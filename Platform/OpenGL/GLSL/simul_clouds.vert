@@ -1,12 +1,12 @@
 #version 140
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/simul_cloud_constants.sl"
+#include "../../CrossPlatform/SL/simul_cloud_constants.sl"
 
 uniform mat4 worldViewProj;
 
 uniform int layerNumber;
 
-in vec4 vertex;
+in vec3 vertex;
 
 out float layerDensity;
 out float rainFade;
@@ -21,14 +21,14 @@ out vec4 transformed_pos;
 void main(void)
 {
 	LayerData layer		=layers[layerIndex];//layerCount-1-layerNumber];
-	vec3 pos			=vertex.xyz;
+	vec3 pos			=vertex.xyz*layerDistance_;
 //	pos.xyz				*=layer.layerDistance;
     wPosition			=pos.xyz;
     transformed_pos		=vec4(vertex.xyz,1.0)*worldViewProj;
     gl_Position			=transformed_pos;
 
 	layerDensity		=layer.layerFade;
-	texCoordLightning	=(wPosition.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
+	texCoordLightning	=(wPosition.xyz-lightningOrigin.xyz)*lightningInvScales.xyz;
 	float depth			=length(pos)/maxFadeDistanceMetres;
 	view				=normalize(pos);
 	wPosition			=viewPos+pos;
@@ -40,7 +40,7 @@ void main(void)
 	n					=normalize(n);
 	vec2 noise_texc_0	=(noiseMatrix*vec4(n.xy,0.0,0.0)).xy;
 
-	noise_texc			=noise_texc_0.xy*layer.layerDistance/fractalRepeatLength+layer.noiseOffset;
+	noise_texc			=noise_texc_0.xy*layerDistance_/fractalRepeatLength+noiseOffset_;
 
 	float sine			=view.z;
 	fade_texc			=vec2(sqrt(depth),0.5*(1.0-sine));

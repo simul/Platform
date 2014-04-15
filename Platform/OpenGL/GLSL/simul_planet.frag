@@ -1,8 +1,8 @@
 #version 140
 // simul_planet.frag - a GLSL fragment shader
-// Copyright 2013 Simul Software Ltd
+// Copyright 2014 Simul Software Ltd
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/sky_constants.sl"
+#include "../../CrossPlatform/SL/sky_constants.sl"
 uniform sampler2D planetTexture;
 // inputs are written by vert shader, interpolated, and read by frag shader.
 in vec2 texCoords;

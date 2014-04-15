@@ -6,7 +6,7 @@
 #include "Simul/Math/Matrix.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/CrossPlatform/simul_gpu_clouds.sl"
+#include "Simul/Platform/CrossPlatform/SL/simul_gpu_clouds.sl"
 
 using namespace simul;
 using namespace opengl;
@@ -105,9 +105,9 @@ void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_sr
 	if(generation_number==last_generation_number&&volume_noise_tex)
 		return (void*)volume_noise_tex;
 	last_generation_number	=generation_number;
-	noiseSize=noise_size;
+	noiseSize				=noise_size;
 	SAFE_DELETE_TEXTURE(volume_noise_tex);
-	volume_noise_tex=(GLuint)make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
+	volume_noise_tex		=(GLuint)make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
 	return (void*)volume_noise_tex;
 }
 
@@ -152,7 +152,7 @@ GL_ERROR_CHECK
 								z,							//	z offset in 3D texture
 								0,							//	x=0 in source 2D texture
 								z*grid[1]+y,				//	y offset in source 2D texture
-								grid[0],		//	width to copy
+								grid[0],					//	width to copy
 								dy);						// length to copy.
 GL_ERROR_CHECK
 GL_ERROR_CHECK
@@ -197,9 +197,7 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 		}
 	}
 	int stride=(iformat==GL_RGBA32F_ARB)?4:1;
-
 	simul::math::Vector3 noise_scale(1.f,1.f,(float)params.density_grid[2]/(float)params.density_grid[0]);
-
 	//using noise_size and noise_src_ptr, make a 3d texture:
 	glUseProgram(density_program);
 	setParameter(density_program,"volumeNoiseTexture"	,0);
@@ -231,9 +229,9 @@ GL_ERROR_CHECK
 		glBindTexture(GL_TEXTURE_3D,density_texture);
 
 		int w,l,d;
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_WIDTH,&w);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_HEIGHT,&l);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_DEPTH,&d);
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_WIDTH	,&w);
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_HEIGHT	,&l);
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_DEPTH	,&d);
 
 		if(!density_texture||density_gridsize!=total_texels*stride||w!=params.density_grid[0]||l!=params.density_grid[1]||d!=params.density_grid[2])
 		{
@@ -326,7 +324,7 @@ GL_ERROR_CHECK
 			F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			if(target)
-			glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
+				glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].tex);
 			CopyTo3DTextureLayer(0,params.light_grid);
@@ -440,9 +438,9 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 				target+=Y0*params.density_grid[0]*4;
 				glReadPixels(0,Y0,params.density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
 			}
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D,finalTexture[cycled_index]->tex);
-		CopyTo3DTexture(start_texel,texels,params.density_grid);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_3D,finalTexture[cycled_index]->tex);
+			CopyTo3DTexture(start_texel,texels,params.density_grid);
 			GL_ERROR_CHECK
 		world_fb.Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);

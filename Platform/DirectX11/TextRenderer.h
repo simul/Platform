@@ -18,6 +18,7 @@ namespace simul
 			{
 			vec4	rect;
 			vec4  texc;
+			vec4 colour;
 			};
 
 		public:
@@ -27,7 +28,7 @@ namespace simul
 			void RestoreDeviceObjects(ID3D11Device*);
 			void InvalidateDeviceObjects();
 		void RecompileShaders();
-			void Render(ID3D11DeviceContext *context, float x,float y,float screen_width,float screen_height,const char *txt);
+			void Render(ID3D11DeviceContext *context, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
 
 		private:
 
@@ -38,7 +39,7 @@ namespace simul
 			ConstantBuffer<ConstantBufferType>	constantBuffer;
 			ID3D11SamplerState* m_sampleState;
 			ID3D11Buffer* m_pixelBuffer;
-			ID3D1xShaderResourceView*			font_texture_SRV;
+			ID3D11ShaderResourceView*			font_texture_SRV;
 		};
 	}
 }

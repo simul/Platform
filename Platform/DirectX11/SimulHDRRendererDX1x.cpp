@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -12,6 +12,7 @@
 #include <tchar.h>
 #include <dxerr.h>
 #include <string>
+#include <algorithm>			// for std::min / max
 #include <assert.h>
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
@@ -32,7 +33,6 @@ using namespace dx11;
 
 SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 	:m_pd3dDevice(NULL)
-	,m_pVertexBuffer(NULL)
 	,m_pTonemapEffect(NULL)
 	,m_pGaussianEffect(NULL)
 	,Exposure(1.f)
@@ -65,7 +65,7 @@ void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
 void SimulHDRRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	glow_fb.RestoreDeviceObjects(m_pd3dDevice);
 
 	glowTexture.release();
@@ -121,7 +121,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	hdrConstants.LinkToEffect(m_pTonemapEffect,"HdrConstants");
 	SAFE_RELEASE(m_pGaussianEffect);
 	
-	int	threadsPerGroup = 256;
+	static int	threadsPerGroup = 128;
 
 //static const uint THREADS_PER_GROUP = 128;
 //static const uint SCAN_SMEM_SIZE = 1200;
@@ -140,7 +140,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	defs["NUM_IMAGE_COLS"]	=string_format("%d",W);
 	defs["NUM_IMAGE_ROWS"]	=string_format("%d",H);
 	
-	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs);
+	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs,0);
 	hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
 }
 
@@ -149,7 +149,6 @@ void SimulHDRRendererDX1x::InvalidateDeviceObjects()
 	hdrConstants.InvalidateDeviceObjects();
 	glow_fb.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pTonemapEffect);
-	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pGaussianEffect);
 	glowTexture.release();
 	m_pd3dDevice=NULL;
@@ -174,17 +173,18 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv)
 void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 {
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
+	SIMUL_COMBINED_PROFILE_START(pContext,"HDR")
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	textureSRV->GetDesc(&desc);
 	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
-	dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
-	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
-	hdrConstants.gamma=Gamma;
-	hdrConstants.exposure=Exposure;
+	dx11::setTexture(m_pTonemapEffect,"imageTexture"	,textureSRV);
+	dx11::setTexture(m_pTonemapEffect,"imageTextureMS"	,textureSRV);
+	hdrConstants.gamma		=Gamma;
+	hdrConstants.exposure	=Exposure;
 	hdrConstants.Apply(pContext);
 	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
-	ID3D1xEffectTechnique *tech=exposureGammaTechnique;
+	ID3DX11EffectTechnique *tech=exposureGammaTechnique;
 	if(Glow)
 	{
 		RenderGlowTexture(context,texture_srv);
@@ -193,11 +193,12 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 	}
 	ApplyPass(pContext,tech->GetPassByName(msaa?"msaa":"main"));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
-	
+
 	dx11::setTexture(m_pTonemapEffect,"imageTexture",NULL);
 	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",NULL);
 	hdrConstants.Unbind(pContext);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
+	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
 void SimulHDRRendererDX1x::RenderWithOculusCorrection(void *context,void *texture_srv

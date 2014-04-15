@@ -13,7 +13,7 @@ RWTexture3D<float4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
 RWTexture3D<float> targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
 
 #include "states.hlsl"
-#include "../../CrossPlatform/simul_gpu_clouds.sl"
+#include "../../CrossPlatform/SL/simul_gpu_clouds.sl"
 
 SamplerState lightSamplerState : register(s8);
 
@@ -132,7 +132,6 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 		targetTexture1[idx]			=indirect_light;
 	}
 }
-
 [numthreads(8,8,1)]
 void CS_GaussianFilter(uint3 sub_pos : SV_DispatchThreadID)
 {

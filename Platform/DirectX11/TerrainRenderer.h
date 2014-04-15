@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -19,8 +19,8 @@ typedef long HRESULT;
 #include "Simul/Base/Referenced.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
-#include "Simul/Platform/CrossPlatform/simul_terrain_constants.sl"
-#include "Simul/Platform/CrossPlatform/simul_cloud_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/simul_terrain_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/simul_cloud_constants.sl"
 
 namespace simul
 {

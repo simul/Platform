@@ -79,14 +79,14 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 	// fill an N*N*2 array with uniformly distributed 
 	// samples across the sphere using jittered stratification 
 	float oneoverN	= 1.0/sqrt_n_samples; 
-	int a			=pos.x;
-	int b			=pos.y;
+	int a=pos.x;
+	int b=pos.y;
 	int i			=a*sqrt_n_samples+b; // array index 
 	// generate unbiased distribution of spherical coords 
-	float x			=(a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
-	float y			=(b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 
-	float theta		=2.0*acos(sqrt(1.0 - x)); 
-	float phi		=2.0*PI*y;
+	float x		=(a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
+	float y		=(b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 
+	float theta	=2.0 * acos(sqrt(1.0 - x)); 
+	float phi	=2.0 * PI * y; 
 	// convert spherical coords to unit vector 
 	vec3 vec		=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
 	samplesBufferRW[i].dir	= vec; 

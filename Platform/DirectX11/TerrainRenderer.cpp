@@ -1,5 +1,5 @@
 #define NOMINMAX
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -17,6 +17,7 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Sky/SkyInterface.h"
+#include "Simul/Camera/Camera.h"
 
 using namespace simul::dx11;
 
@@ -71,34 +72,34 @@ void TerrainRenderer::RecompileShaders()
 void TerrainRenderer::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	terrainConstants.RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();
-	const D3D1x_INPUT_ELEMENT_DESC decl[] =
+	const D3D11_INPUT_ELEMENT_DESC decl[] =
     {
-        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	1, DXGI_FORMAT_R32G32_FLOAT,		0,	24,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	2, DXGI_FORMAT_R32_FLOAT,			0,	32,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",	1, DXGI_FORMAT_R32G32_FLOAT,		0,	24,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",	2, DXGI_FORMAT_R32_FLOAT,			0,	32,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
-	D3D1x_PASS_DESC PassDesc;
-	ID3D1xEffectPass *pass=m_pTechnique->GetPassByIndex(0);
+	D3DX11_PASS_DESC PassDesc;
+	ID3DX11EffectPass *pass=m_pTechnique->GetPassByIndex(0);
 	hr=pass->GetDesc(&PassDesc);
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout(decl,4,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
 	// Create the main vertex buffer:
-	D3D1x_BUFFER_DESC desc=
+	D3D11_BUFFER_DESC desc=
 	{
         MAX_VERTICES*sizeof(TerrainVertex_t),
-        D3D1x_USAGE_DYNAMIC,
-        D3D1x_BIND_VERTEX_BUFFER,
-        D3D1x_CPU_ACCESS_WRITE,
+        D3D11_USAGE_DYNAMIC,
+        D3D11_BIND_VERTEX_BUFFER,
+        D3D11_CPU_ACCESS_WRITE,
         0
 	};
 	TerrainVertex_t *vertices=new TerrainVertex_t[MAX_VERTICES];
-    D3D1x_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    D3D11_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D11_SUBRESOURCE_DATA) );
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(TerrainVertex_t);
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -183,10 +184,10 @@ void TerrainRenderer::Render(void *context,float exposure)
 	D3DXMATRIX world;
 	D3DXMatrixIdentity(&world);
 	D3DXMATRIX wvp;
-	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
-	simul::dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
-	simul::dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
+	dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
+	dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	terrainConstants.eyePosition=cam_pos;
 	if(baseSkyInterface)
 	{
@@ -196,9 +197,8 @@ void TerrainRenderer::Render(void *context,float exposure)
 	}
 	terrainConstants.worldViewProj=wvp;
 	terrainConstants.worldViewProj.transpose();
-
-	simul::math::Matrix4x4 shadowMatrix		=cloudShadowStruct.simpleOffsetMatrix;
-	simul::math::Matrix4x4 invShadowMatrix;
+	math::Matrix4x4 shadowMatrix		=cloudShadowStruct.simpleOffsetMatrix;
+	math::Matrix4x4 invShadowMatrix;
 	shadowMatrix.Inverse(invShadowMatrix);
 	terrainConstants.invShadowMatrix		=invShadowMatrix;
 	terrainConstants.extentZMetres			=cloudShadowStruct.extentZMetres;
@@ -221,9 +221,9 @@ void TerrainRenderer::Render(void *context,float exposure)
 	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
 	// Set the input layout
 	pContext->IASetInputLayout(m_pVtxDecl);
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
-	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	if(numVertices>2)
 		pContext->Draw(numVertices-2,0);
 	pContext->IASetPrimitiveTopology(previousTopology);

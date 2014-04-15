@@ -8,6 +8,7 @@ struct Output
 	int desktopY;
 	int width;
 	int height;
+	int numerator,denominator;
 };
 
 struct Direct3DWindow

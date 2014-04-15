@@ -58,6 +58,9 @@ uniform_buffer Detail2DConstants SIMUL_BUFFER_REGISTER(12)
 	uniform float humidity;
 	uniform float diffusivity;
 	uniform float noiseTextureScale;			// Scale from existing random texture to noise scale of coverage.
+
+	uniform float phase;
+	uniform float aaaaaa,bbbbbbbb,cccccc;
 };
 
 uniform_buffer CloudCrossSection2DConstants SIMUL_BUFFER_REGISTER(13)

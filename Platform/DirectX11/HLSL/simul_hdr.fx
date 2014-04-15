@@ -1,8 +1,8 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-#include "../../CrossPlatform/depth.sl"
-#include "../../CrossPlatform/hdr_constants.sl"
-#include "../../CrossPlatform/mixed_resolution.sl"
+#include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/hdr_constants.sl"
+#include "../../CrossPlatform/SL/mixed_resolution.sl"
 Texture2D imageTexture;
 Texture2DMS<float4> imageTextureMS;
 Texture2D nearImageTexture;

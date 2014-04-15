@@ -210,6 +210,7 @@
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="FramebufferGL.h" />
     <ClInclude Include="Glsl.h" />
@@ -334,6 +335,14 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Clouds\Clouds_x64_VC11.vcxproj">
+      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Scene\Scene_x64_VC11.vcxproj">
+      <Project>{26213dbd-d6be-4f1c-827a-91aa489cf397}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

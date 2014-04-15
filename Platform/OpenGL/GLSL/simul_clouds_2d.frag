@@ -16,14 +16,14 @@ in vec2 texc_detail;
 in vec3 wPosition;
 in vec4 clip_pos;
 
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/earth_shadow_uniforms.sl"
-#include "../../CrossPlatform/depth.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
+#include "../../CrossPlatform/SL/depth.sl"
 
-#include "../../CrossPlatform/simul_2d_clouds.hs"
-#include "../../CrossPlatform/earth_shadow.sl"
-#include "../../CrossPlatform/earth_shadow_fade.sl"
-#include "../../CrossPlatform/simul_2d_clouds.sl"
+#include "../../CrossPlatform/SL/simul_2d_clouds.hs"
+#include "../../CrossPlatform/SL/earth_shadow.sl"
+#include "../../CrossPlatform/SL/earth_shadow_fade.sl"
+#include "../../CrossPlatform/SL/simul_2d_clouds.sl"
 
 void main()
 {

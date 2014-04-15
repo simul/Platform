@@ -1,6 +1,5 @@
 #pragma once
 #include "Simul/Sky/BaseGpuSkyGenerator.h"
-#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include <d3dx9.h>
 #include <d3d11.h>
@@ -22,7 +21,7 @@ namespace simul
 			void RecompileShaders();
 			//! Return true if the derived class can make sky tables using the GPU.
 			bool CanPerformGPUGeneration() const;
-			void Make2DLossAndInscatterTextures(int cycled_index,
+			void MakeLossAndInscatterTextures(int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *skyInterface
 				,const sky::GpuSkyParameters &gpuSkyParameters
 				,const sky::GpuSkyAtmosphereParameters &gpuSkyAtmosphereParameters
@@ -49,9 +48,9 @@ namespace simul
 				}
 			}
 		protected:
-			ID3D1xDevice*					m_pd3dDevice;
+			ID3D11Device*					m_pd3dDevice;
 			ID3D11DeviceContext*			m_pImmediateContext;
-			ID3D1xEffect*					effect;
+			ID3DX11Effect*					effect;
 			ID3DX11EffectTechnique*			lossComputeTechnique;
 			ID3DX11EffectTechnique*			inscComputeTechnique;
 			ID3DX11EffectTechnique*			skylComputeTechnique;

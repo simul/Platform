@@ -8,7 +8,7 @@ public:
 	virtual bool				IsEnabled			() const=0;
 	virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const=0;
 	virtual void				OnD3D11CreateDevice	(struct ID3D11Device* pd3dDevice)=0;
-	//! Add a view. This tells the renderer to create any internal stuff it needs to handle a viewport, so that it is ready when Render() is called.
+	//! Add a view. This tells the renderer to create any internal stuff it needs to handle a viewport, so that it is ready when Render() is called. It returns an identifier for that view.
 	virtual int					AddView				()=0;
 	//! For a view that has already been created, this ensures that it has the requested size and format.
 	virtual void				ResizeView			(int view_id,const struct DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)=0;

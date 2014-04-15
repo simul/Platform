@@ -7,7 +7,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
-#include "Simul/Platform/CrossPlatform/spherical_harmonics_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/spherical_harmonics_constants.sl"
 #pragma warning(disable:4251)
 namespace simul
 {
@@ -54,8 +54,8 @@ namespace simul
 			{
 				return (m_pCubeEnvMapSRV != NULL);
 			}
-			void				GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
-			ID3D11Texture2D		*GetCopy(void *context);
+			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
+			ID3D11Texture2D					*GetCopy(void *context);
 			//! Calculate the spherical harmonics of this cubemap and store the result internally.
 			//! Changing the number of bands will resize the internal storeage.
 			void				CalcSphericalHarmonics(void *context);
@@ -63,18 +63,18 @@ namespace simul
 			{
 				return sphericalHarmonics;
 			}
-			void SetBands(int b)
-			{
+void SetBands(int b)
+{
 				if(b>MAX_SH_BANDS)
 					b=MAX_SH_BANDS;
 				if(bands!=b)
 				{
-					bands=b;
+bands=b;
 					sphericalHarmonics.release();
 				}
-			}
+}
 		protected:
-			int bands;
+int bands;
 			//! The size of the 2D buffer the sky is rendered to.
 			int Width,Height;
 			ID3D11Texture2D								*stagingTexture;	// Only initialized if CopyToMemory or GetCopy invoked.
@@ -100,7 +100,7 @@ namespace simul
 			ConstantBuffer<SphericalHarmonicsConstants> sphericalHarmonicsConstants;
 			StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
 			StructuredBuffer<vec4>						sphericalHarmonics;
-			ID3DX11Effect								*sphericalHarmonicsEffect;
+	ID3DX11Effect *sphericalHarmonicsEffect;
 		};
 	}
 }

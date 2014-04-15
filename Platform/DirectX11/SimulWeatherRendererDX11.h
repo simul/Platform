@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -97,6 +97,7 @@ namespace simul
 										,bool is_cubemap
 										,float exposure
 										,const void* mainDepthTextureMS	
+										,const void* hiResDepthTexture	
 										,const void* lowResDepthTexture 
 										,const sky::float4& depthViewportXYWH
 										);
@@ -107,10 +108,10 @@ namespace simul
 												,const void* mainDepthTexture
 												,const void* lowResDepthTexture
 												,const simul::sky::float4& viewportRegionXYWH);
-			void RenderFramebufferDepth(void *context,int view_id,int w,int h);
-			void RenderCompositingTextures(void *context,int view_id,int w,int h);
-			void RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 depthViewportXYWH);
-			void RenderLightning(void *context,int viewport_id);
+			void RenderFramebufferDepth(void *context,int view_id,int x0,int y0,int w,int h);
+			void RenderCompositingTextures(void *context,int view_id,int x0,int y0,int w,int h);
+			void RenderPrecipitation(void *context,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
+			void RenderLightning(void *context,int viewport_id,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 			void SetExposure(float ex){exposure=ex;}
@@ -123,15 +124,15 @@ namespace simul
 			class Simul2DCloudRendererDX11 *Get2DCloudRenderer();
 			//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
+			void *GetCloudDepthTexture();
 
 		protected:
-			void *GetCloudDepthTexture();
 			simul::base::MemoryInterface	*memoryInterface;
 			// Keep copies of these matrices:
 			simul::math::Matrix4x4 view;
 			simul::math::Matrix4x4 proj;
 			IDXGISwapChain *pSwapChain;
-			ID3D1xDevice*							m_pd3dDevice;
+			ID3D11Device*							m_pd3dDevice;
 			
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3DX11Effect							*m_pTonemapEffect;
@@ -141,13 +142,13 @@ namespace simul
 			ID3DX11EffectShaderResourceVariable		*imageTexture;
 
 			bool CreateBuffers();
-			bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
+			bool RenderBufferToScreen(ID3D11ShaderResourceView* texture,int w,int h,bool do_tonemap);
 			class SimulSkyRendererDX1x				*simulSkyRenderer;
 			class SimulCloudRendererDX1x			*simulCloudRenderer;
 			class PrecipitationRenderer	*simulPrecipitationRenderer;
 			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
 			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
-			class SimulLightningRendererDX11		*simulLightningRenderer;
+			class LightningRenderer		*simulLightningRenderer;
 			typedef std::map<int,simul::dx11::TwoResFramebuffer*> FramebufferMapDx11;
 			// Map from view_id to framebuffer.
 			TwoResFramebuffer *						GetFramebuffer(int view_id);

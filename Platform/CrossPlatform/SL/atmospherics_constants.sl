@@ -29,7 +29,8 @@ SIMUL_CONSTANT_BUFFER_END
 SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform mat4 invViewProj;
 	uniform mat4 invShadowMatrix;
-	uniform mat4 shadowMatrix;
+	//uniform mat4 shadowMatrix;
+	uniform mat4 worldToMoistureSpaceMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 viewPosition;
 	uniform float exposure;
@@ -41,7 +42,11 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
     uniform vec2 depthPixelScales;
 	uniform float shadowRange;
 
-	uniform float AtmosphericsPerViewConstantspad2;
+	uniform float dropletRadius;
+	uniform float rainbowIntensity;
+	uniform float aoehg,aeoithjaoe,aetaetyjk;
+    uniform vec3 lightIrradiance;
+	uniform float xxxxxxx;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

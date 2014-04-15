@@ -1,7 +1,7 @@
 #version 140
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/noise.sl"
-#include "../../CrossPlatform/noise_constants.sl"
+#include "../../CrossPlatform/SL/noise.sl"
+#include "../../CrossPlatform/SL/noise_constants.sl"
 uniform sampler2D noise_texture;
 in vec2 texCoords;
 out vec4 gl_FragColor;

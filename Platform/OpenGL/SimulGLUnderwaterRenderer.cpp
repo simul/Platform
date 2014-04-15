@@ -32,8 +32,3 @@ void SimulGLUnderwaterRenderer::EnsureTexturesAreUpToDate()
 void SimulGLUnderwaterRenderer::EnsureTextureCycle()
 {
 }
-
-bool SimulGLUnderwaterRenderer::IsYVertical() const
-{
-	return false;
-}

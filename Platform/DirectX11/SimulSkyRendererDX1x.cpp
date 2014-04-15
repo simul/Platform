@@ -16,15 +16,18 @@
 #include <d3dx10.h>
 #include <dxerr.h>
 #include <string>
-#include "SimulSkyRendererDX1x.h"
+#include <algorithm>			// for std::min / max
+#include "Simul/Math/Vector3.h"
+#include "Simul/Math/Pi.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
-#include "Simul/Sky/TextureGenerator.h"
-#include "Simul/Math/Vector3.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
+#include "Simul/Math/Pi.h"
+#include "Simul/Camera/Camera.h"
 
 using namespace simul::dx11;
 
@@ -47,7 +50,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	,inscatter_2d(NULL)
 	,overcast_2d(NULL)
 	,skylight_2d(NULL)
-	,d3dQuery(NULL)
 	,cycle(0)
 {
 	SetCameraPosition(0,0,400.f);
@@ -56,6 +58,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	inscatter_2d=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	overcast_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	skylight_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
+	skyKeyframer->SetGpuSkyGenerator(GetBaseGpuSkyGenerator());
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
@@ -65,12 +68,8 @@ void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
 
 void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 {
-	m_pd3dDevice=(ID3D1xDevice*)dev;
-	D3D1x_QUERY_DESC qdesc=
-	{
-		D3D1x_QUERY_OCCLUSION,0
-	};
-    m_pd3dDevice->CreateQuery(&qdesc,&d3dQuery);
+	m_pd3dDevice=(ID3D11Device*)dev;
+	sunQuery.RestoreDeviceObjects(dev);
 	HRESULT hr=S_OK;
 	world.Identity();
 	view.Identity();
@@ -172,7 +171,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	light_table_2d.release();
 	// Set the stored texture sizes to zero, so the textures will be re-created.
 	numFadeDistances=numFadeElevations=numAltitudes=0;
-	SAFE_RELEASE(d3dQuery);
+	sunQuery.InvalidateDeviceObjects();
 	earthShadowUniforms.InvalidateDeviceObjects();
 	skyConstants.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
@@ -216,7 +215,7 @@ float SimulSkyRendererDX1x::GetFadeInterp() const
 
 void SimulSkyRendererDX1x::EnsureCorrectTextureSizes()
 {
-	simul::sky::BaseKeyframer::int3 i=skyKeyframer->GetTextureSizes();
+	simul::sky::int3 i=skyKeyframer->GetTextureSizes();
 	int num_dist=i.x;
 	int num_elev=i.y;
 	int num_alt=i.z;
@@ -271,29 +270,46 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 	illumination_fb.RestoreDeviceObjects(m_pd3dDevice);
 }
 
-void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate(void *c)
+void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate(void *context)
 {
-	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
+	SIMUL_COMBINED_PROFILE_START(context,"SimulSkyRendererDX1x::EnsureTexturesAreUpToDate")
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
-	if(gpuSkyGenerator.GetEnabled()&&skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator)
-		return;
+	
+	sky::GpuSkyParameters p;
+	sky::GpuSkyAtmosphereParameters a;
+	sky::GpuSkyInfraredParameters ir;
 	for(int i=0;i<3;i++)
 	{
-		bool reset=false;
-		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(i,fade_texture_iterator[i]);
-		if(reset)
-		{
-			fade_texture_iterator[i].texel_index=0;
-		}
-		if(texture_fill.num_texels)
-		{
-			MapFade(context,i);
-			FillFadeTex(context,i,texture_fill.texel_index,texture_fill.num_texels,(const simul::sky::float4*)texture_fill.float_array_1,(const simul::sky::float4*)texture_fill.float_array_2,(const simul::sky::float4*)texture_fill.float_array_3);
-		}
-		if(i!=2)
-			UnmapFade(i);
+		skyKeyframer->GetGpuSkyParameters(p,a,ir,i);
+		int cycled_index=(texture_cycle+i)%3;
+		if(gpuSkyGenerator.GetEnabled())
+			gpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+		else
+			skyKeyframer->cpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
 	}
+	if(!gpuSkyGenerator.GetEnabled())
+	{
+		for(int i=0;i<3;i++)
+		{
+			bool reset=false;
+			int cycled_index=(texture_cycle+i)%3;
+			simul::sky::seq_texture_fill texture_fill=skyKeyframer->cpuSkyGenerator.GetSequentialFadeTextureFill(cycled_index,fade_texture_iterator[i]);
+			if(reset)
+			{
+				fade_texture_iterator[i].texel_index=0;
+			}
+			if(texture_fill.num_texels)
+			{
+				MapFade(pContext,i);
+				FillFadeTex(pContext,i,texture_fill.texel_index,texture_fill.num_texels,(const simul::sky::float4*)texture_fill.float_array_1,(const simul::sky::float4*)texture_fill.float_array_2,(const simul::sky::float4*)texture_fill.float_array_3);
+			}
+			if(i!=2)
+				UnmapFade(i);
+		}
+	}
+	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
 void SimulSkyRendererDX1x::CycleTexturesForward()
@@ -321,7 +337,7 @@ void SimulSkyRendererDX1x::EnsureTextureCycle()
 	}
 }
 
-void SimulSkyRendererDX1x::FillFadeTex(ID3D11DeviceContext *context,int texture_index,int texel_index,int num_texels,
+void SimulSkyRendererDX1x::FillFadeTex(ID3D11DeviceContext *pContext,int texture_index,int texel_index,int num_texels,
 						const simul::sky::float4 *loss_float4_array,
 						const simul::sky::float4 *insc_float4_array,
 						const simul::sky::float4 *skyl_float4_array)
@@ -395,79 +411,11 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	fadeTexture1				=m_pSkyEffect->GetVariableByName("fadeTexture1")->AsShaderResource();
 	fadeTexture2				=m_pSkyEffect->GetVariableByName("fadeTexture2")->AsShaderResource();
 	illuminationTexture			=m_pSkyEffect->GetVariableByName("illuminationTexture")->AsShaderResource();
-	m_hTechniqueQuery			=m_pSkyEffect->GetTechniqueByName("simul_query");
+	m_hTechniqueQuery			=m_pSkyEffect->GetTechniqueByName("sun_query");
 
 	earthShadowUniforms.LinkToEffect(m_pSkyEffect,"EarthShadowUniforms");
 	skyConstants.LinkToEffect(m_pSkyEffect,"SkyConstants");
 	gpuSkyGenerator.RecompileShaders();
-}
-#include "Simul/Math/Pi.h"
-float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
-{
-	sun_occlusion=cloud_occlusion;
-	if(!m_hTechniqueQuery)
-		return sun_occlusion;
-//	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
-	float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
-
-	// fix the projection matrix so this quad is far away:
-	D3DXMATRIX tmp=proj;
-	static float ff=0.0001f;
-	float zFar=(1.f+ff)/tan(sun_angular_radius);
-/*
-	// Start the query
-	d3dQuery->Begin();
-	RenderAngledQuad(sun_dir,sun_angular_radius);
-	// End the query, get the data
-	d3dQuery->End();
-    // Loop until the data becomes available
-    UINT64 pixelsVisible = 0;
-    while (d3dQuery->GetData((void *) &pixelsVisible,sizeof(UINT64),0) == S_FALSE);
-	sun_occlusion=1.f-(float)pixelsVisible/560.f;
-	if(sun_occlusion<0)
-		sun_occlusion=0;
-	sun_occlusion=1.f-(1.f-cloud_occlusion)*(1.f-sun_occlusion);
-	proj=tmp;*/
-	return sun_occlusion;
-}
-
-#include "Simul/Geometry/Orientation.h"
-
-void SimulSkyRendererDX1x::SetConstantsForPlanet(SkyConstants &skyConstants,const float *v,const float *p,const float *direction,const float *light_dir)
-{
-	//simul::math::Vector3 pos;
-	simul::math::Vector3 dir(direction);
-	//pos=GetCameraPosVector(view,false);
-	float Yaw=atan2(dir.x,dir.y);
-	float Pitch=-asin(dir.z);
-	HRESULT hr=S_OK;
-	simul::math::Matrix4x4 world, tmp1, tmp2;
-	simul::math::Matrix4x4 view(v);
-	simul::math::Matrix4x4 proj(p);
-	
-	simul::geometry::SimulOrientation or;
-	or.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
-	or.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
-	world=or.T4;
-	//set up matrices
-	view._41=0.f;
-	view._42=0.f;
-	view._43=0.f;
-	simul::math::Vector3 sun2;
-	simul::math::Matrix4x4 inv_world;
-	world.Inverse(inv_world);
-	or.GlobalToLocalDirection(sun2,light_dir);
-	/*D3DXVec3TransformNormal(  &sun2,
-							  &dir,
-							  &inv_world);*/
-	simul::math::Multiply4x4(tmp1,world,view);
-	simul::math::Multiply4x4(tmp2,tmp1,proj);
-	//D3DXMatrixMultiply(&tmp1,&world,&view);
-	//D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
-	//D3DXMatrixTranspose(&tmp1,&tmp2);
-	skyConstants.worldViewProj=tmp2;
-	skyConstants.lightDir=sun2;
 }
 
 void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
@@ -489,32 +437,57 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 	sunlight.w=1.0f/(max_bright*exposure);
 	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
-	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,sun_dir);
-	skyConstants.colour=sunlight;
-	// 2 * sun radius because we want glow around it.
-	skyConstants.radiusRadians	=2.f*skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
+	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,2.f*skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f,sunlight,sun_dir);
 	skyConstants.Apply(pContext);
 	ApplyPass(pContext,m_hTechniqueSun->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);
 
-//	UtilityRenderer::RenderAngledQuad(context,sun_dir,sun_angular_radius*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
-	// Start the query
-/*d3dQuery->Begin();
-	hr=RenderAngledQuad(sun_dir,sun_angular_radius);
-	// End the query, get the data
-    d3dQuery->End();
+	ApplyPass(pContext,m_hTechniqueSun->GetPassByIndex(0));
+	UtilityRenderer::DrawQuad(pContext);
+}
 
-    // Loop until the data becomes available
-    UINT64 pixelsVisible = 0;
-    
-    while (d3dQuery->GetData((void *) &pixelsVisible,sizeof(UINT64),0) == S_FALSE);*/
+float SimulSkyRendererDX1x::CalcSunOcclusion(void *context,float cloud_occlusion)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+#if 1
+	sun_occlusion=cloud_occlusion;
+	if(!m_hTechniqueQuery||!m_hTechniqueQuery->IsValid())
+		return sun_occlusion;
+	// Start the query
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
+	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f,sky::float4(1,1,1,1),sun_dir);
+	// 2 * sun radius because we want glow arprofileData.DisjointQuery[currFrame]ound it.
+	skyConstants.Apply(pContext);
+/*d3dQuery->Begin();*/
+	// Start the query
+    sunQuery.Begin(context);
+	{
+		ApplyPass(pContext,m_hTechniqueQuery->GetPassByIndex(0));
+		UtilityRenderer::DrawQuad(pContext);
+	}
+	// End the query, get the data
+	sunQuery.End(context);
+	D3D11_VIEWPORT viewport;
+	UINT num_v=1;
+	pContext->RSGetViewports(&num_v,&viewport);
+	float tan_half_fov_horizontal=1.f/proj._11;
+	float pixelRadius		=tan(skyConstants.radiusRadians/2.f)*viewport.Width/tan_half_fov_horizontal;
+	float maxPixelsVisible	=pi*pixelRadius*pixelRadius;
+    UINT64 pixelsVisible	=0;
+	sunQuery.GetData(context,&pixelsVisible,sizeof(UINT64));
+ 	sun_occlusion			=1.f-(float)pixelsVisible/maxPixelsVisible;
+	if(sun_occlusion<0)
+		sun_occlusion		=0;
+	sun_occlusion			=1.f-(1.f-cloud_occlusion)*(1.f-sun_occlusion);
+#endif
+	return sun_occlusion;
 }
 
 void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)c;
 	float alt_km=0.001f*(cam_pos.z);
-	flareTexture->SetResource((ID3D1xShaderResourceView*)tex);
+	flareTexture->SetResource((ID3D11ShaderResourceView*)tex);
 	simul::sky::float4 original_irradiance=skyKeyframer->GetSkyInterface()->GetSunIrradiance();
 	simul::sky::float4 planet_dir4=dir;
 	planet_dir4/=simul::sky::length(planet_dir4);
@@ -524,11 +497,8 @@ void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float 
 	D3DXVECTOR4 planet_dir(dir);
 	//m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
-	SetConstantsForPlanet(skyConstants,view,proj,planet_dir,sun_dir);
-	skyConstants.colour			=planet_colour;
-	skyConstants.radiusRadians	=rad;
+	SetConstantsForPlanet(skyConstants,view,proj,planet_dir,rad,planet_colour,sun_dir);
 	skyConstants.Apply(pContext);
-	
 	ApplyPass(pContext,(do_lighting?m_hTechniquePlanet:m_hTechniqueFlare)->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);
 }
@@ -557,15 +527,16 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	return (hr==S_OK);
 }
 
-bool SimulSkyRendererDX1x::Render2DFades(void *c)
+bool SimulSkyRendererDX1x::Render2DFades(void *context)
 {
 	if(!m_hTechniqueFade3DTo2D)
 		return false;
 	if(!loss_2d||!inscatter_2d||!skylight_2d)
 		return false;
 	// First render the illumination buffer, to get earthShadow and overcast properties.
-	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	RenderIlluminationBuffer(context);
+	SIMUL_COMBINED_PROFILE_START(context,"Render2DFades")
 	// Current keyframe properties:
 	const simul::sky::SkyKeyframer::SkyKeyframe *K=skyKeyframer->GetInterpolatedKeyframe();
 	// Clear the screen to black:
@@ -576,74 +547,88 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	skyConstants.eyePosition		=cam_pos;
 	skyConstants.cloudShadowRange	=sqrt(80.f/skyKeyframer->GetMaxDistanceKm());
 	skyConstants.cycled_index		=texture_cycle%3;
-	skyConstants.Apply(context);
-
+	skyConstants.Apply(pContext);
+#if 1
 	illuminationTexture->SetResource((ID3D11ShaderResourceView*)illumination_fb.GetColorTex());
 	{
+		SIMUL_COMBINED_PROFILE_START(context,"Loss")
 		V_CHECK(fadeTexture1->SetResource(loss_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(loss_textures[(texture_cycle+1)%3].shaderResourceView));
-		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		loss_2d->Activate(context);
-			context->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
+		V_CHECK(ApplyPass(pContext,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		loss_2d->Activate(pContext);
+			pContext->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
 			if(loss_2d->m_pBufferDepthSurface)
-				context->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
-			simul::dx11::UtilityRenderer::DrawQuad(context);
-		loss_2d->Deactivate(context);
+				pContext->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+			simul::dx11::UtilityRenderer::DrawQuad(pContext);
+		loss_2d->Deactivate(pContext);
+		SIMUL_COMBINED_PROFILE_END(context)
 	}
 	{
+		SIMUL_COMBINED_PROFILE_START(context,"Inscatter")
 		V_CHECK(fadeTexture1->SetResource(insc_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(insc_textures[(texture_cycle+1)%3].shaderResourceView));
-		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		inscatter_2d->Activate(context);
-			simul::dx11::UtilityRenderer::DrawQuad(context);
-		inscatter_2d->Deactivate(context);
+		V_CHECK(ApplyPass(pContext,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		inscatter_2d->Activate(pContext);
+			simul::dx11::UtilityRenderer::DrawQuad(pContext);
+		inscatter_2d->Deactivate(pContext);
+		SIMUL_COMBINED_PROFILE_END(context)
 	}
 
 	{
+		SIMUL_COMBINED_PROFILE_START(context,"Skylight")
 		V_CHECK(fadeTexture1->SetResource(skyl_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(skyl_textures[(texture_cycle+1)%3].shaderResourceView));
-		//V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		skylight_2d->Activate(context);
-			simul::dx11::UtilityRenderer::DrawQuad(context);
-		skylight_2d->Deactivate(context);
+		//V_CHECK(ApplyPass(pContext,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		V_CHECK(ApplyPass(pContext,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		skylight_2d->Activate(pContext);
+			simul::dx11::UtilityRenderer::DrawQuad(pContext);
+		skylight_2d->Deactivate(pContext);
+		SIMUL_COMBINED_PROFILE_END(context)
 	}
-	ID3D1xEffectTechnique* hTechniqueOverc		=m_pSkyEffect->GetTechniqueByName("overcast_inscatter");
+	ID3DX11EffectTechnique* hTechniqueOverc		=m_pSkyEffect->GetTechniqueByName("overcast_inscatter");
 	// We will bake the overcast effect into the overcast_2d texture.
 	{
+		SIMUL_COMBINED_PROFILE_START(context,"Overcast")
 		V_CHECK(inscTexture->SetResource((ID3D11ShaderResourceView*)inscatter_2d->GetColorTex()));
-		V_CHECK(ApplyPass(context,hTechniqueOverc->GetPassByIndex(0)));
-		overcast_2d->Activate(context);
-			simul::dx11::UtilityRenderer::DrawQuad(context);
-		overcast_2d->Deactivate(context);
+		V_CHECK(ApplyPass(pContext,hTechniqueOverc->GetPassByIndex(0)));
+		overcast_2d->Activate(pContext);
+			simul::dx11::UtilityRenderer::DrawQuad(pContext);
+		overcast_2d->Deactivate(pContext);
+		SIMUL_COMBINED_PROFILE_END(context)
 	}
 	// light_table - using compute.
 	{
+		SIMUL_COMBINED_PROFILE_START(context,"LightTable")
 		simul::dx11::setTexture(m_pSkyEffect				,"sourceTexture"	,light_table.shaderResourceView);
 		simul::dx11::setUnorderedAccessView(m_pSkyEffect	,"targetTexture"	,light_table_2d.unorderedAccessView);
-		ID3D1xEffectTechnique* m_TechniqueLightTableInterp	=m_pSkyEffect->GetTechniqueByName("interp_light_table");
-		V_CHECK(ApplyPass(context,m_TechniqueLightTableInterp->GetPassByIndex(0)));
-		context->Dispatch(light_table_2d.width,light_table_2d.length,1);
+		ID3DX11EffectTechnique* m_TechniqueLightTableInterp	=m_pSkyEffect->GetTechniqueByName("interp_light_table");
+		V_CHECK(ApplyPass(pContext,m_TechniqueLightTableInterp->GetPassByIndex(0)));
+		pContext->Dispatch(light_table_2d.width,light_table_2d.length,1);
 		simul::dx11::setTexture(m_pSkyEffect				,"sourceTexture"	,(ID3D11ShaderResourceView*)NULL);
 		simul::dx11::setUnorderedAccessView(m_pSkyEffect	,"targetTexture"	,NULL);
-		V_CHECK(ApplyPass(context,m_TechniqueLightTableInterp->GetPassByIndex(0)));
+		V_CHECK(ApplyPass(pContext,m_TechniqueLightTableInterp->GetPassByIndex(0)));
+		SIMUL_COMBINED_PROFILE_END(context)
 	}
+#endif
 	V_CHECK(fadeTexture1->SetResource(NULL));
 	V_CHECK(fadeTexture2->SetResource(NULL));
-	V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+	illuminationTexture->SetResource(NULL);
+	V_CHECK(ApplyPass(pContext,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+	SIMUL_COMBINED_PROFILE_END(pContext)
 	return true;
 }
 
 void SimulSkyRendererDX1x::RenderIlluminationBuffer(void *c)
 {
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
+	SIMUL_COMBINED_PROFILE_START(context,"RenderIlluminationBuffer")
 	SetIlluminationConstants(earthShadowUniforms,skyConstants);
 	earthShadowUniforms.Apply(context);
 	skyConstants.Apply(context);
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,1.0,0.0,1.0};
 	{
-		ID3D1xEffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
+		ID3DX11EffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
 		ApplyPass(context,tech->GetPassByIndex(0));
 		illumination_fb.Activate(context);
 		context->ClearRenderTargetView(illumination_fb.m_pHDRRenderTarget,clearColor);
@@ -651,6 +636,7 @@ void SimulSkyRendererDX1x::RenderIlluminationBuffer(void *c)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		illumination_fb.Deactivate(context);
 	}
+	SIMUL_COMBINED_PROFILE_END(context)
 }
 
 void SimulSkyRendererDX1x::BuildStarsBuffer()
@@ -757,8 +743,13 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 		return false;
 	int s							=size/numAltitudes-2;
 	ID3D11DeviceContext *context	=(ID3D11DeviceContext *)c;
+	
+	D3D11_VIEWPORT viewport;
+	UINT num_v		=1;
+	context->RSGetViewports(&num_v,&viewport);
+	UtilityRenderer::SetScreenSize((int)viewport.Width,(int)viewport.Height);
 
-	ID3DX11EffectTechnique*	techniqueShowSky				=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");
+	ID3DX11EffectTechnique*	techShowFadeTable				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_table");
 	ID3DX11EffectTechnique*	techniqueShowFade				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
 	ID3DX11EffectShaderResourceVariable*	inscTexture		=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
 
@@ -768,15 +759,21 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 	
 	int y=y0+8;
 	inscTexture->SetResource(loss_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
+	skyConstants.overlayAlpha=0.f;
+	skyConstants.Apply(context);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techShowFadeTable);
 	y+=size+8;
 	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
+	skyConstants.overlayAlpha=1.f;
+	skyConstants.Apply(context);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techShowFadeTable);
 	inscTexture->SetResource(overcast_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techShowFadeTable);
 	y+=size+8;
+	skyConstants.overlayAlpha=0.f;
+	skyConstants.Apply(context);
 	inscTexture->SetResource(skylight_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techShowFadeTable);
 	y+=size+8;
 	inscTexture->SetResource(illumination_fb.buffer_texture_SRV);
 	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowIlluminationBuffer);
@@ -816,7 +813,7 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 	return true;
 }
 
-void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj)
+void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	D3DXMATRIX tmp1,tmp2,wvp;
@@ -836,11 +833,11 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 	world._41=pos.x;
 	world._42=pos.y;
 	world._43=pos.z;
-	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
 	skyConstants.worldViewProj=&wvp._11;
 	skyConstants.worldViewProj.transpose();
 	skyConstants.Apply(pContext);
-	ID3D1xEffectTechnique*				tech		=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
+	ID3DX11EffectTechnique*				tech		=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
 	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pSkyEffect->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));
@@ -883,10 +880,6 @@ void *SimulSkyRendererDX1x::GetLightTableTexture()
 	return light_table_2d.shaderResourceView;
 }
 
-void SimulSkyRendererDX1x::SetYVertical(bool y)
-{
-	RecompileShaders();
-}
 
 void SimulSkyRendererDX1x::DrawLines(void *context,Vertext *lines,int vertex_count,bool strip)
 {

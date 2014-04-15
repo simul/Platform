@@ -151,6 +151,8 @@ void OpenGLRenderer::paintGL()
 {
 	void *context=NULL;
 	static int viewport_id=0;
+	if(renderPlatform)
+		renderPlatform->SetReverseDepth(ReverseDepth);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	if(simulTerrainRenderer)
@@ -170,18 +172,26 @@ void OpenGLRenderer::paintGL()
 	else
 		glLoadMatrixf(cam->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight));
 	glViewport(0,0,ScreenWidth,ScreenHeight);
+	simul::math::Matrix4x4 proj;
+	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
+	simul::math::Matrix4x4 view;
+	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
+	crossplatform::ViewStruct viewStruct={	viewport_id
+												,view
+												,proj
+												};
 	static float exposure=1.0f;
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->PreRenderUpdate(context);
-		GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
+		/*GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
 		GLuint fogfilter=0;								// Which Fog To Use
 		simul::sky::float4 fogColor=simulWeatherRenderer->GetHorizonColour(0.001f*cam->GetPosition()[2]);
 		glFogi(GL_FOG_MODE,fogMode[fogfilter]);			// Fog Mode
 		glFogfv(GL_FOG_COLOR,fogColor);					// Set Fog Color
 		glFogf(GL_FOG_DENSITY,0.35f);					// How Dense Will The Fog Be
 		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
-		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
+		glFogf(GL_FOG_END,5.0f);						// Fog End Depth*/
 		glDisable(GL_FOG);
 		GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
@@ -200,7 +210,7 @@ void OpenGLRenderer::paintGL()
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		
 		if(sceneRenderer)
-			sceneRenderer->Render(NULL);
+			sceneRenderer->Render(NULL,viewStruct);
 //		gScene->OnTimerClick();
 		
 		if(simulTerrainRenderer&&ShowTerrain)
@@ -227,7 +237,7 @@ void OpenGLRenderer::paintGL()
 		simulWeatherRenderer->RenderSkyAsOverlay(context,viewport_id,view,proj,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTex()
 			,depthFramebuffer.GetDepthTex()
 			,simul::sky::float4(0,0,1.f,1.f),true);
-		simulWeatherRenderer->DoOcclusionTests();
+		simulWeatherRenderer->DoOcclusionTests(context);
 		simulWeatherRenderer->RenderPrecipitation(context);
 		if(simulOpticsRenderer&&ShowFlares)
 		{
@@ -237,7 +247,7 @@ void OpenGLRenderer::paintGL()
 			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-			simulOpticsRenderer->RenderFlare(context,exp,dir,light);
+			simulOpticsRenderer->RenderFlare(context,exp,depthFramebuffer.GetDepthTex(),view,proj,dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(context);

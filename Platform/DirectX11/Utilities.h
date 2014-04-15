@@ -6,9 +6,9 @@
 #include <utility>
 #include <vector>
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
-#include "Simul/Platform/CrossPlatform/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Base/FileLoader.h"
-
+#pragma warning(disable:4251)
 namespace simul
 {
 	namespace dx11
@@ -36,8 +36,13 @@ namespace simul
 			void map(ID3D11DeviceContext *context);
 			bool isMapped() const;
 			void unmap();
+			void activateRenderTarget(ID3D11DeviceContext *context);
+			void deactivateRenderTarget();
 		private:
 			ID3D11DeviceContext *last_context;
+			ID3D11RenderTargetView*				m_pOldRenderTarget;
+			ID3D11DepthStencilView*				m_pOldDepthSurface;
+			D3D11_VIEWPORT						m_OldViewports[16];
 		};
 		struct ComputableTexture
 		{
@@ -79,7 +84,7 @@ namespace simul
 		template<class T> struct VertexBuffer
 		{
 			ID3D11Buffer				*vertexBuffer;
-			//ID3D11UnorderedAccessView	*unorderedAccessView;
+			
 			VertexBuffer()
 				:vertexBuffer(NULL)
 				//,unorderedAccessView(NULL)
@@ -90,15 +95,16 @@ namespace simul
 				release();
 			}
 			//! Make sure the buffer has the number of vertices specified.
-			void ensureBufferSize(ID3D11Device *pd3dDevice,int numVertices,void *data=NULL)
+			void ensureBufferSize(ID3D11Device *pd3dDevice,int numVertices,void *data=NULL
+				,bool stream_output=true,bool cpu_write=false)
 			{
 				release();
 				D3D11_BUFFER_DESC desc	=
 				{
 					numVertices*sizeof(T),
-					D3D11_USAGE_DEFAULT,
-					D3D11_BIND_VERTEX_BUFFER|D3D11_BIND_STREAM_OUTPUT	//D3D11_BIND_UNORDERED_ACCESS is useless for VB's in DX11
-					,0// CPU
+					cpu_write?D3D11_USAGE_DYNAMIC:D3D11_USAGE_DEFAULT,
+					D3D11_BIND_VERTEX_BUFFER|(stream_output?D3D11_BIND_STREAM_OUTPUT:0)//D3D11_BIND_UNORDERED_ACCESS is useless for VB's in DX11
+					,(cpu_write?D3D11_CPU_ACCESS_WRITE:0)// CPU
 					,0//D3D11_RESOURCE_MISC_BUFFER_STRUCTURED
 					,sizeof(T)			//StructureByteStride
 				};
@@ -116,6 +122,17 @@ namespace simul
 				uav_desc.Buffer.NumElements		=numVertices;
 				uav_desc.Buffer.Flags			=0;
 				V_CHECK(pd3dDevice->CreateUnorderedAccessView(vertexBuffer, &uav_desc, &unorderedAccessView));*/
+			}
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			T *Map(ID3D11DeviceContext *pContext)
+			{
+				HRESULT hr=pContext->Map(vertexBuffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+		//		SIMUL_ASSERT(hr==S_OK);
+				return (T*)mapped.pData;
+			}
+			void Unmap(ID3D11DeviceContext *pContext)
+			{
+				pContext->Unmap(vertexBuffer,0);
 			}
 			//! Use this vertex buffer in the next draw call - wraps IASetVertexBuffers.
 			void apply(ID3D11DeviceContext *pContext,int slot)
@@ -140,7 +157,7 @@ namespace simul
 				//SAFE_RELEASE(unorderedAccessView)
 			}
 		};
-		class UtilityRenderer
+		class SIMUL_DIRECTX11_EXPORT UtilityRenderer
 		{
 			static int instance_count;
 			static int screen_width;
@@ -148,33 +165,39 @@ namespace simul
 			static D3DXMATRIX view;
 			static D3DXMATRIX proj;
 		public:
-			static ID3D1xEffect		*m_pDebugEffect;
+			static ID3DX11Effect		*m_pDebugEffect;
 			static ID3D11InputLayout	*m_pCubemapVtxDecl;
 			static ID3D1xBuffer		* m_pVertexBuffer;
-			static ID3D1xDevice		*m_pd3dDevice;
+			static ID3D11Device		*m_pd3dDevice;
 			UtilityRenderer();
 			~UtilityRenderer();
+			static ID3DX11Effect		*GetDebugEffect();
 			static void SetMatrices(D3DXMATRIX v,D3DXMATRIX p);
-			static void SIMUL_DIRECTX11_EXPORT RestoreDeviceObjects(void *m_pd3dDevice);
+			static void RestoreDeviceObjects(void *m_pd3dDevice);
 			static void InvalidateDeviceObjects();
 			static void RecompileShaders();
 			static void SetScreenSize(int w,int h);
+			static void GetScreenSize(int& w,int& h);
 			static void PrintAt3dPos(		ID3D11DeviceContext* pContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 			static void DrawLines(			ID3D11DeviceContext* pContext,VertexXyzRgba *lines,int vertex_count,bool strip);
-			static void RenderAngledQuad(	ID3D11DeviceContext *pContext,const float *dir,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
-			static void Print(				ID3D11DeviceContext *pContext,int x,int y,const char *text);
-			static void Print(				ID3D11DeviceContext *pContext,float x,float y,const char *text);
-			static void DrawTexture(		ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult=1.f);
-			static void DrawTextureMS(		ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult=1.f);
-			static void DrawQuad(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);	
-			static void DrawQuad2(			ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
-			static void DrawQuad2(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
+			static void RenderAngledQuad(	ID3D11DeviceContext *pContext,const float *dir,float half_angle_radians,ID3DX11Effect* effect,ID3DX11EffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
+			static void Print(				ID3D11DeviceContext *pContext,int x,int y,const char *text,const float *clr=NULL);
+			static void Print(				ID3D11DeviceContext *pContext,float x,float y,const char *text,const float *clr=NULL);
+			static void DrawQuad(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11EffectTechnique* tech);	
+			static void DrawQuad2(			ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
+			static void DrawQuad2(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
 			static void DrawQuad(			ID3D11DeviceContext *pContext);
 			static void DrawCube(void *context);
 			static void DrawSphere(void *context,int latitudes,int longitudes);
-			static void DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety);
+			static void DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety);
 		};
 		//! Useful Wrapper class to encapsulate constant buffer behaviour
+		
+		//! Usage: You \em must use the following member functions to use this buffer.
+		//! On device restore, call RestoreDeviceObjects(m_pd3dDevice).
+		//! After creating any effect that uses the buffer, call LinkToEffect(m_pSkyEffect,"BufferNameInFxFile").
+		//! On device shutdown, call InvalidateDeviceObjects().
+		//! Before applying the effect pass, call Apply(pContext)
 		template<class T> class ConstantBuffer:public T
 		{
 		public:
@@ -231,7 +254,8 @@ namespace simul
 			void Apply(ID3D11DeviceContext *pContext)
 			{
 				D3D11_MAPPED_SUBRESOURCE mapped_res;
-				pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
+				if(pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res)!=S_OK)
+					return;
 				*(T*)mapped_res.pData = *this;
 				pContext->Unmap(m_pD3D11Buffer, 0);
 				if(m_pD3DX11EffectConstantBuffer)
@@ -310,7 +334,7 @@ namespace simul
 					uav_desc.Buffer.Flags				=0;
 					uav_desc.Buffer.NumElements			=size;
 					V_CHECK(pd3dDevice->CreateUnorderedAccessView(buffer, &uav_desc,&unorderedAccessView));
-			}
+				}
 			}
 			T *GetBuffer(ID3D11DeviceContext *pContext)
 			{
@@ -343,6 +367,57 @@ namespace simul
 			D3D11_MAPPED_SUBRESOURCE			mapped;
 			int size;
 			ID3D11DeviceContext					*lastContext;
+		};
+		struct Query
+		{
+			static const UINT64 QueryLatency = 5;
+			ID3D11Query *d3d11Query[QueryLatency];
+			bool QueryStarted;
+			bool QueryFinished;
+			int currFrame;
+			Query()
+				:QueryStarted(false)
+				,QueryFinished(false)
+				,currFrame(0)
+			{
+				for(int i=0;i<QueryLatency;i++)
+					d3d11Query[i]		=0;
+			}
+			~Query()
+			{
+				InvalidateDeviceObjects();
+			}
+			void RestoreDeviceObjects(void *dev)
+			{
+				ID3D11Device *m_pd3dDevice=(ID3D11Device*)dev;
+				D3D11_QUERY_DESC qdesc=
+				{
+					D3D11_QUERY_OCCLUSION,0
+				};
+				for(int i=0;i<QueryLatency;i++)
+					m_pd3dDevice->CreateQuery(&qdesc,&d3d11Query[i]);
+			}
+			void InvalidateDeviceObjects()
+			{
+				for(int i=0;i<QueryLatency;i++)
+					SAFE_RELEASE(d3d11Query[i]);
+			}
+			void Begin(void *context)
+			{
+				ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+				pContext->Begin(d3d11Query[currFrame]);
+			}
+			void End(void *context)
+			{
+				ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+				pContext->End(d3d11Query[currFrame]);
+				currFrame = (currFrame + 1) % QueryLatency;  
+			}
+			void GetData(void *context,void *data,size_t sz)
+			{
+				ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+				while (pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0) == S_FALSE);
+			}
 		};
 	}
 }

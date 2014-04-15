@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -12,9 +12,9 @@
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Math/Matrix4x4.h"
 #include <d3dx9.h>
-	#include <d3d11.h>
-	#include <d3dx11.h>
-	#include <d3dx11effect.h>
+#include <d3d11.h>
+#include <d3dx11.h>
+#include <d3dx11effect.h>
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
@@ -70,7 +70,7 @@ public:
 	//! objects like mountains etc. in it, and make sure these have already been drawn.
 	//! GetSunOcclusion executes a pseudo-render of an invisible billboard, then
 	//! uses a hardware occlusion query to see how many pixels have passed the z-test.
-	float CalcSunOcclusion(float cloud_occlusion=0.f);
+	float CalcSunOcclusion(void *context,float cloud_occlusion=0.f);
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 
@@ -87,14 +87,12 @@ public:
 						const simul::sky::float4 *inscatter_float4_array,
 						const simul::sky::float4 *skylight_float4_array);
 	void CycleTexturesForward();
-	void SetYVertical(bool y);
 
 	// for testing:
-	void DrawCubemap(void *context,ID3D1xShaderResourceView*	m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
+	void DrawCubemap(void *context,ID3D11ShaderResourceView*	m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
 	simul::sky::BaseGpuSkyGenerator *GetBaseGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
 	int cycle;
-	bool IsYVertical(){return false;}
 
 	void CreateFadeTextures();
 	void EnsureCorrectTextureSizes();
@@ -103,21 +101,21 @@ protected:
 	
 	void BuildStarsBuffer();
 	
-	ID3D1xDevice*						m_pd3dDevice;
+	ID3D11Device*						m_pd3dDevice;
 	ID3D1xBuffer*						m_pVertexBuffer;
 	ID3D1xInputLayout*					m_pStarsVtxDecl;
 	ID3D1xBuffer*						m_pStarsVertexBuffer;
-	ID3D1xEffect*						m_pSkyEffect;
-	ID3D1xQuery*						d3dQuery;
+	ID3DX11Effect*						m_pSkyEffect;
+	Query								sunQuery;
 
-	ID3D1xEffectTechnique*				m_hTechniqueFade3DTo2D;
-	ID3D1xEffectTechnique*				m_hTechniqueSun;
-	ID3D1xEffectTechnique*				m_hTechniqueQuery;
-	ID3D1xEffectTechnique*				m_hTechniqueFlare;
-	ID3D1xEffectTechnique*				m_hTechniquePlanet;
-	ID3D1xEffectTechnique*				m_hTechniquePointStars;
+	ID3DX11EffectTechnique*				m_hTechniqueFade3DTo2D;
+	ID3DX11EffectTechnique*				m_hTechniqueSun;
+	ID3DX11EffectTechnique*				m_hTechniqueQuery;
+	ID3DX11EffectTechnique*				m_hTechniqueFlare;
+	ID3DX11EffectTechnique*				m_hTechniquePlanet;
+	ID3DX11EffectTechnique*				m_hTechniquePointStars;
 
-			ID3D1xEffectTechnique*				m_TechniqueLightTableInterp;
+			ID3DX11EffectTechnique*				m_TechniqueLightTableInterp;
 	ID3D1xEffectShaderResourceVariable*	flareTexture;
 	ID3D1xEffectShaderResourceVariable*	inscTexture;
 	ID3D1xEffectShaderResourceVariable*	skylTexture;
@@ -127,12 +125,11 @@ protected:
 	
 	ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
 	ConstantBuffer<SkyConstants>		skyConstants;
-void SetConstantsForPlanet(SkyConstants &skyConstants,const float *viewmatrix,const float *projmatrix,const float *dir,const float *light_dir);
 
 	TextureStruct						loss_textures[3];
 	TextureStruct						insc_textures[3];
 	TextureStruct						skyl_textures[3];
-			TextureStruct						light_table;
+	TextureStruct						light_table;
 
 	// Small framebuffers we render to once per frame to perform fade interpolation.
 	simul::dx11::Framebuffer*			loss_2d;
@@ -143,8 +140,8 @@ void SetConstantsForPlanet(SkyConstants &skyConstants,const float *viewmatrix,co
 
 	// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
 	simul::dx11::Framebuffer			illumination_fb;
-	ID3D1xShaderResourceView*			flare_texture_SRV;
-	ID3D1xShaderResourceView*			moon_texture_SRV;
+	ID3D11ShaderResourceView*			flare_texture_SRV;
+	ID3D11ShaderResourceView*			moon_texture_SRV;
 
 	void MapFade(ID3D11DeviceContext *context,int s);
 	void UnmapFade(int i);

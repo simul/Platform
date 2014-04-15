@@ -46,7 +46,7 @@ namespace simul
 			void Clear(void *context,float,float,float,float,float,int mask=0);
 			void ClearDepth(void *context,float);
 			void ClearColour(void* context, float, float, float, float );
-			ID3D1xShaderResourceView *GetBufferResource()
+			ID3D11ShaderResourceView *GetBufferResource()
 			{
 				return buffer_texture_SRV;
 			}
@@ -74,7 +74,7 @@ namespace simul
 			DXGI_FORMAT target_format;
 			DXGI_FORMAT depth_format;
 			bool Destroy();
-			ID3D1xDevice*						m_pd3dDevice;
+			ID3D11Device*						m_pd3dDevice;
 
 		public:
 			ID3D1xRenderTargetView*				m_pHDRRenderTarget;
@@ -89,11 +89,11 @@ namespace simul
 			//! The texture the scene is rendered to.
 		public:
 			ID3D1xTexture2D*					hdr_buffer_texture;
-			ID3D1xShaderResourceView*			buffer_texture_SRV;
+			ID3D11ShaderResourceView*			buffer_texture_SRV;
 		protected:
 			//! The depth buffer.
 			ID3D1xTexture2D*					buffer_depth_texture;
-			ID3D1xShaderResourceView*			buffer_depth_texture_SRV;
+			ID3D11ShaderResourceView*			buffer_depth_texture_SRV;
 
 			bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
 			bool CreateBuffers();

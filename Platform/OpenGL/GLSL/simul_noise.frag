@@ -1,6 +1,6 @@
 #version 140
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/noise.sl"
+#include "../../CrossPlatform/SL/noise.sl"
 varying vec2 texCoords;
 
 void main(void)

@@ -9,6 +9,7 @@
 #include <D3dx11effect.h>
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 #include <vector>
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -26,21 +27,22 @@ namespace simul
 			virtual ~SimulOpticsRendererDX1x();
 			virtual void RestoreDeviceObjects(void *device);
 			virtual void InvalidateDeviceObjects();
-			virtual void RenderFlare(void *context,float exposure,const float *dir,const float *light);
+			virtual void RenderFlare(void *context,float exposure,void *moistureTexture,const float *v,const float *p,const float *dir,const float *light);
+			virtual void RenderRainbowAndCorona(void *context,float exposure,void *depthTexture,const float *v,const float *p,const float *dir_to_sun,const float *light);
 			virtual void RecompileShaders();
-			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 		protected:
-			D3DXMATRIX								view,proj;
-			ID3D1xDevice *							m_pd3dDevice;
-			ID3D1xEffect*							m_pFlareEffect;
-			ID3D1xEffectTechnique*					m_hTechniqueFlare;
-			ID3D1xEffectMatrixVariable*				worldViewProj;
-			ID3D1xEffectVectorVariable*				colour;
-			ID3D1xEffectShaderResourceVariable*		flareTexture;
-			ID3D1xShaderResourceView*				flare_texture;
-			std::vector<ID3D1xShaderResourceView*>	halo_textures;
+			ID3D11Device *							m_pd3dDevice;
+			ID3DX11Effect*							effect;
+			ID3DX11EffectTechnique*					m_hTechniqueFlare;
+			ID3DX11EffectTechnique*					techniqueRainbowCorona;
+			ID3D11ShaderResourceView*				flare_texture;
+			std::vector<ID3D11ShaderResourceView*>	halo_textures;
+			ID3D11ShaderResourceView*				rainbowLookupTexture;
+			ID3D11ShaderResourceView*				coronaLookupTexture;
+			//ID3D11ShaderResourceView*				moistureTexture;
 		protected:
 			std::string								FlareTexture;
+			ConstantBuffer<OpticsConstants>			opticsConstants;
 		};
 	}
 }

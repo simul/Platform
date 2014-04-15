@@ -1,5 +1,6 @@
 #include <GL/glew.h>
 #include "Light.h"
+#include <fbxsdk.h>
 
 using namespace simul;
 
@@ -14,7 +15,7 @@ namespace
 }
 
 
-opengl::Light::Light()// : scene::LightCache()
+opengl::Light::Light()// : scene::Light()
 {
     mLightIndex = GL_LIGHT0 + sLightCount++;
 }

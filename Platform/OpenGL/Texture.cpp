@@ -33,3 +33,8 @@ void opengl::Texture::LoadFromFile(const char *pFilePathUtf8)
 	pTextureObject		=LoadGLImage(pFilePathUtf8,GL_REPEAT);
 	return ;
 }
+
+bool opengl::Texture::IsValid() const
+{
+	return (pTextureObject>0);
+}

@@ -29,15 +29,27 @@ void RenderPlatform::InvalidateDeviceObjects()
 {
 	solidConstants.InvalidateDeviceObjects();
 	SAFE_RELEASE(effect);
+	for(std::set<scene::Material*>::iterator i=materials.begin();i!=materials.end();i++)
+	{
+		dx11::Material *mat=(dx11::Material*)(*i);
+		mat->effect=effect;
+	}
 }
 
 void RenderPlatform::RecompileShaders()
 {
 	std::map<std::string,std::string> defines;
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
 	SAFE_RELEASE(effect);
 	CreateEffect(device,&effect,"solid.fx",defines);
 	solidConstants.LinkToEffect(effect,"SolidConstants");
 	//solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
+	for(std::set<scene::Material*>::iterator i=materials.begin();i!=materials.end();i++)
+	{
+		dx11::Material *mat=(dx11::Material*)(*i);
+		mat->effect=effect;
+	}
 }
 
 void RenderPlatform::PushTexturePath(const char *pathUtf8)
@@ -264,26 +276,29 @@ void MakeWorldViewProjMatrix(float *wvp,const double *w,const float *v,const flo
 	simul::math::Multiply4x4(*(simul::math::Matrix4x4*)wvp,tmp1,proj);
 }
 
-void RenderPlatform::SetModelMatrix(void *context,const double *m)
+void RenderPlatform::SetModelMatrix(void *context,const crossplatform::ViewStruct &viewStruct,const double *m)
 {
-	simul::math::Matrix4x4 proj;
 //	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
-	simul::math::Matrix4x4 view;
 //	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
 	simul::math::Matrix4x4 wvp;
 	simul::math::Matrix4x4 viewproj;
 	simul::math::Matrix4x4 modelviewproj;
-	simul::math::Multiply4x4(viewproj,view,proj);
+	simul::math::Multiply4x4(viewproj,viewStruct.view,viewStruct.proj);
 	simul::math::Matrix4x4 model(m);
 	simul::math::Multiply4x4(modelviewproj,model,viewproj);
 	solidConstants.worldViewProj=modelviewproj;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	solidConstants.Apply(pContext);
+
+	effect->GetTechniqueByName("solid")->GetPassByIndex(0)->Apply(0,pContext);
 }
 
-scene::MaterialCache *RenderPlatform::CreateMaterial()
+scene::Material *RenderPlatform::CreateMaterial()
 {
-	return new dx11::Material;
+	dx11::Material *mat=new dx11::Material;
+	mat->effect=effect;
+	materials.insert(mat);
+	return mat;
 }
 
 scene::Mesh *RenderPlatform::CreateMesh()
@@ -291,7 +306,7 @@ scene::Mesh *RenderPlatform::CreateMesh()
 	return new dx11::Mesh;
 }
 
-scene::LightCache *RenderPlatform::CreateLight()
+scene::Light *RenderPlatform::CreateLight()
 {
 	return new dx11::Light();
 }
@@ -301,4 +316,31 @@ scene::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	scene::Texture * tex=new dx11::Texture(device);
 	tex->LoadFromFile(fileNameUtf8);
 	return tex;
+}
+
+void *RenderPlatform::GetDevice()
+{
+	return device;
+}
+
+void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void *t,float mult)
+{
+	if(!t)
+		return;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3DX11Effect		*m_pDebugEffect=UtilityRenderer::GetDebugEffect();
+	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView*)t;
+	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",srv);
+	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
+	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+	srv->GetDesc(&desc);
+	ID3DX11EffectTechnique *tech=m_pDebugEffect->GetTechniqueByName("textured");
+	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+	if(msaa)
+	{
+		tech=m_pDebugEffect->GetTechniqueByName("textured");
+		simul::dx11::setTexture(m_pDebugEffect,"imageTextureMS",srv);
+	}
+	UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,tech);
+	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",NULL);
 }

@@ -58,17 +58,16 @@ namespace simul
 			void RenderGodrays(void *context,float strength,bool near_pass,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloudDepthTexture);
 		protected:
 			HRESULT Destroy();
-			ID3D1xDevice*								m_pd3dDevice;
+			ID3D11Device*								m_pd3dDevice;
 			simul::math::Matrix4x4						view,proj;
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			ID3D1xEffect*								effect;
+			ID3DX11Effect*								effect;
 
-			ID3D1xEffectTechnique*						twoPassOverlayTechnique;
-			ID3D1xEffectTechnique*							twoPassOverlayTechniqueMSAA;
+			ID3DX11EffectTechnique*						twoPassOverlayTechnique;
+			ID3DX11EffectTechnique*						twoPassOverlayTechniqueMSAA;
 
-			ID3D1xEffectTechnique*						godraysTechnique;
-			ID3D1xEffectTechnique*							godraysNearPassTechnique;
+			ID3DX11EffectTechnique*						godraysTechnique;
 			// Variables for this effect:
 			ID3D1xEffectShaderResourceVariable*			depthTexture;
 			ID3D1xEffectShaderResourceVariable*			cloudDepthTexture;
@@ -80,12 +79,14 @@ namespace simul
 			ID3D1xEffectShaderResourceVariable*			cloudShadowTexture;
 			ID3D1xEffectShaderResourceVariable*				cloudGodraysTexture;
 
-			ID3D1xShaderResourceView*					skyLossTexture_SRV;
-			ID3D1xShaderResourceView*					skyInscatterTexture_SRV;
-			ID3D1xShaderResourceView*					overcInscTexture_SRV;
-			ID3D1xShaderResourceView*					skylightTexture_SRV;
+			ID3D11ShaderResourceView*					skyLossTexture_SRV;
+			ID3D11ShaderResourceView*					skyInscatterTexture_SRV;
+			ID3D11ShaderResourceView*					overcInscTexture_SRV;
+			ID3D11ShaderResourceView*					skylightTexture_SRV;
 
-			ID3D1xShaderResourceView*					illuminationTexture_SRV;
+			ID3D11ShaderResourceView*					illuminationTexture_SRV;
+			ID3D11ShaderResourceView*				rainbowLookupTexture;
+			ID3D11ShaderResourceView*				coronaLookupTexture;
 
 			ConstantBuffer<AtmosphericsPerViewConstants>	atmosphericsPerViewConstants;
 			ConstantBuffer<AtmosphericsUniforms>			atmosphericsUniforms;
