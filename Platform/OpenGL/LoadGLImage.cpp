@@ -98,7 +98,7 @@ GLuint LoadTexture(const char *filename_utf8,unsigned wrap)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap);
 	if(bpp==24)
-		glTexImage2D(GL_TEXTURE_2D,0, GL_RGB8,width,height,0,GL_RGB,GL_UNSIGNED_BYTE,pixels);
+		glTexImage2D(GL_TEXTURE_2D,0, GL_RGB8,width,height,0,GL_BGR,GL_UNSIGNED_BYTE,pixels);
 	if(bpp==32)
 		glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
 	return image_tex;

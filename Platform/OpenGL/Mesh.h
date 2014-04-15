@@ -17,7 +17,8 @@ namespace simul
 			~Mesh();
 			//bool Initialize(const fbxsdk_2014_2_1::FbxMesh * pMesh);
 			bool Initialize(const std::vector<vec3> &vertices,const std::vector<unsigned int> &indices);
-			void BeginDraw(void *,scene::ShadingMode pShadingMode,const double* mat) const;
+			bool Initialize(void *,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices);
+			void BeginDraw(void *,scene::ShadingMode pShadingMode) const;
 			void Draw(void *,int pMaterialIndex,scene::ShadingMode pShadingMode) const;
 			void EndDraw(void *) const;
 			enum
@@ -30,7 +31,6 @@ namespace simul
 			};
 			GLuint mVBONames[VBO_COUNT];
 		protected:
-			bool Initialize(int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices);
 			void UpdateVertexPositions(int lVertexCount, float *lVertices) const;
 		};
 	}

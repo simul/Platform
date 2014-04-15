@@ -35,11 +35,12 @@ namespace simul
 			void DrawLineLoop	(void *context,const double *mat,int num,const double *vertexArray,const float colr[4]);
 			void DrawTexture	(void *context,int x1,int y1,int dx,int dy,void *tex,float mult=1.f);
 			void ApplyDefaultMaterial();
-			void SetModelMatrix(void *,const double *mat);
+			void SetModelMatrix(void *,const crossplatform::ViewStruct &,const double *mat);
 			scene::Material *CreateMaterial();
-			scene::Mesh *CreateMesh();
-			scene::Light *CreateLight();
-			scene::Texture *CreateTexture(const char *lFileNameUtf8);
+			scene::Mesh		*CreateMesh();
+			scene::Light	*CreateLight();
+			scene::Texture	*CreateTexture(const char *lFileNameUtf8);
+			void			*GetDevice();
 			
 			GLuint solid_program;
 			simul::opengl::ConstantBuffer<SolidConstants> solidConstants;

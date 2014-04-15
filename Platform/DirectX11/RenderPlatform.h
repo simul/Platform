@@ -3,6 +3,7 @@
 #include "Simul/Scene/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
+#include "Simul/Platform/CrossPlatform/BaseRenderer.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 
 #include <d3dx9.h>
@@ -41,11 +42,12 @@ namespace simul
 			void DrawTexture(	void *context,int x1,int y1,int dx,int dy,void *tex,float mult=1.f);
 			
 			void ApplyDefaultMaterial();
-			void SetModelMatrix(void *context,const double *mat);
+			void SetModelMatrix(void *context,const crossplatform::ViewStruct &viewStruct,const double *mat);
 			scene::Material *CreateMaterial();
-			scene::Mesh *CreateMesh();
-			scene::Light *CreateLight();
-			scene::Texture *CreateTexture(const char *lFileNameUtf8);
+			scene::Mesh		*CreateMesh();
+			scene::Light	*CreateLight();
+			scene::Texture	*CreateTexture(const char *lFileNameUtf8);
+			void			*GetDevice();
 			
 			ID3DX11Effect *effect;
 			simul::dx11::ConstantBuffer<SolidConstants> solidConstants;

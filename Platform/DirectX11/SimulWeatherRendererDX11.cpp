@@ -424,10 +424,10 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 		DepthTextureStruct depth={	lowResDepthTexture
 									,depthViewportXYWH
 									};
-		ViewStruct viewStruct={	view_id
-								,view
-								,proj
-		};
+		crossplatform::ViewStruct viewStruct={	view_id
+												,view
+												,proj
+												};
 		//basePrecipitationRenderer->RenderMoisture(context
 		//										,depth
 		//										,viewStruct);

@@ -1,11 +1,12 @@
 #include "Material.h"
 #include "Texture.h"
+#include "Utilities.h"
 
 using namespace simul;
 using namespace dx11;
 
-
 Material::Material()
+	:effect(NULL)
 {
 }
 
@@ -14,7 +15,7 @@ Material::~Material()
 {
 }
 
-void Material::Apply() const
+void Material::Apply(void *context) const
 {
 /*	glActiveTexture(GL_TEXTURE0);
 	float zero[]	={0,0,0,0};
@@ -33,4 +34,6 @@ void Material::Apply() const
 		glBindTexture(GL_TEXTURE_2D	,((dx11::Texture *)mDiffuse.mTextureName)->shaderResourceView);
 	}
 	glActiveTexture(GL_TEXTURE0);*/
+	if(mDiffuse.mTextureName)
+		dx11::setTexture(effect,"diffuseTexture",((dx11::Texture *)mDiffuse.mTextureName)->shaderResourceView);
 }

@@ -40,7 +40,7 @@ void main(void)
 	n					=normalize(n);
 	vec2 noise_texc_0	=(noiseMatrix*vec4(n.xy,0.0,0.0)).xy;
 
-	noise_texc			=noise_texc_0.xy*layer.layerDistance/fractalRepeatLength+layer.noiseOffset;
+	noise_texc			=noise_texc_0.xy*layerDistance_/fractalRepeatLength+noiseOffset_;
 
 	float sine			=view.z;
 	fade_texc			=vec2(sqrt(depth),0.5*(1.0-sine));

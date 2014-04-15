@@ -29,7 +29,7 @@ vertexOutput VS_Solid(vertexInput IN)
 
 float4 PS_Solid( vertexOutput IN) : SV_TARGET
 {
-    vec4 c = texture_wrap(diffuseTexture,IN.texCoords);
+    vec4 c = texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
 	c.a=1.0;
 	float light=saturate(IN.normal.z);
 	c.rgb*=light;

@@ -43,7 +43,7 @@ namespace simul
 			void PreRenderUpdate(void *context,float time_step_seconds);
 			void RenderMoisture(void *context,
 				const DepthTextureStruct &depth
-				,const ViewStruct &viewStruct
+				,const crossplatform::ViewStruct &viewStruct
 				,const CloudShadowStruct &cloudShadowStruct);
 			void Render(void *context,const void *depth_tex
 				,const simul::math::Matrix4x4 &v

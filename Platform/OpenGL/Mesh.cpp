@@ -26,7 +26,7 @@ opengl::Mesh::~Mesh()
     glDeleteBuffers(VBO_COUNT, mVBONames);
 }
 
-bool opengl::Mesh::Initialize(int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices)
+bool opengl::Mesh::Initialize(void *,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices)
 {
     // Create VBOs
     glGenBuffers(VBO_COUNT, mVBONames);
@@ -91,12 +91,12 @@ void opengl::Mesh::UpdateVertexPositions(int lVertexCount, float *lVertices) con
     }
 }
 
-void opengl::Mesh::BeginDraw(void *,scene::ShadingMode pShadingMode,const double* mat) const
+void opengl::Mesh::BeginDraw(void *,scene::ShadingMode pShadingMode) const
 {
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-	if(mat)
-		glMultMatrixd((const double*)mat);
+	//if(mat)
+//		glMultMatrixd((const double*)mat);
 	// set this matrix in UBO 0:
 
     // Push OpenGL attributes.

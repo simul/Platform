@@ -210,7 +210,7 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 // The CloudShadowStruct tells us how much cloud is in any given 2D direction.
 void PrecipitationRenderer::RenderMoisture(void *context
 				,const DepthTextureStruct &depthStruct
-				,const ViewStruct &viewStruct
+				,const crossplatform::ViewStruct &viewStruct
 				,const CloudShadowStruct &cloudShadowStruct)
 {
 	if(viewStruct.view_id!=0)

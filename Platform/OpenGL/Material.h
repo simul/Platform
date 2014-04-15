@@ -13,7 +13,7 @@ namespace simul
 		public:
 			Material();
 			virtual ~Material();
-			void Apply() const;
+			void Apply(void *context) const;
 		};
 	}
 }

@@ -151,6 +151,8 @@ void OpenGLRenderer::paintGL()
 {
 	void *context=NULL;
 	static int viewport_id=0;
+	if(renderPlatform)
+		renderPlatform->SetReverseDepth(ReverseDepth);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	if(simulTerrainRenderer)
@@ -170,6 +172,14 @@ void OpenGLRenderer::paintGL()
 	else
 		glLoadMatrixf(cam->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight));
 	glViewport(0,0,ScreenWidth,ScreenHeight);
+	simul::math::Matrix4x4 proj;
+	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
+	simul::math::Matrix4x4 view;
+	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
+	crossplatform::ViewStruct viewStruct={	viewport_id
+												,view
+												,proj
+												};
 	static float exposure=1.0f;
 	if(simulWeatherRenderer)
 	{
@@ -200,7 +210,7 @@ void OpenGLRenderer::paintGL()
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		
 		if(sceneRenderer)
-			sceneRenderer->Render(NULL);
+			sceneRenderer->Render(NULL,viewStruct);
 //		gScene->OnTimerClick();
 		
 		if(simulTerrainRenderer&&ShowTerrain)

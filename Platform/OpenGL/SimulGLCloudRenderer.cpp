@@ -508,7 +508,7 @@ GL_ERROR_CHECK
 //	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
 	static int isolate_layer=-1;
-	sphereMesh.BeginDraw(NULL,scene::SHADING_MODE_SHADED,NULL);
+	sphereMesh.BeginDraw(NULL,scene::SHADING_MODE_SHADED);
 	for(SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
 	GL_ERROR_CHECK

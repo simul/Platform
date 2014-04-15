@@ -19,16 +19,16 @@ typedef std::basic_string<TCHAR> tstring;
 #define ID3D1xTexture2D								ID3D11Texture2D
 #define ID3D1xTexture3D								ID3D11Texture3D
 #define ID3D1xQuery									ID3D11Query
-#define ID3DX11Effect								ID3DX11Effect
+#define ID3DX1xEffect								ID3DX11Effect
 #define ID3D1xEffectPass							ID3DX11EffectPass
-#define ID3DX11EffectTechnique						ID3DX11EffectTechnique	
+#define ID3DX1xEffectTechnique						ID3DX11EffectTechnique	
 #define ID3D1xEffectMatrixVariable					ID3DX11EffectMatrixVariable
 #define ID3D1xEffectVectorVariable					ID3DX11EffectVectorVariable
 #define ID3D1xEffectScalarVariable					ID3DX11EffectScalarVariable
 #define ID3D1xEffectShaderResourceVariable			ID3DX11EffectShaderResourceVariable
 #define ID3D1xEffectConstantBuffer					ID3DX11EffectConstantBuffer
 #define D3D1xCalcSubresource						D3D11CalcSubresource
-#define ID3D11ShaderResourceView					ID3D11ShaderResourceView
+#define ID3D1xShaderResourceView					ID3D11ShaderResourceView
 #define ID3D1xBlendState							ID3D11BlendState
 
 #define D3D1x_USAGE_DEFAULT							D3D11_USAGE_DEFAULT

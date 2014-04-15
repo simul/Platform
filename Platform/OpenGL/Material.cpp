@@ -16,7 +16,7 @@ Material::~Material()
 {
 }
 
-void Material::Apply() const
+void Material::Apply(void *context) const
 {
 	glActiveTexture(GL_TEXTURE0);
 //	float zero[]	={0,0,0,0};

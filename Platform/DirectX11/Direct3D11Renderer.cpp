@@ -339,6 +339,12 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,s
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderScene")
 #if 1
 	View *view=viewManager.GetView(view_id);
+
+	crossplatform::ViewStruct viewStruct;
+	viewStruct.view_id=view_id;
+	viewStruct.proj=(const float*)proj;
+	viewStruct.view=(const float*)v;
+
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetMatrices((const float*)v,(const float*)proj);
 	if(simulTerrainRenderer&&ShowTerrain)
@@ -349,7 +355,7 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,s
 		simulTerrainRenderer->Render(pContext,1.f);	
 	}
 	if(sceneRenderer)
-		sceneRenderer->Render(pContext);
+		sceneRenderer->Render(pContext,viewStruct);
 	if(oceanRenderer&&ShowWater)
 	{
 		oceanRenderer->SetMatrices((const float*)v,(const float*)proj);
@@ -725,6 +731,7 @@ void Direct3D11Renderer::SetCamera(int view_id,const simul::camera::CameraOutput
 
 void Direct3D11Renderer::ReverseDepthChanged()
 {
+	renderPlatformDx11.SetReverseDepth(ReverseDepth);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	if(simulHDRRenderer)
