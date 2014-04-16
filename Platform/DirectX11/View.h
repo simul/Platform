@@ -38,11 +38,11 @@ namespace simul
 			ViewType									viewType;
 			const simul::camera::CameraOutputInterface	*camera;
 		private:
-			int								ScreenWidth;
-			int								ScreenHeight;
 			simul::dx11::TextureStruct		resolvedTexture;
 			ID3D11Device					*m_pd3dDevice;
 		public:
+			int								ScreenWidth;
+			int								ScreenHeight;
 			bool							useExternalFramebuffer;
 			//ID3D11Texture2D					*externalDepthTexture;
 			ID3D11ShaderResourceView		*externalDepthTexture_SRV;

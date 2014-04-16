@@ -11,7 +11,6 @@ using namespace dx11;
 	,ScreenWidth(0)
 	,ScreenHeight(0)
 	,useExternalFramebuffer(false)
-	,externalDepthTexture(NULL)
 	,externalDepthTexture_SRV(NULL)
  {
  }
@@ -38,7 +37,7 @@ void View::InvalidateDeviceObjects()
 	lowResDepthTexture.release();
 	hiResDepthTexture.release();
 	resolvedTexture.release();
-	externalDepthTexture=NULL;
+//	externalDepthTexture=NULL;
 	SAFE_RELEASE(externalDepthTexture_SRV);
 }
 

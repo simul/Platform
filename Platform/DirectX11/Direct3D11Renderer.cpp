@@ -288,12 +288,12 @@ void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View 
 	{
 		D3D11_TEXTURE2D_DESC textureDesc;
 		// recreate the SRV's if necessary:
-		if(view->externalDepthTexture)
+		if(view->externalDepthTexture_SRV)
 		{
-			D3D11_TEXTURE2D_DESC depthDesc;
-			view->externalDepthTexture->GetDesc(&depthDesc);
-			H=depthDesc.Height;
-			W=depthDesc.Width;
+			D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
+			view->externalDepthTexture_SRV->GetDesc(&depthDesc);
+			H=view->ScreenHeight;
+			W=view->ScreenWidth;
 			depth_SRV=view->externalDepthTexture_SRV;
 		}
 	}
