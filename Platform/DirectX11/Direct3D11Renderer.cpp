@@ -53,7 +53,6 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,cubemap_view_id(-1)
 		,enabled(false)
 		,m_pd3dDevice(NULL)
-		,mixedResolutionEffect(NULL)
 		,lightProbesEffect(NULL)
 		,simulOpticsRenderer(NULL)
 		,simulWeatherRenderer(NULL)
@@ -99,6 +98,34 @@ D3D_FEATURE_LEVEL Direct3D11Renderer::GetMinimumFeatureLevel() const
 	return D3D_FEATURE_LEVEL_11_0;
 }
 
+MixedResolutionRenderer::MixedResolutionRenderer()
+		:mixedResolutionEffect(NULL)
+{
+}
+MixedResolutionRenderer::~MixedResolutionRenderer()
+{
+	InvalidateDeviceObjects();
+}
+void MixedResolutionRenderer::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
+{
+	m_pd3dDevice=pd3dDevice;
+	mixedResolutionConstants.RestoreDeviceObjects(pd3dDevice);
+}
+
+void MixedResolutionRenderer::InvalidateDeviceObjects()
+{
+	m_pd3dDevice=NULL;
+	mixedResolutionConstants.InvalidateDeviceObjects();
+	SAFE_RELEASE(mixedResolutionEffect);
+}
+
+void MixedResolutionRenderer::RecompileShaders(const std::map<std::string,std::string> &defines)
+{
+	SAFE_RELEASE(mixedResolutionEffect);
+	HRESULT hr=CreateEffect(m_pd3dDevice,&mixedResolutionEffect,"mixed_resolution.fx",defines);
+	mixedResolutionConstants.LinkToEffect(mixedResolutionEffect,"MixedResolutionConstants");
+}
+
 void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 {
 	m_pd3dDevice=pd3dDevice;
@@ -108,11 +135,11 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 		return;
 	}
 	enabled=true;
+	mixedResolutionRenderer.RestoreDeviceObjects(pd3dDevice);
 	//Set a global device pointer for use by various classes.
 	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
 	simul::dx11::UtilityRenderer::RestoreDeviceObjects(pd3dDevice);
 	renderPlatformDx11.RestoreDeviceObjects(pd3dDevice);
-	mixedResolutionConstants.RestoreDeviceObjects(m_pd3dDevice);
 	lightProbeConstants.RestoreDeviceObjects(m_pd3dDevice);
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects(pd3dDevice);
@@ -252,21 +279,35 @@ void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)
 	}
 }
 
-void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContext,const D3DXMATRIX &proj)
+void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View *view,int s,vec3 depthToLinFadeDistParams)
 {
-	if(!simulWeatherRenderer)
-		return;
-	int s=simulWeatherRenderer->GetDownscale();
-	View *view=viewManager.GetView(view_id);
-	if(!view)
-		return;
 	SIMUL_COMBINED_PROFILE_START(pContext,"DownscaleDepth")
-	int W=view->hdrFramebuffer.Width;
-	int H=view->hdrFramebuffer.Height;
+	int W=0,H=0;
+	ID3D11ShaderResourceView *depth_SRV=NULL;
+	if(view->useExternalFramebuffer)
+	{
+		D3D11_TEXTURE2D_DESC textureDesc;
+		// recreate the SRV's if necessary:
+		if(view->externalDepthTexture)
+		{
+			D3D11_TEXTURE2D_DESC depthDesc;
+			view->externalDepthTexture->GetDesc(&depthDesc);
+			H=depthDesc.Height;
+			W=depthDesc.Width;
+			depth_SRV=view->externalDepthTexture_SRV;
+		}
+	}
+	else
+	{
+		W=view->hdrFramebuffer.Width;
+		H=view->hdrFramebuffer.Height;
+		depth_SRV=(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex();
+	}
+	if(!W||!H)
+		return;
 	int w=W/s;
 	int h=H/s;
 	view->lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R16G16B16A16_FLOAT,/*computable=*/true,/*rendertarget=*/false);
-	ID3D11ShaderResourceView *depth_SRV=(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex();
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	depth_SRV->GetDesc(&desc);
 	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
@@ -276,7 +317,7 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 		view->hiResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,W,H,DXGI_FORMAT_R16G16B16A16_FLOAT,/*computable=*/!use_rt,/*rendertarget=*/use_rt);
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Hi-res Depth")
 		mixedResolutionConstants.scale		=uint2(s,s);
-		mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
+		mixedResolutionConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
 		mixedResolutionConstants.nearZ		=0;
 		mixedResolutionConstants.farZ		=0;
 		mixedResolutionConstants.source_dims=uint2(view->hiResDepthTexture.width,view->hiResDepthTexture.length);
@@ -306,7 +347,7 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 	{
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Lo-res Depth")
 		mixedResolutionConstants.scale=uint2(s,s);
-		mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
+		mixedResolutionConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
 		mixedResolutionConstants.nearZ=0;
 		mixedResolutionConstants.farZ=0;
 		mixedResolutionConstants.source_dims=uint2(view->hiResDepthTexture.width,view->hiResDepthTexture.length);
@@ -369,7 +410,9 @@ void Direct3D11Renderer::RenderScene(int view_id,crossplatform::DeviceContext &d
 	if(simulWeatherRenderer)
 	{
 		void *depthTextureHiRes		=view->hiResDepthTexture.shaderResourceView;
-		DownscaleDepth(view_id,pContext,proj);
+	
+		int s=simulWeatherRenderer->GetDownscale();
+		mixedResolutionRenderer.DownscaleDepth(pContext,view,s,(const float *)simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj));
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 		static bool test=true;
 		const void* skyBufferDepthTex = (UseSkyBuffer&test)? view->lowResDepthTexture.shaderResourceView : depthTextureHiRes;
@@ -651,9 +694,8 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 	viewManager.Clear();
 	cubemapFramebuffer.InvalidateDeviceObjects();
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
-	SAFE_RELEASE(mixedResolutionEffect);
 	SAFE_RELEASE(lightProbesEffect);
-	mixedResolutionConstants.InvalidateDeviceObjects();
+	mixedResolutionRenderer.InvalidateDeviceObjects();
 	m_pd3dDevice=NULL;
 }
 
@@ -689,15 +731,14 @@ void Direct3D11Renderer::RecompileShaders()
 		oceanRenderer->RecompileShaders();
 	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
-	SAFE_RELEASE(mixedResolutionEffect);
+	
 	std::map<std::string,std::string> defines;
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	defines["NUM_AA_SAMPLES"]=base::stringFormat("%d",Antialiasing);
-	HRESULT hr=CreateEffect(m_pd3dDevice,&mixedResolutionEffect,"mixed_resolution.fx",defines);
-	mixedResolutionConstants.LinkToEffect(mixedResolutionEffect,"MixedResolutionConstants");
+	mixedResolutionRenderer.RecompileShaders(defines);
 	SAFE_RELEASE(lightProbesEffect);
-	V_CHECK(CreateEffect(m_pd3dDevice,&lightProbesEffect,"light_probes.fx"));
+	V_CHECK(CreateEffect(m_pd3dDevice,&lightProbesEffect,"light_probes.fx",defines));
 	lightProbeConstants.LinkToEffect(lightProbesEffect,"LightProbeConstants");
 }
 

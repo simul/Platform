@@ -10,6 +10,9 @@ using namespace dx11;
 	,viewType(MAIN_3D_VIEW)
 	,ScreenWidth(0)
 	,ScreenHeight(0)
+	,useExternalFramebuffer(false)
+	,externalDepthTexture(NULL)
+	,externalDepthTexture_SRV(NULL)
  {
  }
 
@@ -21,9 +24,12 @@ using namespace dx11;
 void View::RestoreDeviceObjects(ID3D11Device *pd3dDevice)
 {
 	m_pd3dDevice=pd3dDevice;
-	hdrFramebuffer.RestoreDeviceObjects(pd3dDevice);
-	hdrFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
-	hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+	if(!useExternalFramebuffer)
+	{
+		hdrFramebuffer.RestoreDeviceObjects(pd3dDevice);
+		hdrFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
+		hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+	}
 }
 
 void View::InvalidateDeviceObjects()
@@ -32,6 +38,8 @@ void View::InvalidateDeviceObjects()
 	lowResDepthTexture.release();
 	hiResDepthTexture.release();
 	resolvedTexture.release();
+	externalDepthTexture=NULL;
+	SAFE_RELEASE(externalDepthTexture_SRV);
 }
 
 int View::GetScreenWidth() const
@@ -50,14 +58,31 @@ void View::SetResolution(int w,int h)
 	ScreenHeight=h;
 }
 
+void View::SetExternalFramebuffer(bool e)
+{
+	if(useExternalFramebuffer!=e)
+	{
+		useExternalFramebuffer=e;
+		hdrFramebuffer.InvalidateDeviceObjects();
+	}
+}
+
+void View::SetExternalDepthResource(ID3D11ShaderResourceView *d)
+{
+	externalDepthTexture_SRV=d;
+}
+
 void View::ResolveFramebuffer(ID3D11DeviceContext *pContext)
 {
-	if(hdrFramebuffer.numAntialiasingSamples>1)
+	if(!useExternalFramebuffer)
 	{
-		SIMUL_COMBINED_PROFILE_START(pContext,"ResolveFramebuffer")
-		resolvedTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,ScreenWidth,ScreenHeight,DXGI_FORMAT_R16G16B16A16_FLOAT,false,true);
-		pContext->ResolveSubresource(resolvedTexture.texture,0,hdrFramebuffer.GetColorTexture(),0,DXGI_FORMAT_R16G16B16A16_FLOAT);
-		SIMUL_COMBINED_PROFILE_END(pContext)
+		if(hdrFramebuffer.numAntialiasingSamples>1)
+		{
+			SIMUL_COMBINED_PROFILE_START(pContext,"ResolveFramebuffer")
+			resolvedTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,ScreenWidth,ScreenHeight,DXGI_FORMAT_R16G16B16A16_FLOAT,false,true);
+			pContext->ResolveSubresource(resolvedTexture.texture,0,hdrFramebuffer.GetColorTexture(),0,DXGI_FORMAT_R16G16B16A16_FLOAT);
+			SIMUL_COMBINED_PROFILE_END(pContext)
+		}
 	}
 }
 
@@ -71,8 +96,6 @@ ID3D11ShaderResourceView *View::GetResolvedHDRBuffer()
 
 int	ViewManager::AddView()
 {
-	//if(!enabled)
-//		return -1;
 	last_created_view_id++;
 	int view_id		=last_created_view_id;
 	View *view		=views[view_id]=new View();

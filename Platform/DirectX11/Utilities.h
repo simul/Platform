@@ -157,6 +157,12 @@ namespace simul
 				//SAFE_RELEASE(unorderedAccessView)
 			}
 		};
+		inline void cancelStreamOutTarget(ID3D11DeviceContext *pContext)
+		{
+			ID3D11Buffer *pBuffer =NULL;
+			UINT offset=0;
+			pContext->SOSetTargets(1,&pBuffer,&offset);
+		}
 		class SIMUL_DIRECTX11_EXPORT UtilityRenderer
 		{
 			static int instance_count;

@@ -9,7 +9,7 @@ using namespace dx11;
 
 dx11::Texture::Texture(ID3D11Device* d)
 	:device(d)
-	,texture(NULL)
+//	,texture(NULL)
 	,shaderResourceView(NULL)
 {
 }
@@ -18,9 +18,10 @@ dx11::Texture::~Texture()
 {
 	InvalidateDeviceObjects();
 }
+
 void dx11::Texture::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(texture);
+	//SAFE_RELEASE(texture);
 	SAFE_RELEASE(shaderResourceView);
 }
 
@@ -28,7 +29,8 @@ void dx11::Texture::InvalidateDeviceObjects()
 void dx11::Texture::LoadFromFile(const char *pFilePathUtf8)
 {
 	InvalidateDeviceObjects();
-	//shaderResourceView	=simul::dx11::LoadTexture(device,pFilePathUtf8);
+	SAFE_RELEASE(shaderResourceView);
+	shaderResourceView	=simul::dx11::LoadTexture(device,pFilePathUtf8);
 }
 
 bool dx11::Texture::IsValid() const

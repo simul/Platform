@@ -4,6 +4,7 @@
 #include "Simul/Platform/DirectX11/Texture.h"
 #include "Simul/Platform/DirectX11/Light.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
+#include "Simul/Math/Matrix4x4.h"
 
 using namespace simul;
 using namespace dx11;
@@ -33,7 +34,9 @@ void RenderPlatform::InvalidateDeviceObjects()
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
 		mat->effect=effect;
+		delete mat;
 	}
+	materials.clear();
 }
 
 void RenderPlatform::RecompileShaders()
@@ -268,7 +271,7 @@ void RenderPlatform::ApplyDefaultMaterial()
 
     glBindTexture(GL_TEXTURE_2D, 0);*/
 }
-#include "Simul/Math/Matrix4x4.h"
+
 void MakeWorldViewProjMatrix(float *wvp,const double *w,const float *v,const float *p)
 {
 	simul::math::Matrix4x4 tmp1,view(v),proj(p),model(w);

@@ -199,11 +199,15 @@
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="LightningRenderer.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="OceanRenderer.cpp" />
     <ClCompile Include="OceanSimulator.cpp" />
     <ClCompile Include="PrecipitationRenderer.cpp" />
     <ClCompile Include="Profiler.cpp" />
+    <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
     <ClCompile Include="Simul2DCloudRendererDX1x.cpp" />
     <ClCompile Include="SimulAtmosphericsRendererDX1x.cpp" />
@@ -214,7 +218,9 @@
     <ClCompile Include="TerrainRenderer.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
+    <ClCompile Include="View.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompileShaderDX1x.h" />
@@ -255,6 +261,7 @@
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />
+    <ClInclude Include="View.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\CrossPlatform\atmospherics.sl" />

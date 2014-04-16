@@ -13,9 +13,10 @@ namespace simul
 		public:
 			Mesh();
 			~Mesh();
+			void InvalidateDeviceObjects();
 			// Implementing scene::Mesh
 			bool Initialize(void *device,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices);
-			void release();
+			void releaseBuffers();
 			// Implementing scene::Mesh
 			void BeginDraw	(void *context,scene::ShadingMode pShadingMode) const;
 			// Draw all the faces with specific material with given shading mode.
@@ -39,7 +40,7 @@ namespace simul
 			}
 			template<class T,typename U> void init(ID3D11Device *pd3dDevice,int num_vertices,int num_indices,T *vertices,U *indices)
 			{
-				release();
+				releaseBuffers();
 				stride=sizeof(T);
 				numVertices=num_vertices;
 				numIndices=num_indices;

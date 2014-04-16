@@ -93,9 +93,7 @@ void PrecipitationRenderer::RecompileShaders()
 		vertexBuffer.setAsStreamOutTarget(pImmediateContext);
 		ApplyPass(pImmediateContext,effect->GetTechniqueByName("init_particles")->GetPassByIndex(0));
 		pImmediateContext->Draw(125000,0);
-		ID3D11Buffer *pBuffer =NULL;
-		UINT offset=0;
-		pImmediateContext->SOSetTargets(1,&pBuffer,&offset);
+		cancelStreamOutTarget(pImmediateContext);
 	}
 	pImmediateContext->IASetPrimitiveTopology(previousTopology );
 	pImmediateContext->IASetInputLayout(previousInputLayout);

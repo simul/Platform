@@ -21,7 +21,7 @@ namespace simul
 			bool IsValid() const;
 			
 			ID3D11Device*				device;
-			ID3D11Resource*				texture;
+		//	ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   shaderResourceView;
 		};
 	}

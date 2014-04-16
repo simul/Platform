@@ -26,13 +26,16 @@ void Material::Apply(void *context) const
     glMaterialfv(GL_FRONT_AND_BACK	,GL_SPECULAR	,mSpecular.mColor);
     glMaterialf	(GL_FRONT_AND_BACK	,GL_SHININESS	,mShininess);
 	if(mDiffuse.mTextureName)
+	{
 		glBindTexture(GL_TEXTURE_2D	,((opengl::Texture *)mDiffuse.mTextureName)->pTextureObject);
+		for(int i=1;i<2;i++)
+		{
+			glActiveTexture(GL_TEXTURE0+i);
+			glBindTexture(GL_TEXTURE_2D	,((opengl::Texture *)mDiffuse.mTextureName)->pTextureObject);
+		}
+	}
 	else
 		glBindTexture(GL_TEXTURE_2D	,0);
-	for(int i=1;i<2;i++)
-	{
-		glActiveTexture(GL_TEXTURE0+i);
-		glBindTexture(GL_TEXTURE_2D	,((opengl::Texture *)mDiffuse.mTextureName)->pTextureObject);
-	}
+
 	glActiveTexture(GL_TEXTURE0);
 }

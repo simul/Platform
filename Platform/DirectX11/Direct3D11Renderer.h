@@ -46,7 +46,20 @@ namespace simul
 		class TerrainRenderer;
 		class OceanRenderer;
 		class SimulOpticsRendererDX1x;
-
+		class SIMUL_DIRECTX11_EXPORT MixedResolutionRenderer
+		{
+		public:
+			MixedResolutionRenderer();
+			~MixedResolutionRenderer();
+			void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
+			void InvalidateDeviceObjects();
+			void RecompileShaders(const std::map<std::string,std::string> &defines);
+			void DownscaleDepth(ID3D11DeviceContext* pContext,View *view,int s,vec3 depthToLinFadeDistParams);
+		protected:
+			ID3D11Device								*m_pd3dDevice;
+			ID3DX11Effect								*mixedResolutionEffect;
+			ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
+		};
 		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface
@@ -133,7 +146,6 @@ namespace simul
 			bool										enabled;
 			std::string									screenshotFilenameUtf8;
 			ID3D11Device								*m_pd3dDevice;
-			ID3DX11Effect								*mixedResolutionEffect;
 			ID3DX11Effect								*lightProbesEffect;
 			SimulOpticsRendererDX1x						*simulOpticsRenderer;
 			SimulWeatherRendererDX11					*simulWeatherRenderer;
@@ -146,7 +158,7 @@ namespace simul
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
 			ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;
-			ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
+			MixedResolutionRenderer						mixedResolutionRenderer;
 		};
 	}
 }
