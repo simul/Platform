@@ -238,7 +238,6 @@ vec4 PS_Inscatter_Near_MSAA(atmosVertexOutput IN) : SV_TARGET
 }
 vec4 PS_Inscatter_Far_NFDepth(atmosVertexOutput IN) : SV_TARGET
 {
-//	discard;
 	vec4 res=Inscatter_NFDepth(	inscTexture
 							,skylTexture
 							,illuminationTexture
@@ -251,7 +250,6 @@ vec4 PS_Inscatter_Far_NFDepth(atmosVertexOutput IN) : SV_TARGET
 							,viewportToTexRegionScaleBias
 							,depthToLinFadeDistParams
 							,tanHalfFov,true,false);
-	//vec4 res=vec4(1,0,0,0);
 	res.rgb	*=exposure;
 	return res;
 }

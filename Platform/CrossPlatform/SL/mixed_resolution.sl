@@ -56,6 +56,13 @@ vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> s
 		edge		=fn.x-fn.y;
 		edge		=step(0.002,edge);
 	}
+/*else
+{
+//vec2 fn		=depthToLinearDistance(vec2(farthest_depth,nearest_depth),depthToLinFadeDistParams);
+vec4 d=sourceDepthTexture[pos];
+		d.r=1.0/((1.0-1667.05920) * d.r + 1667.05920);
+return d;
+}*/
 	return vec4(farthest_depth,nearest_depth,edge,0.0);
 }
 

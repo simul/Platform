@@ -167,9 +167,10 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
     float final_radiance=colour.x+colour.y+colour.z;
 	return float4(final_radiance,final_radiance,final_radiance,1.f);
 #else
+
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;
-
+	
 	return float4(colour.rgb,1.0);
 #endif
 }

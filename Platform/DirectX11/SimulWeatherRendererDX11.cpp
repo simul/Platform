@@ -393,7 +393,7 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	SIMUL_GPU_PROFILE_END(context)
 	SIMUL_GPU_PROFILE_START(context,"Hi-Res FAR")
 	fb->hiResFarFramebufferDx11.Activate(context);
-	fb->hiResFarFramebufferDx11.Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
+	fb->hiResFarFramebufferDx11.Clear(context,0.0f,1.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
 	// RenderInscatter also clears the buffer.
 	if(baseAtmosphericsRenderer)
 		baseAtmosphericsRenderer->RenderInscatter(context,hiResDepthTexture,exposure,depthViewportXYWH,false);

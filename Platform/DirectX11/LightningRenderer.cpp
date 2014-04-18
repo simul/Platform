@@ -171,7 +171,7 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	dx11::setTexture(effect,"depthTexture",(ID3D11ShaderResourceView*)depth_tex);
 	dx11::setTexture(effect,"cloudDepthTexture",(ID3D11ShaderResourceView*)cloud_depth_tex);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-	for(int i=0;i<start.size();i++)
+	for(int i=0;i<(int)start.size();i++)
 	{
 		if(!thick[i])
 		{

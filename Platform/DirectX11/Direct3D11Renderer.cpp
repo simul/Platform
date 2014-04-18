@@ -286,7 +286,7 @@ void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View 
 	ID3D11ShaderResourceView *depth_SRV=NULL;
 	if(view->useExternalFramebuffer)
 	{
-		D3D11_TEXTURE2D_DESC textureDesc;
+		//D3D11_TEXTURE2D_DESC textureDesc;
 		// recreate the SRV's if necessary:
 		if(view->externalDepthTexture_SRV)
 		{
@@ -307,14 +307,14 @@ void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View 
 		return;
 	int w=W/s;
 	int h=H/s;
-	view->lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R16G16B16A16_FLOAT,/*computable=*/true,/*rendertarget=*/false);
+	view->lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	depth_SRV->GetDesc(&desc);
 	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups.
 	static bool use_rt=true;
 	{
-		view->hiResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,W,H,DXGI_FORMAT_R16G16B16A16_FLOAT,/*computable=*/!use_rt,/*rendertarget=*/use_rt);
+		view->hiResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,W,H,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/!use_rt,/*rendertarget=*/use_rt);
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Hi-res Depth")
 		mixedResolutionConstants.scale		=uint2(s,s);
 		mixedResolutionConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
@@ -641,11 +641,12 @@ void Direct3D11Renderer::RenderDepthBuffers(void *context,int view_id,int x0,int
 		l=dy/2;
 		dx=(dy*w)/l;
 	}
-	renderPlatformDx11.DrawTexture(pContext	,x0		,y0		,w,l,(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex()			,10000.0f	);
+	static float uu=10000.0f;
+	renderPlatformDx11.DrawTexture(pContext	,x0		,y0		,w,l,(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex()			,uu	);
 	UtilityRenderer::Print(pContext			,x0		,y0		,"Main Depth");
-	renderPlatformDx11.DrawTexture(pContext	,x0		,y0+l	,w,l,view->hiResDepthTexture.shaderResourceView								,10000.0f	);
+	renderPlatformDx11.DrawTexture(pContext	,x0		,y0+l	,w,l,view->hiResDepthTexture.shaderResourceView								,uu	);
 	UtilityRenderer::Print(pContext			,x0		,y0+l	,"Hi-Res Depth");
-	renderPlatformDx11.DrawTexture(pContext	,x0+w	,y0+l	,w,l,view->lowResDepthTexture.shaderResourceView							,10000.0f	);
+	renderPlatformDx11.DrawTexture(pContext	,x0+w	,y0+l	,w,l,view->lowResDepthTexture.shaderResourceView							,uu	);
 	UtilityRenderer::Print(pContext			,x0+w	,y0+l	,"Lo-Res Depth");
 	//UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,(ID3D11ShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
 	//UtilityRenderer::Print(pContext			,2.f*w	,0.f,"Near overlay");

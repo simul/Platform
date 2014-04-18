@@ -703,6 +703,8 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 
 void UtilityRenderer::RecompileShaders()
 {
+	if(!m_pd3dDevice)
+		return;
 	SAFE_RELEASE(m_pDebugEffect);
 	CreateEffect(m_pd3dDevice,&m_pDebugEffect,"simul_debug.fx");
 	textRenderer.RecompileShaders();
