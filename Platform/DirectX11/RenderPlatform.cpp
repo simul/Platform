@@ -4,10 +4,19 @@
 #include "Simul/Platform/DirectX11/Texture.h"
 #include "Simul/Platform/DirectX11/Light.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/TextRenderer.h"
 #include "Simul/Math/Matrix4x4.h"
 
 using namespace simul;
 using namespace dx11;
+namespace simul
+{
+	namespace dx11
+	{
+		TextRenderer textRenderer;
+	}
+}
+
 
 RenderPlatform::RenderPlatform()
 	:effect(NULL)
@@ -23,12 +32,14 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 {
 	device=(ID3D11Device*)d;
 	solidConstants.RestoreDeviceObjects(device);
+	textRenderer.RestoreDeviceObjects(device);
 	RecompileShaders();
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
 	solidConstants.InvalidateDeviceObjects();
+	textRenderer.InvalidateDeviceObjects();
 	SAFE_RELEASE(effect);
 	for(std::set<scene::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
@@ -53,6 +64,7 @@ void RenderPlatform::RecompileShaders()
 		dx11::Material *mat=(dx11::Material*)(*i);
 		mat->effect=effect;
 	}
+	textRenderer.RecompileShaders();
 }
 
 void RenderPlatform::PushTexturePath(const char *pathUtf8)
@@ -346,4 +358,14 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 	}
 	UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,tech);
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",NULL);
+}
+
+void RenderPlatform::Print(void *context,int x,int y	,const char *text)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	float clr[]={1.f,1.f,0.f,1.f};
+	unsigned int num_v=1;
+	D3D11_VIEWPORT								viewport;
+	pContext->RSGetViewports(&num_v,&viewport);
+	textRenderer.Render(pContext,(float)x,(float)y,(float)viewport.Width,(float)viewport.Height,text,clr);
 }

@@ -16,9 +16,9 @@ namespace simul
 		private:
 			struct ConstantBufferType
 			{
-			vec4	rect;
-			vec4  texc;
-			vec4 colour;
+				vec4	rect;
+				vec4	texc;
+				vec4	colour;
 			};
 
 		public:

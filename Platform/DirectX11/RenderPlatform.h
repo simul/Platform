@@ -39,8 +39,9 @@ namespace simul
 			void DrawCrossHair	(void *context,const double *pGlobalPosition);
 			void DrawCamera		(void *context,const double *pGlobalPosition, double pRoll);
 			void DrawLineLoop	(void *context,const double *mat,int num,const double *vertexArray,const float colr[4]);
-			void DrawTexture(	void *context,int x1,int y1,int dx,int dy,void *tex,float mult=1.f);
-			
+			void DrawTexture	(void *context,int x1,int y1,int dx,int dy,void *tex,float mult=1.f);
+			void Print			(void *context,int x,int y	,const char *text);
+
 			void ApplyDefaultMaterial();
 			void SetModelMatrix(void *context,const crossplatform::ViewStruct &viewStruct,const double *mat);
 			scene::Material *CreateMaterial();

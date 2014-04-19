@@ -37,9 +37,6 @@
 using namespace simul;
 using namespace opengl;
 
-#ifndef GLUT_BITMAP_HELVETICA_12
-#define GLUT_BITMAP_HELVETICA_12	((void*)7)
-#endif
 using namespace simul;
 using namespace opengl;
 
@@ -273,7 +270,7 @@ void OpenGLRenderer::paintGL()
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth/2,ScreenHeight/2);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(context,0,0,ScreenWidth/2,ScreenHeight/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext,0,0,ScreenWidth/2,ScreenHeight/2);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{
@@ -297,9 +294,9 @@ void OpenGLRenderer::renderUI()
 	glDisable(GL_TEXTURE_1D);
 	SetOrthoProjection(ScreenWidth,ScreenHeight);
 	static char text[500];
-	float y=12.f;
+	int y=12;
 	static int line_height=16;
-	RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,"OpenGL");
+	renderPlatform->Print(NULL,12,y+=line_height,"OpenGL");
 	if(ShowOSD)
 	{
 	static simul::base::Timer timer;
@@ -314,9 +311,9 @@ void OpenGLRenderer::renderUI()
 		framerate+=0.05f*(1000.f/t);
 		static char osd_text[256];
 		sprintf_s(osd_text,256,"%3.3f fps",framerate);
-		RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,osd_text);
+		renderPlatform->Print(NULL,12,y+=line_height,osd_text);
 		if(simulWeatherRenderer)
-			RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,simulWeatherRenderer->GetDebugText());
+			renderPlatform->Print(NULL,12,y+=line_height,simulWeatherRenderer->GetDebugText());
 		timer.StartTime();
 	}
 }

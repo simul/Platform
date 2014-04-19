@@ -6,6 +6,8 @@
 #include "Simul/Platform/OpenGL/Light.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
+#pragma warning(disable:4505)	// Fix GLUT warnings
+#include <GL/glut.h>
 
 using namespace simul;
 using namespace opengl;
@@ -248,6 +250,38 @@ void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,void
 	glUseProgram(Utilities::GetSingleton().simple_program);
 	DrawQuad(x1,y1,dx,dy);
 	glUseProgram(0);	
+}
+
+#ifndef GLUT_BITMAP_HELVETICA_12
+#define GLUT_BITMAP_HELVETICA_12	((void*)7)
+#endif
+
+void RenderPlatform::Print			(void *context,int x,int y	,const char *string)
+{
+	void *font=GLUT_BITMAP_HELVETICA_12;
+	glColor4f(1.f,1.f,1.f,1.f);
+	int viewport[4];
+	glGetIntegerv(GL_VIEWPORT,viewport);
+	int win_h=viewport[3];
+	glRasterPos2f(x,win_h-y);
+	glDisable(GL_LIGHTING);
+	glBindTexture(GL_TEXTURE_2D,0);
+	const char *s=string;
+	while(*s)
+	{
+		if(*s=='\n')
+		{
+			y+=12;
+			glRasterPos2f(x,win_h-y);
+		}
+#ifndef WIN64
+		else
+			glutBitmapCharacter(font,*s);
+#else
+		font;
+#endif
+		s++;
+	}
 }
 
 void RenderPlatform::ApplyDefaultMaterial()

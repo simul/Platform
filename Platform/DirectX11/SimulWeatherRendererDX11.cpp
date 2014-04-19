@@ -552,13 +552,13 @@ void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_
 	int w=dx/2;
 	int l=dy/2;
 	renderPlatformDx11.DrawTexture(pContext	,x0+0*w	,y0+l	,w,l,(ID3D11ShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
-	UtilityRenderer::Print		(pContext	,x0+0*w	,y0+l	,"Hi-Res Far");
+	renderPlatformDx11.Print		(pContext	,x0+0*w	,y0+l	,"Hi-Res Far");
 	renderPlatformDx11.DrawTexture(pContext	,x0+1*w	,y0+l	,w,l,(ID3D11ShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
-	UtilityRenderer::Print		(pContext	,x0+1*w	,y0+l	,"Hi-Res Near");
+	renderPlatformDx11.Print		(pContext	,x0+1*w	,y0+l	,"Hi-Res Near");
 	renderPlatformDx11.DrawTexture(pContext	,x0+0*w	,y0+2*l	,w,l,(ID3D11ShaderResourceView*)fb->lowResFarFramebufferDx11.GetColorTex());
-	UtilityRenderer::Print		(pContext	,x0+0*w	,y0+2*l	,"Lo-Res Far");
+	renderPlatformDx11.Print		(pContext	,x0+0*w	,y0+2*l	,"Lo-Res Far");
 	renderPlatformDx11.DrawTexture(pContext	,x0+1*w	,y0+2*l	,w,l,(ID3D11ShaderResourceView*)fb->lowResNearFramebufferDx11.GetColorTex());
-	UtilityRenderer::Print		(pContext	,x0+1*w	,y0+2*l	,"Lo-Res Near");
+	renderPlatformDx11.Print		(pContext	,x0+1*w	,y0+2*l	,"Lo-Res Near");
 }
 
 void SimulWeatherRendererDX11::RenderLightning(void *context,int view_id,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex)

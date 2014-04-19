@@ -34,7 +34,7 @@ namespace simul
 			void PreRenderUpdate(void *context);
 			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
-			void RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height);
+			void RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
 			void SetLossTexture(void *l);
 			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);

@@ -1,13 +1,16 @@
+#version 140
+#include "CppGlsl.hs"
+#include "../../CrossPlatform/SL/simul_cloud_constants.sl"
 uniform sampler3D cloud_density;
 varying vec2 texCoords;
-uniform float crossSectionOffset;
-uniform vec4 lightResponse;
+//uniform float crossSectionOffset;
+//uniform vec4 lightResponse;
 uniform float yz;
 
 #define CROSS_SECTION_STEPS 32
 void main(void)
 {
-	vec3 texc=vec3(crossSectionOffset+texCoords.x,yz*(crossSectionOffset+texCoords.y),(1.0-yz)*(texCoords.y));//+yz*0.125
+	vec3 texc=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
 	int i=0;
 	vec3 accum=vec3(0.0,0.5,1.0);
 	for(i=0;i<CROSS_SECTION_STEPS;i++)

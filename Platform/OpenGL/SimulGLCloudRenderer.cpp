@@ -610,11 +610,6 @@ GL_ERROR_CHECK
 	singleLayerConstants	.LinkToProgram(program,"SingleLayerConstants",5);
 	cloudPerViewConstants.LinkToProgram(program,"CloudPerViewConstants",13);
 GL_ERROR_CHECK
-	
-	//GLint layerDataConstants			=glGetUniformBlockIndex(program,"LayerConstants");
-	//if(layerDataConstants>=0)
-	///	glUniformBlockBinding(program,layerDataConstants,layerDataConstantsBindingIndex);
-GL_ERROR_CHECK
 }
 
 void SimulGLCloudRenderer::RecompileShaders()
@@ -656,6 +651,7 @@ GL_ERROR_CHECK
 	
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
+	cloudConstants.LinkToProgram(cross_section_program,"CloudConstants",2);
 	cloudConstants.LinkToProgram(clouds_background_program,"CloudConstants",2);
 	cloudConstants.LinkToProgram(clouds_foreground_program,"CloudConstants",2);
 	//glBindBufferRange(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO,0, sizeof(CloudConstants));
@@ -933,9 +929,9 @@ void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &con
 		h=1;
 	h*=gi->GetGridHeight();
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
-	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
+	//GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
 	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
-	GLint crossSectionOffset	= glGetUniformLocation(cross_section_program,"crossSectionOffset");
+	//GLint crossSectionOffset	= glGetUniformLocation(cross_section_program,"crossSectionOffset");
     glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -953,21 +949,26 @@ void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &con
 		simul::sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+i)%3].tex);
-		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
-		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
+		//setTexture(cross_section_program,"cloud_density",0,cloud_textures[(texture_cycle+i)%3].tex);
+		//glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
+		//glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
 		glUniform1f(yz_param,0.f);
+		cloudConstants.lightResponse=light_response;
+		cloudConstants.crossSectionOffset=vec3(0.5f,0.5f,0.f);
+		//cloudConstants.yz=0.f;
+		cloudConstants.Apply();
 		DrawQuad(x0+i*(w+1)+4,y0+4,w,h);
 		glUniform1f(yz_param,1.f);
 		DrawQuad(x0+i*(w+1)+4,y0+h+8,w,w);
 	}
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
-glUseProgram(Utilities::GetSingleton().simple_program);
+	glUseProgram(Utilities::GetSingleton().simple_program);
 	DrawQuad(x0+width-(w+8),y0+height-(w+8),w,w);
 	glUseProgram(0);
 }
 
-void SimulGLCloudRenderer::RenderAuxiliaryTextures(void *,int x0,int y0,int width,int height)
+void SimulGLCloudRenderer::RenderAuxiliaryTextures(crossplatform::DeviceContext &,int x0,int y0,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;

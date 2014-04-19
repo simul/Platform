@@ -1,7 +1,6 @@
 #define NOMINMAX
 #include "Utilities.h"
 #include "MacrosDX1x.h"
-#include "TextRenderer.h"
 #include "Simul\Base\StringToWString.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Camera/Camera.h"
@@ -19,14 +18,6 @@ static ID3D11SamplerState* m_pSamplerStateStored11=NULL;
 static UINT m_StencilRefStored11;
 static float m_BlendFactorStored11[4];
 static UINT m_SampleMaskStored11;
-
-namespace simul
-{
-	namespace dx11
-	{
-		TextRenderer textRenderer;
-	}
-}
 
 TextureStruct::TextureStruct()
 	:texture(NULL)
@@ -671,7 +662,6 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D11Device *)dev;
 	RecompileShaders();
-	textRenderer.RestoreDeviceObjects(m_pd3dDevice);
 	SAFE_RELEASE(m_pVertexBuffer);
 	// Vertex declaration
 	{
@@ -707,12 +697,10 @@ void UtilityRenderer::RecompileShaders()
 		return;
 	SAFE_RELEASE(m_pDebugEffect);
 	CreateEffect(m_pd3dDevice,&m_pDebugEffect,"simul_debug.fx");
-	textRenderer.RecompileShaders();
 }
 
 void UtilityRenderer::InvalidateDeviceObjects()
 {
-	textRenderer.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pDebugEffect);
@@ -745,15 +733,6 @@ void UtilityRenderer::GetScreenSize(int& w,int& h)
 	h=screen_height;
 }
 
-void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,int x,int y,const char *text,const float *clr)
-{
-	UtilityRenderer::Print(pd3dImmediateContext,(float)x,(float)y,text,clr);
-}
-
-void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,float x,float y,const char *text,const float *clr)
-{
-	textRenderer.Render(pd3dImmediateContext,x,y,(float)screen_width,(float)screen_height,text,clr);
-}
 
 void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {

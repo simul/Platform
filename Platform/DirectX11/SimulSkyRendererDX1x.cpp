@@ -888,5 +888,5 @@ void SimulSkyRendererDX1x::DrawLines(void *context,Vertext *lines,int vertex_cou
 
 void SimulSkyRendererDX1x::PrintAt3dPos(void *context,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
-	simul::dx11::UtilityRenderer::PrintAt3dPos((ID3D11DeviceContext *)context,p,text,colr,offsetx,offsety);
+	//renderPlatform->PrintAt3dPos((ID3D11DeviceContext *)context,p,text,colr,offsetx,offsety);
 }

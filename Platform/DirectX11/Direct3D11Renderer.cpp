@@ -482,6 +482,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.platform_context	=pContext;
+	deviceContext.renderPlatform	=&renderPlatformDx11;
 	deviceContext.viewStruct.view_id=view_id;
 	deviceContext.viewStruct.proj=(const float*)proj;
 	deviceContext.viewStruct.view=(const float*)v;
@@ -595,7 +596,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		{
 			simulWeatherRenderer->RenderFramebufferDepth(pContext,view_id,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pContext,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		}
 		if(ShowDepthBuffers)
 		{
@@ -642,14 +643,14 @@ void Direct3D11Renderer::RenderDepthBuffers(void *context,int view_id,int x0,int
 		dx=(dy*w)/l;
 	}
 	static float uu=10000.0f;
-	renderPlatformDx11.DrawTexture(pContext	,x0		,y0		,w,l,(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex()			,uu	);
-	UtilityRenderer::Print(pContext			,x0		,y0		,"Main Depth");
-	renderPlatformDx11.DrawTexture(pContext	,x0		,y0+l	,w,l,view->hiResDepthTexture.shaderResourceView								,uu	);
-	UtilityRenderer::Print(pContext			,x0		,y0+l	,"Hi-Res Depth");
-	renderPlatformDx11.DrawTexture(pContext	,x0+w	,y0+l	,w,l,view->lowResDepthTexture.shaderResourceView							,uu	);
-	UtilityRenderer::Print(pContext			,x0+w	,y0+l	,"Lo-Res Depth");
+	renderPlatformDx11.DrawTexture(pContext	,x0		,y0		,w,l,(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex()	,uu	);
+	renderPlatformDx11.Print(pContext		,x0		,y0		,"Main Depth");
+	renderPlatformDx11.DrawTexture(pContext	,x0		,y0+l	,w,l,view->hiResDepthTexture.shaderResourceView						,uu	);
+	renderPlatformDx11.Print(pContext		,x0		,y0+l	,"Hi-Res Depth");
+	renderPlatformDx11.DrawTexture(pContext	,x0+w	,y0+l	,w,l,view->lowResDepthTexture.shaderResourceView					,uu	);
+	renderPlatformDx11.Print(pContext		,x0+w	,y0+l	,"Lo-Res Depth");
 	//UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,(ID3D11ShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
-	//UtilityRenderer::Print(pContext			,2.f*w	,0.f,"Near overlay");
+	//renderPlatformDx11.Print(pContext			,2.f*w	,0.f,"Near overlay");
 	simulWeatherRenderer->RenderCompositingTextures(pContext,view_id,x0,l,dx,dy);
 }
 
