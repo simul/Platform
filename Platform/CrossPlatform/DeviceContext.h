@@ -5,6 +5,10 @@ struct ID3D11DeviceContext;
 struct IDirect3DDevice9;
 namespace simul
 {
+	namespace scene
+	{
+		class RenderPlatform;
+	}
 	namespace crossplatform
 	{
 		//! The base class for Device contexts. The actual context pointer is only applicable in DirectX - in OpenGL, it will be null.
@@ -13,6 +17,7 @@ namespace simul
 		struct DeviceContext
 		{
 			void *platform_context;
+			scene::RenderPlatform *renderPlatform;
 			inline ID3D11DeviceContext *asD3D11DeviceContext()
 			{
 				return (ID3D11DeviceContext*)platform_context;

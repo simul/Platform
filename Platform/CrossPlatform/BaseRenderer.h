@@ -16,6 +16,8 @@ namespace simul
 		//! The base class for renderers. Placeholder for now.
 		class BaseRenderer
 		{
+		//protected:
+		//	virtual scene::RenderPlatform *GetRenderPlatform()=0;
 		};
 	}
 }

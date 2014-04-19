@@ -841,7 +841,6 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &c
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;
-
 		h=(int)(kf->cloud_height_km*1000.f/GetCloudInterface()->GetCloudWidth()*(float)w);
 		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 		cloudConstants.lightResponse=light_response;
@@ -856,9 +855,9 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &c
 	ApplyPass(pContext,m_pCloudEffect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
 }
 
-void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height)
+void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.platform_context;
 	HRESULT hr=S_OK;
 	static int u=4;
 	int w=(width-8)/u;
@@ -872,17 +871,17 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int x0,int y0
 	D3DXVECTOR4 cross_section_offset(0,0,0,0);
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",noiseTextureResource);
 	UtilityRenderer::DrawQuad2(pContext	,width-w,height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
-	UtilityRenderer::Print(pContext		,width-w,height-(w+8)	,"2D Noise");
+	deviceContext.renderPlatform->Print(pContext		,width-w,height-(w+8)	,"2D Noise");
 	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
 	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_texture.shaderResourceView);
 	UtilityRenderer::DrawQuad2(pContext	,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
-	UtilityRenderer::Print(pContext		,width-(w+8)-(w+8),height-(w+8)	,"shadow texture");
+	deviceContext.renderPlatform->Print(pContext		,width-(w+8)-(w+8),height-(w+8)	,"shadow texture");
 
 	renderPlatformDx11.DrawTexture(pContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,godrays_texture.shaderResourceView);
-	UtilityRenderer::Print(pContext			,width-2*w,height-(w+8)-w/2	,"godrays framebuffer",vec4(0.f,0.6f,0.f,1.f));
+	deviceContext.renderPlatform->Print(pContext			,width-2*w,height-(w+8)-w/2	,"godrays framebuffer");
 
 	renderPlatformDx11.DrawTexture(pContext	,width-2*w,height-(w+8)-w	,w*2,w/2	,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex());
-	UtilityRenderer::Print(pContext			,width-2*w,height-(w+8)-w	,"moisture framebuffer",vec4(1.f,0.f,0.f,1.f));
+	deviceContext.renderPlatform->Print(pContext			,width-2*w,height-(w+8)-w	,"moisture framebuffer");
 
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"		,(ID3D11ShaderResourceView*)NULL);

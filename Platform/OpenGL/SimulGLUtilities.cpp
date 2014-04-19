@@ -251,29 +251,8 @@ void SetPerspectiveProjection(int w,int h,float field_of_view)
 		gluPerspective(field_of_view,(float)w/(float)h,1.0,325000.0);
 	glViewport(0,0,w,h);
 }
-void RenderString(float x, float y, void *font, const char* string)
-{
-	glColor4f(1.f,1.f,1.f,1.f);
-	glRasterPos2f(x,win_h-y);
-	glDisable(GL_LIGHTING);
-	glBindTexture(GL_TEXTURE_2D,0);
-	const char *s=string;
-	while(*s)
-	{
-		if(*s=='\n')
-		{
-			y+=12;
-			glRasterPos2f(x,win_h-y);
-		}
-#ifndef WIN64
-		else
-			glutBitmapCharacter(font,*s);
-#else
-		font;
-#endif
-		s++;
-	}
-}
+
+
 void SetVSync(int vsync)
 {
 #ifdef WIN32
@@ -614,19 +593,17 @@ void setMatrixTranspose(GLuint program,const char *name,const float *value)
 extern void setTexture(GLuint program,const char *name,int texture_number,GLuint texture)
 {
     glActiveTexture(GL_TEXTURE0+texture_number);
-GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,texture);
 GL_ERROR_CHECK
-	GLint loc=glGetUniformLocation(program,name);
+	GLint loc	=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
 	if(loc<=0)
 		std::cout<<"Warning: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
-	{
 		glUniform1i(loc,texture_number);
-	}
 GL_ERROR_CHECK
 }
+
 void setParameter(GLint loc,int value)
 {
 	glUniform1i(loc,value);

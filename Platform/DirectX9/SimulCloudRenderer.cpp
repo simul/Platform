@@ -1047,7 +1047,7 @@ void SimulCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &devic
 	}
 }
 
-void SimulCloudRenderer::RenderAuxiliaryTextures(void *,int x0,int y0,int width,int height)
+void SimulCloudRenderer::RenderAuxiliaryTextures(crossplatform::DeviceContext &context,int x0,int y0,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;

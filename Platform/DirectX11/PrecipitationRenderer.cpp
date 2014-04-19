@@ -403,5 +403,5 @@ void PrecipitationRenderer::RenderTextures(void *context,int x0,int y0,int dx,in
 		h/=2;
 	}
 	renderPlatformDx11.DrawTexture(pContext	,x0,y0	,w,h,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex(),1.f);
-	UtilityRenderer::Print(pContext			,x0,y0	,"Moisture");
+	renderPlatformDx11.Print(pContext			,x0,y0	,"Moisture");
 }
