@@ -16,6 +16,7 @@
 #endif
 
 #include <GL/glew.h>
+#include <GL/glfx.h>
 #include "Simul/Base/Timer.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,6 +100,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,sim
 	,current_program(0)
 	,cross_section_program(0)
 	,cloud_shadow_program(0)
+	,effect(0)
 {
 	for(int i=0;i<3;i++)
 	{
@@ -628,6 +630,7 @@ GL_ERROR_CHECK
 	
 	SAFE_DELETE_PROGRAM(noise_prog);
 	SAFE_DELETE_PROGRAM(edge_noise_prog);
+
 	std::map<std::string,std::string> defines;
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
@@ -636,10 +639,20 @@ GL_ERROR_CHECK
 	defines["USE_DEPTH_TEXTURE"]="1";
 	clouds_foreground_program	=MakeProgram("simul_clouds",defines);
 	raytrace_program			=MakeProgram("simple.vert",NULL,"simul_raytrace_clouds.frag",defines);
-	noise_prog=MakeProgram("simple.vert",NULL,"simul_noise.frag");
-	edge_noise_prog=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
+	noise_prog					=MakeProgram("simple.vert",NULL,"simul_noise.frag");
+	edge_noise_prog				=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
 
-	cross_section_program	=MakeProgram("simul_cloud_cross_section");
+	cross_section_program		=MakeProgram("simul_cloud_cross_section");
+	
+	glfxDeleteEffect(effect);
+	effect						=opengl::CreateEffect("clouds.glfx",defines);
+	cross_section_program		=glfxCompileProgram(effect, "cross_section");
+	
+	if (!cross_section_program)
+	{
+   		std::string log = glfxGetEffectLog(effect);
+   		std::cerr << "Error parsing effect: " << log << std::endl;
+	}
 	
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
@@ -708,6 +721,8 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
 	init=false;
 	gpuCloudGenerator.InvalidateDeviceObjects();
+	
+	glfxDeleteEffect(effect);
 	SAFE_DELETE_TEXTURE(noise_tex);
 	SAFE_DELETE_PROGRAM(cross_section_program);
 

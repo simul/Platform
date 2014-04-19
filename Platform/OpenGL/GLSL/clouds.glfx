@@ -1,9 +1,9 @@
+#include "../../CrossPlatform/SL/CppSl.hs"
 struct VSinput
 {
     vec3 Position;
     vec2 TexCoord;
 };
-
 
 uniform mat4 gWVP;
 

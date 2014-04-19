@@ -40,22 +40,22 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename);
 		ID3D11Texture1D* make1DTexture(
-							ID3D11Device			*m_pd3dDevice
+										ID3D11Device			*m_pd3dDevice
 										,int w
 										,DXGI_FORMAT format
 										,const float *src);
 		ID3D11Texture2D* make2DTexture(
-							ID3D11Device			*m_pd3dDevice
+										ID3D11Device			*m_pd3dDevice
 										,int w,int h
 										,DXGI_FORMAT format
 										,const float *src);
 		ID3D11Texture3D* make3DTexture(
-							ID3D11Device			*m_pd3dDevice
+										ID3D11Device			*m_pd3dDevice
 										,int w,int l,int d
 										,DXGI_FORMAT format
 										,const void *src);
 		void Ensure3DTextureSizeAndFormat(
-							ID3D11Device			*m_pd3dDevice
+											ID3D11Device			*m_pd3dDevice
 											,ID3D1xTexture3D		* &tex
 											,ID3D11ShaderResourceView* &srv
 											,int w,int l,int d

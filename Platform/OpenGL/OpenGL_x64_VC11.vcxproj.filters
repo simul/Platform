@@ -519,6 +519,9 @@
     <None Include="..\CrossPlatform\earth_shadow_uniforms.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="GLSL\clouds.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

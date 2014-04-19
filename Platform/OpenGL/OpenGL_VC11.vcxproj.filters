@@ -387,6 +387,9 @@
     <None Include="GLSL\simul_raytrace_clouds.frag">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\clouds.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />
