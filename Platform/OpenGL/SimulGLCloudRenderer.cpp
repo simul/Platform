@@ -34,8 +34,10 @@
 #include "Simul/Clouds/TextureGenerator.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/CloudKeyframer.h"
+#include "Simul/Scene/RenderPlatform.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Platform/CrossPlatform/SL/noise_constants.sl"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Pi.h"
@@ -920,8 +922,15 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 	::DrawLines(vertices,vertex_count,strip);
 }
 
-void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &context,int x0,int y0,int width,int height)
+void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
+	glDisable(GL_BLEND);
+	glDisable(GL_CULL_FACE);
+	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_TEXTURE_3D);
+	glUseProgram(cross_section_program);
+
 	static int u=4;
 	int w=(width-8)/u;
 	if(w>height/3)
@@ -931,13 +940,7 @@ void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &con
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
-	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
-	glDisable(GL_BLEND);
-	glDisable(GL_CULL_FACE);
-	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_TEXTURE_3D);
-	glUseProgram(cross_section_program);
+	if(skyInterface)
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
@@ -946,16 +949,17 @@ void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &con
 		if(!kf)
 			break;
 		h=(int)(kf->cloud_height_km*1000.f/GetCloudInterface()->GetCloudWidth()*(float)w);
-		simul::sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
-		set3DTexture(cross_section_program,"cloud_density",0,cloud_textures[(texture_cycle+i)%3].tex);
-		glUniform1f(yz_param,0.f);
-		cloudConstants.lightResponse=light_response;
-		cloudConstants.crossSectionOffset=vec3(0.5f,0.5f,0.f);
-		//cloudConstants.yz=0.f;
+		sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
+		set3DTexture(cross_section_program,"cloudDensity",0,cloud_textures[(texture_cycle+i)%3].tex);
+		
+		cloudConstants.lightResponse		=light_response;
+		cloudConstants.crossSectionOffset	=vec3(0.5f,0.5f,0.f);
+		cloudConstants.yz					=0.f;
 		cloudConstants.Apply();
-		DrawQuad(x0+i*(w+1)+4,y0+4,w,h);
-		glUniform1f(yz_param,1.f);
-		DrawQuad(x0+i*(w+1)+4,y0+h+8,w,w);
+		deviceContext.renderPlatform->DrawQuad(deviceContext.platform_context,x0+i*(w+1)+4,y0+4,w,h,NULL,(void*)cross_section_program);
+		cloudConstants.yz					=1.f;
+		cloudConstants.Apply();
+		deviceContext.renderPlatform->DrawQuad(deviceContext.platform_context,x0+i*(w+1)+4,y0+h+8,w,w,NULL,(void*)cross_section_program);
 	}
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);

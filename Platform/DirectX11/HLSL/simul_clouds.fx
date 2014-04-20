@@ -150,11 +150,6 @@ RaytracePixelOutput PS_Raytrace3DNoise(RaytraceVertexOutput IN)
 	return r;
 }
 
-//uniform_buffer SingleLayerConstants SIMUL_BUFFER_REGISTER(12)
-//{
-	uniform vec4 rect;
-//};
-
 posTexVertexOutput VS_FullScreen(idOnly IN)
 {
 	posTexVertexOutput OUT;
@@ -226,7 +221,7 @@ SamplerState crossSectionSamplerState
 };
 
 #define CROSS_SECTION_STEPS 32
-vec4 PS_CrossSection(vec2 texCoords,float yz)
+vec4 CrossSection(vec2 texCoords,float yz)
 {
 	vec3 texc=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
 	int i=0;
@@ -235,7 +230,7 @@ vec4 PS_CrossSection(vec2 texCoords,float yz)
 	texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		vec4 density=cloudDensity1.Sample(crossSectionSamplerState,texc);
+		vec4 density=texture_wwc(cloudDensity1,texc);
 		vec3 colour=vec3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=vec2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;
@@ -248,14 +243,9 @@ vec4 PS_CrossSection(vec2 texCoords,float yz)
     return vec4(accum,1);
 }
 
-vec4 PS_CrossSectionXZ( posTexVertexOutput IN):SV_TARGET
+vec4 PS_CrossSection( posTexVertexOutput IN):SV_TARGET
 {
-    return PS_CrossSection(IN.texCoords,0.f);
-}
-
-vec4 PS_CrossSectionXY( posTexVertexOutput IN): SV_TARGET
-{
-    return PS_CrossSection(IN.texCoords,1.f);
+    return CrossSection(IN.texCoords,yz);
 }
 
 
@@ -338,7 +328,7 @@ technique11 moisture_accumulation
     }
 }
 
-technique11 cross_section_xz
+technique11 cross_section
 {
     pass p0 
     {
@@ -347,20 +337,7 @@ technique11 cross_section_xz
 		SetBlendState(NoBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_CrossSectionXZ()));
-    }
-}
-
-technique11 cross_section_xy
-{
-    pass p0 
-    {
-		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState( RenderNoCull );
-		SetBlendState(NoBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_CrossSectionXY()));
+		SetPixelShader(CompileShader(ps_4_0,PS_CrossSection()));
     }
 }
 

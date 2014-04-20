@@ -28,7 +28,8 @@ namespace simul
 			void RestoreDeviceObjects(ID3D11Device*);
 			void InvalidateDeviceObjects();
 		void RecompileShaders();
-			void Render(ID3D11DeviceContext *context, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
+			//void Render(crossplatform::DeviceContext &deviceContext, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
+			void Render(void *context, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
 
 		private:
 

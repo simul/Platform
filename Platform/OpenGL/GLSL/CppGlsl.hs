@@ -34,9 +34,15 @@
 	#define texture_cwc_lod(tex,texc,lod) textureLod(tex,texc,lod)
 	#define texture_clamp_lod(tex,texc,lod) textureLod(tex,texc,lod) 
 	#define texture_nearest_lod(tex,texc,lod) textureLod(tex,texc,lod) 
-	#define texture_clamp_mirror_lod(tex,texc,lod) textureLod(tex,texc,lod) 
+	#define texture_clamp_mirror_lod(tex,texc,lod) textureLod(tex,texc,lod)
 	#define texture_cmc_lod(tex,texc,lod) textureLod(tex,texc,lod) 
-	#define texture_cmc_nearest_lod(tex,texc,lod) textureLod(tex,texc,lod) 
+	#define texture_cmc_nearest_lod(tex,texc,lod) textureLod(tex,texc,lod)
+
+	#define texture_wwc(tex,texc) texture(tex,texc)
+	#define texture_nearest(tex,texc) texture(tex,texc)
+	#define texture3Dpt(tex,texc) texture(tex,texc)
+	#define texture2Dpt(tex,texc) texture(tex,texc)
+
 	#define texture3D texture
 	#define texture2D texture 
 	#define Texture3D sampler3D 

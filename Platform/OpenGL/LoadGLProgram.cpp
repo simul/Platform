@@ -176,7 +176,7 @@ namespace simul
 			if(first>=0)
 				pos				=src.find('\n',first)+1;
 			//src				=src.insert(pos,base::stringFormat("#line 1\r\n"));
-			src					=src.insert(pos,base::stringFormat("//#line 1 \"%s\"\r\n",filenameUtf8.c_str()));
+			src					=src.insert(pos,base::stringFormat("#line 1 \"%s\"\r\n",filenameUtf8.c_str()));
 			int next			=(int)src.find('\n',pos+1);
 			int line_number		=0;
 			while(next>=0)
@@ -200,7 +200,7 @@ namespace simul
 					std::string newsrc				=loadShaderSource(includeFilenameUtf8.c_str());
 					ProcessIncludes(newsrc,includeFilenameUtf8);
 					//First put the "restore" #line directive after the commented-out #include.
-					src=src.insert(eol,base::stringFormat("\r\n//#line %d \"%s\"\r\n",line_number,filenameUtf8.c_str()));
+					src=src.insert(eol,base::stringFormat("\r\n#line %d \"%s\"\r\n",line_number,filenameUtf8.c_str()));
 					//src=src.insert(eol,base::stringFormat("\r\n#line %d\r\n",line_number));
 					// Now insert the contents of the #include file before the closing #line directive.
 					src								=src.insert(eol,newsrc);
@@ -473,7 +473,7 @@ namespace simul
 			while(result==IDRETRY)
 			{
 				vertex_shader				=LoadShader(vert_filename,defines);
-				if(!vertex_shader)
+ 				if(!vertex_shader)
 				{
 					std::cerr<<vert_filename<<"(0): ERROR C1000: Shader failed to compile\n";
 		#ifdef _MSC_VER

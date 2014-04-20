@@ -11,6 +11,10 @@
 #pragma warning(disable:4251)
 namespace simul
 {
+	namespace crossplatform
+	{
+		struct DeviceContext;
+	}
 	namespace dx11
 	{
 		struct SIMUL_DIRECTX11_EXPORT TextureStruct
@@ -255,6 +259,11 @@ namespace simul
 				m_pD3DX11EffectConstantBuffer=NULL;
 			}
 			//! Apply the stored data using the given context, in preparation for rendering.
+			void Apply(simul::crossplatform::DeviceContext &deviceContext)
+			{
+				ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
+				Apply(pContext);
+			}
 			void Apply(ID3D11DeviceContext *pContext)
 			{
 				D3D11_MAPPED_SUBRESOURCE mapped_res;

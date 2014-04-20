@@ -92,7 +92,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 noise3DTexcoordScale;
 	uniform float rainEffect;
 	uniform vec3 cloudIrRadiance;
-	uniform float x5;
+	uniform float yz;
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
 	uniform vec2 rainBoundary;
@@ -115,5 +115,9 @@ uniform_buffer CloudShadowStruct
 	float shadowRange;
 	float rainbowIntensity;
 };
+#else
+//SIMUL_CONSTANT_BUFFER(OnscreenRectangle,9)
+	uniform vec4 rect;
+//SIMUL_CONSTANT_BUFFER_END
 #endif
 #endif

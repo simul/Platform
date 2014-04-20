@@ -248,8 +248,30 @@ void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,void
 {
 	glBindTexture(GL_TEXTURE_2D,(GLuint)tex);
 	glUseProgram(Utilities::GetSingleton().simple_program);
-	DrawQuad(x1,y1,dx,dy);
+	::DrawQuad(x1,y1,dx,dy);
 	glUseProgram(0);	
+}
+
+void RenderPlatform::DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *effect,void *technique)
+{
+	struct Viewport
+	{
+		int X,Y,Width,Height;
+	};
+	Viewport viewport;
+	glGetIntegerv(GL_VIEWPORT,(int*)(&viewport));
+	GLint program=(GLint)technique;
+	float r[]={2.f*(float)x1/(float)viewport.Width-1.f
+		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
+		,2.f*(float)dx/(float)viewport.Width
+		,2.f*(float)dy/(float)viewport.Height};
+	opengl::setVector4(program,"rect",r);
+	glBegin(GL_QUADS);
+	glVertex2f(0.0,1.0);
+	glVertex2f(1.0,1.0);
+	glVertex2f(1.0,0.0);
+	glVertex2f(0.0,0.0);
+	glEnd();
 }
 
 #ifndef GLUT_BITMAP_HELVETICA_12

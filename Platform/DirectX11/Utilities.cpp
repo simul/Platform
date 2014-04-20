@@ -812,17 +812,17 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *v
 
 void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pContext)
 {
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	m_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pContext->IASetInputLayout(NULL);
 	m_pContext->Draw(4,0);
 	m_pContext->IASetPrimitiveTopology(previousTopology);
 }			
 
-void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
 {
-	DrawQuad2(m_pContext
+	DrawQuad2(pContext
 		,2.f*(float)x1/(float)screen_width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)screen_height
 		,2.f*(float)dx/(float)screen_width
@@ -830,16 +830,16 @@ void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pContext,int x1,int y1,in
 		,eff,tech);
 }
 
-void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pContext,float x1,float y1,float dx,float dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
 {
 	HRESULT hr=S_OK;
 	setParameter(eff,"rect",x1,y1,dx,dy);
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(m_pContext,tech->GetPassByIndex(0));
-	m_pContext->Draw(4,0);
-	m_pContext->IASetPrimitiveTopology(previousTopology);
+	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	ApplyPass(pContext,tech->GetPassByIndex(0));
+	pContext->Draw(4,0);
+	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
 void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pContext

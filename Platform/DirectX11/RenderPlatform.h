@@ -40,6 +40,8 @@ namespace simul
 			void DrawCamera		(void *context,const double *pGlobalPosition, double pRoll);
 			void DrawLineLoop	(void *context,const double *mat,int num,const double *vertexArray,const float colr[4]);
 			void DrawTexture	(void *context,int x1,int y1,int dx,int dy,void *tex,float mult=1.f);
+			void DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *effect,void *technique);
+
 			void Print			(void *context,int x,int y	,const char *text);
 
 			void ApplyDefaultMaterial();

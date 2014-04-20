@@ -360,6 +360,27 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",NULL);
 }
 
+void RenderPlatform::DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *effect,void *technique)
+{
+	ID3D11DeviceContext *pContext	=(ID3D11DeviceContext *)context;
+	ID3DX11Effect		*eff		=(ID3DX11Effect	*)effect;
+	ID3DX11EffectTechnique *tech	=(ID3DX11EffectTechnique	*)technique;
+	unsigned int num_v=1;
+	D3D11_VIEWPORT viewport;
+	pContext->RSGetViewports(&num_v,&viewport);
+	float r[]={2.f*(float)x1/(float)viewport.Width-1.f
+		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
+		,2.f*(float)dx/(float)viewport.Width
+		,2.f*(float)dy/(float)viewport.Height};
+	setParameter(eff,"rect",r);
+	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	ApplyPass(pContext,tech->GetPassByIndex(0));
+	pContext->Draw(4,0);
+	pContext->IASetPrimitiveTopology(previousTopology);
+}
+
 void RenderPlatform::Print(void *context,int x,int y	,const char *text)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;

@@ -11,7 +11,8 @@
 #define DebugBreak() 
 #endif
 
-
+using namespace simul;
+using namespace opengl;
 std::stack<GLuint> FramebufferGL::fb_stack;
 
 FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageSamples)

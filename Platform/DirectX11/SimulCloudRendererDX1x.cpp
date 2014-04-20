@@ -60,10 +60,9 @@ PosTexVert_t *lightning_vertices=NULL;
 
 SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem) :
 	simul::clouds::BaseCloudRenderer(ck,mem)
-	,m_hTechniqueCrossSectionXZ(NULL)
-	,m_hTechniqueCrossSectionXY(NULL)
+	,m_pTechniqueCrossSection(NULL)
 	,m_pd3dDevice(NULL)
-	,m_pCloudEffect(NULL)
+	,effect(NULL)
 	,cloudPerViewConstantBuffer(NULL)
 	,layerConstantsBuffer(NULL)
 	,noise_texture(NULL)
@@ -242,7 +241,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(computeConstantBuffer);
 	SAFE_RELEASE(cloudPerViewConstantBuffer);
 	SAFE_RELEASE(layerConstantsBuffer);
-	SAFE_RELEASE(m_pCloudEffect);
+	SAFE_RELEASE(effect);
 	for(int i=0;i<3;i++)
 	{
 		cloud_textures[i].release();
@@ -536,32 +535,31 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 		defines["REVERSE_DEPTH"]="1";
 	if(UseLightTables)
 		defines["USE_LIGHT_TABLES"]="1";
-	HRESULT hr=CreateEffect(m_pd3dDevice,&m_pCloudEffect,"simul_clouds.fx",defines);
+	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_clouds.fx",defines);
 	if(cloudKeyframer->GetUse3DNoise())
-		m_hTechniqueCloud			=m_pCloudEffect->GetTechniqueByName("simul_clouds_3d_noise");
+		m_hTechniqueCloud			=effect->GetTechniqueByName("simul_clouds_3d_noise");
 	else
-		m_hTechniqueCloud			=m_pCloudEffect->GetTechniqueByName("simul_clouds");
-	m_hTechniqueRaytraceForward		=m_pCloudEffect->GetTechniqueByName("simul_raytrace_forward");
-	m_hTechniqueRaytraceNearPass	=m_pCloudEffect->GetTechniqueByName("raytrace_near_pass");
-	m_hTechniqueSimpleRaytrace		=m_pCloudEffect->GetTechniqueByName("simul_simple_raytrace");
-	m_hTechniqueRaytrace3DNoise		=m_pCloudEffect->GetTechniqueByName("simul_raytrace_3d_noise");
-	m_hTechniqueCloudsAndLightning	=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
+		m_hTechniqueCloud			=effect->GetTechniqueByName("simul_clouds");
+	m_hTechniqueRaytraceForward		=effect->GetTechniqueByName("simul_raytrace_forward");
+	m_hTechniqueRaytraceNearPass	=effect->GetTechniqueByName("raytrace_near_pass");
+	m_hTechniqueSimpleRaytrace		=effect->GetTechniqueByName("simul_simple_raytrace");
+	m_hTechniqueRaytrace3DNoise		=effect->GetTechniqueByName("simul_raytrace_3d_noise");
+	m_hTechniqueCloudsAndLightning	=effect->GetTechniqueByName("simul_clouds_and_lightning");
 
-	m_hTechniqueCrossSectionXY		=m_pCloudEffect->GetTechniqueByName("cross_section_xy");
-	m_hTechniqueCrossSectionXZ		=m_pCloudEffect->GetTechniqueByName("cross_section_xz");
+	m_pTechniqueCrossSection		=effect->GetTechniqueByName("cross_section");
 
-	cloudDensity					=m_pCloudEffect->GetVariableByName("cloudDensity")->AsShaderResource();
-	cloudDensity1					=m_pCloudEffect->GetVariableByName("cloudDensity1")->AsShaderResource();
-	cloudDensity2					=m_pCloudEffect->GetVariableByName("cloudDensity2")->AsShaderResource();
-	noiseTexture					=m_pCloudEffect->GetVariableByName("noiseTexture")->AsShaderResource();
-	noiseTexture3D					=m_pCloudEffect->GetVariableByName("noiseTexture3D")->AsShaderResource();
-	lightningIlluminationTexture	=m_pCloudEffect->GetVariableByName("lightningIlluminationTexture")->AsShaderResource();
-	skyLossTexture					=m_pCloudEffect->GetVariableByName("lossTexture")->AsShaderResource();
-	skyInscatterTexture				=m_pCloudEffect->GetVariableByName("inscTexture")->AsShaderResource();
-	skylightTexture					=m_pCloudEffect->GetVariableByName("skylTexture")->AsShaderResource();
-	depthTexture					=m_pCloudEffect->GetVariableByName("depthTexture")->AsShaderResource();
-	lightTableTexture				=m_pCloudEffect->GetVariableByName("lightTableTexture")->AsShaderResource();
-	cloudConstants.LinkToEffect(m_pCloudEffect,"CloudConstants");
+	cloudDensity					=effect->GetVariableByName("cloudDensity")->AsShaderResource();
+	cloudDensity1					=effect->GetVariableByName("cloudDensity1")->AsShaderResource();
+	cloudDensity2					=effect->GetVariableByName("cloudDensity2")->AsShaderResource();
+	noiseTexture					=effect->GetVariableByName("noiseTexture")->AsShaderResource();
+	noiseTexture3D					=effect->GetVariableByName("noiseTexture3D")->AsShaderResource();
+	lightningIlluminationTexture	=effect->GetVariableByName("lightningIlluminationTexture")->AsShaderResource();
+	skyLossTexture					=effect->GetVariableByName("lossTexture")->AsShaderResource();
+	skyInscatterTexture				=effect->GetVariableByName("inscTexture")->AsShaderResource();
+	skylightTexture					=effect->GetVariableByName("skylTexture")->AsShaderResource();
+	depthTexture					=effect->GetVariableByName("depthTexture")->AsShaderResource();
+	lightTableTexture				=effect->GetVariableByName("lightTableTexture")->AsShaderResource();
+	cloudConstants.LinkToEffect(effect,"CloudConstants");
 	return true;
 }
 
@@ -607,13 +605,13 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
     SIMUL_COMBINED_PROFILE_START(context,"RenderCloudShadow")
-	ID3DX11EffectTechnique *tech	=m_pCloudEffect->GetTechniqueByName("cloud_shadow");
+	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName("cloud_shadow");
 	cloudConstants.Apply(pContext);
 	// per view:
 	CloudPerViewConstants cloudPerViewConstants;
 	SetCloudShadowPerViewConstants(cloudPerViewConstants);
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
-	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=m_pCloudEffect->GetConstantBufferByName("CloudPerViewConstants");
+	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=effect->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
 		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
 
@@ -621,9 +619,9 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	cloudDensity2->SetResource(cloud_textures[(texture_cycle+1)%3].shaderResourceView);
 	
 	if(GetCloudInterface()->GetWrap())
-		simul::dx11::setSamplerState(m_pCloudEffect,"cloudSamplerState",m_pWrapSamplerState);
+		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pWrapSamplerState);
 	else
-		simul::dx11::setSamplerState(m_pCloudEffect,"cloudSamplerState",m_pClampSamplerState);
+		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pClampSamplerState);
 
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	shadow_fb.Activate(pContext);
@@ -632,25 +630,25 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
     SIMUL_COMBINED_PROFILE_END(context)
     SIMUL_COMBINED_PROFILE_START(context,"GodraysAccumulation")
 	{
-		tech	=m_pCloudEffect->GetTechniqueByName("godrays_accumulation");
-		simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
-		simul::dx11::setUnorderedAccessView(m_pCloudEffect,"targetTexture1",godrays_texture.unorderedAccessView);
+		tech	=effect->GetTechniqueByName("godrays_accumulation");
+		simul::dx11::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
+		simul::dx11::setUnorderedAccessView(effect,"targetTexture1",godrays_texture.unorderedAccessView);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
 		pContext->Dispatch(godrays_texture.width,1,1);
-		simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",NULL);
-		simul::dx11::setUnorderedAccessView(m_pCloudEffect,"targetTexture1",NULL);
+		simul::dx11::setTexture(effect,"cloudShadowTexture",NULL);
+		simul::dx11::setUnorderedAccessView(effect,"targetTexture1",NULL);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
 	}
     SIMUL_COMBINED_PROFILE_END(context)
     SIMUL_COMBINED_PROFILE_START(context,"MoistureAccumulation")
-	tech	=m_pCloudEffect->GetTechniqueByName("moisture_accumulation");
-	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
+	tech	=effect->GetTechniqueByName("moisture_accumulation");
+	simul::dx11::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	moisture_fb.Activate(pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	moisture_fb.Deactivate(pContext);
 	
-	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",NULL);
+	simul::dx11::setTexture(effect,"cloudShadowTexture",NULL);
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
@@ -705,18 +703,18 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 	depthTexture		->SetResource(depthTexture_SRV);
 	lightTableTexture	->SetResource(lightTableTexture_SRV);
 
-	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"		,noiseTextureResource);
-	simul::dx11::setTexture(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);
+	simul::dx11::setTexture(effect,"noiseTexture"		,noiseTextureResource);
+	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
 	
 	if(GetCloudInterface()->GetWrap())
-		simul::dx11::setSamplerState(m_pCloudEffect,"cloudSamplerState",m_pWrapSamplerState);
+		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pWrapSamplerState);
 	else
-		simul::dx11::setSamplerState(m_pCloudEffect,"cloudSamplerState",m_pClampSamplerState);
+		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pClampSamplerState);
 
 	CloudPerViewConstants cloudPerViewConstants;
 	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewport_id,viewportTextureRegionXYWH);
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
-	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=m_pCloudEffect->GetConstantBufferByName("CloudPerViewConstants");
+	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=effect->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
 		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
 	
@@ -753,7 +751,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 		numInstances=1;
 
 	UPDATE_CONSTANT_BUFFER(pContext,layerConstantsBuffer,LayerConstants,layerConstants)
-	ID3DX11EffectConstantBuffer* cbLayerConstants=m_pCloudEffect->GetConstantBufferByName("LayerConstants");
+	ID3DX11EffectConstantBuffer* cbLayerConstants=effect->GetConstantBufferByName("LayerConstants");
 	if(cbLayerConstants)
 		cbLayerConstants->SetConstantBuffer(layerConstantsBuffer);
 	if(cloudKeyframer->GetUse3DNoise())
@@ -790,7 +788,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 	skylightTexture->SetResource((ID3D11ShaderResourceView*)NULL);
 	depthTexture->SetResource((ID3D11ShaderResourceView*)NULL);
 	lightTableTexture	->SetResource((ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture(m_pCloudEffect,"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture(effect,"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
 // To prevent BIZARRE DX11 warning, we re-apply the pass with the textures unbound:
 	ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
 	return (hr==S_OK);
@@ -819,10 +817,10 @@ void SimulCloudRendererDX1x::DrawLines(void *context,VertexXyzRgba *vertices,int
 	simul::dx11::UtilityRenderer::DrawLines(pContext,vertices,vertex_count,strip);
 }
 
-void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &context,int x0,int y0,int width,int height)
+void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
-	ID3D11DeviceContext *pContext=context.asD3D11DeviceContext();
-	HRESULT hr=S_OK;
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+
 	static int u=4;
 	int w=(width-8)/u;
 	if(w>height/3)
@@ -832,7 +830,6 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &c
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
-	D3DXVECTOR4 cross_section_offset(0,0,0,0);
 	if(skyInterface)
 	for(int i=0;i<3;i++)
 	{
@@ -842,18 +839,22 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &c
 		if(!kf)
 			break;
 		h=(int)(kf->cloud_height_km*1000.f/GetCloudInterface()->GetCloudWidth()*(float)w);
-		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
-		cloudConstants.lightResponse=light_response;
-		cloudConstants.crossSectionOffset=vec3(0.5f,0.5f,0.f);
-		cloudConstants.Apply(pContext);
+		sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 		cloudDensity1->SetResource(cloud_textures[(i+texture_cycle)%3].shaderResourceView);
-		context.renderPlatform->DrawQuad(context.renderPlatform,*(w+1)+4	,4		,w,h
-		UtilityRenderer::DrawQuad2(pContext	,i*(w+1)+4	,4		,w,h	,m_pCloudEffect	,m_hTechniqueCrossSectionXZ);
-		UtilityRenderer::DrawQuad2(pContext	,i*(w+1)+4	,h+8	,w,w	,m_pCloudEffect	,m_hTechniqueCrossSectionXY);
+		dx11::setTexture(effect,"cloudDensity",cloud_textures[(i+texture_cycle)%3].shaderResourceView);
+
+		cloudConstants.lightResponse		=light_response;
+		cloudConstants.crossSectionOffset	=vec3(0.5f,0.5f,0.f);
+		cloudConstants.yz					=0.f;
+		cloudConstants.Apply(pContext);
+		deviceContext.renderPlatform->DrawQuad(deviceContext.platform_context,x0+i*(w+1)+4,y0+4,w,h,effect,m_pTechniqueCrossSection);
+		cloudConstants.yz					=1.f;
+		cloudConstants.Apply(pContext);
+		deviceContext.renderPlatform->DrawQuad(deviceContext.platform_context,x0+i*(w+1)+4,y0+h+8,w,w,effect,m_pTechniqueCrossSection);
 	}
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);
-	ApplyPass(pContext,m_pCloudEffect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
+	ApplyPass(pContext,effect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
 }
 
 void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
@@ -869,13 +870,12 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::Devic
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
-	D3DXVECTOR4 cross_section_offset(0,0,0,0);
-	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",noiseTextureResource);
-	UtilityRenderer::DrawQuad2(pContext	,width-w,height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
+	simul::dx11::setTexture(effect,"noiseTexture",noiseTextureResource);
+	UtilityRenderer::DrawQuad2(pContext	,width-w,height-(w+8),w,w,effect,effect->GetTechniqueByName("show_noise"));
 	deviceContext.renderPlatform->Print(pContext		,width-w,height-(w+8)	,"2D Noise");
-	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
-	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_texture.shaderResourceView);
-	UtilityRenderer::DrawQuad2(pContext	,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
+	simul::dx11::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
+	simul::dx11::setTexture(effect,"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_texture.shaderResourceView);
+	UtilityRenderer::DrawQuad2(pContext	,width-(w+8)-(w+8),height-(w+8),w,w,effect,effect->GetTechniqueByName("show_shadow"));
 	deviceContext.renderPlatform->Print(pContext		,width-(w+8)-(w+8),height-(w+8)	,"shadow texture");
 
 	renderPlatformDx11.DrawTexture(pContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,godrays_texture.shaderResourceView);
@@ -884,10 +884,10 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::Devic
 	renderPlatformDx11.DrawTexture(pContext	,width-2*w,height-(w+8)-w	,w*2,w/2	,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex());
 	deviceContext.renderPlatform->Print(pContext			,width-2*w,height-(w+8)-w	,"moisture framebuffer");
 
-	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"		,(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture"	,(ID3D11ShaderResourceView*)NULL);
-	ApplyPass(pContext,m_pCloudEffect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
+	simul::dx11::setTexture(effect,"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture(effect,"cloudShadowTexture"		,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture(effect,"cloudGodraysTexture"	,(ID3D11ShaderResourceView*)NULL);
+	ApplyPass(pContext,effect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
 }
 
 bool SimulCloudRendererDX1x::RenderLightning(void *context,int viewport_id)
