@@ -847,6 +847,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &c
 		cloudConstants.crossSectionOffset=vec3(0.5f,0.5f,0.f);
 		cloudConstants.Apply(pContext);
 		cloudDensity1->SetResource(cloud_textures[(i+texture_cycle)%3].shaderResourceView);
+		context.renderPlatform->DrawQuad(context.renderPlatform,*(w+1)+4	,4		,w,h
 		UtilityRenderer::DrawQuad2(pContext	,i*(w+1)+4	,4		,w,h	,m_pCloudEffect	,m_hTechniqueCrossSectionXZ);
 		UtilityRenderer::DrawQuad2(pContext	,i*(w+1)+4	,h+8	,w,w	,m_pCloudEffect	,m_hTechniqueCrossSectionXY);
 	}

@@ -84,6 +84,7 @@ extern void setParameter3(GLuint program,const char *name,const simul::sky::floa
 extern void setMatrix(GLuint program,const char *name,const float *value);
 extern void setMatrixTranspose(GLuint program,const char *name,const float *value);
 extern void setTexture(GLuint program,const char *name,int texture_number,GLuint texture);
+extern void set3DTexture(GLuint program,const char *name,int texture_number,GLuint texture);
 
 extern void setParameter(GLint,int value);
 extern void setParameter(GLint,float value);

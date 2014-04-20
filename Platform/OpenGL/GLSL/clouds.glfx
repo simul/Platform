@@ -6,26 +6,21 @@ struct VSinput
 };
 
 uniform mat4 gWVP;
-
-
-shader VSmain(in VSinput VSin, out vec2 TexCoord)
-{
-    gl_Position = gWVP * vec4(VSin.Position, 1.0);
-    TexCoord = VSin.TexCoord;
-}
-
-
 uniform sampler2D gColorMap;
 
-
-shader FSmain(in vec2 TexCoord, out vec4 FragColor)
+shader VSmain(in VSinput VSin, out vec2 texCoords)
 {
-     FragColor = texture(gColorMap, TexCoord);
+    gl_Position	= gWVP * vec4(VSin.Position, 1.0);
+    texCoords	= VSin.TexCoord;
 }
 
-
-program SimpleTechnique
+shader FSmain(in vec2 texCoords, out vec4 FragColor)
 {
-    vs(410) = VSmain();
-    fs(410) = FSmain();
+     FragColor = texture(gColorMap, texCoords);
+}
+
+program cross_section
+{
+    vs(140) = VSmain();
+    fs(140) = FSmain();
 };

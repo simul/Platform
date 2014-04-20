@@ -169,36 +169,42 @@ namespace simul
 		}
 		void ProcessIncludes(std::string &src,std::string &filenameUtf8)
 		{
-			size_t pos=0;
-			src=src.insert(0,base::stringFormat("#line 0 \"%s\"\r\n",filenameUtf8.c_str()));
-
-			int next=(int)src.find('\n',pos+1);
-			int line_number=0;
+			size_t pos			=0;
+			// problem: if we insert this at line 0, SOME Glsl compilers will moan about #version not being the first line.
+			//src					=src.insert(0,base::stringFormat("#line 1 \"%s\"\r\n",filenameUtf8.c_str()));
+			int first			=(int)src.find("#version");
+			if(first>=0)
+				pos				=src.find('\n',first)+1;
+			//src				=src.insert(pos,base::stringFormat("#line 1\r\n"));
+			src					=src.insert(pos,base::stringFormat("//#line 1 \"%s\"\r\n",filenameUtf8.c_str()));
+			int next			=(int)src.find('\n',pos+1);
+			int line_number		=0;
 			while(next>=0)
 			{
-				std::string line=src.substr(pos+1,next-pos);
-				int inc=line.find("#include");
+				std::string line				=src.substr(pos+1,next-pos);
+				int inc							=line.find("#include");
 				if(inc==0)
 				{
-					int start_of_line=(int)pos+1;
+					int start_of_line			=(int)pos+1;
 					pos+=9;
-					int n=(int)src.find("\n",pos+1);
-					int r=(int)src.find("\r",pos+1);
-					int eol=n;
+					int n						=(int)src.find("\n",pos+1);
+					int r						=(int)src.find("\r",pos+1);
+					int eol						=n;
 					if(r>=0&&r<n)
-						eol=r;
-					std::string include_file=line.substr(10,line.length()-13);
-					src=src.insert(start_of_line,"//");
+						eol						=r;
+					std::string include_file	=line.substr(10,line.length()-13);
+					src							=src.insert(start_of_line,"//");
 					// Go to after the newline at the end of the #include statement. Two for "//" and two for "\r\n"
-					eol+=4;
+					eol							+=4;
 					std::string includeFilenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(include_file.c_str(),shaderPathsUtf8);
-					std::string newsrc=loadShaderSource(includeFilenameUtf8.c_str());
+					std::string newsrc				=loadShaderSource(includeFilenameUtf8.c_str());
 					ProcessIncludes(newsrc,includeFilenameUtf8);
 					//First put the "restore" #line directive after the commented-out #include.
-					src=src.insert(eol,base::stringFormat("\r\n#line %d \"%s\"\r\n",line_number,filenameUtf8.c_str()));
+					src=src.insert(eol,base::stringFormat("\r\n//#line %d \"%s\"\r\n",line_number,filenameUtf8.c_str()));
+					//src=src.insert(eol,base::stringFormat("\r\n#line %d\r\n",line_number));
 					// Now insert the contents of the #include file before the closing #line directive.
-					src=src.insert(eol,newsrc);
-					next+=newsrc.length();
+					src								=src.insert(eol,newsrc);
+					next							+=newsrc.length();
 					line_number--;
 				}
 				else
@@ -460,21 +466,20 @@ namespace simul
 
 		GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const map<string,string> &defines)
 		{
-			GL_ERROR_CHECK
 			GLuint prog						=glCreateProgram();
-			int result=IDRETRY;
-			GLuint vertex_shader=0;
+			int result						=IDRETRY;
+			GLuint vertex_shader			=0;
 			GL_ERROR_CHECK
 			while(result==IDRETRY)
 			{
-				vertex_shader			=LoadShader(vert_filename,defines);
+				vertex_shader				=LoadShader(vert_filename,defines);
 				if(!vertex_shader)
 				{
 					std::cerr<<vert_filename<<"(0): ERROR C1000: Shader failed to compile\n";
 		#ifdef _MSC_VER
-					std::string msg_text=vert_filename;
-					msg_text+=" failed to compile. Edit shader and try again?";
-					result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
+					std::string msg_text	=vert_filename;
+					msg_text				+=" failed to compile. Edit shader and try again?";
+					result					=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
 					DebugBreak();
 		#else
 					break;

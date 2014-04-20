@@ -100,7 +100,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,sim
 	,current_program(0)
 	,cross_section_program(0)
 	,cloud_shadow_program(0)
-	,effect(0)
+//	,effect(0)
 {
 	for(int i=0;i<3;i++)
 	{
@@ -638,17 +638,20 @@ GL_ERROR_CHECK
 	edge_noise_prog				=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
 
 	cross_section_program		=MakeProgram("simul_cloud_cross_section");
-	
+/*	
 	glfxDeleteEffect(effect);
 	effect						=opengl::CreateEffect("clouds.glfx",defines);
-	cross_section_program		=glfxCompileProgram(effect, "cross_section");
-	
-	if (!cross_section_program)
+	if(effect>=0)
 	{
-   		std::string log = glfxGetEffectLog(effect);
-   		std::cerr << "Error parsing effect: " << log << std::endl;
-	}
-	
+		GLuint p				=glfxCompileProgram(effect, "cross_section");
+		if (!p)
+		{
+   			std::string log		= glfxGetEffectLog(effect);
+   			std::cerr << "Error parsing effect: " << log << std::endl;
+		}
+		else
+			cross_section_program=p;
+	}*/
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
 	cloudConstants.LinkToProgram(cross_section_program,"CloudConstants",2);
@@ -718,7 +721,7 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	init=false;
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	
-	glfxDeleteEffect(effect);
+	//glfxDeleteEffect(effect);
 	SAFE_DELETE_TEXTURE(noise_tex);
 	SAFE_DELETE_PROGRAM(cross_section_program);
 
@@ -928,30 +931,23 @@ void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &con
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
-	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
-	//GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
 	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
-	//GLint crossSectionOffset	= glGetUniformLocation(cross_section_program,"crossSectionOffset");
-    glDisable(GL_BLEND);
+	glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
 	glUseProgram(cross_section_program);
-	glUniform1i(cloudDensity1_param,0);
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
-				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
+			static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+			cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;
+		h=(int)(kf->cloud_height_km*1000.f/GetCloudInterface()->GetCloudWidth()*(float)w);
 		simul::sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+i)%3].tex);
-		//setTexture(cross_section_program,"cloud_density",0,cloud_textures[(texture_cycle+i)%3].tex);
-		//glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
-		//glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
+		set3DTexture(cross_section_program,"cloud_density",0,cloud_textures[(texture_cycle+i)%3].tex);
 		glUniform1f(yz_param,0.f);
 		cloudConstants.lightResponse=light_response;
 		cloudConstants.crossSectionOffset=vec3(0.5f,0.5f,0.f);

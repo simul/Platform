@@ -604,6 +604,20 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
+extern void set3DTexture(GLuint program,const char *name,int texture_number,GLuint texture)
+{
+    glActiveTexture(GL_TEXTURE0+texture_number);
+	glBindTexture(GL_TEXTURE_3D,texture);
+GL_ERROR_CHECK
+	GLint loc	=glGetUniformLocation(program,name);
+GL_ERROR_CHECK
+	if(loc<=0)
+		std::cout<<"Warning: 3D texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	else
+		glUniform1i(loc,texture_number);
+GL_ERROR_CHECK
+}
+
 void setParameter(GLint loc,int value)
 {
 	glUniform1i(loc,value);
