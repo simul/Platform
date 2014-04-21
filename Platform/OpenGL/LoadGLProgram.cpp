@@ -157,70 +157,62 @@ namespace simul
 			}
 			std::string str((const char*)shader_source);
 			simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(shader_source);
-			int pos=(int)str.find("\n");
-			while(pos>=0)
-			{
-				if(pos>0&&str[pos-1]!='\r')
-				{
-					str.replace(pos,1,"\r\n");
-					pos++;
-				}
-				pos=(int)str.find("\n",pos+1);
-			}
+			// Change Windows-style CR-LF's to simple Unix-style LF's
+			base::find_and_replace( str,"\r\n","\n");
+			// Convert any left-over CR's into LF's
+			base::find_and_replace( str,"\r","\n");
 			return str;
 		}
-		void ProcessIncludes(std::string &src,std::string &filenameUtf8,bool line_source_filenames,vector<string> &sourceFilesUtf8)
+		void ProcessIncludes(string &src,string &filenameUtf8,bool line_source_filenames,vector<string> &sourceFilesUtf8)
 		{
 			size_t pos			=0;
 			// problem: if we insert this at line 0, SOME Glsl compilers will moan about #version not being the first line.
-			//src					=src.insert(0,base::stringFormat("#line 1 \"%s\"\r\n",filenameUtf8.c_str()));
+			//src					=src.insert(0,base::stringFormat("#line 1 \"%s\"\n",filenameUtf8.c_str()));
+
+			// instead we find '#version' and insert after that.
 			int first			=(int)src.find("#version");
 			if(first>=0)
 				pos				=src.find('\n',first)+1;
-			//src				=src.insert(pos,base::stringFormat("#line 1\r\n"));
-			
-			int index			=std::find(sourceFilesUtf8.begin(), sourceFilesUtf8.end(), filenameUtf8)-sourceFilesUtf8.begin();
+			// Is this file in the source list?
+			int index			=(int)(find(sourceFilesUtf8.begin(), sourceFilesUtf8.end(), filenameUtf8)-sourceFilesUtf8.begin());
 			// And SOME Glsl compilers will give a syntax error
 			// when you provide a source filename with the #line directive, as it's not in the GLSL spec:
 			if(line_source_filenames)
-				src				=src.insert(pos,base::stringFormat("#line 1 \"%s\"\r\n",filenameUtf8.c_str()));
+				src				=src.insert(pos,base::stringFormat("#line 1 \"%s\"\n",filenameUtf8.c_str()));
 			else
 			{
 				if(index==sourceFilesUtf8.size())
 					sourceFilesUtf8.push_back(filenameUtf8);
-				src				=src.insert(pos,base::stringFormat("#line 1 %d\r\n",index));
+				src				=src.insert(pos,base::stringFormat("#line 1 %d\n",index));
 			}
+			pos					=src.find('\n',pos+1);
 			int next			=(int)src.find('\n',pos+1);
 			int line_number		=0;
 			while(next>=0)
 			{
-				std::string line				=src.substr(pos+1,next-pos);
-				int inc							=line.find("#include");
+				string line						=src.substr(pos+1,next-pos);
+				int inc							=(int)line.find("#include");
 				if(inc==0)
 				{
 					int start_of_line			=(int)pos+1;
 					pos+=9;
-					int n						=(int)src.find("\n",pos+1);
-					int r						=(int)src.find("\r",pos+1);
-					int eol						=n;
-					if(r>=0&&r<n)
-						eol						=r;
-					std::string include_file	=line.substr(10,line.length()-13);
+					int eol						=(int)src.find("\n",pos+1);
+					string include_file			=line.substr(10,line.length()-12);
 					src							=src.insert(start_of_line,"//");
-					// Go to after the newline at the end of the #include statement. Two for "//" and two for "\r\n"
-					eol							+=4;
-					std::string includeFilenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(include_file.c_str(),shaderPathsUtf8);
-					std::string newsrc				=loadShaderSource(includeFilenameUtf8.c_str());
+					// Go to after the newline at the end of the #include statement. Two for "//" and one for "\n"
+					eol							+=3;
+					string includeFilenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(include_file.c_str(),shaderPathsUtf8);
+					string newsrc				=loadShaderSource(includeFilenameUtf8.c_str());
 					ProcessIncludes(newsrc,includeFilenameUtf8,line_source_filenames,sourceFilesUtf8);
 					
 					//First put the "restore" #line directive after the commented-out #include.
 					if(line_source_filenames)
-						src=src.insert(eol,base::stringFormat("\r\n#line %d \"%s\"\r\n",line_number,filenameUtf8.c_str()));
+						src=src.insert(eol,base::stringFormat("\n#line %d \"%s\"\n",line_number,filenameUtf8.c_str()));
 					else
-						src=src.insert(eol,base::stringFormat("\r\n#line %d %d\r\n",line_number,index));
+						src=src.insert(eol,base::stringFormat("\n#line %d %d\n",line_number,index));
 					// Now insert the contents of the #include file before the closing #line directive.
 					src								=src.insert(eol,newsrc);
-					next							+=newsrc.length();
+					next							+=(int)newsrc.length();
 					line_number--;
 				}
 				else
@@ -272,7 +264,8 @@ namespace simul
 				third_colon-=numberstart+numberlen;
 				err_msg.replace(0,1,"(");
 				const char *err_warn	=is_error?"error":"warning";
-				err_msg.replace(third_colon,1,base::stringFormat("): %s G1000: ",err_warn).c_str());
+				if(third_colon>=0)
+					err_msg.replace(third_colon,1,base::stringFormat("): %s C7555: ",err_warn).c_str());
 #if 0
 				int at_pos=(int)err_msg.find("0(");
 				while(at_pos>=0)
@@ -374,7 +367,7 @@ namespace simul
 				def+=i->second;
 				def+="\r\n";
 				src=src.insert(start_of_line,def);
-				int start_line=GetLineNumber(src,start_of_line);
+//				int start_line=(int)GetLineNumber(src,start_of_line);
 				//filenameChart.add("defines",start_line,def);
 			}
 			int lenOfStrings[MAX_STRINGS];
