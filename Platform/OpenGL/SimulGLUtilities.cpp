@@ -287,7 +287,7 @@ void simul::opengl::DrawFullScreenQuad()
 	DrawQuad(0.f,0.f,1.f,1.f);
 }
 
-float GetFramerate()
+float simul::opengl::GetFramerate()
 {
 	static float framerate=0.f;
 #if 1

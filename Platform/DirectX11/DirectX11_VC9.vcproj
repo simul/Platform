@@ -373,7 +373,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Light.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\LightningRenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Material.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Mesh.cpp"
 				>
 			</File>
 			<File
@@ -390,6 +402,10 @@
 			</File>
 			<File
 				RelativePath=".\Profiler.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\RenderPlatform.cpp"
 				>
 			</File>
 			<File
@@ -430,6 +446,10 @@
 			</File>
 			<File
 				RelativePath=".\TextRenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Texture.cpp"
 				>
 			</File>
 			<File
@@ -495,11 +515,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Light.h"
+				>
+			</File>
+			<File
 				RelativePath=".\LightningRenderer.h"
 				>
 			</File>
 			<File
 				RelativePath=".\MacrosDx1x.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Material.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Mesh.h"
 				>
 			</File>
 			<File
@@ -516,6 +548,10 @@
 			</File>
 			<File
 				RelativePath=".\Profiler.h"
+				>
+			</File>
+			<File
+				RelativePath=".\RenderPlatform.h"
 				>
 			</File>
 			<File
@@ -564,6 +600,10 @@
 			</File>
 			<File
 				RelativePath=".\TextRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Texture.h"
 				>
 			</File>
 			<File

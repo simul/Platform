@@ -16,7 +16,9 @@
 #endif
 
 #include <GL/glew.h>
+#ifdef USE_GLFX
 #include <GL/glfx.h>
+#endif
 #include "Simul/Base/Timer.h"
 #include <stdio.h>
 #include <stdlib.h>
