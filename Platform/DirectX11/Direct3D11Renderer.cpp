@@ -100,6 +100,7 @@ D3D_FEATURE_LEVEL Direct3D11Renderer::GetMinimumFeatureLevel() const
 
 MixedResolutionRenderer::MixedResolutionRenderer()
 		:mixedResolutionEffect(NULL)
+		,m_pd3dDevice(NULL)
 {
 }
 MixedResolutionRenderer::~MixedResolutionRenderer()
@@ -122,6 +123,8 @@ void MixedResolutionRenderer::InvalidateDeviceObjects()
 void MixedResolutionRenderer::RecompileShaders(const std::map<std::string,std::string> &defines)
 {
 	SAFE_RELEASE(mixedResolutionEffect);
+	if(!m_pd3dDevice)
+		return;
 	HRESULT hr=CreateEffect(m_pd3dDevice,&mixedResolutionEffect,"mixed_resolution.fx",defines);
 	mixedResolutionConstants.LinkToEffect(mixedResolutionEffect,"MixedResolutionConstants");
 }

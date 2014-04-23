@@ -56,6 +56,8 @@ void RenderPlatform::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	SAFE_RELEASE(effect);
+	if(!device)
+		return;
 	CreateEffect(device,&effect,"solid.fx",defines);
 	solidConstants.LinkToEffect(effect,"SolidConstants");
 	//solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
