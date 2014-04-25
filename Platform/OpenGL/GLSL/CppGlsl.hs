@@ -1,7 +1,7 @@
 #ifndef GLSL_H
 #define GLSL_H
 
-#include "../../CrossPlatform/CppSl.hs"
+#include "../../CrossPlatform/SL/CppSl.hs"
 // These definitions translate the HLSL terms cbuffer and R0 for GLSL or C++
 #define SIMUL_BUFFER_REGISTER(buff_num)
 #define SIMUL_SAMPLER_REGISTER(buff_num)

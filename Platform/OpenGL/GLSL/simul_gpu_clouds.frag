@@ -3,7 +3,7 @@
 uniform sampler3D volumeNoiseTexture;
 uniform sampler2D input_light_texture;
 uniform sampler3D density_texture;
-#include "../../CrossPlatform/simul_gpu_clouds.sl"
+#include "../../CrossPlatform/SL/simul_gpu_clouds.sl"
 
 varying vec2 texCoords;
 

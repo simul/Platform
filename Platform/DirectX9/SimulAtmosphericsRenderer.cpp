@@ -1,5 +1,5 @@
 #define NOMINMAX
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -189,24 +189,19 @@ void SimulAtmosphericsRenderer::SetCloudProperties(void* c1,void* c2,
 }
 
 void SimulAtmosphericsRenderer::SetLightningProperties(	void *tex,
-		simul::clouds::LightningRenderInterface *lri)
+		const simul::clouds::LightningProperties &prop)
 {
-	if(!lri)
-		return;
 	lightning_illumination_texture=(LPDIRECT3DBASETEXTURE9)tex;
 	for(int i=0;i<4;i++)
 	{
-		if(i<(int)lri->GetNumLightSources())
-			(lightning_multipliers.operator float *())[i]=lri->GetLightSourceBrightness(0.f);
-		else
-			(lightning_multipliers.operator float *())[i]=0;
+		(lightning_multipliers.operator float *())[i]=0;
 	}
-	illumination_scales=lri->GetIlluminationScales();
-	illumination_scales.x=1.f/illumination_scales.x;
-	illumination_scales.y=1.f/illumination_scales.y;
-	illumination_scales.z=1.f/illumination_scales.z;
-	illumination_offset=lri->GetIlluminationOrigin();
-	lightning_colour=lri->GetLightningColour();
+	illumination_scales		=prop.illuminationScales;
+	illumination_scales.x	=1.f/illumination_scales.x;
+	illumination_scales.y	=1.f/illumination_scales.y;
+	illumination_scales.z	=1.f/illumination_scales.z;
+	illumination_offset		=prop.illuminationOrigin;
+	lightning_colour		=prop.colour;
 }
 
 bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
@@ -357,9 +352,9 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *,const void *depth_texture
 	// Instead of atmosphericsPerViewConstants.Apply(pContext), we do this:
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,invViewProj);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,invShadowMatrix);
-	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,shadowMatrix);
+//	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,//shadowMatrix);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewportToTexRegionScaleBias);
-	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewPosition);
+//	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewPosition);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,exposure);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,tanHalfFov);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,nearZ);

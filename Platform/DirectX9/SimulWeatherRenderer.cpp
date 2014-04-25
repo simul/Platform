@@ -1,5 +1,5 @@
 #define NOMINMAX
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -222,8 +222,7 @@ bool SimulWeatherRenderer::Restore3DCloudObjects()
 		}
 		if(simulPrecipitationRenderer)
 			simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice);
-		if(simulLightningRenderer)
-			simulLightningRenderer->RestoreDeviceObjects(m_pd3dDevice);
+		
 	}
 	return (hr==S_OK);
 }
@@ -277,8 +276,6 @@ void SimulWeatherRenderer::InvalidateDeviceObjects()
 		simulPrecipitationRenderer->InvalidateDeviceObjects();
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
-	if(simulLightningRenderer)
-		simulLightningRenderer->InvalidateDeviceObjects();
 	if(m_pBufferToScreenEffect)
         hr=m_pBufferToScreenEffect->OnLostDevice();
 	SAFE_RELEASE(m_pBufferToScreenEffect);
@@ -359,8 +356,6 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context
 
 void SimulWeatherRenderer::RenderLightning(void *context,int /*view_id*/)
 {
-	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		return simulLightningRenderer->Render(context);
 }
 
 void SimulWeatherRenderer::RenderPrecipitation(void *context)
@@ -451,7 +446,7 @@ void SimulWeatherRenderer::PreRenderUpdate(void *context,float dt)
 			D3DXMATRIX view;
 			m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 		#endif
-			GetCameraPosVector(view,simulCloudRenderer->IsYVertical(),cam_pos);
+			GetCameraPosVector(view,false,cam_pos);
 			simulPrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
 		}
 		else

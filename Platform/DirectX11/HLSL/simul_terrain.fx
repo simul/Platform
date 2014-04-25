@@ -1,8 +1,8 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-#include "../../CrossPlatform/simul_terrain_constants.sl"
-#include "../../CrossPlatform/states.sl"
-#include "../../CrossPlatform/cloud_shadow.sl"
+#include "../../CrossPlatform/SL/simul_terrain_constants.sl"
+#include "../../CrossPlatform/SL/states.sl"
+#include "../../CrossPlatform/SL/cloud_shadow.sl"
 
 Texture2D cloudShadowTexture;
 Texture2DArray textureArray;

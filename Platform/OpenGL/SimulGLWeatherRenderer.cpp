@@ -262,7 +262,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context
 		float cloud_occlusion=0;
 		if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
 			cloud_occlusion=baseCloudRenderer->GetSunOcclusion();
-		baseSkyRenderer->CalcSunOcclusion(cloud_occlusion);
+		baseSkyRenderer->CalcSunOcclusion(context,cloud_occlusion);
 	}
 	// Do this AFTER sky render, to catch any changes to texture definitions:
 	UpdateSkyAndCloudHookup();
@@ -332,14 +332,16 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,b
 
 void SimulGLWeatherRenderer::RenderLightning(void *context,int /*view_id*/)
 {
+	math::Matrix4x4 view,proj;
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		simulLightningRenderer->Render(context);
+		simulLightningRenderer->Render(context,view,proj,NULL,simul::sky::float4 (0,0,1.f,1.f),NULL);
 }
 
 void SimulGLWeatherRenderer::RenderPrecipitation(void *context)
 {
+	math::Matrix4x4 view,proj;
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render(context,NULL,300000.f,sky::float4(0,0,1.f,1.f));
+		simulPrecipitationRenderer->Render(context,NULL,view,proj,300000.f,sky::float4(0,0,1.f,1.f));
 }
 
 

@@ -1,6 +1,6 @@
 #version 140
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/solid_constants.sl"
+#include "../../CrossPlatform/SL/solid_constants.sl"
 
 in vec3 vertex;
 in vec2 in_coord;

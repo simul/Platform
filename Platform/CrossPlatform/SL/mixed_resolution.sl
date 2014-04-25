@@ -19,7 +19,47 @@ void Resolve(Texture2DMS<float4> sourceTextureMS,RWTexture2D<float4> targetTextu
 	targetTexture[pos.xy]	=d;
 }
 
-void DownscaleDepthFarNear(Texture2DMS<float4> sourceMSDepthTexture,RWTexture2D<float4> target2DTexture,uint3 pos,vec2 scale,vec3 depthToLinFadeDistParams)
+// Find nearest and furthest depths in MSAA texture.
+// sourceDepthTexture, sourceMSDepthTexture, and targetTexture are ALL the SAME SIZE.
+vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> sourceMSDepthTexture,uint numberOfSamples,uint2 pos,vec3 depthToLinFadeDistParams)
+{
+#ifdef REVERSE_DEPTH
+	float nearest_depth			=0.0;
+	float farthest_depth		=1.0;
+#else
+	float nearest_depth			=1.0;
+	float farthest_depth		=0.0;
+#endif
+	for(int k=0;k<numberOfSamples;k++)
+	{
+		float d;
+		if(numberOfSamples==1)
+			d				=sourceDepthTexture[pos].x;
+		else
+			d				=sourceMSDepthTexture.Load(pos,k).x;
+#ifdef REVERSE_DEPTH
+		if(d>nearest_depth)
+			nearest_depth	=d;
+		if(d<farthest_depth)
+			farthest_depth	=d;
+#else
+		if(d<nearest_depth)
+			nearest_depth	=d;
+		if(d>farthest_depth)
+			farthest_depth	=d;
+#endif
+	}
+	float edge		=0.0;
+	if(farthest_depth!=nearest_depth)
+	{
+		vec2 fn		=depthToLinearDistance(vec2(farthest_depth,nearest_depth),depthToLinFadeDistParams);
+		edge		=fn.x-fn.y;
+		edge		=step(0.002,edge);
+	}
+	return vec4(farthest_depth,nearest_depth,edge,0.0);
+}
+
+void DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,RWTexture2D<float4> target2DTexture,uint3 pos,vec2 scale,vec3 depthToLinFadeDistParams)
 {
 	uint2 source_dims;
 	uint numberOfSamples;
@@ -68,7 +108,7 @@ void DownscaleDepthFarNear(Texture2DMS<float4> sourceMSDepthTexture,RWTexture2D<
 }
 
 
-void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<float4> target2DTexture,uint3 pos,vec2 scale,vec3 depthToLinFadeDistParams)
+void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<float4> target2DTexture,uint3 pos,uint2 scale,vec3 depthToLinFadeDistParams)
 {
 	uint2 source_dims;
 	sourceDepthTexture.GetDimensions(source_dims.x,source_dims.y);
@@ -90,24 +130,28 @@ void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<flo
 		for(int j=0;j<scale.y;j++)
 		{
 			uint2 hires_pos		=pos2+uint2(i,j);
-			float d				=sourceDepthTexture[hires_pos].x;
+			vec4 d				=sourceDepthTexture[hires_pos];
 #ifdef REVERSE_DEPTH
-			if(d>nearest_depth)
-				nearest_depth	=d;
-			if(d<farthest_depth)
-				farthest_depth	=d;
+			if(d.y>nearest_depth)
+				nearest_depth	=d.y;
+			if(d.x<farthest_depth)
+				farthest_depth	=d.x;
 #else
-			if(d<nearest_depth)
-				nearest_depth	=d;
-			if(d>farthest_depth)
-				farthest_depth	=d;
+			if(d.y<nearest_depth)
+				nearest_depth	=d.y;
+			if(d.x>farthest_depth)
+				farthest_depth	=d.x;
 #endif
 		}
 	}
-	float n		=depthToLinearDistance(nearest_depth,depthToLinFadeDistParams);
-	float f		=depthToLinearDistance(farthest_depth,depthToLinFadeDistParams);
-	float edge	=f-n;
-	edge		=step(0.002,edge);
+	float edge=0.0;
+	if(nearest_depth!=farthest_depth)
+	{
+		float n		=depthToLinearDistance(nearest_depth,depthToLinFadeDistParams);
+		float f		=depthToLinearDistance(farthest_depth,depthToLinFadeDistParams);
+		edge		=f-n;
+		edge		=step(0.002,edge);
+	}
 	target2DTexture[pos.xy]	=vec4(farthest_depth,nearest_depth,edge,0.0);
 }
 #endif

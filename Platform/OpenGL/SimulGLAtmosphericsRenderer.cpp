@@ -7,8 +7,8 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/CrossPlatform/earth_shadow_uniforms.sl"
-#include "Simul/Platform/CrossPlatform/atmospherics_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/earth_shadow_uniforms.sl"
+#include "Simul/Platform/CrossPlatform/SL/atmospherics_constants.sl"
 #include <stdint.h>  // for uintptr_t
 #include <string.h>  // for memset
 using namespace simul;
@@ -109,6 +109,8 @@ GL_ERROR_CHECK
     glEnable(GL_TEXTURE_2D);
 GL_ERROR_CHECK
 	simul::math::Matrix4x4 view,proj;
+	simul::sky::float4 cam_pos;
+	CalcCameraPosition(cam_pos);
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
 	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
@@ -147,7 +149,7 @@ GL_ERROR_CHECK
 	atmosphericsPerViewConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	atmosphericsPerViewConstants.nearZ=frustum.nearZ*0.001f/fade_distance_km;
 	atmosphericsPerViewConstants.farZ=frustum.farZ*0.001f/fade_distance_km;
-	atmosphericsPerViewConstants.viewPosition	=cam_pos;
+//	atmosphericsPerViewConstants.viewPosition	=cam_pos;
 	
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,proj,proj,depthViewportXYWH);
 	

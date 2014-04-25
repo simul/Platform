@@ -21,10 +21,10 @@ SamplerState samplerState
 	AddressV = Mirror;
 	AddressW = Clamp;
 };
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "CppHlsl.hlsl"
-#include "../../CrossPlatform/states.sl"
-#include "../../CrossPlatform/simul_gpu_sky.sl"
+#include "../../CrossPlatform/SL/states.sl"
+#include "../../CrossPlatform/SL/simul_gpu_sky.sl"
 
 struct vertexInput
 {
@@ -181,7 +181,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 		//final.w=::saturate((1.f-mie_factor)/(1.f-total_loss.x+0.0001f));
 		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
 		
-		targetTexture[idx]	=RAYLEIGH_BETA_FACTOR*insc;
+		targetTexture[idx]	=vec4(RAYLEIGH_BETA_FACTOR*insc.rgb,insc.a);
 		prevDist_km			=dist_km;
 		previous_insc		=insc;
 	}

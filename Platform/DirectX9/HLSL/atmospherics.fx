@@ -1,9 +1,9 @@
 #include "dx9.hlsl"
-#include "../../CrossPlatform/atmospherics_constants.sl"
-#include "../../CrossPlatform/depth.sl"
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/depth.sl"
-#include "../../CrossPlatform/atmospherics.sl"
+#include "../../CrossPlatform/SL/atmospherics_constants.sl"
+#include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/atmospherics.sl"
 
 texture maxDistanceTexture;
 sampler2D distance_texture= sampler_state 
@@ -179,19 +179,20 @@ vec4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : color
 
 vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : color
 {
-	vec3 insc=AtmosphericsInsc(depth_texture
-							,illumination_texture
-							,insc_texture
+	vec3 insc=Inscatter(	insc_texture
 							,skyl_texture
+							,depth_texture
+							,1
+							,illumination_texture
 							,invViewProj
 							,IN.texCoords
-							,IN.clip_pos
+							,lightDir
+							,hazeEccentricity
+							,mieRayleighRatio
 							,viewportToTexRegionScaleBias
 							,depthToLinFadeDistParams
 							,tanHalfFov
-							,hazeEccentricity
-							,lightDir
-							,mieRayleighRatio);
+							,false,false);
 
 	return vec4(insc*exposure,1.0);
 }

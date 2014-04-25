@@ -1,9 +1,9 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-#include "../../CrossPlatform/spherical_harmonics_constants.sl"
-#include "../../CrossPlatform/noise.sl"
-#include "../../CrossPlatform/spherical_harmonics.sl"
-#include "../../CrossPlatform/light_probe_constants.sl"
+#include "../../CrossPlatform/SL/spherical_harmonics_constants.sl"
+#include "../../CrossPlatform/SL/noise.sl"
+#include "../../CrossPlatform/SL/spherical_harmonics.sl"
+#include "../../CrossPlatform/SL/light_probe_constants.sl"
 
 #ifndef pi
 #define pi (3.1415926536)
@@ -56,7 +56,7 @@ vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	{ 
 		float w=WindowFunction(float(l)/float(numSHBands));
 		for(int m=-l;m<=l;m++)
-			result+=SH(l,m,theta,phi)*basisBuffer[n++]*w;
+			result+=SH(l,m,theta,phi)*w*basisBuffer[n++];
 		//*A[l]/3.1415926
 	} 
 	return max(result,vec4(0,0,0,0));

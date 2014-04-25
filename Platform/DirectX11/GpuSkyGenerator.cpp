@@ -2,7 +2,7 @@
 #include "CreateEffectDX1x.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
-#include "Simul/Platform/CrossPlatform/simul_gpu_sky.sl"
+#include "Simul/Platform/CrossPlatform/SL/simul_gpu_sky.sl"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix.h"
@@ -21,6 +21,7 @@ GpuSkyGenerator::GpuSkyGenerator()
 	,light_table(NULL)
 {
 	SetDirectTargets(NULL,NULL,NULL,NULL);
+	Enabled=true;
 }
 
 GpuSkyGenerator::~GpuSkyGenerator()
@@ -30,7 +31,7 @@ GpuSkyGenerator::~GpuSkyGenerator()
 
 void GpuSkyGenerator::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	gpuSkyConstants.RestoreDeviceObjects(m_pd3dDevice);
@@ -72,14 +73,13 @@ static int range(int x,int start,int end)
 	return x;
 }
 
-
 //! Return true if the derived class can make sky tables using the GPU.
 bool GpuSkyGenerator::CanPerformGPUGeneration() const
 {
-	return Enabled&&m_pd3dDevice!=NULL;
+	return m_pd3dDevice!=NULL;
 }
 
-void GpuSkyGenerator::Make2DLossAndInscatterTextures(
+void GpuSkyGenerator::MakeLossAndInscatterTextures(
 				int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *skyInterface
 				,const sky::GpuSkyParameters &p
@@ -87,7 +87,14 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				,const sky::GpuSkyInfraredParameters &ir
 				)
 {
-	SIMUL_PROFILE_START("GpuSkyGenerator init")
+	if(p.fill_up_to_texels<0)
+		return;
+	if(keyframe_checksums[cycled_index]!=p.keyframe_checksum)
+	{
+		keyframe_checksums[cycled_index]	=p.keyframe_checksum;
+		fadeTexIndex[cycled_index]=0;
+	}
+	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator init")
 	HRESULT hr=S_OK;
 	int gridsize			=(int)p.altitudes_km.size()*p.numElevations*p.numDistances;
 	int gridsize_2d			=(int)p.altitudes_km.size()*p.numElevations;
@@ -102,8 +109,8 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		optd_tex.setTexels(m_pImmediateContext,(unsigned *)a.optical_table,0,a.table_size*a.table_size);
 		tables_checksum=a.tables_checksum;
 	}
-	SIMUL_PROFILE_END
-	SIMUL_PROFILE_START("GpuSkyGenerator 1")
+	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
+	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 1")
 
 	ID3D1xEffectScalarVariable *distKm							=effect->GetVariableByName("distKm")->AsScalar();
 	ID3D1xEffectScalarVariable *prevDistKm						=effect->GetVariableByName("prevDistKm")->AsScalar();
@@ -126,17 +133,17 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		gpuSkyConstants.planetRadiusKm		=skyInterface->GetPlanetRadius();
 		gpuSkyConstants.maxOutputAltKm		=maxOutputAltKm;
 		gpuSkyConstants.maxDensityAltKm		=a.maxDensityAltKm;
-		gpuSkyConstants.hazeBaseHeightKm	=p.hazeStruct.haze_base_height_km;
-		gpuSkyConstants.hazeScaleHeightKm	=p.hazeStruct.haze_scale_height_km;
+		gpuSkyConstants.hazeBaseHeightKm	=p.physical.hazeStruct.haze_base_height_km;
+		gpuSkyConstants.hazeScaleHeightKm	=p.physical.hazeStruct.haze_scale_height_km;
 
 		gpuSkyConstants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		gpuSkyConstants.hazeMie				=(const float*)(p.hazeStruct.haze*p.hazeStruct.mie);
-		gpuSkyConstants.ozone				=(const float*)(p.ozone);
+		gpuSkyConstants.hazeMie				=(const float*)(p.physical.hazeStruct.haze*p.physical.hazeStruct.mie);
+		gpuSkyConstants.ozone				=(const float*)(p.physical.ozone);
 
-		gpuSkyConstants.sunIrradiance		=(const float*)p.sun_irradiance;
-		gpuSkyConstants.lightDir			=(const float*)p.dir_to_sun;
-		gpuSkyConstants.directionToMoon		=(const float*)p.dir_to_moon;
-		gpuSkyConstants.starlight			=(const float*)(p.starlight);
+		gpuSkyConstants.sunIrradiance		=(const float*)p.physical.sun_irradiance;
+		gpuSkyConstants.lightDir			=(const float*)p.physical.dir_to_sun;
+		gpuSkyConstants.directionToMoon		=(const float*)p.physical.dir_to_moon;
+		gpuSkyConstants.starlight			=(const float*)(p.physical.starlight);
 		
 		gpuSkyConstants.hazeEccentricity	=1.0;
 		gpuSkyConstants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
@@ -154,16 +161,16 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 	if(light_table)
 		light_table->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size()*32,3,4,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	density_texture->SetResource(dens_tex.shaderResourceView);
-	SIMUL_PROFILE_END
-	SIMUL_PROFILE_START("GpuSkyGenerator 2")
+	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
+	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 2")
 
 	// divide the grid into blocks:
 	static const int BLOCKWIDTH=8;
 
 	int xy_size		=(int)p.altitudes_km.size()*p.numElevations;
 	
-	int start_step	=(p.start_texel*3)/p.numDistances;
-	int end_step	=((p.start_texel+p.num_texels)*3+p.numDistances-1)/p.numDistances;
+	int start_step	=(fadeTexIndex[cycled_index]*3)/p.numDistances;
+	int end_step	=((p.fill_up_to_texels)*3+p.numDistances-1)/p.numDistances;
 
 	int start_loss	=range(start_step			,0,xy_size);
 	int end_loss	=range(end_step				,0,xy_size);
@@ -193,8 +200,8 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 	}
-	SIMUL_PROFILE_END
-	SIMUL_PROFILE_START("GpuSkyGenerator 3")
+	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
+	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 3")
 	int start_skyl	=range(start_step-2*xy_size	,0	,xy_size);
 	int end_skyl	=range(end_step-2*xy_size	,0	,xy_size);
 	int num_skyl	=range(end_skyl-start_skyl	,0	,xy_size);
@@ -233,7 +240,9 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 	insc_texture->SetResource(NULL);
 	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
 	
-	SIMUL_PROFILE_END
+	fadeTexIndex[cycled_index]=p.fill_up_to_texels;
+
+	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
 }
 
 void GpuSkyGenerator::CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl)

@@ -18,6 +18,7 @@ namespace simul
 			~Texture();
 			void InvalidateDeviceObjects();
 			void LoadFromFile(const char *pFilePathUtf8);
+			bool IsValid() const;
 			
 			ID3D11Device*				device;
 			ID3D11Resource*				texture;

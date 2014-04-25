@@ -25,8 +25,10 @@ Window::~Window()
 	Release();
 }
 
-void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice)
+void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,int numerator,int denominator)
 {
+	if(!d3dDevice)
+		return;
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 	D3D11_RASTERIZER_DESC rasterDesc;
 
@@ -61,12 +63,12 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice)
 	// false then it will draw the screen as many times a second as it can, however this can cause some visual artifacts.
 
 	// Set the refresh rate of the back buffer.
-	//if(m_vsync_enabled)
+	if(m_vsync_enabled)
 	{
-	//	swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
-	//	swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
+		swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
+		swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
 	}
-//	else
+	else
 	{
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
@@ -151,6 +153,8 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice)
 
 void Window::CreateRenderTarget(ID3D11Device* d3dDevice)
 {
+	if(!d3dDevice)
+		return;
 	ID3D11Texture2D* backBufferPtr;
 	HRESULT result = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
 	SIMUL_ASSERT(result==S_OK);
@@ -272,10 +276,10 @@ void Window::SetRenderer(Direct3D11CallbackInterface *ci)
 	if(renderer==ci)
 		return;
 	if(renderer)
-	{
 		renderer->RemoveView(view_id);
-	}
 	renderer=ci;
+	if(!m_swapChain)
+		return;
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	DXGI_SURFACE_DESC surfaceDesc;
 	m_swapChain->GetDesc(&swapDesc);
@@ -317,6 +321,7 @@ Direct3D11Manager::~Direct3D11Manager()
 
 void Direct3D11Manager::Initialize()
 {
+	std::cout<<"1"<<std::endl;
 	HRESULT result;
 	IDXGIFactory* factory;
 	int  i;//, numerator, denominator;
@@ -325,7 +330,7 @@ void Direct3D11Manager::Initialize()
 	D3D_FEATURE_LEVEL featureLevel;
 
 	// Store the vsync setting.
-	m_vsync_enabled = true;
+	m_vsync_enabled = false;
 	// Create a DirectX graphics interface factory.
 	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
 	SIMUL_ASSERT(result==S_OK);
@@ -345,6 +350,7 @@ void Direct3D11Manager::Initialize()
 		SIMUL_ASSERT(result==S_OK);
 		i++;
 	}
+	std::cout<<"2"<<std::endl;
 	//We now have the numerator and denominator for the refresh rate.
 	//The last thing we will retrieve using the adapter is the name of the video card and the amount of memory on the video card.
 
@@ -363,7 +369,8 @@ void Direct3D11Manager::Initialize()
 
 	// Release the factory.
 	SAFE_RELEASE(factory);
-
+	
+	std::cout<<"3"<<std::endl;
 	//After setting up the swap chain description we also need to setup one more variable called the feature level.
 	// This variable tells DirectX what version we plan to use. Here we set the feature level to 11.0 which is DirectX 11.
 	// You can set this to 10 or 9 to use a lower level version of DirectX if you plan on supporting multiple versions or running on lower end hardware.
@@ -388,8 +395,11 @@ void Direct3D11Manager::Initialize()
 #ifdef _DEBUG
 	flags|=D3D11_CREATE_DEVICE_DEBUG;
 #endif
+	std::cout<<"D3D11CreateDevice "<<std::endl;
 	result=D3D11CreateDevice(NULL,D3D_DRIVER_TYPE_HARDWARE,NULL,flags, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
-
+	std::cout<<"D3D11CreateDevice result "<<result<<std::endl;
+	if(result!=S_OK)
+		return;
 	d3dDevice->AddRef();
 	UINT refcount=d3dDevice->Release();
 #ifdef _DEBUG
@@ -400,6 +410,7 @@ void Direct3D11Manager::Initialize()
  
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
+	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, true );
 	
 	ReportMessageFilterState();
 	d3dInfoQueue->ClearStoredMessages();
@@ -447,6 +458,7 @@ void Direct3D11Manager::Initialize()
 #endif
 	d3dDevice->AddRef();
 	UINT refcount2=d3dDevice->Release();
+	std::cout<<"result "<<result<<std::endl;
 	SIMUL_ASSERT(result==S_OK);
 }
 
@@ -510,8 +522,8 @@ Output Direct3D11Manager::GetOutput(int i)
 		{
 			if(displayModeList[i].Height == (unsigned int)o.height)
 			{
-				unsigned numerator = displayModeList[i].RefreshRate.Numerator;
-				unsigned denominator = displayModeList[i].RefreshRate.Denominator;
+				o.numerator = displayModeList[i].RefreshRate.Numerator;
+				o.denominator = displayModeList[i].RefreshRate.Denominator;
 			}
 		}
 	}
@@ -593,7 +605,7 @@ void Direct3D11Manager::StartRendering(HWND h)
 	if(w->renderer)
 		w->renderer->Render(w->view_id,GetDevice(),GetDeviceContext());
 	DWORD dwFlags = 0;
-	UINT SyncInterval = 0;
+	UINT SyncInterval = 1;
     // Show the frame on the primary surface.
 	w->m_swapChain->Present(SyncInterval,dwFlags);
 }
@@ -710,5 +722,6 @@ void Direct3D11Manager::AddWindow(HWND hwnd)
 	Window *window=new Window;
 	windows[hwnd]=window;
 	window->hwnd=hwnd;
-	window->RestoreDeviceObjects(d3dDevice);
+	Output o=GetOutput(0);
+	window->RestoreDeviceObjects(d3dDevice,m_vsync_enabled,o.numerator,o.denominator);
 }

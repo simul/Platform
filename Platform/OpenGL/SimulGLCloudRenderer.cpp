@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -7,6 +7,13 @@
 // agreement.
 
 // SimulGLCloudRenderer.cpp A renderer for 3d clouds.
+#define NOMINMAX
+
+#ifdef _MSC_VER
+#include <windows.h>
+#else
+#define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
+#endif
 
 #include <GL/glew.h>
 #include "Simul/Base/Timer.h"
@@ -27,10 +34,9 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
-#include "Simul/Platform/CrossPlatform/noise_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/noise_constants.sl"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
-#include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
 #include "LoadGLProgram.h"
@@ -40,10 +46,6 @@
 
 using namespace simul;
 using namespace opengl;
-
-#ifndef _MSC_VER
-#define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
-#endif
 using std::map;
 using namespace std;
 
@@ -126,7 +128,7 @@ GL_ERROR_CHECK
     glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 	const float *data=GetCloudGridInterface()->GetNoiseInterface()->GetData();
-    glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA32F_ARB,size,size,size,0,GL_RGBA,GL_FLOAT,data);
+    glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA32F,size,size,size,0,GL_RGBA,GL_FLOAT,data);
 	//glGenerateMipmap(GL_TEXTURE_3D);
 GL_ERROR_CHECK
 }
@@ -153,7 +155,7 @@ GL_ERROR_CHECK
 glGenerateMipmap(GL_TEXTURE_2D);
 	FramebufferGL noise_fb(noise_texture_frequency,noise_texture_frequency,GL_TEXTURE_2D);
 	noise_fb.SetWrapClampMode(GL_REPEAT);
-	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
+	noise_fb.InitColor_Tex(0,GL_RGBA32F);
 GL_ERROR_CHECK
 	noise_fb.Activate(context);
 	{
@@ -458,16 +460,15 @@ GL_ERROR_CHECK
 	float left	=proj(0,0)+proj(0,3);
 	float right	=proj(0,0)-proj(0,3);
 
-	float tan_half_fov_vertical=1.f/proj(1,1);
-	float tan_half_fov_horizontal=std::max(1.f/left,1.f/right);
+	float tan_half_fov_vertical			=1.f/proj(1,1);
+	float tan_half_fov_horizontal		=std::max(1.f/left,1.f/right);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	float effective_world_radius_metres=6378000.f;
+	float effective_world_radius_metres	=6378000.f;
 	float base_alt=GetCloudInterface()->GetCloudBaseZ();
 	if(cloudKeyframer->GetMeetHorizon())
 		effective_world_radius_metres	=helper->GetEffectiveEarthRadiusToMeetHorizon(base_alt,helper->GetMaxCloudDistance());
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),effective_world_radius_metres,false,X1.z,false);
 
-helper->Update2DNoiseCoords();
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply();
 
@@ -507,14 +508,13 @@ helper->Update2DNoiseCoords();
 //	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
 	static int isolate_layer=-1;
-	for(CloudGeometryHelper::SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
+	sphereMesh.BeginDraw(NULL,scene::SHADING_MODE_SHADED);
+	for(SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
-		if(isolate_layer>=0&&idx>isolate_layer)
-			continue;
 	GL_ERROR_CHECK
-		simul::clouds::CloudGeometryHelper::Slice *s=*i;
-		helper->MakeLayerGeometry(s,effective_world_radius_metres);
-		const simul::clouds::CloudGeometryHelper::IntVector &quad_strip_vertices=helper->GetQuadStripIndices();
+		simul::clouds::Slice *RS=*i;
+		clouds::SliceInstance s=helper->MakeLayerGeometry(RS,effective_world_radius_metres);
+		const simul::clouds::IntVector &quad_strip_vertices=s.quad_strip_indices;
 		size_t qs_vert=0;
 //		int layer=(int)helper->GetSlices().size()-1-idx;
 //		setParameter(program,"layerNumber",layer);
@@ -524,26 +524,33 @@ helper->Update2DNoiseCoords();
 		singleLayerConstants.layerDistance_	=L.layerDistance;
 		singleLayerConstants.verticalShift_	=L.verticalShift;
 		singleLayerConstants.Apply();
+		if(isolate_layer>=0&&idx!=isolate_layer)
+			continue;
+#if 1
+		sphereMesh.Draw(NULL,0,scene::SHADING_MODE_SHADED);
+#else
 		glBegin(GL_QUAD_STRIP);
 		if(quad_strip_vertices.size())
-		for(CloudGeometryHelper::QuadStripPtrVector::const_iterator j=(*i)->quad_strips.begin();
-			j!=(*i)->quad_strips.end();j++)
+		for(QuadStripVector::const_iterator j=s.quadStrips.begin();
+			j!=s.quadStrips.end();j++)
 		{
 			// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?
-			for(unsigned k=0;k<(*j)->num_vertices;k++,qs_vert++)
+			for(unsigned k=0;k<j->num_vertices;k++,qs_vert++)
 			{
 				if(qs_vert<0||qs_vert>=quad_strip_vertices.size())
 					continue;
 				int v=quad_strip_vertices[qs_vert];
-				if(v<0||v>=(int)helper->GetVertices().size())
+				if(v<0||v>=(int)s.vertices.size())
 					continue;
-				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[v];
-				glVertex3f(V.x*s->layerDistance,V.y*s->layerDistance,V.z*s->layerDistance);
+				const Vertex &V=s.vertices[v];
+				glVertex3f(V.x,V.y,V.z);
 			}
 		}
 		glEnd();
+#endif
 	GL_ERROR_CHECK
 	}
+	sphereMesh.EndDraw(NULL);
 GL_ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
     glPopMatrix();
@@ -680,59 +687,18 @@ struct vertt
 {
 	float x,y,z;
 };
+
 bool SimulGLCloudRenderer::BuildSphereVBO()
 {
+	SIMUL_ASSERT(CheckExtension("GL_ARB_vertex_buffer_object"));
 GL_ERROR_CHECK
-	unsigned el=0,az=0;
+	unsigned el=16,az=32;
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(0);
-	helper->GetGrid(el,az);
-
-	int vertex_count=(el+1)*(az+1);
-	vertt *pVertices=new vertt[vertex_count];
-	vertt *vert=pVertices;
-	for(int i=0;i<(int)el+1;i++)
-	{
-		float elevation=((float)i-(float)el/2.f)/(float)el*pi;
-		float z=sin(elevation);
-		float ce=cos(elevation);
-		for(unsigned j=0;j<az+1;j++)
-		{
-			float azimuth=(float)j/(float)az*2.f*pi;
-			vert->x=cos(azimuth)*ce;
-			vert->y=sin(azimuth)*ce;
-			vert->z=z;
-			vert++;
-		}
-	}
-	// Generate And Bind The Vertex Buffer
-	glGenBuffersARB( 1, &sphere_vbo );					// Get A Valid Name
-	glBindBufferARB( GL_ARRAY_BUFFER_ARB, sphere_vbo );			// Bind The Buffer
-	// Load The Data
-	glBufferDataARB( GL_ARRAY_BUFFER_ARB, vertex_count*3*sizeof(float), pVertices, GL_STATIC_DRAW_ARB );
-GL_ERROR_CHECK
-	// Our Copy Of The Data Is No Longer Necessary, It Is Safe In The Graphics Card
-	delete [] pVertices;
-	glBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
-
-	int index_count=(el)*(az+1)*2;
-	pIndices=new unsigned short[index_count];
-	unsigned short *idx=pIndices;
-	for(unsigned i=0;i<el;i++)
-	{
-		int base=i*(az+1);
-		for(unsigned j=0;j<az+1;j++)
-		{
-			*idx=(unsigned short)(base+j);
-			idx++;
-			*idx=(unsigned short)(base+(az+1)+j);
-			idx++;
-		}
-	}
-	glGenBuffersARB(1, &sphere_ibo);
-	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, sphere_ibo);
-	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, index_count*sizeof(GLushort), pIndices, GL_STATIC_DRAW_ARB); //upload data
-
-	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+	//helper->GetGrid(el,az);
+	std::vector<vec3> vertices;
+	std::vector<unsigned int> indices;
+	helper->GenerateSphereVertices(vertices,indices,el,az);
+	sphereMesh.Initialize(vertices,indices);
 GL_ERROR_CHECK
 	return true;
 }
@@ -761,13 +727,13 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	noiseSampler_param			=0;
 	illumSampler_param			=0;
 
-	glDeleteBuffersARB(1,&sphere_vbo);
-	glDeleteBuffersARB(1,&sphere_ibo);
+	glDeleteBuffers(1,&sphere_vbo);
+	glDeleteBuffers(1,&sphere_ibo);
 	sphere_vbo=sphere_ibo=0;
 
 	volume_noise_tex=0;
 
-	//glDeleteBuffersARB(1,&cloudConstantsUBO);
+	//glDeleteBuffers(1,&cloudConstantsUBO);
 	cloudConstants.Release();
 	cloudPerViewConstants.Release();
 	layerConstants.Release();
@@ -809,7 +775,7 @@ void SimulGLCloudRenderer::New()
 #pragma warning(disable:4127) // "Conditional expression is constant".
 void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 {
-	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
+	sky::int3 i=cloudKeyframer->GetTextureSizes();
 	int width_x=i.x;
 	int length_y=i.y;
 	int depth_z=i.z;
@@ -985,4 +951,17 @@ void SimulGLCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,in
 glUseProgram(Utilities::GetSingleton().simple_program);
 	DrawQuad(x0+width-(w+8),y0+height-(w+8),w,w);
 	glUseProgram(0);
+}
+
+void SimulGLCloudRenderer::RenderAuxiliaryTextures(void *,int x0,int y0,int width,int height)
+{
+	static int u=4;
+	int w=(width-8)/u;
+	if(w>height/3)
+		w=height/3;
+	simul::clouds::CloudGridInterface *gi=GetCloudGridInterface();
+	int h=w/gi->GetGridWidth();
+	if(h<1)
+		h=1;
+	h*=gi->GetGridHeight();
 }

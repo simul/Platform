@@ -26,8 +26,8 @@ float NoiseFunction(Texture2D noiseTexture,vec2 pos,float octaves,float persiste
 
 vec4 Coverage(vec2 texCoords,float humidity,float diffusivity,float octaves,float persistence,float time,Texture2D noiseTexture,float noiseTextureScale)
 {
-	float noise_val			=NoiseFunction(noiseTexture,texCoords/noiseTextureScale,octaves,persistence,time);
-	float dens				=saturate((noise_val+humidity+diffusivity-1.0)/diffusivity);
+	float noise_val			=NoiseFunction(noiseTexture,texCoords/* /noiseTextureScale */,octaves,persistence,time);
+	float dens				=saturate((noise_val+2.0*humidity+diffusivity-2.0)/diffusivity);
     return vec4(dens,dens,dens,dens);
 }
 
@@ -141,11 +141,16 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 						,vec2 texc_global
 						,vec2 texc_detail
 						,vec3 wEyeToPos
-						,vec3 sun_irr,vec3 moon_irr,vec3 amb,vec3 lightDir,vec4 lightResponse)
+						,vec3 sun_irr
+						,vec3 moon_irr
+						,vec3 amb
+						,vec3 lightDir
+						,vec4 lightResponse)
 {
     vec2 texc_offset		=texc_detail/7.11;//offsetScale;
     vec4 noise				=texture_wrap(noiseTexture,texc_offset);
     vec4 coverage			=texture_wrap(coverageTexture,texc_global);
+	
     vec4 detail				=texture_wrap(imageTexture,texc_detail+.2*noise.xy);
 	float opacity			=saturate(detail.a*2.0*Y(coverage));//+2.0*Y(coverage)-1.0);
 	if(opacity<=0)
@@ -165,7 +170,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	vec4 illum_lookup		=texture_wrap_mirror(illuminationTexture,illum_texc);
 	vec2 nearFarTexc		=illum_lookup.xy;
 
-	float visible_light		=saturate((fade_texc.x-nearFarTexc.x)/0.1);
+	float visible_light		=1;//saturate((fade_texc.x-nearFarTexc.x)/0.1);
 	
 	vec2 near_texc			=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc			=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
@@ -173,7 +178,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	vec4 insc_near			=texture_clamp_mirror(inscTexture,near_texc);
 
 	vec4 insc				=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
-	//vec4 insc				=texture_cmc_lod(inscTexture,fade_texc,0);
+	
 	insc.rgb				*=visible_light;
 	vec3 light				=sun_irr*visible_light+moon_irr;
 	vec4 colour				=vec4(light*(lightResponse.y+lightResponse.x*hg)*scattered_light+amb,opacity);

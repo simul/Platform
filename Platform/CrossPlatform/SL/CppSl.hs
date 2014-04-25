@@ -1,7 +1,6 @@
 #ifndef CPPSL_HS
 #define CPPSL_HS
 #undef RADIAL_CLOUD_SHADOW
-//#define RADIAL_CLOUD_SHADOW
 // Definitions shared across C++, HLSL, and GLSL!
 
 #ifndef __cplusplus
@@ -100,9 +99,6 @@
 					}
 		}
 	};
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 	struct vec2
 	{
 		float x,y;
@@ -155,6 +151,13 @@
 			this->y=y;
 			this->z=z;
 			this->w=w;
+		}
+		vec4(const float *v)
+		{
+			this->x=v[0];
+			this->y=v[1];
+			this->z=v[2];
+			this->w=v[3];
 		}
 		operator const float *()
 		{
@@ -234,6 +237,56 @@
 			z=v[2];
 		}
 	};
+	//! Very simple 4x4 matrix of doubles.
+	struct mat4d
+	{
+		union
+		{
+			double m[16];
+			struct
+			{
+				double	_11, _12, _13, _14;
+				double	_21, _22, _23, _24;
+				double	_31, _32, _33, _34;
+				double	_41, _42, _43, _44;
+			};
+			struct
+			{
+				double	_m00, _m01, _m02, _m03;
+				double	_m10, _m11, _m12, _m13;
+				double	_m20, _m21, _m22, _m23;
+				double	_m30, _m31, _m32, _m33;
+			};
+			double M[4][4];
+		};
+		operator double *()
+		{
+			return m;
+		}
+		operator const double *()
+		{
+			return m;
+		}
+		void operator=(const double *v)
+		{
+			for(int i=0;i<16;i++)
+				m[i]=v[i];
+		}
+		void transpose()
+		{
+			for(int i=0;i<4;i++)
+				for(int j=0;j<4;j++)
+					if(i<j)
+					{
+						double temp=m[i*4+j];
+						m[i*4+j]=m[j*4+i];
+						m[j*4+i]=temp;
+					}
+		}
+	};
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #endif
 
 #endif

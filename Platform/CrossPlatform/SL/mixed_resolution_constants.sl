@@ -6,6 +6,8 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform float nearZ,farZ;
 	uniform vec3 depthToLinFadeDistParams;
 	uniform float ccc;
+	uniform uint2 source_dims;
+	uniform float ddd,eee;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

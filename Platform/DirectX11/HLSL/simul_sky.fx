@@ -32,11 +32,11 @@ cbuffer cbPerObject : register(b11)
 
 #include "CppHLSL.hlsl"
 #include "states.hlsl"
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/earth_shadow_uniforms.sl"
-#include "../../CrossPlatform/earth_shadow.sl"
-#include "../../CrossPlatform/sky_constants.sl"
-#include "../../CrossPlatform/illumination.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
+#include "../../CrossPlatform/SL/earth_shadow.sl"
+#include "../../CrossPlatform/SL/sky_constants.sl"
+#include "../../CrossPlatform/SL/illumination.sl"
 
 struct vertexInput
 {
@@ -133,7 +133,7 @@ vec4 PS_OvercastInscatter(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float alt_km		=eyePosition.z/1000.0;
 	// Texcoords representing the full distance from the eye to the given point.
-	vec2 fade_texc		=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
+	vec2 fade_texc	=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
     return OvercastInscatter(inscTexture,illuminationTexture,fade_texc,alt_km,maxFadeDistanceKm,overcast,overcastBaseKm,overcastRangeKm,targetTextureSize);
 }
 
@@ -170,10 +170,10 @@ vertexOutput3Dto2D VS_ShowFade(idOnly IN)
     return OUT;
 }
 
-float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
+float4 PS_ShowFadeTable(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float4 result=inscTexture.Sample(cmcSamplerState,IN.texCoords.xy);
-	//result.rgb*=result.a;
+	result.rgb+=overlayAlpha*result.a;
     return float4(result.rgb,1);
 }
 
@@ -320,6 +320,13 @@ float4 PS_Sun( svertexOutput IN): SV_TARGET
 	return float4(result,1.f);
 }
 
+float4 PS_SunQuery( svertexOutput IN): SV_TARGET
+{
+	float r=2.0*length(IN.tex);
+	if(r>1.0)
+		discard;
+	return float4(1.0,0.0,0.0,1.0);
+}
 float4 PS_Flare( svertexOutput IN): SV_TARGET
 {
 	float3 output=colour.rgb*flareTexture.Sample(flareSamplerState,float2(.5f,.5f)+0.5f*IN.tex).rgb;
@@ -346,7 +353,7 @@ float4 PS_Planet(svertexOutput IN): SV_TARGET
 	return result;
 }
 
-technique11 simul_show_sky_texture
+technique11 simul_show_fade_table
 {
     pass p0 
     {
@@ -355,7 +362,7 @@ technique11 simul_show_sky_texture
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowSkyTexture()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTable()));
     }
 }
 
@@ -471,7 +478,7 @@ technique11 simul_stars
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Stars()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Stars()));
-		SetDepthStencilState( EnableDepth, 0 );
+		SetDepthStencilState( TestDepth, 0 );
 		SetBlendState(AddBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
     }
 }
@@ -485,7 +492,21 @@ technique11 simul_sun
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
-		SetDepthStencilState(EnableDepth,0);
+		SetDepthStencilState(TestDepth,0);
+		SetBlendState(AddBlend,float4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
+    }
+}
+
+
+technique11 sun_query
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
+		SetPixelShader(CompileShader(ps_4_0,PS_SunQuery()));
+		SetDepthStencilState(TestDepth,0);
 		SetBlendState(AddBlend,float4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
     }
 }
@@ -504,20 +525,6 @@ technique11 simul_flare
     }
 }
 
-
-technique11 simul_query
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-    }
-}
-
 technique11 simul_planet
 {
     pass p0 
@@ -526,7 +533,7 @@ technique11 simul_planet
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
-		SetDepthStencilState( EnableDepth, 0 );
+		SetDepthStencilState( TestDepth, 0 );
 		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }

@@ -1,7 +1,7 @@
 #version 140
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/earth_shadow.sl"
-#include "../../CrossPlatform/illumination.sl"
+#include "../../CrossPlatform/SL/earth_shadow.sl"
+#include "../../CrossPlatform/SL/illumination.sl"
 uniform sampler2D illTexture;
 in vec2 texCoords;
 out vec4 gl_FragColor;

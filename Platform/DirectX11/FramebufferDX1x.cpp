@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -83,7 +83,7 @@ void Framebuffer::SetGenerateMips(bool m)
 void Framebuffer::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	if(!m_pd3dDevice)
 		return;
 }
@@ -274,7 +274,7 @@ ID3D1xRenderTargetView* Framebuffer::MakeRenderTarget(const ID3D1xTexture2D* pTe
 	return pRenderTargetView;
 }
 
-ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *m_pd3dDevice
+ID3D11Texture2D* makeStagingTexture(ID3D11Device *m_pd3dDevice
 							,int w,int h,DXGI_FORMAT target_format)
 {
 	ID3D11Texture2D*	tex;
@@ -378,9 +378,9 @@ void Framebuffer::SaveOldRTs(void *context)
 	m_pOldRenderTarget	=NULL;
 	m_pOldDepthSurface	=NULL;
 	pContext->OMGetRenderTargets(	1,
-												&m_pOldRenderTarget,
-												&m_pOldDepthSurface
-												);
+									&m_pOldRenderTarget,
+									&m_pOldDepthSurface
+									);
 }
 
 bool Framebuffer::IsValid() const

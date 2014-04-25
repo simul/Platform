@@ -1,11 +1,11 @@
 // simul_clouds.frag - a GLSL fragment shader
-// Copyright 2008-2013 Simul Software Ltd
+// Copyright 2008-2014 Simul Software Ltd
 #version 140
 
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/simul_cloud_constants.sl"
-#include "../../CrossPlatform/depth.sl"
+#include "../../CrossPlatform/SL/simul_cloud_constants.sl"
+#include "../../CrossPlatform/SL/depth.sl"
 #include "saturate.glsl"
 
 uniform sampler3D cloudDensity1;
@@ -56,7 +56,7 @@ void main(void)
 	vec4 density2			=textureLod(cloudDensity2,pos,0);
 	//vec4 lightning=texture(illumSampler,texCoordLightning.xyz);
 	density					=mix(density,density2,cloud_interp);
-	float opacity			=layerDensity*density.y;
+	float opacity			=layerFade_*density.y;
 	//opacity+=rain*rainFade*saturate((0.25-pos.z)*50.0)*(1.0-density.x);
 #ifdef USE_DEPTH_TEXTURE
 	//float depth_offset=dist-cloud_dist;

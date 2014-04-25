@@ -13,20 +13,22 @@ namespace simul
 		public:
 			Mesh();
 			~Mesh();
+			// Implementing scene::Mesh
+			bool Initialize(void *device,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices);
 			void release();
 			// Implementing scene::Mesh
-			void BeginDraw	(void *context,scene::ShadingMode pShadingMode,const double* mat) const;
+			void BeginDraw	(void *context,scene::ShadingMode pShadingMode) const;
 			// Draw all the faces with specific material with given shading mode.
 			void Draw		(void *context,int pMaterialIndex,scene::ShadingMode pShadingMode) const;
 			// Unbind buffers, reset vertex arrays, turn off lighting and texture.
 			void EndDraw	(void *context) const;
 			// Template function to initialize vertices from an arbitrary vertex structure.
-			template<class T> void init(ID3D11Device *pd3dDevice,const std::vector<T> &vertices,std::vector<unsigned short> indices)
+			template<class T,typename U> void init(ID3D11Device *pd3dDevice,const std::vector<T> &vertices,std::vector<U> indices)
 			{
 				int num_vertices	=(int)vertices.size();
 				int num_indices		=(int)indices.size();
 				T *v				=new T[num_vertices];
-				unsigned short *ind	=new unsigned short[num_indices];
+				U *ind				=new U[num_indices];
 				for(int i=0;i<num_vertices;i++)
 					v[i]=vertices[i];
 				for(int i=0;i<num_indices;i++)
@@ -35,7 +37,7 @@ namespace simul
 				delete [] v;
 				delete [] ind;
 			}
-			template<class T> void init(ID3D11Device *pd3dDevice,int num_vertices,int num_indices,T *vertices,unsigned short *indices)
+			template<class T,typename U> void init(ID3D11Device *pd3dDevice,int num_vertices,int num_indices,T *vertices,U *indices)
 			{
 				release();
 				stride=sizeof(T);
@@ -58,7 +60,7 @@ namespace simul
 				// index buffer
 				D3D11_BUFFER_DESC indexBufferDesc=
 				{
-					num_indices*sizeof(unsigned short),
+					num_indices*sizeof(U),
 					D3D11_USAGE_DYNAMIC,
 					D3D11_BIND_INDEX_BUFFER,
 					D3D11_CPU_ACCESS_WRITE,
@@ -66,19 +68,20 @@ namespace simul
 				};
 				ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
 				InitData.pSysMem = indices;
-				InitData.SysMemPitch = sizeof(unsigned short);
+				InitData.SysMemPitch = sizeof(U);
 				hr=pd3dDevice->CreateBuffer(&indexBufferDesc,&InitData,&indexBuffer);
 			}
 			void apply(ID3D11DeviceContext *pImmediateContext,unsigned instanceStride,ID3D11Buffer *instanceBuffer);
 			ID3D11Buffer *vertexBuffer;
 			ID3D11Buffer *indexBuffer;
+			ID3D11InputLayout* inputLayout;
 			unsigned stride;
 			unsigned numVertices;
 			unsigned numIndices;
 		protected:
-			// Implementing scene::Mesh
-			bool Initialize(int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices);
 			void UpdateVertexPositions(int lVertexCount, float *lVertices) const;
+			mutable ID3D11InputLayout* previousInputLayout;
+			mutable D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 		};
 	}
 }

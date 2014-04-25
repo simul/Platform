@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -91,7 +91,7 @@ void GetCameraPosVector(simul::math::Vector3 &cam_pos,simul::math::Vector3 &cam_
 					static float ww=50.f;
 					static float uu=9.f;
 
-void SimulGLLightningRenderer::Render(void*)
+void SimulGLLightningRenderer::Render(void*,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *cloud_depth_tex)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	if(glStringMarkerGREMEDY)
@@ -133,18 +133,18 @@ GL_ERROR_CHECK
 		const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,i);
 		if(!lightningRenderInterface)
 			continue;
-		if(!lightningRenderInterface->IsSourceStarted(time))
-			continue;
-	float4 colour=lightningRenderInterface->GetLightningColour();
-	setParameter(lightning_program,"lightningColour",colour.x,colour.y,colour.z);
+		simul::clouds::LightningProperties props=cloudKeyframer->GetLightningProperties(time,i);
+		props.seed=0;
+		//setParameter(lightning_program,"lightningColour",props.colour);
 		simul::sky::float4 x1,x2;
-		static float maxwidth=8.f;
-		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
-		for(int j=0;j<lightningRenderInterface->GetNumLevels();j++)
+		static float maxwidth	=8.f;
+		float vertical_shift	=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
+		for(int j=0;j<props.numLevels;j++)
 		{
-			for(int jj=0;jj<lightningRenderInterface->GetNumBranches(j);jj++)
+			for(int jj=0;jj<props.branchCount;jj++)
 			{
-				const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(time,j,jj);
+				const simul::clouds::LightningRenderInterface::Branch &branch
+					=lightningRenderInterface->GetBranch(props,time,j,jj);
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_ONE,GL_ONE);
 				glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ONE,GL_ONE);

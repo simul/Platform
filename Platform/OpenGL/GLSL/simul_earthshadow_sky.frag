@@ -3,10 +3,10 @@
 #include "saturate.glsl"
 uniform float hazeEccentricity;
 uniform vec3 mieRayleighRatio;
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 uniform sampler2D inscTexture;
-#include "../../CrossPlatform/earth_shadow_uniforms.sl"
-#include "../../CrossPlatform/earth_shadow.sl"
+#include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
+#include "../../CrossPlatform/SL/earth_shadow.sl"
 
 uniform sampler2D skylightTexture;
 uniform vec3 lightDir;

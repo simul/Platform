@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -162,7 +162,9 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	noise_fb.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 	noise_fb.Activate(pContext);
 	{
-		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_random");
+		SetDetail2DCloudConstants(detail2DConstants);
+		detail2DConstants.Apply(pContext);
+		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("random");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	} 
@@ -215,7 +217,7 @@ void Simul2DCloudRendererDX11::InvalidateDeviceObjects()
 
 void Simul2DCloudRendererDX11::EnsureCorrectTextureSizes()
 {
-	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
+	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
 	int width_x=i.x;
 	int length_y=i.y;
 	coverage_fb.SetWidthAndHeight(width_x,length_y);
@@ -231,9 +233,10 @@ void Simul2DCloudRendererDX11::EnsureCorrectTextureSizes()
 void Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate(void *context)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-    ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate");
+    SIMUL_COMBINED_PROFILE_START(pContext,"Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate");
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
+    SIMUL_COMBINED_PROFILE_END(context)
 }
 
 void Simul2DCloudRendererDX11::EnsureTextureCycle()
@@ -262,13 +265,19 @@ void Simul2DCloudRendererDX11::PreRenderUpdate(void *context)
 	RenderDetailTexture(context);
 }
 
+void FixProjectionMatrix(simul::math::Matrix4x4 &proj,float zNear,float zFar)
+{
+	proj._33	=zNear/(zFar-zNear);	
+	proj._43	=zFar*zNear/(zFar-zNear);
+}
+
 bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depthTexture,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::Render");
 	
-	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
-	ID3DX11EffectTechnique*		tech=technique;
+	ID3D11ShaderResourceView* depthTexture_SRV	=(ID3D11ShaderResourceView*)depthTexture;
+	ID3DX11EffectTechnique*		tech			=technique;
 	if(depthTexture_SRV)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
@@ -294,6 +303,8 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	static float ff=10000.f; 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	float ir_integration_factors[]={0,0,0,0};
+	FixProjectionMatrix(proj,10.f,500000.f);
+
 	Set2DCloudConstants(cloud2DConstants,view,proj,exposure,viewportTextureRegionXYWH,ir_integration_factors);
 	cloud2DConstants.Apply(pContext);
 
@@ -312,7 +323,6 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	pContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R16_UINT,0);					
 
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
 
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	pContext->DrawIndexed(num_indices-2,0,0);
@@ -363,13 +373,17 @@ void Simul2DCloudRendererDX11::RenderCrossSections(void *context,int x0,int y0,i
 	}
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)coverage_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(0)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
+	simul::dx11::UtilityRenderer::Print(pContext,(0)*(w+8)+8,height-8-w,"coverage");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(1)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
+	simul::dx11::UtilityRenderer::Print(pContext,(1)*(w+8)+8,height-8-w,"noise");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)dens_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(2)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
+	simul::dx11::UtilityRenderer::Print(pContext,(2)*(w+8)+8,height-8-w,"dens");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)detail_fb.GetColorTex());
 	cloud2DConstants.Apply(pContext);
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(3)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("show_detail_texture"));
+	simul::dx11::UtilityRenderer::Print(pContext,(3)*(w+8)+8,height-8-w,"detail");
 		
 }
 

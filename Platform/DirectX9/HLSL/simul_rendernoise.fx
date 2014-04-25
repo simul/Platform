@@ -1,7 +1,7 @@
 #include "dx9.hlsl"
-#include "../../CrossPlatform/states.sl"
-#include "../../CrossPlatform/noise.sl"
-#include "../../CrossPlatform/noise_constants.sl"
+#include "../../CrossPlatform/SL/states.sl"
+#include "../../CrossPlatform/SL/noise.sl"
+#include "../../CrossPlatform/SL/noise_constants.sl"
 
 texture noiseTexture;
 sampler2D noise_texture= sampler_state 

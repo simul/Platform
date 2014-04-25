@@ -11,7 +11,7 @@ namespace simul
 {
 	namespace opengl
 	{
-		class SIMUL_OPENGL_EXPORT Light:public scene::LightCache
+		class SIMUL_OPENGL_EXPORT Light:public scene::Light
 		{
 		public:
 			Light();

@@ -12,6 +12,7 @@
 #include "DX11Exception.h"
 #include "Utilities.h"
 
+//#include <D3D11_1.h>
 using namespace simul;
 using namespace dx11;
 using std::string;
@@ -44,12 +45,12 @@ Profiler::~Profiler()
 
 void Profiler::Uninitialize()
 {
-    for(ProfileMap::iterator iter = profiles.begin(); iter != profiles.end(); iter++)
+    for(ProfileMap::iterator iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         ProfileData *profile = (*iter).second;
 		delete profile;
 	}
-	profiles.clear();
+	profileMap.clear();
     this->device = NULL;
     enabled=true;
 }
@@ -60,6 +61,7 @@ void Profiler::Initialize(ID3D11Device* device)
     enabled=true;
 //	std::cout<<"Profiler::Initialize device "<<(unsigned)device<<std::endl;
 }
+
 ID3D11Query *CreateQuery(ID3D11Device* device,D3D11_QUERY_DESC &desc,const char *name)
 {
 	ID3D11Query *q=NULL;
@@ -72,13 +74,54 @@ void Profiler::Begin(void *ctx,const char *name)
 {
 	IUnknown *unknown=(IUnknown *)ctx;
 	ID3D11DeviceContext *context=(ID3D11DeviceContext*)ctx;
-	last_name.push_back(name);
+
+	//ID3DUserDefinedAnnotation* d3DUserDefinedAnnotation=NULL;
+	//if (context->QueryInterface(__uuidof(ID3D11Texture3D), (void**)&ppd) != S_OK)
+
+	//	d3DUserDefinedAnnotation->BeginEvent(name);
+	//d3DUserDefinedAnnotation->EndEvent();
+	std::string parent;
+	if(last_name.size())
+		parent=(last_name.back());
+	std::string qualified_name(name);
+	if(last_name.size())
+		qualified_name=(parent+".")+name;
+	last_name.push_back(qualified_name);
 	last_context.push_back(context);
 	if(!context||!enabled||!device)
         return;
-	if(profiles.find(name)==profiles.end())
-		profiles[name]=new ProfileData;
-    ProfileData *profileData = profiles[name];
+    ProfileData *profileData = NULL;
+	if(profileMap.find(qualified_name)==profileMap.end())
+	{
+		profileData=profileMap[qualified_name]=new ProfileData;
+		profileData->unqualifiedName=name;
+	}
+	else
+	{
+		profileData=profileMap[qualified_name];
+	}
+	profileData->last_child_updated=0;
+	int new_child_index=0;
+    ProfileData *parentData=NULL;
+	if(parent.length())
+		parentData=profileMap[parent];
+	if(parentData)
+	{
+		new_child_index=++parentData->last_child_updated;
+		while(parentData->children.find(new_child_index)!=parentData->children.end()&&parentData->children[new_child_index]!=profileData)
+		{
+			new_child_index++;
+		}
+		parentData->children[new_child_index]=profileData;
+		if(profileData->child_index!=0&&new_child_index!=profileData->child_index&&parentData->children.find(profileData->child_index)!=parentData->children.end())
+		{
+			parentData->children.erase(profileData->child_index);
+		}
+		profileData->child_index=new_child_index;
+	}
+	profileData->parent=parentData;
+	if(!parentData)
+		rootMap[qualified_name]=profileData;
     _ASSERT(profileData->QueryStarted == FALSE);
     if(profileData->QueryFinished!= FALSE)
         return;
@@ -89,13 +132,13 @@ void Profiler::Begin(void *ctx,const char *name)
         D3D11_QUERY_DESC desc;
         desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
         desc.MiscFlags = 0;
-		std::string disjointName="disjoint";
-		std::string startName	="start";
-		std::string endName		="end";
+		std::string disjointName=qualified_name+"disjoint";
+		std::string startName	=qualified_name+"start";
+		std::string endName		=qualified_name+"end";
 		profileData->DisjointQuery[currFrame]		=CreateQuery(device,desc,disjointName.c_str());
         desc.Query = D3D11_QUERY_TIMESTAMP;
-        profileData->TimestampStartQuery[currFrame]	=CreateQuery(device,desc, startName.c_str());
-        profileData->TimestampEndQuery[currFrame]	=CreateQuery(device,desc, endName.c_str());
+        profileData->TimestampStartQuery[currFrame]	=CreateQuery(device,desc,startName.c_str());
+        profileData->TimestampEndQuery[currFrame]	=CreateQuery(device,desc,endName.c_str());
     }
 
     // Start a disjoint query first
@@ -116,7 +159,7 @@ void Profiler::End()
     if(!enabled||!device||!context)
         return;
 
-    ProfileData *profileData = profiles[name];
+    ProfileData *profileData = profileMap[name];
     if(profileData->QueryStarted != TRUE)
 		return;
     _ASSERT(profileData->QueryFinished == FALSE);
@@ -130,6 +173,7 @@ void Profiler::End()
     profileData->QueryStarted = FALSE;
     profileData->QueryFinished = TRUE;
 }
+
 template<typename T> inline std::string ToString(const T& val)
 {
     std::ostringstream stream;
@@ -145,13 +189,16 @@ void Profiler::EndFrame(ID3D11DeviceContext* context)
 
     currFrame = (currFrame + 1) % QueryLatency;    
 
-    float queryTime = 0.0f;
-	output="";
-    // Iterate over all of the profiles
+    queryTime = 0.0f;
+    // Iterate over all of the profileMap
     ProfileMap::iterator iter;
-    for(iter = profiles.begin(); iter != profiles.end(); iter++)
+    for(iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         ProfileData& profile = *((*iter).second);
+
+		static float mix=0.01f;
+		iter->second->time*=(1.f-mix);
+
         if(profile.QueryFinished == FALSE)
             continue;
 
@@ -183,30 +230,47 @@ void Profiler::EndFrame(ID3D11DeviceContext* context)
             time = (delta / frequency) * 1000.0f;
         }        
 
-        output+= (*iter).first + ": " + ToString(time) + "ms\n";
-        iter->second->time=time;
+        iter->second->time+=mix*time;
     }
-
-    output+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
 }
 
 float Profiler::GetTime(const std::string &name) const
 {
     if(!enabled||!device)
 		return 0.f;
-	return profiles.find(name)->second->time;
+	return profileMap.find(name)->second->time;
 }
 #include "Simul/Base/StringFunctions.h"
+std::string Walk(Profiler::ProfileData *p,int tab,float parent_time)
+{
+	if(p->children.size()==0)
+		return "";
+	std::string str;
+	for(Profiler::ChildMap::const_iterator i=p->children.begin();i!=p->children.end();i++)
+	{
+		for(int j=0;j<tab;j++)
+			str+="  ";
+		str+=i->second->unqualifiedName.c_str();
+		str+=" ";
+		str+=simul::base::stringFormat("%4.4f (%3.3f%%)\n",i->second->time,100.f*i->second->time/parent_time);
+		str+=Walk(i->second,tab+1,i->second->time);
+	}
+	return str;
+}
+
 const char *Profiler::GetDebugText() const
 {
 	static std::string str;
 	str="";
-	for(Profiler::ProfileMap::const_iterator i=profiles.begin();i!=profiles.end();i++)
+	for(Profiler::ProfileMap::const_iterator i=rootMap.begin();i!=rootMap.end();i++)
 	{
-		str+=i->first.c_str();
+		str+=i->second->unqualifiedName.c_str();
 		str+=" ";
-		str+=simul::base::stringFormat("%4.4g\n",i->second->time);
+		str+=simul::base::stringFormat("%4.4f\n",i->second->time);
+		str+=Walk(i->second,1,i->second->time);
 	}
+
+    str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
 	return str.c_str();
 }
 

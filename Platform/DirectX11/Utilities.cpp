@@ -1,10 +1,13 @@
+#define NOMINMAX
 #include "Utilities.h"
 #include "MacrosDX1x.h"
 #include "TextRenderer.h"
 #include "Simul\Base\StringToWString.h"
 #include "Simul/Sky/Float4.h"
+#include "Simul/Camera/Camera.h"
 #include "Simul/Math/Vector3.h"
 #include <d3dx11.h>
+#include <algorithm>			// for std::min / max
 using namespace simul;
 using namespace dx11;
 
@@ -34,6 +37,8 @@ TextureStruct::TextureStruct()
 	,width(0)
 	,length(0)
 	,last_context(NULL)
+	,m_pOldRenderTarget(NULL)
+	,m_pOldDepthSurface(NULL)
 {
 	memset(&mapped,0,sizeof(mapped));
 }
@@ -55,6 +60,8 @@ void TextureStruct::release()
 	SAFE_RELEASE(unorderedAccessView);
 	SAFE_RELEASE(renderTargetView);
 	SAFE_RELEASE(stagingBuffer);
+	SAFE_RELEASE(m_pOldRenderTarget);
+	SAFE_RELEASE(m_pOldDepthSurface);
 }
 
 void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *pContext,void *target,int start_texel,int num_texels)
@@ -79,7 +86,7 @@ void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *p
 	}
 	pContext->CopyResource(stagingBuffer,texture);
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	pContext->Map( stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource);
+	V_CHECK(pContext->Map( stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource));
 	unsigned char *source = (unsigned char *)(mappedResource.pData);
 	
 	int expected_pitch=byteSize*width;
@@ -103,7 +110,7 @@ void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *p
 		if(col>0)
 		{
 			source		+=col*byteSize;
-			int columns	=min(num_texels,width-col);
+			int columns	=std::min(num_texels,width-col);
 			memcpy(dest,source,columns*byteSize);
 			source		+=mappedResource.RowPitch;
 			dest		+=columns*byteSize;
@@ -146,7 +153,7 @@ void TextureStruct::setTexels(ID3D11DeviceContext *context,const void *src,int t
 		int col		=texel_index-row*width;
 		target		+=row*block*byteSize;
 		source		+=col*byteSize;
-		int columns=min(num_texels,width-col);
+		int columns=std::min(num_texels,width-col);
 		memcpy(target,source,columns*byteSize);
 		source		+=columns*byteSize;
 		target		+=block*byteSize;
@@ -316,6 +323,7 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		renderTargetViewDesc.ViewDimension		=D3D11_RTV_DIMENSION_TEXTURE2D;
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 		// Create the render target in DX11:
+		SAFE_RELEASE(renderTargetView);
 		V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&renderTargetView));
 		SetDebugObjectName(renderTargetView,"TextureStruct::ensureTexture2DSizeAndFormat renderTargetView");
 	}
@@ -400,6 +408,55 @@ void TextureStruct::unmap()
 	last_context=NULL;
 }
 
+void TextureStruct::activateRenderTarget(ID3D11DeviceContext *pContext)
+{
+	if(!pContext)
+		return;
+	last_context=pContext;
+	{
+		uint num_v=0;
+		pContext->RSGetViewports(&num_v,NULL);
+		if(num_v>0)
+			pContext->RSGetViewports(&num_v,m_OldViewports);
+		SAFE_RELEASE(m_pOldRenderTarget);
+		SAFE_RELEASE(m_pOldDepthSurface);
+		pContext->OMGetRenderTargets(	1,
+										&m_pOldRenderTarget,
+										&m_pOldDepthSurface
+										);
+	}
+	pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
+	{
+		ID3D11Texture2D* ppd(NULL);
+		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)
+			return;
+		D3D11_TEXTURE2D_DESC textureDesc;
+		ppd->GetDesc(&textureDesc);
+		SAFE_RELEASE(ppd);
+		D3D11_VIEWPORT viewport;
+		viewport.Width = (float)textureDesc.Width;
+		viewport.Height = (float)textureDesc.Height;
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		pContext->RSSetViewports(1, &viewport);
+	}
+}
+
+void TextureStruct::deactivateRenderTarget()
+{
+	if(!last_context)
+		return;
+	last_context->OMSetRenderTargets(	1,
+										&m_pOldRenderTarget,
+										m_pOldDepthSurface
+										);
+	last_context->RSSetViewports(1,m_OldViewports);
+	SAFE_RELEASE(m_pOldRenderTarget);
+	SAFE_RELEASE(m_pOldDepthSurface);
+}
+
 ComputableTexture::ComputableTexture()
 	:g_pTex_Output(NULL)
 	,g_pUAV_Output(NULL)
@@ -470,15 +527,15 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	}
 	D3D11_TEXTURE2D_DESC desc;
 	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[textures.size()];
-	ID3D11DeviceContext *pImmediateContext=NULL;
-	pd3dDevice->GetImmediateContext(&pImmediateContext);
+	ID3D11DeviceContext *pContext=NULL;
+	pd3dDevice->GetImmediateContext(&pContext);
 	for(int i=0;i<(int)textures.size();i++)
 	{
 		if(!textures[i])
 			return;
 		textures[i]->GetDesc(&desc);
 		D3D11_MAPPED_SUBRESOURCE mapped_res;
-		pImmediateContext->Map(textures[i],0,D3D11_MAP_READ,0,&mapped_res);	
+		pContext->Map(textures[i],0,D3D11_MAP_READ,0,&mapped_res);	
 		subResources[i].pSysMem			=mapped_res.pData;
 		subResources[i].SysMemPitch		=mapped_res.RowPitch;
 		subResources[i].SysMemSlicePitch=mapped_res.DepthPitch;
@@ -495,17 +552,17 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	if(m_pArrayTexture)
 	for(unsigned i=0;i<textures.size();i++)
 	{
-		pImmediateContext->UpdateSubresource(m_pArrayTexture,i*num_mips, NULL,subResources[i].pSysMem,subResources[i].SysMemPitch,subResources[i].SysMemSlicePitch);
+		pContext->UpdateSubresource(m_pArrayTexture,i*num_mips, NULL,subResources[i].pSysMem,subResources[i].SysMemPitch,subResources[i].SysMemSlicePitch);
 	}
 	pd3dDevice->CreateShaderResourceView(m_pArrayTexture,NULL,&m_pArrayTexture_SRV);
 	delete [] subResources;
 	for(unsigned i=0;i<textures.size();i++)
 	{
-		pImmediateContext->Unmap(textures[i],0);
+		pContext->Unmap(textures[i],0);
 		SAFE_RELEASE(textures[i])
 	}
-	pImmediateContext->GenerateMips(m_pArrayTexture_SRV);
-	SAFE_RELEASE(pImmediateContext)
+	pContext->GenerateMips(m_pArrayTexture_SRV);
+	SAFE_RELEASE(pContext)
 }
 
 void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORMAT f,bool computable)
@@ -513,8 +570,8 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 	release();
 	D3D11_TEXTURE2D_DESC desc;
 //	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[num];
-	//ID3D11DeviceContext *pImmediateContext=NULL;
-	//pd3dDevice->GetImmediateContext(&pImmediateContext);
+	//ID3D11DeviceContext *pContext=NULL;
+	//pd3dDevice->GetImmediateContext(&pContext);
 	static int num_mips		=5;
 	desc.Width				=w;
 	desc.Height				=l;
@@ -530,17 +587,17 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 	V_CHECK(pd3dDevice->CreateTexture2D(&desc,NULL,&m_pArrayTexture));
 	V_CHECK(pd3dDevice->CreateShaderResourceView(m_pArrayTexture,NULL,&m_pArrayTexture_SRV));
 	V_CHECK(pd3dDevice->CreateUnorderedAccessView(m_pArrayTexture,NULL,&unorderedAccessView));
-	//SAFE_RELEASE(pImmediateContext)
+	//SAFE_RELEASE(pContext)
 }
 
 int UtilityRenderer::instance_count=0;
 int UtilityRenderer::screen_width=0;
 int UtilityRenderer::screen_height=0;
 D3DXMATRIX UtilityRenderer::view,UtilityRenderer::proj;
-ID3D1xEffect *UtilityRenderer::m_pDebugEffect=NULL;
+ID3DX11Effect *UtilityRenderer::m_pDebugEffect=NULL;
 ID3D11InputLayout *UtilityRenderer::m_pCubemapVtxDecl=NULL;
 ID3D1xBuffer* UtilityRenderer::m_pVertexBuffer=NULL;
-ID3D1xDevice* UtilityRenderer::m_pd3dDevice=NULL;
+ID3D11Device* UtilityRenderer::m_pd3dDevice=NULL;
 UtilityRenderer utilityRenderer;
 
 UtilityRenderer::UtilityRenderer()
@@ -612,23 +669,23 @@ static Vertex3_t vertices[36] =
 
 void UtilityRenderer::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=(ID3D1xDevice *)dev;
+	m_pd3dDevice=(ID3D11Device *)dev;
 	RecompileShaders();
 	textRenderer.RestoreDeviceObjects(m_pd3dDevice);
 	SAFE_RELEASE(m_pVertexBuffer);
 	// Vertex declaration
 	{
 		D3DX11_PASS_DESC PassDesc;
-		ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
+		ID3DX11EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
 		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
-		D3D1x_INPUT_ELEMENT_DESC decl[]=
+		D3D11_INPUT_ELEMENT_DESC decl[]=
 		{
 			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
 		};
 		SAFE_RELEASE(m_pCubemapVtxDecl);
 		V_CHECK(m_pd3dDevice->CreateInputLayout(decl,1,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl));
 	}
-	D3D1x_BUFFER_DESC desc=
+	D3D11_BUFFER_DESC desc=
 	{
         36*sizeof(vec3),
         D3D1x_USAGE_DEFAULT,
@@ -637,7 +694,7 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
         0
 	};
 	
-    D3D1x_SUBRESOURCE_DATA InitData;
+    D3D11_SUBRESOURCE_DATA InitData;
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
     InitData.pSysMem		=vertices;
     InitData.SysMemPitch	=sizeof(vec3);
@@ -663,6 +720,11 @@ void UtilityRenderer::InvalidateDeviceObjects()
     SAFE_RELEASE( m_pSamplerStateStored11 );
 }
 
+ID3DX11Effect		*UtilityRenderer::GetDebugEffect()
+{
+	return m_pDebugEffect;
+}
+
 void UtilityRenderer::SetMatrices(D3DXMATRIX v,D3DXMATRIX p)
 {
 	view=v;
@@ -675,21 +737,27 @@ void UtilityRenderer::SetScreenSize(int w,int h)
 	screen_height=h;
 }
 
-void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,int x,int y,const char *text)
+void UtilityRenderer::GetScreenSize(int& w,int& h)
 {
-	UtilityRenderer::Print(pd3dImmediateContext,(float)x,(float)y,text);
+	w=screen_width;
+	h=screen_height;
 }
 
-void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,float x,float y,const char *text)
+void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,int x,int y,const char *text,const float *clr)
 {
-	textRenderer.Render(pd3dImmediateContext,x,y,(float)screen_width,(float)screen_height,text);
+	UtilityRenderer::Print(pd3dImmediateContext,(float)x,(float)y,text,clr);
+}
+
+void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,float x,float y,const char *text,const float *clr)
+{
+	textRenderer.Render(pd3dImmediateContext,x,y,(float)screen_width,(float)screen_height,text,clr);
 }
 
 void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
 }
 
-void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexXyzRgba *vertices,int vertex_count,bool strip)
+void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *vertices,int vertex_count,bool strip)
 {
 	if(!vertex_count)
 		return;
@@ -698,11 +766,11 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 		HRESULT hr=S_OK;
 		D3DXMATRIX world, tmp1, tmp2;
 		D3DXMatrixIdentity(&world);
-		ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_debug");
+		ID3DX11EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_debug");
 		ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
 
 		D3DXMATRIX wvp;
-		MakeWorldViewProjMatrix(&wvp,world,view,proj);
+		camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
 		worldViewProj->SetMatrix(&wvp._11);
 	
 		ID3D1xBuffer *					vertexBuffer=NULL;
@@ -734,70 +802,46 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 		SAFE_RELEASE(m_pVtxDecl);
 		hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
-		m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+		m_pContext->IASetInputLayout(m_pVtxDecl);
 		ID3D11InputLayout* previousInputLayout;
-		m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+		m_pContext->IAGetInputLayout( &previousInputLayout );
 		D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-		m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-		m_pImmediateContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		m_pContext->IAGetPrimitiveTopology(&previousTopology);
+		m_pContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		UINT stride = sizeof(VertexXyzRgba);
 		UINT offset = 0;
 		UINT Strides[1];
 		UINT Offsets[1];
 		Strides[0] = stride;
 		Offsets[0] = 0;
-		m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
+		m_pContext->IASetVertexBuffers(	0,				// the first input slot for binding
 													1,				// the number of buffers in the array
 													&vertexBuffer,	// the array of vertex buffers
 													&stride,		// array of stride values, one for each buffer
 													&offset);		// array of 
-		hr=ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
-		m_pImmediateContext->Draw(vertex_count,0);
-		m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-		m_pImmediateContext->IASetInputLayout( previousInputLayout );
+		hr=ApplyPass(m_pContext,tech->GetPassByIndex(0));
+		m_pContext->Draw(vertex_count,0);
+		m_pContext->IASetPrimitiveTopology(previousTopology);
+		m_pContext->IASetInputLayout( previousInputLayout );
 		SAFE_RELEASE(previousInputLayout);
 		SAFE_RELEASE(vertexBuffer);
 		SAFE_RELEASE(m_pVtxDecl);
 	}
 }
 
-void UtilityRenderer::DrawTexture(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult)
-{
-	if(!t)
-		return;
-	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",t);
-	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
-	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-	t->GetDesc(&desc);
-	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
-	if(msaa)
-		DrawTextureMS(pContext,x1,y1,dx,dy,t,mult);
-	else if(m_pDebugEffect)
-		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("textured"));
-}
-
-void UtilityRenderer::DrawTextureMS(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float brightnessMultiplier)
-{
-	simul::dx11::setTexture(m_pDebugEffect,"imageTextureMS",t);
-	//simul::dx11::setParameter(m_pDebugEffect,"textureMultiplier",brightnessMultiplier);
-	simul::dx11::setParameter(m_pDebugEffect,"multiplier",brightnessMultiplier);
-	if(m_pDebugEffect)
-		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("texturedMS"));
-}
-
-void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext)
+void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pContext)
 {
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_pImmediateContext->IASetInputLayout(NULL);
-	m_pImmediateContext->Draw(4,0);
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pContext->IAGetPrimitiveTopology(&previousTopology);
+	m_pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	m_pContext->IASetInputLayout(NULL);
+	m_pContext->Draw(4,0);
+	m_pContext->IASetPrimitiveTopology(previousTopology);
 }			
 
-void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffect* eff,ID3D1xEffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
 {
-	DrawQuad2(m_pImmediateContext
+	DrawQuad2(m_pContext
 		,2.f*(float)x1/(float)screen_width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)screen_height
 		,2.f*(float)dx/(float)screen_width
@@ -805,23 +849,23 @@ void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,
 		,eff,tech);
 }
 
-void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffect* eff,ID3D1xEffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pContext,float x1,float y1,float dx,float dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
 {
 	HRESULT hr=S_OK;
 	setParameter(eff,"rect",x1,y1,dx,dy);
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
-	m_pImmediateContext->Draw(4,0);
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pContext->IAGetPrimitiveTopology(&previousTopology);
+	m_pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	ApplyPass(m_pContext,tech->GetPassByIndex(0));
+	m_pContext->Draw(4,0);
+	m_pContext->IASetPrimitiveTopology(previousTopology);
 }
 
-void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pImmediateContext
+void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pContext
 									   ,const float *dr
 									   ,float half_angle_radians
-										,ID3D1xEffect* effect
-										,ID3D1xEffectTechnique* tech
+										,ID3DX11Effect* effect
+										,ID3DX11EffectTechnique* tech
 										,D3DXMATRIX view
 										,D3DXMATRIX proj
 										,D3DXVECTOR3 sun_dir)
@@ -837,11 +881,11 @@ void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pImmediateContext
 	// coverage is 2*atan(1/5)=11 degrees.
 	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(pImmediateContext,tech->GetPassByIndex(0));
-	pImmediateContext->Draw(4,0);
-	pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	ApplyPass(pContext,tech->GetPassByIndex(0));
+	pContext->Draw(4,0);
+	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
 
@@ -890,7 +934,7 @@ void UtilityRenderer::DrawSphere(void *context,int latitudes,int longitudes)
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
-void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety)
+void UtilityRenderer::DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	unsigned int num_v=0;
@@ -927,10 +971,10 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCub
 	view._41=0;
 	view._42=0;
 	view._43=0;
-	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
 	simul::dx11::setMatrix(m_pDebugEffect,"worldViewProj",&wvp._11);
-	//ID3D1xEffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
-	ID3D1xEffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");
+	//ID3DX11EffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
+	ID3DX11EffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");
 	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pDebugEffect->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));

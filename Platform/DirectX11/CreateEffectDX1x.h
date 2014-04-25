@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -34,30 +34,28 @@ namespace simul
 		//! When shader should be built, or loaded if available.
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderBuildMode(ShaderBuildMode s);
 		extern SIMUL_DIRECTX11_EXPORT void PushShaderPath(const char *path);
+		extern SIMUL_DIRECTX11_EXPORT void PopShaderPath();
 		extern SIMUL_DIRECTX11_EXPORT void PushTexturePath(const char *pathUtf8);
 		extern SIMUL_DIRECTX11_EXPORT void PopTexturePath();
-		extern SIMUL_DIRECTX11_EXPORT void MakeInvViewProjMatrix(float *ivp,const float *v,const float *p);
-		extern SIMUL_DIRECTX11_EXPORT void MakeViewProjMatrix(float *vp,const float *view,const float *proj);
-		extern SIMUL_DIRECTX11_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,const float *world,const float *view,const float *proj);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename);
 		ID3D11Texture1D* make1DTexture(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 										,int w
 										,DXGI_FORMAT format
 										,const float *src);
 		ID3D11Texture2D* make2DTexture(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 										,int w,int h
 										,DXGI_FORMAT format
 										,const float *src);
 		ID3D11Texture3D* make3DTexture(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 										,int w,int l,int d
 										,DXGI_FORMAT format
 										,const void *src);
 		void Ensure3DTextureSizeAndFormat(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 											,ID3D1xTexture3D		* &tex
 											,ID3D11ShaderResourceView* &srv
 											,int w,int l,int d
@@ -68,35 +66,35 @@ namespace simul
 		// These functions encapsulate getting an effect variable of the given name if it exists, and
 		// if so, setting its value. Due to inefficiency it is best to replace usage of this over time
 		// with Effect variable pointers, but this is a good way to write new render code quickly
-		void setDepthState			(ID3DX11Effect *effect	,const char *name	,ID3D11DepthStencilState * value);
-		void setSamplerState		(ID3DX11Effect *effect	,const char *name	,ID3D11SamplerState * value);
-		void setTexture				(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
-		void applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,int pass=0);
-		void applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,const char *pass);
-		void setUnorderedAccessView	(ID3DX11Effect *effect	,const char *name	,ID3D11UnorderedAccessView * value);
-		void setTextureArray		(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value);
-		void setStructuredBuffer	(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,float value);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y,float z,float w);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,int value);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,float *vec);
-		void setMatrix				(ID3DX11Effect *effect	,const char *name	,const float *value);
-		void setConstantBuffer		(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b);
-		void unbindTextures			(ID3DX11Effect *effect);
+		void SIMUL_DIRECTX11_EXPORT setDepthState			(ID3DX11Effect *effect	,const char *name	,ID3D11DepthStencilState * value);
+		void SIMUL_DIRECTX11_EXPORT setSamplerState			(ID3DX11Effect *effect	,const char *name	,ID3D11SamplerState * value);
+		void SIMUL_DIRECTX11_EXPORT setTexture				(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
+		void SIMUL_DIRECTX11_EXPORT applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,int pass=0);
+		void SIMUL_DIRECTX11_EXPORT applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,const char *pass);
+		void SIMUL_DIRECTX11_EXPORT setUnorderedAccessView	(ID3DX11Effect *effect	,const char *name	,ID3D11UnorderedAccessView * value);
+		void SIMUL_DIRECTX11_EXPORT setTextureArray			(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value);
+		void SIMUL_DIRECTX11_EXPORT setStructuredBuffer		(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float value);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y,float z,float w);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,int value);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float *vec);
+		void SIMUL_DIRECTX11_EXPORT setMatrix				(ID3DX11Effect *effect	,const char *name	,const float *value);
+		void SIMUL_DIRECTX11_EXPORT setConstantBuffer		(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b);
+		void SIMUL_DIRECTX11_EXPORT unbindTextures			(ID3DX11Effect *effect);
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
 	}
 }
 
 typedef long HRESULT;
-extern SIMUL_DIRECTX11_EXPORT ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *d3dDevice,const char *filename);
+extern SIMUL_DIRECTX11_EXPORT ID3D11ComputeShader *LoadComputeShader(ID3D11Device *d3dDevice,const char *filename);
 //! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename.
-extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *filename);
+extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename);
 //! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename. In that case, the defines are ignored.
-extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines);
-extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D1xDevice *d3dDevice,const char *filename_utf8);
-extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D1xDevice *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines);
+extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines,unsigned int shader_flags=D3DCOMPILE_OPTIMIZATION_LEVEL3);
+extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8);
+extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines);
 
 extern SIMUL_DIRECTX11_EXPORT HRESULT Map2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp);
 extern SIMUL_DIRECTX11_EXPORT void Unmap2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex);

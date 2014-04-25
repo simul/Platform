@@ -11,7 +11,7 @@ typedef std::basic_string<TCHAR> tstring;
 	#define stprintf_s sprintf_s
 #endif
 
-#define ID3D1xDevice								ID3D11Device
+#define ID3D11Device								ID3D11Device
 #define ID3D1xBuffer								ID3D11Buffer		
 #define ID3D1xInputLayout							ID3D11InputLayout
 #define ID3D1xResource								ID3D11Resource
@@ -19,9 +19,9 @@ typedef std::basic_string<TCHAR> tstring;
 #define ID3D1xTexture2D								ID3D11Texture2D
 #define ID3D1xTexture3D								ID3D11Texture3D
 #define ID3D1xQuery									ID3D11Query
-#define ID3D1xEffect								ID3DX11Effect
+#define ID3DX1xEffect								ID3DX11Effect
 #define ID3D1xEffectPass							ID3DX11EffectPass
-#define ID3D1xEffectTechnique						ID3DX11EffectTechnique	
+#define ID3DX1xEffectTechnique						ID3DX11EffectTechnique	
 #define ID3D1xEffectMatrixVariable					ID3DX11EffectMatrixVariable
 #define ID3D1xEffectVectorVariable					ID3DX11EffectVectorVariable
 #define ID3D1xEffectScalarVariable					ID3DX11EffectScalarVariable

@@ -5,13 +5,13 @@ uniform_buffer GpuCloudConstants SIMUL_BUFFER_REGISTER(8)
 {
 	uniform mat4 transformMatrix;
 	uniform vec4 yRange;
-	uniform uint3 threadOffset;
+	uniform vec3 noiseScale;
 	uniform float noiseDimsZ;
 	uniform vec2 extinctions;
 	uniform float stepLength,ttt;
 	uniform uint3 gaussianOffset;
 	uniform int octaves;
-	uniform vec3 noiseScale;
+	uniform uint3 threadOffset;
 	uniform float zPosition;
 
 	uniform float time;
@@ -57,7 +57,7 @@ vec3 assemble3dTexcoord(vec2 texcoord2)
 
 float GetHumidityMultiplier(float z)
 {
-	float i	=saturate((z-baseLayer)/transition);
+	float i=saturate((z-baseLayer)/transition);
 	float m	=(1.0-i)+upperDensity*i;
 	m		*=lerp(0.75,1.0,saturate((1.0-z)/transition));
 	return m;
@@ -66,9 +66,9 @@ float GetHumidityMultiplier(float z)
 // height is the height of the total cloud volume as a proportion of the initial noise volume
 float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float t,float height,float texel)
 {
-	float dens	=0.0;
-	float mult	=0.5;
-	float sum	=0.0;
+	float dens=0.0;
+	float mult=0.5;
+	float sum=0.0;
 	for(int i=0;i<5;i++)
 	{
 		if(i>=octaves)

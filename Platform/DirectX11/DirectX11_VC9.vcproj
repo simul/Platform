@@ -373,6 +373,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LightningRenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\OceanRenderer.cpp"
 				>
 			</File>
@@ -409,10 +413,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimulLightningRendererDX11.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\SimulOpticsRendererDX1x.cpp"
 				>
 			</File>
@@ -434,6 +434,10 @@
 			</File>
 			<File
 				RelativePath=".\Utilities.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\View.cpp"
 				>
 			</File>
 		</Filter>
@@ -491,6 +495,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LightningRenderer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\MacrosDx1x.h"
 				>
 			</File>
@@ -539,10 +547,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimulLightningRendererDX11.h"
-				>
-			</File>
-			<File
 				RelativePath=".\SimulOpticsRendererDX1x.h"
 				>
 			</File>
@@ -564,6 +568,10 @@
 			</File>
 			<File
 				RelativePath=".\Utilities.h"
+				>
+			</File>
+			<File
+				RelativePath=".\View.h"
 				>
 			</File>
 		</Filter>

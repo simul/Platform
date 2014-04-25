@@ -1,6 +1,6 @@
 #ifndef STATES_HLSL
 #define STATES_HLSL
-#include "../../CrossPlatform/states.sl"
+#include "../../CrossPlatform/SL/states.sl"
 
 DepthStencilState DisableDepth
 {
@@ -147,14 +147,14 @@ RasterizerState wireframeRasterizer
 {
 	FillMode					= WIREFRAME;
 	CullMode					= none;
-	FrontCounterClockwise		= FALSE;
+	FrontCounterClockwise		= false;
 	DepthBias					= 0;//DEPTH_BIAS_D32_FLOAT(-0.00001);
 	DepthBiasClamp				= 0.f;
 	SlopeScaledDepthBias		= 0.f;
-	DepthClipEnable				= FALSE;
-	ScissorEnable				= FALSE;
-	MultisampleEnable			= FALSE;
-	AntialiasedLineEnable		= FALSE;
+	DepthClipEnable				= false;
+	ScissorEnable				= false;
+	MultisampleEnable			= false;
+	AntialiasedLineEnable		= true;
 };
 
 BlendState NoBlend

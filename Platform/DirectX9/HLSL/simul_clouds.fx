@@ -216,7 +216,7 @@ vertexOutput VS_Main(vertexInput IN)
 	OUT.view				=IN.position.xyz;
 	OUT.layerFade=IN.layerFade;
 // Note position.xzy is used if Y is vertical!
-	float3 texCoordLightning=(wPos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
+	float3 texCoordLightning=float3(0,0,0);//(wPos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
 	texCoordLightning.z		=0.5f;
 	OUT.texCoordLightning=texCoordLightning;
 	float3 view				=normalize(OUT.view.xyz);
