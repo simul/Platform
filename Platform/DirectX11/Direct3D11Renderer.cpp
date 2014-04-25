@@ -282,10 +282,13 @@ void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)
 	}
 }
 
-void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View *view,int s,vec3 depthToLinFadeDistParams)
+void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View *view,ID3D11ShaderResourceView *depth_SRV,int s,vec3 depthToLinFadeDistParams)
 {
 	SIMUL_COMBINED_PROFILE_START(pContext,"DownscaleDepth")
 	int W=0,H=0;
+	H=view->ScreenHeight;
+	W=view->ScreenWidth;
+#if 0
 	ID3D11ShaderResourceView *depth_SRV=NULL;
 	if(view->useExternalFramebuffer)
 	{
@@ -306,6 +309,7 @@ void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View 
 		H=view->hdrFramebuffer.Height;
 		depth_SRV=(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex();
 	}
+#endif
 	if(!W||!H)
 		return;
 	int w=W/s;

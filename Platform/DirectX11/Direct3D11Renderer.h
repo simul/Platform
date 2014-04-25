@@ -54,7 +54,7 @@ namespace simul
 			void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
 			void InvalidateDeviceObjects();
 			void RecompileShaders(const std::map<std::string,std::string> &defines);
-			void DownscaleDepth(ID3D11DeviceContext* pContext,View *view,int s,vec3 depthToLinFadeDistParams);
+			void DownscaleDepth(ID3D11DeviceContext* pContext,View *view,ID3D11ShaderResourceView *depth_SRV,int s,vec3 depthToLinFadeDistParams);
 		protected:
 			ID3D11Device								*m_pd3dDevice;
 			ID3DX11Effect								*mixedResolutionEffect;
