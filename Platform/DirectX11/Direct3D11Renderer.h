@@ -121,7 +121,7 @@ namespace simul
 			virtual int					AddView				();
 			virtual void				RemoveView			(int);
 			virtual void				ResizeView			(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
-			virtual void				Render				(int,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext);
+			virtual void				Render				(int,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,void *depth1,void *depthLowRes)	;
 			virtual void				OnD3D11LostDevice	();
 			virtual void				OnD3D11DestroyDevice();
 			virtual bool				OnDeviceRemoved		();

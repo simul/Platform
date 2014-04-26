@@ -284,6 +284,8 @@ void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)
 
 void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View *view,ID3D11ShaderResourceView *depth_SRV,int s,vec3 depthToLinFadeDistParams)
 {
+	if(!depth_SRV)
+		return;
 	SIMUL_COMBINED_PROFILE_START(pContext,"DownscaleDepth")
 	int W=0,H=0;
 	H=view->ScreenHeight;
@@ -389,7 +391,7 @@ void Direct3D11Renderer::RenderScene(int view_id,crossplatform::DeviceContext &d
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderScene")
 #if 1
 	View *view=viewManager.GetView(view_id);
-
+	
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetMatrices((const float*)v,(const float*)proj);
 	if(simulTerrainRenderer&&ShowTerrain)
@@ -419,7 +421,8 @@ void Direct3D11Renderer::RenderScene(int view_id,crossplatform::DeviceContext &d
 		void *depthTextureHiRes		=view->hiResDepthTexture.shaderResourceView;
 	
 		int s=simulWeatherRenderer->GetDownscale();
-		mixedResolutionRenderer.DownscaleDepth(pContext,view,s,(const float *)simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj));
+		ID3D11ShaderResourceView *fullres_depth_srv=(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex();
+		mixedResolutionRenderer.DownscaleDepth(pContext,view,fullres_depth_srv,s,(const float *)simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj));
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 		static bool test=true;
 		const void* skyBufferDepthTex = (UseSkyBuffer&test)? view->lowResDepthTexture.shaderResourceView : depthTextureHiRes;
@@ -453,7 +456,8 @@ void Direct3D11Renderer::RenderScene(int view_id,crossplatform::DeviceContext &d
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
-void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)
+void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext
+								,void *depth1,void *depthLowRes)
 {
 	if(!enabled)
 		return;
@@ -674,7 +678,7 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 	ID3D11DeviceContext *pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
 	fb.Activate(pImmediateContext);
-	Render(0,m_pd3dDevice,pImmediateContext);
+	Render(0,m_pd3dDevice,pImmediateContext,view->hdrFramebuffer.GetDepthTex(),NULL);
 	fb.Deactivate(pImmediateContext);
 	simul::dx11::SaveTexture(m_pd3dDevice,(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());
 	SAFE_RELEASE(pImmediateContext);
