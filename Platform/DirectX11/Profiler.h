@@ -1,25 +1,12 @@
 #pragma once
-
-// Platform SDK defines, specifies that our min version is Windows Vista
-#ifndef WINVER
-#define WINVER 0x0600
-#endif
-
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
-#endif
-
-#ifndef _WIN32_WINDOWS
-#define _WIN32_WINDOWS 0x0410
-#endif
-
-#ifndef _WIN32_IE
-#define _WIN32_IE 0x0700
-#endif
-
-#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 // C RunTime Header Files
 // C++ Standard Library Header Files
+#include <sdkddkver.h>
+#if WINVER<0x0602
+#include <d3dx11.h>
+#include <dxerr.h>
+#include <dxgi.h>
+#endif
 #include <string>
 #include <vector>
 #include <set>
@@ -35,10 +22,12 @@
 #endif
 #endif
 
-#include <dxgi.h>
 #include <d3d11.h>
+#if WINVER<0x0602
 #include <d3dx11.h>
 #include <dxerr.h>
+#include <dxgi.h>
+#endif
 
 #include <string>
 #include "Simul/Base/Timer.h"

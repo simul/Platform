@@ -1,5 +1,8 @@
 #include "Mesh.h"
+#if WINVER<0x0602
 #include <d3dx11.h>
+#endif
+#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
 #include "MacrosDX1x.h"
 #include "CreateEffectDX1x.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"

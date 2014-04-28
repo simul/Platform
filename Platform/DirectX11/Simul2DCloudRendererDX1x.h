@@ -8,10 +8,12 @@
 // Simul2DCloudRendererDX11.h A renderer for 2D cloud layers.
 
 #pragma once
-#include <d3dx9.h>
 #include <d3d11.h>
+#if WINVER<0x0602
+#include <d3dx9.h>
 #include <d3dx11.h>
-#include <D3dx11effect.h>
+#endif
+#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"

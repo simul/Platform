@@ -5,7 +5,9 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Math/Vector3.h"
+#if WINVER<0x602
 #include <d3dx11.h>
+#endif
 #include <algorithm>			// for std::min / max
 using namespace simul;
 using namespace dx11;
@@ -517,7 +519,7 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 		textures.push_back(simul::dx11::LoadStagingTexture(pd3dDevice,texture_files[i].c_str()));
 	}
 	D3D11_TEXTURE2D_DESC desc;
-	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[textures.size()];
+//	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[textures.size()];
 	ID3D11DeviceContext *pContext=NULL;
 	pd3dDevice->GetImmediateContext(&pContext);
 	for(int i=0;i<(int)textures.size();i++)
@@ -525,11 +527,14 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 		if(!textures[i])
 			return;
 		textures[i]->GetDesc(&desc);
-		D3D11_MAPPED_SUBRESOURCE mapped_res;
-		pContext->Map(textures[i],0,D3D11_MAP_READ,0,&mapped_res);	
+	/*	D3D11_MAPPED_SUBRESOURCE mapped_res;
+		HRESULT hr=pContext->Map(textures[i],0,D3D11_MAP_READ,0,&mapped_res);	
+		if(hr==S_OK)
+		{
 		subResources[i].pSysMem			=mapped_res.pData;
 		subResources[i].SysMemPitch		=mapped_res.RowPitch;
 		subResources[i].SysMemSlicePitch=mapped_res.DepthPitch;
+		}*/
 	}
 	static int num_mips=5;
 	desc.BindFlags=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_RENDER_TARGET;
@@ -543,13 +548,24 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	if(m_pArrayTexture)
 	for(unsigned i=0;i<textures.size();i++)
 	{
-		pContext->UpdateSubresource(m_pArrayTexture,i*num_mips, NULL,subResources[i].pSysMem,subResources[i].SysMemPitch,subResources[i].SysMemSlicePitch);
+		// Copy the resource directly, no CPU mapping
+		pContext->CopySubresourceRegion(
+						m_pArrayTexture
+						,i*num_mips
+						,0
+						,0
+						,0
+						,textures[i]
+						,0
+						,NULL
+						);
+		//pContext->UpdateSubresource(m_pArrayTexture,i*num_mips, NULL,subResources[i].pSysMem,subResources[i].SysMemPitch,subResources[i].SysMemSlicePitch);
 	}
 	pd3dDevice->CreateShaderResourceView(m_pArrayTexture,NULL,&m_pArrayTexture_SRV);
-	delete [] subResources;
+	//delete [] subResources;
 	for(unsigned i=0;i<textures.size();i++)
 	{
-		pContext->Unmap(textures[i],0);
+	//	pContext->Unmap(textures[i],0);
 		SAFE_RELEASE(textures[i])
 	}
 	pContext->GenerateMips(m_pArrayTexture_SRV);
@@ -742,7 +758,6 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *v
 {
 	if(!vertex_count)
 		return;
-	PIXWrapper(0xFF0000FF,"DrawLines")
 	{
 		HRESULT hr=S_OK;
 		D3DXMATRIX world, tmp1, tmp2;
@@ -751,7 +766,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *v
 		ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
 
 		D3DXMATRIX wvp;
-		camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
+		camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&view,(const float*)&proj);
 		worldViewProj->SetMatrix(&wvp._11);
 	
 		ID3D1xBuffer *					vertexBuffer=NULL;
@@ -944,7 +959,7 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCub
 	//simul::math::Vector3 offs0(offsetx*(tan_x-size_req)*d,offsety*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs0(0,0,-d);
 	simul::math::Vector3 offs;
-	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
+	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)&view),offs0);
 
 	world._41=offs.x;
 	world._42=offs.y;
@@ -952,7 +967,7 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCub
 	view._41=0;
 	view._42=0;
 	view._43=0;
-	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
+	camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&view,(const float*)&proj);
 	simul::dx11::setMatrix(m_pDebugEffect,"worldViewProj",&wvp._11);
 	//ID3DX11EffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
 	ID3DX11EffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");

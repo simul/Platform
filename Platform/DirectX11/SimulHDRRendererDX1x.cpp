@@ -10,7 +10,9 @@
 #define NOMINMAX
 #include "SimulHDRRendererDX1x.h"
 #include <tchar.h>
+#if WINVER<0x0602
 #include <dxerr.h>
+#endif
 #include <string>
 #include <algorithm>			// for std::min / max
 #include <assert.h>

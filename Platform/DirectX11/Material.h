@@ -1,7 +1,7 @@
 #pragma once
 
 #include <map>
-#include <d3dx11effect.h>
+#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
 #include "Export.h"
 #include "Simul/Scene/Material.h"
 

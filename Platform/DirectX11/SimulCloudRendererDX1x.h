@@ -11,10 +11,12 @@
 #pragma once
 
 #include <tchar.h>
-#include <d3dx9.h>
 #include <d3d11.h>
+#if WINVER<0x0602
+#include <d3dx9.h>
 #include <d3dx11.h>
-#include <D3dx11effect.h>
+#endif
+#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
 #include "Simul/Graph/Meta/Group.h"
 
 #include "Simul/Clouds/BaseCloudRenderer.h"

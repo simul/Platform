@@ -11,7 +11,9 @@
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
 #include <tchar.h>
+#if WINVER<0x0602
 #include <dxerr.h>
+#endif
 #include <string>
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
@@ -159,7 +161,7 @@ void SimulAtmosphericsRendererDX1x::RenderLoss(void *context,const void *depthTe
 	sky::float4 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
-	D3DXMATRIX p1=proj;
+	math::Matrix4x4 p1=proj;
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,1.f,view,p1,proj,relativeViewportTextureRegionXYWH);
 	atmosphericsPerViewConstants.Apply(pContext);
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
@@ -197,7 +199,7 @@ void SimulAtmosphericsRendererDX1x::RenderInscatter(void *context,const void *de
 	sky::float4 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
-	D3DXMATRIX p1=proj;
+	math::Matrix4x4 p1=proj;
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
 	atmosphericsPerViewConstants.Apply(pContext);
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
@@ -241,7 +243,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	sky::float4 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
-	D3DXMATRIX p1=proj;
+	math::Matrix4x4 p1=proj;
 
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
 	
@@ -296,7 +298,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,b
 	or.DefineFromYZ(north,toSun);
 	sky::float4 cam_pos=dx11::GetCameraPosVector(view);
 	or.SetPosition((const float*)cam_pos);
-	D3DXMATRIX p1=proj;
+	math::Matrix4x4 p1=proj;
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,strength*exposure,view,p1,proj,relativeViewportTextureRegionXYWH);

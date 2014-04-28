@@ -303,7 +303,7 @@ void PrecipitationRenderer::Render(void *context
 	perViewConstants.invViewProj_2[1].transpose();
 	perViewConstants.worldView[1]		=view;
 	perViewConstants.worldView[1].transpose();
-	perViewConstants.worldViewProj[1]	=wvp;
+	perViewConstants.worldViewProj[1]		=(const float *)&wvp;
 	perViewConstants.worldViewProj[1].transpose();
 	perViewConstants.offset[1]		=offs;
 	perViewConstants.tanHalfFov		=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);

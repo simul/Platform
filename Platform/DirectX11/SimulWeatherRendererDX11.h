@@ -11,9 +11,11 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
-#include <d3dx9.h>
 #include <d3d11.h>
+#if WINVER<0x0602
+#include <d3dx9.h>
 #include <d3dx11.h>
+#endif
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
@@ -157,7 +159,7 @@ namespace simul
 			float									exposure;
 			float									gamma;
 			float									exposure_multiplier;
-			D3DXVECTOR3								cam_pos;
+			simul::math::Vector3					cam_pos;
 		};
 	}
 }

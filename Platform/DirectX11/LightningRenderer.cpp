@@ -75,7 +75,7 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	UINT num_v		=1;
 	pContext->RSGetViewports(&num_v,&viewport);
 
-	D3DXMATRIX wvp;
+	math::Matrix4x4 wvp;
 	camera::MakeViewProjMatrix(wvp,(const float*)&view,(const float*)&proj);
 	lightningPerViewConstants.worldViewProj=wvp;
 	lightningPerViewConstants.worldViewProj.transpose();

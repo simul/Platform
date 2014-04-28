@@ -1,8 +1,10 @@
 #pragma once
 // Direct3D includes
 #include <d3d11.h>
+#if WINVER<0x0602
 #include <d3dx11.h>
 #include <dxerr.h>
+#endif
 
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
 #include "Simul/Base/PropertyMacros.h"
@@ -54,7 +56,7 @@ namespace simul
 			void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
 			void InvalidateDeviceObjects();
 			void RecompileShaders(const std::map<std::string,std::string> &defines);
-			void DownscaleDepth(ID3D11DeviceContext* pContext,View *view,ID3D11ShaderResourceView *depth_SRV,int s,vec3 depthToLinFadeDistParams);
+			void DownscaleDepth(ID3D11DeviceContext* pContext,View *view,int s,vec3 depthToLinFadeDistParams);
 		protected:
 			ID3D11Device								*m_pd3dDevice;
 			ID3DX11Effect								*mixedResolutionEffect;
@@ -113,7 +115,7 @@ namespace simul
 				return simulTerrainRenderer;
 			}
 			void						RecompileShaders();
-			void						RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos);
+			void						RenderCubemap(ID3D11DeviceContext* pContext,const float *cam_pos);
 			void						RenderEnvmap(ID3D11DeviceContext* pContext);
 			// D3D11CallbackInterface
 			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
@@ -121,7 +123,7 @@ namespace simul
 			virtual int					AddView				();
 			virtual void				RemoveView			(int);
 			virtual void				ResizeView			(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
-			virtual void				Render				(int,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,void *depth1,void *depthLowRes)	;
+			virtual void				Render				(int,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext);
 			virtual void				OnD3D11LostDevice	();
 			virtual void				OnD3D11DestroyDevice();
 			virtual bool				OnDeviceRemoved		();
@@ -137,7 +139,6 @@ namespace simul
 			// Different kinds of view for Render() to call:
 			void RenderFadeEditView(ID3D11DeviceContext* pd3dImmediateContext);
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
-			void DownscaleDepth(int view_id,ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
 			void ReverseDepthChanged();
 			void AntialiasingChanged();
 			void EnsureCorrectBufferSizes(int view_id);

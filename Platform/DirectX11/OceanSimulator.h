@@ -2,7 +2,9 @@
 #ifndef _OCEAN_WAVE_H
 #define _OCEAN_WAVE_H
 
+#if WINVER<0x0602
 #include <D3DX9.h>
+#endif
 #include <D3D11.h>
 
 #include "Simul/Terrain/BaseSeaRenderer.h"

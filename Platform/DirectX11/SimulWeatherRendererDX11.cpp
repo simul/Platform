@@ -10,8 +10,9 @@
 // SimulWeatherRendererDX11.cpp A renderer for skies, clouds and weather effects.
 
 #include "SimulWeatherRendererDX11.h"
-
+#if WINVER<0x602
 #include <dxerr.h>
+#endif
 #include <string>
 
 #include "Simul/Sky/SkyInterface.h"
@@ -25,6 +26,7 @@
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "PrecipitationRenderer.h"
 
+#include "Simul/Platform/DirectX11/SaveTextureDX1x.h"
 #include "SimulCloudRendererDX1x.h"
 #include "Simul2DCloudRendererDX1x.h"
 #include "LightningRenderer.h"

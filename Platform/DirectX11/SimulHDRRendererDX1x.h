@@ -7,10 +7,12 @@
 
 #pragma once
 
-#include <d3dx9.h>
 #include <d3d11.h>
+#if WINVER<0x0602
+#include <d3dx9.h>
 #include <d3dx11.h>
-#include <d3dx11effect.h>
+#endif
+#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/hdr_constants.sl"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"

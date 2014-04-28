@@ -13,7 +13,9 @@
 #include <fstream>
 #include <math.h>
 #include <tchar.h>
+#if WINVER<0x0602
 #include <dxerr.h>
+#endif
 #include <string>
 #include <algorithm>			// for std::min / max
 
@@ -31,6 +33,7 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/DX11Exception.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
@@ -691,7 +694,6 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 	simul::math::Vector3 view_dir(view._13,view._23,view._33);
 	dx11::GetCameraPosVector(view,view_dir,false);
 	HRESULT hr=S_OK;
-	PIXBeginNamedEvent(1,"Render Clouds Layers");
 	cloudDensity		->SetResource(cloud_texture.shaderResourceView);
 	cloudDensity1		->SetResource(cloud_textures[(texture_cycle)  %3].shaderResourceView);
 	cloudDensity2		->SetResource(cloud_textures[(texture_cycle+1)%3].shaderResourceView);
@@ -770,7 +772,6 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 			ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
 	}
 	UtilityRenderer::DrawQuad(pContext);
-	PIXEndNamedEvent();
 	skyLossTexture->SetResource(NULL);
 	skyInscatterTexture->SetResource(NULL);
 	skylightTexture->SetResource(NULL);

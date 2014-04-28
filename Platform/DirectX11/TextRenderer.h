@@ -2,8 +2,10 @@
 #define TEXTRENDERER_H
 
 #include <d3d11.h>
+#if WINVER<0x0602
 #include <d3dx10math.h>
 #include <d3dx11async.h>
+#endif
 #include <fstream>
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"

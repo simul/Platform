@@ -9,12 +9,12 @@
 
 // SimulSkyRendererDX1x.cpp A renderer for skies.
 #define NOMINMAX
+#include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 
-
-#include <tchar.h>
-#include <d3d10_1.h>
-#include <d3dx10.h>
+#include <d3d11.h>
+#if WINVER<0x0602
 #include <dxerr.h>
+#endif
 #include <string>
 #include <algorithm>			// for std::min / max
 #include "Simul/Math/Vector3.h"
@@ -23,7 +23,6 @@
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
-#include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
 #include "Simul/Math/Pi.h"
@@ -436,7 +435,7 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
 	sunlight.w=1.0f/(max_bright*exposure);
 	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
-	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
+	vec3 sun_dir(skyKeyframer->GetDirectionToSun());
 	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,2.f*skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f,sunlight,sun_dir);
 	skyConstants.Apply(pContext);
 	ApplyPass(pContext,m_hTechniqueSun->GetPassByIndex(0));
@@ -454,7 +453,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(void *context,float cloud_occlusion
 	if(!m_hTechniqueQuery||!m_hTechniqueQuery->IsValid())
 		return sun_occlusion;
 	// Start the query
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
+	vec3 sun_dir(skyKeyframer->GetDirectionToSun());
 	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f,sky::float4(1,1,1,1),sun_dir);
 	// 2 * sun radius because we want glow arprofileData.DisjointQuery[currFrame]ound it.
 	skyConstants.Apply(pContext);
@@ -494,9 +493,9 @@ void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(planet_dir4.z);
 	//planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
-	D3DXVECTOR4 planet_dir(dir);
+	vec3 planet_dir(dir);
 	//m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
-	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
+	vec3 sun_dir(skyKeyframer->GetDirectionToSun());
 	SetConstantsForPlanet(skyConstants,view,proj,planet_dir,rad,planet_colour,sun_dir);
 	skyConstants.Apply(pContext);
 	ApplyPass(pContext,(do_lighting?m_hTechniquePlanet:m_hTechniqueFlare)->GetPassByIndex(0));
@@ -828,12 +827,12 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D11ShaderResourceView *m
 	float d=2.0f*size/size_req;
 	simul::math::Vector3 offs0(-0.7f*(tan_x-size_req)*d,0.7f*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs;
-	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
+	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)&view),offs0);
 	pos+=offs;
 	world._41=pos.x;
 	world._42=pos.y;
 	world._43=pos.z;
-	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
+	camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&view,(const float*)&proj);
 	skyConstants.worldViewProj=&wvp._11;
 	skyConstants.worldViewProj.transpose();
 	skyConstants.Apply(pContext);
