@@ -54,7 +54,7 @@ namespace simul
 				last_created_view_id(-1)
 			{}
 			View						*GetView(int view_id);
-			int							AddView				();
+			int							AddView				(bool external_framebuffer);
 			void						RemoveView			(int);
 			void						Clear();
 		protected:

@@ -162,7 +162,7 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 }
 int	Direct3D11Renderer::AddView				()
 {
-	return viewManager.AddView();
+	return viewManager.AddView(false);
 }
 
 void Direct3D11Renderer::RemoveView			(int view_id)
@@ -212,7 +212,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,const float
 	D3DXMATRIX view_matrices[6];
 	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 	if(cubemap_view_id<0)
-		cubemap_view_id=viewManager.AddView();
+		cubemap_view_id=viewManager.AddView(false);
 	cubemapFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	if(simulTerrainRenderer)
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
@@ -308,6 +308,8 @@ void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View 
 	}
 	if(!W||!H)
 		return;
+#if 1
+	SIMUL_ASSERT(depth_SRV!=NULL);
 	int w=W/s;
 	int h=H/s;
 	view->lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
@@ -371,6 +373,7 @@ void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View 
 		simul::dx11::setTexture(mixedResolutionEffect,"sourceDepthTexture"	,NULL);
 		simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_depth_far_near_from_hires");
 	}
+#endif
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 

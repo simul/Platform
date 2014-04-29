@@ -93,11 +93,12 @@ ID3D11ShaderResourceView *View::GetResolvedHDRBuffer()
 		return (ID3D11ShaderResourceView*)hdrFramebuffer.GetColorTex();
 }
 
-int	ViewManager::AddView()
+int	ViewManager::AddView(bool external_framebuffer)
 {
 	last_created_view_id++;
 	int view_id		=last_created_view_id;
 	View *view		=views[view_id]=new View();
+	view->useExternalFramebuffer=external_framebuffer;
 	return view_id;
 }
 
