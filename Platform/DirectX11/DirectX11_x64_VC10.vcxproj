@@ -240,6 +240,7 @@
     <ClInclude Include="LightningRenderer.h" />
     <ClInclude Include="MacrosDx1x.h" />
     <ClInclude Include="Material.h" />
+    <ClInclude Include="mesh.h" />
     <ClInclude Include="OceanRenderer.h" />
     <ClInclude Include="OceanSimulator.h" />
     <ClInclude Include="precipitationrenderer.h" />
