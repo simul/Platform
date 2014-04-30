@@ -160,9 +160,9 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 	envmapFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	RecompileShaders();
 }
-int	Direct3D11Renderer::AddView				()
+int	Direct3D11Renderer::AddView				(bool external_fb)
 {
-	return viewManager.AddView(false);
+	return viewManager.AddView(external_fb);
 }
 
 void Direct3D11Renderer::RemoveView			(int view_id)
