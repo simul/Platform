@@ -60,8 +60,8 @@ void TwoResFramebuffer::RestoreDeviceObjects(void *dev)
 	hiResNearFramebuffer	.SetDepthFormat(0);
 
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
-	int BufferWidth		=(Width+Downscale-1)/Downscale;
-	int BufferHeight	=(Height+Downscale-1)/Downscale;
+	int BufferWidth			=(Width+Downscale-1)/Downscale;
+	int BufferHeight		=(Height+Downscale-1)/Downscale;
 	lowResFarFramebuffer	.SetWidthAndHeight(BufferWidth,BufferHeight);
 	lowResNearFramebuffer	.SetWidthAndHeight(BufferWidth,BufferHeight);
 	hiResFarFramebuffer		.SetWidthAndHeight(Width,Height);
@@ -93,6 +93,12 @@ void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
 		Downscale=downscale;
 		RestoreDeviceObjects(m_pd3dDevice);
 	}
+}
+void TwoResFramebuffer::GetDimensions(int &w,int &h,int &downscale)
+{
+	w=Width;
+	h=Height;
+	downscale=Downscale;
 }
 
 
@@ -179,14 +185,10 @@ void SimulWeatherRenderer::ConnectInterfaces()
 		simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 }
 */
-void SimulWeatherRenderer::SetScreenSize(int /*view_id*/,int w,int h)
+void SimulWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 {
-	for(FramebufferMap::iterator i=framebuffers.begin();i!=framebuffers.end();i++)
-	{
-		i->second->SetDimensions(w,h,Downscale);
-	}
+	framebuffers[view_id]->SetDimensions(w,h,Downscale);
 }
-
 
 bool SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
 {
@@ -383,7 +385,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,boo
 	{	
 		PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
 		{
-			simulCloudRenderer->Render(context,exposure,false,false,0,false,true,view_id,relativeViewportTextureRegionXYWH);
+			simulCloudRenderer->Render(context,exposure,false,false,0,false,true,view_id,relativeViewportTextureRegionXYWH,sky::float4(0,0,1.f,1.f));
 		}
 	}
 	

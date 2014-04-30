@@ -293,7 +293,11 @@ vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
 	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
+#ifdef REVERSE_DEPTH
 	float depth			=max(depth_lookup.x,cloud_depth);
+#else
+	float depth			=min(depth_lookup.x,cloud_depth);
+#endif
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
@@ -311,7 +315,11 @@ vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
 //	if(depth_lookup.z==0)
 //		discard;
 	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	float depth			=max(depth_lookup.y,cloud_depth);
+#ifdef REVERSE_DEPTH
+	float depth			=max(depth_lookup.x,cloud_depth);
+#else
+	float depth			=min(depth_lookup.x,cloud_depth);
+#endif
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);

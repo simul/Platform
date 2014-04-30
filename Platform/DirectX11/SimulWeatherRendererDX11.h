@@ -63,6 +63,7 @@ namespace simul
 			void RestoreDeviceObjects(void *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale);
+			void GetDimensions(int &w,int &h,int &downscale);
 			int Width,Height,Downscale;
 			ID3D11Device*	m_pd3dDevice;
 		};
@@ -126,7 +127,7 @@ namespace simul
 			class Simul2DCloudRendererDX11 *Get2DCloudRenderer();
 			//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
-			void *GetCloudDepthTexture();
+			void *GetCloudDepthTexture(int view_id);
 
 		protected:
 			simul::base::MemoryInterface	*memoryInterface;

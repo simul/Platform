@@ -314,7 +314,8 @@ simul::math::Matrix4x4 ConvertReversedToRegularProjectionMatrix(const simul::mat
 static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(void *,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
+bool SimulGLCloudRenderer::Render(void *,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha
+								  ,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
@@ -455,7 +456,7 @@ GL_ERROR_CHECK
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
 	simul::math::Matrix4x4 view;
 	glGetMatrix(view.RowPointer(0),GL_MODELVIEW_MATRIX);
-	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewport_id,viewportTextureRegionXYWH);
+	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewport_id,viewportTextureRegionXYWH,mixedResTransformXYWH);
 	cloudPerViewConstants.exposure=exposure;
 
 	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);

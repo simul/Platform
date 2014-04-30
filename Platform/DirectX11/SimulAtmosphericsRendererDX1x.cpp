@@ -185,8 +185,8 @@ void SimulAtmosphericsRendererDX1x::RenderLoss(void *context,const void *depthTe
 void SimulAtmosphericsRendererDX1x::RenderInscatter(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass)
 {
 	HRESULT hr=S_OK;
-	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
-	ID3D11ShaderResourceView* depthTexture_SRV=(ID3D11ShaderResourceView*)depthTexture;
+	ID3D11DeviceContext *pContext				=(ID3D11DeviceContext*)context;
+	ID3D11ShaderResourceView *depthTexture_SRV	=(ID3D11ShaderResourceView*)depthTexture;
 	
 	lossTexture->SetResource(skyLossTexture_SRV);
 	inscTexture->SetResource(overcInscTexture_SRV);
@@ -196,7 +196,7 @@ void SimulAtmosphericsRendererDX1x::RenderInscatter(void *context,const void *de
 	setTexture(effect,"depthTexture"		,depthTexture_SRV);
 	setTexture(effect,"depthTextureMS"		,depthTexture_SRV);
 	setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
-	sky::float4 cam_pos=simul::dx11::GetCameraPosVector(view,false);
+	sky::float4 cam_pos	=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 	math::Matrix4x4 p1=proj;

@@ -54,6 +54,9 @@ RaytraceVertexOutput VS_Raytrace(idOnly IN)
 	OUT.hPosition.z	=OUT.hPosition.w; 
 #endif
     OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,pos.y));
+	// transform to coordinates corresponding to the high-res buffer - when buffers are misaligned.
+	OUT.texCoords.xy			*=mixedResTransformXYWH.zw;
+	OUT.texCoords.xy			+=mixedResTransformXYWH.xy;
 	return OUT;
 }
 
@@ -61,7 +64,6 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
 	texCoords.y				=1.0-texCoords.y;
-
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2

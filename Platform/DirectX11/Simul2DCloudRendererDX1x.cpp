@@ -273,7 +273,8 @@ void FixProjectionMatrix(simul::math::Matrix4x4 &proj,float zNear,float zFar)
 	proj._43	=zFar*zNear/(zFar-zNear);
 }
 
-bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depthTexture,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
+bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depthTexture,bool default_fog,bool write_alpha,int viewport_id
+									  ,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& )
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::Render");

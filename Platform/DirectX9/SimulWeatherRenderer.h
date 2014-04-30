@@ -74,6 +74,7 @@ namespace simul
 			void RestoreDeviceObjects(void *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale);
+			void GetDimensions(int &w,int &h,int &downscale);
 			int Width,Height,Downscale;
 			LPDIRECT3DDEVICE9	m_pd3dDevice;
 		};

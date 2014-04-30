@@ -92,6 +92,13 @@ void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
 	}
 }
 
+void TwoResFramebuffer::GetDimensions(int &w,int &h,int &downscale)
+{
+	w=Width;
+	h=Height;
+	downscale=Downscale;
+}
+
 SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *env
 													,simul::base::MemoryInterface *mem) :
 	BaseWeatherRenderer(env,mem),
@@ -399,8 +406,9 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	// RenderInscatter also clears the buffer.
 	if(baseAtmosphericsRenderer)
 		baseAtmosphericsRenderer->RenderInscatter(context,hiResDepthTexture,exposure,depthViewportXYWH,false);
+	const sky::float4 noscale(0.f,0.f,1.f,1.f);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTextureMS,UseDefaultFog,false,view_id,depthViewportXYWH);
+		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTextureMS,UseDefaultFog,false,view_id,depthViewportXYWH,noscale);
 	
 	fb->hiResFarFramebufferDx11.Deactivate(context);
 	
@@ -449,7 +457,7 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	
 	CompositeCloudsToScreen(context,view_id,!is_cubemap,mainDepthTextureMS,lowResDepthTexture,depthViewportXYWH);
 	
-	//RenderLightning(context,view_id,mainDepthTextureMS,depthViewportXYWH,GetCloudDepthTexture());
+	//RenderLightning(context,view_id,mainDepthTextureMS,depthViewportXYWH,GetCloudDepthTexture(view_id));
 	RenderPrecipitation(context,lowResDepthTexture,depthViewportXYWH,view,proj);
 	SIMUL_GPU_PROFILE_END(context)
 #endif
@@ -603,7 +611,7 @@ void SimulWeatherRendererDX11::SetRenderDepthBufferCallback(RenderDepthBufferCal
 {
 }
 
-void *SimulWeatherRendererDX11::GetCloudDepthTexture()
+void *SimulWeatherRendererDX11::GetCloudDepthTexture(int view_id)
 {
-	return framebuffersDx11.begin()->second->GetLowResFarFramebuffer()->GetDepthTex();
+	return framebuffersDx11[view_id]->GetLowResFarFramebuffer()->GetDepthTex();
 }

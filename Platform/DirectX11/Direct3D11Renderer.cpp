@@ -310,8 +310,9 @@ void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View 
 		return;
 #if 1
 	SIMUL_ASSERT(depth_SRV!=NULL);
-	int w=W/s;
-	int h=H/s;
+	// The downscaled size should be enough to fit in at least s hi-res pixels in every larger pixel
+	int w=(W+s-1)/s;
+	int h=(H+s-1)/s;
 	view->lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	depth_SRV->GetDesc(&desc);
@@ -432,7 +433,7 @@ void Direct3D11Renderer::RenderScene(int view_id,crossplatform::DeviceContext &d
 	#endif
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->hdrFramebuffer.ActivateDepth(pContext);
-		simulWeatherRenderer->RenderLightning(pContext,view_id,depthTextureHiRes,relativeViewportTextureRegionXYWH,simulWeatherRenderer->GetCloudDepthTexture());
+		simulWeatherRenderer->RenderLightning(pContext,view_id,depthTextureHiRes,relativeViewportTextureRegionXYWH,simulWeatherRenderer->GetCloudDepthTexture(view_id));
 		simulWeatherRenderer->DoOcclusionTests(pContext);
 		simulWeatherRenderer->RenderPrecipitation(pContext,depthTextureHiRes,relativeViewportTextureRegionXYWH,(const float*)&v,(const float*)&proj);
 		if(simulOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetSkyRenderer())

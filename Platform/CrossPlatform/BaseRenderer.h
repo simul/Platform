@@ -13,6 +13,12 @@ namespace simul
 			simul::math::Matrix4x4 view;
 			simul::math::Matrix4x4 proj;
 		};
+		struct MixedResolutionStruct
+		{
+			/// The ratios that we multiply low-res texture coordinates by to get the hi-res equivalent.
+			/// These will be close to one, but not exact unless the hi-res buffer is an exact multiple of the low-res one.
+			float xratio,yratio;
+		};
 		//! The base class for renderers. Placeholder for now.
 		class BaseRenderer
 		{

@@ -70,6 +70,7 @@ namespace simul
 			void RestoreDeviceObjects(void *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale);
+			void GetDimensions(int &w,int &h,int &downscale);
 			int Width,Height,Downscale;
 		};
 		//! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within an OpenGL program.

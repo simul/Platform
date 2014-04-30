@@ -57,6 +57,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int shadowTextureSize;
 	uniform float depthMix;
 	uniform float CloudPerViewConstantsPad3;
+	uniform vec4 mixedResTransformXYWH;		// xy=offset, zw=multiple.
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
