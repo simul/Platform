@@ -110,7 +110,8 @@ namespace simul
 												,bool depth_blend
 												,const void* mainDepthTexture
 												,const void* lowResDepthTexture
-												,const simul::sky::float4& viewportRegionXYWH);
+												,const simul::sky::float4& viewportRegionXYWH
+													  ,const crossplatform::MixedResolutionStruct &mixedResolutionStruct);
 			void RenderFramebufferDepth(void *context,int view_id,int x0,int y0,int w,int h);
 			void RenderCompositingTextures(void *context,int view_id,int x0,int y0,int w,int h);
 			void RenderPrecipitation(void *context,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);

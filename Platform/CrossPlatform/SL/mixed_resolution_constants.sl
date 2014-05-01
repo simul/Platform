@@ -8,6 +8,7 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform float ccc;
 	uniform uint2 source_dims;
 	uniform float ddd,eee;
+	//uniform vec4 mixedResolutionTransformXYWH; Not needed
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

@@ -53,17 +53,18 @@ RaytraceVertexOutput VS_Raytrace(idOnly IN)
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
 #endif
-    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,pos.y));
+    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
 	// transform to coordinates corresponding to the high-res buffer - when buffers are misaligned.
-	OUT.texCoords.xy			*=mixedResTransformXYWH.zw;
-	OUT.texCoords.xy			+=mixedResTransformXYWH.xy;
+//	OUT.texCoords.xy			*=mixedResTransformXYWH.zw;
+//	OUT.texCoords.xy			+=mixedResTransformXYWH.xy;
 	return OUT;
 }
 
 RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
-	texCoords.y				=1.0-texCoords.y;
+	//texCoords.y				=1.0-texCoords.y;
+	// Now y is positive downwards.
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2
@@ -76,14 +77,14 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 									,false
 									,true
 									,false);
-
+	
 	return p;
 }
 
 RaytracePixelOutput PS_RaytraceNearPass(RaytraceVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
-	texCoords.y				=1.0-texCoords.y;
+	//texCoords.y				=1.0-texCoords.y;
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2

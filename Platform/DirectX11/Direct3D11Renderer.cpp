@@ -186,22 +186,34 @@ void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
 	View *view			=viewManager.GetView(view_id);
 	if(!view)
 		return;
+	static bool lockx=false,locky=false;
 	// Must have a whole number of full-res pixels per low-res pixel.
-	int w=view->GetScreenWidth(),h=view->GetScreenHeight();
-	if(simulWeatherRenderer)
+	int W=view->GetScreenWidth(),H=view->GetScreenHeight();
+ 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetScreenSize(view_id,view->GetScreenWidth(),view->GetScreenHeight());
-		int s					=simulWeatherRenderer->GetDownscale();
-		w						=(view->GetScreenWidth() +s-1)/s;
-		h						=(view->GetScreenHeight()+s-1)/s;
-		view->SetResolution(w*s,h*s);
+		if(lockx)
+		{
+			int s					=simulWeatherRenderer->GetDownscale();
+			int w					=(W+s-1)/s;
+			W						=w*s;
+			view->SetResolution(W,H);
+		}
+		if(locky)
+		{
+			int s					=simulWeatherRenderer->GetDownscale();
+			int h					=(H+s-1)/s;
+			H						=h*s;
+			view->SetResolution(W,H);
+		}
 	}
-	w=view->GetScreenWidth();
+	W=view->GetScreenWidth();
+	H=view->GetScreenHeight();
 	if(view->viewType==OCULUS_VR)
-		w=view->GetScreenWidth()/2;
+		W=view->GetScreenWidth()/2;
 	if(simulHDRRenderer)
-		simulHDRRenderer->SetBufferSize(w,view->GetScreenHeight());
-	view->hdrFramebuffer	.SetWidthAndHeight(w,view->GetScreenHeight());
+		simulHDRRenderer->SetBufferSize(W,H);
+	view->hdrFramebuffer	.SetWidthAndHeight(W,H);
 	view->hdrFramebuffer	.SetAntialiasing(Antialiasing);
 }
 
@@ -357,6 +369,8 @@ void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View 
 		mixedResolutionConstants.nearZ=0;
 		mixedResolutionConstants.farZ=0;
 		mixedResolutionConstants.source_dims=uint2(view->hiResDepthTexture.width,view->hiResDepthTexture.length);
+		// if using rendertarget we must rescale the texCoords.
+		//mixedResolutionConstants.mixedResolutionTransformXYWH=vec4(0.f,0.f,(float)(w*s)/(float)W,(float)(h*s)/(float)H);
 		mixedResolutionConstants.Apply(pContext);
 		static int BLOCKWIDTH			=8;
 		uint2 subgrid						=uint2((view->lowResDepthTexture.width+BLOCKWIDTH-1)/BLOCKWIDTH,(view->lowResDepthTexture.length+BLOCKWIDTH-1)/BLOCKWIDTH);
@@ -658,7 +672,7 @@ void Direct3D11Renderer::RenderDepthBuffers(void *context,int view_id,int x0,int
 	renderPlatformDx11.Print(pContext		,x0+w	,y0+l	,"Lo-Res Depth");
 	//UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,(ID3D11ShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
 	//renderPlatformDx11.Print(pContext			,2.f*w	,0.f,"Near overlay");
-	simulWeatherRenderer->RenderCompositingTextures(pContext,view_id,x0,l,dx,dy);
+	simulWeatherRenderer->RenderCompositingTextures(pContext,view_id,x0,y0+2*l,dx,dy);
 }
 
 void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)

@@ -130,6 +130,8 @@ void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<flo
 		for(int j=0;j<scale.y;j++)
 		{
 			uint2 hires_pos		=pos2+uint2(i,j);
+			if(hires_pos.x>=source_dims.x||hires_pos.y>=source_dims.y)
+				continue;
 			vec4 d				=sourceDepthTexture[hires_pos];
 #ifdef REVERSE_DEPTH
 			if(d.y>nearest_depth)
