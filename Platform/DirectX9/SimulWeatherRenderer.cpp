@@ -187,7 +187,7 @@ void SimulWeatherRenderer::ConnectInterfaces()
 */
 void SimulWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 {
-	framebuffers[view_id]->SetDimensions(w,h,Downscale);
+	GetFramebuffer(view_id)->SetDimensions(w,h,Downscale);
 }
 
 bool SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)

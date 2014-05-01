@@ -1,7 +1,7 @@
 #ifndef DX9_HLSL
 #define DX9_HLSL
 #define DX9
-#include "../../CrossPlatform/CppSl.hs"
+#include "../../CrossPlatform/SL/CppSl.hs"
 
 #ifndef __cplusplus
 	#define SIMUL_TEXTURE_REGISTER(tex_num)
