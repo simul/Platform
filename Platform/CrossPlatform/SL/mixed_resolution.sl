@@ -108,10 +108,8 @@ void DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,RWTextu
 }
 
 
-void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<float4> target2DTexture,uint3 pos,uint2 scale,vec3 depthToLinFadeDistParams)
+void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<float4> target2DTexture,uint2 source_dims,uint3 pos,uint2 scale,vec3 depthToLinFadeDistParams)
 {
-	uint2 source_dims;
-	sourceDepthTexture.GetDimensions(source_dims.x,source_dims.y);
 	uint2 dims;
 	target2DTexture.GetDimensions(dims.x,dims.y);
 	if(pos.x>=dims.x||pos.y>=dims.y)
