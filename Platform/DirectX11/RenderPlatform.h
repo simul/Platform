@@ -21,6 +21,7 @@ namespace simul
 {
 	namespace dx11
 	{
+		//! A class to implement common rendering functionality for DirectX 11.
 		class SIMUL_DIRECTX11_EXPORT RenderPlatform:public scene::RenderPlatform
 		{
 			ID3D11Device*				device;
