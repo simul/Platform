@@ -8,10 +8,10 @@ float depthToLinearDistance(float depth,vec3 depthToLinFadeDistParams)
 {
 #ifdef REVERSE_DEPTH
 	if(depth<=0)
-		return depthToLinFadeDistParams.y;//max_fade_distance_metres;
+		return 1.0;//max_fade_distance_metres;
 #else
 	if(depth>=1.0)
-		return depthToLinFadeDistParams.y;//max_fade_distance_metres;
+		return 1.0;//max_fade_distance_metres;
 #endif
 	float linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
 	return linearFadeDistanceZ;
@@ -21,14 +21,14 @@ vec4 depthToLinearDistance(vec4 depth,vec3 depthToLinFadeDistParams)
 {
 	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz);
 	
-	linearFadeDistanceZ=min(depthToLinFadeDistParams.yyyy,linearFadeDistanceZ);
+	linearFadeDistanceZ=min(vec4(1.0,1.0,1.0,1.0),linearFadeDistanceZ);
 	return linearFadeDistanceZ;
 }
 
 vec2 depthToLinearDistance(vec2 depth,vec3 depthToLinFadeDistParams)
 {
 	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz);
-	linearFadeDistanceZ=min(depthToLinFadeDistParams.yy,linearFadeDistanceZ);
+	linearFadeDistanceZ=min(vec2(1.0,1.0),linearFadeDistanceZ);
 	return linearFadeDistanceZ;
 }
 

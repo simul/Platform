@@ -327,22 +327,6 @@
     <None Include="HLSL\simul_terrain.fx" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Clouds\Clouds_x64_VC11.vcxproj">
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Sky\Sky_x64_VC11.vcxproj">
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="HLSL\rain.fx">
       <FileType>Document</FileType>
     </None>
