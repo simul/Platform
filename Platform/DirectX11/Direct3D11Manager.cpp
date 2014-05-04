@@ -547,10 +547,12 @@ void Direct3D11Manager::Shutdown()
 		delete i->second;
 	}
 	windows.clear();
+	d3dDeviceContext->ClearState();
+	d3dDeviceContext->Flush();
 	SAFE_RELEASE(d3dDeviceContext);
 	if(d3dDebug)
 	{
-		d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+		d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY);
 	}
 	ReportMessageFilterState();
 	SAFE_RELEASE(d3dInfoQueue);

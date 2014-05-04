@@ -62,6 +62,7 @@ void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
 			glowTexture.init(m_pd3dDevice,Width/2,Height/2);
 		glow_fb.SetWidthAndHeight(Width/2,Height/2);
 	}
+	RecompileShaders();
 }
 
 void SimulHDRRendererDX1x::RestoreDeviceObjects(void *dev)
@@ -132,6 +133,8 @@ void SimulHDRRendererDX1x::RecompileShaders()
 //static const uint NUM_IMAGE_COLS = 1600;
 	int W=Width;
 	int H=Height;
+	if(!H||!W)
+		return;
 	std::map<std::string,std::string> defs;
 	int scan_smem_size			=max3(H,W,(int)threadsPerGroup*2);
 	int texels_per_thread = (H + threadsPerGroup - 1) / threadsPerGroup;

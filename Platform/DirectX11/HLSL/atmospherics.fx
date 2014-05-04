@@ -469,51 +469,52 @@ technique11 inscatter_nearfardepth
     }
 }
 
-technique11 simul_atmospherics_overlay
+fxgroup atmospherics_overlay
 {
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		//SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Loss()));
-    }
-    pass p1
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter()));
-    }
-}
-
-
-technique11 simul_atmospherics_overlay_msaa
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		//SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_LossMSAA()));
-    }
-    pass p1
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_InscatterMSAA()));
-    }
+	technique11 standard
+	{
+		pass p0
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+			//SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+			SetPixelShader(CompileShader(ps_5_0,PS_Loss()));
+		}
+		pass p1
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter()));
+		}
+	}
+	technique11 msaa
+	{
+		pass p0
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+			//SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+			SetPixelShader(CompileShader(ps_5_0,PS_LossMSAA()));
+		}
+		pass p1
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+			SetPixelShader(CompileShader(ps_5_0,PS_InscatterMSAA()));
+		}
+	}
 }
 BlendState MoistureBlend
 {

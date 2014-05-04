@@ -248,15 +248,15 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
-	
-	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("simul_atmospherics_overlay");
+	ID3DX11EffectGroup *group=effect->GetGroupByName("atmospherics_overlay");
+	ID3DX11EffectTechnique *tech=group->GetTechniqueByName("standard");
 	
 	if(depthTexture_SRV)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
 		depthTexture_SRV->GetDesc(&depthDesc);
 		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
-			tech=effect->GetTechniqueByName("simul_atmospherics_overlay_msaa");
+			tech=group->GetTechniqueByName("msaa");
 	}
 
 	ApplyPass(pContext,tech->GetPassByIndex(0));
