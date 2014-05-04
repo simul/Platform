@@ -555,7 +555,7 @@ void Direct3D11Manager::Shutdown()
 	SAFE_RELEASE(d3dDeviceContext);
 	if(d3dDebug)
 	{
-		d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY);
+		d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 	}
 	ReportMessageFilterState();
 	SAFE_RELEASE(d3dInfoQueue);

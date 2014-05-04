@@ -337,6 +337,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Direct3D11Manager.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Direct3D11Renderer.cpp"
 				>
 			</File>
@@ -472,6 +476,14 @@
 			</File>
 			<File
 				RelativePath=".\Direct3D11CallbackInterface.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Direct3D11Manager.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Direct3D11ManagerInterface.h"
 				>
 			</File>
 			<File
