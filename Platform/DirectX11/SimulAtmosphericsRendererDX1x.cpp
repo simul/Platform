@@ -94,9 +94,6 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	//defines["GODRAYS_STEPS"]=simul::base::stringFormat("%d",
 	V_CHECK(CreateEffect(m_pd3dDevice,&effect,"atmospherics.fx",defines));
 
-	twoPassOverlayTechnique	=effect->GetTechniqueByName("simul_atmospherics_overlay");
-	twoPassOverlayTechniqueMSAA	=effect->GetTechniqueByName("simul_atmospherics_overlay_msaa");
-
 	godraysTechnique		=effect->GetTechniqueByName("fast_godrays");
 
 	depthTexture			=effect->GetVariableByName("depthTexture")->AsShaderResource();
@@ -252,14 +249,14 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
 	
-	ID3DX11EffectTechnique *tech=twoPassOverlayTechnique;
+	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("simul_atmospherics_overlay");
 	
 	if(depthTexture_SRV)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
 		depthTexture_SRV->GetDesc(&depthDesc);
 		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
-			tech=twoPassOverlayTechniqueMSAA;
+			tech=effect->GetTechniqueByName("simul_atmospherics_overlay_msaa");
 	}
 
 	ApplyPass(pContext,tech->GetPassByIndex(0));
