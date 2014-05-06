@@ -304,6 +304,7 @@
     <None Include="GLSL\simul_gpu_loss.frag" />
     <None Include="GLSL\simul_gpu_sky.glsl" />
     <None Include="GLSL\simul_gpu_skyl.frag" />
+    <None Include="GLSL\simul_gpu_sky_copy.frag" />
     <None Include="GLSL\simul_hdr_blur.frag" />
     <None Include="GLSL\simul_insc.frag" />
     <None Include="GLSL\simul_insc_earthshadow.frag" />

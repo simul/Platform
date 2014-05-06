@@ -3,7 +3,8 @@
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 
 uniform sampler2D input_skyl_texture;
-uniform sampler1D density_texture;
+uniform sampler2D density_texture;
+uniform sampler2D blackbody_texture;
 uniform sampler3D loss_texture;
 uniform sampler3D insc_texture;
 
@@ -35,33 +36,19 @@ void main()
 	float altTexc		=(texCoords.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
-	float maxd			=min(spaceDistKm,distanceKm);
-	float mind			=min(spaceDistKm,prevDistanceKm);
-	float dist			=0.5*(mind+maxd);
-	float stepLengthKm	=max(0.0,maxd-mind);
-	float y				=planetRadiusKm+viewAltKm+dist*sin_e;
-	float x				=dist*cos_e;
-	float r				=sqrt(x*x+y*y);
-	float alt_km		=r-planetRadiusKm;
-	// lookups is: dens_factor,ozone_factor,haze_factor;
-	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-	vec4 lookups		=texture(density_texture,dens_texc);
-	float dens_factor	=lookups.x;
-	float ozone_factor	=lookups.y;
-	float haze_factor	=getHazeFactorAtAltitude(alt_km);
-	vec4 light			=vec4(starlight+getSkylight(alt_km),0.0);
-	vec4 skyl			=light;
-	vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
-	vec3 total_ext		=extinction+ozone*ozone_factor;
-	vec3 loss			=exp(-extinction*stepLengthKm);
-	skyl.rgb			*=vec3(1.0,1.0,1.0)-loss;
-	float mie_factor	=exp(-skyl.w*stepLengthKm*haze_factor*hazeMie.x);
-	skyl.w				=saturate((1.0-mie_factor)/(1.0-total_ext.x+0.0001));
-	
-	//skyl.w			=(loss.w)*(1.f-previous_skyl.w)*skyl.w+previous_skyl.w;
-	skyl.rgb			*=previous_loss.rgb;
-	skyl.rgb			+=previous_skyl.rgb;
-	float lossw=1.0;
-	skyl.w				=(lossw)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
-    outColor			=skyl;
+
+	outColor		=Skyl(insc_texture
+						,density_texture
+						,blackbody_texture
+						,previous_loss
+						,previous_skyl
+						,maxOutputAltKm
+						,maxDistanceKm
+						,maxDensityAltKm
+						,spaceDistKm
+						,viewAltKm
+						,distanceKm
+						,prevDistanceKm
+						,sin_e
+						,cos_e);
 }

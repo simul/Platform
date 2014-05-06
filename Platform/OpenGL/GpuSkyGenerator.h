@@ -49,6 +49,7 @@ namespace simul
 			GLuint				loss_program;
 			GLuint				insc_program;
 			GLuint				skyl_program;
+			GLuint				copy_program;
 			simul::opengl::ConstantBuffer<GpuSkyConstants> gpuSkyConstants;
 			TextureStruct		*finalLoss[3];
 			TextureStruct		*finalInsc[3];

@@ -162,6 +162,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 		float ozone_factor	=lookups.y;
 		float haze_factor	=getHazeFactorAtAltitude(alt_km);
 		vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(optical_depth_texture,alt_km,lightDir);
+		light.rgb*=RAYLEIGH_BETA_FACTOR;
 		vec4 insc			=light;
 
 		// We don't do this anymore - overcast is applied separately.
@@ -180,8 +181,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 		//insc.w				=(lossw)*(1.0-previous_insc.w)*insc.w+previous_insc.w;
 		//final.w=::saturate((1.f-mie_factor)/(1.f-total_loss.x+0.0001f));
 		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
-		
-		targetTexture[idx]	=vec4(RAYLEIGH_BETA_FACTOR*insc.rgb,insc.a);
+		targetTexture[idx]	=vec4(insc.rgb,insc.a);
 		prevDist_km			=dist_km;
 		previous_insc		=insc;
 	}

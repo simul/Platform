@@ -254,15 +254,26 @@ namespace simul
 			//	ERROR: 0:11: 'assign' :  cannot convert from '2-component vector of float' to 'float'
 				else if((third_colon<0||numberlen>6)&&second_bracket>=0)
 				{
-					numberstart	=first_colon+1;
-					numberlen	=first_bracket-first_colon-1;
+					if(first_colon<first_bracket)
+					{
+						numberstart	=first_colon+1;
+						numberlen	=first_bracket-first_colon-1;
+					}
+					else
+					{
+						numberstart=0;
+						numberlen=first_bracket;
+					}
 				}
 				else
 					return "";
 				std::string filenumber_str=line.substr(numberstart,numberlen);
 				std::string err_msg=line.substr(numberstart+numberlen,line.length()-numberstart-numberlen);
-				third_colon-=numberstart+numberlen;
-				err_msg.replace(0,1,"(");
+				if(third_colon>=0)
+				{
+					third_colon-=numberstart+numberlen;
+					err_msg.replace(0,1,"(");
+				}
 				const char *err_warn	=is_error?"error":"warning";
 				if(third_colon>=0)
 					err_msg.replace(third_colon,1,base::stringFormat("): %s C7555: ",err_warn).c_str());

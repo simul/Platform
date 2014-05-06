@@ -578,7 +578,14 @@ void SimulGLSkyRenderer::EnsureTexturesAreUpToDate(void *)
 		skyKeyframer->GetGpuSkyParameters(p,a,ir,i);
 		int cycled_index=(texture_cycle+i)%3;
 		if(gpuSkyGenerator.GetEnabled())
+		{
+			if(p.fill_up_to_texels==32768)
+				p.fill_up_to_texels=5461;
 			gpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+			if(p.fill_up_to_texels==5461)
+				p.fill_up_to_texels=32768;
+			gpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+		}
 		else
 			skyKeyframer->cpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
 	}

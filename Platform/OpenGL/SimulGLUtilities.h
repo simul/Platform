@@ -149,7 +149,7 @@ namespace simul
 				Release();
 			}
 			GLuint	ubo;
-			GLint bindingIndex;
+			//GLint bindingIndex;
 			//! Create the buffer object.
 			void RestoreDeviceObjects()
 			{
@@ -164,7 +164,7 @@ namespace simul
 			{
 				//if(bindingIndex<=0)
 				//	exit(1);
-				this->bindingIndex=bindingIndex;
+				//this->bindingIndex=bindingIndex;
 				GLint indexInShader=glGetUniformBlockIndex(program,name);
 				if(indexInShader>=0)
 				{
