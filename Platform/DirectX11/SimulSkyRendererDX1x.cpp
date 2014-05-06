@@ -57,7 +57,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	inscatter_2d=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	overcast_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	skylight_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
-	skyKeyframer->SetGpuSkyGenerator(GetBaseGpuSkyGenerator());
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
@@ -777,7 +776,7 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowIlluminationBuffer);
 	int x=16+size;
 	y=y0+8;
-	bool show_3=gpuSkyGenerator.GetEnabled()&&(skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator);
+	bool show_3=gpuSkyGenerator.GetEnabled();
 
 	for(int j=0;j<(show_3?3:2);j++)
 	{

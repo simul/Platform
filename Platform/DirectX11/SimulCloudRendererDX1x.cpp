@@ -928,7 +928,7 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	int width_x=i.x;
 	int length_y=i.y;
 	int depth_z=i.z;
-	bool uav=gpuCloudGenerator.GetEnabled()&&cloudKeyframer->GetGpuCloudGenerator()==&gpuCloudGenerator;
+	bool uav=gpuCloudGenerator.GetEnabled();
 	static DXGI_FORMAT cloud_tex_format=DXGI_FORMAT_R8G8B8A8_UNORM;
 	for(int i=0;i<3;i++)
 	{
@@ -959,27 +959,13 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(void *context)
 	if(!noise_texture)
 		CreateNoiseTexture(pContext);
 	// We don't need to fill the textures if the gpu Generator has already done so:
-	if(cloudKeyframer->GetGpuCloudGenerator()==&gpuCloudGenerator&&gpuCloudGenerator.GetEnabled())
+	if(!gpuCloudGenerator.GetEnabled())
 		return;
 	for(int i=0;i<3;i++)
 	{
-		TextureStruct &texture=cloud_textures[(texture_cycle+i)%3];
-		simul::sky::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
-		if(!texture_fill.num_texels)
-			continue;
-		if(!texture.isMapped()&&texture_fill.texel_index>0&&texture_fill.num_texels>0)
-		{
-			seq_texture_iterator[i].texel_index=0;
-			texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
-		}
-		Map(pContext,i);
-		unsigned *ptr=(unsigned *)texture.mapped.pData;
-		if(!ptr)
-			continue;
-		ptr+=texture_fill.texel_index;
-		memcpy(ptr,texture_fill.uint32_array,texture_fill.num_texels*sizeof(unsigned));
-		if(i!=2)
-			Unmap();
+		int cycled_index=(texture_cycle+i)%3;
+		clouds::GpuCloudsParameters g=cloudKeyframer->GetGpuCloudsParameters(i);
+		gpuCloudGenerator.Update(cycled_index,g,NULL);
 	}
 }
 

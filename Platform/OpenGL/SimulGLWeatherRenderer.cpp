@@ -121,8 +121,6 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 										=::new(memoryInterface) SimulGLPrecipitationRenderer();
 
 	EnableCloudLayers();
-	environment->skyKeyframer->SetStoreTexturesOnCpu(true);
-	environment->cloudKeyframer->SetStoreTexturesOnCpu(true);
 }
 
 
