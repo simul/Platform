@@ -23,6 +23,7 @@ GpuSkyGenerator::GpuSkyGenerator()
 	,insc_cache(NULL)
 	,skyl_cache(NULL)
 {
+	SetDirectTargets(NULL,NULL,NULL,NULL);
 }
 
 GpuSkyGenerator::~GpuSkyGenerator()
@@ -70,7 +71,7 @@ GL_ERROR_CHECK
 //! Return true if the derived class can make sky tables using the GPU.
 bool GpuSkyGenerator::CanPerformGPUGeneration() const
 {
-	return false;//Enabled;
+	return Enabled;
 }
 
 // make a 3D texture. X=altitude (clamp), Y=elevation (clamp), Z=distance (clamp)
@@ -111,7 +112,15 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 				,const simul::sky::GpuSkyAtmosphereParameters &a
 				,const simul::sky::GpuSkyInfraredParameters &ir)
 {
-	keyframe_checksums[cycled_index]	=p.keyframe_checksum;
+	if(p.fill_up_to_texels<0)
+		return;
+	if(keyframe_checksums[cycled_index]!=p.keyframe_checksum)
+	{
+		keyframe_checksums[cycled_index]	=p.keyframe_checksum;
+		fadeTexIndex[cycled_index]=0;
+	}
+	if(fadeTexIndex[cycled_index]>=p.fill_up_to_texels)
+		return;
 	if(loss_program<=0)
 		RecompileShaders();
 	float maxOutputAltKm=p.altitudes_km[p.altitudes_km.size()-1];
@@ -142,32 +151,17 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 	GLuint dens_tex=make1DTexture(a.table_size,(const float *)a.density_table);
 	glUseProgram(loss_program);
 	this->SetGpuSkyConstants(gpuSkyConstants,p,a,ir);
-	/*{
-		constants.texSize			=vec2((float)p.altitudes_km.size(),(float)p.numElevations);
-		static float tto=0.5f;
-		constants.texelOffset		=tto;
-		constants.tableSize			=vec2((float)a.table_size,(float)a.table_size);
-		constants.distanceKm		=0.0;
-		constants.maxDistanceKm		=p.max_distance_km;
-		constants.planetRadiusKm	=skyInterface->GetPlanetRadius();
-		constants.maxOutputAltKm	=maxOutputAltKm;
-		constants.maxDensityAltKm	=a.maxDensityAltKm;
-		constants.hazeBaseHeightKm	=p.hazeStruct.haze_base_height_km;
-		constants.hazeScaleHeightKm	=p.hazeStruct.haze_scale_height_km;
-		constants.overcastBaseKmX	=p.overcast_base_km;
-		constants.overcastRangeKmX	=p.overcast_range_km;
-		constants.overcastX			=0.f;
-		constants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		constants.hazeMie			=(const float*)(p.hazeStruct.haze*skyInterface->GetMie());
-		constants.ozone				=(const float*)(skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
-		constants.sunIrradiance		=(const float*)p.sun_irradiance;
-		constants.lightDir			=(const float*)p.dir_to_sun;
-		constants.starlight			=(const float*)p.starlight;
-		constants.hazeEccentricity	=1.0;
-		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
-		constants.emissivity		=ir.emissivity;
-		UPDATE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
-	}*/
+	for(int i=0;i<3;i++)
+	{
+		if(finalLoss[i])
+			finalLoss[i]->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,GL_RGBA32F,true);
+		if(finalInsc[i])
+			finalInsc[i]->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,GL_RGBA32F,true);
+		if(finalSkyl[i])
+			finalSkyl[i]->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,GL_RGBA32F,true);
+	}
+	if(light_table)
+		light_table->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size()*32,3,4,GL_RGBA32F,true);
 	setParameter(loss_program,"input_loss_texture",0);
 	setParameter(loss_program,"density_texture",1);
 	gpuSkyConstants.Apply();
@@ -178,11 +172,27 @@ GL_ERROR_CHECK
 		F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 		if(target)
-		glReadPixels(0,0,(GLsizei)p.altitudes_km.size(),p.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			glReadPixels(0,0,(GLsizei)p.altitudes_km.size(),p.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+		if(finalLoss[cycled_index])
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_3D,finalLoss[cycled_index]->tex);
+			glCopyTexSubImage3D(GL_TEXTURE_3D
+ 							,0
+ 							,0
+ 							,0
+ 							,0
+ 							,0
+ 							,0
+ 							,(GLsizei)p.altitudes_km.size()
+							,p.numElevations);
+GL_ERROR_CHECK
+		}
 	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-	target+=p.altitudes_km.size()*p.numElevations;
-GL_ERROR_CHECK
+	if(target)
+		target+=p.altitudes_km.size()*p.numElevations;
+	GL_ERROR_CHECK
 	float prevDistKm=0.f;
 	for(int i=1;i<p.numDistances;i++)
 	{
@@ -210,12 +220,26 @@ GL_ERROR_CHECK
 	GL_ERROR_CHECK
 			if(target)
 				glReadPixels(0,0,(GLsizei)p.altitudes_km.size(),p.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			if(finalLoss[cycled_index])
+			{
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_3D,finalLoss[cycled_index]->tex);
+				glCopyTexSubImage3D(GL_TEXTURE_3D
+ 								,0
+ 								,0
+ 								,0
+ 								,i
+ 								,0
+ 								,0
+ 								,(GLsizei)p.altitudes_km.size()
+								,p.numElevations);
+			}
 //std::cout<<"\tGpu sky: loss read"<<i<<" "<<timer.UpdateTime()<<std::endl;
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
 		if(target)
-		target+=p.altitudes_km.size()*p.numElevations;
+			target+=p.altitudes_km.size()*p.numElevations;
 		prevDistKm=distKm;
 	}
 	glUseProgram(0);
@@ -236,10 +260,27 @@ GL_ERROR_CHECK
 	F[0]->Activate(NULL);
 		F[0]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		glReadPixels(0,0,(GLsizei)p.altitudes_km.size(),p.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+		if(target)
+			glReadPixels(0,0,(GLsizei)p.altitudes_km.size(),p.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+		if(finalInsc[cycled_index])
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_3D,finalInsc[cycled_index]->tex);
+			glCopyTexSubImage3D(GL_TEXTURE_3D
+ 							,0
+ 							,0
+ 							,0
+ 							,0
+ 							,0
+ 							,0
+ 							,(GLsizei)p.altitudes_km.size()
+							,p.numElevations);
+GL_ERROR_CHECK
+		}
 	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-	target+=p.altitudes_km.size()*p.numElevations;
+	if(target)
+		target+=p.altitudes_km.size()*p.numElevations;
 	prevDistKm=0.f;
 	for(int i=1;i<p.numDistances;i++)
 	{
@@ -265,11 +306,28 @@ GL_ERROR_CHECK
 			glBindTexture(GL_TEXTURE_2D,optd_tex);
 			DrawQuad(0,0,1,1);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-			glReadPixels(0,0,(GLsizei)p.altitudes_km.size(),p.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			if(target)
+				glReadPixels(0,0,(GLsizei)p.altitudes_km.size(),p.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			if(finalInsc[cycled_index])
+			{
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_3D,finalInsc[cycled_index]->tex);
+				glCopyTexSubImage3D(GL_TEXTURE_3D
+ 								,0
+ 								,0
+ 								,0
+ 								,i
+ 								,0
+ 								,0
+ 								,(GLsizei)p.altitudes_km.size()
+								,p.numElevations);
+	GL_ERROR_CHECK
+			}
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
-		target+=p.altitudes_km.size()*p.numElevations;
+		if(target)
+			target+=p.altitudes_km.size()*p.numElevations;
 		prevDistKm=distKm;
 	}
 	glUseProgram(0);
@@ -321,7 +379,8 @@ GL_ERROR_CHECK
 			DrawQuad(0,0,1,1);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 	GL_ERROR_CHECK
-			glReadPixels(0,0,(GLsizei)p.altitudes_km.size(),p.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			if(target)
+				glReadPixels(0,0,(GLsizei)p.altitudes_km.size(),p.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
@@ -346,6 +405,7 @@ GL_ERROR_CHECK
 	glDisable(GL_TEXTURE_1D);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
+	fadeTexIndex[cycled_index]=p.fill_up_to_texels;
 }
 void GpuSkyGenerator::CopyToMemory(int /*cycled_index*/,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl)
 {

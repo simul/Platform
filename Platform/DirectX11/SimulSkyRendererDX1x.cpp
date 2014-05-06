@@ -218,7 +218,7 @@ void SimulSkyRendererDX1x::EnsureCorrectTextureSizes()
 	int num_dist=i.x;
 	int num_elev=i.y;
 	int num_alt=i.z;
-	bool uav=gpuSkyGenerator.GetEnabled()&&skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator;
+	bool uav=gpuSkyGenerator.GetEnabled();
 	for(int i=0;i<3;i++)
 	{
 		loss_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,num_alt,num_elev,num_dist,DXGI_FORMAT_R32G32B32A32_FLOAT,uav);
@@ -275,7 +275,6 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate(void *context)
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
-	
 	sky::GpuSkyParameters p;
 	sky::GpuSkyAtmosphereParameters a;
 	sky::GpuSkyInfraredParameters ir;

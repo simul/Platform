@@ -13,6 +13,7 @@
 #include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include <cstdlib>
+
 namespace simul
 {
 	namespace sky
@@ -86,12 +87,13 @@ protected:
 	void		CreateFadeTextures();
 	void		CreateSkyTextures();
 
-	GLuint		loss_textures[3];
-	GLuint		inscatter_textures[3];
-	GLuint		skylight_textures[3];
+	simul::opengl::TextureStruct	loss_textures[3];
+	simul::opengl::TextureStruct	insc_textures[3];
+	simul::opengl::TextureStruct	skyl_textures[3];
+	simul::opengl::TextureStruct	light_table;
 
-	bool CreateSkyEffect();
-	bool RenderSkyToBuffer();
+	bool			CreateSkyEffect();
+	bool			RenderSkyToBuffer();
 
 	unsigned		cloud_texel_index;
 	unsigned char	*sky_tex_data;
@@ -119,8 +121,8 @@ protected:
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
 
-	simul::opengl::ConstantBuffer<SkyConstants> skyConstants;
-	simul::opengl::ConstantBuffer<EarthShadowUniforms> earthShadowUniforms;
+	simul::opengl::ConstantBuffer<SkyConstants>			skyConstants;
+	simul::opengl::ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
 	
 	GLint			skyInterp_param;
 	GLint			sunlight_param;
@@ -138,10 +140,10 @@ protected:
 	GLint			viewPosition;
 	GLint			overcast_param;
 
-	GLint			altitudeTexCoord_fade	;
-	GLint			skyInterp_fade		;
-	GLint			fadeTexture1_fade		;
-	GLint			fadeTexture2_fade		;
+	GLint			altitudeTexCoord_fade;
+	GLint			skyInterp_fade;
+	GLint			fadeTexture1_fade;
+	GLint			fadeTexture2_fade;
 	
 	FramebufferGL	loss_2d;
 	FramebufferGL	inscatter_2d;
@@ -154,9 +156,9 @@ protected:
 	GLuint			insc_texture;
 	GLuint			skyl_texture;
 
-	bool campos_updated;
-	short *short_ptr;
-	void DrawLines(void *,Vertext *lines,int vertex_count,bool strip=false);
-	void PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+	bool			campos_updated;
+	short			*short_ptr;
+	void			DrawLines(void *,Vertext *lines,int vertex_count,bool strip=false);
+	void			PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };
 

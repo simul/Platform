@@ -46,33 +46,51 @@ void simul::opengl::TextureStruct::setTexels(void *,const void *src,int x,int y,
 
 void simul::opengl::TextureStruct::ensureTexture3DSizeAndFormat(void *,int w,int l,int d,int frmt,bool /*computable*/)
 {
-	glGenTextures(1,&(tex));
-	glBindTexture(GL_TEXTURE_3D,tex);
-	GLenum number_format=GL_RGBA;
-	GLenum number_type	=GL_UNSIGNED_INT;
-	switch(frmt)
+	if(tex)
 	{
-	case GL_RGBA:
-		number_format	=GL_RGBA;
-		number_type		=GL_UNSIGNED_INT;
-		break;
-	case GL_RGBA32F:
-		number_format	=GL_RGBA;
-		number_type		=GL_FLOAT;
-		break;
-	case GL_LUMINANCE32F_ARB:
-		number_format	=GL_LUMINANCE;
-		number_type		=GL_FLOAT;
-		break;
-	//((frmt==GL_RGBA)?GL_UNSIGNED_INT:GL_UNSIGNED_SHORT)
-	default:
-		break;
-	};
-	glTexImage3D(GL_TEXTURE_3D,0,(GLint)frmt,w,l,d,0,number_format,number_type,0);
-GL_ERROR_CHECK
-//	glTexImage3D(GL_TEXTURE_3D,0,GL_LUMINANCE32F_ARB:GL_RGBA32F_ARB,w,l,d,0,GL_LUMINANCE:GL_RGBA,GL_FLOAT,src);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+		int W,L,D;
+		glBindTexture(GL_TEXTURE_3D,tex);
+		glGetTexLevelParameteriv(	GL_TEXTURE_3D,0
+									,GL_TEXTURE_WIDTH,&W);
+		glGetTexLevelParameteriv(	GL_TEXTURE_3D,0
+									,GL_TEXTURE_HEIGHT,&L);
+		glGetTexLevelParameteriv(	GL_TEXTURE_3D,0
+									,GL_TEXTURE_DEPTH,&D);
+		if(w!=W||l!=L||d!=D)
+		{
+			SAFE_DELETE_TEXTURE(tex);
+		}
+	}
+	if(!tex)
+	{
+		glGenTextures(1,&(tex));
+		glBindTexture(GL_TEXTURE_3D,tex);
+		GLenum number_format=GL_RGBA;
+		GLenum number_type	=GL_UNSIGNED_INT;
+		switch(frmt)
+		{
+		case GL_RGBA:
+			number_format	=GL_RGBA;
+			number_type		=GL_UNSIGNED_INT;
+			break;
+		case GL_RGBA32F:
+			number_format	=GL_RGBA;
+			number_type		=GL_FLOAT;
+			break;
+		case GL_LUMINANCE32F_ARB:
+			number_format	=GL_LUMINANCE;
+			number_type		=GL_FLOAT;
+			break;
+		//((frmt==GL_RGBA)?GL_UNSIGNED_INT:GL_UNSIGNED_SHORT)
+		default:
+			break;
+		};
+		glTexImage3D(GL_TEXTURE_3D,0,(GLint)frmt,w,l,d,0,number_format,number_type,0);
+	GL_ERROR_CHECK
+	//	glTexImage3D(GL_TEXTURE_3D,0,GL_LUMINANCE32F_ARB:GL_RGBA32F_ARB,w,l,d,0,GL_LUMINANCE:GL_RGBA,GL_FLOAT,src);
+		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	}
 }
 
 struct UtKiller

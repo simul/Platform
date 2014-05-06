@@ -808,16 +808,6 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 	{
 		cloud_textures[i].ensureTexture3DSizeAndFormat(NULL,width_x,length_y,depth_z,GL_RGBA,true);
 GL_ERROR_CHECK
-	/*	glGenTextures(1,&(cloud_textures[i].tex));
-		glBindTexture(GL_TEXTURE_3D,cloud_textures[i].tex);
-		if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLushort))
-			glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA4,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_SHORT,0);
-		else if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLuint))
-			glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_INT,0);
-
-		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-		*/
 		glBindTexture(GL_TEXTURE_3D,cloud_textures[i].tex);
 		if(GetCloudInterface()->GetWrap())
 		{
@@ -854,48 +844,12 @@ void SimulGLCloudRenderer::EnsureTexturesAreUpToDate(void *context)
 	EnsureCorrectTextureSizes();
 GL_ERROR_CHECK
 	EnsureTextureCycle();
-#if 1
 	for(int i=0;i<3;i++)
 	{
 		int cycled_index=(texture_cycle+i)%3;
 		clouds::GpuCloudsParameters g=cloudKeyframer->GetGpuCloudsParameters(i);
 		gpuCloudGenerator.Update(cycled_index,g,NULL);
 	}
-#else
-	typedef simul::clouds::CloudKeyframer::block_texture_fill iter;
-	for(int i=0;i<3;i++)
-	{
-		if(!cloud_textures[(texture_cycle+i)%3].tex)
-			continue;
-		iter texture_fill;
-		while((texture_fill=cloudKeyframer->GetBlockTextureFill(seq_texture_iterator[i])).w!=0)
-		{
-			if(!texture_fill.w||!texture_fill.l||!texture_fill.d)
-				break;
-			glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+i)%3].tex);
-GL_ERROR_CHECK
-			if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLushort))
-			{
-				unsigned short *uint16_array=(unsigned short *)texture_fill.uint32_array;
-				glTexSubImage3D(	GL_TEXTURE_3D,0,
-									texture_fill.x,texture_fill.y,texture_fill.z,
-									texture_fill.w,texture_fill.l,texture_fill.d,
-									GL_RGBA,GL_UNSIGNED_SHORT_4_4_4_4,
-									uint16_array);
-			//cloud_textures[(texture_cycle+i)%3].SetTexels(NULL,texture_fill.uint32_array,texture_fill.x,texture_fill.y,texture_fill.z,
-			//						texture_fill.w,texture_fill.l,texture_fill.d);
-GL_ERROR_CHECK
-			}
-			else if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLuint))
-			{
-				cloud_textures[(texture_cycle+i)%3].setTexels(NULL,texture_fill.uint32_array,texture_fill.x,texture_fill.y,texture_fill.z,
-									texture_fill.w,texture_fill.l,texture_fill.d);
-GL_ERROR_CHECK
-			}
-			//seq_texture_iterator[i].texel_index+=texture_fill.w*texture_fill.l*texture_fill.d;
-		}
-	}
-#endif
 }
 
 void SimulGLCloudRenderer::EnsureCorrectIlluminationTextureSizes()
