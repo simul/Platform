@@ -37,8 +37,6 @@ SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 	:m_pd3dDevice(NULL)
 	,m_pTonemapEffect(NULL)
 	,m_pGaussianEffect(NULL)
-	,Exposure(1.f)
-	,Gamma(1.f/2.2f)			// no need for shader-based gamma-correction with DX10/11
 	,Glow(false)
 	,Width(w)
 	,Height(h)
@@ -170,12 +168,12 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 	Destroy();
 }
 
-void SimulHDRRendererDX1x::Render(void *context,void *texture_srv)
+void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float Exposure,float Gamma)
 {
-	Render(context,texture_srv,0);
+	Render(context,texture_srv,0,Exposure, Gamma);
 }
 
-void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
+void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX,float Exposure,float Gamma)
 {
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
 	SIMUL_COMBINED_PROFILE_START(pContext,"HDR")
@@ -207,7 +205,7 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 }
 
 void SimulHDRRendererDX1x::RenderWithOculusCorrection(void *context,void *texture_srv
-	,float offsetX)
+	,float offsetX,float Exposure,float Gamma)
 {
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;

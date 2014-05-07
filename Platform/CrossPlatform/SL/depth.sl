@@ -67,7 +67,7 @@ float depthToFadeDistance(float depth,vec2 xy,vec3 depthToLinFadeDistParams,vec2
 	return fadeDist;
 #endif
 }
-float depthToFadeDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
+/*float depthToFadeDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
 {
 #ifdef REVERSE_DEPTH
 	if(depth<=0)
@@ -94,7 +94,7 @@ float depthToFadeDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHal
 	return fadeDist;
 #endif
 }
-
+*/
 float fadeDistanceToDepth(float dist,vec2 xy,vec3 depthToLinFadeDistParams,vec2 tanHalf)
 {
 #ifdef REVERSE_DEPTH
@@ -147,7 +147,16 @@ void GetCoordinates(Texture2D t,vec2 texc,out int2 pos2)
 	pos2		=int2(texc*vec2(dims.xy));
 }
 
-void GetMSAACoordinates(Texture2DMS<float4> textureMS,vec2 texc,out int2 pos2,out int numSamples)
+void GetMSAACoordinates(Texture2DMS<vec4> textureMS,vec2 texc,out int2 pos2,out int numSamples)
+{
+	uint2 dims;
+	uint nums;
+	textureMS.GetDimensions(dims.x,dims.y,nums);
+	numSamples=nums;
+	pos2		=int2(texc*vec2(dims.xy));
+}
+
+void GetMSAACoordinates(Texture2DMS<vec4> textureMS,vec2 texc,out int2 pos2,out uint numSamples)
 {
 	uint2 dims;
 	textureMS.GetDimensions(dims.x,dims.y,numSamples);
@@ -212,8 +221,8 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 							,Texture2D lowResFarTexture
 							,Texture2D lowResNearTexture
 							,Texture2D lowResDepthTexture
-							,Texture2D<float4> depthTexture
-							,Texture2DMS<float4> depthTextureMS
+							,Texture2D<vec4> depthTexture
+							,Texture2DMS<vec4> depthTextureMS
 							,vec4 viewportToTexRegionScaleBias
 							,vec3 depthToLinFadeDistParams
 							,vec4 hiResToLowResTransformXYWH

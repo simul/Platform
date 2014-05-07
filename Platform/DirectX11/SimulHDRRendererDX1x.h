@@ -34,8 +34,6 @@ namespace simul
 			SimulHDRRendererDX1x(int w,int h);
 			virtual ~SimulHDRRendererDX1x();
 			META_BeginProperties
-				META_ValueProperty(float,Gamma,"")
-				META_ValueProperty(float,Exposure,"")
 				META_ValueProperty(bool,Glow,"Whether to apply a glow effect")
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,RecompileShaders,"")
 			META_EndProperties
@@ -46,9 +44,9 @@ namespace simul
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! Render: write the given texture to screen using the HDR rendering shaders
-			void Render(void *context,void *texture_srv,float offsetX);
-			void Render(void *context,void *texture_srv);
-			void RenderWithOculusCorrection(void *context,void *texture_srv,float offsetX);
+			void Render(void *context,void *texture_srv,float Exposure,float Gamma,float offsetX);
+			void Render(void *context,void *texture_srv,float Exposure,float Gamma);
+			void RenderWithOculusCorrection(void *context,void *texture_srv,float Exposure,float Gamma,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
 			void RenderGlowTexture(void *context,void *texture_srv);
 			//! Get the current debug text as a c-string pointer.

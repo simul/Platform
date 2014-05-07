@@ -179,12 +179,11 @@ void OpenGLRenderer::paintGL()
     glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(cam->MakeViewMatrix());
 	glMatrixMode(GL_PROJECTION);
-	static float nearPlane=1.0f;
-	static float farPlane=250000.f;
+	const camera::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	if(ReverseDepth)
-		glLoadMatrixf(cam->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight));
+		glLoadMatrixf(cam->MakeDepthReversedProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
 	else
-		glLoadMatrixf(cam->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight));
+		glLoadMatrixf(cam->MakeProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
 	glViewport(0,0,ScreenWidth,ScreenHeight);
 /*	crossplatform::ViewStruct viewStruct={	viewport_id
 												,view

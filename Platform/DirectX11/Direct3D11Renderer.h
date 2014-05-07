@@ -90,7 +90,7 @@ namespace simul
 				META_ValueProperty(bool,ShowRainTextures		,"Show rain textures onscreen.")
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
-				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
+				META_ValueProperty(float,SkyBrightness			,"Brightness of the sky (only).")
 				META_ValuePropertyWithSetCall(int,Antialiasing	,AntialiasingChanged,"How many antialiasing samples to use.")
 				META_ValueProperty(int,SphericalHarmonicsBands	,"How many bands to use for spherical harmonics.")
 			META_EndProperties
@@ -135,7 +135,12 @@ namespace simul
 		protected:
 			void RenderDepthBuffers(void *context,int view_id,int x0,int y0,int w,int h);
 			// Encompasses drawing the actual scene and putting the hdr buffer to screen.
-			void RenderScene(int view_id,crossplatform::DeviceContext &deviceContext,clouds::BaseWeatherRenderer *w,D3DXMATRIX v,D3DXMATRIX proj);
+			void RenderScene(int view_id
+				,crossplatform::DeviceContext &deviceContext
+				,clouds::BaseWeatherRenderer *w
+				,D3DXMATRIX v
+				,D3DXMATRIX proj
+				,float exposure);
 			// Different kinds of view for Render() to call:
 			void RenderFadeEditView(ID3D11DeviceContext* pd3dImmediateContext);
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);

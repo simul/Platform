@@ -117,7 +117,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 	
 	vec2 texc			=(pos.xy+0.5)/vec2(dims.xy);
 
-	vec4 previous_insc	=vec4(0.0,0.0,0.0,1.0);
+	vec4 previous_insc	=vec4(0.0,0.0,0.0,0.0);
 	float sin_e			=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
