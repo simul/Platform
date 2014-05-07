@@ -50,12 +50,9 @@ void simul::opengl::TextureStruct::ensureTexture3DSizeAndFormat(void *,int w,int
 	{
 		int W,L,D;
 		glBindTexture(GL_TEXTURE_3D,tex);
-		glGetTexLevelParameteriv(	GL_TEXTURE_3D,0
-									,GL_TEXTURE_WIDTH,&W);
-		glGetTexLevelParameteriv(	GL_TEXTURE_3D,0
-									,GL_TEXTURE_HEIGHT,&L);
-		glGetTexLevelParameteriv(	GL_TEXTURE_3D,0
-									,GL_TEXTURE_DEPTH,&D);
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_WIDTH,&W);
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_HEIGHT,&L);
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_DEPTH,&D);
 		if(w!=W||l!=L||d!=D)
 		{
 			SAFE_DELETE_TEXTURE(tex);

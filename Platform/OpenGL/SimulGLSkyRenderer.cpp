@@ -309,8 +309,8 @@ GL_ERROR_CHECK
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 		int y=y0+i*(s+4);
 		glUseProgram(fade_3d_to_2d_program);
-		GLint fadeTexture1_fade		=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture1");
-		GLint fadeTexture2_fade		=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture2");
+		GLint fadeTexture1_fade			=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture1");
+		GLint fadeTexture2_fade			=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture2");
 
 		skyConstants.skyInterp			=0.f;
 		skyConstants.altitudeTexCoord	=atc;
@@ -331,7 +331,6 @@ GL_ERROR_CHECK
 			RenderTexture(x	,y+24+2*size	,s,s);
 		}
 	}
-
 	glUseProgram(0);
 GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0);

@@ -149,7 +149,7 @@ namespace simul
 			{
 				std::cerr<<"\nERROR:\tShader file "<<filename_utf8<<" not found, exiting.\n";
 				std::cerr<<"\n\t\tShader paths are:"<<std::endl;
-				for(int i=0;i<shaderPathsUtf8.size();i++)
+				for(int i=0;i<(int)shaderPathsUtf8.size();i++)
 					std::cerr<<" "<<shaderPathsUtf8[i].c_str()<<std::endl;
 				DebugBreak();
 				std::cerr<<"exit(1)"<<std::endl;
@@ -181,7 +181,7 @@ namespace simul
 				src				=src.insert(pos,base::stringFormat("#line 1 \"%s\"\n",filenameUtf8.c_str()));
 			else
 			{
-				if(index==sourceFilesUtf8.size())
+				if(index==(int)sourceFilesUtf8.size())
 					sourceFilesUtf8.push_back(filenameUtf8);
 				src				=src.insert(pos,base::stringFormat("#line 1 %d\n",index));
 			}
