@@ -334,15 +334,6 @@ namespace simul
 				}
 			}
 		}
-#ifdef USE_GLFX
-		vector<string> effectSourceFilesUtf8;
-		void printEffectLog(GLint effect)
-		{
-   			std::string log		=glfxGetEffectLog(effect);
-			std::cerr<<log.c_str();
-//			printShaderInfoLog(log,effectSourceFilesUtf8);
-		}
-#endif
 
 		void printProgramInfoLog(GLuint obj)
 		{
@@ -413,11 +404,20 @@ namespace simul
 			}
 			return sh;
 		}
+#ifdef USE_GLFX
+		vector<string> effectSourceFilesUtf8;
+		void printEffectLog(GLint effect)
+		{
+   			std::string log		=glfxGetEffectLog(effect);
+			std::cerr<<log.c_str();
+//			printShaderInfoLog(log,effectSourceFilesUtf8);
+		}
+#endif
 		
 		GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines)
 		{
-			effectSourceFilesUtf8.clear();
-			return CompileShaderFromSource(sh,source,defines,effectSourceFilesUtf8);
+			vector<string> sourceFilesUtf8;
+			return CompileShaderFromSource(sh,source,defines,sourceFilesUtf8);
 		}
 		
 		GLint CreateEffect(const char *filename_utf8,const std::map<std::string,std::string>&defines)
