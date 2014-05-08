@@ -23,5 +23,9 @@ namespace simul
 		extern SIMUL_OPENGL_EXPORT GLuint LoadShader(const char *filename,const std::map<std::string,std::string> &defines);
 
 		extern SIMUL_OPENGL_EXPORT void printProgramInfoLog(GLuint obj);
+		extern SIMUL_OPENGL_EXPORT void printShaderInfoLog(const std::string &info_log,const std::vector<std::string> &sourceFilesUtf8);
+#ifdef USE_GLFX
+		extern SIMUL_OPENGL_EXPORT void printEffectLog(GLint effect);
+#endif
 	}
 }

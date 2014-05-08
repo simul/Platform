@@ -8,10 +8,10 @@ struct VSinput
 uniform mat4 gWVP;
 uniform sampler2D gColorMap;
 
-shader VSmain(in VSinput VSin, out vec2 texCoords)
+shader VSmain(in VSinput IN, out vec2 texCoords)
 {
-    gl_Position	= gWVP * vec4(VSin.Position, 1.0);
-    texCoords	= VSin.TexCoord;
+    gl_Position	= gWVP * vec4(IN.Position, 1.0);
+    texCoords	= IN.TexCoord;
 }
 
 shader FSmain(in vec2 texCoords, out vec4 FragColor)

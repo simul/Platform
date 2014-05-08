@@ -93,9 +93,10 @@ namespace simul
 			void UseShader(GLuint program);
 
 			GLuint cross_section_program;
-
-		//	GLint effect;
-
+			
+#ifdef USE_GLFX
+			GLint effect;
+#endif
 			GLuint cloud_shadow_program;
 			GLint eyePosition_param;
 

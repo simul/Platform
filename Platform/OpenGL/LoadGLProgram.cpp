@@ -246,7 +246,7 @@ namespace simul
 				int second_bracket	=(int)line.find(")",first_bracket+1);
 				int numberstart,numberlen=0;
 			//somefile.glsl(263): error C2065: 'space_' : undeclared identifier
-				if(third_colon>=0)
+				if(third_colon>=0&&second_colon>=0)
 				{
 					numberstart	=first_colon+1;
 					numberlen	=second_colon-first_colon-1;
@@ -304,7 +304,7 @@ namespace simul
 		{
 			int infologLength = 0;
 			int charsWritten  = 0;
-			char *infoLog;
+			char *infoLog=NULL;
 
 			glGetShaderiv(sh, GL_INFO_LOG_LENGTH,&infologLength);
 
@@ -313,23 +313,35 @@ namespace simul
 				infoLog = (char *)malloc(infologLength);
 				glGetShaderInfoLog(sh, infologLength, &charsWritten, infoLog);
 				std::string info_log=infoLog;
-				if(info_log.find("No errors")>=info_log.length())
-				{
-					int pos=0;
-					int next=(int)info_log.find('\n',pos+1);
-					while(next>=0)
-					{
-						std::string line		=info_log.substr(pos,next-pos);
-						std::string error_line	=RewriteErrorLine(line,sourceFilesUtf8);
-						if(error_line.length())
-							std::cerr<<error_line.c_str()<<std::endl;
-						pos=next;
-						next=(int)info_log.find('\n',pos+1);
-					}
-				}
+				printShaderInfoLog(info_log,sourceFilesUtf8);
 				free(infoLog);
 			}
 		}
+		void printShaderInfoLog(const std::string &info_log,const vector<string> &sourceFilesUtf8)
+		{
+			if(info_log.find("No errors")>=info_log.length())
+			{
+				int pos=0;
+				int next=(int)info_log.find('\n',pos+1);
+				while(next>=0)
+				{
+					std::string line		=info_log.substr(pos,next-pos);
+					std::string error_line	=RewriteErrorLine(line,sourceFilesUtf8);
+					if(error_line.length())
+						std::cerr<<error_line.c_str()<<std::endl;
+					pos=next;
+					next=(int)info_log.find('\n',pos+1);
+				}
+			}
+		}
+#ifdef USE_GLFX
+		vector<string> effectSourceFilesUtf8;
+		void printEffectLog(GLint effect)
+		{
+   			std::string log		=glfxGetEffectLog(effect);
+			printShaderInfoLog(log,effectSourceFilesUtf8);
+		}
+#endif
 
 		void printProgramInfoLog(GLuint obj)
 		{
@@ -400,12 +412,11 @@ namespace simul
 			}
 			return sh;
 		}
-
 		
 		GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines)
 		{
-			vector<string> sourceFilesUtf8;
-			return CompileShaderFromSource(sh,source,defines,sourceFilesUtf8);
+			effectSourceFilesUtf8.clear();
+			return CompileShaderFromSource(sh,source,defines,effectSourceFilesUtf8);
 		}
 		
 		GLint CreateEffect(const char *filename_utf8,const std::map<std::string,std::string>&defines)
@@ -417,8 +428,7 @@ namespace simul
 			GLint effect=glfxGenEffect();
 #if 1
 			std::string src				=loadShaderSource(filenameUtf8.c_str());
-			vector<string> sourceFilesUtf8;
-			ProcessIncludes(src,filenameUtf8,false,sourceFilesUtf8);
+			ProcessIncludes(src,filenameUtf8,false,effectSourceFilesUtf8);
 			
 			int pos=(int)src.find("\r\n");
 			while(pos>=0)
