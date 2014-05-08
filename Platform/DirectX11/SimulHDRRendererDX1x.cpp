@@ -10,7 +10,7 @@
 #define NOMINMAX
 #include "SimulHDRRendererDX1x.h"
 #include <tchar.h>
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <dxerr.h>
 #endif
 #include <string>

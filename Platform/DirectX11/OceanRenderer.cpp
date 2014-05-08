@@ -3,7 +3,7 @@
 #include "CreateEffectDX1x.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/SkyInterface.h"
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <D3DX11tex.h>
 #endif
 #include "CompileShaderDX1x.h"

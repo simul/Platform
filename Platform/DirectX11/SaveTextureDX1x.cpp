@@ -5,13 +5,13 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Base/FileLoader.h"
 #include <string>
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #include <dxerr.h>
 #endif
 using namespace simul;
 using namespace dx11;
-#if WINVER>=0x0602
+#ifdef SIMUL_WIN8_SDK
 
 HRESULT D3DX11SaveTextureToFileW(ID3D11DeviceContext       *pContext,ID3D11Resource            *pSrcTexture,D3DX11_IMAGE_FILE_FORMAT    DestFormat,LPCWSTR                   pDestFile)
 {

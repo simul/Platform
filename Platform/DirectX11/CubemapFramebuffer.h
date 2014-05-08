@@ -1,13 +1,13 @@
 #pragma once
 #include <D3Dcompiler.h>
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #endif
 #include <d3d11.h>
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #endif
-#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
+#include "D3dx11effect.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Utilities.h"

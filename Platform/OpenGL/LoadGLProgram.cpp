@@ -339,7 +339,8 @@ namespace simul
 		void printEffectLog(GLint effect)
 		{
    			std::string log		=glfxGetEffectLog(effect);
-			printShaderInfoLog(log,effectSourceFilesUtf8);
+			std::cerr<<log.c_str();
+//			printShaderInfoLog(log,effectSourceFilesUtf8);
 		}
 #endif
 
@@ -436,11 +437,19 @@ namespace simul
 				src.replace(pos,2,"\n");
 				pos=(int)src.find("\r\n",pos+1);
 			}
-			if(!glfxParseEffectFromMemory( effect, src.c_str(),filenameUtf8.c_str()))
+			const char **filenames=new const char*[effectSourceFilesUtf8.size()+1];
+			for(int i=0;i<effectSourceFilesUtf8.size();i++)
+			{
+				filenames[i]=effectSourceFilesUtf8[i].c_str();
+			}
+			filenames[effectSourceFilesUtf8.size()]=0;
+			if(!glfxParseEffectFromTextSIMUL( effect, src.c_str(),filenames))
 			{
    				std::string log = glfxGetEffectLog(effect);
    				std::cout << "Error parsing effect: " << log << std::endl;
+				effect=-1;
 			}
+			delete filenames;
 #else
 			if (!glfxParseEffectFromFile(effect,filenameUtf8.c_str()))
 			{

@@ -512,7 +512,9 @@ void simul::opengl::setParameter(GLuint program,const char *name,float value)
 {
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<=0)
-		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	{
+		//std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	}
 	else
 		glUniform1f(loc,value);
 	GL_ERROR_CHECK
@@ -522,7 +524,9 @@ void simul::opengl::setParameter(GLuint program,const char *name,float value1,fl
 {
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<=0)
-		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	{
+		//std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	}
 	else
 		glUniform2f(loc,value1,value2);
 	GL_ERROR_CHECK
@@ -532,7 +536,9 @@ void simul::opengl::setParameter(GLuint program,const char *name,float value1,fl
 {
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<=0)
-		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	{
+		//std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	}
 	else
 		glUniform3f(loc,value1,value2,value3);
 	GL_ERROR_CHECK
@@ -542,7 +548,7 @@ void simul::opengl::setParameter(GLuint program,const char *name,float value1,fl
 {
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<=0)
-		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform4f(loc,value1,value2,value3,value4);
 	GL_ERROR_CHECK
@@ -551,7 +557,7 @@ void simul::opengl::setVector4(GLuint program,const char *name,const float *valu
 {
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<=0)
-		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform4f(loc,value[0],value[1],value[2],value[3]);
 	GL_ERROR_CHECK
@@ -561,7 +567,7 @@ void simul::opengl::setParameter(GLuint program,const char *name,int value)
 {
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<=0)
-		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform1i(loc,value);
 	GL_ERROR_CHECK
@@ -573,7 +579,7 @@ void simul::opengl::setParameter(GLuint program,const char *name,const simul::sk
 	GLint loc=glGetUniformLocation(program,name);
 	GL_ERROR_CHECK
 	if(loc<=0)
-		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform4f(loc,value.x,value.y,value.z,value.w);
 	GL_ERROR_CHECK
@@ -583,7 +589,7 @@ void simul::opengl::setParameter2(GLuint program,const char *name,const simul::s
 {
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<=0)
-		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	glUniform2f(loc,value.x,value.y);
 	GL_ERROR_CHECK
 }
@@ -592,7 +598,7 @@ void simul::opengl::setParameter3(GLuint program,const char *name,const simul::s
 {
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<=0)
-		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 	{
 		glUniform3f(loc,value.x,value.y,value.z);
@@ -604,7 +610,7 @@ void simul::opengl::setMatrix(GLuint program,const char *name,const float *value
 {
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<=0)
-		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 	{
 		static bool tr=0;
@@ -617,7 +623,7 @@ void simul::opengl::setMatrixTranspose(GLuint program,const char *name,const flo
 {
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<=0)
-		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	static bool tr=1;
 	glUniformMatrix4fv(loc,1,tr,value);
 	GL_ERROR_CHECK
@@ -631,7 +637,7 @@ GL_ERROR_CHECK
 	GLint loc	=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
 	if(loc<=0)
-		std::cout<<"Warning: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform1i(loc,texture_number);
 GL_ERROR_CHECK
@@ -645,7 +651,7 @@ GL_ERROR_CHECK
 	GLint loc	=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
 	if(loc<=0)
-		std::cout<<"Warning: 3D texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: 3D texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform1i(loc,texture_number);
 GL_ERROR_CHECK

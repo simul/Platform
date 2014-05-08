@@ -7,11 +7,11 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 
 #include <d3d11.h>
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
+#include "D3dx11effect.h"
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)

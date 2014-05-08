@@ -27,7 +27,7 @@ static const DWORD default_effect_flags=0;
 #include <assert.h>
 #include <fstream>
 #include "MacrosDX1x.h"
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <dxerr.h>
 #else
 #include <DirectXTex.h>
@@ -50,15 +50,18 @@ enum {D3DX11_FROM_FILE=(UINT)-3};
 enum {D3DX11_FILTER_NONE=(1 << 0)};
 #endif
 
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #pragma comment(lib,"d3dx9.lib")
 #pragma comment(lib,"d3d9.lib")
 #pragma comment(lib,"d3dx11.lib")
 #pragma comment(lib,"dxerr.lib")
+#pragma comment(lib,"Effects11_DXSDK.lib")
+#else
+#pragma comment(lib,"Effects11_Win8SDK.lib")
+#pragma comment(lib,"directxtex.lib")
 #endif
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"d3d11.lib")
-#pragma comment(lib,"Effects11.lib")
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"d3dcompiler.lib")
 
@@ -901,9 +904,15 @@ HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass
 
 void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 {
+#ifdef SIMUL_WIN8_SDK
+	D3DVECTOR vEyePt ={cam_pos[0],cam_pos[1],cam_pos[2]};
+    D3DVECTOR vLookAt;
+    D3DVECTOR vUpDir;
+#else
 	D3DXVECTOR3 vEyePt (cam_pos[0],cam_pos[1],cam_pos[2]);
     D3DXVECTOR3 vLookAt;
     D3DXVECTOR3 vUpDir;
+#endif
     ZeroMemory(mat,6*sizeof(D3DXMATRIX) );
     /*D3DCUBEMAP_FACE_POSITIVE_X     = 0,
     D3DCUBEMAP_FACE_NEGATIVE_X     = 1,
@@ -942,8 +951,8 @@ void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 		vLookAt.y+=lookf[i].y;
 		vLookAt.z+=lookf[i].z;
 		vUpDir		=upf[i];
-		D3DXMatrixLookAtLH(&mat[i], &vEyePt,&vLookAt, &vUpDir );
-		if(true)//everseDepth)
+		//D3DXMatrixLookAtLH(&mat[i], &vEyePt,&vLookAt, &vUpDir );
+		if(true)
 		{
 			vLookAt		=vEyePt+lookr[i];
 			vUpDir		=upr[i];

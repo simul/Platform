@@ -12,7 +12,7 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 
 #include <d3d11.h>
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <dxerr.h>
 #endif
 #include <string>

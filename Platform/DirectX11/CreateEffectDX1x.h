@@ -9,9 +9,9 @@
 // CreateEffect.h Create a DirectX .fx effect and report errors.
 #ifndef CREATEEFFECTDX1X_H
 #define CREATEEFFECTDX1X_H
-#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
+#include "D3dx11effect.h"
 #include <D3Dcompiler.h>
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
 inline D3DXMATRIX D3DXMatrixMultiply(const D3DXMATRIX &a,const D3DXMATRIX &b)
@@ -31,6 +31,12 @@ struct D3DVECTOR
 	{
 		D3DVECTOR v={x+b.x,y+b.y,z+b.z};
 		return v;
+	}
+	void operator=(D3DVECTOR b)
+	{
+		x=b.x;
+		y=b.y;
+		z=b.z;
 	}
 };
 inline float D3DXFresnelTerm(float c, float r)

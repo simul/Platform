@@ -2,7 +2,7 @@
 #define TEXTRENDERER_H
 
 #include <d3d11.h>
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx10math.h>
 #include <d3dx11async.h>
 #endif

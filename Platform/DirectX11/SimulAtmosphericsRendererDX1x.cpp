@@ -11,7 +11,7 @@
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
 #include <tchar.h>
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <dxerr.h>
 #endif
 #include <string>

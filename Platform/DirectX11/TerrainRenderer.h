@@ -6,11 +6,11 @@
 // in accordance with the terms of that agreement.
 #pragma once
 #include <d3d11.h>
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
+#include "D3dx11effect.h"
 typedef long HRESULT;
 #include "Simul/Base/Referenced.h"
 #include "Simul/Terrain/BaseTerrainRenderer.h"

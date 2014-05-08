@@ -1,7 +1,7 @@
 
 #include "DX11Exception.h"
 
-#if WINVER>=0x0602
+#ifdef SIMUL_WIN8_SDK
 #include <string>
 extern const char *DXGetErrorStringA(HRESULT hr)
 {

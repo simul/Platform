@@ -648,14 +648,14 @@ GL_ERROR_CHECK
 
 #ifdef USE_GLFX
 	glfxDeleteEffect(effect);
-	effect						=opengl::CreateEffect("clouds.glfx",defines);
+	effect=-1;
+	while(effect==-1)
+		effect						=opengl::CreateEffect("clouds.glfx",defines);
 	if(effect>=0)
 	{
 		GLuint p				=glfxCompileProgram(effect, "cross_section");
 		if (!p)
-		{
 			printEffectLog(effect);
-		}
 		else
 			cross_section_program=p;
 	}

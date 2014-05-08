@@ -1,7 +1,7 @@
 #pragma once
 #include <exception>
 #include <d3d11.h>
-#if WINVER<0x0602
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #include <dxerr.h>
 #else
