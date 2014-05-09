@@ -17,41 +17,47 @@
 #include "Simul/Platform/DirectX9/Export.h"
 
 typedef long HRESULT;
-class SimulPrecipitationRenderer: public simul::clouds::BasePrecipitationRenderer
+namespace simul
 {
-public:
-	SimulPrecipitationRenderer();
-	virtual ~SimulPrecipitationRenderer();
-	//standard d3d object interface functions:
-	//! Call this when the D3D device has been created or reset.
-	void RestoreDeviceObjects(void *pd3dDevice);
-	void SetCubemapTexture(void *){}
-	void RecompileShaders();
-	//! Call this when the D3D device has been shut down.
-	void InvalidateDeviceObjects();
-	//! Call this to draw the clouds, including any illumination by lightning.
-	void Render(void *context);
-#ifdef XBOX
-	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-#endif
-	// Set a texture not created by this class to be used:
-	bool SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex);
-protected:
-	virtual void TextureRepeatChanged();
-	LPDIRECT3DDEVICE9		m_pd3dDevice;
-	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
-	LPD3DXEFFECT			m_pRainEffect;		// The fx file for the sky
-	LPDIRECT3DTEXTURE9		rain_texture;
-	D3DXHANDLE				worldViewProj;
-	D3DXHANDLE				offset;
-	D3DXHANDLE				lightColour;
-	D3DXHANDLE				offset1;
-	D3DXHANDLE				offset2;
-	D3DXHANDLE				offset3;
-	D3DXHANDLE				intensity;
-	D3DXHANDLE              m_hTechniqueRain;	// Handle to technique in the effect 
-	D3DXMATRIX				view,proj;
-	D3DXVECTOR3				cam_pos;
-	simul::math::Vector3	last_cam_pos;
-	bool external_rain_texture;		// Is the rain texture created outside this class?
-};
+	namespace dx9
+	{
+		class SimulPrecipitationRenderer: public simul::clouds::BasePrecipitationRenderer
+		{
+		public:
+			SimulPrecipitationRenderer();
+			virtual ~SimulPrecipitationRenderer();
+			//standard d3d object interface functions:
+			//! Call this when the D3D device has been created or reset.
+			void RestoreDeviceObjects(void *pd3dDevice);
+			void SetCubemapTexture(void *){}
+			void RecompileShaders();
+			//! Call this when the D3D device has been shut down.
+			void InvalidateDeviceObjects();
+			//! Call this to draw the clouds, including any illumination by lightning.
+			void Render(void *context);
+		#ifdef XBOX
+			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+		#endif
+			// Set a texture not created by this class to be used:
+			bool SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex);
+		protected:
+			virtual void TextureRepeatChanged();
+			LPDIRECT3DDEVICE9		m_pd3dDevice;
+			LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
+			LPD3DXEFFECT			m_pRainEffect;		// The fx file for the sky
+			LPDIRECT3DTEXTURE9		rain_texture;
+			D3DXHANDLE				worldViewProj;
+			D3DXHANDLE				offset;
+			D3DXHANDLE				lightColour;
+			D3DXHANDLE				offset1;
+			D3DXHANDLE				offset2;
+			D3DXHANDLE				offset3;
+			D3DXHANDLE				intensity;
+			D3DXHANDLE              m_hTechniqueRain;	// Handle to technique in the effect 
+			D3DXMATRIX				view,proj;
+			D3DXVECTOR3				cam_pos;
+			simul::math::Vector3	last_cam_pos;
+			bool external_rain_texture;		// Is the rain texture created outside this class?
+		};
+	}
+}

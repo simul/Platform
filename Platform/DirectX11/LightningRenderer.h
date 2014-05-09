@@ -3,9 +3,11 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
-#include <d3dx9.h>
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
+#include <d3dx9.h>
 #include <d3dx11.h>
+#endif
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/BaseLightningRenderer.h"
 #include "Simul/Platform/DirectX11/Export.h"

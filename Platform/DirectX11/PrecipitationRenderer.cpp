@@ -72,7 +72,7 @@ void PrecipitationRenderer::RecompileShaders()
 	pImmediateContext->GenerateMips(rainArrayTexture.m_pArrayTexture_SRV);
 
 	D3D11_INPUT_ELEMENT_DESC decl[] =
-{
+	{
 		{"POSITION"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0	,0	,D3D11_INPUT_PER_VERTEX_DATA,0},
 		{"TYPE"		,0	,DXGI_FORMAT_R32_UINT			,0	,12	,D3D11_INPUT_PER_VERTEX_DATA,0},
 		{"VELOCITY"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0	,16	,D3D11_INPUT_PER_VERTEX_DATA,0},
@@ -93,9 +93,7 @@ void PrecipitationRenderer::RecompileShaders()
 		vertexBuffer.setAsStreamOutTarget(pImmediateContext);
 		ApplyPass(pImmediateContext,effect->GetTechniqueByName("init_particles")->GetPassByIndex(0));
 		pImmediateContext->Draw(125000,0);
-		ID3D11Buffer *pBuffer =NULL;
-		UINT offset=0;
-		pImmediateContext->SOSetTargets(1,&pBuffer,&offset);
+		cancelStreamOutTarget(pImmediateContext);
 	}
 	pImmediateContext->IASetPrimitiveTopology(previousTopology );
 	pImmediateContext->IASetInputLayout(previousInputLayout);
@@ -305,7 +303,7 @@ void PrecipitationRenderer::Render(void *context
 	perViewConstants.invViewProj_2[1].transpose();
 	perViewConstants.worldView[1]		=view;
 	perViewConstants.worldView[1].transpose();
-	perViewConstants.worldViewProj[1]	=wvp;
+	perViewConstants.worldViewProj[1]		=(const float *)&wvp;
 	perViewConstants.worldViewProj[1].transpose();
 	perViewConstants.offset[1]		=offs;
 	perViewConstants.tanHalfFov		=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
@@ -405,5 +403,5 @@ void PrecipitationRenderer::RenderTextures(void *context,int x0,int y0,int dx,in
 		h/=2;
 	}
 	renderPlatformDx11.DrawTexture(pContext	,x0,y0	,w,h,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex(),1.f);
-	UtilityRenderer::Print(pContext			,x0,y0	,"Moisture");
+	renderPlatformDx11.Print(pContext			,x0,y0	,"Moisture");
 }

@@ -8,10 +8,12 @@
 // Simul2DCloudRendererDX11.h A renderer for 2D cloud layers.
 
 #pragma once
-#include <d3dx9.h>
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
+#include <d3dx9.h>
 #include <d3dx11.h>
-#include <D3dx11effect.h>
+#endif
+#include "D3dx11effect.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
@@ -32,9 +34,11 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
 			void PreRenderUpdate(void *context);
-			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
-			void RenderCrossSections(void *context,int x0,int y0,int width,int height);
-			void RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height);
+			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id
+				,const simul::sky::float4& viewportTextureRegionXYWH
+				,const simul::sky::float4& );
+			void RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
+			void RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
 			void SetLossTexture(void *l);
 			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);

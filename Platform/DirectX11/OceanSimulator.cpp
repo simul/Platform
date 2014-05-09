@@ -29,7 +29,7 @@ float Gauss()
 	float u2 = rand() / (float)RAND_MAX;
 	if (u1 < 1e-6f)
 		u1 = 1e-6f;
-	return sqrtf(-2 * logf(u1)) * cosf(2*D3DX_PI * u2);
+	return sqrtf(-2.f* logf(u1)) * cosf(2.f*3.1415926536f * u2);
 }
 
 // Phillips Spectrum

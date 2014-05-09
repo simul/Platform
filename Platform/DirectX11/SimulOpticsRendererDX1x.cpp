@@ -90,7 +90,7 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void *moi
 	simul::math::Matrix4x4 view(v),proj(p);
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	StoreD3D11State(pContext);
-	D3DXVECTOR3 sun_dir(dir);
+	math::Vector3 sun_dir(dir);
 	float magnitude=exposure;
 	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.1f);
 	if(flare_magnitude>1.f)
@@ -103,7 +103,7 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void *moi
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
 	static float sun_mult=0.05f;
-	D3DXVECTOR3 cam_pos,cam_dir;
+	simul::math::Vector3 cam_pos,cam_dir;
 	simul::dx11::GetCameraPosVector(view,(float*)&cam_pos,(float*)&cam_dir,false);
 	lensFlare.UpdateCamera(cam_dir,sun_dir);
 	flare_magnitude*=lensFlare.GetStrength();
@@ -118,7 +118,7 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void *moi
 		sunlight*=0.25f;
 		for(int i=0;i<lensFlare.GetNumArtifacts();i++)
 		{
-			D3DXVECTOR3 pos=lensFlare.GetArtifactPosition(i);
+			math::Vector3 pos=lensFlare.GetArtifactPosition(i);
 			float sz=lensFlare.GetArtifactSize(i);
 			int t=lensFlare.GetArtifactType(i);
 			dx11::setTexture(effect,"flareTexture",halo_textures[t]);

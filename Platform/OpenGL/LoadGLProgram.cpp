@@ -1,4 +1,7 @@
 #include <GL/glew.h>
+#ifdef USE_GLFX
+#include <GL/glfx.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -137,11 +140,171 @@ namespace simul
 			}
 		};
 
-		void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
+		std::string loadShaderSource(const char *filename_utf8)
+		{
+			void *shader_source=NULL;
+			unsigned fileSize=0;
+			simul::base::FileLoader::GetFileLoader()->AcquireFileContents(shader_source,fileSize,filename_utf8,true);
+			if(!shader_source)
+			{
+				std::cerr<<"\nERROR:\tShader file "<<filename_utf8<<" not found, exiting.\n";
+				std::cerr<<"\n\t\tShader paths are:"<<std::endl;
+				for(int i=0;i<(int)shaderPathsUtf8.size();i++)
+					std::cerr<<" "<<shaderPathsUtf8[i].c_str()<<std::endl;
+				DebugBreak();
+				std::cerr<<"exit(1)"<<std::endl;
+				exit(1);
+			}
+			std::string str((const char*)shader_source);
+			simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(shader_source);
+			// Change Windows-style CR-LF's to simple Unix-style LF's
+			base::find_and_replace( str,"\r\n","\n");
+			// Convert any left-over CR's into LF's
+			base::find_and_replace( str,"\r","\n");
+			return str;
+		}
+		void ProcessIncludes(string &src,string &filenameUtf8,bool line_source_filenames,vector<string> &sourceFilesUtf8)
+		{
+			size_t pos			=0;
+			// problem: if we insert this at line 0, SOME Glsl compilers will moan about #version not being the first line.
+			//src					=src.insert(0,base::stringFormat("#line 1 \"%s\"\n",filenameUtf8.c_str()));
+
+			// instead we find '#version' and insert after that.
+			int first			=(int)src.find("#version");
+			if(first>=0)
+				pos				=src.find('\n',first)+1;
+			// Is this file in the source list?
+			int index			=(int)(find(sourceFilesUtf8.begin(), sourceFilesUtf8.end(), filenameUtf8)-sourceFilesUtf8.begin());
+			// And SOME Glsl compilers will give a syntax error
+			// when you provide a source filename with the #line directive, as it's not in the GLSL spec:
+			if(line_source_filenames)
+				src				=src.insert(pos,base::stringFormat("#line 1 \"%s\"\n",filenameUtf8.c_str()));
+			else
+			{
+				if(index==(int)sourceFilesUtf8.size())
+					sourceFilesUtf8.push_back(filenameUtf8);
+				src				=src.insert(pos,base::stringFormat("#line 1 %d\n",index));
+			}
+			pos					=src.find('\n',pos+1);
+			int next			=(int)src.find('\n',pos+1);
+			int line_number		=0;
+			while(next>=0)
+			{
+				string line						=src.substr(pos+1,next-pos);
+				int inc							=(int)line.find("#include");
+				if(inc==0)
+				{
+					int start_of_line			=(int)pos+1;
+					pos+=9;
+					int eol						=(int)src.find("\n",pos+1);
+					string include_file			=line.substr(10,line.length()-12);
+					src							=src.insert(start_of_line,"//");
+					// Go to after the newline at the end of the #include statement. Two for "//" and one for "\n"
+					eol							+=3;
+					string includeFilenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(include_file.c_str(),shaderPathsUtf8);
+					string newsrc				=loadShaderSource(includeFilenameUtf8.c_str());
+					ProcessIncludes(newsrc,includeFilenameUtf8,line_source_filenames,sourceFilesUtf8);
+					
+					//First put the "restore" #line directive after the commented-out #include.
+					if(line_source_filenames)
+						src=src.insert(eol,base::stringFormat("\n#line %d \"%s\"\n",line_number,filenameUtf8.c_str()));
+					else
+						src=src.insert(eol,base::stringFormat("\n#line %d %d\n",line_number,index));
+					// Now insert the contents of the #include file before the closing #line directive.
+					src								=src.insert(eol,newsrc);
+					next							+=(int)newsrc.length();
+					line_number--;
+				}
+				else
+					line_number++;
+				pos=next;
+				next=(int)src.find('\n',pos+1);
+			}
+		}
+		std::string RewriteErrorLine(std::string line,const vector<string> &sourceFilesUtf8)
+		{
+			bool is_error=true;
+			int errpos=(int)line.find("ERROR");
+			if(errpos<0)
+				errpos=(int)line.find("error");
+			if(errpos<0)
+			{
+				errpos=(int)line.find("WARNING");
+				is_error=false;
+			}
+			if(errpos<0)
+			{
+				errpos=(int)line.find("warning");
+				is_error=false;
+			}
+			if(errpos>=0)
+			{
+				int first_colon		=(int)line.find(":");
+				int second_colon	=(int)line.find(":",first_colon+1);
+				int third_colon		=(int)line.find(":",second_colon+1);
+				int first_bracket	=(int)line.find("(");
+				int second_bracket	=(int)line.find(")",first_bracket+1);
+				int numberstart,numberlen=0;
+			//somefile.glsl(263): error C2065: 'space_' : undeclared identifier
+				if(third_colon>=0&&second_colon>=0)
+				{
+					numberstart	=first_colon+1;
+					numberlen	=second_colon-first_colon-1;
+				}
+			//	ERROR: 0:11: 'assign' :  cannot convert from '2-component vector of float' to 'float'
+				else if((third_colon<0||numberlen>6)&&second_bracket>=0)
+				{
+					if(first_colon<first_bracket)
+					{
+						numberstart	=first_colon+1;
+						numberlen	=first_bracket-first_colon-1;
+					}
+					else
+					{
+						numberstart=0;
+						numberlen=first_bracket;
+					}
+				}
+				else
+					return "";
+				std::string filenumber_str=line.substr(numberstart,numberlen);
+				std::string err_msg=line.substr(numberstart+numberlen,line.length()-numberstart-numberlen);
+				if(third_colon>=0)
+				{
+					third_colon-=numberstart+numberlen;
+					err_msg.replace(0,1,"(");
+				}
+				const char *err_warn	=is_error?"error":"warning";
+				if(third_colon>=0)
+					err_msg.replace(third_colon,1,base::stringFormat("): %s C7555: ",err_warn).c_str());
+#if 0
+				int at_pos=(int)err_msg.find("0(");
+				while(at_pos>=0)
+				{
+					int end_brk=(int)err_msg.find(")",at_pos);
+					if(end_brk<0)
+						break;
+					std::string l=err_msg.substr(at_pos+2,end_brk-at_pos-2);
+					int num=atoi(l.c_str());
+					string filename=sourceFilesUtf8[num];
+					err_msg.replace(at_pos,end_brk-at_pos,filename+"("+base::stringFormat("%d",n.line)+") ");
+					at_pos=(int)err_msg.find("0(");
+				}
+#endif
+				int filenumber=atoi(filenumber_str.c_str());
+				string filename=sourceFilesUtf8[filenumber];
+				std::string err_line	=filename+err_msg;
+				//base::stringFormat("%s(%d): %s G1000: %s",filename.c_str(),line,err_warn,err_msg.c_str());
+					//(n.filename+"(")+n.line+"): "+err_warn+" G1000: "+err_msg;
+				return err_line;
+			}
+			return "";
+		}
+		void printShaderInfoLog(GLuint sh,const vector<string> &sourceFilesUtf8)
 		{
 			int infologLength = 0;
 			int charsWritten  = 0;
-			char *infoLog;
+			char *infoLog=NULL;
 
 			glGetShaderiv(sh, GL_INFO_LOG_LENGTH,&infologLength);
 
@@ -150,75 +313,25 @@ namespace simul
 				infoLog = (char *)malloc(infologLength);
 				glGetShaderInfoLog(sh, infologLength, &charsWritten, infoLog);
 				std::string info_log=infoLog;
-				if(info_log.find("No errors")>=info_log.length())
-				{
-					int pos=0;
-					int next=(int)info_log.find('\n',pos+1);
-					while(next>=0)
-					{
-						std::string line=info_log.substr(pos,next-pos);
-						bool is_error=true;
-						int errpos=(int)line.find("ERROR");
-						if(errpos<0)
-							errpos=(int)line.find("error");
-						if(errpos<0)
-						{
-							errpos=(int)line.find("WARNING");
-							is_error=false;
-						}
-						if(errpos<0)
-						{
-							errpos=(int)line.find("warning");
-							is_error=false;
-						}
-						if(errpos>=0)
-						{
-							int first_colon		=(int)line.find(":");
-							int second_colon	=(int)line.find(":",first_colon+1);
-							int third_colon		=(int)line.find(":",second_colon+1);
-							int first_bracket	=(int)line.find("(");
-							int second_bracket	=(int)line.find(")",first_bracket+1);
-							int numberstart,numberlen=0;
-							if(third_colon>=0)
-							{
-								numberstart	=second_colon+1;
-								numberlen	=third_colon-second_colon-1;
-							}
-							else if((third_colon<0||numberlen>6)&&second_bracket>=0)
-							{
-								numberstart	=first_bracket+1;
-								numberlen	=second_bracket-first_bracket-1;
-							}
-							else
-							{
-								pos=next;
-								next=(int)info_log.find('\n',pos+1);
-								continue;
-							}
-							std::string linestr=line.substr(numberstart,numberlen);
-							std::string err_msg=line.substr(numberstart+numberlen+1,line.length()-numberstart-numberlen-1);
-							int at_pos=(int)err_msg.find("0(");
-							while(at_pos>=0)
-							{
-								int end_brk=(int)err_msg.find(")",at_pos);
-								if(end_brk<0)
-									break;
-								std::string l=err_msg.substr(at_pos+2,end_brk-at_pos-2);
-								int num=atoi(l.c_str());
-								NameLine n=filenameChart.find(num);
-								err_msg.replace(at_pos,end_brk-at_pos,n.filename+"("+base::stringFormat("%d",n.line)+") ");
-								at_pos=(int)err_msg.find("0(");
-							}
-							int number=atoi(linestr.c_str());
-							NameLine n=filenameChart.find(number);
-							const char *err_warn=is_error?"error":"warning";
-							std::cerr<<n.filename.c_str()<<"("<<n.line<<"): "<<err_warn<<" G1000: "<<err_msg.c_str()<<std::endl;
-						}
-						pos=next;
-						next=(int)info_log.find('\n',pos+1);
-					}
-				}
+				printShaderInfoLog(info_log,sourceFilesUtf8);
 				free(infoLog);
+			}
+		}
+		void printShaderInfoLog(const std::string &info_log,const vector<string> &sourceFilesUtf8)
+		{
+			if(info_log.find("No errors")>=info_log.length())
+			{
+				int pos=0;
+				int next=(int)info_log.find('\n',pos+1);
+				while(next>=0)
+				{
+					std::string line		=info_log.substr(pos,next-pos);
+					std::string error_line	=RewriteErrorLine(line,sourceFilesUtf8);
+					if(error_line.length())
+						std::cerr<<error_line.c_str()<<std::endl;
+					pos=next;
+					next=(int)info_log.find('\n',pos+1);
+				}
 			}
 		}
 
@@ -244,10 +357,8 @@ namespace simul
 				free(infoLog);
 			}
 			GL_ERROR_CHECK
-				}
-
-
-		GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines,FilenameChart filenameChart)
+		}
+		GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines,const vector<string> &sourceFilesUtf8)
 		{
 			std::string src=source;
 		/*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
@@ -271,8 +382,8 @@ namespace simul
 				def+=i->second;
 				def+="\r\n";
 				src=src.insert(start_of_line,def);
-				int start_line=GetLineNumber(src,start_of_line);
-				filenameChart.add("defines",start_line,def);
+//				int start_line=(int)GetLineNumber(src,start_of_line);
+				//filenameChart.add("defines",start_line,def);
 			}
 			int lenOfStrings[MAX_STRINGS];
 			strings[0]		=src.c_str();
@@ -283,7 +394,7 @@ namespace simul
 				return 0;
 			glCompileShader(sh);
 		GL_ERROR_CHECK
-			printShaderInfoLog(sh,filenameChart);
+			printShaderInfoLog(sh,sourceFilesUtf8);
 			int result=1;
 			glGetShaderiv(sh,GL_COMPILE_STATUS,&result);
 		GL_ERROR_CHECK
@@ -293,11 +404,63 @@ namespace simul
 			}
 			return sh;
 		}
-
+#ifdef USE_GLFX
+		vector<string> effectSourceFilesUtf8;
+		void printEffectLog(GLint effect)
+		{
+   			std::string log		=glfxGetEffectLog(effect);
+			std::cerr<<log.c_str();
+//			printShaderInfoLog(log,effectSourceFilesUtf8);
+		}
+#endif
+		
 		GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines)
 		{
-			FilenameChart filenameChart;
-			return CompileShaderFromSource(sh,source,defines,filenameChart);
+			vector<string> sourceFilesUtf8;
+			return CompileShaderFromSource(sh,source,defines,sourceFilesUtf8);
+		}
+		
+		GLint CreateEffect(const char *filename_utf8,const std::map<std::string,std::string>&defines)
+		{
+			std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,shaderPathsUtf8);
+			if(!filenameUtf8.length())
+				return 0;
+#ifdef USE_GLFX
+			GLint effect=glfxGenEffect();
+#if 1
+			std::string src				=loadShaderSource(filenameUtf8.c_str());
+			ProcessIncludes(src,filenameUtf8,false,effectSourceFilesUtf8);
+			
+			int pos=(int)src.find("\r\n");
+			while(pos>=0)
+			{
+				src.replace(pos,2,"\n");
+				pos=(int)src.find("\r\n",pos+1);
+			}
+			const char **filenames=new const char*[effectSourceFilesUtf8.size()+1];
+			for(int i=0;i<effectSourceFilesUtf8.size();i++)
+			{
+				filenames[i]=effectSourceFilesUtf8[i].c_str();
+			}
+			filenames[effectSourceFilesUtf8.size()]=0;
+			if(!glfxParseEffectFromTextSIMUL( effect, src.c_str(),filenames))
+			{
+   				std::string log = glfxGetEffectLog(effect);
+   				std::cout << "Error parsing effect: " << log << std::endl;
+				effect=-1;
+			}
+			delete filenames;
+#else
+			if (!glfxParseEffectFromFile(effect,filenameUtf8.c_str()))
+			{
+   				std::string log = glfxGetEffectLog(effect);
+   				std::cout << "Error parsing effect: " << log << std::endl;
+			}
+#endif
+			return effect;
+#else
+			return 0;
+#endif
 		}
 
 		GLuint MakeProgram(const char *filename)
@@ -360,21 +523,20 @@ namespace simul
 
 		GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const map<string,string> &defines)
 		{
-			GL_ERROR_CHECK
 			GLuint prog						=glCreateProgram();
-			int result=IDRETRY;
-			GLuint vertex_shader=0;
+			int result						=IDRETRY;
+			GLuint vertex_shader			=0;
 			GL_ERROR_CHECK
 			while(result==IDRETRY)
 			{
-				vertex_shader			=LoadShader(vert_filename,defines);
-				if(!vertex_shader)
+				vertex_shader				=LoadShader(vert_filename,defines);
+ 				if(!vertex_shader)
 				{
 					std::cerr<<vert_filename<<"(0): ERROR C1000: Shader failed to compile\n";
 		#ifdef _MSC_VER
-					std::string msg_text=vert_filename;
-					msg_text+=" failed to compile. Edit shader and try again?";
-					result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
+					std::string msg_text	=vert_filename;
+					msg_text				+=" failed to compile. Edit shader and try again?";
+					result					=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
 					DebugBreak();
 		#else
 					break;
@@ -426,32 +588,6 @@ namespace simul
 			return prog;
 		}
 
-		std::string loadShaderSource(const char *filename_utf8)
-		{
-			void *shader_source=NULL;
-			unsigned fileSize=0;
-			simul::base::FileLoader::GetFileLoader()->AcquireFileContents(shader_source,fileSize,filename_utf8,true);
-			if(!shader_source)
-			{
-				std::cerr<<"\nERROR:\tShader file "<<filename_utf8<<" not found, exiting.\n";
-				std::cerr<<"\n\t\tShader paths are:"<<std::endl;
-				for(int i=0;i<shaderPathsUtf8.size();i++)
-					std::cerr<<" "<<shaderPathsUtf8[i].c_str()<<std::endl;
-				DebugBreak();
-				std::cerr<<"exit(1)"<<std::endl;
-				exit(1);
-			}
-			std::string str((const char*)shader_source);
-			simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(shader_source);
-			int pos=(int)str.find("\n");
-			while(pos>=0)
-			{
-				str.replace(pos,1,"\r\n");
-				pos=(int)str.find("\n",pos+2);
-			}
-			return str;
-		}
-
 		GLuint LoadShader(const char *filename,const map<string,string> &defines)
 		{
 			GLenum shader_type=0;
@@ -467,42 +603,12 @@ namespace simul
 			std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename,shaderPathsUtf8);
 			std::string src				=loadShaderSource(filenameUtf8.c_str());
 		GL_ERROR_CHECK
-			FilenameChart filenameChart;
-			filenameChart.add(filenameUtf8.c_str(),0,src);
-			// process #includes.
-			std::vector<std::string> include_files;
-			size_t pos=0;
-			while((pos=src.find("#include",pos))<src.length())
-			{
-				if(pos>0&&src[pos-1]!='\n')
-				{
-					pos++;
-					continue;
-				}
-		int start_of_line=(int)pos;
-		int start_line=GetLineNumber(src,(int)pos);
-				pos+=9;
-		int n=(int)src.find("\n",pos+1);
-		int r=(int)src.find("\r",pos+1);
-				int eol=n;
-				if(r>=0&&r<n)
-					eol=r;
-				std::string include_file=src.substr(pos,eol-pos);
-				include_file=include_file.substr(1,include_file.length()-2);
-				include_files.push_back(include_file);
-				src=src.insert(start_of_line,"//");
-				eol+=2;
-				src=src.insert(eol,"\r\n");
-				std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(include_file.c_str(),shaderPathsUtf8);
-			
-				std::string newsrc=loadShaderSource(filenameUtf8.c_str());
-				src=src.insert(eol+2,newsrc);
-				filenameChart.add(filenameUtf8.c_str(),start_line+1,newsrc);
-			}
+			vector<string> sourceFilesUtf8;
+			ProcessIncludes(src,filenameUtf8,false,sourceFilesUtf8);
 		GL_ERROR_CHECK
 			GLuint sh=glCreateShader(shader_type);
 		GL_ERROR_CHECK
-			sh=CompileShaderFromSource(sh,src,defines,filenameChart);
+			sh=CompileShaderFromSource(sh,src,defines,sourceFilesUtf8);
 			GL_ERROR_CHECK
 			return sh;
 		}

@@ -271,7 +271,7 @@ void SimulGL2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 
-bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool /*cubemap*/,bool /*near_pass*/,const void *depthTexture, bool, bool,int,const simul::sky::float4& )
+bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool /*cubemap*/,bool /*near_pass*/,const void *depthTexture, bool, bool,int,const simul::sky::float4&,const simul::sky::float4& )
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
@@ -386,7 +386,7 @@ GL_ERROR_CHECK
 	return true;
 }
 
-void SimulGL2DCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,int height)
+void SimulGL2DCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height)
 {
 	static int u=8;
 	int w=(width-8)/u;

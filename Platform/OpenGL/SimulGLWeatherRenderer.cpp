@@ -81,6 +81,13 @@ void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
 		RestoreDeviceObjects(NULL);
 	}
 }
+void TwoResFramebuffer::GetDimensions(int &w,int &h,int &downscale)
+{
+	w=Width;
+	h=Height;
+	downscale=Downscale;
+}
+
 
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 											   ,simul::base::MemoryInterface *mem
@@ -114,8 +121,6 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 										=::new(memoryInterface) SimulGLPrecipitationRenderer();
 
 	EnableCloudLayers();
-	environment->skyKeyframer->SetStoreTexturesOnCpu(true);
-	environment->cloudKeyframer->SetStoreTexturesOnCpu(true);
 }
 
 
@@ -251,7 +256,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(context, mainDepthTexture,exposure,depthViewportXYWH);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,UseDefaultFog,false,view_id,depthViewportXYWH);
+		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,UseDefaultFog,false,view_id,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
 	if(buffered)
 	{
 		fb->GetLowResFarFramebuffer()->Activate(context);
@@ -267,7 +272,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context
 	// Do this AFTER sky render, to catch any changes to texture definitions:
 	UpdateSkyAndCloudHookup();
 	if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
-		baseCloudRenderer->Render(context,buffered?1.f:exposure,is_cubemap,false,mainDepthTexture,UseDefaultFog,true,view_id,depthViewportXYWH);
+		baseCloudRenderer->Render(context,buffered?1.f:exposure,is_cubemap,false,mainDepthTexture,UseDefaultFog,true,view_id,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
 	if(buffered)
 	{
 		fb->GetLowResFarFramebuffer()->Deactivate(context);
@@ -312,7 +317,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,b
 	clouds::TwoResFramebuffer *fb			=GetFramebuffer(view_id);
 	fb->GetLowResFarFramebuffer()->Activate(context);
 	fb->GetLowResFarFramebuffer()->Clear(context,0,0,0,1.f,ReverseDepth?0.f:1.f);
-	simulCloudRenderer->Render(context,exposure,false,false,NULL,UseDefaultFog,true,view_id,depthViewportXYWH);
+	simulCloudRenderer->Render(context,exposure,false,false,NULL,UseDefaultFog,true,view_id,depthViewportXYWH,sky::float4(0,0,1.f,1.f));
 	fb->GetLowResFarFramebuffer()->Deactivate(context);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	glBlendFunc(GL_ONE,GL_SRC_ALPHA);

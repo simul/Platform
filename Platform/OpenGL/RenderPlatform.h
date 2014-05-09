@@ -34,6 +34,9 @@ namespace simul
 			void DrawCamera		(void *context,const double *pGlobalPosition, double pRoll);
 			void DrawLineLoop	(void *context,const double *mat,int num,const double *vertexArray,const float colr[4]);
 			void DrawTexture	(void *context,int x1,int y1,int dx,int dy,void *tex,float mult=1.f);
+			void DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *effect,void *technique);
+//! Print the given string at position x,y onscreen (use sparingly, not very fast).
+			void Print			(void *context,int x,int y	,const char *text);
 			void ApplyDefaultMaterial();
 			void SetModelMatrix(void *,const crossplatform::ViewStruct &,const double *mat);
 			scene::Material *CreateMaterial();

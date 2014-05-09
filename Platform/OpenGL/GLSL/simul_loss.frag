@@ -19,7 +19,7 @@ void main()
 	float sine=view.z;
     vec4 lookup=texture(depthTexture,texCoords);
 	float depth=lookup.x;
-	float dist=depthToFadeDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	float dist=depthToFadeDistance(depth,pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec2 fade_texc=vec2(pow(dist,0.5),0.5*(1.0-sine));
 	vec3 loss=texture(lossTexture,fade_texc).rgb;
 

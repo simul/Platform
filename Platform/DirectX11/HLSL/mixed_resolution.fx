@@ -12,7 +12,9 @@ vec4 PS_MakeDepthFarNear(posTexVertexOutput IN):SV_Target
 {
 	//uint2 source_dims;
 	uint2 pos=uint2(IN.texCoords.xy*source_dims.xy);
-	return MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,1,pos,depthToLinFadeDistParams);
+	vec4 res=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,1,pos,depthToLinFadeDistParams);
+	res.b=IN.texCoords.y;
+	return res;
 }
 
 vec4 PS_MakeDepthFarNear_MSAA(posTexVertexOutput IN):SV_Target
@@ -49,7 +51,7 @@ void CS_Resolve(uint3 pos : SV_DispatchThreadID )
 [numthreads(8,8,1)]
 void CS_DownscaleDepthFarNear(uint3 pos : SV_DispatchThreadID )
 {
-	DownscaleDepthFarNear2(sourceDepthTexture,target2DTexture,pos,scale,depthToLinFadeDistParams);
+	DownscaleDepthFarNear2(sourceDepthTexture,target2DTexture,source_dims,pos,scale,depthToLinFadeDistParams);
 }
 
 [numthreads(8,8,1)]
@@ -62,7 +64,7 @@ void CS_DownscaleDepthFarNear_MSAA(uint3 pos : SV_DispatchThreadID )
 [numthreads(8,8,1)]
 void CS_DownscaleDepthFarNearFromHiRes(uint3 pos : SV_DispatchThreadID )
 {
-	DownscaleDepthFarNear2(sourceDepthTexture,target2DTexture,pos,scale,depthToLinFadeDistParams);
+	DownscaleDepthFarNear2(sourceDepthTexture,target2DTexture,source_dims,pos,scale,depthToLinFadeDistParams);
 }
 
 vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target

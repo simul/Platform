@@ -2,8 +2,10 @@
 #define TEXTRENDERER_H
 
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx10math.h>
 #include <d3dx11async.h>
+#endif
 #include <fstream>
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
@@ -16,9 +18,9 @@ namespace simul
 		private:
 			struct ConstantBufferType
 			{
-			vec4	rect;
-			vec4  texc;
-			vec4 colour;
+				vec4	rect;
+				vec4	texc;
+				vec4	colour;
 			};
 
 		public:
@@ -28,7 +30,8 @@ namespace simul
 			void RestoreDeviceObjects(ID3D11Device*);
 			void InvalidateDeviceObjects();
 		void RecompileShaders();
-			void Render(ID3D11DeviceContext *context, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
+			//void Render(crossplatform::DeviceContext &deviceContext, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
+			void Render(void *context, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
 
 		private:
 

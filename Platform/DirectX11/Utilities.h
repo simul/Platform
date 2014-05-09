@@ -11,6 +11,10 @@
 #pragma warning(disable:4251)
 namespace simul
 {
+	namespace crossplatform
+	{
+		struct DeviceContext;
+	}
 	namespace dx11
 	{
 		struct SIMUL_DIRECTX11_EXPORT TextureStruct
@@ -157,6 +161,12 @@ namespace simul
 				//SAFE_RELEASE(unorderedAccessView)
 			}
 		};
+		inline void cancelStreamOutTarget(ID3D11DeviceContext *pContext)
+		{
+			ID3D11Buffer *pBuffer =NULL;
+			UINT offset=0;
+			pContext->SOSetTargets(1,&pBuffer,&offset);
+		}
 		class SIMUL_DIRECTX11_EXPORT UtilityRenderer
 		{
 			static int instance_count;
@@ -181,8 +191,6 @@ namespace simul
 			static void PrintAt3dPos(		ID3D11DeviceContext* pContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 			static void DrawLines(			ID3D11DeviceContext* pContext,VertexXyzRgba *lines,int vertex_count,bool strip);
 			static void RenderAngledQuad(	ID3D11DeviceContext *pContext,const float *dir,float half_angle_radians,ID3DX11Effect* effect,ID3DX11EffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
-			static void Print(				ID3D11DeviceContext *pContext,int x,int y,const char *text,const float *clr=NULL);
-			static void Print(				ID3D11DeviceContext *pContext,float x,float y,const char *text,const float *clr=NULL);
 			static void DrawQuad(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11EffectTechnique* tech);	
 			static void DrawQuad2(			ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
 			static void DrawQuad2(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
@@ -251,6 +259,11 @@ namespace simul
 				m_pD3DX11EffectConstantBuffer=NULL;
 			}
 			//! Apply the stored data using the given context, in preparation for rendering.
+			void Apply(simul::crossplatform::DeviceContext &deviceContext)
+			{
+				ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
+				Apply(pContext);
+			}
 			void Apply(ID3D11DeviceContext *pContext)
 			{
 				D3D11_MAPPED_SUBRESOURCE mapped_res;

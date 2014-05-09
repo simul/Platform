@@ -33,8 +33,6 @@ public:
 };
 #endif
 class SimulGLSkyRenderer;
-class SimulGLCloudRenderer;
-class SimulGL2DCloudRenderer;
 class SimulGLLightningRenderer;
 class SimulGLAtmosphericsRenderer;
 class SimulGLPrecipitationRenderer;
@@ -44,6 +42,8 @@ namespace simul
 	//! The namespace for the OpenGL platform library and its rendering classes.
 	namespace opengl
 	{
+		class SimulGLCloudRenderer;
+		class SimulGL2DCloudRenderer;
 		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer
 		{
 			TwoResFramebuffer();
@@ -70,6 +70,7 @@ namespace simul
 			void RestoreDeviceObjects(void *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale);
+			void GetDimensions(int &w,int &h,int &downscale);
 			int Width,Height,Downscale;
 		};
 		//! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within an OpenGL program.

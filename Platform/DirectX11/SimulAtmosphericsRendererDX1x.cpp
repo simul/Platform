@@ -11,7 +11,9 @@
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
 #include <tchar.h>
+#ifndef SIMUL_WIN8_SDK
 #include <dxerr.h>
+#endif
 #include <string>
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
@@ -92,9 +94,6 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	//defines["GODRAYS_STEPS"]=simul::base::stringFormat("%d",
 	V_CHECK(CreateEffect(m_pd3dDevice,&effect,"atmospherics.fx",defines));
 
-	twoPassOverlayTechnique	=effect->GetTechniqueByName("simul_atmospherics_overlay");
-	twoPassOverlayTechniqueMSAA	=effect->GetTechniqueByName("simul_atmospherics_overlay_msaa");
-
 	godraysTechnique		=effect->GetTechniqueByName("fast_godrays");
 
 	depthTexture			=effect->GetVariableByName("depthTexture")->AsShaderResource();
@@ -159,7 +158,7 @@ void SimulAtmosphericsRendererDX1x::RenderLoss(void *context,const void *depthTe
 	sky::float4 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
-	D3DXMATRIX p1=proj;
+	math::Matrix4x4 p1=proj;
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,1.f,view,p1,proj,relativeViewportTextureRegionXYWH);
 	atmosphericsPerViewConstants.Apply(pContext);
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
@@ -183,8 +182,8 @@ void SimulAtmosphericsRendererDX1x::RenderLoss(void *context,const void *depthTe
 void SimulAtmosphericsRendererDX1x::RenderInscatter(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass)
 {
 	HRESULT hr=S_OK;
-	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
-	ID3D11ShaderResourceView* depthTexture_SRV=(ID3D11ShaderResourceView*)depthTexture;
+	ID3D11DeviceContext *pContext				=(ID3D11DeviceContext*)context;
+	ID3D11ShaderResourceView *depthTexture_SRV	=(ID3D11ShaderResourceView*)depthTexture;
 	
 	lossTexture->SetResource(skyLossTexture_SRV);
 	inscTexture->SetResource(overcInscTexture_SRV);
@@ -194,10 +193,10 @@ void SimulAtmosphericsRendererDX1x::RenderInscatter(void *context,const void *de
 	setTexture(effect,"depthTexture"		,depthTexture_SRV);
 	setTexture(effect,"depthTextureMS"		,depthTexture_SRV);
 	setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
-	sky::float4 cam_pos=simul::dx11::GetCameraPosVector(view,false);
+	sky::float4 cam_pos	=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
-	D3DXMATRIX p1=proj;
+	math::Matrix4x4 p1=proj;
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
 	atmosphericsPerViewConstants.Apply(pContext);
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
@@ -241,7 +240,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	sky::float4 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
-	D3DXMATRIX p1=proj;
+	math::Matrix4x4 p1=proj;
 
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
 	
@@ -249,15 +248,15 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
-	
-	ID3DX11EffectTechnique *tech=twoPassOverlayTechnique;
+	ID3DX11EffectGroup *group=effect->GetGroupByName("atmospherics_overlay");
+	ID3DX11EffectTechnique *tech=group->GetTechniqueByName("standard");
 	
 	if(depthTexture_SRV)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
 		depthTexture_SRV->GetDesc(&depthDesc);
 		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
-			tech=twoPassOverlayTechniqueMSAA;
+			tech=group->GetTechniqueByName("msaa");
 	}
 
 	ApplyPass(pContext,tech->GetPassByIndex(0));
@@ -296,7 +295,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,b
 	or.DefineFromYZ(north,toSun);
 	sky::float4 cam_pos=dx11::GetCameraPosVector(view);
 	or.SetPosition((const float*)cam_pos);
-	D3DXMATRIX p1=proj;
+	math::Matrix4x4 p1=proj;
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,strength*exposure,view,p1,proj,relativeViewportTextureRegionXYWH);

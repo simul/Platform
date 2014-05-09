@@ -159,8 +159,9 @@ atmosVertexOutput VS_Atmos(vertexInputPositionOnly IN)
 	//OUT.position		=vec4(IN.position.xy,0,1);
 	OUT.clip_pos.xy		=IN.position.xy;
 	//OUT.texCoords		=0.5*vec2(IN.position.x+1.0,1.0-IN.position.y);
-		OUT.hPosition	=vec4(IN.position.xy,0.f,1.f);
-		OUT.texCoords	=0.5*(IN.position.xy+vec2(1.0,1.0));
+	OUT.hPosition	=vec4(IN.position.xy,0.f,1.f);
+	OUT.texCoords	=0.5*(IN.position.xy+vec2(1.0,1.0));
+	OUT.texCoords.y	=1.0-OUT.texCoords.y;
 	return OUT;
 }
 

@@ -564,7 +564,7 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 {
 }
 
-bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& )
+bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4&,const simul::sky::float4& )
 {
 	if(rebuild_shaders)
 		RecompileShaders();
@@ -799,8 +799,9 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	CloudPerViewConstants cloudPerViewConstants;
 	SetCloudConstants(cloudConstants);
 	simul::sky::float4 viewportTextureRegionXYWH(0,0,1.f,1.f);
+	simul::sky::float4 mixedResTransformXYWH(0,0,1.f,1.f);
 	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewport_id
-		,viewportTextureRegionXYWH);
+		,viewportTextureRegionXYWH,mixedResTransformXYWH);
 	{
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,viewportToTexRegionScaleBias);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,viewPos);
@@ -1000,7 +1001,7 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 	fb.InvalidateDeviceObjects();
 }
 
-void SimulCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,int height)
+void SimulCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;
@@ -1047,7 +1048,7 @@ void SimulCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,int 
 	}
 }
 
-void SimulCloudRenderer::RenderAuxiliaryTextures(void *,int x0,int y0,int width,int height)
+void SimulCloudRenderer::RenderAuxiliaryTextures(crossplatform::DeviceContext &context,int x0,int y0,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;

@@ -32,6 +32,9 @@
 #include "Macros.h"
 #include "CreateDX9Effect.h"
 #include "Resources.h"
+using namespace simul;
+using namespace dx9;
+
 
 typedef std::basic_string<TCHAR> tstring;
 

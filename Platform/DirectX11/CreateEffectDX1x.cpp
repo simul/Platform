@@ -26,17 +26,42 @@ static const DWORD default_effect_flags=0;
 #include <iostream>
 #include <assert.h>
 #include <fstream>
-#include <d3dx9.h>
 #include "MacrosDX1x.h"
+#ifndef SIMUL_WIN8_SDK
 #include <dxerr.h>
+#else
+#include <DirectXTex.h>
+typedef struct D3DX11_IMAGE_LOAD_INFO {
+  UINT              Width;
+  UINT              Height;
+  UINT              Depth;
+  UINT              FirstMipLevel;
+  UINT              MipLevels;
+  D3D11_USAGE       Usage;
+  UINT              BindFlags;
+  UINT              CpuAccessFlags;
+  UINT              MiscFlags;
+  DXGI_FORMAT       Format;
+  UINT              Filter;
+  UINT              MipFilter;
+  void *pSrcInfo;
+} D3DX11_IMAGE_LOAD_INFO, *LPD3DX11_IMAGE_LOAD_INFO;
+enum {D3DX11_FROM_FILE=(UINT)-3};
+enum {D3DX11_FILTER_NONE=(1 << 0)};
+#endif
 
+#ifndef SIMUL_WIN8_SDK
 #pragma comment(lib,"d3dx9.lib")
 #pragma comment(lib,"d3d9.lib")
+#pragma comment(lib,"d3dx11.lib")
+#pragma comment(lib,"dxerr.lib")
+#pragma comment(lib,"Effects11_DXSDK.lib")
+#else
+#pragma comment(lib,"Effects11_Win8SDK.lib")
+#pragma comment(lib,"directxtex.lib")
+#endif
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"d3d11.lib")
-#pragma comment(lib,"d3dx11.lib")
-#pragma comment(lib,"Effects11.lib")
-#pragma comment(lib,"dxerr.lib")
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"d3dcompiler.lib")
 
@@ -167,7 +192,7 @@ namespace simul
 		{
 			D3DXMATRIX view(v);
 			static float cam_pos[4],view_dir[4];
-			GetCameraPosVector(view,(float*)cam_pos,(float*)view_dir,y_vertical);
+			GetCameraPosVector(&view._11,(float*)cam_pos,(float*)view_dir,y_vertical);
 			return cam_pos;
 		}
 		void PipeCompilerOutput(bool p)
@@ -209,19 +234,34 @@ namespace simul
 	}
 }
 
+#if WINVER>=0x602
+HRESULT D3DX11CreateTextureFromFileW(ID3D11Device* pd3dDevice,const wchar_t *filename,D3DX11_IMAGE_LOAD_INFO *loadInfo
+									, void *nptr, ID3D11Resource** tex, HRESULT *hr )
+{
+	int flags=0;
+	DirectX::TexMetadata metadata;
+	DirectX::ScratchImage scratchImage;
+	DirectX::LoadFromWICFile( filename,flags,&metadata,scratchImage);
+	const DirectX::Image *image=scratchImage.GetImage(0,0,0);
+    *hr=CreateTexture(  pd3dDevice,image, 1, metadata,tex );
+	return *hr;
+}
+#endif
+
 ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename)
 {
 	ID3D11ShaderResourceView* tex=NULL;
+	
+	if(!texturePathsUtf8.size())
+		texturePathsUtf8.push_back("media/textures");
+	std::string str=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename,texturePathsUtf8);
+	std::wstring wstr	=simul::base::Utf8ToWString(str);
+#if WINVER<0x602
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
 	ZeroMemory(&loadInfo,sizeof(D3DX11_IMAGE_LOAD_INFO));
 	loadInfo.BindFlags	=D3D11_BIND_SHADER_RESOURCE;
 	loadInfo.Format		=DXGI_FORMAT_R8G8B8A8_UNORM;
 	loadInfo.MipLevels=0;
-	if(!texturePathsUtf8.size())
-		texturePathsUtf8.push_back("media/textures");
-	std::string str=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename,texturePathsUtf8);
-	
-	std::wstring wstr	=simul::base::Utf8ToWString(str);
 	HRESULT hr			=D3DX11CreateShaderResourceViewFromFileW(
 									pd3dDevice,
 									wstr.c_str(),
@@ -229,6 +269,14 @@ ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 									NULL,
 									&tex,
 									&hr);
+#else
+	int flags=0;
+	DirectX::TexMetadata metadata;
+	DirectX::ScratchImage scratchImage;
+	DirectX::LoadFromWICFile( wstr.c_str(),flags,&metadata,scratchImage);
+	const DirectX::Image *image=scratchImage.GetImage(0,0,0);
+    HRESULT hr=CreateShaderResourceView(  pd3dDevice,image, 1, metadata,&tex );
+#endif
 	return tex;
 }
 
@@ -267,7 +315,7 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 #ifdef DXTRACE_ERR
         hr=DXTRACE_ERR( L"LoadStagingTexture", hr );
 #else
-		std::cerr<<"Failed to load texture: "<<texturePathsUtf8.c_str()<<std::endl;
+		std::cerr<<"Failed to load texture: "<<wstr.c_str()<<std::endl;
 #endif
 	}
 	return tex;
@@ -674,7 +722,11 @@ ID3D11ComputeShader *LoadComputeShader(ID3D11Device *pd3dDevice,const char *file
 
 	ID3DBlob* pErrorBlob = NULL;
 	ID3DBlob* pBlob = NULL;
+#if WINVER<0x602
 	HRESULT hr = D3DX11CompileFromFileW(simul::base::Utf8ToWString(fn.c_str()).c_str(), NULL, NULL, "main", pProfile, dwShaderFlags, NULL, NULL, &pBlob, &pErrorBlob, NULL );
+#else
+	HRESULT hr=D3DCompileFromFile(simul::base::Utf8ToWString(fn.c_str()).c_str(), NULL, NULL,"main", pProfile, dwShaderFlags, NULL, &pBlob,&pErrorBlob);
+#endif
 	if ( FAILED(hr) )
 	{
 		if ( pErrorBlob )
@@ -852,9 +904,15 @@ HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass
 
 void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 {
-    D3DXVECTOR3 vEyePt = D3DXVECTOR3( cam_pos );
+#ifdef SIMUL_WIN8_SDK
+	D3DVECTOR vEyePt ={cam_pos[0],cam_pos[1],cam_pos[2]};
+    D3DVECTOR vLookAt;
+    D3DVECTOR vUpDir;
+#else
+	D3DXVECTOR3 vEyePt (cam_pos[0],cam_pos[1],cam_pos[2]);
     D3DXVECTOR3 vLookAt;
     D3DXVECTOR3 vUpDir;
+#endif
     ZeroMemory(mat,6*sizeof(D3DXMATRIX) );
     /*D3DCUBEMAP_FACE_POSITIVE_X     = 0,
     D3DCUBEMAP_FACE_NEGATIVE_X     = 1,
@@ -888,10 +946,13 @@ void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 	};
 	for(int i=0;i<6;i++)
 	{
-		vLookAt		=vEyePt+lookf[i];
+		vLookAt		=vEyePt;
+		vLookAt.x+=lookf[i].x;
+		vLookAt.y+=lookf[i].y;
+		vLookAt.z+=lookf[i].z;
 		vUpDir		=upf[i];
-		D3DXMatrixLookAtLH(&mat[i], &vEyePt,&vLookAt, &vUpDir );
-		if(true)//everseDepth)
+		//D3DXMatrixLookAtLH(&mat[i], &vEyePt,&vLookAt, &vUpDir );
+		if(true)
 		{
 			vLookAt		=vEyePt+lookr[i];
 			vUpDir		=upr[i];

@@ -9,7 +9,9 @@
 
 #include "TerrainRenderer.h"
 
+#if WINVER<0x602
 #include <dxerr.h>
+#endif
 #include <string>
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
@@ -184,8 +186,8 @@ void TerrainRenderer::Render(void *context,float exposure)
 	D3DXMATRIX world;
 	D3DXMatrixIdentity(&world);
 	D3DXMATRIX wvp;
-	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
-	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
+	camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&view,(const float*)&proj);
+	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector((const float*)&view,false);
 	dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
 	dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	terrainConstants.eyePosition=cam_pos;
@@ -195,7 +197,7 @@ void TerrainRenderer::Render(void *context,float exposure)
 		terrainConstants.lightDir		=baseSkyInterface->GetDirectionToLight(0.f);
 		terrainConstants.sunlight		=0.1f*exposure*baseSkyInterface->GetLocalIrradiance(0.f);
 	}
-	terrainConstants.worldViewProj=wvp;
+	terrainConstants.worldViewProj=(const float*)&wvp;
 	terrainConstants.worldViewProj.transpose();
 	math::Matrix4x4 shadowMatrix		=cloudShadowStruct.simpleOffsetMatrix;
 	math::Matrix4x4 invShadowMatrix;

@@ -15,29 +15,35 @@
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
-SIMUL_DIRECTX9_EXPORT_CLASS SimulOpticsRendererDX9:public simul::camera::BaseOpticsRenderer
-{
-public:
-	SimulOpticsRendererDX9(simul::base::MemoryInterface *m);
-	virtual ~SimulOpticsRendererDX9();
-	virtual void RestoreDeviceObjects(void *device);
-	virtual void InvalidateDeviceObjects();
-	virtual void RenderFlare(void *context,float exposure,void * depthTexture,const float *v,const float *p,const float *dir,const float *light);
-	virtual void RecompileShaders();
-	void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
-protected:
-	LPDIRECT3DDEVICE9				m_pd3dDevice;
-	LPD3DXEFFECT					m_pFlareEffect;
-	D3DXHANDLE						m_hTechniqueFlare;
-	D3DXHANDLE						worldViewProj;
-	D3DXHANDLE						colour;
-	D3DXHANDLE						flareTexture;
-	bool							external_flare_texture;
-	LPDIRECT3DTEXTURE9				flare_texture;
-	std::vector<LPDIRECT3DTEXTURE9> halo_textures;
-	std::string						FlareTexture;
-};
 
+namespace simul
+{
+	namespace dx9
+	{
+		SIMUL_DIRECTX9_EXPORT_CLASS SimulOpticsRendererDX9:public simul::camera::BaseOpticsRenderer
+		{
+		public:
+			SimulOpticsRendererDX9(simul::base::MemoryInterface *m);
+			virtual ~SimulOpticsRendererDX9();
+			virtual void RestoreDeviceObjects(void *device);
+			virtual void InvalidateDeviceObjects();
+			virtual void RenderFlare(void *context,float exposure,void * depthTexture,const float *v,const float *p,const float *dir,const float *light);
+			virtual void RecompileShaders();
+			void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
+		protected:
+			LPDIRECT3DDEVICE9				m_pd3dDevice;
+			LPD3DXEFFECT					m_pFlareEffect;
+			D3DXHANDLE						m_hTechniqueFlare;
+			D3DXHANDLE						worldViewProj;
+			D3DXHANDLE						colour;
+			D3DXHANDLE						flareTexture;
+			bool							external_flare_texture;
+			LPDIRECT3DTEXTURE9				flare_texture;
+			std::vector<LPDIRECT3DTEXTURE9> halo_textures;
+			std::string						FlareTexture;
+		};
+	}
+}
 #ifdef _MSC_VER
 	#pragma warning(pop)
 #endif

@@ -1,10 +1,14 @@
 #pragma once
 #include "Simul/Sky/BaseGpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
+#endif
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
-#include <d3dx11effect.h>
+#endif
+#include "D3dx11effect.h"
 
 namespace simul
 {

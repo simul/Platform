@@ -11,10 +11,12 @@
 #pragma once
 
 #include <tchar.h>
-#include <d3dx9.h>
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
+#include <d3dx9.h>
 #include <d3dx11.h>
-#include <D3dx11effect.h>
+#endif
+#include "D3dx11effect.h"
 #include "Simul/Graph/Meta/Group.h"
 
 #include "Simul/Clouds/BaseCloudRenderer.h"
@@ -26,6 +28,10 @@
 
 namespace simul
 {
+	namespace crossplatform
+	{
+		struct DeviceContext;
+	}
 	namespace clouds
 	{
 		class CloudInterface;
@@ -63,10 +69,10 @@ namespace simul
 			bool Destroy();
 			void PreRenderUpdate(void *context);
 			//! Call this to draw the clouds, including any illumination by lightning.
-			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
+			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH);
 			void RenderDebugInfo(void *context,int width,int height);
-			void RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height);
-			void RenderCrossSections(void *context,int x0,int y0,int width,int height);
+			void RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
+			void RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height);
 			//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 			bool RenderLightning(void *context,int viewport_id);
 			//! Return true if the camera is above the cloudbase altitude.
@@ -118,7 +124,7 @@ namespace simul
 			ID3D11SamplerState*						m_pWrapSamplerState;
 			ID3D11SamplerState*						m_pClampSamplerState;
 
-			ID3DX11Effect*							m_pCloudEffect;
+			ID3DX11Effect*							effect;
 			ID3DX11EffectTechnique*					m_hTechniqueCloud;
 			ID3DX11EffectTechnique*					m_hTechniqueRaytraceNearPass;
 			ID3DX11EffectTechnique*					m_hTechniqueRaytraceForward;
@@ -126,8 +132,7 @@ namespace simul
 			ID3DX11EffectTechnique*					m_hTechniqueRaytrace3DNoise;
 			ID3DX11EffectTechnique*					m_hTechniqueCloudsAndLightning;
 
-			ID3DX11EffectTechnique*					m_hTechniqueCrossSectionXZ;
-			ID3DX11EffectTechnique*					m_hTechniqueCrossSectionXY;
+			ID3DX11EffectTechnique*					m_pTechniqueCrossSection;
 			
 			ConstantBuffer<CloudConstants>			cloudConstants;
 			StructuredBuffer<SmallLayerData>		layerBuffer;

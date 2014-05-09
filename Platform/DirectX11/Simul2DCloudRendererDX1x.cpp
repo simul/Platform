@@ -19,9 +19,11 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/LicenseKey.h"
 #include "CreateEffectDX1x.h"
+#include "Simul/Platform/Crossplatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
+#include "Simul/Scene/RenderPlatform.h"
 
 using namespace simul;
 using namespace dx11;
@@ -271,7 +273,8 @@ void FixProjectionMatrix(simul::math::Matrix4x4 &proj,float zNear,float zFar)
 	proj._43	=zFar*zNear/(zFar-zNear);
 }
 
-bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depthTexture,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
+bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depthTexture,bool default_fog,bool write_alpha,int viewport_id
+									  ,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& )
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::Render");
@@ -348,9 +351,9 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	return true;
 }
 
-void Simul2DCloudRendererDX11::RenderCrossSections(void *context,int x0,int y0,int width,int height)
+void Simul2DCloudRendererDX11::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	static int u=8;
 	int w=(width-8)/u;
 	if(w>height/2)
@@ -373,21 +376,21 @@ void Simul2DCloudRendererDX11::RenderCrossSections(void *context,int x0,int y0,i
 	}
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)coverage_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(0)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
-	simul::dx11::UtilityRenderer::Print(pContext,(0)*(w+8)+8,height-8-w,"coverage");
+	deviceContext.renderPlatform->Print(pContext,(0)*(w+8)+8,height-8-w,"coverage");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(1)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
-	simul::dx11::UtilityRenderer::Print(pContext,(1)*(w+8)+8,height-8-w,"noise");
+	deviceContext.renderPlatform->Print(pContext,(1)*(w+8)+8,height-8-w,"noise");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)dens_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(2)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
-	simul::dx11::UtilityRenderer::Print(pContext,(2)*(w+8)+8,height-8-w,"dens");
+	deviceContext.renderPlatform->Print(pContext,(2)*(w+8)+8,height-8-w,"dens");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)detail_fb.GetColorTex());
 	cloud2DConstants.Apply(pContext);
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(3)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("show_detail_texture"));
-	simul::dx11::UtilityRenderer::Print(pContext,(3)*(w+8)+8,height-8-w,"detail");
+	deviceContext.renderPlatform->Print(pContext,(3)*(w+8)+8,height-8-w,"detail");
 		
 }
 
-void Simul2DCloudRendererDX11::RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height)
+void Simul2DCloudRendererDX11::RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
 }
 

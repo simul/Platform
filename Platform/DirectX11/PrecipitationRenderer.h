@@ -6,10 +6,12 @@
 // in accordance with the terms of that agreement.
 
 #pragma once
-#include <d3dx9.h>
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
+#include <d3dx9.h>
 #include <d3dx11.h>
-#include <D3dx11effect.h>
+#endif
+#include "D3dx11effect.h"
 typedef long HRESULT;
 #include <vector>
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"

@@ -1,8 +1,10 @@
 #pragma once
 // Direct3D includes
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #include <dxerr.h>
+#endif
 
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
 #include "Simul/Base/PropertyMacros.h"
@@ -31,10 +33,10 @@ namespace simul
 		class Environment;
 		class BaseWeatherRenderer;
 	}
-}
-
-namespace simul
-{
+	namespace crossplatform
+	{
+		struct DeviceContext;
+	}
 	namespace scene
 	{
 		class Scene;
@@ -46,7 +48,20 @@ namespace simul
 		class TerrainRenderer;
 		class OceanRenderer;
 		class SimulOpticsRendererDX1x;
-
+		class SIMUL_DIRECTX11_EXPORT MixedResolutionRenderer
+		{
+		public:
+			MixedResolutionRenderer();
+			~MixedResolutionRenderer();
+			void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
+			void InvalidateDeviceObjects();
+			void RecompileShaders(const std::map<std::string,std::string> &defines);
+			void DownscaleDepth(ID3D11DeviceContext* pContext,View *view,int s,vec3 depthToLinFadeDistParams);
+		protected:
+			ID3D11Device								*m_pd3dDevice;
+			ID3DX11Effect								*mixedResolutionEffect;
+			ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
+		};
 		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface
@@ -75,7 +90,7 @@ namespace simul
 				META_ValueProperty(bool,ShowRainTextures		,"Show rain textures onscreen.")
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
-				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
+				META_ValueProperty(float,SkyBrightness			,"Brightness of the sky (only).")
 				META_ValuePropertyWithSetCall(int,Antialiasing	,AntialiasingChanged,"How many antialiasing samples to use.")
 				META_ValueProperty(int,SphericalHarmonicsBands	,"How many bands to use for spherical harmonics.")
 			META_EndProperties
@@ -100,12 +115,12 @@ namespace simul
 				return simulTerrainRenderer;
 			}
 			void						RecompileShaders();
-			void						RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos);
+			void						RenderCubemap(ID3D11DeviceContext* pContext,const float *cam_pos);
 			void						RenderEnvmap(ID3D11DeviceContext* pContext);
 			// D3D11CallbackInterface
 			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
 			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);
-			virtual int					AddView				();
+			virtual int					AddView				(bool external_fb);
 			virtual void				RemoveView			(int);
 			virtual void				ResizeView			(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
 			virtual void				Render				(int,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext);
@@ -120,11 +135,15 @@ namespace simul
 		protected:
 			void RenderDepthBuffers(void *context,int view_id,int x0,int y0,int w,int h);
 			// Encompasses drawing the actual scene and putting the hdr buffer to screen.
-			void RenderScene(int view_id,ID3D11DeviceContext* pd3dImmediateContext,clouds::BaseWeatherRenderer *w,D3DXMATRIX v,D3DXMATRIX proj);
+			void RenderScene(int view_id
+				,crossplatform::DeviceContext &deviceContext
+				,clouds::BaseWeatherRenderer *w
+				,D3DXMATRIX v
+				,D3DXMATRIX proj
+				,float exposure);
 			// Different kinds of view for Render() to call:
 			void RenderFadeEditView(ID3D11DeviceContext* pd3dImmediateContext);
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
-			void DownscaleDepth(int view_id,ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
 			void ReverseDepthChanged();
 			void AntialiasingChanged();
 			void EnsureCorrectBufferSizes(int view_id);
@@ -133,7 +152,6 @@ namespace simul
 			bool										enabled;
 			std::string									screenshotFilenameUtf8;
 			ID3D11Device								*m_pd3dDevice;
-			ID3DX11Effect								*mixedResolutionEffect;
 			ID3DX11Effect								*lightProbesEffect;
 			SimulOpticsRendererDX1x						*simulOpticsRenderer;
 			SimulWeatherRendererDX11					*simulWeatherRenderer;
@@ -146,7 +164,7 @@ namespace simul
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
 			ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;
-			ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
+			MixedResolutionRenderer						mixedResolutionRenderer;
 		};
 	}
 }

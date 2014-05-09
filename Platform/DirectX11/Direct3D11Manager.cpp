@@ -288,7 +288,7 @@ void Window::SetRenderer(Direct3D11CallbackInterface *ci)
 	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
 	if(view_id<0)
-		view_id=renderer->AddView();
+		view_id=renderer->AddView(false);
 	renderer->ResizeView(view_id,&surfaceDesc);
 }
 
@@ -547,6 +547,11 @@ void Direct3D11Manager::Shutdown()
 		delete i->second;
 	}
 	windows.clear();
+	if(d3dDeviceContext)
+	{
+		d3dDeviceContext->ClearState();
+		d3dDeviceContext->Flush();
+	}
 	SAFE_RELEASE(d3dDeviceContext);
 	if(d3dDebug)
 	{

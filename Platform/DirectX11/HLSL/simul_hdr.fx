@@ -222,16 +222,36 @@ vec4 DirectPS(v2f IN) : SV_TARGET
 // texture_clamp_lod texture_nearest_lod
 vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
 {
-	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams
-		,inscatterTexture,nearInscatterTexture,false);
+	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy
+										,imageTexture
+										,nearImageTexture
+										,lowResDepthTexture
+										,depthTexture
+										,depthTextureMS
+										,viewportToTexRegionScaleBias
+										,depthToLinFadeDistParams
+										,hiResToLowResTransformXYWH
+										,inscatterTexture
+										,nearInscatterTexture
+										,false);
 	result.rgb	*=exposure;
 	return result;
 }
 
 vec4 NearFarDepthCloudBlendPS_MSAA(v2f IN) : SV_TARGET
 {
-	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams
-		,inscatterTexture,nearInscatterTexture,true);
+	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy
+									,imageTexture
+									,nearImageTexture
+									,lowResDepthTexture
+									,depthTexture
+									,depthTextureMS
+									,viewportToTexRegionScaleBias
+									,depthToLinFadeDistParams
+									,hiResToLowResTransformXYWH
+									,inscatterTexture
+									,nearInscatterTexture
+									,true);
 	result.rgb	*=exposure;
 	return result;
 }

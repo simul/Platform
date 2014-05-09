@@ -18,6 +18,7 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,9)
 	uniform vec2 warpScale;
 	uniform vec2 warpScaleIn;
 	uniform vec2 padHdrConstants2;
+	uniform vec4 hiResToLowResTransformXYWH;
 SIMUL_CONSTANT_BUFFER_END
 
 

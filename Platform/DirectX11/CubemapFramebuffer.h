@@ -1,8 +1,13 @@
 #pragma once
+#include <D3Dcompiler.h>
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
+#endif
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
-#include <D3dx11effect.h>
+#endif
+#include "D3dx11effect.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Utilities.h"

@@ -57,6 +57,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int shadowTextureSize;
 	uniform float depthMix;
 	uniform float CloudPerViewConstantsPad3;
+	uniform vec4 mixedResTransformXYWH;		// xy=offset, zw=multiple.
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
@@ -92,7 +93,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 noise3DTexcoordScale;
 	uniform float rainEffect;
 	uniform vec3 cloudIrRadiance;
-	uniform float x5;
+	uniform float yz;
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
 	uniform vec2 rainBoundary;
@@ -115,5 +116,9 @@ uniform_buffer CloudShadowStruct
 	float shadowRange;
 	float rainbowIntensity;
 };
+#else
+//SIMUL_CONSTANT_BUFFER(OnscreenRectangle,9)
+	uniform vec4 rect;
+//SIMUL_CONSTANT_BUFFER_END
 #endif
 #endif

@@ -1,5 +1,8 @@
 #include "Mesh.h"
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
+#endif
+#include "D3dx11effect.h"
 #include "MacrosDX1x.h"
 #include "CreateEffectDX1x.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
@@ -20,7 +23,13 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
-	release();
+	InvalidateDeviceObjects();
+}
+void Mesh::InvalidateDeviceObjects()
+{
+	releaseBuffers();
+	SAFE_RELEASE(inputLayout);
+	SAFE_RELEASE(inputLayout);
 }
 
 bool Mesh::Initialize(void *device,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices)
@@ -51,7 +60,6 @@ bool Mesh::Initialize(void *device,int lPolygonVertexCount,float *lVertices,floa
 	// Put positions, texcoords and normals in an array of structs:
 	numVertices=lPolygonVertexCount;
 	numIndices=lPolygonCount*3;
-	stride=0;
 	struct Vertex
 	{
 		vec3 pos;
@@ -64,19 +72,20 @@ bool Mesh::Initialize(void *device,int lPolygonVertexCount,float *lVertices,floa
 	{
 		Vertex &v	=vertices[i];
 		v.pos		=&(lVertices[i*3]);
-		v.texc		=&(lUVs[i*2]);
-		v.normal	=&(lNormals[i*3]);
+		if(lUVs)
+			v.texc		=&(lUVs[i*2]);
+		if(lNormals)
+			v.normal	=&(lNormals[i*3]);
 	}
 	init(pd3dDevice,numVertices,numIndices,vertices,lIndices);
 	delete [] vertices;
 	return true;
 }
 
-void Mesh::release()
+void Mesh::releaseBuffers()
 {
 	SAFE_RELEASE(vertexBuffer);
 	SAFE_RELEASE(indexBuffer);
-	stride=0;
 	numVertices=0;
 	numIndices=0;
 }
@@ -86,22 +95,21 @@ void Mesh::BeginDraw(void *context,scene::ShadingMode pShadingMode) const
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	pContext->IAGetInputLayout( &previousInputLayout );
 	pContext->IAGetPrimitiveTopology(&previousTopology);
+	// Set the input layout
+	pContext->IASetInputLayout(inputLayout);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 // Draw all the faces with specific material with given shading mode.
 void Mesh::Draw(void *context,int pMaterialIndex,scene::ShadingMode pShadingMode) const
 {
-	UINT offset = 0;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	UINT offset = 0;
 	pContext->IASetVertexBuffers(	0,					// the first input slot for binding
 									1,					// the number of buffers in the array
 									&vertexBuffer,		// the array of vertex buffers
 									&stride,			// array of stride values, one for each buffer
 									&offset );			// array of offset values, one for each buffer
 	pContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R32_UINT,0);					
-
-	// Set the input layout
-	pContext->IASetInputLayout(inputLayout);
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	pContext->Draw(numIndices,0);
 }

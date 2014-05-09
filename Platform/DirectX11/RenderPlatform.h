@@ -6,10 +6,12 @@
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 
-#include <d3dx9.h>
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
+#include <d3dx9.h>
 #include <d3dx11.h>
-#include <d3dx11effect.h>
+#endif
+#include "D3dx11effect.h"
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
@@ -19,6 +21,7 @@ namespace simul
 {
 	namespace dx11
 	{
+		//! A class to implement common rendering functionality for DirectX 11.
 		class SIMUL_DIRECTX11_EXPORT RenderPlatform:public scene::RenderPlatform
 		{
 			ID3D11Device*				device;
@@ -39,8 +42,11 @@ namespace simul
 			void DrawCrossHair	(void *context,const double *pGlobalPosition);
 			void DrawCamera		(void *context,const double *pGlobalPosition, double pRoll);
 			void DrawLineLoop	(void *context,const double *mat,int num,const double *vertexArray,const float colr[4]);
-			void DrawTexture(	void *context,int x1,int y1,int dx,int dy,void *tex,float mult=1.f);
-			
+			void DrawTexture	(void *context,int x1,int y1,int dx,int dy,void *tex,float mult=1.f);
+			void DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *effect,void *technique);
+
+			void Print			(void *context,int x,int y	,const char *text);
+
 			void ApplyDefaultMaterial();
 			void SetModelMatrix(void *context,const crossplatform::ViewStruct &viewStruct,const double *mat);
 			scene::Material *CreateMaterial();

@@ -1,6 +1,6 @@
 #include "dx9.hlsl"
-#include "../../CrossPlatform/simul_cloud_constants.sl"
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/simul_cloud_constants.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #ifndef WRAP_CLOUDS
 	#define WRAP_CLOUDS 1
 #endif

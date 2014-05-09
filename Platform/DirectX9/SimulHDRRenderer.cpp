@@ -43,6 +43,9 @@
 #ifdef  MONTE_CARLO_BLUR
 #include "Simul/Math/Pi.h"
 #endif
+using namespace simul;
+using namespace dx9;
+
 
 SimulHDRRenderer::SimulHDRRenderer(int width,int height) :
 	m_pBufferVertexDecl(NULL),

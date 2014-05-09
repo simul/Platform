@@ -173,7 +173,7 @@ vertexOutput3Dto2D VS_ShowFade(idOnly IN)
 float4 PS_ShowFadeTable(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float4 result=inscTexture.Sample(cmcSamplerState,IN.texCoords.xy);
-	result.rgb+=overlayAlpha*result.a;
+	result.rb+=overlayAlpha*result.a;
     return float4(result.rgb,1);
 }
 

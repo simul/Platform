@@ -27,7 +27,7 @@ vertexOutput VS_Solid(vertexInput IN)
     return OUT;
 }
 
-float4 PS_Solid( vertexOutput IN) : SV_TARGET
+float4 PS_Solid(vertexOutput IN) : SV_TARGET
 {
     vec4 c = texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
 	c.a=1.0;
@@ -40,7 +40,7 @@ technique11 solid
 {
     pass base 
     {
-		SetRasterizerState(RenderFrontfaceCull);
+		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(EnableDepth,0);
 		SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Solid()));

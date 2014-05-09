@@ -1,12 +1,13 @@
 #define NOMINMAX
 #include "Utilities.h"
 #include "MacrosDX1x.h"
-#include "TextRenderer.h"
 #include "Simul\Base\StringToWString.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Math/Vector3.h"
+#if WINVER<0x602
 #include <d3dx11.h>
+#endif
 #include <algorithm>			// for std::min / max
 using namespace simul;
 using namespace dx11;
@@ -19,14 +20,6 @@ static ID3D11SamplerState* m_pSamplerStateStored11=NULL;
 static UINT m_StencilRefStored11;
 static float m_BlendFactorStored11[4];
 static UINT m_SampleMaskStored11;
-
-namespace simul
-{
-	namespace dx11
-	{
-		TextRenderer textRenderer;
-	}
-}
 
 TextureStruct::TextureStruct()
 	:texture(NULL)
@@ -526,7 +519,7 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 		textures.push_back(simul::dx11::LoadStagingTexture(pd3dDevice,texture_files[i].c_str()));
 	}
 	D3D11_TEXTURE2D_DESC desc;
-	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[textures.size()];
+//	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[textures.size()];
 	ID3D11DeviceContext *pContext=NULL;
 	pd3dDevice->GetImmediateContext(&pContext);
 	for(int i=0;i<(int)textures.size();i++)
@@ -534,11 +527,14 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 		if(!textures[i])
 			return;
 		textures[i]->GetDesc(&desc);
-		D3D11_MAPPED_SUBRESOURCE mapped_res;
-		pContext->Map(textures[i],0,D3D11_MAP_READ,0,&mapped_res);	
+	/*	D3D11_MAPPED_SUBRESOURCE mapped_res;
+		HRESULT hr=pContext->Map(textures[i],0,D3D11_MAP_READ,0,&mapped_res);	
+		if(hr==S_OK)
+		{
 		subResources[i].pSysMem			=mapped_res.pData;
 		subResources[i].SysMemPitch		=mapped_res.RowPitch;
 		subResources[i].SysMemSlicePitch=mapped_res.DepthPitch;
+		}*/
 	}
 	static int num_mips=5;
 	desc.BindFlags=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_RENDER_TARGET;
@@ -552,13 +548,24 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	if(m_pArrayTexture)
 	for(unsigned i=0;i<textures.size();i++)
 	{
-		pContext->UpdateSubresource(m_pArrayTexture,i*num_mips, NULL,subResources[i].pSysMem,subResources[i].SysMemPitch,subResources[i].SysMemSlicePitch);
+		// Copy the resource directly, no CPU mapping
+		pContext->CopySubresourceRegion(
+						m_pArrayTexture
+						,i*num_mips
+						,0
+						,0
+						,0
+						,textures[i]
+						,0
+						,NULL
+						);
+		//pContext->UpdateSubresource(m_pArrayTexture,i*num_mips, NULL,subResources[i].pSysMem,subResources[i].SysMemPitch,subResources[i].SysMemSlicePitch);
 	}
 	pd3dDevice->CreateShaderResourceView(m_pArrayTexture,NULL,&m_pArrayTexture_SRV);
-	delete [] subResources;
+	//delete [] subResources;
 	for(unsigned i=0;i<textures.size();i++)
 	{
-		pContext->Unmap(textures[i],0);
+	//	pContext->Unmap(textures[i],0);
 		SAFE_RELEASE(textures[i])
 	}
 	pContext->GenerateMips(m_pArrayTexture_SRV);
@@ -671,7 +678,6 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D11Device *)dev;
 	RecompileShaders();
-	textRenderer.RestoreDeviceObjects(m_pd3dDevice);
 	SAFE_RELEASE(m_pVertexBuffer);
 	// Vertex declaration
 	{
@@ -703,14 +709,14 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 
 void UtilityRenderer::RecompileShaders()
 {
+	if(!m_pd3dDevice)
+		return;
 	SAFE_RELEASE(m_pDebugEffect);
 	CreateEffect(m_pd3dDevice,&m_pDebugEffect,"simul_debug.fx");
-	textRenderer.RecompileShaders();
 }
 
 void UtilityRenderer::InvalidateDeviceObjects()
 {
-	textRenderer.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pDebugEffect);
@@ -743,15 +749,6 @@ void UtilityRenderer::GetScreenSize(int& w,int& h)
 	h=screen_height;
 }
 
-void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,int x,int y,const char *text,const float *clr)
-{
-	UtilityRenderer::Print(pd3dImmediateContext,(float)x,(float)y,text,clr);
-}
-
-void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,float x,float y,const char *text,const float *clr)
-{
-	textRenderer.Render(pd3dImmediateContext,x,y,(float)screen_width,(float)screen_height,text,clr);
-}
 
 void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
@@ -761,7 +758,6 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *v
 {
 	if(!vertex_count)
 		return;
-	PIXWrapper(0xFF0000FF,"DrawLines")
 	{
 		HRESULT hr=S_OK;
 		D3DXMATRIX world, tmp1, tmp2;
@@ -770,7 +766,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *v
 		ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
 
 		D3DXMATRIX wvp;
-		camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
+		camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&view,(const float*)&proj);
 		worldViewProj->SetMatrix(&wvp._11);
 	
 		ID3D1xBuffer *					vertexBuffer=NULL;
@@ -831,17 +827,17 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *v
 
 void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pContext)
 {
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	m_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pContext->IASetInputLayout(NULL);
 	m_pContext->Draw(4,0);
 	m_pContext->IASetPrimitiveTopology(previousTopology);
 }			
 
-void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
 {
-	DrawQuad2(m_pContext
+	DrawQuad2(pContext
 		,2.f*(float)x1/(float)screen_width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)screen_height
 		,2.f*(float)dx/(float)screen_width
@@ -849,16 +845,16 @@ void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pContext,int x1,int y1,in
 		,eff,tech);
 }
 
-void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pContext,float x1,float y1,float dx,float dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
 {
 	HRESULT hr=S_OK;
 	setParameter(eff,"rect",x1,y1,dx,dy);
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(m_pContext,tech->GetPassByIndex(0));
-	m_pContext->Draw(4,0);
-	m_pContext->IASetPrimitiveTopology(previousTopology);
+	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	ApplyPass(pContext,tech->GetPassByIndex(0));
+	pContext->Draw(4,0);
+	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
 void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pContext
@@ -963,7 +959,7 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCub
 	//simul::math::Vector3 offs0(offsetx*(tan_x-size_req)*d,offsety*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs0(0,0,-d);
 	simul::math::Vector3 offs;
-	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
+	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)&view),offs0);
 
 	world._41=offs.x;
 	world._42=offs.y;
@@ -971,7 +967,7 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCub
 	view._41=0;
 	view._42=0;
 	view._43=0;
-	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
+	camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&view,(const float*)&proj);
 	simul::dx11::setMatrix(m_pDebugEffect,"worldViewProj",&wvp._11);
 	//ID3DX11EffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
 	ID3DX11EffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");

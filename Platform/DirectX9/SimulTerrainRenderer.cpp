@@ -40,6 +40,19 @@
 #undef max
 typedef std::basic_string<TCHAR> tstring;
 
+using namespace simul;
+using namespace dx9;
+
+
+struct simul::dx9::TerrainVertex_t
+{
+	float x,y;
+	float tex_x,tex_y;
+	float morph,anymorph;
+    float texCoordHx,texCoordHy;
+    float texCoordH1x,texCoordH1y;
+    float texCoordH2x,texCoordH2y;
+};
 SimulTerrainRenderer::SimulTerrainRenderer(simul::base::MemoryInterface *m) :
 	BaseTerrainRenderer(m)
 	,m_pVtxDecl(NULL)
@@ -66,16 +79,6 @@ SimulTerrainRenderer::SimulTerrainRenderer(simul::base::MemoryInterface *m) :
 	,last_buffer_checksum(0)
 {
 }
-
-struct TerrainVertex_t
-{
-	float x,y;
-	float tex_x,tex_y;
-	float morph,anymorph;
-    float texCoordHx,texCoordHy;
-    float texCoordH1x,texCoordH1y;
-    float texCoordH2x,texCoordH2y;
-};
 
 bool SimulTerrainRenderer::Create( LPDIRECT3DDEVICE9 dev)
 {

@@ -21,6 +21,7 @@
 #include "Simul/Scene/BaseObjectRenderer.h"
 #include "Simul/Scene/BaseSceneRenderer.h"
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
@@ -28,6 +29,10 @@
 #pragma comment(lib,"opengl32")
 #pragma comment(lib,"glew32")
 #pragma comment(lib,"freeglut")
+#ifdef USE_GLFX
+#pragma comment(lib,"glfx")
+#endif
+
 #ifndef _MSC_VER
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
 #endif
@@ -35,9 +40,6 @@
 using namespace simul;
 using namespace opengl;
 
-#ifndef GLUT_BITMAP_HELVETICA_12
-#define GLUT_BITMAP_HELVETICA_12	((void*)7)
-#endif
 using namespace simul;
 using namespace opengl;
 
@@ -151,6 +153,18 @@ void OpenGLRenderer::paintGL()
 {
 	void *context=NULL;
 	static int viewport_id=0;
+
+	simul::math::Matrix4x4 proj;
+	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
+	simul::math::Matrix4x4 view;
+	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
+
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.renderPlatform=renderPlatform;
+	deviceContext.viewStruct.view_id=viewport_id;
+	deviceContext.viewStruct.view	=view;
+	deviceContext.viewStruct.proj	=proj;
+	
 	if(renderPlatform)
 		renderPlatform->SetReverseDepth(ReverseDepth);
 	if(simulWeatherRenderer)
@@ -165,21 +179,16 @@ void OpenGLRenderer::paintGL()
     glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(cam->MakeViewMatrix());
 	glMatrixMode(GL_PROJECTION);
-	static float nearPlane=1.0f;
-	static float farPlane=250000.f;
+	const camera::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	if(ReverseDepth)
-		glLoadMatrixf(cam->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight));
+		glLoadMatrixf(cam->MakeDepthReversedProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
 	else
-		glLoadMatrixf(cam->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight));
+		glLoadMatrixf(cam->MakeProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
 	glViewport(0,0,ScreenWidth,ScreenHeight);
-	simul::math::Matrix4x4 proj;
-	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
-	simul::math::Matrix4x4 view;
-	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
-	crossplatform::ViewStruct viewStruct={	viewport_id
+/*	crossplatform::ViewStruct viewStruct={	viewport_id
 												,view
 												,proj
-												};
+												};*/
 	static float exposure=1.0f;
 	if(simulWeatherRenderer)
 	{
@@ -210,7 +219,7 @@ void OpenGLRenderer::paintGL()
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		
 		if(sceneRenderer)
-			sceneRenderer->Render(NULL,viewStruct);
+			sceneRenderer->Render(NULL,deviceContext.viewStruct);
 //		gScene->OnTimerClick();
 		
 		if(simulTerrainRenderer&&ShowTerrain)
@@ -268,12 +277,12 @@ void OpenGLRenderer::paintGL()
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(context,0,0,ScreenWidth/2,ScreenHeight/2);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(context,0,0,ScreenWidth/2,ScreenHeight/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth/2,ScreenHeight/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext,0,0,ScreenWidth/2,ScreenHeight/2);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{
-			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(context,0,0,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth,ScreenHeight);
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(NULL,ScreenWidth,ScreenHeight);
@@ -293,9 +302,9 @@ void OpenGLRenderer::renderUI()
 	glDisable(GL_TEXTURE_1D);
 	SetOrthoProjection(ScreenWidth,ScreenHeight);
 	static char text[500];
-	float y=12.f;
+	int y=12;
 	static int line_height=16;
-	RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,"OpenGL");
+	renderPlatform->Print(NULL,12,y+=line_height,"OpenGL");
 	if(ShowOSD)
 	{
 	static simul::base::Timer timer;
@@ -310,9 +319,9 @@ void OpenGLRenderer::renderUI()
 		framerate+=0.05f*(1000.f/t);
 		static char osd_text[256];
 		sprintf_s(osd_text,256,"%3.3f fps",framerate);
-		RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,osd_text);
+		renderPlatform->Print(NULL,12,y+=line_height,osd_text);
 		if(simulWeatherRenderer)
-			RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,simulWeatherRenderer->GetDebugText());
+			renderPlatform->Print(NULL,12,y+=line_height,simulWeatherRenderer->GetDebugText());
 		timer.StartTime();
 	}
 }

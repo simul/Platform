@@ -11,7 +11,9 @@
 #include "FramebufferDX1x.h"
 
 #include <tchar.h>
+#ifndef SIMUL_WIN8_SDK
 #include <dxerr.h>
+#endif
 #include <string>
 #include <assert.h>
 

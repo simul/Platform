@@ -1,8 +1,16 @@
 #pragma once
 #include <exception>
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #include <dxerr.h>
+#else
+#include <string>
+//! Name of an error
+extern const char *DXGetErrorStringA(HRESULT hr);
+//! Text of an error
+extern const char *DXGetErrorDescriptionA(HRESULT hr);
+#endif
 #include <string>
 
 // Exception thrown when a DirectX Function fails

@@ -39,7 +39,7 @@ void main()
 	if(1.0>depth)
 		discard;
 #endif
-	float dist		=depthToFadeDistance(depth,depth_pos.xy,nearZ,farZ,tanHalfFov);
+	float dist		=depthToFadeDistance(depth,depth_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec3 wEyeToPos	=wPosition-eyePosition;
 	vec4 ret		=Clouds2DPS(imageTexture
 						,coverageTexture

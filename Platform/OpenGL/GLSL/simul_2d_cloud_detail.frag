@@ -1,16 +1,8 @@
+#version 140
+#include "CppGlsl.hs"
 uniform sampler2D noise_texture;
 uniform float persistence;
 varying vec2 texCoords;
-
-float saturate(float x)
-{
-	return clamp(x,0.0,1.0);
-}
-
-vec4 saturate(vec4 x)
-{
-	return clamp(x,vec4(0.0,0.0,0.0,0.0),vec4(1.0,1.0,1.0,1.0));
-}
 
 void main(void)
 {
@@ -19,7 +11,7 @@ void main(void)
 	float mul=.5;
     for(int i=0;i<24;i++)
     {
-		vec4 c=texture(noise_texture,texcoords);
+		vec4 c=texture_clamp_lod(noise_texture,texcoords,0);
 		texcoords*=2.0;
 		texcoords+=mul*vec2(0.2,0.2)*c.xy;
 		result+=mul*c;

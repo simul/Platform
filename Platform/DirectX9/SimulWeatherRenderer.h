@@ -34,12 +34,12 @@ namespace simul
 	{
 		class SimulSkyRenderer;
 		class SimulCloudRenderer;
+		class Simul2DCloudRenderer;
+		class SimulLightningRenderer;
+		class SimulPrecipitationRenderer;
+		class SimulAtmosphericsRenderer;
 	}
 }
-class SimulLightningRenderer;
-class Simul2DCloudRenderer;
-class SimulPrecipitationRenderer;
-class SimulAtmosphericsRenderer;
 
 namespace simul
 {
@@ -74,6 +74,7 @@ namespace simul
 			void RestoreDeviceObjects(void *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale);
+			void GetDimensions(int &w,int &h,int &downscale);
 			int Width,Height,Downscale;
 			LPDIRECT3DDEVICE9	m_pd3dDevice;
 		};

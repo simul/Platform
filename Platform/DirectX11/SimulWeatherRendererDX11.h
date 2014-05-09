@@ -11,9 +11,11 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
-#include <d3dx9.h>
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
+#include <d3dx9.h>
 #include <d3dx11.h>
+#endif
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
@@ -61,6 +63,7 @@ namespace simul
 			void RestoreDeviceObjects(void *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale);
+			void GetDimensions(int &w,int &h,int &downscale);
 			int Width,Height,Downscale;
 			ID3D11Device*	m_pd3dDevice;
 		};
@@ -107,7 +110,8 @@ namespace simul
 												,bool depth_blend
 												,const void* mainDepthTexture
 												,const void* lowResDepthTexture
-												,const simul::sky::float4& viewportRegionXYWH);
+												,const simul::sky::float4& viewportRegionXYWH
+													  ,const crossplatform::MixedResolutionStruct &mixedResolutionStruct);
 			void RenderFramebufferDepth(void *context,int view_id,int x0,int y0,int w,int h);
 			void RenderCompositingTextures(void *context,int view_id,int x0,int y0,int w,int h);
 			void RenderPrecipitation(void *context,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
@@ -124,7 +128,7 @@ namespace simul
 			class Simul2DCloudRendererDX11 *Get2DCloudRenderer();
 			//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
-			void *GetCloudDepthTexture();
+			void *GetCloudDepthTexture(int view_id);
 
 		protected:
 			simul::base::MemoryInterface	*memoryInterface;
@@ -157,7 +161,7 @@ namespace simul
 			float									exposure;
 			float									gamma;
 			float									exposure_multiplier;
-			D3DXVECTOR3								cam_pos;
+			simul::math::Vector3					cam_pos;
 		};
 	}
 }

@@ -300,6 +300,8 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 				std::cerr<<"Warnings building "<<filename<<std::endl;
 			err=static_cast<const char*>(errors->GetBufferPointer());
 			std::cerr<<err.c_str()<<std::endl;
+			if(FAILED(hr))
+				DebugBreak();
 		}
 	}
 	delete [] macros;

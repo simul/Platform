@@ -3,10 +3,13 @@
 #include "CreateEffectDX1x.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/SkyInterface.h"
+#ifndef SIMUL_WIN8_SDK
 #include <D3DX11tex.h>
+#endif
 #include "CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Math/Matrix4x4.h"
 #pragma warning(disable:4995)
 #include <vector>
 #include <string>
@@ -56,13 +59,13 @@ struct Const_Per_Call
 	D3DXMATRIX	g_matLocal;
 	D3DXMATRIX	g_matWorldViewProj;
 	D3DXMATRIX	g_matWorld;
-	D3DXVECTOR2 g_UVBase;
-	D3DXVECTOR2 g_PerlinMovement;
-	D3DXVECTOR3	g_LocalEye;
+	math::float2	g_UVBase;
+	math::float2	g_PerlinMovement;
+	vec3			g_LocalEye;
 	// Atmospherics
 	float		hazeEccentricity;
-	D3DXVECTOR3	lightDir;
-	D3DXVECTOR4 mieRayleighRatio;
+	vec3			lightDir;
+	vec4			mieRayleighRatio;
 };
 
 struct Const_Shading
@@ -489,8 +492,8 @@ void OceanRenderer::Render(void *context,float exposure)
 	// Build rendering list
 	g_render_list.clear();
 	float ocean_extent =seaKeyframer->patch_length * (1 << g_FurthestCover);
-	QuadNode root_node ={D3DXVECTOR2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-	buildNodeList(root_node,seaKeyframer->patch_length,view,proj);
+	QuadNode root_node ={math::float2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
+	buildNodeList(root_node,seaKeyframer->patch_length,(const float *)&view,(const float *)&proj);
 
 	// Matrices
 	D3DXMATRIX matView = view;
@@ -544,33 +547,33 @@ void OceanRenderer::Render(void *context,float exposure)
 		D3DXMATRIX matWorld;
 		D3DXMatrixTranslation(&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
 		D3DXMatrixTranspose(&call_consts.g_matWorld, &matWorld);
-		D3DXMATRIX matWVP = matWorld * matView * matProj;
+		D3DXMATRIX matWVP =D3DXMatrixMultiply( matWorld,D3DXMatrixMultiply(matView,matProj));
 		D3DXMatrixTranspose(&call_consts.g_matWorldViewProj, &matWVP);
 		// Texcoord for perlin noise
-		D3DXVECTOR2 uv_base = node.bottom_left / seaKeyframer->patch_length * g_PerlinSize;
+		math::float2 uv_base = node.bottom_left / seaKeyframer->patch_length * g_PerlinSize;
 		call_consts.g_UVBase = uv_base;
 		// Constant g_PerlinSpeed need to be adjusted mannually
-		D3DXVECTOR2 perlin_move =D3DXVECTOR2(seaKeyframer->wind_dir)*(-(float)app_time)* g_PerlinSpeed;
+		math::float2 perlin_move =math::float2(seaKeyframer->wind_dir)*(-(float)app_time)* g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
 		// Eye point
-		D3DXMATRIX matInvWV = matWorld * matView;
+		D3DXMATRIX matInvWV = D3DXMatrixMultiply(matWorld ,matView);
 		D3DXMatrixInverse(&matInvWV, NULL, &matInvWV);
 		D3DXVECTOR3 vLocalEye(0, 0, 0);
 		D3DXVec3TransformCoord(&vLocalEye, &vLocalEye, &matInvWV);
-		call_consts.g_LocalEye = vLocalEye;
+		call_consts.g_LocalEye = (const float*)&vLocalEye;
 
 		// Atmospherics
 		if(skyInterface)
 		{
 			call_consts.hazeEccentricity=skyInterface->GetMieEccentricity();
-			call_consts.lightDir=D3DXVECTOR3((const float *)(skyInterface->GetDirectionToLight(0.f)));
-			call_consts.mieRayleighRatio=D3DXVECTOR4((const float *)(skyInterface->GetMieRayleighRatio()));
+			call_consts.lightDir=vec3((const float *)(skyInterface->GetDirectionToLight(0.f)));
+			call_consts.mieRayleighRatio=vec4((const float *)(skyInterface->GetMieRayleighRatio()));
 		}
 		else
 		{
 			call_consts.hazeEccentricity=0.85f;
-			call_consts.lightDir=D3DXVECTOR3(0,0,1.f);
-			call_consts.mieRayleighRatio=D3DXVECTOR4(0,0,0,0);
+			call_consts.lightDir=vec3(0,0,1.f);
+			call_consts.mieRayleighRatio=vec4(0,0,0,0);
 		}
 
 		// Update constant buffer
@@ -614,8 +617,8 @@ void OceanRenderer::RenderWireframe(void *context)
 	// Build rendering list
 	g_render_list.clear();
 	float ocean_extent = seaKeyframer->patch_length * (1 << g_FurthestCover);
-	QuadNode root_node = {D3DXVECTOR2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-	buildNodeList(root_node,seaKeyframer->patch_length,view,proj);
+	QuadNode root_node = {math::float2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
+	buildNodeList(root_node,seaKeyframer->patch_length,(const float*)&view,(const float*)&proj);
 
 	// Matrices
 	D3DXMATRIX matView = view;
@@ -669,23 +672,23 @@ void OceanRenderer::RenderWireframe(void *context)
 		D3DXMATRIX matWorld;
 		D3DXMatrixTranslation(&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
 		D3DXMatrixTranspose(&call_consts.g_matWorld, &matWorld);
-		D3DXMATRIX matWVP = matWorld * matView * matProj;
+		D3DXMATRIX matWVP = D3DXMatrixMultiply(matWorld,D3DXMatrixMultiply(matView ,matProj));
 		D3DXMatrixTranspose(&call_consts.g_matWorldViewProj, &matWVP);
 
 		// Texcoord for perlin noise
-		D3DXVECTOR2 uv_base = node.bottom_left / seaKeyframer->patch_length * g_PerlinSize;
+		math::float2 uv_base = node.bottom_left / seaKeyframer->patch_length * g_PerlinSize;
 		call_consts.g_UVBase = uv_base;
 
 		// Constant g_PerlinSpeed need to be adjusted mannually
-		D3DXVECTOR2 perlin_move =D3DXVECTOR2(seaKeyframer->wind_dir) *(-(float)app_time)* g_PerlinSpeed;
+		math::float2 perlin_move =math::float2(seaKeyframer->wind_dir) *(-(float)app_time)* g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
 
 		// Eye point
-		D3DXMATRIX matInvWV = matWorld * matView;
+		D3DXMATRIX matInvWV = D3DXMatrixMultiply(matWorld ,matView);
 		D3DXMatrixInverse(&matInvWV, NULL, &matInvWV);
 		D3DXVECTOR3 vLocalEye(0, 0, 0);
 		D3DXVec3TransformCoord(&vLocalEye, &vLocalEye, &matInvWV);
-		call_consts.g_LocalEye = vLocalEye;
+		call_consts.g_LocalEye =(const float*)&vLocalEye;
 
 		// Update constant buffer
 		D3D11_MAPPED_SUBRESOURCE mapped_res;            

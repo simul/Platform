@@ -11,10 +11,12 @@
 #include "Simul/Sky/SkyTexturesCallback.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Math/Matrix4x4.h"
-#include <d3dx9.h>
 #include <d3d11.h>
+#ifndef SIMUL_WIN8_SDK
+#include <d3dx9.h>
 #include <d3dx11.h>
-#include <d3dx11effect.h>
+#endif
+#include "D3dx11effect.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
