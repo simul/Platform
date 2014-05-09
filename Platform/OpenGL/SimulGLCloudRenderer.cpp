@@ -523,8 +523,8 @@ GL_ERROR_CHECK
 	GL_ERROR_CHECK
 		simul::clouds::Slice *RS=*i;
 		clouds::SliceInstance s=helper->MakeLayerGeometry(RS,effective_world_radius_metres);
-		const simul::clouds::IntVector &quad_strip_vertices=s.quad_strip_indices;
-		size_t qs_vert=0;
+//		const simul::clouds::IntVector &quad_strip_vertices=s.quad_strip_indices;
+//		size_t qs_vert=0;
 //		int layer=(int)helper->GetSlices().size()-1-idx;
 //		setParameter(program,"layerNumber",layer);
 		const LayerData &L=layerConstants.layers[helper->GetSlices().size()-1-idx];
@@ -941,4 +941,5 @@ void SimulGLCloudRenderer::RenderAuxiliaryTextures(crossplatform::DeviceContext 
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
+	x0;y0;
 }
