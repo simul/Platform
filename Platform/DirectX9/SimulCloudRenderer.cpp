@@ -1125,8 +1125,8 @@ bool SimulCloudRenderer::RenderLightVolume()
 			i1=i%4;
 			i2=i1+4;
 		}
-		simul::math::Vector3 X1=cloudKeyframer->GetCloudInterface()->ConvertLightCoordsToReal(vertices[i1][0],vertices[i1][1],vertices[i1][2]);
-		simul::math::Vector3 X2=cloudKeyframer->GetCloudInterface()->ConvertLightCoordsToReal(vertices[i2][0],vertices[i2][1],vertices[i2][2]);
+		simul::math::Vector3 X1;//=cloudKeyframer->GetCloudInterface()->ConvertLightCoordsToReal(vertices[i1][0],vertices[i1][1],vertices[i1][2]);
+		simul::math::Vector3 X2;//=cloudKeyframer->GetCloudInterface()->ConvertLightCoordsToReal(vertices[i2][0],vertices[i2][1],vertices[i2][2]);
 		std::swap(X1.y,X1.z);
 		std::swap(X2.y,X2.z);
 		lines[i*2].x=X1.x; 
