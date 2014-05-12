@@ -1,0 +1,314 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
+    <ClInclude Include="DeviceContext.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SL\atmospherics_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\atmospherics.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\depth.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\cloud_shadow.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\CloudConstants.glsl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\compositing_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\CppGlsl.hs">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\CppSl.hs">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\earth_shadow.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\earth_shadow_fade.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\earth_shadow_uniforms.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\godrays.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\hdr_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\illumination.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\illumination_buffer.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\light_probe_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\lightning_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\mixed_resolution.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\mixed_resolution_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\noise.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\noise_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\ocean_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\optics_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\rain_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simple.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simple.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_2d_cloud_detail.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_2d_cloud_detail.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_2d_cloud_detail_lighting.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_2d_clouds.hs">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_2d_clouds.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_2d_noise.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_atmospherics.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_atmospherics_earthshadow.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_atmospherics_godrays.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_cloud_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_cloud_cross_section.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_cloud_cross_section.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_cloud_shadow.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_cloudmix.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_cloudmix.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_clouds.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_clouds.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_clouds.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_clouds_2d.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_clouds_2d.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_earthshadow_sky.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_fade_3d_to_2d.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_fade_3d_to_2d.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_flare.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_glow.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_cloud_density.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_cloud_density.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_cloud_transform.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_cloud_transform.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_clouds.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_clouds.glsl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_gpu_clouds.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_clouds.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_insc.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_loss.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_sky.glsl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_gpu_sky.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_skyl.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_hdr_blur.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_insc.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_insc_earthshadow.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_inscatter_fns.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_lightning.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_lightning.geom">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_lightning.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_lightning_glow.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_loss.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_noise.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_planet.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_rain.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_rain.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_raytrace_clouds.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_simple_lightning.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_simple_lightning.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_sky.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_sky.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_stars.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_sun.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_sun.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_sun_planet_flare.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_terrain.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_terrain.geom">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\simul_terrain.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_terrain_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\sky_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\solid.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\solid.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\solid_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\spherical_harmonics.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\spherical_harmonics_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\states.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\tonemap.frag">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\tonemap.vert">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="GLSL\view_dir.glsl">
+      <Filter>SL</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="SL">
+      <UniqueIdentifier>{7a7e0285-43d9-42bc-b4ee-bf8deb426081}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
