@@ -126,6 +126,7 @@ GL_ERROR_CHECK
 void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()
 {
 	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
+	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 	int width_x=i.x;
 	int length_y=i.y;
 	if(cloud_tex_width_x==width_x&&cloud_tex_length_y==length_y&&cloud_tex_depth_z==1
@@ -149,7 +150,7 @@ void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 
-		if(GetCloudInterface()->GetWrap())
+		if(cloudProperties.GetWrap())
 		{
 			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
 			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
@@ -279,9 +280,9 @@ bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool /*cubemap*
 	using namespace simul::clouds;
 	if(skyInterface)
 		cloudKeyframer->Update(skyInterface->GetTime());
-	CloudInterface *ci=cloudKeyframer->GetCloudInterface();
 	simul::math::Vector3 X1,X2;
-	ci->GetExtents(X1,X2);
+	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
+	cloudProperties.GetExtents(X1,X2);
 	simul::math::Vector3 DX=X2-X1;
     glDisable(GL_TEXTURE_1D);
     glEnable(GL_TEXTURE_2D);
@@ -301,7 +302,7 @@ bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool /*cubemap*
 	Set2DTexture(skylightSampler_param,skylight_tex,4);
 	setTexture(clouds_program,"depthTexture",5,depth_texture);
 
-	simul::math::Vector3 wind_offset=cloudKeyframer->GetCloudInterface()->GetWindOffset();
+	simul::math::Vector3 wind_offset=cloudKeyframer->GetWindOffset();
 
 	float max_cloud_distance=400000.f;
 	FixGlProjectionMatrix(max_cloud_distance*1.1f);
@@ -314,16 +315,17 @@ bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool /*cubemap*
 
 	simul::math::Matrix4x4 worldViewProj;
 	simul::math::Multiply4x4(worldViewProj,modelview,proj);
-
+	
+	const clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
 	static float ll=0.05f;
 	static float ff=100.f;
 	Cloud2DConstants cloud2DConstants;
 	cloud2DConstants.worldViewProj			=worldViewProj;
-	cloud2DConstants.origin					=X1+cloudKeyframer->GetCloudInterface()->GetWindOffset();
-	cloud2DConstants.globalScale			=ci->GetCloudWidth();
+	cloud2DConstants.origin					=X1+cloudKeyframer->GetWindOffset();
+	cloud2DConstants.globalScale			=cloudProperties.GetCloudWidth();
 	cloud2DConstants.offsetScale			=1000000.0f;
 	cloud2DConstants.detailScale			=ff;//*ci->GetFractalWavelength();
-	cloud2DConstants.cloudEccentricity		=cloudKeyframer->GetInterpolatedKeyframe().light_asymmetry;
+	cloud2DConstants.cloudEccentricity		=K.light_asymmetry;
 	cloud2DConstants.cloudInterp			=cloudKeyframer->GetInterpolation();
 	cloud2DConstants.eyePosition			=cam_pos;
 	cloud2DConstants.exposure				=exposure;
@@ -337,7 +339,7 @@ bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool /*cubemap*
 	{
 		simul::sky::float4 amb					=skyInterface->GetAmbientLight(X1.z*.001f);
 		cloud2DConstants.lightDir				=skyInterface->GetDirectionToLight(X1.z*0.001f);
-		cloud2DConstants.lightResponse			=simul::sky::float4(ci->GetLightResponse(),0,0,ll*ci->GetSecondaryLightResponse());
+		cloud2DConstants.lightResponse			=simul::sky::float4(K.direct_light,0,0,ll*K.indirect_light);
 		cloud2DConstants.maxFadeDistanceMetres	=max_fade_distance_metres;
 		cloud2DConstants.sunlight				=skyInterface->GetLocalIrradiance(X1.z*0.001f);
 		cloud2DConstants.hazeEccentricity		=skyInterface->GetMieEccentricity();
@@ -356,8 +358,8 @@ GL_ERROR_CHECK
 	simul::math::Vector3 eye_dir=viewInv.RowPointer(2);
 	eye_dir*=-1.f;
 	simul::math::Vector3 up_dir=viewInv.RowPointer(1);
-	helper->Update(view_pos,ci->GetWindOffset(),eye_dir,up_dir);
-	helper->Make2DGeometry(ci,true,false,max_cloud_distance);
+	helper->Update(view_pos,cloudKeyframer->GetWindOffset(),eye_dir,up_dir);
+	helper->Make2DGeometry(cloudKeyframer,true,false,max_cloud_distance);
 GL_ERROR_CHECK
 	
 	for(Cloud2DGeometryHelper::QuadStripVector::const_iterator j=helper->GetQuadStrips().begin();
@@ -408,6 +410,7 @@ void SimulGL2DCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &,
 GL_ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);
 	glUseProgram(cross_section_program);
+	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 GL_ERROR_CHECK
 static float mult=1.f;
 	glUniform1i(cloudDensity1_param,0);
@@ -423,7 +426,7 @@ static float mult=1.f;
 	GL_ERROR_CHECK
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,coverage_tex[i]);
-		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
+		glUniform1f(crossSectionOffset,cloudProperties.GetWrap()?0.5f:0.f);
 		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
 		DrawQuad(x0+(i+1)*(w+8)+8,y0+height-w-8,w,w);
 	}

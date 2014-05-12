@@ -527,8 +527,9 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	if(!m_pd3dDevice)
 		return S_OK;
 	std::map<std::string,std::string> defines;
+	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 	defines["DETAIL_NOISE"]='1';
-	if(GetCloudInterface()->GetWrap())
+	if(cloudProperties.GetWrap())
 		defines["WRAP_CLOUDS"]="1";
 	if(y_vertical)
 		defines["Y_VERTICAL"]="1";
@@ -621,7 +622,8 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	cloudDensity1->SetResource(cloud_textures[(texture_cycle)  %3].shaderResourceView);
 	cloudDensity2->SetResource(cloud_textures[(texture_cycle+1)%3].shaderResourceView);
 	
-	if(GetCloudInterface()->GetWrap())
+	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
+	if(cloudProperties.GetWrap())
 		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pWrapSamplerState);
 	else
 		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pClampSamplerState);
@@ -708,7 +710,8 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 	simul::dx11::setTexture(effect,"noiseTexture"		,noiseTextureResource);
 	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
 	
-	if(GetCloudInterface()->GetWrap())
+	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
+	if(cloudProperties.GetWrap())
 		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pWrapSamplerState);
 	else
 		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pClampSamplerState);
@@ -727,20 +730,20 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 	{
 		//set up matrices
 		simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
-		simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
+		simul::math::Vector3 wind_offset=cloudKeyframer->GetWindOffset();
 		if(y_vertical)
 			std::swap(wind_offset.y,wind_offset.z);
 		X+=wind_offset;
 		if(!y_vertical)
 			view_dir.Define(-view._13,-view._23,-view._33);
 		simul::math::Vector3 up(view._12,view._22,view._32);
-		helper->SetChurn(GetCloudInterface()->GetChurn());
+		helper->SetChurn(cloudProperties.GetChurn());
 		helper->Update((const float*)cam_pos,wind_offset,view_dir,up,1.0);
 		float tan_half_fov_vertical=1.f/proj._22;
 		float tan_half_fov_horizontal=1.f/proj._11;
 		helper->SetNoFrustumLimit(true);
 		helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-		helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
+		helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),enable_lightning);
 	}
 
 	static int select_slice=-1;
@@ -831,6 +834,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &d
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
+	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 	if(skyInterface)
 	for(int i=0;i<3;i++)
 	{
@@ -839,7 +843,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &d
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;
-		h=(int)(kf->cloud_height_km*1000.f/GetCloudInterface()->GetCloudWidth()*(float)w);
+		h=(int)(kf->cloud_height_km*1000.f/cloudProperties.GetCloudWidth()*(float)w);
 		sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 		cloudDensity1->SetResource(cloud_textures[(i+texture_cycle)%3].shaderResourceView);
 		dx11::setTexture(effect,"cloudDensity",cloud_textures[(i+texture_cycle)%3].shaderResourceView);

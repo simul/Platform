@@ -393,7 +393,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,boo
 	if(do_fx)
 	if(simulAtmosphericsRenderer&&simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
-		float str=simulCloudRenderer->GetCloudInterface()->GetHumidity();
+		float str=simulCloudRenderer->GetCloudKeyframer()->GetInterpolatedKeyframe().cloudiness;
 		static float gr_start=0.65f;
 		static float gr_strength=0.5f;
 		str-=gr_start;
