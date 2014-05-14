@@ -713,7 +713,7 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 									&stride,				// array of stride values, one for each buffer
 									&offset );				// array of offset values, one for each buffer
 
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 

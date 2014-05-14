@@ -84,7 +84,7 @@ void PrecipitationRenderer::RecompileShaders()
 	V_CHECK(m_pd3dDevice->CreateInputLayout(decl,3,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl));
 
 	ID3D11InputLayout* previousInputLayout;
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pImmediateContext->IAGetInputLayout(&previousInputLayout);
 	pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	{
@@ -183,7 +183,7 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 	rainConstants.Apply(pContext);
 	
 	ID3D11InputLayout* previousInputLayout;
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetInputLayout(&previousInputLayout);
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	{
@@ -367,7 +367,7 @@ void PrecipitationRenderer::RenderParticles(void *context)
 	ID3D11InputLayout* previousInputLayout;
 	pContext->IAGetInputLayout(&previousInputLayout);
 	pContext->IASetInputLayout(m_pVtxDecl);
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	rainConstants.intensity		=intensity;
 	rainConstants.Apply(pContext);

@@ -1,5 +1,4 @@
 #pragma once
-#include <dxgi.h>
 #include <d3dcommon.h>
 #include <d3d11.h>
 #include <map>
@@ -26,16 +25,19 @@ namespace simul
 			HWND hwnd;
 			/// The id assigned by the renderer to correspond to this hwnd
 			bool vsync;
-			IDXGISwapChain*				m_swapChain;
-			ID3D11RenderTargetView*		m_renderTargetView;
-			ID3D11Texture2D*			m_depthStencilBuffer;
-			ID3D11DepthStencilState*	m_depthStencilState;
-			ID3D11DepthStencilView*		m_depthStencilView;
-			ID3D11RasterizerState*		m_rasterState;
+			IDXGISwapChain				*m_swapChain;
+			ID3D11RenderTargetView		*m_renderTargetView;
+			ID3D11Texture2D				*m_depthStencilBuffer;
+			ID3D11DepthStencilState		*m_depthStencilState;
+			ID3D11DepthStencilView		*m_depthStencilView;
+			ID3D11RasterizerState		*m_rasterState;
 			D3D11_VIEWPORT				viewport;
 			Direct3D11CallbackInterface *renderer;
 		};
 		//! A class intended to replace DXUT, while allowing for multiple swap chains (i.e. rendering windows) to share the same d3d device.
+
+		//! Direct3D11Manager corresponds to a single ID3D11Device (i.e. a single graphics card accessed with this interface).
+		//! With each graphics window it manages (identified by HWND's), Direct3D11Manager
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Manager: public Direct3D11ManagerInterface
 		{
 		public:
@@ -58,7 +60,8 @@ namespace simul
 			Output GetOutput(int i);
 
 			void GetVideoCardInfo(char*, int&);
-			Direct3DWindow *GetWindow(HWND hwnd);
+			int GetViewId(HWND hwnd);
+			Window *GetWindow(HWND hwnd);
 			void ReportMessageFilterState();
 		protected:
 			bool m_vsync_enabled;
@@ -74,7 +77,7 @@ namespace simul
 			OutputMap outputs;
 
 			ID3D11Debug *d3dDebug ;
-	ID3D11InfoQueue *d3dInfoQueue ;
+			ID3D11InfoQueue *d3dInfoQueue ;
 		};
 
 	}

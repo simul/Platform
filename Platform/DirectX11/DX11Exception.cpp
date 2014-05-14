@@ -7,24 +7,34 @@ extern const char *DXGetErrorStringA(HRESULT hr)
 {
 	static std::string str;
 	char *lpBuf;
-	DWORD res=FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+	DWORD res=FormatMessage(
+#ifndef _XBOX_ONE
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+#endif
 			FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL, hr, 0, (LPTSTR)&lpBuf, 0, NULL);
 	if(lpBuf)
 		str=lpBuf;
+#ifndef _XBOX_ONE
 	LocalFree(lpBuf);
+#endif
 	return str.c_str();
 }
 extern const char *DXGetErrorDescriptionA(HRESULT hr)
 {
 	static std::string str;
 	char *lpBuf;
-	DWORD res=FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+	DWORD res=FormatMessage(
+#ifndef _XBOX_ONE
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+#endif
 			FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL, hr, 0, (LPTSTR)&lpBuf, 0, NULL);
 	if(lpBuf)
 		str=lpBuf;
+#ifndef _XBOX_ONE
 	LocalFree(lpBuf);
+#endif
 	return str.c_str();
 }
 #endif

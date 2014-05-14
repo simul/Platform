@@ -3,6 +3,7 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include <dxgi.h>
 
 using namespace simul;
 using namespace dx11;
@@ -31,9 +32,10 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 		return;
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 	D3D11_RASTERIZER_DESC rasterDesc;
-
 	RECT rect;
+#if defined(WINVER) && !defined(_XBOX_ONE)
 	GetWindowRect(hwnd,&rect);
+#endif
 	int screenWidth	=abs(rect.right-rect.left);
 	int screenHeight=abs(rect.bottom-rect.top);
 
@@ -115,7 +117,7 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	// Get the pointer to the back buffer.
 	HRESULT result;
 	IDXGIFactory* factory;
-	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
+	result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
 	SIMUL_ASSERT(result==S_OK);
 	factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain);
 //	SetDebugObjectName(m_swapChain,"Window SwapChain");
@@ -171,7 +173,9 @@ void Window::CreateRenderTarget(ID3D11Device* d3dDevice)
 void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 {
 	RECT rect;
+#if defined(WINVER) &&!defined(_XBOX_ONE)
 	GetWindowRect(hwnd,&rect);
+#endif
 	int screenWidth	=abs(rect.right-rect.left);
 	int screenHeight=abs(rect.bottom-rect.top);
 	// We will also need to set up a depth buffer description.
@@ -332,7 +336,7 @@ void Direct3D11Manager::Initialize()
 	// Store the vsync setting.
 	m_vsync_enabled = false;
 	// Create a DirectX graphics interface factory.
-	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
+	result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
 	SIMUL_ASSERT(result==S_OK);
 
 	// Use the factory to create an adapter for the primary graphics interface (video card).
@@ -482,14 +486,15 @@ Output Direct3D11Manager::GetOutput(int i)
 	o.height	=abs(outputDesc.DesktopCoordinates.top-outputDesc.DesktopCoordinates.bottom);
 
 	// Now get extended information about what monitor this is:
-
+	
+#if defined(WINVER) &&!defined(_XBOX_ONE)
 	MONITORINFOEX monitor;
     monitor.cbSize = sizeof(monitor);
     if (::GetMonitorInfo(outputDesc.Monitor, &monitor) && monitor.szDevice[0])
     {
 		DISPLAY_DEVICE dispDev;
         memset(&dispDev, 0, sizeof(dispDev));
-       dispDev.cb = sizeof(dispDev);
+		dispDev.cb = sizeof(dispDev);
 
        if (::EnumDisplayDevices(monitor.szDevice, 0, &dispDev, 0))
        {
@@ -498,7 +503,7 @@ Output Direct3D11Manager::GetOutput(int i)
            o.desktopY	=monitor.rcMonitor.top;
        }
    }
-
+#endif
 	// Create a list to hold all the possible display modes for this monitor/video card combination.
 	DXGI_MODE_DESC* displayModeList;
 	displayModeList = new DXGI_MODE_DESC[numModes];
@@ -625,7 +630,15 @@ void Direct3D11Manager::SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci)
 	w->SetRenderer(ci);
 }
 
-Direct3DWindow *Direct3D11Manager::GetWindow(HWND hwnd)
+int Direct3D11Manager::GetViewId(HWND hwnd)
+{
+	if(windows.find(hwnd)==windows.end())
+		return -1;
+	Window *w=windows[hwnd];
+	return w->view_id;
+}
+
+Window *Direct3D11Manager::GetWindow(HWND hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return NULL;
@@ -672,7 +685,9 @@ void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 	{
 		// Will this work, or will the hwnd just be the size of the full screen initially?
 		RECT rect;
+#if defined(WINVER) &&!defined(_XBOX_ONE)
 		GetWindowRect(hwnd,&rect);
+#endif
 		W	=abs(rect.right-rect.left);
 		H=abs(rect.bottom-rect.top);
 	}
@@ -687,7 +702,9 @@ void Direct3D11Manager::ResizeSwapChain(HWND hwnd,int width,int height)
 	if(!w)
 		return;
 		RECT rect;
+#if defined(WINVER) &&!defined(_XBOX_ONE)
 		GetWindowRect(hwnd,&rect);
+#endif
 		int W	=abs(rect.right-rect.left);
 		int H	=abs(rect.bottom-rect.top);
 	ID3D11RenderTargetView *t[]={NULL};

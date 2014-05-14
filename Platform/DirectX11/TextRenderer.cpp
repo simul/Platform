@@ -152,7 +152,7 @@ void TextRenderer::Render(void *context,float x,float y,float screen_width,float
 	if(!clr)
 		clr=white;
 	simul::dx11::setTexture(effect,"fontTexture"	,font_texture_SRV);
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
