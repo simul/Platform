@@ -18,7 +18,7 @@ namespace simul
 			bool screenshot;
 			std::string screenshotFilenameUtf8;
 		};
-		inline void GetCommandLineParams(crossplatform::CommandLineParams &commandLineParams,int argCount,LPWSTR *szArgList)
+		inline void GetCommandLineParams(crossplatform::CommandLineParams &commandLineParams,int argCount,const char **szArgList)
 		{
 			commandLineParams.pos_x=16;
 			commandLineParams.pos_y=16;
@@ -31,7 +31,7 @@ namespace simul
 				bool sc=false;
 				for (int i = 0; i < argCount; i++)
 				{
-					std::string arg=simul::base::WStringToString(szArgList[i]);
+					std::string arg(szArgList[i]);
 					if(arg.find(".seq")==arg.length()-4&&arg.length()>4)
 						commandLineParams.seq_filename_utf8=arg;
 					if(arg.find(".sq")==arg.length()-3&&arg.length()>3)
@@ -47,7 +47,7 @@ namespace simul
 						commandLineParams.screenshot=true;
 						sc=true;
 					}
-					unsigned pos=arg.find(":");
+					unsigned pos=(unsigned)arg.find(":");
 					if(pos<arg.length())
 					{
 						std::string left=arg.substr(0,pos);
@@ -69,6 +69,22 @@ namespace simul
 					//-startx:960, -starty:20 -width:640 -height:360
 				}
 			}
+		}
+		
+		inline void GetCommandLineParams(crossplatform::CommandLineParams &commandLineParams,int argCount,const wchar_t **szArgList)
+		{
+			char **args=new char *[argCount];
+			for(int i=0;i<argCount;i++)
+			{
+				std::string str=base::WStringToString(szArgList[i]);
+				args[i]=new char[str.length()+1];
+				strcpy_s(args[i],str.length(),str.c_str());
+				args[i][str.length()]=0;
+			}
+			GetCommandLineParams(commandLineParams,argCount,(const char **)args);
+			for(int i=0;i<argCount;i++)
+				delete [] args[i];
+			delete [] args;
 		}
 	}
 }
