@@ -3,16 +3,12 @@
   <ItemGroup>
     <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
     <ClInclude Include="DeviceContext.h" />
-    <ClInclude Include="CommandLineParams.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
       <Filter>SL</Filter>
     </None>
     <None Include="SL\atmospherics.sl">
-      <Filter>SL</Filter>
-    </None>
-    <None Include="SL\depth.sl">
       <Filter>SL</Filter>
     </None>
     <None Include="SL\cloud_shadow.sl">
@@ -22,6 +18,9 @@
       <Filter>SL</Filter>
     </None>
     <None Include="SL\CppSl.hs">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\depth.sl">
       <Filter>SL</Filter>
     </None>
     <None Include="SL\earth_shadow.sl">
@@ -114,7 +113,7 @@
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SL">
-      <UniqueIdentifier>{7a7e0285-43d9-42bc-b4ee-bf8deb426081}</UniqueIdentifier>
+      <UniqueIdentifier>{66c94634-b877-4d5d-9290-451000a183dc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

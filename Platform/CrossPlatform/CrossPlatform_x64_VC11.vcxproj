@@ -187,6 +187,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
+    <ClInclude Include="CommandLineParams.h" />
     <ClInclude Include="DeviceContext.h" />
   </ItemGroup>
   <ItemGroup>

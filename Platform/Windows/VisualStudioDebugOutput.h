@@ -13,45 +13,53 @@ class VisualStudioDebugOutput : public simul::base::BufferedStringStreamBuf
 {
 public:
     VisualStudioDebugOutput(bool send_to_output_window=true,
-							bool send_to_logfile=true,
 							const char *logfilename=NULL,size_t bufsize=(size_t)16)
 		:simul::base::BufferedStringStreamBuf((int)bufsize)
 		,old_cout_buffer(NULL)
 		,old_cerr_buffer(NULL)
+		,to_logfile(false)
 	{
 		if(errno!=0)
 			simul::base::RuntimeError(strerror(errno));
 		to_output_window=send_to_output_window;
-		to_logfile=send_to_logfile;
-		char buffer[_MAX_PATH];
-		if(_getcwd(buffer,_MAX_PATH))
-		{
-			
-		}
-		std::string fn=buffer;
-		if(send_to_logfile)
-		{
-			if(!logfilename)
-				logfilename="logfile.txt";
-			fn+="/";
-			fn+=logfilename;
-			logFile.open(fn.c_str());
-		if(errno!=0)
-			simul::base::RuntimeError(strerror(errno));
-		}
+		if(logfilename)
+			setLogFile(logfilename);
 		old_cout_buffer=std::cout.rdbuf(this);
 		old_cerr_buffer=std::cerr.rdbuf(this);
 	}
 	virtual ~VisualStudioDebugOutput()
 	{
-		logFile<<std::endl;
-		logFile.close();
+		if(to_logfile)
+		{
+			logFile<<std::endl;
+			logFile.close();
+		}
 		std::cout.rdbuf(old_cout_buffer);
 		std::cerr.rdbuf(old_cerr_buffer);
 	}
+	void setLogFile(const char *logfilename)
+	{
+		std::string fn=logfilename;
+		if(fn.find(":")>=fn.length())
+		{
+			char buffer[_MAX_PATH];
+			if(_getcwd(buffer,_MAX_PATH))
+			{
+				fn=buffer;
+			}
+			fn+="/";
+			fn+=logfilename;
+		}
+		logFile.open(fn.c_str());
+		if(errno!=0)
+			simul::base::RuntimeError(strerror(errno));
+		if(logFile.good())
+			to_logfile=true;
+	}
     virtual void writeString(const std::string &str)
     {
-		logFile<<str.c_str()<<std::endl;
+		if(to_logfile)
+			logFile<<str.c_str()<<std::endl;
 		if(to_output_window)
 		{
 #ifdef UNICODE
