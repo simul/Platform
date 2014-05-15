@@ -332,7 +332,7 @@ GL_ERROR_CHECK
 		z0++;
 	}
 	if(target)
-	target+=z0*params.light_grid[0]*params.light_grid[1]*4;
+		target+=z0*params.light_grid[0]*params.light_grid[1]*4;
 GL_ERROR_CHECK
 	float draw_time=0.f,read_time=0.f;
 	for(int i=z0;i<z1;i++)

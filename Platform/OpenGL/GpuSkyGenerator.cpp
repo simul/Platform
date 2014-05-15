@@ -372,7 +372,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 	GL_ERROR_CHECK
 		simul::sky::float4 *target=skyl_cache;
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-		target+=p.altitudes_km.size()*p.numElevations*start_skyl;
+		if(target)
+			target+=p.altitudes_km.size()*p.numElevations*start_skyl;
 		float prevDistKm=pow((float)(std::max(start_skyl-1,0))/((float)p.numDistances-1.f),2.f)*p.max_distance_km;
 		for(int i=start_skyl;i<end_skyl;i++)
 		{
@@ -422,7 +423,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 			F[1]->Deactivate(NULL);
 			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 			std::swap(F[0],F[1]);
-			target+=p.altitudes_km.size()*p.numElevations;
+			if(target)
+				target+=p.altitudes_km.size()*p.numElevations;
 			prevDistKm=distKm;
 		}
 	}
