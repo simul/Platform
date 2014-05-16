@@ -459,7 +459,7 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	SIMUL_GPU_PROFILE_END(context)
 	SIMUL_GPU_PROFILE_START(context,"Composite")
 	
-	CompositeCloudsToScreen(context,view_id,!is_cubemap,mainDepthTextureMS,lowResDepthTexture,depthViewportXYWH
+	CompositeCloudsToScreen(context,view_id,!is_cubemap,mainDepthTextureMS,hiResDepthTexture,lowResDepthTexture,depthViewportXYWH
 												,mixedResolutionStruct);
 	
 	//RenderLightning(context,view_id,mainDepthTextureMS,depthViewportXYWH,GetCloudDepthTexture(view_id));
@@ -504,7 +504,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	simul::dx11::setTexture(m_pTonemapEffect,"inscatterTexture"		,(ID3D11ShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
 	simul::dx11::setTexture(m_pTonemapEffect,"nearInscatterTexture"	,(ID3D11ShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
 
-	ID3DX11EffectTechnique *tech					=depth_blend?farNearDepthBlendTechnique:simpleCloudBlendTechnique;
+	ID3DX11EffectTechnique *tech				=depth_blend?farNearDepthBlendTechnique:simpleCloudBlendTechnique;
 	ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(msaa?1:0));
 	hdrConstants.exposure						=1.f;
 	hdrConstants.gamma							=1.f;

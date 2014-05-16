@@ -250,13 +250,13 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 	vec4 cloudFar;
 	vec4 cloudNear				=vec4(0,0,0,1.0);
 	vec4 lowres					=texture_clamp_lod(lowResDepthTexture,lowResTexCoords,0);
-	float edge					=lowres.z;
+	float lowres_edge			=lowres.z;
 	vec4 result					=vec4(0,0,0,0);
 	vec2 nearFarDistLowRes		=depthToLinearDistance(lowres.yx,depthToLinFadeDistParams);
 	vec4 insc					=vec4(0,0,0,0);
 	vec4 insc_far				=texture_nearest_lod(farInscatterTexture,texCoords,0);
 	vec4 insc_near				=texture_nearest_lod(nearInscatterTexture,texCoords,0);
-	if(edge>0.0)
+	if(lowres_edge>0.0)
 	{
 		vec2 nearFarDistHiRes	=vec2(1.0,0.0);
 		for(int i=0;i<numSamples;i++)
