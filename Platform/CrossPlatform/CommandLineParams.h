@@ -77,8 +77,9 @@ namespace simul
 			for(int i=0;i<argCount;i++)
 			{
 				std::string str=base::WStringToString(szArgList[i]);
-				args[i]=new char[str.length()+1];
-				strcpy_s(args[i],str.length(),str.c_str());
+				int len=str.length();
+				args[i]=new char[len+1];
+				strcpy_s(args[i],len+1,str.c_str());
 				args[i][str.length()]=0;
 			}
 			GetCommandLineParams(commandLineParams,argCount,(const char **)args);
