@@ -220,6 +220,7 @@ vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D depthTexture,v
 vec4 NearFarDepthCloudBlend(vec2 texCoords
 							,Texture2D lowResFarTexture
 							,Texture2D lowResNearTexture
+							,Texture2D hiResDepthTexture
 							,Texture2D lowResDepthTexture
 							,Texture2D<vec4> depthTexture
 							,Texture2DMS<vec4> depthTextureMS
@@ -250,7 +251,9 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 	vec4 cloudFar;
 	vec4 cloudNear				=vec4(0,0,0,1.0);
 	vec4 lowres					=texture_clamp_lod(lowResDepthTexture,lowResTexCoords,0);
+	vec4 hires					=texture_clamp_lod(hiResDepthTexture,texCoords,0);
 	float lowres_edge			=lowres.z;
+	float hires_edge			=hires.z;
 	vec4 result					=vec4(0,0,0,0);
 	vec2 nearFarDistLowRes		=depthToLinearDistance(lowres.yx,depthToLinFadeDistParams);
 	vec4 insc					=vec4(0,0,0,0);
@@ -287,12 +290,12 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 			cloudNear		=depthDependentFilteredImage(lowResNearTexture	,lowResDepthTexture,lowResDims,lowResTexCoords,vec4(0,1.0,0,0),depthToLinFadeDistParams,trueDist);
 			cloudFar		=depthDependentFilteredImage(lowResFarTexture	,lowResDepthTexture,lowResDims,lowResTexCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
 			float interp	=saturate((nearFarDistLowRes.y-trueDist)/abs(nearFarDistLowRes.y-nearFarDistLowRes.x));
-			vec4 add		=lerp(cloudFar,cloudNear,interp);
+			vec4 add		=lerp(cloudFar,cloudNear,lowres_edge*interp);
 			result			+=add;
 		
 			if(use_msaa)
 			{
-				hiResInterp		=saturate((nearFarDistHiRes.y-trueDist)/(nearFarDistHiRes.y-nearFarDistHiRes.x));
+				hiResInterp		=hires_edge*saturate((nearFarDistHiRes.y-trueDist)/(nearFarDistHiRes.y-nearFarDistHiRes.x));
 				insc			=lerp(insc_far,insc_near,hiResInterp);
 				result.rgb		+=insc.rgb*add.a;
 			}

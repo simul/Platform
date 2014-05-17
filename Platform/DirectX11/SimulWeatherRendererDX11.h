@@ -109,6 +109,7 @@ namespace simul
 												,int view_id
 												,bool depth_blend
 												,const void* mainDepthTexture
+												,const void* hiResDepthTexture
 												,const void* lowResDepthTexture
 												,const simul::sky::float4& viewportRegionXYWH
 													  ,const crossplatform::MixedResolutionStruct &mixedResolutionStruct);

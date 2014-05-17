@@ -9,6 +9,7 @@ Texture2D nearImageTexture;
 Texture2D depthTexture;
 Texture2DMS<float4> depthTextureMS;
 Texture2D lowResDepthTexture;
+Texture2D hiResDepthTexture;
 Texture2D<uint> glowTexture;
 
 Texture2D inscatterTexture;			// Far, or default inscatter
@@ -225,6 +226,7 @@ vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
 	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy
 										,imageTexture
 										,nearImageTexture
+										,hiResDepthTexture
 										,lowResDepthTexture
 										,depthTexture
 										,depthTextureMS
@@ -243,6 +245,7 @@ vec4 NearFarDepthCloudBlendPS_MSAA(v2f IN) : SV_TARGET
 	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy
 									,imageTexture
 									,nearImageTexture
+									,hiResDepthTexture
 									,lowResDepthTexture
 									,depthTexture
 									,depthTextureMS

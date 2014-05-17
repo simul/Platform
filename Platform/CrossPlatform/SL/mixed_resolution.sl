@@ -107,6 +107,20 @@ void DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,RWTextu
 	target2DTexture[pos.xy]	=vec4(farthest_depth,nearest_depth,edge,0.0);
 }
 
+void SpreadEdge(Texture2D<vec4> sourceDepthTexture,RWTexture2D<vec4> target2DTexture,uint2 pos)
+{
+	float e=0.0;
+	for(int i=-1;i<2;i++)
+	{
+		for(int j=-1;j<2;j++)
+		{
+			e=max(e,sourceDepthTexture[pos.xy+uint2(i,j)].z);
+		}
+	}
+	vec4 res=sourceDepthTexture[pos.xy];
+	res.z=e;
+	target2DTexture[pos.xy]=res;
+}
 
 void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<float4> target2DTexture,uint2 source_dims,uint3 pos,uint2 scale,vec3 depthToLinFadeDistParams)
 {
@@ -152,6 +166,6 @@ void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<flo
 		edge		=f-n;
 		edge		=step(0.002,edge);
 	}
-	target2DTexture[pos.xy]	=vec4(farthest_depth,nearest_depth,edge,0.0);
+	target2DTexture[pos.xy]	=vec4(farthest_depth,nearest_depth,edge,0);
 }
 #endif

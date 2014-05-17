@@ -376,7 +376,7 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context
 	if(buffered)
 		fb->lowResFarFramebufferDx11.Deactivate(context);
 	if(buffered&&doFinalCloudBufferToScreenComposite)
-		CompositeCloudsToScreen(context,view_id,false,hiResDepthTexture,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
+		CompositeCloudsToScreen(context,view_id,false,hiResDepthTexture,hiResDepthTexture,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
 	SIMUL_COMBINED_PROFILE_END(context)
 }
 
@@ -473,6 +473,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 												,int view_id
 												,bool depth_blend
 												,const void* mainDepthTexture
+												,const void* hiResDepthTexture
 												,const void* lowResDepthTexture
 												,const simul::sky::float4& depthViewportXYWH
 												  ,const crossplatform::MixedResolutionStruct &mixedResolutionStruct)
@@ -480,25 +481,26 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	imageTexture->SetResource(fb->lowResFarFramebufferDx11.buffer_texture_SRV);
-	ID3D11ShaderResourceView *depth_SRV=(ID3D11ShaderResourceView*)mainDepthTexture;
+	ID3D11ShaderResourceView *mainDepth_SRV=(ID3D11ShaderResourceView*)mainDepthTexture;
 	bool msaa=false;
-	if(depth_SRV)
+	if(mainDepth_SRV)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-		depth_SRV->GetDesc(&desc);
+		mainDepth_SRV->GetDesc(&desc);
 		msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
 	}
 	if(msaa)
 	{
 		// Set both regular and MSAA depth variables. Which it is depends on the situation.
 		//simul::dx11::setTexture(m_pTonemapEffect,"nearFarDepthTexture"			,(ID3D11ShaderResourceView*)nearFarDepthTexture);
-		simul::dx11::setTexture(m_pTonemapEffect,"depthTextureMS"		,depth_SRV);
+		simul::dx11::setTexture(m_pTonemapEffect,"depthTextureMS"		,mainDepth_SRV);
 	}
 //	else
 	{
-		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"			,depth_SRV);
+		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"			,mainDepth_SRV);
 	}
 	// The low res depth texture contains the total near and far depths in its x and y.
+	simul::dx11::setTexture(m_pTonemapEffect,"hiResDepthTexture"	,(ID3D11ShaderResourceView*)hiResDepthTexture);
 	simul::dx11::setTexture(m_pTonemapEffect,"lowResDepthTexture"	,(ID3D11ShaderResourceView*)lowResDepthTexture);
 	simul::dx11::setTexture(m_pTonemapEffect,"nearImageTexture"		,(ID3D11ShaderResourceView*)fb->lowResNearFramebufferDx11.buffer_texture_SRV);
 	simul::dx11::setTexture(m_pTonemapEffect,"inscatterTexture"		,(ID3D11ShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());

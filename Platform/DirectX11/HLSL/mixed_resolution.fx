@@ -67,6 +67,12 @@ void CS_DownscaleDepthFarNearFromHiRes(uint3 pos : SV_DispatchThreadID )
 	DownscaleDepthFarNear2(sourceDepthTexture,target2DTexture,source_dims,pos,scale,depthToLinFadeDistParams);
 }
 
+
+[numthreads(8,8,1)]
+void CS_SpreadEdge(uint3 pos : SV_DispatchThreadID )
+{
+	SpreadEdge(sourceDepthTexture,target2DTexture,pos.xy);
+}
 vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
 {
 	//uint2 source_dims;
@@ -104,6 +110,13 @@ technique11 downscale_depth_far_near_from_hires
     }
 }
 
+technique11 spread_edge
+{
+    pass main
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_SpreadEdge()));
+    }
+}
 technique11 make_depth_far_near
 {
     pass main
