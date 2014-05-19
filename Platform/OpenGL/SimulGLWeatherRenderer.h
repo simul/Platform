@@ -15,7 +15,6 @@
 	#pragma warning(disable:4251)
 #endif
 typedef unsigned GLuint;
-class SimulGLSkyRenderer;
 class SimulGLLightningRenderer;
 namespace simul
 {
@@ -32,7 +31,6 @@ public:
 	virtual void Render()=0;
 };
 #endif
-class SimulGLSkyRenderer;
 class SimulGLLightningRenderer;
 class SimulGLAtmosphericsRenderer;
 class SimulGLPrecipitationRenderer;
@@ -42,6 +40,7 @@ namespace simul
 	//! The namespace for the OpenGL platform library and its rendering classes.
 	namespace opengl
 	{
+		class SimulGLSkyRenderer;
 		class SimulGLCloudRenderer;
 		class SimulGL2DCloudRenderer;
 		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer

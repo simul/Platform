@@ -25,12 +25,12 @@ namespace simul
 		class SkyKeyframer;
 		class OvercastCallback;
 	}
-}
-
-//! A sky rendering class for OpenGL.
-SIMUL_OPENGL_EXPORT_CLASS SimulGLSkyRenderer : public simul::sky::BaseSkyRenderer
-{
-public:
+	namespace opengl
+	{
+		//! A sky rendering class for OpenGL.
+		SIMUL_OPENGL_EXPORT_CLASS SimulGLSkyRenderer : public simul::sky::BaseSkyRenderer
+		{
+		public:
 	SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *m);
 	virtual ~SimulGLSkyRenderer();
 	//standard ogl object interface functions
@@ -47,7 +47,7 @@ public:
 	//! Render the stars, as points.
 	bool						RenderPointStars(void *,float exposure);
 	//! Draw the 2D fades to screen for debugging.
-	bool						RenderFades(void *context,int x,int y,int w,int h);
+			bool						RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
 
 	// Implementing simul::sky::SkyTexturesCallback
 	virtual void SetSkyTextureSize(unsigned ){}
@@ -69,7 +69,7 @@ public:
 
 	const		char *GetDebugText();
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
-protected:
+		protected:
 	void		RenderIlluminationBuffer(void *context);
 	simul::opengl::GpuSkyGenerator	gpuSkyGenerator;
 	//! \internal Switch the current program, either sky_program or earthshadow_program.
@@ -160,5 +160,7 @@ protected:
 	short			*short_ptr;
 	void			DrawLines(void *,Vertext *lines,int vertex_count,bool strip=false);
 	void			PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
-};
+		};
+	}
+}
 
