@@ -610,28 +610,23 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pContext,view->GetScreenWidth(),view->GetScreenHeight());
 		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
-		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth()/2);
+		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth());
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
 		{
-			int x0=view->GetScreenWidth()/4;
+			int x0=view->GetScreenWidth()/2;
 			int y0=8;
-			int w=view->GetScreenWidth()/4;
 			if(vertical_screen)
 			{
 				x0=8;
 				y0=view->GetScreenHeight()/2;
-				w=view->GetScreenWidth()/2;
 			}
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(deviceContext,x0,y0,w,view->GetScreenHeight()/2);
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pContext,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
-			int w=view->GetScreenWidth()/4;
-			if(vertical_screen)
-				w=view->GetScreenWidth()/2;
 			simulWeatherRenderer->RenderFramebufferDepth(pContext,view_id,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,w,view->GetScreenHeight()/2);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext,0,0,w,view->GetScreenHeight()/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		}
 		if(ShowDepthBuffers)
 		{

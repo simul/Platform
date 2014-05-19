@@ -257,7 +257,7 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderFades(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
+bool SimulGLSkyRenderer::RenderFades(void *,int x0,int y0,int width,int height)
 {
 	int size=width/3;
 	if(height/4<size)

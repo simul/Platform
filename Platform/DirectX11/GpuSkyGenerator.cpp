@@ -137,7 +137,6 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		gpuSkyConstants.hazeScaleHeightKm	=p.physical.hazeStruct.haze_scale_height_km;
 
 		gpuSkyConstants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-
 		gpuSkyConstants.hazeMie				=(const float*)(p.physical.hazeStruct.haze*p.physical.hazeStruct.mie);
 		gpuSkyConstants.ozone				=(const float*)(p.physical.ozone);
 
@@ -147,7 +146,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		gpuSkyConstants.starlight			=(const float*)(p.physical.starlight);
 		
 		gpuSkyConstants.hazeEccentricity	=1.0;
-		gpuSkyConstants.mieRayleighRatio	=(const float*)(GetMieRayleighRatio(p.physical.hazeStruct.mie,skyInterface->GetRayleigh()));
+		gpuSkyConstants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
 		gpuSkyConstants.emissivity			=ir.emissivity;
 		gpuSkyConstants.yRange				=vec2(0.f,1.f);
 

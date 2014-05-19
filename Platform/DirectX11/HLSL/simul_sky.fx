@@ -1,4 +1,3 @@
-#include "CppHLSL.hlsl"
 #define pi (3.1415926536f)
 
 Texture2D inscTexture;
@@ -23,14 +22,15 @@ SamplerState flareSamplerState
 Texture3D fadeTexture1;
 Texture3D fadeTexture2;
 Texture3D sourceTexture;
-RWTexture2D<vec4> targetTexture;
+RWTexture2D<float4> targetTexture;
 Texture2D lightTable2DTexture;
 
 cbuffer cbPerObject : register(b11)
 {
-	vec4 rect;
+	float4 rect;
 };
 
+#include "CppHLSL.hlsl"
 #include "states.hlsl"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
@@ -45,7 +45,7 @@ struct vertexInput
 
 struct vertexOutput
 {
-    vec4 hPosition		: SV_POSITION;
+    float4 hPosition		: SV_POSITION;
     float3 wDirection		: TEXCOORD0;
 };
 
@@ -57,7 +57,7 @@ struct vertexInput3Dto2D
 
 struct vertexOutput3Dto2D
 {
-    vec4 hPosition		: SV_POSITION;
+    float4 hPosition		: SV_POSITION;
     float2 texCoords		: TEXCOORD0;
 };
 
@@ -67,7 +67,7 @@ struct vertexOutput3Dto2D
 vertexOutput VS_Main(vertexInput IN) 
 {
     vertexOutput OUT;
-    OUT.hPosition	=mul(worldViewProj,vec4(IN.position.xyz,1.0));
+    OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
     OUT.wDirection	=normalize(IN.position.xyz);
     return OUT;
 }
@@ -76,12 +76,12 @@ vertexOutput VS_Cubemap(vertexInput IN)
 {
     vertexOutput OUT;
 	// World matrix would be identity.
-    OUT.hPosition	=vec4(IN.position.xyz,1.0);
+    OUT.hPosition	=float4(IN.position.xyz,1.0);
     OUT.wDirection	=normalize(IN.position.xyz);
     return OUT;
 }
 
-float3 InscatterFunction(vec4 inscatter_factor,float cos0)
+float3 InscatterFunction(float4 inscatter_factor,float cos0)
 {
 	float BetaRayleigh	=CalcRayleighBeta(cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
@@ -91,7 +91,7 @@ float3 InscatterFunction(vec4 inscatter_factor,float cos0)
 	return result;
 }
 
-vec4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
+float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float alt_km		=eyePosition.z/1000.0;
 	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm
@@ -109,7 +109,7 @@ vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN)
 		{ 0.0, 1.0},
 	};
 	float2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(float2(-1.0,-1.0)+2.0*pos,0.0,1.0);
+	OUT.hPosition	=float4(float2(-1.0,-1.0)+2.0*pos,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
 #ifdef REVERSE_DEPTH
 	OUT.hPosition.z	=0.0; 
@@ -120,12 +120,12 @@ vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN)
     return OUT;
 }
 
-vec4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
+float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float3 texc=float3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
-	vec4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
-	vec4 colour2=fadeTexture2.Sample(cmcSamplerState,texc);
-	vec4 result=lerp(colour1,colour2,skyInterp);
+	float4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
+	float4 colour2=fadeTexture2.Sample(cmcSamplerState,texc);
+	float4 result=lerp(colour1,colour2,skyInterp);
     return result;
 }
 
@@ -137,12 +137,12 @@ vec4 PS_OvercastInscatter(vertexOutput3Dto2D IN): SV_TARGET
     return OvercastInscatter(inscTexture,illuminationTexture,fade_texc,alt_km,maxFadeDistanceKm,overcast,overcastBaseKm,overcastRangeKm,targetTextureSize);
 }
 
-vec4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
+float4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float3 texc=float3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
-	vec4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
-	vec4 colour2=fadeTexture2.Sample(cmcSamplerState,texc);
-	vec4 result;
+	float4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
+	float4 colour2=fadeTexture2.Sample(cmcSamplerState,texc);
+	float4 result;
 	result.rgb=lerp(colour1.rgb,colour2.rgb,skyInterp);
 	result.a=1.0;
     return result;
@@ -159,7 +159,7 @@ vertexOutput3Dto2D VS_ShowFade(idOnly IN)
 		{ 0.0, 1.0},
 	};
 	float2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
+	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
 #ifdef REVERSE_DEPTH
 	OUT.hPosition.z	=0.0; 
@@ -170,40 +170,35 @@ vertexOutput3Dto2D VS_ShowFade(idOnly IN)
     return OUT;
 }
 
-vec4 PS_ShowFadeTable(vertexOutput3Dto2D IN): SV_TARGET
+float4 PS_ShowFadeTable(vertexOutput3Dto2D IN): SV_TARGET
 {
-	vec4 result=inscTexture.Sample(cmcSamplerState,IN.texCoords.xy);
+	float4 result=inscTexture.Sample(cmcSamplerState,IN.texCoords.xy);
 	result.rb+=overlayAlpha*result.a;
-    return vec4(result.rgb,1);
+    return float4(result.rgb,1);
 }
 
-vec4 PS_Colour(vertexOutput3Dto2D IN): SV_TARGET
-{
-    return colour;
-}
-
-vec4 PS_ShowIlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
+float4 PS_ShowIlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
 	return ShowIlluminationBuffer(inscTexture,IN.texCoords);
 }
 
-vec4 PS_ShowFadeTexture(vertexOutput3Dto2D IN): SV_TARGET
+float4 PS_ShowFadeTexture(vertexOutput3Dto2D IN): SV_TARGET
 {
-	vec4 result=fadeTexture1.Sample(cmcSamplerState,float3(altitudeTexCoord,IN.texCoords.yx));
-    return vec4(result.rgb,1);
+	float4 result=fadeTexture1.Sample(cmcSamplerState,float3(altitudeTexCoord,IN.texCoords.yx));
+    return float4(result.rgb,1);
 }
 
-vec4 PS_Show3DLightTable(vertexOutput3Dto2D IN): SV_TARGET
+float4 PS_Show3DLightTable(vertexOutput3Dto2D IN): SV_TARGET
 {
-	vec4 result=fadeTexture1.Sample(samplerStateNearest,vec3(IN.texCoords.y,(float(cycled_index)+.5)/3.0,IN.texCoords.x));
-    return vec4(result.rgb,1);
+	float4 result=fadeTexture1.Sample(samplerStateNearest,vec3(IN.texCoords.y,(float(cycled_index)+.5)/3.0,IN.texCoords.x));
+    return float4(result.rgb,1);
 }
 
-vec4 PS_Show2DLightTable(vertexOutput3Dto2D IN): SV_TARGET
+float4 PS_Show2DLightTable(vertexOutput3Dto2D IN): SV_TARGET
 {
-	vec4 result=texture_nearest_lod(lightTable2DTexture,IN.texCoords.yx,0);
+	float4 result=texture_nearest_lod(lightTable2DTexture,IN.texCoords.yx,0);
 
-    return vec4(result.rgb,1);
+    return float4(result.rgb,1);
 }
 
 [numthreads(1,1,1)]
@@ -232,13 +227,13 @@ struct indexVertexInput
 
 struct svertexOutput
 {
-    vec4 hPosition		: SV_POSITION;
+    float4 hPosition		: SV_POSITION;
     float2 tex				: TEXCOORD0;
 };
 
 struct starsVertexOutput
 {
-    vec4 hPosition		: SV_POSITION;
+    float4 hPosition		: SV_POSITION;
     float tex				: TEXCOORD0;
 };
 
@@ -253,7 +248,7 @@ svertexOutput VS_Sun(indexVertexInput IN)
 		{-1.0, 1.0},
 	};
 	vec3 pos=vec3(poss[IN.vertex_id],1.0/tan(radiusRadians));
-    OUT.hPosition=mul(worldViewProj,vec4(pos,1.0));
+    OUT.hPosition=mul(worldViewProj,float4(pos,1.0));
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
 #ifdef REVERSE_DEPTH
 	OUT.hPosition.z = 0.0f; 
@@ -273,7 +268,7 @@ struct starsVertexInput
 starsVertexOutput VS_Stars(starsVertexInput IN) 
 {
     starsVertexOutput OUT;
-    OUT.hPosition=mul(worldViewProj,vec4(IN.position.xyz,1.0));
+    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
 
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
 #ifdef REVERSE_DEPTH
@@ -285,10 +280,10 @@ starsVertexOutput VS_Stars(starsVertexInput IN)
     return OUT;
 }
 
-vec4 PS_Stars( starsVertexOutput IN): SV_TARGET
+float4 PS_Stars( starsVertexOutput IN): SV_TARGET
 {
 	float3 colour=float3(1.0,1.0,1.0)*clamp(starBrightness*IN.tex,0.0,1.0);
-	return vec4(colour,1.0);
+	return float4(colour,1.0);
 }
 
 float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDir)
@@ -312,7 +307,7 @@ float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDi
 
 // Sun could be overbright. So the colour is in the range [0,1], and a brightness factor is
 // stored in the alpha channel.
-vec4 PS_Sun( svertexOutput IN): SV_TARGET
+float4 PS_Sun( svertexOutput IN): SV_TARGET
 {
 	float r=2.0*length(IN.tex);
 	if(r>2.0)
@@ -322,26 +317,26 @@ vec4 PS_Sun( svertexOutput IN): SV_TARGET
 	//	discard;
 		brightness=colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
 	float3 result=brightness*colour.rgb;
-	return vec4(result,1.f);
+	return float4(result,1.f);
 }
 
-vec4 PS_SunQuery( svertexOutput IN): SV_TARGET
+float4 PS_SunQuery( svertexOutput IN): SV_TARGET
 {
 	float r=2.0*length(IN.tex);
 	if(r>1.0)
 		discard;
-	return vec4(1.0,0.0,0.0,1.0);
+	return float4(1.0,0.0,0.0,1.0);
 }
-vec4 PS_Flare( svertexOutput IN): SV_TARGET
+float4 PS_Flare( svertexOutput IN): SV_TARGET
 {
 	float3 output=colour.rgb*flareTexture.Sample(flareSamplerState,float2(.5f,.5f)+0.5f*IN.tex).rgb;
 
-	return vec4(output,1.f);
+	return float4(output,1.f);
 }
 
-vec4 PS_Planet(svertexOutput IN): SV_TARGET
+float4 PS_Planet(svertexOutput IN): SV_TARGET
 {
-	vec4 result=flareTexture.Sample(flareSamplerState,float2(.5f,.5f)-0.5f*IN.tex);
+	float4 result=flareTexture.Sample(flareSamplerState,float2(.5f,.5f)-0.5f*IN.tex);
 	// IN.tex is +- 1.
 	float3 normal;
 	normal.x=IN.tex.x;
@@ -364,7 +359,7 @@ technique11 simul_show_fade_table
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTable()));
@@ -377,7 +372,7 @@ technique11 show_illumination_buffer
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowIlluminationBuffer()));
@@ -390,23 +385,10 @@ technique11 simul_show_fade_texture
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTexture()));
-    }
-}
-
-technique11 colour_technique
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Colour()));
     }
 }
 
@@ -416,7 +398,7 @@ technique11 show_light_table
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Show3DLightTable()));
@@ -429,7 +411,7 @@ technique11 show_2d_light_table
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Show2DLightTable()));
@@ -442,7 +424,7 @@ technique11 simul_fade_3d_to_2d
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
@@ -455,7 +437,7 @@ technique11 overcast_inscatter
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(DontBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_OvercastInscatter()));
@@ -468,7 +450,7 @@ technique11 skylight_and_overcast
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_SkylightAndOvercast3Dto2D()));
@@ -481,7 +463,7 @@ technique11 illumination_buffer
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_IlluminationBuffer()));
@@ -497,7 +479,7 @@ technique11 simul_stars
 		SetVertexShader(CompileShader(vs_4_0,VS_Stars()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Stars()));
 		SetDepthStencilState( TestDepth, 0 );
-		SetBlendState(AddBlend, vec4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
     }
 }
 
@@ -511,7 +493,7 @@ technique11 simul_sun
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
 		SetDepthStencilState(TestDepth,0);
-		SetBlendState(AddBlend,vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
+		SetBlendState(AddBlend,float4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
     }
 }
 
@@ -525,7 +507,7 @@ technique11 sun_query
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_SunQuery()));
 		SetDepthStencilState(TestDepth,0);
-		SetBlendState(AddBlend,vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
+		SetBlendState(AddBlend,float4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
     }
 }
 
@@ -539,7 +521,7 @@ technique11 simul_flare
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Flare()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
 
@@ -552,7 +534,7 @@ technique11 simul_planet
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
 		SetDepthStencilState( TestDepth, 0 );
-		SetBlendState(AlphaBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
 

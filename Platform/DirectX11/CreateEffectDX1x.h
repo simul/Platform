@@ -164,7 +164,7 @@ namespace simul
 	{
 		enum ShaderBuildMode
 		{
-			ALWAYS_BUILD=1,BUILD_IF_CHANGED,NEVER_BUILD,UNKNOWN
+			ALWAYS_BUILD=1,BUILD_IF_CHANGED,NEVER_BUILD
 		};
 		//! Find the camera position and view direction from the given view matrix.
 		extern SIMUL_DIRECTX11_EXPORT void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical=false);
@@ -225,21 +225,15 @@ namespace simul
 		void SIMUL_DIRECTX11_EXPORT unbindTextures			(ID3DX11Effect *effect);
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
-		//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename.
-		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename);
-//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename. In that case, the defines are ignored.
-		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect
-												   ,const char *filename
-												   ,const std::map<std::string,std::string>&defines
-												   ,unsigned int shader_flags=D3DCOMPILE_OPTIMIZATION_LEVEL3
-												   ,ShaderBuildMode buildMode=UNKNOWN
-												   ,bool saveBinary=true);
 	}
 }
 
 typedef long HRESULT;
 extern SIMUL_DIRECTX11_EXPORT ID3D11ComputeShader *LoadComputeShader(ID3D11Device *d3dDevice,const char *filename);
-
+//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename.
+extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename);
+//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename. In that case, the defines are ignored.
+extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines,unsigned int shader_flags=D3DCOMPILE_OPTIMIZATION_LEVEL3);
 extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8);
 extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines);
 

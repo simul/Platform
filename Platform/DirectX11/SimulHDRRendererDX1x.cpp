@@ -133,21 +133,18 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	int H=Height;
 	if(!H||!W)
 		return;
-	if(Glow)
-	{
-		std::map<std::string,std::string> defs;
-		int scan_smem_size			=max3(H,W,(int)threadsPerGroup*2);
-		int texels_per_thread = (H + threadsPerGroup - 1) / threadsPerGroup;
-	//	int texels_per_thread		= (std::max(H,W) + threadsPerGroup - 1) / threadsPerGroup;
-		defs["SCAN_SMEM_SIZE"]	=string_format("%d",scan_smem_size);
-		defs["TEXELS_PER_THREAD"]=string_format("%d",texels_per_thread);
-		defs["THREADS_PER_GROUP"]=string_format("%d",threadsPerGroup);
-		defs["NUM_IMAGE_COLS"]	=string_format("%d",W);
-		defs["NUM_IMAGE_ROWS"]	=string_format("%d",H);
+	std::map<std::string,std::string> defs;
+	int scan_smem_size			=max3(H,W,(int)threadsPerGroup*2);
+	int texels_per_thread = (H + threadsPerGroup - 1) / threadsPerGroup;
+//	int texels_per_thread		= (std::max(H,W) + threadsPerGroup - 1) / threadsPerGroup;
+	defs["SCAN_SMEM_SIZE"]	=string_format("%d",scan_smem_size);
+	defs["TEXELS_PER_THREAD"]=string_format("%d",texels_per_thread);
+	defs["THREADS_PER_GROUP"]=string_format("%d",threadsPerGroup);
+	defs["NUM_IMAGE_COLS"]	=string_format("%d",W);
+	defs["NUM_IMAGE_ROWS"]	=string_format("%d",H);
 	
-		CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs,0,ALWAYS_BUILD,false);
-		hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
-	}
+	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs,0);
+	hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
 }
 
 void SimulHDRRendererDX1x::InvalidateDeviceObjects()
@@ -268,9 +265,9 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 		return;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	static int g_NumApproxPasses=3;
-	static int	g_MaxApproxPasses = 8;
-	static float g_FilterRadius = 30;
+static int g_NumApproxPasses=3;
+static int	g_MaxApproxPasses = 8;
+static float g_FilterRadius = 30;
 	// Render to the low-res glow.
 	if(glowTechnique)
 	{

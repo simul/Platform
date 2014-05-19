@@ -649,7 +649,7 @@ void SimulSkyRenderer::RenderPlanet(void* ,void* tex,float rad,const float *dir,
 	RenderAngledQuad(planet_dir,planet_angular_size);
 }
 
-bool SimulSkyRenderer::RenderFades(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
+bool SimulSkyRenderer::RenderFades(void *,int x0,int y0,int width,int height)
 {
 	int size=width/6;
 	if(height/4<size)
