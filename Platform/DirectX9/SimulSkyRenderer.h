@@ -72,7 +72,7 @@ public:
 	//! Render the stars, as points.
 	bool						RenderPointStars(void *,float exposure);
 	//! Draw the fade textures to screen
-	bool						RenderFades(void *context,int x,int y,int w,int h);
+	bool						RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
 #ifdef XBOX
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);

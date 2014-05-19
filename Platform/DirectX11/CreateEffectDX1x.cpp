@@ -587,7 +587,14 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *binary_filename_
 	return hr;
 }
 
-HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8
+											  ,D3D10_SHADER_MACRO *macros
+											  ,UINT ShaderFlags
+											  ,UINT FXFlags
+											  ,ID3D11Device *pDevice
+											  ,ID3DX11Effect **ppEffect
+											  ,ShaderBuildMode buildMode
+											  ,bool saveBinary)
 {
 	HRESULT hr=S_OK;
 	int pos=(int)text_filename_utf8.find_last_of("/");
@@ -612,8 +619,9 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	void *textData=NULL;
 	unsigned textSize=0;
 	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
+	bool do_build=(buildMode==ALWAYS_BUILD);
 	// See if there's a binary that's newer than the file date.
-	if(shaderBuildMode==BUILD_IF_CHANGED)
+	if(buildMode==BUILD_IF_CHANGED)
 	{
 		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
 		double binary_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
@@ -640,67 +648,70 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 			if(errorMsgs)
 				errorMsgs->Release();
 		}
-		if(!changes_detected&&binary_date_jdn>0)
-		{
-			hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
-			if(hr==S_OK)
-				return S_OK;
-		}
+		if(changes_detected||binary_date_jdn<=0)
+			do_build=true;
 	}
-	ID3DBlob *binaryBlob	=NULL;
-	ID3DBlob *errorMsgs		=NULL;
-	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
-	hr=D3DCompile(		textData,
-						textSize,
-						text_filename_utf8.c_str(),	//LPCSTR pSourceName,
-						macros,						//const D3D_SHADER_MACRO *pDefines,
-						&shaderIncludeHandler,		//ID3DInclude *pInclude,
-						NULL,						//LPCSTR pEntrypoint,
-						"fx_5_0",					//LPCSTR pTarget,
-						ShaderFlags,				//UINT Flags1,
-						FXFlags,					//UINT Flags2,
-						&binaryBlob,				//ID3DBlob **ppCode,
-						&errorMsgs					//ID3DBlob **ppErrorMsgs
-						);
-	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(textData);
-	if(hr==S_OK)
+	if(do_build)
 	{
-		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
+		ID3DBlob *binaryBlob	=NULL;
+		ID3DBlob *errorMsgs		=NULL;
+		ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
+		hr=D3DCompile(		textData,
+							textSize,
+							text_filename_utf8.c_str(),	//LPCSTR pSourceName,
+							macros,						//const D3D_SHADER_MACRO *pDefines,
+							&shaderIncludeHandler,		//ID3DInclude *pInclude,
+							NULL,						//LPCSTR pEntrypoint,
+							"fx_5_0",					//LPCSTR pTarget,
+							ShaderFlags,				//UINT Flags1,
+							FXFlags,					//UINT Flags2,
+							&binaryBlob,				//ID3DBlob **ppCode,
+							&errorMsgs					//ID3DBlob **ppErrorMsgs
+							);
+		simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(textData);
 		if(hr==S_OK)
 		{
-			simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
+			hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
+			if(hr==S_OK&&saveBinary)
+				simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
 		}
-	}
-	else if(errorMsgs)
-	{
-		char *errs=(char*)errorMsgs->GetBufferPointer();
-		std::string err(errs);
-		int pos=0;
-		while(pos>=0&&pos<(int)err.length())
+		else if(errorMsgs)
 		{
-			int last=pos;
-			pos=(int)err.find("\n",pos+1);
-			std::string line=err.substr(last,pos-last);
-			if(line.find(":")>3)
+			char *errs=(char*)errorMsgs->GetBufferPointer();
+			std::string err(errs);
+			int pos=0;
+			while(pos>=0&&pos<(int)err.length())
 			{
-				std::string path=path_utf8;
-				char full[_MAX_PATH];
-				if( _fullpath( full, path_utf8.c_str(), _MAX_PATH ) != NULL )
-					path=full;
-				path+="/";
-				line=path+line;
-			}
-			std::cerr<<line.c_str()<<std::endl;
-		};//text_filename_utf8.c_str()<<
+				int last=pos;
+				pos=(int)err.find("\n",pos+1);
+				std::string line=err.substr(last,pos-last);
+				if(line.find(":")>3)
+				{
+					std::string path=path_utf8;
+					char full[_MAX_PATH];
+					if( _fullpath( full, path_utf8.c_str(), _MAX_PATH ) != NULL )
+						path=full;
+					path+="/";
+					line=path+line;
+				}
+				std::cerr<<line.c_str()<<std::endl;
+			};
+		}
+		if(binaryBlob)
+			binaryBlob->Release();
+		if(errorMsgs)
+			errorMsgs->Release();
 	}
-	if(binaryBlob)
-		binaryBlob->Release();
-	if(errorMsgs)
-		errorMsgs->Release();
+	else
+	{
+		hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
+		if(hr==S_OK)
+			return S_OK;
+	}
 	return hr;
 }
 
-HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename)
 {
 	std::map<std::string,std::string> defines;
 	return CreateEffect(d3dDevice,effect,filename,defines);
@@ -751,11 +762,15 @@ ID3D11ComputeShader *LoadComputeShader(ID3D11Device *pd3dDevice,const char *file
 	}
 }
 
-HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,unsigned int shader_flags)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect
+					 ,const char *filenameUtf8
+					 ,const std::map<std::string,std::string>&defines
+					 ,unsigned int shader_flags,ShaderBuildMode buildMode,bool saveBinary)
 {
 	SIMUL_ASSERT(d3dDevice!=NULL);
+	if(buildMode==UNKNOWN)
+		buildMode=shaderBuildMode;
 	HRESULT hr=S_OK;
-	//std::string text_filename=(filenameUtf8);
 	std::string filename_utf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filenameUtf8,shaderPathsUtf8);
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filename_utf8.c_str()))
 	{
@@ -789,7 +804,7 @@ HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *
 											shader_flags,
 											flags,
 											d3dDevice,
-											effect);
+											effect,buildMode,saveBinary);
 		if(hr==S_OK)
 			break;
 		std::string err="";
