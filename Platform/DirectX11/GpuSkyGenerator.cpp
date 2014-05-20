@@ -47,6 +47,7 @@ void GpuSkyGenerator::InvalidateDeviceObjects()
 	m_pd3dDevice=NULL;
 	dens_tex.release();
 	optd_tex.release();
+	src_tex.release();
 	tables_checksum=0;
 }
 
@@ -56,6 +57,7 @@ void GpuSkyGenerator::RecompileShaders()
 	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_gpu_sky.fx");
 	if(effect)
 	{
+		copyComputeTechnique	=effect->GetTechniqueByName("gpu_copy");
 		lossComputeTechnique	=effect->GetTechniqueByName("gpu_loss_compute");
 		inscComputeTechnique	=effect->GetTechniqueByName("gpu_insc_compute");
 		skylComputeTechnique	=effect->GetTechniqueByName("gpu_skyl_compute");
@@ -102,7 +104,14 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		tables_checksum=0;
 	dens_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,a.table_size,1,DXGI_FORMAT_R32G32B32A32_FLOAT,false);
 	optd_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,a.table_size,a.table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,false,false);
-
+	int src_size=0;
+	if(!p.physicalSky)
+	{
+		int src_w,src_l,src_d;
+		p.colour.loss->GetSizes(src_w,src_l,src_d);
+		src_tex.ensureTexture3DSizeAndFormat(m_pd3dDevice,src_w,src_l,src_d,DXGI_FORMAT_R32G32B32A32_FLOAT,false);
+		src_size=src_w*src_l*src_d;
+	}
 	if(a.tables_checksum!=tables_checksum)
 	{
 		dens_tex.setTexels(m_pImmediateContext,(unsigned*)a.density_table,0,a.table_size);
@@ -176,13 +185,18 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	int end_loss	=range(end_step				,0,xy_size);
 	int num_loss	=range(end_loss-start_loss	,0,xy_size);
 	int subgrid=(num_loss+BLOCKWIDTH-1)/BLOCKWIDTH;
-	
+	ID3DX11EffectTechnique *tech=copyComputeTechnique;
+	if(p.physicalSky)
+		tech=lossComputeTechnique;
+	else
+		src_tex.setTexels(m_pImmediateContext,p.colour.loss->GetDataPointer(),0,src_size);
 	if(subgrid>0)
 	{
 		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalLoss[cycled_index]->unorderedAccessView);
+		simul::dx11::setTexture(effect,"source_texture",src_tex.shaderResourceView);
 		gpuSkyConstants.threadOffset=uint3(start_loss,0,0);
 		gpuSkyConstants.Apply(m_pImmediateContext);
-		V_CHECK(ApplyPass(m_pImmediateContext,lossComputeTechnique->GetPassByIndex(0)));
+		V_CHECK(ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 	}
 	int start_insc	=range(start_step-xy_size	,0,xy_size);
@@ -192,27 +206,37 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	loss_texture->SetResource(finalLoss[cycled_index]->shaderResourceView);
 	optical_depth_texture->SetResource(optd_tex.shaderResourceView);
 	subgrid=(num_insc+BLOCKWIDTH-1)/BLOCKWIDTH;
+	if(p.physicalSky)
+		tech=inscComputeTechnique;
+	else
+		src_tex.setTexels(m_pImmediateContext,p.colour.insc->GetDataPointer(),0,src_size);
 	if(subgrid>0)
 	{
 		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalInsc[cycled_index]->unorderedAccessView);
+		simul::dx11::setTexture(effect,"source_texture",src_tex.shaderResourceView);
 		gpuSkyConstants.threadOffset=uint3(start_insc,0,0);
 		gpuSkyConstants.Apply(m_pImmediateContext);
-		V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
+		V_CHECK(ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 	}
 	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
 	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 3")
+	if(p.physicalSky)
+		tech=skylComputeTechnique;
+	else
+		src_tex.setTexels(m_pImmediateContext,p.colour.skyl->GetDataPointer(),0,src_size);
 	int start_skyl	=range(start_step-2*xy_size	,0	,xy_size);
 	int end_skyl	=range(end_step-2*xy_size	,0	,xy_size);
 	int num_skyl	=range(end_skyl-start_skyl	,0	,xy_size);
-	insc_texture->SetResource(finalInsc[cycled_index]->shaderResourceView);
-	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalSkyl[cycled_index]->unorderedAccessView);
-	gpuSkyConstants.threadOffset=uint3(start_skyl,0,0);
-	gpuSkyConstants.Apply(m_pImmediateContext);
-	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
 	subgrid=(num_skyl+BLOCKWIDTH-1)/BLOCKWIDTH;
+	insc_texture->SetResource(finalInsc[cycled_index]->shaderResourceView);
 	if(subgrid>0)
 	{
+		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalSkyl[cycled_index]->unorderedAccessView);
+		simul::dx11::setTexture(effect,"source_texture",src_tex.shaderResourceView);
+		gpuSkyConstants.threadOffset=uint3(start_skyl,0,0);
+		gpuSkyConstants.Apply(m_pImmediateContext);
+		V_CHECK(ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 	}
 	//light_table
@@ -238,7 +262,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",NULL);
 	loss_texture->SetResource(NULL);
 	insc_texture->SetResource(NULL);
-	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
+	V_CHECK(ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0)));
 	
 	fadeTexIndex[cycled_index]=p.fill_up_to_texels;
 

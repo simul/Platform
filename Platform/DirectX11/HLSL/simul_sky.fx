@@ -40,18 +40,18 @@ cbuffer cbPerObject : register(b11)
 
 struct vertexInput
 {
-    float3 position			: POSITION;
+    vec3 position			: POSITION;
 };
 
 struct vertexOutput
 {
     vec4 hPosition		: SV_POSITION;
-    float3 wDirection		: TEXCOORD0;
+    vec3 wDirection		: TEXCOORD0;
 };
 
 struct vertexInput3Dto2D
 {
-    float3 position			: POSITION;
+    vec3 position			: POSITION;
     float2 texCoords		: TEXCOORD0;
 };
 
@@ -81,13 +81,13 @@ vertexOutput VS_Cubemap(vertexInput IN)
     return OUT;
 }
 
-float3 InscatterFunction(vec4 inscatter_factor,float cos0)
+vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 {
 	float BetaRayleigh	=CalcRayleighBeta(cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
-	float3 BetaTotal	=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
-	float3 result		=BetaTotal*inscatter_factor.rgb;
+	vec3 BetaTotal	=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
+		/(vec3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
+	vec3 result		=BetaTotal*inscatter_factor.rgb;
 	return result;
 }
 
@@ -122,7 +122,7 @@ vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN)
 
 vec4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 {
-	float3 texc=float3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
+	vec3 texc=vec3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
 	vec4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
 	vec4 colour2=fadeTexture2.Sample(cmcSamplerState,texc);
 	vec4 result=lerp(colour1,colour2,skyInterp);
@@ -139,7 +139,7 @@ vec4 PS_OvercastInscatter(vertexOutput3Dto2D IN): SV_TARGET
 
 vec4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
 {
-	float3 texc=float3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
+	vec3 texc=vec3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
 	vec4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
 	vec4 colour2=fadeTexture2.Sample(cmcSamplerState,texc);
 	vec4 result;
@@ -189,7 +189,7 @@ vec4 PS_ShowIlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 
 vec4 PS_ShowFadeTexture(vertexOutput3Dto2D IN): SV_TARGET
 {
-	vec4 result=fadeTexture1.Sample(cmcSamplerState,float3(altitudeTexCoord,IN.texCoords.yx));
+	vec4 result=fadeTexture1.Sample(cmcSamplerState,vec3(altitudeTexCoord,IN.texCoords.yx));
     return vec4(result.rgb,1);
 }
 
@@ -266,7 +266,7 @@ svertexOutput VS_Sun(indexVertexInput IN)
 
 struct starsVertexInput
 {
-    float3 position			: POSITION;
+    vec3 position			: POSITION;
     float tex				: TEXCOORD0;
 };
 
@@ -287,11 +287,11 @@ starsVertexOutput VS_Stars(starsVertexInput IN)
 
 vec4 PS_Stars( starsVertexOutput IN): SV_TARGET
 {
-	float3 colour=float3(1.0,1.0,1.0)*clamp(starBrightness*IN.tex,0.0,1.0);
+	vec3 colour=vec3(1.0,1.0,1.0)*clamp(starBrightness*IN.tex,0.0,1.0);
 	return vec4(colour,1.0);
 }
 
-float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDir)
+float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 {
 	float roughness2 = roughness * roughness;
 	float2 oren_nayar_fraction = roughness2 / (float2(roughness2,roughness2)+ float2(0.33, 0.09));
@@ -301,8 +301,8 @@ float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDi
 	float2 cos_theta2 = cos_theta * cos_theta;
 	float u=saturate((1-cos_theta2.x) * (1-cos_theta2.y));
 	float sin_theta = sqrt(u);
-	float3 light_plane = normalize(lightDir - cos_theta.x * normal);
-	float3 view_plane = normalize(view - cos_theta.y * normal);
+	vec3 light_plane = normalize(lightDir - cos_theta.x * normal);
+	vec3 view_plane = normalize(view - cos_theta.y * normal);
 	float cos_phi = saturate(dot(light_plane, view_plane));
 	// Composition
 	float diffuse_oren_nayar = cos_phi * sin_theta / max(0.00001,max(cos_theta.x, cos_theta.y));
@@ -314,14 +314,14 @@ float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDi
 // stored in the alpha channel.
 vec4 PS_Sun( svertexOutput IN): SV_TARGET
 {
-	float r=2.0*length(IN.tex);
-	if(r>2.0)
+	float r=4.0*length(IN.tex);
+	if(r>4.0)
 		discard;
-	float brightness=1.0;
+	float brightness=colour.a;
 	if(r>1.0)
 	//	discard;
-		brightness=colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
-	float3 result=brightness*colour.rgb;
+		brightness=1.0/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
+	vec3 result=brightness*colour.rgb;
 	return vec4(result,1.f);
 }
 
@@ -334,7 +334,7 @@ vec4 PS_SunQuery( svertexOutput IN): SV_TARGET
 }
 vec4 PS_Flare( svertexOutput IN): SV_TARGET
 {
-	float3 output=colour.rgb*flareTexture.Sample(flareSamplerState,float2(.5f,.5f)+0.5f*IN.tex).rgb;
+	vec3 output=colour.rgb*flareTexture.Sample(flareSamplerState,float2(.5f,.5f)+0.5f*IN.tex).rgb;
 
 	return vec4(output,1.f);
 }
@@ -343,7 +343,7 @@ vec4 PS_Planet(svertexOutput IN): SV_TARGET
 {
 	vec4 result=flareTexture.Sample(flareSamplerState,float2(.5f,.5f)-0.5f*IN.tex);
 	// IN.tex is +- 1.
-	float3 normal;
+	vec3 normal;
 	normal.x=IN.tex.x;
 	normal.y=IN.tex.y;
 	float l=length(IN.tex);
@@ -351,7 +351,7 @@ vec4 PS_Planet(svertexOutput IN): SV_TARGET
 		return vec4(0,0.0,0,1.0);
 	//	discard;
 	normal.z	=-sqrt(1.0-l*l);
-	float light	=approx_oren_nayar(0.2,float3(0,0,1.0),normal,lightDir.xyz);
+	float light	=approx_oren_nayar(0.2,vec3(0,0,1.0),normal,lightDir.xyz);
 	result.rgb	*=colour.rgb;
 	result.rgb	*=light;
 	result.a	*=saturate((0.97-l)/0.03);
