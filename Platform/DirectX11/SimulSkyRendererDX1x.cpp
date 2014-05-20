@@ -417,9 +417,6 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	gpuSkyGenerator.RecompileShaders();
 }
 
-// Here we will suppose that after multiplying by "exposure", we obtain the final
-// brightness (apart from gamma correction).
-// So we don't want exposure*colour to go too far above 1.0
 void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)c;
@@ -431,26 +428,15 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 	// As the sun has angular diameter of about 1/2 a degree,
 	// which is pi/360 or 0.00873 radians (actually 0.0095), the angular area is 
 	// equal to 2 pi/(1-cos(angular_radius)), or about  6.87×10−5 steradians;
-
-	// divide by 6.87×10−5 to get the radiance.
-	sunlight*=14556.0407f;
-	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
+	sunlight*=2700.f;
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
-	float max_bright=exposure*std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
-	if(max_bright>1.0f)
-	{
-		sunlight*=1.0f/max_bright;
-	}
-	else
-		max_bright=1.0f;
-	if(max_bright>1000.0f)
-		max_bright=1000.f;
-	sunlight.w=max_bright;
+	sunlight.w=1.f;
+	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
+	sunlight.w=1.0f/(max_bright*exposure);
+	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
 	vec3 sun_dir(skyKeyframer->GetDirectionToSun());
-	// Get the angular radius in radians:
-	float rads=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
-	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,4.f*rads,sunlight,sun_dir);
+	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,2.f*skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f,sunlight,sun_dir);
 	skyConstants.Apply(pContext);
 	ApplyPass(pContext,m_hTechniqueSun->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);

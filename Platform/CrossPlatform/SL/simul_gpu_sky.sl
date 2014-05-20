@@ -60,15 +60,6 @@ uint3 LinearThreadToPos2D(uint linear_pos,uint3 dims)
 	uint3 pos			=uint3(X,Y,0);
 	return pos;
 }
-uint3 LinearThreadToPos3D(uint linear_pos,uint3 dims)
-{
-	uint u				=linear_pos/dims.x;
-	uint Z				=u/dims.y;
-	uint Y				=u-Z*dims.y;
-	uint X				=linear_pos-u*dims.x;
-	uint3 pos			=uint3(X,Y,Z);
-	return pos;
-}
 
 float getHazeFactorAtAltitude(float alt_km)
 {

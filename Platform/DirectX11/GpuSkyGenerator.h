@@ -55,7 +55,6 @@ namespace simul
 			ID3D11Device*					m_pd3dDevice;
 			ID3D11DeviceContext*			m_pImmediateContext;
 			ID3DX11Effect*					effect;
-			ID3DX11EffectTechnique*			copyComputeTechnique;
 			ID3DX11EffectTechnique*			lossComputeTechnique;
 			ID3DX11EffectTechnique*			inscComputeTechnique;
 			ID3DX11EffectTechnique*			skylComputeTechnique;
@@ -68,7 +67,6 @@ namespace simul
 			TextureStruct					*finalSkyl[3];
 			TextureStruct					*light_table;
 			TextureStruct					dens_tex,optd_tex;
-			TextureStruct					src_tex;
 
 			unsigned						tables_checksum;
 		};

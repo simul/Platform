@@ -10,7 +10,6 @@ uniform sampler2D input_texture;
 uniform sampler2D density_texture;
 uniform sampler3D loss_texture;
 uniform sampler3D insc_texture;
-uniform sampler3D source_texture;
 uniform sampler2D optical_depth_texture;
 uniform sampler2D blackbody_texture;
 RWTexture3D<float4> targetTexture;
@@ -87,18 +86,6 @@ float4 PS_Loss(vertexOutput IN) : SV_TARGET
 	loss				*=previous_loss;
 
     return			loss;
-}
-
-[numthreads(8,1,1)]
-void CS_Copy(uint3 sub_pos	: SV_DispatchThreadID )
-{
-	uint linear_pos		=sub_pos.x+threadOffset.x;
-	uint3 dims;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
-	uint3 pos			=LinearThreadToPos2D(linear_pos,dims);
-	vec3 texCoords		=(vec3)pos/(vec3)dims;
-	vec4 lookup			=texture_clamp_lod(source_texture,pos,0);
-	targetTexture[pos]	=vec4(pos.x/20.0,0,0,1);//lookup;
 }
 
 [numthreads(8,1,1)]
@@ -339,13 +326,5 @@ technique11 gpu_skyl_compute
     pass p0 
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Skyl()));
-    }
-}
-
-technique11 gpu_copy
-{
-    pass p0 
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_Copy()));
     }
 }
