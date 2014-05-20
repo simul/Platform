@@ -163,6 +163,7 @@ namespace simul
 	{
 		std::vector<std::string> shaderPathsUtf8;
 		static std::vector<std::string> texturePathsUtf8;
+		std::string shaderbinPathUtf8="shaderbin\\";
 		void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical)
 		{
 			D3DXMATRIX tmp1,view(v);
@@ -210,6 +211,11 @@ namespace simul
 		void PopShaderPath()
 		{
 			shaderPathsUtf8.pop_back();
+		}
+		void SetShaderBinaryPath(const char *path_utf8)
+		{
+			shaderbinPathUtf8=path_utf8;
+			shaderbinPathUtf8+='\\';
 		}
 		void PushTexturePath(const char *path_utf8)
 		{
@@ -599,7 +605,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	if(dot<0)
 		dot=(int)text_filename_utf8.length();
 	std::string name_utf8=text_filename_utf8.substr(pos+1,dot-pos-1);
-	std::string binary_filename_utf8=name_utf8;
+	std::string binary_filename_utf8=(shaderbinPathUtf8)+name_utf8;
 	// Modify the binary file with the macros so the output is unique to the specified values.
 	int def=0;
 	while(macros&&macros[def].Name!=0)

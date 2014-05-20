@@ -236,6 +236,7 @@ vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
 										,inscatterTexture
 										,nearInscatterTexture
 										,false);
+	result.rgb	=pow(result.rgb,gamma);
 	result.rgb	*=exposure;
 	return result;
 }
@@ -243,18 +244,19 @@ vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
 vec4 NearFarDepthCloudBlendPS_MSAA(v2f IN) : SV_TARGET
 {
 	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy
-									,imageTexture
-									,nearImageTexture
-									,hiResDepthTexture
-									,lowResDepthTexture
-									,depthTexture
-									,depthTextureMS
-									,viewportToTexRegionScaleBias
-									,depthToLinFadeDistParams
-									,hiResToLowResTransformXYWH
-									,inscatterTexture
-									,nearInscatterTexture
-									,true);
+										,imageTexture
+										,nearImageTexture
+										,hiResDepthTexture
+										,lowResDepthTexture
+										,depthTexture
+										,depthTextureMS
+										,viewportToTexRegionScaleBias
+										,depthToLinFadeDistParams
+										,hiResToLowResTransformXYWH
+										,inscatterTexture
+										,nearInscatterTexture
+										,true);
+	result.rgb	=pow(result.rgb,gamma);
 	result.rgb	*=exposure;
 	return result;
 }
@@ -392,7 +394,6 @@ technique11 simul_glow
 		SetPixelShader(CompileShader(ps_4_0,GlowPS()));
     }
 }
-
 
 technique11 show_depth
 {

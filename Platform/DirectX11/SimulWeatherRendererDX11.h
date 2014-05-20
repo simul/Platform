@@ -82,10 +82,7 @@ namespace simul
 			bool Destroy();
 			//! Apply the view and projection matrices, once per frame.
 			void SetMatrices(const simul::math::Matrix4x4 &viewmat,const simul::math::Matrix4x4 &projmat);
-			void RenderSkyAsOverlay(void *context
-											,int view_id											
-											,const math::Matrix4x4 &viewmat
-											,const math::Matrix4x4 &projmat
+			void RenderSkyAsOverlay(crossplatform::DeviceContext &deviceContext
 											,bool is_cubemap
 											,float exposure
 											,bool buffered
@@ -93,26 +90,25 @@ namespace simul
 											,const void* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite);
-			void RenderMixedResolution(	void *context
-										,int view_id
-										,const math::Matrix4x4 &viewmat
-										,const math::Matrix4x4 &projmat
+			void RenderMixedResolution(	crossplatform::DeviceContext &deviceContext
 										,bool is_cubemap
 										,float exposure
+										,float gamma
 										,const void* mainDepthTextureMS	
 										,const void* hiResDepthTexture	
 										,const void* lowResDepthTexture 
 										,const sky::float4& depthViewportXYWH
 										);
 			// This composites the clouds and other buffers to the screen.
-			void CompositeCloudsToScreen(void *context
-												,int view_id
+			void CompositeCloudsToScreen(crossplatform::DeviceContext &deviceContext
+												,float exposure
+												,float gamma
 												,bool depth_blend
 												,const void* mainDepthTexture
 												,const void* hiResDepthTexture
 												,const void* lowResDepthTexture
 												,const simul::sky::float4& viewportRegionXYWH
-													  ,const crossplatform::MixedResolutionStruct &mixedResolutionStruct);
+												,const crossplatform::MixedResolutionStruct &mixedResolutionStruct);
 			void RenderFramebufferDepth(void *context,int view_id,int x0,int y0,int w,int h);
 			void RenderCompositingTextures(void *context,int view_id,int x0,int y0,int w,int h);
 			void RenderPrecipitation(void *context,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
@@ -153,7 +149,7 @@ namespace simul
 			class PrecipitationRenderer	*simulPrecipitationRenderer;
 			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
 			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
-			class LightningRenderer		*simulLightningRenderer;
+			class LightningRenderer					*simulLightningRenderer;
 			typedef std::map<int,simul::dx11::TwoResFramebuffer*> FramebufferMapDx11;
 			// Map from view_id to framebuffer.
 			TwoResFramebuffer *						GetFramebuffer(int view_id);
