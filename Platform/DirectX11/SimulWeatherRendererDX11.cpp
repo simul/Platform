@@ -412,7 +412,7 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	simul::crossplatform::Devi
 		baseAtmosphericsRenderer->RenderInscatter(pContext,hiResDepthTexture,exposure,depthViewportXYWH,false);
 	const sky::float4 noscale(0.f,0.f,1.f,1.f);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-		base2DCloudRenderer->Render(pContext,exposure,false,false,mainDepthTextureMS,UseDefaultFog,false,deviceContext.viewStruct.view_id,depthViewportXYWH,noscale);
+		base2DCloudRenderer->Render(deviceContext,exposure,false,false,mainDepthTextureMS,UseDefaultFog,false,depthViewportXYWH,noscale);
 	
 	fb->hiResFarFramebufferDx11.Deactivate(pContext);
 	

@@ -554,11 +554,11 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 {
 }
 
-bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4&,const simul::sky::float4& )
+bool SimulCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha,const simul::sky::float4&,const simul::sky::float4& )
 {
 	if(rebuild_shaders)
 		RecompileShaders();
-	EnsureTexturesAreUpToDate(context);
+	EnsureTexturesAreUpToDate(deviceContext.platform_context);
 	depth_alpha_tex;
 	default_fog;
 	if(!write_alpha)
@@ -606,7 +606,7 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /
 		delta_t=0;
 	last_time=t;
 
-	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
+	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(deviceContext.viewStruct.view_id);
 	helper->SetChurn(cloudProperties.GetChurn());
 	helper->SetNoFrustumLimit(true);
 	helper->Update((const float*)cam_pos,wind_offset,view_dir,up,delta_t,cubemap);
@@ -689,7 +689,7 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /
 		m_pCloudEffect->SetTechnique(m_hTechniqueCloud);
 
 	//InternalRenderHorizontal(viewport_id);
-	InternalRenderVolumetric(viewport_id);
+	InternalRenderVolumetric(deviceContext.viewStruct.view_id);
 	
 	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
 	PIXEndNamedEvent();

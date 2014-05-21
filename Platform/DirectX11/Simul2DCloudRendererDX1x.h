@@ -34,7 +34,8 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
 			void PreRenderUpdate(void *context);
-			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id
+			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
+				,const void *depth_tex,bool default_fog,bool write_alpha
 				,const simul::sky::float4& viewportTextureRegionXYWH
 				,const simul::sky::float4& );
 			void RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);

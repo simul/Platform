@@ -272,11 +272,12 @@ void SimulGL2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 
-bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool /*cubemap*/,bool /*near_pass*/,const void *depthTexture, bool, bool,int,const simul::sky::float4&,const simul::sky::float4& )
+bool SimulGL2DCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool /*cubemap*/
+									,bool /*near_pass*/,const void *depthTexture, bool, bool,const simul::sky::float4&,const simul::sky::float4& )
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
-	EnsureTexturesAreUpToDate(context);
+	EnsureTexturesAreUpToDate(deviceContext.platform_context);
 	using namespace simul::clouds;
 	if(skyInterface)
 		cloudKeyframer->Update(skyInterface->GetTime());

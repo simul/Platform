@@ -680,10 +680,10 @@ void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
 // We'll then have a global update and per view updates.
 }
 static int test=29999;
-bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bool near_pass,const void *depth_tex
-,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH)
+bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_tex
+,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH)
 {
-	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	ID3D11ShaderResourceView *depthTexture_SRV	=(ID3D11ShaderResourceView *)depth_tex;
     ProfileBlock profileBlock(pContext,cubemap?"SimulCloudRendererDX1x::Render (cubemap side)":"SimulCloudRendererDX1x::Render");
 
@@ -717,13 +717,13 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pClampSamplerState);
 
 	CloudPerViewConstants cloudPerViewConstants;
-	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewport_id,viewportTextureRegionXYWH,mixedResTransformXYWH);
+	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,deviceContext.viewStruct.view_id,viewportTextureRegionXYWH,mixedResTransformXYWH);
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
 	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=effect->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
 		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
 	
-	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
+	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(deviceContext.viewStruct.view_id);
 
 	// Moved from Update function above. See commment.
 	//if (!cubemap)

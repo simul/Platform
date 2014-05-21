@@ -41,7 +41,8 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void PreRenderUpdate(void *context);
 			//! Render the clouds.
-			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id
+			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
+				,const void *depth_alpha_tex,bool default_fog,bool write_alpha
 				,const simul::sky::float4& viewportTextureRegionXYWH
 				,const simul::sky::float4& mixedResTransformXYWH);
 			//! Show the cross sections on-screen.
