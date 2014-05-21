@@ -255,11 +255,7 @@ VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
 	wPosition= mul(pos_local, g_matWorld).xyz;
 	
 	vec3 view=normalize(wPosition.xyz);
-#ifdef Y_VERTICAL
-	float sine=view.y;
-#else
 	float sine=view.z;
-#endif
 	float depth=length(wPosition.xyz)/MAX_FADE_DISTANCE_METRES;
 	//OUT.fade_texc=vec2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5f*(1.f-sine));
 	Output.fade_texc=vec2(sqrt(depth),0.5f*(1.f-sine));

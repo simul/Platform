@@ -117,8 +117,8 @@ namespace simul
 												,const void* mainDepthTextureMS	
 												,const void* hiResDepthTexture	
 												,const void* lowResDepthTexture 
-												,const sky::float4& depthViewportXYWH
-										){}
+												,const sky::float4& depthViewportXYWH)
+			{}
 			//! Call this to draw the clouds after the main scene.
 			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			//! Call this to draw lightning.
