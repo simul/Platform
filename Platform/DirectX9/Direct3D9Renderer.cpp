@@ -213,27 +213,18 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	fTime;fTimeStep;
 	simul::crossplatform::DeviceContext deviceContext;
 	deviceContext.platform_context=pd3dDevice;
-	D3DXMATRIX world,view,proj;
+	deviceContext.viewStruct.view_id=0;
+	D3DXMATRIX world;
 	if(device_reset)
 		RestoreDeviceObjects(pd3dDevice);
 	if(camera)
 	{
-		view=camera->MakeViewMatrix();
-		proj=camera->MakeProjectionMatrix(1.f,250000.f,aspect);
+		deviceContext.viewStruct.view=camera->MakeViewMatrix();
+		deviceContext.viewStruct.proj=camera->MakeProjectionMatrix(1.f,250000.f,aspect);
 	}
 	D3DXMatrixIdentity(&world);
     if(!SUCCEEDED(pd3dDevice->BeginScene()))
-		return;/*
-V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF00FF00,1.0f,0L));
-		
-	Framebuffer					loss_2d;
-	loss_2d.SetWidthAndHeight(32,32);
-	loss_2d.RestoreDeviceObjects(pd3dDevice);
-	loss_2d.Activate(NULL);
-		loss_2d.Clear(NULL,1.f,1.f,0.f,1.f,1.f);
-V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.0f,0L));
-	loss_2d.Deactivate(NULL);
-	loss_2d.InvalidateDeviceObjects();*/
+		return;
 #if 1
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->PreRenderUpdate(NULL,fTimeStep);
@@ -241,9 +232,9 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 	pd3dDevice->SetRenderState( D3DRS_ZENABLE,FALSE);
 	pd3dDevice->SetRenderState( D3DRS_ZWRITEENABLE,FALSE);
 	pd3dDevice->SetTransform(D3DTS_WORLD,&world);
-	pd3dDevice->SetTransform(D3DTS_VIEW,&view);
+	pd3dDevice->SetTransform(D3DTS_VIEW,(D3DXMATRIX*)((const float *)deviceContext.viewStruct.view));
 	// Make left-handed matrix if y is vertical
-	pd3dDevice->SetTransform(D3DTS_PROJECTION,&proj);
+	pd3dDevice->SetTransform(D3DTS_PROJECTION,(D3DXMATRIX*)((const float *)deviceContext.viewStruct.proj));
 	
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
@@ -268,7 +259,7 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 	void *depth_texture=hdrFramebuffer.GetDepthTex();
 	if(simulWeatherRenderer)
 	{
-		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
+		pd3dDevice->SetTransform(D3DTS_VIEW,(D3DXMATRIX*)((const float *)deviceContext.viewStruct.view));
 		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depth_texture,NULL,simul::sky::float4(0,0,1.f,1.f),true);
 
 	/*	simulWeatherRenderer->DoOcclusionTests(pd3dDevice);
@@ -291,7 +282,7 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 					,dir,light);
 			}
 		}*/
-		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
+		pd3dDevice->SetTransform(D3DTS_VIEW,(D3DXMATRIX*)((const float *)deviceContext.viewStruct.view));
 		simulWeatherRenderer->RenderLightning(NULL,viewport_id);
 		simulWeatherRenderer->RenderPrecipitation(NULL);
 	}
