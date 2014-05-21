@@ -153,18 +153,26 @@ void OpenGLRenderer::paintGL()
 {
 	void *context=NULL;
 	static int viewport_id=0;
-
-	simul::math::Matrix4x4 proj;
-	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
-	simul::math::Matrix4x4 view;
-	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
-
+	
+	const camera::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.renderPlatform=renderPlatform;
 	deviceContext.viewStruct.view_id=viewport_id;
-	deviceContext.viewStruct.view	=view;
-	deviceContext.viewStruct.proj	=proj;
+	deviceContext.viewStruct.view	=cam->MakeViewMatrix();
+	if(ReverseDepth)
+		deviceContext.viewStruct.proj	=(cam->MakeDepthReversedProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
+	else
+		deviceContext.viewStruct.proj	=(cam->MakeProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
 	
+	//simul::math::Matrix4x4 view;
+	//glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
+	//simul::math::Matrix4x4 proj;
+	//glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
+	// If called from some other OpenGL program, we should already have a modelview and projection matrix.
+	// Here we will generate the modelview matrix from the camera class:
+    glMatrixMode(GL_MODELVIEW);
+	glLoadMatrixf(deviceContext.viewStruct.view);
+
 	if(renderPlatform)
 		renderPlatform->SetReverseDepth(ReverseDepth);
 	if(simulWeatherRenderer)
@@ -174,16 +182,8 @@ void OpenGLRenderer::paintGL()
 	glClearColor(0,0,0,1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	glPushAttrib(GL_ENABLE_BIT);
-	// If called from some other OpenGL program, we should already have a modelview and projection matrix.
-	// Here we will generate the modelview matrix from the camera class:
-    glMatrixMode(GL_MODELVIEW);
-	glLoadMatrixf(cam->MakeViewMatrix());
 	glMatrixMode(GL_PROJECTION);
-	const camera::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
-	if(ReverseDepth)
-		glLoadMatrixf(cam->MakeDepthReversedProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
-	else
-		glLoadMatrixf(cam->MakeProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
+	glLoadMatrixf(deviceContext.viewStruct.proj);
 	glViewport(0,0,ScreenWidth,ScreenHeight);
 /*	crossplatform::ViewStruct viewStruct={	viewport_id
 												,view
@@ -240,9 +240,6 @@ void OpenGLRenderer::paintGL()
 		}
 		simulWeatherRenderer->RenderLightning(context,viewport_id);
 		
-		simul::math::Matrix4x4 view,proj;
-		glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
-		glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
 		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTex()
 			,depthFramebuffer.GetDepthTex()
 			,simul::sky::float4(0,0,1.f,1.f),true);
@@ -256,7 +253,7 @@ void OpenGLRenderer::paintGL()
 			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-			simulOpticsRenderer->RenderFlare(context,exp,depthFramebuffer.GetDepthTex(),view,proj,dir,light);
+			simulOpticsRenderer->RenderFlare(context,exp,depthFramebuffer.GetDepthTex(),deviceContext.viewStruct.view,deviceContext.viewStruct.proj,dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(context);
