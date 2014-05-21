@@ -142,13 +142,8 @@ vertexOutput VS_Main(vertexInput IN)
 float4 PS_Stars(vertexOutput IN): COLOR
 {
 	float3 view=normalize(IN.wDirection.xyz);
-#ifdef Y_VERTICAL
-	float sine	=view.y;
-	float azimuth=atan2(view.x,view.z);
-#else
 	float sine	=view.z;
 	float azimuth=atan2(view.x,view.y);
-#endif
 	float elev=asin(sine);
 	float2 stars_texcoord=float2(azimuth/(2.0*pi),0.5*(1.f-elev/(pi/2.0)));
 	float3 output=starBrightness*tex2D(stars_texture,stars_texcoord).rgb;

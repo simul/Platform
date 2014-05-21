@@ -34,6 +34,7 @@ void View::RestoreDeviceObjects(ID3D11Device *pd3dDevice)
 void View::InvalidateDeviceObjects()
 {
 	hdrFramebuffer.InvalidateDeviceObjects();
+	lowResScratch.release();
 	lowResDepthTexture.release();
 	hiResDepthTexture.release();
 	resolvedTexture.release();

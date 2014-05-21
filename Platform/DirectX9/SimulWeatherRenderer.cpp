@@ -311,24 +311,18 @@ bool SimulWeatherRenderer::CreateBuffers()
 	return (hr==S_OK);
 }
 
-void SimulWeatherRenderer::RenderSkyAsOverlay(void *context
-												,int view_id											
-												,const math::Matrix4x4 &viewmat
-												,const math::Matrix4x4 &projmat
-												,bool is_cubemap
-												,float exposure
-												,bool buffered
-												,const void* mainDepthTexture
-												,const void* lowResDepthTexture
-												,const sky::float4& depthViewportXYWH
-												,bool doFinalCloudBufferToScreenComposite
+void SimulWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &deviceContext
+											,bool is_cubemap
+											,float exposure
+											,bool buffered
+											,const void* mainDepthTexture
+											,const void* lowResDepthTexture
+											,const sky::float4& depthViewportXYWH
+											,bool doFinalCloudBufferToScreenComposite
 												)
 {
-	SIMUL_COMBINED_PROFILE_START(context,"RenderSkyAsOverlay")
-	BaseWeatherRenderer::RenderSkyAsOverlay(context
-											,view_id
-											,viewmat
-											,projmat
+	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderSkyAsOverlay")
+	BaseWeatherRenderer::RenderSkyAsOverlay(deviceContext
 											,is_cubemap
 											,exposure
 											,buffered
@@ -338,7 +332,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context
 											,doFinalCloudBufferToScreenComposite );
 	if(buffered&&doFinalCloudBufferToScreenComposite&&m_pBufferToScreenEffect)
 	{
-		clouds::TwoResFramebuffer *fb=GetFramebuffer(view_id);
+		clouds::TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
 		m_pBufferToScreenEffect->SetTexture(bufferTexture,(LPDIRECT3DBASETEXTURE9)fb->GetLowResFarFramebuffer()->GetColorTex());
 		m_pBufferToScreenEffect->SetTechnique(CloudBlendTechnique);
 		unsigned passes;
@@ -352,7 +346,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context
 		m_pBufferToScreenEffect->End();
 		m_pBufferToScreenEffect->SetTexture(bufferTexture,NULL);
 	}
-	SIMUL_COMBINED_PROFILE_END(context)
+	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
 
 
@@ -393,7 +387,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,boo
 	if(do_fx)
 	if(simulAtmosphericsRenderer&&simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
-		float str=simulCloudRenderer->GetCloudInterface()->GetHumidity();
+		float str=simulCloudRenderer->GetCloudKeyframer()->GetInterpolatedKeyframe().cloudiness;
 		static float gr_start=0.65f;
 		static float gr_strength=0.5f;
 		str-=gr_start;

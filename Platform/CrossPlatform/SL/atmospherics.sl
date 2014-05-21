@@ -79,11 +79,10 @@ vec4 Inscatter(	Texture2D inscTexture
 	vec3 view		=normalize(mul(invViewProj,vec4(clip_pos,1.0,1.0)).xyz);
 	view			=normalize(view);
 
-	vec2 depth_texc	=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-	float depth		=texture_clamp(depthTexture,depth_texc).x;
-	float dist		=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	
-	float sine		=view.z;
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+	vec4 depth_lookup	=texture_clamp(depthTexture,depth_texc);
+	float dist			=depthToFadeDistance(depth_lookup.x,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	float sine			=view.z;
 	
 	vec2 fade_texc	=vec2(pow(dist,0.5f),0.5f*(1.f-sine));
 	vec2 illum_texc	=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
@@ -146,7 +145,11 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 	float depth			=0.0;
 	
 	if(nearPass)
+	{
 		depth			=depth_lookup.y;
+		if(depth_lookup.z==0)
+			discard;
+	}
 	else
 		depth			=depth_lookup.x;
 	

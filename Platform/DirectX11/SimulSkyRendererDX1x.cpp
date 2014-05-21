@@ -25,10 +25,12 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
+#include "Simul/Scene/RenderPlatform.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Camera/Camera.h"
 
-using namespace simul::dx11;
+using namespace simul;
+using namespace dx11;
 
 SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem)
 	:simul::sky::BaseSkyRenderer(sk,mem)
@@ -713,7 +715,7 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 									&stride,				// array of stride values, one for each buffer
 									&offset );				// array of offset values, one for each buffer
 
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
@@ -731,7 +733,7 @@ bool SimulSkyRendererDX1x::Render(void *context,bool blend)
 	return (hr==S_OK);
 }
 
-bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int height)
+bool SimulSkyRendererDX1x::RenderFades(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
 	int size=width/3;
 	if(height/4<size)
@@ -739,7 +741,7 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 	if(size<2)
 		return false;
 	int s							=size/numAltitudes-2;
-	ID3D11DeviceContext *context	=(ID3D11DeviceContext *)c;
+	ID3D11DeviceContext *context	=deviceContext.asD3D11DeviceContext();
 	
 	D3D11_VIEWPORT viewport;
 	UINT num_v		=1;
@@ -759,21 +761,26 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 	skyConstants.overlayAlpha=0.f;
 	skyConstants.Apply(context);
 	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techShowFadeTable);
+	deviceContext.renderPlatform->Print(context	,x0+size+2,y		,"loss");
+
 	y+=size+8;
 	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
 	skyConstants.overlayAlpha=1.f;
 	skyConstants.Apply(context);
 	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techShowFadeTable);
+	deviceContext.renderPlatform->Print(context	,x0+size+2,y		,"inscatter");
 	inscTexture->SetResource(overcast_2d->buffer_texture_SRV);
 	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techShowFadeTable);
+	deviceContext.renderPlatform->Print(context	,x0,y		,"insc (overcast)");
 	y+=size+8;
 	skyConstants.overlayAlpha=0.f;
 	skyConstants.Apply(context);
+	inscTexture->SetResource(illumination_fb.buffer_texture_SRV);
+	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowIlluminationBuffer);
+	deviceContext.renderPlatform->Print(context	,x0,y		,"illumination");
 	inscTexture->SetResource(skylight_2d->buffer_texture_SRV);
 	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techShowFadeTable);
-	y+=size+8;
-	inscTexture->SetResource(illumination_fb.buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowIlluminationBuffer);
+	deviceContext.renderPlatform->Print(context	,x0+size+2,y,"skylight");
 	int x=16+size;
 	y=y0+8;
 	bool show_3=gpuSkyGenerator.GetEnabled();
@@ -807,6 +814,13 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 			UtilityRenderer::DrawQuad2(context,x	,y+24+2*size,s,s	,m_pSkyEffect,techniqueShowFade);
 		}
 	}
+	ID3DX11EffectTechnique*	techniqueColour=m_pSkyEffect->GetTechniqueByName("colour_technique");
+	
+	float time_now=skyKeyframer->GetTime();
+	float alt_km=cam_pos.z/1000.f;
+	skyConstants.colour=skyKeyframer->GetLocalSunIrradiance(time_now,alt_km);
+	skyConstants.Apply(context);
+	deviceContext.renderPlatform->DrawQuad(context,x0,y+3*size+4,size,s,m_pSkyEffect,techniqueColour);
 	return true;
 }
 

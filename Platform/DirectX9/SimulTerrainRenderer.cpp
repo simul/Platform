@@ -724,10 +724,6 @@ void SimulTerrainRenderer::RecompileShaders()
 	char max_fade_distance_str[25];
 	sprintf_s(max_fade_distance_str,25,"%g",max_fade_distance_metres);
 	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
-	if(!y_vertical)
-		defines["Z_VERTICAL"]='1';
-	else
-		defines["Y_VERTICAL"]='1';
 	SAFE_RELEASE(pRenderHeightmapEffect);
 	CreateDX9Effect(m_pd3dDevice,pRenderHeightmapEffect,"simul_renderheightmap.fx");
 	hr=CreateDX9Effect(m_pd3dDevice,m_pTerrainEffect,"simul_terrain.fx",defines);

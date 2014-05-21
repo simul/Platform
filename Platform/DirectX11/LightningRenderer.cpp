@@ -68,7 +68,7 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 
 	ID3D11InputLayout* previousInputLayout;
 	pContext->IAGetInputLayout(&previousInputLayout);
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 
 	D3D11_VIEWPORT viewport;

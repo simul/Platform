@@ -801,7 +801,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *v
 		m_pContext->IASetInputLayout(m_pVtxDecl);
 		ID3D11InputLayout* previousInputLayout;
 		m_pContext->IAGetInputLayout( &previousInputLayout );
-		D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+		D3D_PRIMITIVE_TOPOLOGY previousTopology;
 		m_pContext->IAGetPrimitiveTopology(&previousTopology);
 		m_pContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		UINT stride = sizeof(VertexXyzRgba);
@@ -876,7 +876,7 @@ void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pContext
 	}
 	// coverage is 2*atan(1/5)=11 degrees.
 	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
@@ -906,7 +906,7 @@ void UtilityRenderer::DrawCube(void *context)
 	// Set the input layout
 	pContext->IASetInputLayout(m_pCubemapVtxDecl);
 
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -921,7 +921,7 @@ void UtilityRenderer::DrawCube(void *context)
 void UtilityRenderer::DrawSphere(void *context,int latitudes,int longitudes)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	// The number of indices per lat strip is (longitudes+1)*2.

@@ -243,7 +243,7 @@ void OpenGLRenderer::paintGL()
 		simul::math::Matrix4x4 view,proj;
 		glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
 		glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
-		simulWeatherRenderer->RenderSkyAsOverlay(context,viewport_id,view,proj,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTex()
+		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTex()
 			,depthFramebuffer.GetDepthTex()
 			,simul::sky::float4(0,0,1.f,1.f),true);
 		simulWeatherRenderer->DoOcclusionTests(context);
@@ -273,7 +273,7 @@ void OpenGLRenderer::paintGL()
 				x0=8;
 				y0=ScreenHeight/2;
 			}
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(context,x0,y0,ScreenWidth/2,ScreenHeight/2);
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(deviceContext,x0,y0,ScreenWidth/2,ScreenHeight/2);
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{

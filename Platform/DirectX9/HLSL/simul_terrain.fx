@@ -178,11 +178,7 @@ vertexOutput VS_Main(vertexInput IN)
 	OUT.test.g=frac(mip);
 	h=lerp(h,0.5*(h1+h2),OUT.test.g);
 	OUT.test.r=h;
-#ifdef Y_VERTICAL
-	position.y=OUT.test.r;
-#else
 	position.z=OUT.test.r;
-#endif
     OUT.hPosition=mul(worldViewProj,float4(position.xyz,1.f));
     OUT.wPosition=float4(position.xyz,1.f);
     OUT.texCoordDiffuse=IN.texCoordDiffuse;
@@ -219,13 +215,8 @@ float4 PS_Detail( vertexOutput IN) : color
 float4 PS_Shadow(vertexOutput IN) : color
 {
 	float3 normal;
-#ifdef Y_VERTICAL
-	normal.xz=tex2D(height_texture,IN.heightmap_texc.xy).yz;
-	normal.y=1.0-sqrt(dot(normal.xz,normal.xz));
-#else
 	normal.xy=tex2D(height_texture,IN.heightmap_texc.xy).yz;
 	normal.z=1.0-sqrt(dot(normal.xy,normal.xy));
-#endif
 	float direct_light=saturate(dot(normal.xyz,lightDir));
 	float3 colour=lightColour*direct_light+ambientColour;
     return float4(colour,1.f);

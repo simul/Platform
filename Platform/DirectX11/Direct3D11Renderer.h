@@ -140,7 +140,8 @@ namespace simul
 				,clouds::BaseWeatherRenderer *w
 				,D3DXMATRIX v
 				,D3DXMATRIX proj
-				,float exposure);
+				,float exposure
+				,float gamma);
 			// Different kinds of view for Render() to call:
 			void RenderFadeEditView(ID3D11DeviceContext* pd3dImmediateContext);
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
