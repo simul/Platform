@@ -54,7 +54,7 @@ namespace simul
 			simul::opengl::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 	
-			CloudShadowStruct GetCloudShadowTexture();
+			CloudShadowStruct GetCloudShadowTexture(math::Vector3);
 			const char *GetDebugText();
 
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);

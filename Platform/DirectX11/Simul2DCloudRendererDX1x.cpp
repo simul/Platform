@@ -305,7 +305,7 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture_SRV);
 	
 	static float ff=10000.f; 
-	cam_pos=simul::dx11::GetCameraPosVector(view,false);
+	math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	float ir_integration_factors[]={0,0,0,0};
 	FixProjectionMatrix(proj,10.f,500000.f);
 

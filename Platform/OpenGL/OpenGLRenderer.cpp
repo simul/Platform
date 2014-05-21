@@ -223,8 +223,8 @@ void OpenGLRenderer::paintGL()
 //		gScene->OnTimerClick();
 		
 		if(simulTerrainRenderer&&ShowTerrain)
-			simulTerrainRenderer->Render(context,1.f);
-		simulWeatherRenderer->RenderCelestialBackground(context,exposure);
+			simulTerrainRenderer->Render(deviceContext,1.f);
+		simulWeatherRenderer->RenderCelestialBackground(deviceContext,exposure);
 		depthFramebuffer.Deactivate(context);
 		{
 			glActiveTexture(GL_TEXTURE0);
@@ -243,7 +243,7 @@ void OpenGLRenderer::paintGL()
 		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTex()
 			,depthFramebuffer.GetDepthTex()
 			,simul::sky::float4(0,0,1.f,1.f),true);
-		simulWeatherRenderer->DoOcclusionTests(context);
+		simulWeatherRenderer->DoOcclusionTests(deviceContext);
 		simulWeatherRenderer->RenderPrecipitation(context);
 		if(simulOpticsRenderer&&ShowFlares)
 		{

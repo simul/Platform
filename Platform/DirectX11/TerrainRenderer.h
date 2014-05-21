@@ -37,9 +37,7 @@ namespace simul
 			void RecompileShaders();
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
-			void Render(void *context,float exposure);
-			//! Call this once per frame to set the matrices.
-			void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
+			void Render(crossplatform::DeviceContext &deviceContext,float exposure);
 		private:
 			void MakeVertexBuffer();
 			ID3D11Device*						m_pd3dDevice;
@@ -49,8 +47,6 @@ namespace simul
 			ID3DX11EffectTechnique*				m_pTechnique;
 			// ID3D11Texture2D	Accesses data in a 2D texture or a 2D texture array
 			simul::dx11::ArrayTexture			arrayTexture;
-			D3DXMATRIX							view,proj;
-
 			ConstantBuffer<TerrainConstants>	terrainConstants;
 			int numVertices;
 		};

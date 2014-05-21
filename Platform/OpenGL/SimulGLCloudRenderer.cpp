@@ -235,11 +235,6 @@ void SimulGLCloudRenderer::FillIlluminationBlock(int ,int ,int ,int ,int ,int ,i
 {
 }
 
-static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
-{
-	glGetFloatv(src,m);
-}
-
 void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 {
 	const simul::math::Vector3 *XX=reinterpret_cast<const simul::math::Vector3*>(Mat.RowPointer(0));
@@ -339,13 +334,14 @@ GL_ERROR_CHECK
 	cloudProperties.GetExtents(X1,X2);
 
 	simul::math::Vector3 DX=X2-X1;
-	simul::math::Matrix4x4 modelview;
-	glGetMatrix(modelview.RowPointer(0),GL_MODELVIEW_MATRIX);
 	simul::math::Matrix4x4 viewInv;
-	Inverse(modelview,viewInv);
+	Inverse(deviceContext.viewStruct.view,viewInv);
+
+	simul::math::Vector3 cam_pos;
 	cam_pos.x=viewInv(3,0);
 	cam_pos.y=viewInv(3,1);
 	cam_pos.z=viewInv(3,2);
+	simul::math::Matrix4x4 modelview=deviceContext.viewStruct.view;
 	modelview(3,0)=modelview(3,1)=modelview(3,2)=0.f;
 GL_ERROR_CHECK
 Raytrace=false;
@@ -459,22 +455,18 @@ GL_ERROR_CHECK
 	helper->SetChurn(cloudProperties.GetChurn());
 	helper->Update(view_pos,cloudKeyframer->GetWindOffset(),eye_dir,up_dir,delta_t,cubemap);
 
-	simul::math::Matrix4x4 proj;
-	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
-	simul::math::Matrix4x4 view;
-	glGetMatrix(view.RowPointer(0),GL_MODELVIEW_MATRIX);
-	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,deviceContext.viewStruct.view_id,viewportTextureRegionXYWH,mixedResTransformXYWH);
+	SetCloudPerViewConstants(cloudPerViewConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,exposure,deviceContext.viewStruct.view_id,viewportTextureRegionXYWH,mixedResTransformXYWH);
 	cloudPerViewConstants.exposure=exposure;
 
 	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
 	simul::math::Matrix4x4 worldViewProj;
-	simul::math::Multiply4x4(worldViewProj,modelview,proj);
+	simul::math::Multiply4x4(worldViewProj,modelview,deviceContext.viewStruct.proj);
 	setMatrixTranspose(program,"worldViewProj",worldViewProj);
 
-	float left	=proj(0,0)+proj(0,3);
-	float right	=proj(0,0)-proj(0,3);
+	float left	=deviceContext.viewStruct.proj(0,0)+deviceContext.viewStruct.proj(0,3);
+	float right	=deviceContext.viewStruct.proj(0,0)-deviceContext.viewStruct.proj(0,3);
 
-	float tan_half_fov_vertical			=1.f/proj(1,1);
+	float tan_half_fov_vertical			=1.f/deviceContext.viewStruct.proj(1,1);
 	float tan_half_fov_horizontal		=std::max(1.f/left,1.f/right);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	float effective_world_radius_metres	=6378000.f;
@@ -772,9 +764,9 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	ClearIterators();
 }
 
-CloudShadowStruct SimulGLCloudRenderer::GetCloudShadowTexture()
+CloudShadowStruct SimulGLCloudRenderer::GetCloudShadowTexture(math::Vector3 cam_pos)
 {
-	CloudShadowStruct s=BaseCloudRenderer::GetCloudShadowTexture();
+	CloudShadowStruct s=BaseCloudRenderer::GetCloudShadowTexture(cam_pos);
 	s.texture=(void*)cloud_shadow.GetColorTex();
 	return s;
 }

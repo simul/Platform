@@ -80,7 +80,7 @@ namespace simul
 			void SetEnableStorms(bool s);
 			float GetTiming() const;
 			//! Get the list of three textures used for cloud rendering.
-			CloudShadowStruct GetCloudShadowTexture();
+			CloudShadowStruct GetCloudShadowTexture(math::Vector3 cam_pos);
 			void *GetRandomTexture3D();
 			void SetLossTexture(void *t);
 			void SetInscatterTextures(void* i,void *s,void *o);
@@ -103,10 +103,10 @@ namespace simul
 			//! Clear the sequence()
 			void New();
 			simul::dx11::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
+			void RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext);
 		protected:
 			simul::dx11::GpuCloudGenerator gpuCloudGenerator;
 			void RenderCombinedCloudTexture(void *context);
-			void RenderCloudShadowTexture(void *context);
 			void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip);
 			// Make up to date with respect to keyframer:
 			void EnsureCorrectTextureSizes();

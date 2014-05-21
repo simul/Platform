@@ -188,10 +188,6 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::
 {
 	for(int i=0;i<3;i++)
 		cloud_textures[i]=NULL;
-
-	D3DXMatrixIdentity(&world);
-	D3DXMatrixIdentity(&view);
-	D3DXMatrixIdentity(&proj);
 }
 
 void SimulCloudRenderer::EnableFilter(bool )
@@ -553,7 +549,7 @@ void SimulCloudRenderer::EnsureTexturesAreUpToDate(void* context)
 void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 {
 }
-
+#include "Simul/Camera/Camera.h"
 bool SimulCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha,const simul::sky::float4&,const simul::sky::float4& )
 {
 	if(rebuild_shaders)
@@ -576,10 +572,7 @@ bool SimulCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,floa
 	enable_lightning=K.lightning>0;
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
 	/*m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);*/
-#ifndef XBOX
-	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
-#endif
+
 	static D3DTEXTUREADDRESS wrap_u=D3DTADDRESS_WRAP,wrap_v=D3DTADDRESS_WRAP,wrap_w=D3DTADDRESS_CLAMP;
 
 	m_pCloudEffect->SetTexture(cloudDensity1				,cloud_textures[0]);
@@ -592,13 +585,13 @@ bool SimulCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,floa
 	m_pCloudEffect->SetTexture(illuminationTexture	,illumination_texture);
 	
 	// Mess with the proj matrix to extend the far clipping plane? not now
-	GetCameraPosVector(view,false,cam_pos);
+	math::Vector3 cam_pos=camera::GetCameraPosVector(deviceContext.viewStruct.view);
 	simul::math::Vector3 wind_offset=cloudKeyframer->GetWindOffset();
 
-	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
-	simul::math::Vector3 up			(view._12,view._22,view._32);
+	simul::math::Vector3 view_dir	(deviceContext.viewStruct.view._13,deviceContext.viewStruct.view._23,deviceContext.viewStruct.view._33);
+	simul::math::Vector3 up			(deviceContext.viewStruct.view._12,deviceContext.viewStruct.view._22,deviceContext.viewStruct.view._32);
 	
-	view_dir.Define(-view._13,-view._23,-view._33);
+	view_dir.Define(-deviceContext.viewStruct.view._13,-deviceContext.viewStruct.view._23,-deviceContext.viewStruct.view._33);
 
 	float t=skyInterface->GetTime();
 	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
@@ -625,8 +618,8 @@ bool SimulCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,floa
 	simul::sky::float4 sky_light_colour=exposure*skyInterface->GetAmbientLight(base_alt_km)*K.ambient_light;
 
 
-	float tan_half_fov_vertical=1.f/proj._22;
-	float tan_half_fov_horizontal=1.f/proj._11;
+	float tan_half_fov_vertical=1.f/deviceContext.viewStruct.proj._22;
+	float tan_half_fov_horizontal=1.f/deviceContext.viewStruct.proj._11;
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 
 	static bool nofs=false;
@@ -688,8 +681,7 @@ bool SimulCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,floa
 	else
 		m_pCloudEffect->SetTechnique(m_hTechniqueCloud);
 
-	//InternalRenderHorizontal(viewport_id);
-	InternalRenderVolumetric(deviceContext.viewStruct.view_id);
+	InternalRenderVolumetric(deviceContext);
 	
 	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
 	PIXEndNamedEvent();
@@ -699,10 +691,6 @@ bool SimulCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,floa
 }
 
 void SimulCloudRenderer::NumBuffersChanged()
-{
-}
-
-void SimulCloudRenderer::InternalRenderHorizontal(int )
 {
 }
 
@@ -729,61 +717,7 @@ bool SimulCloudRenderer::FillRaytraceLayerTexture(int viewport_id)
 	return (hr==S_OK);
 }
 
-void SimulCloudRenderer::InternalRenderRaytrace(int viewport_id)
-{
-	FillRaytraceLayerTexture(viewport_id);
-	HRESULT hr=S_OK;
-	m_pCloudEffect->SetTechnique(m_hTechniqueRaytraceWithLightning);
-	PIXWrapper(0xFFFFFF00,"Render Cloud Raytrace")
-	{
-#ifndef XBOX
-		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-		m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
-#endif
-		D3DXMATRIX wvp,vpt,ivp;
-		//FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,y_vertical);
-		D3DXMATRIX viewproj;
-		//view._41=view._42=view._43=0;
-		D3DXMatrixMultiply(&viewproj,&view,&proj);
-		MakeWorldViewProjMatrix(&wvp,world,view,proj);
-		m_pCloudEffect->SetMatrix(worldViewProj, &wvp);
-		D3DXMatrixTranspose(&vpt,&viewproj);
-		D3DXMatrixInverse(&ivp,NULL,&vpt);
-
-		hr=m_pCloudEffect->SetMatrix(invViewProj,&ivp);
-
-		hr=m_pCloudEffect->SetTexture(raytraceLayerTexture,raytrace_layer_texture);
-		simul::sky::float4 cloud_scales=GetCloudScales();
-		simul::sky::float4 cloud_offset=GetCloudOffset();
-	
-		m_pCloudEffect->SetVector	(cloudScales	,(const D3DXVECTOR4*)&cloud_scales);
-		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
-		D3DXVECTOR3 d3dcam_pos;
-		GetCameraPosVector(view,y_vertical,(float*)&d3dcam_pos);
-		float altitude_km=0.001f*(y_vertical?d3dcam_pos.y:d3dcam_pos.z);
-		if(skyInterface)
-		{
-//		hr=m_pCloudEffect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
-			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
-			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight(altitude_km));
-			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(altitude_km));
-			
-			//light_colour*=strength;
-			if(y_vertical)
-				std::swap(sun_dir.y,sun_dir.z);
-
-			m_pCloudEffect->SetVector	(lightDir			,&sun_dir);
-			//m_pCloudEffect->SetVector	(lightColour	,(const D3DXVECTOR4*)&light_colour);
-		}
-		m_pCloudEffect->SetVector	(cloudScales	,(const D3DXVECTOR4*)&cloud_scales);
-		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
-		m_pCloudEffect->SetVector	(eyePosition	,(const D3DXVECTOR4*)&(cam_pos));
-
-		hr=DrawFullScreenQuad(m_pd3dDevice,m_pCloudEffect);
-	}
-}
-
-void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
+void SimulCloudRenderer::InternalRenderVolumetric(crossplatform::DeviceContext &deviceContext)
 {
 	float exposure=1.f;
 	CloudConstants cloudConstants;
@@ -791,7 +725,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	SetCloudConstants(cloudConstants);
 	simul::sky::float4 viewportTextureRegionXYWH(0,0,1.f,1.f);
 	simul::sky::float4 mixedResTransformXYWH(0,0,1.f,1.f);
-	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewport_id
+	SetCloudPerViewConstants(cloudPerViewConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,exposure,deviceContext.viewStruct.view_id
 		,viewportTextureRegionXYWH,mixedResTransformXYWH);
 	{
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,viewportToTexRegionScaleBias);
@@ -844,21 +778,22 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,baseNoiseFactor);
 	}
 
-	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
+	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(deviceContext.viewStruct.view_id);
 
 	HRESULT hr=S_OK;
 	//set up matrices
 	D3DXMATRIX wvp;
 //	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,y_vertical);
 	//view._41=view._42=view._43=0.f;
-	MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	wvp=MakeViewProjMatrix(*(D3DXMATRIX *)((const float*)deviceContext.viewStruct.view),*(D3DXMATRIX *)((const float*)deviceContext.viewStruct.proj));
 
 	D3DXMATRIX tmp1,tmp2,w,ident;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
+	D3DXMatrixInverse(&tmp1,NULL,(D3DXMATRIX *)((const float*)deviceContext.viewStruct.view));
+	math::Vector3 cam_pos;
 	cam_pos.x=tmp1._41;
 	cam_pos.y=tmp1._42;
 	cam_pos.z=tmp1._43;
-	D3DXMatrixMultiply(&tmp2,&view,&proj);
+	D3DXMatrixMultiply(&tmp2,(D3DXMATRIX *)((const float*)deviceContext.viewStruct.view),(D3DXMATRIX *)((const float*)deviceContext.viewStruct.proj));
 	D3DXMatrixTranspose(&wvp,&tmp2);
 
 	m_pCloudEffect->SetMatrix(worldViewProj, &wvp);

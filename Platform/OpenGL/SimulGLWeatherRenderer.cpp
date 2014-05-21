@@ -230,7 +230,7 @@ void SimulGLWeatherRenderer::RecompileShaders()
 		defines["REVERSE_DEPTH"]="1";
 	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag",defines);
 }
-
+#include "Simul/Camera/Camera.h"
 void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &deviceContext
 											,bool is_cubemap
 											,float exposure
@@ -259,11 +259,12 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 		fb->GetLowResFarFramebuffer()->Activate(context);
 		fb->GetLowResFarFramebuffer()->Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.f:1.f);
 	}
+	math::Vector3 cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
 	if(baseSkyRenderer)
 	{
 		float cloud_occlusion=0;
 		if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
-			cloud_occlusion=baseCloudRenderer->GetSunOcclusion();
+			cloud_occlusion=baseCloudRenderer->GetSunOcclusion(cam_pos);
 		baseSkyRenderer->CalcSunOcclusion(context,cloud_occlusion);
 	}
 	// Do this AFTER sky render, to catch any changes to texture definitions:

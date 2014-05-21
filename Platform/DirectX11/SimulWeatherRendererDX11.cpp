@@ -395,6 +395,14 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	simul::crossplatform::Devi
 														)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	if(simulCloudRenderer)
+		simulCloudRenderer->RenderCloudShadowTexture(deviceContext);
+	if(baseAtmosphericsRenderer&&baseAtmosphericsRenderer->GetShowGodrays())
+	{
+		baseAtmosphericsRenderer->SetCloudShadowTexture(baseCloudRenderer->GetCloudShadowTexture(cam_pos));
+	}
+	if(basePrecipitationRenderer)
+		basePrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderMixedResolution")
 #if 1
 	SIMUL_GPU_PROFILE_START(pContext,"Loss")
@@ -591,8 +599,6 @@ void SimulWeatherRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const
 	cam_pos=GetCameraPosVector(view);
 	if(simulSkyRenderer)
 		simulSkyRenderer->SetMatrices(view,proj);
-	if(simulCloudRenderer)
-		simulCloudRenderer->SetMatrices(view,proj);
 	if(simul2DCloudRenderer)
 		simul2DCloudRenderer->SetMatrices(view,proj);
 	if(simulAtmosphericsRenderer)

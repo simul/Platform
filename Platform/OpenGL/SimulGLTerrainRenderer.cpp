@@ -95,7 +95,7 @@ void SimulGLTerrainRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_TEXTURE(texArray);
 }
 
-void SimulGLTerrainRenderer::Render(void *,float exposure)
+void SimulGLTerrainRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	GL_ERROR_CHECK
@@ -111,10 +111,8 @@ void SimulGLTerrainRenderer::Render(void *,float exposure)
 	simul::math::Vector3 cam_pos;
 	CalcCameraPosition(cam_pos);
 
-	simul::math::Matrix4x4 view,proj,viewproj;
-	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
-	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
-	simul::math::Multiply4x4(viewproj,view,proj);
+	simul::math::Matrix4x4 viewproj;
+	simul::math::Multiply4x4(viewproj,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 
 	glUniformMatrix4fv(worldViewProj_param,1,false,viewproj.RowPointer(0));
 

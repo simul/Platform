@@ -96,9 +96,7 @@ namespace simul
 
 			void NumBuffersChanged();
 
-			void InternalRenderHorizontal(int viewport_id);
-			void InternalRenderRaytrace(int viewport_id);
-			void InternalRenderVolumetric(int viewport_id);
+			void InternalRenderVolumetric(crossplatform::DeviceContext &deviceContext);
 			bool wrap;
 			struct PosVert_t
 			{
@@ -185,7 +183,6 @@ namespace simul
 			LPDIRECT3DBASETEXTURE9		skylight_texture;
 			LPDIRECT3DBASETEXTURE9		illumination_texture;
 			LPDIRECT3DCUBETEXTURE9		cloud_cubemap;
-			D3DXMATRIX					world,view,proj;
 			LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 			LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;
 			bool MakeCubemap(void *context); // not ready yet

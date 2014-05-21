@@ -312,7 +312,7 @@ bool SimulGL2DCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,
 	glGetMatrix((float*)&proj,GL_PROJECTION_MATRIX);
 	simul::math::Matrix4x4 viewInv;
 	modelview.Inverse(viewInv);
-	cam_pos.Set(viewInv(3,0),viewInv(3,1),viewInv(3,2),0.f);
+	simul::math::Vector3 cam_pos(viewInv(3,0),viewInv(3,1),viewInv(3,2));
 
 	simul::math::Matrix4x4 worldViewProj;
 	simul::math::Multiply4x4(worldViewProj,modelview,proj);
