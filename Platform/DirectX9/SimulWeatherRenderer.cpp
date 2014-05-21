@@ -360,14 +360,14 @@ void SimulWeatherRenderer::RenderPrecipitation(void *context)
 		simulPrecipitationRenderer->Render(context);
 }
 
-void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,bool buf,int view_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH)
+void SimulWeatherRenderer::RenderLateCloudLayer(crossplatform::DeviceContext &deviceContext,float exposure,bool buf,const simul::sky::float4 &relativeViewportTextureRegionXYWH)
 {
 	if(!RenderCloudsLate||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return;
 	HRESULT hr=S_OK;
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface=NULL;
-		clouds::TwoResFramebuffer *fb=GetFramebuffer(view_id);
+		clouds::TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
 	if(buf)
 	{
 		fb->GetLowResFarFramebuffer()->Activate(NULL);
@@ -379,7 +379,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,boo
 	{	
 		PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
 		{
-			simulCloudRenderer->Render(context,exposure,false,false,0,false,true,view_id,relativeViewportTextureRegionXYWH,sky::float4(0,0,1.f,1.f));
+			simulCloudRenderer->Render(deviceContext,exposure,false,false,0,false,true,relativeViewportTextureRegionXYWH,sky::float4(0,0,1.f,1.f));
 		}
 	}
 	

@@ -228,7 +228,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,const float
 	cubemapFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	if(simulTerrainRenderer)
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
-			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture());
+			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
 	for(int i=0;i<6;i++)
 	{
 		cubemapFramebuffer.SetCurrentFace(i);
@@ -251,8 +251,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,const float
 		//cubemapDepthFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		if(simulTerrainRenderer)
 		{
-			simulTerrainRenderer->SetMatrices(view_matrices[i],cube_proj);
-			simulTerrainRenderer->Render(pContext,1.f);
+			simulTerrainRenderer->Render(deviceContext,1.f);
 		}
 		cubemapFramebuffer.DeactivateDepth(pContext);
 		if(simulWeatherRenderer)
@@ -426,10 +425,10 @@ void Direct3D11Renderer::RenderScene(int view_id
 		simulWeatherRenderer->SetMatrices((const float*)&v,(const float*)&proj);
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
-		simulTerrainRenderer->SetMatrices(v,proj);
+		math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(v,false);
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
-			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture());
-		simulTerrainRenderer->Render(pContext,1.f);	
+			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
+		simulTerrainRenderer->Render(deviceContext,1.f);	
 	}
 	if(sceneRenderer)
 		sceneRenderer->Render(pContext,deviceContext.viewStruct);
@@ -441,7 +440,7 @@ void Direct3D11Renderer::RenderScene(int view_id
 			oceanRenderer->RenderWireframe(pContext);
 	}
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->RenderCelestialBackground(pContext,exposure);
+		simulWeatherRenderer->RenderCelestialBackground(deviceContext,exposure);
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		view->hdrFramebuffer.DeactivateDepth(pContext);
 	else
@@ -466,7 +465,7 @@ void Direct3D11Renderer::RenderScene(int view_id
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->hdrFramebuffer.ActivateDepth(pContext);
 		simulWeatherRenderer->RenderLightning(pContext,view_id,depthTextureHiRes,relativeViewportTextureRegionXYWH,simulWeatherRenderer->GetCloudDepthTexture(view_id));
-		simulWeatherRenderer->DoOcclusionTests(pContext);
+		simulWeatherRenderer->DoOcclusionTests(deviceContext);
 		simulWeatherRenderer->RenderPrecipitation(pContext,depthTextureHiRes,relativeViewportTextureRegionXYWH,(const float*)&v,(const float*)&proj);
 		if(simulOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetSkyRenderer())
 		{

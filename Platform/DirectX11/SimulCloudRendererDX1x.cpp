@@ -88,9 +88,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,m_pWrapSamplerState(NULL)
 	,m_pClampSamplerState(NULL)
 {
-	view.Identity();
-	proj.Identity();
-	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
 }
 
@@ -605,15 +602,16 @@ void SimulCloudRendererDX1x::RenderCombinedCloudTexture(void *context)
 // Centred on the viewer
 // Aligned to the sun.
 // Output is km in front of or behind the view pos where shadow starts
-void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
+void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
-    SIMUL_COMBINED_PROFILE_START(context,"RenderCloudShadow")
+	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
+    SIMUL_COMBINED_PROFILE_START(pContext,"RenderCloudShadow")
 	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName("cloud_shadow");
 	cloudConstants.Apply(pContext);
 	// per view:
 	CloudPerViewConstants cloudPerViewConstants;
-	SetCloudShadowPerViewConstants(cloudPerViewConstants);
+	math::Vector3 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
+	SetCloudShadowPerViewConstants(cloudPerViewConstants,cam_pos);
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
 	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=effect->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
@@ -632,8 +630,8 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	shadow_fb.Activate(pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	shadow_fb.Deactivate(pContext);
-    SIMUL_COMBINED_PROFILE_END(context)
-    SIMUL_COMBINED_PROFILE_START(context,"GodraysAccumulation")
+    SIMUL_COMBINED_PROFILE_END(pContext)
+    SIMUL_COMBINED_PROFILE_START(pContext,"GodraysAccumulation")
 	{
 		tech	=effect->GetTechniqueByName("godrays_accumulation");
 		simul::dx11::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
@@ -644,8 +642,8 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 		simul::dx11::setUnorderedAccessView(effect,"targetTexture1",NULL);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
 	}
-    SIMUL_COMBINED_PROFILE_END(context)
-    SIMUL_COMBINED_PROFILE_START(context,"MoistureAccumulation")
+    SIMUL_COMBINED_PROFILE_END(pContext)
+    SIMUL_COMBINED_PROFILE_START(pContext,"MoistureAccumulation")
 	tech	=effect->GetTechniqueByName("moisture_accumulation");
 	simul::dx11::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
 	ApplyPass(pContext,tech->GetPassByIndex(0));
@@ -657,7 +655,7 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-    SIMUL_COMBINED_PROFILE_END(context)
+    SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
 void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
@@ -668,7 +666,6 @@ void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply(pContext);
 	RenderCombinedCloudTexture(pContext);
-	RenderCloudShadowTexture(pContext);
     SIMUL_COMBINED_PROFILE_END(context)
 	//set up matrices
 // Commented this out and moved to Render as was causing cloud noise problem due to the camera
@@ -680,21 +677,22 @@ void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
 // We'll then have a global update and per view updates.
 }
 static int test=29999;
-bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bool near_pass,const void *depth_tex
-,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH)
+bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_tex
+,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH)
 {
-	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	ID3D11ShaderResourceView *depthTexture_SRV	=(ID3D11ShaderResourceView *)depth_tex;
     ProfileBlock profileBlock(pContext,cubemap?"SimulCloudRendererDX1x::Render (cubemap side)":"SimulCloudRendererDX1x::Render");
-
+	
+	math::Vector3 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
 	float blendFactor[] = {0, 0, 0, 0};
 	UINT sampleMask   = 0xffffffff;
 	if(write_alpha)
 		pContext->OMSetBlendState(blendAndWriteAlpha,blendFactor,sampleMask);
 	else
 		pContext->OMSetBlendState(blendAndDontWriteAlpha,blendFactor,sampleMask);
-	simul::math::Vector3 view_dir(view._13,view._23,view._33);
-	dx11::GetCameraPosVector(view,view_dir,false);
+	simul::math::Vector3 view_dir;///(deviceContext.viewStruct.view._13,deviceContext.viewStruct.view._23,deviceContext.viewStruct.view._33);
+	dx11::GetCameraPosVector(deviceContext.viewStruct.view,view_dir,false);
 	HRESULT hr=S_OK;
 	cloudDensity		->SetResource(cloud_texture.shaderResourceView);
 	cloudDensity1		->SetResource(cloud_textures[(texture_cycle)  %3].shaderResourceView);
@@ -717,13 +715,13 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pClampSamplerState);
 
 	CloudPerViewConstants cloudPerViewConstants;
-	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewport_id,viewportTextureRegionXYWH,mixedResTransformXYWH);
+	SetCloudPerViewConstants(cloudPerViewConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,exposure,deviceContext.viewStruct.view_id,viewportTextureRegionXYWH,mixedResTransformXYWH);
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
 	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=effect->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
 		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
 	
-	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
+	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(deviceContext.viewStruct.view_id);
 
 	// Moved from Update function above. See commment.
 	//if (!cubemap)
@@ -735,12 +733,12 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 			std::swap(wind_offset.y,wind_offset.z);
 		X+=wind_offset;
 		if(!y_vertical)
-			view_dir.Define(-view._13,-view._23,-view._33);
-		simul::math::Vector3 up(view._12,view._22,view._32);
+			view_dir.Define(-deviceContext.viewStruct.view._13,-deviceContext.viewStruct.view._23,-deviceContext.viewStruct.view._33);
+		simul::math::Vector3 up(deviceContext.viewStruct.view._12,deviceContext.viewStruct.view._22,deviceContext.viewStruct.view._32);
 		helper->SetChurn(cloudProperties.GetChurn());
 		helper->Update((const float*)cam_pos,wind_offset,view_dir,up,1.0);
-		float tan_half_fov_vertical=1.f/proj._22;
-		float tan_half_fov_horizontal=1.f/proj._11;
+		float tan_half_fov_vertical=1.f/deviceContext.viewStruct.proj._22;
+		float tan_half_fov_horizontal=1.f/deviceContext.viewStruct.proj._11;
 		helper->SetNoFrustumLimit(true);
 		helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 		helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),enable_lightning);
@@ -912,9 +910,9 @@ void SimulCloudRendererDX1x::SetEnableStorms(bool s)
 	enable_lightning=s;
 }
 
-CloudShadowStruct SimulCloudRendererDX1x::GetCloudShadowTexture()
+CloudShadowStruct SimulCloudRendererDX1x::GetCloudShadowTexture(math::Vector3 cam_pos)
 {
-	CloudShadowStruct s	=BaseCloudRenderer::GetCloudShadowTexture();
+	CloudShadowStruct s	=BaseCloudRenderer::GetCloudShadowTexture(cam_pos);
 	s.texture			=shadow_fb.GetColorTex();
 	s.godraysTexture	=godrays_texture.shaderResourceView;
 	s.moistureTexture	=moisture_fb.GetColorTex();

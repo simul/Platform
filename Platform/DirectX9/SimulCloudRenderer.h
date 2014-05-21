@@ -60,7 +60,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void PreRenderUpdate(void *context);
 			//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
-			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& );
+			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& );
 
 			//! Save the first keyframe texture into a 2D image file by stacking X-Z slices vertically.
 			void SaveCloudTexture(const char *filename);
@@ -96,9 +96,7 @@ namespace simul
 
 			void NumBuffersChanged();
 
-			void InternalRenderHorizontal(int viewport_id);
-			void InternalRenderRaytrace(int viewport_id);
-			void InternalRenderVolumetric(int viewport_id);
+			void InternalRenderVolumetric(crossplatform::DeviceContext &deviceContext);
 			bool wrap;
 			struct PosVert_t
 			{
@@ -185,7 +183,6 @@ namespace simul
 			LPDIRECT3DBASETEXTURE9		skylight_texture;
 			LPDIRECT3DBASETEXTURE9		illumination_texture;
 			LPDIRECT3DCUBETEXTURE9		cloud_cubemap;
-			D3DXMATRIX					world,view,proj;
 			LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 			LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;
 			bool MakeCubemap(void *context); // not ready yet

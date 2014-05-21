@@ -107,7 +107,8 @@ namespace simul
 												,const void* lowResDepthTexture 
 												,const sky::float4& depthViewportXYWH	){}
 			//! Call this to draw the clouds
-			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
+			void RenderLateCloudLayer(crossplatform::DeviceContext &deviceContext
+				,float exposure,bool buf,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			//! Call this to draw lightning.
 			void RenderLightning(void *context,int viewport_id);
 			//! Call this to draw rain etc.

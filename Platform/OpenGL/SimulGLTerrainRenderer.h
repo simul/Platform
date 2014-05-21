@@ -23,7 +23,7 @@ namespace simul
 			void RecompileShaders();
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
-			void Render(void *,float exposure);
+			void Render(crossplatform::DeviceContext &deviceContext,float exposure);
 		private:
 			void MakeTextures();
 			GLuint texArray;

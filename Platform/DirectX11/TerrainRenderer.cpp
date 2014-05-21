@@ -179,15 +179,15 @@ void TerrainRenderer::MakeVertexBuffer()
 	SAFE_RELEASE(pImmediateContext);
 }
 
-void TerrainRenderer::Render(void *context,float exposure)
+void TerrainRenderer::Render(simul::crossplatform::DeviceContext &deviceContext,float exposure)
 {
-	SIMUL_COMBINED_PROFILE_START(context,"TerrainRenderer::Render")
-	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
+	SIMUL_COMBINED_PROFILE_START(pContext,"TerrainRenderer::Render")
 	D3DXMATRIX world;
 	D3DXMatrixIdentity(&world);
 	D3DXMATRIX wvp;
-	camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&view,(const float*)&proj);
-	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector((const float*)&view,false);
+	camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&deviceContext.viewStruct.view,(const float*)&deviceContext.viewStruct.proj);
+	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector((const float*)&deviceContext.viewStruct.view,false);
 	dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
 	dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	terrainConstants.eyePosition=cam_pos;
@@ -232,11 +232,5 @@ void TerrainRenderer::Render(void *context,float exposure)
 	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",NULL);
 	simul::dx11::setTexture(m_pTerrainEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
-	SIMUL_COMBINED_PROFILE_END(context)
-}
-
-void TerrainRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
-{
-	view=v;
-	proj=p;
+	SIMUL_COMBINED_PROFILE_END(pContext)
 }
