@@ -762,7 +762,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *v
 		HRESULT hr=S_OK;
 		D3DXMATRIX world, tmp1, tmp2;
 		D3DXMatrixIdentity(&world);
-		ID3DX11EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_debug");
+		ID3DX11EffectTechnique *tech			=m_pDebugEffect->GetTechniqueByName("simul_debug");
 		ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
 
 		D3DXMATRIX wvp;
@@ -794,7 +794,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *v
 		ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
 		hr=pass->GetDesc(&PassDesc);
 
-		ID3D1xInputLayout*				m_pVtxDecl=NULL;
+		ID3D11InputLayout*				m_pVtxDecl=NULL;
 		SAFE_RELEASE(m_pVtxDecl);
 		hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	

@@ -33,7 +33,7 @@ namespace simul
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			void SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
-			void PreRenderUpdate(void *context);
+			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
 				,const void *depth_tex,bool default_fog,bool write_alpha
 				,const simul::sky::float4& viewportTextureRegionXYWH

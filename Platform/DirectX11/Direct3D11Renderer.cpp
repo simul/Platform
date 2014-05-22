@@ -511,18 +511,18 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	else
 		SIMUL_ASSERT(false);
-	if(simulWeatherRenderer)
-	{
-		simulWeatherRenderer->SetMatrices((const float*)&v,(const float*)&proj);
-		simulWeatherRenderer->PreRenderUpdate(pContext);
-	}
 	
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.platform_context	=pContext;
 	deviceContext.renderPlatform	=&renderPlatformDx11;
 	deviceContext.viewStruct.view_id=view_id;
-	deviceContext.viewStruct.proj=(const float*)&proj;
-	deviceContext.viewStruct.view=(const float*)&v;
+	deviceContext.viewStruct.proj	=(const float*)&proj;
+	deviceContext.viewStruct.view	=(const float*)&v;
+	if(simulWeatherRenderer)
+	{
+		simulWeatherRenderer->SetMatrices((const float*)&v,(const float*)&proj);
+		simulWeatherRenderer->PreRenderUpdate(deviceContext);
+	}
 	if(view->viewType==OCULUS_VR)
 	{
 		D3D11_VIEWPORT				viewport;
@@ -615,7 +615,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pContext,view->GetScreenWidth(),view->GetScreenHeight());
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
 		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
 		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth()/2);
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())

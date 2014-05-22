@@ -36,7 +36,7 @@
 #include "Simul/Clouds/TextureGenerator.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/CloudKeyframer.h"
-#include "Simul/Scene/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Platform/CrossPlatform/SL/noise_constants.sl"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
@@ -251,9 +251,9 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 	Inv(3,3)=1.f;
 }
 
-void SimulGLCloudRenderer::PreRenderUpdate(void *context)
+void SimulGLCloudRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
 {
-	EnsureTexturesAreUpToDate(context);
+	EnsureTexturesAreUpToDate(deviceContext.platform_context);
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();

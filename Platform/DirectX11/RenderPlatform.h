@@ -1,6 +1,6 @@
 #pragma once
 #include "Export.h"
-#include "Simul/Scene/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
@@ -19,10 +19,15 @@
 
 namespace simul
 {
+	namespace scene
+	{
+		class Material;
+	}
 	namespace dx11
 	{
+		class Material;
 		//! A class to implement common rendering functionality for DirectX 11.
-		class SIMUL_DIRECTX11_EXPORT RenderPlatform:public scene::RenderPlatform
+		class SIMUL_DIRECTX11_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
 			ID3D11Device*				device;
 		public:
@@ -36,6 +41,7 @@ namespace simul
 			void PopTexturePath();
 			void StartRender();
 			void EndRender();
+			void SetReverseDepth(bool r);
 			void IntializeLightingEnvironment(const float pAmbientLight[3]);
 			void DrawMarker		(void *context,const double *matrix);
 			void DrawLine		(void *context,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width);
@@ -46,6 +52,9 @@ namespace simul
 			void DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *effect,void *technique);
 
 			void Print			(void *context,int x,int y	,const char *text);
+			void DrawLines		(void *context,Vertext *lines,int count,bool strip=false);
+			void DrawCircle		(crossplatform::DeviceContext &context,const float *dir,float rads,const float *colr,bool fill=false);
+			void PrintAt3dPos	(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 
 			void ApplyDefaultMaterial();
 			void SetModelMatrix(void *context,const crossplatform::ViewStruct &viewStruct,const double *mat);
@@ -57,6 +66,8 @@ namespace simul
 			
 			ID3DX11Effect *effect;
 			simul::dx11::ConstantBuffer<SolidConstants> solidConstants;
+			std::set<scene::Material*> materials;
+			bool reverseDepth;
 		};
 	}
 }

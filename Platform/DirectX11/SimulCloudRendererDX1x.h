@@ -67,7 +67,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			//! Call this to release the memory for D3D device objects.
 			bool Destroy();
-			void PreRenderUpdate(void *context);
+			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! Call this to draw the clouds, including any illumination by lightning.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH);
 			void RenderDebugInfo(void *context,int width,int height);

@@ -658,15 +658,15 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceConte
     SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
-void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
+void SimulCloudRendererDX1x::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
-    SIMUL_COMBINED_PROFILE_START(context,"SimulCloudRendererDX1x::PreRenderUpdate")
+	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)deviceContext.platform_context;
+    SIMUL_COMBINED_PROFILE_START(pContext,"SimulCloudRendererDX1x::PreRenderUpdate")
 	EnsureTexturesAreUpToDate(pContext);
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply(pContext);
 	RenderCombinedCloudTexture(pContext);
-    SIMUL_COMBINED_PROFILE_END(context)
+    SIMUL_COMBINED_PROFILE_END(pContext)
 	//set up matrices
 // Commented this out and moved to Render as was causing cloud noise problem due to the camera
 // matrix it was using being for light probes rather than the main view.

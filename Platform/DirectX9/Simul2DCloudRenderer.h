@@ -55,7 +55,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			//! Return debugging information.
 			const char *GetDebugText() const;
-			void PreRenderUpdate(void *context);
+			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! Call this to draw the clouds, including any illumination by lightning.
 			//! On DX9, depth_testing and default_fog are ignored for now.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass

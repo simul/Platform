@@ -220,7 +220,7 @@ namespace simul
 		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y);
 		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y,float z,float w);
 		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,int value);
-		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float *vec);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,const float *vec);
 		void SIMUL_DIRECTX11_EXPORT setMatrix				(ID3DX11Effect *effect	,const char *name	,const float *value);
 		void SIMUL_DIRECTX11_EXPORT setConstantBuffer		(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b);
 		void SIMUL_DIRECTX11_EXPORT unbindTextures			(ID3DX11Effect *effect);

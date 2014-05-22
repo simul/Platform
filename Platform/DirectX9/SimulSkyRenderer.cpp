@@ -179,7 +179,7 @@ int SimulSkyRenderer::CalcScreenPixelHeight()
 	SAFE_RELEASE(backBuffer);
 	return backBufferDesc.Height;
 }
-
+/*
 void SimulSkyRenderer::DrawLines(void*,Vertext *lines,int vertex_count,bool strip)
 {
 	RT::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
@@ -188,8 +188,7 @@ void SimulSkyRenderer::DrawLines(void*,Vertext *lines,int vertex_count,bool stri
 void SimulSkyRenderer::PrintAt3dPos(void*,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
 	RT::PrintAt3dPos(p,text,colr,offsetx,offsety);
-}
-
+}*/
 void SimulSkyRenderer::InvalidateDeviceObjects()
 {
 	screen_pixel_height=0;
@@ -422,9 +421,9 @@ bool SimulSkyRenderer::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians
 		world=*((const D3DXMATRIX*)(or.T4.RowPointer(0)));
 	}
 	//set up matrices
-	world._41=cam_pos.x;
-	world._42=cam_pos.y;
-	world._43=cam_pos.z;
+	view._41=0;
+	view._42=0;
+	view._43=0;
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
@@ -486,6 +485,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	if(!m_hTechniqueQuery)
 		return sun_occlusion;
 	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
+	math::Vector3 cam_pos(0,0,0);
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight(cam_pos.z*.001f));
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
@@ -534,8 +534,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 
 void SimulSkyRenderer::RenderSun(void *,float exposure)
 {
-	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
-	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
+	simul::sky::float4 sunlight=skyKeyframer->GetSkyInterface()->GetSunIrradiance();
 float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
@@ -559,7 +558,7 @@ float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes
 	}
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight(cam_pos.z*0.001f));
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	RenderAngledQuad(sun_dir,sun_angular_radius);
@@ -627,7 +626,6 @@ void SimulSkyRenderer::EnsureTextureCycle()
 
 void SimulSkyRenderer::RenderPlanet(void* ,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
-	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	if(do_lighting)
 		m_pSkyEffect->SetTechnique(m_hTechniquePlanet);
 	else
@@ -638,7 +636,7 @@ void SimulSkyRenderer::RenderPlanet(void* ,void* tex,float rad,const float *dir,
 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(y_vertical?planet_dir4.y:planet_dir4.z);
-	planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
+	planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(0,planet_elevation,0,1e10f);
 	D3DXVECTOR4 planet_dir(dir);
 
 	// Make it bigger than it should be?
@@ -711,7 +709,6 @@ bool SimulSkyRenderer::RenderPointStars(void *,float exposure)
 
 	D3DXMATRIX tmp1, tmp2;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
-	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 
 	cam_dir.x=tmp1._31;
 	cam_dir.y=tmp1._32;
@@ -720,9 +717,9 @@ bool SimulSkyRenderer::RenderPointStars(void *,float exposure)
 		cam_dir*=-1.f;
 
 	GetSiderealTransform((float*)&world);
-	world._41=cam_pos.x;
-	world._42=cam_pos.y;
-	world._43=cam_pos.z;
+	view._41=0;
+	view._42=0;
+	view._43=0;
 	D3DXMatrixInverse(&tmp2,NULL,&world);
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
@@ -772,12 +769,12 @@ bool SimulSkyRenderer::RenderPointStars(void *,float exposure)
 	return (hr==S_OK);
 }
 
-bool SimulSkyRenderer::Render2DFades(void *context)
+bool SimulSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceContext)
 {
 	PIXBeginNamedEvent(0xF0F0F0F0,"Render2DFades");
 	UINT passes=1;
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-	cam_pos=GetCameraPosVector(view);
+	math::Vector3 cam_pos=GetCameraPosVector(view);
 
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
 	m_pSkyEffect->SetFloat	(skyInterp		,skyKeyframer->GetInterpolation());
@@ -792,7 +789,7 @@ bool SimulSkyRenderer::Render2DFades(void *context)
 	float atc=GetAltitudeTextureCoordinate();
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
 	
-	RenderIlluminationBuffer(context);
+	RenderIlluminationBuffer(deviceContext);
 
 	SkyConstants skyConstants;
 	skyConstants.skyInterp			=skyKeyframer->GetInterpolation();
@@ -856,11 +853,12 @@ bool SimulSkyRenderer::Render2DFades(void *context)
 	return true;
 }
 
-void SimulSkyRenderer::RenderIlluminationBuffer(void *context)
+void SimulSkyRenderer::RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext)
 {
 	EarthShadowUniforms earthShadowUniforms;
 	SkyConstants skyConstants;
-	SetIlluminationConstants(earthShadowUniforms,skyConstants);
+	math::Vector3 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
+	SetIlluminationConstants(earthShadowUniforms,skyConstants,cam_pos);
 	
 	/*DX9_STRUCTMEMBER_SET(m_pSkyEffect,skyConstants,skyInterp);
 	DX9_STRUCTMEMBER_SET(m_pSkyEffect,skyConstants,altitudeTexCoord);
@@ -885,7 +883,7 @@ void SimulSkyRenderer::RenderIlluminationBuffer(void *context)
 		D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
 		m_pSkyEffect->SetTechnique(tech);
 		unsigned passes;
-		illumination_fb.Activate(m_pd3dDevice);
+		illumination_fb.Activate(deviceContext.platform_context);
 		illumination_fb.Clear(m_pd3dDevice,0.0f,0.0f,1.0f,1.0f,0.f);
 		//if(e.enable)
 		m_pSkyEffect->Begin(&passes,0);
@@ -893,7 +891,7 @@ void SimulSkyRenderer::RenderIlluminationBuffer(void *context)
 			simul::dx9::DrawQuad(m_pd3dDevice);
 		m_pSkyEffect->EndPass();
 		m_pSkyEffect->End();
-		illumination_fb.Deactivate(context);
+		illumination_fb.Deactivate(deviceContext.platform_context);
 	}
 }
 
@@ -904,13 +902,13 @@ float SimulSkyRenderer::GetTiming() const
 
 simul::sky::float4 SimulSkyRenderer::GetAmbient() const
 {
-	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
+	float alt_km=0;
 	return GetBaseSkyInterface()->GetAmbientLight(alt_km);
 }
 
 simul::sky::float4 SimulSkyRenderer::GetLightColour() const
 {
-	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
+	float alt_km=0;
 	return GetBaseSkyInterface()->GetLocalIrradiance(alt_km);
 }
 
