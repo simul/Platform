@@ -197,9 +197,9 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	simul::opengl::TextureStruct *input_textures[]={loss_textures,insc_textures,skyl_textures};
 	glUseProgram(fade_3d_to_2d_program);
 	skyConstants.skyInterp			=skyKeyframer->GetInterpolation();
-	skyConstants.altitudeTexCoord	=skyKeyframer->GetAltitudeTexCoord();
-	skyConstants.overcast			=skyKeyframer->GetSkyInterface()->GetOvercast();
 	math::Vector3 cam_pos			=camera::GetCameraPosVector(deviceContext.viewStruct.view);
+	skyConstants.altitudeTexCoord	=skyKeyframer->GetAltitudeTexCoord(cam_pos.z/1000.f);
+	skyConstants.overcast			=skyKeyframer->GetSkyInterface()->GetOvercast();
 	skyConstants.eyePosition		=cam_pos;
 	skyConstants.cloudShadowRange	=sqrt(80.f/skyKeyframer->GetMaxDistanceKm());
 	skyConstants.cycled_index		=texture_cycle%3;
@@ -743,9 +743,9 @@ SimulGLSkyRenderer::~SimulGLSkyRenderer()
 
 const char *SimulGLSkyRenderer::GetDebugText()
 {
-	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
+/*	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
 								skyKeyframer->GetAltitudeKM()
-								,skyKeyframer->GetDirectionToSun());
+								,skyKeyframer->GetDirectionToSun());*/
 	static char txt[400];
 //	sprintf_s(txt,400,"e.normal (%4.4g, %4.4g, %4.4g) r-1: %4.4g, cos: %4.4g, illum alt: %4.4g",e.normal.x,e.normal.y,e.normal.z
 //		,e.radius_on_cylinder-1.f,e.terminator_cosine,e.illumination_altitude);

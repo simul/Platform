@@ -405,9 +405,9 @@ void RenderPlatform::Print(void *context,int x,int y	,const char *text)
 	textRenderer.Render(pContext,(float)x,(float)y,(float)viewport.Width,(float)viewport.Height,text,clr);
 }
 
-void RenderPlatform::DrawLines(void *context,Vertext *lines,int vertex_count,bool strip)
+void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)
 {
-	simul::dx11::UtilityRenderer::DrawLines((ID3D11DeviceContext *)context,(VertexXyzRgba*)lines,vertex_count,strip);
+	simul::dx11::UtilityRenderer::DrawLines(deviceContext,(VertexXyzRgba*)lines,vertex_count,strip);
 }
 
 void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill)

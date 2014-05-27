@@ -282,7 +282,7 @@ void OpenGLRenderer::paintGL()
 			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth,ScreenHeight);
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(NULL,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,ScreenWidth,ScreenHeight);
 	}
 	renderUI();
 	glPopAttrib();

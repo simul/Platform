@@ -49,8 +49,8 @@ namespace simul
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
 			virtual void DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *effect,void *technique)=0;
 			virtual void Print			(void *context,int x,int y,const char *text)							=0;
-			virtual void DrawLines		(void *context,Vertext *lines,int count,bool strip=false)				=0;
-			virtual void DrawCircle		(DeviceContext &context,const float *dir,float rads,const float *colr,bool fill=false)	=0;
+			virtual void DrawLines		(DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false)				=0;
+			virtual void DrawCircle		(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false)	=0;
 			virtual void PrintAt3dPos	(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0)		=0;
 			virtual void				SetModelMatrix		(void *context,const crossplatform::ViewStruct &viewStruct,const double *mat)	=0;
 			virtual void				ApplyDefaultMaterial()	=0;

@@ -470,8 +470,9 @@ void Direct3D11Renderer::RenderScene(int view_id
 		if(simulOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetSkyRenderer())
 		{
 			simul::sky::float4 dir,light;
+			math::Vector3 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
 			dir			=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
-			light		=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
+			light		=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ	=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 			float exp	=(simulHDRRenderer?exposure:1.f)*(1.f-occ);
 			void *moistureTexture=NULL;
@@ -654,7 +655,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pContext,view->GetScreenWidth(),view->GetScreenHeight());
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,view->GetScreenWidth(),view->GetScreenHeight());
 		}
 	}
 	if(oceanRenderer&&ShowWaterTextures)

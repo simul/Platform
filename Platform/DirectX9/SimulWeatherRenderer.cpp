@@ -450,11 +450,6 @@ void SimulWeatherRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceC
 			simulPrecipitationRenderer->SetIntensity(0.f);
 			simulPrecipitationRenderer->SetWind(0,0);
 		}
-		if(simulSkyRenderer)
-		{
-			simul::sky::float4 l=simulSkyRenderer->GetLightColour();
-			simulPrecipitationRenderer->SetLightColour((const float*)(l));
-		}
 	}
 }
 

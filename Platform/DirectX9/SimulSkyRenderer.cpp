@@ -775,9 +775,10 @@ bool SimulSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceContext
 	UINT passes=1;
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	math::Vector3 cam_pos=GetCameraPosVector(view);
-
-	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
-	m_pSkyEffect->SetFloat	(skyInterp		,skyKeyframer->GetInterpolation());
+	
+	float atc=skyKeyframer->GetAltitudeTexCoord(cam_pos.z/1000.f);
+	m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
+	m_pSkyEffect->SetFloat	(skyInterp			,skyKeyframer->GetInterpolation());
 	m_pSkyEffect->SetTexture(fadeTexture,loss_textures[0].texture);
 	m_pSkyEffect->SetTexture(fadeTexture2,loss_textures[1].texture);
 	static float ff=0.5f;
@@ -786,14 +787,13 @@ bool SimulSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceContext
 	static float uu=0.f;
 	D3DXVECTOR4 sc(1.f-uu/(float)numFadeDistances,1.f-uu/(float)numFadeElevations,1.f,1.f);
 	m_pSkyEffect->SetVector(texelScale,&sc);
-	float atc=GetAltitudeTextureCoordinate();
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
 	
 	RenderIlluminationBuffer(deviceContext);
 
 	SkyConstants skyConstants;
 	skyConstants.skyInterp			=skyKeyframer->GetInterpolation();
-	skyConstants.altitudeTexCoord	=skyKeyframer->GetAltitudeTexCoord();
+	skyConstants.altitudeTexCoord	=atc;
 	skyConstants.overcast			=skyKeyframer->GetSkyInterface()->GetOvercast();
 	skyConstants.eyePosition		=cam_pos;
 	skyConstants.cloudShadowRange	=sqrt(80.f/skyKeyframer->GetMaxDistanceKm());

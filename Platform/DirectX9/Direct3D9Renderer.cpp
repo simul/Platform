@@ -302,7 +302,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		if(ShowCloudCrossSections&&simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,width,height);
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pd3dDevice,width,height);
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,width,height);
 			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext,0,0,width,height);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer&&simulWeatherRenderer->Get2DCloudRenderer())

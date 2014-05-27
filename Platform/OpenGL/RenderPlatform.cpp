@@ -378,7 +378,7 @@ void *RenderPlatform::GetDevice()
 	return NULL;
 }
 
-void RenderPlatform::DrawLines(void *,Vertext *lines,int vertex_count,bool strip)
+void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)
 {
 	::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
 }

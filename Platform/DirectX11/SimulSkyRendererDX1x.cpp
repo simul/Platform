@@ -548,13 +548,13 @@ bool SimulSkyRendererDX1x::Render2DFades(crossplatform::DeviceContext &deviceCon
 	RenderIlluminationBuffer(deviceContext);
 	SIMUL_COMBINED_PROFILE_START(pContext,"Render2DFades")
 	// Current keyframe properties:
-	const simul::sky::SkyKeyframer::SkyKeyframe *K=skyKeyframer->GetInterpolatedKeyframe();
+	const simul::sky::SkyKeyframe *K=skyKeyframer->GetInterpolatedKeyframe();
+	math::Vector3 cam_pos=camera::GetCameraPosVector(deviceContext.viewStruct.view);
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,0.0,0.0,0.0};
 	skyConstants.skyInterp			=skyKeyframer->GetInterpolation();
-	skyConstants.altitudeTexCoord	=skyKeyframer->GetAltitudeTexCoord();
+	skyConstants.altitudeTexCoord	=skyKeyframer->GetAltitudeTexCoord(cam_pos.z/1000.f);
 	skyConstants.overcast			=skyKeyframer->GetSkyInterface()->GetOvercast();
-	math::Vector3 cam_pos=camera::GetCameraPosVector(deviceContext.viewStruct.view);
 	skyConstants.eyePosition		=cam_pos;
 	skyConstants.cloudShadowRange	=sqrt(80.f/skyKeyframer->GetMaxDistanceKm());
 	skyConstants.cycled_index		=texture_cycle%3;
