@@ -22,7 +22,6 @@
 #include "LoadGLImage.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/earth_shadow_uniforms.sl"
-#include "Simul/Camera/Camera.h"
 using namespace simul;
 using namespace opengl;
 
@@ -71,6 +70,7 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base:
 	v[0][2] = v[3][2] = v[4][2] = v[7][2] =  100.f;
 	v[1][2] = v[2][2] = v[5][2] = v[6][2] = -100.f;
 //	skyKeyframer->SetFillTexturesAsBlocks(true);
+	SetCameraPosition(0,0,skyKeyframer->GetAltitudeKM()*1000.f);
 	gpuSkyGenerator.SetEnabled(true);
 }
 
@@ -160,25 +160,24 @@ const float *SimulGLSkyRenderer::GetFastInscatterLookup(void *context,float dist
 }
 
 
-void SimulGLSkyRenderer::RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext)
+void SimulGLSkyRenderer::RenderIlluminationBuffer(void *context)
 {
-	math::Vector3 cam_pos=camera::GetCameraPosVector(deviceContext.viewStruct.view);
-	SetIlluminationConstants(earthShadowUniforms,skyConstants,cam_pos);
+	SetIlluminationConstants(earthShadowUniforms,skyConstants);
 	skyConstants.Apply();
 	earthShadowUniforms.Apply();
 	{
 		//D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
 		//m_pSkyEffect->SetTechnique(tech);
 		glUseProgram(illumination_buffer_program);
-		illumination_fb.Activate(deviceContext.platform_context);
-		illumination_fb.Clear(deviceContext.platform_context,1.0f,1.0f,1.0f,1.0f,1.f);
+		illumination_fb.Activate(context);
+		illumination_fb.Clear(context,1.0f,1.0f,1.0f,1.0f,1.f);
 		DrawQuad(0,0,1,1);
-		illumination_fb.Deactivate(deviceContext.platform_context);
+		illumination_fb.Deactivate(context);
 	}
 }
 // Here we blend the four 3D fade textures (distance x elevation x altitude at two keyframes, for loss and inscatter)
 // into pair of 2D textures (distance x elevation), eliminating the viewing altitude and time factor.
-bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceContext)
+bool SimulGLSkyRenderer::Render2DFades(void *context)
 {
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -189,7 +188,7 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-	RenderIlluminationBuffer(deviceContext);
+	RenderIlluminationBuffer(context);
 	glDisable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
 	FramebufferGL *fb[]={&loss_2d,&inscatter_2d,&skylight_2d};
@@ -197,8 +196,7 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	simul::opengl::TextureStruct *input_textures[]={loss_textures,insc_textures,skyl_textures};
 	glUseProgram(fade_3d_to_2d_program);
 	skyConstants.skyInterp			=skyKeyframer->GetInterpolation();
-	math::Vector3 cam_pos			=camera::GetCameraPosVector(deviceContext.viewStruct.view);
-	skyConstants.altitudeTexCoord	=skyKeyframer->GetAltitudeTexCoord(cam_pos.z/1000.f);
+	skyConstants.altitudeTexCoord	=skyKeyframer->GetAltitudeTexCoord();
 	skyConstants.overcast			=skyKeyframer->GetSkyInterface()->GetOvercast();
 	skyConstants.eyePosition		=cam_pos;
 	skyConstants.cloudShadowRange	=sqrt(80.f/skyKeyframer->GetMaxDistanceKm());
@@ -213,7 +211,7 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	glLoadIdentity();
 	for(int i=0;i<3;i++)
 	{
-		fb[i]->Activate(deviceContext.platform_context);
+		fb[i]->Activate(context);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,input_textures[i][(texture_cycle+0)%3].tex);
 		glActiveTexture(GL_TEXTURE1);
@@ -230,7 +228,7 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
  					numFadeDistances,numFadeElevations	);
 			glDisable(GL_TEXTURE_2D);
 		}
-		fb[i]->Deactivate(deviceContext.platform_context);
+		fb[i]->Deactivate(context);
 	}
 	glUseProgram(NULL);
 	
@@ -259,7 +257,7 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderFades(crossplatform::DeviceContext &,int x0,int y0,int width,int height)
+bool SimulGLSkyRenderer::RenderFades(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
 	int size=width/3;
 	if(height/4<size)
@@ -387,6 +385,7 @@ bool SimulGLSkyRenderer::RenderPointStars(void *,float exposure)
     glPushMatrix();
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	float sid[16];
+	CalcCameraPosition(cam_pos);
 	GetSiderealTransform(sid);
 	glEnable(GL_BLEND);
 	glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
@@ -422,8 +421,7 @@ bool SimulGLSkyRenderer::RenderPointStars(void *,float exposure)
 	skyConstants.Apply();
 	float mat1[16],mat2[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX,mat1);
-	math::Vector3 cam_pos;
-	CalcCameraPosition(cam_pos);
+
 	glTranslatef(cam_pos.x,cam_pos.y,cam_pos.z);
 	glGetFloatv(GL_MODELVIEW_MATRIX,mat2);
 
@@ -447,8 +445,6 @@ bool SimulGLSkyRenderer::RenderPointStars(void *,float exposure)
 
 void SimulGLSkyRenderer::RenderSun(void *,float exposure)
 {
-	math::Vector3 cam_pos;
-	CalcCameraPosition(cam_pos);
 	float alt_km=0.001f*cam_pos.z;
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
@@ -480,8 +476,7 @@ void SimulGLSkyRenderer::RenderSun(void *,float exposure)
 
 void SimulGLSkyRenderer::RenderPlanet(void *,void* tex,float planet_angular_size,const float *dir,const float *colr,bool do_lighting)
 {
-	GL_ERROR_CHECK
-	math::Vector3 cam_pos;
+		GL_ERROR_CHECK
 	CalcCameraPosition(cam_pos);
 	float alt_km=0.001f*cam_pos.z;
 	glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
@@ -741,11 +736,21 @@ SimulGLSkyRenderer::~SimulGLSkyRenderer()
 	InvalidateDeviceObjects();
 }
 
+void SimulGLSkyRenderer::DrawLines(void *,Vertext *lines,int vertex_count,bool strip)
+{
+	::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
+}
+
+void SimulGLSkyRenderer::PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx,int offsety)
+{
+	::PrintAt3dPos(p,text,colr,offsetx,offsety);
+}
+
 const char *SimulGLSkyRenderer::GetDebugText()
 {
-/*	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
+	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
 								skyKeyframer->GetAltitudeKM()
-								,skyKeyframer->GetDirectionToSun());*/
+								,skyKeyframer->GetDirectionToSun());
 	static char txt[400];
 //	sprintf_s(txt,400,"e.normal (%4.4g, %4.4g, %4.4g) r-1: %4.4g, cos: %4.4g, illum alt: %4.4g",e.normal.x,e.normal.y,e.normal.z
 //		,e.radius_on_cylinder-1.f,e.terminator_cosine,e.illumination_altitude);

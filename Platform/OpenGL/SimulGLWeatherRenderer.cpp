@@ -245,7 +245,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	if(baseSkyRenderer)
 	{
 		baseSkyRenderer->EnsureTexturesAreUpToDate(context);
-		baseSkyRenderer->Render2DFades(deviceContext);
+		baseSkyRenderer->Render2DFades(context);
 	}
 	clouds::TwoResFramebuffer *fb			=GetFramebuffer(deviceContext.viewStruct.view_id);
 	buffered=(buffered&&fb&&!is_cubemap);

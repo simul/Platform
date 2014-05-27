@@ -268,7 +268,7 @@ void Set2DTexture(GLint shader_param,GLuint gl_texture,int channel)
 GL_ERROR_CHECK
 }
 
-void SimulGL2DCloudRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
+void SimulGL2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 

@@ -43,7 +43,7 @@ namespace simul
 		class BaseRenderer
 		{
 		//protected:
-		//	virtual crossplatform::RenderPlatform *GetRenderPlatform()=0;
+		//	virtual scene::RenderPlatform *GetRenderPlatform()=0;
 		};
 	}
 }

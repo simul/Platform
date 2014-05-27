@@ -192,7 +192,7 @@ void OpenGLRenderer::paintGL()
 	static float exposure=1.0f;
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->PreRenderUpdate(deviceContext);
+		simulWeatherRenderer->PreRenderUpdate(context);
 		/*GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
 		GLuint fogfilter=0;								// Which Fog To Use
 		simul::sky::float4 fogColor=simulWeatherRenderer->GetHorizonColour(0.001f*cam->GetPosition()[2]);
@@ -258,7 +258,7 @@ void OpenGLRenderer::paintGL()
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(context);
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(context,ScreenWidth,ScreenHeight);
 		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
 		bool vertical_screen=ScreenHeight>ScreenWidth;
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
@@ -282,7 +282,7 @@ void OpenGLRenderer::paintGL()
 			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth,ScreenHeight);
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(NULL,ScreenWidth,ScreenHeight);
 	}
 	renderUI();
 	glPopAttrib();

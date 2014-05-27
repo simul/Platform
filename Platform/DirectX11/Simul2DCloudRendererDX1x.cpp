@@ -23,7 +23,7 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Scene/RenderPlatform.h"
 
 using namespace simul;
 using namespace dx11;
@@ -261,10 +261,10 @@ void Simul2DCloudRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const
 	proj=p;
 }
 
-void Simul2DCloudRendererDX11::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
+void Simul2DCloudRendererDX11::PreRenderUpdate(void *context)
 {
-	EnsureTexturesAreUpToDate(deviceContext.platform_context);
-	RenderDetailTexture(deviceContext.platform_context);
+	EnsureTexturesAreUpToDate(context);
+	RenderDetailTexture(context);
 }
 
 void FixProjectionMatrix(simul::math::Matrix4x4 &proj,float zNear,float zFar)

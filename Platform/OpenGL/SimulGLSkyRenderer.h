@@ -70,7 +70,7 @@ namespace simul
 	const		char *GetDebugText();
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 		protected:
-	void		RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext);
+	void		RenderIlluminationBuffer(void *context);
 	simul::opengl::GpuSkyGenerator	gpuSkyGenerator;
 	//! \internal Switch the current program, either sky_program or earthshadow_program.
 	//! Also sets the parameter variables.	
@@ -83,7 +83,7 @@ namespace simul
 	void		EnsureTextureCycle();
 
 	bool		initialized;
-	bool		Render2DFades(simul::crossplatform::DeviceContext &deviceContext);
+	bool		Render2DFades(void *context);
 	void		CreateFadeTextures();
 	void		CreateSkyTextures();
 
@@ -158,6 +158,8 @@ namespace simul
 
 	bool			campos_updated;
 	short			*short_ptr;
+	void			DrawLines(void *,Vertext *lines,int vertex_count,bool strip=false);
+	void			PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 		};
 	}
 }

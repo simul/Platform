@@ -10,7 +10,6 @@ uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 	uniform int latitudes,longitudes;
 	uniform float radius;
 	uniform float multiplier;
-	uniform vec4 colour;
 };
 
 cbuffer cbPerObject : register(b11)
@@ -50,30 +49,8 @@ v2f Debug2DVS(idOnly IN)
 v2f DebugVS(a2v IN)
 {
 	v2f OUT;
-    OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
-	OUT.colour		=IN.colour;
-    return OUT;
-}
-
-v2f CircleVS(idOnly IN)
-{
-	v2f OUT;
-	float angle		=2.0*3.1415926536*float(IN.vertex_id)/31.0;
-	vec4 pos		=vec4(100.0*vec3(radius*vec2(cos(angle),sin(angle)),1.0),1.0);
-    OUT.hPosition	=mul(worldViewProj,float4(pos.xyz,1.0));
-	OUT.colour		=colour;
-    return OUT;
-}
-
-v2f FilledCircleVS(idOnly IN)
-{
-	v2f OUT;
-	int i=int(IN.vertex_id/2);
-	int j=int(IN.vertex_id%2);
-	float angle		=2.0*3.1415926536*float(IN.vertex_id)/31.0;
-	vec4 pos		=vec4(100.0*vec3(radius*j*vec2(cos(angle),sin(angle)),1.0),1.0);
-    OUT.hPosition	=mul(worldViewProj,float4(pos.xyz,1.0));
-	OUT.colour		=colour;
+    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
+	OUT.colour = IN.colour;
     return OUT;
 }
 
@@ -93,8 +70,8 @@ vec4 TexturedMSPS(v2f IN) : SV_TARGET
 	uint2 dims;
 	uint numSamples;
 	imageTextureMS.GetDimensions(dims.x,dims.y,numSamples);
-	uint2 pos	=uint2(IN.colour.xy*vec2(dims.xy));
-	vec4 res	=10000.0*imageTextureMS.Load(pos,0);
+	uint2 pos=uint2(IN.colour.xy*vec2(dims.xy));
+	vec4 res=10000.0*imageTextureMS.Load(pos,0);
 	return res;
 }
 
@@ -158,44 +135,18 @@ float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 	return float4(result.rgb,1.f);
 }
 
+
 technique11 simul_debug
 {
     pass p0
     {
-		SetRasterizerState( wireframeRasterizer );
+		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,DebugVS()));
 		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
     }
-}
-fxgroup circle
-{
-	technique11 outline
-	{
-		pass p0
-		{
-			SetRasterizerState( wireframeRasterizer );
-			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-			SetGeometryShader(NULL);
-			SetVertexShader(CompileShader(vs_4_0,CircleVS()));
-			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
-		}
-	}
-	technique11 filled
-	{
-		pass p0
-		{
-			SetRasterizerState( RenderNoCull );
-			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-			SetGeometryShader(NULL);
-			SetVertexShader(CompileShader(vs_4_0,FilledCircleVS()));
-			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
-		}
-	}
 }
 
 technique11 textured

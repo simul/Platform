@@ -58,7 +58,7 @@ namespace simul
 			void RestoreDeviceObjects(void *pd3dDevice);
 			//! Call this when the 3D device has been lost.
 			void InvalidateDeviceObjects();
-			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
+			void PreRenderUpdate(void *context);
 			//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& );
 

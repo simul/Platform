@@ -13,7 +13,6 @@ using namespace simul;
 using namespace opengl;
 RenderPlatform::RenderPlatform()
 	:solid_program(0)
-	,reverseDepth(false)
 {
 }
 
@@ -68,11 +67,6 @@ void RenderPlatform::EndRender()
 	glUseProgram(0);
 	glPopAttrib();
 	glPopAttrib();
-}
-
-void RenderPlatform::SetReverseDepth(bool r)
-{
-	reverseDepth=r;
 }
 
 namespace
@@ -376,18 +370,4 @@ scene::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 void *RenderPlatform::GetDevice()
 {
 	return NULL;
-}
-
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)
-{
-	::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
-}
-
-void RenderPlatform::PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx,int offsety)
-{
-	::PrintAt3dPos(p,text,colr,offsetx,offsety);
-}
-
-void RenderPlatform::DrawCircle		(crossplatform::DeviceContext &context,const float *dir,float rads,const float *colr,bool)
-{
 }

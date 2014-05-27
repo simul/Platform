@@ -264,7 +264,7 @@ void SetTexture()
 {
 }
 
-void Simul2DCloudRenderer::PreRenderUpdate(crossplatform::DeviceContext &)
+void Simul2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 

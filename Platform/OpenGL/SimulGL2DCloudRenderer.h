@@ -40,7 +40,7 @@ namespace simul
 			void RecompileShaders();
 			//! OpenGL Implementation of device invalidation - not strictly needed in GL.
 			void InvalidateDeviceObjects();
-			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
+			void PreRenderUpdate(void *context);
 			//! OpenGL Implementation of 2D cloud rendering.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& );
 			void RenderCrossSections(crossplatform::DeviceContext &context,int x0,int y0,int width,int height);

@@ -39,7 +39,7 @@ namespace simul
 			void RecompileShaders();
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
-			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
+			void PreRenderUpdate(void *context);
 			//! Render the clouds.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
 				,const void *depth_alpha_tex,bool default_fog,bool write_alpha

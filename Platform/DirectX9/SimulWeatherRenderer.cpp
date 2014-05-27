@@ -420,9 +420,9 @@ void SimulWeatherRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 }
 #endif
 
-void SimulWeatherRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceContext,float dt)
+void SimulWeatherRenderer::PreRenderUpdate(void *context,float dt)
 {
-	BaseWeatherRenderer::PreRenderUpdate(deviceContext);
+	BaseWeatherRenderer::PreRenderUpdate(context);
 	//if(baseCloudRenderer&&baseAtmosphericsRenderer)
 	{
 		//void **c=baseCloudRenderer->GetCloudTextures();
@@ -433,7 +433,7 @@ void SimulWeatherRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceC
 	}
 	if(simulPrecipitationRenderer)
 	{
-		simulPrecipitationRenderer->PreRenderUpdate(deviceContext.platform_context,dt);
+		simulPrecipitationRenderer->PreRenderUpdate(context,dt);
 		if(simulCloudRenderer&&environment->cloudKeyframer->GetVisible())
 		{
 			simulPrecipitationRenderer->SetWind(environment->cloudKeyframer->GetWindSpeed(),environment->cloudKeyframer->GetWindHeadingDegrees());
@@ -449,6 +449,11 @@ void SimulWeatherRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceC
 		{
 			simulPrecipitationRenderer->SetIntensity(0.f);
 			simulPrecipitationRenderer->SetWind(0,0);
+		}
+		if(simulSkyRenderer)
+		{
+			simul::sky::float4 l=simulSkyRenderer->GetLightColour();
+			simulPrecipitationRenderer->SetLightColour((const float*)(l));
 		}
 	}
 }

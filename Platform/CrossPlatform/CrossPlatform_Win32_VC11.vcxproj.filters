@@ -3,7 +3,6 @@
   <ItemGroup>
     <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
     <ClInclude Include="DeviceContext.h" />
-    <ClInclude Include="RenderPlatform.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
