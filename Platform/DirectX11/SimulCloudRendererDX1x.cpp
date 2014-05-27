@@ -658,15 +658,15 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceConte
     SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
-void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
+void SimulCloudRendererDX1x::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
-    SIMUL_COMBINED_PROFILE_START(context,"SimulCloudRendererDX1x::PreRenderUpdate")
+	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)deviceContext.platform_context;
+    SIMUL_COMBINED_PROFILE_START(pContext,"SimulCloudRendererDX1x::PreRenderUpdate")
 	EnsureTexturesAreUpToDate(pContext);
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply(pContext);
 	RenderCombinedCloudTexture(pContext);
-    SIMUL_COMBINED_PROFILE_END(context)
+    SIMUL_COMBINED_PROFILE_END(pContext)
 	//set up matrices
 // Commented this out and moved to Render as was causing cloud noise problem due to the camera
 // matrix it was using being for light probes rather than the main view.
@@ -797,9 +797,9 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 }
 
 
-void SimulCloudRendererDX1x::RenderDebugInfo(void *context,int width,int height)
+void SimulCloudRendererDX1x::RenderDebugInfo(crossplatform::DeviceContext &deviceContext,int width,int height)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	
 	D3DXMATRIX ortho;
 	D3DXMATRIX ident;
@@ -809,14 +809,7 @@ void SimulCloudRendererDX1x::RenderDebugInfo(void *context,int width,int height)
 	ortho._22=-ortho._22;
 	ortho._42=1.f;
 	UtilityRenderer::SetMatrices(ident,ortho);
-	simul::clouds::BaseCloudRenderer::RenderDebugInfo(pContext,width,height);
-}
-
-void SimulCloudRendererDX1x::DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
-	
-	simul::dx11::UtilityRenderer::DrawLines(pContext,vertices,vertex_count,strip);
+	simul::clouds::BaseCloudRenderer::RenderDebugInfo(deviceContext,width,height);
 }
 
 void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)

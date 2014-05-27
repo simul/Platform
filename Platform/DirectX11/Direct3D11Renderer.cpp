@@ -470,8 +470,9 @@ void Direct3D11Renderer::RenderScene(int view_id
 		if(simulOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetSkyRenderer())
 		{
 			simul::sky::float4 dir,light;
+			math::Vector3 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
 			dir			=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
-			light		=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
+			light		=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ	=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 			float exp	=(simulHDRRenderer?exposure:1.f)*(1.f-occ);
 			void *moistureTexture=NULL;
@@ -511,18 +512,18 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	else
 		SIMUL_ASSERT(false);
-	if(simulWeatherRenderer)
-	{
-		simulWeatherRenderer->SetMatrices((const float*)&v,(const float*)&proj);
-		simulWeatherRenderer->PreRenderUpdate(pContext);
-	}
 	
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.platform_context	=pContext;
 	deviceContext.renderPlatform	=&renderPlatformDx11;
 	deviceContext.viewStruct.view_id=view_id;
-	deviceContext.viewStruct.proj=(const float*)&proj;
-	deviceContext.viewStruct.view=(const float*)&v;
+	deviceContext.viewStruct.proj	=(const float*)&proj;
+	deviceContext.viewStruct.view	=(const float*)&v;
+	if(simulWeatherRenderer)
+	{
+		simulWeatherRenderer->SetMatrices((const float*)&v,(const float*)&proj);
+		simulWeatherRenderer->PreRenderUpdate(deviceContext);
+	}
 	if(view->viewType==OCULUS_VR)
 	{
 		D3D11_VIEWPORT				viewport;
@@ -615,7 +616,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pContext,view->GetScreenWidth(),view->GetScreenHeight());
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
 		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
 		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth()/2);
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
@@ -654,7 +655,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pContext,view->GetScreenWidth(),view->GetScreenHeight());
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,view->GetScreenWidth(),view->GetScreenHeight());
 		}
 	}
 	if(oceanRenderer&&ShowWaterTextures)

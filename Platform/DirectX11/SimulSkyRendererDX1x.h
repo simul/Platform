@@ -65,8 +65,8 @@ public:
 	virtual void RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
-	bool Render2DFades(void *context);
-	void RenderIlluminationBuffer(void *context);
+	bool Render2DFades(crossplatform::DeviceContext &deviceContext);
+	void RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext);
 	//! Get a value, from zero to one, which represents how much of the sun is visible.
 	//! Call this when the current rendering surface is the one that has obscuring
 	//! objects like mountains etc. in it, and make sure these have already been drawn.
@@ -148,8 +148,6 @@ protected:
 	void MapFade(ID3D11DeviceContext *context,int s);
 	void UnmapFade(int i);
 	simul::math::Matrix4x4				world,view,proj;
-	void DrawLines(void *context,Vertext *lines,int vertex_count,bool strip=false);
-	void PrintAt3dPos(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 	simul::dx11::GpuSkyGenerator gpuSkyGenerator;
 };
 }

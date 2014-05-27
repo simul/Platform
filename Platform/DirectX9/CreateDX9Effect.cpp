@@ -906,10 +906,10 @@ void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *
 	}
 }
 
-D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
+D3DXVECTOR4 GetCameraPosVector(const float*v)
 {
 	D3DXMATRIX tmp1;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
+	D3DXMatrixInverse(&tmp1,NULL,(D3DXMATRIX*)v);
 	D3DXVECTOR4 dcam_pos;
 	dcam_pos.x=tmp1._41;
 	dcam_pos.y=tmp1._42;

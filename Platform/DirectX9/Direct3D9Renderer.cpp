@@ -227,7 +227,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		return;
 #if 1
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->PreRenderUpdate(NULL,fTimeStep);
+		simulWeatherRenderer->PreRenderUpdate(deviceContext,fTimeStep);
 	//since our skybox will blend based on alpha we have to clear the backbuffer to this alpha value
 	pd3dDevice->SetRenderState( D3DRS_ZENABLE,FALSE);
 	pd3dDevice->SetRenderState( D3DRS_ZWRITEENABLE,FALSE);
@@ -296,13 +296,13 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulWeatherRenderer)
 	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(NULL,width,height);
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
 		if(ShowLightVolume&&simulWeatherRenderer->GetCloudRenderer())
 			simulWeatherRenderer->GetCloudRenderer()->RenderLightVolume();
 		if(ShowCloudCrossSections&&simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,width,height);
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pd3dDevice,width,height);
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,width,height);
 			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext,0,0,width,height);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer&&simulWeatherRenderer->Get2DCloudRenderer())

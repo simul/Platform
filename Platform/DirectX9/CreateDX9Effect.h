@@ -74,7 +74,7 @@ extern LPDIRECT3DSURFACE9 SIMUL_DIRECTX9_EXPORT MakeRenderTarget(const LPDIRECT3
 extern void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir=NULL);
 
 
-extern D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view);
+extern D3DXVECTOR4 GetCameraPosVector(const float *view);
 extern std::map<std::string,std::string> MakeDefinesList(bool wrap,bool y_vertical);
 
 

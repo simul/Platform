@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/Material.h"
 #include "Simul/Platform/DirectX11/Mesh.h"
@@ -5,7 +6,9 @@
 #include "Simul/Platform/DirectX11/Light.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/TextRenderer.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Math/Matrix4x4.h"
+#include "Simul/Camera/Camera.h"
 
 using namespace simul;
 using namespace dx11;
@@ -20,6 +23,7 @@ namespace simul
 
 RenderPlatform::RenderPlatform()
 	:effect(NULL)
+	,reverseDepth(false)
 {
 }
 
@@ -53,7 +57,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 void RenderPlatform::RecompileShaders()
 {
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
+	if(reverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	SAFE_RELEASE(effect);
 	if(!device)
@@ -95,6 +99,10 @@ void RenderPlatform::EndRender()
 	/*glUseProgram(0);
 	glPopAttrib();
 	glPopAttrib();*/
+}
+void RenderPlatform::SetReverseDepth(bool r)
+{
+	reverseDepth=r;
 }
 
 namespace
@@ -377,9 +385,13 @@ void RenderPlatform::DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *
 	setParameter(eff,"rect",r);
 	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
+	ID3D11InputLayout* previousInputLayout;
+	pContext->IAGetInputLayout( &previousInputLayout );
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	pContext->Draw(4,0);
+	pContext->IASetInputLayout( previousInputLayout );
+	SAFE_RELEASE(previousInputLayout);
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
@@ -391,4 +403,52 @@ void RenderPlatform::Print(void *context,int x,int y	,const char *text)
 	D3D11_VIEWPORT								viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
 	textRenderer.Render(pContext,(float)x,(float)y,(float)viewport.Width,(float)viewport.Height,text,clr);
+}
+
+void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)
+{
+	simul::dx11::UtilityRenderer::DrawLines(deviceContext,(VertexXyzRgba*)lines,vertex_count,strip);
+}
+
+void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill)
+{
+	ID3D11DeviceContext *pContext	=deviceContext.asD3D11DeviceContext();
+	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+	pContext->IASetPrimitiveTopology(fill?D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+	pContext->IASetInputLayout(NULL);
+	{
+		ID3DX11EffectGroup *g=dx11::UtilityRenderer::GetDebugEffect()->GetGroupByName("circle");
+		ID3DX11EffectTechnique *tech=fill?g->GetTechniqueByName("filled"):g->GetTechniqueByName("outline");
+		
+		simul::math::Vector3 d(dir);
+		d.Normalize();
+		float Yaw=atan2(d.x,d.y);
+		float Pitch=-asin(d.z);
+		simul::math::Matrix4x4 world, tmp1, tmp2;
+	
+		simul::geometry::SimulOrientation ori;
+		ori.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
+		ori.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
+		world	=ori.T4;
+		//set up matrices
+		math::Matrix4x4 view=deviceContext.viewStruct.view;
+		view._41=0.f;
+		view._42=0.f;
+		view._43=0.f;
+		simul::math::Multiply4x4(tmp1,world,view);
+		simul::math::Multiply4x4(tmp2,tmp1,deviceContext.viewStruct.proj);
+		camera::MakeWorldViewProjMatrix(tmp2,world,view,deviceContext.viewStruct.proj);
+		dx11::setMatrix(UtilityRenderer::GetDebugEffect(),"worldViewProj",&tmp2._11);
+		dx11::setParameter(UtilityRenderer::GetDebugEffect(),"radius",rads);
+		dx11::setParameter(UtilityRenderer::GetDebugEffect(),"colour",colr);
+		ApplyPass(pContext,tech->GetPassByIndex(0));
+	}
+	pContext->Draw(fill?64:32,0);
+	pContext->IASetPrimitiveTopology(previousTopology);
+}
+
+void RenderPlatform::PrintAt3dPos(void *context,const float *p,const char *text,const float* colr,int offsetx,int offsety)
+{
+	//renderPlatform->PrintAt3dPos((ID3D11DeviceContext *)context,p,text,colr,offsetx,offsety);
 }

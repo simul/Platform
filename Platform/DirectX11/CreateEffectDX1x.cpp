@@ -533,7 +533,7 @@ void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,int value
 	var->SetInt(value);
 }
 
-void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float *value)
+void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,const float *value)
 {
 	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
 	SIMUL_ASSERT(var->IsValid()!=0);

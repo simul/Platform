@@ -15,6 +15,7 @@
 #include "Simul/Math/RandomNumberGenerator.h"
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
+#include "Simul/Sky/SkyInterface.h"
 extern simul::dx11::RenderPlatform renderPlatformDx11;
 
 using namespace simul;
@@ -120,7 +121,6 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
 	HRESULT hr=S_OK;
-	cam_pos.x=cam_pos.y=cam_pos.z=0;
 	MakeMesh();
 
 	PrecipitationVertex *dat=new PrecipitationVertex[125000];
@@ -248,6 +248,11 @@ void PrecipitationRenderer::Render(void *context
 				,simul::sky::float4 viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	static float ll=0.07f;
+	sky::float4 cam_pos=GetCameraPosVector(view);
+	sky::float4 light_colour=ll*baseSkyInterface->GetLocalIrradiance(cam_pos.z/1000.f);
+	sky::float4 light_dir=baseSkyInterface->GetDirectionToLight(cam_pos.z/1000.f);
+   
 	static float cc=0.02f;
 	intensity*=1.f-cc;
 	intensity+=cc*Intensity;

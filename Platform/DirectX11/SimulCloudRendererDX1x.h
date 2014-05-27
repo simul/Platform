@@ -67,10 +67,10 @@ namespace simul
 			void InvalidateDeviceObjects();
 			//! Call this to release the memory for D3D device objects.
 			bool Destroy();
-			void PreRenderUpdate(void *context);
+			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! Call this to draw the clouds, including any illumination by lightning.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH);
-			void RenderDebugInfo(void *context,int width,int height);
+			void RenderDebugInfo(crossplatform::DeviceContext &deviceContext,int width,int height);
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
 			void RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height);
 			//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
@@ -107,7 +107,6 @@ namespace simul
 		protected:
 			simul::dx11::GpuCloudGenerator gpuCloudGenerator;
 			void RenderCombinedCloudTexture(void *context);
-			void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip);
 			// Make up to date with respect to keyframer:
 			void EnsureCorrectTextureSizes();
 			void EnsureTexturesAreUpToDate(void *context);
