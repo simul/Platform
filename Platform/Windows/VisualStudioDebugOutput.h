@@ -19,8 +19,8 @@ public:
 		,old_cerr_buffer(NULL)
 		,to_logfile(false)
 	{
-		if(errno!=0)
-			simul::base::RuntimeError(strerror(errno));
+		//if(errno!=0)
+		//	simul::base::RuntimeError(strerror(errno));
 		to_output_window=send_to_output_window;
 		if(logfilename)
 			setLogFile(logfilename);

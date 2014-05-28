@@ -251,8 +251,8 @@ extern SIMUL_DIRECTX11_EXPORT HRESULT ApplyPass(ID3D11DeviceContext *pImmediateC
 
 extern void SIMUL_DIRECTX11_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos,bool ReverseDepth);
 
-void StoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
-void RestoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
+void SIMUL_DIRECTX11_EXPORT StoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
+void SIMUL_DIRECTX11_EXPORT RestoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
 
 #define PAD16(n) (((n)+15)/16*16)
 #endif

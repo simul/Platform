@@ -109,8 +109,8 @@ namespace simul
 												,const void* lowResDepthTexture
 												,const simul::sky::float4& viewportRegionXYWH
 												,const crossplatform::MixedResolutionStruct &mixedResolutionStruct);
-			void RenderFramebufferDepth(void *context,int view_id,int x0,int y0,int w,int h);
-			void RenderCompositingTextures(void *context,int view_id,int x0,int y0,int w,int h);
+			void RenderFramebufferDepth(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
+			void RenderCompositingTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			void RenderPrecipitation(void *context,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
 			void RenderLightning(void *context,int viewport_id,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);

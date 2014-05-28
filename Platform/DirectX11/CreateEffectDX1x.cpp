@@ -20,7 +20,6 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
 #include <string>
-static const DWORD default_effect_flags=0;
 
 #include <vector>
 #include <iostream>
@@ -785,6 +784,7 @@ HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *
 			def++;
 		}
 	}
+static const DWORD default_effect_flags=0;
 	DWORD flags=default_effect_flags;
 	SAFE_RELEASE(*effect);
 	hr=1;

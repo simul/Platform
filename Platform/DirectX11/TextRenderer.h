@@ -21,6 +21,7 @@ namespace simul
 				vec4	rect;
 				vec4	texc;
 				vec4	colour;
+				vec4	background;
 			};
 
 		public:
@@ -31,7 +32,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 		void RecompileShaders();
 			//void Render(crossplatform::DeviceContext &deviceContext, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
-			void Render(void *context, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
+			void Render(void *context, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL,const float *bck=NULL,bool mirrorY=false);
 
 		private:
 

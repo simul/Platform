@@ -128,9 +128,9 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void *moi
 			UtilityRenderer::DrawQuad(pContext);
 		}
 	}
-	pContext->VSSetShader(NULL, NULL, 0);
-	pContext->GSSetShader(NULL, NULL, 0);
-	pContext->PSSetShader(NULL, NULL, 0);
+	pContext->VSSetShader(NULL,NULL,0);
+	pContext->GSSetShader(NULL,NULL,0);
+	pContext->PSSetShader(NULL,NULL,0);
 	RestoreD3D11State(pContext );
 	//RenderRainbowAndCorona(context,exposure,moistureTexture,v,p,dir,light);
 }

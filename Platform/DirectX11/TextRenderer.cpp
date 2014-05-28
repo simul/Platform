@@ -146,17 +146,44 @@ void TextRenderer::RecompileShaders()
 	constantBuffer.LinkToEffect(effect,"FontConstants");
 }
 
-void TextRenderer::Render(void *context,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr)
+void TextRenderer::Render(void *context,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
+	float transp[]={0.f,0.f,0.f,0.f};
 	float white[]={1.f,1.f,1.f,1.f};
 	if(!clr)
 		clr=white;
+	if(!bck)
+		bck=transp;
 	simul::dx11::setTexture(effect,"fontTexture"	,font_texture_SRV);
 	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
-	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(pContext,effect->GetTechniqueByIndex(0)->GetPassByIndex(0));
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	constantBuffer.colour		=vec4(clr);
+	constantBuffer.background	=vec4(bck);
+	// Calc width and draw background:
+	int w=0;
+	for(int i=0;i<32;i++)
+	{
+		if(txt[i]==0)
+			break;
+		int idx=(int)txt[i]-32;
+		if(idx<0||idx>100)
+			continue;
+		const FontIndex &f=fontIndices[idx];
+		w+=f.pixel_width+1;
+	}
+	ApplyPass(pContext,effect->GetTechniqueByName("backg")->GetPassByIndex(0));
+	constantBuffer.rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+16.f)/screen_height,2.0f*(float)w/screen_width,2.0f*16.f/screen_height);
+	if(mirrorY)
+	{
+		constantBuffer.rect.y=-constantBuffer.rect.y;
+		constantBuffer.rect.w*=-1.0f;
+	}
+	constantBuffer.Apply(pContext);
+	pContext->Draw(4,0);
+	ApplyPass(pContext,effect->GetTechniqueByName("text")->GetPassByIndex(0));
+
 	for(int i=0;i<32;i++)
 	{
 		if(txt[i]==0)
@@ -167,10 +194,10 @@ void TextRenderer::Render(void *context,float x,float y,float screen_width,float
 		const FontIndex &f=fontIndices[idx];
 		if(idx>0)
 		{
-			constantBuffer.rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+16.f)/screen_height,2.0f*(float)f.pixel_width/screen_width,2.0f*16.f/screen_height);
+			constantBuffer.rect.x		=2.0f*x/screen_width-1.f;
+			constantBuffer.rect.z		=2.0f*(float)f.pixel_width/screen_width;
 			static float u			=1024.f/598.f;
 			constantBuffer.texc		=vec4(f.x*u,1.0f,(f.w-f.x)*u,-1.0f);
-			constantBuffer.colour	=vec4(clr);
 			constantBuffer.Apply(pContext);
 			pContext->Draw(4,0);
 		}

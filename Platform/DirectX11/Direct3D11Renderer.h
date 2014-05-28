@@ -133,7 +133,7 @@ namespace simul
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
-			void RenderDepthBuffers(void *context,int view_id,int x0,int y0,int w,int h);
+			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int view_id,int x0,int y0,int w,int h);
 			// Encompasses drawing the actual scene and putting the hdr buffer to screen.
 			void RenderScene(int view_id
 				,crossplatform::DeviceContext &deviceContext

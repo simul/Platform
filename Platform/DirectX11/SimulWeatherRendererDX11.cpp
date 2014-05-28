@@ -525,10 +525,10 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(crossplatform::DeviceCont
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 }
 
-void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int view_id,int x0,int y0,int width,int height)
+void SimulWeatherRendererDX11::RenderFramebufferDepth(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
-	TwoResFramebuffer *fb=GetFramebuffer(view_id);
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
+	TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
 	HRESULT hr=S_OK;
@@ -568,22 +568,22 @@ void SimulWeatherRendererDX11::RenderPrecipitation(void *context,const void *dep
 		simulPrecipitationRenderer->Render(context,depth_tex,v,p,max_fade_dist_metres,depthViewportXYWH);
 }
 
-void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_id,int x0,int y0,int dx,int dy)
+void SimulWeatherRendererDX11::RenderCompositingTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 
-	TwoResFramebuffer *fb=GetFramebuffer(view_id);
+	TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
 	int w=dx/2;
 	int l=dy/2;
 	int W=w,L=l;
-	renderPlatformDx11.DrawTexture(pContext		,x0+0*W	,y0		,w,l,(ID3D11ShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
-	renderPlatformDx11.Print		(pContext	,x0+0*W	,y0		,"Hi-Res Far");
-	renderPlatformDx11.DrawTexture(pContext		,x0+1*W	,y0		,w,l,(ID3D11ShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
-	renderPlatformDx11.Print		(pContext	,x0+1*W	,y0		,"Hi-Res Near");
-	renderPlatformDx11.DrawTexture(pContext		,x0+0*W	,y0+L	,w,l,(ID3D11ShaderResourceView*)fb->lowResFarFramebufferDx11.GetColorTex());
-	renderPlatformDx11.Print		(pContext	,x0+0*W	,y0+L	,"Lo-Res Far");
-	renderPlatformDx11.DrawTexture(pContext		,x0+1*W	,y0+L	,w,l,(ID3D11ShaderResourceView*)fb->lowResNearFramebufferDx11.GetColorTex());
-	renderPlatformDx11.Print		(pContext	,x0+1*W	,y0+L	,"Lo-Res Near");
+	deviceContext.renderPlatform->DrawTexture(pContext	,x0+0*W	,y0		,w,l,(ID3D11ShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
+	deviceContext.renderPlatform->Print		(pContext	,x0+0*W	,y0		,"Hi-Res Far");
+	deviceContext.renderPlatform->DrawTexture(pContext	,x0+1*W	,y0		,w,l,(ID3D11ShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
+	deviceContext.renderPlatform->Print		(pContext	,x0+1*W	,y0		,"Hi-Res Near");
+	deviceContext.renderPlatform->DrawTexture(pContext	,x0+0*W	,y0+L	,w,l,(ID3D11ShaderResourceView*)fb->lowResFarFramebufferDx11.GetColorTex());
+	deviceContext.renderPlatform->Print		(pContext	,x0+0*W	,y0+L	,"Lo-Res Far");
+	deviceContext.renderPlatform->DrawTexture(pContext	,x0+1*W	,y0+L	,w,l,(ID3D11ShaderResourceView*)fb->lowResNearFramebufferDx11.GetColorTex());
+	deviceContext.renderPlatform->Print		(pContext	,x0+1*W	,y0+L	,"Lo-Res Near");
 }
 
 void SimulWeatherRendererDX11::RenderLightning(void *context,int view_id,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex)

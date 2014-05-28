@@ -68,6 +68,8 @@ namespace simul
 			simul::dx11::ConstantBuffer<SolidConstants> solidConstants;
 			std::set<scene::Material*> materials;
 			bool reverseDepth;
+			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
+			bool mirrorY;
 		};
 	}
 }

@@ -24,6 +24,7 @@ namespace simul
 RenderPlatform::RenderPlatform()
 	:effect(NULL)
 	,reverseDepth(false)
+	,mirrorY(false)
 {
 }
 
@@ -366,7 +367,19 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 		tech=m_pDebugEffect->GetTechniqueByName("textured");
 		simul::dx11::setTexture(m_pDebugEffect,"imageTextureMS",srv);
 	}
-	UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,tech);
+	unsigned int num_v=1;
+	D3D11_VIEWPORT viewport;
+	pContext->RSGetViewports(&num_v,&viewport);
+	if(mirrorY)
+		y1=viewport.Height-y1-dy;
+	{
+		UtilityRenderer::DrawQuad2(pContext
+			,2.f*(float)x1/(float)viewport.Width-1.f
+			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
+			,2.f*(float)dx/(float)viewport.Width
+			,2.f*(float)dy/(float)viewport.Height
+			,m_pDebugEffect,tech);
+	}
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",NULL);
 }
 
@@ -399,10 +412,12 @@ void RenderPlatform::Print(void *context,int x,int y	,const char *text)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	float clr[]={1.f,1.f,0.f,1.f};
+	float black[]={0.f,0.f,0.f,0.5f};
 	unsigned int num_v=1;
-	D3D11_VIEWPORT								viewport;
+	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
-	textRenderer.Render(pContext,(float)x,(float)y,(float)viewport.Width,(float)viewport.Height,text,clr);
+	int h=viewport.Height;
+	textRenderer.Render(pContext,(float)x,(float)y,(float)viewport.Width,(float)h,text,clr,black,mirrorY);
 }
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)
