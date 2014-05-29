@@ -529,10 +529,6 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	defines["DETAIL_NOISE"]='1';
 	if(cloudProperties.GetWrap())
 		defines["WRAP_CLOUDS"]="1";
-	if(y_vertical)
-		defines["Y_VERTICAL"]="1";
-	else
-		defines["Z_VERTICAL"]="1";
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	if(UseLightTables)
