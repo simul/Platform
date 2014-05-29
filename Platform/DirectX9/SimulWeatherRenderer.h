@@ -110,14 +110,14 @@ namespace simul
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite
 									);
-			void RenderMixedResolution(crossplatform::DeviceContext &deviceContext
-												,bool is_cubemap
-												,float exposure
-												,float gamma
-												,const void* mainDepthTextureMS	
-												,const void* hiResDepthTexture	
-												,const void* lowResDepthTexture 
-												,const sky::float4& depthViewportXYWH)
+			void RenderMixedResolution(crossplatform::DeviceContext &
+												,bool 
+												,float 
+												,float 
+												,const void* 	
+												,const void* 	
+												,const void*  
+												,const sky::float4& )
 			{}
 			//! Call this to draw the clouds after the main scene.
 			void RenderLateCloudLayer(crossplatform::DeviceContext &deviceContext,float exposure,bool buf,const simul::sky::float4 &relativeViewportTextureRegionXYWH);

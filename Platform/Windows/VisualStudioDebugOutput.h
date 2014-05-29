@@ -19,6 +19,7 @@ public:
 		,old_cerr_buffer(NULL)
 		,to_logfile(false)
 	{
+	ERRNO_CHECK
 		//if(errno!=0)
 		//	simul::base::RuntimeError(strerror(errno));
 		to_output_window=send_to_output_window;
@@ -26,6 +27,7 @@ public:
 			setLogFile(logfilename);
 		old_cout_buffer=std::cout.rdbuf(this);
 		old_cerr_buffer=std::cerr.rdbuf(this);
+	ERRNO_CHECK
 	}
 	virtual ~VisualStudioDebugOutput()
 	{
@@ -39,6 +41,7 @@ public:
 	}
 	void setLogFile(const char *logfilename)
 	{
+	ERRNO_CHECK
 		std::string fn=logfilename;
 		if(fn.find(":")>=fn.length())
 		{

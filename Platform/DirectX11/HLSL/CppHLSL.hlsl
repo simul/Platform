@@ -105,6 +105,7 @@
 		OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
 		OUT.hPosition.z	=0.0; 
 		OUT.texCoords	=pos;
+		OUT.texCoords.y	=1.0-OUT.texCoords.y;
 		return OUT;
 	}
 	

@@ -21,6 +21,7 @@
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Camera/Camera.h"
 #include "SimulSkyRendererDX1x.h"
 #include "SimulAtmosphericsRendererDX1x.h"
@@ -364,8 +365,10 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(crossplatform::DeviceContext &
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderSkyAsOverlay")
 	TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
+ERRNO_CHECK
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(deviceContext.platform_context,hiResDepthTexture,exposure,depthViewportXYWH);
+ERRNO_CHECK
 	//if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
 	//	base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,UseDefaultFog,false,view_id,depthViewportXYWH);
 	// Now we render the low-resolution elements to the low-res buffer.
@@ -375,12 +378,16 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(crossplatform::DeviceContext &
 		fb->lowResFarFramebufferDx11.ActivateViewport(deviceContext.platform_context,depthViewportXYWH.x,depthViewportXYWH.y,depthViewportXYWH.z,depthViewportXYWH.w);
 		fb->lowResFarFramebufferDx11.Clear(deviceContext.platform_context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
 	}
+ERRNO_CHECK
 	crossplatform::MixedResolutionStruct mixedResolutionStruct(1,1,1);
 	RenderLowResolutionElements(deviceContext,exposure,godrays_strength,is_cubemap,false,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
+ERRNO_CHECK
 	if(buffered)
 		fb->lowResFarFramebufferDx11.Deactivate(deviceContext.platform_context);
+ERRNO_CHECK
 	if(buffered&&doFinalCloudBufferToScreenComposite)
 		CompositeCloudsToScreen(deviceContext,1.f,1.f,false,hiResDepthTexture,hiResDepthTexture,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
+ERRNO_CHECK
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
 
@@ -525,35 +532,21 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(crossplatform::DeviceCont
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 }
 
-void SimulWeatherRendererDX11::RenderFramebufferDepth(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
+void SimulWeatherRendererDX11::RenderFramebufferDepth(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
-	HRESULT hr=S_OK;
-	static int u=4;
-	int w=(width-8)/u;
-	if(w>height/3)
-		w=height/3;
 	if(!environment->skyKeyframer)
 		return;
 	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"	,(ID3D11ShaderResourceView*)fb->lowResFarFramebufferDx11.GetDepthTex());
-	int x=x0+8;
-	int y=y0+height-(w+8);
-	int screenWidth,screenHeight;
-	UtilityRenderer::GetScreenSize(screenWidth,screenHeight);
-	hdrConstants.tanHalfFov					=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	hdrConstants.nearZ						=frustum.nearZ/max_fade_distance_metres;
-	hdrConstants.farZ						=frustum.farZ/max_fade_distance_metres;
-	hdrConstants.depthToLinFadeDistParams	=vec3(proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres);
-	hdrConstants.rect						=vec4((float)x/(float)screenWidth
-												,(float)y/(float)screenHeight
-												,(float)w/(float)screenWidth
-												,(float)w/(float)screenHeight);
-	hdrConstants.Apply(pContext);
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
+	setParameter(m_pTonemapEffect,"tanHalfFov"					,vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
+	setParameter(m_pTonemapEffect,"nearZ"						,frustum.nearZ/max_fade_distance_metres);
+	setParameter(m_pTonemapEffect,"farZ"						,frustum.farZ/max_fade_distance_metres);
+	setParameter(m_pTonemapEffect,"depthToLinFadeDistParams"	,vec3(proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres));
+	deviceContext.renderPlatform->DrawQuad(pContext	,x,y,w,h	,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
 }
 
 

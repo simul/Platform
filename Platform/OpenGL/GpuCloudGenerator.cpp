@@ -334,7 +334,7 @@ GL_ERROR_CHECK
 	if(target)
 		target+=z0*params.light_grid[0]*params.light_grid[1]*4;
 GL_ERROR_CHECK
-	float draw_time=0.f,read_time=0.f;
+//	float draw_time=0.f,read_time=0.f;
 	for(int i=z0;i<z1;i++)
 	{
 		float zPosition=((float)i-0.5f)/(float)params.light_grid[2];

@@ -112,13 +112,14 @@ GL_ERROR_CHECK
 void OpenGLRenderer::initializeGL()
 {
 GL_ERROR_CHECK
-	//glewExperimental=GL_TRUE;
+ERRNO_CHECK
     GLenum glewError = glewInit();
     if( glewError != GLEW_OK )
     {
         std::cerr<<"Error initializing GLEW! "<<glewGetErrorString( glewError )<<"\n";
         return;
     }
+ERRNO_CHECK
     //Make sure OpenGL 2.1 is supported
     if( !GLEW_VERSION_2_1 )
     {
@@ -130,6 +131,7 @@ GL_ERROR_CHECK
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
 	}
+ERRNO_CHECK
 	CheckExtension("GL_VERSION_2_0");
 GL_ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
@@ -137,16 +139,22 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	depthFramebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
 	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);
+ERRNO_CHECK
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(NULL);
+ERRNO_CHECK
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects();
+ERRNO_CHECK
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);
+ERRNO_CHECK
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RestoreDeviceObjects(NULL);
+ERRNO_CHECK
 	renderPlatform->RestoreDeviceObjects(NULL);
 	RecompileShaders();
+ERRNO_CHECK
 }
 
 void OpenGLRenderer::paintGL()

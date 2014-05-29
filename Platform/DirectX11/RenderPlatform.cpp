@@ -351,15 +351,14 @@ void *RenderPlatform::GetDevice()
 
 void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void *t,float mult)
 {
-	if(!t)
-		return;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	ID3DX11Effect		*m_pDebugEffect=UtilityRenderer::GetDebugEffect();
 	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView*)t;
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",srv);
 	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-	srv->GetDesc(&desc);
+	if(srv)
+		srv->GetDesc(&desc);
 	ID3DX11EffectTechnique *tech=m_pDebugEffect->GetTechniqueByName("textured");
 	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
 	if(msaa)
@@ -371,7 +370,7 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
 	if(mirrorY)
-		y1=viewport.Height-y1-dy;
+		y1=(int)viewport.Height-y1-dy;
 	{
 		UtilityRenderer::DrawQuad2(pContext
 			,2.f*(float)x1/(float)viewport.Width-1.f
@@ -385,27 +384,22 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 
 void RenderPlatform::DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *effect,void *technique)
 {
-	ID3D11DeviceContext *pContext	=(ID3D11DeviceContext *)context;
-	ID3DX11Effect		*eff		=(ID3DX11Effect	*)effect;
-	ID3DX11EffectTechnique *tech	=(ID3DX11EffectTechnique	*)technique;
+	ID3D11DeviceContext		*pContext	=(ID3D11DeviceContext *)context;
+	ID3DX11Effect			*eff		=(ID3DX11Effect	*)effect;
+	ID3DX11EffectTechnique	*tech		=(ID3DX11EffectTechnique*)technique;
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
-	float r[]={2.f*(float)x1/(float)viewport.Width-1.f
-		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
-		,2.f*(float)dx/(float)viewport.Width
-		,2.f*(float)dy/(float)viewport.Height};
-	setParameter(eff,"rect",r);
-	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
-	pContext->IAGetPrimitiveTopology(&previousTopology);
-	ID3D11InputLayout* previousInputLayout;
-	pContext->IAGetInputLayout( &previousInputLayout );
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(pContext,tech->GetPassByIndex(0));
-	pContext->Draw(4,0);
-	pContext->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
-	pContext->IASetPrimitiveTopology(previousTopology);
+	if(mirrorY)
+		y1=viewport.Height-y1-dy;
+	{
+		UtilityRenderer::DrawQuad2(pContext
+			,2.f*(float)x1/(float)viewport.Width-1.f
+			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
+			,2.f*(float)dx/(float)viewport.Width
+			,2.f*(float)dy/(float)viewport.Height
+			,eff,tech);
+	}
 }
 
 void RenderPlatform::Print(void *context,int x,int y	,const char *text)

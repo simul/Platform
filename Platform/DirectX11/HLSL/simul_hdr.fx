@@ -72,24 +72,12 @@ v2f OffsetVS(idOnly IN)
     return OUT;
 }
 
-v2f QuadVS(idOnly IN)
+posTexVertexOutput QuadVS(idOnly id)
 {
-    v2f OUT;
-	float2 poss[4]=
-	{
-		{ 1.0, 0.0},
-		{ 1.0, 1.0},
-		{ 0.0, 0.0},
-		{ 0.0, 1.0},
-	};
-	float2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(pos,0.0,1.0);
-	OUT.hPosition	=float4(vec2(2.0*rect.x-1.0,1.0-2.0*(rect.y+rect.w))+2.0*rect.zw*pos,0.0,1.0);
-    OUT.texCoords	=vec2(pos.x,1.0-pos.y);
-    return OUT;
+    return VS_ScreenQuad(id,rect);
 }
 
-vec4 ShowDepthPS(v2f IN) : SV_TARGET
+vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 depth		=texture_clamp(depthTexture,IN.texCoords);
 	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
@@ -408,3 +396,27 @@ technique11 show_depth
     }
 }
 
+posTexVertexOutput Debug2DVS(idOnly id)
+{
+    return VS_ScreenQuad(id,rect);
+}
+
+vec4 TexturedPS(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res=vec4(0,1,0,1);
+	return res;
+}
+
+
+technique11 textured
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
+		SetPixelShader(CompileShader(ps_4_0,TexturedPS()));
+    }
+}

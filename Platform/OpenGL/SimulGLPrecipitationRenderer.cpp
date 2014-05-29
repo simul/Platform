@@ -51,8 +51,11 @@ void SimulGLPrecipitationRenderer::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(program);
 	SAFE_DELETE_TEXTURE(rain_texture);
+GL_ERROR_CHECK
 	program						=MakeProgram("simul_rain");
+GL_ERROR_CHECK
 	rain_texture				=LoadGLImage("Rain.jpg",GL_REPEAT);
+GL_ERROR_CHECK
 }
 
 SimulGLPrecipitationRenderer::~SimulGLPrecipitationRenderer()

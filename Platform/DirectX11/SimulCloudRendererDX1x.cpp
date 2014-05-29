@@ -20,6 +20,7 @@
 #include <algorithm>			// for std::min / max
 
 #include "Simul/Base/Timer.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Camera/Camera.h"						// for simul::camera::Frustum
 
@@ -680,6 +681,7 @@ static int test=29999;
 bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_tex
 ,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH)
 {
+	ERRNO_CHECK
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	ID3D11ShaderResourceView *depthTexture_SRV	=(ID3D11ShaderResourceView *)depth_tex;
     ProfileBlock profileBlock(pContext,cubemap?"SimulCloudRendererDX1x::Render (cubemap side)":"SimulCloudRendererDX1x::Render");
@@ -713,16 +715,16 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pWrapSamplerState);
 	else
 		simul::dx11::setSamplerState(effect,"cloudSamplerState",m_pClampSamplerState);
-
+	ERRNO_CHECK
 	CloudPerViewConstants cloudPerViewConstants;
 	SetCloudPerViewConstants(cloudPerViewConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,exposure,deviceContext.viewStruct.view_id,viewportTextureRegionXYWH,mixedResTransformXYWH);
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
 	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=effect->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
 		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
-	
+	ERRNO_CHECK
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(deviceContext.viewStruct.view_id);
-
+	ERRNO_CHECK
 	// Moved from Update function above. See commment.
 	//if (!cubemap)
 	{
@@ -736,14 +738,20 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 			view_dir.Define(-deviceContext.viewStruct.view._13,-deviceContext.viewStruct.view._23,-deviceContext.viewStruct.view._33);
 		simul::math::Vector3 up(deviceContext.viewStruct.view._12,deviceContext.viewStruct.view._22,deviceContext.viewStruct.view._32);
 		helper->SetChurn(cloudProperties.GetChurn());
+	ERRNO_CHECK
 		helper->Update((const float*)cam_pos,wind_offset,view_dir,up,1.0);
+	ERRNO_CHECK
 		float tan_half_fov_vertical=1.f/deviceContext.viewStruct.proj._22;
 		float tan_half_fov_horizontal=1.f/deviceContext.viewStruct.proj._11;
+	ERRNO_CHECK
 		helper->SetNoFrustumLimit(true);
+	ERRNO_CHECK
 		helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
+	ERRNO_CHECK
 		helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),enable_lightning);
+	ERRNO_CHECK
 	}
-
+	ERRNO_CHECK
 	static int select_slice=-1;
 	int ii=0;
 	unsigned el,az;
@@ -752,7 +760,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	int numInstances=(int)helper->GetSlices().size();
 	if(select_slice>=0)
 		numInstances=1;
-
+	ERRNO_CHECK
 	UPDATE_CONSTANT_BUFFER(pContext,layerConstantsBuffer,LayerConstants,layerConstants)
 	ID3DX11EffectConstantBuffer* cbLayerConstants=effect->GetConstantBufferByName("LayerConstants");
 	if(cbLayerConstants)
@@ -772,6 +780,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 		else
 			ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
 	}
+ERRNO_CHECK
 	UtilityRenderer::DrawQuad(pContext);
 	skyLossTexture->SetResource(NULL);
 	skyInscatterTexture->SetResource(NULL);
@@ -793,6 +802,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	simul::dx11::setTexture(effect,"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
 // To prevent BIZARRE DX11 warning, we re-apply the pass with the textures unbound:
 	ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
+	ERRNO_CHECK
 	return (hr==S_OK);
 }
 

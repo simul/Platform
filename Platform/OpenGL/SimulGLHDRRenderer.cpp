@@ -41,22 +41,18 @@ void SimulGLHDRRenderer::SetBufferSize(int w,int h)
 
 void SimulGLHDRRenderer::RestoreDeviceObjects()
 {
+ERRNO_CHECK
 	initialized=true;
 	framebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
 	glow_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
 	alt_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
-/*	if(glewIsSupported("GL_EXT_packed_depth_stencil")||IsExtensionSupported("GL_EXT_packed_depth_stencil"))
-	{
-		framebuffer.InitDepth_RB(GL_DEPTH24_STENCIL8_EXT);
-		glow_fb.InitDepth_RB(GL_DEPTH24_STENCIL8_EXT);
-		alt_fb.InitDepth_RB(GL_DEPTH24_STENCIL8_EXT);
-	}
-	else*/
+ERRNO_CHECK
 	{
 		framebuffer.InitDepth_RB(GL_DEPTH_COMPONENT32);
 		glow_fb.InitDepth_RB(GL_DEPTH_COMPONENT32);
 		alt_fb.InitDepth_RB(GL_DEPTH_COMPONENT32);
 	}
+ERRNO_CHECK
 	GL_ERROR_CHECK
 	RecompileShaders();
 }
@@ -64,14 +60,17 @@ void SimulGLHDRRenderer::RestoreDeviceObjects()
 
 void SimulGLHDRRenderer::RecompileShaders()
 {
+ERRNO_CHECK
 	tonemap_program		=MakeProgram("simple.vert",NULL,"tonemap.frag");
     exposure_param		=glGetUniformLocation(tonemap_program,"exposure");
     gamma_param			=glGetUniformLocation(tonemap_program,"gamma");
     buffer_tex_param	=glGetUniformLocation(tonemap_program,"image_texture");
 	GL_ERROR_CHECK
+ERRNO_CHECK
 
 	glow_program		=MakeProgram("simple.vert",NULL,"simul_glow.frag");
 	blur_program		=MakeProgram("simple.vert",NULL,"simul_hdr_blur.frag");
+ERRNO_CHECK
 }
 
 void SimulGLHDRRenderer::InvalidateDeviceObjects()

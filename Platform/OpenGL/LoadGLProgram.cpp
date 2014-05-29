@@ -51,19 +51,6 @@ namespace simul
 			}
 			return count;
 		}
-
-		static int GetLineNumber(const std::string &str,int line_pos)
-		{
-			int pos=0;
-			int count=0;
-			while(pos>=0&&pos<=line_pos)
-			{
-				pos=(int)str.find('\n',pos+1);
-				if(pos>=0&&pos<=line_pos)
-					count++;
-			}
-			return count;
-		}
 		struct TiePoint
 		{
 			TiePoint(const char *f,int loc,int glob)
@@ -144,7 +131,9 @@ namespace simul
 		{
 			void *shader_source=NULL;
 			unsigned fileSize=0;
+		ERRNO_CHECK
 			simul::base::FileLoader::GetFileLoader()->AcquireFileContents(shader_source,fileSize,filename_utf8,true);
+		ERRNO_CHECK
 			if(!shader_source)
 			{
 				std::cerr<<"\nERROR:\tShader file "<<filename_utf8<<" not found, exiting.\n";
@@ -155,12 +144,15 @@ namespace simul
 				std::cerr<<"exit(1)"<<std::endl;
 				exit(1);
 			}
+			ERRNO_CHECK
 			std::string str((const char*)shader_source);
 			simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(shader_source);
+			ERRNO_CHECK
 			// Change Windows-style CR-LF's to simple Unix-style LF's
 			base::find_and_replace( str,"\r\n","\n");
 			// Convert any left-over CR's into LF's
 			base::find_and_replace( str,"\r","\n");
+			ERRNO_CHECK
 			return str;
 		}
 		void ProcessIncludes(string &src,string &filenameUtf8,bool line_source_filenames,vector<string> &sourceFilesUtf8)

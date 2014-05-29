@@ -89,7 +89,7 @@ static int range(int x,int start,int end)
 }
 
 void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
-				simul::sky::AtmosphericScatteringInterface *skyInterface
+				simul::sky::AtmosphericScatteringInterface *
 				,const simul::sky::GpuSkyParameters &p
 				,const simul::sky::GpuSkyAtmosphereParameters &a
 				,const simul::sky::GpuSkyInfraredParameters &ir)
@@ -105,7 +105,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 		return;
 	if(loss_program<=0)
 		RecompileShaders();
-	float maxOutputAltKm=p.altitudes_km[p.altitudes_km.size()-1];
+//	float maxOutputAltKm=p.altitudes_km[p.altitudes_km.size()-1];
 // we will render to these three textures, one distance at a time.
 // The rendertextures are altitudes x elevations
 	for(int i=0;i<2;i++)

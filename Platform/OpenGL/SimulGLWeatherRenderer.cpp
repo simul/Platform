@@ -136,12 +136,16 @@ void SimulGLWeatherRenderer::EnableCloudLayers()
 	}
 	if(device_initialized)
 	{
+GL_ERROR_CHECK
 		if(simulSkyRenderer)
 			simulSkyRenderer->RestoreDeviceObjects(NULL);
+GL_ERROR_CHECK
 		if(simulPrecipitationRenderer)
 			simulPrecipitationRenderer->RestoreDeviceObjects(NULL);
+GL_ERROR_CHECK
 		if(simul2DCloudRenderer)
 			simul2DCloudRenderer->RestoreDeviceObjects(NULL);
+GL_ERROR_CHECK
 		if(simulCloudRenderer)
 			simulCloudRenderer->RestoreDeviceObjects(NULL);
 		if(simulLightningRenderer)
@@ -173,7 +177,9 @@ void SimulGLWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 
 void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 {
+ERRNO_CHECK
 	glewInit();
+ERRNO_CHECK
 	if(!CheckExtension("GL_VERSION_2_0"))
 		throw simul::base::RuntimeError("OpenGL version 2.0 is not supported on this hardware");
 	CheckExtension("GL_ARB_fragment_program");
@@ -181,6 +187,7 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 	CheckExtension("GL_ARB_texture_float");
 	CheckExtension("GL_ARB_color_buffer_float");
 	CheckExtension("GL_EXT_framebuffer_object");
+ERRNO_CHECK
 GL_ERROR_CHECK
 	for(FramebufferMap::iterator i=framebuffers.begin();i!=framebuffers.end();i++)
 	{
@@ -189,12 +196,15 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	device_initialized=true;
 	EnableCloudLayers();
+ERRNO_CHECK
 	simulSkyRenderer->RestoreDeviceObjects(NULL);
 	simulCloudRenderer->RestoreDeviceObjects(NULL);
 	simulLightningRenderer->RestoreDeviceObjects();
+ERRNO_CHECK
 	simulAtmosphericsRenderer->RestoreDeviceObjects(NULL);
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
 	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag");
+ERRNO_CHECK
 }
 void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 {
@@ -308,6 +318,16 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	}
 }
 
+void SimulGLWeatherRenderer::RenderMixedResolution(	crossplatform::DeviceContext &deviceContext
+												,bool is_cubemap
+												,float exposure
+												,float gamma
+												,const void* mainDepthTextureMS	
+												,const void* hiResDepthTexture	
+												,const void* lowResDepthTexture 
+												,const sky::float4& depthViewportXYWH	)
+{
+}
 void SimulGLWeatherRenderer::RenderLateCloudLayer(crossplatform::DeviceContext &deviceContext,float exposure,bool
 												  ,const simul::sky::float4 &depthViewportXYWH)
 {

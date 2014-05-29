@@ -30,21 +30,9 @@ struct v2f
     float4 colour		: TEXCOORD0;
 };
 
-v2f Debug2DVS(idOnly IN)
+posTexVertexOutput Debug2DVS(idOnly id)
 {
-	v2f OUT;
-	float2 poss[4]=
-	{
-		{ 1.0, 0.0},
-		{ 1.0, 1.0},
-		{ 0.0, 0.0},
-		{ 0.0, 1.0},
-	};
-	float2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
-	OUT.hPosition.z	=0.0; 
-	OUT.colour		=vec4(pos.x,1.0-pos.y,0,0);
-	return OUT;
+    return VS_ScreenQuad(id,rect);
 }
 
 v2f DebugVS(a2v IN)
@@ -82,19 +70,19 @@ float4 DebugPS(v2f IN) : SV_TARGET
     return IN.colour;
 }
 
-vec4 TexturedPS(v2f IN) : SV_TARGET
+vec4 TexturedPS(posTexVertexOutput IN) : SV_TARGET
 {
-	vec4 res=multiplier*texture_nearest_lod(imageTexture,IN.colour.xy,0);
+	vec4 res=multiplier*texture_nearest_lod(imageTexture,IN.texCoords.xy,0);
 	return res;
 }
 
-vec4 TexturedMSPS(v2f IN) : SV_TARGET
+vec4 TexturedMSPS(posTexVertexOutput IN) : SV_TARGET
 {
 	uint2 dims;
 	uint numSamples;
 	imageTextureMS.GetDimensions(dims.x,dims.y,numSamples);
-	uint2 pos	=uint2(IN.colour.xy*vec2(dims.xy));
-	vec4 res	=10000.0*imageTextureMS.Load(pos,0);
+	uint2 pos	=uint2(IN.texCoords.xy*vec2(dims.xy));
+	vec4 res	=multiplier*imageTextureMS.Load(pos,0);
 	return res;
 }
 

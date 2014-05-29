@@ -62,10 +62,13 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 
 void SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
 {
-	//image_tex=LoadGLImage("Cirrocumulus.png",GL_REPEAT);
+	ERRNO_CHECK
 	FramebufferGL	noise_fb(16,16,GL_TEXTURE_2D);
+	ERRNO_CHECK
 	noise_fb.SetWrapClampMode(GL_REPEAT);
+	ERRNO_CHECK
 	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
+	ERRNO_CHECK
 	noise_fb.Activate(context);
 	{
 		glMatrixMode(GL_PROJECTION);
@@ -454,6 +457,7 @@ void SimulGL2DCloudRenderer::SetInscatterTextures(void* i,void *s,void *)
 
 void SimulGL2DCloudRenderer::RestoreDeviceObjects(void *context)
 {
+GL_ERROR_CHECK
 	CreateNoiseTexture(context);
 GL_ERROR_CHECK
 	RecompileShaders();

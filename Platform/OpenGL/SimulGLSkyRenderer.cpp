@@ -684,6 +684,7 @@ GL_ERROR_CHECK
 		insc[i]=&insc_textures[i];
 		skyl[i]=&skyl_textures[i];
 	}
+GL_ERROR_CHECK
 	gpuSkyGenerator.SetDirectTargets(loss,insc,skyl,&light_table);
 	loss_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	inscatter_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
@@ -699,7 +700,7 @@ GL_ERROR_CHECK
 	loss_texture=make2DTexture(numFadeDistances,numFadeElevations);
 	insc_texture=make2DTexture(numFadeDistances,numFadeElevations);
 	skyl_texture=make2DTexture(numFadeDistances,numFadeElevations);
-
+GL_ERROR_CHECK
 	skyConstants.RestoreDeviceObjects();
 	earthShadowUniforms.RestoreDeviceObjects();
 GL_ERROR_CHECK
@@ -707,7 +708,9 @@ GL_ERROR_CHECK
 	glUseProgram(NULL);
 GL_ERROR_CHECK
 	ReloadTextures();
+GL_ERROR_CHECK
 	ClearIterators();
+GL_ERROR_CHECK
 }
 
 void SimulGLSkyRenderer::InvalidateDeviceObjects()

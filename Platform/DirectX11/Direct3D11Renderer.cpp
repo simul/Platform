@@ -222,6 +222,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,const float
 	D3DXMATRIX view;
 	D3DXMATRIX proj;
 	D3DXMATRIX view_matrices[6];
+ERRNO_CHECK
 	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 	if(cubemap_view_id<0)
 		cubemap_view_id=viewManager.AddView(false);
@@ -231,42 +232,51 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,const float
 			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
 	for(int i=0;i<6;i++)
 	{
+ERRNO_CHECK
 		cubemapFramebuffer.SetCurrentFace(i);
 		cubemapFramebuffer.Activate(pContext);
 		D3DXMATRIX cube_proj;
 		float nearPlane=1.f;
 		float farPlane=200000.f;
-	
+ERRNO_CHECK
+		if(ReverseDepth)
+			cube_proj=*((D3DXMATRIX*)simul::camera::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane));
+		else
+			cube_proj=*((D3DXMATRIX*)simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane));
+ERRNO_CHECK
 		crossplatform::DeviceContext deviceContext;
 		deviceContext.platform_context	=pContext;
 		deviceContext.renderPlatform	=&renderPlatformDx11;
 		deviceContext.viewStruct.view_id=cubemap_view_id;
 		deviceContext.viewStruct.proj	=(const float*)&cube_proj;
 		deviceContext.viewStruct.view	=(const float*)&view_matrices[i];
-		if(ReverseDepth)
-			cube_proj=*((D3DXMATRIX*)simul::camera::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane));
-		else
-			cube_proj=*((D3DXMATRIX*)simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane));
 		//cubemapDepthFramebuffer.Activate(pContext);
 		//cubemapDepthFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+ERRNO_CHECK
 		if(simulTerrainRenderer)
 		{
 			simulTerrainRenderer->Render(deviceContext,1.f);
 		}
 		cubemapFramebuffer.DeactivateDepth(pContext);
+ERRNO_CHECK
 		if(simulWeatherRenderer)
 		{
 			simulWeatherRenderer->SetMatrices((const float*)&(view_matrices[i]),(const float*)&cube_proj);
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
+ERRNO_CHECK
 			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext
 				,true,1.f,false,cubemapFramebuffer.GetDepthTex(),NULL,relativeViewportTextureRegionXYWH,true);
+ERRNO_CHECK
 		}
 		cubemapFramebuffer.Deactivate(pContext);
 	}
+ERRNO_CHECK
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer.GetColorTex());
+ERRNO_CHECK
 	if(oceanRenderer)
 		oceanRenderer->SetCubemapTexture(cubemapFramebuffer.GetColorTex());
+ERRNO_CHECK
 }
 
 void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)
@@ -637,7 +647,6 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			int w=view->GetScreenWidth()/4;
 			if(vertical_screen)
 				w=view->GetScreenWidth()/2;
-			simulWeatherRenderer->RenderFramebufferDepth(deviceContext,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,w,view->GetScreenHeight()/2);
 			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext,0,0,w,view->GetScreenHeight()/2);
 		}
@@ -692,9 +701,13 @@ void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &device
 	renderPlatformDx11.Print(pContext		,x0		,y0+l	,"Hi-Res Depth");
 	renderPlatformDx11.DrawTexture(pContext	,x0+w	,y0+l	,w,l,view->lowResDepthTexture.shaderResourceView					,uu	);
 	renderPlatformDx11.Print(pContext		,x0+w	,y0+l	,"Lo-Res Depth");
-	//UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,(ID3D11ShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
-	//renderPlatformDx11.Print(pContext			,2.f*w	,0.f,"Near overlay");
-	simulWeatherRenderer->RenderCompositingTextures(deviceContext,x0,y0+2*l,dx,dy);
+	if(simulWeatherRenderer)
+	{
+		simulWeatherRenderer->RenderFramebufferDepth(deviceContext,x0+w	,y0	,w,l);
+		//UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,(ID3D11ShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
+		//renderPlatformDx11.Print(pContext			,2.f*w	,0.f,"Near overlay");
+		simulWeatherRenderer->RenderCompositingTextures(deviceContext,x0,y0+2*l,dx,dy);
+	}
 }
 
 void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)

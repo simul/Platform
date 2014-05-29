@@ -2,7 +2,6 @@
 #define HDR_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(HdrConstants,9)
-	uniform vec4 rect;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec2 offset;
 	uniform float nearZ,farZ;
@@ -20,6 +19,9 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,9)
 	uniform vec2 padHdrConstants2;
 	uniform vec4 hiResToLowResTransformXYWH;
 SIMUL_CONSTANT_BUFFER_END
-
+	
+SIMUL_CONSTANT_BUFFER(rectConstants,11)
+	uniform vec4 rect;
+SIMUL_CONSTANT_BUFFER_END
 
 #endif

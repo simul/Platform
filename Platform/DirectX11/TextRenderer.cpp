@@ -194,10 +194,10 @@ void TextRenderer::Render(void *context,float x,float y,float screen_width,float
 		const FontIndex &f=fontIndices[idx];
 		if(idx>0)
 		{
-			constantBuffer.rect.x		=2.0f*x/screen_width-1.f;
-			constantBuffer.rect.z		=2.0f*(float)f.pixel_width/screen_width;
+			constantBuffer.rect.x	=2.0f*x/screen_width-1.f;
+			constantBuffer.rect.z	=2.0f*(float)f.pixel_width/screen_width;
 			static float u			=1024.f/598.f;
-			constantBuffer.texc		=vec4(f.x*u,1.0f,(f.w-f.x)*u,-1.0f);
+			constantBuffer.texc		=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
 			constantBuffer.Apply(pContext);
 			pContext->Draw(4,0);
 		}

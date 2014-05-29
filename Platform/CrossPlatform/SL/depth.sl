@@ -164,7 +164,7 @@ void GetMSAACoordinates(Texture2DMS<vec4> textureMS,vec2 texc,out int2 pos2,out 
 }
 
 // Filter the texture, but bias the result towards the nearest depth values.
-vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D depthTexture,vec2 lowResDims,vec2 texc,vec4 depthMask,vec3 depthToLinFadeDistParams,float d)
+vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D fallbackTexture,Texture2D depthTexture,vec2 lowResDims,vec2 texc,vec4 depthMask,vec3 depthToLinFadeDistParams,float d,bool do_fallback)
 {
 	vec2 texc_unit	=texc*lowResDims-vec2(.5,.5);
 	uint2 idx		=floor(texc_unit);
@@ -182,11 +182,26 @@ vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D depthTexture,v
 	vec4 f21		=imageTexture[i21];
 	vec4 f12		=imageTexture[i12];
 	vec4 f22		=imageTexture[i22];
+	vec4 de11		=depthTexture[i11];
+	vec4 de21		=depthTexture[i21];
+	vec4 de12		=depthTexture[i12];
+	vec4 de22		=depthTexture[i22];
 
-	float d11		=depthToLinearDistance(dot(depthTexture[i11],depthMask),depthToLinFadeDistParams);
-	float d21		=depthToLinearDistance(dot(depthTexture[i21],depthMask),depthToLinFadeDistParams);
-	float d12		=depthToLinearDistance(dot(depthTexture[i12],depthMask),depthToLinFadeDistParams);
-	float d22		=depthToLinearDistance(dot(depthTexture[i22],depthMask),depthToLinFadeDistParams);
+	if(do_fallback)
+	{
+		f11			*=de11.z;
+		f21			*=de21.z;
+		f12			*=de12.z;
+		f22			*=de22.z;
+		f11			+=fallbackTexture[i11]*(1.0-de11.z);
+		f21			+=fallbackTexture[i21]*(1.0-de21.z);
+		f12			+=fallbackTexture[i12]*(1.0-de12.z);
+		f22			+=fallbackTexture[i22]*(1.0-de22.z);
+	}
+	float d11		=depthToLinearDistance(dot(de11,depthMask),depthToLinFadeDistParams);
+	float d21		=depthToLinearDistance(dot(de21,depthMask),depthToLinFadeDistParams);
+	float d12		=depthToLinearDistance(dot(de12,depthMask),depthToLinFadeDistParams);
+	float d22		=depthToLinearDistance(dot(de22,depthMask),depthToLinFadeDistParams);
 
 	// But now we modify these values:
 	float D1		=saturate((d-d11)/(d21-d11));
@@ -287,8 +302,8 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 			else
 				hiresDepth	=depthTexture[hires_depth_pos2].x;
 			float trueDist	=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
-			cloudNear		=depthDependentFilteredImage(lowResNearTexture	,lowResDepthTexture,lowResDims,lowResTexCoords,vec4(0,1.0,0,0),depthToLinFadeDistParams,trueDist);
-			cloudFar		=depthDependentFilteredImage(lowResFarTexture	,lowResDepthTexture,lowResDims,lowResTexCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
+			cloudNear		=depthDependentFilteredImage(lowResNearTexture	,lowResFarTexture	,lowResDepthTexture,lowResDims,lowResTexCoords,vec4(0,1.0,0,0),depthToLinFadeDistParams,trueDist,true);
+			cloudFar		=depthDependentFilteredImage(lowResFarTexture	,lowResFarTexture	,lowResDepthTexture,lowResDims,lowResTexCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist,false);
 			float interp	=saturate((nearFarDistLowRes.y-trueDist)/abs(nearFarDistLowRes.y-nearFarDistLowRes.x));
 			vec4 add		=lerp(cloudFar,cloudNear,lowres_edge*interp);
 			result			+=add;
@@ -317,7 +332,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		else
 			hiresDepth			=depthTexture[hires_depth_pos2].x;
 		float trueDist		=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
-		result				=depthDependentFilteredImage(lowResFarTexture,lowResDepthTexture,lowResDims,lowResTexCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
+		result				=depthDependentFilteredImage(lowResFarTexture,lowResFarTexture,lowResDepthTexture,lowResDims,lowResTexCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist,false);
 		result.rgb			+=insc_far.rgb*result.a;
 	}
     return result;
