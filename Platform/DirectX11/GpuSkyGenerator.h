@@ -1,6 +1,7 @@
 #pragma once
 #include "Simul/Sky/BaseGpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/Texture.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #endif
@@ -32,7 +33,7 @@ namespace simul
 				,const sky::GpuSkyInfraredParameters &gpuSkyInfraredParameters);
 			void CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl);
 			// If we want the generator to put the data directly into 3d textures:
-			void SetDirectTargets(TextureStruct **loss,TextureStruct **insc,TextureStruct **skyl,TextureStruct *light_table)
+			void SetDirectTargets(dx11::Texture **loss,dx11::Texture **insc,dx11::Texture **skyl,dx11::Texture *light_table)
 			{
 				for(int i=0;i<3;i++)
 				{
@@ -62,11 +63,11 @@ namespace simul
 			
 			ID3D1xBuffer*					constantBuffer;
 			ConstantBuffer<GpuSkyConstants>	gpuSkyConstants;
-			TextureStruct					*finalLoss[3];
-			TextureStruct					*finalInsc[3];
-			TextureStruct					*finalSkyl[3];
-			TextureStruct					*light_table;
-			TextureStruct					dens_tex,optd_tex;
+			dx11::Texture					*finalLoss[3];
+			dx11::Texture					*finalInsc[3];
+			dx11::Texture					*finalSkyl[3];
+			dx11::Texture					*light_table;
+			dx11::Texture					dens_tex,optd_tex;
 
 			unsigned						tables_checksum;
 		};

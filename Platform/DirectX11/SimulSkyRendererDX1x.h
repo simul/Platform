@@ -128,17 +128,17 @@ protected:
 	ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
 	ConstantBuffer<SkyConstants>		skyConstants;
 
-	TextureStruct						loss_textures[3];
-	TextureStruct						insc_textures[3];
-	TextureStruct						skyl_textures[3];
-	TextureStruct						light_table;
+	dx11::Texture						loss_textures[3];
+	dx11::Texture						insc_textures[3];
+	dx11::Texture						skyl_textures[3];
+	dx11::Texture						light_table;
 
 	// Small framebuffers we render to once per frame to perform fade interpolation.
 	simul::dx11::Framebuffer*			loss_2d;
 	simul::dx11::Framebuffer*			inscatter_2d;
 	simul::dx11::Framebuffer*			overcast_2d;
 	simul::dx11::Framebuffer*			skylight_2d;
-	TextureStruct						light_table_2d;
+	dx11::Texture						light_table_2d;
 
 	// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
 	simul::dx11::Framebuffer			illumination_fb;

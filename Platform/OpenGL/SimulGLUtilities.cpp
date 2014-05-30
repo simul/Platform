@@ -113,6 +113,7 @@ void Utilities::Kill()
 
 Utilities::Utilities()
 	:linedraw_program(0)
+	,linedraw_2d_program(0)
 	,simple_program(0)
 {
 	instance_count++;
@@ -134,6 +135,13 @@ void Utilities::RestoreDeviceObjects(void *)
 						"	gl_FragColor=colr;"
 						"}";
 	linedraw_program=SetShaders(vert,frag);
+	const char *vert2="varying vec4 colr;"
+						"void main(void)"
+						"{"
+						"    gl_Position		= gl_Vertex;"
+						"    colr=gl_Color;"
+						"}";
+	linedraw_2d_program=SetShaders(vert2,frag);
 	const char *simple_vert="varying vec2 texCoords;"
 						"void main(void)"
 						"{"
@@ -158,6 +166,7 @@ void Utilities::SetScreenSize(int w,int h)
 
 void Utilities::InvalidateDeviceObjects()
 {
+	SAFE_DELETE_PROGRAM(linedraw_2d_program);
 	SAFE_DELETE_PROGRAM(linedraw_program);
 	SAFE_DELETE_PROGRAM(simple_program);
 }

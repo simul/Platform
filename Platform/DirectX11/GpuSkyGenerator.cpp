@@ -45,8 +45,8 @@ void GpuSkyGenerator::InvalidateDeviceObjects()
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(constantBuffer);
 	m_pd3dDevice=NULL;
-	dens_tex.release();
-	optd_tex.release();
+	dens_tex.InvalidateDeviceObjects();
+	optd_tex.InvalidateDeviceObjects();
 	tables_checksum=0;
 }
 
@@ -154,9 +154,9 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	//SetGpuSkyConstants(gpuSkyConstants,p,a,ir);
 	for(int i=0;i<3;i++)
 	{
-		finalLoss[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalInsc[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalSkyl[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalLoss[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true,1);
+		finalInsc[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true,1);
+		finalSkyl[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true,1);
 	}
 	if(light_table)
 		light_table->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size()*32,3,4,DXGI_FORMAT_R32G32B32A32_FLOAT,true);

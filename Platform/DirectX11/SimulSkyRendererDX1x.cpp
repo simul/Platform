@@ -24,6 +24,7 @@
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/Texture.h"
 #include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Math/Pi.h"
@@ -74,7 +75,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	view.Identity();
 	proj.Identity();
 	gpuSkyGenerator.RestoreDeviceObjects(m_pd3dDevice);
-	TextureStruct *loss[3],*insc[3],*skyl[3];
+	dx11::Texture *loss[3],*insc[3],*skyl[3];
 	for(int i=0;i<3;i++)
 	{
 		loss[i]=&loss_textures[i];
@@ -162,12 +163,12 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pStarsVertexBuffer);
 	for(int i=0;i<3;i++)
 	{
-		loss_textures[i].release();
-		insc_textures[i].release();
-		skyl_textures[i].release();
+		loss_textures[i].InvalidateDeviceObjects();
+		insc_textures[i].InvalidateDeviceObjects();
+		skyl_textures[i].InvalidateDeviceObjects();
 	}
-	light_table.release();
-	light_table_2d.release();
+	light_table.InvalidateDeviceObjects();
+	light_table_2d.InvalidateDeviceObjects();
 	// Set the stored texture sizes to zero, so the textures will be re-created.
 	numFadeDistances=numFadeElevations=numAltitudes=0;
 	sunQuery.InvalidateDeviceObjects();

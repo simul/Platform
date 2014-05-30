@@ -78,12 +78,12 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	SAFE_RELEASE(volume_noise_tex_srv);
 	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(effect);
-	density_texture.release();
+	density_texture.InvalidateDeviceObjects();
 	gpuCloudConstants.InvalidateDeviceObjects();
 	for(int i=0;i<2;i++)
 	{
-		directLightTextures[i].release();
-		indirectLightTextures[i].release();
+		directLightTextures[i].InvalidateDeviceObjects();
+		indirectLightTextures[i].InvalidateDeviceObjects();
 	}
 	SAFE_RELEASE(m_pWwcSamplerState);
 	SAFE_RELEASE(m_pCwcSamplerState);
@@ -137,7 +137,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	if(texels<=0)
 		return;
 	for(int i=0;i<3;i++)
-		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
+		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true,1);
 	int density_gridsize=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
 	mask_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]);
 

@@ -156,8 +156,8 @@ void OceanSimulator::InvalidateDeviceObjects()
 
 	choppy		.release();
 	omega		.release();
-	displacement.release();
-	gradient	.release();
+	displacement.InvalidateDeviceObjects();
+	gradient	.InvalidateDeviceObjects();
 	dxyz		.release();
 	h0			.release();
 	m_fft.InvalidateDeviceObjects();

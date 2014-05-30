@@ -3,6 +3,7 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/Texture.h"
 #include "Simul/Camera/Camera.h"
 
 namespace simul
@@ -33,13 +34,13 @@ namespace simul
 			// A framebuffer with depth
 			simul::dx11::Framebuffer					hdrFramebuffer;
 			// The depth from the HDR framebuffer can be resolved into this texture:
-			simul::dx11::TextureStruct					hiResDepthTexture;
-			simul::dx11::TextureStruct					lowResDepthTexture;
-			simul::dx11::TextureStruct					lowResScratch;
+			simul::dx11::Texture					hiResDepthTexture;
+			simul::dx11::Texture					lowResDepthTexture;
+			simul::dx11::Texture					lowResScratch;
 			ViewType									viewType;
 			const simul::camera::CameraOutputInterface	*camera;
 		private:
-			simul::dx11::TextureStruct		resolvedTexture;
+			simul::dx11::Texture		resolvedTexture;
 			ID3D11Device					*m_pd3dDevice;
 		public:
 			int								ScreenWidth;

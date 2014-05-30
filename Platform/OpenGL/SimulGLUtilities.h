@@ -34,6 +34,7 @@ public:
 	void InvalidateDeviceObjects();
 	static void Kill();
 	GLuint linedraw_program;
+	GLuint linedraw_2d_program;
 	GLuint simple_program;
 };
 

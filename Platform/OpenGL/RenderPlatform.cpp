@@ -383,6 +383,32 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 	::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
 }
 
+void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)
+{
+	//::Draw2DLines((VertexXyzRgba*)lines,vertex_count,strip);
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glUseProgram(Utilities::GetSingleton().linedraw_2d_program);
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_1D);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_TEXTURE_3D);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+	glDepthMask(GL_FALSE);
+	glBegin(strip?GL_LINE_STRIP:GL_LINES);
+	for(int i=0;i<vertex_count;i++)
+	{
+		Vertext &V=lines[i];
+		glColor4fv(V.colour);
+		glVertex3fv(V.pos);
+	}
+	glEnd();
+	glUseProgram(0);
+	glPopAttrib();
+}
+
 void RenderPlatform::PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
 	::PrintAt3dPos(p,text,colr,offsetx,offsety);

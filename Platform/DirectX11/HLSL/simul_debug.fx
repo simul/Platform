@@ -43,6 +43,14 @@ v2f DebugVS(a2v IN)
     return OUT;
 }
 
+v2f Debug2dVS(a2v IN)
+{
+	v2f OUT;
+    OUT.hPosition	=float4(rect.xy+rect.zw*IN.position.xy,0.0,1.0);
+	OUT.colour		=IN.colour;
+    return OUT;
+}
+
 v2f CircleVS(idOnly IN)
 {
 	v2f OUT;
@@ -155,6 +163,18 @@ technique11 simul_debug
 		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,DebugVS()));
+		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+    }
+}
+technique11 lines_2d
+{
+    pass p0
+    {
+		SetRasterizerState( wireframeRasterizer );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,Debug2dVS()));
 		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
     }
 }

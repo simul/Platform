@@ -152,7 +152,7 @@ namespace simul
 			ID3D1xEffectShaderResourceVariable*		depthTexture;
 			ID3D1xEffectShaderResourceVariable*		lightTableTexture;
 
-			TextureStruct							cloud_textures[3];
+			dx11::Texture							cloud_textures[3];
 
 			ID3D11ShaderResourceView*				noiseTextureResource;
 			ID3D11ShaderResourceView*				lightningIlluminationTextureResource;
@@ -168,9 +168,9 @@ namespace simul
 			// A texture whose x-axis represents azimuth, and whose y-axis represents distance
 			// as a proportion of shadow range. The texels represent how much illumination accumulates between the viewer
 			// and that distance.
-			simul::dx11::TextureStruct				godrays_texture;
+			simul::dx11::Texture					godrays_texture;
 
-			simul::dx11::TextureStruct				cloud_texture;
+			simul::dx11::Texture					cloud_texture;
 			
 			ID3D1xBuffer*							computeConstantBuffer;
 			ID3D11ComputeShader*					m_pComputeShader;
@@ -180,7 +180,7 @@ namespace simul
 			D3D1x_MAPPED_TEXTURE3D					mapped_illumination;
 
 			ID3D11Texture2D*	noise_texture;
-			TextureStruct		noise_texture_3D;
+			dx11::Texture		noise_texture_3D;
 			ID3D1xTexture1D*	lightning_texture;
 			ID3D1xTexture2D*	cloud_cubemap;
 			

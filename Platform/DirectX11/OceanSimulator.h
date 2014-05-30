@@ -10,6 +10,7 @@
 #include "Simul/Terrain/BaseSeaRenderer.h"
 #include "CSFFT/fft_512x512.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/Texture.h"
 
 //#define CS_DEBUG_BUFFER
 #define PAD16(n) (((n)+15)/16*16)
@@ -47,10 +48,10 @@ protected:
 	ID3DX11Effect				*effect;
 	
 	// Displacement map
-	simul::dx11::TextureStruct displacement;
+	simul::dx11::Texture displacement;
 
 	// Gradient field
-	simul::dx11::TextureStruct gradient;
+	simul::dx11::Texture gradient;
 
 	// Initialize the vector field.
 	void initHeightMap(D3DXVECTOR2* out_h0, float* out_omega);

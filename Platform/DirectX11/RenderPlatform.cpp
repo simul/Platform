@@ -419,6 +419,11 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 	simul::dx11::UtilityRenderer::DrawLines(deviceContext,(VertexXyzRgba*)lines,vertex_count,strip);
 }
 
+void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)
+{
+	simul::dx11::UtilityRenderer::Draw2dLines(deviceContext,(VertexXyzRgba*)lines,vertex_count,strip);
+}
+
 void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill)
 {
 	ID3D11DeviceContext *pContext	=deviceContext.asD3D11DeviceContext();

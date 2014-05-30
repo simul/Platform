@@ -79,7 +79,7 @@ float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float pers
 		float zmax	=height-0.5*texel;
 		pos2.z		=clamp(pos2.z,zmin,zmax);
 		float lookup=texture_wrap_lod(volumeNoiseTexture,pos2,0).x;
-		float val	=lookup;//0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
+		float val	=0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
 		dens		=dens+mult*val;
 		sum			=sum+mult;
 		mult		=mult*persistence;

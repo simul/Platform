@@ -670,7 +670,7 @@ ERRNO_CHECK
 	ID3DBlob *errorMsgs		=NULL;
 ERRNO_CHECK
 	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
-ERRNO_CHECK
+	std::cout<<"Rebuilding DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
 	hr=D3DCompile(		textData,
 						textSize,
 						text_filename_utf8.c_str(),	//LPCSTR pSourceName,
@@ -820,7 +820,7 @@ static const DWORD default_effect_flags=0;
         hr=DXTRACE_ERR( L"CreateEffect", hr );
 #endif
 		DebugBreak();
-	}
+ 	}
 	assert((*effect)->IsValid());
 
 	// Name stuff:

@@ -161,7 +161,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 	m_pd3dDevice=(ID3D11Device*)dev;
 	gpuCloudGenerator.RestoreDeviceObjects(m_pd3dDevice);
 	// Allow the GPU cloud generator to directly create and modify the target textures.
-	TextureStruct *ts[]={&cloud_textures[0],&cloud_textures[1],&cloud_textures[2]};
+	dx11::Texture *ts[]={&cloud_textures[0],&cloud_textures[1],&cloud_textures[2]};
 	gpuCloudGenerator.SetDirectTargets(ts);
 	CreateLightningTexture();
 	RecompileShaders();
@@ -232,7 +232,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	Unmap();
 	shadow_fb.InvalidateDeviceObjects();
-	godrays_texture.release();
+	godrays_texture.InvalidateDeviceObjects();
 	moisture_fb.InvalidateDeviceObjects();
 	//if(illumination_texture)
 	//	Unmap3D(mapped_context,illumination_texture);
@@ -245,9 +245,9 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(effect);
 	for(int i=0;i<3;i++)
 	{
-		cloud_textures[i].release();
+		cloud_textures[i].InvalidateDeviceObjects();
 	}
-	cloud_texture.release();
+	cloud_texture.InvalidateDeviceObjects();
 	// Set the stored texture sizes to zero, so the textures will be re-created.
 	cloud_tex_width_x=cloud_tex_length_y=cloud_tex_depth_z=0;
 	SAFE_RELEASE(noise_texture);
@@ -262,7 +262,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(blendAndDontWriteAlpha);
 
 	SAFE_RELEASE(noiseTextureResource);
-	noise_texture_3D.release();
+	noise_texture_3D.InvalidateDeviceObjects();
 	
 	SAFE_RELEASE(lightningIlluminationTextureResource);
 	cloudConstants.InvalidateDeviceObjects();
@@ -380,7 +380,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 	ID3DX11EffectTechnique *randomComputeTechnique	=effect->GetTechniqueByName("random_3d_compute");
 	ID3DX11EffectTechnique *noise3DComputeTechnique	=effect->GetTechniqueByName("noise_3d_compute");
 
-	TextureStruct random_3d;
+	dx11::Texture random_3d;
 	random_3d.ensureTexture3DSizeAndFormat(m_pd3dDevice
 		,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency
 		,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
@@ -734,29 +734,26 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 			view_dir.Define(-deviceContext.viewStruct.view._13,-deviceContext.viewStruct.view._23,-deviceContext.viewStruct.view._33);
 		simul::math::Vector3 up(deviceContext.viewStruct.view._12,deviceContext.viewStruct.view._22,deviceContext.viewStruct.view._32);
 		helper->SetChurn(cloudProperties.GetChurn());
-	ERRNO_CHECK
+	
 		helper->Update((const float*)cam_pos,wind_offset,view_dir,up,1.0);
-	ERRNO_CHECK
+	
 		float tan_half_fov_vertical=1.f/deviceContext.viewStruct.proj._22;
 		float tan_half_fov_horizontal=1.f/deviceContext.viewStruct.proj._11;
-	ERRNO_CHECK
+	
 		helper->SetNoFrustumLimit(true);
-	ERRNO_CHECK
+	
 		helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	ERRNO_CHECK
+	
 		helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),enable_lightning);
-	ERRNO_CHECK
+	
 	}
 	ERRNO_CHECK
 	static int select_slice=-1;
-	int ii=0;
-	unsigned el,az;
-	helper->GetGrid(el,az);
 	SetLayerConstants(helper,layerConstants);
 	int numInstances=(int)helper->GetSlices().size();
 	if(select_slice>=0)
 		numInstances=1;
-	ERRNO_CHECK
+
 	UPDATE_CONSTANT_BUFFER(pContext,layerConstantsBuffer,LayerConstants,layerConstants)
 	ID3DX11EffectConstantBuffer* cbLayerConstants=effect->GetConstantBufferByName("LayerConstants");
 	if(cbLayerConstants)
@@ -796,7 +793,7 @@ ERRNO_CHECK
 	depthTexture->SetResource((ID3D11ShaderResourceView*)NULL);
 	lightTableTexture	->SetResource((ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect,"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
-// To prevent BIZARRE DX11 warning, we re-apply the pass with the textures unbound:
+// To prevent DX11 warning, we re-apply the pass with the textures unbound:
 	ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
 	ERRNO_CHECK
 	return (hr==S_OK);

@@ -470,7 +470,7 @@ GL_ERROR_CHECK
 	float tan_half_fov_horizontal		=std::max(1.f/left,1.f/right);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	float effective_world_radius_metres	=6378000.f;
-	float base_alt=cloudProperties.GetCloudBaseZ();
+	float base_alt=K.cloud_base_km*1000.f;//
 	if(cloudKeyframer->GetMeetHorizon())
 		effective_world_radius_metres	=helper->GetEffectiveEarthRadiusToMeetHorizon(base_alt,helper->GetMaxCloudDistance());
 	helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),effective_world_radius_metres,false,X1.z,false);
