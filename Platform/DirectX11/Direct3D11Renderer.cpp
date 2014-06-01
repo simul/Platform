@@ -413,11 +413,6 @@ void MixedResolutionRenderer::DownscaleDepth(ID3D11DeviceContext* pContext,View 
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
-void Direct3D11Renderer::RenderFadeEditView(ID3D11DeviceContext* pContext)
-{
-
-}
-
 void Direct3D11Renderer::RenderScene(int view_id
 									 ,crossplatform::DeviceContext &deviceContext
 									 ,simul::clouds::BaseWeatherRenderer *w
@@ -502,11 +497,6 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	simul::base::SetGpuProfilingInterface(pContext,&simul::dx11::Profiler::GetGlobalProfiler());
 	D3DXMATRIX v,proj;
 	View *view=viewManager.GetView(view_id);
-	if(view->viewType==FADE_EDITING)
-	{
-		RenderFadeEditView(pContext);
-		return;
-	}
 	EnsureCorrectBufferSizes(view_id);
 	const camera::CameraOutputInterface *cam=view->camera;
 	const camera::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();

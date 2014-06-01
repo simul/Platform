@@ -313,7 +313,7 @@ static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap
-								  ,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha
+								  ,bool /*near_pass*/,const void *depth_alpha_tex,bool write_alpha
 								  ,const simul::sky::float4& viewportTextureRegionXYWH
 								  ,const simul::sky::float4& mixedResTransformXYWH)
 {
@@ -357,13 +357,9 @@ Raytrace=false;
 			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	}
 	simul::sky::float4 gl_fog;
+	bool default_fog=glIsEnabled(GL_FOG);
 	if(default_fog)
-	{
-		glEnable(GL_FOG);
 		glGetFloatv(GL_FOG_COLOR,gl_fog);
-	}
-	else
-		glDisable(GL_FOG);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_ONE,GL_SRC_ALPHA,GL_ZERO,GL_SRC_ALPHA);
 GL_ERROR_CHECK

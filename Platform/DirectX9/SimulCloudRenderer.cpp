@@ -550,13 +550,12 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 {
 }
 #include "Simul/Camera/Camera.h"
-bool SimulCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha,const simul::sky::float4&,const simul::sky::float4& )
+bool SimulCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool write_alpha,const simul::sky::float4&,const simul::sky::float4& )
 {
 	if(rebuild_shaders)
 		RecompileShaders();
 	EnsureTexturesAreUpToDate(deviceContext.platform_context);
 	depth_alpha_tex;
-	default_fog;
 	if(!write_alpha)
 		m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,7);
 	PIXBeginNamedEvent(0xFF00FFFF,"SimulCloudRenderer::Render");

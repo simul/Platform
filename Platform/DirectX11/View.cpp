@@ -20,9 +20,9 @@ using namespace dx11;
 	 InvalidateDeviceObjects();
  }
 
-void View::RestoreDeviceObjects(ID3D11Device *pd3dDevice)
+void View::RestoreDeviceObjects(void *pd3dDevice)
 {
-	m_pd3dDevice=pd3dDevice;
+	m_pd3dDevice=(ID3D11Device*)pd3dDevice;
 	if(!useExternalFramebuffer)
 	{
 		hdrFramebuffer.RestoreDeviceObjects(pd3dDevice);

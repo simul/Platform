@@ -370,7 +370,7 @@ ERRNO_CHECK
 		baseAtmosphericsRenderer->RenderAsOverlay(deviceContext.platform_context,hiResDepthTexture,exposure,depthViewportXYWH);
 ERRNO_CHECK
 	//if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-	//	base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,UseDefaultFog,false,view_id,depthViewportXYWH);
+	//	base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,false,view_id,depthViewportXYWH);
 	// Now we render the low-resolution elements to the low-res buffer.
 	float godrays_strength		=(float)(!is_cubemap)*environment->cloudKeyframer->GetInterpolatedKeyframe().godray_strength;
 	if(buffered)
@@ -427,7 +427,7 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	simul::crossplatform::Devi
 		baseAtmosphericsRenderer->RenderInscatter(pContext,hiResDepthTexture,exposure,depthViewportXYWH,false);
 	const sky::float4 noscale(0.f,0.f,1.f,1.f);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-		base2DCloudRenderer->Render(deviceContext,exposure,false,false,mainDepthTextureMS,UseDefaultFog,false,depthViewportXYWH,noscale);
+		base2DCloudRenderer->Render(deviceContext,exposure,false,false,mainDepthTextureMS,false,depthViewportXYWH,noscale);
 	
 	fb->hiResFarFramebufferDx11.Deactivate(pContext);
 	

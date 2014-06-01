@@ -675,7 +675,7 @@ void SimulCloudRendererDX1x::PreRenderUpdate(crossplatform::DeviceContext &devic
 }
 static int test=29999;
 bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_tex
-,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH)
+,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH)
 {
 	ERRNO_CHECK
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();

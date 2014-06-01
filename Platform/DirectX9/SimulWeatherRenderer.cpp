@@ -379,7 +379,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(crossplatform::DeviceContext &de
 	{	
 		PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
 		{
-			simulCloudRenderer->Render(deviceContext,exposure,false,false,0,false,true,relativeViewportTextureRegionXYWH,sky::float4(0,0,1.f,1.f));
+			simulCloudRenderer->Render(deviceContext,exposure,false,false,0,true,relativeViewportTextureRegionXYWH,sky::float4(0,0,1.f,1.f));
 		}
 	}
 	

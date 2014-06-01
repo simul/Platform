@@ -60,7 +60,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
-			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& );
+			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& );
 
 			//! Save the first keyframe texture into a 2D image file by stacking X-Z slices vertically.
 			void SaveCloudTexture(const char *filename);

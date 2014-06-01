@@ -3,7 +3,9 @@
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/Export.h"
-
+#ifdef _MSC_VER
+#pragma warning(disable:4251)
+#endif
 namespace simul
 {
 	namespace opengl

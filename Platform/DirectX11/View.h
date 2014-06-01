@@ -22,7 +22,7 @@ namespace simul
 		{
 			View();
 			~View();
-			void RestoreDeviceObjects(ID3D11Device *pd3dDevice);
+			void RestoreDeviceObjects(void *device);
 			void InvalidateDeviceObjects();
 			int GetScreenWidth() const;
 			int GetScreenHeight() const;
@@ -34,19 +34,18 @@ namespace simul
 			// A framebuffer with depth
 			simul::dx11::Framebuffer					hdrFramebuffer;
 			// The depth from the HDR framebuffer can be resolved into this texture:
-			simul::dx11::Texture					hiResDepthTexture;
-			simul::dx11::Texture					lowResDepthTexture;
-			simul::dx11::Texture					lowResScratch;
+			simul::dx11::Texture						hiResDepthTexture;
+			simul::dx11::Texture						lowResDepthTexture;
+			simul::dx11::Texture						lowResScratch;
 			ViewType									viewType;
 			const simul::camera::CameraOutputInterface	*camera;
 		private:
-			simul::dx11::Texture		resolvedTexture;
+			simul::dx11::Texture			resolvedTexture;
 			ID3D11Device					*m_pd3dDevice;
 		public:
 			int								ScreenWidth;
 			int								ScreenHeight;
 			bool							useExternalFramebuffer;
-			//ID3D11Texture2D					*externalDepthTexture;
 			ID3D11ShaderResourceView		*externalDepthTexture_SRV;
 		};
 		class SIMUL_DIRECTX11_EXPORT ViewManager

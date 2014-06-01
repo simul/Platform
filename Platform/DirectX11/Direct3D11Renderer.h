@@ -143,7 +143,6 @@ namespace simul
 				,float exposure
 				,float gamma);
 			// Different kinds of view for Render() to call:
-			void RenderFadeEditView(ID3D11DeviceContext* pd3dImmediateContext);
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
 			void ReverseDepthChanged();
 			void AntialiasingChanged();
