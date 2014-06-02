@@ -2,7 +2,7 @@
 
 namespace simul
 {
-	namespace scene
+	namespace crossplatform
 	{
 		class Texture
 		{
