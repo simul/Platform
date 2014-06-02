@@ -32,7 +32,7 @@ void main()
 	vec3 depth_texc	=0.5*(depth_pos+vec3(1.0,1.0,1.0));
 
     float depth			=texture(depthTexture,depth_texc.xy).x;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	if(depth>0)
 		discard;
 #else

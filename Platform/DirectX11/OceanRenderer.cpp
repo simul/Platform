@@ -136,8 +136,7 @@ void OceanRenderer::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	defines["FX"]="1";
 	effect=LoadEffect(m_pd3dDevice,"ocean.fx",defines);
 

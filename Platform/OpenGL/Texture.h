@@ -1,7 +1,7 @@
 #pragma once
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Base/Timer.h"
-#include "Simul/Scene/Texture.h"
+#include "Simul/Platform/CrossPlatform/Texture.h"
 #include <string>
 #include <map>
 #pragma warning(disable:4251)
@@ -9,7 +9,7 @@ namespace simul
 {
 	namespace opengl
 	{
-		class SIMUL_OPENGL_EXPORT Texture:public simul::scene::Texture
+		class SIMUL_OPENGL_EXPORT Texture:public simul::crossplatform::Texture
 		{
 		public:
 			Texture();

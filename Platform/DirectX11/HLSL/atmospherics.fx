@@ -59,7 +59,7 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 	OUT.pos			=poss[IN.vertex_id];
 	OUT.position	=float4(OUT.pos,0.0,1.0);
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.position.z	=0.0; 
 #else
 	OUT.position.z	=OUT.position.w; 
@@ -293,7 +293,7 @@ vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
 	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	float depth			=max(depth_lookup.x,cloud_depth);
 #else
 	float depth			=min(depth_lookup.x,cloud_depth);
@@ -315,7 +315,7 @@ vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
 //	if(depth_lookup.z==0)
 //		discard;
 	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	float depth			=max(depth_lookup.x,cloud_depth);
 #else
 	float depth			=min(depth_lookup.x,cloud_depth);

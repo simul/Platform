@@ -33,7 +33,7 @@ void LightningRenderer::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
-	defines["REVERSE_DEPTH"]="1";
+	defines["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
 	CreateEffect(m_pd3dDevice,&effect,"lightning.fx",defines);
 	D3DX11_PASS_DESC PassDesc;
 	effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->GetDesc(&PassDesc);

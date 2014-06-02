@@ -337,7 +337,7 @@ rainVertexOutput VS_FullScreen(idOnly IN)
 	OUT.clip_pos	=poss[IN.vertex_id];
 	OUT.position	=vec4(OUT.clip_pos,0.0,1.0);
 	// Set to far plane
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.position.z	=0.0; 
 #else
 	OUT.position.z	=OUT.position.w; 

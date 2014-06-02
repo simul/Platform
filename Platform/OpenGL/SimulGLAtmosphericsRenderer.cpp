@@ -67,8 +67,7 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 	if(!initialized)
 		return;
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	loss_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_loss.frag",defines);
 	insc_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_insc.frag",defines);
 	earthshadow_insc_program	=MakeProgram("simul_atmospherics.vert",NULL,"simul_insc_earthshadow.frag",defines);

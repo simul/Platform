@@ -6,7 +6,7 @@
 
 float depthToLinearDistance(float depth,vec3 depthToLinFadeDistParams)
 {
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	if(depth<=0)
 		return 1.0;//max_fade_distance_metres;
 #else
@@ -34,7 +34,7 @@ vec2 depthToLinearDistance(vec2 depth,vec3 depthToLinFadeDistParams)
 
 void discardOnFar(float depth)
 {
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	if(depth<=0)
 		discard;
 #else
@@ -53,7 +53,7 @@ float depthToFadeDistance(float depth,vec2 xy,vec3 depthToLinFadeDistParams,vec2
 		dist=1.0;
 	return dist;
 #else
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	if(depth<=0)
 		return 1.0;
 #else
@@ -67,37 +67,10 @@ float depthToFadeDistance(float depth,vec2 xy,vec3 depthToLinFadeDistParams,vec2
 	return fadeDist;
 #endif
 }
-/*float depthToFadeDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
-{
-#ifdef REVERSE_DEPTH
-	if(depth<=0)
-		return 1.0;
-#else
-	if(depth>=1.0)
-		return 1.0;
-#endif
-#ifdef VISION
-	float dist=depth*farZ;
-	if(depth>=1.0)
-		dist=1.0;
-	return dist;
-#else
-#ifdef REVERSE_DEPTH
-	float linearFadeDistanceZ = nearZ*farZ/(nearZ+(farZ-nearZ)*depth);
-#else
-	float linearFadeDistanceZ = nearZ*farZ/(farZ-(farZ-nearZ)*depth);
-#endif
-	float Tx=xy.x*tanHalf.x;
-	float Ty=xy.y*tanHalf.y;
-	float fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
-	
-	return fadeDist;
-#endif
-}
-*/
+
 float fadeDistanceToDepth(float dist,vec2 xy,vec3 depthToLinFadeDistParams,vec2 tanHalf)
 {
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	if(dist>=1.0)
 		return 0.0;
 #else
@@ -111,10 +84,9 @@ float fadeDistanceToDepth(float dist,vec2 xy,vec3 depthToLinFadeDistParams,vec2 
 	return depth;
 }
 
-
 float fadeDistanceToDepth(float dist,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
 {
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	if(dist>=1.0)
 		return 0.0;
 #else
@@ -124,7 +96,7 @@ float fadeDistanceToDepth(float dist,vec2 xy,float nearZ,float farZ,vec2 tanHalf
 	float Tx				=xy.x*tanHalf.x;
 	float Ty				=xy.y*tanHalf.y;
 	float linearDistanceZ	=dist/sqrt(1.0+Tx*Tx+Ty*Ty);
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	float depth				=((nearZ*farZ)/linearDistanceZ-nearZ)/(farZ-nearZ);
 #else
 	float depth				=((nearZ*farZ)/linearDistanceZ-farZ)/(nearZ-farZ);

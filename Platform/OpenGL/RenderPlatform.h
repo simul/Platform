@@ -47,7 +47,7 @@ namespace simul
 			scene::Material *CreateMaterial();
 			scene::Mesh		*CreateMesh();
 			scene::Light	*CreateLight();
-			scene::Texture	*CreateTexture(const char *lFileNameUtf8);
+			crossplatform::Texture	*CreateTexture(const char *lFileNameUtf8);
 			void			*GetDevice();
 			
 			GLuint solid_program;

@@ -188,6 +188,7 @@
   <ItemGroup>
     <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
     <ClInclude Include="DeviceContext.h" />
+    <ClInclude Include="Export.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>

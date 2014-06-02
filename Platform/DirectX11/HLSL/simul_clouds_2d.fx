@@ -73,7 +73,7 @@ vec4 msaaPS(v2f IN) : SV_TARGET
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
 	vec3 wEyeToPos		=IN.wPosition-eyePosition;
-#ifdef USE_LIGHT_TABLES
+#if USE_LIGHT_TABLES==1
 	float alt_texc		=IN.wPosition.z/maxAltitudeMetres;
 	vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
 	vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
@@ -116,7 +116,7 @@ vec4 MainPS(v2f IN) : SV_TARGET
     vec2 texc_detail	=wOffset/detailScale;
 	vec3 wEyeToPos		=IN.wPosition-eyePosition;
 //	vec4 ret			=Clouds2DPS_illum(texc_global,texc_detail,wEyeToPos,dist,cloudInterp,sunlight.rgb,lightDir.xyz,lightResponse);
-#ifdef USE_LIGHT_TABLES
+#if USE_LIGHT_TABLES==1
 	float alt_texc		=IN.wPosition.z/maxAltitudeMetres;
 	vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
 	vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;

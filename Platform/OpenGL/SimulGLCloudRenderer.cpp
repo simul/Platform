@@ -627,8 +627,7 @@ GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(edge_noise_prog);
 
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	defines["DETAIL_NOISE"]="1";
 	clouds_background_program	=MakeProgram("simul_clouds",defines);
 	defines["USE_DEPTH_TEXTURE"]="1";

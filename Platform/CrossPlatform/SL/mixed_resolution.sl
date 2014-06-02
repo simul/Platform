@@ -23,7 +23,7 @@ void Resolve(Texture2DMS<float4> sourceTextureMS,RWTexture2D<float4> targetTextu
 // sourceDepthTexture, sourceMSDepthTexture, and targetTexture are ALL the SAME SIZE.
 vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> sourceMSDepthTexture,uint numberOfSamples,uint2 pos,vec3 depthToLinFadeDistParams)
 {
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	float nearest_depth			=0.0;
 	float farthest_depth		=1.0;
 #else
@@ -37,7 +37,7 @@ vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> s
 			d				=sourceDepthTexture[pos].x;
 		else
 			d				=sourceMSDepthTexture.Load(pos,k).x;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 		if(d>nearest_depth)
 			nearest_depth	=d;
 		if(d<farthest_depth)
@@ -70,7 +70,7 @@ void DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,RWTextu
 		return;
 	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
 	uint2 pos2					=pos.xy*scale;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	float nearest_depth			=0.0;
 	float farthest_depth		=1.0;
 #else
@@ -86,7 +86,7 @@ void DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,RWTextu
 			{
 				uint2 hires_pos		=pos2+uint2(i,j);
 				float d				=sourceMSDepthTexture.Load(hires_pos,k).x;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 				if(d>nearest_depth)
 					nearest_depth	=d;
 				if(d<farthest_depth)
@@ -130,7 +130,7 @@ void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<flo
 		return;
 	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
 	uint2 pos2					=pos.xy*scale;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	float nearest_depth			=0.0;
 	float farthest_depth		=1.0;
 #else
@@ -145,7 +145,7 @@ void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<flo
 			if(hires_pos.x>=source_dims.x||hires_pos.y>=source_dims.y)
 				continue;
 			vec4 d				=sourceDepthTexture[hires_pos];
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 			if(d.y>nearest_depth)
 				nearest_depth	=d.y;
 			if(d.x<farthest_depth)

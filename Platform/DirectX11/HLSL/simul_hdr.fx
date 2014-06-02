@@ -41,7 +41,7 @@ v2f MainVS(idOnly IN)
 	vec2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(pos,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z	=0.0; 
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
@@ -63,7 +63,7 @@ v2f OffsetVS(idOnly IN)
 	vec2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(pos/*+offset*/,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z	=0.0; 
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 

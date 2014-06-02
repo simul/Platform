@@ -140,10 +140,8 @@ void Simul2DCloudRendererDX11::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
-	if(UseLightTables)
-		defines["USE_LIGHT_TABLES"]="1";
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
+	defines["USE_LIGHT_TABLES"]=UseLightTables?"1":"0";
 	CreateEffect(m_pd3dDevice,&effect,"simul_clouds_2d.fx",defines);
 	msaaTechnique=effect->GetTechniqueByName("simul_clouds_2d_msaa");
 	technique	=effect->GetTechniqueByName("simul_clouds_2d");

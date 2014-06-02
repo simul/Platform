@@ -4,6 +4,7 @@
     <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
     <ClInclude Include="DeviceContext.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="Export.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">

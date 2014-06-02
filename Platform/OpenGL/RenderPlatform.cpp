@@ -366,9 +366,9 @@ scene::Light *RenderPlatform::CreateLight()
 	return new opengl::Light();
 }
 
-scene::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
+crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
-	scene::Texture * tex=new opengl::Texture;
+	crossplatform::Texture * tex=new opengl::Texture;
 	tex->LoadFromFile(fileNameUtf8);
 	return tex;
 }

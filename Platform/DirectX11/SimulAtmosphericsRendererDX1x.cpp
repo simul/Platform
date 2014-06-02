@@ -89,8 +89,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 		return;
 	HRESULT hr=S_OK;
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	//defines["GODRAYS_STEPS"]=simul::base::stringFormat("%d",
 	V_CHECK(CreateEffect(m_pd3dDevice,&effect,"atmospherics.fx",defines));
 

@@ -781,9 +781,8 @@ void Direct3D11Renderer::RecompileShaders()
 		simulHDRRenderer->RecompileShaders();
 	
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
-	defines["NUM_AA_SAMPLES"]=base::stringFormat("%d",Antialiasing);
+	defines["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
+	defines["NUM_AA_SAMPLES"]		=base::stringFormat("%d",Antialiasing);
 	mixedResolutionRenderer.RecompileShaders(defines);
 	SAFE_RELEASE(lightProbesEffect);
 	V_CHECK(CreateEffect(m_pd3dDevice,&lightProbesEffect,"light_probes.fx",defines));

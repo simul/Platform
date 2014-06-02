@@ -12,10 +12,6 @@ RWTexture2D<float> targetTexture1;
 
 StructuredBuffer<SmallLayerData> layersSB;
 
-#define Z_VERTICAL 1
-#ifndef WRAP_CLOUDS
-	#define WRAP_CLOUDS 1
-#endif
 #ifndef DETAIL_NOISE
 	#define DETAIL_NOISE 1
 #endif
@@ -48,7 +44,7 @@ RaytraceVertexOutput VS_Raytrace(idOnly IN)
 	vec2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(pos,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z	=0.0; 
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
@@ -166,7 +162,7 @@ posTexVertexOutput VS_FullScreen(idOnly IN)
 	vec2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(pos,0.0,1.0);
 	// Set to far plane
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z	=0.0; 
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
@@ -190,7 +186,7 @@ posTexVertexOutput VS_CrossSection(idOnly IN)
 	OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
 	//OUT.hPosition	=vec4(pos,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z	=0.0; 
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 

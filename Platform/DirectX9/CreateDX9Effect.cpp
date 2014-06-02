@@ -924,10 +924,6 @@ std::map<std::string,std::string> MakeDefinesList(bool wrap,bool y_vertical)
 	defines["DETAIL_NOISE"]="1";
 	if(wrap)
 		defines["WRAP_CLOUDS"]="1";
-	if(!y_vertical)
-		defines["Z_VERTICAL"]='1';
-	else
-		defines["Y_VERTICAL"]='1';
 	return defines;
 }
 

@@ -236,8 +236,7 @@ void SimulGLWeatherRenderer::RecompileShaders()
 	BaseWeatherRenderer::RecompileShaders();
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag",defines);
 }
 #include "Simul/Camera/Camera.h"

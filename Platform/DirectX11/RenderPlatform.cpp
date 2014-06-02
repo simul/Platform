@@ -337,9 +337,9 @@ scene::Light *RenderPlatform::CreateLight()
 	return new dx11::Light();
 }
 
-scene::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
+crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
-	scene::Texture * tex=new dx11::Texture(device);
+	crossplatform::Texture * tex=new dx11::Texture(device);
 	tex->LoadFromFile(fileNameUtf8);
 	return tex;
 }
@@ -391,7 +391,7 @@ void RenderPlatform::DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
 	if(mirrorY)
-		y1=viewport.Height-y1-dy;
+		y1=(int)viewport.Height-y1-dy;
 	{
 		UtilityRenderer::DrawQuad2(pContext
 			,2.f*(float)x1/(float)viewport.Width-1.f

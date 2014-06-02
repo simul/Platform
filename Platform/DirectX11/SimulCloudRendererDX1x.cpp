@@ -526,13 +526,9 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 		return S_OK;
 	std::map<std::string,std::string> defines;
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
-	defines["DETAIL_NOISE"]='1';
-	if(cloudProperties.GetWrap())
-		defines["WRAP_CLOUDS"]="1";
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
-	if(UseLightTables)
-		defines["USE_LIGHT_TABLES"]="1";
+	defines["DETAIL_NOISE"]			='1';
+	defines["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
+	defines["USE_LIGHT_TABLES"]		=UseLightTables?"1":"0";
 	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_clouds.fx",defines);
 	if(cloudKeyframer->GetUse3DNoise())
 		m_hTechniqueCloud			=effect->GetTechniqueByName("simul_clouds_3d_noise");

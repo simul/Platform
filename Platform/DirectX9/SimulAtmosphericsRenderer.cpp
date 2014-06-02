@@ -107,10 +107,6 @@ void SimulAtmosphericsRenderer::RecompileShaders()
 		return;
 	std::map<std::string,std::string> defines;
 	defines["WRAP_CLOUDS"]="1";
-	if(!y_vertical)
-		defines["Z_VERTICAL"]='1';
-	else
-		defines["Y_VERTICAL"]='1';
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,effect,"atmospherics.fx",defines));
 
 	technique			=effect->GetTechniqueByName("simul_atmospherics");

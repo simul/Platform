@@ -391,9 +391,7 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
-	defines["Z_VERTICAL"]="1";
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	V_CHECK(CreateEffect(m_pd3dDevice,&m_pSkyEffect,"simul_sky.fx",defines));
 
 	m_hTechniqueFade3DTo2D		=m_pSkyEffect->GetTechniqueByName("simul_fade_3d_to_2d");

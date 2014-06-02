@@ -12,7 +12,7 @@ DepthStencilState TestDepth
 {
 	DepthEnable = TRUE;
 	DepthWriteMask = ZERO;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	DepthFunc = GREATER_EQUAL;
 #else
 	DepthFunc = LESS_EQUAL;
@@ -45,7 +45,7 @@ DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;
 	DepthWriteMask = ALL;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	DepthFunc = GREATER_EQUAL;
 #else
 	DepthFunc = LESS_EQUAL;

@@ -85,11 +85,6 @@ void SimulSkyRenderer::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
-	defines["USE_ALTITUDE_INTERPOLATION"]="1";
-	if(y_vertical)
-		defines["Y_VERTICAL"]="1";
-	else
-		defines["Z_VERTICAL"]="1";
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pSkyEffect,"simul_sky.fx",defines));
 	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
 	m_hTechniqueShowSkyTexture	=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");

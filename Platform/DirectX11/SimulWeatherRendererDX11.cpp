@@ -198,8 +198,7 @@ void SimulWeatherRendererDX11::RecompileShaders()
 		return;
 	SAFE_RELEASE(m_pTonemapEffect);
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"), defines);
 	simpleCloudBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("simple_cloud_blend");
 	showDepthTechnique			=m_pTonemapEffect->GetTechniqueByName("show_depth");

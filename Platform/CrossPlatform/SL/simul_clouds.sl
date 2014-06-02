@@ -313,7 +313,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float BetaClouds	=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	float BetaRayleigh	=CalcRayleighBeta(cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
-#ifndef USE_LIGHT_TABLES	
+#if USE_LIGHT_TABLES==0
 	vec3 amb			=ambientColour.rgb;
 #endif
 	// This provides the range of texcoords that is lit.
@@ -357,7 +357,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				density.z			*=saturate((d-fadeDistance)/0.01);
 			if(density.z>0)
 			{
-#ifdef USE_LIGHT_TABLES
+#if USE_LIGHT_TABLES==1
 				float alt_texc			=world_pos.z/maxAltitudeMetres;
 				vec3 combinedLightColour=texture_clamp_lod(lightTableTexture,vec2(alt_texc,3.5/4.0),0).rgb;
 				vec3 amb				=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;

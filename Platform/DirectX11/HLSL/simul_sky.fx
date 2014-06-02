@@ -111,7 +111,7 @@ vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN)
 	float2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(float2(-1.0,-1.0)+2.0*pos,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z	=0.0; 
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
@@ -161,7 +161,7 @@ vertexOutput3Dto2D VS_ShowFade(idOnly IN)
 	float2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z	=0.0; 
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
@@ -255,7 +255,7 @@ svertexOutput VS_Sun(indexVertexInput IN)
 	vec3 pos=vec3(poss[IN.vertex_id],1.0/tan(radiusRadians));
     OUT.hPosition=mul(worldViewProj,vec4(pos,1.0));
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z = 0.0f; 
 #else
 	OUT.hPosition.z = OUT.hPosition.w; 
@@ -276,7 +276,7 @@ starsVertexOutput VS_Stars(starsVertexInput IN)
     OUT.hPosition=mul(worldViewProj,vec4(IN.position.xyz,1.0));
 
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z = 0.0f; 
 #else
 	OUT.hPosition.z = 1.0f; 
