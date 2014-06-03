@@ -356,6 +356,7 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView*)t;
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",srv);
 	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
+#if 0
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	if(srv)
 		srv->GetDesc(&desc);
@@ -379,6 +380,7 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 			,2.f*(float)dy/(float)viewport.Height
 			,m_pDebugEffect,tech);
 	}
+#endif
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",NULL);
 }
 
