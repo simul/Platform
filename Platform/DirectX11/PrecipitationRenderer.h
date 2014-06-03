@@ -47,9 +47,7 @@ namespace simul
 				const DepthTextureStruct &depth
 				,const crossplatform::ViewStruct &viewStruct
 				,const CloudShadowStruct &cloudShadowStruct);
-			void Render(void *context,const void *depth_tex
-				,const simul::math::Matrix4x4 &v
-				,const simul::math::Matrix4x4 &p
+			void Render(crossplatform::DeviceContext &deviceContext,const void *depth_tex
 				,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH);
 			//! Put textures to screen for debugging
 			void RenderTextures(void *context,int x0,int y0,int dx,int dy);

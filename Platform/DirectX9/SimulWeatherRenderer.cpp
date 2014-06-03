@@ -154,7 +154,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	ConnectInterfaces();
 }
 
-clouds::TwoResFramebuffer *SimulWeatherRenderer::GetFramebuffer(int view_id)
+crossplatform::TwoResFramebuffer *SimulWeatherRenderer::GetFramebuffer(int view_id)
 {
 	if(framebuffers.find(view_id)==framebuffers.end())
 	{
@@ -332,7 +332,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &devi
 											,doFinalCloudBufferToScreenComposite );
 	if(buffered&&doFinalCloudBufferToScreenComposite&&m_pBufferToScreenEffect)
 	{
-		clouds::TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
+		crossplatform::TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
 		m_pBufferToScreenEffect->SetTexture(bufferTexture,(LPDIRECT3DBASETEXTURE9)fb->GetLowResFarFramebuffer()->GetColorTex());
 		m_pBufferToScreenEffect->SetTechnique(CloudBlendTechnique);
 		unsigned passes;
@@ -367,7 +367,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(crossplatform::DeviceContext &de
 	HRESULT hr=S_OK;
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface=NULL;
-		clouds::TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
+		crossplatform::TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
 	if(buf)
 	{
 		fb->GetLowResFarFramebuffer()->Activate(NULL);

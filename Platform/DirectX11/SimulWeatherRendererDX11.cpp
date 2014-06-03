@@ -389,7 +389,7 @@ ERRNO_CHECK
 ERRNO_CHECK
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
-
+/*
 void SimulWeatherRendererDX11::RenderMixedResolution(	simul::crossplatform::DeviceContext &deviceContext
 														,bool is_cubemap
 														,float exposure
@@ -473,11 +473,11 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	simul::crossplatform::Devi
 												,mixedResolutionStruct);
 	
 	//RenderLightning(pContext,view_id,mainDepthTextureMS,depthViewportXYWH,GetCloudDepthTexture(view_id));
-	RenderPrecipitation(pContext,lowResDepthTexture,depthViewportXYWH,view,proj);
+	RenderPrecipitation(deviceContext,lowResDepthTexture,depthViewportXYWH);
 	SIMUL_GPU_PROFILE_END(pContext)
 #endif
 	SIMUL_COMBINED_PROFILE_END(pContext)
-}
+}*/
 
 void SimulWeatherRendererDX11::CompositeCloudsToScreen(crossplatform::DeviceContext &deviceContext
 												,float exposure
@@ -549,7 +549,8 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(crossplatform::DeviceConte
 }
 
 
-void SimulWeatherRendererDX11::RenderPrecipitation(void *context,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
+void SimulWeatherRendererDX11::RenderPrecipitation(crossplatform::DeviceContext &deviceContext,const void *depth_tex
+												   ,simul::sky::float4 depthViewportXYWH)
 {
 	if(basePrecipitationRenderer)
 		basePrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
@@ -557,7 +558,7 @@ void SimulWeatherRendererDX11::RenderPrecipitation(void *context,const void *dep
 	if(environment->skyKeyframer)
 		max_fade_dist_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	if(simulPrecipitationRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render(context,depth_tex,v,p,max_fade_dist_metres,depthViewportXYWH);
+		simulPrecipitationRenderer->Render(deviceContext,depth_tex,max_fade_dist_metres,depthViewportXYWH);
 }
 
 void SimulWeatherRendererDX11::RenderCompositingTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)

@@ -11,7 +11,7 @@
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
-#include "Simul/Clouds/BaseFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/SL/spherical_harmonics_constants.sl"
 #pragma warning(disable:4251)
 namespace simul
@@ -19,7 +19,7 @@ namespace simul
 	namespace dx11
 	{
 		//! A DirectX 11 class for rendering to a cubemap.
-		SIMUL_DIRECTX11_EXPORT_CLASS CubemapFramebuffer:public BaseFramebuffer
+		SIMUL_DIRECTX11_EXPORT_CLASS CubemapFramebuffer:public crossplatform::BaseFramebuffer
 		{
 		public:
 			CubemapFramebuffer();

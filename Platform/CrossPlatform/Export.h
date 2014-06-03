@@ -1,7 +1,7 @@
 #ifndef SIMUL_CROSSPLATFORM_EXPORT_H
 #define SIMUL_CROSSPLATFORM_EXPORT_H
 
-#if 0
+#if 1
 #if defined(_MSC_VER) && !defined(SIMUL_CROSSPLATFORM_DLL)
 	#ifdef _DEBUG
 		#ifdef _DLL
@@ -19,7 +19,7 @@
 #endif
 #endif
 
-#if defined(SIMUL_DLL) && !defined(DOXYGEN)
+#if defined(_WINDLL) && !defined(DOXYGEN)
 // In this lib:
 	#if !defined(SIMUL_CROSSPLATFORM_DLL) 
 	// If we're building dll libraries but not in this library IMPORT the classes

@@ -23,9 +23,10 @@ public:
 	void SetCubemapTexture(void *){}
 	void RecompileShaders();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	void Render(void *context,const void *depth_tex
-				,const simul::math::Matrix4x4 &v
-				,const simul::math::Matrix4x4 &p,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH);
+	void Render(simul::crossplatform::DeviceContext &deviceContext
+				,const void *depth_tex
+				,float max_fade_distance_metres
+				,simul::sky::float4 viewportTextureRegionXYWH);
 	// Set a texture not created by this class to be used:
 	bool SetExternalRainTexture(void* tex);
 protected:

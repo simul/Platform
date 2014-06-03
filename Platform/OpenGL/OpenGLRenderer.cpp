@@ -252,7 +252,7 @@ void OpenGLRenderer::paintGL()
 			,depthFramebuffer.GetDepthTex()
 			,simul::sky::float4(0,0,1.f,1.f),true);
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
-		simulWeatherRenderer->RenderPrecipitation(context);
+		simulWeatherRenderer->RenderPrecipitation(deviceContext);
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light,cam_pos;

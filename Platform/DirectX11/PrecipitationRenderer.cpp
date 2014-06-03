@@ -15,6 +15,7 @@
 #include "Simul/Math/RandomNumberGenerator.h"
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Sky/SkyInterface.h"
 extern simul::dx11::RenderPlatform renderPlatformDx11;
 
@@ -240,16 +241,14 @@ depth map of the scene to find the pixels for which the rain
 streak is not occluded by the scene. The streak is rendered only over
 those pixels.
 */
-void PrecipitationRenderer::Render(void *context
+void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 				,const void *depth_tex
-				,const simul::math::Matrix4x4 &view
-				,const simul::math::Matrix4x4 &proj
 				,float max_fade_distance_metres
 				,simul::sky::float4 viewportTextureRegionXYWH)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	static float ll=0.07f;
-	sky::float4 cam_pos=GetCameraPosVector(view);
+	sky::float4 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
 	sky::float4 light_colour=ll*baseSkyInterface->GetLocalIrradiance(cam_pos.z/1000.f);
 	sky::float4 light_dir=baseSkyInterface->GetDirectionToLight(cam_pos.z/1000.f);
    
@@ -259,7 +258,7 @@ void PrecipitationRenderer::Render(void *context
 	intensity=Intensity;
 	if(intensity<=0.01)
 		return;
-	SIMUL_COMBINED_PROFILE_START(context,"Rain Overlay")
+	SIMUL_COMBINED_PROFILE_START(pContext,"Rain Overlay")
 	rainTexture->SetResource(rain_texture);
 	dx11::setTexture(effect,"cubeTexture",cubemap_SRV);
 	dx11::setTexture(effect,"randomTexture3D",randomTexture3D);
@@ -269,10 +268,10 @@ void PrecipitationRenderer::Render(void *context
 	//set up matrices
 	D3DXMATRIX world,wvp;
 	D3DXMatrixIdentity(&world);
-	vec3 viewPos			=simul::dx11::GetCameraPosVector(view,false);
-	simul::math::Matrix4x4 v=view;
+	vec3 viewPos			=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view,false);
+	simul::math::Matrix4x4 v=deviceContext.viewStruct.view;
 	v._41=v._42=v._43=0;
-	camera::MakeCentredViewProjMatrix((float*)&wvp,view,proj);
+	camera::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	
 	rainConstants.lightColour	=(const float*)light_colour;
 	rainConstants.lightDir		=(const float*)light_dir;
@@ -281,12 +280,12 @@ void PrecipitationRenderer::Render(void *context
 	rainConstants.flurryRate	=1.0f;
 	rainConstants.snowSize		=0.05f;
 
-	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
-	simul::math::Matrix4x4 p1=proj;
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
+	simul::math::Matrix4x4 p1=deviceContext.viewStruct.proj;
 	if(ReverseDepth)
 	{
 		// Convert the proj matrix into a normal non-reversed matrix.
-		p1=proj;//simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
+		p1=deviceContext.viewStruct.proj;//simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
 		simul::camera::ConvertReversedToRegularProjectionMatrix(p1);
 	}
 	simul::math::Matrix4x4 vpt,viewproj,p((const float*)p1);
@@ -306,7 +305,7 @@ void PrecipitationRenderer::Render(void *context
 
 	perViewConstants.invViewProj_2[1]		=ivp;
 	perViewConstants.invViewProj_2[1].transpose();
-	perViewConstants.worldView[1]		=view;
+	perViewConstants.worldView[1]		=deviceContext.viewStruct.view;
 	perViewConstants.worldView[1].transpose();
 	perViewConstants.worldViewProj[1]		=(const float *)&wvp;
 	perViewConstants.worldViewProj[1].transpose();
@@ -338,7 +337,7 @@ void PrecipitationRenderer::Render(void *context
 
 	static float near_rain_distance_metres=250.f;
 	perViewConstants.nearRainDistance=near_rain_distance_metres/max_fade_distance_metres;
-	perViewConstants.depthToLinFadeDistParams = simul::math::Vector3( proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
+	perViewConstants.depthToLinFadeDistParams = simul::math::Vector3(deviceContext.viewStruct.proj.m[3][2], max_fade_distance_metres,deviceContext.viewStruct.proj.m[2][2]*max_fade_distance_metres );
 	
 	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
 
@@ -352,8 +351,8 @@ void PrecipitationRenderer::Render(void *context
 		//	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 		}
 	}
-	SIMUL_COMBINED_PROFILE_END(context)
-	SIMUL_COMBINED_PROFILE_START(context,"Rain/snow Particles")
+	SIMUL_COMBINED_PROFILE_END(pContext)
+	SIMUL_COMBINED_PROFILE_START(pContext,"Rain/snow Particles")
 	//if(RainToSnow>0)
 	{
 		RenderParticles(pContext);
@@ -363,7 +362,7 @@ void PrecipitationRenderer::Render(void *context
 	simul::dx11::setTexture(effect,"depthTexture"		,NULL);
 	dx11::setTextureArray(	effect,"rainTextureArray"	,NULL);
 	ApplyPass(pContext,m_hTechniqueRain->GetPassByIndex(0));
-	SIMUL_COMBINED_PROFILE_END(context)
+	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
 void PrecipitationRenderer::RenderParticles(void *context)

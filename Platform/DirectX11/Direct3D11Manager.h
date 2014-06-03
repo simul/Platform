@@ -13,6 +13,11 @@ namespace simul
 {
 	namespace dx11
 	{
+		struct Direct3DWindow
+		{
+			int view_id;			
+			Direct3DWindow():view_id(-1){}		
+		};
 		struct SIMUL_DIRECTX11_EXPORT Window:public Direct3DWindow
 		{
 			Window();

@@ -471,7 +471,7 @@ void Direct3D11Renderer::RenderScene(int view_id
 			view->hdrFramebuffer.ActivateDepth(pContext);
 		simulWeatherRenderer->RenderLightning(pContext,view_id,depthTextureHiRes,relativeViewportTextureRegionXYWH,simulWeatherRenderer->GetCloudDepthTexture(view_id));
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
-		simulWeatherRenderer->RenderPrecipitation(pContext,depthTextureHiRes,relativeViewportTextureRegionXYWH,(const float*)&v,(const float*)&proj);
+		simulWeatherRenderer->RenderPrecipitation(deviceContext,depthTextureHiRes,relativeViewportTextureRegionXYWH);
 		if(simulOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetSkyRenderer())
 		{
 			simul::sky::float4 dir,light;

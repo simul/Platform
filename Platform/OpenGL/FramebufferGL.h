@@ -5,7 +5,7 @@
 #include "stdint.h" // for uintptr_t
 #include "LoadGLImage.h"
 #include "Simul/Platform/OpenGL/Export.h"
-#include "Simul/Clouds/BaseFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -15,7 +15,7 @@
 #define GL_DEPTH_COMPONENT24 0x81A6
 #endif
 
-SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public BaseFramebuffer
+SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public simul::crossplatform::BaseFramebuffer
 {
 public:
 	FramebufferGL(int w=0, int h=0, GLenum target = GL_TEXTURE_2D,

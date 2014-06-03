@@ -15,12 +15,12 @@ namespace simul
 	namespace scene
 	{
 		class Material;
-		class Mesh;
 		class Light;
 	}
 	namespace crossplatform
 	{
 		class Texture;
+		class Mesh;
 		struct DeviceContext;
 		/// Base class for API-specific rendering.
 		/// Be sure to make the following calls at the appropriate place: RestoreDeviceObjects(), InvalidateDeviceObjects(), RecompileShaders(), SetReverseDepth()
@@ -56,7 +56,7 @@ namespace simul
 			virtual void					SetModelMatrix		(void *context,const crossplatform::ViewStruct &viewStruct,const double *mat)	=0;
 			virtual void					ApplyDefaultMaterial()	=0;
 			virtual scene::Material			*CreateMaterial		()	=0;
-			virtual scene::Mesh				*CreateMesh			()	=0;
+			virtual crossplatform::Mesh		*CreateMesh			()	=0;
 			virtual scene::Light			*CreateLight		()	=0;
 			virtual crossplatform::Texture	*CreateTexture		(const char *lFileNameUtf8)	=0;
 			virtual void					*GetDevice			()	=0;

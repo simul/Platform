@@ -8,13 +8,13 @@
 #include "D3dx11effect.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Clouds/BaseFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 
 namespace simul
 {
 	namespace dx11
 	{
-		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer3D:public BaseFramebuffer
+		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer3D:public crossplatform::BaseFramebuffer
 		{
 		public:
 			Framebuffer3D();

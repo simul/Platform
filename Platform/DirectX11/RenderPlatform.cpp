@@ -327,7 +327,7 @@ scene::Material *RenderPlatform::CreateMaterial()
 	return mat;
 }
 
-scene::Mesh *RenderPlatform::CreateMesh()
+crossplatform::Mesh *RenderPlatform::CreateMesh()
 {
 	return new dx11::Mesh;
 }
@@ -410,7 +410,7 @@ void RenderPlatform::Print(void *context,int x,int y	,const char *text)
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
-	int h=viewport.Height;
+	int h=(int)viewport.Height;
 	textRenderer.Render(pContext,(float)x,(float)y,(float)viewport.Width,(float)h,text,clr,black,mirrorY);
 }
 

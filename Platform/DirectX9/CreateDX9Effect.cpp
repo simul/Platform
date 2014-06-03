@@ -918,7 +918,7 @@ D3DXVECTOR4 GetCameraPosVector(const float*v)
 }
 
 
-std::map<std::string,std::string> MakeDefinesList(bool wrap,bool y_vertical)
+std::map<std::string,std::string> MakeDefinesList(bool wrap,bool )
 {
 	std::map<std::string,std::string> defines;
 	defines["DETAIL_NOISE"]="1";

@@ -37,22 +37,22 @@ namespace simul
 	//! The namespace for the DirectX 11 platform library and its rendering classes.
 	namespace dx11
 	{
-		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer
+		struct TwoResFramebuffer:public simul::crossplatform::TwoResFramebuffer
 		{
 			TwoResFramebuffer();
-			BaseFramebuffer *GetLowResFarFramebuffer()
+			crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()
 			{
 				return &lowResFarFramebufferDx11;
 			}
-			BaseFramebuffer *GetLowResNearFramebuffer()
+			crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()
 			{
 				return &lowResNearFramebufferDx11;
 			}
-			BaseFramebuffer *GetHiResFarFramebuffer()
+			crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()
 			{
 				return &hiResFarFramebufferDx11;
 			}
-			BaseFramebuffer *GetHiResNearFramebuffer()
+			crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()
 			{
 				return &hiResNearFramebufferDx11;
 			}
@@ -90,7 +90,7 @@ namespace simul
 											,const void* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite);
-			void RenderMixedResolution(	crossplatform::DeviceContext &deviceContext
+		/*	void RenderMixedResolution(	crossplatform::DeviceContext &deviceContext
 										,bool is_cubemap
 										,float exposure
 										,float gamma
@@ -98,7 +98,7 @@ namespace simul
 										,const void* hiResDepthTexture	
 										,const void* lowResDepthTexture 
 										,const sky::float4& depthViewportXYWH
-										);
+										);*/
 			// This composites the clouds and other buffers to the screen.
 			void CompositeCloudsToScreen(crossplatform::DeviceContext &deviceContext
 												,float exposure
@@ -111,7 +111,7 @@ namespace simul
 												,const crossplatform::MixedResolutionStruct &mixedResolutionStruct);
 			void RenderFramebufferDepth(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			void RenderCompositingTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
-			void RenderPrecipitation(void *context,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
+			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH);
 			void RenderLightning(void *context,int viewport_id,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.

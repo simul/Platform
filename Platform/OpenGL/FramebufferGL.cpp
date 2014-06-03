@@ -16,7 +16,7 @@ using namespace opengl;
 std::stack<GLuint> FramebufferGL::fb_stack;
 
 FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageSamples)
-	:BaseFramebuffer(w,h)
+	:crossplatform::BaseFramebuffer(w,h)
 	,m_target(target)
 	,m_samples(samples)
 	,m_coverageSamples(coverageSamples)

@@ -1,6 +1,6 @@
 #pragma once
 #include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Scene/Mesh.h"
+#include "Simul/Platform/CrossPlatform/Mesh.h"
 #include <d3d11.h>
 #include <vector>
 
@@ -8,19 +8,19 @@ namespace simul
 {
 	namespace dx11
 	{
-		class Mesh:public scene::Mesh
+		class Mesh:public crossplatform::Mesh
 		{
 		public:
 			Mesh();
 			~Mesh();
 			void InvalidateDeviceObjects();
-			// Implementing scene::Mesh
+			// Implementing crossplatform::Mesh
 			bool Initialize(void *device,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices);
 			void releaseBuffers();
-			// Implementing scene::Mesh
-			void BeginDraw	(void *context,scene::ShadingMode pShadingMode) const;
+			// Implementing crossplatform::Mesh
+			void BeginDraw	(void *context,crossplatform::ShadingMode pShadingMode) const;
 			// Draw all the faces with specific material with given shading mode.
-			void Draw		(void *context,int pMaterialIndex,scene::ShadingMode pShadingMode) const;
+			void Draw		(void *context,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const;
 			// Unbind buffers, reset vertex arrays, turn off lighting and texture.
 			void EndDraw	(void *context) const;
 			// Template function to initialize vertices from an arbitrary vertex structure.

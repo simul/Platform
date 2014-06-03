@@ -43,22 +43,22 @@ namespace simul
 		class SimulGLSkyRenderer;
 		class SimulGLCloudRenderer;
 		class SimulGL2DCloudRenderer;
-		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer
+		struct TwoResFramebuffer:public simul::crossplatform::TwoResFramebuffer
 		{
 			TwoResFramebuffer();
-			BaseFramebuffer *GetLowResFarFramebuffer()
+			crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()
 			{
 				return &lowResFarFramebuffer;
 			}
-			BaseFramebuffer *GetLowResNearFramebuffer()
+			crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()
 			{
 				return &lowResNearFramebuffer;
 			}
-			BaseFramebuffer *GetHiResFarFramebuffer()
+			crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()
 			{
 				return &hiResFarFramebuffer;
 			}
-			BaseFramebuffer *GetHiResNearFramebuffer()
+			crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()
 			{
 				return &hiResNearFramebuffer;
 			}
@@ -112,7 +112,7 @@ namespace simul
 			//! Call this to draw lightning.
 			void RenderLightning(void *context,int viewport_id);
 			//! Call this to draw rain etc.
-			void RenderPrecipitation(void *context);
+			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext);
 			//! Get a pointer to the sky renderer owned by this class instance.
 			SimulGLSkyRenderer *GetSkyRenderer();
 			//! Get a pointer to the 3d cloud renderer owned by this class instance.
@@ -151,7 +151,7 @@ namespace simul
 			SimulGLAtmosphericsRenderer *simulAtmosphericsRenderer;
 			void CreateBuffers();
 			void RenderBufferToScreen(GLuint texture,int w,int h,bool use_shader,bool blend=false);
-			clouds::TwoResFramebuffer *GetFramebuffer(int view_id);
+			crossplatform::TwoResFramebuffer *GetFramebuffer(int view_id);
 		};
 	}
 }

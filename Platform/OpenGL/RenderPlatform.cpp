@@ -356,7 +356,7 @@ scene::Material *RenderPlatform::CreateMaterial()
 	return mat;
 }
 
-scene::Mesh *RenderPlatform::CreateMesh()
+crossplatform::Mesh *RenderPlatform::CreateMesh()
 {
 	return new opengl::Mesh;
 }

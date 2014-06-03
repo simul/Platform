@@ -357,7 +357,7 @@ Raytrace=false;
 			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	}
 	simul::sky::float4 gl_fog;
-	bool default_fog=glIsEnabled(GL_FOG);
+	bool default_fog=(bool)glIsEnabled(GL_FOG);
 	if(default_fog)
 		glGetFloatv(GL_FOG_COLOR,gl_fog);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
@@ -510,7 +510,7 @@ GL_ERROR_CHECK
 //	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
 	static int isolate_layer=-1;
-	sphereMesh.BeginDraw(NULL,scene::SHADING_MODE_SHADED);
+	sphereMesh.BeginDraw(NULL,crossplatform::SHADING_MODE_SHADED);
 	for(SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
 	GL_ERROR_CHECK
@@ -529,7 +529,7 @@ GL_ERROR_CHECK
 		if(isolate_layer>=0&&idx!=isolate_layer)
 			continue;
 #if 1
-		sphereMesh.Draw(NULL,0,scene::SHADING_MODE_SHADED);
+		sphereMesh.Draw(NULL,0,crossplatform::SHADING_MODE_SHADED);
 #else
 		glBegin(GL_QUAD_STRIP);
 		if(quad_strip_vertices.size())

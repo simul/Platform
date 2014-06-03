@@ -11,7 +11,7 @@ namespace
     const GLfloat WIREFRAME_COLOR[] = {0.5f, 0.5f, 0.5f, 1.0f};
 }
 
-opengl::Mesh::Mesh() :scene::Mesh()
+opengl::Mesh::Mesh() :crossplatform::Mesh()
 {
     // Reset every VBO to zero, which means no buffer.
     for (int lVBOIndex = 0; lVBOIndex < VBO_COUNT; ++lVBOIndex)
@@ -91,7 +91,7 @@ void opengl::Mesh::UpdateVertexPositions(int lVertexCount, float *lVertices) con
     }
 }
 
-void opengl::Mesh::BeginDraw(void *,scene::ShadingMode pShadingMode) const
+void opengl::Mesh::BeginDraw(void *,crossplatform::ShadingMode pShadingMode) const
 {
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -112,7 +112,7 @@ void opengl::Mesh::BeginDraw(void *,scene::ShadingMode pShadingMode) const
 	glVertexAttribPointer(0,VERTEX_STRIDE,GL_FLOAT,false,0,0);
 
     // Set normal array.
-    if (mHasNormal && pShadingMode == scene::SHADING_MODE_SHADED)
+    if (mHasNormal && pShadingMode == crossplatform::SHADING_MODE_SHADED)
     {
 		glEnableVertexAttribArray(2);
         glBindBuffer(GL_ARRAY_BUFFER, mVBONames[NORMAL_VBO]);
@@ -124,7 +124,7 @@ void opengl::Mesh::BeginDraw(void *,scene::ShadingMode pShadingMode) const
 	}
     
     // Set UV array.
-    if (mHasUV && pShadingMode == scene::SHADING_MODE_SHADED)
+    if (mHasUV && pShadingMode == crossplatform::SHADING_MODE_SHADED)
     {
 		glEnableVertexAttribArray(1);
         glBindBuffer(GL_ARRAY_BUFFER, mVBONames[UV_VBO]);
@@ -138,7 +138,7 @@ void opengl::Mesh::BeginDraw(void *,scene::ShadingMode pShadingMode) const
     // Set index array.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
 
-    if (pShadingMode == scene::SHADING_MODE_SHADED)
+    if (pShadingMode == crossplatform::SHADING_MODE_SHADED)
     {
         glEnable(GL_LIGHTING);
         glEnable(GL_TEXTURE_2D);
@@ -163,12 +163,12 @@ void opengl::Mesh::BeginDraw(void *,scene::ShadingMode pShadingMode) const
 	//glUseProgram(0);
 }
 
-void opengl::Mesh::Draw(void *,int pMaterialIndex,scene::ShadingMode pShadingMode) const
+void opengl::Mesh::Draw(void *,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
 {
     // Where to start.
 	const SubMesh *subMesh=GetSubMesh(pMaterialIndex);
     GLsizei lOffset = subMesh->IndexOffset * sizeof(unsigned int);
-    if ( pShadingMode == scene::SHADING_MODE_SHADED)
+    if ( pShadingMode == crossplatform::SHADING_MODE_SHADED)
     {
 		if(subMesh->drawAs==SubMesh::AS_TRIANGLES)
 		{

@@ -48,22 +48,22 @@ namespace simul
 	//! This library is deprecated in favour of the \ref  DirectX 11 library.
 	namespace dx9
 	{
-		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer
+		struct TwoResFramebuffer:public simul::crossplatform::TwoResFramebuffer
 		{
 			TwoResFramebuffer();
-			BaseFramebuffer *GetLowResFarFramebuffer()
+			crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()
 			{
 				return &lowResFarFramebuffer;
 			}
-			BaseFramebuffer *GetLowResNearFramebuffer()
+			crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()
 			{
 				return &lowResNearFramebuffer;
 			}
-			BaseFramebuffer *GetHiResFarFramebuffer()
+			crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()
 			{
 				return &hiResFarFramebuffer;
 			}
-			BaseFramebuffer *GetHiResNearFramebuffer()
+			crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()
 			{
 				return &hiResNearFramebuffer;
 			}
@@ -166,7 +166,7 @@ namespace simul
 			D3DXHANDLE						bufferTexture;
 
 			bool CreateBuffers();
-			clouds::TwoResFramebuffer *		GetFramebuffer(int view_id);
+			crossplatform::TwoResFramebuffer *		GetFramebuffer(int view_id);
 			typedef std::map<int,TwoResFramebuffer*> FramebufferMap;
 			FramebufferMap framebuffers;
 			SimulSkyRenderer				*simulSkyRenderer;

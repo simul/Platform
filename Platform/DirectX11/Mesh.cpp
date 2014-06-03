@@ -90,7 +90,7 @@ void Mesh::releaseBuffers()
 	numIndices=0;
 }
 
-void Mesh::BeginDraw(void *context,scene::ShadingMode pShadingMode) const
+void Mesh::BeginDraw(void *context,crossplatform::ShadingMode pShadingMode) const
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	pContext->IAGetInputLayout( &previousInputLayout );
@@ -100,7 +100,7 @@ void Mesh::BeginDraw(void *context,scene::ShadingMode pShadingMode) const
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 // Draw all the faces with specific material with given shading mode.
-void Mesh::Draw(void *context,int pMaterialIndex,scene::ShadingMode pShadingMode) const
+void Mesh::Draw(void *context,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	UINT offset = 0;

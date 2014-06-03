@@ -6,13 +6,13 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Platform/DirectX9/Export.h"
-#include "Simul/Clouds/BaseFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 
 namespace simul
 {
 	namespace dx9
 	{
-		SIMUL_DIRECTX9_EXPORT_CLASS Framebuffer:public BaseFramebuffer
+		SIMUL_DIRECTX9_EXPORT_CLASS Framebuffer:public crossplatform::BaseFramebuffer
 		{
 		public:
 			Framebuffer();

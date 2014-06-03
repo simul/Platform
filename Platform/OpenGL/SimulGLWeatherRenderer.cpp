@@ -169,7 +169,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 {
 	BufferWidth=w/Downscale;
 	BufferHeight=h/Downscale;
-	clouds::TwoResFramebuffer *fb=GetFramebuffer(view_id);
+	crossplatform::TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	fb->SetDimensions(w,h,Downscale);
 	//scene_buffer->InitColor_Tex(0,internal_buffer_format);
 	//fb->RestoreDeviceObjects(0);
@@ -256,7 +256,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 		baseSkyRenderer->EnsureTexturesAreUpToDate(context);
 		baseSkyRenderer->Render2DFades(deviceContext);
 	}
-	clouds::TwoResFramebuffer *fb			=GetFramebuffer(deviceContext.viewStruct.view_id);
+	crossplatform::TwoResFramebuffer *fb			=GetFramebuffer(deviceContext.viewStruct.view_id);
 	buffered=(buffered&&fb&&!is_cubemap);
 	UpdateSkyAndCloudHookup();
 	if(baseAtmosphericsRenderer&&ShowSky)
@@ -332,7 +332,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(crossplatform::DeviceContext &
 {
 	if(!(AlwaysRenderCloudsLate||RenderCloudsLate)||!simulCloudRenderer||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return;
-	clouds::TwoResFramebuffer *fb			=GetFramebuffer(deviceContext.viewStruct.view_id);
+	crossplatform::TwoResFramebuffer *fb			=GetFramebuffer(deviceContext.viewStruct.view_id);
 	fb->GetLowResFarFramebuffer()->Activate(deviceContext.platform_context);
 	fb->GetLowResFarFramebuffer()->Clear(deviceContext.platform_context,0,0,0,1.f,ReverseDepth?0.f:1.f);
 	simulCloudRenderer->Render(deviceContext,exposure,false,false,NULL,true,depthViewportXYWH,sky::float4(0,0,1.f,1.f));
@@ -360,11 +360,11 @@ void SimulGLWeatherRenderer::RenderLightning(void *context,int /*view_id*/)
 		simulLightningRenderer->Render(context,view,proj,NULL,simul::sky::float4 (0,0,1.f,1.f),NULL);
 }
 
-void SimulGLWeatherRenderer::RenderPrecipitation(void *context)
+void SimulGLWeatherRenderer::RenderPrecipitation(crossplatform::DeviceContext &deviceContext)
 {
 	math::Matrix4x4 view,proj;
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render(context,NULL,view,proj,300000.f,sky::float4(0,0,1.f,1.f));
+		simulPrecipitationRenderer->Render(deviceContext,NULL,300000.f,sky::float4(0,0,1.f,1.f));
 }
 
 
@@ -388,7 +388,7 @@ GLuint SimulGLWeatherRenderer::GetFramebufferTexture(int view_id)
 	return (GLuint)GetFramebuffer(view_id)->GetLowResFarFramebuffer()->GetColorTex();
 }
 
-clouds::TwoResFramebuffer *SimulGLWeatherRenderer::GetFramebuffer(int view_id)
+crossplatform::TwoResFramebuffer *SimulGLWeatherRenderer::GetFramebuffer(int view_id)
 {
 	if(framebuffers.find(view_id)==framebuffers.end())
 	{

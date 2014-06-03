@@ -7,14 +7,14 @@
 #include "D3dx11effect.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Clouds/BaseFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 
 namespace simul
 {
 	namespace dx11
 	{
 		//! A DirectX 11 framebuffer class.
-		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer : public BaseFramebuffer
+		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer : public crossplatform::BaseFramebuffer
 		{
 		public:
 			Framebuffer(int w=0,int h=0);

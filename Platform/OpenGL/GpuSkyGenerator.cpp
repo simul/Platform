@@ -124,7 +124,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 		insc_cache=new simul::sky::float4[cache_size];
 		skyl_cache=new simul::sky::float4[cache_size];
 	}
-	BaseFramebuffer *F[2];
+	crossplatform::BaseFramebuffer *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
 	//glEnable(GL_TEXTURE_1D);

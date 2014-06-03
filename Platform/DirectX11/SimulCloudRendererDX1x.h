@@ -75,6 +75,7 @@ namespace simul
 			void RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height);
 			//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 			bool RenderLightning(void *context,int viewport_id);
+			void RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext);
 			//! Return true if the camera is above the cloudbase altitude.
 			bool IsCameraAboveCloudBase() const;
 			void SetEnableStorms(bool s);
@@ -103,7 +104,6 @@ namespace simul
 			//! Clear the sequence()
 			void New();
 			simul::dx11::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
-			void RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext);
 		protected:
 			simul::dx11::GpuCloudGenerator gpuCloudGenerator;
 			void RenderCombinedCloudTexture(void *context);

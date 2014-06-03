@@ -60,7 +60,7 @@ namespace simul
 			void ApplyDefaultMaterial();
 			void SetModelMatrix(void *context,const crossplatform::ViewStruct &viewStruct,const double *mat);
 			scene::Material *CreateMaterial();
-			scene::Mesh		*CreateMesh();
+			crossplatform::Mesh		*CreateMesh();
 			scene::Light	*CreateLight();
 			crossplatform::Texture	*CreateTexture(const char *lFileNameUtf8);
 			void			*GetDevice();
