@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>SimulCrossPlatform</ProjectName>
     <ProjectGuid>{7F8BC215-2B2A-4703-AF7C-F7F7351FB99D}</ProjectGuid>
-    <RootNamespace>OpenGL</RootNamespace>
+    <RootNamespace>SimulCrossPlatform</RootNamespace>
     <Keyword>x64Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -29,7 +29,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -41,7 +41,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -55,38 +55,38 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulReleaseMD.props" />
-    <Import Project="..\..\SimulLib_VC11.props" />
+    <Import Project="..\..\SimulLib_VC10.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulDebugMD.props" />
-    <Import Project="..\..\SimulLib_VC11.props" />
+    <Import Project="..\..\SimulLib_VC10.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulReleaseMD.props" />
-    <Import Project="..\..\SimulDLL_VC11.props" />
+    <Import Project="..\..\SimulDLL_VC10.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulDebugMD.props" />
-    <Import Project="..\..\SimulDLL_VC11.props" />
+    <Import Project="..\..\SimulDLL_VC10.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SIMUL)/exe/$(Platform)/VC11/$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)/VC11/$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SIMUL)/exe/$(Platform)/VC10/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)/VC10/$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)/exe/$(Platform)/VC11/$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)/VC11/$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)/exe/$(Platform)/VC10/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)/VC10/$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">$(Platform)/VC11/$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">$(Platform)/VC11/$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">$(Platform)/VC10/$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">$(Platform)/VC10/$(Configuration)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectName)_MD</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">$(ProjectName)_MD</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)_MDd</TargetName>
@@ -96,7 +96,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;SIMUL_CROSSPLATFORM_DLL;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -112,13 +112,13 @@
       <AdditionalDependencies>
       </AdditionalDependencies>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/OpenGL/lib/x64;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/glew/lib/Release/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/OpenGL/lib/x64;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/glew/lib/Release/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
@@ -126,7 +126,7 @@
     <ClCompile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;SIMUL_CROSSPLATFORM_DLL;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -142,7 +142,7 @@
       <AdditionalDependencies>
       </AdditionalDependencies>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/OpenGL/lib/x64;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/glew/lib/Release/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/OpenGL/lib/x64;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/glew/lib/Release/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -150,7 +150,7 @@
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
@@ -158,7 +158,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -178,7 +178,7 @@
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
