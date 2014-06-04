@@ -438,7 +438,7 @@ void Direct3D11Renderer::RenderScene(int view_id
 		simulTerrainRenderer->Render(deviceContext,1.f);	
 	}
 	if(sceneRenderer)
-		sceneRenderer->Render(pContext,deviceContext.viewStruct);
+		sceneRenderer->Render(deviceContext);
 	if(oceanRenderer&&ShowWater)
 	{
 		oceanRenderer->SetMatrices(v,proj);

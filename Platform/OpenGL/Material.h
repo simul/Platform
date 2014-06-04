@@ -13,7 +13,7 @@ namespace simul
 		public:
 			Material();
 			virtual ~Material();
-			void Apply(void *context) const;
+			void Apply(crossplatform::DeviceContext &deviceContext) const;
 		};
 	}
 }

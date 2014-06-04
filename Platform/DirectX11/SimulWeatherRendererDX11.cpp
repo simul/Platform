@@ -448,14 +448,14 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(crossplatform::DeviceConte
 
 	if(!environment->skyKeyframer)
 		return;
-	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
+	float max_fade_distance_metres		=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	effect->SetTexture("depthTexture"	,(ID3D11ShaderResourceView*)fb->lowResFarFramebufferDx11.GetDepthTex());
-	ID3DX11Effect *d3deffect=(ID3DX11Effect*)effect->platform_effect;
-	dx11::setParameter(d3deffect,"tanHalfFov"				,vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
+	ID3DX11Effect *d3deffect			=(ID3DX11Effect*)effect->platform_effect;
+	dx11::setParameter(d3deffect,"tanHalfFov"					,vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
 	dx11::setParameter(d3deffect,"nearZ"						,frustum.nearZ/max_fade_distance_metres);
-	dx11::setParameter(d3deffect,"farZ"						,frustum.farZ/max_fade_distance_metres);
-	dx11::setParameter(d3deffect,"depthToLinFadeDistParams"	,vec3(proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres));
-	deviceContext.renderPlatform->DrawQuad(pContext	,x,y,w,h	,effect,effect->GetTechniqueByName("show_depth"));
+	dx11::setParameter(d3deffect,"farZ"							,frustum.farZ/max_fade_distance_metres);
+	dx11::setParameter(d3deffect,"depthToLinFadeDistParams"		,vec3(proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres));
+	deviceContext.renderPlatform->DrawQuad(pContext	,x,y,w,h	,d3deffect,d3deffect->GetTechniqueByName("show_depth"));
 }
 
 

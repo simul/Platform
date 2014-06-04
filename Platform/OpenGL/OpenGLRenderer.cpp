@@ -227,7 +227,7 @@ void OpenGLRenderer::paintGL()
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		
 		if(sceneRenderer)
-			sceneRenderer->Render(NULL,deviceContext.viewStruct);
+			sceneRenderer->Render(deviceContext);
 //		gScene->OnTimerClick();
 		
 		if(simulTerrainRenderer&&ShowTerrain)

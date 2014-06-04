@@ -14,7 +14,7 @@ namespace simul
 		public:
 			Material();
 			virtual ~Material();
-			void Apply(void *context) const;
+			void Apply(crossplatform::DeviceContext &) const;
 			ID3DX11Effect *effect;
 		};
 	}
