@@ -123,6 +123,9 @@
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Effect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompileShaderDX1x.h">
@@ -240,6 +243,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -445,5 +451,7 @@
     <None Include="..\CrossPlatform\SL\states.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="SimulUseDXSDK.props" />
+    <None Include="SimulUseWin8SDK.props" />
   </ItemGroup>
 </Project>

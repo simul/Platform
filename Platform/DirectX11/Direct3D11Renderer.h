@@ -135,11 +135,8 @@ namespace simul
 		protected:
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int view_id,int x0,int y0,int w,int h);
 			// Encompasses drawing the actual scene and putting the hdr buffer to screen.
-			void RenderScene(int view_id
-				,crossplatform::DeviceContext &deviceContext
+			void RenderScene(crossplatform::DeviceContext &deviceContext
 				,clouds::BaseWeatherRenderer *w
-				,D3DXMATRIX v
-				,D3DXMATRIX proj
 				,float exposure
 				,float gamma);
 			// Different kinds of view for Render() to call:

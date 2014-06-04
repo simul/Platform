@@ -4,7 +4,6 @@
 #include "Export.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4251)
