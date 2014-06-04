@@ -59,7 +59,7 @@ namespace simul
 			//! StartRender: sets up the rendertarget for atmospherics, and make it the current target. Call at the start of the frame's rendering.
 			void StartRender(void *context);
 			void FinishRender(void *context);
-			void RenderAsOverlay(void *,const void *,float,const simul::sky::float4 &);
+			void RenderAsOverlay(simul::crossplatform::DeviceContext &deviceContext,const void *,float,const simul::sky::float4 &);
 			void *GetDepthAlphaTexture()
 			{
 				return (void*)input_texture;

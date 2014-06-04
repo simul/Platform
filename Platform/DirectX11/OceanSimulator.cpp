@@ -6,6 +6,7 @@
 #include "OceanSimulator.h"
 #include "Utilities.h"
 #include "CompileShaderDX1x.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 
 using namespace simul;
 using namespace dx11;
@@ -313,6 +314,8 @@ void OceanSimulator::initHeightMap(D3DXVECTOR2* out_h0, float* out_omega)
 
 void OceanSimulator::updateDisplacementMap(float time)
 {
+	simul::crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context=m_pd3dImmediateContext;
 	// ---------------------------- H(0) -> H(t), D(x, t), D(y, t) --------------------------------
 	// Compute shader
 	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName("update_spectrum");
@@ -328,8 +331,8 @@ void OceanSimulator::updateDisplacementMap(float time)
 	changePerFrameConstants.g_ChoppyScale	=m_param->choppy_scale;
 	changePerFrameConstants.g_GridLen		=m_param->dmap_dim / m_param->patch_length;
 	
-	immutableConstants		.Apply(m_pd3dImmediateContext);
-	changePerFrameConstants	.Apply(m_pd3dImmediateContext);
+	immutableConstants		.Apply(deviceContext);
+	changePerFrameConstants	.Apply(deviceContext);
 
 	// Run the CS
 	UINT group_count_x = (m_param->dmap_dim + BLOCK_SIZE_X - 1) / BLOCK_SIZE_X;
@@ -359,8 +362,8 @@ void OceanSimulator::updateDisplacementMap(float time)
 	// Set the RenderTarget as the displacement map:
 	m_pd3dImmediateContext->OMSetRenderTargets(1, &displacement.renderTargetView, NULL);
 	// Assign the constant-buffers to the pixel shader:
-	immutableConstants		.Apply(m_pd3dImmediateContext);
-	changePerFrameConstants	.Apply(m_pd3dImmediateContext);
+	immutableConstants		.Apply(deviceContext);
+	changePerFrameConstants	.Apply(deviceContext);
 	// Assign the Dxyz source as a resource for the pixel shader:
 	simul::dx11::setTexture(effect,"g_InputDxyz"				,dxyz.shaderResourceView);
 	// Assign the shaders:

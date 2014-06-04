@@ -3,6 +3,7 @@
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix.h"
 #include "Simul/Math/Matrix4x4.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
@@ -136,6 +137,9 @@ void GpuCloudGenerator::FillDensityGrid(int index
 {
 	if(texels<=0)
 		return;
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context=m_pImmediateContext;
+
 	for(int i=0;i<3;i++)
 		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true,1);
 	int density_gridsize=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
@@ -149,15 +153,15 @@ void GpuCloudGenerator::FillDensityGrid(int index
 		
 		for(simul::clouds::MaskMap::const_iterator i=masks.begin();i!=masks.end();i++)
 		{
-	gpuCloudConstants.yRange		=vec4(0,1.f,0,0);
+			gpuCloudConstants.yRange		=vec4(0,1.f,0,0);
 			gpuCloudConstants.maskCentre	=vec2(i->second.x,i->second.y);
 			gpuCloudConstants.maskRadius	=i->second.radius;
 			gpuCloudConstants.maskFeather	=0.1f;
 			gpuCloudConstants.maskThickness	=i->second.thickness;
-			gpuCloudConstants.Apply(m_pImmediateContext);
-		ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
-	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
-	}
+			gpuCloudConstants.Apply(deviceContext);
+			ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
+			simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
+		}
 	}
 	else
 	{
@@ -193,7 +197,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	int x0	=start_texel/BLOCKSIZE/subgrid.y/subgrid.z;
 	int x1	=(((start_texel+texels+BLOCKSIZE-1)/(BLOCKSIZE)+subgrid.y-1)/subgrid.y+subgrid.z-1)/subgrid.z;
 	gpuCloudConstants.threadOffset=uint3(x0*BLOCKWIDTH,0,0);
-	gpuCloudConstants.Apply(m_pImmediateContext);
+	gpuCloudConstants.Apply(deviceContext);
 	ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0));
 	if(x1>x0)
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,subgrid.z);
@@ -211,6 +215,8 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 {
 	if(texels<=0)
 		return;
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context=m_pImmediateContext;
 	start_texel*=2;
 	texels*=2;
 	const int *light_grid=NULL;
@@ -279,9 +285,8 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	// which blocks to execute?
 	int x0	=t0/BLOCKSIZE/subgrid.y;
 	int x1	=((t0+t+BLOCKSIZE-1)/BLOCKSIZE+subgrid.y-1)/subgrid.y;
-
 	gpuCloudConstants.threadOffset=uint3(x0*BLOCKWIDTH,0,0);
-	gpuCloudConstants.Apply(m_pImmediateContext);
+	gpuCloudConstants.Apply(deviceContext);
 	if(x1>x0)
 	{
 		simul::dx11::setUnorderedAccessView(effect,"targetTexture1",directLightTextures[light_index].unorderedAccessView);
@@ -295,7 +300,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 		if(harmonic_secondary)
 		{
 			gpuCloudConstants.threadOffset=uint3(0,0,0);
-			gpuCloudConstants.Apply(m_pImmediateContext);
+			gpuCloudConstants.Apply(deviceContext);
 			setTexture(effect,"lightTexture1"				,directLightTextures[light_index].shaderResourceView);
 			simul::dx11::setUnorderedAccessView(effect,"targetTexture1",indirectLightTextures[light_index].unorderedAccessView);
 			ApplyPass(m_pImmediateContext,secondaryHarmonicTechnique->GetPassByIndex(0));
@@ -305,7 +310,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 		for(int z=z0;z<z1;z++)
 		{
 			gpuCloudConstants.threadOffset=uint3(0,0,z);
-			gpuCloudConstants.Apply(m_pImmediateContext);
+			gpuCloudConstants.Apply(deviceContext);
 			setTexture(effect,"lightTexture1"				,directLightTextures[light_index].shaderResourceView);
 			simul::dx11::setUnorderedAccessView(effect,"targetTexture1",indirectLightTextures[light_index].unorderedAccessView);
 			ApplyPass(m_pImmediateContext,secondaryLightingComputeTechnique->GetPassByIndex(0));
@@ -334,6 +339,8 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 {
 	if(texels<=0)
 		return;
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context=m_pImmediateContext;
 	int density_gridsize				=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
 
 	int z0								=start_texel/(params.density_grid[0]*params.density_grid[1]);
@@ -356,7 +363,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	setTexture(effect,"lightTexture1"		,directLightTextures[1].shaderResourceView);
 	setTexture(effect,"lightTexture2"		,indirectLightTextures[1].shaderResourceView);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
-	gpuCloudConstants.Apply(m_pImmediateContext);
+	gpuCloudConstants.Apply(deviceContext);
 	for(int i=0;i<3;i++)
 	{
 		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
@@ -374,7 +381,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	int x1	=(((start_texel+texels+BLOCKSIZE-1)/(BLOCKSIZE)+subgrid.y-1)/subgrid.y+subgrid.z-1)/subgrid.z;
 
 	gpuCloudConstants.threadOffset=uint3(x0*BLOCKWIDTH,0,0);
-	gpuCloudConstants.Apply(m_pImmediateContext);
+	gpuCloudConstants.Apply(deviceContext);
 	//simul::dx11::setParameter(effect,"targetTexture",density_texture.unorderedAccessView);
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalTexture[cycled_index]->unorderedAccessView);
 	ApplyPass(m_pImmediateContext,transformComputeTechnique->GetPassByIndex(0));

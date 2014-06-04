@@ -168,6 +168,7 @@
     <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
     <ClInclude Include="BaseFramebuffer.h" />
     <ClInclude Include="DeviceContext.h" />
+    <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="RenderPlatform.h" />
@@ -213,6 +214,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BaseFramebuffer.cpp" />
+    <ClCompile Include="Effect.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>

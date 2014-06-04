@@ -15,7 +15,7 @@ public:
 	SimulGLLightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk);
 	~SimulGLLightningRenderer();
 	void RestoreDeviceObjects();
-	void Render(void *context,const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *cloud_depth_tex);
+	void Render(simul::crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *cloud_depth_tex);
 	void InvalidateDeviceObjects();
 	void RecompileShaders();
 protected:

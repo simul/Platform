@@ -44,11 +44,11 @@ namespace simul
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! Render: write the given texture to screen using the HDR rendering shaders
-			void Render(void *context,void *texture_srv,float Exposure,float Gamma,float offsetX);
-			void Render(void *context,void *texture_srv,float Exposure,float Gamma);
-			void RenderWithOculusCorrection(void *context,void *texture_srv,float Exposure,float Gamma,float offsetX);
+			void Render(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma,float offsetX);
+			void Render(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma);
+			void RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
-			void RenderGlowTexture(void *context,void *texture_srv);
+			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext,void *texture_srv);
 			//! Get the current debug text as a c-string pointer.
 			const char *GetDebugText() const;
 			//! Get a timing value for debugging.

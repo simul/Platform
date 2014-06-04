@@ -203,6 +203,7 @@
     <ClCompile Include="Direct3D11Manager.cpp" />
     <ClCompile Include="Direct3D11Renderer.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
+    <ClCompile Include="Effect.cpp" />
     <ClCompile Include="Framebuffer3D.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
@@ -240,6 +241,7 @@
     <ClInclude Include="Direct3D11ManagerInterface.h" />
     <ClInclude Include="Direct3D11Renderer.h" />
     <ClInclude Include="DX11Exception.h" />
+    <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Framebuffer3D.h" />
     <ClInclude Include="FramebufferDX1x.h" />

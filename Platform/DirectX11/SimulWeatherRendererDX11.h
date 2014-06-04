@@ -112,7 +112,7 @@ namespace simul
 			void RenderFramebufferDepth(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			void RenderCompositingTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH);
-			void RenderLightning(void *context,int viewport_id,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex);
+			void RenderLightning(crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 			void SetExposure(float ex){exposure=ex;}
@@ -136,11 +136,9 @@ namespace simul
 			ID3D11Device*							m_pd3dDevice;
 			
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			ID3DX11Effect							*m_pTonemapEffect;
-			ID3DX11EffectTechnique					*simpleCloudBlendTechnique;
-			ID3DX11EffectTechnique					*farNearDepthBlendTechnique;
-			ID3DX11EffectTechnique					*showDepthTechnique;
-			ID3DX11EffectShaderResourceVariable		*imageTexture;
+			crossplatform::EffectTechnique					*simpleCloudBlendTechnique;
+			crossplatform::EffectTechnique					*farNearDepthBlendTechnique;
+			crossplatform::EffectTechnique					*showDepthTechnique;
 
 			bool CreateBuffers();
 			bool RenderBufferToScreen(ID3D11ShaderResourceView* texture,int w,int h,bool do_tonemap);

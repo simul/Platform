@@ -211,7 +211,7 @@ ERRNO_CHECK
 	terrainConstants.startZMetres			=cloudShadowStruct.startZMetres;
 	terrainConstants.shadowRange			=cloudShadowStruct.shadowRange;
 
-	terrainConstants.Apply(pContext);
+	terrainConstants.Apply(deviceContext);
 
 	UINT stride =sizeof(TerrainVertex_t);
 	UINT offset =0;

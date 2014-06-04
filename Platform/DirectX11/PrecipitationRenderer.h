@@ -42,7 +42,7 @@ namespace simul
 			void SetCubemapTexture(void *);
 			//! Call this when the D3D device has been shut down.
 			void InvalidateDeviceObjects();
-			void PreRenderUpdate(void *context,float time_step_seconds);
+			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext,float time_step_seconds);
 			void RenderMoisture(void *context,
 				const DepthTextureStruct &depth
 				,const crossplatform::ViewStruct &viewStruct
@@ -50,12 +50,12 @@ namespace simul
 			void Render(crossplatform::DeviceContext &deviceContext,const void *depth_tex
 				,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH);
 			//! Put textures to screen for debugging
-			void RenderTextures(void *context,int x0,int y0,int dx,int dy);
+			void RenderTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy);
 			//! Provide a random 3D texture. This is set externally so the texture can be shared.
 			void SetRandomTexture3D(void *texture);
 			void *GetMoistureTexture();
 		protected:
-			void RenderParticles(void *context);
+			void RenderParticles(crossplatform::DeviceContext &deviceContext);
 			ID3D11Device*							m_pd3dDevice;
 			ID3D11InputLayout*						m_pVtxDecl;
 			VertexBuffer<PrecipitationVertex>		vertexBuffer;

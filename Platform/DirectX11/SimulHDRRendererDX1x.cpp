@@ -168,14 +168,14 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 	Destroy();
 }
 
-void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float Exposure,float Gamma)
+void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma)
 {
-	Render(context,texture_srv,0,Exposure, Gamma);
+	Render(deviceContext,texture_srv,0,Exposure, Gamma);
 }
 
-void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX,float Exposure,float Gamma)
+void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,void *texture_srv,float offsetX,float Exposure,float Gamma)
 {
-	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	SIMUL_COMBINED_PROFILE_START(pContext,"HDR")
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
@@ -185,12 +185,12 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX,
 	dx11::setTexture(m_pTonemapEffect,"imageTextureMS"	,textureSRV);
 	hdrConstants.gamma		=Gamma;
 	hdrConstants.exposure	=Exposure;
-	hdrConstants.Apply(pContext);
+	hdrConstants.Apply(deviceContext);
 	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
 	ID3DX11EffectTechnique *tech=exposureGammaTechnique;
 	if(Glow)
 	{
-		RenderGlowTexture(context,texture_srv);
+		RenderGlowTexture(deviceContext,texture_srv);
 		tech=glowExposureGammaTechnique;
 		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
 	}
@@ -204,10 +204,10 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX,
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
-void SimulHDRRendererDX1x::RenderWithOculusCorrection(void *context,void *texture_srv
+void SimulHDRRendererDX1x::RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,void *texture_srv
 	,float offsetX,float Exposure,float Gamma)
 {
-	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
 	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
@@ -231,11 +231,11 @@ void SimulHDRRendererDX1x::RenderWithOculusCorrection(void *context,void *textur
 	hdrConstants.warpScreenCentre	=vec2(0.5f,0.5f);
 	hdrConstants.warpScale			=vec2(0.5f* scaleFactor, 0.5f* scaleFactor * as);
 	hdrConstants.warpScaleIn		=vec2(2.f,2.f/ as);
-	hdrConstants.Apply(pContext);
+	hdrConstants.Apply(deviceContext);
 	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
 	if(Glow)
 	{
-		RenderGlowTexture(context,texture_srv);
+		RenderGlowTexture(deviceContext,texture_srv);
 		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
 		ApplyPass(pContext,warpGlowExposureGamma->GetPassByIndex(0));
 	}
@@ -259,12 +259,12 @@ static float CalculateBoxFilterWidth(float radius, int pass)
 	return box_width;
 }
 
-void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
+void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,void *texture_srv)
 {
 	if(!m_pGaussianEffect)
 		return;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 static int g_NumApproxPasses=3;
 static int	g_MaxApproxPasses = 8;
 static float g_FilterRadius = 30;
@@ -274,10 +274,10 @@ static float g_FilterRadius = 30;
 		dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
 		dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
 		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
-		ApplyPass(m_pImmediateContext,glowTechnique->GetPassByIndex(0));
-		glow_fb.Activate(context);
-		simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
-		glow_fb.Deactivate(context);
+		ApplyPass(pContext,glowTechnique->GetPassByIndex(0));
+		glow_fb.Activate(pContext);
+		simul::dx11::UtilityRenderer::DrawQuad(pContext);
+		glow_fb.Deactivate(pContext);
 	}
     D3D11_TEXTURE2D_DESC tex_desc;
 	ID3D1xTexture2D *texture=glow_fb.GetColorTexture();
@@ -301,14 +301,14 @@ static float g_FilterRadius = 30;
 
 	// Select pass
 	gaussianColTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_col");
-	gaussianColTechnique->GetPassByIndex(0)->Apply(0,m_pImmediateContext);
-	m_pImmediateContext->Dispatch(tex_desc.Width,1,1);
+	gaussianColTechnique->GetPassByIndex(0)->Apply(0,pContext);
+	pContext->Dispatch(tex_desc.Width,1,1);
 
 	// Unbound CS resource and output
 	ID3D11ShaderResourceView* srv_array[] = {NULL, NULL, NULL, NULL};
-	m_pImmediateContext->CSSetShaderResources(0, 4, srv_array);
+	pContext->CSSetShaderResources(0, 4, srv_array);
 	ID3D11UnorderedAccessView* uav_array[] = {NULL, NULL, NULL, NULL};
-	m_pImmediateContext->CSSetUnorderedAccessViews(0, 4, uav_array, NULL);
+	pContext->CSSetUnorderedAccessViews(0, 4, uav_array, NULL);
 
 	// Step 2. Horizontal passes: Each thread group handles a row in the image
 	// Input texture
@@ -318,12 +318,12 @@ static float g_FilterRadius = 30;
 
 	// Select pass
 	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");
-	gaussianRowTechnique->GetPassByIndex(0)->Apply(0,m_pImmediateContext);
-	m_pImmediateContext->Dispatch(tex_desc.Height,1,1);
+	gaussianRowTechnique->GetPassByIndex(0)->Apply(0,pContext);
+	pContext->Dispatch(tex_desc.Height,1,1);
 
 	// Unbound CS resource and output
-	m_pImmediateContext->CSSetShaderResources(0,4,srv_array);
-	m_pImmediateContext->CSSetUnorderedAccessViews(0,4,uav_array, NULL);
+	pContext->CSSetShaderResources(0,4,srv_array);
+	pContext->CSSetUnorderedAccessViews(0,4,uav_array, NULL);
 }
 
 const char *SimulHDRRendererDX1x::GetDebugText() const

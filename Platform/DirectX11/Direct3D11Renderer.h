@@ -56,7 +56,7 @@ namespace simul
 			void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
 			void InvalidateDeviceObjects();
 			void RecompileShaders(const std::map<std::string,std::string> &defines);
-			void DownscaleDepth(ID3D11DeviceContext* pContext,View *view,int s,vec3 depthToLinFadeDistParams);
+			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,View *view,int s,vec3 depthToLinFadeDistParams);
 		protected:
 			ID3D11Device								*m_pd3dDevice;
 			ID3DX11Effect								*mixedResolutionEffect;
@@ -115,8 +115,8 @@ namespace simul
 				return simulTerrainRenderer;
 			}
 			void						RecompileShaders();
-			void						RenderCubemap(ID3D11DeviceContext* pContext,const float *cam_pos);
-			void						RenderEnvmap(ID3D11DeviceContext* pContext);
+			void						RenderCubemap(crossplatform::DeviceContext &deviceContext,const float *cam_pos);
+			void						RenderEnvmap(crossplatform::DeviceContext &deviceContext);
 			// D3D11CallbackInterface
 			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
 			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);

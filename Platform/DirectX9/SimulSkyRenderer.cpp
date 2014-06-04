@@ -527,7 +527,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	return sun_occlusion;
 }
 
-void SimulSkyRenderer::RenderSun(void *,float exposure)
+void SimulSkyRenderer::RenderSun(simul::crossplatform::DeviceContext &deviceContext,float exposure)
 {
 	simul::sky::float4 sunlight=skyKeyframer->GetSkyInterface()->GetSunIrradiance();
 float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
@@ -619,7 +619,7 @@ void SimulSkyRenderer::EnsureTextureCycle()
 	}
 }
 
-void SimulSkyRenderer::RenderPlanet(void* ,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
+void SimulSkyRenderer::RenderPlanet(simul::crossplatform::DeviceContext &deviceContext ,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
 	if(do_lighting)
 		m_pSkyEffect->SetTechnique(m_hTechniquePlanet);
@@ -694,7 +694,7 @@ bool SimulSkyRenderer::RenderFades(crossplatform::DeviceContext &deviceContext,i
 	return true;
 }
 
-bool SimulSkyRenderer::RenderPointStars(void *,float exposure)
+bool SimulSkyRenderer::RenderPointStars(simul::crossplatform::DeviceContext &deviceContext,float exposure)
 {
 	PIXBeginNamedEvent(0xFF000FFF,"SimulSkyRenderer::RenderPointStars");
 	HRESULT hr=S_OK;

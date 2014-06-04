@@ -246,7 +246,7 @@ void OpenGLRenderer::paintGL()
 			depthFramebuffer.Render(context,false);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
-		simulWeatherRenderer->RenderLightning(context,viewport_id);
+		simulWeatherRenderer->RenderLightning(deviceContext);
 		
 		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTex()
 			,depthFramebuffer.GetDepthTex()
@@ -261,7 +261,7 @@ void OpenGLRenderer::paintGL()
 			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-			simulOpticsRenderer->RenderFlare(context,exp,depthFramebuffer.GetDepthTex(),deviceContext.viewStruct.view,deviceContext.viewStruct.proj,dir,light);
+			simulOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTex(),dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(context);
@@ -309,7 +309,8 @@ void OpenGLRenderer::renderUI()
 	static char text[500];
 	int y=12;
 	static int line_height=16;
-	renderPlatform->Print(NULL,12,y+=line_height,"OpenGL");
+	crossplatform::DeviceContext deviceContext;
+	renderPlatform->Print(deviceContext,12,y+=line_height,"OpenGL");
 	if(ShowOSD)
 	{
 	static simul::base::Timer timer;
@@ -324,9 +325,9 @@ void OpenGLRenderer::renderUI()
 		framerate+=0.05f*(1000.f/t);
 		static char osd_text[256];
 		sprintf_s(osd_text,256,"%3.3f fps",framerate);
-		renderPlatform->Print(NULL,12,y+=line_height,osd_text);
+		renderPlatform->Print(deviceContext,12,y+=line_height,osd_text);
 		if(simulWeatherRenderer)
-			renderPlatform->Print(NULL,12,y+=line_height,simulWeatherRenderer->GetDebugText());
+			renderPlatform->Print(deviceContext,12,y+=line_height,simulWeatherRenderer->GetDebugText());
 		timer.StartTime();
 	}
 }

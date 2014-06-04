@@ -51,14 +51,14 @@ namespace simul
 			void DrawTexture	(void *context,int x1,int y1,int dx,int dy,void *tex,float mult=1.f);
 			void DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *effect,void *technique);
 
-			void Print			(void *context,int x,int y	,const char *text);
+			void Print			(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *text);
 			void DrawLines		(crossplatform::DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false);
 			void Draw2dLines	(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip);
 			void DrawCircle		(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false);
 			void PrintAt3dPos	(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 
 			void ApplyDefaultMaterial();
-			void SetModelMatrix(void *context,const crossplatform::ViewStruct &viewStruct,const double *mat);
+			void SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *mat);
 			scene::Material *CreateMaterial();
 			crossplatform::Mesh		*CreateMesh();
 			scene::Light	*CreateLight();

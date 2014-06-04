@@ -234,6 +234,13 @@ namespace simul
 				ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
 				Apply(pContext);
 			}
+			//! Unbind from the effect.
+			void Unbind(ID3D11DeviceContext *pContext)
+			{
+				if(m_pD3DX11EffectConstantBuffer)
+					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
+			}
+		protected:
 			void Apply(ID3D11DeviceContext *pContext)
 			{
 				D3D11_MAPPED_SUBRESOURCE mapped_res;
@@ -243,12 +250,6 @@ namespace simul
 				pContext->Unmap(m_pD3D11Buffer, 0);
 				if(m_pD3DX11EffectConstantBuffer)
 					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
-			}
-			//! Unbind from the effect.
-			void Unbind(ID3D11DeviceContext *pContext)
-			{
-				if(m_pD3DX11EffectConstantBuffer)
-					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
 			}
 		};
 		

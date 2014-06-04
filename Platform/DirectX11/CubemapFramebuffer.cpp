@@ -1,8 +1,10 @@
 #include "CubemapFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include <assert.h>
 const int MIPLEVELS=1;
 
-using namespace simul::dx11;
+using namespace simul;
+using namespace dx11;
 
 CubemapFramebuffer::CubemapFramebuffer()
 	:bands(4)
@@ -203,9 +205,9 @@ void CubemapFramebuffer::RecompileShaders()
 	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect,"SphericalHarmonicsConstants");
 }
 
-void CubemapFramebuffer::CalcSphericalHarmonics(void *context)
+void CubemapFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	if(!sphericalHarmonicsEffect)
 		RecompileShaders();
 	int num_coefficients=bands*bands;
@@ -219,7 +221,7 @@ void CubemapFramebuffer::CalcSphericalHarmonics(void *context)
 	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
 	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;
 	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
-	sphericalHarmonicsConstants.Apply(pContext);
+	sphericalHarmonicsConstants.Apply(deviceContext);
 	simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect,"targetBuffer"	,sphericalHarmonics.unorderedAccessView);
 	ID3DX11EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");
 	ApplyPass(pContext,clear->GetPassByIndex(0));

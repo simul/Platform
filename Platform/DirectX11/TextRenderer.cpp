@@ -146,7 +146,7 @@ void TextRenderer::RecompileShaders()
 	constantBuffer.LinkToEffect(effect,"FontConstants");
 }
 
-void TextRenderer::Render(void *context,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
+void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
 	float transp[]={0.f,0.f,0.f,0.f};
 	float white[]={1.f,1.f,1.f,1.f};
@@ -156,7 +156,7 @@ void TextRenderer::Render(void *context,float x,float y,float screen_width,float
 		bck=transp;
 	simul::dx11::setTexture(effect,"fontTexture"	,font_texture_SRV);
 	D3D_PRIMITIVE_TOPOLOGY previousTopology;
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	constantBuffer.colour		=vec4(clr);
@@ -180,7 +180,7 @@ void TextRenderer::Render(void *context,float x,float y,float screen_width,float
 		constantBuffer.rect.y=-constantBuffer.rect.y;
 		constantBuffer.rect.w*=-1.0f;
 	}
-	constantBuffer.Apply(pContext);
+	constantBuffer.Apply(deviceContext);
 	pContext->Draw(4,0);
 	ApplyPass(pContext,effect->GetTechniqueByName("text")->GetPassByIndex(0));
 
@@ -198,7 +198,7 @@ void TextRenderer::Render(void *context,float x,float y,float screen_width,float
 			constantBuffer.rect.z	=2.0f*(float)f.pixel_width/screen_width;
 			static float u			=1024.f/598.f;
 			constantBuffer.texc		=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
-			constantBuffer.Apply(pContext);
+			constantBuffer.Apply(deviceContext);
 			pContext->Draw(4,0);
 		}
 		x+=f.pixel_width+1;

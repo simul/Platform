@@ -6,6 +6,7 @@
 #include "MacrosDX1x.h"
 #include "CreateEffectDX1x.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 using namespace simul;
 using namespace dx11;
 
@@ -90,9 +91,9 @@ void Mesh::releaseBuffers()
 	numIndices=0;
 }
 
-void Mesh::BeginDraw(void *context,crossplatform::ShadingMode pShadingMode) const
+void Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	pContext->IAGetInputLayout( &previousInputLayout );
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	// Set the input layout
@@ -100,9 +101,9 @@ void Mesh::BeginDraw(void *context,crossplatform::ShadingMode pShadingMode) cons
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 // Draw all the faces with specific material with given shading mode.
-void Mesh::Draw(void *context,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
+void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	UINT offset = 0;
 	pContext->IASetVertexBuffers(	0,					// the first input slot for binding
 									1,					// the number of buffers in the array
@@ -114,9 +115,9 @@ void Mesh::Draw(void *context,int pMaterialIndex,crossplatform::ShadingMode pSha
 	pContext->Draw(numIndices,0);
 }
 // Unbind buffers, reset vertex arrays, turn off lighting and texture.
-void Mesh::EndDraw(void *context) const
+void Mesh::EndDraw(crossplatform::DeviceContext &deviceContext) const
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout( previousInputLayout );
 	SAFE_RELEASE(previousInputLayout);

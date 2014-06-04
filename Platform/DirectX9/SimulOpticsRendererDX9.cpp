@@ -93,13 +93,13 @@ void SimulOpticsRendererDX9::SetFlare(LPDIRECT3DTEXTURE9 tex,float rad)
 	external_flare_texture=true;
 }
 
-void SimulOpticsRendererDX9::RenderFlare(void *,float exposure,void * depthTexture,const float *v,const float *p,const float *dir,const float *light)
+void SimulOpticsRendererDX9::RenderFlare(crossplatform::DeviceContext &deviceContext,float exposure,void * depthTexture,const float *dir,const float *light)
 {
 	HRESULT hr=S_OK;
 	if(!m_pFlareEffect)
 		return ;
-	D3DXMATRIX view=v;
-	D3DXMATRIX proj=p;
+	D3DXMATRIX view=deviceContext.viewStruct.view;
+	D3DXMATRIX proj=deviceContext.viewStruct.proj;
 	D3DXVECTOR3 sun_dir(dir);//skyKeyframer->GetDirectionToLight());
 	float magnitude=exposure;//*(1.f-sun_occlusion);
 	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.1f);

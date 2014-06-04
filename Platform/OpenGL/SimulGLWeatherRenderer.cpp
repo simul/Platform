@@ -260,7 +260,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	buffered=(buffered&&fb&&!is_cubemap);
 	UpdateSkyAndCloudHookup();
 	if(baseAtmosphericsRenderer&&ShowSky)
-		baseAtmosphericsRenderer->RenderAsOverlay(context, mainDepthTexture,exposure,depthViewportXYWH);
+		baseAtmosphericsRenderer->RenderAsOverlay(deviceContext, mainDepthTexture,exposure,depthViewportXYWH);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
 		base2DCloudRenderer->Render(deviceContext,exposure,false,false,mainDepthTexture,false,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
 	if(buffered)
@@ -274,7 +274,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 		float cloud_occlusion=0;
 		if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
 			cloud_occlusion=baseCloudRenderer->GetSunOcclusion(cam_pos);
-		baseSkyRenderer->CalcSunOcclusion(context,cloud_occlusion);
+		baseSkyRenderer->CalcSunOcclusion(deviceContext,cloud_occlusion);
 	}
 	// Do this AFTER sky render, to catch any changes to texture definitions:
 	UpdateSkyAndCloudHookup();
@@ -353,11 +353,11 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(crossplatform::DeviceContext &
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 }
 
-void SimulGLWeatherRenderer::RenderLightning(void *context,int /*view_id*/)
+void SimulGLWeatherRenderer::RenderLightning(simul::crossplatform::DeviceContext &deviceContext)
 {
 	math::Matrix4x4 view,proj;
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		simulLightningRenderer->Render(context,view,proj,NULL,simul::sky::float4 (0,0,1.f,1.f),NULL);
+		simulLightningRenderer->Render(deviceContext,NULL,simul::sky::float4(0,0,1.f,1.f),NULL);
 }
 
 void SimulGLWeatherRenderer::RenderPrecipitation(crossplatform::DeviceContext &deviceContext)

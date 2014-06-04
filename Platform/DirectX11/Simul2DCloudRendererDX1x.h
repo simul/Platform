@@ -46,8 +46,7 @@ namespace simul
 			void SetLightTableTexture(void *l);
 			void SetWindVelocity(float x,float y);
 		protected:
-			void RenderDetailTexture(void *context);
-			virtual void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip){}
+			void RenderDetailTexture(crossplatform::DeviceContext &deviceContext);
 			void EnsureCorrectTextureSizes();
 			virtual void EnsureTexturesAreUpToDate(void *context);
 			void EnsureTextureCycle();

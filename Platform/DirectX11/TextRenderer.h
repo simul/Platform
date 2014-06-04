@@ -11,6 +11,10 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 namespace simul
 {
+	namespace crossplatform
+	{
+		struct DeviceContext;
+	}
 	namespace dx11
 	{
 		class TextRenderer
@@ -30,9 +34,9 @@ namespace simul
 
 			void RestoreDeviceObjects(ID3D11Device*);
 			void InvalidateDeviceObjects();
-		void RecompileShaders();
+			void RecompileShaders();
 			//void Render(crossplatform::DeviceContext &deviceContext, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
-			void Render(void *context, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL,const float *bck=NULL,bool mirrorY=false);
+			void Render(crossplatform::DeviceContext &deviceContext, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL,const float *bck=NULL,bool mirrorY=false);
 
 		private:
 

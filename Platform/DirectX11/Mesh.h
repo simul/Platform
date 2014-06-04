@@ -18,11 +18,11 @@ namespace simul
 			bool Initialize(void *device,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices);
 			void releaseBuffers();
 			// Implementing crossplatform::Mesh
-			void BeginDraw	(void *context,crossplatform::ShadingMode pShadingMode) const;
+			void BeginDraw	(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const;
 			// Draw all the faces with specific material with given shading mode.
-			void Draw		(void *context,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const;
+			void Draw		(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const;
 			// Unbind buffers, reset vertex arrays, turn off lighting and texture.
-			void EndDraw	(void *context) const;
+			void EndDraw	(crossplatform::DeviceContext &deviceContext) const;
 			// Template function to initialize vertices from an arbitrary vertex structure.
 			template<class T,typename U> void init(ID3D11Device *pd3dDevice,const std::vector<T> &vertices,std::vector<U> indices)
 			{

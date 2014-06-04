@@ -14,6 +14,7 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		struct DeviceContext;
 		// Save mesh vertices, normals, UVs and indices in GPU with OpenGL Vertex Buffer Objects
 		class SIMUL_CROSSPLATFORM_EXPORT Mesh
 		{
@@ -23,11 +24,11 @@ namespace simul
 			virtual bool Initialize(void *device,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices)=0;
 			virtual void UpdateVertexPositions(int lVertexCount, float *lVertices) const=0;
 			// Bind buffers, set vertex arrays, turn on lighting and texture.
-			virtual void BeginDraw(void *context,ShadingMode pShadingMode) const=0;
+			virtual void BeginDraw(DeviceContext &deviceContext,ShadingMode pShadingMode) const=0;
 			// Draw all the faces with specific material with given shading mode.
-			virtual void Draw(void *context,int pMaterialIndex, ShadingMode pShadingMode) const=0;
+			virtual void Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex, ShadingMode pShadingMode) const=0;
 			// Unbind buffers, reset vertex arrays, turn off lighting and texture.
-			virtual void EndDraw(void *context) const=0;
+			virtual void EndDraw(crossplatform::DeviceContext &deviceContext) const=0;
 			// Get the count of material groups
 			int GetSubMeshCount() const;
 			static int VERTEX_STRIDE ;

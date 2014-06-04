@@ -91,7 +91,7 @@ void opengl::Mesh::UpdateVertexPositions(int lVertexCount, float *lVertices) con
     }
 }
 
-void opengl::Mesh::BeginDraw(void *,crossplatform::ShadingMode pShadingMode) const
+void opengl::Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const
 {
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -163,7 +163,7 @@ void opengl::Mesh::BeginDraw(void *,crossplatform::ShadingMode pShadingMode) con
 	//glUseProgram(0);
 }
 
-void opengl::Mesh::Draw(void *,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
+void opengl::Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
 {
     // Where to start.
 	const SubMesh *subMesh=GetSubMesh(pMaterialIndex);
@@ -198,7 +198,7 @@ void opengl::Mesh::Draw(void *,int pMaterialIndex,crossplatform::ShadingMode pSh
     }
 }
 
-void opengl::Mesh::EndDraw(void *) const
+void opengl::Mesh::EndDraw(crossplatform::DeviceContext &deviceContext) const
 {
     // Reset VBO binding.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

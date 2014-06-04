@@ -110,7 +110,7 @@ namespace simul
 			void RenderLateCloudLayer(crossplatform::DeviceContext &deviceContext
 				,float exposure,bool buf,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			//! Call this to draw lightning.
-			void RenderLightning(void *context,int viewport_id);
+			void RenderLightning(simul::crossplatform::DeviceContext &deviceContext);
 			//! Call this to draw rain etc.
 			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext);
 			//! Get a pointer to the sky renderer owned by this class instance.

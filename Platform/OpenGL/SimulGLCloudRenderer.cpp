@@ -510,7 +510,7 @@ GL_ERROR_CHECK
 //	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
 	static int isolate_layer=-1;
-	sphereMesh.BeginDraw(NULL,crossplatform::SHADING_MODE_SHADED);
+	sphereMesh.BeginDraw(deviceContext,crossplatform::SHADING_MODE_SHADED);
 	for(SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
 	GL_ERROR_CHECK
@@ -529,7 +529,7 @@ GL_ERROR_CHECK
 		if(isolate_layer>=0&&idx!=isolate_layer)
 			continue;
 #if 1
-		sphereMesh.Draw(NULL,0,crossplatform::SHADING_MODE_SHADED);
+		sphereMesh.Draw(deviceContext,0,crossplatform::SHADING_MODE_SHADED);
 #else
 		glBegin(GL_QUAD_STRIP);
 		if(quad_strip_vertices.size())
@@ -552,7 +552,7 @@ GL_ERROR_CHECK
 #endif
 	GL_ERROR_CHECK
 	}
-	sphereMesh.EndDraw(NULL);
+	sphereMesh.EndDraw(deviceContext);
 GL_ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
     glPopMatrix();

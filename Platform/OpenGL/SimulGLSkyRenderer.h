@@ -45,9 +45,9 @@ namespace simul
 	//! GL Implementation of render function.
 	bool						Render(void *,bool blend);
 	//! Render the stars, as points.
-	bool						RenderPointStars(void *,float exposure);
+	bool						RenderPointStars(crossplatform::DeviceContext &deviceContext,float exposure);
 	//! Draw the 2D fades to screen for debugging.
-			bool						RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
+	bool						RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
 
 	// Implementing simul::sky::SkyTexturesCallback
 	virtual void SetSkyTextureSize(unsigned ){}
@@ -62,8 +62,8 @@ namespace simul
 	virtual		const float *GetFastLossLookup(void* context,float distance_texcoord,float elevation_texcoord);
 	virtual		const float *GetFastInscatterLookup(void* context,float distance_texcoord,float elevation_texcoord);
 
-	void		RenderPlanet(void *,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void		RenderSun(void *context,float exposure);
+	void		RenderPlanet(crossplatform::DeviceContext &deviceContext,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	void		RenderSun(crossplatform::DeviceContext &deviceContext,float exposure);
 
 	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o);
 

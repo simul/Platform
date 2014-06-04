@@ -302,19 +302,19 @@ void MakeWorldViewProjMatrix(float *wvp,const double *w,const float *v,const flo
 	simul::math::Multiply4x4(*(simul::math::Matrix4x4*)wvp,tmp1,proj);
 }
 
-void RenderPlatform::SetModelMatrix(void *context,const crossplatform::ViewStruct &viewStruct,const double *m)
+void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *m)
 {
 //	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
 //	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
 	simul::math::Matrix4x4 wvp;
 	simul::math::Matrix4x4 viewproj;
 	simul::math::Matrix4x4 modelviewproj;
-	simul::math::Multiply4x4(viewproj,viewStruct.view,viewStruct.proj);
+	simul::math::Multiply4x4(viewproj,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	simul::math::Matrix4x4 model(m);
 	simul::math::Multiply4x4(modelviewproj,model,viewproj);
 	solidConstants.worldViewProj=modelviewproj;
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
-	solidConstants.Apply(pContext);
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
+	solidConstants.Apply(deviceContext);
 
 	effect->GetTechniqueByName("solid")->GetPassByIndex(0)->Apply(0,pContext);
 }
@@ -404,16 +404,16 @@ void RenderPlatform::DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *
 	}
 }
 
-void RenderPlatform::Print(void *context,int x,int y	,const char *text)
+void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *text)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	float clr[]={1.f,1.f,0.f,1.f};
 	float black[]={0.f,0.f,0.f,0.5f};
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
 	int h=(int)viewport.Height;
-	textRenderer.Render(pContext,(float)x,(float)y,(float)viewport.Width,(float)h,text,clr,black,mirrorY);
+	textRenderer.Render(deviceContext,(float)x,(float)y,(float)viewport.Width,(float)h,text,clr,black,mirrorY);
 }
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)

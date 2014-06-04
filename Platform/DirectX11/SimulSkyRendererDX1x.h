@@ -58,11 +58,11 @@ public:
 	bool Destroy();
 	//! \deprecated This function is no longer used, as the sky is drawn by the atmospherics renderer. See simul::sky::BaseAtmosphericsRenderer.
 	bool Render(void *context,bool blend);
-	bool RenderPointStars(void *context,float exposure);
-	void RenderSun(void *context,float exposure);
+	bool RenderPointStars(crossplatform::DeviceContext &deviceContext,float exposure);
+	void RenderSun(crossplatform::DeviceContext &deviceContext,float exposure);
 	//! Draw the fade textures to screen
 	bool RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
-	virtual void RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	virtual void RenderPlanet(crossplatform::DeviceContext &deviceContext,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
 	bool Render2DFades(crossplatform::DeviceContext &deviceContext);
@@ -72,7 +72,7 @@ public:
 	//! objects like mountains etc. in it, and make sure these have already been drawn.
 	//! GetSunOcclusion executes a pseudo-render of an invisible billboard, then
 	//! uses a hardware occlusion query to see how many pixels have passed the z-test.
-	float CalcSunOcclusion(void *context,float cloud_occlusion=0.f);
+	float CalcSunOcclusion(crossplatform::DeviceContext &deviceContext,float cloud_occlusion=0.f);
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 
@@ -91,7 +91,7 @@ public:
 	void CycleTexturesForward();
 
 	// for testing:
-	void DrawCubemap(void *context,ID3D11ShaderResourceView*	m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
+	void DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView*	m_pCubeEnvMapSRV);
 	simul::sky::BaseGpuSkyGenerator *GetBaseGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
 	int cycle;

@@ -384,7 +384,7 @@ bool SimulGLSkyRenderer::Render(void *,bool )
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderPointStars(void *,float exposure)
+bool SimulGLSkyRenderer::RenderPointStars(crossplatform::DeviceContext &deviceContext,float exposure)
 {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -448,7 +448,7 @@ bool SimulGLSkyRenderer::RenderPointStars(void *,float exposure)
 	return true;
 }
 
-void SimulGLSkyRenderer::RenderSun(void *,float exposure)
+void SimulGLSkyRenderer::RenderSun(crossplatform::DeviceContext &deviceContext,float exposure)
 {
 	math::Vector3 cam_pos;
 	CalcCameraPosition(cam_pos);
@@ -481,7 +481,7 @@ void SimulGLSkyRenderer::RenderSun(void *,float exposure)
 	glUseProgram(0);
 }
 
-void SimulGLSkyRenderer::RenderPlanet(void *,void* tex,float planet_angular_size,const float *dir,const float *colr,bool do_lighting)
+void SimulGLSkyRenderer::RenderPlanet(crossplatform::DeviceContext &deviceContext,void* tex,float planet_angular_size,const float *dir,const float *colr,bool do_lighting)
 {
 	GL_ERROR_CHECK
 	math::Vector3 cam_pos;

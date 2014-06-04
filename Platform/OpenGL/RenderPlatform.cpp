@@ -6,6 +6,7 @@
 #include "Simul/Platform/OpenGL/Light.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #pragma warning(disable:4505)	// Fix GLUT warnings
 #include <GL/glut.h>
 
@@ -284,7 +285,7 @@ void RenderPlatform::DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 #endif
 
-void RenderPlatform::Print			(void *context,int x,int y	,const char *string)
+void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *string)
 {
 	void *font=GLUT_BITMAP_HELVETICA_12;
 	glColor4f(1.f,1.f,1.f,1.f);
@@ -333,7 +334,7 @@ void MakeWorldViewProjMatrix(float *wvp,const double *w,const float *v,const flo
 	simul::math::Multiply4x4(*(simul::math::Matrix4x4*)wvp,tmp1,proj);
 }
 
-void RenderPlatform::SetModelMatrix(void *,const crossplatform::ViewStruct &viewStruct,const double *m)
+void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *m)
 {
 	simul::math::Matrix4x4 proj;
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
@@ -342,7 +343,7 @@ void RenderPlatform::SetModelMatrix(void *,const crossplatform::ViewStruct &view
 	simul::math::Matrix4x4 wvp;
 	simul::math::Matrix4x4 viewproj;
 	simul::math::Matrix4x4 modelviewproj;
-	simul::math::Multiply4x4(viewproj,viewStruct.view,viewStruct.proj);
+	simul::math::Multiply4x4(viewproj,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	simul::math::Matrix4x4 model(m);
 	simul::math::Multiply4x4(modelviewproj,model,viewproj);
 	solidConstants.worldViewProj=modelviewproj;

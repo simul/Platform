@@ -144,10 +144,10 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const simul::math::Matrix4x4 &v,
 	proj=p;
 }
 
-void SimulAtmosphericsRendererDX1x::RenderLoss(void *context,const void *depthTexture,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass)
+void SimulAtmosphericsRendererDX1x::RenderLoss(crossplatform::DeviceContext &deviceContext,const void *depthTexture,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass)
 {
 	HRESULT hr=S_OK;
-	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	ID3D11ShaderResourceView* depthTexture_SRV=(ID3D11ShaderResourceView*)depthTexture;
 	lossTexture->SetResource(skyLossTexture_SRV);
 	setTexture(effect,"illuminationTexture"	,illuminationTexture_SRV);
@@ -159,9 +159,9 @@ void SimulAtmosphericsRendererDX1x::RenderLoss(void *context,const void *depthTe
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 	math::Matrix4x4 p1=proj;
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,1.f,view,p1,proj,relativeViewportTextureRegionXYWH);
-	atmosphericsPerViewConstants.Apply(pContext);
+	atmosphericsPerViewConstants.Apply(deviceContext);
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
-	atmosphericsUniforms.Apply(pContext);
+	atmosphericsUniforms.Apply(deviceContext);
 	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("loss");
 	if(depthTexture_SRV)
 	{
@@ -178,10 +178,10 @@ void SimulAtmosphericsRendererDX1x::RenderLoss(void *context,const void *depthTe
 	ApplyPass(pContext,tech->GetPassByIndex(1));
 }
 
-void SimulAtmosphericsRendererDX1x::RenderInscatter(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass)
+void SimulAtmosphericsRendererDX1x::RenderInscatter(crossplatform::DeviceContext &deviceContext,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass)
 {
 	HRESULT hr=S_OK;
-	ID3D11DeviceContext *pContext				=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext *pContext				=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	ID3D11ShaderResourceView *depthTexture_SRV	=(ID3D11ShaderResourceView*)depthTexture;
 	
 	lossTexture->SetResource(skyLossTexture_SRV);
@@ -197,9 +197,9 @@ void SimulAtmosphericsRendererDX1x::RenderInscatter(void *context,const void *de
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 	math::Matrix4x4 p1=proj;
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
-	atmosphericsPerViewConstants.Apply(pContext);
+	atmosphericsPerViewConstants.Apply(deviceContext);
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
-	atmosphericsUniforms.Apply(pContext);
+	atmosphericsUniforms.Apply(deviceContext);
 	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("inscatter");
 	if(depthTexture_SRV)
 	{
@@ -220,11 +220,11 @@ void SimulAtmosphericsRendererDX1x::RenderInscatter(void *context,const void *de
 	ApplyPass(pContext,tech->GetPassByIndex(1));
 }
 
-void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure
+void SimulAtmosphericsRendererDX1x::RenderAsOverlay(crossplatform::DeviceContext &deviceContext,const void *depthTexture,float exposure
 	,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	HRESULT hr=S_OK;
-	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	ID3D11ShaderResourceView* depthTexture_SRV=(ID3D11ShaderResourceView*)depthTexture;
 	
 	lossTexture->SetResource(skyLossTexture_SRV);
@@ -243,10 +243,10 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
 	
-	atmosphericsPerViewConstants.Apply(pContext);
+	atmosphericsPerViewConstants.Apply(deviceContext);
 	
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
-	atmosphericsUniforms.Apply(pContext);
+	atmosphericsUniforms.Apply(deviceContext);
 	ID3DX11EffectGroup *group=effect->GetGroupByName("atmospherics_overlay");
 	ID3DX11EffectTechnique *tech=group->GetTechniqueByName("standard");
 	
@@ -271,11 +271,11 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	ApplyPass(pContext,tech->GetPassByIndex(1));
 }
 
-void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,bool near_pass,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloud_depth_texture)
+void SimulAtmosphericsRendererDX1x::RenderGodrays(crossplatform::DeviceContext &deviceContext,float strength,bool near_pass,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloud_depth_texture)
 {
 	if(!ShowGodrays)
 		return;
-	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	ID3D11ShaderResourceView* depthTexture_SRV		=(ID3D11ShaderResourceView*)depth_texture;
 	ID3D11ShaderResourceView* cloudDepthTexture_SRV	=(ID3D11ShaderResourceView*)cloud_depth_texture;
 	lossTexture			->SetResource(skyLossTexture_SRV);
@@ -296,11 +296,11 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,b
 	or.SetPosition((const float*)cam_pos);
 	math::Matrix4x4 p1=proj;
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
-	atmosphericsUniforms.Apply(pContext);
+	atmosphericsUniforms.Apply(deviceContext);
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,strength*exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
 	SetGodraysConstants(atmosphericsPerViewConstants,view);
 
-	atmosphericsPerViewConstants.Apply(pContext);
+	atmosphericsPerViewConstants.Apply(deviceContext);
 
 	dx11::setTexture(effect,"rainbowLookupTexture"	,rainbowLookupTexture);
 	dx11::setTexture(effect,"coronaLookupTexture"	,coronaLookupTexture);

@@ -170,18 +170,18 @@ PrecipitationRenderer::~PrecipitationRenderer()
 	InvalidateDeviceObjects();
 }
 
-void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
+void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceContext,float dt)
 {
 	if(dt<0)
 		dt*=-1.0f;
 	if(dt>1.0f)
 		dt=1.0f;
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	BasePrecipitationRenderer::PreRenderUpdate(context,dt);
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
+	BasePrecipitationRenderer::PreRenderUpdate(pContext,dt);
 	
 	rainConstants.meanFallVelocity	=meanVelocity;
 	rainConstants.timeStepSeconds	=dt;
-	rainConstants.Apply(pContext);
+	rainConstants.Apply(deviceContext);
 	
 	ID3D11InputLayout* previousInputLayout;
 	D3D_PRIMITIVE_TOPOLOGY previousTopology;
@@ -214,20 +214,20 @@ void PrecipitationRenderer::RenderMoisture(void *context
 {
 	if(viewStruct.view_id!=0)
 		return;
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+/*	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	SIMUL_COMBINED_PROFILE_START(context,"Moisture")
 	moisture_fb.SetWidthAndHeight(512,512);
 	moisture_fb.Activate(context);
 	{
 		SetMoistureConstants(moisturePerViewConstants,depthStruct,viewStruct);
-		moisturePerViewConstants.Apply(pContext);
+		moisturePerViewConstants.Apply(deviceContext);
 		simul::dx11::setTexture(effect,"depthTexture"	,(ID3D11ShaderResourceView*)depthStruct.depth_tex);
 		ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("moisture");
 		tech->GetPassByIndex(0)->Apply(0,pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	}
 	moisture_fb.Deactivate(context);
-	SIMUL_COMBINED_PROFILE_END(context)
+	SIMUL_COMBINED_PROFILE_END(context)*/
 }
 
 /*	Here, we only consider the effect of exposure time on the transparency of the rain streak. It has been
@@ -341,9 +341,9 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	
 	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
 
-	perViewConstants.Apply(pContext);
+	perViewConstants.Apply(deviceContext);
 	{
-		rainConstants.Apply(pContext);
+		rainConstants.Apply(deviceContext);
 		UINT passes=1;
 		for(unsigned i = 0 ; i < passes ; ++i )
 		{
@@ -355,7 +355,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	SIMUL_COMBINED_PROFILE_START(pContext,"Rain/snow Particles")
 	//if(RainToSnow>0)
 	{
-		RenderParticles(pContext);
+		RenderParticles(deviceContext);
 	}
 	simul::dx11::setTexture(effect,"cubeTexture"		,NULL);
 	simul::dx11::setTexture(effect,"randomTexture3D"	,NULL);
@@ -365,16 +365,16 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
-void PrecipitationRenderer::RenderParticles(void *context)
+void PrecipitationRenderer::RenderParticles(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	ID3D11InputLayout* previousInputLayout;
 	pContext->IAGetInputLayout(&previousInputLayout);
 	pContext->IASetInputLayout(m_pVtxDecl);
 	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	rainConstants.intensity		=intensity;
-	rainConstants.Apply(pContext);
+	rainConstants.Apply(deviceContext);
 	int numParticles			=(int)(intensity*125000.f);
 	vertexBuffer.apply(pContext,0);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
@@ -388,9 +388,9 @@ void PrecipitationRenderer::RenderParticles(void *context)
 	SAFE_RELEASE(previousInputLayout);
 }
 
-void PrecipitationRenderer::RenderTextures(void *context,int x0,int y0,int dx,int dy)
+void PrecipitationRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	HRESULT hr=S_OK;
 	static int u=1;
 	int w=(dx-8)/u;
@@ -407,5 +407,5 @@ void PrecipitationRenderer::RenderTextures(void *context,int x0,int y0,int dx,in
 		h/=2;
 	}
 	renderPlatformDx11.DrawTexture(pContext	,x0,y0	,w,h,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex(),1.f);
-	renderPlatformDx11.Print(pContext			,x0,y0	,"Moisture");
+	renderPlatformDx11.Print(deviceContext	,x0,y0	,"Moisture");
 }

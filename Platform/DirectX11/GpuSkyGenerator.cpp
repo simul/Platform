@@ -9,6 +9,7 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 using namespace simul;
 using namespace dx11;
 
@@ -89,6 +90,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 {
 	if(p.fill_up_to_texels<0)
 		return;
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context=m_pImmediateContext;
 	if(keyframe_checksums[cycled_index]!=p.keyframe_checksum)
 	{
 		keyframe_checksums[cycled_index]	=p.keyframe_checksum;
@@ -181,7 +184,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	{
 		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalLoss[cycled_index]->unorderedAccessView);
 		gpuSkyConstants.threadOffset=uint3(start_loss,0,0);
-		gpuSkyConstants.Apply(m_pImmediateContext);
+		gpuSkyConstants.Apply(deviceContext);
 		V_CHECK(ApplyPass(m_pImmediateContext,lossComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 	}
@@ -196,7 +199,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	{
 		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalInsc[cycled_index]->unorderedAccessView);
 		gpuSkyConstants.threadOffset=uint3(start_insc,0,0);
-		gpuSkyConstants.Apply(m_pImmediateContext);
+		gpuSkyConstants.Apply(deviceContext);
 		V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 	}
@@ -208,7 +211,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	insc_texture->SetResource(finalInsc[cycled_index]->shaderResourceView);
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalSkyl[cycled_index]->unorderedAccessView);
 	gpuSkyConstants.threadOffset=uint3(start_skyl,0,0);
-	gpuSkyConstants.Apply(m_pImmediateContext);
+	gpuSkyConstants.Apply(deviceContext);
 	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
 	subgrid=(num_skyl+BLOCKWIDTH-1)/BLOCKWIDTH;
 	if(subgrid>0)
@@ -228,7 +231,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		{
 			simul::dx11::setUnorderedAccessView(effect,"targetTexture",light_table->unorderedAccessView);
 			gpuSkyConstants.threadOffset	=uint3(start_light,cycled_index,0);
-			gpuSkyConstants.Apply(m_pImmediateContext);
+			gpuSkyConstants.Apply(deviceContext);
 			V_CHECK(ApplyPass(m_pImmediateContext,lightComputeTechnique->GetPassByIndex(0)));
 			m_pImmediateContext->Dispatch(num_light,1,1);
 		}

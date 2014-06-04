@@ -54,10 +54,10 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 			//! Render the Atmospherics.
-			void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
-			virtual void RenderLoss(void *context,const void *depthTexture,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass);
-			virtual void RenderInscatter(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass);
-			void RenderGodrays(void *context,float strength,bool near_pass,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloudDepthTexture);
+			void RenderAsOverlay(crossplatform::DeviceContext &deviceContext,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
+			virtual void RenderLoss(crossplatform::DeviceContext &deviceContext,const void *depthTexture,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass);
+			virtual void RenderInscatter(crossplatform::DeviceContext &deviceContext,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass);
+			void RenderGodrays(crossplatform::DeviceContext &deviceContext,float strength,bool near_pass,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloudDepthTexture);
 		protected:
 			HRESULT Destroy();
 			ID3D11Device*								m_pd3dDevice;

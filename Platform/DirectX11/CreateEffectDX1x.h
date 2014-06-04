@@ -160,6 +160,10 @@ inline void D3DXMatrixLookAtRH(D3DXMATRIX *m, D3DVECTOR *vEyePt,D3DVECTOR *vLook
 struct VertexXyzRgba;
 namespace simul
 {
+	namespace crossplatform
+	{
+		class Effect;
+	}
 	namespace dx11
 	{
 		enum ShaderBuildMode
@@ -226,6 +230,7 @@ namespace simul
 		void SIMUL_DIRECTX11_EXPORT unbindTextures			(ID3DX11Effect *effect);
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
+		//simul::crossplatform::Effect *CreateEffect(void *device,const char *filename,const std::map<std::string,std::string>&defines);
 	}
 }
 

@@ -9,10 +9,13 @@
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/earth_shadow_uniforms.sl"
 #include "Simul/Platform/CrossPlatform/SL/atmospherics_constants.sl"
+#include "Simul/Camera/Camera.h"
 #include <stdint.h>  // for uintptr_t
 #include <string.h>  // for memset
+
 using namespace simul;
 using namespace opengl;
+
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer(simul::base::MemoryInterface *m)
 	:BaseAtmosphericsRenderer(m)
 	,clouds_texture(0)
@@ -99,9 +102,7 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(earthshadow_insc_program);
 }
 
-#include "Simul/Camera/Camera.h"
-
-void SimulGLAtmosphericsRenderer::RenderAsOverlay(void *,const void *depthTexture,float exposure,const simul::sky::float4& depthViewportXYWH)
+void SimulGLAtmosphericsRenderer::RenderAsOverlay(crossplatform::DeviceContext &deviceContext,const void *depthTexture,float exposure,const simul::sky::float4& depthViewportXYWH)
 {
 	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
 GL_ERROR_CHECK

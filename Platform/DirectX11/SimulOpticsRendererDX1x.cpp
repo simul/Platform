@@ -6,7 +6,9 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
-using namespace simul::dx11;
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+using namespace simul;
+using namespace dx11;
 
 SimulOpticsRendererDX1x::SimulOpticsRendererDX1x(simul::base::MemoryInterface *m)
 	:BaseOpticsRenderer(m)
@@ -82,13 +84,12 @@ void SimulOpticsRendererDX1x::RecompileShaders()
 	opticsConstants.LinkToEffect(effect,"OpticsConstants");
 }
 
-void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void *moistureTexture,const float *v,const float *p,const float *dir,const float *light)
+void SimulOpticsRendererDX1x::RenderFlare(crossplatform::DeviceContext &deviceContext,float exposure,void *moistureTexture,const float *dir,const float *light)
 {
 	HRESULT hr=S_OK;
 	if(!effect)
 		return;
-	simul::math::Matrix4x4 view(v),proj(p);
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	StoreD3D11State(pContext);
 	math::Vector3 sun_dir(dir);
 	float magnitude=exposure;
@@ -104,15 +105,15 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void *moi
 	// equal to pi/(120^2), or about 1/2700 steradians;
 	static float sun_mult=0.05f;
 	simul::math::Vector3 cam_pos,cam_dir;
-	simul::dx11::GetCameraPosVector(view,(float*)&cam_pos,(float*)&cam_dir,false);
+	simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&cam_dir,false);
 	lensFlare.UpdateCamera(cam_dir,sun_dir);
 	flare_magnitude*=lensFlare.GetStrength();
 	sunlight*=sun_mult*flare_magnitude;
 	if(flare_magnitude>0.f)
 	{
 		dx11::setTexture(effect,"flareTexture",flare_texture);
-		SetOpticsConstants(opticsConstants,view,proj,dir,sunlight,flare_angular_size*flare_magnitude);
-		opticsConstants.Apply(pContext);
+		SetOpticsConstants(opticsConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,dir,sunlight,flare_angular_size*flare_magnitude);
+		opticsConstants.Apply(deviceContext);
 		ApplyPass(pContext,m_hTechniqueFlare->GetPassByIndex(0));
 		UtilityRenderer::DrawQuad(pContext);
 		sunlight*=0.25f;
@@ -122,8 +123,8 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void *moi
 			float sz=lensFlare.GetArtifactSize(i);
 			int t=lensFlare.GetArtifactType(i);
 			dx11::setTexture(effect,"flareTexture",halo_textures[t]);
-			SetOpticsConstants(opticsConstants,view,proj,pos,sunlight,flare_angular_size*sz*flare_magnitude);
-			opticsConstants.Apply(pContext);
+			SetOpticsConstants(opticsConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,pos,sunlight,flare_angular_size*sz*flare_magnitude);
+			opticsConstants.Apply(deviceContext);
 			ApplyPass(pContext,m_hTechniqueFlare->GetPassByIndex(0));
 			UtilityRenderer::DrawQuad(pContext);
 		}
@@ -134,13 +135,12 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void *moi
 	RestoreD3D11State(pContext );
 	//RenderRainbowAndCorona(context,exposure,moistureTexture,v,p,dir,light);
 }
-void SimulOpticsRendererDX1x::RenderRainbowAndCorona(void *context,float exposure,void *moistureTexture,const float *v,const float *p,const float *dir_to_sun,const float *light)
+void SimulOpticsRendererDX1x::RenderRainbowAndCorona(crossplatform::DeviceContext &deviceContext,float exposure,void *moistureTexture,const float *dir_to_sun,const float *light)
 {
 	HRESULT hr=S_OK;
 	if(!effect)
 		return;
-	simul::math::Matrix4x4 view(v),proj(p);
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	StoreD3D11State(pContext);
 	float magnitude=exposure;
 	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.1f);
@@ -148,12 +148,12 @@ void SimulOpticsRendererDX1x::RenderRainbowAndCorona(void *context,float exposur
 		flare_magnitude=1.f;
 	simul::sky::float4 sunlight(light);
 	D3DXVECTOR3 cam_pos,cam_dir;
-	simul::dx11::GetCameraPosVector(view,(float*)&cam_pos,(float*)&cam_dir,false);
+	simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&cam_dir,false);
 	dx11::setTexture(effect,"rainbowLookupTexture"	,rainbowLookupTexture);
 	dx11::setTexture(effect,"coronaLookupTexture"	,coronaLookupTexture);
 	dx11::setTexture(effect,"moistureTexture"		,(ID3D11ShaderResourceView*)moistureTexture);
-	SetOpticsConstants(opticsConstants,view,proj,dir_to_sun,sunlight,flare_angular_size*flare_magnitude);
-	opticsConstants.Apply(pContext);
+	SetOpticsConstants(opticsConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,dir_to_sun,sunlight,flare_angular_size*flare_magnitude);
+	opticsConstants.Apply(deviceContext);
 	ApplyPass(pContext,techniqueRainbowCorona->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);
 	pContext->VSSetShader(NULL,NULL,0);
