@@ -23,6 +23,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BaseFramebuffer.h" />
+    <ClInclude Include="effect.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -150,5 +151,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BaseFramebuffer.cpp" />
+    <ClCompile Include="Effect.cpp" />
   </ItemGroup>
 </Project>

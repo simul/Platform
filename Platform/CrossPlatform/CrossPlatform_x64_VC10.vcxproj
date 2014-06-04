@@ -29,7 +29,6 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -40,7 +39,6 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -196,6 +194,7 @@
     <ClInclude Include="BaseFramebuffer.h" />
     <ClInclude Include="CommandLineParams.h" />
     <ClInclude Include="DeviceContext.h" />
+    <ClInclude Include="effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="RenderPlatform.h" />
@@ -241,6 +240,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BaseFramebuffer.cpp" />
+    <ClCompile Include="Effect.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
