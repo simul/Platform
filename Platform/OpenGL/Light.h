@@ -5,13 +5,13 @@
 
 #include "Export.h"
 #include "Material.h"
-#include "Simul/Scene/Light.h"
+#include "Simul/Platform/CrossPlatform/Light.h"
 
 namespace simul
 {
 	namespace opengl
 	{
-		class SIMUL_OPENGL_EXPORT Light:public scene::Light
+		class SIMUL_OPENGL_EXPORT Light:public crossplatform::Light
 		{
 		public:
 			Light();

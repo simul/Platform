@@ -15,7 +15,7 @@ namespace
 }
 
 
-opengl::Light::Light()// : scene::Light()
+opengl::Light::Light()// : crossplatform::Light()
 {
     mLightIndex = GL_LIGHT0 + sLightCount++;
 }

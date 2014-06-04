@@ -59,7 +59,9 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,simulHDRRenderer(NULL)
 		,simulTerrainRenderer(NULL)
 		,oceanRenderer(NULL)
+#ifndef _XBOX_ONE
 		,sceneRenderer(NULL)
+#endif
 		,memoryInterface(m)
 {
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
@@ -71,8 +73,10 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 	oceanRenderer			=new(memoryInterface) OceanRenderer(env->seaKeyframer);
 	oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	
+#ifndef _XBOX_ONE
 	if(sc)
 		sceneRenderer			=new(memoryInterface) scene::BaseSceneRenderer(sc,&renderPlatformDx11);
+#endif
 	ReverseDepthChanged();
 	cubemapFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
 	cubemapFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
@@ -84,7 +88,9 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 Direct3D11Renderer::~Direct3D11Renderer()
 {
 	OnD3D11LostDevice();
+#ifndef _XBOX_ONE
 	del(sceneRenderer,memoryInterface);
+#endif
 	del(simulOpticsRenderer,memoryInterface);
 	del(simulWeatherRenderer,memoryInterface);
 	del(simulHDRRenderer,memoryInterface);
@@ -436,8 +442,10 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
 		simulTerrainRenderer->Render(deviceContext,1.f);	
 	}
+#ifndef _XBOX_ONE
 	if(sceneRenderer)
 		sceneRenderer->Render(deviceContext);
+#endif
 	if(oceanRenderer&&ShowWater)
 	{
 		oceanRenderer->SetMatrices(deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
@@ -739,8 +747,10 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 		simulTerrainRenderer->InvalidateDeviceObjects();
 	if(oceanRenderer)
 		oceanRenderer->InvalidateDeviceObjects();
+#ifndef _XBOX_ONE
 	if(sceneRenderer)
 		sceneRenderer->InvalidateDeviceObjects();
+#endif
 	viewManager.Clear();
 	cubemapFramebuffer.InvalidateDeviceObjects();
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();

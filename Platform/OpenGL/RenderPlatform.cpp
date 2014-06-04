@@ -350,7 +350,7 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	solidConstants.Apply();
 }
 
-scene::Material *RenderPlatform::CreateMaterial()
+crossplatform::Material *RenderPlatform::CreateMaterial()
 {
 	opengl::Material *mat=new opengl::Material;
 	materials.insert(mat);
@@ -362,7 +362,7 @@ crossplatform::Mesh *RenderPlatform::CreateMesh()
 	return new opengl::Mesh;
 }
 
-scene::Light *RenderPlatform::CreateLight()
+crossplatform::Light *RenderPlatform::CreateLight()
 {
 	return new opengl::Light();
 }

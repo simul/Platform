@@ -46,7 +46,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	solidConstants.InvalidateDeviceObjects();
 	textRenderer.InvalidateDeviceObjects();
 	SAFE_RELEASE(effect);
-	for(std::set<scene::Material*>::iterator i=materials.begin();i!=materials.end();i++)
+	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
 		mat->effect=effect;
@@ -66,7 +66,7 @@ void RenderPlatform::RecompileShaders()
 	CreateEffect(device,&effect,"solid.fx",defines);
 	solidConstants.LinkToEffect(effect,"SolidConstants");
 	//solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
-	for(std::set<scene::Material*>::iterator i=materials.begin();i!=materials.end();i++)
+	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
 		mat->effect=effect;
@@ -319,7 +319,7 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	effect->GetTechniqueByName("solid")->GetPassByIndex(0)->Apply(0,pContext);
 }
 
-scene::Material *RenderPlatform::CreateMaterial()
+crossplatform::Material *RenderPlatform::CreateMaterial()
 {
 	dx11::Material *mat=new dx11::Material;
 	mat->effect=effect;
@@ -332,7 +332,7 @@ crossplatform::Mesh *RenderPlatform::CreateMesh()
 	return new dx11::Mesh;
 }
 
-scene::Light *RenderPlatform::CreateLight()
+crossplatform::Light *RenderPlatform::CreateLight()
 {
 	return new dx11::Light();
 }

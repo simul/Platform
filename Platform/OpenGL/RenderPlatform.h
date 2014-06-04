@@ -44,9 +44,9 @@ namespace simul
 			void DrawCircle		(crossplatform::DeviceContext &context,const float *dir,float rads,const float *colr,bool fill=false);
 			void ApplyDefaultMaterial();
 			void SetModelMatrix(crossplatform::DeviceContext &context,const double *mat);
-			scene::Material *CreateMaterial();
+			crossplatform::Material *CreateMaterial();
 			crossplatform::Mesh		*CreateMesh();
-			scene::Light	*CreateLight();
+			crossplatform::Light	*CreateLight();
 			crossplatform::Texture	*CreateTexture(const char *lFileNameUtf8);
 			void			*GetDevice();
 			

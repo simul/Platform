@@ -11,13 +11,10 @@
 
 namespace simul
 {
-	namespace scene
+	namespace crossplatform
 	{
 		class Material;
 		class Light;
-	}
-	namespace crossplatform
-	{
 		class Texture;
 		class Mesh;
 		struct DeviceContext;
@@ -54,9 +51,9 @@ namespace simul
 			virtual void PrintAt3dPos		(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0)		=0;
 			virtual void					SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat)	=0;
 			virtual void					ApplyDefaultMaterial()	=0;
-			virtual scene::Material			*CreateMaterial		()	=0;
+			virtual crossplatform::Material	*CreateMaterial		()	=0;
 			virtual crossplatform::Mesh		*CreateMesh			()	=0;
-			virtual scene::Light			*CreateLight		()	=0;
+			virtual crossplatform::Light	*CreateLight		()	=0;
 			virtual crossplatform::Texture	*CreateTexture		(const char *lFileNameUtf8)	=0;
 			virtual void					*GetDevice			()	=0;
 		};
