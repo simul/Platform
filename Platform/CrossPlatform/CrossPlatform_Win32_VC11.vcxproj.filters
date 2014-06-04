@@ -28,6 +28,9 @@
     <ClInclude Include="BaseFramebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="CommandLineParams.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -160,5 +163,7 @@
     <ClCompile Include="BaseFramebuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Material.cpp" />
   </ItemGroup>
 </Project>

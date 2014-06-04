@@ -1,12 +1,11 @@
 #pragma once
-#include <d3dcommon.h>
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #include <map>
 #include <string>
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
 #include "Simul/Platform/DirectX11/Direct3D11ManagerInterface.h"
 #include "Simul/Platform/DirectX11/Export.h"
-
+struct ID3D11Debug;
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul

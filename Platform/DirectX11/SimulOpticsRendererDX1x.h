@@ -3,7 +3,7 @@
 #include "Simul/Camera/BaseOpticsRenderer.h"
 #include "Simul/Camera/LensFlare.h"
 #include "Simul/Sky/Float4.h"
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>

@@ -5,7 +5,7 @@
 #ifndef SIMUL_WIN8_SDK
 #include <D3DX9.h>
 #endif
-#include <D3D11.h>
+#include "SimulDirectXHeader.h"
 
 #include "Simul/Terrain/BaseSeaRenderer.h"
 #include "CSFFT/fft_512x512.h"

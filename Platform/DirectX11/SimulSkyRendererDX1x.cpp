@@ -11,7 +11,7 @@
 #define NOMINMAX
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <dxerr.h>
 #endif

@@ -3,7 +3,7 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include <string>
 #include <map>
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 
 #pragma warning(disable:4251)
 

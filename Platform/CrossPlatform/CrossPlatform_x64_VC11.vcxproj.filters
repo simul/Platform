@@ -25,6 +25,8 @@
     <ClInclude Include="BaseFramebuffer.h" />
     <ClInclude Include="CommandLineParams.h" />
     <ClInclude Include="Effect.h" />
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="Material.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -153,5 +155,7 @@
     </ClCompile>
     <ClCompile Include="BaseFramebuffer.cpp" />
     <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Material.cpp" />
   </ItemGroup>
 </Project>

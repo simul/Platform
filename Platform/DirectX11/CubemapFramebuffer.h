@@ -1,9 +1,8 @@
 #pragma once
-#include <D3Dcompiler.h>
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #endif
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #endif

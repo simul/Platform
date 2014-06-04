@@ -1,7 +1,7 @@
 #pragma once
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/CrossPlatform/Mesh.h"
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #include <vector>
 
 namespace simul

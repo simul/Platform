@@ -1,6 +1,6 @@
 #pragma once
 // Direct3D includes
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #include <dxerr.h>
@@ -9,12 +9,14 @@
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Graph/Meta/Group.h"
+#ifndef _XBOX_ONE
 #include "Simul/Scene/BaseSceneRenderer.h"
+#endif
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
-#include "Simul/Platform/DirectX11/OceanRenderer.h"
+#include "Simul/Platform/DirectX11/OceanRenderer.h"f
 #include "Simul/Platform/DirectX11/View.h"
 #include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
@@ -155,7 +157,9 @@ namespace simul
 			SimulHDRRendererDX1x						*simulHDRRenderer;
 			TerrainRenderer								*simulTerrainRenderer;
 			OceanRenderer								*oceanRenderer;
+#ifndef _XBOX_ONE
 			simul::scene::BaseSceneRenderer				*sceneRenderer;
+#endif
 			ViewManager									viewManager;
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
