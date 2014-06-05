@@ -56,6 +56,7 @@ namespace simul
 			virtual void resizeGL(int w,int h);
 			virtual void initializeGL();
 			virtual void renderUI();
+			void InvalidateDeviceObjects();
 			simul::opengl::SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer;}
 			SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer;}
 			class SimulGLTerrainRenderer *GetTerrainRenderer(){return simulTerrainRenderer;}

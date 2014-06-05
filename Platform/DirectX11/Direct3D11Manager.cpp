@@ -11,6 +11,7 @@ using namespace dx11;
 
 Window::Window():
 	hwnd(0)
+	,view_id(-1)
 	,vsync(false)
 	,m_swapChain(0)
 	,m_renderTargetView(0)

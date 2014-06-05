@@ -1,12 +1,12 @@
 #pragma once
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #endif
-#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
@@ -67,16 +67,24 @@ namespace simul
 			{
 				return sphericalHarmonics;
 			}
-void SetBands(int b)
-{
+			void SetBands(int b)
+			{
 				if(b>MAX_SH_BANDS)
 					b=MAX_SH_BANDS;
 				if(bands!=b)
 				{
-bands=b;
+					bands=b;
 					sphericalHarmonics.release();
 				}
-}
+			}
+			crossplatform::Texture *GetTexture()
+			{
+				return NULL;
+			}
+			crossplatform::Texture *GetDepthTexture()
+			{
+				return NULL;
+			}
 		protected:
 int bands;
 			//! The size of the 2D buffer the sky is rendered to.

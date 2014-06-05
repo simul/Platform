@@ -128,7 +128,7 @@ void Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetScreenSize(0,width,height);
-		simulWeatherRenderer->RestoreDeviceObjects(pd3dDevice);
+		simulWeatherRenderer->RestoreDeviceObjects(NULL/*Will need a valid RenderPlatform is used*/);
 	}
 	timer.UpdateTime();
 	weather_restore_time=timer.Time/1000.f;
@@ -260,28 +260,8 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulWeatherRenderer)
 	{
 		pd3dDevice->SetTransform(D3DTS_VIEW,(D3DXMATRIX*)((const float *)deviceContext.viewStruct.view));
-		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depth_texture,NULL,simul::sky::float4(0,0,1.f,1.f),true);
+		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,hdrFramebuffer.GetDepthTexture(),NULL,simul::sky::float4(0,0,1.f,1.f),true);
 
-	/*	simulWeatherRenderer->DoOcclusionTests(pd3dDevice);
-		if(simulOpticsRenderer&&ShowFlares)
-		{
-			simul::sky::float4 dir(0,0,1.f,0),light(0,0,0,0);
-			if(simulWeatherRenderer->GetSkyRenderer())
-			{
-				simul::sky::float4 dir,light,cam_pos;
-				dir=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
-			
-				GetCameraPosVector(view,false,cam_pos);
-				light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
-				simulOpticsRenderer->SetMatrices(view,proj);
-				float exposure=1.f;
-				if(simulHDRRenderer)
-					exposure=simulHDRRenderer->GetExposure();
-				simulOpticsRenderer->RenderFlare(NULL,
-					exposure*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
-					,dir,light);
-			}
-		}*/
 		pd3dDevice->SetTransform(D3DTS_VIEW,(D3DXMATRIX*)((const float *)deviceContext.viewStruct.view));
 		simulWeatherRenderer->RenderLightning(NULL,viewport_id);
 		simulWeatherRenderer->RenderPrecipitation(NULL);

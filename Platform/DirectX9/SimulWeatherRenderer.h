@@ -97,7 +97,7 @@ namespace simul
 			bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
 			void RecompileShaders();
 			//! Call this when the device has been created
-			void RestoreDeviceObjects(void *pd3dDevice);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			//! Call this when the 3D device has been lost.
 			void InvalidateDeviceObjects();
 			//! Call this to draw the sky and clouds.
@@ -105,7 +105,7 @@ namespace simul
 											,bool is_cubemap
 											,float exposure
 											,bool buffered
-											,const void* mainDepthTexture
+											,crossplatform::Texture *mainDepthTexture
 											,const void* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite
@@ -114,7 +114,7 @@ namespace simul
 												,bool 
 												,float 
 												,float 
-												,const void* 	
+												,crossplatform::Texture *mainDepthTexture 	
 												,const void* 	
 												,const void*  
 												,const sky::float4& )

@@ -1,5 +1,6 @@
 #include "TextRenderer.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;

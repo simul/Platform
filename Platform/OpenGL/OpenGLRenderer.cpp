@@ -42,7 +42,7 @@ using namespace opengl;
 
 using namespace simul;
 using namespace opengl;
-
+static bool glut_initialized=false;
 simul::opengl::RenderPlatform *renderPlatform=NULL;
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut)
@@ -76,21 +76,20 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 	
 	//sceneCache=new scene::BaseObjectRenderer(gScene,&renderPlatform);
-	if(init_glut)
+	if(init_glut&&!glut_initialized)
 	{
 		char argv[]="no program";
 		char *a=argv;
 		int argc=1;
 	    glutInit(&argc,&a);
+		glut_initialized=true;
 	}
 }
 
-OpenGLRenderer::~OpenGLRenderer()
+void OpenGLRenderer::InvalidateDeviceObjects()
 {
 GL_ERROR_CHECK
-	delete sceneRenderer;
-GL_ERROR_CHECK
-	delete renderPlatform;
+	SAFE_DELETE_PROGRAM(simple_program);
 GL_ERROR_CHECK
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
@@ -102,7 +101,16 @@ GL_ERROR_CHECK
 		simulHDRRenderer->InvalidateDeviceObjects();
 	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
 	depthFramebuffer.InvalidateDeviceObjects();
-	SAFE_DELETE_PROGRAM(simple_program);
+GL_ERROR_CHECK
+}
+
+OpenGLRenderer::~OpenGLRenderer()
+{
+	InvalidateDeviceObjects();
+GL_ERROR_CHECK
+	delete sceneRenderer;
+GL_ERROR_CHECK
+	delete renderPlatform;
 	delete simulHDRRenderer;
 	delete simulWeatherRenderer;
 	delete simulOpticsRenderer;
@@ -248,8 +256,8 @@ void OpenGLRenderer::paintGL()
 		}
 		simulWeatherRenderer->RenderLightning(deviceContext);
 		
-		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTex()
-			,depthFramebuffer.GetDepthTex()
+		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTexture()
+			,depthFramebuffer.GetDepthTexture()
 			,simul::sky::float4(0,0,1.f,1.f),true);
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
 		simulWeatherRenderer->RenderPrecipitation(deviceContext);

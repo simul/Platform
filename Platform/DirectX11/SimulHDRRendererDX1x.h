@@ -12,7 +12,7 @@
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/hdr_constants.sl"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
@@ -23,6 +23,7 @@
 #include "Simul/Base/PropertyMacros.h"
 #pragma warning(push)
 #pragma warning(disable:4251)
+struct ID3DX11EffectScalarVariable;
 namespace simul
 {
 	namespace dx11
@@ -69,8 +70,8 @@ namespace simul
 			ID3DX11EffectTechnique*				warpGlowExposureGamma;
 			
 			ID3DX11EffectTechnique*				glowTechnique;
-			ID3D1xEffectScalarVariable*			Exposure_;
-			ID3D1xEffectScalarVariable*			Gamma_;
+			ID3DX11EffectScalarVariable*		Exposure_;
+			ID3DX11EffectScalarVariable*		Gamma_;
 
 			ID3DX11Effect*						m_pGaussianEffect;
 			ID3DX11EffectTechnique*				gaussianRowTechnique;

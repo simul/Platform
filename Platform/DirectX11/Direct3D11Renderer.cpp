@@ -23,10 +23,9 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/pi.h"
+#include "D3dx11effect.h"
 using namespace simul;
 using namespace dx11;
-
-simul::dx11::RenderPlatform renderPlatformDx11;
 
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,int w,int h):
 		ShowCloudCrossSections(false)
@@ -153,7 +152,7 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects(pd3dDevice);
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->RestoreDeviceObjects(pd3dDevice);
+		simulWeatherRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
 	if(simulTerrainRenderer)
@@ -273,7 +272,7 @@ ERRNO_CHECK
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 ERRNO_CHECK
 			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext
-				,true,1.f,false,cubemapFramebuffer.GetDepthTex(),NULL,relativeViewportTextureRegionXYWH,true);
+				,true,1.f,false,cubemapFramebuffer.GetDepthTexture(),NULL,relativeViewportTextureRegionXYWH,true);
 ERRNO_CHECK
 		}
 		cubemapFramebuffer.Deactivate(deviceContext.platform_context);
@@ -473,7 +472,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 			//,relativeViewportTextureRegionXYWH
 			//,true);
 	#if 1
-		simulWeatherRenderer->RenderMixedResolution(deviceContext,false,exposure,gamma,view->hdrFramebuffer.GetDepthTex()
+		simulWeatherRenderer->RenderMixedResolution(deviceContext,false,exposure,gamma,view->hdrFramebuffer.GetDepthTexture()
 			,depthTextureHiRes,skyBufferDepthTex,relativeViewportTextureRegionXYWH);
 	#endif
 		if(simulHDRRenderer&&UseHdrPostprocessor)

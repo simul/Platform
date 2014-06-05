@@ -1,10 +1,12 @@
 #include "GL/glew.h"
 #include "Texture.h"
 #include "LoadGLImage.h"
+#include "SimulGLUtilities.h"
 
 #include <string>
 
 using namespace simul;
+using namespace opengl;
 #if defined(_MSC_VER) && (defined(WIN32) || defined(WIN64))
 #else
 #include <stdio.h>
@@ -13,14 +15,20 @@ using namespace simul;
 #endif
 
 opengl::Texture::Texture()
+	:pTextureObject(0)
 {
 }
 
 opengl::Texture::~Texture()
 {
-	glDeleteTextures(1,&pTextureObject);
+	InvalidateDeviceObjects();
 }
 
+void Texture::InvalidateDeviceObjects()
+{
+	//glDeleteTextures(1,&pTextureObject);
+	SAFE_DELETE_TEXTURE(pTextureObject);
+}
 // Load a texture file
 void opengl::Texture::LoadFromFile(const char *pFilePathUtf8)
 {

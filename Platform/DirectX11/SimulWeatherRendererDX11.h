@@ -76,7 +76,7 @@ namespace simul
 			virtual ~SimulWeatherRendererDX11();
 			void SetScreenSize(int view_id,int w,int h);
 			//standard d3d object interface functions
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			bool Destroy();
@@ -86,25 +86,17 @@ namespace simul
 											,bool is_cubemap
 											,float exposure
 											,bool buffered
-											,const void* mainDepthTexture
+											,crossplatform::Texture *mainDepthTexture
 											,const void* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite);
-		/*	void RenderMixedResolution(	crossplatform::DeviceContext &deviceContext
-										,bool is_cubemap
-										,float exposure
-										,float gamma
-										,const void* mainDepthTextureMS	
-										,const void* hiResDepthTexture	
-										,const void* lowResDepthTexture 
-										,const sky::float4& depthViewportXYWH
-										);*/
+	
 			// This composites the clouds and other buffers to the screen.
 			void CompositeCloudsToScreen(crossplatform::DeviceContext &deviceContext
 												,float exposure
 												,float gamma
 												,bool depth_blend
-												,const void* mainDepthTexture
+												,crossplatform::Texture *mainDepthTexture
 												,const void* hiResDepthTexture
 												,const void* lowResDepthTexture
 												,const simul::sky::float4& viewportRegionXYWH
@@ -113,7 +105,7 @@ namespace simul
 			void RenderCompositingTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH);
 			void RenderLightning(crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex);
-			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
+			void SaveCubemapToFile(crossplatform::RenderPlatform *renderPlatform,const char *filename,float exposure,float gamma);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 			void SetExposure(float ex){exposure=ex;}
 

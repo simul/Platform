@@ -7,6 +7,7 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "D3dx11effect.h"
 using namespace simul;
 using namespace dx11;
 

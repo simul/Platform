@@ -84,7 +84,7 @@ namespace simul
 			virtual ~SimulGLWeatherRenderer();
 			void SetScreenSize(int view_id,int w,int h);
 			//! Call this when the device has been created
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void ReloadTextures();
 			void RecompileShaders();
 			//! Call this when the 3D device has been lost.
@@ -94,18 +94,10 @@ namespace simul
 											,bool is_cubemap
 											,float exposure
 											,bool buffered
-											,const void* mainDepthTexture
+											,crossplatform::Texture *mainDepthTexture
 											,const void* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite);
-			void RenderMixedResolution(	crossplatform::DeviceContext &deviceContext
-												,bool is_cubemap
-												,float exposure
-												,float gamma
-												,const void* mainDepthTextureMS	
-												,const void* hiResDepthTexture	
-												,const void* lowResDepthTexture 
-												,const sky::float4& depthViewportXYWH	);
 			//! Call this to draw the clouds
 			void RenderLateCloudLayer(crossplatform::DeviceContext &deviceContext
 				,float exposure,bool buf,const simul::sky::float4 &relativeViewportTextureRegionXYWH);

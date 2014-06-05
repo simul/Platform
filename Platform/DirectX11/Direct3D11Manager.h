@@ -12,12 +12,7 @@ namespace simul
 {
 	namespace dx11
 	{
-		struct Direct3DWindow
-		{
-			int view_id;			
-			Direct3DWindow():view_id(-1){}		
-		};
-		struct SIMUL_DIRECTX11_EXPORT Window:public Direct3DWindow
+		struct SIMUL_DIRECTX11_EXPORT Window
 		{
 			Window();
 			~Window();
@@ -28,6 +23,7 @@ namespace simul
 			void SetRenderer(Direct3D11CallbackInterface *ci);
 			HWND hwnd;
 			/// The id assigned by the renderer to correspond to this hwnd
+			int view_id;			
 			bool vsync;
 			IDXGISwapChain				*m_swapChain;
 			ID3D11RenderTargetView		*m_renderTargetView;

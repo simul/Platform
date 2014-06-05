@@ -15,6 +15,7 @@
 #include <string>
 #include <map>
 #include <assert.h>
+#include "D3dx11effect.h"
 using namespace std;
 using namespace simul;
 using namespace dx11;

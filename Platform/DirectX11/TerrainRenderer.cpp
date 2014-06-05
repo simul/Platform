@@ -21,6 +21,7 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Camera/Camera.h"
+#include "D3dx11effect.h"
 
 using namespace simul::dx11;
 

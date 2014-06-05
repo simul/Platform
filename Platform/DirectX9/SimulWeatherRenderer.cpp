@@ -24,6 +24,7 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/Environment.h"
 #include "Simul/Platform/DirectX9/SimulCloudRenderer.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX9/SimulLightningRenderer.h"
 #include "Simul/Platform/DirectX9/SimulPrecipitationRenderer.h"
 #include "Simul/Platform/DirectX9/Simul2DCloudRenderer.h"
@@ -251,9 +252,9 @@ void SimulWeatherRenderer::RecompileShaders()
 	bufferTexture				=m_pBufferToScreenEffect->GetParameterByName(NULL,"hdrTexture");
 }
 
-void SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
+void SimulWeatherRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform)
 {
-	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	m_pd3dDevice=(LPDIRECT3DDEVICE9)renderPlatform->GetDevice();
 	RecompileShaders();
 	CreateBuffers();
 	if(simulSkyRenderer)
@@ -261,7 +262,7 @@ void SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 	Restore3DCloudObjects();
 	Restore2DCloudObjects();
 	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);
+		simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
 	UpdateSkyAndCloudHookup();
 }
 
@@ -315,7 +316,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &devi
 											,bool is_cubemap
 											,float exposure
 											,bool buffered
-											,const void* mainDepthTexture
+											,crossplatform::Texture *mainDepthTexture
 											,const void* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite

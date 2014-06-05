@@ -16,7 +16,7 @@
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 #include "Simul/Graph/Meta/Group.h"
 
 #include "Simul/Clouds/BaseCloudRenderer.h"
@@ -25,7 +25,8 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/GpuCloudGenerator.h"
-
+struct ID3DX11EffectMatrixVariable;
+struct ID3DX11EffectShaderResourceVariable;
 namespace simul
 {
 	namespace crossplatform
@@ -137,20 +138,20 @@ namespace simul
 			StructuredBuffer<SmallLayerData>		layerBuffer;
 			ID3D11Buffer*							cloudPerViewConstantBuffer;
 			ID3D11Buffer*							layerConstantsBuffer;
-			ID3D1xEffectMatrixVariable* 			l_worldViewProj;
+			ID3DX11EffectMatrixVariable* 			l_worldViewProj;
 			
-			ID3D1xEffectShaderResourceVariable*		cloudDensity;
-			ID3D1xEffectShaderResourceVariable*		cloudDensity1;
-			ID3D1xEffectShaderResourceVariable*		cloudDensity2;
-			ID3D1xEffectShaderResourceVariable*		noiseTexture;
-			ID3D1xEffectShaderResourceVariable*		noiseTexture3D;
+			ID3DX11EffectShaderResourceVariable*		cloudDensity;
+			ID3DX11EffectShaderResourceVariable*		cloudDensity1;
+			ID3DX11EffectShaderResourceVariable*		cloudDensity2;
+			ID3DX11EffectShaderResourceVariable*		noiseTexture;
+			ID3DX11EffectShaderResourceVariable*		noiseTexture3D;
 
-			ID3D1xEffectShaderResourceVariable*		lightningIlluminationTexture;
-			ID3D1xEffectShaderResourceVariable*		skyLossTexture;
-			ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;
-			ID3D1xEffectShaderResourceVariable*		skylightTexture;
-			ID3D1xEffectShaderResourceVariable*		depthTexture;
-			ID3D1xEffectShaderResourceVariable*		lightTableTexture;
+			ID3DX11EffectShaderResourceVariable*		lightningIlluminationTexture;
+			ID3DX11EffectShaderResourceVariable*		skyLossTexture;
+			ID3DX11EffectShaderResourceVariable*		skyInscatterTexture;
+			ID3DX11EffectShaderResourceVariable*		skylightTexture;
+			ID3DX11EffectShaderResourceVariable*		depthTexture;
+			ID3DX11EffectShaderResourceVariable*		lightTableTexture;
 
 			dx11::Texture							cloud_textures[3];
 
@@ -172,20 +173,20 @@ namespace simul
 
 			simul::dx11::Texture					cloud_texture;
 			
-			ID3D1xBuffer*							computeConstantBuffer;
+			ID3D11Buffer*							computeConstantBuffer;
 			ID3D11ComputeShader*					m_pComputeShader;
 
-			ID3D1xTexture3D*						illumination_texture;
+			ID3D11Texture3D*						illumination_texture;
 			
 			D3D1x_MAPPED_TEXTURE3D					mapped_illumination;
 
 			ID3D11Texture2D*	noise_texture;
 			dx11::Texture		noise_texture_3D;
-			ID3D1xTexture1D*	lightning_texture;
-			ID3D1xTexture2D*	cloud_cubemap;
+			ID3D11Texture1D*	lightning_texture;
+			ID3D11Texture2D*	cloud_cubemap;
 			
-			ID3D1xBlendState*	blendAndWriteAlpha;
-			ID3D1xBlendState*	blendAndDontWriteAlpha;
+			ID3D11BlendState*	blendAndWriteAlpha;
+			ID3D11BlendState*	blendAndDontWriteAlpha;
 
 			bool UpdateIlluminationTexture(float dt);
 			float LookupLargeScaleTexture(float x,float y);

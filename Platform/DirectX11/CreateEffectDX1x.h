@@ -9,8 +9,7 @@
 // CreateEffect.h Create a DirectX .fx effect and report errors.
 #ifndef CREATEEFFECTDX1X_H
 #define CREATEEFFECTDX1X_H
-#include "D3dx11effect.h"
-#include <D3Dcompiler.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
@@ -146,10 +145,16 @@ inline void D3DXMatrixLookAtRH(D3DXMATRIX *m, D3DVECTOR *vEyePt,D3DVECTOR *vLook
 }
 
 #endif
+
 #include <map>
 #include "MacrosDX1x.h"
 #include "Export.h"
+
 struct VertexXyzRgba;
+struct ID3DX11Effect;
+struct ID3DX11EffectTechnique;
+struct ID3DX11EffectPass;
+
 namespace simul
 {
 	namespace crossplatform
@@ -231,6 +236,9 @@ extern SIMUL_DIRECTX11_EXPORT ID3D11ComputeShader *LoadComputeShader(ID3D11Devic
 //! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename.
 extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename);
 //! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename. In that case, the defines are ignored.
+#ifndef D3DCOMPILE_OPTIMIZATION_LEVEL3
+#define D3DCOMPILE_OPTIMIZATION_LEVEL3            (1 << 15)
+#endif
 extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines,unsigned int shader_flags=D3DCOMPILE_OPTIMIZATION_LEVEL3);
 extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8);
 extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines);

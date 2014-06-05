@@ -9,7 +9,6 @@
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
 
 namespace simul
 {

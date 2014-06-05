@@ -10,6 +10,7 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Camera/Camera.h"
+#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;
@@ -23,7 +24,8 @@ namespace simul
 
 
 RenderPlatform::RenderPlatform()
-	:effect(NULL)
+	:device(NULL)
+	,effect(NULL)
 	,reverseDepth(false)
 	,mirrorY(false)
 {

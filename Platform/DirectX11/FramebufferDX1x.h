@@ -4,7 +4,6 @@
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Texture.h"
@@ -64,7 +63,7 @@ namespace simul
 			{
 				return (ID3D11Texture2D*)buffer_texture.texture;
 			}
-			ID3D11Texture2D* GetDepthTexture()
+			ID3D11Texture2D* GetDepthTexture2D()
 			{
 				return (ID3D11Texture2D*)buffer_depth_texture.texture;
 			}
@@ -72,6 +71,14 @@ namespace simul
 			//! is at \em target, which is the address to copy the given chunk to, not the base address of the whole in-memory texture.
 			void CopyToMemory(void *context,void *target,int start_texel=0,int texels=0);
 			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
+			Texture *GetTexture()
+			{
+				return &buffer_texture;
+			}
+			Texture *GetDepthTexture()
+			{
+				return &buffer_depth_texture;
+			}
 		protected:
 			DXGI_FORMAT target_format;
 			DXGI_FORMAT depth_format;
@@ -79,7 +86,7 @@ namespace simul
 			ID3D11Device*						m_pd3dDevice;
 
 		public:
-			ID3D1xRenderTargetView*				m_pHDRRenderTarget;
+			//ID3D1xRenderTargetView*				m_pHDRRenderTarget;
 			ID3D1xDepthStencilView*				m_pBufferDepthSurface;
 		protected:
 			ID3D11Texture2D *stagingTexture;	// Only initialized if CopyToMemory is invoked.
@@ -91,13 +98,9 @@ namespace simul
 			//! The texture the scene is rendered to.
 		public:
 			dx11::Texture						buffer_texture;
-			//ID3D11Texture2D*					hdr_buffer_texture;
-			//ID3D11ShaderResourceView*			buffer_texture_SRV;
 		protected:
 			//! The depth buffer.
 			dx11::Texture						buffer_depth_texture;
-			//ID3D11Texture2D*					buffer_depth_texture;
-			//ID3D11ShaderResourceView*			buffer_depth_texture_SRV;
 
 			bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
 			bool CreateBuffers();

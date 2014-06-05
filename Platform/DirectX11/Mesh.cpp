@@ -2,11 +2,12 @@
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 #include "MacrosDX1x.h"
 #include "CreateEffectDX1x.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "D3dx11effect.h"
 using namespace simul;
 using namespace dx11;
 

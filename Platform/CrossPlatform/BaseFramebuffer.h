@@ -6,6 +6,7 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		class Texture;
 		//! A base class for API-dependent framebuffer classes.
 		SIMUL_CROSSPLATFORM_EXPORT_CLASS BaseFramebuffer
 		{
@@ -42,6 +43,8 @@ namespace simul
 			virtual void* GetColorTex()=0;
 			//! Get the API-dependent pointer or id for the depth buffer target.
 			virtual void* GetDepthTex()=0;
+			virtual Texture *GetTexture()=0;
+			virtual Texture *GetDepthTexture()=0;
 			//! Copy from the rt to the given target memory. If not starting at the top of the texture (start_texel>0), the first byte written
 			//! is at \em target, which is the address to copy the given chunk to, not the base address of the whole in-memory texture.
 			virtual void CopyToMemory(void *context,void *target,int start_texel=0,int texels=0)=0;

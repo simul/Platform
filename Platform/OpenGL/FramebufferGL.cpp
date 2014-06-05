@@ -20,16 +20,16 @@ FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageS
 	,m_target(target)
 	,m_samples(samples)
 	,m_coverageSamples(coverageSamples)
-	,m_tex_depth(0)
-	,m_rb_depth(0)
+//	,m_tex_depth(0)
+//	,m_rb_depth(0)
 	,m_fb(0)
 	,initialized(false)
 	,depth_iformat(0)
 	,colour_iformat(0)
 	,wrap_clamp(GL_CLAMP_TO_EDGE)
 {
-    for(int i = 0; i < num_col_buffers; i++)
-        m_tex_col[i] = 0;
+ //   for(int i = 0; i < num_col_buffers; i++)
+//        m_tex_col[i] = 0;
 	if(fb_stack.size()==0)
 		fb_stack.push((GLuint)0);
 }
@@ -45,9 +45,11 @@ void FramebufferGL::RestoreDeviceObjects(void*)
 
 void FramebufferGL::InvalidateDeviceObjects()
 {
-	SAFE_DELETE_TEXTURE(m_tex_col[0]);
-	SAFE_DELETE_TEXTURE(m_tex_depth);
-	SAFE_DELETE_RENDERBUFFER(m_rb_depth);
+	buffer_texture.InvalidateDeviceObjects();
+	buffer_depth_texture.InvalidateDeviceObjects();
+	//SAFE_DELETE_TEXTURE(m_tex_col[0]);
+	//SAFE_DELETE_TEXTURE(m_tex_depth);
+	//SAFE_DELETE_RENDERBUFFER(m_rb_depth);
 	SAFE_DELETE_FRAMEBUFFER(m_fb);
 }
 
@@ -102,20 +104,20 @@ GL_ERROR_CHECK
 	{
 		glGenFramebuffers(1, &m_fb);
 	}
-	SAFE_DELETE_TEXTURE(m_tex_col[0]);
-	SAFE_DELETE_TEXTURE(m_tex_depth);
+	buffer_texture.InvalidateDeviceObjects();//SAFE_DELETE_TEXTURE(m_tex_col[0]);
+	buffer_depth_texture.InvalidateDeviceObjects();//SAFE_DELETE_TEXTURE(m_tex_depth);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
 	if(colour_iformat)
 	{
-		glGenTextures(1, &m_tex_col[0]);
-		glBindTexture(GL_TEXTURE_2D, m_tex_col[0]);
+		glGenTextures(1, &buffer_texture.pTextureObject);//m_tex_col[0]);
+		glBindTexture(GL_TEXTURE_2D, buffer_texture.pTextureObject);//m_tex_col[0]);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap_clamp);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap_clamp);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D,0, colour_iformat, Width, Height,0,GL_RGBA, GL_UNSIGNED_INT, NULL);
-		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_tex_col[0], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffer_texture.pTextureObject, 0);
 		
 		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(status!=GL_FRAMEBUFFER_COMPLETE)
@@ -123,8 +125,8 @@ GL_ERROR_CHECK
 	}
 	if(depth_iformat)
 	{
-		glGenTextures(1, &m_tex_depth);
-		glBindTexture(GL_TEXTURE_2D, m_tex_depth);
+		glGenTextures(1, &buffer_depth_texture.pTextureObject);
+		glBindTexture(GL_TEXTURE_2D, buffer_depth_texture.pTextureObject);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_clamp);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_clamp);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -134,7 +136,7 @@ GL_ERROR_CHECK
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 		glTexImage2D(GL_TEXTURE_2D, 0, depth_iformat, Width, Height, 0,GL_DEPTH_COMPONENT,GL_UNSIGNED_INT, NULL);
 
-		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,m_tex_depth,0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,buffer_depth_texture.pTextureObject,0);
 		
 		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(status!=GL_FRAMEBUFFER_COMPLETE)

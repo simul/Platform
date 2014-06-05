@@ -1,5 +1,6 @@
 #include "CubemapFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "D3dx11effect.h"
 #include <assert.h>
 const int MIPLEVELS=1;
 

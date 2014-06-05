@@ -12,7 +12,7 @@
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
@@ -20,6 +20,7 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 typedef long HRESULT;
+struct ID3DX11EffectShaderResourceVariable;
 namespace simul
 {
 	namespace sky
@@ -68,15 +69,15 @@ namespace simul
 
 			ID3DX11EffectTechnique*						godraysTechnique;
 			// Variables for this effect:
-			ID3D1xEffectShaderResourceVariable*			depthTexture;
-			ID3D1xEffectShaderResourceVariable*			cloudDepthTexture;
-			ID3D1xEffectShaderResourceVariable*			lossTexture;
-			ID3D1xEffectShaderResourceVariable*			inscTexture;
-			ID3D1xEffectShaderResourceVariable*			skylTexture;
-			ID3D1xEffectShaderResourceVariable*			illuminationTexture;
-			ID3D1xEffectShaderResourceVariable*			overcTexture;
-			ID3D1xEffectShaderResourceVariable*			cloudShadowTexture;
-			ID3D1xEffectShaderResourceVariable*				cloudGodraysTexture;
+			ID3DX11EffectShaderResourceVariable*			depthTexture;
+			ID3DX11EffectShaderResourceVariable*			cloudDepthTexture;
+			ID3DX11EffectShaderResourceVariable*			lossTexture;
+			ID3DX11EffectShaderResourceVariable*			inscTexture;
+			ID3DX11EffectShaderResourceVariable*			skylTexture;
+			ID3DX11EffectShaderResourceVariable*			illuminationTexture;
+			ID3DX11EffectShaderResourceVariable*			overcTexture;
+			ID3DX11EffectShaderResourceVariable*			cloudShadowTexture;
+			ID3DX11EffectShaderResourceVariable*				cloudGodraysTexture;
 
 			ID3D11ShaderResourceView*					skyLossTexture_SRV;
 			ID3D11ShaderResourceView*					skyInscatterTexture_SRV;

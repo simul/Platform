@@ -24,6 +24,7 @@
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;

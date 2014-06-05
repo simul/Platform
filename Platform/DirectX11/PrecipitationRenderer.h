@@ -11,7 +11,7 @@
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 typedef long HRESULT;
 #include <vector>
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
@@ -24,7 +24,7 @@ typedef long HRESULT;
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Math/Matrix4x4.h"
 typedef long HRESULT;
-
+struct ID3DX11EffectShaderResourceVariable;
 namespace simul
 {
 	namespace dx11
@@ -67,7 +67,7 @@ namespace simul
 			ID3D11ShaderResourceView*				rain_texture;
 			ID3D11ShaderResourceView*				randomTexture3D;
 			ID3D11ShaderResourceView*				cubemap_SRV;
-			ID3D1xEffectShaderResourceVariable*		rainTexture;
+			ID3DX11EffectShaderResourceVariable*		rainTexture;
 			vec3  *particles;
 			
 			ID3DX11EffectTechnique*						m_hTechniqueRain;

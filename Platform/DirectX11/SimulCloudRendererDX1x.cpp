@@ -39,8 +39,7 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
-
-extern simul::dx11::RenderPlatform renderPlatformDx11;
+#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;
@@ -873,10 +872,10 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::Devic
 	UtilityRenderer::DrawQuad2(pContext	,width-(w+8)-(w+8),height-(w+8),w,w,effect,effect->GetTechniqueByName("show_shadow"));
 	deviceContext.renderPlatform->Print(deviceContext,width-(w+8)-(w+8),height-(w+8)	,"shadow texture");
 
-	renderPlatformDx11.DrawTexture(pContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,godrays_texture.shaderResourceView);
+	deviceContext.renderPlatform->DrawTexture(pContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,godrays_texture.shaderResourceView);
 	deviceContext.renderPlatform->Print(deviceContext,width-2*w,height-(w+8)-w/2	,"godrays framebuffer");
 
-	renderPlatformDx11.DrawTexture(pContext	,width-2*w,height-(w+8)-w	,w*2,w/2	,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex());
+	deviceContext.renderPlatform->DrawTexture(pContext	,width-2*w,height-(w+8)-w	,w*2,w/2	,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex());
 	deviceContext.renderPlatform->Print(deviceContext,width-2*w,height-(w+8)-w	,"moisture framebuffer");
 
 	simul::dx11::setTexture(effect,"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);

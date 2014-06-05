@@ -17,7 +17,7 @@
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Sky/SkyInterface.h"
-extern simul::dx11::RenderPlatform renderPlatformDx11;
+#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;
@@ -57,7 +57,7 @@ void PrecipitationRenderer::RecompileShaders()
 	make_rain_fb.Activate(pImmediateContext);
 	simul::dx11::UtilityRenderer::DrawQuad(pImmediateContext);
 	make_rain_fb.Deactivate(pImmediateContext);
-	rain_texture=make_rain_fb.buffer_texture_SRV;
+	rain_texture=make_rain_fb.buffer_texture.shaderResourceView;
 	// Make sure it isn't destroyed when the fb goes out of scope:
 	rain_texture->AddRef();
 	view_initialized=false;
@@ -406,6 +406,6 @@ void PrecipitationRenderer::RenderTextures(crossplatform::DeviceContext &deviceC
 		w/=2;
 		h/=2;
 	}
-	renderPlatformDx11.DrawTexture(pContext	,x0,y0	,w,h,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex(),1.f);
-	renderPlatformDx11.Print(deviceContext	,x0,y0	,"Moisture");
+	deviceContext.renderPlatform->DrawTexture(pContext	,x0,y0	,w,h,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex(),1.f);
+	deviceContext.renderPlatform->Print(deviceContext	,x0,y0	,"Moisture");
 }

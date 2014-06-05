@@ -5,6 +5,7 @@
 #include "stdint.h" // for uintptr_t
 #include "LoadGLImage.h"
 #include "Simul/Platform/OpenGL/Export.h"
+#include "Simul/Platform/OpenGL/Texture.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 
 #ifdef _MSC_VER
@@ -62,11 +63,11 @@ public:
 	// Get the internal texture object IDs.
 	void* GetColorTex()
 	{
-		return (void*) (uintptr_t)m_tex_col[0];
+		return (void*) (uintptr_t)buffer_texture.pTextureObject;//m_tex_col[0];
 	}
 	void* GetDepthTex()
 	{
-		return (void*)(uintptr_t)m_tex_depth;
+		return (void*)(uintptr_t)buffer_depth_texture.pTextureObject;//m_tex_depth;
 	}
 	// Get the target texture format (texture2d or texture_rectangle)
 	inline GLenum GetTarget()
@@ -78,13 +79,21 @@ public:
 		return m_fb;
 	}
 	void CopyToMemory(void *context,void *target,int start_texel,int num_texels);
+	simul::crossplatform::Texture *GetTexture()
+	{
+		return &buffer_texture;
+	}
+	simul::crossplatform::Texture *GetDepthTexture()
+	{
+		return &buffer_depth_texture;
+	}
 private:
 	static std::stack<GLuint> fb_stack;
 	void CheckFramebufferStatus();
 	// Bind the internal textures
 	void BindColor()
 	{
-		glBindTexture(m_target, m_tex_col[0]);
+		glBindTexture(m_target, buffer_texture.pTextureObject);//m_tex_col[0]);
 	}
 	inline void Bind()
 	{
@@ -94,7 +103,7 @@ private:
 	// from the pbuffer implementation.
 	void BindDepth()
 	{
-		glBindTexture(m_target, m_tex_depth);
+		glBindTexture(m_target,buffer_depth_texture.pTextureObject);// m_tex_depth);
 	}
 	void Release()
 	{
@@ -106,11 +115,17 @@ private:
 	int m_samples; // 0 if not multisampled
 	int m_coverageSamples; // for CSAA
 	GLuint m_fb;
-	GLuint m_tex_col[num_col_buffers];//, m_rb_col[num_col_buffers];
-	GLuint m_tex_depth, m_rb_depth;
+	//GLuint m_tex_col[num_col_buffers];//, m_rb_col[num_col_buffers];
+	//GLuint m_tex_depth;
+	//GLuint m_rb_depth;
 	GLenum colour_iformat,depth_iformat;
 	bool initialized;
 	GLint wrap_clamp;
+public:
+	simul::opengl::Texture						buffer_texture;
+protected:
+	//! The depth buffer.
+	simul::opengl::Texture						buffer_depth_texture;
 };
 
 #ifdef _MSC_VER

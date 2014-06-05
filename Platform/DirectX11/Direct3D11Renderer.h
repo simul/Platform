@@ -16,6 +16,7 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/DirectX11/View.h"
 #include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
@@ -134,6 +135,7 @@ namespace simul
 			void SetViewType(int view_id,ViewType vt);
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
 			void SaveScreenshot(const char *filename_utf8);
+			simul::dx11::RenderPlatform renderPlatformDx11;
 		protected:
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int view_id,int x0,int y0,int w,int h);
 			// Encompasses drawing the actual scene and putting the hdr buffer to screen.

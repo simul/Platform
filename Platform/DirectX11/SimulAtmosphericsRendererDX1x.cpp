@@ -29,6 +29,7 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
+#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;

@@ -10,8 +10,16 @@ using namespace dx11;
 
 dx11::Texture::Texture(ID3D11Device* d)
 	:device(d)
-//	,texture(NULL)
+	,texture(NULL)
 	,shaderResourceView(NULL)
+	,unorderedAccessView(NULL)
+	, unorderedAccessViewMips(NULL)
+	,renderTargetView(NULL)
+	,stagingBuffer(NULL)
+	,last_context(NULL)
+	,m_pOldRenderTarget(NULL)
+	,m_pOldDepthSurface(NULL)
+
 {
 }
 
@@ -195,6 +203,12 @@ void dx11::Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 	SAFE_RELEASE(shaderResourceView);
 	pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView);
 	SAFE_RELEASE(stagingBuffer);
+}
+
+void dx11::Texture::InitFromExternalSRV(ID3D11ShaderResourceView *srv)
+{
+	shaderResourceView=srv;
+	shaderResourceView->AddRef();
 }
 
 void dx11::Texture::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable,int mips)

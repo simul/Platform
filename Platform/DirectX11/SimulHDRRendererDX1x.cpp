@@ -29,6 +29,7 @@
 #include "MacrosDX1x.h"
 #include "Utilities.h"
 #include "Simul/Math/Pi.h"
+#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;

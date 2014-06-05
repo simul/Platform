@@ -11,7 +11,7 @@
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)

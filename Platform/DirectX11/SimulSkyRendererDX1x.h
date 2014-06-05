@@ -16,14 +16,14 @@
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
-
+struct ID3DX11EffectShaderResourceVariable;
 namespace simul
 {
 	namespace sky
@@ -117,13 +117,13 @@ protected:
 	ID3DX11EffectTechnique*				m_hTechniquePlanet;
 	ID3DX11EffectTechnique*				m_hTechniquePointStars;
 
-			ID3DX11EffectTechnique*				m_TechniqueLightTableInterp;
-	ID3D1xEffectShaderResourceVariable*	flareTexture;
-	ID3D1xEffectShaderResourceVariable*	inscTexture;
-	ID3D1xEffectShaderResourceVariable*	skylTexture;
-	ID3D1xEffectShaderResourceVariable*	fadeTexture1;
-	ID3D1xEffectShaderResourceVariable*	fadeTexture2;
-	ID3D1xEffectShaderResourceVariable*	illuminationTexture;
+	ID3DX11EffectTechnique*				m_TechniqueLightTableInterp;
+	ID3DX11EffectShaderResourceVariable*	flareTexture;
+	ID3DX11EffectShaderResourceVariable*	inscTexture;
+	ID3DX11EffectShaderResourceVariable*	skylTexture;
+	ID3DX11EffectShaderResourceVariable*	fadeTexture1;
+	ID3DX11EffectShaderResourceVariable*	fadeTexture2;
+	ID3DX11EffectShaderResourceVariable*	illuminationTexture;
 	
 	ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
 	ConstantBuffer<SkyConstants>		skyConstants;

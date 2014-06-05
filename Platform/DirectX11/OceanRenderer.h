@@ -1,7 +1,7 @@
 #ifndef SIMUL_OCEAN_RENDERER_DX1X_H
 #define SIMUL_OCEAN_RENDERER_DX1X_H
 
-#include "D3dx11effect.h"
+
 #include "OceanSimulator.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"

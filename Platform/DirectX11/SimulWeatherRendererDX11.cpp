@@ -37,7 +37,7 @@
 #include "Simul/Platform/DirectX11/Effect.h"
 #include "MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
-extern simul::dx11::RenderPlatform renderPlatformDx11;
+#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;
@@ -150,13 +150,13 @@ void SimulWeatherRendererDX11::SetScreenSize(int view_id,int w,int h)
 	fb->SetDimensions(w,h,Downscale);
 }
 
-void SimulWeatherRendererDX11::RestoreDeviceObjects(void* dev)
+void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D11Device*)dev;
+	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	for(FramebufferMapDx11::iterator i=framebuffersDx11.begin();i!=framebuffersDx11.end();i++)
 		i->second->RestoreDeviceObjects(m_pd3dDevice);
-	hdrConstants.RestoreDeviceObjects(&renderPlatformDx11);
+	hdrConstants.RestoreDeviceObjects(renderPlatform);
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
@@ -253,7 +253,7 @@ SimulWeatherRendererDX11::~SimulWeatherRendererDX11()
 	del(simulLightningRenderer,memoryInterface);
 }
 
-void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float exposure,float gamma)
+void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,float exposure,float gamma)
 {
 	std::wstring filenamew=simul::base::Utf8ToWString(filename_utf8);
 	ID3D11DeviceContext* m_pImmediateContext=NULL;
@@ -305,7 +305,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	
 			crossplatform::DeviceContext deviceContext;
 			deviceContext.platform_context	=m_pImmediateContext;
-			deviceContext.renderPlatform	=&renderPlatformDx11;
+			deviceContext.renderPlatform	=renderPlatform;
 			deviceContext.viewStruct.view_id=0;
 			deviceContext.viewStruct.proj	=(const float*)&cube_proj;
 			deviceContext.viewStruct.view	=(const float*)&view_matrices[i];
@@ -319,7 +319,8 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 				hdrConstants.gamma=gamma;
 				hdrConstants.exposure=exposure;
 				hdrConstants.Apply(deviceContext);
-				ApplyPass(m_pImmediateContext,((ID3DX11EffectTechnique*)tech->platform_technique)->GetPassByIndex(0));
+				deviceContext.renderPlatform->ApplyShaderPass(deviceContext,effect,tech,0);
+				//ApplyPass(m_pImmediateContext,((ID3DX11EffectTechnique*)tech->platform_technique)->GetPassByIndex(0));
 				simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
 			}
 		}
@@ -349,7 +350,7 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(crossplatform::DeviceContext &
 											,bool is_cubemap
 											,float exposure
 											,bool buffered
-											,const void* hiResDepthTexture			// x=far, y=near, z=edge
+											,crossplatform::Texture *hiResDepthTexture			// x=far, y=near, z=edge
 											,const void* lowResDepthTexture			// x=far, y=near, z=edge
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite
@@ -387,7 +388,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(crossplatform::DeviceCont
 												,float exposure
 												,float gamma
 												,bool depth_blend
-												,const void* mainDepthTexture
+												,crossplatform::Texture *mainDepthTexture
 												,const void* hiResDepthTexture
 												,const void* lowResDepthTexture
 												,const simul::sky::float4& depthViewportXYWH
@@ -396,8 +397,8 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(crossplatform::DeviceCont
 	TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.platform_context;
 	ID3DX11Effect *e=(ID3DX11Effect*)effect->platform_effect;
-	dx11::setTexture(e,"imageTexture",fb->lowResFarFramebufferDx11.buffer_texture_SRV);
-	ID3D11ShaderResourceView *mainDepth_SRV=(ID3D11ShaderResourceView*)mainDepthTexture;
+	dx11::setTexture(e,"imageTexture",fb->lowResFarFramebufferDx11.buffer_texture.shaderResourceView);
+	ID3D11ShaderResourceView *mainDepth_SRV=(ID3D11ShaderResourceView*)mainDepthTexture->AsVoidPointer();
 	bool msaa=false;
 	if(mainDepth_SRV)
 	{
@@ -415,7 +416,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(crossplatform::DeviceCont
 	// The low res depth texture contains the total near and far depths in its x and y.
 	dx11::setTexture(e,"hiResDepthTexture"		,(ID3D11ShaderResourceView*)hiResDepthTexture);
 	dx11::setTexture(e,"lowResDepthTexture"		,(ID3D11ShaderResourceView*)lowResDepthTexture);
-	dx11::setTexture(e,"nearImageTexture"		,(ID3D11ShaderResourceView*)fb->lowResNearFramebufferDx11.buffer_texture_SRV);
+	dx11::setTexture(e,"nearImageTexture"		,(ID3D11ShaderResourceView*)fb->lowResNearFramebufferDx11.buffer_texture.shaderResourceView);
 	dx11::setTexture(e,"inscatterTexture"		,(ID3D11ShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
 	dx11::setTexture(e,"nearInscatterTexture"	,(ID3D11ShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
 

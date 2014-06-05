@@ -7,6 +7,7 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
+#include "D3dx11effect.h"
 #include <math.h>
 
 using namespace simul;

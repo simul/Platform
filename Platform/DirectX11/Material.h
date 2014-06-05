@@ -1,10 +1,10 @@
 #pragma once
 
 #include <map>
-#include "D3dx11effect.h"
+
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/Material.h"
-
+struct ID3DX11Effect;
 namespace simul
 {
 	namespace dx11
