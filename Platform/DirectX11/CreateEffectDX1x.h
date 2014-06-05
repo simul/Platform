@@ -136,14 +136,6 @@ inline D3DXMATRIX* D3DXMatrixPerspectiveFovRH( D3DXMATRIX *pOut, FLOAT fovy, FLO
 	DirectX::XMStoreFloat4x4(pOut,M);
 	return pOut;
 }
-inline void D3DXMatrixLookAtLH(D3DXMATRIX *m, D3DVECTOR *vEyePt,D3DVECTOR *vLookAt, D3DVECTOR *vUpDir )
-{
-	DirectX::XMVECTOR e=DirectX::XMLoadFloat3(&DirectX::XMFLOAT3((const float*)vEyePt));
-	DirectX::XMVECTOR l=DirectX::XMLoadFloat3(&DirectX::XMFLOAT3((const float*)vLookAt));
-	DirectX::XMVECTOR u=DirectX::XMLoadFloat3(&DirectX::XMFLOAT3((const float*)vUpDir));
-	DirectX::XMMATRIX M=DirectX::XMMatrixLookAtLH(e,l,u);
-	DirectX::XMStoreFloat4x4(m,M);
-}
 inline void D3DXMatrixLookAtRH(D3DXMATRIX *m, D3DVECTOR *vEyePt,D3DVECTOR *vLookAt, D3DVECTOR *vUpDir )
 {
 	DirectX::XMVECTOR e=DirectX::XMLoadFloat3(&DirectX::XMFLOAT3((const float*)vEyePt));

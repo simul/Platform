@@ -3,8 +3,9 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#ifndef _XBOX_ONE
 #include <dxgi.h>
-
+#endif
 using namespace simul;
 using namespace dx11;
 
@@ -116,13 +117,14 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 
 	// Get the pointer to the back buffer.
 	HRESULT result;
+#ifndef _XBOX_ONE
 	IDXGIFactory* factory;
 	result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
 	SIMUL_ASSERT(result==S_OK);
 	factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain);
 //	SetDebugObjectName(m_swapChain,"Window SwapChain");
 	SAFE_RELEASE(factory);
-
+#endif
 	CreateRenderTarget(d3dDevice);
 	CreateDepthBuffer(d3dDevice);
 	//With that created we can now call OMSetRenderTargets.
@@ -335,10 +337,10 @@ void Direct3D11Manager::Initialize()
 
 	// Store the vsync setting.
 	m_vsync_enabled = false;
+#ifndef _XBOX_ONE
 	// Create a DirectX graphics interface factory.
 	result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
 	SIMUL_ASSERT(result==S_OK);
-
 	// Use the factory to create an adapter for the primary graphics interface (video card).
 	SAFE_RELEASE(adapter);
 	result = factory->EnumAdapters(0, &adapter);
@@ -373,6 +375,7 @@ void Direct3D11Manager::Initialize()
 
 	// Release the factory.
 	SAFE_RELEASE(factory);
+#endif
 	
 	std::cout<<"3"<<std::endl;
 	//After setting up the swap chain description we also need to setup one more variable called the feature level.
@@ -474,14 +477,15 @@ int Direct3D11Manager::GetNumOutputs()
 Output Direct3D11Manager::GetOutput(int i)
 {
 	unsigned numModes;
+	Output o;
 	IDXGIOutput *output=outputs[i];
+#ifndef _XBOX_ONE
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
 	HRESULT result = output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	SIMUL_ASSERT(result==S_OK);
 
 	DXGI_OUTPUT_DESC outputDesc;
 	output->GetDesc(&outputDesc);
-	Output o;
 	o.width		=abs(outputDesc.DesktopCoordinates.right-outputDesc.DesktopCoordinates.left);
 	o.height	=abs(outputDesc.DesktopCoordinates.top-outputDesc.DesktopCoordinates.bottom);
 
@@ -535,6 +539,7 @@ Output Direct3D11Manager::GetOutput(int i)
 	// Release the display mode list.
 	delete [] displayModeList;
 	displayModeList = 0;
+#endif
 	return o;
 }
 void Direct3D11Manager::Shutdown()
@@ -558,13 +563,17 @@ void Direct3D11Manager::Shutdown()
 		d3dDeviceContext->Flush();
 	}
 	SAFE_RELEASE(d3dDeviceContext);
+#ifndef _XBOX_ONE
 	if(d3dDebug)
 	{
 		d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 	}
+#endif
 	ReportMessageFilterState();
 	SAFE_RELEASE(d3dInfoQueue);
+#ifndef _XBOX_ONE
 	SAFE_RELEASE(d3dDebug);
+#endif
 	// Finally, we can destroy the device.
 	if(d3dDevice)
 	{

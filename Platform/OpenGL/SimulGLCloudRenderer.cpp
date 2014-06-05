@@ -912,10 +912,10 @@ void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &dev
 		cloudConstants.crossSectionOffset	=vec3(0.5f,0.5f,0.f);
 		cloudConstants.yz					=0.f;
 		cloudConstants.Apply();
-		deviceContext.renderPlatform->DrawQuad(deviceContext.platform_context,x0+i*(w+1)+4,y0+4,w,h,NULL,(void*)cross_section_program);
+		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+4,w,h,NULL,(void*)cross_section_program);
 		cloudConstants.yz					=1.f;
 		cloudConstants.Apply();
-		deviceContext.renderPlatform->DrawQuad(deviceContext.platform_context,x0+i*(w+1)+4,y0+h+8,w,w,NULL,(void*)cross_section_program);
+		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+h+8,w,w,NULL,(void*)cross_section_program);
 	}
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);

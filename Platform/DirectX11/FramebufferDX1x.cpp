@@ -31,10 +31,7 @@ using namespace dx11;
 Framebuffer::Framebuffer(int w,int h) :
 	BaseFramebuffer(w,h)
 	,m_pd3dDevice(NULL),
-	hdr_buffer_texture(NULL),
 	buffer_depth_texture(NULL),
-	buffer_texture_SRV(NULL),
-	buffer_depth_texture_SRV(NULL),
 	m_pHDRRenderTarget(NULL),
 	m_pBufferDepthSurface(NULL),
 	m_pOldRenderTarget(NULL),
@@ -97,12 +94,6 @@ void Framebuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pHDRRenderTarget)
 	SAFE_RELEASE(m_pBufferDepthSurface)
 
-	SAFE_RELEASE(hdr_buffer_texture);
-	SAFE_RELEASE(buffer_texture_SRV);
-
-	SAFE_RELEASE(buffer_depth_texture);
-	SAFE_RELEASE(buffer_depth_texture_SRV);
-
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 	SAFE_RELEASE(stagingTexture);
@@ -159,12 +150,12 @@ bool Framebuffer::CreateBuffers()
 	if(!m_pd3dDevice)
 		return false;
 	HRESULT hr=S_OK;
-	SAFE_RELEASE(hdr_buffer_texture);
+	buffer_texture.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pHDRRenderTarget)
-	SAFE_RELEASE(buffer_texture_SRV);
-	SAFE_RELEASE(buffer_depth_texture);
+	buffer_texture.InvalidateDeviceObjects();
+	buffer_depth_texture.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pBufferDepthSurface)
-	SAFE_RELEASE(buffer_depth_texture_SRV);
+	buffer_depth_texture.InvalidateDeviceObjects();
 	SAFE_RELEASE(stagingTexture);
 	D3D11_TEXTURE2D_DESC desc=
 	{
@@ -196,10 +187,10 @@ bool Framebuffer::CreateBuffers()
 		};
 		desc.SampleDesc.Count	=numAntialiasingSamples;
 		desc.SampleDesc.Quality	=quality;//numQualityLevels-1;
-
-		V_CHECK(m_pd3dDevice->CreateTexture2D(	&desc,
-												NULL,
-												&hdr_buffer_texture	))
+		buffer_texture.ensureTexture2DSizeAndFormat(m_pd3dDevice,Width,Height,target_format,false,true,numAntialiasingSamples,quality);
+	//	V_CHECK(m_pd3dDevice->CreateTexture2D(	&desc,
+	//											NULL,
+	//											&hdr_buffer_texture	))
 												
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 		renderTargetViewDesc.Format				=target_format;

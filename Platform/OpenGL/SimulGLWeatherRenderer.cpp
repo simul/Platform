@@ -224,6 +224,7 @@ GL_ERROR_CHECK
 		i->second->InvalidateDeviceObjects();
 	}
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
+	BaseWeatherRenderer::InvalidateDeviceObjects();
 }
 
 void SimulGLWeatherRenderer::ReloadTextures()

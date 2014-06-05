@@ -257,7 +257,7 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 	}
 }
 
-void dx11::Texture::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable,bool rendertarget)
+void dx11::Texture::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable,bool rendertarget,int num_samples,int aa_quality)
 {
 	D3D11_TEXTURE2D_DESC textureDesc;
 	bool ok=true;
@@ -292,13 +292,14 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		textureDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0);
 		textureDesc.CPUAccessFlags		=(computable||rendertarget)?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags			=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
-		textureDesc.SampleDesc.Count	= 1;
+		textureDesc.SampleDesc.Count	=num_samples;
+		textureDesc.SampleDesc.Quality	=aa_quality;
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 		srv_desc.Format						= f;
-		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
+		srv_desc.ViewDimension				= num_samples>1?D3D11_SRV_DIMENSION_TEXTURE2DMS:D3D11_SRV_DIMENSION_TEXTURE2D;
 		srv_desc.Texture2D.MipLevels		= 1;
 		srv_desc.Texture2D.MostDetailedMip	= 0;
 		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
@@ -321,7 +322,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		// Setup the description of the render target view.
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 		renderTargetViewDesc.Format				=f;
-		renderTargetViewDesc.ViewDimension		=D3D11_RTV_DIMENSION_TEXTURE2D;
+		renderTargetViewDesc.ViewDimension		=num_samples>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 		// Create the render target in DX11:
 		SAFE_RELEASE(renderTargetView);

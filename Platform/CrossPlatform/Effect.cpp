@@ -1,13 +1,8 @@
-#include "Effect.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include <iostream>
 
 using namespace simul;
 using namespace crossplatform;
-
-EffectTechnique::EffectTechnique()
-	:platform_technique(NULL)
-{
-}
 
 Effect::Effect()
 	:platform_effect(NULL)
@@ -16,6 +11,6 @@ Effect::Effect()
 
 Effect::~Effect()
 {
-	std::cout<<"~Effect"<<std::endl;
+	std::cout<<"~texture"<<std::endl;
 }
 

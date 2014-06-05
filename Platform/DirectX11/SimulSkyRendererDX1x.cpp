@@ -11,7 +11,7 @@
 #define NOMINMAX
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <dxerr.h>
 #endif
@@ -836,7 +836,7 @@ bool SimulSkyRendererDX1x::RenderFades(crossplatform::DeviceContext &deviceConte
 	float alt_km=cam_pos.z/1000.f;
 	skyConstants.colour=skyKeyframer->GetLocalSunIrradiance(time_now,alt_km);
 	skyConstants.Apply(deviceContext);
-	deviceContext.renderPlatform->DrawQuad(context,x0,y+3*size+4,size,s,m_pSkyEffect,techniqueColour);
+	deviceContext.renderPlatform->DrawQuad(deviceContext,x0,y+3*size+4,size,s,m_pSkyEffect,techniqueColour);
 	return true;
 }
 

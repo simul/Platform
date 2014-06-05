@@ -24,7 +24,7 @@ namespace simul
 			void RecompileShaders();
 			// Rendering routines
 			//! Call this once per frame to set the matrices.
-			void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
+			void SetMatrices(const float *v,const float *p);
 			void Render(void *context,float exposure);
 			void RenderWireframe(void *context);
 			void Update(float dt);

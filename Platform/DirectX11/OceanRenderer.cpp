@@ -472,10 +472,12 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-void OceanRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void OceanRenderer::SetMatrices(const float *v,const float *p)
 {
+#ifndef _XBOX_ONE
 	view=v;
 	proj=p;
+#endif
 }
 
 void OceanRenderer::Render(void *context,float exposure)

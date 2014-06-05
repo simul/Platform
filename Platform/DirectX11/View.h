@@ -1,5 +1,5 @@
 #pragma once
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Export.h"

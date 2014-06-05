@@ -50,19 +50,28 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 #endif
 
 #ifndef SIMUL_WIN8_SDK
-#pragma comment(lib,"d3dx9.lib")
-#pragma comment(lib,"d3d9.lib")
-#pragma comment(lib,"d3dx11.lib")
-#pragma comment(lib,"dxerr.lib")
-#pragma comment(lib,"Effects11_DXSDK.lib")
+	#pragma comment(lib,"d3dx9.lib")
+	#pragma comment(lib,"d3d9.lib")
+	#pragma comment(lib,"d3dx11.lib")
+	#pragma comment(lib,"dxerr.lib")
+	#pragma comment(lib,"Effects11_DXSDK.lib")
 #else
-#pragma comment(lib,"Effects11_Win8SDK.lib")
-#pragma comment(lib,"directxtex.lib")
+	#ifndef _XBOX_ONE
+		#pragma comment(lib,"Effects11_Win8SDK.lib")
+	#else
+		#pragma comment(lib,"Effects11.lib")
+	#endif
+	#pragma comment(lib,"directxtex.lib")
 #endif
-#pragma comment(lib,"dxgi.lib")
-#pragma comment(lib,"d3d11.lib")
-#pragma comment(lib,"dxguid.lib")
-#pragma comment(lib,"d3dcompiler.lib")
+#ifdef _XBOX_ONE
+	#pragma comment(lib,"d3d11_x.lib")
+	//#pragma comment(lib,"d3dcompiler_x.lib")
+#else
+	#pragma comment(lib,"dxgi.lib")
+	#pragma comment(lib,"d3d11.lib")
+	#pragma comment(lib,"dxguid.lib")
+	#pragma comment(lib,"d3dcompiler.lib")
+#endif
 
 // winmm.lib comctl32.lib
 static bool pipe_compiler_output=false;
@@ -441,7 +450,7 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 	}
 }
 
-void simul::dx11::setDepthState(ID3DX11Effect *effect,const char *name	,ID3D11DepthStencilState * value)
+void simul::dx11::setDepthState(ID3DX11Effect *effect,const char *name		,ID3D11DepthStencilState * value)
 {
 	ID3DX11EffectDepthStencilVariable*	var	=effect->GetVariableByName(name)->AsDepthStencil();
 	var->SetDepthStencilState(0,value);
@@ -453,7 +462,7 @@ void simul::dx11::setSamplerState(ID3DX11Effect *effect,const char *name	,ID3D11
 	var->SetSampler(0,value);
 }
 
-void simul::dx11::setTexture(ID3DX11Effect *effect,const char *name	,ID3D11ShaderResourceView * value)
+void simul::dx11::setTexture(ID3DX11Effect *effect,const char *name			,ID3D11ShaderResourceView * value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
 	SIMUL_ASSERT(var->IsValid()!=0);
@@ -595,7 +604,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *binary_filename_
 	return hr;
 }
 
-HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 ERRNO_CHECK
 	HRESULT hr=S_OK;
@@ -784,12 +793,12 @@ HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *
 		throw simul::base::RuntimeError(std::string("Shader not found: ")+filenameUtf8);
 		return S_FALSE;
 	}
-	D3D10_SHADER_MACRO *macros=NULL;
+	D3D_SHADER_MACRO *macros=NULL;
 	{
 		size_t num_defines=defines.size();
 		if(num_defines)
 		{
-			macros=new D3D10_SHADER_MACRO[num_defines+1];
+			macros=new D3D_SHADER_MACRO[num_defines+1];
 			macros[num_defines].Definition=0;
 			macros[num_defines].Name=0;
 		}
@@ -974,7 +983,6 @@ void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 		vLookAt.y+=lookf[i].y;
 		vLookAt.z+=lookf[i].z;
 		vUpDir		=upf[i];
-		//D3DXMatrixLookAtLH(&mat[i], &vEyePt,&vLookAt, &vUpDir );
 		if(true)
 		{
 			vLookAt		=vEyePt+lookr[i];

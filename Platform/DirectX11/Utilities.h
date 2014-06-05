@@ -2,7 +2,11 @@
 #ifndef SIMUL_PLATFORM_DIRECTX11_UTILITIES_H
 #define SIMUL_PLATFORM_DIRECTX11_UTILITIES_H
 
-#include <d3d11.h>
+#ifdef _XBOX_ONE
+#include <d3d11_x.h>
+#else
+#include "SimulDirectXHeader.h"
+#endif
 #include <utility>
 #include <vector>
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"

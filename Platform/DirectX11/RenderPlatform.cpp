@@ -4,6 +4,7 @@
 #include "Simul/Platform/DirectX11/Mesh.h"
 #include "Simul/Platform/DirectX11/Texture.h"
 #include "Simul/Platform/DirectX11/Light.h"
+#include "Simul/Platform/DirectX11/Effect.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/TextRenderer.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
@@ -46,7 +47,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	solidConstants.InvalidateDeviceObjects();
 	textRenderer.InvalidateDeviceObjects();
 	SAFE_RELEASE(effect);
-	for(std::set<scene::Material*>::iterator i=materials.begin();i!=materials.end();i++)
+	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
 		mat->effect=effect;
@@ -66,7 +67,7 @@ void RenderPlatform::RecompileShaders()
 	CreateEffect(device,&effect,"solid.fx",defines);
 	solidConstants.LinkToEffect(effect,"SolidConstants");
 	//solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
-	for(std::set<scene::Material*>::iterator i=materials.begin();i!=materials.end();i++)
+	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
 		mat->effect=effect;
@@ -125,6 +126,11 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
     // Set ambient light.
     GLfloat lAmbientLight[] = {static_cast<GLfloat>(pAmbientLight[0]), static_cast<GLfloat>(pAmbientLight[1]),static_cast<GLfloat>(pAmbientLight[2]), 1.0f};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lAmbientLight);*/
+}
+
+void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,crossplatform::EffectTechnique *tech,int index)
+{
+	tech->asD3DX11EffectTechnique()->GetPassByIndex(index)->Apply(0,deviceContext.asD3D11DeviceContext());
 }
 
 void RenderPlatform::DrawMarker(void *context,const double *matrix)
@@ -319,7 +325,7 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	effect->GetTechniqueByName("solid")->GetPassByIndex(0)->Apply(0,pContext);
 }
 
-scene::Material *RenderPlatform::CreateMaterial()
+crossplatform::Material *RenderPlatform::CreateMaterial()
 {
 	dx11::Material *mat=new dx11::Material;
 	mat->effect=effect;
@@ -332,7 +338,7 @@ crossplatform::Mesh *RenderPlatform::CreateMesh()
 	return new dx11::Mesh;
 }
 
-scene::Light *RenderPlatform::CreateLight()
+crossplatform::Light *RenderPlatform::CreateLight()
 {
 	return new dx11::Light();
 }
@@ -342,6 +348,12 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	crossplatform::Texture * tex=new dx11::Texture(device);
 	tex->LoadFromFile(fileNameUtf8);
 	return tex;
+}
+
+crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer()
+{
+	dx11::PlatformConstantBuffer *b=new dx11::PlatformConstantBuffer();
+	return b;
 }
 
 void *RenderPlatform::GetDevice()
@@ -356,7 +368,6 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView*)t;
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",srv);
 	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
-#if 1
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	if(srv)
 		srv->GetDesc(&desc);
@@ -372,6 +383,7 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 	pContext->RSGetViewports(&num_v,&viewport);
 	if(mirrorY)
 		y1=(int)viewport.Height-y1-dy;
+#if 1
 	{
 		UtilityRenderer::DrawQuad2(pContext
 			,2.f*(float)x1/(float)viewport.Width-1.f
@@ -384,9 +396,9 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",NULL);
 }
 
-void RenderPlatform::DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *effect,void *technique)
+void RenderPlatform::DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,void *effect,void *technique)
 {
-	ID3D11DeviceContext		*pContext	=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
 	ID3DX11Effect			*eff		=(ID3DX11Effect	*)effect;
 	ID3DX11EffectTechnique	*tech		=(ID3DX11EffectTechnique*)technique;
 	unsigned int num_v=1;
@@ -402,6 +414,16 @@ void RenderPlatform::DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *
 			,2.f*(float)dy/(float)viewport.Height
 			,eff,tech);
 	}
+}
+void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
+{
+	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
+	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	pContext->IASetInputLayout(NULL);
+	pContext->Draw(4,0);
+	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
 void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *text)

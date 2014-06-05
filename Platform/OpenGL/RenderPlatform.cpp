@@ -96,7 +96,10 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
     GLfloat lAmbientLight[] = {static_cast<GLfloat>(pAmbientLight[0]), static_cast<GLfloat>(pAmbientLight[1]),static_cast<GLfloat>(pAmbientLight[2]), 1.0f};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lAmbientLight);
 }
-
+void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int)
+{
+}
+		
 void RenderPlatform::DrawMarker(void *,const double *matrix)
 {
     glColor3f(0.0, 1.0, 1.0);
@@ -259,7 +262,7 @@ void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,void
 	glUseProgram(0);	
 }
 
-void RenderPlatform::DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *effect,void *technique)
+void RenderPlatform::DrawQuad	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,void *effect,void *technique)
 {
 	struct Viewport
 	{
@@ -280,6 +283,12 @@ void RenderPlatform::DrawQuad		(void *context,int x1,int y1,int dx,int dy,void *
 	glVertex2f(0.0,0.0);
 	glEnd();
 }
+
+void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
+{
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); 
+}
+
 
 #ifndef GLUT_BITMAP_HELVETICA_12
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
@@ -350,7 +359,7 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	solidConstants.Apply();
 }
 
-scene::Material *RenderPlatform::CreateMaterial()
+crossplatform::Material *RenderPlatform::CreateMaterial()
 {
 	opengl::Material *mat=new opengl::Material;
 	materials.insert(mat);
@@ -362,7 +371,7 @@ crossplatform::Mesh *RenderPlatform::CreateMesh()
 	return new opengl::Mesh;
 }
 
-scene::Light *RenderPlatform::CreateLight()
+crossplatform::Light *RenderPlatform::CreateLight()
 {
 	return new opengl::Light();
 }
@@ -372,6 +381,11 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	crossplatform::Texture * tex=new opengl::Texture;
 	tex->LoadFromFile(fileNameUtf8);
 	return tex;
+}
+
+crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer()
+{
+	return NULL;
 }
 
 void *RenderPlatform::GetDevice()

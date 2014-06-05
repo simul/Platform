@@ -5,13 +5,13 @@
 
 #include "Export.h"
 #include "Material.h"
-#include "Simul/Scene/Light.h"
+#include "Simul/Platform/CrossPlatform/Light.h"
 
 namespace simul
 {
 	namespace dx11
 	{
-		class SIMUL_DIRECTX11_EXPORT Light:public scene::Light
+		class SIMUL_DIRECTX11_EXPORT Light:public crossplatform::Light
 		{
 		public:
 			Light();

@@ -1,5 +1,5 @@
 #pragma once
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
@@ -7,6 +7,7 @@
 #include "D3dx11effect.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/Texture.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 
 namespace simul
@@ -49,23 +50,23 @@ namespace simul
 			void ClearColour(void* context, float, float, float, float );
 			ID3D11ShaderResourceView *GetBufferResource()
 			{
-				return buffer_texture_SRV;
+				return buffer_texture.shaderResourceView;
 			}
 			void* GetColorTex()
 			{
-				return (void*)buffer_texture_SRV;
+				return (void*)buffer_texture.shaderResourceView;
 			}
 			void* GetDepthTex()
 			{
-				return (void*)buffer_depth_texture_SRV;
+				return (void*)buffer_depth_texture.shaderResourceView;
 			}
 			ID3D11Texture2D* GetColorTexture()
 			{
-				return hdr_buffer_texture;
+				return (ID3D11Texture2D*)buffer_texture.texture;
 			}
 			ID3D11Texture2D* GetDepthTexture()
 			{
-				return buffer_depth_texture;
+				return (ID3D11Texture2D*)buffer_depth_texture.texture;
 			}
 			//! Copy from the rt to the given target memory. If not starting at the top of the texture (start_texel>0), the first byte written
 			//! is at \em target, which is the address to copy the given chunk to, not the base address of the whole in-memory texture.
@@ -85,16 +86,18 @@ namespace simul
 			
 			ID3D1xRenderTargetView*				m_pOldRenderTarget;
 			ID3D1xDepthStencilView*				m_pOldDepthSurface;
-			D3D1x_VIEWPORT						m_OldViewports[16];
+			D3D11_VIEWPORT						m_OldViewports[16];
 
 			//! The texture the scene is rendered to.
 		public:
-			ID3D1xTexture2D*					hdr_buffer_texture;
-			ID3D11ShaderResourceView*			buffer_texture_SRV;
+			dx11::Texture						buffer_texture;
+			//ID3D11Texture2D*					hdr_buffer_texture;
+			//ID3D11ShaderResourceView*			buffer_texture_SRV;
 		protected:
 			//! The depth buffer.
-			ID3D1xTexture2D*					buffer_depth_texture;
-			ID3D11ShaderResourceView*			buffer_depth_texture_SRV;
+			dx11::Texture						buffer_depth_texture;
+			//ID3D11Texture2D*					buffer_depth_texture;
+			//ID3D11ShaderResourceView*			buffer_depth_texture_SRV;
 
 			bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
 			bool CreateBuffers();

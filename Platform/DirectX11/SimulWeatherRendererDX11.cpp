@@ -106,7 +106,6 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 													,simul::base::MemoryInterface *mem) :
 	BaseWeatherRenderer(env,mem),
 	m_pd3dDevice(NULL)
-	,simpleCloudBlendTechnique(NULL)
 	,simulSkyRenderer(NULL)
 	,simulCloudRenderer(NULL)
 	,simulPrecipitationRenderer(NULL)
@@ -157,7 +156,7 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(void* dev)
 	m_pd3dDevice=(ID3D11Device*)dev;
 	for(FramebufferMapDx11::iterator i=framebuffersDx11.begin();i!=framebuffersDx11.end();i++)
 		i->second->RestoreDeviceObjects(m_pd3dDevice);
-	hdrConstants.RestoreDeviceObjects(m_pd3dDevice);
+	hdrConstants.RestoreDeviceObjects(&renderPlatformDx11);
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
@@ -198,10 +197,7 @@ void SimulWeatherRendererDX11::RecompileShaders()
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	effect=new dx11::Effect(m_pd3dDevice,"simul_hdr.fx",defines);
-	simpleCloudBlendTechnique	=effect->GetTechniqueByName("simple_cloud_blend");
-	showDepthTechnique			=effect->GetTechniqueByName("show_depth");
-	farNearDepthBlendTechnique	=effect->GetTechniqueByName("far_near_depth_blend");
-	hdrConstants.LinkToEffect((ID3DX11Effect*)effect->platform_effect,"HdrConstants");
+	hdrConstants.LinkToEffect(effect,"HdrConstants");
 	BaseWeatherRenderer::RecompileShaders();
 }
 
@@ -210,7 +206,6 @@ void SimulWeatherRendererDX11::InvalidateDeviceObjects()
 	SAFE_DELETE(effect);
 	for(FramebufferMapDx11::iterator i=framebuffersDx11.begin();i!=framebuffersDx11.end();i++)
 		i->second->InvalidateDeviceObjects();
-	hdrConstants.InvalidateDeviceObjects();
 	if(simulSkyRenderer)
 		simulSkyRenderer->InvalidateDeviceObjects();
 	if(simulCloudRenderer)
@@ -223,6 +218,7 @@ void SimulWeatherRendererDX11::InvalidateDeviceObjects()
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
 	if(simulLightningRenderer)
 		simulLightningRenderer->InvalidateDeviceObjects();
+	BaseWeatherRenderer::InvalidateDeviceObjects();
 }
 
 bool SimulWeatherRendererDX11::Destroy()
@@ -414,10 +410,8 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(crossplatform::DeviceCont
 		// Set both regular and MSAA depth variables. Which it is depends on the situation.
 		dx11::setTexture(e,"depthTextureMS"		,mainDepth_SRV);
 	}
-//	else
-	{
-		dx11::setTexture(e,"depthTexture"		,mainDepth_SRV);
-	}
+	dx11::setTexture(e,"depthTexture"			,mainDepth_SRV);
+	
 	// The low res depth texture contains the total near and far depths in its x and y.
 	dx11::setTexture(e,"hiResDepthTexture"		,(ID3D11ShaderResourceView*)hiResDepthTexture);
 	dx11::setTexture(e,"lowResDepthTexture"		,(ID3D11ShaderResourceView*)lowResDepthTexture);
@@ -435,7 +429,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(crossplatform::DeviceCont
 	hdrConstants.depthToLinFadeDistParams		=simul::math::Vector3(proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
 	hdrConstants.hiResToLowResTransformXYWH		=mixedResolutionStruct.GetTransformHiResToLowRes();
 	hdrConstants.Apply(deviceContext);
-	simul::dx11::UtilityRenderer::DrawQuad(pContext);
+	deviceContext.renderPlatform->DrawQuad(deviceContext);
 	dx11::setTexture(e,"imageTexture",NULL);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 }
@@ -455,7 +449,7 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(crossplatform::DeviceConte
 	dx11::setParameter(d3deffect,"nearZ"						,frustum.nearZ/max_fade_distance_metres);
 	dx11::setParameter(d3deffect,"farZ"							,frustum.farZ/max_fade_distance_metres);
 	dx11::setParameter(d3deffect,"depthToLinFadeDistParams"		,vec3(proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres));
-	deviceContext.renderPlatform->DrawQuad(pContext	,x,y,w,h	,d3deffect,d3deffect->GetTechniqueByName("show_depth"));
+	deviceContext.renderPlatform->DrawQuad(deviceContext	,x,y,w,h	,d3deffect,d3deffect->GetTechniqueByName("show_depth"));
 }
 
 

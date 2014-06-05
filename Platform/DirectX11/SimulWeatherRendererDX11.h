@@ -11,7 +11,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
-#include <d3d11.h>
+#include "Simul/Platform/DirectX11/SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
@@ -132,31 +132,25 @@ namespace simul
 			// Keep copies of these matrices:
 			simul::math::Matrix4x4 view;
 			simul::math::Matrix4x4 proj;
-			IDXGISwapChain *pSwapChain;
-			ID3D11Device*							m_pd3dDevice;
-			
-			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			crossplatform::EffectTechnique					*simpleCloudBlendTechnique;
-			crossplatform::EffectTechnique					*farNearDepthBlendTechnique;
-			crossplatform::EffectTechnique					*showDepthTechnique;
+			IDXGISwapChain								*pSwapChain;
+			ID3D11Device								*m_pd3dDevice;
 
 			bool CreateBuffers();
 			bool RenderBufferToScreen(ID3D11ShaderResourceView* texture,int w,int h,bool do_tonemap);
-			class SimulSkyRendererDX1x				*simulSkyRenderer;
-			class SimulCloudRendererDX1x			*simulCloudRenderer;
-			class PrecipitationRenderer	*simulPrecipitationRenderer;
-			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
-			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
-			class LightningRenderer					*simulLightningRenderer;
+			class SimulSkyRendererDX1x					*simulSkyRenderer;
+			class SimulCloudRendererDX1x				*simulCloudRenderer;
+			class PrecipitationRenderer					*simulPrecipitationRenderer;
+			class SimulAtmosphericsRendererDX1x			*simulAtmosphericsRenderer;
+			class Simul2DCloudRendererDX11				*simul2DCloudRenderer;
+			class LightningRenderer						*simulLightningRenderer;
 			typedef std::map<int,simul::dx11::TwoResFramebuffer*> FramebufferMapDx11;
 			// Map from view_id to framebuffer.
-			TwoResFramebuffer *						GetFramebuffer(int view_id);
-			FramebufferMapDx11						framebuffersDx11;
-			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
-			float									exposure;
-			float									gamma;
-			float									exposure_multiplier;
-			simul::math::Vector3					cam_pos;
+			TwoResFramebuffer *							GetFramebuffer(int view_id);
+			FramebufferMapDx11							framebuffersDx11;
+			float										exposure;
+			float										gamma;
+			float										exposure_multiplier;
+			simul::math::Vector3						cam_pos;
 		};
 	}
 }
