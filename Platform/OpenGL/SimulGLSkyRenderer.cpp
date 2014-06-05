@@ -123,7 +123,7 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 	GL_ERROR_CHECK
 }
 
-static simul::sky::float4 Lookup(void *context,FramebufferGL &fb,float distance_texcoord,float elevation_texcoord)
+static simul::sky::float4 Lookup(crossplatform::DeviceContext &deviceContext,FramebufferGL &fb,float distance_texcoord,float elevation_texcoord)
 {
 	distance_texcoord*=(float)fb.GetWidth();
 	int x=(int)(distance_texcoord);
@@ -141,24 +141,24 @@ static simul::sky::float4 Lookup(void *context,FramebufferGL &fb,float distance_
 	float y_interp=elevation_texcoord-y;
 	// four floats per texel, four texels.
 	simul::sky::float4 data[4];
-	fb.Activate(context);
+	fb.Activate(deviceContext);
 	glReadPixels(x,y,2,2,GL_RGBA,GL_FLOAT,(GLvoid*)data);
-	fb.Deactivate(context);
+	fb.Deactivate(deviceContext.platform_context);
 	simul::sky::float4 bottom	=simul::sky::lerp(x_interp,data[0],data[1]);
 	simul::sky::float4 top		=simul::sky::lerp(x_interp,data[2],data[3]);
 	simul::sky::float4 ret		=simul::sky::lerp(y_interp,bottom,top);
 	return ret;
 }
 
-const float *SimulGLSkyRenderer::GetFastLossLookup(void *context,float distance_texcoord,float elevation_texcoord)
+const float *SimulGLSkyRenderer::GetFastLossLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord)
 {
-	return Lookup(context,loss_2d,distance_texcoord,elevation_texcoord);
-}
-const float *SimulGLSkyRenderer::GetFastInscatterLookup(void *context,float distance_texcoord,float elevation_texcoord)
-{
-	return Lookup(context,inscatter_2d,distance_texcoord,elevation_texcoord);
+	return Lookup(deviceContext,loss_2d,distance_texcoord,elevation_texcoord);
 }
 
+const float *SimulGLSkyRenderer::GetFastInscatterLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord)
+{
+	return Lookup(deviceContext,inscatter_2d,distance_texcoord,elevation_texcoord);
+}
 
 void SimulGLSkyRenderer::RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext)
 {
@@ -170,7 +170,7 @@ void SimulGLSkyRenderer::RenderIlluminationBuffer(crossplatform::DeviceContext &
 		//D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
 		//m_pSkyEffect->SetTechnique(tech);
 		glUseProgram(illumination_buffer_program);
-		illumination_fb.Activate(deviceContext.platform_context);
+		illumination_fb.Activate(deviceContext);
 		illumination_fb.Clear(deviceContext.platform_context,1.0f,1.0f,1.0f,1.0f,1.f);
 		DrawQuad(0,0,1,1);
 		illumination_fb.Deactivate(deviceContext.platform_context);
@@ -216,7 +216,7 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	glLoadIdentity();
 	for(int i=0;i<3;i++)
 	{
-		fb[i]->Activate(deviceContext.platform_context);
+		fb[i]->Activate(deviceContext);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,input_textures[i][(texture_cycle+0)%3].tex);
 		glActiveTexture(GL_TEXTURE1);
@@ -245,7 +245,7 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	setTexture(overcast_inscatter_program,"inscTexture"			,0,(GLuint)inscatter_2d.GetColorTex());
 	setTexture(overcast_inscatter_program,"illuminationTexture"	,1,(GLuint)illumination_fb.GetColorTex());
 
-	overcast_2d.Activate(NULL);
+	overcast_2d.Activate(deviceContext);
 		overcast_2d.Clear(NULL,1.f,1.f,0.f,1.f,1.f);
 		DrawQuad(0,0,1,1);
 	overcast_2d.Deactivate(NULL);
@@ -672,7 +672,7 @@ GL_ERROR_CHECK
 	earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms"	,9);
 }
 
-void SimulGLSkyRenderer::RestoreDeviceObjects(void*)
+void SimulGLSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform*)
 {
 GL_ERROR_CHECK
 	initialized=true;

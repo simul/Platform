@@ -276,7 +276,7 @@ static float g_FilterRadius = 30;
 		dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
 		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
 		ApplyPass(pContext,glowTechnique->GetPassByIndex(0));
-		glow_fb.Activate(pContext);
+		glow_fb.Activate(deviceContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 		glow_fb.Deactivate(pContext);
 	}

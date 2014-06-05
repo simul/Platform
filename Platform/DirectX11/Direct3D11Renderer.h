@@ -18,7 +18,7 @@
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
-#include "Simul/Platform/DirectX11/View.h"
+#include "Simul/Platform/DirectX11/MixedResolutionView.h"
 #include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
 #pragma warning(push)
@@ -59,7 +59,7 @@ namespace simul
 			void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
 			void InvalidateDeviceObjects();
 			void RecompileShaders(const std::map<std::string,std::string> &defines);
-			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,View *view,int s,vec3 depthToLinFadeDistParams);
+			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec3 depthToLinFadeDistParams);
 		protected:
 			ID3D11Device								*m_pd3dDevice;
 			ID3DX11Effect								*mixedResolutionEffect;
@@ -84,7 +84,7 @@ namespace simul
 				META_ValueProperty(bool,ShowMap					,"Show the terrain map as an overlay.")
 				META_ValueProperty(bool,UseHdrPostprocessor		,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
 				META_ValueProperty(bool,UseSkyBuffer			,"Render the sky to a low-res buffer to increase performance.")
-				META_ValueProperty(bool,ShowDepthBuffers		,"Show the depth buffers .")
+				META_ValueProperty(bool,ShowCompositing			,"Show the multi-resolution compositing textures.")
 				META_ValueProperty(bool,ShowLightVolume			,"Show the cloud light volume as a wireframe box.")
 				META_ValueProperty(bool,CelestialDisplay		,"Show geographical and sidereal overlay.")
 				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")
@@ -137,7 +137,7 @@ namespace simul
 			void SaveScreenshot(const char *filename_utf8);
 			simul::dx11::RenderPlatform renderPlatformDx11;
 		protected:
-			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int view_id,int x0,int y0,int w,int h);
+			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			// Encompasses drawing the actual scene and putting the hdr buffer to screen.
 			void RenderScene(crossplatform::DeviceContext &deviceContext
 				,clouds::BaseWeatherRenderer *w
@@ -168,6 +168,7 @@ namespace simul
 			ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;
 			MixedResolutionRenderer						mixedResolutionRenderer;
+			std::map<int,const simul::camera::CameraOutputInterface *> cameras;
 		};
 	}
 }

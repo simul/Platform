@@ -142,7 +142,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-void SimulGLCloudRenderer::CreateNoiseTexture(void *context)
+void SimulGLCloudRenderer::CreateNoiseTexture(crossplatform::DeviceContext &deviceContext)
 {
 	if(!init)
 		return ;
@@ -166,7 +166,7 @@ glGenerateMipmap(GL_TEXTURE_2D);
 	noise_fb.SetWrapClampMode(GL_REPEAT);
 	noise_fb.InitColor_Tex(0,GL_RGBA32F);
 GL_ERROR_CHECK
-	noise_fb.Activate(context);
+	noise_fb.Activate(deviceContext);
 	{
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -176,7 +176,7 @@ GL_ERROR_CHECK
 		glUseProgram(noise_prog);
 		DrawQuad(0,0,1,1);
 	}
-	noise_fb.Deactivate(context);
+	noise_fb.Deactivate(deviceContext.platform_context);
 	glUseProgram(0);
 GL_ERROR_CHECK	
 	FramebufferGL n_fb(noise_texture_size,noise_texture_size,GL_TEXTURE_2D);
@@ -185,10 +185,10 @@ GL_ERROR_CHECK
 	n_fb.SetWrapClampMode(GL_REPEAT);
 	n_fb.InitColor_Tex(0,GL_RGBA);
 GL_ERROR_CHECK	
-	n_fb.Activate(context);
+	n_fb.Activate(deviceContext);
 	{
 	GL_ERROR_CHECK
-		n_fb.Clear(context,0.f,0.f,0.f,0.f,1.f);
+		n_fb.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,1.f);
 	GL_ERROR_CHECK
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
@@ -218,7 +218,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK	
 	glGenerateMipmap(GL_TEXTURE_2D);
 GL_ERROR_CHECK	
-	n_fb.Deactivate(context);
+	n_fb.Deactivate(deviceContext.platform_context);
 	glUseProgram(0);
 GL_ERROR_CHECK
 }
@@ -253,7 +253,7 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 
 void SimulGLCloudRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
 {
-	EnsureTexturesAreUpToDate(deviceContext.platform_context);
+	EnsureTexturesAreUpToDate(deviceContext);
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -273,7 +273,7 @@ void SimulGLCloudRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceC
 	setParameter(cloud_shadow_program,"cloudTexture2"	,1);
 	setParameter(cloud_shadow_program,"interp"			,cloudKeyframer->GetInterpolation());
 	
-	cloud_shadow.Activate(NULL);
+	cloud_shadow.Activate(deviceContext);
 		//cloud_shadow.Clear(0.f,0.f,0.f,0.f);
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -673,7 +673,7 @@ GL_ERROR_CHECK
 	glUseProgram(0);
 }
 
-void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
+void SimulGLCloudRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *)
 {
 	init=true;
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
@@ -825,7 +825,7 @@ GL_ERROR_CHECK
 
 }
 
-void SimulGLCloudRenderer::EnsureTexturesAreUpToDate(void *context)
+void SimulGLCloudRenderer::EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext)
 {
 	int a	=cloudKeyframer->GetEdgeNoiseTextureSize();
 	int b	=cloudKeyframer->GetEdgeNoiseFrequency();
@@ -838,7 +838,7 @@ void SimulGLCloudRenderer::EnsureTexturesAreUpToDate(void *context)
 		noise_checksum=check;
 	}
 	if(!noise_tex)
-		CreateNoiseTexture(context);
+		CreateNoiseTexture(deviceContext);
 	EnsureCorrectTextureSizes();
 GL_ERROR_CHECK
 	EnsureTextureCycle();

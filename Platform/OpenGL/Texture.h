@@ -21,6 +21,12 @@ namespace simul
 			{
 				return (void*)pTextureObject;
 			}
+			void ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *renderPlatform,int w,int l
+				,unsigned f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0);
+			void activateRenderTarget(simul::crossplatform::DeviceContext &deviceContext);
+			void deactivateRenderTarget();
+			int GetLength() const;
+			int GetWidth() const;
 			GLuint pTextureObject;
 		};
 	}

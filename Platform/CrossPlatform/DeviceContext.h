@@ -15,6 +15,11 @@ namespace simul
 		{
 			void *platform_context;
 			RenderPlatform *renderPlatform;
+			DeviceContext():
+				platform_context(NULL)
+				,renderPlatform(NULL)
+			{
+			}
 			inline ID3D11DeviceContext *asD3D11DeviceContext()
 			{
 				return (ID3D11DeviceContext*)platform_context;

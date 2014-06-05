@@ -262,6 +262,11 @@ void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,void
 	glUseProgram(0);	
 }
 
+void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult)
+{
+	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsVoidPointer(),mult);
+}
+
 void RenderPlatform::DrawQuad	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,void *effect,void *technique)
 {
 	struct Viewport

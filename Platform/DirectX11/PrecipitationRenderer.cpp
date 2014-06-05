@@ -43,18 +43,20 @@ void PrecipitationRenderer::RecompileShaders()
 	m_hTechniqueRainParticles	=effect->GetTechniqueByName("rain_particles");
 	techniqueMoveParticles		=effect->GetTechniqueByName("move_particles");
 	rainTexture					=effect->GetVariableByName("rainTexture")->AsShaderResource();
-
 	rainConstants.LinkToEffect(effect,"RainConstants");
 	perViewConstants.LinkToEffect(effect,"RainPerViewConstants");
 	moisturePerViewConstants.LinkToEffect(effect,"MoisturePerViewConstants");
 
 	ID3D11DeviceContext *pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context		=pImmediateContext;
+	deviceContext.renderPlatform		=renderPlatform;
 	ID3DX11EffectTechnique *tech		=effect->GetTechniqueByName("create_rain_texture");
 	ApplyPass(pImmediateContext,tech->GetPassByIndex(0));
 	simul::dx11::Framebuffer make_rain_fb(512,64);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
-	make_rain_fb.Activate(pImmediateContext);
+	make_rain_fb.Activate(deviceContext);
 	simul::dx11::UtilityRenderer::DrawQuad(pImmediateContext);
 	make_rain_fb.Deactivate(pImmediateContext);
 	rain_texture=make_rain_fb.buffer_texture.shaderResourceView;
@@ -118,9 +120,10 @@ void *PrecipitationRenderer::GetMoistureTexture()
 	return moisture_fb.GetColorTex();
 }
 
-void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
+void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	m_pd3dDevice=(ID3D11Device*)dev;
+	renderPlatform=r;
+	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	HRESULT hr=S_OK;
 	MakeMesh();
 

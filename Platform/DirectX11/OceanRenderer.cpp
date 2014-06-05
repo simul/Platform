@@ -7,6 +7,7 @@
 #include <D3DX11tex.h>
 #endif
 #include "CompileShaderDX1x.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Math/Matrix4x4.h"
@@ -160,12 +161,12 @@ void OceanRenderer::RecompileShaders()
 	changePerCallConstants	.LinkToEffect(effect,"cbChangePerCall");
 }
 
-void OceanRenderer::RestoreDeviceObjects(ID3D11Device* dev)
+void OceanRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform)
 {
 	InvalidateDeviceObjects();
-	m_pd3dDevice=dev;
+	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	oceanSimulator=new OceanSimulator(seaKeyframer);
-	oceanSimulator->RestoreDeviceObjects(m_pd3dDevice);
+	oceanSimulator->RestoreDeviceObjects(renderPlatform);
 	
 	// Update the simulation for the first time.
 	oceanSimulator->updateDisplacementMap(0);

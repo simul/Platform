@@ -29,7 +29,7 @@ namespace simul
 		public:
 			Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck2d,simul::base::MemoryInterface *mem);
 			virtual ~Simul2DCloudRendererDX11();
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			void SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
@@ -48,11 +48,11 @@ namespace simul
 		protected:
 			void RenderDetailTexture(crossplatform::DeviceContext &deviceContext);
 			void EnsureCorrectTextureSizes();
-			virtual void EnsureTexturesAreUpToDate(void *context);
+			virtual void EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext);
 			void EnsureTextureCycle();
 			void EnsureCorrectIlluminationTextureSizes(){}
 			void EnsureIlluminationTexturesAreUpToDate(){}
-			void CreateNoiseTexture(void *context){}
+			void CreateNoiseTexture(crossplatform::DeviceContext &deviceContext){}
 			simul::math::Matrix4x4		view,proj;
 			ID3D11Device*				m_pd3dDevice;
 			ID3DX11Effect*				effect;

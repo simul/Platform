@@ -67,15 +67,16 @@ void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
 	skyKeyframer->SetUniformKeyframes(steps);
 }
 
-void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
+void SimulSkyRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	m_pd3dDevice=(ID3D11Device*)dev;
-	sunQuery.RestoreDeviceObjects(dev);
+	renderPlatform=r;
+	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
+	sunQuery.RestoreDeviceObjects(m_pd3dDevice);
 	HRESULT hr=S_OK;
 	world.Identity();
 	view.Identity();
 	proj.Identity();
-	gpuSkyGenerator.RestoreDeviceObjects(m_pd3dDevice);
+	gpuSkyGenerator.RestoreDeviceObjects(renderPlatform);
 	dx11::Texture *loss[3],*insc[3],*skyl[3];
 	for(int i=0;i<3;i++)
 	{
@@ -91,22 +92,22 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	if(loss_2d)
 	{
 		loss_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		loss_2d->RestoreDeviceObjects(dev);
+		loss_2d->RestoreDeviceObjects(m_pd3dDevice);
 	}
 	if(inscatter_2d)
 	{
 		inscatter_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		inscatter_2d->RestoreDeviceObjects(dev);
+		inscatter_2d->RestoreDeviceObjects(m_pd3dDevice);
 	}
 	if(overcast_2d)
 	{
 		overcast_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		overcast_2d->RestoreDeviceObjects(dev);
+		overcast_2d->RestoreDeviceObjects(m_pd3dDevice);
 	}
 	if(skylight_2d)
 	{
 		skylight_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		skylight_2d->RestoreDeviceObjects(dev);
+		skylight_2d->RestoreDeviceObjects(m_pd3dDevice);
 	}
 	illumination_fb.SetWidthAndHeight(64,numFadeElevations*4);
 	SAFE_RELEASE(moon_texture_SRV);
@@ -227,7 +228,7 @@ void SimulSkyRendererDX1x::EnsureCorrectTextureSizes()
 		insc_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,num_alt,num_elev,num_dist,DXGI_FORMAT_R32G32B32A32_FLOAT,uav);
 		skyl_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,num_alt,num_elev,num_dist,DXGI_FORMAT_R32G32B32A32_FLOAT,uav);
 	}
-	light_table_2d.ensureTexture2DSizeAndFormat(m_pd3dDevice,num_alt*32,4,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+	light_table_2d.ensureTexture2DSizeAndFormat(renderPlatform,num_alt*32,4,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	
 	if(!num_dist||!num_elev||!num_alt)
 		return;
@@ -569,7 +570,7 @@ bool SimulSkyRendererDX1x::Render2DFades(crossplatform::DeviceContext &deviceCon
 		V_CHECK(fadeTexture1->SetResource(loss_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(loss_textures[(texture_cycle+1)%3].shaderResourceView));
 		V_CHECK(ApplyPass(pContext,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		loss_2d->Activate(pContext);
+		loss_2d->Activate(deviceContext);
 			pContext->ClearRenderTargetView(loss_2d->buffer_texture.renderTargetView,clearColor);
 			if(loss_2d->m_pBufferDepthSurface)
 				pContext->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
@@ -582,7 +583,7 @@ bool SimulSkyRendererDX1x::Render2DFades(crossplatform::DeviceContext &deviceCon
 		V_CHECK(fadeTexture1->SetResource(insc_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(insc_textures[(texture_cycle+1)%3].shaderResourceView));
 		V_CHECK(ApplyPass(pContext,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		inscatter_2d->Activate(pContext);
+		inscatter_2d->Activate(deviceContext);
 			simul::dx11::UtilityRenderer::DrawQuad(pContext);
 		inscatter_2d->Deactivate(pContext);
 		SIMUL_COMBINED_PROFILE_END(pContext)
@@ -594,7 +595,7 @@ bool SimulSkyRendererDX1x::Render2DFades(crossplatform::DeviceContext &deviceCon
 		V_CHECK(fadeTexture2->SetResource(skyl_textures[(texture_cycle+1)%3].shaderResourceView));
 		//V_CHECK(ApplyPass(pContext,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		V_CHECK(ApplyPass(pContext,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		skylight_2d->Activate(pContext);
+		skylight_2d->Activate(deviceContext);
 			simul::dx11::UtilityRenderer::DrawQuad(pContext);
 		skylight_2d->Deactivate(pContext);
 		SIMUL_COMBINED_PROFILE_END(pContext)
@@ -605,7 +606,7 @@ bool SimulSkyRendererDX1x::Render2DFades(crossplatform::DeviceContext &deviceCon
 		SIMUL_COMBINED_PROFILE_START(pContext,"Overcast")
 		V_CHECK(inscTexture->SetResource((ID3D11ShaderResourceView*)inscatter_2d->GetColorTex()));
 		V_CHECK(ApplyPass(pContext,hTechniqueOverc->GetPassByIndex(0)));
-		overcast_2d->Activate(pContext);
+		overcast_2d->Activate(deviceContext);
 			simul::dx11::UtilityRenderer::DrawQuad(pContext);
 		overcast_2d->Deactivate(pContext);
 		SIMUL_COMBINED_PROFILE_END(pContext)
@@ -645,7 +646,7 @@ void SimulSkyRendererDX1x::RenderIlluminationBuffer(crossplatform::DeviceContext
 	{
 		ID3DX11EffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
 		ApplyPass(context,tech->GetPassByIndex(0));
-		illumination_fb.Activate(context);
+		illumination_fb.Activate(deviceContext);
 		context->ClearRenderTargetView(illumination_fb.buffer_texture.renderTargetView,clearColor);
 		//if(e.enable)
 			simul::dx11::UtilityRenderer::DrawQuad(context);

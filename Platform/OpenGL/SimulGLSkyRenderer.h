@@ -37,7 +37,7 @@ namespace simul
 
 	//! Create the API-specific objects to be used in rendering. This is usually called from the SimulGLWeatherRenderer that
 	//! owns this object.
-	void						RestoreDeviceObjects(void*);
+	void						RestoreDeviceObjects(simul::crossplatform::RenderPlatform *);
 	//! Destroy the API-specific objects used in rendering.
 	void						InvalidateDeviceObjects();
 	void						ReloadTextures();
@@ -59,8 +59,8 @@ namespace simul
 	}
 	virtual		void CycleTexturesForward(){}
 	virtual		bool HasFastFadeLookup() const{return true;}
-	virtual		const float *GetFastLossLookup(void* context,float distance_texcoord,float elevation_texcoord);
-	virtual		const float *GetFastInscatterLookup(void* context,float distance_texcoord,float elevation_texcoord);
+	virtual		const float *GetFastLossLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord);
+	virtual		const float *GetFastInscatterLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord);
 
 	void		RenderPlanet(crossplatform::DeviceContext &deviceContext,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	void		RenderSun(crossplatform::DeviceContext &deviceContext,float exposure);

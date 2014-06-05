@@ -60,7 +60,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 {
 }
 
-void SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
+void SimulGL2DCloudRenderer::CreateNoiseTexture(crossplatform::DeviceContext &deviceContext)
 {
 	ERRNO_CHECK
 	FramebufferGL	noise_fb(16,16,GL_TEXTURE_2D);
@@ -69,7 +69,7 @@ void SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
 	ERRNO_CHECK
 	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
 	ERRNO_CHECK
-	noise_fb.Activate(context);
+	noise_fb.Activate(deviceContext);
 	{
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -81,16 +81,16 @@ void SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
 		DrawQuad(0,0,1,1);
 		SAFE_DELETE_PROGRAM(noise_prog);
 	}
-	noise_fb.Deactivate(context);
+	noise_fb.Deactivate(deviceContext.platform_context);
 	glUseProgram(0);
 GL_ERROR_CHECK
 	FramebufferGL dens_fb(512,512,GL_TEXTURE_2D);
 	dens_fb.SetWidthAndHeight(512,512);
 	dens_fb.SetWrapClampMode(GL_REPEAT);
 	dens_fb.InitColor_Tex(0,GL_RGBA);
-	dens_fb.Activate(context);
+	dens_fb.Activate(deviceContext);
 	{
-		dens_fb.Clear(context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+		dens_fb.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)noise_fb.GetColorTex());
@@ -101,15 +101,15 @@ GL_ERROR_CHECK
 		DrawFullScreenQuad();
 		SAFE_DELETE_PROGRAM(dens_prog);
 	}
-	dens_fb.Deactivate(context);
+	dens_fb.Deactivate(deviceContext.platform_context);
 	glUseProgram(0);
 
 	detail_fb.SetWidthAndHeight(512,512);
 	detail_fb.SetWrapClampMode(GL_REPEAT);
 	detail_fb.InitColor_Tex(0,GL_RGBA);
-	detail_fb.Activate(context);
+	detail_fb.Activate(deviceContext);
 	{
-		detail_fb.Clear(context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+		detail_fb.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)dens_fb.GetColorTex());
@@ -122,7 +122,7 @@ GL_ERROR_CHECK
 		DrawQuad(0,0,1,1);
 		SAFE_DELETE_PROGRAM(lighting_prog);
 	}
-	detail_fb.Deactivate(context);
+	detail_fb.Deactivate(deviceContext.platform_context);
 	glUseProgram(0);
 }
 #pragma warning(disable:4127) // "Conditional expression is constant".
@@ -170,7 +170,7 @@ void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()
 	std::cout<<"Cloud memory usage: "<<cloud_mem/1024<<"k"<<std::endl;
 
 }
-void SimulGL2DCloudRenderer::EnsureTexturesAreUpToDate(void *)
+void SimulGL2DCloudRenderer::EnsureTexturesAreUpToDate(crossplatform::DeviceContext &)
 {
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
@@ -280,7 +280,7 @@ bool SimulGL2DCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
-	EnsureTexturesAreUpToDate(deviceContext.platform_context);
+	EnsureTexturesAreUpToDate(deviceContext);
 	using namespace simul::clouds;
 	if(skyInterface)
 		cloudKeyframer->Update(skyInterface->GetTime());
@@ -455,10 +455,12 @@ void SimulGL2DCloudRenderer::SetInscatterTextures(void* i,void *s,void *)
 	skylight_tex=((GLuint)(uintptr_t)s);
 }
 
-void SimulGL2DCloudRenderer::RestoreDeviceObjects(void *context)
+void SimulGL2DCloudRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	renderPlatform=r;
 GL_ERROR_CHECK
-	CreateNoiseTexture(context);
+	crossplatform::DeviceContext deviceContext;
+	CreateNoiseTexture(deviceContext);
 GL_ERROR_CHECK
 	RecompileShaders();
 GL_ERROR_CHECK

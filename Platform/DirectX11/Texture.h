@@ -43,13 +43,21 @@ namespace simul
 			void setTexels(ID3D11DeviceContext *context,const void *src,int texel_index,int num_texels);
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
 			void ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable,int mips=1);
-			void ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0);
+			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,unsigned f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0);
 			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT f,bool computable=false);
 			void map(ID3D11DeviceContext *context);
 			bool isMapped() const;
 			void unmap();
-			void activateRenderTarget(ID3D11DeviceContext *context);
+			void activateRenderTarget(crossplatform::DeviceContext &deviceContext);
 			void deactivateRenderTarget();
+			virtual int GetLength() const
+			{
+				return length;
+			}
+			virtual int GetWidth() const
+			{
+				return width;
+			}
 		private:
 			ID3D11DeviceContext *last_context;
 			ID3D11RenderTargetView*				m_pOldRenderTarget;

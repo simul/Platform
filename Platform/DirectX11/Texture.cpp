@@ -2,6 +2,8 @@
 #include "Texture.h"
 #include "CreateEffectDX1x.h"
 #include "Utilities.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 
 #include <string>
 
@@ -270,9 +272,9 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
 	}
 }
-
-void dx11::Texture::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable,bool rendertarget,int num_samples,int aa_quality)
+void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,unsigned f,bool computable,bool rendertarget,int num_samples,int aa_quality)
 {
+	ID3D11Device *pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	D3D11_TEXTURE2D_DESC textureDesc;
 	bool ok=true;
 	if(texture)
@@ -283,7 +285,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=f)
+			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=(DXGI_FORMAT)f)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -299,7 +301,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		textureDesc.Width				=width=w;
 		textureDesc.Height				=length=l;
 		depth							=1;
-		textureDesc.Format				=format=f;
+		textureDesc.Format				=format=(DXGI_FORMAT)f;
 		textureDesc.MipLevels			=1;
 		textureDesc.ArraySize			=1;
 		textureDesc.Usage				=(computable||rendertarget)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
@@ -312,7 +314,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		srv_desc.Format						= f;
+		srv_desc.Format						= (DXGI_FORMAT)f;
 		srv_desc.ViewDimension				= num_samples>1?D3D11_SRV_DIMENSION_TEXTURE2DMS:D3D11_SRV_DIMENSION_TEXTURE2D;
 		srv_desc.Texture2D.MipLevels		= 1;
 		srv_desc.Texture2D.MostDetailedMip	= 0;
@@ -323,7 +325,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 	{
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format				= f;
+		uav_desc.Format				= (DXGI_FORMAT)f;
 		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE2D;
 		uav_desc.Texture2D.MipSlice	= 0;
 
@@ -335,7 +337,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 	{
 		// Setup the description of the render target view.
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-		renderTargetViewDesc.Format				=f;
+		renderTargetViewDesc.Format				=(DXGI_FORMAT)f;
 		renderTargetViewDesc.ViewDimension		=num_samples>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 		// Create the render target in DX11:
@@ -423,25 +425,25 @@ void dx11::Texture::unmap()
 	mapped.pData=NULL;
 	last_context=NULL;
 }
-
-void dx11::Texture::activateRenderTarget(ID3D11DeviceContext *pContext)
+void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext)
 {
-	if(!pContext)
+
+	if(!deviceContext.asD3D11DeviceContext())
 		return;
-	last_context=pContext;
+	last_context=deviceContext.asD3D11DeviceContext();
 	{
 		uint num_v=0;
-		pContext->RSGetViewports(&num_v,NULL);
+		last_context->RSGetViewports(&num_v,NULL);
 		if(num_v>0)
-			pContext->RSGetViewports(&num_v,m_OldViewports);
+			last_context->RSGetViewports(&num_v,m_OldViewports);
 		SAFE_RELEASE(m_pOldRenderTarget);
 		SAFE_RELEASE(m_pOldDepthSurface);
-		pContext->OMGetRenderTargets(	1,
+		last_context->OMGetRenderTargets(	1,
 										&m_pOldRenderTarget,
 										&m_pOldDepthSurface
 										);
 	}
-	pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
+	last_context->OMSetRenderTargets(1,&renderTargetView,NULL);
 	{
 		ID3D11Texture2D* ppd(NULL);
 		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)
@@ -456,7 +458,7 @@ void dx11::Texture::activateRenderTarget(ID3D11DeviceContext *pContext)
 		viewport.TopLeftY = 0;
 		viewport.MinDepth = 0.0f;
 		viewport.MaxDepth = 1.0f;
-		pContext->RSSetViewports(1, &viewport);
+		last_context->RSSetViewports(1, &viewport);
 	}
 }
 

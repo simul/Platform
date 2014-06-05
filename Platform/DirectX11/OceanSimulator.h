@@ -21,7 +21,7 @@ public:
 	OceanSimulator(simul::terrain::SeaKeyframer *s);
 	~OceanSimulator();
 
-	void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
+	void RestoreDeviceObjects(simul::crossplatform::RenderPlatform *renderPlatform);
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	// -------------------------- Initialization & simulation routines ------------------------

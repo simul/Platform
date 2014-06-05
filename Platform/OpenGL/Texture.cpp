@@ -46,3 +46,26 @@ bool opengl::Texture::IsValid() const
 {
 	return (pTextureObject>0);
 }
+
+void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *renderPlatform,int w,int l
+	,unsigned f,bool computable,bool rendertarget,int num_samples,int aa_quality)
+{
+}
+
+void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &deviceContext)
+{
+}
+
+void Texture::deactivateRenderTarget()
+{
+}
+
+int Texture::GetLength() const
+{
+	return 0;
+}
+
+int Texture::GetWidth() const
+{
+	return 0;
+}

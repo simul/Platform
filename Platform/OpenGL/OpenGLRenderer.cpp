@@ -49,6 +49,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	:ScreenWidth(0)
 	,ScreenHeight(0)
 	,cam(NULL)
+	,ShowCompositing(false)
 	,ShowFlares(true)
 	,ShowFades(false)
 	,ShowTerrain(true)
@@ -221,7 +222,7 @@ void OpenGLRenderer::paintGL()
 		GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
-			simulHDRRenderer->StartRender(context);
+			simulHDRRenderer->StartRender(deviceContext);
 			//simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 		}
 		else
@@ -231,7 +232,7 @@ void OpenGLRenderer::paintGL()
 			glDepthMask(GL_TRUE);
 			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		}
-		depthFramebuffer.Activate(context);
+		depthFramebuffer.Activate(deviceContext);
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		
 		if(sceneRenderer)
@@ -272,11 +273,15 @@ void OpenGLRenderer::paintGL()
 			simulOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTex(),dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
-			simulHDRRenderer->FinishRender(context);
+			simulHDRRenderer->FinishRender(deviceContext);
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
 		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
 		bool vertical_screen=ScreenHeight>ScreenWidth;
+		if(ShowCompositing)
+		{
+			RenderDepthBuffers(deviceContext,ScreenWidth/2,0,ScreenWidth/2,ScreenHeight/2);
+		}
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		{
 			int x0=ScreenWidth/2;
@@ -380,6 +385,17 @@ void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)
 	SaveGLImage(filename_utf8,(GLuint)(simulHDRRenderer->framebuffer.GetColorTex()));
 }
 
+void OpenGLRenderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
+{
+	ID3D11DeviceContext* pContext=(ID3D11DeviceContext* )deviceContext.asD3D11DeviceContext();
+	//MixedResolutionView *view	=viewManager.GetView(view_id);
+	//view->RenderDepthBuffers(deviceContext,x0,y0,dx,dy);
+	if(simulWeatherRenderer)
+	{
+		//simulWeatherRenderer->RenderFramebufferDepth(deviceContext,x0+w	,y0	,w,l);
+		//simulWeatherRenderer->RenderCompositingTextures(deviceContext,x0,y0+2*l,dx,dy);
+	}
+}
 
 void OpenGLRenderer::ReverseDepthChanged()
 {

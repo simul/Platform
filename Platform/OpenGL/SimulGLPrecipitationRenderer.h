@@ -11,27 +11,33 @@
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 typedef long HRESULT;
-class SimulGLPrecipitationRenderer: public simul::clouds::BasePrecipitationRenderer
+namespace simul
 {
-public:
-	SimulGLPrecipitationRenderer();
-	virtual ~SimulGLPrecipitationRenderer();
-	//! Call this when the device has been created or reset.
-	void RestoreDeviceObjects(void *pd3dDevice);
-	//! Call this when the D3D device has been shut down.
-	void InvalidateDeviceObjects();
-	void SetCubemapTexture(void *){}
-	void RecompileShaders();
-	//! Call this to draw the clouds, including any illumination by lightning.
-	void Render(simul::crossplatform::DeviceContext &deviceContext
-				,const void *depth_tex
-				,float max_fade_distance_metres
-				,simul::sky::float4 viewportTextureRegionXYWH);
-	// Set a texture not created by this class to be used:
-	bool SetExternalRainTexture(void* tex);
-protected:
-	virtual void TextureRepeatChanged();
-	bool		external_rain_texture;
-	GLuint		program;
-	GLuint		rain_texture;
-};
+	namespace opengl
+	{
+		class SimulGLPrecipitationRenderer: public simul::clouds::BasePrecipitationRenderer
+		{
+		public:
+			SimulGLPrecipitationRenderer();
+			virtual ~SimulGLPrecipitationRenderer();
+			//! Call this when the device has been created or reset.
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
+			//! Call this when the D3D device has been shut down.
+			void InvalidateDeviceObjects();
+			void SetCubemapTexture(void *){}
+			void RecompileShaders();
+			//! Call this to draw the clouds, including any illumination by lightning.
+			void Render(simul::crossplatform::DeviceContext &deviceContext
+						,const void *depth_tex
+						,float max_fade_distance_metres
+						,simul::sky::float4 viewportTextureRegionXYWH);
+			// Set a texture not created by this class to be used:
+			bool SetExternalRainTexture(void* tex);
+		protected:
+			virtual void TextureRepeatChanged();
+			bool		external_rain_texture;
+			GLuint		program;
+			GLuint		rain_texture;
+		};
+	}
+}

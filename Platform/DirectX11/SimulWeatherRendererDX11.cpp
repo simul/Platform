@@ -159,7 +159,7 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	hdrConstants.RestoreDeviceObjects(renderPlatform);
 	if(simulCloudRenderer)
 	{
-		simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
+		simulCloudRenderer->RestoreDeviceObjects(renderPlatform);
 		if(simulSkyRenderer)
 			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	}
@@ -171,7 +171,7 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	}*/
 	if(simulSkyRenderer)
 	{
-		simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice);
+		simulSkyRenderer->RestoreDeviceObjects(renderPlatform);
 	//	if(simulCloudRenderer)
 //			simulSkyRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
 	}
@@ -180,9 +180,9 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	//V_RETURN(CreateBuffers());
 
 	if(simul2DCloudRenderer)
-		simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
+		simul2DCloudRenderer->RestoreDeviceObjects(renderPlatform);
 	if(simulPrecipitationRenderer)
-		simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice);
+		simulPrecipitationRenderer->RestoreDeviceObjects(renderPlatform);
 
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
@@ -258,6 +258,8 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 	std::wstring filenamew=simul::base::Utf8ToWString(filename_utf8);
 	ID3D11DeviceContext* m_pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context=m_pImmediateContext;
 	CubemapFramebuffer	fb_cubemap;
 	static int cubesize=1024;
 	fb_cubemap.SetWidthAndHeight(cubesize,cubesize);
@@ -288,10 +290,10 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 	for(int i=0;i<6;i++)
 	{
 		fb_cubemap.SetCurrentFace(i);
-		fb_cubemap.Activate(m_pImmediateContext);
+		fb_cubemap.Activate(deviceContext);
 		if(gamma_correction)
 		{
-			gamma_correct.Activate(m_pImmediateContext);
+			gamma_correct.Activate(deviceContext);
 			gamma_correct.Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,0.f);
 		}
 		if(simulSkyRenderer)
@@ -368,7 +370,7 @@ ERRNO_CHECK
 	float godrays_strength		=(float)(!is_cubemap)*environment->cloudKeyframer->GetInterpolatedKeyframe().godray_strength;
 	if(buffered)
 	{
-		fb->lowResFarFramebufferDx11.ActivateViewport(deviceContext.platform_context,depthViewportXYWH.x,depthViewportXYWH.y,depthViewportXYWH.z,depthViewportXYWH.w);
+		fb->lowResFarFramebufferDx11.ActivateViewport(deviceContext,depthViewportXYWH.x,depthViewportXYWH.y,depthViewportXYWH.z,depthViewportXYWH.w);
 		fb->lowResFarFramebufferDx11.Clear(deviceContext.platform_context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
 	}
 ERRNO_CHECK
@@ -464,24 +466,6 @@ void SimulWeatherRendererDX11::RenderPrecipitation(crossplatform::DeviceContext 
 		max_fade_dist_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	if(simulPrecipitationRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible()) 
 		simulPrecipitationRenderer->Render(deviceContext,depth_tex,max_fade_dist_metres,depthViewportXYWH);
-}
-
-void SimulWeatherRendererDX11::RenderCompositingTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
-
-	TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
-	int w=dx/2;
-	int l=dy/2;
-	int W=w,L=l;
-	deviceContext.renderPlatform->DrawTexture(pContext		,x0+0*W	,y0		,w,l,(ID3D11ShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
-	deviceContext.renderPlatform->Print		(deviceContext	,x0+0*W	,y0		,"Hi-Res Far");
-	deviceContext.renderPlatform->DrawTexture(pContext		,x0+1*W	,y0		,w,l,(ID3D11ShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
-	deviceContext.renderPlatform->Print		(deviceContext	,x0+1*W	,y0		,"Hi-Res Near");
-	deviceContext.renderPlatform->DrawTexture(pContext		,x0+0*W	,y0+L	,w,l,(ID3D11ShaderResourceView*)fb->lowResFarFramebufferDx11.GetColorTex());
-	deviceContext.renderPlatform->Print		(deviceContext	,x0+0*W	,y0+L	,"Lo-Res Far");
-	deviceContext.renderPlatform->DrawTexture(pContext		,x0+1*W	,y0+L	,w,l,(ID3D11ShaderResourceView*)fb->lowResNearFramebufferDx11.GetColorTex());
-	deviceContext.renderPlatform->Print		(deviceContext	,x0+1*W	,y0+L	,"Lo-Res Near");
 }
 
 void SimulWeatherRendererDX11::RenderLightning(crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex)

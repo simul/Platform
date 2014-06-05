@@ -37,7 +37,7 @@ namespace simul
 			//standard ogl object interface functions
 			bool Create();
 			void RecompileShaders();
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform*);
 			void InvalidateDeviceObjects();
 			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! Render the clouds.
@@ -80,7 +80,7 @@ namespace simul
 			bool init;
 			// Make up to date with respect to keyframer:
 			void EnsureCorrectTextureSizes();
-			void EnsureTexturesAreUpToDate(void *);
+			void EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext);
 			void EnsureCorrectIlluminationTextureSizes();
 			void EnsureIlluminationTexturesAreUpToDate();
 			void EnsureTextureCycle();
@@ -141,7 +141,7 @@ namespace simul
 			simul::opengl::Mesh sphereMesh;
 
 			void CreateVolumeNoise();
-			void CreateNoiseTexture(void *);
+			void CreateNoiseTexture(crossplatform::DeviceContext &deviceContext);
 			bool CreateCloudEffect();
 			bool RenderCloudsToBuffer();
 

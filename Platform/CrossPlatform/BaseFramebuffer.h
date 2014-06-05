@@ -7,6 +7,7 @@ namespace simul
 	namespace crossplatform
 	{
 		class Texture;
+		struct DeviceContext;
 		//! A base class for API-dependent framebuffer classes.
 		SIMUL_CROSSPLATFORM_EXPORT_CLASS BaseFramebuffer
 		{
@@ -17,11 +18,12 @@ namespace simul
 			//! Call this when the API-dependent device has been lost or is shutting down.
 			virtual void InvalidateDeviceObjects()=0;
 			//! Activate the framebuffer and set the viewport- must be followed after rendering by a call to \ref Deactivate().
-			virtual void ActivateViewport(void*,float viewportX, float viewportY, float viewportW, float viewportH)=0;
+			virtual void ActivateViewport(crossplatform::DeviceContext &,float viewportX, float viewportY, float viewportW, float viewportH)=0;
 			//! Activate the framebuffer - must be followed after rendering by a call to \ref Deactivate().
-			virtual void Activate(void* context)=0;
+			virtual void Activate(crossplatform::DeviceContext &)=0;
 			//! Activate the colour part of this framebuffer, without depth - must be followed after rendering by a call to \ref Deactivate().
-			virtual void ActivateColour(void*,const float viewportXYWH[4])=0;
+			virtual void ActivateColour(crossplatform::DeviceContext &,const float viewportXYWH[4])=0;
+			virtual void ActivateDepth(crossplatform::DeviceContext &)=0;
 			//! Return true if the framebuffer's depth buffer has been activated and not yet deactivated.
 			virtual bool IsDepthActive() const;
 			//! Return true if the framebuffer's colour buffer has been activated and not yet deactivated.
@@ -39,6 +41,7 @@ namespace simul
 			//! Set the size of the framebuffer in pixel height and width.
 			virtual void ClearColour(void* context,float,float,float,float)=0;
 			virtual void SetWidthAndHeight(int w,int h)=0;
+			virtual void SetAntialiasing(int s)=0;
 			//! Get the API-dependent pointer or id for the colour buffer target.
 			virtual void* GetColorTex()=0;
 			//! Get the API-dependent pointer or id for the depth buffer target.

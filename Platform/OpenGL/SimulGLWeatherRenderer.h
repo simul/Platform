@@ -31,15 +31,15 @@ public:
 	virtual void Render()=0;
 };
 #endif
-class SimulGLLightningRenderer;
-class SimulGLAtmosphericsRenderer;
-class SimulGLPrecipitationRenderer;
 
 namespace simul
 {
 	//! The namespace for the OpenGL platform library and its rendering classes.
 	namespace opengl
 	{
+		class SimulGLLightningRenderer;
+		class SimulGLAtmosphericsRenderer;
+		class SimulGLPrecipitationRenderer;
 		class SimulGLSkyRenderer;
 		class SimulGLCloudRenderer;
 		class SimulGL2DCloudRenderer;

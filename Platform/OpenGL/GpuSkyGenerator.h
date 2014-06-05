@@ -12,7 +12,7 @@ namespace simul
 		public:
 			GpuSkyGenerator();
 			virtual ~GpuSkyGenerator();
-			void RestoreDeviceObjects(void *dev);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			//! Return true if the derived class can make sky tables using the GPU.

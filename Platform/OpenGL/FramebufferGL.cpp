@@ -164,7 +164,7 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 	SetDepthFormat(iformat);
 }
 
-void FramebufferGL::Activate(void *)
+void FramebufferGL::Activate(crossplatform::DeviceContext &)
 {
 	if(!m_fb)
 		Init();
@@ -179,7 +179,11 @@ void FramebufferGL::Activate(void *)
 	fb_stack.push(m_fb);
 }
 
-void FramebufferGL::ActivateColour(void *,const float /*viewportXYWH*/[4])
+void FramebufferGL::ActivateDepth(crossplatform::DeviceContext &)
+{
+}
+
+void FramebufferGL::ActivateColour(crossplatform::DeviceContext &,const float /*viewportXYWH*/[4])
 {
 	SIMUL_THROW("ActivateColour does not yet work for FramebufferGL");
 	if(!m_fb)
@@ -197,7 +201,7 @@ void FramebufferGL::ActivateColour(void *,const float /*viewportXYWH*/[4])
 // Activate the FBO as a render target
 // The FBO needs to be deactivated when using the associated Textures.
 
-void FramebufferGL::ActivateViewport(void *,float viewportX, float viewportY, float viewportW, float viewportH)
+void FramebufferGL::ActivateViewport(crossplatform::DeviceContext &,float viewportX, float viewportY, float viewportW, float viewportH)
 {
 	if(!m_fb)
 		Init();

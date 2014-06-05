@@ -11,6 +11,7 @@
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/simul_gpu_sky.sl"
 #include "Simul/Base/Timer.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include <math.h>
 using namespace simul;
 using namespace opengl;
@@ -35,7 +36,7 @@ GpuSkyGenerator::~GpuSkyGenerator()
 	delete [] skyl_cache;
 }
 
-void GpuSkyGenerator::RestoreDeviceObjects(void *)
+void GpuSkyGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *)
 {
 	gpuSkyConstants.RestoreDeviceObjects();
 	RecompileShaders();
@@ -103,6 +104,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 	}
 	if(fadeTexIndex[cycled_index]>=p.fill_up_to_texels)
 		return;
+	crossplatform::DeviceContext deviceContext;
 	if(loss_program<=0)
 		RecompileShaders();
 //	float maxOutputAltKm=p.altitudes_km[p.altitudes_km.size()-1];
@@ -169,7 +171,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 			glUseProgram(copy_program);
 			setParameter(copy_program,"source_texture",0);
 			setParameter(copy_program,"tz",gpuSkyConstants.texCoordZ);
-			F[0]->Activate(NULL);
+			F[0]->Activate(deviceContext);
 				// input light values:
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_3D,finalLoss[cycled_index]->tex);
@@ -194,7 +196,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 			gpuSkyConstants.Apply();
 		glUseProgram(loss_program);
 		GL_ERROR_CHECK
-			F[1]->Activate(NULL);
+			F[1]->Activate(deviceContext);
 		GL_ERROR_CHECK
 				if(i==0)
 				{
@@ -258,7 +260,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 			gpuSkyConstants.texCoordZ		=((float)start_insc-uu)/(float)p.numDistances;
 			gpuSkyConstants.Apply();
 			setParameter(copy_program,"tz",gpuSkyConstants.texCoordZ);
-			F[0]->Activate(NULL);
+			F[0]->Activate(deviceContext);
 				// input light values:
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_3D,finalInsc[cycled_index]->tex);
@@ -289,7 +291,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 			gpuSkyConstants.distanceKm		=distKm;
 			gpuSkyConstants.prevDistanceKm	=prevDistKm;
 			gpuSkyConstants.Apply();
-			F[1]->Activate(NULL);
+			F[1]->Activate(deviceContext);
 				F[1]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 				if(i>0)
 				{
@@ -348,7 +350,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 			gpuSkyConstants.texCoordZ		=((float)start_skyl-uu)/(float)p.numDistances;
 			gpuSkyConstants.Apply();
 			setParameter(copy_program,"tz",gpuSkyConstants.texCoordZ);
-			F[0]->Activate(NULL);
+			F[0]->Activate(deviceContext);
 				// input light values:
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_3D,finalSkyl[cycled_index]->tex);
@@ -385,7 +387,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 			gpuSkyConstants.distanceKm		=distKm;
 			gpuSkyConstants.prevDistanceKm	=prevDistKm;
 			gpuSkyConstants.Apply();
-			F[1]->Activate(NULL);
+			F[1]->Activate(deviceContext);
 				F[1]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 				if(i>0)
 				{

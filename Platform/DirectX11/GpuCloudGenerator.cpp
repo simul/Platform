@@ -146,7 +146,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	int density_gridsize=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
 	mask_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]);
 
-	mask_fb.Activate(m_pImmediateContext);
+	mask_fb.Activate(deviceContext);
 	const simul::clouds::MaskMap &masks=*params.masks;
 	if(masks.size())
 	{

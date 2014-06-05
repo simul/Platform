@@ -36,7 +36,7 @@ namespace simul
 			//standard ogl object interface functions
 			bool Create();
 			//! OpenGL Implementation of device object creation - needs a GL context to be present.
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void RecompileShaders();
 			//! OpenGL Implementation of device invalidation - not strictly needed in GL.
 			void InvalidateDeviceObjects();
@@ -59,7 +59,7 @@ namespace simul
 			virtual void DrawLines(void *,VertexXyzRgba *,int ,bool ){}
 
 			void EnsureCorrectTextureSizes();
-			void EnsureTexturesAreUpToDate(void *);
+			void EnsureTexturesAreUpToDate(crossplatform::DeviceContext &);
 			void EnsureTextureCycle();
 			void EnsureCorrectIlluminationTextureSizes(){}
 			void EnsureIlluminationTexturesAreUpToDate(){}
@@ -94,7 +94,7 @@ namespace simul
 			FramebufferGL	coverage_fb;
 
 			FramebufferGL	detail_fb;
-			void CreateNoiseTexture(void *);
+			void CreateNoiseTexture(crossplatform::DeviceContext &deviceContext);
 			//void CreateImageTexture();
 			bool CreateCloudEffect();
 			bool RenderCloudsToBuffer();

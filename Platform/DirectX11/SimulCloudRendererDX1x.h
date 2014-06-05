@@ -53,6 +53,10 @@ typedef long HRESULT;
 
 namespace simul
 {
+	namespace crossplatform
+	{
+		class RenderPlatform;
+	}
 	namespace dx11
 	{
 	//! A cloud rendering class. Create an instance of this class within a DirectX program.
@@ -63,7 +67,7 @@ namespace simul
 			virtual ~SimulCloudRendererDX1x();
 			void RecompileShaders();
 			//! Call this when the D3D device has been created or reset
-			void RestoreDeviceObjects( void* pd3dDevice);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			//! Call this when the 3D device has been lost.
 			void InvalidateDeviceObjects();
 			//! Call this to release the memory for D3D device objects.
@@ -110,7 +114,7 @@ namespace simul
 			void RenderCombinedCloudTexture(void *context);
 			// Make up to date with respect to keyframer:
 			void EnsureCorrectTextureSizes();
-			void EnsureTexturesAreUpToDate(void *context);
+			void EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext);
 			void EnsureCorrectIlluminationTextureSizes();
 			void EnsureIlluminationTexturesAreUpToDate();
 			void EnsureTextureCycle();
@@ -192,11 +196,11 @@ namespace simul
 			float LookupLargeScaleTexture(float x,float y);
 
 			bool CreateLightningTexture();
-			void CreateNoiseTexture(void *context);
-			void Create3DNoiseTexture(void *context);
+			void CreateNoiseTexture(crossplatform::DeviceContext &deviceContext);
+			void Create3DNoiseTexture(crossplatform::DeviceContext &deviceContext);
 			bool CreateCloudEffect();
 			bool MakeCubemap(); // not ready yet
-			void RenderNoise(void *context);
+			void RenderNoise(crossplatform::DeviceContext &deviceContext);
 			
 			bool enable_lightning;
 		};

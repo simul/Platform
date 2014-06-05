@@ -30,7 +30,7 @@ void SimulGLPrecipitationRenderer::TextureRepeatChanged()
 	MakeMesh();
 }
 
-void SimulGLPrecipitationRenderer::RestoreDeviceObjects(void *)
+void SimulGLPrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *)
 {
 	MakeMesh();
 	RecompileShaders();

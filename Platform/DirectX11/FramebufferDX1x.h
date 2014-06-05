@@ -37,11 +37,11 @@ namespace simul
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-			void Activate(void *context );
-			void ActivateColour(void*,const float viewportXYWH[4]);
-			void ActivateDepth(void *context);
-			void ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH );
-			void ActivateColour(void *context);
+			void Activate(crossplatform::DeviceContext &deviceContext);
+			void ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4]);
+			void ActivateDepth(crossplatform::DeviceContext &deviceContext);
+			void ActivateViewport(crossplatform::DeviceContext &deviceContext, float viewportX, float viewportY, float viewportW, float viewportH );
+			void ActivateColour(crossplatform::DeviceContext &context);
 			void Deactivate(void *context);
 			void DeactivateDepth(void *context);
 			void Clear(void *context,float,float,float,float,float,int mask=0);
@@ -103,7 +103,7 @@ namespace simul
 			dx11::Texture						buffer_depth_texture;
 
 			bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
-			bool CreateBuffers();
+			bool CreateBuffers(crossplatform::RenderPlatform *renderPlatform);
 			ID3D1xRenderTargetView* MakeRenderTarget(const ID3D1xTexture2D* pTexture);
 			float timing;
 			unsigned int num_v;

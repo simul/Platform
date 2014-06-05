@@ -24,6 +24,7 @@ namespace simul
 			CubemapFramebuffer();
 			virtual ~CubemapFramebuffer();
 			void SetWidthAndHeight(int w,int h);
+			void SetAntialiasing(int s){}
 			void SetFormat(int i);
 			void SetDepthFormat(int){}
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
@@ -33,9 +34,10 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void SetCurrentFace(int i);
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-			void ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH );
-			void Activate(void *context );
-			void ActivateColour(void*,const float viewportXYWH[4]);
+			void ActivateViewport(crossplatform::DeviceContext &, float viewportX, float viewportY, float viewportW, float viewportH );
+			void Activate(crossplatform::DeviceContext &);
+			void ActivateColour(crossplatform::DeviceContext &,const float viewportXYWH[4]);
+			void ActivateDepth(crossplatform::DeviceContext &);
 			void Deactivate(void *context);
 			void DeactivateDepth(void *context);
 			void Render(bool){}

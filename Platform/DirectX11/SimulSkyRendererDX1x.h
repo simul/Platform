@@ -51,7 +51,7 @@ public:
 	//standard d3d object interface functions
 	void RecompileShaders();
 	//! Call this when the D3D device has been created or reset.
-	void RestoreDeviceObjects(void* pd3dDevice);
+	void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 	//! Call this when the D3D device has been shut down.
 	void InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.

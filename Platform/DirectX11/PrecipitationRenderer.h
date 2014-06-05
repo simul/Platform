@@ -37,7 +37,7 @@ namespace simul
 			virtual ~PrecipitationRenderer();
 			//standard d3d object interface functions:
 			//! Call this when the D3D device has been created or reset.
-			void RestoreDeviceObjects(void* dev);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void RecompileShaders();
 			void SetCubemapTexture(void *);
 			//! Call this when the D3D device has been shut down.

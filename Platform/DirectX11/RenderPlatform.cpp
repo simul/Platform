@@ -398,6 +398,11 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",NULL);
 }
 
+void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult)
+{
+	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsVoidPointer(),mult);
+}
+
 void RenderPlatform::DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,void *effect,void *technique)
 {
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();

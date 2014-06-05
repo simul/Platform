@@ -10,6 +10,7 @@
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "D3dx11effect.h"
 using namespace simul;
 using namespace dx11;
@@ -31,9 +32,10 @@ GpuSkyGenerator::~GpuSkyGenerator()
 	InvalidateDeviceObjects();
 }
 
-void GpuSkyGenerator::RestoreDeviceObjects(void *dev)
+void GpuSkyGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	m_pd3dDevice=(ID3D11Device*)dev;
+	renderPlatform=r;
+	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	gpuSkyConstants.RestoreDeviceObjects(m_pd3dDevice);
@@ -93,6 +95,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		return;
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.platform_context=m_pImmediateContext;
+	deviceContext.renderPlatform=renderPlatform;
 	if(keyframe_checksums[cycled_index]!=p.keyframe_checksum)
 	{
 		keyframe_checksums[cycled_index]	=p.keyframe_checksum;
@@ -104,8 +107,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	int gridsize_2d			=(int)p.altitudes_km.size()*p.numElevations;
 	if(dens_tex.width!=a.table_size||optd_tex.width!=a.table_size)
 		tables_checksum=0;
-	dens_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,a.table_size,1,DXGI_FORMAT_R32G32B32A32_FLOAT,false);
-	optd_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,a.table_size,a.table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,false,false);
+	dens_tex.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,a.table_size,1,DXGI_FORMAT_R32G32B32A32_FLOAT,false);
+	optd_tex.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,a.table_size,a.table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,false,false);
 
 	if(a.tables_checksum!=tables_checksum)
 	{

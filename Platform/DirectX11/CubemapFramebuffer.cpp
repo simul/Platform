@@ -252,14 +252,18 @@ void CubemapFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 }
 
-void CubemapFramebuffer::Activate(void *context)
+void CubemapFramebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 {
-	ActivateViewport(context,0.f,0.f,1.f,1.f);
+	ActivateViewport(deviceContext,0.f,0.f,1.f,1.f);
 }
 
-void CubemapFramebuffer::ActivateColour(void *context,const float viewportXYWH[4])
+void CubemapFramebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+}
+
+void CubemapFramebuffer::ActivateColour(crossplatform::DeviceContext &context,const float viewportXYWH[4])
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context.asD3D11DeviceContext();
 	HRESULT hr=S_OK;
 	unsigned int num_v=0;
 	pContext->RSGetViewports(&num_v,NULL);
@@ -286,9 +290,9 @@ void CubemapFramebuffer::ActivateColour(void *context,const float viewportXYWH[4
 	pContext->RSSetViewports(1, &viewport);
 }
 
-void CubemapFramebuffer::ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH)
+void CubemapFramebuffer::ActivateViewport(crossplatform::DeviceContext &deviceContext, float viewportX, float viewportY, float viewportW, float viewportH)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	HRESULT hr=S_OK;
 	unsigned int num_v=0;
 	pContext->RSGetViewports(&num_v,NULL);

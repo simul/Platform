@@ -19,7 +19,7 @@ namespace simul
 			OceanRenderer(simul::terrain::SeaKeyframer *s);
 			virtual ~OceanRenderer();
 			// init & cleanup
-			void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			// Rendering routines

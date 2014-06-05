@@ -7,6 +7,7 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/simul_gpu_clouds.sl"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 
 using namespace simul;
 using namespace opengl;
@@ -183,6 +184,7 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	int total_texels=GetDensityGridsize(params.density_grid);
 	if(!density_program)
 		RecompileShaders();
+	crossplatform::DeviceContext deviceContext;
 	// We render out a 2D texture with each XY layer laid end-to-end, and copy it to the target.
 	dens_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]*params.density_grid[2]);
 	if(!dens_fb.InitColor_Tex(0,iformat))
@@ -219,7 +221,7 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	glLoadIdentity();
 	{
 GL_ERROR_CHECK
-		dens_fb.Activate(NULL);
+		dens_fb.Activate(deviceContext);
 //dens_fb.Clear(1,0,0,0);
 GL_ERROR_CHECK
 		DrawQuad(0.f,y_start,1.f,y_end-y_start);
@@ -266,6 +268,7 @@ void GpuCloudGenerator::PerformGPURelight(int light_index
 											,int start_texel
 											,int texels)
 {
+	crossplatform::DeviceContext deviceContext;
 GL_ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -320,7 +323,7 @@ GL_ERROR_CHECK
 	}
 	if(z0==0)
 	{
-		F[0]->Activate(NULL);
+		F[0]->Activate(deviceContext);
 			F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			if(target)
@@ -341,7 +344,7 @@ GL_ERROR_CHECK
 
 		gpuCloudConstants.zPosition=zPosition;
 		gpuCloudConstants.Apply();
-		F[1]->Activate(NULL);
+		F[1]->Activate(deviceContext);
 float u=(float)i/(float)z1;
 F[1]->Clear(NULL,u,u,u,u,1.f);
 			glMatrixMode(GL_PROJECTION);
@@ -387,6 +390,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 {
 	if(texels<=0)
 		return;
+	crossplatform::DeviceContext deviceContext;
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -419,7 +423,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	glBindTexture(GL_TEXTURE_3D,directLightTextures[0].tex);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	{
-		world_fb.Activate(NULL);
+		world_fb.Activate(deviceContext);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
 			glOrtho(0,1.0,0,1.0,-1.0,1.0);
