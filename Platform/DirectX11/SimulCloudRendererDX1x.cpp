@@ -159,7 +159,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
 {
 	renderPlatform=r;
 	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
-	gpuCloudGenerator.RestoreDeviceObjects(m_pd3dDevice);
+	gpuCloudGenerator.RestoreDeviceObjects(renderPlatform);
 	// Allow the GPU cloud generator to directly create and modify the target textures.
 	dx11::Texture *ts[]={&cloud_textures[0],&cloud_textures[1],&cloud_textures[2]};
 	gpuCloudGenerator.SetDirectTargets(ts);

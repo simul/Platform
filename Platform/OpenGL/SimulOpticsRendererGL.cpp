@@ -52,7 +52,9 @@ ERRNO_CHECK
 void SimulOpticsRendererGL::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(flare_program);
-	flare_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_flare.frag");
+	std::map<std::string,std::string> defines;
+	defines["REVERSE_DEPTH"]="0";
+	flare_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_flare.frag",defines);
 	flareColour_param				=glGetUniformLocation(flare_program,"flareColour");
 	flareTexture_param				=glGetUniformLocation(flare_program,"flareTexture");
 

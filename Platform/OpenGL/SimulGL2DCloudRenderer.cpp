@@ -468,8 +468,10 @@ GL_ERROR_CHECK
 
 void SimulGL2DCloudRenderer::RecompileShaders()
 {
+	std::map<std::string,std::string> defines;
+	defines["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
 	SAFE_DELETE_PROGRAM(clouds_program);
-	clouds_program			=MakeProgram("simul_clouds_2d");
+	clouds_program			=MakeProgram("simul_clouds_2d",defines);
 	glUseProgram(clouds_program);
 
 	coverageTexture			= glGetUniformLocation(clouds_program,"coverageTexture");

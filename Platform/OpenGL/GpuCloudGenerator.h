@@ -15,7 +15,7 @@ namespace simul
 		public:
 			GpuCloudGenerator();
 			virtual ~GpuCloudGenerator();
-			void RestoreDeviceObjects(void *dev);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			bool CanPerformGPULighting() const

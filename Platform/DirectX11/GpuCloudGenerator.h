@@ -26,7 +26,7 @@ namespace simul
 			{
 				harmonic_secondary=h;
 			}
-			void RestoreDeviceObjects(void *dev);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			bool CanPerformGPULighting() const

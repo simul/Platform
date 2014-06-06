@@ -630,21 +630,23 @@ void SimulGLSkyRenderer::RecompileShaders()
 	SAFE_DELETE_PROGRAM(fade_3d_to_2d_program);
 	SAFE_DELETE_PROGRAM(sun_program);
 	SAFE_DELETE_PROGRAM(stars_program);
+	std::map<std::string,std::string> defines;
+	defines["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
 GL_ERROR_CHECK
-	sky_program						=MakeProgram("simul_sky");
-	earthshadow_program				=MakeProgram("simul_sky.vert",NULL,"simul_earthshadow_sky.frag");
+	sky_program						=MakeProgram("simul_sky",defines);
+	earthshadow_program				=MakeProgram("simul_sky.vert",NULL,"simul_earthshadow_sky.frag",defines);
 GL_ERROR_CHECK
-	sun_program						=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
+	sun_program						=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag",defines);
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
-	stars_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
+	stars_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag",defines);
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 GL_ERROR_CHECK
-	sun_program						=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
+	sun_program						=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag",defines);
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
-	stars_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
+	stars_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag",defines);
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 GL_ERROR_CHECK
-	planet_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_planet.frag");
+	planet_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_planet.frag",defines);
 GL_ERROR_CHECK
 	planetTexture_param				=glGetUniformLocation(planet_program,"planetTexture");
 	planetColour_param				=glGetUniformLocation(planet_program,"colour");

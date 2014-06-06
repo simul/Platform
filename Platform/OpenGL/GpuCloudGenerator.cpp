@@ -30,7 +30,7 @@ GpuCloudGenerator::~GpuCloudGenerator()
 	delete [] density;
 }
 
-void GpuCloudGenerator::RestoreDeviceObjects(void *)
+void GpuCloudGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *)
 {
 	iformat=GL_LUMINANCE32F_ARB;
 	itype=GL_LUMINANCE;

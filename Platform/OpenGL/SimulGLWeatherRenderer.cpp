@@ -203,7 +203,9 @@ ERRNO_CHECK
 ERRNO_CHECK
 	simulAtmosphericsRenderer->RestoreDeviceObjects(NULL);
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
-	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag");
+	std::map<std::string,std::string> defines;
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
+	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag",defines);
 ERRNO_CHECK
 }
 void SimulGLWeatherRenderer::InvalidateDeviceObjects()

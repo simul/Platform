@@ -4,6 +4,7 @@
 #include "Simul/Math/Matrix.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
@@ -37,9 +38,10 @@ GpuCloudGenerator::~GpuCloudGenerator()
 	InvalidateDeviceObjects();
 }
 
-void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
+void GpuCloudGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	m_pd3dDevice=(ID3D11Device*)dev;
+	renderPlatform=r;
+	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	// Mask must have depth as that's how it merges.
@@ -139,7 +141,8 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	if(texels<=0)
 		return;
 	crossplatform::DeviceContext deviceContext;
-	deviceContext.platform_context=m_pImmediateContext;
+	deviceContext.platform_context	=m_pImmediateContext;
+	deviceContext.renderPlatform	=renderPlatform;
 
 	for(int i=0;i<3;i++)
 		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true,1);
