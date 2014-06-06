@@ -50,7 +50,7 @@ namespace simul
 			void RemoveWindow(HWND h);
 			void Shutdown();
 			IDXGISwapChain *GetSwapChain(HWND hwnd);
-			void StartRendering(HWND hwnd);
+			void Render(HWND hwnd);
 			void SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci);
 			void SetFullScreen(HWND hwnd,bool fullscreen,int which_output);
 			void ResizeSwapChain(HWND hwnd,int width,int height);

@@ -46,10 +46,12 @@ public:
 		if(fn.find(":")>=fn.length())
 		{
 			char buffer[_MAX_PATH];
+#ifndef _XBOX_ONE
 			if(_getcwd(buffer,_MAX_PATH))
 			{
 				fn=buffer;
 			}
+#endif
 			fn+="/";
 			fn+=logfilename;
 		}

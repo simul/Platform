@@ -507,6 +507,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	MixedResolutionView *view=viewManager.GetView(view_id);
 	EnsureCorrectBufferSizes(view_id);
 	const camera::CameraOutputInterface *cam=cameras[view_id];
+	SIMUL_ASSERT(cam!=NULL);
 	const camera::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	if(cam)
 	{
@@ -518,8 +519,6 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		v=*((D3DXMATRIX*)(cam->MakeViewMatrix()));
 		simul::dx11::UtilityRenderer::SetMatrices(v,proj);
 	}
-	else
-		SIMUL_ASSERT(false);
 	
 	crossplatform::DeviceContext deviceContext;
 	

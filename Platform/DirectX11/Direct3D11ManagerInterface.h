@@ -17,7 +17,7 @@ public:
 	virtual void						AddWindow(HWND h)=0;
 	virtual void						RemoveWindow(HWND h)=0;
 	virtual struct IDXGISwapChain *		GetSwapChain(HWND h)=0;
-	virtual void						StartRendering(HWND h)=0;
+	virtual void						Render(HWND h)=0;
 	virtual void						SetRenderer(HWND,Direct3D11CallbackInterface *ci)=0;
 	virtual void						SetFullScreen(HWND hwnd,bool fullscreen,int which_output)=0;
 	virtual void						ResizeSwapChain(HWND hwnd,int width,int height)=0;

@@ -611,7 +611,7 @@ IDXGISwapChain *Direct3D11Manager::GetSwapChain(HWND h)
 	return w->m_swapChain;
 }
 
-void Direct3D11Manager::StartRendering(HWND h)
+void Direct3D11Manager::Render(HWND h)
 {
 	if(windows.find(h)==windows.end())
 		return;
