@@ -169,6 +169,7 @@
     <ClInclude Include="light.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MixedResolutionView.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="ShaderMode.h" />
     <ClInclude Include="Texture.h" />
@@ -216,6 +217,7 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MixedResolutionView.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
