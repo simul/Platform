@@ -411,10 +411,14 @@ void Direct3D11Manager::Initialize()
 	d3dDevice->AddRef();
 	UINT refcount=d3dDevice->Release();
 #ifdef _DEBUG
+#ifndef _XBOX_ONE
 	SAFE_RELEASE(d3dDebug);
+#endif
 	SAFE_RELEASE(d3dInfoQueue);
+#ifndef _XBOX_ONE
 	d3dDevice->QueryInterface( __uuidof(ID3D11Debug), (void**)&d3dDebug );
 	d3dDebug->QueryInterface( __uuidof(ID3D11InfoQueue), (void**)&d3dInfoQueue );
+#endif
  
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
