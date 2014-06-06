@@ -200,6 +200,7 @@
     <ClCompile Include="LightningRenderer.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MixedResolutionView.cpp" />
     <ClCompile Include="OceanRenderer.cpp" />
     <ClCompile Include="OceanSimulator.cpp" />
     <ClCompile Include="PrecipitationRenderer.cpp" />
@@ -217,7 +218,6 @@
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
-    <ClCompile Include="View.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompileShaderDX1x.h" />
@@ -240,6 +240,7 @@
     <ClInclude Include="MacrosDx1x.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="mixedresolutionview.h" />
     <ClInclude Include="OceanRenderer.h" />
     <ClInclude Include="OceanSimulator.h" />
     <ClInclude Include="PrecipitationRenderer.h" />
@@ -259,7 +260,6 @@
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />
-    <ClInclude Include="View.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\CrossPlatform\atmospherics.sl" />
