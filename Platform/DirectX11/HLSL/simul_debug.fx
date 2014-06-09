@@ -1,5 +1,7 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
+#include "../../CrossPlatform/SL/depth.sl"
+
 sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 Texture2DMS<float4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
 TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
@@ -11,6 +13,8 @@ uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 	uniform float radius;
 	uniform float multiplier;
 	uniform vec4 colour;
+	uniform vec4 depthToLinFadeDistParams;
+	uniform vec2 tanHalfFov;
 };
 
 cbuffer cbPerObject : register(b11)
@@ -93,7 +97,21 @@ vec4 TexturedMSPS(posTexVertexOutput IN) : SV_TARGET
 	vec4 res	=multiplier*imageTextureMS.Load(pos,0);
 	return res;
 }
+float depthToFadeDistance(vec4 depth,vec2 xy,vec3 depthToLinFadeDistParams,vec2 tanHalf)
+{
+	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz);
+	float Tx=xy.x*tanHalf.x;
+	float Ty=xy.y*tanHalf.y;
+	vec4 fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
+	return fadeDist;
+}
 
+vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 depth		=texture_clamp(imageTexture,IN.texCoords);
+	vec4 dist		=depthToFadeDistance(depth,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
+    return dist;
+}
 struct vec3input
 {
     float3 position	: POSITION;
@@ -267,5 +285,18 @@ technique11 draw_cubemap_sphere
 		SetPixelShader(CompileShader(ps_4_0,PS_DrawCubemap()));
 		SetDepthStencilState( EnableDepth, 0 );
 		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+}
+
+technique11 show_depth
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
+		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS()));
     }
 }

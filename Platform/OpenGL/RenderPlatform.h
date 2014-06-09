@@ -38,6 +38,7 @@ namespace simul
 			void DrawLineLoop		(void *context,const double *mat,int num,const double *vertexArray,const float colr[4]);
 			void DrawTexture		(void *context,int x1,int y1,int dx,int dy,void *tex,float mult=1.f);
 			void DrawTexture		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f);
+			void DrawDepth			(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const float *proj);
 			void DrawQuad			(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,void *effect,void *technique);
 			void DrawQuad			(crossplatform::DeviceContext &deviceContext);
 			void Print				(crossplatform::DeviceContext &deviceContext,int x	,int y	,const char *text);

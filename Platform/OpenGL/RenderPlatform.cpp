@@ -267,6 +267,11 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsVoidPointer(),mult);
 }
 
+void RenderPlatform::DrawDepth		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const float *proj)
+{
+	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsVoidPointer(),1.0f);
+}
+
 void RenderPlatform::DrawQuad	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,void *effect,void *technique)
 {
 	struct Viewport

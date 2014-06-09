@@ -306,6 +306,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		float trueDist		=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 		result				=depthDependentFilteredImage(lowResFarTexture,lowResFarTexture,lowResDepthTexture,lowResDims,lowResTexCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist,false);
 		result.rgb			+=insc_far.rgb*result.a;
+		result.r=1;
 	}
     return result;
 }
