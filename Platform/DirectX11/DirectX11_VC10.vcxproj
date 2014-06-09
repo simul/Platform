@@ -77,11 +77,8 @@
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedManifest>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">$(Platform)/VC10/$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">$(Platform)/VC10/$(Configuration)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectName)_MD</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)_MDd</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">$(ProjectName)_MD</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">$(ProjectName)_MDd</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -170,8 +167,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>$(SIMUL)\..\;$(SIMUL)/External/FBX/include;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;SIMUL_DIRECTX11_DLL;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
