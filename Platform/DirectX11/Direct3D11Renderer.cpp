@@ -24,6 +24,9 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/pi.h"
 #include "D3dx11effect.h"
+#ifdef SIMUL_USE_SCENE
+#include "Simul/Scene/BaseSceneRenderer.h"
+#endif
 using namespace simul;
 using namespace dx11;
 
@@ -58,7 +61,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,simulHDRRenderer(NULL)
 		,simulTerrainRenderer(NULL)
 		,oceanRenderer(NULL)
-#ifndef _XBOX_ONE
+#ifdef SIMUL_USE_SCENE
 		,sceneRenderer(NULL)
 #endif
 		,memoryInterface(m)
@@ -72,7 +75,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 	oceanRenderer			=new(memoryInterface) OceanRenderer(env->seaKeyframer);
 	oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	
-#ifndef _XBOX_ONE
+#ifdef SIMUL_USE_SCENE
 	if(sc)
 		sceneRenderer			=new(memoryInterface) scene::BaseSceneRenderer(sc,&renderPlatformDx11);
 #endif
@@ -87,7 +90,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 Direct3D11Renderer::~Direct3D11Renderer()
 {
 	OnD3D11LostDevice();
-#ifndef _XBOX_ONE
+#ifdef SIMUL_USE_SCENE
 	del(sceneRenderer,memoryInterface);
 #endif
 	del(simulOpticsRenderer,memoryInterface);
@@ -441,7 +444,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
 		simulTerrainRenderer->Render(deviceContext,1.f);	
 	}
-#ifndef _XBOX_ONE
+#ifdef SIMUL_USE_SCENE
 	if(sceneRenderer)
 		sceneRenderer->Render(deviceContext);
 #endif
@@ -725,7 +728,7 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 		simulTerrainRenderer->InvalidateDeviceObjects();
 	if(oceanRenderer)
 		oceanRenderer->InvalidateDeviceObjects();
-#ifndef _XBOX_ONE
+#ifdef SIMUL_USE_SCENE
 	if(sceneRenderer)
 		sceneRenderer->InvalidateDeviceObjects();
 #endif

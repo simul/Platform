@@ -19,7 +19,7 @@
 	#endif
 #endif
 
-#if defined(_WINDLL) && !defined(DOXYGEN)
+#if defined(_DLL) && !defined(DOXYGEN)
 // In this lib:
 	#if !defined(SIMUL_DIRECTX1x_DLL) 
 	// If we're building dll libraries but not in this library IMPORT the classes
