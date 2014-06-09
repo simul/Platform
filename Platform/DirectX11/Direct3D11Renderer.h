@@ -9,9 +9,6 @@
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Graph/Meta/Group.h"
-#ifndef _XBOX_ONE
-#include "Simul/Scene/BaseSceneRenderer.h"
-#endif
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
@@ -43,6 +40,7 @@ namespace simul
 	namespace scene
 	{
 		class Scene;
+		class BaseSceneRenderer;
 	}
 	namespace dx11
 	{
@@ -159,9 +157,7 @@ namespace simul
 			SimulHDRRendererDX1x						*simulHDRRenderer;
 			TerrainRenderer								*simulTerrainRenderer;
 			OceanRenderer								*oceanRenderer;
-#ifndef _XBOX_ONE
 			simul::scene::BaseSceneRenderer				*sceneRenderer;
-#endif
 			ViewManager									viewManager;
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
