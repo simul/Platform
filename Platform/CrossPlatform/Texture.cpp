@@ -6,6 +6,6 @@ using namespace crossplatform;
 
 Texture::~Texture()
 {
-	std::cout<<"~texture"<<std::endl;
+	//std::cout<<"~texture"<<std::endl;
 }
 

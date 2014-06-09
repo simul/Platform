@@ -400,20 +400,23 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(crossplatform::DeviceCont
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.platform_context;
 	ID3DX11Effect *e=(ID3DX11Effect*)effect->platform_effect;
 	dx11::setTexture(e,"imageTexture",fb->lowResFarFramebufferDx11.buffer_texture.shaderResourceView);
-	ID3D11ShaderResourceView *mainDepth_SRV=(ID3D11ShaderResourceView*)mainDepthTexture->AsVoidPointer();
 	bool msaa=false;
-	if(mainDepth_SRV)
+	if(mainDepthTexture)
 	{
-		D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-		mainDepth_SRV->GetDesc(&desc);
-		msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+		ID3D11ShaderResourceView *mainDepth_SRV=(ID3D11ShaderResourceView*)mainDepthTexture->AsVoidPointer();
+		if(mainDepth_SRV)
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+			mainDepth_SRV->GetDesc(&desc);
+			msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+		}
+		if(msaa)
+		{
+			// Set both regular and MSAA depth variables. Which it is depends on the situation.
+			dx11::setTexture(e,"depthTextureMS"		,mainDepth_SRV);
+		}
+		dx11::setTexture(e,"depthTexture"			,mainDepth_SRV);
 	}
-	if(msaa)
-	{
-		// Set both regular and MSAA depth variables. Which it is depends on the situation.
-		dx11::setTexture(e,"depthTextureMS"		,mainDepth_SRV);
-	}
-	dx11::setTexture(e,"depthTexture"			,mainDepth_SRV);
 	
 	// The low res depth texture contains the total near and far depths in its x and y.
 	dx11::setTexture(e,"hiResDepthTexture"		,(ID3D11ShaderResourceView*)hiResDepthTexture);

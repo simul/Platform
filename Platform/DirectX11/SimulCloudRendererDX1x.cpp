@@ -873,10 +873,10 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::Devic
 	UtilityRenderer::DrawQuad2(pContext	,width-(w+8)-(w+8),height-(w+8),w,w,effect,effect->GetTechniqueByName("show_shadow"));
 	deviceContext.renderPlatform->Print(deviceContext,width-(w+8)-(w+8),height-(w+8)	,"shadow texture");
 
-	deviceContext.renderPlatform->DrawTexture(pContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,godrays_texture.shaderResourceView);
+	deviceContext.renderPlatform->DrawTexture(deviceContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,&godrays_texture);
 	deviceContext.renderPlatform->Print(deviceContext,width-2*w,height-(w+8)-w/2	,"godrays framebuffer");
 
-	deviceContext.renderPlatform->DrawTexture(pContext	,width-2*w,height-(w+8)-w	,w*2,w/2	,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex());
+	deviceContext.renderPlatform->DrawTexture(deviceContext	,width-2*w,height-(w+8)-w	,w*2,w/2	,moisture_fb.GetTexture());
 	deviceContext.renderPlatform->Print(deviceContext,width-2*w,height-(w+8)-w	,"moisture framebuffer");
 
 	simul::dx11::setTexture(effect,"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);

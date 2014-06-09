@@ -11,6 +11,6 @@ Effect::Effect()
 
 Effect::~Effect()
 {
-	std::cout<<"~texture"<<std::endl;
+	//std::cout<</"~texture"<<std::endl;
 }
 
