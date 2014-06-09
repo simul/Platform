@@ -23,7 +23,7 @@ void dx11::PlatformConstantBuffer::RestoreDeviceObjects(void *dev,size_t size,vo
 	cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
 	cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
 	cb_desc.MiscFlags			= 0;
-	cb_desc.ByteWidth			= PAD16(size);
+	cb_desc.ByteWidth			= (UINT)(PAD16(size));
 	cb_desc.StructureByteStride = 0;
 	ID3D11Device *device=(ID3D11Device*)dev;
 	device->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
