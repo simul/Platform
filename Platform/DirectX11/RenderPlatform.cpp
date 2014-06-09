@@ -370,15 +370,17 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView*)t;
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",srv);
 	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
+	ID3DX11EffectTechnique *tech=m_pDebugEffect->GetTechniqueByName("textured");
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	if(srv)
-		srv->GetDesc(&desc);
-	ID3DX11EffectTechnique *tech=m_pDebugEffect->GetTechniqueByName("textured");
-	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
-	if(msaa)
 	{
-		tech=m_pDebugEffect->GetTechniqueByName("textured");
-		simul::dx11::setTexture(m_pDebugEffect,"imageTextureMS",srv);
+		srv->GetDesc(&desc);
+		bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+		if(msaa)
+		{
+			tech=m_pDebugEffect->GetTechniqueByName("textured");
+			simul::dx11::setTexture(m_pDebugEffect,"imageTextureMS",srv);
+		}
 	}
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;
