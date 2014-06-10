@@ -25,6 +25,7 @@
 #include "Utilities.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 
 using namespace simul;
 using namespace dx11;
@@ -85,8 +86,6 @@ void Framebuffer::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D11Device*)dev;
-	if(!m_pd3dDevice)
-		return;
 }
 
 void Framebuffer::InvalidateDeviceObjects()
@@ -150,6 +149,10 @@ bool Framebuffer::CreateBuffers(crossplatform::RenderPlatform *renderPlatform)
 {
 	if(!Width||!Height)
 		return false;
+	if(!m_pd3dDevice)
+	{
+		RestoreDeviceObjects(renderPlatform->AsD3D11Device());
+	}
 	if(!m_pd3dDevice)
 		return false;
 	HRESULT hr=S_OK;

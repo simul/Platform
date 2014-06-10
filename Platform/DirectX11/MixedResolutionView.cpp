@@ -153,6 +153,14 @@ MixedResolutionView *ViewManager::GetView(int view_id)
 	return i->second;
 }
 
+std::set<MixedResolutionView*> ViewManager::GetViews()
+{
+	std::set<MixedResolutionView*> v;
+	for(ViewMap::iterator i=views.begin();i!=views.end();i++)
+		v.insert(i->second);
+	return v;
+}
+
 void ViewManager::Clear()
 {
 	for(ViewMap::iterator i=views.begin();i!=views.end();i++)

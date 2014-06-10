@@ -462,7 +462,7 @@ void SimulSkyRendererDX1x::RenderSun(crossplatform::DeviceContext &deviceContext
 float SimulSkyRendererDX1x::CalcSunOcclusion(crossplatform::DeviceContext &deviceContext,float cloud_occlusion)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-#if 1
+#ifndef _XBOX_ONE
 	sun_occlusion=cloud_occlusion;
 	if(!m_hTechniqueQuery||!m_hTechniqueQuery->IsValid())
 		return sun_occlusion;

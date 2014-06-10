@@ -14,8 +14,7 @@ namespace simul
 		class SIMUL_DIRECTX11_EXPORT Texture:public simul::crossplatform::Texture
 		{
 		public:
-			Texture(ID3D11Device* d);
-			Texture();
+			Texture(ID3D11Device* d=NULL);
 			~Texture();
 			void InvalidateDeviceObjects();
 			void LoadFromFile(const char *pFilePathUtf8);

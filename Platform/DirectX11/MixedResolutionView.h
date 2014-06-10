@@ -6,6 +6,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Texture.h"
 #include "Simul/Camera/Camera.h"
+#include <set>
 
 namespace simul
 {
@@ -73,6 +74,7 @@ namespace simul
 				last_created_view_id(-1)
 			{}
 			MixedResolutionView			*GetView(int view_id);
+			std::set<MixedResolutionView*> GetViews();
 			int							AddView				(bool external_framebuffer);
 			void						RemoveView			(int);
 			void						Clear();

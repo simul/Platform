@@ -18,12 +18,15 @@ dx11::Texture::Texture(ID3D11Device* d)
 	, unorderedAccessViewMips(NULL)
 	,renderTargetView(NULL)
 	,stagingBuffer(NULL)
+	,width(0)
+	,length(0)
 	,last_context(NULL)
 	,m_pOldRenderTarget(NULL)
 	,m_pOldDepthSurface(NULL)
-
 {
+	memset(&mapped,0,sizeof(mapped));
 }
+
 
 dx11::Texture::~Texture()
 {
@@ -58,23 +61,6 @@ bool dx11::Texture::IsValid() const
 {
 	return (shaderResourceView!=NULL);
 }
-
-
-dx11::Texture::Texture()
-	:texture(NULL)
-	,shaderResourceView(NULL)
-	,unorderedAccessView(NULL)
-	,renderTargetView(NULL)
-	,stagingBuffer(NULL)
-	,width(0)
-	,length(0)
-	,last_context(NULL)
-	,m_pOldRenderTarget(NULL)
-	,m_pOldDepthSurface(NULL)
-{
-	memset(&mapped,0,sizeof(mapped));
-}
-
 void dx11::Texture::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *pContext,void *target,int start_texel,int num_texels)
 {
 	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);

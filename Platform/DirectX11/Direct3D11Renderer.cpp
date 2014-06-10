@@ -166,11 +166,19 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 	cubemapFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	envmapFramebuffer.SetWidthAndHeight(64,64);
 	envmapFramebuffer.RestoreDeviceObjects(pd3dDevice);
+	std::set<MixedResolutionView*> views=viewManager.GetViews();
+	for(std::set<MixedResolutionView*>::iterator i=views.begin();i!=views.end();i++)
+	{
+		(*i)->RestoreDeviceObjects(pd3dDevice);
+	}
 	RecompileShaders();
 }
+
 int	Direct3D11Renderer::AddView				(bool external_fb)
 {
-	return viewManager.AddView(external_fb);
+	int view_id=viewManager.AddView(external_fb);
+	viewManager.GetView(view_id)->RestoreDeviceObjects(m_pd3dDevice);
+	return view_id;
 }
 
 void Direct3D11Renderer::RemoveView			(int view_id)
@@ -508,6 +516,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	simul::base::SetGpuProfilingInterface(pContext,&simul::dx11::Profiler::GetGlobalProfiler());
 	D3DXMATRIX v,proj;
 	MixedResolutionView *view=viewManager.GetView(view_id);
+	if(!view)
+		return;
+	D3D11_VIEWPORT				viewport;
+	memset(&viewport,0,sizeof(D3D11_VIEWPORT));
+	UINT numv=1;
+	pContext->RSGetViewports(&numv, &viewport);
+	view->SetResolution((int)viewport.Width,(int)viewport.Height);
 	EnsureCorrectBufferSizes(view_id);
 	const camera::CameraOutputInterface *cam=cameras[view_id];
 	SIMUL_ASSERT(cam!=NULL);
@@ -808,9 +823,6 @@ void Direct3D11Renderer::SetViewType(int view_id,ViewType vt)
 
 void Direct3D11Renderer::SetCamera(int view_id,const simul::camera::CameraOutputInterface *c)
 {
-	MixedResolutionView *v=viewManager.GetView(view_id);
-	if(!v)
-		return;
 	cameras[view_id]=c;
 }
 

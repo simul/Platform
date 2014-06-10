@@ -39,6 +39,10 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			
+			ID3D11Device *AsD3D11Device()
+			{
+				return device;
+			}
 			void PushTexturePath(const char *pathUtf8);
 			void PopTexturePath();
 			void StartRender();

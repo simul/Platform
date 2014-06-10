@@ -8,7 +8,7 @@
 #ifdef _MSC_VER
 #pragma warning(disable:4251)
 #endif
-
+struct ID3D11Device;
 namespace simul
 {
 	namespace crossplatform
@@ -31,7 +31,7 @@ namespace simul
 				vec3 pos;
 				vec4 colour;
 			};
-
+			virtual ID3D11Device *AsD3D11Device()=0;
 			virtual void PushTexturePath	(const char *pathUtf8)=0;
 			virtual void PopTexturePath		()=0;
 			virtual void StartRender		()=0;

@@ -144,8 +144,8 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	defs["NUM_IMAGE_COLS"]	=string_format("%d",W);
 	defs["NUM_IMAGE_ROWS"]	=string_format("%d",H);
 	
-	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs,0);
-	hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
+	//CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs,0);
+	//hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
 }
 
 void SimulHDRRendererDX1x::InvalidateDeviceObjects()

@@ -66,7 +66,7 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 #endif
 #ifdef _XBOX_ONE
 	#pragma comment(lib,"d3d11_x.lib")
-	//#pragma comment(lib,"d3dcompiler_x.lib")
+	#pragma comment(lib,"d3dcompiler.lib")
 #else
 	#pragma comment(lib,"dxgi.lib")
 	#pragma comment(lib,"d3d11.lib")
@@ -169,7 +169,7 @@ namespace simul
 
 #if WINVER>=0x602
 HRESULT D3DX11CreateTextureFromFileW(ID3D11Device* pd3dDevice,const wchar_t *filename,D3DX11_IMAGE_LOAD_INFO *loadInfo
-									, void *nptr, ID3D11Resource** tex, HRESULT *hr )
+									, void *, ID3D11Resource** tex, HRESULT *hr )
 {
 	int flags=0;
 	DirectX::TexMetadata metadata;
@@ -223,16 +223,16 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 	//loadInfo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	loadInfo.MipLevels=0;
 
-    loadInfo.Width          = D3DX11_FROM_FILE;
-    loadInfo.Height         = D3DX11_FROM_FILE;
-     loadInfo.Depth          = D3DX11_FROM_FILE;
+    loadInfo.Width          = (UINT)D3DX11_FROM_FILE;
+    loadInfo.Height         = (UINT)D3DX11_FROM_FILE;
+    loadInfo.Depth          = (UINT)D3DX11_FROM_FILE;
 	loadInfo.Usage          = D3D11_USAGE_STAGING;
     loadInfo.Format         = (DXGI_FORMAT) D3DX11_FROM_FILE;
     loadInfo.CpuAccessFlags = D3D11_CPU_ACCESS_READ;
-	loadInfo.FirstMipLevel  = D3DX11_FROM_FILE;
-    loadInfo.MipLevels      = D3DX11_FROM_FILE;
+	loadInfo.FirstMipLevel  = (UINT)D3DX11_FROM_FILE;
+    loadInfo.MipLevels      = (UINT)D3DX11_FROM_FILE;
     loadInfo.MiscFlags      = 0;
-    loadInfo.MipFilter      = D3DX11_FROM_FILE;
+    loadInfo.MipFilter      = (UINT)D3DX11_FROM_FILE;
     loadInfo.pSrcInfo       = NULL;
     loadInfo.Filter         = D3DX11_FILTER_NONE;
 
@@ -487,12 +487,22 @@ void simul::dx11::unbindTextures(ID3DX11Effect *effect)
 	effect->GetDesc(&desc);
 	for(unsigned i=0;i<desc.GlobalVariables;i++)
 	{
-		ID3DX11EffectShaderResourceVariable*	srv	=effect->GetVariableByIndex(i)->AsShaderResource();
-		if(srv->IsValid())
-			srv->SetResource(NULL);
-		ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
-		if(uav->IsValid())
-			uav->SetUnorderedAccessView(NULL);
+		ID3DX11EffectVariable *var	=effect->GetVariableByIndex(i);
+		D3DX11_EFFECT_VARIABLE_DESC desc;
+		var->GetDesc(&desc);
+		ID3DX11EffectType *s=var->GetType();
+		//if(var->IsShaderResource())
+		{
+			ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
+			if(srv->IsValid())
+				srv->SetResource(NULL);
+		}
+		//if(var->IsUnorderedAccessView())
+		{
+			ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
+			if(uav->IsValid())
+				uav->SetUnorderedAccessView(NULL);
+		}
 	}
 }
 
@@ -549,23 +559,19 @@ ERRNO_CHECK
 	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
 ERRNO_CHECK
 	// See if there's a binary that's newer than the file date.
+	bool changes_detected=(shaderBuildMode==ALWAYS_BUILD);
+	double binary_date_jdn=0.0;
 	if(shaderBuildMode==BUILD_IF_CHANGED)
 	{
-ERRNO_CHECK
 		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
-ERRNO_CHECK
-		double binary_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
-ERRNO_CHECK
-		bool changes_detected=false;
+		binary_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
 		if(text_date_jdn>binary_date_jdn||!binary_date_jdn)
 			changes_detected=true;
 		else if(text_date_jdn>0)	// maybe some of the includes have changed?
 		{
 			ID3DBlob *binaryBlob=NULL;
 			ID3DBlob *errorMsgs=NULL;
-ERRNO_CHECK
 			DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),binary_date_jdn);
-ERRNO_CHECK
 			hr=D3DPreprocess(	textData	
 								,textSize
 								,text_filename_utf8.c_str()		//in   LPCSTR pSourceName,
@@ -574,7 +580,6 @@ ERRNO_CHECK
 								,&binaryBlob					//ID3DBlob **ppCodeText,
 								,&errorMsgs						//ID3DBlob **ppErrorMsgs
 								);
-ERRNO_CHECK
 			if(hr!=S_OK||detectChangesIncludeHandler.HasDetectedChanges())
 				changes_detected=true;
 			if(binaryBlob)
@@ -582,14 +587,14 @@ ERRNO_CHECK
 			if(errorMsgs)
 				errorMsgs->Release();
 		}
-		if(!changes_detected&&binary_date_jdn>0)
-		{
-ERRNO_CHECK
-			hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
-ERRNO_CHECK
-			if(hr==S_OK)
-				return S_OK;
-		}
+	}
+	if(shaderBuildMode==NEVER_BUILD||!changes_detected&&binary_date_jdn>0)
+	{
+		hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
+		if(hr==S_OK)
+			return S_OK;
+		if(shaderBuildMode==NEVER_BUILD)
+			return S_FALSE;
 	}
 	ID3DBlob *binaryBlob	=NULL;
 	ID3DBlob *errorMsgs		=NULL;
