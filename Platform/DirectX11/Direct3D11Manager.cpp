@@ -422,7 +422,7 @@ void Direct3D11Manager::Initialize()
  
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
-	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, true );
+	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, false );
 	
 	ReportMessageFilterState();
 	d3dInfoQueue->ClearStoredMessages();
@@ -456,7 +456,7 @@ void Direct3D11Manager::Initialize()
 	// set filter.AllowList as follows:
 	//filter.AllowList.NumCategories = sizeof(cats) / sizeof(D3D11_MESSAGE_CATEGORY); 
 	//filter.AllowList.pCategoryList = cats;
-	filter.AllowList.NumSeverities = sizeof(sevs)/ sizeof(D3D11_MESSAGE_SEVERITY); 
+	filter.AllowList.NumSeverities = 2; 
 	filter.AllowList.pSeverityList = sevs;
 	filter.AllowList.NumIDs = 0;//sizeof(ids) / sizeof(UINT);
 	//..filter.AllowList.pIDList = ids;
