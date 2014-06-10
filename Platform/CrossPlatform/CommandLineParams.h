@@ -42,7 +42,7 @@ namespace simul
 						sc=false;
 						continue;
 					}
-					if(arg.find("SCREENSHOT")<arg.length())
+					if(arg.find("SCREENSHOT")<arg.length()||arg.find("screenshot")<arg.length())
 					{
 						commandLineParams.screenshot=true;
 						sc=true;

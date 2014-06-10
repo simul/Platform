@@ -707,9 +707,7 @@ void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &device
 void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 {
 	std::string screenshotFilenameUtf8=filename_utf8;
-	//if(!views.size())
-//		return;
-	MixedResolutionView *view=viewManager.GetView(0);//(views.begin())->second;
+	MixedResolutionView *view=viewManager.GetView(0);
 	if(!view)
 		return;
 	simul::dx11::Framebuffer fb(view->GetScreenWidth(),view->GetScreenHeight());
