@@ -32,7 +32,7 @@ namespace simul
 	{
 		SIMUL_OPENGL_EXPORT_CLASS OpenGLRenderer
 			:public OpenGLCallbackInterface
-			,public simul::graph::meta::Group
+			,public simul::base::Referenced
 		{
 		public:
 			OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut=true);

@@ -45,12 +45,16 @@ void FramebufferGL::RestoreDeviceObjects(void*)
 
 void FramebufferGL::InvalidateDeviceObjects()
 {
+	GL_ERROR_CHECK
 	buffer_texture.InvalidateDeviceObjects();
+	GL_ERROR_CHECK
 	buffer_depth_texture.InvalidateDeviceObjects();
+	GL_ERROR_CHECK
 	//SAFE_DELETE_TEXTURE(m_tex_col[0]);
 	//SAFE_DELETE_TEXTURE(m_tex_depth);
 	//SAFE_DELETE_RENDERBUFFER(m_rb_depth);
 	SAFE_DELETE_FRAMEBUFFER(m_fb);
+	GL_ERROR_CHECK
 }
 
 void FramebufferGL::SetWidthAndHeight(int w,int h)

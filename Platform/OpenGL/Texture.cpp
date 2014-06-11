@@ -26,8 +26,9 @@ opengl::Texture::~Texture()
 
 void Texture::InvalidateDeviceObjects()
 {
-	//glDeleteTextures(1,&pTextureObject);
+	GL_ERROR_CHECK
 	SAFE_DELETE_TEXTURE(pTextureObject);
+	GL_ERROR_CHECK
 }
 // Load a texture file
 void opengl::Texture::LoadFromFile(const char *pFilePathUtf8)

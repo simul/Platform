@@ -89,6 +89,9 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 
 void OpenGLRenderer::InvalidateDeviceObjects()
 {
+	int err=errno;
+	std::cout<<"Errno "<<err<<std::endl;
+	errno=0;
 ERRNO_CHECK
 GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(simple_program);
@@ -108,6 +111,7 @@ GL_ERROR_CHECK
 
 OpenGLRenderer::~OpenGLRenderer()
 {
+GL_ERROR_CHECK
 	InvalidateDeviceObjects();
 GL_ERROR_CHECK
 	delete sceneRenderer;
