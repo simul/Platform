@@ -38,6 +38,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,ShowFades(false)
 		,ShowTerrain(true)
 		,ShowMap(false)
+		,UseMixedResolution(false)
 		,UseHdrPostprocessor(true)
 		,UseSkyBuffer(true)
 		,ShowCompositing(false)
@@ -339,14 +340,14 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 		static bool test=true;
 		const void* skyBufferDepthTex = (UseSkyBuffer&test)? view->lowResDepthTexture.shaderResourceView : depthTextureHiRes;
-		//simulWeatherRenderer->RenderSkyAsOverlay(pContext,view_id,(const float*)v,(const float*)proj,false,Exposure,UseSkyBuffer
-			//,depthTextureMS,skyBufferDepthTex
-			//,relativeViewportTextureRegionXYWH
-			//,true);
-	#if 1
-		simulWeatherRenderer->RenderMixedResolution(deviceContext,false,exposure,gamma,view->GetFramebuffer()->GetDepthTexture()
-			,depthTextureHiRes,skyBufferDepthTex,relativeViewportTextureRegionXYWH);
-	#endif
+	
+		if(UseMixedResolution)
+			simulWeatherRenderer->RenderMixedResolution(deviceContext,false,exposure,gamma,view->GetFramebuffer()->GetDepthTexture()
+				,depthTextureHiRes,skyBufferDepthTex,relativeViewportTextureRegionXYWH);
+		else
+			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer
+				,view->GetFramebuffer()->GetDepthTexture(),skyBufferDepthTex
+				,relativeViewportTextureRegionXYWH,true);
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->ActivateDepth(deviceContext);
 		simulWeatherRenderer->RenderLightning(deviceContext,depthTextureHiRes,relativeViewportTextureRegionXYWH,simulWeatherRenderer->GetCloudDepthTexture(deviceContext.viewStruct.view_id));

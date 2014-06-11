@@ -70,3 +70,8 @@ int Texture::GetWidth() const
 {
 	return 0;
 }
+
+int Texture::GetSampleCount() const
+{
+	return 0;
+}

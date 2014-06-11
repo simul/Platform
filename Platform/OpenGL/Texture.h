@@ -27,6 +27,7 @@ namespace simul
 			void deactivateRenderTarget();
 			int GetLength() const;
 			int GetWidth() const;
+			int GetSampleCount() const;
 			GLuint pTextureObject;
 		};
 	}

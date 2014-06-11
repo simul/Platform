@@ -65,6 +65,7 @@ namespace simul
 				META_ValueProperty(bool,ShowFades				,"Show the fade textures as an overlay.")
 				META_ValueProperty(bool,ShowTerrain				,"Whether to draw the terrain.")
 				META_ValueProperty(bool,ShowMap					,"Show the terrain map as an overlay.")
+				META_ValueProperty(bool,UseMixedResolution		,"Whether to use the mixed-resolution renderer.")
 				META_ValueProperty(bool,UseHdrPostprocessor		,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
 				META_ValueProperty(bool,UseSkyBuffer			,"Render the sky to a low-res buffer to increase performance.")
 				META_ValueProperty(bool,ShowCompositing			,"Show the multi-resolution compositing textures.")

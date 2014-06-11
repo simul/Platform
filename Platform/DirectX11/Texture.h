@@ -57,6 +57,7 @@ namespace simul
 			{
 				return width;
 			}
+			int GetSampleCount() const;
 		private:
 			ID3D11DeviceContext *last_context;
 			ID3D11RenderTargetView*				m_pOldRenderTarget;

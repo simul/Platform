@@ -460,3 +460,16 @@ void dx11::Texture::deactivateRenderTarget()
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
+
+int dx11::Texture::GetSampleCount() const
+{
+	bool msaa=false;
+	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+	shaderResourceView->GetDesc(&desc);
+	msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+	if(!msaa)
+		return 0;
+	D3D11_TEXTURE2D_DESC t2d_desc;
+	((ID3D11Texture2D*)texture)->GetDesc(&t2d_desc);
+	return t2d_desc.SampleDesc.Count;
+}
