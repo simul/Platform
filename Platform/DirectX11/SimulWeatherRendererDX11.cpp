@@ -271,7 +271,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 
 	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("exposure_gamma");
 
-	cam_pos=GetCameraPosVector(view);
+	math::Vector3 cam_pos=GetCameraPosVector(view);
 	D3DXMATRIX view_matrices[6];
 	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 	bool noise3d=environment->cloudKeyframer->GetUse3DNoise();
@@ -462,6 +462,7 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(crossplatform::DeviceConte
 void SimulWeatherRendererDX11::RenderPrecipitation(crossplatform::DeviceContext &deviceContext,const void *depth_tex
 												   ,simul::sky::float4 depthViewportXYWH)
 {
+	math::Vector3 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
 	if(basePrecipitationRenderer)
 		basePrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
 	float max_fade_dist_metres=1.f;
@@ -481,7 +482,7 @@ void SimulWeatherRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const
 {
 	view=v;
 	proj=p;
-	cam_pos=GetCameraPosVector(view);
+	//cam_pos=GetCameraPosVector(view);
 	if(simulSkyRenderer)
 		simulSkyRenderer->SetMatrices(view,proj);
 	if(simul2DCloudRenderer)

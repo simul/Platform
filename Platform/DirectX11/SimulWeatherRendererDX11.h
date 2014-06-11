@@ -141,7 +141,7 @@ namespace simul
 			float										exposure;
 			float										gamma;
 			float										exposure_multiplier;
-			simul::math::Vector3						cam_pos;
+			//simul::math::Vector3						cam_pos;
 		};
 	}
 }
