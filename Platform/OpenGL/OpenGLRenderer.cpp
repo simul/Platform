@@ -89,6 +89,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 
 void OpenGLRenderer::InvalidateDeviceObjects()
 {
+ERRNO_CHECK
 GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(simple_program);
 GL_ERROR_CHECK
@@ -164,6 +165,10 @@ ERRNO_CHECK
 	renderPlatform->RestoreDeviceObjects(NULL);
 	RecompileShaders();
 ERRNO_CHECK
+}
+void OpenGLRenderer::shutdownGL()
+{
+	InvalidateDeviceObjects();
 }
 
 void OpenGLRenderer::paintGL()

@@ -1,6 +1,8 @@
 #pragma once
 #include "SimulDirectXHeader.h"
 #include "Simul/Platform/CrossPlatform/MixedResolutionView.h"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Export.h"
@@ -23,7 +25,7 @@ namespace simul
 		{
 			MixedResolutionView();
 			~MixedResolutionView();
-			void RestoreDeviceObjects(void *device);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void InvalidateDeviceObjects();
 			int GetScreenWidth() const;
 			int GetScreenHeight() const;
@@ -59,7 +61,7 @@ namespace simul
 			simul::dx11::Texture			lowResDepthTexture;
 			simul::dx11::Texture			lowResScratch;
 			simul::dx11::Texture			resolvedTexture;
-			ID3D11Device					*m_pd3dDevice;
+			crossplatform::RenderPlatform	*renderPlatform;
 			const simul::camera::CameraOutputInterface	*camera;
 		public:
 			int								ScreenWidth;
@@ -67,21 +69,40 @@ namespace simul
 			bool							useExternalFramebuffer;
 			ID3D11ShaderResourceView		*externalDepthTexture_SRV;
 		};
-		class SIMUL_DIRECTX11_EXPORT ViewManager
+		class SIMUL_DIRECTX11_EXPORT MixedResolutionRenderer
 		{
 		public:
-			ViewManager():
+			MixedResolutionRenderer();
+			~MixedResolutionRenderer();
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
+			void InvalidateDeviceObjects();
+			void RecompileShaders(const std::map<std::string,std::string> &defines);
+			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec3 depthToLinFadeDistParams);
+		protected:
+			crossplatform::RenderPlatform				*renderPlatform;
+			ID3DX11Effect								*mixedResolutionEffect;
+			ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
+		};
+		class SIMUL_DIRECTX11_EXPORT MixedResolutionViewManager
+		{
+		public:
+			MixedResolutionViewManager():
 				last_created_view_id(-1)
 			{}
-			MixedResolutionView			*GetView(int view_id);
-			std::set<MixedResolutionView*> GetViews();
-			int							AddView				(bool external_framebuffer);
-			void						RemoveView			(int);
-			void						Clear();
+			void							RestoreDeviceObjects	(crossplatform::RenderPlatform *renderPlatform);
+			void							InvalidateDeviceObjects	();
+			void							RecompileShaders		(std::map<std::string,std::string> defines);
+			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext,int s,float max_dist_metres);
+			MixedResolutionView				*GetView				(int view_id);
+			std::set<MixedResolutionView*>	GetViews				();
+			int								AddView					(bool external_framebuffer);
+			void							RemoveView				(int);
+			void							Clear					();
 		protected:
 			typedef std::map<int,MixedResolutionView*>	ViewMap;
-			ViewMap						views;
-			int							last_created_view_id;
+			ViewMap							views;
+			int								last_created_view_id;
+			MixedResolutionRenderer			mixedResolutionRenderer;
 		};
 	}
 }

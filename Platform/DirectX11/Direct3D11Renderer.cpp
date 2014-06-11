@@ -106,37 +106,6 @@ D3D_FEATURE_LEVEL Direct3D11Renderer::GetMinimumFeatureLevel() const
 	return D3D_FEATURE_LEVEL_11_0;
 }
 
-MixedResolutionRenderer::MixedResolutionRenderer()
-		:mixedResolutionEffect(NULL)
-		,m_pd3dDevice(NULL)
-{
-}
-MixedResolutionRenderer::~MixedResolutionRenderer()
-{
-	InvalidateDeviceObjects();
-}
-void MixedResolutionRenderer::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
-{
-	m_pd3dDevice=pd3dDevice;
-	mixedResolutionConstants.RestoreDeviceObjects(pd3dDevice);
-}
-
-void MixedResolutionRenderer::InvalidateDeviceObjects()
-{
-	m_pd3dDevice=NULL;
-	mixedResolutionConstants.InvalidateDeviceObjects();
-	SAFE_RELEASE(mixedResolutionEffect);
-}
-
-void MixedResolutionRenderer::RecompileShaders(const std::map<std::string,std::string> &defines)
-{
-	SAFE_RELEASE(mixedResolutionEffect);
-	if(!m_pd3dDevice)
-		return;
-	HRESULT hr=CreateEffect(m_pd3dDevice,&mixedResolutionEffect,"mixed_resolution.fx",defines);
-	mixedResolutionConstants.LinkToEffect(mixedResolutionEffect,"MixedResolutionConstants");
-}
-
 void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 {
 	m_pd3dDevice=pd3dDevice;
@@ -146,11 +115,11 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 		return;
 	}
 	enabled=true;
-	mixedResolutionRenderer.RestoreDeviceObjects(pd3dDevice);
+	renderPlatformDx11.RestoreDeviceObjects(pd3dDevice);
 	//Set a global device pointer for use by various classes.
 	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
 	simul::dx11::UtilityRenderer::RestoreDeviceObjects(pd3dDevice);
-	renderPlatformDx11.RestoreDeviceObjects(pd3dDevice);
+	viewManager.RestoreDeviceObjects(&renderPlatformDx11);
 	lightProbeConstants.RestoreDeviceObjects(m_pd3dDevice);
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects(pd3dDevice);
@@ -166,18 +135,13 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 	cubemapFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	envmapFramebuffer.SetWidthAndHeight(64,64);
 	envmapFramebuffer.RestoreDeviceObjects(pd3dDevice);
-	std::set<MixedResolutionView*> views=viewManager.GetViews();
-	for(std::set<MixedResolutionView*>::iterator i=views.begin();i!=views.end();i++)
-	{
-		(*i)->RestoreDeviceObjects(pd3dDevice);
-	}
 	RecompileShaders();
 }
 
 int	Direct3D11Renderer::AddView				(bool external_fb)
 {
 	int view_id=viewManager.AddView(external_fb);
-	viewManager.GetView(view_id)->RestoreDeviceObjects(m_pd3dDevice);
+	viewManager.GetView(view_id)->RestoreDeviceObjects(&renderPlatformDx11);
 	return view_id;
 }
 
@@ -191,7 +155,7 @@ void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBu
 	MixedResolutionView *view			=viewManager.GetView(view_id);
 	if(view)
 	{	
-		view->RestoreDeviceObjects(m_pd3dDevice);
+		view->RestoreDeviceObjects(&renderPlatformDx11);
 		// RVK: Downscale here to get a closeup view of small-scale pixel effects.
 		view->SetResolution(pBackBufferSurfaceDesc->Width,pBackBufferSurfaceDesc->Height);
 	}
@@ -474,7 +438,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 		void *depthTextureHiRes		=view->hiResDepthTexture.shaderResourceView;
 	
 		int s=simulWeatherRenderer->GetDownscale();
-		mixedResolutionRenderer.DownscaleDepth(deviceContext,view,s,(const float *)simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters((const float*)&deviceContext.viewStruct.proj));
+		viewManager.DownscaleDepth(deviceContext,s,simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetMaxDistanceKm()*1000.0f);
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 		static bool test=true;
 		const void* skyBufferDepthTex = (UseSkyBuffer&test)? view->lowResDepthTexture.shaderResourceView : depthTextureHiRes;
@@ -749,7 +713,7 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 	cubemapFramebuffer.InvalidateDeviceObjects();
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	SAFE_RELEASE(lightProbesEffect);
-	mixedResolutionRenderer.InvalidateDeviceObjects();
+	viewManager.InvalidateDeviceObjects();
 	m_pd3dDevice=NULL;
 }
 
@@ -789,7 +753,7 @@ void Direct3D11Renderer::RecompileShaders()
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
 	defines["NUM_AA_SAMPLES"]		=base::stringFormat("%d",Antialiasing);
-	mixedResolutionRenderer.RecompileShaders(defines);
+	viewManager.RecompileShaders(defines);
 	SAFE_RELEASE(lightProbesEffect);
 	V_CHECK(CreateEffect(m_pd3dDevice,&lightProbesEffect,"light_probes.fx",defines,D3DCOMPILE_OPTIMIZATION_LEVEL3));
 	lightProbeConstants.LinkToEffect(lightProbesEffect,"LightProbeConstants");

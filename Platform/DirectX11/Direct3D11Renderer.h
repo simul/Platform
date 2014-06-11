@@ -16,7 +16,6 @@
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/DirectX11/MixedResolutionView.h"
-#include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
 #pragma warning(push)
 #pragma warning(disable:4251)
@@ -49,20 +48,6 @@ namespace simul
 		class TerrainRenderer;
 		class OceanRenderer;
 		class SimulOpticsRendererDX1x;
-		class SIMUL_DIRECTX11_EXPORT MixedResolutionRenderer
-		{
-		public:
-			MixedResolutionRenderer();
-			~MixedResolutionRenderer();
-			void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
-			void InvalidateDeviceObjects();
-			void RecompileShaders(const std::map<std::string,std::string> &defines);
-			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec3 depthToLinFadeDistParams);
-		protected:
-			ID3D11Device								*m_pd3dDevice;
-			ID3DX11Effect								*mixedResolutionEffect;
-			ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
-		};
 		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface
@@ -158,12 +143,11 @@ namespace simul
 			TerrainRenderer								*simulTerrainRenderer;
 			OceanRenderer								*oceanRenderer;
 			simul::scene::BaseSceneRenderer				*sceneRenderer;
-			ViewManager									viewManager;
+			MixedResolutionViewManager					viewManager;
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
 			ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;
-			MixedResolutionRenderer						mixedResolutionRenderer;
 			std::map<int,const simul::camera::CameraOutputInterface *> cameras;
 		};
 	}

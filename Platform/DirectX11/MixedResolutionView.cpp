@@ -3,6 +3,7 @@
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;
@@ -22,12 +23,12 @@ using namespace dx11;
 	 InvalidateDeviceObjects();
  }
 
-void MixedResolutionView::RestoreDeviceObjects(void *pd3dDevice)
+void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	m_pd3dDevice=(ID3D11Device*)pd3dDevice;
+	renderPlatform=r;
 	if(!useExternalFramebuffer)
 	{
-		hdrFramebuffer.RestoreDeviceObjects(pd3dDevice);
+		hdrFramebuffer.RestoreDeviceObjects(renderPlatform->AsD3D11Device());
 		hdrFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
 		hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 	}
@@ -130,7 +131,58 @@ ID3D11ShaderResourceView *MixedResolutionView::GetResolvedHDRBuffer()
 		return (ID3D11ShaderResourceView*)hdrFramebuffer.GetColorTex();
 }
 
-int	ViewManager::AddView(bool external_framebuffer)
+MixedResolutionRenderer::MixedResolutionRenderer()
+		:mixedResolutionEffect(NULL)
+		,renderPlatform(NULL)
+{
+}
+MixedResolutionRenderer::~MixedResolutionRenderer()
+{
+	InvalidateDeviceObjects();
+}
+void MixedResolutionRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+{
+	renderPlatform=r;
+	mixedResolutionConstants.RestoreDeviceObjects(renderPlatform->AsD3D11Device());
+}
+
+void MixedResolutionRenderer::InvalidateDeviceObjects()
+{
+	renderPlatform=NULL;
+	mixedResolutionConstants.InvalidateDeviceObjects();
+	SAFE_RELEASE(mixedResolutionEffect);
+}
+
+void MixedResolutionRenderer::RecompileShaders(const std::map<std::string,std::string> &defines)
+{
+	SAFE_RELEASE(mixedResolutionEffect);
+	if(!renderPlatform)
+		return;
+	HRESULT hr=CreateEffect(renderPlatform->AsD3D11Device(),&mixedResolutionEffect,"mixed_resolution.fx",defines);
+	mixedResolutionConstants.LinkToEffect(mixedResolutionEffect,"MixedResolutionConstants");
+}
+
+void MixedResolutionViewManager::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform)
+{
+	mixedResolutionRenderer.RestoreDeviceObjects(renderPlatform);
+	std::set<MixedResolutionView*> views=GetViews();
+	for(std::set<MixedResolutionView*>::iterator i=views.begin();i!=views.end();i++)
+	{
+		(*i)->RestoreDeviceObjects(renderPlatform);
+	}
+}
+
+void MixedResolutionViewManager::InvalidateDeviceObjects()
+{
+	mixedResolutionRenderer.InvalidateDeviceObjects();
+	std::set<MixedResolutionView*> views=GetViews();
+	for(std::set<MixedResolutionView*>::iterator i=views.begin();i!=views.end();i++)
+	{
+		(*i)->InvalidateDeviceObjects();
+	}
+}
+
+int	MixedResolutionViewManager::AddView(bool external_framebuffer)
 {
 	last_created_view_id++;
 	int view_id		=last_created_view_id;
@@ -139,13 +191,13 @@ int	ViewManager::AddView(bool external_framebuffer)
 	return view_id;
 }
 
-void ViewManager::RemoveView(int view_id)
+void MixedResolutionViewManager::RemoveView(int view_id)
 {
 	delete views[view_id];
 	views.erase(view_id);
 }
 
-MixedResolutionView *ViewManager::GetView(int view_id)
+MixedResolutionView *MixedResolutionViewManager::GetView(int view_id)
 {
 	ViewMap::iterator i=views.find(view_id);
 	if(i==views.end())
@@ -153,7 +205,7 @@ MixedResolutionView *ViewManager::GetView(int view_id)
 	return i->second;
 }
 
-std::set<MixedResolutionView*> ViewManager::GetViews()
+std::set<MixedResolutionView*> MixedResolutionViewManager::GetViews()
 {
 	std::set<MixedResolutionView*> v;
 	for(ViewMap::iterator i=views.begin();i!=views.end();i++)
@@ -161,11 +213,22 @@ std::set<MixedResolutionView*> ViewManager::GetViews()
 	return v;
 }
 
-void ViewManager::Clear()
+void MixedResolutionViewManager::Clear()
 {
 	for(ViewMap::iterator i=views.begin();i!=views.end();i++)
 	{
 		delete i->second;
 	}
 	views.clear();
+}
+
+void MixedResolutionViewManager::DownscaleDepth(crossplatform::DeviceContext &deviceContext,int s,float max_dist_metres)
+{
+	MixedResolutionView *view=GetView(deviceContext.viewStruct.view_id);
+	mixedResolutionRenderer.DownscaleDepth(deviceContext,view,s,(const float *)simul::camera::GetDepthToDistanceParameters((const float*)&deviceContext.viewStruct.proj,max_dist_metres));
+}
+
+void MixedResolutionViewManager::RecompileShaders(std::map<std::string,std::string> defines)
+{
+	mixedResolutionRenderer.RecompileShaders(defines);
 }
