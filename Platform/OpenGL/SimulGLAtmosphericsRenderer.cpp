@@ -102,9 +102,9 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(earthshadow_insc_program);
 }
 
-void SimulGLAtmosphericsRenderer::RenderAsOverlay(crossplatform::DeviceContext &deviceContext,const void *depthTexture,float exposure,const simul::sky::float4& depthViewportXYWH)
+void SimulGLAtmosphericsRenderer::RenderAsOverlay(crossplatform::DeviceContext &,crossplatform::Texture *depthTexture,float exposure,const simul::sky::float4& depthViewportXYWH)
 {
-	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
+	GLuint depth_texture=depthTexture->AsGLuint();
 GL_ERROR_CHECK
     glEnable(GL_TEXTURE_2D);
 GL_ERROR_CHECK

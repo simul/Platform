@@ -84,7 +84,7 @@ void Framebuffer::SetGenerateMips(bool m)
 
 void Framebuffer::RestoreDeviceObjects(void *dev)
 {
-	HRESULT hr=S_OK;
+
 	m_pd3dDevice=(ID3D11Device*)dev;
 }
 

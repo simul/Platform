@@ -28,7 +28,7 @@ namespace simul
 			void RecompileShaders();
 			//! Call this to draw the clouds, including any illumination by lightning.
 			void Render(simul::crossplatform::DeviceContext &deviceContext
-						,const void *depth_tex
+						,crossplatform::Texture *depth_tex
 						,float max_fade_distance_metres
 						,simul::sky::float4 viewportTextureRegionXYWH);
 			// Set a texture not created by this class to be used:

@@ -19,7 +19,7 @@ namespace simul
 			SimulGLLightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk);
 			~SimulGLLightningRenderer();
 			void RestoreDeviceObjects();
-			void Render(simul::crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *cloud_depth_tex);
+			void Render(simul::crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *cloud_depth_tex);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 		protected:

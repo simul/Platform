@@ -13,7 +13,6 @@ vec4 PS_MakeDepthFarNear(posTexVertexOutput IN):SV_Target
 	//uint2 source_dims;
 	uint2 pos=uint2(IN.texCoords.xy*source_dims.xy);
 	vec4 res=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,1,pos,depthToLinFadeDistParams);
-	res.b=IN.texCoords.y;
 	return res;
 }
 

@@ -636,19 +636,22 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceConte
 		ApplyPass(pContext,tech->GetPassByIndex(0));
 	}
     SIMUL_COMBINED_PROFILE_END(pContext)
+	const simul::clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
     SIMUL_COMBINED_PROFILE_START(pContext,"MoistureAccumulation")
-	tech	=effect->GetTechniqueByName("moisture_accumulation");
-	simul::dx11::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
-	ApplyPass(pContext,tech->GetPassByIndex(0));
-	moisture_fb.Activate(deviceContext);
-		simul::dx11::UtilityRenderer::DrawQuad(pContext);
-	moisture_fb.Deactivate(pContext);
-	
+	if(K.precipitation>0)
+	{
+		tech	=effect->GetTechniqueByName("moisture_accumulation");
+		simul::dx11::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
+		ApplyPass(pContext,tech->GetPassByIndex(0));
+		moisture_fb.Activate(deviceContext);
+			simul::dx11::UtilityRenderer::DrawQuad(pContext);
+		moisture_fb.Deactivate(pContext);
+	}
+    SIMUL_COMBINED_PROFILE_END(pContext)
 	simul::dx11::setTexture(effect,"cloudShadowTexture",NULL);
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-    SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
 void SimulCloudRendererDX1x::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
@@ -670,12 +673,14 @@ void SimulCloudRendererDX1x::PreRenderUpdate(crossplatform::DeviceContext &devic
 // We'll then have a global update and per view updates.
 }
 static int test=29999;
-bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_tex
+bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,crossplatform::Texture *depth_tex
 ,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH)
 {
 	ERRNO_CHECK
-	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
-	ID3D11ShaderResourceView *depthTexture_SRV	=(ID3D11ShaderResourceView *)depth_tex;
+	ID3D11DeviceContext* pContext	=deviceContext.asD3D11DeviceContext();
+	ID3D11ShaderResourceView *depthTexture_SRV=NULL;
+	if(depth_tex)
+		depthTexture_SRV=depth_tex->AsD3D11ShaderResourceView();
     ProfileBlock profileBlock(pContext,cubemap?"SimulCloudRendererDX1x::Render (cubemap side)":"SimulCloudRendererDX1x::Render");
 	
 	math::Vector3 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
@@ -800,10 +805,13 @@ void SimulCloudRendererDX1x::RenderDebugInfo(crossplatform::DeviceContext &devic
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	
-	D3DXMATRIX ortho;
-	D3DXMATRIX ident;
-	D3DXMatrixIdentity(&ident);
-    D3DXMatrixOrthoLH(&ortho,(float)width,(float)height,-100.f,100.f);
+	simul::math::Matrix4x4 ortho;
+	simul::math::Matrix4x4 ident;
+	ident.Identity();
+	ortho.Identity();
+	ortho._11=width;
+	ortho._22=height;
+    //D3DXMatrixOrthoLH(ortho,(float)width,(float)height,-100.f,100.f);
 	ortho._41=-1.f;
 	ortho._22=-ortho._22;
 	ortho._42=1.f;

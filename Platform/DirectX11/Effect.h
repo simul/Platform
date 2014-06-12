@@ -36,8 +36,9 @@ namespace simul
 			Effect();
 			~Effect();
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
-			void SetTexture(const char *name,void *tex);
+			void SetTexture(const char *name,crossplatform::Texture *tex);
 			void SetTexture(const char *name,crossplatform::Texture &t);
+			void SetTexture(const char *name,ID3D11ShaderResourceView *tex);
 		};
 	}
 }

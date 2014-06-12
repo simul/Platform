@@ -14,12 +14,16 @@ namespace simul
 		public:
 			Texture();
 			~Texture();
-			void LoadFromFile(const char *pFilePathUtf8);
+			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
 			bool IsValid() const;
 			void InvalidateDeviceObjects();
-			void *AsVoidPointer()
+			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
-				return (void*)pTextureObject;
+				return NULL;
+			}
+			GLuint AsGLuint()
+			{
+				return pTextureObject;
 			}
 			void ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *renderPlatform,int w,int l
 				,unsigned f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0);

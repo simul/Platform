@@ -259,7 +259,7 @@ void RenderPlatform::DrawLineLoop(void *,const double *mat,int lVerticeCount,con
     glPopMatrix();
 }
 
-void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,void *tex,float /*mult*/)
+void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,GLuint tex,float /*mult*/)
 {
 	glBindTexture(GL_TEXTURE_2D,(GLuint)tex);
 	glUseProgram(Utilities::GetSingleton().simple_program);
@@ -269,12 +269,12 @@ void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,void
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult)
 {
-	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsVoidPointer(),mult);
+	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsGLuint(),mult);
 }
 
 void RenderPlatform::DrawDepth		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const float *proj)
 {
-	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsVoidPointer(),1.0f);
+	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsGLuint(),1.0f);
 }
 
 void RenderPlatform::DrawQuad	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,void *effect,void *technique)
@@ -396,7 +396,7 @@ crossplatform::Light *RenderPlatform::CreateLight()
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture * tex=new opengl::Texture;
-	tex->LoadFromFile(fileNameUtf8);
+	tex->LoadFromFile(this,fileNameUtf8);
 	return tex;
 }
 

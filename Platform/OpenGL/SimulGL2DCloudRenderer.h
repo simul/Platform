@@ -42,7 +42,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! OpenGL Implementation of 2D cloud rendering.
-			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& );
+			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,crossplatform::Texture *depth_alpha_tex,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& );
 			void RenderCrossSections(crossplatform::DeviceContext &context,int x0,int y0,int width,int height);
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &,int ,int ,int ,int ){}
 			//! Set the platform-dependent atmospheric loss texture.

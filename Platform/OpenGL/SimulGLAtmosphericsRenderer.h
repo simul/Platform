@@ -46,7 +46,7 @@ namespace simul
 				depth_texture=(GLuint)(uintptr_t)depth;
 			}
 			//! Render the Atmospherics.
-			void RenderAsOverlay(simul::crossplatform::DeviceContext &deviceContext,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
+			void RenderAsOverlay(simul::crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 		private:
 			bool initialized;
 			GLuint loss_program;

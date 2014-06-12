@@ -87,7 +87,7 @@ namespace simul
 											,float exposure
 											,bool buffered
 											,crossplatform::Texture *mainDepthTexture
-											,const void* lowResDepthTexture
+											,crossplatform::Texture* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite);
 	
@@ -97,13 +97,13 @@ namespace simul
 												,float gamma
 												,bool depth_blend
 												,crossplatform::Texture *mainDepthTexture
-												,const void* hiResDepthTexture
-												,const void* lowResDepthTexture
+												,crossplatform::Texture* hiResDepthTexture
+												,crossplatform::Texture* lowResDepthTexture
 												,const simul::sky::float4& viewportRegionXYWH
 												,const crossplatform::MixedResolutionStruct &mixedResolutionStruct);
 			void RenderFramebufferDepth(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
-			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH);
-			void RenderLightning(crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex);
+			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH);
+			void RenderLightning(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *low_res_depth_tex);
 			void SaveCubemapToFile(crossplatform::RenderPlatform *renderPlatform,const char *filename,float exposure,float gamma);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 			void SetExposure(float ex){exposure=ex;}
@@ -116,13 +116,13 @@ namespace simul
 			class Simul2DCloudRendererDX11 *Get2DCloudRenderer();
 			//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
-			void *GetCloudDepthTexture(int view_id);
+			crossplatform::Texture *GetCloudDepthTexture(int view_id);
 
 		protected:
 			simul::base::MemoryInterface	*memoryInterface;
 			// Keep copies of these matrices:
-			simul::math::Matrix4x4 view;
-			simul::math::Matrix4x4 proj;
+		//	simul::math::Matrix4x4 view;
+		//	simul::math::Matrix4x4 proj;
 			IDXGISwapChain								*pSwapChain;
 			ID3D11Device								*m_pd3dDevice;
 

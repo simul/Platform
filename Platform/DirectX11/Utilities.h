@@ -12,6 +12,7 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Base/FileLoader.h"
+#include "Simul/Math/Matrix4x4.h"
 struct ID3DX11EffectConstantBuffer;
 #pragma warning(disable:4251)
 namespace simul
@@ -146,8 +147,8 @@ namespace simul
 			static int instance_count;
 			static int screen_width;
 			static int screen_height;
-			static D3DXMATRIX view;
-			static D3DXMATRIX proj;
+			static simul::math::Matrix4x4 view;
+			static simul::math::Matrix4x4 proj;
 		public:
 			static ID3DX11Effect		*m_pDebugEffect;
 			static ID3D11InputLayout	*m_pCubemapVtxDecl;
@@ -156,7 +157,7 @@ namespace simul
 			UtilityRenderer();
 			~UtilityRenderer();
 			static ID3DX11Effect		*GetDebugEffect();
-			static void SetMatrices(D3DXMATRIX v,D3DXMATRIX p);
+			static void SetMatrices(const float *v,const float *p);
 			static void RestoreDeviceObjects(void *m_pd3dDevice);
 			static void InvalidateDeviceObjects();
 			static void RecompileShaders();
@@ -172,7 +173,7 @@ namespace simul
 			static void DrawQuad(			ID3D11DeviceContext *pContext);
 			static void DrawCube(void *context);
 			static void DrawSphere(void *context,int latitudes,int longitudes);
-			static void DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety);
+			static void DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,float offsetx,float offsety);
 		};
 		//! Useful Wrapper class to encapsulate constant buffer behaviour
 		

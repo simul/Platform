@@ -88,6 +88,7 @@ namespace simul
 		public:
 			MixedResolutionViewManager():
 				last_created_view_id(-1)
+				,renderPlatform(NULL)
 			{}
 			void							RestoreDeviceObjects	(crossplatform::RenderPlatform *renderPlatform);
 			void							InvalidateDeviceObjects	();
@@ -99,6 +100,7 @@ namespace simul
 			void							RemoveView				(int);
 			void							Clear					();
 		protected:
+			crossplatform::RenderPlatform				*renderPlatform;
 			typedef std::map<int,MixedResolutionView*>	ViewMap;
 			ViewMap							views;
 			int								last_created_view_id;

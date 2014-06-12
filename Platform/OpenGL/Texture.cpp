@@ -31,7 +31,7 @@ void Texture::InvalidateDeviceObjects()
 	GL_ERROR_CHECK
 }
 // Load a texture file
-void opengl::Texture::LoadFromFile(const char *pFilePathUtf8)
+void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *,const char *pFilePathUtf8)
 {
 	std::string filename(pFilePathUtf8);
 	int dot_pos			=(int)filename.find_last_of(".");

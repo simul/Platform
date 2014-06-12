@@ -50,13 +50,13 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	// Initialize the swap chain description.
 	ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
 
-	// Set to a single back buffer.
-	swapChainDesc.BufferCount = 1;
+	// Set number of back buffers.
+	swapChainDesc.BufferCount = 3;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
 
 	// Set the width and height of the back buffer.
 	swapChainDesc.BufferDesc.Width = screenWidth;
 	swapChainDesc.BufferDesc.Height = screenHeight;
-
 	// Set regular 32-bit surface for the back buffer.
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	// The next part of the description of the swap chain is the refresh rate.
@@ -103,7 +103,7 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	swapChainDesc.BufferDesc.Scaling			= DXGI_MODE_SCALING_UNSPECIFIED;
 
 	// Discard the back buffer contents after presenting.
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+	//swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
 	// Don't set the advanced flags.
 	swapChainDesc.Flags = 0;
@@ -628,8 +628,9 @@ void Direct3D11Manager::Render(HWND h)
 	d3dDeviceContext->RSSetState(w->m_rasterState);
 	if(w->renderer)
 		w->renderer->Render(w->view_id,GetDevice(),GetDeviceContext());
-	DWORD dwFlags = 0;
-	UINT SyncInterval = 1;
+	static DWORD dwFlags = 0;
+	// 0 - don't wait for 60Hz refresh.
+	static UINT SyncInterval = 0;
     // Show the frame on the primary surface.
 	w->m_swapChain->Present(SyncInterval,dwFlags);
 }

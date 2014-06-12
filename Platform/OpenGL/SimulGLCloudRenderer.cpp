@@ -313,7 +313,7 @@ static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap
-								  ,bool /*near_pass*/,const void *depth_alpha_tex,bool write_alpha
+								  ,bool /*near_pass*/,crossplatform::Texture *depth_alpha_tex,bool write_alpha
 								  ,const simul::sky::float4& viewportTextureRegionXYWH
 								  ,const simul::sky::float4& mixedResTransformXYWH)
 {
@@ -398,9 +398,12 @@ GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
 
     glActiveTexture(GL_TEXTURE7);
-	glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
-
-	GLuint program=depth_alpha_tex>0?clouds_foreground_program:clouds_background_program;
+	GLuint program=clouds_background_program;
+	if(depth_alpha_tex)
+	{
+		glBindTexture(GL_TEXTURE_2D,depth_alpha_tex->AsGLuint());
+		program=depth_alpha_tex->AsGLuint()>0?clouds_foreground_program:clouds_background_program;
+	}
 
 	if(Raytrace)
 		program=raytrace_program;

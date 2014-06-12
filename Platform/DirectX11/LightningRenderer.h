@@ -24,7 +24,7 @@ namespace simul
 			void RestoreDeviceObjects(void* dev);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
-			void Render(crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *cloud_depth_tex);
+			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *cloud_depth_tex);
 		protected:
 			ID3DX11Effect*	effect;
 			ID3D11Device *	m_pd3dDevice;

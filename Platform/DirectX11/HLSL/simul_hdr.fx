@@ -337,7 +337,16 @@ technique11 glow_exposure_gamma
 
 technique11 simple_cloud_blend
 {
-    pass p0
+    pass main
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(CloudBufferBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
+    }
+    pass msaa
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );

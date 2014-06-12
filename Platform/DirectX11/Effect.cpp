@@ -97,9 +97,9 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 	return tech;
 }
 
-void dx11::Effect::SetTexture(const char *name,void *tex)
+void dx11::Effect::SetTexture(const char *name,ID3D11ShaderResourceView *tex)
 {
-	simul::dx11::setTexture(asD3DX11Effect(),name,(ID3D11ShaderResourceView *)tex);
+	simul::dx11::setTexture(asD3DX11Effect(),name,tex);
 }
 
 void dx11::Effect::SetTexture(const char *name,crossplatform::Texture &t)
@@ -108,3 +108,9 @@ void dx11::Effect::SetTexture(const char *name,crossplatform::Texture &t)
 	simul::dx11::setTexture(asD3DX11Effect(),name,T->shaderResourceView);
 }
 
+
+void dx11::Effect::SetTexture(const char *name,crossplatform::Texture *t)
+{
+	dx11::Texture *T=(dx11::Texture*)t;
+	simul::dx11::setTexture(asD3DX11Effect(),name,T->shaderResourceView);
+}

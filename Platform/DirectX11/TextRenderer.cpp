@@ -164,9 +164,9 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	constantBuffer.background	=vec4(bck);
 	// Calc width and draw background:
 	int w=0;
-	for(int i=0;i<32;i++)
+	for(int i=0;i<70;i++)
 	{
-		if(txt[i]==0)
+		if(txt[i]==0||txt[i]=='\n')
 			break;
 		int idx=(int)txt[i]-32;
 		if(idx<0||idx>100)
@@ -185,9 +185,9 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	pContext->Draw(4,0);
 	ApplyPass(pContext,effect->GetTechniqueByName("text")->GetPassByIndex(0));
 
-	for(int i=0;i<32;i++)
+	for(int i=0;i<70;i++)
 	{
-		if(txt[i]==0)
+		if(txt[i]==0||txt[i]=='\n')
 			break;
 		int idx=(int)txt[i]-32;
 		if(idx<0||idx>100)

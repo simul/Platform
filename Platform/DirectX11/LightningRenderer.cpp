@@ -4,6 +4,7 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/Texture.h"
 #include "D3dx11effect.h"
 
 using namespace simul;
@@ -59,7 +60,7 @@ void LightningRenderer::InvalidateDeviceObjects()
 	vertexBuffer.release();
 }
 
-void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *cloud_depth_tex)
+void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *cloud_depth_tex)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	SIMUL_COMBINED_PROFILE_START(pContext,"LightningRenderer::Render")
@@ -169,9 +170,9 @@ void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,const
 
 	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("lightning_thick");
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
-	dx11::setTexture(effect,"depthTextureMS",(ID3D11ShaderResourceView*)depth_tex);
-	dx11::setTexture(effect,"depthTexture",(ID3D11ShaderResourceView*)depth_tex);
-	dx11::setTexture(effect,"cloudDepthTexture",(ID3D11ShaderResourceView*)cloud_depth_tex);
+	dx11::setTexture(effect,"depthTextureMS",depth_tex->AsD3D11ShaderResourceView());
+	dx11::setTexture(effect,"depthTexture",depth_tex->AsD3D11ShaderResourceView());
+	dx11::setTexture(effect,"cloudDepthTexture",cloud_depth_tex->AsD3D11ShaderResourceView());
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	for(int i=0;i<(int)start.size();i++)
 	{

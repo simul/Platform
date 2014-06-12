@@ -1,5 +1,7 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/Export.h"
+struct ID3D11ShaderResourceView;
+typedef unsigned GLuint;
 namespace simul
 {
 	namespace crossplatform
@@ -10,10 +12,14 @@ namespace simul
 		{
 		public:
 			virtual ~Texture();
-			virtual void LoadFromFile(const char *pFilePathUtf8)=0;
+			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects()=0;
-			virtual void *AsVoidPointer()=0;
+			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView()=0;
+			virtual GLuint AsGLuint()
+			{
+				return 0;
+			}
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,unsigned f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0)=0;
 			virtual void activateRenderTarget(DeviceContext &deviceContext)=0;

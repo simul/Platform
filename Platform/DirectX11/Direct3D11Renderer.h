@@ -55,7 +55,7 @@ namespace simul
 		{
 		public:
 			//! Constructor - pass a pointer to your Environment, and either an implementation of MemoryInterface, or NULL.
-			Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m,int w,int h);
+			Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);
 			virtual ~Direct3D11Renderer();
 			META_BeginProperties
 				META_ValueProperty(bool,ShowFlares				,"Whether to draw light flares around the sun and moon.")

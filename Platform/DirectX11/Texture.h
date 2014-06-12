@@ -17,15 +17,15 @@ namespace simul
 			Texture(ID3D11Device* d=NULL);
 			~Texture();
 			void InvalidateDeviceObjects();
-			void LoadFromFile(const char *pFilePathUtf8);
+			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
 			bool IsValid() const;
-			void *AsVoidPointer()
+			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
+				if(!this)
+					return NULL;
 				return shaderResourceView;
 			}
 			void InitFromExternalSRV(ID3D11ShaderResourceView *srv);
-			
-			ID3D11Device*				device;
 
 			ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   shaderResourceView;

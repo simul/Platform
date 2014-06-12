@@ -276,10 +276,10 @@ void SimulGL2DCloudRenderer::PreRenderUpdate(crossplatform::DeviceContext &devic
 }
 
 bool SimulGL2DCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool /*cubemap*/
-									,bool /*near_pass*/,const void *depthTexture, bool,const simul::sky::float4&,const simul::sky::float4& )
+									,bool /*near_pass*/,crossplatform::Texture *depthTexture, bool,const simul::sky::float4&,const simul::sky::float4& )
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
+	GLuint depth_texture=depthTexture->AsGLuint();
 	EnsureTexturesAreUpToDate(deviceContext);
 	using namespace simul::clouds;
 	if(skyInterface)

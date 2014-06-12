@@ -35,7 +35,7 @@ namespace simul
 			void SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
 			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
-				,const void *depth_tex,bool write_alpha
+				,crossplatform::Texture *depth_tex,bool write_alpha
 				,const simul::sky::float4& viewportTextureRegionXYWH
 				,const simul::sky::float4& );
 			void RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);

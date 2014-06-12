@@ -11,8 +11,7 @@ using namespace simul;
 using namespace dx11;
 
 dx11::Texture::Texture(ID3D11Device* d)
-	:device(d)
-	,texture(NULL)
+	:texture(NULL)
 	,shaderResourceView(NULL)
 	,unorderedAccessView(NULL)
 	, unorderedAccessViewMips(NULL)
@@ -50,11 +49,11 @@ void dx11::Texture::InvalidateDeviceObjects()
 }
 
 // Load a texture file
-void dx11::Texture::LoadFromFile(const char *pFilePathUtf8)
+void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8)
 {
 	InvalidateDeviceObjects();
 	SAFE_RELEASE(shaderResourceView);
-	shaderResourceView	=simul::dx11::LoadTexture(device,pFilePathUtf8);
+	shaderResourceView	=simul::dx11::LoadTexture(r->AsD3D11Device(),pFilePathUtf8);
 }
 
 bool dx11::Texture::IsValid() const

@@ -274,13 +274,13 @@ void FixProjectionMatrix(simul::math::Matrix4x4 &proj,float zNear,float zFar)
 }
 
 bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
-									  ,const void *depthTexture,bool write_alpha
+									  ,crossplatform::Texture *depthTexture,bool write_alpha
 									  ,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& )
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::Render");
 	
-	ID3D11ShaderResourceView* depthTexture_SRV	=(ID3D11ShaderResourceView*)depthTexture;
+	ID3D11ShaderResourceView* depthTexture_SRV	=depthTexture->AsD3D11ShaderResourceView();
 	ID3DX11EffectTechnique*		tech			=technique;
 	if(depthTexture_SRV)
 	{

@@ -42,7 +42,7 @@ namespace simul
 			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! Render the clouds.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
-				,const void *depth_alpha_tex,bool write_alpha
+				,crossplatform::Texture *depth_alpha_tex,bool write_alpha
 				,const simul::sky::float4& viewportTextureRegionXYWH
 				,const simul::sky::float4& mixedResTransformXYWH);
 			//! Show the cross sections on-screen.

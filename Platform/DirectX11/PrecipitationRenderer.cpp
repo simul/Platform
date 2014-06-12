@@ -245,7 +245,7 @@ streak is not occluded by the scene. The streak is rendered only over
 those pixels.
 */
 void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
-				,const void *depth_tex
+				,crossplatform::Texture *depth_tex
 				,float max_fade_distance_metres
 				,simul::sky::float4 viewportTextureRegionXYWH)
 {
@@ -265,7 +265,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	rainTexture->SetResource(rain_texture);
 	dx11::setTexture(effect,"cubeTexture",cubemap_SRV);
 	dx11::setTexture(effect,"randomTexture3D",randomTexture3D);
-	dx11::setTexture(effect,"depthTexture",(ID3D11ShaderResourceView*)depth_tex);
+	dx11::setTexture(effect,"depthTexture",depth_tex->AsD3D11ShaderResourceView());
 	dx11::setTextureArray(effect,"rainTextureArray",rainArrayTexture.m_pArrayTexture_SRV);
 	
 	//set up matrices
@@ -409,6 +409,6 @@ void PrecipitationRenderer::RenderTextures(crossplatform::DeviceContext &deviceC
 		w/=2;
 		h/=2;
 	}
-	deviceContext.renderPlatform->DrawTexture(pContext	,x0,y0	,w,h,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex(),1.f);
+	deviceContext.renderPlatform->DrawTexture(deviceContext	,x0,y0	,w,h,moisture_fb.GetTexture(),1.f);
 	deviceContext.renderPlatform->Print(deviceContext	,x0,y0	,"Moisture");
 }

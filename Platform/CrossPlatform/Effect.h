@@ -102,7 +102,7 @@ namespace simul
 				return (ID3DX11Effect*)platform_effect;
 			}
 			virtual EffectTechnique *GetTechniqueByName(const char *name)=0;
-			virtual void SetTexture(const char *name,void *tex)=0;
+			virtual void SetTexture(const char *name,Texture *tex)=0;
 			virtual void SetTexture(const char *name,Texture &t)=0;
 		};
 	}

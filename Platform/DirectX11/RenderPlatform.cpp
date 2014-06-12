@@ -348,7 +348,7 @@ crossplatform::Light *RenderPlatform::CreateLight()
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture * tex=new dx11::Texture(device);
-	tex->LoadFromFile(fileNameUtf8);
+	tex->LoadFromFile(this,fileNameUtf8);
 	return tex;
 }
 
@@ -363,11 +363,10 @@ void *RenderPlatform::GetDevice()
 	return device;
 }
 
-void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void *t,float mult)
+void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *srv,float mult)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	ID3DX11Effect		*m_pDebugEffect=UtilityRenderer::GetDebugEffect();
-	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView*)t;
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",srv);
 	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
 	ID3DX11EffectTechnique *tech=m_pDebugEffect->GetTechniqueByName("textured");
@@ -400,7 +399,7 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void 
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult)
 {
-	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsVoidPointer(),mult);
+	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsD3D11ShaderResourceView(),mult);
 }
 #include "Simul/Camera/Camera.h"
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const float *proj)
@@ -411,7 +410,7 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	setParameter(m_pDebugEffect,"tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
 	static float cc=0.1f;
 	setParameter(m_pDebugEffect,"depthToLinFadeDistParams",vec3(proj[3*4+2],cc*frustum.farZ,proj[2*4+2]*cc*frustum.farZ));
-	setTexture(m_pDebugEffect,"imageTexture",(ID3D11ShaderResourceView*)tex->AsVoidPointer());
+	setTexture(m_pDebugEffect,"imageTexture",tex->AsD3D11ShaderResourceView());
 	DrawQuad(deviceContext,x1,y1,dx,dy,m_pDebugEffect,tech);
 }
 
@@ -454,7 +453,20 @@ void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
 	int h=(int)viewport.Height;
-	textRenderer.Render(deviceContext,(float)x,(float)y,(float)viewport.Width,(float)h,text,clr,black,mirrorY);
+	int pos=0;
+	
+	while(*text!=0)
+	{
+		textRenderer.Render(deviceContext,(float)x,(float)y,(float)viewport.Width,(float)h,text,clr,black,mirrorY);
+		while(*text!='\n'&&*text!=0)
+		{
+			text++;
+			pos++;
+		}
+		text++;
+		pos++;
+		y+=16;
+	}
 }
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)

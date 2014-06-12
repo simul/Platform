@@ -27,7 +27,7 @@ using namespace dx11;
 void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
-	if(!useExternalFramebuffer)
+	if(renderPlatform&&!useExternalFramebuffer)
 	{
 		hdrFramebuffer.RestoreDeviceObjects(renderPlatform->AsD3D11Device());
 		hdrFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
@@ -213,8 +213,10 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		mixedResolutionConstants.Apply(deviceContext);
 		static int BLOCKWIDTH			=8;
 		uint2 subgrid						=uint2((view->hiResDepthTexture.width+BLOCKWIDTH-1)/BLOCKWIDTH,(view->hiResDepthTexture.length+BLOCKWIDTH-1)/BLOCKWIDTH);
-		simul::dx11::setTexture				(mixedResolutionEffect,"sourceMSDepthTexture"	,depth_SRV);
-		simul::dx11::setTexture				(mixedResolutionEffect,"sourceDepthTexture"		,depth_SRV);
+		if(msaa)
+			simul::dx11::setTexture				(mixedResolutionEffect,"sourceMSDepthTexture"	,depth_SRV);
+		else
+			simul::dx11::setTexture				(mixedResolutionEffect,"sourceDepthTexture"		,depth_SRV);
 		simul::dx11::setUnorderedAccessView	(mixedResolutionEffect,"target2DTexture"		,view->hiResDepthTexture.unorderedAccessView);
 	
 		if(use_rt)
@@ -245,13 +247,14 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		mixedResolutionConstants.Apply(deviceContext);
 		static int BLOCKWIDTH				=8;
 		uint2 subgrid						=uint2((view->GetLowResDepthTexture()->GetWidth()+BLOCKWIDTH-1)/BLOCKWIDTH,(view->GetLowResDepthTexture()->GetLength()+BLOCKWIDTH-1)/BLOCKWIDTH);
-		simul::dx11::setTexture				(mixedResolutionEffect,"sourceMSDepthTexture"	,depth_SRV);
-		simul::dx11::setTexture				(mixedResolutionEffect,"sourceDepthTexture"		,(ID3D11ShaderResourceView *)view->GetHiResDepthTexture()->AsVoidPointer());
+		if(msaa)
+			simul::dx11::setTexture				(mixedResolutionEffect,"sourceMSDepthTexture"	,depth_SRV);
+		simul::dx11::setTexture				(mixedResolutionEffect,"sourceDepthTexture"		,view->GetHiResDepthTexture()->AsD3D11ShaderResourceView());
 		simul::dx11::setUnorderedAccessView	(mixedResolutionEffect,"target2DTexture"		,((dx11::Texture *)view->GetLowResScratchTexture())->unorderedAccessView);
 	
 		simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_depth_far_near_from_hires");
 		pContext->Dispatch(subgrid.x,subgrid.y,1);
-		simul::dx11::setTexture				(mixedResolutionEffect,"sourceDepthTexture"		,(ID3D11ShaderResourceView *)view->GetLowResScratchTexture()->AsVoidPointer());
+		simul::dx11::setTexture				(mixedResolutionEffect,"sourceDepthTexture"		,view->GetLowResScratchTexture()->AsD3D11ShaderResourceView());
 		simul::dx11::setUnorderedAccessView	(mixedResolutionEffect,"target2DTexture"		,((dx11::Texture *)view->GetLowResDepthTexture())->unorderedAccessView);
 		simul::dx11::applyPass(pContext,mixedResolutionEffect,"spread_edge");
 		pContext->Dispatch(subgrid.x,subgrid.y,1);
@@ -266,8 +269,9 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
-void MixedResolutionViewManager::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform)
+void MixedResolutionViewManager::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	renderPlatform=r;
 	mixedResolutionRenderer.RestoreDeviceObjects(renderPlatform);
 	std::set<MixedResolutionView*> views=GetViews();
 	for(std::set<MixedResolutionView*>::iterator i=views.begin();i!=views.end();i++)
@@ -278,6 +282,7 @@ void MixedResolutionViewManager::RestoreDeviceObjects(crossplatform::RenderPlatf
 
 void MixedResolutionViewManager::InvalidateDeviceObjects()
 {
+	renderPlatform=NULL;
 	mixedResolutionRenderer.InvalidateDeviceObjects();
 	std::set<MixedResolutionView*> views=GetViews();
 	for(std::set<MixedResolutionView*>::iterator i=views.begin();i!=views.end();i++)
@@ -292,6 +297,7 @@ int	MixedResolutionViewManager::AddView(bool external_framebuffer)
 	int view_id		=last_created_view_id;
 	MixedResolutionView *view		=views[view_id]=new MixedResolutionView();
 	view->useExternalFramebuffer=external_framebuffer;
+	view->RestoreDeviceObjects(renderPlatform);
 	return view_id;
 }
 

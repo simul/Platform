@@ -172,7 +172,7 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 int UtilityRenderer::instance_count=0;
 int UtilityRenderer::screen_width=0;
 int UtilityRenderer::screen_height=0;
-D3DXMATRIX UtilityRenderer::view,UtilityRenderer::proj;
+simul::math::Matrix4x4 UtilityRenderer::view,UtilityRenderer::proj;
 ID3DX11Effect *UtilityRenderer::m_pDebugEffect=NULL;
 ID3D11InputLayout *UtilityRenderer::m_pCubemapVtxDecl=NULL;
 ID3D1xBuffer* UtilityRenderer::m_pVertexBuffer=NULL;
@@ -303,7 +303,7 @@ ID3DX11Effect		*UtilityRenderer::GetDebugEffect()
 	return m_pDebugEffect;
 }
 
-void UtilityRenderer::SetMatrices(D3DXMATRIX v,D3DXMATRIX p)
+void UtilityRenderer::SetMatrices(const float *v,const float *p)
 {
 	view=v;
 	proj=p;
@@ -576,9 +576,9 @@ void UtilityRenderer::DrawSphere(void *context,int latitudes,int longitudes)
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
-void UtilityRenderer::DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety)
+void UtilityRenderer::DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,float offsetx,float offsety)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	unsigned int num_v=0;
 	D3D11_VIEWPORT								m_OldViewports[4];
 	pContext->RSGetViewports(&num_v,NULL);
@@ -624,7 +624,7 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCub
 	simul::dx11::setParameter(m_pDebugEffect,"longitudes",32);
 	static float rr=6.f;
 	simul::dx11::setParameter(m_pDebugEffect,"radius",rr);
-	UtilityRenderer::DrawSphere(context,16,32);
+	UtilityRenderer::DrawSphere(pContext,16,32);
 	pContext->RSSetViewports(num_v,m_OldViewports);
 }
 
