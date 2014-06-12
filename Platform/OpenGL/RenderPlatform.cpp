@@ -96,8 +96,13 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
     GLfloat lAmbientLight[] = {static_cast<GLfloat>(pAmbientLight[0]), static_cast<GLfloat>(pAmbientLight[1]),static_cast<GLfloat>(pAmbientLight[2]), 1.0f};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lAmbientLight);
 }
-void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int)
+
+void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,crossplatform::EffectTechnique *tech,int pass)
 {
+	deviceContext;
+	effect;
+	tech;
+	pass;
 }
 		
 void RenderPlatform::DrawMarker(void *,const double *matrix)
@@ -254,7 +259,7 @@ void RenderPlatform::DrawLineLoop(void *,const double *mat,int lVerticeCount,con
     glPopMatrix();
 }
 
-void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,void *tex,float mult)
+void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,void *tex,float /*mult*/)
 {
 	glBindTexture(GL_TEXTURE_2D,(GLuint)tex);
 	glUseProgram(Utilities::GetSingleton().simple_program);
@@ -306,6 +311,8 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 
 void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *string)
 {
+	if(!string)
+		return;
 	void *font=GLUT_BITMAP_HELVETICA_12;
 	glColor4f(1.f,1.f,1.f,1.f);
 	int viewport[4];
