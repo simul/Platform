@@ -25,6 +25,10 @@ namespace simul
 					return NULL;
 				return shaderResourceView;
 			}
+			GLuint AsGLuint()
+			{
+				return 0;
+			}
 			void InitFromExternalSRV(ID3D11ShaderResourceView *srv);
 
 			ID3D11Resource*				texture;

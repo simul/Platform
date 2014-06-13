@@ -16,10 +16,7 @@ namespace simul
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView()=0;
-			virtual GLuint AsGLuint()
-			{
-				return 0;
-			}
+			virtual GLuint AsGLuint()=0;
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,unsigned f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0)=0;
 			virtual void activateRenderTarget(DeviceContext &deviceContext)=0;
