@@ -515,3 +515,4 @@ crossplatform::Texture *SimulWeatherRendererDX11::GetCloudDepthTexture(int view_
 {
 	return framebuffersDx11[view_id]->GetLowResFarFramebuffer()->GetDepthTexture();
 }
+
