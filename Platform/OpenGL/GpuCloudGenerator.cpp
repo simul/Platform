@@ -61,9 +61,9 @@ void GpuCloudGenerator::RecompileShaders()
 	density_program		=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_density.frag");
 	lighting_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_clouds.frag");
 	transform_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_transform.frag");
-	gpuCloudConstants			.LinkToProgram(density_program	,"GpuCloudConstants",8);
-	gpuCloudConstants			.LinkToProgram(lighting_program	,"GpuCloudConstants",8);
-	gpuCloudConstants			.LinkToProgram(transform_program,"GpuCloudConstants",8);
+	gpuCloudConstants	.LinkToProgram(density_program	,"GpuCloudConstants",8);
+	gpuCloudConstants	.LinkToProgram(lighting_program	,"GpuCloudConstants",8);
+	gpuCloudConstants	.LinkToProgram(transform_program,"GpuCloudConstants",8);
 }
 
 static GLuint make3DTexture(int w,int l,int d,int stride,bool wrap_z,const float *src)

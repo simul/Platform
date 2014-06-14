@@ -16,9 +16,7 @@
 #endif
 
 #include <GL/glew.h>
-#ifdef USE_GLFX
 #include <GL/glfx.h>
-#endif
 #include "Simul/Base/Timer.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,9 +102,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,sim
 	,current_program(0)
 	,cross_section_program(0)
 	,cloud_shadow_program(0)
-#ifdef USE_GLFX
 	,effect(0)
-#endif
 {
 	for(int i=0;i<3;i++)
 	{
@@ -641,7 +637,6 @@ GL_ERROR_CHECK
 
 	cross_section_program		=MakeProgram("simul_cloud_cross_section");
 
-#ifdef USE_GLFX
 	glfxDeleteEffect(effect);
 	effect=-1;
 	while(effect==-1)
@@ -650,11 +645,10 @@ GL_ERROR_CHECK
 	{
 		GLuint p				=glfxCompileProgram(effect, "cross_section");
 		if (!p)
-			printEffectLog(effect);
+			opengl::printEffectLog(effect);
 		else
 			cross_section_program=p;
 	}
-#endif
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
 	cloudConstants.LinkToProgram(cross_section_program,"CloudConstants",2);
@@ -724,9 +718,7 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	init=false;
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	
-#ifdef USE_GLFX
 	glfxDeleteEffect(effect);
-#endif
 	SAFE_DELETE_TEXTURE(noise_tex);
 	SAFE_DELETE_PROGRAM(cross_section_program);
 

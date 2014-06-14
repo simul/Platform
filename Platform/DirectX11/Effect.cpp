@@ -31,7 +31,7 @@ void dx11::PlatformConstantBuffer::RestoreDeviceObjects(void *dev,size_t size,vo
 		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 }
 //! Find the constant buffer in the given effect, and link to it.
-void dx11::PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name)
+void dx11::PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int )
 {
 	m_pD3DX11EffectConstantBuffer=effect->asD3DX11Effect()->GetConstantBufferByName(name);
 	if(m_pD3DX11EffectConstantBuffer)
@@ -94,6 +94,34 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 	crossplatform::EffectTechnique *tech=new crossplatform::EffectTechnique;
 	tech->platform_technique=e->GetTechniqueByName(name);
 	techniques[name]=tech;
+	return tech;
+}
+
+crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
+{
+	if(techniques_by_index.find(index)!=techniques_by_index.end())
+	{
+		return techniques_by_index[index];
+	}
+	if(!platform_effect)
+		return NULL;
+	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
+	ID3DX11EffectTechnique *t=e->GetTechniqueByIndex(index);
+	if(!t)
+		return NULL;
+	D3DX11_TECHNIQUE_DESC desc;
+	t->GetDesc(&desc);
+	crossplatform::EffectTechnique *tech=NULL;
+	if(techniques.find(desc.Name)!=techniques.end())
+	{
+		tech=techniques[desc.Name];
+		techniques_by_index[index]=tech;
+		return tech;;
+	}
+	tech=new crossplatform::EffectTechnique;
+	tech->platform_technique=t;
+	techniques[desc.Name]=tech;
+	techniques_by_index[index]=tech;
 	return tech;
 }
 
