@@ -77,6 +77,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 
 crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 {
+	int nump=glfxGetProgramCount(effect);
 }
 
 void Effect::SetTexture(const char *name,crossplatform::Texture *tex)
