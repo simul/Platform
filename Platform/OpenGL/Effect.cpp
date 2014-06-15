@@ -68,7 +68,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	}
 	if(!platform_effect)
 		return NULL;
-	
+	GLuint e=(GLuint)platform_effect;
 	crossplatform::EffectTechnique *tech=new crossplatform::EffectTechnique;
 	tech->platform_technique=e->GetTechniqueByName(name);
 	techniques[name]=tech;

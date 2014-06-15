@@ -96,6 +96,7 @@ namespace simul
 			GLuint cross_section_program;
 			
 			GLint effect;
+
 			GLuint cloud_shadow_program;
 			GLint eyePosition_param;
 

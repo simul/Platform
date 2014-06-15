@@ -643,7 +643,7 @@ GL_ERROR_CHECK
 		effect						=opengl::CreateEffect("clouds.glfx",defines);
 	if(effect>=0)
 	{
-		GLuint p				=glfxCompileProgram(effect, "cross_section");
+		GLuint p					=glfxCompileProgram(effect, "cross_section");
 		if (!p)
 			opengl::printEffectLog(effect);
 		else
