@@ -144,10 +144,10 @@ GL_ERROR_CHECK
 			simulPrecipitationRenderer->RestoreDeviceObjects(NULL);
 GL_ERROR_CHECK
 		if(simul2DCloudRenderer)
-			simul2DCloudRenderer->RestoreDeviceObjects(NULL);
+			simul2DCloudRenderer->RestoreDeviceObjects(renderPlatform);
 GL_ERROR_CHECK
 		if(simulCloudRenderer)
-			simulCloudRenderer->RestoreDeviceObjects(NULL);
+			simulCloudRenderer->RestoreDeviceObjects(renderPlatform);
 		if(simulLightningRenderer)
 			simulLightningRenderer->RestoreDeviceObjects();
 	}
@@ -175,8 +175,9 @@ void SimulGLWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 	//fb->RestoreDeviceObjects(0);
 }
 
-void SimulGLWeatherRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *)
+void SimulGLWeatherRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	renderPlatform=r;
 ERRNO_CHECK
 	glewInit();
 ERRNO_CHECK

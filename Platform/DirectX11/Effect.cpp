@@ -4,6 +4,7 @@
 #include "Utilities.h"
 #include "Texture.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "D3dx11effect.h"
 
 #include <string>
@@ -33,6 +34,8 @@ void dx11::PlatformConstantBuffer::RestoreDeviceObjects(void *dev,size_t size,vo
 //! Find the constant buffer in the given effect, and link to it.
 void dx11::PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int )
 {
+	if(!effect->asD3DX11Effect())
+		return;
 	m_pD3DX11EffectConstantBuffer=effect->asD3DX11Effect()->GetConstantBufferByName(name);
 	if(m_pD3DX11EffectConstantBuffer)
 		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
@@ -65,11 +68,13 @@ void dx11::PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &d
 		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
 }
 
-dx11::Effect::Effect(void *device,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+dx11::Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	ID3DX11Effect *e=NULL;
-	HRESULT hr=CreateEffect((ID3D11Device *)device,&e,filename_utf8,defines,D3DCOMPILE_OPTIMIZATION_LEVEL3);
-	platform_effect=e;
+	if(!renderPlatform)
+		return;
+	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_utf8,defines,D3DCOMPILE_OPTIMIZATION_LEVEL3);
+	platform_effect	=e;
 }
 
 dx11::Effect::~Effect()
@@ -141,4 +146,13 @@ void dx11::Effect::SetTexture(const char *name,crossplatform::Texture *t)
 {
 	dx11::Texture *T=(dx11::Texture*)t;
 	simul::dx11::setTexture(asD3DX11Effect(),name,T->shaderResourceView);
+}
+
+void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
+{
+	ID3DX11Effect *effect			=asD3DX11Effect();
+	ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
+	ID3DX11EffectPass *pass			=tech->GetPassByIndex(pass_num);
+	HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
+	V_CHECK(hr);
 }

@@ -102,7 +102,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,sim
 	,current_program(0)
 	,cross_section_program(0)
 	,cloud_shadow_program(0)
-	,effect(0)
+	,gleffect(0)
 {
 	for(int i=0;i<3;i++)
 	{
@@ -419,7 +419,7 @@ GL_ERROR_CHECK
 	
 //const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
-	//CloudPerViewConstants cloudPerViewConstants;
+	//CloudPerViewConstants cloudPerViewConstantsGl;
 GL_ERROR_CHECK
 	const clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
 
@@ -450,8 +450,8 @@ GL_ERROR_CHECK
 	helper->SetChurn(cloudProperties.GetChurn());
 	helper->Update(view_pos,cloudKeyframer->GetWindOffset(),eye_dir,up_dir,delta_t,cubemap);
 
-	SetCloudPerViewConstants(cloudPerViewConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,exposure,deviceContext.viewStruct.view_id,viewportTextureRegionXYWH,mixedResTransformXYWH);
-	cloudPerViewConstants.exposure=exposure;
+	SetCloudPerViewConstants(cloudPerViewConstantsGl,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,exposure,deviceContext.viewStruct.view_id,viewportTextureRegionXYWH,mixedResTransformXYWH);
+	cloudPerViewConstantsGl.exposure=exposure;
 
 	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
 	simul::math::Matrix4x4 worldViewProj;
@@ -470,12 +470,12 @@ GL_ERROR_CHECK
 		effective_world_radius_metres	=helper->GetEffectiveEarthRadiusToMeetHorizon(base_alt,helper->GetMaxCloudDistance());
 	helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),effective_world_radius_metres,false,X1.z,false);
 
-	SetCloudConstants(cloudConstants);
-	cloudConstants.Apply();
+	SetCloudConstants(cloudConstantsGl);
+	cloudConstantsGl.Apply();
 
-	//UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
-	cloudPerViewConstants.layerIndex=18;
-	cloudPerViewConstants.Apply();
+	//UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstantsGl,cloudPerViewConstantsBindingIndex)
+	cloudPerViewConstantsGl.layerIndex=18;
+	cloudPerViewConstantsGl.Apply();
 	if(Raytrace)
 	{
 		UseShader(raytrace_program);
@@ -604,13 +604,13 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 
 GL_ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
-	cloudConstants			.LinkToProgram(program,"CloudConstants",2);
+	cloudConstantsGl			.LinkToProgram(program,"CloudConstants",2);
 	layerConstants			.LinkToProgram(program,"LayerConstants",4);
 	singleLayerConstants	.LinkToProgram(program,"SingleLayerConstants",5);
-	cloudPerViewConstants.LinkToProgram(program,"CloudPerViewConstants",13);
+	cloudPerViewConstantsGl.LinkToProgram(program,"CloudPerViewConstants",13);
 GL_ERROR_CHECK
 }
-
+#include "Simul/Platform/OpenGL/Effect.h"
 void SimulGLCloudRenderer::RecompileShaders()
 {
 	if(!init)
@@ -624,7 +624,6 @@ GL_ERROR_CHECK
 	
 	SAFE_DELETE_PROGRAM(noise_prog);
 	SAFE_DELETE_PROGRAM(edge_noise_prog);
-
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	defines["DETAIL_NOISE"]="1";
@@ -637,28 +636,32 @@ GL_ERROR_CHECK
 
 	cross_section_program		=MakeProgram("simul_cloud_cross_section");
 
-	glfxDeleteEffect(effect);
-	effect=-1;
-	while(effect==-1)
-		effect						=opengl::CreateEffect("clouds.glfx",defines);
-	if(effect>=0)
+	glfxDeleteEffect(gleffect);
+	gleffect=-1;
+	while(gleffect==-1)
+		gleffect					=opengl::CreateEffect("clouds.glfx",defines);
+	if(gleffect>=0)
 	{
-		GLuint p					=glfxCompileProgram(effect, "cross_section");
+		GLuint p				=glfxCompileProgram(gleffect, "cross_section");
 		if (!p)
-			opengl::printEffectLog(effect);
+			opengl::printEffectLog(gleffect);
 		else
 			cross_section_program=p;
 	}
+	effect=new opengl::Effect(renderPlatform,"simul_clouds.glfx",defines);
+	cloudConstants.LinkToEffect(effect,"CloudPerViewConstants");
+	cloudPerViewConstants.LinkToEffect(effect,"CloudPerViewConstants");
+	
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
-	cloudConstants.LinkToProgram(cross_section_program,"CloudConstants",2);
-	cloudConstants.LinkToProgram(clouds_background_program,"CloudConstants",2);
-	cloudConstants.LinkToProgram(clouds_foreground_program,"CloudConstants",2);
+	cloudConstantsGl.LinkToProgram(cross_section_program,"CloudConstants",2);
+	cloudConstantsGl.LinkToProgram(clouds_background_program,"CloudConstants",2);
+	cloudConstantsGl.LinkToProgram(clouds_foreground_program,"CloudConstants",2);
 	//glBindBufferRange(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO,0, sizeof(CloudConstants));
 //	glBindBufferRange(GL_UNIFORM_BUFFER,layerDataConstantsBindingIndex,layerDataConstantsUBO,0, sizeof(LayerConstants));
 	//glBindBufferRange(GL_UNIFORM_BUFFER,cloudPerViewConstantsBindingIndex,cloudPerViewConstantsUBO,0, sizeof(CloudPerViewConstants));
-	cloudPerViewConstants.LinkToProgram(clouds_background_program,"CloudPerViewConstants",13);
-	cloudPerViewConstants.LinkToProgram(clouds_foreground_program,"CloudPerViewConstants",13);
+	cloudPerViewConstantsGl.LinkToProgram(clouds_background_program,"CloudPerViewConstants",13);
+	cloudPerViewConstantsGl.LinkToProgram(clouds_foreground_program,"CloudPerViewConstants",13);
 
 	layerConstants.LinkToProgram(clouds_background_program,"LayerConstants",4);
 	layerConstants.LinkToProgram(clouds_foreground_program,"LayerConstants",4);
@@ -670,17 +673,19 @@ GL_ERROR_CHECK
 	glUseProgram(0);
 }
 
-void SimulGLCloudRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *)
+void SimulGLCloudRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	init=true;
+	renderPlatform=r;
+	BaseCloudRenderer::RestoreDeviceObjects(renderPlatform);
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	TextureStruct *ts[]={&cloud_textures[0],&cloud_textures[1],&cloud_textures[2]};
 	gpuCloudGenerator.SetDirectTargets(ts);
 	
-	cloudConstants.RestoreDeviceObjects();
+	cloudConstantsGl.RestoreDeviceObjects();
 	layerConstants.RestoreDeviceObjects();
 	singleLayerConstants.RestoreDeviceObjects();
-	cloudPerViewConstants.RestoreDeviceObjects();
+	cloudPerViewConstantsGl.RestoreDeviceObjects();
 
 	RecompileShaders();
 	//CreateVolumeNoise();
@@ -716,9 +721,10 @@ GL_ERROR_CHECK
 void SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
 	init=false;
+	BaseCloudRenderer::InvalidateDeviceObjects();
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	
-	glfxDeleteEffect(effect);
+	glfxDeleteEffect(gleffect);
 	SAFE_DELETE_TEXTURE(noise_tex);
 	SAFE_DELETE_PROGRAM(cross_section_program);
 
@@ -745,8 +751,8 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	volume_noise_tex=0;
 
 	//glDeleteBuffers(1,&cloudConstantsUBO);
-	cloudConstants.Release();
-	cloudPerViewConstants.Release();
+	cloudConstantsGl.Release();
+	cloudPerViewConstantsGl.Release();
 	layerConstants.Release();
 	singleLayerConstants.Release();
 	//cloudConstantsUBO=0;
@@ -903,13 +909,13 @@ void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &dev
 		sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 		set3DTexture(cross_section_program,"cloudDensity",0,cloud_textures[(texture_cycle+i)%3].tex);
 		
-		cloudConstants.lightResponse		=light_response;
-		cloudConstants.crossSectionOffset	=vec3(0.5f,0.5f,0.f);
-		cloudConstants.yz					=0.f;
-		cloudConstants.Apply();
+		cloudConstantsGl.lightResponse		=light_response;
+		cloudConstantsGl.crossSectionOffset	=vec3(0.5f,0.5f,0.f);
+		cloudConstantsGl.yz					=0.f;
+		cloudConstantsGl.Apply();
 		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+4,w,h,NULL,(void*)cross_section_program);
-		cloudConstants.yz					=1.f;
-		cloudConstants.Apply();
+		cloudConstantsGl.yz					=1.f;
+		cloudConstantsGl.Apply();
 		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+h+8,w,w,NULL,(void*)cross_section_program);
 	}
 	glActiveTexture(GL_TEXTURE0);

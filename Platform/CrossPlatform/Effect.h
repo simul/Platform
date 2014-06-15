@@ -112,6 +112,7 @@ namespace simul
 			virtual EffectTechnique *GetTechniqueByIndex(int index)=0;
 			virtual void SetTexture(const char *name,Texture *tex)=0;
 			virtual void SetTexture(const char *name,Texture &t)=0;
+			virtual void Apply(simul::crossplatform::DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass)=0;
 		};
 	}
 }

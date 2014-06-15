@@ -24,13 +24,20 @@ namespace simul
 		class Effect:public crossplatform::Effect
 		{
 			GLint effect;
+			int current_texture_number;
+			crossplatform::EffectTechnique *currentTechnique;
 		public:
-			Effect();
+			Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			~Effect();
+			inline GLuint asGLint() const
+			{
+				return (GLint)(uintptr_t)platform_effect;
+			}
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
 			void SetTexture(const char *name,crossplatform::Texture *tex);
 			void SetTexture(const char *name,crossplatform::Texture &t);
+			virtual void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);
 		};
 	}
 }

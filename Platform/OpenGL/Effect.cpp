@@ -1,6 +1,9 @@
 #include <GL/glew.h>
+#include <GL/glfx.h>
 #include "Simul/Platform/OpenGL/Effect.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
+#include "Simul/Platform/OpenGL/LoadGLProgram.h"
+#include "Simul/Platform/CrossPlatform/Texture.h"
 
 using namespace simul;
 using namespace opengl;
@@ -51,10 +54,12 @@ void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &deviceC
 {
 }
 
-Effect::Effect()
+Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+	:current_texture_number(0)
+	,currentTechnique(NULL)
 {
+	platform_effect		=(void*)opengl::CreateEffect(filename_utf8,defines);
 }
-
 
 Effect::~Effect()
 {
@@ -66,24 +71,61 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	{
 		return techniques[name];
 	}
-	if(!platform_effect)
+	if(asGLint()==-1)
 		return NULL;
-	GLuint e=(GLuint)platform_effect;
-	crossplatform::EffectTechnique *tech=new crossplatform::EffectTechnique;
-	tech->platform_technique=e->GetTechniqueByName(name);
-	techniques[name]=tech;
+	GLint e									=asGLint();
+	crossplatform::EffectTechnique *tech	=new crossplatform::EffectTechnique;
+	techniques[name]						=tech;
+	// Now it needs to be in the techniques_by_index list.
+	size_t index							=glfxGetProgramIndex(e,name);
+	techniques_by_index[index]				=tech;
 	return tech;
 }
 
 crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 {
-	int nump=glfxGetProgramCount(effect);
+	if(techniques_by_index.find(index)!=techniques_by_index.end())
+	{
+		return techniques_by_index[index];
+	}
+	if(asGLint()==-1)
+		return NULL;
+	GLint e									=asGLint();
+	int nump								=glfxGetProgramCount(effect);
+	const char *name						=glfxGetProgramName(e,index);
+	GLuint t								=glfxCompileProgram(e,name);
+	crossplatform::EffectTechnique *tech	=new crossplatform::EffectTechnique;
+	techniques[name]						=tech;
+	techniques_by_index[index]				=tech;
+	return tech;
 }
 
 void Effect::SetTexture(const char *name,crossplatform::Texture *tex)
 {
+	current_texture_number++;
+    glActiveTexture(GL_TEXTURE0+current_texture_number);
+	glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
+GL_ERROR_CHECK
+	if(!currentTechnique)
+		return;
+	GLuint program	=currentTechnique->asGLuint();
+	GLint loc		=glGetUniformLocation(program,name);
+GL_ERROR_CHECK
+	if(loc<=0)
+		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	else
+		glUniform1i(loc,current_texture_number);
+GL_ERROR_CHECK
 }
 
 void Effect::SetTexture(const char *name,crossplatform::Texture &t)
 {
+	SetTexture(name,&t);
+}
+
+void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass)
+{
+	glUseProgram(effectTechnique->asGLuint());
+	current_texture_number	=0;
+	currentTechnique		=effectTechnique;
 }

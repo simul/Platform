@@ -158,6 +158,7 @@ void SimulCloudRendererDX1x::RecompileShaders()
 void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
+	BaseCloudRenderer::RestoreDeviceObjects(renderPlatform);
 	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	gpuCloudGenerator.RestoreDeviceObjects(renderPlatform);
 	// Allow the GPU cloud generator to directly create and modify the target textures.
@@ -229,6 +230,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
 void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
+	BaseCloudRenderer::InvalidateDeviceObjects();
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	Unmap();
 	shadow_fb.InvalidateDeviceObjects();
@@ -683,9 +685,9 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 		depthTexture_SRV=depth_tex->AsD3D11ShaderResourceView();
     ProfileBlock profileBlock(pContext,cubemap?"SimulCloudRendererDX1x::Render (cubemap side)":"SimulCloudRendererDX1x::Render");
 	
-	math::Vector3 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
-	float blendFactor[] = {0, 0, 0, 0};
-	UINT sampleMask   = 0xffffffff;
+	math::Vector3 cam_pos	=GetCameraPosVector(deviceContext.viewStruct.view);
+	float blendFactor[]		={0,0,0,0};
+	UINT sampleMask			=0xffffffff;
 	if(write_alpha)
 		pContext->OMSetBlendState(blendAndWriteAlpha,blendFactor,sampleMask);
 	else

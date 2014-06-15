@@ -29,9 +29,7 @@
 #pragma comment(lib,"opengl32")
 #pragma comment(lib,"glew32")
 #pragma comment(lib,"freeglut")
-#ifdef USE_GLFX
 #pragma comment(lib,"glfx")
-#endif
 
 #ifndef _MSC_VER
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
@@ -155,7 +153,7 @@ GL_ERROR_CHECK
 	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);
 ERRNO_CHECK
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->RestoreDeviceObjects(NULL);
+		simulWeatherRenderer->RestoreDeviceObjects(renderPlatform);
 ERRNO_CHECK
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects();

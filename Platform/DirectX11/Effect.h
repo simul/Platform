@@ -32,7 +32,7 @@ namespace simul
 		class SIMUL_DIRECTX11_EXPORT Effect:public simul::crossplatform::Effect
 		{
 		public:
-			Effect(void *device,const char *filename_utf8,const std::map<std::string,std::string> &defines);
+			Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			Effect();
 			~Effect();
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
@@ -40,6 +40,7 @@ namespace simul
 			void SetTexture(const char *name,crossplatform::Texture *tex);
 			void SetTexture(const char *name,crossplatform::Texture &t);
 			void SetTexture(const char *name,ID3D11ShaderResourceView *tex);
+			virtual void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);
 		};
 	}
 }
