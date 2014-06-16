@@ -1,9 +1,5 @@
 #include "CppGlSl.hs"
-
-layout(std140) uniform TestHdrConstants
-{
-	uniform vec4 colour;
-};
+#include "../../CrossPlatform/SL/hdr_constants.sl"
 
 uniform sampler2D image_texture;
 uniform sampler2D glowTexture;
@@ -27,7 +23,7 @@ shader PS_Tonemap(in vec2 texCoords, out vec4 FragColor)
 
 	//c.rgb*=exposure;
 	vec4 glow=texture2D(glowTexture,texCoords);
-	//c.rgb+=glow.rgb;
+	c.rgb+=glow.rgb;
 	//c.rgb = pow(c.rgb,vec3(gamma,gamma,gamma));
 	//c.a=1.0-pow(1.0-c.a,gamma);
     gl_FragColor=c;
