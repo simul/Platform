@@ -619,8 +619,8 @@ void SimulGLCloudRenderer::RecompileShaders()
 {
 	if(!init)
 		return;
-current_program=0;
-GL_ERROR_CHECK
+	current_program=0;
+	GL_ERROR_CHECK
 	gpuCloudGenerator.RecompileShaders();
 	SAFE_DELETE_PROGRAM(clouds_background_program);
 	SAFE_DELETE_PROGRAM(clouds_foreground_program);
