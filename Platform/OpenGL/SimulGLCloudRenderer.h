@@ -95,9 +95,8 @@ namespace simul
 
 			GLuint cross_section_program;
 			
-#ifdef USE_GLFX
-			GLint effect;
-#endif
+			GLint gleffect;
+
 			GLuint cloud_shadow_program;
 			GLint eyePosition_param;
 
@@ -112,8 +111,8 @@ namespace simul
 	
 			unsigned short *pIndices;
 
-			simul::opengl::ConstantBuffer<CloudConstants> cloudConstants;
-			simul::opengl::ConstantBuffer<CloudPerViewConstants> cloudPerViewConstants;
+			simul::opengl::ConstantBuffer<CloudConstants> cloudConstantsGl;
+			simul::opengl::ConstantBuffer<CloudPerViewConstants> cloudPerViewConstantsGl;
 			simul::opengl::ConstantBuffer<LayerConstants> layerConstants;
 			simul::opengl::ConstantBuffer<SingleLayerConstants> singleLayerConstants;
 

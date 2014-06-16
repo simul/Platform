@@ -380,6 +380,8 @@ void simul::dx11::setSamplerState(ID3DX11Effect *effect,const char *name	,ID3D11
 
 void simul::dx11::setTexture(ID3DX11Effect *effect,const char *name			,ID3D11ShaderResourceView * value)
 {
+	if(!effect)
+		return;
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
 	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetResource(value);

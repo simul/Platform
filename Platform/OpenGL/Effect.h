@@ -1,26 +1,18 @@
 #pragma once
-#include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
-#include <string>
-#include <map>
-#include "SimulDirectXHeader.h"
-
-#pragma warning(disable:4251)
-
-struct ID3D11Buffer;
-struct ID3DX11EffectConstantBuffer;
-
+typedef unsigned GLuint;
 namespace simul
 {
-	namespace dx11
+	namespace opengl
 	{
 		// Platform-specific data for constant buffer, managed by RenderPlatform.
 		class PlatformConstantBuffer : public crossplatform::PlatformConstantBuffer
 		{
-			ID3D11Buffer*					m_pD3D11Buffer;
-			ID3DX11EffectConstantBuffer*	m_pD3DX11EffectConstantBuffer;
+			GLuint	ubo;
+			size_t size;
 		public:
-			PlatformConstantBuffer():m_pD3D11Buffer(NULL),m_pD3DX11EffectConstantBuffer(NULL)
+			PlatformConstantBuffer():ubo(0)
 			{
 			}
 			void RestoreDeviceObjects(void *dev,size_t sz,void *addr);
@@ -29,17 +21,21 @@ namespace simul
 			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
 			void Unbind(simul::crossplatform::DeviceContext &deviceContext);
 		};
-		class SIMUL_DIRECTX11_EXPORT Effect:public simul::crossplatform::Effect
+		class Effect:public crossplatform::Effect
 		{
+			int current_texture_number;
+			crossplatform::EffectTechnique *currentTechnique;
 		public:
 			Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
-			Effect();
 			~Effect();
+			inline GLuint asGLint() const
+			{
+				return (GLint)(uintptr_t)platform_effect;
+			}
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
 			void SetTexture(const char *name,crossplatform::Texture *tex);
 			void SetTexture(const char *name,crossplatform::Texture &t);
-			void SetTexture(const char *name,ID3D11ShaderResourceView *tex);
 			virtual void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);
 		};
 	}

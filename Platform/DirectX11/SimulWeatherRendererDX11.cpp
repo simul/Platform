@@ -150,9 +150,10 @@ void SimulWeatherRendererDX11::SetScreenSize(int view_id,int w,int h)
 	fb->SetDimensions(w,h,Downscale);
 }
 
-void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform)
+void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	HRESULT hr=S_OK;
+	renderPlatform=r;
 	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	for(FramebufferMapDx11::iterator i=framebuffersDx11.begin();i!=framebuffersDx11.end();i++)
 		i->second->RestoreDeviceObjects(m_pd3dDevice);
@@ -196,7 +197,7 @@ void SimulWeatherRendererDX11::RecompileShaders()
 	delete effect;
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
-	effect=new dx11::Effect(m_pd3dDevice,"simul_hdr.fx",defines);
+	effect=new dx11::Effect(renderPlatform,"simul_hdr.fx",defines);
 	hdrConstants.LinkToEffect(effect,"HdrConstants");
 	BaseWeatherRenderer::RecompileShaders();
 }

@@ -1,7 +1,5 @@
 #include <GL/glew.h>
-#ifdef USE_GLFX
 #include <GL/glfx.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -396,7 +394,6 @@ namespace simul
 			}
 			return sh;
 		}
-#ifdef USE_GLFX
 		vector<string> effectSourceFilesUtf8;
 		void printEffectLog(GLint effect)
 		{
@@ -404,7 +401,6 @@ namespace simul
 			std::cerr<<log.c_str();
 //			printShaderInfoLog(log,effectSourceFilesUtf8);
 		}
-#endif
 		
 		GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines)
 		{
@@ -416,8 +412,7 @@ namespace simul
 		{
 			std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,shaderPathsUtf8);
 			if(!filenameUtf8.length())
-				return 0;
-#ifdef USE_GLFX
+				return -1;
 			GLint effect=glfxGenEffect();
 #if 1
 			std::string src				=loadShaderSource(filenameUtf8.c_str());
@@ -450,9 +445,6 @@ namespace simul
 			}
 #endif
 			return effect;
-#else
-			return 0;
-#endif
 		}
 
 		GLuint MakeProgram(const char *filename)

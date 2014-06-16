@@ -4,6 +4,7 @@
 #include <map>
 struct ID3DX11Effect;
 struct ID3DX11EffectTechnique;
+typedef unsigned int GLuint;
 #ifdef _MSC_VER
 #pragma warning(disable:4251)
 #endif
@@ -24,7 +25,7 @@ namespace simul
 			virtual ~PlatformConstantBuffer(){}
 			virtual void RestoreDeviceObjects(void *dev,size_t sz,void *addr)=0;
 			virtual void InvalidateDeviceObjects()=0;
-			virtual void LinkToEffect(crossplatform::Effect *effect,const char *name)=0;
+			virtual void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)=0;
 			virtual void Apply(DeviceContext &deviceContext,size_t size,void *addr)=0;
 			virtual void Unbind(DeviceContext &deviceContext)=0;
 		};
@@ -57,7 +58,7 @@ namespace simul
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(Effect *effect,const char *name)
 			{
-				platformConstantBuffer->LinkToEffect(effect,name);
+				platformConstantBuffer->LinkToEffect(effect,name,T::bindingIndex);
 			}
 			//! Free the allocated buffer.
 			void InvalidateDeviceObjects()
@@ -82,17 +83,27 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique
 		{
 		public:
+			inline EffectTechnique()
+				:platform_technique(NULL)
+			{
+			}
 			void *platform_technique;
 			inline ID3DX11EffectTechnique *asD3DX11EffectTechnique()
 			{
 				return (ID3DX11EffectTechnique*)platform_technique;
+			}
+			inline GLuint asGLuint() const
+			{
+				return (GLuint)((uintptr_t)platform_technique);
 			}
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{
 		protected:
 			typedef std::map<std::string,EffectTechnique *> TechniqueMap;
+			typedef std::map<int,EffectTechnique *> IndexMap;
 			TechniqueMap techniques;
+			IndexMap techniques_by_index;
 		public:
 			void *platform_effect;
 			Effect();
@@ -102,8 +113,10 @@ namespace simul
 				return (ID3DX11Effect*)platform_effect;
 			}
 			virtual EffectTechnique *GetTechniqueByName(const char *name)=0;
+			virtual EffectTechnique *GetTechniqueByIndex(int index)=0;
 			virtual void SetTexture(const char *name,Texture *tex)=0;
 			virtual void SetTexture(const char *name,Texture &t)=0;
+			virtual void Apply(simul::crossplatform::DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass)=0;
 		};
 	}
 }

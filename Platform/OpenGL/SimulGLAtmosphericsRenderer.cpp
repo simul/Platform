@@ -156,18 +156,6 @@ GL_ERROR_CHECK
 	UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniforms2UBO,atmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex)
 
 	AtmosphericsUniforms a;
-/*	float alt_km			=cam_pos.z/1000.f;
-	a.lightDir			=(const float*)skyInterface->GetDirectionToLight(alt_km);
-	a.mieRayleighRatio	=(const float*)skyInterface->GetMieRayleighRatio();
-	a.texelOffsets		=vec2(0,0);
-	a.hazeEccentricity	=skyInterface->GetMieEccentricity();
-	
-	a.cloudOrigin	=cloud_origin;
-	a.cloudScale		=cloud_scale;
-	a.maxFadeDistanceMetres	=fade_distance_km*1000.f;
-	a.overcast		=overcast;
-	a.exposure		=exposure;*/
-	
 	SetAtmosphericsConstants(a,simul::sky::float4(1.0,1.0,1.0,0.0));
 
 	UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,a,atmosphericsUniformsBindingIndex)
