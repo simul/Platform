@@ -486,7 +486,7 @@ void SimulGLSkyRenderer::RenderPlanet(crossplatform::DeviceContext &deviceContex
 	GL_ERROR_CHECK
 	math::Vector3 cam_pos;
 	CalcCameraPosition(cam_pos);
-	float alt_km=0.001f*cam_pos.z;
+//	float alt_km=0.001f*cam_pos.z;
 	glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
@@ -497,7 +497,7 @@ void SimulGLSkyRenderer::RenderPlanet(crossplatform::DeviceContext &deviceContex
 	planet_dir4/=simul::sky::length(planet_dir4);
 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
-	float planet_elevation=asin(planet_dir4.z);
+//	float planet_elevation=asin(planet_dir4.z);
 	//planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 
 	glEnable(GL_TEXTURE_2D);

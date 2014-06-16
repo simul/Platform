@@ -10,6 +10,7 @@
 #include "Simul/Platform/OpenGL/SimulGLHDRRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/OpenGL/Effect.h"
 #include <stdint.h>  // for uintptr_t
@@ -45,6 +46,7 @@ void SimulGLHDRRenderer::SetBufferSize(int w,int h)
 void SimulGLHDRRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
+	hdrConstants.RestoreDeviceObjects(r);
 ERRNO_CHECK
 	initialized=true;
 	framebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
@@ -77,12 +79,15 @@ ERRNO_CHECK
 ERRNO_CHECK
 	std::map<std::string,std::string> defines;
 	effect				=new opengl::Effect(renderPlatform,"hdr.glfx",defines);
+	tech=effect->GetTechniqueByName("tonemap");
+	hdrConstants.LinkToEffect(effect,"HdrConstants");
 }
 
 void SimulGLHDRRenderer::InvalidateDeviceObjects()
 {
 	delete effect;
 	effect=NULL;
+	hdrConstants.InvalidateDeviceObjects();
 }
 
 bool SimulGLHDRRenderer::StartRender(crossplatform::DeviceContext &deviceContext)
@@ -97,14 +102,17 @@ bool SimulGLHDRRenderer::FinishRender(crossplatform::DeviceContext &deviceContex
 {
 	framebuffer.Deactivate(deviceContext.platform_context);
 	RenderGlowTexture(deviceContext);
-	effect->Apply(deviceContext,effect->GetTechniqueByName("tonemap"),0);
-	effect->SetTexture("image_texture",framebuffer.GetTexture());
-	GL_ERROR_CHECK
+	effect->Apply(deviceContext,tech,0);
 	effect->SetParameter("exposure",Exposure);
 	effect->SetParameter("gamma",Gamma);
+	effect->SetParameter("colour2",vec4(0.0,1.0,1.0,0.5));
+	effect->SetTexture("image_texture",framebuffer.GetTexture());
 	effect->SetTexture("glowTexture",glow_fb.GetTexture());
-	framebuffer.Render(deviceContext.platform_context,false);
-	glUseProgram(0);
+	hdrConstants.colour=vec4(1.0,0,1.0,0.5);
+	
+	hdrConstants.Apply(deviceContext);
+	
+	deviceContext.renderPlatform->DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);
 	return true;
 }

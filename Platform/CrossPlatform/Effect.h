@@ -20,7 +20,7 @@ namespace simul
 		{
 		public:
 		};
-		class PlatformConstantBuffer
+		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{
 		public:
 			virtual ~PlatformConstantBuffer(){}

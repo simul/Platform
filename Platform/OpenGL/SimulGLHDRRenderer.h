@@ -8,6 +8,10 @@
 #pragma once
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/SL/hdr_constants.sl"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Graph/Meta/Group.h"
 
 namespace simul
@@ -34,11 +38,13 @@ namespace simul
 			FramebufferGL framebuffer;
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;
+			__declspec(align(32)) crossplatform::ConstantBuffer<TestHdrConstants> hdrConstants;
 			FramebufferGL glow_fb;
 			FramebufferGL alt_fb;
 			bool initialized;
 			// shaders
 			Effect *effect;
+			crossplatform::EffectTechnique *tech;
 			GLuint tonemap_program;
 			GLint exposure_param;
 			GLint gamma_param;

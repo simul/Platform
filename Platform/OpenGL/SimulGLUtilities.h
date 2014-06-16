@@ -106,7 +106,7 @@ namespace simul
 		#define MAKE_GL_CONSTANT_BUFFER(ubo,Struct,bindingIndex)	\
 			glGenBuffers(1, &ubo);	\
 			glBindBuffer(GL_UNIFORM_BUFFER, ubo);	\
-			glBufferData(GL_UNIFORM_BUFFER, sizeof(Struct), NULL, GL_STREAM_DRAW);	\
+			glBufferData(GL_UNIFORM_BUFFER, sizeof(Struct), NULL, GL_DYNAMIC_DRAW);	\
 			glBindBuffer(GL_UNIFORM_BUFFER, 0);		\
 			glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0, sizeof(Struct));
 
@@ -157,7 +157,7 @@ namespace simul
 				Release();
 				glGenBuffers(1, &ubo);
 				glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-				glBufferData(GL_UNIFORM_BUFFER, sizeof(T), NULL, GL_STREAM_DRAW);
+				glBufferData(GL_UNIFORM_BUFFER, sizeof(T), NULL, GL_DYNAMIC_DRAW );
 				glBindBuffer(GL_UNIFORM_BUFFER, 0);
 			}
 			//! Find the constant buffer in the given effect, and link to it.
@@ -170,6 +170,12 @@ namespace simul
 				if(indexInShader>=0)
 				{
 					glUniformBlockBinding(program,indexInShader,bindingIndex);
+					GLint blockSize;
+					glGetActiveUniformBlockiv(program, indexInShader,
+                      GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+					if(blockSize!=sizeof(T))
+						throw std::runtime_error("");
+					glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 					glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,sizeof(T));	
 				}
 				else

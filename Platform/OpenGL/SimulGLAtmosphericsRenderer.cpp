@@ -25,8 +25,8 @@ SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer(simul::base::MemoryInte
 	,earthshadow_insc_program(0)
 	,godrays_program(0)
 	,earthShadowUniformsUBO(0)
-	,atmosphericsUniformsUBO(0)
-	,atmosphericsUniforms2UBO(0)
+	//,atmosphericsUniformsUBO(0)
+	//,atmosphericsUniforms2UBO(0)
 	,loss_texture(0)
 	,inscatter_texture(0)
 	,skylight_texture(0)
@@ -77,17 +77,25 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 	godrays_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defines);
 
 	MAKE_GL_CONSTANT_BUFFER(earthShadowUniformsUBO,EarthShadowUniforms,earthShadowUniformsBindingIndex);
-	MAKE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,AtmosphericsUniforms,atmosphericsUniformsBindingIndex);
-	MAKE_GL_CONSTANT_BUFFER(atmosphericsUniforms2UBO,AtmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex);
+	atmosphericsUniforms.RestoreDeviceObjects();
+	atmosphericsPerViewConstants.RestoreDeviceObjects();
+	//MAKE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,AtmosphericsUniforms,atmosphericsUniformsBindingIndex);
+	//MAKE_GL_CONSTANT_BUFFER(atmosphericsUniforms2UBO,AtmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex);
 	
-	linkToConstantBuffer(loss_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
+	atmosphericsUniforms		.LinkToProgram(loss_program,"AtmosphericsUniforms"			,atmosphericsUniformsBindingIndex);
+	//atmosphericsPerViewConstants.LinkToProgram(loss_program,"AtmosphericsPerViewConstants"	,atmosphericsUniforms2BindingIndex);
+	//linkToConstantBuffer(loss_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
 	linkToConstantBuffer(loss_program,"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
 	
-	linkToConstantBuffer(insc_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
+	atmosphericsUniforms		.LinkToProgram(insc_program,"AtmosphericsUniforms"			,atmosphericsUniformsBindingIndex);
+	//atmosphericsPerViewConstants.LinkToProgram(insc_program,"AtmosphericsPerViewConstants"	,atmosphericsUniforms2BindingIndex);
+	//linkToConstantBuffer(insc_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
 	linkToConstantBuffer(insc_program,"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
 	
-	linkToConstantBuffer(earthshadow_insc_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
-	linkToConstantBuffer(earthshadow_insc_program,"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
+	atmosphericsUniforms		.LinkToProgram(earthshadow_insc_program,"AtmosphericsUniforms"			,atmosphericsUniformsBindingIndex);
+	atmosphericsPerViewConstants.LinkToProgram(earthshadow_insc_program,"AtmosphericsPerViewConstants"	,atmosphericsUniforms2BindingIndex);
+	//linkToConstantBuffer(earthshadow_insc_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
+	//linkToConstantBuffer(earthshadow_insc_program,"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
 	linkToConstantBuffer(earthshadow_insc_program,"EarthShadowUniforms",earthShadowUniformsBindingIndex);
 
 	glUseProgram(0);
@@ -143,7 +151,7 @@ GL_ERROR_CHECK
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
 	
-	AtmosphericsPerViewConstants atmosphericsPerViewConstants;
+	//AtmosphericsPerViewConstants atmosphericsPerViewConstants;
 	atmosphericsPerViewConstants.invViewProj=ivp;
 	atmosphericsPerViewConstants.invViewProj.transpose();
 	atmosphericsPerViewConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
@@ -151,14 +159,18 @@ GL_ERROR_CHECK
 	atmosphericsPerViewConstants.farZ=frustum.farZ*0.001f/fade_distance_km;
 //	atmosphericsPerViewConstants.viewPosition	=cam_pos;
 	
+	//AtmosphericsPerViewConstants atmosphericsPerViewConstants;
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,proj,proj,depthViewportXYWH);
-	
-	UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniforms2UBO,atmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex)
+	atmosphericsPerViewConstants.Apply();
+				glBindBufferBase(GL_UNIFORM_BUFFER,atmosphericsUniforms2BindingIndex,atmosphericsPerViewConstants.ubo);
+	//UPDATE_GL_CONSTANT_BUFFER(atmosphericsPerViewConstants.ubo,(AtmosphericsPerViewConstants)atmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex)
 
+GL_ERROR_CHECK
 	AtmosphericsUniforms a;
 	SetAtmosphericsConstants(a,simul::sky::float4(1.0,1.0,1.0,0.0));
-
-	UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,a,atmosphericsUniformsBindingIndex)
+	(AtmosphericsUniforms)atmosphericsUniforms=a;
+	atmosphericsUniforms.Apply();
+	//UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,a,atmosphericsUniformsBindingIndex)
 	
 GL_ERROR_CHECK
 	glEnable(GL_BLEND);

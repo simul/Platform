@@ -10,6 +10,7 @@
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/OpenGL/Export.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include <stdint.h> // for intptr_t
 
 namespace simul
@@ -60,8 +61,10 @@ namespace simul
 			GLuint clouds_texture;
 
 			GLuint		earthShadowUniformsUBO;
-			GLuint		atmosphericsUniformsUBO;
-			GLuint		atmosphericsUniforms2UBO;
+			opengl::ConstantBuffer<AtmosphericsUniforms> atmosphericsUniforms;
+			opengl::ConstantBuffer<AtmosphericsPerViewConstants> atmosphericsPerViewConstants;
+		//	GLuint		atmosphericsUniformsUBO;
+		//	GLuint		atmosphericsUniforms2UBO;
 
 			FramebufferGL *framebuffer;
 		};

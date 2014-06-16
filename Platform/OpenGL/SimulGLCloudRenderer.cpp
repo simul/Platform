@@ -104,7 +104,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,sim
 	,current_program(0)
 	,cross_section_program(0)
 	,cloud_shadow_program(0)
-	,gleffect(0)
+	//,gleffect(0)
 {
 	for(int i=0;i<3;i++)
 	{
@@ -488,10 +488,10 @@ GL_ERROR_CHECK
 
 //	crossplatform::EffectTechnique*tech=effect->GetTechniqueByName("");
 //	effect->Apply(deviceContext,tech,0);
-	(CloudConstants)cloudConstants=cloudConstantsGl;
+/*	(CloudConstants)cloudConstants=cloudConstantsGl;
 	cloudConstants.Apply(deviceContext);
 	(CloudPerViewConstants)cloudPerViewConstants=cloudPerViewConstantsGl;
-	cloudPerViewConstants.Apply(deviceContext);
+	cloudPerViewConstants.Apply(deviceContext);*/
 	/*
 	effect->SetTexture("cloudDensity1",&cloud_textures[(texture_cycle+0)%3].tex);
 	effect->SetTexture("cloudDensity2",&cloud_textures[(texture_cycle+1)%3].tex);
@@ -639,7 +639,7 @@ void SimulGLCloudRenderer::RecompileShaders()
 	edge_noise_prog				=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
 
 	cross_section_program		=MakeProgram("simul_cloud_cross_section");
-
+/*
 	glfxDeleteEffect(gleffect);
 	gleffect=-1;
 	while(gleffect==-1)
@@ -654,7 +654,7 @@ void SimulGLCloudRenderer::RecompileShaders()
 	}
 	effect=new opengl::Effect(renderPlatform,"clouds.glfx",defines);
 	cloudConstants.LinkToEffect(effect,"CloudPerViewConstants");
-	cloudPerViewConstants.LinkToEffect(effect,"CloudPerViewConstants");
+	cloudPerViewConstants.LinkToEffect(effect,"CloudPerViewConstants");*/
 	
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
@@ -728,7 +728,7 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	BaseCloudRenderer::InvalidateDeviceObjects();
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	
-	glfxDeleteEffect(gleffect);
+//	glfxDeleteEffect(gleffect);
 	SAFE_DELETE_TEXTURE(noise_tex);
 	SAFE_DELETE_PROGRAM(cross_section_program);
 

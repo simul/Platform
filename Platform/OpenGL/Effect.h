@@ -11,6 +11,7 @@ namespace simul
 		{
 			GLuint	ubo;
 			size_t size;
+			int bindingIndex;
 		public:
 			PlatformConstantBuffer():ubo(0)
 			{
@@ -24,6 +25,7 @@ namespace simul
 		class SIMUL_OPENGL_EXPORT Effect:public crossplatform::Effect
 		{
 			int current_texture_number;
+			std::string filename;
 		public:
 			Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			~Effect();

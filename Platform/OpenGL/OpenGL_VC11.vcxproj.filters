@@ -396,6 +396,9 @@
     <None Include="GLSL\clouds.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\hdr.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

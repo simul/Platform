@@ -302,7 +302,9 @@ void RenderPlatform::DrawQuad	(crossplatform::DeviceContext &deviceContext,int x
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
+	GL_ERROR_CHECK
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); 
+	GL_ERROR_CHECK
 }
 
 

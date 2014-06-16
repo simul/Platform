@@ -505,7 +505,7 @@ void SimulGL2DCloudRenderer::RecompileShaders()
 //	CreateImageTexture();
 	glGenBuffers(1, &cloud2DConstantsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER,cloud2DConstantsUBO);
-	glBufferData(GL_UNIFORM_BUFFER,sizeof(Cloud2DConstants),NULL,GL_STREAM_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER,sizeof(Cloud2DConstants),NULL,GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER,0);
 	//glBindBufferRange(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO,0,sizeof(Cloud2DConstants));
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO);

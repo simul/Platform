@@ -237,6 +237,7 @@
   <ItemGroup>
     <None Include="GLSL\clouds.glfx" />
     <None Include="GLSL\CppGlsl.hs" />
+    <None Include="GLSL\hdr.glfx" />
     <None Include="GLSL\saturate.glsl" />
     <None Include="GLSL\simple.frag" />
     <None Include="GLSL\simple.vert" />
