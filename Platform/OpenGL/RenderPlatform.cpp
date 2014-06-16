@@ -3,6 +3,7 @@
 #include "Simul/Platform/OpenGL/Material.h"
 #include "Simul/Platform/OpenGL/Mesh.h"
 #include "Simul/Platform/OpenGL/Texture.h"
+#include "Simul/Platform/OpenGL/Effect.h"
 #include "Simul/Platform/OpenGL/Light.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
@@ -402,7 +403,7 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 
 crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer()
 {
-	return NULL;
+	return new opengl::PlatformConstantBuffer();
 }
 
 void *RenderPlatform::GetDevice()

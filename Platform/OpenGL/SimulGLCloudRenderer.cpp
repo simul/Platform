@@ -29,6 +29,7 @@
 
 #include "SimulGLCloudRenderer.h"
 #include "SimulGLUtilities.h"
+#include "Simul/Camera/Camera.h"
 #include "Simul/Clouds/FastCloudNode.h"
 #include "Simul/Clouds/CloudGeometryHelper.h"
 #include "Simul/Clouds/TextureGenerator.h"
@@ -51,6 +52,7 @@ using namespace simul;
 using namespace opengl;
 using std::map;
 using namespace std;
+static float transitionDistance=0.01f;
 
 class CumulonimbusHumidityCallback:public simul::clouds::HumidityCallbackInterface
 {
@@ -304,8 +306,6 @@ simul::math::Matrix4x4 ConvertReversedToRegularProjectionMatrix(const simul::mat
 	}
 	return p;
 }
-#include "Simul/Camera/Camera.h"
-static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap
@@ -377,33 +377,42 @@ GL_ERROR_CHECK
 
     glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+1)%3].tex);
-
+GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
-
+GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,loss_tex);
 
     glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,overcast_tex);
-
+GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D,skylight_tex);
-
+GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE6);
-	glBindTexture(GL_TEXTURE_3D,illum_tex);
-
+GL_ERROR_CHECK
+	if(illum_tex>0)
+	{
+		glBindTexture(GL_TEXTURE_3D,illum_tex);
+	GL_ERROR_CHECK
+		glUniform1i(illumSampler_param,6);
+	GL_ERROR_CHECK
+	}
     glActiveTexture(GL_TEXTURE7);
+	glUniform1i(depthTexture,7);
 	GLuint program=clouds_background_program;
 	if(depth_alpha_tex)
 	{
 		glBindTexture(GL_TEXTURE_2D,depth_alpha_tex->AsGLuint());
 		program=depth_alpha_tex->AsGLuint()>0?clouds_foreground_program:clouds_background_program;
 	}
-
+GL_ERROR_CHECK
 	if(Raytrace)
 		program=raytrace_program;
+GL_ERROR_CHECK
 	UseShader(program);
+GL_ERROR_CHECK
 	glUseProgram(program);
 
 	glUniform1i(cloudDensity1_param,0);
@@ -412,14 +421,8 @@ GL_ERROR_CHECK
 	glUniform1i(lossSampler_param,3);
 	glUniform1i(inscatterSampler_param,4);
 	glUniform1i(skylightSampler_param,5);
-	glUniform1i(illumSampler_param,6);
-	glUniform1i(depthTexture,7);
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
-	
-//const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
-
-	//CloudPerViewConstants cloudPerViewConstantsGl;
 GL_ERROR_CHECK
 	const clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
 
@@ -476,6 +479,23 @@ GL_ERROR_CHECK
 	//UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstantsGl,cloudPerViewConstantsBindingIndex)
 	cloudPerViewConstantsGl.layerIndex=18;
 	cloudPerViewConstantsGl.Apply();
+
+	crossplatform::EffectTechnique*tech=effect->GetTechniqueByName("");
+	effect->Apply(deviceContext,tech,0);
+	(CloudConstants)cloudConstants=cloudConstantsGl;
+	cloudConstants.Apply(deviceContext);
+	(CloudPerViewConstants)cloudPerViewConstants=cloudPerViewConstantsGl;
+	cloudPerViewConstants.Apply(deviceContext);
+	/*
+	effect->SetTexture("cloudDensity1",&cloud_textures[(texture_cycle+0)%3].tex);
+	effect->SetTexture("cloudDensity2",&cloud_textures[(texture_cycle+1)%3].tex);
+	effect->SetTexture("noiseSampler",noise_tex);
+	effect->SetTexture("lossSampler",loss_tex);
+	effect->SetTexture("inscatter",inscatter_tex);
+	effect->SetTexture("skylight",skylight_tex);
+	effect->SetTexture("illum",illum_tex);
+	effect->SetTexture("depthTexture",depth_alpha_tex->AsGLuint());*/
+
 	if(Raytrace)
 	{
 		UseShader(raytrace_program);
@@ -515,10 +535,6 @@ GL_ERROR_CHECK
 	GL_ERROR_CHECK
 		simul::clouds::Slice *RS=*i;
 		clouds::SliceInstance s=helper->MakeLayerGeometry(RS,effective_world_radius_metres);
-//		const simul::clouds::IntVector &quad_strip_vertices=s.quad_strip_indices;
-//		size_t qs_vert=0;
-//		int layer=(int)helper->GetSlices().size()-1-idx;
-//		setParameter(program,"layerNumber",layer);
 		const LayerData &L=layerConstants.layers[helper->GetSlices().size()-1-idx];
 		singleLayerConstants.noiseOffset_	=L.noiseOffset;
 		singleLayerConstants.layerFade_		=L.layerFade;
@@ -527,28 +543,7 @@ GL_ERROR_CHECK
 		singleLayerConstants.Apply();
 		if(isolate_layer>=0&&idx!=isolate_layer)
 			continue;
-#if 1
 		sphereMesh.Draw(deviceContext,0,crossplatform::SHADING_MODE_SHADED);
-#else
-		glBegin(GL_QUAD_STRIP);
-		if(quad_strip_vertices.size())
-		for(QuadStripVector::const_iterator j=s.quadStrips.begin();
-			j!=s.quadStrips.end();j++)
-		{
-			// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?
-			for(unsigned k=0;k<j->num_vertices;k++,qs_vert++)
-			{
-				if(qs_vert<0||qs_vert>=quad_strip_vertices.size())
-					continue;
-				int v=quad_strip_vertices[qs_vert];
-				if(v<0||v>=(int)s.vertices.size())
-					continue;
-				const Vertex &V=s.vertices[v];
-				glVertex3f(V.x,V.y,V.z);
-			}
-		}
-		glEnd();
-#endif
 	GL_ERROR_CHECK
 	}
 	sphereMesh.EndDraw(deviceContext);
@@ -587,8 +582,11 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 {
 	if(current_program==program)
 		return;
+GL_ERROR_CHECK
 	current_program=program;
-	eyePosition_param			=glGetUniformLocation(program,"eyePosition");
+GL_ERROR_CHECK
+	eyePosition_param				=glGetUniformLocation(program,"eyePosition");
+GL_ERROR_CHECK
 	//hazeEccentricity_param		=glGetUniformLocation(program,"hazeEccentricity");
 	//mieRayleighRatio_param		=glGetUniformLocation(program,"mieRayleighRatio");
 	maxFadeDistanceMetres_param		=glGetUniformLocation(program,"maxFadeDistanceMetres");
@@ -648,7 +646,7 @@ GL_ERROR_CHECK
 		else
 			cross_section_program=p;
 	}
-	effect=new opengl::Effect(renderPlatform,"simul_clouds.glfx",defines);
+	effect=new opengl::Effect(renderPlatform,"clouds.glfx",defines);
 	cloudConstants.LinkToEffect(effect,"CloudPerViewConstants");
 	cloudPerViewConstants.LinkToEffect(effect,"CloudPerViewConstants");
 	

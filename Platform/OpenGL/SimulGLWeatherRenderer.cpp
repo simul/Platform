@@ -199,7 +199,7 @@ GL_ERROR_CHECK
 	EnableCloudLayers();
 ERRNO_CHECK
 	simulSkyRenderer->RestoreDeviceObjects(NULL);
-	simulCloudRenderer->RestoreDeviceObjects(NULL);
+	simulCloudRenderer->RestoreDeviceObjects(renderPlatform);
 	simulLightningRenderer->RestoreDeviceObjects();
 ERRNO_CHECK
 	simulAtmosphericsRenderer->RestoreDeviceObjects(NULL);

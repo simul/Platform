@@ -23,7 +23,6 @@ namespace simul
 		};
 		class Effect:public crossplatform::Effect
 		{
-			GLint effect;
 			int current_texture_number;
 			crossplatform::EffectTechnique *currentTechnique;
 		public:

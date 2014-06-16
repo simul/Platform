@@ -74,7 +74,9 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	if(asGLint()==-1)
 		return NULL;
 	GLint e									=asGLint();
+	GLuint t								=glfxCompileProgram(e,name);
 	crossplatform::EffectTechnique *tech	=new crossplatform::EffectTechnique;
+	tech->platform_technique				=(void*)t;
 	techniques[name]						=tech;
 	// Now it needs to be in the techniques_by_index list.
 	size_t index							=glfxGetProgramIndex(e,name);
@@ -91,12 +93,15 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 	if(asGLint()==-1)
 		return NULL;
 	GLint e									=asGLint();
-	int nump								=glfxGetProgramCount(effect);
+	int nump								=glfxGetProgramCount(e);
+	if(index>=nump)
+		return NULL;
 	const char *name						=glfxGetProgramName(e,index);
 	GLuint t								=glfxCompileProgram(e,name);
 	crossplatform::EffectTechnique *tech	=new crossplatform::EffectTechnique;
 	techniques[name]						=tech;
 	techniques_by_index[index]				=tech;
+	tech->platform_technique				=(void*)t;
 	return tech;
 }
 

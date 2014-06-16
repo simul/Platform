@@ -412,7 +412,7 @@ namespace simul
 		{
 			std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,shaderPathsUtf8);
 			if(!filenameUtf8.length())
-				return 0;
+				return -1;
 			GLint effect=glfxGenEffect();
 #if 1
 			std::string src				=loadShaderSource(filenameUtf8.c_str());

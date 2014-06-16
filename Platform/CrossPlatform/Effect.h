@@ -83,6 +83,10 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique
 		{
 		public:
+			inline EffectTechnique()
+				:platform_technique(NULL)
+			{
+			}
 			void *platform_technique;
 			inline ID3DX11EffectTechnique *asD3DX11EffectTechnique()
 			{
