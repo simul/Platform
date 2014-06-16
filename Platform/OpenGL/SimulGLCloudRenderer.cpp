@@ -399,12 +399,15 @@ GL_ERROR_CHECK
 		glUniform1i(illumSampler_param,6);
 	GL_ERROR_CHECK
 	}
+GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE7);
-	glUniform1i(depthTexture,7);
+GL_ERROR_CHECK
 	GLuint program=clouds_background_program;
+GL_ERROR_CHECK
 	if(depth_alpha_tex)
 	{
 		glBindTexture(GL_TEXTURE_2D,depth_alpha_tex->AsGLuint());
+GL_ERROR_CHECK
 		program=depth_alpha_tex->AsGLuint()>0?clouds_foreground_program:clouds_background_program;
 	}
 GL_ERROR_CHECK
@@ -414,13 +417,16 @@ GL_ERROR_CHECK
 	UseShader(program);
 GL_ERROR_CHECK
 	glUseProgram(program);
-
+GL_ERROR_CHECK
 	glUniform1i(cloudDensity1_param,0);
 	glUniform1i(cloudDensity2_param,1);
 	glUniform1i(noiseSampler_param,2);
 	glUniform1i(lossSampler_param,3);
 	glUniform1i(inscatterSampler_param,4);
 	glUniform1i(skylightSampler_param,5);
+GL_ERROR_CHECK
+	glUniform1i(depthTexture,7);
+GL_ERROR_CHECK
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
 GL_ERROR_CHECK
@@ -480,8 +486,8 @@ GL_ERROR_CHECK
 	cloudPerViewConstantsGl.layerIndex=18;
 	cloudPerViewConstantsGl.Apply();
 
-	crossplatform::EffectTechnique*tech=effect->GetTechniqueByName("");
-	effect->Apply(deviceContext,tech,0);
+//	crossplatform::EffectTechnique*tech=effect->GetTechniqueByName("");
+//	effect->Apply(deviceContext,tech,0);
 	(CloudConstants)cloudConstants=cloudConstantsGl;
 	cloudConstants.Apply(deviceContext);
 	(CloudPerViewConstants)cloudPerViewConstants=cloudPerViewConstantsGl;

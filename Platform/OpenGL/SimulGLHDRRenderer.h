@@ -14,6 +14,7 @@ namespace simul
 {
 	namespace opengl
 	{
+		class Effect;
 		SIMUL_OPENGL_EXPORT_CLASS SimulGLHDRRenderer:public simul::graph::meta::Group
 		{
 		public:
@@ -25,17 +26,19 @@ namespace simul
 				META_ValueProperty(float,Exposure,"")
 			META_EndProperties
 			void SetBufferSize(int w,int h);
-			void RestoreDeviceObjects();
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void InvalidateDeviceObjects();
 			bool StartRender(crossplatform::DeviceContext &deviceContext);
 			bool FinishRender(crossplatform::DeviceContext &deviceContext);
 			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext);
 			FramebufferGL framebuffer;
 		protected:
+			crossplatform::RenderPlatform *renderPlatform;
 			FramebufferGL glow_fb;
 			FramebufferGL alt_fb;
 			bool initialized;
 			// shaders
+			Effect *effect;
 			GLuint tonemap_program;
 			GLint exposure_param;
 			GLint gamma_param;

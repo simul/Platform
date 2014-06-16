@@ -1,3 +1,7 @@
+#ifdef _MSC_VER
+#include <Windows.h>
+#endif
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include <iostream>
 
@@ -6,11 +10,13 @@ using namespace crossplatform;
 
 Effect::Effect()
 	:platform_effect(NULL)
+	,apply_count(0)
+	,currentTechnique(NULL)
 {
 }
 
 Effect::~Effect()
 {
-	//std::cout<</"~texture"<<std::endl;
+	SIMUL_ASSERT(apply_count==0);
 }
 

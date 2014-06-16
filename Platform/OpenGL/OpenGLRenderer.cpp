@@ -156,7 +156,7 @@ ERRNO_CHECK
 		simulWeatherRenderer->RestoreDeviceObjects(renderPlatform);
 ERRNO_CHECK
 	if(simulHDRRenderer)
-		simulHDRRenderer->RestoreDeviceObjects();
+		simulHDRRenderer->RestoreDeviceObjects(renderPlatform);
 ERRNO_CHECK
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);

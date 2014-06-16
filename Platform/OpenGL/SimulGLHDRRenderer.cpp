@@ -7,9 +7,11 @@
 // agreement.
 
 #include <GL/glew.h>
-#include "SimulGLHDRRenderer.h"
-#include "SimulGLUtilities.h"
-#include "LoadGLProgram.h"
+#include "Simul/Platform/OpenGL/SimulGLHDRRenderer.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
+#include "Simul/Platform/OpenGL/LoadGLProgram.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/OpenGL/Effect.h"
 #include <stdint.h>  // for uintptr_t
 using namespace simul;
 using namespace opengl;
@@ -20,6 +22,7 @@ SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h)
 	,tonemap_program(0)
 	,glow_fb(w/2,h/2,GL_TEXTURE_2D)
 	,alt_fb(w/2,h/2,GL_TEXTURE_2D)
+	,effect(NULL)
 {
 }
 
@@ -35,12 +38,13 @@ void SimulGLHDRRenderer::SetBufferSize(int w,int h)
 		glow_fb.SetWidthAndHeight(w/2,h/2);
 		alt_fb.SetWidthAndHeight(w/2,h/2);
 		if(initialized)
-			RestoreDeviceObjects();
+			RestoreDeviceObjects(renderPlatform);
 	}
 }
 
-void SimulGLHDRRenderer::RestoreDeviceObjects()
+void SimulGLHDRRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	renderPlatform=r;
 ERRNO_CHECK
 	initialized=true;
 	framebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
@@ -71,12 +75,16 @@ ERRNO_CHECK
 	glow_program		=MakeProgram("simple.vert",NULL,"simul_glow.frag");
 	blur_program		=MakeProgram("simple.vert",NULL,"simul_hdr_blur.frag");
 ERRNO_CHECK
+	std::map<std::string,std::string> defines;
+	effect				=new opengl::Effect(renderPlatform,"hdr.glfx",defines);
 }
 
 void SimulGLHDRRenderer::InvalidateDeviceObjects()
 {
+	delete effect;
+	effect=NULL;
 }
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+
 bool SimulGLHDRRenderer::StartRender(crossplatform::DeviceContext &deviceContext)
 {
 	framebuffer.Activate(deviceContext);
@@ -89,18 +97,15 @@ bool SimulGLHDRRenderer::FinishRender(crossplatform::DeviceContext &deviceContex
 {
 	framebuffer.Deactivate(deviceContext.platform_context);
 	RenderGlowTexture(deviceContext);
-
-	glUseProgram(tonemap_program);
-	setTexture(tonemap_program,"image_texture",0,(GLuint)framebuffer.GetColorTex());
+	effect->Apply(deviceContext,effect->GetTechniqueByName("tonemap"),0);
+	effect->SetTexture("image_texture",framebuffer.GetTexture());
 	GL_ERROR_CHECK
-	glUniform1f(exposure_param,Exposure);
-	glUniform1f(gamma_param,Gamma);
-	glUniform1i(buffer_tex_param,0);
-	setTexture(tonemap_program,"glowTexture",1,(GLuint)glow_fb.GetColorTex());
-
+	effect->SetParameter("exposure",Exposure);
+	effect->SetParameter("gamma",Gamma);
+	effect->SetTexture("glowTexture",glow_fb.GetTexture());
 	framebuffer.Render(deviceContext.platform_context,false);
-	GL_ERROR_CHECK
 	glUseProgram(0);
+	effect->Unapply(deviceContext);
 	return true;
 }
 

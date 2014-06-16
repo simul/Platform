@@ -248,6 +248,9 @@
     <ClInclude Include="mixedresolutionview.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SimulDirectXHeader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\CppHLSL.hlsl">
@@ -298,77 +301,11 @@
     <None Include="HLSL\atmospherics.fx">
       <Filter>FX</Filter>
     </None>
-    <None Include="..\CrossPlatform\atmospherics_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\cloud_shadow.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\CppSl.hs">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\depth.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow_fade.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\godrays.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\illumination.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\rain_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_2d_clouds.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_cloud_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_clouds.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_gpu_clouds.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_gpu_sky.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_inscatter_fns.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_terrain_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\sky_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\states.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
     <None Include="HLSL\states.hlsl">
       <Filter>HLSL</Filter>
     </None>
     <None Include="HLSL\spherical_harmonics.fx">
       <Filter>FX</Filter>
-    </None>
-    <None Include="..\CrossPlatform\spherical_harmonics_constants.sl">
-      <Filter>CrossPlatform</Filter>
     </None>
     <None Include="CSFFT\fft_512x512_c2c.hlsl">
       <Filter>HLSL</Filter>
@@ -382,23 +319,11 @@
     <None Include="HLSL\ocean.fx">
       <Filter>FX</Filter>
     </None>
-    <None Include="..\CrossPlatform\ocean_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\atmospherics.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\hdr_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
     <None Include="HLSL\mixed_resolution.fx">
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\rain.fx">
       <Filter>FX</Filter>
-    </None>
-    <None Include="..\CrossPlatform\spherical_harmonics.sl">
-      <Filter>CrossPlatform</Filter>
     </None>
     <None Include="HLSL\font.fx">
       <Filter>FX</Filter>

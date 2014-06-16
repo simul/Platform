@@ -3,6 +3,7 @@
 #include "CreateEffectDX1x.h"
 #include "Utilities.h"
 #include "Texture.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "D3dx11effect.h"
@@ -148,11 +149,78 @@ void dx11::Effect::SetTexture(const char *name,crossplatform::Texture *t)
 	simul::dx11::setTexture(asD3DX11Effect(),name,T->shaderResourceView);
 }
 
+void Effect::SetParameter	(const char *name	,float value)
+{
+	ID3DX11EffectScalarVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsScalar();
+	SIMUL_ASSERT(var->IsValid()!=0);
+	var->SetFloat(value);
+}
+
+void Effect::SetParameter	(const char *name	,vec2 value)	
+{
+	ID3DX11EffectVectorVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsVector();
+	SIMUL_ASSERT(var->IsValid()!=0);
+	var->SetFloatVector(value);
+}
+
+void Effect::SetParameter	(const char *name	,vec3 value)	
+{
+	ID3DX11EffectVectorVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsVector();
+	SIMUL_ASSERT(var->IsValid()!=0);
+	var->SetFloatVector(value);
+}
+
+void Effect::SetParameter	(const char *name	,vec4 value)	
+{
+	ID3DX11EffectVectorVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsVector();
+	SIMUL_ASSERT(var->IsValid()!=0);
+	var->SetFloatVector(value);
+}
+
+void Effect::SetParameter	(const char *name	,int value)	
+{
+	ID3DX11EffectScalarVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsScalar();
+	SIMUL_ASSERT(var->IsValid()!=0);
+	var->SetInt(value);
+}
+
+void Effect::SetVector		(const char *name	,const float *value)	
+{
+	ID3DX11EffectVectorVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsVector();
+	SIMUL_ASSERT(var->IsValid()!=0);
+	var->SetFloatVector(value);
+}
+
+void Effect::SetMatrix		(const char *name	,const float *m)	
+{
+	ID3DX11EffectMatrixVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsMatrix();
+	SIMUL_ASSERT(var->IsValid()!=0);
+	var->SetMatrix(m);
+}
+
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {
+	if(apply_count!=0)
+		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
+	apply_count++;
 	ID3DX11Effect *effect			=asD3DX11Effect();
+	currentTechnique				=effectTechnique;
 	ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
 	ID3DX11EffectPass *pass			=tech->GetPassByIndex(pass_num);
 	HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
 	V_CHECK(hr);
+}
+
+void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
+{
+	if(apply_count<=0)
+		SIMUL_BREAK("Effect::Unapply without a corresponding Apply!")
+	else if(apply_count>1)
+		SIMUL_BREAK("Effect::Apply has been called too many times!")
+	apply_count--;
+	ID3DX11Effect *effect			=asD3DX11Effect();
+	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
+	ID3DX11EffectPass *pass			=tech->GetPassByIndex(0);
+	HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
+	currentTechnique=NULL;
 }

@@ -95,15 +95,15 @@
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Effect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FramebufferGL.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Glsl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GpuCloudGenerator.h">
@@ -185,6 +185,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -363,12 +366,6 @@
     <None Include="GLSL\tonemap.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="..\CrossPlatform\atmospherics_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\cloud_shadow.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
     <None Include="..\CrossPlatform\depth.sl">
       <Filter>CrossPlatform</Filter>
     </None>
@@ -376,51 +373,6 @@
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\earth_shadow_uniforms.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_2d_clouds.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_cloud_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_clouds.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_gpu_clouds.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_gpu_sky.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_inscatter_fns.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_terrain_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\depth.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow_fade.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\godrays.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\illumination.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\rain_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="GLSL\CloudConstants.glsl">
@@ -435,25 +387,13 @@
     <None Include="..\CrossPlatform\simul_inscatter_fns.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="..\CrossPlatform\sky_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
     <None Include="..\CrossPlatform\simul_2d_clouds.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\simul_terrain_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="..\CrossPlatform\states.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\solid_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
     <None Include="..\CrossPlatform\simul_cloud_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\simul_clouds.sl">
@@ -520,6 +460,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="GLSL\simul_gpu_sky_copy.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\hdr.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\light_pass.glfx">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

@@ -7,7 +7,7 @@ namespace simul
 	namespace opengl
 	{
 		// Platform-specific data for constant buffer, managed by RenderPlatform.
-		class PlatformConstantBuffer : public crossplatform::PlatformConstantBuffer
+		class SIMUL_OPENGL_EXPORT PlatformConstantBuffer : public crossplatform::PlatformConstantBuffer
 		{
 			GLuint	ubo;
 			size_t size;
@@ -21,10 +21,9 @@ namespace simul
 			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
 			void Unbind(simul::crossplatform::DeviceContext &deviceContext);
 		};
-		class Effect:public crossplatform::Effect
+		class SIMUL_OPENGL_EXPORT Effect:public crossplatform::Effect
 		{
 			int current_texture_number;
-			crossplatform::EffectTechnique *currentTechnique;
 		public:
 			Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			~Effect();
@@ -34,9 +33,17 @@ namespace simul
 			}
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
-			void SetTexture(const char *name,crossplatform::Texture *tex);
-			void SetTexture(const char *name,crossplatform::Texture &t);
-			virtual void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);
+			void SetTexture		(const char *name,crossplatform::Texture *tex);
+			void SetTexture		(const char *name,crossplatform::Texture &t);
+			void SetParameter	(const char *name	,float value)		;
+			void SetParameter	(const char *name	,vec2)				;
+			void SetParameter	(const char *name	,vec3)				;
+			void SetParameter	(const char *name	,vec4)				;
+			void SetParameter	(const char *name	,int value)			;
+			void SetVector		(const char *name	,const float *vec)	;
+			void SetMatrix		(const char *name	,const float *m)	;
+			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);
+			void Unapply(crossplatform::DeviceContext &deviceContext);
 		};
 	}
 }

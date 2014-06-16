@@ -76,7 +76,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -103,7 +103,7 @@
     <ClCompile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DLL;WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -130,7 +130,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -147,7 +147,7 @@
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -160,6 +160,7 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Effect.cpp" />
     <ClCompile Include="FramebufferGL.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
@@ -187,6 +188,7 @@
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="FramebufferGL.h" />
     <ClInclude Include="GpuCloudGenerator.h" />
@@ -216,28 +218,8 @@
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\CrossPlatform\atmospherics_constants.sl" />
-    <None Include="..\CrossPlatform\cloud_shadow.sl" />
-    <None Include="..\CrossPlatform\CppSl.hs" />
-    <None Include="..\CrossPlatform\depth.sl" />
-    <None Include="..\CrossPlatform\earth_shadow.sl" />
-    <None Include="..\CrossPlatform\earth_shadow_fade.sl" />
-    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
     <None Include="..\CrossPlatform\godrays.sl" />
     <None Include="..\CrossPlatform\illumination.sl" />
-    <None Include="..\CrossPlatform\rain_constants.sl" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl" />
-    <None Include="..\CrossPlatform\simul_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
-    <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
-    <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
-    <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
-    <None Include="..\CrossPlatform\sky_constants.sl" />
-    <None Include="..\CrossPlatform\solid_constants.sl" />
-    <None Include="..\CrossPlatform\states.sl" />
     <None Include="GLSL\CloudConstants.glsl" />
     <None Include="GLSL\CppGlsl.hs" />
     <None Include="GLSL\illumination_buffer.frag" />
@@ -309,18 +291,6 @@
     <None Include="GLSL\tonemap.frag" />
     <None Include="GLSL\tonemap.vert" />
     <None Include="GLSL\view_dir.glsl" />
-    <None Include="..\CrossPlatform\CppSl.hs" />
-    <None Include="..\CrossPlatform\depth.sl" />
-    <None Include="..\CrossPlatform\earth_shadow.sl" />
-    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
-    <None Include="..\CrossPlatform\simul_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
-    <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
-    <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

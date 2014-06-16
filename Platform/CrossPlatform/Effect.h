@@ -1,5 +1,6 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/Export.h"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include <string>
 #include <map>
 struct ID3DX11Effect;
@@ -104,6 +105,8 @@ namespace simul
 			typedef std::map<int,EffectTechnique *> IndexMap;
 			TechniqueMap techniques;
 			IndexMap techniques_by_index;
+			int apply_count;
+			crossplatform::EffectTechnique *currentTechnique;
 		public:
 			void *platform_effect;
 			Effect();
@@ -112,11 +115,19 @@ namespace simul
 			{
 				return (ID3DX11Effect*)platform_effect;
 			}
-			virtual EffectTechnique *GetTechniqueByName(const char *name)=0;
-			virtual EffectTechnique *GetTechniqueByIndex(int index)=0;
-			virtual void SetTexture(const char *name,Texture *tex)=0;
-			virtual void SetTexture(const char *name,Texture &t)=0;
-			virtual void Apply(simul::crossplatform::DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass)=0;
+			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
+			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
+			virtual void SetTexture		(const char *name	,Texture *tex)		=0;
+			virtual void SetTexture		(const char *name	,Texture &t)		=0;
+			virtual void SetParameter	(const char *name	,float value)		=0;
+			virtual void SetParameter	(const char *name	,vec2)				=0;
+			virtual void SetParameter	(const char *name	,vec3)				=0;
+			virtual void SetParameter	(const char *name	,vec4)				=0;
+			virtual void SetParameter	(const char *name	,int value)			=0;
+			virtual void SetVector		(const char *name	,const float *vec)	=0;
+			virtual void SetMatrix		(const char *name	,const float *m)	=0;
+			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass)=0;
+			virtual void Unapply(DeviceContext &deviceContext)=0;
 		};
 	}
 }

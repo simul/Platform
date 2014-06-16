@@ -1,5 +1,9 @@
 #include <GL/glew.h>
 #include <GL/glfx.h>
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/OpenGL/Effect.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
@@ -56,7 +60,6 @@ void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &deviceC
 
 Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 	:current_texture_number(0)
-	,currentTechnique(NULL)
 {
 	platform_effect		=(void*)opengl::CreateEffect(filename_utf8,defines);
 }
@@ -75,6 +78,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 		return NULL;
 	GLint e									=asGLint();
 	GLuint t								=glfxCompileProgram(e,name);
+
 	crossplatform::EffectTechnique *tech	=new crossplatform::EffectTechnique;
 	tech->platform_technique				=(void*)t;
 	techniques[name]						=tech;
@@ -116,7 +120,7 @@ GL_ERROR_CHECK
 	GLuint program	=currentTechnique->asGLuint();
 	GLint loc		=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
-	if(loc<=0)
+	if(loc<0)
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform1i(loc,current_texture_number);
@@ -128,9 +132,78 @@ void Effect::SetTexture(const char *name,crossplatform::Texture &t)
 	SetTexture(name,&t);
 }
 
+void Effect::SetParameter	(const char *name	,float value)
+{
+	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	SIMUL_ASSERT_WARN(loc>=0,(std::string("Parameter not found in GL Effect: ")+name).c_str());
+	glUniform1f(loc,value);
+	GL_ERROR_CHECK
+}
+
+void Effect::SetParameter	(const char *name	,vec2 value)
+{
+	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	SIMUL_ASSERT_WARN(loc>=0,(std::string("Parameter not found in GL Effect: ")+name).c_str());
+	glUniform2fv(loc,1,value);
+	GL_ERROR_CHECK
+}
+
+void Effect::SetParameter	(const char *name	,vec3 value)	
+{
+	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	SIMUL_ASSERT_WARN(loc>=0,(std::string("Parameter not found in GL Effect: ")+name).c_str());
+	glUniform3fv(loc,1,value);
+	GL_ERROR_CHECK
+}
+
+void Effect::SetParameter	(const char *name	,vec4 value)	
+{
+	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	SIMUL_ASSERT_WARN(loc>=0,(std::string("Parameter not found in GL Effect: ")+name).c_str());
+	glUniform4fv(loc,1,value);
+	GL_ERROR_CHECK
+}
+
+void Effect::SetParameter	(const char *name	,int value)	
+{
+	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	SIMUL_ASSERT_WARN(loc>=0,(std::string("Parameter not found in GL Effect: ")+name).c_str());
+	glUniform1i(loc,value);
+	GL_ERROR_CHECK
+}
+
+void Effect::SetVector		(const char *name	,const float *value)	
+{
+	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	SIMUL_ASSERT_WARN(loc>=0,(std::string("Parameter not found in GL Effect: ")+name).c_str());
+	glUniform4fv(loc,1,value);
+	GL_ERROR_CHECK
+}
+
+void Effect::SetMatrix		(const char *name	,const float *m)	
+{
+	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	SIMUL_ASSERT_WARN(loc>=0,(std::string("Parameter not found in GL Effect: ")+name).c_str());
+	glUniformMatrix4fv(loc,1,false,m);
+	GL_ERROR_CHECK
+}
+
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass)
 {
+	if(apply_count!=0)
+		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
 	glUseProgram(effectTechnique->asGLuint());
 	current_texture_number	=0;
 	currentTechnique		=effectTechnique;
+	apply_count++;
+}
+void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
+{
+	glUseProgram(0);
+	if(apply_count<=0)
+		SIMUL_BREAK("Effect::Unapply without a corresponding Apply!")
+	else if(apply_count>1)
+		SIMUL_BREAK("Effect::Apply has been called too many times!")
+	currentTechnique=NULL;
+	apply_count--;
 }
