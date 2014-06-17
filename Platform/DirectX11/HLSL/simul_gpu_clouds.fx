@@ -191,7 +191,7 @@ technique11 density_mask
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState(ReverseDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_DensityMask()));

@@ -1,0 +1,28 @@
+#include "CppGlSl.hs"
+
+uniform sampler2D image_texture;
+uniform vec4 rect;
+
+shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
+{
+	vec2 poss[4];
+	poss[0]		=vec2(1.0, 0.0);
+	poss[1]		=vec2(1.0, 1.0);
+	poss[2]		=vec2(0.0, 0.0);
+	poss[3]		=vec2(0.0, 1.0);
+	vec2 pos	=poss[gl_VertexID];
+	gl_Position	=vec4(rect.xy+rect.zw*pos.xy,1.0,1.0);
+    texCoords	=pos.xy;
+}
+
+shader PS_ShowTexture(in vec2 texCoords, out vec4 FragColor)
+{
+    vec4 c		=texture2D(image_texture,texCoords);
+    FragColor	=c;
+}
+
+program show_texture
+{
+    vs(430) = VS_FullScreen();
+    fs(430) = PS_ShowTexture();
+};

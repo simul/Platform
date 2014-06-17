@@ -32,7 +32,7 @@ namespace simul
 				,const sky::GpuSkyInfraredParameters &gpuSkyInfraredParameters);
 			void CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl);
 			// If we want the generator to put the data directly into 3d textures:
-			void SetDirectTargets(dx11::Texture **loss,dx11::Texture **insc,dx11::Texture **skyl,dx11::Texture *light_table)
+			void SetDirectTargets(crossplatform::Texture **loss,crossplatform::Texture **insc,crossplatform::Texture **skyl,crossplatform::Texture *light_table)
 			{
 				for(int i=0;i<3;i++)
 				{
@@ -62,10 +62,10 @@ namespace simul
 			
 			ID3D1xBuffer*					constantBuffer;
 			ConstantBuffer<GpuSkyConstants>	gpuSkyConstants;
-			dx11::Texture					*finalLoss[3];
-			dx11::Texture					*finalInsc[3];
-			dx11::Texture					*finalSkyl[3];
-			dx11::Texture					*light_table;
+			crossplatform::Texture					*finalLoss[3];
+			crossplatform::Texture					*finalInsc[3];
+			crossplatform::Texture					*finalSkyl[3];
+			crossplatform::Texture					*light_table;
 			dx11::Texture					dens_tex,optd_tex;
 
 			unsigned						tables_checksum;

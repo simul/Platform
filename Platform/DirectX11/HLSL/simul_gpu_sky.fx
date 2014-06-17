@@ -131,13 +131,13 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 	for(int i=1;i<dims.z;i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
-		float zPosition		=pow((float)(i)/((float)dims.z-1.f),2.0);
+		float zPosition		=pow((float)(i)/((float)dims.z-1.0),2.0);
 		
 		vec3 previous_loss	=loss_texture[idx].rgb;
 
 		float dist_km		=zPosition*maxDistanceKm;
 		if(i==dims.z-1)
-			dist_km=1000.f;
+			dist_km=1000.0;
 		float maxd			=min(spaceDistKm,dist_km);
 		float mind			=min(spaceDistKm,prevDist_km);
 		float dist			=0.5*(mind+maxd);
@@ -179,7 +179,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 		insc.rgb			+=previous_insc.rgb;
 		//float lossw=1.0;
 		//insc.w				=(lossw)*(1.0-previous_insc.w)*insc.w+previous_insc.w;
-		//final.w=::saturate((1.f-mie_factor)/(1.f-total_loss.x+0.0001f));
+		//final.w=::saturate((1.0-mie_factor)/(1.0-total_loss.x+0.0001f));
 		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
 		targetTexture[idx]	=vec4(insc.rgb,insc.a);
 		prevDist_km			=dist_km;
@@ -234,9 +234,9 @@ float4 PS_Skyl(vertexOutput IN) : SV_TARGET
 	vec3 loss			=exp(-extinction*stepLengthKm);
 	skyl.rgb			*=vec3(1.0,1.0,1.0)-loss;
 	float mie_factor	=exp(-skyl.w*stepLengthKm*haze_factor*hazeMie.x);
-	skyl.w				=saturate((1.f-mie_factor)/(1.f-total_ext.x+0.0001f));
+	skyl.w				=saturate((1.0-mie_factor)/(1.0-total_ext.x+0.0001f));
 	
-	//skyl.w				=(loss.w)*(1.f-previous_skyl.w)*skyl.w+previous_skyl.w;
+	//skyl.w				=(loss.w)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 	skyl.rgb			*=previous_loss.rgb;
 	skyl.rgb			+=previous_skyl.rgb;
 	float lossw=1.0;
@@ -265,7 +265,7 @@ technique11 simul_gpu_loss
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Loss()));
@@ -278,7 +278,7 @@ technique11 simul_gpu_insc
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Insc()));
@@ -291,7 +291,7 @@ technique11 simul_gpu_skyl
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Skyl()));

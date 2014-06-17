@@ -10,7 +10,7 @@ void main()
 {
 	pos=gl_Vertex.xyz;
     gl_Position		= gl_ModelViewProjectionMatrix * gl_Vertex;
-#if REVERSE_DEPTH==1
+#ifdef REVERSE_DEPTH
 	gl_Position.z	=0.0;
 #else
 	gl_Position.z	=gl_Position.w;

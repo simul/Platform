@@ -17,6 +17,7 @@ using namespace opengl;
 	{\
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLFX program "<<filename.c_str()<<std::endl;\
 		std::cout<<filename.c_str()<<"(1): warning B0001: parameter "<<name<<" was not found."<<filename.c_str()<<std::endl;\
+		return;\
 	}
 #define CHECK_TECH_EXISTS\
 	if(currentTechnique==NULL)\
@@ -134,6 +135,11 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 		return NULL;
 	const char *name						=glfxGetProgramName(e,index);
 	GLuint t								=glfxCompileProgram(e,name);
+	if(!t)
+	{
+		opengl::printEffectLog(e);
+		return NULL;
+	}
 	crossplatform::EffectTechnique *tech	=new crossplatform::EffectTechnique;
 	techniques[name]						=tech;
 	techniques_by_index[index]				=tech;

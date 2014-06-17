@@ -8,6 +8,7 @@
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #pragma warning(disable:4505)	// Fix GLUT warnings
 #include <GL/glut.h>
 
@@ -16,6 +17,7 @@ using namespace opengl;
 RenderPlatform::RenderPlatform()
 	:solid_program(0)
 	,reverseDepth(false)
+	,effect(NULL)
 {
 }
 
@@ -34,6 +36,8 @@ void RenderPlatform::InvalidateDeviceObjects()
 {
 	solidConstants.Release();
 	SAFE_DELETE_PROGRAM(solid_program);
+	delete effect;
+	effect=NULL;
 }
 
 void RenderPlatform::RecompileShaders()
@@ -42,6 +46,8 @@ void RenderPlatform::RecompileShaders()
 	SAFE_DELETE_PROGRAM(solid_program);
 	solid_program	=MakeProgram("solid",defines);
 	solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
+
+	effect=CreateEffect("debug",defines);
 }
 
 void RenderPlatform::PushTexturePath(const char *pathUtf8)
@@ -260,27 +266,29 @@ void RenderPlatform::DrawLineLoop(void *,const double *mat,int lVerticeCount,con
     glPopMatrix();
 }
 
-void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,GLuint tex,float /*mult*/)
+void RenderPlatform::DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,GLuint tex,float /*mult*/)
 {
 GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,tex);
 GL_ERROR_CHECK
-	glUseProgram(Utilities::GetSingleton().simple_program);
+	//effect->Apply(deviceContext,effect->GetTechniqueByIndex(0),0);
 GL_ERROR_CHECK
-	::DrawQuad(x1,y1,dx,dy);
+glDisable(GL_BLEND);
+glDisable(GL_CULL_FACE);
+	DrawQuad(deviceContext,x1,y1,dx,dy,effect,effect->GetTechniqueByIndex(0));
 GL_ERROR_CHECK
-	glUseProgram(0);
+	//effect->Unapply(deviceContext);
 GL_ERROR_CHECK
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult)
 {
-	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsGLuint(),mult);
+	DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsGLuint(),mult);
 }
 
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const float *proj)
 {
-	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsGLuint(),1.0f);
+	DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsGLuint(),1.0f);
 }
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)
@@ -403,7 +411,8 @@ crossplatform::Light *RenderPlatform::CreateLight()
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture * tex=new opengl::Texture;
-	tex->LoadFromFile(this,fileNameUtf8);
+	if(fileNameUtf8)
+		tex->LoadFromFile(this,fileNameUtf8);
 	return tex;
 }
 
