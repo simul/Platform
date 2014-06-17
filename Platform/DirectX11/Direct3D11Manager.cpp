@@ -378,7 +378,7 @@ void Direct3D11Manager::Initialize()
 	SAFE_RELEASE(factory);
 #endif
 	
-	std::cout<<"3"<<std::endl;
+
 	//After setting up the swap chain description we also need to setup one more variable called the feature level.
 	// This variable tells DirectX what version we plan to use. Here we set the feature level to 11.0 which is DirectX 11.
 	// You can set this to 10 or 9 to use a lower level version of DirectX if you plan on supporting multiple versions or running on lower end hardware.

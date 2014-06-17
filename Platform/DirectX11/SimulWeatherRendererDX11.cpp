@@ -204,7 +204,6 @@ void SimulWeatherRendererDX11::RecompileShaders()
 
 void SimulWeatherRendererDX11::InvalidateDeviceObjects()
 {
-	SAFE_DELETE(effect);
 	for(FramebufferMapDx11::iterator i=framebuffersDx11.begin();i!=framebuffersDx11.end();i++)
 		i->second->InvalidateDeviceObjects();
 	if(simulSkyRenderer)
@@ -457,7 +456,7 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(crossplatform::DeviceConte
 	dx11::setParameter(d3deffect,"nearZ"						,frustum.nearZ/max_fade_distance_metres);
 	dx11::setParameter(d3deffect,"farZ"							,frustum.farZ/max_fade_distance_metres);
 	dx11::setParameter(d3deffect,"depthToLinFadeDistParams"		,vec3(deviceContext.viewStruct.proj[14], max_fade_distance_metres, deviceContext.viewStruct.proj[10]*max_fade_distance_metres));
-	deviceContext.renderPlatform->DrawQuad(deviceContext	,x,y,w,h	,d3deffect,d3deffect->GetTechniqueByName("show_depth"));
+	deviceContext.renderPlatform->DrawQuad(deviceContext	,x,y,w,h	,effect,effect->GetTechniqueByName("show_depth"));
 }
 
 

@@ -4,6 +4,8 @@
 #include "Simul\Base\StringToWString.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Camera/Camera.h"
+#include "Simul/Platform/DirectX11/Effect.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Math/Vector3.h"
 #if WINVER<0x602
 #include <d3dx11.h>
@@ -173,10 +175,10 @@ int UtilityRenderer::instance_count=0;
 int UtilityRenderer::screen_width=0;
 int UtilityRenderer::screen_height=0;
 simul::math::Matrix4x4 UtilityRenderer::view,UtilityRenderer::proj;
-ID3DX11Effect *UtilityRenderer::m_pDebugEffect=NULL;
+crossplatform::Effect *UtilityRenderer::m_pDebugEffect=NULL;
 ID3D11InputLayout *UtilityRenderer::m_pCubemapVtxDecl=NULL;
 ID3D1xBuffer* UtilityRenderer::m_pVertexBuffer=NULL;
-ID3D11Device* UtilityRenderer::m_pd3dDevice=NULL;
+crossplatform::RenderPlatform* UtilityRenderer::renderPlatform=NULL;
 UtilityRenderer utilityRenderer;
 
 UtilityRenderer::UtilityRenderer()
@@ -246,22 +248,22 @@ static Vertex3_t vertices[36] =
 	{-size,		-size,	-size},
 };
 
-void UtilityRenderer::RestoreDeviceObjects(void *dev)
+void UtilityRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 {
-	m_pd3dDevice=(ID3D11Device *)dev;
+	renderPlatform=r;
 	RecompileShaders();
 	SAFE_RELEASE(m_pVertexBuffer);
 	// Vertex declaration
 	{
 		D3DX11_PASS_DESC PassDesc;
-		ID3DX11EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
-		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
+		crossplatform::EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
+		tech->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
 		D3D11_INPUT_ELEMENT_DESC decl[]=
 		{
 			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
 		};
 		SAFE_RELEASE(m_pCubemapVtxDecl);
-		V_CHECK(m_pd3dDevice->CreateInputLayout(decl,1,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl));
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateInputLayout(decl,1,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl));
 	}
 	D3D11_BUFFER_DESC desc=
 	{
@@ -276,29 +278,31 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
     InitData.pSysMem		=vertices;
     InitData.SysMemPitch	=sizeof(vec3);
-	V_CHECK(m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer));
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&desc,&InitData,&m_pVertexBuffer));
 }
 
 void UtilityRenderer::RecompileShaders()
 {
-	if(!m_pd3dDevice)
+	if(!renderPlatform)
 		return;
-	SAFE_RELEASE(m_pDebugEffect);
-	CreateEffect(m_pd3dDevice,&m_pDebugEffect,"simul_debug.fx");
+	delete m_pDebugEffect;
+	std::map<std::string,std::string> defines;
+	m_pDebugEffect=new dx11::Effect(renderPlatform,"simul_debug.fx",defines);
 }
 
 void UtilityRenderer::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_RELEASE(m_pDebugEffect);
+	delete m_pDebugEffect;
+	m_pDebugEffect=NULL;
     SAFE_RELEASE( m_pDepthStencilStateStored11 );
     SAFE_RELEASE( m_pRasterizerStateStored11 );
     SAFE_RELEASE( m_pBlendStateStored11 );
     SAFE_RELEASE( m_pSamplerStateStored11 );
 }
 
-ID3DX11Effect		*UtilityRenderer::GetDebugEffect()
+crossplatform::Effect		*UtilityRenderer::GetDebugEffect()
 {
 	return m_pDebugEffect;
 }
@@ -336,8 +340,8 @@ void UtilityRenderer::DrawLines(crossplatform::DeviceContext &deviceContext,Vert
 		HRESULT hr=S_OK;
 		D3DXMATRIX world, tmp1, tmp2;
 		D3DXMatrixIdentity(&world);
-		ID3DX11EffectTechnique *tech			=m_pDebugEffect->GetTechniqueByName("simul_debug");
-		ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
+		crossplatform::EffectTechnique *tech			=m_pDebugEffect->GetTechniqueByName("simul_debug");
+		ID3D1xEffectMatrixVariable*	worldViewProj		=m_pDebugEffect->asD3DX11Effect()->GetVariableByName("worldViewProj")->AsMatrix();
 
 		D3DXMATRIX wvp;
 		camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
@@ -357,7 +361,7 @@ void UtilityRenderer::DrawLines(crossplatform::DeviceContext &deviceContext,Vert
 		ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
 		InitData.pSysMem = vertices;
 		InitData.SysMemPitch = sizeof(VertexXyzRgba);
-		hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
+		hr=renderPlatform->AsD3D11Device()->CreateBuffer(&desc,&InitData,&vertexBuffer);
 
 		const D3D1x_INPUT_ELEMENT_DESC decl[] =
 		{
@@ -365,12 +369,12 @@ void UtilityRenderer::DrawLines(crossplatform::DeviceContext &deviceContext,Vert
 			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
 		};
 		D3D1x_PASS_DESC PassDesc;
-		ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
+		ID3D1xEffectPass *pass=tech->asD3DX11EffectTechnique()->GetPassByIndex(0);
 		hr=pass->GetDesc(&PassDesc);
 
 		ID3D11InputLayout*				m_pVtxDecl=NULL;
 		SAFE_RELEASE(m_pVtxDecl);
-		hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+		hr=renderPlatform->AsD3D11Device()->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
 		pContext->IASetInputLayout(m_pVtxDecl);
 		ID3D11InputLayout* previousInputLayout;
@@ -389,7 +393,7 @@ void UtilityRenderer::DrawLines(crossplatform::DeviceContext &deviceContext,Vert
 													&vertexBuffer,	// the array of vertex buffers
 													&stride,		// array of stride values, one for each buffer
 													&offset);		// array of 
-		hr=ApplyPass(pContext,tech->GetPassByIndex(0));
+		hr=ApplyPass(pContext,tech->asD3DX11EffectTechnique()->GetPassByIndex(0));
 		pContext->Draw(vertex_count,0);
 		pContext->IASetPrimitiveTopology(previousTopology);
 		pContext->IASetInputLayout( previousInputLayout );
@@ -407,12 +411,12 @@ void UtilityRenderer::Draw2dLines(crossplatform::DeviceContext &deviceContext,Ve
 		HRESULT hr=S_OK;
 		D3DXMATRIX world, tmp1, tmp2;
 		D3DXMatrixIdentity(&world);
-		ID3DX11EffectTechnique *tech			=m_pDebugEffect->GetTechniqueByName("lines_2d");
+		ID3DX11EffectTechnique *tech			=m_pDebugEffect->asD3DX11Effect()->GetTechniqueByName("lines_2d");
 		
 		unsigned int num_v=1;
 		D3D11_VIEWPORT								viewport;
 		pContext->RSGetViewports(&num_v,&viewport);
-		dx11::setParameter(m_pDebugEffect,"rect",vec4(-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height));
+		dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"rect",vec4(-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height));
 
 		ID3D1xBuffer *					vertexBuffer=NULL;
 		// Create the vertex buffer:
@@ -428,7 +432,7 @@ void UtilityRenderer::Draw2dLines(crossplatform::DeviceContext &deviceContext,Ve
 		ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
 		InitData.pSysMem = vertices;
 		InitData.SysMemPitch = sizeof(VertexXyzRgba);
-		hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
+		hr=renderPlatform->AsD3D11Device()->CreateBuffer(&desc,&InitData,&vertexBuffer);
 
 		const D3D1x_INPUT_ELEMENT_DESC decl[] =
 		{
@@ -441,7 +445,7 @@ void UtilityRenderer::Draw2dLines(crossplatform::DeviceContext &deviceContext,Ve
 
 		ID3D11InputLayout*				m_pVtxDecl=NULL;
 		SAFE_RELEASE(m_pVtxDecl);
-		hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+		hr=renderPlatform->AsD3D11Device()->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
 		pContext->IASetInputLayout(m_pVtxDecl);
 		ID3D11InputLayout* previousInputLayout;
@@ -614,16 +618,16 @@ void UtilityRenderer::DrawCubemap(crossplatform::DeviceContext &deviceContext,ID
 	view._42=0;
 	view._43=0;
 	camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&view,(const float*)&proj);
-	simul::dx11::setMatrix(m_pDebugEffect,"worldViewProj",&wvp._11);
+	simul::dx11::setMatrix(m_pDebugEffect->asD3DX11Effect(),"worldViewProj",&wvp._11);
 	//ID3DX11EffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
-	ID3DX11EffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");
-	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pDebugEffect->GetVariableByName("cubeTexture")->AsShaderResource();
+	ID3DX11EffectTechnique*				tech		=m_pDebugEffect->asD3DX11Effect()->GetTechniqueByName("draw_cubemap_sphere");
+	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pDebugEffect->asD3DX11Effect()->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));
-	simul::dx11::setParameter(m_pDebugEffect,"latitudes",16);
-	simul::dx11::setParameter(m_pDebugEffect,"longitudes",32);
+	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"latitudes",16);
+	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"longitudes",32);
 	static float rr=6.f;
-	simul::dx11::setParameter(m_pDebugEffect,"radius",rr);
+	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"radius",rr);
 	UtilityRenderer::DrawSphere(pContext,16,32);
 	pContext->RSSetViewports(num_v,m_OldViewports);
 }

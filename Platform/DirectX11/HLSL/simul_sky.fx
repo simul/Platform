@@ -436,7 +436,7 @@ technique11 show_2d_light_table
     }
 }
 
-technique11 simul_fade_3d_to_2d
+technique11 fade_3d_to_2d
 {
     pass p0 
     {

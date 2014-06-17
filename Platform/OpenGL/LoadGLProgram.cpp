@@ -425,7 +425,7 @@ namespace simul
 				pos=(int)src.find("\r\n",pos+1);
 			}
 			const char **filenames=new const char*[effectSourceFilesUtf8.size()+1];
-			for(int i=0;i<effectSourceFilesUtf8.size();i++)
+			for(size_t i=0;i<effectSourceFilesUtf8.size();i++)
 			{
 				filenames[i]=effectSourceFilesUtf8[i].c_str();
 			}

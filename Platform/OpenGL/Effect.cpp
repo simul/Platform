@@ -34,9 +34,13 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	SAFE_DELETE_BUFFER(ubo);
 }
 
-void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int bi)
+void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int )
 {
-	bindingIndex=bi;
+	static int lastBindingIndex=21;
+	if(lastBindingIndex>=GL_MAX_UNIFORM_BUFFER_BINDINGS)
+		lastBindingIndex=1;
+	bindingIndex=lastBindingIndex;
+	lastBindingIndex++;
 	for(int i=0;i<100;i++)
 	{
 		crossplatform::EffectTechnique *tech=effect->GetTechniqueByIndex(i);
@@ -49,7 +53,7 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const ch
 		{
 GL_ERROR_CHECK
 			glUniformBlockBinding(program,indexInShader,bindingIndex);
-					glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
+			glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 			glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,size);	
 GL_ERROR_CHECK
 		}

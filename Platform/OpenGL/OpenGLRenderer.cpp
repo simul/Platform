@@ -229,6 +229,7 @@ void OpenGLRenderer::paintGL()
 		GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
+
 			simulHDRRenderer->StartRender(deviceContext);
 			//simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 		}
@@ -280,7 +281,7 @@ void OpenGLRenderer::paintGL()
 			simulOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTex(),dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
-			simulHDRRenderer->FinishRender(deviceContext);
+			simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
 		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);

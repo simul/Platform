@@ -366,10 +366,10 @@ void *RenderPlatform::GetDevice()
 void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *srv,float mult)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	ID3DX11Effect		*m_pDebugEffect=UtilityRenderer::GetDebugEffect();
-	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",srv);
-	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
-	ID3DX11EffectTechnique *tech=m_pDebugEffect->GetTechniqueByName("textured");
+	crossplatform::Effect		*m_pDebugEffect=UtilityRenderer::GetDebugEffect();
+	simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTexture",srv);
+	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"multiplier",mult);
+	crossplatform::EffectTechnique *tech=m_pDebugEffect->GetTechniqueByName("textured");
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	if(srv)
 	{
@@ -378,7 +378,7 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,ID3D1
 		if(msaa)
 		{
 			tech=m_pDebugEffect->GetTechniqueByName("textured");
-			simul::dx11::setTexture(m_pDebugEffect,"imageTextureMS",srv);
+			simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureMS",srv);
 		}
 	}
 	unsigned int num_v=1;
@@ -392,9 +392,9 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,ID3D1
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 			,2.f*(float)dx/(float)viewport.Width
 			,2.f*(float)dy/(float)viewport.Height
-			,m_pDebugEffect,tech);
+			,m_pDebugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique());
 	}
-	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",NULL);
+	simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTexture",NULL);
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult)
@@ -404,21 +404,21 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 #include "Simul/Camera/Camera.h"
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const float *proj)
 {
-	ID3DX11Effect		*m_pDebugEffect	=UtilityRenderer::GetDebugEffect();
-	ID3DX11EffectTechnique *tech		=m_pDebugEffect->GetTechniqueByName("show_depth");
+	crossplatform::Effect		*m_pDebugEffect	=UtilityRenderer::GetDebugEffect();
+	crossplatform::EffectTechnique *tech		=m_pDebugEffect->GetTechniqueByName("show_depth");
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(proj);
-	setParameter(m_pDebugEffect,"tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
+	m_pDebugEffect->SetParameter("tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
 	static float cc=0.1f;
-	setParameter(m_pDebugEffect,"depthToLinFadeDistParams",vec3(proj[3*4+2],cc*frustum.farZ,proj[2*4+2]*cc*frustum.farZ));
-	setTexture(m_pDebugEffect,"imageTexture",tex->AsD3D11ShaderResourceView());
+	m_pDebugEffect->SetParameter("depthToLinFadeDistParams",vec3(proj[3*4+2],cc*frustum.farZ,proj[2*4+2]*cc*frustum.farZ));
+	m_pDebugEffect->SetTexture("imageTexture",tex);
 	DrawQuad(deviceContext,x1,y1,dx,dy,m_pDebugEffect,tech);
 }
 
-void RenderPlatform::DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,void *effect,void *technique)
+void RenderPlatform::DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)
 {
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
-	ID3DX11Effect			*eff		=(ID3DX11Effect	*)effect;
-	ID3DX11EffectTechnique	*tech		=(ID3DX11EffectTechnique*)technique;
+	ID3DX11Effect			*eff		=effect->asD3DX11Effect();
+	ID3DX11EffectTechnique	*tech		=technique->asD3DX11EffectTechnique();
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
@@ -433,6 +433,7 @@ void RenderPlatform::DrawQuad		(crossplatform::DeviceContext &deviceContext,int 
 			,eff,tech);
 	}
 }
+
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
@@ -487,7 +488,7 @@ void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,cons
 	pContext->IASetPrimitiveTopology(fill?D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
 	pContext->IASetInputLayout(NULL);
 	{
-		ID3DX11EffectGroup *g=dx11::UtilityRenderer::GetDebugEffect()->GetGroupByName("circle");
+		ID3DX11EffectGroup *g=dx11::UtilityRenderer::GetDebugEffect()->asD3DX11Effect()->GetGroupByName("circle");
 		ID3DX11EffectTechnique *tech=fill?g->GetTechniqueByName("filled"):g->GetTechniqueByName("outline");
 		
 		simul::math::Vector3 d(dir);
@@ -508,9 +509,9 @@ void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,cons
 		simul::math::Multiply4x4(tmp1,world,view);
 		simul::math::Multiply4x4(tmp2,tmp1,deviceContext.viewStruct.proj);
 		camera::MakeWorldViewProjMatrix(tmp2,world,view,deviceContext.viewStruct.proj);
-		dx11::setMatrix(UtilityRenderer::GetDebugEffect(),"worldViewProj",&tmp2._11);
-		dx11::setParameter(UtilityRenderer::GetDebugEffect(),"radius",rads);
-		dx11::setParameter(UtilityRenderer::GetDebugEffect(),"colour",colr);
+		UtilityRenderer::GetDebugEffect()->SetMatrix("worldViewProj",&tmp2._11);
+		UtilityRenderer::GetDebugEffect()->SetParameter("radius",rads);
+		UtilityRenderer::GetDebugEffect()->SetVector("colour",colr);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
 	}
 	pContext->Draw(fill?64:32,0);

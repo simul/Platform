@@ -20,6 +20,7 @@ namespace simul
 	namespace crossplatform
 	{
 		struct DeviceContext;
+		class RenderPlatform;
 	}
 	namespace dx11
 	{
@@ -150,15 +151,15 @@ namespace simul
 			static simul::math::Matrix4x4 view;
 			static simul::math::Matrix4x4 proj;
 		public:
-			static ID3DX11Effect		*m_pDebugEffect;
-			static ID3D11InputLayout	*m_pCubemapVtxDecl;
-			static ID3D1xBuffer		* m_pVertexBuffer;
-			static ID3D11Device		*m_pd3dDevice;
+			static crossplatform::Effect			*m_pDebugEffect;
+			static ID3D11InputLayout				*m_pCubemapVtxDecl;
+			static ID3D1xBuffer						*m_pVertexBuffer;
+			static crossplatform::RenderPlatform	*renderPlatform;
 			UtilityRenderer();
 			~UtilityRenderer();
-			static ID3DX11Effect		*GetDebugEffect();
+			static crossplatform::Effect		*GetDebugEffect();
 			static void SetMatrices(const float *v,const float *p);
-			static void RestoreDeviceObjects(void *m_pd3dDevice);
+			static void RestoreDeviceObjects(crossplatform::RenderPlatform	*r);
 			static void InvalidateDeviceObjects();
 			static void RecompileShaders();
 			static void SetScreenSize(int w,int h);

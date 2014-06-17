@@ -12,6 +12,8 @@
 
 using namespace simul;
 using namespace dx11;
+
+
 void dx11::PlatformConstantBuffer::RestoreDeviceObjects(void *dev,size_t size,void *addr)
 {
 	InvalidateDeviceObjects();
@@ -68,6 +70,8 @@ void dx11::PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &d
 	if(m_pD3DX11EffectConstantBuffer)
 		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
 }
+//#pragma optimize("",off)
+//#pragma optimize("",on)
 
 dx11::Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
@@ -149,7 +153,7 @@ void dx11::Effect::SetTexture(const char *name,crossplatform::Texture *t)
 	simul::dx11::setTexture(asD3DX11Effect(),name,T->shaderResourceView);
 }
 
-void Effect::SetParameter	(const char *name	,float value)
+void Effect::SetParameter(const char *name	,float value)
 {
 	ID3DX11EffectScalarVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsScalar();
 	SIMUL_ASSERT(var->IsValid()!=0);

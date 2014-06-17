@@ -33,12 +33,12 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void InvalidateDeviceObjects();
 			bool StartRender(crossplatform::DeviceContext &deviceContext);
-			bool FinishRender(crossplatform::DeviceContext &deviceContext);
+			bool FinishRender(crossplatform::DeviceContext &deviceContext,float exposure,float gamma);
 			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext);
 			FramebufferGL framebuffer;
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;
-			__declspec(align(32)) crossplatform::ConstantBuffer<TestHdrConstants> hdrConstants;
+			__declspec(align(32)) crossplatform::ConstantBuffer<HdrConstants> hdrConstants;
 			FramebufferGL glow_fb;
 			FramebufferGL alt_fb;
 			bool initialized;
@@ -51,7 +51,6 @@ namespace simul
 			GLint buffer_tex_param;
 			GLuint glow_program;
 			GLuint blur_program;
-			float exposure, gamma;
 		};
 	}
 }

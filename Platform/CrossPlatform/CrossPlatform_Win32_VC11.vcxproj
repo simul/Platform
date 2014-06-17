@@ -168,6 +168,7 @@
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Light.h" />
+    <ClInclude Include="Macros.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MixedResolutionView.h" />

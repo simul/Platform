@@ -3,6 +3,7 @@
 #include <iostream>
 #include <tchar.h>
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/CrossPlatform/Macros.h"
 typedef std::basic_string<TCHAR> tstring;
 #define ENABLE_PIX
 #ifdef UNICODE
@@ -96,9 +97,6 @@ extern const char *GetErrorText(HRESULT hr);
 #endif
 	#ifndef SAFE_RELEASE
 		#define SAFE_RELEASE(p)		{ if(p) { (p)->Release(); (p)=NULL; } }
-	#endif
-	#ifndef SAFE_DELETE
-		#define SAFE_DELETE(p)		{ if(p) { delete p; (p)=NULL; } }
 	#endif
 	#ifndef SAFE_RELEASE_ARRAY
 		#define SAFE_RELEASE_ARRAY(p,n)		{ if(p) for(int i=0;i<n;i++) if(p[i]) { (p[i])->Release(); (p[i])=NULL; } }

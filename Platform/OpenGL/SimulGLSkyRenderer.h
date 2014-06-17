@@ -98,9 +98,6 @@ namespace simul
 	unsigned		cloud_texel_index;
 	unsigned char	*sky_tex_data;
 	
-	// Two alternative programs for rendering the sky:
-	GLuint			sky_program;
-	GLuint			earthshadow_program;
 	// Whichever of those two we are currently using:
 	GLuint			current_program;
 	

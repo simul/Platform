@@ -294,6 +294,7 @@
     <None Include="GLSL\simul_terrain.frag" />
     <None Include="GLSL\simul_terrain.geom" />
     <None Include="GLSL\simul_terrain.vert" />
+    <None Include="GLSL\sky.glfx" />
     <None Include="GLSL\tonemap.frag" />
     <None Include="GLSL\tonemap.vert" />
     <None Include="..\CrossPlatform\CppSl.hs" />

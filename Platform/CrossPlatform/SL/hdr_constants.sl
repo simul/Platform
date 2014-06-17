@@ -24,7 +24,4 @@ SIMUL_CONSTANT_BUFFER(rectConstants,11)
 	uniform vec4 rect;
 SIMUL_CONSTANT_BUFFER_END
 	
-SIMUL_CONSTANT_BUFFER(TestHdrConstants,5)
-	uniform vec4 colour;
-SIMUL_CONSTANT_BUFFER_END
 #endif

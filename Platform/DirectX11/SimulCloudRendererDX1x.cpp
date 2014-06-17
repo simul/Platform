@@ -811,8 +811,8 @@ void SimulCloudRendererDX1x::RenderDebugInfo(crossplatform::DeviceContext &devic
 	simul::math::Matrix4x4 ident;
 	ident.Identity();
 	ortho.Identity();
-	ortho._11=width;
-	ortho._22=height;
+	ortho._11=(float)width;
+	ortho._22=(float)height;
     //D3DXMatrixOrthoLH(ortho,(float)width,(float)height,-100.f,100.f);
 	ortho._41=-1.f;
 	ortho._22=-ortho._22;
@@ -852,10 +852,10 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &d
 		cloudConstants.crossSectionOffset	=vec3(0.5f,0.5f,0.f);
 		cloudConstants.yz					=0.f;
 		cloudConstants.Apply(deviceContext);
-		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+4,w,h,effect,m_pTechniqueCrossSection);
+//		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+4,w,h,effect,m_pTechniqueCrossSection);
 		cloudConstants.yz					=1.f;
 		cloudConstants.Apply(deviceContext);
-		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+h+8,w,w,effect,m_pTechniqueCrossSection);
+//		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+h+8,w,w,effect,m_pTechniqueCrossSection);
 	}
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);

@@ -119,7 +119,7 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 	renderPlatformDx11.RestoreDeviceObjects(pd3dDevice);
 	//Set a global device pointer for use by various classes.
 	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
-	simul::dx11::UtilityRenderer::RestoreDeviceObjects(pd3dDevice);
+	simul::dx11::UtilityRenderer::RestoreDeviceObjects(&renderPlatformDx11);
 	viewManager.RestoreDeviceObjects(&renderPlatformDx11);
 	lightProbeConstants.RestoreDeviceObjects(m_pd3dDevice);
 	if(simulHDRRenderer)
