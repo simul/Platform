@@ -188,14 +188,14 @@ void simul::opengl::RenderTexture(int x,int y,int w,int h)
 	glLoadIdentity();
 
 	glBegin(GL_QUADS);
+	glTexCoord2f(0.f,0.f);
+	glVertex2f((float)x,(float)y);
+	glTexCoord2f(1.f,0.f);
+	glVertex2f((float)(x+w),(float)y);
 	glTexCoord2f(0.f,1.f);
 	glVertex2f((float)x,(float)(y+h));
 	glTexCoord2f(1.f,1.f);
 	glVertex2f((float)(x+w),(float)(y+h));
-	glTexCoord2f(1.f,0.f);
-	glVertex2f((float)(x+w),(float)y);
-	glTexCoord2f(0.f,0.f);
-	glVertex2f((float)x,(float)y);
 	glEnd();
 	GL_ERROR_CHECK
 }

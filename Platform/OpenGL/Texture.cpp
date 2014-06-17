@@ -51,6 +51,15 @@ bool opengl::Texture::IsValid() const
 void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *renderPlatform,int w,int l
 	,unsigned f,bool computable,bool rendertarget,int num_samples,int aa_quality)
 {
+	GLuint tex=0;
+	glGenTextures(1,&tex);
+	glBindTexture(GL_TEXTURE_2D,tex);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w,l,0,GL_RGBA,GL_FLOAT,NULL);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_2D,0);
 }
 
 void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &deviceContext)

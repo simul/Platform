@@ -149,9 +149,9 @@ namespace simul
 
 	FramebufferGL	illumination_fb;
 
-	GLuint			loss_texture;
-	GLuint			insc_texture;
-	GLuint			skyl_texture;
+	opengl::Texture	loss_texture;
+	opengl::Texture	insc_texture;
+	opengl::Texture	skyl_texture;
 
 	bool			campos_updated;
 	short			*short_ptr;

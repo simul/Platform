@@ -22,6 +22,9 @@
 #include "LoadGLImage.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/earth_shadow_uniforms.sl"
+#include "Simul/Platform/CrossPlatform/Macros.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/OpenGL/Effect.h"
 #include "Simul/Camera/Camera.h"
 using namespace simul;
@@ -48,10 +51,6 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base:
 	,inscatter_2d(0,0,GL_TEXTURE_2D)
 	,skylight_2d(0,0,GL_TEXTURE_2D)
 	,overcast_2d(0,0,GL_TEXTURE_2D)
-
-	,loss_texture(0)
-	,insc_texture(0)
-	,skyl_texture(0)
 
 	,current_program(0)
 	,planet_program(0)
@@ -111,12 +110,13 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 	skylight_2d.InitColor_Tex(0,GL_RGBA32F_ARB);
 	overcast_2d.InitColor_Tex(0,GL_RGBA32F_ARB);
 
-	SAFE_DELETE_TEXTURE(loss_texture);
-	SAFE_DELETE_TEXTURE(insc_texture);
-	SAFE_DELETE_TEXTURE(skyl_texture);
-	loss_texture=make2DTexture(numFadeDistances,numFadeElevations);
-	insc_texture=make2DTexture(numFadeDistances,numFadeElevations);
-	skyl_texture=make2DTexture(numFadeDistances,numFadeElevations);
+	loss_texture.InvalidateDeviceObjects();
+	insc_texture.InvalidateDeviceObjects();
+	skyl_texture.InvalidateDeviceObjects();
+
+	loss_texture.ensureTexture2DSizeAndFormat(renderPlatform,numFadeDistances,numFadeElevations,GL_RGBA32F_ARB);
+	insc_texture.ensureTexture2DSizeAndFormat(renderPlatform,numFadeDistances,numFadeElevations,GL_RGBA32F_ARB);
+	skyl_texture.ensureTexture2DSizeAndFormat(renderPlatform,numFadeDistances,numFadeElevations,GL_RGBA32F_ARB);
 
 
 	GL_ERROR_CHECK
@@ -192,7 +192,7 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	glDisable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
 	FramebufferGL *fb[]={&loss_2d,&inscatter_2d,&skylight_2d};
-	GLuint target_textures[]={loss_texture,insc_texture,skyl_texture};
+	GLuint target_textures[]={loss_texture.AsGLuint(),insc_texture.AsGLuint(),skyl_texture.AsGLuint()};
 	simul::opengl::TextureStruct *input_textures[]={loss_textures,insc_textures,skyl_textures};
 	glUseProgram(techFade3DTo2D->asGLuint());
 	skyConstants.skyInterp			=skyKeyframer->GetSubdivisionInterpolation(skyKeyframer->GetTime()).interpolation;
@@ -261,7 +261,7 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderFades(crossplatform::DeviceContext &,int x0,int y0,int width,int height)
+bool SimulGLSkyRenderer::RenderFades(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
 	int size=width/3;
 	if(height/4<size)
@@ -289,10 +289,11 @@ GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,0);
 	glActiveTexture(GL_TEXTURE0);
-
-	glBindTexture(GL_TEXTURE_2D,loss_texture);
-	RenderTexture(x0+size+2,y	,size,size);
+	glBindTexture(GL_TEXTURE_2D,loss_texture.AsGLuint());
+//	RenderTexture(x0+size+2,y	,size,size);
+	deviceContext.renderPlatform->DrawTexture(deviceContext,x0+size+2,y,size,size,&loss_texture);
 	y+=size+8;
+#if 0
 	glBindTexture(GL_TEXTURE_2D,insc_texture);
 	RenderTexture(x0+size+2,y	,size,size);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)overcast_2d.GetColorTex());
@@ -335,6 +336,7 @@ GL_ERROR_CHECK
 			RenderTexture(x	,y+24+2*size	,s,s);
 		}
 	}
+#endif
 	glUseProgram(0);
 GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0);
@@ -541,9 +543,9 @@ void SimulGLSkyRenderer::RenderPlanet(crossplatform::DeviceContext &deviceContex
 
 void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o)
 {
-	*l1=(void*)(uintptr_t)loss_texture;
-	*i1=(void*)(uintptr_t)insc_texture;
-	*s=(void*)(uintptr_t)skyl_texture;
+	*l1=(void*)(uintptr_t)loss_texture.AsGLuint();
+	*i1=(void*)(uintptr_t)insc_texture.AsGLuint();
+	*s=(void*)(uintptr_t)skyl_texture.AsGLuint();
 	*o=(void*)(uintptr_t)overcast_2d.GetColorTex();
 }
 
@@ -694,12 +696,10 @@ GL_ERROR_CHECK
 	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB);
 	skylight_2d.InitColor_Tex(0,GL_RGBA32F_ARB);
 	overcast_2d.InitColor_Tex(0,GL_RGBA32F_ARB);
-	SAFE_DELETE_TEXTURE(loss_texture);
-	SAFE_DELETE_TEXTURE(insc_texture);
-	SAFE_DELETE_TEXTURE(skyl_texture);
-	loss_texture=make2DTexture(numFadeDistances,numFadeElevations);
-	insc_texture=make2DTexture(numFadeDistances,numFadeElevations);
-	skyl_texture=make2DTexture(numFadeDistances,numFadeElevations);
+	
+	loss_texture.ensureTexture2DSizeAndFormat(renderPlatform,numFadeDistances,numFadeElevations,GL_RGBA32F);
+	insc_texture.ensureTexture2DSizeAndFormat(renderPlatform,numFadeDistances,numFadeElevations,GL_RGBA32F);
+	skyl_texture.ensureTexture2DSizeAndFormat(renderPlatform,numFadeDistances,numFadeElevations,GL_RGBA32F);
 GL_ERROR_CHECK
 	skyConstants.RestoreDeviceObjects();
 	earthShadowUniforms.RestoreDeviceObjects();
@@ -730,9 +730,9 @@ void SimulGLSkyRenderer::InvalidateDeviceObjects()
 		insc_textures[i].release();
 		skyl_textures[i].release();
 	}
-	SAFE_DELETE_TEXTURE(loss_texture);
-	SAFE_DELETE_TEXTURE(insc_texture);
-	SAFE_DELETE_TEXTURE(skyl_texture);
+	loss_texture.InvalidateDeviceObjects();
+	insc_texture.InvalidateDeviceObjects();
+	skyl_texture.InvalidateDeviceObjects();
 	
 	loss_2d.InvalidateDeviceObjects();
 	inscatter_2d.InvalidateDeviceObjects();
