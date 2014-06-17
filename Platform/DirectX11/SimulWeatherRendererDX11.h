@@ -60,7 +60,7 @@ namespace simul
 			dx11::Framebuffer	lowResNearFramebufferDx11;
 			dx11::Framebuffer	hiResFarFramebufferDx11;
 			dx11::Framebuffer	hiResNearFramebufferDx11;
-			void RestoreDeviceObjects(void *);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale);
 			void GetDimensions(int &w,int &h,int &downscale);

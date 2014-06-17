@@ -35,61 +35,6 @@ int Utilities::screen_height=0;
 Utilities *Utilities::ut=NULL;
 
 
-void simul::opengl::TextureStruct::setTexels(void *,const void *src,int x,int y,int z,int w,int l,int d)
-{
-	glTexSubImage3D(	GL_TEXTURE_3D,0,
-						x,y,z,
-						w,l,d,
-						GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
-						src);
-}
-
-void simul::opengl::TextureStruct::ensureTexture3DSizeAndFormat(void *,int w,int l,int d,int frmt,bool /*computable*/)
-{
-	if(tex)
-	{
-		int W,L,D;
-		glBindTexture(GL_TEXTURE_3D,tex);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_WIDTH,&W);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_HEIGHT,&L);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_DEPTH,&D);
-		if(w!=W||l!=L||d!=D)
-		{
-			SAFE_DELETE_TEXTURE(tex);
-		}
-	}
-	if(!tex)
-	{
-		glGenTextures(1,&(tex));
-		glBindTexture(GL_TEXTURE_3D,tex);
-		GLenum number_format=GL_RGBA;
-		GLenum number_type	=GL_UNSIGNED_INT;
-		switch(frmt)
-		{
-		case GL_RGBA:
-			number_format	=GL_RGBA;
-			number_type		=GL_UNSIGNED_INT;
-			break;
-		case GL_RGBA32F:
-			number_format	=GL_RGBA;
-			number_type		=GL_FLOAT;
-			break;
-		case GL_LUMINANCE32F_ARB:
-			number_format	=GL_LUMINANCE;
-			number_type		=GL_FLOAT;
-			break;
-		//((frmt==GL_RGBA)?GL_UNSIGNED_INT:GL_UNSIGNED_SHORT)
-		default:
-			break;
-		};
-		glTexImage3D(GL_TEXTURE_3D,0,(GLint)frmt,w,l,d,0,number_format,number_type,0);
-	GL_ERROR_CHECK
-	//	glTexImage3D(GL_TEXTURE_3D,0,GL_LUMINANCE32F_ARB:GL_RGBA32F_ARB,w,l,d,0,GL_LUMINANCE:GL_RGBA,GL_FLOAT,src);
-		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-	}
-}
-
 struct UtKiller
 {
 	~UtKiller()
@@ -254,15 +199,21 @@ void simul::opengl::Ortho()
 
 void simul::opengl::SetTopDownOrthoProjection(int w,int h)
 {
+	GL_ERROR_CHECK
 	win_h=h;
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
+	GL_ERROR_CHECK
 		glOrtho(0,w,h,0,-1.0,1.0);
-		glMatrixMode(GL_TEXTURE);
-		glLoadIdentity();
+	GL_ERROR_CHECK
+		//glMatrixMode(GL_TEXTURE);
+	//	glLoadIdentity();
+	//GL_ERROR_CHECK
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
+	GL_ERROR_CHECK
 		glViewport(0,0,w,h);
+	GL_ERROR_CHECK
 }
 
 void simul::opengl::SetPerspectiveProjection(int w,int h,float field_of_view)
@@ -295,16 +246,18 @@ void simul::opengl::DrawQuad(int x,int y,int w,int h)
 // draw a quad with texture coordinate for texture rectangle
 void simul::opengl::DrawQuad(float x,float y,float w,float h)
 {
-	glBegin(GL_QUADS);
+GL_ERROR_CHECK
+	glBegin(GL_TRIANGLE_STRIP);
 	glTexCoord2f(0.0,1.0);
 	glVertex2f(x,y+h);
 	glTexCoord2f(1.0,1.0);
 	glVertex2f(x+w,y+h);
-	glTexCoord2f(1.0,0.0);
-	glVertex2f(x+w,y);
 	glTexCoord2f(0.0,0.0);
 	glVertex2f(x,y);
+	glTexCoord2f(1.0,0.0);
+	glVertex2f(x+w,y);
 	glEnd();
+GL_ERROR_CHECK
 }
 void simul::opengl::DrawFullScreenQuad()
 {
@@ -654,6 +607,7 @@ GL_ERROR_CHECK
 
 void simul::opengl::set3DTexture(GLuint program,const char *name,int texture_number,GLuint texture)
 {
+GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE0+texture_number);
 	glBindTexture(GL_TEXTURE_3D,texture);
 GL_ERROR_CHECK

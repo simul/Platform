@@ -29,7 +29,7 @@ void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	renderPlatform=r;
 	if(renderPlatform&&!useExternalFramebuffer)
 	{
-		hdrFramebuffer.RestoreDeviceObjects(renderPlatform->AsD3D11Device());
+		hdrFramebuffer.RestoreDeviceObjects(renderPlatform);
 		hdrFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
 		hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 	}

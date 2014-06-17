@@ -121,17 +121,17 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	cloud2DConstants.RestoreDeviceObjects(m_pd3dDevice);
 	detail2DConstants.RestoreDeviceObjects(m_pd3dDevice);
 
-	coverage_fb.RestoreDeviceObjects(m_pd3dDevice);
+	coverage_fb.RestoreDeviceObjects(renderPlatform);
 
 	detail_fb.SetWidthAndHeight(256,256);
-	detail_fb.RestoreDeviceObjects(m_pd3dDevice);
+	detail_fb.RestoreDeviceObjects(renderPlatform);
 	detail_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
 	
-	noise_fb.RestoreDeviceObjects(m_pd3dDevice);
+	noise_fb.RestoreDeviceObjects(renderPlatform);
 	noise_fb.SetWidthAndHeight(16,16);
 	noise_fb.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 
-	dens_fb.RestoreDeviceObjects(m_pd3dDevice);
+	dens_fb.RestoreDeviceObjects(renderPlatform);
 	dens_fb.SetWidthAndHeight(512,512);
 	dens_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
 }

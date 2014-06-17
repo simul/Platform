@@ -1,5 +1,6 @@
 #include "CubemapFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "D3dx11effect.h"
 #include <assert.h>
 const int MIPLEVELS=1;
@@ -47,8 +48,9 @@ void CubemapFramebuffer::SetFormat(int f)
 	format=F;
 }
 
-void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
+void CubemapFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 {
+	renderPlatform=r;
 	for(int i=0;i<6;i++)
 	{
 		SAFE_RELEASE(m_pCubeEnvMapRTV[i]);
@@ -56,7 +58,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 		SAFE_RELEASE(m_pCubeEnvDepthMapSRV[i]);
 	}
 	HRESULT hr=S_OK;
-	pd3dDevice=(ID3D11Device*)dev;
+	pd3dDevice=renderPlatform->AsD3D11Device();
 	// The table of coefficients.
 	int s=(bands+1);
 	if(s<4)

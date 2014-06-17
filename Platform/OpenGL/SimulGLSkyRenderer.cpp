@@ -55,10 +55,7 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base:
 	,current_program(0)
 	,planet_program(0)
 	,fade_3d_to_2d_program(0)
-	,sun_program(0)
 	,stars_program(0)
-	,illumination_buffer_program(0)
-	,overcast_inscatter_program(0)
 	,initialized(false)
 {
 /* Setup cube vertex data. */
@@ -163,12 +160,12 @@ void SimulGLSkyRenderer::RenderIlluminationBuffer(crossplatform::DeviceContext &
 {
 	math::Vector3 cam_pos=camera::GetCameraPosVector(deviceContext.viewStruct.view);
 	SetIlluminationConstants(earthShadowUniforms,skyConstants,cam_pos);
-	skyConstants.Apply();
+	skyConstants.Apply(deviceContext);
 	earthShadowUniforms.Apply();
 	{
 		//D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
 		//m_pSkyEffect->SetTechnique(tech);
-		glUseProgram(illumination_buffer_program);
+		glUseProgram(techIlluminationBuffer->asGLuint());
 		illumination_fb.Activate(deviceContext);
 		illumination_fb.Clear(deviceContext.platform_context,1.0f,1.0f,1.0f,1.0f,1.f);
 		DrawQuad(0,0,1,1);
@@ -193,7 +190,7 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	glEnable(GL_TEXTURE_3D);
 	FramebufferGL *fb[]={&loss_2d,&inscatter_2d,&skylight_2d};
 	GLuint target_textures[]={loss_texture.AsGLuint(),insc_texture.AsGLuint(),skyl_texture.AsGLuint()};
-	simul::opengl::TextureStruct *input_textures[]={loss_textures,insc_textures,skyl_textures};
+	simul::opengl::Texture *input_textures[]={loss_textures,insc_textures,skyl_textures};
 	glUseProgram(techFade3DTo2D->asGLuint());
 	skyConstants.skyInterp			=skyKeyframer->GetSubdivisionInterpolation(skyKeyframer->GetTime()).interpolation;
 	math::Vector3 cam_pos			=camera::GetCameraPosVector(deviceContext.viewStruct.view);
@@ -205,7 +202,7 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	skyConstants.eyePosition		=cam_pos;
 	skyConstants.cloudShadowRange	=sqrt(80.f/skyKeyframer->GetMaxDistanceKm());
 	skyConstants.cycled_index		=texture_cycle%3;
-	skyConstants.Apply();
+	skyConstants.Apply(deviceContext);
 	glUniform1i(fadeTexture1_fade,0);
 	glUniform1i(fadeTexture2_fade,1);
 	glMatrixMode(GL_PROJECTION);
@@ -213,36 +210,42 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	glOrtho(0,1.0,0,1.0,-1.0,1.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	GL_ERROR_CHECK
 	for(int i=0;i<3;i++)
 	{
+	GL_ERROR_CHECK
 		fb[i]->Activate(deviceContext);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D,input_textures[i][(texture_cycle+0)%3].tex);
+		glBindTexture(GL_TEXTURE_3D,input_textures[i][(texture_cycle+0)%3].AsGLuint());
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_3D,input_textures[i][(texture_cycle+1)%3].tex);
+		glBindTexture(GL_TEXTURE_3D,input_textures[i][(texture_cycle+1)%3].AsGLuint());
 		DrawQuad(0,0,1,1);
+	GL_ERROR_CHECK
 		// copy to target:
 		{
 			glEnable(GL_TEXTURE_2D);
 			glActiveTexture(GL_TEXTURE0);
+	GL_ERROR_CHECK
 			glBindTexture(GL_TEXTURE_2D,target_textures[i]);
+	GL_ERROR_CHECK
 			glCopyTexSubImage2D(GL_TEXTURE_2D,0
 					,0,0
 					,0,0,
  					numFadeDistances,numFadeElevations	);
 			glDisable(GL_TEXTURE_2D);
+	GL_ERROR_CHECK
 		}
 		fb[i]->Deactivate(deviceContext.platform_context);
 	}
 	glUseProgram(NULL);
 	
-	glUseProgram(overcast_inscatter_program);
+	glUseProgram(techOvercastInscatter->asGLuint());
 
 	earthShadowUniforms.targetTextureSize=vec2((float)numFadeDistances,(float)numFadeElevations);
 	earthShadowUniforms.Apply();
 	
-	setTexture(overcast_inscatter_program,"inscTexture"			,0,(GLuint)inscatter_2d.GetColorTex());
-	setTexture(overcast_inscatter_program,"illuminationTexture"	,1,(GLuint)illumination_fb.GetColorTex());
+	setTexture(techOvercastInscatter->asGLuint(),"inscTexture"			,0,(GLuint)inscatter_2d.GetColorTex());
+	setTexture(techOvercastInscatter->asGLuint(),"illuminationTexture"	,1,(GLuint)illumination_fb.GetColorTex());
 
 	overcast_2d.Activate(deviceContext);
 		overcast_2d.Clear(NULL,1.f,1.f,0.f,1.f,1.f);
@@ -293,51 +296,61 @@ GL_ERROR_CHECK
 //	RenderTexture(x0+size+2,y	,size,size);
 	deviceContext.renderPlatform->DrawTexture(deviceContext,x0+size+2,y,size,size,&loss_texture);
 	y+=size+8;
-#if 0
-	glBindTexture(GL_TEXTURE_2D,insc_texture);
-	RenderTexture(x0+size+2,y	,size,size);
+	glBindTexture(GL_TEXTURE_2D,insc_texture.AsGLuint());
+	deviceContext.renderPlatform->DrawTexture(deviceContext,x0+size+2,y	,size,size,&insc_texture);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)overcast_2d.GetColorTex());
-	RenderTexture(x0		,y	,size,size);
+	deviceContext.renderPlatform->DrawTexture(deviceContext,x0		,y	,size,size,overcast_2d.GetTexture());
 	y+=size+8;
 
-	glBindTexture(GL_TEXTURE_2D,skyl_texture);
-	RenderTexture(x0+size+2	,y	,size,size);
+	deviceContext.renderPlatform->DrawTexture(deviceContext,x0+size+2	,y	,size,size,&skyl_texture);
 	y+=size+8;
 	bool show_3=true;
-	glBindTexture(GL_TEXTURE_2D,(GLuint)illumination_fb.GetColorTex());
-	glUseProgram(show_illumination_buffer_program);
-	RenderTexture(x0+size+2	,y	,size,size);
-
+	//glBindTexture(GL_TEXTURE_2D,(GLuint)illumination_fb.GetColorTex());
+	effect->SetTexture("illuminationTexture",illumination_fb.GetTexture());
+	//effect->Apply(deviceContext,techShowIlluminationBuffer,0);
+	//RenderTexture(x0+size+2	,y	,size,size);
+	//deviceContext.renderPlatform->DrawQuad(deviceContext,x0+size+2	,y	,size,size,effect,techShowIlluminationBuffer);
+	//effect->Unapply(deviceContext);
+#if 1
 	x0+=2*(size+8);
 	for(int i=0;i<numAltitudes;i++)
 	{
+GL_ERROR_CHECK
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 		int y=y0+i*(s+4);
-		glUseProgram(techFade3DTo2D->asGLuint());
-		GLint fadeTexture1_fade			=glGetUniformLocation(techFade3DTo2D->asGLuint(),"fadeTexture1");
-		GLint fadeTexture2_fade			=glGetUniformLocation(techFade3DTo2D->asGLuint(),"fadeTexture2");
-
+	//	glUseProgram(techFade3DTo2D->asGLuint());
+GL_ERROR_CHECK
+	//	GLint fadeTexture1_fade			=glGetUniformLocation(techFade3DTo2D->asGLuint(),"fadeTexture1");
+	//	GLint fadeTexture2_fade			=glGetUniformLocation(techFade3DTo2D->asGLuint(),"fadeTexture2");
+GL_ERROR_CHECK
 		skyConstants.skyInterp			=0.f;
 		skyConstants.altitudeTexCoord	=atc;
-		skyConstants.Apply();
+		skyConstants.Apply(deviceContext);
 
-		glUniform1i(fadeTexture1_fade,0);
-		glUniform1i(fadeTexture2_fade,0);
+	//	glUniform1i(fadeTexture1_fade,0);
+	//	glUniform1i(fadeTexture2_fade,0);
 		
-		glActiveTexture(GL_TEXTURE0);
+	//	glActiveTexture(GL_TEXTURE0);
+GL_ERROR_CHECK
 		for(int j=0;j<(show_3?3:2);j++)
 		{
 			int x=x0+(s+8)*j;
-			glBindTexture(GL_TEXTURE_3D,loss_textures[(texture_cycle+j)%3].tex);
-			RenderTexture(x	,y+8			,s,s);
-			glBindTexture(GL_TEXTURE_3D,insc_textures[(texture_cycle+j)%3].tex);
-			RenderTexture(x	,y+16+size		,s,s);
-			glBindTexture(GL_TEXTURE_3D,skyl_textures[(texture_cycle+j)%3].tex);
-			RenderTexture(x	,y+24+2*size	,s,s);
+			effect->SetTexture("fadeTexture1",&loss_textures[(texture_cycle+j)%3]);
+			effect->SetTexture("fadeTexture2",&loss_textures[(texture_cycle+j)%3]);
+GL_ERROR_CHECK
+			deviceContext.renderPlatform->DrawQuad(deviceContext,x	,y+8			,s,s,effect,techShowCrossSection);
+GL_ERROR_CHECK
+			effect->SetTexture("fadeTexture1",&insc_textures[(texture_cycle+j)%3]);
+			effect->SetTexture("fadeTexture2",&insc_textures[(texture_cycle+j)%3]);
+			deviceContext.renderPlatform->DrawQuad(deviceContext,x	,y+16+size		,s,s,effect,techShowCrossSection);
+GL_ERROR_CHECK
+			effect->SetTexture("fadeTexture1",&skyl_textures[(texture_cycle+j)%3]);
+			effect->SetTexture("fadeTexture2",&skyl_textures[(texture_cycle+j)%3]);
+			deviceContext.renderPlatform->DrawQuad(deviceContext,x	,y+24+2*size	,s,s,effect,techShowCrossSection);
+GL_ERROR_CHECK
 		}
 	}
 #endif
-	glUseProgram(0);
 GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,NULL);
@@ -369,7 +382,6 @@ void SimulGLSkyRenderer::UseProgram(GLuint p)
 		altitudeTexCoord_param		=glGetUniformLocation(current_program,"altitudeTexCoord");
 		
 		earthShadowUniforms			.LinkToProgram(current_program,"EarthShadowUniforms",9);
-		skyConstants				.LinkToProgram(current_program,"SkyConstants",10);
 
 		cloudOrigin					=glGetUniformLocation(current_program,"cloudOrigin");
 		cloudScale					=glGetUniformLocation(current_program,"cloudScale");
@@ -423,7 +435,7 @@ bool SimulGLSkyRenderer::RenderPointStars(crossplatform::DeviceContext &deviceCo
 	float sb=skyKeyframer->GetStarlight().x;
 	float star_brightness=sb*exposure*skyKeyframer->GetStarBrightness();
 	skyConstants.starBrightness=star_brightness;
-	skyConstants.Apply();
+	skyConstants.Apply(deviceContext);
 	float mat1[16],mat2[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX,mat1);
 	math::Vector3 cam_pos;
@@ -465,9 +477,8 @@ void SimulGLSkyRenderer::RenderSun(crossplatform::DeviceContext &deviceContext,f
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
-	glUseProgram(sun_program);
-	GL_ERROR_CHECK
-	glUniform4f(sunlight_param,sunlight.x,sunlight.y,sunlight.z,sunlight.w);
+	
+	//glUniform4f(sunlight_param,sunlight.x,sunlight.y,sunlight.z,sunlight.w);
 	//skyConstants.colour=sunlight;
 	GL_ERROR_CHECK
 	glEnable(GL_BLEND);
@@ -477,9 +488,14 @@ void SimulGLSkyRenderer::RenderSun(crossplatform::DeviceContext &deviceContext,f
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); 
-
-	RenderAngledQuad(sun_dir,skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f);
-	glUseProgram(0);
+	float rads=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
+	SetConstantsForPlanet(skyConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,sun_dir,4.f*rads,sunlight,sun_dir);
+	skyConstants.Apply(deviceContext);
+	effect->Apply(deviceContext,techSun,0);
+	effect->SetParameter("sunlight",(vec4)sunlight);//				=glGetUniformLocation(techSun->asGLuint(),"sunlight");
+	renderPlatform->DrawQuad(deviceContext);
+//	RenderAngledQuad(sun_dir,skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f);
+	effect->Unapply(deviceContext);
 }
 
 void SimulGLSkyRenderer::RenderPlanet(crossplatform::DeviceContext &deviceContext,void* tex,float planet_angular_size,const float *dir,const float *colr,bool do_lighting)
@@ -556,15 +572,15 @@ void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int
 	if(!initialized)
 		return;
 	GLenum target=GL_TEXTURE_3D;
-	glBindTexture(target,loss_textures[texture_index].tex);
+	glBindTexture(target,loss_textures[texture_index].AsGLuint());
 		GL_ERROR_CHECK
 	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)loss_float4_array);
 		GL_ERROR_CHECK
-	glBindTexture(target,insc_textures[texture_index].tex);
+	glBindTexture(target,insc_textures[texture_index].AsGLuint());
 		GL_ERROR_CHECK
 	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)inscatter_float4_array);
 		GL_ERROR_CHECK
-	glBindTexture(target,skyl_textures[texture_index].tex);
+	glBindTexture(target,skyl_textures[texture_index].AsGLuint());
 		GL_ERROR_CHECK
 	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)skylight_float4_array);
 		GL_ERROR_CHECK
@@ -628,58 +644,59 @@ void SimulGLSkyRenderer::RecompileShaders()
 
 	SAFE_DELETE_PROGRAM(planet_program);
 	//SAFE_DELETE_PROGRAM(fade_3d_to_2d_program);
-	SAFE_DELETE_PROGRAM(sun_program);
 	SAFE_DELETE_PROGRAM(stars_program);
 
+	BaseSkyRenderer::RecompileShaders();
+	
 	std::map<std::string,std::string> defines;
-	defines["REVERSE_DEPTH"]	=ReverseDepth?"1":"0";
-	effect						=new Effect(renderPlatform,"sky.glfx",defines);
-	techFade3DTo2D				=effect->GetTechniqueByName("fade_3d_to_2d");
+	stars_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag",defines);
+	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 GL_ERROR_CHECK
-	sun_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag",defines);
-	sunlight_param				=glGetUniformLocation(sun_program,"sunlight");
-	stars_program				=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag",defines);
-	starBrightness_param		=glGetUniformLocation(stars_program,"starBrightness");
+	//sun_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag",defines);
+	//sunlight_param				=glGetUniformLocation(sun_program,"sunlight");
+	stars_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag",defines);
+	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 GL_ERROR_CHECK
-	sun_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag",defines);
-	sunlight_param				=glGetUniformLocation(sun_program,"sunlight");
-	stars_program				=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag",defines);
-	starBrightness_param		=glGetUniformLocation(stars_program,"starBrightness");
+	planet_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_planet.frag",defines);
 GL_ERROR_CHECK
-	planet_program				=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_planet.frag",defines);
-GL_ERROR_CHECK
-	planetTexture_param			=glGetUniformLocation(planet_program,"planetTexture");
-	planetColour_param			=glGetUniformLocation(planet_program,"colour");
-	planetLightDir_param		=glGetUniformLocation(planet_program,"lightDir");
+	planetTexture_param				=glGetUniformLocation(planet_program,"planetTexture");
+	planetColour_param				=glGetUniformLocation(planet_program,"colour");
+	planetLightDir_param			=glGetUniformLocation(planet_program,"lightDir");
 GL_ERROR_CHECK
 	//fade_3d_to_2d_program		=MakeProgram("simul_fade_3d_to_2d");
 	
-	altitudeTexCoord_fade		=glGetUniformLocation(techFade3DTo2D->asGLuint(),"altitudeTexCoord");
-	skyInterp_fade				=glGetUniformLocation(techFade3DTo2D->asGLuint(),"skyInterp");
-	fadeTexture1_fade			=glGetUniformLocation(techFade3DTo2D->asGLuint(),"fadeTexture1");
-	fadeTexture2_fade			=glGetUniformLocation(techFade3DTo2D->asGLuint(),"fadeTexture2");
+	altitudeTexCoord_fade			=glGetUniformLocation(techFade3DTo2D->asGLuint(),"altitudeTexCoord");
+	skyInterp_fade					=glGetUniformLocation(techFade3DTo2D->asGLuint(),"skyInterp");
+GL_ERROR_CHECK
+	fadeTexture1_fade				=glGetUniformLocation(techFade3DTo2D->asGLuint(),"fadeTexture1");
+	fadeTexture2_fade				=glGetUniformLocation(techFade3DTo2D->asGLuint(),"fadeTexture2");
 
-	illumination_buffer_program		=MakeProgram("simple.vert",NULL,"illumination_buffer.frag");
-	overcast_inscatter_program		=MakeProgram("simple.vert",NULL,"overcast_inscatter.frag");
-	show_illumination_buffer_program=MakeProgram("simul_fade_3d_to_2d.vert",NULL,"show_illumination_buffer.frag");
-
-	skyConstants					.LinkToProgram(techFade3DTo2D->asGLuint()		,"SkyConstants"			,10);
+	//illumination_buffer_program		=MakeProgram("simple.vert",NULL,"illumination_buffer.frag");
+	//overcast_inscatter_program		=MakeProgram("simple.vert",NULL,"overcast_inscatter.frag");
+	//show_illumination_buffer_program=MakeProgram("simul_fade_3d_to_2d.vert",NULL,"show_illumination_buffer.frag");
+	
+GL_ERROR_CHECK
+	skyConstants					.LinkToEffect(effect,"SkyConstants");
+	/*skyConstants					.LinkToProgram(techFade3DTo2D->asGLuint()	,"SkyConstants"			,10);
 	skyConstants					.LinkToProgram(stars_program				,"SkyConstants"			,10);
 	skyConstants					.LinkToProgram(planet_program				,"SkyConstants"			,10);
-	skyConstants					.LinkToProgram(sun_program					,"SkyConstants"			,10);
+	skyConstants					.LinkToProgram(techSun->asGLuint()			,"SkyConstants"			,10);
 	skyConstants					.LinkToProgram(illumination_buffer_program	,"SkyConstants"			,10);
-	skyConstants					.LinkToProgram(overcast_inscatter_program	,"SkyConstants"			,10);
-	earthShadowUniforms				.LinkToProgram(illumination_buffer_program	,"EarthShadowUniforms"	,9);
+	skyConstants					.LinkToProgram(overcast_inscatter_program	,"SkyConstants"			,10);*/
+	if(techIlluminationBuffer)
+		earthShadowUniforms			.LinkToProgram(techIlluminationBuffer->asGLuint()	,"EarthShadowUniforms"	,9);
 //	earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms"	,9);
-	earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms"	,9);
+	if(techOvercastInscatter)
+		earthShadowUniforms			.LinkToProgram(techOvercastInscatter->asGLuint(),"EarthShadowUniforms"	,9);
 }
 
-void SimulGLSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform*)
+void SimulGLSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 {
+	renderPlatform=r;
 GL_ERROR_CHECK
 	initialized=true;
 	gpuSkyGenerator.RestoreDeviceObjects(NULL);
-	TextureStruct *loss[3],*insc[3],*skyl[3];
+	Texture *loss[3],*insc[3],*skyl[3];
 	for(int i=0;i<3;i++)
 	{
 		loss[i]=&loss_textures[i];
@@ -701,7 +718,7 @@ GL_ERROR_CHECK
 	insc_texture.ensureTexture2DSizeAndFormat(renderPlatform,numFadeDistances,numFadeElevations,GL_RGBA32F);
 	skyl_texture.ensureTexture2DSizeAndFormat(renderPlatform,numFadeDistances,numFadeElevations,GL_RGBA32F);
 GL_ERROR_CHECK
-	skyConstants.RestoreDeviceObjects();
+	skyConstants.RestoreDeviceObjects(renderPlatform);
 	earthShadowUniforms.RestoreDeviceObjects();
 GL_ERROR_CHECK
 	RecompileShaders();
@@ -718,7 +735,7 @@ void SimulGLSkyRenderer::InvalidateDeviceObjects()
 	initialized=false;
 	gpuSkyGenerator.InvalidateDeviceObjects();
 	
-	skyConstants.Release();
+	skyConstants.InvalidateDeviceObjects();
 	earthShadowUniforms.Release();
 	
 	BaseSkyRenderer::InvalidateDeviceObjects();
@@ -726,9 +743,9 @@ void SimulGLSkyRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(planet_program);
 	for(int i=0;i<3;i++)
 	{
-		loss_textures[i].release();
-		insc_textures[i].release();
-		skyl_textures[i].release();
+		loss_textures[i].InvalidateDeviceObjects();
+		insc_textures[i].InvalidateDeviceObjects();
+		skyl_textures[i].InvalidateDeviceObjects();
 	}
 	loss_texture.InvalidateDeviceObjects();
 	insc_texture.InvalidateDeviceObjects();

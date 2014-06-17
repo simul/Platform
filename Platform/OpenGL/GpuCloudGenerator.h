@@ -39,7 +39,7 @@ namespace simul
 												,int start_texel
 												,int texels);
 			// If we want the generator to put the data directly into 3d textures:
-			void SetDirectTargets(TextureStruct **textures)
+			void SetDirectTargets(Texture **textures)
 			{
 				for(int i=0;i<3;i++)
 				{
@@ -60,13 +60,13 @@ namespace simul
 			GLenum			iformat;
 			GLenum			itype;
 			GLuint			density_texture;
-			TextureStruct	*finalTexture[3];
+			Texture	*finalTexture[3];
 			bool			readback_to_cpu;
 			float			*density;	// used if we are using CPU to read back the density texture.
 			int				density_gridsize;
 			simul::opengl::ConstantBuffer<GpuCloudConstants> gpuCloudConstants;
-			TextureStruct	directLightTextures[2];
-			TextureStruct	indirectLightTextures[2];
+			Texture	directLightTextures[2];
+			Texture	indirectLightTextures[2];
 			int				last_generation_number;
 		};
 	}

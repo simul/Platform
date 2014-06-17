@@ -39,8 +39,9 @@ FramebufferGL::~FramebufferGL()
 	InvalidateDeviceObjects();
 }
 
-void FramebufferGL::RestoreDeviceObjects(void*)
+void FramebufferGL::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	renderPlatform=r;
 }
 
 void FramebufferGL::InvalidateDeviceObjects()
@@ -110,6 +111,9 @@ GL_ERROR_CHECK
 	}
 	buffer_texture.InvalidateDeviceObjects();//SAFE_DELETE_TEXTURE(m_tex_col[0]);
 	buffer_depth_texture.InvalidateDeviceObjects();//SAFE_DELETE_TEXTURE(m_tex_depth);
+	buffer_texture.dim=2;
+	buffer_depth_texture.dim=2;
+	//buffer_texture.ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,GL_RGBA,false,true,1,0);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
 	if(colour_iformat)
 	{
@@ -223,7 +227,6 @@ void FramebufferGL::ActivateViewport(crossplatform::DeviceContext &,float viewpo
 
 void FramebufferGL::Deactivate(void *) 
 {
-	GL_ERROR_CHECK
 	//glFlush(); 
 	GL_ERROR_CHECK
 	CheckFramebufferStatus();

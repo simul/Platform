@@ -31,8 +31,13 @@ namespace simul
 			void deactivateRenderTarget();
 			int GetLength() const;
 			int GetWidth() const;
+			int GetDimension() const;
 			int GetSampleCount() const;
 			GLuint pTextureObject;
+
+			// Former Texture functions
+			void setTexels(void *,const void *src,int x,int y,int z,int w,int l,int d);
+			void ensureTexture3DSizeAndFormat(void *,int w,int l,int d,int frmt,bool computable=false);
 		};
 	}
 }

@@ -262,10 +262,15 @@ void RenderPlatform::DrawLineLoop(void *,const double *mat,int lVerticeCount,con
 
 void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,GLuint tex,float /*mult*/)
 {
-	glBindTexture(GL_TEXTURE_2D,(GLuint)tex);
+GL_ERROR_CHECK
+	glBindTexture(GL_TEXTURE_2D,tex);
+GL_ERROR_CHECK
 	glUseProgram(Utilities::GetSingleton().simple_program);
+GL_ERROR_CHECK
 	::DrawQuad(x1,y1,dx,dy);
-	glUseProgram(0);	
+GL_ERROR_CHECK
+	glUseProgram(0);
+GL_ERROR_CHECK
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult)
@@ -273,31 +278,30 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsGLuint(),mult);
 }
 
-void RenderPlatform::DrawDepth		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const float *proj)
+void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const float *proj)
 {
 	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsGLuint(),1.0f);
 }
 
-void RenderPlatform::DrawQuad	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)
+void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)
 {
 	struct Viewport
 	{
 		int X,Y,Width,Height;
 	};
+	if(!effect||!technique)
+		return;
 	Viewport viewport;
 	glGetIntegerv(GL_VIEWPORT,(int*)(&viewport));
-	GLint program=(GLint)technique;
-	float r[]={2.f*(float)x1/(float)viewport.Width-1.f
+	effect->Apply(deviceContext,technique,0);
+	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 		,2.f*(float)dx/(float)viewport.Width
-		,2.f*(float)dy/(float)viewport.Height};
-	opengl::setVector4(program,"rect",r);
-	glBegin(GL_QUADS);
-	glVertex2f(0.0,1.0);
-	glVertex2f(1.0,1.0);
-	glVertex2f(1.0,0.0);
-	glVertex2f(0.0,0.0);
-	glEnd();
+		,2.f*(float)dy/(float)viewport.Height);
+
+	effect->SetParameter("rect",r);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	effect->Unapply(deviceContext);
 }
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
@@ -401,6 +405,14 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	crossplatform::Texture * tex=new opengl::Texture;
 	tex->LoadFromFile(this,fileNameUtf8);
 	return tex;
+}
+
+crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
+{
+	std::string fn(filename_utf8);
+	if(fn.find(".")>=fn.length())
+		fn+=".glfx";
+	return new opengl::Effect(this,fn.c_str(),defines);
 }
 
 crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer()

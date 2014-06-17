@@ -55,7 +55,7 @@ void PrecipitationRenderer::RecompileShaders()
 	ID3DX11EffectTechnique *tech		=effect->GetTechniqueByName("create_rain_texture");
 	ApplyPass(pImmediateContext,tech->GetPassByIndex(0));
 	simul::dx11::Framebuffer make_rain_fb(512,64);
-	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
+	make_rain_fb.RestoreDeviceObjects(renderPlatform);
 	make_rain_fb.Activate(deviceContext);
 	simul::dx11::UtilityRenderer::DrawQuad(pImmediateContext);
 	make_rain_fb.Deactivate(pImmediateContext);
@@ -145,8 +145,7 @@ void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *
 	perViewConstants.RestoreDeviceObjects(m_pd3dDevice);
 	moisturePerViewConstants.RestoreDeviceObjects(m_pd3dDevice);
 	
-
-	moisture_fb.RestoreDeviceObjects(m_pd3dDevice);
+	moisture_fb.RestoreDeviceObjects(renderPlatform);
 	moisture_fb.SetWidthAndHeight(512,512);
 	moisture_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
 }

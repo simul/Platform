@@ -17,8 +17,6 @@ dx11::Texture::Texture(ID3D11Device* d)
 	, unorderedAccessViewMips(NULL)
 	,renderTargetView(NULL)
 	,stagingBuffer(NULL)
-	,width(0)
-	,length(0)
 	,last_context(NULL)
 	,m_pOldRenderTarget(NULL)
 	,m_pOldDepthSurface(NULL)
@@ -185,6 +183,7 @@ void dx11::Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 	};
 	width=w;
 	length=l;
+	dim=2;
 	SAFE_RELEASE(texture);
 	pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)&(texture));
 	SAFE_RELEASE(shaderResourceView);
@@ -196,10 +195,12 @@ void dx11::Texture::InitFromExternalSRV(ID3D11ShaderResourceView *srv)
 {
 	shaderResourceView=srv;
 	shaderResourceView->AddRef();
+	dim=2;
 }
 
 void dx11::Texture::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable,int mips)
 {
+	dim=3;
 	D3D11_TEXTURE3D_DESC textureDesc;
 	bool ok=true;
 	if(texture)
@@ -259,6 +260,7 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 }
 void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,unsigned f,bool computable,bool rendertarget,int num_samples,int aa_quality)
 {
+	dim=2;
 	ID3D11Device *pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	D3D11_TEXTURE2D_DESC textureDesc;
 	bool ok=true;
@@ -334,6 +336,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 
 void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT f,bool computable)
 {
+	dim=1;
 	D3D11_TEXTURE1D_DESC textureDesc;
 	bool ok=true;
 	if(texture)

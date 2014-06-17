@@ -266,9 +266,9 @@ void SimulGLCloudRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceC
 	glUseProgram(cloud_shadow_program);
 	glEnable(GL_TEXTURE_3D);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+0)%3].tex);
+	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+0)%3].AsGLuint());
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+1)%3].tex);
+	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+1)%3].AsGLuint());
 	setParameter(cloud_shadow_program,"cloudTexture1"	,0);
 	setParameter(cloud_shadow_program,"cloudTexture2"	,1);
 	setParameter(cloud_shadow_program,"interp"			,cloudKeyframer->GetInterpolation());
@@ -377,10 +377,10 @@ GL_ERROR_CHECK
 	glEnable(GL_TEXTURE_3D);
 
     glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+0)%3].tex);
+	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+0)%3].AsGLuint());
 
     glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+1)%3].tex);
+	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+1)%3].AsGLuint());
 
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
@@ -680,7 +680,7 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *)
 {
 	init=true;
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
-	TextureStruct *ts[]={&cloud_textures[0],&cloud_textures[1],&cloud_textures[2]};
+	Texture *ts[]={&cloud_textures[0],&cloud_textures[1],&cloud_textures[2]};
 	gpuCloudGenerator.SetDirectTargets(ts);
 	
 	cloudConstants.RestoreDeviceObjects();
@@ -799,7 +799,7 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 	int length_y=i.y;
 	int depth_z=i.z;
 	if(cloud_tex_width_x==width_x&&cloud_tex_length_y==length_y&&cloud_tex_depth_z==depth_z
-		&&cloud_textures[0].tex>0)
+		&&cloud_textures[0].AsGLuint()>0)
 		return;
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
@@ -809,7 +809,7 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 	{
 		cloud_textures[i].ensureTexture3DSizeAndFormat(NULL,width_x,length_y,depth_z,GL_RGBA,true);
 GL_ERROR_CHECK
-		glBindTexture(GL_TEXTURE_3D,cloud_textures[i].tex);
+		glBindTexture(GL_TEXTURE_3D,cloud_textures[i].AsGLuint());
 		if(cloudProperties.GetWrap())
 		{
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_REPEAT);
@@ -882,6 +882,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 
 void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
+GL_ERROR_CHECK
 	glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -897,11 +898,13 @@ void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &dev
 	int h=w/gi->GetGridWidth();
 	if(h<1)
 		h=1;
+GL_ERROR_CHECK
 	h*=gi->GetGridHeight();
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 	if(skyInterface)
 	for(int i=0;i<3;i++)
 	{
+GL_ERROR_CHECK
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 			static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
 			cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
@@ -909,7 +912,8 @@ void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &dev
 			break;
 		h=(int)(kf->cloud_height_km*1000.f/cloudProperties.GetCloudWidth()*(float)w);
 		sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
-		set3DTexture(cross_section_program,"cloudDensity",0,cloud_textures[(texture_cycle+i)%3].tex);
+GL_ERROR_CHECK
+		set3DTexture(cross_section_program,"cloudDensity",0,cloud_textures[(texture_cycle+i)%3].AsGLuint());
 		
 		cloudConstants.lightResponse		=light_response;
 		cloudConstants.crossSectionOffset	=vec3(0.5f,0.5f,0.f);

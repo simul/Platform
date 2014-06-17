@@ -100,6 +100,7 @@ bool SimulGLHDRRenderer::StartRender(crossplatform::DeviceContext &deviceContext
 
 bool SimulGLHDRRenderer::FinishRender(crossplatform::DeviceContext &deviceContext,float exposure,float gamma)
 {
+GL_ERROR_CHECK
 	framebuffer.Deactivate(deviceContext.platform_context);
 	RenderGlowTexture(deviceContext);
 	effect->Apply(deviceContext,tech,0);
@@ -108,12 +109,14 @@ bool SimulGLHDRRenderer::FinishRender(crossplatform::DeviceContext &deviceContex
 	effect->SetParameter("colour2",vec4(0.0,1.0,1.0,0.5));
 	effect->SetTexture("image_texture",framebuffer.GetTexture());
 	effect->SetTexture("glowTexture",glow_fb.GetTexture());
+GL_ERROR_CHECK
 	hdrConstants.exposure	=exposure;//=vec4(1.0,0,1.0,0.5);
 	hdrConstants.gamma		=gamma;
 	hdrConstants.Apply(deviceContext);
-	
+GL_ERROR_CHECK
 	deviceContext.renderPlatform->DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);
+GL_ERROR_CHECK
 	return true;
 }
 

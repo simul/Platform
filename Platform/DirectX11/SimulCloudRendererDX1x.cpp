@@ -204,8 +204,8 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
 	cloudConstants.RestoreDeviceObjects(m_pd3dDevice);
 	layerBuffer.RestoreDeviceObjects(m_pd3dDevice,SIMUL_MAX_CLOUD_RAYTRACE_STEPS);
 
-	shadow_fb.RestoreDeviceObjects(m_pd3dDevice);
-	moisture_fb.RestoreDeviceObjects(m_pd3dDevice);
+	shadow_fb.RestoreDeviceObjects(renderPlatform);
+	moisture_fb.RestoreDeviceObjects(renderPlatform);
 
 	SAFE_RELEASE(m_pWrapSamplerState);
 	SAFE_RELEASE(m_pClampSamplerState);
@@ -310,7 +310,7 @@ void SimulCloudRendererDX1x::RenderNoise(crossplatform::DeviceContext &deviceCon
 	noiseTechnique					=effect->GetTechniqueByName("simul_noise_2d");
 
 	simul::dx11::Framebuffer	random_fb;
-	random_fb.RestoreDeviceObjects(m_pd3dDevice);
+	random_fb.RestoreDeviceObjects(renderPlatform);
 	random_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency);
 	random_fb.SetFormat((int)DXGI_FORMAT_R32G32B32A32_FLOAT);
 	ApplyPass(pContext,randomTechnique->GetPassByIndex(0));
@@ -319,7 +319,7 @@ void SimulCloudRendererDX1x::RenderNoise(crossplatform::DeviceContext &deviceCon
 	random_fb.Deactivate(pContext);
 
 	simul::dx11::Framebuffer n_fb;
-	n_fb.RestoreDeviceObjects(m_pd3dDevice);
+	n_fb.RestoreDeviceObjects(renderPlatform);
 	n_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
 	n_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
 	n_fb.Activate(deviceContext);

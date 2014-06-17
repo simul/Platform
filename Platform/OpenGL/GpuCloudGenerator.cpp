@@ -329,7 +329,7 @@ GL_ERROR_CHECK
 			if(target)
 				glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].tex);
+			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].AsGLuint());
 			CopyTo3DTextureLayer(0,params.light_grid);
 		F[0]->Deactivate(NULL);
 		z0++;
@@ -362,7 +362,7 @@ F[1]->Clear(NULL,u,u,u,u,1.f);
 			if(target)
 				glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].tex);
+			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].AsGLuint());
 			CopyTo3DTextureLayer(i,params.light_grid);
 			GL_ERROR_CHECK
 		F[1]->Deactivate(NULL);
@@ -418,9 +418,9 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,density_texture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_3D,directLightTextures[1].tex);
+	glBindTexture(GL_TEXTURE_3D,directLightTextures[1].AsGLuint());
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_3D,directLightTextures[0].tex);
+	glBindTexture(GL_TEXTURE_3D,directLightTextures[0].AsGLuint());
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	{
 		world_fb.Activate(deviceContext);
@@ -443,7 +443,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 				glReadPixels(0,Y0,params.density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
 			}
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_3D,finalTexture[cycled_index]->tex);
+			glBindTexture(GL_TEXTURE_3D,finalTexture[cycled_index]->AsGLuint());
 			CopyTo3DTexture(start_texel,texels,params.density_grid);
 			GL_ERROR_CHECK
 		world_fb.Deactivate(NULL);

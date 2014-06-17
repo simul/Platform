@@ -235,6 +235,7 @@
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CrossPlatform\SL\sky.sl" />
     <None Include="GLSL\clouds.glfx" />
     <None Include="GLSL\CppGlsl.hs" />
     <None Include="GLSL\hdr.glfx" />

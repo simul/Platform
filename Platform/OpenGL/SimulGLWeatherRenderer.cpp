@@ -36,9 +36,12 @@ TwoResFramebuffer::TwoResFramebuffer()
 {
 }
 
-void TwoResFramebuffer::RestoreDeviceObjects(void *)
+void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	renderPlatform=r;
 	if(Width==0||Height==0||Downscale==0)
+		return;
+	if(!renderPlatform)
 		return;
 	lowResFarFramebuffer	.SetFormat(GL_RGBA32F_ARB);
 	lowResNearFramebuffer	.SetFormat(GL_RGBA32F_ARB);
@@ -138,10 +141,10 @@ void SimulGLWeatherRenderer::EnableCloudLayers()
 	{
 GL_ERROR_CHECK
 		if(simulSkyRenderer)
-			simulSkyRenderer->RestoreDeviceObjects(NULL);
+			simulSkyRenderer->RestoreDeviceObjects(renderPlatform);
 GL_ERROR_CHECK
 		if(simulPrecipitationRenderer)
-			simulPrecipitationRenderer->RestoreDeviceObjects(NULL);
+			simulPrecipitationRenderer->RestoreDeviceObjects(renderPlatform);
 GL_ERROR_CHECK
 		if(simul2DCloudRenderer)
 			simul2DCloudRenderer->RestoreDeviceObjects(renderPlatform);
@@ -192,17 +195,17 @@ ERRNO_CHECK
 GL_ERROR_CHECK
 	for(FramebufferMap::iterator i=framebuffers.begin();i!=framebuffers.end();i++)
 	{
-		i->second->RestoreDeviceObjects(NULL);
+		i->second->RestoreDeviceObjects(renderPlatform);
 	}
 GL_ERROR_CHECK
 	device_initialized=true;
 	EnableCloudLayers();
 ERRNO_CHECK
-	simulSkyRenderer->RestoreDeviceObjects(NULL);
+	simulSkyRenderer->RestoreDeviceObjects(renderPlatform);
 	simulCloudRenderer->RestoreDeviceObjects(renderPlatform);
 	simulLightningRenderer->RestoreDeviceObjects();
 ERRNO_CHECK
-	simulAtmosphericsRenderer->RestoreDeviceObjects(NULL);
+	simulAtmosphericsRenderer->RestoreDeviceObjects(renderPlatform);
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";

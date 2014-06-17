@@ -40,7 +40,6 @@ namespace simul
 			ID3D11Resource*				stagingBuffer;
 
 			D3D11_MAPPED_SUBRESOURCE	mapped;
-			int width,length,depth;
 			DXGI_FORMAT format;
 			void copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *context,void *target,int start_texel=0,int texels=0);
 			void setTexels(ID3D11DeviceContext *context,const void *src,int texel_index,int num_texels);
@@ -60,6 +59,10 @@ namespace simul
 			virtual int GetWidth() const
 			{
 				return width;
+			}
+			virtual int GetDimension() const
+			{
+				return dim;
 			}
 			int GetSampleCount() const;
 		private:

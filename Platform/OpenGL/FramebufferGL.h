@@ -26,7 +26,7 @@ namespace simul
 					int samples = 0, int coverageSamples = 0);
 
 			~FramebufferGL();
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 			void SetWidthAndHeight(int w,int h);
 			void SetAntialiasing(int ){}

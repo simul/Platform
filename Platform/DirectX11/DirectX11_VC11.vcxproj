@@ -314,7 +314,7 @@
     <None Include="HLSL\simul_hdr.fx" />
     <None Include="HLSL\simul_lightning.fx" />
     <None Include="HLSL\simul_rendernoise.fx" />
-    <None Include="HLSL\simul_sky.fx" />
+    <None Include="HLSL\sky.fx" />
     <None Include="HLSL\simul_terrain.fx" />
     <None Include="HLSL\spherical_harmonics.fx" />
     <None Include="HLSL\states.hlsl" />

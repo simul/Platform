@@ -1,6 +1,8 @@
 #ifndef SIMUL_PLATFORM_CROSSPLATFORM_RENDERPLATFORM_H
 #define SIMUL_PLATFORM_CROSSPLATFORM_RENDERPLATFORM_H
 #include <set>
+#include <map>
+#include <string>
 #include "Export.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
@@ -57,14 +59,15 @@ namespace simul
 			virtual void Draw2dLines		(DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)		=0;
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false)		=0;
 			virtual void PrintAt3dPos		(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0)		=0;
-			virtual void					SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat)	=0;
-			virtual void					ApplyDefaultMaterial()	=0;
-			virtual crossplatform::Material	*CreateMaterial		()	=0;
-			virtual crossplatform::Mesh		*CreateMesh			()	=0;
-			virtual crossplatform::Light	*CreateLight		()	=0;
-			virtual crossplatform::Texture	*CreateTexture		(const char *lFileNameUtf8)	=0;
+			virtual void					SetModelMatrix					(crossplatform::DeviceContext &deviceContext,const double *mat)	=0;
+			virtual void					ApplyDefaultMaterial			()	=0;
+			virtual Material				*CreateMaterial					()	=0;
+			virtual Mesh					*CreateMesh						()	=0;
+			virtual Light					*CreateLight					()	=0;
+			virtual Texture					*CreateTexture					(const char *lFileNameUtf8)	=0;
+			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
-			virtual void					*GetDevice			()	=0;
+			virtual void					*GetDevice						()	=0;
 		};
 	}
 }

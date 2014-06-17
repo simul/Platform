@@ -50,11 +50,12 @@ TwoResFramebuffer::TwoResFramebuffer()
 {
 }
 
-void TwoResFramebuffer::RestoreDeviceObjects(void *dev)
+void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	if(!dev)
+	renderPlatform=r;
+	if(!r)
 		return;
-	m_pd3dDevice=(ID3D11Device*	)dev;
+	m_pd3dDevice=(ID3D11Device*	)r->AsD3D11Device();
 	if(Width<=0||Height<=0||Downscale<=0)
 		return;
 	lowResFarFramebufferDx11	.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
@@ -70,10 +71,10 @@ void TwoResFramebuffer::RestoreDeviceObjects(void *dev)
 	hiResFarFramebufferDx11		.SetWidthAndHeight(Width,Height);
 	hiResNearFramebufferDx11	.SetWidthAndHeight(Width,Height);
 	
-	lowResFarFramebufferDx11	.RestoreDeviceObjects(dev);
-	lowResNearFramebufferDx11	.RestoreDeviceObjects(dev);
-	hiResFarFramebufferDx11		.RestoreDeviceObjects(dev);
-	hiResNearFramebufferDx11	.RestoreDeviceObjects(dev);
+	lowResFarFramebufferDx11	.RestoreDeviceObjects(r);
+	lowResNearFramebufferDx11	.RestoreDeviceObjects(r);
+	hiResFarFramebufferDx11		.RestoreDeviceObjects(r);
+	hiResNearFramebufferDx11	.RestoreDeviceObjects(r);
 }
 
 void TwoResFramebuffer::InvalidateDeviceObjects()
@@ -91,7 +92,7 @@ void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
 		Width=w;
 		Height=h;
 		Downscale=downscale;
-		RestoreDeviceObjects(m_pd3dDevice);
+		RestoreDeviceObjects(renderPlatform);
 	}
 }
 
@@ -138,7 +139,7 @@ TwoResFramebuffer *SimulWeatherRendererDX11::GetFramebuffer(int view_id)
 	{
 		dx11::TwoResFramebuffer *fb=new dx11::TwoResFramebuffer();
 		framebuffersDx11[view_id]=fb;
-		fb->RestoreDeviceObjects(m_pd3dDevice);
+		fb->RestoreDeviceObjects(renderPlatform);
 		return fb;
 	}
 	return framebuffersDx11[view_id];
@@ -156,7 +157,7 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	renderPlatform=r;
 	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	for(FramebufferMapDx11::iterator i=framebuffersDx11.begin();i!=framebuffersDx11.end();i++)
-		i->second->RestoreDeviceObjects(m_pd3dDevice);
+		i->second->RestoreDeviceObjects(renderPlatform);
 	hdrConstants.RestoreDeviceObjects(renderPlatform);
 	if(simulCloudRenderer)
 	{
@@ -264,10 +265,10 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 	static int cubesize=1024;
 	fb_cubemap.SetWidthAndHeight(cubesize,cubesize);
 	fb_cubemap.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
-	fb_cubemap.RestoreDeviceObjects(m_pd3dDevice);
+	fb_cubemap.RestoreDeviceObjects(renderPlatform);
 	dx11::Framebuffer gamma_correct;
 	gamma_correct.SetWidthAndHeight(cubesize,cubesize);
-	gamma_correct.RestoreDeviceObjects(m_pd3dDevice);
+	gamma_correct.RestoreDeviceObjects(renderPlatform);
 
 	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("exposure_gamma");
 	math::Matrix4x4 view;

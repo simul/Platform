@@ -41,8 +41,6 @@ namespace simul
 {
 	namespace dx11
 	{
-		//! A renderer for skies, this class will manage an instance of simul::sky::SkyNode and use it to calculate sky colours
-		//! in real time for the simul_sky.fx shader.
 		SIMUL_DIRECTX11_EXPORT_CLASS SimulSkyRendererDX1x:public simul::sky::BaseSkyRenderer
 		{
 		public:
@@ -109,13 +107,6 @@ namespace simul
 			ID3D1xBuffer*							m_pStarsVertexBuffer;
 			Query									sunQuery;
 
-			crossplatform::EffectTechnique*			m_hTechniqueSun;
-			crossplatform::EffectTechnique*			m_hTechniqueQuery;
-			crossplatform::EffectTechnique*			m_hTechniqueFlare;
-			crossplatform::EffectTechnique*			m_hTechniquePlanet;
-			crossplatform::EffectTechnique*			m_hTechniquePointStars;
-
-			crossplatform::EffectTechnique*			m_TechniqueLightTableInterp;
 			ID3DX11EffectShaderResourceVariable*	flareTexture;
 			ID3DX11EffectShaderResourceVariable*	inscTexture;
 			ID3DX11EffectShaderResourceVariable*	skylTexture;
@@ -124,7 +115,6 @@ namespace simul
 			ID3DX11EffectShaderResourceVariable*	illuminationTexture;
 	
 			ConstantBuffer<EarthShadowUniforms>		earthShadowUniforms;
-			crossplatform::ConstantBuffer<SkyConstants>		skyConstants;
 
 			dx11::Texture						loss_textures[3];
 			dx11::Texture						insc_textures[3];

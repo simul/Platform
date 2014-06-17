@@ -174,7 +174,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 			F[0]->Activate(deviceContext);
 				// input light values:
 				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_3D,finalLoss[cycled_index]->tex);
+				glBindTexture(GL_TEXTURE_3D,finalLoss[cycled_index]->AsGLuint());
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER, GL_NEAREST);  
 				DrawQuad(0,0,1,1);
@@ -221,7 +221,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 				if(finalLoss[cycled_index])
 				{
 					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_3D,finalLoss[cycled_index]->tex);
+					glBindTexture(GL_TEXTURE_3D,finalLoss[cycled_index]->AsGLuint());
 					glCopyTexSubImage3D(GL_TEXTURE_3D
  									,0
  									,0
@@ -250,7 +250,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 	int num_insc	=range(end_insc-start_insc			,0,p.numDistances);
 	
 	// First we make the loss into a 3D texture.
-	GLuint loss_tex=finalLoss[cycled_index]->tex;
+	GLuint loss_tex=finalLoss[cycled_index]->AsGLuint();
 	if(num_insc>0)
 	{		// Copy layer to initial texture
 		if(start_insc>0)
@@ -263,7 +263,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 			F[0]->Activate(deviceContext);
 				// input light values:
 				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_3D,finalInsc[cycled_index]->tex);
+				glBindTexture(GL_TEXTURE_3D,finalInsc[cycled_index]->AsGLuint());
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER, GL_NEAREST);  
 				DrawQuad(0,0,1,1);
@@ -313,7 +313,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 				if(finalInsc[cycled_index])
 				{
 					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_3D,finalInsc[cycled_index]->tex);
+					glBindTexture(GL_TEXTURE_3D,finalInsc[cycled_index]->AsGLuint());
 					glCopyTexSubImage3D(GL_TEXTURE_3D
  									,0
  									,0
@@ -339,7 +339,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 	int end_skyl	=range(end_step		-2*p.numDistances	,0	,p.numDistances);
 	int num_skyl	=range(end_skyl-start_skyl				,0	,p.numDistances);
 	
-	GLuint insc_tex=finalInsc[cycled_index]->tex;
+	GLuint insc_tex=finalInsc[cycled_index]->AsGLuint();
 	if(num_skyl>0)
 	{
 		// Copy layer to initial texture
@@ -353,7 +353,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 			F[0]->Activate(deviceContext);
 				// input light values:
 				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_3D,finalSkyl[cycled_index]->tex);
+				glBindTexture(GL_TEXTURE_3D,finalSkyl[cycled_index]->AsGLuint());
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER, GL_NEAREST);  
 				DrawQuad(0,0,1,1);
@@ -410,7 +410,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 				if(finalSkyl[cycled_index])
 				{
 					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_3D,finalSkyl[cycled_index]->tex);
+					glBindTexture(GL_TEXTURE_3D,finalSkyl[cycled_index]->AsGLuint());
 					glCopyTexSubImage3D(GL_TEXTURE_3D
  									,0
  									,0

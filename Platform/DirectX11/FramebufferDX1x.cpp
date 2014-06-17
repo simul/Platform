@@ -82,10 +82,11 @@ void Framebuffer::SetGenerateMips(bool m)
 	GenerateMips=m;
 }
 
-void Framebuffer::RestoreDeviceObjects(void *dev)
+void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 {
-
-	m_pd3dDevice=(ID3D11Device*)dev;
+	renderPlatform=r;
+	if(renderPlatform)
+		m_pd3dDevice=(ID3D11Device*)renderPlatform->AsD3D11Device();
 }
 
 void Framebuffer::InvalidateDeviceObjects()
@@ -151,7 +152,7 @@ bool Framebuffer::CreateBuffers(crossplatform::RenderPlatform *renderPlatform)
 		return false;
 	if(!m_pd3dDevice)
 	{
-		RestoreDeviceObjects(renderPlatform->AsD3D11Device());
+		RestoreDeviceObjects(renderPlatform);
 	}
 	if(!m_pd3dDevice)
 		return false;

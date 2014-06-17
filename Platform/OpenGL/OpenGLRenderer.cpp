@@ -282,14 +282,18 @@ void OpenGLRenderer::paintGL()
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
+GL_ERROR_CHECK
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
+GL_ERROR_CHECK
 		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
 		bool vertical_screen=ScreenHeight>ScreenWidth;
+GL_ERROR_CHECK
 		if(ShowCompositing)
 		{
 			RenderDepthBuffers(deviceContext,ScreenWidth/2,0,ScreenWidth/2,ScreenHeight/2);
 		}
+GL_ERROR_CHECK
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		{
 			int x0=ScreenWidth/2;
@@ -301,6 +305,7 @@ void OpenGLRenderer::paintGL()
 			}
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(deviceContext,x0,y0,ScreenWidth/2,ScreenHeight/2);
 		}
+GL_ERROR_CHECK
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth/2,ScreenHeight/2);

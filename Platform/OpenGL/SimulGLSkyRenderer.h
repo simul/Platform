@@ -87,10 +87,10 @@ namespace simul
 	void		CreateFadeTextures();
 	void		CreateSkyTextures();
 
-	simul::opengl::TextureStruct	loss_textures[3];
-	simul::opengl::TextureStruct	insc_textures[3];
-	simul::opengl::TextureStruct	skyl_textures[3];
-	simul::opengl::TextureStruct	light_table;
+	simul::opengl::Texture	loss_textures[3];
+	simul::opengl::Texture	insc_textures[3];
+	simul::opengl::Texture	skyl_textures[3];
+	simul::opengl::Texture	light_table;
 
 	bool			CreateSkyEffect();
 	bool			RenderSkyToBuffer();
@@ -102,11 +102,7 @@ namespace simul
 	GLuint			current_program;
 	
 	GLuint			planet_program;
-	GLuint			sun_program;
 	GLuint			stars_program;
-	GLuint			illumination_buffer_program;
-	GLuint			overcast_inscatter_program;
-	GLuint			show_illumination_buffer_program;
 
 	GLuint			fade_3d_to_2d_program;
 	GLint			planetTexture_param;
@@ -118,11 +114,9 @@ namespace simul
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
 
-	simul::opengl::ConstantBuffer<SkyConstants>			skyConstants;
 	simul::opengl::ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
 	
 	GLint			skyInterp_param;
-	GLint			sunlight_param;
 	
 	GLint			starBrightness_param;
 

@@ -402,6 +402,9 @@
     <None Include="GLSL\sky.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\sky.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

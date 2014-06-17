@@ -123,7 +123,7 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 	viewManager.RestoreDeviceObjects(&renderPlatformDx11);
 	lightProbeConstants.RestoreDeviceObjects(m_pd3dDevice);
 	if(simulHDRRenderer)
-		simulHDRRenderer->RestoreDeviceObjects(pd3dDevice);
+		simulHDRRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	if(simulOpticsRenderer)
@@ -133,9 +133,9 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 	if(oceanRenderer)
 		oceanRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	cubemapFramebuffer.SetWidthAndHeight(32,32);
-	cubemapFramebuffer.RestoreDeviceObjects(pd3dDevice);
+	cubemapFramebuffer.RestoreDeviceObjects(&renderPlatformDx11);
 	envmapFramebuffer.SetWidthAndHeight(64,64);
-	envmapFramebuffer.RestoreDeviceObjects(pd3dDevice);
+	envmapFramebuffer.RestoreDeviceObjects(&renderPlatformDx11);
 	RecompileShaders();
 }
 
@@ -574,7 +574,7 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 	if(!view)
 		return;
 	simul::dx11::Framebuffer fb(view->GetScreenWidth(),view->GetScreenHeight());
-	fb.RestoreDeviceObjects(m_pd3dDevice);
+	fb.RestoreDeviceObjects(&renderPlatformDx11);
 	crossplatform::DeviceContext deviceContext;
 	ID3D11DeviceContext *pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
@@ -654,7 +654,7 @@ void Direct3D11Renderer::RecompileShaders()
 	defines["NUM_AA_SAMPLES"]		=base::stringFormat("%d",Antialiasing);
 	viewManager.RecompileShaders(defines);
 	SAFE_RELEASE(lightProbesEffect);
-	V_CHECK(CreateEffect(m_pd3dDevice,&lightProbesEffect,"light_probes.fx",defines,D3DCOMPILE_OPTIMIZATION_LEVEL3));
+	V_CHECK(dx11::CreateEffect(m_pd3dDevice,&lightProbesEffect,"light_probes.fx",defines,D3DCOMPILE_OPTIMIZATION_LEVEL3));
 	lightProbeConstants.LinkToEffect(lightProbesEffect,"LightProbeConstants");
 }
 

@@ -41,7 +41,7 @@ namespace simul
 			void SetBufferSize(int w,int h);
 			// Standard d3d object interface functions
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-			void RestoreDeviceObjects(void *x);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! Render: write the given texture to screen using the HDR rendering shaders
@@ -57,6 +57,7 @@ namespace simul
 
 			void RecompileShaders();
 		protected:
+			crossplatform::RenderPlatform *renderPlatform;
 			bool Destroy();
 			simul::dx11::Framebuffer glow_fb;
 			int Width,Height;

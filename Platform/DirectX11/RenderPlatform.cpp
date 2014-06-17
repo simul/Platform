@@ -66,7 +66,7 @@ void RenderPlatform::RecompileShaders()
 	SAFE_RELEASE(effect);
 	if(!device)
 		return;
-	CreateEffect(device,&effect,"solid.fx",defines);
+	dx11::CreateEffect(device,&effect,"solid.fx",defines);
 	solidConstants.LinkToEffect(effect,"SolidConstants");
 	//solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
@@ -350,6 +350,14 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	crossplatform::Texture * tex=new dx11::Texture(device);
 	tex->LoadFromFile(this,fileNameUtf8);
 	return tex;
+}
+
+crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
+{
+	std::string fn(filename_utf8);
+	if(fn.find(".")>=fn.length())
+		fn+=".fx";
+	return new dx11::Effect(this,fn.c_str(),defines);
 }
 
 crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer()

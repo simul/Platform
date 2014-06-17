@@ -30,12 +30,14 @@
 #include "Utilities.h"
 #include "Simul/Math/Pi.h"
 #include "D3dx11effect.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 
 using namespace simul;
 using namespace dx11;
 
 SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 	:m_pd3dDevice(NULL)
+	,renderPlatform(NULL)
 	,m_pTonemapEffect(NULL)
 	,m_pGaussianEffect(NULL)
 	,Glow(false)
@@ -64,11 +66,12 @@ void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
 	RecompileShaders();
 }
 
-void SimulHDRRendererDX1x::RestoreDeviceObjects(void *dev)
+void SimulHDRRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D11Device*)dev;
-	glow_fb.RestoreDeviceObjects(m_pd3dDevice);
+	renderPlatform=r;
+	m_pd3dDevice=renderPlatform->AsD3D11Device();
+	glow_fb.RestoreDeviceObjects(renderPlatform);
 
 	glowTexture.release();
 	if(m_pd3dDevice&&Width>0&&Height>0)

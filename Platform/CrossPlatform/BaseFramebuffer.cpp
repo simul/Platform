@@ -9,6 +9,7 @@ BaseFramebuffer::BaseFramebuffer(int w,int h)
 	,numAntialiasingSamples(1)	// no AA by default
 	,depth_active(false)
 	,colour_active(false)
+	,renderPlatform(0)
 {
 }
 bool BaseFramebuffer::IsDepthActive() const

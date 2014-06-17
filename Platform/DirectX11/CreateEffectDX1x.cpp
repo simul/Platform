@@ -654,13 +654,13 @@ ERRNO_CHECK
 	return hr;
 }
 
-HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename)
 {
 	std::map<std::string,std::string> defines;
-	return CreateEffect(d3dDevice,effect,filename,defines);
+	return simul::dx11::CreateEffect(d3dDevice,effect,filename,defines);
 }
 
-ID3D11ComputeShader *LoadComputeShader(ID3D11Device *pd3dDevice,const char *filename_utf8)
+ID3D11ComputeShader *simul::dx11::LoadComputeShader(ID3D11Device *pd3dDevice,const char *filename_utf8)
 {
 	if(!shaderPathsUtf8.size())
 		shaderPathsUtf8.push_back(std::string("media/hlsl/dx11"));
@@ -705,7 +705,7 @@ ID3D11ComputeShader *LoadComputeShader(ID3D11Device *pd3dDevice,const char *file
 	}
 }
 
-HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,unsigned int shader_flags)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,unsigned int shader_flags)
 {
 	SIMUL_ASSERT(d3dDevice!=NULL);
 	HRESULT hr=S_OK;
@@ -802,7 +802,7 @@ ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8)
 ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines)
 {
 	ID3DX11Effect *effect=NULL;
-	CreateEffect(d3dDevice,&effect,filename_utf8,defines);
+	simul::dx11::CreateEffect(d3dDevice,&effect,filename_utf8,defines);
 	return effect;
 }
 

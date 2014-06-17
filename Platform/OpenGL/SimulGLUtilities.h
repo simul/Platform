@@ -117,23 +117,6 @@ namespace simul
 			glBindBuffer(GL_UNIFORM_BUFFER, 0);		\
 			glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 
-		struct TextureStruct
-		{
-			TextureStruct():tex(0)
-			{
-			}
-			~TextureStruct()
-			{
-				release();
-			}
-			void release()
-			{
-				SAFE_DELETE_TEXTURE(tex);
-			}
-			void setTexels(void *,const void *src,int x,int y,int z,int w,int l,int d);
-			void ensureTexture3DSizeAndFormat(void *,int w,int l,int d,int frmt,bool computable=false);
-			GLuint tex;
-		};
 		//! Useful Wrapper class to encapsulate constant buffer behaviour
 		template<class T> class ConstantBuffer:public T
 		{

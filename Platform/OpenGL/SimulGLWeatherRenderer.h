@@ -66,7 +66,7 @@ namespace simul
 			FramebufferGL	lowResNearFramebuffer;
 			FramebufferGL	hiResFarFramebuffer;
 			FramebufferGL	hiResNearFramebuffer;
-			void RestoreDeviceObjects(void *);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale);
 			void GetDimensions(int &w,int &h,int &downscale);

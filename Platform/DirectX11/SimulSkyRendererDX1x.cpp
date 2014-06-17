@@ -41,11 +41,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	,m_pStarsVtxDecl(NULL)
 	,m_pVertexBuffer(NULL)
 	,m_pStarsVertexBuffer(NULL)
-	,m_hTechniqueSun(NULL)
-	,m_hTechniqueQuery(NULL)	
-	,m_hTechniqueFlare(NULL)
-	,m_hTechniquePlanet(NULL)
-	,m_hTechniquePointStars(NULL)
 	,flare_texture_SRV(NULL)
 	,moon_texture_SRV(NULL)
 	,loss_2d(NULL)
@@ -68,6 +63,8 @@ void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
 
 void SimulSkyRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	if(!r)
+		return;
 	renderPlatform=r;
 	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	sunQuery.RestoreDeviceObjects(m_pd3dDevice);
@@ -93,22 +90,22 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r
 	if(loss_2d)
 	{
 		loss_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		loss_2d->RestoreDeviceObjects(m_pd3dDevice);
+		loss_2d->RestoreDeviceObjects(renderPlatform);
 	}
 	if(inscatter_2d)
 	{
 		inscatter_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		inscatter_2d->RestoreDeviceObjects(m_pd3dDevice);
+		inscatter_2d->RestoreDeviceObjects(renderPlatform);
 	}
 	if(overcast_2d)
 	{
 		overcast_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		overcast_2d->RestoreDeviceObjects(m_pd3dDevice);
+		overcast_2d->RestoreDeviceObjects(renderPlatform);
 	}
 	if(skylight_2d)
 	{
 		skylight_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		skylight_2d->RestoreDeviceObjects(m_pd3dDevice);
+		skylight_2d->RestoreDeviceObjects(renderPlatform);
 	}
 	illumination_fb.SetWidthAndHeight(64,numFadeElevations*4);
 	SAFE_RELEASE(moon_texture_SRV);
@@ -120,7 +117,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r
 	// Stars vertex declaration
 	{
 		D3D1x_PASS_DESC PassDesc;
-		m_hTechniquePointStars->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
+		techPointStars->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
 		D3D1x_INPUT_ELEMENT_DESC decl[]=
 		{
 			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -250,25 +247,25 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 	if(loss_2d)
 	{
 		loss_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		loss_2d->RestoreDeviceObjects(m_pd3dDevice);
+		loss_2d->RestoreDeviceObjects(renderPlatform);
 	}
 	if(inscatter_2d)
 	{
 		inscatter_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		inscatter_2d->RestoreDeviceObjects(m_pd3dDevice);
+		inscatter_2d->RestoreDeviceObjects(renderPlatform);
 	}
 	if(overcast_2d)
 	{
 		overcast_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		overcast_2d->RestoreDeviceObjects(m_pd3dDevice);
+		overcast_2d->RestoreDeviceObjects(renderPlatform);
 	}
 	if(skylight_2d)
 	{
 		skylight_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
-		skylight_2d->RestoreDeviceObjects(m_pd3dDevice);
+		skylight_2d->RestoreDeviceObjects(renderPlatform);
 	}
 	illumination_fb.SetWidthAndHeight(128,numFadeElevations);
-	illumination_fb.RestoreDeviceObjects(m_pd3dDevice);
+	illumination_fb.RestoreDeviceObjects(renderPlatform);
 }
 
 void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate(void *context)
@@ -391,25 +388,17 @@ void SimulSkyRendererDX1x::RecompileShaders()
 
 	if(!m_pd3dDevice)
 		return;
-	std::map<std::string,std::string> defines;
-	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
-	delete effect;
-	effect						=new Effect(renderPlatform,"simul_sky.fx",defines);
-	techFade3DTo2D				=effect->GetTechniqueByName("fade_3d_to_2d");
-								 
-	m_hTechniqueSun				=effect->GetTechniqueByName("simul_sun");
-	m_hTechniquePointStars		=effect->GetTechniqueByName("simul_stars");
-	m_hTechniqueFlare			=effect->GetTechniqueByName("simul_flare");
-	m_hTechniquePlanet			=effect->GetTechniqueByName("simul_planet");
-	flareTexture				=effect->asD3DX11Effect()->GetVariableByName("flareTexture")->AsShaderResource();
-								 
-	inscTexture					=effect->asD3DX11Effect()->GetVariableByName("inscTexture")->AsShaderResource();
-	skylTexture					=effect->asD3DX11Effect()->GetVariableByName("skylTexture")->AsShaderResource();
-								 
-	fadeTexture1				=effect->asD3DX11Effect()->GetVariableByName("fadeTexture1")->AsShaderResource();
-	fadeTexture2				=effect->asD3DX11Effect()->GetVariableByName("fadeTexture2")->AsShaderResource();
-	illuminationTexture			=effect->asD3DX11Effect()->GetVariableByName("illuminationTexture")->AsShaderResource();
-	m_hTechniqueQuery			=effect->GetTechniqueByName("sun_query");
+	BaseSkyRenderer::RecompileShaders();
+
+	flareTexture		=effect->asD3DX11Effect()->GetVariableByName("flareTexture")->AsShaderResource();
+			 
+	inscTexture			=effect->asD3DX11Effect()->GetVariableByName("inscTexture")->AsShaderResource();
+	skylTexture			=effect->asD3DX11Effect()->GetVariableByName("skylTexture")->AsShaderResource();
+						 
+	fadeTexture1		=effect->asD3DX11Effect()->GetVariableByName("fadeTexture1")->AsShaderResource();
+	fadeTexture2		=effect->asD3DX11Effect()->GetVariableByName("fadeTexture2")->AsShaderResource();
+	illuminationTexture	=effect->asD3DX11Effect()->GetVariableByName("illuminationTexture")->AsShaderResource();
+	techQuery			=effect->GetTechniqueByName("sun_query");
 
 	earthShadowUniforms.LinkToEffect(effect->asD3DX11Effect(),"EarthShadowUniforms");
 	skyConstants.LinkToEffect(effect,"SkyConstants");
@@ -451,12 +440,8 @@ void SimulSkyRendererDX1x::RenderSun(crossplatform::DeviceContext &deviceContext
 	float rads=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,4.f*rads,sunlight,sun_dir);
 	skyConstants.Apply(deviceContext);
-	effect->Apply(deviceContext,m_hTechniqueSun,0);
-	UtilityRenderer::DrawQuad(pContext);
-	effect->Unapply(deviceContext);
-
-	effect->Apply(deviceContext,m_hTechniqueSun,0);
-	UtilityRenderer::DrawQuad(pContext);
+	effect->Apply(deviceContext,techSun,0);
+	renderPlatform->DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);
 }
 
@@ -465,7 +450,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(crossplatform::DeviceContext &devic
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 #ifndef _XBOX_ONE
 	sun_occlusion=cloud_occlusion;
-	if(!m_hTechniqueQuery||!m_hTechniqueQuery->asD3DX11EffectTechnique()->IsValid())
+	if(!techQuery||!techQuery->asD3DX11EffectTechnique()->IsValid())
 		return sun_occlusion;
 	// Start the query
 	vec3 sun_dir(skyKeyframer->GetDirectionToSun());
@@ -476,7 +461,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(crossplatform::DeviceContext &devic
 	// Start the query
     sunQuery.Begin(pContext);
 	{
-		ApplyPass(pContext,m_hTechniqueQuery->asD3DX11EffectTechnique()->GetPassByIndex(0));
+		ApplyPass(pContext,techQuery->asD3DX11EffectTechnique()->GetPassByIndex(0));
 		UtilityRenderer::DrawQuad(pContext);
 	}
 	// End the query, get the data
@@ -511,7 +496,7 @@ void SimulSkyRendererDX1x::RenderPlanet(crossplatform::DeviceContext &deviceCont
 	vec3 sun_dir(skyKeyframer->GetDirectionToSun());
 	SetConstantsForPlanet(skyConstants,view,proj,planet_dir,rad,planet_colour,sun_dir);
 	skyConstants.Apply(deviceContext);
-	ApplyPass(pContext,(do_lighting?m_hTechniquePlanet:m_hTechniqueFlare)->asD3DX11EffectTechnique()->GetPassByIndex(0));
+	ApplyPass(pContext,(do_lighting?techPlanet:techFlare)->asD3DX11EffectTechnique()->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);
 }
 
@@ -531,11 +516,11 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	static float sun_mult=0.5f;
 	sunlight*=sun_mult*magnitude;
 	colour->SetFloatVector(sunlight);
-	//effect->SetTechnique(m_hTechniqueFlare);
+	//effect->SetTechnique(techFlare);
 	//flareTexture->SetResource(flare_texture_SRV);
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 //	hr=RenderAngledQuad(sun_dir,sun_angular_radius*20.f*magnitude);
-	RenderAngledQuad(m_pd3dDevice,sun_dir,sun_angular_radius*20.f*magnitude,effect,m_hTechniqueFlare,view,proj,sun_dir);*/
+	RenderAngledQuad(m_pd3dDevice,sun_dir,sun_angular_radius*20.f*magnitude,effect,techFlare,view,proj,sun_dir);*/
 	return (hr==S_OK);
 }
 
@@ -604,12 +589,12 @@ bool SimulSkyRendererDX1x::Render2DFades(crossplatform::DeviceContext &deviceCon
 		effect->Unapply(deviceContext);
 		SIMUL_COMBINED_PROFILE_END(pContext)
 	}
-	ID3DX11EffectTechnique* hTechniqueOverc		=effect->GetTechniqueByName("overcast_inscatter")->asD3DX11EffectTechnique();
+	crossplatform::EffectTechnique* hTechniqueOverc		=effect->GetTechniqueByName("overcast_inscatter");
 	// We will bake the overcast effect into the overcast_2d texture.
 	{
 		SIMUL_COMBINED_PROFILE_START(pContext,"Overcast")
 		V_CHECK(inscTexture->SetResource((ID3D11ShaderResourceView*)inscatter_2d->GetColorTex()));
-		V_CHECK(ApplyPass(pContext,hTechniqueOverc->GetPassByIndex(0)));
+		V_CHECK(ApplyPass(pContext,hTechniqueOverc->asD3DX11EffectTechnique()->GetPassByIndex(0)));
 		overcast_2d->Activate(deviceContext);
 			simul::dx11::UtilityRenderer::DrawQuad(pContext);
 		overcast_2d->Deactivate(pContext);
@@ -704,7 +689,7 @@ bool SimulSkyRendererDX1x::RenderPointStars(crossplatform::DeviceContext &device
 	D3DXMatrixMultiply(&tmp2,&tmp1,(const D3DXMATRIX*)&proj);
 	D3DXMatrixTranspose(&wvp,&tmp2);
 	skyConstants.worldViewProj=(const float *)(&tmp2);
-	hr=ApplyPass(pContext,m_hTechniquePointStars->asD3DX11EffectTechnique()->GetPassByIndex(0));
+	hr=ApplyPass(pContext,techPointStars->asD3DX11EffectTechnique()->GetPassByIndex(0));
 
 	skyConstants.starBrightness	= exposure * skyKeyframer->GetCurrentStarBrightness();
 	if(skyConstants.starBrightness<minimumStarBrightness)
@@ -769,8 +754,8 @@ bool SimulSkyRendererDX1x::RenderFades(crossplatform::DeviceContext &deviceConte
 	context->RSGetViewports(&num_v,&viewport);
 	UtilityRenderer::SetScreenSize((int)viewport.Width,(int)viewport.Height);
 
-	ID3DX11EffectTechnique*	techShowFadeTable				=effect->GetTechniqueByName("simul_show_fade_table")->asD3DX11EffectTechnique();
-	ID3DX11EffectTechnique*	techniqueShowFade				=effect->GetTechniqueByName("simul_show_fade_texture")->asD3DX11EffectTechnique();
+	ID3DX11EffectTechnique*	techShowFadeTable				=effect->GetTechniqueByName("show_fade_table")->asD3DX11EffectTechnique();
+	ID3DX11EffectTechnique*	techniqueShowFade				=effect->GetTechniqueByName("show_fade_texture")->asD3DX11EffectTechnique();
 	ID3DX11EffectShaderResourceVariable*	inscTexture		=effect->asD3DX11Effect()->GetVariableByName("inscTexture")->AsShaderResource();
 
 	ID3DX11EffectTechnique*	techniqueShowLightTable			=effect->GetTechniqueByName("show_light_table")->asD3DX11EffectTechnique();

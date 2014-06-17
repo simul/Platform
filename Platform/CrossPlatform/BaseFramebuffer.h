@@ -8,13 +8,14 @@ namespace simul
 	{
 		class Texture;
 		struct DeviceContext;
+		class RenderPlatform;
 		//! A base class for API-dependent framebuffer classes.
 		SIMUL_CROSSPLATFORM_EXPORT_CLASS BaseFramebuffer
 		{
 		public:
 			BaseFramebuffer(int w=0,int h=0);
 			//! Call this when the API-dependent device has been created.
-			virtual void RestoreDeviceObjects(void *device)=0;
+			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r)=0;
 			//! Call this when the API-dependent device has been lost or is shutting down.
 			virtual void InvalidateDeviceObjects()=0;
 			//! Activate the framebuffer and set the viewport- must be followed after rendering by a call to \ref Deactivate().
@@ -58,17 +59,21 @@ namespace simul
 			int Width,Height;
 			int numAntialiasingSamples;
 			bool depth_active, colour_active;
+			crossplatform::RenderPlatform *renderPlatform;
 		};
 		struct TwoResFramebuffer
 		{
+			TwoResFramebuffer():renderPlatform(0){}
 			virtual crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()=0;
 			virtual crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()=0;
 			virtual crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()=0;
 			virtual crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()=0;
-			virtual void RestoreDeviceObjects(void *)=0;
+			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *)=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual void SetDimensions(int w,int h,int downscale)=0;
 			virtual void GetDimensions(int &w,int &h,int &downscale)=0;
+		protected:
+			crossplatform::RenderPlatform *renderPlatform;
 		};
 	}
 }
