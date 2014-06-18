@@ -145,7 +145,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	deviceContext.renderPlatform	=renderPlatform;
 
 	for(int i=0;i<3;i++)
-		finalTexture[i]->ensureTexture3DSizeAndFormat(renderPlatform,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true,1);
+		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true,1);
 	int density_gridsize=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
 	mask_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]);
 
@@ -183,7 +183,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	simul::dx11::setTexture(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	simul::dx11::setTexture(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
 	
-	density_texture.ensureTexture3DSizeAndFormat(renderPlatform
+	density_texture.ensureTexture3DSizeAndFormat(m_pd3dDevice
 		,params.density_grid[0],params.density_grid[1],params.density_grid[2]
 		,DXGI_FORMAT_R32_FLOAT,true);
 
@@ -235,10 +235,10 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 		start_texel=gridsize;	
 	if(start_texel+texels>gridsize)
 		texels=gridsize-start_texel; 
-	directLightTextures[light_index].ensureTexture3DSizeAndFormat(renderPlatform
+	directLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice
 				,light_grid[0],light_grid[1],light_grid[2]
 				,DXGI_FORMAT_R32_FLOAT,true);
-	indirectLightTextures[light_index].ensureTexture3DSizeAndFormat(renderPlatform
+	indirectLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice
 				,light_grid[0],light_grid[1],light_grid[2]
 				,DXGI_FORMAT_R32_FLOAT,true);
 
@@ -329,9 +329,9 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	// copy to CPU memory if required by CloudKeyframer.
 	if(target)
 	{
-		directLightTextures[light_index].copyToMemory(deviceContext,target,start_texel,texels);
+		directLightTextures[light_index].copyToMemory(m_pd3dDevice,m_pImmediateContext,target,start_texel,texels);
 		target+=gridsize;
-		indirectLightTextures[light_index].copyToMemory(deviceContext,target,start_texel,texels);
+		indirectLightTextures[light_index].copyToMemory(m_pd3dDevice,m_pImmediateContext,target,start_texel,texels);
 	}
 }
 
@@ -370,7 +370,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	gpuCloudConstants.Apply(deviceContext);
 	for(int i=0;i<3;i++)
 	{
-		finalTexture[i]->ensureTexture3DSizeAndFormat(renderPlatform,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
+		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
 	}
 	// divide the grid into 8x8x8 blocks:
 	static const int BLOCKWIDTH=8;
@@ -401,6 +401,6 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	// copy to CPU memory if required by CloudKeyframer.
 	if(target)
 	{
-		finalTexture[cycled_index]->copyToMemory(deviceContext,target,start_texel,texels);
+		finalTexture[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,target,start_texel,texels);
 	}
 }

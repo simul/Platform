@@ -122,7 +122,7 @@ technique11 make_depth_far_near
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_MakeDepthFarNear()));
@@ -131,7 +131,7 @@ technique11 make_depth_far_near
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_MakeDepthFarNear_MSAA()));
@@ -156,7 +156,7 @@ technique11 resolve_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_ResolveDepth()));

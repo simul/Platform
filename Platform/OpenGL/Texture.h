@@ -21,28 +21,23 @@ namespace simul
 			{
 				return NULL;
 			}
-			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
-			{
-				return NULL;
-			}
 			GLuint AsGLuint()
 			{
 				return pTextureObject;
 			}
-			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
+			void ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *renderPlatform,int w,int l
 				,unsigned f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0);
-			void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,int frmt,bool computable=false,int mips=1);
-			void activateRenderTarget(crossplatform::DeviceContext &deviceContext);
+			void activateRenderTarget(simul::crossplatform::DeviceContext &deviceContext);
 			void deactivateRenderTarget();
 			int GetLength() const;
 			int GetWidth() const;
 			int GetDimension() const;
 			int GetSampleCount() const;
-			void copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels);
 			GLuint pTextureObject;
 
 			// Former Texture functions
 			void setTexels(void *,const void *src,int x,int y,int z,int w,int l,int d);
+			void ensureTexture3DSizeAndFormat(void *,int w,int l,int d,int frmt,bool computable=false);
 		};
 	}
 }

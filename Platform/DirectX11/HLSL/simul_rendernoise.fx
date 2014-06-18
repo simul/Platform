@@ -128,9 +128,9 @@ technique11 simul_random
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+		SetBlendState(NoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		//SetBlendState(NoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,RandomPS()));
     }
@@ -142,9 +142,9 @@ technique11 simul_noise_2d
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+		SetBlendState(NoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		//SetBlendState(NoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,MainPS()));
     }

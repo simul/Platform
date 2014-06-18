@@ -224,7 +224,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 {
 	vec3 texc=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
 	int i=0;
-	vec3 accum=vec3(0.0,0.5,1.0);
+	vec3 accum=vec3(0.f,0.5f,1.f);
 	texc.y+=0.5*(1.0-yz)/(float)CROSS_SECTION_STEPS;
 	texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
@@ -234,7 +234,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 		colour.gb+=vec2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;
 		colour*=opacity;
-		accum*=1.0-opacity;
+		accum*=1.f-opacity;
 		accum+=colour;
 		texc.y-=(1.0-yz)/(float)CROSS_SECTION_STEPS;
 		texc.z+=yz/(float)CROSS_SECTION_STEPS;
@@ -299,7 +299,7 @@ technique11 cloud_shadow
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(NoBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_CloudShadow()));
@@ -320,7 +320,7 @@ technique11 moisture_accumulation
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_MoistureAccumulation()));
@@ -333,7 +333,7 @@ technique11 cross_section
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(NoBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_CrossSection()));
@@ -346,7 +346,7 @@ technique11 simple
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Simple()));
@@ -359,7 +359,7 @@ technique11 show_noise
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowNoise()));
@@ -372,7 +372,7 @@ technique11 show_shadow
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowShadow()));

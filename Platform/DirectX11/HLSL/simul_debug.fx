@@ -169,7 +169,7 @@ float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
 	float3 view		=(IN.wDirection.xyz);
 	float4 result	=cubeTexture.Sample(cubeSamplerState,view);
-	return float4(result.rgb,1.0);
+	return float4(result.rgb,1.f);
 }
 
 technique11 simul_debug
@@ -294,7 +294,7 @@ technique11 show_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS()));

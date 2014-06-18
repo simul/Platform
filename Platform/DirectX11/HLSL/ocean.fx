@@ -126,8 +126,8 @@ void UpdateSpectrumCS(uint3 sub_pos : SV_DispatchThreadID)
 	ht.y = (h0_k.x - h0_mk.x) * sin_v + (h0_k.y - h0_mk.y) * cos_v;
 
 	// H(t) -> Dx(t), Dy(t)
-	float kx = sub_pos.x - g_ActualDim * 0.5;
-	float ky = sub_pos.y - g_ActualDim * 0.5;
+	float kx = sub_pos.x - g_ActualDim * 0.5f;
+	float ky = sub_pos.y - g_ActualDim * 0.5f;
 	float sqr_k = kx * kx + ky * ky;
 	float rsqr_k = 0;
 	if (sqr_k > 1e-12f)
@@ -167,7 +167,7 @@ float4 UpdateDisplacementPS(posTexVertexOutput In) : SV_Target
 float4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
 {
 	// Sample neighbour texels
-	vec2 one_texel = vec2(1.0 / (float)g_OutWidth, 1.0 / (float)g_OutHeight);
+	vec2 one_texel = vec2(1.0f / (float)g_OutWidth, 1.0f / (float)g_OutHeight);
 
 	vec2 tc_left  = vec2(In.texCoords.x - one_texel.x, In.texCoords.y);
 	vec2 tc_right = vec2(In.texCoords.x + one_texel.x, In.texCoords.y);
@@ -185,10 +185,10 @@ float4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
 	// Calculate Jacobian correlation from the partial differential of height field
 	vec2 Dx = (displace_right.xy - displace_left.xy) * g_ChoppyScale * g_GridLen;
 	vec2 Dy = (displace_front.xy - displace_back.xy) * g_ChoppyScale * g_GridLen;
-	float J = (1.0 + Dx.x) * (1.0 + Dy.y) - Dx.y * Dy.x;
+	float J = (1.0f + Dx.x) * (1.0f + Dy.y) - Dx.y * Dy.x;
 
 	// Practical subsurface scale calculation: max[0, (1 - J) + Amplitude * (2 * Coverage - 1)].
-	float fold = max(1.0 - J, 0);
+	float fold = max(1.0f - J, 0);
 
 	// Output
 	return float4(gradient, 0, fold);
@@ -207,7 +207,7 @@ struct VS_OUTPUT
     vec2 fade_texc	: TEXCOORD2;
 };
 #ifndef MAX_FADE_DISTANCE_METRES
-	#define MAX_FADE_DISTANCE_METRES (300000.0)
+	#define MAX_FADE_DISTANCE_METRES (300000.f)
 #endif
 VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
 {
@@ -242,7 +242,7 @@ VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
 		displacement = g_texDisplacement.SampleLevel(g_samplerDisplacement, uv_local, 0).xyz;
 	displacement = lerp(vec3(0, 0, perlin), displacement, blend_factor);
 	pos_local.xyz += displacement;
-//pos_local.z+=500.0*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
+//pos_local.z+=500.f*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
 	// Transform
 	Output.Position = mul(pos_local, g_matWorldViewProj);
    // Output.Position = mul( g_matWorldViewProj,pos_local);
@@ -257,8 +257,8 @@ VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
 	vec3 view=normalize(wPosition.xyz);
 	float sine=view.z;
 	float depth=length(wPosition.xyz)/MAX_FADE_DISTANCE_METRES;
-	//OUT.fade_texc=vec2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5*(1.0-sine));
-	Output.fade_texc=vec2(sqrt(depth),0.5*(1.0-sine));
+	//OUT.fade_texc=vec2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5f*(1.f-sine));
+	Output.fade_texc=vec2(sqrt(depth),0.5f*(1.f-sine));
 	return Output; 
 }
 
@@ -354,7 +354,7 @@ technique11 ocean
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( EnableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,OceanSurfVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,OceanSurfPS()));
@@ -367,7 +367,7 @@ technique11 show_texture
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowTexture()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
@@ -379,7 +379,7 @@ technique11 show_structured_buffer
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowTexture()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowStructuredBuffer()));
@@ -392,7 +392,7 @@ technique11 wireframe
     {
 		SetRasterizerState( wireframeRasterizer );
 		SetDepthStencilState(TestDepth, 0 );
-		SetBlendState(AddBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,OceanSurfVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,WireframePS()));
@@ -414,7 +414,7 @@ technique11 update_displacement
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,UpdateDisplacementPS()));
@@ -427,7 +427,7 @@ technique11 gradient_folding
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,GenGradientFoldingPS()));

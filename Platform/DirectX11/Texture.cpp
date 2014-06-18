@@ -58,7 +58,7 @@ bool dx11::Texture::IsValid() const
 {
 	return (shaderResourceView!=NULL);
 }
-void dx11::Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels)
+void dx11::Texture::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *pContext,void *target,int start_texel,int num_texels)
 {
 	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);
 	if(!stagingBuffer)
@@ -76,11 +76,11 @@ void dx11::Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,voi
 		stagingBufferDesc.CPUAccessFlags=D3D11_CPU_ACCESS_READ;
 		stagingBufferDesc.MiscFlags		=0;
 
-		deviceContext.renderPlatform->AsD3D11Device()->CreateTexture3D(&stagingBufferDesc,NULL,(ID3D11Texture3D**)(&stagingBuffer));
+		pd3dDevice->CreateTexture3D(&stagingBufferDesc,NULL,(ID3D11Texture3D**)(&stagingBuffer));
 	}
-	deviceContext.asD3D11DeviceContext()->CopyResource(stagingBuffer,texture);
+	pContext->CopyResource(stagingBuffer,texture);
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	V_CHECK(deviceContext.asD3D11DeviceContext()->Map( stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource));
+	V_CHECK(pContext->Map( stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource));
 	unsigned char *source = (unsigned char *)(mappedResource.pData);
 	
 	int expected_pitch=byteSize*width;
@@ -120,7 +120,7 @@ void dx11::Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,voi
 		if(end_columns>0)
 			memcpy(dest,source,end_columns*byteSize);
 	}
-	deviceContext.asD3D11DeviceContext()->Unmap( stagingBuffer, 0);
+	pContext->Unmap( stagingBuffer, 0);
 }
 
 void dx11::Texture::setTexels(ID3D11DeviceContext *context,const void *src,int texel_index,int num_texels)
@@ -198,7 +198,7 @@ void dx11::Texture::InitFromExternalSRV(ID3D11ShaderResourceView *srv)
 	dim=2;
 }
 
-void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,int f,bool computable,int mips)
+void dx11::Texture::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable,int mips)
 {
 	dim=3;
 	D3D11_TEXTURE3D_DESC textureDesc;
@@ -227,35 +227,35 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 		textureDesc.Width			=width=w;
 		textureDesc.Height			=length=l;
 		textureDesc.Depth			=depth=d;
-		textureDesc.Format			=format=(DXGI_FORMAT)f;
+		textureDesc.Format			=format=f;
 		textureDesc.MipLevels		=mips;
 		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
 		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
 		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags		=0;
 		
-		V_CHECK(r->AsD3D11Device()->CreateTexture3D(&textureDesc,0,(ID3D11Texture3D**)(&texture)));
+		V_CHECK(pd3dDevice->CreateTexture3D(&textureDesc,0,(ID3D11Texture3D**)(&texture)));
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		srv_desc.Format						= (DXGI_FORMAT)f;
+		srv_desc.Format						= f;
 		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
 		srv_desc.Texture3D.MipLevels		= mips;
 		srv_desc.Texture3D.MostDetailedMip	= 0;
-		V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(texture, &srv_desc,&shaderResourceView));
+		V_CHECK(pd3dDevice->CreateShaderResourceView(texture, &srv_desc,&shaderResourceView));
 	}
 	if(computable&&(!unorderedAccessView||!ok))
 	{
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format				= (DXGI_FORMAT)f;
+		uav_desc.Format				= f;
 		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE3D;
 		uav_desc.Texture3D.MipSlice	= 0;
 		uav_desc.Texture3D.WSize	= d;
 		uav_desc.Texture3D.FirstWSlice=0;
 
 		SAFE_RELEASE(unorderedAccessView);
-		V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
+		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
 	}
 }
 void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,unsigned f,bool computable,bool rendertarget,int num_samples,int aa_quality)

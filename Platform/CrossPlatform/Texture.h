@@ -1,7 +1,6 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/Export.h"
 struct ID3D11ShaderResourceView;
-struct ID3D11UnorderedAccessView;
 typedef unsigned GLuint;
 namespace simul
 {
@@ -21,11 +20,9 @@ namespace simul
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView()=0;
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()=0;
 			virtual GLuint AsGLuint()=0;
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,unsigned f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0)=0;
-			virtual void ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,int frmt,bool computable=false,int mips=1)=0;
 			virtual void activateRenderTarget(DeviceContext &deviceContext)=0;
 			virtual void deactivateRenderTarget()=0;
 			virtual int GetLength() const=0;
@@ -34,7 +31,7 @@ namespace simul
 			//! If the texture is multisampled, this returns the samples per texel. Zero means it is not an MS texture,
 			//! while 1 means it is MS, even though the sample count is unity.
 			virtual int GetSampleCount() const=0;
-			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
+			
 			int width,length,depth,dim;
 		};
 	}

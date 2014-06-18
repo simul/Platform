@@ -64,8 +64,7 @@ namespace simul
 			std::set<opengl::Material*> materials;
 			bool reverseDepth;
 		protected:
-			void DrawTexture		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,GLuint tex,float mult=1.f);
-			crossplatform::Effect *effect;
+			void DrawTexture		(void *context,int x1,int y1,int dx,int dy,GLuint tex,float mult=1.f);
 		};
 	}
 }

@@ -184,8 +184,8 @@ inline void scan_inclusive_filtering(uint thread_id, uint size)
 	float3 local_data[TEXELS_PER_THREAD];
 
 	// Calculating average values in the box window while performing level-0 scan
-	int L_pos = (int) ceil(location - 0.5 - g_HalfBoxFilterWidth) - 1;
-	int R_pos = (int)floor(location - 0.5 + g_HalfBoxFilterWidth);
+	int L_pos = (int) ceil(location - 0.5f - g_HalfBoxFilterWidth) - 1;
+	int R_pos = (int)floor(location - 0.5f + g_HalfBoxFilterWidth);
 
 	float3 L_sum = gs_ScanData[clamp(L_pos, 0, (int)size - 1)] * g_FracHalfBoxFilterWidth;
 	float3 R_sum = gs_ScanData[clamp(R_pos, 0, (int)size - 1)] * g_InvFracHalfBoxFilterWidth;
@@ -228,7 +228,7 @@ inline float3 box_filtering(uint location, uint size)
 	// We treat the original data as a piecewise box function, thus the sum is a
 	// piecewise linear function. For arbitrary FP sampling location, we interpolate
 	// the value from adjacent data pairs.
-	float center = location - 0.5;
+	float center = location - 0.5f;
 	int L_a = clamp((int)ceil(center - g_HalfBoxFilterWidth), 0, (int)size - 1);
 	int L_b = clamp(L_a - 1, 0, (int)size - 1);
 	int R_a = clamp((int)floor(center + g_HalfBoxFilterWidth), 0, (int)size - 1);
@@ -244,9 +244,9 @@ inline uint color3_to_uint(float3 color)
 {
 	// Convert to R11G11B10
 	color = clamp(color, 0, 1);
-	uint int_r = (uint)(color.r * 2047.0f + 0.5);
-	uint int_g = (uint)(color.g * 2047.0f + 0.5);
-	uint int_b = (uint)(color.b * 1023.0f + 0.5);
+	uint int_r = (uint)(color.r * 2047.0f + 0.5f);
+	uint int_g = (uint)(color.g * 2047.0f + 0.5f);
+	uint int_b = (uint)(color.b * 1023.0f + 0.5f);
 
 	// Pack into UINT32
 	return (int_r << 21) | (int_g << 10) | int_b;

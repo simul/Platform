@@ -38,7 +38,7 @@ technique11 backg
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(AlphaBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,FontVertexShader()));
 		SetPixelShader(CompileShader(ps_4_0,FontBackgroundShader()));
@@ -53,7 +53,7 @@ technique11 text
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(AlphaBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,FontVertexShader()));
 		SetPixelShader(CompileShader(ps_4_0,FontPixelShader()));

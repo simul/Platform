@@ -238,7 +238,6 @@
     <None Include="..\CrossPlatform\SL\sky.sl" />
     <None Include="GLSL\clouds.glfx" />
     <None Include="GLSL\CppGlsl.hs" />
-    <None Include="GLSL\debug.glfx" />
     <None Include="GLSL\hdr.glfx" />
     <None Include="GLSL\saturate.glsl" />
     <None Include="GLSL\simple.frag" />
