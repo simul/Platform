@@ -178,6 +178,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="CompileShaderDX1x.cpp" />
     <ClCompile Include="CreateEffectDX1x.cpp" />
     <ClCompile Include="CSFFT\fft_512x512.cpp" />
@@ -190,6 +191,7 @@
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="LightningRenderer.cpp" />
     <ClCompile Include="Material.cpp" />
@@ -214,6 +216,7 @@
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Buffer.h" />
     <ClInclude Include="CompileShaderDX1x.h" />
     <ClInclude Include="CreateEffectDX1x.h" />
     <ClInclude Include="CSFFT\fft_512x512.h" />
@@ -229,6 +232,7 @@
     <ClInclude Include="FramebufferDX1x.h" />
     <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="GpuSkyGenerator.h" />
+    <ClInclude Include="Layout.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="LightningRenderer.h" />
     <ClInclude Include="MacrosDx1x.h" />

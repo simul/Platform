@@ -7,6 +7,7 @@
 #include "Simul/Platform/OpenGL/Light.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
+#include "Simul/Platform/OpenGL/Buffer.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #pragma warning(disable:4505)	// Fix GLUT warnings
@@ -269,12 +270,15 @@ void RenderPlatform::DrawLineLoop(void *,const double *mat,int lVerticeCount,con
 void RenderPlatform::DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,GLuint tex,float /*mult*/)
 {
 GL_ERROR_CHECK
+	glEnable(GL_TEXTURE_2D);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,tex);
 GL_ERROR_CHECK
 	//effect->Apply(deviceContext,effect->GetTechniqueByIndex(0),0);
 GL_ERROR_CHECK
 glDisable(GL_BLEND);
 glDisable(GL_CULL_FACE);
+//effect->SetTexture("image_texture",tex);
 	DrawQuad(deviceContext,x1,y1,dx,dy,effect,effect->GetTechniqueByIndex(0));
 GL_ERROR_CHECK
 	//effect->Unapply(deviceContext);
@@ -299,17 +303,23 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 	};
 	if(!effect||!technique)
 		return;
+	GL_ERROR_CHECK
 	Viewport viewport;
 	glGetIntegerv(GL_VIEWPORT,(int*)(&viewport));
+	GL_ERROR_CHECK
 	effect->Apply(deviceContext,technique,0);
+	GL_ERROR_CHECK
 	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 		,2.f*(float)dx/(float)viewport.Width
 		,2.f*(float)dy/(float)viewport.Height);
-
+	GL_ERROR_CHECK
 	effect->SetParameter("rect",r);
+	GL_ERROR_CHECK
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	GL_ERROR_CHECK
 	effect->Unapply(deviceContext);
+	GL_ERROR_CHECK
 }
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
@@ -427,6 +437,11 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer()
 {
 	return new opengl::PlatformConstantBuffer();
+}
+
+crossplatform::Buffer *RenderPlatform::CreateBuffer()
+{
+	return new opengl::Buffer();
 }
 
 void *RenderPlatform::GetDevice()

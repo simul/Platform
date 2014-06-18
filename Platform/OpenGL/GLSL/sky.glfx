@@ -11,6 +11,7 @@ uniform sampler2D flareTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D illuminationTexture;
 uniform vec4 rect;
+
 shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
 {
 	vec2 poss[4];
@@ -145,7 +146,7 @@ shader PS_OvercastInscatter(in vec2 texCoords,out vec4 FragColor)
 
 shader PS_ShowIlluminationBuffer(in vec2 texCoords,out vec4 FragColor)
 {
-	FragColor=ShowIlluminationBuffer(inscTexture,texCoords);
+	FragColor=ShowIlluminationBuffer(illuminationTexture,texCoords);
 }
 
 program fade_3d_to_2d

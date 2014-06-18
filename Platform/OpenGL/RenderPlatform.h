@@ -57,7 +57,8 @@ namespace simul
 			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8);
 			crossplatform::Effect					*CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer();
-			void			*GetDevice();
+			crossplatform::Buffer					*CreateBuffer();
+			void									*GetDevice();
 			
 			GLuint solid_program;
 			simul::opengl::ConstantBuffer<SolidConstants> solidConstants;

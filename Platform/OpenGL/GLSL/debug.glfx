@@ -13,6 +13,7 @@ shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
 	vec2 pos	=poss[gl_VertexID];
 	gl_Position	=vec4(rect.xy+rect.zw*pos.xy,1.0,1.0);
     texCoords	=pos.xy;
+	texCoords.y	=1.0-texCoords.y;
 }
 
 shader PS_ShowTexture(in vec2 texCoords, out vec4 FragColor)

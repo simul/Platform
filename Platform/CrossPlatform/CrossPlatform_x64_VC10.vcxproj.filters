@@ -28,6 +28,9 @@
     <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="MixedResolutionView.h" />
+    <ClInclude Include="layout.h" />
+    <ClInclude Include="macros.h" />
+    <ClInclude Include="buffer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -159,5 +162,7 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="MixedResolutionView.cpp" />
+    <ClCompile Include="Layout.cpp" />
+    <ClCompile Include="Buffer.cpp" />
   </ItemGroup>
 </Project>

@@ -2,7 +2,7 @@
 #include "Texture.h"
 #include "LoadGLImage.h"
 #include "SimulGLUtilities.h"
-
+#include "FramebufferGL.h"
 #include <string>
 
 using namespace simul;
@@ -16,7 +16,7 @@ using namespace opengl;
 
 opengl::Texture::Texture()
 	:pTextureObject(0)
-
+	,m_fb(0)
 {
 }
 
@@ -29,11 +29,13 @@ void Texture::InvalidateDeviceObjects()
 {
 	GL_ERROR_CHECK
 	SAFE_DELETE_TEXTURE(pTextureObject);
+	SAFE_DELETE_FRAMEBUFFER(m_fb);
 	GL_ERROR_CHECK
 }
 // Load a texture file
 void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *,const char *pFilePathUtf8)
 {
+	dim=2;
 	std::string filename(pFilePathUtf8);
 	int dot_pos			=(int)filename.find_last_of(".");
 	std::string extension;
@@ -57,20 +59,58 @@ void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform 
 	dim=2;
 	glGenTextures(1,&pTextureObject);
 	glBindTexture(GL_TEXTURE_2D,pTextureObject);
-	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w,l,0,GL_RGBA,GL_FLOAT,NULL);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w,l,0,GL_RGBA,GL_UNSIGNED_INT,NULL);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+
+	if(rendertarget)
+	{
+		SAFE_DELETE_FRAMEBUFFER(m_fb);
+		glGenFramebuffers(1, &m_fb);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pTextureObject, 0);
+		
+		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		if(status!=GL_FRAMEBUFFER_COMPLETE)
+		{
+			FramebufferGL::CheckFramebufferStatus();
+			throw base::RuntimeError("Framebuffer incomplete for rendertarget texture");
+		}
+	}
 	glBindTexture(GL_TEXTURE_2D,0);
 }
-
 void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &deviceContext)
 {
+	if(!m_fb)
+		return;
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
+	GL_ERROR_CHECK
+	FramebufferGL::CheckFramebufferStatus();
+	glGetIntegerv(GL_VIEWPORT,main_viewport);
+	GL_ERROR_CHECK
+	glViewport(0,0,width,length);
+	GL_ERROR_CHECK
+	FramebufferGL::fb_stack.push(m_fb);
 }
 
 void Texture::deactivateRenderTarget()
 {
+	//glFlush(); 
+	GL_ERROR_CHECK
+	FramebufferGL::CheckFramebufferStatus();
+	GL_ERROR_CHECK
+	// remove m_fb from the stack and...
+	FramebufferGL::fb_stack.pop();
+	// ..restore the n one down.
+	GLuint last_fb=FramebufferGL::fb_stack.top();
+	GL_ERROR_CHECK
+    glBindFramebuffer(GL_FRAMEBUFFER,last_fb);
+	GL_ERROR_CHECK
+	glViewport(0,0,main_viewport[2],main_viewport[3]);
+	GL_ERROR_CHECK
 }
 
 int Texture::GetLength() const
@@ -107,6 +147,9 @@ void simul::opengl::Texture::setTexels(void *,const void *src,int x,int y,int z,
 void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,int frmt,bool /*computable*/,int mips)
 {
 	dim=3;
+	width=w;
+	length=l;
+	depth=d;
 	if(pTextureObject)
 	{
 		int W,L,D;

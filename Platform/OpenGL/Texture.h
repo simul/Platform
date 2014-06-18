@@ -11,6 +11,8 @@ namespace simul
 	{
 		class SIMUL_OPENGL_EXPORT Texture:public simul::crossplatform::Texture
 		{
+			GLuint m_fb;
+			int main_viewport[4];
 		public:
 			Texture();
 			~Texture();

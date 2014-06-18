@@ -57,10 +57,8 @@ namespace simul
 			//! \deprecated This function is no longer used, as the sky is drawn by the atmospherics renderer. See simul::sky::BaseAtmosphericsRenderer.
 			bool Render(void *context,bool blend);
 			bool RenderPointStars(crossplatform::DeviceContext &deviceContext,float exposure);
-			void RenderSun(crossplatform::DeviceContext &deviceContext,float exposure);
 			//! Draw the fade textures to screen
 			bool RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
-			virtual void RenderPlanet(crossplatform::DeviceContext &deviceContext,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 			//! Call this to draw the sun flare, usually drawn last, on the main render target.
 			bool RenderFlare(float exposure);
 			bool Render2DFades(crossplatform::DeviceContext &deviceContext);
@@ -99,12 +97,8 @@ namespace simul
 			void EnsureTexturesAreUpToDate(void *c);
 			void EnsureTextureCycle();
 	
-			void BuildStarsBuffer();
-	
 			ID3D11Device*							m_pd3dDevice;
-			ID3D1xBuffer*							m_pVertexBuffer;
-			ID3D1xInputLayout*						m_pStarsVtxDecl;
-			ID3D1xBuffer*							m_pStarsVertexBuffer;
+			ID3D11InputLayout*						m_pStarsVtxDecl;
 			Query									sunQuery;
 
 			ID3DX11EffectShaderResourceVariable*	flareTexture;
@@ -113,24 +107,9 @@ namespace simul
 			ID3DX11EffectShaderResourceVariable*	fadeTexture1;
 			ID3DX11EffectShaderResourceVariable*	fadeTexture2;
 			ID3DX11EffectShaderResourceVariable*	illuminationTexture;
-	
-			ConstantBuffer<EarthShadowUniforms>		earthShadowUniforms;
-
-			dx11::Texture						light_table;
-
-			// Small framebuffers we render to once per frame to perform fade interpolation.
-			simul::dx11::Framebuffer*			loss_2d;
-			simul::dx11::Framebuffer*			inscatter_2d;
-			simul::dx11::Framebuffer*			overcast_2d;
-			simul::dx11::Framebuffer*			skylight_2d;
-			dx11::Texture						light_table_2d;
 
 			// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
-			simul::dx11::Framebuffer			illumination_fb;
-			ID3D11ShaderResourceView*			flare_texture_SRV;
-			ID3D11ShaderResourceView*			moon_texture_SRV;
 
-			simul::math::Matrix4x4				world,view,proj;
 			simul::dx11::GpuSkyGenerator		gpuSkyGenerator;
 		};
 	}

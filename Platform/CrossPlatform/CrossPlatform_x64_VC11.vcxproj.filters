@@ -40,6 +40,9 @@
     <ClInclude Include="MixedResolutionView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Buffer.h" />
+    <ClInclude Include="Layout.h" />
+    <ClInclude Include="Macros.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -181,5 +184,7 @@
     <ClCompile Include="MixedResolutionView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="Layout.cpp" />
   </ItemGroup>
 </Project>

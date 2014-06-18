@@ -176,11 +176,14 @@
   <ItemGroup>
     <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
     <ClInclude Include="BaseFramebuffer.h" />
+    <ClInclude Include="buffer.h" />
     <ClInclude Include="CommandLineParams.h" />
     <ClInclude Include="DeviceContext.h" />
     <ClInclude Include="effect.h" />
     <ClInclude Include="Export.h" />
+    <ClInclude Include="layout.h" />
     <ClInclude Include="Light.h" />
+    <ClInclude Include="macros.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MixedResolutionView.h" />
@@ -227,7 +230,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BaseFramebuffer.cpp" />
+    <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />

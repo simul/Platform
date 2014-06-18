@@ -62,9 +62,6 @@ namespace simul
 			virtual		const float *GetFastLossLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord);
 			virtual		const float *GetFastInscatterLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord);
 
-			void		RenderPlanet(crossplatform::DeviceContext &deviceContext,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-			void		RenderSun(crossplatform::DeviceContext &deviceContext,float exposure);
-
 			void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o);
 
 			const		char *GetDebugText();
@@ -89,63 +86,21 @@ namespace simul
 
 			simul::opengl::Texture	light_table;
 
-			bool			CreateSkyEffect();
-			bool			RenderSkyToBuffer();
+			bool					CreateSkyEffect();
+			bool					RenderSkyToBuffer();
 
-			unsigned		cloud_texel_index;
-			unsigned char	*sky_tex_data;
+			unsigned				cloud_texel_index;
+			unsigned char			*sky_tex_data;
 	
-			// Whichever of those two we are currently using:
-			GLuint			current_program;
+			GLuint					planet_program;
+
+			GLuint					fade_3d_to_2d_program;
+			GLint					planetTexture_param;
+			GLint					planetLightDir_param;
+			GLint					planetColour_param;
 	
-			GLuint			planet_program;
-			GLuint			stars_program;
-
-			GLuint			fade_3d_to_2d_program;
-			GLint			planetTexture_param;
-			GLint			planetLightDir_param;
-			GLint			planetColour_param;
-
-			GLint			altitudeTexCoord_param;
-			GLint			MieRayleighRatio_param;
-			GLint			hazeEccentricity_param;
-			GLint			lightDirection_sky_param;
-
-			simul::opengl::ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
-	
-			GLint			skyInterp_param;
-	
-			GLint			starBrightness_param;
-
-			GLint			skyTexture1_param;
-			GLint			skyTexture2_param;
-
-			GLint			skylightTexture_param;
-	
-			GLint			cloudOrigin;
-			GLint			cloudScale;
-			GLint			maxDistance;
-			GLint			viewPosition;
-			GLint			overcast_param;
-
-			GLint			altitudeTexCoord_fade;
-			GLint			skyInterp_fade;
-			GLint			fadeTexture1_fade;
-			GLint			fadeTexture2_fade;
-	
-			FramebufferGL	loss_2d;
-			FramebufferGL	inscatter_2d;
-			FramebufferGL	skylight_2d;
-			FramebufferGL	overcast_2d;
-
-			FramebufferGL	illumination_fb;
-
-			opengl::Texture	loss_texture;
-			opengl::Texture	insc_texture;
-			opengl::Texture	skyl_texture;
-
-			bool			campos_updated;
-			short			*short_ptr;
+			GLint					fadeTexture1_fade;
+			GLint					fadeTexture2_fade;
 		};
 	}
 }

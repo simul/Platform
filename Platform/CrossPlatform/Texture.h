@@ -15,6 +15,7 @@ namespace simul
 			Texture()
 				:width(0)
 				,length(0)
+				,depth(0)
 				,dim(0){}
 			virtual ~Texture();
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;

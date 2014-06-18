@@ -7,6 +7,7 @@
 #include "Simul/Platform/DirectX11/Effect.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/TextRenderer.h"
+#include "Simul/Platform/DirectX11/Buffer.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Camera/Camera.h"
@@ -363,7 +364,12 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 
 crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer()
 {
-	dx11::PlatformConstantBuffer *b=new dx11::PlatformConstantBuffer();
+	crossplatform::PlatformConstantBuffer *b=new dx11::PlatformConstantBuffer();
+	return b;
+}
+crossplatform::Buffer *RenderPlatform::CreateBuffer()
+{
+	crossplatform::Buffer *b=new dx11::Buffer();
 	return b;
 }
 

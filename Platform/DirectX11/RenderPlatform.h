@@ -76,6 +76,7 @@ namespace simul
 			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8);
 			crossplatform::Effect					*CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer();
+			crossplatform::Buffer					*CreateBuffer();
 			void									*GetDevice();
 			
 			ID3DX11Effect *effect;

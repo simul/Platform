@@ -151,22 +151,46 @@ void Effect::SetTexture(const char *name,crossplatform::Texture *tex)
 {
 	current_texture_number++;
     glActiveTexture(GL_TEXTURE0+current_texture_number);
+	// Fall out silently if this texture is not set.
+	if(!tex)
+		return;
+	if(!tex->AsGLuint())
+		return;
 	if(tex->GetDimension()==2)
 		glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
 	else if(tex->GetDimension()==3)
 		glBindTexture(GL_TEXTURE_3D,tex->AsGLuint());
 	else
 		throw simul::base::RuntimeError("Unknown texture dimension!");
+    glActiveTexture(GL_TEXTURE0+current_texture_number);
 GL_ERROR_CHECK
-	if(!currentTechnique)
-		return;
-	GLuint program	=currentTechnique->asGLuint();
-	GLint loc		=glGetUniformLocation(program,name);
+	if(currentTechnique)
+	{
+		GLuint program	=currentTechnique->asGLuint();
+		GLint loc		=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
-	if(loc<0)
-		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
-	else
+	CHECK_PARAM_EXISTS
 		glUniform1i(loc,current_texture_number);
+	}
+	else
+	{
+GL_ERROR_CHECK
+		for(TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
+		{
+GL_ERROR_CHECK
+			GLuint program	=i->second->asGLuint();
+GL_ERROR_CHECK
+			GLint loc		=glGetUniformLocation(program,name);
+GL_ERROR_CHECK
+			if(loc>=0)
+			{
+				glUseProgram(program);
+				glUniform1i(loc,current_texture_number);
+				glUseProgram(0);
+			}
+GL_ERROR_CHECK
+		}
+	}
 GL_ERROR_CHECK
 }
 

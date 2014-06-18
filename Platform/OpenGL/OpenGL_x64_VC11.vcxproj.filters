@@ -98,6 +98,12 @@
     <ClCompile Include="Effect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Layout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h">
@@ -188,6 +194,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Effect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Layout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -366,41 +378,8 @@
     <None Include="GLSL\tonemap.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="..\CrossPlatform\depth.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
     <None Include="GLSL\CloudConstants.glsl">
       <Filter>Shaders</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_gpu_clouds.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_gpu_sky.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_inscatter_fns.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_2d_clouds.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_terrain_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_cloud_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_clouds.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs">
-      <Filter>CrossPlatform</Filter>
     </None>
     <None Include="GLSL\overcast_inscatter.frag">
       <Filter>Shaders</Filter>

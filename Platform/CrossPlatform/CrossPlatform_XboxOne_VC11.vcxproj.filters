@@ -19,6 +19,7 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MixedResolutionView.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Buffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseFramebuffer.h" />
@@ -34,5 +35,7 @@
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="ShaderMode.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="Buffer.h" />
+    <ClInclude Include="Macros.h" />
   </ItemGroup>
 </Project>

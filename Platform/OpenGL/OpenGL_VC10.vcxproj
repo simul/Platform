@@ -160,10 +160,12 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="FramebufferGL.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="LoadGLImage.cpp" />
     <ClCompile Include="LoadGLProgram.cpp" />
@@ -188,11 +190,13 @@
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Buffer.h" />
     <ClInclude Include="effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="FramebufferGL.h" />
     <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="GpuSkyGenerator.h" />
+    <ClInclude Include="Layout.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="LoadGLImage.h" />
     <ClInclude Include="LoadGLProgram.h" />

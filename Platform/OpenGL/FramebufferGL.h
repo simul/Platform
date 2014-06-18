@@ -92,9 +92,9 @@ namespace simul
 			{
 				return &buffer_depth_texture;
 			}
-		private:
+			static void CheckFramebufferStatus();
 			static std::stack<GLuint> fb_stack;
-			void CheckFramebufferStatus();
+		private:
 			// Bind the internal textures
 			void BindColor()
 			{

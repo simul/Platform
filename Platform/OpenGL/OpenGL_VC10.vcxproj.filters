@@ -95,6 +95,12 @@
     <ClCompile Include="Effect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Layout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h">
@@ -179,6 +185,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="effect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Layout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -400,18 +412,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="GLSL\simul_cloud_overlay.frag" />
-    <None Include="..\CrossPlatform\CppSl.hs" />
-    <None Include="..\CrossPlatform\depth.sl" />
-    <None Include="..\CrossPlatform\earth_shadow.sl" />
-    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
-    <None Include="..\CrossPlatform\simul_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
-    <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
-    <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
     <None Include="GLSL\simul_cloud_overlay.frag" />
     <None Include="..\CrossPlatform\CppSl.hs" />
     <None Include="..\CrossPlatform\depth.sl" />
@@ -516,6 +516,7 @@
     <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
     <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
     <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
+    <None Include="GLSL\simul_cloud_overlay.frag" />
     <None Include="GLSL\simul_cloud_overlay.frag" />
   </ItemGroup>
   <ItemGroup>
