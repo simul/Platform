@@ -26,8 +26,8 @@ struct vertexOutput
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition	= mul(worldViewProj, float4(IN.position.xyz,1.f));
-    OUT.wPosition	=float4(IN.position.xyz,1.f);
+    OUT.hPosition	= mul(worldViewProj, float4(IN.position.xyz,1.0));
+    OUT.wPosition	=float4(IN.position.xyz,1.0);
 	OUT.texcoord	=vec2(IN.position.xy/2000.0);
     OUT.normal.xyz	=IN.normal;
     OUT.normal.a	=0.5;
@@ -54,7 +54,7 @@ technique11 simul_terrain
     {
 		SetRasterizerState(RenderFrontfaceCull);
 		SetDepthStencilState(EnableDepth,0);
-		SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
+		SetBlendState(DontBlend,float4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Main()));

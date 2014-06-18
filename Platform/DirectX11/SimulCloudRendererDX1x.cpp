@@ -383,7 +383,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(crossplatform::DeviceContext &
 	ID3DX11EffectTechnique *noise3DComputeTechnique	=effect->GetTechniqueByName("noise_3d_compute");
 
 	dx11::Texture random_3d;
-	random_3d.ensureTexture3DSizeAndFormat(m_pd3dDevice
+	random_3d.ensureTexture3DSizeAndFormat(renderPlatform
 		,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency
 		,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",random_3d.unorderedAccessView);
@@ -396,7 +396,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(crossplatform::DeviceContext &
 		noise_texture_size/=2;
 		realtime_3d_octaves++;
 	}
-	noise_texture_3D.ensureTexture3DSizeAndFormat(m_pd3dDevice
+	noise_texture_3D.ensureTexture3DSizeAndFormat(renderPlatform
 		,noise_texture_size,noise_texture_size,noise_texture_size
 		,DXGI_FORMAT_R8G8B8A8_SNORM,true);
 
@@ -936,7 +936,7 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	static DXGI_FORMAT cloud_tex_format=DXGI_FORMAT_R8G8B8A8_UNORM;
 	for(int i=0;i<3;i++)
 	{
-		cloud_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,width_x,length_y,depth_z,cloud_tex_format,uav);
+		cloud_textures[i].ensureTexture3DSizeAndFormat(renderPlatform,width_x,length_y,depth_z,cloud_tex_format,uav);
 	}
 	shadow_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize(),cloudKeyframer->GetGodraysSteps());
 	godrays_texture.ensureTexture2DSizeAndFormat(renderPlatform,cloudKeyframer->GetShadowTextureSize()*2,cloudKeyframer->GetGodraysSteps(),DXGI_FORMAT_R32_FLOAT,true,false);
@@ -950,7 +950,7 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
 	
-	//cloud_texture.ensureTexture3DSizeAndFormat(m_pd3dDevice,width_x,length_y,depth_z,cloud_tex_format,true);
+	//cloud_texture.ensureTexture3DSizeAndFormat(renderPlatform,width_x,length_y,depth_z,cloud_tex_format,true);
 }
 
 void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext)

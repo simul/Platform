@@ -25,6 +25,12 @@ namespace simul
 					return NULL;
 				return shaderResourceView;
 			}
+			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
+			{
+				if(!this)
+					return NULL;
+				return unorderedAccessView;
+			}
 			GLuint AsGLuint()
 			{
 				return 0;
@@ -41,10 +47,10 @@ namespace simul
 
 			D3D11_MAPPED_SUBRESOURCE	mapped;
 			DXGI_FORMAT format;
-			void copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *context,void *target,int start_texel=0,int texels=0);
+			void copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
 			void setTexels(ID3D11DeviceContext *context,const void *src,int texel_index,int num_texels);
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
-			void ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable,int mips=1);
+			void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,int f,bool computable,int mips=1);
 			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,unsigned f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0);
 			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT f,bool computable=false);
 			void map(ID3D11DeviceContext *context);

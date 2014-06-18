@@ -116,9 +116,6 @@ namespace simul
 	
 			ConstantBuffer<EarthShadowUniforms>		earthShadowUniforms;
 
-			dx11::Texture						loss_textures[3];
-			dx11::Texture						insc_textures[3];
-			dx11::Texture						skyl_textures[3];
 			dx11::Texture						light_table;
 
 			// Small framebuffers we render to once per frame to perform fade interpolation.
@@ -133,8 +130,6 @@ namespace simul
 			ID3D11ShaderResourceView*			flare_texture_SRV;
 			ID3D11ShaderResourceView*			moon_texture_SRV;
 
-			void MapFade(ID3D11DeviceContext *context,int s);
-			void UnmapFade(int i);
 			simul::math::Matrix4x4				world,view,proj;
 			simul::dx11::GpuSkyGenerator		gpuSkyGenerator;
 		};

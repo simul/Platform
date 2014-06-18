@@ -24,7 +24,7 @@ namespace simul
 				,const simul::sky::GpuSkyInfraredParameters &gpuSkyInfraredParameters);
 			virtual void CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl);
 			// If we want the generator to put the data directly into 3d textures:
-			void SetDirectTargets(Texture **loss,Texture **insc,Texture **skyl,Texture *light_table)
+			void SetDirectTargets(crossplatform::Texture **loss,crossplatform::Texture **insc,crossplatform::Texture **skyl,crossplatform::Texture *light_table)
 			{
 				for(int i=0;i<3;i++)
 				{
@@ -51,10 +51,10 @@ namespace simul
 			GLuint				skyl_program;
 			GLuint				copy_program;
 			simul::opengl::ConstantBuffer<GpuSkyConstants> gpuSkyConstants;
-			Texture		*finalLoss[3];
-			Texture		*finalInsc[3];
-			Texture		*finalSkyl[3];
-			Texture		*light_table;
+			crossplatform::Texture		*finalLoss[3];
+			crossplatform::Texture		*finalInsc[3];
+			crossplatform::Texture		*finalSkyl[3];
+			crossplatform::Texture		*light_table;
 			Texture		dens_tex,optd_tex;
 			simul::sky::float4	*loss_cache;
 			simul::sky::float4	*insc_cache;

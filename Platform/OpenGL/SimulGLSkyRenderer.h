@@ -31,124 +31,121 @@ namespace simul
 		SIMUL_OPENGL_EXPORT_CLASS SimulGLSkyRenderer : public simul::sky::BaseSkyRenderer
 		{
 		public:
-	SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *m);
-	virtual ~SimulGLSkyRenderer();
-	//standard ogl object interface functions
+			SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *m);
+			virtual ~SimulGLSkyRenderer();
+			//standard ogl object interface functions
 
-	//! Create the API-specific objects to be used in rendering. This is usually called from the SimulGLWeatherRenderer that
-	//! owns this object.
-	void						RestoreDeviceObjects(simul::crossplatform::RenderPlatform *);
-	//! Destroy the API-specific objects used in rendering.
-	void						InvalidateDeviceObjects();
-	void						ReloadTextures();
-	void						RecompileShaders();
-	//! GL Implementation of render function.
-	bool						Render(void *,bool blend);
-	//! Render the stars, as points.
-	bool						RenderPointStars(crossplatform::DeviceContext &deviceContext,float exposure);
-	//! Draw the 2D fades to screen for debugging.
-	bool						RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
+			//! Create the API-specific objects to be used in rendering. This is usually called from the SimulGLWeatherRenderer that
+			//! owns this object.
+			void						RestoreDeviceObjects(simul::crossplatform::RenderPlatform *);
+			//! Destroy the API-specific objects used in rendering.
+			void						InvalidateDeviceObjects();
+			void						ReloadTextures();
+			void						RecompileShaders();
+			//! GL Implementation of render function.
+			bool						Render(void *,bool blend);
+			//! Render the stars, as points.
+			bool						RenderPointStars(crossplatform::DeviceContext &deviceContext,float exposure);
+			//! Draw the 2D fades to screen for debugging.
+			bool						RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
 
-	// Implementing simul::sky::SkyTexturesCallback
-	virtual void SetSkyTextureSize(unsigned ){}
-	virtual void SetFadeTextureSize(unsigned ,unsigned ,unsigned ){}
-	virtual void FillFadeTexturesSequentially(int ,int ,const float *,const float *)
-	{
-		std::cerr<<"exit(1)"<<std::endl;
-		exit(1);
-	}
-	virtual		void CycleTexturesForward(){}
-	virtual		bool HasFastFadeLookup() const{return true;}
-	virtual		const float *GetFastLossLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord);
-	virtual		const float *GetFastInscatterLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord);
+			// Implementing simul::sky::SkyTexturesCallback
+			virtual void SetSkyTextureSize(unsigned ){}
+			virtual void SetFadeTextureSize(unsigned ,unsigned ,unsigned ){}
+			virtual void FillFadeTexturesSequentially(int ,int ,const float *,const float *)
+			{
+				std::cerr<<"exit(1)"<<std::endl;
+				exit(1);
+			}
+			virtual		void CycleTexturesForward(){}
+			virtual		bool HasFastFadeLookup() const{return true;}
+			virtual		const float *GetFastLossLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord);
+			virtual		const float *GetFastInscatterLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord);
 
-	void		RenderPlanet(crossplatform::DeviceContext &deviceContext,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void		RenderSun(crossplatform::DeviceContext &deviceContext,float exposure);
+			void		RenderPlanet(crossplatform::DeviceContext &deviceContext,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+			void		RenderSun(crossplatform::DeviceContext &deviceContext,float exposure);
 
-	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o);
+			void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o);
 
-	const		char *GetDebugText();
-	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
-		protected:
-	void		RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext);
-	simul::opengl::GpuSkyGenerator	gpuSkyGenerator;
-	//! \internal Switch the current program, either sky_program or earthshadow_program.
-	//! Also sets the parameter variables.	
-	void		UseProgram(GLuint);
-	void		SetFadeTexSize(int width_num_distances,int height_num_elevations,int num_altitudes);
-	void		FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d
-				,const float *loss_float4_array,const float *inscatter_float4_array,const float *skylight_float4_array);
+			const		char *GetDebugText();
+			simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
+				protected:
+			void		RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext);
+			simul::opengl::GpuSkyGenerator	gpuSkyGenerator;
+			//! \internal Switch the current program, either sky_program or earthshadow_program.
+			//! Also sets the parameter variables.	
+			void		UseProgram(GLuint);
+			void		SetFadeTexSize(int width_num_distances,int height_num_elevations,int num_altitudes);
+			void		FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d
+						,const float *loss_float4_array,const float *inscatter_float4_array,const float *skylight_float4_array);
 
-	void		EnsureTexturesAreUpToDate(void *);
-	void		EnsureTextureCycle();
+			void		EnsureTexturesAreUpToDate(void *);
+			void		EnsureTextureCycle();
 
-	bool		initialized;
-	bool		Render2DFades(simul::crossplatform::DeviceContext &deviceContext);
-	void		CreateFadeTextures();
-	void		CreateSkyTextures();
+			bool		initialized;
+			bool		Render2DFades(simul::crossplatform::DeviceContext &deviceContext);
+			void		CreateFadeTextures();
+			void		CreateSkyTextures();
 
-	simul::opengl::Texture	loss_textures[3];
-	simul::opengl::Texture	insc_textures[3];
-	simul::opengl::Texture	skyl_textures[3];
-	simul::opengl::Texture	light_table;
+			simul::opengl::Texture	light_table;
 
-	bool			CreateSkyEffect();
-	bool			RenderSkyToBuffer();
+			bool			CreateSkyEffect();
+			bool			RenderSkyToBuffer();
 
-	unsigned		cloud_texel_index;
-	unsigned char	*sky_tex_data;
+			unsigned		cloud_texel_index;
+			unsigned char	*sky_tex_data;
 	
-	// Whichever of those two we are currently using:
-	GLuint			current_program;
+			// Whichever of those two we are currently using:
+			GLuint			current_program;
 	
-	GLuint			planet_program;
-	GLuint			stars_program;
+			GLuint			planet_program;
+			GLuint			stars_program;
 
-	GLuint			fade_3d_to_2d_program;
-	GLint			planetTexture_param;
-	GLint			planetLightDir_param;
-	GLint			planetColour_param;
+			GLuint			fade_3d_to_2d_program;
+			GLint			planetTexture_param;
+			GLint			planetLightDir_param;
+			GLint			planetColour_param;
 
-	GLint			altitudeTexCoord_param;
-	GLint			MieRayleighRatio_param;
-	GLint			hazeEccentricity_param;
-	GLint			lightDirection_sky_param;
+			GLint			altitudeTexCoord_param;
+			GLint			MieRayleighRatio_param;
+			GLint			hazeEccentricity_param;
+			GLint			lightDirection_sky_param;
 
-	simul::opengl::ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
+			simul::opengl::ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
 	
-	GLint			skyInterp_param;
+			GLint			skyInterp_param;
 	
-	GLint			starBrightness_param;
+			GLint			starBrightness_param;
 
-	GLint			skyTexture1_param;
-	GLint			skyTexture2_param;
+			GLint			skyTexture1_param;
+			GLint			skyTexture2_param;
 
-	GLint			skylightTexture_param;
+			GLint			skylightTexture_param;
 	
-	GLint			cloudOrigin;
-	GLint			cloudScale;
-	GLint			maxDistance;
-	GLint			viewPosition;
-	GLint			overcast_param;
+			GLint			cloudOrigin;
+			GLint			cloudScale;
+			GLint			maxDistance;
+			GLint			viewPosition;
+			GLint			overcast_param;
 
-	GLint			altitudeTexCoord_fade;
-	GLint			skyInterp_fade;
-	GLint			fadeTexture1_fade;
-	GLint			fadeTexture2_fade;
+			GLint			altitudeTexCoord_fade;
+			GLint			skyInterp_fade;
+			GLint			fadeTexture1_fade;
+			GLint			fadeTexture2_fade;
 	
-	FramebufferGL	loss_2d;
-	FramebufferGL	inscatter_2d;
-	FramebufferGL	skylight_2d;
-	FramebufferGL	overcast_2d;
+			FramebufferGL	loss_2d;
+			FramebufferGL	inscatter_2d;
+			FramebufferGL	skylight_2d;
+			FramebufferGL	overcast_2d;
 
-	FramebufferGL	illumination_fb;
+			FramebufferGL	illumination_fb;
 
-	opengl::Texture	loss_texture;
-	opengl::Texture	insc_texture;
-	opengl::Texture	skyl_texture;
+			opengl::Texture	loss_texture;
+			opengl::Texture	insc_texture;
+			opengl::Texture	skyl_texture;
 
-	bool			campos_updated;
-	short			*short_ptr;
+			bool			campos_updated;
+			short			*short_ptr;
 		};
 	}
 }
