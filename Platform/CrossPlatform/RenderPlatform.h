@@ -64,7 +64,7 @@ namespace simul
 			virtual Material				*CreateMaterial					()	=0;
 			virtual Mesh					*CreateMesh						()	=0;
 			virtual Light					*CreateLight					()	=0;
-			virtual Texture					*CreateTexture					(const char *lFileNameUtf8)	=0;
+			virtual Texture					*CreateTexture					(const char *lFileNameUtf8=NULL)	=0;
 			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
 			virtual void					*GetDevice						()	=0;
