@@ -142,7 +142,8 @@ void SimulAtmosphericsRendererDX1x::RenderInscatter(crossplatform::DeviceContext
 	effect->SetTexture("skylTexture",NULL);
 	atmosphericsPerViewConstants.Unbind(deviceContext);
 	atmosphericsUniforms.Unbind(deviceContext);
-	ApplyPass(pContext,tech->asD3DX11EffectTechnique()->GetPassByIndex(0));
+	//ApplyPass(pContext,tech->asD3DX11EffectTechnique()->GetPassByIndex(0));
+	effect->Unapply(deviceContext);
 }
 
 void SimulAtmosphericsRendererDX1x::RenderAsOverlay(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *hiResDepthTexture,float exposure

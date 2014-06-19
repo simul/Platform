@@ -70,7 +70,7 @@ program loss.near
     fs(430) = PS_Loss();
 };
 
-program loss.near
+program loss.far
 {
     vs(430) = VS_FullScreen();
     fs(430) = PS_Loss();

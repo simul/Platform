@@ -134,7 +134,7 @@ void Effect::FillInTechniques()
 		else
 		{
 			tech					=new opengl::EffectTechnique; 
-			techniques[name]		=tech;
+			techniques[techname]	=tech;
 			int index				=(int)techniques_by_index.size();
 			techniques_by_index[index]=tech;
 		}
@@ -230,17 +230,20 @@ GL_ERROR_CHECK
 		for(TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
 		{
 GL_ERROR_CHECK
-			GLuint program	=i->second->passAsGLuint(currentPass);
-GL_ERROR_CHECK
-			GLint loc		=glGetUniformLocation(program,name);
-GL_ERROR_CHECK
-			if(loc>=0)
+			for(int j=0;j<i->second->NumPasses();j++)
 			{
-				glUseProgram(program);
-				glUniform1i(loc,current_texture_number);
-				glUseProgram(0);
-			}
+				GLuint program	=i->second->passAsGLuint(j);
+	GL_ERROR_CHECK
+				GLint loc		=glGetUniformLocation(program,name);
+	GL_ERROR_CHECK
+				if(loc>=0)
+				{
+					glUseProgram(program);
+					glUniform1i(loc,current_texture_number);
+					glUseProgram(0);
+				}
 GL_ERROR_CHECK
+			}
 		}
 	}
 GL_ERROR_CHECK
