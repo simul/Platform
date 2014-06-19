@@ -103,11 +103,18 @@ SIMUL_CONSTANT_BUFFER_END
 #ifdef __cplusplus
 //! A struct containing a pointer or id for the cloud shadow texture, along with 
 //! information on how to project it.
+namespace simul
+{
+	namespace crossplatform
+	{
+		class Texture;
+	}
+}
 uniform_buffer CloudShadowStruct 
 {
-	void *texture;						// texture, or SRV for DX11
-	void *godraysTexture;				// texture, or SRV for DX11, represents accumulated illumination at a given angle and distance.
-	void *moistureTexture;				// Texture, or SRV for DX11, represents optical thickness of moisture at a given horizontal angle and distance.
+	simul::crossplatform::Texture *texture;					// texture, or SRV for DX11
+	simul::crossplatform::Texture *godraysTexture;				// texture, or SRV for DX11, represents accumulated illumination at a given angle and distance.
+	simul::crossplatform::Texture *moistureTexture;			// Texture, or SRV for DX11, represents optical thickness of moisture at a given horizontal angle and distance.
 	mat4 shadowMatrix;					// Transform a position from shadow space to world space
 	mat4 worldToMoistureSpaceMatrix;	// Transform a position from world space to moisture space.
 	mat4 simpleOffsetMatrix;

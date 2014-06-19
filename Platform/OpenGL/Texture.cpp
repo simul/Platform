@@ -3,6 +3,7 @@
 #include "LoadGLImage.h"
 #include "SimulGLUtilities.h"
 #include "FramebufferGL.h"
+#include "RenderPlatform.h"
 #include <string>
 
 using namespace simul;
@@ -52,14 +53,15 @@ bool opengl::Texture::IsValid() const
 }
 
 void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *renderPlatform,int w,int l
-	,unsigned f,bool computable,bool rendertarget,int num_samples,int aa_quality)
+	,crossplatform::PixelFormat pixelFormat,bool computable,bool rendertarget,int num_samples,int aa_quality)
 {
+	GLuint frmt=opengl::RenderPlatform::ToGLFormat(pixelFormat);
 	width=w;
 	length=l;
 	dim=2;
 	glGenTextures(1,&pTextureObject);
 	glBindTexture(GL_TEXTURE_2D,pTextureObject);
-	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w,l,0,GL_RGBA,GL_UNSIGNED_INT,NULL);
+	glTexImage2D(GL_TEXTURE_2D,0,frmt,w,l,0,GL_RGBA,GL_UNSIGNED_INT,NULL);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
@@ -144,8 +146,9 @@ void simul::opengl::Texture::setTexels(void *,const void *src,int x,int y,int z,
 						src);
 }
 
-void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,int frmt,bool /*computable*/,int mips)
+void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pixelFormat,bool /*computable*/,int mips)
 {
+	GLuint frmt=opengl::RenderPlatform::ToGLFormat(pixelFormat);
 	dim=3;
 	width=w;
 	length=l;

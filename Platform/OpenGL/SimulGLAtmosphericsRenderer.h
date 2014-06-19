@@ -24,22 +24,12 @@ namespace simul
 			virtual ~SimulGLAtmosphericsRenderer();
 			//standard ogl object interface functions
 			void RecompileShaders();
-			void RestoreDeviceObjects(void *);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
 			// Assign the clouds framebuffer texture
 			void SetCloudsTexture(void* t)
 			{
 				clouds_texture=(GLuint)(uintptr_t)t;
-			}
-			void SetLossTexture(void* t)
-			{
-				loss_texture=(GLuint)(uintptr_t)t;
-			}
-			void SetInscatterTextures(void* t,void *s,void *o)
-			{
-				inscatter_texture=(GLuint)(uintptr_t)t;
-				skylight_texture=(GLuint)(uintptr_t)s;
-				overcast_texture=(GLuint)(uintptr_t)o;
 			}
 			void SetInputTextures(void* image,void* depth)
 			{
@@ -50,13 +40,10 @@ namespace simul
 			void RenderAsOverlay(simul::crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 		private:
 			bool initialized;
-			GLuint loss_program;
-			GLuint insc_program;
 			GLuint earthshadow_insc_program;
 
 			GLuint godrays_program;
 
-			GLuint loss_texture,inscatter_texture,skylight_texture,overcast_texture;
 			GLuint input_texture,depth_texture;
 			GLuint clouds_texture;
 

@@ -84,18 +84,27 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique
 		{
 		public:
-			inline EffectTechnique()
+			typedef std::map<std::string,void *> PassMap;
+			typedef std::map<int,void *> IndexMap;
+			PassMap passes_by_name;
+			IndexMap passes_by_index;
+			EffectTechnique()
 				:platform_technique(NULL)
 			{
 			}
+			virtual int NumPasses() const=0;
 			void *platform_technique;
 			inline ID3DX11EffectTechnique *asD3DX11EffectTechnique()
 			{
 				return (ID3DX11EffectTechnique*)platform_technique;
 			}
-			inline GLuint asGLuint() const
+			inline GLuint passAsGLuint(int p)
 			{
-				return (GLuint)((uintptr_t)platform_technique);
+				return (GLuint)((uintptr_t)passes_by_index[p]);
+			}
+			inline GLuint passAsGLuint(const char *name)
+			{
+				return (GLuint)((uintptr_t)(passes_by_name[std::string(name)]));
 			}
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
@@ -106,6 +115,7 @@ namespace simul
 			TechniqueMap techniques;
 			IndexMap techniques_by_index;
 			int apply_count;
+			int currentPass;
 			crossplatform::EffectTechnique *currentTechnique;
 		public:
 			void *platform_effect;
@@ -117,6 +127,7 @@ namespace simul
 			}
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
+			virtual void SetUnorderedAccessView(const char *name,Texture *tex)	=0;
 			virtual void SetTexture		(const char *name	,Texture *tex)		=0;
 			virtual void SetTexture		(const char *name	,Texture &t)		=0;
 			virtual void SetParameter	(const char *name	,float value)		=0;
@@ -127,6 +138,7 @@ namespace simul
 			virtual void SetVector		(const char *name	,const float *vec)	=0;
 			virtual void SetMatrix		(const char *name	,const float *m)	=0;
 			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass)=0;
+			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,const char *pass)=0;
 			virtual void Unapply(DeviceContext &deviceContext)=0;
 		};
 	}

@@ -40,10 +40,8 @@ namespace simul
 				,const simul::sky::float4& );
 			void RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
-			void SetLossTexture(void *l);
-			void SetInscatterTextures(void* i,void *s,void *o);
-			void SetIlluminationTexture(void *i);
-			void SetLightTableTexture(void *l);
+			void SetIlluminationTexture(crossplatform::Texture *i);
+			void SetLightTableTexture(crossplatform::Texture *l);
 			void SetWindVelocity(float x,float y);
 		protected:
 			void RenderDetailTexture(crossplatform::DeviceContext &deviceContext);
@@ -65,12 +63,6 @@ namespace simul
 			ConstantBuffer<Cloud2DConstants>	cloud2DConstants;
 			ConstantBuffer<Detail2DConstants>	detail2DConstants;
 			int num_indices;
-			
-			ID3D11ShaderResourceView*	skyLossTexture_SRV;
-			ID3D11ShaderResourceView*	skyInscatterTexture_SRV;
-			ID3D11ShaderResourceView*	skylightTexture_SRV;
-			ID3D11ShaderResourceView*	illuminationTexture_SRV;
-			ID3D11ShaderResourceView*	lightTableTexture_SRV;
 
 			simul::dx11::Framebuffer	coverage_fb;
 			simul::dx11::Framebuffer	detail_fb;

@@ -68,7 +68,8 @@ namespace simul
 		#define GL_ERROR_CHECK simul::opengl::CheckGLError(__FILE__,__LINE__);ERRNO_CHECK
 		#define SAFE_DELETE_PROGRAM(prog)		if(prog){GLuint shaders[2];GLsizei count;glGetAttachedShaders(prog,2,&count,shaders);for(int i=0;i<count;i++) glDeleteShader(shaders[i]); glDeleteProgram(prog);prog=0;}
 		#define SAFE_DELETE_TEXTURE(tex)		if(tex) glDeleteTextures(1,&tex);tex=0;
-		#define SAFE_DELETE_BUFFER(buff)		if(buff) glDeleteBuffersARB(1,&buff);buff=0;
+		#define SAFE_DELETE_BUFFER(buff)		if(buff) glDeleteBuffers(1,&buff);buff=0;
+		#define SAFE_DELETE_VAO(vao)			if(vao) glDeleteVertexArrays(1,&vao);vao=0;
 		#define SAFE_DELETE_FRAMEBUFFER(fb)		if(fb) glDeleteFramebuffers(1,&fb);fb=0;
 		#define SAFE_DELETE_RENDERBUFFER(rb)	if(rb) glDeleteRenderbuffers(1,&rb);rb=0;
 		extern SIMUL_OPENGL_EXPORT bool RenderAngledQuad(const float *dir,float half_angle_radians);

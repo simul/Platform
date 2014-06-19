@@ -6,6 +6,7 @@
 #include "Export.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
+#include "Simul/Platform/CrossPlatform/PixelFormat.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4251)
@@ -43,7 +44,7 @@ namespace simul
 			virtual void EndRender			()=0;
 			virtual void SetReverseDepth	(bool)=0;
 			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;
-
+			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			virtual void ApplyShaderPass	(DeviceContext &deviceContext,Effect *,EffectTechnique *,int)=0;
 			virtual void Draw				(DeviceContext &deviceContext,int num_verts,int start_vert)=0;
 			virtual void DrawMarker			(void *context,const double *matrix)			=0;
@@ -72,7 +73,7 @@ namespace simul
 			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
 			virtual Buffer					*CreateBuffer					()	=0;
-			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *)	=0;
+			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *,Buffer *)	=0;
 			virtual void					*GetDevice						()	=0;
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers)=0;
 		};

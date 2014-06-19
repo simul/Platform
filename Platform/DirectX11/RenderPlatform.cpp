@@ -132,6 +132,11 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lAmbientLight);*/
 }
 
+void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
+{
+	deviceContext.asD3D11DeviceContext()->Dispatch(w,l,d);
+}
+
 void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,crossplatform::EffectTechnique *tech,int index)
 {
 	tech->asD3DX11EffectTechnique()->GetPassByIndex(index)->Apply(0,deviceContext.asD3D11DeviceContext());
@@ -380,24 +385,56 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 	return b;
 }
 
-static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p)
+DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 {
 	using namespace crossplatform;
 	switch(p)
 	{
+	case RGBA_16_FLOAT:
+		return DXGI_FORMAT_R16G16B16A16_FLOAT;
 	case RGBA_32_FLOAT:
-		return DXGI_FORMAT_R32G32B32_FLOAT;
+		return DXGI_FORMAT_R32G32B32A32_FLOAT;
 	case RGB_32_FLOAT:
 		return DXGI_FORMAT_R32G32B32_FLOAT;
 	case RG_32_FLOAT:
 		return DXGI_FORMAT_R32G32_FLOAT;
 	case R_32_FLOAT:
 		return DXGI_FORMAT_R32_FLOAT;
+	case LUM_32_FLOAT:
+		return DXGI_FORMAT_R32_FLOAT;
+	case RGBA_8_UNORM:
+		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case RGBA_8_SNORM:
+		return DXGI_FORMAT_R8G8B8A8_SNORM;
 	default:
 		return DXGI_FORMAT_UNKNOWN;
 	};
 }
-crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatform::LayoutDesc *desc)
+
+crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
+{
+	using namespace crossplatform;
+	switch(f)
+	{
+	case DXGI_FORMAT_R16G16B16A16_FLOAT:
+		return RGBA_16_FLOAT;
+	case DXGI_FORMAT_R32G32B32A32_FLOAT:
+		return RGBA_32_FLOAT;
+	case DXGI_FORMAT_R32G32B32_FLOAT:
+		return RGB_32_FLOAT;
+	case DXGI_FORMAT_R32G32_FLOAT:
+		return RG_32_FLOAT;
+	case DXGI_FORMAT_R32_FLOAT:
+		return R_32_FLOAT;
+	case DXGI_FORMAT_R8G8B8A8_UNORM:
+		return RGBA_8_UNORM;
+	case DXGI_FORMAT_R8G8B8A8_SNORM:
+		return RGBA_8_SNORM;
+	default:
+		return UNKNOWN;
+	};
+}
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatform::LayoutDesc *desc,crossplatform::Buffer *buffer)
 {
 	D3D11_INPUT_ELEMENT_DESC *decl=new D3D11_INPUT_ELEMENT_DESC[num_elements];
 	for(int i=0;i<num_elements;i++)

@@ -137,14 +137,14 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 	for(int i=0;i<3;i++)
 	{
 		if(finalLoss[i])
-			finalLoss[i]->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,GL_RGBA32F,true);
+			finalLoss[i]->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,crossplatform::RGBA_32_FLOAT,true);
 		if(finalInsc[i])
-			finalInsc[i]->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,GL_RGBA32F,true);
+			finalInsc[i]->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,crossplatform::RGBA_32_FLOAT,true);
 		if(finalSkyl[i])
-			finalSkyl[i]->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,GL_RGBA32F,true);
+			finalSkyl[i]->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,crossplatform::RGBA_32_FLOAT,true);
 	}
 	if(light_table)
-		light_table->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size()*32,3,4,GL_RGBA32F,true);
+		light_table->ensureTexture3DSizeAndFormat(NULL,(int)p.altitudes_km.size()*32,3,4,crossplatform::RGBA_32_FLOAT,true);
 	
 	int xy_size		=(int)p.altitudes_km.size()*p.numElevations;
 	

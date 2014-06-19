@@ -55,20 +55,23 @@ GL_ERROR_CHECK
 		crossplatform::EffectTechnique *tech=effect->GetTechniqueByIndex(i);
 		if(!tech)
 			break;
-		GLuint program=tech->asGLuint();
-		GLint indexInShader;
-GL_ERROR_CHECK
-		indexInShader=glGetUniformBlockIndex(program,name);
-		if(indexInShader>=0)
+		for(int j=0;j<tech->NumPasses();j++)
 		{
-GL_ERROR_CHECK
-			glUniformBlockBinding(program,indexInShader,bindingIndex);
-			glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
-			glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,size);	
-GL_ERROR_CHECK
+			GLuint program=tech->passAsGLuint(j);
+			GLint indexInShader;
+	GL_ERROR_CHECK
+			indexInShader=glGetUniformBlockIndex(program,name);
+			if(indexInShader>=0)
+			{
+	GL_ERROR_CHECK
+				glUniformBlockBinding(program,indexInShader,bindingIndex);
+				glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
+				glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,size);	
+	GL_ERROR_CHECK
+			}
+			else
+				std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in the program."<<std::endl;
 		}
-		else
-			std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in the program."<<std::endl;
 	}
 }
 
@@ -82,8 +85,13 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &deviceContext)
+void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &)
 {
+}
+
+int EffectTechnique::NumPasses() const
+{
+	return passes_by_index.size();
 }
 
 Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
@@ -91,10 +99,49 @@ Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filenam
 {
 	filename=filename_utf8;
 	platform_effect		=(void*)opengl::CreateEffect(filename_utf8,defines);
+	FillInTechniques();
 }
 
 Effect::~Effect()
 {
+}
+
+// convert GL programs into techniques and passes.
+void Effect::FillInTechniques()
+{
+	GLint e				=asGLint();
+	if(e<0)
+		return ;
+	int nump			=glfxGetProgramCount(e);
+	if(!nump)
+		return;
+	for(int i=0;i<nump;i++)
+	{
+		std::string name	=glfxGetProgramName(e,i);
+		GLuint t			=glfxCompileProgram(e,name.c_str());
+		// Now the name will determine what technique and pass it is.
+		std::string techname=name;
+		std::string passname="main";
+		int dotpos=name.find_last_of(".");
+		if(dotpos>=0)
+		{
+			techname=name.substr(0,dotpos);
+			passname=name.substr(dotpos+1,name.length()-dotpos-1);
+		}
+		crossplatform::EffectTechnique *tech=NULL;
+		if(techniques.find(techname)!=techniques.end())
+			tech=techniques[techname];
+		else
+		{
+			tech					=new opengl::EffectTechnique; 
+			techniques[name]		=tech;
+			int index				=(int)techniques_by_index.size();
+			techniques_by_index[index]=tech;
+		}
+		tech->passes_by_name[passname]=(void*)t;
+		int pass_idx=tech->passes_by_index.size();
+		tech->passes_by_index[pass_idx]=(void*)t;
+	}
 }
 
 crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
@@ -112,7 +159,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 		opengl::printEffectLog(e);
 		return NULL;
 	}
-	crossplatform::EffectTechnique *tech	=new crossplatform::EffectTechnique;
+	crossplatform::EffectTechnique *tech	=new opengl::EffectTechnique;
 	tech->platform_technique				=(void*)t;
 	techniques[name]						=tech;
 	// Now it needs to be in the techniques_by_index list.
@@ -129,22 +176,27 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 	}
 	if(asGLint()==-1)
 		return NULL;
-	GLint e									=asGLint();
-	int nump								=glfxGetProgramCount(e);
+	GLint e				=asGLint();
+	int nump			=glfxGetProgramCount(e);
 	if(index>=nump)
 		return NULL;
-	const char *name						=glfxGetProgramName(e,index);
-	GLuint t								=glfxCompileProgram(e,name);
+	const char *name	=glfxGetProgramName(e,index);
+	GLuint t			=glfxCompileProgram(e,name);
 	if(!t)
 	{
 		opengl::printEffectLog(e);
 		return NULL;
 	}
-	crossplatform::EffectTechnique *tech	=new crossplatform::EffectTechnique;
+	crossplatform::EffectTechnique *tech	=new opengl::EffectTechnique;
 	techniques[name]						=tech;
 	techniques_by_index[index]				=tech;
 	tech->platform_technique				=(void*)t;
 	return tech;
+}
+
+void Effect::SetUnorderedAccessView(const char *name,crossplatform::Texture *tex)
+{
+	SetTexture(name,tex);
 }
 
 void Effect::SetTexture(const char *name,crossplatform::Texture *tex)
@@ -166,7 +218,7 @@ void Effect::SetTexture(const char *name,crossplatform::Texture *tex)
 GL_ERROR_CHECK
 	if(currentTechnique)
 	{
-		GLuint program	=currentTechnique->asGLuint();
+		GLuint program	=currentTechnique->passAsGLuint(currentPass);
 		GLint loc		=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
 	CHECK_PARAM_EXISTS
@@ -178,7 +230,7 @@ GL_ERROR_CHECK
 		for(TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
 		{
 GL_ERROR_CHECK
-			GLuint program	=i->second->asGLuint();
+			GLuint program	=i->second->passAsGLuint(currentPass);
 GL_ERROR_CHECK
 			GLint loc		=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
@@ -202,7 +254,7 @@ void Effect::SetTexture(const char *name,crossplatform::Texture &t)
 void Effect::SetParameter	(const char *name	,float value)
 {
 	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
 	CHECK_PARAM_EXISTS
 	glUniform1f(loc,value);
 	GL_ERROR_CHECK
@@ -211,7 +263,7 @@ void Effect::SetParameter	(const char *name	,float value)
 void Effect::SetParameter	(const char *name	,vec2 value)
 {
 	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
 	CHECK_PARAM_EXISTS
 	glUniform2fv(loc,1,value);
 	GL_ERROR_CHECK
@@ -220,7 +272,7 @@ void Effect::SetParameter	(const char *name	,vec2 value)
 void Effect::SetParameter	(const char *name	,vec3 value)	
 {
 	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
 	CHECK_PARAM_EXISTS
 	glUniform3fv(loc,1,value);
 	GL_ERROR_CHECK
@@ -229,7 +281,7 @@ void Effect::SetParameter	(const char *name	,vec3 value)
 void Effect::SetParameter	(const char *name	,vec4 value)	
 {
 	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
 	CHECK_PARAM_EXISTS
 	glUniform4fv(loc,1,value);
 	GL_ERROR_CHECK
@@ -238,7 +290,7 @@ void Effect::SetParameter	(const char *name	,vec4 value)
 void Effect::SetParameter	(const char *name	,int value)	
 {
 	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
 	CHECK_PARAM_EXISTS
 	glUniform1i(loc,value);
 	GL_ERROR_CHECK
@@ -247,7 +299,7 @@ void Effect::SetParameter	(const char *name	,int value)
 void Effect::SetVector		(const char *name	,const float *value)	
 {
 	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
 	CHECK_PARAM_EXISTS
 	glUniform4fv(loc,1,value);
 	GL_ERROR_CHECK
@@ -256,7 +308,7 @@ void Effect::SetVector		(const char *name	,const float *value)
 void Effect::SetMatrix		(const char *name	,const float *m)	
 {
 	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->asGLuint(),name);
+	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
 	CHECK_PARAM_EXISTS
 	SIMUL_ASSERT_WARN(loc>=0,(std::string("Parameter not found in GL Effect: ")+name).c_str());
 	glUniformMatrix4fv(loc,1,false,m);
@@ -270,11 +322,26 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	GL_ERROR_CHECK
 	apply_count++;
 	currentTechnique		=effectTechnique;
+	currentPass				=pass;
 	CHECK_TECH_EXISTS
-	glUseProgram(effectTechnique->asGLuint());
+	glUseProgram(effectTechnique->passAsGLuint(pass));
 	GL_ERROR_CHECK
 	current_texture_number	=0;
 }
+
+void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass)
+{
+	if(apply_count!=0)
+		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
+	GL_ERROR_CHECK
+	apply_count++;
+	currentTechnique		=effectTechnique;
+	CHECK_TECH_EXISTS
+	glUseProgram(effectTechnique->passAsGLuint(pass));
+	GL_ERROR_CHECK
+	current_texture_number	=0;
+}
+
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
 	glUseProgram(0);

@@ -32,8 +32,8 @@ namespace simul
 				return pTextureObject;
 			}
 			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
-				,unsigned f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0);
-			void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,int frmt,bool computable=false,int mips=1);
+				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0);
+			void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int mips=1);
 			void activateRenderTarget(crossplatform::DeviceContext &deviceContext);
 			void deactivateRenderTarget();
 			int GetLength() const;

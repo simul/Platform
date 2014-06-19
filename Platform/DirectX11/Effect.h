@@ -29,6 +29,10 @@ namespace simul
 			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
 			void Unbind(simul::crossplatform::DeviceContext &deviceContext);
 		};
+		class SIMUL_DIRECTX11_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
+		{
+			int NumPasses() const;
+		};
 		class SIMUL_DIRECTX11_EXPORT Effect:public simul::crossplatform::Effect
 		{
 		public:
@@ -37,6 +41,7 @@ namespace simul
 			~Effect();
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
+			void SetUnorderedAccessView(const char *name,crossplatform::Texture *tex);
 			void SetTexture(const char *name,crossplatform::Texture *tex);
 			void SetTexture(const char *name,crossplatform::Texture &t);
 			void SetTexture(const char *name,ID3D11ShaderResourceView *tex);
@@ -48,6 +53,7 @@ namespace simul
 			void SetVector		(const char *name	,const float *vec)	;
 			void SetMatrix		(const char *name	,const float *m)	;
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);
+			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass);
 			void Unapply(crossplatform::DeviceContext &deviceContext);
 		};
 	}

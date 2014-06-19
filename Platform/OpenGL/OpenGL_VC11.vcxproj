@@ -240,6 +240,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\CrossPlatform\SL\sky.sl" />
+    <None Include="GLSL\atmospherics.glfx" />
     <None Include="GLSL\clouds.glfx" />
     <None Include="GLSL\CppGlsl.hs" />
     <None Include="GLSL\debug.glfx" />

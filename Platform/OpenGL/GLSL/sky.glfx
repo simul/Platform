@@ -109,7 +109,7 @@ shader PS_Planet(in vec2 texCoords, out vec4 FragColor)
 struct starsVertexInput
 {
     vec3 position			;
-    float tex				;
+    float intex				;
 };
 
 shader VS_Stars(in vec3 position,in float intex, out float tex) 

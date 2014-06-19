@@ -43,16 +43,10 @@ namespace simul
 			void SetBufferSize(int w,int h);
 
 			// BaseAtmosphericsRenderer.
-			void SetLossTexture(void* t);
-			void SetInscatterTextures(void* i,void *s,void *o);
-			void SetIlluminationTexture(void *i);
-			void SetCloudsTexture(void* t);
 			void RecompileShaders();
 
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-			void RestoreDeviceObjects(void* pd3dDevice);
-			//! Call this when the device has been lost.
-			void InvalidateDeviceObjects();
+			void RestoreDeviceObjects(crossplatform::RenderPlatform* r);
 			void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 			//! Render the Atmospherics.
 			void RenderAsOverlay(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *hiResDepthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
@@ -61,35 +55,7 @@ namespace simul
 			void RenderGodrays(crossplatform::DeviceContext &deviceContext,float strength,bool near_pass,crossplatform::Texture *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,crossplatform::Texture *cloudDepthTexture);
 		protected:
 			HRESULT Destroy();
-			ID3D11Device*								m_pd3dDevice;
-			simul::math::Matrix4x4						view,proj;
-
-			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			ID3DX11Effect*								effect;
-
-			ID3DX11EffectTechnique*						godraysTechnique;
-			// Variables for this effect:
-			ID3DX11EffectShaderResourceVariable*			depthTexture;
-			ID3DX11EffectShaderResourceVariable*			cloudDepthTexture;
-			ID3DX11EffectShaderResourceVariable*			lossTexture;
-			ID3DX11EffectShaderResourceVariable*			inscTexture;
-			ID3DX11EffectShaderResourceVariable*			skylTexture;
-			ID3DX11EffectShaderResourceVariable*			illuminationTexture;
-			ID3DX11EffectShaderResourceVariable*			overcTexture;
-			ID3DX11EffectShaderResourceVariable*			cloudShadowTexture;
-			ID3DX11EffectShaderResourceVariable*				cloudGodraysTexture;
-
-			ID3D11ShaderResourceView*					skyLossTexture_SRV;
-			ID3D11ShaderResourceView*					skyInscatterTexture_SRV;
-			ID3D11ShaderResourceView*					overcInscTexture_SRV;
-			ID3D11ShaderResourceView*					skylightTexture_SRV;
-
-			ID3D11ShaderResourceView*					illuminationTexture_SRV;
-			ID3D11ShaderResourceView*				rainbowLookupTexture;
-			ID3D11ShaderResourceView*				coronaLookupTexture;
-
-			ConstantBuffer<AtmosphericsPerViewConstants>	atmosphericsPerViewConstants;
-			ConstantBuffer<AtmosphericsUniforms>			atmosphericsUniforms;
+			ID3D11Device*									m_pd3dDevice;
 		};
 	}
 }

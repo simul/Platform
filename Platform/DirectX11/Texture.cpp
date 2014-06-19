@@ -2,7 +2,7 @@
 #include "Texture.h"
 #include "CreateEffectDX1x.h"
 #include "Utilities.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 
 #include <string>
@@ -198,8 +198,9 @@ void dx11::Texture::InitFromExternalSRV(ID3D11ShaderResourceView *srv)
 	dim=2;
 }
 
-void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,int f,bool computable,int mips)
+void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pixelFormat,bool computable,int mips)
 {
+	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	dim=3;
 	D3D11_TEXTURE3D_DESC textureDesc;
 	bool ok=true;
@@ -227,7 +228,7 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 		textureDesc.Width			=width=w;
 		textureDesc.Height			=length=l;
 		textureDesc.Depth			=depth=d;
-		textureDesc.Format			=format=(DXGI_FORMAT)f;
+		textureDesc.Format			=format=f;
 		textureDesc.MipLevels		=mips;
 		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
 		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
@@ -238,7 +239,7 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		srv_desc.Format						= (DXGI_FORMAT)f;
+		srv_desc.Format						= f;
 		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
 		srv_desc.Texture3D.MipLevels		= mips;
 		srv_desc.Texture3D.MostDetailedMip	= 0;
@@ -248,7 +249,7 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 	{
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format				= (DXGI_FORMAT)f;
+		uav_desc.Format				= f;
 		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE3D;
 		uav_desc.Texture3D.MipSlice	= 0;
 		uav_desc.Texture3D.WSize	= d;
@@ -258,8 +259,9 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 		V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
 	}
 }
-void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,unsigned f,bool computable,bool rendertarget,int num_samples,int aa_quality)
+void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,crossplatform::PixelFormat pixelFormat,bool computable,bool rendertarget,int num_samples,int aa_quality)
 {
+	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	dim=2;
 	ID3D11Device *pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	D3D11_TEXTURE2D_DESC textureDesc;
@@ -272,7 +274,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=(DXGI_FORMAT)f)
+			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=f)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -288,7 +290,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		textureDesc.Width				=width=w;
 		textureDesc.Height				=length=l;
 		depth							=1;
-		textureDesc.Format				=format=(DXGI_FORMAT)f;
+		textureDesc.Format				=format=f;
 		textureDesc.MipLevels			=1;
 		textureDesc.ArraySize			=1;
 		textureDesc.Usage				=(computable||rendertarget)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
@@ -301,7 +303,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		srv_desc.Format						= (DXGI_FORMAT)f;
+		srv_desc.Format						= f;
 		srv_desc.ViewDimension				= num_samples>1?D3D11_SRV_DIMENSION_TEXTURE2DMS:D3D11_SRV_DIMENSION_TEXTURE2D;
 		srv_desc.Texture2D.MipLevels		= 1;
 		srv_desc.Texture2D.MostDetailedMip	= 0;
@@ -312,7 +314,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	{
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format				= (DXGI_FORMAT)f;
+		uav_desc.Format				= f;
 		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE2D;
 		uav_desc.Texture2D.MipSlice	= 0;
 
@@ -324,7 +326,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	{
 		// Setup the description of the render target view.
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-		renderTargetViewDesc.Format				=(DXGI_FORMAT)f;
+		renderTargetViewDesc.Format				=f;
 		renderTargetViewDesc.ViewDimension		=num_samples>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 		// Create the render target in DX11:
@@ -334,8 +336,9 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	}
 }
 
-void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT f,bool computable)
+void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat pixelFormat,bool computable)
 {
+	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	dim=1;
 	D3D11_TEXTURE1D_DESC textureDesc;
 	bool ok=true;

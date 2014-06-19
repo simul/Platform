@@ -14,7 +14,7 @@ uniform sampler2D noiseSampler;
 uniform sampler2D lossSampler;
 uniform sampler2D inscatterSampler;
 uniform sampler2D skylightSampler;
-uniform sampler3D illumSampler;
+uniform sampler2D illumSampler;
 uniform sampler2D depthTexture;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.

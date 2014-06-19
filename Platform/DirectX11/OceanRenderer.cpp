@@ -245,15 +245,11 @@ void OceanRenderer::SetCubemapTexture(void *c)
 	g_pSRV_ReflectCube=(ID3D11ShaderResourceView*)c;
 }
 
-void OceanRenderer::SetLossTexture(void *t)
+void OceanRenderer::SetLossAndInscatterTextures(crossplatform::Texture *l,crossplatform::Texture *i,crossplatform::Texture *s)
 {
-	skyLossTexture_SRV=((ID3D11ShaderResourceView*)t);
-}
-
-void OceanRenderer::SetInscatterTextures(void *t,void *s)
-{
-	skyInscatterTexture_SRV	=((ID3D11ShaderResourceView*)t);
-	skylightTexture_SRV		=((ID3D11ShaderResourceView*)s);
+	skyLossTexture_SRV		=l->AsD3D11ShaderResourceView();
+	skyInscatterTexture_SRV	=i->AsD3D11ShaderResourceView();
+	skylightTexture_SRV		=s->AsD3D11ShaderResourceView();
 }
 
 void OceanRenderer::InvalidateDeviceObjects()

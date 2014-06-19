@@ -420,6 +420,9 @@
     <None Include="GLSL\debug.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\atmospherics.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

@@ -29,8 +29,7 @@ namespace simul
 			void RenderWireframe(void *context);
 			void Update(float dt);
 			void SetCubemapTexture(void *c);
-			void SetLossTexture(void *t1);
-			void SetInscatterTextures(void *t1,void *s);
+			void SetLossAndInscatterTextures(crossplatform::Texture *l,crossplatform::Texture *i,crossplatform::Texture *s);
 			void RenderTextures(void *context,int width,int depth);
 		protected:
 			OceanSimulator						*oceanSimulator;

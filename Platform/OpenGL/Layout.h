@@ -8,6 +8,7 @@ namespace simul
 		class Layout:public crossplatform::Layout
 		{
 		public:
+			GLuint vao;
 			Layout();
 			virtual ~Layout();
 			void InvalidateDeviceObjects();

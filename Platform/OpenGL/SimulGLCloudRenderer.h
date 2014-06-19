@@ -48,9 +48,7 @@ namespace simul
 			//! Show the cross sections on-screen.
 			void RenderCrossSections(crossplatform::DeviceContext &context,int x0,int y0,int width,int height);
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &,int x0,int y0,int width,int height);
-			void SetLossTexture(void *);
-			void SetInscatterTextures(void* t,void *s,void *o);
-			void SetIlluminationTexture(void *i);
+			void SetIlluminationTexture(crossplatform::Texture *i);
 			simul::opengl::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 	
@@ -123,14 +121,6 @@ namespace simul
 			GLint		maxFadeDistanceMetres_param;
 
 			simul::opengl::Texture	cloud_textures[3];
-			// 2D textures (x=distance, y=elevation) for fades, updated per-frame:
-			GLuint		loss_tex;
-			GLuint		inscatter_tex;
-			GLuint		skylight_tex;
-			GLuint		overcast_tex;
-
-			GLuint		illum_tex;
-	
 			// 2D texture
 			GLuint		noise_tex;
 			GLuint		volume_noise_tex;
@@ -151,7 +141,7 @@ namespace simul
 
 			unsigned max_octave;
 			bool BuildSphereVBO();
-			FramebufferGL	cloud_shadow;
+			opengl::Texture	cloud_shadow;
 		};
 	}
 }

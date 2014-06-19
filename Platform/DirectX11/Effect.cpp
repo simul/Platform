@@ -70,8 +70,15 @@ void dx11::PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &d
 	if(m_pD3DX11EffectConstantBuffer)
 		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
 }
-//#pragma optimize("",off)
-//#pragma optimize("",on)
+
+int EffectTechnique::NumPasses() const
+{
+	D3DX11_TECHNIQUE_DESC desc;
+	ID3DX11EffectTechnique *tech=const_cast<EffectTechnique*>(this)->asD3DX11EffectTechnique();
+	tech->GetDesc(&desc);
+	return (int)desc.Passes;
+}
+
 
 dx11::Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
@@ -101,7 +108,7 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 	if(!platform_effect)
 		return NULL;
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
-	crossplatform::EffectTechnique *tech=new crossplatform::EffectTechnique;
+	crossplatform::EffectTechnique *tech=new dx11::EffectTechnique;
 	tech->platform_technique=e->GetTechniqueByName(name);
 	techniques[name]=tech;
 	return tech;
@@ -128,11 +135,22 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 		techniques_by_index[index]=tech;
 		return tech;;
 	}
-	tech=new crossplatform::EffectTechnique;
+	tech=new dx11::EffectTechnique;
 	tech->platform_technique=t;
 	techniques[desc.Name]=tech;
 	techniques_by_index[index]=tech;
 	return tech;
+}
+
+void dx11::Effect::SetUnorderedAccessView(const char *name,crossplatform::Texture *t)
+{
+	if(t)
+	{
+		dx11::Texture *T=(dx11::Texture*)t;
+		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,T->unorderedAccessView);
+	}
+	else
+		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,NULL);
 }
 
 void dx11::Effect::SetTexture(const char *name,ID3D11ShaderResourceView *tex)
@@ -149,8 +167,13 @@ void dx11::Effect::SetTexture(const char *name,crossplatform::Texture &t)
 
 void dx11::Effect::SetTexture(const char *name,crossplatform::Texture *t)
 {
-	dx11::Texture *T=(dx11::Texture*)t;
-	simul::dx11::setTexture(asD3DX11Effect(),name,T->shaderResourceView);
+	if(t)
+	{
+		dx11::Texture *T=(dx11::Texture*)t;
+		simul::dx11::setTexture(asD3DX11Effect(),name,T->shaderResourceView);
+	}
+	else
+		simul::dx11::setTexture(asD3DX11Effect(),name,NULL);
 }
 
 void Effect::SetParameter(const char *name	,float value)
@@ -214,6 +237,20 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
 	V_CHECK(hr);
 }
+
+void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)
+{
+	if(apply_count!=0)
+		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
+	apply_count++;
+	ID3DX11Effect *effect			=asD3DX11Effect();
+	currentTechnique				=effectTechnique;
+	ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
+	ID3DX11EffectPass *pass			=tech->GetPassByName(passname);
+	HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
+	V_CHECK(hr);
+}
+
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {

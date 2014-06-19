@@ -47,9 +47,6 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	,scale(2.f)
 	,texture_effect(1.f)
 	,cloud_data(NULL)
-	,loss_tex(0)
-	,inscatter_tex(0)
-	,skylight_tex(0)
 	,clouds_program(0)
 	,cross_section_program(0)
 	,cloud2DConstants(0)
@@ -301,9 +298,9 @@ bool SimulGL2DCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,
 	glUseProgram(clouds_program);
 	Set2DTexture(imageTexture_param,(GLuint)(uintptr_t)detail_fb.GetColorTex(),0);
 	Set2DTexture(coverageTexture,(GLuint)(uintptr_t)coverage_fb.GetColorTex(),1);
-	Set2DTexture(lossTexture,loss_tex,2);
-	Set2DTexture(inscatterSampler_param,inscatter_tex,3);
-	Set2DTexture(skylightSampler_param,skylight_tex,4);
+	Set2DTexture(lossTexture,skyLossTexture->AsGLuint(),2);
+	Set2DTexture(inscatterSampler_param,overcInscTexture->AsGLuint(),3);
+	Set2DTexture(skylightSampler_param,skylightTexture->AsGLuint(),4);
 	setTexture(clouds_program,"depthTexture",5,depth_texture);
 
 	simul::math::Vector3 wind_offset=cloudKeyframer->GetWindOffset();
@@ -442,18 +439,7 @@ static float mult=1.f;
 	glUseProgram(0);	
 }
 
-void SimulGL2DCloudRenderer::SetLossTexture(void *l)
-{
-	if(l)
-	loss_tex=((GLuint)(uintptr_t)l);
-}
 static GLint earthShadowUniformsBindingIndex=3;
-
-void SimulGL2DCloudRenderer::SetInscatterTextures(void* i,void *s,void *)
-{
-	inscatter_tex=((GLuint)(uintptr_t)i);
-	skylight_tex=((GLuint)(uintptr_t)s);
-}
 
 void SimulGL2DCloudRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {

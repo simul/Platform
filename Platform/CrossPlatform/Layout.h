@@ -1,5 +1,6 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/Export.h"
+#include "Simul/Platform/CrossPlatform/PixelFormat.h"
 struct ID3D11InputLayout;
 namespace simul
 {
@@ -7,14 +8,6 @@ namespace simul
 	{
 		class RenderPlatform;
 		struct DeviceContext;
-		//! A cross-platform equivalent to the OpenGL and DirectX pixel formats
-		enum PixelFormat
-		{
-			RGBA_32_FLOAT
-			,RGB_32_FLOAT
-			,RG_32_FLOAT
-			,R_32_FLOAT
-		};
 		//! A cross-platform equivalent to D3D11_INPUT_ELEMENT_DESC, used
 		//! to create layouts.
 		struct LayoutDesc

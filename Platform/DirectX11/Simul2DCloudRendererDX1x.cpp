@@ -38,11 +38,6 @@ Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer
 	,vertexBuffer(NULL)
 	,indexBuffer(NULL)
 	,inputLayout(NULL)
-	,skyLossTexture_SRV(NULL)
-	,skyInscatterTexture_SRV(NULL)
-	,skylightTexture_SRV(NULL)
-	,illuminationTexture_SRV(NULL)
-	,lightTableTexture_SRV(NULL)
 {
 }
 
@@ -295,14 +290,14 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)detail_fb.GetColorTex());
 	simul::dx11::setTexture(effect,"noiseTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 	simul::dx11::setTexture(effect,"coverageTexture",(ID3D11ShaderResourceView*)coverage_fb.GetColorTex());
-	simul::dx11::setTexture(effect,"lossTexture",skyLossTexture_SRV);
-	simul::dx11::setTexture(effect,"inscTexture",skyInscatterTexture_SRV);
-	simul::dx11::setTexture(effect,"skylTexture",skylightTexture_SRV);
+	simul::dx11::setTexture(effect,"lossTexture",skyLossTexture->AsD3D11ShaderResourceView());
+	simul::dx11::setTexture(effect,"inscTexture",overcInscTexture->AsD3D11ShaderResourceView());
+	simul::dx11::setTexture(effect,"skylTexture",skylightTexture->AsD3D11ShaderResourceView());
 	// Set both MS and regular - we'll only use one of them:
 	simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
 	simul::dx11::setTexture(effect,"depthTextureMS",depthTexture_SRV);
-	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
-	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture_SRV);
+	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture->AsD3D11ShaderResourceView());
+	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture->AsD3D11ShaderResourceView());
 	
 	static float ff=10000.f; 
 	math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
@@ -393,27 +388,6 @@ void Simul2DCloudRendererDX11::RenderCrossSections(crossplatform::DeviceContext 
 
 void Simul2DCloudRendererDX11::RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
-}
-
-void Simul2DCloudRendererDX11::SetLossTexture(void *t)
-{
-	skyLossTexture_SRV=(ID3D11ShaderResourceView*)t;
-}
-
-void Simul2DCloudRendererDX11::SetInscatterTextures(void* i,void *s,void *o)
-{
-	skyInscatterTexture_SRV=(ID3D11ShaderResourceView*)o;
-	skylightTexture_SRV=(ID3D11ShaderResourceView*)s;
-}
-
-void Simul2DCloudRendererDX11::SetIlluminationTexture(void *i)
-{
-	illuminationTexture_SRV=(ID3D11ShaderResourceView*)i;
-}
-
-void Simul2DCloudRendererDX11::SetLightTableTexture(void *l)
-{
-	lightTableTexture_SRV=(ID3D11ShaderResourceView*)l;
 }
 
 void Simul2DCloudRendererDX11::SetWindVelocity(float x,float y)

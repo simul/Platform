@@ -174,12 +174,7 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	if(simulSkyRenderer)
 	{
 		simulSkyRenderer->RestoreDeviceObjects(renderPlatform);
-	//	if(simulCloudRenderer)
-//			simulSkyRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
 	}
-	//if(simulAtmosphericsRenderer&&simulSkyRenderer)
-	//	simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-	//V_RETURN(CreateBuffers());
 
 	if(simul2DCloudRenderer)
 		simul2DCloudRenderer->RestoreDeviceObjects(renderPlatform);
@@ -187,7 +182,7 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		simulPrecipitationRenderer->RestoreDeviceObjects(renderPlatform);
 
 	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
+		simulAtmosphericsRenderer->RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 }
 
@@ -482,11 +477,6 @@ void SimulWeatherRendererDX11::RenderLightning(crossplatform::DeviceContext &dev
 
 void SimulWeatherRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
-	//view=v;
-	//proj=p;
-	//cam_pos=GetCameraPosVector(view);
-	if(simulSkyRenderer)
-		simulSkyRenderer->SetMatrices(v,p);
 	if(simul2DCloudRenderer)
 		simul2DCloudRenderer->SetMatrices(v,p);
 	if(simulAtmosphericsRenderer)

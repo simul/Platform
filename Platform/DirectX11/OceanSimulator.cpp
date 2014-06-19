@@ -225,8 +225,8 @@ void OceanSimulator::RestoreDeviceObjects(simul::crossplatform::RenderPlatform *
 	// Have now created: H0, Ht, Omega, Dxyz - as both UAV's and SRV's.
 
 	// D3D11 Textures - these ar the outputs of the ocean simulator.
-	displacement.ensureTexture2DSizeAndFormat(renderPlatform,hmap_dim,hmap_dim,DXGI_FORMAT_R32G32B32A32_FLOAT,false,true);
-	gradient.ensureTexture2DSizeAndFormat(renderPlatform,hmap_dim,hmap_dim,DXGI_FORMAT_R16G16B16A16_FLOAT,false,true);
+	displacement.ensureTexture2DSizeAndFormat(renderPlatform,hmap_dim,hmap_dim,crossplatform::RGBA_32_FLOAT,false,true);
+	gradient.ensureTexture2DSizeAndFormat(renderPlatform,hmap_dim,hmap_dim,crossplatform::RGBA_16_FLOAT,false,true);
 
 	immutableConstants		.RestoreDeviceObjects(m_pd3dDevice);
 	changePerFrameConstants	.RestoreDeviceObjects(m_pd3dDevice);

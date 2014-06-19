@@ -59,8 +59,6 @@ namespace simul
 			virtual		const float *GetFastLossLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord);
 			virtual		const float *GetFastInscatterLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord);
 
-			void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o);
-
 			const		char *GetDebugText();
 			simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 				protected:
@@ -78,7 +76,6 @@ namespace simul
 
 			bool		initialized;
 			bool		Render2DFades(simul::crossplatform::DeviceContext &deviceContext);
-			void		CreateFadeTextures();
 			void		CreateSkyTextures();
 
 			simul::opengl::Texture	light_table;
@@ -94,9 +91,6 @@ namespace simul
 			GLint					planetTexture_param;
 			GLint					planetLightDir_param;
 			GLint					planetColour_param;
-	
-			GLint					fadeTexture1_fade;
-			GLint					fadeTexture2_fade;
 		};
 	}
 }

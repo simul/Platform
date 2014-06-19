@@ -49,6 +49,8 @@ namespace simul
 			void EndRender();
 			void SetReverseDepth(bool r);
 			void IntializeLightingEnvironment(const float pAmbientLight[3]);
+
+			void DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
 			
 			void ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
 			
@@ -78,7 +80,7 @@ namespace simul
 			crossplatform::Effect					*CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer();
 			crossplatform::Buffer					*CreateBuffer();
-			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *);
+			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *,crossplatform::Buffer *);
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers);
 			ID3DX11Effect *effect;
@@ -87,6 +89,9 @@ namespace simul
 			bool reverseDepth;
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY;
+			// DX11-specific stuff:
+			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
+			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 		protected:
 			void DrawTexture	(void *context,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *tex,float mult);
 		};

@@ -3,7 +3,7 @@
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "D3dx11effect.h"
 
 using namespace simul;
@@ -82,9 +82,9 @@ void MixedResolutionView::ResolveFramebuffer(crossplatform::DeviceContext &devic
 		if(hdrFramebuffer.numAntialiasingSamples>1)
 		{
 			SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"ResolveFramebuffer")
-			resolvedTexture.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,ScreenWidth,ScreenHeight,DXGI_FORMAT_R16G16B16A16_FLOAT,false,true);
+			resolvedTexture.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,ScreenWidth,ScreenHeight,crossplatform::RGBA_16_FLOAT,false,true);
 			ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.platform_context;
-			pContext->ResolveSubresource(resolvedTexture.texture,0,hdrFramebuffer.GetColorTexture(),0,DXGI_FORMAT_R16G16B16A16_FLOAT);
+			pContext->ResolveSubresource(resolvedTexture.texture,0,hdrFramebuffer.GetColorTexture(),0,dx11::RenderPlatform::ToDxgiFormat(crossplatform::RGBA_16_FLOAT));
 			SIMUL_COMBINED_PROFILE_END(pContext)
 		}
 	}
@@ -195,15 +195,15 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	// The downscaled size should be enough to fit in at least s hi-res pixels in every larger pixel
 	int w=(W+s-1)/s;
 	int h=(H+s-1)/s;
-	view->GetLowResDepthTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
-	view->GetLowResScratchTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
+	view->GetLowResDepthTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,crossplatform::RGBA_32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
+	view->GetLowResScratchTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,crossplatform::RGBA_32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	depth_SRV->GetDesc(&desc);
 	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups.
 	static bool use_rt=true;
 	{
-		view->GetHiResDepthTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/!use_rt,/*rendertarget=*/use_rt);
+		view->GetHiResDepthTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,crossplatform::RGBA_32_FLOAT,/*computable=*/!use_rt,/*rendertarget=*/use_rt);
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Hi-res Depth")
 		mixedResolutionConstants.scale		=uint2(s,s);
 		mixedResolutionConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;

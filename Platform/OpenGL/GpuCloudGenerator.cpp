@@ -281,10 +281,10 @@ GL_ERROR_CHECK
 	}
 	directLightTextures[light_index].ensureTexture3DSizeAndFormat(NULL
 				,params.light_grid[0],params.light_grid[1],params.light_grid[2]
-				,GL_RGBA32F_ARB/*GL_LUMINANCE32F_ARB*/,true);
+		,crossplatform::RGBA_32_FLOAT/*GL_LUMINANCE32F_ARB*/,true);
 	indirectLightTextures[light_index].ensureTexture3DSizeAndFormat(NULL
 				,params.light_grid[0],params.light_grid[1],params.light_grid[2]
-				,GL_LUMINANCE32F_ARB,true);
+				,crossplatform::LUM_32_FLOAT,true);
 	// We use the density framebuffer texture as our density texture. This works well
 	// because we don't need to do any filtering.
 	//GLuint density_texture	=dens_fb.GetColorTex();

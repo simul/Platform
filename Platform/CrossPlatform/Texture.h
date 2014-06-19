@@ -1,5 +1,6 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/Export.h"
+#include "Simul/Platform/CrossPlatform/PixelFormat.h"
 struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 typedef unsigned GLuint;
@@ -25,8 +26,8 @@ namespace simul
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()=0;
 			virtual GLuint AsGLuint()=0;
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
-				,unsigned f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0)=0;
-			virtual void ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,int frmt,bool computable=false,int mips=1)=0;
+				,PixelFormat f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0)=0;
+			virtual void ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1)=0;
 			virtual void activateRenderTarget(DeviceContext &deviceContext)=0;
 			virtual void deactivateRenderTarget()=0;
 			virtual int GetLength() const=0;

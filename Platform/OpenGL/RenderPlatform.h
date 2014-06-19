@@ -3,6 +3,7 @@
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
+#include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 
 #ifdef _MSC_VER
@@ -34,6 +35,7 @@ namespace simul
 			void EndRender();
 			void SetReverseDepth(bool);
 			void IntializeLightingEnvironment(const float pAmbientLight[3]);
+			void DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
 			void ApplyShaderPass	(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int);
 			void Draw				(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
 			void DrawMarker			(void *context,const double *matrix);
@@ -59,7 +61,7 @@ namespace simul
 			crossplatform::Effect					*CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer();
 			crossplatform::Buffer					*CreateBuffer();
-			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *);
+			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *,crossplatform::Buffer *);
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers);
 			
@@ -67,6 +69,9 @@ namespace simul
 			simul::opengl::ConstantBuffer<SolidConstants> solidConstants;
 			std::set<opengl::Material*> materials;
 			bool reverseDepth;
+			// OpenGL-specific stuff:
+			static GLuint ToGLFormat(crossplatform::PixelFormat p);
+			static int FormatCount(crossplatform::PixelFormat p);
 		protected:
 			void DrawTexture		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,GLuint tex,float mult=1.f);
 			crossplatform::Effect *effect;

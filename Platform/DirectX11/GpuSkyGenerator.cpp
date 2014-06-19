@@ -107,8 +107,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	int gridsize_2d			=(int)p.altitudes_km.size()*p.numElevations;
 	if(dens_tex.width!=a.table_size||optd_tex.width!=a.table_size)
 		tables_checksum=0;
-	dens_tex.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,a.table_size,1,DXGI_FORMAT_R32G32B32A32_FLOAT,false);
-	optd_tex.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,a.table_size,a.table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,false,false);
+	dens_tex.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,a.table_size,1,crossplatform::RGBA_32_FLOAT,false);
+	optd_tex.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,a.table_size,a.table_size,crossplatform::RGBA_32_FLOAT,false,false);
 
 	if(a.tables_checksum!=tables_checksum)
 	{
@@ -161,12 +161,12 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	//SetGpuSkyConstants(gpuSkyConstants,p,a,ir);
 	for(int i=0;i<3;i++)
 	{
-		finalLoss[i]->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true,1);
-		finalInsc[i]->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true,1);
-		finalSkyl[i]->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true,1);
+		finalLoss[i]->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,crossplatform::RGBA_32_FLOAT,true,1);
+		finalInsc[i]->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,crossplatform::RGBA_32_FLOAT,true,1);
+		finalSkyl[i]->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,crossplatform::RGBA_32_FLOAT,true,1);
 	}
 	if(light_table)
-		light_table->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size()*32,3,4,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		light_table->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size()*32,3,4,crossplatform::RGBA_32_FLOAT,true);
 	density_texture->SetResource(dens_tex.shaderResourceView);
 	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
 	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 2")

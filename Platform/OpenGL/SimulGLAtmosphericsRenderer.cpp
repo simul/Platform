@@ -20,17 +20,9 @@ SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer(simul::base::MemoryInte
 	:BaseAtmosphericsRenderer(m)
 	,clouds_texture(0)
 	,initialized(false)
-	,insc_program(0)
-	,loss_program(0)
 	,earthshadow_insc_program(0)
 	,godrays_program(0)
 	,earthShadowUniformsUBO(0)
-	//,atmosphericsUniformsUBO(0)
-	//,atmosphericsUniforms2UBO(0)
-	,loss_texture(0)
-	,inscatter_texture(0)
-	,skylight_texture(0)
-	,overcast_texture(0)
 	,input_texture(0)
 	,depth_texture(0)
 {
@@ -42,22 +34,10 @@ SimulGLAtmosphericsRenderer::~SimulGLAtmosphericsRenderer()
 	//delete framebuffer;
 }
 
-void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
+void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	BaseAtmosphericsRenderer::RestoreDeviceObjects(r);
 	initialized=true;
-	//framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB);
-	
-  //You can also try GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24 for the internal format.
-  //If GL_DEPTH24_STENCIL8_EXT, go ahead and use it (GL_EXT_packed_depth_stencil)
-/*	if(glewIsSupported("GL_EXT_packed_depth_stencil")||IsExtensionSupported("GL_EXT_packed_depth_stencil"))
-	{
-		framebuffer->InitDepth_RB(GL_DEPTH24_STENCIL8_EXT);
-	}
-	else
-	{
-		framebuffer->InitDepth_RB(GL_DEPTH_COMPONENT32);
-	}
-	framebuffer->NoDepth();*/
 	RecompileShaders();
 }
 
@@ -69,10 +49,9 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 {
 	if(!initialized)
 		return;
+	BaseAtmosphericsRenderer::RecompileShaders();
 	std::map<std::string,std::string> defines;
-	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
-	loss_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_loss.frag",defines);
-	insc_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_insc.frag",defines);
+	defines["REVERSE_DEPTH"]	=ReverseDepth?"1":"0";
 	earthshadow_insc_program	=MakeProgram("simul_atmospherics.vert",NULL,"simul_insc_earthshadow.frag",defines);
 	godrays_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defines);
 
@@ -82,15 +61,13 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 	//MAKE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,AtmosphericsUniforms,atmosphericsUniformsBindingIndex);
 	//MAKE_GL_CONSTANT_BUFFER(atmosphericsUniforms2UBO,AtmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex);
 	
-	atmosphericsUniforms		.LinkToProgram(loss_program,"AtmosphericsUniforms"			,atmosphericsUniformsBindingIndex);
-	//atmosphericsPerViewConstants.LinkToProgram(loss_program,"AtmosphericsPerViewConstants"	,atmosphericsUniforms2BindingIndex);
-	//linkToConstantBuffer(loss_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
-	linkToConstantBuffer(loss_program,"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
+	atmosphericsUniforms		.LinkToProgram(effect->GetTechniqueByName("loss")->passAsGLuint(0),"AtmosphericsUniforms"			,atmosphericsUniformsBindingIndex);
+	linkToConstantBuffer(effect->GetTechniqueByName("loss")->passAsGLuint(0),"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
 	
-	atmosphericsUniforms		.LinkToProgram(insc_program,"AtmosphericsUniforms"			,atmosphericsUniformsBindingIndex);
+	atmosphericsUniforms		.LinkToProgram(effect->GetTechniqueByName("inscatter")->passAsGLuint(0),"AtmosphericsUniforms"			,atmosphericsUniformsBindingIndex);
 	//atmosphericsPerViewConstants.LinkToProgram(insc_program,"AtmosphericsPerViewConstants"	,atmosphericsUniforms2BindingIndex);
 	//linkToConstantBuffer(insc_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
-	linkToConstantBuffer(insc_program,"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
+	linkToConstantBuffer(effect->GetTechniqueByName("inscatter")->passAsGLuint(0),"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
 	
 	atmosphericsUniforms		.LinkToProgram(earthshadow_insc_program,"AtmosphericsUniforms"			,atmosphericsUniformsBindingIndex);
 	atmosphericsPerViewConstants.LinkToProgram(earthshadow_insc_program,"AtmosphericsPerViewConstants"	,atmosphericsUniforms2BindingIndex);
@@ -104,10 +81,8 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 {
 	SAFE_DELETE_PROGRAM(godrays_program);
-
-	SAFE_DELETE_PROGRAM(loss_program);
-	SAFE_DELETE_PROGRAM(insc_program);
 	SAFE_DELETE_PROGRAM(earthshadow_insc_program);
+	BaseAtmosphericsRenderer::InvalidateDeviceObjects();
 }
 
 void SimulGLAtmosphericsRenderer::RenderAsOverlay(crossplatform::DeviceContext &,crossplatform::Texture *depthTexture,float exposure,const simul::sky::float4& depthViewportXYWH)
@@ -175,18 +150,18 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	glEnable(GL_BLEND);
 
-	glUseProgram(loss_program);
-	setTexture(loss_program,"lossTexture",3,loss_texture);
-	setTexture(loss_program,"depthTexture",5,depth_texture);
+	glUseProgram(effect->GetTechniqueByName("loss")->passAsGLuint(0));
+	setTexture(effect->GetTechniqueByName("loss")->passAsGLuint(0),"lossTexture",3,skyLossTexture->AsGLuint());
+	setTexture(effect->GetTechniqueByName("loss")->passAsGLuint(0),"depthTexture",5,depth_texture);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_ZERO,GL_SRC_COLOR,GL_ZERO,GL_ONE);
 	DrawQuad(0.f,0.f,1.f,1.f);
 
-	GLuint current_insc_program=e.enable?earthshadow_insc_program:insc_program;
+	GLuint current_insc_program=e.enable?earthshadow_insc_program:effect->GetTechniqueByName("inscatter")->passAsGLuint(0);
 	glUseProgram(current_insc_program);
-	setTexture(current_insc_program,"inscTexture"		,1,overcast_texture);
+	setTexture(current_insc_program,"inscTexture"		,1,overcInscTexture->AsGLuint());
 	//setTexture(current_insc_program,"cloudShadowTexture",2,cloud_shadow_texture);
-	setTexture(current_insc_program,"skylightTexture"	,4,skylight_texture);
+	setTexture(current_insc_program,"skylightTexture"	,4,skylightTexture->AsGLuint());
 	setTexture(current_insc_program,"depthTexture"		,5,depth_texture);
 	// retain background based on alpha in overlay
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);

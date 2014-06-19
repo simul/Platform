@@ -106,6 +106,12 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lAmbientLight);
 }
 
+void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
+{
+	glDispatchCompute(w,l,d);
+	GL_ERROR_CHECK
+}
+
 void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,crossplatform::EffectTechnique *tech,int pass)
 {
 	deviceContext;
@@ -275,14 +281,10 @@ GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,tex);
 GL_ERROR_CHECK
-	//effect->Apply(deviceContext,effect->GetTechniqueByIndex(0),0);
-GL_ERROR_CHECK
 glDisable(GL_BLEND);
 glDisable(GL_CULL_FACE);
 //effect->SetTexture("image_texture",tex);
 	DrawQuad(deviceContext,x1,y1,dx,dy,effect,effect->GetTechniqueByIndex(0));
-GL_ERROR_CHECK
-	//effect->Unapply(deviceContext);
 GL_ERROR_CHECK
 }
 
@@ -445,9 +447,116 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 	return new opengl::Buffer();
 }
 
-crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatform::LayoutDesc *)
+GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 {
-	return new opengl::Layout;
+	using namespace crossplatform;
+	switch(p)
+	{
+	case RGBA_16_FLOAT:
+		return GL_RGBA16F;
+	case RGBA_32_FLOAT:
+		return GL_RGBA32F;
+	case RGB_32_FLOAT:
+		return GL_RGB32F;
+	case RG_32_FLOAT:
+		return GL_RG32F;
+	case R_32_FLOAT:
+		return GL_R32F;
+	case LUM_32_FLOAT:
+		return GL_LUMINANCE32F_ARB;
+	case RGBA_8_UNORM:
+		return GL_RGBA;
+	case RGBA_8_SNORM:
+		return GL_RGBA;
+	default:
+		return 0;
+	};
+}
+
+int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
+{
+	using namespace crossplatform;
+	switch(p)
+	{
+	case RGBA_16_FLOAT:
+		return 4;
+	case RGBA_32_FLOAT:
+		return 4;
+	case RGB_32_FLOAT:
+		return 3;
+	case RG_32_FLOAT:
+		return 2;
+	case R_32_FLOAT:
+		return 1;
+	case LUM_32_FLOAT:
+		return 1;
+	case RGBA_8_UNORM:
+		return 4;
+	case RGBA_8_SNORM:
+		return 4;
+	default:
+		return 0;
+	};
+}
+GLenum DataType(crossplatform::PixelFormat p)
+{
+	using namespace crossplatform;
+	switch(p)
+	{
+	case RGBA_16_FLOAT:
+		return GL_FLOAT;
+	case RGBA_32_FLOAT:
+		return GL_FLOAT;
+	case RGB_32_FLOAT:
+		return GL_FLOAT;
+	case RG_32_FLOAT:
+		return GL_FLOAT;
+	case R_32_FLOAT:
+		return GL_FLOAT;
+	case LUM_32_FLOAT:
+		return GL_FLOAT;
+	case RGBA_8_UNORM:
+		return GL_UNSIGNED_INT;
+	case RGBA_8_SNORM:
+		return GL_UNSIGNED_INT;
+	default:
+		return 0;
+	};
+}
+
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatform::LayoutDesc *desc,crossplatform::Buffer *buffer)
+{
+	opengl::Layout *l=new opengl::Layout();
+GL_ERROR_CHECK
+	SAFE_DELETE_VAO(l->vao);
+	glGenVertexArrays(1,&l->vao );
+	glBindVertexArray(l->vao);
+	SIMUL_ASSERT(buffer->AsGLuint()!=0);
+	glBindBuffer(GL_ARRAY_BUFFER,buffer->AsGLuint());
+	for(int i=0;i<num_elements;i++)
+	{
+		const crossplatform::LayoutDesc &d=desc[i];
+		//d.semanticName;
+		//d.semanticIndex;
+		//ToGLFormat(d.format);
+		//d.alignedByteOffset;
+		//d.inputSlot;
+		//d.perInstance?D3D11_INPUT_PER_INSTANCE_DATA:D3D11_INPUT_PER_VERTEX_DATA;
+		//d.instanceDataStepRate;
+		//{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		//{ "TEXCOORD",	0, DXGI_FORMAT_R32_FLOAT,			0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			glEnableVertexAttribArray( i );
+			glVertexAttribPointer( i						// Attribute bind location
+									,FormatCount(d.format)	// Data type count
+									,DataType(d.format)				// Data type
+									,GL_FALSE				// Normalise this data type?
+									,buffer->stride			// Stride to the next vertex
+									,(GLvoid*)d.alignedByteOffset );	// Vertex Buffer starting offset
+	};
+	
+	glBindVertexArray( 0 ); 
+GL_ERROR_CHECK
+	return l;
 }
 
 void *RenderPlatform::GetDevice()
@@ -460,21 +569,11 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	for(int i=0;i<num_buffers;i++)
 	{
 		crossplatform::Buffer *buffer=buffers[i];
-//int weightPosition = glGetAttribLocation(programID, "blendWeights");
-//glVertexAttribPointer(weightPosition, 4, GL_FLOAT, GL_FALSE, sizeof(TVertex_VNTWI), info->weightOffset);
-  //glEnableVertexAttribArray(weightPosition);
-  ///////////////
-//int indexPosition = glGetAttribLocation(programID, "blendIndices");
- // glVertexAttribPointer(indexPosition, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(TVertex_VNTWI), info->indexOffset);
- // glEnableVertexAttribArray(indexPosition);
 GL_ERROR_CHECK
-		glBindBuffer( GL_ARRAY_BUFFER, buffers[0]->AsGLuint() );
-		glVertexAttribPointer(0,3, GL_FLOAT,GL_FALSE,buffer->stride,NULL);    
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1,1, GL_FLOAT,GL_FALSE,buffer->stride,NULL); 
-		glEnableVertexAttribArray(1);
-GL_ERROR_CHECK
-		//glBindBuffer(GL_ARRAY_BUFFER,0)
+		GLuint buf=buffers[0]->AsGLuint();
+		GLint prog;
+		glGetIntegerv(GL_CURRENT_PROGRAM,&prog);
+		glBindBuffer(GL_ARRAY_BUFFER,buf);
 	}
 }
 

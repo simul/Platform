@@ -60,7 +60,6 @@ namespace simul
 			bool RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
 			//! Call this to draw the sun flare, usually drawn last, on the main render target.
 			bool RenderFlare(float exposure);
-			bool Render2DFades(crossplatform::DeviceContext &deviceContext);
 			void RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext);
 			//! Get a value, from zero to one, which represents how much of the sun is visible.
 			//! Call this when the current rendering surface is the one that has obscuring
@@ -68,12 +67,6 @@ namespace simul
 			//! GetSunOcclusion executes a pseudo-render of an invisible billboard, then
 			//! uses a hardware occlusion query to see how many pixels have passed the z-test.
 			float CalcSunOcclusion(crossplatform::DeviceContext &deviceContext,float cloud_occlusion=0.f);
-			//! Call this once per frame to set the matrices.
-			void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
-
-			void Get2DLossAndInscatterTextures(void* *loss,void* *insc,void* *skyl,void* *overc);
-			void *GetIlluminationTexture();
-			void *GetLightTableTexture();
 
 			float GetFadeInterp() const;
 			void SetStepsPerDay(unsigned steps);
@@ -91,20 +84,11 @@ namespace simul
 		protected:
 			int cycle;
 
-			void CreateFadeTextures();
-			void EnsureCorrectTextureSizes();
 			void EnsureTexturesAreUpToDate(void *c);
 			void EnsureTextureCycle();
 	
 			ID3D11Device*							m_pd3dDevice;
 			Query									sunQuery;
-
-			ID3DX11EffectShaderResourceVariable*	flareTexture;
-			ID3DX11EffectShaderResourceVariable*	inscTexture;
-			ID3DX11EffectShaderResourceVariable*	skylTexture;
-			ID3DX11EffectShaderResourceVariable*	fadeTexture1;
-			ID3DX11EffectShaderResourceVariable*	fadeTexture2;
-			ID3DX11EffectShaderResourceVariable*	illuminationTexture;
 
 			// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
 

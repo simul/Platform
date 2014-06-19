@@ -45,10 +45,6 @@ namespace simul
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,crossplatform::Texture *depth_alpha_tex,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& );
 			void RenderCrossSections(crossplatform::DeviceContext &context,int x0,int y0,int width,int height);
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &,int ,int ,int ,int ){}
-			//! Set the platform-dependent atmospheric loss texture.
-			void SetLossTexture(void *l);
-			//! Set the platform-dependent atmospheric inscatter texture.
-			void SetInscatterTextures(void* t,void *s,void *o);
 			void SetWindVelocity(float x,float y);
 
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y);
@@ -88,9 +84,6 @@ namespace simul
 	
 			GLuint	coverage_tex[3];
 	
-			GLuint	loss_tex;
-			GLuint	inscatter_tex;
-			GLuint	skylight_tex;
 			FramebufferGL	coverage_fb;
 
 			FramebufferGL	detail_fb;

@@ -25,7 +25,7 @@
 #include "Utilities.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
 
 using namespace simul;
 using namespace dx11;
@@ -194,7 +194,7 @@ bool Framebuffer::CreateBuffers(crossplatform::RenderPlatform *renderPlatform)
 		};
 		desc.SampleDesc.Count	=numAntialiasingSamples;
 		desc.SampleDesc.Quality	=quality;//numQualityLevels-1;
-		buffer_texture.ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,target_format,false,true,numAntialiasingSamples,quality);
+		buffer_texture.ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(target_format),false,true,numAntialiasingSamples,quality);
 	//	V_CHECK(m_pd3dDevice->CreateTexture2D(	&desc,
 	//											NULL,
 	//											&hdr_buffer_texture	))

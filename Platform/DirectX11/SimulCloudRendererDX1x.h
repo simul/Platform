@@ -88,10 +88,8 @@ namespace simul
 			//! Get the list of three textures used for cloud rendering.
 			CloudShadowStruct GetCloudShadowTexture(math::Vector3 cam_pos);
 			void *GetRandomTexture3D();
-			void SetLossTexture(void *t);
-			void SetInscatterTextures(void* i,void *s,void *o);
-			void SetIlluminationTexture(void *i);
-			void SetLightTableTexture(void *l);
+			void SetIlluminationTexture(crossplatform::Texture *i);
+			void SetLightTableTexture(crossplatform::Texture *l);
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
@@ -151,9 +149,9 @@ namespace simul
 			ID3DX11EffectShaderResourceVariable*		noiseTexture3D;
 
 			ID3DX11EffectShaderResourceVariable*		lightningIlluminationTexture;
-			ID3DX11EffectShaderResourceVariable*		skyLossTexture;
-			ID3DX11EffectShaderResourceVariable*		skyInscatterTexture;
-			ID3DX11EffectShaderResourceVariable*		skylightTexture;
+			ID3DX11EffectShaderResourceVariable*		skyLossTextureV;
+			ID3DX11EffectShaderResourceVariable*		skyInscatterTextureV;
+			ID3DX11EffectShaderResourceVariable*		skylightTextureV;
 			ID3DX11EffectShaderResourceVariable*		depthTexture;
 			ID3DX11EffectShaderResourceVariable*		lightTableTexture;
 
@@ -161,10 +159,6 @@ namespace simul
 
 			ID3D11ShaderResourceView*				noiseTextureResource;
 			ID3D11ShaderResourceView*				lightningIlluminationTextureResource;
-			ID3D11ShaderResourceView*				skyLossTexture_SRV;
-			ID3D11ShaderResourceView*				skyInscatterTexture_SRV;
-			ID3D11ShaderResourceView*				overcInscTexture_SRV;
-			ID3D11ShaderResourceView*				skylightTexture_SRV;
 			ID3D11ShaderResourceView*				illuminationTexture_SRV;
 			ID3D11ShaderResourceView*				lightTableTexture_SRV;
 			simul::dx11::Framebuffer				shadow_fb;

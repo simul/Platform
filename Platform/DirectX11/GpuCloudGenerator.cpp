@@ -145,7 +145,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	deviceContext.renderPlatform	=renderPlatform;
 
 	for(int i=0;i<3;i++)
-		finalTexture[i]->ensureTexture3DSizeAndFormat(renderPlatform,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true,1);
+		finalTexture[i]->ensureTexture3DSizeAndFormat(renderPlatform,params.density_grid[0],params.density_grid[1],params.density_grid[2],crossplatform::RGBA_8_UNORM,true,1);
 	int density_gridsize=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
 	mask_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]);
 
@@ -185,7 +185,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	
 	density_texture.ensureTexture3DSizeAndFormat(renderPlatform
 		,params.density_grid[0],params.density_grid[1],params.density_grid[2]
-		,DXGI_FORMAT_R32_FLOAT,true);
+		,crossplatform::R_32_FLOAT,true);
 
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",density_texture.unorderedAccessView);
 
@@ -237,10 +237,10 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 		texels=gridsize-start_texel; 
 	directLightTextures[light_index].ensureTexture3DSizeAndFormat(renderPlatform
 				,light_grid[0],light_grid[1],light_grid[2]
-				,DXGI_FORMAT_R32_FLOAT,true);
+				,crossplatform::R_32_FLOAT,true);
 	indirectLightTextures[light_index].ensureTexture3DSizeAndFormat(renderPlatform
 				,light_grid[0],light_grid[1],light_grid[2]
-				,DXGI_FORMAT_R32_FLOAT,true);
+				,crossplatform::R_32_FLOAT,true);
 
 	ID3D1xEffectShaderResourceVariable*	densityTexture		=effect->GetVariableByName("densityTexture")->AsShaderResource();
 	//SetGpuCloudConstants(gpuCloudConstants);
@@ -370,7 +370,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	gpuCloudConstants.Apply(deviceContext);
 	for(int i=0;i<3;i++)
 	{
-		finalTexture[i]->ensureTexture3DSizeAndFormat(renderPlatform,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
+		finalTexture[i]->ensureTexture3DSizeAndFormat(renderPlatform,params.density_grid[0],params.density_grid[1],params.density_grid[2],crossplatform::RGBA_8_UNORM,true);
 	}
 	// divide the grid into 8x8x8 blocks:
 	static const int BLOCKWIDTH=8;
