@@ -48,7 +48,7 @@ shader VS_Sun(in int gl_VertexID, out vec2 texCoords)
 	vec3 pos=vec3(poss[gl_VertexID],1.0/tan(radiusRadians));
     gl_Position=mul(worldViewProj,vec4(pos,1.0));
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
-#if REVERSE_DEPTH==1
+#ifdef REVERSE_DEPTH
 	gl_Position.z = 0.0; 
 #else
 	gl_Position.z = gl_Position.w; 
@@ -80,7 +80,7 @@ shader PS_Sun( in vec2 texCoords, out vec4 FragColor)
 
 shader PS_Flare( in vec2 texCoords, out vec4 FragColor)
 {
-	vec3 res=colour.rgb*texture_clamp(flareTexture,vec2(.5,.5)+0.5f*texCoords).rgb;
+	vec3 res=colour.rgb*texture_clamp(flareTexture,vec2(.5,.5)+0.5*texCoords).rgb;
 	FragColor=vec4(res,1.0);
 }
 
@@ -112,17 +112,17 @@ struct starsVertexInput
     float tex				;
 };
 
-shader VS_Stars(in starsVertexInput IN:0, out float tex) 
+shader VS_Stars(in vec3 position,in float intex, out float tex) 
 {
-    gl_Position=mul(worldViewProj,vec4(IN.position.xyz,1.0));
+    gl_Position=mul(worldViewProj,vec4(position.xyz,1.0));
 
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
-#if REVERSE_DEPTH==1
+#ifdef REVERSE_DEPTH
 	gl_Position.z = 0.0; 
 #else
 	gl_Position.z = 1.0; 
 #endif
-    tex=IN.tex;
+    tex=intex;
 }
 
 shader PS_Stars(in float tex,out vec4 FragColor)

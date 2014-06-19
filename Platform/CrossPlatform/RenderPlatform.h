@@ -23,7 +23,9 @@ namespace simul
 		class Mesh;
 		class PlatformConstantBuffer;
 		class Buffer;
+		class Layout;
 		struct DeviceContext;
+		struct LayoutDesc;
 		/// Base class for API-specific rendering.
 		/// Be sure to make the following calls at the appropriate place: RestoreDeviceObjects(), InvalidateDeviceObjects(), RecompileShaders(), SetReverseDepth()
 		class RenderPlatform
@@ -43,6 +45,7 @@ namespace simul
 			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;
 
 			virtual void ApplyShaderPass	(DeviceContext &deviceContext,Effect *,EffectTechnique *,int)=0;
+			virtual void Draw				(DeviceContext &deviceContext,int num_verts,int start_vert)=0;
 			virtual void DrawMarker			(void *context,const double *matrix)			=0;
 			virtual void DrawLine			(void *context,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)=0;
 			virtual void DrawCrossHair		(void *context,const double *pGlobalPosition)	=0;
@@ -69,7 +72,9 @@ namespace simul
 			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
 			virtual Buffer					*CreateBuffer					()	=0;
+			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *)	=0;
 			virtual void					*GetDevice						()	=0;
+			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers)=0;
 		};
 	}
 }

@@ -348,12 +348,8 @@ namespace simul
 			}
 			GL_ERROR_CHECK
 		}
-		GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines,const vector<string> &sourceFilesUtf8)
+		static void InsertDefines(std::string &src,const map<string,string> &defines)
 		{
-			std::string src=source;
-		/*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
-			const int MAX_STRINGS=12;
-			const char *strings[MAX_STRINGS];
 			int start_of_line=0;
 			// We can insert #defines, but only AFTER the #version string.
 			int pos=(int)src.find("#version");
@@ -375,6 +371,14 @@ namespace simul
 //				int start_line=(int)GetLineNumber(src,start_of_line);
 				//filenameChart.add("defines",start_line,def);
 			}
+		}
+		GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines,const vector<string> &sourceFilesUtf8)
+		{
+			std::string src=source;
+		/*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
+			const int MAX_STRINGS=12;
+			const char *strings[MAX_STRINGS];
+			InsertDefines(src,defines);
 			int lenOfStrings[MAX_STRINGS];
 			strings[0]		=src.c_str();
 			lenOfStrings[0]	=(int)strlen(strings[0]);
@@ -416,7 +420,9 @@ namespace simul
 			GLint effect=glfxGenEffect();
 #if 1
 			std::string src				=loadShaderSource(filenameUtf8.c_str());
+
 			ProcessIncludes(src,filenameUtf8,false,effectSourceFilesUtf8);
+			InsertDefines(src,defines);
 			
 			int pos=(int)src.find("\r\n");
 			while(pos>=0)
@@ -589,6 +595,7 @@ namespace simul
 		GL_ERROR_CHECK
 			vector<string> sourceFilesUtf8;
 			ProcessIncludes(src,filenameUtf8,false,sourceFilesUtf8);
+			//InsertDefines(src,defines);
 		GL_ERROR_CHECK
 			GLuint sh=glCreateShader(shader_type);
 		GL_ERROR_CHECK

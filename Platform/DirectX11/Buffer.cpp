@@ -36,4 +36,5 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
         num_vertices*struct_size,D3D11_USAGE_DEFAULT,D3D11_BIND_VERTEX_BUFFER,0,0
 	};
 	renderPlatform->AsD3D11Device()->CreateBuffer(&desc,&InitData,&d3d11Buffer);
+	stride=struct_size;
 }

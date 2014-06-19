@@ -50,8 +50,9 @@ namespace simul
 			void SetReverseDepth(bool r);
 			void IntializeLightingEnvironment(const float pAmbientLight[3]);
 			
-			void ApplyShaderPass	(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
-
+			void ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
+			
+			void Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
 			void DrawMarker		(void *context,const double *matrix);
 			void DrawLine		(void *context,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width);
 			void DrawCrossHair	(void *context,const double *pGlobalPosition);
@@ -77,8 +78,9 @@ namespace simul
 			crossplatform::Effect					*CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer();
 			crossplatform::Buffer					*CreateBuffer();
+			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *);
 			void									*GetDevice();
-			
+			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers);
 			ID3DX11Effect *effect;
 			simul::dx11::ConstantBuffer<SolidConstants> solidConstants;
 			std::set<crossplatform::Material*> materials;

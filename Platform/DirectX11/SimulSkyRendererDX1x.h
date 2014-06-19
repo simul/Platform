@@ -56,7 +56,6 @@ namespace simul
 			bool Destroy();
 			//! \deprecated This function is no longer used, as the sky is drawn by the atmospherics renderer. See simul::sky::BaseAtmosphericsRenderer.
 			bool Render(void *context,bool blend);
-			bool RenderPointStars(crossplatform::DeviceContext &deviceContext,float exposure);
 			//! Draw the fade textures to screen
 			bool RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
 			//! Call this to draw the sun flare, usually drawn last, on the main render target.
@@ -98,7 +97,6 @@ namespace simul
 			void EnsureTextureCycle();
 	
 			ID3D11Device*							m_pd3dDevice;
-			ID3D11InputLayout*						m_pStarsVtxDecl;
 			Query									sunQuery;
 
 			ID3DX11EffectShaderResourceVariable*	flareTexture;

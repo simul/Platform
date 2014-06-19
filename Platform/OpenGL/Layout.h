@@ -10,6 +10,9 @@ namespace simul
 		public:
 			Layout();
 			virtual ~Layout();
+			void InvalidateDeviceObjects();
+			void Apply(crossplatform::DeviceContext &deviceContext);
+			void Unapply(crossplatform::DeviceContext &deviceContext);
 		};
 
 	}

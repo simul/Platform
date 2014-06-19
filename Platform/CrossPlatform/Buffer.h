@@ -17,6 +17,7 @@ namespace simul
 			virtual ID3D11Buffer *AsD3D11Buffer()=0;
 			virtual GLuint AsGLuint()=0;
 			virtual void EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,int struct_size,const void *data)=0;
+			int stride;
 		};
 	}
 }

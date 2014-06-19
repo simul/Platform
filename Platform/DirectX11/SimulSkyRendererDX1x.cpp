@@ -27,6 +27,7 @@
 #include "Simul/Platform/DirectX11/Texture.h"
 #include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
 #include "Simul/Platform/DirectX11/Effect.h"
+#include "Simul/Platform/DirectX11/Layout.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/Buffer.h"
 #include "Simul/Math/Pi.h"
@@ -39,7 +40,6 @@ using namespace dx11;
 SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem)
 	:simul::sky::BaseSkyRenderer(sk,mem)
 	,m_pd3dDevice(NULL)
-	,m_pStarsVtxDecl(NULL)
 	,cycle(0)
 {
 	skyKeyframer->SetCalculateAllAltitudes(true);
@@ -71,85 +71,11 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r
 	RecompileShaders();
 	
 	ClearIterators();
-	
-	// Stars vertex declaration
-	{
-		D3D11_INPUT_ELEMENT_DESC decl[]=
-		{
-			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD",	0, DXGI_FORMAT_R32_FLOAT,			0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		};
-		SAFE_RELEASE(m_pStarsVtxDecl);
-		//hr=m_pd3dDevice->CreateInputLayout(decl,2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pStarsVtxDecl);
-		
-		ID3DBlob *VS;
-		ID3DBlob *errorMsgs=NULL;
-		std::string dummy_shader;
-		dummy_shader="struct vertexInput"
-					"{";
-		for(int i=0;i<2;i++)
-		{
-			D3D11_INPUT_ELEMENT_DESC &dec=decl[i];
-			std::string format;
-			switch(dec.Format)
-			{
-			case DXGI_FORMAT_R32G32B32A32_FLOAT:
-				format="float4";
-				break;
-			case DXGI_FORMAT_R32G32B32_FLOAT:
-				format="float3";
-				break;
-			case DXGI_FORMAT_R32G32_FLOAT:
-				format="float2";
-				break;
-			case DXGI_FORMAT_R32_FLOAT:
-				format="float";
-				break;
-			};
-			dummy_shader+="   ";
-			dummy_shader+=format+" ";
-			std::string name=dec.SemanticName;
-			if(strcmp(dec.SemanticName,"POSITION")!=0)
-				name+=('0'+dec.SemanticIndex);
-			dummy_shader+=name;
-			dummy_shader+="_";
-			dummy_shader+=" : ";
-			dummy_shader+=name;
-			dummy_shader+=";";
-					//"	float3 position		: POSITION;"
-					//"	float texCoords		: TEXCOORD0;";
-		}
-		dummy_shader+="};"
-					"struct vertexOutput"
-					"{"
-					"	float4 hPosition	: SV_POSITION;"
-					"};"
-					"vertexOutput VS_Main(vertexInput IN) "
-					"{"
-					"	vertexOutput OUT;"
-					"	OUT.hPosition	=float4(1.0,1.0,1.0,1.0);"
-					"	return OUT;"
-					"}";
-		const char *str=dummy_shader.c_str();
-		size_t len=strlen(str);
-		HRESULT hr=D3DX11CompileFromMemory(str,len,"dummy",NULL,NULL,"VS_Main", "vs_4_0", 0, 0, 0, &VS, &errorMsgs, 0);
-		if(hr!=S_OK)
-		{
-			const char *e=(const char*)errorMsgs->GetBufferPointer();
-			std::cerr<<e<<std::endl;
-		}
-		m_pd3dDevice->CreateInputLayout(decl, 2, VS->GetBufferPointer(), VS->GetBufferSize(), &m_pStarsVtxDecl);
-		if(VS)
-			VS->Release();
-		if(errorMsgs)
-			errorMsgs->Release();
-	}
 }
 
 void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-	SAFE_RELEASE(m_pStarsVtxDecl);
 	if(light_table)
 		light_table->InvalidateDeviceObjects();
 	if(light_table_2d)
@@ -531,70 +457,6 @@ void SimulSkyRendererDX1x::RenderIlluminationBuffer(crossplatform::DeviceContext
 		illumination_2d->deactivateRenderTarget();
 	}
 	SIMUL_COMBINED_PROFILE_END(context)
-}
-
-bool SimulSkyRendererDX1x::RenderPointStars(crossplatform::DeviceContext &deviceContext,float exposure)
-{
-	HRESULT hr=S_OK;
-	math::Matrix4x4 tmp1, tmp2,wvp;
-	deviceContext.viewStruct.view.Inverse(tmp1);
-	math::Vector3 cam_pos(tmp1._41,tmp1._42,tmp1._43);
-	math::Matrix4x4 world;
-	GetSiderealTransform((float*)&world);
-	world._41=cam_pos.x;
-	world._42=cam_pos.y;
-	world._43=cam_pos.z;
-	world.Inverse(tmp2);
-	math::Multiply4x4(tmp1,world,deviceContext.viewStruct.view);
-	math::Multiply4x4(tmp2,tmp1,deviceContext.viewStruct.proj);
-	tmp2.Transpose(wvp);
-	skyConstants.worldViewProj=(const float *)(&tmp2);
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-
-
-	skyConstants.starBrightness	= exposure * skyKeyframer->GetCurrentStarBrightness();
-	if(skyConstants.starBrightness<minimumStarBrightness)
-		return true;
-	if(skyConstants.starBrightness<minimumStarBrightness)
-		return true;
-	effect->Apply(deviceContext,techPointStars,0);
-	//hr=ApplyPass(pContext,techPointStars->asD3DX11EffectTechnique()->GetPassByIndex(0));
-	skyConstants.Apply(deviceContext);
-
-	int current_num_stars=skyKeyframer->stars.GetNumStars();
-	if(!star_vertices||current_num_stars!=num_stars)
-	{
-		BuildStarsBuffer();
-	}
-
-	ID3D11InputLayout* previousInputLayout;
-	pContext->IAGetInputLayout( &previousInputLayout );
-	D3D_PRIMITIVE_TOPOLOGY previousTopology;
-	pContext->IAGetPrimitiveTopology(&previousTopology);
-
-	pContext->IASetInputLayout( m_pStarsVtxDecl );
-	UINT stride = sizeof(StarVertext);
-	UINT offset = 0;
-    UINT Strides[1];
-    UINT Offsets[1];
-    Strides[0] = 0;
-    Offsets[0] = 0;
-	ID3D11Buffer *buf=m_pStarsVertexBuffer->AsD3D11Buffer();
-	pContext->IASetVertexBuffers(	0,			// the first input slot for binding
-									1,			// the number of buffers in the array
-									&buf,		// the array of vertex buffers
-									&stride,	// array of stride values, one for each buffer
-									&offset );	// array of offset values, one for each buffer
-	
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-	pContext->Draw(num_stars,0);
-
-	pContext->IASetPrimitiveTopology(previousTopology);
-	pContext->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
-	effect->Unapply(deviceContext);
-	return true;
 }
 
 bool SimulSkyRendererDX1x::Render(void *context,bool blend)

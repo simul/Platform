@@ -8,6 +8,7 @@
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
 #include "Simul/Platform/OpenGL/Buffer.h"
+#include "Simul/Platform/OpenGL/Layout.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #pragma warning(disable:4505)	// Fix GLUT warnings
@@ -444,9 +445,40 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 	return new opengl::Buffer();
 }
 
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatform::LayoutDesc *)
+{
+	return new opengl::Layout;
+}
+
 void *RenderPlatform::GetDevice()
 {
 	return NULL;
+}
+
+void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers)
+{
+	for(int i=0;i<num_buffers;i++)
+	{
+		crossplatform::Buffer *buffer=buffers[i];
+  int weightPosition = glGetAttribLocation(programID, "blendWeights");
+  glVertexAttribPointer(weightPosition, 4, GL_FLOAT, GL_FALSE, sizeof(TVertex_VNTWI), info->weightOffset);
+  glEnableVertexAttribArray(weightPosition);
+  ///////////////
+  int indexPosition = glGetAttribLocation(programID, "blendIndices");
+  glVertexAttribPointer(indexPosition, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(TVertex_VNTWI), info->indexOffset);
+  glEnableVertexAttribArray(indexPosition);
+
+		glBindBuffer( GL_ARRAY_BUFFER, buffers[0]->AsGLuint() );
+		glVertexAttribPointer(0,3, GL_FLOAT, GL_FALSE,buffer->stride, 0 );       // Set The Vertex Pointer To The Vertex Buffer
+		glBindBuffer( GL_ARRAY_BUFFER, m_nVBOTexCoords );
+		glVertexAttribPointer(1,2, GL_FLOAT, 0, (char *) NULL ); 
+		//glBindBuffer(GL_ARRAY_BUFFER,0)
+	}
+}
+
+void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
+{
+	glDrawArrays(GL_POINTS, start_vert, num_verts); 
 }
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)

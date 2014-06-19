@@ -41,7 +41,6 @@ GLenum internal_format=GL_RGBA32F_ARB;
 
 SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *m)
 	:BaseSkyRenderer(sk,m)
-	,planet_program(0)
 	,initialized(false)
 {
 	gpuSkyGenerator.SetEnabled(true);
@@ -266,71 +265,6 @@ bool SimulGLSkyRenderer::Render(void *,bool )
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderPointStars(crossplatform::DeviceContext &deviceContext,float exposure)
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	float sid[16];
-	GetSiderealTransform(sid);
-	glEnable(GL_BLEND);
-	glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE);
-	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
-	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
-#if 1
-	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE,GL_SRC_ALPHA,GL_ONE);
-	int current_num_stars=skyKeyframer->stars.GetNumStars();
-	if(!star_vertices||current_num_stars!=num_stars)
-	{
-		num_stars=current_num_stars;
-		delete [] star_vertices;
-		star_vertices=new StarVertext[num_stars];
-		static float d=100.f;
-		{
-			for(int i=0;i<num_stars;i++)
-			{
-				float ra=(float)skyKeyframer->stars.GetStar(i).ascension;
-				float de=(float)skyKeyframer->stars.GetStar(i).declination;
-				star_vertices[i].x= d*cos(de)*sin(ra);
-				star_vertices[i].y= d*cos(de)*cos(ra);
-				star_vertices[i].z= d*sin(de);
-				star_vertices[i].b=(float)exp(-skyKeyframer->stars.GetStar(i).magnitude);
-			}
-		}
-	}
-	glUseProgram(effect->GetTechniqueByName("stars")->asGLuint());
-	float sb=skyKeyframer->GetStarlight().x;
-	float star_brightness=sb*exposure*skyKeyframer->GetStarBrightness();
-	skyConstants.starBrightness=star_brightness;
-	skyConstants.Apply(deviceContext);
-	float mat1[16],mat2[16];
-	glGetFloatv(GL_MODELVIEW_MATRIX,mat1);
-	math::Vector3 cam_pos;
-	CalcCameraPosition(cam_pos);
-	glTranslatef(cam_pos.x,cam_pos.y,cam_pos.z);
-	glGetFloatv(GL_MODELVIEW_MATRIX,mat2);
-
-	glMultMatrixf(sid);
-	glGetFloatv(GL_MODELVIEW_MATRIX,mat1);
-
-	glBegin(GL_POINTS);
-	for(int i=0;i<num_stars;i++)
-	{
-		StarVertext &V=star_vertices[i];
-		glMultiTexCoord1f(GL_TEXTURE0,V.b);
-		glVertex3f(V.x,V.y,V.z);
-	}
-	glEnd();
-#endif
-	glPopAttrib();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-	return true;
-}
-
-
 void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o)
 {
 	*l1=(void*)(uintptr_t)loss_2d->AsGLuint();
@@ -410,18 +344,11 @@ void SimulGLSkyRenderer::RecompileShaders()
 {
 	gpuSkyGenerator.RecompileShaders();
 
-	SAFE_DELETE_PROGRAM(planet_program);
 	BaseSkyRenderer::RecompileShaders();
 	
 	std::map<std::string,std::string> defines;
 	//sun_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag",defines);
 	//sunlight_param				=glGetUniformLocation(sun_program,"sunlight");
-GL_ERROR_CHECK
-	planet_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_planet.frag",defines);
-GL_ERROR_CHECK
-	planetTexture_param				=glGetUniformLocation(planet_program,"planetTexture");
-	planetColour_param				=glGetUniformLocation(planet_program,"colour");
-	planetLightDir_param			=glGetUniformLocation(planet_program,"lightDir");
 GL_ERROR_CHECK
 	//fade_3d_to_2d_program		=MakeProgram("simul_fade_3d_to_2d");
 	
@@ -466,9 +393,6 @@ void SimulGLSkyRenderer::InvalidateDeviceObjects()
 {
 	initialized=false;
 	gpuSkyGenerator.InvalidateDeviceObjects();
-
-	SAFE_DELETE_PROGRAM(planet_program);
-	
 	BaseSkyRenderer::InvalidateDeviceObjects();
 }
 

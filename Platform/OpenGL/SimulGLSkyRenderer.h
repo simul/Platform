@@ -44,11 +44,8 @@ namespace simul
 			void						RecompileShaders();
 			//! GL Implementation of render function.
 			bool						Render(void *,bool blend);
-			//! Render the stars, as points.
-			bool						RenderPointStars(crossplatform::DeviceContext &deviceContext,float exposure);
 			//! Draw the 2D fades to screen for debugging.
 			bool						RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
-
 			// Implementing simul::sky::SkyTexturesCallback
 			virtual void SetSkyTextureSize(unsigned ){}
 			virtual void SetFadeTextureSize(unsigned ,unsigned ,unsigned ){}
@@ -92,7 +89,6 @@ namespace simul
 			unsigned				cloud_texel_index;
 			unsigned char			*sky_tex_data;
 	
-			GLuint					planet_program;
 
 			GLuint					fade_3d_to_2d_program;
 			GLint					planetTexture_param;

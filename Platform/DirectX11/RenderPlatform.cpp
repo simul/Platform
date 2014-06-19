@@ -8,6 +8,7 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/TextRenderer.h"
 #include "Simul/Platform/DirectX11/Buffer.h"
+#include "Simul/Platform/DirectX11/Layout.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Camera/Camera.h"
@@ -134,6 +135,12 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
 void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,crossplatform::EffectTechnique *tech,int index)
 {
 	tech->asD3DX11EffectTechnique()->GetPassByIndex(index)->Apply(0,deviceContext.asD3D11DeviceContext());
+}
+
+void RenderPlatform::Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
+{
+	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
+	pContext->Draw(num_verts,start_vert);
 }
 
 void RenderPlatform::DrawMarker(void *context,const double *matrix)
@@ -373,9 +380,132 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 	return b;
 }
 
+static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p)
+{
+	using namespace crossplatform;
+	switch(p)
+	{
+	case RGBA_32_FLOAT:
+		return DXGI_FORMAT_R32G32B32_FLOAT;
+	case RGB_32_FLOAT:
+		return DXGI_FORMAT_R32G32B32_FLOAT;
+	case RG_32_FLOAT:
+		return DXGI_FORMAT_R32G32_FLOAT;
+	case R_32_FLOAT:
+		return DXGI_FORMAT_R32_FLOAT;
+	default:
+		return DXGI_FORMAT_UNKNOWN;
+	};
+}
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatform::LayoutDesc *desc)
+{
+	D3D11_INPUT_ELEMENT_DESC *decl=new D3D11_INPUT_ELEMENT_DESC[num_elements];
+	for(int i=0;i<num_elements;i++)
+	{
+		const crossplatform::LayoutDesc &d=desc[i];
+		D3D11_INPUT_ELEMENT_DESC &D=decl[i];
+		D.SemanticName=d.semanticName;
+		D.SemanticIndex=d.semanticIndex;
+		D.Format=ToDxgiFormat(d.format);
+		D.AlignedByteOffset=d.alignedByteOffset;
+		D.InputSlot=d.inputSlot;
+		D.InputSlotClass=d.perInstance?D3D11_INPUT_PER_INSTANCE_DATA:D3D11_INPUT_PER_VERTEX_DATA;
+		D.InstanceDataStepRate=d.instanceDataStepRate;
+		//{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		//{ "TEXCOORD",	0, DXGI_FORMAT_R32_FLOAT,			0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+	dx11::Layout *l=new dx11::Layout();
+	//hr=m_pd3dDevice->CreateInputLayout(decl,2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &starsLayout);
+	
+	ID3DBlob *VS;
+	ID3DBlob *errorMsgs=NULL;
+	std::string dummy_shader;
+	dummy_shader="struct vertexInput"
+				"{";
+	for(int i=0;i<2;i++)
+	{
+		D3D11_INPUT_ELEMENT_DESC &dec=decl[i];
+		std::string format;
+		switch(dec.Format)
+		{
+		case DXGI_FORMAT_R32G32B32A32_FLOAT:
+			format="float4";
+			break;
+		case DXGI_FORMAT_R32G32B32_FLOAT:
+			format="float3";
+			break;
+		case DXGI_FORMAT_R32G32_FLOAT:
+			format="float2";
+			break;
+		case DXGI_FORMAT_R32_FLOAT:
+			format="float";
+			break;
+		};
+		dummy_shader+="   ";
+		dummy_shader+=format+" ";
+		std::string name=dec.SemanticName;
+		if(strcmp(dec.SemanticName,"POSITION")!=0)
+			name+=('0'+dec.SemanticIndex);
+		dummy_shader+=name;
+		dummy_shader+="_";
+		dummy_shader+=" : ";
+		dummy_shader+=name;
+		dummy_shader+=";";
+				//"	float3 position		: POSITION;"
+				//"	float texCoords		: TEXCOORD0;";
+	}
+	dummy_shader+="};"
+				"struct vertexOutput"
+				"{"
+				"	float4 hPosition	: SV_POSITION;"
+				"};"
+				"vertexOutput VS_Main(vertexInput IN) "
+				"{"
+				"	vertexOutput OUT;"
+				"	OUT.hPosition	=float4(1.0,1.0,1.0,1.0);"
+				"	return OUT;"
+				"}";
+	const char *str=dummy_shader.c_str();
+	size_t len=strlen(str);
+	HRESULT hr=D3DX11CompileFromMemory(str,len,"dummy",NULL,NULL,"VS_Main", "vs_4_0", 0, 0, 0, &VS, &errorMsgs, 0);
+	if(hr!=S_OK)
+	{
+		const char *e=(const char*)errorMsgs->GetBufferPointer();
+		std::cerr<<e<<std::endl;
+	}
+	AsD3D11Device()->CreateInputLayout(decl, 2, VS->GetBufferPointer(), VS->GetBufferSize(), &l->d3d11InputLayout);
+	
+	if(VS)
+		VS->Release();
+	if(errorMsgs)
+		errorMsgs->Release();
+	delete [] decl;
+	return l;
+}
+
 void *RenderPlatform::GetDevice()
 {
 	return device;
+}
+
+void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers)
+{
+	UINT offset = 0;
+	ID3D11Buffer *buf[10];
+	UINT strides[10];
+	UINT offsets[10];
+	for(int i=0;i<num_buffers;i++)
+	{
+		strides[i]=buffers[i]->stride;
+		buf[i]=buffers[i]->AsD3D11Buffer();
+		offsets[i]=0;
+	}
+	deviceContext.asD3D11DeviceContext()->IASetVertexBuffers(	0,				// the first input slot for binding
+									num_buffers,	// the number of buffers in the array
+									buf,			// the array of vertex buffers
+									strides,			// array of stride values, one for each buffer
+									offsets );		// array of offset values, one for each buffer
+
 }
 
 void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *srv,float mult)
