@@ -228,13 +228,6 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 
 bool SimulGLSkyRenderer::RenderFades(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
-	int size=width/3;
-	if(height/4<size)
-		size=height/4;
-	if(size<2)
-		return false;
-	int s=size/numAltitudes-2;
-	int y=y0+8;
 	static int main_viewport[]={0,0,1,1};
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	glOrtho(0,(double)main_viewport[2],(double)main_viewport[3],0,-1.0,1.0);
@@ -244,7 +237,6 @@ GL_ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
 	BaseSkyRenderer::RenderFades(deviceContext,x0, y0, width, height);
-	
 GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,NULL);

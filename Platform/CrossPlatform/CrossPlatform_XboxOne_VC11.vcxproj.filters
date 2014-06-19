@@ -20,6 +20,7 @@
     <ClCompile Include="MixedResolutionView.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="Layout.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseFramebuffer.h" />
@@ -37,5 +38,6 @@
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="Macros.h" />
+    <ClInclude Include="Layout.h" />
   </ItemGroup>
 </Project>

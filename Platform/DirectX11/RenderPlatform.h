@@ -59,7 +59,7 @@ namespace simul
 			void DrawCamera		(void *context,const double *pGlobalPosition, double pRoll);
 			void DrawLineLoop	(void *context,const double *mat,int num,const double *vertexArray,const float colr[4]);
 			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f);
-			void DrawDepth		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const float *proj);
+			void DrawDepth		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex);
 			void DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique);
 			void DrawQuad		(crossplatform::DeviceContext &deviceContext);
 

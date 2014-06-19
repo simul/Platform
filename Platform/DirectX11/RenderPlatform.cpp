@@ -547,14 +547,14 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	DrawTexture(deviceContext.platform_context,x1,y1,dx,dy,tex->AsD3D11ShaderResourceView(),mult);
 }
 #include "Simul/Camera/Camera.h"
-void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const float *proj)
+void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex)
 {
 	crossplatform::Effect		*m_pDebugEffect	=UtilityRenderer::GetDebugEffect();
 	crossplatform::EffectTechnique *tech		=m_pDebugEffect->GetTechniqueByName("show_depth");
-	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(proj);
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	m_pDebugEffect->SetParameter("tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
 	static float cc=0.1f;
-	m_pDebugEffect->SetParameter("depthToLinFadeDistParams",vec3(proj[3*4+2],cc*frustum.farZ,proj[2*4+2]*cc*frustum.farZ));
+	m_pDebugEffect->SetParameter("depthToLinFadeDistParams",vec3(deviceContext.viewStruct.proj[3*4+2],cc*frustum.farZ,deviceContext.viewStruct.proj[2*4+2]*cc*frustum.farZ));
 	m_pDebugEffect->SetTexture("imageTexture",tex);
 	DrawQuad(deviceContext,x1,y1,dx,dy,m_pDebugEffect,tech);
 }

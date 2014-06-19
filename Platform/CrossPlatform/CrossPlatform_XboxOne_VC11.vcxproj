@@ -18,6 +18,7 @@
     <ClCompile Include="BaseFramebuffer.cpp" />
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -32,6 +33,7 @@
     <ClInclude Include="DeviceContext.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
+    <ClInclude Include="Layout.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Material.h" />

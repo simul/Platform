@@ -113,14 +113,14 @@ void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &devic
 	{
 		dx11::Texture tex;
 		tex.shaderResourceView=externalDepthTexture_SRV;
-		deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,&tex	,deviceContext.viewStruct.proj	);
+		deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,&tex	);
 	}
 	else
-		deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,hdrFramebuffer.GetDepthTexture()	,deviceContext.viewStruct.proj	);
+		deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,hdrFramebuffer.GetDepthTexture());
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0		,"Main Depth");
-	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0+l	,w,l,&hiResDepthTexture	,deviceContext.viewStruct.proj);
+	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0+l	,w,l,&hiResDepthTexture	);
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0+l	,"Hi-Res Depth");
-	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0+w	,y0+l	,w,l,&lowResDepthTexture,deviceContext.viewStruct.proj);
+	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0+w	,y0+l	,w,l,&lowResDepthTexture);
 	deviceContext.renderPlatform->Print(deviceContext			,x0+w	,y0+l	,"Lo-Res Depth");
 }
 

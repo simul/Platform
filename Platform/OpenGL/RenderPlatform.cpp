@@ -291,7 +291,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsGLuint(),mult);
 }
 
-void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const float *proj)
+void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex)
 {
 	DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsGLuint(),1.0f);
 }
@@ -460,18 +460,20 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	for(int i=0;i<num_buffers;i++)
 	{
 		crossplatform::Buffer *buffer=buffers[i];
-  int weightPosition = glGetAttribLocation(programID, "blendWeights");
-  glVertexAttribPointer(weightPosition, 4, GL_FLOAT, GL_FALSE, sizeof(TVertex_VNTWI), info->weightOffset);
-  glEnableVertexAttribArray(weightPosition);
+//int weightPosition = glGetAttribLocation(programID, "blendWeights");
+//glVertexAttribPointer(weightPosition, 4, GL_FLOAT, GL_FALSE, sizeof(TVertex_VNTWI), info->weightOffset);
+  //glEnableVertexAttribArray(weightPosition);
   ///////////////
-  int indexPosition = glGetAttribLocation(programID, "blendIndices");
-  glVertexAttribPointer(indexPosition, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(TVertex_VNTWI), info->indexOffset);
-  glEnableVertexAttribArray(indexPosition);
-
+//int indexPosition = glGetAttribLocation(programID, "blendIndices");
+ // glVertexAttribPointer(indexPosition, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(TVertex_VNTWI), info->indexOffset);
+ // glEnableVertexAttribArray(indexPosition);
+GL_ERROR_CHECK
 		glBindBuffer( GL_ARRAY_BUFFER, buffers[0]->AsGLuint() );
-		glVertexAttribPointer(0,3, GL_FLOAT, GL_FALSE,buffer->stride, 0 );       // Set The Vertex Pointer To The Vertex Buffer
-		glBindBuffer( GL_ARRAY_BUFFER, m_nVBOTexCoords );
-		glVertexAttribPointer(1,2, GL_FLOAT, 0, (char *) NULL ); 
+		glVertexAttribPointer(0,3, GL_FLOAT,GL_FALSE,buffer->stride,NULL);    
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1,1, GL_FLOAT,GL_FALSE,buffer->stride,NULL); 
+		glEnableVertexAttribArray(1);
+GL_ERROR_CHECK
 		//glBindBuffer(GL_ARRAY_BUFFER,0)
 	}
 }
