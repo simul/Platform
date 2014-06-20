@@ -122,13 +122,13 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{
 		protected:
+		public:
 			GroupMap groups;
 			TechniqueMap techniques;
 			IndexMap techniques_by_index;
 			int apply_count;
 			int currentPass;
 			crossplatform::EffectTechnique *currentTechnique;
-		public:
 			void *platform_effect;
 			Effect();
 			virtual ~Effect();

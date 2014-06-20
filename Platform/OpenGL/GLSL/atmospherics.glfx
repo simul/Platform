@@ -16,17 +16,6 @@ uniform sampler2D cloudShadowTexture;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords, out vec2 pos)
 {
 	vec2 poss[4];
@@ -73,9 +62,9 @@ shader PS_Inscatter(in vec2 texCoords,in vec2 pos, out vec4 FragColor)
 	vec4 insc=texture(inscTexture,fade_texc);
 	float cos0=dot(view,lightDir);
 	vec3 colour=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
-	vec3 skyl=texture(skylightTexture,fade_texc).rgb;
-	colour+=skyl;
-	colour*=exposure;
+	//vec3 skyl=texture(skylightTexture,fade_texc).rgb;
+	//colour+=skyl;
+	//colour*=exposure;
     FragColor=vec4(colour.rgb,1.0);
 }
 
@@ -114,6 +103,12 @@ program atmospherics_overlay::standard.loss
 {
     vs(430) = VS_FullScreen();
     fs(430) = PS_Loss();
+};
+
+program atmospherics_overlay::standard.inscatter
+{
+    vs(430) = VS_FullScreen();
+    fs(430) = PS_Inscatter();
 };
 
 program loss.near

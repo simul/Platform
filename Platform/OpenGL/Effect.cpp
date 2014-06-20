@@ -50,11 +50,13 @@ GL_ERROR_CHECK
 	bindingIndex=lastBindingIndex;
 	lastBindingIndex++;
 GL_ERROR_CHECK
-	for(int i=0;i<100;i++)
+	for(crossplatform::TechniqueMap::iterator i=effect->techniques.begin();i!=effect->techniques.end();i++)
 	{
-		crossplatform::EffectTechnique *tech=effect->GetTechniqueByIndex(i);
+		const char *techname=i->first.c_str();
+		crossplatform::EffectTechnique *tech=i->second;
 		if(!tech)
 			break;
+		bool any=false;
 		for(int j=0;j<tech->NumPasses();j++)
 		{
 	GL_ERROR_CHECK
@@ -64,6 +66,7 @@ GL_ERROR_CHECK
 			indexInShader=glGetUniformBlockIndex(program,name);
 			if(indexInShader>=0)
 			{
+				any=true;
 	GL_ERROR_CHECK
 				glUniformBlockBinding(program,indexInShader,bindingIndex);
 	GL_ERROR_CHECK
@@ -73,12 +76,14 @@ GL_ERROR_CHECK
 	GL_ERROR_CHECK
 			}
 			else
-				std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in the program."<<std::endl;
+				std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in pass "<<j<<" of "<<techname<<std::endl;
 		}
+		if(!any)
+			std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in the technique "<<techname<<"."<<std::endl;
 	}
 }
 
-void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr)
+void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &,size_t size,void *addr)
 {
 GL_ERROR_CHECK
 	glBindBuffer(GL_UNIFORM_BUFFER,ubo);
@@ -97,7 +102,7 @@ int EffectTechnique::NumPasses() const
 	return passes_by_index.size();
 }
 
-Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+Effect::Effect(crossplatform::RenderPlatform *,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 	:current_texture_number(0)
 {
 	filename=filename_utf8;
@@ -157,22 +162,26 @@ void Effect::FillInTechniques()
 			else
 			{
 				tech								=new opengl::EffectTechnique; 
+				int index							=(int)group->techniques.size();
 				group->techniques[techname]			=tech;
-				int index							=(int)group->techniques_by_index.size();
 				group->techniques_by_index[index]	=tech;
 			}
+			techname=(groupname+"::")+techname;
+		}
+		if(techniques.find(techname)!=techniques.end())
+		{
+			if(!tech)
+				tech=techniques[techname];
+			else
+				techniques[techname]=tech;
 		}
 		else
 		{
-			if(techniques.find(techname)!=techniques.end())
-				tech=techniques[techname];
-			else
-			{
+			if(!tech)
 				tech						=new opengl::EffectTechnique; 
-				techniques[techname]		=tech;
-				int index					=(int)techniques_by_index.size();
-				techniques_by_index[index]	=tech;
-			}
+			techniques[techname]		=tech;
+			int index					=(int)techniques_by_index.size();
+			techniques_by_index[index]	=tech;
 		}
 		tech->passes_by_name[passname]	=(void*)t;
 		int pass_idx					=tech->passes_by_index.size();
@@ -213,9 +222,9 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 	if(asGLint()==-1)
 		return NULL;
 	GLint e				=asGLint();
-	int nump			=glfxGetProgramCount(e);
-	if(index>=nump)
+	if(index>=techniques.size())
 		return NULL;
+//	int nump			=glfxGetProgramCount(e);
 	const char *name	=glfxGetProgramName(e,index);
 	GLuint t			=glfxCompileProgram(e,name);
 	if(!t)
@@ -368,7 +377,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	current_texture_number	=0;
 }
 
-void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass)
+void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique *effectTechnique,const char *pass)
 {
 	if(apply_count!=0)
 		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
@@ -381,7 +390,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	current_texture_number	=0;
 }
 
-void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
+void Effect::Unapply(crossplatform::DeviceContext &)
 {
 	glUseProgram(0);
 	if(apply_count<=0)
@@ -390,5 +399,6 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 		SIMUL_BREAK("Effect::Apply has been called too many times!")
 	currentTechnique=NULL;
 	apply_count--;
+	current_texture_number	=0;
 GL_ERROR_CHECK
 }

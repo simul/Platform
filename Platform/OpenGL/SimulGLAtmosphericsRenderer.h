@@ -22,8 +22,6 @@ namespace simul
 		public:
 			SimulGLAtmosphericsRenderer(simul::base::MemoryInterface *m);
 			virtual ~SimulGLAtmosphericsRenderer();
-			//standard ogl object interface functions
-			void RecompileShaders();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
 			// Assign the clouds framebuffer texture
