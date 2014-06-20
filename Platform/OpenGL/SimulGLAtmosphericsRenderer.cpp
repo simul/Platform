@@ -20,9 +20,6 @@ SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer(simul::base::MemoryInte
 	:BaseAtmosphericsRenderer(m)
 	,clouds_texture(0)
 	,initialized(false)
-	,earthshadow_insc_program(0)
-	,godrays_program(0)
-	,earthShadowUniformsUBO(0)
 	,input_texture(0)
 	,depth_texture(0)
 {
@@ -52,40 +49,17 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 	BaseAtmosphericsRenderer::RecompileShaders();
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]	=ReverseDepth?"1":"0";
-	earthshadow_insc_program	=MakeProgram("simul_atmospherics.vert",NULL,"simul_insc_earthshadow.frag",defines);
-	godrays_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defines);
-
-	MAKE_GL_CONSTANT_BUFFER(earthShadowUniformsUBO,EarthShadowUniforms,earthShadowUniformsBindingIndex);
-	atmosphericsUniforms.RestoreDeviceObjects();
-	atmosphericsPerViewConstants.RestoreDeviceObjects();
-	//MAKE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,AtmosphericsUniforms,atmosphericsUniformsBindingIndex);
-	//MAKE_GL_CONSTANT_BUFFER(atmosphericsUniforms2UBO,AtmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex);
 	
-	atmosphericsUniforms		.LinkToProgram(effect->GetTechniqueByName("loss")->passAsGLuint(0),"AtmosphericsUniforms"			,atmosphericsUniformsBindingIndex);
-	linkToConstantBuffer(effect->GetTechniqueByName("loss")->passAsGLuint(0),"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
 	
-	atmosphericsUniforms		.LinkToProgram(effect->GetTechniqueByName("inscatter")->passAsGLuint(0),"AtmosphericsUniforms"			,atmosphericsUniformsBindingIndex);
-	//atmosphericsPerViewConstants.LinkToProgram(insc_program,"AtmosphericsPerViewConstants"	,atmosphericsUniforms2BindingIndex);
-	//linkToConstantBuffer(insc_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
-	linkToConstantBuffer(effect->GetTechniqueByName("inscatter")->passAsGLuint(0),"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
-	
-	atmosphericsUniforms		.LinkToProgram(earthshadow_insc_program,"AtmosphericsUniforms"			,atmosphericsUniformsBindingIndex);
-	atmosphericsPerViewConstants.LinkToProgram(earthshadow_insc_program,"AtmosphericsPerViewConstants"	,atmosphericsUniforms2BindingIndex);
-	//linkToConstantBuffer(earthshadow_insc_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
-	//linkToConstantBuffer(earthshadow_insc_program,"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
-	linkToConstantBuffer(earthshadow_insc_program,"EarthShadowUniforms",earthShadowUniformsBindingIndex);
-
 	glUseProgram(0);
 }
 
 void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 {
-	SAFE_DELETE_PROGRAM(godrays_program);
-	SAFE_DELETE_PROGRAM(earthshadow_insc_program);
 	BaseAtmosphericsRenderer::InvalidateDeviceObjects();
 }
 
-void SimulGLAtmosphericsRenderer::RenderAsOverlay(crossplatform::DeviceContext &,crossplatform::Texture *depthTexture,float exposure,const simul::sky::float4& depthViewportXYWH)
+void SimulGLAtmosphericsRenderer::RenderAsOverlay(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,float exposure,const simul::sky::float4& depthViewportXYWH)
 {
 	GLuint depth_texture=depthTexture->AsGLuint();
 GL_ERROR_CHECK
@@ -104,14 +78,13 @@ GL_ERROR_CHECK
 	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,skyInterface->GetDirectionToSun());
 	if(e.enable)
 	{
-		EarthShadowUniforms earthShadowUniforms;
-		memset(&earthShadowUniforms,0,sizeof(earthShadowUniforms));
 		earthShadowUniforms.earthShadowNormal	=e.normal;
 		earthShadowUniforms.radiusOnCylinder	=e.radius_on_cylinder;
 		earthShadowUniforms.maxFadeDistance		=fade_distance_km/e.planet_radius;
 		earthShadowUniforms.terminatorDistance	=e.terminator_distance_km/fade_distance_km;
 		earthShadowUniforms.sunDir				=sun_dir;
-		UPDATE_GL_CONSTANT_BUFFER(earthShadowUniformsUBO,earthShadowUniforms,earthShadowUniformsBindingIndex)
+		earthShadowUniforms.Apply(deviceContext);
+//		UPDATE_GL_CONSTANT_BUFFER(earthShadowUniformsUBO,earthShadowUniforms,earthShadowUniformsBindingIndex)
 	}
 	GL_ERROR_CHECK
 	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
@@ -126,26 +99,18 @@ GL_ERROR_CHECK
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
 	
-	//AtmosphericsPerViewConstants atmosphericsPerViewConstants;
 	atmosphericsPerViewConstants.invViewProj=ivp;
 	atmosphericsPerViewConstants.invViewProj.transpose();
 	atmosphericsPerViewConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	atmosphericsPerViewConstants.nearZ=frustum.nearZ*0.001f/fade_distance_km;
 	atmosphericsPerViewConstants.farZ=frustum.farZ*0.001f/fade_distance_km;
-//	atmosphericsPerViewConstants.viewPosition	=cam_pos;
 	
-	//AtmosphericsPerViewConstants atmosphericsPerViewConstants;
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,proj,proj,depthViewportXYWH);
-	atmosphericsPerViewConstants.Apply();
-				glBindBufferBase(GL_UNIFORM_BUFFER,atmosphericsUniforms2BindingIndex,atmosphericsPerViewConstants.ubo);
-	//UPDATE_GL_CONSTANT_BUFFER(atmosphericsPerViewConstants.ubo,(AtmosphericsPerViewConstants)atmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex)
-
+	atmosphericsPerViewConstants.Apply(deviceContext);
+	
 GL_ERROR_CHECK
-	AtmosphericsUniforms a;
-	SetAtmosphericsConstants(a,simul::sky::float4(1.0,1.0,1.0,0.0));
-	(AtmosphericsUniforms)atmosphericsUniforms=a;
-	atmosphericsUniforms.Apply();
-	//UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,a,atmosphericsUniformsBindingIndex)
+	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
+	atmosphericsUniforms.Apply(deviceContext);
 	
 GL_ERROR_CHECK
 	glEnable(GL_BLEND);
@@ -157,13 +122,11 @@ GL_ERROR_CHECK
 	glBlendFuncSeparate(GL_ZERO,GL_SRC_COLOR,GL_ZERO,GL_ONE);
 	DrawQuad(0.f,0.f,1.f,1.f);
 
-	GLuint current_insc_program=e.enable?earthshadow_insc_program:effect->GetTechniqueByName("inscatter")->passAsGLuint(0);
+	GLuint current_insc_program=effect->GetTechniqueByName(e.enable?"earthshadow_inscatter":"inscatter")->passAsGLuint(0);
 	glUseProgram(current_insc_program);
 	setTexture(current_insc_program,"inscTexture"		,1,overcInscTexture->AsGLuint());
-	//setTexture(current_insc_program,"cloudShadowTexture",2,cloud_shadow_texture);
 	setTexture(current_insc_program,"skylightTexture"	,4,skylightTexture->AsGLuint());
 	setTexture(current_insc_program,"depthTexture"		,5,depth_texture);
-	// retain background based on alpha in overlay
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ZERO,GL_ONE);

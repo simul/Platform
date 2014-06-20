@@ -40,18 +40,11 @@ namespace simul
 			void RenderAsOverlay(simul::crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 		private:
 			bool initialized;
-			GLuint earthshadow_insc_program;
 
 			GLuint godrays_program;
 
 			GLuint input_texture,depth_texture;
 			GLuint clouds_texture;
-
-			GLuint		earthShadowUniformsUBO;
-			opengl::ConstantBuffer<AtmosphericsUniforms> atmosphericsUniforms;
-			opengl::ConstantBuffer<AtmosphericsPerViewConstants> atmosphericsPerViewConstants;
-		//	GLuint		atmosphericsUniformsUBO;
-		//	GLuint		atmosphericsUniforms2UBO;
 
 			FramebufferGL *framebuffer;
 		};
