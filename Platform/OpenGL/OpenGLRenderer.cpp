@@ -28,7 +28,6 @@
 
 #pragma comment(lib,"opengl32")
 #pragma comment(lib,"glew32")
-#pragma comment(lib,"freeglut")
 #pragma comment(lib,"glfx")
 
 #ifndef _MSC_VER
