@@ -80,8 +80,6 @@ namespace simul
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			bool Destroy();
-			//! Apply the view and projection matrices, once per frame.
-			void SetMatrices(const simul::math::Matrix4x4 &viewmat,const simul::math::Matrix4x4 &projmat);
 			void RenderSkyAsOverlay(crossplatform::DeviceContext &deviceContext
 											,bool is_cubemap
 											,float exposure

@@ -244,7 +244,6 @@ ERRNO_CHECK
 ERRNO_CHECK
 		if(simulWeatherRenderer)
 		{
-			simulWeatherRenderer->SetMatrices((const float*)&(view_matrices[i]),(const float*)&deviceContext.viewStruct.proj);
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 ERRNO_CHECK
 			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext
@@ -304,9 +303,6 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderScene")
 #if 1
 	MixedResolutionView *view=viewManager.GetView(deviceContext.viewStruct.view_id);
-	
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetMatrices((const float*)&deviceContext.viewStruct.view,(const float*)&deviceContext.viewStruct.proj);
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view,false);
@@ -394,7 +390,8 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	deviceContext.platform_context	=pContext;
 	deviceContext.renderPlatform	=&renderPlatformDx11;
 	deviceContext.viewStruct.view_id=view_id;
-
+	
+	SetReverseDepth(cameraViewStruct.ReverseDepth);
 	if(cam)
 	{
 		float aspect=(float)view->GetScreenWidth()/(float)view->GetScreenHeight();
@@ -407,7 +404,6 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->SetMatrices(deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 		simulWeatherRenderer->PreRenderUpdate(deviceContext);
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)

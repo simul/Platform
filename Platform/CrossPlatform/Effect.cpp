@@ -20,3 +20,17 @@ Effect::~Effect()
 	SIMUL_ASSERT(apply_count==0);
 }
 
+EffectTechnique *EffectTechniqueGroup::GetTechniqueByName(const char *name)
+{
+	return techniques[name];
+}
+
+EffectTechnique *EffectTechniqueGroup::GetTechniqueByIndex(int index)
+{
+	return techniques_by_index[index];
+}
+
+EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
+{
+	return groups[name];
+}

@@ -250,24 +250,17 @@ void Simul2DCloudRendererDX11::EnsureTextureCycle()
 	}
 }
 
-void Simul2DCloudRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
-{
-	view=v;
-	proj=p;
-}
-
 void Simul2DCloudRendererDX11::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
 {
 	EnsureTexturesAreUpToDate(deviceContext);
 	RenderDetailTexture(deviceContext);
 }
-
+/*
 void FixProjectionMatrix(simul::math::Matrix4x4 &proj,float zNear,float zFar)
 {
 	proj._33	=zNear/(zFar-zNear);	
 	proj._43	=zFar*zNear/(zFar-zNear);
-}
-
+}*/
 bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
 									  ,crossplatform::Texture *depthTexture,bool write_alpha
 									  ,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& )
@@ -300,11 +293,11 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture->AsD3D11ShaderResourceView());
 	
 	static float ff=10000.f; 
-	math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
+	math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view,false);
 	float ir_integration_factors[]={0,0,0,0};
-	FixProjectionMatrix(proj,10.f,500000.f);
+	//FixProjectionMatrix(deviceContext.viewStruct.proj,10.f,500000.f);
 
-	Set2DCloudConstants(cloud2DConstants,view,proj,exposure,viewportTextureRegionXYWH,ir_integration_factors);
+	Set2DCloudConstants(cloud2DConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,exposure,viewportTextureRegionXYWH,ir_integration_factors);
 	cloud2DConstants.Apply(deviceContext);
 
 	ID3D11InputLayout* previousInputLayout;

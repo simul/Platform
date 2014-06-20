@@ -292,6 +292,7 @@ GL_ERROR_CHECK
 		if(ShowCompositing)
 		{
 			RenderDepthBuffers(deviceContext,ScreenWidth/2,0,ScreenWidth/2,ScreenHeight/2);
+GL_ERROR_CHECK
 		}
 GL_ERROR_CHECK
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
@@ -400,7 +401,8 @@ void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)
 
 void OpenGLRenderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
 {
-	ID3D11DeviceContext* pContext=(ID3D11DeviceContext* )deviceContext.asD3D11DeviceContext();
+	renderPlatform->DrawDepth(deviceContext,x0,y0,dx/2,dy/2,depthFramebuffer.GetDepthTexture());
+GL_ERROR_CHECK
 	//MixedResolutionView *view	=viewManager.GetView(view_id);
 	//view->RenderDepthBuffers(deviceContext,x0,y0,dx,dy);
 	if(simulWeatherRenderer)

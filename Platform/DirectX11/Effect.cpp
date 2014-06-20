@@ -87,13 +87,40 @@ dx11::Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *f
 		return;
 	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_utf8,defines,D3DCOMPILE_OPTIMIZATION_LEVEL3);
 	platform_effect	=e;
+	groups.clear();
+	if(e)
+	{
+		D3DX11_EFFECT_DESC desc;
+		e->GetDesc(&desc);
+		for(int i=0;i<desc.Groups;i++)
+		{
+			ID3DX11EffectGroup *g=e->GetGroupByIndex(i);
+			D3DX11_GROUP_DESC gdesc;
+			g->GetDesc(&gdesc);
+			crossplatform::EffectTechniqueGroup *G=new crossplatform::EffectTechniqueGroup;
+			if(gdesc.Name)
+				groups[gdesc.Name]=G;
+			else
+				groups[""]=G;// The ungrouped techniques!
+			for(int j=0;j<gdesc.Techniques;j++)
+			{
+				ID3DX11EffectTechnique *t	=g->GetTechniqueByIndex(j);
+				D3DX11_TECHNIQUE_DESC tdesc;
+				t->GetDesc(&tdesc);
+				dx11::EffectTechnique *T	=new dx11::EffectTechnique;
+				G->techniques[tdesc.Name]	=T;
+				T->platform_technique		=t;
+				G->techniques_by_index[j]	=T;
+			}
+		}
+	}
 }
 
 dx11::Effect::~Effect()
 {
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
 	SAFE_RELEASE(e);
-	for(TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
+	for(crossplatform::TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
 	{
 		delete i->second;
 	}

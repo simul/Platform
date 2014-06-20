@@ -47,12 +47,6 @@ namespace simul
 
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform* r);
-			void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
-			//! Render the Atmospherics.
-			void RenderAsOverlay(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *hiResDepthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
-			virtual void RenderLoss(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass);
-			virtual void RenderInscatter(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass);
-			void RenderGodrays(crossplatform::DeviceContext &deviceContext,float strength,bool near_pass,crossplatform::Texture *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,crossplatform::Texture *cloudDepthTexture);
 		protected:
 			HRESULT Destroy();
 			ID3D11Device*									m_pd3dDevice;

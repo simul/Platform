@@ -32,7 +32,6 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
-			void SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
 			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
 				,crossplatform::Texture *depth_tex,bool write_alpha
@@ -51,7 +50,6 @@ namespace simul
 			void EnsureCorrectIlluminationTextureSizes(){}
 			void EnsureIlluminationTexturesAreUpToDate(){}
 			void CreateNoiseTexture(crossplatform::DeviceContext &deviceContext){}
-			simul::math::Matrix4x4		view,proj;
 			ID3D11Device*				m_pd3dDevice;
 			ID3DX11Effect*				effect;
 			ID3DX11EffectTechnique*		msaaTechnique;

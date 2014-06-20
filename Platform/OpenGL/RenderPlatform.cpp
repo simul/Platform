@@ -13,7 +13,7 @@
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #pragma warning(disable:4505)	// Fix GLUT warnings
 #include <GL/glut.h>
-
+#include "Simul/Camera/Camera.h"
 using namespace simul;
 using namespace opengl;
 RenderPlatform::RenderPlatform()
@@ -45,6 +45,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 void RenderPlatform::RecompileShaders()
 {
 	std::map<std::string,std::string> defines;
+	defines["REVERSE_DEPTH"]="0";
 	SAFE_DELETE_PROGRAM(solid_program);
 	solid_program	=MakeProgram("solid",defines);
 	solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
@@ -283,7 +284,6 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 glDisable(GL_BLEND);
 glDisable(GL_CULL_FACE);
-//effect->SetTexture("image_texture",tex);
 	DrawQuad(deviceContext,x1,y1,dx,dy,effect,effect->GetTechniqueByIndex(0));
 GL_ERROR_CHECK
 }
@@ -295,7 +295,40 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex)
 {
-	DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsGLuint(),1.0f);
+GL_ERROR_CHECK
+	glEnable(GL_TEXTURE_2D);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
+GL_ERROR_CHECK
+glDisable(GL_BLEND);
+glDisable(GL_CULL_FACE);
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	static float cc=300000.f;
+	vec3 d(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
+	struct Viewport
+	{
+		int X,Y,Width,Height;
+	};
+	GL_ERROR_CHECK
+	Viewport viewport;
+	glGetIntegerv(GL_VIEWPORT,(int*)(&viewport));
+	GL_ERROR_CHECK
+	effect->Apply(deviceContext,effect->GetTechniqueByName("show_depth"),0);
+	GL_ERROR_CHECK
+	effect->SetParameter("tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
+	effect->SetParameter("depthToLinFadeDistParams",d);
+	effect->SetTexture("image_texture",tex);
+	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
+		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
+		,2.f*(float)dx/(float)viewport.Width
+		,2.f*(float)dy/(float)viewport.Height);
+	GL_ERROR_CHECK
+	effect->SetParameter("rect",r);
+	GL_ERROR_CHECK
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	GL_ERROR_CHECK
+	effect->Unapply(deviceContext);
+GL_ERROR_CHECK
 }
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)

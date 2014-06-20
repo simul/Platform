@@ -57,6 +57,7 @@ GL_ERROR_CHECK
 			break;
 		for(int j=0;j<tech->NumPasses();j++)
 		{
+	GL_ERROR_CHECK
 			GLuint program=tech->passAsGLuint(j);
 			GLint indexInShader;
 	GL_ERROR_CHECK
@@ -115,32 +116,65 @@ void Effect::FillInTechniques()
 	int nump			=glfxGetProgramCount(e);
 	if(!nump)
 		return;
+	groups.clear();
 	for(int i=0;i<nump;i++)
 	{
 		std::string name	=glfxGetProgramName(e,i);
 		GLuint t			=glfxCompileProgram(e,name.c_str());
+		if(!t)
+		{
+			opengl::printEffectLog(e);
+			return;
+		}
 		// Now the name will determine what technique and pass it is.
+		std::string groupname;
 		std::string techname=name;
 		std::string passname="main";
-		int dotpos=name.find_last_of(".");
-		if(dotpos>=0)
+		int dotpos1=techname.find("::");
+		if(dotpos1>=0)
 		{
-			techname=name.substr(0,dotpos);
-			passname=name.substr(dotpos+1,name.length()-dotpos-1);
+			groupname	=name.substr(0,dotpos1);
+			techname	=name.substr(dotpos1+1,techname.length()-dotpos1-2);
+		}
+		int dotpos2=techname.find_last_of(".");
+		if(dotpos2>=0)
+		{
+			techname	=name.substr(0,dotpos2);
+			passname	=name.substr(dotpos2+1,name.length()-dotpos2-1);
 		}
 		crossplatform::EffectTechnique *tech=NULL;
-		if(techniques.find(techname)!=techniques.end())
-			tech=techniques[techname];
+		if(groupname.size()>0)
+		{
+			if(groups.find(groupname)==groups.end())
+			{
+				groups[groupname]=new crossplatform::EffectTechniqueGroup;
+			}
+			crossplatform::EffectTechniqueGroup *group=groups[groupname];
+			if(group->techniques.find(techname)!=group->techniques.end())
+				tech=group->techniques[techname];
+			else
+			{
+				tech								=new opengl::EffectTechnique; 
+				group->techniques[techname]			=tech;
+				int index							=(int)group->techniques_by_index.size();
+				group->techniques_by_index[index]	=tech;
+			}
+		}
 		else
 		{
-			tech					=new opengl::EffectTechnique; 
-			techniques[techname]	=tech;
-			int index				=(int)techniques_by_index.size();
-			techniques_by_index[index]=tech;
+			if(techniques.find(techname)!=techniques.end())
+				tech=techniques[techname];
+			else
+			{
+				tech						=new opengl::EffectTechnique; 
+				techniques[techname]		=tech;
+				int index					=(int)techniques_by_index.size();
+				techniques_by_index[index]	=tech;
+			}
 		}
-		tech->passes_by_name[passname]=(void*)t;
-		int pass_idx=tech->passes_by_index.size();
-		tech->passes_by_index[pass_idx]=(void*)t;
+		tech->passes_by_name[passname]	=(void*)t;
+		int pass_idx					=tech->passes_by_index.size();
+		tech->passes_by_index[pass_idx]	=(void*)t;
 	}
 }
 
@@ -227,7 +261,7 @@ GL_ERROR_CHECK
 	else
 	{
 GL_ERROR_CHECK
-		for(TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
+		for(crossplatform::TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
 		{
 GL_ERROR_CHECK
 			for(int j=0;j<i->second->NumPasses();j++)
@@ -354,4 +388,5 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 		SIMUL_BREAK("Effect::Apply has been called too many times!")
 	currentTechnique=NULL;
 	apply_count--;
+GL_ERROR_CHECK
 }

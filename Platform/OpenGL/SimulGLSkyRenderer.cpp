@@ -104,8 +104,11 @@ const float *SimulGLSkyRenderer::GetFastInscatterLookup(crossplatform::DeviceCon
 void SimulGLSkyRenderer::RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext)
 {
 	math::Vector3 cam_pos=camera::GetCameraPosVector(deviceContext.viewStruct.view);
+GL_ERROR_CHECK
 	SetIlluminationConstants(earthShadowUniforms,skyConstants,cam_pos);
+GL_ERROR_CHECK
 	skyConstants.Apply(deviceContext);
+GL_ERROR_CHECK
 	earthShadowUniforms.Apply(deviceContext);
 	{
 		//D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
@@ -121,6 +124,7 @@ void SimulGLSkyRenderer::RenderIlluminationBuffer(crossplatform::DeviceContext &
 // into pair of 2D textures (distance x elevation), eliminating the viewing altitude and time factor.
 bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceContext)
 {
+GL_ERROR_CHECK
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -130,7 +134,9 @@ bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceConte
 	glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+GL_ERROR_CHECK
 	BaseSkyRenderer::Render2DFades(deviceContext);
+GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,NULL);
 	glActiveTexture(GL_TEXTURE1);
@@ -221,6 +227,7 @@ void SimulGLSkyRenderer::EnsureTexturesAreUpToDate(void *)
 
 void SimulGLSkyRenderer::EnsureTextureCycle()
 {
+GL_ERROR_CHECK
 	int cyc=(skyKeyframer->GetTextureCycle())%3;
 	while(texture_cycle!=cyc)
 	{

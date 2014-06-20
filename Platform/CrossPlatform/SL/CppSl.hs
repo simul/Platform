@@ -1,5 +1,8 @@
 #ifndef CPPSL_HS
 #define CPPSL_HS
+#ifndef REVERSE_DEPTH
+#define REVERSE_DEPTH 0
+#endif
 #undef RADIAL_CLOUD_SHADOW
 // Definitions shared across C++, HLSL, and GLSL!
 

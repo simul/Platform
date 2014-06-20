@@ -97,20 +97,25 @@ vec4 TexturedMSPS(posTexVertexOutput IN) : SV_TARGET
 	vec4 res	=multiplier*imageTextureMS.Load(pos,0);
 	return res;
 }
-float depthToFadeDistance(vec4 depth,vec2 xy,vec3 depthToLinFadeDistParams,vec2 tanHalf)
-{
-	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz);
-	float Tx=xy.x*tanHalf.x;
-	float Ty=xy.y*tanHalf.y;
-	vec4 fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
-	return fadeDist;
-}
 
 vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 depth		=texture_clamp(imageTexture,IN.texCoords);
-	vec4 dist		=depthToFadeDistance(depth,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
-    return vec4(dist.xy,depth.z,1.0);
+	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
+    return vec4(pow(dist.xy,0.44),depth.z,1.0);
+}
+vec4 ShowDepthMS_PS(posTexVertexOutput IN) : SV_TARGET
+{
+	uint2 dims;
+	uint numSamples;
+	imageTextureMS.GetDimensions(dims.x,dims.y,numSamples);
+	uint2 pos	=uint2(IN.texCoords.xy*vec2(dims.xy));
+	vec4 depth		=imageTextureMS.Load(pos,0);
+	vec2 dist		=depthToFadeDistance(depth.xx,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
+   // return vec4(1.0-1000.0*(1.0-depth.xxx),1.0);
+	///if(dist.x<.2)
+	//	dist.x=0;
+	return vec4(pow(dist.xxx,0.44),1.0);
 }
 struct vec3input
 {
@@ -298,5 +303,17 @@ technique11 show_depth
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS()));
+    }
+}
+technique11 show_depth_ms
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,Debug2DVS()));
+		SetPixelShader(CompileShader(ps_5_0,ShowDepthMS_PS()));
     }
 }

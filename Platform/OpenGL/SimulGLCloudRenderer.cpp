@@ -249,6 +249,7 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 
 void SimulGLCloudRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
 {
+GL_ERROR_CHECK
 	EnsureTexturesAreUpToDate(deviceContext);
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_MODELVIEW);
@@ -290,6 +291,7 @@ void SimulGLCloudRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceC
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 	glPopAttrib();
+GL_ERROR_CHECK
 }
 
 simul::math::Matrix4x4 ConvertReversedToRegularProjectionMatrix(const simul::math::Matrix4x4 &proj)

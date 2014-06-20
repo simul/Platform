@@ -107,11 +107,22 @@ namespace simul
 				return (GLuint)((uintptr_t)(passes_by_name[std::string(name)]));
 			}
 		};
+		typedef std::map<std::string,EffectTechnique *> TechniqueMap;
+		typedef std::map<int,EffectTechnique *> IndexMap;
+		/// Crossplatform equivalent of D3DXEffectGroup - a named group of techniques.
+		class SIMUL_CROSSPLATFORM_EXPORT EffectTechniqueGroup
+		{
+		public:
+			TechniqueMap techniques;
+			IndexMap techniques_by_index;
+			EffectTechnique *GetTechniqueByName(const char *name);
+			EffectTechnique *GetTechniqueByIndex(int index);
+		};
+		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{
 		protected:
-			typedef std::map<std::string,EffectTechnique *> TechniqueMap;
-			typedef std::map<int,EffectTechnique *> IndexMap;
+			GroupMap groups;
 			TechniqueMap techniques;
 			IndexMap techniques_by_index;
 			int apply_count;
@@ -125,6 +136,7 @@ namespace simul
 			{
 				return (ID3DX11Effect*)platform_effect;
 			}
+			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
 			virtual void SetUnorderedAccessView(const char *name,Texture *tex)	=0;

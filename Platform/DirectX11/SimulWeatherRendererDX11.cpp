@@ -308,7 +308,6 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 			deviceContext.viewStruct.view_id=0;
 			deviceContext.viewStruct.proj	=(const float*)&cube_proj;
 			deviceContext.viewStruct.view	=(const float*)&view_matrices[i];
-			SetMatrices((const float*)&view_matrices[i],(const float*)&cube_proj);
 			RenderSkyAsOverlay(deviceContext
 				,false,exposure,false,NULL,NULL,simul::sky::float4(0,0,1.f,1.f),true);
 			if(gamma_correction)
@@ -451,7 +450,8 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(crossplatform::DeviceConte
 	dx11::setParameter(d3deffect,"tanHalfFov"					,vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
 	dx11::setParameter(d3deffect,"nearZ"						,frustum.nearZ/max_fade_distance_metres);
 	dx11::setParameter(d3deffect,"farZ"							,frustum.farZ/max_fade_distance_metres);
-	dx11::setParameter(d3deffect,"depthToLinFadeDistParams"		,vec3(deviceContext.viewStruct.proj[14], max_fade_distance_metres, deviceContext.viewStruct.proj[10]*max_fade_distance_metres));
+	vec3 d(deviceContext.viewStruct.proj[14], max_fade_distance_metres, deviceContext.viewStruct.proj[10]*max_fade_distance_metres);
+	dx11::setParameter(d3deffect,"depthToLinFadeDistParams"		,d);
 	deviceContext.renderPlatform->DrawQuad(deviceContext	,x,y,w,h	,effect,effect->GetTechniqueByName("show_depth"));
 }
 
@@ -473,14 +473,6 @@ void SimulWeatherRendererDX11::RenderLightning(crossplatform::DeviceContext &dev
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
 		simulLightningRenderer->Render(deviceContext,depth_tex,depthViewportXYWH,low_res_depth_tex);
-}
-
-void SimulWeatherRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
-{
-	if(simul2DCloudRenderer)
-		simul2DCloudRenderer->SetMatrices(v,p);
-	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->SetMatrices(v,p);
 }
 
 SimulSkyRendererDX1x *SimulWeatherRendererDX11::GetSkyRenderer()
