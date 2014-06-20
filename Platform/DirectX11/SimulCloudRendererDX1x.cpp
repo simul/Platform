@@ -783,23 +783,6 @@ ERRNO_CHECK
 }
 
 
-void SimulCloudRendererDX1x::RenderDebugInfo(crossplatform::DeviceContext &deviceContext,int width,int height)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
-	
-	simul::math::Matrix4x4 ortho;
-	simul::math::Matrix4x4 ident;
-	ident.Identity();
-	ortho.Identity();
-	ortho._11=(float)width;
-	ortho._22=(float)height;
-    //D3DXMatrixOrthoLH(ortho,(float)width,(float)height,-100.f,100.f);
-	ortho._41=-1.f;
-	ortho._22=-ortho._22;
-	ortho._42=1.f;
-	UtilityRenderer::SetMatrices(ident,ortho);
-	simul::clouds::BaseCloudRenderer::RenderDebugInfo(deviceContext,width,height);
-}
 
 void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {

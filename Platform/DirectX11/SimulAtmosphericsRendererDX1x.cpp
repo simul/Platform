@@ -37,7 +37,6 @@ using namespace dx11;
 
 SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x(simul::base::MemoryInterface *m)
 	:BaseAtmosphericsRenderer(m)
-	,m_pd3dDevice(NULL)
 {
 }
 
@@ -48,20 +47,16 @@ SimulAtmosphericsRendererDX1x::~SimulAtmosphericsRendererDX1x()
 
 void SimulAtmosphericsRendererDX1x::RecompileShaders()
 {
-	SAFE_DELETE(effect);
-	if(!m_pd3dDevice)
-		return;
 	BaseAtmosphericsRenderer::RecompileShaders();
-	HRESULT hr=S_OK;
 }
 
 void SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	HRESULT hr=S_OK;
 	BaseAtmosphericsRenderer::RestoreDeviceObjects(r);
-	m_pd3dDevice=renderPlatform->AsD3D11Device();
 	RecompileShaders();
 }
+
 HRESULT SimulAtmosphericsRendererDX1x::Destroy()
 {
 	InvalidateDeviceObjects();

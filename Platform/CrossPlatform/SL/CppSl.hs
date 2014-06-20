@@ -143,6 +143,20 @@
 			y=v[1];
 			z=v[2];
 		}
+		void operator*=(float m)
+		{
+			x*=m;
+			y*=m;
+			z*=m;
+		}
+		vec3 operator+(vec3 v)
+		{
+			vec3 r;
+			r.x=x+v.x;
+			r.y=y+v.y;
+			r.z=z+v.z;
+			return r;
+		}
 	};
 
 	struct vec4

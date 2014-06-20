@@ -104,9 +104,9 @@ GL_ERROR_CHECK
 	framebuffer.Deactivate(deviceContext.platform_context);
 	RenderGlowTexture(deviceContext);
 	effect->Apply(deviceContext,tech,0);
-	effect->SetParameter("exposure",exposure);
-	effect->SetParameter("gamma",gamma);
-	effect->SetParameter("colour2",vec4(0.0,1.0,1.0,0.5));
+	//effect->SetParameter("exposure",exposure);
+	//effect->SetParameter("gamma",gamma);
+	
 	effect->SetTexture("image_texture",framebuffer.GetTexture());
 	effect->SetTexture("glowTexture",glow_fb.GetTexture());
 GL_ERROR_CHECK

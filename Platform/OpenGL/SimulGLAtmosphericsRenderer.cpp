@@ -84,7 +84,6 @@ GL_ERROR_CHECK
 		earthShadowUniforms.terminatorDistance	=e.terminator_distance_km/fade_distance_km;
 		earthShadowUniforms.sunDir				=sun_dir;
 		earthShadowUniforms.Apply(deviceContext);
-//		UPDATE_GL_CONSTANT_BUFFER(earthShadowUniformsUBO,earthShadowUniforms,earthShadowUniformsBindingIndex)
 	}
 	GL_ERROR_CHECK
 	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();

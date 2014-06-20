@@ -857,64 +857,6 @@ HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass
 	return pass->Apply(0,pImmediateContext);
 }
 
-void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
-{
-#ifdef SIMUL_WIN8_SDK
-	D3DVECTOR vEyePt ={cam_pos[0],cam_pos[1],cam_pos[2]};
-    D3DVECTOR vLookAt;
-    D3DVECTOR vUpDir;
-#else
-	D3DXVECTOR3 vEyePt (cam_pos[0],cam_pos[1],cam_pos[2]);
-    D3DXVECTOR3 vLookAt;
-    D3DXVECTOR3 vUpDir;
-#endif
-    ZeroMemory(mat,6*sizeof(D3DXMATRIX) );
-    /*D3DCUBEMAP_FACE_POSITIVE_X     = 0,
-    D3DCUBEMAP_FACE_NEGATIVE_X     = 1,
-    D3DCUBEMAP_FACE_POSITIVE_Y     = 2,
-    D3DCUBEMAP_FACE_NEGATIVE_Y     = 3,
-    D3DCUBEMAP_FACE_POSITIVE_Z     = 4,
-    D3DCUBEMAP_FACE_NEGATIVE_Z     = 5,*/
-	static const D3DVECTOR lookf[6]=
-	{
-		 {1.f,0.f,0.f}		,{-1.f,0.f,0.f}
-		,{0.f,-1.f,0.f}		,{0.f,1.f,0.f}
-		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
-	};
-	static const D3DVECTOR upf[6]=
-	{
-		 {0.f,1.f,0.f}		,{0.f,1.f,0.f}
-		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
-		,{0.f,1.f,0.f}		,{0.f,1.f,0.f}
-	};
-	static const D3DVECTOR lookr[6]=
-	{
-		 {-1.f,0.f,0.f}		,{1.f,0.f,0.f}
-		,{0.f,-1.f,0.f}		,{0.f,1.f,0.f}
-		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
-	};
-	static const D3DVECTOR upr[6]=
-	{
-		 {0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
-		,{0.f,0.f,1.f}		,{0.f,0.f,-1.f}
-		,{0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
-	};
-	for(int i=0;i<6;i++)
-	{
-		vLookAt		=vEyePt;
-		vLookAt.x+=lookf[i].x;
-		vLookAt.y+=lookf[i].y;
-		vLookAt.z+=lookf[i].z;
-		vUpDir		=upf[i];
-		if(true)
-		{
-			vLookAt		=vEyePt+lookr[i];
-			vUpDir		=upr[i];
-			D3DXMatrixLookAtRH(&mat[i], &vEyePt, &vLookAt, &vUpDir );
-		}
-	}
-}
-
 void BreakIfDebugging()
 {
 	DebugBreak();

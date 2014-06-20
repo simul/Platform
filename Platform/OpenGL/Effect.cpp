@@ -66,7 +66,9 @@ GL_ERROR_CHECK
 			{
 	GL_ERROR_CHECK
 				glUniformBlockBinding(program,indexInShader,bindingIndex);
+	GL_ERROR_CHECK
 				glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
+	GL_ERROR_CHECK
 				glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,size);	
 	GL_ERROR_CHECK
 			}
@@ -134,13 +136,13 @@ void Effect::FillInTechniques()
 		if(dotpos1>=0)
 		{
 			groupname	=name.substr(0,dotpos1);
-			techname	=name.substr(dotpos1+1,techname.length()-dotpos1-2);
+			techname	=name.substr(dotpos1+2,techname.length()-dotpos1-2);
 		}
 		int dotpos2=techname.find_last_of(".");
 		if(dotpos2>=0)
 		{
-			techname	=name.substr(0,dotpos2);
-			passname	=name.substr(dotpos2+1,name.length()-dotpos2-1);
+			passname	=techname.substr(dotpos2+1,techname.length()-dotpos2-1);
+			techname	=techname.substr(0,dotpos2);
 		}
 		crossplatform::EffectTechnique *tech=NULL;
 		if(groupname.size()>0)

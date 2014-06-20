@@ -59,8 +59,6 @@ RaytraceVertexOutput VS_Raytrace(idOnly IN)
 RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
-	//texCoords.y				=1.0-texCoords.y;
-	// Now y is positive downwards.
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2
@@ -80,7 +78,6 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 RaytracePixelOutput PS_RaytraceNearPass(RaytraceVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
-	//texCoords.y				=1.0-texCoords.y;
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2
@@ -125,11 +122,20 @@ vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
 
 vec4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
-	vec2 texCoords		=IN.texCoords.xy;
-	texCoords.y			=1.0-texCoords.y;
-	vec4 r				=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture
-									,noiseTexture3D,depthTexture,lightTableTexture,true,texCoords,false,false,false).colour;
-	return r;
+	vec2 texCoords			=IN.texCoords.xy;
+	RaytracePixelOutput p	=RaytraceCloudsForward(
+									cloudDensity1
+									,cloudDensity2
+									,noiseTexture
+									,noiseTexture3D
+									,depthTexture
+									,lightTableTexture
+									,false
+									,texCoords
+									,false
+									,false
+									,false);
+	return p.colour;
 }
 
 RaytracePixelOutput PS_Raytrace3DNoise(RaytraceVertexOutput IN)

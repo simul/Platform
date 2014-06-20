@@ -148,8 +148,6 @@ namespace simul
 			static int instance_count;
 			static int screen_width;
 			static int screen_height;
-			static simul::math::Matrix4x4 view;
-			static simul::math::Matrix4x4 proj;
 		public:
 			static crossplatform::Effect			*m_pDebugEffect;
 			static ID3D11InputLayout				*m_pCubemapVtxDecl;
@@ -158,7 +156,6 @@ namespace simul
 			UtilityRenderer();
 			~UtilityRenderer();
 			static crossplatform::Effect		*GetDebugEffect();
-			static void SetMatrices(const float *v,const float *p);
 			static void RestoreDeviceObjects(crossplatform::RenderPlatform	*r);
 			static void InvalidateDeviceObjects();
 			static void RecompileShaders();

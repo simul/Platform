@@ -155,8 +155,9 @@ v2f_cubemap VS_DrawCubemapSphere(idOnly IN)
 	uint longitude		=(vertex_id)/2;
 	vertex_id			-=longitude*2;
 	float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);
-	float elevation		=(float(latitude_strip+vertex_id)/float(latitudes)-0.5)*3.1415926536;
-	vec3 pos			=radius*vec3(sin(azimuth)*cos(elevation),cos(azimuth)*cos(elevation),sin(elevation));
+	float elevation		=.99*(float(latitude_strip+vertex_id)/float(latitudes+1)-0.5)*3.1415926536;
+	float cos_el		=cos(elevation);
+	vec3 pos			=radius*vec3(sin(azimuth)*cos_el,cos(azimuth)*cos_el,sin(elevation));
     OUT.hPosition		=mul(worldViewProj,float4(pos.xyz,1.0));
     OUT.wDirection		=normalize(pos.xyz);
     return OUT;
@@ -172,7 +173,7 @@ SamplerState cubeSamplerState
 
 float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
-	float3 view		=(IN.wDirection.xyz);
+	float3 view		=-(IN.wDirection.xyz);
 	float4 result	=cubeTexture.Sample(cubeSamplerState,view);
 	return float4(result.rgb,1.0);
 }
@@ -272,11 +273,11 @@ technique11 draw_cubemap
 {
     pass p0 
     {		
-		SetRasterizerState( RenderBackfaceCull );
+		SetRasterizerState( RenderFrontfaceCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_DrawCubemap()));
 		SetPixelShader(CompileShader(ps_4_0,PS_DrawCubemap()));
-		SetDepthStencilState( EnableDepth, 0 );
+		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 }
@@ -288,7 +289,7 @@ technique11 draw_cubemap_sphere
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_DrawCubemapSphere()));
 		SetPixelShader(CompileShader(ps_4_0,PS_DrawCubemap()));
-		SetDepthStencilState( EnableDepth, 0 );
+		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 }

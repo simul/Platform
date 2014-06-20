@@ -49,7 +49,6 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform* r);
 		protected:
 			HRESULT Destroy();
-			ID3D11Device*									m_pd3dDevice;
 		};
 	}
 }

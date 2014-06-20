@@ -31,6 +31,12 @@ namespace simul
 					return NULL;
 				return unorderedAccessView;
 			}
+			ID3D11DepthStencilView *AsD3D11DepthStencilView()
+			{
+				if(!this)
+					return NULL;
+				return depthStencilView;
+			}
 			GLuint AsGLuint()
 			{
 				return 0;
@@ -40,6 +46,8 @@ namespace simul
 			ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   shaderResourceView;
 			ID3D11UnorderedAccessView*  unorderedAccessView;
+			ID3D11DepthStencilView*  depthStencilView;
+			
 			
 			ID3D11UnorderedAccessView**  unorderedAccessViewMips;
 			ID3D11RenderTargetView*		renderTargetView;

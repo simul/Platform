@@ -102,7 +102,7 @@ void DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,RWTextu
 	}
 	float n		=depthToLinearDistance(nearest_depth,depthToLinFadeDistParams);
 	float f		=depthToLinearDistance(farthest_depth,depthToLinFadeDistParams);
-	float edge=f-n;
+	float edge	=f-n;
 	edge		=step(0.002,edge);
 	target2DTexture[pos.xy]	=vec4(farthest_depth,nearest_depth,edge,0.0);
 }

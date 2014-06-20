@@ -10,6 +10,7 @@
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/Texture.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/SL/spherical_harmonics_constants.sl"
 #pragma warning(disable:4251)
@@ -54,7 +55,7 @@ namespace simul
 			}
 			virtual void* GetDepthTex(int i)
 			{
-				return (void*)m_pCubeEnvDepthMapSRV[i];
+				return (void*)m_pCubeEnvDepthMap[i]->AsD3D11ShaderResourceView();
 			}
 			bool IsValid()
 			{
@@ -85,10 +86,10 @@ namespace simul
 			}
 			crossplatform::Texture *GetDepthTexture()
 			{
-				return NULL;
+				return m_pCubeEnvDepthMap[current_face];
 			}
 		protected:
-int bands;
+			int bands;
 			//! The size of the 2D buffer the sky is rendered to.
 			int Width,Height;
 			ID3D11Texture2D								*stagingTexture;	// Only initialized if CopyToMemory or GetCopy invoked.
@@ -103,9 +104,7 @@ int bands;
 			ID3D11RenderTargetView*						m_pCubeEnvMapRTV[6];
 
 			// Six Depth map textures, each with a DepthStencilView and SRV
-			ID3D11Texture2D*							m_pCubeEnvDepthMap[6];
-			ID3D11DepthStencilView*						m_pCubeEnvDepthMapDSV[6];
-			ID3D11ShaderResourceView*					m_pCubeEnvDepthMapSRV[6];
+			crossplatform::Texture*						m_pCubeEnvDepthMap[6];
 
 			int											current_face;
 

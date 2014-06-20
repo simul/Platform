@@ -61,8 +61,7 @@ namespace simul
 
 			const		char *GetDebugText();
 			simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
-				protected:
-			void		RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext);
+		protected:
 			simul::opengl::GpuSkyGenerator	gpuSkyGenerator;
 			//! \internal Switch the current program, either sky_program or earthshadow_program.
 			//! Also sets the parameter variables.	

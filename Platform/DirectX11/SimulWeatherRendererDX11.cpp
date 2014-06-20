@@ -269,8 +269,8 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 	math::Matrix4x4 view;
 	view.Identity();
 	math::Vector3 cam_pos=GetCameraPosVector(view);
-	D3DXMATRIX view_matrices[6];
-	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
+	math::Matrix4x4 view_matrices[6];
+	camera::MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 	bool noise3d=environment->cloudKeyframer->GetUse3DNoise();
 	bool godrays=GetBaseAtmosphericsRenderer()->GetShowGodrays();
 	GetBaseAtmosphericsRenderer()->SetShowGodrays(false);

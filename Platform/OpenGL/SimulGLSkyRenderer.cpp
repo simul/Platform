@@ -101,34 +101,11 @@ const float *SimulGLSkyRenderer::GetFastInscatterLookup(crossplatform::DeviceCon
 	return Lookup(deviceContext,insc_2d,distance_texcoord,elevation_texcoord);
 }
 
-void SimulGLSkyRenderer::RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext)
-{
-	math::Vector3 cam_pos=camera::GetCameraPosVector(deviceContext.viewStruct.view);
-GL_ERROR_CHECK
-	SetIlluminationConstants(earthShadowUniforms,skyConstants,cam_pos);
-GL_ERROR_CHECK
-	skyConstants.Apply(deviceContext);
-GL_ERROR_CHECK
-	earthShadowUniforms.Apply(deviceContext);
-	{
-		//D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
-		//m_pSkyEffect->SetTechnique(tech);
-		glUseProgram(techIlluminationBuffer->passAsGLuint(0));
-		illumination_2d->activateRenderTarget(deviceContext);
-		//illumination_2d->Clear(deviceContext.platform_context,1.0f,1.0f,1.0f,1.0f,1.f);
-		DrawQuad(0,0,1,1);
-		illumination_2d->deactivateRenderTarget();
-	}
-}
 // Here we blend the four 3D fade textures (distance x elevation x altitude at two keyframes, for loss and inscatter)
 // into pair of 2D textures (distance x elevation), eliminating the viewing altitude and time factor.
 bool SimulGLSkyRenderer::Render2DFades(crossplatform::DeviceContext &deviceContext)
 {
 GL_ERROR_CHECK
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
@@ -141,11 +118,6 @@ GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_3D,NULL);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,NULL);
-	glDisable(GL_TEXTURE_3D);
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
 	return true;
 }
 
@@ -161,7 +133,6 @@ GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,NULL);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,NULL);
-	glDisable(GL_TEXTURE_2D);
 GL_ERROR_CHECK
 return true;
 }

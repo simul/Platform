@@ -261,26 +261,6 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	return (hr==S_OK);
 }
 
-void SimulSkyRendererDX1x::RenderIlluminationBuffer(crossplatform::DeviceContext &deviceContext)
-{
-	ID3D11DeviceContext *context=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	SIMUL_COMBINED_PROFILE_START(context,"RenderIlluminationBuffer")
-	math::Vector3 cam_pos=camera::GetCameraPosVector(deviceContext.viewStruct.view);
-	SetIlluminationConstants(earthShadowUniforms,skyConstants,cam_pos);
-	earthShadowUniforms.Apply(deviceContext);
-	skyConstants.Apply(deviceContext);
-	// Clear the screen to black:
-	static float clearColor[4]={0.0,1.0,0.0,1.0};
-	{
-		ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("illumination_buffer")->asD3DX11EffectTechnique();
-		ApplyPass(context,tech->GetPassByIndex(0));
-		illumination_2d->activateRenderTarget(deviceContext);
-		simul::dx11::UtilityRenderer::DrawQuad(context);
-		illumination_2d->deactivateRenderTarget();
-	}
-	SIMUL_COMBINED_PROFILE_END(context)
-}
-
 bool SimulSkyRendererDX1x::Render(void *context,bool blend)
 {
 	HRESULT hr=S_OK;

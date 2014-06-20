@@ -75,7 +75,6 @@ namespace simul
 			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! Call this to draw the clouds, including any illumination by lightning.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,crossplatform::Texture *depth_tex,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH);
-			void RenderDebugInfo(crossplatform::DeviceContext &deviceContext,int width,int height);
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
 			void RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height);
 			//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).

@@ -92,7 +92,7 @@ dx11::Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *f
 	{
 		D3DX11_EFFECT_DESC desc;
 		e->GetDesc(&desc);
-		for(int i=0;i<desc.Groups;i++)
+		for(int i=0;i<(int)desc.Groups;i++)
 		{
 			ID3DX11EffectGroup *g=e->GetGroupByIndex(i);
 			D3DX11_GROUP_DESC gdesc;

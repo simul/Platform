@@ -174,7 +174,6 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 int UtilityRenderer::instance_count=0;
 int UtilityRenderer::screen_width=0;
 int UtilityRenderer::screen_height=0;
-simul::math::Matrix4x4 UtilityRenderer::view,UtilityRenderer::proj;
 crossplatform::Effect *UtilityRenderer::m_pDebugEffect=NULL;
 ID3D11InputLayout *UtilityRenderer::m_pCubemapVtxDecl=NULL;
 ID3D1xBuffer* UtilityRenderer::m_pVertexBuffer=NULL;
@@ -305,12 +304,6 @@ void UtilityRenderer::InvalidateDeviceObjects()
 crossplatform::Effect		*UtilityRenderer::GetDebugEffect()
 {
 	return m_pDebugEffect;
-}
-
-void UtilityRenderer::SetMatrices(const float *v,const float *p)
-{
-	view=v;
-	proj=p;
 }
 
 void UtilityRenderer::SetScreenSize(int w,int h)
@@ -597,27 +590,27 @@ void UtilityRenderer::DrawCubemap(crossplatform::DeviceContext &deviceContext,ID
 	viewport.TopLeftX	=0.5f*(1.f+offsetx)*m_OldViewports[0].Width-viewport.Width/2;
 	viewport.TopLeftY	=0.5f*(1.f-offsety)*m_OldViewports[0].Height-viewport.Height/2;
 	pContext->RSSetViewports(1,&viewport);
-
+	
+	math::Matrix4x4 view=deviceContext.viewStruct.view;
+	math::Matrix4x4 proj=camera::Camera::MakeProjectionMatrix(1.f,1.f,1.f,100.f);
 	// Create the viewport.
-	D3DXMATRIX wvp,world;
-	D3DXMatrixIdentity(&world);
+	math::Matrix4x4 wvp,world;
+	world.Identity();
 	float tan_x=1.0f/proj(0, 0);
 	float tan_y=1.0f/proj(1, 1);
 	float size_req=tan_x*.5f;
 	static float size=3.f;
 	float d=2.0f*size/size_req;
-	//simul::math::Vector3 offs0(offsetx*(tan_x-size_req)*d,offsety*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs0(0,0,-d);
-	simul::math::Vector3 offs;
-	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)&view),offs0);
-
-	world._41=offs.x;
-	world._42=offs.y;
-	world._43=offs.z;
 	view._41=0;
 	view._42=0;
 	view._43=0;
-	camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&view,(const float*)&proj);
+	simul::math::Vector3 offs;
+	Multiply3(offs,view,offs0);
+	world._41=offs.x;
+	world._42=offs.y;
+	world._43=offs.z;
+	camera::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	simul::dx11::setMatrix(m_pDebugEffect->asD3DX11Effect(),"worldViewProj",&wvp._11);
 	//ID3DX11EffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
 	ID3DX11EffectTechnique*				tech		=m_pDebugEffect->asD3DX11Effect()->GetTechniqueByName("draw_cubemap_sphere");

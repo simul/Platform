@@ -14,6 +14,7 @@ dx11::Texture::Texture(ID3D11Device* d)
 	:texture(NULL)
 	,shaderResourceView(NULL)
 	,unorderedAccessView(NULL)
+	,depthStencilView(NULL)
 	, unorderedAccessViewMips(NULL)
 	,renderTargetView(NULL)
 	,stagingBuffer(NULL)
@@ -40,6 +41,7 @@ void dx11::Texture::InvalidateDeviceObjects()
 	SAFE_RELEASE(texture);
 	SAFE_RELEASE(shaderResourceView);
 	SAFE_RELEASE(unorderedAccessView);
+	SAFE_RELEASE(depthStencilView);
 	SAFE_RELEASE(renderTargetView);
 	SAFE_RELEASE(stagingBuffer);
 	SAFE_RELEASE(m_pOldRenderTarget);

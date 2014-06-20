@@ -3,6 +3,7 @@
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
+struct ID3D11DepthStencilView;
 typedef unsigned GLuint;
 namespace simul
 {
@@ -24,6 +25,7 @@ namespace simul
 			virtual void InvalidateDeviceObjects()=0;
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView()=0;
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()=0;
+			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
 			virtual GLuint AsGLuint()=0;
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0)=0;
