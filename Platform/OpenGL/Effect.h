@@ -22,9 +22,16 @@ namespace simul
 			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
 			void Unbind(simul::crossplatform::DeviceContext &deviceContext);
 		};
+		class SIMUL_OPENGL_EXPORT PassState
+		{
+		public:
+			virtual void Apply()=0;
+		};
 		class SIMUL_OPENGL_EXPORT EffectTechnique:public crossplatform::EffectTechnique
 		{
 		public:
+			typedef std::map<int,PassState *> PassStateMap;
+			PassStateMap passStates;
 			int NumPasses() const;
 		};
 		class SIMUL_OPENGL_EXPORT Effect:public crossplatform::Effect

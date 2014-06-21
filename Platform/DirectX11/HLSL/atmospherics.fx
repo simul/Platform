@@ -473,7 +473,7 @@ fxgroup atmospherics_overlay
 {
 	technique11 standard
 	{
-		pass p0
+		pass loss
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
@@ -483,7 +483,7 @@ fxgroup atmospherics_overlay
 			SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 			SetPixelShader(CompileShader(ps_5_0,PS_Loss()));
 		}
-		pass p1
+		pass inscatter
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
@@ -495,7 +495,7 @@ fxgroup atmospherics_overlay
 	}
 	technique11 msaa
 	{
-		pass p0
+		pass loss
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
@@ -505,7 +505,7 @@ fxgroup atmospherics_overlay
 			SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 			SetPixelShader(CompileShader(ps_5_0,PS_LossMSAA()));
 		}
-		pass p1
+		pass inscatter
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );

@@ -470,6 +470,8 @@ void dx11::Texture::deactivateRenderTarget()
 
 int dx11::Texture::GetSampleCount() const
 {
+	if(!shaderResourceView)
+		return 0;
 	bool msaa=false;
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	shaderResourceView->GetDesc(&desc);

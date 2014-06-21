@@ -186,6 +186,7 @@ void Effect::FillInTechniques()
 		tech->passes_by_name[passname]	=(void*)t;
 		int pass_idx					=tech->passes_by_index.size();
 		tech->passes_by_index[pass_idx]	=(void*)t;
+		tech->pass_indices[passname]	=pass_idx;
 	}
 }
 
@@ -375,6 +376,9 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	glUseProgram(effectTechnique->passAsGLuint(pass));
 	GL_ERROR_CHECK
 	current_texture_number	=0;
+	EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
+	if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
+		glEffectTechnique->passStates[currentPass]->Apply();
 }
 
 void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique *effectTechnique,const char *pass)
@@ -385,9 +389,20 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 	apply_count++;
 	currentTechnique		=effectTechnique;
 	CHECK_TECH_EXISTS
-	glUseProgram(effectTechnique->passAsGLuint(pass));
+	GLuint prog=effectTechnique->passAsGLuint(pass);
+	for(EffectTechnique::PassIndexMap::iterator i=effectTechnique->passes_by_index.begin();
+		i!=effectTechnique->passes_by_index.end();i++)
+	{
+		if(i->second==(void*)prog)
+			currentPass				=i->first;
+	}
+	//currentPass=effectTechnique->passes_by_index.find((void*)prog);
+	glUseProgram(prog);
 	GL_ERROR_CHECK
 	current_texture_number	=0;
+	EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
+	if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
+		glEffectTechnique->passStates[currentPass]->Apply();
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &)

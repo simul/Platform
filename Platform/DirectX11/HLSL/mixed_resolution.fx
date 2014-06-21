@@ -10,21 +10,37 @@ RWTexture2D<float4> target2DTexture SIMUL_RWTEXTURE_REGISTER(1);
 
 vec4 PS_MakeDepthFarNear(posTexVertexOutput IN):SV_Target
 {
-	//uint2 source_dims;
 	uint2 pos=uint2(IN.texCoords.xy*source_dims.xy);
 	vec4 res=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,1,pos,depthToLinFadeDistParams);
 	return res;
 }
 
-vec4 PS_MakeDepthFarNear_MSAA(posTexVertexOutput IN):SV_Target
+vec4 PS_MakeDepthFarNear_MSAA1(posTexVertexOutput IN):SV_Target
 {
-	//uint2 source_dims;
-	//uint numberOfSamples;
-	//sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
-	uint2 pos=uint2(IN.texCoords.xy*source_dims.xy);
-	return MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,NUM_AA_SAMPLES,pos,depthToLinFadeDistParams);
+	return MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,1,uint2(IN.texCoords.xy*source_dims.xy),depthToLinFadeDistParams);
 }
 
+vec4 PS_MakeDepthFarNear_MSAA2(posTexVertexOutput IN):SV_Target
+{
+	return MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,2,uint2(IN.texCoords.xy*source_dims.xy),depthToLinFadeDistParams);
+}
+
+vec4 PS_MakeDepthFarNear_MSAA4(posTexVertexOutput IN):SV_Target
+{
+	uint2 pos=uint2(IN.texCoords.xy*source_dims.xy);
+	vec4 r= MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,4,pos,depthToLinFadeDistParams);
+	return r;
+}
+
+vec4 PS_MakeDepthFarNear_MSAA8(posTexVertexOutput IN):SV_Target
+{
+	return MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,8,uint2(IN.texCoords.xy*source_dims.xy),depthToLinFadeDistParams);
+}
+
+vec4 PS_MakeDepthFarNear_MSAA16(posTexVertexOutput IN):SV_Target
+{
+	return MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,16,uint2(IN.texCoords.xy*source_dims.xy),depthToLinFadeDistParams);
+}
 
 [numthreads(16,16,1)]
 void CS_MakeDepthFarNear(uint3 pos : SV_DispatchThreadID )
@@ -33,12 +49,33 @@ void CS_MakeDepthFarNear(uint3 pos : SV_DispatchThreadID )
 }
 
 [numthreads(16,16,1)]
-void CS_MakeDepthFarNear_MSAA(uint3 pos : SV_DispatchThreadID )
+void CS_MakeDepthFarNear_MSAA1(uint3 pos : SV_DispatchThreadID )
 {
-	//uint2 source_dims;
-	//uint numberOfSamples;
-	//sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
-	target2DTexture[pos.xy]=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,NUM_AA_SAMPLES,pos,depthToLinFadeDistParams);
+	target2DTexture[pos.xy]=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,1,pos,depthToLinFadeDistParams);
+}
+
+[numthreads(16,16,1)]
+void CS_MakeDepthFarNear_MSAA2(uint3 pos : SV_DispatchThreadID )
+{
+	target2DTexture[pos.xy]=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,2,pos,depthToLinFadeDistParams);
+}
+
+[numthreads(16,16,1)]
+void CS_MakeDepthFarNear_MSAA4(uint3 pos : SV_DispatchThreadID )
+{
+	target2DTexture[pos.xy]=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,4,pos,depthToLinFadeDistParams);
+}
+
+[numthreads(16,16,1)]
+void CS_MakeDepthFarNear_MSAA8(uint3 pos : SV_DispatchThreadID )
+{
+	target2DTexture[pos.xy]=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,8,pos,depthToLinFadeDistParams);
+}
+
+[numthreads(16,16,1)]
+void CS_MakeDepthFarNear_MSAA16(uint3 pos : SV_DispatchThreadID )
+{
+	target2DTexture[pos.xy]=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,16,pos,depthToLinFadeDistParams);
 }
 
 [numthreads(8,8,1)]
@@ -74,9 +111,6 @@ void CS_SpreadEdge(uint3 pos : SV_DispatchThreadID )
 }
 vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
 {
-	//uint2 source_dims;
-	//uint numberOfSamples;
-	//sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,NUM_AA_SAMPLES);
 	uint2 hires_pos		=uint2(vec2(source_dims)*IN.texCoords.xy);
 	return sourceMSDepthTexture.Load(hires_pos,0).x;
 }
@@ -127,14 +161,50 @@ technique11 make_depth_far_near
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_MakeDepthFarNear()));
     }
-    pass msaa
+    pass msaa1
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_MakeDepthFarNear_MSAA()));
+		SetPixelShader(CompileShader(ps_5_0,PS_MakeDepthFarNear_MSAA1()));
+    }
+    pass msaa2
+    {
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_MakeDepthFarNear_MSAA2()));
+    }
+    pass msaa4
+    {
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_MakeDepthFarNear_MSAA4()));
+    }
+    pass msaa8
+    {
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_MakeDepthFarNear_MSAA8()));
+    }
+    pass msaa16
+    {
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_MakeDepthFarNear_MSAA16()));
     }
 }
 
@@ -144,9 +214,25 @@ technique11 cs_make_depth_far_near
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_MakeDepthFarNear()));
     }
-    pass msaa
+    pass msaa1
     {
-		SetComputeShader(CompileShader(cs_5_0,CS_MakeDepthFarNear_MSAA()));
+		SetComputeShader(CompileShader(cs_5_0,CS_MakeDepthFarNear_MSAA1()));
+    }
+    pass msaa2
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MakeDepthFarNear_MSAA2()));
+    }
+    pass msaa4
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MakeDepthFarNear_MSAA4()));
+    }
+    pass msaa8
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MakeDepthFarNear_MSAA8()));
+    }
+    pass msaa16
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MakeDepthFarNear_MSAA16()));
     }
 }
 

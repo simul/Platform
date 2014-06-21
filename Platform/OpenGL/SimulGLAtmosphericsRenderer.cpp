@@ -11,16 +11,39 @@
 #include "Simul/Platform/CrossPlatform/SL/atmospherics_constants.sl"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/OpenGL/Effect.h"
 #include <stdint.h>  // for uintptr_t
 #include <string.h>  // for memset
 
 using namespace simul;
 using namespace opengl;
 
+class LossBlendState:public opengl::PassState
+{
+public:
+	void Apply()
+	{
+		glEnable(GL_BLEND);
+		glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
+		glBlendFuncSeparate(GL_ZERO,GL_SRC_COLOR,GL_ZERO,GL_ONE);
+	}
+};
+static LossBlendState lossBlendState;
+class InscBlendState:public opengl::PassState
+{
+public:
+	void Apply()
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
+		glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ZERO,GL_ONE);
+	}
+};
+static InscBlendState inscBlendState;
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer(simul::base::MemoryInterface *m)
 	:BaseAtmosphericsRenderer(m)
 	,clouds_texture(0)
-	,initialized(false)
 	,input_texture(0)
 	,depth_texture(0)
 {
@@ -33,8 +56,25 @@ SimulGLAtmosphericsRenderer::~SimulGLAtmosphericsRenderer()
 void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	BaseAtmosphericsRenderer::RestoreDeviceObjects(r);
-	initialized=true;
 	RecompileShaders();
+}
+
+void SimulGLAtmosphericsRenderer::RecompileShaders()
+{
+	BaseAtmosphericsRenderer::RecompileShaders();
+	crossplatform::EffectTechniqueGroup *group=effect->GetTechniqueGroupByName("atmospherics_overlay");
+	if(group)
+	{
+		for(int i=0;i<group->techniques.size();i++)
+		{
+			opengl::EffectTechnique *t=(opengl::EffectTechnique *)group->GetTechniqueByIndex(i);
+			if(t)
+			{
+				t->passStates[t->GetPassIndex("loss")]=&lossBlendState;
+				t->passStates[t->GetPassIndex("inscatter")]=&inscBlendState;
+			}
+		}
+	}
 }
 
 static GLint earthShadowUniformsBindingIndex=3;
@@ -77,41 +117,34 @@ void SimulGLAtmosphericsRenderer::RenderAsOverlay(crossplatform::DeviceContext &
 	crossplatform::EffectTechniqueGroup *group=effect->GetTechniqueGroupByName("atmospherics_overlay");
 	crossplatform::EffectTechnique *tech=group->GetTechniqueByName(msaa?"msaa":"standard");
 	
-	effect->Apply(deviceContext,tech,0);
-	effect->SetTexture("lossTexture",skyLossTexture);
-	effect->SetTexture("depthTexture",depthTexture);
+	effect->Apply(deviceContext,tech,"loss");
+	
 	glEnable(GL_BLEND);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_ZERO,GL_SRC_COLOR,GL_ZERO,GL_ONE);
 	renderPlatform->DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);
 
-//	GLuint current_insc_program=effect->GetTechniqueByName("inscatter")->passAsGLuint(0);
-	effect->Apply(deviceContext,effect->GetTechniqueByName("inscatter"),0);//current_insc_program);
+	effect->Apply(deviceContext,tech,"inscatter");
 	atmosphericsUniforms.Apply(deviceContext);
-	effect->SetTexture("inscTexture"	,overcInscTexture);
+	effect->SetTexture("inscTexture"		,overcInscTexture);
 	effect->SetTexture("skylightTexture"	,skylightTexture);
 	effect->SetTexture("depthTexture"		,depthTexture);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ZERO,GL_ONE);
 	renderPlatform->DrawQuad(deviceContext);
+	effect->SetTexture("depthTextureMS"	,NULL);
+	effect->SetTexture("depthTexture"	,NULL);
+	effect->SetTexture("lossTexture",NULL);
+	effect->SetTexture("inscTexture",NULL);
+	effect->SetTexture("skylTexture",NULL);
+	effect->SetTexture("illuminationTexture",NULL);
+	effect->SetTexture("cloudShadowTexture",NULL);
+	atmosphericsPerViewConstants.Unbind(deviceContext);
+	atmosphericsUniforms.Unbind(deviceContext);
+	earthShadowUniforms.Unbind(deviceContext);
 	effect->Unapply(deviceContext);
-	glUseProgram(0);
-    glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D,0);
-	GL_ERROR_CHECK
 	glDisable(GL_BLEND);
-    glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D,0);
-    glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D,0);
-    glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D,0);
-    glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D,0);
-    glActiveTexture(GL_TEXTURE5);
-	glBindTexture(GL_TEXTURE_2D,0);
-    glDisable(GL_TEXTURE_2D);
 GL_ERROR_CHECK
 }

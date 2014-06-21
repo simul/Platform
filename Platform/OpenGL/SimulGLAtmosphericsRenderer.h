@@ -24,6 +24,7 @@ namespace simul
 			virtual ~SimulGLAtmosphericsRenderer();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
+			void RecompileShaders();
 			// Assign the clouds framebuffer texture
 			void SetCloudsTexture(void* t)
 			{
@@ -37,8 +38,6 @@ namespace simul
 			//! Render the Atmospherics.
 			void RenderAsOverlay(simul::crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 		private:
-			bool initialized;
-
 			GLuint godrays_program;
 
 			GLuint input_texture,depth_texture;

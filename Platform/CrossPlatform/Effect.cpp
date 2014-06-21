@@ -12,6 +12,7 @@ Effect::Effect()
 	:platform_effect(NULL)
 	,apply_count(0)
 	,currentTechnique(NULL)
+	,currentPass(0)
 {
 }
 

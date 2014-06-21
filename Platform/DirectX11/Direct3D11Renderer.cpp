@@ -322,26 +322,24 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 		view->GetFramebuffer()->Deactivate(pContext);
 	if(simulWeatherRenderer)
 	{
-		crossplatform::Texture *depthTextureHiRes		=&view->hiResDepthTexture;
-	
 		int s=simulWeatherRenderer->GetDownscale();
 		viewManager.DownscaleDepth(deviceContext,s,simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetMaxDistanceKm()*1000.0f);
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-		static bool test=true;
-		crossplatform::Texture* skyBufferDepthTex = (UseSkyBuffer&test)? &view->lowResDepthTexture : depthTextureHiRes;
+	
+		crossplatform::Texture* skyBufferDepthTex = (UseSkyBuffer)? &view->lowResDepthTexture : &view->hiResDepthTexture;
 	
 		if(UseMixedResolution)
 			simulWeatherRenderer->RenderMixedResolution(deviceContext,false,exposure,gamma,view->GetFramebuffer()->GetDepthTexture()
-				,depthTextureHiRes,skyBufferDepthTex,relativeViewportTextureRegionXYWH);
+				,&view->hiResDepthTexture,skyBufferDepthTex,relativeViewportTextureRegionXYWH);
 		else
 			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer
 				,view->GetFramebuffer()->GetDepthTexture(),view->GetFramebuffer()->GetDepthTexture()
 				,relativeViewportTextureRegionXYWH,true);
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->ActivateDepth(deviceContext);
-		simulWeatherRenderer->RenderLightning(deviceContext,depthTextureHiRes,relativeViewportTextureRegionXYWH,simulWeatherRenderer->GetCloudDepthTexture(deviceContext.viewStruct.view_id));
+		simulWeatherRenderer->RenderLightning(deviceContext,&view->hiResDepthTexture,relativeViewportTextureRegionXYWH,simulWeatherRenderer->GetCloudDepthTexture(deviceContext.viewStruct.view_id));
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
-		simulWeatherRenderer->RenderPrecipitation(deviceContext,depthTextureHiRes,relativeViewportTextureRegionXYWH);
+		simulWeatherRenderer->RenderPrecipitation(deviceContext,&view->hiResDepthTexture,relativeViewportTextureRegionXYWH);
 		if(simulOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetSkyRenderer())
 		{
 			simul::sky::float4 dir,light;
@@ -633,7 +631,7 @@ void Direct3D11Renderer::RecompileShaders()
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
 	defines["NUM_AA_SAMPLES"]		=base::stringFormat("%d",Antialiasing);
-	viewManager.RecompileShaders(defines);
+	viewManager.RecompileShaders();
 	SAFE_RELEASE(lightProbesEffect);
 	if(m_pd3dDevice)
 	{

@@ -85,9 +85,11 @@ namespace simul
 		{
 		public:
 			typedef std::map<std::string,void *> PassMap;
-			typedef std::map<int,void *> IndexMap;
+			typedef std::map<int,void *> PassIndexMap;
+			typedef std::map<std::string,int> IndexMap;
 			PassMap passes_by_name;
-			IndexMap passes_by_index;
+			PassIndexMap passes_by_index;
+			IndexMap pass_indices;
 			EffectTechnique()
 				:platform_technique(NULL)
 			{
@@ -105,6 +107,10 @@ namespace simul
 			inline GLuint passAsGLuint(const char *name)
 			{
 				return (GLuint)((uintptr_t)(passes_by_name[std::string(name)]));
+			}
+			inline int GetPassIndex(const char *name)
+			{
+				return pass_indices[std::string(name)];
 			}
 		};
 		typedef std::map<std::string,EffectTechnique *> TechniqueMap;

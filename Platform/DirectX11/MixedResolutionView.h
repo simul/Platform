@@ -3,6 +3,7 @@
 #include "Simul/Platform/CrossPlatform/MixedResolutionView.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Export.h"
@@ -31,7 +32,8 @@ namespace simul
 			int GetScreenHeight() const;
 			void SetResolution(int w,int h);
 			void SetExternalFramebuffer(bool);
-			void SetExternalDepthResource(ID3D11ShaderResourceView *tex);
+			// If an external depth buffer is used, pass it here, wrappered in a simul::crossplatform::Texture.
+			void SetExternalDepthTexture(crossplatform::Texture *tex);
 			void ResolveFramebuffer(crossplatform::DeviceContext &deviceContext);
 			// Debuggin onscreen info:
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy);
@@ -67,7 +69,7 @@ namespace simul
 			int								ScreenWidth;
 			int								ScreenHeight;
 			bool							useExternalFramebuffer;
-			ID3D11ShaderResourceView		*externalDepthTexture_SRV;
+			crossplatform::Texture			*externalDepthTexture;
 		};
 		class SIMUL_DIRECTX11_EXPORT MixedResolutionRenderer
 		{
@@ -76,13 +78,15 @@ namespace simul
 			~MixedResolutionRenderer();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void InvalidateDeviceObjects();
-			void RecompileShaders(const std::map<std::string,std::string> &defines);
+			void RecompileShaders();
 			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec3 depthToLinFadeDistParams);
 		protected:
 			crossplatform::RenderPlatform				*renderPlatform;
-			ID3DX11Effect								*mixedResolutionEffect;
-			ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
+			crossplatform::Effect						*depthForwardEffect;
+			crossplatform::Effect						*depthReverseEffect;
+			crossplatform::ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
 		};
+		/// A class to store a set of MixedResolutionView objects, one per view id.
 		class SIMUL_DIRECTX11_EXPORT MixedResolutionViewManager
 		{
 		public:
@@ -92,7 +96,7 @@ namespace simul
 			{}
 			void							RestoreDeviceObjects	(crossplatform::RenderPlatform *renderPlatform);
 			void							InvalidateDeviceObjects	();
-			void							RecompileShaders		(std::map<std::string,std::string> defines);
+			void							RecompileShaders		();
 			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext,int s,float max_dist_metres);
 			MixedResolutionView				*GetView				(int view_id);
 			std::set<MixedResolutionView*>	GetViews				();
