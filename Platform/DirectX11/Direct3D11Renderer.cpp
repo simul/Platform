@@ -629,13 +629,13 @@ void Direct3D11Renderer::RecompileShaders()
 		simulHDRRenderer->RecompileShaders();
 
 	std::map<std::string,std::string> defines;
-	defines["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
-	defines["NUM_AA_SAMPLES"]		=base::stringFormat("%d",Antialiasing);
+	//["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
+	//defines["NUM_AA_SAMPLES"]		=base::stringFormat("%d",Antialiasing);
 	viewManager.RecompileShaders();
 	SAFE_RELEASE(lightProbesEffect);
 	if(m_pd3dDevice)
 	{
-		V_CHECK(dx11::CreateEffect(m_pd3dDevice,&lightProbesEffect,"light_probes.fx",defines,D3DCOMPILE_OPTIMIZATION_LEVEL3));
+		V_CHECK(dx11::CreateEffect(m_pd3dDevice,&lightProbesEffect,"light_probes.fx",defines));
 		lightProbeConstants.LinkToEffect(lightProbesEffect,"LightProbeConstants");
 	}
 }

@@ -4,6 +4,7 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
+#include "Simul/Camera/Camera.h"
 #include "D3dx11effect.h"
 
 using namespace simul;
@@ -195,7 +196,10 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	}
 	if(!W||!H)
 		return;
-	crossplatform::Effect *effect=depthReverseEffect;
+	crossplatform::Effect *effect=depthForwardEffect;
+	simul::camera::Frustum frustum=camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	if(frustum.reverseDepth)
+		effect=depthReverseEffect;
 	SIMUL_ASSERT(depthTexture!=NULL);
 	// The downscaled size should be enough to fit in at least s hi-res pixels in every larger pixel
 	int w=(W+s-1)/s;
