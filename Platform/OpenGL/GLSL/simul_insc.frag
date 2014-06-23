@@ -37,7 +37,6 @@ vec4 simple()
 	vec4 insc=texture(inscTexture,fade_texc);
 	float cos0=dot(view,lightDir);
 	vec3 colour=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
-	
 	vec3 skyl=texture(skylightTexture,fade_texc).rgb;
 	colour+=skyl;
 	colour*=exposure;

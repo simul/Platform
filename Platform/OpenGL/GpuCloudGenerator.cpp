@@ -7,6 +7,7 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/simul_gpu_clouds.sl"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 
 using namespace simul;
 using namespace opengl;
@@ -29,7 +30,7 @@ GpuCloudGenerator::~GpuCloudGenerator()
 	delete [] density;
 }
 
-void GpuCloudGenerator::RestoreDeviceObjects(void *)
+void GpuCloudGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *)
 {
 	iformat=GL_LUMINANCE32F_ARB;
 	itype=GL_LUMINANCE;
@@ -60,9 +61,9 @@ void GpuCloudGenerator::RecompileShaders()
 	density_program		=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_density.frag");
 	lighting_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_clouds.frag");
 	transform_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_transform.frag");
-	gpuCloudConstants			.LinkToProgram(density_program	,"GpuCloudConstants",8);
-	gpuCloudConstants			.LinkToProgram(lighting_program	,"GpuCloudConstants",8);
-	gpuCloudConstants			.LinkToProgram(transform_program,"GpuCloudConstants",8);
+	gpuCloudConstants	.LinkToProgram(density_program	,"GpuCloudConstants",8);
+	gpuCloudConstants	.LinkToProgram(lighting_program	,"GpuCloudConstants",8);
+	gpuCloudConstants	.LinkToProgram(transform_program,"GpuCloudConstants",8);
 }
 
 static GLuint make3DTexture(int w,int l,int d,int stride,bool wrap_z,const float *src)
@@ -183,6 +184,7 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	int total_texels=GetDensityGridsize(params.density_grid);
 	if(!density_program)
 		RecompileShaders();
+	crossplatform::DeviceContext deviceContext;
 	// We render out a 2D texture with each XY layer laid end-to-end, and copy it to the target.
 	dens_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]*params.density_grid[2]);
 	if(!dens_fb.InitColor_Tex(0,iformat))
@@ -219,7 +221,7 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	glLoadIdentity();
 	{
 GL_ERROR_CHECK
-		dens_fb.Activate(NULL);
+		dens_fb.Activate(deviceContext);
 //dens_fb.Clear(1,0,0,0);
 GL_ERROR_CHECK
 		DrawQuad(0.f,y_start,1.f,y_end-y_start);
@@ -266,6 +268,7 @@ void GpuCloudGenerator::PerformGPURelight(int light_index
 											,int start_texel
 											,int texels)
 {
+	crossplatform::DeviceContext deviceContext;
 GL_ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -278,10 +281,10 @@ GL_ERROR_CHECK
 	}
 	directLightTextures[light_index].ensureTexture3DSizeAndFormat(NULL
 				,params.light_grid[0],params.light_grid[1],params.light_grid[2]
-				,GL_RGBA32F_ARB/*GL_LUMINANCE32F_ARB*/,true);
+		,crossplatform::RGBA_32_FLOAT/*GL_LUMINANCE32F_ARB*/,true);
 	indirectLightTextures[light_index].ensureTexture3DSizeAndFormat(NULL
 				,params.light_grid[0],params.light_grid[1],params.light_grid[2]
-				,GL_LUMINANCE32F_ARB,true);
+				,crossplatform::LUM_32_FLOAT,true);
 	// We use the density framebuffer texture as our density texture. This works well
 	// because we don't need to do any filtering.
 	//GLuint density_texture	=dens_fb.GetColorTex();
@@ -320,13 +323,13 @@ GL_ERROR_CHECK
 	}
 	if(z0==0)
 	{
-		F[0]->Activate(NULL);
+		F[0]->Activate(deviceContext);
 			F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			if(target)
 				glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].tex);
+			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].AsGLuint());
 			CopyTo3DTextureLayer(0,params.light_grid);
 		F[0]->Deactivate(NULL);
 		z0++;
@@ -334,14 +337,14 @@ GL_ERROR_CHECK
 	if(target)
 		target+=z0*params.light_grid[0]*params.light_grid[1]*4;
 GL_ERROR_CHECK
-	float draw_time=0.f,read_time=0.f;
+//	float draw_time=0.f,read_time=0.f;
 	for(int i=z0;i<z1;i++)
 	{
 		float zPosition=((float)i-0.5f)/(float)params.light_grid[2];
 
 		gpuCloudConstants.zPosition=zPosition;
 		gpuCloudConstants.Apply();
-		F[1]->Activate(NULL);
+		F[1]->Activate(deviceContext);
 float u=(float)i/(float)z1;
 F[1]->Clear(NULL,u,u,u,u,1.f);
 			glMatrixMode(GL_PROJECTION);
@@ -359,7 +362,7 @@ F[1]->Clear(NULL,u,u,u,u,1.f);
 			if(target)
 				glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].tex);
+			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].AsGLuint());
 			CopyTo3DTextureLayer(i,params.light_grid);
 			GL_ERROR_CHECK
 		F[1]->Deactivate(NULL);
@@ -387,6 +390,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 {
 	if(texels<=0)
 		return;
+	crossplatform::DeviceContext deviceContext;
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -414,12 +418,12 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,density_texture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_3D,directLightTextures[1].tex);
+	glBindTexture(GL_TEXTURE_3D,directLightTextures[1].AsGLuint());
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_3D,directLightTextures[0].tex);
+	glBindTexture(GL_TEXTURE_3D,directLightTextures[0].AsGLuint());
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	{
-		world_fb.Activate(NULL);
+		world_fb.Activate(deviceContext);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
 			glOrtho(0,1.0,0,1.0,-1.0,1.0);
@@ -439,7 +443,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 				glReadPixels(0,Y0,params.density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
 			}
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_3D,finalTexture[cycled_index]->tex);
+			glBindTexture(GL_TEXTURE_3D,finalTexture[cycled_index]->AsGLuint());
 			CopyTo3DTexture(start_texel,texels,params.density_grid);
 			GL_ERROR_CHECK
 		world_fb.Deactivate(NULL);

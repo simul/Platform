@@ -6,12 +6,12 @@
 // in accordance with the terms of that agreement.
 
 #pragma once
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 typedef long HRESULT;
 #include <vector>
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
@@ -24,7 +24,7 @@ typedef long HRESULT;
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Math/Matrix4x4.h"
 typedef long HRESULT;
-
+struct ID3DX11EffectShaderResourceVariable;
 namespace simul
 {
 	namespace dx11
@@ -37,27 +37,25 @@ namespace simul
 			virtual ~PrecipitationRenderer();
 			//standard d3d object interface functions:
 			//! Call this when the D3D device has been created or reset.
-			void RestoreDeviceObjects(void* dev);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void RecompileShaders();
 			void SetCubemapTexture(void *);
 			//! Call this when the D3D device has been shut down.
 			void InvalidateDeviceObjects();
-			void PreRenderUpdate(void *context,float time_step_seconds);
+			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext,float time_step_seconds);
 			void RenderMoisture(void *context,
 				const DepthTextureStruct &depth
 				,const crossplatform::ViewStruct &viewStruct
 				,const CloudShadowStruct &cloudShadowStruct);
-			void Render(void *context,const void *depth_tex
-				,const simul::math::Matrix4x4 &v
-				,const simul::math::Matrix4x4 &p
+			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex
 				,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH);
 			//! Put textures to screen for debugging
-			void RenderTextures(void *context,int x0,int y0,int dx,int dy);
+			void RenderTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy);
 			//! Provide a random 3D texture. This is set externally so the texture can be shared.
 			void SetRandomTexture3D(void *texture);
 			void *GetMoistureTexture();
 		protected:
-			void RenderParticles(void *context);
+			void RenderParticles(crossplatform::DeviceContext &deviceContext);
 			ID3D11Device*							m_pd3dDevice;
 			ID3D11InputLayout*						m_pVtxDecl;
 			VertexBuffer<PrecipitationVertex>		vertexBuffer;
@@ -69,7 +67,7 @@ namespace simul
 			ID3D11ShaderResourceView*				rain_texture;
 			ID3D11ShaderResourceView*				randomTexture3D;
 			ID3D11ShaderResourceView*				cubemap_SRV;
-			ID3D1xEffectShaderResourceVariable*		rainTexture;
+			ID3DX11EffectShaderResourceVariable*		rainTexture;
 			vec3  *particles;
 			
 			ID3DX11EffectTechnique*						m_hTechniqueRain;

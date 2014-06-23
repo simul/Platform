@@ -6,7 +6,9 @@
 #include "OceanSimulator.h"
 #include "Utilities.h"
 #include "CompileShaderDX1x.h"
-
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "D3dx11effect.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 using namespace simul;
 using namespace dx11;
 
@@ -156,8 +158,8 @@ void OceanSimulator::InvalidateDeviceObjects()
 
 	choppy		.release();
 	omega		.release();
-	displacement.release();
-	gradient	.release();
+	displacement.InvalidateDeviceObjects();
+	gradient	.InvalidateDeviceObjects();
 	dxyz		.release();
 	h0			.release();
 	m_fft.InvalidateDeviceObjects();
@@ -165,13 +167,13 @@ void OceanSimulator::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pd3dImmediateContext);
 }
 
-void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
+void OceanSimulator::RestoreDeviceObjects(simul::crossplatform::RenderPlatform *renderPlatform)
 {
-	m_pd3dDevice=pd3dDevice;
+	m_pd3dDevice=(ID3D11Device* )renderPlatform->GetDevice();
 	// If the device becomes invalid at some point, delete current instance and generate a new one.
-	assert(pd3dDevice);
+	assert(m_pd3dDevice);
 	SAFE_RELEASE(m_pd3dImmediateContext);
-	pd3dDevice->GetImmediateContext(&m_pd3dImmediateContext);
+	m_pd3dDevice->GetImmediateContext(&m_pd3dImmediateContext);
 	assert(m_pd3dImmediateContext);
 	// Height map H(0)
 	int height_map_size = (m_param->dmap_dim + 4) * (m_param->dmap_dim + 1);
@@ -194,26 +196,26 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	// RW buffer allocations
 	// H0
 	UINT float2_stride = 2 * sizeof(float);
-	createBufferAndUAV(pd3dDevice, h0_data, input_full_size * float2_stride, float2_stride
+	createBufferAndUAV(m_pd3dDevice, h0_data, input_full_size * float2_stride, float2_stride
 		, &h0.buffer, &h0.unorderedAccessView, &h0.shaderResourceView);
 
 	// Notice: The following 3 buffers should be half sized buffer because of conjugate symmetric input. But
 	// we use full sized buffers due to the CS4.0 restriction.
 
 	// Put H(t), Dx(t) and Dy(t) into one buffer because CS4.0 allows only 1 UAV at a time
-	createBufferAndUAV(pd3dDevice, zero_data, 3 * input_half_size * float2_stride, float2_stride,
+	createBufferAndUAV(m_pd3dDevice, zero_data, 3 * input_half_size * float2_stride, float2_stride,
 		//&m_pBuffer_Float2_Ht, &m_pUAV_Ht, &m_pSRV_Ht);
 		&choppy.buffer,&choppy.unorderedAccessView,&choppy.shaderResourceView);
 	
 	//choppy.RestoreDeviceObjects(pd3dDevice,3 * input_half_size);
 	// omega
-	createBufferAndUAV(pd3dDevice, omega_data, input_full_size * sizeof(float), sizeof(float)
+	createBufferAndUAV(m_pd3dDevice, omega_data, input_full_size * sizeof(float), sizeof(float)
 		, &omega.buffer, &omega.unorderedAccessView, &omega.shaderResourceView);
 
 	// Notice: The following 3 should be real number data. But here we use the complex numbers and C2C FFT
 	// due to the CS4.0 restriction.
 	// Put Dz, Dx and Dy into one buffer because CS4.0 allows only 1 UAV at a time
-	createBufferAndUAV(pd3dDevice, zero_data, 3 * output_size * float2_stride, float2_stride
+	createBufferAndUAV(m_pd3dDevice, zero_data, 3 * output_size * float2_stride, float2_stride
 		, &dxyz.buffer, &dxyz.unorderedAccessView, &dxyz.shaderResourceView);
 
 	SAFE_DELETE_ARRAY(zero_data);
@@ -223,11 +225,11 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	// Have now created: H0, Ht, Omega, Dxyz - as both UAV's and SRV's.
 
 	// D3D11 Textures - these ar the outputs of the ocean simulator.
-	displacement.ensureTexture2DSizeAndFormat(pd3dDevice,hmap_dim,hmap_dim,DXGI_FORMAT_R32G32B32A32_FLOAT,false,true);
-	gradient.ensureTexture2DSizeAndFormat(pd3dDevice,hmap_dim,hmap_dim,DXGI_FORMAT_R16G16B16A16_FLOAT,false,true);
+	displacement.ensureTexture2DSizeAndFormat(renderPlatform,hmap_dim,hmap_dim,crossplatform::RGBA_32_FLOAT,false,true);
+	gradient.ensureTexture2DSizeAndFormat(renderPlatform,hmap_dim,hmap_dim,crossplatform::RGBA_16_FLOAT,false,true);
 
-	immutableConstants		.RestoreDeviceObjects(pd3dDevice);
-	changePerFrameConstants	.RestoreDeviceObjects(pd3dDevice);
+	immutableConstants		.RestoreDeviceObjects(m_pd3dDevice);
+	changePerFrameConstants	.RestoreDeviceObjects(m_pd3dDevice);
 	
 	RecompileShaders();
 
@@ -244,7 +246,7 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 
 	// FFT
 	//fft512x512_create_plan(&m_fft, pd3dDevice, 3);
-	m_fft.RestoreDeviceObjects(pd3dDevice, 3);
+	m_fft.RestoreDeviceObjects(m_pd3dDevice, 3);
 }
 
 void OceanSimulator::RecompileShaders()
@@ -313,6 +315,8 @@ void OceanSimulator::initHeightMap(D3DXVECTOR2* out_h0, float* out_omega)
 
 void OceanSimulator::updateDisplacementMap(float time)
 {
+	simul::crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context=m_pd3dImmediateContext;
 	// ---------------------------- H(0) -> H(t), D(x, t), D(y, t) --------------------------------
 	// Compute shader
 	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName("update_spectrum");
@@ -328,8 +332,8 @@ void OceanSimulator::updateDisplacementMap(float time)
 	changePerFrameConstants.g_ChoppyScale	=m_param->choppy_scale;
 	changePerFrameConstants.g_GridLen		=m_param->dmap_dim / m_param->patch_length;
 	
-	immutableConstants		.Apply(m_pd3dImmediateContext);
-	changePerFrameConstants	.Apply(m_pd3dImmediateContext);
+	immutableConstants		.Apply(deviceContext);
+	changePerFrameConstants	.Apply(deviceContext);
 
 	// Run the CS
 	UINT group_count_x = (m_param->dmap_dim + BLOCK_SIZE_X - 1) / BLOCK_SIZE_X;
@@ -359,8 +363,8 @@ void OceanSimulator::updateDisplacementMap(float time)
 	// Set the RenderTarget as the displacement map:
 	m_pd3dImmediateContext->OMSetRenderTargets(1, &displacement.renderTargetView, NULL);
 	// Assign the constant-buffers to the pixel shader:
-	immutableConstants		.Apply(m_pd3dImmediateContext);
-	changePerFrameConstants	.Apply(m_pd3dImmediateContext);
+	immutableConstants		.Apply(deviceContext);
+	changePerFrameConstants	.Apply(deviceContext);
 	// Assign the Dxyz source as a resource for the pixel shader:
 	simul::dx11::setTexture(effect,"g_InputDxyz"				,dxyz.shaderResourceView);
 	// Assign the shaders:

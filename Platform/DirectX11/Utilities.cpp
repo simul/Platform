@@ -4,11 +4,14 @@
 #include "Simul\Base\StringToWString.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Camera/Camera.h"
+#include "Simul/Platform/DirectX11/Effect.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Math/Vector3.h"
 #if WINVER<0x602
 #include <d3dx11.h>
 #endif
 #include <algorithm>			// for std::min / max
+#include "D3dx11effect.h"
 using namespace simul;
 using namespace dx11;
 
@@ -20,435 +23,6 @@ static ID3D11SamplerState* m_pSamplerStateStored11=NULL;
 static UINT m_StencilRefStored11;
 static float m_BlendFactorStored11[4];
 static UINT m_SampleMaskStored11;
-
-TextureStruct::TextureStruct()
-	:texture(NULL)
-	,shaderResourceView(NULL)
-	,unorderedAccessView(NULL)
-	,renderTargetView(NULL)
-	,stagingBuffer(NULL)
-	,width(0)
-	,length(0)
-	,last_context(NULL)
-	,m_pOldRenderTarget(NULL)
-	,m_pOldDepthSurface(NULL)
-{
-	memset(&mapped,0,sizeof(mapped));
-}
-
-TextureStruct::~TextureStruct()
-{
-	release();
-}
-
-void TextureStruct::release()
-{
-	if(last_context&&mapped.pData)
-	{
-		last_context->Unmap(texture,0);
-		memset(&mapped,0,sizeof(mapped));
-	}
-	SAFE_RELEASE(texture);
-	SAFE_RELEASE(shaderResourceView);
-	SAFE_RELEASE(unorderedAccessView);
-	SAFE_RELEASE(renderTargetView);
-	SAFE_RELEASE(stagingBuffer);
-	SAFE_RELEASE(m_pOldRenderTarget);
-	SAFE_RELEASE(m_pOldDepthSurface);
-}
-
-void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *pContext,void *target,int start_texel,int num_texels)
-{
-	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);
-	if(!stagingBuffer)
-	{
-		//Create a "Staging" Resource to actually copy data to-from the GPU buffer. 
-		D3D11_TEXTURE3D_DESC stagingBufferDesc;
-
-		stagingBufferDesc.Width			=width;
-		stagingBufferDesc.Height		=length;
-		stagingBufferDesc.Depth			=depth;
-		stagingBufferDesc.Format		=format;
-		stagingBufferDesc.MipLevels		=1;
-		stagingBufferDesc.Usage			=D3D11_USAGE_STAGING;
-		stagingBufferDesc.BindFlags		=0;
-		stagingBufferDesc.CPUAccessFlags=D3D11_CPU_ACCESS_READ;
-		stagingBufferDesc.MiscFlags		=0;
-
-		pd3dDevice->CreateTexture3D(&stagingBufferDesc,NULL,(ID3D11Texture3D**)(&stagingBuffer));
-	}
-	pContext->CopyResource(stagingBuffer,texture);
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	V_CHECK(pContext->Map( stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource));
-	unsigned char *source = (unsigned char *)(mappedResource.pData);
-	
-	int expected_pitch=byteSize*width;
-	char *dest=(char*)target;
-	if(mappedResource.RowPitch==expected_pitch)
-	{
-		source+=start_texel*byteSize;
-		dest+=start_texel*byteSize;
-		memcpy(dest,source,num_texels*byteSize);
-	}
-	else
-	{
-		//num_texels=start_texel+num_texels;
-		//start_texel=0;
-		dest+=start_texel*byteSize;
-
-		int row		=start_texel/width;
-		int last_row=(start_texel+num_texels)/width;
-		int col		=start_texel-row*width;
-		source		+=row*mappedResource.RowPitch;
-		if(col>0)
-		{
-			source		+=col*byteSize;
-			int columns	=std::min(num_texels,width-col);
-			memcpy(dest,source,columns*byteSize);
-			source		+=mappedResource.RowPitch;
-			dest		+=columns*byteSize;
-			row++;
-		}
-		for(int r=row;r<last_row;r++)
-		{
-			memcpy(dest,source,width*byteSize);
-			source		+=mappedResource.RowPitch;
-			dest		+=width*byteSize;
-		}
-		int end_columns=start_texel+num_texels-last_row*width;
-		if(end_columns>0)
-			memcpy(dest,source,end_columns*byteSize);
-	}
-	pContext->Unmap( stagingBuffer, 0);
-}
-
-void TextureStruct::setTexels(ID3D11DeviceContext *context,const void *src,int texel_index,int num_texels)
-{
-	last_context=context;
-	if(!mapped.pData)
-		context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
-	if(!mapped.pData)
-		return;
-	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);
-	const unsigned char *source=(const unsigned char*)src;
-	unsigned char *target=(unsigned char*)mapped.pData;
-	int expected_pitch=byteSize*width;
-	if(mapped.RowPitch==expected_pitch)
-	{
-		target+=texel_index*byteSize;
-		memcpy(target,source,num_texels*byteSize);
-	}
-	else
-	{
-		int block	=mapped.RowPitch/byteSize;
-		int row		=texel_index/width;
-		int last_row=(texel_index+num_texels)/width;
-		int col		=texel_index-row*width;
-		target		+=row*block*byteSize;
-		source		+=col*byteSize;
-		int columns=std::min(num_texels,width-col);
-		memcpy(target,source,columns*byteSize);
-		source		+=columns*byteSize;
-		target		+=block*byteSize;
-		for(int r=row+1;r<last_row;r++)
-		{
-			memcpy(target,source,width*byteSize);
-			target		+=block*byteSize;
-			source		+=width*byteSize;
-		}
-		int end_columns=texel_index+num_texels-last_row*width;
-		if(end_columns>0)
-			memcpy(target,source,end_columns*byteSize);
-	}
-	if(texel_index+num_texels>=width*length)
-	{
-		last_context->Unmap(texture,0);
-		memset(&mapped,0,sizeof(mapped));
-	}
-}
-
-void TextureStruct::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format)
-{
-	D3D11_TEXTURE2D_DESC textureDesc=
-	{
-		w,l,
-		1,1,
-		format,
-		{1,0}
-		,D3D11_USAGE_DYNAMIC,
-		D3D11_BIND_SHADER_RESOURCE,
-		D3D11_CPU_ACCESS_WRITE,
-		0
-	};
-	width=w;
-	length=l;
-	SAFE_RELEASE(texture);
-	pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)&(texture));
-	SAFE_RELEASE(shaderResourceView);
-	pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView);
-	SAFE_RELEASE(stagingBuffer);
-}
-
-void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable)
-{
-	D3D11_TEXTURE3D_DESC textureDesc;
-	bool ok=true;
-	if(texture)
-	{
-		ID3D11Texture3D* ppd(NULL);
-		if(texture->QueryInterface( __uuidof(ID3D11Texture3D),(void**)&ppd)!=S_OK)
-			ok=false;
-		else
-		{
-			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Depth!=d||textureDesc.Format!=f)
-				ok=false;
-			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
-				ok=false;
-		}
-		SAFE_RELEASE(ppd);
-	}
-	else
-		ok=false;
-	if(!ok)
-	{
-		release();
-		memset(&textureDesc,0,sizeof(textureDesc));
-		textureDesc.Width			=width=w;
-		textureDesc.Height			=length=l;
-		textureDesc.Depth			=depth=d;
-		textureDesc.Format			=format=f;
-		textureDesc.MipLevels		=1;
-		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
-		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
-		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
-		textureDesc.MiscFlags		=0;
-		
-		V_CHECK(pd3dDevice->CreateTexture3D(&textureDesc,0,(ID3D11Texture3D**)(&texture)));
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		srv_desc.Format						= f;
-		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
-		srv_desc.Texture3D.MipLevels		= 1;
-		srv_desc.Texture3D.MostDetailedMip	= 0;
-		V_CHECK(pd3dDevice->CreateShaderResourceView(texture, &srv_desc,&shaderResourceView));
-	}
-	if(computable&&(!unorderedAccessView||!ok))
-	{
-		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format				= f;
-		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE3D;
-		uav_desc.Texture3D.MipSlice	= 0;
-		uav_desc.Texture3D.WSize	= d;
-		uav_desc.Texture3D.FirstWSlice=0;
-
-		SAFE_RELEASE(unorderedAccessView);
-		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
-	}
-}
-
-void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable,bool rendertarget)
-{
-	D3D11_TEXTURE2D_DESC textureDesc;
-	bool ok=true;
-	if(texture)
-	{
-		ID3D11Texture2D* ppd(NULL);
-		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)
-			ok=false;
-		else
-		{
-			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=f)
-				ok=false;
-			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
-				ok=false;
-		}
-		SAFE_RELEASE(ppd);
-	}
-	else
-		ok=false;
-	if(!ok)
-	{
-		release();
-		memset(&textureDesc,0,sizeof(textureDesc));
-		textureDesc.Width				=width=w;
-		textureDesc.Height				=length=l;
-		depth							=1;
-		textureDesc.Format				=format=f;
-		textureDesc.MipLevels			=1;
-		textureDesc.ArraySize			=1;
-		textureDesc.Usage				=(computable||rendertarget)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
-		textureDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0);
-		textureDesc.CPUAccessFlags		=(computable||rendertarget)?0:D3D11_CPU_ACCESS_WRITE;
-		textureDesc.MiscFlags			=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
-		textureDesc.SampleDesc.Count	= 1;
-		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
-		SetDebugObjectName(texture,"TextureStruct::ensureTexture2DSizeAndFormat");
-		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		srv_desc.Format						= f;
-		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
-		srv_desc.Texture2D.MipLevels		= 1;
-		srv_desc.Texture2D.MostDetailedMip	= 0;
-		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
-		SetDebugObjectName(shaderResourceView,"TextureStruct::ensureTexture2DSizeAndFormat shaderResourceView");
-	}
-	if(computable&&(!unorderedAccessView||!ok))
-	{
-		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format				= f;
-		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE2D;
-		uav_desc.Texture2D.MipSlice	= 0;
-
-		SAFE_RELEASE(unorderedAccessView);
-		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));
-		SetDebugObjectName(unorderedAccessView,"TextureStruct::ensureTexture2DSizeAndFormat unorderedAccessView");
-	}
-	if(rendertarget&&(!renderTargetView||!ok))
-	{
-		// Setup the description of the render target view.
-		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-		renderTargetViewDesc.Format				=f;
-		renderTargetViewDesc.ViewDimension		=D3D11_RTV_DIMENSION_TEXTURE2D;
-		renderTargetViewDesc.Texture2D.MipSlice	=0;
-		// Create the render target in DX11:
-		SAFE_RELEASE(renderTargetView);
-		V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&renderTargetView));
-		SetDebugObjectName(renderTargetView,"TextureStruct::ensureTexture2DSizeAndFormat renderTargetView");
-	}
-}
-
-void TextureStruct::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT f,bool computable)
-{
-	D3D11_TEXTURE1D_DESC textureDesc;
-	bool ok=true;
-	if(texture)
-	{
-		ID3D11Texture1D* ppd(NULL);
-		if(texture->QueryInterface( __uuidof(ID3D11Texture1D),(void**)&ppd)!=S_OK)
-			ok=false;
-		else
-		{
-			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Format!=f)
-				ok=false;
-			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
-				ok=false;
-		}
-		SAFE_RELEASE(ppd);
-	}
-	else
-		ok=false;
-	if(!ok)
-	{
-		release();
-		memset(&textureDesc,0,sizeof(textureDesc));
-		textureDesc.Width			=width=w;
-		length						=depth=1;
-		textureDesc.Format			=format=f;
-		textureDesc.MipLevels		=1;
-		textureDesc.ArraySize		=1;
-		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
-		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
-		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
-		textureDesc.MiscFlags		=0;
-		
-		V_CHECK(pd3dDevice->CreateTexture1D(&textureDesc,0,(ID3D11Texture1D**)(&texture)));
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		srv_desc.Format						= f;
-		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE1D;
-		srv_desc.Texture1D.MipLevels		= 1;
-		srv_desc.Texture1D.MostDetailedMip	= 0;
-		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
-	}
-	if(computable&&(!unorderedAccessView||!ok))
-	{
-		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format				= f;
-		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE1D;
-		uav_desc.Texture1D.MipSlice	= 0;
-		
-		SAFE_RELEASE(unorderedAccessView);
-		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));
-	}
-}
-
-void TextureStruct::map(ID3D11DeviceContext *context)
-{
-	if(mapped.pData!=NULL)
-		return;
-	last_context=context;
-	last_context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
-}
-
-bool TextureStruct::isMapped() const
-{
-	return (mapped.pData!=NULL);
-}
-
-void TextureStruct::unmap()
-{
-	if(mapped.pData)
-		last_context->Unmap(texture,0);
-	mapped.pData=NULL;
-	last_context=NULL;
-}
-
-void TextureStruct::activateRenderTarget(ID3D11DeviceContext *pContext)
-{
-	if(!pContext)
-		return;
-	last_context=pContext;
-	{
-		uint num_v=0;
-		pContext->RSGetViewports(&num_v,NULL);
-		if(num_v>0)
-			pContext->RSGetViewports(&num_v,m_OldViewports);
-		SAFE_RELEASE(m_pOldRenderTarget);
-		SAFE_RELEASE(m_pOldDepthSurface);
-		pContext->OMGetRenderTargets(	1,
-										&m_pOldRenderTarget,
-										&m_pOldDepthSurface
-										);
-	}
-	pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
-	{
-		ID3D11Texture2D* ppd(NULL);
-		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)
-			return;
-		D3D11_TEXTURE2D_DESC textureDesc;
-		ppd->GetDesc(&textureDesc);
-		SAFE_RELEASE(ppd);
-		D3D11_VIEWPORT viewport;
-		viewport.Width = (float)textureDesc.Width;
-		viewport.Height = (float)textureDesc.Height;
-		viewport.TopLeftX = 0;
-		viewport.TopLeftY = 0;
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-		pContext->RSSetViewports(1, &viewport);
-	}
-}
-
-void TextureStruct::deactivateRenderTarget()
-{
-	if(!last_context)
-		return;
-	last_context->OMSetRenderTargets(	1,
-										&m_pOldRenderTarget,
-										m_pOldDepthSurface
-										);
-	last_context->RSSetViewports(1,m_OldViewports);
-	SAFE_RELEASE(m_pOldRenderTarget);
-	SAFE_RELEASE(m_pOldDepthSurface);
-}
 
 ComputableTexture::ComputableTexture()
 	:g_pTex_Output(NULL)
@@ -600,11 +174,10 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 int UtilityRenderer::instance_count=0;
 int UtilityRenderer::screen_width=0;
 int UtilityRenderer::screen_height=0;
-D3DXMATRIX UtilityRenderer::view,UtilityRenderer::proj;
-ID3DX11Effect *UtilityRenderer::m_pDebugEffect=NULL;
+crossplatform::Effect *UtilityRenderer::m_pDebugEffect=NULL;
 ID3D11InputLayout *UtilityRenderer::m_pCubemapVtxDecl=NULL;
 ID3D1xBuffer* UtilityRenderer::m_pVertexBuffer=NULL;
-ID3D11Device* UtilityRenderer::m_pd3dDevice=NULL;
+crossplatform::RenderPlatform* UtilityRenderer::renderPlatform=NULL;
 UtilityRenderer utilityRenderer;
 
 UtilityRenderer::UtilityRenderer()
@@ -674,22 +247,22 @@ static Vertex3_t vertices[36] =
 	{-size,		-size,	-size},
 };
 
-void UtilityRenderer::RestoreDeviceObjects(void *dev)
+void UtilityRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 {
-	m_pd3dDevice=(ID3D11Device *)dev;
+	renderPlatform=r;
 	RecompileShaders();
 	SAFE_RELEASE(m_pVertexBuffer);
 	// Vertex declaration
 	{
 		D3DX11_PASS_DESC PassDesc;
-		ID3DX11EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
-		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
+		crossplatform::EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
+		tech->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
 		D3D11_INPUT_ELEMENT_DESC decl[]=
 		{
 			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
 		};
 		SAFE_RELEASE(m_pCubemapVtxDecl);
-		V_CHECK(m_pd3dDevice->CreateInputLayout(decl,1,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl));
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateInputLayout(decl,1,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl));
 	}
 	D3D11_BUFFER_DESC desc=
 	{
@@ -704,37 +277,33 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
     InitData.pSysMem		=vertices;
     InitData.SysMemPitch	=sizeof(vec3);
-	V_CHECK(m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer));
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&desc,&InitData,&m_pVertexBuffer));
 }
 
 void UtilityRenderer::RecompileShaders()
 {
-	if(!m_pd3dDevice)
+	if(!renderPlatform)
 		return;
-	SAFE_RELEASE(m_pDebugEffect);
-	CreateEffect(m_pd3dDevice,&m_pDebugEffect,"simul_debug.fx");
+	delete m_pDebugEffect;
+	std::map<std::string,std::string> defines;
+	m_pDebugEffect=new dx11::Effect(renderPlatform,"simul_debug.fx",defines);
 }
 
 void UtilityRenderer::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_RELEASE(m_pDebugEffect);
+	delete m_pDebugEffect;
+	m_pDebugEffect=NULL;
     SAFE_RELEASE( m_pDepthStencilStateStored11 );
     SAFE_RELEASE( m_pRasterizerStateStored11 );
     SAFE_RELEASE( m_pBlendStateStored11 );
     SAFE_RELEASE( m_pSamplerStateStored11 );
 }
 
-ID3DX11Effect		*UtilityRenderer::GetDebugEffect()
+crossplatform::Effect		*UtilityRenderer::GetDebugEffect()
 {
 	return m_pDebugEffect;
-}
-
-void UtilityRenderer::SetMatrices(D3DXMATRIX v,D3DXMATRIX p)
-{
-	view=v;
-	proj=p;
 }
 
 void UtilityRenderer::SetScreenSize(int w,int h)
@@ -754,19 +323,21 @@ void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,con
 {
 }
 
-void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *vertices,int vertex_count,bool strip)
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+void UtilityRenderer::DrawLines(crossplatform::DeviceContext &deviceContext,VertexXyzRgba *vertices,int vertex_count,bool strip)
 {
 	if(!vertex_count)
 		return;
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	{
 		HRESULT hr=S_OK;
 		D3DXMATRIX world, tmp1, tmp2;
 		D3DXMatrixIdentity(&world);
-		ID3DX11EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_debug");
-		ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
+		crossplatform::EffectTechnique *tech			=m_pDebugEffect->GetTechniqueByName("simul_debug");
+		ID3D1xEffectMatrixVariable*	worldViewProj		=m_pDebugEffect->asD3DX11Effect()->GetVariableByName("worldViewProj")->AsMatrix();
 
 		D3DXMATRIX wvp;
-		camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&view,(const float*)&proj);
+		camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 		worldViewProj->SetMatrix(&wvp._11);
 	
 		ID3D1xBuffer *					vertexBuffer=NULL;
@@ -783,7 +354,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *v
 		ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
 		InitData.pSysMem = vertices;
 		InitData.SysMemPitch = sizeof(VertexXyzRgba);
-		hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
+		hr=renderPlatform->AsD3D11Device()->CreateBuffer(&desc,&InitData,&vertexBuffer);
 
 		const D3D1x_INPUT_ELEMENT_DESC decl[] =
 		{
@@ -791,39 +362,111 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pContext,VertexXyzRgba *v
 			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
 		};
 		D3D1x_PASS_DESC PassDesc;
-		ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
+		ID3D1xEffectPass *pass=tech->asD3DX11EffectTechnique()->GetPassByIndex(0);
 		hr=pass->GetDesc(&PassDesc);
 
-		ID3D1xInputLayout*				m_pVtxDecl=NULL;
+		ID3D11InputLayout*				m_pVtxDecl=NULL;
 		SAFE_RELEASE(m_pVtxDecl);
-		hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+		hr=renderPlatform->AsD3D11Device()->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
-		m_pContext->IASetInputLayout(m_pVtxDecl);
+		pContext->IASetInputLayout(m_pVtxDecl);
 		ID3D11InputLayout* previousInputLayout;
-		m_pContext->IAGetInputLayout( &previousInputLayout );
+		pContext->IAGetInputLayout( &previousInputLayout );
 		D3D_PRIMITIVE_TOPOLOGY previousTopology;
-		m_pContext->IAGetPrimitiveTopology(&previousTopology);
-		m_pContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		pContext->IAGetPrimitiveTopology(&previousTopology);
+		pContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		UINT stride = sizeof(VertexXyzRgba);
 		UINT offset = 0;
 		UINT Strides[1];
 		UINT Offsets[1];
 		Strides[0] = stride;
 		Offsets[0] = 0;
-		m_pContext->IASetVertexBuffers(	0,				// the first input slot for binding
+		pContext->IASetVertexBuffers(	0,				// the first input slot for binding
 													1,				// the number of buffers in the array
 													&vertexBuffer,	// the array of vertex buffers
 													&stride,		// array of stride values, one for each buffer
 													&offset);		// array of 
-		hr=ApplyPass(m_pContext,tech->GetPassByIndex(0));
-		m_pContext->Draw(vertex_count,0);
-		m_pContext->IASetPrimitiveTopology(previousTopology);
-		m_pContext->IASetInputLayout( previousInputLayout );
+		hr=ApplyPass(pContext,tech->asD3DX11EffectTechnique()->GetPassByIndex(0));
+		pContext->Draw(vertex_count,0);
+		pContext->IASetPrimitiveTopology(previousTopology);
+		pContext->IASetInputLayout( previousInputLayout );
 		SAFE_RELEASE(previousInputLayout);
 		SAFE_RELEASE(vertexBuffer);
 		SAFE_RELEASE(m_pVtxDecl);
 	}
 }
+void UtilityRenderer::Draw2dLines(crossplatform::DeviceContext &deviceContext,VertexXyzRgba *vertices,int vertex_count,bool strip)
+{
+	if(!vertex_count)
+		return;
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	{
+		HRESULT hr=S_OK;
+		D3DXMATRIX world, tmp1, tmp2;
+		D3DXMatrixIdentity(&world);
+		ID3DX11EffectTechnique *tech			=m_pDebugEffect->asD3DX11Effect()->GetTechniqueByName("lines_2d");
+		
+		unsigned int num_v=1;
+		D3D11_VIEWPORT								viewport;
+		pContext->RSGetViewports(&num_v,&viewport);
+		dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"rect",vec4(-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height));
+
+		ID3D1xBuffer *					vertexBuffer=NULL;
+		// Create the vertex buffer:
+		D3D1x_BUFFER_DESC desc=
+		{
+			vertex_count*sizeof(VertexXyzRgba),
+			D3D1x_USAGE_DYNAMIC,
+			D3D1x_BIND_VERTEX_BUFFER,
+			D3D1x_CPU_ACCESS_WRITE,
+			0
+		};
+		D3D1x_SUBRESOURCE_DATA InitData;
+		ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+		InitData.pSysMem = vertices;
+		InitData.SysMemPitch = sizeof(VertexXyzRgba);
+		hr=renderPlatform->AsD3D11Device()->CreateBuffer(&desc,&InitData,&vertexBuffer);
+
+		const D3D1x_INPUT_ELEMENT_DESC decl[] =
+		{
+			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
+		};
+		D3DX11_PASS_DESC PassDesc;
+		ID3DX11EffectPass *pass=tech->GetPassByIndex(0);
+		hr=pass->GetDesc(&PassDesc);
+
+		ID3D11InputLayout*				m_pVtxDecl=NULL;
+		SAFE_RELEASE(m_pVtxDecl);
+		hr=renderPlatform->AsD3D11Device()->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+	
+		pContext->IASetInputLayout(m_pVtxDecl);
+		ID3D11InputLayout* previousInputLayout;
+		pContext->IAGetInputLayout( &previousInputLayout );
+		D3D_PRIMITIVE_TOPOLOGY previousTopology;
+		pContext->IAGetPrimitiveTopology(&previousTopology);
+		pContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		UINT stride = sizeof(VertexXyzRgba);
+		UINT offset = 0;
+		UINT Strides[1];
+		UINT Offsets[1];
+		Strides[0] = stride;
+		Offsets[0] = 0;
+		pContext->IASetVertexBuffers(	0,				// the first input slot for binding
+										1,				// the number of buffers in the array
+										&vertexBuffer,	// the array of vertex buffers
+										&stride,		// array of stride values, one for each buffer
+										&offset);		// array of 
+		hr=ApplyPass(pContext,tech->GetPassByIndex(0));
+		pContext->Draw(vertex_count,0);
+		pContext->IASetPrimitiveTopology(previousTopology);
+		pContext->IASetInputLayout( previousInputLayout );
+		SAFE_RELEASE(previousInputLayout);
+		SAFE_RELEASE(vertexBuffer);
+		SAFE_RELEASE(m_pVtxDecl);
+	}
+}
+
 
 void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pContext)
 {
@@ -930,9 +573,9 @@ void UtilityRenderer::DrawSphere(void *context,int latitudes,int longitudes)
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
-void UtilityRenderer::DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety)
+void UtilityRenderer::DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,float offsetx,float offsety)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	unsigned int num_v=0;
 	D3D11_VIEWPORT								m_OldViewports[4];
 	pContext->RSGetViewports(&num_v,NULL);
@@ -947,38 +590,38 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCub
 	viewport.TopLeftX	=0.5f*(1.f+offsetx)*m_OldViewports[0].Width-viewport.Width/2;
 	viewport.TopLeftY	=0.5f*(1.f-offsety)*m_OldViewports[0].Height-viewport.Height/2;
 	pContext->RSSetViewports(1,&viewport);
-
+	
+	math::Matrix4x4 view=deviceContext.viewStruct.view;
+	math::Matrix4x4 proj=camera::Camera::MakeProjectionMatrix(1.f,(float)viewport.Height/(float)viewport.Width,1.f,100.f);
 	// Create the viewport.
-	D3DXMATRIX wvp,world;
-	D3DXMatrixIdentity(&world);
+	math::Matrix4x4 wvp,world;
+	world.Identity();
 	float tan_x=1.0f/proj(0, 0);
 	float tan_y=1.0f/proj(1, 1);
 	float size_req=tan_x*.5f;
 	static float size=3.f;
 	float d=2.0f*size/size_req;
-	//simul::math::Vector3 offs0(offsetx*(tan_x-size_req)*d,offsety*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs0(0,0,-d);
-	simul::math::Vector3 offs;
-	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)&view),offs0);
-
-	world._41=offs.x;
-	world._42=offs.y;
-	world._43=offs.z;
 	view._41=0;
 	view._42=0;
 	view._43=0;
-	camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&view,(const float*)&proj);
-	simul::dx11::setMatrix(m_pDebugEffect,"worldViewProj",&wvp._11);
+	simul::math::Vector3 offs;
+	Multiply3(offs,view,offs0);
+	world._41=offs.x;
+	world._42=offs.y;
+	world._43=offs.z;
+	camera::MakeWorldViewProjMatrix(wvp,world,view,proj);
+	simul::dx11::setMatrix(m_pDebugEffect->asD3DX11Effect(),"worldViewProj",&wvp._11);
 	//ID3DX11EffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
-	ID3DX11EffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");
-	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pDebugEffect->GetVariableByName("cubeTexture")->AsShaderResource();
+	ID3DX11EffectTechnique*				tech		=m_pDebugEffect->asD3DX11Effect()->GetTechniqueByName("draw_cubemap_sphere");
+	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pDebugEffect->asD3DX11Effect()->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));
-	simul::dx11::setParameter(m_pDebugEffect,"latitudes",16);
-	simul::dx11::setParameter(m_pDebugEffect,"longitudes",32);
+	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"latitudes",16);
+	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"longitudes",32);
 	static float rr=6.f;
-	simul::dx11::setParameter(m_pDebugEffect,"radius",rr);
-	UtilityRenderer::DrawSphere(context,16,32);
+	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"radius",rr);
+	UtilityRenderer::DrawSphere(pContext,16,32);
 	pContext->RSSetViewports(num_v,m_OldViewports);
 }
 

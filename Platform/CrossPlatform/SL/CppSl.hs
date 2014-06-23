@@ -1,5 +1,8 @@
 #ifndef CPPSL_HS
 #define CPPSL_HS
+#ifndef REVERSE_DEPTH
+#define REVERSE_DEPTH 0
+#endif
 #undef RADIAL_CLOUD_SHADOW
 // Definitions shared across C++, HLSL, and GLSL!
 
@@ -26,7 +29,7 @@
 
 	#define uniform_buffer ALIGN_16 cbuffer
 
-	#define SIMUL_CONSTANT_BUFFER(name,buff_num) struct name {
+	#define SIMUL_CONSTANT_BUFFER(name,buff_num) struct name {static const int bindingIndex=buff_num;
 	#define SIMUL_CONSTANT_BUFFER_END };
 
 	struct mat2
@@ -139,6 +142,20 @@
 			x=v[0];
 			y=v[1];
 			z=v[2];
+		}
+		void operator*=(float m)
+		{
+			x*=m;
+			y*=m;
+			z*=m;
+		}
+		vec3 operator+(vec3 v)
+		{
+			vec3 r;
+			r.x=x+v.x;
+			r.y=y+v.y;
+			r.z=z+v.z;
+			return r;
 		}
 	};
 

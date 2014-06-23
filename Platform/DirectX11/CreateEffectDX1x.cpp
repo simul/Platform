@@ -15,18 +15,18 @@
 #include "Simul/Base/DefaultFileLoader.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Matrix4x4.h"
-#include <tchar.h>
 #include "CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
+#include "Simul/Platform/DirectX11/Effect.h"
 #include <string>
-static const DWORD default_effect_flags=0;
 
 #include <vector>
 #include <iostream>
 #include <assert.h>
 #include <fstream>
 #include "MacrosDX1x.h"
+#include "D3dx11effect.h"
 #ifndef SIMUL_WIN8_SDK
 #include <dxerr.h>
 #else
@@ -51,19 +51,28 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 #endif
 
 #ifndef SIMUL_WIN8_SDK
-#pragma comment(lib,"d3dx9.lib")
-#pragma comment(lib,"d3d9.lib")
-#pragma comment(lib,"d3dx11.lib")
-#pragma comment(lib,"dxerr.lib")
-#pragma comment(lib,"Effects11_DXSDK.lib")
+	#pragma comment(lib,"d3dx9.lib")
+	#pragma comment(lib,"d3d9.lib")
+	#pragma comment(lib,"d3dx11.lib")
+	#pragma comment(lib,"dxerr.lib")
+	#pragma comment(lib,"Effects11_DXSDK.lib")
 #else
-#pragma comment(lib,"Effects11_Win8SDK.lib")
-#pragma comment(lib,"directxtex.lib")
+	#ifndef _XBOX_ONE
+		#pragma comment(lib,"Effects11_Win8SDK.lib")
+	#else
+		#pragma comment(lib,"Effects11.lib")
+	#endif
+	#pragma comment(lib,"directxtex.lib")
 #endif
-#pragma comment(lib,"dxgi.lib")
-#pragma comment(lib,"d3d11.lib")
-#pragma comment(lib,"dxguid.lib")
-#pragma comment(lib,"d3dcompiler.lib")
+#ifdef _XBOX_ONE
+	#pragma comment(lib,"d3d11_x.lib")
+	#pragma comment(lib,"d3dcompiler.lib")
+#else
+	#pragma comment(lib,"dxgi.lib")
+	#pragma comment(lib,"d3d11.lib")
+	#pragma comment(lib,"dxguid.lib")
+	#pragma comment(lib,"d3dcompiler.lib")
+#endif
 
 // winmm.lib comctl32.lib
 static bool pipe_compiler_output=false;
@@ -73,88 +82,6 @@ using namespace simul;
 using namespace dx11;
 using namespace base;
 ShaderBuildMode shaderBuildMode=BUILD_IF_CHANGED;
-
-HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
-{
-	try
-	{
-		std::string finalPathUtf8;
-		switch(IncludeType)
-		{
-		case D3D_INCLUDE_LOCAL:
-			finalPathUtf8	=m_ShaderDirUtf8+"\\"+pFileNameUtf8;
-			break;
-		case D3D_INCLUDE_SYSTEM:
-			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;
-			break;
-		default:
-			assert(0);
-		}
-		void *buf=NULL;
-		unsigned fileSize=0;
-		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
-		*ppData = buf;
-		*pBytes = (UINT)fileSize;
-		if(!*ppData)
-			return E_FAIL;
-		return S_OK;
-	}
-	catch(std::exception& e)
-	{
-		std::cerr<<e.what()<<std::endl;
-		return E_FAIL;
-	}
-}
-
-HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
-{
-	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
-	return S_OK;
-}
-
-HRESULT __stdcall DetectChangesIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
-{
-	try
-	{
-		std::string finalPathUtf8;
-		switch(IncludeType)
-		{
-		case D3D_INCLUDE_LOCAL:
-			finalPathUtf8	=m_ShaderDirUtf8+"\\"+pFileNameUtf8;
-			break;
-		case D3D_INCLUDE_SYSTEM:
-			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;
-			break;
-		default:
-			assert(0);
-		}
-		void *buf=NULL;
-		unsigned fileSize=0;
-		double dateTimeJdn=simul::base::FileLoader::GetFileLoader()->GetFileDate(finalPathUtf8.c_str());
-		if(dateTimeJdn>lastCompileTime)
-		{
-			anyChanges=true;
-			return E_FAIL;
-		}
-		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
-		*ppData = buf;
-		*pBytes = (UINT)fileSize;
-		if(!*ppData)
-			return E_FAIL;
-		return S_OK;
-	}
-	catch(std::exception& e)
-	{
-		std::cerr<<e.what()<<std::endl;
-		return E_FAIL;
-	}
-}
-
-HRESULT __stdcall DetectChangesIncludeHandler::Close(LPCVOID pData)
-{
-	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
-	return S_OK;
-}
 
 
 namespace simul
@@ -242,7 +169,7 @@ namespace simul
 
 #if WINVER>=0x602
 HRESULT D3DX11CreateTextureFromFileW(ID3D11Device* pd3dDevice,const wchar_t *filename,D3DX11_IMAGE_LOAD_INFO *loadInfo
-									, void *nptr, ID3D11Resource** tex, HRESULT *hr )
+									, void *, ID3D11Resource** tex, HRESULT *hr )
 {
 	int flags=0;
 	DirectX::TexMetadata metadata;
@@ -296,16 +223,16 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 	//loadInfo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	loadInfo.MipLevels=0;
 
-    loadInfo.Width          = D3DX11_FROM_FILE;
-    loadInfo.Height         = D3DX11_FROM_FILE;
-     loadInfo.Depth          = D3DX11_FROM_FILE;
+    loadInfo.Width          = (UINT)D3DX11_FROM_FILE;
+    loadInfo.Height         = (UINT)D3DX11_FROM_FILE;
+    loadInfo.Depth          = (UINT)D3DX11_FROM_FILE;
 	loadInfo.Usage          = D3D11_USAGE_STAGING;
     loadInfo.Format         = (DXGI_FORMAT) D3DX11_FROM_FILE;
     loadInfo.CpuAccessFlags = D3D11_CPU_ACCESS_READ;
-	loadInfo.FirstMipLevel  = D3DX11_FROM_FILE;
-    loadInfo.MipLevels      = D3DX11_FROM_FILE;
+	loadInfo.FirstMipLevel  = (UINT)D3DX11_FROM_FILE;
+    loadInfo.MipLevels      = (UINT)D3DX11_FROM_FILE;
     loadInfo.MiscFlags      = 0;
-    loadInfo.MipFilter      = D3DX11_FROM_FILE;
+    loadInfo.MipFilter      = (UINT)D3DX11_FROM_FILE;
     loadInfo.pSrcInfo       = NULL;
     loadInfo.Filter         = D3DX11_FILTER_NONE;
 
@@ -439,7 +366,7 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 	}
 }
 
-void simul::dx11::setDepthState(ID3DX11Effect *effect,const char *name	,ID3D11DepthStencilState * value)
+void simul::dx11::setDepthState(ID3DX11Effect *effect,const char *name		,ID3D11DepthStencilState * value)
 {
 	ID3DX11EffectDepthStencilVariable*	var	=effect->GetVariableByName(name)->AsDepthStencil();
 	var->SetDepthStencilState(0,value);
@@ -451,8 +378,10 @@ void simul::dx11::setSamplerState(ID3DX11Effect *effect,const char *name	,ID3D11
 	var->SetSampler(0,value);
 }
 
-void simul::dx11::setTexture(ID3DX11Effect *effect,const char *name	,ID3D11ShaderResourceView * value)
+void simul::dx11::setTexture(ID3DX11Effect *effect,const char *name			,ID3D11ShaderResourceView * value)
 {
+	if(!effect)
+		return;
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
 	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetResource(value);
@@ -533,7 +462,7 @@ void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,int value
 	var->SetInt(value);
 }
 
-void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float *value)
+void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,const float *value)
 {
 	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
 	SIMUL_ASSERT(var->IsValid()!=0);
@@ -560,12 +489,22 @@ void simul::dx11::unbindTextures(ID3DX11Effect *effect)
 	effect->GetDesc(&desc);
 	for(unsigned i=0;i<desc.GlobalVariables;i++)
 	{
-		ID3DX11EffectShaderResourceVariable*	srv	=effect->GetVariableByIndex(i)->AsShaderResource();
-		if(srv->IsValid())
-			srv->SetResource(NULL);
-		ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
-		if(uav->IsValid())
-			uav->SetUnorderedAccessView(NULL);
+		ID3DX11EffectVariable *var	=effect->GetVariableByIndex(i);
+		D3DX11_EFFECT_VARIABLE_DESC desc;
+		var->GetDesc(&desc);
+		ID3DX11EffectType *s=var->GetType();
+		//if(var->IsShaderResource())
+		{
+			ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
+			if(srv->IsValid())
+				srv->SetResource(NULL);
+		}
+		//if(var->IsUnorderedAccessView())
+		{
+			ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
+			if(uav->IsValid())
+				uav->SetUnorderedAccessView(NULL);
+		}
 	}
 }
 
@@ -593,8 +532,9 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *binary_filename_
 	return hr;
 }
 
-HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
+ERRNO_CHECK
 	HRESULT hr=S_OK;
 	int pos=(int)text_filename_utf8.find_last_of("/");
 	int bpos=(int)text_filename_utf8.find_last_of("\\");
@@ -617,13 +557,16 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	binary_filename_utf8+=".fxo";
 	void *textData=NULL;
 	unsigned textSize=0;
+ERRNO_CHECK
 	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
+ERRNO_CHECK
 	// See if there's a binary that's newer than the file date.
+	bool changes_detected=(shaderBuildMode==ALWAYS_BUILD);
+	double binary_date_jdn=0.0;
 	if(shaderBuildMode==BUILD_IF_CHANGED)
 	{
 		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
-		double binary_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
-		bool changes_detected=false;
+		binary_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
 		if(text_date_jdn>binary_date_jdn||!binary_date_jdn)
 			changes_detected=true;
 		else if(text_date_jdn>0)	// maybe some of the includes have changed?
@@ -646,16 +589,20 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 			if(errorMsgs)
 				errorMsgs->Release();
 		}
-		if(!changes_detected&&binary_date_jdn>0)
-		{
-			hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
-			if(hr==S_OK)
-				return S_OK;
-		}
+	}
+	if(shaderBuildMode==NEVER_BUILD||!changes_detected&&binary_date_jdn>0)
+	{
+		hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
+		if(hr==S_OK)
+			return S_OK;
+		if(shaderBuildMode==NEVER_BUILD)
+			return S_FALSE;
 	}
 	ID3DBlob *binaryBlob	=NULL;
 	ID3DBlob *errorMsgs		=NULL;
+ERRNO_CHECK
 	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
+	std::cout<<"Rebuilding DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
 	hr=D3DCompile(		textData,
 						textSize,
 						text_filename_utf8.c_str(),	//LPCSTR pSourceName,
@@ -668,6 +615,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 						&binaryBlob,				//ID3DBlob **ppCode,
 						&errorMsgs					//ID3DBlob **ppErrorMsgs
 						);
+ERRNO_CHECK
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(textData);
 	if(hr==S_OK)
 	{
@@ -706,13 +654,13 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	return hr;
 }
 
-HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename)
 {
 	std::map<std::string,std::string> defines;
-	return CreateEffect(d3dDevice,effect,filename,defines);
+	return simul::dx11::CreateEffect(d3dDevice,effect,filename,defines);
 }
 
-ID3D11ComputeShader *LoadComputeShader(ID3D11Device *pd3dDevice,const char *filename_utf8)
+ID3D11ComputeShader *simul::dx11::LoadComputeShader(ID3D11Device *pd3dDevice,const char *filename_utf8)
 {
 	if(!shaderPathsUtf8.size())
 		shaderPathsUtf8.push_back(std::string("media/hlsl/dx11"));
@@ -757,7 +705,7 @@ ID3D11ComputeShader *LoadComputeShader(ID3D11Device *pd3dDevice,const char *file
 	}
 }
 
-HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,unsigned int shader_flags)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,unsigned int shader_flags)
 {
 	SIMUL_ASSERT(d3dDevice!=NULL);
 	HRESULT hr=S_OK;
@@ -768,12 +716,12 @@ HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *
 		throw simul::base::RuntimeError(std::string("Shader not found: ")+filenameUtf8);
 		return S_FALSE;
 	}
-	D3D10_SHADER_MACRO *macros=NULL;
+	D3D_SHADER_MACRO *macros=NULL;
 	{
 		size_t num_defines=defines.size();
 		if(num_defines)
 		{
-			macros=new D3D10_SHADER_MACRO[num_defines+1];
+			macros=new D3D_SHADER_MACRO[num_defines+1];
 			macros[num_defines].Definition=0;
 			macros[num_defines].Name=0;
 		}
@@ -785,6 +733,7 @@ HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *
 			def++;
 		}
 	}
+static const DWORD default_effect_flags=0;
 	DWORD flags=default_effect_flags;
 	SAFE_RELEASE(*effect);
 	hr=1;
@@ -803,7 +752,7 @@ HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *
         hr=DXTRACE_ERR( L"CreateEffect", hr );
 #endif
 		DebugBreak();
-	}
+ 	}
 	assert((*effect)->IsValid());
 
 	// Name stuff:
@@ -853,7 +802,7 @@ ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8)
 ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines)
 {
 	ID3DX11Effect *effect=NULL;
-	CreateEffect(d3dDevice,&effect,filename_utf8,defines);
+	simul::dx11::CreateEffect(d3dDevice,&effect,filename_utf8,defines);
 	return effect;
 }
 
@@ -906,65 +855,6 @@ void UnmapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuff
 HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass)
 {
 	return pass->Apply(0,pImmediateContext);
-}
-
-void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
-{
-#ifdef SIMUL_WIN8_SDK
-	D3DVECTOR vEyePt ={cam_pos[0],cam_pos[1],cam_pos[2]};
-    D3DVECTOR vLookAt;
-    D3DVECTOR vUpDir;
-#else
-	D3DXVECTOR3 vEyePt (cam_pos[0],cam_pos[1],cam_pos[2]);
-    D3DXVECTOR3 vLookAt;
-    D3DXVECTOR3 vUpDir;
-#endif
-    ZeroMemory(mat,6*sizeof(D3DXMATRIX) );
-    /*D3DCUBEMAP_FACE_POSITIVE_X     = 0,
-    D3DCUBEMAP_FACE_NEGATIVE_X     = 1,
-    D3DCUBEMAP_FACE_POSITIVE_Y     = 2,
-    D3DCUBEMAP_FACE_NEGATIVE_Y     = 3,
-    D3DCUBEMAP_FACE_POSITIVE_Z     = 4,
-    D3DCUBEMAP_FACE_NEGATIVE_Z     = 5,*/
-	static const D3DVECTOR lookf[6]=
-	{
-		 {1.f,0.f,0.f}		,{-1.f,0.f,0.f}
-		,{0.f,-1.f,0.f}		,{0.f,1.f,0.f}
-		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
-	};
-	static const D3DVECTOR upf[6]=
-	{
-		 {0.f,1.f,0.f}		,{0.f,1.f,0.f}
-		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
-		,{0.f,1.f,0.f}		,{0.f,1.f,0.f}
-	};
-	static const D3DVECTOR lookr[6]=
-	{
-		 {-1.f,0.f,0.f}		,{1.f,0.f,0.f}
-		,{0.f,-1.f,0.f}		,{0.f,1.f,0.f}
-		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
-	};
-	static const D3DVECTOR upr[6]=
-	{
-		 {0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
-		,{0.f,0.f,1.f}		,{0.f,0.f,-1.f}
-		,{0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
-	};
-	for(int i=0;i<6;i++)
-	{
-		vLookAt		=vEyePt;
-		vLookAt.x+=lookf[i].x;
-		vLookAt.y+=lookf[i].y;
-		vLookAt.z+=lookf[i].z;
-		vUpDir		=upf[i];
-		//D3DXMatrixLookAtLH(&mat[i], &vEyePt,&vLookAt, &vUpDir );
-		if(true)
-		{
-			vLookAt		=vEyePt+lookr[i];
-			vUpDir		=upr[i];
-			D3DXMatrixLookAtRH(&mat[i], &vEyePt, &vLookAt, &vUpDir );
-		}
-	}
 }
 
 void BreakIfDebugging()

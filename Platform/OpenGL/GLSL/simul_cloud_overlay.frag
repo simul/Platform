@@ -9,7 +9,7 @@ void main(void)
 {
 	vec2 depthTexCoord	=screenCoordOffset+texCoords;
 	float depth			=texture(depthAlphaTexture,depthTexCoord).a;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	//if(depth<=0.0)
 	//	discard;
 #else

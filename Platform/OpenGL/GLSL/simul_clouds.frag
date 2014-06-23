@@ -14,7 +14,7 @@ uniform sampler2D noiseSampler;
 uniform sampler2D lossSampler;
 uniform sampler2D inscatterSampler;
 uniform sampler2D skylightSampler;
-uniform sampler3D illumSampler;
+uniform sampler2D illumSampler;
 uniform sampler2D depthTexture;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
@@ -42,8 +42,8 @@ void main(void)
 	vec2 screenCoord		=screenCoordOffset+0.5*(clip_pos.xy)+vec2(0.5,0.5);
 	float depth				=texture(depthTexture,screenCoord).x;
 	float dist				=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	float cloud_dist		=pow(fade_texc.x,2.0);
 #endif
+	float cloud_dist		=pow(fade_texc.x,2.0);
 	vec4 texc				=texCoords;
 #ifdef TILING_OFFSET
 	vec2 tiling_offset		=texture(noiseSampler,texc.xy/64.0).xy;
@@ -86,6 +86,7 @@ void main(void)
 	final.rgb					*=loss_lookup;
 	final.rgb					+=InscatterFunction(insc_lookup,hazeEccentricity,cos0,mieRayleighRatio);
 	final.rgb					+=skyl_lookup;
+	//final.rgb=vec3(cloud_dist,cloud_dist,cloud_dist);
     gl_FragColor				=vec4(final.rgb*opacity*exposure,1.0-opacity);
 #endif
 }

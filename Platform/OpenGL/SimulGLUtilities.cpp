@@ -35,61 +35,6 @@ int Utilities::screen_height=0;
 Utilities *Utilities::ut=NULL;
 
 
-void simul::opengl::TextureStruct::setTexels(void *,const void *src,int x,int y,int z,int w,int l,int d)
-{
-	glTexSubImage3D(	GL_TEXTURE_3D,0,
-						x,y,z,
-						w,l,d,
-						GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
-						src);
-}
-
-void simul::opengl::TextureStruct::ensureTexture3DSizeAndFormat(void *,int w,int l,int d,int frmt,bool /*computable*/)
-{
-	if(tex)
-	{
-		int W,L,D;
-		glBindTexture(GL_TEXTURE_3D,tex);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_WIDTH,&W);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_HEIGHT,&L);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_DEPTH,&D);
-		if(w!=W||l!=L||d!=D)
-		{
-			SAFE_DELETE_TEXTURE(tex);
-		}
-	}
-	if(!tex)
-	{
-		glGenTextures(1,&(tex));
-		glBindTexture(GL_TEXTURE_3D,tex);
-		GLenum number_format=GL_RGBA;
-		GLenum number_type	=GL_UNSIGNED_INT;
-		switch(frmt)
-		{
-		case GL_RGBA:
-			number_format	=GL_RGBA;
-			number_type		=GL_UNSIGNED_INT;
-			break;
-		case GL_RGBA32F:
-			number_format	=GL_RGBA;
-			number_type		=GL_FLOAT;
-			break;
-		case GL_LUMINANCE32F_ARB:
-			number_format	=GL_LUMINANCE;
-			number_type		=GL_FLOAT;
-			break;
-		//((frmt==GL_RGBA)?GL_UNSIGNED_INT:GL_UNSIGNED_SHORT)
-		default:
-			break;
-		};
-		glTexImage3D(GL_TEXTURE_3D,0,(GLint)frmt,w,l,d,0,number_format,number_type,0);
-	GL_ERROR_CHECK
-	//	glTexImage3D(GL_TEXTURE_3D,0,GL_LUMINANCE32F_ARB:GL_RGBA32F_ARB,w,l,d,0,GL_LUMINANCE:GL_RGBA,GL_FLOAT,src);
-		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-	}
-}
-
 struct UtKiller
 {
 	~UtKiller()
@@ -113,6 +58,7 @@ void Utilities::Kill()
 
 Utilities::Utilities()
 	:linedraw_program(0)
+	,linedraw_2d_program(0)
 	,simple_program(0)
 {
 	instance_count++;
@@ -134,6 +80,13 @@ void Utilities::RestoreDeviceObjects(void *)
 						"	gl_FragColor=colr;"
 						"}";
 	linedraw_program=SetShaders(vert,frag);
+	const char *vert2="varying vec4 colr;"
+						"void main(void)"
+						"{"
+						"    gl_Position		= gl_Vertex;"
+						"    colr=gl_Color;"
+						"}";
+	linedraw_2d_program=SetShaders(vert2,frag);
 	const char *simple_vert="varying vec2 texCoords;"
 						"void main(void)"
 						"{"
@@ -158,6 +111,7 @@ void Utilities::SetScreenSize(int w,int h)
 
 void Utilities::InvalidateDeviceObjects()
 {
+	SAFE_DELETE_PROGRAM(linedraw_2d_program);
 	SAFE_DELETE_PROGRAM(linedraw_program);
 	SAFE_DELETE_PROGRAM(simple_program);
 }
@@ -179,14 +133,14 @@ void simul::opengl::RenderTexture(int x,int y,int w,int h)
 	glLoadIdentity();
 
 	glBegin(GL_QUADS);
+	glTexCoord2f(0.f,0.f);
+	glVertex2f((float)x,(float)y);
+	glTexCoord2f(1.f,0.f);
+	glVertex2f((float)(x+w),(float)y);
 	glTexCoord2f(0.f,1.f);
 	glVertex2f((float)x,(float)(y+h));
 	glTexCoord2f(1.f,1.f);
 	glVertex2f((float)(x+w),(float)(y+h));
-	glTexCoord2f(1.f,0.f);
-	glVertex2f((float)(x+w),(float)y);
-	glTexCoord2f(0.f,0.f);
-	glVertex2f((float)x,(float)y);
 	glEnd();
 	GL_ERROR_CHECK
 }
@@ -245,15 +199,21 @@ void simul::opengl::Ortho()
 
 void simul::opengl::SetTopDownOrthoProjection(int w,int h)
 {
+	GL_ERROR_CHECK
 	win_h=h;
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
+	GL_ERROR_CHECK
 		glOrtho(0,w,h,0,-1.0,1.0);
-		glMatrixMode(GL_TEXTURE);
-		glLoadIdentity();
+	GL_ERROR_CHECK
+		//glMatrixMode(GL_TEXTURE);
+	//	glLoadIdentity();
+	//GL_ERROR_CHECK
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
+	GL_ERROR_CHECK
 		glViewport(0,0,w,h);
+	GL_ERROR_CHECK
 }
 
 void simul::opengl::SetPerspectiveProjection(int w,int h,float field_of_view)
@@ -286,16 +246,18 @@ void simul::opengl::DrawQuad(int x,int y,int w,int h)
 // draw a quad with texture coordinate for texture rectangle
 void simul::opengl::DrawQuad(float x,float y,float w,float h)
 {
-	glBegin(GL_QUADS);
+GL_ERROR_CHECK
+	glBegin(GL_TRIANGLE_STRIP);
 	glTexCoord2f(0.0,1.0);
 	glVertex2f(x,y+h);
 	glTexCoord2f(1.0,1.0);
 	glVertex2f(x+w,y+h);
-	glTexCoord2f(1.0,0.0);
-	glVertex2f(x+w,y);
 	glTexCoord2f(0.0,0.0);
 	glVertex2f(x,y);
+	glTexCoord2f(1.0,0.0);
+	glVertex2f(x+w,y);
 	glEnd();
+GL_ERROR_CHECK
 }
 void simul::opengl::DrawFullScreenQuad()
 {
@@ -511,7 +473,7 @@ void simul::opengl::OrthoMatrices()
 void simul::opengl::setParameter(GLuint program,const char *name,float value)
 {
 	GLint loc=glGetUniformLocation(program,name);
-	if(loc<=0)
+	if(loc<0)
 	{
 		//std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	}
@@ -523,7 +485,7 @@ void simul::opengl::setParameter(GLuint program,const char *name,float value)
 void simul::opengl::setParameter(GLuint program,const char *name,float value1,float value2)
 {
 	GLint loc=glGetUniformLocation(program,name);
-	if(loc<=0)
+	if(loc<0)
 	{
 		//std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	}
@@ -535,7 +497,7 @@ void simul::opengl::setParameter(GLuint program,const char *name,float value1,fl
 void simul::opengl::setParameter(GLuint program,const char *name,float value1,float value2,float value3)
 {
 	GLint loc=glGetUniformLocation(program,name);
-	if(loc<=0)
+	if(loc<0)
 	{
 		//std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	}
@@ -547,7 +509,7 @@ void simul::opengl::setParameter(GLuint program,const char *name,float value1,fl
 void simul::opengl::setParameter(GLuint program,const char *name,float value1,float value2,float value3,float value4)
 {
 	GLint loc=glGetUniformLocation(program,name);
-	if(loc<=0)
+	if(loc<0)
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform4f(loc,value1,value2,value3,value4);
@@ -556,7 +518,7 @@ void simul::opengl::setParameter(GLuint program,const char *name,float value1,fl
 void simul::opengl::setVector4(GLuint program,const char *name,const float *value)
 {
 	GLint loc=glGetUniformLocation(program,name);
-	if(loc<=0)
+	if(loc<0)
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform4f(loc,value[0],value[1],value[2],value[3]);
@@ -566,7 +528,7 @@ void simul::opengl::setVector4(GLuint program,const char *name,const float *valu
 void simul::opengl::setParameter(GLuint program,const char *name,int value)
 {
 	GLint loc=glGetUniformLocation(program,name);
-	if(loc<=0)
+	if(loc<0)
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform1i(loc,value);
@@ -578,7 +540,7 @@ void simul::opengl::setParameter(GLuint program,const char *name,const simul::sk
 	GL_ERROR_CHECK
 	GLint loc=glGetUniformLocation(program,name);
 	GL_ERROR_CHECK
-	if(loc<=0)
+	if(loc<0)
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform4f(loc,value.x,value.y,value.z,value.w);
@@ -588,7 +550,7 @@ void simul::opengl::setParameter(GLuint program,const char *name,const simul::sk
 void simul::opengl::setParameter2(GLuint program,const char *name,const simul::sky::float4 &value)
 {
 	GLint loc=glGetUniformLocation(program,name);
-	if(loc<=0)
+	if(loc<0)
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	glUniform2f(loc,value.x,value.y);
 	GL_ERROR_CHECK
@@ -597,7 +559,7 @@ void simul::opengl::setParameter2(GLuint program,const char *name,const simul::s
 void simul::opengl::setParameter3(GLuint program,const char *name,const simul::sky::float4 &value)
 {
 	GLint loc=glGetUniformLocation(program,name);
-	if(loc<=0)
+	if(loc<0)
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 	{
@@ -609,7 +571,7 @@ void simul::opengl::setParameter3(GLuint program,const char *name,const simul::s
 void simul::opengl::setMatrix(GLuint program,const char *name,const float *value)
 {
 	GLint loc=glGetUniformLocation(program,name);
-	if(loc<=0)
+	if(loc<0)
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 	{
@@ -622,7 +584,7 @@ void simul::opengl::setMatrix(GLuint program,const char *name,const float *value
 void simul::opengl::setMatrixTranspose(GLuint program,const char *name,const float *value)
 {
 	GLint loc=glGetUniformLocation(program,name);
-	if(loc<=0)
+	if(loc<0)
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	static bool tr=1;
 	glUniformMatrix4fv(loc,1,tr,value);
@@ -636,7 +598,7 @@ void simul::opengl::setTexture(GLuint program,const char *name,int texture_numbe
 GL_ERROR_CHECK
 	GLint loc	=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
-	if(loc<=0)
+	if(loc<0)
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform1i(loc,texture_number);
@@ -645,12 +607,13 @@ GL_ERROR_CHECK
 
 void simul::opengl::set3DTexture(GLuint program,const char *name,int texture_number,GLuint texture)
 {
+GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE0+texture_number);
 	glBindTexture(GL_TEXTURE_3D,texture);
 GL_ERROR_CHECK
 	GLint loc	=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
-	if(loc<=0)
+	if(loc<0)
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: 3D texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform1i(loc,texture_number);

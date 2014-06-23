@@ -3,7 +3,7 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
@@ -24,7 +24,7 @@ namespace simul
 			void RestoreDeviceObjects(void* dev);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
-			void Render(void *context,const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *cloud_depth_tex);
+			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *cloud_depth_tex);
 		protected:
 			ID3DX11Effect*	effect;
 			ID3D11Device *	m_pd3dDevice;

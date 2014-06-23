@@ -186,7 +186,7 @@ void CS_MakeVertexBuffer(uint3 idx	: SV_DispatchThreadID )
 	velocity				=2.0*velocity-vec3(1.0,1.0,1.0);
 	v.velocity				=velocity;
 	v.type					=0;//i%32;
-	//v.dummy					=0.f;
+	//v.dummy					=0.0;
 	targetVertexBuffer[i]	=v;
 }
 
@@ -337,7 +337,7 @@ rainVertexOutput VS_FullScreen(idOnly IN)
 	OUT.clip_pos	=poss[IN.vertex_id];
 	OUT.position	=vec4(OUT.clip_pos,0.0,1.0);
 	// Set to far plane
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.position.z	=0.0; 
 #else
 	OUT.position.z	=OUT.position.w; 
@@ -500,7 +500,7 @@ void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStr
        // output.random = input[0].random;
        
         float3 pos[4];
-		float g_FrameRate=20.f;
+		float g_FrameRate=20.0;
         GenRainSpriteVertices(input[0].position.xyz,( meanFallVelocity+meanFallVelocity.z*flurry*0.1*input[0].velocity)/g_FrameRate, viewPos[1], pos);
         
         float3 closestPointLight=vec3(0,0,500);
@@ -710,7 +710,7 @@ technique11 rain_particles
         SetGeometryShader( CompileShader( gs_5_0, GS_RainParticles() ) );
         SetPixelShader( CompileShader(    ps_5_0, PS_RainParticles() ) );
         
-        SetBlendState( AddAlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetBlendState( AddAlphaBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetDepthStencilState( EnableDepth, 0 );
     }  
 }
@@ -725,7 +725,7 @@ technique11 simul_particles
 		SetVertexShader(CompileShader(vs_5_0,VS_Particles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Particles()));
 		SetDepthStencilState(EnableDepth,0);
-		SetBlendState(AddAlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(AddAlphaBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
 }
 
@@ -738,7 +738,7 @@ technique11 simul_rain
 		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Overlay()));
 		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AddAlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(AddAlphaBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
 }
 
@@ -775,7 +775,7 @@ technique11 create_rain_texture
 		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_RenderRainTexture()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
     }
 }
 
@@ -788,7 +788,7 @@ technique11 create_random_texture
 		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_RenderRandomTexture()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
     }
 }
 
@@ -802,7 +802,7 @@ technique11 show_texture
 		SetVertexShader(CompileShader(vs_5_0,VS_ShowTexture()));
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
     }
 }
 
@@ -815,7 +815,7 @@ technique11 moisture
 		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Moisture()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
     }
 }
 
@@ -835,7 +835,7 @@ PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput input,uint ve
 	velocity				=2.0*velocity-vec3(1.0,1.0,1.0);
 	v.velocity				=velocity;
 	v.type					=vertex_id%32;
-	//v.dummy					=0.f;
+	//v.dummy					=0.0;
 
     return v;
 }

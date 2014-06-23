@@ -3,6 +3,7 @@
 #include <iostream>
 #include <tchar.h>
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/CrossPlatform/Macros.h"
 typedef std::basic_string<TCHAR> tstring;
 #define ENABLE_PIX
 #ifdef UNICODE

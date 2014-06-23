@@ -11,12 +11,12 @@
 #pragma once
 
 #include <tchar.h>
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 #include "Simul/Graph/Meta/Group.h"
 
 #include "Simul/Clouds/BaseCloudRenderer.h"
@@ -25,7 +25,8 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/GpuCloudGenerator.h"
-
+struct ID3DX11EffectMatrixVariable;
+struct ID3DX11EffectShaderResourceVariable;
 namespace simul
 {
 	namespace crossplatform
@@ -52,6 +53,10 @@ typedef long HRESULT;
 
 namespace simul
 {
+	namespace crossplatform
+	{
+		class RenderPlatform;
+	}
 	namespace dx11
 	{
 	//! A cloud rendering class. Create an instance of this class within a DirectX program.
@@ -62,19 +67,19 @@ namespace simul
 			virtual ~SimulCloudRendererDX1x();
 			void RecompileShaders();
 			//! Call this when the D3D device has been created or reset
-			void RestoreDeviceObjects( void* pd3dDevice);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			//! Call this when the 3D device has been lost.
 			void InvalidateDeviceObjects();
 			//! Call this to release the memory for D3D device objects.
 			bool Destroy();
-			void PreRenderUpdate(void *context);
+			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! Call this to draw the clouds, including any illumination by lightning.
-			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH);
-			void RenderDebugInfo(void *context,int width,int height);
+			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,crossplatform::Texture *depth_tex,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH);
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
 			void RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height);
 			//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 			bool RenderLightning(void *context,int viewport_id);
+			void RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext);
 			//! Return true if the camera is above the cloudbase altitude.
 			bool IsCameraAboveCloudBase() const;
 			void SetEnableStorms(bool s);
@@ -82,10 +87,8 @@ namespace simul
 			//! Get the list of three textures used for cloud rendering.
 			CloudShadowStruct GetCloudShadowTexture(math::Vector3 cam_pos);
 			void *GetRandomTexture3D();
-			void SetLossTexture(void *t);
-			void SetInscatterTextures(void* i,void *s,void *o);
-			void SetIlluminationTexture(void *i);
-			void SetLightTableTexture(void *l);
+			void SetIlluminationTexture(crossplatform::Texture *i);
+			void SetLightTableTexture(crossplatform::Texture *l);
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
@@ -103,14 +106,12 @@ namespace simul
 			//! Clear the sequence()
 			void New();
 			simul::dx11::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
-			void RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext);
 		protected:
 			simul::dx11::GpuCloudGenerator gpuCloudGenerator;
 			void RenderCombinedCloudTexture(void *context);
-			void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip);
 			// Make up to date with respect to keyframer:
 			void EnsureCorrectTextureSizes();
-			void EnsureTexturesAreUpToDate(void *context);
+			void EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext);
 			void EnsureCorrectIlluminationTextureSizes();
 			void EnsureIlluminationTexturesAreUpToDate();
 			void EnsureTextureCycle();
@@ -138,29 +139,25 @@ namespace simul
 			StructuredBuffer<SmallLayerData>		layerBuffer;
 			ID3D11Buffer*							cloudPerViewConstantBuffer;
 			ID3D11Buffer*							layerConstantsBuffer;
-			ID3D1xEffectMatrixVariable* 			l_worldViewProj;
+			ID3DX11EffectMatrixVariable* 			l_worldViewProj;
 			
-			ID3D1xEffectShaderResourceVariable*		cloudDensity;
-			ID3D1xEffectShaderResourceVariable*		cloudDensity1;
-			ID3D1xEffectShaderResourceVariable*		cloudDensity2;
-			ID3D1xEffectShaderResourceVariable*		noiseTexture;
-			ID3D1xEffectShaderResourceVariable*		noiseTexture3D;
+			ID3DX11EffectShaderResourceVariable*		cloudDensity;
+			ID3DX11EffectShaderResourceVariable*		cloudDensity1;
+			ID3DX11EffectShaderResourceVariable*		cloudDensity2;
+			ID3DX11EffectShaderResourceVariable*		noiseTexture;
+			ID3DX11EffectShaderResourceVariable*		noiseTexture3D;
 
-			ID3D1xEffectShaderResourceVariable*		lightningIlluminationTexture;
-			ID3D1xEffectShaderResourceVariable*		skyLossTexture;
-			ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;
-			ID3D1xEffectShaderResourceVariable*		skylightTexture;
-			ID3D1xEffectShaderResourceVariable*		depthTexture;
-			ID3D1xEffectShaderResourceVariable*		lightTableTexture;
+			ID3DX11EffectShaderResourceVariable*		lightningIlluminationTexture;
+			ID3DX11EffectShaderResourceVariable*		skyLossTextureV;
+			ID3DX11EffectShaderResourceVariable*		skyInscatterTextureV;
+			ID3DX11EffectShaderResourceVariable*		skylightTextureV;
+			ID3DX11EffectShaderResourceVariable*		depthTexture;
+			ID3DX11EffectShaderResourceVariable*		lightTableTexture;
 
-			TextureStruct							cloud_textures[3];
+			dx11::Texture							cloud_textures[3];
 
 			ID3D11ShaderResourceView*				noiseTextureResource;
 			ID3D11ShaderResourceView*				lightningIlluminationTextureResource;
-			ID3D11ShaderResourceView*				skyLossTexture_SRV;
-			ID3D11ShaderResourceView*				skyInscatterTexture_SRV;
-			ID3D11ShaderResourceView*				overcInscTexture_SRV;
-			ID3D11ShaderResourceView*				skylightTexture_SRV;
 			ID3D11ShaderResourceView*				illuminationTexture_SRV;
 			ID3D11ShaderResourceView*				lightTableTexture_SRV;
 			simul::dx11::Framebuffer				shadow_fb;
@@ -169,34 +166,34 @@ namespace simul
 			// A texture whose x-axis represents azimuth, and whose y-axis represents distance
 			// as a proportion of shadow range. The texels represent how much illumination accumulates between the viewer
 			// and that distance.
-			simul::dx11::TextureStruct				godrays_texture;
+			simul::dx11::Texture					godrays_texture;
 
-			simul::dx11::TextureStruct				cloud_texture;
+			simul::dx11::Texture					cloud_texture;
 			
-			ID3D1xBuffer*							computeConstantBuffer;
+			ID3D11Buffer*							computeConstantBuffer;
 			ID3D11ComputeShader*					m_pComputeShader;
 
-			ID3D1xTexture3D*						illumination_texture;
+			ID3D11Texture3D*						illumination_texture;
 			
 			D3D1x_MAPPED_TEXTURE3D					mapped_illumination;
 
 			ID3D11Texture2D*	noise_texture;
-			TextureStruct		noise_texture_3D;
-			ID3D1xTexture1D*	lightning_texture;
-			ID3D1xTexture2D*	cloud_cubemap;
+			dx11::Texture		noise_texture_3D;
+			ID3D11Texture1D*	lightning_texture;
+			ID3D11Texture2D*	cloud_cubemap;
 			
-			ID3D1xBlendState*	blendAndWriteAlpha;
-			ID3D1xBlendState*	blendAndDontWriteAlpha;
+			ID3D11BlendState*	blendAndWriteAlpha;
+			ID3D11BlendState*	blendAndDontWriteAlpha;
 
 			bool UpdateIlluminationTexture(float dt);
 			float LookupLargeScaleTexture(float x,float y);
 
 			bool CreateLightningTexture();
-			void CreateNoiseTexture(void *context);
-			void Create3DNoiseTexture(void *context);
+			void CreateNoiseTexture(crossplatform::DeviceContext &deviceContext);
+			void Create3DNoiseTexture(crossplatform::DeviceContext &deviceContext);
 			bool CreateCloudEffect();
 			bool MakeCubemap(); // not ready yet
-			void RenderNoise(void *context);
+			void RenderNoise(crossplatform::DeviceContext &deviceContext);
 			
 			bool enable_lightning;
 		};

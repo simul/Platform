@@ -92,6 +92,15 @@
     <ClCompile Include="Light.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Effect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Layout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h">
@@ -173,6 +182,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="effect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Layout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -339,28 +357,7 @@
     <None Include="GLSL\tonemap.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="..\CrossPlatform\CppSl.hs">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\atmospherics_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\cloud_shadow.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\depth.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
     <None Include="..\CrossPlatform\simul_inscatter_fns.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow_fade.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\godrays.sl">
@@ -454,10 +451,24 @@
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="GLSL\simul_cloud_overlay.frag" />
-    <None Include="..\CrossPlatform\CppSl.hs" />
-    <None Include="..\CrossPlatform\depth.sl" />
-    <None Include="..\CrossPlatform\earth_shadow.sl" />
-    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
+    <None Include="..\CrossPlatform\simul_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
+    <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
+    <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
+    <None Include="GLSL\simul_cloud_overlay.frag" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
+    <None Include="..\CrossPlatform\simul_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
+    <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
+    <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
+    <None Include="GLSL\simul_cloud_overlay.frag" />
     <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
     <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
     <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
@@ -510,6 +521,42 @@
     <None Include="..\CrossPlatform\depth.sl" />
     <None Include="..\CrossPlatform\earth_shadow.sl" />
     <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
+    <None Include="..\CrossPlatform\simul_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
+    <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
+    <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
+    <None Include="GLSL\simul_cloud_overlay.frag" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
+    <None Include="..\CrossPlatform\simul_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
+    <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
+    <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
+    <None Include="GLSL\simul_cloud_overlay.frag" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
+    <None Include="..\CrossPlatform\simul_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
+    <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
+    <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
+    <None Include="GLSL\simul_cloud_overlay.frag" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
+    <None Include="..\CrossPlatform\simul_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
+    <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
+    <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
+    <None Include="GLSL\simul_cloud_overlay.frag" />
     <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
     <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
     <None Include="..\CrossPlatform\simul_cloud_constants.sl" />

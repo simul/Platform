@@ -11,7 +11,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
-#include <d3d11.h>
+#include "Simul/Platform/DirectX11/SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
@@ -37,22 +37,22 @@ namespace simul
 	//! The namespace for the DirectX 11 platform library and its rendering classes.
 	namespace dx11
 	{
-		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer
+		struct TwoResFramebuffer:public simul::crossplatform::TwoResFramebuffer
 		{
 			TwoResFramebuffer();
-			BaseFramebuffer *GetLowResFarFramebuffer()
+			crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()
 			{
 				return &lowResFarFramebufferDx11;
 			}
-			BaseFramebuffer *GetLowResNearFramebuffer()
+			crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()
 			{
 				return &lowResNearFramebufferDx11;
 			}
-			BaseFramebuffer *GetHiResFarFramebuffer()
+			crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()
 			{
 				return &hiResFarFramebufferDx11;
 			}
-			BaseFramebuffer *GetHiResNearFramebuffer()
+			crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()
 			{
 				return &hiResNearFramebufferDx11;
 			}
@@ -60,7 +60,7 @@ namespace simul
 			dx11::Framebuffer	lowResNearFramebufferDx11;
 			dx11::Framebuffer	hiResFarFramebufferDx11;
 			dx11::Framebuffer	hiResNearFramebufferDx11;
-			void RestoreDeviceObjects(void *);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale);
 			void GetDimensions(int &w,int &h,int &downscale);
@@ -76,44 +76,33 @@ namespace simul
 			virtual ~SimulWeatherRendererDX11();
 			void SetScreenSize(int view_id,int w,int h);
 			//standard d3d object interface functions
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			bool Destroy();
-			//! Apply the view and projection matrices, once per frame.
-			void SetMatrices(const simul::math::Matrix4x4 &viewmat,const simul::math::Matrix4x4 &projmat);
 			void RenderSkyAsOverlay(crossplatform::DeviceContext &deviceContext
 											,bool is_cubemap
 											,float exposure
 											,bool buffered
-											,const void* mainDepthTexture
-											,const void* lowResDepthTexture
+											,crossplatform::Texture *mainDepthTexture
+											,crossplatform::Texture* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite);
-			void RenderMixedResolution(	crossplatform::DeviceContext &deviceContext
-										,bool is_cubemap
-										,float exposure
-										,float gamma
-										,const void* mainDepthTextureMS	
-										,const void* hiResDepthTexture	
-										,const void* lowResDepthTexture 
-										,const sky::float4& depthViewportXYWH
-										);
+	
 			// This composites the clouds and other buffers to the screen.
 			void CompositeCloudsToScreen(crossplatform::DeviceContext &deviceContext
 												,float exposure
 												,float gamma
 												,bool depth_blend
-												,const void* mainDepthTexture
-												,const void* hiResDepthTexture
-												,const void* lowResDepthTexture
+												,crossplatform::Texture *mainDepthTexture
+												,crossplatform::Texture* hiResDepthTexture
+												,crossplatform::Texture* lowResDepthTexture
 												,const simul::sky::float4& viewportRegionXYWH
 												,const crossplatform::MixedResolutionStruct &mixedResolutionStruct);
-			void RenderFramebufferDepth(void *context,int view_id,int x0,int y0,int w,int h);
-			void RenderCompositingTextures(void *context,int view_id,int x0,int y0,int w,int h);
-			void RenderPrecipitation(void *context,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
-			void RenderLightning(void *context,int viewport_id,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex);
-			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
+			void RenderFramebufferDepth(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
+			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH);
+			void RenderLightning(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *low_res_depth_tex);
+			void SaveCubemapToFile(crossplatform::RenderPlatform *renderPlatform,const char *filename,float exposure,float gamma);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 			void SetExposure(float ex){exposure=ex;}
 
@@ -125,40 +114,32 @@ namespace simul
 			class Simul2DCloudRendererDX11 *Get2DCloudRenderer();
 			//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
-			void *GetCloudDepthTexture(int view_id);
+			crossplatform::Texture *GetCloudDepthTexture(int view_id);
 
 		protected:
 			simul::base::MemoryInterface	*memoryInterface;
 			// Keep copies of these matrices:
-			simul::math::Matrix4x4 view;
-			simul::math::Matrix4x4 proj;
-			IDXGISwapChain *pSwapChain;
-			ID3D11Device*							m_pd3dDevice;
-			
-			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			ID3DX11Effect							*m_pTonemapEffect;
-			ID3DX11EffectTechnique					*simpleCloudBlendTechnique;
-			ID3DX11EffectTechnique					*farNearDepthBlendTechnique;
-			ID3DX11EffectTechnique					*showDepthTechnique;
-			ID3DX11EffectShaderResourceVariable		*imageTexture;
+		//	simul::math::Matrix4x4 view;
+		//	simul::math::Matrix4x4 proj;
+			IDXGISwapChain								*pSwapChain;
+			ID3D11Device								*m_pd3dDevice;
 
 			bool CreateBuffers();
 			bool RenderBufferToScreen(ID3D11ShaderResourceView* texture,int w,int h,bool do_tonemap);
-			class SimulSkyRendererDX1x				*simulSkyRenderer;
-			class SimulCloudRendererDX1x			*simulCloudRenderer;
-			class PrecipitationRenderer	*simulPrecipitationRenderer;
-			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
-			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
-			class LightningRenderer					*simulLightningRenderer;
+			class SimulSkyRendererDX1x					*simulSkyRenderer;
+			class SimulCloudRendererDX1x				*simulCloudRenderer;
+			class PrecipitationRenderer					*simulPrecipitationRenderer;
+			class SimulAtmosphericsRendererDX1x			*simulAtmosphericsRenderer;
+			class Simul2DCloudRendererDX11				*simul2DCloudRenderer;
+			class LightningRenderer						*simulLightningRenderer;
 			typedef std::map<int,simul::dx11::TwoResFramebuffer*> FramebufferMapDx11;
 			// Map from view_id to framebuffer.
-			TwoResFramebuffer *						GetFramebuffer(int view_id);
-			FramebufferMapDx11						framebuffersDx11;
-			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
-			float									exposure;
-			float									gamma;
-			float									exposure_multiplier;
-			simul::math::Vector3					cam_pos;
+			TwoResFramebuffer *							GetFramebuffer(int view_id);
+			FramebufferMapDx11							framebuffersDx11;
+			float										exposure;
+			float										gamma;
+			float										exposure_multiplier;
+			//simul::math::Vector3						cam_pos;
 		};
 	}
 }

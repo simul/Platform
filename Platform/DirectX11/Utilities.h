@@ -2,52 +2,28 @@
 #ifndef SIMUL_PLATFORM_DIRECTX11_UTILITIES_H
 #define SIMUL_PLATFORM_DIRECTX11_UTILITIES_H
 
-#include <d3d11.h>
+#ifdef _XBOX_ONE
+#include <d3d11_x.h>
+#else
+#include "SimulDirectXHeader.h"
+#endif
 #include <utility>
 #include <vector>
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Base/FileLoader.h"
+#include "Simul/Math/Matrix4x4.h"
+struct ID3DX11EffectConstantBuffer;
 #pragma warning(disable:4251)
 namespace simul
 {
 	namespace crossplatform
 	{
 		struct DeviceContext;
+		class RenderPlatform;
 	}
 	namespace dx11
 	{
-		struct SIMUL_DIRECTX11_EXPORT TextureStruct
-		{
-			TextureStruct();
-			~TextureStruct();
-			void release();
-			ID3D11Resource*				texture;
-			ID3D11ShaderResourceView*   shaderResourceView;
-			ID3D11UnorderedAccessView*  unorderedAccessView;
-			ID3D11RenderTargetView*		renderTargetView;
-			ID3D11Resource*				stagingBuffer;
-
-			D3D11_MAPPED_SUBRESOURCE	mapped;
-			int width,length,depth;
-			DXGI_FORMAT format;
-			void copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *context,void *target,int start_texel=0,int texels=0);
-			void setTexels(ID3D11DeviceContext *context,const void *src,int texel_index,int num_texels);
-			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
-			void ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable=false);
-			void ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable=false,bool rendertarget=false);
-			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT f,bool computable=false);
-			void map(ID3D11DeviceContext *context);
-			bool isMapped() const;
-			void unmap();
-			void activateRenderTarget(ID3D11DeviceContext *context);
-			void deactivateRenderTarget();
-		private:
-			ID3D11DeviceContext *last_context;
-			ID3D11RenderTargetView*				m_pOldRenderTarget;
-			ID3D11DepthStencilView*				m_pOldDepthSurface;
-			D3D11_VIEWPORT						m_OldViewports[16];
-		};
 		struct ComputableTexture
 		{
 			ComputableTexture();
@@ -172,24 +148,22 @@ namespace simul
 			static int instance_count;
 			static int screen_width;
 			static int screen_height;
-			static D3DXMATRIX view;
-			static D3DXMATRIX proj;
 		public:
-			static ID3DX11Effect		*m_pDebugEffect;
-			static ID3D11InputLayout	*m_pCubemapVtxDecl;
-			static ID3D1xBuffer		* m_pVertexBuffer;
-			static ID3D11Device		*m_pd3dDevice;
+			static crossplatform::Effect			*m_pDebugEffect;
+			static ID3D11InputLayout				*m_pCubemapVtxDecl;
+			static ID3D1xBuffer						*m_pVertexBuffer;
+			static crossplatform::RenderPlatform	*renderPlatform;
 			UtilityRenderer();
 			~UtilityRenderer();
-			static ID3DX11Effect		*GetDebugEffect();
-			static void SetMatrices(D3DXMATRIX v,D3DXMATRIX p);
-			static void RestoreDeviceObjects(void *m_pd3dDevice);
+			static crossplatform::Effect		*GetDebugEffect();
+			static void RestoreDeviceObjects(crossplatform::RenderPlatform	*r);
 			static void InvalidateDeviceObjects();
 			static void RecompileShaders();
 			static void SetScreenSize(int w,int h);
 			static void GetScreenSize(int& w,int& h);
 			static void PrintAt3dPos(		ID3D11DeviceContext* pContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
-			static void DrawLines(			ID3D11DeviceContext* pContext,VertexXyzRgba *lines,int vertex_count,bool strip);
+			static void DrawLines(			crossplatform::DeviceContext &deviceContext,VertexXyzRgba *lines,int vertex_count,bool strip);
+			static void Draw2dLines(		crossplatform::DeviceContext &deviceContext,VertexXyzRgba *lines,int vertex_count,bool strip);
 			static void RenderAngledQuad(	ID3D11DeviceContext *pContext,const float *dir,float half_angle_radians,ID3DX11Effect* effect,ID3DX11EffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
 			static void DrawQuad(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11EffectTechnique* tech);	
 			static void DrawQuad2(			ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
@@ -197,7 +171,7 @@ namespace simul
 			static void DrawQuad(			ID3D11DeviceContext *pContext);
 			static void DrawCube(void *context);
 			static void DrawSphere(void *context,int latitudes,int longitudes);
-			static void DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety);
+			static void DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,float offsetx,float offsety);
 		};
 		//! Useful Wrapper class to encapsulate constant buffer behaviour
 		
@@ -264,6 +238,13 @@ namespace simul
 				ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
 				Apply(pContext);
 			}
+			//! Unbind from the effect.
+			void Unbind(ID3D11DeviceContext *pContext)
+			{
+				if(m_pD3DX11EffectConstantBuffer)
+					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
+			}
+		protected:
 			void Apply(ID3D11DeviceContext *pContext)
 			{
 				D3D11_MAPPED_SUBRESOURCE mapped_res;
@@ -274,17 +255,10 @@ namespace simul
 				if(m_pD3DX11EffectConstantBuffer)
 					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 			}
-			//! Unbind from the effect.
-			void Unbind(ID3D11DeviceContext *pContext)
-			{
-				if(m_pD3DX11EffectConstantBuffer)
-					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
-			}
 		};
-		
 		inline void SetDebugObjectName( ID3D11DeviceChild* resource,const char *name)
 		{
-		  #if defined(_DEBUG) || defined(PROFILE)
+		  #if (defined(_DEBUG) || defined(PROFILE)) && !defined(_XBOX_ONE)
 			if(resource)
 			 resource->SetPrivateData(WKPDID_D3DDebugObjectName,(UINT)(name?strlen(name):0),name?name:"un-named resource");
 		  #endif
@@ -437,24 +411,11 @@ namespace simul
 
 namespace std
 {
-	template<> inline void swap(simul::dx11::TextureStruct& _Left, simul::dx11::TextureStruct& _Right)
-	{
-		std::swap(_Left.shaderResourceView	,_Right.shaderResourceView);
-		std::swap(_Left.unorderedAccessView	,_Right.unorderedAccessView);
-		std::swap(_Left.renderTargetView	,_Right.renderTargetView);
-		std::swap(_Left.stagingBuffer		,_Right.stagingBuffer);
-		std::swap(_Left.texture				,_Right.texture);
-		std::swap(_Left.width				,_Right.width);
-		std::swap(_Left.length				,_Right.length);
-		std::swap(_Left.depth				,_Right.depth);
-		std::swap(_Left.mapped				,_Right.mapped);
-		std::swap(_Left.format				,_Right.format);
-	}
 	template<class T> inline void swap(simul::dx11::VertexBuffer<T>& _Left, simul::dx11::VertexBuffer<T>& _Right)
 	{
 		std::swap(_Left.vertexBuffer		,_Right.vertexBuffer);
 //		std::swap(_Left.unorderedAccessView	,_Right.unorderedAccessView);
-}
+	}
 }
 
 #define SET_VERTEX_BUFFER(context,vertexBuffer,VertexType)\

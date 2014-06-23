@@ -1,19 +1,18 @@
 #pragma once
-#include <d3dcommon.h>
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #include <map>
 #include <string>
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
 #include "Simul/Platform/DirectX11/Direct3D11ManagerInterface.h"
 #include "Simul/Platform/DirectX11/Export.h"
-
+struct ID3D11Debug;
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul
 {
 	namespace dx11
 	{
-		struct SIMUL_DIRECTX11_EXPORT Window:public Direct3DWindow
+		struct SIMUL_DIRECTX11_EXPORT Window
 		{
 			Window();
 			~Window();
@@ -24,6 +23,7 @@ namespace simul
 			void SetRenderer(Direct3D11CallbackInterface *ci);
 			HWND hwnd;
 			/// The id assigned by the renderer to correspond to this hwnd
+			int view_id;			
 			bool vsync;
 			IDXGISwapChain				*m_swapChain;
 			ID3D11RenderTargetView		*m_renderTargetView;
@@ -36,8 +36,8 @@ namespace simul
 		};
 		//! A class intended to replace DXUT, while allowing for multiple swap chains (i.e. rendering windows) to share the same d3d device.
 
-		//! Direct3D11Manager corresponds to a single ID3D11Device (i.e. a single graphics card accessed with this interface).
-		//! With each graphics window it manages (identified by HWND's), Direct3D11Manager
+		//! Direct3D11Manager corresponds to a single ID3D11Device, which it creates when initialized (i.e. a single graphics card accessed with this interface).
+		//! With each graphics window it manages (identified by HWND's), Direct3D11Manager creates and manages a IDXGISwapChain instance.
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Manager: public Direct3D11ManagerInterface
 		{
 		public:
@@ -50,7 +50,7 @@ namespace simul
 			void RemoveWindow(HWND h);
 			void Shutdown();
 			IDXGISwapChain *GetSwapChain(HWND hwnd);
-			void StartRendering(HWND hwnd);
+			void Render(HWND hwnd);
 			void SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci);
 			void SetFullScreen(HWND hwnd,bool fullscreen,int which_output);
 			void ResizeSwapChain(HWND hwnd,int width,int height);

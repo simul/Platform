@@ -9,8 +9,7 @@
 // CreateEffect.h Create a DirectX .fx effect and report errors.
 #ifndef CREATEEFFECTDX1X_H
 #define CREATEEFFECTDX1X_H
-#include "D3dx11effect.h"
-#include <D3Dcompiler.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
@@ -136,14 +135,6 @@ inline D3DXMATRIX* D3DXMatrixPerspectiveFovRH( D3DXMATRIX *pOut, FLOAT fovy, FLO
 	DirectX::XMStoreFloat4x4(pOut,M);
 	return pOut;
 }
-inline void D3DXMatrixLookAtLH(D3DXMATRIX *m, D3DVECTOR *vEyePt,D3DVECTOR *vLookAt, D3DVECTOR *vUpDir )
-{
-	DirectX::XMVECTOR e=DirectX::XMLoadFloat3(&DirectX::XMFLOAT3((const float*)vEyePt));
-	DirectX::XMVECTOR l=DirectX::XMLoadFloat3(&DirectX::XMFLOAT3((const float*)vLookAt));
-	DirectX::XMVECTOR u=DirectX::XMLoadFloat3(&DirectX::XMFLOAT3((const float*)vUpDir));
-	DirectX::XMMATRIX M=DirectX::XMMatrixLookAtLH(e,l,u);
-	DirectX::XMStoreFloat4x4(m,M);
-}
 inline void D3DXMatrixLookAtRH(D3DXMATRIX *m, D3DVECTOR *vEyePt,D3DVECTOR *vLookAt, D3DVECTOR *vUpDir )
 {
 	DirectX::XMVECTOR e=DirectX::XMLoadFloat3(&DirectX::XMFLOAT3((const float*)vEyePt));
@@ -154,12 +145,23 @@ inline void D3DXMatrixLookAtRH(D3DXMATRIX *m, D3DVECTOR *vEyePt,D3DVECTOR *vLook
 }
 
 #endif
+
 #include <map>
 #include "MacrosDX1x.h"
 #include "Export.h"
+
 struct VertexXyzRgba;
+struct ID3DX11Effect;
+struct ID3DX11EffectTechnique;
+struct ID3DX11EffectPass;
+
+typedef long HRESULT;
 namespace simul
 {
+	namespace crossplatform
+	{
+		class Effect;
+	}
 	namespace dx11
 	{
 		enum ShaderBuildMode
@@ -220,21 +222,24 @@ namespace simul
 		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y);
 		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y,float z,float w);
 		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,int value);
-		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float *vec);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,const float *vec);
 		void SIMUL_DIRECTX11_EXPORT setMatrix				(ID3DX11Effect *effect	,const char *name	,const float *value);
 		void SIMUL_DIRECTX11_EXPORT setConstantBuffer		(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b);
 		void SIMUL_DIRECTX11_EXPORT unbindTextures			(ID3DX11Effect *effect);
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
+		//simul::crossplatform::Effect *CreateEffect(void *device,const char *filename,const std::map<std::string,std::string>&defines);
+		extern SIMUL_DIRECTX11_EXPORT ID3D11ComputeShader *LoadComputeShader(ID3D11Device *d3dDevice,const char *filename);
+		//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename.
+		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename);
+		//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename and defines.
+		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines,unsigned int shader_flags=0);
 	}
 }
 
-typedef long HRESULT;
-extern SIMUL_DIRECTX11_EXPORT ID3D11ComputeShader *LoadComputeShader(ID3D11Device *d3dDevice,const char *filename);
-//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename.
-extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename);
-//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename. In that case, the defines are ignored.
-extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines,unsigned int shader_flags=D3DCOMPILE_OPTIMIZATION_LEVEL3);
+#ifndef D3DCOMPILE_OPTIMIZATION_LEVEL3
+#define D3DCOMPILE_OPTIMIZATION_LEVEL3            (1 << 15)
+#endif
 extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8);
 extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines);
 
@@ -249,10 +254,8 @@ extern SIMUL_DIRECTX11_EXPORT HRESULT MapBuffer(ID3D11DeviceContext *pImmediateC
 extern SIMUL_DIRECTX11_EXPORT void UnmapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuffer);
 extern SIMUL_DIRECTX11_EXPORT HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass);
 
-extern void SIMUL_DIRECTX11_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos,bool ReverseDepth);
-
-void StoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
-void RestoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
+void SIMUL_DIRECTX11_EXPORT StoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
+void SIMUL_DIRECTX11_EXPORT RestoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
 
 #define PAD16(n) (((n)+15)/16*16)
 #endif

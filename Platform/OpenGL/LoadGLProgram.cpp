@@ -1,7 +1,5 @@
 #include <GL/glew.h>
-#ifdef USE_GLFX
 #include <GL/glfx.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -48,19 +46,6 @@ namespace simul
 			{
 				pos=(int)str.find('\n',pos+1);
 				count++;
-			}
-			return count;
-		}
-
-		static int GetLineNumber(const std::string &str,int line_pos)
-		{
-			int pos=0;
-			int count=0;
-			while(pos>=0&&pos<=line_pos)
-			{
-				pos=(int)str.find('\n',pos+1);
-				if(pos>=0&&pos<=line_pos)
-					count++;
 			}
 			return count;
 		}
@@ -144,7 +129,9 @@ namespace simul
 		{
 			void *shader_source=NULL;
 			unsigned fileSize=0;
+		ERRNO_CHECK
 			simul::base::FileLoader::GetFileLoader()->AcquireFileContents(shader_source,fileSize,filename_utf8,true);
+		ERRNO_CHECK
 			if(!shader_source)
 			{
 				std::cerr<<"\nERROR:\tShader file "<<filename_utf8<<" not found, exiting.\n";
@@ -155,12 +142,15 @@ namespace simul
 				std::cerr<<"exit(1)"<<std::endl;
 				exit(1);
 			}
+			ERRNO_CHECK
 			std::string str((const char*)shader_source);
 			simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(shader_source);
+			ERRNO_CHECK
 			// Change Windows-style CR-LF's to simple Unix-style LF's
 			base::find_and_replace( str,"\r\n","\n");
 			// Convert any left-over CR's into LF's
 			base::find_and_replace( str,"\r","\n");
+			ERRNO_CHECK
 			return str;
 		}
 		void ProcessIncludes(string &src,string &filenameUtf8,bool line_source_filenames,vector<string> &sourceFilesUtf8)
@@ -358,12 +348,8 @@ namespace simul
 			}
 			GL_ERROR_CHECK
 		}
-		GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines,const vector<string> &sourceFilesUtf8)
+		static void InsertDefines(std::string &src,const map<string,string> &defines)
 		{
-			std::string src=source;
-		/*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
-			const int MAX_STRINGS=12;
-			const char *strings[MAX_STRINGS];
 			int start_of_line=0;
 			// We can insert #defines, but only AFTER the #version string.
 			int pos=(int)src.find("#version");
@@ -385,6 +371,14 @@ namespace simul
 //				int start_line=(int)GetLineNumber(src,start_of_line);
 				//filenameChart.add("defines",start_line,def);
 			}
+		}
+		GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines,const vector<string> &sourceFilesUtf8)
+		{
+			std::string src=source;
+		/*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
+			const int MAX_STRINGS=12;
+			const char *strings[MAX_STRINGS];
+			InsertDefines(src,defines);
 			int lenOfStrings[MAX_STRINGS];
 			strings[0]		=src.c_str();
 			lenOfStrings[0]	=(int)strlen(strings[0]);
@@ -404,7 +398,6 @@ namespace simul
 			}
 			return sh;
 		}
-#ifdef USE_GLFX
 		vector<string> effectSourceFilesUtf8;
 		void printEffectLog(GLint effect)
 		{
@@ -412,7 +405,6 @@ namespace simul
 			std::cerr<<log.c_str();
 //			printShaderInfoLog(log,effectSourceFilesUtf8);
 		}
-#endif
 		
 		GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines)
 		{
@@ -424,12 +416,13 @@ namespace simul
 		{
 			std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,shaderPathsUtf8);
 			if(!filenameUtf8.length())
-				return 0;
-#ifdef USE_GLFX
+				return -1;
 			GLint effect=glfxGenEffect();
 #if 1
 			std::string src				=loadShaderSource(filenameUtf8.c_str());
+
 			ProcessIncludes(src,filenameUtf8,false,effectSourceFilesUtf8);
+			InsertDefines(src,defines);
 			
 			int pos=(int)src.find("\r\n");
 			while(pos>=0)
@@ -438,7 +431,7 @@ namespace simul
 				pos=(int)src.find("\r\n",pos+1);
 			}
 			const char **filenames=new const char*[effectSourceFilesUtf8.size()+1];
-			for(int i=0;i<effectSourceFilesUtf8.size();i++)
+			for(size_t i=0;i<effectSourceFilesUtf8.size();i++)
 			{
 				filenames[i]=effectSourceFilesUtf8[i].c_str();
 			}
@@ -458,9 +451,6 @@ namespace simul
 			}
 #endif
 			return effect;
-#else
-			return 0;
-#endif
 		}
 
 		GLuint MakeProgram(const char *filename)
@@ -605,6 +595,7 @@ namespace simul
 		GL_ERROR_CHECK
 			vector<string> sourceFilesUtf8;
 			ProcessIncludes(src,filenameUtf8,false,sourceFilesUtf8);
+			//InsertDefines(src,defines);
 		GL_ERROR_CHECK
 			GLuint sh=glCreateShader(shader_type);
 		GL_ERROR_CHECK

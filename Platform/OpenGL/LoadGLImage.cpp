@@ -46,6 +46,7 @@ static bool FileExists(const std::string& filename_utf8)
 
 unsigned char *LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
 {
+ERRNO_CHECK
 #ifdef _MSC_VER
 	std::string fn			=filename_utf8;
 	FREE_IMAGE_FORMAT fif	=FIF_UNKNOWN;
@@ -63,6 +64,7 @@ unsigned char *LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &widt
 	{
 		throw simul::base::RuntimeError(std::string("Can't determine bitmap type from filename: ")+std::string(filename_utf8));
 	}
+ERRNO_CHECK
 	// ok, let's load the file
 	FIBITMAP *dib = FreeImage_LoadU(fif,wstr.c_str());
 	if(!dib)
@@ -77,6 +79,7 @@ unsigned char *LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &widt
 	//if(bpp!=24)
 	//	return 0;
 	BYTE *pixels = (BYTE*)FreeImage_GetBits(dib);
+ERRNO_CHECK
 	return pixels;
 #else
 	return NULL;
@@ -180,6 +183,8 @@ GL_ERROR_CHECK
 #include "Simul/Base/FileLoader.h"
 unsigned char *LoadGLBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
 {
+ERRNO_CHECK
 	std::string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
+ERRNO_CHECK
 	return LoadBitmap(fn.c_str(),bpp,width,height);
 }

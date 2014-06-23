@@ -9,6 +9,9 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "D3dx11effect.h"
 using namespace simul;
 using namespace dx11;
 
@@ -29,9 +32,10 @@ GpuSkyGenerator::~GpuSkyGenerator()
 	InvalidateDeviceObjects();
 }
 
-void GpuSkyGenerator::RestoreDeviceObjects(void *dev)
+void GpuSkyGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	m_pd3dDevice=(ID3D11Device*)dev;
+	renderPlatform=r;
+	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	gpuSkyConstants.RestoreDeviceObjects(m_pd3dDevice);
@@ -45,8 +49,8 @@ void GpuSkyGenerator::InvalidateDeviceObjects()
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(constantBuffer);
 	m_pd3dDevice=NULL;
-	dens_tex.release();
-	optd_tex.release();
+	dens_tex.InvalidateDeviceObjects();
+	optd_tex.InvalidateDeviceObjects();
 	tables_checksum=0;
 }
 
@@ -89,6 +93,9 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 {
 	if(p.fill_up_to_texels<0)
 		return;
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context=m_pImmediateContext;
+	deviceContext.renderPlatform=renderPlatform;
 	if(keyframe_checksums[cycled_index]!=p.keyframe_checksum)
 	{
 		keyframe_checksums[cycled_index]	=p.keyframe_checksum;
@@ -100,8 +107,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	int gridsize_2d			=(int)p.altitudes_km.size()*p.numElevations;
 	if(dens_tex.width!=a.table_size||optd_tex.width!=a.table_size)
 		tables_checksum=0;
-	dens_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,a.table_size,1,DXGI_FORMAT_R32G32B32A32_FLOAT,false);
-	optd_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,a.table_size,a.table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,false,false);
+	dens_tex.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,a.table_size,1,crossplatform::RGBA_32_FLOAT,false);
+	optd_tex.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,a.table_size,a.table_size,crossplatform::RGBA_32_FLOAT,false,false);
 
 	if(a.tables_checksum!=tables_checksum)
 	{
@@ -154,12 +161,12 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	//SetGpuSkyConstants(gpuSkyConstants,p,a,ir);
 	for(int i=0;i<3;i++)
 	{
-		finalLoss[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalInsc[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalSkyl[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalLoss[i]->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,crossplatform::RGBA_32_FLOAT,true,1);
+		finalInsc[i]->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,crossplatform::RGBA_32_FLOAT,true,1);
+		finalSkyl[i]->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,crossplatform::RGBA_32_FLOAT,true,1);
 	}
 	if(light_table)
-		light_table->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size()*32,3,4,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		light_table->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size()*32,3,4,crossplatform::RGBA_32_FLOAT,true);
 	density_texture->SetResource(dens_tex.shaderResourceView);
 	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
 	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 2")
@@ -179,9 +186,9 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	
 	if(subgrid>0)
 	{
-		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalLoss[cycled_index]->unorderedAccessView);
+		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalLoss[cycled_index]->AsD3D11UnorderedAccessView());
 		gpuSkyConstants.threadOffset=uint3(start_loss,0,0);
-		gpuSkyConstants.Apply(m_pImmediateContext);
+		gpuSkyConstants.Apply(deviceContext);
 		V_CHECK(ApplyPass(m_pImmediateContext,lossComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 	}
@@ -189,14 +196,14 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	int end_insc	=range(end_step-xy_size		,0,xy_size);
 	int num_insc	=range(end_insc-start_insc	,0,xy_size);
 	
-	loss_texture->SetResource(finalLoss[cycled_index]->shaderResourceView);
+	loss_texture->SetResource(finalLoss[cycled_index]->AsD3D11ShaderResourceView());
 	optical_depth_texture->SetResource(optd_tex.shaderResourceView);
 	subgrid=(num_insc+BLOCKWIDTH-1)/BLOCKWIDTH;
 	if(subgrid>0)
 	{
-		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalInsc[cycled_index]->unorderedAccessView);
+		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalInsc[cycled_index]->AsD3D11UnorderedAccessView());
 		gpuSkyConstants.threadOffset=uint3(start_insc,0,0);
-		gpuSkyConstants.Apply(m_pImmediateContext);
+		gpuSkyConstants.Apply(deviceContext);
 		V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 	}
@@ -205,10 +212,10 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	int start_skyl	=range(start_step-2*xy_size	,0	,xy_size);
 	int end_skyl	=range(end_step-2*xy_size	,0	,xy_size);
 	int num_skyl	=range(end_skyl-start_skyl	,0	,xy_size);
-	insc_texture->SetResource(finalInsc[cycled_index]->shaderResourceView);
-	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalSkyl[cycled_index]->unorderedAccessView);
+	insc_texture->SetResource(finalInsc[cycled_index]->AsD3D11ShaderResourceView());
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalSkyl[cycled_index]->AsD3D11UnorderedAccessView());
 	gpuSkyConstants.threadOffset=uint3(start_skyl,0,0);
-	gpuSkyConstants.Apply(m_pImmediateContext);
+	gpuSkyConstants.Apply(deviceContext);
 	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
 	subgrid=(num_skyl+BLOCKWIDTH-1)/BLOCKWIDTH;
 	if(subgrid>0)
@@ -221,14 +228,14 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		int start_light			=range(start_step-2*xy_size	,0,x_size);
 		int end_light			=range(end_step-2*xy_size	,0,x_size);
 		int num_light			=range(end_light-start_light,0,x_size);
-		loss_texture			->SetResource(finalLoss[cycled_index]->shaderResourceView);
+		loss_texture			->SetResource(finalLoss[cycled_index]->AsD3D11ShaderResourceView());
 		optical_depth_texture	->SetResource(optd_tex.shaderResourceView);
-		insc_texture			->SetResource(finalInsc[cycled_index]->shaderResourceView);
+		insc_texture			->SetResource(finalInsc[cycled_index]->AsD3D11ShaderResourceView());
 		if(num_light>0)
 		{
-			simul::dx11::setUnorderedAccessView(effect,"targetTexture",light_table->unorderedAccessView);
+			simul::dx11::setUnorderedAccessView(effect,"targetTexture",light_table->AsD3D11UnorderedAccessView());
 			gpuSkyConstants.threadOffset	=uint3(start_light,cycled_index,0);
-			gpuSkyConstants.Apply(m_pImmediateContext);
+			gpuSkyConstants.Apply(deviceContext);
 			V_CHECK(ApplyPass(m_pImmediateContext,lightComputeTechnique->GetPassByIndex(0)));
 			m_pImmediateContext->Dispatch(num_light,1,1);
 		}
@@ -247,11 +254,14 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 
 void GpuSkyGenerator::CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl)
 {
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context=m_pImmediateContext;
+	deviceContext.renderPlatform=renderPlatform;
 	int size=finalLoss[cycled_index]->depth*finalLoss[cycled_index]->width*finalLoss[cycled_index]->length;
 	if(loss)
-		finalLoss[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,loss,0,size);
+		finalLoss[cycled_index]->copyToMemory(deviceContext,loss,0,size);
 	if(insc)
-		finalInsc[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,insc,0,size);	
+		finalInsc[cycled_index]->copyToMemory(deviceContext,insc,0,size);	
 	if(skyl)
-		finalSkyl[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,skyl,0,size);
+		finalSkyl[cycled_index]->copyToMemory(deviceContext,skyl,0,size);
 }

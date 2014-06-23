@@ -23,7 +23,8 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
-#include "Simul/Scene/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;
@@ -37,11 +38,6 @@ Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer
 	,vertexBuffer(NULL)
 	,indexBuffer(NULL)
 	,inputLayout(NULL)
-	,skyLossTexture_SRV(NULL)
-	,skyInscatterTexture_SRV(NULL)
-	,skylightTexture_SRV(NULL)
-	,illuminationTexture_SRV(NULL)
-	,lightTableTexture_SRV(NULL)
 {
 }
 
@@ -50,9 +46,10 @@ Simul2DCloudRendererDX11::~Simul2DCloudRendererDX11()
 	InvalidateDeviceObjects();
 }
 
-void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
+void Simul2DCloudRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform)
 {
-	m_pd3dDevice=(ID3D11Device*)dev;
+	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
+;
     RecompileShaders();
 	SAFE_RELEASE(inputLayout);
 	if(technique)
@@ -119,17 +116,17 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 	cloud2DConstants.RestoreDeviceObjects(m_pd3dDevice);
 	detail2DConstants.RestoreDeviceObjects(m_pd3dDevice);
 
-	coverage_fb.RestoreDeviceObjects(m_pd3dDevice);
+	coverage_fb.RestoreDeviceObjects(renderPlatform);
 
 	detail_fb.SetWidthAndHeight(256,256);
-	detail_fb.RestoreDeviceObjects(m_pd3dDevice);
+	detail_fb.RestoreDeviceObjects(renderPlatform);
 	detail_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
 	
-	noise_fb.RestoreDeviceObjects(m_pd3dDevice);
+	noise_fb.RestoreDeviceObjects(renderPlatform);
 	noise_fb.SetWidthAndHeight(16,16);
 	noise_fb.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 
-	dens_fb.RestoreDeviceObjects(m_pd3dDevice);
+	dens_fb.RestoreDeviceObjects(renderPlatform);
 	dens_fb.SetWidthAndHeight(512,512);
 	dens_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
 }
@@ -140,10 +137,8 @@ void Simul2DCloudRendererDX11::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
-	if(UseLightTables)
-		defines["USE_LIGHT_TABLES"]="1";
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
+	defines["USE_LIGHT_TABLES"]=UseLightTables?"1":"0";
 	CreateEffect(m_pd3dDevice,&effect,"simul_clouds_2d.fx",defines);
 	msaaTechnique=effect->GetTechniqueByName("simul_clouds_2d_msaa");
 	technique	=effect->GetTechniqueByName("simul_clouds_2d");
@@ -151,10 +146,10 @@ void Simul2DCloudRendererDX11::RecompileShaders()
 	detail2DConstants.LinkToEffect(effect,"Detail2DConstants");
 }
 
-void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
+void Simul2DCloudRendererDX11::RenderDetailTexture(crossplatform::DeviceContext &deviceContext)
 {
 	const simul::clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture");
 
 	int noise_texture_size		=cloudKeyframer->GetEdgeNoiseTextureSize();
@@ -162,42 +157,42 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	
 	noise_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency);
 	noise_fb.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
-	noise_fb.Activate(pContext);
+	noise_fb.Activate(deviceContext);
 	{
 		SetDetail2DCloudConstants(detail2DConstants);
-		detail2DConstants.Apply(pContext);
+		detail2DConstants.Apply(deviceContext);
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("random");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	} 
 	noise_fb.Deactivate(pContext);
 	dens_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
-	dens_fb.Activate(context);
+	dens_fb.Activate(deviceContext);
 	{
 		SetDetail2DCloudConstants(detail2DConstants);
-		detail2DConstants.Apply(pContext);
+		detail2DConstants.Apply(deviceContext);
 		simul::dx11::setTexture(effect,"imageTexture"	,(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_2d_cloud_detail");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	}
-	dens_fb.Deactivate(context);
-	detail_fb.Activate(context);
+	dens_fb.Deactivate(pContext);
+	detail_fb.Activate(deviceContext);
 	{
 		simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)dens_fb.GetColorTex());
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_2d_cloud_detail_lighting");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	}
-	detail_fb.Deactivate(context);
-	coverage_fb.Activate(context);
+	detail_fb.Deactivate(pContext);
+	coverage_fb.Activate(deviceContext);
 	{
 		simul::dx11::setTexture(effect,"noiseTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_coverage");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	} 
-	coverage_fb.Deactivate(context);
+	coverage_fb.Deactivate(pContext);
 }
 
 void Simul2DCloudRendererDX11::InvalidateDeviceObjects()
@@ -232,13 +227,13 @@ void Simul2DCloudRendererDX11::EnsureCorrectTextureSizes()
 	//	coverage_tex[i].init(m_pd3dDevice,cloud_tex_width_x,cloud_tex_length_y,DXGI_FORMAT_R8G8B8A8_UNORM);
 }
 
-void Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate(void *context)
+void Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
     SIMUL_COMBINED_PROFILE_START(pContext,"Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate");
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
-    SIMUL_COMBINED_PROFILE_END(context)
+    SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
 void Simul2DCloudRendererDX11::EnsureTextureCycle()
@@ -255,32 +250,25 @@ void Simul2DCloudRendererDX11::EnsureTextureCycle()
 	}
 }
 
-void Simul2DCloudRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
+void Simul2DCloudRendererDX11::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
 {
-	view=v;
-	proj=p;
+	EnsureTexturesAreUpToDate(deviceContext);
+	RenderDetailTexture(deviceContext);
 }
-
-void Simul2DCloudRendererDX11::PreRenderUpdate(void *context)
-{
-	EnsureTexturesAreUpToDate(context);
-	RenderDetailTexture(context);
-}
-
+/*
 void FixProjectionMatrix(simul::math::Matrix4x4 &proj,float zNear,float zFar)
 {
 	proj._33	=zNear/(zFar-zNear);	
 	proj._43	=zFar*zNear/(zFar-zNear);
-}
-
+}*/
 bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
-									  ,const void *depthTexture,bool default_fog,bool write_alpha
+									  ,crossplatform::Texture *depthTexture,bool write_alpha
 									  ,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& )
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::Render");
 	
-	ID3D11ShaderResourceView* depthTexture_SRV	=(ID3D11ShaderResourceView*)depthTexture;
+	ID3D11ShaderResourceView* depthTexture_SRV	=depthTexture->AsD3D11ShaderResourceView();
 	ID3DX11EffectTechnique*		tech			=technique;
 	if(depthTexture_SRV)
 	{
@@ -295,22 +283,22 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)detail_fb.GetColorTex());
 	simul::dx11::setTexture(effect,"noiseTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 	simul::dx11::setTexture(effect,"coverageTexture",(ID3D11ShaderResourceView*)coverage_fb.GetColorTex());
-	simul::dx11::setTexture(effect,"lossTexture",skyLossTexture_SRV);
-	simul::dx11::setTexture(effect,"inscTexture",skyInscatterTexture_SRV);
-	simul::dx11::setTexture(effect,"skylTexture",skylightTexture_SRV);
+	simul::dx11::setTexture(effect,"lossTexture",skyLossTexture->AsD3D11ShaderResourceView());
+	simul::dx11::setTexture(effect,"inscTexture",overcInscTexture->AsD3D11ShaderResourceView());
+	simul::dx11::setTexture(effect,"skylTexture",skylightTexture->AsD3D11ShaderResourceView());
 	// Set both MS and regular - we'll only use one of them:
 	simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
 	simul::dx11::setTexture(effect,"depthTextureMS",depthTexture_SRV);
-	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
-	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture_SRV);
+	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture->AsD3D11ShaderResourceView());
+	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture->AsD3D11ShaderResourceView());
 	
 	static float ff=10000.f; 
-	math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
+	math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view,false);
 	float ir_integration_factors[]={0,0,0,0};
-	FixProjectionMatrix(proj,10.f,500000.f);
+	//FixProjectionMatrix(deviceContext.viewStruct.proj,10.f,500000.f);
 
-	Set2DCloudConstants(cloud2DConstants,view,proj,exposure,viewportTextureRegionXYWH,ir_integration_factors);
-	cloud2DConstants.Apply(pContext);
+	Set2DCloudConstants(cloud2DConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,exposure,viewportTextureRegionXYWH,ir_integration_factors);
+	cloud2DConstants.Apply(deviceContext);
 
 	ID3D11InputLayout* previousInputLayout;
 	UINT prevOffset;
@@ -377,43 +365,22 @@ void Simul2DCloudRendererDX11::RenderCrossSections(crossplatform::DeviceContext 
 	}
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)coverage_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(0)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
-	deviceContext.renderPlatform->Print(pContext,(0)*(w+8)+8,height-8-w,"coverage");
+	deviceContext.renderPlatform->Print(deviceContext,(0)*(w+8)+8,height-8-w,"coverage");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(1)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
-	deviceContext.renderPlatform->Print(pContext,(1)*(w+8)+8,height-8-w,"noise");
+	deviceContext.renderPlatform->Print(deviceContext,(1)*(w+8)+8,height-8-w,"noise");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)dens_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(2)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
-	deviceContext.renderPlatform->Print(pContext,(2)*(w+8)+8,height-8-w,"dens");
+	deviceContext.renderPlatform->Print(deviceContext,(2)*(w+8)+8,height-8-w,"dens");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)detail_fb.GetColorTex());
-	cloud2DConstants.Apply(pContext);
+	cloud2DConstants.Apply(deviceContext);
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(3)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("show_detail_texture"));
-	deviceContext.renderPlatform->Print(pContext,(3)*(w+8)+8,height-8-w,"detail");
+	deviceContext.renderPlatform->Print(deviceContext,(3)*(w+8)+8,height-8-w,"detail");
 		
 }
 
 void Simul2DCloudRendererDX11::RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
-}
-
-void Simul2DCloudRendererDX11::SetLossTexture(void *t)
-{
-	skyLossTexture_SRV=(ID3D11ShaderResourceView*)t;
-}
-
-void Simul2DCloudRendererDX11::SetInscatterTextures(void* i,void *s,void *o)
-{
-	skyInscatterTexture_SRV=(ID3D11ShaderResourceView*)o;
-	skylightTexture_SRV=(ID3D11ShaderResourceView*)s;
-}
-
-void Simul2DCloudRendererDX11::SetIlluminationTexture(void *i)
-{
-	illuminationTexture_SRV=(ID3D11ShaderResourceView*)i;
-}
-
-void Simul2DCloudRendererDX11::SetLightTableTexture(void *l)
-{
-	lightTableTexture_SRV=(ID3D11ShaderResourceView*)l;
 }
 
 void Simul2DCloudRendererDX11::SetWindVelocity(float x,float y)

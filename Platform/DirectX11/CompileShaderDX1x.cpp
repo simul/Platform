@@ -10,8 +10,6 @@
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
 #endif
 
-typedef std::basic_string<TCHAR> tstring;
-
 namespace simul
 {
 	namespace dx11
@@ -21,6 +19,94 @@ namespace simul
 }
 
 using namespace simul::dx11;
+
+
+HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
+{
+	try
+	{
+ERRNO_CHECK
+		std::string finalPathUtf8;
+		switch(IncludeType)
+		{
+		case D3D_INCLUDE_LOCAL:
+			finalPathUtf8	=m_ShaderDirUtf8+"\\"+pFileNameUtf8;
+			break;
+		case D3D_INCLUDE_SYSTEM:
+			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;
+			break;
+		default:
+			assert(0);
+		}
+		void *buf=NULL;
+		unsigned fileSize=0;
+ERRNO_CHECK
+		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
+		*ppData = buf;
+		*pBytes = (UINT)fileSize;
+		if(!*ppData)
+			return E_FAIL;
+		return S_OK;
+	}
+	catch(std::exception& e)
+	{
+		std::cerr<<e.what()<<std::endl;
+		return E_FAIL;
+	}
+}
+
+HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
+{
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
+	return S_OK;
+}
+
+HRESULT __stdcall DetectChangesIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
+{
+	try
+	{
+ERRNO_CHECK
+		std::string finalPathUtf8;
+		switch(IncludeType)
+		{
+		case D3D_INCLUDE_LOCAL:
+			finalPathUtf8	=m_ShaderDirUtf8+"\\"+pFileNameUtf8;
+			break;
+		case D3D_INCLUDE_SYSTEM:
+			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;
+			break;
+		default:
+			assert(0);
+		}
+		void *buf=NULL;
+		unsigned fileSize=0;
+		double dateTimeJdn=simul::base::FileLoader::GetFileLoader()->GetFileDate(finalPathUtf8.c_str());
+		if(dateTimeJdn>lastCompileTime)
+		{
+			anyChanges=true;
+			return E_FAIL;
+		}
+		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
+		*ppData = buf;
+		*pBytes = (UINT)fileSize;
+		if(!*ppData)
+			return E_FAIL;
+		return S_OK;
+	}
+	catch(std::exception& e)
+	{
+		std::cerr<<e.what()<<std::endl;
+		return E_FAIL;
+	}
+}
+
+HRESULT __stdcall DetectChangesIncludeHandler::Close(LPCVOID pData)
+{
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
+	return S_OK;
+}
+
+
 
 HRESULT CompileShaderFromFile( const char* filename_utf8, const char* szEntryPoint, const char* szShaderModel, ID3DBlob** ppBlobOut )
 {

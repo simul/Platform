@@ -27,10 +27,20 @@
 #include <stdint.h> // for uintptr_t
 
 #pragma comment(lib,"opengl32")
-#pragma comment(lib,"glew32")
-#pragma comment(lib,"freeglut")
-#ifdef USE_GLFX
 #pragma comment(lib,"glfx")
+
+#ifdef _DLL
+#ifdef _DEBUG
+#pragma comment(lib,"glew32d")
+#else
+#pragma comment(lib,"glew32")
+#endif
+#else
+#ifdef _DEBUG
+#pragma comment(lib,"glew32sd")
+#else
+#pragma comment(lib,"glew32s")
+#endif
 #endif
 
 #ifndef _MSC_VER
@@ -42,13 +52,14 @@ using namespace opengl;
 
 using namespace simul;
 using namespace opengl;
-
+static bool glut_initialized=false;
 simul::opengl::RenderPlatform *renderPlatform=NULL;
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut)
 	:ScreenWidth(0)
 	,ScreenHeight(0)
 	,cam(NULL)
+	,ShowCompositing(false)
 	,ShowFlares(true)
 	,ShowFades(false)
 	,ShowTerrain(true)
@@ -76,21 +87,24 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 	
 	//sceneCache=new scene::BaseObjectRenderer(gScene,&renderPlatform);
-	if(init_glut)
+	if(init_glut&&!glut_initialized)
 	{
 		char argv[]="no program";
 		char *a=argv;
 		int argc=1;
 	    glutInit(&argc,&a);
+		glut_initialized=true;
 	}
 }
 
-OpenGLRenderer::~OpenGLRenderer()
+void OpenGLRenderer::InvalidateDeviceObjects()
 {
+	int err=errno;
+	std::cout<<"Errno "<<err<<std::endl;
+	errno=0;
+ERRNO_CHECK
 GL_ERROR_CHECK
-	delete sceneRenderer;
-GL_ERROR_CHECK
-	delete renderPlatform;
+	SAFE_DELETE_PROGRAM(simple_program);
 GL_ERROR_CHECK
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
@@ -102,7 +116,17 @@ GL_ERROR_CHECK
 		simulHDRRenderer->InvalidateDeviceObjects();
 	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
 	depthFramebuffer.InvalidateDeviceObjects();
-	SAFE_DELETE_PROGRAM(simple_program);
+GL_ERROR_CHECK
+}
+
+OpenGLRenderer::~OpenGLRenderer()
+{
+GL_ERROR_CHECK
+	InvalidateDeviceObjects();
+GL_ERROR_CHECK
+	delete sceneRenderer;
+GL_ERROR_CHECK
+	delete renderPlatform;
 	delete simulHDRRenderer;
 	delete simulWeatherRenderer;
 	delete simulOpticsRenderer;
@@ -112,13 +136,14 @@ GL_ERROR_CHECK
 void OpenGLRenderer::initializeGL()
 {
 GL_ERROR_CHECK
-	//glewExperimental=GL_TRUE;
+ERRNO_CHECK
     GLenum glewError = glewInit();
     if( glewError != GLEW_OK )
     {
         std::cerr<<"Error initializing GLEW! "<<glewGetErrorString( glewError )<<"\n";
         return;
     }
+ERRNO_CHECK
     //Make sure OpenGL 2.1 is supported
     if( !GLEW_VERSION_2_1 )
     {
@@ -130,6 +155,7 @@ GL_ERROR_CHECK
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
 	}
+ERRNO_CHECK
 	CheckExtension("GL_VERSION_2_0");
 GL_ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
@@ -137,16 +163,26 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	depthFramebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
 	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);
+ERRNO_CHECK
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->RestoreDeviceObjects(NULL);
+		simulWeatherRenderer->RestoreDeviceObjects(renderPlatform);
+ERRNO_CHECK
 	if(simulHDRRenderer)
-		simulHDRRenderer->RestoreDeviceObjects();
+		simulHDRRenderer->RestoreDeviceObjects(renderPlatform);
+ERRNO_CHECK
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);
+ERRNO_CHECK
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RestoreDeviceObjects(NULL);
+ERRNO_CHECK
 	renderPlatform->RestoreDeviceObjects(NULL);
 	RecompileShaders();
+ERRNO_CHECK
+}
+void OpenGLRenderer::shutdownGL()
+{
+	InvalidateDeviceObjects();
 }
 
 void OpenGLRenderer::paintGL()
@@ -160,9 +196,9 @@ void OpenGLRenderer::paintGL()
 	deviceContext.viewStruct.view_id=viewport_id;
 	deviceContext.viewStruct.view	=cam->MakeViewMatrix();
 	if(ReverseDepth)
-		deviceContext.viewStruct.proj	=(cam->MakeDepthReversedProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
+		deviceContext.viewStruct.proj	=(cam->MakeDepthReversedProjectionMatrix((float)ScreenWidth/(float)ScreenHeight));
 	else
-		deviceContext.viewStruct.proj	=(cam->MakeProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
+		deviceContext.viewStruct.proj	=(cam->MakeProjectionMatrix((float)ScreenWidth/(float)ScreenHeight));
 	
 	//simul::math::Matrix4x4 view;
 	//glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
@@ -192,7 +228,7 @@ void OpenGLRenderer::paintGL()
 	static float exposure=1.0f;
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->PreRenderUpdate(context);
+		simulWeatherRenderer->PreRenderUpdate(deviceContext);
 		/*GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
 		GLuint fogfilter=0;								// Which Fog To Use
 		simul::sky::float4 fogColor=simulWeatherRenderer->GetHorizonColour(0.001f*cam->GetPosition()[2]);
@@ -205,7 +241,8 @@ void OpenGLRenderer::paintGL()
 		GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
-			simulHDRRenderer->StartRender(context);
+
+			simulHDRRenderer->StartRender(deviceContext);
 			//simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 		}
 		else
@@ -215,11 +252,11 @@ void OpenGLRenderer::paintGL()
 			glDepthMask(GL_TRUE);
 			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		}
-		depthFramebuffer.Activate(context);
+		depthFramebuffer.Activate(deviceContext);
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		
 		if(sceneRenderer)
-			sceneRenderer->Render(NULL,deviceContext.viewStruct);
+			sceneRenderer->Render(deviceContext);
 //		gScene->OnTimerClick();
 		
 		if(simulTerrainRenderer&&ShowTerrain)
@@ -238,13 +275,13 @@ void OpenGLRenderer::paintGL()
 			depthFramebuffer.Render(context,false);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
-		simulWeatherRenderer->RenderLightning(context,viewport_id);
+		simulWeatherRenderer->RenderLightning(deviceContext);
 		
-		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTex()
-			,depthFramebuffer.GetDepthTex()
+		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTexture()
+			,depthFramebuffer.GetDepthTexture()
 			,simul::sky::float4(0,0,1.f,1.f),true);
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
-		simulWeatherRenderer->RenderPrecipitation(context);
+		simulWeatherRenderer->RenderPrecipitation(deviceContext);
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light,cam_pos;
@@ -253,14 +290,23 @@ void OpenGLRenderer::paintGL()
 			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-			simulOpticsRenderer->RenderFlare(context,exp,depthFramebuffer.GetDepthTex(),deviceContext.viewStruct.view,deviceContext.viewStruct.proj,dir,light);
+			simulOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTex(),dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
-			simulHDRRenderer->FinishRender(context);
+			simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
+GL_ERROR_CHECK
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(context,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
+GL_ERROR_CHECK
 		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
 		bool vertical_screen=ScreenHeight>ScreenWidth;
+GL_ERROR_CHECK
+		if(ShowCompositing)
+		{
+			RenderDepthBuffers(deviceContext,ScreenWidth/2,0,ScreenWidth/2,ScreenHeight/2);
+GL_ERROR_CHECK
+		}
+GL_ERROR_CHECK
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		{
 			int x0=ScreenWidth/2;
@@ -272,6 +318,7 @@ void OpenGLRenderer::paintGL()
 			}
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(deviceContext,x0,y0,ScreenWidth/2,ScreenHeight/2);
 		}
+GL_ERROR_CHECK
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth/2,ScreenHeight/2);
@@ -282,7 +329,7 @@ void OpenGLRenderer::paintGL()
 			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth,ScreenHeight);
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(NULL,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,ScreenWidth,ScreenHeight);
 	}
 	renderUI();
 	glPopAttrib();
@@ -301,7 +348,8 @@ void OpenGLRenderer::renderUI()
 	static char text[500];
 	int y=12;
 	static int line_height=16;
-	renderPlatform->Print(NULL,12,y+=line_height,"OpenGL");
+	crossplatform::DeviceContext deviceContext;
+	renderPlatform->Print(deviceContext,12,y+=line_height,"OpenGL");
 	if(ShowOSD)
 	{
 	static simul::base::Timer timer;
@@ -316,9 +364,9 @@ void OpenGLRenderer::renderUI()
 		framerate+=0.05f*(1000.f/t);
 		static char osd_text[256];
 		sprintf_s(osd_text,256,"%3.3f fps",framerate);
-		renderPlatform->Print(NULL,12,y+=line_height,osd_text);
+		renderPlatform->Print(deviceContext,12,y+=line_height,osd_text);
 		if(simulWeatherRenderer)
-			renderPlatform->Print(NULL,12,y+=line_height,simulWeatherRenderer->GetDebugText());
+			renderPlatform->Print(deviceContext,12,y+=line_height,simulWeatherRenderer->GetDebugText());
 		timer.StartTime();
 	}
 }
@@ -363,6 +411,18 @@ void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)
 	SaveGLImage(filename_utf8,(GLuint)(simulHDRRenderer->framebuffer.GetColorTex()));
 }
 
+void OpenGLRenderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
+{
+	renderPlatform->DrawDepth(deviceContext,x0,y0,dx/2,dy/2,depthFramebuffer.GetDepthTexture());
+GL_ERROR_CHECK
+	//MixedResolutionView *view	=viewManager.GetView(view_id);
+	//view->RenderDepthBuffers(deviceContext,x0,y0,dx,dy);
+	if(simulWeatherRenderer)
+	{
+		//simulWeatherRenderer->RenderFramebufferDepth(deviceContext,x0+w	,y0	,w,l);
+		//simulWeatherRenderer->RenderCompositingTextures(deviceContext,x0,y0+2*l,dx,dy);
+	}
+}
 
 void OpenGLRenderer::ReverseDepthChanged()
 {

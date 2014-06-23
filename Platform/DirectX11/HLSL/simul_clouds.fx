@@ -12,10 +12,6 @@ RWTexture2D<float> targetTexture1;
 
 StructuredBuffer<SmallLayerData> layersSB;
 
-#define Z_VERTICAL 1
-#ifndef WRAP_CLOUDS
-	#define WRAP_CLOUDS 1
-#endif
 #ifndef DETAIL_NOISE
 	#define DETAIL_NOISE 1
 #endif
@@ -48,7 +44,7 @@ RaytraceVertexOutput VS_Raytrace(idOnly IN)
 	vec2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(pos,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z	=0.0; 
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
@@ -63,8 +59,6 @@ RaytraceVertexOutput VS_Raytrace(idOnly IN)
 RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
-	//texCoords.y				=1.0-texCoords.y;
-	// Now y is positive downwards.
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2
@@ -84,7 +78,6 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 RaytracePixelOutput PS_RaytraceNearPass(RaytraceVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
-	//texCoords.y				=1.0-texCoords.y;
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2
@@ -129,11 +122,20 @@ vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
 
 vec4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
-	vec2 texCoords		=IN.texCoords.xy;
-	texCoords.y			=1.0-texCoords.y;
-	vec4 r				=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture
-									,noiseTexture3D,depthTexture,lightTableTexture,true,texCoords,false,false,false).colour;
-	return r;
+	vec2 texCoords			=IN.texCoords.xy;
+	RaytracePixelOutput p	=RaytraceCloudsForward(
+									cloudDensity1
+									,cloudDensity2
+									,noiseTexture
+									,noiseTexture3D
+									,depthTexture
+									,lightTableTexture
+									,false
+									,texCoords
+									,false
+									,false
+									,false);
+	return p.colour;
 }
 
 RaytracePixelOutput PS_Raytrace3DNoise(RaytraceVertexOutput IN)
@@ -166,7 +168,7 @@ posTexVertexOutput VS_FullScreen(idOnly IN)
 	vec2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(pos,0.0,1.0);
 	// Set to far plane
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z	=0.0; 
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
@@ -190,7 +192,7 @@ posTexVertexOutput VS_CrossSection(idOnly IN)
 	OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
 	//OUT.hPosition	=vec4(pos,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.hPosition.z	=0.0; 
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
@@ -228,7 +230,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 {
 	vec3 texc=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
 	int i=0;
-	vec3 accum=vec3(0.f,0.5f,1.f);
+	vec3 accum=vec3(0.0,0.5,1.0);
 	texc.y+=0.5*(1.0-yz)/(float)CROSS_SECTION_STEPS;
 	texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
@@ -238,7 +240,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 		colour.gb+=vec2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;
 		colour*=opacity;
-		accum*=1.f-opacity;
+		accum*=1.0-opacity;
 		accum+=colour;
 		texc.y-=(1.0-yz)/(float)CROSS_SECTION_STEPS;
 		texc.z+=yz/(float)CROSS_SECTION_STEPS;
@@ -303,7 +305,7 @@ technique11 cloud_shadow
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetBlendState(NoBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_CloudShadow()));
@@ -324,7 +326,7 @@ technique11 moisture_accumulation
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_MoistureAccumulation()));
@@ -337,7 +339,7 @@ technique11 cross_section
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetBlendState(NoBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_CrossSection()));
@@ -350,7 +352,7 @@ technique11 simple
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Simple()));
@@ -363,7 +365,7 @@ technique11 show_noise
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowNoise()));
@@ -376,7 +378,7 @@ technique11 show_shadow
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowShadow()));

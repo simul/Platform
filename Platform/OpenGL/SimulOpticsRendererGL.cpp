@@ -22,13 +22,16 @@ SimulOpticsRendererGL::~SimulOpticsRendererGL()
 
 void SimulOpticsRendererGL::RestoreDeviceObjects(void *)
 {
+ERRNO_CHECK
 	RecompileShaders();
+ERRNO_CHECK
 	flare_texture=LoadGLImage("SunFlare.png",GL_CLAMP_TO_EDGE);
-
+ERRNO_CHECK
 	for(size_t i=0;i<halo_textures.size();i++)
 	{
 		SAFE_DELETE_TEXTURE(halo_textures[i]);
 	}
+ERRNO_CHECK
 	halo_textures.clear();
 	int num_halo_textures=0;
 	for(int i=0;i<lensFlare.GetNumArtifacts();i++)
@@ -43,12 +46,15 @@ void SimulOpticsRendererGL::RestoreDeviceObjects(void *)
 		std::string tn=lensFlare.GetTypeName(i);
 		halo_textures[i]=LoadGLImage((tn+".png").c_str(),GL_CLAMP_TO_EDGE);
 	}
+ERRNO_CHECK
 }
 
 void SimulOpticsRendererGL::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(flare_program);
-	flare_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_flare.frag");
+	std::map<std::string,std::string> defines;
+	defines["REVERSE_DEPTH"]="0";
+	flare_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_flare.frag",defines);
 	flareColour_param				=glGetUniformLocation(flare_program,"flareColour");
 	flareTexture_param				=glGetUniformLocation(flare_program,"flareTexture");
 
@@ -64,7 +70,7 @@ void SimulOpticsRendererGL::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(flare_program);
 }
 
-void SimulOpticsRendererGL::RenderFlare(void *,float exposure,void *depthTexture,const float *v,const float *p,const float *dir,const float *light)
+void SimulOpticsRendererGL::RenderFlare(simul::crossplatform::DeviceContext &deviceContext,float exposure,void *depthTexture,const float *dir,const float *light)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	simul::sky::float4 sun_dir(dir);//skyKeyframer->GetDirectionToLight());

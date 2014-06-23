@@ -126,6 +126,17 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 				,bool USE_NEAR_FAR
 				,bool nearPass)
 {
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+	vec4 depth_lookup	=texture_nearest_lod(depthTextureNF,depth_texc,0);
+	float depth			=0.0;
+	if(nearPass)
+	{
+		depth			=depth_lookup.y;
+		if(depth_lookup.z==0)
+			discard;
+	}
+	else
+		depth			=depth_lookup.x;
 	vec2 clip_pos		=vec2(-1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;
 	clip_pos.y			-=2.0*texCoords.y;
@@ -139,19 +150,7 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 	float sine			=view.z;
 	float2 fade_texc	=vec2(0,0.5f*(1.f-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 	
-	vec4 depth_lookup	=texture_nearest_lod(depthTextureNF,depth_texc,0);
-	float depth			=0.0;
-	
-	if(nearPass)
-	{
-		depth			=depth_lookup.y;
-		if(depth_lookup.z==0)
-			discard;
-	}
-	else
-		depth			=depth_lookup.x;
 	
 	float dist			=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	

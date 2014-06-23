@@ -16,10 +16,12 @@
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Base/ProfilingInterface.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Camera/Camera.h"
+#include "D3dx11effect.h"
 
 using namespace simul::dx11;
 
@@ -63,8 +65,7 @@ void TerrainRenderer::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	V_CHECK(CreateEffect(m_pd3dDevice,&m_pTerrainEffect,("simul_terrain.fx"),defines));
 	m_pTechnique		=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
 	ReloadTextures();
@@ -181,16 +182,20 @@ void TerrainRenderer::MakeVertexBuffer()
 
 void TerrainRenderer::Render(simul::crossplatform::DeviceContext &deviceContext,float exposure)
 {
+ERRNO_CHECK
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	SIMUL_COMBINED_PROFILE_START(pContext,"TerrainRenderer::Render")
 	D3DXMATRIX world;
 	D3DXMatrixIdentity(&world);
 	D3DXMATRIX wvp;
+ERRNO_CHECK
 	camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&deviceContext.viewStruct.view,(const float*)&deviceContext.viewStruct.proj);
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector((const float*)&deviceContext.viewStruct.view,false);
+ERRNO_CHECK
 	dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
-	dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
+dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,cloudShadowStruct.texture->AsD3D11ShaderResourceView());
 	terrainConstants.eyePosition=cam_pos;
+ERRNO_CHECK
 	if(baseSkyInterface)
 	{
 		terrainConstants.ambientColour	=exposure*baseSkyInterface->GetAmbientLight(0.f);
@@ -207,7 +212,7 @@ void TerrainRenderer::Render(simul::crossplatform::DeviceContext &deviceContext,
 	terrainConstants.startZMetres			=cloudShadowStruct.startZMetres;
 	terrainConstants.shadowRange			=cloudShadowStruct.shadowRange;
 
-	terrainConstants.Apply(pContext);
+	terrainConstants.Apply(deviceContext);
 
 	UINT stride =sizeof(TerrainVertex_t);
 	UINT offset =0;

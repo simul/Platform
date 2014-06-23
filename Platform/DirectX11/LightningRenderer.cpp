@@ -3,6 +3,9 @@
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/Texture.h"
+#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;
@@ -33,7 +36,7 @@ void LightningRenderer::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
-	defines["REVERSE_DEPTH"]="1";
+	defines["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
 	CreateEffect(m_pd3dDevice,&effect,"lightning.fx",defines);
 	D3DX11_PASS_DESC PassDesc;
 	effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->GetDesc(&PassDesc);
@@ -57,10 +60,10 @@ void LightningRenderer::InvalidateDeviceObjects()
 	vertexBuffer.release();
 }
 
-void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *cloud_depth_tex)
+void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *cloud_depth_tex)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	SIMUL_COMBINED_PROFILE_START(context,"LightningRenderer::Render")
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
+	SIMUL_COMBINED_PROFILE_START(pContext,"LightningRenderer::Render")
 	const simul::clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
 	LightningVertex *vertices=vertexBuffer.Map(pContext);
 	if(!vertices)
@@ -76,7 +79,7 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	pContext->RSGetViewports(&num_v,&viewport);
 
 	math::Matrix4x4 wvp;
-	camera::MakeViewProjMatrix(wvp,(const float*)&view,(const float*)&proj);
+	camera::MakeViewProjMatrix(wvp,(const float*)&deviceContext.viewStruct.view,(const float*)&deviceContext.viewStruct.proj);
 	lightningPerViewConstants.worldViewProj=wvp;
 	lightningPerViewConstants.worldViewProj.transpose();
 	
@@ -84,7 +87,7 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	lightningPerViewConstants._line_width	=4;
 	lightningPerViewConstants.viewportToTexRegionScaleBias			=vec4(depthViewportXYWH.z,depthViewportXYWH.w,depthViewportXYWH.x,depthViewportXYWH.y);
 
-	lightningPerViewConstants.Apply(pContext);
+	lightningPerViewConstants.Apply(deviceContext);
 	std::vector<int> start;
 	std::vector<int> count;
 	std::vector<bool> thick;
@@ -99,13 +102,13 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 		if(!props.numLevels)
 			continue;
 		lightningConstants.lightningColour	=props.colour;
-		lightningConstants.Apply(pContext);
+		lightningConstants.Apply(deviceContext);
 
 		//dx11::setParameter(effect,"lightningColour",props.colour);
 		simul::sky::float4 x1,x2;
 		static float maxwidth=8.f;
 		static float pixel_width_threshold=3.f;
-		simul::math::Vector3 cam_pos=GetCameraPosVector((const float*)&view);
+		simul::math::Vector3 cam_pos=GetCameraPosVector((const float*)&deviceContext.viewStruct.view);
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
 		for(int j=0;j<props.numLevels;j++)
 		{
@@ -167,9 +170,9 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 
 	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("lightning_thick");
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
-	dx11::setTexture(effect,"depthTextureMS",(ID3D11ShaderResourceView*)depth_tex);
-	dx11::setTexture(effect,"depthTexture",(ID3D11ShaderResourceView*)depth_tex);
-	dx11::setTexture(effect,"cloudDepthTexture",(ID3D11ShaderResourceView*)cloud_depth_tex);
+	dx11::setTexture(effect,"depthTextureMS",depth_tex->AsD3D11ShaderResourceView());
+	dx11::setTexture(effect,"depthTexture",depth_tex->AsD3D11ShaderResourceView());
+	dx11::setTexture(effect,"cloudDepthTexture",cloud_depth_tex->AsD3D11ShaderResourceView());
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	for(int i=0;i<(int)start.size();i++)
 	{
@@ -184,5 +187,5 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	}
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout(previousInputLayout);
-	SIMUL_COMBINED_PROFILE_END(context)
+	SIMUL_COMBINED_PROFILE_END(pContext)
 }

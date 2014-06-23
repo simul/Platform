@@ -59,7 +59,7 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 	OUT.pos			=poss[IN.vertex_id];
 	OUT.position	=float4(OUT.pos,0.0,1.0);
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	OUT.position.z	=0.0; 
 #else
 	OUT.position.z	=OUT.position.w; 
@@ -293,7 +293,7 @@ vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
 	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	float depth			=max(depth_lookup.x,cloud_depth);
 #else
 	float depth			=min(depth_lookup.x,cloud_depth);
@@ -312,13 +312,13 @@ vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
-//	if(depth_lookup.z==0)
-//		discard;
+	if(depth_lookup.z==0)
+		discard;
 	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-#ifdef REVERSE_DEPTH
-	float depth			=max(depth_lookup.x,cloud_depth);
+#if REVERSE_DEPTH==1
+	float depth			=max(depth_lookup.y,cloud_depth);
 #else
-	float depth			=min(depth_lookup.x,cloud_depth);
+	float depth			=min(depth_lookup.y,cloud_depth);
 #endif
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
@@ -363,7 +363,7 @@ technique11 loss
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Loss()));
@@ -372,7 +372,7 @@ technique11 loss
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Loss()));
@@ -385,7 +385,7 @@ technique11 inscatter
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter()));
@@ -394,7 +394,7 @@ technique11 inscatter
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter()));
@@ -407,7 +407,7 @@ technique11 loss_msaa
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Loss_Far()));
@@ -416,7 +416,7 @@ technique11 loss_msaa
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Loss_Near()));
@@ -430,7 +430,7 @@ technique11 inscatter_msaa
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Far_MSAA()));
@@ -439,7 +439,7 @@ technique11 inscatter_msaa
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Near_MSAA()));
@@ -453,7 +453,7 @@ technique11 inscatter_nearfardepth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Far_NFDepth()));
@@ -462,7 +462,7 @@ technique11 inscatter_nearfardepth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Near_NFDepth()));
@@ -473,21 +473,21 @@ fxgroup atmospherics_overlay
 {
 	technique11 standard
 	{
-		pass p0
+		pass loss
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-			//SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+			SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			//SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 			SetPixelShader(CompileShader(ps_5_0,PS_Loss()));
 		}
-		pass p1
+		pass inscatter
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+			SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter()));
@@ -495,21 +495,21 @@ fxgroup atmospherics_overlay
 	}
 	technique11 msaa
 	{
-		pass p0
+		pass loss
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-			//SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+			SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			//SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 			SetPixelShader(CompileShader(ps_5_0,PS_LossMSAA()));
 		}
-		pass p1
+		pass inscatter
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+			SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 			SetPixelShader(CompileShader(ps_5_0,PS_InscatterMSAA()));
@@ -534,7 +534,7 @@ technique11 fast_godrays
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_FastGodrays()));
@@ -543,7 +543,7 @@ technique11 fast_godrays
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_NearGodrays()));
@@ -552,7 +552,7 @@ technique11 fast_godrays
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(MoistureBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(MoistureBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_RainShadowLoss()));
@@ -565,7 +565,7 @@ technique11 near_depth_godrays
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_NearGodrays()));
@@ -574,7 +574,7 @@ technique11 near_depth_godrays
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(MoistureBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(MoistureBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_NearRainShadow()));

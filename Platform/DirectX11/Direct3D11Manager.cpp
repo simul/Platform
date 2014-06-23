@@ -3,13 +3,15 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#ifndef _XBOX_ONE
 #include <dxgi.h>
-
+#endif
 using namespace simul;
 using namespace dx11;
 
 Window::Window():
 	hwnd(0)
+	,view_id(-1)
 	,vsync(false)
 	,m_swapChain(0)
 	,m_renderTargetView(0)
@@ -48,13 +50,13 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	// Initialize the swap chain description.
 	ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
 
-	// Set to a single back buffer.
-	swapChainDesc.BufferCount = 1;
+	// Set number of back buffers.
+	swapChainDesc.BufferCount = 3;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
 
 	// Set the width and height of the back buffer.
 	swapChainDesc.BufferDesc.Width = screenWidth;
 	swapChainDesc.BufferDesc.Height = screenHeight;
-
 	// Set regular 32-bit surface for the back buffer.
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	// The next part of the description of the swap chain is the refresh rate.
@@ -101,7 +103,7 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	swapChainDesc.BufferDesc.Scaling			= DXGI_MODE_SCALING_UNSPECIFIED;
 
 	// Discard the back buffer contents after presenting.
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+	//swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
 	// Don't set the advanced flags.
 	swapChainDesc.Flags = 0;
@@ -116,13 +118,14 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 
 	// Get the pointer to the back buffer.
 	HRESULT result;
+#ifndef _XBOX_ONE
 	IDXGIFactory* factory;
 	result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
 	SIMUL_ASSERT(result==S_OK);
 	factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain);
 //	SetDebugObjectName(m_swapChain,"Window SwapChain");
 	SAFE_RELEASE(factory);
-
+#endif
 	CreateRenderTarget(d3dDevice);
 	CreateDepthBuffer(d3dDevice);
 	//With that created we can now call OMSetRenderTargets.
@@ -335,10 +338,10 @@ void Direct3D11Manager::Initialize()
 
 	// Store the vsync setting.
 	m_vsync_enabled = false;
+#ifndef _XBOX_ONE
 	// Create a DirectX graphics interface factory.
 	result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
 	SIMUL_ASSERT(result==S_OK);
-
 	// Use the factory to create an adapter for the primary graphics interface (video card).
 	SAFE_RELEASE(adapter);
 	result = factory->EnumAdapters(0, &adapter);
@@ -373,8 +376,9 @@ void Direct3D11Manager::Initialize()
 
 	// Release the factory.
 	SAFE_RELEASE(factory);
+#endif
 	
-	std::cout<<"3"<<std::endl;
+
 	//After setting up the swap chain description we also need to setup one more variable called the feature level.
 	// This variable tells DirectX what version we plan to use. Here we set the feature level to 11.0 which is DirectX 11.
 	// You can set this to 10 or 9 to use a lower level version of DirectX if you plan on supporting multiple versions or running on lower end hardware.
@@ -407,14 +411,18 @@ void Direct3D11Manager::Initialize()
 	d3dDevice->AddRef();
 	UINT refcount=d3dDevice->Release();
 #ifdef _DEBUG
+#ifndef _XBOX_ONE
 	SAFE_RELEASE(d3dDebug);
+#endif
 	SAFE_RELEASE(d3dInfoQueue);
+#ifndef _XBOX_ONE
 	d3dDevice->QueryInterface( __uuidof(ID3D11Debug), (void**)&d3dDebug );
 	d3dDebug->QueryInterface( __uuidof(ID3D11InfoQueue), (void**)&d3dInfoQueue );
+#endif
  
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
-	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, true );
+	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, false );
 	
 	ReportMessageFilterState();
 	d3dInfoQueue->ClearStoredMessages();
@@ -448,7 +456,7 @@ void Direct3D11Manager::Initialize()
 	// set filter.AllowList as follows:
 	//filter.AllowList.NumCategories = sizeof(cats) / sizeof(D3D11_MESSAGE_CATEGORY); 
 	//filter.AllowList.pCategoryList = cats;
-	filter.AllowList.NumSeverities = sizeof(sevs)/ sizeof(D3D11_MESSAGE_SEVERITY); 
+	filter.AllowList.NumSeverities = 2; 
 	filter.AllowList.pSeverityList = sevs;
 	filter.AllowList.NumIDs = 0;//sizeof(ids) / sizeof(UINT);
 	//..filter.AllowList.pIDList = ids;
@@ -474,14 +482,15 @@ int Direct3D11Manager::GetNumOutputs()
 Output Direct3D11Manager::GetOutput(int i)
 {
 	unsigned numModes;
+	Output o;
 	IDXGIOutput *output=outputs[i];
+#ifndef _XBOX_ONE
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
 	HRESULT result = output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	SIMUL_ASSERT(result==S_OK);
 
 	DXGI_OUTPUT_DESC outputDesc;
 	output->GetDesc(&outputDesc);
-	Output o;
 	o.width		=abs(outputDesc.DesktopCoordinates.right-outputDesc.DesktopCoordinates.left);
 	o.height	=abs(outputDesc.DesktopCoordinates.top-outputDesc.DesktopCoordinates.bottom);
 
@@ -535,6 +544,7 @@ Output Direct3D11Manager::GetOutput(int i)
 	// Release the display mode list.
 	delete [] displayModeList;
 	displayModeList = 0;
+#endif
 	return o;
 }
 void Direct3D11Manager::Shutdown()
@@ -558,13 +568,17 @@ void Direct3D11Manager::Shutdown()
 		d3dDeviceContext->Flush();
 	}
 	SAFE_RELEASE(d3dDeviceContext);
+#ifndef _XBOX_ONE
 	if(d3dDebug)
 	{
 		d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 	}
+#endif
 	ReportMessageFilterState();
 	SAFE_RELEASE(d3dInfoQueue);
+#ifndef _XBOX_ONE
 	SAFE_RELEASE(d3dDebug);
+#endif
 	// Finally, we can destroy the device.
 	if(d3dDevice)
 	{
@@ -597,7 +611,7 @@ IDXGISwapChain *Direct3D11Manager::GetSwapChain(HWND h)
 	return w->m_swapChain;
 }
 
-void Direct3D11Manager::StartRendering(HWND h)
+void Direct3D11Manager::Render(HWND h)
 {
 	if(windows.find(h)==windows.end())
 		return;
@@ -614,8 +628,9 @@ void Direct3D11Manager::StartRendering(HWND h)
 	d3dDeviceContext->RSSetState(w->m_rasterState);
 	if(w->renderer)
 		w->renderer->Render(w->view_id,GetDevice(),GetDeviceContext());
-	DWORD dwFlags = 0;
-	UINT SyncInterval = 1;
+	static DWORD dwFlags = 0;
+	// 0 - don't wait for 60Hz refresh.
+	static UINT SyncInterval = 0;
     // Show the frame on the primary surface.
 	w->m_swapChain->Present(SyncInterval,dwFlags);
 }

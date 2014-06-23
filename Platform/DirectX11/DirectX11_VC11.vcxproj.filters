@@ -117,10 +117,19 @@
     <ClCompile Include="RenderPlatform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="View.cpp">
+    <ClCompile Include="Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Texture.cpp">
+    <ClCompile Include="Effect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MixedResolutionView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Layout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -197,9 +206,6 @@
     <ClInclude Include="CSFFT\fft_512x512.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cubemapframebuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Direct3D11Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -239,7 +245,19 @@
     <ClInclude Include="LightningRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="View.h">
+    <ClInclude Include="Effect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MixedResolutionView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cubemapframebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Layout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -275,9 +293,6 @@
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_rendernoise.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_sky.fx">
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_debug.fx">
@@ -424,10 +439,18 @@
     <None Include="..\CrossPlatform\SL\states.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="HLSL\sky.fx">
+      <Filter>FX</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="HLSL\light_probes.fx">
+      <Filter>FX</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

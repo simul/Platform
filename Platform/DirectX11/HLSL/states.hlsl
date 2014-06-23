@@ -12,7 +12,7 @@ DepthStencilState TestDepth
 {
 	DepthEnable = TRUE;
 	DepthWriteMask = ZERO;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	DepthFunc = GREATER_EQUAL;
 #else
 	DepthFunc = LESS_EQUAL;
@@ -45,7 +45,7 @@ DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;
 	DepthWriteMask = ALL;
-#ifdef REVERSE_DEPTH
+#if REVERSE_DEPTH==1
 	DepthFunc = GREATER_EQUAL;
 #else
 	DepthFunc = LESS_EQUAL;
@@ -73,54 +73,54 @@ BlendState CloudBlend
 
 BlendState CloudBufferBlend
 {
-	BlendEnable[0] = TRUE;
-	SrcBlend = ONE;
-	DestBlend = SRC_ALPHA;
-    BlendOp = ADD;
+	BlendEnable[0]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=SRC_ALPHA;
+    BlendOp			=ADD;
 };
 
 BlendState AlphaBlend
 {
-	BlendEnable[0] = TRUE;
-	SrcBlend = SRC_ALPHA;
-	DestBlend = INV_SRC_ALPHA;
+	BlendEnable[0]	=TRUE;
+	SrcBlend		=SRC_ALPHA;
+	DestBlend		=INV_SRC_ALPHA;
 };
 
 BlendState MultiplyBlend
 {
-	BlendEnable[0] = TRUE;
-	SrcBlend = ZERO;
-	DestBlend = SRC_COLOR;
+	BlendEnable[0]	=TRUE;
+	SrcBlend		=ZERO;
+	DestBlend		=SRC_COLOR;
 };
 
 BlendState AddBlend
 {
-	BlendEnable[0] = TRUE;
-	SrcBlend = ONE;
-	DestBlend = ONE;
+	BlendEnable[0]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=ONE;
 };
 
 BlendState AddAlphaBlend
 {
-	BlendEnable[0] = TRUE;
-	SrcBlend = SRC_ALPHA;
-	DestBlend = ONE;
+	BlendEnable[0]	=TRUE;
+	SrcBlend		=SRC_ALPHA;
+	DestBlend		=ONE;
 };
 
 BlendState AddBlendDontWriteAlpha
 {
-	BlendEnable[0] = TRUE;
-	SrcBlend = ONE;
-	DestBlend = ONE;
+	BlendEnable[0]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=ONE;
 	RenderTargetWriteMask[0]=7;
 };
 
 BlendState SubtractBlend
 {
-	BlendEnable[0] = TRUE;
-	BlendOp	= SUBTRACT;
-	SrcBlend = ONE;
-	DestBlend = ONE;
+	BlendEnable[0]	=TRUE;
+	BlendOp			=SUBTRACT;
+	SrcBlend		=ONE;
+	DestBlend		=ONE;
 };
 
 BlendState DontBlend

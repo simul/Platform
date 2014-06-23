@@ -1,6 +1,7 @@
 #pragma once
 // C RunTime Header Files
 // C++ Standard Library Header Files
+#include "SimulDirectXHeader.h"
 #include <sdkddkver.h>
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
@@ -22,7 +23,7 @@
 #endif
 #endif
 
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #include <dxerr.h>

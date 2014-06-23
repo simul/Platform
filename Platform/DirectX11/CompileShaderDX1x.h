@@ -1,6 +1,11 @@
 #ifndef COMPILE_SHADER_DX11_H
 #define COMPILE_SHADER_DX11_H
+#include "SimulDirectXHeader.h"
+#ifdef _XBOX_ONE
+#include <D3Dcompiler_x.h>
+#else
 #include <D3Dcompiler.h>
+#endif
 #include <string>
 
 //! An include-handler for Direct3D 11 shader compilation.

@@ -2,14 +2,15 @@
 #ifndef _OCEAN_WAVE_H
 #define _OCEAN_WAVE_H
 
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <D3DX9.h>
 #endif
-#include <D3D11.h>
 
 #include "Simul/Terrain/BaseSeaRenderer.h"
 #include "CSFFT/fft_512x512.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/Texture.h"
 
 //#define CS_DEBUG_BUFFER
 #define PAD16(n) (((n)+15)/16*16)
@@ -20,7 +21,7 @@ public:
 	OceanSimulator(simul::terrain::SeaKeyframer *s);
 	~OceanSimulator();
 
-	void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
+	void RestoreDeviceObjects(simul::crossplatform::RenderPlatform *renderPlatform);
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	// -------------------------- Initialization & simulation routines ------------------------
@@ -47,10 +48,10 @@ protected:
 	ID3DX11Effect				*effect;
 	
 	// Displacement map
-	simul::dx11::TextureStruct displacement;
+	simul::dx11::Texture displacement;
 
 	// Gradient field
-	simul::dx11::TextureStruct gradient;
+	simul::dx11::Texture gradient;
 
 	// Initialize the vector field.
 	void initHeightMap(D3DXVECTOR2* out_h0, float* out_omega);

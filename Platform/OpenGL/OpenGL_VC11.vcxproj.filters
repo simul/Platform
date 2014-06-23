@@ -89,6 +89,15 @@
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Effect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Layout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h">
@@ -170,6 +179,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Layout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -388,6 +406,21 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="GLSL\clouds.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\hdr.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\sky.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\sky.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="GLSL\debug.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\atmospherics.glfx">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

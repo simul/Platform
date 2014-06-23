@@ -31,34 +31,34 @@ public:
 	virtual void Render()=0;
 };
 #endif
-class SimulGLLightningRenderer;
-class SimulGLAtmosphericsRenderer;
-class SimulGLPrecipitationRenderer;
 
 namespace simul
 {
 	//! The namespace for the OpenGL platform library and its rendering classes.
 	namespace opengl
 	{
+		class SimulGLLightningRenderer;
+		class SimulGLAtmosphericsRenderer;
+		class SimulGLPrecipitationRenderer;
 		class SimulGLSkyRenderer;
 		class SimulGLCloudRenderer;
 		class SimulGL2DCloudRenderer;
-		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer
+		struct TwoResFramebuffer:public simul::crossplatform::TwoResFramebuffer
 		{
 			TwoResFramebuffer();
-			BaseFramebuffer *GetLowResFarFramebuffer()
+			crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()
 			{
 				return &lowResFarFramebuffer;
 			}
-			BaseFramebuffer *GetLowResNearFramebuffer()
+			crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()
 			{
 				return &lowResNearFramebuffer;
 			}
-			BaseFramebuffer *GetHiResFarFramebuffer()
+			crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()
 			{
 				return &hiResFarFramebuffer;
 			}
-			BaseFramebuffer *GetHiResNearFramebuffer()
+			crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()
 			{
 				return &hiResNearFramebuffer;
 			}
@@ -66,7 +66,7 @@ namespace simul
 			FramebufferGL	lowResNearFramebuffer;
 			FramebufferGL	hiResFarFramebuffer;
 			FramebufferGL	hiResNearFramebuffer;
-			void RestoreDeviceObjects(void *);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale);
 			void GetDimensions(int &w,int &h,int &downscale);
@@ -84,7 +84,7 @@ namespace simul
 			virtual ~SimulGLWeatherRenderer();
 			void SetScreenSize(int view_id,int w,int h);
 			//! Call this when the device has been created
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void ReloadTextures();
 			void RecompileShaders();
 			//! Call this when the 3D device has been lost.
@@ -94,25 +94,17 @@ namespace simul
 											,bool is_cubemap
 											,float exposure
 											,bool buffered
-											,const void* mainDepthTexture
+											,crossplatform::Texture *mainDepthTexture
 											,const void* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite);
-			void RenderMixedResolution(	crossplatform::DeviceContext &deviceContext
-												,bool is_cubemap
-												,float exposure
-												,float gamma
-												,const void* mainDepthTextureMS	
-												,const void* hiResDepthTexture	
-												,const void* lowResDepthTexture 
-												,const sky::float4& depthViewportXYWH	){}
 			//! Call this to draw the clouds
 			void RenderLateCloudLayer(crossplatform::DeviceContext &deviceContext
 				,float exposure,bool buf,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			//! Call this to draw lightning.
-			void RenderLightning(void *context,int viewport_id);
+			void RenderLightning(simul::crossplatform::DeviceContext &deviceContext);
 			//! Call this to draw rain etc.
-			void RenderPrecipitation(void *context);
+			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext);
 			//! Get a pointer to the sky renderer owned by this class instance.
 			SimulGLSkyRenderer *GetSkyRenderer();
 			//! Get a pointer to the 3d cloud renderer owned by this class instance.
@@ -151,7 +143,7 @@ namespace simul
 			SimulGLAtmosphericsRenderer *simulAtmosphericsRenderer;
 			void CreateBuffers();
 			void RenderBufferToScreen(GLuint texture,int w,int h,bool use_shader,bool blend=false);
-			clouds::TwoResFramebuffer *GetFramebuffer(int view_id);
+			crossplatform::TwoResFramebuffer *GetFramebuffer(int view_id);
 		};
 	}
 }

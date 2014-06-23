@@ -8,12 +8,12 @@
 // Simul2DCloudRendererDX11.h A renderer for 2D cloud layers.
 
 #pragma once
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
@@ -29,32 +29,27 @@ namespace simul
 		public:
 			Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck2d,simul::base::MemoryInterface *mem);
 			virtual ~Simul2DCloudRendererDX11();
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
-			void SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
-			void PreRenderUpdate(void *context);
+			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
-				,const void *depth_tex,bool default_fog,bool write_alpha
+				,crossplatform::Texture *depth_tex,bool write_alpha
 				,const simul::sky::float4& viewportTextureRegionXYWH
 				,const simul::sky::float4& );
 			void RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
-			void SetLossTexture(void *l);
-			void SetInscatterTextures(void* i,void *s,void *o);
-			void SetIlluminationTexture(void *i);
-			void SetLightTableTexture(void *l);
+			void SetIlluminationTexture(crossplatform::Texture *i);
+			void SetLightTableTexture(crossplatform::Texture *l);
 			void SetWindVelocity(float x,float y);
 		protected:
-			void RenderDetailTexture(void *context);
-			virtual void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip){}
+			void RenderDetailTexture(crossplatform::DeviceContext &deviceContext);
 			void EnsureCorrectTextureSizes();
-			virtual void EnsureTexturesAreUpToDate(void *context);
+			virtual void EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext);
 			void EnsureTextureCycle();
 			void EnsureCorrectIlluminationTextureSizes(){}
 			void EnsureIlluminationTexturesAreUpToDate(){}
-			void CreateNoiseTexture(void *context){}
-			simul::math::Matrix4x4		view,proj;
+			void CreateNoiseTexture(crossplatform::DeviceContext &deviceContext){}
 			ID3D11Device*				m_pd3dDevice;
 			ID3DX11Effect*				effect;
 			ID3DX11EffectTechnique*		msaaTechnique;
@@ -66,12 +61,6 @@ namespace simul
 			ConstantBuffer<Cloud2DConstants>	cloud2DConstants;
 			ConstantBuffer<Detail2DConstants>	detail2DConstants;
 			int num_indices;
-			
-			ID3D11ShaderResourceView*	skyLossTexture_SRV;
-			ID3D11ShaderResourceView*	skyInscatterTexture_SRV;
-			ID3D11ShaderResourceView*	skylightTexture_SRV;
-			ID3D11ShaderResourceView*	illuminationTexture_SRV;
-			ID3D11ShaderResourceView*	lightTableTexture_SRV;
 
 			simul::dx11::Framebuffer	coverage_fb;
 			simul::dx11::Framebuffer	detail_fb;

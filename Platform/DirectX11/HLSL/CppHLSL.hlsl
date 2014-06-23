@@ -7,6 +7,7 @@
 #define texture_clamp(tex,texc) tex.Sample(clampSamplerState,texc)
 #define texture_wrap_clamp(tex,texc) tex.Sample(wrapClampSamplerState,texc)
 #define texture_wrap_mirror(tex,texc) tex.Sample(wrapMirrorSamplerState,texc)
+#define sample(tex,sampler,texc) tex.Sample(sampler,texc)
 #define sampleLod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 #define texture(tex,texc) tex.Sample(samplerState,texc)
 #define texture2D(tex,texc) tex.Sample(samplerState,texc)
@@ -105,6 +106,7 @@
 		OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
 		OUT.hPosition.z	=0.0; 
 		OUT.texCoords	=pos;
+		OUT.texCoords.y	=1.0-OUT.texCoords.y;
 		return OUT;
 	}
 	

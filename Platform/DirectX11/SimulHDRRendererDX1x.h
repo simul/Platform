@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/hdr_constants.sl"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
@@ -23,6 +23,7 @@
 #include "Simul/Base/PropertyMacros.h"
 #pragma warning(push)
 #pragma warning(disable:4251)
+struct ID3DX11EffectScalarVariable;
 namespace simul
 {
 	namespace dx11
@@ -40,15 +41,15 @@ namespace simul
 			void SetBufferSize(int w,int h);
 			// Standard d3d object interface functions
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-			void RestoreDeviceObjects(void *x);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! Render: write the given texture to screen using the HDR rendering shaders
-			void Render(void *context,void *texture_srv,float Exposure,float Gamma,float offsetX);
-			void Render(void *context,void *texture_srv,float Exposure,float Gamma);
-			void RenderWithOculusCorrection(void *context,void *texture_srv,float Exposure,float Gamma,float offsetX);
+			void Render(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma,float offsetX);
+			void Render(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma);
+			void RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
-			void RenderGlowTexture(void *context,void *texture_srv);
+			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext,void *texture_srv);
 			//! Get the current debug text as a c-string pointer.
 			const char *GetDebugText() const;
 			//! Get a timing value for debugging.
@@ -56,6 +57,7 @@ namespace simul
 
 			void RecompileShaders();
 		protected:
+			crossplatform::RenderPlatform *renderPlatform;
 			bool Destroy();
 			simul::dx11::Framebuffer glow_fb;
 			int Width,Height;
@@ -69,8 +71,8 @@ namespace simul
 			ID3DX11EffectTechnique*				warpGlowExposureGamma;
 			
 			ID3DX11EffectTechnique*				glowTechnique;
-			ID3D1xEffectScalarVariable*			Exposure_;
-			ID3D1xEffectScalarVariable*			Gamma_;
+			ID3DX11EffectScalarVariable*		Exposure_;
+			ID3DX11EffectScalarVariable*		Gamma_;
 
 			ID3DX11Effect*						m_pGaussianEffect;
 			ID3DX11EffectTechnique*				gaussianRowTechnique;

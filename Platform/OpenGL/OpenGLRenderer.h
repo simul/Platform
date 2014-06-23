@@ -32,12 +32,13 @@ namespace simul
 	{
 		SIMUL_OPENGL_EXPORT_CLASS OpenGLRenderer
 			:public OpenGLCallbackInterface
-			,public simul::graph::meta::Group
+			,public simul::base::Referenced
 		{
 		public:
 			OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut=true);
 			virtual ~OpenGLRenderer();
 			META_BeginProperties
+				META_ValueProperty(bool,ShowCompositing			,"Show the multi-resolution compositing textures.")
 				META_ValueProperty(bool,ShowCloudCrossSections,"Show cross-sections of the cloud volumes as an overlay.")
 				META_ValueProperty(bool,Show2DCloudTextures,"Show the 2D cloud textures as an overlay.")
 				META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
@@ -55,7 +56,9 @@ namespace simul
 			virtual void paintGL();
 			virtual void resizeGL(int w,int h);
 			virtual void initializeGL();
+			virtual void shutdownGL();
 			virtual void renderUI();
+			void InvalidateDeviceObjects();
 			simul::opengl::SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer;}
 			SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer;}
 			class SimulGLTerrainRenderer *GetTerrainRenderer(){return simulTerrainRenderer;}
@@ -64,6 +67,7 @@ namespace simul
 			void RecompileShaders();
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
+			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			void ReverseDepthChanged();
 			simul::opengl::SimulGLWeatherRenderer *simulWeatherRenderer;
 			SimulGLHDRRenderer *simulHDRRenderer;

@@ -1,8 +1,12 @@
 #include "CubemapFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "D3dx11effect.h"
 #include <assert.h>
 const int MIPLEVELS=1;
 
-using namespace simul::dx11;
+using namespace simul;
+using namespace dx11;
 
 CubemapFramebuffer::CubemapFramebuffer()
 	:bands(4)
@@ -14,12 +18,11 @@ CubemapFramebuffer::CubemapFramebuffer()
 	,format(DXGI_FORMAT_R8G8B8A8_UNORM)
 	,stagingTexture(NULL)
 	,sphericalHarmonicsEffect(NULL)
+	,pd3dDevice(NULL)
 {
 	for(int i=0;i<6;i++)
 	{
 		m_pCubeEnvMapRTV[i]=NULL;
-		m_pCubeEnvDepthMapDSV[i]=NULL;
-		m_pCubeEnvDepthMapSRV[i]=NULL;
 		m_pCubeEnvDepthMap[i]	=NULL;
 	}
 }
@@ -44,16 +47,17 @@ void CubemapFramebuffer::SetFormat(int f)
 	format=F;
 }
 
-void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
+void CubemapFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 {
+	renderPlatform=r;
 	for(int i=0;i<6;i++)
 	{
 		SAFE_RELEASE(m_pCubeEnvMapRTV[i]);
-		SAFE_RELEASE(m_pCubeEnvDepthMapDSV[i]);
-		SAFE_RELEASE(m_pCubeEnvDepthMapSRV[i]);
+		SAFE_DELETE(m_pCubeEnvDepthMap[i]);
+		m_pCubeEnvDepthMap[i]=renderPlatform->CreateTexture();
 	}
 	HRESULT hr=S_OK;
-	pd3dDevice=(ID3D11Device*)dev;
+	pd3dDevice=renderPlatform->AsD3D11Device();
 	// The table of coefficients.
 	int s=(bands+1);
 	if(s<4)
@@ -91,9 +95,12 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 	//B_RETURN( pd3dDevice->CreateDepthStencilView(m_pCubeEnvDepthMap, &DescDS, &m_pCubeEnvDepthMapDSV ));
 	for(int i=0;i<6;i++)
 	{
-		V_CHECK(pd3dDevice->CreateTexture2D(&tex2dDesc, NULL, &m_pCubeEnvDepthMap[i] ));
-		V_CHECK(pd3dDevice->CreateDepthStencilView(m_pCubeEnvDepthMap[i]	,&DescDS		,&m_pCubeEnvDepthMapDSV[i]));
-		V_CHECK(pd3dDevice->CreateShaderResourceView(m_pCubeEnvDepthMap[i]	,&depthSRVDesc	,&m_pCubeEnvDepthMapSRV[i]));
+		dx11::Texture *t=(dx11::Texture *)(m_pCubeEnvDepthMap[i]);
+		ID3D11Texture2D *texture=NULL;
+		pd3dDevice->CreateTexture2D(&tex2dDesc, NULL,&texture);
+		t->texture=texture;
+		V_CHECK(pd3dDevice->CreateDepthStencilView(texture		,&DescDS		,&t->depthStencilView));
+		V_CHECK(pd3dDevice->CreateShaderResourceView(texture	,&depthSRVDesc	,&t->shaderResourceView));
 	}
 	// Create the cube map for env map render target
 	tex2dDesc.Format = format;
@@ -162,11 +169,8 @@ void CubemapFramebuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pCubeEnvMap);
 	for(int i=0;i<6;i++)
 	{
-		SAFE_RELEASE(m_pCubeEnvDepthMap[i]);
+		SAFE_DELETE(m_pCubeEnvDepthMap[i]);
 		SAFE_RELEASE(m_pCubeEnvMapRTV[i]);
-		SAFE_RELEASE(m_pCubeEnvDepthMapDSV[i]);
-		SAFE_RELEASE(m_pCubeEnvDepthMapSRV[i]);
-		SAFE_RELEASE(m_pCubeEnvDepthMap[i]);
 	}
 	SAFE_RELEASE(m_pCubeEnvMapSRV);
 	sphericalHarmonics.release();
@@ -199,13 +203,15 @@ ID3D11Texture2D *CubemapFramebuffer::GetCopy(void *context)
 void CubemapFramebuffer::RecompileShaders()
 {
 	SAFE_RELEASE(sphericalHarmonicsEffect);
+	if(!pd3dDevice)
+		return;
 	CreateEffect(pd3dDevice,&sphericalHarmonicsEffect,"spherical_harmonics.fx");
 	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect,"SphericalHarmonicsConstants");
 }
 
-void CubemapFramebuffer::CalcSphericalHarmonics(void *context)
+void CubemapFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	if(!sphericalHarmonicsEffect)
 		RecompileShaders();
 	int num_coefficients=bands*bands;
@@ -219,7 +225,7 @@ void CubemapFramebuffer::CalcSphericalHarmonics(void *context)
 	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
 	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;
 	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
-	sphericalHarmonicsConstants.Apply(pContext);
+	sphericalHarmonicsConstants.Apply(deviceContext);
 	simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect,"targetBuffer"	,sphericalHarmonics.unorderedAccessView);
 	ID3DX11EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");
 	ApplyPass(pContext,clear->GetPassByIndex(0));
@@ -249,14 +255,18 @@ void CubemapFramebuffer::CalcSphericalHarmonics(void *context)
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 }
 
-void CubemapFramebuffer::Activate(void *context)
+void CubemapFramebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 {
-	ActivateViewport(context,0.f,0.f,1.f,1.f);
+	ActivateViewport(deviceContext,0.f,0.f,1.f,1.f);
 }
 
-void CubemapFramebuffer::ActivateColour(void *context,const float viewportXYWH[4])
+void CubemapFramebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+}
+
+void CubemapFramebuffer::ActivateColour(crossplatform::DeviceContext &context,const float viewportXYWH[4])
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context.asD3D11DeviceContext();
 	HRESULT hr=S_OK;
 	unsigned int num_v=0;
 	pContext->RSGetViewports(&num_v,NULL);
@@ -283,9 +293,9 @@ void CubemapFramebuffer::ActivateColour(void *context,const float viewportXYWH[4
 	pContext->RSSetViewports(1, &viewport);
 }
 
-void CubemapFramebuffer::ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH)
+void CubemapFramebuffer::ActivateViewport(crossplatform::DeviceContext &deviceContext, float viewportX, float viewportY, float viewportW, float viewportH)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	HRESULT hr=S_OK;
 	unsigned int num_v=0;
 	pContext->RSGetViewports(&num_v,NULL);
@@ -298,7 +308,7 @@ void CubemapFramebuffer::ActivateViewport(void *context, float viewportX, float 
 									&m_pOldRenderTarget,
 									&m_pOldDepthSurface
 									);
-	pContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV[current_face],m_pCubeEnvDepthMapDSV[current_face]);
+	pContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV[current_face],m_pCubeEnvDepthMap[current_face]->AsD3D11DepthStencilView());
 	D3D11_VIEWPORT viewport;
 		// Setup the viewport for rendering.
 	viewport.Width = floorf((float)Width*viewportW + 0.5f);
@@ -338,8 +348,8 @@ void CubemapFramebuffer::Clear(void *context,float r,float g,float b,float a,flo
     for(int i=0;i<6;i++)
     {
 		pContext->ClearRenderTargetView(m_pCubeEnvMapRTV[i],clearColor);
-		if(m_pCubeEnvDepthMapDSV[i])
-			pContext->ClearDepthStencilView(m_pCubeEnvDepthMapDSV[i],mask,depth, 0);
+		if(m_pCubeEnvDepthMap[i]->AsD3D11DepthStencilView())
+			pContext->ClearDepthStencilView(m_pCubeEnvDepthMap[i]->AsD3D11DepthStencilView(),mask,depth, 0);
 	}
 }
 

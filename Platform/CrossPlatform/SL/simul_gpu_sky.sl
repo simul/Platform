@@ -24,9 +24,9 @@ uniform_buffer GpuSkyConstants SIMUL_BUFFER_REGISTER(8)
 	uniform float seaLevelTemperatureK;
 
 	uniform vec3 rayleigh;
-	uniform float overcastBaseKmX;
+	uniform float XovercastBaseKmX;
 	uniform vec3 hazeMie;
-	uniform float overcastRangeKmX;
+	uniform float XovercastRangeKmX;
 	uniform vec3 ozone;
 	uniform float overcastX;
 

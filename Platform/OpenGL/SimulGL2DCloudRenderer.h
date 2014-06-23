@@ -36,19 +36,15 @@ namespace simul
 			//standard ogl object interface functions
 			bool Create();
 			//! OpenGL Implementation of device object creation - needs a GL context to be present.
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void RecompileShaders();
 			//! OpenGL Implementation of device invalidation - not strictly needed in GL.
 			void InvalidateDeviceObjects();
-			void PreRenderUpdate(void *context);
+			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! OpenGL Implementation of 2D cloud rendering.
-			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& );
+			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,crossplatform::Texture *depth_alpha_tex,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& );
 			void RenderCrossSections(crossplatform::DeviceContext &context,int x0,int y0,int width,int height);
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &,int ,int ,int ,int ){}
-			//! Set the platform-dependent atmospheric loss texture.
-			void SetLossTexture(void *l);
-			//! Set the platform-dependent atmospheric inscatter texture.
-			void SetInscatterTextures(void* t,void *s,void *o);
 			void SetWindVelocity(float x,float y);
 
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y);
@@ -59,7 +55,7 @@ namespace simul
 			virtual void DrawLines(void *,VertexXyzRgba *,int ,bool ){}
 
 			void EnsureCorrectTextureSizes();
-			void EnsureTexturesAreUpToDate(void *);
+			void EnsureTexturesAreUpToDate(crossplatform::DeviceContext &);
 			void EnsureTextureCycle();
 			void EnsureCorrectIlluminationTextureSizes(){}
 			void EnsureIlluminationTexturesAreUpToDate(){}
@@ -88,13 +84,10 @@ namespace simul
 	
 			GLuint	coverage_tex[3];
 	
-			GLuint	loss_tex;
-			GLuint	inscatter_tex;
-			GLuint	skylight_tex;
 			FramebufferGL	coverage_fb;
 
 			FramebufferGL	detail_fb;
-			void CreateNoiseTexture(void *);
+			void CreateNoiseTexture(crossplatform::DeviceContext &deviceContext);
 			//void CreateImageTexture();
 			bool CreateCloudEffect();
 			bool RenderCloudsToBuffer();

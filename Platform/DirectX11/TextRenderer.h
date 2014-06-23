@@ -1,7 +1,7 @@
 #ifndef TEXTRENDERER_H
 #define TEXTRENDERER_H
 
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx10math.h>
 #include <d3dx11async.h>
@@ -11,6 +11,10 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 namespace simul
 {
+	namespace crossplatform
+	{
+		struct DeviceContext;
+	}
 	namespace dx11
 	{
 		class TextRenderer
@@ -21,6 +25,7 @@ namespace simul
 				vec4	rect;
 				vec4	texc;
 				vec4	colour;
+				vec4	background;
 			};
 
 		public:
@@ -29,9 +34,9 @@ namespace simul
 
 			void RestoreDeviceObjects(ID3D11Device*);
 			void InvalidateDeviceObjects();
-		void RecompileShaders();
+			void RecompileShaders();
 			//void Render(crossplatform::DeviceContext &deviceContext, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
-			void Render(void *context, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
+			void Render(crossplatform::DeviceContext &deviceContext, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL,const float *bck=NULL,bool mirrorY=false);
 
 		private:
 

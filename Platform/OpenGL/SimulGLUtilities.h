@@ -34,6 +34,7 @@ public:
 	void InvalidateDeviceObjects();
 	static void Kill();
 	GLuint linedraw_program;
+	GLuint linedraw_2d_program;
 	GLuint simple_program;
 };
 
@@ -64,10 +65,11 @@ namespace simul
 		extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_number);
 		//! Check the given error code, and halt the program if it is non-zero.
 		extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_number,int err);
-		#define GL_ERROR_CHECK simul::opengl::CheckGLError(__FILE__,__LINE__);
+		#define GL_ERROR_CHECK simul::opengl::CheckGLError(__FILE__,__LINE__);ERRNO_CHECK
 		#define SAFE_DELETE_PROGRAM(prog)		if(prog){GLuint shaders[2];GLsizei count;glGetAttachedShaders(prog,2,&count,shaders);for(int i=0;i<count;i++) glDeleteShader(shaders[i]); glDeleteProgram(prog);prog=0;}
 		#define SAFE_DELETE_TEXTURE(tex)		if(tex) glDeleteTextures(1,&tex);tex=0;
-		#define SAFE_DELETE_BUFFER(buff)		if(buff) glDeleteBuffersARB(1,&buff);buff=0;
+		#define SAFE_DELETE_BUFFER(buff)		if(buff) glDeleteBuffers(1,&buff);buff=0;
+		#define SAFE_DELETE_VAO(vao)			if(vao) glDeleteVertexArrays(1,&vao);vao=0;
 		#define SAFE_DELETE_FRAMEBUFFER(fb)		if(fb) glDeleteFramebuffers(1,&fb);fb=0;
 		#define SAFE_DELETE_RENDERBUFFER(rb)	if(rb) glDeleteRenderbuffers(1,&rb);rb=0;
 		extern SIMUL_OPENGL_EXPORT bool RenderAngledQuad(const float *dir,float half_angle_radians);
@@ -105,7 +107,7 @@ namespace simul
 		#define MAKE_GL_CONSTANT_BUFFER(ubo,Struct,bindingIndex)	\
 			glGenBuffers(1, &ubo);	\
 			glBindBuffer(GL_UNIFORM_BUFFER, ubo);	\
-			glBufferData(GL_UNIFORM_BUFFER, sizeof(Struct), NULL, GL_STREAM_DRAW);	\
+			glBufferData(GL_UNIFORM_BUFFER, sizeof(Struct), NULL, GL_DYNAMIC_DRAW);	\
 			glBindBuffer(GL_UNIFORM_BUFFER, 0);		\
 			glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0, sizeof(Struct));
 
@@ -116,23 +118,6 @@ namespace simul
 			glBindBuffer(GL_UNIFORM_BUFFER, 0);		\
 			glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 
-		struct TextureStruct
-		{
-			TextureStruct():tex(0)
-			{
-			}
-			~TextureStruct()
-			{
-				release();
-			}
-			void release()
-			{
-				SAFE_DELETE_TEXTURE(tex);
-			}
-			void setTexels(void *,const void *src,int x,int y,int z,int w,int l,int d);
-			void ensureTexture3DSizeAndFormat(void *,int w,int l,int d,int frmt,bool computable=false);
-			GLuint tex;
-		};
 		//! Useful Wrapper class to encapsulate constant buffer behaviour
 		template<class T> class ConstantBuffer:public T
 		{
@@ -156,7 +141,7 @@ namespace simul
 				Release();
 				glGenBuffers(1, &ubo);
 				glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-				glBufferData(GL_UNIFORM_BUFFER, sizeof(T), NULL, GL_STREAM_DRAW);
+				glBufferData(GL_UNIFORM_BUFFER, sizeof(T), NULL, GL_DYNAMIC_DRAW );
 				glBindBuffer(GL_UNIFORM_BUFFER, 0);
 			}
 			//! Find the constant buffer in the given effect, and link to it.
@@ -169,6 +154,12 @@ namespace simul
 				if(indexInShader>=0)
 				{
 					glUniformBlockBinding(program,indexInShader,bindingIndex);
+					GLint blockSize;
+					glGetActiveUniformBlockiv(program, indexInShader,
+                      GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+					if(blockSize!=sizeof(T))
+						throw std::runtime_error("");
+					glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 					glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,sizeof(T));	
 				}
 				else

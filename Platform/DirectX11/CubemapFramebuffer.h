@@ -1,17 +1,17 @@
 #pragma once
-#include <D3Dcompiler.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #endif
-#include <d3d11.h>
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
-#include "Simul/Clouds/BaseFramebuffer.h"
+#include "Simul/Platform/DirectX11/Texture.h"
+#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/SL/spherical_harmonics_constants.sl"
 #pragma warning(disable:4251)
 namespace simul
@@ -19,24 +19,26 @@ namespace simul
 	namespace dx11
 	{
 		//! A DirectX 11 class for rendering to a cubemap.
-		SIMUL_DIRECTX11_EXPORT_CLASS CubemapFramebuffer:public BaseFramebuffer
+		SIMUL_DIRECTX11_EXPORT_CLASS CubemapFramebuffer:public crossplatform::BaseFramebuffer
 		{
 		public:
 			CubemapFramebuffer();
 			virtual ~CubemapFramebuffer();
 			void SetWidthAndHeight(int w,int h);
+			void SetAntialiasing(int s){}
 			void SetFormat(int i);
 			void SetDepthFormat(int){}
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-			void RestoreDeviceObjects(void* );
+			void RestoreDeviceObjects(crossplatform::RenderPlatform	*renderPlatform);
 			void RecompileShaders();
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			void SetCurrentFace(int i);
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-			void ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH );
-			void Activate(void *context );
-			void ActivateColour(void*,const float viewportXYWH[4]);
+			void ActivateViewport(crossplatform::DeviceContext &, float viewportX, float viewportY, float viewportW, float viewportH );
+			void Activate(crossplatform::DeviceContext &);
+			void ActivateColour(crossplatform::DeviceContext &,const float viewportXYWH[4]);
+			void ActivateDepth(crossplatform::DeviceContext &);
 			void Deactivate(void *context);
 			void DeactivateDepth(void *context);
 			void Render(bool){}
@@ -53,7 +55,7 @@ namespace simul
 			}
 			virtual void* GetDepthTex(int i)
 			{
-				return (void*)m_pCubeEnvDepthMapSRV[i];
+				return (void*)m_pCubeEnvDepthMap[i]->AsD3D11ShaderResourceView();
 			}
 			bool IsValid()
 			{
@@ -63,23 +65,31 @@ namespace simul
 			ID3D11Texture2D					*GetCopy(void *context);
 			//! Calculate the spherical harmonics of this cubemap and store the result internally.
 			//! Changing the number of bands will resize the internal storeage.
-			void				CalcSphericalHarmonics(void *context);
+			void				CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext);
 			StructuredBuffer<vec4> &GetSphericalHarmonics()
 			{
 				return sphericalHarmonics;
 			}
-void SetBands(int b)
-{
+			void SetBands(int b)
+			{
 				if(b>MAX_SH_BANDS)
 					b=MAX_SH_BANDS;
 				if(bands!=b)
 				{
-bands=b;
+					bands=b;
 					sphericalHarmonics.release();
 				}
-}
+			}
+			crossplatform::Texture *GetTexture()
+			{
+				return NULL;
+			}
+			crossplatform::Texture *GetDepthTexture()
+			{
+				return m_pCubeEnvDepthMap[current_face];
+			}
 		protected:
-int bands;
+			int bands;
 			//! The size of the 2D buffer the sky is rendered to.
 			int Width,Height;
 			ID3D11Texture2D								*stagingTexture;	// Only initialized if CopyToMemory or GetCopy invoked.
@@ -94,9 +104,7 @@ int bands;
 			ID3D11RenderTargetView*						m_pCubeEnvMapRTV[6];
 
 			// Six Depth map textures, each with a DepthStencilView and SRV
-			ID3D11Texture2D*							m_pCubeEnvDepthMap[6];
-			ID3D11DepthStencilView*						m_pCubeEnvDepthMapDSV[6];
-			ID3D11ShaderResourceView*					m_pCubeEnvDepthMapSRV[6];
+			crossplatform::Texture*						m_pCubeEnvDepthMap[6];
 
 			int											current_face;
 

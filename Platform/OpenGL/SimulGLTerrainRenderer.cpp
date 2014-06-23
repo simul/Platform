@@ -22,6 +22,7 @@ SimulGLTerrainRenderer::~SimulGLTerrainRenderer()
 
 void SimulGLTerrainRenderer::RecompileShaders()
 {
+ERRNO_CHECK
 	SAFE_DELETE_PROGRAM(program);
 	program							=MakeProgram("simul_terrain");//WithGS
 	GL_ERROR_CHECK
@@ -43,12 +44,14 @@ void SimulGLTerrainRenderer::RestoreDeviceObjects(void*)
 
 void SimulGLTerrainRenderer::MakeTextures()
 {
+ERRNO_CHECK
 	glGenTextures(1, &texArray);
 	if(!IsExtensionSupported("GL_EXT_texture_array"))
 	{
 		simul::base::RuntimeError("SimulGLTerrainRenderer needs the GL_EXT_texture_array extension.");
 		return;
 	}
+ERRNO_CHECK
 	//if(!IsExtensionSupported("GL_EXT_gpu_shader4"))
 	//	return;
 	//GL_TEXTURE_2D_ARRAY_EXT
@@ -61,8 +64,11 @@ void SimulGLTerrainRenderer::MakeTextures()
 	//glTexParameterfv(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_BORDER_COLOR, borderColor);
 	unsigned bpp,width,height;
 	GL_ERROR_CHECK
+ERRNO_CHECK
 	unsigned char *data=LoadGLBitmap("terrain.png",bpp,width,height);
+ERRNO_CHECK
 	unsigned char *moss=LoadGLBitmap("moss.png",bpp,width,height);
+ERRNO_CHECK
 	if(!data||!moss)
 		return;
 	GL_ERROR_CHECK
@@ -87,6 +93,7 @@ void SimulGLTerrainRenderer::MakeTextures()
 
 	glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 	GL_ERROR_CHECK
+ERRNO_CHECK
 }
 
 void SimulGLTerrainRenderer::InvalidateDeviceObjects()

@@ -37,20 +37,18 @@ namespace simul
 			//standard ogl object interface functions
 			bool Create();
 			void RecompileShaders();
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform*);
 			void InvalidateDeviceObjects();
-			void PreRenderUpdate(void *context);
+			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! Render the clouds.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
-				,const void *depth_alpha_tex,bool default_fog,bool write_alpha
+				,crossplatform::Texture *depth_alpha_tex,bool write_alpha
 				,const simul::sky::float4& viewportTextureRegionXYWH
 				,const simul::sky::float4& mixedResTransformXYWH);
 			//! Show the cross sections on-screen.
 			void RenderCrossSections(crossplatform::DeviceContext &context,int x0,int y0,int width,int height);
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &,int x0,int y0,int width,int height);
-			void SetLossTexture(void *);
-			void SetInscatterTextures(void* t,void *s,void *o);
-			void SetIlluminationTexture(void *i);
+			void SetIlluminationTexture(crossplatform::Texture *i);
 			simul::opengl::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 	
@@ -80,7 +78,7 @@ namespace simul
 			bool init;
 			// Make up to date with respect to keyframer:
 			void EnsureCorrectTextureSizes();
-			void EnsureTexturesAreUpToDate(void *);
+			void EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext);
 			void EnsureCorrectIlluminationTextureSizes();
 			void EnsureIlluminationTexturesAreUpToDate();
 			void EnsureTextureCycle();
@@ -122,15 +120,7 @@ namespace simul
 	
 			GLint		maxFadeDistanceMetres_param;
 
-			simul::opengl::TextureStruct	cloud_textures[3];
-			// 2D textures (x=distance, y=elevation) for fades, updated per-frame:
-			GLuint		loss_tex;
-			GLuint		inscatter_tex;
-			GLuint		skylight_tex;
-			GLuint		overcast_tex;
-
-			GLuint		illum_tex;
-	
+			simul::opengl::Texture	cloud_textures[3];
 			// 2D texture
 			GLuint		noise_tex;
 			GLuint		volume_noise_tex;
@@ -141,7 +131,7 @@ namespace simul
 			simul::opengl::Mesh sphereMesh;
 
 			void CreateVolumeNoise();
-			void CreateNoiseTexture(void *);
+			void CreateNoiseTexture(crossplatform::DeviceContext &deviceContext);
 			bool CreateCloudEffect();
 			bool RenderCloudsToBuffer();
 
@@ -151,7 +141,7 @@ namespace simul
 
 			unsigned max_octave;
 			bool BuildSphereVBO();
-			FramebufferGL	cloud_shadow;
+			opengl::Texture	cloud_shadow;
 		};
 	}
 }

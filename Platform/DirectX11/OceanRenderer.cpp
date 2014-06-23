@@ -7,6 +7,7 @@
 #include <D3DX11tex.h>
 #endif
 #include "CompileShaderDX1x.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Math/Matrix4x4.h"
@@ -15,6 +16,7 @@
 #include <string>
 #include <map>
 #include <assert.h>
+#include "D3dx11effect.h"
 using namespace std;
 using namespace simul;
 using namespace dx11;
@@ -136,8 +138,7 @@ void OceanRenderer::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
-	if(ReverseDepth)
-		defines["REVERSE_DEPTH"]="1";
+	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	defines["FX"]="1";
 	effect=LoadEffect(m_pd3dDevice,"ocean.fx",defines);
 
@@ -160,12 +161,12 @@ void OceanRenderer::RecompileShaders()
 	changePerCallConstants	.LinkToEffect(effect,"cbChangePerCall");
 }
 
-void OceanRenderer::RestoreDeviceObjects(ID3D11Device* dev)
+void OceanRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform)
 {
 	InvalidateDeviceObjects();
-	m_pd3dDevice=dev;
+	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
 	oceanSimulator=new OceanSimulator(seaKeyframer);
-	oceanSimulator->RestoreDeviceObjects(m_pd3dDevice);
+	oceanSimulator->RestoreDeviceObjects(renderPlatform);
 	
 	// Update the simulation for the first time.
 	oceanSimulator->updateDisplacementMap(0);
@@ -244,15 +245,11 @@ void OceanRenderer::SetCubemapTexture(void *c)
 	g_pSRV_ReflectCube=(ID3D11ShaderResourceView*)c;
 }
 
-void OceanRenderer::SetLossTexture(void *t)
+void OceanRenderer::SetLossAndInscatterTextures(crossplatform::Texture *l,crossplatform::Texture *i,crossplatform::Texture *s)
 {
-	skyLossTexture_SRV=((ID3D11ShaderResourceView*)t);
-}
-
-void OceanRenderer::SetInscatterTextures(void *t,void *s)
-{
-	skyInscatterTexture_SRV	=((ID3D11ShaderResourceView*)t);
-	skylightTexture_SRV		=((ID3D11ShaderResourceView*)s);
+	skyLossTexture_SRV		=l->AsD3D11ShaderResourceView();
+	skyInscatterTexture_SRV	=i->AsD3D11ShaderResourceView();
+	skylightTexture_SRV		=s->AsD3D11ShaderResourceView();
 }
 
 void OceanRenderer::InvalidateDeviceObjects()
@@ -473,10 +470,12 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-void OceanRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void OceanRenderer::SetMatrices(const float *v,const float *p)
 {
+#ifndef _XBOX_ONE
 	view=v;
 	proj=p;
+#endif
 }
 
 void OceanRenderer::Render(void *context,float exposure)

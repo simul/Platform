@@ -3,13 +3,14 @@
 #include "Simul/Clouds/BaseGpuCloudGenerator.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/Texture.h"
 
-#include <d3d11.h>
+#include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
 #endif
-#include "D3dx11effect.h"
+
 
 namespace simul
 {
@@ -25,7 +26,7 @@ namespace simul
 			{
 				harmonic_secondary=h;
 			}
-			void RestoreDeviceObjects(void *dev);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			bool CanPerformGPULighting() const
@@ -49,7 +50,7 @@ namespace simul
 											,int start_texel
 											,int texels);
 			// If we want the generator to put the data directly into 3d textures:
-			void SetDirectTargets(TextureStruct **textures)
+			void SetDirectTargets(dx11::Texture **textures)
 			{
 				for(int i=0;i<3;i++)
 				{
@@ -75,10 +76,10 @@ namespace simul
 			ID3D11Texture3D						*volume_noise_tex;
 			ID3D11ShaderResourceView			*volume_noise_tex_srv;
 
-			TextureStruct						density_texture;
-			TextureStruct						*finalTexture[3];
-			TextureStruct						directLightTextures[2];
-			TextureStruct						indirectLightTextures[2];
+			dx11::Texture						density_texture;
+			dx11::Texture						*finalTexture[3];
+			dx11::Texture						directLightTextures[2];
+			dx11::Texture						indirectLightTextures[2];
 			ConstantBuffer<GpuCloudConstants>	gpuCloudConstants;
 			ID3D11SamplerState*					m_pWwcSamplerState;
 			ID3D11SamplerState*					m_pWccSamplerState;
