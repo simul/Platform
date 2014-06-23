@@ -85,19 +85,6 @@ void CS_Resolve(uint3 pos : SV_DispatchThreadID )
 }
 
 [numthreads(8,8,1)]
-void CS_DownscaleDepthFarNear(uint3 pos : SV_DispatchThreadID )
-{
-	DownscaleDepthFarNear2(sourceDepthTexture,target2DTexture,source_dims,pos,scale,depthToLinFadeDistParams);
-}
-
-[numthreads(8,8,1)]
-void CS_DownscaleDepthFarNear_MSAA(uint3 pos : SV_DispatchThreadID )
-{
-	//target2DTexture[pos.xy]=sourceMSDepthTexture.Load(pos.xy,0);
-	DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,target2DTexture,pos,scale,depthToLinFadeDistParams);
-}
-
-[numthreads(8,8,1)]
 void CS_DownscaleDepthFarNearFromHiRes(uint3 pos : SV_DispatchThreadID )
 {
 	DownscaleDepthFarNear2(sourceDepthTexture,target2DTexture,source_dims,pos,scale,depthToLinFadeDistParams);
@@ -120,18 +107,6 @@ technique11 resolve
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Resolve()));
-    }
-}
-
-technique11 downscale_depth_far_near
-{
-    pass main
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear()));
-    }
-    pass msaa
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear_MSAA()));
     }
 }
 

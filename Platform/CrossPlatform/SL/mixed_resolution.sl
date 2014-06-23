@@ -325,12 +325,16 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 			}
 		}
 		// atmospherics: we simply interpolate.
-		result				/=float(numSamples);
-		hiResInterp			/=float(numSamples);
-		if(!use_msaa)
+		if(use_msaa)
+		{
+			result				/=float(numSamples);
+			hiResInterp			/=float(numSamples);
+		}
+		else
 		{
 			result.rgb		+=insc_far.rgb*result.a;
 		}
+		//result=vec4(1.0,0,0,1.0);
 	}
 	else
 	{

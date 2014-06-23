@@ -592,7 +592,7 @@ void UtilityRenderer::DrawCubemap(crossplatform::DeviceContext &deviceContext,ID
 	pContext->RSSetViewports(1,&viewport);
 	
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
-	math::Matrix4x4 proj=camera::Camera::MakeProjectionMatrix(1.f,1.f,1.f,100.f);
+	math::Matrix4x4 proj=camera::Camera::MakeProjectionMatrix((float)viewport.Width/(float)viewport.Height,1.f,1.f,100.f);
 	// Create the viewport.
 	math::Matrix4x4 wvp,world;
 	world.Identity();

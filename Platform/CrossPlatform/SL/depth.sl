@@ -1,6 +1,6 @@
 #ifndef DEPTH_SL
 #define DEPTH_SL
-
+#define UNITY_DIST 1.0;
 // Enable the following to use a 3-parameter depth conversion, for possible slight speed improvement
 #define NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
 
@@ -8,10 +8,10 @@ float depthToLinearDistance(float depth,vec3 depthToLinFadeDistParams)
 {
 #if REVERSE_DEPTH==1
 	if(depth<=0)
-		return 1.0;//max_fade_distance_metres;
+		return UNITY_DIST;//max_fade_distance_metres;
 #else
 	if(depth>=1.0)
-		return 1.0;//max_fade_distance_metres;
+		return UNITY_DIST;//max_fade_distance_metres;
 #endif
 	float linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
 	return linearFadeDistanceZ;
@@ -50,10 +50,10 @@ float depthToFadeDistance(float depth,vec2 xy,vec3 depthToLinFadeDistParams,vec2
 {
 #if REVERSE_DEPTH==1
 	if(depth<=0)
-		return 1.0;
+		return UNITY_DIST;
 #else
 	if(depth>=1.0)
-		return 1.0;
+		return UNITY_DIST;
 #endif
 	float linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
 	float Tx=xy.x*tanHalf.x;
@@ -89,7 +89,7 @@ float fadeDistanceToDepth(float dist,vec2 xy,vec3 depthToLinFadeDistParams,vec2 
 		return 0.0;
 #else
 	if(dist>=1.0)
-		return 1.0;
+		return UNITY_DIST;
 #endif
 	float Tx				=xy.x*tanHalf.x;
 	float Ty				=xy.y*tanHalf.y;
@@ -105,7 +105,7 @@ float fadeDistanceToDepth(float dist,vec2 xy,float nearZ,float farZ,vec2 tanHalf
 		return 0.0;
 #else
 	if(dist>=1.0)
-		return 1.0;
+		return UNITY_DIST;
 #endif
 	float Tx				=xy.x*tanHalf.x;
 	float Ty				=xy.y*tanHalf.y;

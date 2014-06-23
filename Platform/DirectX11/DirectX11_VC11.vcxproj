@@ -327,7 +327,9 @@
     <ResourceCompile Include="DirectX11.rc" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="HLSL\light_probes.fx" />
+    <None Include="HLSL\light_probes.fx">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

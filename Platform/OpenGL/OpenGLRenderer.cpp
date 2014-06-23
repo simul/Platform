@@ -183,9 +183,9 @@ void OpenGLRenderer::paintGL()
 	deviceContext.viewStruct.view_id=viewport_id;
 	deviceContext.viewStruct.view	=cam->MakeViewMatrix();
 	if(ReverseDepth)
-		deviceContext.viewStruct.proj	=(cam->MakeDepthReversedProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
+		deviceContext.viewStruct.proj	=(cam->MakeDepthReversedProjectionMatrix((float)ScreenWidth/(float)ScreenHeight));
 	else
-		deviceContext.viewStruct.proj	=(cam->MakeProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)ScreenWidth/(float)ScreenHeight));
+		deviceContext.viewStruct.proj	=(cam->MakeProjectionMatrix((float)ScreenWidth/(float)ScreenHeight));
 	
 	//simul::math::Matrix4x4 view;
 	//glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));

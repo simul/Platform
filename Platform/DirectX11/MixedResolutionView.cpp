@@ -172,7 +172,7 @@ void MixedResolutionRenderer::RecompileShaders()
 	mixedResolutionConstants.LinkToEffect(depthForwardEffect,"MixedResolutionConstants");
 	mixedResolutionConstants.LinkToEffect(depthReverseEffect,"MixedResolutionConstants");
 }
-
+#pragma optimize("",off)
 void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec3 depthToLinFadeDistParams)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
@@ -224,8 +224,8 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		if(msaa)
 			simul::dx11::setTexture			(effect->asD3DX11Effect(),"sourceMSDepthTexture"	,depthTexture->AsD3D11ShaderResourceView());
 		else
-			simul::dx11::setTexture			(effect->asD3DX11Effect(),"sourceDepthTexture"					,depthTexture->AsD3D11ShaderResourceView());
-		simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"						,view->hiResDepthTexture.unorderedAccessView);
+			simul::dx11::setTexture			(effect->asD3DX11Effect(),"sourceDepthTexture"		,depthTexture->AsD3D11ShaderResourceView());
+		simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"			,view->hiResDepthTexture.unorderedAccessView);
 	
 		std::string pass_name=msaa?"msaa":"main";
 		if(msaa)

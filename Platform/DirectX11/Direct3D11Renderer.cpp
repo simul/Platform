@@ -387,9 +387,9 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		float aspect=(float)view->GetScreenWidth()/(float)view->GetScreenHeight();
 		if(ReverseDepth)
-			deviceContext.viewStruct.proj=cam->MakeDepthReversedProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.InfiniteFarPlane?0.f:cameraViewStruct.farZ,aspect);
+			deviceContext.viewStruct.proj=cam->MakeDepthReversedProjectionMatrix(aspect);
 		else
-			deviceContext.viewStruct.proj=cam->MakeProjectionMatrix(cameraViewStruct.nearZ,cameraViewStruct.farZ,aspect);
+			deviceContext.viewStruct.proj=cam->MakeProjectionMatrix(aspect);
 		deviceContext.viewStruct.view=cam->MakeViewMatrix();
 	}
 	if(simulWeatherRenderer)
@@ -409,7 +409,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		//left eye
 		if(cam)
 		{
-			deviceContext.viewStruct.proj=cam->MakeStereoProjectionMatrix(simul::camera::LEFT_EYE,cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
+			deviceContext.viewStruct.proj=cam->MakeStereoProjectionMatrix(simul::camera::LEFT_EYE,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
 			deviceContext.viewStruct.view=cam->MakeStereoViewMatrix(simul::camera::LEFT_EYE);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
@@ -427,7 +427,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		//right eye
 		if(cam)
 		{
-			deviceContext.viewStruct.proj	=cam->MakeStereoProjectionMatrix(simul::camera::RIGHT_EYE,cameraViewStruct.nearZ,cameraViewStruct.farZ,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
+			deviceContext.viewStruct.proj	=cam->MakeStereoProjectionMatrix(simul::camera::RIGHT_EYE,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
 			deviceContext.viewStruct.view	=cam->MakeStereoViewMatrix(simul::camera::RIGHT_EYE);
 		}
 		viewport.TopLeftX			=view->GetScreenWidth()/2.f;
