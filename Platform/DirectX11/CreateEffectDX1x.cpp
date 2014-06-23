@@ -15,7 +15,6 @@
 #include "Simul/Base/DefaultFileLoader.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Matrix4x4.h"
-#include "CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX11/Effect.h"

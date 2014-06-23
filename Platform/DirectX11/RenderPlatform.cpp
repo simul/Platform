@@ -14,6 +14,11 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Camera/Camera.h"
 #include "D3dx11effect.h"
+#ifdef _XBOX_ONE
+#include <D3Dcompiler_x.h>
+#else
+#include <D3Dcompiler.h>
+#endif
 
 using namespace simul;
 using namespace dx11;
@@ -505,7 +510,11 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatfo
 				"}";
 	const char *str=dummy_shader.c_str();
 	size_t len=strlen(str);
+#if WINVER<0x602
 	HRESULT hr=D3DX11CompileFromMemory(str,len,"dummy",NULL,NULL,"VS_Main", "vs_4_0", 0, 0, 0, &VS, &errorMsgs, 0);
+#else
+	HRESULT hr=D3DCompile(str,len,"dummy",NULL,NULL,"VS_Main", "vs_4_0", 0, 0, &VS, &errorMsgs);
+#endif
 	if(hr!=S_OK)
 	{
 		const char *e=(const char*)errorMsgs->GetBufferPointer();
