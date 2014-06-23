@@ -193,8 +193,9 @@ void dx11::Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 	SAFE_RELEASE(stagingBuffer);
 }
 
-void dx11::Texture::InitFromExternalSRV(ID3D11ShaderResourceView *srv)
+void dx11::Texture::InitFromExternalD3D11Texture2D(ID3D11Texture2D *t,ID3D11ShaderResourceView *srv)
 {
+	texture=t;
 	shaderResourceView=srv;
 	shaderResourceView->AddRef();
 	dim=2;

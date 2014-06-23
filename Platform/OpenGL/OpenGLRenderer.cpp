@@ -27,8 +27,21 @@
 #include <stdint.h> // for uintptr_t
 
 #pragma comment(lib,"opengl32")
-#pragma comment(lib,"glew32")
 #pragma comment(lib,"glfx")
+
+#ifdef _DLL
+#ifdef _DEBUG
+#pragma comment(lib,"glew32d")
+#else
+#pragma comment(lib,"glew32")
+#endif
+#else
+#ifdef _DEBUG
+#pragma comment(lib,"glew32sd")
+#else
+#pragma comment(lib,"glew32s")
+#endif
+#endif
 
 #ifndef _MSC_VER
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))

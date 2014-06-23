@@ -225,9 +225,6 @@
     <None Include="GLSL\simul_cloud_cross_section.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="GLSL\simul_cloud_overlay.frag">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="GLSL\simul_cloudmix.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -357,12 +354,6 @@
     <None Include="GLSL\tonemap.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="..\CrossPlatform\godrays.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\illumination.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
     <None Include="GLSL\illumination_buffer.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -414,18 +405,6 @@
     <None Include="GLSL\simul_cloud_overlay.frag" />
     <None Include="GLSL\simul_cloud_overlay.frag" />
     <None Include="GLSL\simul_cloud_overlay.frag" />
-    <None Include="..\CrossPlatform\CppSl.hs" />
-    <None Include="..\CrossPlatform\depth.sl" />
-    <None Include="..\CrossPlatform\earth_shadow.sl" />
-    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
-    <None Include="..\CrossPlatform\simul_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
-    <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
-    <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
     <None Include="GLSL\simul_cloud_overlay.frag" />
     <None Include="..\CrossPlatform\CppSl.hs" />
     <None Include="..\CrossPlatform\depth.sl" />
@@ -507,6 +486,24 @@
     <None Include="GLSL\simul_cloud_overlay.frag" />
     <None Include="GLSL\simul_cloud_overlay.frag" />
     <None Include="GLSL\simul_cloud_overlay.frag" />
+    <None Include="GLSL\atmospherics.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\light_pass.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\clouds.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\debug.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\hdr.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_cloud_overlay.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

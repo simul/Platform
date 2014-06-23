@@ -45,8 +45,6 @@ namespace simul
 			virtual void SetAntialiasing(int s)=0;
 			//! Get the API-dependent pointer or id for the colour buffer target.
 			virtual void* GetColorTex()=0;
-			//! Get the API-dependent pointer or id for the depth buffer target.
-			virtual void* GetDepthTex()=0;
 			virtual Texture *GetTexture()=0;
 			virtual Texture *GetDepthTexture()=0;
 			//! Copy from the rt to the given target memory. If not starting at the top of the texture (start_texel>0), the first byte written

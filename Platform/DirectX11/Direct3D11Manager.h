@@ -36,8 +36,8 @@ namespace simul
 		};
 		//! A class intended to replace DXUT, while allowing for multiple swap chains (i.e. rendering windows) to share the same d3d device.
 
-		//! Direct3D11Manager corresponds to a single ID3D11Device (i.e. a single graphics card accessed with this interface).
-		//! With each graphics window it manages (identified by HWND's), Direct3D11Manager
+		//! Direct3D11Manager corresponds to a single ID3D11Device, which it creates when initialized (i.e. a single graphics card accessed with this interface).
+		//! With each graphics window it manages (identified by HWND's), Direct3D11Manager creates and manages a IDXGISwapChain instance.
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Manager: public Direct3D11ManagerInterface
 		{
 		public:

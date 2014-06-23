@@ -41,7 +41,8 @@ namespace simul
 			{
 				return 0;
 			}
-			void InitFromExternalSRV(ID3D11ShaderResourceView *srv);
+			// Use this dx11::Texture as a wrapper for a texture and its corresponding SRV. Both pointers are needed.
+			void InitFromExternalD3D11Texture2D(ID3D11Texture2D *t,ID3D11ShaderResourceView *srv);
 
 			ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   shaderResourceView;

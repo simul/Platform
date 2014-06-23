@@ -55,9 +55,10 @@ namespace simul
 			{
 				return (void*)buffer_texture.shaderResourceView;
 			}
-			void* GetDepthTex()
+			//! Get the API-dependent pointer or id for the depth buffer target.
+			ID3D11ShaderResourceView* GetDepthSRV()
 			{
-				return (void*)buffer_depth_texture.shaderResourceView;
+				return buffer_depth_texture.shaderResourceView;
 			}
 			ID3D11Texture2D* GetColorTexture()
 			{
