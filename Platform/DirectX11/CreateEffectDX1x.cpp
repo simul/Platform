@@ -238,17 +238,20 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 	ID3D11Texture2D *tex=NULL;
 	if(!texturePathsUtf8.size())
 		texturePathsUtf8.push_back("media/textures");
+	HRESULT hr=S_FALSE;
 	for(int i=0;i<(int)texturePathsUtf8.size();i++)
 	{
 		std::wstring wstr	=simul::base::Utf8ToWString((texturePathsUtf8[i]+"/")+filename);
 		HRESULT hr=D3DX11CreateTextureFromFileW(pd3dDevice,wstr.c_str(),&loadInfo, NULL, ( ID3D11Resource** )&tex, &hr );
 		if(hr==S_OK)
 			break;
+	}
+	if(hr!=S_OK)
+	{
 #ifdef DXTRACE_ERR
-        hr=DXTRACE_ERR( L"LoadStagingTexture", hr );
-#else
-		std::cerr<<"Failed to load texture: "<<wstr.c_str()<<std::endl;
+		hr=DXTRACE_ERR( L"LoadStagingTexture", hr );
 #endif
+		std::cerr<<"Failed to load texture: "<<filename<<std::endl;
 	}
 	return tex;
 }

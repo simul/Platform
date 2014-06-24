@@ -432,7 +432,14 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(crossplatform::DeviceCont
 	hdrConstants.hiResToLowResTransformXYWH		=mixedResolutionStruct.GetTransformHiResToLowRes();
 	hdrConstants.Apply(deviceContext);
 	deviceContext.renderPlatform->DrawQuad(deviceContext);
-	dx11::setTexture(e,"imageTexture",NULL);
+	effect->SetTexture("imageTexture",NULL);
+	effect->SetTexture("depthTextureMS"		,NULL);
+	effect->SetTexture("depthTexture"		,NULL);
+	effect->SetTexture("hiResDepthTexture"		,NULL);
+	effect->SetTexture("lowResDepthTexture"		,NULL);
+	effect->SetTexture("nearImageTexture"		,NULL);
+	effect->SetTexture("inscatterTexture"		,NULL);
+	effect->SetTexture("nearInscatterTexture"	,NULL);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 }
 
