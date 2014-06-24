@@ -911,8 +911,6 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
-	
-	//cloud_texture.ensureTexture3DSizeAndFormat(renderPlatform,width_x,length_y,depth_z,cloud_tex_format,true);
 }
 
 void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext)
@@ -932,6 +930,7 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(crossplatform::DeviceCont
 		int cycled_index=(texture_cycle+i)%3;
 		clouds::GpuCloudsParameters g=cloudKeyframer->GetGpuCloudsParameters(i);
 		gpuCloudGenerator.Update(cycled_index,g,NULL);
+ERRNO_CHECK
 	}
 }
 
