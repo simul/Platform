@@ -242,7 +242,7 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 	for(int i=0;i<(int)texturePathsUtf8.size();i++)
 	{
 		std::wstring wstr	=simul::base::Utf8ToWString((texturePathsUtf8[i]+"/")+filename);
-		HRESULT hr=D3DX11CreateTextureFromFileW(pd3dDevice,wstr.c_str(),&loadInfo, NULL, ( ID3D11Resource** )&tex, &hr );
+		hr=D3DX11CreateTextureFromFileW(pd3dDevice,wstr.c_str(),&loadInfo, NULL, ( ID3D11Resource** )&tex, &hr );
 		if(hr==S_OK)
 			break;
 	}
