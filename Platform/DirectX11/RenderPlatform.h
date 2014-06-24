@@ -31,11 +31,12 @@ namespace simul
 		//! A class to implement common rendering functionality for DirectX 11.
 		class SIMUL_DIRECTX11_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
-			ID3D11Device*				device;
+			ID3D11Device *device;
 		public:
 			RenderPlatform();
 			virtual ~RenderPlatform();
-			void RestoreDeviceObjects(void*);
+			///  The \em platform_device parameter should be the ID3D11Device pointer.
+			void RestoreDeviceObjects(void *platform_device);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			

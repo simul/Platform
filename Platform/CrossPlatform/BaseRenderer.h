@@ -8,6 +8,10 @@ namespace simul
 	namespace crossplatform
 	{
 		//! A simple struct encapsulating a view and a projection matrix.
+		//! The \em view_id is an integer that distinguishes between multiple simultaneous viewports onscreen.
+		//! By convention, viewport 0 is the main view, and viewport 1 is the cubemap for reflections and lighting.
+		//! Always use a separate view id when rendering cubemaps and lightprobe view,
+		//! from when rendering the main view.
 		struct ViewStruct
 		{
 			int view_id;

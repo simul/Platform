@@ -32,6 +32,12 @@ namespace simul
 		class RenderPlatform
 		{
 		public:
+			/// To be called when the device has initialized or changed.
+			virtual void RestoreDeviceObjects(void * platform_device)=0;
+			/// To be called when the device will be lost or destroyed.
+			virtual void InvalidateDeviceObjects()=0;
+			/// To be called if shader source code has changed.
+			virtual void RecompileShaders()=0;
 			struct Vertext
 			{
 				vec3 pos;
