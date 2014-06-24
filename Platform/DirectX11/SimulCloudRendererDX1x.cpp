@@ -580,6 +580,9 @@ void SimulCloudRendererDX1x::RenderCombinedCloudTexture(void *context)
 void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
+	shadow_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize(),cloudKeyframer->GetGodraysSteps());
+	godrays_texture.ensureTexture2DSizeAndFormat(renderPlatform,cloudKeyframer->GetShadowTextureSize()*2,cloudKeyframer->GetGodraysSteps(),crossplatform::R_32_FLOAT,true,false);
+	moisture_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize()*2,cloudKeyframer->GetGodraysSteps());
     SIMUL_COMBINED_PROFILE_START(pContext,"RenderCloudShadow")
 	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName("cloud_shadow");
 	cloudConstants.Apply(deviceContext);
@@ -900,9 +903,6 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	{
 		cloud_textures[i].ensureTexture3DSizeAndFormat(renderPlatform,width_x,length_y,depth_z,crossplatform::RGBA_8_UNORM,uav);
 	}
-	shadow_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize(),cloudKeyframer->GetGodraysSteps());
-	godrays_texture.ensureTexture2DSizeAndFormat(renderPlatform,cloudKeyframer->GetShadowTextureSize()*2,cloudKeyframer->GetGodraysSteps(),crossplatform::R_32_FLOAT,true,false);
-	moisture_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize()*2,cloudKeyframer->GetGodraysSteps());
 	if(!width_x||!length_y||!depth_z)
 		return;
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[texture_cycle%3].texture!=NULL)
@@ -911,8 +911,6 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
-	
-	//cloud_texture.ensureTexture3DSizeAndFormat(renderPlatform,width_x,length_y,depth_z,cloud_tex_format,true);
 }
 
 void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext)
@@ -932,6 +930,7 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(crossplatform::DeviceCont
 		int cycled_index=(texture_cycle+i)%3;
 		clouds::GpuCloudsParameters g=cloudKeyframer->GetGpuCloudsParameters(i);
 		gpuCloudGenerator.Update(cycled_index,g,NULL);
+ERRNO_CHECK
 	}
 }
 

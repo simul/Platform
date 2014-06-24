@@ -2,6 +2,7 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
@@ -143,12 +144,12 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.platform_context	=m_pImmediateContext;
 	deviceContext.renderPlatform	=renderPlatform;
-
+ERRNO_CHECK
 	for(int i=0;i<3;i++)
 		finalTexture[i]->ensureTexture3DSizeAndFormat(renderPlatform,params.density_grid[0],params.density_grid[1],params.density_grid[2],crossplatform::RGBA_8_UNORM,true,1);
 	int density_gridsize=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
 	mask_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]);
-
+ERRNO_CHECK
 	mask_fb.Activate(deviceContext);
 	const simul::clouds::MaskMap &masks=*params.masks;
 	if(masks.size())
@@ -171,22 +172,24 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	{
 		mask_fb.Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
 	}
+ERRNO_CHECK
 	mask_fb.Deactivate(m_pImmediateContext);
-
+ERRNO_CHECK
 	int z0	=start_texel/(params.density_grid[0]*params.density_grid[1]);
 	int z1	=(start_texel+texels)/(params.density_grid[0]*params.density_grid[1]);
+ERRNO_CHECK
 	int zmax=params.density_grid[2];
 	float y_start					=(float)z0/(float)zmax;
 	float y_range					=(float)z1/(float)zmax-y_start;
 	SetGpuCloudConstants(gpuCloudConstants,params,y_start,y_range);
-
+ERRNO_CHECK
 	simul::dx11::setTexture(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	simul::dx11::setTexture(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
-	
+ERRNO_CHECK
 	density_texture.ensureTexture3DSizeAndFormat(renderPlatform
 		,params.density_grid[0],params.density_grid[1],params.density_grid[2]
 		,crossplatform::R_32_FLOAT,true);
-
+ERRNO_CHECK
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",density_texture.unorderedAccessView);
 
 	// divide the grid into 8x8x8 blocks:
@@ -209,6 +212,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	simul::dx11::setTexture				(effect,"maskTexture"		,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setUnorderedAccessView	(effect,"targetTexture"		,(ID3D11UnorderedAccessView*)NULL);
 	ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0));
+ERRNO_CHECK
 }
 
 void GpuCloudGenerator::PerformGPURelight	(int light_index

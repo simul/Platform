@@ -193,7 +193,8 @@ ERRNO_CHECK
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector((const float*)&deviceContext.viewStruct.view,false);
 ERRNO_CHECK
 	dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
-dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,cloudShadowStruct.texture->AsD3D11ShaderResourceView());
+	if(cloudShadowStruct.texture)
+		dx11::setTexture(	m_pTerrainEffect,"cloudShadowTexture"	,cloudShadowStruct.texture->AsD3D11ShaderResourceView());
 	terrainConstants.eyePosition=cam_pos;
 ERRNO_CHECK
 	if(baseSkyInterface)

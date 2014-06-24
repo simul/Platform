@@ -14,6 +14,11 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Camera/Camera.h"
 #include "D3dx11effect.h"
+#ifdef _XBOX_ONE
+#include <D3Dcompiler_x.h>
+#else
+#include <D3Dcompiler.h>
+#endif
 
 using namespace simul;
 using namespace dx11;
@@ -505,7 +510,11 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatfo
 				"}";
 	const char *str=dummy_shader.c_str();
 	size_t len=strlen(str);
+#if WINVER<0x602
 	HRESULT hr=D3DX11CompileFromMemory(str,len,"dummy",NULL,NULL,"VS_Main", "vs_4_0", 0, 0, 0, &VS, &errorMsgs, 0);
+#else
+	HRESULT hr=D3DCompile(str,len,"dummy",NULL,NULL,"VS_Main", "vs_4_0", 0, 0, &VS, &errorMsgs);
+#endif
 	if(hr!=S_OK)
 	{
 		const char *e=(const char*)errorMsgs->GetBufferPointer();
@@ -578,6 +587,7 @@ void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,ID3D1
 			,m_pDebugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique());
 	}
 	simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTexture",NULL);
+	simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureMS",NULL);
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult)
@@ -604,6 +614,8 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	vec3 d(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
 	m_pDebugEffect->SetParameter("depthToLinFadeDistParams",d);
 	DrawQuad(deviceContext,x1,y1,dx,dy,m_pDebugEffect,tech);
+	m_pDebugEffect->SetTexture("imageTextureMS",NULL);
+	m_pDebugEffect->SetTexture("imageTexture",NULL);
 }
 
 void RenderPlatform::DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)
@@ -656,6 +668,8 @@ void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int
 			text++;
 			pos++;
 		}
+		if(*text==0)
+			break;
 		text++;
 		pos++;
 		y+=16;
