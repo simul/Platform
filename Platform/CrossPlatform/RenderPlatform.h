@@ -86,10 +86,10 @@ namespace simul
 			/// Applies the shader pass.
 			///
 			/// \param [in,out]	deviceContext	cross-platform device context.
-			/// \param [in,out]	parameter2   	The effect.
-			/// \param [in,out]	parameter3   	The technique.
+			/// \param [in,out]	effect   		The effect.
+			/// \param [in,out]	tech		 	The technique.
 			/// \param	pass			 		The pass index.
-			virtual void ApplyShaderPass	(DeviceContext &deviceContext,Effect *,EffectTechnique *,int pass)=0;
+			virtual void ApplyShaderPass	(DeviceContext &deviceContext,Effect *effect,EffectTechnique * ,int pass)=0;
 
 			/// Draws.
 			///
@@ -267,11 +267,11 @@ namespace simul
 			/// Creates a layout.
 			///
 			/// \param	num_elements	  	Number of elements.
-			/// \param [in,out]	parameter2	If non-null, the second parameter.
-			/// \param [in,out]	parameter3	If non-null, the third parameter.
+			/// \param [in,out]	desc		The cross-platform layout description.
+			/// \param [in,out]	buf			The cross-platform buffer to be used with this layout.
 			///
 			/// \return	null if it fails, else the new layout.
-			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *,Buffer *)	=0;
+			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *desc,Buffer *buf)	=0;
 
 			/// Gets the device.
 			///
