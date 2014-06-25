@@ -47,10 +47,6 @@ namespace simul
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &,int ,int ,int ,int ){}
 			void SetWindVelocity(float x,float y);
 
-			void SetCloudTextureSize(unsigned width_x,unsigned length_y);
-			void FillCloudTextureBlock(int texture_index,int x,int y,int w,int l,const unsigned *uint32_array);
-			void FillCloudTextureSequentially(int,int,int,const unsigned int *){}
-
 		protected:
 			virtual void DrawLines(void *,VertexXyzRgba *,int ,bool ){}
 

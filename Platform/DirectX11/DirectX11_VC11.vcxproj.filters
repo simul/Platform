@@ -442,7 +442,6 @@
     <None Include="HLSL\sky.fx">
       <Filter>FX</Filter>
     </None>
-    <None Include="HLSL\light_probes.fx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">
