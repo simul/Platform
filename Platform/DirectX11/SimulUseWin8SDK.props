@@ -9,7 +9,7 @@
       <AdditionalIncludeDirectories>$(SIMUL)/External/DirectX/Effects11_Win8SDK/Inc/;$(SIMUL)\External\DirectX\DirectXTex\DirectXTex;$(SIMUL)\External\DirectX\Effects11\include;C:\Program Files (x86)\Windows Kits\8.1\Include\um;C:\Program Files (x86)\Windows Kits\8.1\Include\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(WindowsSDK80Path\lib\win8\um\$(PlatformShortName);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WindowsSDK80Path)\lib\win8\um\$(PlatformShortName);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
