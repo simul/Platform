@@ -20,8 +20,6 @@ namespace simul
 		{
 		public:
 		};
-		/// Base class for the platform implementation of a constant buffer. Do not use this class directly - 
-		/// just pass RenderPlatform* to ConstantBuffer.
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{
 		public:
@@ -32,9 +30,6 @@ namespace simul
 			virtual void Apply(DeviceContext &deviceContext,size_t size,void *addr)=0;
 			virtual void Unbind(DeviceContext &deviceContext)=0;
 		};
-		/// A cross-platform constant buffer container. Constant buffers can be declared using
-		/// simul::crossplatform::ConstantBuffer<BufferType> bufferType;
-		/// The platform implementation is handled by passing a Renderplatform* to RestoreDeviceObjects().
 		template<class T> class ConstantBuffer:public ConstantBufferBase,public T
 		{
 			PlatformConstantBuffer *platformConstantBuffer;
@@ -54,7 +49,7 @@ namespace simul
 			{
 				*(T*)pData = *this;
 			}
-			//! Create the platform-specific buffer object.
+			//! Create the buffer object.
 			void RestoreDeviceObjects(RenderPlatform *p)
 			{
 				InvalidateDeviceObjects();
@@ -86,7 +81,6 @@ namespace simul
 			}
 		};
 		class Texture;
-		/// The cross-platform base for an EffectTechnique - known in GLSL as a Program.
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique
 		{
 		public:
@@ -121,7 +115,7 @@ namespace simul
 		};
 		typedef std::map<std::string,EffectTechnique *> TechniqueMap;
 		typedef std::map<int,EffectTechnique *> IndexMap;
-		/// Crossplatform equivalent of D3DXEffectGroup - a named group of techniques. There is no direct equivalent in GLSL, so we implement grouping directly.
+		/// Crossplatform equivalent of D3DXEffectGroup - a named group of techniques.
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechniqueGroup
 		{
 		public:
@@ -131,7 +125,6 @@ namespace simul
 			EffectTechnique *GetTechniqueByIndex(int index);
 		};
 		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
-		/// The cross-platform base for Effects. An effect in this context is a collection of shaders and shader techniques, compiled from an individual source file.
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{
 		protected:

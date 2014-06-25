@@ -28,18 +28,14 @@ namespace simul
 	{
 		class ConstantBufferCache;
 		class Material;
-		/// \brief	A class to implement common rendering functionality for DirectX 11.
-		///
-		/// \author	Roderick
-		/// \date	24/06/2014
+		//! A class to implement common rendering functionality for DirectX 11.
 		class SIMUL_DIRECTX11_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
-			ID3D11Device *device;
+			ID3D11Device*				device;
 		public:
 			RenderPlatform();
 			virtual ~RenderPlatform();
-			///  The \em platform_device parameter should be the ID3D11Device pointer.
-			void RestoreDeviceObjects(void *platform_device);
+			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			
