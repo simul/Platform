@@ -222,38 +222,6 @@ void SimulGL2DCloudRenderer::EnsureTextureCycle()
 			texture_cycle+=3;
 	}
 }
-	
-void SimulGL2DCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_y)
-{
-	tex_width=width_x;
-	delete [] cloud_data;
-	cloud_data=new unsigned char[4*width_x*length_y];
-	for(int i=0;i<3;i++)
-	{
-		glGenTextures(1,&(coverage_tex[i]));
-		glBindTexture(GL_TEXTURE_2D,coverage_tex[i]);
-		glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,width_x,length_y,0,GL_RGBA,GL_UNSIGNED_INT,0);
-
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-	}
-}
-
-void SimulGL2DCloudRenderer::FillCloudTextureBlock(
-	int texture_index,int x,int y,int w,int l,const unsigned *uint32_array)
-{
-	glBindTexture(GL_TEXTURE_2D,coverage_tex[texture_index]);
-	{
-		glTexSubImage2D(	GL_TEXTURE_2D,0,
-							x,y,
-							w,l,
-							GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
-							uint32_array);
-	}
-}
 
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 {

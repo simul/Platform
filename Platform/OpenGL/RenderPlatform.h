@@ -21,8 +21,7 @@ namespace simul
 		public:
 			RenderPlatform();
 			virtual ~RenderPlatform();
-			///  The \em platform_device parameter is not used in OpenGL.
-			void RestoreDeviceObjects(void *platform_device);
+			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			

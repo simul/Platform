@@ -54,8 +54,6 @@ namespace simul
 	
 			CloudShadowStruct GetCloudShadowTexture(math::Vector3);
 			const char *GetDebugText();
-
-			void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	
 			void SetIlluminationGridSize(unsigned ,unsigned ,unsigned );
 			void FillIlluminationSequentially(int ,int ,int ,const unsigned char *);
