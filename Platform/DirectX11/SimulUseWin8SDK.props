@@ -6,7 +6,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>SIMUL_WIN8_SDK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SIMUL)/External/DirectX/Effects11_Win8SDK/Inc/;$(SIMUL)\External\DirectX\DirectXTex\DirectXTex;$(SIMUL)\External\DirectX\Effects11\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/External/DirectX/Effects11_Win8SDK/Inc/;$(SIMUL)\External\DirectX\DirectXTex\DirectXTex;$(SIMUL)\External\DirectX\Effects11\include;C:\Program Files (x86)\Windows Kits\8.1\Include\um;C:\Program Files (x86)\Windows Kits\8.1\Include\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />
