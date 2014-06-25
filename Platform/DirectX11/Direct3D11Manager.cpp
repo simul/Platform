@@ -326,7 +326,7 @@ Direct3D11Manager::~Direct3D11Manager()
 	Shutdown();
 }
 
-void Direct3D11Manager::Initialize()
+void Direct3D11Manager::Initialize(bool use_debug)
 {
 	std::cout<<"1"<<std::endl;
 	HRESULT result;
@@ -401,6 +401,7 @@ void Direct3D11Manager::Initialize()
 	//				       D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &d3dDevice, NULL, &d3dDeviceContext);
 	UINT flags=0;
 #ifdef _DEBUG
+	if(use_debug)
 	flags|=D3D11_CREATE_DEVICE_DEBUG;
 #endif
 	std::cout<<"D3D11CreateDevice "<<std::endl;
@@ -408,21 +409,26 @@ void Direct3D11Manager::Initialize()
 	std::cout<<"D3D11CreateDevice result "<<result<<std::endl;
 	if(result!=S_OK)
 		return;
-	d3dDevice->AddRef();
-	UINT refcount=d3dDevice->Release();
+	//d3dDevice->AddRef();
+	//UINT refcount=d3dDevice->Release();
+	UINT exc=d3dDevice->GetExceptionMode();
+	if(exc>0)
+		std::cout<<"d3dDevice Exception mode is "<<exc<<std::endl;
 #ifdef _DEBUG
 #ifndef _XBOX_ONE
 	SAFE_RELEASE(d3dDebug);
 #endif
 	SAFE_RELEASE(d3dInfoQueue);
-#ifndef _XBOX_ONE
+	if(use_debug)
+	{
+	#ifndef _XBOX_ONE
 	d3dDevice->QueryInterface( __uuidof(ID3D11Debug), (void**)&d3dDebug );
 	d3dDebug->QueryInterface( __uuidof(ID3D11InfoQueue), (void**)&d3dInfoQueue );
-#endif
+	#endif
  
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
-	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, false );
+		d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, true );
 	
 	ReportMessageFilterState();
 	d3dInfoQueue->ClearStoredMessages();
@@ -467,9 +473,10 @@ void Direct3D11Manager::Initialize()
 	// The following single call sets all of the preceding information.
 	HRESULT hr=d3dInfoQueue->AddStorageFilterEntries( &filter );
 	ReportMessageFilterState();
+	}
 #endif
-	d3dDevice->AddRef();
-	UINT refcount2=d3dDevice->Release();
+	//d3dDevice->AddRef();
+	//UINT refcount2=d3dDevice->Release();
 	std::cout<<"result "<<result<<std::endl;
 	SIMUL_ASSERT(result==S_OK);
 }
@@ -582,6 +589,9 @@ void Direct3D11Manager::Shutdown()
 	// Finally, we can destroy the device.
 	if(d3dDevice)
 	{
+		UINT exc=d3dDevice->GetExceptionMode();
+		if(exc>0)
+			std::cout<<"d3dDevice Exception mode is "<<exc<<std::endl;
 		UINT references=d3dDevice->Release();
 		if(references>0)
 		{
