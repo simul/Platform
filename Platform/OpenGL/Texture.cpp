@@ -52,7 +52,7 @@ bool opengl::Texture::IsValid() const
 	return (pTextureObject>0);
 }
 
-void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *renderPlatform,int w,int l
+void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
 	,crossplatform::PixelFormat pixelFormat,bool computable,bool rendertarget,int num_samples,int aa_quality)
 {
 GL_ERROR_CHECK
@@ -86,7 +86,7 @@ GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,0);
 GL_ERROR_CHECK
 }
-void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &deviceContext)
+void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &)
 {
 	if(!m_fb)
 		return;
@@ -199,6 +199,6 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 	}
 }
 
-void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels)
+void Texture::copyToMemory(crossplatform::DeviceContext &,void *,int ,int )
 {
 }
