@@ -612,7 +612,23 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	static float cc=300000.f;
 	vec3 d(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
 	m_pDebugEffect->SetParameter("depthToLinFadeDistParams",d);
-	DrawQuad(deviceContext,x1,y1,dx,dy,m_pDebugEffect,tech);
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	unsigned int num_v=1;
+	D3D11_VIEWPORT viewport;
+	pContext->RSGetViewports(&num_v,&viewport);
+	if(mirrorY)
+	{
+		y1=(int)viewport.Height-y1;
+		dy*=-1;
+	}
+	{
+		UtilityRenderer::DrawQuad2(pContext
+			,2.f*(float)x1/(float)viewport.Width-1.f
+			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
+			,2.f*(float)dx/(float)viewport.Width
+			,2.f*(float)dy/(float)viewport.Height
+			,m_pDebugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique());
+	}
 }
 
 void RenderPlatform::DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)

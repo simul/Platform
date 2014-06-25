@@ -17,7 +17,7 @@
 	#endif
 #endif
 
-#if defined(_DLL) && !defined(DOXYGEN)
+#if defined(SIMUL_DYNAMIC_LINK) && !defined(DOXYGEN)
 // In this lib:
 	#if !defined(SIMUL_OPENGL_DLL) 
 	// If we're building dll libraries but not in this library IMPORT the classes
