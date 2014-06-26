@@ -18,7 +18,7 @@ uniform_buffer MoisturePerViewConstants SIMUL_BUFFER_REGISTER(9)
 {
 	uniform mat4 invViewProj;
 	uniform vec4 depthViewport;		// xy = pos, zw = size
-	uniform vec3 depthToLinFadeDist;
+	uniform vec4 depthToLinFadeDist;
 };
 
 uniform_buffer RainPerViewConstants SIMUL_BUFFER_REGISTER(8)
@@ -30,11 +30,10 @@ uniform_buffer RainPerViewConstants SIMUL_BUFFER_REGISTER(8)
 	uniform vec4 offset[2];
 	uniform float nearZ;
 	uniform float farZ;
-	uniform vec3 depthToLinFadeDistParams;
-	uniform float nearRainDistance;			// as a proportion of max fade distance
+	uniform vec4 depthToLinFadeDistParams;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec2 tanHalfFov;
-	uniform vec2 dumm;
+	uniform vec2 nearRainDistance;// as a proportion of max fade distance
 };
 
 uniform_buffer RainOsdConstants SIMUL_BUFFER_REGISTER(9)

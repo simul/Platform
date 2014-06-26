@@ -79,7 +79,7 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
-			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec3 depthToLinFadeDistParams);
+			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec4 depthToLinFadeDistParams);
 		protected:
 			crossplatform::RenderPlatform				*renderPlatform;
 			crossplatform::Effect						*depthForwardEffect;

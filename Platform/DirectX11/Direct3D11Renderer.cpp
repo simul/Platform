@@ -134,7 +134,7 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 		oceanRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	cubemapFramebuffer.SetWidthAndHeight(32,32);
 	cubemapFramebuffer.RestoreDeviceObjects(&renderPlatformDx11);
-	envmapFramebuffer.SetWidthAndHeight(64,64);
+	envmapFramebuffer.SetWidthAndHeight(8,8);
 	envmapFramebuffer.RestoreDeviceObjects(&renderPlatformDx11);
 	RecompileShaders();
 }
@@ -256,16 +256,19 @@ ERRNO_CHECK
 
 void Direct3D11Renderer::RenderEnvmap(crossplatform::DeviceContext &deviceContext)
 {
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	SIMUL_COMBINED_PROFILE_START(pContext,"RenderEnvmap CalcSphericalHarmonics")
 	cubemapFramebuffer.SetBands(SphericalHarmonicsBands);
 	cubemapFramebuffer.CalcSphericalHarmonics(deviceContext);
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	envmapFramebuffer.Clear(pContext,0.f,1.f,0.f,1.f,0.f);
 	math::Matrix4x4 invViewProj;
 	math::Matrix4x4 view_matrices[6];
 	float cam_pos[]={0,0,0};
 	ID3DX11EffectTechnique *tech=lightProbesEffect->GetTechniqueByName("irradiance_map");
 	camera::MakeCubeMatrices(view_matrices,cam_pos,false);
+	SIMUL_COMBINED_PROFILE_END(pContext)
 	// For each face, 
+	SIMUL_COMBINED_PROFILE_START(pContext,"RenderEnvmap draw")
 	for(int i=0;i<6;i++)
 	{
 		envmapFramebuffer.SetCurrentFace(i);
@@ -284,6 +287,7 @@ void Direct3D11Renderer::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 		}
 		envmapFramebuffer.Deactivate(pContext);
 	}
+	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
 
@@ -450,9 +454,11 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 
 	if(MakeCubemap)
 	{
-		SIMUL_COMBINED_PROFILE_START(pContext,"Env+Cubemap")
+		SIMUL_COMBINED_PROFILE_START(pContext,"Cubemap")
 		const float *cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view);
 		RenderCubemap(deviceContext,cam_pos);
+		SIMUL_COMBINED_PROFILE_END(pContext)
+		SIMUL_COMBINED_PROFILE_START(pContext,"Envmap")
 		RenderEnvmap(deviceContext);
 		SIMUL_COMBINED_PROFILE_END(pContext)
 	}
@@ -541,7 +547,7 @@ void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &device
 	view->RenderDepthBuffers(deviceContext,x0,y0,dx,dy);
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->RenderFramebufferDepth(deviceContext,x0+dx	,y0	,dx,dy);
+		simulWeatherRenderer->RenderFramebufferDepth(deviceContext,x0+dx/2	,y0	,dx/2,dy/2);
 		//UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,(ID3D11ShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
 		//renderPlatformDx11.Print(pContext			,2.f*w	,0.f,"Near overlay");
 		simulWeatherRenderer->RenderCompositingTextures(deviceContext,x0,y0+dy,dx,dy);

@@ -321,7 +321,8 @@ vec4 PS_Particles(particleGeometryOutput IN): SV_TARGET
 	//float spoke	=fract(angle/pi*3.0)-0.5;
 	float opacity	=IN.fade*saturate(1.0-radius);//-spoke*spoke);
 	
-	return (vec4(result.rgb,opacity));
+	//return vec4(1,0,1,opacity);
+	return vec4(result.rgb,opacity);
 }
 
 rainVertexOutput VS_FullScreen(idOnly IN)

@@ -89,17 +89,6 @@ namespace simul
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite);
 	
-			// This composites the clouds and other buffers to the screen.
-			void CompositeCloudsToScreen(crossplatform::DeviceContext &deviceContext
-												,float exposure
-												,float gamma
-												,bool depth_blend
-												,crossplatform::Texture *mainDepthTexture
-												,crossplatform::Texture* hiResDepthTexture
-												,crossplatform::Texture* lowResDepthTexture
-												,const simul::sky::float4& viewportRegionXYWH
-												,const crossplatform::MixedResolutionStruct &mixedResolutionStruct);
-			void RenderFramebufferDepth(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH);
 			void RenderLightning(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *low_res_depth_tex);
 			void SaveCubemapToFile(crossplatform::RenderPlatform *renderPlatform,const char *filename,float exposure,float gamma);

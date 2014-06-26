@@ -863,7 +863,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 	::DrawLines(vertices,vertex_count,strip);
 }
 
-void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
+void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height)
 {
 GL_ERROR_CHECK
 	glDisable(GL_BLEND);

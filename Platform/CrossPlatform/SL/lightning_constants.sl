@@ -9,8 +9,7 @@ uniform_buffer LightningConstants SIMUL_BUFFER_REGISTER(10)
 uniform_buffer LightningPerViewConstants SIMUL_BUFFER_REGISTER(8)
 {
 	uniform mat4 worldViewProj;
-	uniform vec3 depthToLinFadeDistParams;
-	uniform float xxxxxxx;
+	uniform vec4 depthToLinFadeDistParams;
 	uniform vec2 viewportPixels;
 	uniform vec2 _line_width;
 	uniform vec4 viewportToTexRegionScaleBias;

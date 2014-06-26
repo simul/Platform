@@ -91,7 +91,7 @@ void GetCameraPosVector(simul::math::Vector3 &cam_pos,simul::math::Vector3 &cam_
 					static float ww=50.f;
 					static float uu=9.f;
 
-void SimulGLLightningRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *cloud_depth_tex)
+void SimulGLLightningRenderer::Render(crossplatform::DeviceContext &,crossplatform::Texture *,simul::sky::float4 ,crossplatform::Texture *)
 {
 }
 
