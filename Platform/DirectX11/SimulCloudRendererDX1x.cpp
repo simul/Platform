@@ -517,6 +517,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	opts.push_back(crossplatform::CreateDefineOptions("REVERSE_DEPTH","0","1"));
 	opts.push_back(crossplatform::CreateDefineOptions("USE_LIGHT_TABLES","0","1"));
 //	renderPlatform->EnsureEffectIsBuilt("simul_clouds",opts);
+	SAFE_DELETE(effect);
 	effect							=renderPlatform->CreateEffect("simul_clouds",defines);
 	if(cloudKeyframer->GetUse3DNoise())
 		m_hTechniqueCloud			=effect->asD3DX11Effect()->GetTechniqueByName("simul_clouds_3d_noise");

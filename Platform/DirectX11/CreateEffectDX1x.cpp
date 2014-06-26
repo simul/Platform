@@ -564,7 +564,7 @@ ERRNO_CHECK
 	// See if there's a binary that's newer than the file date.
 	bool changes_detected=(shaderBuildMode==ALWAYS_BUILD);
 	double binary_date_jdn=0.0;
-	std::cout<<"Checking DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
+	//std::cout<<"Checking DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
 	if(shaderBuildMode==BUILD_IF_CHANGED)
 	{
 		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
