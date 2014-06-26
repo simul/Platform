@@ -178,13 +178,13 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 		dt*=-1.0f;
 	if(dt>1.0f)
 		dt=1.0f;
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	BasePrecipitationRenderer::PreRenderUpdate(pContext,dt);
+	BasePrecipitationRenderer::PreRenderUpdate(deviceContext,dt);
 	
 	rainConstants.meanFallVelocity	=meanVelocity;
 	rainConstants.timeStepSeconds	=dt;
 	rainConstants.Apply(deviceContext);
 	
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	ID3D11InputLayout* previousInputLayout;
 	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetInputLayout(&previousInputLayout);

@@ -518,7 +518,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 		if(simulWeatherRenderer->GetBasePrecipitationRenderer()&&ShowRainTextures)
 		{
-			simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(pContext,0,view->GetScreenHeight()/2,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
+			simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(deviceContext,0,view->GetScreenHeight()/2,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{
