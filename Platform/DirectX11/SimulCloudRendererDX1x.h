@@ -122,7 +122,7 @@ namespace simul
 			ID3D11SamplerState*						m_pWrapSamplerState;
 			ID3D11SamplerState*						m_pClampSamplerState;
 
-			ID3DX11Effect*							effect;
+			crossplatform::Effect*					effect;
 			ID3DX11EffectTechnique*					m_hTechniqueCloud;
 			ID3DX11EffectTechnique*					m_hTechniqueRaytraceNearPass;
 			ID3DX11EffectTechnique*					m_hTechniqueRaytraceForward;

@@ -385,6 +385,7 @@ crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuf
 	crossplatform::PlatformConstantBuffer *b=new dx11::PlatformConstantBuffer();
 	return b;
 }
+
 crossplatform::Buffer *RenderPlatform::CreateBuffer()
 {
 	crossplatform::Buffer *b=new dx11::Buffer();

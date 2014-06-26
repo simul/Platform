@@ -94,6 +94,7 @@ namespace simul
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 		protected:
 			void DrawTexture	(void *context,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *tex,float mult);
+			void EnsureEffectIsBuilt(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &opts,const std::map<std::string,std::string> &defines);
 		};
 	}
 }

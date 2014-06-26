@@ -3,6 +3,7 @@
 #include <set>
 #include <map>
 #include <string>
+#include <vector>
 #include "Export.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
@@ -19,6 +20,7 @@ namespace simul
 		class Material;
 		class Effect;
 		class EffectTechnique;
+		struct EffectDefineOptions;
 		class Light;
 		class Texture;
 		class Mesh;
@@ -75,6 +77,9 @@ namespace simul
 			virtual Buffer					*CreateBuffer					()	=0;
 			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *,Buffer *)	=0;
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers)=0;
+			void							EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &defines);
+		private:
+			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};
 	}
 }

@@ -3,6 +3,7 @@
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include <string>
 #include <map>
+#include <vector>
 struct ID3DX11Effect;
 struct ID3DX11EffectTechnique;
 typedef unsigned int GLuint;
@@ -126,6 +127,13 @@ namespace simul
 			IndexMap techniques_by_index;
 			EffectTechnique *GetTechniqueByName(const char *name);
 			EffectTechnique *GetTechniqueByIndex(int index);
+		};
+		/// A crossplatform structure for a #define and its possible values.
+		/// This allows all of the macro combinations to be built to binary.
+		struct SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions
+		{
+			std::string name;
+			std::vector<std::string> options;
 		};
 		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
 		class SIMUL_CROSSPLATFORM_EXPORT Effect

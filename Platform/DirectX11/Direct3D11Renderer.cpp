@@ -243,7 +243,7 @@ ERRNO_CHECK
 								"-Y",
 								"+Z",
 								"-Z"};
-		renderPlatformDx11.Print(deviceContext,16,16,txt[i]);
+		//renderPlatformDx11.Print(deviceContext,16,16,txt[i]);
 		cubemapFramebuffer.Deactivate(deviceContext.platform_context);
 	}
 	if(simulWeatherRenderer)
