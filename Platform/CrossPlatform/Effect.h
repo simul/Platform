@@ -53,8 +53,11 @@ namespace simul
 			void RestoreDeviceObjects(RenderPlatform *p)
 			{
 				InvalidateDeviceObjects();
-				platformConstantBuffer=p->CreatePlatformConstantBuffer();
-				platformConstantBuffer->RestoreDeviceObjects(p,sizeof(T),(T*)this);
+				//if(p)
+				{
+					platformConstantBuffer=p->CreatePlatformConstantBuffer();
+					platformConstantBuffer->RestoreDeviceObjects(p,sizeof(T),(T*)this);
+				}
 			}
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(Effect *effect,const char *name)
