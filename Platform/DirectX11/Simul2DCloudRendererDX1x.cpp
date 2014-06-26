@@ -48,8 +48,7 @@ Simul2DCloudRendererDX11::~Simul2DCloudRendererDX11()
 
 void Simul2DCloudRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform)
 {
-	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
-;
+	m_pd3dDevice=renderPlatform->AsD3D11Device();
     RecompileShaders();
 	SAFE_RELEASE(inputLayout);
 	if(technique)

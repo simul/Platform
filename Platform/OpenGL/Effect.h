@@ -16,7 +16,7 @@ namespace simul
 			PlatformConstantBuffer():ubo(0)
 			{
 			}
-			void RestoreDeviceObjects(void *dev,size_t sz,void *addr);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *dev,size_t sz,void *addr);
 			void InvalidateDeviceObjects();
 			void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex);
 			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);

@@ -74,7 +74,6 @@ namespace simul
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
 			virtual Buffer					*CreateBuffer					()	=0;
 			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *,Buffer *)	=0;
-			virtual void					*GetDevice						()	=0;
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers)=0;
 		};
 	}

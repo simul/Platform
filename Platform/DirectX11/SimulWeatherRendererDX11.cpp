@@ -129,7 +129,7 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 		base2DCloudRenderer		=simul2DCloudRenderer		=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
 	basePrecipitationRenderer	=simulPrecipitationRenderer	=::new(memoryInterface) PrecipitationRenderer();
 	baseAtmosphericsRenderer	=simulAtmosphericsRenderer	=::new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
-
+	
 	ConnectInterfaces();
 }
 
@@ -155,7 +155,7 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 {
 	HRESULT hr=S_OK;
 	renderPlatform=r;
-	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
+	m_pd3dDevice=renderPlatform->AsD3D11Device();
 	for(FramebufferMapDx11::iterator i=framebuffersDx11.begin();i!=framebuffersDx11.end();i++)
 		i->second->RestoreDeviceObjects(renderPlatform);
 	hdrConstants.RestoreDeviceObjects(renderPlatform);
@@ -427,7 +427,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(crossplatform::DeviceCont
 	hdrConstants.exposure						=exposure;
 	hdrConstants.gamma							=gamma;
 	hdrConstants.viewportToTexRegionScaleBias	=vec4(depthViewportXYWH.z, depthViewportXYWH.w, depthViewportXYWH.x, depthViewportXYWH.y);
-	float max_fade_distance_metres				=baseSkyRenderer->GetSkyKeyframer()->GetMaxDistanceKm()*1000.f;
+	float max_fade_distance_metres				=baseSkyRenderer?baseSkyRenderer->GetSkyKeyframer()->GetMaxDistanceKm()*1000.f:1.f;
 	hdrConstants.depthToLinFadeDistParams		=simul::math::Vector3(deviceContext.viewStruct.proj.m[3][2], max_fade_distance_metres, deviceContext.viewStruct.proj.m[2][2]*max_fade_distance_metres );
 	hdrConstants.hiResToLowResTransformXYWH		=mixedResolutionStruct.GetTransformHiResToLowRes();
 	hdrConstants.Apply(deviceContext);

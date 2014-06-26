@@ -123,7 +123,7 @@ void *PrecipitationRenderer::GetMoistureTexture()
 void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
-	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
+	m_pd3dDevice=renderPlatform->AsD3D11Device();
 	HRESULT hr=S_OK;
 	MakeMesh();
 

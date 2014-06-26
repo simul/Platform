@@ -23,7 +23,7 @@ namespace simul
 			PlatformConstantBuffer():m_pD3D11Buffer(NULL),m_pD3DX11EffectConstantBuffer(NULL)
 			{
 			}
-			void RestoreDeviceObjects(void *dev,size_t sz,void *addr);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t sz,void *addr);
 			void InvalidateDeviceObjects();
 			void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex);
 			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);

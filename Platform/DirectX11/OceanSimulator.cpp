@@ -169,7 +169,7 @@ void OceanSimulator::InvalidateDeviceObjects()
 
 void OceanSimulator::RestoreDeviceObjects(simul::crossplatform::RenderPlatform *renderPlatform)
 {
-	m_pd3dDevice=(ID3D11Device* )renderPlatform->GetDevice();
+	m_pd3dDevice=renderPlatform->AsD3D11Device();
 	// If the device becomes invalid at some point, delete current instance and generate a new one.
 	assert(m_pd3dDevice);
 	SAFE_RELEASE(m_pd3dImmediateContext);

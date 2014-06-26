@@ -108,11 +108,10 @@ void SimulCloudRendererDX1x::RecompileShaders()
 	CreateCloudEffect();
 	if(!m_pd3dDevice)
 		return;
-	
 	SAFE_RELEASE(m_pComputeShader);
 	SAFE_RELEASE(computeConstantBuffer);
 	MAKE_CONSTANT_BUFFER(computeConstantBuffer,MixCloudsConstants)
-	m_pComputeShader=LoadComputeShader(m_pd3dDevice,"MixClouds_c.hlsl");
+	//m_pComputeShader=LoadComputeShader(m_pd3dDevice,"MixClouds_c.hlsl");
 	MAKE_CONSTANT_BUFFER(cloudPerViewConstantBuffer,CloudPerViewConstants);
 	MAKE_CONSTANT_BUFFER(layerConstantsBuffer,LayerConstants);
 	
@@ -143,7 +142,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
 {
 	renderPlatform=r;
 	BaseCloudRenderer::RestoreDeviceObjects(renderPlatform);
-	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
+	m_pd3dDevice=renderPlatform->AsD3D11Device();
 	gpuCloudGenerator.RestoreDeviceObjects(renderPlatform);
 	// Allow the GPU cloud generator to directly create and modify the target textures.
 	dx11::Texture *ts[]={&cloud_textures[0],&cloud_textures[1],&cloud_textures[2]};
@@ -156,7 +155,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
 	texdesc.ViewDimension=D3D11_SRV_DIMENSION_TEXTURE3D;
 	texdesc.Texture3D.MostDetailedMip=0;
 	texdesc.Texture3D.MipLevels=1;
-
+	
 	noiseTexture				->SetResource(noiseTextureResource);
 	
 	const D3D11_INPUT_ELEMENT_DESC decl[] =

@@ -24,7 +24,7 @@ namespace simul
 		{
 		public:
 			virtual ~PlatformConstantBuffer(){}
-			virtual void RestoreDeviceObjects(void *dev,size_t sz,void *addr)=0;
+			virtual void RestoreDeviceObjects(RenderPlatform *dev,size_t sz,void *addr)=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)=0;
 			virtual void Apply(DeviceContext &deviceContext,size_t size,void *addr)=0;
@@ -54,7 +54,7 @@ namespace simul
 			{
 				InvalidateDeviceObjects();
 				platformConstantBuffer=p->CreatePlatformConstantBuffer();
-				platformConstantBuffer->RestoreDeviceObjects(p->GetDevice(),sizeof(T),(T*)this);
+				platformConstantBuffer->RestoreDeviceObjects(p,sizeof(T),(T*)this);
 			}
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(Effect *effect,const char *name)

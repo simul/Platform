@@ -35,7 +35,7 @@ GpuSkyGenerator::~GpuSkyGenerator()
 void GpuSkyGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
-	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
+	m_pd3dDevice=renderPlatform->AsD3D11Device();
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	gpuSkyConstants.RestoreDeviceObjects(m_pd3dDevice);

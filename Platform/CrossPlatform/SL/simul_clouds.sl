@@ -290,7 +290,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float depth;
 	if(near_pass)
 	{
-	//	if(dlookup.z==0)
+		if(dlookup.z==0)
 			discard;
 		depth			=dlookup.y;
 	}

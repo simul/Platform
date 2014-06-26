@@ -10,30 +10,13 @@ RWTexture2D<float> targetTexture1;
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/earth_shadow_fade.sl"
 
-StructuredBuffer<SmallLayerData> layersSB;
-
 #ifndef DETAIL_NOISE
 	#define DETAIL_NOISE 1
 #endif
 
-SamplerState lightningSamplerState
+posTexVertexOutput VS_FullScreen(idOnly IN)
 {
-    Texture = <lightningIlluminationTexture>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Border;
-	AddressV = Border;
-	AddressW = Border;
-};
-
-struct RaytraceVertexOutput
-{
-    vec4 hPosition		: SV_POSITION;
-	vec2 texCoords		: TEXCOORD0;
-};
-
-RaytraceVertexOutput VS_Raytrace(idOnly IN)
-{
-    RaytraceVertexOutput OUT;
+    posTexVertexOutput OUT;
 	vec2 poss[4]=
 	{
 		{ 1.0,-1.0},
@@ -50,13 +33,10 @@ RaytraceVertexOutput VS_Raytrace(idOnly IN)
 	OUT.hPosition.z	=OUT.hPosition.w; 
 #endif
     OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
-	// transform to coordinates corresponding to the high-res buffer - when buffers are misaligned.
-//	OUT.texCoords.xy			*=mixedResTransformXYWH.zw;
-//	OUT.texCoords.xy			+=mixedResTransformXYWH.xy;
 	return OUT;
 }
 
-RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
+RaytracePixelOutput PS_RaytraceForward(posTexVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
 	RaytracePixelOutput p	=RaytraceCloudsForward(
@@ -75,7 +55,7 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 	return p;
 }
 
-RaytracePixelOutput PS_RaytraceNearPass(RaytraceVertexOutput IN)
+RaytracePixelOutput PS_RaytraceNearPass(posTexVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
 	RaytracePixelOutput p	=RaytraceCloudsForward(
@@ -94,11 +74,6 @@ RaytracePixelOutput PS_RaytraceNearPass(RaytraceVertexOutput IN)
 	return p;
 }
 
-struct vertexInputCS
-{
-    vec4 position		: POSITION;
-    vec2 texCoords		: TEXCOORD0;
-};
 
 // Given texture position from texCoords, convert to a worldpos with shadowMatrix.
 // Then, trace towards sun to find initial intersection with cloud volume
@@ -120,7 +95,7 @@ vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
 	return vec4(m,m,m,m);
 }
 
-vec4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
+vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 {
 	vec2 texCoords			=IN.texCoords.xy;
 	RaytracePixelOutput p	=RaytraceCloudsForward(
@@ -138,7 +113,7 @@ vec4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 	return p.colour;
 }
 
-RaytracePixelOutput PS_Raytrace3DNoise(RaytraceVertexOutput IN)
+RaytracePixelOutput PS_Raytrace3DNoise(posTexVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
 	texCoords.y				=1.0-texCoords.y;
@@ -153,29 +128,6 @@ RaytracePixelOutput PS_Raytrace3DNoise(RaytraceVertexOutput IN)
 									,true
 									,true);
 	return r;
-}
-
-posTexVertexOutput VS_FullScreen(idOnly IN)
-{
-	posTexVertexOutput OUT;
-	vec2 poss[4]=
-	{
-		{ 1.0,-1.0},
-		{ 1.0, 1.0},
-		{-1.0,-1.0},
-		{-1.0, 1.0},
-	};
-	vec2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(pos,0.0,1.0);
-	// Set to far plane
-#if REVERSE_DEPTH==1
-	OUT.hPosition.z	=0.0; 
-#else
-	OUT.hPosition.z	=OUT.hPosition.w; 
-#endif
-    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
-//OUT.texCoords	+=0.5*texelOffsets;
-	return OUT;
 }
 
 posTexVertexOutput VS_CrossSection(idOnly IN)
@@ -217,14 +169,6 @@ vec4 PS_ShowShadow( posTexVertexOutput IN):SV_TARGET
 	return ShowCloudShadow(cloudShadowTexture,cloudGodraysTexture,IN.texCoords);
 }
 
-SamplerState crossSectionSamplerState
-{
-	Filter = MIN_MAG_MIP_POINT;
-	AddressU = Wrap;
-	AddressV = Wrap;
-	AddressW = Clamp;
-};
-
 #define CROSS_SECTION_STEPS 32
 vec4 CrossSection(vec2 texCoords,float yz)
 {
@@ -260,7 +204,7 @@ technique11 simul_raytrace_forward
     {
 		SetDepthStencilState(WriteDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
+		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_RaytraceForward()));
     }
 }
@@ -271,7 +215,7 @@ technique11 raytrace_near_pass
     {
 		SetDepthStencilState(WriteDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
+		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNearPass()));
     }
 }
@@ -282,7 +226,7 @@ technique11 simul_simple_raytrace
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
+		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace()));
     }
 }
@@ -293,11 +237,10 @@ technique11 simul_raytrace_3d_noise
     {
 		SetDepthStencilState(WriteDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
+		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoise()));
     }
 }
-
 
 technique11 cloud_shadow
 {
