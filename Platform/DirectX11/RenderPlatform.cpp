@@ -681,6 +681,8 @@ void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int
 			text++;
 			pos++;
 		}
+		if(*text==0)
+			break;
 		text++;
 		pos++;
 		y+=16;
