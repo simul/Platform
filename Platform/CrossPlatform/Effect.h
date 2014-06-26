@@ -135,6 +135,9 @@ namespace simul
 			std::string name;
 			std::vector<std::string> options;
 		};
+		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1);
+		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2);
+		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2,const char *option3);
 		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{

@@ -35,3 +35,29 @@ EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 {
 	return groups[name];
 }
+
+EffectDefineOptions simul::crossplatform::CreateDefineOptions(const char *name,const char *option1)
+{
+	EffectDefineOptions o;
+	o.name=name;
+	o.options.push_back(std::string(option1));
+	return o;
+}
+
+EffectDefineOptions simul::crossplatform::CreateDefineOptions(const char *name,const char *option1,const char *option2)
+{
+	EffectDefineOptions o;
+	o.name=name;
+	o.options.push_back(std::string(option1));
+	o.options.push_back(std::string(option2));
+	return o;
+}
+EffectDefineOptions simul::crossplatform::CreateDefineOptions(const char *name,const char *option1,const char *option2,const char *option3)
+{
+	EffectDefineOptions o;
+	o.name=name;
+	o.options.push_back(std::string(option1));
+	o.options.push_back(std::string(option2));
+	o.options.push_back(std::string(option3));
+	return o;
+}

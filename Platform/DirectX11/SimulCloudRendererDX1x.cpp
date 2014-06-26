@@ -513,9 +513,9 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	defines["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
 	defines["USE_LIGHT_TABLES"]		=UseLightTables?"1":"0";
 	std::vector<crossplatform::EffectDefineOptions> opts;
-	opts.push_back(crossplatform::EffectDefineOptions("DETAIL_NOISE","1"));
-	opts.push_back(crossplatform::EffectDefineOptions("REVERSE_DEPTH","0","1"));
-	opts.push_back(crossplatform::EffectDefineOptions("USE_LIGHT_TABLES","0","1"));
+	opts.push_back(crossplatform::CreateDefineOptions("DETAIL_NOISE","1"));
+	opts.push_back(crossplatform::CreateDefineOptions("REVERSE_DEPTH","0","1"));
+	opts.push_back(crossplatform::CreateDefineOptions("USE_LIGHT_TABLES","0","1"));
 	renderPlatform->EnsureEffectIsBuilt("simul_clouds",opts);
 	effect							=renderPlatform->CreateEffect("simul_clouds",defines);
 	if(cloudKeyframer->GetUse3DNoise())
