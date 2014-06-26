@@ -43,6 +43,7 @@
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="Macros.h" />
+    <ClInclude Include="PixelFormat.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -186,5 +187,6 @@
     </ClCompile>
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="Layout.cpp" />
+    <ClCompile Include="RenderPlatform.cpp" />
   </ItemGroup>
 </Project>

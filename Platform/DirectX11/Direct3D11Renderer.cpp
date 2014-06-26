@@ -243,7 +243,7 @@ ERRNO_CHECK
 								"-Y",
 								"+Z",
 								"-Z"};
-		renderPlatformDx11.Print(deviceContext,16,16,txt[i]);
+		//renderPlatformDx11.Print(deviceContext,16,16,txt[i]);
 		cubemapFramebuffer.Deactivate(deviceContext.platform_context);
 	}
 	if(simulWeatherRenderer)
@@ -477,7 +477,8 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		view->GetFramebuffer()->Deactivate(pContext);
 		view->ResolveFramebuffer(deviceContext);
-		simulHDRRenderer->Render(deviceContext,view->GetResolvedHDRBuffer(),cameraViewStruct.exposure,cameraViewStruct.gamma);
+		if(simulHDRRenderer)
+			simulHDRRenderer->Render(deviceContext,view->GetResolvedHDRBuffer(),cameraViewStruct.exposure,cameraViewStruct.gamma);
 	}
 	SIMUL_COMBINED_PROFILE_START(pContext,"Overlays")
 	if(simulWeatherRenderer)

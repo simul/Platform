@@ -266,7 +266,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 {
 	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	dim=2;
-	ID3D11Device *pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
+	ID3D11Device *pd3dDevice=renderPlatform->AsD3D11Device();
 	D3D11_TEXTURE2D_DESC textureDesc;
 	bool ok=true;
 	if(texture)

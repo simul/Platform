@@ -186,7 +186,7 @@ ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	
 	if(!texturePathsUtf8.size())
 		texturePathsUtf8.push_back("media/textures");
-	std::string str=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename,texturePathsUtf8);
+	std::string str		=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename,texturePathsUtf8);
 	std::wstring wstr	=simul::base::Utf8ToWString(str);
 #if WINVER<0x602
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
@@ -205,8 +205,10 @@ ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	int flags=0;
 	DirectX::TexMetadata metadata;
 	DirectX::ScratchImage scratchImage;
-	DirectX::LoadFromWICFile( wstr.c_str(),flags,&metadata,scratchImage);
+	DirectX::LoadFromWICFile(wstr.c_str(),flags,&metadata,scratchImage);
 	const DirectX::Image *image=scratchImage.GetImage(0,0,0);
+	if(!image)
+		return NULL;
     HRESULT hr=CreateShaderResourceView(  pd3dDevice,image, 1, metadata,&tex );
 #endif
 	return tex;
@@ -562,6 +564,7 @@ ERRNO_CHECK
 	// See if there's a binary that's newer than the file date.
 	bool changes_detected=(shaderBuildMode==ALWAYS_BUILD);
 	double binary_date_jdn=0.0;
+	//std::cout<<"Checking DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
 	if(shaderBuildMode==BUILD_IF_CHANGED)
 	{
 		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
@@ -602,17 +605,21 @@ ERRNO_CHECK
 ERRNO_CHECK
 	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
 	std::cout<<"Rebuilding DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
-	hr=D3DCompile(		textData,
-						textSize,
-						text_filename_utf8.c_str(),	//LPCSTR pSourceName,
-						macros,						//const D3D_SHADER_MACRO *pDefines,
-						&shaderIncludeHandler,		//ID3DInclude *pInclude,
-						NULL,						//LPCSTR pEntrypoint,
-						"fx_5_0",					//LPCSTR pTarget,
-						ShaderFlags,				//UINT Flags1,
-						FXFlags,					//UINT Flags2,
-						&binaryBlob,				//ID3DBlob **ppCode,
-						&errorMsgs					//ID3DBlob **ppErrorMsgs
+	//hr=D3DX11CompileEffectFromMemory(
+	hr=D3DCompile(		
+						textData
+						,textSize
+						,text_filename_utf8.c_str()	//LPCSTR pSourceName,
+						,macros						//const D3D_SHADER_MACRO *pDefines,
+						,&shaderIncludeHandler		//ID3DInclude *pInclude,
+						,NULL						//LPCSTR pEntrypoint,
+						//,0
+						//,pDevice
+						,"fx_5_0"					//LPCSTR pTarget,
+						,ShaderFlags				//UINT Flags1,
+						,FXFlags					//UINT Flags2,
+						,&binaryBlob				//ID3DBlob **ppCode,
+						,&errorMsgs					//ID3DBlob **ppErrorMsgs
 						);
 ERRNO_CHECK
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(textData);
@@ -755,6 +762,7 @@ static const DWORD default_effect_flags=0;
 	assert((*effect)->IsValid());
 
 	// Name stuff:
+#ifdef _DEBUG
 	ID3DX11Effect *e=*effect;
 	if(e)
 	{
@@ -788,6 +796,7 @@ static const DWORD default_effect_flags=0;
 			}
 		}
 	}
+#endif
 	delete [] macros;
 	return hr;
 }

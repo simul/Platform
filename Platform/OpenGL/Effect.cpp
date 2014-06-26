@@ -26,7 +26,7 @@ using namespace opengl;
 		return;\
 	}
 
-void PlatformConstantBuffer::RestoreDeviceObjects(void *dev,size_t sz,void *addr)
+void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *,size_t sz,void *addr)
 {
 	InvalidateDeviceObjects();
 	glGenBuffers(1, &ubo);

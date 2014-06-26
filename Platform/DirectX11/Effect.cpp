@@ -14,9 +14,11 @@ using namespace simul;
 using namespace dx11;
 
 
-void dx11::PlatformConstantBuffer::RestoreDeviceObjects(void *dev,size_t size,void *addr)
+void dx11::PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t size,void *addr)
 {
 	InvalidateDeviceObjects();
+	if(!r)
+		return;
 	SAFE_RELEASE(m_pD3D11Buffer);	
 	D3D11_SUBRESOURCE_DATA cb_init_data;
 	cb_init_data.pSysMem			= addr;
@@ -29,7 +31,7 @@ void dx11::PlatformConstantBuffer::RestoreDeviceObjects(void *dev,size_t size,vo
 	cb_desc.MiscFlags			= 0;
 	cb_desc.ByteWidth			= (UINT)(PAD16(size));
 	cb_desc.StructureByteStride = 0;
-	ID3D11Device *device=(ID3D11Device*)dev;
+	ID3D11Device *device=r->AsD3D11Device();
 	device->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
 	if(m_pD3DX11EffectConstantBuffer)
 		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);

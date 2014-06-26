@@ -3,6 +3,7 @@
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include <string>
 #include <map>
+#include <vector>
 struct ID3DX11Effect;
 struct ID3DX11EffectTechnique;
 typedef unsigned int GLuint;
@@ -24,7 +25,7 @@ namespace simul
 		{
 		public:
 			virtual ~PlatformConstantBuffer(){}
-			virtual void RestoreDeviceObjects(void *dev,size_t sz,void *addr)=0;
+			virtual void RestoreDeviceObjects(RenderPlatform *dev,size_t sz,void *addr)=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)=0;
 			virtual void Apply(DeviceContext &deviceContext,size_t size,void *addr)=0;
@@ -53,8 +54,11 @@ namespace simul
 			void RestoreDeviceObjects(RenderPlatform *p)
 			{
 				InvalidateDeviceObjects();
-				platformConstantBuffer=p->CreatePlatformConstantBuffer();
-				platformConstantBuffer->RestoreDeviceObjects(p->GetDevice(),sizeof(T),(T*)this);
+				//if(p)
+				{
+					platformConstantBuffer=p->CreatePlatformConstantBuffer();
+					platformConstantBuffer->RestoreDeviceObjects(p,sizeof(T),(T*)this);
+				}
 			}
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(Effect *effect,const char *name)
@@ -124,6 +128,16 @@ namespace simul
 			EffectTechnique *GetTechniqueByName(const char *name);
 			EffectTechnique *GetTechniqueByIndex(int index);
 		};
+		/// A crossplatform structure for a #define and its possible values.
+		/// This allows all of the macro combinations to be built to binary.
+		struct SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions
+		{
+			std::string name;
+			std::vector<std::string> options;
+		};
+		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1);
+		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2);
+		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2,const char *option3);
 		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{

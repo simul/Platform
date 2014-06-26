@@ -164,7 +164,7 @@ void OceanRenderer::RecompileShaders()
 void OceanRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform)
 {
 	InvalidateDeviceObjects();
-	m_pd3dDevice=(ID3D11Device*)renderPlatform->GetDevice();
+	m_pd3dDevice=renderPlatform->AsD3D11Device();
 	oceanSimulator=new OceanSimulator(seaKeyframer);
 	oceanSimulator->RestoreDeviceObjects(renderPlatform);
 	

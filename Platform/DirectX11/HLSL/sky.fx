@@ -342,11 +342,11 @@ vec4 PS_Planet(svertexOutput IN): SV_TARGET
 
 technique11 show_fade_table
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTable()));
@@ -355,11 +355,11 @@ technique11 show_fade_table
 
 technique11 show_illumination_buffer
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowIlluminationBuffer()));
@@ -368,11 +368,11 @@ technique11 show_illumination_buffer
 
 technique11 show_fade_texture
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTexture()));
@@ -381,11 +381,11 @@ technique11 show_fade_texture
 
 technique11 colour_technique
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Colour()));
@@ -394,11 +394,11 @@ technique11 colour_technique
 
 technique11 show_light_table
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Show3DLightTable()));
@@ -407,11 +407,11 @@ technique11 show_light_table
 
 technique11 show_2d_light_table
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Show2DLightTable()));
@@ -420,11 +420,11 @@ technique11 show_2d_light_table
 
 technique11 fade_3d_to_2d
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
@@ -433,11 +433,11 @@ technique11 fade_3d_to_2d
 
 technique11 show_cross_section
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
@@ -446,7 +446,7 @@ technique11 show_cross_section
  
 technique11 overcast_inscatter
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
@@ -459,11 +459,11 @@ technique11 overcast_inscatter
  
 technique11 skylight_and_overcast
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_SkylightAndOvercast3Dto2D()));
@@ -472,11 +472,11 @@ technique11 skylight_and_overcast
 
 technique11 illumination_buffer
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_IlluminationBuffer()));
@@ -485,21 +485,20 @@ technique11 illumination_buffer
 
 technique11 stars
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Stars()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Stars()));
 		SetDepthStencilState( TestDepth, 0 );
-		SetBlendState(AddBlend, vec4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
     }
 }
 
-
 technique11 sun
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
@@ -510,10 +509,9 @@ technique11 sun
     }
 }
 
-
 technique11 query
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
@@ -524,36 +522,35 @@ technique11 query
     }
 }
 
-
 technique11 flare
 {
-    pass p0 
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Flare()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
     }
 }
 
 technique11 planet
 {
-    pass p0 
+    pass p0
     {		
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
-		SetDepthStencilState( TestDepth, 0 );
-		SetBlendState(AlphaBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetDepthStencilState(TestDepth,0);
+		SetBlendState(AlphaBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
     }
 }
 
 technique11 interp_light_table
 {
-    pass p0 
+    pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_InterpLightTable()));
     }

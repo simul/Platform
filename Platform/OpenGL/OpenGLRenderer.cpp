@@ -29,7 +29,7 @@
 #pragma comment(lib,"opengl32")
 #pragma comment(lib,"glfx")
 
-#ifdef _DLL
+#ifdef SIMUL_DYNAMIC_LINK
 #ifdef _DEBUG
 #pragma comment(lib,"glew32d")
 #else
