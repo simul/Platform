@@ -31,7 +31,7 @@ namespace simul
 		struct LayoutDesc;
 		/// Base class for API-specific rendering.
 		/// Be sure to make the following calls at the appropriate place: RestoreDeviceObjects(), InvalidateDeviceObjects(), RecompileShaders(), SetReverseDepth()
-		class RenderPlatform
+		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
 		public:
 			struct Vertext
