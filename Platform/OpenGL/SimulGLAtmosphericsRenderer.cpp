@@ -65,7 +65,7 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 	crossplatform::EffectTechniqueGroup *group=effect->GetTechniqueGroupByName("atmospherics_overlay");
 	if(group)
 	{
-		for(int i=0;i<group->techniques.size();i++)
+		for(int i=0;i<(int)group->techniques.size();i++)
 		{
 			opengl::EffectTechnique *t=(opengl::EffectTechnique *)group->GetTechniqueByIndex(i);
 			if(t)

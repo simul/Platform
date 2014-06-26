@@ -355,7 +355,7 @@ Raytrace=false;
 			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	}
 	simul::sky::float4 gl_fog;
-	bool default_fog=(bool)glIsEnabled(GL_FOG);
+	bool default_fog=(glIsEnabled(GL_FOG)!=0);
 	if(default_fog)
 		glGetFloatv(GL_FOG_COLOR,gl_fog);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
@@ -863,7 +863,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 	::DrawLines(vertices,vertex_count,strip);
 }
 
-void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
+void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height)
 {
 GL_ERROR_CHECK
 	glDisable(GL_BLEND);

@@ -11,7 +11,7 @@ void RenderPlatform::EnsureEffectIsBuiltPartialSpec(const char *filename_utf8,co
 		std::vector<crossplatform::EffectDefineOptions> opts=options;
 		opts.pop_back();
 		crossplatform::EffectDefineOptions opt=options.back();
-		for(int i=0;i<opt.options.size();i++)
+		for(int i=0;i<(int)opt.options.size();i++)
 		{
 			std::map<std::string,std::string> defs=defines;
 			defs[opt.name]=opt.options[i];

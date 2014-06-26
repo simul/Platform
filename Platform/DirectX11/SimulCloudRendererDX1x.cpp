@@ -285,7 +285,7 @@ void SimulCloudRendererDX1x::RenderNoise(crossplatform::DeviceContext &deviceCon
 	ID3DX11EffectTechnique *randomTechnique	=NULL;
 	ID3DX11EffectTechnique *noiseTechnique	=NULL;
 	std::map<std::string,std::string> defines;
-	effect=renderPlatform->CreateEffect("simul_rendernoise",defines);
+	effect							=renderPlatform->CreateEffect("simul_rendernoise",defines);
 	randomTechnique					=effect->asD3DX11Effect()->GetTechniqueByName("simul_random");
 	noiseTechnique					=effect->asD3DX11Effect()->GetTechniqueByName("simul_noise_2d");
 
@@ -516,7 +516,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	opts.push_back(crossplatform::CreateDefineOptions("DETAIL_NOISE","1"));
 	opts.push_back(crossplatform::CreateDefineOptions("REVERSE_DEPTH","0","1"));
 	opts.push_back(crossplatform::CreateDefineOptions("USE_LIGHT_TABLES","0","1"));
-//	renderPlatform->EnsureEffectIsBuilt("simul_clouds",opts);
+	renderPlatform->EnsureEffectIsBuilt("simul_clouds",opts);
 	SAFE_DELETE(effect);
 	effect							=renderPlatform->CreateEffect("simul_clouds",defines);
 	if(cloudKeyframer->GetUse3DNoise())
