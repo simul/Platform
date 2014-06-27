@@ -18,6 +18,11 @@ Effect::Effect()
 
 Effect::~Effect()
 {
+	for(crossplatform::TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
+	{
+		delete i->second;
+	}
+	techniques.clear();
 	SIMUL_ASSERT(apply_count==0);
 }
 

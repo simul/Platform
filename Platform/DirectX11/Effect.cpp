@@ -129,12 +129,14 @@ void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char
 
 dx11::Effect::~Effect()
 {
+	InvalidateDeviceObjects();
+}
+
+void Effect::InvalidateDeviceObjects()
+{
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
 	SAFE_RELEASE(e);
-	for(crossplatform::TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
-	{
-		delete i->second;
-	}
+	platform_effect=e;
 }
 
 crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *name)

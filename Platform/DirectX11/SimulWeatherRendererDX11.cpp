@@ -356,6 +356,7 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(crossplatform::DeviceContext &
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderSkyAsOverlay")
 	TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
+	SIMUL_ASSERT(fb->Width!=0,"SimulWeatherRendererDX11 screensize ");
 ERRNO_CHECK
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(deviceContext,hiResDepthTexture,exposure,depthViewportXYWH);
