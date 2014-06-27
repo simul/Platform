@@ -13,13 +13,13 @@ float depthToLinearDistance(float depth,vec4 depthToLinFadeDistParams)
 	if(depth>=1.0)
 		return UNITY_DIST;//max_fade_distance_metres;
 #endif
-	float linearFadeDistanceZ = depthToLinFadeDistParams.x/(depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
+	float linearFadeDistanceZ = depthToLinFadeDistParams.x/(depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z)+depthToLinFadeDistParams.w*depth;
 	return linearFadeDistanceZ;
 }
 
 vec4 depthToLinearDistance(vec4 depth,vec4 depthToLinFadeDistParams)
 {
-	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz);
+	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz)+depthToLinFadeDistParams.wwww*depth;
 #if REVERSE_DEPTH==1
 	vec4 st=step(depth,0.0);
 	linearFadeDistanceZ*=(vec4(1.0,1.0,1.0,1.0)-st);
@@ -32,7 +32,7 @@ vec4 depthToLinearDistance(vec4 depth,vec4 depthToLinFadeDistParams)
 
 vec2 depthToLinearDistance(vec2 depth,vec4 depthToLinFadeDistParams)
 {
-	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz);
+	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz)+depthToLinFadeDistParams.ww*depth;
 #if REVERSE_DEPTH==1
 	vec2 st=step(depth,0.0);
 	linearFadeDistanceZ*=(vec2(1.0,1.0)-st);
@@ -54,7 +54,7 @@ float depthToFadeDistance(float depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2
 	if(depth>=1.0)
 		return UNITY_DIST;
 #endif
-	float linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
+	float linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z)+depthToLinFadeDistParams.w*depth;
 	float Tx=xy.x*tanHalf.x;
 	float Ty=xy.y*tanHalf.y;
 	float fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
@@ -63,7 +63,7 @@ float depthToFadeDistance(float depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2
 
 vec2 depthToFadeDistance(vec2 depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2 tanHalf)
 {
-	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
+	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z)+depthToLinFadeDistParams.w*depth;
 	float Tx=xy.x*tanHalf.x;
 	float Ty=xy.y*tanHalf.y;
 	vec2 fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
@@ -93,10 +93,20 @@ float fadeDistanceToDepth(float dist,vec2 xy,vec4 depthToLinFadeDistParams,vec2 
 	float Tx				=xy.x*tanHalf.x;
 	float Ty				=xy.y*tanHalf.y;
 	float linearDistanceZ	=dist/sqrt(1.0+Tx*Tx+Ty*Ty);
-	float depth =((depthToLinFadeDistParams.x / linearDistanceZ) - depthToLinFadeDistParams.z) / depthToLinFadeDistParams.y;
+	float depth =0;
+#if 0
+	float invDepth=depthToLinFadeDistParams.y/((depthToLinFadeDistParams.x / linearDistanceZ) - depthToLinFadeDistParams.z)
+					+depthToLinFadeDistParams.w/(linearDistanceZ - depthToLinFadeDistParams.x);
+	depth=1.0/invDepth;
+#else
+	if(depthToLinFadeDistParams.y>0)
+		depth=((depthToLinFadeDistParams.x / linearDistanceZ) - depthToLinFadeDistParams.z) / depthToLinFadeDistParams.y;
+	else // LINEAR DEPTH case:
+		depth=(linearDistanceZ - depthToLinFadeDistParams.x) / depthToLinFadeDistParams.w;
+#endif
 	return depth;
 }
-
+/*
 float fadeDistanceToDepth(float dist,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
 {
 #if REVERSE_DEPTH==1
@@ -116,7 +126,7 @@ float fadeDistanceToDepth(float dist,vec2 xy,float nearZ,float farZ,vec2 tanHalf
 #endif
 	return depth;
 }
-
+*/
 vec2 viewportCoordToTexRegionCoord(vec2 iViewportCoord,vec4 iViewportToTexRegionScaleBias )
 {
 	return iViewportCoord * iViewportToTexRegionScaleBias.xy + iViewportToTexRegionScaleBias.zw;

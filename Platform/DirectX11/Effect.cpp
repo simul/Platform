@@ -81,8 +81,16 @@ int EffectTechnique::NumPasses() const
 	return (int)desc.Passes;
 }
 
+dx11::Effect::Effect()
+{
+}
 
 dx11::Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+{
+	Load(renderPlatform,filename_utf8,defines);
+}
+
+void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	ID3DX11Effect *e=NULL;
 	if(!renderPlatform)

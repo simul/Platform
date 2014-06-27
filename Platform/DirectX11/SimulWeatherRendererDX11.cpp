@@ -116,19 +116,19 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	,exposure_multiplier(1.f)
 	,memoryInterface(mem)
 {
-	simul::sky::SkyKeyframer *sk		=env->skyKeyframer;
-	simul::clouds::CloudKeyframer *ck2d	=env->cloud2DKeyframer;
-	simul::clouds::CloudKeyframer *ck3d	=env->cloudKeyframer;
-	simulSkyRenderer			=::new(memoryInterface) SimulSkyRendererDX1x(sk, memoryInterface);
-	baseSkyRenderer				=simulSkyRenderer;
+	sky::SkyKeyframer *sk			=env->skyKeyframer;
+	clouds::CloudKeyframer *ck2d	=env->cloud2DKeyframer;
+	clouds::CloudKeyframer *ck3d	=env->cloudKeyframer;
+	simulSkyRenderer				=::new(memoryInterface) SimulSkyRendererDX1x(sk, memoryInterface);
+	baseSkyRenderer					=simulSkyRenderer;
 	
-	simulCloudRenderer			=::new(memoryInterface) SimulCloudRendererDX1x(ck3d, memoryInterface);
-	baseCloudRenderer			=simulCloudRenderer;
-	baseLightningRenderer		=simulLightningRenderer	=::new(memoryInterface) LightningRenderer(ck3d,sk);
+	simulCloudRenderer				=::new(memoryInterface) SimulCloudRendererDX1x(ck3d, memoryInterface);
+	baseCloudRenderer				=simulCloudRenderer;
+	baseLightningRenderer			=simulLightningRenderer	=::new(memoryInterface) LightningRenderer(ck3d,sk);
 	if(env->cloud2DKeyframer)
-		base2DCloudRenderer		=simul2DCloudRenderer		=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
-	basePrecipitationRenderer	=simulPrecipitationRenderer	=::new(memoryInterface) PrecipitationRenderer();
-	baseAtmosphericsRenderer	=simulAtmosphericsRenderer	=::new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
+		base2DCloudRenderer			=simul2DCloudRenderer		=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
+	basePrecipitationRenderer		=simulPrecipitationRenderer	=::new(memoryInterface) PrecipitationRenderer();
+	baseAtmosphericsRenderer		=simulAtmosphericsRenderer	=::new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
 	
 	ConnectInterfaces();
 }

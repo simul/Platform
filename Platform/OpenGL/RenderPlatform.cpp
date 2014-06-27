@@ -304,7 +304,7 @@ glDisable(GL_BLEND);
 glDisable(GL_CULL_FACE);
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	static float cc=300000.f;
-	vec4 depthToLinFadeDistParams(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
+	vec4 depthToLinFadeDistParams=camera::GetDepthToDistanceParameters(deviceContext.viewStruct,cc);//(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
 	struct Viewport
 	{
 		int X,Y,Width,Height;

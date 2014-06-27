@@ -185,8 +185,10 @@ void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,vo
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	textureSRV->GetDesc(&desc);
 	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
-	dx11::setTexture(m_pTonemapEffect,"imageTexture"	,textureSRV);
-	dx11::setTexture(m_pTonemapEffect,"imageTextureMS"	,textureSRV);
+	if(msaa)
+		dx11::setTexture(m_pTonemapEffect,"imageTextureMS"	,textureSRV);
+	else
+		dx11::setTexture(m_pTonemapEffect,"imageTexture"	,textureSRV);
 	hdrConstants.gamma		=Gamma;
 	hdrConstants.exposure	=Exposure;
 	hdrConstants.Apply(deviceContext);

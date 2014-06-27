@@ -343,7 +343,8 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 
 	static float near_rain_distance_metres=250.f;
 	perViewConstants.nearRainDistance=near_rain_distance_metres/max_fade_distance_metres;
-	perViewConstants.depthToLinFadeDistParams = vec4(deviceContext.viewStruct.proj.m[3][2], max_fade_distance_metres,deviceContext.viewStruct.proj.m[2][2]*max_fade_distance_metres,0.0f);
+	perViewConstants.depthToLinFadeDistParams =camera::GetDepthToDistanceParameters(deviceContext.viewStruct,max_fade_distance_metres);
+	// vec4(deviceContext.viewStruct.proj.m[3][2], max_fade_distance_metres,deviceContext.viewStruct.proj.m[2][2]*max_fade_distance_metres,0.0f);
 	
 	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
 

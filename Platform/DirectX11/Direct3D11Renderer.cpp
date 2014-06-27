@@ -395,6 +395,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		else
 			deviceContext.viewStruct.proj=cam->MakeProjectionMatrix(aspect);
 		deviceContext.viewStruct.view=cam->MakeViewMatrix();
+		deviceContext.viewStruct.depthTextureStyle=crossplatform::PROJECTION;
 	}
 	if(simulWeatherRenderer)
 	{
