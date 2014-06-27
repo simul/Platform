@@ -13,14 +13,13 @@ float depthToLinearDistance(float depth,vec4 depthToLinFadeDistParams)
 	if(depth>=1.0)
 		return UNITY_DIST;//max_fade_distance_metres;
 #endif
-	float linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
+	float linearFadeDistanceZ = depthToLinFadeDistParams.x/(depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
 	return linearFadeDistanceZ;
 }
 
 vec4 depthToLinearDistance(vec4 depth,vec4 depthToLinFadeDistParams)
 {
 	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz);
-	
 #if REVERSE_DEPTH==1
 	vec4 st=step(depth,0.0);
 	linearFadeDistanceZ*=(vec4(1.0,1.0,1.0,1.0)-st);
