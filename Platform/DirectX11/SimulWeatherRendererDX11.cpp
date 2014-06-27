@@ -166,7 +166,7 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	}
 	if(simulLightningRenderer)
-		simulLightningRenderer->RestoreDeviceObjects(m_pd3dDevice);
+		simulLightningRenderer->RestoreDeviceObjects(renderPlatform);
 /*	if(simul2DCloudRenderer)
 	{
 		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());

@@ -42,9 +42,6 @@ namespace simul
 			
 			void SetBufferSize(int w,int h);
 
-			// BaseAtmosphericsRenderer.
-			void RecompileShaders();
-
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform* r);
 		protected:

@@ -45,11 +45,6 @@ SimulAtmosphericsRendererDX1x::~SimulAtmosphericsRendererDX1x()
 	Destroy();
 }
 
-void SimulAtmosphericsRendererDX1x::RecompileShaders()
-{
-	BaseAtmosphericsRenderer::RecompileShaders();
-}
-
 void SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	HRESULT hr=S_OK;

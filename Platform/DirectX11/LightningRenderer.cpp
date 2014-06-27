@@ -4,7 +4,9 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "D3dx11effect.h"
 
 using namespace simul;
@@ -21,25 +23,29 @@ LightningRenderer::~LightningRenderer()
 {
 }
 
-void LightningRenderer::RestoreDeviceObjects(void* dev)
+void LightningRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	m_pd3dDevice=(ID3D11Device*)dev;
+	BaseLightningRenderer::RestoreDeviceObjects(r);
+	m_pd3dDevice=renderPlatform->AsD3D11Device();
 	vertexBuffer.ensureBufferSize(m_pd3dDevice,1000,NULL,false,true);
-	lightningConstants.RestoreDeviceObjects(m_pd3dDevice);
-	lightningPerViewConstants.RestoreDeviceObjects(m_pd3dDevice);
+	lightningConstants.RestoreDeviceObjects(renderPlatform);
+	lightningPerViewConstants.RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 }
 
 void LightningRenderer::RecompileShaders()
 {
-	SAFE_RELEASE(effect);
+	SAFE_DELETE(effect);
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
-	CreateEffect(m_pd3dDevice,&effect,"lightning.fx",defines);
+	std::vector<crossplatform::EffectDefineOptions> opts;
+	opts.push_back(crossplatform::CreateDefineOptions("REVERSE_DEPTH","0","1"));
+	renderPlatform->EnsureEffectIsBuilt("lightning",opts);
+	effect=renderPlatform->CreateEffect("lightning",defines);
 	D3DX11_PASS_DESC PassDesc;
-	effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->GetDesc(&PassDesc);
+	effect->GetTechniqueByIndex(0)->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
 	SAFE_RELEASE(inputLayout);
 	const D3D11_INPUT_ELEMENT_DESC mesh_layout_desc[] =
     {
@@ -53,7 +59,7 @@ void LightningRenderer::RecompileShaders()
 
 void LightningRenderer::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(effect);
+	SAFE_DELETE(effect);
 	SAFE_RELEASE(inputLayout);
 	lightningConstants.InvalidateDeviceObjects();
 	lightningPerViewConstants.InvalidateDeviceObjects();
@@ -168,23 +174,27 @@ void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,cross
 	vertexBuffer.apply(pContext,0);
 	pContext->IASetInputLayout(inputLayout);
 
-	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("lightning_thick");
+	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("lightning_thick");
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
-	dx11::setTexture(effect,"depthTextureMS",depth_tex->AsD3D11ShaderResourceView());
-	dx11::setTexture(effect,"depthTexture",depth_tex->AsD3D11ShaderResourceView());
-	dx11::setTexture(effect,"cloudDepthTexture",cloud_depth_tex->AsD3D11ShaderResourceView());
-	ApplyPass(pContext,tech->GetPassByIndex(0));
+	if(depth_tex->GetSampleCount()>0)
+		effect->SetTexture("depthTextureMS",depth_tex);
+	else
+		effect->SetTexture("depthTexture",depth_tex);
+	effect->SetTexture("cloudDepthTexture",cloud_depth_tex);
+	effect->Apply(deviceContext,tech,0);
 	for(int i=0;i<(int)start.size();i++)
 	{
 		if(!thick[i])
 		{
 			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
 			tech=effect->GetTechniqueByName("lightning_thin");
-			ApplyPass(pContext,tech->GetPassByIndex(0));
+			effect->Unapply(deviceContext);
+			effect->Apply(deviceContext,tech,0);
 		}
 		if(count[i]>0)
 			pContext->Draw(count[i],start[i]);
 	}
+	effect->Unapply(deviceContext);
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout(previousInputLayout);
 	SIMUL_COMBINED_PROFILE_END(pContext)

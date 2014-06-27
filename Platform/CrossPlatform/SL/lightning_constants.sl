@@ -1,19 +1,17 @@
 #ifndef LIGHTNING_CONSTANTS_SL
 #define LIGHTNING_CONSTANTS_SL
 
-uniform_buffer LightningConstants SIMUL_BUFFER_REGISTER(10)
-{
+SIMUL_CONSTANT_BUFFER(LightningConstants,10)
 	uniform vec4 lightningColour;
-};
+SIMUL_CONSTANT_BUFFER_END
 
-uniform_buffer LightningPerViewConstants SIMUL_BUFFER_REGISTER(8)
-{
+SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
 	uniform mat4 worldViewProj;
 	uniform vec4 depthToLinFadeDistParams;
 	uniform vec2 viewportPixels;
 	uniform vec2 _line_width;
 	uniform vec4 viewportToTexRegionScaleBias;
-};
+SIMUL_CONSTANT_BUFFER_END
 
 struct LightningVertex
 {
