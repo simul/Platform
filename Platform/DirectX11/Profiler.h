@@ -47,10 +47,11 @@ namespace simul
 			~Profiler();
 			void Initialize(ID3D11Device* device);
 			void Uninitialize();
-					void Begin(void *context,const char *name);
-					void End();
-
-			void EndFrame(ID3D11DeviceContext* context);
+			void Begin(void *context,const char *name);
+			void End();
+			
+			void StartFrame(void* context){}
+			void EndFrame(void* context);
 	
 			float GetTime(const std::string &name) const;
 			//! Get all the active profilers as a text report.

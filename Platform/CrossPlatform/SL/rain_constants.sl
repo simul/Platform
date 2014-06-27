@@ -1,8 +1,7 @@
 #ifndef RAIN_CONSTANTS_SL
 #define RAIN_CONSTANTS_SL
 
-uniform_buffer RainConstants SIMUL_BUFFER_REGISTER(10)
-{
+SIMUL_CONSTANT_BUFFER(RainConstants,10)
 	uniform vec4 lightColour;
 	uniform vec3 lightDir;
 	uniform float snowSize;
@@ -12,17 +11,15 @@ uniform_buffer RainConstants SIMUL_BUFFER_REGISTER(10)
 	uniform float flurryRate;
 	uniform float phase;
 	uniform float timeStepSeconds;
-};
+SIMUL_CONSTANT_BUFFER_END
 
-uniform_buffer MoisturePerViewConstants SIMUL_BUFFER_REGISTER(9)
-{
+SIMUL_CONSTANT_BUFFER(MoisturePerViewConstants,9)
 	uniform mat4 invViewProj;
 	uniform vec4 depthViewport;		// xy = pos, zw = size
 	uniform vec4 depthToLinFadeDist;
-};
+SIMUL_CONSTANT_BUFFER_END
 
-uniform_buffer RainPerViewConstants SIMUL_BUFFER_REGISTER(8)
-{
+SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	uniform mat4 worldViewProj[2];
 	uniform mat4 worldView[2];
 	uniform mat4 invViewProj_2[2];
@@ -34,12 +31,11 @@ uniform_buffer RainPerViewConstants SIMUL_BUFFER_REGISTER(8)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec2 tanHalfFov;
 	uniform vec2 nearRainDistance;// as a proportion of max fade distance
-};
+SIMUL_CONSTANT_BUFFER_END
 
-uniform_buffer RainOsdConstants SIMUL_BUFFER_REGISTER(9)
-{
+SIMUL_CONSTANT_BUFFER(RainOsdConstants,9)
 	uniform vec4 rect;
-};
+SIMUL_CONSTANT_BUFFER_END
 
 struct PrecipitationVertex
 {

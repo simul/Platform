@@ -356,10 +356,10 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(crossplatform::DeviceContext &
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderSkyAsOverlay")
 	TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
-ERRNO_CHECK
+
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(deviceContext,hiResDepthTexture,exposure,depthViewportXYWH);
-ERRNO_CHECK
+
 	//if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
 	//	base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,false,view_id,depthViewportXYWH);
 	// Now we render the low-resolution elements to the low-res buffer.
@@ -369,16 +369,16 @@ ERRNO_CHECK
 		fb->lowResFarFramebufferDx11.ActivateViewport(deviceContext,depthViewportXYWH.x,depthViewportXYWH.y,depthViewportXYWH.z,depthViewportXYWH.w);
 		fb->lowResFarFramebufferDx11.Clear(deviceContext.platform_context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
 	}
-ERRNO_CHECK
+
 	crossplatform::MixedResolutionStruct mixedResolutionStruct(1,1,1);
 	RenderLowResolutionElements(deviceContext,exposure,godrays_strength,is_cubemap,false,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
-ERRNO_CHECK
+
 	if(buffered)
 		fb->lowResFarFramebufferDx11.Deactivate(deviceContext.platform_context);
-ERRNO_CHECK
+
 	if(buffered&&doFinalCloudBufferToScreenComposite)
 		CompositeCloudsToScreen(deviceContext,1.f,1.f,false,hiResDepthTexture,hiResDepthTexture,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
-ERRNO_CHECK
+
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
 

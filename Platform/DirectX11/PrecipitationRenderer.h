@@ -18,6 +18,7 @@ typedef long HRESULT;
 #include "Simul/Math/float3.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 #include "Simul/Platform/DirectX11/Utilities.h"
@@ -56,27 +57,27 @@ namespace simul
 			void *GetMoistureTexture();
 		protected:
 			void RenderParticles(crossplatform::DeviceContext &deviceContext);
-			ID3D11Device*							m_pd3dDevice;
-			ID3D11InputLayout*						m_pVtxDecl;
-			VertexBuffer<PrecipitationVertex>		vertexBuffer;
-			VertexBuffer<PrecipitationVertex>		vertexBufferSwap;
-			dx11::ArrayTexture						rainArrayTexture;
-			dx11::Framebuffer						moisture_fb;
-			//ID3D11Buffer*							m_pVertexBufferSwap;
-			ID3DX11Effect*							effect;					// The fx file for this renderer
-			ID3D11ShaderResourceView*				rain_texture;
-			ID3D11ShaderResourceView*				randomTexture3D;
-			ID3D11ShaderResourceView*				cubemap_SRV;
+			ID3D11Device*								m_pd3dDevice;
+			ID3D11InputLayout*							m_pVtxDecl;
+			VertexBuffer<PrecipitationVertex>			vertexBuffer;
+			VertexBuffer<PrecipitationVertex>			vertexBufferSwap;
+			dx11::ArrayTexture							rainArrayTexture;
+			dx11::Framebuffer							moisture_fb;
+		
+			crossplatform::Effect*						effect;
+			crossplatform::Texture*					rain_texture;
+			ID3D11ShaderResourceView*					randomTexture3D;
+			ID3D11ShaderResourceView*					cubemap_SRV;
 			ID3DX11EffectShaderResourceVariable*		rainTexture;
 			vec3  *particles;
 			
-			ID3DX11EffectTechnique*						m_hTechniqueRain;
-			ID3DX11EffectTechnique*						m_hTechniqueParticles;
-			ID3DX11EffectTechnique*						m_hTechniqueRainParticles;
-			ID3DX11EffectTechnique*						techniqueMoveParticles;
-			ConstantBuffer<RainConstants>				rainConstants;
-			ConstantBuffer<RainPerViewConstants>		perViewConstants;
-			ConstantBuffer<MoisturePerViewConstants>	moisturePerViewConstants;
+			crossplatform::EffectTechnique*				m_hTechniqueRain;
+			crossplatform::EffectTechnique*				m_hTechniqueParticles;
+			crossplatform::EffectTechnique*				m_hTechniqueRainParticles;
+			crossplatform::EffectTechnique*				techniqueMoveParticles;
+			crossplatform::ConstantBuffer<RainConstants>			rainConstants;
+			crossplatform::ConstantBuffer<RainPerViewConstants>		perViewConstants;
+			crossplatform::ConstantBuffer<MoisturePerViewConstants>	moisturePerViewConstants;
 			float intensity;
 
 			bool view_initialized;

@@ -298,7 +298,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderScene")
-#if 1
+
 	MixedResolutionView *view=viewManager.GetView(deviceContext.viewStruct.view_id);
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
@@ -324,6 +324,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 		view->GetFramebuffer()->DeactivateDepth(pContext);
 	else
 		view->GetFramebuffer()->Deactivate(pContext);
+#if 1
 	if(simulWeatherRenderer)
 	{
 		int s=simulWeatherRenderer->GetDownscale();
@@ -370,6 +371,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	MixedResolutionView *view=viewManager.GetView(view_id);
 	if(!view)
 		return;
+	SIMUL_COMBINED_PROFILE_STARTFRAME(pContext)
 	SIMUL_COMBINED_PROFILE_START(pContext,"PreRender")
 	D3D11_VIEWPORT				viewport;
 	memset(&viewport,0,sizeof(D3D11_VIEWPORT));
@@ -537,7 +539,8 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		oceanRenderer->RenderTextures(pContext,view->GetScreenWidth(),view->GetScreenHeight());
 	SIMUL_COMBINED_PROFILE_END(pContext)
 	SIMUL_COMBINED_PROFILE_END(pContext)
-	Profiler::GetGlobalProfiler().EndFrame(pContext);
+	SIMUL_COMBINED_PROFILE_ENDFRAME(pContext)
+	//Profiler::GetGlobalProfiler().EndFrame(pContext);
 }
 
 void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)

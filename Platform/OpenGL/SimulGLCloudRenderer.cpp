@@ -692,7 +692,7 @@ bool SimulGLCloudRenderer::BuildSphereVBO()
 GL_ERROR_CHECK
 	unsigned el=16,az=32;
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(0);
-	//helper->GetGrid(el,az);
+	
 	std::vector<vec3> vertices;
 	std::vector<unsigned int> indices;
 	helper->GenerateSphereVertices(vertices,indices,el,az);

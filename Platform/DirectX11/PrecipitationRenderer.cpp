@@ -36,13 +36,19 @@ void PrecipitationRenderer::RecompileShaders()
 {
 	if(!m_pd3dDevice)
 		return;
-	CreateEffect(m_pd3dDevice,&effect,"rain.fx");
-	SAFE_RELEASE(rain_texture);
+	std::vector<crossplatform::EffectDefineOptions> opts;
+	opts.push_back(crossplatform::CreateDefineOptions("REVERSE_DEPTH","0","1"));
+	renderPlatform->EnsureEffectIsBuilt("atmospherics",opts);
+	SAFE_DELETE(effect);
+	std::map<std::string,std::string> defines;
+	defines["REVERSE_DEPTH"]	=ReverseDepth?"1":"0";
+	effect=renderPlatform->CreateEffect("rain",defines);
+	SAFE_DELETE(rain_texture);
 	m_hTechniqueRain			=effect->GetTechniqueByName("simul_rain");
 	m_hTechniqueParticles		=effect->GetTechniqueByName("simul_particles");
 	m_hTechniqueRainParticles	=effect->GetTechniqueByName("rain_particles");
 	techniqueMoveParticles		=effect->GetTechniqueByName("move_particles");
-	rainTexture					=effect->GetVariableByName("rainTexture")->AsShaderResource();
+	rainTexture					=effect->asD3DX11Effect()->GetVariableByName("rainTexture")->AsShaderResource();
 	rainConstants.LinkToEffect(effect,"RainConstants");
 	perViewConstants.LinkToEffect(effect,"RainPerViewConstants");
 	moisturePerViewConstants.LinkToEffect(effect,"MoisturePerViewConstants");
@@ -52,28 +58,27 @@ void PrecipitationRenderer::RecompileShaders()
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.platform_context		=pImmediateContext;
 	deviceContext.renderPlatform		=renderPlatform;
-	ID3DX11EffectTechnique *tech		=effect->GetTechniqueByName("create_rain_texture");
-	ApplyPass(pImmediateContext,tech->GetPassByIndex(0));
-	simul::dx11::Framebuffer make_rain_fb(512,64);
-	make_rain_fb.RestoreDeviceObjects(renderPlatform);
-	make_rain_fb.Activate(deviceContext);
-	simul::dx11::UtilityRenderer::DrawQuad(pImmediateContext);
-	make_rain_fb.Deactivate(pImmediateContext);
-	rain_texture=make_rain_fb.buffer_texture.shaderResourceView;
-	// Make sure it isn't destroyed when the fb goes out of scope:
-	rain_texture->AddRef();
+	crossplatform::EffectTechnique *tech		=effect->GetTechniqueByName("create_rain_texture");
+	effect->Apply(deviceContext,tech,0);
+	rain_texture=renderPlatform->CreateTexture();
+	rain_texture->ensureTexture2DSizeAndFormat(renderPlatform,512,64,crossplatform::PixelFormat::RGBA_32_FLOAT,false,true);
+	rain_texture->activateRenderTarget(deviceContext);
+	renderPlatform->DrawQuad(deviceContext);
+	rain_texture->deactivateRenderTarget();
+	effect->Unapply(deviceContext);
 	view_initialized=false;
 	// The array of rain textures:
 	rainArrayTexture.create(m_pd3dDevice,16,512,32,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	// Use a compute shader to initialize the rain texture:
 	// shader has been created:
-	dx11::setUnorderedAccessView(effect,"targetTextureArray",rainArrayTexture.unorderedAccessView);
-	ApplyPass(pImmediateContext,effect->GetTechniqueByName("make_rain_texture_array")->GetPassByIndex(0));
+	dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTextureArray",rainArrayTexture.unorderedAccessView);
+	effect->Apply(deviceContext,effect->GetTechniqueByName("make_rain_texture_array"),0);
 
 	pImmediateContext->Dispatch(16,512,32);
 
 	// We can't detect if this has worked or not.
 	pImmediateContext->GenerateMips(rainArrayTexture.m_pArrayTexture_SRV);
+	effect->Unapply(deviceContext);
 
 	D3D11_INPUT_ELEMENT_DESC decl[] =
 	{
@@ -84,7 +89,7 @@ void PrecipitationRenderer::RecompileShaders()
 	};
 	SAFE_RELEASE(m_pVtxDecl);
     D3DX11_PASS_DESC PassDesc;
-	m_hTechniqueRainParticles->GetPassByIndex(0)->GetDesc(&PassDesc);
+	m_hTechniqueRainParticles->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
 	V_CHECK(m_pd3dDevice->CreateInputLayout(decl,3,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl));
 #if 1
 	ID3D11InputLayout* previousInputLayout;
@@ -95,9 +100,10 @@ void PrecipitationRenderer::RecompileShaders()
 		pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST );
 		pImmediateContext->IASetInputLayout(m_pVtxDecl);
 		vertexBuffer.setAsStreamOutTarget(pImmediateContext);
-		ApplyPass(pImmediateContext,effect->GetTechniqueByName("init_particles")->GetPassByIndex(0));
+		effect->Apply(deviceContext,effect->GetTechniqueByName("init_particles"),0);
 		pImmediateContext->Draw(125000,0);
 		cancelStreamOutTarget(pImmediateContext);
+		effect->Unapply(deviceContext);
 	}
 	pImmediateContext->IASetPrimitiveTopology(previousTopology );
 	pImmediateContext->IASetInputLayout(previousInputLayout);
@@ -138,16 +144,16 @@ void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *
 	vertexBuffer.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
 	vertexBufferSwap.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
 	delete dat;
-
-    RecompileShaders();
 	
-	rainConstants.RestoreDeviceObjects(m_pd3dDevice);
-	perViewConstants.RestoreDeviceObjects(m_pd3dDevice);
-	moisturePerViewConstants.RestoreDeviceObjects(m_pd3dDevice);
+	rainConstants.RestoreDeviceObjects(renderPlatform);
+	perViewConstants.RestoreDeviceObjects(renderPlatform);
+	moisturePerViewConstants.RestoreDeviceObjects(renderPlatform);
 	
 	moisture_fb.RestoreDeviceObjects(renderPlatform);
 	moisture_fb.SetWidthAndHeight(512,512);
 	moisture_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
+
+    RecompileShaders();
 }
 
 void PrecipitationRenderer::InvalidateDeviceObjects()
@@ -157,9 +163,9 @@ void PrecipitationRenderer::InvalidateDeviceObjects()
 	vertexBuffer.release();
 	vertexBufferSwap.release();
 	rainArrayTexture.release();
-	SAFE_RELEASE(effect);
+	SAFE_DELETE(effect);
 	SAFE_RELEASE(m_pVtxDecl);
-	SAFE_RELEASE(rain_texture);
+	SAFE_DELETE(rain_texture);
 	
 	rainConstants.InvalidateDeviceObjects();
 	perViewConstants.InvalidateDeviceObjects();
@@ -196,9 +202,9 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 		pContext->IASetInputLayout(m_pVtxDecl);
 		vertexBuffer.apply(pContext,0);
 		vertexBufferSwap.setAsStreamOutTarget(pContext);
-		techniqueMoveParticles->GetPassByIndex(0)->Apply(0,pContext);
-		ApplyPass(pContext,effect->GetTechniqueByName("move_particles")->GetPassByIndex(0));
+		effect->Apply(deviceContext,techniqueMoveParticles,0);
 		pContext->Draw(125000,0);
+		effect->Unapply(deviceContext);
 		ID3D11Buffer *pBuffer =NULL;
 		UINT offset=0;
 		pContext->SOSetTargets(1,&pBuffer,&offset );
@@ -265,11 +271,11 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	if(intensity<=0.01)
 		return;
 	SIMUL_COMBINED_PROFILE_START(pContext,"PrecipitationRenderer")
-	rainTexture->SetResource(rain_texture);
-	dx11::setTexture(effect,"cubeTexture",cubemap_SRV);
-	dx11::setTexture(effect,"randomTexture3D",randomTexture3D);
-	dx11::setTexture(effect,"depthTexture",depth_tex->AsD3D11ShaderResourceView());
-	dx11::setTextureArray(effect,"rainTextureArray",rainArrayTexture.m_pArrayTexture_SRV);
+		rainTexture->SetResource(rain_texture->AsD3D11ShaderResourceView());
+	dx11::setTexture(effect->asD3DX11Effect(),"cubeTexture",cubemap_SRV);
+	dx11::setTexture(effect->asD3DX11Effect(),"randomTexture3D",randomTexture3D);
+	dx11::setTexture(effect->asD3DX11Effect(),"depthTexture",depth_tex->AsD3D11ShaderResourceView());
+	dx11::setTextureArray(effect->asD3DX11Effect(),"rainTextureArray",rainArrayTexture.m_pArrayTexture_SRV);
 	
 	//set up matrices
 	D3DXMATRIX world,wvp;
@@ -353,7 +359,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 		UINT passes=1;
 		for(unsigned i = 0 ; i < passes ; ++i )
 		{
-			ApplyPass(pContext,m_hTechniqueRain->GetPassByIndex(i));
+			//ApplyPass(pContext,m_hTechniqueRain->GetPassByIndex(i));
 		//	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 		}
 	}
@@ -362,11 +368,11 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	{
 		RenderParticles(deviceContext);
 	}
-	simul::dx11::setTexture(effect,"cubeTexture"		,NULL);
-	simul::dx11::setTexture(effect,"randomTexture3D"	,NULL);
-	simul::dx11::setTexture(effect,"depthTexture"		,NULL);
-	dx11::setTextureArray(	effect,"rainTextureArray"	,NULL);
-	ApplyPass(pContext,m_hTechniqueRain->GetPassByIndex(0));
+	simul::dx11::setTexture(effect->asD3DX11Effect(),"cubeTexture"		,NULL);
+	simul::dx11::setTexture(effect->asD3DX11Effect(),"randomTexture3D"	,NULL);
+	simul::dx11::setTexture(effect->asD3DX11Effect(),"depthTexture"		,NULL);
+	dx11::setTextureArray(	effect->asD3DX11Effect(),"rainTextureArray"	,NULL);
+	effect->Unapply(deviceContext);
 }
 
 void PrecipitationRenderer::RenderParticles(crossplatform::DeviceContext &deviceContext)
@@ -384,9 +390,9 @@ void PrecipitationRenderer::RenderParticles(crossplatform::DeviceContext &device
 	vertexBuffer.apply(pContext,0);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	if(RainToSnow>.5)
-		ApplyPass(pContext,m_hTechniqueParticles->GetPassByIndex(0));
+		effect->Apply(deviceContext,m_hTechniqueParticles,0);
 	else
-		ApplyPass(pContext,m_hTechniqueRainParticles->GetPassByIndex(0));
+		effect->Apply(deviceContext,m_hTechniqueRainParticles,0);
 	pContext->Draw(numParticles,0);
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout(previousInputLayout);
@@ -401,9 +407,7 @@ void PrecipitationRenderer::RenderTextures(crossplatform::DeviceContext &deviceC
 	static int u=1;
 	int w=(dx-8)/u;
 	int h=w/8;
-	simul::dx11::setTexture(effect,"showTexture",rain_texture);
-	UtilityRenderer::DrawQuad2(pContext,x0,y0+dy-(h+8),w,h,effect,effect->GetTechniqueByName("show_texture"));
-	simul::dx11::setTexture(effect,"showTexture",NULL);
+	renderPlatform->DrawTexture(deviceContext,x0,y0+dy-(h+8),w,h,rain_texture);
 
 	w=moisture_fb.Width;
 	h=moisture_fb.Height;

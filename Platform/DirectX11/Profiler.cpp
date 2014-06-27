@@ -11,8 +11,7 @@
 #include "Profiler.h"
 #include "DX11Exception.h"
 #include "Utilities.h"
-
-//#include <D3D11_1.h>
+#include "Simul/Base/StringFunctions.h"
 using namespace simul;
 using namespace dx11;
 using std::string;
@@ -75,11 +74,6 @@ void Profiler::Begin(void *ctx,const char *name)
 	IUnknown *unknown=(IUnknown *)ctx;
 	ID3D11DeviceContext *context=(ID3D11DeviceContext*)ctx;
 
-	//ID3DUserDefinedAnnotation* d3DUserDefinedAnnotation=NULL;
-	//if (context->QueryInterface(__uuidof(ID3D11Texture3D), (void**)&ppd) != S_OK)
-
-	//	d3DUserDefinedAnnotation->BeginEvent(name);
-	//d3DUserDefinedAnnotation->EndEvent();
 	std::string parent;
 	if(last_name.size())
 		parent=(last_name.back());
@@ -182,8 +176,9 @@ template<typename T> inline std::string ToString(const T& val)
     return stream.str();
 }
 
-void Profiler::EndFrame(ID3D11DeviceContext* context)
+void Profiler::EndFrame(void* c)
 {
+	ID3D11DeviceContext *context=(ID3D11DeviceContext*)c;
     if(!enabled||!device)
         return;
 
@@ -240,7 +235,7 @@ float Profiler::GetTime(const std::string &name) const
 		return 0.f;
 	return profileMap.find(name)->second->time;
 }
-#include "Simul/Base/StringFunctions.h"
+
 std::string Walk(Profiler::ProfileData *p,int tab,float parent_time)
 {
 	if(p->children.size()==0)

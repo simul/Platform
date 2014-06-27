@@ -91,16 +91,38 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 				,const sky::GpuSkyInfraredParameters &ir
 				)
 {
-	if(p.fill_up_to_texels<0)
+	if(p.fill_up_to_texels<=0)
 		return;
-	crossplatform::DeviceContext deviceContext;
-	deviceContext.platform_context=m_pImmediateContext;
-	deviceContext.renderPlatform=renderPlatform;
 	if(keyframe_checksums[cycled_index]!=p.keyframe_checksum)
 	{
 		keyframe_checksums[cycled_index]	=p.keyframe_checksum;
 		fadeTexIndex[cycled_index]=0;
 	}
+	int xy_size		=(int)p.altitudes_km.size()*p.numElevations;
+	int start_step	=(fadeTexIndex[cycled_index]*3)/p.numDistances;
+	int end_step	=((p.fill_up_to_texels)*3+p.numDistances-1)/p.numDistances;
+	
+	// divide the grid into blocks:
+	static const int BLOCKWIDTH=8;
+	int start_loss	=range(start_step			,0,xy_size);
+	int end_loss	=range(end_step				,0,xy_size);
+	int num_loss	=range(end_loss-start_loss	,0,xy_size);
+	int subgrid_loss=(num_loss+BLOCKWIDTH-1)/BLOCKWIDTH;
+	int start_insc	=range(start_step-xy_size	,0,xy_size);
+	int end_insc	=range(end_step-xy_size		,0,xy_size);
+	int num_insc	=range(end_insc-start_insc	,0,xy_size);
+	int subgrid_insc=(num_insc+BLOCKWIDTH-1)/BLOCKWIDTH;
+	int start_skyl	=range(start_step-2*xy_size	,0	,xy_size);
+	int end_skyl	=range(end_step-2*xy_size	,0	,xy_size);
+	int num_skyl	=range(end_skyl-start_skyl	,0	,xy_size);
+	int subgrid_skyl=(num_skyl+BLOCKWIDTH-1)/BLOCKWIDTH;
+
+	if(subgrid_loss==0&&subgrid_insc==0&&subgrid_skyl==0)
+		return;
+
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context=m_pImmediateContext;
+	deviceContext.renderPlatform=renderPlatform;
 	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator init")
 	HRESULT hr=S_OK;
 	int gridsize			=(int)p.altitudes_km.size()*p.numElevations*p.numDistances;
@@ -158,7 +180,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		gpuSkyConstants.yRange				=vec2(0.f,1.f);
 
 	}
-	//SetGpuSkyConstants(gpuSkyConstants,p,a,ir);
+
 	for(int i=0;i<3;i++)
 	{
 		finalLoss[i]->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,crossplatform::RGBA_32_FLOAT,true,1);
@@ -171,56 +193,36 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
 	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 2")
 
-	// divide the grid into blocks:
-	static const int BLOCKWIDTH=8;
-
-	int xy_size		=(int)p.altitudes_km.size()*p.numElevations;
 	
-	int start_step	=(fadeTexIndex[cycled_index]*3)/p.numDistances;
-	int end_step	=((p.fill_up_to_texels)*3+p.numDistances-1)/p.numDistances;
-
-	int start_loss	=range(start_step			,0,xy_size);
-	int end_loss	=range(end_step				,0,xy_size);
-	int num_loss	=range(end_loss-start_loss	,0,xy_size);
-	int subgrid=(num_loss+BLOCKWIDTH-1)/BLOCKWIDTH;
-	
-	if(subgrid>0)
+	if(subgrid_loss>0)
 	{
 		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalLoss[cycled_index]->AsD3D11UnorderedAccessView());
 		gpuSkyConstants.threadOffset=uint3(start_loss,0,0);
 		gpuSkyConstants.Apply(deviceContext);
 		V_CHECK(ApplyPass(m_pImmediateContext,lossComputeTechnique->GetPassByIndex(0)));
-		m_pImmediateContext->Dispatch(subgrid,1,1);
+		m_pImmediateContext->Dispatch(subgrid_loss,1,1);
 	}
-	int start_insc	=range(start_step-xy_size	,0,xy_size);
-	int end_insc	=range(end_step-xy_size		,0,xy_size);
-	int num_insc	=range(end_insc-start_insc	,0,xy_size);
 	
 	loss_texture->SetResource(finalLoss[cycled_index]->AsD3D11ShaderResourceView());
 	optical_depth_texture->SetResource(optd_tex.shaderResourceView);
-	subgrid=(num_insc+BLOCKWIDTH-1)/BLOCKWIDTH;
-	if(subgrid>0)
+	if(subgrid_insc>0)
 	{
 		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalInsc[cycled_index]->AsD3D11UnorderedAccessView());
 		gpuSkyConstants.threadOffset=uint3(start_insc,0,0);
 		gpuSkyConstants.Apply(deviceContext);
 		V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
-		m_pImmediateContext->Dispatch(subgrid,1,1);
+		m_pImmediateContext->Dispatch(subgrid_insc,1,1);
 	}
 	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
 	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 3")
-	int start_skyl	=range(start_step-2*xy_size	,0	,xy_size);
-	int end_skyl	=range(end_step-2*xy_size	,0	,xy_size);
-	int num_skyl	=range(end_skyl-start_skyl	,0	,xy_size);
 	insc_texture->SetResource(finalInsc[cycled_index]->AsD3D11ShaderResourceView());
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalSkyl[cycled_index]->AsD3D11UnorderedAccessView());
 	gpuSkyConstants.threadOffset=uint3(start_skyl,0,0);
 	gpuSkyConstants.Apply(deviceContext);
 	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
-	subgrid=(num_skyl+BLOCKWIDTH-1)/BLOCKWIDTH;
-	if(subgrid>0)
+	if(subgrid_skyl>0)
 	{
-		m_pImmediateContext->Dispatch(subgrid,1,1);
+		m_pImmediateContext->Dispatch(subgrid_skyl,1,1);
 	}
 	//light_table
 	{

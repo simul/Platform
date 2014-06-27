@@ -21,20 +21,14 @@ namespace simul
 			bool IsValid() const;
 			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
-				if(!this)
-					return NULL;
 				return shaderResourceView;
 			}
 			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
 			{
-				if(!this)
-					return NULL;
 				return unorderedAccessView;
 			}
 			ID3D11DepthStencilView *AsD3D11DepthStencilView()
 			{
-				if(!this)
-					return NULL;
 				return depthStencilView;
 			}
 			GLuint AsGLuint()
