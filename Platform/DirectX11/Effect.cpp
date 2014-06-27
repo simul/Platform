@@ -92,7 +92,8 @@ dx11::Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *f
 
 void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
-	ID3DX11Effect *e=NULL;
+	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
+	SAFE_RELEASE(e);
 	if(!renderPlatform)
 		return;
 	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_utf8,defines,D3DCOMPILE_OPTIMIZATION_LEVEL3);
