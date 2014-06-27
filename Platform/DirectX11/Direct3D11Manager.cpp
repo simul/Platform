@@ -404,9 +404,9 @@ void Direct3D11Manager::Initialize(bool use_debug)
 	if(use_debug)
 	flags|=D3D11_CREATE_DEVICE_DEBUG;
 #endif
-	std::cout<<"D3D11CreateDevice "<<std::endl;
+	//std::cout<<"D3D11CreateDevice "<<std::endl;
 	result=D3D11CreateDevice(NULL,D3D_DRIVER_TYPE_HARDWARE,NULL,flags, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
-	std::cout<<"D3D11CreateDevice result "<<result<<std::endl;
+	//std::cout<<"D3D11CreateDevice result "<<result<<std::endl;
 	if(result!=S_OK)
 		return;
 	//d3dDevice->AddRef();

@@ -29,8 +29,7 @@ uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
 	uniform float nearZ;
 	uniform float farZ;
 
-	uniform vec3 depthToLinFadeDistParams;
-	uniform float exposure;
+	uniform vec4 depthToLinFadeDistParams;
 
 	uniform float time;
 	uniform float maxAltitudeMetres;
@@ -40,7 +39,7 @@ uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
 	uniform vec3 infraredIntegrationFactors;
 	uniform float agagaegehrs;
 	uniform vec3 cloudIrRadiance;
-	uniform float ageahhraj;
+	uniform float exposure;
 };
 
 uniform_buffer Detail2DConstants SIMUL_BUFFER_REGISTER(12)

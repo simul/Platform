@@ -8,8 +8,7 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform vec2 tanHalfFov;
 	uniform float exposure;
 	uniform float gamma;
-	uniform vec3 depthToLinFadeDistParams;
-	uniform float padHdrConstants;
+	uniform vec4 depthToLinFadeDistParams;
 	uniform vec4 warpHmdWarpParam;
 	uniform vec2 lowResTexelSizeX;
 	uniform vec2 warpLensCentre;

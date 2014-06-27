@@ -611,8 +611,8 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	m_pDebugEffect->SetParameter("tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
 	static float cc=300000.f;
-	vec3 d(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
-	m_pDebugEffect->SetParameter("depthToLinFadeDistParams",d);
+	vec4 depthToLinFadeDistParams(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
+	m_pDebugEffect->SetParameter("depthToLinFadeDistParams",depthToLinFadeDistParams);
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;
@@ -682,7 +682,7 @@ void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int
 			text++;
 			pos++;
 		}
-		if(*text==0)
+		if(!(*text))
 			break;
 		text++;
 		pos++;

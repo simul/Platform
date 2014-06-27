@@ -86,7 +86,7 @@ void PrecipitationRenderer::RecompileShaders()
     D3DX11_PASS_DESC PassDesc;
 	m_hTechniqueRainParticles->GetPassByIndex(0)->GetDesc(&PassDesc);
 	V_CHECK(m_pd3dDevice->CreateInputLayout(decl,3,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl));
-
+#if 1
 	ID3D11InputLayout* previousInputLayout;
 	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pImmediateContext->IAGetInputLayout(&previousInputLayout);
@@ -101,7 +101,7 @@ void PrecipitationRenderer::RecompileShaders()
 	}
 	pImmediateContext->IASetPrimitiveTopology(previousTopology );
 	pImmediateContext->IASetInputLayout(previousInputLayout);
-
+#endif
 	SAFE_RELEASE(pImmediateContext);
 }
 
@@ -174,17 +174,19 @@ PrecipitationRenderer::~PrecipitationRenderer()
 
 void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceContext,float dt)
 {
+#if 1
+	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"PrecipitationRenderer::PreRenderUpdate")
 	if(dt<0)
 		dt*=-1.0f;
 	if(dt>1.0f)
 		dt=1.0f;
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	BasePrecipitationRenderer::PreRenderUpdate(pContext,dt);
+	BasePrecipitationRenderer::PreRenderUpdate(deviceContext,dt);
 	
 	rainConstants.meanFallVelocity	=meanVelocity;
 	rainConstants.timeStepSeconds	=dt;
 	rainConstants.Apply(deviceContext);
 	
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	ID3D11InputLayout* previousInputLayout;
 	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetInputLayout(&previousInputLayout);
@@ -204,6 +206,8 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 	}
 	pContext->IASetPrimitiveTopology(previousTopology );
 	pContext->IASetInputLayout(previousInputLayout);
+	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+#endif
 }
 
 // Render an image representing the optical thickness of moisture in any direction within a given view.
@@ -260,7 +264,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	intensity=Intensity;
 	if(intensity<=0.01)
 		return;
-	SIMUL_COMBINED_PROFILE_START(pContext,"Rain Overlay")
+	SIMUL_COMBINED_PROFILE_START(pContext,"PrecipitationRenderer")
 	rainTexture->SetResource(rain_texture);
 	dx11::setTexture(effect,"cubeTexture",cubemap_SRV);
 	dx11::setTexture(effect,"randomTexture3D",randomTexture3D);
@@ -339,7 +343,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 
 	static float near_rain_distance_metres=250.f;
 	perViewConstants.nearRainDistance=near_rain_distance_metres/max_fade_distance_metres;
-	perViewConstants.depthToLinFadeDistParams = simul::math::Vector3(deviceContext.viewStruct.proj.m[3][2], max_fade_distance_metres,deviceContext.viewStruct.proj.m[2][2]*max_fade_distance_metres );
+	perViewConstants.depthToLinFadeDistParams = vec4(deviceContext.viewStruct.proj.m[3][2], max_fade_distance_metres,deviceContext.viewStruct.proj.m[2][2]*max_fade_distance_metres,0.0f);
 	
 	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
 
@@ -354,7 +358,6 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 		}
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
-	SIMUL_COMBINED_PROFILE_START(pContext,"Rain/snow Particles")
 	//if(RainToSnow>0)
 	{
 		RenderParticles(deviceContext);
@@ -364,11 +367,11 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	simul::dx11::setTexture(effect,"depthTexture"		,NULL);
 	dx11::setTextureArray(	effect,"rainTextureArray"	,NULL);
 	ApplyPass(pContext,m_hTechniqueRain->GetPassByIndex(0));
-	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
 void PrecipitationRenderer::RenderParticles(crossplatform::DeviceContext &deviceContext)
 {
+	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"PrecipitationRenderer Particles")
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	ID3D11InputLayout* previousInputLayout;
 	pContext->IAGetInputLayout(&previousInputLayout);
@@ -388,6 +391,7 @@ void PrecipitationRenderer::RenderParticles(crossplatform::DeviceContext &device
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout(previousInputLayout);
 	SAFE_RELEASE(previousInputLayout);
+	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
 void PrecipitationRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)

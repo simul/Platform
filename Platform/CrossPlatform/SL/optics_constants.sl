@@ -12,11 +12,10 @@ uniform_buffer OpticsConstants SIMUL_BUFFER_REGISTER(10)
 	uniform vec3 lightDir;
 	uniform float radiusRadians;
 
-	uniform vec3 depthToLinFadeDistParams;
-	uniform float dropletRadius;
+	uniform vec4 depthToLinFadeDistParams;
 
 	uniform float rainbowIntensity;
-	uniform float ahgaad,ahgage,aejhue;
+	uniform float dropletRadius,ahgage,aejhue;
 };
 
 #endif

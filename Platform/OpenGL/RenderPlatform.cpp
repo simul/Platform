@@ -107,7 +107,7 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lAmbientLight);
 }
 
-void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
+void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &,int w,int l,int d)
 {
 	glDispatchCompute(w,l,d);
 	GL_ERROR_CHECK
@@ -304,7 +304,7 @@ glDisable(GL_BLEND);
 glDisable(GL_CULL_FACE);
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	static float cc=300000.f;
-	vec3 d(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
+	vec4 depthToLinFadeDistParams(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
 	struct Viewport
 	{
 		int X,Y,Width,Height;
@@ -316,7 +316,7 @@ glDisable(GL_CULL_FACE);
 	effect->Apply(deviceContext,effect->GetTechniqueByName("show_depth"),0);
 	GL_ERROR_CHECK
 	effect->SetParameter("tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
-	effect->SetParameter("depthToLinFadeDistParams",d);
+	effect->SetParameter("depthToLinFadeDistParams",depthToLinFadeDistParams);
 	effect->SetTexture("image_texture",tex);
 	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
@@ -358,7 +358,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 	GL_ERROR_CHECK
 }
 
-void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::DrawQuad(crossplatform::DeviceContext &)
 {
 	GL_ERROR_CHECK
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); 
@@ -370,7 +370,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 #endif
 
-void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *string)
+void RenderPlatform::Print(crossplatform::DeviceContext &,int x,int y	,const char *string)
 {
 	if(!string)
 		return;
@@ -379,7 +379,7 @@ void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int
 	int viewport[4];
 	glGetIntegerv(GL_VIEWPORT,viewport);
 	int win_h=viewport[3];
-	glRasterPos2f(x,win_h-y);
+	glRasterPos2f((float)x,(float)(win_h-y));
 	glDisable(GL_LIGHTING);
 	glBindTexture(GL_TEXTURE_2D,0);
 	const char *s=string;
@@ -388,7 +388,7 @@ void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int
 		if(*s=='\n')
 		{
 			y+=12;
-			glRasterPos2f(x,win_h-y);
+			glRasterPos2f((float)x,(float)(win_h-y));
 		}
 #ifndef WIN64
 		else
@@ -597,30 +597,30 @@ void *RenderPlatform::GetDevice()
 	return NULL;
 }
 
-void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers)
+void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &,int ,int num_buffers,crossplatform::Buffer **buffers)
 {
 	for(int i=0;i<num_buffers;i++)
 	{
 		crossplatform::Buffer *buffer=buffers[i];
 GL_ERROR_CHECK
-		GLuint buf=buffers[0]->AsGLuint();
+		GLuint buf=buffer->AsGLuint();
 		GLint prog;
 		glGetIntegerv(GL_CURRENT_PROGRAM,&prog);
 		glBindBuffer(GL_ARRAY_BUFFER,buf);
 	}
 }
 
-void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
+void RenderPlatform::Draw(crossplatform::DeviceContext &,int num_verts,int start_vert)
 {
 	glDrawArrays(GL_POINTS, start_vert, num_verts); 
 }
 
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)
+void RenderPlatform::DrawLines(crossplatform::DeviceContext &,Vertext *lines,int vertex_count,bool strip)
 {
 	::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
 }
 
-void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)
+void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,Vertext *lines,int vertex_count,bool strip)
 {
 	//::Draw2DLines((VertexXyzRgba*)lines,vertex_count,strip);
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -651,6 +651,6 @@ void RenderPlatform::PrintAt3dPos(void *,const float *p,const char *text,const f
 	::PrintAt3dPos(p,text,colr,offsetx,offsety);
 }
 
-void RenderPlatform::DrawCircle		(crossplatform::DeviceContext &context,const float *dir,float rads,const float *colr,bool)
+void RenderPlatform::DrawCircle		(crossplatform::DeviceContext &,const float *,float ,const float *,bool)
 {
 }

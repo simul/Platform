@@ -70,7 +70,7 @@ void SimulOpticsRendererGL::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(flare_program);
 }
 
-void SimulOpticsRendererGL::RenderFlare(simul::crossplatform::DeviceContext &deviceContext,float exposure,void *depthTexture,const float *dir,const float *light)
+void SimulOpticsRendererGL::RenderFlare(simul::crossplatform::DeviceContext &,float exposure,void *,const float *dir,const float *light)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	simul::sky::float4 sun_dir(dir);//skyKeyframer->GetDirectionToLight());

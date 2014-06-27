@@ -21,7 +21,7 @@ void Resolve(Texture2DMS<float4> sourceTextureMS,RWTexture2D<float4> targetTextu
 
 // Find nearest and furthest depths in MSAA texture.
 // sourceDepthTexture, sourceMSDepthTexture, and targetTexture are ALL the SAME SIZE.
-vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> sourceMSDepthTexture,uint numberOfSamples,uint2 pos,vec3 depthToLinFadeDistParams)
+vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> sourceMSDepthTexture,uint numberOfSamples,uint2 pos,vec4 depthToLinFadeDistParams)
 {
 #if REVERSE_DEPTH==1
 	float nearest_depth			=0.0;
@@ -59,7 +59,7 @@ vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> s
 	return vec4(farthest_depth,nearest_depth,edge,0.0);
 }
 
-void DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,RWTexture2D<float4> target2DTexture,uint3 pos,vec2 scale,vec3 depthToLinFadeDistParams)
+void DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,RWTexture2D<float4> target2DTexture,uint3 pos,vec2 scale,vec4 depthToLinFadeDistParams)
 {
 	uint2 source_dims;
 	uint numberOfSamples;
@@ -122,7 +122,7 @@ void SpreadEdge(Texture2D<vec4> sourceDepthTexture,RWTexture2D<vec4> target2DTex
 	target2DTexture[pos.xy]=res;
 }
 
-void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<float4> target2DTexture,uint2 source_dims,uint3 pos,uint2 scale,vec3 depthToLinFadeDistParams)
+void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<float4> target2DTexture,uint2 source_dims,uint3 pos,uint2 scale,vec4 depthToLinFadeDistParams)
 {
 	uint2 dims;
 	target2DTexture.GetDimensions(dims.x,dims.y);
@@ -173,7 +173,7 @@ void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<flo
 
 
 // Filter the texture, but bias the result towards the nearest depth values.
-vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D fallbackTexture,Texture2D depthTexture,vec2 lowResDims,vec2 texc,vec4 depthMask,vec3 depthToLinFadeDistParams,float d,bool do_fallback)
+vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D fallbackTexture,Texture2D depthTexture,vec2 lowResDims,vec2 texc,vec4 depthMask,vec4 depthToLinFadeDistParams,float d,bool do_fallback)
 {
 	vec2 texc_unit	=texc*lowResDims-vec2(.5,.5);
 	uint2 idx		=floor(texc_unit);
@@ -249,7 +249,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 							,Texture2D<vec4> depthTexture
 							,Texture2DMS<vec4> depthTextureMS
 							,vec4 viewportToTexRegionScaleBias
-							,vec3 depthToLinFadeDistParams
+							,vec4 depthToLinFadeDistParams
 							,vec4 hiResToLowResTransformXYWH
 							,Texture2D farInscatterTexture
 							,Texture2D nearInscatterTexture

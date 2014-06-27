@@ -2,7 +2,7 @@
 #define ATMOSPHERICS_SL
 
 vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
-	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,vec3 depthToLinFadeDistParams,vec2 tanHalfFov)
+	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,vec4 depthToLinFadeDistParams,vec2 tanHalfFov)
 {
 	float3 view		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view			=normalize(view);
@@ -17,7 +17,7 @@ vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,T
 }
 
 vec3 AtmosphericsLossMSAA(Texture2DMS<float4> depthTextureMS,uint numSamples,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
-	,mat4 invViewProj,vec2 texCoords,uint2 depth_pos2,vec2 clip_pos,vec3 depthToLinFadeDistParams,vec2 tanHalfFov)
+	,mat4 invViewProj,vec2 texCoords,uint2 depth_pos2,vec2 clip_pos,vec4 depthToLinFadeDistParams,vec2 tanHalfFov)
 {
 	float3 view	=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view		=normalize(view);
@@ -68,7 +68,7 @@ vec4 Inscatter(	Texture2D inscTexture
 						,float hazeEccentricity
 						,vec3 mieRayleighRatio
 						,vec4 viewportToTexRegionScaleBias
-						,vec3 depthToLinFadeDistParams
+						,vec4 depthToLinFadeDistParams
 						,vec2 tanHalfFov
 						,bool USE_NEAR_FAR
 						,bool nearPass)
@@ -121,7 +121,7 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 				,float hazeEccentricity
 				,vec3 mieRayleighRatio
 				,vec4 viewportToTexRegionScaleBias
-				,vec3 depthToLinFadeDistParams
+				,vec4 depthToLinFadeDistParams
 				,vec2 tanHalfFov
 				,bool USE_NEAR_FAR
 				,bool nearPass)
@@ -189,7 +189,7 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 				,float hazeEccentricity
 				,vec3 mieRayleighRatio
 				,vec4 viewportToTexRegionScaleBias
-				,vec3 depthToLinFadeDistParams
+				,vec4 depthToLinFadeDistParams
 				,vec2 tanHalfFov
 				,bool USE_NEAR_FAR
 				,bool nearPass)
@@ -286,7 +286,7 @@ vec4 Inscatter(	Texture2D inscTexture
 				,float hazeEccentricity
 				,vec3 mieRayleighRatio
 				,vec4 viewportToTexRegionScaleBias
-				,vec3 depthToLinFadeDistParams
+				,vec4 depthToLinFadeDistParams
 				,vec2 tanHalfFov)
 {
 	vec4 clip_pos		=vec4(-1.f,1.f,1.f,1.f);
