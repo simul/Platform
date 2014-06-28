@@ -19,6 +19,7 @@ namespace simul
 				platform_context(NULL)
 				,renderPlatform(NULL)
 			{
+				viewStruct.depthTextureStyle=crossplatform::PROJECTION;
 			}
 			inline ID3D11DeviceContext *asD3D11DeviceContext()
 			{

@@ -687,18 +687,18 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
 
 vec4 PS_RainParticles(PSSceneIn input) : SV_Target
 {
-	vec3 light			=cubeTexture.Sample(wrapSamplerState,-input.view).rgb;
-	vec4 texel			=.5*rainTextureArray.Sample(samAniso,vec3(input.texCoords,input.type));
+	vec3 light				=cubeTexture.Sample(wrapSamplerState,-input.view).rgb;
+	vec4 texel				=.5*rainTextureArray.Sample(samAniso,vec3(input.texCoords,input.type));
 	//directional lighting---------------------------------------------------------------------------------
 	vec4 directionalLight	=vec4(1,1,1,1);
 	//rainResponse(input, input.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*input.random, float3(1.0,1.0,1.0), input.eyeVec, false, directionalLight);
 
 	//point lighting---------------------------------------------------------------------------------------
-	vec4 pointLight		=vec4(0,0,0,0);
+	vec4 pointLight			=vec4(0,0,0,0);
 	//vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	//float depth			=texture_clamp(depthTexture,depth_texc).x;
 	//float dist			=depthToFadeDistance(depth,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	float totalOpacity = pointLight.a+directionalLight.a;
+	float totalOpacity		= pointLight.a+directionalLight.a;
 	return vec4(texel.rgb*light,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
 
@@ -836,7 +836,7 @@ PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput input,uint ve
 	velocity				=2.0*velocity-vec3(1.0,1.0,1.0);
 	v.velocity				=velocity;
 	v.type					=vertex_id%32;
-	//v.dummy					=0.0;
+	//v.dummy				=0.0;
 
     return v;
 }

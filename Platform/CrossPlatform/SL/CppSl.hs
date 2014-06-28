@@ -118,6 +118,27 @@
 			x=v[0];
 			y=v[1];
 		}
+		vec2 operator+(vec2 v) const
+		{
+			vec2 r;
+			r.x=x+v.x;
+			r.y=y+v.y;
+			return r;
+		}
+		vec2 operator-(vec2 v) const
+		{
+			vec2 r;
+			r.x=x-v.x;
+			r.y=y-v.y;
+			return r;
+		}
+		vec2 operator*(float m) const
+		{
+			vec2 r;
+			r.x=x*m;
+			r.y=y*m;
+			return r;
+		}
 	};
 
 	struct vec3
@@ -149,12 +170,20 @@
 			y*=m;
 			z*=m;
 		}
-		vec3 operator+(vec3 v)
+		vec3 operator+(vec3 v) const
 		{
 			vec3 r;
 			r.x=x+v.x;
 			r.y=y+v.y;
 			r.z=z+v.z;
+			return r;
+		}
+		vec3 operator-(vec3 v) const
+		{
+			vec3 r;
+			r.x=x-v.x;
+			r.y=y-v.y;
+			r.z=z-v.z;
 			return r;
 		}
 	};
