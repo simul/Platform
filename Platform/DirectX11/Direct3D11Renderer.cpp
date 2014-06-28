@@ -206,8 +206,8 @@ ERRNO_CHECK
 	if(cubemap_view_id<0)
 		cubemap_view_id=viewManager.AddView(false);
 	crossplatform::DeviceContext deviceContext;
-	deviceContext.platform_context	=parentDeviceContext.asD3D11DeviceContext();
-	deviceContext.renderPlatform	=&renderPlatformDx11;
+	deviceContext.platform_context	=parentDeviceContext.platform_context;
+	deviceContext.renderPlatform	=parentDeviceContext.renderPlatform;
 	deviceContext.viewStruct.view_id=cubemap_view_id;
 	cubemapFramebuffer.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	if(simulTerrainRenderer)
@@ -246,11 +246,6 @@ ERRNO_CHECK
 		//renderPlatformDx11.Print(deviceContext,16,16,txt[i]);
 		cubemapFramebuffer.Deactivate(deviceContext.platform_context);
 	}
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer.GetColorTex());
-ERRNO_CHECK
-	if(oceanRenderer)
-		oceanRenderer->SetCubemapTexture(cubemapFramebuffer.GetColorTex());
 ERRNO_CHECK
 }
 
@@ -459,9 +454,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		const float *cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view);
 		RenderCubemap(deviceContext,cam_pos);
 		SIMUL_COMBINED_PROFILE_END(pContext)
+		if(oceanRenderer)
+			oceanRenderer->SetCubemapTexture(cubemapFramebuffer.GetColorTex());
 		SIMUL_COMBINED_PROFILE_START(pContext,"Envmap")
 		RenderEnvmap(deviceContext);
 		SIMUL_COMBINED_PROFILE_END(pContext)
+		if(simulWeatherRenderer)
+			simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer.GetColorTex());
 	}
 	if(UseHdrPostprocessor)
 	{
