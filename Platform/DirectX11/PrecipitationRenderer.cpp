@@ -271,7 +271,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	if(intensity<=0.01)
 		return;
 	SIMUL_COMBINED_PROFILE_START(pContext,"PrecipitationRenderer")
-		rainTexture->SetResource(rain_texture->AsD3D11ShaderResourceView());
+	rainTexture->SetResource(rain_texture->AsD3D11ShaderResourceView());
 	dx11::setTexture(effect->asD3DX11Effect(),"cubeTexture",cubemap_SRV);
 	dx11::setTexture(effect->asD3DX11Effect(),"randomTexture3D",randomTexture3D);
 	dx11::setTexture(effect->asD3DX11Effect(),"depthTexture",depth_tex->AsD3D11ShaderResourceView());

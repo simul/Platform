@@ -166,9 +166,9 @@ void MixedResolutionRenderer::RecompileShaders()
 		return;
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]		="0";
-	depthForwardEffect=renderPlatform->CreateEffect("mixed_resolution.fx",defines);
+	depthForwardEffect=renderPlatform->CreateEffect("mixed_resolution",defines);
 	defines["REVERSE_DEPTH"]		="1";
-	depthReverseEffect=renderPlatform->CreateEffect("mixed_resolution.fx",defines);
+	depthReverseEffect=renderPlatform->CreateEffect("mixed_resolution",defines);
 	mixedResolutionConstants.LinkToEffect(depthForwardEffect,"MixedResolutionConstants");
 	mixedResolutionConstants.LinkToEffect(depthReverseEffect,"MixedResolutionConstants");
 }

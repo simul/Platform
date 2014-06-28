@@ -190,10 +190,13 @@ void SimulWeatherRendererDX11::RecompileShaders()
 {
 	if(!m_pd3dDevice)
 		return;
-	delete effect;
+	SAFE_DELETE(effect);
+	std::vector<crossplatform::EffectDefineOptions> opts;
+	opts.push_back(crossplatform::CreateDefineOptions("REVERSE_DEPTH","0","1"));
+	renderPlatform->EnsureEffectIsBuilt("simul_hdr",opts);
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
-	effect=new dx11::Effect(renderPlatform,"simul_hdr.fx",defines);
+	effect=renderPlatform->CreateEffect("simul_hdr",defines);
 	hdrConstants.LinkToEffect(effect,"HdrConstants");
 	BaseWeatherRenderer::RecompileShaders();
 }

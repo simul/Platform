@@ -1,9 +1,13 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include <string>
 #include <map>
 #include <vector>
+#ifndef _MSC_VER
+#include <stdint.h>
+#endif
 struct ID3DX11Effect;
 struct ID3DX11EffectTechnique;
 typedef unsigned int GLuint;
@@ -54,7 +58,7 @@ namespace simul
 			void RestoreDeviceObjects(RenderPlatform *p)
 			{
 				InvalidateDeviceObjects();
-				//if(p)
+				if(p)
 				{
 					platformConstantBuffer=p->CreatePlatformConstantBuffer();
 					platformConstantBuffer->RestoreDeviceObjects(p,sizeof(T),(T*)this);

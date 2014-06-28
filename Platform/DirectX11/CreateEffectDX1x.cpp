@@ -559,7 +559,8 @@ ERRNO_CHECK
 	void *textData=NULL;
 	unsigned textSize=0;
 ERRNO_CHECK
-	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
+	if(shaderBuildMode!=NEVER_BUILD)
+		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
 ERRNO_CHECK
 	// See if there's a binary that's newer than the file date.
 	bool changes_detected=(shaderBuildMode==ALWAYS_BUILD);
@@ -622,7 +623,8 @@ ERRNO_CHECK
 						,&errorMsgs					//ID3DBlob **ppErrorMsgs
 						);
 ERRNO_CHECK
-	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(textData);
+	if(shaderBuildMode!=NEVER_BUILD)
+		simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(textData);
 	if(hr==S_OK)
 	{
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
@@ -715,12 +717,11 @@ HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect
 {
 	SIMUL_ASSERT(d3dDevice!=NULL);
 	HRESULT hr=S_OK;
-	//std::string text_filename=(filenameUtf8);
 	std::string filename_utf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filenameUtf8,shaderPathsUtf8);
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filename_utf8.c_str()))
 	{
-		throw simul::base::RuntimeError(std::string("Shader not found: ")+filenameUtf8);
-		return S_FALSE;
+		filename_utf8=filenameUtf8;
+		// This will fail later unless we can use the binary.
 	}
 	D3D_SHADER_MACRO *macros=NULL;
 	{

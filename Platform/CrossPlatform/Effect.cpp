@@ -9,10 +9,10 @@ using namespace simul;
 using namespace crossplatform;
 
 Effect::Effect()
-	:platform_effect(NULL)
-	,apply_count(0)
-	,currentTechnique(NULL)
+	:apply_count(0)
 	,currentPass(0)
+	,currentTechnique(NULL)
+	,platform_effect(NULL)
 {
 }
 
