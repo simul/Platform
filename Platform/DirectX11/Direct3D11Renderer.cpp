@@ -560,9 +560,12 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 	MixedResolutionView *view=viewManager.GetView(0);
 	if(!view)
 		return;
+	try
+	{
 	simul::dx11::Framebuffer fb(view->GetScreenWidth(),view->GetScreenHeight());
 	fb.RestoreDeviceObjects(&renderPlatformDx11);
 	crossplatform::DeviceContext deviceContext;
+	deviceContext.renderPlatform=&renderPlatformDx11;
 	ID3D11DeviceContext *pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
 	deviceContext.platform_context=pImmediateContext;
@@ -571,6 +574,10 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 	fb.Deactivate(pImmediateContext);
 	simul::dx11::SaveTexture(m_pd3dDevice,(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());
 	SAFE_RELEASE(pImmediateContext);
+	}
+	catch(...)
+	{
+	}
 }
 
 void Direct3D11Renderer::OnD3D11LostDevice()

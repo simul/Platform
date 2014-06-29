@@ -95,8 +95,8 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float yz;
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
-	uniform vec2 rainBoundary;
-	uniform vec2 rainRegionNormal;
+	uniform vec2 rainCentre;
+	uniform float rainRadius;
 SIMUL_CONSTANT_BUFFER_END
 
 #ifdef __cplusplus
