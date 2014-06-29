@@ -6,7 +6,7 @@
 
 float depthToLinearDistance(float depth,vec4 depthToLinFadeDistParams)
 {
-#if REVERSE_DEPTH == 1
+#if REVERSE_DEPTH==1
 	if(depth<=0)
 		return UNITY_DIST;//max_fade_distance_metres;
 #else

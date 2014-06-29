@@ -3,6 +3,13 @@
 #include "BaseRenderer.h"
 struct ID3D11DeviceContext;
 struct IDirect3DDevice9;
+namespace sce
+{
+	namespace Gnmx
+	{
+		class GfxContext;
+	}
+}
 namespace simul
 {
 	namespace crossplatform
@@ -27,6 +34,10 @@ namespace simul
 			inline IDirect3DDevice9 *asD3D9Device()
 			{
 				return (IDirect3DDevice9*)platform_context;
+			}
+			inline sce::Gnmx::GfxContext *asGfxContext()
+			{
+				return (sce::Gnmx::GfxContext*)platform_context;
 			}
 			ViewStruct viewStruct;
 		};

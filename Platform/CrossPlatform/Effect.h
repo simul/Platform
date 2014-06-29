@@ -163,9 +163,9 @@ namespace simul
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
-			virtual void SetUnorderedAccessView(const char *name,Texture *tex)	=0;
-			virtual void SetTexture		(const char *name	,Texture *tex)		=0;
-			virtual void SetTexture		(const char *name	,Texture &t)		=0;
+			virtual void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,Texture *tex)	=0;
+			virtual void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name	,Texture *tex)		=0;
+			virtual void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name	,Texture &t)		=0;
 			virtual void SetParameter	(const char *name	,float value)		=0;
 			virtual void SetParameter	(const char *name	,vec2)				=0;
 			virtual void SetParameter	(const char *name	,vec3)				=0;
