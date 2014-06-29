@@ -32,6 +32,25 @@ Texture2DArray rainTextureArray;
 RWTexture2DArray<vec4> targetTextureArray;
 RWStructuredBuffer<PrecipitationVertex> targetVertexBuffer;
 
+
+vec3 WrapParticleZone(vec3 pos)
+{
+	if(pos.z<-particleZoneSize)
+		pos.z+=2.0*particleZoneSize;
+	if(pos.x<-particleZoneSize)
+		pos.x+=2.0*particleZoneSize;
+	else if(pos.x>particleZoneSize)
+		pos.x-=2.0*particleZoneSize;
+	if(pos.y<-particleZoneSize)
+		pos.y+=2.0*particleZoneSize;
+	else if(pos.y>particleZoneSize)
+		pos.y-=2.0*particleZoneSize;
+	static const vec3 c=vec3(0.5,0.5,0.5);
+	vec3 box	=pos/(2.0*particleZoneSize)+c;
+	pos			=(frac(box)-c)*2.0*particleZoneSize;
+	return pos;
+}
+
 SamplerState rainSampler
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -121,7 +140,9 @@ vec4 PS_ShowTexture(posTexVertexOutput In): SV_TARGET
 
 void transf(out TransformedParticle p,in vec3 position,int i)
 {
-	vec3 particlePos	=position.xyz;
+	vec3 particlePos	=position.xyz;//+offset[i].xyz;
+	particlePos			+=i*viewPositionOffset.xyz;
+	//particlePos			=WrapParticleZone(particlePos);
 	//particlePos		*=10.0;
 	float sc			=1.0+0.7*rand3(position.xyz);
 	//vec3 pp1			=particlePos-viewPos[1].xyz+offset[1].xyz*sc;
@@ -197,6 +218,7 @@ void CS_MoveParticles(uint3 idx	: SV_DispatchThreadID )
 	vec3 pos					=targetVertexBuffer[i].position;
 	pos							+=(meanFallVelocity+meanFallVelocity.z*targetVertexBuffer[i].velocity*flurry*0.2)*timeStepSeconds;
 	//pos							+=meanFallVelocity*timeStepSeconds;
+	pos							+=viewPositionOffset;
 	if(pos.z<-particleZoneSize)
 		pos.z+=2.0*particleZoneSize;
 	if(pos.x<-particleZoneSize)
@@ -210,7 +232,7 @@ void CS_MoveParticles(uint3 idx	: SV_DispatchThreadID )
 	targetVertexBuffer[i].position		=pos;
 }
 
-particleVertexOutput VS_Particles(PosAndId IN)
+particleVertexOutput VS_SnowParticles(PosAndId IN)
 {
 	particleVertexOutput OUT;
 	TransformedParticle p0;
@@ -246,7 +268,7 @@ cbuffer cbImmutable
 };
 
 [maxvertexcount(6)]
-void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<particleGeometryOutput> SpriteStream)
+void GS_SnowParticles(point particleVertexOutput input[1], inout TriangleStream<particleGeometryOutput> SpriteStream)
 {
     particleGeometryOutput output;
 	// Emit four new triangles.
@@ -262,9 +284,9 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 		pos1=pos_temp;
 	}
 	float sz=input[0].pointSize;
-        output.brightness	=input[0].brightness;  
+	output.brightness	=input[0].brightness;  
 	output.fade			=input[0].fade*sz/(sz+length(pos2-pos1));  
-        output.view			=input[0].view;     
+	output.view			=input[0].view;     
 	if(pos1.x/pos1.w<=pos2.x/pos2.w)
 	{
 		// bottom-left quadrant:
@@ -312,7 +334,7 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
     SpriteStream.RestartStrip();
 }
 
-vec4 PS_Particles(particleGeometryOutput IN): SV_TARGET
+vec4 PS_SnowParticles(particleGeometryOutput IN): SV_TARGET
 {
 	vec4 result		=IN.brightness*cubeTexture.Sample(wrapSamplerState,-IN.view);
 	vec2 pos		=IN.texCoords*2.0-1.0;
@@ -502,7 +524,7 @@ void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStr
        
         float3 pos[4];
 		float g_FrameRate=20.0;
-        GenRainSpriteVertices(input[0].position.xyz,( meanFallVelocity+meanFallVelocity.z*flurry*0.1*input[0].velocity)/g_FrameRate, viewPos[1], pos);
+        GenRainSpriteVertices(input[0].position.xyz,-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*0.1*input[0].velocity)/g_FrameRate, viewPos[1], pos);
         
         float3 closestPointLight=vec3(0,0,500);
         float closestDistance	=length(closestPointLight-pos[0]);
@@ -716,15 +738,15 @@ technique11 rain_particles
     }  
 }
 
-technique11 simul_particles
+technique11 snow
 {
     pass p0 
     {
 		SetRasterizerState(RenderNoCull);
 		//SetRasterizerState( wireframeRasterizer );
-        SetGeometryShader(CompileShader(gs_5_0,GS_Particles()));
-		SetVertexShader(CompileShader(vs_5_0,VS_Particles()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Particles()));
+        SetGeometryShader(CompileShader(gs_5_0,GS_SnowParticles()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
 		SetDepthStencilState(EnableDepth,0);
 		SetBlendState(AddAlphaBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
@@ -846,16 +868,8 @@ PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint ve
 	vec3 pos					=input.position;
 	pos							+=(meanFallVelocity+meanFallVelocity.z*input.velocity*0.1*flurry)*timeStepSeconds;
 	//pos							+=meanFallVelocity*timeStepSeconds;
-	if(pos.z<-particleZoneSize)
-		pos.z+=2.0*particleZoneSize;
-	if(pos.x<-particleZoneSize)
-		pos.x+=2.0*particleZoneSize;
-	else if(pos.x>particleZoneSize)
-		pos.x-=2.0*particleZoneSize;
-	if(pos.y<-particleZoneSize)
-		pos.y+=2.0*particleZoneSize;
-	else if(pos.y>particleZoneSize)
-		pos.y-=2.0*particleZoneSize;
+	pos							-=viewPositionOffset;
+	pos=WrapParticleZone(pos);
 	input.position		=pos;
     return input;
 }

@@ -8,6 +8,7 @@ uniform_buffer RainConstants SIMUL_BUFFER_REGISTER(10)
 	uniform float snowSize;
 	uniform vec3 meanFallVelocity;
 	uniform float intensity;
+	uniform vec3 viewPositionOffset;
 	uniform float flurry;
 	uniform float flurryRate;
 	uniform float phase;

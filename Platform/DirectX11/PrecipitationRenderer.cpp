@@ -29,6 +29,7 @@ PrecipitationRenderer::PrecipitationRenderer() :
 	,rain_texture(NULL)
 	,cubemap_SRV(NULL)
 	,view_initialized(false)
+	,last_cam_pos(0.0f,0.0f,0.0f)
 {
 }
 
@@ -39,7 +40,7 @@ void PrecipitationRenderer::RecompileShaders()
 	CreateEffect(m_pd3dDevice,&effect,"rain.fx");
 	SAFE_RELEASE(rain_texture);
 	m_hTechniqueRain			=effect->GetTechniqueByName("simul_rain");
-	m_hTechniqueParticles		=effect->GetTechniqueByName("simul_particles");
+	m_hTechniqueParticles		=effect->GetTechniqueByName("snow");
 	m_hTechniqueRainParticles	=effect->GetTechniqueByName("rain_particles");
 	techniqueMoveParticles		=effect->GetTechniqueByName("move_particles");
 	rainTexture					=effect->GetVariableByName("rainTexture")->AsShaderResource();
@@ -174,20 +175,22 @@ PrecipitationRenderer::~PrecipitationRenderer()
 
 void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceContext,float dt)
 {
-#if 1
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"PrecipitationRenderer::PreRenderUpdate")
 	if(dt<0)
 		dt*=-1.0f;
 	if(dt>1.0f)
 		dt=1.0f;
 	BasePrecipitationRenderer::PreRenderUpdate(deviceContext,dt);
-	
+	math::Vector3 cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
+	if(last_cam_pos.Magnitude()==0.0f)
+		last_cam_pos=cam_pos;
 	rainConstants.meanFallVelocity	=meanVelocity;
 	rainConstants.timeStepSeconds	=dt;
+	rainConstants.viewPositionOffset=cam_pos-last_cam_pos;
 	rainConstants.Apply(deviceContext);
 	
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	ID3D11InputLayout* previousInputLayout;
+	ID3D11InputLayout	*previousInputLayout;
 	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetInputLayout(&previousInputLayout);
 	pContext->IAGetPrimitiveTopology(&previousTopology);
@@ -207,7 +210,6 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 	pContext->IASetPrimitiveTopology(previousTopology );
 	pContext->IASetInputLayout(previousInputLayout);
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
-#endif
 }
 
 // Render an image representing the optical thickness of moisture in any direction within a given view.
@@ -253,8 +255,8 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 				,simul::sky::float4 viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
+	math::Vector3 cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
 	static float ll=0.07f;
-	sky::float4 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
 	sky::float4 light_colour=ll*baseSkyInterface->GetLocalIrradiance(cam_pos.z/1000.f);
 	sky::float4 light_dir=baseSkyInterface->GetDirectionToLight(cam_pos.z/1000.f);
    
@@ -291,7 +293,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	if(ReverseDepth)
 	{
 		// Convert the proj matrix into a normal non-reversed matrix.
-		p1=deviceContext.viewStruct.proj;//simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
+		p1=deviceContext.viewStruct.proj;
 		simul::camera::ConvertReversedToRegularProjectionMatrix(p1);
 	}
 	simul::math::Matrix4x4 vpt,viewproj,p((const float*)p1);
@@ -311,19 +313,19 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 
 	perViewConstants.invViewProj_2[1]		=ivp;
 	perViewConstants.invViewProj_2[1].transpose();
-	perViewConstants.worldView[1]		=deviceContext.viewStruct.view;
+	perViewConstants.worldView[1]			=deviceContext.viewStruct.view;
 	perViewConstants.worldView[1].transpose();
 	perViewConstants.worldViewProj[1]		=(const float *)&wvp;
 	perViewConstants.worldViewProj[1].transpose();
-	perViewConstants.offset[1]		=offs;
-	perViewConstants.tanHalfFov		=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	perViewConstants.nearZ			=0;//frustum.nearZ*0.001f/fade_distance_km;
-	perViewConstants.farZ			=0;//frustum.farZ*0.001f/fade_distance_km;
-	perViewConstants.viewPos[1]		=viewPos;
+	perViewConstants.offset[1]				=(const float*)cam_pos;
+	perViewConstants.tanHalfFov				=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	perViewConstants.nearZ					=0;//frustum.nearZ*0.001f/fade_distance_km;
+	perViewConstants.farZ					=0;//frustum.farZ*0.001f/fade_distance_km;
+	perViewConstants.viewPos[1]				=viewPos;
 	
 	if(!view_initialized)
 	{
-		perViewConstants.invViewProj_2[0]		=perViewConstants.invViewProj_2[1];
+		perViewConstants.invViewProj_2[0]	=perViewConstants.invViewProj_2[1];
 		perViewConstants.worldViewProj[0]	=perViewConstants.worldViewProj[1];
 		perViewConstants.worldView[0]		=perViewConstants.worldView[1];
 		perViewConstants.offset[0]			=perViewConstants.offset[1];
@@ -344,7 +346,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	static float near_rain_distance_metres=250.f;
 	perViewConstants.nearRainDistance=near_rain_distance_metres/max_fade_distance_metres;
 	perViewConstants.depthToLinFadeDistParams =camera::GetDepthToDistanceParameters(deviceContext.viewStruct,max_fade_distance_metres);
-	// vec4(deviceContext.viewStruct.proj.m[3][2], max_fade_distance_metres,deviceContext.viewStruct.proj.m[2][2]*max_fade_distance_metres,0.0f);
+
 	
 	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
 
@@ -363,6 +365,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	{
 		RenderParticles(deviceContext);
 	}
+	last_cam_pos=cam_pos;
 	simul::dx11::setTexture(effect,"cubeTexture"		,NULL);
 	simul::dx11::setTexture(effect,"randomTexture3D"	,NULL);
 	simul::dx11::setTexture(effect,"depthTexture"		,NULL);

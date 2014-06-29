@@ -1,3 +1,7 @@
+#define NOMINMAX
+#ifdef _MSC_VER
+#include <Windows.h>
+#endif
 #include "GpuCloudGenerator.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Math/Vector3.h"

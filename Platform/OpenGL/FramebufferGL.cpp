@@ -8,7 +8,7 @@
 #ifdef _MSC_VER
 #include <windows.h>
 #else
-#define DebugBreak() 
+#define BREAK_IF_DEBUGGING 
 #endif
 
 using namespace simul;
@@ -330,15 +330,15 @@ void FramebufferGL::CheckFramebufferStatus()
             break;
         case GL_FRAMEBUFFER_UNSUPPORTED:
 			std::cerr<<("Unsupported framebuffer format\n");
-			DebugBreak();
+			BREAK_IF_DEBUGGING;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
             std::cerr<<("Framebuffer incomplete attachment\n");
-			DebugBreak();
+			BREAK_IF_DEBUGGING;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
             std::cerr<<("Framebuffer incomplete, missing attachment\n");
-			DebugBreak();
+			BREAK_IF_DEBUGGING;
             break;
     /*    case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
             std::cerr<<("Framebuffer incomplete, attached images must have same dimensions\n");
@@ -348,11 +348,11 @@ void FramebufferGL::CheckFramebufferStatus()
             break;*/
         case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
             std::cerr<<("Framebuffer incomplete, missing draw buffer\n");
-			DebugBreak();
+			BREAK_IF_DEBUGGING;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
             std::cerr<<("Framebuffer incomplete, missing read buffer\n");
-			DebugBreak();
+			BREAK_IF_DEBUGGING;
             break;
         default:
 			std::cerr<<"Unknown error "<<(int)status<<std::endl;
