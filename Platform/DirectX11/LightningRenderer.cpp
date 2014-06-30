@@ -170,8 +170,10 @@ void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,cross
 
 	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("lightning_thick");
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
-	dx11::setTexture(effect,"depthTextureMS",depth_tex->AsD3D11ShaderResourceView());
-	dx11::setTexture(effect,"depthTexture",depth_tex->AsD3D11ShaderResourceView());
+	if(depth_tex->GetSampleCount()>0)
+		dx11::setTexture(effect,"depthTextureMS",depth_tex->AsD3D11ShaderResourceView());
+	else
+		dx11::setTexture(effect,"depthTexture",depth_tex->AsD3D11ShaderResourceView());
 	dx11::setTexture(effect,"cloudDepthTexture",cloud_depth_tex->AsD3D11ShaderResourceView());
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	for(int i=0;i<(int)start.size();i++)
