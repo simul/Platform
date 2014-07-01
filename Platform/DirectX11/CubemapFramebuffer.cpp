@@ -96,6 +96,10 @@ void CubemapFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 	for(int i=0;i<6;i++)
 	{
 		dx11::Texture *t=(dx11::Texture *)(m_pCubeEnvDepthMap[i]);
+		t->width=Width;
+		t->length=Height;
+		t->depth=1;
+		t->dim=2;
 		ID3D11Texture2D *texture=NULL;
 		pd3dDevice->CreateTexture2D(&tex2dDesc, NULL,&texture);
 		t->texture=texture;
@@ -113,7 +117,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 	D3D1x_RENDER_TARGET_VIEW_DESC DescRT;
 	DescRT.Format = tex2dDesc.Format;
 	DescRT.ViewDimension					=D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
-	DescRT.Texture2DArray.FirstArraySlice = 0;
+	DescRT.Texture2DArray.FirstArraySlice	= 0;
 	DescRT.Texture2DArray.ArraySize = 6;
 	DescRT.Texture2DArray.MipSlice = 0;
 	 

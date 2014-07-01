@@ -157,8 +157,13 @@ namespace simul
 					GLint blockSize;
 					glGetActiveUniformBlockiv(program, indexInShader,
                       GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
-					if(blockSize!=sizeof(T))
-						throw std::runtime_error("");
+					// blocksize can be greater than sizeof(T), because GLSL might expect whole chunks of 16 bytes, while C++ only allocates what it needs. But
+					// blocksize can't be less than sizeof(T), because it won't have the space to take the data we're sending it!
+					if(blockSize<sizeof(T))
+					{
+						std::cerr<<"blockSize<sizeof(T) - shader/C++ mismatch in GLSL."<<std::endl;
+						return;
+					}
 					glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 					glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,sizeof(T));	
 				}

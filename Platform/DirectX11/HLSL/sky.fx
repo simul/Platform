@@ -295,13 +295,13 @@ vec4 PS_Stars( starsVertexOutput IN): SV_TARGET
 // stored in the alpha channel.
 vec4 PS_Sun( svertexOutput IN): SV_TARGET
 {
-	float r=2.0*length(IN.tex);
-	if(r>2.0)
+	float r=4.0*length(IN.tex);
+	if(r>4.0)
 		discard;
 	float brightness=1.0;
 	if(r>1.0)
 	//	discard;
-		brightness=colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
+		brightness=1.0/pow(r,4.0);//();//colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
 	vec3 result=brightness*colour.rgb;
 	return vec4(result,1.f);
 }

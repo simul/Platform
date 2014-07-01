@@ -20,7 +20,7 @@
 
 #ifndef _MSC_VER
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
-#define DebugBreak()
+#define BREAK_IF_DEBUGGING
 #endif
 
 using namespace simul;
@@ -138,7 +138,7 @@ namespace simul
 				std::cerr<<"\n\t\tShader paths are:"<<std::endl;
 				for(int i=0;i<(int)shaderPathsUtf8.size();i++)
 					std::cerr<<" "<<shaderPathsUtf8[i].c_str()<<std::endl;
-				DebugBreak();
+				BREAK_IF_DEBUGGING;
 				std::cerr<<"exit(1)"<<std::endl;
 				exit(1);
 			}
@@ -527,7 +527,7 @@ namespace simul
 					std::string msg_text	=vert_filename;
 					msg_text				+=" failed to compile. Edit shader and try again?";
 					result					=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
-					DebugBreak();
+					BREAK_IF_DEBUGGING;
 		#else
 					break;
 		#endif
@@ -543,7 +543,7 @@ namespace simul
 				if(!geometry_shader)
 				{
 					std::cerr<<"ERROR:\tShader failed to compile\n";
-					DebugBreak();
+					BREAK_IF_DEBUGGING;
 				}
 				glAttachShader(prog,geometry_shader);
 				GL_ERROR_CHECK
@@ -561,7 +561,7 @@ namespace simul
 					std::string msg_text=frag_filename;
 					msg_text+=" failed to compile. Edit shader and try again?";
 					result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
-					DebugBreak();
+					BREAK_IF_DEBUGGING;
 		#else
 					break;
 		#endif

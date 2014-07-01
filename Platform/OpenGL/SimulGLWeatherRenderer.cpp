@@ -280,7 +280,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	{
 		float cloud_occlusion=0;
 		if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
-			cloud_occlusion=baseCloudRenderer->GetSunOcclusion(cam_pos);
+			cloud_occlusion=baseCloudRenderer->GetSunOcclusion(deviceContext,cam_pos);
 		baseSkyRenderer->CalcSunOcclusion(deviceContext,cloud_occlusion);
 	}
 	// Do this AFTER sky render, to catch any changes to texture definitions:

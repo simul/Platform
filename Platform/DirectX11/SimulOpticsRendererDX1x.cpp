@@ -113,7 +113,7 @@ void SimulOpticsRendererDX1x::RenderFlare(crossplatform::DeviceContext &deviceCo
 	if(flare_magnitude>0.f)
 	{
 		dx11::setTexture(effect,"flareTexture",flare_texture);
-		SetOpticsConstants(opticsConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,dir,sunlight,flare_angular_size*flare_magnitude);
+		SetOpticsConstants(opticsConstants,deviceContext.viewStruct,dir,sunlight,flare_angular_size*flare_magnitude);
 		opticsConstants.Apply(deviceContext);
 		ApplyPass(pContext,m_hTechniqueFlare->GetPassByIndex(0));
 		UtilityRenderer::DrawQuad(pContext);
@@ -124,7 +124,7 @@ void SimulOpticsRendererDX1x::RenderFlare(crossplatform::DeviceContext &deviceCo
 			float sz=lensFlare.GetArtifactSize(i);
 			int t=lensFlare.GetArtifactType(i);
 			dx11::setTexture(effect,"flareTexture",halo_textures[t]);
-			SetOpticsConstants(opticsConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,pos,sunlight,flare_angular_size*sz*flare_magnitude);
+			SetOpticsConstants(opticsConstants,deviceContext.viewStruct,pos,sunlight,flare_angular_size*sz*flare_magnitude);
 			opticsConstants.Apply(deviceContext);
 			ApplyPass(pContext,m_hTechniqueFlare->GetPassByIndex(0));
 			UtilityRenderer::DrawQuad(pContext);
@@ -153,7 +153,7 @@ void SimulOpticsRendererDX1x::RenderRainbowAndCorona(crossplatform::DeviceContex
 	dx11::setTexture(effect,"rainbowLookupTexture"	,rainbowLookupTexture);
 	dx11::setTexture(effect,"coronaLookupTexture"	,coronaLookupTexture);
 	dx11::setTexture(effect,"moistureTexture"		,(ID3D11ShaderResourceView*)moistureTexture);
-	SetOpticsConstants(opticsConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,dir_to_sun,sunlight,flare_angular_size*flare_magnitude);
+	SetOpticsConstants(opticsConstants,deviceContext.viewStruct,dir_to_sun,sunlight,flare_angular_size*flare_magnitude);
 	opticsConstants.Apply(deviceContext);
 	ApplyPass(pContext,techniqueRainbowCorona->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);

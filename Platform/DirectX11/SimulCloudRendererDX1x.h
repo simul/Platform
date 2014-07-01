@@ -128,6 +128,7 @@ namespace simul
 			ID3DX11EffectTechnique*					m_hTechniqueRaytraceForward;
 			ID3DX11EffectTechnique*					m_hTechniqueSimpleRaytrace;
 			ID3DX11EffectTechnique*					m_hTechniqueRaytrace3DNoise;
+			ID3DX11EffectTechnique*					m_hTechniqueRaytrace3DNoiseNearPass;
 			ID3DX11EffectTechnique*					m_hTechniqueCloudsAndLightning;
 
 			ID3DX11EffectTechnique*					m_pTechniqueCrossSection;

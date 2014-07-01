@@ -122,6 +122,12 @@ vec3 FilmicTone(vec3 x)
 	return c;
 }
 
+vec4 LinearizeDepthPS(v2f IN) : SV_TARGET
+{
+	vec4 depth=texture_nearest_lod(depthTexture,IN.texCoords,0);
+	float dist=depthToLinearDistance(depth.x,depthToLinFadeDistParams);
+    return vec4(dist,dist,dist,1.0);
+}
 vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
 {
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
@@ -354,6 +360,19 @@ technique11 simple_cloud_blend
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
+    }
+}
+
+technique11 linearize_depth
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetPixelShader(CompileShader(ps_4_0,LinearizeDepthPS()));
     }
 }
 

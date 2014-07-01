@@ -116,9 +116,9 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	,exposure_multiplier(1.f)
 	,memoryInterface(mem)
 {
-	simul::sky::SkyKeyframer *sk		=env->skyKeyframer;
-	simul::clouds::CloudKeyframer *ck2d	=env->cloud2DKeyframer;
-	simul::clouds::CloudKeyframer *ck3d	=env->cloudKeyframer;
+	sky::SkyKeyframer *sk			=env->skyKeyframer;
+	clouds::CloudKeyframer *ck2d	=env->cloud2DKeyframer;
+	clouds::CloudKeyframer *ck3d	=env->cloudKeyframer;
 	simulSkyRenderer			=::new(memoryInterface) SimulSkyRendererDX1x(sk, memoryInterface);
 	baseSkyRenderer				=simulSkyRenderer;
 	
@@ -359,7 +359,22 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(crossplatform::DeviceContext &
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderSkyAsOverlay")
 	TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
-
+	if(buffered)
+	{
+		int w,h,s;
+		fb->GetDimensions(w,h,s);
+		if(hiResDepthTexture)
+		{
+			int S=s;
+			if(lowResDepthTexture->width)
+				S=hiResDepthTexture->width/lowResDepthTexture->width;
+			if(S<1)
+				S=1;
+			fb->SetDimensions(hiResDepthTexture->width,hiResDepthTexture->length,s);
+		}
+		SIMUL_ASSERT(w!=0);
+	}
+ERRNO_CHECK
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(deviceContext,hiResDepthTexture,exposure,depthViewportXYWH);
 

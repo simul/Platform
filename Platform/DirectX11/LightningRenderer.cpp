@@ -177,10 +177,10 @@ void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,cross
 	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("lightning_thick");
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
 	if(depth_tex->GetSampleCount()>0)
-		effect->SetTexture("depthTextureMS",depth_tex);
+		effect->SetTexture(deviceContext,"depthTextureMS",depth_tex);
 	else
-		effect->SetTexture("depthTexture",depth_tex);
-	effect->SetTexture("cloudDepthTexture",cloud_depth_tex);
+		effect->SetTexture(deviceContext,"depthTexture",depth_tex);
+	effect->SetTexture(deviceContext,"cloudDepthTexture",cloud_depth_tex);
 	effect->Apply(deviceContext,tech,0);
 	for(int i=0;i<(int)start.size();i++)
 	{

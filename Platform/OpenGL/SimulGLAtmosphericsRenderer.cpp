@@ -97,18 +97,18 @@ void SimulGLAtmosphericsRenderer::RenderAsOverlay(crossplatform::DeviceContext &
 		msaa=(depthTexture->GetSampleCount()>0);
 	}
 	if(msaa)
-		effect->SetTexture("depthTextureMS"		,depthTexture);
+		effect->SetTexture(deviceContext,"depthTextureMS"		,depthTexture);
 	else
-		effect->SetTexture("depthTexture"		,depthTexture);
+		effect->SetTexture(deviceContext,"depthTexture"		,depthTexture);
 
-	effect->SetTexture("lossTexture",skyLossTexture);
-	effect->SetTexture("inscTexture",overcInscTexture);
-	effect->SetTexture("skylTexture",skylightTexture);
+	effect->SetTexture(deviceContext,"lossTexture",skyLossTexture);
+	effect->SetTexture(deviceContext,"inscTexture",overcInscTexture);
+	effect->SetTexture(deviceContext,"skylTexture",skylightTexture);
 	
-	effect->SetTexture("illuminationTexture",illuminationTexture);
-	effect->SetTexture("cloudShadowTexture",cloudShadowStruct.texture);
+	effect->SetTexture(deviceContext,"illuminationTexture",illuminationTexture);
+	effect->SetTexture(deviceContext,"cloudShadowTexture",cloudShadowStruct.texture);
 
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,deviceContext.viewStruct.proj,depthViewportXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,deviceContext.viewStruct,depthViewportXYWH);
 	atmosphericsPerViewConstants.Apply(deviceContext);
 	
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
@@ -127,20 +127,20 @@ void SimulGLAtmosphericsRenderer::RenderAsOverlay(crossplatform::DeviceContext &
 
 	effect->Apply(deviceContext,tech,"inscatter");
 	atmosphericsUniforms.Apply(deviceContext);
-	effect->SetTexture("inscTexture"		,overcInscTexture);
-	effect->SetTexture("skylightTexture"	,skylightTexture);
-	effect->SetTexture("depthTexture"		,depthTexture);
+	effect->SetTexture(deviceContext,"inscTexture"		,overcInscTexture);
+	effect->SetTexture(deviceContext,"skylightTexture"	,skylightTexture);
+	effect->SetTexture(deviceContext,"depthTexture"		,depthTexture);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ZERO,GL_ONE);
 	renderPlatform->DrawQuad(deviceContext);
-	effect->SetTexture("depthTextureMS"	,NULL);
-	effect->SetTexture("depthTexture"	,NULL);
-	effect->SetTexture("lossTexture",NULL);
-	effect->SetTexture("inscTexture",NULL);
-	effect->SetTexture("skylTexture",NULL);
-	effect->SetTexture("illuminationTexture",NULL);
-	effect->SetTexture("cloudShadowTexture",NULL);
+	effect->SetTexture(deviceContext,"depthTextureMS"	,NULL);
+	effect->SetTexture(deviceContext,"depthTexture"	,NULL);
+	effect->SetTexture(deviceContext,"lossTexture",NULL);
+	effect->SetTexture(deviceContext,"inscTexture",NULL);
+	effect->SetTexture(deviceContext,"skylTexture",NULL);
+	effect->SetTexture(deviceContext,"illuminationTexture",NULL);
+	effect->SetTexture(deviceContext,"cloudShadowTexture",NULL);
 	atmosphericsPerViewConstants.Unbind(deviceContext);
 	atmosphericsUniforms.Unbind(deviceContext);
 	earthShadowUniforms.Unbind(deviceContext);

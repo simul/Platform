@@ -7,12 +7,18 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		enum DepthTextureStyle
+		{
+			PROJECTION
+			,DISTANCE_FROM_NEAR_PLANE
+		};
 		//! A simple struct encapsulating a view and a projection matrix.
 		struct ViewStruct
 		{
 			int view_id;
-			simul::math::Matrix4x4 view;
-			simul::math::Matrix4x4 proj;
+			math::Matrix4x4 view;
+			math::Matrix4x4 proj;
+			DepthTextureStyle depthTextureStyle;
 		};
 		struct MixedResolutionStruct
 		{

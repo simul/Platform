@@ -21,6 +21,10 @@
 
 using namespace simul;
 using namespace dx11;
+static float length(vec3 v)
+{
+	return sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
+}
 
 PrecipitationRenderer::PrecipitationRenderer() :
 	m_pd3dDevice(NULL)
@@ -29,6 +33,7 @@ PrecipitationRenderer::PrecipitationRenderer() :
 	,rain_texture(NULL)
 	,cubemap_SRV(NULL)
 	,view_initialized(false)
+	,last_cam_pos(0.0f,0.0f,0.0f)
 {
 }
 
@@ -45,7 +50,7 @@ void PrecipitationRenderer::RecompileShaders()
 	effect=renderPlatform->CreateEffect("rain",defines);
 	SAFE_DELETE(rain_texture);
 	m_hTechniqueRain			=effect->GetTechniqueByName("simul_rain");
-	m_hTechniqueParticles		=effect->GetTechniqueByName("simul_particles");
+	m_hTechniqueParticles		=effect->GetTechniqueByName("snow");
 	m_hTechniqueRainParticles	=effect->GetTechniqueByName("rain_particles");
 	techniqueMoveParticles		=effect->GetTechniqueByName("move_particles");
 	rainTexture					=effect->asD3DX11Effect()->GetVariableByName("rainTexture")->AsShaderResource();
@@ -180,16 +185,24 @@ PrecipitationRenderer::~PrecipitationRenderer()
 
 void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceContext,float dt)
 {
-#if 1
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"PrecipitationRenderer::PreRenderUpdate")
 	if(dt<0)
 		dt*=-1.0f;
 	if(dt>1.0f)
 		dt=1.0f;
 	BasePrecipitationRenderer::PreRenderUpdate(deviceContext,dt);
-	
+	math::Vector3 cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
+	if(last_cam_pos.Magnitude()==0.0f)
+		last_cam_pos=cam_pos;
 	rainConstants.meanFallVelocity	=meanVelocity;
 	rainConstants.timeStepSeconds	=dt;
+	rainConstants.viewPositionOffset=cam_pos-last_cam_pos;
+	float l=length(rainConstants.viewPositionOffset);
+	if(l>10.0f)
+	{
+		rainConstants.viewPositionOffset*=10.0f/l;
+	}
+	last_cam_pos=cam_pos;
 	rainConstants.Apply(deviceContext);
 	
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
@@ -213,7 +226,6 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 	pContext->IASetPrimitiveTopology(previousTopology );
 	pContext->IASetInputLayout(previousInputLayout);
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
-#endif
 }
 
 // Render an image representing the optical thickness of moisture in any direction within a given view.
@@ -259,8 +271,8 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 				,simul::sky::float4 viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
+	math::Vector3 cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
 	static float ll=0.07f;
-	sky::float4 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
 	sky::float4 light_colour=ll*baseSkyInterface->GetLocalIrradiance(cam_pos.z/1000.f);
 	sky::float4 light_dir=baseSkyInterface->GetDirectionToLight(cam_pos.z/1000.f);
    
@@ -321,7 +333,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	perViewConstants.worldView[1].transpose();
 	perViewConstants.worldViewProj[1]		=(const float *)&wvp;
 	perViewConstants.worldViewProj[1].transpose();
-	perViewConstants.offset[1]		=offs;
+	perViewConstants.offset[1]				=(const float*)cam_pos;
 	perViewConstants.tanHalfFov		=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	perViewConstants.nearZ			=0;//frustum.nearZ*0.001f/fade_distance_km;
 	perViewConstants.farZ			=0;//frustum.farZ*0.001f/fade_distance_km;
@@ -349,7 +361,8 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 
 	static float near_rain_distance_metres=250.f;
 	perViewConstants.nearRainDistance=near_rain_distance_metres/max_fade_distance_metres;
-	perViewConstants.depthToLinFadeDistParams = vec4(deviceContext.viewStruct.proj.m[3][2], max_fade_distance_metres,deviceContext.viewStruct.proj.m[2][2]*max_fade_distance_metres,0.0f);
+	perViewConstants.depthToLinFadeDistParams =camera::GetDepthToDistanceParameters(deviceContext.viewStruct,max_fade_distance_metres);
+	
 	
 	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
 

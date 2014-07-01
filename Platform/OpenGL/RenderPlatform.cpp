@@ -304,7 +304,7 @@ glDisable(GL_BLEND);
 glDisable(GL_CULL_FACE);
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	static float cc=300000.f;
-	vec4 depthToLinFadeDistParams(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
+	vec4 depthToLinFadeDistParams=camera::GetDepthToDistanceParameters(deviceContext.viewStruct,cc);//(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
 	struct Viewport
 	{
 		int X,Y,Width,Height;
@@ -317,7 +317,7 @@ glDisable(GL_CULL_FACE);
 	GL_ERROR_CHECK
 	effect->SetParameter("tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
 	effect->SetParameter("depthToLinFadeDistParams",depthToLinFadeDistParams);
-	effect->SetTexture("image_texture",tex);
+	effect->SetTexture(deviceContext,"image_texture",tex);
 	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 		,2.f*(float)dx/(float)viewport.Width

@@ -38,12 +38,14 @@ namespace simul
 		public:
 			Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			Effect();
-			~Effect();
+			virtual ~Effect();
+			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
+			void InvalidateDeviceObjects();
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
-			void SetUnorderedAccessView(const char *name,crossplatform::Texture *tex);
-			void SetTexture(const char *name,crossplatform::Texture *tex);
-			void SetTexture(const char *name,crossplatform::Texture &t);
+			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex);
+			void SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex);
+			void SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture &t);
 			void SetTexture(const char *name,ID3D11ShaderResourceView *tex);
 			void SetParameter	(const char *name	,float value)		;
 			void SetParameter	(const char *name	,vec2 value)		;

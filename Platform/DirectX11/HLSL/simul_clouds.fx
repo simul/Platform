@@ -3,6 +3,8 @@
 Texture2D nearFarTexture	: register(t3);
 Texture2D cloudGodraysTexture;
 RWTexture2D<float> targetTexture1;
+RWBuffer<float> occlusionBuffer;
+
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/simul_cloud_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
@@ -94,6 +96,16 @@ vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
 	float m=MoistureAccumulation(cloudShadowTexture,shadowTextureSize,IN.texCoords);
 	return vec4(m,m,m,m);
 }
+float CloudsOcclusion(Texture3D cloudDensity1,Texture3D cloudDensity2,float cloud_interp,vec3 viewPos,vec3 directionToSun)
+{
+	return 0.f;
+}
+[numthreads(1,1,1)]
+void CS_Occlusion(uint3 idx: SV_DispatchThreadID)
+{
+	occlusionBuffer[idx.x]=CloudsOcclusion(cloudDensity1,cloudDensity2,cloud_interp,viewPos,directionToSun);
+}
+
 
 vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 {
@@ -116,7 +128,22 @@ vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 RaytracePixelOutput PS_Raytrace3DNoise(posTexVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
-	texCoords.y				=1.0-texCoords.y;
+	RaytracePixelOutput r	=RaytraceCloudsForward(cloudDensity1,cloudDensity2
+									,noiseTexture
+									,noiseTexture3D
+									,depthTexture
+									,lightTableTexture
+									,true
+									,texCoords
+									,false
+									,true
+									,true);
+	return r;
+}
+
+RaytracePixelOutput PS_Raytrace3DNoiseNearPass(posTexVertexOutput IN)
+{
+	vec2 texCoords			=IN.texCoords.xy;
 	RaytracePixelOutput r	=RaytraceCloudsForward(cloudDensity1,cloudDensity2
 									,noiseTexture
 									,noiseTexture3D
@@ -242,6 +269,18 @@ technique11 simul_raytrace_3d_noise
     }
 }
 
+technique11 simul_raytrace_3d_noise_near_pass
+{
+    pass p0 
+    {
+		SetDepthStencilState(WriteDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseNearPass()));
+    }
+}
+
+
 technique11 cloud_shadow
 {
     pass p0 
@@ -260,6 +299,13 @@ technique11 godrays_accumulation
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_GodraysAccumulation()));
+    }
+}
+technique11 occlusion
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Occlusion()));
     }
 }
 

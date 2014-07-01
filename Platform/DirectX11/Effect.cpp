@@ -81,10 +81,19 @@ int EffectTechnique::NumPasses() const
 	return (int)desc.Passes;
 }
 
+dx11::Effect::Effect()
+{
+}
 
 dx11::Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
-	ID3DX11Effect *e=NULL;
+	Load(renderPlatform,filename_utf8,defines);
+}
+
+void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+{
+	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
+	SAFE_RELEASE(e);
 	if(!renderPlatform)
 		return;
 	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_utf8,defines,D3DCOMPILE_OPTIMIZATION_LEVEL3);
@@ -120,12 +129,14 @@ dx11::Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *f
 
 dx11::Effect::~Effect()
 {
+	InvalidateDeviceObjects();
+}
+
+void Effect::InvalidateDeviceObjects()
+{
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
 	SAFE_RELEASE(e);
-	for(crossplatform::TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
-	{
-		delete i->second;
-	}
+	platform_effect=e;
 }
 
 crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *name)
@@ -171,7 +182,7 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 	return tech;
 }
 
-void dx11::Effect::SetUnorderedAccessView(const char *name,crossplatform::Texture *t)
+void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *t)
 {
 	if(t)
 	{
@@ -187,14 +198,14 @@ void dx11::Effect::SetTexture(const char *name,ID3D11ShaderResourceView *tex)
 	simul::dx11::setTexture(asD3DX11Effect(),name,tex);
 }
 
-void dx11::Effect::SetTexture(const char *name,crossplatform::Texture &t)
+void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture &t)
 {
 	dx11::Texture *T=(dx11::Texture*)&t;
 	simul::dx11::setTexture(asD3DX11Effect(),name,T->shaderResourceView);
 }
 
 
-void dx11::Effect::SetTexture(const char *name,crossplatform::Texture *t)
+void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *t)
 {
 	if(t)
 	{

@@ -286,8 +286,10 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	simul::dx11::setTexture(effect,"inscTexture",overcInscTexture->AsD3D11ShaderResourceView());
 	simul::dx11::setTexture(effect,"skylTexture",skylightTexture->AsD3D11ShaderResourceView());
 	// Set both MS and regular - we'll only use one of them:
-	simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
-	simul::dx11::setTexture(effect,"depthTextureMS",depthTexture_SRV);
+	if(depthTexture->GetSampleCount()>0)
+		simul::dx11::setTexture(effect,"depthTextureMS",depthTexture_SRV);
+	else
+		simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
 	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture->AsD3D11ShaderResourceView());
 	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture->AsD3D11ShaderResourceView());
 	

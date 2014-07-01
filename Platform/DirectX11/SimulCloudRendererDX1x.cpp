@@ -527,6 +527,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	m_hTechniqueRaytraceNearPass	=effect->asD3DX11Effect()->GetTechniqueByName("raytrace_near_pass");
 	m_hTechniqueSimpleRaytrace		=effect->asD3DX11Effect()->GetTechniqueByName("simul_simple_raytrace");
 	m_hTechniqueRaytrace3DNoise		=effect->asD3DX11Effect()->GetTechniqueByName("simul_raytrace_3d_noise");
+	m_hTechniqueRaytrace3DNoiseNearPass=effect->asD3DX11Effect()->GetTechniqueByName("simul_raytrace_3d_noise_near_pass");
 	m_hTechniqueCloudsAndLightning	=effect->asD3DX11Effect()->GetTechniqueByName("simul_clouds_and_lightning");
 
 	m_pTechniqueCrossSection		=effect->asD3DX11Effect()->GetTechniqueByName("cross_section");
@@ -705,7 +706,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	//SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	//SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"2")
 	CloudPerViewConstants cloudPerViewConstants;
-	SetCloudPerViewConstants(cloudPerViewConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,exposure,deviceContext.viewStruct.view_id,viewportTextureRegionXYWH,mixedResTransformXYWH);
+	SetCloudPerViewConstants(cloudPerViewConstants,deviceContext.viewStruct,exposure,viewportTextureRegionXYWH,mixedResTransformXYWH);
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
 	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=effect->asD3DX11Effect()->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
@@ -752,7 +753,10 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 		cbLayerConstants->SetConstantBuffer(layerConstantsBuffer);
 	if(cloudKeyframer->GetUse3DNoise())
 	{
-		ApplyPass(pContext,m_hTechniqueRaytrace3DNoise->GetPassByIndex(0));
+		if(near_pass)
+			ApplyPass(pContext,m_hTechniqueRaytrace3DNoiseNearPass->GetPassByIndex(0));
+		else
+			ApplyPass(pContext,m_hTechniqueRaytrace3DNoise->GetPassByIndex(0));
 	}
 	else if(cubemap)
 	{

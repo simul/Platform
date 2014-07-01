@@ -141,8 +141,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
 	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 1")
 
-	ID3D1xEffectScalarVariable *distKm							=effect->GetVariableByName("distKm")->AsScalar();
-	ID3D1xEffectScalarVariable *prevDistKm						=effect->GetVariableByName("prevDistKm")->AsScalar();
+	//ID3D1xEffectScalarVariable *distKm							=effect->GetVariableByName("distKm")->AsScalar();
+	//ID3D1xEffectScalarVariable *prevDistKm						=effect->GetVariableByName("prevDistKm")->AsScalar();
 	ID3D1xEffectShaderResourceVariable*	input_texture			=effect->GetVariableByName("input_texture")->AsShaderResource();
 	ID3DX11EffectUnorderedAccessViewVariable *targetTexture		=effect->GetVariableByName("targetTexture")->AsUnorderedAccessView();
 	ID3DX11EffectShaderResourceVariable* optical_depth_texture	=effect->GetVariableByName("optical_depth_texture")->AsShaderResource();

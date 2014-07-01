@@ -79,7 +79,7 @@ namespace simul
 			crossplatform::ConstantBuffer<RainPerViewConstants>		perViewConstants;
 			crossplatform::ConstantBuffer<MoisturePerViewConstants>	moisturePerViewConstants;
 			float intensity;
-
+			math::Vector3 last_cam_pos;
 			bool view_initialized;
 		};
 	}

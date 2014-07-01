@@ -1,4 +1,8 @@
+#define NOMINMAX
 #include <gl/glew.h>
+#ifdef _MSC_VER
+#include <Windows.h>
+#endif
 #include "Simul/Platform/OpenGL/GpuCloudGenerator.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"

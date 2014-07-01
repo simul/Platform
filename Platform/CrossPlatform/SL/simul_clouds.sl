@@ -251,7 +251,7 @@ vec3 calcLightningColour(vec3 world_pos,vec3 lightningColour,vec3 lightningOrigi
 {
 	vec3 texCoords=(world_pos-lightningOrigin)*lightningInvScales;
 	float diff=length(texCoords-vec3(.5,.5,.5));
-	float b=1.0/pow(diff+.0001,1.0);
+	float b=1.0/pow(diff+.0001,2.0);
 	vec3 colour=b*lightningColour;
 	return colour;
 }
@@ -349,7 +349,14 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				}
 			}
 			density						=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
-		//	density.z					=saturate(density.z+layer.layerFade*rainEffect*saturate(1.0-density.w)*saturate(dot(world_pos.xy-rainBoundary.xy,rainRegionNormal.xy)*0.001)*saturate(5.0-10*cloudTexCoords.z)*saturate(cloudTexCoords.z+2.0));
+			density.z					=saturate(density.z
+											+layer.layerFade*rainEffect
+											*saturate(1.0-density.w)
+											*saturate(1.0-density.x)
+											*saturate((rainRadius-length(world_pos.xy-rainCentre.xy))*0.0003)
+											*saturate(5.0-10*cloudTexCoords.z)
+											*saturate(cloudTexCoords.z+2.0)
+											);
             if(do_depth_mix)
 				density.z				*=saturate((d-fadeDistance)/0.01);
 			if(density.z>0)
@@ -386,7 +393,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	meanFadeDistance					+=colour.a;
 	RaytracePixelOutput res;
     res.colour							=vec4(exposure*colour.rgb,colour.a);
-	res.depth							=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,nearZ,farZ,tanHalfFov);
+	res.depth							=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	return res;
 }
 #endif

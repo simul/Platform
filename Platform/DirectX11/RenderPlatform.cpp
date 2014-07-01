@@ -602,16 +602,16 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	if(tex->GetSampleCount()>0)
 	{
 		tech=m_pDebugEffect->GetTechniqueByName("show_depth_ms");
-		m_pDebugEffect->SetTexture("imageTextureMS",tex);
+		m_pDebugEffect->SetTexture(deviceContext,"imageTextureMS",tex);
 	}
 	else
 	{
-		m_pDebugEffect->SetTexture("imageTexture",tex);
+		m_pDebugEffect->SetTexture(deviceContext,"imageTexture",tex);
 	}
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	m_pDebugEffect->SetParameter("tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
 	static float cc=300000.f;
-	vec4 depthToLinFadeDistParams(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
+	vec4 depthToLinFadeDistParams=camera::GetDepthToDistanceParameters(deviceContext.viewStruct,cc);//(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
 	m_pDebugEffect->SetParameter("depthToLinFadeDistParams",depthToLinFadeDistParams);
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	unsigned int num_v=1;

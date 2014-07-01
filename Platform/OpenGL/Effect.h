@@ -48,9 +48,9 @@ namespace simul
 			}
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
-			void SetUnorderedAccessView(const char *name,crossplatform::Texture *tex);
-			void SetTexture		(const char *name,crossplatform::Texture *tex);
-			void SetTexture		(const char *name,crossplatform::Texture &t);
+			void SetUnorderedAccessView(crossplatform::DeviceContext&,const char *name,crossplatform::Texture *tex);
+			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture *tex);
+			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture &t);
 			void SetParameter	(const char *name	,float value)		;
 			void SetParameter	(const char *name	,vec2)				;
 			void SetParameter	(const char *name	,vec3)				;

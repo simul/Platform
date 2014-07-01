@@ -758,7 +758,7 @@ static const DWORD default_effect_flags=0;
 #ifdef DXTRACE_ERR
         hr=DXTRACE_ERR( L"CreateEffect", hr );
 #endif
-		DebugBreak();
+		BREAK_IF_DEBUGGING;
  	}
 	assert((*effect)->IsValid());
 
@@ -868,7 +868,7 @@ HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass
 
 void BreakIfDebugging()
 {
-	DebugBreak();
+	BREAK_IF_DEBUGGING;
 }
 
 int simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )

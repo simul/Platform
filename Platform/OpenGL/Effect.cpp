@@ -240,12 +240,12 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 	return tech;
 }
 
-void Effect::SetUnorderedAccessView(const char *name,crossplatform::Texture *tex)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex)
 {
-	SetTexture(name,tex);
+	SetTexture(deviceContext,name,tex);
 }
 
-void Effect::SetTexture(const char *name,crossplatform::Texture *tex)
+void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex)
 {
 	current_texture_number++;
     glActiveTexture(GL_TEXTURE0+current_texture_number);
@@ -295,9 +295,9 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-void Effect::SetTexture(const char *name,crossplatform::Texture &t)
+void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture &t)
 {
-	SetTexture(name,&t);
+	SetTexture(deviceContext,name,&t);
 }
 
 void Effect::SetParameter	(const char *name	,float value)

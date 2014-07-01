@@ -206,8 +206,8 @@ ERRNO_CHECK
 	if(cubemap_view_id<0)
 		cubemap_view_id=viewManager.AddView(false);
 	crossplatform::DeviceContext deviceContext;
-	deviceContext.platform_context	=parentDeviceContext.asD3D11DeviceContext();
-	deviceContext.renderPlatform	=&renderPlatformDx11;
+	deviceContext.platform_context	=parentDeviceContext.platform_context;
+	deviceContext.renderPlatform	=parentDeviceContext.renderPlatform;
 	deviceContext.viewStruct.view_id=cubemap_view_id;
 	cubemapFramebuffer.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	if(simulTerrainRenderer)
@@ -218,8 +218,8 @@ ERRNO_CHECK
 ERRNO_CHECK
 		cubemapFramebuffer.SetCurrentFace(i);
 		cubemapFramebuffer.Activate(deviceContext);
-		float nearPlane=1.f;
-		float farPlane=200000.f;
+		static float nearPlane	=10.f;
+		static float farPlane	=200000.f;
 ERRNO_CHECK
 		if(ReverseDepth)
 			deviceContext.viewStruct.proj=simul::camera::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane);
@@ -235,22 +235,17 @@ ERRNO_CHECK
 		{
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext
-				,true,1.f,false,cubemapFramebuffer.GetDepthTexture(),NULL,relativeViewportTextureRegionXYWH,true);
+				,true,1.f,false,cubemapFramebuffer.GetDepthTexture(),cubemapFramebuffer.GetDepthTexture(),relativeViewportTextureRegionXYWH,true);
 		}
-		static const char *txt[]={"+X",
-								"-X",
-								"+Y",
-								"-Y",
-								"+Z",
-								"-Z"};
+		static const char *txt[]={	"+X",
+									"-X",
+									"+Y",
+									"-Y",
+									"+Z",
+									"-Z"};
 		//renderPlatformDx11.Print(deviceContext,16,16,txt[i]);
 		cubemapFramebuffer.Deactivate(deviceContext.platform_context);
 	}
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer.GetColorTex());
-ERRNO_CHECK
-	if(oceanRenderer)
-		oceanRenderer->SetCubemapTexture(cubemapFramebuffer.GetColorTex());
 ERRNO_CHECK
 }
 
@@ -344,7 +339,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 			view->GetFramebuffer()->ActivateDepth(deviceContext);
 		simulWeatherRenderer->RenderLightning(deviceContext,&view->hiResDepthTexture,relativeViewportTextureRegionXYWH,simulWeatherRenderer->GetCloudDepthTexture(deviceContext.viewStruct.view_id));
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
-		simulWeatherRenderer->RenderPrecipitation(deviceContext,&view->hiResDepthTexture,relativeViewportTextureRegionXYWH);
+		//simulWeatherRenderer->RenderPrecipitation(deviceContext,&view->hiResDepthTexture,relativeViewportTextureRegionXYWH);
 		if(simulOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetSkyRenderer())
 		{
 			simul::sky::float4 dir,light;
@@ -397,6 +392,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		else
 			deviceContext.viewStruct.proj=cam->MakeProjectionMatrix(aspect);
 		deviceContext.viewStruct.view=cam->MakeViewMatrix();
+		deviceContext.viewStruct.depthTextureStyle=crossplatform::PROJECTION;
 	}
 	if(simulWeatherRenderer)
 	{
@@ -460,9 +456,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		const float *cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view);
 		RenderCubemap(deviceContext,cam_pos);
 		SIMUL_COMBINED_PROFILE_END(pContext)
+		if(oceanRenderer)
+			oceanRenderer->SetCubemapTexture(cubemapFramebuffer.GetColorTex());
 		SIMUL_COMBINED_PROFILE_START(pContext,"Envmap")
 		RenderEnvmap(deviceContext);
 		SIMUL_COMBINED_PROFILE_END(pContext)
+		if(simulWeatherRenderer)
+			simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer.GetColorTex());
 	}
 	if(UseHdrPostprocessor)
 	{
@@ -563,9 +563,12 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 	MixedResolutionView *view=viewManager.GetView(0);
 	if(!view)
 		return;
+	try
+	{
 	simul::dx11::Framebuffer fb(view->GetScreenWidth(),view->GetScreenHeight());
 	fb.RestoreDeviceObjects(&renderPlatformDx11);
 	crossplatform::DeviceContext deviceContext;
+	deviceContext.renderPlatform=&renderPlatformDx11;
 	ID3D11DeviceContext *pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
 	deviceContext.platform_context=pImmediateContext;
@@ -574,6 +577,10 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 	fb.Deactivate(pImmediateContext);
 	simul::dx11::SaveTexture(m_pd3dDevice,(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());
 	SAFE_RELEASE(pImmediateContext);
+	}
+	catch(...)
+	{
+	}
 }
 
 void Direct3D11Renderer::OnD3D11LostDevice()

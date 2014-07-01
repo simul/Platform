@@ -107,8 +107,8 @@ GL_ERROR_CHECK
 	//effect->SetParameter("exposure",exposure);
 	//effect->SetParameter("gamma",gamma);
 	
-	effect->SetTexture("image_texture",framebuffer.GetTexture());
-	effect->SetTexture("glowTexture",glow_fb.GetTexture());
+	effect->SetTexture(deviceContext,"image_texture",framebuffer.GetTexture());
+	effect->SetTexture(deviceContext,"glowTexture",glow_fb.GetTexture());
 GL_ERROR_CHECK
 	hdrConstants.exposure	=exposure;//=vec4(1.0,0,1.0,0.5);
 	hdrConstants.gamma		=gamma;
