@@ -223,7 +223,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 	if(asGLint()==-1)
 		return NULL;
 	GLint e				=asGLint();
-	if(index>=techniques.size())
+	if(index>=(int)techniques.size())
 		return NULL;
 //	int nump			=glfxGetProgramCount(e);
 	const char *name	=glfxGetProgramName(e,index);
@@ -245,7 +245,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 	SetTexture(deviceContext,name,tex);
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex)
+void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex)
 {
 	current_texture_number++;
     glActiveTexture(GL_TEXTURE0+current_texture_number);
@@ -364,7 +364,7 @@ void Effect::SetMatrix		(const char *name	,const float *m)
 	GL_ERROR_CHECK
 }
 
-void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass)
+void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique *effectTechnique,int pass)
 {
 	if(apply_count!=0)
 		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")

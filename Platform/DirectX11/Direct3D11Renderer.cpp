@@ -228,6 +228,18 @@ ERRNO_CHECK
 ERRNO_CHECK
 		deviceContext.viewStruct.view_id=cubemap_view_id;
 		deviceContext.viewStruct.view	=view_matrices[i];
+		if(simulWeatherRenderer)
+		{
+			float time=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetTime();
+			for(int i=0;i<simulWeatherRenderer->GetEnvironment()->cloudKeyframer->GetNumLightningBolts(time);i++)
+			{
+				const simul::clouds::LightningRenderInterface *lightningRenderInterface=simulWeatherRenderer->GetEnvironment()->cloudKeyframer->GetLightningBolt(time,i);
+				if(!lightningRenderInterface)
+					continue;
+				simul::clouds::LightningProperties props	=simulWeatherRenderer->GetEnvironment()->cloudKeyframer->GetLightningProperties(time,i);
+				simulTerrainRenderer->SetLightningProperties(props);
+			}
+		}
 		if(simulTerrainRenderer)
 			simulTerrainRenderer->Render(deviceContext,1.f);
 		cubemapFramebuffer.DeactivateDepth(deviceContext.platform_context);

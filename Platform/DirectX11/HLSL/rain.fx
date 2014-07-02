@@ -866,8 +866,8 @@ PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput input,uint ve
 PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint vertex_id	: SV_VertexID)
 {
 	vec3 pos					=input.position;
-	pos							+=(meanFallVelocity+meanFallVelocity.z*input.velocity*0.1*flurry)*timeStepSeconds;
-	//pos							+=meanFallVelocity*timeStepSeconds;
+	pos							+=(meanFallVelocity+meanFallVelocity.z*input.velocity*0.5*flurry)*timeStepSeconds;
+	//pos						+=meanFallVelocity*timeStepSeconds;
 	pos							-=viewPositionOffset;
 	pos=WrapParticleZone(pos);
 	input.position		=pos;

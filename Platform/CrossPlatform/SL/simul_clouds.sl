@@ -62,6 +62,18 @@ vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier
     return final;
 }
 
+float MakeRainMap(Texture3D cloudDensity1,Texture3D cloudDensity2,float cloud_interp,vec2 texCoords)
+{
+	vec3 texc		=vec3(texCoords.xy,0.75);
+	vec4 density1	=sampleLod(cloudDensity1,cloudSamplerState,texc,0);
+	vec4 density2	=sampleLod(cloudDensity2,cloudSamplerState,texc,0);
+	vec4 density	=lerp(density1,density2,cloud_interp);
+	float r			=density.z;
+	if(r<0.999)
+		r=0;
+	return r;
+}
+
 vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,mat4 shadowMatrix,vec3 cornerPos,vec3 inverseScales)
 {
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
@@ -259,6 +271,7 @@ vec3 calcLightningColour(vec3 world_pos,vec3 lightningColour,vec3 lightningOrigi
 #ifndef GLSL
 RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,Texture3D cloudDensity2
+											,Texture2D rainMapTexture
 											,Texture2D noiseTexture
 											,Texture3D noiseTexture3D
 											,Texture2D depthTexture
@@ -322,7 +335,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		float fadeDistance				=saturate(layerWorldDist/maxFadeDistanceMetres);
 		vec3 world_pos					=viewPos+layerWorldDist*view;
 		world_pos.z						-=layer.verticalShift;
-		vec3 cloudTexCoords				=(world_pos-cornerPos)*inverseScales;
+		vec3 cloudWorldOffset			=(world_pos-cornerPos);
+		vec3 cloudTexCoords				=cloudWorldOffset*inverseScales;
 		float layerFade					=layer.layerFade;
 		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
@@ -349,13 +363,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				}
 			}
 			density						=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
+			// The rain fall angle is used:
+			vec3 rain_texc				=cloudWorldOffset;
+			rain_texc.xy				+=rain_texc.z*rainTangent;
+			float rain_lookup			=texture_wrap_lod(rainMapTexture,rain_texc.xy*inverseScales.xy,0).x;
+			vec4 streak					=texture_wrap_lod(noiseTexture,0.0001*rain_texc.xy,0);
 			density.z					=saturate(density.z
-											+layer.layerFade*rainEffect
-											*saturate(1.0-density.w)
-											*saturate(1.0-density.x)
+											+layer.layerFade*rainEffect*rain_lookup
 											*saturate((rainRadius-length(world_pos.xy-rainCentre.xy))*0.0003)
 											*saturate(5.0-10*cloudTexCoords.z)
-											*saturate(cloudTexCoords.z+2.0)
+											*saturate(cloudTexCoords.z+1.0+4.0*streak.y)
+											*(0.4+0.6*streak.x)
 											);
             if(do_depth_mix)
 				density.z				*=saturate((d-fadeDistance)/0.01);

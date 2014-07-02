@@ -2,6 +2,7 @@
 #include "states.hlsl"
 Texture2D nearFarTexture	: register(t3);
 Texture2D cloudGodraysTexture;
+Texture2D rainMapTexture;
 RWTexture2D<float> targetTexture1;
 RWBuffer<float> occlusionBuffer;
 
@@ -44,6 +45,7 @@ RaytracePixelOutput PS_RaytraceForward(posTexVertexOutput IN)
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2
+									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
 									,depthTexture
@@ -63,6 +65,7 @@ RaytracePixelOutput PS_RaytraceNearPass(posTexVertexOutput IN)
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2
+									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
 									,depthTexture
@@ -83,6 +86,12 @@ RaytracePixelOutput PS_RaytraceNearPass(posTexVertexOutput IN)
 vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 {
 	return CloudShadow(cloudDensity1,cloudDensity2,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
+}
+
+vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
+{
+	float r=MakeRainMap(cloudDensity1,cloudDensity2,cloud_interp,IN.texCoords);
+	return vec4(r,r,r,r);
 }
 
 [numthreads(1,1,1)]
@@ -113,6 +122,7 @@ vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2
+									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
 									,depthTexture
@@ -128,7 +138,10 @@ vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 RaytracePixelOutput PS_Raytrace3DNoise(posTexVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
-	RaytracePixelOutput r	=RaytraceCloudsForward(cloudDensity1,cloudDensity2
+	RaytracePixelOutput r	=RaytraceCloudsForward(
+									cloudDensity1
+									,cloudDensity2
+									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
 									,depthTexture
@@ -145,6 +158,7 @@ RaytracePixelOutput PS_Raytrace3DNoiseNearPass(posTexVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
 	RaytracePixelOutput r	=RaytraceCloudsForward(cloudDensity1,cloudDensity2
+									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
 									,depthTexture
@@ -280,7 +294,6 @@ technique11 simul_raytrace_3d_noise_near_pass
     }
 }
 
-
 technique11 cloud_shadow
 {
     pass p0 
@@ -291,6 +304,20 @@ technique11 cloud_shadow
 		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_CloudShadow()));
+    }
+}
+
+
+technique11 rain_map
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_RainMap()));
     }
 }
 

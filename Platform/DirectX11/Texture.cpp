@@ -58,6 +58,8 @@ void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *r,const char *pF
 		void *f=NULL;
 		unsigned int bytes=0;
 		std::string str		=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(pFilePathUtf8,dx11::GetTexturePathsUtf8());
+		if(!str.length())
+			return;
 		base::FileLoader::GetFileLoader()->AcquireFileContents(f,bytes,str.c_str(),false);
 		char *src=(char*)f+bytes-32768*4;
 		ensureTexture2DSizeAndFormat(r,256,128,crossplatform::RGBA_8_UNORM,false,false);

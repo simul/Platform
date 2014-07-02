@@ -57,6 +57,9 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform float depthMix;
 	uniform float CloudPerViewConstantsPad3;
 	uniform vec4 mixedResTransformXYWH;		// xy=offset, zw=multiple.
+	uniform vec2 rainCentre;
+	uniform float rainRadius;
+	uniform float ageaeghj5;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
@@ -80,7 +83,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 sunlightColour2;
 	uniform float maxAltitudeMetres;
 	uniform vec2 screenCoordOffset;
-	uniform vec2 awehrasj;
+	uniform vec2 rainTangent;
 	uniform vec3 mieRayleighRatio;
 	uniform float alphaSharpness;
 	uniform vec3 lightningOrigin;
@@ -95,8 +98,6 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float yz;
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
-	uniform vec2 rainCentre;
-	uniform float rainRadius;
 SIMUL_CONSTANT_BUFFER_END
 
 #ifdef __cplusplus
@@ -111,9 +112,10 @@ namespace simul
 }
 uniform_buffer CloudShadowStruct 
 {
-	simul::crossplatform::Texture *texture;					// texture, or SRV for DX11
-	simul::crossplatform::Texture *godraysTexture;				// texture, or SRV for DX11, represents accumulated illumination at a given angle and distance.
-	simul::crossplatform::Texture *moistureTexture;			// Texture, or SRV for DX11, represents optical thickness of moisture at a given horizontal angle and distance.
+	simul::crossplatform::Texture *texture;					///< Cloud shadow texture.
+	simul::crossplatform::Texture *godraysTexture;			///< Texture represents accumulated illumination at a given angle and distance.
+	simul::crossplatform::Texture *moistureTexture;			///< Texture represents optical thickness of moisture at a given horizontal angle and distance.
+	simul::crossplatform::Texture *rainMapTexture;			///< Texture represents where in the horizontal plane of the cloud rain can fall.
 	mat4 shadowMatrix;					// Transform a position from shadow space to world space
 	mat4 worldToMoistureSpaceMatrix;	// Transform a position from world space to moisture space.
 	mat4 simpleOffsetMatrix;

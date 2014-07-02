@@ -65,7 +65,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	simul::clouds::BaseCloudRenderer(ck,mem)
 	,m_pTechniqueCrossSection(NULL)
 	,m_pd3dDevice(NULL)
-	,effect(NULL)
 	,cloudPerViewConstantBuffer(NULL)
 	,layerConstantsBuffer(NULL)
 	,noise_texture(NULL)
@@ -187,9 +186,13 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
 	cloudConstants.RestoreDeviceObjects(m_pd3dDevice);
 	layerBuffer.RestoreDeviceObjects(m_pd3dDevice,SIMUL_MAX_CLOUD_RAYTRACE_STEPS);
 
-	shadow_fb.RestoreDeviceObjects(renderPlatform);
-	moisture_fb.RestoreDeviceObjects(renderPlatform);
-
+	SAFE_DELETE(shadow_fb);
+	shadow_fb=renderPlatform->CreateTexture();
+	SAFE_DELETE(moisture_fb);
+	moisture_fb=renderPlatform->CreateTexture();
+	SAFE_DELETE(rain_map);
+	rain_map=renderPlatform->CreateTexture();
+	
 	SAFE_RELEASE(m_pWrapSamplerState);
 	SAFE_RELEASE(m_pClampSamplerState);
 	D3D11_SAMPLER_DESC samplerDesc;
@@ -216,9 +219,16 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	BaseCloudRenderer::InvalidateDeviceObjects();
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	Unmap();
-	shadow_fb.InvalidateDeviceObjects();
+	if(shadow_fb)
+		shadow_fb->InvalidateDeviceObjects();
 	godrays_texture.InvalidateDeviceObjects();
-	moisture_fb.InvalidateDeviceObjects();
+	if(moisture_fb)
+		moisture_fb->InvalidateDeviceObjects();
+	if(rain_map)
+		rain_map->InvalidateDeviceObjects();
+	SAFE_DELETE(shadow_fb);
+	SAFE_DELETE(moisture_fb);
+	SAFE_DELETE(rain_map);
 	//if(illumination_texture)
 	//	Unmap3D(mapped_context,illumination_texture);
 	SAFE_RELEASE(m_pWrapSamplerState);
@@ -530,7 +540,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	m_hTechniqueRaytrace3DNoiseNearPass=effect->asD3DX11Effect()->GetTechniqueByName("simul_raytrace_3d_noise_near_pass");
 	m_hTechniqueCloudsAndLightning	=effect->asD3DX11Effect()->GetTechniqueByName("simul_clouds_and_lightning");
 
-	m_pTechniqueCrossSection		=effect->asD3DX11Effect()->GetTechniqueByName("cross_section");
+	m_pTechniqueCrossSection		=effect->GetTechniqueByName("cross_section");
 
 	cloudDensity					=effect->asD3DX11Effect()->GetVariableByName("cloudDensity")->AsShaderResource();
 	cloudDensity1					=effect->asD3DX11Effect()->GetVariableByName("cloudDensity1")->AsShaderResource();
@@ -608,14 +618,14 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceConte
 		simul::dx11::setSamplerState(effect->asD3DX11Effect(),"cloudSamplerState",m_pClampSamplerState);
 
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-	shadow_fb.Activate(deviceContext);
+	shadow_fb->activateRenderTarget(deviceContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
-	shadow_fb.Deactivate(pContext);
+	shadow_fb->deactivateRenderTarget();
     SIMUL_COMBINED_PROFILE_END(pContext)
     SIMUL_COMBINED_PROFILE_START(pContext,"GodraysAccumulation")
 	{
 		tech	=effect->asD3DX11Effect()->GetTechniqueByName("godrays_accumulation");
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
+		effect->SetTexture(deviceContext,"cloudShadowTexture",shadow_fb);
 		simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture1",godrays_texture.unorderedAccessView);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
 		pContext->Dispatch(godrays_texture.width,1,1);
@@ -629,11 +639,16 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceConte
 	if(K.precipitation>0)
 	{
 		tech	=effect->asD3DX11Effect()->GetTechniqueByName("moisture_accumulation");
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
+		effect->SetTexture(deviceContext,"cloudShadowTexture",shadow_fb);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
-		moisture_fb.Activate(deviceContext);
+		moisture_fb->activateRenderTarget(deviceContext);
 			simul::dx11::UtilityRenderer::DrawQuad(pContext);
-		moisture_fb.Deactivate(pContext);
+		moisture_fb->deactivateRenderTarget();
+		effect->Apply(deviceContext,effect->GetTechniqueByName("rain_map"),0);
+		rain_map->activateRenderTarget(deviceContext);
+			simul::dx11::UtilityRenderer::DrawQuad(pContext);
+		rain_map->deactivateRenderTarget();
+		effect->Unapply(deviceContext);
 	}
     SIMUL_COMBINED_PROFILE_END(pContext)
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudShadowTexture",NULL);
@@ -694,6 +709,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	lightTableTexture	->SetResource(lightTableTexture_SRV);
 	//SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	//SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"1")
+	effect->SetTexture(deviceContext,"rainMapTexture"		,rain_map);
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"noiseTexture"		,noiseTextureResource);
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"illuminationTexture",illuminationTexture_SRV);
 	
@@ -831,10 +847,10 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &d
 		cloudConstants.crossSectionOffset	=vec3(0.5f,0.5f,0.f);
 		cloudConstants.yz					=0.f;
 		cloudConstants.Apply(deviceContext);
-//		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+4,w,h,effect,m_pTechniqueCrossSection);
+		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+4,w,h,effect,m_pTechniqueCrossSection);
 		cloudConstants.yz					=1.f;
 		cloudConstants.Apply(deviceContext);
-//		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+h+8,w,w,effect,m_pTechniqueCrossSection);
+		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+h+8,w,w,effect,m_pTechniqueCrossSection);
 	}
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);
@@ -855,19 +871,21 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::Devic
 		h=1;
 	h*=gi->GetGridHeight();
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"noiseTexture",noiseTextureResource);
-	UtilityRenderer::DrawQuad2(pContext	,width-w,height-(w+8),w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_noise"));
-	deviceContext.renderPlatform->Print(deviceContext,width-w,height-(w+8)	,"2D Noise");
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
+	UtilityRenderer::DrawQuad2(pContext	,width-w,height-w,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_noise"));
+	deviceContext.renderPlatform->Print(deviceContext,width-w,height-w	,"2D Noise");
+	effect->SetTexture(deviceContext,"cloudShadowTexture",shadow_fb);
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_texture.shaderResourceView);
-	UtilityRenderer::DrawQuad2(pContext	,width-(w+8)-(w+8),height-(w+8),w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_shadow"));
-	deviceContext.renderPlatform->Print(deviceContext,width-(w+8)-(w+8),height-(w+8)	,"shadow texture");
+	UtilityRenderer::DrawQuad2(pContext	,width-w-w,height-w,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_shadow"));
+	deviceContext.renderPlatform->Print(deviceContext,width-w-w,height-w	,"shadow texture");
 
-	deviceContext.renderPlatform->DrawTexture(deviceContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,&godrays_texture);
-	deviceContext.renderPlatform->Print(deviceContext,width-2*w,height-(w+8)-w/2	,"godrays framebuffer");
+	deviceContext.renderPlatform->DrawTexture(deviceContext	,width-2*w,height-w-w/2	,w*2,w/2,&godrays_texture);
+	deviceContext.renderPlatform->Print(deviceContext,width-2*w,height-w-w/2	,"godrays framebuffer");
 
-	deviceContext.renderPlatform->DrawTexture(deviceContext	,width-2*w,height-(w+8)-w	,w*2,w/2	,moisture_fb.GetTexture());
-	deviceContext.renderPlatform->Print(deviceContext,width-2*w,height-(w+8)-w	,"moisture framebuffer");
-
+	deviceContext.renderPlatform->DrawTexture(deviceContext	,width-2*w,height-w-w	,w*2,w/2	,moisture_fb);
+	deviceContext.renderPlatform->Print(deviceContext,width-2*w,height-w-w	,"moisture framebuffer");
+	deviceContext.renderPlatform->DrawTexture(deviceContext	,width-w,height-2*w-w	,w,w	,rain_map);
+	deviceContext.renderPlatform->Print(deviceContext,width-w,height-2*w-w	,"rain_map");
+	
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudShadowTexture"		,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudGodraysTexture"	,(ID3D11ShaderResourceView*)NULL);
@@ -894,9 +912,10 @@ void SimulCloudRendererDX1x::SetEnableStorms(bool s)
 CloudShadowStruct SimulCloudRendererDX1x::GetCloudShadowTexture(math::Vector3 cam_pos)
 {
 	CloudShadowStruct s	=BaseCloudRenderer::GetCloudShadowTexture(cam_pos);
-	s.texture			=shadow_fb.GetTexture();
+	s.texture			=shadow_fb;
 	s.godraysTexture	=&godrays_texture;
-	s.moistureTexture	=moisture_fb.GetTexture();
+	s.moistureTexture	=moisture_fb;
+	s.rainMapTexture	=rain_map;
 	return s;
 }
 
@@ -916,14 +935,15 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	{
 		cloud_textures[i].ensureTexture3DSizeAndFormat(renderPlatform,width_x,length_y,depth_z,crossplatform::RGBA_8_UNORM,uav);
 	}
-	shadow_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize(),cloudKeyframer->GetGodraysSteps());
-	godrays_texture.ensureTexture2DSizeAndFormat(renderPlatform,cloudKeyframer->GetShadowTextureSize()*2,cloudKeyframer->GetGodraysSteps(),crossplatform::R_32_FLOAT,true,false);
-	moisture_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize()*2,cloudKeyframer->GetGodraysSteps());
+	int shadow_tex_size=cloudKeyframer->GetShadowTextureSize();
+	shadow_fb->ensureTexture2DSizeAndFormat		(renderPlatform,shadow_tex_size,cloudKeyframer->GetGodraysSteps(),crossplatform::RGBA_32_FLOAT,false,true);
+	godrays_texture.ensureTexture2DSizeAndFormat(renderPlatform,shadow_tex_size*2,cloudKeyframer->GetGodraysSteps(),crossplatform::R_32_FLOAT,true,false);
+	moisture_fb->ensureTexture2DSizeAndFormat	(renderPlatform,shadow_tex_size*2,cloudKeyframer->GetGodraysSteps(),crossplatform::R_32_FLOAT,false,true);
+	rain_map->ensureTexture2DSizeAndFormat		(renderPlatform,width_x/2,length_y/2,crossplatform::R_32_FLOAT,false,true);
 	if(!width_x||!length_y||!depth_z)
 		return;
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[texture_cycle%3].texture!=NULL)
 		return;
-	shadow_fb.SetGenerateMips(false);
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;

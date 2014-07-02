@@ -18,7 +18,7 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "D3dx11effect.h"
-
+#pragma optimize("",off)
 using namespace simul;
 using namespace dx11;
 static float length(vec3 v)

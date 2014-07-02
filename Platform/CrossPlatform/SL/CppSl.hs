@@ -118,6 +118,11 @@
 			x=v[0];
 			y=v[1];
 		}
+		void operator+=(vec2 v)
+		{
+			x+=v.x;
+			y+=v.y;
+		}
 		vec2 operator+(vec2 v) const
 		{
 			vec2 r;
@@ -137,6 +142,13 @@
 			vec2 r;
 			r.x=x*m;
 			r.y=y*m;
+			return r;
+		}
+		friend vec2 operator*(float m,vec2 v)
+		{
+			vec2 r;
+			r.x=v.x*m;
+			r.y=v.y*m;
 			return r;
 		}
 	};

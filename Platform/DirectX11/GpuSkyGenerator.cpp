@@ -93,6 +93,9 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 {
 	if(p.fill_up_to_texels<=0)
 		return;
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context=m_pImmediateContext;
+	deviceContext.renderPlatform=renderPlatform;
 	if(keyframe_checksums[cycled_index]!=p.keyframe_checksum)
 	{
 		keyframe_checksums[cycled_index]	=p.keyframe_checksum;
@@ -120,9 +123,6 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	if(subgrid_loss==0&&subgrid_insc==0&&subgrid_skyl==0)
 		return;
 
-	crossplatform::DeviceContext deviceContext;
-	deviceContext.platform_context=m_pImmediateContext;
-	deviceContext.renderPlatform=renderPlatform;
 	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator init")
 	HRESULT hr=S_OK;
 	int gridsize			=(int)p.altitudes_km.size()*p.numElevations*p.numDistances;

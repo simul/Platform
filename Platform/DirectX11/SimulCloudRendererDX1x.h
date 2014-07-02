@@ -122,7 +122,6 @@ namespace simul
 			ID3D11SamplerState*						m_pWrapSamplerState;
 			ID3D11SamplerState*						m_pClampSamplerState;
 
-			crossplatform::Effect*					effect;
 			ID3DX11EffectTechnique*					m_hTechniqueCloud;
 			ID3DX11EffectTechnique*					m_hTechniqueRaytraceNearPass;
 			ID3DX11EffectTechnique*					m_hTechniqueRaytraceForward;
@@ -131,7 +130,7 @@ namespace simul
 			ID3DX11EffectTechnique*					m_hTechniqueRaytrace3DNoiseNearPass;
 			ID3DX11EffectTechnique*					m_hTechniqueCloudsAndLightning;
 
-			ID3DX11EffectTechnique*					m_pTechniqueCrossSection;
+			crossplatform::EffectTechnique*					m_pTechniqueCrossSection;
 			
 			ConstantBuffer<CloudConstants>			cloudConstants;
 			StructuredBuffer<SmallLayerData>		layerBuffer;
@@ -139,18 +138,18 @@ namespace simul
 			ID3D11Buffer*							layerConstantsBuffer;
 			ID3DX11EffectMatrixVariable* 			l_worldViewProj;
 			
-			ID3DX11EffectShaderResourceVariable*		cloudDensity;
-			ID3DX11EffectShaderResourceVariable*		cloudDensity1;
-			ID3DX11EffectShaderResourceVariable*		cloudDensity2;
-			ID3DX11EffectShaderResourceVariable*		noiseTexture;
-			ID3DX11EffectShaderResourceVariable*		noiseTexture3D;
+			ID3DX11EffectShaderResourceVariable*	cloudDensity;
+			ID3DX11EffectShaderResourceVariable*	cloudDensity1;
+			ID3DX11EffectShaderResourceVariable*	cloudDensity2;
+			ID3DX11EffectShaderResourceVariable*	noiseTexture;
+			ID3DX11EffectShaderResourceVariable*	noiseTexture3D;
 
-			ID3DX11EffectShaderResourceVariable*		lightningIlluminationTexture;
-			ID3DX11EffectShaderResourceVariable*		skyLossTextureV;
-			ID3DX11EffectShaderResourceVariable*		skyInscatterTextureV;
-			ID3DX11EffectShaderResourceVariable*		skylightTextureV;
-			ID3DX11EffectShaderResourceVariable*		depthTexture;
-			ID3DX11EffectShaderResourceVariable*		lightTableTexture;
+			ID3DX11EffectShaderResourceVariable*	lightningIlluminationTexture;
+			ID3DX11EffectShaderResourceVariable*	skyLossTextureV;
+			ID3DX11EffectShaderResourceVariable*	skyInscatterTextureV;
+			ID3DX11EffectShaderResourceVariable*	skylightTextureV;
+			ID3DX11EffectShaderResourceVariable*	depthTexture;
+			ID3DX11EffectShaderResourceVariable*	lightTableTexture;
 
 			dx11::Texture							cloud_textures[3];
 
@@ -158,14 +157,11 @@ namespace simul
 			ID3D11ShaderResourceView*				lightningIlluminationTextureResource;
 			ID3D11ShaderResourceView*				illuminationTexture_SRV;
 			ID3D11ShaderResourceView*				lightTableTexture_SRV;
-			simul::dx11::Framebuffer				shadow_fb;
-			simul::dx11::Framebuffer				moisture_fb;
 
 			// A texture whose x-axis represents azimuth, and whose y-axis represents distance
 			// as a proportion of shadow range. The texels represent how much illumination accumulates between the viewer
 			// and that distance.
 			simul::dx11::Texture					godrays_texture;
-
 			simul::dx11::Texture					cloud_texture;
 			
 			ID3D11Buffer*							computeConstantBuffer;
