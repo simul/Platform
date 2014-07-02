@@ -188,7 +188,7 @@ void TerrainRenderer::Test(simul::crossplatform::DeviceContext &deviceContext)
 	static dx11::Texture *grass=NULL;
 	if(!grass)
 	{
-		grass=(dx11::Texture*)renderPlatform->CreateTexture("grass_02_fullres.rgb");
+		grass=(dx11::Texture*)renderPlatform->CreateTexture("grass_02_fullres.png");
 	}
 	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("test_alpha_to_coverage");
 	if(tech&&grass)
@@ -260,5 +260,4 @@ ERRNO_CHECK
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(pContext,m_pTechnique->asD3DX11EffectTechnique()->GetPassByIndex(0));
 	SIMUL_COMBINED_PROFILE_END(pContext)
-	Test(deviceContext);
 }

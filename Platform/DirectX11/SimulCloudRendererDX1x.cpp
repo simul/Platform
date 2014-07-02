@@ -173,7 +173,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
         { "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 	D3DX11_PASS_DESC PassDesc;
-	ID3DX11EffectPass *pass=m_hTechniqueCloud->GetPassByIndex(0);
+	ID3DX11EffectPass *pass=effect->GetTechniqueByIndex(0)->asD3DX11EffectTechnique()->GetPassByIndex(0);
 	HRESULT hr=pass->GetDesc(&PassDesc);
 
 	// Get a count of the elements in the layout.
@@ -529,16 +529,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	renderPlatform->EnsureEffectIsBuilt("simul_clouds",opts);
 	SAFE_DELETE(effect);
 	effect							=renderPlatform->CreateEffect("simul_clouds",defines);
-	if(cloudKeyframer->GetUse3DNoise())
-		m_hTechniqueCloud			=effect->asD3DX11Effect()->GetTechniqueByName("simul_clouds_3d_noise");
-	else
-		m_hTechniqueCloud			=effect->asD3DX11Effect()->GetTechniqueByName("simul_clouds");
-	m_hTechniqueRaytraceForward		=effect->asD3DX11Effect()->GetTechniqueByName("simul_raytrace_forward");
-	m_hTechniqueRaytraceNearPass	=effect->asD3DX11Effect()->GetTechniqueByName("raytrace_near_pass");
-	m_hTechniqueSimpleRaytrace		=effect->asD3DX11Effect()->GetTechniqueByName("simul_simple_raytrace");
-	m_hTechniqueRaytrace3DNoise		=effect->asD3DX11Effect()->GetTechniqueByName("simul_raytrace_3d_noise");
-	m_hTechniqueRaytrace3DNoiseNearPass=effect->asD3DX11Effect()->GetTechniqueByName("simul_raytrace_3d_noise_near_pass");
-	m_hTechniqueCloudsAndLightning	=effect->asD3DX11Effect()->GetTechniqueByName("simul_clouds_and_lightning");
+	
 
 	m_pTechniqueCrossSection		=effect->GetTechniqueByName("cross_section");
 
@@ -767,32 +758,25 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	ID3DX11EffectConstantBuffer* cbLayerConstants=effect->asD3DX11Effect()->GetConstantBufferByName("LayerConstants");
 	if(cbLayerConstants)
 		cbLayerConstants->SetConstantBuffer(layerConstantsBuffer);
-	if(cloudKeyframer->GetUse3DNoise())
+	crossplatform::EffectTechniqueGroup *group	=effect->GetTechniqueGroupByName("raytrace");
+	crossplatform::EffectTechnique *tech		=NULL;
+	if(group)
 	{
-		if(near_pass)
-			ApplyPass(pContext,m_hTechniqueRaytrace3DNoiseNearPass->GetPassByIndex(0));
+		if(cubemap)
+			tech=group->GetTechniqueByName("simple");
+		else if(cloudKeyframer->GetUse3DNoise())
+			tech=group->GetTechniqueByName("noise3d");
+		else if(!cloudProperties.GetWrap())
+			tech=group->GetTechniqueByName("nonwrapping");
 		else
-			ApplyPass(pContext,m_hTechniqueRaytrace3DNoise->GetPassByIndex(0));
+			tech=group->GetTechniqueByName("full");
 	}
-	else if(cubemap)
-	{
-		ApplyPass(pContext,m_hTechniqueSimpleRaytrace->GetPassByIndex(0));
-	}
-	else if(cloudKeyframer->GetTraceForward())
-	{
-		if(near_pass)
-			ApplyPass(pContext,m_hTechniqueRaytraceNearPass->GetPassByIndex(0));
-		else
-			ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
-	}
-	//SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
-	//SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"6")
+	effect->Apply(deviceContext,tech,near_pass?"near":"far");
 	UtilityRenderer::DrawQuad(pContext);
 	skyLossTextureV->SetResource(NULL);
 	skyInscatterTextureV->SetResource(NULL);
 	skylightTextureV->SetResource(NULL);
 	depthTexture->SetResource(NULL);
-	ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
 	pContext->OMSetBlendState(NULL, blendFactor, sampleMask);
 	depthTexture->SetResource((ID3D11ShaderResourceView*)NULL);
 	cloudDensity->SetResource((ID3D11ShaderResourceView*)NULL);
@@ -807,7 +791,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	lightTableTexture	->SetResource((ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
 // To prevent DX11 warning, we re-apply the pass with the textures unbound:
-	ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
+	effect->Unapply(deviceContext);
 	ERRNO_CHECK
 	//SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)

@@ -38,6 +38,8 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 			void Render(crossplatform::DeviceContext &deviceContext,float exposure);
+			/// Test render function for alpha-to-coverage
+			void Test(crossplatform::DeviceContext &deviceContext);
 		private:
 			void MakeVertexBuffer();
 			ID3D11Device*						m_pd3dDevice;
@@ -48,7 +50,6 @@ namespace simul
 			simul::dx11::ArrayTexture			arrayTexture;
 			crossplatform::ConstantBuffer<TerrainConstants>	terrainConstants;
 			int numVertices;
-			void Test(crossplatform::DeviceContext &deviceContext);
 		};
 	}
 }

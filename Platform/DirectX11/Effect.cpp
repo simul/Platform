@@ -285,10 +285,15 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	apply_count++;
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	currentTechnique				=effectTechnique;
-	ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
-	ID3DX11EffectPass *pass			=tech->GetPassByName(passname);
-	HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
-	V_CHECK(hr);
+	if(effectTechnique)
+	{
+		ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
+		ID3DX11EffectPass *pass			=tech->GetPassByName(passname);
+		HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
+		V_CHECK(hr);
+	}
+	else
+		SIMUL_BREAK("Technique not found!")
 }
 
 

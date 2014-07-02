@@ -90,7 +90,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float maxFadeDistanceMetres;
 	uniform vec3 lightningInvScales;
 	uniform float noise3DPersistence;
-	uniform vec3 crossSectionOffset	;
+	uniform vec3 crossSectionOffset;
 	uniform int noise3DOctaves;
 	uniform vec3 noise3DTexcoordScale;
 	uniform float rainEffect;

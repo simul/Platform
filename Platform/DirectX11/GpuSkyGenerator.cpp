@@ -138,8 +138,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		optd_tex.setTexels(m_pImmediateContext,(unsigned *)a.optical_table,0,a.table_size*a.table_size);
 		tables_checksum=a.tables_checksum;
 	}
-	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
-	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 1")
+	//SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
+	//SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 1")
 
 	//ID3D1xEffectScalarVariable *distKm							=effect->GetVariableByName("distKm")->AsScalar();
 	//ID3D1xEffectScalarVariable *prevDistKm						=effect->GetVariableByName("prevDistKm")->AsScalar();
@@ -190,8 +190,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	if(light_table)
 		light_table->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size()*32,3,4,crossplatform::RGBA_32_FLOAT,true);
 	density_texture->SetResource(dens_tex.shaderResourceView);
-	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
-	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 2")
+	//SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
+	//SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 2")
 
 	
 	if(subgrid_loss>0)
@@ -213,8 +213,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid_insc,1,1);
 	}
-	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
-	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 3")
+	//SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
+	//SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 3")
 	insc_texture->SetResource(finalInsc[cycled_index]->AsD3D11ShaderResourceView());
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalSkyl[cycled_index]->AsD3D11UnorderedAccessView());
 	gpuSkyConstants.threadOffset=uint3(start_skyl,0,0);

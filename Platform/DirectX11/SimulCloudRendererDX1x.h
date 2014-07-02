@@ -122,14 +122,6 @@ namespace simul
 			ID3D11SamplerState*						m_pWrapSamplerState;
 			ID3D11SamplerState*						m_pClampSamplerState;
 
-			ID3DX11EffectTechnique*					m_hTechniqueCloud;
-			ID3DX11EffectTechnique*					m_hTechniqueRaytraceNearPass;
-			ID3DX11EffectTechnique*					m_hTechniqueRaytraceForward;
-			ID3DX11EffectTechnique*					m_hTechniqueSimpleRaytrace;
-			ID3DX11EffectTechnique*					m_hTechniqueRaytrace3DNoise;
-			ID3DX11EffectTechnique*					m_hTechniqueRaytrace3DNoiseNearPass;
-			ID3DX11EffectTechnique*					m_hTechniqueCloudsAndLightning;
-
 			crossplatform::EffectTechnique*					m_pTechniqueCrossSection;
 			
 			ConstantBuffer<CloudConstants>			cloudConstants;

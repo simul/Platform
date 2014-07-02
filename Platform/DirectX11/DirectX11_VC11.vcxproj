@@ -277,6 +277,7 @@
     <None Include="..\CrossPlatform\SL\ocean_constants.sl" />
     <None Include="..\CrossPlatform\SL\optics_constants.sl" />
     <None Include="..\CrossPlatform\SL\rain_constants.sl" />
+    <None Include="..\CrossPlatform\SL\raytrace_new.sl" />
     <None Include="..\CrossPlatform\SL\simul_2d_clouds.hs" />
     <None Include="..\CrossPlatform\SL\simul_2d_clouds.sl" />
     <None Include="..\CrossPlatform\SL\simul_2d_cloud_detail.sl" />

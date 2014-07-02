@@ -10,6 +10,7 @@ RWBuffer<float> occlusionBuffer;
 #include "../../CrossPlatform/SL/simul_cloud_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
 #include "../../CrossPlatform/SL/simul_clouds.sl"
+#include "../../CrossPlatform/SL/raytrace_new.sl"
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/earth_shadow_fade.sl"
 
@@ -63,6 +64,46 @@ RaytracePixelOutput PS_RaytraceNearPass(posTexVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
 	RaytracePixelOutput p	=RaytraceCloudsForward(
+									cloudDensity1
+									,cloudDensity2
+									,rainMapTexture
+									,noiseTexture
+									,noiseTexture3D
+									,depthTexture
+									,lightTableTexture
+									,true
+									,texCoords
+									,true
+									,true
+									,false);
+
+	return p;
+}
+
+RaytracePixelOutput PS_RaytraceNew(posTexVertexOutput IN)
+{
+	vec2 texCoords			=IN.texCoords.xy;
+	RaytracePixelOutput p	=RaytraceNew(
+									cloudDensity1
+									,cloudDensity2
+									,rainMapTexture
+									,noiseTexture
+									,noiseTexture3D
+									,depthTexture
+									,lightTableTexture
+									,true
+									,texCoords
+									,false
+									,true
+									,false);
+	
+	return p;
+}
+
+RaytracePixelOutput PS_RaytraceNewNearPass(posTexVertexOutput IN)
+{
+	vec2 texCoords			=IN.texCoords.xy;
+	RaytracePixelOutput p	=RaytraceNew(
 									cloudDensity1
 									,cloudDensity2
 									,rainMapTexture
@@ -239,59 +280,69 @@ vec4 PS_CrossSection( posTexVertexOutput IN):SV_TARGET
 }
 
 
-technique11 simul_raytrace_forward
+fxgroup raytrace
 {
-    pass p0 
-    {
-		SetDepthStencilState(WriteDepth,0);
-        SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
-		SetPixelShader(CompileShader(ps_5_0,PS_RaytraceForward()));
-    }
-}
-
-technique11 raytrace_near_pass
-{
-    pass p0 
-    {
-		SetDepthStencilState(WriteDepth,0);
-        SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
-		SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNearPass()));
-    }
-}
-
-technique11 simul_simple_raytrace
-{
-    pass p0 
-    {
-		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
-		SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace()));
-    }
-}
-
-technique11 simul_raytrace_3d_noise
-{
-    pass p0 
-    {
-		SetDepthStencilState(WriteDepth,0);
-        SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoise()));
-    }
-}
-
-technique11 simul_raytrace_3d_noise_near_pass
-{
-    pass p0 
-    {
-		SetDepthStencilState(WriteDepth,0);
-        SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseNearPass()));
-    }
+	technique11 full
+	{
+		pass far 
+		{
+			SetDepthStencilState(WriteDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceForward()));
+		}
+		pass near 
+		{
+			SetDepthStencilState(WriteDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNearPass()));
+		}
+	}
+	technique11 nonwrapping
+	{
+		pass far 
+		{
+			SetDepthStencilState(WriteDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNew()));
+		}
+		pass near 
+		{
+			SetDepthStencilState(WriteDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNewNearPass()));
+		}
+	}
+	technique11 simple
+	{
+		pass far 
+		{
+			SetDepthStencilState(DisableDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace()));
+		}
+	}
+	technique11 noise3d
+	{
+		pass far 
+		{
+			SetDepthStencilState(WriteDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoise()));
+		}
+		pass near 
+		{
+			SetDepthStencilState(WriteDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseNearPass()));
+		}
+	}
 }
 
 technique11 cloud_shadow
