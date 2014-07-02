@@ -1,8 +1,7 @@
 #ifndef TERRAIN_CONSTANTS_SL
 #define TERRAIN_CONSTANTS_SL
 
-uniform_buffer TerrainConstants SIMUL_BUFFER_REGISTER(10)
-{
+SIMUL_CONSTANT_BUFFER(TerrainConstants,10)
 	uniform mat4 worldViewProj;
 
 	uniform vec4 eyePosition;
@@ -23,6 +22,6 @@ uniform_buffer TerrainConstants SIMUL_BUFFER_REGISTER(10)
 	uniform float extentZMetres;
 	uniform float startZMetres;
 	uniform float shadowRange;
-};
+SIMUL_CONSTANT_BUFFER_END
 
 #endif

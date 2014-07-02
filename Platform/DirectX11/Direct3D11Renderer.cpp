@@ -129,7 +129,7 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
 	if(simulTerrainRenderer)
-		simulTerrainRenderer->RestoreDeviceObjects(pd3dDevice);
+		simulTerrainRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	if(oceanRenderer)
 		oceanRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	cubemapFramebuffer.SetWidthAndHeight(32,32);

@@ -47,13 +47,44 @@ void dx11::Texture::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
-
 // Load a texture file
 void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8)
 {
 	InvalidateDeviceObjects();
 	SAFE_RELEASE(shaderResourceView);
-	shaderResourceView	=simul::dx11::LoadTexture(r->AsD3D11Device(),pFilePathUtf8);
+	std::string str(pFilePathUtf8);
+	if(str.find(".rgb")<str.length())
+	{
+		void *f=NULL;
+		unsigned int bytes=0;
+		std::string str		=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(pFilePathUtf8,dx11::GetTexturePathsUtf8());
+		base::FileLoader::GetFileLoader()->AcquireFileContents(f,bytes,str.c_str(),false);
+		char *src=(char*)f+bytes-32768*4;
+		ensureTexture2DSizeAndFormat(r,256,128,crossplatform::RGBA_8_UNORM,false,false);
+		ID3D11DeviceContext *ctx=NULL;
+		r->AsD3D11Device()->GetImmediateContext(&ctx);
+
+		char *interleaved=new char[bytes];
+		char *target=interleaved;
+		char *r=src;
+		char *g=src+32768;
+		char *b=src+2*32768;
+		char *a=src+3*32768;
+		for(int i=0;i<32768;i++)
+		{
+			*(target++)=r[i];
+			*(target++)=g[i];
+			*(target++)=b[i];
+			*(target++)=a[i];
+		}
+		setTexels(ctx,interleaved,0,32768);
+		SAFE_RELEASE(ctx)
+		base::FileLoader::GetFileLoader()->ReleaseFileContents(f);
+		delete [] interleaved;
+		return;
+	}
+	else
+		shaderResourceView	=simul::dx11::LoadTexture(r->AsD3D11Device(),pFilePathUtf8);
 }
 
 bool dx11::Texture::IsValid() const

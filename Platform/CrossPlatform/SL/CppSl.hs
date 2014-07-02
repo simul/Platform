@@ -170,6 +170,14 @@
 			y*=m;
 			z*=m;
 		}
+		vec3 operator*(float m) const
+		{
+			vec3 r;
+			r.x=m*x;
+			r.y=m*y;
+			r.z=m*z;
+			return r;
+		}
 		vec3 operator+(vec3 v) const
 		{
 			vec3 r;

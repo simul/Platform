@@ -19,11 +19,14 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/Texture.h"
+#include "Simul/Platform/DirectX11/Effect.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Camera/Camera.h"
 #include "D3dx11effect.h"
 
-using namespace simul::dx11;
+using namespace simul;
+using namespace dx11;
 
 struct TerrainVertex_t
 {
@@ -39,7 +42,6 @@ TerrainRenderer::TerrainRenderer(simul::base::MemoryInterface *m)
 	,m_pd3dDevice(NULL)
 	,m_pVertexBuffer(NULL)
 	,m_pVtxDecl(NULL)
-	,m_pTerrainEffect(NULL)
 	,m_pTechnique(NULL)
 	,numVertices(0)
 {
@@ -61,22 +63,23 @@ void TerrainRenderer::ReloadTextures()
 void TerrainRenderer::RecompileShaders()
 {
 	HRESULT hr=S_OK;
-	SAFE_RELEASE(m_pTerrainEffect);
+	SAFE_DELETE(effect);
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
-	V_CHECK(CreateEffect(m_pd3dDevice,&m_pTerrainEffect,("simul_terrain.fx"),defines));
-	m_pTechnique		=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
+	effect=renderPlatform->CreateEffect("simul_terrain",defines);
+	m_pTechnique		=effect->GetTechniqueByName("simul_terrain");
 	ReloadTextures();
-	terrainConstants.LinkToEffect(m_pTerrainEffect,"TerrainConstants");
+	terrainConstants.LinkToEffect(effect,"TerrainConstants");
 }
 
-void TerrainRenderer::RestoreDeviceObjects(void *dev)
+void TerrainRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D11Device*)dev;
-	terrainConstants.RestoreDeviceObjects(m_pd3dDevice);
+	renderPlatform=r;
+	m_pd3dDevice=renderPlatform->AsD3D11Device();
+	terrainConstants.RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 	const D3D11_INPUT_ELEMENT_DESC decl[] =
     {
@@ -86,7 +89,7 @@ void TerrainRenderer::RestoreDeviceObjects(void *dev)
         { "TEXCOORD",	2, DXGI_FORMAT_R32_FLOAT,			0,	32,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 	D3DX11_PASS_DESC PassDesc;
-	ID3DX11EffectPass *pass=m_pTechnique->GetPassByIndex(0);
+	ID3DX11EffectPass *pass=m_pTechnique->asD3DX11EffectTechnique()->GetPassByIndex(0);
 	hr=pass->GetDesc(&PassDesc);
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout(decl,4,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
@@ -114,7 +117,7 @@ void TerrainRenderer::RestoreDeviceObjects(void *dev)
 void TerrainRenderer::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_RELEASE(m_pTerrainEffect);
+	SAFE_DELETE(effect);
 	SAFE_RELEASE(m_pVtxDecl);
 	arrayTexture.release();
 	terrainConstants.InvalidateDeviceObjects();
@@ -180,6 +183,23 @@ void TerrainRenderer::MakeVertexBuffer()
 	SAFE_RELEASE(pImmediateContext);
 }
 
+void TerrainRenderer::Test(simul::crossplatform::DeviceContext &deviceContext)
+{
+	static dx11::Texture *grass=NULL;
+	if(!grass)
+	{
+		grass=(dx11::Texture*)renderPlatform->CreateTexture("grass_02_fullres.rgb");
+	}
+	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("test_alpha_to_coverage");
+	if(tech&&grass)
+	{
+		effect->Apply(deviceContext,tech,0);
+		effect->SetTexture(deviceContext,"grassTexture",grass);
+		renderPlatform->DrawQuad(deviceContext);
+		effect->Unapply(deviceContext);
+	}
+}
+
 void TerrainRenderer::Render(simul::crossplatform::DeviceContext &deviceContext,float exposure)
 {
 ERRNO_CHECK
@@ -192,11 +212,11 @@ ERRNO_CHECK
 	camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,(const float*)&deviceContext.viewStruct.view,(const float*)&deviceContext.viewStruct.proj);
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector((const float*)&deviceContext.viewStruct.view,false);
 ERRNO_CHECK
-	dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
+	dx11::setTextureArray(	effect->asD3DX11Effect(),"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
 	if(cloudShadowStruct.texture)
-		dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,cloudShadowStruct.texture->AsD3D11ShaderResourceView());
+		dx11::setTexture(		effect->asD3DX11Effect(),"cloudShadowTexture"	,cloudShadowStruct.texture->AsD3D11ShaderResourceView());
 	terrainConstants.eyePosition=cam_pos;
-ERRNO_CHECK
+
 	if(baseSkyInterface)
 	{
 		terrainConstants.ambientColour	=exposure*baseSkyInterface->GetAmbientLight(0.f);
@@ -226,7 +246,7 @@ ERRNO_CHECK
 									&m_pVertexBuffer,	// the array of vertex buffers
 									&stride,			// array of stride values, one for each buffer
 									&offset);			// array of offset values, one for each buffer
-	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
+	ApplyPass(pContext,m_pTechnique->asD3DX11EffectTechnique()->GetPassByIndex(0));
 	// Set the input layout
 	pContext->IASetInputLayout(m_pVtxDecl);
 	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
@@ -235,8 +255,9 @@ ERRNO_CHECK
 	if(numVertices>2)
 		pContext->Draw(numVertices-2,0);
 	pContext->IASetPrimitiveTopology(previousTopology);
-	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",NULL);
-	simul::dx11::setTexture(m_pTerrainEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);
-	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
+	simul::dx11::setTextureArray(effect->asD3DX11Effect(),"textureArray",NULL);
+	simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);
+	ApplyPass(pContext,m_pTechnique->asD3DX11EffectTechnique()->GetPassByIndex(0));
 	SIMUL_COMBINED_PROFILE_END(pContext)
+	Test(deviceContext);
 }

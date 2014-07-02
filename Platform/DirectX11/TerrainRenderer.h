@@ -35,7 +35,7 @@ namespace simul
 			~TerrainRenderer();
 			void ReloadTextures();
 			void RecompileShaders();
-			void RestoreDeviceObjects(void*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 			void Render(crossplatform::DeviceContext &deviceContext,float exposure);
 		private:
@@ -43,12 +43,12 @@ namespace simul
 			ID3D11Device*						m_pd3dDevice;
 			ID3D11Buffer*						m_pVertexBuffer;
 			ID3D11InputLayout*					m_pVtxDecl;
-			ID3DX11Effect*						m_pTerrainEffect;
-			ID3DX11EffectTechnique*				m_pTechnique;
+			crossplatform::EffectTechnique*				m_pTechnique;
 			// ID3D11Texture2D	Accesses data in a 2D texture or a 2D texture array
 			simul::dx11::ArrayTexture			arrayTexture;
-			ConstantBuffer<TerrainConstants>	terrainConstants;
+			crossplatform::ConstantBuffer<TerrainConstants>	terrainConstants;
 			int numVertices;
+			void Test(crossplatform::DeviceContext &deviceContext);
 		};
 	}
 }

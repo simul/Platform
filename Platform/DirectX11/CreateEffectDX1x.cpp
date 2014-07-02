@@ -88,7 +88,7 @@ namespace simul
 	namespace dx11
 	{
 		std::vector<std::string> shaderPathsUtf8;
-		static std::vector<std::string> texturePathsUtf8;
+		std::vector<std::string> texturePathsUtf8;
 		std::string shaderbinPathUtf8="shaderbin\\";
 		void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical)
 		{
@@ -150,6 +150,10 @@ namespace simul
 		void PopTexturePath()
 		{ 
 			texturePathsUtf8.pop_back();
+		}
+		std::vector<std::string> GetTexturePathsUtf8()
+		{
+			return texturePathsUtf8;
 		}
 		D3DXMATRIX ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj)
 		{

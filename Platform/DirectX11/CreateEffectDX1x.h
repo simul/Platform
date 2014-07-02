@@ -147,6 +147,7 @@ inline void D3DXMatrixLookAtRH(D3DXMATRIX *m, D3DVECTOR *vEyePt,D3DVECTOR *vLook
 #endif
 
 #include <map>
+#include <vector>
 #include "MacrosDX1x.h"
 #include "Export.h"
 
@@ -181,6 +182,7 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT void PopShaderPath();
 		extern SIMUL_DIRECTX11_EXPORT void PushTexturePath(const char *pathUtf8);
 		extern SIMUL_DIRECTX11_EXPORT void PopTexturePath();
+		extern SIMUL_DIRECTX11_EXPORT std::vector<std::string> GetTexturePathsUtf8();
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename);
 		ID3D11Texture1D* make1DTexture(

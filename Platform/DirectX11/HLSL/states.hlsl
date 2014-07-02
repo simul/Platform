@@ -59,6 +59,14 @@ BlendState DoBlend
 	DestBlend = INV_SRC_ALPHA;
 };
 
+BlendState AlphaToCoverageBlend
+{
+	BlendEnable[0] = TRUE;
+	AlphaToCoverageEnable = TRUE;
+	SrcBlend = SRC_ALPHA;
+	DestBlend = INV_SRC_ALPHA;
+};
+
 BlendState CloudBlend
 {
 	BlendEnable[0] = TRUE;
