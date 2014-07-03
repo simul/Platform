@@ -40,6 +40,7 @@ namespace simul
 				SubMesh() : IndexOffset(0), TriangleCount(0),drawAs(AS_TRIANGLES) {}
 				int IndexOffset;
 				int TriangleCount;
+///
 				enum DrawAs {AS_TRIANGLES,AS_TRISTRIP};
 				DrawAs drawAs;
 			};

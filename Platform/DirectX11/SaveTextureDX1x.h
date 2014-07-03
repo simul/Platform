@@ -5,6 +5,7 @@
 #include <d3dx9.h>
 #include <d3dx11.h>
 #else
+		///
 typedef enum D3DX11_IMAGE_FILE_FORMAT
 {
     D3DX11_IFF_BMP         = 0,

@@ -60,30 +60,33 @@ RaytracePixelOutput RaytraceNew(Texture3D cloudDensity1
 	vec3 amb			=ambientColour.rgb;
 #endif
 	//project to the entry point:
-	vec3 scales						=vec3(1.0,1.0,1.0)/inverseScales.xyz;
-	vec3 zr							=vec3(0,0,0);
-	vec3 dist_to_entry				=min(cornerPos+scales-viewPos,zr)+max(cornerPos-viewPos,zr);
+	vec3 scales				=vec3(1.0,1.0,1.0)/inverseScales.xyz;
+	vec3 zr					=vec3(0,0,0);
+	vec3 dist_to_entry		=min(cornerPos+scales-viewPos,zr)+max(cornerPos-viewPos,zr);
 	if(length(max(0,-dist_to_entry.xyz*view.xyz))>0)
 	{
-		RaytracePixelOutput res;
-		res.colour=vec4(1,0,0,1);
-		res.depth=.5;
-		return res;
+		discard;
 	}
-	dist_to_entry					/=view;
+	dist_to_entry			/=view;
 	// Now project to the nearest face of the cuboid:
-	vec3 world_pos					=viewPos;
-	dist_to_entry=abs(dist_to_entry);
-	float start_dist=max(dist_to_entry.x,max(dist_to_entry.y,dist_to_entry.z));
-	float dist=start_dist;
-	world_pos+=view*start_dist;
+	vec3 world_pos			=viewPos;
+	dist_to_entry			=abs(dist_to_entry);
+	float start_dist		=max(dist_to_entry.x,max(dist_to_entry.y,dist_to_entry.z));
+	float dist				=start_dist;
+	world_pos				+=view*start_dist;
+	// Now test whether view is pointing away from the volume here:
+	dist_to_entry			=min(cornerPos+scales-world_pos,zr)+max(cornerPos-world_pos,zr);
+	if(length(max(0,-dist_to_entry.xyz*view.xyz))>0)
+	{
+		discard;
+	}
 	//vec3 testColour=step(dist_to_entry,vec3(start_dist,start_dist,start_dist));
 	vec3 testColour=vec3(start_dist,start_dist,start_dist);
 	for(int i=0;i<layerCount;i++)
 	{
 		vec4 density					=vec4(0,0,0,0);
-		world_pos						=world_pos+100.0*view;
-		dist							+=100.0;
+		world_pos						=world_pos+200.0*view;
+		dist							+=200.0;
 		float fadeDistance				=saturate(dist/maxFadeDistanceMetres);
 		vec3 cloudWorldOffset			=(world_pos-cornerPos);
 		vec3 cloudTexCoords				=cloudWorldOffset*inverseScales;

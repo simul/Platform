@@ -7,6 +7,7 @@ namespace simul
 {
 	namespace crossplatform
 	{
+/// How to interpret the depth texture.
 		enum DepthTextureStyle
 		{
 			PROJECTION

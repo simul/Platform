@@ -225,15 +225,14 @@ ERRNO_CHECK
 	}
 	terrainConstants.worldViewProj=(const float*)&wvp;
 	terrainConstants.worldViewProj.transpose();
-	math::Matrix4x4 shadowMatrix		=cloudShadowStruct.simpleOffsetMatrix;
+	math::Matrix4x4 shadowMatrix			=cloudShadowStruct.simpleOffsetMatrix;
 	math::Matrix4x4 invShadowMatrix;
 	shadowMatrix.Inverse(invShadowMatrix);
 	terrainConstants.invShadowMatrix		=invShadowMatrix;
 	terrainConstants.extentZMetres			=cloudShadowStruct.extentZMetres;
 	terrainConstants.startZMetres			=cloudShadowStruct.startZMetres;
 	terrainConstants.shadowRange			=cloudShadowStruct.shadowRange;
-	{
-	}
+	
 	terrainConstants.Apply(deviceContext);
 
 	UINT stride =sizeof(TerrainVertex_t);

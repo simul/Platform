@@ -15,6 +15,7 @@ namespace simul
 {
 	namespace dx11
 	{
+		///
 		enum ViewType
 		{
 			MAIN_3D_VIEW

@@ -40,6 +40,7 @@ namespace simul
 			// Draw a geometry (sphere for point and directional light, cone for spot light).
 			// And set light attributes.
 			void SetLight(const double *,double time) const;
+///
 			enum LightType
 			{
 				ePoint, 

@@ -78,13 +78,14 @@ float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float pers
 		float zmin	=0.5*texel;
 		float zmax	=height-0.5*texel;
 		pos2.z		=clamp(pos2.z,zmin,zmax);
+		pos2.z		*=saturate(i);
 		float lookup=texture_wrap_lod(volumeNoiseTexture,pos2,0).x;
-		float val	=0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
+		float val	=lookup*0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
 		dens		=dens+mult*val;
 		sum			=sum+mult;
 		mult		=mult*persistence;
 		pos			=pos*2.0;
-		t			=t*2.0;
+		t			*=2.0;
 		height		*=2.0;
 	}
 	dens=saturate(dens/sum);

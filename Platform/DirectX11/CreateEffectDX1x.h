@@ -165,6 +165,7 @@ namespace simul
 	}
 	namespace dx11
 	{
+		/// Tells the renderer what to do with shader source to get binaries.
 		enum ShaderBuildMode
 		{
 			ALWAYS_BUILD=1,BUILD_IF_CHANGED,NEVER_BUILD

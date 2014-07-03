@@ -5,6 +5,7 @@ namespace simul
 {
 	namespace crossplatform
 	{
+///
 		enum ShadingMode
 		{
 			SHADING_MODE_WIREFRAME,
