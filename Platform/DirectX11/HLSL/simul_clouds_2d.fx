@@ -52,6 +52,9 @@ v2f MainVS(a2v IN)
 	pos.z				+=vertical_shift;
 	pos.xy				+=eyePosition.xy;
 	OUT.clip_pos		=mul(worldViewProj,vec4(pos.xyz,1.0));
+	// Prevent clipping:
+	if(OUT.clip_pos.z<0)
+		OUT.clip_pos.z=0;
 	OUT.hPosition		=OUT.clip_pos;
     OUT.wPosition		=pos.xyz;
     return OUT;
@@ -219,7 +222,7 @@ float4 DetailLightingPS(v2f2 IN) : SV_TARGET
     return DetailLighting(IN.texCoords,imageTexture);
 }
 
-technique11 simul_coverage
+technique11 coverage
 {
     pass p0
     {
@@ -271,7 +274,7 @@ technique11 random
     }
 }
 
-technique11 simul_2d_cloud_detail
+technique11 detail_density
 {
     pass p0
     {
@@ -284,7 +287,7 @@ technique11 simul_2d_cloud_detail
     }
 }
 
-technique11 simul_2d_cloud_detail_lighting
+technique11 detail_lighting
 {
     pass p0
     {

@@ -230,7 +230,8 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(ID3D11Texture2D *t,ID3D11Shad
 {
 	texture=t;
 	shaderResourceView=srv;
-	shaderResourceView->AddRef();
+	if(shaderResourceView)
+		shaderResourceView->AddRef();
 	dim=2;
 }
 

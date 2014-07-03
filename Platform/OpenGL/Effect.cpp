@@ -99,7 +99,7 @@ void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &)
 
 int EffectTechnique::NumPasses() const
 {
-	return passes_by_index.size();
+	return (int)passes_by_index.size();
 }
 
 Effect::Effect(crossplatform::RenderPlatform *,const char *filename_utf8,const std::map<std::string,std::string> &defines)
@@ -137,13 +137,13 @@ void Effect::FillInTechniques()
 		std::string groupname;
 		std::string techname=name;
 		std::string passname="main";
-		int dotpos1=techname.find("::");
+		int dotpos1=(int)techname.find("::");
 		if(dotpos1>=0)
 		{
 			groupname	=name.substr(0,dotpos1);
 			techname	=name.substr(dotpos1+2,techname.length()-dotpos1-2);
 		}
-		int dotpos2=techname.find_last_of(".");
+		int dotpos2=(int)techname.find_last_of(".");
 		if(dotpos2>=0)
 		{
 			passname	=techname.substr(dotpos2+1,techname.length()-dotpos2-1);
@@ -184,7 +184,7 @@ void Effect::FillInTechniques()
 			techniques_by_index[index]	=tech;
 		}
 		tech->passes_by_name[passname]	=(void*)t;
-		int pass_idx					=tech->passes_by_index.size();
+		int pass_idx					=(int)tech->passes_by_index.size();
 		tech->passes_by_index[pass_idx]	=(void*)t;
 		tech->pass_indices[passname]	=pass_idx;
 	}
@@ -210,7 +210,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	techniques[name]						=tech;
 	// Now it needs to be in the techniques_by_index list.
 	size_t index							=glfxGetProgramIndex(e,name);
-	techniques_by_index[index]				=tech;
+	techniques_by_index[(int)index]			=tech;
 	return tech;
 }
 
