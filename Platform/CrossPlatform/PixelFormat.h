@@ -7,6 +7,7 @@ namespace simul
 		enum PixelFormat
 		{
 			UNKNOWN
+			,R_16_FLOAT
 			,RGBA_16_FLOAT
 			,RGBA_32_FLOAT
 			,RGB_32_FLOAT

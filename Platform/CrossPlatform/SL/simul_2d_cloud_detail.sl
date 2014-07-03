@@ -25,20 +25,20 @@ vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture,float amplitude)
 
 vec4 DetailLighting(vec2 texcoords,Texture2D imageTexture)
 {
-	vec4 c=texture_wrap(imageTexture,texcoords);
+	float c=texture_wrap(imageTexture,texcoords).r;
 	//Scale the offset by one texel.
-	vec2 offset=lightDir2d.xy/detailTextureSize;
+	vec2 offset=.5*lightDir2d.xy/detailTextureSize;
 	float dens_dist=0.0;
     for(int i=0;i<12;i++)
     {
 		texcoords+=offset;
-		vec4 v=texture_wrap(imageTexture,texcoords);
-		v.a=saturate(v.a);//0.2*density-0.1);
-		dens_dist+=v.a;
-		if(v.a==0)
-			dens_dist=0;
+		float v=texture_wrap(imageTexture,texcoords).r;
+		//v=saturate(v);//0.2*density-0.1);
+		dens_dist+=v;
+		if(v==0)
+			dens_dist*=0.8;
     }
-    return vec4(dens_dist/12.0,dens_dist/12.0,dens_dist/12.0,c.a);
+    return vec4(dens_dist/12.0,dens_dist/12.0,dens_dist/12.0,c);
 }
 
 #endif

@@ -397,6 +397,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 	using namespace crossplatform;
 	switch(p)
 	{
+	case R_16_FLOAT:
+		return DXGI_FORMAT_R16_FLOAT;
 	case RGBA_16_FLOAT:
 		return DXGI_FORMAT_R16G16B16A16_FLOAT;
 	case RGBA_32_FLOAT:
@@ -423,6 +425,8 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	using namespace crossplatform;
 	switch(f)
 	{
+	case DXGI_FORMAT_R16_FLOAT:
+		return R_16_FLOAT;
 	case DXGI_FORMAT_R16G16B16A16_FLOAT:
 		return RGBA_16_FLOAT;
 	case DXGI_FORMAT_R32G32B32A32_FLOAT:

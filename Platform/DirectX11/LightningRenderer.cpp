@@ -150,7 +150,7 @@ void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,cross
 						x1=(const float *)branch.vertices[k];
 					bool end=(k==branch.numVertices-1);
 
-					float brightness=branch.brightness;
+					float brightness=branch.brightness*props.maxRadiance;
 					float dh=x1.z/1000.f-K.cloud_base_km;
 					if(dh>0)
 					{

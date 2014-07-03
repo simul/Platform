@@ -84,12 +84,8 @@ vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
     return vec4(1,dist,dist,1.0);
 }
 
-vec4 convertInt(Texture2D<uint> glowTexture,vec2 texCoord)
+vec4 convertInt(Texture2D<uint> glowTexture,uint2 location)
 {
-	uint2 tex_dim;
-	glowTexture.GetDimensions(tex_dim.x, tex_dim.y);
-
-	uint2 location = uint2((uint)(tex_dim.x * texCoord.x), (uint)(tex_dim.y * texCoord.y));
 	uint int_color = glowTexture[location];
 
 	// Convert R11G11B10 to float3
@@ -100,6 +96,30 @@ vec4 convertInt(Texture2D<uint> glowTexture,vec2 texCoord)
 	color.a = 1;
 
 	return color;
+}
+
+vec4 texture_int(Texture2D<uint> glowTexture,vec2 texCoord)
+{
+	uint2 tex_dim;
+	glowTexture.GetDimensions(tex_dim.x, tex_dim.y);
+
+	vec2 pos1=vec2(tex_dim.x*texCoord.x-0.5,tex_dim.y * texCoord.y-0.5);
+	vec2 pos2=vec2(tex_dim.x*texCoord.x+0.5,tex_dim.y * texCoord.y+0.5);
+
+	uint2 location1=uint2(pos1);
+	uint2 location2=uint2(pos2);
+
+	vec2 l=vec2(tex_dim.x*texCoord.x,tex_dim.y * texCoord.y)-vec2(location1);
+
+	vec4 tex00=convertInt(glowTexture,location1);
+	vec4 tex10=convertInt(glowTexture,uint2(location2.x,location1.y));
+	vec4 tex11=convertInt(glowTexture,location2);
+	vec4 tex01=convertInt(glowTexture,uint2(location1.x,location2.y));
+
+	vec4 tex0=lerp(tex00,tex10,l.x);
+	vec4 tex1=lerp(tex01,tex11,l.x);
+	vec4 tex=lerp(tex0,tex1,l.y);
+	return tex;
 }
 
 /*
@@ -131,7 +151,7 @@ vec4 LinearizeDepthPS(v2f IN) : SV_TARGET
 vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
 {
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
-	vec4 glow=convertInt(glowTexture,IN.texCoords);
+	vec4 glow=texture_int(glowTexture,IN.texCoords);
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
@@ -141,7 +161,7 @@ vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
 vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_TARGET
 {
 	vec4 c=texture_resolve(imageTextureMS,IN.texCoords);
-	vec4 glow=convertInt(glowTexture,IN.texCoords);
+	vec4 glow=texture_int(glowTexture,IN.texCoords);
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
