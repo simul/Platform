@@ -130,7 +130,7 @@ inline float3 scan_top_exclusive(uint thread_id, float3 value, uint size)
 inline void scan_inclusive(uint thread_id, uint numRows)
 {
 	uint i;
-	// Each thread deals the number of "texelsPerThread" texels
+	// Each thread deals with "texelsPerThread" texels
 	uint row=thread_id*texelsPerThread;
 	// The lowest level (level-0) are stored in register space
 	vec3 local_data[MAX_TEXELS_PER_THREAD];
