@@ -16,6 +16,7 @@ namespace simul
 			,LUM_32_FLOAT
 			,RGBA_8_UNORM
 			,RGBA_8_SNORM
+			,R_32_UINT
 		};
 	}
 }

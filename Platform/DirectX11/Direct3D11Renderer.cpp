@@ -532,6 +532,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		{
 			RenderDepthBuffers(deviceContext,view->GetScreenWidth()/2,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		}
+		simulHDRRenderer->RenderDebug(deviceContext,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
 		{
 			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(deviceContext,0,0,view->GetScreenWidth(),view->GetScreenHeight());

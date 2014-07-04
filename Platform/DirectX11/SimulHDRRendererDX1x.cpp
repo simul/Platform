@@ -59,8 +59,9 @@ void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
 	Height=h;
 	if(Width>0&&Height>0)
 	{
-		if(m_pd3dDevice)
-			glowTexture.init(m_pd3dDevice,Width/2,Height/2);
+		glowTexture.ensureTexture2DSizeAndFormat(renderPlatform,Width/2,Height/2,crossplatform::R_32_UINT,true);
+		
+		glow_fb.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
 		glow_fb.SetWidthAndHeight(Width/2,Height/2);
 	}
 	RecompileShaders();
@@ -73,13 +74,12 @@ void SimulHDRRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r
 	m_pd3dDevice=renderPlatform->AsD3D11Device();
 	glow_fb.RestoreDeviceObjects(renderPlatform);
 
-	glowTexture.release();
 	if(m_pd3dDevice&&Width>0&&Height>0)
 	{
-		glowTexture.init(m_pd3dDevice,Width/2,Height/2);
-		glow_fb.SetWidthAndHeight(Width/2,Height/2);
+		glowTexture.ensureTexture2DSizeAndFormat(renderPlatform,Width/2,Height/2,crossplatform::R_32_UINT,true);
 	}
 	hdrConstants.RestoreDeviceObjects(m_pd3dDevice);
+	imageConstants.RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();
 }
 
@@ -111,6 +111,7 @@ template<typename t> t max3(t a,t b,t c)
 {
 	return std::max(a,std::max(b,c));
 }
+	static int	threadsPerGroup = 128;
 
 void SimulHDRRendererDX1x::RecompileShaders()
 {
@@ -126,7 +127,6 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	hdrConstants.LinkToEffect(m_pTonemapEffect,"HdrConstants");
 	SAFE_RELEASE(m_pGaussianEffect);
 	
-	static int	threadsPerGroup = 128;
 
 //static const uint THREADS_PER_GROUP = 128;
 //static const uint SCAN_SMEM_SIZE = 1200;
@@ -138,26 +138,28 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	if(!H||!W)
 		return;
 	std::map<std::string,std::string> defs;
-	int scan_smem_size			=max3(H,W,(int)threadsPerGroup*2);
-	int texels_per_thread = (H + threadsPerGroup - 1) / threadsPerGroup;
-//	int texels_per_thread		= (std::max(H,W) + threadsPerGroup - 1) / threadsPerGroup;
-	defs["SCAN_SMEM_SIZE"]	=string_format("%d",scan_smem_size);
-	defs["TEXELS_PER_THREAD"]=string_format("%d",texels_per_thread);
-	defs["THREADS_PER_GROUP"]=string_format("%d",threadsPerGroup);
-	defs["NUM_IMAGE_COLS"]	=string_format("%d",W);
-	defs["NUM_IMAGE_ROWS"]	=string_format("%d",H);
+	// Just set scan_mem_size to the largest value we can ever expect:
+	int scan_smem_size			=1920;//max3(H,W,(int)threadsPerGroup*2);
+//	int texels_per_thread		=(std::max(H,W) + threadsPerGroup - 1) / threadsPerGroup;
+	defs["SCAN_SMEM_SIZE"]		=string_format("%d",scan_smem_size);
+	//defs["TEXELS_PER_THREAD"]	=string_format("%d",texels_per_thread);
+	defs["THREADS_PER_GROUP"]	=string_format("%d",threadsPerGroup);
+	//defs["NUM_IMAGE_COLS"]		=string_format("%d",W);
+	//defs["NUM_IMAGE_ROWS"]		=string_format("%d",H);
 	
 	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs,0);
 	hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
+	imageConstants.LinkToEffect(m_pGaussianEffect,"ImageConstants");
 }
 
 void SimulHDRRendererDX1x::InvalidateDeviceObjects()
 {
 	hdrConstants.InvalidateDeviceObjects();
+	imageConstants.InvalidateDeviceObjects();
 	glow_fb.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pTonemapEffect);
 	SAFE_RELEASE(m_pGaussianEffect);
-	glowTexture.release();
+	glowTexture.InvalidateDeviceObjects();
 	m_pd3dDevice=NULL;
 }
 
@@ -198,7 +200,7 @@ void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,vo
 	{
 		RenderGlowTexture(deviceContext,texture_srv);
 		tech=glowExposureGammaTechnique;
-		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
+		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.shaderResourceView);
 	}
 	ApplyPass(pContext,tech->GetPassByName(msaa?"msaa":"main"));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
@@ -206,6 +208,8 @@ void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,vo
 	dx11::setTexture(m_pTonemapEffect,"imageTexture",NULL);
 	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",NULL);
 	hdrConstants.Unbind(pContext);
+	imageConstants.Unbind(pContext);
+	
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
@@ -242,7 +246,7 @@ void SimulHDRRendererDX1x::RenderWithOculusCorrection(crossplatform::DeviceConte
 	if(Glow)
 	{
 		RenderGlowTexture(deviceContext,texture_srv);
-		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
+		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.shaderResourceView);
 		ApplyPass(pContext,warpGlowExposureGamma->GetPassByIndex(0));
 	}
 	else
@@ -271,9 +275,9 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 		return;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-static int g_NumApproxPasses=3;
-static int	g_MaxApproxPasses = 8;
-static float g_FilterRadius = 30;
+	static int g_NumApproxPasses=3;
+	static int	g_MaxApproxPasses = 8;
+	static float g_FilterRadius = 30;
 	// Render to the low-res glow.
 	if(glowTechnique)
 	{
@@ -290,25 +294,29 @@ static float g_FilterRadius = 30;
 	ID3D1xTexture2D *texture=glow_fb.GetColorTexture();
 	texture->GetDesc(&tex_desc);
 
-	float box_width = CalculateBoxFilterWidth(g_FilterRadius, g_NumApproxPasses);
-	float half_box_width = box_width * 0.5f;
-	float frac_half_box_width = (half_box_width + 0.5f) - (int)(half_box_width + 0.5f);
-	float inv_frac_half_box_width = 1.0f - frac_half_box_width;
-	float rcp_box_width = 1.0f / box_width;
+	float box_width					= CalculateBoxFilterWidth(g_FilterRadius, g_NumApproxPasses);
+	float half_box_width			= box_width * 0.5f;
+	float frac_half_box_width		= (half_box_width + 0.5f) - (int)(half_box_width + 0.5f);
+	float inv_frac_half_box_width	= 1.0f - frac_half_box_width;
+	float rcp_box_width				= 1.0f / box_width;
 	// Step 1. Vertical passes: Each thread group handles a column in the image
 	// Input texture
 	simul::dx11::setTexture(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture
-	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
-	simul::dx11::setParameter(m_pGaussianEffect,"g_NumApproxPasses",g_NumApproxPasses - 1);
-	simul::dx11::setParameter(m_pGaussianEffect,"g_HalfBoxFilterWidth",half_box_width);
-	simul::dx11::setParameter(m_pGaussianEffect,"g_FracHalfBoxFilterWidth",frac_half_box_width);
-	simul::dx11::setParameter(m_pGaussianEffect,"g_InvFracHalfBoxFilterWidth",inv_frac_half_box_width);
-	simul::dx11::setParameter(m_pGaussianEffect,"g_RcpBoxFilterWidth",rcp_box_width);
-
+	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput"			,glowTexture.AsD3D11UnorderedAccessView());
+	imageConstants.imageSize					=uint2(tex_desc.Width,tex_desc.Height);
+	// Each thread is a chunk of threadsPerGroup(=128) texels, so to cover all of them we divide by threadsPerGroup
+	imageConstants.texelsPerThread				=(tex_desc.Height + threadsPerGroup - 1)/threadsPerGroup;
+	imageConstants.g_NumApproxPasses			=g_NumApproxPasses-1;
+	imageConstants.g_HalfBoxFilterWidth			=half_box_width;
+	imageConstants.g_FracHalfBoxFilterWidth		=frac_half_box_width;
+	imageConstants.g_InvFracHalfBoxFilterWidth	=inv_frac_half_box_width;
+	imageConstants.g_RcpBoxFilterWidth			=rcp_box_width;
+	imageConstants.Apply(deviceContext);
 	// Select pass
-	gaussianColTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_col");
+	gaussianColTechnique						=m_pGaussianEffect->GetTechniqueByName("simul_gaussian_col");
 	gaussianColTechnique->GetPassByIndex(0)->Apply(0,pContext);
+	// We perform the Gaussian blur for each column. Each group is a column, and each thread 
 	pContext->Dispatch(tex_desc.Width,1,1);
 
 	// Unbound CS resource and output
@@ -321,8 +329,9 @@ static float g_FilterRadius = 30;
 	// Input texture
 	simul::dx11::setTexture(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture
-	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
-
+	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.AsD3D11UnorderedAccessView());
+	imageConstants.texelsPerThread				=(tex_desc.Width + threadsPerGroup - 1)/threadsPerGroup;
+	imageConstants.Apply(deviceContext);
 	// Select pass
 	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");
 	gaussianRowTechnique->GetPassByIndex(0)->Apply(0,pContext);
@@ -331,6 +340,12 @@ static float g_FilterRadius = 30;
 	// Unbound CS resource and output
 	pContext->CSSetShaderResources(0,4,srv_array);
 	pContext->CSSetUnorderedAccessViews(0,4,uav_array, NULL);
+}
+
+void SimulHDRRendererDX1x::RenderDebug(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h)
+{
+	renderPlatform->DrawTexture(deviceContext,x0,y0,w/2,h/2,glow_fb.GetTexture());
+	renderPlatform->DrawTexture(deviceContext,x0+w/2,y0,w/2,h/2,&glowTexture);
 }
 
 const char *SimulHDRRendererDX1x::GetDebugText() const

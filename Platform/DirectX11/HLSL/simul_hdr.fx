@@ -148,6 +148,7 @@ vec4 LinearizeDepthPS(v2f IN) : SV_TARGET
 	float dist=depthToLinearDistance(depth.x,depthToLinFadeDistParams);
     return vec4(dist,dist,dist,1.0);
 }
+
 vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
 {
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
@@ -155,7 +156,7 @@ vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
-    return vec4(c.rgb,1.0);
+    return vec4(glow.rgb,1.0);
 }
 
 vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_TARGET

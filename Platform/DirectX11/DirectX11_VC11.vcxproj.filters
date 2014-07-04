@@ -446,6 +446,9 @@
     <None Include="..\CrossPlatform\SL\raytrace_new.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\image_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">

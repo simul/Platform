@@ -19,6 +19,8 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/SL/image_constants.sl"
 #include "Simul/Base/Referenced.h"
 #include "Simul/Base/PropertyMacros.h"
 #pragma warning(push)
@@ -50,6 +52,7 @@ namespace simul
 			void RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
 			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext,void *texture_srv);
+			void RenderDebug(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			//! Get the current debug text as a c-string pointer.
 			const char *GetDebugText() const;
 			//! Get a timing value for debugging.
@@ -79,8 +82,9 @@ namespace simul
 			ID3DX11EffectTechnique*				gaussianColTechnique;
 
 			float timing;
-			simul::dx11::ComputableTexture		glowTexture;
+			simul::dx11::Texture				glowTexture;
 			ConstantBuffer<HdrConstants>		hdrConstants;
+			ConstantBuffer<ImageConstants>		imageConstants;
 		};
 	}
 }
