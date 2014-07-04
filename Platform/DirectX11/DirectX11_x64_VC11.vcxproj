@@ -313,7 +313,6 @@
     <None Include="HLSL\simul_hdr.fx" />
     <None Include="HLSL\lightning.fx" />
     <None Include="HLSL\simul_rendernoise.fx" />
-    <None Include="HLSL\simul_sky.fx" />
     <None Include="HLSL\simul_terrain.fx" />
     <None Include="SimulUseDXSDK.props" />
     <None Include="SimulUseWin8SDK.props" />
@@ -351,6 +350,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\solid.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\gaussian.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\sky.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

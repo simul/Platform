@@ -94,7 +94,7 @@ vec4 convertInt(Texture2D<uint> glowTexture,uint2 location)
 	color.g = (float)((int_color >> 10) & 0x7ff) / 2047.0f;
 	color.b = (float)(int_color & 0x0003ff) / 1023.0f;
 	color.a = 1;
-
+	color.rgb*=10.0;
 	return color;
 }
 
@@ -151,12 +151,12 @@ vec4 LinearizeDepthPS(v2f IN) : SV_TARGET
 
 vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
 {
-	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
-	vec4 glow=texture_int(glowTexture,IN.texCoords);
-	c.rgb+=glow.rgb;
-	c.rgb*=exposure;
-	c.rgb=pow(c.rgb,gamma);
-    return vec4(glow.rgb,1.0);
+	vec4 c		=texture_nearest_lod(imageTexture,IN.texCoords,0);
+	vec4 glow	=texture_int(glowTexture,IN.texCoords);
+	c.rgb		+=glow.rgb;
+	c.rgb		*=exposure;
+	c.rgb		=pow(c.rgb,gamma);
+    return vec4(c.rgb,1.0);
 }
 
 vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_TARGET
@@ -167,6 +167,11 @@ vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_TARGET
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
     return vec4(c.rgb,1.0);
+}
+float4 PS_ShowCompressed(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 glow=texture_int(glowTexture,IN.texCoords);
+    return vec4(glow.rgb,1.0);
 }
 
 vec4 ExposureGammaPS(v2f IN) : SV_TARGET
@@ -467,5 +472,18 @@ technique11 textured
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,TexturedPS()));
+    }
+}
+
+technique11 show_compressed_texture
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowCompressed()));
     }
 }

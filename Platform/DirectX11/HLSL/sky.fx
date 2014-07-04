@@ -300,9 +300,9 @@ vec4 PS_Sun( svertexOutput IN): SV_TARGET
 		discard;
 	float brightness=1.0;
 	if(r>1.0)
-	//	discard;
-		brightness=1.0/pow(r,4.0);//();//colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
-	vec3 result=brightness*colour.rgb;
+		discard;
+		//brightness=1.0/pow(r,4.0);//();//colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
+	vec3 result=brightness*colour.rgb*colour.a;
 	return vec4(result,1.f);
 }
 

@@ -117,7 +117,7 @@
 		textureMS.GetDimensions(dims.x,dims.y,numberOfSamples);
 		uint2 pos=uint2(vec2(dims)*texCoords);
 		vec4 d=vec4(0,0,0,0);
-		for(int k=0;k<numberOfSamples;k++)
+		for(uint k=0;k<numberOfSamples;k++)
 		{
 			d+=textureMS.Load(pos,k);
 		}

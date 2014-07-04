@@ -325,9 +325,6 @@
     <None Include="HLSL\simul_rendernoise.fx">
       <Filter>FX</Filter>
     </None>
-    <None Include="HLSL\simul_sky.fx">
-      <Filter>FX</Filter>
-    </None>
     <None Include="HLSL\simul_terrain.fx">
       <Filter>FX</Filter>
     </None>
@@ -465,5 +462,13 @@
     </None>
     <None Include="SimulUseDXSDK.props" />
     <None Include="SimulUseWin8SDK.props" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="HLSL\gaussian.fx">
+      <Filter>FX</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\sky.fx">
+      <Filter>FX</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

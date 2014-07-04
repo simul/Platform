@@ -38,11 +38,11 @@ using namespace dx11;
 SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 	:m_pd3dDevice(NULL)
 	,renderPlatform(NULL)
-	,m_pTonemapEffect(NULL)
+	,hdr_effect(NULL)
 	,m_pGaussianEffect(NULL)
 	,Glow(false)
-	,Width(w)
-	,Height(h)
+	,Width(0)
+	,Height(0)
 	,timing(0.f)
 	,glow_fb(w/2,h/2)
 	,exposureGammaTechnique(NULL)
@@ -78,8 +78,8 @@ void SimulHDRRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r
 	{
 		glowTexture.ensureTexture2DSizeAndFormat(renderPlatform,Width/2,Height/2,crossplatform::R_32_UINT,true);
 	}
-	hdrConstants.RestoreDeviceObjects(m_pd3dDevice);
-	imageConstants.RestoreDeviceObjects(m_pd3dDevice);
+	hdrConstants.RestoreDeviceObjects(renderPlatform);
+	imageConstants.RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 }
 
@@ -115,17 +115,18 @@ template<typename t> t max3(t a,t b,t c)
 
 void SimulHDRRendererDX1x::RecompileShaders()
 {
-	SAFE_RELEASE(m_pTonemapEffect);
+	SAFE_DELETE(hdr_effect);
+	SAFE_DELETE(m_pGaussianEffect);
 	if(!m_pd3dDevice)
 		return;
-	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"));
-	exposureGammaTechnique		=m_pTonemapEffect->GetTechniqueByName("exposure_gamma");
-	glowExposureGammaTechnique	=m_pTonemapEffect->GetTechniqueByName("glow_exposure_gamma");
-	warpExposureGamma			=m_pTonemapEffect->GetTechniqueByName("warp_exposure_gamma");
-	warpGlowExposureGamma		=m_pTonemapEffect->GetTechniqueByName("warp_glow_exposure_gamma");
-	glowTechnique				=m_pTonemapEffect->GetTechniqueByName("simul_glow");
-	hdrConstants.LinkToEffect(m_pTonemapEffect,"HdrConstants");
-	SAFE_RELEASE(m_pGaussianEffect);
+	std::map<std::string,std::string> defs;
+	hdr_effect					=renderPlatform->CreateEffect("simul_hdr",defs);
+	exposureGammaTechnique		=hdr_effect->GetTechniqueByName("exposure_gamma");
+	glowExposureGammaTechnique	=hdr_effect->GetTechniqueByName("glow_exposure_gamma");
+	warpExposureGamma			=hdr_effect->GetTechniqueByName("warp_exposure_gamma");
+	warpGlowExposureGamma		=hdr_effect->GetTechniqueByName("warp_glow_exposure_gamma");
+	glowTechnique				=hdr_effect->GetTechniqueByName("simul_glow");
+	hdrConstants.LinkToEffect(hdr_effect,"HdrConstants");
 	
 
 //static const uint THREADS_PER_GROUP = 128;
@@ -137,17 +138,17 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	int H=Height;
 	if(!H||!W)
 		return;
-	std::map<std::string,std::string> defs;
 	// Just set scan_mem_size to the largest value we can ever expect:
-	int scan_smem_size			=1920;//max3(H,W,(int)threadsPerGroup*2);
-//	int texels_per_thread		=(std::max(H,W) + threadsPerGroup - 1) / threadsPerGroup;
+	int scan_smem_size			=1920;//max3(H,W,(int)threadsPerGroup*2);//1920;//
 	defs["SCAN_SMEM_SIZE"]		=string_format("%d",scan_smem_size);
-	//defs["TEXELS_PER_THREAD"]	=string_format("%d",texels_per_thread);
 	defs["THREADS_PER_GROUP"]	=string_format("%d",threadsPerGroup);
+
+	//int texels_per_thread		=(std::max(H,W) + threadsPerGroup - 1) / threadsPerGroup;
+	//defs["TEXELS_PER_THREAD"]	=string_format("%d",texels_per_thread);
 	//defs["NUM_IMAGE_COLS"]		=string_format("%d",W);
 	//defs["NUM_IMAGE_ROWS"]		=string_format("%d",H);
 	
-	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs,0);
+	m_pGaussianEffect			=renderPlatform->CreateEffect("simul_gaussian",defs);
 	hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
 	imageConstants.LinkToEffect(m_pGaussianEffect,"ImageConstants");
 }
@@ -157,8 +158,8 @@ void SimulHDRRendererDX1x::InvalidateDeviceObjects()
 	hdrConstants.InvalidateDeviceObjects();
 	imageConstants.InvalidateDeviceObjects();
 	glow_fb.InvalidateDeviceObjects();
-	SAFE_RELEASE(m_pTonemapEffect);
-	SAFE_RELEASE(m_pGaussianEffect);
+	SAFE_DELETE(hdr_effect);
+	SAFE_DELETE(m_pGaussianEffect);
 	glowTexture.InvalidateDeviceObjects();
 	m_pd3dDevice=NULL;
 }
@@ -188,29 +189,29 @@ void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,vo
 	textureSRV->GetDesc(&desc);
 	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
 	if(msaa)
-		dx11::setTexture(m_pTonemapEffect,"imageTextureMS"	,textureSRV);
+		dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTextureMS"	,textureSRV);
 	else
-		dx11::setTexture(m_pTonemapEffect,"imageTexture"	,textureSRV);
+		dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTexture"	,textureSRV);
 	hdrConstants.gamma		=Gamma;
 	hdrConstants.exposure	=Exposure;
 	hdrConstants.Apply(deviceContext);
-	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
-	ID3DX11EffectTechnique *tech=exposureGammaTechnique;
+	simul::dx11::setParameter(hdr_effect->asD3DX11Effect(),"offset",offsetX,0.f);
+	crossplatform::EffectTechnique *tech=exposureGammaTechnique;
 	if(Glow)
 	{
 		RenderGlowTexture(deviceContext,texture_srv);
 		tech=glowExposureGammaTechnique;
-		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.shaderResourceView);
+		simul::dx11::setTexture(hdr_effect->asD3DX11Effect(),"glowTexture",glowTexture.shaderResourceView);
 	}
-	ApplyPass(pContext,tech->GetPassByName(msaa?"msaa":"main"));
+	hdr_effect->Apply(deviceContext,tech,(msaa?"msaa":"main"));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 
-	dx11::setTexture(m_pTonemapEffect,"imageTexture",NULL);
-	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",NULL);
-	hdrConstants.Unbind(pContext);
-	imageConstants.Unbind(pContext);
+	dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTexture",NULL);
+	dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTextureMS",NULL);
+	hdrConstants.Unbind(deviceContext);
+	imageConstants.Unbind(deviceContext);
 	
-	ApplyPass(pContext,tech->GetPassByIndex(0));
+	hdr_effect->Unapply(deviceContext);
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
@@ -219,8 +220,8 @@ void SimulHDRRendererDX1x::RenderWithOculusCorrection(crossplatform::DeviceConte
 {
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
-	dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
-	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
+	dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTexture",textureSRV);
+	dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTextureMS",textureSRV);
 	hdrConstants.gamma				=Gamma;
 	hdrConstants.exposure			=Exposure;
 	
@@ -242,21 +243,21 @@ void SimulHDRRendererDX1x::RenderWithOculusCorrection(crossplatform::DeviceConte
 	hdrConstants.warpScale			=vec2(0.5f* scaleFactor, 0.5f* scaleFactor * as);
 	hdrConstants.warpScaleIn		=vec2(2.f,2.f/ as);
 	hdrConstants.Apply(deviceContext);
-	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
+	simul::dx11::setParameter(hdr_effect->asD3DX11Effect(),"offset",offsetX,0.f);
 	if(Glow)
 	{
 		RenderGlowTexture(deviceContext,texture_srv);
-		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.shaderResourceView);
-		ApplyPass(pContext,warpGlowExposureGamma->GetPassByIndex(0));
+		simul::dx11::setTexture(hdr_effect->asD3DX11Effect(),"glowTexture",glowTexture.shaderResourceView);
+		hdr_effect->Apply(deviceContext,warpGlowExposureGamma,0);
 	}
 	else
-		ApplyPass(pContext,warpExposureGamma->GetPassByIndex(0));
+		hdr_effect->Apply(deviceContext,warpExposureGamma,0);
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	
-	dx11::setTexture(m_pTonemapEffect,"imageTexture",NULL);
-	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",NULL);
-	hdrConstants.Unbind(pContext);
-	ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
+	dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTexture",NULL);
+	dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTextureMS",NULL);
+	hdrConstants.Unbind(deviceContext);
+	hdr_effect->Unapply(deviceContext);
 }
 
 static float CalculateBoxFilterWidth(float radius, int pass)
@@ -281,14 +282,15 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 	// Render to the low-res glow.
 	if(glowTechnique)
 	{
-		dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
-		dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
-		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
-		ApplyPass(pContext,glowTechnique->GetPassByIndex(0));
+		dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTexture",textureSRV);
+		dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTextureMS",textureSRV);
+		simul::dx11::setParameter(hdr_effect->asD3DX11Effect(),"offset",1.f/Width,1.f/Height);
+		hdr_effect->Apply(deviceContext,glowTechnique,(0));
 		glow_fb.Activate(deviceContext);
 		glow_fb.Clear(deviceContext.platform_context,0,0,0,0,0);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 		glow_fb.Deactivate(pContext);
+		hdr_effect->Unapply(deviceContext);
 	}
     D3D11_TEXTURE2D_DESC tex_desc;
 	ID3D1xTexture2D *texture=glow_fb.GetColorTexture();
@@ -301,9 +303,9 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 	float rcp_box_width				= 1.0f / box_width;
 	// Step 1. Vertical passes: Each thread group handles a column in the image
 	// Input texture
-	simul::dx11::setTexture(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
+	m_pGaussianEffect->SetTexture(deviceContext,"g_texInput",glow_fb.GetTexture());
 	// Output texture
-	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput"			,glowTexture.AsD3D11UnorderedAccessView());
+	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",&glowTexture);
 	imageConstants.imageSize					=uint2(tex_desc.Width,tex_desc.Height);
 	// Each thread is a chunk of threadsPerGroup(=128) texels, so to cover all of them we divide by threadsPerGroup
 	imageConstants.texelsPerThread				=(tex_desc.Height + threadsPerGroup - 1)/threadsPerGroup;
@@ -315,7 +317,7 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 	imageConstants.Apply(deviceContext);
 	// Select pass
 	gaussianColTechnique						=m_pGaussianEffect->GetTechniqueByName("simul_gaussian_col");
-	gaussianColTechnique->GetPassByIndex(0)->Apply(0,pContext);
+	m_pGaussianEffect->Apply(deviceContext,gaussianColTechnique,0);
 	// We perform the Gaussian blur for each column. Each group is a column, and each thread 
 	pContext->Dispatch(tex_desc.Width,1,1);
 
@@ -324,28 +326,33 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 	pContext->CSSetShaderResources(0, 4, srv_array);
 	ID3D11UnorderedAccessView* uav_array[] = {NULL, NULL, NULL, NULL};
 	pContext->CSSetUnorderedAccessViews(0, 4, uav_array, NULL);
-
+	
+	m_pGaussianEffect->Unapply(deviceContext);
 	// Step 2. Horizontal passes: Each thread group handles a row in the image
 	// Input texture
-	simul::dx11::setTexture(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
+	m_pGaussianEffect->SetTexture(deviceContext,"g_texInput",glow_fb.GetTexture());
 	// Output texture
-	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.AsD3D11UnorderedAccessView());
+	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",&glowTexture);
 	imageConstants.texelsPerThread				=(tex_desc.Width + threadsPerGroup - 1)/threadsPerGroup;
 	imageConstants.Apply(deviceContext);
 	// Select pass
 	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");
-	gaussianRowTechnique->GetPassByIndex(0)->Apply(0,pContext);
+	m_pGaussianEffect->Apply(deviceContext,gaussianRowTechnique,0);
 	pContext->Dispatch(tex_desc.Height,1,1);
 
 	// Unbound CS resource and output
 	pContext->CSSetShaderResources(0,4,srv_array);
 	pContext->CSSetUnorderedAccessViews(0,4,uav_array, NULL);
+	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",NULL);
+	m_pGaussianEffect->Unapply(deviceContext);
 }
 
 void SimulHDRRendererDX1x::RenderDebug(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h)
 {
 	renderPlatform->DrawTexture(deviceContext,x0,y0,w/2,h/2,glow_fb.GetTexture());
-	renderPlatform->DrawTexture(deviceContext,x0+w/2,y0,w/2,h/2,&glowTexture);
+	//renderPlatform->DrawTexture(deviceContext,x0+w/2,y0,w/2,h/2,&glowTexture);
+	simul::dx11::setTexture(hdr_effect->asD3DX11Effect(),"glowTexture",glowTexture.shaderResourceView);
+	renderPlatform->DrawQuad(deviceContext,x0+w/2,y0,w/2,h/2,hdr_effect,hdr_effect->GetTechniqueByName("show_compressed_texture"));
 }
 
 const char *SimulHDRRendererDX1x::GetDebugText() const

@@ -252,7 +252,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 											,float exposure
 											,bool buffered
 											,crossplatform::Texture *mainDepthTexture
-											,const void* lowResDepthTexture
+											,const void* 
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite)
 {

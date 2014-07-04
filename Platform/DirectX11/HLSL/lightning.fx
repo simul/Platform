@@ -203,7 +203,7 @@ technique11 lightning_thick
     {
 		SetDepthStencilState(TestDepth,0);
         SetRasterizerState(RenderNoCull);
-		SetBlendState(DoBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
         SetGeometryShader( CompileShader(gs_5_0, GS_Thick()));
@@ -230,7 +230,7 @@ technique11 lightning_thin
     {
 		SetDepthStencilState(TestDepth,0);
         SetRasterizerState(lightningLineRasterizer);
-		SetBlendState(DoBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Thin()));

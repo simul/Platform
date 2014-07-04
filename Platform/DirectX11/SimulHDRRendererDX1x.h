@@ -19,6 +19,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/Effect.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/image_constants.sl"
 #include "Simul/Base/Referenced.h"
@@ -67,24 +68,24 @@ namespace simul
 			ID3D11Device*						m_pd3dDevice;
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			ID3DX11Effect*						m_pTonemapEffect;
-			ID3DX11EffectTechnique*				exposureGammaTechnique;
-			ID3DX11EffectTechnique*				glowExposureGammaTechnique;
-			ID3DX11EffectTechnique*				warpExposureGamma;
-			ID3DX11EffectTechnique*				warpGlowExposureGamma;
+			crossplatform::Effect*				hdr_effect;
+			crossplatform::EffectTechnique*		exposureGammaTechnique;
+			crossplatform::EffectTechnique*		glowExposureGammaTechnique;
+			crossplatform::EffectTechnique*		warpExposureGamma;
+			crossplatform::EffectTechnique*		warpGlowExposureGamma;
 			
-			ID3DX11EffectTechnique*				glowTechnique;
+			crossplatform::EffectTechnique*		glowTechnique;
 			ID3DX11EffectScalarVariable*		Exposure_;
 			ID3DX11EffectScalarVariable*		Gamma_;
 
-			ID3DX11Effect*						m_pGaussianEffect;
-			ID3DX11EffectTechnique*				gaussianRowTechnique;
-			ID3DX11EffectTechnique*				gaussianColTechnique;
+			crossplatform::Effect*				m_pGaussianEffect;
+			crossplatform::EffectTechnique*		gaussianRowTechnique;
+			crossplatform::EffectTechnique*		gaussianColTechnique;
 
 			float timing;
 			simul::dx11::Texture				glowTexture;
-			ConstantBuffer<HdrConstants>		hdrConstants;
-			ConstantBuffer<ImageConstants>		imageConstants;
+			crossplatform::ConstantBuffer<HdrConstants>		hdrConstants;
+			crossplatform::ConstantBuffer<ImageConstants>		imageConstants;
 		};
 	}
 }

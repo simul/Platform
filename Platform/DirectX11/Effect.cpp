@@ -96,7 +96,7 @@ void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char
 	SAFE_RELEASE(e);
 	if(!renderPlatform)
 		return;
-	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_utf8,defines,D3DCOMPILE_OPTIMIZATION_LEVEL3);
+	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_utf8,defines,0);//D3DCOMPILE_OPTIMIZATION_LEVEL3);
 	platform_effect	=e;
 	groups.clear();
 	if(e)

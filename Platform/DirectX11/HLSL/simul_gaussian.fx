@@ -21,15 +21,17 @@
 // Macros and constant values
 //-----------------------------------------------------------------------------
 
+
 static const uint SCAN_WARP_SIZE = 32;
 static const uint SCAN_LOG2_WARP_SIZE = 5;
 
 // The following constants are defined via compiler command line
 //static const uint THREADS_PER_GROUP = 128;
 //static const uint SCAN_SMEM_SIZE = 1200;
-//static const uint texelsPerThread = 5;
+static const uint MAX_TEXELS_PER_THREAD = 64;
 //static const uint imageSize.y = 1200;
-#define MAX_TEXELS_PER_THREAD 64
+//static const uint imageSize.x = 1600;
+
 //-----------------------------------------------------------------------------
 // Shared memory variables
 // Shared memory for prefix sum operation (scan).
@@ -37,8 +39,6 @@ groupshared float3 gs_ScanData[SCAN_SMEM_SIZE];
 
 //-----------------------------------------------------------------------------
 // Shader constant buffers
-
-
 //-----------------------------------------------------------------------------
 // Buffers, textures & samplers
 //-----------------------------------------------------------------------------
@@ -112,7 +112,7 @@ inline float3 scan_top_inclusive(uint thread_id, float3 value, uint size)
 	// Grab top warp elements
 	float3 top_value = gs_ScanData[thread_id];
 
-	// Calculate exclusive scan and write back to shared memory
+	// Calculate exclsive scan and write back to shared memory
 	gs_ScanData[thread_id] = scan_warp_exclusive(thread_id, top_value, THREADS_PER_GROUP >> SCAN_LOG2_WARP_SIZE);
 
 	// Wait for the result of top element scan
@@ -127,32 +127,40 @@ inline float3 scan_top_exclusive(uint thread_id, float3 value, uint size)
 	return scan_top_inclusive(thread_id, value, size) - value;
 }
 
-inline void scan_inclusive(uint thread_id, uint numRows)
+inline void scan_inclusive(uint thread_id, uint size)
 {
 	uint i;
-	// Each thread deals with "texelsPerThread" texels
-	uint row=thread_id*texelsPerThread;
+
+	// Each thread deals the number of "texelsPerThread" texels
+	uint location = thread_id * texelsPerThread;
 	// The lowest level (level-0) are stored in register space
-	vec3 local_data[MAX_TEXELS_PER_THREAD];
-	// Read data from group memory to register space
-	for (i=0;i<texelsPerThread;i++)
-		local_data[i]=row+(i<numRows)?gs_ScanData[row+i]:0;
+	float3 local_data[MAX_TEXELS_PER_THREAD];
+
+	// Read back data from shared memory to register space
+	for (i = 0; i < texelsPerThread; i ++)
+		local_data[i] = location + i < size ? gs_ScanData[location + i] : 0;
+	
 	// Perform level-0 sum
-	for (i=1;i<texelsPerThread;i++)
-		local_data[i]+=local_data[i-1];
+	for (i = 1; i < texelsPerThread; i ++)
+		local_data[i] += local_data[i - 1];
+
 	// Wait until all intra-thread operations finished
 	GroupMemoryBarrierWithGroupSync();
+
 	// Level-1 exclusive scan
-	vec3 top_value	=local_data[texelsPerThread - 1];
-	vec3 top_result	=scan_top_exclusive(thread_id, top_value, THREADS_PER_GROUP);
+	float3 top_value = local_data[texelsPerThread - 1];
+	float3 top_result = scan_top_exclusive(thread_id, top_value, THREADS_PER_GROUP);
+
 	// Wait until top level scan finished
 	GroupMemoryBarrierWithGroupSync();
+
 	// Propagate level-1 scan result to level-0, and then write to shared memory
 	for (i = 0; i < texelsPerThread; i ++)
 	{
-		if (row + i<numRows)
-			gs_ScanData[row + i] = local_data[i] + top_result;
+		if (location + i < size)
+			gs_ScanData[location + i] = local_data[i] + top_result;
 	}
+
 	// Wait until all write operations finished
 	GroupMemoryBarrierWithGroupSync();
 }
@@ -225,10 +233,11 @@ inline float3 box_filtering(uint location, uint size)
 inline uint color3_to_uint(float3 color)
 {
 	// Convert to R11G11B10
-	color = clamp(color, 0, 1);
+	color = clamp(color/10.0, 0, 1);
 	uint int_r = (uint)(color.r * 2047.0f + 0.5);
 	uint int_g = (uint)(color.g * 2047.0f + 0.5);
 	uint int_b = (uint)(color.b * 1023.0f + 0.5);
+
 	// Pack into UINT32
 	return (int_r << 21) | (int_g << 10) | int_b;
 }
@@ -240,7 +249,61 @@ inline float3 uint_to_color3(uint int_color)
 	float g = (float)((int_color >> 10) & 0x7ff);
 	float b = (float)(int_color & 0x0003ff);
 	// Convert R11G11B10 to float3
-	return float3(r/2047.0f, g/2047.0f, b/1023.0f);
+	return 10.0*float3(r/2047.0f, g/2047.0f, b/1023.0f);
+}
+inline void input_row_color(uint group_id, uint thread_id)
+{
+	uint col = thread_id;
+	uint row = group_id;
+	// Fetch back the data output by vertical filtering pass.
+	while (col < imageSize.x)
+	{
+		uint int_color = g_rwtOutput[uint2(col, row)];
+		gs_ScanData[col] = uint_to_color3(int_color);
+		col += THREADS_PER_GROUP;
+	}
+	// Wait until all write operations finished
+	GroupMemoryBarrierWithGroupSync();
+}
+
+inline void input_col_color(uint group_id, uint thread_id)
+{
+	uint col = group_id;
+	uint row = thread_id;
+	// Fetch in color
+	while (row < imageSize.y)
+	{
+		gs_ScanData[row] = g_texInput[uint2(col, row)].rgb;
+		row += THREADS_PER_GROUP;
+	}
+	// Wait until all write operations finished
+	GroupMemoryBarrierWithGroupSync();
+}
+
+inline void output_col_color(uint group_id, uint thread_id)
+{
+	uint col = group_id;
+	uint row = thread_id;
+	// Output color values.
+	while (row < imageSize.y)
+	{
+		float3 color = box_filtering(row, imageSize.y);
+		g_rwtOutput[uint2(col, row)] = color3_to_uint(color);
+		row += THREADS_PER_GROUP;
+	}
+}
+
+inline void output_row_color(uint group_id, uint thread_id)
+{
+	uint col = thread_id;
+	uint row = group_id;
+	// Output color values.
+	while (col < imageSize.x)
+	{
+		float3 color = box_filtering(col, imageSize.x);
+		g_rwtOutput[uint2(col, row)] = color3_to_uint(color);
+		col += THREADS_PER_GROUP;
+	}
 }
 
 // The compute shaders for column and row filtering are created from the same
@@ -256,33 +319,17 @@ void GaussianCol_CS(uint3 GroupID			: SV_GroupID,
 					  uint3 GroupThreadID	: SV_GroupThreadID)
 {
 	// Step 1: Fetch the entire column (or row) of texels into shared memory
-	uint col = GroupID.x;
-	uint row = GroupThreadID.x;
-	// Fetch in color
-	for(int i=0;i<texelsPerThread;i++)
-	{
-		int r=GroupThreadID.x*texelsPerThread+i;
-		// gs_ScanData is groupshared
-		gs_ScanData[r] = g_texInput[uint2(col,r)].rgb;
-	}
-	// Wait until all write operations finished
-	GroupMemoryBarrierWithGroupSync();
-	// Now gs_ScanData will contain the whole column of input.
+	input_col_color(GroupID.x, GroupThreadID.x);
+
 	// Step 2. Scan the columns or rows in-place for the first time
 	scan_inclusive(GroupThreadID.x, imageSize.y);
-#if 1
 
 	// Step 3: Perform box filtering repeatly for approximating Gaussian blur
 	for (uint i = 0; i < g_NumApproxPasses; i ++)
 		scan_inclusive_filtering(GroupThreadID.x, imageSize.y);
-#endif
-	// Step 4: Write back to global memory and Output color values.
-	for(int i=0;i<texelsPerThread;i++)
-	{
-		int r=GroupThreadID.x*texelsPerThread+i;
-		float3 color = box_filtering(row, imageSize.y);
-		g_rwtOutput[uint2(col, r)] = color3_to_uint(color);
-	}
+
+	// Step 4: Write back to global memory
+	output_col_color(GroupID.x, GroupThreadID.x);
 }
 
 [numthreads(THREADS_PER_GROUP, 1, 1)]
@@ -290,17 +337,7 @@ void GaussianRow_CS(uint3 GroupID			: SV_GroupID,
 					  uint3 GroupThreadID	: SV_GroupThreadID)
 {
 	// Step 1: Fetch the entire column (or row) of texels into shared memory
-	uint col = GroupThreadID.x;
-	uint row = GroupID.x;
-	// Fetch back the data output by vertical filtering pass.
-	while (col < imageSize.x)
-	{
-		uint int_color = g_rwtOutput[uint2(col, row)];
-		gs_ScanData[col] = uint_to_color3(int_color);
-		col += THREADS_PER_GROUP;
-	}
-	// Wait until all write operations finished
-	GroupMemoryBarrierWithGroupSync();
+	input_row_color(GroupID.x, GroupThreadID.x);
 
 	// Step 2. Scan the columns or rows in-place for the first time
 	scan_inclusive(GroupThreadID.x, imageSize.x);
@@ -310,14 +347,7 @@ void GaussianRow_CS(uint3 GroupID			: SV_GroupID,
 		scan_inclusive_filtering(GroupThreadID.x, imageSize.x);
 
 	// Step 4: Write back to global memory
-	col=GroupThreadID.x;
-	// Output color values.
-	while (col < imageSize.x)
-	{
-		float3 color = uint_to_color3(g_rwtOutput[uint2(col, row)]);//box_filtering(col, imageSize.x);
-		g_rwtOutput[uint2(col, row)] = color3_to_uint(color);
-		col += THREADS_PER_GROUP;
-	}
+	output_row_color(GroupID.x, GroupThreadID.x);
 }
 
 
