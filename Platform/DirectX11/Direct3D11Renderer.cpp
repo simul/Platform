@@ -237,7 +237,7 @@ ERRNO_CHECK
 				if(!lightningRenderInterface)
 					continue;
 				simul::clouds::LightningProperties props	=simulWeatherRenderer->GetEnvironment()->cloudKeyframer->GetLightningProperties(time,i);
-				simulTerrainRenderer->SetLightningProperties(props);
+				//simulTerrainRenderer->SetLightningProperties(props);
 			}
 		}
 		if(simulTerrainRenderer)
