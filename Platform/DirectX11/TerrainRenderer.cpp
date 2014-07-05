@@ -216,7 +216,8 @@ ERRNO_CHECK
 	if(cloudShadowStruct.texture)
 		dx11::setTexture(		effect->asD3DX11Effect(),"cloudShadowTexture"	,cloudShadowStruct.texture->AsD3D11ShaderResourceView());
 	terrainConstants.eyePosition=cam_pos;
-
+	terrainConstants.lightningCentre=lightningIllumination.centre;
+	terrainConstants.lightningColour=lightningIllumination.colour;
 	if(baseSkyInterface)
 	{
 		terrainConstants.ambientColour	=exposure*baseSkyInterface->GetAmbientLight(0.f);

@@ -76,6 +76,10 @@ float4 PS_Main( vertexOutput IN) : SV_TARGET
 	light		*=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,IN.wPosition.xyz);
 	result.rgb	=texel.rgb*(ambientColour.rgb+light.x*sunlight.rgb);
 	result.a	=1.0;
+
+	float from_lightning_centre_km	=0.001*length(IN.wPosition.xy-lightningCentre.xy);
+	vec3 lightning				=lightningColour.rgb*saturate(1.0/pow(from_lightning_centre_km+.0001,2.0));
+	result.rgb					+=lightning;
     return result;
 }
 

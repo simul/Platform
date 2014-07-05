@@ -69,6 +69,7 @@ namespace simul
 				META_ValueProperty(bool,UseHdrPostprocessor		,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
 				META_ValueProperty(bool,UseSkyBuffer			,"Render the sky to a low-res buffer to increase performance.")
 				META_ValueProperty(bool,ShowCompositing			,"Show the multi-resolution compositing textures.")
+				META_ValueProperty(bool,ShowHDRTextures			,"Show the HDR glow textures.")
 				META_ValueProperty(bool,ShowLightVolume			,"Show the cloud light volume as a wireframe box.")
 				META_ValueProperty(bool,CelestialDisplay		,"Show geographical and sidereal overlay.")
 				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")
@@ -118,7 +119,7 @@ namespace simul
 			virtual const char *		GetDebugText		() const;
 			void SetViewType(int view_id,ViewType vt);
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
-			void SaveScreenshot(const char *filename_utf8);
+			void SaveScreenshot(const char *filename_utf8,int width=0,int height=0);
 			simul::dx11::RenderPlatform renderPlatformDx11;
 		protected:
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
@@ -149,6 +150,8 @@ namespace simul
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
 			ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;
+			ID3D11RenderTargetView	*mainRenderTarget;
+			ID3D11DepthStencilView	*mainDepthSurface;
 			std::map<int,const simul::camera::CameraOutputInterface *> cameras;
 		};
 	}

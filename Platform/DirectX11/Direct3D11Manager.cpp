@@ -15,7 +15,7 @@ Window::Window():
 	,vsync(false)
 	,m_swapChain(0)
 	,m_renderTargetView(0)
-	,m_depthStencilBuffer(0)
+	,m_depthStencilTexture(0)
 	,m_depthStencilState(0)
 	,m_depthStencilView(0)
 	,m_rasterState(0)
@@ -209,9 +209,9 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 	// Then this 2D buffer is drawn to the screen.
 
 	// Create the texture for the depth buffer using the filled out description.
-	SAFE_RELEASE(m_depthStencilBuffer);
-	HRESULT result = d3dDevice->CreateTexture2D(&depthBufferDesc, NULL, &m_depthStencilBuffer);
-	SetDebugObjectName( m_depthStencilBuffer,"Window m_depthStencilBuffer");
+	SAFE_RELEASE(m_depthStencilTexture);
+	HRESULT result = d3dDevice->CreateTexture2D(&depthBufferDesc, NULL, &m_depthStencilTexture);
+	SetDebugObjectName( m_depthStencilTexture,"Window m_depthStencilTexture");
 	SIMUL_ASSERT(result==S_OK);
 	//Now we need to setup the depth stencil description.
 	//This allows us to control what type of depth test Direct3D will do for each pixel.
@@ -263,7 +263,7 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 
 	// Create the depth stencil view.
 	SAFE_RELEASE(m_depthStencilView)
-	result = d3dDevice->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView);
+	result = d3dDevice->CreateDepthStencilView(m_depthStencilTexture, &depthStencilViewDesc, &m_depthStencilView);
 	SetDebugObjectName( m_depthStencilView,"Window m_depthStencilView");
 	SIMUL_ASSERT(result==S_OK);
 	//The viewport also needs to be setup so that Direct3D can map clip space coordinates to the render target space.
@@ -306,7 +306,7 @@ void Window::Release()
 		m_swapChain->SetFullscreenState(false, NULL);
 	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE(m_renderTargetView);
-	SAFE_RELEASE(m_depthStencilBuffer);
+	SAFE_RELEASE(m_depthStencilTexture);
 	SAFE_RELEASE(m_depthStencilState);
 	SAFE_RELEASE(m_depthStencilView);
 	SAFE_RELEASE(m_rasterState);
@@ -637,7 +637,9 @@ void Direct3D11Manager::Render(HWND h)
 	// Now set the rasterizer state.
 	d3dDeviceContext->RSSetState(w->m_rasterState);
 	if(w->renderer)
+	{
 		w->renderer->Render(w->view_id,GetDevice(),GetDeviceContext());
+	}
 	static DWORD dwFlags = 0;
 	// 0 - don't wait for 60Hz refresh.
 	static UINT SyncInterval = 0;

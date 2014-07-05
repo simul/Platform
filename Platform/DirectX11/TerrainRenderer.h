@@ -45,7 +45,7 @@ namespace simul
 			ID3D11Device*						m_pd3dDevice;
 			ID3D11Buffer*						m_pVertexBuffer;
 			ID3D11InputLayout*					m_pVtxDecl;
-			crossplatform::EffectTechnique*				m_pTechnique;
+			crossplatform::EffectTechnique*		m_pTechnique;
 			// ID3D11Texture2D	Accesses data in a 2D texture or a 2D texture array
 			simul::dx11::ArrayTexture			arrayTexture;
 			crossplatform::ConstantBuffer<TerrainConstants>	terrainConstants;

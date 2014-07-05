@@ -29,16 +29,6 @@ namespace simul
 			bool as_dds=false;
 			if(fn_utf8.find(".dds")<fn_utf8.length())
 				as_dds=true;
-			int number=0;
-			while(simul::base::FileLoader::GetFileLoader()->FileExists(fn_utf8.c_str()))
-			{
-				number++;
-				char number_text[10];
-				sprintf_s(number_text,10,"%d",number);
-				std::string nstr(number_text);
-				int pos=(int)fn_utf8.find_last_of(".");
-				fn_utf8=fn_utf8.replace(fn_utf8.begin()+pos,fn_utf8.begin()+pos+1,nstr+".");
-			}
 			std::wstring wfilename=simul::base::Utf8ToWString(fn_utf8);
 			ID3D11DeviceContext*			m_pImmediateContext;
 			pd3dDevice->GetImmediateContext(&m_pImmediateContext);

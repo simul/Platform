@@ -42,6 +42,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,UseHdrPostprocessor(true)
 		,UseSkyBuffer(true)
 		,ShowCompositing(false)
+		,ShowHDRTextures(false)
 		,ShowLightVolume(false)
 		,CelestialDisplay(false)
 		,ShowWater(true)
@@ -66,6 +67,8 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,sceneRenderer(NULL)
 #endif
 		,memoryInterface(m)
+		,mainRenderTarget(NULL)
+		,mainDepthSurface(NULL)
 {
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
@@ -236,8 +239,24 @@ ERRNO_CHECK
 				const simul::clouds::LightningRenderInterface *lightningRenderInterface=simulWeatherRenderer->GetEnvironment()->cloudKeyframer->GetLightningBolt(time,i);
 				if(!lightningRenderInterface)
 					continue;
+				simul::terrain::LightningIllumination lightningIllumination;
 				simul::clouds::LightningProperties props	=simulWeatherRenderer->GetEnvironment()->cloudKeyframer->GetLightningProperties(time,i);
-				//simulTerrainRenderer->SetLightningProperties(props);
+				lightningIllumination.colour				=vec3(0,0,0);
+				const simul::clouds::CloudKeyframer *cloudKeyframer=simulWeatherRenderer->GetEnvironment()->cloudKeyframer;
+				for(int i=0;i<cloudKeyframer->GetNumLightningBolts(time);i++)
+				{
+					const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,i);
+					if(!lightningRenderInterface)
+						continue;
+					simul::clouds::LightningProperties props	=cloudKeyframer->GetLightningProperties(time,i);
+					if(!props.numLevels)
+						continue;
+					float brightness							=lightningRenderInterface->GetBrightness(props,time,0,0);
+					lightningIllumination.centre	=props.startX;
+					lightningIllumination.colour	=props.colour;
+					lightningIllumination.colour	*=brightness;
+				}
+				simulTerrainRenderer->SetLightningProperties(lightningIllumination);
 			}
 		}
 		if(simulTerrainRenderer)
@@ -305,7 +324,6 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderScene")
-
 	MixedResolutionView *view=viewManager.GetView(deviceContext.viewStruct.view_id);
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
@@ -330,7 +348,15 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		view->GetFramebuffer()->DeactivateDepth(pContext);
 	else
-		view->GetFramebuffer()->Deactivate(pContext);
+	{
+		pContext->OMSetRenderTargets(	1,
+										&mainRenderTarget,
+										NULL
+										);
+	/*	simul::dx11::Texture depthT;
+		depthT.InitFromExternalD3D11Texture2D(,);
+		view->SetExternalDepthTexture(&depthT);*/
+	}
 #if 1
 	if(simulWeatherRenderer)
 	{
@@ -349,6 +375,11 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 				,relativeViewportTextureRegionXYWH,true);
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->ActivateDepth(deviceContext);
+		else
+			pContext->OMSetRenderTargets(	1
+											,&mainRenderTarget
+											,mainDepthSurface
+											);
 		simulWeatherRenderer->RenderLightning(deviceContext,&view->hiResDepthTexture,relativeViewportTextureRegionXYWH,simulWeatherRenderer->GetCloudDepthTexture(deviceContext.viewStruct.view_id));
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
 		//simulWeatherRenderer->RenderPrecipitation(deviceContext,&view->hiResDepthTexture,relativeViewportTextureRegionXYWH);
@@ -374,6 +405,11 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 {
 	if(!enabled)
 		return;
+	pContext->OMGetRenderTargets(	1,
+									&mainRenderTarget,
+									&mainDepthSurface
+									);
+	bool hdr=simulHDRRenderer&&UseHdrPostprocessor;
 	simul::base::SetGpuProfilingInterface(pContext,&simul::dx11::Profiler::GetGlobalProfiler());
 	MixedResolutionView *view=viewManager.GetView(view_id);
 	if(!view)
@@ -426,14 +462,20 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			deviceContext.viewStruct.proj=cam->MakeStereoProjectionMatrix(simul::camera::LEFT_EYE,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
 			deviceContext.viewStruct.view=cam->MakeStereoViewMatrix(simul::camera::LEFT_EYE);
 		}
-		if(simulHDRRenderer&&UseHdrPostprocessor)
+		if(hdr)
 		{
 			view->GetFramebuffer()->SetAntialiasing(Antialiasing);
 			view->GetFramebuffer()->Activate(deviceContext);
 			view->GetFramebuffer()->Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		}
+		else
+		{
+			float clearColor[4]={0,0,0,0};
+			pContext->ClearRenderTargetView(mainRenderTarget,clearColor);
+			pContext->ClearDepthStencilView(mainDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,ReverseDepth?0.f:1.f, 0);
+		}
 		RenderScene(deviceContext,simulWeatherRenderer,cameraViewStruct.exposure,cameraViewStruct.gamma);
-		if(simulHDRRenderer&&UseHdrPostprocessor)
+		if(hdr)
 		{
 			view->GetFramebuffer()->Deactivate(pContext);
 			simulHDRRenderer->RenderWithOculusCorrection(deviceContext,view->GetFramebuffer()->GetColorTex(),cameraViewStruct.exposure,cameraViewStruct.gamma,0.f);
@@ -446,14 +488,20 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 		viewport.TopLeftX			=view->GetScreenWidth()/2.f;
 		pContext->RSSetViewports(1, &viewport);
-		if(simulHDRRenderer&&UseHdrPostprocessor)
+		if(hdr)
 		{
 			view->GetFramebuffer()->SetAntialiasing(Antialiasing);
 			view->GetFramebuffer()->Activate(deviceContext);
 			view->GetFramebuffer()->Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		}
+		else
+		{
+			float clearColor[4]={0,0,0,0};
+			pContext->ClearRenderTargetView(mainRenderTarget,clearColor);
+			pContext->ClearDepthStencilView(mainDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,ReverseDepth?0.f:1.f, 0);
+		}
 		RenderScene(deviceContext,simulWeatherRenderer,cameraViewStruct.exposure,cameraViewStruct.gamma);
-		if(simulHDRRenderer&&UseHdrPostprocessor)
+		if(hdr)
 		{
 			view->GetFramebuffer()->Deactivate(pContext);
 			simulHDRRenderer->RenderWithOculusCorrection(deviceContext,view->GetFramebuffer()->GetColorTex(),cameraViewStruct.exposure,cameraViewStruct.gamma,1.f);
@@ -476,7 +524,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		if(simulWeatherRenderer)
 			simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer.GetColorTex());
 	}
-	if(UseHdrPostprocessor)
+	if(hdr)
 	{
 		view->GetFramebuffer()->SetAntialiasing(Antialiasing);
 		view->GetFramebuffer()->Activate(deviceContext);
@@ -484,7 +532,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		view->GetFramebuffer()->Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		SIMUL_COMBINED_PROFILE_END(pContext)
 	}
-	RenderScene(deviceContext,simulWeatherRenderer,UseHdrPostprocessor?1.f:cameraViewStruct.exposure,UseHdrPostprocessor?1.f:cameraViewStruct.gamma);
+	else
+	{
+		float clearColor[4]={0,0,0,0};
+		pContext->ClearRenderTargetView(mainRenderTarget,clearColor);
+		pContext->ClearDepthStencilView(mainDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,ReverseDepth?0.f:1.f, 0);
+	}
+	RenderScene(deviceContext,simulWeatherRenderer,hdr?1.f:cameraViewStruct.exposure,hdr?1.f:cameraViewStruct.gamma);
 	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
 	{
 		static float x=0.35f,y=0.4f;
@@ -493,7 +547,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		//UtilityRenderer::DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)cubemapFramebuffer.GetColorTex(),-0.4f,0.45f);
 		UtilityRenderer::DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)envmapFramebuffer.GetColorTex(),x,y);
 	}
-	if(UseHdrPostprocessor)
+	if(hdr)
 	{
 		view->GetFramebuffer()->Deactivate(pContext);
 		view->ResolveFramebuffer(deviceContext);
@@ -533,6 +587,11 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			int W2=view->GetScreenWidth()/2;
 			int H2=view->GetScreenHeight()/2;
 			RenderDepthBuffers(deviceContext,W2,0,W2,H2);
+		}
+		if(ShowHDRTextures&&simulHDRRenderer)
+		{
+			int W2=view->GetScreenWidth()/2;
+			int H2=view->GetScreenHeight()/2;
 			simulHDRRenderer->RenderDebug(deviceContext,W2,H2,W2,H2);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
@@ -552,6 +611,8 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	if(oceanRenderer&&ShowWaterTextures)
 		oceanRenderer->RenderTextures(pContext,view->GetScreenWidth(),view->GetScreenHeight());
+	SAFE_RELEASE(mainRenderTarget);
+	SAFE_RELEASE(mainDepthSurface);
 	SIMUL_COMBINED_PROFILE_END(pContext)
 	SIMUL_COMBINED_PROFILE_END(pContext)
 	SIMUL_COMBINED_PROFILE_ENDFRAME(pContext)
@@ -572,7 +633,7 @@ void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &device
 	}
 }
 
-void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
+void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8,int width,int height)
 {
 	std::string screenshotFilenameUtf8=filename_utf8;
 	MixedResolutionView *view=viewManager.GetView(0);
@@ -580,7 +641,11 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 		return;
 	try
 	{
-	simul::dx11::Framebuffer fb(view->GetScreenWidth(),view->GetScreenHeight());
+		if(width==0)
+			width=view->GetScreenWidth();
+		if(height==0)
+			height=view->GetScreenHeight();
+	simul::dx11::Framebuffer fb(width,height);
 	fb.RestoreDeviceObjects(&renderPlatformDx11);
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.renderPlatform=&renderPlatformDx11;
@@ -588,8 +653,19 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
 	deviceContext.platform_context=pImmediateContext;
 	fb.Activate(deviceContext);
+	bool t=UseHdrPostprocessor;
+	UseHdrPostprocessor=true;
+	
+	camera::CameraOutputInterface *cam		=const_cast<camera::CameraOutputInterface *>(cameras[0]);
+	camera::CameraViewStruct s0=cam->GetCameraViewStruct();
+	camera::CameraViewStruct s=s0;
+	s.exposure=1.0f;
+	s.gamma=1.0f;
+	cam->SetCameraViewStruct(s);
 	Render(0,m_pd3dDevice,pImmediateContext);
+	UseHdrPostprocessor=t;
 	fb.Deactivate(pImmediateContext);
+	cam->SetCameraViewStruct(s0);
 	simul::dx11::SaveTexture(m_pd3dDevice,(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());
 	SAFE_RELEASE(pImmediateContext);
 	}

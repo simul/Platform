@@ -22,6 +22,12 @@ SIMUL_CONSTANT_BUFFER(TerrainConstants,10)
 	uniform float extentZMetres;
 	uniform float startZMetres;
 	uniform float shadowRange;
+	uniform float pad4;
+
+	uniform vec3 lightningCentre;
+	uniform float pad5;
+	uniform vec3 lightningColour;
+	uniform float pad6;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif
