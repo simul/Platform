@@ -64,7 +64,7 @@ vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier
 
 float MakeRainMap(Texture3D cloudDensity1,Texture3D cloudDensity2,float cloud_interp,vec2 texCoords)
 {
-	vec3 texc		=vec3(texCoords.xy,0.75);
+	vec3 texc		=vec3(texCoords.xy,0.5);
 	vec4 density1	=sampleLod(cloudDensity1,cloudSamplerState,texc,0);
 	vec4 density2	=sampleLod(cloudDensity2,cloudSamplerState,texc,0);
 	vec4 density	=lerp(density1,density2,cloud_interp);
@@ -367,7 +367,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			vec3 rain_texc				=cloudWorldOffset;
 			rain_texc.xy				+=rain_texc.z*rainTangent;
 			float rain_lookup			=texture_wrap_lod(rainMapTexture,rain_texc.xy*inverseScales.xy,0).x;
-			vec4 streak					=texture_wrap_lod(noiseTexture,0.0001*rain_texc.xy,0);
+			vec4 streak					=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
 			density.z					=saturate(density.z
 											+layer.layerFade*rainEffect*rain_lookup
 											*saturate((rainRadius-length(world_pos.xy-rainCentre.xy))*0.0003)
