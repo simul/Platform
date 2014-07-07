@@ -506,6 +506,8 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			view->GetFramebuffer()->Deactivate(pContext);
 			simulHDRRenderer->RenderWithOculusCorrection(deviceContext,view->GetFramebuffer()->GetColorTex(),cameraViewStruct.exposure,cameraViewStruct.gamma,1.f);
 		}
+	SAFE_RELEASE(mainRenderTarget);
+	SAFE_RELEASE(mainDepthSurface);
 		return;
 	}
 	SIMUL_COMBINED_PROFILE_START(pContext,"Render")
@@ -679,6 +681,8 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 {
 	if(!m_pd3dDevice)
 		return;
+	SAFE_RELEASE(mainRenderTarget);
+	SAFE_RELEASE(mainDepthSurface);
 	std::cout<<"Direct3D11Renderer::OnD3D11LostDevice"<<std::endl;
 	Profiler::GetGlobalProfiler().Uninitialize();
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();

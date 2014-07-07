@@ -26,7 +26,7 @@ uniform sampler2D glowTexture;
 //uniform float exposure;
 //uniform float gamma;
 in vec2 texCoords;
-
+out vec4 FragColor;
 void main(void)
 {
     // original image
@@ -40,5 +40,5 @@ void main(void)
     // gamma correction
 	//../c.rgb = pow(c.rgb,vec3(gamma,gamma,gamma));
 	//c.a=1.0-pow(1.0-c.a,gamma);
-    gl_FragColor=c;
+    FragColor=c;
 }
