@@ -10,6 +10,7 @@
 #include "Simul/Math/Matrix.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
+#include "Simul/Platform/CrossPlatform/SL/gpu_cloud_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/simul_gpu_clouds.sl"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 

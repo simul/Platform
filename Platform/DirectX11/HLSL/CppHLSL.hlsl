@@ -27,6 +27,9 @@
 #define texture3Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
 #define texture2Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
 #define texture(tex,texc) tex.Sample(samplerState,texc)
+
+#define texelFetch3d(tex,p,lod) tex.Load(int4(p,lod))
+#define texelFetch2d(tex,p,lod) tex.Load(int3(p,lod))
 #endif
 
 #define uniform

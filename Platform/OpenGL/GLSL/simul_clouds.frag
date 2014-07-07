@@ -32,7 +32,6 @@ void main(void)
 {
 #if 0
 	gl_FragColor=vec4(1,0,1,.5);
-	return;
 #else
 //gl_FragColor=vec4(0.5,0.5,0.5,.5);
 	vec3 half_vec			=vec3(0.5,0.5,0.5);//0.49803921568627452,0.49803921568627452,0.49803921568627452);

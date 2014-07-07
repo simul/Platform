@@ -119,7 +119,7 @@ namespace simul
 			virtual const char *		GetDebugText		() const;
 			void SetViewType(int view_id,ViewType vt);
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
-			void SaveScreenshot(const char *filename_utf8,int width=0,int height=0);
+			void SaveScreenshot(const char *filename_utf8,int width=0,int height=0,float exposure=1.0f,float gamma=0.44f);
 			simul::dx11::RenderPlatform renderPlatformDx11;
 		protected:
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);

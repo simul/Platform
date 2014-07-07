@@ -579,8 +579,9 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			int w=view->GetScreenWidth()/4;
 			if(vertical_screen)
 				w=view->GetScreenWidth()/2;
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,w,view->GetScreenHeight()/2);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext,0,0,w,view->GetScreenHeight()/2);
+			int H2=view->GetScreenHeight()/2;
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext		,0,0,w,H2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext	,0,H2,w,H2);
 		}
 		if(ShowCompositing)
 		{
@@ -633,7 +634,7 @@ void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &device
 	}
 }
 
-void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8,int width,int height)
+void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8,int width,int height,float exposure,float gamma)
 {
 	std::string screenshotFilenameUtf8=filename_utf8;
 	MixedResolutionView *view=viewManager.GetView(0);
@@ -659,8 +660,8 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8,int width,int 
 	camera::CameraOutputInterface *cam		=const_cast<camera::CameraOutputInterface *>(cameras[0]);
 	camera::CameraViewStruct s0=cam->GetCameraViewStruct();
 	camera::CameraViewStruct s=s0;
-	s.exposure=1.0f;
-	s.gamma=1.0f;
+	s.exposure=exposure;
+	s.gamma=gamma/0.44f;
 	cam->SetCameraViewStruct(s);
 	Render(0,m_pd3dDevice,pImmediateContext);
 	UseHdrPostprocessor=t;

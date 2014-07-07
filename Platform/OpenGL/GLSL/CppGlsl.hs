@@ -44,6 +44,9 @@
 	#define texture3Dpt(tex,texc) texture(tex,texc)
 	#define texture2Dpt(tex,texc) texture(tex,texc)
 
+	#define texelFetch3d(tex,p,lod) texelFetch(tex,p,lod)
+	#define texelFetch2d(tex,p,lod) texelFetch(tex,p,lod)
+
 	#define texture3D texture
 	#define texture2D texture 
 	#define Texture3D sampler3D 

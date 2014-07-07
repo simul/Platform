@@ -384,6 +384,9 @@
     <None Include="GLSL\atmospherics.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\gpu_cloud_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

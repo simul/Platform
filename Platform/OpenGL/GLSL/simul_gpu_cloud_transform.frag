@@ -1,6 +1,7 @@
 #version 140
 #include "CppGlsl.hs"
 uniform sampler3D volumeNoiseTexture;
+#include "../../CrossPlatform/SL/gpu_cloud_constants.sl"
 #include "../../CrossPlatform/SL/simul_gpu_clouds.sl"
 uniform sampler3D density_texture;
 uniform sampler3D light_texture;

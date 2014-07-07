@@ -238,6 +238,7 @@
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CrossPlatform\SL\gpu_cloud_constants.sl" />
     <None Include="..\CrossPlatform\SL\sky.sl" />
     <None Include="GLSL\atmospherics.glfx" />
     <None Include="GLSL\clouds.glfx" />

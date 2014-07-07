@@ -21,7 +21,7 @@ vec4 depthToLinearDistance(vec4 depth,vec4 depthToLinFadeDistParams)
 {
 	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz)+depthToLinFadeDistParams.wwww*depth;
 #if REVERSE_DEPTH==1
-	vec4 st=step(depth,0.0);
+	vec4 st=step(depth,vec4(0.0,0.0,0.0,0.0));
 	linearFadeDistanceZ*=(vec4(1.0,1.0,1.0,1.0)-st);
 	linearFadeDistanceZ+=st;
 #else
@@ -34,7 +34,7 @@ vec2 depthToLinearDistance(vec2 depth,vec4 depthToLinFadeDistParams)
 {
 	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz)+depthToLinFadeDistParams.ww*depth;
 #if REVERSE_DEPTH==1
-	vec2 st=step(depth,0.0);
+	vec2 st=step(depth,vec2(0.0,0.0));
 	linearFadeDistanceZ*=(vec2(1.0,1.0)-st);
 	linearFadeDistanceZ+=st;
 #else
