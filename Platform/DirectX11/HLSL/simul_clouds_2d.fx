@@ -70,8 +70,13 @@ vec4 msaaPS(v2f IN) : SV_TARGET
 	depthTextureMS.GetDimensions(depthDims.x,depthDims.y,depthSamples);
 	uint2 depth_pos2	=uint2(depthTexCoords.xy*vec2(depthDims.xy));
 	float dlookup 		=depthTextureMS.Load(depth_pos2,0).r;
+#if REVERSE_DEPTH==1
 	if(dlookup!=0)
 		discard;
+#else
+	if(dlookup<1.0)
+		discard;
+#endif
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
@@ -112,8 +117,13 @@ vec4 MainPS(v2f IN) : SV_TARGET
 	uint depthSamples;
 	vec2 depthTexCoords	=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
 	float dlookup 		=texture_clamp_lod(depthTexture,depthTexCoords,0);
+#if REVERSE_DEPTH==1
 	if(dlookup!=0)
 		discard;
+#else
+	if(dlookup<1.0)
+		discard;
+#endif
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
