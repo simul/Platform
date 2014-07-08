@@ -227,7 +227,7 @@ namespace simul
 				errpos=(int)line.find("warning");
 				is_error=false;
 			}
-			if(errpos>=0)
+			//if(errpos>=0)
 			{
 				int first_colon		=(int)line.find(":");
 				int second_colon	=(int)line.find(":",first_colon+1);
@@ -309,7 +309,7 @@ namespace simul
 		}
 		void printShaderInfoLog(const std::string &info_log,const vector<string> &sourceFilesUtf8)
 		{
-			if(info_log.find("No errors")>=info_log.length())
+			//if(info_log.find("No errors")>=info_log.length())
 			{
 				int pos=0;
 				int next=(int)info_log.find('\n',pos+1);

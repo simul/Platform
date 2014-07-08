@@ -37,7 +37,6 @@ namespace simul
 		class SIMUL_OPENGL_EXPORT Effect:public crossplatform::Effect
 		{
 			int current_texture_number;
-			std::string filename;
 			void FillInTechniques();
 		public:
 			Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);

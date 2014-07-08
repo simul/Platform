@@ -41,6 +41,7 @@ void GpuCloudGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *)
 	itype=GL_LUMINANCE;
 	RecompileShaders();
 	density_texture=0;
+	maskTexture.ensureTexture2DSizeAndFormat(renderPlatform,16,16,crossplatform::RGBA_16_FLOAT,false,true);
 	gpuCloudConstants.RestoreDeviceObjects();
 }
 
@@ -55,6 +56,7 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(lighting_program);
 	SAFE_DELETE_TEXTURE(density_texture);
 	gpuCloudConstants.Release();
+	maskTexture.InvalidateDeviceObjects();
 	SAFE_DELETE_TEXTURE(volume_noise_tex);
 }
 
@@ -208,6 +210,7 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	//using noise_size and noise_src_ptr, make a 3d texture:
 	glUseProgram(density_program);
 	setParameter(density_program,"volumeNoiseTexture"	,0);
+	setParameter(density_program,"maskTexture"			,1);
 	//MakeVertexMatrix(params.density_grid,start_texel,texels);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -222,6 +225,8 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	glEnable(GL_TEXTURE_3D);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,volume_noise_tex);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D,maskTexture.AsGLuint());
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	{

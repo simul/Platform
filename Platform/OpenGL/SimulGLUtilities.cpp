@@ -682,6 +682,6 @@ void simul::opengl::CheckGLError(const char *filename,int line_number,int err)
 		if(!c&&!d)
 			std::cerr<<std::endl<<"unknown error: "<<err<<std::endl;
 		BREAK_IF_DEBUGGING;
-		//assert(0);
+		
 	}
 }

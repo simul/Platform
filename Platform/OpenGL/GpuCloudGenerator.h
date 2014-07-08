@@ -67,6 +67,7 @@ namespace simul
 			simul::opengl::ConstantBuffer<GpuCloudConstants> gpuCloudConstants;
 			Texture	directLightTextures[2];
 			Texture	indirectLightTextures[2];
+			Texture	maskTexture;
 			int				last_generation_number;
 		};
 	}

@@ -50,13 +50,13 @@ GL_ERROR_CHECK
 	bindingIndex=lastBindingIndex;
 	lastBindingIndex++;
 GL_ERROR_CHECK
+	bool any=false;
 	for(crossplatform::TechniqueMap::iterator i=effect->techniques.begin();i!=effect->techniques.end();i++)
 	{
 		const char *techname=i->first.c_str();
 		crossplatform::EffectTechnique *tech=i->second;
 		if(!tech)
 			break;
-		bool any=false;
 		for(int j=0;j<tech->NumPasses();j++)
 		{
 	GL_ERROR_CHECK
@@ -64,23 +64,30 @@ GL_ERROR_CHECK
 			GLint indexInShader;
 	GL_ERROR_CHECK
 			indexInShader=glGetUniformBlockIndex(program,name);
+			if(indexInShader==GL_INVALID_INDEX)
+				continue;
 			if(indexInShader>=0)
 			{
 				any=true;
 	GL_ERROR_CHECK
 				glUniformBlockBinding(program,indexInShader,bindingIndex);
-	GL_ERROR_CHECK
+				int err=glGetError();
+				if(err)
+				{
+					// No good reason why this might happen, but it sometimes does - driver-dependent.
+					continue;
+				}
 				glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 	GL_ERROR_CHECK
 				glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,size);	
 	GL_ERROR_CHECK
 			}
-			else
-				std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in pass "<<j<<" of "<<techname<<std::endl;
+			///else
+			//	std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in pass "<<j<<" of "<<techname<<std::endl;
 		}
-		if(!any)
-			std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in the technique "<<techname<<"."<<std::endl;
 	}
+	if(!any)
+		std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in the effect "<<effect->GetName()<<"."<<std::endl;
 }
 
 void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &,size_t size,void *addr)

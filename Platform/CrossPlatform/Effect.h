@@ -150,6 +150,7 @@ namespace simul
 			GroupMap groups;
 			TechniqueMap techniques;
 			IndexMap techniques_by_index;
+			std::string filename;
 			int apply_count;
 			int currentPass;
 			crossplatform::EffectTechnique *currentTechnique;
@@ -159,6 +160,10 @@ namespace simul
 			inline ID3DX11Effect *asD3DX11Effect()
 			{
 				return (ID3DX11Effect*)platform_effect;
+			}
+			const char *GetName()const
+			{
+				return filename.c_str();
 			}
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;

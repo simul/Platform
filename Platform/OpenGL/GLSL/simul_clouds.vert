@@ -26,7 +26,7 @@ void main(void)
     wPosition			=pos.xyz;
     transformed_pos		=vec4(vertex.xyz,1.0)*worldViewProj;
     gl_Position			=transformed_pos;
-
+	gl_Position.z		=gl_Position.w;
 	layerDensity		=layer.layerFade;
 	texCoordLightning	=(wPosition.xyz-lightningOrigin.xyz)*lightningInvScales.xyz;
 	float depth			=length(pos)/maxFadeDistanceMetres;

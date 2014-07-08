@@ -1,3 +1,4 @@
+#version 140
 uniform sampler2D image_texture;
 uniform vec2 offset;
 varying vec2 texCoords;
