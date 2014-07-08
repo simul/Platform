@@ -38,7 +38,8 @@ namespace simul
 			FramebufferGL framebuffer;
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;
-			__declspec(align(32)) crossplatform::ConstantBuffer<HdrConstants> hdrConstants;
+			//__declspec(align(32))
+			crossplatform::ConstantBuffer<HdrConstants> hdrConstants;
 			FramebufferGL glow_fb;
 			FramebufferGL alt_fb;
 			bool initialized;

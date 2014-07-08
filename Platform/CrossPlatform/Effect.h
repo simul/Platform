@@ -132,7 +132,7 @@ namespace simul
 			EffectTechnique *GetTechniqueByName(const char *name);
 			EffectTechnique *GetTechniqueByIndex(int index);
 		};
-		/// A crossplatform structure for a #define and its possible values.
+		/// A crossplatform structure for a \#define and its possible values.
 		/// This allows all of the macro combinations to be built to binary.
 		struct SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions
 		{
