@@ -5,7 +5,7 @@
 #include <d3dx9.h>
 #include <d3dx11.h>
 #else
-		///
+//! Forward declaration for this, means we needn't include the dx11 headers yet.
 typedef enum D3DX11_IMAGE_FILE_FORMAT
 {
     D3DX11_IFF_BMP         = 0,

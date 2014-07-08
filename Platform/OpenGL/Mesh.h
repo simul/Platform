@@ -21,7 +21,7 @@ namespace simul
 			void BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const;
 			void Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const;
 			void EndDraw(crossplatform::DeviceContext &deviceContext) const;
-		///
+		/// Identify the types of vertex buffer.
 			enum
 			{
 				VERTEX_VBO,

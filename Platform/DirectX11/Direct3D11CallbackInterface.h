@@ -1,4 +1,5 @@
 #pragma once
+//! Forward declaration for this, means we needn't include the dx11 headers yet.
 typedef enum D3D_FEATURE_LEVEL;
 //! An interface to abstract the nuts and bolts of D3D device creation/management (e.g. what DXUT does) from the application-specific tasks of object allocation and rendering
 //! (what the derived classes of this one will do).
