@@ -524,10 +524,15 @@ namespace simul
 				{
 					std::cerr<<vert_filename<<"(0): ERROR C1000: Shader failed to compile\n";
 		#ifdef _MSC_VER
-					std::string msg_text	=vert_filename;
-					msg_text				+=" failed to compile. Edit shader and try again?";
-					result					=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
-					BREAK_IF_DEBUGGING;
+					if(IsDebuggerPresent())
+					{
+						std::string msg_text	=vert_filename;
+						msg_text				+=" failed to compile. Edit shader and try again?";
+						result					=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
+						BREAK_IF_DEBUGGING;
+					}
+					else
+						exit(1);
 		#else
 					break;
 		#endif
@@ -558,10 +563,15 @@ namespace simul
 				{
 					std::cerr<<frag_filename<<"(0): ERROR C1000: Shader failed to compile\n";
 		#ifdef _MSC_VER
-					std::string msg_text=frag_filename;
-					msg_text+=" failed to compile. Edit shader and try again?";
-					result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
-					BREAK_IF_DEBUGGING;
+					if(IsDebuggerPresent())
+					{
+						std::string msg_text=frag_filename;
+						msg_text+=" failed to compile. Edit shader and try again?";
+						result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
+						BREAK_IF_DEBUGGING;
+					}
+					else
+						exit(1);
 		#else
 					break;
 		#endif

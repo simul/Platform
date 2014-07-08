@@ -5,10 +5,10 @@
 
 uint3 LinearThreadToPos3D(uint linear_pos,uint3 dims)
 {
-	uint Z				=linear_pos/dims.x/dims.y;
-	uint Y				=(linear_pos-Z*dims.x*dims.y)/dims.x;
-	uint X				=linear_pos-Y*(dims.x+Z*dims.y);
-	uint3 pos			=uint3(X,Y,Z);
+	uint Z			=linear_pos/dims.x/dims.y;
+	uint Y			=(linear_pos-Z*dims.x*dims.y)/dims.x;
+	uint X			=linear_pos-Y*(dims.x+Z*dims.y);
+	uint3 pos		=uint3(X,Y,Z);
 	return pos;
 }
 
@@ -22,21 +22,21 @@ vec3 assemble3dTexcoord(vec2 texcoord2)
 	return texcoord3;
 }
 
-float GetShapeFunction(float z)
+float GetShapeFunction(float z,float ztop)
 {
 	// i is the lerp variable between the top of the base layer and the upper layer.
-	float i	=smoothstep(baseLayer,baseLayer+transition,z);
-	float m	=lerp(1.0,upperDensity,i);
-	float j	=1.0-saturate((1.0-z)/transition);
-	m		*=sqrt(1.0-j*j);
+	float i		=smoothstep(baseLayer,baseLayer+transition,z);
+	float m		=lerp(1.0,upperDensity,i);
+	float j		=1.0-saturate((0.8+0.2*ztop-z)/transition);
+	m			*=sqrt(1.0-j*j);
 	return m;
 }
 
 float GetHumidityMultiplier(float z)
 {
-	float i=saturate((z-baseLayer)/transition);
-	float m	=(1.0-i)+upperDensity*i;
-	m		*=lerp(0.75,1.0,saturate((1.0-z)/transition));
+	float i		=saturate((z-baseLayer)/transition);
+	float m		=(1.0-i)+upperDensity*i;
+	m			*=lerp(0.75,1.0,saturate((1.0-z)/transition));
 	return m;
 }
 
@@ -48,7 +48,7 @@ float CircularLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float sz,float 
 	//..s.xyz		+=texture_wrap_lod(volumeNoiseTexture,texCoords,0).xyz-0.5;
 	int3 pos3		=int3(trunc(s));
 	vec3 offs		=fract(s);
-#if 0//def GLSL
+#ifdef GLSL
 	const int3 poss[8]=int3[8](
 						int3(0,0,0),
 						int3(1,0,0),
@@ -78,6 +78,7 @@ float CircularLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float sz,float 
 		vec3 dist3		=offs-corner;
 		float dist		=length(dist3);
 		float mult		=saturate(1.0-(dist/0.866));
+		// Each texel "vertex" is the centre of a sphere, of radius 0.866 texels.
 		if(mult>0)
 		{
 			int3 p		=pos3+poss[i];
@@ -86,9 +87,15 @@ float CircularLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float sz,float 
 				continue;
 			float val	=texelFetch3d(volumeNoiseTexture, p, 0).x;
 			//	volumeNoiseTexture.Load(int4(p,0));
-			float c		=sin(3.1415926536/2.0*mult)*cos(1.0*3.1415926536*(val+t));
-			lookup		+=val*c*c;
-		//lookup		+=1.0;
+			float h		=sin(3.1415926536/2.0*mult);
+			// The magnitude of the "peak" at the texel centre is m^2.
+			float m		=cos(1.0*3.1415926536*(val+t));
+			// It is always positive, and its average is 0.5:
+			// The local magnitude depends on the distance to the centre, it is 0 at the edges and m^2 at the centre.
+			float c		=sin(3.1415926536/2.0*mult);
+			float u		=c*m*m;
+			lookup		=max(lookup,u);
+			//lookup	+=1.0;
 		}
 	}
 	return 2.0*saturate(lookup)-1.0;//texture_wrap_lod(volumeNoiseTexture,texCoords,0)-1.0;//
@@ -133,7 +140,7 @@ float DensityFunction(Texture3D volumeNoiseTexture,vec3 noisespace_texcoord,floa
 	int noiseDimension=8;
 	int noiseHeight=8;
 	// We want to distort the lookup by up to half a noise texel at the specified dimension.
-	//noisespace_texcoord.xy	+=0.5/float(noiseDimension)*(texture_wrap_lod(volumeNoiseTexture,vec3(noisespace_texcoord.xy,0),0).xy-0.5);
+	noisespace_texcoord.xy	+=2.0/float(noiseDimension)*(texture_wrap_lod(volumeNoiseTexture,vec3(noisespace_texcoord.xy,0),0).xy-0.5);
 	float lookup			=CircularLookup(volumeNoiseTexture,vec3(noisespace_texcoord.xy,0),1.0,t,noiseDimension,noiseHeight);
 	return lookup;
 }
@@ -155,12 +162,12 @@ float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float pers
 		pos2.z		=clamp(pos2.z,zmin,zmax);
 		pos2.z		*=saturate(i);
 		float lookup=texture_wrap_lod(volumeNoiseTexture,pos2,0).x;
-		float val	=lookup*0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
+		float val	=0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
 		dens		=dens+mult*val;
 		sum			=sum+mult;
 		mult		=mult*persistence;
 		pos			=pos*2.0;
-		t			*=2.0;
+		t			=t*2.0;
 		height		*=2.0;
 	}
 	dens=saturate(dens/sum);
@@ -188,18 +195,22 @@ void CS_CloudDensity(RWTexture3D<float4> targetTexture,Texture3D volumeNoiseText
 		return;
 	vec3 densityspace_texcoord	=(pos+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec3 noisespace_texcoord	=(densityspace_texcoord+vec3(0,0,0.0*zPixel))*noiseScale+vec3(1.0,1.0,0);
-	// main_density goes from -1 to +1.
-	float main_density			=DensityFunction(volumeNoiseTexture,noisespace_texcoord,time);
 	// noise_texel is the size of a noise texel
 	float noise_texel			=1.0/noise_dims.z;
 	float height				=noiseScale.z;
+#if 0
+	// main_density goes from -1 to +1.
+	float main_density			=DensityFunction(volumeNoiseTexture,noisespace_texcoord,time);
 	vec4 mask					=texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0);
-	vec4 lookup					=texture_wrap_lod(volumeNoiseTexture,vec3(densityspace_texcoord.xy,0),0);
-	float hm					=humidity*GetShapeFunction(densityspace_texcoord.z)*mask.x;///(3.0-main_density)
+	float hm					=humidity*GetShapeFunction(densityspace_texcoord.z,main_density)*mask.x;//
 	float noise_mod				=ModifierNoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
-	float dens					=main_density+noise_mod+2.0*hm-1.0;//+hm+diffusivity/2.0;//main_density+noise_mod+hm+0.4;//*;
-//	dens						=saturate((dens+hm-1.0)/diffusivity);
+	float dens					=main_density+noise_mod+2.0*hm-1.0;
 	dens						=saturate(dens/diffusivity);
+#else
+	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
+	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
+	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
+#endif
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
 	dens						=saturate(dens);
 	targetTexture[pos]			=dens;
@@ -211,12 +222,20 @@ float CloudDensity(Texture3D volumeNoiseTexture,Texture2D maskTexture,vec2 texCo
 	vec3 densityspace_texcoord	=assemble3dTexcoord(texCoords.xy);
 	vec3 noisespace_texcoord	=(densityspace_texcoord+vec3(0,0,0.0*zPixel))*noiseScale+vec3(1.0,1.0,0);
 	float noise_texel			=1.0/noise_dims_z;
-	//float height				=noiseScale.z;
-	float hm					=humidity*GetShapeFunction(densityspace_texcoord.z);//*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
+	float height				=noiseScale.z;
+#if 0
+	// main_density goes from -1 to +1.
 	float main_density			=DensityFunction(volumeNoiseTexture,noisespace_texcoord,time);
-	//float noise_mod			=ModifierNoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
-	float dens					=main_density+hm+0.4;//+persistence*noise_mod;
+	vec4 mask					=texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0);
+	float hm					=humidity*GetShapeFunction(densityspace_texcoord.z,main_density)*mask.x;//
+	float noise_mod				=ModifierNoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
+	float dens					=main_density+noise_mod+2.0*hm-1.0;
 	dens						=saturate(dens/diffusivity);
+#else
+	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
+	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z);//*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
+	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
+#endif
 	//dens						=saturate((dens+hm)/diffusivity);
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
     return dens;
