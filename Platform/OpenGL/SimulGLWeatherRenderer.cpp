@@ -21,6 +21,7 @@
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
+#include "Simul/Camera/Camera.h"
 #include "Simul/Math/Decay.h"
 #include <stdint.h>  // for uintptr_t
 
@@ -176,7 +177,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 	fb->SetDimensions(w,h,Downscale);
 	//scene_buffer->InitColor_Tex(0,internal_buffer_format);
 	//fb->RestoreDeviceObjects(0);
-	}
+}
 
 void SimulGLWeatherRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
@@ -246,16 +247,31 @@ void SimulGLWeatherRenderer::RecompileShaders()
 	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag",defines);
 }
-#include "Simul/Camera/Camera.h"
+
 void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &deviceContext
 											,bool is_cubemap
 											,float exposure
 											,bool buffered
 											,crossplatform::Texture *mainDepthTexture
-											,const void* lowResDepthTexture
+											,crossplatform::Texture* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite)
 {
+	crossplatform::TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
+	if(buffered)
+	{
+		int w,h,s;
+		fb->GetDimensions(w,h,s);
+		if(mainDepthTexture)
+		{
+			int S=s;
+			if(mainDepthTexture->width)
+				S=mainDepthTexture->width/lowResDepthTexture->width;
+			if(S<1)
+				S=1;
+			fb->SetDimensions(mainDepthTexture->width,mainDepthTexture->length,s);
+		}
+	}
 	void *context=deviceContext.platform_context;
 	RenderCloudsLate=false;
 	if(baseSkyRenderer)
@@ -263,7 +279,6 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 		baseSkyRenderer->EnsureTexturesAreUpToDate(context);
 		baseSkyRenderer->Render2DFades(deviceContext);
 	}
-	crossplatform::TwoResFramebuffer *fb			=GetFramebuffer(deviceContext.viewStruct.view_id);
 	buffered=(buffered&&fb&&!is_cubemap);
 	UpdateSkyAndCloudHookup();
 	if(baseAtmosphericsRenderer&&ShowSky)

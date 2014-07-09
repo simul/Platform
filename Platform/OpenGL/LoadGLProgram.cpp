@@ -528,7 +528,7 @@ namespace simul
 					{
 						std::string msg_text	=vert_filename;
 						msg_text				+=" failed to compile. Edit shader and try again?";
-						result					=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
+						//result					=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
 						BREAK_IF_DEBUGGING;
 					}
 					else
@@ -567,7 +567,7 @@ namespace simul
 					{
 						std::string msg_text=frag_filename;
 						msg_text+=" failed to compile. Edit shader and try again?";
-						result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
+						//result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
 						BREAK_IF_DEBUGGING;
 					}
 					else

@@ -48,7 +48,7 @@ float CircularLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float sz,float 
 	//..s.xyz		+=texture_wrap_lod(volumeNoiseTexture,texCoords,0).xyz-0.5;
 	int3 pos3		=int3(trunc(s));
 	vec3 offs		=fract(s);
-#ifdef GLSL
+#if 0//def GLSL
 	const int3 poss[8]=int3[8](
 						int3(0,0,0),
 						int3(1,0,0),

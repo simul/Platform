@@ -257,8 +257,5 @@ extern SIMUL_DIRECTX11_EXPORT HRESULT MapBuffer(ID3D11DeviceContext *pImmediateC
 extern SIMUL_DIRECTX11_EXPORT void UnmapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuffer);
 extern SIMUL_DIRECTX11_EXPORT HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass);
 
-void SIMUL_DIRECTX11_EXPORT StoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
-void SIMUL_DIRECTX11_EXPORT RestoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
-
 #define PAD16(n) (((n)+15)/16*16)
 #endif

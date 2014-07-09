@@ -16,6 +16,7 @@ namespace simul
 	namespace opengl
 	{
 		class Material;
+		/// A RenderPlatform for OpenGL.
 		class SIMUL_OPENGL_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
 		public:
@@ -64,7 +65,10 @@ namespace simul
 			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *,crossplatform::Buffer *);
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers);
-			
+
+			void StoreRenderState(crossplatform::DeviceContext &deviceContext);
+			void RestoreRenderState(crossplatform::DeviceContext &deviceContext);
+
 			GLuint solid_program;
 			simul::opengl::ConstantBuffer<SolidConstants> solidConstants;
 			std::set<opengl::Material*> materials;

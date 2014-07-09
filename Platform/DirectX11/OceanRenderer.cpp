@@ -8,6 +8,7 @@
 #endif
 #include "CompileShaderDX1x.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Math/Matrix4x4.h"
@@ -714,9 +715,9 @@ void OceanRenderer::RenderWireframe(void *context)
 	tech->GetPassByIndex(0)->Apply(0,pContext);
 }
 
-void OceanRenderer::RenderTextures(void *context,int width,int height)
+void OceanRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,int width,int height)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 
 	HRESULT hr=S_OK;
 	static int u=8;
@@ -728,21 +729,21 @@ void OceanRenderer::RenderTextures(void *context,int width,int height)
 	int y=height-w;
 	simul::dx11::setTexture(effect,"showTexture",g_pSRV_Perlin);
 	simul::dx11::setParameter(effect,"showMultiplier",10.f);
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
 	x+=w+2;
 	static float spectrum_multiplier=10000.0f;
 	simul::dx11::setTexture(effect,"g_InputDxyz",oceanSimulator->GetSpectrum());
 	simul::dx11::setParameter(effect,"showMultiplier",spectrum_multiplier);
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
+	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
 	x+=w+2;
 	simul::dx11::setTexture(effect,"showTexture",oceanSimulator->getDisplacementMap());
 	simul::dx11::setParameter(effect,"showMultiplier",0.01f);
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
 	x+=w+2;
 	static float gradient_multiplier=1000.0f;
 	simul::dx11::setTexture(effect,"showTexture",oceanSimulator->getGradientMap());
 	simul::dx11::setParameter(effect,"showMultiplier",gradient_multiplier);
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
 	x+=w+2;
 //	simul::dx11::setParameter(effect,"showTexture",g_pSRV_Fresnel);
 	//UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
@@ -753,7 +754,7 @@ void OceanRenderer::RenderTextures(void *context,int width,int height)
 	x+=w+2;*/
 	simul::dx11::setTexture(effect,"g_InputDxyz",oceanSimulator->GetFftOutput());
 	simul::dx11::setParameter(effect,"showMultiplier",0.01f);
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
+	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
 
 	simul::dx11::setTexture(effect,"g_InputDxyz",NULL);
 	simul::dx11::unbindTextures(effect);

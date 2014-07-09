@@ -64,7 +64,7 @@ vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier
 
 float MakeRainMap(Texture3D cloudDensity1,Texture3D cloudDensity2,float cloud_interp,vec2 texCoords)
 {
-	vec3 texc		=vec3(texCoords.xy,0.5);
+	vec3 texc		=vec3(texCoords.xy,0.25);
 	vec4 density1	=sampleLod(cloudDensity1,cloudSamplerState,texc,0);
 	vec4 density2	=sampleLod(cloudDensity2,cloudSamplerState,texc,0);
 	vec4 density	=lerp(density1,density2,cloud_interp);

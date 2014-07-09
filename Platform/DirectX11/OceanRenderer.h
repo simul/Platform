@@ -30,7 +30,7 @@ namespace simul
 			void Update(float dt);
 			void SetCubemapTexture(void *c);
 			void SetLossAndInscatterTextures(crossplatform::Texture *l,crossplatform::Texture *i,crossplatform::Texture *s);
-			void RenderTextures(void *context,int width,int depth);
+			void RenderTextures(crossplatform::DeviceContext &deviceContext,int width,int depth);
 		protected:
 			OceanSimulator						*oceanSimulator;
 			D3DXMATRIX view,proj;

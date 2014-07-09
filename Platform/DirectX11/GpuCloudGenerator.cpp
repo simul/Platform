@@ -167,7 +167,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 			gpuCloudConstants.maskThickness	=i->second.thickness;
 			gpuCloudConstants.Apply(deviceContext);
 			ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
-			simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
+			simul::dx11::UtilityRenderer::DrawQuad(deviceContext);
 		}
 	}
 	else

@@ -369,7 +369,7 @@ void OceanSimulator::updateDisplacementMap(float time)
 	simul::dx11::setTexture(effect,"g_InputDxyz"				,dxyz.shaderResourceView);
 	// Assign the shaders:
 	effect->GetTechniqueByName("update_displacement")->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
-	UtilityRenderer::DrawQuad(m_pd3dImmediateContext);
+	UtilityRenderer::DrawQuad(deviceContext);
 	// Unbind the shader resource (i.e. the input texture map). Must do this or we get a DX warning when we
 	// try to write to the texture again:
 	simul::dx11::unbindTextures(effect);
@@ -383,7 +383,7 @@ void OceanSimulator::updateDisplacementMap(float time)
 	simul::dx11::setTexture(effect,"g_samplerDisplacementMap"	,displacement.shaderResourceView);
 	effect->GetTechniqueByName("gradient_folding")->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
 	// Perform draw call
-	UtilityRenderer::DrawQuad(m_pd3dImmediateContext);
+	UtilityRenderer::DrawQuad(deviceContext);
 	// Unbind the shader resource (the texture):
 	simul::dx11::unbindTextures(effect);
 	simul::dx11::setTexture(effect,"g_InputDxyz"				,(ID3D11ShaderResourceView*)NULL);

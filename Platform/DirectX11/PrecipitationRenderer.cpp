@@ -198,9 +198,10 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 	rainConstants.timeStepSeconds	=dt;
 	rainConstants.viewPositionOffset=cam_pos-last_cam_pos;
 	float l=length(rainConstants.viewPositionOffset);
-	if(l>10.0f)
+	static float max_offs=2.0f;
+	if(l>max_offs)
 	{
-		rainConstants.viewPositionOffset*=10.0f/l;
+		rainConstants.viewPositionOffset*=max_offs/l;
 	}
 	last_cam_pos=cam_pos;
 	rainConstants.Apply(deviceContext);

@@ -67,14 +67,12 @@ namespace simul
 			int Width,Height,Downscale;
 			ID3D11Device*	m_pd3dDevice;
 		};
-		//! An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 10 and 11
-		//! The DX10 switch is used
+		/// An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 11
 		SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX11 : public simul::clouds::BaseWeatherRenderer
 		{
 		public:
 			SimulWeatherRendererDX11(simul::clouds::Environment *env,simul::base::MemoryInterface *mem);
 			virtual ~SimulWeatherRendererDX11();
-			void SetScreenSize(int view_id,int w,int h);
 			//standard d3d object interface functions
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void RecompileShaders();
@@ -121,10 +119,7 @@ namespace simul
 			class SimulAtmosphericsRendererDX1x			*simulAtmosphericsRenderer;
 			class Simul2DCloudRendererDX11				*simul2DCloudRenderer;
 			class LightningRenderer						*simulLightningRenderer;
-			typedef std::map<int,simul::dx11::TwoResFramebuffer*> FramebufferMapDx11;
-			// Map from view_id to framebuffer.
-			TwoResFramebuffer *							GetFramebuffer(int view_id);
-			FramebufferMapDx11							framebuffersDx11;
+			simul::crossplatform::TwoResFramebuffer *	GetFramebuffer(int view_id);
 			float										exposure;
 			float										gamma;
 			float										exposure_multiplier;

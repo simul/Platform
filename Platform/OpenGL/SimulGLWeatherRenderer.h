@@ -95,7 +95,7 @@ namespace simul
 											,float exposure
 											,bool buffered
 											,crossplatform::Texture *mainDepthTexture
-											,const void* lowResDepthTexture
+											,crossplatform::Texture* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite);
 			//! Call this to draw the clouds

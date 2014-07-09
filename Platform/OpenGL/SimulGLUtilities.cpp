@@ -4,6 +4,7 @@
 #include <GL/glut.h>
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
+#include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Sky/Float4.h"
 #include <stdlib.h>
 #include <GL/gl.h>

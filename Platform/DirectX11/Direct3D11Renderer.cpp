@@ -122,7 +122,6 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 	renderPlatformDx11.RestoreDeviceObjects(pd3dDevice);
 	//Set a global device pointer for use by various classes.
 	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
-	simul::dx11::UtilityRenderer::RestoreDeviceObjects(&renderPlatformDx11);
 	viewManager.RestoreDeviceObjects(&renderPlatformDx11);
 	lightProbeConstants.RestoreDeviceObjects(m_pd3dDevice);
 	if(simulHDRRenderer)
@@ -175,7 +174,6 @@ void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
 	int W=view->GetScreenWidth(),H=view->GetScreenHeight();
  	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->SetScreenSize(view_id,view->GetScreenWidth(),view->GetScreenHeight());
 		if(lockx)
 		{
 			int s					=simulWeatherRenderer->GetDownscale();
@@ -307,7 +305,7 @@ void Direct3D11Renderer::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 			lightProbeConstants.Apply(deviceContext);
 			simul::dx11::setTexture(lightProbesEffect,"basisBuffer"	,cubemapFramebuffer.GetSphericalHarmonics().shaderResourceView);
 			ApplyPass(pContext,tech->GetPassByIndex(0));
-			UtilityRenderer::DrawQuad(pContext);
+			UtilityRenderer::DrawQuad(deviceContext);
 			simul::dx11::setTexture(lightProbesEffect,"basisBuffer"	,NULL);
 			ApplyPass(pContext,tech->GetPassByIndex(0));
 		}
@@ -544,10 +542,10 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
 	{
 		static float x=0.35f,y=0.4f;
-		UtilityRenderer::DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)cubemapFramebuffer.GetColorTex(),-0.7f,0.7f);
-		UtilityRenderer::DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)cubemapFramebuffer.GetColorTex(),-x,y);
+		renderPlatformDx11.DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)cubemapFramebuffer.GetColorTex(),-0.7f,0.7f);
+		renderPlatformDx11.DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)cubemapFramebuffer.GetColorTex(),-x,y);
 		//UtilityRenderer::DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)cubemapFramebuffer.GetColorTex(),-0.4f,0.45f);
-		UtilityRenderer::DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)envmapFramebuffer.GetColorTex(),x,y);
+		renderPlatformDx11.DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)envmapFramebuffer.GetColorTex(),x,y);
 	}
 	if(hdr)
 	{
@@ -613,7 +611,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 	}
 	if(oceanRenderer&&ShowWaterTextures)
-		oceanRenderer->RenderTextures(pContext,view->GetScreenWidth(),view->GetScreenHeight());
+		oceanRenderer->RenderTextures(deviceContext,view->GetScreenWidth(),view->GetScreenHeight());
 	SAFE_RELEASE(mainRenderTarget);
 	SAFE_RELEASE(mainDepthSurface);
 	SIMUL_COMBINED_PROFILE_END(pContext)
@@ -685,7 +683,6 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 	SAFE_RELEASE(mainDepthSurface);
 	std::cout<<"Direct3D11Renderer::OnD3D11LostDevice"<<std::endl;
 	Profiler::GetGlobalProfiler().Uninitialize();
-	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	renderPlatformDx11.InvalidateDeviceObjects();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
@@ -703,7 +700,6 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 #endif
 	viewManager.Clear();
 	cubemapFramebuffer.InvalidateDeviceObjects();
-	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	SAFE_RELEASE(lightProbesEffect);
 	viewManager.InvalidateDeviceObjects();
 	m_pd3dDevice=NULL;
@@ -728,7 +724,6 @@ bool Direct3D11Renderer::OnDeviceRemoved()
 
 void Direct3D11Renderer::RecompileShaders()
 {
-	simul::dx11::UtilityRenderer::RecompileShaders();
 	cubemapFramebuffer.RecompileShaders();
 	renderPlatformDx11.RecompileShaders();
 	if(simulWeatherRenderer)

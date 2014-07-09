@@ -28,7 +28,7 @@
 #include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
 #include "Simul/Platform/DirectX11/Effect.h"
 #include "Simul/Platform/DirectX11/Layout.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/Buffer.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Camera/Camera.h"
@@ -234,7 +234,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(crossplatform::DeviceContext &devic
     sunQuery.Begin(pContext);
 	{
 		ApplyPass(pContext,techQuery->asD3DX11EffectTechnique()->GetPassByIndex(0));
-		UtilityRenderer::DrawQuad(pContext);
+		UtilityRenderer::DrawQuad(deviceContext);
 	}
 	// End the query, get the data
 	sunQuery.End(pContext);
@@ -328,5 +328,5 @@ void SimulSkyRendererDX1x::DrawCubemap(crossplatform::DeviceContext &deviceConte
 	ID3D1xEffectShaderResourceVariable*	cubeTexture	=effect->asD3DX11Effect()->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));
-	UtilityRenderer::DrawCube(pContext);
+	((dx11::RenderPlatform*)renderPlatform)->DrawCube(deviceContext);
 }

@@ -234,7 +234,7 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		{
 			view->GetHiResDepthTexture()->activateRenderTarget(deviceContext);
 			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"make_depth_far_near",pass_name.c_str());
-			UtilityRenderer::DrawQuad(pContext);
+			UtilityRenderer::DrawQuad(deviceContext);
 			view->GetHiResDepthTexture()->deactivateRenderTarget();
 		}
 		else

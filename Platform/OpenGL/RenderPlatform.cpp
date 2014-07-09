@@ -610,6 +610,16 @@ GL_ERROR_CHECK
 	}
 }
 
+void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &deviceContext)
+{
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+}
+
+void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &deviceContext)
+{
+	glPopAttrib();
+}
+
 void RenderPlatform::Draw(crossplatform::DeviceContext &,int num_verts,int start_vert)
 {
 	glDrawArrays(GL_POINTS, start_vert, num_verts); 

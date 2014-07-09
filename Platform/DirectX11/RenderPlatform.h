@@ -31,7 +31,10 @@ namespace simul
 		//! A class to implement common rendering functionality for DirectX 11.
 		class SIMUL_DIRECTX11_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
-			ID3D11Device*				device;
+			ID3D11Device*					device;
+			crossplatform::Effect			*m_pDebugEffect;
+			ID3D11InputLayout				*m_pCubemapVtxDecl;
+			ID3D11Buffer					*m_pVertexBuffer;
 		public:
 			RenderPlatform();
 			virtual ~RenderPlatform();
@@ -83,6 +86,14 @@ namespace simul
 			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *,crossplatform::Buffer *);
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers);
+
+			void StoreRenderState(crossplatform::DeviceContext &deviceContext);
+			void RestoreRenderState(crossplatform::DeviceContext &deviceContext);
+
+			// To be taken cross-platform
+			void DrawCube(crossplatform::DeviceContext &deviceContext);
+			void DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,float offsetx,float offsety);
+
 			ID3DX11Effect *effect;
 			simul::dx11::ConstantBuffer<SolidConstants> solidConstants;
 			std::set<crossplatform::Material*> materials;
@@ -93,7 +104,15 @@ namespace simul
 			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 		protected:
-			void DrawTexture	(void *context,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *tex,float mult);
+			/// \todo The stored states are implemented per-RenderPlatform for DX11, but need to be implemented per-DeviceContext.
+			ID3D11DepthStencilState* m_pDepthStencilStateStored11;
+			ID3D11RasterizerState* m_pRasterizerStateStored11;
+			ID3D11BlendState* m_pBlendStateStored11;
+			ID3D11SamplerState* m_pSamplerStateStored11;
+			UINT m_StencilRefStored11;
+			UINT m_SampleMaskStored11;
+			float m_BlendFactorStored11[4];
+			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *tex,float mult);
 			void EnsureEffectIsBuilt(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &opts,const std::map<std::string,std::string> &defines);
 		};
 	}

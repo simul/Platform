@@ -305,7 +305,7 @@ void SimulCloudRendererDX1x::RenderNoise(crossplatform::DeviceContext &deviceCon
 	random_fb.SetFormat((int)DXGI_FORMAT_R32G32B32A32_FLOAT);
 	ApplyPass(pContext,randomTechnique->GetPassByIndex(0));
 	random_fb.Activate(deviceContext);
-		simul::dx11::UtilityRenderer::DrawQuad(pContext);
+		simul::dx11::UtilityRenderer::DrawQuad(deviceContext);
 	random_fb.Deactivate(pContext);
 
 	simul::dx11::Framebuffer n_fb;
@@ -320,7 +320,7 @@ void SimulCloudRendererDX1x::RenderNoise(crossplatform::DeviceContext &deviceCon
 		simul::dx11::setParameter(effect->asD3DX11Effect(),"octaves"		,texture_octaves);
 		simul::dx11::setParameter(effect->asD3DX11Effect(),"persistence"	,texture_persistence);
 		ApplyPass(pContext,noiseTechnique->GetPassByIndex(0));
-		simul::dx11::UtilityRenderer::DrawQuad(pContext);
+		simul::dx11::UtilityRenderer::DrawQuad(deviceContext);
 	}
 	n_fb.Deactivate(pContext);
 	// Now copy to a texture.
@@ -610,7 +610,7 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceConte
 
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	shadow_fb->activateRenderTarget(deviceContext);
-		simul::dx11::UtilityRenderer::DrawQuad(pContext);
+		simul::dx11::UtilityRenderer::DrawQuad(deviceContext);
 	shadow_fb->deactivateRenderTarget();
     SIMUL_COMBINED_PROFILE_END(pContext)
     SIMUL_COMBINED_PROFILE_START(pContext,"GodraysAccumulation")
@@ -633,11 +633,11 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceConte
 		effect->SetTexture(deviceContext,"cloudShadowTexture",shadow_fb);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
 		moisture_fb->activateRenderTarget(deviceContext);
-			simul::dx11::UtilityRenderer::DrawQuad(pContext);
+			simul::dx11::UtilityRenderer::DrawQuad(deviceContext);
 		moisture_fb->deactivateRenderTarget();
 		effect->Apply(deviceContext,effect->GetTechniqueByName("rain_map"),0);
 		rain_map->activateRenderTarget(deviceContext);
-			simul::dx11::UtilityRenderer::DrawQuad(pContext);
+			simul::dx11::UtilityRenderer::DrawQuad(deviceContext);
 		rain_map->deactivateRenderTarget();
 		effect->Unapply(deviceContext);
 	}
@@ -772,7 +772,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 			tech=group->GetTechniqueByName("full");
 	}
 	effect->Apply(deviceContext,tech,near_pass?"near":"far");
-	UtilityRenderer::DrawQuad(pContext);
+	UtilityRenderer::DrawQuad(deviceContext);
 	skyLossTextureV->SetResource(NULL);
 	skyInscatterTextureV->SetResource(NULL);
 	skylightTextureV->SetResource(NULL);
@@ -854,11 +854,11 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::Devic
 		h=1;
 	h*=gi->GetGridHeight();
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"noiseTexture",noiseTextureResource);
-	UtilityRenderer::DrawQuad2(pContext						,x0+width-w		,y0+height-w		,w,w		,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_noise"));
+	UtilityRenderer::DrawQuad2(deviceContext				,x0+width-w		,y0+height-w		,w,w		,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_noise"));
 	deviceContext.renderPlatform->Print(deviceContext		,x0+width-w		,y0+height-w					,"2D Noise");
 	effect->SetTexture(deviceContext					,"cloudShadowTexture",shadow_fb);
 	simul::dx11::setTexture(effect->asD3DX11Effect()	,"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_texture.shaderResourceView);
-	UtilityRenderer::DrawQuad2(pContext						,x0+width-w-w	,y0+height-w		,w,w		,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_shadow"));
+	UtilityRenderer::DrawQuad2(deviceContext				,x0+width-w-w	,y0+height-w		,w,w		,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_shadow"));
 	deviceContext.renderPlatform->Print(deviceContext		,x0+width-w-w	,y0+height-w					,"shadow texture");
 
 	deviceContext.renderPlatform->DrawTexture(deviceContext	,x0+width-2*w	,y0+height-w-w/2	,w*2,w/2	,&godrays_texture);

@@ -149,29 +149,17 @@ namespace simul
 			static int screen_width;
 			static int screen_height;
 		public:
-			static crossplatform::Effect			*m_pDebugEffect;
-			static ID3D11InputLayout				*m_pCubemapVtxDecl;
-			static ID3D1xBuffer						*m_pVertexBuffer;
-			static crossplatform::RenderPlatform	*renderPlatform;
 			UtilityRenderer();
 			~UtilityRenderer();
-			static crossplatform::Effect		*GetDebugEffect();
-			static void RestoreDeviceObjects(crossplatform::RenderPlatform	*r);
-			static void InvalidateDeviceObjects();
-			static void RecompileShaders();
 			static void SetScreenSize(int w,int h);
 			static void GetScreenSize(int& w,int& h);
-			static void PrintAt3dPos(		ID3D11DeviceContext* pContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
-			static void DrawLines(			crossplatform::DeviceContext &deviceContext,VertexXyzRgba *lines,int vertex_count,bool strip);
-			static void Draw2dLines(		crossplatform::DeviceContext &deviceContext,VertexXyzRgba *lines,int vertex_count,bool strip);
-			static void RenderAngledQuad(	ID3D11DeviceContext *pContext,const float *dir,float half_angle_radians,ID3DX11Effect* effect,ID3DX11EffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
-			static void DrawQuad(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11EffectTechnique* tech);	
-			static void DrawQuad2(			ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
-			static void DrawQuad2(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
-			static void DrawQuad(			ID3D11DeviceContext *pContext);
-			static void DrawCube(void *context);
-			static void DrawSphere(void *context,int latitudes,int longitudes);
-			static void DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,float offsetx,float offsety);
+			static void PrintAt3dPos(		crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+			static void RenderAngledQuad(	crossplatform::DeviceContext &deviceContext,const float *dir,float half_angle_radians,ID3DX11Effect* effect,ID3DX11EffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
+			static void DrawQuad(			crossplatform::DeviceContext &deviceContext,float x1,float y1,float dx,float dy,ID3DX11EffectTechnique* tech);	
+			static void DrawQuad2(			crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
+			static void DrawQuad2(			crossplatform::DeviceContext &deviceContext,float x1,float y1,float dx,float dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
+			static void DrawQuad(			crossplatform::DeviceContext &deviceContext);
+			static void DrawSphere(			crossplatform::DeviceContext &deviceContext,int latitudes,int longitudes);
 		};
 		//! Useful Wrapper class to encapsulate constant buffer behaviour
 		

@@ -10,16 +10,18 @@ namespace simul
 /// How to interpret the depth texture.
 		enum DepthTextureStyle
 		{
+			/// Depth textures are interpreted as representing the z-output of the projection matrix transformation.
 			PROJECTION
+			/// Depth textures are interpreted as representing a linear distance in the z-direction from the near clipping plane.
 			,DISTANCE_FROM_NEAR_PLANE
 		};
-		//! A simple struct encapsulating a view and a projection matrix.
+		/// A simple struct encapsulating a view and a projection matrix.
 		struct ViewStruct
 		{
-			int view_id;
-			math::Matrix4x4 view;
-			math::Matrix4x4 proj;
-			DepthTextureStyle depthTextureStyle;
+			int view_id;							///< An id unique to each rendered view, but persistent across frames.
+			math::Matrix4x4 view;					///< The view matrix. If considered as row-major, position information is in the 4th row.
+			math::Matrix4x4 proj;					///< The projection matrix, row-major.
+			DepthTextureStyle depthTextureStyle;	///< How to interpret any depth texture passed from outside.
 		};
 		struct MixedResolutionStruct
 		{

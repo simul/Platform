@@ -13,6 +13,11 @@
 #pragma warning(disable:4251)
 #endif
 struct ID3D11Device;
+struct VertexXyzRgba
+{
+	float x,y,z;
+	float r,g,b,a;
+};
 namespace simul
 {
 	namespace crossplatform
@@ -29,8 +34,17 @@ namespace simul
 		class Layout;
 		struct DeviceContext;
 		struct LayoutDesc;
-		/// Base class for API-specific rendering.
-		/// Be sure to make the following calls at the appropriate place: RestoreDeviceObjects(), InvalidateDeviceObjects(), RecompileShaders(), SetReverseDepth()
+		/// A base class for API-specific rendering.
+
+		/*! RenderPlatform is an interface that allows Simul's rendering functions to be developed
+			in a cross-platform manner. By abstracting the common functionality of the different graphics API's
+			into an interface, we can write render code that need not know which API is being used. It is possible
+			to create platform-specific objects like /link CreateTexture textures/endlink, /link CreateEffect effects/endlink
+			and /link CreateBuffer buffers/endlink
+
+			Be sure to make the following calls at the appropriate places:
+			RestoreDeviceObjects(), InvalidateDeviceObjects(), RecompileShaders(), SetReverseDepth()
+			*/
 		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
 		public:
@@ -68,16 +82,33 @@ namespace simul
 			virtual void PrintAt3dPos		(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0)		=0;
 			virtual void					SetModelMatrix					(crossplatform::DeviceContext &deviceContext,const double *mat)	=0;
 			virtual void					ApplyDefaultMaterial			()	=0;
+			/// Create a platform-specific material instance.
 			virtual Material				*CreateMaterial					()	=0;
+			/// Create a platform-specific mesh instance.
 			virtual Mesh					*CreateMesh						()	=0;
+			/// Create a platform-specific light instance.
 			virtual Light					*CreateLight					()	=0;
+			/// Create a platform-specific texture instance.
 			virtual Texture					*CreateTexture					(const char *lFileNameUtf8=NULL)	=0;
+			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
+			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
+			/// simul::crossplatform::ConstantBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
+			/// Create a platform-specific buffer instance - e.g. vertex buffers, index buffers etc.
 			virtual Buffer					*CreateBuffer					()	=0;
-			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *,Buffer *)	=0;
+			/// Create a platform-specific layout instance based on the given layout description \em layoutDesc and buffer \em buffer.
+			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *layoutDesc,Buffer *buffer)	=0;
+			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers)=0;
-			void							EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &defines);
+			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
+			void							EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
+			/// Called to store the render state - blending, depth check, etc. - for later retrieval with RestoreRenderState.
+			/// Some platforms may not support this.
+			virtual void					StoreRenderState(crossplatform::DeviceContext &deviceContext)=0;
+			/// Called to restore the render state previously stored with StoreRenderState. There must be exactly one call of RestoreRenderState
+			/// for each StoreRenderState call, and they are not expected to be nested.
+			virtual void					RestoreRenderState(crossplatform::DeviceContext &deviceContext)=0;
 		private:
 			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};

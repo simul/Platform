@@ -7,6 +7,7 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "D3dx11effect.h"
 using namespace simul;
 using namespace dx11;
@@ -90,8 +91,8 @@ void SimulOpticsRendererDX1x::RenderFlare(crossplatform::DeviceContext &deviceCo
 	HRESULT hr=S_OK;
 	if(!effect)
 		return;
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	StoreD3D11State(pContext);
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	deviceContext.renderPlatform->StoreRenderState(deviceContext);
 	math::Vector3 sun_dir(dir);
 	float magnitude=exposure;
 	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.1f);
@@ -116,7 +117,7 @@ void SimulOpticsRendererDX1x::RenderFlare(crossplatform::DeviceContext &deviceCo
 		SetOpticsConstants(opticsConstants,deviceContext.viewStruct,dir,sunlight,flare_angular_size*flare_magnitude);
 		opticsConstants.Apply(deviceContext);
 		ApplyPass(pContext,m_hTechniqueFlare->GetPassByIndex(0));
-		UtilityRenderer::DrawQuad(pContext);
+		UtilityRenderer::DrawQuad(deviceContext);
 		sunlight*=0.25f;
 		for(int i=0;i<lensFlare.GetNumArtifacts();i++)
 		{
@@ -127,13 +128,13 @@ void SimulOpticsRendererDX1x::RenderFlare(crossplatform::DeviceContext &deviceCo
 			SetOpticsConstants(opticsConstants,deviceContext.viewStruct,pos,sunlight,flare_angular_size*sz*flare_magnitude);
 			opticsConstants.Apply(deviceContext);
 			ApplyPass(pContext,m_hTechniqueFlare->GetPassByIndex(0));
-			UtilityRenderer::DrawQuad(pContext);
+			UtilityRenderer::DrawQuad(deviceContext);
 		}
 	}
 	pContext->VSSetShader(NULL,NULL,0);
 	pContext->GSSetShader(NULL,NULL,0);
 	pContext->PSSetShader(NULL,NULL,0);
-	RestoreD3D11State(pContext );
+	deviceContext.renderPlatform->RestoreRenderState(deviceContext );
 	//RenderRainbowAndCorona(context,exposure,moistureTexture,v,p,dir,light);
 }
 void SimulOpticsRendererDX1x::RenderRainbowAndCorona(crossplatform::DeviceContext &deviceContext,float exposure,void *moistureTexture,const float *dir_to_sun,const float *light)
@@ -142,7 +143,7 @@ void SimulOpticsRendererDX1x::RenderRainbowAndCorona(crossplatform::DeviceContex
 	if(!effect)
 		return;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	StoreD3D11State(pContext);
+	deviceContext.renderPlatform->StoreRenderState(deviceContext);
 	float magnitude=exposure;
 	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.1f);
 	if(flare_magnitude>1.f)
@@ -156,9 +157,9 @@ void SimulOpticsRendererDX1x::RenderRainbowAndCorona(crossplatform::DeviceContex
 	SetOpticsConstants(opticsConstants,deviceContext.viewStruct,dir_to_sun,sunlight,flare_angular_size*flare_magnitude);
 	opticsConstants.Apply(deviceContext);
 	ApplyPass(pContext,techniqueRainbowCorona->GetPassByIndex(0));
-	UtilityRenderer::DrawQuad(pContext);
+	UtilityRenderer::DrawQuad(deviceContext);
 	pContext->VSSetShader(NULL,NULL,0);
 	pContext->GSSetShader(NULL,NULL,0);
 	pContext->PSSetShader(NULL,NULL,0);
-	RestoreD3D11State(pContext );
+	deviceContext.renderPlatform->RestoreRenderState(deviceContext);
 }

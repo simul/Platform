@@ -133,22 +133,16 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	ConnectInterfaces();
 }
 
-TwoResFramebuffer *SimulWeatherRendererDX11::GetFramebuffer(int view_id)
+crossplatform::TwoResFramebuffer *SimulWeatherRendererDX11::GetFramebuffer(int view_id)
 {
-	if(framebuffersDx11.find(view_id)==framebuffersDx11.end())
+	if(framebuffers.find(view_id)==framebuffers.end())
 	{
 		dx11::TwoResFramebuffer *fb=new dx11::TwoResFramebuffer();
-		framebuffersDx11[view_id]=fb;
+		framebuffers[view_id]=fb;
 		fb->RestoreDeviceObjects(renderPlatform);
 		return fb;
 	}
-	return framebuffersDx11[view_id];
-}
-
-void SimulWeatherRendererDX11::SetScreenSize(int view_id,int w,int h)
-{
-	TwoResFramebuffer *fb=GetFramebuffer(view_id);
-	fb->SetDimensions(w,h,Downscale);
+	return framebuffers[view_id];
 }
 
 void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -156,7 +150,7 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	HRESULT hr=S_OK;
 	renderPlatform=r;
 	m_pd3dDevice=renderPlatform->AsD3D11Device();
-	for(FramebufferMapDx11::iterator i=framebuffersDx11.begin();i!=framebuffersDx11.end();i++)
+	for(FramebufferMap::iterator i=framebuffers.begin();i!=framebuffers.end();i++)
 		i->second->RestoreDeviceObjects(renderPlatform);
 	hdrConstants.RestoreDeviceObjects(renderPlatform);
 	if(simulCloudRenderer)
@@ -203,7 +197,7 @@ void SimulWeatherRendererDX11::RecompileShaders()
 
 void SimulWeatherRendererDX11::InvalidateDeviceObjects()
 {
-	for(FramebufferMapDx11::iterator i=framebuffersDx11.begin();i!=framebuffersDx11.end();i++)
+	for(FramebufferMap::iterator i=framebuffers.begin();i!=framebuffers.end();i++)
 		i->second->InvalidateDeviceObjects();
 	if(simulSkyRenderer)
 		simulSkyRenderer->InvalidateDeviceObjects();
@@ -242,7 +236,6 @@ SimulWeatherRendererDX11::~SimulWeatherRendererDX11()
 {
 	InvalidateDeviceObjects();
 	// Free this memory here instead of global destruction(as causes shutdown problems).
-	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	Destroy();
 	del(simulSkyRenderer,memoryInterface);
 	del(simulCloudRenderer,memoryInterface);
@@ -322,7 +315,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 				hdrConstants.Apply(deviceContext);
 				deviceContext.renderPlatform->ApplyShaderPass(deviceContext,effect,tech,0);
 				//ApplyPass(m_pImmediateContext,((ID3DX11EffectTechnique*)tech->platform_technique)->GetPassByIndex(0));
-				simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
+				simul::dx11::UtilityRenderer::DrawQuad(deviceContext);
 			}
 		}
 		fb_cubemap.Deactivate(m_pImmediateContext);
@@ -358,7 +351,7 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(crossplatform::DeviceContext &
 											)
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderSkyAsOverlay")
-	TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
+	crossplatform::TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
 	if(buffered)
 	{
 		int w,h,s;
@@ -384,15 +377,15 @@ ERRNO_CHECK
 	float godrays_strength		=(float)(!is_cubemap)*environment->cloudKeyframer->GetInterpolatedKeyframe().godray_strength;
 	if(buffered)
 	{
-		fb->lowResFarFramebufferDx11.ActivateViewport(deviceContext,depthViewportXYWH.x,depthViewportXYWH.y,depthViewportXYWH.z,depthViewportXYWH.w);
-		fb->lowResFarFramebufferDx11.Clear(deviceContext.platform_context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
+		fb->GetLowResFarFramebuffer()->ActivateViewport(deviceContext,depthViewportXYWH.x,depthViewportXYWH.y,depthViewportXYWH.z,depthViewportXYWH.w);
+		fb->GetLowResFarFramebuffer()->Clear(deviceContext.platform_context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
 	}
 
 	crossplatform::MixedResolutionStruct mixedResolutionStruct(1,1,1);
 	RenderLowResolutionElements(deviceContext,exposure,godrays_strength,is_cubemap,false,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
 
 	if(buffered)
-		fb->lowResFarFramebufferDx11.Deactivate(deviceContext.platform_context);
+		fb->GetLowResFarFramebuffer()->Deactivate(deviceContext.platform_context);
 
 	if(buffered&&doFinalCloudBufferToScreenComposite)
 		CompositeCloudsToScreen(deviceContext,1.f,1.f,false,hiResDepthTexture,hiResDepthTexture,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
@@ -440,6 +433,6 @@ void SimulWeatherRendererDX11::SetRenderDepthBufferCallback(RenderDepthBufferCal
 
 crossplatform::Texture *SimulWeatherRendererDX11::GetCloudDepthTexture(int view_id)
 {
-	return framebuffersDx11[view_id]->GetLowResFarFramebuffer()->GetDepthTexture();
+	return framebuffers[view_id]->GetLowResFarFramebuffer()->GetDepthTexture();
 }
 
