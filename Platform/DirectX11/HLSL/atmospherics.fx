@@ -64,7 +64,7 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 #else
 	OUT.position.z	=OUT.position.w; 
 #endif
-    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(OUT.pos.x,-OUT.pos.y));
+    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(OUT.pos.x,-OUT.pos.y));
 	OUT.texCoords	+=0.5*texelOffsets;
 	return OUT;
 }

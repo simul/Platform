@@ -26,7 +26,6 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *cloud_depth_tex);
 		protected:
-			crossplatform::Effect*	effect;
 			ID3D11Device *	m_pd3dDevice;
 			ID3D11InputLayout* inputLayout;
 			VertexBuffer<LightningVertex>				vertexBuffer;

@@ -607,7 +607,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,view->GetScreenWidth(),view->GetScreenHeight());
 			const char *txt=Profiler::GetGlobalProfiler().GetDebugText();
-			renderPlatformDx11.Print(deviceContext			,12	,12,txt);
+		//	renderPlatformDx11.Print(deviceContext			,12	,12,txt);
 		}
 	}
 	if(oceanRenderer&&ShowWaterTextures)

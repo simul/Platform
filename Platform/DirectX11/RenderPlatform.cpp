@@ -917,26 +917,26 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,Ver
 		pContext->RSGetViewports(&num_v,&viewport);
 		dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"rect",vec4(-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height));
 
-		ID3D1xBuffer *					vertexBuffer=NULL;
+		ID3D11Buffer *vertexBuffer=NULL;
 		// Create the vertex buffer:
-		D3D1x_BUFFER_DESC desc=
+		D3D11_BUFFER_DESC desc=
 		{
 			vertex_count*sizeof(VertexXyzRgba),
-			D3D1x_USAGE_DYNAMIC,
-			D3D1x_BIND_VERTEX_BUFFER,
-			D3D1x_CPU_ACCESS_WRITE,
+			D3D11_USAGE_DYNAMIC,
+			D3D11_BIND_VERTEX_BUFFER,
+			D3D11_CPU_ACCESS_WRITE,
 			0
 		};
-		D3D1x_SUBRESOURCE_DATA InitData;
-		ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-		InitData.pSysMem = vertices;
+		D3D11_SUBRESOURCE_DATA InitData;
+		ZeroMemory( &InitData, sizeof(D3D11_SUBRESOURCE_DATA) );
+		InitData.pSysMem = lines;
 		InitData.SysMemPitch = sizeof(VertexXyzRgba);
 		hr=AsD3D11Device()->CreateBuffer(&desc,&InitData,&vertexBuffer);
 
-		const D3D1x_INPUT_ELEMENT_DESC decl[] =
+		const D3D11_INPUT_ELEMENT_DESC decl[] =
 		{
-			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
+			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 }
 		};
 		D3DX11_PASS_DESC PassDesc;
 		ID3DX11EffectPass *pass=tech->GetPassByIndex(0);

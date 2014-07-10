@@ -61,6 +61,11 @@ namespace simul
 			ID3D11InputLayout*							m_pVtxDecl;
 			VertexBuffer<PrecipitationVertex>			vertexBuffer;
 			VertexBuffer<PrecipitationVertex>			vertexBufferSwap;
+
+			
+			VertexBuffer<SplashVertex>					splashBuffer;
+			VertexBuffer<SplashVertex>					splashBufferSwap;
+
 			dx11::ArrayTexture							rainArrayTexture;
 			dx11::Framebuffer							moisture_fb;
 		

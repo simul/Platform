@@ -26,12 +26,14 @@ SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	uniform mat4 invViewProj_2[2];
 	uniform vec4 viewPos[2];
 	uniform vec4 offset[2];
-	uniform float nearZ;
-	uniform float farZ;
 	uniform vec4 depthToLinFadeDistParams;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec2 tanHalfFov;
 	uniform vec2 nearRainDistance;// as a proportion of max fade distance
+	uniform float nearZ;
+	uniform float farZ;
+	uniform float qega;
+	uniform float srhshrhrs;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(RainOsdConstants,9)
@@ -43,6 +45,12 @@ struct PrecipitationVertex
     vec3 position;	
 	uint type;
 	vec3 velocity;
+};
+struct SplashVertex
+{
+    vec3 position;
+	vec3 normal;
+	float strength;
 };
 
 #ifndef __cplusplus

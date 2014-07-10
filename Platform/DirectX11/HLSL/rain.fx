@@ -80,16 +80,6 @@ struct posOnly
 {
     float3 position		: POSITION;
 };
-/*
-struct VSParticleIn
-{   
-    float3 pos			: POSITION;         //position of the particle
-    //float3 seed		: SEED;
-    //float3 speed		: SPEED;
-    //float random		: RAND;
-    //uint Type			: TYPE;             //particle type
-};
-*/
 
 struct vertexOutput
 {
@@ -142,13 +132,7 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 {
 	vec3 particlePos	=position.xyz;//+offset[i].xyz;
 	particlePos			+=i*viewPositionOffset.xyz;
-	//particlePos			=WrapParticleZone(particlePos);
-	//particlePos		*=10.0;
 	float sc			=1.0+0.7*rand3(position.xyz);
-	//vec3 pp1			=particlePos-viewPos[1].xyz+offset[1].xyz*sc;
-	//particlePos		-=viewPos[i].xyz;
-	//particlePos		+=offset[i].xyz*sc;
-	//particlePos		=Frac(particlePos,pp1,10.0);
 	float ph			=flurryRate*phase;
 	vec3 rand1			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/100.0,0).xyz;
 	vec3 rand2			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/100.0*5.0,0).xyz;
@@ -190,46 +174,6 @@ void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 	result.rgba			+=(brightness+highlight)*s;
 	
 	targetTextureArray[idx]	=saturate(result);
-}
-
-[numthreads(2,2,2)]
-void CS_MakeVertexBuffer(uint3 idx	: SV_DispatchThreadID )
-{
-	vec3 r					=vec3(idx)/600.0;
-	vec3 pos				=vec3(rand3(r),rand3(11.01*r),rand3(587.087*r));
-	pos						*=2.0;
-	pos						-=vec3(1.0,1.0,1.0);
-	uint i					=idx.z*400+idx.y*20+idx.x;
-	PrecipitationVertex v;
-	v.position				=particleZoneSize*pos;
-	// velocity is normalized in order to scale with fall speed
-	vec3 velocity			=vec3(rand3(1.7*r),rand3(17.01*r),rand3(887.087*r));
-	velocity				=2.0*velocity-vec3(1.0,1.0,1.0);
-	v.velocity				=velocity;
-	v.type					=0;//i%32;
-	//v.dummy					=0.0;
-	targetVertexBuffer[i]	=v;
-}
-
-[numthreads(10,10,10)]
-void CS_MoveParticles(uint3 idx	: SV_DispatchThreadID )
-{
-	int i						=idx.z*400+idx.y*20+idx.x;
-	vec3 pos					=targetVertexBuffer[i].position;
-	pos							+=(meanFallVelocity+meanFallVelocity.z*targetVertexBuffer[i].velocity*flurry*0.2)*timeStepSeconds;
-	//pos							+=meanFallVelocity*timeStepSeconds;
-	pos							+=viewPositionOffset;
-	if(pos.z<-particleZoneSize)
-		pos.z+=2.0*particleZoneSize;
-	if(pos.x<-particleZoneSize)
-		pos.x+=2.0*particleZoneSize;
-	else if(pos.x>particleZoneSize)
-		pos.x-=2.0*particleZoneSize;
-	if(pos.y<-particleZoneSize)
-		pos.y+=2.0*particleZoneSize;
-	else if(pos.y>particleZoneSize)
-		pos.y-=2.0*particleZoneSize;
-	targetVertexBuffer[i].position		=pos;
 }
 
 particleVertexOutput VS_SnowParticles(PosAndId IN)
@@ -445,6 +389,8 @@ struct PSSceneIn
     float3 pointLightDir	: LIGHT2;
     float3 view				: EYE;
     float2 texCoords		: TEXTURE0;
+	vec2 depthTexc			: TEXTURE1;
+	vec4 clip_pos			: TEXTURE2;
     uint type  : TYPE;
     float random : RAND;
 };
@@ -455,6 +401,25 @@ struct RainParticleVertexOutput
 	uint type		:TEXCOORD0;
     vec3 velocity	: TEXCOORD1;
 };
+struct RainSplashVertexInput
+{
+    vec3 position	:POSITION;
+	vec3 normal		:TEXCOORD0;
+    float strength	:TEXCOORD1;
+};
+struct RainSplashVertexOutput
+{
+    vec3 position	: POSITION;
+	vec3 normal		:TEXCOORD0;
+    float strength	:TEXCOORD1;
+};
+
+struct RainSplashGeometryOutput
+{
+    vec4 position		:SV_POSITION;
+    vec2 texCoords		:TEXCOORD0;
+	float strength		:TEXCOORD1;
+};
 
 RainParticleVertexOutput VS_RainParticles(PrecipitationVertexInput input )
 {
@@ -463,6 +428,53 @@ RainParticleVertexOutput VS_RainParticles(PrecipitationVertexInput input )
 	p.type		=input.type;
 	p.velocity	=input.velocity;
     return p;
+}
+
+RainSplashVertexOutput VS_RainSplash(PrecipitationVertexInput input )
+{
+	RainSplashVertexOutput p;
+	p.position	=input.position;
+	p.normal	=vec3(0,0,1.0);
+	p.strength	=1.0;
+    return p;
+}
+
+[maxvertexcount(6)]
+void GS_RainSplash(point RainSplashVertexOutput input[1], inout TriangleStream<RainSplashGeometryOutput> SpriteStream)
+{
+    RainSplashGeometryOutput output;
+	// Emit two new triangles.
+	// The two centres of the streak positions.
+	float sz=.1;
+	vec4 pos1			=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
+	output.strength		=input[0].strength; 
+	{
+		// bottom-left quadrant:
+		output.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[0];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[1];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[2];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[1].xy*sz,0,0);  
+		output.texCoords	=g_texcoords[1];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[2];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[3].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[3];
+		SpriteStream.Append(output);
+	}
+    SpriteStream.RestartStrip();
+}
+
+vec4 PS_RainSplash(RainSplashGeometryOutput IN) : SV_Target
+{
+	return vec4(IN.texCoords.xyy,1.0);
 }
 
 float g_Near=1.0;
@@ -517,6 +529,8 @@ void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStr
 {
     float totalIntensity = 1.0;//g_PointLightIntensity*g_ResponsePointLight + dirLightIntensity*g_ResponseDirLight;
 	//if(!cullSprite(input[0].position.xyz,2*g_SpriteSize) && totalIntensity > 0)
+vec4 clip_pos				=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
+	if(clip_pos.z>0)
     {    
         PSSceneIn output	= (PSSceneIn)0;
         output.type			= input[0].type;
@@ -524,33 +538,45 @@ void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStr
        
         float3 pos[4];
 		float g_FrameRate=20.0;
-        GenRainSpriteVertices(input[0].position.xyz,-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*0.1*input[0].velocity)/g_FrameRate, viewPos[1], pos);
+        GenRainSpriteVertices(input[0].position.xyz,-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*0.1*input[0].velocity)/g_FrameRate, viewPos[1].xyz, pos);
         
         float3 closestPointLight=vec3(0,0,500);
         float closestDistance	=length(closestPointLight-pos[0]);
         
-        output.pos				=mul(worldViewProj[1],float4(pos[0],1.0));
+        output.pos				=mul(worldViewProj[1],vec4(pos[0],1.0));
+		output.clip_pos			=output.pos.xyzw/output.pos.w;
+		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
+		output.depthTexc.y		=1.0-output.depthTexc.y;
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight-pos[0];
         output.view				=normalize(pos[0]);
         output.texCoords		=g_texcoords[0];
         SpriteStream.Append(output);
                 
-        output.pos				=mul(worldViewProj[1],float4(pos[1],1.0));
+        output.pos				=mul(worldViewProj[1],vec4(pos[1],1.0));
+		output.clip_pos			=output.pos.xyzw/output.pos.w;
+		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
+		output.depthTexc.y		=1.0-output.depthTexc.y;
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[1];
         output.view				=normalize(pos[1]);
         output.texCoords		=g_texcoords[1];
         SpriteStream.Append(output);
         
-        output.pos				=mul(worldViewProj[1],float4(pos[2],1.0));
+        output.pos				=mul(worldViewProj[1],vec4(pos[2],1.0));
+		output.clip_pos			=output.pos.xyzw/output.pos.w;
+		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
+		output.depthTexc.y		=1.0-output.depthTexc.y;
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[2];
         output.view				=normalize(pos[2]);
         output.texCoords		=g_texcoords[2];
         SpriteStream.Append(output);
                 
-        output.pos				=mul(worldViewProj[1],float4(pos[3],1.0));
+        output.pos				=mul(worldViewProj[1],vec4(pos[3],1.0));
+		output.clip_pos			=output.pos.xyzw/output.pos.w;
+		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
+		output.depthTexc.y		=1.0-output.depthTexc.y;
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[3];
         output.view				=normalize(pos[3]);
@@ -698,8 +724,8 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
         float col4 = rainTextureArray.Sample( samAniso, tex4).x;//* g_rainfactors[texIndicesV2.y];
 
         // Compute interpolated opacity using the s and t factors
-        float hOpacity1 = lerp(col1,col2,s);
-        float hOpacity2 = lerp(col3,col4,s);
+        float hOpacity1=lerp(col1,col2,s);
+        float hOpacity2=lerp(col3,col4,s);
         opacity = lerp(hOpacity1,hOpacity2,t);
         opacity = pow(opacity,0.7); // inverse gamma correction (expand dynamic range)
         opacity = 4*lightIntensity * opacity * fallOff;
@@ -707,20 +733,42 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
 	rainResponseVal = float4(lightColor,opacity);
 }
 
-vec4 PS_RainParticles(PSSceneIn input) : SV_Target
+vec4 PS_RainParticles(PSSceneIn IN) : SV_Target
 {
-	vec3 light				=cubeTexture.Sample(wrapSamplerState,-input.view).rgb;
-	vec4 texel				=.5*rainTextureArray.Sample(samAniso,vec3(input.texCoords,input.type));
+	vec3 light			=cubeTexture.Sample(wrapSamplerState,-IN.view).rgb;
+	vec4 texel			=.5*rainTextureArray.Sample(samAniso,vec3(IN.texCoords,IN.type));
 	//directional lighting---------------------------------------------------------------------------------
 	vec4 directionalLight	=vec4(1,1,1,1);
-	//rainResponse(input, input.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*input.random, float3(1.0,1.0,1.0), input.eyeVec, false, directionalLight);
+	//rainResponse(IN, IN.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*IN.random, float3(1.0,1.0,1.0), input.eyeVec, false, directionalLight);
 
 	//point lighting---------------------------------------------------------------------------------------
-	vec4 pointLight			=vec4(0,0,0,0);
-	//vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	//float depth			=texture_clamp(depthTexture,depth_texc).x;
-	//float dist			=depthToFadeDistance(depth,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	float totalOpacity		= pointLight.a+directionalLight.a;
+	vec4 pointLight		=vec4(0,0,0,0);
+	vec2 depth_texc		=IN.depthTexc.xy;//viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
+				
+	vec2 depth;
+	depth.x				=texture_clamp(depthTexture,depth_texc.xy).x;
+	depth.y				=1.0;//IN.clip_pos.z;
+	vec2 dist			=depthToFadeDistance(depth.xy,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	 dist.y			=depthToFadeDistance(1.0,vec2(0,0),vec4(0.0204173792,2000000.00,0.0408347584,0),vec2(1,1));
+		texel.rgb		=0;
+	if(dist.x<dist.y+0.00001)
+	{
+	//	texel.r			=1.0;
+		//texel.a			=1.0;
+		light			=vec3(1,1,1);
+		texel.rg		=1.0;
+	}
+	else
+	{
+		light			=vec3(1,1,1);
+		texel.gb		=1.0;
+	}
+	texel.rgb		=vec3(dist.x,dist.y,dist.y);
+	if(dist.y>dist.x)
+	{
+		//texel.rgb=vec3(1,1,0);
+	}
+	float totalOpacity	=pointLight.a+directionalLight.a;
 	return vec4(texel.rgb*light,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
 
@@ -729,9 +777,23 @@ technique11 rain_particles
     pass p0
     {
         SetRasterizerState( RenderNoCull );
-        SetVertexShader( CompileShader(   vs_5_0, VS_RainParticles() ) );
-        SetGeometryShader( CompileShader( gs_5_0, GS_RainParticles() ) );
-        SetPixelShader( CompileShader(    ps_5_0, PS_RainParticles() ) );
+        SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles()));
+        SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
+        SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles()));
+        
+        SetBlendState( AlphaBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//AddAlphaBlend
+        SetDepthStencilState( EnableDepth, 0 );
+    }  
+}
+
+technique11 splash
+{
+    pass p0
+    {
+        SetRasterizerState( RenderNoCull );
+        SetVertexShader(CompileShader(vs_5_0,VS_RainSplash()));
+        SetGeometryShader(CompileShader(gs_5_0,GS_RainSplash()));
+        SetPixelShader(CompileShader(ps_5_0,PS_RainSplash()));
         
         SetBlendState( AddAlphaBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetDepthStencilState( EnableDepth, 0 );
@@ -762,22 +824,6 @@ technique11 simul_rain
 		SetPixelShader(CompileShader(ps_5_0,PS_Overlay()));
 		SetDepthStencilState(DisableDepth,0);
 		SetBlendState(AddAlphaBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-    }
-}
-
-technique11 make_vertex_buffer
-{
-    pass p0 
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_MakeVertexBuffer()));
-    }
-}
-
-technique11 move_particles_compute
-{
-    pass p0 
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_MoveParticles()));
     }
 }
 
@@ -848,8 +894,9 @@ technique11 moisture
 
 PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput input,uint vertex_id	: SV_VertexID)
 {
-	vec3 pos				=vec3(rand(vertex_id*0.5),rand(7.01*vertex_id),rand(vertex_id));
-	pos						*=2.0;
+	vec3 pos				=vec3(rand(vertex_id*0.52),rand(7.01*vertex_id),rand(vertex_id));
+	vec3 pos2				=vec3(rand(vertex_id*4.55),rand(1.35*vertex_id),rand(27.2*vertex_id));
+	pos						+=pos2;
 	pos						-=vec3(1.0,1.0,1.0);
 	PrecipitationVertexInput v;
 	v.position				=particleZoneSize*pos;
@@ -863,42 +910,41 @@ PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput input,uint ve
     return v;
 }
 
+// Rainsplashes: use vertex texture to see whether a splash should be generated.
 PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint vertex_id	: SV_VertexID)
 {
 	vec3 pos					=input.position;
 	pos							+=(meanFallVelocity+meanFallVelocity.z*input.velocity*0.5*flurry)*timeStepSeconds;
 	//pos						+=meanFallVelocity*timeStepSeconds;
 	pos							-=viewPositionOffset;
-	pos=WrapParticleZone(pos);
-	input.position		=pos;
+	pos							=WrapParticleZone(pos);
+	input.position				=pos;
+	// 
     return input;
 }
 
-GeometryShader gsStreamOut = ConstructGSWithSO( CompileShader( vs_5_0, VS_InitParticles() ), "POSITION.xyz; TYPE.x; VELOCITY.xyz" );
+GeometryShader gsStreamOut = ConstructGSWithSO(CompileShader(vs_5_0,VS_InitParticles()),"POSITION.xyz; TYPE.x; VELOCITY.xyz" );
 
 technique11 init_particles
 {
     pass p0
     {
-        SetVertexShader( CompileShader( vs_5_0, VS_InitParticles() ) );
-        SetGeometryShader( gsStreamOut );
-        SetPixelShader( NULL );
-        
-        SetDepthStencilState( DisableDepth, 0 );
+        SetVertexShader(CompileShader(vs_5_0,VS_InitParticles()));
+        SetGeometryShader(gsStreamOut);
+        SetPixelShader(NULL);
+        SetDepthStencilState(DisableDepth,0);
     }  
 }
 
-GeometryShader gsStreamOut2 = ConstructGSWithSO( CompileShader( vs_5_0, VS_MoveParticles() ), "POSITION.xyz; TYPE.x; VELOCITY.xyz" );
-
+GeometryShader gsStreamOut2=ConstructGSWithSO(CompileShader(vs_5_0,VS_MoveParticles() ),"POSITION.xyz; TYPE.x; VELOCITY.xyz" );
 
 technique11 move_particles
 {
     pass p0
     {
-        SetVertexShader( CompileShader( vs_5_0, VS_MoveParticles() ) );
-        SetGeometryShader( gsStreamOut2 );
-        SetPixelShader( NULL );
-        
-        SetDepthStencilState( DisableDepth, 0 );
+        SetVertexShader(CompileShader(vs_5_0,VS_MoveParticles()));
+        SetGeometryShader(gsStreamOut2);
+        SetPixelShader(NULL);
+        SetDepthStencilState(DisableDepth,0);
 	}
 }

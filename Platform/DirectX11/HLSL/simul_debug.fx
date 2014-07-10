@@ -34,7 +34,7 @@ struct v2f
     float4 colour		: TEXCOORD0;
 };
 
-posTexVertexOutput Debug2DVS(idOnly id)
+posTexVertexOutput VS_Quad(idOnly id)
 {
     return VS_ScreenQuad(id,rect);
 }
@@ -236,7 +236,7 @@ technique11 textured
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
+		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
 		SetPixelShader(CompileShader(ps_4_0,TexturedPS()));
     }
 }
@@ -249,7 +249,7 @@ technique11 texturedMS
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,Debug2DVS()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
 		SetPixelShader(CompileShader(ps_5_0,TexturedMSPS()));
     }
 }
@@ -300,7 +300,7 @@ technique11 show_depth
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
+		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
 		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS()));
     }
 }
@@ -312,7 +312,7 @@ technique11 show_depth_ms
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,Debug2DVS()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
 		SetPixelShader(CompileShader(ps_5_0,ShowDepthMS_PS()));
     }
 }

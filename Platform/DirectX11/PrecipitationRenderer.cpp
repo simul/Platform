@@ -43,7 +43,7 @@ void PrecipitationRenderer::RecompileShaders()
 		return;
 	std::vector<crossplatform::EffectDefineOptions> opts;
 	opts.push_back(crossplatform::CreateDefineOptions("REVERSE_DEPTH","0","1"));
-	renderPlatform->EnsureEffectIsBuilt("atmospherics",opts);
+	renderPlatform->EnsureEffectIsBuilt("rain",opts);
 	SAFE_DELETE(effect);
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]	=ReverseDepth?"1":"0";
@@ -130,7 +130,7 @@ void *PrecipitationRenderer::GetMoistureTexture()
 {
 	return moisture_fb.GetColorTex();
 }
-
+#include "Simul/Math/RandomNumberGenerator.h"
 void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
@@ -138,18 +138,38 @@ void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *
 	HRESULT hr=S_OK;
 	MakeMesh();
 
-	PrecipitationVertex *dat=new PrecipitationVertex[125000];
-	memset(dat,0,125000);
-	for(int i=0;i<125000;i++)
 	{
-		dat[i].position.y=6;
-		dat[i].position.x=10*(i/125000.0f-.5f);
+		PrecipitationVertex *dat=new PrecipitationVertex[125000];
+		memset(dat,0,125000);
+		for(int i=0;i<125000;i++)
+		{
+			dat[i].position.y=6;
+			dat[i].position.x=10*(i/125000.0f-.5f);
+		}
+	
+		vertexBuffer.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
+		vertexBufferSwap.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
+
+		delete [] dat;
 	}
-	
-	vertexBuffer.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
-	vertexBufferSwap.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
-	delete dat;
-	
+	{
+		SplashVertex *splash_data=new SplashVertex[10000];
+		memset(splash_data,0,10000);
+		for(int i=0;i<10000;i++)
+		{
+			simul::math::RandomNumberGenerator rnd;
+			splash_data[i].position.x=rnd.FRand(0.f,100.f);
+			splash_data[i].position.y=rnd.FRand(0.f,100.f);
+			splash_data[i].position.z=800.0f;
+			splash_data[i].normal.x=0;
+			splash_data[i].normal.y=0;
+			splash_data[i].normal.z=1.0f;
+			splash_data[i].strength=1.0f;
+		}
+		splashBuffer.ensureBufferSize(m_pd3dDevice,10000,splash_data,true,false);
+		splashBufferSwap.ensureBufferSize(m_pd3dDevice,10000,splash_data,true,false);
+		delete [] splash_data;
+	}
 	rainConstants.RestoreDeviceObjects(renderPlatform);
 	perViewConstants.RestoreDeviceObjects(renderPlatform);
 	moisturePerViewConstants.RestoreDeviceObjects(renderPlatform);
@@ -204,6 +224,7 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 		rainConstants.viewPositionOffset*=max_offs/l;
 	}
 	last_cam_pos=cam_pos;
+	return;
 	rainConstants.Apply(deviceContext);
 	
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
@@ -311,7 +332,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	{
 		// Convert the proj matrix into a normal non-reversed matrix.
 		p1=deviceContext.viewStruct.proj;//simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
-		simul::camera::ConvertReversedToRegularProjectionMatrix(p1);
+		//simul::camera::ConvertReversedToRegularProjectionMatrix(p1);
 	}
 	simul::math::Matrix4x4 vpt,viewproj,p((const float*)p1);
 
@@ -364,7 +385,6 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	perViewConstants.nearRainDistance=near_rain_distance_metres/max_fade_distance_metres;
 	perViewConstants.depthToLinFadeDistParams =camera::GetDepthToDistanceParameters(deviceContext.viewStruct,max_fade_distance_metres);
 	
-	
 	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
 
 	perViewConstants.Apply(deviceContext);
@@ -375,6 +395,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 		{
 			//ApplyPass(pContext,m_hTechniqueRain->GetPassByIndex(i));
 		//	simul::dx11::UtilityRenderer::DrawQuad(pContext);
+//effect->Unapply(deviceContext);
 		}
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
@@ -386,7 +407,6 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"randomTexture3D"	,NULL);
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"depthTexture"		,NULL);
 	dx11::setTextureArray(	effect->asD3DX11Effect(),"rainTextureArray"	,NULL);
-	effect->Unapply(deviceContext);
 }
 
 void PrecipitationRenderer::RenderParticles(crossplatform::DeviceContext &deviceContext)
@@ -408,6 +428,14 @@ void PrecipitationRenderer::RenderParticles(crossplatform::DeviceContext &device
 	else
 		effect->Apply(deviceContext,m_hTechniqueRainParticles,0);
 	pContext->Draw(numParticles,0);
+	effect->Unapply(deviceContext);
+	{
+		// Splashes!
+		//splashBuffer.apply(pContext,0);
+	//	effect->Apply(deviceContext,effect->GetTechniqueByName("splash"),0);
+	//	pContext->Draw(10000,0);
+	//	effect->Unapply(deviceContext);
+	}
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout(previousInputLayout);
 	SAFE_RELEASE(previousInputLayout);

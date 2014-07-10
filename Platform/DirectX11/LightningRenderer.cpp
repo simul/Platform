@@ -14,13 +14,14 @@ using namespace dx11;
 
 LightningRenderer::LightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk)
 	:BaseLightningRenderer(ck,sk)
-	,effect(NULL)
+	,m_pd3dDevice(NULL)
 	,inputLayout(NULL)
 {
 }
 
 LightningRenderer::~LightningRenderer()
 {
+	InvalidateDeviceObjects();
 }
 
 void LightningRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
