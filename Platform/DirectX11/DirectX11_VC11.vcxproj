@@ -327,6 +327,23 @@
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\gaussian.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\lightning.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\optics.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_render_cubemap.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\solid.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -279,7 +279,7 @@ starsVertexOutput VS_Stars(starsVertexInput IN)
 #if REVERSE_DEPTH==1
 	OUT.hPosition.z = 0.0f; 
 #else
-	OUT.hPosition.z = 1.0f; 
+	OUT.hPosition.z = OUT.hPosition.w; 
 #endif
     OUT.tex=IN.tex;
     return OUT;

@@ -19,6 +19,7 @@
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Clouds/CloudInterface.h"
+#include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
@@ -69,6 +70,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,memoryInterface(m)
 		,mainRenderTarget(NULL)
 		,mainDepthSurface(NULL)
+		,AllOsds(true)
 {
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
@@ -76,8 +78,11 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 	simulTerrainRenderer	=::new(memoryInterface) TerrainRenderer(memoryInterface);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 
-	oceanRenderer			=new(memoryInterface) OceanRenderer(env->seaKeyframer);
-	oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
+	if((simul::base::featureLevel&simul::base::EXPERIMENTAL)!=0)
+	{
+		oceanRenderer			=new(memoryInterface) OceanRenderer(env->seaKeyframer);
+		oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
+	}
 	
 #ifdef SIMUL_USE_SCENE
 	if(sc)
@@ -257,8 +262,12 @@ ERRNO_CHECK
 				simulTerrainRenderer->SetLightningProperties(lightningIllumination);
 			}
 		}
-		if(simulTerrainRenderer)
+		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render(deviceContext,1.f);
+		if(oceanRenderer&&ShowWater)
+		{
+			oceanRenderer->Render(deviceContext.platform_context,1.f);
+		}
 		cubemapFramebuffer.DeactivateDepth(deviceContext.platform_context);
 		if(simulWeatherRenderer)
 		{
@@ -334,7 +343,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	if(sceneRenderer)
 		sceneRenderer->Render(deviceContext);
 #endif
-	if(oceanRenderer&&ShowWater)
+	if(oceanRenderer&&ShowWater&&(simul::base::featureLevel&simul::base::EXPERIMENTAL)!=0)
 	{
 		oceanRenderer->SetMatrices(deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 		oceanRenderer->Render(pContext,1.f);
@@ -539,7 +548,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		pContext->ClearDepthStencilView(mainDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,ReverseDepth?0.f:1.f, 0);
 	}
 	RenderScene(deviceContext,simulWeatherRenderer,hdr?1.f:cameraViewStruct.exposure,hdr?1.f:cameraViewStruct.gamma);
-	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
+	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid()&&AllOsds)
 	{
 		static float x=0.35f,y=0.4f;
 		renderPlatformDx11.DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)cubemapFramebuffer.GetColorTex(),-0.7f,0.7f);
@@ -555,7 +564,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			simulHDRRenderer->Render(deviceContext,view->GetResolvedHDRBuffer(),cameraViewStruct.exposure,cameraViewStruct.gamma);
 	}
 	SIMUL_COMBINED_PROFILE_START(pContext,"Overlays")
-	if(simulWeatherRenderer)
+	if(simulWeatherRenderer&&AllOsds)
 	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
@@ -609,9 +618,9 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			const char *txt=Profiler::GetGlobalProfiler().GetDebugText();
 		//	renderPlatformDx11.Print(deviceContext			,12	,12,txt);
 		}
+		if(oceanRenderer&&ShowWaterTextures)
+			oceanRenderer->RenderTextures(deviceContext,view->GetScreenWidth(),view->GetScreenHeight());
 	}
-	if(oceanRenderer&&ShowWaterTextures)
-		oceanRenderer->RenderTextures(deviceContext,view->GetScreenWidth(),view->GetScreenHeight());
 	SAFE_RELEASE(mainRenderTarget);
 	SAFE_RELEASE(mainDepthSurface);
 	SIMUL_COMBINED_PROFILE_END(pContext)
@@ -663,7 +672,9 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8,int width,int 
 	s.exposure=exposure;
 	s.gamma=gamma/0.44f;
 	cam->SetCameraViewStruct(s);
+	AllOsds=false;
 	Render(0,m_pd3dDevice,pImmediateContext);
+	AllOsds=true;
 	UseHdrPostprocessor=t;
 	fb.Deactivate(pImmediateContext);
 	cam->SetCameraViewStruct(s0);

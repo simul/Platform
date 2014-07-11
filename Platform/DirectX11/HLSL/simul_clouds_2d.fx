@@ -53,8 +53,13 @@ v2f MainVS(a2v IN)
 	pos.xy				+=eyePosition.xy;
 	OUT.clip_pos		=mul(worldViewProj,vec4(pos.xyz,1.0));
 	// Prevent clipping:
+#if REVERSE_DEPTH==1
 	if(OUT.clip_pos.z<0)
 		OUT.clip_pos.z=0;
+#else
+	if(OUT.clip_pos.z>OUT.clip_pos.w)
+		OUT.clip_pos.z=OUT.clip_pos.w;
+#endif
 	OUT.hPosition		=OUT.clip_pos;
     OUT.wPosition		=pos.xyz;
     return OUT;
@@ -74,6 +79,7 @@ vec4 msaaPS(v2f IN) : SV_TARGET
 	if(dlookup!=0)
 		discard;
 #else
+	// RVK: dlookup < 1.0 seems to not have the required accuracy.
 	if(dlookup<1.0)
 		discard;
 #endif

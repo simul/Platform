@@ -87,8 +87,6 @@ namespace simul
 			//! Get the list of three textures used for cloud rendering.
 			CloudShadowStruct GetCloudShadowTexture(math::Vector3 cam_pos);
 			void *GetRandomTexture3D();
-			void SetIlluminationTexture(crossplatform::Texture *i);
-			void SetLightTableTexture(crossplatform::Texture *l);
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 
 			void CycleTexturesForward(){}
@@ -136,19 +134,15 @@ namespace simul
 			ID3DX11EffectShaderResourceVariable*	noiseTexture;
 			ID3DX11EffectShaderResourceVariable*	noiseTexture3D;
 
-			ID3DX11EffectShaderResourceVariable*	lightningIlluminationTexture;
 			ID3DX11EffectShaderResourceVariable*	skyLossTextureV;
 			ID3DX11EffectShaderResourceVariable*	skyInscatterTextureV;
 			ID3DX11EffectShaderResourceVariable*	skylightTextureV;
-			ID3DX11EffectShaderResourceVariable*	depthTexture;
-			ID3DX11EffectShaderResourceVariable*	lightTableTexture;
+			ID3DX11EffectShaderResourceVariable*	depthTextureV;
+			ID3DX11EffectShaderResourceVariable*	lightTableTextureV;
 
 			dx11::Texture							cloud_textures[3];
 
 			ID3D11ShaderResourceView*				noiseTextureResource;
-			ID3D11ShaderResourceView*				lightningIlluminationTextureResource;
-			ID3D11ShaderResourceView*				illuminationTexture_SRV;
-			ID3D11ShaderResourceView*				lightTableTexture_SRV;
 
 			// A texture whose x-axis represents azimuth, and whose y-axis represents distance
 			// as a proportion of shadow range. The texels represent how much illumination accumulates between the viewer

@@ -291,8 +291,9 @@ vec4 GlowPS(v2f IN) : SV_TARGET
 	offset2.x=offset.x*-1.0;
 	c+=texture_clamp(imageTexture,IN.texCoords+offset2/2.0);
 	c+=texture_clamp(imageTexture,IN.texCoords-offset2/2.0);
-	c=c*exposure/4.0;
-	c-=1.0*vec4(1.0,1.0,1.0,1.0);
+	c*=exposure;
+	c/=4.0;
+	c-=1.1*vec4(1.0,1.0,1.0,1.0);
 	c=clamp(c,vec4(0.0,0.0,0.0,0.0),vec4(10.0,10.0,10.0,10.0));
     return c;
 }

@@ -153,6 +153,7 @@ namespace simul
 			ID3D11RenderTargetView	*mainRenderTarget;
 			ID3D11DepthStencilView	*mainDepthSurface;
 			std::map<int,const simul::camera::CameraOutputInterface *> cameras;
+			bool AllOsds;
 		};
 	}
 }

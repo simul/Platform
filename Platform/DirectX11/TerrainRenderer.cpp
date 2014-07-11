@@ -214,7 +214,7 @@ ERRNO_CHECK
 ERRNO_CHECK
 	dx11::setTextureArray(	effect->asD3DX11Effect(),"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
 	if(cloudShadowStruct.texture)
-		dx11::setTexture(		effect->asD3DX11Effect(),"cloudShadowTexture"	,cloudShadowStruct.texture->AsD3D11ShaderResourceView());
+		effect->SetTexture(deviceContext	,"cloudShadowTexture",cloudShadowStruct.texture);
 	terrainConstants.eyePosition=cam_pos;
 	terrainConstants.lightningCentre=lightningIllumination.centre;
 	terrainConstants.lightningColour=lightningIllumination.colour;

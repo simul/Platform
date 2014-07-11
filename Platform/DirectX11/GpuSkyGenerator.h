@@ -62,10 +62,10 @@ namespace simul
 			
 			ID3D1xBuffer*					constantBuffer;
 			ConstantBuffer<GpuSkyConstants>	gpuSkyConstants;
-			crossplatform::Texture					*finalLoss[3];
-			crossplatform::Texture					*finalInsc[3];
-			crossplatform::Texture					*finalSkyl[3];
-			crossplatform::Texture					*light_table;
+			crossplatform::Texture			*finalLoss[3];
+			crossplatform::Texture			*finalInsc[3];
+			crossplatform::Texture			*finalSkyl[3];
+			crossplatform::Texture			*light_table;
 			dx11::Texture					dens_tex,optd_tex;
 
 			unsigned						tables_checksum;
