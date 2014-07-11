@@ -224,7 +224,7 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 		rainConstants.viewPositionOffset*=max_offs/l;
 	}
 	last_cam_pos=cam_pos;
-	return;
+
 	rainConstants.Apply(deviceContext);
 	
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
@@ -360,7 +360,6 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	perViewConstants.nearZ			=0;//frustum.nearZ*0.001f/fade_distance_km;
 	perViewConstants.farZ			=0;//frustum.farZ*0.001f/fade_distance_km;
 	perViewConstants.viewPos[1]		=viewPos;
-	
 	if(!view_initialized)
 	{
 		perViewConstants.invViewProj_2[0]		=perViewConstants.invViewProj_2[1];
@@ -381,11 +380,12 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 		perViewConstants.viewPos[0]=pos0;
 	}
 
-	static float near_rain_distance_metres=250.f;
-	perViewConstants.nearRainDistance=near_rain_distance_metres/max_fade_distance_metres;
-	perViewConstants.depthToLinFadeDistParams =camera::GetDepthToDistanceParameters(deviceContext.viewStruct,max_fade_distance_metres);
+	static float near_rain_distance_metres			=250.0f;
+	perViewConstants.nearRainDistance				=near_rain_distance_metres/max_fade_distance_metres;
+	perViewConstants.splashDelta					=0.02f/max_fade_distance_metres;
+	perViewConstants.depthToLinFadeDistParams		=camera::GetDepthToDistanceParameters(deviceContext.viewStruct,max_fade_distance_metres);
 	
-	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
+	perViewConstants.viewportToTexRegionScaleBias	=simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
 
 	perViewConstants.Apply(deviceContext);
 	{

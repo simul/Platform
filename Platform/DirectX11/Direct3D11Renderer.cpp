@@ -341,6 +341,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 		if(oceanRenderer->GetShowWireframes())
 			oceanRenderer->RenderWireframe(pContext);
 	}
+		simul::sky::float4 depthViewportXYWH(0.0f,0.0f,1.0f,1.0f);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RenderCelestialBackground(deviceContext,exposure);
 	if(simulHDRRenderer&&UseHdrPostprocessor)
@@ -360,17 +361,16 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	{
 		int s=simulWeatherRenderer->GetDownscale();
 		viewManager.DownscaleDepth(deviceContext,s,simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetMaxDistanceKm()*1000.0f);
-		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 	
 		crossplatform::Texture* skyBufferDepthTex = (UseSkyBuffer)? &view->lowResDepthTexture : &view->hiResDepthTexture;
 	
 		if(UseMixedResolution)
 			simulWeatherRenderer->RenderMixedResolution(deviceContext,false,exposure,gamma,view->GetFramebuffer()->GetDepthTexture()
-				,&view->hiResDepthTexture,skyBufferDepthTex,relativeViewportTextureRegionXYWH);
+				,&view->hiResDepthTexture,skyBufferDepthTex,depthViewportXYWH);
 		else
 			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer
 				,view->GetFramebuffer()->GetDepthTexture(),view->GetFramebuffer()->GetDepthTexture()
-				,relativeViewportTextureRegionXYWH,true);
+				,depthViewportXYWH,true);
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->ActivateDepth(deviceContext);
 		else
@@ -378,7 +378,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 											,&mainRenderTarget
 											,mainDepthSurface
 											);
-		simulWeatherRenderer->RenderLightning(deviceContext,&view->hiResDepthTexture,relativeViewportTextureRegionXYWH,simulWeatherRenderer->GetCloudDepthTexture(deviceContext.viewStruct.view_id));
+		simulWeatherRenderer->RenderLightning(deviceContext,&view->hiResDepthTexture,depthViewportXYWH,simulWeatherRenderer->GetCloudDepthTexture(deviceContext.viewStruct.view_id));
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
 		//simulWeatherRenderer->RenderPrecipitation(deviceContext,&view->hiResDepthTexture,relativeViewportTextureRegionXYWH);
 		if(simulOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetSkyRenderer())

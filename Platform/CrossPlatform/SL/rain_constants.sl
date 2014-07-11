@@ -32,7 +32,7 @@ SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	uniform vec2 nearRainDistance;// as a proportion of max fade distance
 	uniform float nearZ;
 	uniform float farZ;
-	uniform float qega;
+	uniform float splashDelta;	
 	uniform float srhshrhrs;
 SIMUL_CONSTANT_BUFFER_END
 

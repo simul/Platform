@@ -16,14 +16,14 @@ vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,T
 	return loss;
 }
 
-vec3 AtmosphericsLossMSAA(Texture2DMS<float4> depthTextureMS,uint numSamples,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
+vec3 AtmosphericsLossMSAA(Texture2DMS<float4> depthTextureMS,uint i,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
 	,mat4 invViewProj,vec2 texCoords,uint2 depth_pos2,vec2 clip_pos,vec4 depthToLinFadeDistParams,vec2 tanHalfFov)
 {
 	float3 view	=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view		=normalize(view);
 	float sine	=view.z;
 	vec3 loss	=vec3(0,0,0);
-	for(uint i=0;i<numSamples;i++)
+	//for(uint i=0;i<numSamples;i++)
 	{
 		vec4 insc_i;
         vec3 skyl_i;
@@ -33,7 +33,7 @@ vec3 AtmosphericsLossMSAA(Texture2DMS<float4> depthTextureMS,uint numSamples,vec
 		vec2 texc2	=vec2(pow(dist,0.5),0.5*(1.f-sine));
 		loss				+=texture_clamp_mirror(lossTexture,texc2).rgb;
 	}
-	loss/=float(numSamples);
+	//loss/=float(numSamples);
 	return loss;
 }
 

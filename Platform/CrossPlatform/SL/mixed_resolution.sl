@@ -54,7 +54,7 @@ vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> s
 	{
 		vec2 fn		=depthToLinearDistance(vec2(farthest_depth,nearest_depth),depthToLinFadeDistParams);
 		edge		=fn.x-fn.y;
-		edge		=step(0.002,edge);
+		edge		=step(0.0002,edge);
 	}
 	return vec4(farthest_depth,nearest_depth,edge,0.0);
 }
@@ -103,7 +103,7 @@ void DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,RWTextu
 	float n		=depthToLinearDistance(nearest_depth,depthToLinFadeDistParams);
 	float f		=depthToLinearDistance(farthest_depth,depthToLinFadeDistParams);
 	float edge	=f-n;
-	edge		=step(0.002,edge);
+	edge		=step(0.0002,edge);
 	target2DTexture[pos.xy]	=vec4(farthest_depth,nearest_depth,edge,0.0);
 }
 
@@ -164,7 +164,7 @@ void DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,RWTexture2D<flo
 		float n		=depthToLinearDistance(nearest_depth,depthToLinFadeDistParams);
 		float f		=depthToLinearDistance(farthest_depth,depthToLinFadeDistParams);
 		edge		=f-n;
-		edge		=step(0.002,edge);
+		edge		=step(0.0002,edge);
 	}
 	target2DTexture[pos.xy]	=vec4(farthest_depth,nearest_depth,edge,0);
 }

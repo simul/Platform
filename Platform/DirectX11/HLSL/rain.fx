@@ -743,30 +743,21 @@ vec4 PS_RainParticles(PSSceneIn IN) : SV_Target
 
 	//point lighting---------------------------------------------------------------------------------------
 	vec4 pointLight		=vec4(0,0,0,0);
-	vec2 depth_texc		=IN.depthTexc.xy;//viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
 				
 	vec2 depth;
 	depth.x				=texture_clamp(depthTexture,depth_texc.xy).x;
-	depth.y				=1.0;//IN.clip_pos.z;
+	depth.y				=IN.clip_pos.z;
 	vec2 dist			=depthToFadeDistance(depth.xy,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	 dist.y			=depthToFadeDistance(1.0,vec2(0,0),vec4(0.0204173792,2000000.00,0.0408347584,0),vec2(1,1));
-		texel.rgb		=0;
-	if(dist.x<dist.y+0.00001)
+//	 dist.y			=depthToFadeDistance(1.0,vec2(0,0),vec4(0.0204173792,2000000.00,0.0408347584,0),vec2(1,1));
+		
+	if(dist.y>dist.x-splashDelta)
 	{
-	//	texel.r			=1.0;
-		//texel.a			=1.0;
-		light			=vec3(1,1,1);
-		texel.rg		=1.0;
+		texel.rgb		=vec3(1,1,1);
 	}
-	else
-	{
-		light			=vec3(1,1,1);
-		texel.gb		=1.0;
-	}
-	texel.rgb		=vec3(dist.x,dist.y,dist.y);
 	if(dist.y>dist.x)
 	{
-		//texel.rgb=vec3(1,1,0);
+		discard;
 	}
 	float totalOpacity	=pointLight.a+directionalLight.a;
 	return vec4(texel.rgb*light,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
@@ -781,7 +772,7 @@ technique11 rain_particles
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles()));
         
-        SetBlendState( AlphaBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//AddAlphaBlend
+        SetBlendState( AddAlphaBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
         SetDepthStencilState( EnableDepth, 0 );
     }  
 }

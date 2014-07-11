@@ -83,14 +83,14 @@ vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
     return float4(loss.rgb,1.0);
 }
 
-vec4 PS_LossMSAA(atmosVertexOutput IN) : SV_TARGET
+vec4 PS_LossMSAA(atmosVertexOutput IN,uint sampleIndex:SV_SampleIndex) : SV_TARGET
 {
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	int2 pos2;
 	int numSamples;
 	GetMSAACoordinates(depthTextureMS,depth_texc,pos2,numSamples);
 	vec3 loss		=AtmosphericsLossMSAA(depthTextureMS
-											,numSamples
+											,sampleIndex
 											,viewportToTexRegionScaleBias
 											,lossTexture
 											,invViewProj
@@ -150,92 +150,6 @@ vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET
 	return res;
 }
 
-
-vec4 PS_Loss_Far(atmosVertexOutput IN) : SV_TARGET
-{
-	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	int2 pos2;
-	int numSamples;
-	GetMSAACoordinates(depthTextureMS,depth_texc,pos2,numSamples);
-	vec3 loss		=AtmosphericsLossMSAA(depthTextureMS
-											,numSamples
-											,viewportToTexRegionScaleBias
-											,lossTexture
-											,invViewProj
-											,IN.texCoords
-											,pos2
-											,IN.pos
-											,depthToLinFadeDistParams
-											,tanHalfFov);
-    return float4(loss.rgb,1.0);
-}
-
-vec4 PS_Loss_Near(atmosVertexOutput IN) : SV_TARGET
-{
-	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	int2 pos2;
-	int numSamples;
-	GetMSAACoordinates(depthTextureMS,depth_texc,pos2,numSamples);
-	vec3 loss		=AtmosphericsLossMSAA(depthTextureMS
-											,numSamples
-											,viewportToTexRegionScaleBias
-											,lossTexture
-											,invViewProj
-											,IN.texCoords
-											,pos2
-											,IN.pos
-											,depthToLinFadeDistParams
-							,tanHalfFov);
-    return float4(loss.rgb,1.0);
-}
-
-vec4 PS_Inscatter_Far_MSAA(atmosVertexOutput IN) : SV_TARGET
-{
-	uint2 dims;
-	int numSamples;
-	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
-	int2 pos2=int2(IN.texCoords*vec2(dims.xy));
-	vec4 res=InscatterMSAA(	inscTexture
-							,skylTexture
-							,illuminationTexture
-							,depthTextureMS
-							,numSamples
-							,IN.texCoords
-							,pos2
-							,invViewProj
-							,lightDir
-							,hazeEccentricity
-							,mieRayleighRatio
-							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
-							,tanHalfFov,true,false);
-	res.rgb	*=exposure;
-	return res;
-}
-
-vec4 PS_Inscatter_Near_MSAA(atmosVertexOutput IN) : SV_TARGET
-{
-	uint2 dims;
-	int numSamples;
-	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
-	int2 pos2=int2(IN.texCoords*vec2(dims.xy));
-	vec4 res=InscatterMSAA(	inscTexture
-							,skylTexture
-							,illuminationTexture
-							,depthTextureMS
-							,numSamples
-							,IN.texCoords
-							,pos2
-							,invViewProj
-							,lightDir
-							,hazeEccentricity
-							,mieRayleighRatio
-							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
-							,tanHalfFov,true,true);
-	res.rgb	*=exposure;
-	return res;
-}
 vec4 PS_Inscatter_Far_NFDepth(atmosVertexOutput IN) : SV_TARGET
 {
 	vec4 res=Inscatter_NFDepth(	inscTexture
@@ -403,46 +317,28 @@ technique11 inscatter
 
 technique11 loss_msaa
 {
-    pass far
+    pass msaa_target
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Loss_Far()));
-    }
-    pass near
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Loss_Near()));
+		SetPixelShader(CompileShader(ps_5_0,PS_LossMSAA()));
     }
 }
 
 // An inscatter technique that expects an MSAA depth texture. Probably too inefficient for everyday use.
 technique11 inscatter_msaa
 {
-    pass far
+    pass msaa_target
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Far_MSAA()));
-    }
-    pass near
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Near_MSAA()));
+		SetPixelShader(CompileShader(ps_5_0,PS_InscatterMSAA()));
     }
 }
 

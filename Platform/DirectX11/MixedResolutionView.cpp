@@ -176,7 +176,6 @@ void MixedResolutionRenderer::RecompileShaders()
 void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec4 depthToLinFadeDistParams)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	SIMUL_COMBINED_PROFILE_START(pContext,"DownscaleDepth")
 	int W=0,H=0;
 	crossplatform::Texture *depthTexture=NULL;
 	if(view->useExternalFramebuffer)
@@ -196,6 +195,7 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	}
 	if(!W||!H)
 		return;
+	SIMUL_COMBINED_PROFILE_START(pContext,"DownscaleDepth")
 	crossplatform::Effect *effect=depthForwardEffect;
 	simul::camera::Frustum frustum=camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	if(frustum.reverseDepth)
