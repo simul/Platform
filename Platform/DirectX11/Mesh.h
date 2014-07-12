@@ -15,7 +15,7 @@ namespace simul
 			~Mesh();
 			void InvalidateDeviceObjects();
 			// Implementing crossplatform::Mesh
-			bool Initialize(void *device,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices);
+			bool Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices);
 			void releaseBuffers();
 			// Implementing crossplatform::Mesh
 			void BeginDraw	(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const;
@@ -24,7 +24,7 @@ namespace simul
 			// Unbind buffers, reset vertex arrays, turn off lighting and texture.
 			void EndDraw	(crossplatform::DeviceContext &deviceContext) const;
 			// Template function to initialize vertices from an arbitrary vertex structure.
-			template<class T,typename U> void init(ID3D11Device *pd3dDevice,const std::vector<T> &vertices,std::vector<U> indices)
+			template<class T,typename U> void init(crossplatform::RenderPlatform *renderPlatform,const std::vector<T> &vertices,std::vector<U> indices)
 			{
 				int num_vertices	=(int)vertices.size();
 				int num_indices		=(int)indices.size();
@@ -34,11 +34,11 @@ namespace simul
 					v[i]=vertices[i];
 				for(int i=0;i<num_indices;i++)
 					ind[i]=indices[i];
-				init(pd3dDevice,num_vertices,num_indices,v,ind);
+				init(renderPlatform,num_vertices,num_indices,v,ind);
 				delete [] v;
 				delete [] ind;
 			}
-			template<class T,typename U> void init(ID3D11Device *pd3dDevice,int num_vertices,int num_indices,T *vertices,U *indices)
+			template<class T,typename U> void init(crossplatform::RenderPlatform *renderPlatform,int num_vertices,int num_indices,T *vertices,U *indices)
 			{
 				releaseBuffers();
 				stride=sizeof(T);
@@ -56,7 +56,7 @@ namespace simul
 				ZeroMemory(&InitData,sizeof(D3D11_SUBRESOURCE_DATA));
 				InitData.pSysMem = vertices;
 				InitData.SysMemPitch = sizeof(T);
-				HRESULT hr=pd3dDevice->CreateBuffer(&vertexBufferDesc,&InitData,&vertexBuffer);
+				HRESULT hr=renderPlatform->AsD3D11Device()->CreateBuffer(&vertexBufferDesc,&InitData,&vertexBuffer);
 				
 				// index buffer
 				D3D11_BUFFER_DESC indexBufferDesc=
@@ -70,7 +70,7 @@ namespace simul
 				ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
 				InitData.pSysMem = indices;
 				InitData.SysMemPitch = sizeof(U);
-				hr=pd3dDevice->CreateBuffer(&indexBufferDesc,&InitData,&indexBuffer);
+				hr=renderPlatform->AsD3D11Device()->CreateBuffer(&indexBufferDesc,&InitData,&indexBuffer);
 			}
 			void apply(ID3D11DeviceContext *pImmediateContext,unsigned instanceStride,ID3D11Buffer *instanceBuffer);
 			ID3D11Buffer *vertexBuffer;

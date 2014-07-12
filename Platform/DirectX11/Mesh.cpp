@@ -7,6 +7,8 @@
 #include "CreateEffectDX1x.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "D3dx11effect.h"
 using namespace simul;
 using namespace dx11;
@@ -34,9 +36,8 @@ void Mesh::InvalidateDeviceObjects()
 	SAFE_RELEASE(inputLayout);
 }
 
-bool Mesh::Initialize(void *device,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices)
+bool Mesh::Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices)
 {
-	ID3D11Device	*pd3dDevice=(ID3D11Device*)device;
 	SAFE_RELEASE(vertexBuffer);
 	SAFE_RELEASE(indexBuffer);
 	stride=0;
@@ -45,10 +46,12 @@ bool Mesh::Initialize(void *device,int lPolygonVertexCount,float *lVertices,floa
 	// Vertex declaration
 	{
 		D3DX11_PASS_DESC PassDesc;
-		ID3DX11Effect *effect=NULL;
-		CreateEffect(pd3dDevice,&effect,"solid.fx");
-		ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName("solid");
-		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
+		crossplatform::Effect *effect=NULL;
+		std::map<std::string,std::string> defines;
+	//defines["REVERSE_DEPTH"]	=ReverseDepth?"1":"0";
+		effect=renderPlatform->CreateEffect("solid",defines);
+		crossplatform::EffectTechnique *tech	=effect->GetTechniqueByName("solid");
+		tech->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
 		D3D11_INPUT_ELEMENT_DESC decl[]=
 		{
 			{"POSITION"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0,0,	D3D11_INPUT_PER_VERTEX_DATA,0},
@@ -56,8 +59,8 @@ bool Mesh::Initialize(void *device,int lPolygonVertexCount,float *lVertices,floa
 			{"TEXCOORD"	,1	,DXGI_FORMAT_R32G32B32_FLOAT	,0,20,	D3D11_INPUT_PER_VERTEX_DATA,0},
 		};
 		SAFE_RELEASE(inputLayout);
-		V_CHECK(pd3dDevice->CreateInputLayout(decl,3,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &inputLayout));
-		SAFE_RELEASE(effect);
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateInputLayout(decl,3,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &inputLayout));
+		SAFE_DELETE(effect);
 	}
 	// Put positions, texcoords and normals in an array of structs:
 	numVertices=lPolygonVertexCount;
@@ -79,7 +82,7 @@ bool Mesh::Initialize(void *device,int lPolygonVertexCount,float *lVertices,floa
 		if(lNormals)
 			v.normal	=&(lNormals[i*3]);
 	}
-	init(pd3dDevice,numVertices,numIndices,vertices,lIndices);
+	init(renderPlatform,numVertices,numIndices,vertices,lIndices);
 	delete [] vertices;
 	return true;
 }
@@ -101,6 +104,7 @@ void Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::
 	pContext->IASetInputLayout(inputLayout);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
+
 // Draw all the faces with specific material with given shading mode.
 void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
 {
@@ -115,6 +119,7 @@ void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,c
 
 	pContext->Draw(numIndices,0);
 }
+
 // Unbind buffers, reset vertex arrays, turn off lighting and texture.
 void Mesh::EndDraw(crossplatform::DeviceContext &deviceContext) const
 {

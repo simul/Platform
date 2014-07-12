@@ -15,13 +15,14 @@ namespace simul
 	namespace crossplatform
 	{
 		struct DeviceContext;
+		class RenderPlatform;
 		// Save mesh vertices, normals, UVs and indices in GPU with OpenGL Vertex Buffer Objects
 		class SIMUL_CROSSPLATFORM_EXPORT Mesh
 		{
 		public:
 			Mesh();
 			virtual ~Mesh();
-			virtual bool Initialize(void *device,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices)=0;
+			virtual bool Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices)=0;
 			virtual void UpdateVertexPositions(int lVertexCount, float *lVertices) const=0;
 			// Bind buffers, set vertex arrays, turn on lighting and texture.
 			virtual void BeginDraw(DeviceContext &deviceContext,ShadingMode pShadingMode) const=0;

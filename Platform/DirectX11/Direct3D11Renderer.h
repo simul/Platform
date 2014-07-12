@@ -19,7 +19,7 @@
 #include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
 #pragma warning(push)
 #pragma warning(disable:4251)
-
+#define SIMUL_USE_SCENE
 namespace simul
 {
 	namespace camera
