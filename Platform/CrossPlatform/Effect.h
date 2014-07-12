@@ -88,6 +88,53 @@ namespace simul
 				platformConstantBuffer->Unbind(deviceContext);
 			}
 		};
+		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer
+		{
+		public:
+			virtual ~PlatformStructuredBuffer(){}
+			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,void *addr)=0;
+			virtual void InvalidateDeviceObjects()=0;
+			virtual void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)=0;
+			virtual void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)=0;
+			virtual void Unbind(DeviceContext &deviceContext)=0;
+			virtual void *GetBuffer(crossplatform::DeviceContext &deviceContext)=0;
+		};
+		template<class T> class StructuredBuffer 
+		{
+			PlatformStructuredBuffer *platformStructuredBuffer;
+		public:
+			StructuredBuffer()
+				:platformStructuredBuffer(NULL)
+				,count(0)
+			{
+			}
+			~StructuredBuffer()
+			{
+				InvalidateDeviceObjects();
+			}
+			void RestoreDeviceObjects(RenderPlatform *p,int ct,bool computable=false)
+			{
+				count=s;
+				unit_size=unit;
+				SAFE_DELETE(platformStructuredBuffer);
+				platformStructuredBuffer=p->CreatePlatformStructuredBuffer();
+				platformStructuredBuffer->RestoreDeviceObjects(p,count,sizeof(T),computable);
+			}
+			T *GetBuffer(crossplatform::DeviceContext &deviceContext)
+			{
+				return (T*)platformStructuredBuffer->GetBuffer(deviceContext);
+			}
+			void Apply(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
+			{
+				platformStructuredBuffer->Apply(pContext,effect,name);
+			}
+			void InvalidateDeviceObjects()
+			{
+				platformStructuredBuffer->InvalidateDeviceObjects();
+				count=0;
+			}
+			int count;
+		};
 		class Texture;
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique
 		{

@@ -19,21 +19,21 @@ namespace simul
 			OceanRenderer(simul::terrain::SeaKeyframer *s);
 			virtual ~OceanRenderer();
 			// init & cleanup
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			// Rendering routines
 			//! Call this once per frame to set the matrices.
 			void SetMatrices(const float *v,const float *p);
-			void Render(void *context,float exposure);
-			void RenderWireframe(void *context);
+			void Render(crossplatform::DeviceContext &context,float exposure);
+			void RenderWireframe(crossplatform::DeviceContext &deviceContext);
 			void Update(float dt);
 			void SetCubemapTexture(void *c);
 			void SetLossAndInscatterTextures(crossplatform::Texture *l,crossplatform::Texture *i,crossplatform::Texture *s);
 			void RenderTextures(crossplatform::DeviceContext &deviceContext,int width,int depth);
 		protected:
+			crossplatform::RenderPlatform		*renderPlatform;
 			OceanSimulator						*oceanSimulator;
-			D3DXMATRIX view,proj;
 			ID3D11Device						*m_pd3dDevice;
 			// HLSL shaders
 			ID3DX11Effect						*effect;

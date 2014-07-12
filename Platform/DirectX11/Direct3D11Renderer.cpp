@@ -266,7 +266,7 @@ ERRNO_CHECK
 			simulTerrainRenderer->Render(deviceContext,1.f);
 		if(oceanRenderer&&ShowWater)
 		{
-			oceanRenderer->Render(deviceContext.platform_context,1.f);
+			oceanRenderer->Render(deviceContext,1.f);
 		}
 		cubemapFramebuffer.DeactivateDepth(deviceContext.platform_context);
 		if(simulWeatherRenderer)
@@ -346,9 +346,9 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	if(oceanRenderer&&ShowWater&&(simul::base::featureLevel&simul::base::EXPERIMENTAL)!=0)
 	{
 		oceanRenderer->SetMatrices(deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-		oceanRenderer->Render(pContext,1.f);
+		oceanRenderer->Render(deviceContext,1.f);
 		if(oceanRenderer->GetShowWireframes())
-			oceanRenderer->RenderWireframe(pContext);
+			oceanRenderer->RenderWireframe(deviceContext);
 	}
 		simul::sky::float4 depthViewportXYWH(0.0f,0.0f,1.0f,1.0f);
 	if(simulWeatherRenderer)

@@ -162,16 +162,21 @@ void OceanRenderer::RecompileShaders()
 	changePerCallConstants	.LinkToEffect(effect,"cbChangePerCall");
 }
 
-void OceanRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform)
+void OceanRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	InvalidateDeviceObjects();
+	renderPlatform=r;
 	m_pd3dDevice=renderPlatform->AsD3D11Device();
 	oceanSimulator=new OceanSimulator(seaKeyframer);
 	oceanSimulator->RestoreDeviceObjects(renderPlatform);
 	
 	// Update the simulation for the first time.
-	oceanSimulator->updateDisplacementMap(0);
-
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.renderPlatform=renderPlatform;
+	ID3D11DeviceContext *pImmediateContext;
+	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
+	deviceContext.platform_context=pImmediateContext;
+	oceanSimulator->updateDisplacementMap(deviceContext,0);
 	// D3D buffers
 	createSurfaceMesh();
 	createFresnelMap();
@@ -239,6 +244,7 @@ void OceanRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPl
 	
 	blend_desc.RenderTarget[0].BlendEnable = FALSE;
 	blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	SAFE_RELEASE(pImmediateContext);
 }
 
 void OceanRenderer::SetCubemapTexture(void *c)
@@ -459,50 +465,38 @@ void OceanRenderer::loadTextures()
 	//assert(g_pSRV_Perlin);
 }
 
-
-static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
-{
-	D3DXMATRIX tmp1;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXVECTOR3 cam_pos;
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
-	return cam_pos;
-}
-
 void OceanRenderer::SetMatrices(const float *v,const float *p)
 {
 }
 
-void OceanRenderer::Render(void *context,float exposure)
+void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure)
 {
 	if(skyInterface)
 		app_time=skyInterface->GetTime();
-	oceanSimulator->updateDisplacementMap((float)app_time);
+	oceanSimulator->updateDisplacementMap(deviceContext,(float)app_time);
 
-	ID3D11DeviceContext*	pContext=(ID3D11DeviceContext*)context;
-	ID3D11ShaderResourceView* displacement_map = oceanSimulator->getDisplacementMap();
-	ID3D11ShaderResourceView* gradient_map = oceanSimulator->getGradientMap();
+	ID3D11DeviceContext*	pContext			=deviceContext.asD3D11DeviceContext();
+	crossplatform::Texture* displacement_map	= oceanSimulator->getDisplacementMap();
+	crossplatform::Texture* gradient_map		= oceanSimulator->getGradientMap();
 
 	// Build rendering list
 	g_render_list.clear();
 	float ocean_extent =seaKeyframer->patch_length * (1 << g_FurthestCover);
 	QuadNode root_node ={math::float2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-	buildNodeList(root_node,seaKeyframer->patch_length,(const float *)&view,(const float *)&proj);
+	buildNodeList(root_node,seaKeyframer->patch_length,(const float *)&deviceContext.viewStruct.view,(const float *)&deviceContext.viewStruct.proj);
 
 	// Matrices
-	D3DXMATRIX matView = view;
-	D3DXMATRIX matProj = proj;
+	D3DXMATRIX matView = deviceContext.viewStruct.view;
+	D3DXMATRIX matProj = deviceContext.viewStruct.proj;
 
 	// VS & PS
 	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("ocean");
 	tech->GetPassByIndex(0)->Apply(0,pContext);
 
 	// Textures
-	setTexture(effect,"g_texDisplacement"		,displacement_map);
-	setTexture(effect,"g_texPerlin"			,g_pSRV_Perlin);
-	setTexture(effect,"g_texGradient"			,gradient_map);
+	setTexture(effect,"g_texDisplacement"		,displacement_map->AsD3D11ShaderResourceView());
+	setTexture(effect,"g_texPerlin"				,g_pSRV_Perlin);
+	setTexture(effect,"g_texGradient"			,gradient_map->AsD3D11ShaderResourceView());
 	setTexture(effect,"g_texFresnel"			,g_pSRV_Fresnel);
 	setTexture(effect,"g_texReflectCube"		,g_pSRV_ReflectCube);
 	setTexture(effect,"g_skyLossTexture"		,skyLossTexture_SRV);
@@ -599,31 +593,30 @@ void OceanRenderer::Render(void *context,float exposure)
 			pContext->DrawIndexed(render_param.num_boundary_faces * 3, render_param.boundary_start_index, 0);
 		}
 	}
-
 	// Unbind
 	unbindTextures(effect);
 
 	tech->GetPassByIndex(0)->Apply(0,pContext);
 }
 
-void OceanRenderer::RenderWireframe(void *context)
+void OceanRenderer::RenderWireframe(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext*	pContext=(ID3D11DeviceContext*)context;
-	ID3D11ShaderResourceView* displacement_map = oceanSimulator->getDisplacementMap();
+	ID3D11DeviceContext*	pContext			=deviceContext.asD3D11DeviceContext();
+	crossplatform::Texture* displacement_map	=oceanSimulator->getDisplacementMap();
 	// Build rendering list
 	g_render_list.clear();
 	float ocean_extent = seaKeyframer->patch_length * (1 << g_FurthestCover);
 	QuadNode root_node = {math::float2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-	buildNodeList(root_node,seaKeyframer->patch_length,(const float*)&view,(const float*)&proj);
+	buildNodeList(root_node,seaKeyframer->patch_length,(const float*)&deviceContext.viewStruct.view,(const float*)&deviceContext.viewStruct.proj);
 
 	// Matrices
-	D3DXMATRIX matView = view;
-	D3DXMATRIX matProj = proj;
+	D3DXMATRIX matView = deviceContext.viewStruct.view;
+	D3DXMATRIX matProj = deviceContext.viewStruct.proj;
 
 	// VS & PS
 	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("wireframe");
 	
-	setTexture(effect,"g_texDisplacement",displacement_map);
+	setTexture(effect,"g_texDisplacement",displacement_map->AsD3D11ShaderResourceView());
 	setTexture(effect,"g_texPerlin",g_pSRV_Perlin);
 
 	// IA setup
@@ -729,21 +722,21 @@ void OceanRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,i
 	int y=height-w;
 	simul::dx11::setTexture(effect,"showTexture",g_pSRV_Perlin);
 	simul::dx11::setParameter(effect,"showMultiplier",10.f);
-	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	//renderPlatform->DrawTexture(deviceContext,x,y,w,w,g_pSRV_Perlin);
 	x+=w+2;
 	static float spectrum_multiplier=10000.0f;
 	simul::dx11::setTexture(effect,"g_InputDxyz",oceanSimulator->GetSpectrum());
 	simul::dx11::setParameter(effect,"showMultiplier",spectrum_multiplier);
 	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
 	x+=w+2;
-	simul::dx11::setTexture(effect,"showTexture",oceanSimulator->getDisplacementMap());
-	simul::dx11::setParameter(effect,"showMultiplier",0.01f);
-	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	//simul::dx11::setTexture(effect,"showTexture",oceanSimulator->getDisplacementMap());
+	//simul::dx11::setParameter(effect,"showMultiplier",0.01f);
+	renderPlatform->DrawTexture(deviceContext,x,y,w,w,oceanSimulator->getDisplacementMap(),0.01f);
 	x+=w+2;
 	static float gradient_multiplier=1000.0f;
-	simul::dx11::setTexture(effect,"showTexture",oceanSimulator->getGradientMap());
-	simul::dx11::setParameter(effect,"showMultiplier",gradient_multiplier);
-	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	//simul::dx11::setTexture(effect,"showTexture",oceanSimulator->getGradientMap());
+	//simul::dx11::setParameter(effect,"showMultiplier",gradient_multiplier);
+	renderPlatform->DrawTexture(deviceContext,x,y,w,w,oceanSimulator->getDisplacementMap(),gradient_multiplier);
 	x+=w+2;
 //	simul::dx11::setParameter(effect,"showTexture",g_pSRV_Fresnel);
 	//UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));

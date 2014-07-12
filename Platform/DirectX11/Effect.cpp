@@ -14,6 +14,30 @@ using namespace simul;
 using namespace dx11;
 
 
+void PlatformStructuredBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)
+{
+	ID3DX11EffectShaderResourceVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsShaderResource();
+}
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
+{
+	if(lastContext&&mapped.pData)
+		lastContext->Unmap(buffer,0);
+	memset(&mapped,0,sizeof(mapped));
+	ID3DX11EffectShaderResourceVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsShaderResource();
+	var->SetResource(shaderResourceView);
+}
+void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &deviceContext)
+{
+}
+void PlatformStructuredBuffer::InvalidateDeviceObjects()
+{
+	if(lastContext&&mapped.pData)
+		lastContext->Unmap(buffer,0);
+	SAFE_RELEASE(unorderedAccessView);
+	SAFE_RELEASE(shaderResourceView);
+	SAFE_RELEASE(buffer);
+	size=0;
+}
 void dx11::PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t size,void *addr)
 {
 	InvalidateDeviceObjects();

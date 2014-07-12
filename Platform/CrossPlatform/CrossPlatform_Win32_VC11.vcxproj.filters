@@ -49,7 +49,9 @@
     <ClInclude Include="Layout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PixelFormat.h" />
+    <ClInclude Include="PixelFormat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">

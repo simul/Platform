@@ -29,6 +29,84 @@ namespace simul
 			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
 			void Unbind(simul::crossplatform::DeviceContext &deviceContext);
 		};
+		class PlatformStructuredBuffer:public crossplatform::PlatformStructuredBuffer
+		{
+			ID3D11Buffer						*buffer;
+			ID3D11ShaderResourceView			*shaderResourceView;
+			ID3D11UnorderedAccessView			*unorderedAccessView;
+			D3D11_MAPPED_SUBRESOURCE			mapped;
+			int size;
+			ID3D11DeviceContext					*lastContext;
+		public:
+			PlatformStructuredBuffer()
+				:size(0)
+				,buffer(0)
+				,shaderResourceView(0)
+				,unorderedAccessView(0)
+			{
+				memset(&mapped,0,sizeof(mapped));
+			}
+			virtual ~PlatformStructuredBuffer()
+			{
+				InvalidateDeviceObjects();
+			}
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int count,int unit_size,bool computable)
+			{
+				InvalidateDeviceObjects();
+				D3D11_BUFFER_DESC sbDesc;
+				memset(&sbDesc,0,sizeof(sbDesc));
+				if(computable)
+				{
+					sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_UNORDERED_ACCESS;
+					sbDesc.Usage				=D3D11_USAGE_DEFAULT;
+					sbDesc.CPUAccessFlags		=0;
+				}
+				else
+				{
+				sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE ;
+				sbDesc.Usage				=D3D11_USAGE_DYNAMIC;
+				sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
+				}
+				sbDesc.MiscFlags			=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED ;
+				sbDesc.StructureByteStride	=unit_size;
+				sbDesc.ByteWidth			=unit_size *count;
+				(renderPlatform->AsD3D11Device()->CreateBuffer( &sbDesc, NULL, &buffer ));
+
+				D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+				memset(&srv_desc,0,sizeof(srv_desc));
+				srv_desc.Format						=DXGI_FORMAT_UNKNOWN;
+				srv_desc.ViewDimension				=D3D11_SRV_DIMENSION_BUFFER;
+				srv_desc.Buffer.ElementOffset		=0;
+				srv_desc.Buffer.ElementWidth		=0;
+				srv_desc.Buffer.FirstElement		=0;
+				srv_desc.Buffer.NumElements			=size;
+				renderPlatform->AsD3D11Device()->CreateShaderResourceView(buffer, &srv_desc,&shaderResourceView);
+
+				if(computable)
+				{
+					D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+					memset(&uav_desc,0,sizeof(uav_desc));
+					uav_desc.Format						=DXGI_FORMAT_UNKNOWN;
+					uav_desc.ViewDimension				=D3D11_UAV_DIMENSION_BUFFER;
+					uav_desc.Buffer.FirstElement		=0;
+					uav_desc.Buffer.Flags				=0;
+					uav_desc.Buffer.NumElements			=size;
+					(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(buffer, &uav_desc,&unorderedAccessView));
+				}
+			}
+			void *GetBuffer(ID3D11DeviceContext *pContext)
+			{
+				lastContext=pContext;
+				if(!mapped.pData)
+					pContext->Map(buffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+				void *ptr=(void *)mapped.pData;
+				return ptr;
+			}
+			void InvalidateDeviceObjects();
+			void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex);
+			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
+			void Unbind(crossplatform::DeviceContext &deviceContext);
+		};
 		class SIMUL_DIRECTX11_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
 		{
 			int NumPasses() const;
