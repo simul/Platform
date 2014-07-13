@@ -225,9 +225,16 @@ namespace simul
 			virtual void SetParameter	(const char *name	,int value)			=0;
 			virtual void SetVector		(const char *name	,const float *vec)	=0;
 			virtual void SetMatrix		(const char *name	,const float *m)	=0;
+			/// Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass)=0;
+			/// Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,const char *pass)=0;
+			/// Call Reapply between Apply and Unapply to apply the effect of modified constant buffers etc.
+			virtual void Reapply(DeviceContext &deviceContext)=0;
+			/// Deactivate the shader.
 			virtual void Unapply(DeviceContext &deviceContext)=0;
+			/// Zero-out the textures that are set for this shader. Call before apply.
+			virtual void UnbindTextures(crossplatform::DeviceContext &deviceContext)=0;
 		};
 	}
 }

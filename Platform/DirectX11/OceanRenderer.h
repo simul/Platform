@@ -32,7 +32,6 @@ namespace simul
 			void SetLossAndInscatterTextures(crossplatform::Texture *l,crossplatform::Texture *i,crossplatform::Texture *s);
 			void RenderTextures(crossplatform::DeviceContext &deviceContext,int width,int depth);
 		protected:
-			crossplatform::RenderPlatform		*renderPlatform;
 			OceanSimulator						*oceanSimulator;
 			ID3D11Device						*m_pd3dDevice;
 			// HLSL shaders
@@ -60,8 +59,8 @@ namespace simul
 			ID3D11ShaderResourceView* skyLossTexture_SRV;
 			ID3D11ShaderResourceView* skyInscatterTexture_SRV;
 			ID3D11ShaderResourceView* skylightTexture_SRV;
-			simul::dx11::ConstantBuffer<cbShading>			shadingConstants;
-			simul::dx11::ConstantBuffer<cbChangePerCall>	changePerCallConstants;
+			crossplatform::ConstantBuffer<cbShading>		shadingConstants;
+			crossplatform::ConstantBuffer<cbChangePerCall>	changePerCallConstants;
 	
 			// create a triangle strip mesh for ocean surface.
 			void createSurfaceMesh();

@@ -134,7 +134,9 @@ namespace simul
 			void SetMatrix		(const char *name	,const float *m)	;
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass);
+			void Reapply(crossplatform::DeviceContext &deviceContext);
 			void Unapply(crossplatform::DeviceContext &deviceContext);
+			void UnbindTextures(crossplatform::DeviceContext &deviceContext);
 		};
 	}
 }

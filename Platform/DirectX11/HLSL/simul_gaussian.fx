@@ -21,7 +21,6 @@
 // Macros and constant values
 //-----------------------------------------------------------------------------
 
-
 static const uint SCAN_WARP_SIZE = 32;
 static const uint SCAN_LOG2_WARP_SIZE = 5;
 

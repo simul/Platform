@@ -838,8 +838,11 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 		HRESULT hr=S_OK;
 		D3DXMATRIX world, tmp1, tmp2;
 		D3DXMatrixIdentity(&world);
-		crossplatform::EffectTechnique *tech			=m_pDebugEffect->GetTechniqueByName(test_depth?"lines_3d_depth":"lines_3d");
-
+		crossplatform::EffectTechniqueGroup *g=m_pDebugEffect->GetTechniqueGroupByName(test_depth?"lines_3d_depth":"lines_3d");
+		camera::Frustum f=camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+			crossplatform::EffectTechnique *tech=g->GetTechniqueByIndex(0);
+		if(test_depth)
+			tech=g->GetTechniqueByName(f.reverseDepth?"depth_reverse":"depth_forward");
 		D3DXMATRIX wvp;
 		camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 		m_pDebugEffect->SetMatrix("worldViewProj",&wvp._11);
@@ -855,7 +858,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 			0
 		};
 		D3D11_SUBRESOURCE_DATA InitData;
-		ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+		ZeroMemory( &InitData, sizeof(D3D11_SUBRESOURCE_DATA) );
 		InitData.pSysMem = line_vertices;
 		InitData.SysMemPitch = sizeof(Vertext);
 		hr=AsD3D11Device()->CreateBuffer(&desc,&InitData,&vertexBuffer);

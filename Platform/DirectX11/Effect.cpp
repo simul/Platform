@@ -320,6 +320,15 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 		SIMUL_BREAK("Technique not found!")
 }
 
+void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
+{
+	if(apply_count!=1)
+		SIMUL_BREAK("Effect::Reapply can only be called after Apply and before Unapply!")
+	ID3DX11Effect *effect			=asD3DX11Effect();
+	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
+	ID3DX11EffectPass *pass			=tech->GetPassByIndex(0);
+	HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
+}
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
@@ -333,4 +342,11 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 	ID3DX11EffectPass *pass			=tech->GetPassByIndex(0);
 	HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
 	currentTechnique=NULL;
+}
+void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
+{
+	if(apply_count!=1)
+		SIMUL_BREAK("UnbindTextures can only be called after Apply and before Unapply!")
+	ID3DX11Effect *effect			=asD3DX11Effect();
+	dx11::unbindTextures(effect);
 }

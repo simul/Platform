@@ -383,13 +383,16 @@ void simul::dx11::setSamplerState(ID3DX11Effect *effect,const char *name	,ID3D11
 	var->SetSampler(0,value);
 }
 
-void simul::dx11::setTexture(ID3DX11Effect *effect,const char *name			,ID3D11ShaderResourceView * value)
+bool simul::dx11::setTexture(ID3DX11Effect *effect,const char *name			,ID3D11ShaderResourceView * value)
 {
 	if(!effect)
-		return;
+		return false;
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
 	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetResource(value);
+	if(value&&var->IsValid()!=0)
+		return true;
+	return false;
 }
 
 void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,int pass_num)
@@ -416,11 +419,14 @@ void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,
 	V_CHECK(hr);
 }
 
-void simul::dx11::setUnorderedAccessView(ID3DX11Effect *effect,const char *name	,ID3D11UnorderedAccessView * value)
+bool simul::dx11::setUnorderedAccessView(ID3DX11Effect *effect,const char *name	,ID3D11UnorderedAccessView * value)
 {
 	ID3DX11EffectUnorderedAccessViewVariable*	var	=effect->GetVariableByName(name)->AsUnorderedAccessView();
 	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetUnorderedAccessView(value);
+	if(value&&var->IsValid()!=0)
+		return true;
+	return false;
 }
 
 void simul::dx11::setStructuredBuffer(ID3DX11Effect *effect,const char *name,ID3D11ShaderResourceView * value)

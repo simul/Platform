@@ -343,9 +343,9 @@ void OceanSimulator::updateDisplacementMap(simul::crossplatform::DeviceContext &
 		//deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1, &gradient.renderTargetView, NULL);
 		// VS & PS
 		// Use the Displacement map as the texture input:
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"g_samplerDisplacementMap"	,displacement->AsD3D11ShaderResourceView());
-		effect->asD3DX11Effect()->GetTechniqueByName("gradient_folding")->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext());
+		effect->SetTexture(deviceContext,"g_samplerDisplacementMap"	,displacement);
 		// Perform draw call
+		effect->Apply(deviceContext,effect->GetTechniqueByName("gradient_folding"),0);
 		UtilityRenderer::DrawQuad(deviceContext);
 		// Unbind the shader resource (the texture):
 		simul::dx11::unbindTextures(effect->asD3DX11Effect());
@@ -353,6 +353,8 @@ void OceanSimulator::updateDisplacementMap(simul::crossplatform::DeviceContext &
 		effect->GetTechniqueByName("gradient_folding")->asD3DX11EffectTechnique()->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext());
 		// Reset the renderTarget to what it was before:
 		gradient->deactivateRenderTarget();
+		effect->UnbindTextures(deviceContext);
+		effect->Unapply(deviceContext);
 	}
 	deviceContext.asD3D11DeviceContext()->RSSetViewports(1, &old_viewport);
 	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1, &old_target, old_depth);

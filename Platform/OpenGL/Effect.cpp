@@ -53,7 +53,7 @@ GL_ERROR_CHECK
 	bool any=false;
 	for(crossplatform::TechniqueMap::iterator i=effect->techniques.begin();i!=effect->techniques.end();i++)
 	{
-		const char *techname=i->first.c_str();
+//		const char *techname=i->first.c_str();
 		crossplatform::EffectTechnique *tech=i->second;
 		if(!tech)
 			break;
@@ -407,9 +407,17 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 	glUseProgram(prog);
 	GL_ERROR_CHECK
 	current_texture_number	=0;
+	current_pass	=prog;
 	EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 	if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
 		glEffectTechnique->passStates[currentPass]->Apply();
+}
+void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
+{
+	if(apply_count!=1)
+		SIMUL_BREAK("Effect::Reapply can only be called after Apply and before Unapply!")
+	GLuint prog=current_pass;
+	glUseProgram(prog);
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &)
@@ -423,4 +431,11 @@ void Effect::Unapply(crossplatform::DeviceContext &)
 	apply_count--;
 	current_texture_number	=0;
 GL_ERROR_CHECK
+}
+
+void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
+{
+	if(apply_count!=1)
+		SIMUL_BREAK("UnbindTextures can only be called after Apply and before Unapply!")
+	// Here we should be clearing out all the textures that were set to use the shader.
 }

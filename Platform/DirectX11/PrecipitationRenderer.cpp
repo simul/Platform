@@ -103,6 +103,7 @@ void PrecipitationRenderer::RecompileShaders()
 	{
 		pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST );
 		pImmediateContext->IASetInputLayout(m_pVtxDecl);
+		vertexBufferSwap.apply(pImmediateContext,0);
 		vertexBuffer.setAsStreamOutTarget(pImmediateContext);
 		effect->Apply(deviceContext,effect->GetTechniqueByName("init_particles"),0);
 		pImmediateContext->Draw(125000,0);

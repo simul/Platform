@@ -19,6 +19,20 @@ DepthStencilState TestDepth
 #endif
 };
 
+DepthStencilState TestReverseDepth
+{
+	DepthEnable = TRUE;
+	DepthWriteMask = ZERO;
+	DepthFunc = GREATER_EQUAL;
+};
+
+DepthStencilState TestForwardDepth
+{
+	DepthEnable = TRUE;
+	DepthWriteMask = ZERO;
+	DepthFunc = LESS_EQUAL;
+};
+
 DepthStencilState WriteDepth
 {
 	DepthEnable = TRUE;
@@ -39,7 +53,6 @@ DepthStencilState ForwardDepth
 	DepthWriteMask = ALL;
 	DepthFunc = LESS_EQUAL;
 };
-
 
 DepthStencilState EnableDepth
 {

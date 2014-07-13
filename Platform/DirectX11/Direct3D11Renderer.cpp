@@ -266,7 +266,7 @@ ERRNO_CHECK
 			simulTerrainRenderer->Render(deviceContext,1.f);
 		if(oceanRenderer&&ShowWater)
 		{
-			oceanRenderer->Render(deviceContext,1.f);
+			//oceanRenderer->Render(deviceContext,1.f);
 		}
 		cubemapFramebuffer.DeactivateDepth(deviceContext.platform_context);
 		if(simulWeatherRenderer)
@@ -350,7 +350,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 		if(oceanRenderer->GetShowWireframes())
 			oceanRenderer->RenderWireframe(deviceContext);
 	}
-		simul::sky::float4 depthViewportXYWH(0.0f,0.0f,1.0f,1.0f);
+	simul::sky::float4 depthViewportXYWH(0.0f,0.0f,1.0f,1.0f);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RenderCelestialBackground(deviceContext,exposure);
 	if(simulHDRRenderer&&UseHdrPostprocessor)
@@ -409,7 +409,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	{
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->ActivateDepth(deviceContext);
-		crossplatform::DrawGrid(deviceContext);
+		crossplatform::DrawGrid(deviceContext,100.f);
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->DeactivateDepth(pContext);
 	}

@@ -368,7 +368,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			rain_texc.xy				+=rain_texc.z*rainTangent;
 			float rain_lookup			=texture_wrap_lod(rainMapTexture,rain_texc.xy*inverseScales.xy,0).x;
 			vec4 streak					=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
-			density.z					=saturate((0.6+.4*noiseval.w)*density.z
+			density.z					=saturate(
+											//(0.6+.4*noiseval.w)*	
+											density.z
 											+layer.layerFade*rainEffect*rain_lookup
 											*saturate((rainRadius-length(world_pos.xy-rainCentre.xy))*0.0003)
 											*saturate(5.0-10*cloudTexCoords.z)

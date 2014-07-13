@@ -215,10 +215,10 @@ namespace simul
 		// with Effect variable pointers, but this is a good way to write new render code quickly
 		void SIMUL_DIRECTX11_EXPORT setDepthState			(ID3DX11Effect *effect	,const char *name	,ID3D11DepthStencilState * value);
 		void SIMUL_DIRECTX11_EXPORT setSamplerState			(ID3DX11Effect *effect	,const char *name	,ID3D11SamplerState * value);
-		void SIMUL_DIRECTX11_EXPORT setTexture				(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
+		bool SIMUL_DIRECTX11_EXPORT setTexture				(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
 		void SIMUL_DIRECTX11_EXPORT applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,int pass=0);
 		void SIMUL_DIRECTX11_EXPORT applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,const char *pass);
-		void SIMUL_DIRECTX11_EXPORT setUnorderedAccessView	(ID3DX11Effect *effect	,const char *name	,ID3D11UnorderedAccessView * value);
+		bool SIMUL_DIRECTX11_EXPORT setUnorderedAccessView	(ID3DX11Effect *effect	,const char *name	,ID3D11UnorderedAccessView * value);
 		void SIMUL_DIRECTX11_EXPORT setTextureArray			(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value);
 		void SIMUL_DIRECTX11_EXPORT setStructuredBuffer		(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
 		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float value);

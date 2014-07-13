@@ -116,7 +116,8 @@ namespace simul
 		/// Draw a horizontal grid, centred around the camera, at z=0.
 		///
 		/// \param [in,out]	deviceContext	Context for the device.
-		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext);
+		/// \param [in]	square_size	Spacing between lines - in whatever units the renderer is working in.
+		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext,float square_size);
 	}
 }
 #endif

@@ -177,29 +177,47 @@ float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 	return float4(result.rgb,1.0);
 }
 
-technique11 lines_3d_depth
+fxgroup lines_3d_depth
 {
-    pass lines3d
+	technique11 depth_forward
     {
-		SetRasterizerState( wireframeRasterizer );
-		SetDepthStencilState( TestDepth, 0 );
-		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,DebugVS()));
-		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+		pass lines3d
+		{
+			SetRasterizerState( wireframeRasterizer );
+			SetDepthStencilState( TestForwardDepth, 0 );
+			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(CompileShader(vs_4_0,DebugVS()));
+			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+		}
+    }
+    technique11 depth_reverse
+    {
+		pass lines3d
+		{
+			SetRasterizerState( wireframeRasterizer );
+			SetDepthStencilState( TestReverseDepth, 0 );
+			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(CompileShader(vs_4_0,DebugVS()));
+			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+		}
     }
 }
-technique11 lines_3d
+fxgroup lines_3d
 {
-    pass lines3d
-    {
-		SetRasterizerState( wireframeRasterizer );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,DebugVS()));
-		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
-    }
+	technique11 lines_3d
+	{
+		pass lines3d
+		{
+			SetRasterizerState( wireframeRasterizer );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(CompileShader(vs_4_0,DebugVS()));
+			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+		}
+	}
 }
 technique11 lines_2d
 {
