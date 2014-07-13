@@ -769,6 +769,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	skylightTextureV->SetResource((ID3D11ShaderResourceView*)NULL);
 	lightTableTextureV->SetResource((ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
+	effect->SetTexture(deviceContext,"rainMapTexture"		,NULL);
 // To prevent DX11 warning, we re-apply the pass with the textures unbound:
 	effect->Unapply(deviceContext);
 	ERRNO_CHECK

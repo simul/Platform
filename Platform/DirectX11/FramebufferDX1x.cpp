@@ -33,17 +33,17 @@ using namespace dx11;
 
 Framebuffer::Framebuffer(int w,int h) :
 	BaseFramebuffer(w,h)
-	,m_pd3dDevice(NULL),
-	buffer_depth_texture(NULL),
+	,m_pd3dDevice(NULL)
+	,buffer_depth_texture(NULL)
 //	m_pHDRRenderTarget(NULL),
-	m_pBufferDepthSurface(NULL),
-	m_pOldRenderTarget(NULL),
-	m_pOldDepthSurface(NULL)
+	,m_pBufferDepthSurface(NULL)
+	,m_pOldRenderTarget(NULL)
+	,m_pOldDepthSurface(NULL)
+	,num_OldViewports(0)
 	,stagingTexture(NULL)
 	,timing(0.f)
 	,target_format(DXGI_FORMAT_R32G32B32A32_FLOAT)
 	,depth_format(DXGI_FORMAT_UNKNOWN) //The usual case is for the user to supply depth look-up textures, which is all we need for the majority of cases... So let's avoid needless construction of depth buffers unless otherwise indicated with a SetDepthFormat(...)
-	,num_v(0)
 	,GenerateMips(false)
 {
 }
@@ -374,9 +374,9 @@ void Framebuffer::ActivateViewport(crossplatform::DeviceContext &deviceContext, 
 void Framebuffer::SaveOldRTs(void *context)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	pContext->RSGetViewports(&num_v,NULL);
-	if(num_v>0)
-		pContext->RSGetViewports(&num_v,m_OldViewports);
+	pContext->RSGetViewports(&num_OldViewports,NULL);
+	if(num_OldViewports>0)
+		pContext->RSGetViewports(&num_OldViewports,m_OldViewports);
 	m_pOldRenderTarget	=NULL;
 	m_pOldDepthSurface	=NULL;
 	pContext->OMGetRenderTargets(	1,
@@ -440,9 +440,9 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 
 	if(m_pOldRenderTarget==NULL&&m_pOldDepthSurface==NULL)
 	{
-		pContext->RSGetViewports(&num_v,NULL);
-		if(num_v>0)
-			pContext->RSGetViewports(&num_v,m_OldViewports);
+		pContext->RSGetViewports(&num_OldViewports,NULL);
+		if(num_OldViewports>0)
+			pContext->RSGetViewports(&num_OldViewports,m_OldViewports);
 		pContext->OMGetRenderTargets(	1,
 										&m_pOldRenderTarget,
 										&m_pOldDepthSurface
@@ -488,8 +488,8 @@ void Framebuffer::Deactivate(void *context)
 	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
-	if(num_v>0)
-		pContext->RSSetViewports(num_v,m_OldViewports);
+	if(num_OldViewports>0)
+		pContext->RSSetViewports(num_OldViewports,m_OldViewports);
 	if(GenerateMips)
 		pContext->GenerateMips(buffer_texture.shaderResourceView);
 	colour_active=false;

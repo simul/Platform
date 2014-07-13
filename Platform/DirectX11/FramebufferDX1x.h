@@ -95,7 +95,7 @@ namespace simul
 			ID3D1xRenderTargetView*				m_pOldRenderTarget;
 			ID3D1xDepthStencilView*				m_pOldDepthSurface;
 			D3D11_VIEWPORT						m_OldViewports[16];
-
+			unsigned							num_OldViewports;
 			//! The texture the scene is rendered to.
 		public:
 			dx11::Texture						buffer_texture;
@@ -107,7 +107,6 @@ namespace simul
 			bool CreateBuffers(crossplatform::RenderPlatform *renderPlatform);
 			ID3D1xRenderTargetView* MakeRenderTarget(const ID3D1xTexture2D* pTexture);
 			float timing;
-			unsigned int num_v;
 			bool GenerateMips;
 			void SaveOldRTs(void *context);
 			void SetViewport(void *context,float X,float Y,float W,float H,float Z,float D);

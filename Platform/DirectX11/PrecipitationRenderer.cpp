@@ -187,6 +187,8 @@ void PrecipitationRenderer::InvalidateDeviceObjects()
 	cubemap_SRV=NULL;
 	vertexBuffer.release();
 	vertexBufferSwap.release();
+		splashBuffer.release();
+		splashBufferSwap.release();
 	rainArrayTexture.release();
 	SAFE_DELETE(effect);
 	SAFE_RELEASE(m_pVtxDecl);

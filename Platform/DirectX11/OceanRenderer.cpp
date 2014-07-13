@@ -498,7 +498,7 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	setTexture(effect,"g_texPerlin"				,g_pSRV_Perlin);
 	setTexture(effect,"g_texGradient"			,gradient_map->AsD3D11ShaderResourceView());
 	setTexture(effect,"g_texFresnel"			,g_pSRV_Fresnel);
-	setTexture(effect,"g_texReflectCube"		,g_pSRV_ReflectCube);
+	setTexture(effect,"g_texReflectCube"		,NULL);//g_pSRV_ReflectCube);
 	setTexture(effect,"g_skyLossTexture"		,skyLossTexture_SRV);
 	setTexture(effect,"g_skyInscatterTexture"	,skyInscatterTexture_SRV);
 
@@ -595,6 +595,13 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	}
 	// Unbind
 	unbindTextures(effect);
+	/*setTexture(effect,"g_texDisplacement"		,NULL);
+	setTexture(effect,"g_texPerlin"				,NULL);
+	setTexture(effect,"g_texGradient"			,NULL);
+	setTexture(effect,"g_texFresnel"			,NULL);
+	setTexture(effect,"g_texReflectCube"		,NULL);
+	setTexture(effect,"g_skyLossTexture"		,NULL);
+	setTexture(effect,"g_skyInscatterTexture"	,NULL);*/
 
 	tech->GetPassByIndex(0)->Apply(0,pContext);
 }

@@ -137,7 +137,7 @@ void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char
 				groups[gdesc.Name]=G;
 			else
 				groups[""]=G;// The ungrouped techniques!
-			for(int j=0;j<gdesc.Techniques;j++)
+			for(int j=0;j<(int)gdesc.Techniques;j++)
 			{
 				ID3DX11EffectTechnique *t	=g->GetTechniqueByIndex(j);
 				D3DX11_TECHNIQUE_DESC tdesc;

@@ -317,38 +317,43 @@ void OceanSimulator::updateDisplacementMap(simul::crossplatform::DeviceContext &
 	D3D11_VIEWPORT new_vp={0,0,(float)m_param->dmap_dim,(float)m_param->dmap_dim,0.0f,1.0f};
 	deviceContext.asD3D11DeviceContext()->RSSetViewports(1, &new_vp);
 	// Set the RenderTarget as the displacement map:
-	displacement->activateRenderTarget(deviceContext);
-//	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1, &displacement.renderTargetView, NULL);
-	// Assign the constant-buffers to the pixel shader:
-	immutableConstants		.Apply(deviceContext);
-	changePerFrameConstants	.Apply(deviceContext);
-	// Assign the Dxyz source as a resource for the pixel shader:
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz"				,dxyz.shaderResourceView);
-	// Assign the shaders:
-	effect->Apply(deviceContext,effect->GetTechniqueByName("update_displacement"),0);
-	UtilityRenderer::DrawQuad(deviceContext);
-	// Unbind the shader resource (i.e. the input texture map). Must do this or we get a DX warning when we
-	// try to write to the texture again:
-	simul::dx11::unbindTextures(effect->asD3DX11Effect());
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz"				,NULL);
-	effect->Unapply(deviceContext);
-	// Now generate the gradient map.
-	// Set the gradient texture as the RenderTarget:
-	displacement->deactivateRenderTarget();
-	gradient->activateRenderTarget(deviceContext);
-	//deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1, &gradient.renderTargetView, NULL);
-	// VS & PS
-	// Use the Displacement map as the texture input:
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_samplerDisplacementMap"	,displacement->AsD3D11ShaderResourceView());
-	effect->asD3DX11Effect()->GetTechniqueByName("gradient_folding")->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext());
-	// Perform draw call
-	UtilityRenderer::DrawQuad(deviceContext);
-	// Unbind the shader resource (the texture):
-	simul::dx11::unbindTextures(effect->asD3DX11Effect());
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz"				,(ID3D11ShaderResourceView*)NULL);
-	effect->GetTechniqueByName("gradient_folding")->asD3DX11EffectTechnique()->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext());
-	// Reset the renderTarget to what it was before:
-	gradient->deactivateRenderTarget();
+	{
+		displacement->activateRenderTarget(deviceContext);
+	//	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1, &displacement.renderTargetView, NULL);
+		// Assign the constant-buffers to the pixel shader:
+		immutableConstants		.Apply(deviceContext);
+		changePerFrameConstants	.Apply(deviceContext);
+		// Assign the Dxyz source as a resource for the pixel shader:
+		simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz"				,dxyz.shaderResourceView);
+		// Assign the shaders:
+		effect->Apply(deviceContext,effect->GetTechniqueByName("update_displacement"),0);
+		UtilityRenderer::DrawQuad(deviceContext);
+		// Unbind the shader resource (i.e. the input texture map). Must do this or we get a DX warning when we
+		// try to write to the texture again:
+		simul::dx11::unbindTextures(effect->asD3DX11Effect());
+		simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz"				,NULL);
+		effect->Unapply(deviceContext);
+		unbindTextures(effect->asD3DX11Effect());
+		// Now generate the gradient map.
+		// Set the gradient texture as the RenderTarget:
+		displacement->deactivateRenderTarget();
+	}
+	{
+		gradient->activateRenderTarget(deviceContext);
+		//deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1, &gradient.renderTargetView, NULL);
+		// VS & PS
+		// Use the Displacement map as the texture input:
+		simul::dx11::setTexture(effect->asD3DX11Effect(),"g_samplerDisplacementMap"	,displacement->AsD3D11ShaderResourceView());
+		effect->asD3DX11Effect()->GetTechniqueByName("gradient_folding")->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext());
+		// Perform draw call
+		UtilityRenderer::DrawQuad(deviceContext);
+		// Unbind the shader resource (the texture):
+		simul::dx11::unbindTextures(effect->asD3DX11Effect());
+		simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz"				,(ID3D11ShaderResourceView*)NULL);
+		effect->GetTechniqueByName("gradient_folding")->asD3DX11EffectTechnique()->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext());
+		// Reset the renderTarget to what it was before:
+		gradient->deactivateRenderTarget();
+	}
 	deviceContext.asD3D11DeviceContext()->RSSetViewports(1, &old_viewport);
 	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1, &old_target, old_depth);
 	SAFE_RELEASE(old_target);

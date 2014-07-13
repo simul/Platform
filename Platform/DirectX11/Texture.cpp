@@ -2,6 +2,7 @@
 #include "Texture.h"
 #include "CreateEffectDX1x.h"
 #include "Utilities.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 
@@ -21,6 +22,7 @@ dx11::Texture::Texture(ID3D11Device* d)
 	,last_context(NULL)
 	,m_pOldRenderTarget(NULL)
 	,m_pOldDepthSurface(NULL)
+	,num_OldViewports(0)
 {
 	memset(&mapped,0,sizeof(mapped));
 }
@@ -455,15 +457,15 @@ void dx11::Texture::unmap()
 }
 void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext)
 {
-
 	if(!deviceContext.asD3D11DeviceContext())
 		return;
 	last_context=deviceContext.asD3D11DeviceContext();
 	{
-		uint num_v=0;
-		last_context->RSGetViewports(&num_v,NULL);
-		if(num_v>0)
-			last_context->RSGetViewports(&num_v,m_OldViewports);
+		num_OldViewports=0;
+		last_context->RSGetViewports(&num_OldViewports,NULL);
+		SIMUL_ASSERT(num_OldViewports>=0&&num_OldViewports<=16)
+		if(num_OldViewports>0)
+			last_context->RSGetViewports(&num_OldViewports,m_OldViewports);
 		SAFE_RELEASE(m_pOldRenderTarget);
 		SAFE_RELEASE(m_pOldDepthSurface);
 		last_context->OMGetRenderTargets(	1,
@@ -494,7 +496,7 @@ void dx11::Texture::deactivateRenderTarget()
 {
 	if(!last_context)
 		return;
-	last_context->OMSetRenderTargets(	1,
+	last_context->OMSetRenderTargets(	num_OldViewports,
 										&m_pOldRenderTarget,
 										m_pOldDepthSurface
 										);
