@@ -63,11 +63,11 @@ namespace simul
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			virtual void ApplyShaderPass	(DeviceContext &deviceContext,Effect *,EffectTechnique *,int)=0;
 			virtual void Draw				(DeviceContext &deviceContext,int num_verts,int start_vert)=0;
-			virtual void DrawMarker			(void *context,const double *matrix)			=0;
-			virtual void DrawLine			(void *context,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)=0;
-			virtual void DrawCrossHair		(void *context,const double *pGlobalPosition)	=0;
-			virtual void DrawCamera			(void *context,const double *pGlobalPosition, double pRoll)=0;
-			virtual void DrawLineLoop		(void *context,const double *mat,int num,const double *vertexArray,const float colr[4])=0;
+			virtual void DrawMarker			(DeviceContext &deviceContext,const double *matrix)			=0;
+			virtual void DrawLine			(DeviceContext &deviceContext,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)=0;
+			virtual void DrawCrossHair		(DeviceContext &deviceContext,const double *pGlobalPosition)	=0;
+			virtual void DrawCamera			(DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)=0;
+			virtual void DrawLineLoop		(DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4])=0;
 
 			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f)=0;
 			virtual void DrawDepth			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex)=0;
@@ -79,7 +79,7 @@ namespace simul
 			virtual void DrawLines			(DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false)		=0;
 			virtual void Draw2dLines		(DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)		=0;
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false)		=0;
-			virtual void PrintAt3dPos		(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0)		=0;
+			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0)		=0;
 			virtual void					SetModelMatrix					(crossplatform::DeviceContext &deviceContext,const double *mat)	=0;
 			virtual void					ApplyDefaultMaterial			()	=0;
 			/// Create a platform-specific material instance.

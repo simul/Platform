@@ -121,7 +121,7 @@ void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext
 	pass;
 }
 		
-void RenderPlatform::DrawMarker(void *,const double *matrix)
+void RenderPlatform::DrawMarker(crossplatform::DeviceContext &,const double *matrix)
 {
     glColor3f(0.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -164,7 +164,7 @@ void RenderPlatform::DrawMarker(void *,const double *matrix)
     glPopMatrix();
 }
 
-void RenderPlatform::DrawLine(void *,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)
+void RenderPlatform::DrawLine(crossplatform::DeviceContext &,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)
 {
     glColor3f(colour[0],colour[1],colour[2]);
     glLineWidth(width);
@@ -177,7 +177,7 @@ void RenderPlatform::DrawLine(void *,const double *pGlobalBasePosition, const do
     glEnd();
 }
 
-void RenderPlatform::DrawCrossHair(void *,const double *pGlobalPosition)
+void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &,const double *pGlobalPosition)
 {
     glColor3f(1.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -215,7 +215,7 @@ void RenderPlatform::DrawCrossHair(void *,const double *pGlobalPosition)
     glPopMatrix();
 }
 
-void RenderPlatform::DrawCamera(void *,const double *pGlobalPosition, double pRoll)
+void RenderPlatform::DrawCamera(crossplatform::DeviceContext &,const double *pGlobalPosition, double pRoll)
 {
     glColor3d(1.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -261,7 +261,7 @@ void RenderPlatform::DrawCamera(void *,const double *pGlobalPosition, double pRo
     glPopMatrix();
 }
 
-void RenderPlatform::DrawLineLoop(void *,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
+void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {
     glPushMatrix();
     glMultMatrixd((const double*)mat);
@@ -610,12 +610,12 @@ GL_ERROR_CHECK
 	}
 }
 
-void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 }
 
-void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &)
 {
 	glPopAttrib();
 }
@@ -656,7 +656,7 @@ void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,Vertext *lines,
 	glPopAttrib();
 }
 
-void RenderPlatform::PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx,int offsety)
+void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
 	::PrintAt3dPos(p,text,colr,offsetx,offsety);
 }

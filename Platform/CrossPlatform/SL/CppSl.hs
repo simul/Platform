@@ -302,6 +302,35 @@
 			z=v[2];
 		}
 	};
+	//! Very simple 3 vector of doubles.
+	struct vec3d
+	{
+		union
+		{
+			double v[3];
+			struct
+			{
+				double	x, y, z;
+			};
+			struct
+			{
+				double	r, g, b;
+			};
+		};
+		operator double *()
+		{
+			return v;
+		}
+		operator const double *()
+		{
+			return v;
+		}
+		void operator=(const double *u)
+		{
+			for(int i=0;i<3;i++)
+				v[i]=u[i];
+		}
+	};
 	//! Very simple 4x4 matrix of doubles.
 	struct mat4d
 	{

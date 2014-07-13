@@ -340,7 +340,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		float layerFade					=layer.layerFade;
 		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
-			vec3 noiseval				=vec3(0,0,0);
+			vec4 noiseval				=vec4(0,0,0,0);
 			if(noise)
 			{
 				float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(cloudTexCoords.z));
@@ -350,7 +350,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 					float mult			=0.5;
 					for(int j=0;j<4;j++)
 					{
-						noiseval		+=(texture_wrap_lod(noiseTexture3D,noise_texc,0).xyz)*mult;
+						noiseval		+=(texture_wrap_lod(noiseTexture3D,noise_texc,0).xyzw)*mult;
 						noise_texc		*=2.0;
 						mult			*=noise3DPersistence;
 					}
@@ -359,16 +359,16 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				else
 				{
 					vec2 noise_texc		=noise_texc_0*layerWorldDist+layer.noiseOffset;
-					noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
+					noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyzw;
 				}
 			}
-			density						=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
+			density						=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval.xyz,fractalScale,cloud_interp);
 			// The rain fall angle is used:
 			vec3 rain_texc				=cloudWorldOffset;
 			rain_texc.xy				+=rain_texc.z*rainTangent;
 			float rain_lookup			=texture_wrap_lod(rainMapTexture,rain_texc.xy*inverseScales.xy,0).x;
 			vec4 streak					=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
-			density.z					=saturate(density.z
+			density.z					=saturate((0.4+.6*noiseval.w)*density.z
 											+layer.layerFade*rainEffect*rain_lookup
 											*saturate((rainRadius-length(world_pos.xy-rainCentre.xy))*0.0003)
 											*saturate(5.0-10*cloudTexCoords.z)

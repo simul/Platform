@@ -58,11 +58,11 @@ namespace simul
 			void ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
 			
 			void Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
-			void DrawMarker		(void *context,const double *matrix);
-			void DrawLine		(void *context,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width);
-			void DrawCrossHair	(void *context,const double *pGlobalPosition);
-			void DrawCamera		(void *context,const double *pGlobalPosition, double pRoll);
-			void DrawLineLoop	(void *context,const double *mat,int num,const double *vertexArray,const float colr[4]);
+			void DrawMarker		(crossplatform::DeviceContext &deviceContext,const double *matrix);
+			void DrawLine		(crossplatform::DeviceContext &deviceContext,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width);
+			void DrawCrossHair	(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition);
+			void DrawCamera		(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll);
+			void DrawLineLoop	(crossplatform::DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4]);
 			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f);
 			void DrawDepth		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex);
 			void DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique);
@@ -72,7 +72,7 @@ namespace simul
 			void DrawLines		(crossplatform::DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false);
 			void Draw2dLines	(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip);
 			void DrawCircle		(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false);
-			void PrintAt3dPos	(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+			void PrintAt3dPos	(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 
 			void ApplyDefaultMaterial();
 			void SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *mat);

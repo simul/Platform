@@ -262,7 +262,7 @@ void RenderPlatform::Draw			(crossplatform::DeviceContext &deviceContext,int num
 	pContext->Draw(num_verts,start_vert);
 }
 
-void RenderPlatform::DrawMarker(void *context,const double *matrix)
+void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,const double *matrix)
 {
  /*   glColor3f(0.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -305,7 +305,7 @@ void RenderPlatform::DrawMarker(void *context,const double *matrix)
     glPopMatrix();*/
 }
 
-void RenderPlatform::DrawLine(void *context,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)
+void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)
 {
 /*    glColor3f(colour[0],colour[1],colour[2]);
     glLineWidth(width);
@@ -318,7 +318,7 @@ void RenderPlatform::DrawLine(void *context,const double *pGlobalBasePosition, c
     glEnd();*/
 }
 
-void RenderPlatform::DrawCrossHair(void *context,const double *pGlobalPosition)
+void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition)
 {
 /*    glColor3f(1.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -356,7 +356,7 @@ void RenderPlatform::DrawCrossHair(void *context,const double *pGlobalPosition)
     glPopMatrix();*/
 }
 
-void RenderPlatform::DrawCamera(void *context,const double *pGlobalPosition, double pRoll)
+void RenderPlatform::DrawCamera(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)
 {
  /*   glColor3d(1.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -402,7 +402,7 @@ void RenderPlatform::DrawCamera(void *context,const double *pGlobalPosition, dou
     glPopMatrix();*/
 }
 
-void RenderPlatform::DrawLineLoop(void *context,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
+void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &deviceContext,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {
 /*    glPushMatrix();
     glMultMatrixd((const double*)mat);
@@ -1011,7 +1011,7 @@ void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,cons
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
-void RenderPlatform::PrintAt3dPos(void *context,const float *p,const char *text,const float* colr,int offsetx,int offsety)
+void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
 	//renderPlatform->PrintAt3dPos((ID3D11DeviceContext *)context,p,text,colr,offsetx,offsety);
 }

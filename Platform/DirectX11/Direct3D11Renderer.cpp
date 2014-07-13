@@ -690,6 +690,10 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 {
 	if(!m_pd3dDevice)
 		return;
+#ifdef SIMUL_USE_SCENE
+	if(sceneRenderer)
+		sceneRenderer->InvalidateDeviceObjects();
+#endif
 	SAFE_RELEASE(mainRenderTarget);
 	SAFE_RELEASE(mainDepthSurface);
 	std::cout<<"Direct3D11Renderer::OnD3D11LostDevice"<<std::endl;
@@ -705,10 +709,6 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 		simulTerrainRenderer->InvalidateDeviceObjects();
 	if(oceanRenderer)
 		oceanRenderer->InvalidateDeviceObjects();
-#ifdef SIMUL_USE_SCENE
-	if(sceneRenderer)
-		sceneRenderer->InvalidateDeviceObjects();
-#endif
 	viewManager.Clear();
 	cubemapFramebuffer.InvalidateDeviceObjects();
 	SAFE_RELEASE(lightProbesEffect);
