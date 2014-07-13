@@ -10,8 +10,7 @@ using namespace dx11;
 
 CubemapFramebuffer::CubemapFramebuffer()
 	:bands(4)
-	,m_pCubeEnvMap(NULL)
-	,m_pCubeEnvMapSRV(NULL)
+	,texture(NULL)
 	,Width(0)
 	,Height(0)
 	,current_face(0)
@@ -58,6 +57,8 @@ void CubemapFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 	}
 	HRESULT hr=S_OK;
 	pd3dDevice=renderPlatform->AsD3D11Device();
+	SAFE_DELETE(texture);
+	texture=renderPlatform->CreateTexture();
 	// The table of coefficients.
 	int s=(bands+1);
 	if(s<4)
@@ -111,8 +112,9 @@ void CubemapFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 	tex2dDesc.BindFlags =D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	tex2dDesc.MiscFlags =D3D11_RESOURCE_MISC_GENERATE_MIPS | D3D11_RESOURCE_MISC_TEXTURECUBE;
 	tex2dDesc.MipLevels = MIPLEVELS;
- 
-	V_CHECK(pd3dDevice->CreateTexture2D(&tex2dDesc,NULL,&m_pCubeEnvMap));
+ dx11::Texture *t=(dx11::Texture *)texture;
+ ID3D11Texture2D *tex2d=(ID3D11Texture2D*)t->texture;
+	V_CHECK(pd3dDevice->CreateTexture2D(&tex2dDesc,NULL,&tex2d));
 	// Create the 6-face render target view
 	D3D1x_RENDER_TARGET_VIEW_DESC DescRT;
 	DescRT.Format = tex2dDesc.Format;
@@ -125,7 +127,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 	{
 		DescRT.Texture2DArray.FirstArraySlice = i;
 		DescRT.Texture2DArray.ArraySize = 1;
-		V_CHECK(pd3dDevice->CreateRenderTargetView(m_pCubeEnvMap, &DescRT, &(m_pCubeEnvMapRTV[i])));
+		V_CHECK(pd3dDevice->CreateRenderTargetView(tex2d, &DescRT, &(m_pCubeEnvMapRTV[i])));
 	}
 	// Create the shader resource view for the cubic env map
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
@@ -135,7 +137,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 	SRVDesc.TextureCube.MipLevels = MIPLEVELS;
 	SRVDesc.TextureCube.MostDetailedMip = 0;
 	 
-	V_CHECK( pd3dDevice->CreateShaderResourceView(m_pCubeEnvMap, &SRVDesc, &m_pCubeEnvMapSRV ));
+	V_CHECK( pd3dDevice->CreateShaderResourceView(tex2d, &SRVDesc, &t->shaderResourceView ));
 	
 	// A single face depth texture:
 
@@ -162,7 +164,7 @@ ID3D11Texture2D* makeStagingTexture(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT t
 	tex2dDesc.BindFlags				= 0;
 	tex2dDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_READ| D3D11_CPU_ACCESS_WRITE;
 	tex2dDesc.MiscFlags				=D3D11_RESOURCE_MISC_TEXTURECUBE;
-	ID3D11Texture2D* tex		=NULL;
+	ID3D11Texture2D* tex			=NULL;
 	pd3dDevice->CreateTexture2D(&tex2dDesc,NULL,&tex);
 	return tex;
 }
@@ -170,13 +172,12 @@ ID3D11Texture2D* makeStagingTexture(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT t
 void CubemapFramebuffer::InvalidateDeviceObjects()
 {
 	sphericalHarmonicsConstants.InvalidateDeviceObjects();
-	SAFE_RELEASE(m_pCubeEnvMap);
+	SAFE_DELETE(texture);
 	for(int i=0;i<6;i++)
 	{
 		SAFE_DELETE(m_pCubeEnvDepthMap[i]);
 		SAFE_RELEASE(m_pCubeEnvMapRTV[i]);
 	}
-	SAFE_RELEASE(m_pCubeEnvMapSRV);
 	sphericalHarmonics.release();
 	SAFE_RELEASE(sphericalHarmonicsEffect);
 	sphericalSamples.release();
@@ -199,8 +200,10 @@ ID3D11Texture2D *CubemapFramebuffer::GetCopy(void *context)
 	sourceRegion.bottom = Height;
 	sourceRegion.front = 0;
 	sourceRegion.back = 1;
+ dx11::Texture *t=(dx11::Texture *)texture;
+ ID3D11Texture2D *tex2d=(ID3D11Texture2D*)t->texture;
 	for(int i=0;i<6;i++)
-		pContext->CopySubresourceRegion(stagingTexture,i, 0, 0, 0, m_pCubeEnvMap,i, &sourceRegion);
+		pContext->CopySubresourceRegion(stagingTexture,i, 0, 0, 0, tex2d,i, &sourceRegion);
 	return stagingTexture;
 }
 
@@ -246,7 +249,7 @@ void CubemapFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	}
 
 	ID3DX11EffectTechnique *tech		=sphericalHarmonicsEffect->GetTechniqueByName("encode");
-	simul::dx11::setTexture				(sphericalHarmonicsEffect,"cubemapTexture"	,m_pCubeEnvMapSRV);
+	simul::dx11::setTexture				(sphericalHarmonicsEffect,"cubemapTexture"	,texture->AsD3D11ShaderResourceView());
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"samplesBuffer"	,sphericalSamples.shaderResourceView);
 	
 	static bool sh_by_samples=false;

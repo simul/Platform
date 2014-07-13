@@ -625,9 +625,9 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &,int num_verts,int start
 	glDrawArrays(GL_POINTS, start_vert, num_verts); 
 }
 
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &,Vertext *lines,int vertex_count,bool strip)
+void RenderPlatform::DrawLines(crossplatform::DeviceContext &,Vertext *lines,int vertex_count,bool strip,bool test_depth)
 {
-	::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
+	::DrawLines((VertexXyzRgba*)lines,vertex_count,strip,test_depth);
 }
 
 void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,Vertext *lines,int vertex_count,bool strip)

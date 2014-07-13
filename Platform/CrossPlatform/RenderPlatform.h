@@ -76,7 +76,7 @@ namespace simul
 			virtual void DrawQuad			(DeviceContext &deviceContext)=0;
 
 			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text)							=0;
-			virtual void DrawLines			(DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false)		=0;
+			virtual void DrawLines			(DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false,bool test_depth=false)		=0;
 			virtual void Draw2dLines		(DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)		=0;
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false)		=0;
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0)		=0;
@@ -112,6 +112,11 @@ namespace simul
 		private:
 			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};
+
+		/// Draw a horizontal grid, centred around the camera, at z=0.
+		///
+		/// \param [in,out]	deviceContext	Context for the device.
+		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext);
 	}
 }
 #endif

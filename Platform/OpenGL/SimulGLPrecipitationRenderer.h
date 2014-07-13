@@ -24,7 +24,6 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			//! Call this when the D3D device has been shut down.
 			void InvalidateDeviceObjects();
-			void SetCubemapTexture(void *){}
 			void RecompileShaders();
 			//! Call this to draw the clouds, including any illumination by lightning.
 			void Render(simul::crossplatform::DeviceContext &deviceContext

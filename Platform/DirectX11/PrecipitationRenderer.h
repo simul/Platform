@@ -40,7 +40,6 @@ namespace simul
 			//! Call this when the D3D device has been created or reset.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void RecompileShaders();
-			void SetCubemapTexture(void *);
 			//! Call this when the D3D device has been shut down.
 			void InvalidateDeviceObjects();
 			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext,float time_step_seconds);
@@ -72,7 +71,6 @@ namespace simul
 			crossplatform::Effect*						effect;
 			crossplatform::Texture*					rain_texture;
 			ID3D11ShaderResourceView*					randomTexture3D;
-			ID3D11ShaderResourceView*					cubemap_SRV;
 			ID3DX11EffectShaderResourceVariable*		rainTexture;
 			vec3  *particles;
 			

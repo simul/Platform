@@ -858,11 +858,6 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 	}
 }
 
-void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_count,bool strip)
-{
-	::DrawLines(vertices,vertex_count,strip);
-}
-
 void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height)
 {
 GL_ERROR_CHECK

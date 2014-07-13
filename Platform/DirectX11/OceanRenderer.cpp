@@ -115,7 +115,7 @@ OceanRenderer::OceanRenderer(simul::terrain::SeaKeyframer *s)
 	// Distant perlin wave
 	,g_pSRV_Perlin(NULL)
 	// Environment maps
-	,g_pSRV_ReflectCube(NULL)
+	,cubemapTexture(NULL)
 	,skyLossTexture_SRV(NULL)
 	,skyInscatterTexture_SRV(NULL)
 {
@@ -247,9 +247,9 @@ void OceanRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	SAFE_RELEASE(pImmediateContext);
 }
 
-void OceanRenderer::SetCubemapTexture(void *c)
+void OceanRenderer::SetCubemapTexture(crossplatform::Texture *c)
 {
-	g_pSRV_ReflectCube=(ID3D11ShaderResourceView*)c;
+	cubemapTexture=c;
 }
 
 void OceanRenderer::SetLossAndInscatterTextures(crossplatform::Texture *l,crossplatform::Texture *i,crossplatform::Texture *s)
@@ -498,7 +498,7 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	setTexture(effect,"g_texPerlin"				,g_pSRV_Perlin);
 	setTexture(effect,"g_texGradient"			,gradient_map->AsD3D11ShaderResourceView());
 	setTexture(effect,"g_texFresnel"			,g_pSRV_Fresnel);
-	setTexture(effect,"g_texReflectCube"		,NULL);//g_pSRV_ReflectCube);
+	setTexture(effect,"g_texReflectCube"		,cubemapTexture?cubemapTexture->AsD3D11ShaderResourceView():NULL);
 	setTexture(effect,"g_skyLossTexture"		,skyLossTexture_SRV);
 	setTexture(effect,"g_skyInscatterTexture"	,skyInscatterTexture_SRV);
 

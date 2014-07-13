@@ -31,7 +31,6 @@ PrecipitationRenderer::PrecipitationRenderer() :
 	,m_pVtxDecl(NULL)
 	,effect(NULL)
 	,rain_texture(NULL)
-	,cubemap_SRV(NULL)
 	,view_initialized(false)
 	,last_cam_pos(0.0f,0.0f,0.0f)
 {
@@ -115,12 +114,6 @@ void PrecipitationRenderer::RecompileShaders()
 #endif
 	SAFE_RELEASE(pImmediateContext);
 }
-
-void PrecipitationRenderer::SetCubemapTexture(void *t)
-{
-	cubemap_SRV=(ID3D11ShaderResourceView*)t;
-}
-
 void PrecipitationRenderer::SetRandomTexture3D(void *t)
 {
 	randomTexture3D=(ID3D11ShaderResourceView*)t;
@@ -184,7 +177,7 @@ void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *
 void PrecipitationRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-	cubemap_SRV=NULL;
+	cubemapTexture=NULL;
 	vertexBuffer.release();
 	vertexBufferSwap.release();
 		splashBuffer.release();
@@ -308,7 +301,7 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 		return;
 	SIMUL_COMBINED_PROFILE_START(pContext,"PrecipitationRenderer")
 	rainTexture->SetResource(rain_texture->AsD3D11ShaderResourceView());
-	dx11::setTexture(effect->asD3DX11Effect(),"cubeTexture",cubemap_SRV);
+	effect->SetTexture(deviceContext,"cubeTexture",cubemapTexture);
 	dx11::setTexture(effect->asD3DX11Effect(),"randomTexture3D",randomTexture3D);
 	dx11::setTexture(effect->asD3DX11Effect(),"depthTexture",depth_tex->AsD3D11ShaderResourceView());
 	dx11::setTextureArray(effect->asD3DX11Effect(),"rainTextureArray",rainArrayTexture.m_pArrayTexture_SRV);

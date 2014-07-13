@@ -412,12 +412,12 @@ void simul::opengl::PrintAt3dPos(const float *p,const char *text,const float* co
 	glPopAttrib();
 }
 
-void simul::opengl::DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
+void simul::opengl::DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip,bool test_depth)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glUseProgram(Utilities::GetSingleton().linedraw_program);
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_DEPTH_TEST);
+	glDisable(GL_ALPHA_TEST);
+    test_depth?glEnable(GL_DEPTH_TEST):glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_1D);
     glDisable(GL_TEXTURE_2D);

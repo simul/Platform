@@ -72,7 +72,6 @@ namespace simul
 		protected:
 			simul::opengl::GpuCloudGenerator gpuCloudGenerator;
 			void SwitchShaders(GLuint program);
-			void DrawLines(void *,VertexXyzRgba *vertices,int vertex_count,bool strip);
 			bool init;
 			// Make up to date with respect to keyframer:
 			void EnsureCorrectTextureSizes();

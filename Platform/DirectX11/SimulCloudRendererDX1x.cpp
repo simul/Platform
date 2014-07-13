@@ -778,7 +778,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	return (hr==S_OK);
 }
 
-
+#include "Simul/Base/StringFunctions.h"
 
 void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
@@ -815,6 +815,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &d
 		cloudConstants.Apply(deviceContext);
 		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+h+8,w,w,effect,m_pTechniqueCrossSection);
 	}
+	deviceContext.renderPlatform->Print(deviceContext,x0,w,simul::base::stringFormat("%4.4f",cloudConstants.cloud_interp).c_str());
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);
 	ApplyPass(pContext,effect->asD3DX11Effect()->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
@@ -924,8 +925,7 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(crossplatform::DeviceCont
 	if(!noise_texture)
 		CreateNoiseTexture(deviceContext);
 	// We don't need to fill the textures if the gpu Generator has already done so:
-	if(!gpuCloudGenerator.GetEnabled())
-		return;
+	if(gpuCloudGenerator.GetEnabled())
 	for(int i=0;i<3;i++)
 	{
 		int cycled_index=(texture_cycle+i)%3;

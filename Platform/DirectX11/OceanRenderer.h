@@ -28,7 +28,7 @@ namespace simul
 			void Render(crossplatform::DeviceContext &context,float exposure);
 			void RenderWireframe(crossplatform::DeviceContext &deviceContext);
 			void Update(float dt);
-			void SetCubemapTexture(void *c);
+			void SetCubemapTexture(crossplatform::Texture *c);
 			void SetLossAndInscatterTextures(crossplatform::Texture *l,crossplatform::Texture *i,crossplatform::Texture *s);
 			void RenderTextures(crossplatform::DeviceContext &deviceContext,int width,int depth);
 		protected:
@@ -36,7 +36,7 @@ namespace simul
 			OceanSimulator						*oceanSimulator;
 			ID3D11Device						*m_pd3dDevice;
 			// HLSL shaders
-			ID3DX11Effect						*effect;
+			crossplatform::Effect				*effect;
 			// State blocks
 			ID3D11Buffer* g_pPerCallCB;
 			ID3D11Buffer* g_pPerFrameCB;
@@ -55,7 +55,7 @@ namespace simul
 			ID3D11ShaderResourceView* g_pSRV_Perlin;
 
 			// Environment maps
-			ID3D11ShaderResourceView* g_pSRV_ReflectCube;
+			crossplatform::Texture *cubemapTexture;
 			// Atmospheric scattering
 			ID3D11ShaderResourceView* skyLossTexture_SRV;
 			ID3D11ShaderResourceView* skyInscatterTexture_SRV;

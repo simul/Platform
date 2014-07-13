@@ -47,7 +47,7 @@ namespace simul
 			void CopyToMemory(void* /*context*/,void *,int,int){}
 			virtual void* GetColorTex()
 			{
-				return (void*)m_pCubeEnvMapSRV;
+				return (void*)texture->AsD3D11ShaderResourceView();
 			}
 			virtual void* GetDepthTex()
 			{
@@ -59,7 +59,7 @@ namespace simul
 			}
 			bool IsValid()
 			{
-				return (m_pCubeEnvMapSRV != NULL);
+				return (texture->AsD3D11ShaderResourceView() != NULL);
 			}
 			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
 			ID3D11Texture2D					*GetCopy(void *context);
@@ -82,7 +82,7 @@ namespace simul
 			}
 			crossplatform::Texture *GetTexture()
 			{
-				return NULL;
+				return texture;
 			}
 			crossplatform::Texture *GetDepthTexture()
 			{
@@ -96,11 +96,12 @@ namespace simul
 			ID3D11Device*								pd3dDevice;
 			ID3D11RenderTargetView*						m_pOldRenderTarget;
 			ID3D11DepthStencilView*						m_pOldDepthSurface;
-			D3D11_VIEWPORT								m_OldViewports[4];
+			D3D11_VIEWPORT								m_OldViewports[16];
 
 			// One Environment map texture, one Shader Resource View on it, and six Render Target Views on it.
-			ID3D11Texture2D*							m_pCubeEnvMap;
-			ID3D11ShaderResourceView*					m_pCubeEnvMapSRV;
+			//ID3D11Texture2D*							m_pCubeEnvMap;
+			//ID3D11ShaderResourceView*					m_pCubeEnvMapSRV;
+			crossplatform::Texture						*texture;
 			ID3D11RenderTargetView*						m_pCubeEnvMapRTV[6];
 
 			// Six Depth map textures, each with a DepthStencilView and SRV

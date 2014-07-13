@@ -38,7 +38,7 @@ struct Vertex3_t
 };
 
 static const float size=5.f;
-static Vertex3_t vertices[36] =
+static Vertex3_t box_vertices[36] =
 {
 	{-size,		-size,	size},
 	{size,		size,	size},
@@ -139,7 +139,7 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	
     D3D11_SUBRESOURCE_DATA InitData;
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-    InitData.pSysMem		=vertices;
+    InitData.pSysMem		=box_vertices;
     InitData.SysMemPitch	=sizeof(vec3);
 	V_CHECK(AsD3D11Device()->CreateBuffer(&desc,&InitData,&m_pVertexBuffer));
 
@@ -829,7 +829,7 @@ void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int
 	}
 }
 
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)
+void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *line_vertices,int vertex_count,bool strip,bool test_depth)
 {
 	if(!vertex_count)
 		return;
@@ -838,55 +838,54 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 		HRESULT hr=S_OK;
 		D3DXMATRIX world, tmp1, tmp2;
 		D3DXMatrixIdentity(&world);
-		crossplatform::EffectTechnique *tech			=m_pDebugEffect->GetTechniqueByName("simul_debug");
-		ID3D1xEffectMatrixVariable*	worldViewProj		=m_pDebugEffect->asD3DX11Effect()->GetVariableByName("worldViewProj")->AsMatrix();
+		crossplatform::EffectTechnique *tech			=m_pDebugEffect->GetTechniqueByName(test_depth?"lines_3d_depth":"lines_3d");
 
 		D3DXMATRIX wvp;
 		camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-		worldViewProj->SetMatrix(&wvp._11);
+		m_pDebugEffect->SetMatrix("worldViewProj",&wvp._11);
 	
-		ID3D1xBuffer *					vertexBuffer=NULL;
+		ID3D11Buffer *					vertexBuffer=NULL;
 		// Create the vertex buffer:
-		D3D1x_BUFFER_DESC desc=
+		D3D11_BUFFER_DESC desc=
 		{
-			vertex_count*sizeof(VertexXyzRgba),
-			D3D1x_USAGE_DYNAMIC,
-			D3D1x_BIND_VERTEX_BUFFER,
-			D3D1x_CPU_ACCESS_WRITE,
+			vertex_count*sizeof(Vertext),
+			D3D11_USAGE_DYNAMIC,
+			D3D11_BIND_VERTEX_BUFFER,
+			D3D11_CPU_ACCESS_WRITE,
 			0
 		};
-		D3D1x_SUBRESOURCE_DATA InitData;
+		D3D11_SUBRESOURCE_DATA InitData;
 		ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-		InitData.pSysMem = vertices;
-		InitData.SysMemPitch = sizeof(VertexXyzRgba);
+		InitData.pSysMem = line_vertices;
+		InitData.SysMemPitch = sizeof(Vertext);
 		hr=AsD3D11Device()->CreateBuffer(&desc,&InitData,&vertexBuffer);
 
-		const D3D1x_INPUT_ELEMENT_DESC decl[] =
+		const D3D11_INPUT_ELEMENT_DESC decl[] =
 		{
-			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
+			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 }
 		};
-		D3D1x_PASS_DESC PassDesc;
-		ID3D1xEffectPass *pass=tech->asD3DX11EffectTechnique()->GetPassByIndex(0);
+		D3DX11_PASS_DESC PassDesc;
+		ID3DX11EffectPass *pass=tech->asD3DX11EffectTechnique()->GetPassByIndex(0);
 		hr=pass->GetDesc(&PassDesc);
 
 		ID3D11InputLayout*				m_pVtxDecl=NULL;
 		SAFE_RELEASE(m_pVtxDecl);
 		hr=AsD3D11Device()->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
-		pContext->IASetInputLayout(m_pVtxDecl);
 		ID3D11InputLayout* previousInputLayout;
 		pContext->IAGetInputLayout( &previousInputLayout );
+		pContext->IASetInputLayout(m_pVtxDecl);
 		D3D_PRIMITIVE_TOPOLOGY previousTopology;
 		pContext->IAGetPrimitiveTopology(&previousTopology);
 		pContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-		UINT stride = sizeof(VertexXyzRgba);
+		UINT stride = sizeof(Vertext);
 		UINT offset = 0;
 		UINT Strides[1];
 		UINT Offsets[1];
 		Strides[0] = stride;
 		Offsets[0] = 0;
-		pContext->IASetVertexBuffers(	0,				// the first input slot for binding
+		pContext->IASetVertexBuffers(	0,							// the first input slot for binding
 													1,				// the number of buffers in the array
 													&vertexBuffer,	// the array of vertex buffers
 													&stride,		// array of stride values, one for each buffer

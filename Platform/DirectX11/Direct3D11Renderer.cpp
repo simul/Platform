@@ -405,9 +405,16 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 		}
 	}
 #endif
+	if(AllOsds)
+	{
+		if(simulHDRRenderer&&UseHdrPostprocessor)
+			view->GetFramebuffer()->ActivateDepth(deviceContext);
+		crossplatform::DrawGrid(deviceContext);
+		if(simulHDRRenderer&&UseHdrPostprocessor)
+			view->GetFramebuffer()->DeactivateDepth(pContext);
+	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
-
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)
 {
 	if(!enabled)
@@ -523,15 +530,17 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		SIMUL_COMBINED_PROFILE_START(pContext,"Cubemap")
 		const float *cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view);
+		if(oceanRenderer)
+			oceanRenderer->SetCubemapTexture(envmapFramebuffer.GetTexture());
 		RenderCubemap(deviceContext,cam_pos);
 		SIMUL_COMBINED_PROFILE_END(pContext)
 		if(oceanRenderer)
-			oceanRenderer->SetCubemapTexture(cubemapFramebuffer.GetColorTex());
+			oceanRenderer->SetCubemapTexture(cubemapFramebuffer.GetTexture());
 		SIMUL_COMBINED_PROFILE_START(pContext,"Envmap")
 		RenderEnvmap(deviceContext);
 		SIMUL_COMBINED_PROFILE_END(pContext)
 		if(simulWeatherRenderer)
-			simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer.GetColorTex());
+			simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer.GetTexture());
 	}
 	if(hdr)
 	{
@@ -548,6 +557,11 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		pContext->ClearDepthStencilView(mainDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,ReverseDepth?0.f:1.f, 0);
 	}
 	RenderScene(deviceContext,simulWeatherRenderer,hdr?1.f:cameraViewStruct.exposure,hdr?1.f:cameraViewStruct.gamma);
+	if(simulWeatherRenderer&&AllOsds)
+	{
+		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
+	}
 	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid()&&AllOsds)
 	{
 		static float x=0.35f,y=0.4f;
@@ -566,8 +580,6 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	SIMUL_COMBINED_PROFILE_START(pContext,"Overlays")
 	if(simulWeatherRenderer&&AllOsds)
 	{
-		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
 		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
 		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth()/2);
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())

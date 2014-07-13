@@ -75,7 +75,7 @@ namespace simul
 		extern SIMUL_OPENGL_EXPORT bool RenderAngledQuad(const float *dir,float half_angle_radians);
 		extern SIMUL_OPENGL_EXPORT void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 
-		extern SIMUL_OPENGL_EXPORT void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip);
+		extern SIMUL_OPENGL_EXPORT void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip,bool test_depth);
 		extern SIMUL_OPENGL_EXPORT void CalcCameraPosition(float *cam_pos,float *cam_dir=0);
 		extern SIMUL_OPENGL_EXPORT void FixGlProjectionMatrix(float required_distance);
 		extern SIMUL_OPENGL_EXPORT void OrthoMatrices();

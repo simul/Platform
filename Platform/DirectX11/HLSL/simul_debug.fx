@@ -39,10 +39,11 @@ posTexVertexOutput VS_Quad(idOnly id)
     return VS_ScreenQuad(id,rect);
 }
 
-v2f DebugVS(a2v IN)
+v2f DebugVS(positionColourVertexInput IN)
 {
 	v2f OUT;
-    OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
+	vec3 pos		=IN.position.xyz;
+    OUT.hPosition	=mul(worldViewProj,vec4(pos.xyz,1.0));
 	OUT.colour		=IN.colour;
     return OUT;
 }
@@ -176,9 +177,21 @@ float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 	return float4(result.rgb,1.0);
 }
 
-technique11 simul_debug
+technique11 lines_3d_depth
 {
-    pass p0
+    pass lines3d
+    {
+		SetRasterizerState( wireframeRasterizer );
+		SetDepthStencilState( TestDepth, 0 );
+		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,DebugVS()));
+		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+    }
+}
+technique11 lines_3d
+{
+    pass lines3d
     {
 		SetRasterizerState( wireframeRasterizer );
 		SetDepthStencilState( DisableDepth, 0 );

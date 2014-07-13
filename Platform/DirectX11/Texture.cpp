@@ -500,7 +500,7 @@ void dx11::Texture::deactivateRenderTarget()
 										&m_pOldRenderTarget,
 										m_pOldDepthSurface
 										);
-	last_context->RSSetViewports(1,m_OldViewports);
+	last_context->RSSetViewports(num_OldViewports,m_OldViewports);
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 }

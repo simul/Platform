@@ -74,6 +74,11 @@
 	{
 		uint vertex_id			: SV_VertexID;
 	};
+	struct positionColourVertexInput
+	{
+		vec3 position	: POSITION;
+		vec4 colour		: TEXCOORD0;		
+	};
 	struct posTexVertexOutput
 	{
 		vec4 hPosition	: SV_POSITION;

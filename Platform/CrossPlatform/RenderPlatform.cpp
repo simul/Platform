@@ -30,3 +30,50 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 	const std::map<std::string,std::string> defines;
 	EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
 }
+
+#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+namespace simul
+{
+	namespace crossplatform
+	{
+		void DrawGrid(crossplatform::DeviceContext &deviceContext)
+		{
+			// 101 lines across, 101 along.
+			static int numLines=101;
+			crossplatform::RenderPlatform::Vertext *lines=new crossplatform::RenderPlatform::Vertext[2*numLines*2];
+			// one metre apart
+			static float d=1.f;
+			vec3 cam_pos=camera::GetCameraPosVector(deviceContext.viewStruct.view);
+			vec3 centrePos((int)(cam_pos.x/d),(int)(cam_pos.y/d),0);
+			crossplatform::RenderPlatform::Vertext *vertex=lines;
+			int halfOffset=numLines/2;
+			for(int i=0;i<numLines;i++)
+			{
+				int j=i-numLines/2;
+				math::Vector3 pos1	=centrePos+vec3(d*j	,-d*halfOffset	,0);
+				math::Vector3 pos2	=centrePos+vec3(d*j	, d*halfOffset	,0);
+				vertex->pos		=pos1;
+				vertex->colour	=vec4(5.f,5.f,0.f,1.0f);
+				vertex++;
+				vertex->pos		=pos2;
+				vertex->colour	=vec4(5.f,0.5f,0.f,1.0f);
+				vertex++;
+			}
+			for(int i=0;i<numLines;i++)
+			{
+				int j=i-numLines/2;
+				math::Vector3 pos1	=centrePos+vec3(-d*halfOffset	,d*j	,0);
+				math::Vector3 pos2	=centrePos+vec3( d*halfOffset	,d*j	,0);
+				vertex->pos		=pos1;
+				vertex->colour	=vec4(0.f,1.f,5.f,1.0f);
+				vertex++;
+				vertex->pos		=pos2;
+				vertex->colour	=vec4(0.f,2.5f,5.f,1.0f);
+				vertex++;
+			}
+			deviceContext.renderPlatform->DrawLines(deviceContext,lines,2*numLines*2,false);
+			delete[] lines;
+		}
+	}
+}

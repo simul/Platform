@@ -287,7 +287,7 @@ starsVertexOutput VS_Stars(starsVertexInput IN)
 
 vec4 PS_Stars( starsVertexOutput IN): SV_TARGET
 {
-	vec3 colour=vec3(1.0,1.0,1.0)*clamp(starBrightness*IN.tex,0.0,1.0);
+	vec3 colour=vec3(1.0,1.0,1.0)*(starBrightness*IN.tex);
 	return vec4(colour,1.0);
 }
 
