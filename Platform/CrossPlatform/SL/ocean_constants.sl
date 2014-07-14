@@ -21,9 +21,11 @@ SIMUL_CONSTANT_BUFFER(cbShading,2)
 	uniform vec3		g_WaterbodyColor;
 
 	// The strength, direction and color of sun streak
-	uniform float		g_Shineness;
-	uniform vec3		g_SunDir;
-	uniform vec3		g_SunColor;
+	uniform float		g_ShinenessX;
+	uniform vec3		g_SunDirX;
+	uniform float		xxxxxxxxxxx;
+	uniform vec3		g_SunColorX;
+	uniform float		xxxxxxxxxxxx;
 	
 	// The parameter is used for fixing an artifact
 	uniform vec3		g_BendParam;
@@ -31,13 +33,17 @@ SIMUL_CONSTANT_BUFFER(cbShading,2)
 	// Perlin noise for distant wave crest
 	uniform float		g_PerlinSize;
 	uniform vec3		g_PerlinAmplitude;
+	uniform float		xxxxxxxxxxxxxxx;
 	uniform vec3		g_PerlinOctave;
+	uniform float		xxxxxxxxxxxxxxxx;
 	uniform vec3		g_PerlinGradient;
+	uniform float		xxxxxxxxxxxxxxxxx;
 
 	// Constants for calculating texcoord from position
 	uniform float		g_TexelLength_x2;
 	uniform float		g_UVScale;
 	uniform float		g_UVOffset;
+	uniform float		xxxxxxxxxxxxxxxxxx;
 SIMUL_CONSTANT_BUFFER_END
 
 // Per draw call constants
@@ -54,8 +60,9 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 
 	// Atmospherics
 	uniform float		hazeEccentricity;
-	uniform vec3		lightDir;
 	uniform vec4		mieRayleighRatio;
+	uniform vec3		lightDir;
+	uniform float		srjdtkfylu;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(OsdConstants,5)

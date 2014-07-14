@@ -6,7 +6,6 @@ using namespace simul;
 using namespace dx11;
 
 Material::Material()
-	:effect(NULL)
 {
 }
 
@@ -34,6 +33,9 @@ void Material::Apply(crossplatform::DeviceContext &deviceContext) const
 		glBindTexture(GL_TEXTURE_2D	,((dx11::Texture *)mDiffuse.mTextureName)->shaderResourceView);
 	}
 	glActiveTexture(GL_TEXTURE0);*/
-	if(mDiffuse.mTextureName)
-		dx11::setTexture(effect,"diffuseTexture",((dx11::Texture *)mDiffuse.mTextureName)->shaderResourceView);
+	if(effect)
+	{
+		if(mDiffuse.mTextureName)
+			effect->SetTexture(deviceContext,"diffuseTexture",mDiffuse.mTextureName);
+	}
 }

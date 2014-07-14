@@ -4,6 +4,7 @@
 #include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 
 #include "SimulDirectXHeader.h"
@@ -94,8 +95,8 @@ namespace simul
 			void DrawCube(crossplatform::DeviceContext &deviceContext);
 			void DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,float offsetx,float offsety);
 
-			ID3DX11Effect *effect;
-			simul::dx11::ConstantBuffer<SolidConstants> solidConstants;
+			crossplatform::Effect *solidEffect;
+			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 			std::set<crossplatform::Material*> materials;
 			bool reverseDepth;
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.

@@ -44,13 +44,15 @@ namespace simul
 		{
 		public:
 			static Profiler &GetGlobalProfiler();
+			Profiler();
 			~Profiler();
 			void Initialize(ID3D11Device* device);
 			void Uninitialize();
 			void Begin(void *context,const char *name);
 			void End();
 			
-			void StartFrame(void* context){}
+			void StartFrame(void* context){
+	within_frame=true;}
 			void EndFrame(void* context);
 	
 			float GetTime(const std::string &name) const;
@@ -107,6 +109,7 @@ namespace simul
 				int child_index;
 			};
 		protected:
+			bool within_frame;
 			ProfileMap profileMap;
 			ProfileMap rootMap;
 			UINT64 currFrame;

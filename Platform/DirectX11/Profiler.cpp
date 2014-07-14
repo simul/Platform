@@ -36,6 +36,9 @@ Profiler &Profiler::GetGlobalProfiler()
 	return GlobalProfiler;
 }
 
+Profiler::Profiler():within_frame(false)
+{
+}
 Profiler::~Profiler()
 {
 	//std::cout<<"Profiler::~Profiler"<<std::endl;
@@ -71,6 +74,9 @@ ID3D11Query *CreateQuery(ID3D11Device* device,D3D11_QUERY_DESC &desc,const char 
 
 void Profiler::Begin(void *ctx,const char *name)
 {
+	// Fail silently in case we are called from code that's not in a render.
+	if(!within_frame)
+		return;
 	IUnknown *unknown=(IUnknown *)ctx;
 	ID3D11DeviceContext *context=(ID3D11DeviceContext*)ctx;
 
@@ -181,6 +187,8 @@ void Profiler::EndFrame(void* c)
 	ID3D11DeviceContext *context=(ID3D11DeviceContext*)c;
     if(!enabled||!device)
         return;
+	if(!within_frame)
+		return;
 
     currFrame = (currFrame + 1) % QueryLatency;    
 
@@ -227,6 +235,7 @@ void Profiler::EndFrame(void* c)
 
         iter->second->time+=mix*time;
     }
+	within_frame=false;
 }
 
 float Profiler::GetTime(const std::string &name) const

@@ -89,7 +89,7 @@ RenderPlatform::RenderPlatform()
 	,m_pDebugEffect(NULL)
 	,m_pCubemapVtxDecl(NULL)
 	,m_pVertexBuffer(NULL)
-	,effect(NULL)
+	,solidEffect(NULL)
 	,reverseDepth(false)
 	,mirrorY(false)
 	,m_pDepthStencilStateStored11(NULL)
@@ -111,7 +111,7 @@ RenderPlatform::~RenderPlatform()
 void RenderPlatform::RestoreDeviceObjects(void *d)
 {
 	device=(ID3D11Device*)d;
-	solidConstants.RestoreDeviceObjects(device);
+	solidConstants.RestoreDeviceObjects(this);
 	textRenderer.RestoreDeviceObjects(device);
 
 	RecompileShaders();
@@ -150,11 +150,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 {
 	solidConstants.InvalidateDeviceObjects();
 	textRenderer.InvalidateDeviceObjects();
-	SAFE_RELEASE(effect);
+	SAFE_DELETE(solidEffect);
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
-		mat->effect=effect;
+		mat->effect=solidEffect;
 		delete mat;
 	}
 	materials.clear();
@@ -175,20 +175,20 @@ void RenderPlatform::InvalidateDeviceObjects()
 void RenderPlatform::RecompileShaders()
 {
 	SAFE_DELETE(m_pDebugEffect);
-	SAFE_RELEASE(effect);
+	SAFE_DELETE(solidEffect);
 	if(!device)
 		return;
 	std::map<std::string,std::string> defines;
-	m_pDebugEffect=new dx11::Effect(this,"simul_debug.fx",defines);
+	m_pDebugEffect=CreateEffect("simul_debug",defines);
 	if(reverseDepth)
 		defines["REVERSE_DEPTH"]="1";
-	dx11::CreateEffect(device,&effect,"solid.fx",defines);
-	solidConstants.LinkToEffect(effect,"SolidConstants");
+	solidEffect=CreateEffect("solid",defines);
+	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
 	//solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
-		mat->effect=effect;
+		mat->effect=solidEffect;
 	}
 	textRenderer.RecompileShaders();
 }
@@ -449,13 +449,13 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	solidConstants.Apply(deviceContext);
 
-	effect->GetTechniqueByName("solid")->GetPassByIndex(0)->Apply(0,pContext);
+	solidEffect->asD3DX11Effect()->GetTechniqueByName("solid")->GetPassByIndex(0)->Apply(0,pContext);
 }
 
 crossplatform::Material *RenderPlatform::CreateMaterial()
 {
 	dx11::Material *mat=new dx11::Material;
-	mat->effect=effect;
+	mat->effect=solidEffect;
 	materials.insert(mat);
 	return mat;
 }

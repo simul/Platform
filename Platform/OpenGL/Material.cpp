@@ -16,7 +16,7 @@ Material::~Material()
 {
 }
 
-void Material::Apply(crossplatform::DeviceContext &deviceContext) const
+void Material::Apply(crossplatform::DeviceContext &) const
 {
 	glActiveTexture(GL_TEXTURE0);
 //	float zero[]	={0,0,0,0};

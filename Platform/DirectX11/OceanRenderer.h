@@ -5,6 +5,7 @@
 #include "OceanSimulator.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/CrossPlatform/Buffer.h"
 #include "Simul/Terrain/BaseSeaRenderer.h"
 
 #pragma warning(push)
@@ -32,33 +33,28 @@ namespace simul
 			void SetLossAndInscatterTextures(crossplatform::Texture *l,crossplatform::Texture *i,crossplatform::Texture *s);
 			void RenderTextures(crossplatform::DeviceContext &deviceContext,int width,int depth);
 		protected:
-			OceanSimulator						*oceanSimulator;
-			ID3D11Device						*m_pd3dDevice;
+			OceanSimulator				*oceanSimulator;
 			// HLSL shaders
-			crossplatform::Effect				*effect;
-			// State blocks
-			ID3D11Buffer* g_pPerCallCB;
-			ID3D11Buffer* g_pPerFrameCB;
-			ID3D11Buffer* g_pShadingCB;
-
+			crossplatform::Effect		*effect;
 			// D3D11 buffers and layout
-			ID3D11Buffer* g_pMeshVB;
-			ID3D11Buffer* g_pMeshIB;
-			ID3D11InputLayout* g_pMeshLayout;
+			ID3D11Buffer				*g_pMeshVB;
+			crossplatform::Buffer		*vertexBuffer;
+			ID3D11Buffer				*g_pMeshIB;
+			ID3D11InputLayout			*g_pMeshLayout;
 
 			// Color look up 1D texture
-			ID3D11Texture1D* g_pFresnelMap;
-			ID3D11ShaderResourceView* g_pSRV_Fresnel;
+			ID3D11Texture1D				*g_pFresnelMap;
+			ID3D11ShaderResourceView	*g_pSRV_Fresnel;
 
 			// Distant perlin wave
-			ID3D11ShaderResourceView* g_pSRV_Perlin;
+			ID3D11ShaderResourceView	*g_pSRV_Perlin;
 
 			// Environment maps
-			crossplatform::Texture *cubemapTexture;
+			crossplatform::Texture		*cubemapTexture;
 			// Atmospheric scattering
-			ID3D11ShaderResourceView* skyLossTexture_SRV;
-			ID3D11ShaderResourceView* skyInscatterTexture_SRV;
-			ID3D11ShaderResourceView* skylightTexture_SRV;
+			ID3D11ShaderResourceView	*skyLossTexture_SRV;
+			ID3D11ShaderResourceView	*skyInscatterTexture_SRV;
+			ID3D11ShaderResourceView	*skylightTexture_SRV;
 			crossplatform::ConstantBuffer<cbShading>		shadingConstants;
 			crossplatform::ConstantBuffer<cbChangePerCall>	changePerCallConstants;
 	

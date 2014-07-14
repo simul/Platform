@@ -13,6 +13,7 @@ namespace simul
 	namespace crossplatform
 	{
 		class Texture;
+		class Effect;
 		struct DeviceContext;
 		// Cache for material
 		class SIMUL_CROSSPLATFORM_EXPORT Material
@@ -39,6 +40,7 @@ namespace simul
 			ColorChannel mDiffuse;
 			ColorChannel mSpecular;
 			float mShininess;
+			crossplatform::Effect *effect;
 		};
 	}
 }

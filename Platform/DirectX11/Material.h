@@ -4,7 +4,7 @@
 
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/Material.h"
-struct ID3DX11Effect;
+#include "Simul/Platform/CrossPlatform/Effect.h"
 namespace simul
 {
 	namespace dx11
@@ -15,7 +15,6 @@ namespace simul
 			Material();
 			virtual ~Material();
 			void Apply(crossplatform::DeviceContext &) const;
-			ID3DX11Effect *effect;
 		};
 	}
 }
