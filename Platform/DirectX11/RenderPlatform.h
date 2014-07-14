@@ -83,10 +83,12 @@ namespace simul
 			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8);
 			crossplatform::Effect					*CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer();
+			crossplatform::PlatformStructuredBuffer	*CreatePlatformStructuredBuffer();
 			crossplatform::Buffer					*CreateBuffer();
 			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *,crossplatform::Buffer *);
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers);
+			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer);
 
 			void StoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void RestoreRenderState(crossplatform::DeviceContext &deviceContext);

@@ -412,7 +412,7 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 	if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
 		glEffectTechnique->passStates[currentPass]->Apply();
 }
-void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
+void Effect::Reapply(crossplatform::DeviceContext &)
 {
 	if(apply_count!=1)
 		SIMUL_BREAK("Effect::Reapply can only be called after Apply and before Unapply!")
@@ -433,7 +433,7 @@ void Effect::Unapply(crossplatform::DeviceContext &)
 GL_ERROR_CHECK
 }
 
-void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
+void Effect::UnbindTextures(crossplatform::DeviceContext &)
 {
 	if(apply_count!=1)
 		SIMUL_BREAK("UnbindTextures can only be called after Apply and before Unapply!")

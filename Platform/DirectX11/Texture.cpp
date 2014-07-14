@@ -50,7 +50,7 @@ void dx11::Texture::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
 // Load a texture file
-void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8)
+void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
 {
 	InvalidateDeviceObjects();
 	SAFE_RELEASE(shaderResourceView);
@@ -64,9 +64,9 @@ void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *r,const char *pF
 			return;
 		base::FileLoader::GetFileLoader()->AcquireFileContents(f,bytes,str.c_str(),false);
 		char *src=(char*)f+bytes-32768*4;
-		ensureTexture2DSizeAndFormat(r,256,128,crossplatform::RGBA_8_UNORM,false,false);
+		ensureTexture2DSizeAndFormat(renderPlatform,256,128,crossplatform::RGBA_8_UNORM,false,false);
 		ID3D11DeviceContext *ctx=NULL;
-		r->AsD3D11Device()->GetImmediateContext(&ctx);
+		renderPlatform->AsD3D11Device()->GetImmediateContext(&ctx);
 
 		char *interleaved=new char[bytes];
 		char *target=interleaved;
@@ -81,14 +81,21 @@ void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *r,const char *pF
 			*(target++)=b[i];
 			*(target++)=a[i];
 		}
-		setTexels(ctx,interleaved,0,32768);
+		
+		crossplatform::DeviceContext deviceContext;
+		deviceContext.renderPlatform=renderPlatform;
+		deviceContext.platform_context=ctx;
+		setTexels(deviceContext,interleaved,0,32768);
 		SAFE_RELEASE(ctx)
 		base::FileLoader::GetFileLoader()->ReleaseFileContents(f);
 		delete [] interleaved;
 		return;
 	}
 	else
-		shaderResourceView	=simul::dx11::LoadTexture(r->AsD3D11Device(),pFilePathUtf8);
+	{
+		shaderResourceView	=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8);
+		SetDebugObjectName(texture,pFilePathUtf8);
+	}
 }
 
 bool dx11::Texture::IsValid() const
@@ -160,11 +167,11 @@ void dx11::Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,voi
 	deviceContext.asD3D11DeviceContext()->Unmap( stagingBuffer, 0);
 }
 
-void dx11::Texture::setTexels(ID3D11DeviceContext *context,const void *src,int texel_index,int num_texels)
+void dx11::Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)
 {
-	last_context=context;
+	last_context=deviceContext.asD3D11DeviceContext();
 	if(!mapped.pData)
-		context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+		last_context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
 	if(!mapped.pData)
 		return;
 	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);

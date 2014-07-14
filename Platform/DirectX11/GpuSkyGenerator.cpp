@@ -134,8 +134,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 
 	if(a.tables_checksum!=tables_checksum)
 	{
-		dens_tex.setTexels(m_pImmediateContext,(unsigned*)a.density_table,0,a.table_size);
-		optd_tex.setTexels(m_pImmediateContext,(unsigned *)a.optical_table,0,a.table_size*a.table_size);
+		dens_tex.setTexels(deviceContext,(unsigned*)a.density_table,0,a.table_size);
+		optd_tex.setTexels(deviceContext,(unsigned *)a.optical_table,0,a.table_size*a.table_size);
 		tables_checksum=a.tables_checksum;
 	}
 	//SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)

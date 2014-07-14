@@ -18,6 +18,7 @@ using namespace opengl;
 opengl::Texture::Texture()
 	:pTextureObject(0)
 	,m_fb(0)
+	,pixelFormat(crossplatform::UNKNOWN)
 {
 }
 
@@ -53,9 +54,10 @@ bool opengl::Texture::IsValid() const
 }
 
 void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
-	,crossplatform::PixelFormat pixelFormat,bool computable,bool rendertarget,int num_samples,int aa_quality)
+	,crossplatform::PixelFormat p,bool computable,bool rendertarget,int num_samples,int aa_quality)
 {
 GL_ERROR_CHECK
+	pixelFormat=p;
 	GLuint frmt=opengl::RenderPlatform::ToGLFormat(pixelFormat);
 	width=w;
 	length=l;
@@ -86,6 +88,97 @@ GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,0);
 GL_ERROR_CHECK
 }
+
+void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)
+{
+	glBindTexture(GL_TEXTURE_2D,pTextureObject);
+	GLuint frmt=opengl::RenderPlatform::ToGLFormat(pixelFormat);
+#if 0
+	int start_slice				=it.texel_index/sliceStride;
+	int start_texel_in_slice	=it.texel_index-start_slice*sliceStride;
+	int start_row				=start_texel_in_slice/stride;
+	int start_texel_in_row		=start_texel_in_slice-start_row*stride;
+
+	int end_slice				=(it.texel_index+num_texels)/sliceStride;
+	int end_texel_in_slice		=(it.texel_index+num_texels)-end_slice*sliceStride;
+	int end_row					=end_texel_in_slice/stride;
+	int end_texel_in_row		=end_texel_in_slice-end_row*stride;
+
+	int first_row_length		=stride-start_texel_in_row;
+	int first_slice_rows		=sent_length-start_row-1;
+
+	if(first_row_length==stride)
+	{
+		first_row_length=0;
+		first_slice_rows++;
+		start_row--;
+	}
+	int num_slices=end_slice-start_slice-1;
+	if(first_slice_rows==(int)sent_length)
+	{
+		first_slice_rows=0;
+		num_slices++;
+		start_slice--;
+	}
+	if(end_slice==start_slice)
+	{
+		if(end_row==start_row)
+		{
+			first_row_length=end_texel_in_row-start_texel_in_row;
+			end_texel_in_row=0;
+		}
+		first_slice_rows=end_row-start_row-1;
+	}
+	const unsigned *uptr=&((fillTextures[it.texture_index].texels)[it.texel_index]);
+	int num_written=0;
+	if(first_row_length>0)
+	{
+		block_texture_fill t(start_texel_in_row,start_row,start_slice,first_row_length,1,1,uptr);
+		num_written+=first_row_length;
+		texel_index+=t.w*t.l*t.d;
+	glTexImage2D(GL_TEXTURE_2D,0,frmt,w,l,0,GL_RGBA,GL_UNSIGNED_INT,NULL);
+	}
+	// The rest of the first slice:
+	if(first_slice_rows>0)
+	{
+		block_texture_fill t(0,start_row+1,start_slice,stride,first_slice_rows,1,uptr);
+		uptr+=stride*first_slice_rows;
+		num_written+=stride*first_slice_rows;
+		it.texel_index+=t.w*t.l*t.d;
+		return t;
+	}
+	// The main block:
+	if(num_slices>0)
+	{
+		block_texture_fill t(0,0,start_slice+1,stride,sent_length,num_slices,uptr);
+		uptr+=stride*sent_length*num_slices;
+		num_written+=stride*sent_length*num_slices;
+		it.texel_index+=t.w*t.l*t.d;
+		return t;
+	}
+	// the rows at the end:
+	if(end_slice!=start_slice&&end_row>0)
+	{
+		block_texture_fill t(0,0,end_slice,stride,end_row,1,uptr);
+		uptr+=stride*end_row;
+		num_written+=stride*end_row;
+		it.texel_index+=t.w*t.l*t.d;
+		return t;
+	}
+	// and the final row:
+	if(end_texel_in_row>0)
+	{
+		block_texture_fill t(0,end_row,end_slice,end_texel_in_row,1,1,uptr);
+		uptr+=end_texel_in_row;
+		num_written+=end_texel_in_row;
+		it.texel_index+=t.w*t.l*t.d;
+		return t;
+	}
+
+#endif
+	glBindTexture(GL_TEXTURE_2D,0);
+}
+
 void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &)
 {
 	if(!m_fb)

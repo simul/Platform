@@ -30,6 +30,7 @@ namespace simul
 		class Texture;
 		class Mesh;
 		class PlatformConstantBuffer;
+		class PlatformStructuredBuffer;
 		class Buffer;
 		class Layout;
 		struct DeviceContext;
@@ -95,12 +96,17 @@ namespace simul
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
 			/// simul::crossplatform::ConstantBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
+			/// Create a platform-specific structured buffer instance. This is not usually used directly, instead, create a
+			/// simul::crossplatform::StructuredBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
+			virtual PlatformStructuredBuffer	*CreatePlatformStructuredBuffer	()	=0;
 			/// Create a platform-specific buffer instance - e.g. vertex buffers, index buffers etc.
 			virtual Buffer					*CreateBuffer					()	=0;
 			/// Create a platform-specific layout instance based on the given layout description \em layoutDesc and buffer \em buffer.
 			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *layoutDesc,Buffer *buffer)	=0;
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers)=0;
+			/// Activate the specifided index buffer in preparation for rendering.
+			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer)=0;
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			void							EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 			/// Called to store the render state - blending, depth check, etc. - for later retrieval with RestoreRenderState.

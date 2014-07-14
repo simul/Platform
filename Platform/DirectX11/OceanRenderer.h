@@ -37,17 +37,15 @@ namespace simul
 			// HLSL shaders
 			crossplatform::Effect		*effect;
 			// D3D11 buffers and layout
-			ID3D11Buffer				*g_pMeshVB;
 			crossplatform::Buffer		*vertexBuffer;
-			ID3D11Buffer				*g_pMeshIB;
-			ID3D11InputLayout			*g_pMeshLayout;
+			crossplatform::Buffer		*indexBuffer;
+			crossplatform::Layout		*layout;
 
 			// Color look up 1D texture
-			ID3D11Texture1D				*g_pFresnelMap;
-			ID3D11ShaderResourceView	*g_pSRV_Fresnel;
+			crossplatform::Texture		*fresnelMap;
 
 			// Distant perlin wave
-			ID3D11ShaderResourceView	*g_pSRV_Perlin;
+			crossplatform::Texture		*perlinNoise;
 
 			// Environment maps
 			crossplatform::Texture		*cubemapTexture;
@@ -61,7 +59,7 @@ namespace simul
 			// create a triangle strip mesh for ocean surface.
 			void createSurfaceMesh();
 			// create color/fresnel lookup table.
-			void createFresnelMap();
+			void createFresnelMap(crossplatform::DeviceContext &deviceContext);
 			// create perlin noise texture for far-sight rendering
 			void loadTextures();
 			void EnumeratePatterns(unsigned long* index_array);

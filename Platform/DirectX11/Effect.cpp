@@ -13,6 +13,84 @@
 using namespace simul;
 using namespace dx11;
 
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data)
+{
+	InvalidateDeviceObjects();
+	num_elements=ct;
+	element_bytesize=unit_size;
+	D3D11_BUFFER_DESC sbDesc;
+	memset(&sbDesc,0,sizeof(sbDesc));
+	if(computable)
+	{
+		sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_UNORDERED_ACCESS;
+		sbDesc.Usage				=D3D11_USAGE_DEFAULT;
+		sbDesc.CPUAccessFlags		=0;
+	}
+	else
+	{
+		sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE ;
+		sbDesc.Usage				=D3D11_USAGE_DYNAMIC;
+		sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
+	}
+	sbDesc.MiscFlags			=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED ;
+	sbDesc.StructureByteStride	=element_bytesize;
+	sbDesc.ByteWidth			=element_bytesize*num_elements;
+	
+	D3D11_SUBRESOURCE_DATA sbInit = {init_data, 0, 0};
+
+	renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &buffer);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+	memset(&srv_desc,0,sizeof(srv_desc));
+	srv_desc.Format						=DXGI_FORMAT_UNKNOWN;
+	srv_desc.ViewDimension				=D3D11_SRV_DIMENSION_BUFFER;
+	srv_desc.Buffer.ElementOffset		=0;
+	srv_desc.Buffer.ElementWidth		=0;
+	srv_desc.Buffer.FirstElement		=0;
+	srv_desc.Buffer.NumElements			=num_elements;
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(buffer, &srv_desc,&shaderResourceView));
+
+	if(computable)
+	{
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+		memset(&uav_desc,0,sizeof(uav_desc));
+		uav_desc.Format						=DXGI_FORMAT_UNKNOWN;
+		uav_desc.ViewDimension				=D3D11_UAV_DIMENSION_BUFFER;
+		uav_desc.Buffer.FirstElement		=0;
+		uav_desc.Buffer.Flags				=0;
+		uav_desc.Buffer.NumElements			=num_elements;
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(buffer, &uav_desc,&unorderedAccessView));
+	}
+}
+void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceContext)
+{
+	lastContext=deviceContext.asD3D11DeviceContext();
+	if(!mapped.pData)
+		lastContext->Map(buffer,0,D3D11_MAP_WRITE,0,&mapped);
+	void *ptr=(void *)mapped.pData;
+	return ptr;
+}
+
+void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceContext,void *data)
+{
+	lastContext=deviceContext.asD3D11DeviceContext();
+	if(lastContext)
+	{
+		HRESULT hr=lastContext->Map(buffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+		if(hr==S_OK)
+		{
+			memcpy(mapped.pData,data,num_elements*element_bytesize);
+			mapped.RowPitch=0;
+			mapped.DepthPitch=0;
+			lastContext->Unmap(buffer,0);
+		}
+		else
+			SIMUL_BREAK("Map failed");
+	}
+	else
+		SIMUL_BREAK("Uninitialized device context");
+	mapped.pData=NULL;
+}
 
 void PlatformStructuredBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)
 {
@@ -36,7 +114,7 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(unorderedAccessView);
 	SAFE_RELEASE(shaderResourceView);
 	SAFE_RELEASE(buffer);
-	size=0;
+	num_elements=0;
 }
 void dx11::PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t size,void *addr)
 {

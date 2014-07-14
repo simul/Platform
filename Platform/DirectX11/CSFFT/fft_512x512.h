@@ -17,13 +17,13 @@ struct Fft
 {
 	Fft();
 	~Fft();
-	void RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT slices);
+	void RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT slices,int size);
 	void InvalidateDeviceObjects();
 	void RecompileShaders();
-	void CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices);
+	void CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices,int size);
 	void fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
 							ID3D11ShaderResourceView* pSRV_Dst,
-							ID3D11ShaderResourceView* pSRV_Src);
+							ID3D11ShaderResourceView* pSRV_Src,int size);
 	void radix008A(ID3D11UnorderedAccessView* pUAV_Dst,
 				   ID3D11ShaderResourceView* pSRV_Src,
 				   UINT thread_count,
@@ -39,12 +39,11 @@ protected:
 	UINT						slices;
 
 	// For 512x512 config, we need 6 constant buffers
-	ID3D11Buffer				*pRadix008A_CB[6];
+	ID3D11Buffer				**ppRadix008A_CB;
+	int							numBuffers;
 	// Temporary buffers
 	ID3D11Buffer				*pBuffer_Tmp;
 	ID3D11UnorderedAccessView	*pUAV_Tmp;
 	ID3D11ShaderResourceView	*pSRV_Tmp;
-
-	int							size;
 };
 

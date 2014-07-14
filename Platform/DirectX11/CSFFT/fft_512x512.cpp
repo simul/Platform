@@ -33,23 +33,23 @@ HRESULT CompileShaderFromFile( const char* szFileName, const char* szEntryPoint,
 
 Fft::Fft()
 	:m_pd3dDevice(NULL)
-	,size(512)
+	//,size(512)
 	,pd3dImmediateContext(NULL)
 	,pRadix008A_CS(NULL)
 	,pRadix008A_CS2(NULL)
 	,pBuffer_Tmp(NULL)
 	,pUAV_Tmp(NULL)
 	,pSRV_Tmp(NULL)
+	,ppRadix008A_CB(NULL)
+	,numBuffers(0)
 {
-	for(int i=0;i<6;i++)
-		pRadix008A_CB[i]=NULL;
 }
 Fft::~Fft()
 {
 	InvalidateDeviceObjects();
 }
 
-void Fft::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
+void Fft::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s,int size)
 {
 	m_pd3dDevice=pd3dDevice;
 	slices = s;
@@ -60,11 +60,11 @@ void Fft::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
 
 	// Constants
 	// Create 6 cbuffers for 512x512 transform
-	CreateCBuffers(pd3dDevice, slices);
+	CreateCBuffers(pd3dDevice, slices,size);
 
 	// Temp buffer
 	D3D11_BUFFER_DESC buf_desc;
-	buf_desc.ByteWidth = sizeof(float) * 2 * (size * slices) * size;
+	buf_desc.ByteWidth = sizeof(float) * 2 * (size* slices) * size;
     buf_desc.Usage = D3D11_USAGE_DEFAULT;
     buf_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
     buf_desc.CPUAccessFlags = 0;
@@ -102,8 +102,8 @@ void Fft::RecompileShaders()
     ID3DBlob* pBlobCS = NULL;
     ID3DBlob* pBlobCS2 = NULL;
 
-    CompileShaderFromFile("fft_512x512_c2c.hlsl", "Radix008A_CS", "cs_4_0", &pBlobCS);
-    CompileShaderFromFile("fft_512x512_c2c.hlsl", "Radix008A_CS2", "cs_4_0", &pBlobCS2);
+    CompileShaderFromFile("fft_512x512_c2c.hlsl","Radix008A_CS", "cs_4_0", &pBlobCS);
+    CompileShaderFromFile("fft_512x512_c2c.hlsl","Radix008A_CS2", "cs_4_0", &pBlobCS2);
 	
 	SAFE_RELEASE(pRadix008A_CS);
 	SAFE_RELEASE(pRadix008A_CS2);
@@ -122,9 +122,14 @@ void Fft::InvalidateDeviceObjects()
 	SAFE_RELEASE(pRadix008A_CS);
 	SAFE_RELEASE(pRadix008A_CS2);
 	SAFE_RELEASE(pd3dImmediateContext);
-
-	for (int i = 0; i < 6; i++)
-		SAFE_RELEASE(pRadix008A_CB[i]);
+	
+	if(ppRadix008A_CB)
+	{
+		for(int i=0;i<numBuffers;i++)
+			SAFE_RELEASE(ppRadix008A_CB[i]);
+	}
+	ppRadix008A_CB=NULL;
+	numBuffers=0;
 }
 
 void Fft::radix008A(	ID3D11UnorderedAccessView* pUAV_Dst,
@@ -162,16 +167,27 @@ void Fft::radix008A(	ID3D11UnorderedAccessView* pUAV_Dst,
 					 
 void Fft::fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
 									ID3D11ShaderResourceView* pSRV_Dst,
-									ID3D11ShaderResourceView* pSRV_Src)
+									ID3D11ShaderResourceView* pSRV_Src,int grid_size)
 {
-	const UINT thread_count = slices * (size * size) / 8;
+	const UINT thread_count = slices * (grid_size * grid_size) / 8;
 	ID3D11Buffer* cs_cbs[1];
-	UINT istride = size * size / 8;
+	UINT istride = grid_size * grid_size / 8;
 	// i.e. istride is 32768, 4096, 512, 64, 8, 1
+	// So if istride is grid^2/8, and grid=2^X, then
+	//			istride is 2^2X/(2^3) = 2^(2X-3)
+	//	and how many times can we divide istride by 8? 8=2^3
+	//			so after n divisions, we have istride -> 2^(2X-3-3n)
+	//			i.e. say grid is 512, so X=9.
+	//			then istride -> 2^(15-3n), which is 1 when 15-3n=0, 3n=15, n=5.
+	//			so one more division (the 6th) sets istride to zero, being an integer.
+	
+	// This means that in general, 2X-3-3n=0 at the second-last division,
+	//			so 3n=2X-3, n=2X/3-1.
+	// But one more gives us the total number, which is N=2X/3.
 	int i=0;
 	while(istride>0)
 	{
-		cs_cbs[0] = pRadix008A_CB[i];
+		cs_cbs[0] = ppRadix008A_CB[i];
 		pd3dImmediateContext->CSSetConstantBuffers(0, 1, &cs_cbs[0]);
 		// current source for the operation is either pSRV_Src (the first time), or swaps between pSRV_Tmp and pSRV_Dst.
 		ID3D11ShaderResourceView *srv=(i%2==0?(i==0?pSRV_Src:pSRV_Dst):pSRV_Tmp);
@@ -184,7 +200,7 @@ void Fft::fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
 	}
 }
 
-void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
+void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices,int size)
 {
 	// Create 6 cbuffers for 512x512 transform.
 
@@ -224,8 +240,42 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 		(float)phase_base
 	};
 	cb_data.pSysMem = &cb_data_buf0;
+	if(ppRadix008A_CB)
+	{
+		for(int i=0;i<numBuffers;i++)
+			SAFE_RELEASE(ppRadix008A_CB[i]);
+	}
+	int X=(int)(log((double)size)/log(2.0));
+	numBuffers=2*X/3;
+	ppRadix008A_CB=new ID3D11Buffer*[numBuffers];
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[0]);
+#if 1
+	int sz=size;
+	for(int i=0;i<numBuffers;i++)
+	{
+		CB_Structure cb_data_buf0 =
+		{
+			thread_count,
+			ostride,
+			istride,
+			sz,
+			(float)phase_base
+		};
+		cb_data.pSysMem = &cb_data_buf0;
+
+		pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[i]);
+		assert(ppRadix008A_CB[i]);
+		istride /= 8;
+		phase_base *= 8.0;
+		if(i==2)
+		{
+			ostride /= size;
+			sz=1;
+		}
+	}
+#else
+
+	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[0]);
 
 	// Buffer 1
 	istride /= 8;
@@ -241,7 +291,7 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 	};
 	cb_data.pSysMem = &cb_data_buf1;
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[1]);
+	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[1]);
 
 	// Buffer 2
 	istride /= 8;
@@ -257,8 +307,8 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 	};
 	cb_data.pSysMem = &cb_data_buf2;
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[2]);
-	assert(pRadix008A_CB[2]);
+	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[2]);
+	assert(ppRadix008A_CB[2]);
 
 	// Buffer 3
 	istride /= 8;
@@ -275,8 +325,8 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 	};
 	cb_data.pSysMem = &cb_data_buf3;
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[3]);
-	assert(pRadix008A_CB[3]);
+	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[3]);
+	assert(ppRadix008A_CB[3]);
 
 	// Buffer 4
 	istride /= 8;
@@ -292,8 +342,8 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 	};
 	cb_data.pSysMem = &cb_data_buf4;
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[4]);
-	assert(pRadix008A_CB[4]);
+	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[4]);
+	assert(ppRadix008A_CB[4]);
 
 	// Buffer 5
 	istride /= 8;
@@ -309,6 +359,7 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 	};
 	cb_data.pSysMem = &cb_data_buf5;
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[5]);
-	assert(pRadix008A_CB[5]);
+	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[5]);
+	assert(ppRadix008A_CB[5]);
+#endif
 }

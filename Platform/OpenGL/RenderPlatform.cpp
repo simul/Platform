@@ -475,6 +475,11 @@ crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuf
 	return new opengl::PlatformConstantBuffer();
 }
 
+crossplatform::PlatformStructuredBuffer *RenderPlatform::CreatePlatformStructuredBuffer()
+{
+	return NULL;
+}
+
 crossplatform::Buffer *RenderPlatform::CreateBuffer()
 {
 	return new opengl::Buffer();
@@ -609,6 +614,13 @@ GL_ERROR_CHECK
 		glBindBuffer(GL_ARRAY_BUFFER,buf);
 	}
 }
+
+void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
+{
+	GLuint buf=buffer->AsGLuint();
+    glBindBuffer(GL_ARRAY_BUFFER, buf);
+}
+
 
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)
 {

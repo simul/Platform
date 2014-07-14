@@ -30,6 +30,7 @@ namespace simul
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0)=0;
 			virtual void ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1)=0;
+			virtual void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)=0;
 			virtual void activateRenderTarget(DeviceContext &deviceContext)=0;
 			virtual void deactivateRenderTarget()=0;
 			virtual int GetLength() const=0;

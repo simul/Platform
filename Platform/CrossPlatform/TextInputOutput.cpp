@@ -281,6 +281,7 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
 		val[i]=(float)atof(s.c_str());
+		pos=comma_pos+1;
 	}
 	vec4 ret=val;
 	return ret;

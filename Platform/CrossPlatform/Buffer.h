@@ -14,9 +14,11 @@ namespace simul
 		public:
 			Buffer();
 			virtual ~Buffer();
+			virtual void InvalidateDeviceObjects()=0;
 			virtual ID3D11Buffer *AsD3D11Buffer()=0;
 			virtual GLuint AsGLuint()=0;
 			virtual void EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,int struct_size,const void *data)=0;
+			virtual void EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data)=0;
 			int stride;
 		};
 	}

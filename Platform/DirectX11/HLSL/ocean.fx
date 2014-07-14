@@ -17,7 +17,7 @@ Texture2D	showTexture					: register(t0);		// FFT wave displacement map in VS
 Texture2D	g_texDisplacement			: register(t0);		// FFT wave displacement map in VS
 Texture2D	g_texPerlin					: register(t1);		// FFT wave gradient map in PS
 Texture2D	g_texGradient				: register(t2);		// Perlin wave displacement & gradient map in both VS & PS
-Texture1D	g_texFresnel				: register(t3);		// Fresnel factor lookup table
+Texture2D	g_texFresnel				: register(t3);		// Fresnel factor lookup table. Actually 1D, but some platforms don't support that.
 TextureCube	g_texReflectCube			: register(t4);		// A small skybox cube texture for reflection
 Texture2D	g_skyLossTexture			: register(t5);
 Texture2D	g_skyInscatterTexture		: register(t6);
@@ -201,9 +201,9 @@ float4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
 //-----------------------------------------------------------------------------
 struct VS_OUTPUT
 {
-    float4 Position		: SV_POSITION;
-    vec2 texCoords		: TEXCOORD0;
-    vec3 LocalPos		: TEXCOORD1;
+    float4 Position	: SV_POSITION;
+    vec2 texCoords	: TEXCOORD0;
+    vec3 LocalPos	: TEXCOORD1;
     vec2 fade_texc	: TEXCOORD2;
 };
 #ifndef MAX_FADE_DISTANCE_METRES
@@ -301,7 +301,7 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	float cos_angle = dot(normal, eye_dir);
 	// --------------- Reflected color
 	// ramp.x for fresnel term.
-	float4 ramp = g_texFresnel.Sample(g_samplerFresnel, cos_angle).xyzw;
+	float4 ramp = g_texFresnel.Sample(g_samplerFresnel,vec2(cos_angle,0)).xyzw;
 // A workaround to deal with "indirect reflection vectors" (which are rays requiring multiple reflections to reach the sky).
 //	if (reflect_vec.z < g_BendParam.x)
 //		ramp = lerp(ramp, g_BendParam.z, (g_BendParam.x - reflect_vec.z)/(g_BendParam.x - g_BendParam.y));
@@ -341,9 +341,9 @@ vec4 PS_ShowTexture( posTexVertexOutput IN):SV_TARGET
 
 vec4 PS_ShowStructuredBuffer( posTexVertexOutput In):SV_TARGET
 {
-	uint index_x = (uint)(In.texCoords.x * (float)512);
-	uint index_y = (uint)(In.texCoords.y * (float)512);
-	uint addr = 512 * index_y + index_x;
+	uint index_x = (uint)(In.texCoords.x * (float)g_ActualDim);
+	uint index_y = (uint)(In.texCoords.y * (float)g_ActualDim);
+	uint addr = (bufferGrid.x) * index_y + index_x;
     vec2 lookup=g_InputDxyz[addr];
 	return vec4(showMultiplier*lookup.rg,0.0,1.0);
 }

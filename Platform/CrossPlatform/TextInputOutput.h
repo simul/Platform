@@ -1,5 +1,4 @@
 #pragma once
-#include "Simul/Sky/Float4.h"
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Base/FileLoader.h"

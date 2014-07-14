@@ -36,7 +36,7 @@ float Gauss()
 
 // Phillips Spectrum
 // K: normalized wave vector, W: wind direction, v: wind velocity, a: amplitude constant
-float Phillips(D3DXVECTOR2 K, D3DXVECTOR2 W, float v, float a, float dir_depend)
+float Phillips(vec2 K, vec2 W, float v, float a, float dir_depend)
 {
 	// largest possible wave from constant wind of velocity v
 	float l = v * v / GRAV_ACCEL;
@@ -45,7 +45,7 @@ float Phillips(D3DXVECTOR2 K, D3DXVECTOR2 W, float v, float a, float dir_depend)
 
 	float Ksqr = K.x * K.x + K.y * K.y;
 	float Kcos = K.x * W.x + K.y * W.y;
-	float phillips = a * expf(-1 / (l * l * Ksqr)) / (Ksqr * Ksqr * Ksqr) * (Kcos * Kcos);
+	float phillips = a * expf(-1.0f / (l * l * Ksqr)) / (Ksqr * Ksqr * Ksqr) * (Kcos * Kcos);
 
 	// filter out waves moving opposite to wind
 	if (Kcos < 0)
@@ -55,46 +55,6 @@ float Phillips(D3DXVECTOR2 K, D3DXVECTOR2 W, float v, float a, float dir_depend)
 	return phillips * expf(-Ksqr * w * w);
 }
 
-void createBufferAndUAV(ID3D11Device* pd3dDevice, void* data, UINT byte_width, UINT byte_stride,
-						ID3D11Buffer** ppBuffer, ID3D11UnorderedAccessView** ppUAV, ID3D11ShaderResourceView** ppSRV)
-{
-	// Create buffer
-	D3D11_BUFFER_DESC buf_desc;
-	buf_desc.ByteWidth = byte_width;
-    buf_desc.Usage = D3D11_USAGE_DEFAULT;
-    buf_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-    buf_desc.CPUAccessFlags = 0;
-    buf_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    buf_desc.StructureByteStride = byte_stride;
-
-	D3D11_SUBRESOURCE_DATA init_data = {data, 0, 0};
-
-	pd3dDevice->CreateBuffer(&buf_desc, data != NULL ? &init_data : NULL, ppBuffer);
-	assert(*ppBuffer);
-
-	// Create undordered access view
-	D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-	uav_desc.Format = DXGI_FORMAT_UNKNOWN;
-	uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-	uav_desc.Buffer.FirstElement = 0;
-	uav_desc.Buffer.NumElements = byte_width / byte_stride;
-	uav_desc.Buffer.Flags = 0;
-
-	pd3dDevice->CreateUnorderedAccessView(*ppBuffer, &uav_desc, ppUAV);
-	assert(*ppUAV);
-
-	// Create shader resource view
-	D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-	srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-	srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-	srv_desc.Buffer.FirstElement = 0;
-	srv_desc.Buffer.NumElements = byte_width / byte_stride;
-
-	pd3dDevice->CreateShaderResourceView(*ppBuffer, &srv_desc, ppSRV);
-	assert(*ppSRV);
-}
-
-
 OceanSimulator::OceanSimulator(simul::terrain::SeaKeyframer *s)
 	:m_param(s)
 	,renderPlatform(NULL)
@@ -102,26 +62,28 @@ OceanSimulator::OceanSimulator(simul::terrain::SeaKeyframer *s)
 	,start_time(0.f)
 	,displacement(NULL)
 	,gradient(NULL)
+	,gridSize(0)
+	,propertiesChecksum(0)
 {
 }
 
 void OceanSimulator::InvalidateDeviceObjects()
 {
-	SAFE_DELETE(effect);
 	immutableConstants		.InvalidateDeviceObjects();
 	changePerFrameConstants	.InvalidateDeviceObjects();
 
-	choppy		.release();
-	omega		.release();
+	Choppy.InvalidateDeviceObjects();
+	Omega.InvalidateDeviceObjects();
 	if(displacement)
 		displacement->InvalidateDeviceObjects();
 	if(gradient)
 		gradient	->InvalidateDeviceObjects();
 	SAFE_DELETE(displacement);
 	SAFE_DELETE(gradient);
-	dxyz		.release();
-	h0			.release();
+	dxyz		.InvalidateDeviceObjects();
+	H0.InvalidateDeviceObjects();
 	m_fft.InvalidateDeviceObjects();
+	effect=NULL;
 }
 
 void OceanSimulator::RestoreDeviceObjects(simul::crossplatform::RenderPlatform *r)
@@ -133,87 +95,74 @@ void OceanSimulator::RestoreDeviceObjects(simul::crossplatform::RenderPlatform *
 	SAFE_DELETE(gradient);
 	displacement	=renderPlatform->CreateTexture();
 	gradient		=renderPlatform->CreateTexture();
-	// Height map H(0)
-	int height_map_size = (m_param->dmap_dim + 4) * (m_param->dmap_dim + 1);
-	D3DXVECTOR2* h0_data = new D3DXVECTOR2[height_map_size * sizeof(D3DXVECTOR2)];
-	float* omega_data = new float[height_map_size * sizeof(float)];
-	initHeightMap(h0_data, omega_data);
-
-	int hmap_dim = m_param->dmap_dim;
-	int input_full_size = (hmap_dim + 4) * (hmap_dim + 1);
-	// This value should be (hmap_dim / 2 + 1) * hmap_dim, but we use full sized buffer here for simplicity.
-	int input_half_size = hmap_dim * hmap_dim;
-	int output_size = hmap_dim * hmap_dim;
-
-	// For filling the buffer with zeroes.
-	float* zero_data = new float[3 * output_size * 2];
-	for(int i=0;i<3 * output_size * 2;i++)
-		zero_data[i]=0.f;
-	//memset(zero_data, 0, 3 * output_size * sizeof(float) * 2);
 	
-	// RW buffer allocations
-	// H0
-	UINT float2_stride = 2 * sizeof(float);
-	createBufferAndUAV(renderPlatform->AsD3D11Device(), h0_data, input_full_size * float2_stride, float2_stride
-		, &h0.buffer, &h0.unorderedAccessView, &h0.shaderResourceView);
+	immutableConstants		.RestoreDeviceObjects(renderPlatform);
+	changePerFrameConstants	.RestoreDeviceObjects(renderPlatform);
 
-	// Notice: The following 3 buffers should be half sized buffer because of conjugate symmetric input. But
-	// we use full sized buffers due to the CS4.0 restriction.
 
-	// Put H(t), Dx(t) and Dy(t) into one buffer because CS4.0 allows only 1 UAV at a time
-	createBufferAndUAV(renderPlatform->AsD3D11Device(), zero_data, 3 * input_half_size * float2_stride, float2_stride,
-		//&m_pBuffer_Float2_Ht, &m_pUAV_Ht, &m_pSRV_Ht);
-		&choppy.buffer,&choppy.unorderedAccessView,&choppy.shaderResourceView);
+	gridSize=0;
+	// FFT
+	//fft512x512_create_plan(&m_fft, pd3dDevice, 3);
+}
+
+void OceanSimulator::EnsureTablesInitialized(simul::crossplatform::DeviceContext &deviceContext)
+{
+	if(m_param->dmap_dim!=gridSize||propertiesChecksum!=m_param->CalcChecksum())
+	{
+		gridSize = m_param->dmap_dim;
+		propertiesChecksum=m_param->CalcChecksum();
+		m_fft.RestoreDeviceObjects(renderPlatform->AsD3D11Device(), 3,gridSize);
+		int input_full_size = (gridSize + 4) * (gridSize + 1);
+		// This value should be (hmap_dim / 2 + 1) * hmap_dim, but we use full sized buffer here for simplicity.
+		int input_half_size = gridSize * gridSize;
+		int output_size = gridSize * gridSize;
 	
-	//choppy.RestoreDeviceObjects(pd3dDevice,3 * input_half_size);
-	// omega
-	createBufferAndUAV(renderPlatform->AsD3D11Device(), omega_data, input_full_size * sizeof(float), sizeof(float)
-		, &omega.buffer, &omega.unorderedAccessView, &omega.shaderResourceView);
+		// RW buffer allocations
+		// H0
+		H0.RestoreDeviceObjects(renderPlatform,input_full_size,false);
+		// Notice: The following 3 buffers should be half sized buffer because of conjugate symmetric input. But
+		// we use full sized buffers due to the CS4.0 restriction.
+		// Put H(t), Dx(t) and Dy(t) into one buffer because CS4.0 allows only 1 UAV at a time
+		Choppy.RestoreDeviceObjects(renderPlatform,3 * input_half_size,true);
+		Omega.RestoreDeviceObjects(renderPlatform,input_full_size,false);
 
-	// Notice: The following 3 should be real number data. But here we use the complex numbers and C2C FFT
-	// due to the CS4.0 restriction.
-	// Put Dz, Dx and Dy into one buffer because CS4.0 allows only 1 UAV at a time
-	createBufferAndUAV(renderPlatform->AsD3D11Device(), zero_data, 3 * output_size * float2_stride, float2_stride
-		, &dxyz.buffer, &dxyz.unorderedAccessView, &dxyz.shaderResourceView);
+		// Notice: The following 3 should be real number data. But here we use the complex numbers and C2C FFT
+		// due to the CS4.0 restriction.
+		// Put Dz, Dx and Dy into one buffer because CS4.0 allows only 1 UAV at a time
+		dxyz.RestoreDeviceObjects(renderPlatform, 3 * output_size,true);
 
-	SAFE_DELETE_ARRAY(zero_data);
-	SAFE_DELETE_ARRAY(h0_data);
-	SAFE_DELETE_ARRAY(omega_data);
+		// Height map H(0)
+		int height_map_size = (gridSize + 4) * (gridSize + 1);
+		vec2* h0_data = new vec2[height_map_size * sizeof(vec2)];
+		float* omega_data = new float[height_map_size * sizeof(float)];
+		initHeightMap(h0_data, omega_data);
+		H0.SetData(deviceContext,h0_data);
+		Omega.SetData(deviceContext,omega_data);
+		SAFE_DELETE_ARRAY(h0_data);
+		SAFE_DELETE_ARRAY(omega_data);
+		
+		// Constant buffers
+		// We use full sized data here. The value "output_width" should be actual_dim/2+1 though.
+		immutableConstants.g_ActualDim			=gridSize;
+		immutableConstants.g_InWidth			=gridSize + 4;
+		immutableConstants.g_OutWidth			=gridSize;
+		immutableConstants.g_OutHeight			=gridSize;
+		immutableConstants.g_DxAddressOffset	=gridSize*gridSize;
+		immutableConstants.g_DyAddressOffset	=gridSize*gridSize*2;
 
+	}
 	// Have now created: H0, Ht, Omega, Dxyz - as both UAV's and SRV's.
 
 	// D3D11 Textures - these ar the outputs of the ocean simulator.
-	displacement->ensureTexture2DSizeAndFormat(renderPlatform,hmap_dim,hmap_dim,crossplatform::RGBA_32_FLOAT,false,true);
-	gradient->ensureTexture2DSizeAndFormat(renderPlatform,hmap_dim,hmap_dim,crossplatform::RGBA_16_FLOAT,false,true);
-
-	immutableConstants		.RestoreDeviceObjects(renderPlatform);
-	changePerFrameConstants	.RestoreDeviceObjects(renderPlatform);
-	
-	RecompileShaders();
-
-	// Constant buffers
-	UINT actual_dim = m_param->dmap_dim;
-
-	// We use full sized data here. The value "output_width" should be actual_dim/2+1 though.
-	immutableConstants.g_ActualDim			=actual_dim;
-	immutableConstants.g_InWidth			=actual_dim + 4;
-	immutableConstants.g_OutWidth			=actual_dim;
-	immutableConstants.g_OutHeight			=actual_dim;
-	immutableConstants.g_DxAddressOffset	=actual_dim*actual_dim;
-	immutableConstants.g_DyAddressOffset	=actual_dim*actual_dim*2;
-
-	// FFT
-	//fft512x512_create_plan(&m_fft, pd3dDevice, 3);
-	m_fft.RestoreDeviceObjects(renderPlatform->AsD3D11Device(), 3);
+	displacement->ensureTexture2DSizeAndFormat(renderPlatform,gridSize,gridSize,crossplatform::RGBA_32_FLOAT,false,true);
+	gradient->ensureTexture2DSizeAndFormat(renderPlatform,gridSize,gridSize,crossplatform::RGBA_16_FLOAT,false,true);
 }
 
-void OceanSimulator::RecompileShaders()
+void OceanSimulator::SetShader(crossplatform::Effect		*e)
 {
 	if(!renderPlatform)
 		return;
-	SAFE_DELETE(effect);
-	std::map<std::string,std::string> defines;
-	effect					=renderPlatform->CreateEffect("ocean",defines);
+	effect=e;
 	m_fft					.RecompileShaders();
 	immutableConstants		.LinkToEffect(effect,"cbImmutable");
 	changePerFrameConstants	.LinkToEffect(effect,"cbChangePerFrame");
@@ -223,36 +172,42 @@ OceanSimulator::~OceanSimulator()
 {
 	InvalidateDeviceObjects();
 }
-
+static vec2 vec2Normalize(vec2 v)
+{
+	float sz=sqrt(v.x*v.x+v.y*v.y);
+	v.x/=sz;
+	v.y/=sz;
+	return v;
+}
 // Initialize the vector field.
 // wlen_x: width of wave tile, in meters
 // wlen_y: length of wave tile, in meters
-void OceanSimulator::initHeightMap(D3DXVECTOR2* out_h0, float* out_omega)
+void OceanSimulator::initHeightMap(vec2* out_h0, float* out_omega)
 {
 	int i, j;
-	D3DXVECTOR2 K, Kn;
+	vec2 K, Kn;
 
-	D3DXVECTOR2 wind_dir;
-	D3DXVECTOR2 pwind_dir(m_param->wind_dir[0],m_param->wind_dir[1]);
-	D3DXVec2Normalize(&wind_dir, &pwind_dir);
+	vec2 wind_dir;
+	vec2 pwind_dir(m_param->wind_dir[0],m_param->wind_dir[1]);
+	wind_dir=vec2Normalize(pwind_dir);
 	float a = m_param->wave_amplitude * 1e-7f;	// It is too small. We must scale it for editing.
 	float v = m_param->wind_speed;
 	float dir_depend = m_param->wind_dependency;
 
-	int height_map_dim = m_param->dmap_dim;
+	int height_map_dim = gridSize;
 	float patch_length = m_param->patch_length;
 
 	// initialize random generator.
 	srand(0);
-
+	float R=600.f/(float)height_map_dim;
 	for (i = 0; i <= height_map_dim; i++)
 	{
 		// K is wave-vector, range [-|DX/W, |DX/W], [-|DY/H, |DY/H]
-		K.y = (-height_map_dim / 2.0f + i) * (2 * D3DX_PI / patch_length);
+		K.y = (-height_map_dim / 2.0f + i) *R* (2*D3DX_PI/patch_length);
 
 		for (j = 0; j <= height_map_dim; j++)
 		{
-			K.x = (-height_map_dim / 2.0f + j) * (2 * D3DX_PI / patch_length);
+			K.x = (-height_map_dim / 2.0f + j) *R* (2 * D3DX_PI / patch_length);
 
 			float phil = (K.x == 0 && K.y == 0) ? 0 : sqrtf(Phillips(K, wind_dir, v, a, dir_depend));
 
@@ -274,14 +229,15 @@ void OceanSimulator::initHeightMap(D3DXVECTOR2* out_h0, float* out_omega)
 
 void OceanSimulator::updateDisplacementMap(simul::crossplatform::DeviceContext &deviceContext,float time)
 {
+	EnsureTablesInitialized(deviceContext);
 	// ---------------------------- H(0) -> H(t), D(x, t), D(y, t) --------------------------------
 	// Compute shader
 	crossplatform::EffectTechnique *tech	=effect->GetTechniqueByName("update_spectrum");
 	// Buffers
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputH0"		,h0.shaderResourceView);
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputOmega"	,omega.shaderResourceView);
+	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputH0"	,H0.AsD3D11ShaderResourceView());
+	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputOmega"	,Omega.AsD3D11ShaderResourceView());
 
-	simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"g_OutputHt",choppy.unorderedAccessView);
+	simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"g_OutputHt",Choppy.AsD3D11UnorderedAccessView());
 	if(start_time==0)
 		start_time=time;
 	float time_seconds						=(time-start_time)*3600.f*24.f;
@@ -303,7 +259,7 @@ void OceanSimulator::updateDisplacementMap(simul::crossplatform::DeviceContext &
 	effect->Unapply(deviceContext);
 	// Perform Fast (inverse) Fourier Transform from the source Ht to the destination Dxyz.
 	// NOTE: we also provide the SRV of Dxyz so that FFT can use it as a temporary buffer and save space.
-	m_fft.fft_512x512_c2c(dxyz.unorderedAccessView,dxyz.shaderResourceView,choppy.shaderResourceView);
+	m_fft.fft_512x512_c2c(dxyz.AsD3D11UnorderedAccessView(),dxyz.AsD3D11ShaderResourceView(),Choppy.AsD3D11ShaderResourceView(),gridSize);
 	// Now we will use the transformed Dxyz to create our displacement map
 	// --------------------------------- Wrap Dx, Dy and Dz ---------------------------------------
 	// Save the current RenderTarget and viewport:
@@ -324,7 +280,7 @@ void OceanSimulator::updateDisplacementMap(simul::crossplatform::DeviceContext &
 		immutableConstants		.Apply(deviceContext);
 		changePerFrameConstants	.Apply(deviceContext);
 		// Assign the Dxyz source as a resource for the pixel shader:
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz"				,dxyz.shaderResourceView);
+		simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz"				,dxyz.AsD3D11ShaderResourceView());
 		// Assign the shaders:
 		effect->Apply(deviceContext,effect->GetTechniqueByName("update_displacement"),0);
 		UtilityRenderer::DrawQuad(deviceContext);
@@ -366,12 +322,12 @@ void OceanSimulator::updateDisplacementMap(simul::crossplatform::DeviceContext &
 
 ID3D11ShaderResourceView* OceanSimulator::GetFftOutput()
 {
-	return dxyz.shaderResourceView;//m_pSRV_Dxyz;
+	return dxyz.AsD3D11ShaderResourceView();//m_pSRV_Dxyz;
 }
 
 ID3D11ShaderResourceView* OceanSimulator::GetFftInput()
 {
-	return h0.shaderResourceView;//m_pSRV_Dxyz;
+	return H0.AsD3D11ShaderResourceView();//m_pSRV_Dxyz;
 }
 
 crossplatform::Texture* OceanSimulator::getDisplacementMap()
@@ -381,7 +337,7 @@ crossplatform::Texture* OceanSimulator::getDisplacementMap()
 
 ID3D11ShaderResourceView* OceanSimulator::GetSpectrum()
 {
-	return choppy.shaderResourceView;
+	return Choppy.AsD3D11ShaderResourceView();
 }
 
 crossplatform::Texture* OceanSimulator::getGradientMap()

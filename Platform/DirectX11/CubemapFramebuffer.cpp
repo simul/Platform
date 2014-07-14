@@ -115,6 +115,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
  dx11::Texture *t=(dx11::Texture *)texture;
  ID3D11Texture2D *tex2d=(ID3D11Texture2D*)t->texture;
 	V_CHECK(pd3dDevice->CreateTexture2D(&tex2dDesc,NULL,&tex2d));
+	t->texture=tex2d;
 	// Create the 6-face render target view
 	D3D1x_RENDER_TARGET_VIEW_DESC DescRT;
 	DescRT.Format = tex2dDesc.Format;

@@ -9,6 +9,7 @@
 #include "CompileShaderDX1x.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/Layout.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Math/Matrix4x4.h"
@@ -56,13 +57,11 @@ OceanRenderer::OceanRenderer(simul::terrain::SeaKeyframer *s)
 	,effect(NULL)
 	// D3D11 buffers and layout
 	,vertexBuffer(NULL)
-	,g_pMeshIB(NULL)
-	,g_pMeshLayout(NULL)
-	// Color look up 1D texture
-	,g_pFresnelMap(NULL)
-	,g_pSRV_Fresnel(NULL)
+	,indexBuffer(NULL)
+	,layout(NULL)
+	,fresnelMap(NULL)
 	// Distant perlin wave
-	,g_pSRV_Perlin(NULL)
+	,perlinNoise(NULL)
 	// Environment maps
 	,cubemapTexture(NULL)
 	,skyLossTexture_SRV(NULL)
@@ -85,21 +84,15 @@ void OceanRenderer::RecompileShaders()
 	defines["FX"]="1";
 	effect=renderPlatform->CreateEffect("ocean.fx",defines);
 
-	// Input layout
-	D3D11_INPUT_ELEMENT_DESC mesh_layout_desc[] =
+	SAFE_DELETE(layout);
+	crossplatform::LayoutDesc desc[]=
 	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{ "POSITION",	0, crossplatform::RG_32_FLOAT	,		0,	0,	false, 0 },
 	};
-	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("ocean");
-	if(tech)
-	{
-		D3DX11_PASS_DESC PassDesc;
-		tech->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
-		SAFE_RELEASE(g_pMeshLayout);
-		renderPlatform->AsD3D11Device()->CreateInputLayout(mesh_layout_desc,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &g_pMeshLayout);
-	}
+	layout=renderPlatform->CreateLayout(1,desc,vertexBuffer);
+
 	if(oceanSimulator)
-		oceanSimulator->RecompileShaders();
+		oceanSimulator->SetShader(effect);
 	shadingConstants		.LinkToEffect(effect,"cbShading");
 	changePerCallConstants	.LinkToEffect(effect,"cbChangePerCall");
 }
@@ -112,6 +105,10 @@ void OceanRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		return;
 	oceanSimulator					=new OceanSimulator(seaKeyframer);
 	oceanSimulator->RestoreDeviceObjects(renderPlatform);
+
+	shadingConstants		.RestoreDeviceObjects(renderPlatform);
+	changePerCallConstants	.RestoreDeviceObjects(renderPlatform);
+	RecompileShaders();
 	
 	// Update the simulation for the first time.
 	crossplatform::DeviceContext deviceContext;
@@ -122,21 +119,8 @@ void OceanRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	oceanSimulator->updateDisplacementMap(deviceContext,0);
 	// D3D buffers
 	createSurfaceMesh();
-	createFresnelMap();
+	createFresnelMap(deviceContext);
 	loadTextures();
-
-	shadingConstants		.RestoreDeviceObjects(renderPlatform);
-	changePerCallConstants	.RestoreDeviceObjects(renderPlatform);
-	RecompileShaders();
-	// Constants
-	D3D11_BUFFER_DESC cb_desc;
-	cb_desc.Usage = D3D11_USAGE_DYNAMIC;
-	cb_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	cb_desc.MiscFlags = 0;    
-	cb_desc.ByteWidth = PAD16(sizeof(cbChangePerCall));
-	cb_desc.StructureByteStride = 0;
-
 	SAFE_RELEASE(pImmediateContext);
 }
 
@@ -155,6 +139,8 @@ void OceanRenderer::SetLossAndInscatterTextures(crossplatform::Texture *l,crossp
 void OceanRenderer::InvalidateDeviceObjects()
 {
 	SAFE_DELETE(vertexBuffer);
+	SAFE_DELETE(indexBuffer);
+	SAFE_DELETE(layout);
 	if(oceanSimulator)
 	{
 		oceanSimulator->InvalidateDeviceObjects();
@@ -162,14 +148,11 @@ void OceanRenderer::InvalidateDeviceObjects()
 		delete (oceanSimulator);
 		oceanSimulator=NULL;
 	}
-	SAFE_RELEASE(g_pMeshIB);
-	SAFE_RELEASE(g_pMeshLayout);
 	
 	SAFE_DELETE(effect);
 
-	SAFE_RELEASE(g_pFresnelMap);
-	SAFE_RELEASE(g_pSRV_Fresnel);
-	SAFE_RELEASE(g_pSRV_Perlin);
+	SAFE_DELETE(fresnelMap);
+	SAFE_DELETE(perlinNoise);
 
 	shadingConstants		.InvalidateDeviceObjects();
 	changePerCallConstants	.InvalidateDeviceObjects();
@@ -240,9 +223,9 @@ void OceanRenderer::createSurfaceMesh()
 
 	init_data.pSysMem = index_array;
 
-	SAFE_RELEASE(g_pMeshIB);
-	renderPlatform->AsD3D11Device()->CreateBuffer(&ib_desc, &init_data, &g_pMeshIB);
-
+	SAFE_DELETE(indexBuffer);
+	indexBuffer=renderPlatform->CreateBuffer();
+	indexBuffer->EnsureIndexBuffer(renderPlatform,index_size_lookup[g_Lods],sizeof(DWORD),index_array);
 	SAFE_DELETE_ARRAY(index_array);
 }
 
@@ -302,7 +285,7 @@ void OceanRenderer::EnumeratePatterns(unsigned long* index_array)
 //	assert(offset == index_size_lookup[g_Lods]);
 }
 
-void OceanRenderer::createFresnelMap()
+void OceanRenderer::createFresnelMap(crossplatform::DeviceContext &deviceContext)
 {
 	DWORD* buffer = new DWORD[FRESNEL_TEX_SIZE];
 	for (int i = 0; i < FRESNEL_TEX_SIZE; i++)
@@ -313,43 +296,19 @@ void OceanRenderer::createFresnelMap()
 		DWORD sky_blend = (DWORD)(powf(1 / (1 + cos_a), g_SkyBlending) * 255);
 		buffer[i] = (sky_blend << 8) | fresnel;
 	}
-	D3D11_TEXTURE1D_DESC tex_desc;
-	tex_desc.Width = FRESNEL_TEX_SIZE;
-	tex_desc.MipLevels = 1;
-	tex_desc.ArraySize = 1;
-	tex_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	tex_desc.Usage = D3D11_USAGE_IMMUTABLE;
-	tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	tex_desc.CPUAccessFlags = 0;
-	tex_desc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA init_data;
-	init_data.pSysMem = buffer;
-	init_data.SysMemPitch = 0;
-	init_data.SysMemSlicePitch = 0;
-
-	renderPlatform->AsD3D11Device()->CreateTexture1D(&tex_desc, &init_data, &g_pFresnelMap);
-	assert(g_pFresnelMap);
-
+	SAFE_DELETE(fresnelMap);
+	fresnelMap=renderPlatform->CreateTexture();
+	fresnelMap->ensureTexture2DSizeAndFormat(renderPlatform,FRESNEL_TEX_SIZE,1,crossplatform::RGBA_8_UNORM,false,false);
+	fresnelMap->setTexels(deviceContext,buffer,0,FRESNEL_TEX_SIZE);
 	SAFE_DELETE_ARRAY(buffer);
 
-	// Create shader resource
-	D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-	srv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D;
-	srv_desc.Texture1D.MipLevels = 1;
-	srv_desc.Texture1D.MostDetailedMip = 0;
-
-	renderPlatform->AsD3D11Device()->CreateShaderResourceView(g_pFresnelMap, &srv_desc, &g_pSRV_Fresnel);
-	assert(g_pSRV_Fresnel);
 }
 
 void OceanRenderer::loadTextures()
 {
 //    WCHAR strPath[MAX_PATH];
-	SAFE_RELEASE(g_pSRV_Perlin);
-    //swprintf_s(strPath, MAX_PATH, L"../../Platform/DirectX11/Textures/perlin_noise.dds");
-	g_pSRV_Perlin=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),"perlin_noise.dds");
+	SAFE_DELETE(perlinNoise);
+	perlinNoise=renderPlatform->CreateTexture("perlin_noise.dds");
 	//D3DX11CreateShaderResourceViewFromFile(m_pd3dDevice, strPath, NULL, NULL, &g_pSRV_Perlin, NULL);
 	//assert(g_pSRV_Perlin);
 }
@@ -407,19 +366,19 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	effect->SetTexture(deviceContext	,"g_texDisplacement"	,displacement_map);
 	effect->SetTexture(deviceContext	,"g_texGradient"		,gradient_map);
 	effect->SetTexture(deviceContext	,"g_texReflectCube"		,cubemapTexture);
-	setTexture(effect->asD3DX11Effect()	,"g_texPerlin"			,g_pSRV_Perlin);
-	setTexture(effect->asD3DX11Effect()	,"g_texFresnel"			,g_pSRV_Fresnel);
+	effect->SetTexture(deviceContext	,"g_texPerlin"			,perlinNoise);
+	//setTexture(effect->asD3DX11Effect()	,"g_texFresnel"			,g_pSRV_Fresnel);
+	effect->SetTexture(deviceContext	,"g_texFresnel"		,fresnelMap);
 	setTexture(effect->asD3DX11Effect()	,"g_skyLossTexture"		,skyLossTexture_SRV);
 	setTexture(effect->asD3DX11Effect()	,"g_skyInscatterTexture",skyInscatterTexture_SRV);
 
 	// IA setup
-	pContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
+	//pContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
 
-
+	renderPlatform->SetIndexBuffer(deviceContext,indexBuffer);
 	renderPlatform->SetVertexBuffers(deviceContext,0,1,&vertexBuffer);
 
-	pContext->IASetInputLayout(g_pMeshLayout);
-
+	layout->Apply(deviceContext);
 	// Constants
 	shadingConstants.Apply(deviceContext);
 	effect->Apply(deviceContext,tech,0);
@@ -496,6 +455,7 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	}
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
+	layout->Unapply(deviceContext);
 }
 
 void OceanRenderer::RenderWireframe(crossplatform::DeviceContext &deviceContext)
@@ -519,14 +479,16 @@ void OceanRenderer::RenderWireframe(crossplatform::DeviceContext &deviceContext)
 	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("wireframe");
 	
 	effect->SetTexture(deviceContext,"g_texDisplacement",displacement_map);
-	setTexture(effect->asD3DX11Effect(),"g_texPerlin",g_pSRV_Perlin);
+	effect->SetTexture(deviceContext,"g_texPerlin",perlinNoise);
 
 	// IA setup
-	pContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
+	//pContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
+
+	renderPlatform->SetIndexBuffer(deviceContext,indexBuffer);
 
 	//pContext->IASetVertexBuffers(0, 1, &vbs[0], &strides[0], &offsets[0]);
 	renderPlatform->SetVertexBuffers(deviceContext,0,1,&vertexBuffer);
-	pContext->IASetInputLayout(g_pMeshLayout);
+	layout->Apply(deviceContext);
 	// Constants
 	shadingConstants.Apply(deviceContext);
 	effect->Apply(deviceContext,tech,0);
@@ -591,6 +553,7 @@ void OceanRenderer::RenderWireframe(crossplatform::DeviceContext &deviceContext)
 			pContext->DrawIndexed(render_param.num_boundary_faces * 3, render_param.boundary_start_index, 0);
 		}
 	}
+	layout->Unapply(deviceContext);
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
 }
@@ -607,13 +570,25 @@ void OceanRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,i
 	UtilityRenderer::SetScreenSize(width,height);
 	int x=8;
 	int y=height-w;
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"showTexture",g_pSRV_Perlin);
-	simul::dx11::setParameter(effect->asD3DX11Effect(),"showMultiplier",10.f);
-	//renderPlatform->DrawTexture(deviceContext,x,y,w,w,g_pSRV_Perlin);
+	renderPlatform->DrawTexture(deviceContext,x,y,w,w,perlinNoise);
+	x+=w+2;
+	float gridSize=(float)seaKeyframer->dmap_dim;
+	// structured buffer
+	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz",oceanSimulator->GetFftInput());
+	static float hh=100000.0f;
+	simul::dx11::setParameter(effect->asD3DX11Effect(),"showMultiplier",hh);
+	simul::dx11::setParameter(effect->asD3DX11Effect(),"bufferGrid",vec2(gridSize+4,gridSize+1));
+	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer"));
 	x+=w+2;
 	static float spectrum_multiplier=10000.0f;
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz",oceanSimulator->GetSpectrum());
 	simul::dx11::setParameter(effect->asD3DX11Effect(),"showMultiplier",spectrum_multiplier);
+	simul::dx11::setParameter(effect->asD3DX11Effect(),"bufferGrid",vec2(gridSize,gridSize));
+	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer"));
+	x+=w+2;
+	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz",oceanSimulator->GetFftOutput());
+	simul::dx11::setParameter(effect->asD3DX11Effect(),"showMultiplier",0.01f);
+	simul::dx11::setParameter(effect->asD3DX11Effect(),"bufferGrid",vec2(gridSize,gridSize));
 	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer"));
 	x+=w+2;
 	//simul::dx11::setTexture(effect,"showTexture",oceanSimulator->getDisplacementMap());
@@ -627,14 +602,7 @@ void OceanRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,i
 	x+=w+2;
 //	simul::dx11::setParameter(effect,"showTexture",g_pSRV_Fresnel);
 	//UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
-//	x+=w+2;
-	// structured buffer
-	/*simul::dx11::setTexture(effect,"g_InputDxyz",oceanSimulator->GetFftInput());
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
-	x+=w+2;*/
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz",oceanSimulator->GetFftOutput());
-	simul::dx11::setParameter(effect->asD3DX11Effect(),"showMultiplier",0.01f);
-	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer"));
+	x+=w+2;
 
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz",NULL);
 	simul::dx11::unbindTextures(effect->asD3DX11Effect());

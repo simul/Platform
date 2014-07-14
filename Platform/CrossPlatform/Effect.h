@@ -10,6 +10,8 @@
 #endif
 struct ID3DX11Effect;
 struct ID3DX11EffectTechnique;
+struct ID3D11ShaderResourceView;
+struct ID3D11UnorderedAccessView;
 typedef unsigned int GLuint;
 #ifdef _MSC_VER
 #pragma warning(disable:4251)
@@ -88,17 +90,28 @@ namespace simul
 				platformConstantBuffer->Unbind(deviceContext);
 			}
 		};
+		/// A base class for structured buffers, used by StructuredBuffer internally.
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer
 		{
 		public:
 			virtual ~PlatformStructuredBuffer(){}
-			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,void *addr)=0;
+			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,bool computable,void *init_data)=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)=0;
 			virtual void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)=0;
 			virtual void Unbind(DeviceContext &deviceContext)=0;
 			virtual void *GetBuffer(crossplatform::DeviceContext &deviceContext)=0;
+			virtual void SetData(crossplatform::DeviceContext &deviceContext,void *data)=0;
+			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView()=0;
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()=0;
 		};
+
+		/// Templated structured buffer, which uses platform-specific implementations of PlatformStructuredBuffer.
+		///
+		/// Declare like so:
+		/// \code
+		/// 	StructuredBuffer<Example> example;
+		/// \endcode
 		template<class T> class StructuredBuffer 
 		{
 			PlatformStructuredBuffer *platformStructuredBuffer;
@@ -112,17 +125,29 @@ namespace simul
 			{
 				InvalidateDeviceObjects();
 			}
-			void RestoreDeviceObjects(RenderPlatform *p,int ct,bool computable=false)
+			void RestoreDeviceObjects(RenderPlatform *p,int ct,bool computable=false,T *data=NULL)
 			{
-				count=s;
-				unit_size=unit;
+				count=ct;
+//				unit_size=sizeof(T);
 				SAFE_DELETE(platformStructuredBuffer);
 				platformStructuredBuffer=p->CreatePlatformStructuredBuffer();
-				platformStructuredBuffer->RestoreDeviceObjects(p,count,sizeof(T),computable);
+				platformStructuredBuffer->RestoreDeviceObjects(p,count,sizeof(T),computable,data);
 			}
 			T *GetBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				return (T*)platformStructuredBuffer->GetBuffer(deviceContext);
+			}
+			void SetData(crossplatform::DeviceContext &deviceContext,T *data)
+			{
+				platformStructuredBuffer->SetData(deviceContext,(void*)data);
+			}
+			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
+			{
+				return platformStructuredBuffer->AsD3D11ShaderResourceView();
+			}
+			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
+			{
+				return platformStructuredBuffer->AsD3D11UnorderedAccessView();
 			}
 			void Apply(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
 			{
@@ -130,7 +155,9 @@ namespace simul
 			}
 			void InvalidateDeviceObjects()
 			{
-				platformStructuredBuffer->InvalidateDeviceObjects();
+				if(platformStructuredBuffer)
+					platformStructuredBuffer->InvalidateDeviceObjects();
+				SAFE_DELETE(platformStructuredBuffer);
 				count=0;
 			}
 			int count;

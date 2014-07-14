@@ -11,6 +11,7 @@
 #include "Simul/Platform/DirectX11/Layout.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Camera/Camera.h"
@@ -492,6 +493,12 @@ crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuf
 	return b;
 }
 
+crossplatform::PlatformStructuredBuffer *RenderPlatform::CreatePlatformStructuredBuffer()
+{
+	crossplatform::PlatformStructuredBuffer *b=new dx11::PlatformStructuredBuffer();
+	return b;
+}
+
 crossplatform::Buffer *RenderPlatform::CreateBuffer()
 {
 	crossplatform::Buffer *b=new dx11::Buffer();
@@ -555,6 +562,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return UNKNOWN;
 	};
 }
+
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatform::LayoutDesc *desc,crossplatform::Buffer *buffer)
 {
 	D3D11_INPUT_ELEMENT_DESC *decl=new D3D11_INPUT_ELEMENT_DESC[num_elements];
@@ -569,8 +577,6 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatfo
 		D.InputSlot=d.inputSlot;
 		D.InputSlotClass=d.perInstance?D3D11_INPUT_PER_INSTANCE_DATA:D3D11_INPUT_PER_VERTEX_DATA;
 		D.InstanceDataStepRate=d.instanceDataStepRate;
-		//{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		//{ "TEXCOORD",	0, DXGI_FORMAT_R32_FLOAT,			0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	dx11::Layout *l=new dx11::Layout();
 	//hr=m_pd3dDevice->CreateInputLayout(decl,2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &starsLayout);
@@ -580,7 +586,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatfo
 	std::string dummy_shader;
 	dummy_shader="struct vertexInput"
 				"{";
-	for(int i=0;i<2;i++)
+	for(int i=0;i<num_elements;i++)
 	{
 		D3D11_INPUT_ELEMENT_DESC &dec=decl[i];
 		std::string format;
@@ -635,7 +641,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatfo
 		const char *e=(const char*)errorMsgs->GetBufferPointer();
 		std::cerr<<e<<std::endl;
 	}
-	AsD3D11Device()->CreateInputLayout(decl, 2, VS->GetBufferPointer(), VS->GetBufferSize(), &l->d3d11InputLayout);
+	AsD3D11Device()->CreateInputLayout(decl, num_elements, VS->GetBufferPointer(), VS->GetBufferSize(), &l->d3d11InputLayout);
 	
 	if(VS)
 		VS->Release();
@@ -668,6 +674,31 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 									strides,			// array of stride values, one for each buffer
 									offsets );		// array of offset values, one for each buffer
 
+};
+
+void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
+{
+	if(!buffer)
+	{
+		deviceContext.asD3D11DeviceContext()->IASetIndexBuffer(NULL, DXGI_FORMAT_R32_UINT, 0);
+		return;
+	}
+	DXGI_FORMAT f;
+	int index_byte_size=buffer->stride;
+	switch(index_byte_size)
+	{
+	case 4:
+		f=DXGI_FORMAT_R32_UINT;
+		break;
+	case 2:
+		f=DXGI_FORMAT_R16_UINT;
+		break;
+	default:
+		f=DXGI_FORMAT_UNKNOWN;
+		SIMUL_BREAK("Can't use DXGI_FORMAT_UNKNOWN for an index buffer.")
+		break;
+	};
+	deviceContext.asD3D11DeviceContext()->IASetIndexBuffer(buffer->AsD3D11Buffer(), f, 0);
 }
 
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )
