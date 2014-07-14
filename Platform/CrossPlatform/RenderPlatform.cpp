@@ -37,26 +37,29 @@ namespace simul
 {
 	namespace crossplatform
 	{
-		void DrawGrid(crossplatform::DeviceContext &deviceContext,float square_size)
+		void DrawGrid(crossplatform::DeviceContext &deviceContext,float square_size,float brightness,int numLines)
 		{
 			// 101 lines across, 101 along.
-			static int numLines=101;
+			numLines++;
 			crossplatform::RenderPlatform::Vertext *lines=new crossplatform::RenderPlatform::Vertext[2*numLines*2];
 			// one metre apart
 			vec3 cam_pos=camera::GetCameraPosVector(deviceContext.viewStruct.view);
-			vec3 centrePos((int)(cam_pos.x/square_size),(int)(cam_pos.y/square_size),0);
+			vec3 centrePos(square_size*(int)(cam_pos.x/square_size),square_size*(int)(cam_pos.y/square_size),0);
 			crossplatform::RenderPlatform::Vertext *vertex=lines;
 			int halfOffset=numLines/2;
+			float l10=brightness;
+			float l5=brightness*0.5;
+			float l25=brightness*2.5;
 			for(int i=0;i<numLines;i++)
 			{
 				int j=i-numLines/2;
 				math::Vector3 pos1	=centrePos+vec3(square_size*j	,-square_size*halfOffset	,0);
 				math::Vector3 pos2	=centrePos+vec3(square_size*j	, square_size*halfOffset	,0);
 				vertex->pos		=pos1;
-				vertex->colour	=vec4(5.f,5.f,0.f,1.0f);
+				vertex->colour	=vec4(l5,l5,0.f,1.0f);
 				vertex++;
 				vertex->pos		=pos2;
-				vertex->colour	=vec4(5.f,0.5f,0.f,1.0f);
+				vertex->colour	=vec4(l5,0.1*l5,0.f,1.0f);
 				vertex++;
 			}
 			for(int i=0;i<numLines;i++)
@@ -65,10 +68,10 @@ namespace simul
 				math::Vector3 pos1	=centrePos+vec3(-square_size*halfOffset	,square_size*j	,0);
 				math::Vector3 pos2	=centrePos+vec3( square_size*halfOffset	,square_size*j	,0);
 				vertex->pos		=pos1;
-				vertex->colour	=vec4(0.f,1.f,5.f,1.0f);
+				vertex->colour	=vec4(0.f,l10,l5,1.0f);
 				vertex++;
 				vertex->pos		=pos2;
-				vertex->colour	=vec4(0.f,2.5f,5.f,1.0f);
+				vertex->colour	=vec4(0.f,l25,l5,1.0f);
 				vertex++;
 			}
 			deviceContext.renderPlatform->DrawLines(deviceContext,lines,2*numLines*2,false,true);

@@ -409,7 +409,8 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	{
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->ActivateDepth(deviceContext);
-		crossplatform::DrawGrid(deviceContext,100.f);
+		crossplatform::DrawGrid(deviceContext,1.f,1.f,100);
+		crossplatform::DrawGrid(deviceContext,10.f,10.f,10);
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->DeactivateDepth(pContext);
 	}

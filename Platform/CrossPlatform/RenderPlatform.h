@@ -123,7 +123,7 @@ namespace simul
 		///
 		/// \param [in,out]	deviceContext	Context for the device.
 		/// \param [in]	square_size	Spacing between lines - in whatever units the renderer is working in.
-		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext,float square_size);
+		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext,float square_size,float brightness,int numLines);
 	}
 }
 #endif
