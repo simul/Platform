@@ -51,6 +51,7 @@ Fft::~Fft()
 
 void Fft::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s,int size)
 {
+	InvalidateDeviceObjects();
 	m_pd3dDevice=pd3dDevice;
 	slices = s;
 

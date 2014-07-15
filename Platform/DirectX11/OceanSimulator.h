@@ -71,7 +71,6 @@ namespace simul
 			// Height field H(t), choppy field Dx(t) and Dy(t) in frequency domain, updated each frame.
 			crossplatform::ConstantBuffer<cbImmutable>		immutableConstants;
 			crossplatform::ConstantBuffer<cbChangePerFrame>	changePerFrameConstants;
-
 			// Height & choppy buffer in the space domain, corresponding to H(t), Dx(t) and Dy(t)
 			crossplatform::StructuredBuffer<vec2>	dxyz;
 

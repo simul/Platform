@@ -72,6 +72,7 @@ namespace simul
 				META_ValueProperty(bool,ShowHDRTextures			,"Show the HDR glow textures.")
 				META_ValueProperty(bool,ShowLightVolume			,"Show the cloud light volume as a wireframe box.")
 				META_ValueProperty(bool,CelestialDisplay		,"Show geographical and sidereal overlay.")
+				META_ValueProperty(bool,ShowGroundGrid			,"Show a metre-scale grid at ground level.")
 				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")
 				META_ValueProperty(bool,MakeCubemap				,"Render a cubemap each frame.")
 				META_ValueProperty(bool,ShowCubemaps			,"Show any generated cubemaps onscreen.")

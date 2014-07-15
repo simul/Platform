@@ -4,8 +4,8 @@
 #include "../../CrossPlatform/SL/ocean_constants.sl"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 
-#define PATCH_BLEND_BEGIN		800
-#define PATCH_BLEND_END			20000
+#define PATCH_BLEND_BEGIN		80
+#define PATCH_BLEND_END			2000
 
 #define PI 3.1415926536f
 #define BLOCK_SIZE_X 16

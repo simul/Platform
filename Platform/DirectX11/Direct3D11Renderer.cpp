@@ -46,6 +46,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,ShowHDRTextures(false)
 		,ShowLightVolume(false)
 		,CelestialDisplay(false)
+		,ShowGroundGrid(false)
 		,ShowWater(true)
 		,MakeCubemap(true)
 		,ShowCubemaps(false)
@@ -405,7 +406,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 		}
 	}
 #endif
-	if(AllOsds)
+	if(ShowGroundGrid&&AllOsds)
 	{
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->ActivateDepth(deviceContext);

@@ -9,6 +9,7 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "D3dx11effect.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Math/Pi.h"
 using namespace simul;
 using namespace dx11;
 
@@ -18,8 +19,7 @@ using namespace dx11;
 #pragma warning(disable:4127)
 
 
-#define HALF_SQRT_2	0.7071068f
-#define GRAV_ACCEL	981.0f	// The acceleration of gravity, cm/s^2
+#define GRAV_ACCEL	9.810f	// The acceleration of gravity, m/s^2
 
 #define BLOCK_SIZE_X 16
 #define BLOCK_SIZE_Y 16
@@ -39,12 +39,16 @@ float Gauss()
 float Phillips(vec2 K, vec2 W, float v, float a, float dir_depend)
 {
 	// largest possible wave from constant wind of velocity v
+	// m^2/s^2 / (m/s^2)  = m
 	float l = v * v / GRAV_ACCEL;
 	// damp out waves with very small length w << l
+	// w in m
 	float w = l / 1000;
 
 	float Ksqr = K.x * K.x + K.y * K.y;
 	float Kcos = K.x * W.x + K.y * W.y;
+	// The exponent must be unitless, so the units of l*l *(K.K) must be unity.
+	// Therefore, K has units of 1/cm.
 	float phillips = a * expf(-1.0f / (l * l * Ksqr)) / (Ksqr * Ksqr * Ksqr) * (Kcos * Kcos);
 
 	// filter out waves moving opposite to wind
@@ -72,18 +76,18 @@ void OceanSimulator::InvalidateDeviceObjects()
 	immutableConstants		.InvalidateDeviceObjects();
 	changePerFrameConstants	.InvalidateDeviceObjects();
 
-	Choppy.InvalidateDeviceObjects();
-	Omega.InvalidateDeviceObjects();
+	Choppy	.InvalidateDeviceObjects();
+	Omega	.InvalidateDeviceObjects();
 	if(displacement)
 		displacement->InvalidateDeviceObjects();
 	if(gradient)
 		gradient	->InvalidateDeviceObjects();
+	dxyz	.InvalidateDeviceObjects();
+	H0		.InvalidateDeviceObjects();
+	m_fft	.InvalidateDeviceObjects();
+	effect=NULL;
 	SAFE_DELETE(displacement);
 	SAFE_DELETE(gradient);
-	dxyz		.InvalidateDeviceObjects();
-	H0.InvalidateDeviceObjects();
-	m_fft.InvalidateDeviceObjects();
-	effect=NULL;
 }
 
 void OceanSimulator::RestoreDeviceObjects(simul::crossplatform::RenderPlatform *r)
@@ -190,7 +194,7 @@ void OceanSimulator::initHeightMap(vec2* out_h0, float* out_omega)
 	vec2 wind_dir;
 	vec2 pwind_dir(m_param->wind_dir[0],m_param->wind_dir[1]);
 	wind_dir=vec2Normalize(pwind_dir);
-	float a = m_param->wave_amplitude * 1e-7f;	// It is too small. We must scale it for editing.
+	float a = m_param->wave_amplitude * 1e-4f;	// It is too small. We must scale it for editing.
 	float v = m_param->wind_speed;
 	float dir_depend = m_param->wind_dependency;
 
@@ -199,16 +203,28 @@ void OceanSimulator::initHeightMap(vec2* out_h0, float* out_omega)
 
 	// initialize random generator.
 	srand(0);
-	float R=600.f/(float)height_map_dim;
+	static float scale=0.5f;
+	const float HALF_SQRT_2=0.7071068f;
+	// scale_ratio=scale/patch_length;
+
+	// Here we create a table, where the x and y axes represent the x and y components of
+	// the wave vector, K.
+	// This means that the larger waves are towards the centre of the table, and smaller
+	// waves are towards the outside.
+	// Also this means that the ratio of the largest to the smallest wavelength is given
+	// roughly by half the resolution of the table.
 	for (i = 0; i <= height_map_dim; i++)
 	{
 		// K is wave-vector, range [-|DX/W, |DX/W], [-|DY/H, |DY/H]
-		K.y = (-height_map_dim / 2.0f + i) *R* (2*D3DX_PI/patch_length);
-
+		// According to Tessendorf, k points in the wave's direction of travel,
+		// and has magnitude k related to the wavelength l by k=2pi/l.
+		K.y = (-1.0f+2.0f*(float)i/(float)height_map_dim)*2.0f*pi/scale;
+		// So K.y goes from -2 pi/scale to +2 pi/scale
+		// And so the wavelength range goes from scale to scale*gridsize/2
 		for (j = 0; j <= height_map_dim; j++)
 		{
-			K.x = (-height_map_dim / 2.0f + j) *R* (2 * D3DX_PI / patch_length);
-
+			K.x = (-1.0f+2.0f*(float)j/(float)height_map_dim)*2.0f*pi/scale;
+			// i.e. K.x goes from 
 			float phil = (K.x == 0 && K.y == 0) ? 0 : sqrtf(Phillips(K, wind_dir, v, a, dir_depend));
 
 			out_h0[i * (height_map_dim + 4) + j].x = phil*Gauss()*HALF_SQRT_2;
