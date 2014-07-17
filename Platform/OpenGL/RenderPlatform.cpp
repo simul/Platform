@@ -615,6 +615,14 @@ GL_ERROR_CHECK
 	}
 }
 
+void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs)
+{
+}
+
+void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Viewport *vps)
+{
+}
+
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
 {
 	GLuint buf=buffer->AsGLuint();

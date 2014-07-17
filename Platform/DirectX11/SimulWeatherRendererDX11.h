@@ -56,6 +56,10 @@ namespace simul
 			{
 				return &hiResNearFramebufferDx11;
 			}
+			void ActivateHiRes(crossplatform::DeviceContext &deviceContext);
+			void DeactivateHiRes(crossplatform::DeviceContext &deviceContext);
+			void ActivateLowRes(crossplatform::DeviceContext &deviceContext);
+			void DeactivateLowRes(crossplatform::DeviceContext &deviceContext);
 			dx11::Framebuffer	lowResFarFramebufferDx11;
 			dx11::Framebuffer	lowResNearFramebufferDx11;
 			dx11::Framebuffer	hiResFarFramebufferDx11;
@@ -65,7 +69,13 @@ namespace simul
 			void SetDimensions(int w,int h,int downscale);
 			void GetDimensions(int &w,int &h,int &downscale);
 			int Width,Height,Downscale;
+		protected:
 			ID3D11Device*	m_pd3dDevice;
+			void SaveOldRTs(crossplatform::DeviceContext &deviceContext);
+			unsigned numOldViewports;
+			ID3D11RenderTargetView*				m_pOldRenderTargets[2];
+			ID3D11DepthStencilView*				m_pOldDepthSurface;
+			D3D11_VIEWPORT						m_OldViewports[16];
 		};
 		/// An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 11
 		SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX11 : public simul::clouds::BaseWeatherRenderer

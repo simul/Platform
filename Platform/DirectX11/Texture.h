@@ -31,6 +31,10 @@ namespace simul
 			{
 				return depthStencilView;
 			}
+			ID3D11RenderTargetView *AsD3D11RenderTargetView()
+			{
+				return renderTargetView;
+			}
 			GLuint AsGLuint()
 			{
 				return 0;

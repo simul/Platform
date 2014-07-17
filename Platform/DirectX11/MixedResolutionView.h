@@ -114,6 +114,10 @@ namespace simul
 			{
 				return &lowResScratch;
 			}
+			crossplatform::Texture					*GetHiResScratchTexture()
+			{
+				return &hiResScratch;
+			}
 			/// Type of the view.
 			ViewType						viewType;
 
@@ -122,10 +126,12 @@ namespace simul
 			simul::dx11::Framebuffer		hdrFramebuffer;
 			/// The depth from the HDR framebuffer can be resolved into this texture:
 			simul::dx11::Texture			hiResDepthTexture;
-			/// The low resource depth texture.
+			/// The low  depth texture.
 			simul::dx11::Texture			lowResDepthTexture;
-			/// The low resource scratch.
+			/// The low-res scratch.
 			simul::dx11::Texture			lowResScratch;
+			/// The high-res scratch.
+			simul::dx11::Texture			hiResScratch;
 			/// The resolved texture.
 			simul::dx11::Texture			resolvedTexture;
 			/// The render platform.

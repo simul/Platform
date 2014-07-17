@@ -30,7 +30,9 @@ namespace simul
 			void SetDepthFormat(int){}
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform	*renderPlatform);
+			bool CreateBuffers();
 			void RecompileShaders();
+			bool IsValid() const;
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			void SetCurrentFace(int i);

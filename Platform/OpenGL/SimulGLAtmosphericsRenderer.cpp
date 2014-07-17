@@ -108,7 +108,7 @@ void SimulGLAtmosphericsRenderer::RenderAsOverlay(crossplatform::DeviceContext &
 	effect->SetTexture(deviceContext,"illuminationTexture",illuminationTexture);
 	effect->SetTexture(deviceContext,"cloudShadowTexture",cloudShadowStruct.texture);
 
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,deviceContext.viewStruct,depthViewportXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,deviceContext.viewStruct,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
 	atmosphericsPerViewConstants.Apply(deviceContext);
 	
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));

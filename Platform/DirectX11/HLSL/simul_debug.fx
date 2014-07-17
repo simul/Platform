@@ -103,7 +103,7 @@ vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 depth		=texture_clamp(imageTexture,IN.texCoords);
 	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
-    return vec4(pow(dist.xx,0.44),depth.z,1.0);
+    return vec4(pow(dist.xy,0.44),depth.z,1.0);
 }
 
 vec4 ShowDepthMS_PS(posTexVertexOutput IN) : SV_TARGET

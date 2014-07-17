@@ -34,6 +34,7 @@ namespace simul
 			void SetGenerateMips(bool);
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform	*renderPlatform);
+			bool CreateBuffers();
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
@@ -102,9 +103,7 @@ namespace simul
 		protected:
 			//! The depth buffer.
 			dx11::Texture						buffer_depth_texture;
-
 			bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
-			bool CreateBuffers(crossplatform::RenderPlatform *renderPlatform);
 			ID3D1xRenderTargetView* MakeRenderTarget(const ID3D1xTexture2D* pTexture);
 			float timing;
 			bool GenerateMips;

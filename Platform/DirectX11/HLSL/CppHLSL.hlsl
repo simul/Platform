@@ -50,6 +50,7 @@
 	#define SIMUL_CONSTANT_BUFFER_END };
 
 	#define SIMUL_TARGET_OUTPUT : SV_TARGET
+	#define SIMUL_RENDERTARGET_OUTPUT(n) : SV_TARGET##n
 	#define SIMUL_DEPTH_OUTPUT : SV_DEPTH
 
 	#define vec2 float2

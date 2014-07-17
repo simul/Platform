@@ -49,6 +49,16 @@ void CubemapFramebuffer::SetFormat(int f)
 void CubemapFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 {
 	renderPlatform=r;
+	CreateBuffers();
+}
+
+bool CubemapFramebuffer::IsValid() const
+{
+	return (texture!=NULL);
+}
+
+bool CubemapFramebuffer::CreateBuffers()
+{
 	for(int i=0;i<6;i++)
 	{
 		SAFE_RELEASE(m_pCubeEnvMapRTV[i]);
@@ -150,6 +160,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform	*r)
 	SRVDesc.TextureCube.MostDetailedMip = 0;
 	 
 	V_CHECK(pd3dDevice->CreateShaderResourceView(m_pCubeEnvDepthMap,&SRVDesc,&m_pCubeEnvMapDepthSRV));*/
+	return true;
 }
 ID3D11Texture2D* makeStagingTexture(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT target_format)
 {

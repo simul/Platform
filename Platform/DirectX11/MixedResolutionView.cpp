@@ -40,6 +40,7 @@ void MixedResolutionView::InvalidateDeviceObjects()
 {
 	hdrFramebuffer.InvalidateDeviceObjects();
 	lowResScratch.InvalidateDeviceObjects();
+	hiResScratch.InvalidateDeviceObjects();
 	lowResDepthTexture.InvalidateDeviceObjects();
 	hiResDepthTexture.InvalidateDeviceObjects();
 	resolvedTexture.InvalidateDeviceObjects();
@@ -176,34 +177,37 @@ void MixedResolutionRenderer::RecompileShaders()
 void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec4 depthToLinFadeDistParams)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	int W=0,H=0;
+	SIMUL_COMBINED_PROFILE_START(pContext,"DownscaleDepth")
+	int FullWidth=0,FullHeight=0;
 	crossplatform::Texture *depthTexture=NULL;
 	if(view->useExternalFramebuffer)
 	{
 		if(view->externalDepthTexture)
 		{
-			H				=view->ScreenHeight;
-			W				=view->ScreenWidth;
+			FullHeight		=view->ScreenHeight;
+			FullWidth		=view->ScreenWidth;
 			depthTexture	=view->externalDepthTexture;
 		}
 	}
 	else
 	{
-		W				=view->GetFramebuffer()->Width;
-		H				=view->GetFramebuffer()->Height;
+		FullWidth		=view->GetFramebuffer()->Width;
+		FullHeight		=view->GetFramebuffer()->Height;
 		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
 	}
-	if(!W||!H)
+	if(!FullWidth||!FullHeight)
 		return;
-	SIMUL_COMBINED_PROFILE_START(pContext,"DownscaleDepth")
 	crossplatform::Effect *effect=depthForwardEffect;
 	simul::camera::Frustum frustum=camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	if(frustum.reverseDepth)
 		effect=depthReverseEffect;
 	SIMUL_ASSERT(depthTexture!=NULL);
+	static int ds2=2;
+	int W=(FullWidth+ds2-1)/ds2;
+	int H=(FullHeight+ds2-1)/ds2;
 	// The downscaled size should be enough to fit in at least s hi-res pixels in every larger pixel
-	int w=(W+s-1)/s;
-	int h=(H+s-1)/s;
+	int w=(FullWidth+s-1)/s;
+	int h=(FullHeight+s-1)/s;
 	view->GetLowResDepthTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,crossplatform::RGBA_32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	view->GetLowResScratchTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,crossplatform::RGBA_32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	bool msaa=(depthTexture->GetSampleCount()>0);
@@ -211,13 +215,15 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups.
 	static bool use_rt=true;
 	{
-		view->GetHiResDepthTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,crossplatform::RGBA_32_FLOAT,/*computable=*/!use_rt,/*rendertarget=*/use_rt);
+		view->GetHiResDepthTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,crossplatform::RGBA_32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
+		view->GetHiResScratchTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,crossplatform::RGBA_32_FLOAT,/*computable=*/!use_rt,/*rendertarget=*/use_rt);
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Hi-res Depth")
-		mixedResolutionConstants.scale		=uint2(s,s);
+		mixedResolutionConstants.scale						=uint2(ds2,ds2);
 		mixedResolutionConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
 		mixedResolutionConstants.nearZ		=0;
 		mixedResolutionConstants.farZ		=0;
-		mixedResolutionConstants.source_dims=uint2(view->hiResDepthTexture.width,view->hiResDepthTexture.length);
+		mixedResolutionConstants.source_dims				=uint2(depthTexture->GetWidth(),depthTexture->GetLength());
+		mixedResolutionConstants.target_dims				=uint2(W,H);
 		mixedResolutionConstants.Apply(deviceContext);
 		static int BLOCKWIDTH			=8;
 		uint2 subgrid						=uint2((view->hiResDepthTexture.width+BLOCKWIDTH-1)/BLOCKWIDTH,(view->hiResDepthTexture.length+BLOCKWIDTH-1)/BLOCKWIDTH);
@@ -225,21 +231,28 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 			simul::dx11::setTexture			(effect->asD3DX11Effect(),"sourceMSDepthTexture"	,depthTexture->AsD3D11ShaderResourceView());
 		else
 			simul::dx11::setTexture			(effect->asD3DX11Effect(),"sourceDepthTexture"		,depthTexture->AsD3D11ShaderResourceView());
-		simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"			,view->hiResDepthTexture.unorderedAccessView);
+		simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"			,view->hiResScratch.unorderedAccessView);
 	
 		std::string pass_name=msaa?"msaa":"main";
 		if(msaa)
 			pass_name+=('0'+depthTexture->GetSampleCount());
 		if(use_rt)
 		{
-			view->GetHiResDepthTexture()->activateRenderTarget(deviceContext);
-			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"make_depth_far_near",pass_name.c_str());
-			UtilityRenderer::DrawQuad(deviceContext);
-			view->GetHiResDepthTexture()->deactivateRenderTarget();
+			view->GetHiResScratchTexture()->activateRenderTarget(deviceContext);
+			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near",pass_name.c_str());
+			renderPlatform->DrawQuad(deviceContext);
+			view->GetHiResScratchTexture()->deactivateRenderTarget();
 		}
 		else
 		{
 			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"cs_make_depth_far_near",pass_name.c_str());
+			pContext->Dispatch(subgrid.x,subgrid.y,1);
+		}
+		unbindTextures(effect->asD3DX11Effect());
+		{
+			simul::dx11::setTexture				(effect->asD3DX11Effect(),"sourceDepthTexture"		,view->GetHiResScratchTexture()->AsD3D11ShaderResourceView());
+			simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"			,((dx11::Texture *)view->GetHiResDepthTexture())->unorderedAccessView);
+			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"spread_edge");
 			pContext->Dispatch(subgrid.x,subgrid.y,1);
 		}
 		unbindTextures(effect->asD3DX11Effect());
@@ -248,27 +261,30 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	}
 	{
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Lo-res Depth")
-		mixedResolutionConstants.scale=uint2(s,s);
+		mixedResolutionConstants.scale=uint2(s/ds2,s/ds2);
 		mixedResolutionConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
 		mixedResolutionConstants.nearZ=0;
 		mixedResolutionConstants.farZ=0;
 		mixedResolutionConstants.source_dims=uint2(view->GetHiResDepthTexture()->GetWidth(),view->GetHiResDepthTexture()->GetLength());
+		mixedResolutionConstants.target_dims=uint2(w,h);
 		// if using rendertarget we must rescale the texCoords.
-		//mixedResolutionConstants.mixedResolutionTransformXYWH=vec4(0.f,0.f,(float)(w*s)/(float)W,(float)(h*s)/(float)H);
+		//mixedResolutionConstants.mixedResolutionTransformXYWH=vec4(0.f,0.f,(float)(w*s)/(float)FullWidth,(float)(h*s)/(float)FullHeight);
 		mixedResolutionConstants.Apply(deviceContext);
 		static int BLOCKWIDTH				=8;
 		uint2 subgrid						=uint2((view->GetLowResDepthTexture()->GetWidth()+BLOCKWIDTH-1)/BLOCKWIDTH,(view->GetLowResDepthTexture()->GetLength()+BLOCKWIDTH-1)/BLOCKWIDTH);
-		if(msaa)
-			simul::dx11::setTexture			(effect->asD3DX11Effect(),"sourceMSDepthTexture"	,depthTexture->AsD3D11ShaderResourceView());
+		{
 		simul::dx11::setTexture				(effect->asD3DX11Effect(),"sourceDepthTexture"		,view->GetHiResDepthTexture()->AsD3D11ShaderResourceView());
 		simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"		,((dx11::Texture *)view->GetLowResScratchTexture())->unorderedAccessView);
 	
 		simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near_from_hires");
 		pContext->Dispatch(subgrid.x,subgrid.y,1);
+		}
+		{
 		simul::dx11::setTexture				(effect->asD3DX11Effect(),"sourceDepthTexture"		,view->GetLowResScratchTexture()->AsD3D11ShaderResourceView());
 		simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"		,((dx11::Texture *)view->GetLowResDepthTexture())->unorderedAccessView);
 		simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"spread_edge");
 		pContext->Dispatch(subgrid.x,subgrid.y,1);
+		}
 		unbindTextures(effect->asD3DX11Effect());
 		simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near_from_hires");
 		SIMUL_COMBINED_PROFILE_END(pContext)

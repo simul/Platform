@@ -96,10 +96,10 @@ void FramebufferGL::SetWrapClampMode(GLint wr)
 bool FramebufferGL::InitColor_Tex(int , GLenum iformat)
 {
 	SetFormat(iformat);
-	return Init();
+	return CreateBuffers();
 }
 
-bool FramebufferGL::Init()
+bool FramebufferGL::CreateBuffers()
 {
 	if(!Width||!Height)
 		return false;
@@ -172,10 +172,15 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 	SetDepthFormat(iformat);
 }
 
+bool FramebufferGL::IsValid() const
+{
+	return (m_fb!=0);
+}
+
 void FramebufferGL::Activate(crossplatform::DeviceContext &)
 {
 	if(!m_fb)
-		Init();
+		CreateBuffers();
 	CheckFramebufferStatus();
     glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
 	GL_ERROR_CHECK
@@ -195,7 +200,7 @@ void FramebufferGL::ActivateColour(crossplatform::DeviceContext &,const float /*
 {
 	SIMUL_THROW("ActivateColour does not yet work for FramebufferGL");
 	if(!m_fb)
-		Init();
+		CreateBuffers();
 	CheckFramebufferStatus();
     glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
 	GL_ERROR_CHECK
@@ -212,7 +217,7 @@ void FramebufferGL::ActivateColour(crossplatform::DeviceContext &,const float /*
 void FramebufferGL::ActivateViewport(crossplatform::DeviceContext &,float viewportX, float viewportY, float viewportW, float viewportH)
 {
 	if(!m_fb)
-		Init();
+		CreateBuffers();
 	CheckFramebufferStatus();
     glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
 	GL_ERROR_CHECK

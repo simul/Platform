@@ -252,7 +252,7 @@ vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
 										,depthTextureMS
 										,viewportToTexRegionScaleBias
 										,depthToLinFadeDistParams
-										,hiResToLowResTransformXYWH
+										,fullResToLowResTransformXYWH
 										,inscatterTexture
 										,nearInscatterTexture
 										,false);
@@ -272,7 +272,55 @@ vec4 NearFarDepthCloudBlendPS_MSAA(v2f IN) : SV_TARGET
 										,depthTextureMS
 										,viewportToTexRegionScaleBias
 										,depthToLinFadeDistParams
-										,hiResToLowResTransformXYWH
+										,fullResToLowResTransformXYWH
+										,inscatterTexture
+										,nearInscatterTexture
+										,true);
+	result.rgb	=pow(result.rgb,gamma);
+	result.rgb	*=exposure;
+	return result;
+}
+
+vec4 PS_Composite(v2f IN) : SV_TARGET
+{
+	vec4 result	=Composite(IN.texCoords.xy
+							,imageTexture
+							,nearImageTexture
+							,hiResDepthTexture
+							,hiResDims
+							,lowResDepthTexture
+							,lowResDims
+							,depthTexture
+							,depthTextureMS
+							,fullResDims
+							,viewportToTexRegionScaleBias
+							,depthToLinFadeDistParams
+							,fullResToLowResTransformXYWH
+							,fullResToHighResTransformXYWH
+							,inscatterTexture
+							,nearInscatterTexture
+							,false);
+	result.rgb	=pow(result.rgb,gamma);
+	result.rgb	*=exposure;
+	return result;
+}
+
+vec4 PS_Composite_MSAA(v2f IN) : SV_TARGET
+{
+	vec4 result	=Composite(IN.texCoords.xy
+							,imageTexture
+							,nearImageTexture
+							,hiResDepthTexture
+							,hiResDims
+							,lowResDepthTexture
+							,lowResDims
+							,depthTexture
+							,depthTextureMS
+							,fullResDims
+							,viewportToTexRegionScaleBias
+							,depthToLinFadeDistParams
+							,fullResToLowResTransformXYWH
+							,fullResToHighResTransformXYWH
 										,inscatterTexture
 										,nearInscatterTexture
 										,true);
@@ -291,9 +339,8 @@ vec4 GlowPS(v2f IN) : SV_TARGET
 	offset2.x=offset.x*-1.0;
 	c+=texture_clamp(imageTexture,IN.texCoords+offset2/2.0);
 	c+=texture_clamp(imageTexture,IN.texCoords-offset2/2.0);
-	c*=exposure;
-	c/=4.0;
-	c-=1.1*vec4(1.0,1.0,1.0,1.0);
+	c=c*exposure/4.0;
+	c-=1.0*vec4(1.0,1.0,1.0,1.0);
 	c=clamp(c,vec4(0.0,0.0,0.0,0.0),vec4(10.0,10.0,10.0,10.0));
     return c;
 }
@@ -422,6 +469,29 @@ technique11 far_near_depth_blend
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,NearFarDepthCloudBlendPS_MSAA()));
+    }
+}
+
+// This technique composites on the basis that clouds have an arbitrary integral downscale, and sky has downscale 2.
+technique11 composite_mixed_res
+{
+    pass main
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(CloudBufferBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Composite()));
+    }
+    pass msaa
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(CloudBufferBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Composite_MSAA()));
     }
 }
 

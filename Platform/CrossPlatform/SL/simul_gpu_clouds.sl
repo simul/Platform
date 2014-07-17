@@ -198,19 +198,9 @@ void CS_CloudDensity(RWTexture3D<float4> targetTexture,Texture3D volumeNoiseText
 	// noise_texel is the size of a noise texel
 	float noise_texel			=1.0/noise_dims.z;
 	float height				=noiseScale.z;
-#if 0
-	// main_density goes from -1 to +1.
-	float main_density			=DensityFunction(volumeNoiseTexture,noisespace_texcoord,time);
-	vec4 mask					=texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0);
-	float hm					=humidity*GetShapeFunction(densityspace_texcoord.z,main_density)*mask.x;//
-	float noise_mod				=ModifierNoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
-	float dens					=main_density+noise_mod+2.0*hm-1.0;
-	dens						=saturate(dens/diffusivity);
-#else
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
 	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
 	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
-#endif
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
 	dens						=saturate(dens);
 	targetTexture[pos]			=dens;

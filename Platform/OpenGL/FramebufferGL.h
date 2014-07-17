@@ -27,6 +27,8 @@ namespace simul
 
 			~FramebufferGL();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
+			bool IsValid() const;
+			bool CreateBuffers();
 			void InvalidateDeviceObjects();
 			void SetWidthAndHeight(int w,int h);
 			void SetAntialiasing(int ){}
@@ -41,7 +43,6 @@ namespace simul
 			// InitDepth_RB or InitDepth_Tex needs to be called.
 			void InitDepth_RB(GLenum iformat = GL_DEPTH_COMPONENT24);
 			void InitDepth_Tex(GLenum iformat = GL_DEPTH_COMPONENT24);
-			bool Init();
 			/// Use the existing depth buffer
 			void NoDepth();
 			/// Activate / deactivate the FBO as a render target

@@ -21,6 +21,7 @@ namespace simul
 			~Framebuffer3D();
 			// BaseFramebuffer
 			void RestoreDeviceObjects(void*);
+			bool CreateBuffers();
 			void InvalidateDeviceObjects();
 			void Activate(void*);
 			void Deactivate(void*);
@@ -31,7 +32,6 @@ namespace simul
 			//
 			void SetDepth(int d);
 		protected:
-			void CreateBuffers();
 			int Depth;
 			unsigned int num_v;
 			DXGI_FORMAT target_format;

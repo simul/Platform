@@ -47,7 +47,10 @@ TwoResFramebuffer::TwoResFramebuffer()
 	,Width(0)
 	,Height(0)
 	,Downscale(0)
+	,numOldViewports(0)
+	,m_pOldDepthSurface(NULL)
 {
+	m_pOldRenderTargets[0]=m_pOldRenderTargets[1]=NULL;
 }
 
 void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -58,6 +61,11 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	m_pd3dDevice=(ID3D11Device*	)r->AsD3D11Device();
 	if(Width<=0||Height<=0||Downscale<=0)
 		return;
+	lowResFarFramebufferDx11	.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
+	lowResNearFramebufferDx11	.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
+	hiResFarFramebufferDx11		.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
+	hiResNearFramebufferDx11	.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
+
 	lowResFarFramebufferDx11	.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 	lowResNearFramebufferDx11	.SetDepthFormat(0);
 	hiResFarFramebufferDx11		.SetDepthFormat(0);
@@ -68,13 +76,91 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	int BufferHeight	=(Height+Downscale-1)/Downscale;
 	lowResFarFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
 	lowResNearFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
-	hiResFarFramebufferDx11		.SetWidthAndHeight(Width,Height);
-	hiResNearFramebufferDx11	.SetWidthAndHeight(Width,Height);
+	hiResFarFramebufferDx11		.SetWidthAndHeight(Width/ds2,Height/ds2);
+	hiResNearFramebufferDx11	.SetWidthAndHeight(Width/ds2,Height/ds2);
 	
 	lowResFarFramebufferDx11	.RestoreDeviceObjects(r);
 	lowResNearFramebufferDx11	.RestoreDeviceObjects(r);
 	hiResFarFramebufferDx11		.RestoreDeviceObjects(r);
 	hiResNearFramebufferDx11	.RestoreDeviceObjects(r);
+}
+
+void TwoResFramebuffer::SaveOldRTs(crossplatform::DeviceContext &deviceContext)
+{
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	pContext->RSGetViewports(&numOldViewports,NULL);
+	if(numOldViewports>0)
+		pContext->RSGetViewports(&numOldViewports,m_OldViewports);
+	m_pOldRenderTargets[0]=m_pOldRenderTargets[1]=NULL;
+	m_pOldDepthSurface	=NULL;
+	pContext->OMGetRenderTargets(	numOldViewports,
+									m_pOldRenderTargets,
+									&m_pOldDepthSurface
+									);
+	for(int i=numOldViewports;i<2;i++)
+	{
+		m_pOldRenderTargets[i]=NULL;
+	}
+}
+
+void TwoResFramebuffer::ActivateHiRes(crossplatform::DeviceContext &deviceContext)
+{
+	SaveOldRTs(deviceContext);
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	if(!pContext)
+		return;
+	if(!GetHiResFarFramebuffer()->IsValid())
+		GetHiResFarFramebuffer()->CreateBuffers();
+	if(!GetHiResNearFramebuffer()->IsValid())
+		GetHiResNearFramebuffer()->CreateBuffers();
+	crossplatform::Texture * targs[]={GetHiResFarFramebuffer()->GetTexture(),GetHiResNearFramebuffer()->GetTexture()};
+	renderPlatform->ActivateRenderTargets(deviceContext,2,targs);
+	crossplatform::Viewport v[]={{0,0,Width/ds2,Height/ds2,0,1.f},{0,0,Width/ds2,Height/ds2,0,1.f}};
+	renderPlatform->SetViewports(deviceContext,2,v);
+}
+
+void TwoResFramebuffer::DeactivateHiRes(crossplatform::DeviceContext &deviceContext)
+{
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	pContext->OMSetRenderTargets(	numOldViewports,
+									m_pOldRenderTargets,
+									m_pOldDepthSurface
+									);
+	SAFE_RELEASE(m_pOldRenderTargets[0]);
+	SAFE_RELEASE(m_pOldRenderTargets[1]);
+	SAFE_RELEASE(m_pOldDepthSurface);
+	if(numOldViewports>0)
+		pContext->RSSetViewports(numOldViewports,m_OldViewports);
+}
+
+void TwoResFramebuffer::ActivateLowRes(crossplatform::DeviceContext &deviceContext)
+{
+	SaveOldRTs(deviceContext);
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	if(!pContext)
+		return;
+	if(!GetLowResFarFramebuffer()->IsValid())
+		GetLowResFarFramebuffer()->CreateBuffers();
+	if(!GetLowResNearFramebuffer()->IsValid())
+		GetLowResNearFramebuffer()->CreateBuffers();
+	crossplatform::Texture * targs[]={GetLowResFarFramebuffer()->GetTexture(),GetLowResNearFramebuffer()->GetTexture()};
+	renderPlatform->ActivateRenderTargets(deviceContext,2,targs);
+	crossplatform::Viewport v[]={{0,0,Width/Downscale,Height/Downscale,0,1.f},{0,0,Width/Downscale,Height/Downscale,0,1.f}};
+	renderPlatform->SetViewports(deviceContext,2,v);
+}
+
+void TwoResFramebuffer::DeactivateLowRes(crossplatform::DeviceContext &deviceContext)
+{
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	pContext->OMSetRenderTargets(	numOldViewports,
+									m_pOldRenderTargets,
+									m_pOldDepthSurface
+									);
+	SAFE_RELEASE(m_pOldRenderTargets[0]);
+	SAFE_RELEASE(m_pOldRenderTargets[1]);
+	SAFE_RELEASE(m_pOldDepthSurface);
+	if(numOldViewports>0)
+		pContext->RSSetViewports(numOldViewports,m_OldViewports);
 }
 
 void TwoResFramebuffer::InvalidateDeviceObjects()
@@ -382,13 +468,13 @@ ERRNO_CHECK
 	}
 
 	crossplatform::MixedResolutionStruct mixedResolutionStruct(1,1,1);
-	RenderLowResolutionElements(deviceContext,exposure,godrays_strength,is_cubemap,false,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
+	RenderLowResolutionElements(deviceContext,exposure,godrays_strength,is_cubemap,crossplatform::FAR_PASS,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
 
 	if(buffered)
 		fb->GetLowResFarFramebuffer()->Deactivate(deviceContext.platform_context);
 
 	if(buffered&&doFinalCloudBufferToScreenComposite)
-		CompositeCloudsToScreen(deviceContext,1.f,1.f,false,hiResDepthTexture,hiResDepthTexture,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
+		CompositeCloudsToScreen(deviceContext,1.f,1.f,false,hiResDepthTexture,hiResDepthTexture,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct,mixedResolutionStruct);
 
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }

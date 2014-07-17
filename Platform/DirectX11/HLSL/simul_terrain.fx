@@ -74,8 +74,6 @@ float4 PS_Main( vertexOutput IN) : SV_TARGET
 	vec2 light	=lightDir.z;
 
 	light		*=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,IN.wPosition.xyz);
-	//vec2 texc			=mul(invShadowMatrix,vec4(IN.wPosition.xyz,1.0)).xy;
-	//light			*=texture_wrap_lod(cloudShadowTexture,texc.xy,0).xy;
 	result.rgb	=texel.rgb*(ambientColour.rgb+light.x*sunlight.rgb);
 	result.a	=1.0;
 	

@@ -80,7 +80,7 @@ vec4 msaaPS(v2f IN) : SV_TARGET
 		discard;
 #else
 	// RVK: dlookup < 1.0 seems to not have the required accuracy.
-	if(dlookup<1.0)
+	if(dlookup<0.9999999)
 		discard;
 #endif
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
@@ -127,7 +127,7 @@ vec4 MainPS(v2f IN) : SV_TARGET
 	if(dlookup!=0)
 		discard;
 #else
-	if(dlookup<1.0)
+	if(dlookup<0.999999)
 		discard;
 #endif
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
@@ -315,6 +315,17 @@ technique11 detail_lighting
 		SetPixelShader(CompileShader(ps_4_0,DetailLightingPS()));
     }
 }
+BlendState AlphaBlendX
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = SRC_ALPHA;
+	DestBlend = INV_SRC_ALPHA;
+    BlendOp = ADD;
+    SrcBlendAlpha = ZERO;
+    DestBlendAlpha = INV_SRC_ALPHA;
+    BlendOpAlpha = ADD;
+    //RenderTargetWriteMask[0]	=0x07;
+};
 
 technique11 simul_clouds_2d_msaa
 {
@@ -322,7 +333,7 @@ technique11 simul_clouds_2d_msaa
     {
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(TestDepth,0);
-		SetBlendState(AlphaBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,msaaPS()));
@@ -334,7 +345,7 @@ technique11 simul_clouds_2d
     {
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(TestDepth,0);
-		SetBlendState(AlphaBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,MainPS()));

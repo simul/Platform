@@ -37,6 +37,22 @@ TwoResFramebuffer::TwoResFramebuffer()
 {
 }
 
+void TwoResFramebuffer::ActivateHiRes(crossplatform::DeviceContext &)
+{
+}
+
+void TwoResFramebuffer::DeactivateHiRes(crossplatform::DeviceContext &)
+{
+}
+
+void TwoResFramebuffer::ActivateLowRes(crossplatform::DeviceContext &)
+{
+}
+
+void TwoResFramebuffer::DeactivateLowRes(crossplatform::DeviceContext &)
+{
+}
+
 void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
@@ -284,7 +300,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(deviceContext, mainDepthTexture,exposure,depthViewportXYWH);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-		base2DCloudRenderer->Render(deviceContext,exposure,false,false,mainDepthTexture,false,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
+		base2DCloudRenderer->Render(deviceContext,exposure,false,crossplatform::FAR_PASS,mainDepthTexture,false,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
 	if(buffered)
 	{
 		fb->GetLowResFarFramebuffer()->Activate(deviceContext);
@@ -301,7 +317,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	// Do this AFTER sky render, to catch any changes to texture definitions:
 	UpdateSkyAndCloudHookup();
 	if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
-		baseCloudRenderer->Render(deviceContext,buffered?1.f:exposure,is_cubemap,false,mainDepthTexture,true,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
+		baseCloudRenderer->Render(deviceContext,buffered?1.f:exposure,is_cubemap,crossplatform::FAR_PASS,mainDepthTexture,true,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
 	if(buffered)
 	{
 		fb->GetLowResFarFramebuffer()->Deactivate(context);
@@ -346,7 +362,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(crossplatform::DeviceContext &
 	crossplatform::TwoResFramebuffer *fb			=GetFramebuffer(deviceContext.viewStruct.view_id);
 	fb->GetLowResFarFramebuffer()->Activate(deviceContext);
 	fb->GetLowResFarFramebuffer()->Clear(deviceContext.platform_context,0,0,0,1.f,ReverseDepth?0.f:1.f);
-	simulCloudRenderer->Render(deviceContext,exposure,false,false,NULL,true,depthViewportXYWH,sky::float4(0,0,1.f,1.f));
+	simulCloudRenderer->Render(deviceContext,exposure,false,crossplatform::FAR_PASS,NULL,true,depthViewportXYWH,sky::float4(0,0,1.f,1.f));
 	fb->GetLowResFarFramebuffer()->Deactivate(deviceContext.platform_context);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	glBlendFunc(GL_ONE,GL_SRC_ALPHA);

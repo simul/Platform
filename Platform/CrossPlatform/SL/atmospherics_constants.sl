@@ -46,6 +46,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform float startZMetres,aeoithjaoe,aetaetyjk;
     uniform vec3 lightIrradiance;
 	uniform float eagagaeg;
+	uniform vec4 mixedResolutionTransformXYWH;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

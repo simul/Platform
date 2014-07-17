@@ -146,10 +146,14 @@ struct Vertext
 	D3DXVECTOR2 tex;
 };
 
-bool Framebuffer::CreateBuffers(crossplatform::RenderPlatform *renderPlatform)
+bool Framebuffer::CreateBuffers()
 {
 	if(!Width||!Height)
 		return false;
+	if(!renderPlatform)
+	{
+		SIMUL_BREAK("renderPlatform should not be NULL here");
+	}
 	if(!m_pd3dDevice)
 	{
 		RestoreDeviceObjects(renderPlatform);
@@ -157,8 +161,7 @@ bool Framebuffer::CreateBuffers(crossplatform::RenderPlatform *renderPlatform)
 	if(!m_pd3dDevice)
 		return false;
 	HRESULT hr=S_OK;
-	buffer_texture.InvalidateDeviceObjects();
-//	SAFE_RELEASE(m_pHDRRenderTarget)
+
 	buffer_texture.InvalidateDeviceObjects();
 	buffer_depth_texture.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pBufferDepthSurface)
@@ -258,6 +261,13 @@ bool Framebuffer::CreateBuffers(crossplatform::RenderPlatform *renderPlatform)
 		depthSrvDesc.Texture2D.MostDetailedMip=0;
 
 		V_CHECK(m_pd3dDevice->CreateShaderResourceView(buffer_depth_texture.texture,&depthSrvDesc, &buffer_depth_texture.shaderResourceView ));
+		if(hr==S_OK)
+		{
+			buffer_depth_texture.width=Width;
+			buffer_depth_texture.length=Height;
+			buffer_depth_texture.dim=2;
+			buffer_depth_texture.depth=1;
+		}
 	}
 	return (hr==S_OK);
 }
@@ -352,7 +362,9 @@ void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext,con
 		return;
 	SaveOldRTs(pContext);
 	if(!buffer_texture.texture&&!buffer_depth_texture.texture)
-		CreateBuffers(deviceContext.renderPlatform);
+	{
+		CreateBuffers();
+	}
 	if(buffer_texture.renderTargetView)
 	{
 		colour_active=true;
@@ -398,7 +410,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 		return;
 	SaveOldRTs(pContext);
 	if(!buffer_texture.texture&&!buffer_depth_texture.texture)
-		CreateBuffers(deviceContext.renderPlatform);
+		CreateBuffers();
 	SIMUL_ASSERT(IsValid());
 	if(buffer_texture.renderTargetView)
 	{
@@ -435,7 +447,7 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 	if(!pContext)
 		return;
 	if(!buffer_texture.texture&&!buffer_depth_texture.texture)
-		CreateBuffers(deviceContext.renderPlatform);
+		CreateBuffers();
 	HRESULT hr=S_OK;
 
 	if(m_pOldRenderTarget==NULL&&m_pOldDepthSurface==NULL)
@@ -473,7 +485,7 @@ void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext)
 	if(!pContext)
 		return;
 	if(!buffer_texture.texture&&!buffer_depth_texture.texture)
-		CreateBuffers(deviceContext.renderPlatform);
+		CreateBuffers();
 	if(!buffer_texture.renderTargetView)
 		return;
 	SaveOldRTs(pContext);

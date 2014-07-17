@@ -7,6 +7,7 @@
 #define SIMUL_SAMPLER_REGISTER(buff_num)
 #define SIMUL_BUFFER_REGISTER(buff_num)
 #define SIMUL_TARGET_OUTPUT
+#define SIMUL_RENDERTARGET_OUTPUT(n)
 #define	SIMUL_DEPTH_OUTPUT
 
 #define GLSL

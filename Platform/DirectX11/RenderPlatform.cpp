@@ -1,4 +1,5 @@
 #define NOMINMAX
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/Material.h"
 #include "Simul/Platform/DirectX11/Mesh.h"
@@ -676,6 +677,30 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 
 };
 
+void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs)
+{
+	ID3D11RenderTargetView *rt[4];
+	SIMUL_ASSERT(num<=4);
+	for(int i=0;i<num;i++)
+		rt[i]=targs[i]->AsD3D11RenderTargetView();
+	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(num,rt,NULL);
+}
+
+void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Viewport *vps)
+{
+	D3D11_VIEWPORT viewports[4];
+	SIMUL_ASSERT(num<=4);
+	for(int i=0;i<num;i++)
+	{
+		viewports[i].Width		=(float)vps[i].w;
+		viewports[i].Height		=(float)vps[i].h;
+		viewports[i].TopLeftX	=(float)vps[i].x;
+		viewports[i].TopLeftY	=(float)vps[i].y;
+		viewports[i].MinDepth	=vps[i].znear;
+		viewports[i].MaxDepth	=vps[i].zfar;
+	}
+	deviceContext.asD3D11DeviceContext()->RSSetViewports(num,viewports);
+}
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
 {
 	if(!buffer)

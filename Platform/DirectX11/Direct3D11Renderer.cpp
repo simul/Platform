@@ -51,7 +51,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,MakeCubemap(true)
 		,ShowCubemaps(false)
 		,ShowRainTextures(false)
-		,ReverseDepth(true)
+		,ReverseDepth(false)
 		,ShowOSD(false)
 		,SkyBrightness(1.f)
 		,Antialiasing(1)
@@ -175,25 +175,27 @@ void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
 	MixedResolutionView *view			=viewManager.GetView(view_id);
 	if(!view)
 		return;
-	static bool lockx=false,locky=false;
+	static bool lockx=true,locky=true;
+	static int magnify=1;
 	// Must have a whole number of full-res pixels per low-res pixel.
 	int W=view->GetScreenWidth(),H=view->GetScreenHeight();
+	W=W/magnify;
+	H=H/magnify;
  	if(simulWeatherRenderer)
 	{
 		if(lockx)
 		{
 			int s					=simulWeatherRenderer->GetDownscale();
-			int w					=(W+s-1)/s;
+			int w					=W/s;
 			W						=w*s;
-			view->SetResolution(W,H);
 		}
 		if(locky)
 		{
 			int s					=simulWeatherRenderer->GetDownscale();
-			int h					=(H+s-1)/s;
+			int h					=H/s;
 			H						=h*s;
-			view->SetResolution(W,H);
 		}
+		view->SetResolution(W,H);
 	}
 	W=view->GetScreenWidth();
 	H=view->GetScreenHeight();
@@ -260,6 +262,7 @@ ERRNO_CHECK
 					lightningIllumination.colour	=props.colour;
 					lightningIllumination.colour	*=brightness;
 				}
+				if(simulTerrainRenderer)
 				simulTerrainRenderer->SetLightningProperties(lightningIllumination);
 			}
 		}
@@ -417,6 +420,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
+
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)
 {
 	if(!enabled)
@@ -584,38 +588,37 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
 		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth()/2);
+		int W1=viewport.Width;
+		int H1=viewport.Height;
+		int W2=W1/2;
+		int H2=H1/2;
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
 		{
-			int x0=view->GetScreenWidth()/4;
+			int x0=W2/2;
 			int y0=8;
-			int w=view->GetScreenWidth()/4;
+			int w=W2/2;
 			if(vertical_screen)
 			{
 				x0=8;
-				y0=view->GetScreenHeight()/2;
-				w=view->GetScreenWidth()/2;
+				y0=W2;
+				w=W2;
 			}
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(deviceContext,x0,y0,w,view->GetScreenHeight()/2);
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
-			int w=view->GetScreenWidth()/4;
+			int w=W2/2;
 			if(vertical_screen)
-				w=view->GetScreenWidth()/2;
-			int H2=view->GetScreenHeight()/2;
+				w=W2;
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext		,0,0,w,H2);
 			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext	,0,H2,w,H2);
 		}
 		if(ShowCompositing)
 		{
-			int W2=view->GetScreenWidth()/2;
-			int H2=view->GetScreenHeight()/2;
 			RenderDepthBuffers(deviceContext,W2,0,W2,H2);
 		}
 		if(ShowHDRTextures&&simulHDRRenderer)
 		{
-			int W2=view->GetScreenWidth()/2;
-			int H2=view->GetScreenHeight()/2;
 			simulHDRRenderer->RenderDebug(deviceContext,W2,H2,W2,H2);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
@@ -624,11 +627,11 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 		if(simulWeatherRenderer->GetBasePrecipitationRenderer()&&ShowRainTextures)
 		{
-			simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(deviceContext,0,view->GetScreenHeight()/2,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
+			simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(deviceContext,0,H2,W2,H2);
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,view->GetScreenWidth(),view->GetScreenHeight());
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,W1,H1);
 			const char *txt=Profiler::GetGlobalProfiler().GetDebugText();
 		//	renderPlatformDx11.Print(deviceContext			,12	,12,txt);
 		}

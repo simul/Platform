@@ -12,12 +12,12 @@
 #include "DX11Exception.h"
 #include "Utilities.h"
 #include "Simul/Base/StringFunctions.h"
+#include "Simul/Base/StringToWString.h"
 using namespace simul;
 using namespace dx11;
 using std::string;
 using std::map;
 bool enabled=false;
-
 // Throws a DXException on failing HRESULT
 inline void DXCall(HRESULT hr)
 {
@@ -35,10 +35,11 @@ Profiler &Profiler::GetGlobalProfiler()
 {
 	return GlobalProfiler;
 }
-
-Profiler::Profiler():within_frame(false)
+Profiler::Profiler():pUserDefinedAnnotation(NULL)
 {
+
 }
+
 Profiler::~Profiler()
 {
 	//std::cout<<"Profiler::~Profiler"<<std::endl;
@@ -47,6 +48,9 @@ Profiler::~Profiler()
 
 void Profiler::Uninitialize()
 {
+#ifdef SIMUL_WIN8_SDK
+	SAFE_RELEASE(pUserDefinedAnnotation);
+#endif
     for(ProfileMap::iterator iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         ProfileData *profile = (*iter).second;
@@ -71,15 +75,17 @@ ID3D11Query *CreateQuery(ID3D11Device* device,D3D11_QUERY_DESC &desc,const char 
 	SetDebugObjectName( q, name );
 	return q;
 }
-
+void Profiler::StartFrame(void* ctx)
+{
+#ifdef SIMUL_WIN8_SDK
+	IUnknown *unknown=(IUnknown *)ctx;
+	HRESULT hr = unknown->QueryInterface(IID_PPV_ARGS(&pUserDefinedAnnotation));
+#endif
+}
 void Profiler::Begin(void *ctx,const char *name)
 {
-	// Fail silently in case we are called from code that's not in a render.
-	if(!within_frame)
-		return;
 	IUnknown *unknown=(IUnknown *)ctx;
 	ID3D11DeviceContext *context=(ID3D11DeviceContext*)ctx;
-
 	std::string parent;
 	if(last_name.size())
 		parent=(last_name.back());
@@ -101,6 +107,11 @@ void Profiler::Begin(void *ctx,const char *name)
 		profileData=profileMap[qualified_name];
 	}
 	profileData->last_child_updated=0;
+#ifdef SIMUL_WIN8_SDK
+	if(!profileData->wUnqualifiedName.length())
+		profileData->wUnqualifiedName=base::StringToWString(name);
+	pUserDefinedAnnotation->BeginEvent(profileData->wUnqualifiedName.c_str());
+#endif
 	int new_child_index=0;
     ProfileData *parentData=NULL;
 	if(parent.length())
@@ -172,6 +183,10 @@ void Profiler::End()
 
     profileData->QueryStarted = FALSE;
     profileData->QueryFinished = TRUE;
+#ifdef SIMUL_WIN8_SDK
+	if(pUserDefinedAnnotation)
+		pUserDefinedAnnotation->EndEvent();
+#endif
 }
 
 template<typename T> inline std::string ToString(const T& val)
@@ -187,8 +202,9 @@ void Profiler::EndFrame(void* c)
 	ID3D11DeviceContext *context=(ID3D11DeviceContext*)c;
     if(!enabled||!device)
         return;
-	if(!within_frame)
-		return;
+#ifdef SIMUL_WIN8_SDK
+	SAFE_RELEASE(pUserDefinedAnnotation);
+#endif
 
     currFrame = (currFrame + 1) % QueryLatency;    
 
@@ -235,7 +251,6 @@ void Profiler::EndFrame(void* c)
 
         iter->second->time+=mix*time;
     }
-	within_frame=false;
 }
 
 float Profiler::GetTime(const std::string &name) const
@@ -245,7 +260,37 @@ float Profiler::GetTime(const std::string &name) const
 	return profileMap.find(name)->second->time;
 }
 
-std::string Walk(Profiler::ProfileData *p,int tab,float parent_time)
+static const string format_template("<div style=\"color:#%06x;margin-left:%d;\">%s</div>");
+static string formatLine(const char *name,int tab,float number,float parent,bool as_html)
+{
+	float proportion_of_parent=0.0f;
+	if(parent>0.0f)
+		proportion_of_parent=number/parent;
+	string str;
+	if(!as_html)
+	for(int j=0;j<tab;j++)
+	{
+		str+="  ";
+	}
+	string content=name;
+	content+=" ";
+	content+=base::stringFormat("%4.4f",number);
+	if(parent>0.0f)
+		content+=base::stringFormat(" (%3.3f%%)",100.f*proportion_of_parent);
+	if(as_html)
+	{
+		unsigned colour=0xFF0000;
+		unsigned greenblue=255-(unsigned)(175.0f*proportion_of_parent);
+		colour|=(greenblue<<8)|(greenblue);
+		int padding=12*tab;
+		content=base::stringFormat(format_template.c_str(),colour,padding,content.c_str());
+	}
+	str+=content;
+	str+=as_html?"":"\n";
+	return str;
+}
+
+std::string Walk(Profiler::ProfileData *p,int tab,float parent_time,bool as_html)
 {
 	if(p->children.size()==0)
 		return "";
@@ -254,27 +299,28 @@ std::string Walk(Profiler::ProfileData *p,int tab,float parent_time)
 	{
 		for(int j=0;j<tab;j++)
 			str+="  ";
-		str+=i->second->unqualifiedName.c_str();
-		str+=" ";
-		str+=simul::base::stringFormat("%4.4f (%3.3f%%)\n",i->second->time,100.f*i->second->time/parent_time);
-		str+=Walk(i->second,tab+1,i->second->time);
+		str+=formatLine(i->second->unqualifiedName.c_str(),tab,i->second->time,parent_time,as_html);
+		str+=Walk(i->second,tab+1,i->second->time,as_html);
 	}
 	return str;
 }
 
-const char *Profiler::GetDebugText() const
+const char *Profiler::GetDebugText(bool as_html) const
 {
 	static std::string str;
 	str="";
+	float total=0.f;
+	for(Profiler::ProfileMap::const_iterator i=rootMap.begin();i!=rootMap.end();i++)
+		total+=i->second->time;
+	str+=formatLine("TOTAL",0,total,0.0f,as_html);
 	for(Profiler::ProfileMap::const_iterator i=rootMap.begin();i!=rootMap.end();i++)
 	{
-		str+=i->second->unqualifiedName.c_str();
-		str+=" ";
-		str+=simul::base::stringFormat("%4.4f\n",i->second->time);
-		str+=Walk(i->second,1,i->second->time);
+		str+=formatLine(i->second->unqualifiedName.c_str(),1,i->second->time,total,as_html);
+		str+=Walk(i->second,1,i->second->time,as_html);
 	}
-
+	str+=as_html?"<br/>":"\n";
     str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
+	str+=as_html?"<br/>":"\n";
 	return str.c_str();
 }
 

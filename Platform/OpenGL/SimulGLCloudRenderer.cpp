@@ -311,7 +311,7 @@ static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap
-								  ,bool /*near_pass*/,crossplatform::Texture *depth_alpha_tex,bool write_alpha
+								  ,crossplatform::NearFarPass nearFarPass,crossplatform::Texture *depth_alpha_tex,bool write_alpha
 								  ,const simul::sky::float4& viewportTextureRegionXYWH
 								  ,const simul::sky::float4& mixedResTransformXYWH)
 {
@@ -472,7 +472,7 @@ GL_ERROR_CHECK
 	float base_alt=K.cloud_base_km*1000.f;//
 	if(cloudKeyframer->GetMeetHorizon())
 		effective_world_radius_metres	=helper->GetEffectiveEarthRadiusToMeetHorizon(base_alt,helper->GetMaxCloudDistance());
-	helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),effective_world_radius_metres,false,X1.z,false);
+	helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),false,X1.z,false);
 
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply();

@@ -4,6 +4,7 @@
 struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 struct ID3D11DepthStencilView;
+struct ID3D11RenderTargetView;
 typedef unsigned GLuint;
 namespace simul
 {
@@ -26,6 +27,7 @@ namespace simul
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView()=0;
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()=0;
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
+			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(){return 0;}
 			virtual GLuint AsGLuint()=0;
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,int num_samples=1,int aa_quality=0)=0;

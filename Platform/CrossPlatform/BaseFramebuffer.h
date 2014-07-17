@@ -18,6 +18,10 @@ namespace simul
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r)=0;
 			//! Call this when the API-dependent device has been lost or is shutting down.
 			virtual void InvalidateDeviceObjects()=0;
+			/// Return true if the API-dependent objects have been updated to match the properties.
+			virtual bool IsValid() const=0;
+			//! Call this if needed (not usually) to ensure that the buffers are created.
+			virtual bool CreateBuffers()=0;
 			//! Activate the framebuffer and set the viewport- must be followed after rendering by a call to \ref Deactivate().
 			virtual void ActivateViewport(crossplatform::DeviceContext &,float viewportX, float viewportY, float viewportW, float viewportH)=0;
 			//! Activate the framebuffer - must be followed after rendering by a call to \ref Deactivate().
@@ -61,7 +65,7 @@ namespace simul
 		};
 		struct TwoResFramebuffer
 		{
-			TwoResFramebuffer():renderPlatform(0){}
+			TwoResFramebuffer():ds2(2),renderPlatform(0){}
 			virtual crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()=0;
 			virtual crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()=0;
 			virtual crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()=0;
@@ -70,6 +74,15 @@ namespace simul
 			virtual void InvalidateDeviceObjects()=0;
 			virtual void SetDimensions(int w,int h,int downscale)=0;
 			virtual void GetDimensions(int &w,int &h,int &downscale)=0;
+			/// Activate BOTH Hi-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivateHiRes after rendering.
+			virtual void ActivateHiRes(crossplatform::DeviceContext &)=0;
+			/// Deactivate both hi-res framebuffers.
+			virtual void DeactivateHiRes(crossplatform::DeviceContext &)=0;
+			/// Activate BOTH low-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivatelLowRes after rendering.
+			virtual void ActivateLowRes(crossplatform::DeviceContext &)=0;
+			/// Deactivate both low-res framebuffers.
+			virtual void DeactivateLowRes(crossplatform::DeviceContext &)=0;
+			int ds2;
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;
 		};

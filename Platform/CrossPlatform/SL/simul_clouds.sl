@@ -24,6 +24,12 @@ struct RaytracePixelOutput
 	vec4 colour SIMUL_TARGET_OUTPUT;
 	float depth	SIMUL_DEPTH_OUTPUT;
 };
+struct FarNearPixelOutput
+{
+	vec4 farColour SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 nearColour SIMUL_RENDERTARGET_OUTPUT(1);
+	float depth	SIMUL_DEPTH_OUTPUT;
+};
 
 vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texc,float layerFade,float cloud_interp)
 {
@@ -64,7 +70,7 @@ vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier
 
 float MakeRainMap(Texture3D cloudDensity1,Texture3D cloudDensity2,float cloud_interp,vec2 texCoords)
 {
-	vec3 texc		=vec3(texCoords.xy,0.25);
+	vec3 texc		=vec3(texCoords.xy,0.5);
 	vec4 density1	=sampleLod(cloudDensity1,cloudSamplerState,texc,0);
 	vec4 density2	=sampleLod(cloudDensity2,cloudSamplerState,texc,0);
 	vec4 density	=lerp(density1,density2,cloud_interp);
@@ -274,15 +280,15 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,Texture2D rainMapTexture
 											,Texture2D noiseTexture
 											,Texture3D noiseTexture3D
-											,Texture2D depthTexture
 											,Texture2D lightTableTexture
                                             ,bool do_depth_mix
+											,vec4 dlookup
 											,vec2 texCoords
 											,bool near_pass
 											,bool noise
 											,bool noise_3d)
 {
-	vec4 dlookup 		=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
+	RaytracePixelOutput res;
 	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;
 	clip_pos.y			-=2.0*texCoords.y;
@@ -304,7 +310,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	if(near_pass)
 	{
 		if(dlookup.z==0)
-			discard;
+		{
+			res.colour=vec4(0,0,0,1.0);
+			res.depth=0.0;
+			return res;
+		}
 		depth			=dlookup.y;
 	}
 	else
@@ -408,10 +418,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			}
 		}
 	}
-	if(colour.a>=1.0)
-	   discard;
 	meanFadeDistance					+=colour.a;
-	RaytracePixelOutput res;
     res.colour							=vec4(exposure*colour.rgb,colour.a);
 	res.depth							=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	return res;

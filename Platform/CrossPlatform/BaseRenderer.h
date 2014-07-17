@@ -23,6 +23,13 @@ namespace simul
 			math::Matrix4x4 proj;					///< The projection matrix, row-major.
 			DepthTextureStyle depthTextureStyle;	///< How to interpret any depth texture passed from outside.
 		};
+		/// Values that represent what pass to render, be it the near pass, the far, or both: far to render target 0, near to render target 1.
+		enum NearFarPass
+		{
+			FAR_PASS
+			,NEAR_PASS
+			,BOTH_PASSES
+		};
 		struct MixedResolutionStruct
 		{
 			inline MixedResolutionStruct(int W,int H,int s)
@@ -41,11 +48,15 @@ namespace simul
 			//float xratio,yratio;GetTransformLowResToHiRes();
 			inline vec4 GetTransformLowResToHiRes() const
 			{
-				return vec4(0.f,0.f,(float)(w*downscale)/(float)W,(float)(h*downscale)/(float)H);
+				float a=(float)(w*downscale)/(float)W;
+				float b=(float)(h*downscale)/(float)H;
+				return vec4(0.f,0.0f,a,b);//1.0f-b
 			}
 			inline vec4 GetTransformHiResToLowRes() const
 			{
-				return vec4(0.f,0.f,(float)W/(float)(w*downscale),(float)H/(float)(h*downscale));
+				float a=(float)(w*downscale)/(float)W;
+				float b=(float)(h*downscale)/(float)H;
+				return vec4(0.f,0.0f,1.0f/a,1.0f/b);//1.0f-1.0f/b
 			}
 		};
 		//! The base class for renderers. Placeholder for now.

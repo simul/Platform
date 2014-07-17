@@ -111,10 +111,10 @@ void Framebuffer3D::SetDepth(int d)
 	}
 }
 
-void Framebuffer3D::CreateBuffers()
+bool Framebuffer3D::CreateBuffers()
 {
 	if(!Width||!Height||!Depth)
-		return ;
+		return false;
 	HRESULT hr=S_OK;
 	D3D11_TEXTURE3D_DESC desc=
 	{
@@ -141,5 +141,5 @@ void Framebuffer3D::CreateBuffers()
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 	// Create the render target in DX11:
 	hr=m_pd3dDevice->CreateRenderTargetView((ID3D1xResource*)texture,&renderTargetViewDesc, &renderTarget);
-	
+	return true;	
 }

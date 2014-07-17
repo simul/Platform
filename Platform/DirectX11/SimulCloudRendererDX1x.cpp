@@ -648,8 +648,11 @@ void SimulCloudRendererDX1x::PreRenderUpdate(crossplatform::DeviceContext &devic
 // We'll then have a global update and per view updates.
 }
 static int test=29999;
-bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass,crossplatform::Texture *depth_tex
-,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH)
+bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap
+									,crossplatform::NearFarPass nearFarPass,crossplatform::Texture *depth_tex
+									,bool write_alpha
+									,const simul::sky::float4& viewportTextureRegionXYWH
+									,const simul::sky::float4& mixedResTransformXYWH)
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"SimulCloudRendererDX1x::Render")
 		
@@ -752,7 +755,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 		else
 			tech=group->GetTechniqueByName("full");
 	}
-	effect->Apply(deviceContext,tech,near_pass?"near":"far");
+	effect->Apply(deviceContext,tech,(nearFarPass==crossplatform::NEAR_PASS)?"near":(nearFarPass==crossplatform::FAR_PASS)?"far":"both");
 	UtilityRenderer::DrawQuad(deviceContext);
 	skyLossTextureV->SetResource(NULL);
 	skyInscatterTextureV->SetResource(NULL);
@@ -767,6 +770,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	skyLossTextureV->SetResource((ID3D11ShaderResourceView*)NULL);
 	skyInscatterTextureV->SetResource((ID3D11ShaderResourceView*)NULL);
 	skylightTextureV->SetResource((ID3D11ShaderResourceView*)NULL);
+	depthTextureV->SetResource((ID3D11ShaderResourceView*)NULL);
 	lightTableTextureV->SetResource((ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
 	effect->SetTexture(deviceContext,"rainMapTexture"		,NULL);

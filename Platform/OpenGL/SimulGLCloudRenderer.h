@@ -41,7 +41,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! Render the clouds.
-			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,bool near_pass
+			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,crossplatform::NearFarPass nearFarPass
 				,crossplatform::Texture *depth_alpha_tex,bool write_alpha
 				,const simul::sky::float4& viewportTextureRegionXYWH
 				,const simul::sky::float4& mixedResTransformXYWH);

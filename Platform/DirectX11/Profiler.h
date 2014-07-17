@@ -28,6 +28,10 @@
 #include <d3dx11.h>
 #include <dxerr.h>
 #include <dxgi.h>
+#else
+	#ifndef _XBOX_ONE
+		#include <D3D11_1.h>
+	#endif
 #endif
 
 #include <string>
@@ -36,6 +40,9 @@
 #include "MacrosDX1x.h"
 
 #include "Simul/Platform/DirectX11/Export.h"
+#ifndef _XBOX_ONE
+	struct ID3DUserDefinedAnnotation;
+#endif
 namespace simul
 {
 	namespace dx11
@@ -51,20 +58,19 @@ namespace simul
 			void Begin(void *context,const char *name);
 			void End();
 			
-			void StartFrame(void* context){
-	within_frame=true;}
+			void StartFrame(void* context);
 			void EndFrame(void* context);
-	
+			ID3DUserDefinedAnnotation *pUserDefinedAnnotation;
 			float GetTime(const std::string &name) const;
 			//! Get all the active profilers as a text report.
-			const char *GetDebugText() const;
+			const char *GetDebugText(bool as_html=false) const;
 			std::string GetChildText(const char *name,std::string tab) const;
 			std::vector<std::string> last_name;
 			std::vector<ID3D11DeviceContext *> last_context;
 			static Profiler GlobalProfiler;
 
 			// Constants
-			static const UINT64 QueryLatency = 5;
+			static const UINT64 QueryLatency = 9;
 
 			struct ProfileData;
 			typedef std::map<std::string,ProfileData*> ProfileMap;
@@ -79,6 +85,7 @@ namespace simul
 				BOOL QueryFinished;
 				std::string full_name;
 				std::string unqualifiedName;
+				std::wstring wUnqualifiedName;
 				float time;
 				ProfileData()
 					:QueryStarted(false)
@@ -109,7 +116,6 @@ namespace simul
 				int child_index;
 			};
 		protected:
-			bool within_frame;
 			ProfileMap profileMap;
 			ProfileMap rootMap;
 			UINT64 currFrame;

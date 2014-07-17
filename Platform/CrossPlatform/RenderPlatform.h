@@ -35,6 +35,16 @@ namespace simul
 		class Layout;
 		struct DeviceContext;
 		struct LayoutDesc;
+		/// A crossplatform viewport structure.
+		struct Viewport
+		{
+			int x,y;
+			unsigned w,h;
+			float znear,zfar;
+		};
+		/// Base class for API-specific rendering.
+		/// Be sure to make the following calls at the appropriate place: RestoreDeviceObjects(), InvalidateDeviceObjects(), RecompileShaders(), SetReverseDepth()
+
 		/// A base class for API-specific rendering.
 
 		/*! RenderPlatform is an interface that allows Simul's rendering functions to be developed
@@ -105,6 +115,9 @@ namespace simul
 			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *layoutDesc,Buffer *buffer)	=0;
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers)=0;
+			virtual void					ActivateRenderTargets(DeviceContext &deviceContext,int num,Texture **targs)=0;
+			virtual void					SetViewports(DeviceContext &deviceContext,int num,Viewport *vps)=0;
+
 			/// Activate the specifided index buffer in preparation for rendering.
 			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer)=0;
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
