@@ -543,18 +543,18 @@ vec4 Composite(vec2 texCoords
 	
 	//hiResTexCoords				-=0.5*fullresTexel;
 
-	vec4 lowres_depths			=texture_nearest_lod(lowResDepthTexture	,lowResTexCoords	,0);
-	vec4 hires_depths			=texture_nearest_lod(hiResDepthTexture	,hiResTexCoords		,0);
+	vec4 lowres_depths			=texture_clamp_lod(lowResDepthTexture	,lowResTexCoords	,0);
+	vec4 hires_depths			=texture_clamp_lod(hiResDepthTexture	,hiResTexCoords		,0);
 	float lowres_edge			=lowres_depths.z;
 	float hires_edge			=hires_depths.z;
 	vec4 result					=vec4(0,0,0,0);
 	vec4 insc					=vec4(0,0,0,0);
 	if(lowres_edge>0.0||hires_edge>0.0)
 	{
-		vec4 cloudNear				=texture_nearest_lod(lowResNearTexture	,lowResTexCoords	,0);
-		vec4 cloudFar				=texture_nearest_lod(lowResFarTexture		,lowResTexCoords	,0);
-		vec4 insc_far				=texture_nearest_lod(farInscatterTexture	,hiResTexCoords		,0);
-		vec4 insc_near				=texture_nearest_lod(nearInscatterTexture	,hiResTexCoords		,0);
+		vec4 cloudNear				=texture_clamp_lod(lowResNearTexture	,lowResTexCoords	,0);
+		vec4 cloudFar				=texture_clamp_lod(lowResFarTexture		,lowResTexCoords	,0);
+		vec4 insc_far				=texture_clamp_lod(farInscatterTexture	,hiResTexCoords		,0);
+		vec4 insc_near				=texture_clamp_lod(nearInscatterTexture	,hiResTexCoords		,0);
 		vec2 nearFarDistLowRes		=depthToLinearDistance(lowres_depths.yx	,depthToLinFadeDistParams);
 		vec2 nearFarDistHiRes		=depthToLinearDistance(hires_depths.yx	,depthToLinFadeDistParams);
 		// Given that we have the near and far depths, 

@@ -80,6 +80,7 @@ vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
 									,IN.pos
 									,depthToLinFadeDistParams
 									,tanHalfFov);
+	
     return float4(loss.rgb,1.0);
 }
 
@@ -451,23 +452,14 @@ technique11 inscatter
 
 technique11 loss_msaa
 {
-    pass far
+    pass msaa_target
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Loss_Far()));
-    }
-    pass near
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Loss_Near()));
+		SetPixelShader(CompileShader(ps_5_0,PS_LossMSAA()));
     }
 }
 
