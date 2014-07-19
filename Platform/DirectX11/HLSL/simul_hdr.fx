@@ -281,6 +281,11 @@ vec4 NearFarDepthCloudBlendPS_MSAA(v2f IN) : SV_TARGET
 	return result;
 }
 
+[numthreads(8,8,1)]
+void CS_Composite(uint3 sub_pos	: SV_DispatchThreadID )
+{
+}
+
 vec4 PS_Composite(v2f IN) : SV_TARGET
 {
 	vec4 result	=Composite(IN.texCoords.xy
@@ -492,6 +497,14 @@ technique11 composite_mixed_res
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Composite_MSAA()));
+    }
+}
+
+technique11 cs_composite
+{
+    pass main
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Composite()));
     }
 }
 

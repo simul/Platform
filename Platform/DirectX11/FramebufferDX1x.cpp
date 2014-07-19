@@ -35,8 +35,6 @@ Framebuffer::Framebuffer(int w,int h) :
 	BaseFramebuffer(w,h)
 	,m_pd3dDevice(NULL)
 	,buffer_depth_texture(NULL)
-//	m_pHDRRenderTarget(NULL),
-	,m_pBufferDepthSurface(NULL)
 	,m_pOldRenderTarget(NULL)
 	,m_pOldDepthSurface(NULL)
 	,num_OldViewports(0)
@@ -94,8 +92,6 @@ void Framebuffer::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 	buffer_texture.InvalidateDeviceObjects();
 	buffer_depth_texture.InvalidateDeviceObjects();
-//	SAFE_RELEASE(m_pHDRRenderTarget)
-	SAFE_RELEASE(m_pBufferDepthSurface)
 
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
@@ -164,8 +160,6 @@ bool Framebuffer::CreateBuffers()
 
 	buffer_texture.InvalidateDeviceObjects();
 	buffer_depth_texture.InvalidateDeviceObjects();
-	SAFE_RELEASE(m_pBufferDepthSurface)
-	buffer_depth_texture.InvalidateDeviceObjects();
 	SAFE_RELEASE(stagingTexture);
 	D3D11_TEXTURE2D_DESC desc=
 	{
@@ -198,9 +192,7 @@ bool Framebuffer::CreateBuffers()
 		desc.SampleDesc.Count	=numAntialiasingSamples;
 		desc.SampleDesc.Quality	=quality;//numQualityLevels-1;
 		buffer_texture.ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(target_format),false,true,numAntialiasingSamples,quality);
-	//	V_CHECK(m_pd3dDevice->CreateTexture2D(	&desc,
-	//											NULL,
-	//											&hdr_buffer_texture	))
+	
 												
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 		renderTargetViewDesc.Format				=target_format;
@@ -252,7 +244,7 @@ bool Framebuffer::CreateBuffers()
 		depthDesc.Format			=DXGI_FORMAT_D32_FLOAT;
 		depthDesc.Flags				=0;
 		depthDesc.Texture2D			=dsv;
-		hr=m_pd3dDevice->CreateDepthStencilView((ID3D11Resource*)buffer_depth_texture.texture,&depthDesc, &m_pBufferDepthSurface);
+		hr=m_pd3dDevice->CreateDepthStencilView((ID3D11Resource*)buffer_depth_texture.texture,&depthDesc, &buffer_depth_texture.depthStencilView);
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC depthSrvDesc;
 		depthSrvDesc.Format			=DXGI_FORMAT_R32_FLOAT;
@@ -399,7 +391,7 @@ void Framebuffer::SaveOldRTs(void *context)
 
 bool Framebuffer::IsValid() const
 {
-	bool ok=(buffer_texture.renderTargetView!=NULL)||(m_pBufferDepthSurface!=NULL);
+	bool ok=(buffer_texture.renderTargetView!=NULL)||(buffer_depth_texture.depthStencilView!=NULL);
 	return ok;
 }
 
@@ -415,13 +407,13 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	if(buffer_texture.renderTargetView)
 	{
 		colour_active=true;
-		depth_active=(m_pBufferDepthSurface!=NULL);
-		pContext->OMSetRenderTargets(1,&buffer_texture.renderTargetView,m_pBufferDepthSurface);
+		depth_active=(buffer_depth_texture.depthStencilView!=NULL);
+		pContext->OMSetRenderTargets(1,&buffer_texture.renderTargetView,buffer_depth_texture.depthStencilView);
 	}
 	else 
 	{
-		depth_active=(m_pBufferDepthSurface!=NULL);
-		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
+		depth_active=(buffer_depth_texture.depthStencilView!=NULL);
+		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,buffer_depth_texture.depthStencilView);
 	}
 	SetViewport(pContext,0,0,1.f,1.f,0,1.f);
 }
@@ -459,13 +451,13 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 										&m_pOldRenderTarget,
 										&m_pOldDepthSurface
 										);
-		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
+		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,buffer_depth_texture.depthStencilView);
 	}
 	else
 	{
-		pContext->OMSetRenderTargets(1,&buffer_texture.renderTargetView,m_pBufferDepthSurface);
+		pContext->OMSetRenderTargets(1,&buffer_texture.renderTargetView,buffer_depth_texture.depthStencilView);
 	}
-	depth_active=(m_pBufferDepthSurface!=NULL);
+	depth_active=(buffer_depth_texture.depthStencilView!=NULL);
 	D3D11_VIEWPORT viewport;
 		// Setup the viewport for rendering.
 	viewport.Width = (float)Width;
@@ -529,15 +521,15 @@ void Framebuffer::Clear(void *context,float r,float g,float b,float a,float dept
 		mask=D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL;
 	if(buffer_texture.renderTargetView)
 		pContext->ClearRenderTargetView(buffer_texture.renderTargetView,clearColor);
-	if(m_pBufferDepthSurface)
-		pContext->ClearDepthStencilView(m_pBufferDepthSurface,mask,depth,0);
+	if(buffer_depth_texture.depthStencilView)
+		pContext->ClearDepthStencilView(buffer_depth_texture.depthStencilView,mask,depth,0);
 }
 
 void Framebuffer::ClearDepth(void *context,float depth)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	if(m_pBufferDepthSurface)
-		pContext->ClearDepthStencilView(m_pBufferDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,depth,0);
+	if(buffer_depth_texture.depthStencilView)
+		pContext->ClearDepthStencilView(buffer_depth_texture.depthStencilView,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,depth,0);
 }
 
 void Framebuffer::ClearColour(void *context,float r,float g,float b,float a)

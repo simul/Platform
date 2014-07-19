@@ -212,11 +212,12 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	view->GetLowResScratchTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,crossplatform::RGBA_32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	bool msaa=(depthTexture->GetSampleCount()>0);
 	
+	static bool spread=false;
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups.
 	static bool use_rt=true;
 	{
-		view->GetHiResDepthTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,crossplatform::RGBA_32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
-		view->GetHiResScratchTexture()->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,crossplatform::RGBA_32_FLOAT,/*computable=*/!use_rt,/*rendertarget=*/use_rt);
+		view->GetHiResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,crossplatform::RGBA_32_FLOAT,/*computable=*/true,/*rendertarget=*/true);
+		view->GetHiResScratchTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,crossplatform::RGBA_32_FLOAT,/*computable=*/true,/*rendertarget=*/true);
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Hi-res Depth")
 		mixedResolutionConstants.scale						=uint2(ds2,ds2);
 		mixedResolutionConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
@@ -231,30 +232,38 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 			simul::dx11::setTexture			(effect->asD3DX11Effect(),"sourceMSDepthTexture"	,depthTexture->AsD3D11ShaderResourceView());
 		else
 			simul::dx11::setTexture			(effect->asD3DX11Effect(),"sourceDepthTexture"		,depthTexture->AsD3D11ShaderResourceView());
-		simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"			,view->hiResScratch.unorderedAccessView);
-	
 		std::string pass_name=msaa?"msaa":"main";
 		if(msaa)
 			pass_name+=('0'+depthTexture->GetSampleCount());
+	SIMUL_GPU_PROFILE_START(pContext,"Initial Downscale Far Near")
 		if(use_rt)
 		{
-			view->GetHiResScratchTexture()->activateRenderTarget(deviceContext);
+			crossplatform::Texture *targ=spread?view->GetHiResScratchTexture():view->GetHiResDepthTexture();
+			targ->activateRenderTarget(deviceContext);
 			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near",pass_name.c_str());
 			renderPlatform->DrawQuad(deviceContext);
-			view->GetHiResScratchTexture()->deactivateRenderTarget();
+			targ->deactivateRenderTarget();
 		}
 		else
 		{
-			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"cs_make_depth_far_near",pass_name.c_str());
+			effect->SetUnorderedAccessView	(deviceContext,"target2DTexture"	,spread?view->GetHiResScratchTexture():view->GetHiResDepthTexture());
+			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"cs_downscale_depth_far_near",pass_name.c_str());
 			pContext->Dispatch(subgrid.x,subgrid.y,1);
 		}
+		effect->SetUnorderedAccessView	(deviceContext,"target2DTexture"	,NULL);
+		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceDepthTexture"		,NULL);
+		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceMSDepthTexture"		,NULL);
+	SIMUL_GPU_PROFILE_END(pContext)
+	SIMUL_GPU_PROFILE_START(pContext,"Spread")
 		unbindTextures(effect->asD3DX11Effect());
+		if(spread)
 		{
 			simul::dx11::setTexture				(effect->asD3DX11Effect(),"sourceDepthTexture"		,view->GetHiResScratchTexture()->AsD3D11ShaderResourceView());
 			simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"			,((dx11::Texture *)view->GetHiResDepthTexture())->unorderedAccessView);
 			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"spread_edge");
 			pContext->Dispatch(subgrid.x,subgrid.y,1);
 		}
+	SIMUL_GPU_PROFILE_END(pContext)
 		unbindTextures(effect->asD3DX11Effect());
 		simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"cs_make_depth_far_near",pass_name.c_str());
 		SIMUL_COMBINED_PROFILE_END(pContext)
@@ -270,21 +279,30 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		// if using rendertarget we must rescale the texCoords.
 		//mixedResolutionConstants.mixedResolutionTransformXYWH=vec4(0.f,0.f,(float)(w*s)/(float)FullWidth,(float)(h*s)/(float)FullHeight);
 		mixedResolutionConstants.Apply(deviceContext);
-		static int BLOCKWIDTH				=8;
+		static int BLOCKWIDTH				=12;
 		uint2 subgrid						=uint2((view->GetLowResDepthTexture()->GetWidth()+BLOCKWIDTH-1)/BLOCKWIDTH,(view->GetLowResDepthTexture()->GetLength()+BLOCKWIDTH-1)/BLOCKWIDTH);
+		// HiResDepthTexture->LowResScratchTexture
+		SIMUL_GPU_PROFILE_START(pContext,"Downscale Hi to Low")
 		{
-		simul::dx11::setTexture				(effect->asD3DX11Effect(),"sourceDepthTexture"		,view->GetHiResDepthTexture()->AsD3D11ShaderResourceView());
-		simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"		,((dx11::Texture *)view->GetLowResScratchTexture())->unorderedAccessView);
-	
+			effect->SetTexture				(deviceContext,"sourceDepthTexture"		,view->GetHiResDepthTexture());
+			crossplatform::Texture *targ=spread?view->GetLowResScratchTexture():view->GetLowResDepthTexture();
+			effect->SetUnorderedAccessView	(deviceContext,"target2DTexture",targ);
 		simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near_from_hires");
 		pContext->Dispatch(subgrid.x,subgrid.y,1);
 		}
+		SIMUL_GPU_PROFILE_END(pContext)
+		// LowResScratchTexture->LowResDepthTexture
+		SIMUL_GPU_PROFILE_START(pContext,"Spread Low")
+		if(spread)
 		{
-		simul::dx11::setTexture				(effect->asD3DX11Effect(),"sourceDepthTexture"		,view->GetLowResScratchTexture()->AsD3D11ShaderResourceView());
-		simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"		,((dx11::Texture *)view->GetLowResDepthTexture())->unorderedAccessView);
+		simul::dx11::setTexture					(effect->asD3DX11Effect(),"sourceDepthTexture"	,view->GetLowResScratchTexture()->AsD3D11ShaderResourceView());
+			simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"target2DTexture"		,view->GetLowResDepthTexture()->AsD3D11UnorderedAccessView());
 		simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"spread_edge");
 		pContext->Dispatch(subgrid.x,subgrid.y,1);
 		}
+		SIMUL_GPU_PROFILE_END(pContext)
+		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceDepthTexture"		,NULL);
+		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceMSDepthTexture"		,NULL);
 		unbindTextures(effect->asD3DX11Effect());
 		simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near_from_hires");
 		SIMUL_COMBINED_PROFILE_END(pContext)

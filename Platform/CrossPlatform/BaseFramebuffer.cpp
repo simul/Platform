@@ -1,5 +1,6 @@
 #include "BaseFramebuffer.h"
-
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 using namespace simul;
 using namespace crossplatform;
 
@@ -20,4 +21,11 @@ bool BaseFramebuffer::IsDepthActive() const
 bool BaseFramebuffer::IsColourActive() const
 {
 	return colour_active;
+}
+
+
+void TwoResFramebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
+{
+	crossplatform::Texture * targs[]={GetLowResFarFramebuffer()->GetTexture(),GetLowResNearFramebuffer()->GetTexture()};
+	deviceContext.renderPlatform->ActivateRenderTargets(deviceContext,2,targs,NULL);
 }

@@ -677,13 +677,16 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 
 };
 
-void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs)
+void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {
 	ID3D11RenderTargetView *rt[4];
 	SIMUL_ASSERT(num<=4);
 	for(int i=0;i<num;i++)
 		rt[i]=targs[i]->AsD3D11RenderTargetView();
-	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(num,rt,NULL);
+	ID3D11DepthStencilView *d=NULL;
+	if(depth)
+		d=depth->AsD3D11DepthStencilView();
+	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(num,rt,d);
 }
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Viewport *vps)

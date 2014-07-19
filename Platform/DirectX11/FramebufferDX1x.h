@@ -86,15 +86,11 @@ namespace simul
 			DXGI_FORMAT depth_format;
 			bool Destroy();
 			ID3D11Device*						m_pd3dDevice;
-
-		public:
-			//ID3D1xRenderTargetView*				m_pHDRRenderTarget;
-			ID3D1xDepthStencilView*				m_pBufferDepthSurface;
 		protected:
 			ID3D11Texture2D *stagingTexture;	// Only initialized if CopyToMemory is invoked.
 			
-			ID3D1xRenderTargetView*				m_pOldRenderTarget;
-			ID3D1xDepthStencilView*				m_pOldDepthSurface;
+			ID3D11RenderTargetView*				m_pOldRenderTarget;
+			ID3D11DepthStencilView*				m_pOldDepthSurface;
 			D3D11_VIEWPORT						m_OldViewports[16];
 			unsigned							num_OldViewports;
 			//! The texture the scene is rendered to.

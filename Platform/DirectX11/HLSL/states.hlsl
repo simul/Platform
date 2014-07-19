@@ -68,6 +68,7 @@ DepthStencilState EnableDepth
 BlendState DoBlend
 {
 	BlendEnable[0] = TRUE;
+	BlendEnable[1]	=TRUE;
 	SrcBlend = One;
 	DestBlend = INV_SRC_ALPHA;
 };
@@ -75,6 +76,7 @@ BlendState DoBlend
 BlendState AlphaToCoverageBlend
 {
 	BlendEnable[0] = TRUE;
+	BlendEnable[1]	=TRUE;
 	AlphaToCoverageEnable = TRUE;
 	SrcBlend = SRC_ALPHA;
 	DestBlend = INV_SRC_ALPHA;
@@ -83,6 +85,7 @@ BlendState AlphaToCoverageBlend
 BlendState CloudBlend
 {
 	BlendEnable[0] = TRUE;
+	BlendEnable[1]	=TRUE;
 	SrcBlend = SRC_ALPHA;
 	DestBlend = INV_SRC_ALPHA;
     BlendOp = ADD;
@@ -95,6 +98,7 @@ BlendState CloudBlend
 BlendState CloudBufferBlend
 {
 	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
 	SrcBlend		=ONE;
 	DestBlend		=SRC_ALPHA;
     BlendOp			=ADD;
@@ -103,6 +107,7 @@ BlendState CloudBufferBlend
 BlendState AlphaBlend
 {
 	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
 	SrcBlend		=SRC_ALPHA;
 	DestBlend		=INV_SRC_ALPHA;
 };
@@ -110,6 +115,7 @@ BlendState AlphaBlend
 BlendState MultiplyBlend
 {
 	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
 	SrcBlend		=ZERO;
 	DestBlend		=SRC_COLOR;
 };
@@ -117,6 +123,7 @@ BlendState MultiplyBlend
 BlendState AddBlend
 {
 	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
 	SrcBlend		=ONE;
 	DestBlend		=ONE;
 };
@@ -124,6 +131,7 @@ BlendState AddBlend
 BlendState AddAlphaBlend
 {
 	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
 	SrcBlend		=SRC_ALPHA;
 	DestBlend		=ONE;
 };
@@ -131,14 +139,17 @@ BlendState AddAlphaBlend
 BlendState AddBlendDontWriteAlpha
 {
 	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
 	SrcBlend		=ONE;
 	DestBlend		=ONE;
 	RenderTargetWriteMask[0]=7;
+	RenderTargetWriteMask[1]=7;
 };
 
 BlendState SubtractBlend
 {
 	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
 	BlendOp			=SUBTRACT;
 	SrcBlend		=ONE;
 	DestBlend		=ONE;
@@ -147,6 +158,7 @@ BlendState SubtractBlend
 BlendState DontBlend
 {
 	BlendEnable[0] = FALSE;
+	BlendEnable[1]	=FALSE;
 };
 
 RasterizerState RenderNoCull

@@ -63,7 +63,7 @@ namespace simul
 			bool depth_active, colour_active;
 			crossplatform::RenderPlatform *renderPlatform;
 		};
-		struct TwoResFramebuffer
+		struct SIMUL_CROSSPLATFORM_EXPORT TwoResFramebuffer
 		{
 			TwoResFramebuffer():ds2(2),renderPlatform(0){}
 			virtual crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()=0;
@@ -82,6 +82,8 @@ namespace simul
 			virtual void ActivateLowRes(crossplatform::DeviceContext &)=0;
 			/// Deactivate both low-res framebuffers.
 			virtual void DeactivateLowRes(crossplatform::DeviceContext &)=0;
+			/// Deactivate the depth buffer
+			virtual void DeactivateDepth(crossplatform::DeviceContext &);
 			int ds2;
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;

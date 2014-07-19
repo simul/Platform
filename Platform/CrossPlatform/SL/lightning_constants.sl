@@ -10,6 +10,7 @@ SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
 	uniform vec4 depthToLinFadeDistParams;
 	uniform vec2 viewportPixels;
 	uniform vec2 _line_width;
+	uniform vec2 tanHalfFov;
 	uniform vec4 viewportToTexRegionScaleBias;
 SIMUL_CONSTANT_BUFFER_END
 
@@ -24,6 +25,12 @@ struct LightningVertexInput
 {
     vec4 position		: POSITION;
     vec4 texCoords		: TEXCOORD0;
+};
+struct LightningVertexOutput
+{
+    vec4 position		: POSITION;
+    vec4 texCoords		: TEXCOORD0;
+	float depth			: TEXCOORD1;
 };
 #endif
 

@@ -286,7 +286,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,vec2 texCoords
 											,bool near_pass
 											,bool noise
-											,bool noise_3d)
+											,bool noise_3d
+											,bool do_rain_effect)
 {
 	RaytracePixelOutput res;
 	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
@@ -378,6 +379,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			rain_texc.xy				+=rain_texc.z*rainTangent;
 			float rain_lookup			=texture_wrap_lod(rainMapTexture,rain_texc.xy*inverseScales.xy,0).x;
 			vec4 streak					=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
+			if(do_rain_effect)
 			density.z					=saturate(
 											//(0.6+.4*noiseval.w)*	
 											density.z

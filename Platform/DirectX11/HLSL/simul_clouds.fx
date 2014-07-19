@@ -56,7 +56,8 @@ RaytracePixelOutput PS_RaytraceForward(posTexVertexOutput IN)
 									,texCoords
 									,false
 									,true
-									,false);
+									,false
+									,true);
 	if(texCoords.y>1.0)
 		p.colour.r=1;
 	if(p.colour.a>=1.0)
@@ -80,7 +81,8 @@ RaytracePixelOutput PS_RaytraceNearPass(posTexVertexOutput IN)
 									,texCoords
 									,true
 									,true
-									,false);
+									,false
+									,true);
 
 	if(p.colour.a>=1.0)
 	   discard;
@@ -103,7 +105,8 @@ FarNearPixelOutput PS_RaytraceBothPasses(posTexVertexOutput IN)
 									,texCoords
 									,false
 									,true
-									,false);
+									,false
+									,true);
 	RaytracePixelOutput n;
 	if(dlookup.z>0)
 	{
@@ -119,7 +122,8 @@ FarNearPixelOutput PS_RaytraceBothPasses(posTexVertexOutput IN)
 									,texCoords
 									,true
 									,true
-									,false);
+									,false
+									,true);
 	}
 	else
 		n=f;
@@ -224,6 +228,7 @@ vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 									,texCoords
 									,false
 									,false
+									,false
 									,false);
 	if(p.colour.a>=1.0)
 	   discard;
@@ -246,6 +251,7 @@ RaytracePixelOutput PS_Raytrace3DNoise(posTexVertexOutput IN)
 									,texCoords
 									,false
 									,true
+									,true
 									,true);
 	if(r.colour.a>=1.0)
 	   discard;
@@ -266,6 +272,7 @@ RaytracePixelOutput PS_Raytrace3DNoiseNearPass(posTexVertexOutput IN)
 									,true
 									,dlookup
 									,texCoords
+									,true
 									,true
 									,true
 									,true);
@@ -341,6 +348,18 @@ vec4 PS_CrossSection( posTexVertexOutput IN):SV_TARGET
     return CrossSection(IN.texCoords,yz);
 }
 
+BlendState Blend1
+{
+	BlendEnable[0] = TRUE;
+	BlendEnable[1] = FALSE;
+	SrcBlend = ONE;
+	DestBlend = SRC_ALPHA;
+    BlendOp = ADD;
+    SrcBlendAlpha = ZERO;
+    DestBlendAlpha = SRC_ALPHA;
+    BlendOpAlpha = ADD;
+    //RenderTargetWriteMask[0] = 0x0F;
+};
 
 fxgroup raytrace
 {
@@ -362,9 +381,8 @@ fxgroup raytrace
 		}
 	pass both 
 	{
-		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetDepthStencilState(WriteDepth,0);
-		SetDepthStencilState(DisableDepth,1);
 		SetRasterizerState( RenderNoCull );
 		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_RaytraceBothPasses()));

@@ -318,8 +318,9 @@ technique11 detail_lighting
 BlendState AlphaBlendX
 {
 	BlendEnable[0] = TRUE;
+	BlendEnable[1] = FALSE;
 	SrcBlend = SRC_ALPHA;
-	DestBlend = INV_SRC_ALPHA;
+	DestBlend = ZERO;
     BlendOp = ADD;
     SrcBlendAlpha = ZERO;
     DestBlendAlpha = INV_SRC_ALPHA;

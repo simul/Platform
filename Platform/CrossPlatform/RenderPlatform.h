@@ -115,7 +115,8 @@ namespace simul
 			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *layoutDesc,Buffer *buffer)	=0;
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers)=0;
-			virtual void					ActivateRenderTargets(DeviceContext &deviceContext,int num,Texture **targs)=0;
+			/// Make the specified rendertargets and optional depth target active.
+			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
 			virtual void					SetViewports(DeviceContext &deviceContext,int num,Viewport *vps)=0;
 
 			/// Activate the specifided index buffer in preparation for rendering.
