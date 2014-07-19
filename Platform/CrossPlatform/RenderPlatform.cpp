@@ -53,8 +53,8 @@ namespace simul
 			for(int i=0;i<numLines;i++)
 			{
 				int j=i-numLines/2;
-				math::Vector3 pos1	=centrePos+vec3(square_size*j	,-square_size*halfOffset	,0);
-				math::Vector3 pos2	=centrePos+vec3(square_size*j	, square_size*halfOffset	,0);
+				vec3 pos1		=centrePos+vec3(square_size*j	,-square_size*halfOffset	,0);
+				vec3 pos2		=centrePos+vec3(square_size*j	, square_size*halfOffset	,0);
 				vertex->pos		=pos1;
 				vertex->colour	=vec4(l5,l5,0.f,1.0f);
 				vertex++;
@@ -65,8 +65,8 @@ namespace simul
 			for(int i=0;i<numLines;i++)
 			{
 				int j=i-numLines/2;
-				math::Vector3 pos1	=centrePos+vec3(-square_size*halfOffset	,square_size*j	,0);
-				math::Vector3 pos2	=centrePos+vec3( square_size*halfOffset	,square_size*j	,0);
+				vec3 pos1		=centrePos+vec3(-square_size*halfOffset	,square_size*j	,0);
+				vec3 pos2		=centrePos+vec3( square_size*halfOffset	,square_size*j	,0);
 				vertex->pos		=pos1;
 				vertex->colour	=vec4(0.f,l10,l5,1.0f);
 				vertex++;

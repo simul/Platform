@@ -4,9 +4,19 @@
 // Enable the following to use a 3-parameter depth conversion, for possible slight speed improvement
 #define NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
 
+#ifdef __PSSL__
+#ifdef REVERSE_DEPTH
+#define REVERSE_DEPTH1
+#endif
+#else
+#if REVERSE_DEPTH==1
+#define REVERSE_DEPTH1
+#endif
+#endif
+
 float depthToLinearDistance(float depth,vec4 depthToLinFadeDistParams)
 {
-#if REVERSE_DEPTH==1
+#ifdef REVERSE_DEPTH1
 	if(depth<=0)
 		return UNITY_DIST;//max_fade_distance_metres;
 #else
@@ -20,7 +30,7 @@ float depthToLinearDistance(float depth,vec4 depthToLinFadeDistParams)
 vec4 depthToLinearDistance(vec4 depth,vec4 depthToLinFadeDistParams)
 {
 	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz)+depthToLinFadeDistParams.wwww*depth;
-#if REVERSE_DEPTH==1
+#ifdef REVERSE_DEPTH1
 	vec4 st=step(depth,vec4(0.0,0.0,0.0,0.0));
 	linearFadeDistanceZ*=(vec4(1.0,1.0,1.0,1.0)-st);
 	linearFadeDistanceZ+=st;
@@ -33,7 +43,7 @@ vec4 depthToLinearDistance(vec4 depth,vec4 depthToLinFadeDistParams)
 vec2 depthToLinearDistance(vec2 depth,vec4 depthToLinFadeDistParams)
 {
 	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz)+depthToLinFadeDistParams.ww*depth;
-#if REVERSE_DEPTH==1
+#ifdef REVERSE_DEPTH1
 	vec2 st=step(depth,vec2(0.0,0.0));
 	linearFadeDistanceZ*=(vec2(1.0,1.0)-st);
 	linearFadeDistanceZ+=st;
@@ -47,7 +57,7 @@ vec2 depthToLinearDistance(vec2 depth,vec4 depthToLinFadeDistParams)
 //	-	where usually nearZ and farZ will be factors of the maximum fade distance.
 float depthToFadeDistance(float depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2 tanHalf)
 {
-#if REVERSE_DEPTH==1
+#ifdef REVERSE_DEPTH1
 	if(depth<=0)
 		return UNITY_DIST;
 #else
@@ -67,7 +77,7 @@ vec2 depthToFadeDistance(vec2 depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2 t
 	float Tx=xy.x*tanHalf.x;
 	float Ty=xy.y*tanHalf.y;
 	vec2 fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
-#if REVERSE_DEPTH==1
+#ifdef REVERSE_DEPTH1
 	if(depth.x<=0)
 		fadeDist.x=1.0;
 	if(depth.y<=0)
@@ -83,7 +93,7 @@ vec2 depthToFadeDistance(vec2 depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2 t
 
 float fadeDistanceToDepth(float dist,vec2 xy,vec4 depthToLinFadeDistParams,vec2 tanHalf)
 {
-#if REVERSE_DEPTH==1
+#ifdef REVERSE_DEPTH1
 	if(dist>=1.0)
 		return 0.0;
 #else

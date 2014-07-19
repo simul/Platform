@@ -18,6 +18,19 @@ Texture2D lightTableTexture				: register(t11);
 SamplerState cloudSamplerState			: register( s0);
 #endif
 
+#ifdef __PSSL__
+	#ifdef USE_LIGHT_TABLES
+		#define USE_LIGHT_TABLES1
+	#else
+		#define USE_LIGHT_TABLES0
+	#endif
+#else
+	#if USE_LIGHT_TABLES==1
+		#define USE_LIGHT_TABLES1
+	#else
+		#define USE_LIGHT_TABLES0
+	#endif
+#endif
 #define MIN_SUN_ELEV (0.2)
 struct RaytracePixelOutput
 {
@@ -334,7 +347,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float BetaClouds	=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	float BetaRayleigh	=CalcRayleighBeta(cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
-#if USE_LIGHT_TABLES==0
+#ifdef USE_LIGHT_TABLES0
 	vec3 amb			=ambientColour.rgb;
 #endif
 	// This provides the range of texcoords that is lit.
@@ -393,7 +406,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				density.z				*=saturate((d-fadeDistance)/0.01);
 			if(density.z>0)
 			{
-#if USE_LIGHT_TABLES==1
+#ifdef USE_LIGHT_TABLES1
 				float alt_texc			=world_pos.z/maxAltitudeMetres;
 				vec3 combinedLightColour=texture_clamp_lod(lightTableTexture,vec2(alt_texc,3.5/4.0),0).rgb;
 				vec3 amb				=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
