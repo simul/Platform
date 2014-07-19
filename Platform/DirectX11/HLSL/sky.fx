@@ -306,6 +306,19 @@ vec4 PS_Sun( svertexOutput IN): SV_TARGET
 	return vec4(result,1.f);
 }
 
+vec4 PS_SunGaussian( svertexOutput IN): SV_TARGET
+{
+	float r=4.0*length(IN.tex);
+	if(r>4.0)
+		discard;
+	float brightness=1.0;
+	if(r>1.0)
+		discard;
+		//brightness=1.0/pow(r,4.0);//();//colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
+	vec3 result=brightness*colour.rgb*colour.a;
+	return vec4(result,1.f);
+}
+
 vec4 PS_SunQuery( svertexOutput IN): SV_TARGET
 {
 	float r=2.0*length(IN.tex);
@@ -504,6 +517,18 @@ technique11 sun
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
+		SetDepthStencilState(TestDepth,0);
+		SetBlendState(AddBlend,vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
+    }
+}
+technique11 sun_gaussian
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
+		SetPixelShader(CompileShader(ps_4_0,PS_SunGaussian()));
 		SetDepthStencilState(TestDepth,0);
 		SetBlendState(AddBlend,vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
     }
