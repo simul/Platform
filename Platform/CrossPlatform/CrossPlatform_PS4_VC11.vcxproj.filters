@@ -52,6 +52,7 @@
     <ClInclude Include="PixelFormat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TextInputOutput.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SL">
@@ -98,5 +99,6 @@
     <ClCompile Include="prx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TextInputOutput.cpp" />
   </ItemGroup>
 </Project>

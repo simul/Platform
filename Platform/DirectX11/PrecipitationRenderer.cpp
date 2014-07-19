@@ -135,11 +135,11 @@ void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *
 	{
 		PrecipitationVertex *dat=new PrecipitationVertex[125000];
 		memset(dat,0,125000);
-		for(int i=0;i<125000;i++)
+	/*	for(int i=0;i<125000;i++)
 		{
 			dat[i].position.y=6;
 			dat[i].position.x=10*(i/125000.0f-.5f);
-		}
+		}*/
 	
 		vertexBuffer.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
 		vertexBufferSwap.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
@@ -149,7 +149,7 @@ void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *
 	{
 		SplashVertex *splash_data=new SplashVertex[10000];
 		memset(splash_data,0,10000);
-		for(int i=0;i<10000;i++)
+	/*	for(int i=0;i<10000;i++)
 		{
 			simul::math::RandomNumberGenerator rnd;
 			splash_data[i].position.x=rnd.FRand(0.f,100.f);
@@ -159,7 +159,7 @@ void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *
 			splash_data[i].normal.y=0;
 			splash_data[i].normal.z=1.0f;
 			splash_data[i].strength=1.0f;
-		}
+		}*/
 		splashBuffer.ensureBufferSize(m_pd3dDevice,10000,splash_data,true,false);
 		splashBufferSwap.ensureBufferSize(m_pd3dDevice,10000,splash_data,true,false);
 		delete [] splash_data;

@@ -17,23 +17,16 @@ vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,T
 }
 
 vec3 AtmosphericsLossMSAA(Texture2DMS<float4> depthTextureMS,uint i,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
-	,mat4 invViewProj,vec2 texCoords,uint2 depth_pos2,vec2 clip_pos,vec4 depthToLinFadeDistParams,vec2 tanHalfFov)
+	,mat4 invViewProj,vec2 texCoords,int2 depth_pos2,vec2 clip_pos,vec4 depthToLinFadeDistParams,vec2 tanHalfFov)
 {
 	float3 view	=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view		=normalize(view);
 	float sine	=view.z;
-	vec3 loss	=vec3(0,0,0);
-	//for(uint i=0;i<numSamples;i++)
-	{
-		vec4 insc_i;
-        vec3 skyl_i;
-		vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-		float depth			=depthTextureMS.Load(depth_pos2,i).x;
-		float dist	=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-		vec2 texc2	=vec2(pow(dist,0.5),0.5*(1.f-sine));
-		loss				+=texture_clamp_mirror(lossTexture,texc2).rgb;
-	}
-	//loss/=float(numSamples);
+	float depth	=depthTextureMS.Load(depth_pos2,i).x;
+	float dist	=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec2 texc2	=vec2(pow(dist,0.5),0.5*(1.f-sine));
+	vec3 loss	=texture_clamp_mirror(lossTexture,texc2).rgb;
+	
 	return loss;
 }
 
@@ -182,8 +175,8 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 	
 struct FarNearOutput
 {
-	vec4 farColour :SV_TARGET0;//SIMUL_RENDERTARGET_OUTPUT(0);
-	vec4 nearColour :SV_TARGET1;//SIMUL_RENDERTARGET_OUTPUT(1);
+	vec4 farColour SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 nearColour SIMUL_RENDERTARGET_OUTPUT(1);
 };
 
 // In depthTextureNF, x=far, y=near, z=edge
@@ -402,6 +395,24 @@ vec4 Inscatter(	Texture2D inscTexture
 	float3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;
     return float4(colour.rgb,1.f);
+}
+
+
+vec4 RainbowAndCorona(Texture2D rainbowLookupTexture,Texture2D coronaLookupTexture,float dropletRadius,
+					  float rainbowIntensity,vec3 lightIrradiance,vec3 view,vec3 lightDir,vec2 texCoords)
+{
+	//return texture_clamp(coronaLookupTexture,IN.texCoords.xy);
+	 //note: use a float for d here, since a half corrupts the corona
+	float d=  -dot( lightDir,normalize(view ) 	);
+
+	vec4 scattered	=texture_clamp(rainbowLookupTexture, vec2( dropletRadius, d));
+	vec4 moisture	=1.0;//texture_clamp(moistureTexture,IN.texCoords);
+
+	//(1 + d) will be clamped between 0 and 1 by the texture sampler
+	// this gives up the dot product result in the range of [-1 to 0]
+	// that is to say, an angle of 90 to 180 degrees
+	vec4 coronaDiffracted = texture_clamp(coronaLookupTexture, vec2(dropletRadius, 1.0 + d));
+	return (coronaDiffracted + scattered)*vec4(lightIrradiance/25.0,1.0)*rainbowIntensity*moisture.x;
 }
 
 

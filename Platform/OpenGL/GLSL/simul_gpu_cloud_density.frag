@@ -8,6 +8,11 @@ in vec2 texCoords;
 out vec4 FragColour;
 void main()
 {
-	float dens					=CloudDensity(volumeNoiseTexture,maskTexture,texCoords,humidity,diffusivity,octaves,persistence,time,zPixel,noiseDimsZ);
+	float dens					=CloudDensity(volumeNoiseTexture,maskTexture,texCoords,humidity,diffusivity,octaves,persistence,time,zPixel,zSize,noiseDimsZ
+					, noiseScale
+				   , baseLayer
+					 , transition
+					 , upperDensity);
+
     FragColour					=vec4(dens,0,0,1.0);
 }
