@@ -102,6 +102,8 @@ namespace simul
 			/// Create a platform-specific texture instance.
 			virtual Texture					*CreateTexture					(const char *lFileNameUtf8=NULL)	=0;
 			/// Create a platform-specific effect instance.
+			Effect							*CreateEffect					(const char *filename_utf8);
+			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
 			/// simul::crossplatform::ConstantBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().

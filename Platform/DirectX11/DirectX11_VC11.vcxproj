@@ -293,19 +293,14 @@
     <None Include="..\CrossPlatform\SL\spherical_harmonics.sl" />
     <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\SL\states.sl" />
-    <None Include="CSFFT\fft_512x512_c2c.hlsl" />
     <None Include="HLSL\atmospherics.fx" />
-    <None Include="HLSL\CppHLSL.hlsl" />
     <None Include="HLSL\font.fx" />
     <None Include="HLSL\ocean.fx" />
-    <None Include="HLSL\ocean_simulator_cs.hlsl" />
-    <None Include="HLSL\ocean_simulator_vs_ps.hlsl" />
     <None Include="HLSL\mixed_resolution.fx" />
     <None Include="HLSL\rain.fx" />
     <None Include="HLSL\simul_clouds.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
     <None Include="HLSL\simul_debug.fx" />
-    <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\simul_foliage.fx" />
     <None Include="HLSL\simul_gaussian.fx" />
     <None Include="HLSL\simul_gpu_clouds.fx" />
@@ -317,7 +312,6 @@
     <None Include="HLSL\sky.fx" />
     <None Include="HLSL\simul_terrain.fx" />
     <None Include="HLSL\spherical_harmonics.fx" />
-    <None Include="HLSL\states.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc" />
@@ -343,6 +337,14 @@
     <None Include="HLSL\solid.fx">
       <FileType>Document</FileType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="CSFFT\fft_512x512_c2c.hlsl" />
+    <None Include="HLSL\CppHLSL.hlsl" />
+    <None Include="HLSL\ocean_simulator_cs.hlsl" />
+    <None Include="HLSL\ocean_simulator_vs_ps.hlsl" />
+    <None Include="HLSL\simul_earthshadow.hlsl" />
+    <None Include="HLSL\states.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

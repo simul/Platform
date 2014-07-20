@@ -439,7 +439,7 @@ namespace simul
 			if(!glfxParseEffectFromTextSIMUL( effect, src.c_str(),filenames))
 			{
    				std::string log = glfxGetEffectLog(effect);
-   				std::cout << "Error parsing effect: " << log << std::endl;
+   				std::cerr << "Error parsing effect: " << log << std::endl;
 				effect=-1;
 			}
 			delete filenames;
@@ -447,7 +447,7 @@ namespace simul
 			if (!glfxParseEffectFromFile(effect,filenameUtf8.c_str()))
 			{
    				std::string log = glfxGetEffectLog(effect);
-   				std::cout << "Error parsing effect: " << log << std::endl;
+   				std::cerr << "Error parsing effect: " << log << std::endl;
 			}
 #endif
 			return effect;

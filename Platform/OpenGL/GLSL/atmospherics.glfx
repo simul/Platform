@@ -93,10 +93,7 @@ shader PS_EarthShadowInscatter(in vec2 texCoords,in vec2 pos, out vec4 FragColor
 
 	vec3 colour			=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
 	colour				+=skyl;
-	//colour.rg			=nearFarTexc.xx;
-	//colour.b=0;
-	//colour.rgb			=insc_near.rgb;
-    FragColor		=vec4(colour.rgb,1.0);
+    FragColor			=vec4(colour.rgb,1.0);
 }
 
 program atmospherics_overlay::standard.loss

@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "CubemapFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"

@@ -9,9 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="HLSL">
-      <UniqueIdentifier>{e219929b-633e-4a9c-9546-ee848cbb7060}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
@@ -21,6 +18,9 @@
     </Filter>
     <Filter Include="CrossPlatform">
       <UniqueIdentifier>{c6275862-f101-4904-baac-8e003a70d943}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HLSL">
+      <UniqueIdentifier>{6e6134bb-9684-4650-8c68-4dcd8bd337e4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -262,12 +262,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="HLSL\CppHLSL.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\simul_earthshadow.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
     <None Include="HLSL\simul_terrain.fx">
       <Filter>FX</Filter>
     </None>
@@ -307,20 +301,8 @@
     <None Include="HLSL\atmospherics.fx">
       <Filter>FX</Filter>
     </None>
-    <None Include="HLSL\states.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
     <None Include="HLSL\spherical_harmonics.fx">
       <Filter>FX</Filter>
-    </None>
-    <None Include="CSFFT\fft_512x512_c2c.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\ocean_simulator_cs.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\ocean_simulator_vs_ps.hlsl">
-      <Filter>HLSL</Filter>
     </None>
     <None Include="HLSL\ocean.fx">
       <Filter>FX</Filter>
@@ -465,6 +447,24 @@
     </None>
     <None Include="HLSL\solid.fx">
       <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\CppHLSL.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="CSFFT\fft_512x512_c2c.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean_simulator_cs.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean_simulator_vs_ps.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\simul_earthshadow.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\states.hlsl">
+      <Filter>HLSL</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -235,10 +235,15 @@ namespace simul
 			{
 				return (ID3DX11Effect*)platform_effect;
 			}
+			void SetName(const char *n)
+			{
+				filename=n;
+			}
 			const char *GetName()const
 			{
 				return filename.c_str();
 			}
+			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;

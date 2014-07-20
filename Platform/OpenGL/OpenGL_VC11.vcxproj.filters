@@ -387,6 +387,9 @@
     <None Include="..\CrossPlatform\SL\gpu_cloud_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="GLSL\simul_rendernoise.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

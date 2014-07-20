@@ -17,8 +17,7 @@ uniform sampler3D lightningIlluminationTexture;
 #include "../../CrossPlatform/SL/depth.sl"
 #include "saturate.glsl"
 
-varying vec2 texc;
-
+in vec2 texc;
 
 vec4 calcDensity2(vec3 texCoords,float layerFade,vec3 noiseval)
 {
@@ -26,6 +25,7 @@ vec4 calcDensity2(vec3 texCoords,float layerFade,vec3 noiseval)
 	vec4 density=texture(cloudDensity1,pos);
 	return density;
 }
+
 void main()
 {
 	vec4 colour=vec4(0.0,0.0,0.0,1.0);

@@ -588,8 +588,8 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
 		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth()/2);
-		int W1=viewport.Width;
-		int H1=viewport.Height;
+		int W1=(int)viewport.Width;
+		int H1=(int)viewport.Height;
 		int W2=W1/2;
 		int H2=H1/2;
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())

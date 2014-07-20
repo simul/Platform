@@ -46,6 +46,7 @@ namespace simul
 			{
 				return (GLint)(uintptr_t)platform_effect;
 			}
+			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
 			void SetUnorderedAccessView(crossplatform::DeviceContext&,const char *name,crossplatform::Texture *tex);

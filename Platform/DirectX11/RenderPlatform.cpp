@@ -485,7 +485,9 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 	std::string fn(filename_utf8);
 	if(fn.find(".")>=fn.length())
 		fn+=".fx";
-	return new dx11::Effect(this,fn.c_str(),defines);
+	crossplatform::Effect *e= new dx11::Effect(this,fn.c_str(),defines);
+	e->SetName(filename_utf8);
+	return e;
 }
 
 crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer()

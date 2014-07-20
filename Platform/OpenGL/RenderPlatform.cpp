@@ -11,6 +11,7 @@
 #include "Simul/Platform/OpenGL/Layout.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/Macros.h"
 #pragma warning(disable:4505)	// Fix GLUT warnings
 #include <GL/glut.h>
 #include "Simul/Camera/Camera.h"
@@ -467,7 +468,13 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 	std::string fn(filename_utf8);
 	if(fn.find(".")>=fn.length())
 		fn+=".glfx";
-	return new opengl::Effect(this,fn.c_str(),defines);
+	opengl::Effect *e=new opengl::Effect(this,fn.c_str(),defines);
+	e->SetName(filename_utf8);
+	if(!e->platform_effect)
+	{
+		SAFE_DELETE(e);
+	}
+	return e;
 }
 
 crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer()

@@ -39,7 +39,7 @@ namespace simul
 												,int start_texel
 												,int texels);
 			// If we want the generator to put the data directly into 3d textures:
-			void SetDirectTargets(Texture **textures)
+			void SetDirectTargets(crossplatform::Texture **textures)
 			{
 				for(int i=0;i<3;i++)
 				{
@@ -60,7 +60,7 @@ namespace simul
 			GLenum			iformat;
 			GLenum			itype;
 			GLuint			density_texture;
-			Texture	*finalTexture[3];
+			crossplatform::Texture	*finalTexture[3];
 			bool			readback_to_cpu;
 			float			*density;	// used if we are using CPU to read back the density texture.
 			int				density_gridsize;

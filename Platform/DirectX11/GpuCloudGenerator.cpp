@@ -9,6 +9,7 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
@@ -84,7 +85,7 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	SAFE_RELEASE(volume_noise_tex);
 	SAFE_RELEASE(volume_noise_tex_srv);
 	SAFE_RELEASE(m_pImmediateContext);
-	SAFE_RELEASE(effect);
+	SAFE_DELETE(effect);
 	density_texture.InvalidateDeviceObjects();
 	gpuCloudConstants.InvalidateDeviceObjects();
 	for(int i=0;i<2;i++)
@@ -100,18 +101,18 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 
 void GpuCloudGenerator::RecompileShaders()
 {
-	SAFE_RELEASE(effect);
-	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_gpu_clouds.fx");
-	if(effect)
+	SAFE_DELETE(effect);
+	effect=renderPlatform->CreateEffect("simul_gpu_clouds");
+	if(effect->asD3DX11Effect())
 	{
-		lightingComputeTechnique			=effect->GetTechniqueByName("gpu_lighting_compute");
-		secondaryLightingComputeTechnique	=effect->GetTechniqueByName("gpu_secondary_compute");
-		secondaryHarmonicTechnique			=effect->GetTechniqueByName("gpu_secondary_harmonic");
-		maskTechnique						=effect->GetTechniqueByName("density_mask");
-		densityComputeTechnique				=effect->GetTechniqueByName("gpu_density_compute");
-		transformComputeTechnique			=effect->GetTechniqueByName("gpu_transform_compute");
+		lightingComputeTechnique			=effect->asD3DX11Effect()->GetTechniqueByName("gpu_lighting_compute");
+		secondaryLightingComputeTechnique	=effect->asD3DX11Effect()->GetTechniqueByName("gpu_secondary_compute");
+		secondaryHarmonicTechnique			=effect->asD3DX11Effect()->GetTechniqueByName("gpu_secondary_harmonic");
+		maskTechnique						=effect->asD3DX11Effect()->GetTechniqueByName("density_mask");
+		densityComputeTechnique				=effect->asD3DX11Effect()->GetTechniqueByName("gpu_density_compute");
+		transformComputeTechnique			=effect->asD3DX11Effect()->GetTechniqueByName("gpu_transform_compute");
 	}
-	gpuCloudConstants.LinkToEffect(effect,"GpuCloudConstants");
+	gpuCloudConstants.LinkToEffect(effect->asD3DX11Effect(),"GpuCloudConstants");
 }
 
 int GpuCloudGenerator::GetDensityGridsize(const int *grid)
@@ -183,14 +184,14 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	float y_range					=(float)z1/(float)zmax-y_start;
 	SetGpuCloudConstants(gpuCloudConstants,params,y_start,y_range);
 
-	simul::dx11::setTexture(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
-	simul::dx11::setTexture(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
+	simul::dx11::setTexture(effect->asD3DX11Effect(),"volumeNoiseTexture"	,volume_noise_tex_srv);
+	simul::dx11::setTexture(effect->asD3DX11Effect(),"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
 	
 	density_texture.ensureTexture3DSizeAndFormat(renderPlatform
 		,params.density_grid[0],params.density_grid[1],params.density_grid[2]
 		,crossplatform::R_32_FLOAT,true);
 
-	simul::dx11::setUnorderedAccessView(effect,"targetTexture",density_texture.unorderedAccessView);
+	simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture",density_texture.unorderedAccessView);
 
 	// divide the grid into 8x8x8 blocks:
 	static const int BLOCKWIDTH=8;
@@ -208,9 +209,9 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0));
 	if(x1>x0)
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,subgrid.z);
-	simul::dx11::setTexture				(effect,"volumeNoiseTexture",(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture				(effect,"maskTexture"		,(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setUnorderedAccessView	(effect,"targetTexture"		,(ID3D11UnorderedAccessView*)NULL);
+	simul::dx11::setTexture				(effect->asD3DX11Effect(),"volumeNoiseTexture",(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture				(effect->asD3DX11Effect(),"maskTexture"		,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setUnorderedAccessView	(effect->asD3DX11Effect(),"targetTexture"		,(ID3D11UnorderedAccessView*)NULL);
 	ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0));
 }
 
@@ -245,7 +246,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 				,light_grid[0],light_grid[1],light_grid[2]
 				,crossplatform::R_32_FLOAT,true);
 
-	ID3D1xEffectShaderResourceVariable*	densityTexture		=effect->GetVariableByName("densityTexture")->AsShaderResource();
+	ID3D1xEffectShaderResourceVariable*	densityTexture		=effect->asD3DX11Effect()->GetVariableByName("densityTexture")->AsShaderResource();
 	//SetGpuCloudConstants(gpuCloudConstants);
 	gpuCloudConstants.yRange			=vec4(0.0,1.0,0,0);
 	if(light_index==0)
@@ -269,11 +270,11 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	step*=simul::sky::float4(params.DensityGridScalesM[0],params.DensityGridScalesM[1],params.DensityGridScalesM[2],1.0);
 	gpuCloudConstants.stepLength		=simul::sky::length(step); 
 	if(params.wrap_light_tex[light_index])
-		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWwcSamplerState);
+		simul::dx11::setSamplerState(effect->asD3DX11Effect(),"lightSamplerState",m_pWwcSamplerState);
 	else if(light_grid[0]>light_grid[1])
-		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWccSamplerState);
+		simul::dx11::setSamplerState(effect->asD3DX11Effect(),"lightSamplerState",m_pWccSamplerState);
 	else
-		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pCwcSamplerState);
+		simul::dx11::setSamplerState(effect->asD3DX11Effect(),"lightSamplerState",m_pCwcSamplerState);
 	densityTexture->SetResource(density_texture.shaderResourceView);
 
 	// divide the grid into 8x8x8 blocks:
@@ -296,7 +297,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	gpuCloudConstants.Apply(deviceContext);
 	if(x1>x0)
 	{
-		simul::dx11::setUnorderedAccessView(effect,"targetTexture1",directLightTextures[light_index].unorderedAccessView);
+		simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture1",directLightTextures[light_index].unorderedAccessView);
 		ApplyPass(m_pImmediateContext,lightingComputeTechnique->GetPassByIndex(0));
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,1);
 	}
@@ -308,8 +309,8 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 		{
 			gpuCloudConstants.threadOffset=uint3(0,0,0);
 			gpuCloudConstants.Apply(deviceContext);
-			setTexture(effect,"lightTexture1"				,directLightTextures[light_index].shaderResourceView);
-			simul::dx11::setUnorderedAccessView(effect,"targetTexture1",indirectLightTextures[light_index].unorderedAccessView);
+			setTexture(effect->asD3DX11Effect(),"lightTexture1"				,directLightTextures[light_index].shaderResourceView);
+			simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture1",indirectLightTextures[light_index].unorderedAccessView);
 			ApplyPass(m_pImmediateContext,secondaryHarmonicTechnique->GetPassByIndex(0));
 			m_pImmediateContext->Dispatch(subgrid.x,subgrid.y,subgrid.z);
 		}
@@ -318,13 +319,13 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 		{
 			gpuCloudConstants.threadOffset=uint3(0,0,z);
 			gpuCloudConstants.Apply(deviceContext);
-			setTexture(effect,"lightTexture1"				,directLightTextures[light_index].shaderResourceView);
-			simul::dx11::setUnorderedAccessView(effect,"targetTexture1",indirectLightTextures[light_index].unorderedAccessView);
+			setTexture(effect->asD3DX11Effect(),"lightTexture1"				,directLightTextures[light_index].shaderResourceView);
+			simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture1",indirectLightTextures[light_index].unorderedAccessView);
 			ApplyPass(m_pImmediateContext,secondaryLightingComputeTechnique->GetPassByIndex(0));
 			m_pImmediateContext->Dispatch(subgrid.x,subgrid.y,1);
 		}
 	}
-	simul::dx11::setUnorderedAccessView(effect,"targetTexture1",(ID3D11UnorderedAccessView*)NULL);
+	simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture1",(ID3D11UnorderedAccessView*)NULL);
 	densityTexture->SetResource(NULL);
 	// We have to do THIS, AFTER NULLing the textures to avoid DX11 warnings.
 	ApplyPass(m_pImmediateContext,secondaryLightingComputeTechnique->GetPassByIndex(0));
@@ -364,11 +365,11 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	gpuCloudConstants.zPixel			=(1.f/(float)params.density_grid[2]);
 	gpuCloudConstants.zPixelLightspace	=(1.f/(float)params.light_grid[2]);
 
-	setTexture(effect,"densityTexture"		,density_texture.shaderResourceView);
-	setTexture(effect,"ambientTexture1"		,directLightTextures[0].shaderResourceView);
-	setTexture(effect,"ambientTexture2"		,indirectLightTextures[0].shaderResourceView);
-	setTexture(effect,"lightTexture1"		,directLightTextures[1].shaderResourceView);
-	setTexture(effect,"lightTexture2"		,indirectLightTextures[1].shaderResourceView);
+	setTexture(effect->asD3DX11Effect(),"densityTexture"		,density_texture.shaderResourceView);
+	setTexture(effect->asD3DX11Effect(),"ambientTexture1"		,directLightTextures[0].shaderResourceView);
+	setTexture(effect->asD3DX11Effect(),"ambientTexture2"		,indirectLightTextures[0].shaderResourceView);
+	setTexture(effect->asD3DX11Effect(),"lightTexture1"		,directLightTextures[1].shaderResourceView);
+	setTexture(effect->asD3DX11Effect(),"lightTexture2"		,indirectLightTextures[1].shaderResourceView);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	gpuCloudConstants.Apply(deviceContext);
 	for(int i=0;i<3;i++)
@@ -389,17 +390,17 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 
 	gpuCloudConstants.threadOffset=uint3(x0*BLOCKWIDTH,0,0);
 	gpuCloudConstants.Apply(deviceContext);
-	//simul::dx11::setParameter(effect,"targetTexture",density_texture.unorderedAccessView);
-	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalTexture[cycled_index]->unorderedAccessView);
+	//simul::dx11::setParameter(effect->asD3DX11Effect(),"targetTexture",density_texture.unorderedAccessView);
+	effect->SetUnorderedAccessView(deviceContext,"targetTexture",finalTexture[cycled_index]);
 	ApplyPass(m_pImmediateContext,transformComputeTechnique->GetPassByIndex(0));
 	if(x1>x0)
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,subgrid.z);
-	simul::dx11::setUnorderedAccessView(effect,"targetTexture",(ID3D11UnorderedAccessView*)NULL);
-	setTexture(effect,"densityTexture"	,(ID3D11ShaderResourceView*)NULL);
-	setTexture(effect,"ambientTexture1"	,(ID3D11ShaderResourceView*)NULL);
-	setTexture(effect,"ambientTexture2"	,(ID3D11ShaderResourceView*)NULL);
-	setTexture(effect,"lightTexture1"		,(ID3D11ShaderResourceView*)NULL);
-	setTexture(effect,"lightTexture2"		,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture",(ID3D11UnorderedAccessView*)NULL);
+	setTexture(effect->asD3DX11Effect(),"densityTexture"	,(ID3D11ShaderResourceView*)NULL);
+	setTexture(effect->asD3DX11Effect(),"ambientTexture1"	,(ID3D11ShaderResourceView*)NULL);
+	setTexture(effect->asD3DX11Effect(),"ambientTexture2"	,(ID3D11ShaderResourceView*)NULL);
+	setTexture(effect->asD3DX11Effect(),"lightTexture1"		,(ID3D11ShaderResourceView*)NULL);
+	setTexture(effect->asD3DX11Effect(),"lightTexture2"		,(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(m_pImmediateContext,transformComputeTechnique->GetPassByIndex(0));
 	// copy to CPU memory if required by CloudKeyframer.
 	if(target)

@@ -39,11 +39,6 @@ float g_SkyBlending				= 16.0f;
 // Perlin wave parameters
 float g_PerlinSize		= 1.0f;
 float g_PerlinSpeed		= 0.06f;
-D3DXVECTOR3 g_PerlinAmplitude	= D3DXVECTOR3(0.35, 0.42, 0.57);
-D3DXVECTOR3 g_PerlinGradient	= D3DXVECTOR3(1.4f, 1.6f, 2.2f);
-D3DXVECTOR3 g_PerlinOctave		= D3DXVECTOR3(1.12f, 0.59f, 0.23f);
-
-D3DXVECTOR3 g_BendParam			= D3DXVECTOR3(0.1f, -0.4f, 0.2f);
 
 OceanRenderer::OceanRenderer(simul::terrain::SeaKeyframer *s)
 	:simul::terrain::BaseSeaRenderer(s)
@@ -330,6 +325,11 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	shadingConstants.g_UVScale = 1.0f / seaKeyframer->patch_length;
 	shadingConstants.g_UVOffset = 0.5f / seaKeyframer->dmap_dim;
 	// Perlin
+	D3DXVECTOR3 g_PerlinAmplitude	= D3DXVECTOR3(0.35f, 0.42f, 0.57f);
+	D3DXVECTOR3 g_PerlinGradient	= D3DXVECTOR3(1.4f, 1.6f, 2.2f);
+	D3DXVECTOR3 g_PerlinOctave		= D3DXVECTOR3(1.12f, 0.59f, 0.23f);
+
+	D3DXVECTOR3 g_BendParam			= D3DXVECTOR3(0.1f, -0.4f, 0.2f);
 	shadingConstants.g_PerlinSize		= g_PerlinSize;
 	shadingConstants.g_PerlinAmplitude	= g_PerlinAmplitude;
 	shadingConstants.g_PerlinGradient	= g_PerlinGradient;

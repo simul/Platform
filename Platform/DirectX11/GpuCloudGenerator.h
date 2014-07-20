@@ -50,7 +50,7 @@ namespace simul
 											,int start_texel
 											,int texels);
 			// If we want the generator to put the data directly into 3d textures:
-			void SetDirectTargets(dx11::Texture **textures)
+			void SetDirectTargets(crossplatform::Texture **textures)
 			{
 				for(int i=0;i<3;i++)
 				{
@@ -65,7 +65,7 @@ namespace simul
 			
 			ID3D11Device*						m_pd3dDevice;
 			ID3D11DeviceContext*				m_pImmediateContext;
-			ID3DX11Effect*						effect;
+			crossplatform::Effect*				effect;
 			ID3DX11EffectTechnique*				densityComputeTechnique;
 			ID3DX11EffectTechnique*				maskTechnique;
 			ID3DX11EffectTechnique*				lightingComputeTechnique;
@@ -77,7 +77,7 @@ namespace simul
 			ID3D11ShaderResourceView			*volume_noise_tex_srv;
 
 			dx11::Texture						density_texture;
-			dx11::Texture						*finalTexture[3];
+			crossplatform::Texture				*finalTexture[3];
 			dx11::Texture						directLightTextures[2];
 			dx11::Texture						indirectLightTextures[2];
 			ConstantBuffer<GpuCloudConstants>	gpuCloudConstants;

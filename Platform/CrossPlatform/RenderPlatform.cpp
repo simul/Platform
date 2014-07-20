@@ -25,6 +25,12 @@ void RenderPlatform::EnsureEffectIsBuiltPartialSpec(const char *filename_utf8,co
 	}
 }
 
+Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
+{
+	std::map<std::string,std::string> defines;
+	return CreateEffect(filename_utf8,defines);
+}
+
 void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &opts)
 {
 	const std::map<std::string,std::string> defines;

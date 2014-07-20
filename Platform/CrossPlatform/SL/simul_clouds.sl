@@ -265,17 +265,17 @@ vec4 calcColour2(vec4 density,float Beta,vec4 lightResponse,vec3 combinedLightCo
 {
 	vec3 ambient=density.w*ambientColour.rgb;
 	float opacity=density.z;
-	vec4 final;
-	final.rgb=(density.y*Beta+lightResponse.y*density.x)*combinedLightColour+ambient.rgb;
-	final.a=opacity;
-	return final;
+	vec4 ret;
+	ret.rgb=(density.yyy*Beta+lightResponse.yyy*density.xxx)*combinedLightColour+ambient.rgb;
+	ret.a=opacity;
+	return ret;
 }
 
 
 float unshadowedBrightness(float Beta,vec4 lightResponse,vec3 ambientColour)
 {
-	float final			=max(1.0,(Beta+lightResponse.y)+ambientColour.b);
-	return final;
+	float f			=max(1.0,(Beta+lightResponse.y)+ambientColour.b);
+	return f;
 }
 
 vec3 calcLightningColour(vec3 world_pos,vec3 lightningColour,vec3 lightningOrigin,vec3 lightningInvScales)

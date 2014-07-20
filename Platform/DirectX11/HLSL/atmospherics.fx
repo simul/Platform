@@ -356,7 +356,8 @@ vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
 	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
 	
 	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	res					+=saturate(res.a*2.0)*RainbowAndCorona(view,lightDir,IN.texCoords.xy);
+	res					+=saturate(res.a*2.0)*RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
+										  rainbowIntensity,lightIrradiance,view,lightDir,IN.texCoords.xy);
 	return vec4(res.rgb,1.0);
 }
 
@@ -378,7 +379,8 @@ FarNearOutput PS_BothGodrays(atmosVertexOutput IN) : SV_TARGET
 	fn.nearColour		=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist.y);
 	
 	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	vec4 rc				=RainbowAndCorona(view,lightDir,IN.texCoords.xy);
+	vec4 rc				=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
+										  rainbowIntensity,lightIrradiance,view,lightDir,IN.texCoords.xy);
 	fn.farColour		+=saturate(fn.farColour.a*2.0)*rc;
 	fn.nearColour		+=saturate(fn.nearColour.a*2.0)*rc;
 	return fn;

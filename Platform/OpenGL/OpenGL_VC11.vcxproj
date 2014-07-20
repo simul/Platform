@@ -54,21 +54,25 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulLib_VC11.props" />
     <Import Project="..\..\SimulStaticRelease.props" />
+    <Import Project="UseNvFX.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulStaticDebug.props" />
     <Import Project="..\..\SimulLib_VC11.props" />
+    <Import Project="UseNvFX.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulRelease.props" />
     <Import Project="..\..\SimulDLL_VC11.props" />
+    <Import Project="UseNvFX.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulDebug.props" />
     <Import Project="..\..\SimulDLL_VC11.props" />
+    <Import Project="UseNvFX.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -290,6 +294,7 @@
     <None Include="GLSL\simul_rain.frag" />
     <None Include="GLSL\simul_rain.vert" />
     <None Include="GLSL\simul_raytrace_clouds.frag" />
+    <None Include="GLSL\simul_rendernoise.glfx" />
     <None Include="GLSL\simul_simple_lightning.frag" />
     <None Include="GLSL\simul_simple_lightning.vert" />
     <None Include="GLSL\simul_sky.frag" />

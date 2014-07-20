@@ -1,8 +1,16 @@
 #include <GL/glew.h>
+#include <stdlib.h>
+#include <stdio.h>
+#ifdef SIMUL_USE_NVFX
+#include <FXParser.h>
+#else
 #include <GL/glfx.h>
+#endif
+
 #ifdef _MSC_VER
 #include <windows.h>
 #endif
+
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/OpenGL/Effect.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
@@ -109,16 +117,34 @@ int EffectTechnique::NumPasses() const
 	return (int)passes_by_index.size();
 }
 
-Effect::Effect(crossplatform::RenderPlatform *,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 	:current_texture_number(0)
 {
+	Load(renderPlatform,filename_utf8,defines);
+}
+
+void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+{
 	filename=filename_utf8;
+#ifdef SIMUL_USE_NVFX
+	nvFX::IContainer*   fx_Effect       = NULL;
+	fx_Effect = nvFX::IContainer::create(filename_utf8);
+	bool bRes = nvFX::loadEffectFromFile(fx_Effect,filename_utf8);
+
+	platform_effect=fx_Effect;
+#else
 	platform_effect		=(void*)opengl::CreateEffect(filename_utf8,defines);
+#endif
 	FillInTechniques();
 }
 
 Effect::~Effect()
 {
+#ifdef SIMUL_USE_NVFX
+	nvFX::IContainer*   fx_Effect       = (nvFX::IContainer* )platform_effect; 
+    nvFX::IContainer::destroy(fx_Effect);
+	fx_Effect=NULL;
+#endif
 }
 
 // convert GL programs into techniques and passes.
@@ -127,12 +153,27 @@ void Effect::FillInTechniques()
 	GLint e				=asGLint();
 	if(e<0)
 		return ;
+#ifdef SIMUL_USE_NVFX
+	nvFX::ITechnique*   fx_Tech         = NULL;
+	int nump=0;
+	nvFX::IContainer*   fx_Effect       = (nvFX::IContainer* )platform_effect; 
+	for(int t=0; fx_Tech = fx_Effect->findTechnique(t); t++)
+	{
+		nump++;
+	}
+#else
 	int nump			=glfxGetProgramCount(e);
+#endif
 	if(!nump)
 		return;
 	groups.clear();
 	for(int i=0;i<nump;i++)
 	{
+#ifdef SIMUL_USE_NVFX
+		nvFX::ITechnique*   t = fx_Effect->findTechnique(i);
+		std::string name	=fx_Tech->getName();
+		t->validate();
+#else
 		std::string name	=glfxGetProgramName(e,i);
 		GLuint t			=glfxCompileProgram(e,name.c_str());
 		if(!t)
@@ -140,6 +181,7 @@ void Effect::FillInTechniques()
 			opengl::printEffectLog(e);
 			return;
 		}
+#endif
 		// Now the name will determine what technique and pass it is.
 		std::string groupname;
 		std::string techname=name;
@@ -206,7 +248,12 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	if(asGLint()==-1)
 		return NULL;
 	GLint e									=asGLint();
-	GLuint t								=glfxCompileProgram(e,name);
+#ifdef SIMUL_USE_NVFX
+	nvFX::IContainer*   fx_Effect	=(nvFX::IContainer*)platform_effect; 
+	nvFX::ITechnique*   t			=fx_Effect->findTechnique(name);
+#else
+	GLuint t						=glfxCompileProgram(e,name);
+#endif
 	if(!t)
 	{
 		opengl::printEffectLog(e);
@@ -216,7 +263,14 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	tech->platform_technique				=(void*)t;
 	techniques[name]						=tech;
 	// Now it needs to be in the techniques_by_index list.
+#ifdef SIMUL_USE_NVFX
+	size_t index=0;
+	for(int i=0;i<techniques.size();i++)
+		if(fx_Effect->findTechnique(i)==t)
+			index=i;
+#else
 	size_t index							=glfxGetProgramIndex(e,name);
+#endif
 	techniques_by_index[(int)index]			=tech;
 	return tech;
 }
@@ -232,9 +286,14 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 	GLint e				=asGLint();
 	if(index>=(int)techniques.size())
 		return NULL;
-//	int nump			=glfxGetProgramCount(e);
+#ifdef SIMUL_USE_NVFX
+	nvFX::IContainer*   fx_Effect	=(nvFX::IContainer*)platform_effect; 
+	nvFX::ITechnique*   t			=fx_Effect->findTechnique(index);
+	const char *name	=t->getName();
+#else
 	const char *name	=glfxGetProgramName(e,index);
 	GLuint t			=glfxCompileProgram(e,name);
+#endif
 	if(!t)
 	{
 		opengl::printEffectLog(e);
@@ -412,6 +471,7 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 	if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
 		glEffectTechnique->passStates[currentPass]->Apply();
 }
+
 void Effect::Reapply(crossplatform::DeviceContext &)
 {
 	if(apply_count!=1)

@@ -82,7 +82,6 @@ namespace simul
 
 			GLuint clouds_background_program;
 			GLuint clouds_foreground_program;
-			GLuint raytrace_program;
 			GLuint noise_prog;
 			GLuint edge_noise_prog;
 			GLuint current_program;
@@ -117,18 +116,11 @@ namespace simul
 	
 			GLint		maxFadeDistanceMetres_param;
 
-			simul::opengl::Texture	cloud_textures[3];
-			// 2D texture
-			GLuint		noise_tex;
-			GLuint		volume_noise_tex;
-
 			GLuint		sphere_vbo;
 			GLuint		sphere_ibo;
 
 			simul::opengl::Mesh sphereMesh;
 
-			void CreateVolumeNoise();
-			void CreateNoiseTexture(crossplatform::DeviceContext &deviceContext);
 			bool CreateCloudEffect();
 			bool RenderCloudsToBuffer();
 
