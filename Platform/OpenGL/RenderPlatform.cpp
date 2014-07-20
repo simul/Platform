@@ -11,7 +11,10 @@
 #include "Simul/Platform/OpenGL/Layout.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Base/DefaultFileLoader.h"
+#include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
+
 #pragma warning(disable:4505)	// Fix GLUT warnings
 #include <GL/glut.h>
 #include "Simul/Camera/Camera.h"
@@ -468,7 +471,8 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 	std::string fn(filename_utf8);
 	if(fn.find(".")>=fn.length())
 		fn+=".glfx";
-	opengl::Effect *e=new opengl::Effect(this,fn.c_str(),defines);
+	opengl::Effect *e=new opengl::Effect();
+	e->Load(this,fn.c_str(),defines);
 	e->SetName(filename_utf8);
 	if(!e->platform_effect)
 	{
@@ -636,6 +640,13 @@ void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,
     glBindBuffer(GL_ARRAY_BUFFER, buf);
 }
 
+void RenderPlatform::EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options)
+{
+	/// We will not do this for GL, because there's NO BINARY SHADER FORMAT!
+#if 0
+	crossplatform::RenderPlatform::EnsureEffectIsBuilt(filename_utf8,options);
+#endif
+}
 
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)
 {

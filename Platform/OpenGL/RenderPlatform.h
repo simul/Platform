@@ -70,6 +70,7 @@ namespace simul
 			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Viewport *vps);
 
 			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer);
+			void									EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options);
 
 			void StoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void RestoreRenderState(crossplatform::DeviceContext &deviceContext);

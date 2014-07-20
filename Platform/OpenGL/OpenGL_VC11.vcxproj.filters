@@ -390,6 +390,9 @@
     <None Include="GLSL\simul_rendernoise.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\sky.nvfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

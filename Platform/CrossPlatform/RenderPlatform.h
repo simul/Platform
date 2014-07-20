@@ -124,7 +124,7 @@ namespace simul
 			/// Activate the specifided index buffer in preparation for rendering.
 			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer)=0;
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
-			void							EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
+			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 			/// Called to store the render state - blending, depth check, etc. - for later retrieval with RestoreRenderState.
 			/// Some platforms may not support this.
 			virtual void					StoreRenderState(crossplatform::DeviceContext &deviceContext)=0;

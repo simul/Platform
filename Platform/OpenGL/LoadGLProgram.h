@@ -9,6 +9,7 @@ namespace simul
 	namespace opengl
 	{
 		extern SIMUL_OPENGL_EXPORT void PushShaderPath(const char *path_utf8);
+		extern SIMUL_OPENGL_EXPORT std::vector<std::string> GetShaderPathsUtf8();
 		extern SIMUL_OPENGL_EXPORT GLint CreateEffect(const char *filename,const std::map<std::string,std::string>&defines);
 
 		extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *root_filename);
@@ -26,6 +27,5 @@ namespace simul
 		extern SIMUL_OPENGL_EXPORT void printShaderInfoLog(const std::string &info_log,const std::vector<std::string> &sourceFilesUtf8);
 
 		extern SIMUL_OPENGL_EXPORT void printEffectLog(GLint effect);
-
 	}
 }

@@ -22,6 +22,7 @@
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="TextInputOutput.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseFramebuffer.h" />
@@ -41,5 +42,6 @@
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="PixelFormat.h" />
+    <ClInclude Include="TextInputOutput.h" />
   </ItemGroup>
 </Project>

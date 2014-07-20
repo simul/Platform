@@ -40,7 +40,7 @@ namespace simul
 			int current_texture_number;
 			void FillInTechniques();
 		public:
-			Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
+			Effect();
 			~Effect();
 			inline GLuint asGLint() const
 			{

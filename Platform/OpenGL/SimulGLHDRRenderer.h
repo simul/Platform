@@ -44,7 +44,7 @@ namespace simul
 			FramebufferGL alt_fb;
 			bool initialized;
 			// shaders
-			Effect *effect;
+			crossplatform::Effect *effect;
 			crossplatform::EffectTechnique *tech;
 			GLuint tonemap_program;
 			GLint exposure_param;

@@ -78,7 +78,7 @@ ERRNO_CHECK
 	blur_program		=MakeProgram("simple.vert",NULL,"simul_hdr_blur.frag");
 ERRNO_CHECK
 	std::map<std::string,std::string> defines;
-	effect				=new opengl::Effect(renderPlatform,"hdr.glfx",defines);
+	effect				=renderPlatform->CreateEffect("hdr",defines);
 	tech=effect->GetTechniqueByName("tonemap");
 	hdrConstants.LinkToEffect(effect,"HdrConstants");
 }

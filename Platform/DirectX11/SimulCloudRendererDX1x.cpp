@@ -546,6 +546,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
 	ERRNO_CHECK
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(deviceContext.viewStruct.view_id);
+	helper->SetMaxLayers(cloudKeyframer->GetDefaultNumSlices());
 	ERRNO_CHECK
 	// Moved from Update function above. See commment.
 	//if (!cubemap)

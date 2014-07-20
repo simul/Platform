@@ -8,6 +8,9 @@
       <AdditionalIncludeDirectories>$(SIMUL)\External\nvFX\include;$(SIMUL)/..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SIMUL_USE_NVFX;SIMUL_DYNAMIC_LINK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SIMUL)\External\nvFX\lib\$(Configuration);$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)</AdditionalLibraryDirectories>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>

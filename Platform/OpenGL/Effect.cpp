@@ -3,6 +3,15 @@
 #include <stdio.h>
 #ifdef SIMUL_USE_NVFX
 #include <FXParser.h>
+#ifdef _DEBUG
+#pragma comment(lib,"FxLibD")
+#pragma comment(lib,"FxLibGLD")
+#pragma comment(lib,"FxParserD")
+#else
+#pragma comment(lib,"FxLib")
+#pragma comment(lib,"FxLibGL")
+#pragma comment(lib,"FxParser")
+#endif
 #else
 #include <GL/glfx.h>
 #endif
@@ -117,20 +126,45 @@ int EffectTechnique::NumPasses() const
 	return (int)passes_by_index.size();
 }
 
-Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+Effect::Effect()
 	:current_texture_number(0)
 {
-	Load(renderPlatform,filename_utf8,defines);
+}
+//------------------------------------------------------------------------------
+void errorCallbackFunc(const char *errMsg)
+{
+    std::cerr<<errMsg;
+}
+#include "Simul/Base/DefaultFileLoader.h"
+void includeCallbackFunc(const char *incName, FILE *&fp, const char *&buf)
+{
+	std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(incName,opengl::GetShaderPathsUtf8());
+	if(!filenameUtf8.length())
+	{
+		fp=NULL;
+		return;
+	}
+    char fullpath[200];
+    fp = fopen(filenameUtf8.c_str(),"r");
+	ERRNO_CHECK
 }
 
 void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	filename=filename_utf8;
+	std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,opengl::GetShaderPathsUtf8());
+	if(!filenameUtf8.length())
+		return;
 #ifdef SIMUL_USE_NVFX
 	nvFX::IContainer*   fx_Effect       = NULL;
+	nvFX::setErrorCallback(errorCallbackFunc);
+	nvFX::setIncludeCallback(includeCallbackFunc);
+	int pos=filenameUtf8.find_last_of(".glfx");
+	if(pos>0)
+		filenameUtf8=filenameUtf8.substr(0,pos-4)+".nvfx";
 	fx_Effect = nvFX::IContainer::create(filename_utf8);
-	bool bRes = nvFX::loadEffectFromFile(fx_Effect,filename_utf8);
-
+	bool bRes = nvFX::loadEffectFromFile(fx_Effect,filenameUtf8.c_str());
+	ERRNO_CHECK
 	platform_effect=fx_Effect;
 #else
 	platform_effect		=(void*)opengl::CreateEffect(filename_utf8,defines);

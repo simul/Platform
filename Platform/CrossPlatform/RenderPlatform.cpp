@@ -54,8 +54,8 @@ namespace simul
 			crossplatform::RenderPlatform::Vertext *vertex=lines;
 			int halfOffset=numLines/2;
 			float l10=brightness;
-			float l5=brightness*0.5;
-			float l25=brightness*2.5;
+			float l5=brightness*0.5f;
+			float l25=brightness*2.5f;
 			for(int i=0;i<numLines;i++)
 			{
 				int j=i-numLines/2;
@@ -65,7 +65,7 @@ namespace simul
 				vertex->colour	=vec4(l5,l5,0.f,1.0f);
 				vertex++;
 				vertex->pos		=pos2;
-				vertex->colour	=vec4(l5,0.1*l5,0.f,1.0f);
+				vertex->colour	=vec4(l5,0.1f*l5,0.f,1.0f);
 				vertex++;
 			}
 			for(int i=0;i<numLines;i++)

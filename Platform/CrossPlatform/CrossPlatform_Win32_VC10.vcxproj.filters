@@ -32,6 +32,7 @@
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="pixelformat.h" />
     <ClInclude Include="commandlineparams.h" />
+    <ClInclude Include="TextInputOutput.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -166,5 +167,6 @@
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="TextInputOutput.cpp" />
   </ItemGroup>
 </Project>

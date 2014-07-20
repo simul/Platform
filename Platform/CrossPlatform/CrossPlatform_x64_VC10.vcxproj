@@ -174,8 +174,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
     <ClInclude Include="BaseFramebuffer.h" />
+    <ClInclude Include="BaseRenderer.h" />
     <ClInclude Include="buffer.h" />
     <ClInclude Include="CommandLineParams.h" />
     <ClInclude Include="DeviceContext.h" />
@@ -187,8 +187,10 @@
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MixedResolutionView.h" />
+    <ClInclude Include="PixelFormat.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="ShaderMode.h" />
+    <ClInclude Include="TextInputOutput.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
@@ -237,6 +239,8 @@
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MixedResolutionView.cpp" />
+    <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

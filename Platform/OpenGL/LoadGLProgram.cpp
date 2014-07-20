@@ -32,11 +32,19 @@ namespace simul
 {
 	namespace opengl
 	{
-		std::vector<std::string> texturePathsUtf8;
-		std::vector<std::string> shaderPathsUtf8;
+		vector<string> texturePathsUtf8;
+		vector<string> shaderPathsUtf8;
+		vector<string> GetShaderPathsUtf8()
+		{
+			return shaderPathsUtf8;
+		}
 		void PushShaderPath(const char *path_utf8)
 		{
-			shaderPathsUtf8.push_back(std::string(path_utf8)+"/");
+			string str=string(path_utf8);
+			if(str.find_last_of("/")!=str.length()-1
+				&&str.find_last_of('\\')!=str.length()-1)
+				str+="/";
+			shaderPathsUtf8.push_back(str);
 		}
 		static int LineCount(const std::string &str)
 		{

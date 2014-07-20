@@ -307,6 +307,7 @@
     <None Include="GLSL\simul_terrain.geom" />
     <None Include="GLSL\simul_terrain.vert" />
     <None Include="GLSL\sky.glfx" />
+    <None Include="GLSL\sky.nvfx" />
     <None Include="GLSL\tonemap.frag" />
     <None Include="GLSL\tonemap.vert" />
   </ItemGroup>

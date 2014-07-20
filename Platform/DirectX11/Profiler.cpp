@@ -78,8 +78,16 @@ ID3D11Query *CreateQuery(ID3D11Device* device,D3D11_QUERY_DESC &desc,const char 
 void Profiler::StartFrame(void* ctx)
 {
 #ifdef SIMUL_WIN8_SDK
+	if(enabled)
+	{
+		SAFE_RELEASE(pUserDefinedAnnotation);
 	IUnknown *unknown=(IUnknown *)ctx;
-	HRESULT hr = unknown->QueryInterface(IID_PPV_ARGS(&pUserDefinedAnnotation));
+#ifdef _XBOX_ONE
+		V_CHECK(unknown->QueryInterface( __uuidof(pUserDefinedAnnotation), reinterpret_cast<void**>(&pUserDefinedAnnotation) ));
+#else
+		V_CHECK(unknown->QueryInterface(IID_PPV_ARGS(&pUserDefinedAnnotation)));
+#endif
+}
 #endif
 }
 void Profiler::Begin(void *ctx,const char *name)
@@ -199,12 +207,12 @@ template<typename T> inline std::string ToString(const T& val)
 
 void Profiler::EndFrame(void* c)
 {
-	ID3D11DeviceContext *context=(ID3D11DeviceContext*)c;
-    if(!enabled||!device)
-        return;
 #ifdef SIMUL_WIN8_SDK
 	SAFE_RELEASE(pUserDefinedAnnotation);
 #endif
+	ID3D11DeviceContext *context=(ID3D11DeviceContext*)c;
+    if(!enabled||!device)
+        return;
 
     currFrame = (currFrame + 1) % QueryLatency;    
 

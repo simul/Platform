@@ -308,6 +308,7 @@ void OceanRenderer::SetMatrices(const float *v,const float *p)
 
 void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure)
 {
+#ifndef _XBOX_ONE
 	double app_time=0.0;
 	if(skyInterface)
 		app_time=skyInterface->GetTime();
@@ -325,11 +326,11 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	shadingConstants.g_UVScale = 1.0f / seaKeyframer->patch_length;
 	shadingConstants.g_UVOffset = 0.5f / seaKeyframer->dmap_dim;
 	// Perlin
-	D3DXVECTOR3 g_PerlinAmplitude	= D3DXVECTOR3(0.35f, 0.42f, 0.57f);
-	D3DXVECTOR3 g_PerlinGradient	= D3DXVECTOR3(1.4f, 1.6f, 2.2f);
-	D3DXVECTOR3 g_PerlinOctave		= D3DXVECTOR3(1.12f, 0.59f, 0.23f);
+	vec3 g_PerlinAmplitude	(0.35f, 0.42f, 0.57f);
+	vec3 g_PerlinGradient	(1.4f, 1.6f, 2.2f);
+	vec3 g_PerlinOctave		(1.12f, 0.59f, 0.23f);
 
-	D3DXVECTOR3 g_BendParam			= D3DXVECTOR3(0.1f, -0.4f, 0.2f);
+	vec3 g_BendParam	(0.1f, -0.4f, 0.2f);
 	shadingConstants.g_PerlinSize		= g_PerlinSize;
 	shadingConstants.g_PerlinAmplitude	= g_PerlinAmplitude;
 	shadingConstants.g_PerlinGradient	= g_PerlinGradient;
@@ -351,8 +352,8 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	buildNodeList(root_node,seaKeyframer->patch_length,(const float *)&deviceContext.viewStruct.view,(const float *)&deviceContext.viewStruct.proj);
 
 	// Matrices
-	D3DXMATRIX matView = deviceContext.viewStruct.view;
-	D3DXMATRIX matProj = deviceContext.viewStruct.proj;
+	math::Matrix4x4 matView = deviceContext.viewStruct.view;
+	math::Matrix4x4  matProj = deviceContext.viewStruct.proj;
 
 	// VS & PS
 	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("ocean");
@@ -402,10 +403,10 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 		changePerCallConstants.g_matLocal=matScale;
 		//D3DXMatrixTranspose(&changePerCallConstants.g_matLocal, &matScale);
 		// WVP matrix
-		D3DXMATRIX matWorld;
-		D3DXMatrixTranslation(&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
+		math::Matrix4x4 matWorld;
+		D3DXMatrixTranslation((D3DXMATRIX*)&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
 		D3DXMatrixTranspose((D3DXMATRIX*)&changePerCallConstants.g_matWorld, &matWorld);
-		D3DXMATRIX matWVP =D3DXMatrixMultiply( matWorld,D3DXMatrixMultiply(matView,matProj));
+		math::Matrix4x4 matWVP =D3DXMatrixMultiply( (D3DXMATRIX*)&matWorld,D3DXMatrixMultiply((D3DXMATRIX*)&matView,(D3DXMATRIX*)&matProj));
 		D3DXMatrixTranspose((D3DXMATRIX*)&changePerCallConstants.g_matWorldViewProj, &matWVP);
 		// Texcoord for perlin noise
 		math::float2 uv_base = node.bottom_left / seaKeyframer->patch_length * g_PerlinSize;
@@ -414,7 +415,7 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 		math::float2 perlin_move =math::float2(seaKeyframer->wind_dir)*(-(float)app_time)* g_PerlinSpeed;
 		changePerCallConstants.g_PerlinMovement = perlin_move;
 		// Eye point
-		D3DXMATRIX matInvWV = D3DXMatrixMultiply(matWorld ,matView);
+		math::Matrix4x4 matInvWV = D3DXMatrixMultiply(matWorld ,matView);
 		D3DXMatrixInverse(&matInvWV, NULL, &matInvWV);
 		D3DXVECTOR3 vLocalEye(0, 0, 0);
 		D3DXVec3TransformCoord(&vLocalEye, &vLocalEye, &matInvWV);
@@ -453,10 +454,12 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
 	layout->Unapply(deviceContext);
+#endif
 }
 
 void OceanRenderer::RenderWireframe(crossplatform::DeviceContext &deviceContext)
 {
+#ifndef _XBOX_ONE
 	double app_time=0.0;
 	if(skyInterface)
 		app_time=skyInterface->GetTime();
@@ -553,6 +556,7 @@ void OceanRenderer::RenderWireframe(crossplatform::DeviceContext &deviceContext)
 	layout->Unapply(deviceContext);
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
+#endif
 }
 
 void OceanRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,int width,int height)

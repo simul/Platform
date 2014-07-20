@@ -11,9 +11,9 @@
 #ifdef _MSC_VER
 #pragma comment(lib,"freeImage.lib")
 #endif
+using namespace std;
 
-
-static std::vector<std::string> texturePathsUtf8;
+static vector<string> texturePathsUtf8;
 
 namespace simul
 {
@@ -21,7 +21,11 @@ namespace simul
 	{
 		void PushTexturePath(const char *path_utf8)
 		{
-			texturePathsUtf8.push_back(path_utf8);
+			string str=string(path_utf8);
+			if(str.find_last_of("/")!=str.length()-1
+				&&str.find_last_of('\\')!=str.length()-1)
+				str+="/";
+			texturePathsUtf8.push_back(str);
 		}
 		void PopTexturePath()
 		{ 
@@ -29,11 +33,11 @@ namespace simul
 		}
 	}
 }
-static bool FileExists(const std::string& filename_utf8)
+static bool FileExists(const string& filename_utf8)
 {
 	FILE* pFile = NULL;
 #ifdef _MSC_VER
-	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8.c_str());
+	wstring wstr=simul::base::Utf8ToWString(filename_utf8.c_str());
 	_wfopen_s(&pFile,wstr.c_str(),L"r");
 #else
 	pFile=fopen(filename_utf8.c_str(),"r");
@@ -48,10 +52,10 @@ unsigned char *LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &widt
 {
 ERRNO_CHECK
 #ifdef _MSC_VER
-	std::string fn			=filename_utf8;
+	string fn			=filename_utf8;
 	FREE_IMAGE_FORMAT fif	=FIF_UNKNOWN;
 
-	std::wstring wstr		=simul::base::Utf8ToWString(fn);
+	wstring wstr		=simul::base::Utf8ToWString(fn);
 	fif						=FreeImage_GetFileTypeU(wstr.c_str(), 0);
 	if(fif == FIF_UNKNOWN)
 	{
@@ -62,14 +66,14 @@ ERRNO_CHECK
 	// check that the plugin has reading capabilities ...
 	if((fif == FIF_UNKNOWN) ||!FreeImage_FIFSupportsReading(fif))
 	{
-		throw simul::base::RuntimeError(std::string("Can't determine bitmap type from filename: ")+std::string(filename_utf8));
+		throw simul::base::RuntimeError(string("Can't determine bitmap type from filename: ")+string(filename_utf8));
 	}
 ERRNO_CHECK
 	// ok, let's load the file
 	FIBITMAP *dib = FreeImage_LoadU(fif,wstr.c_str());
 	if(!dib)
 	{
-		throw simul::base::RuntimeError(std::string("Failed to load bitmap ")+std::string(filename_utf8));
+		throw simul::base::RuntimeError(string("Failed to load bitmap ")+string(filename_utf8));
 	}
 
 	width  = FreeImage_GetWidth(dib),
@@ -112,7 +116,7 @@ GLuint LoadTexture(const char *filename_utf8,unsigned wrap)
 #include "Simul/Base/FileLoader.h"
 GLuint LoadGLImage(const char *filename_utf8,unsigned wrap)
 {
-	std::string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
+	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
 	if(!FileExists(fn.c_str()))
 		return 0;
 	return LoadTexture(fn.c_str(),wrap);
@@ -122,7 +126,7 @@ void SaveGLImage(const char *filename_utf8,GLuint tex)
 {
 	FREE_IMAGE_FORMAT fif	=FIF_UNKNOWN;
 GL_ERROR_CHECK
-	std::wstring wstr		=simul::base::Utf8ToWString(filename_utf8);
+	wstring wstr		=simul::base::Utf8ToWString(filename_utf8);
 	fif						=FreeImage_GetFIFFromFilenameU(wstr.c_str());
 	BYTE* pixels = NULL;
 	int bytes_per_pixel=0;
@@ -184,7 +188,7 @@ GL_ERROR_CHECK
 unsigned char *LoadGLBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
 {
 ERRNO_CHECK
-	std::string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
+	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
 ERRNO_CHECK
 	return LoadBitmap(fn.c_str(),bpp,width,height);
 }
