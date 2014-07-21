@@ -462,6 +462,86 @@ void dx11::Texture::unmap()
 	mapped.pData=NULL;
 	last_context=NULL;
 }
+
+vec4 dx11::Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap)
+{
+	if(!stagingBuffer)
+	{
+		//Create a "Staging" Resource to actually copy data to-from the GPU buffer. 
+		D3D11_TEXTURE2D_DESC desc;
+		memset(&desc,0,sizeof(desc));
+		desc.Width			=1;
+		desc.Height		=1;
+		desc.ArraySize = 1;
+		desc.Format		=format;
+		desc.Usage			=D3D11_USAGE_STAGING;
+		desc.CPUAccessFlags=D3D11_CPU_ACCESS_READ;
+		desc.SampleDesc.Count=1;
+		desc.SampleDesc.Quality=0;
+		ID3D11Texture2D *tex;
+		ID3D11Device *dev=deviceContext.renderPlatform->AsD3D11Device();
+		deviceContext.renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,NULL,&tex);
+		stagingBuffer=tex;
+	}
+	if(wrap)
+	{
+	/*	int X=(int)(texCoords.x-0.5f);
+		int Y=(int)(texCoords.y-0.5f);
+		texCoords.x-=(float)X;
+		texCoords.y-=(float)Y;*/
+		float u,v;
+		texCoords.x=modf(texCoords.x+1.0f,&u);
+		texCoords.y=modf(texCoords.y+1.0f,&v);
+		if(texCoords.x<0.0f)
+			texCoords.x+=1.0f;
+		if(texCoords.y<0.0f)
+			texCoords.y+=1.0f;
+		static bool flip=false;
+		if(flip)
+			texCoords.y=1.0f-texCoords.y;
+	}
+	else
+	{
+		texCoords.x=std::max(0.0f,texCoords.x);
+		texCoords.y=std::max(0.0f,texCoords.y);
+		texCoords.x=std::min(1.0f,texCoords.x);
+		texCoords.y=std::min(1.0f,texCoords.y);
+	}
+	D3D11_BOX srcBox;
+	srcBox.left		=(int)(texCoords.x*width);
+	srcBox.top		=(int)(texCoords.y*length);
+	
+	srcBox.left		=std::max((int)0		,(int)srcBox.left);
+	srcBox.top		=std::max((int)0		,(int)srcBox.top);
+	srcBox.left		=std::min((int)srcBox.left		,(int)width-1);
+	srcBox.top		=std::min((int)srcBox.top		,(int)length-1);
+	srcBox.right	=srcBox.left + 1,width-1;
+	srcBox.bottom	=srcBox.top + 1,length-1;
+
+	srcBox.back		=1;
+	srcBox.front	=0;
+	void *pixel;
+	if(!texture)
+		return vec4(0,0,0,0);
+	try
+	{
+		deviceContext.asD3D11DeviceContext()->CopySubresourceRegion(stagingBuffer, 0, 0, 0, 0, texture, 0, &srcBox);
+
+		D3D11_MAPPED_SUBRESOURCE msr;
+		deviceContext.asD3D11DeviceContext()->Map(stagingBuffer, 0, D3D11_MAP_READ, 0, &msr);
+		pixel = msr.pData;
+		// copy data
+		deviceContext.asD3D11DeviceContext()->Unmap(stagingBuffer, 0);
+	}
+	catch(...)
+	{
+	if(!pixel)
+		return vec4(0,0,0,0);
+	}
+	if(!pixel)
+		return vec4(0,0,0,0);
+	return vec4((const float*)pixel);
+}
 void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext)
 {
 	if(!deviceContext.asD3D11DeviceContext())

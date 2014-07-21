@@ -12,6 +12,7 @@
 #include "DX11Exception.h"
 #include "Utilities.h"
 #include "Simul/Base/StringFunctions.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
 using namespace simul;
 using namespace dx11;
@@ -158,15 +159,19 @@ void Profiler::Begin(void *ctx,const char *name)
         desc.Query = D3D11_QUERY_TIMESTAMP;
         profileData->TimestampStartQuery[currFrame]	=CreateQuery(device,desc,startName.c_str());
         profileData->TimestampEndQuery[currFrame]	=CreateQuery(device,desc,endName.c_str());
+		if(!profileData->DisjointQuery[currFrame])
+			SIMUL_BREAK("Failed to create query");
     }
-
+	if(profileData->DisjointQuery[currFrame])
+	{
     // Start a disjoint query first
-    context->Begin(profileData->DisjointQuery[currFrame]);
+		context->Begin(profileData->DisjointQuery[currFrame]);
 
     // Insert the start timestamp    
-    context->End(profileData->TimestampStartQuery[currFrame]);
+		context->End(profileData->TimestampStartQuery[currFrame]);
 
-    profileData->QueryStarted = TRUE;
+	    profileData->QueryStarted = TRUE;
+	}
 }
 
 void Profiler::End()

@@ -466,7 +466,7 @@ technique11 loss_msaa
 		SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_LossMSAA()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Loss_Far()));
     }
     pass near
     {
@@ -475,7 +475,7 @@ technique11 loss_msaa
 		SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_LossMSAA()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Loss_Near()));
     }
 }
 

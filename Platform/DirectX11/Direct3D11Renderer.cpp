@@ -175,7 +175,7 @@ void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
 	MixedResolutionView *view			=viewManager.GetView(view_id);
 	if(!view)
 		return;
-	static bool lockx=true,locky=true;
+	static bool lockx=true,locky=true,force_2560=false;
 	static int magnify=1;
 	// Must have a whole number of full-res pixels per low-res pixel.
 	int W=view->GetScreenWidth(),H=view->GetScreenHeight();
@@ -194,6 +194,11 @@ void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
 			int s					=simulWeatherRenderer->GetDownscale();
 			int h					=H/s;
 			H						=h*s;
+		}
+		if(force_2560)
+		{
+			W=2560;
+			H=1600;
 		}
 		view->SetResolution(W,H);
 	}
@@ -218,14 +223,17 @@ ERRNO_CHECK
 	deviceContext.platform_context	=parentDeviceContext.platform_context;
 	deviceContext.renderPlatform	=parentDeviceContext.renderPlatform;
 	deviceContext.viewStruct.view_id=cubemap_view_id;
-	cubemapFramebuffer.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	if(simulTerrainRenderer)
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
 			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
-	for(int i=0;i<6;i++)
+	//for(int i=0;i<6;i++)
+	static int i=0;
+	i++;
+	i=i%6;
 	{
 ERRNO_CHECK
 		cubemapFramebuffer.SetCurrentFace(i);
+	cubemapFramebuffer.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		cubemapFramebuffer.Activate(deviceContext);
 		static float nearPlane	=10.f;
 		static float farPlane	=200000.f;
@@ -632,11 +640,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,W1,H1);
-			const char *txt=Profiler::GetGlobalProfiler().GetDebugText();
-		//	renderPlatformDx11.Print(deviceContext			,12	,12,txt);
 		}
 		if(oceanRenderer&&ShowWaterTextures)
 			oceanRenderer->RenderTextures(deviceContext,view->GetScreenWidth(),view->GetScreenHeight());
+#ifdef _XBOX_ONE
+			const char *txt=Profiler::GetGlobalProfiler().GetDebugText();
+			renderPlatformDx11.Print(deviceContext			,12	,12,txt);
+#endif
 	}
 	SAFE_RELEASE(mainRenderTarget);
 	SAFE_RELEASE(mainDepthSurface);

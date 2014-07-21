@@ -2,6 +2,7 @@
 #define RAIN_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(RainConstants,10)
+	uniform mat4 rainMapMatrix;
 	uniform vec4 lightColour;
 	uniform vec3 lightDir;
 	uniform float snowSize;
@@ -29,7 +30,8 @@ SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	uniform vec4 depthToLinFadeDistParams;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec2 tanHalfFov;
-	uniform vec2 nearRainDistance;// as a proportion of max fade distance
+	uniform float nearRainDistance;// as a proportion of max fade distance
+	uniform float ateaethkltdujr;
 	uniform float nearZ;
 	uniform float farZ;
 	uniform float splashDelta;	

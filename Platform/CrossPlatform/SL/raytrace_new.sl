@@ -96,7 +96,7 @@ RaytracePixelOutput RaytraceNew(Texture3D cloudDensity1
 			layerFade=0;
 		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
-			vec3 noiseval				=vec3(0,0,0);
+			vec4 noiseval				=vec4(0,0,0,0);
 			if(noise)
 			{
 				float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(cloudTexCoords.z));
@@ -105,7 +105,7 @@ RaytracePixelOutput RaytraceNew(Texture3D cloudDensity1
 					float mult			=0.5;
 					for(int j=0;j<4;j++)
 					{
-						noiseval		+=(texture_wrap_lod(noiseTexture3D,noise_texc,0).xyz)*mult;
+						noiseval		+=(texture_wrap_lod(noiseTexture3D,noise_texc,0))*mult;
 						noise_texc		*=2.0;
 						mult			*=noise3DPersistence;
 					}

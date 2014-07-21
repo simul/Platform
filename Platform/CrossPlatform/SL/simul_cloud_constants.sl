@@ -119,6 +119,7 @@ uniform_buffer CloudShadowStruct
 	mat4 shadowMatrix;					// Transform a position from shadow space to world space
 	mat4 worldToMoistureSpaceMatrix;	// Transform a position from world space to moisture space.
 	mat4 simpleOffsetMatrix;
+	mat4 worldspaceToCloudspaceMatrix;
 	float extentZMetres;
 	float startZMetres;
 	float shadowRange;

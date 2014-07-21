@@ -29,7 +29,7 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform uint2 lowResDims;
 
 	uniform uint2 fullResDims;
-	uniform float adytkhej,dlydyk;
+	uniform int numSamples,dlydyk;
 SIMUL_CONSTANT_BUFFER_END
 	
 SIMUL_CONSTANT_BUFFER(rectConstants,11)

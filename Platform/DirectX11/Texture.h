@@ -63,6 +63,7 @@ namespace simul
 			void map(ID3D11DeviceContext *context);
 			bool isMapped() const;
 			void unmap();
+			vec4 GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap);
 			void activateRenderTarget(crossplatform::DeviceContext &deviceContext);
 			void deactivateRenderTarget();
 			virtual int GetLength() const

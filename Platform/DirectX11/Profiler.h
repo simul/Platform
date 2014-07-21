@@ -70,7 +70,7 @@ namespace simul
 			static Profiler GlobalProfiler;
 
 			// Constants
-			static const UINT64 QueryLatency = 9;
+			static const UINT64 QueryLatency = 6;
 
 			struct ProfileData;
 			typedef std::map<std::string,ProfileData*> ProfileMap;

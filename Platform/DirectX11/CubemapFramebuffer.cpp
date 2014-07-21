@@ -365,11 +365,20 @@ void CubemapFramebuffer::Clear(void *context,float r,float g,float b,float a,flo
 		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
 	// Clear the screen to the colour specified:
     float clearColor[4]={r,g,b,a};
+	if(current_face>=0)
+	{
+		pContext->ClearRenderTargetView(m_pCubeEnvMapRTV[current_face],clearColor);
+		if(m_pCubeEnvDepthMap[current_face]->AsD3D11DepthStencilView())
+			pContext->ClearDepthStencilView(m_pCubeEnvDepthMap[current_face]->AsD3D11DepthStencilView(),mask,depth, 0);
+	}
+	else
+	{
     for(int i=0;i<6;i++)
     {
 		pContext->ClearRenderTargetView(m_pCubeEnvMapRTV[i],clearColor);
 		if(m_pCubeEnvDepthMap[i]->AsD3D11DepthStencilView())
 			pContext->ClearDepthStencilView(m_pCubeEnvDepthMap[i]->AsD3D11DepthStencilView(),mask,depth, 0);
+		}
 	}
 }
 

@@ -43,7 +43,7 @@ struct FarNearPixelOutput
 	vec4 nearColour SIMUL_RENDERTARGET_OUTPUT(1);
 	float depth	SIMUL_DEPTH_OUTPUT;
 };
-
+/*
 vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texc,float layerFade,float cloud_interp)
 {
 	vec4 density1=sampleLod(cloudDensity1,cloudSamplerState,texc,0);
@@ -53,13 +53,14 @@ vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texc,float
 	density.z=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness);
 	return density;
 }
-
-vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,float layerFade,vec3 noiseval,vec3 fractalScale,float cloud_interp)
+*/
+vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float cloud_interp)
 {
-	vec3 pos=texCoords.xyz+fractalScale.xyz*noiseval;
+	vec3 pos=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
 	vec4 density1=sampleLod(cloudDensity1,cloudSamplerState,pos,0);
 	vec4 density2=sampleLod(cloudDensity2,cloudSamplerState,pos,0);
 	vec4 density=lerp(density1,density2,cloud_interp);
+	//density.z*=(0.6+0.4*noiseval.w);
 	density.z*=layerFade;
 	density.z=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness);
 	return density;
@@ -265,17 +266,17 @@ vec4 calcColour2(vec4 density,float Beta,vec4 lightResponse,vec3 combinedLightCo
 {
 	vec3 ambient=density.w*ambientColour.rgb;
 	float opacity=density.z;
-	vec4 ret;
-	ret.rgb=(density.yyy*Beta+lightResponse.yyy*density.xxx)*combinedLightColour+ambient.rgb;
-	ret.a=opacity;
-	return ret;
+	vec4 final;
+	final.rgb=(density.y*Beta+lightResponse.y*density.x)*combinedLightColour+ambient.rgb;
+	final.a=opacity;
+	return final;
 }
 
 
 float unshadowedBrightness(float Beta,vec4 lightResponse,vec3 ambientColour)
 {
-	float f			=max(1.0,(Beta+lightResponse.y)+ambientColour.b);
-	return f;
+	float final			=max(1.0,(Beta+lightResponse.y)+ambientColour.b);
+	return final;
 }
 
 vec3 calcLightningColour(vec3 world_pos,vec3 lightningColour,vec3 lightningOrigin,vec3 lightningInvScales)
@@ -303,6 +304,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,bool do_rain_effect)
 {
 	RaytracePixelOutput res;
+	res.colour=vec4(0,0,0,1.0);
+	res.depth=0.0;
 	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;
 	clip_pos.y			-=2.0*texCoords.y;
@@ -319,7 +322,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
-
+	if(do_rain_effect)
+		min_texc_z		=-12.0;
+	else if(view.z<0&&viewPos.z<cornerPos.z-fractalScale.z/inverseScales.z)
+		return res;
 	float depth;
 	if(near_pass)
 	{
@@ -361,6 +367,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		world_pos.z						-=layer.verticalShift;
 		vec3 cloudWorldOffset			=(world_pos-cornerPos);
 		vec3 cloudTexCoords				=cloudWorldOffset*inverseScales;
+	//	if((view.z<0&&cloudTexCoords.z<min_texc_z)||(view.z>0&&cloudTexCoords.z>max_texc_z))
+	//		break;
 		float layerFade					=layer.layerFade;
 		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
@@ -386,7 +394,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 					noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyzw;
 				}
 			}
-			density						=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval.xyz,fractalScale,cloud_interp);
+			density						=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
 			// The rain fall angle is used:
 			vec3 rain_texc				=cloudWorldOffset;
 			rain_texc.xy				+=rain_texc.z*rainTangent;

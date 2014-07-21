@@ -546,7 +546,6 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
 	ERRNO_CHECK
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(deviceContext.viewStruct.view_id);
-	helper->SetMaxLayers(cloudKeyframer->GetDefaultNumSlices());
 	ERRNO_CHECK
 	// Moved from Update function above. See commment.
 	//if (!cubemap)
@@ -592,11 +591,18 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 		if(cubemap)
 			tech=group->GetTechniqueByName("simple");
 		else if(cloudKeyframer->GetUse3DNoise())
+		{
+			if(cloudConstants.rainEffect>0.0f)
 			tech=group->GetTechniqueByName("noise3d");
+			else
+				tech=group->GetTechniqueByName("noise3d_no_rain");
+		}
 		else if(!cloudProperties.GetWrap())
 			tech=group->GetTechniqueByName("nonwrapping");
-		else
+		else if(cloudConstants.rainEffect>0.0f)
 			tech=group->GetTechniqueByName("full");
+		else
+			tech=group->GetTechniqueByName("no_rain");
 	}
 	effect->Apply(deviceContext,tech,(nearFarPass==crossplatform::NEAR_PASS)?"near":(nearFarPass==crossplatform::FAR_PASS)?"far":"both");
 	UtilityRenderer::DrawQuad(deviceContext);
@@ -685,8 +691,6 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::Devic
 
 	deviceContext.renderPlatform->DrawTexture(deviceContext	,x0+width-2*w	,y0+height-w-w		,w*2,w/2	,moisture_fb);
 	deviceContext.renderPlatform->Print(deviceContext		,x0+width-2*w	,y0+height-w-w					,"moisture framebuffer");
-	deviceContext.renderPlatform->DrawTexture(deviceContext	,x0				,y0+2*w				,w,w		,rain_map);
-	deviceContext.renderPlatform->Print(deviceContext		,x0				,y0+2*w				,"rain_map");
 	
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudShadowTexture"		,(ID3D11ShaderResourceView*)NULL);

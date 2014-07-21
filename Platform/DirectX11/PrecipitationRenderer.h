@@ -51,8 +51,6 @@ namespace simul
 				,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH);
 			//! Put textures to screen for debugging
 			void RenderTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy);
-			//! Provide a random 3D texture. This is set externally so the texture can be shared.
-			void SetRandomTexture3D(void *texture);
 			void *GetMoistureTexture();
 		protected:
 			void RenderParticles(crossplatform::DeviceContext &deviceContext);
@@ -68,9 +66,6 @@ namespace simul
 			dx11::ArrayTexture							rainArrayTexture;
 			dx11::Framebuffer							moisture_fb;
 		
-			crossplatform::Effect*						effect;
-			crossplatform::Texture*					rain_texture;
-			ID3D11ShaderResourceView*					randomTexture3D;
 			ID3DX11EffectShaderResourceVariable*		rainTexture;
 			vec3  *particles;
 			

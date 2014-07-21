@@ -296,15 +296,13 @@ vec4 PS_Composite(v2f IN) : SV_TARGET
 							,lowResDepthTexture
 							,lowResDims
 							,depthTexture
-							,depthTextureMS
 							,fullResDims
 							,viewportToTexRegionScaleBias
 							,depthToLinFadeDistParams
 							,fullResToLowResTransformXYWH
 							,fullResToHighResTransformXYWH
 							,inscatterTexture
-							,nearInscatterTexture
-							,false);
+							,nearInscatterTexture);
 	result.rgb	=pow(result.rgb,gamma);
 	result.rgb	*=exposure;
 	return result;
@@ -312,23 +310,22 @@ vec4 PS_Composite(v2f IN) : SV_TARGET
 
 vec4 PS_Composite_MSAA(v2f IN) : SV_TARGET
 {
-	vec4 result	=Composite(IN.texCoords.xy
+	vec4 result	=Composite_MSAA(IN.texCoords.xy
 							,imageTexture
 							,nearImageTexture
 							,hiResDepthTexture
 							,hiResDims
 							,lowResDepthTexture
 							,lowResDims
-							,depthTexture
 							,depthTextureMS
+							,numSamples
 							,fullResDims
 							,viewportToTexRegionScaleBias
 							,depthToLinFadeDistParams
 							,fullResToLowResTransformXYWH
 							,fullResToHighResTransformXYWH
 										,inscatterTexture
-										,nearInscatterTexture
-										,true);
+							,nearInscatterTexture);
 	result.rgb	=pow(result.rgb,gamma);
 	result.rgb	*=exposure;
 	return result;

@@ -13,6 +13,7 @@
 #include "Utilities.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Math/RandomNumberGenerator.h"
+#include "Simul/Base/StringFunctions.h"
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
@@ -29,8 +30,6 @@ static float length(vec3 v)
 PrecipitationRenderer::PrecipitationRenderer() :
 	m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
-	,effect(NULL)
-	,rain_texture(NULL)
 	,view_initialized(false)
 	,last_cam_pos(0.0f,0.0f,0.0f)
 {
@@ -66,10 +65,13 @@ void PrecipitationRenderer::RecompileShaders()
 	effect->Apply(deviceContext,tech,0);
 	rain_texture=renderPlatform->CreateTexture();
 	rain_texture->ensureTexture2DSizeAndFormat(renderPlatform,512,64,crossplatform::PixelFormat::RGBA_32_FLOAT,false,true);
+	
+
 	rain_texture->activateRenderTarget(deviceContext);
 	renderPlatform->DrawQuad(deviceContext);
 	rain_texture->deactivateRenderTarget();
 	effect->Unapply(deviceContext);
+
 	view_initialized=false;
 	// The array of rain textures:
 	rainArrayTexture.create(m_pd3dDevice,16,512,32,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
@@ -115,10 +117,6 @@ void PrecipitationRenderer::RecompileShaders()
 #endif
 	SAFE_RELEASE(pImmediateContext);
 }
-void PrecipitationRenderer::SetRandomTexture3D(void *t)
-{
-	randomTexture3D=(ID3D11ShaderResourceView*)t;
-}
 
 void *PrecipitationRenderer::GetMoistureTexture()
 {
@@ -135,11 +133,11 @@ void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *
 	{
 		PrecipitationVertex *dat=new PrecipitationVertex[125000];
 		memset(dat,0,125000);
-	/*	for(int i=0;i<125000;i++)
+		for(int i=0;i<125000;i++)
 		{
 			dat[i].position.y=6;
 			dat[i].position.x=10*(i/125000.0f-.5f);
-		}*/
+		}
 	
 		vertexBuffer.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
 		vertexBufferSwap.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
@@ -192,6 +190,7 @@ void PrecipitationRenderer::InvalidateDeviceObjects()
 	perViewConstants.InvalidateDeviceObjects();
 	moisturePerViewConstants.InvalidateDeviceObjects();
 	moisture_fb.InvalidateDeviceObjects();
+	BasePrecipitationRenderer::InvalidateDeviceObjects();
 }
 
 PrecipitationRenderer::~PrecipitationRenderer()
@@ -210,6 +209,7 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 	math::Vector3 cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
 	if(last_cam_pos.Magnitude()==0.0f)
 		last_cam_pos=cam_pos;
+	rainConstants.rainMapMatrix		=rainMapMatrix;
 	rainConstants.meanFallVelocity	=meanVelocity;
 	rainConstants.timeStepSeconds	=dt;
 	rainConstants.viewPositionOffset=cam_pos-last_cam_pos;
@@ -300,21 +300,39 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	intensity=Intensity;
 	if(intensity<=0.01)
 		return;
-	SIMUL_COMBINED_PROFILE_START(pContext,"PrecipitationRenderer")
+	float underRain=0.0f;
 	rainTexture->SetResource(rain_texture->AsD3D11ShaderResourceView());
 	effect->SetTexture(deviceContext,"cubeTexture",cubemapTexture);
-	dx11::setTexture(effect->asD3DX11Effect(),"randomTexture3D",randomTexture3D);
-	dx11::setTexture(effect->asD3DX11Effect(),"depthTexture",depth_tex->AsD3D11ShaderResourceView());
+	effect->SetTexture(deviceContext,"randomTexture3D",randomTexture3D);
+	effect->SetTexture(deviceContext,"depthTexture",depth_tex);
+	effect->SetTexture(deviceContext,"rainMapTexture",rainMapTexture);
 	dx11::setTextureArray(effect->asD3DX11Effect(),"rainTextureArray",rainArrayTexture.m_pArrayTexture_SRV);
 	
 	//set up matrices
 	D3DXMATRIX world,wvp;
 	D3DXMatrixIdentity(&world);
 	vec3 viewPos			=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view,false);
+/*	SIMUL_COMBINED_PROFILE_START(pContext,"lookup")
+	if(rainMapTexture)
+	{
+		math::Matrix4x4 mat=rainMapMatrix;
+		math::Vector3 texc;
+		math::Multiply4(texc,mat,(math::Vector3)viewPos);
+		dx11::Texture *t=(dx11::Texture *)rainMapTexture;
+		vec4 T=t->GetTexel(deviceContext,vec2(texc.x,texc.y),true);
+		if(T.x<0.5f)
+		{
+			SIMUL_COMBINED_PROFILE_END(pContext)
+			return;
+		}
+	}
+	SIMUL_COMBINED_PROFILE_END(pContext)*/
+	SIMUL_COMBINED_PROFILE_START(pContext,"PrecipitationRenderer")
 	simul::math::Matrix4x4 v=deviceContext.viewStruct.view;
 	v._41=v._42=v._43=0;
 	camera::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	
+	rainConstants.rainMapMatrix		=rainMapMatrix;
 	rainConstants.lightColour	=(const float*)light_colour;
 	rainConstants.lightDir		=(const float*)light_dir;
 	rainConstants.phase			=Phase;
@@ -418,12 +436,14 @@ void PrecipitationRenderer::RenderParticles(crossplatform::DeviceContext &device
 	rainConstants.Apply(deviceContext);
 	int numParticles			=(int)(intensity*125000.f);
 	vertexBuffer.apply(pContext,0);
+	effect->SetTexture(deviceContext,"rainMapTexture",rainMapTexture);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	if(RainToSnow>.5)
 		effect->Apply(deviceContext,m_hTechniqueParticles,0);
 	else
 		effect->Apply(deviceContext,m_hTechniqueRainParticles,0);
 	pContext->Draw(numParticles,0);
+	effect->SetTexture(deviceContext,"rainMapTexture",NULL);
 	effect->Unapply(deviceContext);
 	{
 		// Splashes!
@@ -445,7 +465,7 @@ void PrecipitationRenderer::RenderTextures(crossplatform::DeviceContext &deviceC
 	static int u=1;
 	int w=(dx-8)/u;
 	int h=w/8;
-	renderPlatform->DrawTexture(deviceContext,x0,y0+dy-(h+8),w,h,rain_texture);
+	//renderPlatform->DrawTexture(deviceContext,x0,y0+dy-(h+8),w,h,rain_texture);
 
 	w=moisture_fb.Width;
 	h=moisture_fb.Height;
@@ -454,6 +474,14 @@ void PrecipitationRenderer::RenderTextures(crossplatform::DeviceContext &deviceC
 		w/=2;
 		h/=2;
 	}
-	deviceContext.renderPlatform->DrawTexture(deviceContext	,x0,y0	,w,h,moisture_fb.GetTexture(),1.f);
-	deviceContext.renderPlatform->Print(deviceContext	,x0,y0	,"Moisture");
+//	deviceContext.renderPlatform->DrawTexture(deviceContext	,x0,y0	,w,h,moisture_fb.GetTexture(),1.f);
+	//deviceContext.renderPlatform->Print(deviceContext	,x0,y0	,"Moisture");
+	
+	deviceContext.renderPlatform->DrawTexture(deviceContext	,x0				,y0+dy-w		,w,w		,rainMapTexture);
+	deviceContext.renderPlatform->Print(deviceContext		,x0				,y0+dy-w		,"rain_map");
+	
+		math::Matrix4x4 mat=rainMapMatrix;
+		math::Vector3 texc;
+		math::Multiply4(texc,mat,(math::Vector3)last_cam_pos);
+		deviceContext.renderPlatform->Print(deviceContext	,x0,y0	,simul::base::stringFormat("%4.4f %4.4f",texc.x,texc.y).c_str());
 }

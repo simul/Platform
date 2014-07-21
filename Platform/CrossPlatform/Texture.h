@@ -2,6 +2,7 @@
 #include "Simul/Base/MemoryInterface.h"
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 struct ID3D11DepthStencilView;

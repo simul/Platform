@@ -10,6 +10,7 @@ float particleZoneSize=15.0;	// = 625 m^3
 #include "../../CrossPlatform/SL/depth.sl"
 #include "../../CrossPlatform/SL/noise.sl"
 texture3D randomTexture3D;
+texture2D rainMapTexture;
 // Same as transformedParticle, but with semantics
 struct particleVertexOutput
 {
@@ -385,7 +386,7 @@ float4 PS_Moisture(rainVertexOutput IN) : SV_TARGET
 struct PSSceneIn
 {
     float4 pos				: SV_Position;
-    float3 lightDir			: LIGHT;
+    float3 wPos			: TEXCOORD3;
     float3 pointLightDir	: LIGHT2;
     float3 view				: EYE;
     float2 texCoords		: TEXTURE0;
@@ -427,6 +428,10 @@ RainParticleVertexOutput VS_RainParticles(PrecipitationVertexInput input )
 	p.position	=input.position;
 	p.type		=input.type;
 	p.velocity	=input.velocity;
+	vec3 map_texc=mul(vec4(offset[1].xyz,1.0),rainMapMatrix).xyz;
+	float mapped_rain=texture_wrap_lod(rainMapTexture,map_texc.xy,0).x;
+	if(mapped_rain<=0.0)
+		p.type=0;
     return p;
 }
 
@@ -468,8 +473,8 @@ void GS_RainSplash(point RainSplashVertexOutput input[1], inout TriangleStream<R
 		output.position		=pos1+vec4(g_positions[3].xy*sz,0,0); 
 		output.texCoords	=g_texcoords[3];
 		SpriteStream.Append(output);
+		SpriteStream.RestartStrip();
 	}
-    SpriteStream.RestartStrip();
 }
 
 vec4 PS_RainSplash(RainSplashGeometryOutput IN) : SV_Target
@@ -530,16 +535,17 @@ void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStr
     float totalIntensity = 1.0;//g_PointLightIntensity*g_ResponsePointLight + dirLightIntensity*g_ResponseDirLight;
 	//if(!cullSprite(input[0].position.xyz,2*g_SpriteSize) && totalIntensity > 0)
 vec4 clip_pos				=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
+	if(input[0].type>0)
 	if(clip_pos.z>0)
     {    
         PSSceneIn output	= (PSSceneIn)0;
         output.type			= input[0].type;
        // output.random = input[0].random;
-       
         float3 pos[4];
 		float g_FrameRate=20.0;
         GenRainSpriteVertices(input[0].position.xyz,-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*0.1*input[0].velocity)/g_FrameRate, viewPos[1].xyz, pos);
         
+       output.wPos			=pos[0];
         float3 closestPointLight=vec3(0,0,500);
         float closestDistance	=length(closestPointLight-pos[0]);
         
@@ -547,7 +553,6 @@ vec4 clip_pos				=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
 		output.clip_pos			=output.pos.xyzw/output.pos.w;
 		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
 		output.depthTexc.y		=1.0-output.depthTexc.y;
-        output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight-pos[0];
         output.view				=normalize(pos[0]);
         output.texCoords		=g_texcoords[0];
@@ -557,7 +562,6 @@ vec4 clip_pos				=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
 		output.clip_pos			=output.pos.xyzw/output.pos.w;
 		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
 		output.depthTexc.y		=1.0-output.depthTexc.y;
-        output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[1];
         output.view				=normalize(pos[1]);
         output.texCoords		=g_texcoords[1];
@@ -567,7 +571,6 @@ vec4 clip_pos				=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
 		output.clip_pos			=output.pos.xyzw/output.pos.w;
 		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
 		output.depthTexc.y		=1.0-output.depthTexc.y;
-        output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[2];
         output.view				=normalize(pos[2]);
         output.texCoords		=g_texcoords[2];
@@ -577,7 +580,6 @@ vec4 clip_pos				=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
 		output.clip_pos			=output.pos.xyzw/output.pos.w;
 		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
 		output.depthTexc.y		=1.0-output.depthTexc.y;
-        output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[3];
         output.view				=normalize(pos[3]);
         output.texCoords		=g_texcoords[3];
@@ -755,12 +757,15 @@ vec4 PS_RainParticles(PSSceneIn IN) : SV_Target
 	{
 		texel.rgb		=vec3(1,1,1);
 	}
-	if(dist.y>dist.x)
+	vec3 map_texc=mul(vec4(offset[1].xyz,1.0),rainMapMatrix).xyz;
+	float mapped_rain=texture_wrap(rainMapTexture,map_texc.xy).x;
+	texel.a*=mapped_rain;
+	if(mapped_rain<=0||dist.y>dist.x)
 	{
 		discard;
 	}
 	float totalOpacity	=pointLight.a+directionalLight.a;
-	return vec4(texel.rgb*light,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
+	return vec4(texel.rgb,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
 
 technique11 rain_particles
