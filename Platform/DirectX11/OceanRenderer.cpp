@@ -352,8 +352,8 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	buildNodeList(root_node,seaKeyframer->patch_length,(const float *)&deviceContext.viewStruct.view,(const float *)&deviceContext.viewStruct.proj);
 
 	// Matrices
-	math::Matrix4x4 matView = deviceContext.viewStruct.view;
-	math::Matrix4x4  matProj = deviceContext.viewStruct.proj;
+	D3DXMATRIX matView = deviceContext.viewStruct.view;
+	D3DXMATRIX  matProj = deviceContext.viewStruct.proj;
 
 	// VS & PS
 	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("ocean");
@@ -403,10 +403,10 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 		changePerCallConstants.g_matLocal=matScale;
 		//D3DXMatrixTranspose(&changePerCallConstants.g_matLocal, &matScale);
 		// WVP matrix
-		math::Matrix4x4 matWorld;
+		D3DXMATRIX matWorld;
 		D3DXMatrixTranslation((D3DXMATRIX*)&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
 		D3DXMatrixTranspose((D3DXMATRIX*)&changePerCallConstants.g_matWorld, &matWorld);
-		math::Matrix4x4 matWVP =D3DXMatrixMultiply( (D3DXMATRIX*)&matWorld,D3DXMatrixMultiply((D3DXMATRIX*)&matView,(D3DXMATRIX*)&matProj));
+		D3DXMATRIX matWVP =D3DXMatrixMultiply(matWorld,D3DXMatrixMultiply(matView,matProj));
 		D3DXMatrixTranspose((D3DXMATRIX*)&changePerCallConstants.g_matWorldViewProj, &matWVP);
 		// Texcoord for perlin noise
 		math::float2 uv_base = node.bottom_left / seaKeyframer->patch_length * g_PerlinSize;
@@ -415,7 +415,7 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 		math::float2 perlin_move =math::float2(seaKeyframer->wind_dir)*(-(float)app_time)* g_PerlinSpeed;
 		changePerCallConstants.g_PerlinMovement = perlin_move;
 		// Eye point
-		math::Matrix4x4 matInvWV = D3DXMatrixMultiply(matWorld ,matView);
+		D3DXMATRIX matInvWV = D3DXMatrixMultiply(matWorld ,matView);
 		D3DXMatrixInverse(&matInvWV, NULL, &matInvWV);
 		D3DXVECTOR3 vLocalEye(0, 0, 0);
 		D3DXVec3TransformCoord(&vLocalEye, &vLocalEye, &matInvWV);

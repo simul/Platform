@@ -10,6 +10,7 @@ uniform sampler3D fadeTexture2;
 uniform sampler2D flareTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D illuminationTexture;
+uniform sampler2D lightTable2DTexture;
 uniform vec4 rect;
 
 shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
@@ -149,6 +150,18 @@ shader PS_ShowIlluminationBuffer(in vec2 texCoords,out vec4 FragColor)
 	FragColor=ShowIlluminationBuffer(illuminationTexture,texCoords);
 }
 
+shader PS_Show3DLightTable(in vec2 texCoords,out vec4 FragColor)
+{
+	vec4 result=texture_nearest_lod(fadeTexture1,vec3(texCoords.y,(float(cycled_index)+.5)/3.0,texCoords.x),0);
+    FragColor= vec4(result.rgb,1.0);
+}
+
+shader PS_Show2DLightTable(in vec2 texCoords,out vec4 FragColor)
+{
+	vec4 result=texture_nearest_lod(lightTable2DTexture,texCoords.yx,0);
+
+    FragColor= vec4(result.rgb,1);
+}
 program fade_3d_to_2d
 {
     vs(430) = VS_FullScreen();
@@ -201,4 +214,15 @@ program show_cross_section
 {
     vs(430) = VS_ScreenQuad();
     fs(430) = PS_Fade3DTo2D();
+};
+
+program show_2d_light_table
+{
+    vs(430) = VS_ScreenQuad();
+    fs(430) = PS_Show2DLightTable();
+};
+program show_light_table
+{
+    vs(430) = VS_ScreenQuad();
+    fs(430) = PS_Show3DLightTable();
 };

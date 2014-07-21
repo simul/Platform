@@ -644,7 +644,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	SIMUL_COMBINED_PROFILE_END(pContext)
 	SIMUL_COMBINED_PROFILE_ENDFRAME(pContext)
 	//Profiler::GetGlobalProfiler().EndFrame(pContext);
-	renderPlatformDx11.Print(deviceContext,0,0,dx11::Profiler::GetGlobalProfiler().GetDebugText(false));
+	//renderPlatformDx11.Print(deviceContext,0,0,dx11::Profiler::GetGlobalProfiler().GetDebugText(false));
 }
 
 void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)

@@ -113,6 +113,7 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
 
 void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &,int w,int l,int d)
 {
+	GL_ERROR_CHECK
 	glDispatchCompute(w,l,d);
 	GL_ERROR_CHECK
 }
@@ -474,7 +475,7 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 	opengl::Effect *e=new opengl::Effect();
 	e->Load(this,fn.c_str(),defines);
 	e->SetName(filename_utf8);
-	if(!e->platform_effect)
+	if(e->platform_effect==(void*)0xFFFFFFFF)
 	{
 		SAFE_DELETE(e);
 	}

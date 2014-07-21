@@ -1,63 +1,75 @@
 #include "CppGlSl.hs"
 #include "../../CrossPlatform/SL/noise.sl"
 #include "../../CrossPlatform/SL/noise_constants.sl"
+#include "../../CrossPlatform/SL/depth.sl"
 
+uniform sampler2D image_texture;
 uniform sampler2D noise_texture ;
 uniform sampler3D random_texture_3d;
-uniform image3D targetTexture;
+layout(binding = 0) uniform image3D targetTexture;
+uniform vec4 rect;
+uniform vec4 depthToLinFadeDistParams;
+uniform vec2 tanHalfFov;
 
-struct a2v
+shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
 {
-    vec4 position  : POSITION;
-    vec2 texCoords  : TEXCOORD0;
-};
-
-struct v2f
-{
-    vec4 hPosition  : SV_POSITION;
-    vec2 texCoords  : TEXCOORD0;
-};
-
-shader MainVS(in int vertex_id,out v2f OUT)
-{
-	vec2 poss[4]=
-	{
-		{ 1.0,-1.0},
-		{ 1.0, 1.0},
-		{-1.0,-1.0},
-		{-1.0, 1.0},
-	};
-	vec2 pos		=poss[vertex_id];
-	OUT.hPosition	=vec4(pos,0.0,1.0);
-    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,pos.y));
+	vec2 poss[4];
+	poss[0]		=vec2( 1.0,-1.0);
+	poss[1]		=vec2( 1.0, 1.0);
+	poss[2]		=vec2(-1.0,-1.0);
+	poss[3]		=vec2(-1.0, 1.0);
+	vec2 pos	=poss[gl_VertexID];
+	gl_Position	=vec4(pos,0.0,1.0);
+    texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,pos.y));
+	//texCoords.y	=1.0-texCoords.y;
 }
 
-shader RandomPS(in v2f IN,out vec4 FragColour)
+shader RandomPS(in vec2 texCoords,out vec4 FragColour)
 {
 	// Range from -1 to 1.
-    vec4 c=2.0*vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords))-1.0;
+    vec4 c=2.0*vec4(rand(texCoords),rand(1.7*texCoords),rand(0.11*texCoords),rand(513.1*texCoords))-1.0;
     FragColour=c;
 }
 
-shader MainPS(in v2f IN,out vec4 FragColour) 
+shader PS_Noise2D(in vec2 texCoords,out vec4 FragColour) 
 {
-    FragColour= Noise(noise_texture,IN.texCoords,persistence,octaves);
+    FragColour= Noise(noise_texture,texCoords,persistence,octaves);
 }
 
 layout(local_size_x=8,local_size_y=8,local_size_z=8) in;
 shader CS_Random3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
 {
+	// NOTE: could use shader_image_size(targetTexture)
 	uint3 pos=gl_GlobalInvocationID;
-	uint3 dims;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
-	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+	if(pos.x>=noise_texture_size||pos.y>=noise_texture_size||pos.z>=noise_texture_size)
 		return;
-	vec3 texCoords	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
-	vec2 texc2		=texCoords.xy+dims.y*texCoords.z;
+/*	vec3 texCoords	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(noise_texture_size,noise_texture_size,noise_texture_size);
+	vec2 texc2		=texCoords.xy+noise_texture_size*texCoords.z;
 	// Range from -1 to 1.
     vec4 c=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
-    targetTexture[pos]			= c;
+  //  targetTexture[pos]			= c;
+	//imageStore(targetTexture,ivec3(pos), c);*/
 }
+
+program simul_random
+{
+    vs(430) = VS_FullScreen();
+    fs(430) = RandomPS();
+};
+
+program simul_noise_2d
+{
+	vs(430) =VS_FullScreen();
+	fs(430) =PS_Noise2D();
+};
+
+program random_3d_compute
+{
+    cs(430) =CS_Random3D();
+};
+
+/*
+
 
 void CS_Noise3D( )	//gl_GlobalInvocationID gives the combined id in each dimension.
 {
@@ -83,24 +95,10 @@ void CS_Noise3D( )	//gl_GlobalInvocationID gives the combined id in each dimensi
 	targetTexture[pos]			=result;
 }
 
-program simul_random
-{
-    vs(430) =MainVS();
-	fs(430) =RandomPS();
-}
-
-program simul_noise_2d
-{
-	vs(430) =MainVS();
-	fs(430) =MainPS();
-}
-
-program random_3d_compute
-{
-    cs(430) =CS_Random3D();
-}
-
 program noise_3d_compute
 {
     cs(430) =CS_Noise3D();
 }
+
+
+*/
