@@ -81,6 +81,7 @@ namespace simul
 				ID3D11Query *DisjointQuery[QueryLatency];
 				ID3D11Query *TimestampStartQuery[QueryLatency];
 				ID3D11Query *TimestampEndQuery[QueryLatency];
+				bool gotResults[QueryLatency];
 				BOOL QueryStarted;
 				BOOL QueryFinished;
 				std::string full_name;

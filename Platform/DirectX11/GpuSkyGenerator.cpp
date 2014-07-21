@@ -123,7 +123,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	if(subgrid_loss==0&&subgrid_insc==0&&subgrid_skyl==0)
 		return;
 
-	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator init")
+	//SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator init")
 	HRESULT hr=S_OK;
 	int gridsize			=(int)p.altitudes_km.size()*p.numElevations*p.numDistances;
 	int gridsize_2d			=(int)p.altitudes_km.size()*p.numElevations;
@@ -251,7 +251,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	
 	fadeTexIndex[cycled_index]=p.fill_up_to_texels;
 
-	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
+//	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
 }
 
 void GpuSkyGenerator::CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl)

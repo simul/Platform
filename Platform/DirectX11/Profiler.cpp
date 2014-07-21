@@ -159,11 +159,16 @@ void Profiler::Begin(void *ctx,const char *name)
         desc.Query = D3D11_QUERY_TIMESTAMP;
         profileData->TimestampStartQuery[currFrame]	=CreateQuery(device,desc,startName.c_str());
         profileData->TimestampEndQuery[currFrame]	=CreateQuery(device,desc,endName.c_str());
+		profileData->gotResults[currFrame]=true;
 		if(!profileData->DisjointQuery[currFrame])
 			SIMUL_BREAK("Failed to create query");
     }
 	if(profileData->DisjointQuery[currFrame])
 	{
+		if(!profileData->gotResults[currFrame])
+		{
+			SIMUL_BREAK("not got query results!")
+		}
     // Start a disjoint query first
 		context->Begin(profileData->DisjointQuery[currFrame]);
 
@@ -187,12 +192,16 @@ void Profiler::End()
     if(profileData->QueryStarted != TRUE)
 		return;
     _ASSERT(profileData->QueryFinished == FALSE);
-
+	if(!profileData->gotResults[currFrame])
+	{
+		SIMUL_BREAK("not got query results!")
+	}
     // Insert the end timestamp    
     context->End(profileData->TimestampEndQuery[currFrame]);
 
     // End the disjoint query
     context->End(profileData->DisjointQuery[currFrame]);
+	profileData->gotResults[currFrame]=false;
 
     profileData->QueryStarted = FALSE;
     profileData->QueryFinished = TRUE;
@@ -250,7 +259,7 @@ void Profiler::EndFrame(void* c)
 
         D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData;
         while(context->GetData(profile.DisjointQuery[currFrame], &disjointData, sizeof(disjointData), 0) != S_OK);
-
+		profile.gotResults[currFrame]=true;
         timer.UpdateTime();
         queryTime += timer.Time;
 
@@ -262,7 +271,7 @@ void Profiler::EndFrame(void* c)
             time = (delta / frequency) * 1000.0f;
         }        
 
-        iter->second->time+=mix*time;
+        profile.time+=mix*time;
     }
 }
 

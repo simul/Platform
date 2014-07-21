@@ -536,6 +536,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 	SAFE_RELEASE(mainRenderTarget);
 	SAFE_RELEASE(mainDepthSurface);
+	SIMUL_COMBINED_PROFILE_ENDFRAME(pContext)
 		return;
 	}
 	SIMUL_COMBINED_PROFILE_START(pContext,"Render")
