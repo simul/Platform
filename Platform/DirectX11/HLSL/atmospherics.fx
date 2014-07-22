@@ -6,6 +6,7 @@
 #include "../../CrossPlatform/SL/atmospherics_constants.sl"
 
 Texture2D depthTexture;
+Texture2D nearFarDepthTexture;
 Texture2DMS<float4> depthTextureMS;
 Texture2D cloudDepthTexture;
 Texture2D imageTexture;
@@ -68,6 +69,21 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 	OUT.texCoords	+=0.5*texelOffsets;
 	return OUT;
 }
+
+vec4 PS_LossComposite(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	vec3 loss		=LossComposite(nearFarDepthTexture
+									,viewportToTexRegionScaleBias
+									,lossTexture
+									,invViewProj
+									,IN.texCoords
+									,IN.pos
+									,depthToLinFadeDistParams
+									,tanHalfFov);
+    return float4(loss.rgb,1.0);
+}
+
 
 vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
 {
@@ -412,7 +428,18 @@ vec4 PS_NearRainShadow(atmosVertexOutput IN) : SV_TARGET
 	
 	return res;
 }
-
+technique11 loss_composite
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_LossComposite()));
+    }
+}
 technique11 loss
 {
     pass far

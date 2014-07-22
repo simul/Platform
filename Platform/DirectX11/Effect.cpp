@@ -395,14 +395,15 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 		ID3DX11EffectPass *pass			=tech->GetPassByName(passname);
 		if(!pass->IsValid())
 		{
-			SIMUL_BREAK(base::QuickFormat("Invalid pass %s sent to Effect::Apply for %s\n",passname,this->filename.c_str()));
+			const char *techname="";//effectTechnique->getName();
+			SIMUL_BREAK(base::QuickFormat("Invalid pass %s sent to Effect::Apply for technique %s of shader %s\n",passname,techname,this->filename.c_str()));
 		}
 		HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
 		V_CHECK(hr);
 	}
 	else
 	{
-		SIMUL_BREAK(base::QuickFormat("NULL technique sent to Effect::Apply for %s\n",this->filename.c_str()));
+		SIMUL_BREAK(base::QuickFormat("NULL technique sent to Effect::Apply for shader %s\n",this->filename.c_str()));
 	}
 }
 

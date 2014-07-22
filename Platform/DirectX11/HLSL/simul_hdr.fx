@@ -286,9 +286,9 @@ void CS_Composite(uint3 sub_pos	: SV_DispatchThreadID )
 {
 }
 
-vec4 PS_Composite(v2f IN) : SV_TARGET
+TwoColourCompositeOutput PS_Composite(v2f IN) 
 {
-	vec4 result	=Composite(IN.texCoords.xy
+	TwoColourCompositeOutput result	=Composite(IN.texCoords.xy
 							,imageTexture
 							,nearImageTexture
 							,hiResDepthTexture
@@ -303,14 +303,15 @@ vec4 PS_Composite(v2f IN) : SV_TARGET
 							,fullResToHighResTransformXYWH
 							,inscatterTexture
 							,nearInscatterTexture);
-	result.rgb	=pow(result.rgb,gamma);
-	result.rgb	*=exposure;
+	result.add.rgb	=pow(result.add.rgb,gamma);
+	result.add.rgb	*=exposure;
+
 	return result;
 }
 
-vec4 PS_Composite_MSAA(v2f IN) : SV_TARGET
+TwoColourCompositeOutput PS_Composite_MSAA(v2f IN) : SV_TARGET
 {
-	vec4 result	=Composite_MSAA(IN.texCoords.xy
+	TwoColourCompositeOutput result	=Composite_MSAA(IN.texCoords.xy
 							,imageTexture
 							,nearImageTexture
 							,hiResDepthTexture
@@ -326,8 +327,8 @@ vec4 PS_Composite_MSAA(v2f IN) : SV_TARGET
 							,fullResToHighResTransformXYWH
 										,inscatterTexture
 							,nearInscatterTexture);
-	result.rgb	=pow(result.rgb,gamma);
-	result.rgb	*=exposure;
+	result.add.rgb	=pow(result.add.rgb,gamma);
+	result.add.rgb	*=exposure;
 	return result;
 }
  
@@ -465,14 +466,24 @@ technique11 far_near_depth_blend
     }
     pass msaa
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(CloudBufferBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState( DisableDepth,0);
+		SetBlendState(CloudBufferBlend,vec4(1.0,1.0,1.0,1.0),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,NearFarDepthCloudBlendPS_MSAA()));
     }
 }
+
+// special blend!
+BlendState CompositeBlend
+{
+	BlendEnable[0]	=TRUE;
+	//BlendEnable[1]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=SRC1_COLOR;
+    BlendOp			=ADD;
+};
 
 // This technique composites on the basis that clouds have an arbitrary integral downscale, and sky has downscale 2.
 technique11 composite_mixed_res
@@ -481,7 +492,7 @@ technique11 composite_mixed_res
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(CloudBufferBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+		SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Composite()));
@@ -490,7 +501,7 @@ technique11 composite_mixed_res
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(CloudBufferBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+		SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Composite_MSAA()));

@@ -3,6 +3,12 @@
 
 #define EDGE_FACTOR (0.0002)
 
+struct TwoColourCompositeOutput
+{
+	vec4 add		:SV_TARGET0;
+	vec4 multiply	:SV_TARGET1;
+};
+
 void Resolve(Texture2DMS<float4> sourceTextureMS,RWTexture2D<float4> targetTexture,uint2 pos)
 {
 	uint2 source_dims;
@@ -532,7 +538,7 @@ vec3 nearFarDepthFilter(LookupQuad4 depth_Q,LookupQuad4 dist_Q,vec2 texDims,vec2
 	return f;
 }
 
-vec4 Composite(vec2 texCoords
+TwoColourCompositeOutput Composite(vec2 texCoords
 				,Texture2D lowResFarTexture
 				,Texture2D lowResNearTexture
 				,Texture2D hiResDepthTexture
@@ -549,7 +555,7 @@ vec4 Composite(vec2 texCoords
 				,Texture2D nearInscatterTexture)
 {
 	// texCoords.y is positive DOWNwards
-	
+	TwoColourCompositeOutput result;
 	vec2 depth_texc			=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 	int2 hires_depth_pos2;
 	hires_depth_pos2			=int2(depth_texc*vec2(fullResDims.xy));
@@ -559,7 +565,7 @@ vec4 Composite(vec2 texCoords
 	vec4 hires_depths			=texture_clamp_lod(hiResDepthTexture	,hiResTexCoords		,0);
 	float lowres_edge			=lowres_depths.z;
 	float hires_edge			=hires_depths.z;
-	vec4 result					=vec4(0,0,0,0);
+	result.add					=vec4(0,0,0,0);
 	vec4 insc					=vec4(0,0,0,0);
 	float depth					=depthTexture[hires_depth_pos2].x;
 	float dist					=depthToLinearDistance(depth		,depthToLinFadeDistParams);
@@ -583,10 +589,10 @@ vec4 Composite(vec2 texCoords
 		nearFarDistLowRes.xy=depthToLinearDistance(lowres_depths.yx	,depthToLinFadeDistParams);
 		nearFarDistLowRes.z=abs(nearFarDistLowRes.y-nearFarDistLowRes.x);
 		float interp	=saturate((nearFarDistLowRes.y-dist)/nearFarDistLowRes.z);
-		result			=lerp(cloudFar,cloudNear,interp);
+		result.add		=lerp(cloudFar,cloudNear,interp);
 	}
 	else
-		result				+=texture_clamp_lod(lowResFarTexture,lowResTexCoords,0);
+		result.add		+=texture_clamp_lod(lowResFarTexture,lowResTexCoords,0);
 	if(hires_edge>0.0)
 	{
 		LookupQuad4 inscNear_Q		=GetLookupQuad(nearInscatterTexture		,hiResTexCoords,hiResDims);
@@ -618,11 +624,12 @@ vec4 Composite(vec2 texCoords
 	{	
 		insc					=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
 	}
-	result.rgb					+=insc.rgb*result.a;
+	result.add.rgb					+=insc.rgb*result.add.a;
+	result.multiply=vec4(1.0,0.5,0.0,1.0);
     return result;
-	}
+}
 
-vec4 Composite_MSAA(vec2 texCoords
+TwoColourCompositeOutput Composite_MSAA(vec2 texCoords
 				,Texture2D lowResFarTexture
 				,Texture2D lowResNearTexture
 				,Texture2D hiResDepthTexture
@@ -656,7 +663,8 @@ vec4 Composite_MSAA(vec2 texCoords
 	vec4 hires_depths			=texture_clamp_lod(hiResDepthTexture	,hiResTexCoords		,0);
 	float lowres_edge			=lowres_depths.z;
 	float hires_edge			=hires_depths.z;
-	vec4 result					=vec4(0,0,0,0);
+	TwoColourCompositeOutput result;
+	result.add					=vec4(0,0,0,0);
 	vec4 insc					=vec4(0,0,0,0);
 	if(lowres_edge>0.0||hires_edge>0.0)
 	{
@@ -674,10 +682,10 @@ vec4 Composite_MSAA(vec2 texCoords
 		vec4 cloudNear				;
 		vec4 cloudFar				;
 
-			LookupQuad4 cloudNear_Q		=GetLookupQuad(lowResNearTexture		,lowResTexCoords,lowResDims);
-			LookupQuad4 cloudFar_Q		=GetLookupQuad(lowResFarTexture			,lowResTexCoords,lowResDims);
-			LookupQuad4 distFar_Q		=GetDepthLookupQuad(lowResDepthTexture	,lowResTexCoords,lowResDims,depthToLinFadeDistParams);
-			LookupQuad4 distNear_Q		=MaskDepth(distFar_Q,vec2(0,1.0));
+		LookupQuad4 cloudNear_Q		=GetLookupQuad(lowResNearTexture		,lowResTexCoords,lowResDims);
+		LookupQuad4 cloudFar_Q		=GetLookupQuad(lowResFarTexture			,lowResTexCoords,lowResDims);
+		LookupQuad4 distFar_Q		=GetDepthLookupQuad(lowResDepthTexture	,lowResTexCoords,lowResDims,depthToLinFadeDistParams);
+		LookupQuad4 distNear_Q		=MaskDepth(distFar_Q,vec2(0,1.0));
 		
 		vec2 texc_unit				=lowResTexCoords*lowResDims-vec2(.5,.5);
 		vec2 xy						=frac(texc_unit);
@@ -695,10 +703,10 @@ vec4 Composite_MSAA(vec2 texCoords
 		//must obtain lowres_depths from the relevant blending of cloudNear and cloudFar.
 		//LookupQuad4 lowres_depths_Q	=GetLookupQuad(lowResDepthTexture,lowResTexCoords,lowResDims);
 		vec4 insc_far				;//=texture_clamp_lod(farInscatterTexture	,hiResTexCoords		,0);
-		vec4 insc_near			;//	=texture_clamp_lod(nearInscatterTexture	,hiResTexCoords		,0);
+		vec4 insc_near				;//	=texture_clamp_lod(nearInscatterTexture	,hiResTexCoords		,0);
 		
-			LookupQuad4 inscNear_Q		=GetLookupQuad(nearInscatterTexture		,hiResTexCoords,hiResDims);
-			LookupQuad4 inscFar_Q		=GetLookupQuad(farInscatterTexture		,hiResTexCoords,hiResDims);
+		LookupQuad4 inscNear_Q		=GetLookupQuad(nearInscatterTexture		,hiResTexCoords,hiResDims);
+		LookupQuad4 inscFar_Q		=GetLookupQuad(farInscatterTexture		,hiResTexCoords,hiResDims);
 		LookupQuad4 inscDistFar_Q	=GetDepthLookupQuad(hiResDepthTexture	,hiResTexCoords,hiResDims,depthToLinFadeDistParams);
 		LookupQuad4 inscDistNear_Q	=MaskDepth(inscDistFar_Q,vec2(0,1.0));
 		vec2 isncTexc_unit			=hiResTexCoords*hiResDims-vec2(.5,.5);
@@ -743,8 +751,8 @@ vec4 Composite_MSAA(vec2 texCoords
 														,trueDist);
 #endif
 			float interp	=saturate((nearFarDistLowRes.y-trueDist)/nearFarDistLowRes.z);
-				add				=lerp(cloudFar,cloudNear,interp);
-			result			+=add;
+			add				=lerp(cloudFar,cloudNear,interp);
+			result.add		+=add;
 			}
 			if(hires_edge>0.0)
 			{
@@ -760,12 +768,12 @@ vec4 Composite_MSAA(vec2 texCoords
 														,trueDist);
 #endif
 				insc			=lerp(insc_far,insc_near,hiResInterp);
-				result.rgb		+=insc.rgb*add.a;
+				result.add.rgb		+=insc.rgb*add.a;
 			//	result.rgb=hiResInterp;
 			}
 		}
 		// atmospherics: we simply interpolate.
-			result				/=float(numSamples);
+		result.add				/=float(numSamples);
 		//result.gb=nearFarDistHiRes.xy;
 	}
 	if(lowres_edge<=0.0||hires_edge<=0.0)
@@ -776,13 +784,14 @@ vec4 Composite_MSAA(vec2 texCoords
 		
 		float trueDist			=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 		if(lowres_edge<=0.0)
-			result				+=texture_clamp_lod(lowResFarTexture,lowResTexCoords,0);
+			result.add			+=texture_clamp_lod(lowResFarTexture,lowResTexCoords,0);
 		if(hires_edge<=0.0)
 		{	
 			vec4 insc_far		=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
-			result.rgb			+=insc_far.rgb*result.a;
+			result.add.rgb		+=insc_far.rgb*result.add.a;
 		}
 	}
+	result.multiply=vec4(0.0,0.5,1.0,1.0);
     return result;
 }
 #endif

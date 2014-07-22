@@ -65,13 +65,14 @@ namespace simul
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT TwoResFramebuffer
 		{
-			TwoResFramebuffer():ds2(2),renderPlatform(0){}
+			TwoResFramebuffer():ds2(2),renderPlatform(0),lossTexture(0){}
 			virtual crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()=0;
 			virtual crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()=0;
 			virtual crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()=0;
 			virtual crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()=0;
-			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *)=0;
-			virtual void InvalidateDeviceObjects()=0;
+			crossplatform::Texture *GetLossTexture();
+			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *);
+			virtual void InvalidateDeviceObjects();
 			virtual void SetDimensions(int w,int h,int downscale)=0;
 			virtual void GetDimensions(int &w,int &h,int &downscale)=0;
 			/// Activate BOTH Hi-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivateHiRes after rendering.
@@ -87,6 +88,7 @@ namespace simul
 			int ds2;
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;
+			crossplatform::Texture *lossTexture;
 		};
 	}
 }

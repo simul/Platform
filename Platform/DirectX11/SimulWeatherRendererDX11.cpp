@@ -55,7 +55,7 @@ TwoResFramebuffer::TwoResFramebuffer()
 
 void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	renderPlatform=r;
+	crossplatform::TwoResFramebuffer::RestoreDeviceObjects(r);
 	if(!r)
 		return;
 	m_pd3dDevice=(ID3D11Device*	)r->AsD3D11Device();
@@ -72,13 +72,15 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	hiResNearFramebufferDx11	.SetDepthFormat(0);
 
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
-	int BufferWidth		=(Width+Downscale-1)/Downscale;
-	int BufferHeight	=(Height+Downscale-1)/Downscale;
+	int BufferWidth				=(Width+Downscale-1)/Downscale;
+	int BufferHeight			=(Height+Downscale-1)/Downscale;
+	int W						=(Width+ds2-1)/ds2;
+	int H						=(Height+ds2-1)/ds2;
 	lowResFarFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
 	lowResNearFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
-	hiResFarFramebufferDx11		.SetWidthAndHeight(Width/ds2,Height/ds2);
-	hiResNearFramebufferDx11	.SetWidthAndHeight(Width/ds2,Height/ds2);
-	
+	hiResFarFramebufferDx11		.SetWidthAndHeight(W,H);
+	hiResNearFramebufferDx11	.SetWidthAndHeight(W,H);
+	lossTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
 	lowResFarFramebufferDx11	.RestoreDeviceObjects(r);
 	lowResNearFramebufferDx11	.RestoreDeviceObjects(r);
 	hiResFarFramebufferDx11		.RestoreDeviceObjects(r);
@@ -170,6 +172,7 @@ void TwoResFramebuffer::InvalidateDeviceObjects()
 	lowResNearFramebufferDx11	.InvalidateDeviceObjects();
 	hiResFarFramebufferDx11		.InvalidateDeviceObjects();
 	hiResNearFramebufferDx11	.InvalidateDeviceObjects();
+	crossplatform::TwoResFramebuffer::InvalidateDeviceObjects();
 }
 
 void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)

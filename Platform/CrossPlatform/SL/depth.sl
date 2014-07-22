@@ -53,6 +53,17 @@ vec2 depthToLinearDistance(vec2 depth,vec4 depthToLinFadeDistParams)
 	return linearFadeDistanceZ;
 }
 
+void discardOnFar(float depth)
+{
+#ifdef REVERSE_DEPTH1
+	if(depth<=0)
+		discard;
+#else
+	if(depth>=1.0)
+		discard;
+#endif
+}
+
 // This converts a z-buffer depth into a distance in the units of nearZ and farZ,
 //	-	where usually nearZ and farZ will be factors of the maximum fade distance.
 float depthToFadeDistance(float depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2 tanHalf)

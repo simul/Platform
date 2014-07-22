@@ -1,6 +1,8 @@
 #include "BaseFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/Macros.h"
+#include "Simul/Platform/CrossPlatform/Texture.h"
 using namespace simul;
 using namespace crossplatform;
 
@@ -13,6 +15,16 @@ BaseFramebuffer::BaseFramebuffer(int w,int h)
 	,renderPlatform(0)
 {
 }
+
+void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+{
+	renderPlatform=r;
+}
+
+void BaseFramebuffer::InvalidateDeviceObjects()
+{
+}
+
 bool BaseFramebuffer::IsDepthActive() const
 {
 	return depth_active;
@@ -24,8 +36,25 @@ bool BaseFramebuffer::IsColourActive() const
 }
 
 
+void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+{
+	renderPlatform	=r;
+	SAFE_DELETE(lossTexture);
+	lossTexture		=renderPlatform->CreateTexture();
+}
+
+void TwoResFramebuffer::InvalidateDeviceObjects()
+{
+	SAFE_DELETE(lossTexture);
+}
+
 void TwoResFramebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 {
 	crossplatform::Texture * targs[]={GetLowResFarFramebuffer()->GetTexture(),GetLowResNearFramebuffer()->GetTexture()};
-	deviceContext.renderPlatform->ActivateRenderTargets(deviceContext,2,targs,NULL);
+	renderPlatform->ActivateRenderTargets(deviceContext,2,targs,NULL);
+}
+
+crossplatform::Texture *TwoResFramebuffer::GetLossTexture()
+{
+	return lossTexture;
 }

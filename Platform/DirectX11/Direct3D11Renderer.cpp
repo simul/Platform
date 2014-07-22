@@ -645,8 +645,8 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		if(oceanRenderer&&ShowWaterTextures)
 			oceanRenderer->RenderTextures(deviceContext,view->GetScreenWidth(),view->GetScreenHeight());
 #ifdef _XBOX_ONE
-			const char *txt=Profiler::GetGlobalProfiler().GetDebugText();
-			renderPlatformDx11.Print(deviceContext			,12	,12,txt);
+		const char *txt=Profiler::GetGlobalProfiler().GetDebugText();
+		renderPlatformDx11.Print(deviceContext			,12	,12,txt);
 #endif
 	}
 	SAFE_RELEASE(mainRenderTarget);

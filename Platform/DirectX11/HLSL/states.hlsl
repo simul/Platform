@@ -84,14 +84,14 @@ BlendState AlphaToCoverageBlend
 
 BlendState CloudBlend
 {
-	BlendEnable[0] = TRUE;
-	BlendEnable[1]	=TRUE;
-	SrcBlend = SRC_ALPHA;
-	DestBlend = INV_SRC_ALPHA;
-    BlendOp = ADD;
-    SrcBlendAlpha = ZERO;
-    DestBlendAlpha = INV_SRC_ALPHA;
-    BlendOpAlpha = ADD;
+	BlendEnable[0]		= TRUE;
+	BlendEnable[1]		=TRUE;
+	SrcBlend			= SRC_ALPHA;
+	DestBlend			= INV_SRC_ALPHA;
+    BlendOp				= ADD;
+    SrcBlendAlpha		= ZERO;
+    DestBlendAlpha		= INV_SRC_ALPHA;
+    BlendOpAlpha		= ADD;
     //RenderTargetWriteMask[0] = 0x0F;
 };
 
