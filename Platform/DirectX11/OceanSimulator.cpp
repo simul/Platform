@@ -193,7 +193,10 @@ void OceanSimulator::initHeightMap(vec2* out_h0, float* out_omega)
 
 	vec2 wind_dir;
 	vec2 pwind_dir(m_param->wind_dir[0],m_param->wind_dir[1]);
-	wind_dir=vec2Normalize(pwind_dir);
+	if(fabs(pwind_dir.x)+fabs(pwind_dir.y)>0)
+		wind_dir=vec2Normalize(pwind_dir);
+	else
+		wind_dir=vec2(1.0f,0);
 	float a = m_param->wave_amplitude * 1e-4f;	// It is too small. We must scale it for editing.
 	float v = m_param->wind_speed;
 	float dir_depend = m_param->wind_dependency;

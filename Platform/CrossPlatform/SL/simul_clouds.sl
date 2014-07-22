@@ -101,7 +101,7 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 	//float distance_off_centre		=length(pos_xy);
 	vec2 illumination				=vec2(1.0,1.0);
 	float U							=-1.0;
-	#define NUM_STEPS 24
+	#define NUM_STEPS 8
 	vec3 cartesian_1				=vec3(pos_xy.xy,1.0);
 	vec3 wpos_1						=mul(shadowMatrix,vec4(cartesian_1,1.0)).xyz;
 	vec3 cartesian_2				=vec3(pos_xy.xy,0.0);

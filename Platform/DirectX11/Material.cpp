@@ -14,7 +14,7 @@ Material::~Material()
 {
 }
 
-void Material::Apply(crossplatform::DeviceContext &deviceContext) const
+void Material::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::PhysicalLightRenderData &physicalLightRenderData) const
 {
 /*	glActiveTexture(GL_TEXTURE0);
 	float zero[]	={0,0,0,0};
@@ -37,5 +37,8 @@ void Material::Apply(crossplatform::DeviceContext &deviceContext) const
 	{
 		if(mDiffuse.mTextureName)
 			effect->SetTexture(deviceContext,"diffuseTexture",mDiffuse.mTextureName);
+		effect->SetTexture(deviceContext,"diffuseCubemap",physicalLightRenderData.diffuseCubemap);
+		effect->SetParameter("lightIrradiance",physicalLightRenderData.lightColour);
+		effect->SetParameter("lightDir",physicalLightRenderData.dirToLight);
 	}
 }

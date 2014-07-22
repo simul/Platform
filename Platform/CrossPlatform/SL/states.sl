@@ -87,5 +87,12 @@ SamplerState samplerStateNearestWrap SIMUL_STATE_REGISTER(14)
 	AddressV = Wrap;
 	AddressW = Wrap;
 };
+SamplerState cubeSamplerState
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Mirror;
+	AddressV = Mirror;
+	AddressW = Mirror;
+};
 
 #endif

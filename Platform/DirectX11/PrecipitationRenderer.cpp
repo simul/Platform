@@ -133,11 +133,11 @@ void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *
 	{
 		PrecipitationVertex *dat=new PrecipitationVertex[125000];
 		memset(dat,0,125000);
-		for(int i=0;i<125000;i++)
+	/*	for(int i=0;i<125000;i++)
 		{
 			dat[i].position.y=6;
 			dat[i].position.x=10*(i/125000.0f-.5f);
-		}
+		}*/
 	
 		vertexBuffer.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
 		vertexBufferSwap.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
@@ -200,6 +200,12 @@ PrecipitationRenderer::~PrecipitationRenderer()
 
 void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceContext,float dt)
 {
+	static float cc=0.05f;
+	intensity*=1.f-cc;
+	intensity+=cc*Intensity;
+	//intensity=Intensity;
+	if(intensity<=0.01)
+		return;
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"PrecipitationRenderer::PreRenderUpdate")
 	if(dt<0)
 		dt*=-1.0f;
@@ -222,6 +228,7 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 	last_cam_pos=cam_pos;
 
 	rainConstants.Apply(deviceContext);
+	int numParticles			=(int)(intensity*125000.f);
 	
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	ID3D11InputLayout* previousInputLayout;
@@ -234,7 +241,7 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 		vertexBuffer.apply(pContext,0);
 		vertexBufferSwap.setAsStreamOutTarget(pContext);
 		effect->Apply(deviceContext,techniqueMoveParticles,0);
-		pContext->Draw(125000,0);
+		pContext->Draw(numParticles,0);
 		effect->Unapply(deviceContext);
 		ID3D11Buffer *pBuffer =NULL;
 		UINT offset=0;
@@ -294,10 +301,6 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 	sky::float4 light_colour=ll*baseSkyInterface->GetLocalIrradiance(cam_pos.z/1000.f);
 	sky::float4 light_dir=baseSkyInterface->GetDirectionToLight(cam_pos.z/1000.f);
    
-	static float cc=0.02f;
-	intensity*=1.f-cc;
-	intensity+=cc*Intensity;
-	intensity=Intensity;
 	if(intensity<=0.01)
 		return;
 	float underRain=0.0f;

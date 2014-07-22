@@ -2,6 +2,7 @@
 
 #include <map>
 #include "Export.h"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -15,6 +16,12 @@ namespace simul
 		class Texture;
 		class Effect;
 		struct DeviceContext;
+		struct PhysicalLightRenderData
+		{
+			Texture *diffuseCubemap;
+			vec3 dirToLight;
+			vec3 lightColour;
+		};
 		// Cache for material
 		class SIMUL_CROSSPLATFORM_EXPORT Material
 		{
@@ -22,7 +29,7 @@ namespace simul
 			Material();
 			virtual ~Material();
 			bool HasTexture() const { return mDiffuse.mTextureName != 0; }
-			virtual void Apply(crossplatform::DeviceContext &) const=0;
+			virtual void Apply(crossplatform::DeviceContext &,PhysicalLightRenderData &) const=0;
 			struct ColorChannel
 			{
 				ColorChannel() : mTextureName(0)

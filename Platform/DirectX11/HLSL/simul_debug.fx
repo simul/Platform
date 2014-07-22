@@ -91,7 +91,7 @@ float4 DebugPS(v2f IN) : SV_TARGET
 vec4 TexturedPS(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 res=multiplier*texture_nearest_lod(imageTexture,IN.texCoords.xy,0);
-//	res.xy+=IN.texCoords.xy;
+	res.r=res.a;
 	return res;
 }
 
@@ -183,13 +183,6 @@ v2f_cubemap VS_DrawCubemapSphere(idOnly IN)
     return OUT;
 }
 
-SamplerState cubeSamplerState
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Mirror;
-	AddressV = Mirror;
-	AddressW = Mirror;
-};
 
 float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {

@@ -14,7 +14,7 @@ namespace simul
 		public:
 			Material();
 			virtual ~Material();
-			void Apply(crossplatform::DeviceContext &) const;
+			void Apply(crossplatform::DeviceContext &,crossplatform::PhysicalLightRenderData &physicalLightRenderData) const;
 		};
 	}
 }

@@ -3,7 +3,7 @@
 #include "../../CrossPlatform/SL/solid_constants.sl"
 
 Texture2D diffuseTexture;
-
+TextureCube diffuseCubemap;
 struct vertexInput
 {
     vec3 position		: POSITION;
@@ -30,9 +30,10 @@ vertexOutput VS_Solid(vertexInput IN)
 float4 PS_Solid(vertexOutput IN) : SV_TARGET
 {
     vec4 c = texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
+	vec3 totalDiff=diffuseCubemap.Sample(cubeSamplerState,IN.normal.xyz).rgb;
 	c.a=1.0;
-	float light=saturate(IN.normal.z);
-	c.rgb*=light;
+	totalDiff+=saturate(dot(lightDir,IN.normal.xyz)*lightIrradiance);
+	c.rgb*=totalDiff;
     return c;
 }
 

@@ -2,6 +2,7 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringFunctions.h"
 #include "Simul/Platform/Crossplatform/DeviceContext.h"
+#include "Simul/Platform/Crossplatform/Material.h"
 #include "Simul/Platform/DirectX11/Direct3D11Renderer.h"
 #include "Simul/Platform/DirectX11/SimulWeatherRendererDX11.h"
 #include "Simul/Platform/DirectX11/TerrainRenderer.h"
@@ -353,7 +354,13 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	}
 #ifdef SIMUL_USE_SCENE
 	if(sceneRenderer)
-		sceneRenderer->Render(deviceContext);
+	{
+		crossplatform::PhysicalLightRenderData physicalLightRenderData;
+		physicalLightRenderData.diffuseCubemap=envmapFramebuffer.GetTexture();
+		physicalLightRenderData.lightColour=simulWeatherRenderer->GetSkyKeyframer()->GetLocalIrradiance(0.0f);
+		physicalLightRenderData.dirToLight=simulWeatherRenderer->GetSkyKeyframer()->GetDirectionToLight(0.0f);
+		sceneRenderer->Render(deviceContext,physicalLightRenderData);
+	}
 #endif
 	if(oceanRenderer&&ShowWater&&(simul::base::featureLevel&simul::base::EXPERIMENTAL)!=0)
 	{

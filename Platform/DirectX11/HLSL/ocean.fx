@@ -345,7 +345,7 @@ vec4 PS_ShowStructuredBuffer( posTexVertexOutput In):SV_TARGET
 	uint index_y = (uint)(In.texCoords.y * (float)g_ActualDim);
 	uint addr = (bufferGrid.x) * index_y + index_x;
     vec2 lookup=g_InputDxyz[addr];
-	return vec4(showMultiplier*lookup.rg,0.0,1.0);
+	return vec4(showMultiplier*lookup.rg,1.0,1.0);
 }
 
 technique11 ocean

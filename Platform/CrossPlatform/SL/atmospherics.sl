@@ -8,7 +8,7 @@ void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthText
 	float3 view		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view			=normalize(view);
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-	vec2 depth		=texture_clamp(nearFarDepthTexture,depth_texc).xy;
+	vec3 depth		=texture_clamp(nearFarDepthTexture,depth_texc).xyz;
 
 	vec2 dist		=depthToFadeDistance(depth.xy,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	float sine		=view.z;
@@ -16,6 +16,7 @@ void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthText
 	vec2 texx		=pow(dist,0.5);
 	farLoss			=texture_clamp_mirror(lossTexture,vec2(texx.x,texy)).rgb;
 	nearLoss		=texture_clamp_mirror(lossTexture,vec2(texx.y,texy)).rgb;
+	
 }
 
 vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
