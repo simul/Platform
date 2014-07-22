@@ -2,6 +2,7 @@
 #include "states.hlsl"
 #include "../../CrossPlatform/SL/depth.sl"
 #include "../../CrossPlatform/SL/hdr_constants.sl"
+#include "../../CrossPlatform/SL/colour_packing.sl"
 #include "../../CrossPlatform/SL/mixed_resolution.sl"
 Texture2D imageTexture;
 Texture2DMS<float4> imageTextureMS;
@@ -14,6 +15,7 @@ Texture2D<uint> glowTexture;
 
 Texture2D inscatterTexture;			// Far, or default inscatter
 Texture2D nearInscatterTexture;		// Near inscatter.
+Texture2D<uint2> lossTexture;
 
 struct a2v
 {
@@ -302,7 +304,8 @@ TwoColourCompositeOutput PS_Composite(v2f IN)
 							,fullResToLowResTransformXYWH
 							,fullResToHighResTransformXYWH
 							,inscatterTexture
-							,nearInscatterTexture);
+							,nearInscatterTexture
+							,lossTexture);
 	result.add.rgb	=pow(result.add.rgb,gamma);
 	result.add.rgb	*=exposure;
 
@@ -326,7 +329,8 @@ TwoColourCompositeOutput PS_Composite_MSAA(v2f IN) : SV_TARGET
 							,fullResToLowResTransformXYWH
 							,fullResToHighResTransformXYWH
 										,inscatterTexture
-							,nearInscatterTexture);
+							,nearInscatterTexture
+							,lossTexture);
 	result.add.rgb	=pow(result.add.rgb,gamma);
 	result.add.rgb	*=exposure;
 	return result;

@@ -4,9 +4,9 @@
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/atmospherics.sl"
 #include "../../CrossPlatform/SL/atmospherics_constants.sl"
+#include "../../CrossPlatform/SL/colour_packing.sl"
 
 Texture2D depthTexture;
-Texture2D nearFarDepthTexture;
 Texture2DMS<float4> depthTextureMS;
 Texture2D cloudDepthTexture;
 Texture2D imageTexture;
@@ -70,18 +70,21 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 	return OUT;
 }
 
-vec4 PS_LossComposite(atmosVertexOutput IN) : SV_TARGET
+uint2 PS_LossComposite(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	vec3 loss		=LossComposite(nearFarDepthTexture
-									,viewportToTexRegionScaleBias
-									,lossTexture
-									,invViewProj
-									,IN.texCoords
-									,IN.pos
-									,depthToLinFadeDistParams
-									,tanHalfFov);
-    return float4(loss.rgb,1.0);
+	vec3 farLoss,nearLoss;
+	LossComposite(farLoss,nearLoss,depthTexture
+					,viewportToTexRegionScaleBias
+					,lossTexture
+						,invViewProj
+						,IN.texCoords
+						,IN.pos
+							,depthToLinFadeDistParams
+							,tanHalfFov);
+	uint faru		=colour3_to_uint(farLoss);
+	uint nearu		=colour3_to_uint(nearLoss);
+    return uint2(faru,nearu);
 }
 
 

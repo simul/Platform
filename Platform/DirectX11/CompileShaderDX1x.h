@@ -4,7 +4,11 @@
 #ifdef _XBOX_ONE
 #include <D3Dcompiler_x.h>
 #else
+#ifdef SIMUL_WIN8_SDK
+#include <D3Dcompiler_xdk.h>
+#else
 #include <D3Dcompiler.h>
+#endif
 #endif
 #include <string>
 
@@ -27,21 +31,21 @@ private:
 class DetectChangesIncludeHandler : public ID3DInclude
 {
 public:
-	DetectChangesIncludeHandler(const char* shaderDirUtf8, double t)
-		: m_ShaderDirUtf8(shaderDirUtf8), lastCompileTime(t), anyChanges(false)
+	DetectChangesIncludeHandler(const char* shaderDirUtf8,double binaryTime=0.0)
+		: m_ShaderDirUtf8(shaderDirUtf8), lastCompileTime(binaryTime)
 	{
 	}
 	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType,LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
 	HRESULT __stdcall Close(LPCVOID pData);
-	bool HasDetectedChanges() const
+	double GetNewestIncludeDateJDN() const
 	{
-		return anyChanges;
+		return newest;
 	}
 private:
 	std::string m_ShaderDirUtf8;
 	std::string m_SystemDirUtf8;
 	double lastCompileTime;
-	bool anyChanges;
+	double newest;
 };
 
 HRESULT CompileShaderFromFile( const char* szFileNameUtf8, const char*  szEntryPoint, const char*  szShaderModel, ID3DBlob** ppBlobOut );

@@ -2,6 +2,7 @@
 #include "states.hlsl"
 #include "../../CrossPlatform/SL/mixed_resolution_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/colour_packing.sl"
 #include "../../CrossPlatform/SL/mixed_resolution.sl"
 Texture2DMS<float4> sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
 Texture2DMS<float4> sourceTextureMS SIMUL_TEXTURE_REGISTER(0);

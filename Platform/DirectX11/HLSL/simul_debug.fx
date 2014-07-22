@@ -1,10 +1,15 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
 #include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/colour_packing.sl"
 
 sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 Texture2DMS<float4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
 TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
+Texture2D<uint> imageTextureUint SIMUL_TEXTURE_REGISTER(3);
+Texture2D<uint2> imageTextureUint2 SIMUL_TEXTURE_REGISTER(4);
+Texture2D<uint3> imageTextureUint3 SIMUL_TEXTURE_REGISTER(5);
+Texture2D<uint4> imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
 
 uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 {
@@ -90,6 +95,21 @@ vec4 TexturedPS(posTexVertexOutput IN) : SV_TARGET
 	return res;
 }
 
+
+vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
+{
+	uint2 dims;
+	imageTextureUint2.GetDimensions(dims.x,dims.y);
+	uint2 pos			=IN.texCoords*dims;
+	uint2 lookup		=image_load(imageTextureUint2,pos);
+	vec3 clr1=uint_to_colour3(lookup.x);
+	vec3 clr2=uint_to_colour3(lookup.y);
+	vec3 clr=0.5*(clr2+clr1);
+	clr.r+=100.0*abs(clr1.x-clr2.x);
+	vec3 res=multiplier*clr;
+//	res.xy+=IN.texCoords.xy;
+	return vec4(res,1.0);
+}
 vec4 TexturedMSPS(posTexVertexOutput IN) : SV_TARGET
 {
 	uint2 dims;
@@ -283,6 +303,19 @@ technique11 texturedMS
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
 		SetPixelShader(CompileShader(ps_5_0,TexturedMSPS()));
+    }
+}
+
+technique11 compacted_texture
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_4_0,PS_CompactedTexture()));
     }
 }
 

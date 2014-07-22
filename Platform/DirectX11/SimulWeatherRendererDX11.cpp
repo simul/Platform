@@ -80,7 +80,8 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	lowResNearFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
 	hiResFarFramebufferDx11		.SetWidthAndHeight(W,H);
 	hiResNearFramebufferDx11	.SetWidthAndHeight(W,H);
-	lossTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
+	// We're going to TRY to encode near and far loss into two UINT's, for faster results
+	lossTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RG_32_UINT,false,true);
 	lowResFarFramebufferDx11	.RestoreDeviceObjects(r);
 	lowResNearFramebufferDx11	.RestoreDeviceObjects(r);
 	hiResFarFramebufferDx11		.RestoreDeviceObjects(r);

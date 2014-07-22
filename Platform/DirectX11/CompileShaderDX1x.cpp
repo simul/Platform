@@ -81,9 +81,11 @@ ERRNO_CHECK
 		void *buf=NULL;
 		unsigned fileSize=0;
 		double dateTimeJdn=simul::base::FileLoader::GetFileLoader()->GetFileDate(finalPathUtf8.c_str());
+		if(dateTimeJdn>newest)
+			newest=dateTimeJdn;
 		if(dateTimeJdn>lastCompileTime)
 		{
-			anyChanges=true;
+			// Early-out if we're testing against a specific compile time.
 			return E_FAIL;
 		}
 		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);

@@ -241,6 +241,19 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(ID3D11Texture2D *t,ID3D11Shad
 	shaderResourceView=srv;
 	if(shaderResourceView)
 		shaderResourceView->AddRef();
+	if(texture)
+	{
+		//texture->AddRef();
+		ID3D11Texture2D* ppd(NULL);
+		D3D11_TEXTURE2D_DESC textureDesc;
+		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)
+			return;
+		ppd->GetDesc(&textureDesc);
+		width=textureDesc.Width;
+		length=textureDesc.Height;
+		SAFE_RELEASE(ppd);
+	}
+	depth=1;
 	dim=2;
 }
 

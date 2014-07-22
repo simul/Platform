@@ -6,10 +6,10 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>SIMUL_WIN8_SDK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SIMUL)/External/DirectX/Effects11_Win8SDK/Inc/;$(SIMUL)\External\DirectX\DirectXTex\DirectXTex;$(SIMUL)\External\DirectX\Effects11\include;C:\Program Files (x86)\Windows Kits\8.1\Include\um;C:\Program Files (x86)\Windows Kits\8.1\Include\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DurangoXDK)/PC/include;$(SIMUL)/External/DirectX/Effects11_Win8SDK/Inc/;$(SIMUL)\External\DirectX\DirectXTex\DirectXTex;$(SIMUL)\External\DirectX\Effects11\include;C:\Program Files (x86)\Windows Kits\8.1\Include\um;C:\Program Files (x86)\Windows Kits\8.1\Include\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(WindowsSDK80Path)\lib\win8\um\$(PlatformShortName);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(DurangoXDK)/PC/lib/amd64;$(WindowsSDK80Path)\lib\win8\um\$(PlatformShortName);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

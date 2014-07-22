@@ -730,10 +730,10 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 		cloud_textures[i]->ensureTexture3DSizeAndFormat(renderPlatform,width_x,length_y,depth_z,crossplatform::RGBA_8_UNORM,uav);
 	}
 	int shadow_tex_size=cloudKeyframer->GetShadowTextureSize();
-	shadow_fb->ensureTexture2DSizeAndFormat		(renderPlatform,shadow_tex_size,cloudKeyframer->GetGodraysSteps(),crossplatform::RGBA_32_FLOAT,false,true);
-	godrays_texture.ensureTexture2DSizeAndFormat(renderPlatform,shadow_tex_size*2,cloudKeyframer->GetGodraysSteps(),crossplatform::R_32_FLOAT,true,false);
-	moisture_fb->ensureTexture2DSizeAndFormat	(renderPlatform,shadow_tex_size*2,cloudKeyframer->GetGodraysSteps(),crossplatform::R_32_FLOAT,false,true);
-	rain_map->ensureTexture2DSizeAndFormat		(renderPlatform,width_x/2,length_y/2,crossplatform::R_32_FLOAT,false,true);
+	shadow_fb->ensureTexture2DSizeAndFormat		(renderPlatform,shadow_tex_size,cloudKeyframer->GetGodraysSteps(),crossplatform::RGBA_8_UNORM,false,true);
+	godrays_texture.ensureTexture2DSizeAndFormat(renderPlatform,shadow_tex_size*2,cloudKeyframer->GetGodraysSteps(),crossplatform::R_16_FLOAT,true,false);
+	moisture_fb->ensureTexture2DSizeAndFormat	(renderPlatform,shadow_tex_size*2,cloudKeyframer->GetGodraysSteps(),crossplatform::R_16_FLOAT,false,true);
+	rain_map->ensureTexture2DSizeAndFormat		(renderPlatform,width_x/2,length_y/2,crossplatform::RGBA_8_UNORM,false,true);
 	if(!width_x||!length_y||!depth_z)
 		return;
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[texture_cycle%3]->AsD3D11UnorderedAccessView()!=NULL)

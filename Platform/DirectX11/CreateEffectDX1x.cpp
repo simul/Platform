@@ -70,7 +70,11 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 	#pragma comment(lib,"dxgi.lib")
 	#pragma comment(lib,"d3d11.lib")
 	#pragma comment(lib,"dxguid.lib")
+#ifdef SIMUL_WIN8_SDK
+	#pragma comment(lib,"d3dcompiler_xdk.lib")
+#else
 	#pragma comment(lib,"d3dcompiler.lib")
+#endif
 #endif
 
 // winmm.lib comctl32.lib
@@ -543,6 +547,32 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *binary_filename_
 	return hr;
 }
 
+static double GetNewestIncludeFileDate(std::string text_filename_utf8,void *textData,size_t textSize,D3D_SHADER_MACRO *macros,double binary_date_jdn=0.0)
+{
+	ID3DBlob *binaryBlob=NULL;
+	ID3DBlob *errorMsgs=NULL;
+	int pos=(int)text_filename_utf8.find_last_of("/");
+	int bpos=(int)text_filename_utf8.find_last_of("\\");
+	if(pos<0||bpos>pos)
+		pos=bpos;
+	std::string path_utf8=text_filename_utf8.substr(0,pos);
+	DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),binary_date_jdn);
+	HRESULT hr=D3DPreprocess(	textData	
+						,textSize
+						,text_filename_utf8.c_str()		//in   LPCSTR pSourceName,
+						,macros							//in   const D3D_SHADER_MACRO *pDefines,
+						,&detectChangesIncludeHandler	//in   ID3DInclude pInclude,
+						,&binaryBlob					//ID3DBlob **ppCodeText,
+						,&errorMsgs						//ID3DBlob **ppErrorMsgs
+						);
+	double newestFileTime=detectChangesIncludeHandler.GetNewestIncludeDateJDN();
+	if(binaryBlob)
+		binaryBlob->Release();
+	if(errorMsgs)
+		errorMsgs->Release();
+	return newestFileTime;
+}
+
 HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 ERRNO_CHECK
@@ -579,28 +609,21 @@ ERRNO_CHECK
 	if(shaderBuildMode==BUILD_IF_CHANGED)
 	{
 		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
-		binary_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
+		binary_date_jdn			=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
 		if(text_date_jdn>binary_date_jdn||!binary_date_jdn)
 			changes_detected=true;
 		else if(text_date_jdn>0)	// maybe some of the includes have changed?
 		{
-			ID3DBlob *binaryBlob=NULL;
-			ID3DBlob *errorMsgs=NULL;
-			DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),binary_date_jdn);
-			hr=D3DPreprocess(	textData	
-								,textSize
-								,text_filename_utf8.c_str()		//in   LPCSTR pSourceName,
-								,macros							//in   const D3D_SHADER_MACRO *pDefines,
-								,&detectChangesIncludeHandler	//in   ID3DInclude pInclude,
-								,&binaryBlob					//ID3DBlob **ppCodeText,
-								,&errorMsgs						//ID3DBlob **ppErrorMsgs
-								);
-			if(hr!=S_OK||detectChangesIncludeHandler.HasDetectedChanges())
+			if(featureLevel>=FeatureLevel::EXPERIMENTAL)
+			{
+				// Xbox One shader build:
+				//	/*
+				//	C:\Program Files (x86)\Microsoft Durango XDK\xdk\FXC\amd64\Fxc cs.hlsl –T cs_5_0 –D__XBOX_CONTROL_NONIEEE=0
+				//	*/
+			}
+			double newest_included_file=GetNewestIncludeFileDate(text_filename_utf8,textData,textSize,macros,binary_date_jdn);
+			if(hr!=S_OK||newest_included_file>binary_date_jdn)
 				changes_detected=true;
-			if(binaryBlob)
-				binaryBlob->Release();
-			if(errorMsgs)
-				errorMsgs->Release();
 		}
 	}
 	if(shaderBuildMode==NEVER_BUILD||!changes_detected&&binary_date_jdn>0)
@@ -616,7 +639,6 @@ ERRNO_CHECK
 ERRNO_CHECK
 	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
 	std::cout<<"Rebuilding DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
-	//hr=D3DX11CompileEffectFromMemory(
 	hr=D3DCompile(		
 						textData
 						,textSize

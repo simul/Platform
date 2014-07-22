@@ -17,11 +17,6 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Camera/Camera.h"
 #include "D3dx11effect.h"
-#ifdef _XBOX_ONE
-#include <D3Dcompiler_x.h>
-#else
-#include <D3Dcompiler.h>
-#endif
 
 using namespace simul;
 using namespace dx11;
@@ -531,8 +526,18 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case RGBA_8_SNORM:
 		return DXGI_FORMAT_R8G8B8A8_SNORM;
+	case R_8_UNORM:
+		return DXGI_FORMAT_R8_UNORM;
+	case R_8_SNORM:
+		return DXGI_FORMAT_R8_SNORM;
 	case R_32_UINT:
 		return DXGI_FORMAT_R32_UINT;
+	case RG_32_UINT:
+		return DXGI_FORMAT_R32G32_UINT;
+	case RGB_32_UINT:
+		return DXGI_FORMAT_R32G32B32_UINT;
+	case RGBA_32_UINT:
+		return DXGI_FORMAT_R32G32B32A32_UINT;
 	default:
 		return DXGI_FORMAT_UNKNOWN;
 	};
@@ -561,6 +566,12 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 		return RGBA_8_SNORM;
 	case DXGI_FORMAT_R32_UINT:
 		return R_32_UINT;
+	case DXGI_FORMAT_R32G32_UINT:
+		return RG_32_UINT;
+	case DXGI_FORMAT_R32G32B32_UINT:
+		return RGB_32_UINT;
+	case DXGI_FORMAT_R32G32B32A32_UINT:
+		return RGBA_32_UINT;
 	default:
 		return UNKNOWN;
 	};
@@ -773,6 +784,14 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 		{
 			tech=m_pDebugEffect->GetTechniqueByName("textured");
 			simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureMS",srv);
+		}
+		else if(desc.Format==DXGI_FORMAT_R32_UINT||desc.Format==DXGI_FORMAT_R32G32_UINT||desc.Format==DXGI_FORMAT_R32G32B32_UINT||desc.Format==DXGI_FORMAT_R32G32B32A32_UINT)
+		{
+			tech=m_pDebugEffect->GetTechniqueByName("compacted_texture");
+			simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureUint",srv);
+			simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureUint2",srv);
+			simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureUint3",srv);
+			simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureUint4",srv);
 		}
 	}
 	unsigned int num_v=1;
