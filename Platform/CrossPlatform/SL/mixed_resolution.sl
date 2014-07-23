@@ -67,10 +67,10 @@ vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> s
 	return vec4(farthest_depth,nearest_depth,edge,0.0);
 }
 
-vec4 DownscaleDepthFarNear(Texture2D<float4> sourceDepthTexture,uint2 source_dims,int2 pos,int2 scale,vec4 depthToLinFadeDistParams)
+vec4 DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,uint2 source_dims,int2 pos,vec4 depthToLinFadeDistParams)
 {
 	// pos is the texel position in the target.
-	int2 pos2=pos*scale;
+	int2 pos2=pos*2;
 	// now pos2 is the texel position in the source.
 	// scale must represent the exact number of horizontal and vertical pixels for the hi-res texture that fit into each texel of the downscaled texture.
 
@@ -82,7 +82,7 @@ vec4 DownscaleDepthFarNear(Texture2D<float4> sourceDepthTexture,uint2 source_dim
 	for(int i=0;i<4;i++)
 	{
 		int2 hires_pos		=pos2+int2(i-1,-1);
-		vec4 u				=vec4(sourceDepthTexture[int2(hires_pos.x,hires_pos.y+0)].x
+		vec4 u				=vec4(	sourceDepthTexture[int2(hires_pos.x,hires_pos.y+0)].x
 									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+1)].x
 									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+2)].x
 									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+3)].x);
@@ -102,8 +102,9 @@ vec4 DownscaleDepthFarNear(Texture2D<float4> sourceDepthTexture,uint2 source_dim
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
 		vec2 fn	=depthToLinearDistance(farthest_nearest.xy,depthToLinFadeDistParams);
+	//fn =saturate(0.07 / (farthest_nearest.xy*depthToLinFadeDistParams.y ));
 		edge	=abs(fn.x-fn.y);
-		edge	=step(EDGE_FACTOR,edge);
+		edge	=fn.x;//step(EDGE_FACTOR,edge);
 	}
 	vec4 res=vec4(farthest_nearest,edge,0);
 	return res;

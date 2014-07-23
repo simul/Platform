@@ -23,13 +23,13 @@ float depthToLinearDistance(float depth,vec4 depthToLinFadeDistParams)
 	if(depth>=1.0)
 		return UNITY_DIST;//max_fade_distance_metres;
 #endif
-	float linearFadeDistanceZ = depthToLinFadeDistParams.x/(depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z)+depthToLinFadeDistParams.w*depth;
+	float linearFadeDistanceZ = saturate(depthToLinFadeDistParams.x/(depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z)+depthToLinFadeDistParams.w*depth);
 	return linearFadeDistanceZ;
 }
 
 vec4 depthToLinearDistance(vec4 depth,vec4 depthToLinFadeDistParams)
 {
-	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz)+depthToLinFadeDistParams.wwww*depth;
+	vec4 linearFadeDistanceZ = saturate(depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz)+depthToLinFadeDistParams.wwww*depth);
 #ifdef REVERSE_DEPTH1
 	vec4 st=step(depth,vec4(0.0,0.0,0.0,0.0));
 	linearFadeDistanceZ*=(vec4(1.0,1.0,1.0,1.0)-st);
@@ -42,7 +42,7 @@ vec4 depthToLinearDistance(vec4 depth,vec4 depthToLinFadeDistParams)
 
 vec2 depthToLinearDistance(vec2 depth,vec4 depthToLinFadeDistParams)
 {
-	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz)+depthToLinFadeDistParams.ww*depth;
+	vec2 linearFadeDistanceZ =saturate(depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz)+depthToLinFadeDistParams.ww*depth);
 #ifdef REVERSE_DEPTH1
 	vec2 st=step(depth,vec2(0.0,0.0));
 	linearFadeDistanceZ*=(vec2(1.0,1.0)-st);
@@ -66,6 +66,12 @@ void discardOnFar(float depth)
 
 // This converts a z-buffer depth into a distance in the units of nearZ and farZ,
 //	-	where usually nearZ and farZ will be factors of the maximum fade distance.
+//	-	
+// if depthToLinFadeDistParams.z=0
+// (0.07,300000.0, 0, 0):
+//									0->0.07/(300000*0).
+//									i.e. infinite.
+//									1->0.07/(300000) -> v small value.
 float depthToFadeDistance(float depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2 tanHalf)
 {
 #ifdef REVERSE_DEPTH1
@@ -84,7 +90,7 @@ float depthToFadeDistance(float depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2
 
 vec2 depthToFadeDistance(vec2 depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2 tanHalf)
 {
-	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz)+depthToLinFadeDistParams.ww*depth;
+	vec2 linearFadeDistanceZ = saturate(depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz)+depthToLinFadeDistParams.ww*depth);
 	float Tx=xy.x*tanHalf.x;
 	float Ty=xy.y*tanHalf.y;
 	vec2 fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);

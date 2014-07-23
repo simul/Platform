@@ -124,7 +124,8 @@ vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 depth		=texture_clamp(imageTexture,IN.texCoords);
 	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
-    return vec4(pow(dist.xy,0.44),depth.z,1.0);
+    vec4 result		=vec4(pow(dist.xy,0.44),depth.z,1.0);
+	return result;
 }
 
 vec4 ShowDepthMS_PS(posTexVertexOutput IN) : SV_TARGET
@@ -356,7 +357,7 @@ technique11 show_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
 		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS()));
@@ -368,7 +369,7 @@ technique11 show_depth_ms
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
 		SetPixelShader(CompileShader(ps_5_0,ShowDepthMS_PS()));

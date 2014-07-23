@@ -113,7 +113,7 @@ vec4 PS_DownscaleDepthFarNear(posTexVertexOutput IN):SV_Target
 	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
 	//if(pos.y>target_dims.y/2)
 	//	return vec4(0,0,0,0);
-	vec4 res	=DownscaleDepthFarNear(sourceDepthTexture,source_dims,pos,scale,depthToLinFadeDistParams);
+	vec4 res	=DownscaleDepthFarNear2(sourceDepthTexture,source_dims,pos,depthToLinFadeDistParams);
 	return res;
 }
 
@@ -159,7 +159,7 @@ vec4 PS_DownscaleDepthFarNear_MSAA16(posTexVertexOutput IN):SV_Target
 [numthreads(1,BLOCK_SIZE,1)]
 void CS_DownscaleDepthFarNear(uint3 pos : SV_DispatchThreadID )
 {
-	vec4 res	=DownscaleDepthFarNear(sourceDepthTexture,source_dims,pos.xy,scale,depthToLinFadeDistParams);
+	vec4 res	=DownscaleDepthFarNear2(sourceDepthTexture,source_dims,pos.xy,depthToLinFadeDistParams);
 	//res.xyzw=vec4(1,1,1,1);
 	target2DTexture[pos.xy]=res;
 }

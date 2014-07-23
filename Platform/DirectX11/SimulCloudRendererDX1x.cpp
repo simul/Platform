@@ -636,7 +636,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &d
 		h=1;
 	h*=gi->GetGridHeight();
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
-	if(skyInterface)
+	/*if(skyInterface)
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
@@ -659,7 +659,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &d
 		cloudConstants.Apply(deviceContext);
 		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+h+8,w,w,effect,m_pTechniqueCrossSection);
 	}
-	deviceContext.renderPlatform->Print(deviceContext,x0,w,simul::base::stringFormat("%4.4f",cloudConstants.cloud_interp).c_str());
+	deviceContext.renderPlatform->Print(deviceContext,x0,w,simul::base::stringFormat("%4.4f",cloudConstants.cloud_interp).c_str());*/
 	effect->Apply(deviceContext,m_pTechniqueCrossSection,0);
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);

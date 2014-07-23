@@ -110,13 +110,17 @@ void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &devic
 		l=dy/2;
 		dx=(dy*w)/l;
 	}
-	static float uu=10000.0f;
-	if(externalDepthTexture)
+	static bool enable=true;
+	if(enable)
 	{
-		deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,externalDepthTexture	);
+		static float uu=10000.0f;
+		if(externalDepthTexture)
+		{
+			deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,externalDepthTexture	);
+		}
+		else
+			deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,hdrFramebuffer.GetDepthTexture());
 	}
-	else
-		deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,hdrFramebuffer.GetDepthTexture());
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0		,"Main Depth");
 	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0+l	,w,l,&hiResDepthTexture	);
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0+l	,"Hi-Res Depth");

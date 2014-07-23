@@ -42,7 +42,10 @@ namespace simul
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
-			
+			crossplatform::Effect *GetDebugEffect()
+			{
+				return m_pDebugEffect;
+			}
 			ID3D11Device *AsD3D11Device()
 			{
 				return device;

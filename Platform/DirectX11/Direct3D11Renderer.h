@@ -20,7 +20,7 @@
 #pragma warning(push)
 #pragma warning(disable:4251)
 #ifndef _XBOX_ONE
-#define SIMUL_USE_SCENE
+//#define SIMUL_USE_SCENE
 #endif
 namespace simul
 {
