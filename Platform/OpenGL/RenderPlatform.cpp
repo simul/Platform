@@ -610,15 +610,6 @@ GL_ERROR_CHECK
 	for(int i=0;i<num_elements;i++)
 	{
 		const crossplatform::LayoutDesc &d=desc[i];
-		//d.semanticName;
-		//d.semanticIndex;
-		//ToGLFormat(d.format);
-		//d.alignedByteOffset;
-		//d.inputSlot;
-		//d.perInstance?D3D11_INPUT_PER_INSTANCE_DATA:D3D11_INPUT_PER_VERTEX_DATA;
-		//d.instanceDataStepRate;
-		//{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		//{ "TEXCOORD",	0, DXGI_FORMAT_R32_FLOAT,			0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
 			glEnableVertexAttribArray( i );
 			glVertexAttribPointer( i						// Attribute bind location
 									,FormatCount(d.format)	// Data type count

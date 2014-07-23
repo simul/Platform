@@ -569,9 +569,9 @@ void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceCon
 		SAFE_RELEASE(m_pOldRenderTarget);
 		SAFE_RELEASE(m_pOldDepthSurface);
 		last_context->OMGetRenderTargets(	1,
-										&m_pOldRenderTarget,
-										&m_pOldDepthSurface
-										);
+											&m_pOldRenderTarget,
+											&m_pOldDepthSurface
+											);
 	}
 	SIMUL_ASSERT(renderTargetView!=NULL);
 	last_context->OMSetRenderTargets(1,&renderTargetView,NULL);

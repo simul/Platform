@@ -19,28 +19,23 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/LicenseKey.h"
 #include "CreateEffectDX1x.h"
+#include "Simul/Platform/Crossplatform/Layout.h"
 #include "Simul/Platform/Crossplatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/Crossplatform/Buffer.h"
 #include "Simul/Camera/Camera.h"
-#include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "D3dx11effect.h"
+#ifndef SIMUL_WIN8_SDK
+#include <d3dx9.h>
+#include <d3dx11.h>
+#endif
 
 using namespace simul;
 using namespace dx11;
 
 Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem) :
 	simul::clouds::Base2DCloudRenderer(ck,mem)
-	,effect(NULL)
-	,msaaTechnique(NULL)
-	,technique(NULL)
-	,vertexBuffer(NULL)
-	,indexBuffer(NULL)
-	,inputLayout(NULL)
-	,coverage(NULL)
-	,detail(NULL)
-	,noise(NULL)
-	,dens(NULL)
 {
 }
 
@@ -48,211 +43,6 @@ Simul2DCloudRendererDX11::~Simul2DCloudRendererDX11()
 {
 	InvalidateDeviceObjects();
 }
-
-void Simul2DCloudRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
-{
-	BaseCloudRenderer::RestoreDeviceObjects(r);
-	cloud2DConstants.RestoreDeviceObjects(renderPlatform);
-	detail2DConstants.RestoreDeviceObjects(renderPlatform);
-    RecompileShaders();
-	SAFE_RELEASE(inputLayout);
-	if(technique)
-	{
-		D3D11_INPUT_ELEMENT_DESC decl[] =
-		{
-			{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT	,0,0	,D3D11_INPUT_PER_VERTEX_DATA,0},
-		};
-		D3DX11_PASS_DESC PassDesc;
-		technique->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
-		renderPlatform->AsD3D11Device()->CreateInputLayout(decl,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &inputLayout);
-	}
-	static float max_cloud_distance=1.f;
-	helper->SetGrid(4,4);
-	helper->MakeDefaultGeometry(max_cloud_distance);
-	const simul::clouds::Cloud2DGeometryHelper::VertexVector &vertices=helper->GetVertices();
-	simul::clouds::Cloud2DGeometryHelper::Vertex *v=::new(memoryInterface) simul::clouds::Cloud2DGeometryHelper::Vertex[vertices.size()];
-	for(int i=0;i<(int)vertices.size();i++)
-		v[i]=vertices[i];
-    D3D11_SUBRESOURCE_DATA InitData;
-    ZeroMemory(&InitData,sizeof(D3D1x_SUBRESOURCE_DATA));
-    InitData.pSysMem	=v;
-    InitData.SysMemPitch=sizeof(simul::clouds::Cloud2DGeometryHelper::Vertex);
-	D3D11_BUFFER_DESC desc=
-	{
-		(UINT)(vertices.size()*sizeof(simul::clouds::Cloud2DGeometryHelper::Vertex)),
-        D3D11_USAGE_IMMUTABLE,
-        D3D11_BIND_VERTEX_BUFFER,
-        0,0
-	};
-	SAFE_RELEASE(vertexBuffer);
-	renderPlatform->AsD3D11Device()->CreateBuffer(&desc,&InitData,&vertexBuffer);
-	::operator delete [](v,memoryInterface);
-	const simul::clouds::Cloud2DGeometryHelper::QuadStripVector &quads=helper->GetQuadStrips();
-	num_indices=0;
-	for(int i=0;i<(int)quads.size();i++)
-		num_indices+=(int)quads[i].indices.size()+2;
-	num_indices+=((int)quads.size()-1)*2;
-	unsigned short *indices=new unsigned short[num_indices];
-	int n=0;
-	for(int i=0;i<(int)quads.size();i++)
-	{
-		if(i)
-			for(int j=0;j<2;j++)
-				indices[n++]=quads[i].indices[j];
-		for(int j=0;j<(int)quads[i].indices.size();j++)
-			indices[n++]=quads[i].indices[j];
-	}
-	// index buffer
-	D3D11_BUFFER_DESC indexBufferDesc=
-	{
-        num_indices*sizeof(unsigned short),
-        D3D11_USAGE_IMMUTABLE,
-        D3D11_BIND_INDEX_BUFFER,
-        0,
-        0
-	};
-    ZeroMemory(&InitData,sizeof(D3D11_SUBRESOURCE_DATA));
-    InitData.pSysMem		=indices;
-    InitData.SysMemPitch	=sizeof(unsigned short);
-	SAFE_RELEASE(indexBuffer);
-	renderPlatform->AsD3D11Device()->CreateBuffer(&indexBufferDesc,&InitData,&indexBuffer);
-	delete [] indices;
-
-	SAFE_DELETE(coverage);
-	coverage=renderPlatform->CreateTexture();
-
-	SAFE_DELETE(detail);
-	detail=renderPlatform->CreateTexture();
-	
-	SAFE_DELETE(noise);
-	noise=renderPlatform->CreateTexture();
-
-	SAFE_DELETE(dens);
-	dens=renderPlatform->CreateTexture();
-}
-
-void Simul2DCloudRendererDX11::RecompileShaders()
-{
-	SAFE_DELETE(effect);
-	if(!renderPlatform)
-		return;
-	std::map<std::string,std::string> defines;
-	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
-	defines["USE_LIGHT_TABLES"]=UseLightTables?"1":"0";
-	effect=renderPlatform->CreateEffect("simul_clouds_2d",defines);
-	msaaTechnique	=effect->GetTechniqueByName("simul_clouds_2d_msaa");
-	technique		=effect->GetTechniqueByName("simul_clouds_2d");
-	cloud2DConstants.LinkToEffect(effect,"Cloud2DConstants");
-	detail2DConstants.LinkToEffect(effect,"Detail2DConstants");
-}
-
-void Simul2DCloudRendererDX11::RenderDetailTexture(crossplatform::DeviceContext &deviceContext)
-{
-	const simul::clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-    ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture");
-
-	int noise_texture_size		=cloudKeyframer->GetEdgeNoiseTextureSize();
-	int noise_texture_frequency	=cloudKeyframer->GetEdgeNoiseFrequency();
-	
-	noise->ensureTexture2DSizeAndFormat(renderPlatform,noise_texture_frequency,noise_texture_frequency,crossplatform::RGBA_8_UNORM,false,true);
-	noise->activateRenderTarget(deviceContext);
-	{
-		SetDetail2DCloudConstants(detail2DConstants);
-		detail2DConstants.Apply(deviceContext);
-		ID3DX11EffectTechnique *t=effect->asD3DX11Effect()->GetTechniqueByName("random");
-		t->GetPassByIndex(0)->Apply(0,pContext);
-		renderPlatform->DrawQuad(deviceContext);
-	} 
-	noise->deactivateRenderTarget();
-	dens->ensureTexture2DSizeAndFormat(renderPlatform,noise_texture_size,noise_texture_size,crossplatform::R_8_UNORM,false,true);
-	dens->activateRenderTarget(deviceContext);
-	{
-		SetDetail2DCloudConstants(detail2DConstants);
-		detail2DConstants.Apply(deviceContext);
-		effect->SetTexture(deviceContext,"imageTexture"	,noise);
-		ID3DX11EffectTechnique *t=effect->asD3DX11Effect()->GetTechniqueByName("detail_density");
-		t->GetPassByIndex(0)->Apply(0,pContext);
-		renderPlatform->DrawQuad(deviceContext);
-	}
-	dens->deactivateRenderTarget();
-	detail->ensureTexture2DSizeAndFormat(renderPlatform,noise_texture_size,noise_texture_size,crossplatform::PixelFormat::RGBA_8_UNORM,false,true);
-	detail->activateRenderTarget(deviceContext);
-	{
-		effect->SetTexture(deviceContext,"imageTexture",dens);
-		ID3DX11EffectTechnique *t=effect->asD3DX11Effect()->GetTechniqueByName("detail_lighting");
-		t->GetPassByIndex(0)->Apply(0,pContext);
-		renderPlatform->DrawQuad(deviceContext);
-	}
-	detail->deactivateRenderTarget();
-	coverage->activateRenderTarget(deviceContext);
-	{
-		effect->SetTexture(deviceContext,"noiseTexture",noise);
-		ID3DX11EffectTechnique *t=effect->asD3DX11Effect()->GetTechniqueByName("coverage");
-		t->GetPassByIndex(0)->Apply(0,pContext);
-		renderPlatform->DrawQuad(deviceContext);
-	}
-	coverage->deactivateRenderTarget();
-}
-
-void Simul2DCloudRendererDX11::InvalidateDeviceObjects()
-{
-	SAFE_DELETE(effect);
-	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(inputLayout);
-	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(indexBuffer);
-	cloud2DConstants.InvalidateDeviceObjects();
-	detail2DConstants.InvalidateDeviceObjects();
-	dens->InvalidateDeviceObjects();
-	
-	SAFE_DELETE(coverage);
-	SAFE_DELETE(detail);
-	SAFE_DELETE(noise);
-}
-
-void Simul2DCloudRendererDX11::EnsureCorrectTextureSizes()
-{
-	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
-	int width_x=i.x;
-	int length_y=i.y;
-	coverage->ensureTexture2DSizeAndFormat(renderPlatform,width_x,length_y,crossplatform::R_8_UNORM,false,true);
-	if(cloud_tex_width_x==width_x&&cloud_tex_length_y==length_y&&cloud_tex_depth_z==1)
-		return;
-	cloud_tex_width_x=width_x;
-	cloud_tex_length_y=length_y;
-	cloud_tex_depth_z=1;
-}
-
-void Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-    SIMUL_COMBINED_PROFILE_START(pContext,"Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate");
-	EnsureCorrectTextureSizes();
-	EnsureTextureCycle();
-    SIMUL_COMBINED_PROFILE_END(pContext)
-}
-
-void Simul2DCloudRendererDX11::EnsureTextureCycle()
-{
-	int cyc=(cloudKeyframer->GetTextureCycle())%3;
-	while(texture_cycle!=cyc)
-	{
-		std::swap(seq_texture_iterator[0],seq_texture_iterator[1]);
-		std::swap(seq_texture_iterator[1],seq_texture_iterator[2]);
-		texture_cycle++;
-		texture_cycle=texture_cycle%3;
-		if(texture_cycle<0)
-			texture_cycle+=3;
-	}
-}
-
-void Simul2DCloudRendererDX11::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
-{
-	EnsureTexturesAreUpToDate(deviceContext);
-	RenderDetailTexture(deviceContext);
-}
-
 
 bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,crossplatform::NearFarPass nearFarPass
 									  ,crossplatform::Texture *depthTexture,bool write_alpha
@@ -284,10 +74,9 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 		simul::dx11::setTexture(effect->asD3DX11Effect(),"depthTextureMS",depthTexture_SRV);
 	else
 		simul::dx11::setTexture(effect->asD3DX11Effect(),"depthTexture",depthTexture_SRV);
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"illuminationTexture",illuminationTexture->AsD3D11ShaderResourceView());
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"lightTableTexture",lightTableTexture->AsD3D11ShaderResourceView());
+	effect->SetTexture(deviceContext,"illuminationTexture",illuminationTexture);
+	effect->SetTexture(deviceContext,"lightTableTexture",lightTableTexture);
 	
-
 	math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view,false);
 	float ir_integration_factors[]={0,0,0,0};
 
@@ -296,95 +85,37 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	cloud2DConstants.Apply(deviceContext);
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 
-	ID3D11InputLayout* previousInputLayout;
+	//ID3D11InputLayout* previousInputLayout;
 	UINT prevOffset;
 	DXGI_FORMAT prevFormat;
 	ID3D11Buffer* pPrevBuffer;
-	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
+	//D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 
-	pContext->IAGetPrimitiveTopology(&previousTopology);
-	pContext->IAGetInputLayout(&previousInputLayout);
+	//pContext->IAGetPrimitiveTopology(&previousTopology);
+	//pContext->IAGetInputLayout(&previousInputLayout);
 	pContext->IAGetIndexBuffer(&pPrevBuffer, &prevFormat, &prevOffset);
 
-	pContext->IASetInputLayout(inputLayout);
-	SET_VERTEX_BUFFER(pContext,vertexBuffer,simul::clouds::Cloud2DGeometryHelper::Vertex);
-	pContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R16_UINT,0);					
+//	pContext->IASetInputLayout(inputLayout);
+	inputLayout->Apply(deviceContext);
+	renderPlatform->SetVertexBuffers(deviceContext,0,1,&vertexBuffer);
+	renderPlatform->SetIndexBuffer(deviceContext,indexBuffer);		
 
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-//	ApplyPass(pContext,tech->GetPassByIndex(0));
 	effect->Apply(deviceContext,tech,0);
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"DrawIndexed")
 
 	pContext->DrawIndexed(num_indices-2,0,0);
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 
-	pContext->IASetPrimitiveTopology(previousTopology);
-	pContext->IASetInputLayout(previousInputLayout);
+	///pContext->IASetPrimitiveTopology(previousTopology);
+	//pContext->IASetInputLayout(previousInputLayout);
 	pContext->IASetIndexBuffer(pPrevBuffer, prevFormat, prevOffset);
-
-	SAFE_RELEASE(previousInputLayout)
+	inputLayout->Unapply(deviceContext);
+//	SAFE_RELEASE(previousInputLayout)
 	SAFE_RELEASE(pPrevBuffer);
-	/*
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"imageTexture"			,(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"coverageTexture"		,(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"lossTexture"			,(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"inscTexture"			,(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"skylTexture"			,(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"depthTexture"			,(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"depthTextureMS"		,(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"illuminationTexture"	,(ID3D11ShaderResourceView*)NULL);*/
-	//ApplyPass(pContext,tech->GetPassByIndex(0));effect
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	return true;
-}
-
-void Simul2DCloudRendererDX11::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
-	static int u=8;
-	int w=(width-8)/u;
-	if(w>height/2)
-		w=height/2;
-	simul::clouds::CloudGridInterface *gi=GetCloudGridInterface();
-	int h=w/gi->GetGridWidth();
-	if(h<1)
-		h=1;
-	h*=gi->GetGridHeight();
-	static float mult=1.f;
-	simul::dx11::UtilityRenderer::SetScreenSize(width,height);
-	for(int i=0;i<3;i++)
-	{
-		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
-				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
-		if(!kf)
-			break;
-		simul::sky::float4 light_response(mult*kf->direct_light,mult*kf->indirect_light,mult*kf->ambient_light,0);
-	}
-	effect->SetTexture(deviceContext,"imageTexture",coverage);
-	simul::dx11::UtilityRenderer::DrawQuad2(deviceContext,(0)*(w+8)+8,height-8-w,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("simple"));
-	renderPlatform->Print(deviceContext,(0)*(w+8)+8,height-8-w,"coverage");
-	effect->SetTexture(deviceContext,"imageTexture",noise);
-	simul::dx11::UtilityRenderer::DrawQuad2(deviceContext,(1)*(w+8)+8,height-8-w,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("simple"));
-	renderPlatform->Print(deviceContext,(1)*(w+8)+8,height-8-w,"noise");
-	effect->SetTexture(deviceContext,"imageTexture",dens);
-	simul::dx11::UtilityRenderer::DrawQuad2(deviceContext,(2)*(w+8)+8,height-8-w,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("simple"));
-	renderPlatform->Print(deviceContext,(2)*(w+8)+8,height-8-w,"dens");
-	effect->SetTexture(deviceContext,"imageTexture",detail);
-	cloud2DConstants.Apply(deviceContext);
-	simul::dx11::UtilityRenderer::DrawQuad2(deviceContext,(3)*(w+8)+8,height-8-w,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_detail_texture"));
-	renderPlatform->Print(deviceContext,(3)*(w+8)+8,height-8-w,"detail");
-		
-}
-
-void Simul2DCloudRendererDX11::RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
-{
-}
-
-void Simul2DCloudRendererDX11::SetWindVelocity(float x,float y)
-{
 }
