@@ -613,7 +613,7 @@ ERRNO_CHECK
 			changes_detected=true;
 		else if(text_date_jdn>0)	// maybe some of the includes have changed?
 		{
-			if(featureLevel>=FeatureLevel::EXPERIMENTAL)
+			if(base::GetFeatureLevel()>=FeatureLevel::EXPERIMENTAL)
 			{
 				// Xbox One shader build:
 				//	/*

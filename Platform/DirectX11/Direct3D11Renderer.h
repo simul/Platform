@@ -19,8 +19,8 @@
 #include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
 #pragma warning(push)
 #pragma warning(disable:4251)
-#ifndef _XBOX_ONE
-//#define SIMUL_USE_SCENE
+#if !defined(_XBOX_ONE) && defined(SIMUL_DYNAMIC_LINK)
+#define SIMUL_USE_SCENE
 #endif
 namespace simul
 {

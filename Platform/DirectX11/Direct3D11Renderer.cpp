@@ -80,7 +80,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 	simulTerrainRenderer	=::new(memoryInterface) TerrainRenderer(memoryInterface);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 
-	if((simul::base::featureLevel&simul::base::EXPERIMENTAL)!=0)
+	if((simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
 	{
 		oceanRenderer			=new(memoryInterface) OceanRenderer(env->seaKeyframer);
 		oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
@@ -362,7 +362,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 		sceneRenderer->Render(deviceContext,physicalLightRenderData);
 	}
 #endif
-	if(oceanRenderer&&ShowWater&&(simul::base::featureLevel&simul::base::EXPERIMENTAL)!=0)
+	if(oceanRenderer&&ShowWater&&(simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
 	{
 		oceanRenderer->SetMatrices(deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 		oceanRenderer->Render(deviceContext,1.f);
