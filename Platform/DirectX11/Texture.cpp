@@ -573,6 +573,7 @@ void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceCon
 										&m_pOldDepthSurface
 										);
 	}
+	SIMUL_ASSERT(renderTargetView!=NULL);
 	last_context->OMSetRenderTargets(1,&renderTargetView,NULL);
 	{
 		ID3D11Texture2D* ppd(NULL);

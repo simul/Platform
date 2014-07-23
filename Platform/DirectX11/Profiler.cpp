@@ -338,7 +338,7 @@ const char *Profiler::GetDebugText(bool as_html) const
 	for(Profiler::ProfileMap::const_iterator i=rootMap.begin();i!=rootMap.end();i++)
 	{
 		str+=formatLine(i->second->unqualifiedName.c_str(),1,i->second->time,total,as_html);
-		str+=Walk(i->second,1,i->second->time,as_html);
+		str+=Walk(i->second,2,i->second->time,as_html);
 	}
 	str+=as_html?"<br/>":"\n";
     str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";

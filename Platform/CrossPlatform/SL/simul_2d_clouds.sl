@@ -152,7 +152,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
     vec4 coverage			=texture_wrap(coverageTexture,texc_global);
 	
     vec4 detail				=texture_wrap(imageTexture,texc_detail+.2*noise.xy);
-	float opacity			=saturate(detail.a*2.0*Y(coverage));//+2.0*Y(coverage)-1.0);
+	float opacity			=saturate(detail.a*2.0*(coverage.x));//+2.0*Y(coverage)-1.0);
 	if(opacity<=0)
 		discard;
 	vec3 view	=normalize(wEyeToPos);

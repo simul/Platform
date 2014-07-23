@@ -118,7 +118,6 @@ namespace simul
 				}
 			}
 		}
-
 		const float *GetCameraPosVector(const float *v,bool y_vertical)
 		{
 			D3DXMATRIX view(v);

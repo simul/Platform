@@ -1,8 +1,7 @@
 #ifndef SIMUL_2D_CLOUDS_HS
 #define SIMUL_2D_CLOUDS_HS
 
-uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
-{
+SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform mat4 worldViewProj;
 	uniform vec3 origin;
@@ -40,10 +39,9 @@ uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
 	uniform float agagaegehrs;
 	uniform vec3 cloudIrRadiance;
 	uniform float exposure;
-};
+SIMUL_CONSTANT_BUFFER_END
 
-uniform_buffer Detail2DConstants SIMUL_BUFFER_REGISTER(12)
-{
+SIMUL_CONSTANT_BUFFER(Detail2DConstants,12)
 	uniform float persistence;
 	uniform int octaves;
 	uniform float amplitude;
@@ -60,12 +58,11 @@ uniform_buffer Detail2DConstants SIMUL_BUFFER_REGISTER(12)
 
 	uniform float phase;
 	uniform float detailTextureSize,bbbbbbbb,cccccc;
-};
+SIMUL_CONSTANT_BUFFER_END
 
-uniform_buffer CloudCrossSection2DConstants SIMUL_BUFFER_REGISTER(13)
-{
+SIMUL_CONSTANT_BUFFER(CloudCrossSection2DConstants,13)
 	uniform vec4 rect;
-};
+SIMUL_CONSTANT_BUFFER_END
 
 #ifndef __cplusplus
 #endif

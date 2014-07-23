@@ -50,22 +50,21 @@ namespace simul
 			void EnsureCorrectIlluminationTextureSizes(){}
 			void EnsureIlluminationTexturesAreUpToDate(){}
 			void CreateNoiseTexture(crossplatform::DeviceContext &deviceContext){}
-			ID3D11Device*				m_pd3dDevice;
-			ID3DX11Effect*				effect;
-			ID3DX11EffectTechnique*		msaaTechnique;
-			ID3DX11EffectTechnique*		technique;
+			crossplatform::Effect*		effect;
+			crossplatform::EffectTechnique*		msaaTechnique;
+			crossplatform::EffectTechnique*		technique;
 			ID3D11Buffer*				vertexBuffer;
 			ID3D11Buffer*				indexBuffer;
 			ID3D11InputLayout*			inputLayout;
 			
-			ConstantBuffer<Cloud2DConstants>	cloud2DConstants;
-			ConstantBuffer<Detail2DConstants>	detail2DConstants;
+			crossplatform::ConstantBuffer<Cloud2DConstants>	cloud2DConstants;
+			crossplatform::ConstantBuffer<Detail2DConstants>	detail2DConstants;
 			int num_indices;
 
-			simul::dx11::Framebuffer	coverage_fb;
-			simul::dx11::Framebuffer	detail_fb;
-			simul::dx11::Framebuffer	noise_fb;
-			simul::dx11::Framebuffer	dens_fb;
+			simul::crossplatform::Texture *coverage;
+			simul::crossplatform::Texture *detail;
+			simul::crossplatform::Texture *noise;
+			simul::crossplatform::Texture *dens;
 		};
 	}
 }

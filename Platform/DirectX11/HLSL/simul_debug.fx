@@ -88,10 +88,10 @@ float4 DebugPS(v2f IN) : SV_TARGET
     return IN.colour;
 }
 
-vec4 TexturedPS(posTexVertexOutput IN) : SV_TARGET
+vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 res=multiplier*texture_nearest_lod(imageTexture,IN.texCoords.xy,0);
-	res.r=res.a;
+	//res.r=res.a;
 	return res;
 }
 
@@ -110,7 +110,7 @@ vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 //	res.xy+=IN.texCoords.xy;
 	return vec4(res,1.0);
 }
-vec4 TexturedMSPS(posTexVertexOutput IN) : SV_TARGET
+vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
 {
 	uint2 dims;
 	uint numSamples;
@@ -282,7 +282,7 @@ technique11 textured
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
-		SetPixelShader(CompileShader(ps_4_0,TexturedPS()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
     }
 }
 
@@ -295,7 +295,7 @@ technique11 texturedMS
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
-		SetPixelShader(CompileShader(ps_5_0,TexturedMSPS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureMS()));
     }
 }
 

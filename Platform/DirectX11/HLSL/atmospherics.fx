@@ -77,11 +77,11 @@ uint2 PS_LossComposite(atmosVertexOutput IN) : SV_TARGET
 	LossComposite(farLoss,nearLoss,depthTexture
 					,viewportToTexRegionScaleBias
 					,lossTexture
-						,invViewProj
-						,IN.texCoords
-						,IN.pos
-							,depthToLinFadeDistParams
-							,tanHalfFov);
+					,invViewProj
+					,IN.texCoords
+					,IN.pos
+					,depthToLinFadeDistParams
+					,tanHalfFov);
 	uint faru		=colour3_to_uint(farLoss);
 	uint nearu		=colour3_to_uint(nearLoss);
     return uint2(faru,nearu);
