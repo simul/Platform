@@ -12,6 +12,7 @@
 #include "Simul/Platform/DirectX11/Layout.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Math/Matrix4x4.h"
