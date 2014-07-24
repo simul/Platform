@@ -9,15 +9,19 @@
 #include <direct.h>
 #include <cerrno>
 
+typedef void (__stdcall *DebugOutputCallback)(const char *);
+
 class VisualStudioDebugOutput : public simul::base::BufferedStringStreamBuf
 {
 public:
     VisualStudioDebugOutput(bool send_to_output_window=true,
-							const char *logfilename=NULL,size_t bufsize=(size_t)16)
+							const char *logfilename=NULL,size_t bufsize=(size_t)16
+							,DebugOutputCallback c=NULL)
 		:simul::base::BufferedStringStreamBuf((int)bufsize)
 		,old_cout_buffer(NULL)
 		,old_cerr_buffer(NULL)
 		,to_logfile(false)
+		,callback(c)
 	{
 	ERRNO_CHECK
 		//if(errno!=0)
@@ -61,10 +65,18 @@ public:
 		if(logFile.good())
 			to_logfile=true;
 	}
+	void setCallback(DebugOutputCallback c)
+	{
+		callback=c;
+	}
     virtual void writeString(const std::string &str)
     {
 		if(to_logfile)
 			logFile<<str.c_str()<<std::endl;
+		if(callback)
+		{
+			callback(str.c_str());
+		}
 		if(to_output_window)
 		{
 #ifdef UNICODE
@@ -76,7 +88,6 @@ public:
 	        OutputDebugString(str.c_str());
 #endif
 		}
-
     }
 protected:
 	std::ofstream logFile;
@@ -84,4 +95,5 @@ protected:
 	bool to_logfile;
 	std::streambuf *old_cout_buffer;
 	std::streambuf *old_cerr_buffer;
+	DebugOutputCallback callback;
 };
