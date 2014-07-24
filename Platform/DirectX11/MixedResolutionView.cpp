@@ -94,21 +94,13 @@ void MixedResolutionView::ResolveFramebuffer(crossplatform::DeviceContext &devic
 
 void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
 {
-	int w		=lowResDepthTexture.width*4;
-	int l		=lowResDepthTexture.length*4;
-	if(w>dx/2)
-	{
-		l*=dx/2;
-		l/=w;
-		w=dx/2;
-		dy=(dx*l)/w;
-	}
+//	int w		=lowResDepthTexture.width;
+	int w=dx/2;
+	int l		=(lowResDepthTexture.length*w)/lowResDepthTexture.width;
 	if(l>dy/2)
 	{
-		w*=dy/2;
-		w/=l;
 		l=dy/2;
-		dx=(dy*w)/l;
+		w		=(lowResDepthTexture.width*l)/lowResDepthTexture.length;
 	}
 	static bool enable=true;
 	if(enable)

@@ -118,7 +118,9 @@ void TwoResFramebuffer::ActivateHiRes(crossplatform::DeviceContext &deviceContex
 		GetHiResNearFramebuffer()->CreateBuffers();
 	crossplatform::Texture * targs[]={GetHiResFarFramebuffer()->GetTexture(),GetHiResNearFramebuffer()->GetTexture()};
 	renderPlatform->ActivateRenderTargets(deviceContext,2,targs,NULL);
-	crossplatform::Viewport v[]={{0,0,Width/ds2,Height/ds2,0,1.f},{0,0,Width/ds2,Height/ds2,0,1.f}};
+	int w=GetHiResFarFramebuffer()->Width
+		,h=GetHiResFarFramebuffer()->Height;
+	crossplatform::Viewport v[]={{0,0,w,h,0,1.f},{0,0,w,h,0,1.f}};
 	renderPlatform->SetViewports(deviceContext,2,v);
 }
 
@@ -149,7 +151,9 @@ void TwoResFramebuffer::ActivateLowRes(crossplatform::DeviceContext &deviceConte
 	crossplatform::Texture * targs[]={GetLowResFarFramebuffer()->GetTexture(),GetLowResNearFramebuffer()->GetTexture()};
 	crossplatform::Texture * depth=GetLowResFarFramebuffer()->GetDepthTexture();
 	renderPlatform->ActivateRenderTargets(deviceContext,2,targs,depth);
-	crossplatform::Viewport v[]={{0,0,Width/Downscale,Height/Downscale,0,1.f},{0,0,Width/Downscale,Height/Downscale,0,1.f}};
+	int w=GetLowResFarFramebuffer()->Width
+		,h=GetLowResFarFramebuffer()->Height;
+	crossplatform::Viewport v[]={{0,0,w,h,0,1.f},{0,0,w,h,0,1.f}};
 	renderPlatform->SetViewports(deviceContext,2,v);
 }
 

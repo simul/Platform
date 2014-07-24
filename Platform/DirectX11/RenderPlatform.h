@@ -121,7 +121,6 @@ namespace simul
 			UINT m_SampleMaskStored11;
 			float m_BlendFactorStored11[4];
 			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *tex,float mult);
-			void EnsureEffectIsBuilt(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &opts,const std::map<std::string,std::string> &defines);
 		};
 	}
 }

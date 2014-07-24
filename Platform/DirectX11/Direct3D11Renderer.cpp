@@ -176,7 +176,7 @@ void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
 	MixedResolutionView *view			=viewManager.GetView(view_id);
 	if(!view)
 		return;
-	static bool lockx=true,locky=true,force_2560=false;
+	static bool lockx=false,locky=false,force_2560=false;
 	static int magnify=1;
 	// Must have a whole number of full-res pixels per low-res pixel.
 	int W=view->GetScreenWidth(),H=view->GetScreenHeight();

@@ -1,4 +1,5 @@
 #include "RenderPlatform.h"
+#include "Simul/Base/EnvironmentVariables.h"
 #include "Effect.h"
 
 using namespace simul;
@@ -34,7 +35,9 @@ Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &opts)
 {
 	const std::map<std::string,std::string> defines;
-	EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
+	static bool enabled=true;
+	if(enabled&&simul::base::GetFeatureLevel()>=base::EXPERIMENTAL)
+		EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
 }
 
 #include "Simul/Camera/Camera.h"

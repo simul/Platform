@@ -79,6 +79,7 @@ vec4 DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,uint2 source_di
 #else
 	vec2 farthest_nearest		=vec2(0.0,1.0);
 #endif
+	pos2=min(pos2,source_dims-uint2(3,3));
 	for(int i=0;i<4;i++)
 	{
 		int2 hires_pos		=pos2+int2(i-1,-1);
@@ -226,13 +227,16 @@ vec4 DownscaleFarNearEdge(Texture2D<float4> sourceDepthTexture,uint2 source_dims
 	vec2 farthest_nearest		=vec2(0.0,1.0);
 #endif
 	vec4 res=vec4(0,0,0,0);
+	uint2 maxpos=source_dims.xy-uint2(1,1);
 	for(uint i=0;i<scale.x;i++)
 	{
 		for(uint j=0;j<scale.y;j++)
 		{
-			uint2 hires_pos		=pos2+uint2(i,j);
-			//if(hires_pos.x>=source_dims.x||hires_pos.y>=source_dims.y)
-				//continue;
+			uint2 hires_pos		=uint2(pos2.x+i,pos2.y+j);
+			// MUST do this in case we go slightly over the edge:
+			hires_pos.xy		=min(hires_pos.xy,maxpos);
+		//	if(hires_pos.x>=source_dims.x||hires_pos.y>=source_dims.y)
+		//		continue;
 			vec2 d				=sourceDepthTexture[hires_pos].xy;
 #if REVERSE_DEPTH==1
 				if(d.y>farthest_nearest.y)
