@@ -205,21 +205,21 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	// The downscaled size should be enough to fit in at least s hi-res pixels in every larger pixel
 	int w=(FullWidth+s-1)/s;
 	int h=(FullHeight+s-1)/s;
-	view->GetLowResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,crossplatform::RGBA_16_FLOAT,/*computable=*/true,/*rendertarget=*/false);
-	view->GetLowResScratchTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,crossplatform::RGBA_16_FLOAT,/*computable=*/true,/*rendertarget=*/false);
+	view->GetLowResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/false);
+	view->GetLowResScratchTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/false);
 	bool msaa=(depthTexture->GetSampleCount()>0);
 	
 	static bool spread=false;
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups.
 	static bool use_rt=true;
 	{
-		view->GetHiResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,/*computable=*/true,/*rendertarget=*/true);
-		view->GetHiResScratchTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,/*computable=*/true,/*rendertarget=*/true);
+		view->GetHiResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/true);
+		view->GetHiResScratchTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/true);
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Hi-res Depth")
 		mixedResolutionConstants.scale						=uint2(ds2,ds2);
-		mixedResolutionConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
-		mixedResolutionConstants.nearZ		=0;
-		mixedResolutionConstants.farZ		=0;
+		mixedResolutionConstants.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+		mixedResolutionConstants.nearZ						=0;
+		mixedResolutionConstants.farZ						=0;
 		mixedResolutionConstants.source_dims				=uint2(depthTexture->GetWidth(),depthTexture->GetLength());
 		mixedResolutionConstants.target_dims				=uint2(W,H);
 		mixedResolutionConstants.Apply(deviceContext);
