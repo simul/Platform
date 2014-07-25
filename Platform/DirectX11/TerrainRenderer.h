@@ -51,6 +51,7 @@ namespace simul
 			simul::dx11::ArrayTexture			arrayTexture;
 			crossplatform::ConstantBuffer<TerrainConstants>	terrainConstants;
 			int numVertices;
+	dx11::Texture *grass;
 		};
 	}
 }

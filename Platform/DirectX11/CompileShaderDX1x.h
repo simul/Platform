@@ -4,7 +4,7 @@
 #ifdef _XBOX_ONE
 #include <D3Dcompiler_x.h>
 #else
-#ifdef SIMUL_WIN8_SDK
+#if defined(SIMUL_WIN8_SDK) && defined(WIN64)
 #include <D3Dcompiler_xdk.h>
 #else
 #include <D3Dcompiler.h>

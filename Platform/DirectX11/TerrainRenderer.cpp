@@ -44,6 +44,7 @@ TerrainRenderer::TerrainRenderer(simul::base::MemoryInterface *m)
 	,m_pVtxDecl(NULL)
 	,m_pTechnique(NULL)
 	,numVertices(0)
+	,grass(NULL)
 {
 }
 
@@ -119,6 +120,7 @@ void TerrainRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_DELETE(effect);
 	SAFE_RELEASE(m_pVtxDecl);
+	SAFE_DELETE(grass);
 	arrayTexture.release();
 	terrainConstants.InvalidateDeviceObjects();
 }
@@ -185,7 +187,6 @@ void TerrainRenderer::MakeVertexBuffer()
 
 void TerrainRenderer::Test(simul::crossplatform::DeviceContext &deviceContext)
 {
-	static dx11::Texture *grass=NULL;
 	if(!grass)
 	{
 		grass=(dx11::Texture*)renderPlatform->CreateTexture("grass_02_fullres.png");
@@ -260,4 +261,5 @@ ERRNO_CHECK
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(pContext,m_pTechnique->asD3DX11EffectTechnique()->GetPassByIndex(0));
 	SIMUL_COMBINED_PROFILE_END(pContext)
+	//Test(deviceContext);
 }
