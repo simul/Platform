@@ -357,7 +357,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	{
 		crossplatform::PhysicalLightRenderData physicalLightRenderData;
 		physicalLightRenderData.diffuseCubemap=envmapFramebuffer.GetTexture();
-		physicalLightRenderData.lightColour=simulWeatherRenderer->GetSkyKeyframer()->GetLocalIrradiance(0.0f);
+		physicalLightRenderData.lightColour=simulWeatherRenderer->GetSkyKeyframer()->GetLocalSunIrradiance(simulWeatherRenderer->GetSkyKeyframer()->GetTime(),0.f);//GetLocalIrradiance(0.0f);
 		physicalLightRenderData.dirToLight=simulWeatherRenderer->GetSkyKeyframer()->GetDirectionToLight(0.0f);
 		sceneRenderer->Render(deviceContext,physicalLightRenderData);
 	}

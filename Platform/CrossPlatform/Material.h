@@ -3,6 +3,7 @@
 #include <map>
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -28,8 +29,11 @@ namespace simul
 		public:
 			Material();
 			virtual ~Material();
+			void SetEffect(crossplatform::Effect *e);
+			crossplatform::Effect *GetEffect();
+			void InvalidateDeviceObjects();
 			bool HasTexture() const { return mDiffuse.mTextureName != 0; }
-			virtual void Apply(crossplatform::DeviceContext &,PhysicalLightRenderData &) const=0;
+			virtual void Apply(crossplatform::DeviceContext &,PhysicalLightRenderData &)=0;
 			struct ColorChannel
 			{
 				ColorChannel() : mTextureName(0)
@@ -47,6 +51,7 @@ namespace simul
 			ColorChannel mDiffuse;
 			ColorChannel mSpecular;
 			float mShininess;
+		protected:
 			crossplatform::Effect *effect;
 		};
 	}

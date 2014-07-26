@@ -171,7 +171,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	vec2 nearFarTexc		=illum_lookup.xy;
 
 	float visible_light		=1;//saturate((fade_texc.x-nearFarTexc.x)/0.1);
-	
+	//nearFarTexc.y=1.0;
 	vec2 near_texc			=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc			=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 	vec4 insc_far			=texture_clamp_mirror(inscTexture,far_texc);
@@ -188,6 +188,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	vec4 skyl_lookup		=texture_cmc_lod(skylTexture,fade_texc,0);
 	colour.rgb				+=skyl_lookup.rgb;
 //colour.rgb=.05*insc.rgb;
+//	colour.rgb=insc_far.rgb;
 	return colour;
 }
 

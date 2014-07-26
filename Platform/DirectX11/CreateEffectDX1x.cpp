@@ -199,7 +199,7 @@ ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
 	ZeroMemory(&loadInfo,sizeof(D3DX11_IMAGE_LOAD_INFO));
 	loadInfo.BindFlags	=D3D11_BIND_SHADER_RESOURCE;
-	loadInfo.Format		=DXGI_FORMAT_R8G8B8A8_UNORM;
+	loadInfo.Format		=DXGI_FORMAT_FROM_FILE;
 	loadInfo.MipLevels=0;
 	HRESULT hr			=D3DX11CreateShaderResourceViewFromFileW(
 									pd3dDevice,

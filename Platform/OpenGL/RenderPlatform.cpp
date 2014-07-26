@@ -426,7 +426,7 @@ void MakeWorldViewProjMatrix(float *wvp,const double *w,const float *v,const flo
 	simul::math::Multiply4x4(*(simul::math::Matrix4x4*)wvp,tmp1,proj);
 }
 
-void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *m)
+void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *m,const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
 {
 	simul::math::Matrix4x4 proj;
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));

@@ -152,7 +152,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
-		mat->effect=solidEffect;
 		delete mat;
 	}
 	materials.clear();
@@ -186,7 +185,7 @@ void RenderPlatform::RecompileShaders()
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
-		mat->effect=solidEffect;
+		mat->SetEffect(solidEffect);
 	}
 	textRenderer.RecompileShaders();
 }
@@ -435,7 +434,7 @@ void MakeWorldViewProjMatrix(float *wvp,const double *w,const float *v,const flo
 	simul::math::Multiply4x4(*(simul::math::Matrix4x4*)wvp,tmp1,proj);
 }
 
-void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *m)
+void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *m,const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
 {
 	simul::math::Matrix4x4 wvp;
 	simul::math::Matrix4x4 viewproj;
@@ -443,17 +442,24 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	simul::math::Multiply4x4(viewproj,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	simul::math::Matrix4x4 model(m);
 	simul::math::Multiply4x4(modelviewproj,model,viewproj);
+	//math::Vector3 dirToLight;
+	//simul::math::Multiply3(dirToLight,(const float*)&physicalLightRenderData.dirToLight,model);
 	solidConstants.worldViewProj=modelviewproj;
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
+	solidConstants.world=model;
+	
+	solidConstants.lightIrradiance	=physicalLightRenderData.lightColour;
+	solidConstants.lightDir			=physicalLightRenderData.dirToLight;
 	solidConstants.Apply(deviceContext);
-
+	solidConstants.Apply(deviceContext);
+	
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	solidEffect->asD3DX11Effect()->GetTechniqueByName("solid")->GetPassByIndex(0)->Apply(0,pContext);
 }
 
 crossplatform::Material *RenderPlatform::CreateMaterial()
 {
 	dx11::Material *mat=new dx11::Material;
-	mat->effect=solidEffect;
+	mat->SetEffect(solidEffect);
 	materials.insert(mat);
 	return mat;
 }

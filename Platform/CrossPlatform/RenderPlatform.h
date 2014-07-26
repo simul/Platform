@@ -35,6 +35,7 @@ namespace simul
 		class Layout;
 		struct DeviceContext;
 		struct LayoutDesc;
+		struct PhysicalLightRenderData;
 		/// A crossplatform viewport structure.
 		struct Viewport
 		{
@@ -91,7 +92,7 @@ namespace simul
 			virtual void Draw2dLines		(DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)		=0;
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false)		=0;
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0)		=0;
-			virtual void					SetModelMatrix					(crossplatform::DeviceContext &deviceContext,const double *mat)	=0;
+			virtual void					SetModelMatrix					(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData)	=0;
 			virtual void					ApplyDefaultMaterial			()	=0;
 			/// Create a platform-specific material instance.
 			virtual Material				*CreateMaterial					()	=0;
@@ -131,6 +132,7 @@ namespace simul
 			/// Called to restore the render state previously stored with StoreRenderState. There must be exactly one call of RestoreRenderState
 			/// for each StoreRenderState call, and they are not expected to be nested.
 			virtual void					RestoreRenderState(crossplatform::DeviceContext &deviceContext)=0;
+		protected:
 		private:
 			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};
