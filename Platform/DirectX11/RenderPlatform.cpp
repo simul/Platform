@@ -18,6 +18,11 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Camera/Camera.h"
 #include "D3dx11effect.h"
+#ifdef _XBOX_ONE
+#include <D3Dcompiler_x.h>
+#else
+#include <D3Dcompiler.h>
+#endif
 
 using namespace simul;
 using namespace dx11;
@@ -1138,7 +1143,7 @@ void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 	SAFE_RELEASE(previousInputLayout);
 }
 
-void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,float offsetx,float offsety)
+void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *cubemap,float offsetx,float offsety,float exposure,float gamma)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	unsigned int num_v=0;
@@ -1180,7 +1185,7 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3
 	//ID3DX11EffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
 	ID3DX11EffectTechnique*				tech		=m_pDebugEffect->asD3DX11Effect()->GetTechniqueByName("draw_cubemap_sphere");
 	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pDebugEffect->asD3DX11Effect()->GetVariableByName("cubeTexture")->AsShaderResource();
-	cubeTexture->SetResource(m_pCubeEnvMapSRV);
+	cubeTexture->SetResource(cubemap->AsD3D11ShaderResourceView());
 	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));
 	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"latitudes",16);
 	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"longitudes",32);

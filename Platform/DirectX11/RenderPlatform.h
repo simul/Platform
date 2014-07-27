@@ -76,6 +76,8 @@ namespace simul
 			void DrawLines		(crossplatform::DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false,bool test_depth=false);
 			void Draw2dLines	(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip);
 			void DrawCircle		(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false);
+			void DrawCube		(crossplatform::DeviceContext &deviceContext);
+			void DrawCubemap	(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *cubemap,float offsetx,float offsety,float exposure,float gamma);
 			void PrintAt3dPos	(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 
 			void ApplyDefaultMaterial();
@@ -97,10 +99,6 @@ namespace simul
 
 			void StoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void RestoreRenderState(crossplatform::DeviceContext &deviceContext);
-
-			// To be taken cross-platform
-			void DrawCube(crossplatform::DeviceContext &deviceContext);
-			void DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,float offsetx,float offsety);
 
 			crossplatform::Effect *solidEffect;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
