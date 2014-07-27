@@ -170,7 +170,8 @@ void MixedResolutionRenderer::RecompileShaders()
 	mixedResolutionConstants.LinkToEffect(depthReverseEffect,"MixedResolutionConstants");
 }
 #pragma optimize("",off)
-void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec4 depthToLinFadeDistParams)
+void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s
+											 ,vec4 depthToLinFadeDistParams,bool includeLowResDepth)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	SIMUL_COMBINED_PROFILE_START(pContext,"DownscaleDepth")
@@ -376,10 +377,11 @@ void MixedResolutionViewManager::Clear()
 	views.clear();
 }
 
-void MixedResolutionViewManager::DownscaleDepth(crossplatform::DeviceContext &deviceContext,int s,float max_dist_metres)
+void MixedResolutionViewManager::DownscaleDepth(crossplatform::DeviceContext &deviceContext,int s,float max_dist_metres,bool includeLowRes)
 {
 	MixedResolutionView *view=GetView(deviceContext.viewStruct.view_id);
-	mixedResolutionRenderer.DownscaleDepth(deviceContext,view,s,(const float *)simul::camera::GetDepthToDistanceParameters(deviceContext.viewStruct,max_dist_metres));
+	mixedResolutionRenderer.DownscaleDepth(deviceContext,view,s
+		,(const float *)simul::camera::GetDepthToDistanceParameters(deviceContext.viewStruct,max_dist_metres),includeLowRes);
 }
 
 void MixedResolutionViewManager::RecompileShaders()

@@ -116,15 +116,26 @@ namespace simul
 				int last_child_updated;
 				int child_index;
 			};
+			void SetMaxLevel(int m)
+			{
+				max_level=m;
+			}
+			int GetMaxLevel() const
+			{
+				return max_level;
+			}
 		protected:
 			ProfileMap profileMap;
 			ProfileMap rootMap;
+			int max_level;				// Maximum level of nesting.
+			int level;
 			UINT64 currFrame;
 
 			ID3D11Device* device;
 
 			simul::base::Timer timer;
 			float queryTime;
+std::string Walk(Profiler::ProfileData *p,int tab,float parent_time,bool as_html) const;
 		};
 
 		class ProfileBlock

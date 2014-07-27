@@ -171,8 +171,9 @@ namespace simul
 			/// \param [in,out]	deviceContext   	Cross-platform deviceContext.
 			/// \param [in,out]	view				The view.
 			/// \param	s							The downscale factor.
-			/// \param	depthToLinFadeDistParams	Options for controlling the depth to lin fade distance.
-			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec4 depthToLinFadeDistParams);
+			/// \param	depthToLinFadeDistParams	Options for controlling the depth to linear fade distance conversion.
+			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec4 depthToLinFadeDistParams
+								,bool includeLowResDepth);
 		protected:
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;
@@ -180,7 +181,7 @@ namespace simul
 			crossplatform::Effect						*depthForwardEffect;
 			/// The depth reverse effect.
 			crossplatform::Effect						*depthReverseEffect;
-			/// The mixed resolution constants.
+			/// The constant buffer for the shader effect.
 			crossplatform::ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
 		};
 
@@ -208,7 +209,7 @@ namespace simul
 			/// \param [in,out]	deviceContext	Cross-platform deviceContext.
 			/// \param	s					 	The downscale factor.
 			/// \param	max_dist_metres		 	The maximum distance in metres.
-			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext,int s,float max_dist_metres);
+			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext,int s,float max_dist_metres,bool includeLowResDepth);
 
 			/// Gets a view.
 			///

@@ -36,7 +36,7 @@ Profiler &Profiler::GetGlobalProfiler()
 {
 	return GlobalProfiler;
 }
-Profiler::Profiler():pUserDefinedAnnotation(NULL)
+Profiler::Profiler():pUserDefinedAnnotation(NULL),max_level(12)
 {
 
 }
@@ -78,6 +78,7 @@ ID3D11Query *CreateQuery(ID3D11Device* device,D3D11_QUERY_DESC &desc,const char 
 }
 void Profiler::StartFrame(void* ctx)
 {
+	level=0;
 #ifdef SIMUL_WIN8_SDK
 	if(enabled)
 	{
@@ -93,6 +94,9 @@ void Profiler::StartFrame(void* ctx)
 }
 void Profiler::Begin(void *ctx,const char *name)
 {
+	level++;
+	if(level>max_level)
+		return;
 	IUnknown *unknown=(IUnknown *)ctx;
 	ID3D11DeviceContext *context=(ID3D11DeviceContext*)ctx;
 	std::string parent;
@@ -181,6 +185,9 @@ void Profiler::Begin(void *ctx,const char *name)
 
 void Profiler::End()
 {
+	level--;
+	if(level>=max_level)
+		return;
 	std::string name		=last_name.back();
 	last_name.pop_back();
 	ID3D11DeviceContext *context=last_context.back();
@@ -221,6 +228,7 @@ template<typename T> inline std::string ToString(const T& val)
 
 void Profiler::EndFrame(void* c)
 {
+	SIMUL_ASSERT(level==0)
 #ifdef SIMUL_WIN8_SDK
 	SAFE_RELEASE(pUserDefinedAnnotation);
 #endif
@@ -312,8 +320,10 @@ static string formatLine(const char *name,int tab,float number,float parent,bool
 	return str;
 }
 
-std::string Walk(Profiler::ProfileData *p,int tab,float parent_time,bool as_html)
+std::string Profiler::Walk(Profiler::ProfileData *p,int tab,float parent_time,bool as_html) const
 {
+	if(tab>=max_level)
+		return "";
 	if(p->children.size()==0)
 		return "";
 	std::string str;

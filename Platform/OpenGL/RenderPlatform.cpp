@@ -710,7 +710,7 @@ void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,Vertext *lines,
 	glPopAttrib();
 }
 
-void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
+void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
 	::PrintAt3dPos(p,text,colr,offsetx,offsety);
 }

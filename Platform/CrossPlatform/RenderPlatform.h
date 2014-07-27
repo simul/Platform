@@ -116,13 +116,14 @@ namespace simul
 			virtual Buffer					*CreateBuffer					()	=0;
 			/// Create a platform-specific layout instance based on the given layout description \em layoutDesc and buffer \em buffer.
 			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *layoutDesc,Buffer *buffer)	=0;
+			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers)=0;
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
 			virtual void					SetViewports(DeviceContext &deviceContext,int num,Viewport *vps)=0;
 
-			/// Activate the specifided index buffer in preparation for rendering.
+			/// Activate the specified index buffer in preparation for rendering.
 			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer)=0;
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
