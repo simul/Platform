@@ -388,7 +388,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	if(simulWeatherRenderer)
 	{
 		int s=simulWeatherRenderer->GetDownscale();
-		viewManager.DownscaleDepth(deviceContext,s,simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetMaxDistanceKm()*1000.0f);
+		viewManager.DownscaleDepth(deviceContext,s,simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetMaxDistanceKm()*1000.0f,true);
 	
 		crossplatform::Texture* skyBufferDepthTex = (UseSkyBuffer)? &view->lowResDepthTexture : &view->hiResDepthTexture;
 	
@@ -578,19 +578,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		pContext->ClearRenderTargetView(mainRenderTarget,clearColor);
 		pContext->ClearDepthStencilView(mainDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,ReverseDepth?0.f:1.f, 0);
 	}
-	RenderScene(deviceContext,simulWeatherRenderer,hdr?1.f:cameraViewStruct.exposure,hdr?1.f:cameraViewStruct.gamma);
+	float exposure	=hdr?1.f:cameraViewStruct.exposure;
+	float gamma		=hdr?1.f:cameraViewStruct.gamma;
+	RenderScene(deviceContext,simulWeatherRenderer,exposure,gamma);
 	if(simulWeatherRenderer&&AllOsds)
 	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
-	}
-	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid()&&AllOsds)
-	{
-		static float x=0.35f,y=0.4f;
-		renderPlatformDx11.DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)cubemapFramebuffer.GetColorTex(),-0.7f,0.7f);
-		renderPlatformDx11.DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)cubemapFramebuffer.GetColorTex(),-x,y);
-		//UtilityRenderer::DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)cubemapFramebuffer.GetColorTex(),-0.4f,0.45f);
-		renderPlatformDx11.DrawCubemap(deviceContext,(ID3D11ShaderResourceView*)envmapFramebuffer.GetColorTex(),x,y);
 	}
 	if(hdr)
 	{
@@ -598,6 +592,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		view->ResolveFramebuffer(deviceContext);
 		if(simulHDRRenderer)
 			simulHDRRenderer->Render(deviceContext,view->GetResolvedHDRBuffer(),cameraViewStruct.exposure,cameraViewStruct.gamma);
+	}
+	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid()&&AllOsds)
+	{
+		static float x=0.35f,y=0.4f;
+		renderPlatformDx11.DrawCubemap(deviceContext,cubemapFramebuffer.GetTexture(),-0.7f	,0.7f	,cameraViewStruct.exposure,cameraViewStruct.gamma);
+		renderPlatformDx11.DrawCubemap(deviceContext,cubemapFramebuffer.GetTexture(),-x		,y		,cameraViewStruct.exposure,cameraViewStruct.gamma);
+		renderPlatformDx11.DrawCubemap(deviceContext,envmapFramebuffer.GetTexture()	,x		,y		,cameraViewStruct.exposure,cameraViewStruct.gamma);
 	}
 	SIMUL_COMBINED_PROFILE_START(pContext,"Overlays")
 	if(simulWeatherRenderer&&AllOsds)
