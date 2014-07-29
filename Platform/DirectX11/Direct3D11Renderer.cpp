@@ -564,6 +564,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		if(simulWeatherRenderer)
 			simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer.GetTexture());
 	}
+	else
+	{
+		if(oceanRenderer)
+			oceanRenderer->SetCubemapTexture(NULL);
+		if(simulWeatherRenderer)
+			simulWeatherRenderer->SetCubemapTexture(NULL);
+	}
 	if(hdr)
 	{
 		view->GetFramebuffer()->SetAntialiasing(Antialiasing);

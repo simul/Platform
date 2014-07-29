@@ -292,6 +292,19 @@ vec4 PS_SnowParticles(particleGeometryOutput IN): SV_TARGET
 	return vec4(result.rgb,opacity);
 }
 
+vec4 PS_SnowParticles_NoCubemap(particleGeometryOutput IN): SV_TARGET
+{
+	vec4 result		=IN.brightness*vec4(lightColour.rgb,1.0);
+	vec2 pos		=IN.texCoords*2.0-1.0;
+	float radius	=length(pos.xy);
+	float angle		=atan2(pos.x,pos.y);
+	//float spoke	=fract(angle/pi*3.0)-0.5;
+	float opacity	=IN.fade*saturate(1.0-radius);//-spoke*spoke);
+	
+	//return vec4(1,0,1,opacity);
+	return vec4(result.rgb,opacity);
+}
+
 rainVertexOutput VS_FullScreen(idOnly IN)
 {
 	rainVertexOutput OUT;
@@ -768,9 +781,42 @@ vec4 PS_RainParticles(PSSceneIn IN) : SV_Target
 	return vec4(texel.rgb,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
 
+
+vec4 PS_RainParticles_NoCubemap(PSSceneIn IN) : SV_Target
+{
+	vec3 light			=lightColour.rgb;
+	vec4 texel			=.5*rainTextureArray.Sample(samAniso,vec3(IN.texCoords,IN.type));
+	//directional lighting---------------------------------------------------------------------------------
+	vec4 directionalLight	=vec4(1,1,1,1);
+	//rainResponse(IN, IN.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*IN.random, float3(1.0,1.0,1.0), input.eyeVec, false, directionalLight);
+
+	//point lighting---------------------------------------------------------------------------------------
+	vec4 pointLight		=vec4(0,0,0,0);
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
+				
+	vec2 depth;
+	depth.x				=texture_clamp(depthTexture,depth_texc.xy).x;
+	depth.y				=IN.clip_pos.z;
+	vec2 dist			=depthToFadeDistance(depth.xy,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+//	 dist.y			=depthToFadeDistance(1.0,vec2(0,0),vec4(0.0204173792,2000000.00,0.0408347584,0),vec2(1,1));
+		
+	if(dist.y>dist.x-splashDelta)
+	{
+		texel.rgb		=vec3(1,1,1);
+	}
+	vec3 map_texc=mul(vec4(offset[1].xyz,1.0),rainMapMatrix).xyz;
+	float mapped_rain=texture_wrap(rainMapTexture,map_texc.xy).x;
+	texel.a*=mapped_rain;
+	if(mapped_rain<=0||dist.y>dist.x)
+	{
+		discard;
+	}
+	float totalOpacity	=pointLight.a+directionalLight.a;
+	return vec4(texel.rgb,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
+}
 technique11 rain_particles
 {
-    pass p0
+    pass cubemap
     {
         SetRasterizerState( RenderNoCull );
         SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles()));
@@ -779,7 +825,17 @@ technique11 rain_particles
         
         SetBlendState( AddAlphaBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
         SetDepthStencilState( EnableDepth, 0 );
-    }  
+    }
+    pass no_cubemap
+    {
+        SetRasterizerState( RenderNoCull );
+        SetVertexShader(CompileShader(   vs_5_0,VS_RainParticles()));
+        SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
+        SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap()));
+        
+        SetBlendState( AddAlphaBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
+        SetDepthStencilState( EnableDepth, 0 );
+    }
 }
 
 technique11 splash
@@ -798,13 +854,23 @@ technique11 splash
 
 technique11 snow
 {
-    pass p0 
+    pass cubemap 
     {
 		SetRasterizerState(RenderNoCull);
 		//SetRasterizerState( wireframeRasterizer );
         SetGeometryShader(CompileShader(gs_5_0,GS_SnowParticles()));
 		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
+		SetDepthStencilState(EnableDepth,0);
+		SetBlendState(AddAlphaBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+    }
+    pass no_cubemap 
+    {
+		SetRasterizerState(RenderNoCull);
+		//SetRasterizerState( wireframeRasterizer );
+        SetGeometryShader(CompileShader(gs_5_0,GS_SnowParticles()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
 		SetDepthStencilState(EnableDepth,0);
 		SetBlendState(AddAlphaBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }

@@ -147,22 +147,23 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 						,vec3 lightDir
 						,vec4 lightResponse)
 {
+	vec3 view				=normalize(wEyeToPos);
+	float sine				=view.z;
     vec2 texc_offset		=texc_detail/7.11;//offsetScale;
     vec4 noise				=texture_wrap(noiseTexture,texc_offset);
     vec4 coverage			=texture_wrap(coverageTexture,texc_global);
 	
     vec4 detail				=texture_wrap(imageTexture,texc_detail+.2*noise.xy);
+	float dist_tc			=(length(wEyeToPos)/maxFadeDistanceMetres);
+	detail					=lerp(vec4(0.5,0.5,0.5,0.5),detail,saturate((abs(sine)+0.0001)));
 	float opacity			=saturate(detail.a*2.0*(coverage.x));//+2.0*Y(coverage)-1.0);
 	if(opacity<=0)
 		discard;
-	vec3 view	=normalize(wEyeToPos);
 	float cos0	=dot(normalize(lightDir),view);
 	float scattered_light	=exp(-detail.r*extinction);
 	float hg				=HenyeyGreenstein(cloudEccentricity,cos0);
 
-	float sine				=view.z;
-	
-	vec2 fade_texc			=vec2(sqrt(length(wEyeToPos)/maxFadeDistanceMetres),0.5*(1.0-sine));
+	vec2 fade_texc			=vec2(sqrt(dist_tc),0.5*(1.0-sine));
 
 	vec3 loss				=texture_cmc_lod(lossTexture,fade_texc,0).rgb;
 

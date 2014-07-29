@@ -111,6 +111,13 @@ void PrecipitationRenderer::RecompileShaders()
 		pImmediateContext->Draw(125000,0);
 		cancelStreamOutTarget(pImmediateContext);
 		effect->Unapply(deviceContext);
+		
+		vertexBuffer.apply(pImmediateContext,0);
+		vertexBufferSwap.setAsStreamOutTarget(pImmediateContext);
+		effect->Apply(deviceContext,effect->GetTechniqueByName("init_particles"),0);
+		pImmediateContext->Draw(125000,0);
+		cancelStreamOutTarget(pImmediateContext);
+		effect->Unapply(deviceContext);
 	}
 	pImmediateContext->IASetPrimitiveTopology(previousTopology );
 	pImmediateContext->IASetInputLayout(previousInputLayout);
@@ -442,9 +449,9 @@ void PrecipitationRenderer::RenderParticles(crossplatform::DeviceContext &device
 	effect->SetTexture(deviceContext,"rainMapTexture",rainMapTexture);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	if(RainToSnow>.5)
-		effect->Apply(deviceContext,m_hTechniqueParticles,0);
+		effect->Apply(deviceContext,m_hTechniqueParticles,cubemapTexture?"cubemap":"no_cubemap");
 	else
-		effect->Apply(deviceContext,m_hTechniqueRainParticles,0);
+		effect->Apply(deviceContext,m_hTechniqueRainParticles,cubemapTexture?"cubemap":"no_cubemap");
 	pContext->Draw(numParticles,0);
 	effect->SetTexture(deviceContext,"rainMapTexture",NULL);
 	effect->Unapply(deviceContext);
