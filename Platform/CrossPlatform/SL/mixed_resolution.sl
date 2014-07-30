@@ -433,13 +433,13 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 	vec2 lowResDims	=vec2(width,height);
 
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-	int2 hires_depth_pos2;
+	int2 fullres_depth_pos2;
 	int numSamples;
 	if(use_msaa)
-		GetMSAACoordinates(depthTextureMS,depth_texc,hires_depth_pos2,numSamples);
+		GetMSAACoordinates(depthTextureMS,depth_texc,fullres_depth_pos2,numSamples);
 	else
 	{
-		GetCoordinates(depthTexture,depth_texc,hires_depth_pos2);
+		GetCoordinates(depthTexture,depth_texc,fullres_depth_pos2);
 		numSamples=1;
 	}
 	vec2 lowResTexCoords		=hiResToLowResTransformXYWH.xy+hiResToLowResTransformXYWH.zw*texCoords;
@@ -462,9 +462,9 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		{
 			float hiresDepth=0.0;
 			if(use_msaa)
-				hiresDepth=depthTextureMS.Load(hires_depth_pos2,i).x;
+				hiresDepth=depthTextureMS.Load(fullres_depth_pos2,i).x;
 			else
-				hiresDepth=depthTexture[hires_depth_pos2].x;
+				hiresDepth=depthTexture[fullres_depth_pos2].x;
 			float trueDist	=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 		// Find the near and far depths at full resolution.
 			if(trueDist<nearFarDistHiRes.x)
@@ -479,9 +479,9 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		{
 			float hiresDepth=0.0;
 			if(use_msaa)
-				hiresDepth	=depthTextureMS.Load(hires_depth_pos2,j).x;
+				hiresDepth	=depthTextureMS.Load(fullres_depth_pos2,j).x;
 			else
-				hiresDepth	=depthTexture[hires_depth_pos2].x;
+				hiresDepth	=depthTexture[fullres_depth_pos2].x;
 			float trueDist	=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 			cloudNear		=depthDependentFilteredImage(lowResNearTexture	,lowResFarTexture	,lowResDepthTexture,lowResDims,lowResTexCoords,vec2(0,1.0),depthToLinFadeDistParams,trueDist,true);
 			cloudFar		=depthDependentFilteredImage(lowResFarTexture	,lowResFarTexture	,lowResDepthTexture,lowResDims,lowResTexCoords,vec2(1.0,0),depthToLinFadeDistParams,trueDist,false);
@@ -513,9 +513,9 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		float hiresDepth=0.0;
 		// Just use the zero MSAA sample if we're not at an edge:
 		if(use_msaa)
-			hiresDepth			=depthTextureMS.Load(hires_depth_pos2,0).x;
+			hiresDepth			=depthTextureMS.Load(fullres_depth_pos2,0).x;
 		else
-			hiresDepth			=depthTexture[hires_depth_pos2].x;
+			hiresDepth			=depthTexture[fullres_depth_pos2].x;
 		float trueDist		=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 		result				=depthDependentFilteredImage(lowResFarTexture,lowResFarTexture,lowResDepthTexture,lowResDims,lowResTexCoords,vec2(1.0,0),depthToLinFadeDistParams,trueDist,false);
 		result.rgb			+=insc_far.rgb*result.a;
@@ -585,9 +585,9 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 {
 	// texCoords.y is positive DOWNwards
 	TwoColourCompositeOutput result;
-	vec2 depth_texc			=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-	int2 hires_depth_pos2;
-	hires_depth_pos2			=int2(depth_texc*vec2(fullResDims.xy));
+	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+
+	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
 	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
 	vec2 hiResTexCoords			=fullResToHighResTransformXYWH.xy+texCoords*fullResToHighResTransformXYWH.zw;
 	vec4 lowres_depths			=texture_clamp_lod(lowResDepthTexture	,lowResTexCoords	,0);
@@ -596,7 +596,7 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 	float hires_edge			=hires_depths.z;
 	result.add					=vec4(0,0,0,0);
 	vec4 insc					=vec4(0,0,0,0);
-	float depth					=depthTexture[hires_depth_pos2].x;
+	float depth					=depthTexture[fullres_depth_pos2].x;
 	float dist					=depthToLinearDistance(depth		,depthToLinFadeDistParams);
 	if(lowres_edge>0.0)
 	{
@@ -693,7 +693,7 @@ TwoColourCompositeOutput Composite_MSAA(vec2 texCoords
 	// texCoords.y is positive DOWNwards
 	
 	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-	int2 hires_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
+	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
 	
 	vec2 lowresTexel			=vec2(1.0/lowResDims.x,1.0/lowResDims.y);
 	vec2 hiresTexel				=vec2(1.0/hiResDims.x,1.0/hiResDims.y);
@@ -718,8 +718,8 @@ TwoColourCompositeOutput Composite_MSAA(vec2 texCoords
 		
 		for(int k=0;k<numSamples;k++)
 		{
-			nearestDepth			=max(nearestDepth,depthTextureMS.Load(hires_depth_pos2,k).x);
-			furthestDepth			=min(furthestDepth,depthTextureMS.Load(hires_depth_pos2,k).x);
+			nearestDepth			=max(nearestDepth,depthTextureMS.Load(fullres_depth_pos2,k).x);
+			furthestDepth			=min(furthestDepth,depthTextureMS.Load(fullres_depth_pos2,k).x);
 		}
 		float nearestDist			=depthToLinearDistance(nearestDepth		,depthToLinFadeDistParams);
 		float furthestDist			=depthToLinearDistance(furthestDepth	,depthToLinFadeDistParams);
@@ -783,7 +783,7 @@ TwoColourCompositeOutput Composite_MSAA(vec2 texCoords
 		float hiResInterp	=0.0;
 		for(int j=0;j<numSamples;j++)
 		{
-			float hiresDepth	=depthTextureMS.Load(hires_depth_pos2,j).x;
+			float hiresDepth	=depthTextureMS.Load(fullres_depth_pos2,j).x;
 			float trueDist		=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 			vec4 add			=vec4(0,0,0,1.0);
 			//if(lowres_edge>0.0)

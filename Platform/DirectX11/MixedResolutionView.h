@@ -62,7 +62,7 @@ namespace simul
 			/// simul::crossplatform::Texture.
 			///
 			/// \param [in,out]	tex	If non-null, the tex.
-			void SetExternalDepthTexture(crossplatform::Texture *tex);
+			void SetExternalDepthTexture(crossplatform::Texture *tex,crossplatform::Viewport v);
 
 			/// Resolve framebuffer.
 			///
@@ -147,6 +147,7 @@ namespace simul
 			bool							useExternalFramebuffer;
 			/// The external depth texture.
 			crossplatform::Texture			*externalDepthTexture;
+			crossplatform::Viewport			depthTextureViewport;
 		};
 		/// A class to render mixed-resolution depth buffers.
 		class SIMUL_DIRECTX11_EXPORT MixedResolutionRenderer

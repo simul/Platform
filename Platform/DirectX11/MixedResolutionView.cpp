@@ -72,9 +72,10 @@ void MixedResolutionView::SetExternalFramebuffer(bool e)
 	}
 }
 
-void MixedResolutionView::SetExternalDepthTexture(crossplatform::Texture *d)
+void MixedResolutionView::SetExternalDepthTexture(crossplatform::Texture *d,crossplatform::Viewport v)
 {
 	externalDepthTexture=d;
+	depthTextureViewport=v;
 }
 
 void MixedResolutionView::ResolveFramebuffer(crossplatform::DeviceContext &deviceContext)
