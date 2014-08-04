@@ -351,12 +351,6 @@ vec4 depthFilteredTexture(	LookupQuad4 image
 							,vec2 xy
 							,float d)
 {
-	// x = right, y = up, z = left, w = down
-/*	if(do_fallback)
-	{
-		image=LerpZ(image,fallback,dist);
-	}*/
-	// But now we modify these values:
 	float D1		=saturate((d-dist._11.x)/(dist._21.x-dist._11.x));
 	float delta1	=abs(dist._21.x-dist._11.x);			
 	image._11		=lerp(image._11,image._21,delta1*D1);
