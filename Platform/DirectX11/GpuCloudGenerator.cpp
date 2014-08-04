@@ -175,7 +175,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	{
 		mask_fb.Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
 	}
-	mask_fb.Deactivate(m_pImmediateContext);
+	mask_fb.Deactivate(deviceContext);
 
 	int z0	=start_texel/(params.density_grid[0]*params.density_grid[1]);
 	int z1	=(start_texel+texels)/(params.density_grid[0]*params.density_grid[1]);

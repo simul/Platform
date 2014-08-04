@@ -320,7 +320,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 		baseCloudRenderer->Render(deviceContext,buffered?1.f:exposure,is_cubemap,crossplatform::FAR_PASS,mainDepthTexture,true,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
 	if(buffered)
 	{
-		fb->GetLowResFarFramebuffer()->Deactivate(context);
+		fb->GetLowResFarFramebuffer()->Deactivate(deviceContext);
 	//	setTexture(Utilities::GetSingleton().simple_program,"image_texure",0,(GLuint)baseFramebuffer->GetColorTex());
 		glUseProgram(Utilities::GetSingleton().simple_program);
 		//setParameter(
@@ -363,7 +363,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(crossplatform::DeviceContext &
 	fb->GetLowResFarFramebuffer()->Activate(deviceContext);
 	fb->GetLowResFarFramebuffer()->Clear(deviceContext.platform_context,0,0,0,1.f,ReverseDepth?0.f:1.f);
 	simulCloudRenderer->Render(deviceContext,exposure,false,crossplatform::FAR_PASS,NULL,true,depthViewportXYWH,sky::float4(0,0,1.f,1.f));
-	fb->GetLowResFarFramebuffer()->Deactivate(deviceContext.platform_context);
+	fb->GetLowResFarFramebuffer()->Deactivate(deviceContext);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	GLuint prog=cloud_overlay_program;//AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;

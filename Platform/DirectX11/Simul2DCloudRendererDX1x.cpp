@@ -60,8 +60,13 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
 			tech=msaaTechnique;
 	}
-	if(!tech)
-		return false;
+	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Set constants")
+	float ir_integration_factors[]={0,0,0,0};
+	Set2DCloudConstants(cloud2DConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,exposure,viewportTextureRegionXYWH,ir_integration_factors);
+	cloud2DConstants.Apply(deviceContext);
+	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+	if(tech)//&&cloud2DConstants.cloudiness>0)
+	{
 
 	effect->SetTexture(deviceContext,"imageTexture",detail);
 	effect->SetTexture(deviceContext,"noiseTexture",noise);
@@ -78,14 +83,8 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	effect->SetTexture(deviceContext,"lightTableTexture",lightTableTexture);
 	
 	math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view,false);
-	float ir_integration_factors[]={0,0,0,0};
 
-	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Set constants")
-	Set2DCloudConstants(cloud2DConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,exposure,viewportTextureRegionXYWH,ir_integration_factors);
-	cloud2DConstants.Apply(deviceContext);
-	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 
-	//ID3D11InputLayout* previousInputLayout;
 	UINT prevOffset;
 	DXGI_FORMAT prevFormat;
 	ID3D11Buffer* pPrevBuffer;
@@ -116,6 +115,7 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	SAFE_RELEASE(pPrevBuffer);
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
+	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	return true;
 }

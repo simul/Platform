@@ -649,7 +649,6 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 		// At an edge we will do the interpolation for each MSAA sample.
 		float hiResInterp		=saturate((nearFarDistHiRes.y-dist)/nearFarDistHiRes.z);
 		insc					=lerp(insc_far,insc_near,hiResInterp);
-		//uint2 loss				=image_load(lossTexture,isncTexc_unit).xy;
 		// 
 		vec4 loss_far			=depthFilteredTexture(	lossFar_Q
 														,distFar_Q
@@ -664,11 +663,12 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 	else
 	{	
 		insc					=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
-		vec2 isncTexc_unit		=hiResTexCoords*hiResDims-vec2(.5,.5);
-		uint2 loss				=image_load(lossTexture,isncTexc_unit).xy;
+		vec2 inscTexc_unit		=hiResTexCoords*hiResDims-vec2(.5,.5);
+		uint2 loss				=image_load(lossTexture,inscTexc_unit).xy;
 		result.multiply			=vec4(uint_to_colour3(loss.x),1.0)*result.add.a;
 	}
 	result.add.rgb				+=insc.rgb*result.add.a;
+	result.add.a		=result.multiply.r;
     return result;
 }
 
@@ -843,8 +843,8 @@ TwoColourCompositeOutput Composite_MSAA(vec2 texCoords
 		{	
 			vec4 insc			=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
 			result.add.rgb		+=insc.rgb*result.add.a;
-			vec2 isncTexc_unit	=hiResTexCoords*hiResDims-vec2(.5,.5);
-			uint2 loss			=image_load(lossTexture,isncTexc_unit).xy;
+			vec2 inscTexc_unit	=hiResTexCoords*hiResDims-vec2(.5,.5);
+			uint2 loss			=image_load(lossTexture,inscTexc_unit).xy;
 			result.multiply		=vec4(uint_to_colour3(loss.x),1.0)*result.add.a;
 		}
 	}

@@ -59,6 +59,7 @@ vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 			result+=SH(l,m,theta,phi)*w*basisBuffer[n++];
 		//*A[l]/3.1415926
 	} 
+	result.a=0.002;
 	return max(result,vec4(0,0,0,0));
 }
 
@@ -71,6 +72,6 @@ technique11 irradiance_map
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_IrradianceMap()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }

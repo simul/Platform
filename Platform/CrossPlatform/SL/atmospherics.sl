@@ -18,6 +18,26 @@ void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthText
 	nearLoss		=texture_clamp_mirror(lossTexture,vec2(texx.y,texy)).rgb;
 	
 }
+void LossCompositeShadowed(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthTexture,Texture2D cloudShadowTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
+	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,vec4 depthToLinFadeDistParams,vec2 tanHalfFov,mat4 worldspaceToShadowspaceMatrix,vec3 eyePos,float cloudShadowing)
+{
+	vec3 wOffset	=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
+	vec3 view		=normalize(wOffset);
+	vec2 depth_texc	=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+	vec3 depth		=texture_clamp(nearFarDepthTexture,depth_texc).xyz;
+
+	vec2 dist		=depthToFadeDistance(depth.xy,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec4 shadow1	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.x*view*depthToLinFadeDistParams.y).x;
+	vec4 shadow2	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.y*view*depthToLinFadeDistParams.y).x;
+	vec2 shadow		=vec2(1.0-shadow1.x,1.0-shadow2.x);
+	shadow			*=cloudShadowing;
+	shadow			=vec2(1.0,1.0)-shadow;
+	float sine		=view.z;
+	float texy		=0.5*(1.f-sine);
+	vec2 texx		=pow(dist,0.5);
+	farLoss			=shadow.x*texture_clamp_mirror(lossTexture,vec2(texx.x,texy)).rgb;
+	nearLoss		=shadow.y*texture_clamp_mirror(lossTexture,vec2(texx.y,texy)).rgb;
+}
 
 vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
 	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,vec4 depthToLinFadeDistParams,vec2 tanHalfFov)

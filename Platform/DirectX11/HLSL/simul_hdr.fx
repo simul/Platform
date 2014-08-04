@@ -328,7 +328,7 @@ TwoColourCompositeOutput PS_Composite_MSAA(v2f IN) : SV_TARGET
 							,depthToLinFadeDistParams
 							,fullResToLowResTransformXYWH
 							,fullResToHighResTransformXYWH
-										,inscatterTexture
+							,inscatterTexture
 							,nearInscatterTexture
 							,lossTexture);
 	result.add.rgb	=pow(result.add.rgb,gamma);

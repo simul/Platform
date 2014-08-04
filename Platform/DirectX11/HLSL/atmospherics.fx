@@ -2,6 +2,7 @@
 #include "states.hlsl"
 #include "../../CrossPlatform/SL/depth.sl"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/cloud_shadow.sl"
 #include "../../CrossPlatform/SL/atmospherics.sl"
 #include "../../CrossPlatform/SL/atmospherics_constants.sl"
 #include "../../CrossPlatform/SL/colour_packing.sl"
@@ -87,6 +88,24 @@ uint2 PS_LossComposite(atmosVertexOutput IN) : SV_TARGET
     return uint2(faru,nearu);
 }
 
+
+uint2 PS_LossCompositeShadowed(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	vec3 farLoss,nearLoss;
+	LossCompositeShadowed(farLoss,nearLoss,depthTexture,cloudShadowTexture
+					,viewportToTexRegionScaleBias
+					,lossTexture
+					,invViewProj
+					,IN.texCoords
+					,IN.pos
+					,depthToLinFadeDistParams
+					,tanHalfFov
+					,invShadowMatrix,viewPosition,cloudShadowing);
+	uint faru		=colour3_to_uint(farLoss);
+	uint nearu		=colour3_to_uint(nearLoss);
+    return uint2(faru,nearu);
+}
 
 vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
 {
@@ -441,6 +460,18 @@ technique11 loss_composite
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_LossComposite()));
+    }
+}
+technique11 loss_composite_shadowed
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_LossCompositeShadowed()));
     }
 }
 technique11 loss

@@ -235,7 +235,8 @@ void CubemapFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	if(!sphericalHarmonicsEffect)
 		RecompileShaders();
 	int num_coefficients=bands*bands;
-	static int sqrt_jitter_samples					=16;
+	static int BLOCK_SIZE=4;
+	static int sqrt_jitter_samples					=4;
 	if(!sphericalHarmonics.size)
 	{
 		sphericalHarmonics.RestoreDeviceObjects(pd3dDevice,num_coefficients,true);
@@ -249,14 +250,14 @@ void CubemapFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect,"targetBuffer"	,sphericalHarmonics.unorderedAccessView);
 	ID3DX11EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");
 	ApplyPass(pContext,clear->GetPassByIndex(0));
-	pContext->Dispatch(num_coefficients,1,1);
+	pContext->Dispatch((num_coefficients+BLOCK_SIZE-1)/BLOCK_SIZE,1,1);
 	{
 		// The table of 3D directional sample positions. sqrt_jitter_samples x sqrt_jitter_samples
 		// We just fill this texture with random 3d directions.
 		ID3DX11EffectTechnique *jitter=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
 		simul::dx11::setUnorderedAccessView(sphericalHarmonicsEffect,"samplesBufferRW",sphericalSamples.unorderedAccessView);
 		ApplyPass(pContext,jitter->GetPassByIndex(0));
-		pContext->Dispatch(sqrt_jitter_samples/8,sqrt_jitter_samples/8,1);
+		pContext->Dispatch((sqrt_jitter_samples+BLOCK_SIZE-1)/BLOCK_SIZE,(sqrt_jitter_samples+BLOCK_SIZE-1)/BLOCK_SIZE,1);
 		simul::dx11::setUnorderedAccessView(sphericalHarmonicsEffect,"samplesBufferRW",NULL);
 		ApplyPass(pContext,jitter->GetPassByIndex(0));
 	}
@@ -267,7 +268,7 @@ void CubemapFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	
 	static bool sh_by_samples=false;
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-	pContext->Dispatch(sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients,1,1);
+	pContext->Dispatch(((sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients)+BLOCK_SIZE-1)/BLOCK_SIZE,1,1);
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"cubemapTexture"	,NULL);
 	simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect,"targetBuffer"	,NULL);
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"samplesBuffer"	,NULL);
@@ -342,9 +343,9 @@ void CubemapFramebuffer::ActivateViewport(crossplatform::DeviceContext &deviceCo
 	pContext->RSSetViewports(1, &viewport);
 }
 
-void CubemapFramebuffer::Deactivate(void *context)
+void CubemapFramebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
@@ -352,9 +353,9 @@ void CubemapFramebuffer::Deactivate(void *context)
 	pContext->RSSetViewports(1,m_OldViewports);
 }
 
-void CubemapFramebuffer::DeactivateDepth(void *context)
+void CubemapFramebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV[current_face],NULL);
 }
 

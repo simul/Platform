@@ -258,7 +258,7 @@ GL_ERROR_CHECK
 		}
 	GL_ERROR_CHECK
 		CopyTo3DTexture(start_texel,texels,params.density_grid);
-		dens_fb.Deactivate(NULL);
+		dens_fb.Deactivate(deviceContext);
 	}
 	glDisable(GL_TEXTURE_3D);
 	glUseProgram(0);
@@ -341,7 +341,7 @@ GL_ERROR_CHECK
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].AsGLuint());
 			CopyTo3DTextureLayer(0,params.light_grid);
-		F[0]->Deactivate(NULL);
+		F[0]->Deactivate(deviceContext);
 		z0++;
 	}
 	if(target)
@@ -375,7 +375,7 @@ F[1]->Clear(NULL,u,u,u,u,1.f);
 			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].AsGLuint());
 			CopyTo3DTextureLayer(i,params.light_grid);
 			GL_ERROR_CHECK
-		F[1]->Deactivate(NULL);
+		F[1]->Deactivate(deviceContext);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
 		if(target)
@@ -456,7 +456,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 			glBindTexture(GL_TEXTURE_3D,finalTexture[cycled_index]->AsGLuint());
 			CopyTo3DTexture(start_texel,texels,params.density_grid);
 			GL_ERROR_CHECK
-		world_fb.Deactivate(NULL);
+		world_fb.Deactivate(deviceContext);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 			GL_ERROR_CHECK
 		//target+=density_grid[0]*density_grid[1]*4;

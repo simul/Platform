@@ -5,6 +5,7 @@
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #ifdef _MSC_VER
 #include <windows.h>
 #else
@@ -230,7 +231,7 @@ void FramebufferGL::ActivateViewport(crossplatform::DeviceContext &,float viewpo
 	fb_stack.push(m_fb);
 }
 
-void FramebufferGL::Deactivate(void *) 
+void FramebufferGL::Deactivate(crossplatform::DeviceContext &)
 {
 	//glFlush(); 
 	GL_ERROR_CHECK
@@ -259,11 +260,11 @@ void FramebufferGL::CopyDepthFromFramebuffer()
 	GL_ERROR_CHECK
 }
 
-void FramebufferGL::DeactivateAndRender(void *context,bool blend)
+void FramebufferGL::DeactivateAndRender(crossplatform::DeviceContext &d,bool blend)
 {
 	GL_ERROR_CHECK
-	Deactivate(context);
-	Render(context,blend);
+	Deactivate(d);
+	Render(d.platform_context,blend);
 }
 
 void FramebufferGL::Render(void *,bool blend)

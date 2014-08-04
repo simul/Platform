@@ -171,7 +171,7 @@ void Profiler::Begin(void *ctx,const char *name)
 	{
 		if(!profileData->gotResults[currFrame])
 		{
-			SIMUL_BREAK("not got query results!")
+			return;//SIMUL_BREAK("not got query results!")
 		}
     // Start a disjoint query first
 		context->Begin(profileData->DisjointQuery[currFrame]);
@@ -196,6 +196,9 @@ void Profiler::End()
         return;
 
     ProfileData *profileData = profileMap[name];
+	if(!profileData->gotResults[currFrame])
+        return;
+	
     if(profileData->QueryStarted != TRUE)
 		return;
     _ASSERT(profileData->QueryFinished == FALSE);

@@ -78,7 +78,7 @@ void SimulGL2DCloudRenderer::CreateNoiseTexture(crossplatform::DeviceContext &de
 		DrawQuad(0,0,1,1);
 		SAFE_DELETE_PROGRAM(noise_prog);
 	}
-	noise_fb.Deactivate(deviceContext.platform_context);
+	noise_fb.Deactivate(deviceContext);
 	glUseProgram(0);
 GL_ERROR_CHECK
 	FramebufferGL dens_fb(512,512,GL_TEXTURE_2D);
@@ -98,7 +98,7 @@ GL_ERROR_CHECK
 		DrawFullScreenQuad();
 		SAFE_DELETE_PROGRAM(dens_prog);
 	}
-	dens_fb.Deactivate(deviceContext.platform_context);
+	dens_fb.Deactivate(deviceContext);
 	glUseProgram(0);
 
 	detail_fb.SetWidthAndHeight(512,512);
@@ -119,7 +119,7 @@ GL_ERROR_CHECK
 		DrawQuad(0,0,1,1);
 		SAFE_DELETE_PROGRAM(lighting_prog);
 	}
-	detail_fb.Deactivate(deviceContext.platform_context);
+	detail_fb.Deactivate(deviceContext);
 	glUseProgram(0);
 }
 #pragma warning(disable:4127) // "Conditional expression is constant".

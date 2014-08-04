@@ -1191,6 +1191,8 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"longitudes",32);
 	static float rr=6.f;
 	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"radius",rr);
+	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"exposure",exposure);
+	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"gamma",gamma);
 	UtilityRenderer::DrawSphere(deviceContext,16,32);
 	pContext->RSSetViewports(num_v,m_OldViewports);
 }

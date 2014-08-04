@@ -486,9 +486,9 @@ void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext)
 	SetViewport(pContext,0,0,1.f,1.f,0,1.f);
 }
 
-void Framebuffer::Deactivate(void *context)
+void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
@@ -500,12 +500,12 @@ void Framebuffer::Deactivate(void *context)
 	depth_active=false;
 }
 
-void Framebuffer::DeactivateDepth(void *context)
+void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	if(!buffer_texture.renderTargetView)
 	{
-		Deactivate(context);
+		Deactivate(deviceContext);
 		return;
 	}
 	pContext->OMSetRenderTargets(1,&buffer_texture.renderTargetView,NULL);

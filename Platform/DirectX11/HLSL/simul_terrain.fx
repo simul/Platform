@@ -71,15 +71,17 @@ float4 PS_Main( vertexOutput IN) : SV_TARGET
 	vec4 layer1	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,0.0));
 	vec4 layer2	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,1.0));
 	vec4 texel	=mix(layer1,layer2,clamp(1.0-IN.wPosition.z/100.0,0.0,1.0));
-	vec2 light	=lightDir.z;
+	vec3 light	=lightDir.zzz;
 
-	light		*=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,IN.wPosition.xyz);
-	result.rgb	=texel.rgb*(ambientColour.rgb+light.x*sunlight.rgb);
+	light.r		*=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,IN.wPosition.xyz).x;
+	result.rgb	=texel.rgb*(ambientColour.rgb+light.rgb*sunlight.rgb);
 	result.a	=1.0;
 	
 	float from_lightning_centre_km	=0.001*length(IN.wPosition.xy-lightningCentre.xy);
 	vec3 lightning					=lightningColour.rgb*saturate(1.0/pow(from_lightning_centre_km+.0001,2.0));
 	result.rgb						+=lightning;
+
+//result.rgb=frac(mul(invShadowMatrix,vec4(IN.wPosition.xyz,1.0)).xyy);
     return result;
 }
 

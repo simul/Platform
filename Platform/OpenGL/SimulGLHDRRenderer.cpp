@@ -101,7 +101,7 @@ bool SimulGLHDRRenderer::StartRender(crossplatform::DeviceContext &deviceContext
 bool SimulGLHDRRenderer::FinishRender(crossplatform::DeviceContext &deviceContext,float exposure,float gamma)
 {
 GL_ERROR_CHECK
-	framebuffer.Deactivate(deviceContext.platform_context);
+	framebuffer.Deactivate(deviceContext);
 	RenderGlowTexture(deviceContext);
 	effect->Apply(deviceContext,tech,0);
 	//effect->SetParameter("exposure",exposure);
@@ -141,7 +141,7 @@ void SimulGLHDRRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceC
 		setParameter(glow_program,"exposure",Exposure);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
-	glow_fb.Deactivate(deviceContext.platform_context);
+	glow_fb.Deactivate(deviceContext);
 
 	// blur horizontally:
 	glUseProgram(blur_program);
@@ -154,7 +154,7 @@ void SimulGLHDRRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceC
 		setParameter(blur_program,"offset",1.f/(float)glow_viewport[2],0.f);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
-	alt_fb.Deactivate(deviceContext.platform_context);
+	alt_fb.Deactivate(deviceContext);
 
 	glow_fb.Activate(deviceContext);
 	{
@@ -165,7 +165,7 @@ void SimulGLHDRRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceC
 		setParameter(blur_program,"offset",0.f,0.5f/(float)glow_viewport[3]);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
-	glow_fb.Deactivate(deviceContext.platform_context);
+	glow_fb.Deactivate(deviceContext);
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);

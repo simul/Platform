@@ -34,9 +34,9 @@ namespace simul
 			//! Return true if the framebuffer's colour buffer has been activated and not yet deactivated.
 			virtual bool IsColourActive() const;
 			//! Deactivate the framebuffer - must be preceded a call to \ref Activate().
-			virtual void Deactivate(void*)=0;
+			virtual void Deactivate(crossplatform::DeviceContext &)=0;
 			//! Deactivate only the depth buffer, so it can be used as a texture for rendering to the colour buffer.
-			virtual void DeactivateDepth(void*){}
+			virtual void DeactivateDepth(crossplatform::DeviceContext &){}
 			//! Set the API-dependent colour buffer format for this framebuffer. Across all API's, setting 0 means no rendering to colour.
 			virtual void SetFormat(int)=0;
 			//! Set the API-dependent colour depth format for this framebuffer. Across all API's, setting 0 means no rendering to depth.

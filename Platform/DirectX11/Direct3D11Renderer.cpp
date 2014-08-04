@@ -281,7 +281,7 @@ ERRNO_CHECK
 		{
 			//oceanRenderer->Render(deviceContext,1.f);
 		}
-		cubemapFramebuffer.DeactivateDepth(deviceContext.platform_context);
+		cubemapFramebuffer.DeactivateDepth(deviceContext);
 		if(simulWeatherRenderer)
 		{
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
@@ -295,7 +295,7 @@ ERRNO_CHECK
 									"+Z",
 									"-Z"};
 		//renderPlatformDx11.Print(deviceContext,16,16,txt[i]);
-		cubemapFramebuffer.Deactivate(deviceContext.platform_context);
+		cubemapFramebuffer.Deactivate(deviceContext);
 	}
 ERRNO_CHECK
 }
@@ -331,7 +331,7 @@ void Direct3D11Renderer::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 			simul::dx11::setTexture(lightProbesEffect,"basisBuffer"	,NULL);
 			ApplyPass(pContext,tech->GetPassByIndex(0));
 		}
-		envmapFramebuffer.Deactivate(pContext);
+		envmapFramebuffer.Deactivate(deviceContext);
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
@@ -373,7 +373,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RenderCelestialBackground(deviceContext,exposure);
 	if(simulHDRRenderer&&UseHdrPostprocessor)
-		view->GetFramebuffer()->DeactivateDepth(pContext);
+		view->GetFramebuffer()->DeactivateDepth(deviceContext);
 	else
 	{
 		pContext->OMSetRenderTargets(	1,
@@ -431,7 +431,7 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 		crossplatform::DrawGrid(deviceContext,1.f,1.f,100);
 		crossplatform::DrawGrid(deviceContext,10.f,10.f,10);
 		if(simulHDRRenderer&&UseHdrPostprocessor)
-			view->GetFramebuffer()->DeactivateDepth(pContext);
+			view->GetFramebuffer()->DeactivateDepth(deviceContext);
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
@@ -512,7 +512,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		RenderScene(deviceContext,simulWeatherRenderer,cameraViewStruct.exposure,cameraViewStruct.gamma);
 		if(hdr)
 		{
-			view->GetFramebuffer()->Deactivate(pContext);
+			view->GetFramebuffer()->Deactivate(deviceContext);
 			simulHDRRenderer->RenderWithOculusCorrection(deviceContext,view->GetFramebuffer()->GetColorTex(),cameraViewStruct.exposure,cameraViewStruct.gamma,0.f);
 		}
 		//right eye
@@ -538,7 +538,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		RenderScene(deviceContext,simulWeatherRenderer,cameraViewStruct.exposure,cameraViewStruct.gamma);
 		if(hdr)
 		{
-			view->GetFramebuffer()->Deactivate(pContext);
+			view->GetFramebuffer()->Deactivate(deviceContext);
 			simulHDRRenderer->RenderWithOculusCorrection(deviceContext,view->GetFramebuffer()->GetColorTex(),cameraViewStruct.exposure,cameraViewStruct.gamma,1.f);
 		}
 	SAFE_RELEASE(mainRenderTarget);
@@ -595,7 +595,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	if(hdr)
 	{
-		view->GetFramebuffer()->Deactivate(pContext);
+		view->GetFramebuffer()->Deactivate(deviceContext);
 		view->ResolveFramebuffer(deviceContext);
 		if(simulHDRRenderer)
 			simulHDRRenderer->Render(deviceContext,view->GetResolvedHDRBuffer(),cameraViewStruct.exposure,cameraViewStruct.gamma);
@@ -720,7 +720,7 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8,int width,int 
 	Render(0,m_pd3dDevice,pImmediateContext);
 	AllOsds=true;
 	UseHdrPostprocessor=t;
-	fb.Deactivate(pImmediateContext);
+	fb.Deactivate(deviceContext);
 	cam->SetCameraViewStruct(s0);
 	simul::dx11::SaveTexture(m_pd3dDevice,(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());
 	SAFE_RELEASE(pImmediateContext);

@@ -41,8 +41,8 @@ namespace simul
 			void Activate(crossplatform::DeviceContext &);
 			void ActivateColour(crossplatform::DeviceContext &,const float viewportXYWH[4]);
 			void ActivateDepth(crossplatform::DeviceContext &);
-			void Deactivate(void *context);
-			void DeactivateDepth(void *context);
+			void Deactivate(crossplatform::DeviceContext &context);
+			void DeactivateDepth(crossplatform::DeviceContext &context);
 			void Render(bool){}
 			void Clear(void *context,float,float,float,float,float,int mask=0);
 			void ClearColour(void* context, float, float, float, float );

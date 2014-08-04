@@ -178,7 +178,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER, GL_NEAREST);  
 				DrawQuad(0,0,1,1);
-			F[0]->Deactivate(NULL);
+			F[0]->Deactivate(deviceContext);
 		}
 		glUseProgram(loss_program);
 		setParameter(loss_program,"input_loss_texture",0);
@@ -233,7 +233,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 									,p.numElevations);
 				}
 	//std::cout<<"\tGpu sky: loss read"<<i<<" "<<timer.UpdateTime()<<std::endl;
-			F[1]->Deactivate(NULL);
+			F[1]->Deactivate(deviceContext);
 			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 			std::swap(F[0],F[1]);
 			if(target)
@@ -267,7 +267,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER, GL_NEAREST);  
 				DrawQuad(0,0,1,1);
-			F[0]->Deactivate(NULL);
+			F[0]->Deactivate(deviceContext);
 		}
 		// Now render out the inscatter.
 		glUseProgram(insc_program);
@@ -325,7 +325,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 									,p.numElevations);
 		GL_ERROR_CHECK
 				}
-			F[1]->Deactivate(NULL);
+			F[1]->Deactivate(deviceContext);
 			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 			std::swap(F[0],F[1]);
 			if(target)
@@ -357,7 +357,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
 				glTexParameteri( GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER, GL_NEAREST);  
 				DrawQuad(0,0,1,1);
-			F[0]->Deactivate(NULL);
+			F[0]->Deactivate(deviceContext);
 		}
 		// Finally we will generate the skylight texture.
 		// First we make the inscatter into a 3D texture.
@@ -422,7 +422,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 									,p.numElevations);
 		GL_ERROR_CHECK
 				}
-			F[1]->Deactivate(NULL);
+			F[1]->Deactivate(deviceContext);
 			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 			std::swap(F[0],F[1]);
 			if(target)

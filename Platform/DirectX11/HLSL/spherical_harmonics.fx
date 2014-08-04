@@ -11,19 +11,22 @@ RWStructuredBuffer<float4> targetBuffer;
 RWStructuredBuffer<SphericalHarmonicsSample> samplesBufferRW;
 StructuredBuffer<SphericalHarmonicsSample> samplesBuffer;
 
-[numthreads(8,8,1)]
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE (4)
+#endif
+[numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
 void CS_Jitter(uint3 sub_pos: SV_DispatchThreadID )
 {
 	SH_setup_spherical_samples(samplesBufferRW,sub_pos.xy,sqrtJitterSamples,MAX_SH_BANDS);
 }
 
-[numthreads(1,1,1)]
+[numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
 void CS_Clear(uint3 sub_pos: SV_DispatchThreadID )
 {
 	targetBuffer[sub_pos.x]				=vec4(0,0,0,0); 
 }
 
-[numthreads(1,1,1)]
+[numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
 void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
 {
 	// The sub_pos gives the co-ordinate in the table of sam

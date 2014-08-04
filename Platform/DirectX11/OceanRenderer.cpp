@@ -308,7 +308,7 @@ void OceanRenderer::SetMatrices(const float *v,const float *p)
 
 void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure)
 {
-#ifndef _XBOX_ONE
+#if !defined(_XBOX_ONE) && ! defined(SIMUL_WIN8_SDK)
 	double app_time=0.0;
 	if(skyInterface)
 		app_time=skyInterface->GetTime();
@@ -459,7 +459,7 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 
 void OceanRenderer::RenderWireframe(crossplatform::DeviceContext &deviceContext)
 {
-#ifndef _XBOX_ONE
+#if !defined(_XBOX_ONE) && ! defined(SIMUL_WIN8_SDK)
 	double app_time=0.0;
 	if(skyInterface)
 		app_time=skyInterface->GetTime();

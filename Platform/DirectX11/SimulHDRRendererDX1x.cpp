@@ -289,7 +289,7 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 		glow_fb.Activate(deviceContext);
 		glow_fb.Clear(deviceContext.platform_context,0,0,0,0,0);
 		simul::dx11::UtilityRenderer::DrawQuad(deviceContext);
-		glow_fb.Deactivate(pContext);
+		glow_fb.Deactivate(deviceContext);
 		hdr_effect->Unapply(deviceContext);
 	}
     D3D11_TEXTURE2D_DESC tex_desc;

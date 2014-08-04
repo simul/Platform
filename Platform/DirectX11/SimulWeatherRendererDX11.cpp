@@ -403,7 +403,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 				,false,exposure,false,NULL,NULL,simul::sky::float4(0,0,1.f,1.f),true);
 			if(gamma_correction)
 			{
-				gamma_correct.Deactivate(m_pImmediateContext);
+				gamma_correct.Deactivate(deviceContext);
 				simul::dx11::setTexture((ID3DX11Effect*)effect->platform_effect,"imageTexture",gamma_correct.GetBufferResource());
 				hdrConstants.gamma=gamma;
 				hdrConstants.exposure=exposure;
@@ -413,7 +413,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 				simul::dx11::UtilityRenderer::DrawQuad(deviceContext);
 			}
 		}
-		fb_cubemap.Deactivate(m_pImmediateContext);
+		fb_cubemap.Deactivate(deviceContext);
 	}
 	ID3D11Texture2D *tex=fb_cubemap.GetCopy(m_pImmediateContext);
 	//if(gamma_correction)
@@ -480,7 +480,7 @@ ERRNO_CHECK
 	RenderLowResolutionElements(deviceContext,exposure,godrays_strength,is_cubemap,crossplatform::FAR_PASS,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
 
 	if(buffered)
-		fb->GetLowResFarFramebuffer()->Deactivate(deviceContext.platform_context);
+		fb->GetLowResFarFramebuffer()->Deactivate(deviceContext);
 
 	if(buffered&&doFinalCloudBufferToScreenComposite)
 		CompositeCloudsToScreen(deviceContext,1.f,1.f,false,hiResDepthTexture,hiResDepthTexture,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct,mixedResolutionStruct);
