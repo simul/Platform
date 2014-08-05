@@ -92,6 +92,7 @@ RaytracePixelOutput PS_RaytraceNearPass(posTexVertexOutput IN)
 FarNearPixelOutput PS_RaytraceBothPasses(posTexVertexOutput IN)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
+	
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
 	RaytracePixelOutput f	=RaytraceCloudsForward(
 									cloudDensity1
@@ -177,9 +178,9 @@ FarNearPixelOutput PS_RaytraceNoRainBothPasses(posTexVertexOutput IN)
 	if(f.colour.a>=1.0)
 	   discard;
 	FarNearPixelOutput fn;
-	fn.farColour=f.colour;
-	fn.nearColour=n.colour;
-	fn.depth	=f.depth;
+	fn.farColour	=f.colour;
+	fn.nearColour	=n.colour;
+	fn.depth		=f.depth;
 	return fn;
 }
 RaytracePixelOutput PS_RaytraceNoRainFar(posTexVertexOutput IN)
@@ -635,14 +636,14 @@ fxgroup raytrace
 			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNearPass()));
 		}
-	pass both 
-	{
+		pass both 
+		{
 			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetDepthStencilState(WriteDepth,0);
-		SetRasterizerState( RenderNoCull );
-		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
-		SetPixelShader(CompileShader(ps_5_0,PS_RaytraceBothPasses()));
-	}
+			SetDepthStencilState(WriteDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceBothPasses()));
+		}
 	}
 	technique11 no_rain
 	{

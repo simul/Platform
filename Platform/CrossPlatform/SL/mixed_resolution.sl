@@ -105,7 +105,7 @@ vec4 DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,uint2 source_di
 		vec2 fn	=depthToLinearDistance(farthest_nearest.xy,depthToLinFadeDistParams);
 	//fn =saturate(0.07 / (farthest_nearest.xy*depthToLinFadeDistParams.y ));
 		edge	=abs(fn.x-fn.y);
-		edge	=fn.x;//step(EDGE_FACTOR,edge);
+		edge	=step(EDGE_FACTOR,edge);
 	}
 	vec4 res=vec4(farthest_nearest,edge,0);
 	return res;
@@ -591,7 +591,7 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 	result.add					=vec4(0,0,0,0);
 	vec4 insc					=vec4(0,0,0,0);
 	float depth					=depthTexture[fullres_depth_pos2].x;
-	float dist					=depthToLinearDistance(depth		,depthToLinFadeDistParams);
+	float dist					=depthToLinearDistance(depth,depthToLinFadeDistParams);
 	if(lowres_edge>0.0)
 	{
 		LookupQuad4 cloudNear_Q		=GetLookupQuad(lowResNearTexture		,lowResTexCoords,lowResDims);
@@ -643,7 +643,8 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 		// At an edge we will do the interpolation for each MSAA sample.
 		float hiResInterp		=saturate((nearFarDistHiRes.y-dist)/nearFarDistHiRes.z);
 		insc					=lerp(insc_far,insc_near,hiResInterp);
-		// 
+		//uint2 loss				=image_load(lossTexture,isncTexc_unit).xy;
+			// 
 		vec4 loss_far			=depthFilteredTexture(	lossFar_Q
 														,distFar_Q
 														,xy
