@@ -35,7 +35,6 @@ Framebuffer::Framebuffer(int w,int h) :
 	BaseFramebuffer(w,h)
 	,m_pd3dDevice(NULL)
 	,buffer_depth_texture(NULL)
-	,m_pOldRenderTarget(NULL)
 	,m_pOldDepthSurface(NULL)
 	,num_OldViewports(0)
 	,stagingTexture(NULL)
@@ -44,6 +43,8 @@ Framebuffer::Framebuffer(int w,int h) :
 	,depth_format(DXGI_FORMAT_UNKNOWN) //The usual case is for the user to supply depth look-up textures, which is all we need for the majority of cases... So let's avoid needless construction of depth buffers unless otherwise indicated with a SetDepthFormat(...)
 	,GenerateMips(false)
 {
+	for(int i=0;i<16;i++)
+		m_pOldRenderTargets[i]=NULL;
 }
 
 void Framebuffer::SetWidthAndHeight(int w,int h)
@@ -92,8 +93,9 @@ void Framebuffer::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 	buffer_texture.InvalidateDeviceObjects();
 	buffer_depth_texture.InvalidateDeviceObjects();
-
-	SAFE_RELEASE(m_pOldRenderTarget);
+	
+	for(int i=0;i<16;i++)
+		SAFE_RELEASE(m_pOldRenderTargets[i]);
 	SAFE_RELEASE(m_pOldDepthSurface);
 	SAFE_RELEASE(stagingTexture);
 }
@@ -364,7 +366,7 @@ void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext,con
 	}
 	else 
 	{
-		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,NULL);
+		pContext->OMSetRenderTargets(16,m_pOldRenderTargets,NULL);
 	}
 	SetViewport(pContext,viewportXYWH[0],viewportXYWH[1],viewportXYWH[2],viewportXYWH[3],0,1.f);
 }
@@ -381,10 +383,9 @@ void Framebuffer::SaveOldRTs(void *context)
 	pContext->RSGetViewports(&num_OldViewports,NULL);
 	if(num_OldViewports>0)
 		pContext->RSGetViewports(&num_OldViewports,m_OldViewports);
-	m_pOldRenderTarget	=NULL;
 	m_pOldDepthSurface	=NULL;
-	pContext->OMGetRenderTargets(	1,
-									&m_pOldRenderTarget,
+	pContext->OMGetRenderTargets(	num_OldViewports,
+									m_pOldRenderTargets,
 									&m_pOldDepthSurface
 									);
 }
@@ -413,7 +414,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	else 
 	{
 		depth_active=(buffer_depth_texture.depthStencilView!=NULL);
-		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,buffer_depth_texture.depthStencilView);
+		pContext->OMSetRenderTargets(num_OldViewports,m_pOldRenderTargets,buffer_depth_texture.depthStencilView);
 	}
 	SetViewport(pContext,0,0,1.f,1.f,0,1.f);
 }
@@ -442,16 +443,16 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 		CreateBuffers();
 	HRESULT hr=S_OK;
 
-	if(m_pOldRenderTarget==NULL&&m_pOldDepthSurface==NULL)
+	if(m_pOldRenderTargets==NULL&&m_pOldDepthSurface==NULL)
 	{
 		pContext->RSGetViewports(&num_OldViewports,NULL);
 		if(num_OldViewports>0)
 			pContext->RSGetViewports(&num_OldViewports,m_OldViewports);
-		pContext->OMGetRenderTargets(	1,
-										&m_pOldRenderTarget,
+		pContext->OMGetRenderTargets(	num_OldViewports,
+										m_pOldRenderTargets,
 										&m_pOldDepthSurface
 										);
-		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,buffer_depth_texture.depthStencilView);
+		pContext->OMSetRenderTargets(num_OldViewports,m_pOldRenderTargets,buffer_depth_texture.depthStencilView);
 	}
 	else
 	{
@@ -489,11 +490,17 @@ void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext)
 void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
-	SAFE_RELEASE(m_pOldRenderTarget)
+	for(int j=num_OldViewports;j<16;j++)
+		m_pOldRenderTargets[j]=NULL;
+	if(num_OldViewports)
+		pContext->OMSetRenderTargets(num_OldViewports,m_pOldRenderTargets,m_pOldDepthSurface);
+	for(int j=0;j<16;j++)
+		SAFE_RELEASE(m_pOldRenderTargets[j])
 	SAFE_RELEASE(m_pOldDepthSurface)
 	if(num_OldViewports>0)
-		pContext->RSSetViewports(num_OldViewports,m_OldViewports);
+	{
+		pContext->RSSetViewports(16,m_OldViewports);
+	}
 	if(GenerateMips)
 		pContext->GenerateMips(buffer_texture.shaderResourceView);
 	colour_active=false;

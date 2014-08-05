@@ -487,6 +487,8 @@ BlendState CompositeBlend
 	SrcBlend		=ONE;
 	DestBlend		=SRC1_COLOR;
     BlendOp			=ADD;
+	RenderTargetWriteMask[0]=7;
+	RenderTargetWriteMask[1]=7;
 };
 
 // This technique composites on the basis that clouds have an arbitrary integral downscale, and sky has downscale 2.

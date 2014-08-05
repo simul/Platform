@@ -89,7 +89,7 @@ namespace simul
 		protected:
 			ID3D11Texture2D *stagingTexture;	// Only initialized if CopyToMemory is invoked.
 			
-			ID3D11RenderTargetView*				m_pOldRenderTarget;
+			ID3D11RenderTargetView*				m_pOldRenderTargets[16];
 			ID3D11DepthStencilView*				m_pOldDepthSurface;
 			D3D11_VIEWPORT						m_OldViewports[16];
 			unsigned							num_OldViewports;

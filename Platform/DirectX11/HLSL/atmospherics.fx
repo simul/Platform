@@ -332,14 +332,14 @@ vec4 PS_Inscatter_Near_NFDepth1(atmosVertexOutput IN) : SV_TARGET1
 
 FarNearOutput PS_Inscatter_Both(atmosVertexOutput IN)
 {
-#if 0
-	FarNearOutput fn;
-	fn.farColour=vec4(1,0,0,1);
-	fn.nearColour=vec4(0,1,0,1);
-#else
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec4 depth_lookup	=texture_nearest_lod(depthTexture,depth_texc,0);
 	vec2 texCoords		=mixedResolutionTransformXYWH.xy+IN.texCoords.xy*mixedResolutionTransformXYWH.zw;
+#if 0
+	FarNearOutput fn;
+	fn.farColour=vec4(texCoords,0,1);
+	fn.nearColour=vec4(0,texCoords,1);
+#else
 	FarNearOutput fn	=Inscatter_Both(inscTexture
 										,skylTexture
 										,illuminationTexture

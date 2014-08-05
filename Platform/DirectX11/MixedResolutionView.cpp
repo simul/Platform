@@ -16,7 +16,6 @@ using namespace dx11;
 	,ScreenWidth(0)
 	,ScreenHeight(0)
 	,useExternalFramebuffer(false)
-	,externalDepthTexture(NULL)
  {
  }
 
@@ -44,7 +43,6 @@ void MixedResolutionView::InvalidateDeviceObjects()
 	lowResDepthTexture.InvalidateDeviceObjects();
 	hiResDepthTexture.InvalidateDeviceObjects();
 	resolvedTexture.InvalidateDeviceObjects();
-	externalDepthTexture=NULL;
 }
 
 int MixedResolutionView::GetScreenWidth() const
@@ -72,12 +70,6 @@ void MixedResolutionView::SetExternalFramebuffer(bool e)
 	}
 }
 
-void MixedResolutionView::SetExternalDepthTexture(crossplatform::Texture *d,crossplatform::Viewport v)
-{
-	externalDepthTexture=d;
-	depthTextureViewport=v;
-}
-
 void MixedResolutionView::ResolveFramebuffer(crossplatform::DeviceContext &deviceContext)
 {
 	if(!useExternalFramebuffer)
@@ -93,7 +85,7 @@ void MixedResolutionView::ResolveFramebuffer(crossplatform::DeviceContext &devic
 	}
 }
 
-void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
+void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,int x0,int y0,int dx,int dy)
 {
 //	int w		=lowResDepthTexture.width;
 	int w=dx/2;
@@ -103,17 +95,8 @@ void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &devic
 		l=dy/2;
 		w		=(lowResDepthTexture.width*l)/lowResDepthTexture.length;
 	}
-	static bool enable=true;
-	if(enable)
-	{
-		static float uu=10000.0f;
-		if(externalDepthTexture)
-		{
-			deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,externalDepthTexture	);
-		}
-		else
-			deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,hdrFramebuffer.GetDepthTexture());
-	}
+	deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,depthTexture	);
+	
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0		,"Main Depth");
 	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0+l	,w,l,&hiResDepthTexture	);
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0+l	,"Hi-Res Depth");
@@ -171,42 +154,45 @@ void MixedResolutionRenderer::RecompileShaders()
 	mixedResolutionConstants.LinkToEffect(depthReverseEffect,"MixedResolutionConstants");
 }
 #pragma optimize("",off)
-void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s
-											 ,vec4 depthToLinFadeDistParams,bool includeLowResDepth)
+void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &deviceContext
+											,crossplatform::Texture *depthTexture
+											,const crossplatform::Viewport *simulViewport
+											,MixedResolutionView *view
+											,int hiResDownscale
+											,int lowResDownscale
+											,vec4 depthToLinFadeDistParams,bool includeLowResDepth)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	SIMUL_COMBINED_PROFILE_START(pContext,"DownscaleDepth")
 	int FullWidth=0,FullHeight=0;
-	crossplatform::Texture *depthTexture=NULL;
-	if(view->useExternalFramebuffer)
+	int StartX=0,StartY=0;
+	if(!depthTexture)
+		return;
+	if(simulViewport)
 	{
-		if(view->externalDepthTexture)
-		{
-			FullHeight		=view->ScreenHeight;
-			FullWidth		=view->ScreenWidth;
-			depthTexture	=view->externalDepthTexture;
-		}
+		FullHeight		=simulViewport->h;
+		FullWidth		=simulViewport->w;
+		StartX			=simulViewport->x;
+		StartY			=simulViewport->y;
 	}
 	else
 	{
-		FullWidth		=view->GetFramebuffer()->Width;
-		FullHeight		=view->GetFramebuffer()->Height;
-		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
+		FullHeight		=depthTexture->length;
+		FullWidth		=depthTexture->width;
 	}
 	if(!FullWidth||!FullHeight)
 		return;
+	SIMUL_COMBINED_PROFILE_START(pContext,"DownscaleDepth")
 	static int BLOCKWIDTH								=8;
 	crossplatform::Effect *effect=depthForwardEffect;
 	simul::camera::Frustum frustum=camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	if(frustum.reverseDepth)
 		effect=depthReverseEffect;
 	SIMUL_ASSERT(depthTexture!=NULL);
-	static int ds2=2;
-	int W=(FullWidth+ds2-1)/ds2;
-	int H=(FullHeight+ds2-1)/ds2;
-	// The downscaled size should be enough to fit in at least s hi-res pixels in every larger pixel
-	int w=(FullWidth+s-1)/s;
-	int h=(FullHeight+s-1)/s;
+	int W=(FullWidth+hiResDownscale-1)/hiResDownscale;
+	int H=(FullHeight+hiResDownscale-1)/hiResDownscale;
+	// The downscaled size should be enough to fit in at least lowResDownscale hi-res pixels in every larger pixel
+	int w=(FullWidth+lowResDownscale-1)/lowResDownscale;
+	int h=(FullHeight+lowResDownscale-1)/lowResDownscale;
 	view->GetLowResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/false);
 	view->GetLowResScratchTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/false);
 	bool msaa=(depthTexture->GetSampleCount()>0);
@@ -218,10 +204,11 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		view->GetHiResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/true);
 		view->GetHiResScratchTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/true);
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Hi-res Depth")
-		mixedResolutionConstants.scale						=uint2(ds2,ds2);
+		mixedResolutionConstants.scale						=uint2(hiResDownscale,hiResDownscale);
 		mixedResolutionConstants.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 		mixedResolutionConstants.nearZ						=0;
 		mixedResolutionConstants.farZ						=0;
+		mixedResolutionConstants.source_offset				=uint2(StartX,StartY);
 		mixedResolutionConstants.source_dims				=uint2(depthTexture->GetWidth(),depthTexture->GetLength());
 		mixedResolutionConstants.target_dims				=uint2(W,H);
 		mixedResolutionConstants.Apply(deviceContext);
@@ -272,14 +259,14 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	}
 	{
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Lo-res Depth")
-		mixedResolutionConstants.scale=uint2(s/ds2,s/ds2);
+		mixedResolutionConstants.scale=uint2(lowResDownscale/hiResDownscale,lowResDownscale/hiResDownscale);
 		mixedResolutionConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
 		mixedResolutionConstants.nearZ=0;
 		mixedResolutionConstants.farZ=0;
-		mixedResolutionConstants.source_dims=uint2(view->GetHiResDepthTexture()->GetWidth(),view->GetHiResDepthTexture()->GetLength());
+		mixedResolutionConstants.source_dims=uint2(W,H);
 		mixedResolutionConstants.target_dims=uint2(w,h);
 		// if using rendertarget we must rescale the texCoords.
-		//mixedResolutionConstants.mixedResolutionTransformXYWH=vec4(0.f,0.f,(float)(w*s)/(float)FullWidth,(float)(h*s)/(float)FullHeight);
+		//mixedResolutionConstants.mixedResolutionTransformXYWH=vec4(0.f,0.f,(float)(w*lowResDownscale)/(float)FullWidth,(float)(h*lowResDownscale)/(float)FullHeight);
 		mixedResolutionConstants.Apply(deviceContext);
 		uint2 subgrid						=uint2((view->GetLowResDepthTexture()->GetWidth()+BLOCKWIDTH-1)/BLOCKWIDTH,(view->GetLowResDepthTexture()->GetLength()+BLOCKWIDTH-1)/BLOCKWIDTH);
 		// HiResDepthTexture->LowResScratchTexture
@@ -378,10 +365,10 @@ void MixedResolutionViewManager::Clear()
 	views.clear();
 }
 
-void MixedResolutionViewManager::DownscaleDepth(crossplatform::DeviceContext &deviceContext,int s,float max_dist_metres,bool includeLowRes)
+void MixedResolutionViewManager::DownscaleDepth(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *v,int lowResDownscale,float max_dist_metres,bool includeLowRes)
 {
 	MixedResolutionView *view=GetView(deviceContext.viewStruct.view_id);
-	mixedResolutionRenderer.DownscaleDepth(deviceContext,view,s
+	mixedResolutionRenderer.DownscaleDepth(deviceContext,depthTexture,v,view, 2,lowResDownscale
 		,(const float *)simul::camera::GetDepthToDistanceParameters(deviceContext.viewStruct,max_dist_metres),includeLowRes);
 }
 

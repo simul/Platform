@@ -158,7 +158,6 @@ vec4 MainPS(v2f IN) : SV_TARGET
 										,ambient_light.rgb
 										,lightDir.xyz
 										,lightResponse);
-	
 	ret.rgb				*=exposure;
 	return ret;
 }
@@ -317,9 +316,9 @@ technique11 detail_lighting
 BlendState AlphaBlendX
 {
 	BlendEnable[0] = TRUE;
-	BlendEnable[1] = FALSE;
+	BlendEnable[1] = TRUE;
 	SrcBlend = SRC_ALPHA;
-	DestBlend = ZERO;
+	DestBlend = INV_SRC_ALPHA;
     BlendOp = ADD;
     SrcBlendAlpha = ZERO;
     DestBlendAlpha = INV_SRC_ALPHA;

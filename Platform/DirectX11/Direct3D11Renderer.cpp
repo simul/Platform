@@ -380,15 +380,14 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 										&mainRenderTarget,
 										NULL
 										);
-	/*	simul::dx11::Texture depthT;
-		depthT.InitFromExternalD3D11Texture2D(,);
-		view->SetExternalDepthTexture(&depthT);*/
 	}
 #if 1
 	if(simulWeatherRenderer)
 	{
 		int s=simulWeatherRenderer->GetDownscale();
-		viewManager.DownscaleDepth(deviceContext,s,simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetMaxDistanceKm()*1000.0f,true);
+		crossplatform::Texture *depthTexture=NULL;
+		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
+		viewManager.DownscaleDepth(deviceContext,depthTexture,NULL,s,simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetMaxDistanceKm()*1000.0f,true);
 	
 		crossplatform::Texture* skyBufferDepthTex = (UseSkyBuffer)? &view->lowResDepthTexture : &view->hiResDepthTexture;
 	
@@ -611,7 +610,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer&&AllOsds)
 	{
 		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
-		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth()/2);
+		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth());
 		int W1=(int)viewport.Width;
 		int H1=(int)viewport.Height;
 		int W2=W1/2;
@@ -624,10 +623,10 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			if(vertical_screen)
 			{
 				x0=8;
-				y0=W2;
+				y0=H2;
 				w=W2;
 			}
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(deviceContext,x0,y0,w,view->GetScreenHeight()/2);
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(deviceContext,x0,y0,w,H2);
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
@@ -677,7 +676,7 @@ void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &device
 {
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext* )deviceContext.asD3D11DeviceContext();
 	MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
-	view->RenderDepthBuffers(deviceContext,x0,y0,dx,dy);
+	view->RenderDepthBuffers(deviceContext,view->GetFramebuffer()->GetDepthTexture(),x0,y0,dx,dy);
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->RenderFramebufferDepth(deviceContext,x0+dx/2	,y0	,dx/2,dy/2);

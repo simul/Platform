@@ -58,12 +58,6 @@ namespace simul
 			/// \param	ext	Whether to use an external framebuffer.
 			void SetExternalFramebuffer(bool ext);
 
-			/// If an external depth buffer is used, pass it here, wrappered in a
-			/// simul::crossplatform::Texture.
-			///
-			/// \param [in,out]	tex	If non-null, the tex.
-			void SetExternalDepthTexture(crossplatform::Texture *tex,crossplatform::Viewport v);
-
 			/// Resolve framebuffer.
 			///
 			/// \param [in,out]	deviceContext	Context for the device.
@@ -76,7 +70,7 @@ namespace simul
 			/// \param	y0					 	The y coordinate 0.
 			/// \param	dx					 	The dx.
 			/// \param	dy					 	The dy.
-			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy);
+			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,int x0,int y0,int dx,int dy);
 
 			/// Gets resolved header buffer.
 			///
@@ -145,9 +139,6 @@ namespace simul
 			int								ScreenHeight;
 			/// true to use external framebuffer.
 			bool							useExternalFramebuffer;
-			/// The external depth texture.
-			crossplatform::Texture			*externalDepthTexture;
-			crossplatform::Viewport			depthTextureViewport;
 		};
 		/// A class to render mixed-resolution depth buffers.
 		class SIMUL_DIRECTX11_EXPORT MixedResolutionRenderer
@@ -173,7 +164,8 @@ namespace simul
 			/// \param [in,out]	view				The view.
 			/// \param	s							The downscale factor.
 			/// \param	depthToLinFadeDistParams	Options for controlling the depth to linear fade distance conversion.
-			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,MixedResolutionView *view,int s,vec4 depthToLinFadeDistParams
+			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *simulViewport,MixedResolutionView *view
+											 ,int lowResDownscale,int hiResDownscale,vec4 depthToLinFadeDistParams
 								,bool includeLowResDepth);
 		protected:
 			/// The render platform.
@@ -210,7 +202,7 @@ namespace simul
 			/// \param [in,out]	deviceContext	Cross-platform deviceContext.
 			/// \param	s					 	The downscale factor.
 			/// \param	max_dist_metres		 	The maximum distance in metres.
-			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext,int s,float max_dist_metres,bool includeLowResDepth);
+			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *v,int lowResDownscale,float max_dist_metres,bool includeLowResDepth);
 
 			/// Gets a view.
 			///
