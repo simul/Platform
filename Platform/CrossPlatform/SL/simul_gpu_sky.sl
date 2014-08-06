@@ -313,6 +313,8 @@ void CSLoss(RWTexture3D<float4> targetTexture,Texture2D density_texture,uint3 po
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow((float)(i)/((float)dims.z-1.0),2.0);
 		float dist_km		=zPosition*maxDistanceKm;
+		if(i==dims.z-1)
+			dist_km=12000.0;
 		float maxd			=min(spaceDistKm,dist_km);
 		float mind			=min(spaceDistKm,prevDist_km);
 		float dist			=0.5*(mind+maxd);

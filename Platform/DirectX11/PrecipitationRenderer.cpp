@@ -213,6 +213,8 @@ void PrecipitationRenderer::PreRenderUpdate(crossplatform::DeviceContext &device
 	//intensity=Intensity;
 	if(intensity<=0.01)
 		return;
+	if(dt==0.f)
+		return;
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"PrecipitationRenderer::PreRenderUpdate")
 	if(dt<0)
 		dt*=-1.0f;
@@ -302,6 +304,8 @@ void PrecipitationRenderer::Render(crossplatform::DeviceContext &deviceContext
 				,float max_fade_distance_metres
 				,simul::sky::float4 viewportTextureRegionXYWH)
 {
+	if(!baseSkyInterface)
+		return;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	math::Vector3 cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
 	static float ll=0.07f;

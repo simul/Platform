@@ -102,6 +102,7 @@ bool dx11::Texture::IsValid() const
 {
 	return (shaderResourceView!=NULL);
 }
+
 void dx11::Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels)
 {
 	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);

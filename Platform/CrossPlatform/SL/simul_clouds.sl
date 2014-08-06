@@ -309,7 +309,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float max_texc_z	=1.0-min_texc_z;
 	if(do_rain_effect)
 		min_texc_z		=-12.0;
-	else if(view.z<0&&viewPos.z<cornerPos.z-fractalScale.z/inverseScales.z)
+	else if(view.z<-0.1&&viewPos.z<cornerPos.z-fractalScale.z/inverseScales.z)
 		return res;
 	float depth;
 	if(near_pass)
@@ -426,9 +426,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			}
 		}
 	}
-	meanFadeDistance					+=colour.a;
-    res.colour							=vec4(exposure*colour.rgb,colour.a);
-	res.depth							=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	meanFadeDistance	+=colour.a;
+    res.colour			=vec4(exposure*colour.rgb,colour.a);
+	res.depth			=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	return res;
 }
 #endif

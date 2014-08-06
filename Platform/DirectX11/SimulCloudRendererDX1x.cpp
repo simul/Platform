@@ -433,9 +433,12 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceConte
 		simul::dx11::setSamplerState(effect->asD3DX11Effect(),"cloudSamplerState",m_pClampSamplerState);
 
 	effect->Apply(deviceContext,tech,0);
-	shadow_fb->activateRenderTarget(deviceContext);
-		renderPlatform->DrawQuad(deviceContext);
-	shadow_fb->deactivateRenderTarget();
+	if(shadow_fb->IsValid())
+	{
+		shadow_fb->activateRenderTarget(deviceContext);
+			renderPlatform->DrawQuad(deviceContext);
+		shadow_fb->deactivateRenderTarget();
+	}
 	effect->Unapply(deviceContext);
     SIMUL_COMBINED_PROFILE_END(pContext)
     SIMUL_COMBINED_PROFILE_START(pContext,"GodraysAccumulation")

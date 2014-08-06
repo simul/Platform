@@ -811,8 +811,7 @@ vec4 PS_RainParticles_NoCubemap(PSSceneIn IN) : SV_Target
 	{
 		discard;
 	}
-	float totalOpacity	=pointLight.a+directionalLight.a;
-	return vec4(texel.rgb,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
+	return texel;//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
 technique11 rain_particles
 {

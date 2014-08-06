@@ -49,6 +49,8 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 									  ,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& )
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
+	if(!skyLossTexture)
+		return true;
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"2DCloudRenderer")
 	
 	ID3D11ShaderResourceView* depthTexture_SRV	=depthTexture->AsD3D11ShaderResourceView();
