@@ -31,6 +31,19 @@ namespace simul
 			VertexBuffer<LightningVertex>				vertexBuffer;
 			crossplatform::ConstantBuffer<LightningConstants>			lightningConstants;
 			crossplatform::ConstantBuffer<LightningPerViewConstants>	lightningPerViewConstants;
+			void Walk(const simul::clouds::LightningProperties &props
+							,float time
+							,const simul::math::Vector3 &cam_pos
+							,int viewportWidth
+							,LightningVertex *vertices
+							 ,int &v
+							,int level
+							 ,int branchIndex
+							,std::vector<int> &start
+							,std::vector<int> &count
+							,std::vector<bool> &thick
+							 ,const simul::clouds::LightningRenderInterface *lightningRenderInterface
+							,const simul::clouds::LightningRenderInterface::Branch *parentBranch=NULL);
 		};
 	}
 }

@@ -190,7 +190,8 @@ float4 PS_Main(transformedVertex IN): SV_TARGET
 {
 	vec2 texCoords=IN.screenPos*0.5-0.5;
 	vec4 dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec4 clookup 		=sampleLod(cloudDepthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
+	vec4 clookup 		=sampleLod(cloudDepthTexture,samplerStateNearest,texCoords.xy,0);
+	return vec4(0,IN.texCoords.xy,0.5);
 	vec4 clip_pos		=vec4(IN.screenPos,1.0,1.0);
 #if REVERSE_DEPTH==1
 	float depth			=max(dlookup.x,clookup.x);
@@ -213,6 +214,9 @@ float4 PS_Main(transformedVertex IN): SV_TARGET
 
 float4 PS_Thin(transformedThinVertex IN): SV_TARGET
 {
+	vec4 dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
+	vec4 clookup 		=sampleLod(cloudDepthTexture,samplerStateNearest,IN.texCoords.xy,0);
+	return vec4(IN.texCoords.xy,0,0.5);
 	float4 colour=lightningColour*IN.texCoords.w;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
     return colour;
 }

@@ -67,6 +67,96 @@ void LightningRenderer::InvalidateDeviceObjects()
 	vertexBuffer.release();
 }
 
+void LightningRenderer::Walk(const simul::clouds::LightningProperties &props
+							 ,float time
+							 ,const simul::math::Vector3 &cam_pos
+							 ,int viewportWidth
+							 ,LightningVertex *vertices
+							 ,int &v,int level
+							 ,int branchIndex
+							,std::vector<int> &start
+							,std::vector<int> &count
+							,std::vector<bool> &thick
+							 ,const simul::clouds::LightningRenderInterface *lightningRenderInterface
+							 ,const simul::clouds::LightningRenderInterface::Branch *parentBranch)
+{
+	if(level>=props.numLevels)
+		return;
+	simul::sky::float4 x1,x2;
+	static float maxwidth=8.f;
+	static float pixel_width_threshold=3.f;
+	const simul::clouds::LightningRenderInterface::Branch *branch=NULL;
+	if(level==0)
+		branch=&lightningRenderInterface->GetRoot(props,vertices,time);
+	else
+		branch=&lightningRenderInterface->GetBranch(props,&(vertices[v]),time,level,branchIndex,*parentBranch);
+	float dist=0.001f*(cam_pos-simul::math::Vector3(branch->vertices[0].position)).Magnitude();
+
+	int v_start=v;
+	start.push_back(v);
+	math::Vector3 diff=((const float *)branch->vertices[0].position);
+	diff-=cam_pos;
+	float pixel_width=branch->width/diff.Magnitude()*viewportWidth;
+	bool draw_thick=pixel_width>pixel_width_threshold;
+	thick.push_back(draw_thick);
+
+	for(int k=draw_thick?-1:0;k<branch->numVertices;k++)
+	{
+		if(v>=1000)
+			break;
+		bool start=(k<0);
+		if(start)
+		{
+			x1=(const float *)branch->vertices[k+2].position;
+			if(k+1<branch->numVertices)
+			{
+				x2=(const float *)branch->vertices[k+1].position;
+				simul::sky::float4 dir=x2-x1;
+				x1=x2+dir;
+			}
+		}
+		else
+			x1=(const float *)branch->vertices[k].position;
+		bool end=(k==branch->numVertices-1);
+
+		float brightness=branch->brightness*props.maxRadiance;
+		/* dh=x1.z/1000.f-K.cloud_base_km;
+		if(dh>0)
+		{
+			static float cc=0.1f;
+			float d=exp(-dh/cc);
+			brightness*=d;
+		}*/
+		if(end)
+			brightness=0.f;
+		if(!draw_thick)
+			brightness*=pixel_width/pixel_width_threshold;
+		vertices[v].texCoords=vec4(branch->width*x1.w,branch->width*x1.w,x1.w,brightness*x1.w);
+		vertices[v].position=vec4(x1.x,x1.y,x1.z,x1.w);
+		v++;
+	}
+	count.push_back(v-v_start);
+	
+		if(v>=1000)
+			return;
+	for(int j=0;j<props.branchCount;j++)
+	{
+		Walk(props
+							,time
+							,cam_pos
+							,viewportWidth
+							,vertices
+							 ,v
+							,level+1
+							,j,start
+							,count
+							,thick
+							,lightningRenderInterface
+							,branch);
+	}
+	
+}
+
 void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *cloud_depth_tex)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
@@ -112,64 +202,19 @@ void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,cross
 		lightningConstants.Apply(deviceContext);
 
 		//dx11::setParameter(effect,"lightningColour",props.colour);
-		simul::sky::float4 x1,x2;
-		static float maxwidth=8.f;
-		static float pixel_width_threshold=3.f;
 		simul::math::Vector3 cam_pos=GetCameraPosVector((const float*)&deviceContext.viewStruct.view);
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
-		for(int j=0;j<props.numLevels;j++)
-		{
-			for(int jj=0;jj<(j>0?props.branchCount:1);jj++)
-			{
-				const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(props,time,j,jj);
-				float dist=0.001f*(cam_pos-simul::math::Vector3(branch.vertices[0])).Magnitude();
-
-				int v_start=v;
-				start.push_back(v);
-				math::Vector3 diff=((const float *)branch.vertices[0]);
-				diff-=cam_pos;
-				float pixel_width=branch.width/diff.Magnitude()*viewport.Width;
-				bool draw_thick=pixel_width>pixel_width_threshold;
-				thick.push_back(draw_thick);
-
-				for(int k=draw_thick?-1:0;k<branch.numVertices;k++)
-				{
-					if(v>=1000)
-						break;
-					bool start=(k<0);
-					if(start)
-					{
-						x1=(const float *)branch.vertices[k+2];
-						if(k+1<branch.numVertices)
-						{
-							x2=(const float *)branch.vertices[k+1];
-							simul::sky::float4 dir=x2-x1;
-							x1=x2+dir;
-						}
-					}
-					else
-						x1=(const float *)branch.vertices[k];
-					bool end=(k==branch.numVertices-1);
-
-					float brightness=branch.brightness*props.maxRadiance;
-					float dh=x1.z/1000.f-K.cloud_base_km;
-					if(dh>0)
-					{
-						static float cc=0.1f;
-						float d=exp(-dh/cc);
-						brightness*=d;
-					}
-					if(end)
-						brightness=0.f;
-					if(!draw_thick)
-						brightness*=pixel_width/pixel_width_threshold;
-					vertices[v].texCoords=vec4(branch.width*x1.w,branch.width*x1.w,x1.w,brightness*x1.w);
-					vertices[v].position=vec4(x1.x,x1.y,x1.z+vertical_shift,x1.w);
-					v++;
-				}
-				count.push_back(v-v_start);
-			}
-		}
+		Walk(props
+							,time
+							,cam_pos
+							,(int)viewport.Width
+							,vertices
+							,v
+							,0
+							,0,start
+							,count
+							,thick
+							,lightningRenderInterface);
 	}
 	vertexBuffer.Unmap(pContext);
 	vertexBuffer.apply(pContext,0);
