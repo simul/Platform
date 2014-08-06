@@ -314,7 +314,7 @@ struct LookupQuad4
 	vec4 _22;
 };
 
-void ExtractCompactedLookupQuads(out LookupQuad4 farQ,out LookupQuad4 nearQ,Texture2D<uint2> image,vec2 texc,vec2 texDims)
+void ExtractCompactedLookupQuads(out LookupQuad4 farQ,out LookupQuad4 nearQ,Texture2D<uint4> image,vec2 texc,vec2 texDims)
 {
 	vec2 texc_unit	=texc*texDims-vec2(.5,.5);
 	uint2 idx		=floor(texc_unit);
@@ -326,18 +326,18 @@ void ExtractCompactedLookupQuads(out LookupQuad4 farQ,out LookupQuad4 nearQ,Text
 	uint2 i21		=uint2(i2,j1);
 	uint2 i12		=uint2(i1,j2);
 	uint2 i22		=uint2(i2,j2);
-	uint2 v11		=image[i11];
-	uint2 v21		=image[i21];
-	uint2 v12		=image[i12];
-	uint2 v22		=image[i22];
-	farQ._11=vec4(uint_to_colour3(v11.x),1.0);
-	farQ._21=vec4(uint_to_colour3(v21.x),1.0);
-	farQ._12=vec4(uint_to_colour3(v12.x),1.0);
-	farQ._22=vec4(uint_to_colour3(v22.x),1.0);
-	nearQ._11=vec4(uint_to_colour3(v11.y),1.0);
-	nearQ._21=vec4(uint_to_colour3(v21.y),1.0);
-	nearQ._12=vec4(uint_to_colour3(v12.y),1.0);
-	nearQ._22=vec4(uint_to_colour3(v22.y),1.0);
+	uint4 v11		=image[i11];
+	uint4 v21		=image[i21];
+	uint4 v12		=image[i12];
+	uint4 v22		=image[i22];
+	farQ._11=vec4(uint2_to_colour3(v11.xy),1.0);
+	farQ._21=vec4(uint2_to_colour3(v21.xy),1.0);
+	farQ._12=vec4(uint2_to_colour3(v12.xy),1.0);
+	farQ._22=vec4(uint2_to_colour3(v22.xy),1.0);
+	nearQ._11=vec4(uint2_to_colour3(v11.zw),1.0);
+	nearQ._21=vec4(uint2_to_colour3(v21.zw),1.0);
+	nearQ._12=vec4(uint2_to_colour3(v12.zw),1.0);
+	nearQ._22=vec4(uint2_to_colour3(v22.zw),1.0);
 }
 LookupQuad4 GetLookupQuad(Texture2D image,vec2 texc,vec2 texDims)
 {
@@ -618,7 +618,7 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 				,vec4 fullResToHighResTransformXYWH
 				,Texture2D farInscatterTexture
 				,Texture2D nearInscatterTexture
-				,Texture2D<uint2> lossTexture)
+				,Texture2D<uint4> lossTexture)
 {
 	// texCoords.y is positive DOWNwards
 	TwoColourCompositeOutput result;
@@ -702,8 +702,7 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 		insc					=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
 		vec2 inscTexc_unit		=hiResTexCoords*hiResDims-vec2(.5,.5);
 		uint2 loss				=image_load(lossTexture,inscTexc_unit).xy;
-		result.multiply			=vec4(uint_to_colour3(loss.x),1.0)*result.add.a;
-	//	result.add.r=0;
+		result.multiply			=vec4(uint2_to_colour3(loss.xy),1.0)*result.add.a;
 	}
 	result.add.rgb				+=insc.rgb*result.add.a;
 	result.add.a		=result.multiply.r;
@@ -727,7 +726,7 @@ TwoColourCompositeOutput Composite_MSAA(vec2 texCoords
 				,vec4 fullResToHighResTransformXYWH
 				,Texture2D farInscatterTexture
 				,Texture2D nearInscatterTexture
-				,Texture2D<uint2> lossTexture)
+				,Texture2D<uint4> lossTexture)
 {
 	// texCoords.y is positive DOWNwards
 	
@@ -884,7 +883,7 @@ TwoColourCompositeOutput Composite_MSAA(vec2 texCoords
 			result.add.rgb		+=insc.rgb*result.add.a;
 			vec2 inscTexc_unit	=hiResTexCoords*hiResDims-vec2(.5,.5);
 			uint2 loss			=image_load(lossTexture,inscTexc_unit).xy;
-			result.multiply		=vec4(uint_to_colour3(loss.x),1.0)*result.add.a;
+			result.multiply		=vec4(uint2_to_colour3(loss.xy),1.0)*result.add.a;
 		}
 	}
 	

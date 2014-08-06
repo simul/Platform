@@ -66,21 +66,6 @@ vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,
 	return density;
 }
 
-vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier)
-{
-	vec4 l=sampleLod(lossTexture		,cmcSamplerState,fade_texc,0);
-	vec3 loss=l.rgb;
-	vec4 insc=sampleLod(inscTexture		,cmcSamplerState,fade_texc,0);
-	vec3 skyl=sampleLod(skylTexture		,cmcSamplerState,fade_texc,0).rgb;
-	vec3 inscatter=earthshadowMultiplier*InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-	final*=loss;
-#ifdef INFRARED
-	final=skyl.rgb;
-#else
-	final+=skyl+inscatter;
-#endif
-    return final;
-}
 
 float MakeRainMap(Texture3D cloudDensity1,Texture3D cloudDensity2,float cloud_interp,vec2 texCoords)
 {

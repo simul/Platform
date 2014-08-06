@@ -22,4 +22,24 @@ inline vec3 uint_to_colour3(uint int_colour)
 	return vec3(r/2047.0f, g/2047.0f, b/1023.0f);
 }
 
+inline uint2 colour3_to_uint2(vec3 colour)
+{
+	// Convert to R16G16B16
+	colour = clamp(colour, 0, 1);
+	uint int_r = asuint(colour.r);
+	uint int_g = f32tof16(colour.g);
+	uint int_b =f32tof16(colour.b );
+	// Pack into UINT32
+	return uint2(int_r,(int_g << 16) | int_b);
+}
+
+inline vec3 uint2_to_colour3(uint2 int_colour)
+{
+	// Unpack from UINT2 32
+	float r = asfloat(int_colour.x);
+	float g = f16tof32(int_colour.y>>16);
+	float b = f16tof32(int_colour.y);
+	// Convert R11G11B10 to float3
+	return vec3(r, g, b);
+}
 #endif

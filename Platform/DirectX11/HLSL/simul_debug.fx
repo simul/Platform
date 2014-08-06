@@ -99,11 +99,11 @@ vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	uint2 dims;
-	imageTextureUint2.GetDimensions(dims.x,dims.y);
+	imageTextureUint4.GetDimensions(dims.x,dims.y);
 	uint2 pos			=IN.texCoords*dims;
-	uint2 lookup		=image_load(imageTextureUint2,pos);
-	vec3 clr1=uint_to_colour3(lookup.x);
-	vec3 clr2=uint_to_colour3(lookup.y);
+	uint4 lookup		=image_load(imageTextureUint4,pos);
+	vec3 clr1=uint2_to_colour3(lookup.xy);
+	vec3 clr2=uint2_to_colour3(lookup.zw);
 	vec3 clr=0.5*(clr2+clr1);
 	clr.r+=100.0*abs(clr1.x-clr2.x);
 	vec3 res=multiplier*clr;
@@ -308,8 +308,8 @@ technique11 compacted_texture
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
-		SetPixelShader(CompileShader(ps_4_0,PS_CompactedTexture()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));
     }
 }
 

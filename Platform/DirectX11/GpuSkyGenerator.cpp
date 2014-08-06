@@ -175,7 +175,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		gpuSkyConstants.starlight			=(const float*)(p.physical.starlight);
 		
 		gpuSkyConstants.hazeEccentricity	=1.0;
-		gpuSkyConstants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
+		gpuSkyConstants.mieRayleighRatio	=(const float*)(p.physical.hazeStruct.mie/p.physical.rayleigh);//skyInterface->GetMieRayleighRatio());
 		gpuSkyConstants.emissivity			=ir.emissivity;
 		gpuSkyConstants.yRange				=vec2(0.f,1.f);
 

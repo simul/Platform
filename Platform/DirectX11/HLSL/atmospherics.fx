@@ -71,7 +71,7 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 	return OUT;
 }
 
-uint2 PS_LossComposite(atmosVertexOutput IN) : SV_TARGET
+uint4 PS_LossComposite(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec3 farLoss,nearLoss;
@@ -83,28 +83,29 @@ uint2 PS_LossComposite(atmosVertexOutput IN) : SV_TARGET
 					,IN.pos
 					,depthToLinFadeDistParams
 					,tanHalfFov);
-	uint faru		=colour3_to_uint(farLoss);
-	uint nearu		=colour3_to_uint(nearLoss);
-    return uint2(faru,nearu);
+	//uint faru		=colour3_to_uint(farLoss);
+	//uint nearu	=colour3_to_uint(nearLoss);
+	uint2 faru		=colour3_to_uint2(farLoss);
+	uint2 nearu		=colour3_to_uint2(nearLoss);
+    return uint4(faru,nearu);
 }
 
-
-uint2 PS_LossCompositeShadowed(atmosVertexOutput IN) : SV_TARGET
+uint4 PS_LossCompositeShadowed(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec3 farLoss,nearLoss;
 	LossCompositeShadowed(farLoss,nearLoss,depthTexture,cloudShadowTexture
-					,viewportToTexRegionScaleBias
-					,lossTexture
-					,invViewProj
-					,IN.texCoords
-					,IN.pos
-					,depthToLinFadeDistParams
-					,tanHalfFov
-					,invShadowMatrix,viewPosition,cloudShadowing);
-	uint faru		=colour3_to_uint(farLoss);
-	uint nearu		=colour3_to_uint(nearLoss);
-    return uint2(faru,nearu);
+						,viewportToTexRegionScaleBias
+						,lossTexture
+						,invViewProj
+						,IN.texCoords
+						,IN.pos
+						,depthToLinFadeDistParams
+						,tanHalfFov
+						,invShadowMatrix,viewPosition,cloudShadowing);
+	uint2 faru		=colour3_to_uint2(farLoss);
+	uint2 nearu		=colour3_to_uint2(nearLoss);
+    return uint4(faru,nearu);
 }
 
 vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET

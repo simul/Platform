@@ -15,7 +15,7 @@ Texture2D<uint> glowTexture;
 
 Texture2D inscatterTexture;			// Far, or default inscatter
 Texture2D nearInscatterTexture;		// Near inscatter.
-Texture2D<uint2> lossTexture;
+Texture2D<uint4> lossTexture;
 
 struct a2v
 {
