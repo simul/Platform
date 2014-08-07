@@ -238,20 +238,23 @@ void dx11::Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 
 void dx11::Texture::InitFromExternalD3D11Texture2D(ID3D11Texture2D *t,ID3D11ShaderResourceView *srv)
 {
+	if(shaderResourceView)
+		SAFE_RELEASE(shaderResourceView);
 	texture=t;
 	shaderResourceView=srv;
 	if(shaderResourceView)
 		shaderResourceView->AddRef();
 	if(texture)
 	{
-		//texture->AddRef();
+		texture->AddRef();
 		ID3D11Texture2D* ppd(NULL);
 		D3D11_TEXTURE2D_DESC textureDesc;
-		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)
-			return;
-		ppd->GetDesc(&textureDesc);
-		width=textureDesc.Width;
-		length=textureDesc.Height;
+		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
+		{
+			ppd->GetDesc(&textureDesc);
+			width=textureDesc.Width;
+			length=textureDesc.Height;
+		}
 		SAFE_RELEASE(ppd);
 	}
 	depth=1;
