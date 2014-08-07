@@ -26,6 +26,7 @@ struct transformedThinVertex
     vec4 hPosition	: SV_POSITION;
 	vec4 texCoords	: TEXCOORD0;
     float depth	: TEXCOORD1;
+	vec2 screenPos:	TEXCOORD2;
 };
 
 transformedThinVertex VS_Thin(LightningVertexInput IN)
@@ -34,6 +35,7 @@ transformedThinVertex VS_Thin(LightningVertexInput IN)
     OUT.hPosition	=mul(worldViewProj, vec4(IN.position.xyz , 1.0));
 	OUT.texCoords	=IN.texCoords;
 	OUT.depth		=OUT.hPosition.z/OUT.hPosition.w;
+	OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
     return OUT;
 }
 
@@ -109,19 +111,19 @@ void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStream<trans
 		if(dot(v0,n1)>0)
 		{
 			output.hPosition	=vec4( (p1 + width1 * n0) / viewportPixels, 0.0, 1.0 );
-			output.screenPos	=output.hPosition.xy;
+			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(0,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( (p1 + width1 * n1) / viewportPixels, 0.0, 1.0 );
-			output.screenPos	=output.hPosition.xy;
+			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(0,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
-			output.screenPos	=output.hPosition.xy;
+			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(0.5,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
@@ -131,19 +133,19 @@ void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStream<trans
 		else
 		{
 			output.hPosition	=vec4( (p1 - width2 * n1) / viewportPixels, 0.0, 1.0 );
-			output.screenPos	=output.hPosition.xy;
+			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(1.0,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( (p1 - width2 * n0) / viewportPixels, 0.0, 1.0 );
-			output.screenPos	=output.hPosition.xy;
+			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(1.0,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
-			output.screenPos	=output.hPosition.xy;
+			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(0.5,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
@@ -162,6 +164,7 @@ void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStream<trans
 	output.hPosition	=vec4(output.screenPos.xy*start.w,start.z,start.w);
 	output.along		=dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2*1.1-0.05;
 	output.texCoords	=vec4(0.0,input[1].texCoords.yzw);
+
 	output.depth		=input[1].depth;
 	SpriteStream.Append(output);
 	output.screenPos	=(p1 - lengthPixels_a * miter_a)/viewportPixels;
@@ -191,14 +194,14 @@ float4 PS_Main(transformedVertex IN): SV_TARGET
 	vec2 texCoords=IN.screenPos*0.5-0.5;
 	vec4 dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec4 clookup 		=sampleLod(cloudDepthTexture,samplerStateNearest,texCoords.xy,0);
-	return vec4(0,IN.texCoords.xy,0.5);
+	return vec4(1,1,0,0.5);
 	vec4 clip_pos		=vec4(IN.screenPos,1.0,1.0);
 #if REVERSE_DEPTH==1
 	float depth			=max(dlookup.x,clookup.x);
 #else
 	float depth			=min(dlookup.x,clookup.x);
 #endif
-	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthToLinFadeDistParams,tanHalfFov);
 	if(dist.x<dist.y)
 		discard;
 	
@@ -214,9 +217,19 @@ float4 PS_Main(transformedVertex IN): SV_TARGET
 
 float4 PS_Thin(transformedThinVertex IN): SV_TARGET
 {
-	vec4 dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec4 clookup 		=sampleLod(cloudDepthTexture,samplerStateNearest,IN.texCoords.xy,0);
-	return vec4(IN.texCoords.xy,0,0.5);
+	vec2 texCoords=IN.screenPos*0.5-0.5;
+	vec4 dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
+	vec4 clookup 		=sampleLod(cloudDepthTexture,samplerStateNearest,texCoords.xy,0);
+	return vec4(texCoords.xyy,0.5);
+#if REVERSE_DEPTH==1
+	float depth			=max(dlookup.x,clookup.x);
+#else
+	float depth			=min(dlookup.x,clookup.x);
+#endif
+	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthToLinFadeDistParams,tanHalfFov);
+	if(dist.x<1000.0)//dist.y)
+		discard;
+	
 	float4 colour=lightningColour*IN.texCoords.w;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
     return colour;
 }

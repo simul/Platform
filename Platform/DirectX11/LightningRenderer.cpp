@@ -82,6 +82,8 @@ void LightningRenderer::Walk(const simul::clouds::LightningProperties &props
 {
 	if(level>=props.numLevels)
 		return;
+	if(v>=1000)
+		return;
 	simul::sky::float4 x1,x2;
 	static float maxwidth=8.f;
 	static float pixel_width_threshold=3.f;
@@ -236,9 +238,9 @@ void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,cross
 			tech=effect->GetTechniqueByName("lightning_thin");
 			effect->Unapply(deviceContext);
 			effect->Apply(deviceContext,tech,0);
-		}
 		if(count[i]>0)
 			pContext->Draw(count[i],start[i]);
+		}
 	}
 	effect->Unapply(deviceContext);
 	pContext->IASetPrimitiveTopology(previousTopology);
