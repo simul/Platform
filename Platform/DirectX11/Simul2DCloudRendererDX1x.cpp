@@ -17,7 +17,6 @@
 #include "Simul/Sky/FadeTableInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Pi.h"
-#include "Simul/LicenseKey.h"
 #include "CreateEffectDX1x.h"
 #include "Simul/Platform/Crossplatform/Layout.h"
 #include "Simul/Platform/Crossplatform/DeviceContext.h"

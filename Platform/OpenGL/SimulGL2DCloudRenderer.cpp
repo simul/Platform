@@ -28,7 +28,6 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
-#include "Simul/LicenseKey.h"
 #include "LoadGLImage.h"
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
