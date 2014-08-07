@@ -16,9 +16,10 @@ struct transformedVertex
     vec2 hPosCentre1: TEXCOORD1;
     vec2 hPosCentre2: TEXCOORD2;
 	vec2 screenPos:	TEXCOORD3;
-    float along: TEXCOORD4;
-	float width: TEXCOORD5;
-    float depth	: TEXCOORD6;
+	vec2 texc		:	TEXCOORD4;
+    float along: TEXCOORD5;
+	float width: TEXCOORD6;
+    float depth	: TEXCOORD7;
 };
 
 struct transformedThinVertex
@@ -27,7 +28,30 @@ struct transformedThinVertex
 	vec4 texCoords	: TEXCOORD0;
     float depth	: TEXCOORD1;
 	vec2 screenPos:	TEXCOORD2;
+	vec2 texc		:	TEXCOORD3;
 };
+
+posTexVertexOutput VS_FullScreen(idOnly IN)
+{
+    posTexVertexOutput OUT;
+	vec2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(pos,0.0,1.0);
+	// Set to far plane so can use depth test as we want this geometry effectively at infinity
+#if REVERSE_DEPTH==1
+	OUT.hPosition.z	=0.0; 
+#else
+	OUT.hPosition.z	=OUT.hPosition.w; 
+#endif
+    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
+	return OUT;
+}
 
 transformedThinVertex VS_Thin(LightningVertexInput IN)
 {
@@ -36,6 +60,7 @@ transformedThinVertex VS_Thin(LightningVertexInput IN)
 	OUT.texCoords	=IN.texCoords;
 	OUT.depth		=OUT.hPosition.z/OUT.hPosition.w;
 	OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
+	OUT.texc		=OUT.screenPos.xy*0.5+0.5;
     return OUT;
 }
 
@@ -112,18 +137,21 @@ void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStream<trans
 		{
 			output.hPosition	=vec4( (p1 + width1 * n0) / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
+			output.texc			=output.screenPos.xy*0.5+0.5;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(0,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( (p1 + width1 * n1) / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
+			output.texc			=output.screenPos.xy*0.5+0.5;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(0,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
+			output.texc			=output.screenPos.xy*0.5+0.5;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(0.5,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
@@ -134,18 +162,21 @@ void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStream<trans
 		{
 			output.hPosition	=vec4( (p1 - width2 * n1) / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
+			output.texc			=output.screenPos.xy*0.5+0.5;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(1.0,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( (p1 - width2 * n0) / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
+			output.texc			=output.screenPos.xy*0.5+0.5;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(1.0,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
+			output.texc			=output.screenPos.xy*0.5+0.5;
 			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(0.5,input[1].texCoords.yzw);
 			output.depth		=input[1].depth;
@@ -162,6 +193,7 @@ void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStream<trans
 	output.width		=width1/start.w;
 	output.screenPos	=(p1 + lengthPixels_a * miter_a)/viewportPixels;
 	output.hPosition	=vec4(output.screenPos.xy*start.w,start.z,start.w);
+	output.texc			=output.screenPos.xy*0.5+0.5;
 	output.along		=dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2*1.1-0.05;
 	output.texCoords	=vec4(0.0,input[1].texCoords.yzw);
 
@@ -169,6 +201,7 @@ void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStream<trans
 	SpriteStream.Append(output);
 	output.screenPos	=(p1 - lengthPixels_a * miter_a)/viewportPixels;
 	output.hPosition	=vec4(output.screenPos.xy*start.w,start.z,start.w);
+	output.texc			=output.screenPos.xy*0.5+0.5;
 	output.along		=dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2;
 	output.texCoords	=vec4(1.0,input[1].texCoords.yzw);
 	output.depth		=input[1].depth;
@@ -176,25 +209,32 @@ void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStream<trans
 	output.width		=width2/end.w;
 	output.screenPos	=(p2 + lengthPixels_b * miter_b)/viewportPixels;
 	output.hPosition	=vec4(output.screenPos.xy*end.w,end.z,end.w);
+	output.texc			=output.screenPos.xy*0.5+0.5;
 	output.along		=dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2;
 	output.texCoords	=vec4(0.0,input[2].texCoords.yzw);
 	output.depth		=input[2].depth;
 	SpriteStream.Append(output);
 	output.screenPos	=(p2 - lengthPixels_b * miter_b)/viewportPixels;
 	output.hPosition	=vec4(output.screenPos.xy*end.w,end.z,end.w);
+	output.texc			=output.screenPos.xy*0.5+0.5;
 	output.along		=dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2;
 	output.texCoords	=vec4(1.0,input[2].texCoords.yzw);
 	output.depth		=input[2].depth;
 	SpriteStream.Append(output);
     SpriteStream.RestartStrip();
 }
-
+vec4 PS_Test(posTexVertexOutput IN): SV_TARGET
+{
+	vec4 dlookup 		=texture_wrap(depthTexture,IN.texCoords.xy);
+	vec2 dist			=depthToFadeDistance(dlookup.xy,vec2(0,0),depthToLinFadeDistParams,tanHalfFov);
+	return vec4(dist,dlookup.z,0.5);
+}
 float4 PS_Main(transformedVertex IN): SV_TARGET
 {
-	vec2 texCoords=IN.screenPos*0.5-0.5;
-	vec4 dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec4 clookup 		=sampleLod(cloudDepthTexture,samplerStateNearest,texCoords.xy,0);
-	return vec4(1,1,0,0.5);
+	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
+	vec4 dlookup 		=texture_wrap(depthTexture,texc.xy);
+	vec4 clookup 		=texture_wrap(cloudDepthTexture,texc.xy);
+
 	vec4 clip_pos		=vec4(IN.screenPos,1.0,1.0);
 #if REVERSE_DEPTH==1
 	float depth			=max(dlookup.x,clookup.x);
@@ -202,35 +242,38 @@ float4 PS_Main(transformedVertex IN): SV_TARGET
 	float depth			=min(dlookup.x,clookup.x);
 #endif
 	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthToLinFadeDistParams,tanHalfFov);
-	if(dist.x<dist.y)
-		discard;
+	//return vec4(100*dist.xy,100*dlookup.z,1.0);//dlookup.rb,1);
 	
 	float b			=2.0*(IN.texCoords.x-0.5);
-	float br		=pow(1.0-b*b,4.0)*IN.texCoords.w;// w is the local brightness factor
+	float br		=IN.texCoords.w;//pow(1.0-b*b,4.0);// w is the local brightness factor
 	vec2 centre		=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along));
 	vec2 diff		=IN.screenPos-centre;
 	float d			=length(diff)/IN.width;
-	br				*=exp(-6.0*d);
+//	br				*=exp(-2.0*d);
+	if(br<0)
+		br=0;
 	float4 colour	=br*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
+	
     return colour;
 }
 
 float4 PS_Thin(transformedThinVertex IN): SV_TARGET
 {
-	vec2 texCoords=IN.screenPos*0.5-0.5;
-	vec4 dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec4 clookup 		=sampleLod(cloudDepthTexture,samplerStateNearest,texCoords.xy,0);
-	return vec4(texCoords.xyy,0.5);
+	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
+	vec4 dlookup 		=texture_clamp(depthTexture,texc.xy);
+	vec4 clookup 		=texture_clamp(cloudDepthTexture,texc.xy);
 #if REVERSE_DEPTH==1
 	float depth			=max(dlookup.x,clookup.x);
 #else
 	float depth			=min(dlookup.x,clookup.x);
 #endif
 	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthToLinFadeDistParams,tanHalfFov);
-	if(dist.x<1000.0)//dist.y)
-		discard;
+	//if(dist.x<dist.y)
+	//	discard;
 	
 	float4 colour=lightningColour*IN.texCoords.w;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
     return colour;
 }
 
@@ -238,7 +281,7 @@ technique11 lightning_thick
 {
     pass p0 
     {
-		SetDepthStencilState(TestDepth,0);
+		SetDepthStencilState(TestDepth,0);//
         SetRasterizerState(RenderNoCull);
 		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
@@ -274,3 +317,16 @@ technique11 lightning_thin
     }
 }
 
+
+technique11 test
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_Test()));
+    }
+}

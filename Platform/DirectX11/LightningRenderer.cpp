@@ -87,6 +87,9 @@ void LightningRenderer::Walk(const simul::clouds::LightningProperties &props
 	simul::sky::float4 x1,x2;
 	static float maxwidth=8.f;
 	static float pixel_width_threshold=3.f;
+	if(level)
+		v++;
+	int v_start=v;
 	const simul::clouds::LightningRenderInterface::Branch *branch=NULL;
 	if(level==0)
 		branch=&lightningRenderInterface->GetRoot(props,vertices,time);
@@ -94,34 +97,31 @@ void LightningRenderer::Walk(const simul::clouds::LightningProperties &props
 		branch=&lightningRenderInterface->GetBranch(props,&(vertices[v]),time,level,branchIndex,*parentBranch);
 	float dist=0.001f*(cam_pos-simul::math::Vector3(branch->vertices[0].position)).Magnitude();
 
-	int v_start=v;
-	start.push_back(v);
 	math::Vector3 diff=((const float *)branch->vertices[0].position);
 	diff-=cam_pos;
 	float pixel_width=branch->width/diff.Magnitude()*viewportWidth;
 	bool draw_thick=pixel_width>pixel_width_threshold;
 	thick.push_back(draw_thick);
-
-	for(int k=draw_thick?-1:0;k<branch->numVertices;k++)
+		float brightness=branch->brightness*props.maxRadiance;
+		brightness*=pixel_width/pixel_width_threshold;
+	if(level>0&&draw_thick)
+	{
+		int v_pre_start=v_start-1;
+		x1=(const float *)branch->vertices[0].position;
+		x2=(const float *)branch->vertices[1].position;
+		vertices[v_pre_start].position=x1+(x1-x2);
+		vertices[v_pre_start].position.w=x1.w;
+		vertices[v].texCoords=vec4(branch->width*x1.w,branch->width*x1.w,x1.w,brightness*x1.w);
+		v_start=v_pre_start;
+	}
+	start.push_back(v_start);
+	for(int k=0;k<branch->numVertices;k++)
 	{
 		if(v>=1000)
 			break;
-		bool start=(k<0);
-		if(start)
-		{
-			x1=(const float *)branch->vertices[k+2].position;
-			if(k+1<branch->numVertices)
-			{
-				x2=(const float *)branch->vertices[k+1].position;
-				simul::sky::float4 dir=x2-x1;
-				x1=x2+dir;
-			}
-		}
-		else
-			x1=(const float *)branch->vertices[k].position;
+		x1=(const float *)branch->vertices[k].position;
 		bool end=(k==branch->numVertices-1);
 
-		float brightness=branch->brightness*props.maxRadiance;
 		/* dh=x1.z/1000.f-K.cloud_base_km;
 		if(dh>0)
 		{
@@ -131,10 +131,8 @@ void LightningRenderer::Walk(const simul::clouds::LightningProperties &props
 		}*/
 		if(end)
 			brightness=0.f;
-		if(!draw_thick)
-			brightness*=pixel_width/pixel_width_threshold;
 		vertices[v].texCoords=vec4(branch->width*x1.w,branch->width*x1.w,x1.w,brightness*x1.w);
-		vertices[v].position=vec4(x1.x,x1.y,x1.z,x1.w);
+		//vertices[v].position=vec4(x1.x,x1.y,x1.z,x1.w);
 		v++;
 	}
 	count.push_back(v-v_start);
@@ -185,7 +183,9 @@ void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,cross
 	lightningPerViewConstants.viewportPixels=vec2(viewport.Width,viewport.Height);
 	lightningPerViewConstants._line_width	=4;
 	lightningPerViewConstants.viewportToTexRegionScaleBias			=vec4(depthViewportXYWH.z,depthViewportXYWH.w,depthViewportXYWH.x,depthViewportXYWH.y);
-
+	lightningPerViewConstants.depthToLinFadeDistParams=simul::camera::GetDepthToDistanceParameters(deviceContext.viewStruct,300000.0f);
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
+	lightningPerViewConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	lightningPerViewConstants.Apply(deviceContext);
 	std::vector<int> start;
 	std::vector<int> count;
@@ -221,26 +221,36 @@ void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,cross
 	vertexBuffer.Unmap(pContext);
 	vertexBuffer.apply(pContext,0);
 	pContext->IASetInputLayout(inputLayout);
-
-	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("lightning_thick");
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
 	if(depth_tex->GetSampleCount()>0)
 		effect->SetTexture(deviceContext,"depthTextureMS",depth_tex);
 	else
 		effect->SetTexture(deviceContext,"depthTexture",depth_tex);
 	effect->SetTexture(deviceContext,"cloudDepthTexture",cloud_depth_tex);
+	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("test");
+	/*effect->Apply(deviceContext,tech,0);
+	renderPlatform->DrawQuad(deviceContext);
+	effect->Unapply(deviceContext);*/
+	tech=effect->GetTechniqueByName("lightning_thick");
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
 	effect->Apply(deviceContext,tech,0);
 	for(int i=0;i<(int)start.size();i++)
 	{
-		if(!thick[i])
-		{
-			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
-			tech=effect->GetTechniqueByName("lightning_thin");
-			effect->Unapply(deviceContext);
-			effect->Apply(deviceContext,tech,0);
-		if(count[i]>0)
+		if(thick[i]&&count[i]>0)
 			pContext->Draw(count[i],start[i]);
-		}
+	}
+	effect->Unapply(deviceContext);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+	tech=effect->GetTechniqueByName("lightning_thin");
+	effect->Apply(deviceContext,tech,0);
+	if(depth_tex->GetSampleCount()>0)
+		effect->SetTexture(deviceContext,"depthTextureMS",depth_tex);
+	else
+		effect->SetTexture(deviceContext,"depthTexture",depth_tex);
+	effect->SetTexture(deviceContext,"cloudDepthTexture",cloud_depth_tex);
+	for(int i=0;i<(int)start.size();i++)
+	{
+		if(!thick[i]&&count[i]>0)
+			pContext->Draw(count[i],start[i]);
 	}
 	effect->Unapply(deviceContext);
 	pContext->IASetPrimitiveTopology(previousTopology);

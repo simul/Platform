@@ -8,10 +8,10 @@ SIMUL_CONSTANT_BUFFER_END
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
 	uniform mat4 worldViewProj;
 	uniform vec4 depthToLinFadeDistParams;
+	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec2 viewportPixels;
 	uniform vec2 _line_width;
 	uniform vec2 tanHalfFov;
-	uniform vec4 viewportToTexRegionScaleBias;
 SIMUL_CONSTANT_BUFFER_END
 
 struct LightningVertex
