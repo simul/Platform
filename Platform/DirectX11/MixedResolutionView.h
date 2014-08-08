@@ -158,12 +158,6 @@ namespace simul
 			/// Recompile shaders.
 			void RecompileShaders();
 
-			/// Downscale depth.
-			///
-			/// \param [in,out]	deviceContext   	Cross-platform deviceContext.
-			/// \param [in,out]	view				The view.
-			/// \param	s							The downscale factor.
-			/// \param	depthToLinFadeDistParams	Options for controlling the depth to linear fade distance conversion.
 			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *simulViewport,MixedResolutionView *view
 											 ,int lowResDownscale,int hiResDownscale,vec4 depthToLinFadeDistParams
 								,bool includeLowResDepth);
@@ -197,12 +191,9 @@ namespace simul
 			/// Recompile the shaders.
 			void							RecompileShaders		();
 
-			/// Downscale depth.
-			///
-			/// \param [in,out]	deviceContext	Cross-platform deviceContext.
-			/// \param	s					 	The downscale factor.
-			/// \param	max_dist_metres		 	The maximum distance in metres.
-			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *v,int lowResDownscale,float max_dist_metres,bool includeLowResDepth);
+			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext
+																			,crossplatform::Texture *depthTexture,const crossplatform::Viewport *v
+																			,int lowResDownscale,float max_dist_metres,bool includeLowResDepth);
 
 			/// Gets a view.
 			///

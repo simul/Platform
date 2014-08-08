@@ -97,7 +97,9 @@ vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize
 	vec2 overcast_range		=OvercastDistances(alt_km,sine,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm);
     return vec4(full_bright_range,overcast_range);
 }
-
+#ifndef OVERCAST_STEPS
+#define OVERCAST_STEPS 6
+#endif
 vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 texCoords,float alt_km,float maxFadeDistanceKm
 	,float overcast,float overcastBaseKm,float overcastRangeKm,vec2 targetTextureSize)
 {
@@ -110,16 +112,15 @@ vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 
 	vec2 illum_texc			=vec2(0.5,fade_texc.y);
 	vec4 illum_lookup		=texture_clamp_lod(illuminationTexture,illum_texc,0);
 
-//	vec2 overcDistTexc		=clamp(illum_lookup.zw,vec2(0,0),vec2(1.0,1.0));
 	float sine				=1.0-(2.0*(fade_texc.y)*targetTextureSize.y/(targetTextureSize.y-1.0));
 	float dist_km			=fade_texc.x*fade_texc.x*maxFadeDistanceKm;
 	vec4 insc_diff			=vec4(0,0,0,0);
 
 	float ov_total			=0.0;
-	for(int i=0;i<12;i++)
+	for(int i=0;i<OVERCAST_STEPS;i++)
 	{
-		float u1			=float(i)/12.0;
-		float u2			=float(i+1)/12.0;
+		float u1			=float(i)/float(OVERCAST_STEPS);
+		float u2			=float(i+1)/float(OVERCAST_STEPS);
 		float this_alt_km	=alt_km+sine*dist_km*0.5*(u1+u2);
 		float ov			=saturate(((overcastRangeKm+overcastBaseKm)-this_alt_km)/overcastRangeKm);
 		vec2 fade_texc_1	=vec2(fade_texc.x*u1,fade_texc.y);
@@ -130,8 +131,8 @@ vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 
 		insc_diff.w			+=ov*0.5*(overc_1.a+overc_2.a);
 		ov_total			+=ov;
 	}
-	insc_diff.w				/=12.0;
-	ov_total				/=12.0;
+	insc_diff.w				/=float(OVERCAST_STEPS);
+	ov_total				/=float(OVERCAST_STEPS);
 	insc.rgb				=max(vec3(0,0,0),insc.rgb-insc_diff.rgb*overcast);
 	insc.w					=lerp(insc.a,0,ov_total);
     return insc;

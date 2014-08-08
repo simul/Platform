@@ -96,9 +96,7 @@ void CS_Resolve(uint3 pos : SV_DispatchThreadID )
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
 void CS_DownscaleDepthFarNearFromHiRes(uint3 pos : SV_DispatchThreadID )
 {
-	uint2 dims;
-	target2DTexture.GetDimensions(dims.x,dims.y);
-	if(pos.x>=dims.x||pos.y>=dims.y)
+	if(pos.x>=target_dims.x||pos.y>=target_dims.y)
 		return;
 	target2DTexture[pos.xy]=DownscaleFarNearEdge(sourceDepthTexture,source_dims,pos.xy,scale,depthToLinFadeDistParams);
 }

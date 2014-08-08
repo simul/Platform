@@ -7,6 +7,7 @@ struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 struct ID3D11DepthStencilView;
 struct ID3D11RenderTargetView;
+struct ID3D11Texture2D;
 typedef unsigned GLuint;
 namespace simul
 {
@@ -26,6 +27,7 @@ namespace simul
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects()=0;
+			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return 0;}
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(){return 0;}
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
