@@ -271,6 +271,41 @@ vec4 DownscaleFarNearEdge(Texture2D<float4> sourceDepthTexture,uint2 source_dims
 #endif
 	vec4 res=vec4(0,0,0,0);
 	uint2 maxpos=source_dims.xy-uint2(2,2);
+#if 0
+	for(uint i=0;i<scale.x;i+=2)
+	{
+		for(uint j=0;j<scale.y;j+=2)
+		{
+			uint2 hires_pos		=uint2(pos2.x+i,pos2.y+j);
+			// MUST do this in case we go slightly over the edge:
+			//hires_pos.xy		=min(hires_pos.xy,maxpos);
+			vec2 c11			=sourceDepthTexture[hires_pos			].xy;
+			vec2 c12			=sourceDepthTexture[hires_pos+uint2(0,1)].xy;
+			vec2 c21			=sourceDepthTexture[hires_pos+uint2(1,0)].xy;
+			vec2 c22			=sourceDepthTexture[hires_pos+uint2(1,1)].xy;
+			vec4 f				=vec4(	 c11.x
+										,c12.x
+										,c21.x
+										,c22.x);
+			vec4 n				=vec4(	 c11.y
+										,c12.y
+										,c21.y
+										,c22.y);
+			
+#if REVERSE_DEPTH==1
+			vec2 f2				=vec2(min(f.x,f.y),min(f.z,f.w));
+			farthest_nearest.x	=min(f2.x,f2.y);
+			vec2 n2				=vec2(max(n.x,n.y),max(n.z,n.w));
+			farthest_nearest.y	=max(n2.x,n2.y);
+#else
+			vec2 f2				=max(f.xy,f.zw);
+			farthest_nearest.x	=max(f2.x,f2.y);
+			vec2 n2				=min(n.xy,n.zw);
+			farthest_nearest.y	=min(n2.x,n2.y);
+#endif
+		}
+	}
+#else
 	for(uint i=0;i<scale.x;i++)
 	{
 		for(uint j=0;j<scale.y;j++)
@@ -294,6 +329,7 @@ vec4 DownscaleFarNearEdge(Texture2D<float4> sourceDepthTexture,uint2 source_dims
 #endif
 		}
 	}
+#endif
 	float edge=0.0;
 	if(farthest_nearest.y!=farthest_nearest.x)
 	{
@@ -411,12 +447,17 @@ vec4 depthFilteredTexture(	LookupQuad4 image
 	
 	float D			=saturate((d-d1)/(d2-d1));
 	float delta		=abs(d2-d1);
-
+#if 1
 	f1				=lerp(f1,f2,delta*D);
 	f2				=lerp(f2,f1,delta*(1.0-D));
 
 	vec4 f			=lerp(f1,f2,xy.y);
+#else
+	vec4 F1			=lerp(f1,f2,delta*D);
+	vec4 F2			=lerp(f2,f1,delta*(1.0-D));
 
+	vec4 f			=lerp(F1,F2,xy.y);
+#endif
 	return f;
 }
 
@@ -864,7 +905,7 @@ TwoColourCompositeOutput Composite_MSAA(vec2 texCoords
 				insc				=lerp(insc_far,insc_near,hiResInterp);
 				vec4 loss			=lerp(loss_far,loss_near,hiResInterp);
 				result.add.rgb		+=insc.rgb*add.a;
-				result.multiply.rgb	+=loss*add.a;
+				result.multiply.rgb	+=loss.rgb*add.a;
 			//	result.rgb=hiResInterp;
 			}
 		}
