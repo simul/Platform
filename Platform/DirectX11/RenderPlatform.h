@@ -105,7 +105,7 @@ namespace simul
 			std::set<crossplatform::Material*> materials;
 			bool reverseDepth;
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
-			bool mirrorY;
+			bool mirrorY,mirrorY2;
 			// DX11-specific stuff:
 			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);

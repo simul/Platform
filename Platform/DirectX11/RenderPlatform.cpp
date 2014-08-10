@@ -95,6 +95,7 @@ RenderPlatform::RenderPlatform()
 	,solidEffect(NULL)
 	,reverseDepth(false)
 	,mirrorY(false)
+	,mirrorY2(false)
 	,m_pDepthStencilStateStored11(NULL)
 	,m_pRasterizerStateStored11(NULL)
 	,m_pBlendStateStored11(NULL)
@@ -809,7 +810,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
-	if(mirrorY)
+	if(mirrorY2)
 		y1=(int)viewport.Height-y1-dy;
 	{
 		UtilityRenderer::DrawQuad2(deviceContext
@@ -848,7 +849,7 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
-	if(mirrorY)
+	if(mirrorY2)
 	{
 		y1=(int)viewport.Height-y1;
 		dy*=-1;
@@ -907,7 +908,7 @@ void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int
 	
 	while(*text!=0)
 	{
-		textRenderer.Render(deviceContext,(float)x,(float)y,(float)viewport.Width,(float)h,text,clr,black,mirrorY);
+		textRenderer.Render(deviceContext,(float)x,(float)y,(float)viewport.Width,(float)h,text,clr,black,mirrorY2);
 		while(*text!='\n'&&*text!=0)
 		{
 			text++;
