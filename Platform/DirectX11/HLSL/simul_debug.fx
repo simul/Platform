@@ -276,11 +276,20 @@ fxgroup circle
 
 technique11 textured
 {
-    pass p0
+    pass noblend
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));

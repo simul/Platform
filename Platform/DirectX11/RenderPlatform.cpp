@@ -730,6 +730,23 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 	}
 	deviceContext.asD3D11DeviceContext()->RSSetViewports(num,viewports);
 }
+
+crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &deviceContext,int index)
+{
+	D3D11_VIEWPORT viewports[4];
+	unsigned num=0;
+	deviceContext.asD3D11DeviceContext()->RSGetViewports(&num,NULL);
+	deviceContext.asD3D11DeviceContext()->RSGetViewports(&num,viewports);
+	crossplatform::Viewport v;
+	v.x=(int)viewports[index].TopLeftX;
+	v.y=(int)viewports[index].TopLeftY;
+	v.w=(int)viewports[index].Width;
+	v.h=(int)viewports[index].Height;
+	v.znear	=viewports[index].MinDepth;
+	v.zfar	=viewports[index].MaxDepth;
+	return v;
+}
+
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
 {
 	if(!buffer)
@@ -782,13 +799,14 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
     SAFE_RELEASE( m_pSamplerStateStored11 );
 }
 
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *srv,float mult)
+void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *srv,float mult,bool blend)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTexture",srv);
 	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"multiplier",mult);
 	crossplatform::EffectTechnique *tech=m_pDebugEffect->GetTechniqueByName("textured");
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+	int pass=(blend==true)?1:0;
 	if(srv)
 	{
 		srv->GetDesc(&desc);
@@ -818,14 +836,14 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 			,2.f*(float)dx/(float)viewport.Width
 			,2.f*(float)dy/(float)viewport.Height
-			,m_pDebugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique());
+			,m_pDebugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique(),pass);
 	}
 	simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTexture",NULL);
 }
 
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult)
+void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend)
 {
-	DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsD3D11ShaderResourceView(),mult);
+	DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsD3D11ShaderResourceView(),mult,blend);
 }
 
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex)

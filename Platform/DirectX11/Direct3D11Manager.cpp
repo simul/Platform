@@ -383,7 +383,7 @@ void Direct3D11Manager::Initialize(bool use_debug)
 	// This variable tells DirectX what version we plan to use. Here we set the feature level to 11.0 which is DirectX 11.
 	// You can set this to 10 or 9 to use a lower level version of DirectX if you plan on supporting multiple versions or running on lower end hardware.
 
-	// Set the feature level to DirectX 11.1
+	// Set the feature level to DirectX 11.0
 	featureLevel = D3D_FEATURE_LEVEL_11_0;
 	//Now that the swap chain description and feature level have been filled out we can create the swap chain, the Direct3D device, and the Direct3D device context.
 	// The Direct3D device and Direct3D device context are very important, they are the interface to all of the Direct3D functions. We will use the device and device context for almost everything from this point forward.

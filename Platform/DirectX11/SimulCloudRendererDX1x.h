@@ -65,7 +65,6 @@ namespace simul
 		public:
 			SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer,simul::base::MemoryInterface *mem);
 			virtual ~SimulCloudRendererDX1x();
-			void RecompileShaders();
 			//! Call this when the D3D device has been created or reset
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			//! Call this when the 3D device has been lost.
@@ -101,6 +100,7 @@ namespace simul
 			void New();
 			simul::dx11::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
 		protected:
+			void Recompile();
 			simul::dx11::GpuCloudGenerator gpuCloudGenerator;
 			void RenderCombinedCloudTexture(crossplatform::DeviceContext &deviceContext);
 			// Make up to date with respect to keyframer:

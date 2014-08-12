@@ -87,7 +87,7 @@ struct MixCloudsConstants
 	float pad1,pad2,pad3;
 };
 
-void SimulCloudRendererDX1x::RecompileShaders()
+void SimulCloudRendererDX1x::Recompile()
 {
 	CreateCloudEffect();
 	if(!m_pd3dDevice)
@@ -120,6 +120,7 @@ void SimulCloudRendererDX1x::RecompileShaders()
 										| D3D11_COLOR_WRITE_ENABLE_BLUE;
 	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndDontWriteAlpha );
 	gpuCloudGenerator.RecompileShaders();
+	recompile_shaders=false;
 }
 
 void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -138,7 +139,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
 	texdesc.ViewDimension=D3D11_SRV_DIMENSION_TEXTURE3D;
 	texdesc.Texture3D.MostDetailedMip=0;
 	texdesc.Texture3D.MipLevels=1;
-	
+	/*
 	const D3D11_INPUT_ELEMENT_DESC decl[] =
     {
         { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -159,7 +160,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
 	HRESULT hr=pass->GetDesc(&PassDesc);
 
 	// Get a count of the elements in the layout.
-	int numElements = sizeof(decl) / sizeof(decl[0]);
+	int numElements = sizeof(decl) / sizeof(decl[0]);*/
 
 	ClearIterators();
 	layerBuffer.RestoreDeviceObjects(m_pd3dDevice,SIMUL_MAX_CLOUD_RAYTRACE_STEPS);
@@ -479,6 +480,10 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceConte
 void SimulCloudRendererDX1x::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)deviceContext.platform_context;
+	if(recompile_shaders)
+	{
+		Recompile();
+	}
     SIMUL_COMBINED_PROFILE_START(pContext,"SimulCloudRendererDX1x::PreRenderUpdate")
 	EnsureTexturesAreUpToDate(deviceContext);
 	SetCloudConstants(cloudConstants);
@@ -639,7 +644,8 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &d
 		h=1;
 	h*=gi->GetGridHeight();
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
-	/*if(skyInterface)
+#if 1
+	if(skyInterface)
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
@@ -662,7 +668,8 @@ void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &d
 		cloudConstants.Apply(deviceContext);
 		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+h+8,w,w,effect,m_pTechniqueCrossSection);
 	}
-	deviceContext.renderPlatform->Print(deviceContext,x0,w,simul::base::stringFormat("%4.4f",cloudConstants.cloud_interp).c_str());*/
+	deviceContext.renderPlatform->Print(deviceContext,x0,w,simul::base::stringFormat("%4.4f",cloudConstants.cloud_interp).c_str());
+	#endif
 	effect->Apply(deviceContext,m_pTechniqueCrossSection,0);
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);

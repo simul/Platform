@@ -280,12 +280,16 @@ void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *m
     glPopMatrix();
 }
 
-void RenderPlatform::DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,GLuint tex,float /*mult*/)
+void RenderPlatform::DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,GLuint tex,float /*mult*/,bool blend)
 {
 GL_ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,tex);
+	if(blend)
+		glEnable(GL_BLEND);
+	else
+		glDisable(GL_BLEND);
 GL_ERROR_CHECK
 glDisable(GL_BLEND);
 glDisable(GL_CULL_FACE);
@@ -293,9 +297,9 @@ glDisable(GL_CULL_FACE);
 GL_ERROR_CHECK
 }
 
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult)
+void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend)
 {
-	DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsGLuint(),mult);
+	DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsGLuint(),mult,blend);
 }
 
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex)
@@ -644,6 +648,12 @@ GL_ERROR_CHECK
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {
+}
+
+crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &deviceContext,int index)
+{
+	crossplatform::Viewport v;
+	return v;
 }
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Viewport *vps)
