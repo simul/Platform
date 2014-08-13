@@ -64,7 +64,7 @@ SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 inverseScales;
-	uniform int abcde;
+	uniform float rainbowIntensity;
 	uniform vec3 ambientColour;
 	uniform float cloud_interp;
 	uniform vec3 fractalScale;
@@ -98,8 +98,11 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float yz;
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
+	uniform float dropletRadius;
+	uniform float uageaeg,agpaeg,ageafaeg;
 SIMUL_CONSTANT_BUFFER_END
-
+	
+										  
 #ifdef __cplusplus
 //! A struct containing a pointer or id for the cloud shadow texture, along with 
 //! information on how to project it.

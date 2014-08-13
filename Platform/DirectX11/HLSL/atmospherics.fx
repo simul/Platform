@@ -20,8 +20,6 @@ Texture2D cloudShadowTexture;
 Texture2D cloudNearFarTexture;
 Texture2D cloudGodraysTexture;
 
-Texture2D rainbowLookupTexture;
-Texture2D coronaLookupTexture;
 Texture2D moistureTexture;
 
 SamplerState samplerState: register(s1)
@@ -374,7 +372,7 @@ vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 
 	// NOTE: inefficient as we're calculating view in FastGodrays as well.
 	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	res					+=saturate(res.a*2.0)*RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,rainbowIntensity,lightIrradiance,view,lightDir,IN.texCoords.xy);
+	//res					+=saturate(res.a*2.0)*RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,rainbowIntensity,lightIrradiance,view,lightDir,IN.texCoords.xy);
 	return vec4(res.rgb,1.0);
 }
 
@@ -395,8 +393,7 @@ vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
 	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
 	
 	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	res					+=saturate(res.a*2.0)*RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
-										  rainbowIntensity,lightIrradiance,view,lightDir,IN.texCoords.xy);
+	//res					+=saturate(res.a*2.0)*RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,  rainbowIntensity,lightIrradiance,view,lightDir,IN.texCoords.xy);
 	return vec4(res.rgb,1.0);
 }
 
@@ -418,10 +415,10 @@ FarNearOutput PS_BothGodrays(atmosVertexOutput IN) : SV_TARGET
 	fn.nearColour		=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist.y);
 	
 	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	vec4 rc				=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
+	/*vec4 rc				=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
 										  rainbowIntensity,lightIrradiance,view,lightDir,IN.texCoords.xy);
 	fn.farColour		+=saturate(fn.farColour.a*2.0)*rc;
-	fn.nearColour		+=saturate(fn.nearColour.a*2.0)*rc;
+	fn.nearColour		+=saturate(fn.nearColour.a*2.0)*rc;*/
 	return fn;
 }
 vec4 PS_RainShadowLoss(atmosVertexOutput IN) : SV_TARGET

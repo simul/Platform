@@ -537,6 +537,9 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	effect->SetTexture(deviceContext,"rainMapTexture"		,rain_map);
 	effect->SetTexture(deviceContext,"noiseTexture"			,noise_texture);
 	effect->SetTexture(deviceContext,"illuminationTexture"	,illuminationTexture);
+
+	effect->SetTexture(deviceContext,"rainbowLookupTexture",rainbowLookupTexture);
+	effect->SetTexture(deviceContext,"coronaLookupTexture",coronaLookupTexture);
 	
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 	if(cloudProperties.GetWrap())
@@ -621,6 +624,8 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	effect->SetTexture(deviceContext,"noiseTexture3D",NULL);
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
 	effect->SetTexture(deviceContext,"rainMapTexture"		,NULL);
+	effect->SetTexture(deviceContext,"rainbowLookupTexture",NULL);
+	effect->SetTexture(deviceContext,"coronaLookupTexture",NULL);
 // To prevent DX11 warning, we re-apply the pass with the textures unbound:
 	effect->Unapply(deviceContext);
 	ERRNO_CHECK

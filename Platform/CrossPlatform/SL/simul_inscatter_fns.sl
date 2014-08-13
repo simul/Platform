@@ -36,4 +36,21 @@ vec3 InscatterFunction(vec4 inscatter_factor,float hazeEccentricity,float cos0,v
 	return PrecalculatedInscatterFunction(inscatter_factor,BetaRayleigh,BetaMie,mieRayleighRatio);
 }
 
+
+vec4 RainbowAndCorona(Texture2D rainbowLookupTexture,Texture2D coronaLookupTexture,float dropletRadius,
+					  float rainbowIntensity,vec3 view,vec3 lightDir,vec2 texCoords)
+{
+	//return texture_clamp(coronaLookupTexture,IN.texCoords.xy);
+	 //note: use a float for d here, since a half corrupts the corona
+	float d=  -dot( lightDir,normalize(view ) 	);
+
+	vec4 scattered	=texture_clamp(rainbowLookupTexture, vec2( dropletRadius, d));
+	vec4 moisture	=1.0;//texture_clamp(moistureTexture,IN.texCoords);
+
+	//(1 + d) will be clamped between 0 and 1 by the texture sampler
+	// this gives up the dot product result in the range of [-1 to 0]
+	// that is to say, an angle of 90 to 180 degrees
+	vec4 coronaDiffracted = texture_clamp(coronaLookupTexture, vec2(dropletRadius, 1.0 + d));
+	return (coronaDiffracted + scattered)*rainbowIntensity*moisture.x;
+}
 #endif

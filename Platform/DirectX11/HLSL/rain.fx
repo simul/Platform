@@ -177,7 +177,7 @@ void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 	targetTextureArray[idx]	=saturate(result);
 }
 
-particleVertexOutput VS_SnowParticles(PosAndId IN)
+particleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)
 {
 	particleVertexOutput OUT;
 	TransformedParticle p0;
@@ -186,7 +186,7 @@ particleVertexOutput VS_SnowParticles(PosAndId IN)
 	transf(p1,IN.position,1);
 	
     OUT.position0	=p0.position;
-    OUT.position1	=p1.position;
+    OUT.position1	=p1.position;//+0.3*vec4(meanFallVelocity+meanFallVelocity.z*IN.velocity*0.5*flurry,0.0);//+meanFallVelocity.z*IN.velocity*0.5*flurry,0.0);
 	OUT.pointSize	=p1.pointSize;
 	OUT.brightness	=p1.brightness;
 	OUT.fade		=p1.fade;
@@ -228,9 +228,9 @@ void GS_SnowParticles(point particleVertexOutput input[1], inout TriangleStream<
 		pos2=pos1;
 		pos1=pos_temp;
 	}
-	float sz=input[0].pointSize;
+	vec2 sz=input[0].pointSize*vec2(0.5,1.0);
 	output.brightness	=input[0].brightness;  
-	output.fade			=input[0].fade*sz/(sz+length(pos2-pos1));  
+	output.fade			=input[0].fade*sz.x/(sz.x+length(pos2-pos1));  
 	output.view			=input[0].view;     
 	if(pos1.x/pos1.w<=pos2.x/pos2.w)
 	{
@@ -289,7 +289,7 @@ vec4 PS_SnowParticles(particleGeometryOutput IN): SV_TARGET
 	float opacity	=IN.fade*saturate(1.0-radius);//-spoke*spoke);
 	
 	//return vec4(1,0,1,opacity);
-	return vec4(result.rgb,opacity);
+	return vec4(4.0*result.rgb,opacity);
 }
 
 vec4 PS_SnowParticles_NoCubemap(particleGeometryOutput IN): SV_TARGET
@@ -556,7 +556,7 @@ vec4 clip_pos				=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
        // output.random = input[0].random;
         float3 pos[4];
 		float g_FrameRate=20.0;
-        GenRainSpriteVertices(input[0].position.xyz,-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*0.1*input[0].velocity)/g_FrameRate, viewPos[1].xyz, pos);
+        GenRainSpriteVertices(input[0].position.xyz,-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*0.5*input[0].velocity)/g_FrameRate, viewPos[1].xyz, pos);
         
        output.wPos			=pos[0];
         float3 closestPointLight=vec3(0,0,500);

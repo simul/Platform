@@ -119,12 +119,22 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	// Get the pointer to the back buffer.
 	HRESULT result;
 #ifndef _XBOX_ONE
-	IDXGIFactory* factory;
-	result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
-	SIMUL_ASSERT(result==S_OK);
-	factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain);
+/*	NOTE: ***YOU CANNOT DO THIS***
+        IDXGIFactory* factory;
+result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
+SIMUL_ASSERT(result==S_OK);*/
+
+  IDXGIDevice * pDXGIDevice;
+  d3dDevice->QueryInterface(__uuidof(IDXGIDevice), (void **)&pDXGIDevice);      
+  IDXGIAdapter * pDXGIAdapter;
+  pDXGIDevice->GetParent(__uuidof(IDXGIAdapter), (void **)&pDXGIAdapter);
+  IDXGIFactory * factory;
+  pDXGIAdapter->GetParent(__uuidof(IDXGIFactory), (void **)&factory);
+factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain);
 //	SetDebugObjectName(m_swapChain,"Window SwapChain");
-	SAFE_RELEASE(factory);
+  SAFE_RELEASE(factory);
+  SAFE_RELEASE(pDXGIAdapter);
+  SAFE_RELEASE(pDXGIDevice);
 #endif
 	CreateRenderTarget(d3dDevice);
 	CreateDepthBuffer(d3dDevice);
@@ -383,7 +393,7 @@ void Direct3D11Manager::Initialize(bool use_debug)
 	// This variable tells DirectX what version we plan to use. Here we set the feature level to 11.0 which is DirectX 11.
 	// You can set this to 10 or 9 to use a lower level version of DirectX if you plan on supporting multiple versions or running on lower end hardware.
 
-	// Set the feature level to DirectX 11.0
+	// Set the feature level to DirectX 11.1
 	featureLevel = D3D_FEATURE_LEVEL_11_0;
 	//Now that the swap chain description and feature level have been filled out we can create the swap chain, the Direct3D device, and the Direct3D device context.
 	// The Direct3D device and Direct3D device context are very important, they are the interface to all of the Direct3D functions. We will use the device and device context for almost everything from this point forward.
