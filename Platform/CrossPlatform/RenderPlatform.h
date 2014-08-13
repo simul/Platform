@@ -81,7 +81,7 @@ namespace simul
 			virtual void DrawCamera			(DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)=0;
 			virtual void DrawLineLoop		(DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4])=0;
 
-			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f)=0;
+			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false)=0;
 			virtual void DrawDepth			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex)=0;
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
 			virtual void DrawQuad			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)=0;
@@ -122,7 +122,8 @@ namespace simul
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
 			virtual void					SetViewports(DeviceContext &deviceContext,int num,Viewport *vps)=0;
-
+			/// Get the viewport at the given index.
+			virtual Viewport				GetViewport(DeviceContext &deviceContext,int index)=0;
 			/// Activate the specified index buffer in preparation for rendering.
 			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer)=0;
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.

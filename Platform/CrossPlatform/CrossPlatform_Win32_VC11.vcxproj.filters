@@ -55,6 +55,9 @@
     <ClInclude Include="TextInputOutput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DemoOverlay.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -206,6 +209,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TextInputOutput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DemoOverlay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -216,17 +216,19 @@ void UtilityRenderer::DrawQuad(crossplatform::DeviceContext &deviceContext)
 	pContext->IASetPrimitiveTopology(previousTopology);
 }			
 
-void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech,int pass)
 {
 	DrawQuad2(deviceContext
 		,2.f*(float)x1/(float)screen_width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)screen_height
 		,2.f*(float)dx/(float)screen_width
 		,2.f*(float)dy/(float)screen_height
-		,eff,tech);
+		,eff,tech,pass);
 }
 
-void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext,float x1,float y1,float dx,float dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext,float x1,float y1,float dx,float dy,ID3DX11Effect* eff
+								,ID3DX11EffectTechnique* tech
+								,int pass)
 {
 	HRESULT hr=S_OK;
 	setParameter(eff,"rect",x1,y1,dx,dy);
@@ -234,7 +236,7 @@ void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext,floa
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(pContext,tech->GetPassByIndex(0));
+	ApplyPass(pContext,tech->GetPassByIndex(pass));
 	pContext->Draw(4,0);
 	pContext->IASetPrimitiveTopology(previousTopology);
 }

@@ -3,6 +3,7 @@
 #include "Simul/Base/StringFunctions.h"
 #include "Simul/Platform/Crossplatform/DeviceContext.h"
 #include "Simul/Platform/Crossplatform/Material.h"
+#include "Simul/Platform/Crossplatform/DemoOverlay.h"
 #include "Simul/Platform/DirectX11/Direct3D11Renderer.h"
 #include "Simul/Platform/DirectX11/SimulWeatherRendererDX11.h"
 #include "Simul/Platform/DirectX11/TerrainRenderer.h"
@@ -73,6 +74,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,mainRenderTarget(NULL)
 		,mainDepthSurface(NULL)
 		,AllOsds(true)
+		,demoOverlay(NULL)
 {
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
@@ -145,6 +147,10 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 	cubemapFramebuffer.RestoreDeviceObjects(&renderPlatformDx11);
 	envmapFramebuffer.SetWidthAndHeight(8,8);
 	envmapFramebuffer.RestoreDeviceObjects(&renderPlatformDx11);
+
+	if(!demoOverlay)
+		demoOverlay=new crossplatform::DemoOverlay();
+	demoOverlay->RestoreDeviceObjects(&renderPlatformDx11);
 	RecompileShaders();
 }
 
@@ -630,11 +636,11 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
-			int w=W2/2;
+			int w=W2;
 			if(vertical_screen)
-				w=W2;
+				w=W1;
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext		,0,0,w,H2);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext	,0,H2,w,H2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext	,0,0,w,H2);
 		}
 		if(ShowCompositing)
 		{
@@ -658,6 +664,9 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 		if(oceanRenderer&&ShowWaterTextures)
 			oceanRenderer->RenderTextures(deviceContext,view->GetScreenWidth(),view->GetScreenHeight());
+
+		if(demoOverlay)
+			demoOverlay->Render(deviceContext);
 #ifdef _XBOX_ONE
 		const char *txt=Profiler::GetGlobalProfiler().GetDebugText();
 		renderPlatformDx11.Print(deviceContext			,12	,12,txt);
@@ -737,6 +746,8 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 	if(sceneRenderer)
 		sceneRenderer->InvalidateDeviceObjects();
 #endif
+	if(demoOverlay)
+		demoOverlay->InvalidateDeviceObjects();
 	SAFE_RELEASE(mainRenderTarget);
 	SAFE_RELEASE(mainDepthSurface);
 	std::cout<<"Direct3D11Renderer::OnD3D11LostDevice"<<std::endl;

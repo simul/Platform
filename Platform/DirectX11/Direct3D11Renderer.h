@@ -37,6 +37,7 @@ namespace simul
 	namespace crossplatform
 	{
 		struct DeviceContext;
+		class DemoOverlay;
 	}
 	namespace scene
 	{
@@ -157,6 +158,7 @@ namespace simul
 			ID3D11DepthStencilView	*mainDepthSurface;
 			std::map<int,const simul::camera::CameraOutputInterface *> cameras;
 			bool AllOsds;
+			crossplatform::DemoOverlay *demoOverlay;
 		};
 	}
 }

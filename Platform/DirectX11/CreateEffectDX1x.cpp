@@ -645,8 +645,6 @@ ERRNO_CHECK
 						,macros						//const D3D_SHADER_MACRO *pDefines,
 						,&shaderIncludeHandler		//ID3DInclude *pInclude,
 						,NULL						//LPCSTR pEntrypoint,
-						//,0
-						//,pDevice
 						,"fx_5_0"					//LPCSTR pTarget,
 						,ShaderFlags				//UINT Flags1,
 						,FXFlags					//UINT Flags2,

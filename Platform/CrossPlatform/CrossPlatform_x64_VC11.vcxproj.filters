@@ -45,6 +45,7 @@
     <ClInclude Include="Macros.h" />
     <ClInclude Include="PixelFormat.h" />
     <ClInclude Include="TextInputOutput.h" />
+    <ClInclude Include="DemoOverlay.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -190,5 +191,6 @@
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="TextInputOutput.cpp" />
+    <ClCompile Include="DemoOverlay.cpp" />
   </ItemGroup>
 </Project>
