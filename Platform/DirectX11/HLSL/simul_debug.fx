@@ -17,9 +17,11 @@ uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 	uniform int latitudes,longitudes;
 	uniform float radius;
 	uniform float multiplier;
+	uniform float exposure;
 	uniform vec4 colour;
 	uniform vec4 depthToLinFadeDistParams;
 	uniform vec2 tanHalfFov;
+	uniform float gamma;
 };
 
 cbuffer cbPerObject : register(b11)
@@ -189,6 +191,8 @@ float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
 	float3 view		=-(IN.wDirection.xyz);
 	float4 result	=cubeTexture.Sample(cubeSamplerState,view);
+	result.rgb		*=exposure;
+	result.rgb		=pow(result.rgb,gamma);
 	return float4(result.rgb,1.0);
 }
 

@@ -183,10 +183,11 @@ particleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)
 	TransformedParticle p0;
 	transf(p0,IN.position,0);
 	TransformedParticle p1;
-	transf(p1,IN.position,1);
+	vec4 offset=0.02*vec4(meanFallVelocity+meanFallVelocity.z*IN.velocity*0.5*flurry,0.0);
+	transf(p1,IN.position+offset,1);
 	
     OUT.position0	=p0.position;
-    OUT.position1	=p1.position;//+0.3*vec4(meanFallVelocity+meanFallVelocity.z*IN.velocity*0.5*flurry,0.0);//+meanFallVelocity.z*IN.velocity*0.5*flurry,0.0);
+    OUT.position1	=p1.position;//+meanFallVelocity.z*IN.velocity*0.5*flurry,0.0);
 	OUT.pointSize	=p1.pointSize;
 	OUT.brightness	=p1.brightness;
 	OUT.fade		=p1.fade;
@@ -289,7 +290,7 @@ vec4 PS_SnowParticles(particleGeometryOutput IN): SV_TARGET
 	float opacity	=IN.fade*saturate(1.0-radius);//-spoke*spoke);
 	
 	//return vec4(1,0,1,opacity);
-	return vec4(4.0*result.rgb,opacity);
+	return vec4(2.0*result.rgb,opacity);
 }
 
 vec4 PS_SnowParticles_NoCubemap(particleGeometryOutput IN): SV_TARGET
