@@ -36,19 +36,19 @@ shader PS_Noise2D(in vec2 texCoords,out vec4 FragColour)
     FragColour= Noise(noise_texture,texCoords,persistence,octaves);
 }
 
-layout(local_size_x=8,local_size_y=8,local_size_z=8) in;
+LAYOUT(8,8,8)
 shader CS_Random3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
 {
 	// NOTE: could use shader_image_size(targetTexture)
 	uint3 pos=gl_GlobalInvocationID;
 	if(pos.x>=noise_texture_size||pos.y>=noise_texture_size||pos.z>=noise_texture_size)
 		return;
-/*	vec3 texCoords	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(noise_texture_size,noise_texture_size,noise_texture_size);
+	vec3 texCoords	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(noise_texture_size,noise_texture_size,noise_texture_size);
 	vec2 texc2		=texCoords.xy+noise_texture_size*texCoords.z;
 	// Range from -1 to 1.
     vec4 c=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
   //  targetTexture[pos]			= c;
-	//imageStore(targetTexture,ivec3(pos), c);*/
+	imageStore(targetTexture,ivec3(pos), c);
 }
 
 program simul_random

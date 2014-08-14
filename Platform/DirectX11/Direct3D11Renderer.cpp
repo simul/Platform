@@ -312,7 +312,7 @@ void Direct3D11Renderer::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderEnvmap CalcSphericalHarmonics")
 	cubemapFramebuffer.SetBands(SphericalHarmonicsBands);
 	cubemapFramebuffer.CalcSphericalHarmonics(deviceContext);
-	envmapFramebuffer.Clear(pContext,0.f,1.f,0.f,1.f,0.f);
+	//envmapFramebuffer.Clear(pContext,0.f,1.f,0.f,1.f,0.f);
 	math::Matrix4x4 invViewProj;
 	math::Matrix4x4 view_matrices[6];
 	float cam_pos[]={0,0,0};
@@ -321,7 +321,10 @@ void Direct3D11Renderer::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 	SIMUL_COMBINED_PROFILE_END(pContext)
 	// For each face, 
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderEnvmap draw")
-	for(int i=0;i<6;i++)
+	static int i=0;
+	i++;
+	i=i%6;
+	//for(int i=0;i<6;i++)
 	{
 		envmapFramebuffer.SetCurrentFace(i);
 		envmapFramebuffer.Activate(deviceContext);

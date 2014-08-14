@@ -63,6 +63,11 @@
 	{
 		return m*v;
 	}
+#ifdef GL_COMPUTE_SHADER
+	#define LAYOUT(u,v,w) layout(local_size_x=u,local_size_y=v,local_size_z=w) in;
+#else
+	#define LAYOUT(u,v,w)
+#endif
 #else
 	#define STATIC static
 #endif

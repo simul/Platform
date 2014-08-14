@@ -1,6 +1,6 @@
 #include "CppHLSL.hlsl"
 #include "states.hlsl"
-Texture2D nearFarTexture	: register(t3);
+Texture2D nearFarTexture : register(t3);
 Texture2D cloudGodraysTexture;
 Texture2D rainMapTexture;
 RWTexture2D<float> targetTexture1;

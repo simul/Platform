@@ -52,7 +52,7 @@ vec2 depthToLinearDistance(vec2 depth,vec4 depthToLinFadeDistParams)
 #endif
 	return linearFadeDistanceZ;
 }
-
+#if defined(GL_FRAGMENT_SHADER) || !defined(GLSL)
 void discardOnFar(float depth)
 {
 #ifdef REVERSE_DEPTH1
@@ -63,7 +63,7 @@ void discardOnFar(float depth)
 		discard;
 #endif
 }
-
+#endif
 // This converts a z-buffer depth into a distance in the units of nearZ and farZ,
 //	-	where usually nearZ and farZ will be factors of the maximum fade distance.
 //	-	

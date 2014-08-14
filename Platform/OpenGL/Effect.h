@@ -38,7 +38,8 @@ namespace simul
 		{
 			GLuint current_pass;
 			int current_texture_number;
-			void FillInTechniques();
+			bool FillInTechniques();
+			std::string filenameInUseUtf8;
 		public:
 			Effect();
 			~Effect();

@@ -152,24 +152,34 @@ void includeCallbackFunc(const char *incName, FILE *&fp, const char *&buf)
 void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	filename=filename_utf8;
-	std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,opengl::GetShaderPathsUtf8());
-	if(!filenameUtf8.length())
+	filenameInUseUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,opengl::GetShaderPathsUtf8());
+	if(!filenameInUseUtf8.length())
 		return;
+	bool retry=true;
+	while(retry)
+	{
 #ifdef SIMUL_USE_NVFX
-	nvFX::IContainer*   fx_Effect       = NULL;
-	nvFX::setErrorCallback(errorCallbackFunc);
-	nvFX::setIncludeCallback(includeCallbackFunc);
-	int pos=filenameUtf8.find_last_of(".glfx");
-	if(pos>0)
-		filenameUtf8=filenameUtf8.substr(0,pos-4)+".nvfx";
-	fx_Effect = nvFX::IContainer::create(filename_utf8);
-	bool bRes = nvFX::loadEffectFromFile(fx_Effect,filenameUtf8.c_str());
-	ERRNO_CHECK
-	platform_effect=fx_Effect;
+		nvFX::IContainer*   fx_Effect       = NULL;
+		nvFX::setErrorCallback(errorCallbackFunc);
+		nvFX::setIncludeCallback(includeCallbackFunc);
+		int pos=filenameUtf8.find_last_of(".glfx");
+		if(pos>0)
+			filenameUtf8=filenameUtf8.substr(0,pos-4)+".nvfx";
+		fx_Effect = nvFX::IContainer::create(filename_utf8);
+		bool bRes = nvFX::loadEffectFromFile(fx_Effect,filenameInUseUtf8.c_str());
+		ERRNO_CHECK
+		platform_effect=fx_Effect;
 #else
-	platform_effect		=(void*)opengl::CreateEffect(filename_utf8,defines);
+		platform_effect		=(void*)opengl::CreateEffect(filename_utf8,defines);
 #endif
-	FillInTechniques();
+	// If any technique fails, we don't want to proceed until the problem is fixed.
+		if(!FillInTechniques()&&IsDebuggerPresent())
+		{
+			DebugBreak();
+		}
+		else
+			break;
+	}
 }
 
 Effect::~Effect()
@@ -182,11 +192,11 @@ Effect::~Effect()
 }
 
 // convert GL programs into techniques and passes.
-void Effect::FillInTechniques()
+bool Effect::FillInTechniques()
 {
 	GLint e				=asGLint();
 	if(e<0)
-		return ;
+		return false;
 #ifdef SIMUL_USE_NVFX
 	nvFX::ITechnique*   fx_Tech         = NULL;
 	int nump=0;
@@ -199,7 +209,7 @@ void Effect::FillInTechniques()
 	int nump			=glfxGetProgramCount(e);
 #endif
 	if(!nump)
-		return;
+		return false;
 	groups.clear();
 	for(int i=0;i<nump;i++)
 	{
@@ -212,8 +222,9 @@ void Effect::FillInTechniques()
 		GLuint t			=glfxCompileProgram(e,name.c_str());
 		if(!t)
 		{
-			opengl::printEffectLog(e);
-			return;
+			std::cerr<<filenameInUseUtf8.c_str()<<": error C7555:  there are errors in the technique "<<name.c_str()<<std::endl;
+			opengl::printEffectLog(asGLint());
+			return false;
 		}
 #endif
 		// Now the name will determine what technique and pass it is.
@@ -271,6 +282,7 @@ void Effect::FillInTechniques()
 		tech->passes_by_index[pass_idx]	=(void*)t;
 		tech->pass_indices[passname]	=pass_idx;
 	}
+	return true;
 }
 
 crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
