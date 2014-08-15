@@ -292,7 +292,7 @@ ERRNO_CHECK
 		{
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext
-				,true,1.f,false,cubemapFramebuffer.GetDepthTexture(),cubemapFramebuffer.GetDepthTexture(),relativeViewportTextureRegionXYWH,true);
+				,true,1.f,false,cubemapFramebuffer.GetDepthTexture(),relativeViewportTextureRegionXYWH,true);
 		}
 		static const char *txt[]={	"+X",
 									"-X",
@@ -404,9 +404,11 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 			simulWeatherRenderer->RenderMixedResolution(deviceContext,false,exposure,gamma,view->GetFramebuffer()->GetDepthTexture()
 				,&view->hiResDepthTexture,skyBufferDepthTex,depthViewportXYWH);
 		else
-			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer
-				,view->GetFramebuffer()->GetDepthTexture(),view->GetFramebuffer()->GetDepthTexture()
-				,depthViewportXYWH,true);
+		{
+			//simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer
+			//	,view->GetFramebuffer()->GetDepthTexture()
+			//	,depthViewportXYWH,true);
+		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->ActivateDepth(deviceContext);
 		else

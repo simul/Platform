@@ -120,8 +120,8 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	HRESULT result;
 #ifndef _XBOX_ONE
 /*	NOTE: ***YOU CANNOT DO THIS***
-        IDXGIFactory* factory;
-result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
+  IDXGIFactory * factory;
+	result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
 SIMUL_ASSERT(result==S_OK);*/
 
   IDXGIDevice * pDXGIDevice;
