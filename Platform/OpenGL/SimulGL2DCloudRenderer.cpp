@@ -253,6 +253,7 @@ bool SimulGL2DCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,
 	GLuint depth_texture=depthTexture->AsGLuint();
 	GL_ERROR_CHECK
 	EnsureTexturesAreUpToDate(deviceContext);
+GL_ERROR_CHECK
 	using namespace simul::clouds;
 	if(skyInterface)
 		cloudKeyframer->Update(skyInterface->GetTime());
@@ -260,14 +261,23 @@ bool SimulGL2DCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 	cloudProperties.GetExtents(X1,X2);
 	simul::math::Vector3 DX=X2-X1;
-    glDisable(GL_TEXTURE_1D);
+GL_ERROR_CHECK
     glEnable(GL_TEXTURE_2D);
+GL_ERROR_CHECK
     glDisable(GL_TEXTURE_3D);
+GL_ERROR_CHECK
+    glDisable(GL_TEXTURE_1D);
+GL_ERROR_CHECK
     glEnable(GL_BLEND);
+GL_ERROR_CHECK
 	glBlendEquation(GL_FUNC_ADD);
+GL_ERROR_CHECK
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+GL_ERROR_CHECK
     glDisable(GL_DEPTH_TEST);
+GL_ERROR_CHECK
     glDisable(GL_CULL_FACE);
+GL_ERROR_CHECK
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 GL_ERROR_CHECK
 	glUseProgram(clouds_program);
