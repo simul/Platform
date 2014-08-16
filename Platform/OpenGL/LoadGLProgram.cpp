@@ -427,11 +427,10 @@ namespace simul
 				return -1;
 			GLint effect=glfxGenEffect();
 #if 1
-			std::string src				=loadShaderSource(filenameUtf8.c_str());
-
+			std::string src		=loadShaderSource(filenameUtf8.c_str());
+			effectSourceFilesUtf8.clear();
 			ProcessIncludes(src,filenameUtf8,false,effectSourceFilesUtf8);
 			InsertDefines(src,defines);
-			
 			int pos=(int)src.find("\r\n");
 			while(pos>=0)
 			{
@@ -447,7 +446,7 @@ namespace simul
 			if(!glfxParseEffectFromTextSIMUL( effect, src.c_str(),filenames))
 			{
    				std::string log = glfxGetEffectLog(effect);
-   				std::cerr << "Error parsing effect: " << log << std::endl;
+   				std::cerr <<  log << std::endl;
 				effect=-1;
 			}
 			delete filenames;
@@ -455,7 +454,7 @@ namespace simul
 			if (!glfxParseEffectFromFile(effect,filenameUtf8.c_str()))
 			{
    				std::string log = glfxGetEffectLog(effect);
-   				std::cerr << "Error parsing effect: " << log << std::endl;
+   				std::cerr <<  log << std::endl;
 			}
 #endif
 			return effect;

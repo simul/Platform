@@ -6,7 +6,7 @@
 uniform sampler2D image_texture;
 uniform sampler2D noise_texture ;
 uniform sampler3D random_texture_3d;
-layout(binding = 0) uniform image3D targetTexture;
+layout(rgba32f,binding = 0) uniform image3D targetTexture;
 uniform vec4 rect;
 uniform vec4 depthToLinFadeDistParams;
 uniform vec2 tanHalfFov;
@@ -51,6 +51,31 @@ shader CS_Random3D()	//gl_GlobalInvocationID gives the combined id in each dimen
 	imageStore(targetTexture,ivec3(pos), c);
 }
 
+LAYOUT(8,8,8)
+shader CS_Noise3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
+{
+	uint3 pos=gl_GlobalInvocationID;
+	//uint3 dims;
+	/*targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;*/
+	vec4 result		=vec4(0,0,0,0);
+/*	vec3 texCoords	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
+	float mult		=0.5;
+	float total		=0.0;
+    for(int i=0;i<octaves;i++)
+    {
+		vec4 c		=texture_wrap_lod(random_texture_3d,texCoords,0);
+		texCoords	*=2.0;
+		total		+=mult;
+		result		+=mult*c;
+		mult		*=persistence;
+    }
+	// divide by total to get the range -1,1.
+	result*=1.0/total;*/
+	imageStore(targetTexture,ivec3(pos), result);
+}
+
 program simul_random
 {
     vs(430) = VS_FullScreen();
@@ -68,37 +93,7 @@ program random_3d_compute
     cs(430) =CS_Random3D();
 };
 
-/*
-
-
-void CS_Noise3D( )	//gl_GlobalInvocationID gives the combined id in each dimension.
-{
-	uint3 pos=gl_GlobalInvocationID;
-	uint3 dims;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
-	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
-		return;
-	vec4 result		=vec4(0,0,0,0);
-	vec3 texCoords	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
-	float mult		=0.5;
-	float total		=0.0;
-    for(int i=0;i<octaves;i++)
-    {
-		vec4 c		=texture_wrap_lod(random_texture_3d,texCoords,0);
-		texCoords	*=2.0;
-		total		+=mult;
-		result		+=mult*c;
-		mult		*=persistence;
-    }
-	// divide by total to get the range -1,1.
-	result*=1.0/total;
-	targetTexture[pos]			=result;
-}
-
 program noise_3d_compute
 {
     cs(430) =CS_Noise3D();
-}
-
-
-*/
+};

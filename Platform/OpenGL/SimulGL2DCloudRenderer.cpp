@@ -124,6 +124,7 @@ GL_ERROR_CHECK
 #pragma warning(disable:4127) // "Conditional expression is constant".
 void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()
 {
+	GL_ERROR_CHECK
 	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 	int width_x=i.x;
@@ -168,6 +169,7 @@ void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()
 }
 void SimulGL2DCloudRenderer::EnsureTexturesAreUpToDate(crossplatform::DeviceContext &)
 {
+	GL_ERROR_CHECK
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
 	typedef simul::sky::block_texture_fill iter;
@@ -229,8 +231,11 @@ static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 
 void Set2DTexture(GLint shader_param,GLuint gl_texture,int channel)
 {
+GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0+channel);
+GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,gl_texture);
+GL_ERROR_CHECK
 	glUniform1i(shader_param,channel);
 GL_ERROR_CHECK
 }
@@ -242,8 +247,11 @@ void SimulGL2DCloudRenderer::PreRenderUpdate(crossplatform::DeviceContext &)
 bool SimulGL2DCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool /*cubemap*/
 									,crossplatform::NearFarPass nearFarPass,crossplatform::Texture *depthTexture, bool,const simul::sky::float4&,const simul::sky::float4& )
 {
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	GL_ERROR_CHECK
+//	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	GL_ERROR_CHECK
 	GLuint depth_texture=depthTexture->AsGLuint();
+	GL_ERROR_CHECK
 	EnsureTexturesAreUpToDate(deviceContext);
 	using namespace simul::clouds;
 	if(skyInterface)
@@ -261,8 +269,9 @@ bool SimulGL2DCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-
+GL_ERROR_CHECK
 	glUseProgram(clouds_program);
+GL_ERROR_CHECK
 	Set2DTexture(imageTexture_param,(GLuint)(uintptr_t)detail_fb.GetColorTex(),0);
 	Set2DTexture(coverageTexture,(GLuint)(uintptr_t)coverage_fb.GetColorTex(),1);
 	Set2DTexture(lossTexture,skyLossTexture->AsGLuint(),2);
@@ -351,7 +360,7 @@ GL_ERROR_CHECK
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
 	glUseProgram(0);
-	glPopAttrib();
+//	glPopAttrib();
 GL_ERROR_CHECK
 	return true;
 }

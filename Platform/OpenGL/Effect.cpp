@@ -39,7 +39,8 @@ using namespace opengl;
 #define CHECK_TECH_EXISTS\
 	if(currentTechnique==NULL)\
 	{\
-		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: currentTechnique is NULL in "<<filename.c_str()<<std::endl;\
+		std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: currentTechnique is NULL in "<<filename.c_str()<<std::endl;\
+		BREAK_IF_DEBUGGING\
 		return;\
 	}
 
