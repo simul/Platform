@@ -217,6 +217,7 @@ namespace simul
 		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2);
 		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2,const char *option3);
 		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
+		/// The cross-platform base class for shader effects.
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{
 		protected:

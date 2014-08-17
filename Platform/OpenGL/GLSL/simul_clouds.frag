@@ -2,8 +2,8 @@
 // Copyright 2008-2014 Simul Software Ltd
 #version 140
 
-#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "CppGlsl.hs"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/simul_cloud_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
 #include "saturate.glsl"

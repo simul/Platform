@@ -3,6 +3,7 @@
 
 vec2 fn(float r,float cos2,float sine_phi,float sine_gamma,float maxFadeDistance)
 {
+	vec2 range;
 	// Normalized so that Earth radius is 1.0..
 	float u			=1.0-r*r*cos2;
 	float d			=0.0;
@@ -28,7 +29,6 @@ vec2 fn(float r,float cos2,float sine_phi,float sine_gamma,float maxFadeDistance
 	
 	vec2 out_range	=vec2(a,1.0);
 	vec2 in_range	=vec2(0.0,a);
-	vec2 range;
 	if(a==0.0||r<=1.0)
 	{
 		range=out_range;

@@ -91,6 +91,7 @@ void SimulGLAtmosphericsRenderer::RenderAsOverlay(crossplatform::DeviceContext &
 												  ,float exposure
 												  ,const simul::sky::float4& depthViewportXYWH)
 {
+	GL_ERROR_CHECK
 	bool msaa=false;
 	if(depthTexture)
 	{

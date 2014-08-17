@@ -1,4 +1,5 @@
 #version 330
+#include "CppGlsl.hs"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "simul_gpu_sky.glsl"
 

@@ -78,6 +78,7 @@ namespace simul
 
 			ID3D11Debug *d3dDebug ;
 			ID3D11InfoQueue *d3dInfoQueue ;
+			IDXGIFactory* factory;
 		};
 
 	}

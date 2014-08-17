@@ -135,8 +135,9 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
 		float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
 		indirect_light				*=exp(-extinctions.y*density*stepLength);
-
-		if(density==0)
+		
+		//NOTE: Causes artifact underneath clouds:
+		if(density==0&&pos.z<dims.z-1)
 			indirect_light			=1.0;//-(1.0-indirect_light)*exp(-5.0*stepLength);
 		targetTexture1[idx]			=indirect_light;
 	}

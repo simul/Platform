@@ -15,6 +15,8 @@ Texture3D lightningIlluminationTexture	: register(t8);
 Texture3D cloudDensity					: register(t9);
 Texture2D illuminationTexture			: register(t10);
 Texture2D lightTableTexture				: register(t11);
+Texture2D rainbowLookupTexture			: register(t12);
+Texture2D coronaLookupTexture			: register(t13);
 SamplerState cloudSamplerState			: register( s0);
 #endif
 
@@ -341,6 +343,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 #ifdef USE_LIGHT_TABLES0
 	vec3 amb			=ambientColour.rgb;
 #endif
+	vec4 rainbowColour			=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
+										  rainbowIntensity,view,lightDir,texCoords.xy);
+	float moisture=0.0;
 	// This provides the range of texcoords that is lit.
 	for(int i=0;i<layerCount;i++)
 	{
@@ -385,17 +390,19 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			rain_texc.xy				+=rain_texc.z*rainTangent;
 			float rain_lookup			=texture_wrap_lod(rainMapTexture,rain_texc.xy*inverseScales.xy,0).x;
 			vec4 streak					=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
+			float dm=0.0;
 			if(do_rain_effect)
-			density.z					=saturate(
-											//(0.6+.4*noiseval.w)*	
-											density.z
-											+layer.layerFade*rainEffect*rain_lookup
+			{
+				dm					=layer.layerFade*rainEffect*rain_lookup
 											*saturate((rainRadius-length(world_pos.xy-rainCentre.xy))*0.0003)
 											*saturate(5.0-10*cloudTexCoords.z)
 											*saturate(cloudTexCoords.z+1.0+4.0*streak.y)
 											*(0.4+0.6*streak.x)
-											);
-            if(do_depth_mix)
+											;
+				moisture+=0.01*dm*density.x;
+				density.z=saturate(density.z+dm);
+			}
+			if(do_depth_mix)
 				density.z				*=saturate((d-fadeDistance)/0.01);
 			if(density.z>0)
 			{
@@ -429,6 +436,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	meanFadeDistance	+=colour.a;
     res.colour			=vec4(exposure*colour.rgb,colour.a);
 	res.depth			=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	res.colour.rgb+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 	return res;
 }
 #endif

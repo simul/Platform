@@ -28,16 +28,6 @@ shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords, out vec2 pos)
     texCoords	=pos.xy;
 }
 
-float GetIlluminationAt(vec3 vd)
-{
-	vec3 pos=vd+viewPosition;
-	vec3 cloud_texc=(pos-cloudOrigin)*cloudScale;
-	vec4 cloud_texel=texture(cloudShadowTexture,cloud_texc.xy);
-	float illumination=cloud_texel.z;
-	float above=saturate(cloud_texc.z);
-	illumination=saturate(illumination-above);
-	return illumination;
-}
 
 shader PS_Loss(in vec2 texCoords,in vec2 pos,out vec4 FragColor)
 {

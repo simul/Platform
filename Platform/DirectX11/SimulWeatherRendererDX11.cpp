@@ -400,7 +400,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 			deviceContext.viewStruct.proj	=(const float*)&cube_proj;
 			deviceContext.viewStruct.view	=(const float*)&view_matrices[i];
 			RenderSkyAsOverlay(deviceContext
-				,false,exposure,false,NULL,NULL,simul::sky::float4(0,0,1.f,1.f),true);
+				,false,exposure,false,NULL,simul::sky::float4(0,0,1.f,1.f),true);
 			if(gamma_correction)
 			{
 				gamma_correct.Deactivate(deviceContext);
@@ -433,59 +433,6 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 		baseCloudRenderer->SetMaxSlices(0,l);
 	}
 	GetBaseAtmosphericsRenderer()->SetShowGodrays(godrays);
-}
-
-void SimulWeatherRendererDX11::RenderSkyAsOverlay(crossplatform::DeviceContext &deviceContext
-											,bool is_cubemap
-											,float exposure
-											,bool buffered
-											,crossplatform::Texture *hiResDepthTexture			// x=far, y=near, z=edge
-											,crossplatform::Texture* lowResDepthTexture			// x=far, y=near, z=edge
-											,const sky::float4& depthViewportXYWH
-											,bool doFinalCloudBufferToScreenComposite
-											)
-{
-	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderSkyAsOverlay")
-	crossplatform::TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
-	if(buffered)
-	{
-		int w,h,s;
-		fb->GetDimensions(w,h,s);
-		if(hiResDepthTexture)
-		{
-			int S=s;
-			if(lowResDepthTexture->width)
-				S=hiResDepthTexture->width/lowResDepthTexture->width;
-			if(S<1)
-				S=1;
-			fb->SetDimensions(hiResDepthTexture->width,hiResDepthTexture->length,s);
-		}
-		SIMUL_ASSERT(w!=0);
-	}
-ERRNO_CHECK
-	if(baseAtmosphericsRenderer&&ShowSky)
-		baseAtmosphericsRenderer->RenderAsOverlay(deviceContext,hiResDepthTexture,exposure,depthViewportXYWH);
-ERRNO_CHECK
-	//if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-	//	base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,false,view_id,depthViewportXYWH);
-	// Now we render the low-resolution elements to the low-res buffer.
-	float godrays_strength		=(float)(!is_cubemap)*environment->cloudKeyframer->GetInterpolatedKeyframe().godray_strength;
-	if(buffered)
-	{
-		fb->GetLowResFarFramebuffer()->ActivateViewport(deviceContext,depthViewportXYWH.x,depthViewportXYWH.y,depthViewportXYWH.z,depthViewportXYWH.w);
-		fb->GetLowResFarFramebuffer()->Clear(deviceContext.platform_context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
-	}
-
-	crossplatform::MixedResolutionStruct mixedResolutionStruct(1,1,1);
-	RenderLowResolutionElements(deviceContext,exposure,godrays_strength,is_cubemap,crossplatform::FAR_PASS,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct);
-
-	if(buffered)
-		fb->GetLowResFarFramebuffer()->Deactivate(deviceContext);
-
-	if(buffered&&doFinalCloudBufferToScreenComposite)
-		CompositeCloudsToScreen(deviceContext,1.f,1.f,false,hiResDepthTexture,hiResDepthTexture,lowResDepthTexture,depthViewportXYWH,mixedResolutionStruct,mixedResolutionStruct);
-
-	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
 
 void SimulWeatherRendererDX11::RenderPrecipitation(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex
@@ -528,6 +475,10 @@ void SimulWeatherRendererDX11::SetRenderDepthBufferCallback(RenderDepthBufferCal
 
 crossplatform::Texture *SimulWeatherRendererDX11::GetCloudDepthTexture(int view_id)
 {
+	if(framebuffers.find(view_id)==framebuffers.end())
+		return NULL;
+	if(framebuffers[view_id]->GetLowResFarFramebuffer()==NULL)
+		return NULL;
 	return framebuffers[view_id]->GetLowResFarFramebuffer()->GetDepthTexture();
 }
 

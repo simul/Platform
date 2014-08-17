@@ -119,12 +119,22 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	// Get the pointer to the back buffer.
 	HRESULT result;
 #ifndef _XBOX_ONE
-	IDXGIFactory* factory;
+/*	NOTE: ***YOU CANNOT DO THIS***
+  IDXGIFactory * factory;
 	result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
-	SIMUL_ASSERT(result==S_OK);
-	factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain);
+SIMUL_ASSERT(result==S_OK);*/
+
+  IDXGIDevice * pDXGIDevice;
+  d3dDevice->QueryInterface(__uuidof(IDXGIDevice), (void **)&pDXGIDevice);      
+  IDXGIAdapter * pDXGIAdapter;
+  pDXGIDevice->GetParent(__uuidof(IDXGIAdapter), (void **)&pDXGIAdapter);
+  IDXGIFactory * factory;
+  pDXGIAdapter->GetParent(__uuidof(IDXGIFactory), (void **)&factory);
+factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain);
 //	SetDebugObjectName(m_swapChain,"Window SwapChain");
-	SAFE_RELEASE(factory);
+  SAFE_RELEASE(factory);
+  SAFE_RELEASE(pDXGIAdapter);
+  SAFE_RELEASE(pDXGIDevice);
 #endif
 	CreateRenderTarget(d3dDevice);
 	CreateDepthBuffer(d3dDevice);

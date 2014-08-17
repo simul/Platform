@@ -244,6 +244,37 @@
 			w=v[3];
 		}
 	};
+	struct int2
+	{
+		int x,y;
+		int2(int x=0,int y=0)
+		{
+			this->x=x;
+			this->y=y;
+		}
+		int2(const int *v)
+		{
+			operator=(v);
+		}
+		int2(const unsigned *v)
+		{
+			operator=(v);
+		}
+		operator const int *()
+		{
+			return &x;
+		}
+		void operator=(const int *v)
+		{
+			x=v[0];
+			y=v[1];
+		}
+		void operator=(const unsigned *v)
+		{
+			x=v[0];
+			y=v[1];
+		}
+	};
 	typedef unsigned int uint;
 	struct uint2
 	{

@@ -88,14 +88,6 @@ namespace simul
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			bool Destroy();
-			void RenderSkyAsOverlay(crossplatform::DeviceContext &deviceContext
-											,bool is_cubemap
-											,float exposure
-											,bool buffered
-											,crossplatform::Texture *mainDepthTexture
-											,crossplatform::Texture* lowResDepthTexture
-											,const sky::float4& depthViewportXYWH
-											,bool doFinalCloudBufferToScreenComposite);
 	
 			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH);
 			void RenderLightning(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *low_res_depth_tex);

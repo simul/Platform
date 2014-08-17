@@ -292,7 +292,7 @@ ERRNO_CHECK
 		{
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext
-				,true,1.f,false,cubemapFramebuffer.GetDepthTexture(),cubemapFramebuffer.GetDepthTexture(),relativeViewportTextureRegionXYWH,true);
+				,true,1.f,false,cubemapFramebuffer.GetDepthTexture(),relativeViewportTextureRegionXYWH,true);
 		}
 		static const char *txt[]={	"+X",
 									"-X",
@@ -312,7 +312,7 @@ void Direct3D11Renderer::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderEnvmap CalcSphericalHarmonics")
 	cubemapFramebuffer.SetBands(SphericalHarmonicsBands);
 	cubemapFramebuffer.CalcSphericalHarmonics(deviceContext);
-	envmapFramebuffer.Clear(pContext,0.f,1.f,0.f,1.f,0.f);
+	//envmapFramebuffer.Clear(pContext,0.f,1.f,0.f,1.f,0.f);
 	math::Matrix4x4 invViewProj;
 	math::Matrix4x4 view_matrices[6];
 	float cam_pos[]={0,0,0};
@@ -321,7 +321,10 @@ void Direct3D11Renderer::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 	SIMUL_COMBINED_PROFILE_END(pContext)
 	// For each face, 
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderEnvmap draw")
-	for(int i=0;i<6;i++)
+	static int i=0;
+	i++;
+	i=i%6;
+	//for(int i=0;i<6;i++)
 	{
 		envmapFramebuffer.SetCurrentFace(i);
 		envmapFramebuffer.Activate(deviceContext);
@@ -401,9 +404,11 @@ void Direct3D11Renderer::RenderScene(crossplatform::DeviceContext &deviceContext
 			simulWeatherRenderer->RenderMixedResolution(deviceContext,false,exposure,gamma,view->GetFramebuffer()->GetDepthTexture()
 				,&view->hiResDepthTexture,skyBufferDepthTex,depthViewportXYWH);
 		else
-			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer
-				,view->GetFramebuffer()->GetDepthTexture(),view->GetFramebuffer()->GetDepthTexture()
-				,depthViewportXYWH,true);
+		{
+			//simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer
+			//	,view->GetFramebuffer()->GetDepthTexture()
+			//	,depthViewportXYWH,true);
+		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->ActivateDepth(deviceContext);
 		else

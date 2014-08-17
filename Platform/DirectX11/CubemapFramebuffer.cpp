@@ -163,6 +163,7 @@ bool CubemapFramebuffer::CreateBuffers()
 	V_CHECK(pd3dDevice->CreateShaderResourceView(m_pCubeEnvDepthMap,&SRVDesc,&m_pCubeEnvMapDepthSRV));*/
 	return true;
 }
+
 ID3D11Texture2D* makeStagingTexture(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT target_format)
 {
 	D3D11_TEXTURE2D_DESC tex2dDesc;

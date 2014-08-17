@@ -20,6 +20,7 @@ struct VertexXyzRgba
 };
 namespace simul
 {
+	/// The namespace and library for cross-platform base classes, which abstract rendering functionality.
 	namespace crossplatform
 	{
 		class Material;
