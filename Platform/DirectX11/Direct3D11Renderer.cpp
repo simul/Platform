@@ -148,8 +148,8 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 	envmapFramebuffer.SetWidthAndHeight(8,8);
 	envmapFramebuffer.RestoreDeviceObjects(&renderPlatformDx11);
 
-	if(!demoOverlay)
-		demoOverlay=new crossplatform::DemoOverlay();
+	//if(!demoOverlay)
+	//	demoOverlay=new crossplatform::DemoOverlay();
 	demoOverlay->RestoreDeviceObjects(&renderPlatformDx11);
 	RecompileShaders();
 }
