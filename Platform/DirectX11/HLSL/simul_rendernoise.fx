@@ -49,7 +49,7 @@ vec4 RandomPS(v2f IN) : SV_TARGET
     return c;
 }
 
-vec4 MainPS(v2f IN) : SV_TARGET
+vec4 NoisePS(v2f IN) : SV_TARGET
 {
     return Noise(noise_texture,IN.texCoords,persistence,octaves);
 }
@@ -132,7 +132,7 @@ technique11 simul_noise_2d
         SetGeometryShader(NULL);
 		//SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,MainPS()));
+		SetPixelShader(CompileShader(ps_4_0,NoisePS()));
     }
 }
 

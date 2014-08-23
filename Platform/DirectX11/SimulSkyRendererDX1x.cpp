@@ -42,7 +42,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	,m_pd3dDevice(NULL)
 	,cycle(0)
 {
-	skyKeyframer->SetCalculateAllAltitudes(true);
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
