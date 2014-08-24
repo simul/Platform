@@ -391,7 +391,7 @@ bool simul::dx11::setTexture(ID3DX11Effect *effect,const char *name			,ID3D11Sha
 	if(!effect)
 		return false;
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
-	SIMUL_ASSERT(var->IsValid()!=0);
+	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 	var->SetResource(value);
 	if(value&&var->IsValid()!=0)
 		return true;
@@ -425,7 +425,7 @@ void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,
 bool simul::dx11::setUnorderedAccessView(ID3DX11Effect *effect,const char *name	,ID3D11UnorderedAccessView * value)
 {
 	ID3DX11EffectUnorderedAccessViewVariable*	var	=effect->GetVariableByName(name)->AsUnorderedAccessView();
-	SIMUL_ASSERT(var->IsValid()!=0);
+	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 	var->SetUnorderedAccessView(value);
 	if(value&&var->IsValid()!=0)
 		return true;
@@ -435,28 +435,28 @@ bool simul::dx11::setUnorderedAccessView(ID3DX11Effect *effect,const char *name	
 void simul::dx11::setStructuredBuffer(ID3DX11Effect *effect,const char *name,ID3D11ShaderResourceView * value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
-	SIMUL_ASSERT(var->IsValid()!=0);
+	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 	var->SetResource(value);
 }
 
 void simul::dx11::setTextureArray(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
-	SIMUL_ASSERT(var->IsValid()!=0);
+	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 	var->SetResource(value);
 }
 
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float value)
 {
 	ID3DX11EffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
-	SIMUL_ASSERT(var->IsValid()!=0);
+	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 	var->SetFloat(value);
 }
 
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,float y)
 {
 	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
-	SIMUL_ASSERT(var->IsValid()!=0);
+	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 	float V[]={x,y,0.f,0.f};
 	var->SetFloatVector(V);
 }
@@ -464,7 +464,7 @@ void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,f
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,float y,float z,float w)
 {
 	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
-	SIMUL_ASSERT(var->IsValid()!=0);
+	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 	float V[]={x,y,z,w};
 	var->SetFloatVector(V);
 }
@@ -472,28 +472,28 @@ void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,f
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,int value)
 {
 	ID3DX11EffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
-	SIMUL_ASSERT(var->IsValid()!=0);
+	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 	var->SetInt(value);
 }
 
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,const float *value)
 {
 	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
-	SIMUL_ASSERT(var->IsValid()!=0);
+	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 	var->SetFloatVector(value);
 }
 
 void simul::dx11::setMatrix(ID3DX11Effect *effect,const char *name	,const float *value)
 {
 	ID3DX11EffectMatrixVariable*	var	=effect->GetVariableByName(name)->AsMatrix();
-	SIMUL_ASSERT(var->IsValid()!=0);
+	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 	var->SetMatrix(value);
 }
 
 void simul::dx11::setConstantBuffer(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b)
 {
 	ID3DX11EffectConstantBuffer*	pD3DX11EffectConstantBuffer=effect->GetConstantBufferByName(name);
-	SIMUL_ASSERT(pD3DX11EffectConstantBuffer->IsValid()!=0);
+	SIMUL_ASSERT_WARN(pD3DX11EffectConstantBuffer->IsValid()!=0,(std::string("Invalid constant buffer: ")+name).c_str());
 	pD3DX11EffectConstantBuffer->SetConstantBuffer(b);
 }
 
@@ -744,7 +744,7 @@ ID3D11ComputeShader *simul::dx11::LoadComputeShader(ID3D11Device *pd3dDevice,con
 
 HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,unsigned int shader_flags)
 {
-	SIMUL_ASSERT(d3dDevice!=NULL);
+	SIMUL_ASSERT_WARN(d3dDevice!=NULL,"Null device");
 	HRESULT hr=S_OK;
 	std::string filename_utf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filenameUtf8,shaderPathsUtf8);
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filename_utf8.c_str()))
