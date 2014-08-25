@@ -234,6 +234,11 @@ ERRNO_CHECK
 	if(simulTerrainRenderer)
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
 			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
+	// We want to limit the number of raytrace steps for clouds in the cubemap.
+	if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
+	{
+		simulWeatherRenderer->GetBaseCloudRenderer()->SetMaxSlices(cubemap_view_id,20);
+	}
 	//for(int i=0;i<6;i++)
 	static int i=0;
 	i++;
