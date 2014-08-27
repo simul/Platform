@@ -60,7 +60,7 @@ namespace simul
 			virtual		const float *GetFastInscatterLookup(crossplatform::DeviceContext &deviceContext,float distance_texcoord,float elevation_texcoord);
 
 			const		char *GetDebugText();
-			simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
+			simul::sky::BaseGpuSkyGenerator *GetBaseGpuSkyGenerator(){return &gpuSkyGenerator;}
 		protected:
 			simul::opengl::GpuSkyGenerator	gpuSkyGenerator;
 			//! \internal Switch the current program, either sky_program or earthshadow_program.

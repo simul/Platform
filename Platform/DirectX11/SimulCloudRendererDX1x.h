@@ -76,6 +76,7 @@ namespace simul
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure
 				,bool cubemap,crossplatform::NearFarPass nearFarPass,crossplatform::Texture *depth_tex,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH);
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
+			void RenderTestXXX(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
 			void RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height);
 			void RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext);
 			//! Return true if the camera is above the cloudbase altitude.

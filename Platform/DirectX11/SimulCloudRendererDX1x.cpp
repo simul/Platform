@@ -712,6 +712,23 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::Devic
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"cloudGodraysTexture"	,(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(pContext,effect->asD3DX11Effect()->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
 }
+#pragma optimize("",off)
+void SimulCloudRendererDX1x::RenderTestXXX(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.platform_context;
+	HRESULT hr=S_OK;
+	//effect->SetTexture(deviceContext,"noiseTexture",noise_texture);
+	static int test=1;
+	if(test>=1)
+	{
+			effect->SetTexture(deviceContext,"cloudDensity1",cloud_textures[(2+texture_cycle)%3]);
+			effect->SetTexture(deviceContext,"cloudDensity2",cloud_textures[(2+texture_cycle)%3]);
+
+		effect->Apply(deviceContext,m_pTechniqueCrossSection,0);
+		effect->UnbindTextures(deviceContext);
+		effect->Unapply(deviceContext);
+	}
+}
 
 void SimulCloudRendererDX1x::SetEnableStorms(bool s)
 {

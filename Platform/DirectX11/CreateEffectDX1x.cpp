@@ -393,7 +393,7 @@ bool simul::dx11::setTexture(ID3DX11Effect *effect,const char *name			,ID3D11Sha
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
 	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 	var->SetResource(value);
-	if(value&&var->IsValid()!=0)
+	if(var->IsValid()!=0)
 		return true;
 	return false;
 }

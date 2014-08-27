@@ -746,7 +746,7 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 		result.multiply			=vec4(uint2_to_colour3(loss.xy),1.0)*result.add.a;
 	}
 	result.add.rgb				+=insc.rgb*result.add.a;
-	result.add.a		=result.multiply.r;
+	result.add.a				=result.multiply.r;
 	//	result.add.gb=0;
     return result;
 }

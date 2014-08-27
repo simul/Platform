@@ -490,6 +490,14 @@ BlendState CompositeBlend
 	RenderTargetWriteMask[0]=7;
 	RenderTargetWriteMask[1]=7;
 };
+BlendState AddAlphaBlend1
+{
+	BlendEnable[0]	=TRUE;
+	//BlendEnable[1]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=ZERO;
+    BlendOp			=ADD;
+};
 
 // This technique composites on the basis that clouds have an arbitrary integral downscale, and sky has downscale 2.
 technique11 composite_mixed_res
@@ -498,7 +506,7 @@ technique11 composite_mixed_res
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+		SetBlendState(AddAlphaBlend1,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Composite()));
