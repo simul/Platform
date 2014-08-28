@@ -160,6 +160,11 @@ void dx11::PlatformConstantBuffer::InvalidateDeviceObjects()
 
 void dx11::PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr)
 {
+	if(!m_pD3D11Buffer)
+	{
+		SIMUL_CERR<<"Attempting to apply an uninitialized Constant Buffer"<<std::endl;
+		return;
+	}
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
 	
 	D3D11_MAPPED_SUBRESOURCE mapped_res;
