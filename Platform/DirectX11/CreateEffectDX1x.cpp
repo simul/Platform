@@ -637,9 +637,8 @@ ERRNO_CHECK
 	ID3DBlob *errorMsgs		=NULL;
 ERRNO_CHECK
 	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
-	std::cout<<"Rebuilding DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
-	hr=D3DCompile(		
-						textData
+	std::cout<<"Rebuilding DX11 shader "<<text_filename_utf8.c_str()<<" to target "<<binary_filename_utf8.c_str()<<std::endl;
+	hr=D3DCompile(		textData
 						,textSize
 						,text_filename_utf8.c_str()	//LPCSTR pSourceName,
 						,macros						//const D3D_SHADER_MACRO *pDefines,
