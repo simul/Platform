@@ -487,8 +487,8 @@ BlendState CompositeBlend
 	SrcBlend		=ONE;
 	DestBlend		=SRC1_COLOR;
     BlendOp			=ADD;
-	RenderTargetWriteMask[0]=7;
-	RenderTargetWriteMask[1]=7;
+	RenderTargetWriteMask[0]=15;
+	RenderTargetWriteMask[1]=15;
 };
 BlendState AddAlphaBlend1
 {
@@ -506,7 +506,7 @@ technique11 composite_mixed_res
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddAlphaBlend1,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+		SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Composite()));
