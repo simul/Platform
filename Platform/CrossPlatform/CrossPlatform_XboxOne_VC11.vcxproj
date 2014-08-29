@@ -17,6 +17,7 @@
   <ItemGroup>
     <ClCompile Include="BaseFramebuffer.cpp" />
     <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="DemoOverlay.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
@@ -32,6 +33,7 @@
     <ClInclude Include="BaseRenderer.h" />
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="CommandLineParams.h" />
+    <ClInclude Include="DemoOverlay.h" />
     <ClInclude Include="DeviceContext.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />

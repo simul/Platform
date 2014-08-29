@@ -11,7 +11,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsUniforms,11)
 	uniform float cloudShadowing;
 	// X, Y and Z for the bottom-left corner of the cloud shadow texture.
 	uniform vec3 cloudOrigin;
-	uniform float pad7;
+	uniform float cloudShadowSharpness;
 	uniform vec3 cloudScale;
 	uniform float pad8;
 
