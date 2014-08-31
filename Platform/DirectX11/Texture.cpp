@@ -349,27 +349,41 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	if(!ok)
 	{
 		InvalidateDeviceObjects();
+
+		unsigned int numQualityLevels=0;
+		while(numQualityLevels==0&&num_samples>1)
+		{
+			V_CHECK(renderPlatform->AsD3D11Device()->CheckMultisampleQualityLevels(
+				f,
+				num_samples,
+				&numQualityLevels	));
+			if(numQualityLevels>0)
+				aa_quality=numQualityLevels-1;
+			if(numQualityLevels==0)
+				num_samples/=2;
+		};
+
 		memset(&textureDesc,0,sizeof(textureDesc));
-		textureDesc.Width				=width=w;
-		textureDesc.Height				=length=l;
-		depth							=1;
-		textureDesc.Format				=format=f;
-		textureDesc.MipLevels			=1;
-		textureDesc.ArraySize			=1;
-		textureDesc.Usage				=(computable||rendertarget)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
-		textureDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0);
-		textureDesc.CPUAccessFlags		=(computable||rendertarget)?0:D3D11_CPU_ACCESS_WRITE;
-		textureDesc.MiscFlags			=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
-		textureDesc.SampleDesc.Count	=num_samples;
-		textureDesc.SampleDesc.Quality	=aa_quality;
+		textureDesc.Width					=width=w;
+		textureDesc.Height					=length=l;
+		depth								=1;
+		textureDesc.Format					=format=f;
+		textureDesc.MipLevels				=1;
+		textureDesc.ArraySize				=1;
+		textureDesc.Usage					=(computable||rendertarget)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		textureDesc.BindFlags				=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0);
+		textureDesc.CPUAccessFlags			=(computable||rendertarget)?0:D3D11_CPU_ACCESS_WRITE;
+		textureDesc.MiscFlags				=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
+		textureDesc.SampleDesc.Count		=num_samples;
+		textureDesc.SampleDesc.Quality		=aa_quality;
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		srv_desc.Format						= f;
-		srv_desc.ViewDimension				= num_samples>1?D3D11_SRV_DIMENSION_TEXTURE2DMS:D3D11_SRV_DIMENSION_TEXTURE2D;
-		srv_desc.Texture2D.MipLevels		= 1;
-		srv_desc.Texture2D.MostDetailedMip	= 0;
+		srv_desc.Format						=f;
+		srv_desc.ViewDimension				=num_samples>1?D3D11_SRV_DIMENSION_TEXTURE2DMS:D3D11_SRV_DIMENSION_TEXTURE2D;
+		srv_desc.Texture2D.MipLevels		=1;
+		srv_desc.Texture2D.MostDetailedMip	=0;
 		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
 		SetDebugObjectName(shaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat shaderResourceView");
 	}
@@ -377,9 +391,9 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	{
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format				= f;
-		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE2D;
-		uav_desc.Texture2D.MipSlice	= 0;
+		uav_desc.Format						=f;
+		uav_desc.ViewDimension				=D3D11_UAV_DIMENSION_TEXTURE2D;
+		uav_desc.Texture2D.MipSlice			=0;
 
 		SAFE_RELEASE(unorderedAccessView);
 		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));

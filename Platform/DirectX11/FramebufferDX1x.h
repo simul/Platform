@@ -50,42 +50,41 @@ namespace simul
 			void ClearColour(void* context, float, float, float, float );
 			ID3D11ShaderResourceView *GetBufferResource()
 			{
-				return buffer_texture.shaderResourceView;
+				return buffer_texture->AsD3D11ShaderResourceView();
 			}
 			void* GetColorTex()
 			{
-				return (void*)buffer_texture.shaderResourceView;
+				return (void*)buffer_texture->AsD3D11ShaderResourceView();
 			}
 			//! Get the API-dependent pointer or id for the depth buffer target.
 			ID3D11ShaderResourceView* GetDepthSRV()
 			{
-				return buffer_depth_texture.shaderResourceView;
+				return buffer_depth_texture->AsD3D11ShaderResourceView();
 			}
 			ID3D11Texture2D* GetColorTexture()
 			{
-				return (ID3D11Texture2D*)buffer_texture.texture;
+				return (ID3D11Texture2D*)buffer_texture->AsD3D11Texture2D();
 			}
 			ID3D11Texture2D* GetDepthTexture2D()
 			{
-				return (ID3D11Texture2D*)buffer_depth_texture.texture;
+				return (ID3D11Texture2D*)buffer_depth_texture->AsD3D11Texture2D();
 			}
 			//! Copy from the rt to the given target memory. If not starting at the top of the texture (start_texel>0), the first byte written
 			//! is at \em target, which is the address to copy the given chunk to, not the base address of the whole in-memory texture.
 			void CopyToMemory(void *context,void *target,int start_texel=0,int texels=0);
 			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
-			Texture *GetTexture()
+			dx11::Texture *GetTexture()
 			{
-				return &buffer_texture;
+				return (dx11::Texture*)buffer_texture;
 			}
 			Texture *GetDepthTexture()
 			{
-				return &buffer_depth_texture;
+				return (dx11::Texture*)buffer_depth_texture;
 			}
 		protected:
 			DXGI_FORMAT target_format;
 			DXGI_FORMAT depth_format;
 			bool Destroy();
-			ID3D11Device*						m_pd3dDevice;
 		protected:
 			ID3D11Texture2D *stagingTexture;	// Only initialized if CopyToMemory is invoked.
 			
@@ -95,10 +94,10 @@ namespace simul
 			unsigned							num_OldViewports;
 			//! The texture the scene is rendered to.
 		public:
-			dx11::Texture						buffer_texture;
+			crossplatform::Texture				*buffer_texture;
 		protected:
 			//! The depth buffer.
-			dx11::Texture						buffer_depth_texture;
+			crossplatform::Texture				*buffer_depth_texture;
 			bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
 			ID3D1xRenderTargetView* MakeRenderTarget(const ID3D1xTexture2D* pTexture);
 			float timing;
