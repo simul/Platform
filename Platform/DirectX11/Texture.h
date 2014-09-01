@@ -20,6 +20,10 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
 			bool IsValid() const;
+			ID3D11Texture2D *AsD3D11Texture2D()
+			{
+				return (ID3D11Texture2D*)texture;
+			}
 			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
 				return shaderResourceView;
