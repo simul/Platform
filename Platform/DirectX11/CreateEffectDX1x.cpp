@@ -520,6 +520,7 @@ void simul::dx11::unbindTextures(ID3DX11Effect *effect)
 				uav->SetUnorderedAccessView(NULL);
 		}
 	}
+//	effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->Apply(0,
 }
 
 struct d3dMacro

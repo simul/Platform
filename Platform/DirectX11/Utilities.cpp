@@ -239,6 +239,8 @@ void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext,floa
 	ApplyPass(pContext,tech->GetPassByIndex(pass));
 	pContext->Draw(4,0);
 	pContext->IASetPrimitiveTopology(previousTopology);
+	unbindTextures(eff);
+	ApplyPass(pContext,tech->GetPassByIndex(pass));
 }
 
 void UtilityRenderer::RenderAngledQuad(crossplatform::DeviceContext &deviceContext

@@ -22,6 +22,8 @@ namespace simul
 			,RG_32_UINT
 			,RGB_32_UINT
 			,RGBA_32_UINT
+			// depth formats:
+			,D_32_FLOAT// DXGI_FORMAT_D32_FLOAT or GL_DEPTH_COMPONENT32F
 		};
 	}
 }

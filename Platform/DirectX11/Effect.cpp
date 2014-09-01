@@ -437,8 +437,12 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 }
 void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 {
-	if(apply_count!=1)
-		SIMUL_BREAK(base::QuickFormat("UnbindTextures can only be called after Apply and before Unapply! Effect: %s\n",this->filename.c_str()))
+	//if(apply_count!=1)
+	//	SIMUL_BREAK(base::QuickFormat("UnbindTextures can only be called after Apply and before Unapply! Effect: %s\n",this->filename.c_str()))
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	dx11::unbindTextures(effect);
+	if(apply_count!=1)
+	{
+		V_CHECK(effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext()));
+	}
 }

@@ -363,6 +363,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 	GL_ERROR_CHECK
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	GL_ERROR_CHECK
+	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
 	GL_ERROR_CHECK
 }
@@ -522,6 +523,8 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 		return GL_RGBA;
 	case RGBA_8_SNORM:
 		return GL_RGBA;
+	case D_32_FLOAT:
+		return GL_DEPTH_COMPONENT32F;
 	default:
 		return 0;
 	};
@@ -560,6 +563,8 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 		return 3;
 	case RGBA_32_UINT:
 		return 4;
+	case D_32_FLOAT:
+		return 1;
 	default:
 		return 0;
 	};
@@ -597,6 +602,8 @@ GLenum DataType(crossplatform::PixelFormat p)
 		return GL_UNSIGNED_INT;
 	case RGBA_32_UINT:
 		return GL_UNSIGNED_INT;
+	case D_32_FLOAT:
+		return GL_FLOAT;
 	default:
 		return 0;
 	};

@@ -54,7 +54,7 @@ bool opengl::Texture::IsValid() const
 }
 
 void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
-	,crossplatform::PixelFormat p,bool computable,bool rendertarget,int num_samples,int aa_quality)
+	,crossplatform::PixelFormat p,bool computable,bool rendertarget,bool depthstencil,int num_samples,int aa_quality)
 {
 GL_ERROR_CHECK
 	pixelFormat=p;
@@ -76,6 +76,21 @@ GL_ERROR_CHECK
 		glGenFramebuffers(1, &m_fb);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pTextureObject, 0);
+		
+		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		if(status!=GL_FRAMEBUFFER_COMPLETE)
+		{
+			FramebufferGL::CheckFramebufferStatus();
+			throw base::RuntimeError("Framebuffer incomplete for rendertarget texture");
+		}
+	}
+	if(depthstencil)
+	{
+		SAFE_DELETE_FRAMEBUFFER(m_fb);
+		glGenFramebuffers(1, &m_fb);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, pTextureObject, 0);
 		
 		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);

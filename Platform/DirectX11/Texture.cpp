@@ -322,9 +322,16 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 		V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
 	}
 }
-void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,crossplatform::PixelFormat pixelFormat,bool computable,bool rendertarget,int num_samples,int aa_quality)
+void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,crossplatform::PixelFormat pixelFormat,bool computable,bool rendertarget,bool depthstencil,int num_samples,int aa_quality)
 {
-	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT texture2dFormat=format;
+	DXGI_FORMAT srvFormat=format;
+	if(texture2dFormat==DXGI_FORMAT_D32_FLOAT)
+	{
+		texture2dFormat	=DXGI_FORMAT_R32_TYPELESS;
+		srvFormat		=DXGI_FORMAT_R32_FLOAT;
+	}
 	dim=2;
 	ID3D11Device *pd3dDevice=renderPlatform->AsD3D11Device();
 	D3D11_TEXTURE2D_DESC textureDesc;
@@ -337,15 +344,17 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=f)
+			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=texture2dFormat)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
+				ok=false;
+			if(rendertarget!=((textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET)==D3D11_BIND_RENDER_TARGET))
 				ok=false;
 		}
 		SAFE_RELEASE(ppd);
 	}
 	else
-		ok=false;
+		ok=false; 
 	if(!ok)
 	{
 		InvalidateDeviceObjects();
@@ -354,11 +363,11 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		while(numQualityLevels==0&&num_samples>1)
 		{
 			V_CHECK(renderPlatform->AsD3D11Device()->CheckMultisampleQualityLevels(
-				f,
+				texture2dFormat,
 				num_samples,
 				&numQualityLevels	));
-			if(numQualityLevels>0)
-				aa_quality=numQualityLevels-1;
+			//if(aa_quality>=numQualityLevels)
+			//	aa_quality=numQualityLevels-1;
 			if(numQualityLevels==0)
 				num_samples/=2;
 		};
@@ -367,11 +376,11 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		textureDesc.Width					=width=w;
 		textureDesc.Height					=length=l;
 		depth								=1;
-		textureDesc.Format					=format=f;
+		textureDesc.Format					=texture2dFormat;
 		textureDesc.MipLevels				=1;
 		textureDesc.ArraySize				=1;
 		textureDesc.Usage					=(computable||rendertarget)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
-		textureDesc.BindFlags				=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0);
+		textureDesc.BindFlags				=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0)|(depthstencil?D3D11_BIND_DEPTH_STENCIL:0);
 		textureDesc.CPUAccessFlags			=(computable||rendertarget)?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags				=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
 		textureDesc.SampleDesc.Count		=num_samples;
@@ -380,7 +389,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		srv_desc.Format						=f;
+		srv_desc.Format						=srvFormat;
 		srv_desc.ViewDimension				=num_samples>1?D3D11_SRV_DIMENSION_TEXTURE2DMS:D3D11_SRV_DIMENSION_TEXTURE2D;
 		srv_desc.Texture2D.MipLevels		=1;
 		srv_desc.Texture2D.MostDetailedMip	=0;
@@ -391,7 +400,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	{
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format						=f;
+		uav_desc.Format						=texture2dFormat;
 		uav_desc.ViewDimension				=D3D11_UAV_DIMENSION_TEXTURE2D;
 		uav_desc.Texture2D.MipSlice			=0;
 
@@ -403,13 +412,24 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	{
 		// Setup the description of the render target view.
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-		renderTargetViewDesc.Format				=f;
+		renderTargetViewDesc.Format				=texture2dFormat;
 		renderTargetViewDesc.ViewDimension		=num_samples>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 		// Create the render target in DX11:
 		SAFE_RELEASE(renderTargetView);
 		V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&renderTargetView));
 		SetDebugObjectName(renderTargetView,"dx11::Texture::ensureTexture2DSizeAndFormat renderTargetView");
+	}
+	if(depthstencil&&(!depthStencilView||!ok))
+	{
+		D3D11_TEX2D_DSV dsv;
+		dsv.MipSlice=0;
+		D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
+		depthDesc.ViewDimension		=num_samples>1?D3D11_DSV_DIMENSION_TEXTURE2DMS:D3D11_DSV_DIMENSION_TEXTURE2D;
+		depthDesc.Format			=format;
+		depthDesc.Flags				=0;
+		depthDesc.Texture2D			=dsv;
+		V_CHECK(pd3dDevice->CreateDepthStencilView(texture,&depthDesc,&depthStencilView));
 	}
 }
 

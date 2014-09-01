@@ -182,7 +182,7 @@ bool Framebuffer::CreateBuffers()
 	int quality=0;
 	if(target_format!=0)
 	{
-		buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(target_format),false,true,numAntialiasingSamples,quality);
+		buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(target_format),false,true,false,numAntialiasingSamples,quality);
 	
 												
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
@@ -191,12 +191,12 @@ bool Framebuffer::CreateBuffers()
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 	}
 	DXGI_FORMAT fmtDepthTex = depth_format;
-	DXGI_FORMAT possibles[]={
+	/*DXGI_FORMAT possibles[]={
 		DXGI_FORMAT_D24_UNORM_S8_UINT,
 		DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
 		DXGI_FORMAT_D32_FLOAT,
 		DXGI_FORMAT_D16_UNORM,
-		DXGI_FORMAT_UNKNOWN};
+		DXGI_FORMAT_UNKNOWN};*/
 	// Try creating a depth texture
 	D3D11_TEXTURE2D_DESC desc=
 	{
@@ -226,14 +226,16 @@ bool Framebuffer::CreateBuffers()
 	desc.MiscFlags = 0;
 	if(fmtDepthTex!=DXGI_FORMAT_UNKNOWN)
 	{
-		ID3D11Texture2D *tex=NULL;
+		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(depth_format),false,false,true,numAntialiasingSamples,quality);
+	/*	ID3D11Texture2D *tex=NULL;
 		V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(	&desc,
 												NULL,
 												&tex))
-		((dx11::Texture *)buffer_depth_texture)->texture=tex;
+		((dx11::Texture *)buffer_depth_texture)->texture=tex;*/
 	}
-	if(((dx11::Texture *)buffer_depth_texture)->texture)
+/*	if(((dx11::Texture *)buffer_depth_texture)->texture)
 	{
+
 		unsigned int numQualityLevels=0;
 		V_CHECK(renderPlatform->AsD3D11Device()->CheckMultisampleQualityLevels(
 				DXGI_FORMAT_D32_FLOAT,
@@ -262,7 +264,7 @@ bool Framebuffer::CreateBuffers()
 			buffer_depth_texture->dim=2;
 			buffer_depth_texture->depth=1;
 		}
-	}
+	}*/
 	return (hr==S_OK);
 }
 
