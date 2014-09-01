@@ -381,7 +381,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		textureDesc.ArraySize				=1;
 		textureDesc.Usage					=(computable||rendertarget)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
 		textureDesc.BindFlags				=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0)|(depthstencil?D3D11_BIND_DEPTH_STENCIL:0);
-		textureDesc.CPUAccessFlags			=(computable||rendertarget)?0:D3D11_CPU_ACCESS_WRITE;
+		textureDesc.CPUAccessFlags			=(computable||rendertarget||depthstencil)?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags				=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
 		textureDesc.SampleDesc.Count		=num_samples;
 		textureDesc.SampleDesc.Quality		=aa_quality;
