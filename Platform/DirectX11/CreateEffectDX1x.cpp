@@ -359,7 +359,7 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 	{
 		D3D11_TEXTURE3D_DESC desc;
 		tex->GetDesc(&desc);
-		if(desc.Width!=w||desc.Height!=l||desc.Depth!=d||desc.Format!=format)
+		if((int)desc.Width!=w||(int)desc.Height!=l||(int)desc.Depth!=d||desc.Format!=format)
 		{
 			SAFE_RELEASE(tex);
 			SAFE_RELEASE(srv);
@@ -557,14 +557,14 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,void *text
 		pos=bpos;
 	std::string path_utf8=text_filename_utf8.substr(0,pos);
 	DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),binary_date_jdn);
-	HRESULT hr=D3DPreprocess(	textData	
+	V_CHECK(D3DPreprocess(	textData	
 						,textSize
 						,text_filename_utf8.c_str()		//in   LPCSTR pSourceName,
 						,macros							//in   const D3D_SHADER_MACRO *pDefines,
 						,&detectChangesIncludeHandler	//in   ID3DInclude pInclude,
 						,&binaryBlob					//ID3DBlob **ppCodeText,
 						,&errorMsgs						//ID3DBlob **ppErrorMsgs
-						);
+						));
 	double newestFileTime=detectChangesIncludeHandler.GetNewestIncludeDateJDN();
 	if(binaryBlob)
 		binaryBlob->Release();

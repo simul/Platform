@@ -23,6 +23,13 @@ namespace simul
 			void SetFormat(int f);
 			void SetDepthFormat(int f);
 			bool IsValid() const;
+#ifdef _XBOX_ONE
+			void SetUseESRAM(bool colour,bool depth)
+			{
+				useESRAM=colour;
+				useESRAMforDepth=depth;
+			}
+#endif
 			void SetAntialiasing(int a)
 			{
 				if(numAntialiasingSamples!=a)
@@ -96,6 +103,7 @@ namespace simul
 		public:
 			crossplatform::Texture				*buffer_texture;
 		protected:
+			bool useESRAM,useESRAMforDepth;
 			//! The depth buffer.
 			crossplatform::Texture				*buffer_depth_texture;
 			bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);

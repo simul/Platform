@@ -66,7 +66,6 @@ bool CubemapFramebuffer::CreateBuffers()
 		SAFE_DELETE(m_pCubeEnvDepthMap[i]);
 		m_pCubeEnvDepthMap[i]=renderPlatform->CreateTexture();
 	}
-	HRESULT hr=S_OK;
 	pd3dDevice=renderPlatform->AsD3D11Device();
 	SAFE_DELETE(texture);
 	texture=renderPlatform->CreateTexture();
@@ -282,14 +281,14 @@ void CubemapFramebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	ActivateViewport(deviceContext,0.f,0.f,1.f,1.f);
 }
 
-void CubemapFramebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
+void CubemapFramebuffer::ActivateDepth(crossplatform::DeviceContext &)
 {
 }
 
 void CubemapFramebuffer::ActivateColour(crossplatform::DeviceContext &context,const float viewportXYWH[4])
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context.asD3D11DeviceContext();
-	HRESULT hr=S_OK;
+	
 	unsigned int num_v=0;
 	pContext->RSGetViewports(&num_v,NULL);
 	if(num_v<=4)
@@ -318,7 +317,7 @@ void CubemapFramebuffer::ActivateColour(crossplatform::DeviceContext &context,co
 void CubemapFramebuffer::ActivateViewport(crossplatform::DeviceContext &deviceContext, float viewportX, float viewportY, float viewportW, float viewportH)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	HRESULT hr=S_OK;
+	
 	unsigned int num_v=0;
 	pContext->RSGetViewports(&num_v,NULL);
 	if(num_v<=4)

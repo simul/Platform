@@ -25,7 +25,7 @@ namespace simul
 			CubemapFramebuffer();
 			virtual ~CubemapFramebuffer();
 			void SetWidthAndHeight(int w,int h);
-			void SetAntialiasing(int s){}
+			void SetAntialiasing(int ){}
 			void SetFormat(int i);
 			void SetDepthFormat(int){}
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.

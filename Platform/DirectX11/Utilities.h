@@ -227,7 +227,7 @@ namespace simul
 				Apply(pContext);
 			}
 			//! Unbind from the effect.
-			void Unbind(ID3D11DeviceContext *pContext)
+			void Unbind(ID3D11DeviceContext *)
 			{
 				if(m_pD3DX11EffectConstantBuffer)
 					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
@@ -249,6 +249,8 @@ namespace simul
 		  #if (defined(_DEBUG) || defined(PROFILE)) && !defined(_XBOX_ONE)
 			if(resource)
 				resource->SetPrivateData(WKPDID_D3DDebugObjectName,(UINT)(name?strlen(name):0),name?name:"un-named resource");
+			#else
+			name;resource;
 		  #endif
 		}
 		template<class T> class StructuredBuffer 

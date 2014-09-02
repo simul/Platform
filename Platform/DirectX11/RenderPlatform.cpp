@@ -482,7 +482,7 @@ crossplatform::Light *RenderPlatform::CreateLight()
 
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
-	crossplatform::Texture * tex=new dx11::Texture(device);
+	crossplatform::Texture * tex=new dx11::Texture();
 	if(fileNameUtf8)
 		tex->LoadFromFile(this,fileNameUtf8);
 	return tex;

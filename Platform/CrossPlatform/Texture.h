@@ -34,7 +34,7 @@ namespace simul
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(){return 0;}
 			virtual GLuint AsGLuint(){return 0;}
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
-				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0)=0;
+				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool esram=false)=0;
 			virtual void ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1)=0;
 			virtual void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)=0;
 			virtual void activateRenderTarget(DeviceContext &deviceContext)=0;

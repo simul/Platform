@@ -46,6 +46,8 @@ Framebuffer::Framebuffer(int w,int h) :
 	,target_format(DXGI_FORMAT_R32G32B32A32_FLOAT)
 	,depth_format(DXGI_FORMAT_UNKNOWN) //The usual case is for the user to supply depth look-up textures, which is all we need for the majority of cases... So let's avoid needless construction of depth buffers unless otherwise indicated with a SetDepthFormat(...)
 	,GenerateMips(false)
+	,useESRAM(false)
+	,useESRAMforDepth(false)
 {
 }
 
@@ -179,10 +181,10 @@ bool Framebuffer::CreateBuffers()
 	if(!buffer_depth_texture)
 		buffer_depth_texture=renderPlatform->CreateTexture();
 	SAFE_RELEASE(stagingTexture);
-	int quality=0;
+	static int quality=0;
 	if(target_format!=0)
 	{
-		buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(target_format),false,true,false,numAntialiasingSamples,quality);
+		buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(target_format),false,true,false,numAntialiasingSamples,quality,useESRAM);
 	
 												
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
@@ -190,7 +192,7 @@ bool Framebuffer::CreateBuffers()
 		renderTargetViewDesc.ViewDimension		=numAntialiasingSamples>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 	}
-	DXGI_FORMAT fmtDepthTex = depth_format;
+	//DXGI_FORMAT fmtDepthTex = depth_format;
 	/*DXGI_FORMAT possibles[]={
 		DXGI_FORMAT_D24_UNORM_S8_UINT,
 		DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
@@ -198,306 +200,12 @@ bool Framebuffer::CreateBuffers()
 		DXGI_FORMAT_D16_UNORM,
 		DXGI_FORMAT_UNKNOWN};*/
 	// Try creating a depth texture
-	D3D11_TEXTURE2D_DESC desc=
+	if(depth_format!=DXGI_FORMAT_UNKNOWN)
 	{
-		Width,
-		Height,
-		1,
-		GenerateMips?0:1,
-		target_format,
-		{1,0},
-		D3D11_USAGE_DEFAULT,
-		D3D11_BIND_RENDER_TARGET|D3D11_BIND_SHADER_RESOURCE,
-		0,
-		GenerateMips?D3D11_RESOURCE_MISC_GENERATE_MIPS:0
-	};
-	desc.SampleDesc.Count	=numAntialiasingSamples;
-	desc.SampleDesc.Quality	=quality;//numQualityLevels-1;
-	desc.Width = Width;
-	desc.Height = Height;
-	desc.MipLevels = 1;
-	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_R32_TYPELESS;
-	desc.SampleDesc.Count = numAntialiasingSamples;
-	desc.SampleDesc.Quality = quality;
-	desc.Usage = D3D1x_USAGE_DEFAULT;
-	desc.BindFlags = D3D1x_BIND_DEPTH_STENCIL|D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = 0;
-	desc.MiscFlags = 0;
-	if(fmtDepthTex!=DXGI_FORMAT_UNKNOWN)
-	{
-		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(depth_format),false,false,true,numAntialiasingSamples,quality);
-	/*	ID3D11Texture2D *tex=NULL;
-		V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(	&desc,
-												NULL,
-												&tex))
-		((dx11::Texture *)buffer_depth_texture)->texture=tex;*/
+		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(depth_format),false,false,true,numAntialiasingSamples,quality,useESRAMforDepth);
 	}
-/*	if(((dx11::Texture *)buffer_depth_texture)->texture)
-	{
-
-		unsigned int numQualityLevels=0;
-		V_CHECK(renderPlatform->AsD3D11Device()->CheckMultisampleQualityLevels(
-				DXGI_FORMAT_D32_FLOAT,
-				numAntialiasingSamples,
-				&numQualityLevels	));
-		D3D11_TEX2D_DSV dsv;
-		dsv.MipSlice=0;
-		D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
-		depthDesc.ViewDimension		=numAntialiasingSamples>1?D3D11_DSV_DIMENSION_TEXTURE2DMS:D3D11_DSV_DIMENSION_TEXTURE2D;
-		depthDesc.Format			=DXGI_FORMAT_D32_FLOAT;
-		depthDesc.Flags				=0;
-		depthDesc.Texture2D			=dsv;
-		V_CHECK(renderPlatform->AsD3D11Device()->CreateDepthStencilView(((dx11::Texture *)buffer_depth_texture)->texture,&depthDesc,&((dx11::Texture *)buffer_depth_texture)->depthStencilView));
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC depthSrvDesc;
-		depthSrvDesc.Format			=DXGI_FORMAT_R32_FLOAT;
-		depthSrvDesc.ViewDimension	=numAntialiasingSamples>1?D3D_SRV_DIMENSION_TEXTURE2DMS:D3D_SRV_DIMENSION_TEXTURE2D;
-		depthSrvDesc.Texture2D.MipLevels=1;
-		depthSrvDesc.Texture2D.MostDetailedMip=0;
-
-		V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(((dx11::Texture *)buffer_depth_texture)->texture,&depthSrvDesc,&((dx11::Texture *)buffer_depth_texture)->shaderResourceView ));
-		
-		{
-			buffer_depth_texture->width=Width;
-			buffer_depth_texture->length=Height;
-			buffer_depth_texture->dim=2;
-			buffer_depth_texture->depth=1;
-		}
-	}*/
-	return (hr==S_OK);
+	return true;
 }
-
-
-
-
-
-
-
-
-
-
-#ifdef _XBOX_ONE
-
-
-
-
-    // Figure out size and alignment for ESRAM surface
-    XG_TILE_MODE ColorTileMode = XGComputeOptimalTileMode( XG_RESOURCE_DIMENSION_TEXTURE2D, 
-        m_dwXGColorFormat, 
-        m_iSurfaceWidth, 
-        m_iSurfaceHeight, 
-        1, 
-        1, 
-        XG_BIND_RENDER_TARGET );
-    struct XG_TEXTURE2D_DESC ColorESRAMXGDesc = 
-    {
-        m_iSurfaceWidth,                    // UINT Width;
-        m_iSurfaceHeight,                   // UINT Height;
-        1,                                  // UINT MipLevels;
-        1,                                  // UINT ArraySize;
-        m_dwXGColorFormat,                  // XG_FORMAT Format;
-        {                                   // XG_SAMPLE_DESC SampleDesc;
-            2,                                      // UINT Count;
-            (UINT) D3D11_STANDARD_MULTISAMPLE_PATTERN,     // UINT Quality;
-        }, 
-        XG_USAGE_DEFAULT,                   // XG_USAGE Usage;
-        XG_BIND_RENDER_TARGET,              // UINT BindFlags;
-        0,                                  // UINT CPUAccessFlags;
-        0,                                  // UINT MiscFlags;
-        0,                                  // UINT ESRAMOffsetBytes; Unused
-        0,                                  // UINT ESRAMUsageBytes; Unused
-        ColorTileMode,                      // XG_TILE_MODE TileMode;
-        0,                                  // UINT Pitch;
-    };
-
-    XGTextureAddressComputer* ColorAddressComputer;
-    XGCreateTexture2DComputer( &ColorESRAMXGDesc, &ColorAddressComputer );
-    XG_RESOURCE_LAYOUT ColorLayout;
-    ColorAddressComputer->GetResourceLayout( &ColorLayout );
-    RoundUpToNextMultiple( iCurrentESRAMOffset, ColorLayout.BaseAlignmentBytes );
-
-    UINT iColorESRAMOffset = (UINT) iCurrentESRAMOffset;    
-    iCurrentESRAMOffset += ColorLayout.SizeBytes;   // If this grows beyond ESRAM_SIZE, we will overflow to DRAM
-
-    XG_TILE_MODE DepthTileMode;
-    XG_TILE_MODE StencilTileMode;
-    XGComputeOptimalDepthStencilTileModes( m_dwXGDepthFormat, 
-        m_iSurfaceWidth, 
-        m_iSurfaceHeight, 
-        1, 
-        1, 
-        TRUE,   
-        &DepthTileMode, 
-        &StencilTileMode );
-    XSF_ASSERT( DepthTileMode == StencilTileMode ); // We have no way to mix these currently
-    struct XG_TEXTURE2D_DESC DepthESRAMXGDesc = 
-    {
-        m_iSurfaceWidth,                    // UINT Width;
-        m_iSurfaceHeight,                   // UINT Height;
-        1,                                  // UINT MipLevels;
-        1,                                  // UINT ArraySize;
-        m_dwXGDepthFormat,                  // XG_FORMAT Format;
-        {                                   // XG_SAMPLE_DESC SampleDesc;
-            2,                                      // UINT Count;
-            (UINT) D3D11_STANDARD_MULTISAMPLE_PATTERN,     // UINT Quality;
-        }, 
-        XG_USAGE_DEFAULT,                   // XG_USAGE Usage;
-        XG_BIND_DEPTH_STENCIL,              // UINT BindFlags;
-        0,                                  // UINT CPUAccessFlags;
-        0,                                  // UINT MiscFlags;
-        0,                                  // UINT ESRAMOffsetBytes; Unused
-        0,                                  // UINT ESRAMUsageBytes; Unused
-        DepthTileMode,                      // XG_TILE_MODE TileMode;
-        0,                                  // UINT Pitch;
-    };
-    XGTextureAddressComputer* DepthAddressComputer;
-    XGCreateTexture2DComputer( &DepthESRAMXGDesc, &DepthAddressComputer );
-    XG_RESOURCE_LAYOUT DepthLayout;
-    DepthAddressComputer->GetResourceLayout( &DepthLayout );
-    RoundUpToNextMultiple( iCurrentESRAMOffset, DepthLayout.BaseAlignmentBytes );
-
-    UINT iDepthESRAMOffset = (UINT) iCurrentESRAMOffset;
-    iCurrentESRAMOffset += DepthLayout.SizeBytes;   // If this grows beyond ESRAM_SIZE, we will overflow to DRAM
-
-    // Now create the ESRAM resources
-    D3D11_TEXTURE2D_DESC ColorESRAMDesc = ColorDRAMDesc;
-    D3D11_TEXTURE2D_DESC DepthESRAMDesc = DepthDRAMDesc;
-
-    if( iCurrentESRAMOffset <= ESRAM_SIZE )
-    {
-        // The MISC_ESRAM_RESIDENT flag is only permitted for automatic creation
-        ColorESRAMDesc.MiscFlags |= D3D11X_RESOURCE_MISC_ESRAM_RESIDENT;
-        ColorESRAMDesc.ESRAMOffsetBytes = iColorESRAMOffset;
-
-        DepthESRAMDesc.MiscFlags |= D3D11X_RESOURCE_MISC_ESRAM_RESIDENT;
-        DepthESRAMDesc.ESRAMOffsetBytes = iDepthESRAMOffset;
-
-        // Standard creation
-        XSF_ERROR_IF_FAILED( pDev->CreateTexture2D( &ColorESRAMDesc, nullptr, &m_pColorTextureESRAM ) );
-        XSF_ERROR_IF_FAILED( pDev->CreateTexture2D( &DepthESRAMDesc, nullptr, &m_pDepthTextureESRAM ) );
-    }
-    else
-    {
-#define USE_ALLOCATE_TITLE_PHYSICAL_PAGES 1
-#define USE_4MB_PAGES 1
-#if USE_4MB_PAGES
-        // Choose page size --- these must be consistent with each other
-        const UINT64 iPageSize = 4 * 1024 * 1024;
-        const ULONG lPageType = MEM_4MB_PAGES;
-        const UINT iESRAMPageType = D3D11_MAP_ESRAM_4MB_PAGES;
-#else
-        // Choose page size --- these must be consistent with each other
-        const UINT64 iPageSize = 64 * 1024;
-        const ULONG lPageType = MEM_LARGE_PAGES;
-        const UINT iESRAMPageType = D3D11_MAP_ESRAM_LARGE_PAGES;
-#endif
-        const UINT iMinPageSize = 64 * 1024;
-        static_assert( iPageSize % iMinPageSize == 0, "Unexpected alignment mismatch" );
-
-        // PAGE_NOACCESS not working right now --- possible bug?
-        const DWORD dwProtect = PAGE_READONLY; 
-
-        // Reserve virtual range, but do not commit
-        void *CpuVirtualAddress = VirtualAlloc( nullptr, 
-            iCurrentESRAMOffset, 
-            MEM_GRAPHICS | lPageType | MEM_RESERVE, 
-            dwProtect );
-        XSF_ASSERT( CpuVirtualAddress != nullptr );
-
-        // Map ESRAM pages
-        UINT iNumESRAMPages = (UINT) RoundUpToNextMultiple( std::min( iCurrentESRAMOffset, ESRAM_SIZE ), iPageSize ) / iPageSize;
-        UINT ESRAMPageList[ ESRAM_SIZE / iPageSize ];
-        for( UINT i = 0; i < _countof( ESRAMPageList ); ++i ) ESRAMPageList[i] = i;
-        XSF_ERROR_IF_FAILED( D3DMapEsramMemory( iESRAMPageType, 
-            CpuVirtualAddress, 
-            iNumESRAMPages, 
-            ESRAMPageList ) );
-
-        // This check is redundant here, but good for sanity check
-        if( iCurrentESRAMOffset > ESRAM_SIZE )
-        {
-            // Commit physical pages for ESRAM overflow into DRAM.  Can either 
-            //   1) Preallocate these pages with AllocateTitlePhysicalPages, and commit them with MapTitlePhysicalPages
-            //   2) Let the system choose the physical pages to commit
-#if USE_ALLOCATE_TITLE_PHYSICAL_PAGES
-            // AllocateTitlePhysicalPages uses the min page size of 64 KB, regardless of the requested GPU page size.
-            // This allows you to change the page size dynamically after allocation.
-            ULONG_PTR iNumDRAMPages = RoundUpToNextMultiple( iCurrentESRAMOffset - ESRAM_SIZE, iPageSize ) / iMinPageSize;
-            ULONG_PTR* DRAMPageArray = (ULONG_PTR*) alloca( iNumDRAMPages * sizeof( DRAMPageArray[0] ) );
-            XSF_ASSERT( AllocateTitlePhysicalPages( GetCurrentProcess(), 
-                lPageType,   
-                &iNumDRAMPages, 
-                DRAMPageArray ) );
-
-            // Create the appropriate virtual to physical mapping for DRAM
-            XSF_ASSERT( nullptr != MapTitlePhysicalPages( reinterpret_cast<BYTE*>( CpuVirtualAddress ) + ESRAM_SIZE, 
-                iNumDRAMPages, 
-                MEM_GRAPHICS | lPageType, 
-                dwProtect, 
-                DRAMPageArray ) );
-#else
-            void *ConfirmCpuVirtualAddress = VirtualAlloc( reinterpret_cast<BYTE*>( CpuVirtualAddress ) + ESRAM_SIZE, 
-                iCurrentESRAMOffset - ESRAM_SIZE, 
-                MEM_GRAPHICS | lPageType | MEM_COMMIT, 
-                dwProtect );
-            XSF_ASSERT( ConfirmCpuVirtualAddress == reinterpret_cast<BYTE*>( CpuVirtualAddress ) + ESRAM_SIZE );
-#endif
-        }
-
-        ID3DXboxPerformanceDevice* pPerfDev;
-        XSF_ERROR_IF_FAILED( pDev->QueryInterface( __uuidof(pPerfDev), reinterpret_cast<void**>(&pPerfDev) ) );
-
-        XSF_ERROR_IF_FAILED( pPerfDev->CreatePlacementTexture2D( &ColorESRAMDesc, 
-            ColorTileMode, 
-            0, 
-            reinterpret_cast<BYTE*>(CpuVirtualAddress) + iColorESRAMOffset, 
-            &m_pColorTextureESRAM ) );
-        XSF_ERROR_IF_FAILED( pPerfDev->CreatePlacementTexture2D( &DepthESRAMDesc, 
-            DepthTileMode, 
-            0, 
-            reinterpret_cast<BYTE*>(CpuVirtualAddress) + iDepthESRAMOffset, 
-            &m_pDepthTextureESRAM ) );
-    }
-
-    // Create color RTVs and depth DSVs
-    D3D11_RENDER_TARGET_VIEW_DESC ColorRTVDesc = 
-    {
-        m_dwColorFormat,                    // DXGI_FORMAT Format;
-        D3D11_RTV_DIMENSION_TEXTURE2DMS,    // D3D11_RTV_DIMENSION ViewDimension;
-        {                                   // D3D11_TEX2DMS_RTV Texture2D;
-            0,                              // UINT UnusedField_NothingToDefine;
-        }, 
-    };
-    XSF_ERROR_IF_FAILED( pDev->CreateRenderTargetView( m_pColorTextureDRAM, &ColorRTVDesc, &m_pRenderTargetViewDRAM ) );
-    XSF_ERROR_IF_FAILED( pDev->CreateRenderTargetView( m_pColorTextureESRAM, &ColorRTVDesc, &m_pRenderTargetViewESRAM ) );
-
-    D3D11_DEPTH_STENCIL_VIEW_DESC DepthDSVDesc = 
-    {
-        m_dwDepthFormat,                    // DXGI_FORMAT Format;
-        D3D11_DSV_DIMENSION_TEXTURE2DMS,    // D3D11_DSV_DIMENSION ViewDimension;
-        {                                   // D3D11_TEX2DMS_DSV Texture2D;
-            0,                              // UINT UnusedField_NothingToDefine;
-        }, 
-    };
-    XSF_ERROR_IF_FAILED( pDev->CreateDepthStencilView( m_pDepthTextureDRAM, &DepthDSVDesc, &m_pDepthStencilViewDRAM ) );
-    XSF_ERROR_IF_FAILED( pDev->CreateDepthStencilView( m_pDepthTextureESRAM, &DepthDSVDesc, &m_pDepthStencilViewESRAM ) );
-
-
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ID3D1xRenderTargetView* Framebuffer::MakeRenderTarget(const ID3D1xTexture2D* pTexture)
 {

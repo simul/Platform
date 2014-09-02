@@ -346,6 +346,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	vec4 rainbowColour			=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
 										  rainbowIntensity,view,lightDir,texCoords.xy);
 	float moisture=0.0;
+	float noise_centre_factor=exp(-length(clip_pos.xy));
 	// This provides the range of texcoords that is lit.
 	for(int i=0;i<layerCount;i++)
 	{
@@ -365,7 +366,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			vec4 noiseval				=vec4(0,0,0,0);
 			if(noise)
 			{
-				float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(cloudTexCoords.z));
+				float noise_factor		=noise_centre_factor*lerp(baseNoiseFactor,1.0,saturate(cloudTexCoords.z));
 				if(noise_3d)
 				{
 					vec3 noise_texc		=cloudTexCoords.xyz*noise3DTexcoordScale;

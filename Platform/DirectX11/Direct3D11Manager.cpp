@@ -340,10 +340,10 @@ void Direct3D11Manager::Initialize(bool use_debug)
 {
 	std::cout<<"1"<<std::endl;
 	HRESULT result;
-	IDXGIFactory* factory;
-	int  i;//, numerator, denominator;
-	DXGI_ADAPTER_DESC adapterDesc;
-	int error;
+//	IDXGIFactory* factory;
+//	int  i;//, numerator, denominator;
+//	DXGI_ADAPTER_DESC adapterDesc;
+//	int error;
 	D3D_FEATURE_LEVEL featureLevel;
 
 	// Store the vsync setting.
@@ -360,7 +360,7 @@ void Direct3D11Manager::Initialize(bool use_debug)
 	// Enumerate the primary adapter output (monitor).
 	//result = adapter->EnumOutputs(0, &adapterOutput);
 	IDXGIOutput* output=NULL;
-	 i=0;
+	int i=0;
 	while(adapter->EnumOutputs(i,&output)!=DXGI_ERROR_NOT_FOUND)
 	{
 		outputs[i]=output;
@@ -443,7 +443,7 @@ void Direct3D11Manager::Initialize(bool use_debug)
 	d3dInfoQueue->ClearStorageFilter();
 	ReportMessageFilterState();
 	
-	D3D11_MESSAGE_CATEGORY cats[] = {/*D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED
+/*	D3D11_MESSAGE_CATEGORY cats[] = {/*D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED
 										,D3D11_MESSAGE_CATEGORY_MISCELLANEOUS	
 										,D3D11_MESSAGE_CATEGORY_INITIALIZATION	
 										,D3D11_MESSAGE_CATEGORY_CLEANUP
@@ -451,16 +451,16 @@ void Direct3D11Manager::Initialize(bool use_debug)
 										,D3D11_MESSAGE_CATEGORY_STATE_CREATION
 										,D3D11_MESSAGE_CATEGORY_STATE_SETTING
 										,D3D11_MESSAGE_CATEGORY_STATE_GETTING
-										,D3D11_MESSAGE_CATEGORY_RESOURCE_MANIPULATION*/
+										,D3D11_MESSAGE_CATEGORY_RESOURCE_MANIPULATION
 										D3D11_MESSAGE_CATEGORY_EXECUTION
-									};
+									};*/
 	D3D11_MESSAGE_SEVERITY sevs[] = { 
 		D3D11_MESSAGE_SEVERITY_ERROR
 		,D3D11_MESSAGE_SEVERITY_WARNING};
-	UINT ids[] = { D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
+/*	UINT ids[] = { D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
 		D3D11_MESSAGE_ID_DESTROY_VERTEXSHADER,
 		D3D11_MESSAGE_ID_DESTROY_PIXELSHADER,
-		D3D11_MESSAGE_ID_DESTROY_COMPUTESHADER };
+		D3D11_MESSAGE_ID_DESTROY_COMPUTESHADER };*/
 
 	D3D11_INFO_QUEUE_FILTER filter;
 	memset( &filter, 0, sizeof(filter) );
@@ -478,7 +478,7 @@ void Direct3D11Manager::Initialize(bool use_debug)
 	// similarly to the preceding filter.AllowList.
 
 	// The following single call sets all of the preceding information.
-	HRESULT hr=d3dInfoQueue->AddStorageFilterEntries( &filter );
+	V_CHECK(d3dInfoQueue->AddStorageFilterEntries( &filter ));
 	ReportMessageFilterState();
 	}
 	//d3dDevice->AddRef();

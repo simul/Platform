@@ -15,7 +15,7 @@ namespace simul
 		class SIMUL_DIRECTX11_EXPORT Texture:public simul::crossplatform::Texture
 		{
 		public:
-			Texture(ID3D11Device* d=NULL);
+			Texture();
 			~Texture();
 			void InvalidateDeviceObjects();
 			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
@@ -64,7 +64,7 @@ namespace simul
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
 			void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips=1);
 			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
-				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0);
+				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool esram=false);
 			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void map(ID3D11DeviceContext *context);
 			bool isMapped() const;
