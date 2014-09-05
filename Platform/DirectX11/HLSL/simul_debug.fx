@@ -106,8 +106,12 @@ vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 	uint4 lookup		=image_load(imageTextureUint4,pos);
 	vec3 clr1=uint2_to_colour3(lookup.xy);
 	vec3 clr2=uint2_to_colour3(lookup.zw);
+#if 0
+	vec3 clr=vec3(clr1.x,clr2.x,0.0);
+#else
 	vec3 clr=0.5*(clr2+clr1);
-	clr.r+=100.0*abs(clr1.x-clr2.x);
+	//clr.r+=100.0*abs(clr1.x-clr2.x);
+#endif
 	vec3 res=multiplier*clr;
 //	res.xy+=IN.texCoords.xy;
 	return vec4(res,1.0);

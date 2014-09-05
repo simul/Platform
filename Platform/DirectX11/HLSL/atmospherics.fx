@@ -99,6 +99,7 @@ uint4 PS_LossCompositeShadowed(atmosVertexOutput IN) : SV_TARGET
 						,IN.texCoords
 						,IN.pos
 						,depthToLinFadeDistParams
+						,maxFadeDistanceMetres
 						,tanHalfFov
 						,invShadowMatrix,viewPosition,cloudShadowing,cloudShadowSharpness);
 	uint2 faru		=colour3_to_uint2(farLoss);

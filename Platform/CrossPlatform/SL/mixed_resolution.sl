@@ -1,8 +1,10 @@
 #ifndef MIXED_RESOLUTION_SL
 #define MIXED_RESOLUTION_SL
-
+#if REVERSE_DEPTH==1
+#define EDGE_FACTOR (0.0002)
+#else
 #define EDGE_FACTOR (0.0005)
-
+#endif
 struct TwoColourCompositeOutput
 {
 	vec4 add		SIMUL_RENDERTARGET_OUTPUT(0);
@@ -356,8 +358,8 @@ void ExtractCompactedLookupQuads(out LookupQuad4 farQ,out LookupQuad4 nearQ,Text
 	uint2 idx		=floor(texc_unit);
 	int i1			=max(0,idx.x);
 	int i2			=min(idx.x+1,texDims.x-1);
-	int j1			=max(0,idx.y);
-	int j2			=min(idx.y+1,texDims.y-1);
+	int j2			=max(0,idx.y);
+	int j1			=min(idx.y+1,texDims.y-1);
 	uint2 i11		=uint2(i1,j1);
 	uint2 i21		=uint2(i2,j1);
 	uint2 i12		=uint2(i1,j2);

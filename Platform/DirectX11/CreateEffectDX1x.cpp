@@ -557,14 +557,15 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,void *text
 		pos=bpos;
 	std::string path_utf8=text_filename_utf8.substr(0,pos);
 	DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),binary_date_jdn);
-	V_CHECK(D3DPreprocess(	textData	
+	HRESULT hr=D3DPreprocess(	textData	
 						,textSize
 						,text_filename_utf8.c_str()		//in   LPCSTR pSourceName,
 						,macros							//in   const D3D_SHADER_MACRO *pDefines,
 						,&detectChangesIncludeHandler	//in   ID3DInclude pInclude,
 						,&binaryBlob					//ID3DBlob **ppCodeText,
 						,&errorMsgs						//ID3DBlob **ppErrorMsgs
-						));
+						);
+	// Don't V_CHECK here as we'll often expect a S_FAIL result for early-out.
 	double newestFileTime=detectChangesIncludeHandler.GetNewestIncludeDateJDN();
 	if(binaryBlob)
 		binaryBlob->Release();

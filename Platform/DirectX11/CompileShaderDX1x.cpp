@@ -76,7 +76,7 @@ ERRNO_CHECK
 			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;
 			break;
 		default:
-			assert(0);
+			return E_FAIL;
 		}
 		void *buf=NULL;
 		unsigned fileSize=0;

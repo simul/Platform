@@ -18,8 +18,9 @@ void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthText
 	nearLoss		=texture_clamp_mirror(lossTexture,vec2(texx.y,texy)).rgb;
 	
 }
+
 void LossCompositeShadowed(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthTexture,Texture2D cloudShadowTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
-	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,vec4 depthToLinFadeDistParams,vec2 tanHalfFov,mat4 worldspaceToShadowspaceMatrix,vec3 eyePos,float cloudShadowing
+	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,vec4 depthToLinFadeDistParams,float maxFadeDistanceMetres,vec2 tanHalfFov,mat4 worldspaceToShadowspaceMatrix,vec3 eyePos,float cloudShadowing
 	,float cloudShadowSharpness)
 {
 	vec3 wOffset	=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
@@ -28,20 +29,20 @@ void LossCompositeShadowed(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarD
 	vec3 depth		=texture_clamp(nearFarDepthTexture,depth_texc).xyz;
 
 	vec2 dist		=depthToFadeDistance(depth.xy,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	vec4 shadow1	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.x*view*depthToLinFadeDistParams.y).x;
-	vec4 shadow2	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.y*view*depthToLinFadeDistParams.y).x;
+	vec4 shadow1	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.x*view*maxFadeDistanceMetres).x;
+	vec4 shadow2	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.y*view*maxFadeDistanceMetres).x;
 	float sine		=view.z;
 	float texy		=0.5*(1.f-sine);
 	vec2 texx		=pow(dist,0.5);
 	// now shadow1 and shadow2 are from 0 (shadowed) to 1 (light).
-	vec2 sharp_mul	=vec2(1.0,1.0)+500.0*cloudShadowSharpness*(1.0-texx);
+	vec2 sharp_mul	=vec2(1.0,1.0)+500.0*cloudShadowSharpness*(vec2(1.0,1.0)-texx);
 	vec2 shadow		=saturate(vec2(0.5,0.5)+sharp_mul*vec2(0.5-shadow1.x,0.5-shadow2.x));
 #ifdef REVERSE_DEPTH1
 	shadow			*=step(0.0,depth.y)*cloudShadowing;
 #else
-	shadow			*=step(-1.0,-depth.y)*cloudShadowing;
+	shadow			*=(1.0-step(1.0,depth.y))*cloudShadowing;
 #endif
-	shadow			=vec2(1.0,1.0)-shadow;
+	shadow			=saturate(vec2(1.0,1.0)-shadow);
 	farLoss			=shadow.x*texture_clamp_mirror(lossTexture,vec2(texx.x,texy)).rgb;
 	nearLoss		=shadow.y*texture_clamp_mirror(lossTexture,vec2(texx.y,texy)).rgb;
 }
