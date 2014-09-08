@@ -116,7 +116,17 @@ namespace simul
 			ID3D11DepthStencilState* m_pDepthStencilStateStored11;
 			ID3D11RasterizerState* m_pRasterizerStateStored11;
 			ID3D11BlendState* m_pBlendStateStored11;
-			ID3D11SamplerState* m_pSamplerStateStored11;
+			ID3D11SamplerState* m_pSamplerStateStored11[16];
+			ID3D11SamplerState* m_pVertexSamplerStateStored11[16];
+			ID3D11Buffer *m_pVertexBuffersStored11[32];
+			
+			UINT m_VertexStrides[32];
+			UINT m_VertexOffsets[32];
+			UINT m_indexOffset;
+			DXGI_FORMAT m_indexFormatStored11;
+			ID3D11Buffer *pIndexBufferStored11;
+			ID3D11InputLayout* m_previousInputLayout;
+			D3D_PRIMITIVE_TOPOLOGY m_previousTopology;
 			UINT m_StencilRefStored11;
 			UINT m_SampleMaskStored11;
 			float m_BlendFactorStored11[4];

@@ -32,20 +32,20 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	//uniform mat4 shadowMatrix;
 	uniform mat4 worldToMoistureSpaceMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
+	uniform vec4 mixedResolutionTransformXYWH;
+	uniform vec4 depthToLinFadeDistParams;
 	uniform vec3 viewPosition;
 	uniform float exposure;
 	uniform vec2 tanHalfFov;
 	uniform float nearZ;
 	uniform float farZ;
-	uniform vec4 depthToLinFadeDistParams;
     uniform vec2 depthPixelScales;
 	uniform float shadowRange;
-
 	uniform float dropletRadius;
-	uniform float rainbowIntensity;
-	uniform float startZMetres,aeoithjaoe,aetaetyjk;
+	
     uniform vec3 lightIrradiance;
-	uniform vec4 mixedResolutionTransformXYWH;
+	uniform float rainbowIntensity;
+	uniform float startZMetres,aeoithjaoe,aetaetyjk,ugygyhje;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

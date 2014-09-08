@@ -99,12 +99,21 @@ RenderPlatform::RenderPlatform()
 	,m_pDepthStencilStateStored11(NULL)
 	,m_pRasterizerStateStored11(NULL)
 	,m_pBlendStateStored11(NULL)
-	,m_pSamplerStateStored11(NULL)
+	,m_previousInputLayout(NULL)
 	,m_StencilRefStored11(0)
 	,m_SampleMaskStored11(0)
 {
 	for(int i=0;i<4;i++)
 		m_BlendFactorStored11[i];
+	for(int i=0;i<D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;i++)
+	{
+		m_pSamplerStateStored11[i]=NULL;
+		m_pVertexSamplerStateStored11[i]=NULL;
+	}
+	for(int i=0;i<D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;i++)
+	{
+		m_pVertexBuffersStored11[i]=NULL;
+	}
 }
 
 RenderPlatform::~RenderPlatform()
@@ -168,7 +177,11 @@ void RenderPlatform::InvalidateDeviceObjects()
     SAFE_RELEASE( m_pDepthStencilStateStored11 );
     SAFE_RELEASE( m_pRasterizerStateStored11 );
     SAFE_RELEASE( m_pBlendStateStored11 );
-    SAFE_RELEASE( m_pSamplerStateStored11 );
+	for(int i=0;i<D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;i++)
+	{
+	    SAFE_RELEASE( m_pSamplerStateStored11[i]);
+	    SAFE_RELEASE( m_pVertexSamplerStateStored11[i]);
+	}
 	m_StencilRefStored11=0;
 	m_SampleMaskStored11=0;
 	for(int i=0;i<4;i++)
@@ -780,13 +793,23 @@ void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceConte
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
     pContext->OMGetDepthStencilState( &m_pDepthStencilStateStored11, &m_StencilRefStored11 );
-	SetDebugObjectName(m_pDepthStencilStateStored11,"m_pDepthStencilStateStored11");
     pContext->RSGetState(&m_pRasterizerStateStored11 );
-	SetDebugObjectName(m_pRasterizerStateStored11,"m_pRasterizerStateStored11");
     pContext->OMGetBlendState(&m_pBlendStateStored11, m_BlendFactorStored11, &m_SampleMaskStored11 );
-	SetDebugObjectName(m_pBlendStateStored11,"m_pBlendStateStored11");
-    pContext->PSGetSamplers(0, 1, &m_pSamplerStateStored11 );
-	SetDebugObjectName(m_pSamplerStateStored11,"m_pSamplerStateStored11");
+    pContext->PSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, m_pSamplerStateStored11 );
+    pContext->VSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT , m_pVertexSamplerStateStored11 );
+
+	pContext->IAGetInputLayout( &m_previousInputLayout );
+	pContext->IAGetPrimitiveTopology(&m_previousTopology);
+
+	pContext->IAGetVertexBuffers(	0,
+									D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT,
+									m_pVertexBuffersStored11,
+									m_VertexStrides,
+									m_VertexOffsets	);
+
+	pContext->IAGetIndexBuffer(&pIndexBufferStored11,
+								&m_indexFormatStored11,
+								&m_indexOffset);
 }
 
 void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceContext )
@@ -795,12 +818,36 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
     pContext->OMSetDepthStencilState( m_pDepthStencilStateStored11, m_StencilRefStored11 );
     pContext->RSSetState(m_pRasterizerStateStored11 );
     pContext->OMSetBlendState(m_pBlendStateStored11, m_BlendFactorStored11, m_SampleMaskStored11 );
-    pContext->PSSetSamplers(0, 1, &m_pSamplerStateStored11 );
+    pContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, m_pSamplerStateStored11 );
+    pContext->VSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, m_pVertexSamplerStateStored11 );
 
     SAFE_RELEASE( m_pDepthStencilStateStored11 );
     SAFE_RELEASE( m_pRasterizerStateStored11 );
     SAFE_RELEASE( m_pBlendStateStored11 );
-    SAFE_RELEASE( m_pSamplerStateStored11 );
+	for(int i=0;i<D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;i++)
+	{
+	    SAFE_RELEASE( m_pSamplerStateStored11[i]);
+	    SAFE_RELEASE( m_pVertexSamplerStateStored11[i]);
+	}
+	pContext->IASetPrimitiveTopology(m_previousTopology);
+	pContext->IASetInputLayout( m_previousInputLayout );
+	SAFE_RELEASE(m_previousInputLayout);
+
+	
+	pContext->IASetVertexBuffers(	0,
+									D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT,
+									m_pVertexBuffersStored11,
+									m_VertexStrides,
+									m_VertexOffsets	);
+	for(int i=0;i<D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;i++)
+	{
+	    SAFE_RELEASE( m_pVertexBuffersStored11[i]);
+	}
+
+	pContext->IASetIndexBuffer(pIndexBufferStored11,
+								m_indexFormatStored11,
+								m_indexOffset);
+	SAFE_RELEASE(pIndexBufferStored11);
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *srv,float mult,bool blend)
