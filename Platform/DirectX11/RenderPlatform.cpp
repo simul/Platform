@@ -566,6 +566,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R32G32B32A32_UINT;
 	case D_32_FLOAT:
 		return DXGI_FORMAT_D32_FLOAT;
+	case D_16_UNORM:
+		return DXGI_FORMAT_D16_UNORM;
 	default:
 		return DXGI_FORMAT_UNKNOWN;
 	};
@@ -601,7 +603,9 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	case DXGI_FORMAT_R32G32B32A32_UINT:
 		return RGBA_32_UINT;
 	case DXGI_FORMAT_D32_FLOAT:
-		return D_32_FLOAT; 
+		return D_32_FLOAT;
+	case DXGI_FORMAT_D16_UNORM:
+		return D_16_UNORM;
 	default:
 		return UNKNOWN;
 	};
@@ -1177,7 +1181,37 @@ void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,cons
 
 void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
-	//renderPlatform->PrintAt3dPos((ID3D11DeviceContext *)context,p,text,colr,offsetx,offsety);
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
+	unsigned int num_v=1;
+	D3D11_VIEWPORT viewport;
+	pContext->RSGetViewports(&num_v,&viewport);
+	
+	//simul::math::Matrix4x4 v(deviceContext.viewStruct.view);
+/*	v._41=0;
+	v._42=0;
+	v._43=0;*/
+	mat4 wvp;
+	camera::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+	static bool tr=false;
+	if(tr)
+		wvp.transpose();
+	vec4 clip_pos;
+	clip_pos=wvp*vec4(p[0],p[1],p[2],1.0f);
+	if(clip_pos.w<0)
+		return;
+	clip_pos.x/=clip_pos.w;
+	clip_pos.y/=clip_pos.w;
+	static bool ml=true;
+	vec2 pos;
+	pos.x=(1.0f+clip_pos.x)/2.0f;
+	pos.y=(1.0f-clip_pos.y)/2.0f;
+	if(ml)
+	{
+		pos.x*=viewport.Width;
+		pos.y*=viewport.Height;
+	}
+
+	Print(deviceContext,pos.x+offsetx,pos.y+offsety,text);
 }
 
 void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)

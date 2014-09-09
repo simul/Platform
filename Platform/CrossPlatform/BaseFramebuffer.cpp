@@ -35,7 +35,6 @@ bool BaseFramebuffer::IsColourActive() const
 	return colour_active;
 }
 
-
 void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform	=r;

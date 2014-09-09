@@ -133,10 +133,6 @@ namespace simul
 			/// The camera.
 			const simul::camera::CameraOutputInterface	*camera;
 		public:
-			/// Width of the screen.
-			int								ScreenWidth;
-			/// Height of the screen.
-			int								ScreenHeight;
 			/// true to use external framebuffer.
 			bool							useExternalFramebuffer;
 		};
@@ -193,7 +189,8 @@ namespace simul
 
 			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext
 																			,crossplatform::Texture *depthTexture,const crossplatform::Viewport *v
-																			,int lowResDownscale,float max_dist_metres,bool includeLowResDepth);
+																	,int lowResDownscale,int hiResDownscale
+,float max_dist_metres,bool includeLowResDepth);
 
 			/// Gets a view.
 			///

@@ -192,7 +192,10 @@ namespace simul
 			}
 			inline int GetPassIndex(const char *name)
 			{
-				return pass_indices[std::string(name)];
+				std::string str(name);
+				if(pass_indices.find(str)==pass_indices.end())
+					return -1;
+				return pass_indices[str];
 			}
 		};
 		typedef std::map<std::string,EffectTechnique *> TechniqueMap;
@@ -226,6 +229,7 @@ namespace simul
 			TechniqueMap techniques;
 			IndexMap techniques_by_index;
 			std::string filename;
+			std::string filenameInUseUtf8;
 			int apply_count;
 			int currentPass;
 			crossplatform::EffectTechnique *currentTechnique;
@@ -256,6 +260,7 @@ namespace simul
 			virtual void SetParameter	(const char *name	,vec3)				=0;
 			virtual void SetParameter	(const char *name	,vec4)				=0;
 			virtual void SetParameter	(const char *name	,int value)			=0;
+			virtual void SetParameter	(const char *name	,int2 value)		=0;
 			virtual void SetVector		(const char *name	,const float *vec)	=0;
 			virtual void SetMatrix		(const char *name	,const float *m)	=0;
 			/// Activate the shader. Unapply must be called after rendering is done.

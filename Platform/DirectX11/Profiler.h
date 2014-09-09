@@ -84,6 +84,7 @@ namespace simul
 				bool gotResults[QueryLatency];
 				BOOL QueryStarted;
 				BOOL QueryFinished;
+				bool updatedThisFrame;
 				std::string full_name;
 				std::string unqualifiedName;
 				std::wstring wUnqualifiedName;
@@ -91,6 +92,7 @@ namespace simul
 				ProfileData()
 					:QueryStarted(false)
 					,QueryFinished(false)
+					,updatedThisFrame(false)
 					,time(0.f)
 					,parent(NULL)
 					,last_child_updated(0)

@@ -66,9 +66,8 @@ namespace simul
 			dx11::Framebuffer	hiResNearFramebufferDx11;
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
-			void SetDimensions(int w,int h,int downscale);
-			void GetDimensions(int &w,int &h,int &downscale);
-			int Width,Height,Downscale;
+			void SetDimensions(int w,int h,int downscale,int hiResDownscale);
+			void GetDimensions(int &w,int &h,int &downscale,int &hiResDownscale);
 		protected:
 			ID3D11Device*	m_pd3dDevice;
 			void SaveOldRTs(crossplatform::DeviceContext &deviceContext);
@@ -83,6 +82,7 @@ namespace simul
 		public:
 			SimulWeatherRendererDX11(simul::clouds::Environment *env,simul::base::MemoryInterface *mem);
 			virtual ~SimulWeatherRendererDX11();
+			void SetScreenSize(int view_id,int w,int h);
 			//standard d3d object interface functions
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			void RecompileShaders();

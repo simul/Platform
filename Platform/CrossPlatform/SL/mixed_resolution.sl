@@ -101,8 +101,7 @@ void ExtendDepths(inout vec2 farthest_nearest,vec4 d)
 	#endif
 }
 
-
-vec4 DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 pos,vec4 depthToLinFadeDistParams)
+vec4 DownscaleDepthFarNear2(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,vec4 depthToLinFadeDistParams)
 {
 	// pos is the texel position in the target.
 	int2 pos2=pos*2;
@@ -114,8 +113,10 @@ vec4 DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,uint2 source_di
 #else
 	vec2 farthest_nearest		=vec2(0.0,1.0);
 #endif
-	pos2=max(int2(1,1),min(pos2,source_dims-uint2(3,3)));
-	pos2+=source_offset;
+	//pos2-=cornerOffset;
+	//pos2.x=clamp(pos2.x,(int)1,(int)source_dims.x-(int)3);
+	//pos2.y=clamp(pos2.y,(int)1,(int)source_dims.y-(int)3);
+	//pos2+=source_offset;
 	for(int i=0;i<4;i++)
 	{
 #if 1
@@ -156,10 +157,13 @@ vec4 DownscaleDepthFarNear2(Texture2D<float4> sourceDepthTexture,uint2 source_di
 	return res;
 }
 
-vec4 DownscaleDepthFarNear_MSAA4(Texture2DMS<float4> sourceMSDepthTexture,uint2 source_dims,uint2 source_offset,int2 pos,vec2 scale,vec4 depthToLinFadeDistParams)
+vec4 DownscaleDepthFarNear_MSAA4(Texture2DMS<float4> sourceMSDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,vec2 scale,vec4 depthToLinFadeDistParams)
 {
 	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
-	int2 pos2					=source_offset+pos*scale;
+	int2 pos2					=pos*scale;
+	pos2-=cornerOffset;
+	pos2=max(int2(1,1),min(pos2,source_dims-int2(3,3)));
+	pos2+=source_offset;
 #if REVERSE_DEPTH==1
 	vec2 farthest_nearest		=vec2(1.0,0.0);
 #else
@@ -200,25 +204,74 @@ vec4 DownscaleDepthFarNear_MSAA4(Texture2DMS<float4> sourceMSDepthTexture,uint2 
 	return		vec4(farthest_nearest,edge,0.0);
 }
 
-vec4 DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,uint2 source_dims,uint2 source_offset,int numberOfSamples,int2 pos,vec2 scale,vec4 depthToLinFadeDistParams)
+vec4 DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,int2 source_dims,int2 source_offset,int2 cornerOffset,int numberOfSamples,int2 pos,int2 scale,vec4 depthToLinFadeDistParams)
 {
 	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
-	int2 pos2					=source_offset+pos*scale;
+	int2 pos2					=pos*scale;
+	pos2-=cornerOffset;
+	int2 max_pos=source_dims-int2(scale.x+1,scale.y+1);
+	int2 min_pos=int2(1,1);
+	pos2=int2(max(min_pos.x,min(pos2.x,max_pos.x))
+		,max(min_pos.y,min(pos2.y,max_pos.y)));
+	pos2+=source_offset;
 #if REVERSE_DEPTH==1
 	vec2 farthest_nearest		=vec2(1.0,0.0);
 #else
 	vec2 farthest_nearest		=vec2(0.0,1.0);
 #endif
-	for(int i=0;i<2;i++)
+	for(int i=0;i<scale.x+2;i++)
 	{
-		for(int j=0;j<2;j++)
+		for(int j=0;j<scale.y+2;j++)
 		{
-			int2 hires_pos		=pos2+uint2(i,j);
+			int2 hires_pos		=pos2+int2(i-1,j-1);
 			//if(hires_pos.x>=source_dims.x||hires_pos.y>=source_dims.y)
 			//	continue;
-			for(int k=0;k<numberOfSamples;k++)
+			//for(int k=0;k<numberOfSamples;k++)
+			int k=0;
 			{
 				float d				=sourceMSDepthTexture.Load(hires_pos,k).x;
+#if REVERSE_DEPTH==1
+				farthest_nearest.y=max(farthest_nearest.y,d);
+				farthest_nearest.x=min(farthest_nearest.x,d);
+#else
+				farthest_nearest.y=min(farthest_nearest.y,d);
+				farthest_nearest.x=max(farthest_nearest.x,d);
+#endif
+			}
+		}
+	}
+	float edge=0.0;
+	if(farthest_nearest.x!=farthest_nearest.y)
+	{
+		vec2 fn	=depthToLinearDistance(farthest_nearest.xy,depthToLinFadeDistParams);
+		edge	=abs(fn.x-fn.y);
+		//edge	=abs(farthest_nearest.x-farthest_nearest.y);
+		edge	=step(EDGE_FACTOR,edge);
+	}
+	return		vec4(farthest_nearest,edge,0.0);
+}
+
+vec4 DownscaleDepthFarNear(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,vec2 scale,vec4 depthToLinFadeDistParams)
+{
+	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
+	int2 pos2					=pos*scale;
+	pos2		-=cornerOffset;
+	int2 max_pos=source_dims-int2(scale.x+3,scale.y+3);
+	int2 min_pos=int2(1,1);
+	pos2		=int2	(max(min_pos.x,min(pos2.x,max_pos.x))
+						,max(min_pos.y,min(pos2.y,max_pos.y)));
+	pos2		+=source_offset;
+#if REVERSE_DEPTH==1
+	vec2 farthest_nearest		=vec2(1.0,0.0);
+#else
+	vec2 farthest_nearest		=vec2(0.0,1.0);
+#endif
+	for(int i=0;i<scale.x+2;i++)
+	{
+		for(int j=0;j<scale.y+2;j++)
+		{
+			int2 hires_pos		=pos2+int2(i-1,j-1);
+			float d				=sourceDepthTexture[hires_pos].x;
 #if REVERSE_DEPTH==1
 				if(d>farthest_nearest.y)
 					farthest_nearest.y	=d;
@@ -232,7 +285,6 @@ vec4 DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,uint2 s
 #endif
 			}
 		}
-	}
 	float edge=0.0;
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
@@ -259,10 +311,10 @@ void SpreadEdge(Texture2D<vec4> sourceDepthTexture,RWTexture2D<vec4> target2DTex
 	target2DTexture[pos.xy]=res;
 }
 
-vec4 DownscaleFarNearEdge(Texture2D<float4> sourceDepthTexture,uint2 source_dims,uint2 pos,uint2 scale,vec4 depthToLinFadeDistParams)
+vec4 DownscaleFarNearEdge(Texture2D<float4> sourceDepthTexture,int2 source_dims,int2 cornerOffset,int2 pos,int2 scale,vec4 depthToLinFadeDistParams)
 {
 	// pos is the texel position in the target.
-	uint2 pos2=pos*scale;
+	int2 pos2=pos*scale;
 	// now pos2 is the texel position in the source.
 	// scale must represent the exact number of horizontal and vertical pixels for the hi-res texture that fit into each texel of the downscaled texture.
 
@@ -272,19 +324,21 @@ vec4 DownscaleFarNearEdge(Texture2D<float4> sourceDepthTexture,uint2 source_dims
 	vec2 farthest_nearest		=vec2(0.0,1.0);
 #endif
 	vec4 res=vec4(0,0,0,0);
-	uint2 maxpos=source_dims.xy-uint2(2,2);
+	pos2					-=cornerOffset;
+	int2 minpos				=cornerOffset;
+	int2 maxpos				=source_dims.xy-int2(2,2);
 #if 0
 	for(uint i=0;i<scale.x;i+=2)
 	{
 		for(uint j=0;j<scale.y;j+=2)
 		{
-			uint2 hires_pos		=uint2(pos2.x+i,pos2.y+j);
+			int2 hires_pos		=int2(pos2.x+i,pos2.y+j);
 			// MUST do this in case we go slightly over the edge:
 			//hires_pos.xy		=min(hires_pos.xy,maxpos);
 			vec2 c11			=sourceDepthTexture[hires_pos			].xy;
-			vec2 c12			=sourceDepthTexture[hires_pos+uint2(0,1)].xy;
-			vec2 c21			=sourceDepthTexture[hires_pos+uint2(1,0)].xy;
-			vec2 c22			=sourceDepthTexture[hires_pos+uint2(1,1)].xy;
+			vec2 c12			=sourceDepthTexture[hires_pos+int2(0,1)	].xy;
+			vec2 c21			=sourceDepthTexture[hires_pos+int2(1,0)	].xy;
+			vec2 c22			=sourceDepthTexture[hires_pos+int2(1,1)	].xy;
 			vec4 f				=vec4(	 c11.x
 										,c12.x
 										,c21.x
@@ -308,15 +362,14 @@ vec4 DownscaleFarNearEdge(Texture2D<float4> sourceDepthTexture,uint2 source_dims
 		}
 	}
 #else
-	for(uint i=0;i<scale.x;i++)
+	for(int i=0;i<scale.x;i++)
 	{
-		for(uint j=0;j<scale.y;j++)
+		for(int j=0;j<scale.y;j++)
 		{
-			uint2 hires_pos		=uint2(pos2.x+i,pos2.y+j);
+			int2 hires_pos		=int2(pos2.x+i,pos2.y+j); 
 			// MUST do this in case we go slightly over the edge:
-			hires_pos.xy		=min(hires_pos.xy,maxpos);
-		//	if(hires_pos.x>=source_dims.x||hires_pos.y>=source_dims.y)
-		//		continue;
+			hires_pos.x			=max(minpos.x,min(hires_pos.x,maxpos.x));
+			hires_pos.y			=max(minpos.y,min(hires_pos.y,maxpos.y));
 			vec2 d				=sourceDepthTexture[hires_pos].xy;
 #if REVERSE_DEPTH==1
 				if(d.y>farthest_nearest.y)
@@ -358,8 +411,8 @@ void ExtractCompactedLookupQuads(out LookupQuad4 farQ,out LookupQuad4 nearQ,Text
 	uint2 idx		=floor(texc_unit);
 	int i1			=max(0,idx.x);
 	int i2			=min(idx.x+1,texDims.x-1);
-	int j2			=max(0,idx.y);
-	int j1			=min(idx.y+1,texDims.y-1);
+	int j1			=max(0,idx.y);
+	int j2			=min(idx.y+1,texDims.y-1);
 	uint2 i11		=uint2(i1,j1);
 	uint2 i21		=uint2(i2,j1);
 	uint2 i12		=uint2(i1,j2);
@@ -368,27 +421,27 @@ void ExtractCompactedLookupQuads(out LookupQuad4 farQ,out LookupQuad4 nearQ,Text
 	uint4 v21		=image[i21];
 	uint4 v12		=image[i12];
 	uint4 v22		=image[i22];
-	farQ._11=vec4(uint2_to_colour3(v11.xy),1.0);
-	farQ._21=vec4(uint2_to_colour3(v21.xy),1.0);
-	farQ._12=vec4(uint2_to_colour3(v12.xy),1.0);
-	farQ._22=vec4(uint2_to_colour3(v22.xy),1.0);
-	nearQ._11=vec4(uint2_to_colour3(v11.zw),1.0);
-	nearQ._21=vec4(uint2_to_colour3(v21.zw),1.0);
-	nearQ._12=vec4(uint2_to_colour3(v12.zw),1.0);
-	nearQ._22=vec4(uint2_to_colour3(v22.zw),1.0);
+	farQ._11		=vec4(uint2_to_colour3(v11.xy),1.0);
+	farQ._21		=vec4(uint2_to_colour3(v21.xy),1.0);
+	farQ._12		=vec4(uint2_to_colour3(v12.xy),1.0);
+	farQ._22		=vec4(uint2_to_colour3(v22.xy),1.0);
+	nearQ._11		=vec4(uint2_to_colour3(v11.zw),1.0);
+	nearQ._21		=vec4(uint2_to_colour3(v21.zw),1.0);
+	nearQ._12		=vec4(uint2_to_colour3(v12.zw),1.0);
+	nearQ._22		=vec4(uint2_to_colour3(v22.zw),1.0);
 }
 LookupQuad4 GetLookupQuad(Texture2D image,vec2 texc,vec2 texDims)
 {
 	vec2 texc_unit	=texc*texDims-vec2(.5,.5);
-	uint2 idx		=floor(texc_unit);
+	int2 idx		=floor(texc_unit);
 	int i1			=max(0,idx.x);
-	int i2			=min(idx.x+1,texDims.x-1);
+	int i2			=min(idx.x+1,texDims.x-2);
 	int j1			=max(0,idx.y);
-	int j2			=min(idx.y+1,texDims.y-1);
-	uint2 i11		=uint2(i1,j1);
-	uint2 i21		=uint2(i2,j1);
-	uint2 i12		=uint2(i1,j2);
-	uint2 i22		=uint2(i2,j2);
+	int j2			=min(idx.y+1,texDims.y-2);
+	int2 i11		=int2(i1,j1);
+	int2 i21		=int2(i2,j1);
+	int2 i12		=int2(i1,j2);
+	int2 i22		=int2(i2,j2);
 
 	LookupQuad4 q;
 	q._11=image[i11];
@@ -434,22 +487,22 @@ vec4 depthFilteredTexture(	LookupQuad4 image
 {
 	float D1		=saturate((d-dist._11.x)/(dist._21.x-dist._11.x));
 	float delta1	=abs(dist._21.x-dist._11.x);			
-	image._11		=lerp(image._11,image._21,delta1*D1);
-	image._21		=lerp(image._21,image._11,delta1*(1-D1));
+	vec4 _11		=lerp(image._11,image._21,delta1*D1);
+	vec4 _21		=lerp(image._21,image._11,delta1*(1-D1));
 	float D2		=saturate((d-dist._12.x)/(dist._22.x-dist._12.x));
 	float delta2	=abs(dist._22.x-dist._12.x);			
-	image._12		=lerp(image._12,image._22,delta2*D2);
-	image._22		=lerp(image._22,image._12,delta2*(1-D2));
+	vec4 _12		=lerp(image._12,image._22,delta2*D2);
+	vec4 _22		=lerp(image._22,image._12,delta2*(1-D2));
 
-	vec4 f1			=lerp(image._11,image._21,xy.x);
-	vec4 f2			=lerp(image._12,image._22,xy.x);
+	vec4 f1			=lerp(_11,_21,xy.x);
+	vec4 f2			=lerp(_12,_22,xy.x);
 	
 	float d1		=lerp(dist._11.x,dist._21.x,xy.x);
 	float d2		=lerp(dist._12.x,dist._22.x,xy.x);
 	
 	float D			=saturate((d-d1)/(d2-d1));
 	float delta		=abs(d2-d1);
-#if 1
+#if 0
 	f1				=lerp(f1,f2,delta*D);
 	f2				=lerp(f2,f1,delta*(1.0-D));
 
@@ -650,11 +703,11 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 				,Texture2D lowResFarTexture
 				,Texture2D lowResNearTexture
 				,Texture2D hiResDepthTexture
-				,uint2 hiResDims
+				,int2 hiResDims
 				,Texture2D lowResDepthTexture
-				,uint2 lowResDims
+				,int2 lowResDims
 				,Texture2D<vec4> depthTexture
-				,uint2 fullResDims
+				,int2 fullResDims
 				,vec4 viewportToTexRegionScaleBias
 				,vec4 depthToLinFadeDistParams
 				,vec4 fullResToLowResTransformXYWH
@@ -665,7 +718,7 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 {
 	// texCoords.y is positive DOWNwards
 	TwoColourCompositeOutput result;
-	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,vec4(1,1,0,0));
 
 	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
 	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
@@ -741,15 +794,16 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 	}
 	else
 	{	
-		result.add		+=texture_clamp_lod(lowResFarTexture,lowResTexCoords,0);
+		result.add				+=texture_clamp_lod(lowResFarTexture,lowResTexCoords,0);
 		insc					=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
-		vec2 inscTexc_unit		=hiResTexCoords*hiResDims-vec2(.5,.5);
+		int2 inscTexc_unit		=hiResTexCoords*hiResDims;//-vec2(.5,.5);
+		if(inscTexc_unit.x>=hiResDims.x)
+			inscTexc_unit.x=hiResDims.x-1;
 		uint2 loss				=image_load(lossTexture,inscTexc_unit).xy;
 		result.multiply			=vec4(uint2_to_colour3(loss.xy),1.0)*result.add.a;
+	//result.add.r=1.0;
 	}
 	result.add.rgb				+=insc.rgb*result.add.a;
-	result.add.a				=result.multiply.r;
-	//	result.add.gb=0;
     return result;
 }
 
@@ -776,13 +830,10 @@ TwoColourCompositeOutput Composite_MSAA(vec2 texCoords
 	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
 	
-	vec2 lowresTexel			=vec2(1.0/lowResDims.x,1.0/lowResDims.y);
-	vec2 hiresTexel				=vec2(1.0/hiResDims.x,1.0/hiResDims.y);
-	vec2 fullresTexel			=vec2(1.0/fullResDims.x,1.0/fullResDims.y);
 	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
 	vec2 hiResTexCoords			=fullResToHighResTransformXYWH.xy+texCoords*fullResToHighResTransformXYWH.zw;
 	
-	//hiResTexCoords				-=0.5*fullresTexel;
+	vec4 cloudFar				=texture_clamp_lod(lowResFarTexture,lowResTexCoords,0);
 
 	vec4 lowres_depths			=texture_clamp_lod(lowResDepthTexture	,lowResTexCoords	,0);
 	vec4 hires_depths			=texture_clamp_lod(hiResDepthTexture	,hiResTexCoords		,0);
@@ -806,7 +857,6 @@ TwoColourCompositeOutput Composite_MSAA(vec2 texCoords
 		float furthestDist			=depthToLinearDistance(furthestDepth	,depthToLinFadeDistParams);
 
 		vec4 cloudNear				;
-		vec4 cloudFar				;
 
 		LookupQuad4 cloudNear_Q		=GetLookupQuad(lowResNearTexture		,lowResTexCoords,lowResDims);
 		LookupQuad4 cloudFar_Q		=GetLookupQuad(lowResFarTexture			,lowResTexCoords,lowResDims);
@@ -908,29 +958,489 @@ TwoColourCompositeOutput Composite_MSAA(vec2 texCoords
 				vec4 loss			=lerp(loss_far,loss_near,hiResInterp);
 				result.add.rgb		+=insc.rgb*add.a;
 				result.multiply.rgb	+=loss.rgb*add.a;
-			//	result.rgb=hiResInterp;
 			}
 		}
 		// atmospherics: we simply interpolate.
 		result.add				/=float(numSamples);
 		result.multiply			/=float(numSamples);
-		//result.gb=nearFarDistHiRes.xy;
+//result.add.gb=result.multiply.xy;
 	}
 	else
 	{
 		if(lowres_edge<=0.0)
-			result.add			+=texture_clamp_lod(lowResFarTexture,lowResTexCoords,0);
+			result.add			+=cloudFar;
 		if(hires_edge<=0.0)
 		{	
 			vec4 insc			=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
 			result.add.rgb		+=insc.rgb*result.add.a;
-			vec2 inscTexc_unit	=hiResTexCoords*hiResDims-vec2(.5,.5);
-			uint2 loss			=image_load(lossTexture,inscTexc_unit).xy;
+			vec2 isncTexc_unit	=hiResTexCoords*hiResDims-vec2(.5,.5);
+			uint2 loss			=image_load(lossTexture,isncTexc_unit).xy;
 			result.multiply		=vec4(uint2_to_colour3(loss.xy),1.0)*result.add.a;
 		}
 	}
 	
     return result;
 }
+
+TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
+				,Texture2D lowResFarTexture
+				,Texture2D hiResDepthTexture
+				,int2 hiResDims
+				,int2 lowResDims
+				,Texture2D<vec4> depthTexture
+				,int2 fullResDims
+				,vec4 viewportToTexRegionScaleBias
+				,vec4 depthToLinFadeDistParams
+				,vec4 fullResToLowResTransformXYWH
+				,vec4 fullResToHighResTransformXYWH
+				,Texture2D farInscatterTexture
+				,Texture2D nearInscatterTexture
+				,Texture2D<uint4> lossTexture)
+{
+	// texCoords.y is positive DOWNwards
+	TwoColourCompositeOutput result;
+	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+
+	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
+	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
+	vec2 hiResTexCoords			=fullResToHighResTransformXYWH.xy+texCoords*fullResToHighResTransformXYWH.zw;
+	vec4 hires_depths			=texture_clamp_lod(hiResDepthTexture	,hiResTexCoords		,0);
+	float hires_edge			=hires_depths.z;
+	result.add					=vec4(0,0,0,1.0);
+	vec4 insc					=vec4(0,0,0,0);
+	float depth					=depthTexture[fullres_depth_pos2].x;
+	float dist					=depthToLinearDistance(depth		,depthToLinFadeDistParams);
+	vec4 cloud					=texture_clamp_lod(	lowResFarTexture,lowResTexCoords,0);
+	
+	float far					=step(1.0,dist);
+	result.add					=lerp(result.add,cloud,far);
+	if(hires_edge>0.0)
+	{
+		LookupQuad4 lossFar_Q,lossNear_Q;
+		ExtractCompactedLookupQuads(lossFar_Q,lossNear_Q,lossTexture,hiResTexCoords,hiResDims);
+		LookupQuad4 distFar_Q		=GetDepthLookupQuad(hiResDepthTexture	,hiResTexCoords,hiResDims,depthToLinFadeDistParams);
+		LookupQuad4 distNear_Q		=MaskDepth(distFar_Q,vec2(0,1.0));
+		vec2 texc_unit				=hiResTexCoords*hiResDims-vec2(.5,.5);
+		vec2 xy						=frac(texc_unit);
+#if 0
+		vec4 insc_far				=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
+		vec4 insc_near				=texture_clamp_lod(nearInscatterTexture,hiResTexCoords,0);
+#else
+		LookupQuad4 inscNear_Q		=GetLookupQuad(nearInscatterTexture		,hiResTexCoords,hiResDims);
+		LookupQuad4 inscFar_Q		=GetLookupQuad(farInscatterTexture		,hiResTexCoords,hiResDims);
+		
+		vec4 insc_far				=depthFilteredTexture(	inscFar_Q
+															,distFar_Q
+															,xy
+															,dist);
+		vec4 insc_near				=depthFilteredTexture(	inscNear_Q
+															,distNear_Q
+															,xy
+															,dist);
+#endif
+		vec3 nearFarDistHiRes;
+		nearFarDistHiRes.xy		=depthToLinearDistance(hires_depths.yx	,depthToLinFadeDistParams);
+		nearFarDistHiRes.z		=abs(nearFarDistHiRes.y-nearFarDistHiRes.x);
+		// Given that we have the near and far depths, 
+		// At an edge we will do the interpolation for each MSAA sample.
+		float hiResInterp		=saturate((nearFarDistHiRes.y-dist)/nearFarDistHiRes.z);
+		insc					=lerp(insc_far,insc_near,hiResInterp);
+		vec4 loss_far			=depthFilteredTexture(	lossFar_Q
+														,distFar_Q
+														,xy
+														,dist);
+		vec4 loss_near			=depthFilteredTexture(	lossNear_Q
+														,distNear_Q
+														,xy
+														,dist);
+		result.multiply			=lerp(loss_far,loss_near,hiResInterp)*result.add.a;
+		
+	}
+	else
+	{	
+		insc					=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
+			vec2 inscTexc_unit	=hiResTexCoords*hiResDims-vec2(.5,.5);
+			uint2 loss			=image_load(lossTexture,inscTexc_unit).xy;
+		result.multiply			=vec4(uint2_to_colour3(loss.xy),1.0)*result.add.a;
+		}
+	result.add.rgb				+=insc.rgb*result.add.a;
+    return result;
+}
+
+TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
+				,Texture2D cloudTexture
+				,Texture2D hiResDepthTexture
+				,int2 hiResDims
+				,int2 lowResDims
+				,Texture2DMS<vec4> depthTextureMS
+				,int numSamples
+				,int2 fullResDims
+				,vec4 viewportToTexRegionScaleBias
+				,vec4 depthToLinFadeDistParams
+				,vec4 fullResToLowResTransformXYWH
+				,vec4 fullResToHighResTransformXYWH
+				,Texture2D farInscatterTexture
+				,Texture2D nearInscatterTexture
+				,Texture2D<uint4> lossTexture)
+{
+	// texCoords.y is positive DOWNwards
+	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
+	
+	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy	+texCoords*fullResToLowResTransformXYWH.zw;
+	vec2 hiResTexCoords			=fullResToHighResTransformXYWH.xy	+texCoords*fullResToHighResTransformXYWH.zw;
+	
+	vec4 cloud					=texture_clamp_lod(cloudTexture			,lowResTexCoords	,0);
+	vec4 hires_depths			=texture_clamp_lod(hiResDepthTexture	,hiResTexCoords		,0);
+	cloud.a						=1.0-cloud.a;
+	float hires_edge			=hires_depths.z;
+	TwoColourCompositeOutput result;
+	result.add					=vec4(0,0,0,1.0);
+	result.multiply				=vec4(0,0,0,0);
+	vec4 insc					=vec4(0,0,0,0);
+	if(hires_edge>0.0)
+	{
+		float nearestDepth=0.0;
+		float furthestDepth=1.0;
+		float depths[8];
+		for(int k=0;k<numSamples;k++)
+		{
+			float d					=depthTextureMS.Load(fullres_depth_pos2,k).x;
+			depths[k]				=d;
+			nearestDepth			=max(nearestDepth,d);
+			furthestDepth			=min(furthestDepth,d);
+	}
+		float nearestDist			=depthToLinearDistance(nearestDepth		,depthToLinFadeDistParams);
+		float furthestDist			=depthToLinearDistance(furthestDepth	,depthToLinFadeDistParams);
+	
+		vec4 insc_far,insc_near,loss_far,loss_near;
+		LookupQuad4 lossFar_Q,lossNear_Q;
+		ExtractCompactedLookupQuads(lossFar_Q,lossNear_Q,lossTexture,hiResTexCoords,hiResDims);
+		LookupQuad4 inscDistFar_Q	=GetDepthLookupQuad(hiResDepthTexture	,hiResTexCoords,hiResDims,depthToLinFadeDistParams);
+		LookupQuad4 inscDistNear_Q	=MaskDepth(inscDistFar_Q,vec2(0,1.0));
+		vec2 isncTexc_unit			=hiResTexCoords*hiResDims-vec2(.5,.5);
+		vec2 inscXy					=frac(isncTexc_unit);
+#if 1
+		insc_far					=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
+		insc_near					=texture_clamp_lod(nearInscatterTexture,hiResTexCoords,0);
+#else
+		LookupQuad4 inscNear_Q		=GetLookupQuad(nearInscatterTexture		,hiResTexCoords,hiResDims);
+		LookupQuad4 inscFar_Q		=GetLookupQuad(farInscatterTexture		,hiResTexCoords,hiResDims);
+
+		insc_far					=depthFilteredTexture(	inscFar_Q
+															,inscDistFar_Q
+															,inscXy
+															,furthestDist);
+		insc_near					=depthFilteredTexture(	inscNear_Q
+															,inscDistNear_Q
+															,inscXy
+															,nearestDist);
+#endif
+		loss_far					=depthFilteredTexture(	lossFar_Q
+															,inscDistFar_Q
+															,inscXy
+															,furthestDist);
+		loss_near					=depthFilteredTexture(	lossNear_Q
+															,inscDistNear_Q
+															,inscXy
+															,nearestDist);
+
+		vec3 nearFarDistHiRes;
+		nearFarDistHiRes.xy=depthToLinearDistance(hires_depths.yx	,depthToLinFadeDistParams);
+		nearFarDistHiRes.z=abs(nearFarDistHiRes.y-nearFarDistHiRes.x);
+		// Given that we have the near and far depths, 
+		// At an edge we will do the interpolation for each MSAA sample.
+		float hiResInterp	=0.0;
+		for(int j=0;j<numSamples;j++)
+		{
+			float hiresDepth	=depths[j];
+#if REVERSE_DEPTH==1
+			float u				=step(0.0,-hiresDepth);
+#else
+			float u				=step(1.0,hiresDepth);
+#endif
+			float trueDist		=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
+			hiResInterp			=saturate((nearFarDistHiRes.y-trueDist)/nearFarDistHiRes.z);
+#if 0
+			insc_far			=depthFilteredTexture(	inscFar_Q
+														,inscDistFar_Q
+														,inscXy
+														,trueDist);
+			insc_near			=depthFilteredTexture(	inscNear_Q
+														,inscDistNear_Q
+														,inscXy
+														,trueDist);
+			loss_far			=depthFilteredTexture(	lossFar_Q
+														,inscDistFar_Q
+														,inscXy
+														,trueDist);
+			loss_near			=depthFilteredTexture(	lossNear_Q
+														,inscDistNear_Q
+														,inscXy
+														,trueDist);
+#endif
+
+			insc				=lerp(insc_far,insc_near,hiResInterp);
+			vec4 loss			=lerp(loss_far,loss_near,hiResInterp);
+			vec4 c				=cloud*u;
+			result.add			+=c;
+			result.add.rgb		+=insc.rgb*(1.0-c.a);
+			result.multiply.rgb	+=loss.rgb;
+			
+		}
+		// atmospherics: we simply interpolate.
+		result.add				/=float(numSamples);
+		result.multiply			/=float(numSamples);
+	}
+	else
+	{
+#if REVERSE_DEPTH==1
+		result.add			=cloud*step(0.0,-hires_depths.x);
+#else
+		result.add			=cloud*step(1.0,hires_depths.x);
+#endif
+		vec4 insc			=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
+		result.add.rgb		+=insc.rgb*(1.0-result.add.a);
+		vec2 isncTexc_unit	=hiResTexCoords*hiResDims-vec2(.5,.5);
+		uint2 loss			=image_load(lossTexture,isncTexc_unit).xy;
+		result.multiply		=vec4(uint2_to_colour3(loss.xy),1.0)*(1.0-result.add.a);
+	}
+	result.add.a=1.0-result.add.a;
+    return result;
+}
+
+
+vec4 ForegroundComposite(vec2 texCoords
+						,Texture2D lowResFarTexture
+						,Texture2D hiResDepthTexture
+						,int2 hiResDims
+						,Texture2D<vec4> depthTexture
+						,int2 fullResDims
+						,vec4 viewportToTexRegionScaleBias
+						,vec4 depthToLinFadeDistParams
+						,vec4 fullResToLowResTransformXYWH
+						,vec4 fullResToHighResTransformXYWH
+						,Texture2D farInscatterTexture
+						,Texture2D nearInscatterTexture
+						,Texture2D<uint4> lossTexture)
+{
+	// texCoords.y is positive DOWNwards
+	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+
+	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
+	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
+	vec2 hiResTexCoords			=fullResToHighResTransformXYWH.xy+texCoords*fullResToHighResTransformXYWH.zw;
+	vec4 hires_depths			=texture_clamp_lod(hiResDepthTexture	,hiResTexCoords		,0);
+	float hires_edge			=hires_depths.z;
+	vec4 add					=vec4(0,0,0,1.0);
+	vec4 multiply				=vec4(1.0,1.0,1.0,1.0);
+	vec4 insc					=vec4(0,0,0,0);
+	float depth					=depthTexture[fullres_depth_pos2].x;
+	float dist					=depthToLinearDistance(depth		,depthToLinFadeDistParams);
+	vec4 cloud					=texture_clamp_lod(	lowResFarTexture,lowResTexCoords,0);
+	//cloud.a						=1.0-saturate((1.0-cloud.a)*step(1.0,dist));
+	if(dist>=1.0)
+		discard;
+	if(hires_edge>0.0)
+	{
+		LookupQuad4 inscNear_Q		=GetLookupQuad(nearInscatterTexture		,hiResTexCoords,hiResDims);
+		LookupQuad4 inscFar_Q		=GetLookupQuad(farInscatterTexture		,hiResTexCoords,hiResDims);
+		LookupQuad4 distFar_Q		=GetDepthLookupQuad(hiResDepthTexture	,hiResTexCoords,hiResDims,depthToLinFadeDistParams);
+		LookupQuad4 distNear_Q		=MaskDepth(distFar_Q,vec2(0,1.0));
+		
+		LookupQuad4 lossFar_Q,lossNear_Q;
+		ExtractCompactedLookupQuads(lossFar_Q,lossNear_Q,lossTexture,hiResTexCoords,hiResDims);
+
+		vec2 texc_unit				=hiResTexCoords*hiResDims-vec2(.5,.5);
+		vec2 xy						=frac(texc_unit);
+		vec4 insc_far				=depthFilteredTexture(	inscFar_Q
+														,distFar_Q
+														,xy
+														,dist);
+		vec4 insc_near				=depthFilteredTexture(	inscNear_Q
+														,distNear_Q
+														,xy
+														,dist);
+		vec3 nearFarDistHiRes;
+		nearFarDistHiRes.xy		=depthToLinearDistance(hires_depths.yx	,depthToLinFadeDistParams);
+		nearFarDistHiRes.z		=abs(nearFarDistHiRes.y-nearFarDistHiRes.x);
+		// Given that we have the near and far depths, 
+		// At an edge we will do the interpolation for each MSAA sample.
+		float hiResInterp		=saturate((nearFarDistHiRes.y-dist)/nearFarDistHiRes.z);
+		insc					=lerp(insc_far,insc_near,hiResInterp);
+		//uint2 loss				=image_load(lossTexture,isncTexc_unit).xy;
+		// 
+		vec4 loss_far			=depthFilteredTexture(	lossFar_Q
+														,distFar_Q
+														,xy
+														,dist);
+		vec4 loss_near			=depthFilteredTexture(	lossNear_Q
+														,distNear_Q
+														,xy
+														,dist);
+		multiply				=lerp(loss_far,loss_near,hiResInterp)*add.a;
+		
+	}
+	else
+	{	
+		insc					=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
+		vec2 inscTexc_unit		=hiResTexCoords*hiResDims-vec2(.5,.5);
+		uint2 loss				=image_load(lossTexture,inscTexc_unit).xy;
+		multiply				=vec4(uint2_to_colour3(loss.xy),1.0)*add.a;
+	}
+	add.rgb				+=insc.rgb*add.a;
+    return add;
+}
+
+vec4 ForegroundComposite_MSAA(vec2 texCoords
+				,Texture2D cloudTexture
+				,Texture2D hiResDepthTexture
+				,int2 hiResDims
+				,Texture2DMS<vec4> depthTextureMS
+				,int numSamples
+				,int2 fullResDims
+				,vec4 viewportToTexRegionScaleBias
+				,vec4 depthToLinFadeDistParams
+				,vec4 fullResToLowResTransformXYWH
+				,vec4 fullResToHighResTransformXYWH
+				,Texture2D farInscatterTexture
+				,Texture2D nearInscatterTexture
+				,Texture2D<uint4> lossTexture)
+{
+	// texCoords.y is positive DOWNwards
+	float depths[8];
+	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
+	
+	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
+	vec2 hiResTexCoords			=fullResToHighResTransformXYWH.xy+texCoords*fullResToHighResTransformXYWH.zw;
+	
+	vec4 cloud					=texture_clamp_lod(cloudTexture,lowResTexCoords,0);
+
+	vec4 hires_depths			=texture_clamp_lod(hiResDepthTexture	,hiResTexCoords		,0);
+	float effect=1.0;
+#if REVERSE_DEPTH==1
+	effect*=1.0-step(0.0,-hires_depths.y);
+#else
+	effect*=1.0-step(1.0, hires_depths.y);
+#endif
+	float hires_edge			=hires_depths.z;
+	vec4 add					=vec4(0,0,0,1.0);
+	vec4 multiply				=vec4(0,0,0,0);
+	vec4 insc					=vec4(0,0,0,0);
+	if(hires_edge>0.0)
+	{
+		float far=0.0;
+#ifndef D1
+		float nearestDepth=hires_depths.y;
+		float furthestDepth=hires_depths.x;
+#else
+		float nearestDepth=0.0;
+		float furthestDepth=1.0;
+		// How much of this pixel is at infinite distance?
+		for(int k=0;k<numSamples;k++)
+		{
+			float d			=depthTextureMS.Load(fullres_depth_pos2,k).x;
+			depths[k]		=d;
+#if REVERSE_DEPTH==1
+			nearestDepth	=max(nearestDepth	,d);
+			furthestDepth	=min(furthestDepth	,d);
+			far				+=step(0,-d);
+#else
+			nearestDepth	=min(nearestDepth	,d);
+			furthestDepth	=max(furthestDepth	,d);
+			far				+=step(1.0,d);
+#endif
+		}
+		effect*=1.0-step(numSamples-0.1,far);
+#endif
+		//if(effect<=0)
+		//	discard;
+		float numUsefulSamples=(float)numSamples;
+		float nearestDist			=depthToLinearDistance(nearestDepth		,depthToLinFadeDistParams);
+		float furthestDist			=depthToLinearDistance(furthestDepth	,depthToLinFadeDistParams);
+
+		vec4 insc_far,insc_near,loss_far,loss_near;
+		LookupQuad4 inscNear_Q		=GetLookupQuad(nearInscatterTexture		,hiResTexCoords,hiResDims);
+		LookupQuad4 inscFar_Q		=GetLookupQuad(farInscatterTexture		,hiResTexCoords,hiResDims);
+		LookupQuad4 inscDistFar_Q	=GetDepthLookupQuad(hiResDepthTexture	,hiResTexCoords,hiResDims,depthToLinFadeDistParams);
+		LookupQuad4 inscDistNear_Q	=MaskDepth(inscDistFar_Q,vec2(0,1.0));
+		LookupQuad4 lossFar_Q,lossNear_Q;
+		ExtractCompactedLookupQuads(lossFar_Q,lossNear_Q,lossTexture,hiResTexCoords,hiResDims);
+		vec2 isncTexc_unit			=hiResTexCoords*hiResDims-vec2(.5,.5);
+		vec2 inscXy					=frac(isncTexc_unit);
+
+		float cloud_obs				=1.0-(1.0-cloud.a)*far/numUsefulSamples;
+		vec3 nearFarDistHiRes;
+		nearFarDistHiRes.xy	=depthToLinearDistance(hires_depths.yx	,depthToLinFadeDistParams);
+		nearFarDistHiRes.z	=abs(nearFarDistHiRes.y-nearFarDistHiRes.x);
+		vec3 sky			=cloud.rgb+cloud.a*depthFilteredTexture(	inscFar_Q
+															,inscDistFar_Q
+															,inscXy
+															,1.0);
+		loss_far			=depthFilteredTexture(	lossFar_Q
+													,inscDistFar_Q
+													,inscXy
+													,nearFarDistHiRes.x);
+		loss_near			=depthFilteredTexture(	lossNear_Q
+													,inscDistNear_Q
+													,inscXy
+													,nearFarDistHiRes.y);
+		insc_far			=depthFilteredTexture(	inscFar_Q
+													,inscDistFar_Q
+													,inscXy
+													,nearFarDistHiRes.x);
+		insc_near			=depthFilteredTexture(	inscNear_Q
+													,inscDistNear_Q
+													,inscXy
+													,nearFarDistHiRes.y);
+		float hiResInterp	=0.0;
+		for(int j=0;j<numSamples;j++)
+		{
+#ifndef D1
+			float hiresDepth	=depthTextureMS.Load(fullres_depth_pos2,j).x;
+			far					+=step(1.0,hiresDepth);
+#else
+			float hiresDepth	=depths[j];
+#endif
+#if REVERSE_DEPTH==1
+			float this_is_far	=step(0.0,-hiresDepth);
+#else
+			float this_is_far	=step(1.0,hiresDepth);
+#endif
+			float trueDist		=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
+			hiResInterp			=saturate((nearFarDistHiRes.y-trueDist)/nearFarDistHiRes.z);
+
+		//	vec4 insc_far1		=lerp(insc_far,cloud,this_is_far);
+			insc				=lerp(insc_far,insc_near,hiResInterp);
+			vec4 loss			=lerp(loss_far,loss_near,hiResInterp);
+			float ok			=1.0-this_is_far;
+			add.rgb				+=insc.rgb*ok;
+			multiply.rgb		+=loss.rgb*ok;
+			
+		}
+#ifndef D1
+		effect*=1.0-step(numSamples-0.1,far);
+#endif
+		float farness	=saturate(far/numUsefulSamples);
+		add				/=numUsefulSamples;
+		multiply		/=numUsefulSamples;
+		multiply.r		*=(1.0-farness);
+		add.a			=saturate(1.0-multiply.r);
+		add.rgb			=lerp(add.rgb,sky.rgb,farness);
+	}
+	else
+	{
+		vec4 insc			=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
+		add.rgb				+=insc.rgb*add.a;
+		vec2 isncTexc_unit	=hiResTexCoords*hiResDims-vec2(.5,.5);
+		uint2 loss			=image_load(lossTexture,isncTexc_unit).xy;
+		multiply			=vec4(uint2_to_colour3(loss.xy),1.0);
+		add.a				=1.0-multiply.r;
+	}
+	add*=effect;
+    return add;
+}
+
 #endif
 #endif

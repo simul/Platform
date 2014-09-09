@@ -260,6 +260,10 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 	crossplatform::EffectTechnique *tech=new dx11::EffectTechnique;
 	tech->platform_technique=e->GetTechniqueByName(name);
 	techniques[name]=tech;
+	if(!tech->platform_technique)
+	{
+		SIMUL_BREAK("NULL technique");
+	}
 	return tech;
 }
 
@@ -358,6 +362,13 @@ void Effect::SetParameter	(const char *name	,int value)
 	ID3DX11EffectScalarVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsScalar();
 	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetInt(value);
+}
+
+void Effect::SetParameter	(const char *name	,int2 value)	
+{
+	ID3DX11EffectVectorVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsVector();
+	SIMUL_ASSERT(var->IsValid()!=0);
+	var->SetIntVector((const int *)&value);
 }
 
 void Effect::SetVector		(const char *name	,const float *value)	

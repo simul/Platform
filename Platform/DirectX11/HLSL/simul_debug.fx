@@ -97,7 +97,6 @@ vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 	return res;
 }
 
-
 vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	uint2 dims;
@@ -110,7 +109,7 @@ vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 	vec3 clr=vec3(clr1.x,clr2.x,0.0);
 #else
 	vec3 clr=0.5*(clr2+clr1);
-	//clr.r+=100.0*abs(clr1.x-clr2.x);
+	clr.r+=100.0*abs(clr1.x-clr2.x);
 #endif
 	vec3 res=multiplier*clr;
 //	res.xy+=IN.texCoords.xy;

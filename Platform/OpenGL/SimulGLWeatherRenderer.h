@@ -72,8 +72,8 @@ namespace simul
 			void DeactivateLowRes(crossplatform::DeviceContext &);
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
-			void SetDimensions(int w,int h,int downscale);
-			void GetDimensions(int &w,int &h,int &downscale);
+			void SetDimensions(int w,int h,int downscale,int hiResDownscale);
+			void GetDimensions(int &w,int &h,int &downscale,int &hiResDownscale);
 			int Width,Height,Downscale;
 		};
 		//! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within an OpenGL program.

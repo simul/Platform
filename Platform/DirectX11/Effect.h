@@ -91,6 +91,7 @@ namespace simul
 			void SetParameter	(const char *name	,vec3 value)		;
 			void SetParameter	(const char *name	,vec4 value)		;
 			void SetParameter	(const char *name	,int value)			;
+			void SetParameter	(const char *name	,int2 value)		;
 			void SetVector		(const char *name	,const float *vec)	;
 			void SetMatrix		(const char *name	,const float *m)	;
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);

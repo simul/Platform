@@ -390,6 +390,11 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		texture2dFormat	=DXGI_FORMAT_R32_TYPELESS;
 		srvFormat		=DXGI_FORMAT_R32_FLOAT;
 	}
+	if(texture2dFormat==DXGI_FORMAT_D16_UNORM)
+	{
+		texture2dFormat	=DXGI_FORMAT_R16_TYPELESS;
+		srvFormat		=DXGI_FORMAT_R16_UNORM;
+	}
 	dim=2;
 	ID3D11Device *pd3dDevice=renderPlatform->AsD3D11Device();
 	D3D11_TEXTURE2D_DESC textureDesc;

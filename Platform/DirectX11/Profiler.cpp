@@ -91,6 +91,12 @@ void Profiler::StartFrame(void* ctx)
 #endif
 }
 #endif
+    ProfileMap::iterator iter;
+    for(iter = profileMap.begin(); iter != profileMap.end(); iter++)
+    {
+        ProfileData& profile = *((*iter).second);
+		profile.updatedThisFrame=false;
+	}
 }
 void Profiler::Begin(void *ctx,const char *name)
 {
@@ -201,6 +207,7 @@ void Profiler::End()
 	
     if(profileData->QueryStarted != TRUE)
 		return;
+	profileData->updatedThisFrame=true;
     _ASSERT(profileData->QueryFinished == FALSE);
 	if(!profileData->gotResults[currFrame])
 	{
@@ -248,7 +255,7 @@ void Profiler::EndFrame(void* c)
     {
         ProfileData& profile = *((*iter).second);
 
-		static float mix=0.01f;
+		static float mix=0.07f;
 		iter->second->time*=(1.f-mix);
 
         if(profile.QueryFinished == FALSE)
@@ -332,6 +339,8 @@ std::string Profiler::Walk(Profiler::ProfileData *p,int tab,float parent_time,bo
 	std::string str;
 	for(Profiler::ChildMap::const_iterator i=p->children.begin();i!=p->children.end();i++)
 	{
+		if(!i->second->updatedThisFrame)
+			continue;
 		for(int j=0;j<tab;j++)
 			str+="  ";
 		str+=formatLine(i->second->unqualifiedName.c_str(),tab,i->second->time,parent_time,as_html);
@@ -350,6 +359,8 @@ const char *Profiler::GetDebugText(bool as_html) const
 	str+=formatLine("TOTAL",0,total,0.0f,as_html);
 	for(Profiler::ProfileMap::const_iterator i=rootMap.begin();i!=rootMap.end();i++)
 	{
+		if(!i->second->updatedThisFrame)
+			continue;
 		str+=formatLine(i->second->unqualifiedName.c_str(),1,i->second->time,total,as_html);
 		str+=Walk(i->second,2,i->second->time,as_html);
 	}

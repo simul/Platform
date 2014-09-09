@@ -199,12 +199,6 @@ void UtilityRenderer::GetScreenSize(int& w,int& h)
 }
 
 
-void UtilityRenderer::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
-{
-}
-
-
-
 void UtilityRenderer::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
 	D3D11_PRIMITIVE_TOPOLOGY previousTopology;

@@ -33,6 +33,7 @@ namespace simul
 	{
 		class Environment;
 		class BaseWeatherRenderer;
+		enum TrueSkyRenderMode;
 	}
 	namespace crossplatform
 	{
@@ -46,6 +47,13 @@ namespace simul
 	}
 	namespace dx11
 	{
+		enum PerformanceTestLevel
+		{
+			DEFAULT
+			,FORCE_1920_1080
+			,FORCE_2560_1600
+			,FORCE_3840_2160
+		};
 		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
 		class TerrainRenderer;
@@ -68,7 +76,8 @@ namespace simul
 				META_ValueProperty(bool,ShowFades				,"Show the fade textures as an overlay.")
 				META_ValueProperty(bool,ShowTerrain				,"Whether to draw the terrain.")
 				META_ValueProperty(bool,ShowMap					,"Show the terrain map as an overlay.")
-				META_ValueProperty(bool,UseMixedResolution		,"Whether to use the mixed-resolution renderer.")
+				META_ValueProperty(clouds::TrueSkyRenderMode,trueSkyRenderMode		,"Whether to use the mixed-resolution renderer.")
+				META_ValueProperty(bool,DepthBasedComposite		,"Whether to blend the sky and clouds using depth.")
 				META_ValueProperty(bool,UseHdrPostprocessor		,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
 				META_ValueProperty(bool,UseSkyBuffer			,"Render the sky to a low-res buffer to increase performance.")
 				META_ValueProperty(bool,ShowCompositing			,"Show the multi-resolution compositing textures.")
@@ -80,6 +89,7 @@ namespace simul
 				META_ValueProperty(bool,MakeCubemap				,"Render a cubemap each frame.")
 				META_ValueProperty(bool,ShowCubemaps			,"Show any generated cubemaps onscreen.")
 				META_ValueProperty(bool,ShowRainTextures		,"Show rain textures onscreen.")
+				META_ValueRangeProperty(PerformanceTestLevel,PerformanceTest,DEFAULT,DEFAULT,FORCE_3840_2160,"Force rendering at a higher resolution to test performance");
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
 				META_ValueProperty(float,SkyBrightness			,"Brightness of the sky (only).")
@@ -127,11 +137,24 @@ namespace simul
 			simul::dx11::RenderPlatform renderPlatformDx11;
 		protected:
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
-			// Encompasses drawing the actual scene and putting the hdr buffer to screen.
-			void RenderScene(crossplatform::DeviceContext &deviceContext
-				,clouds::BaseWeatherRenderer *w
+			/// Parts of the scene that go into the main buffer with depth active.
+			void RenderDepthElements(crossplatform::DeviceContext &deviceContext
 				,float exposure
 				,float gamma);
+			/// Draw the trueSKY elements as background. Use with RenderForegroundSky in place of RenderMixedResolutionSky for faster performance.
+			void RenderBackgroundSky(crossplatform::DeviceContext &deviceContext
+									 ,float exposure
+									 ,float gamma);
+			/// Render the sky.
+			void RenderMixedResolutionSky(crossplatform::DeviceContext &deviceContext
+				,crossplatform::Texture *depthTexture
+				,float exposure
+				,float gamma);
+			void RenderStandard(crossplatform::DeviceContext &deviceContext
+				,const camera::CameraViewStruct &cameraViewStruct);
+			void RenderToOculus(crossplatform::DeviceContext &deviceContext
+				,const camera::CameraViewStruct &cameraViewStruct);
+			void RenderOverlays(crossplatform::DeviceContext &deviceContext,const camera::CameraViewStruct &cameraViewStruct);
 			// Different kinds of view for Render() to call:
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
 			void ReverseDepthChanged();
@@ -143,6 +166,7 @@ namespace simul
 			std::string									screenshotFilenameUtf8;
 			ID3D11Device								*m_pd3dDevice;
 			ID3DX11Effect								*lightProbesEffect;
+			crossplatform::Effect						*linearizeDepthEffect;
 			SimulOpticsRendererDX1x						*simulOpticsRenderer;
 			SimulWeatherRendererDX11					*simulWeatherRenderer;
 			SimulHDRRendererDX1x						*simulHDRRenderer;
@@ -152,10 +176,12 @@ namespace simul
 			MixedResolutionViewManager					viewManager;
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
+			simul::dx11::Framebuffer					msaaFramebuffer;
 			ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;
 			ID3D11RenderTargetView	*mainRenderTarget;
 			ID3D11DepthStencilView	*mainDepthSurface;
+			simul::crossplatform::Texture				*linearDepthTexture;
 			std::map<int,const simul::camera::CameraOutputInterface *> cameras;
 			bool AllOsds;
 			crossplatform::DemoOverlay *demoOverlay;

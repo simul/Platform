@@ -244,6 +244,15 @@
 			w=v[3];
 		}
 	};
+	inline vec4 operator*(const mat4 &m,vec4 &v)
+	{
+		vec4 r;
+		r.x=m._11*v.x+m._12*v.y+m._13*v.z+m._14*v.w;
+		r.y=m._21*v.x+m._22*v.y+m._23*v.z+m._24*v.w;
+		r.z=m._31*v.x+m._32*v.y+m._33*v.z+m._34*v.w;
+		r.w=m._41*v.x+m._42*v.y+m._43*v.z+m._44*v.w;
+		return r;
+	}
 	struct int2
 	{
 		int x,y;

@@ -48,17 +48,11 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 									  ,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& )
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
-	if(!skyLossTexture)
-		return true;
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"2DCloudRenderer")
 	
-	ID3D11ShaderResourceView* depthTexture_SRV	=depthTexture->AsD3D11ShaderResourceView();
 	crossplatform::EffectTechnique*		tech			=technique;
-	if(depthTexture_SRV)
+	if(depthTexture&&depthTexture->GetSampleCount()>1)
 	{
-		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
-		depthTexture_SRV->GetDesc(&depthDesc);
-		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
 			tech=msaaTechnique;
 	}
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Set constants")
@@ -76,10 +70,10 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"inscTexture",overcInscTexture->AsD3D11ShaderResourceView());
 	simul::dx11::setTexture(effect->asD3DX11Effect(),"skylTexture",skylightTexture->AsD3D11ShaderResourceView());
 	// Set both MS and regular - we'll only use one of them:
-	if(depthTexture->GetSampleCount()>0)
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"depthTextureMS",depthTexture_SRV);
+		if(depthTexture&&depthTexture->GetSampleCount()>0)
+			effect->SetTexture(deviceContext,"depthTextureMS",depthTexture);
 	else
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"depthTexture",depthTexture_SRV);
+			effect->SetTexture(deviceContext,"depthTexture",depthTexture);
 	effect->SetTexture(deviceContext,"illuminationTexture",illuminationTexture);
 	effect->SetTexture(deviceContext,"lightTableTexture",lightTableTexture);
 	
@@ -89,13 +83,8 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	UINT prevOffset;
 	DXGI_FORMAT prevFormat;
 	ID3D11Buffer* pPrevBuffer;
-	//D3D11_PRIMITIVE_TOPOLOGY previousTopology;
-
-	//pContext->IAGetPrimitiveTopology(&previousTopology);
-	//pContext->IAGetInputLayout(&previousInputLayout);
 	pContext->IAGetIndexBuffer(&pPrevBuffer, &prevFormat, &prevOffset);
 
-//	pContext->IASetInputLayout(inputLayout);
 	inputLayout->Apply(deviceContext);
 	renderPlatform->SetVertexBuffers(deviceContext,0,1,&vertexBuffer);
 	renderPlatform->SetIndexBuffer(deviceContext,indexBuffer);		
@@ -108,11 +97,8 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	pContext->DrawIndexed(num_indices-2,0,0);
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 
-	///pContext->IASetPrimitiveTopology(previousTopology);
-	//pContext->IASetInputLayout(previousInputLayout);
 	pContext->IASetIndexBuffer(pPrevBuffer, prevFormat, prevOffset);
 	inputLayout->Unapply(deviceContext);
-//	SAFE_RELEASE(previousInputLayout)
 	SAFE_RELEASE(pPrevBuffer);
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);

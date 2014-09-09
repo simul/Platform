@@ -44,9 +44,6 @@ using namespace dx11;
 
 TwoResFramebuffer::TwoResFramebuffer()
 	:m_pd3dDevice(NULL)
-	,Width(0)
-	,Height(0)
-	,Downscale(0)
 	,numOldViewports(0)
 	,m_pOldDepthSurface(NULL)
 {
@@ -72,10 +69,10 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	hiResNearFramebufferDx11	.SetDepthFormat(0);
 
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
-	int BufferWidth				=(Width+Downscale-1)/Downscale;
-	int BufferHeight			=(Height+Downscale-1)/Downscale;
-	int W						=(Width+ds2-1)/ds2;
-	int H						=(Height+ds2-1)/ds2;
+	int BufferWidth				=(Width+Downscale-1)/Downscale+1;
+	int BufferHeight			=(Height+Downscale-1)/Downscale+1;
+	int W						=(Width+HiResDownscale-1)/HiResDownscale+1;
+	int H						=(Height+HiResDownscale-1)/HiResDownscale+1;
 	lowResFarFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
 	lowResNearFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
 	hiResFarFramebufferDx11		.SetWidthAndHeight(W,H);
@@ -180,22 +177,24 @@ void TwoResFramebuffer::InvalidateDeviceObjects()
 	crossplatform::TwoResFramebuffer::InvalidateDeviceObjects();
 }
 
-void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
+void TwoResFramebuffer::SetDimensions(int w,int h,int downscale,int hiResDownscale)
 {
-	if(Width!=w||Height!=h||Downscale!=downscale)
+	if(Width!=w||Height!=h||Downscale!=downscale||HiResDownscale!=hiResDownscale)
 	{
 		Width=w;
 		Height=h;
 		Downscale=downscale;
+		HiResDownscale=hiResDownscale;
 		RestoreDeviceObjects(renderPlatform);
 	}
 }
 
-void TwoResFramebuffer::GetDimensions(int &w,int &h,int &downscale)
+void TwoResFramebuffer::GetDimensions(int &w,int &h,int &downscale,int &hiResDownscale)
 {
 	w=Width;
 	h=Height;
 	downscale=Downscale;
+	hiResDownscale=HiResDownscale;
 }
 
 SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *env
@@ -238,6 +237,12 @@ crossplatform::TwoResFramebuffer *SimulWeatherRendererDX11::GetFramebuffer(int v
 		return fb;
 	}
 	return framebuffers[view_id];
+}
+
+void SimulWeatherRendererDX11::SetScreenSize(int view_id,int w,int h)
+{
+	crossplatform::TwoResFramebuffer *fb=GetFramebuffer(view_id);
+	fb->SetDimensions(w,h,Downscale,AtmosphericDownscale);
 }
 
 void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -400,7 +405,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 			deviceContext.viewStruct.proj	=(const float*)&cube_proj;
 			deviceContext.viewStruct.view	=(const float*)&view_matrices[i];
 			RenderSkyAsOverlay(deviceContext
-				,false,exposure,false,NULL,simul::sky::float4(0,0,1.f,1.f),true);
+				,false,exposure,gamma,false,NULL,simul::sky::float4(0,0,1.f,1.f),true,vec2(0,0));
 			if(gamma_correction)
 			{
 				gamma_correct.Deactivate(deviceContext);

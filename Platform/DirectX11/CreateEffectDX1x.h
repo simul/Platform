@@ -179,7 +179,10 @@ namespace simul
 		//! When shader should be built, or loaded if available.
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderBuildMode(ShaderBuildMode s);
 		extern SIMUL_DIRECTX11_EXPORT void PushShaderPath(const char *path);
+		extern SIMUL_DIRECTX11_EXPORT std::vector<std::string> GetShaderPathsUtf8();
+		extern SIMUL_DIRECTX11_EXPORT void SetShaderPathsUtf8(const std::vector<std::string> &pathsUtf8);
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderBinaryPath(const char *path_utf8);
+		extern SIMUL_DIRECTX11_EXPORT const char *GetShaderBinaryPathUtf8();
 		extern SIMUL_DIRECTX11_EXPORT void PopShaderPath();
 		extern SIMUL_DIRECTX11_EXPORT void PushTexturePath(const char *pathUtf8);
 		extern SIMUL_DIRECTX11_EXPORT void PopTexturePath();

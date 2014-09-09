@@ -151,6 +151,25 @@ vec4 LinearizeDepthPS(v2f IN) : SV_TARGET
     return vec4(dist,dist,dist,1.0);
 }
 
+vec4 LinearizeDepthPS_MSAA(v2f IN,in uint coverageMask:SV_COVERAGE,out uint outputCoverage:SV_COVERAGE) : SV_TARGET
+{
+	int2 pos=vec2(fullResDims.xy)*IN.texCoords.xy;
+//	const uint FullMask = ( 1 << NumMSAASamples ) - 1; // 0xF
+//	float edgePixel = coverageMask != FullMask ? 1.0f : 0.0f;
+	outputCoverage=coverageMask;
+	for(int i=0;i<8;i++)
+	{
+		uint u=1<<i;
+		//if(coverageMask&u)
+		{
+			vec4 depth=depthTextureMS.Load(pos,i);
+			float dist=depthToLinearDistance(depth.x,depthToLinFadeDistParams);
+			return vec4(dist,dist,dist,1.0);
+		}
+	}
+    return vec4(0,0,0,1.0);
+}
+
 vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
 {
 	vec4 c		=texture_nearest_lod(imageTexture,IN.texCoords,0);
@@ -237,9 +256,97 @@ bool IsSampleNearer(inout float MinDist,float Z,float ZFull)
 
 vec4 DirectPS(v2f IN) : SV_TARGET
 {
-	vec4 c=texture_clamp(imageTexture,IN.texCoords);
-	c.rgb*=exposure;
-    return c;
+	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+IN.texCoords*fullResToLowResTransformXYWH.zw;
+	vec4 result	=texture_clamp(imageTexture,lowResTexCoords);
+	vec4 insc	=texture_clamp(inscatterTexture,IN.texCoords);
+	result		+=insc*result.a;
+	result.rgb	=exposure*pow(result.rgb,gamma);
+    return result;
+}
+
+vec4 PS_ForegroundComposite(v2f IN) : SV_TARGET
+{
+	vec4 depthLookup			=texture_clamp(depthTexture,IN.texCoords);
+#if REVERSE_DEPTH==1
+	if(depthLookup.x==0)
+		discard;
+#else
+	if(depthLookup.x>=1.0)
+		discard;
+#endif
+	vec2 hiResTexCoords		=fullResToHighResTransformXYWH.xy+IN.texCoords*fullResToHighResTransformXYWH.zw;
+	vec4 result	;//=texture_clamp(imageTexture,lowResTexCoords);
+	vec4 insc	=texture_nearest_lod(inscatterTexture,hiResTexCoords,0);
+	result		=insc;//*result.a;
+    return result;
+}
+
+// With an MSAA depth texture.
+vec4 PS_ForegroundComposite_MSAA(v2f IN) : SV_TARGET
+{
+	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	int2 fullres_depth_pos2	=int2(depth_texc*vec2(fullResDims.xy));
+	float proportion		=0.0;
+	for(int k=0;k<numSamples;k++)
+	{
+		float d			=depthTextureMS.Load(fullres_depth_pos2,k).x;
+#if REVERSE_DEPTH==1
+		proportion		+=1.0-step(0,-d);
+#else
+		proportion		*=step(1.0,d);
+#endif
+	}
+	proportion/=(float)numSamples;
+	//if(!proportion)
+	//	discard;
+	vec2 hiResTexCoords		=fullResToHighResTransformXYWH.xy+IN.texCoords*fullResToHighResTransformXYWH.zw;
+	vec4 result	;//=texture_clamp(imageTexture,lowResTexCoords);
+	vec4 insc	=texture_clamp(inscatterTexture,hiResTexCoords);
+	insc.rgb	*=proportion;
+	result		=insc;//*result.a;
+	//result.a=proportion;
+    return result;
+}
+
+vec4 PS_ForegroundComposite2(v2f IN) :SV_TARGET
+{
+	vec4 result	=ForegroundComposite(IN.texCoords.xy
+										,imageTexture
+										,hiResDepthTexture
+										,hiResDims
+										,depthTexture
+										,fullResDims
+										,viewportToTexRegionScaleBias
+										,depthToLinFadeDistParams
+										,fullResToLowResTransformXYWH
+										,fullResToHighResTransformXYWH
+										,inscatterTexture
+										,nearInscatterTexture
+										,lossTexture);
+	result.rgb	=pow(result.rgb,gamma);
+	result.rgb	*=exposure;
+	return result;
+}
+
+vec4 PS_ForegroundComposite2_MSAA(v2f IN) :SV_TARGET
+{
+	vec4 result	=ForegroundComposite_MSAA(IN.texCoords.xy
+														,imageTexture
+														,hiResDepthTexture
+														,hiResDims
+														,depthTextureMS
+														,numSamples
+														,fullResDims
+														,viewportToTexRegionScaleBias
+														,depthToLinFadeDistParams
+														,fullResToLowResTransformXYWH
+														,fullResToHighResTransformXYWH
+														,inscatterTexture
+														,nearInscatterTexture
+														,lossTexture);
+	result.rgb	=pow(result.rgb,gamma);
+	result.rgb	*=exposure;
+	return result;
 }
 
 // texture_clamp_lod texture_nearest_lod
@@ -308,10 +415,51 @@ TwoColourCompositeOutput PS_Composite(v2f IN)
 							,lossTexture);
 	result.add.rgb	=pow(result.add.rgb,gamma);
 	result.add.rgb	*=exposure;
-
 	return result;
 }
 
+TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN) 
+{
+	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.texCoords.xy
+												,imageTexture
+												,hiResDepthTexture
+												,hiResDims
+												,lowResDims
+												,depthTexture
+												,fullResDims
+												,viewportToTexRegionScaleBias
+												,depthToLinFadeDistParams
+												,fullResToLowResTransformXYWH
+												,fullResToHighResTransformXYWH
+												,inscatterTexture
+												,nearInscatterTexture
+												,lossTexture);
+	result.add.rgb	=pow(result.add.rgb,gamma);
+	result.add.rgb	*=exposure;
+	return result;
+}
+
+TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(v2f IN) 
+{
+	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.texCoords.xy
+														,imageTexture
+														,hiResDepthTexture
+														,hiResDims
+														,lowResDims
+														,depthTextureMS
+														,numSamples
+														,fullResDims
+														,viewportToTexRegionScaleBias
+														,depthToLinFadeDistParams
+														,fullResToLowResTransformXYWH
+														,fullResToHighResTransformXYWH
+														,inscatterTexture
+														,nearInscatterTexture
+														,lossTexture);
+	result.add.rgb	=pow(result.add.rgb,gamma);
+	result.add.rgb	*=exposure;
+	return result;
+}
 TwoColourCompositeOutput PS_Composite_MSAA(v2f IN) : SV_TARGET
 {
 	TwoColourCompositeOutput result	=Composite_MSAA(IN.texCoords.xy
@@ -422,6 +570,69 @@ technique11 glow_exposure_gamma
     }
 }
 
+// special blend for 3-colour blending!
+BlendState CompositeBlend
+{
+	BlendEnable[0]	=TRUE;
+	//BlendEnable[1]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=SRC1_COLOR;
+    BlendOp			=ADD;
+};
+
+technique11 foreground_composite
+{
+    pass main
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ForegroundComposite()));
+    }
+    pass msaa
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ForegroundComposite_MSAA()));
+    }
+}
+
+
+BlendState SpecialBlend
+{
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=FALSE;
+	SrcBlend		=ONE;
+	DestBlend		=INV_SRC_ALPHA;
+};
+
+technique11 foreground_composite_2
+{
+    pass main
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ForegroundComposite2()));
+    }
+    pass msaa
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(SpecialBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ForegroundComposite2_MSAA()));
+    }
+}
+
 technique11 simple_cloud_blend
 {
     pass main
@@ -430,23 +641,23 @@ technique11 simple_cloud_blend
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(CloudBufferBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,DirectPS()));
     }
-    pass msaa
+    pass msaa// same as above
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(CloudBufferBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,DirectPS()));
     }
 }
 
 technique11 linearize_depth
 {
-    pass p0
+    pass main
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
@@ -454,6 +665,15 @@ technique11 linearize_depth
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,LinearizeDepthPS()));
+    }
+    pass msaa
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,LinearizeDepthPS_MSAA()));
     }
 }
 
@@ -479,26 +699,6 @@ technique11 far_near_depth_blend
     }
 }
 
-// special blend!
-BlendState CompositeBlend
-{
-	BlendEnable[0]	=TRUE;
-	//BlendEnable[1]	=TRUE;
-	SrcBlend		=ONE;
-	DestBlend		=SRC1_COLOR;
-    BlendOp			=ADD;
-	RenderTargetWriteMask[0]=15;
-	RenderTargetWriteMask[1]=15;
-};
-BlendState AddAlphaBlend1
-{
-	BlendEnable[0]	=TRUE;
-	//BlendEnable[1]	=TRUE;
-	SrcBlend		=ONE;
-	DestBlend		=ZERO;
-    BlendOp			=ADD;
-};
-
 // This technique composites on the basis that clouds have an arbitrary integral downscale, and sky has downscale 2.
 technique11 composite_mixed_res
 {
@@ -519,6 +719,28 @@ technique11 composite_mixed_res
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Composite_MSAA()));
+    }
+}
+
+technique11 composite_atmospherics
+{
+    pass main
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics()));
+    }
+    pass msaa
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_MSAA()));
     }
 }
 

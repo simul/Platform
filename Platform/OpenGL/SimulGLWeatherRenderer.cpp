@@ -91,21 +91,23 @@ void TwoResFramebuffer::InvalidateDeviceObjects()
 	hiResNearFramebuffer	.InvalidateDeviceObjects();
 }
 
-void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
+void TwoResFramebuffer::SetDimensions(int w,int h,int downscale,int hiResDownscale)
 {
 	if(Width!=w||Height!=h||Downscale!=downscale)
 	{
 		Width=w;
 		Height=h;
 		Downscale=downscale;
+		HiResDownscale=hiResDownscale;
 		RestoreDeviceObjects(NULL);
 	}
 }
-void TwoResFramebuffer::GetDimensions(int &w,int &h,int &downscale)
+void TwoResFramebuffer::GetDimensions(int &w,int &h,int &downscale,int &hiResDownscale)
 {
 	w=Width;
 	h=Height;
 	downscale=Downscale;
+	hiResDownscale=HiResDownscale;
 }
 
 
@@ -190,7 +192,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 	BufferWidth=w/Downscale;
 	BufferHeight=h/Downscale;
 	crossplatform::TwoResFramebuffer *fb=GetFramebuffer(view_id);
-	fb->SetDimensions(w,h,Downscale);
+	fb->SetDimensions(w,h,Downscale,AtmosphericDownscale);
 	//scene_buffer->InitColor_Tex(0,internal_buffer_format);
 	//fb->RestoreDeviceObjects(0);
 }
@@ -276,8 +278,8 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	crossplatform::TwoResFramebuffer *fb=GetFramebuffer(deviceContext.viewStruct.view_id);
 	if(buffered)
 	{
-		int w,h,s;
-		fb->GetDimensions(w,h,s);
+		int w,h,s,a;
+		fb->GetDimensions(w,h,s,a);
 		if(mainDepthTexture)
 		{
 			int S=s;
@@ -285,7 +287,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 				S=mainDepthTexture->width/lowResDepthTexture->width;
 			if(S<1)
 				S=1;
-			fb->SetDimensions(mainDepthTexture->width,mainDepthTexture->length,s);
+			fb->SetDimensions(mainDepthTexture->width,mainDepthTexture->length,s,a);
 		}
 	}
 	void *context=deviceContext.platform_context;
@@ -299,7 +301,6 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	UpdateSkyAndCloudHookup();
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(deviceContext, mainDepthTexture,exposure,depthViewportXYWH);
-	GL_ERROR_CHECK
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
 		base2DCloudRenderer->Render(deviceContext,exposure,false,crossplatform::FAR_PASS,mainDepthTexture,false,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
 	if(buffered)
@@ -421,7 +422,7 @@ crossplatform::TwoResFramebuffer *SimulGLWeatherRenderer::GetFramebuffer(int vie
 	if(framebuffers.find(view_id)==framebuffers.end())
 	{
 		opengl::TwoResFramebuffer *fb=new opengl::TwoResFramebuffer();
-		fb->SetDimensions(BufferWidth,BufferHeight,Downscale);
+		fb->SetDimensions(BufferWidth,BufferHeight,Downscale,AtmosphericDownscale);
 		framebuffers[view_id]=fb;
 		fb->RestoreDeviceObjects(NULL);
 		return fb;

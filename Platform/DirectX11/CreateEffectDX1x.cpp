@@ -137,6 +137,15 @@ namespace simul
 		{
 			shaderPathsUtf8.push_back(std::string(path_utf8)+"/");
 		}
+		std::vector<std::string> GetShaderPathsUtf8()
+		{
+			return shaderPathsUtf8;
+		}
+		void SetShaderPathsUtf8(const std::vector<std::string> &pathsUtf8)
+		{
+			shaderPathsUtf8.clear();
+			shaderPathsUtf8=pathsUtf8;
+		}
 		void PopShaderPath()
 		{
 			shaderPathsUtf8.pop_back();
@@ -145,6 +154,10 @@ namespace simul
 		{
 			shaderbinPathUtf8=path_utf8;
 			shaderbinPathUtf8+='\\';
+		}
+		const char *GetShaderBinaryPathUtf8()
+		{
+			return shaderbinPathUtf8.c_str();
 		}
 		void PushTexturePath(const char *path_utf8)
 		{
