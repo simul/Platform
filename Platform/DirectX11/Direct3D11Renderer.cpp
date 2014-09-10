@@ -805,8 +805,10 @@ void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceCont
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,W1,H1);
+#ifdef _XBOX_ONE
 			const char *txt=Profiler::GetGlobalProfiler().GetDebugText();
-		//	renderPlatformDx11.Print(deviceContext			,12	,12,txt);
+			renderPlatformDx11.Print(deviceContext			,12	,12,txt);
+#endif
 		}
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)

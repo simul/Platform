@@ -19,7 +19,7 @@ namespace simul
 	namespace opengl
 	{
 		class Effect;
-		SIMUL_OPENGL_EXPORT_CLASS SimulGLHDRRenderer:public simul::graph::meta::Group
+		SIMUL_OPENGL_EXPORT_CLASS SimulGLHDRRenderer
 		{
 		public:
 			SimulGLHDRRenderer(int w,int h);

@@ -24,6 +24,7 @@ namespace simul
 	}
 	namespace dx11
 	{
+		extern bool IsTypeless( DXGI_FORMAT fmt, bool partialTypeless );
 		struct ComputableTexture
 		{
 			ComputableTexture();

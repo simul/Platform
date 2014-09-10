@@ -4,6 +4,7 @@
 #include "Simul/Platform/DirectX11/Material.h"
 #include "Simul/Platform/DirectX11/Mesh.h"
 #include "Simul/Platform/DirectX11/Texture.h"
+#include "Simul/Platform/DirectX11/ESRAMTexture.h"
 #include "Simul/Platform/DirectX11/Light.h"
 #include "Simul/Platform/DirectX11/Effect.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
@@ -19,6 +20,7 @@
 #include "Simul/Camera/Camera.h"
 #include "D3dx11effect.h"
 #ifdef _XBOX_ONE
+#include "Simul/Platform/DirectX11/ESRAMManager.h"
 #include <D3Dcompiler_x.h>
 #else
 #include <D3Dcompiler.h>
@@ -120,10 +122,16 @@ RenderPlatform::~RenderPlatform()
 {
 	InvalidateDeviceObjects();
 }
-
+#ifdef _XBOX_ONE
+ESRAMManager *eSRAMManager=NULL;
+#endif
 void RenderPlatform::RestoreDeviceObjects(void *d)
 {
 	device=(ID3D11Device*)d;
+#ifdef _XBOX_ONE
+	delete eSRAMManager;
+	eSRAMManager=new ESRAMManager(device);
+#endif
 	solidConstants.RestoreDeviceObjects(this);
 	textRenderer.RestoreDeviceObjects(device);
 
@@ -161,6 +169,9 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
+#ifdef _XBOX_ONE
+	delete eSRAMManager;
+#endif
 	solidConstants.InvalidateDeviceObjects();
 	textRenderer.InvalidateDeviceObjects();
 	SAFE_DELETE(solidEffect);
@@ -495,9 +506,17 @@ crossplatform::Light *RenderPlatform::CreateLight()
 
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
-	crossplatform::Texture * tex=new dx11::Texture();
-	if(fileNameUtf8)
-		tex->LoadFromFile(this,fileNameUtf8);
+	crossplatform::Texture * tex=NULL;
+#ifdef _XBOX_ONE
+	if(fileNameUtf8&&strcmp(fileNameUtf8,"ESRAM")==0)
+		tex=new dx11::ESRAMTexture();
+	else
+#endif
+	{
+		tex=new dx11::Texture();
+		if(fileNameUtf8)
+			tex->LoadFromFile(this,fileNameUtf8);
+	}
 	return tex;
 }
 

@@ -59,21 +59,21 @@
   <PropertyGroup Label="UserMacros" />
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\SimulXboxOne.props" />
-    <Import Project="..\..\..\SimulRelease.props" />
-    <Import Project="..\..\..\SimulDLL_VC11.props" />
+    <Import Project="..\XboxOne\SimulXboxOne.props" />
+    <Import Project="..\..\SimulRelease.props" />
+    <Import Project="..\..\SimulDLL_VC11.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Durango'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\SimulXboxOne.props" />
-    <Import Project="..\..\..\SimulRelease.props" />
-    <Import Project="..\..\..\SimulDLL_VC11.props" />
+    <Import Project="..\XboxOne\SimulXboxOne.props" />
+    <Import Project="..\..\SimulRelease.props" />
+    <Import Project="..\..\SimulDLL_VC11.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Durango'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\SimulXboxOne.props" />
-    <Import Project="..\..\..\SimulDebug.props" />
-    <Import Project="..\..\..\SimulDLL_VC11.props" />
+    <Import Project="..\XboxOne\SimulXboxOne.props" />
+    <Import Project="..\..\SimulDebug.props" />
+    <Import Project="..\..\SimulDLL_VC11.props" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">
     <ReferencePath>$(Console_SdkLibPath);$(Console_SdkWindowsMetadataPath)</ReferencePath>
@@ -161,88 +161,90 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\DirectX11\Buffer.h" />
-    <ClInclude Include="..\..\DirectX11\CompileShaderDX1x.h" />
-    <ClInclude Include="..\..\DirectX11\CreateEffectDX1x.h" />
-    <ClInclude Include="..\..\DirectX11\CSFFT\fft_512x512.h" />
-    <ClInclude Include="..\..\DirectX11\CubemapFramebuffer.h" />
-    <ClInclude Include="..\..\DirectX11\Direct3D11CallbackInterface.h" />
-    <ClInclude Include="..\..\DirectX11\Direct3D11Manager.h" />
-    <ClInclude Include="..\..\DirectX11\Direct3D11ManagerInterface.h" />
-    <ClInclude Include="..\..\DirectX11\Direct3D11Renderer.h" />
-    <ClInclude Include="..\..\DirectX11\DX11Exception.h" />
-    <ClInclude Include="..\..\DirectX11\Effect.h" />
-    <ClInclude Include="..\..\DirectX11\Export.h" />
-    <ClInclude Include="..\..\DirectX11\Framebuffer3D.h" />
-    <ClInclude Include="..\..\DirectX11\FramebufferDX1x.h" />
-    <ClInclude Include="..\..\DirectX11\GpuCloudGenerator.h" />
-    <ClInclude Include="..\..\DirectX11\GpuSkyGenerator.h" />
-    <ClInclude Include="..\..\DirectX11\Layout.h" />
-    <ClInclude Include="..\..\DirectX11\Light.h" />
-    <ClInclude Include="..\..\DirectX11\LightningRenderer.h" />
-    <ClInclude Include="..\..\DirectX11\MacrosDx1x.h" />
-    <ClInclude Include="..\..\DirectX11\Material.h" />
-    <ClInclude Include="..\..\DirectX11\Mesh.h" />
-    <ClInclude Include="..\..\DirectX11\MixedResolutionView.h" />
-    <ClInclude Include="..\..\DirectX11\OceanRenderer.h" />
-    <ClInclude Include="..\..\DirectX11\OceanSimulator.h" />
-    <ClInclude Include="..\..\DirectX11\PrecipitationRenderer.h" />
-    <ClInclude Include="..\..\DirectX11\Profiler.h" />
-    <ClInclude Include="..\..\DirectX11\RenderPlatform.h" />
-    <ClInclude Include="..\..\DirectX11\resource.h" />
-    <ClInclude Include="..\..\DirectX11\ResourcesDx1x.h" />
-    <ClInclude Include="..\..\DirectX11\SaveTextureDX1x.h" />
-    <ClInclude Include="..\..\DirectX11\Simul2DCloudRendererDX1x.h" />
-    <ClInclude Include="..\..\DirectX11\SimulAtmosphericsRendererDX1x.h" />
-    <ClInclude Include="..\..\DirectX11\SimulCloudRendererDX1x.h" />
-    <ClInclude Include="..\..\DirectX11\SimulDirectXHeader.h" />
-    <ClInclude Include="..\..\DirectX11\SimulHDRRendererDX1x.h" />
-    <ClInclude Include="..\..\DirectX11\SimulOpticsRendererDX1x.h" />
-    <ClInclude Include="..\..\DirectX11\SimulSkyRendererDX1x.h" />
-    <ClInclude Include="..\..\DirectX11\SimulWeatherRendererDX11.h" />
-    <ClInclude Include="..\..\DirectX11\TerrainRenderer.h" />
-    <ClInclude Include="..\..\DirectX11\TextRenderer.h" />
-    <ClInclude Include="..\..\DirectX11\Texture.h" />
-    <ClInclude Include="..\..\DirectX11\Utilities.h" />
+    <ClInclude Include="Buffer.h" />
+    <ClInclude Include="CompileShaderDX1x.h" />
+    <ClInclude Include="CreateEffectDX1x.h" />
+    <ClInclude Include="CSFFT\fft_512x512.h" />
+    <ClInclude Include="CubemapFramebuffer.h" />
+    <ClInclude Include="Direct3D11CallbackInterface.h" />
+    <ClInclude Include="Direct3D11Manager.h" />
+    <ClInclude Include="Direct3D11ManagerInterface.h" />
+    <ClInclude Include="Direct3D11Renderer.h" />
+    <ClInclude Include="DX11Exception.h" />
+    <ClInclude Include="Effect.h" />
+    <ClInclude Include="ESRAMManager.h" />
+    <ClInclude Include="Export.h" />
+    <ClInclude Include="Framebuffer3D.h" />
+    <ClInclude Include="FramebufferDX1x.h" />
+    <ClInclude Include="GpuCloudGenerator.h" />
+    <ClInclude Include="GpuSkyGenerator.h" />
+    <ClInclude Include="Layout.h" />
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="LightningRenderer.h" />
+    <ClInclude Include="MacrosDx1x.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MixedResolutionView.h" />
+    <ClInclude Include="OceanRenderer.h" />
+    <ClInclude Include="OceanSimulator.h" />
+    <ClInclude Include="PrecipitationRenderer.h" />
+    <ClInclude Include="Profiler.h" />
+    <ClInclude Include="RenderPlatform.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="ResourcesDx1x.h" />
+    <ClInclude Include="SaveTextureDX1x.h" />
+    <ClInclude Include="Simul2DCloudRendererDX1x.h" />
+    <ClInclude Include="SimulAtmosphericsRendererDX1x.h" />
+    <ClInclude Include="SimulCloudRendererDX1x.h" />
+    <ClInclude Include="SimulDirectXHeader.h" />
+    <ClInclude Include="SimulHDRRendererDX1x.h" />
+    <ClInclude Include="SimulOpticsRendererDX1x.h" />
+    <ClInclude Include="SimulSkyRendererDX1x.h" />
+    <ClInclude Include="SimulWeatherRendererDX11.h" />
+    <ClInclude Include="TerrainRenderer.h" />
+    <ClInclude Include="TextRenderer.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="Utilities.h" />
     <ClInclude Include="ESRAMTexture.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\DirectX11\Buffer.cpp" />
-    <ClCompile Include="..\..\DirectX11\CompileShaderDX1x.cpp" />
-    <ClCompile Include="..\..\DirectX11\CreateEffectDX1x.cpp" />
-    <ClCompile Include="..\..\DirectX11\CSFFT\fft_512x512.cpp" />
-    <ClCompile Include="..\..\DirectX11\CubemapFramebuffer.cpp" />
-    <ClCompile Include="..\..\DirectX11\Direct3D11Manager.cpp" />
-    <ClCompile Include="..\..\DirectX11\Direct3D11Renderer.cpp" />
-    <ClCompile Include="..\..\DirectX11\DX11Exception.cpp" />
-    <ClCompile Include="..\..\DirectX11\Effect.cpp" />
-    <ClCompile Include="..\..\DirectX11\Framebuffer3D.cpp" />
-    <ClCompile Include="..\..\DirectX11\FramebufferDX1x.cpp" />
-    <ClCompile Include="..\..\DirectX11\GpuCloudGenerator.cpp" />
-    <ClCompile Include="..\..\DirectX11\GpuSkyGenerator.cpp" />
-    <ClCompile Include="..\..\DirectX11\Layout.cpp" />
-    <ClCompile Include="..\..\DirectX11\Light.cpp" />
-    <ClCompile Include="..\..\DirectX11\LightningRenderer.cpp" />
-    <ClCompile Include="..\..\DirectX11\Material.cpp" />
-    <ClCompile Include="..\..\DirectX11\Mesh.cpp" />
-    <ClCompile Include="..\..\DirectX11\MixedResolutionView.cpp" />
-    <ClCompile Include="..\..\DirectX11\OceanRenderer.cpp" />
-    <ClCompile Include="..\..\DirectX11\OceanSimulator.cpp" />
-    <ClCompile Include="..\..\DirectX11\PrecipitationRenderer.cpp" />
-    <ClCompile Include="..\..\DirectX11\Profiler.cpp" />
-    <ClCompile Include="..\..\DirectX11\RenderPlatform.cpp" />
-    <ClCompile Include="..\..\DirectX11\SaveTextureDX1x.cpp" />
-    <ClCompile Include="..\..\DirectX11\Simul2DCloudRendererDX1x.cpp" />
-    <ClCompile Include="..\..\DirectX11\SimulAtmosphericsRendererDX1x.cpp" />
-    <ClCompile Include="..\..\DirectX11\SimulCloudRendererDX1x.cpp" />
-    <ClCompile Include="..\..\DirectX11\SimulHDRRendererDX1x.cpp" />
-    <ClCompile Include="..\..\DirectX11\SimulOpticsRendererDX1x.cpp" />
-    <ClCompile Include="..\..\DirectX11\SimulSkyRendererDX1x.cpp" />
-    <ClCompile Include="..\..\DirectX11\SimulWeatherRendererDX11.cpp" />
-    <ClCompile Include="..\..\DirectX11\TerrainRenderer.cpp" />
-    <ClCompile Include="..\..\DirectX11\TextRenderer.cpp" />
-    <ClCompile Include="..\..\DirectX11\Texture.cpp" />
-    <ClCompile Include="..\..\DirectX11\Utilities.cpp" />
+    <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="CompileShaderDX1x.cpp" />
+    <ClCompile Include="CreateEffectDX1x.cpp" />
+    <ClCompile Include="CSFFT\fft_512x512.cpp" />
+    <ClCompile Include="CubemapFramebuffer.cpp" />
+    <ClCompile Include="Direct3D11Manager.cpp" />
+    <ClCompile Include="Direct3D11Renderer.cpp" />
+    <ClCompile Include="DX11Exception.cpp" />
+    <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="ESRAMManager.cpp" />
+    <ClCompile Include="Framebuffer3D.cpp" />
+    <ClCompile Include="FramebufferDX1x.cpp" />
+    <ClCompile Include="GpuCloudGenerator.cpp" />
+    <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="Layout.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="LightningRenderer.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MixedResolutionView.cpp" />
+    <ClCompile Include="OceanRenderer.cpp" />
+    <ClCompile Include="OceanSimulator.cpp" />
+    <ClCompile Include="PrecipitationRenderer.cpp" />
+    <ClCompile Include="Profiler.cpp" />
+    <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="SaveTextureDX1x.cpp" />
+    <ClCompile Include="Simul2DCloudRendererDX1x.cpp" />
+    <ClCompile Include="SimulAtmosphericsRendererDX1x.cpp" />
+    <ClCompile Include="SimulCloudRendererDX1x.cpp" />
+    <ClCompile Include="SimulHDRRendererDX1x.cpp" />
+    <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
+    <ClCompile Include="SimulSkyRendererDX1x.cpp" />
+    <ClCompile Include="SimulWeatherRendererDX11.cpp" />
+    <ClCompile Include="TerrainRenderer.cpp" />
+    <ClCompile Include="TextRenderer.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Utilities.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">

@@ -16,6 +16,49 @@
 using namespace simul;
 using namespace dx11;
 
+bool simul::dx11::IsTypeless( DXGI_FORMAT fmt, bool partialTypeless )
+{
+    switch( static_cast<int>(fmt) )
+    {
+    case DXGI_FORMAT_R32G32B32A32_TYPELESS:
+    case DXGI_FORMAT_R32G32B32_TYPELESS:
+    case DXGI_FORMAT_R16G16B16A16_TYPELESS:
+    case DXGI_FORMAT_R32G32_TYPELESS:
+    case DXGI_FORMAT_R32G8X24_TYPELESS:
+    case DXGI_FORMAT_R10G10B10A2_TYPELESS:
+    case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+    case DXGI_FORMAT_R16G16_TYPELESS:
+    case DXGI_FORMAT_R32_TYPELESS:
+    case DXGI_FORMAT_R24G8_TYPELESS:
+    case DXGI_FORMAT_R8G8_TYPELESS:
+    case DXGI_FORMAT_R16_TYPELESS:
+    case DXGI_FORMAT_R8_TYPELESS:
+    case DXGI_FORMAT_BC1_TYPELESS:
+    case DXGI_FORMAT_BC2_TYPELESS:
+    case DXGI_FORMAT_BC3_TYPELESS:
+    case DXGI_FORMAT_BC4_TYPELESS:
+    case DXGI_FORMAT_BC5_TYPELESS:
+    case DXGI_FORMAT_B8G8R8A8_TYPELESS:
+    case DXGI_FORMAT_B8G8R8X8_TYPELESS:
+    case DXGI_FORMAT_BC6H_TYPELESS:
+    case DXGI_FORMAT_BC7_TYPELESS:
+        return true;
+
+    case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
+    case DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
+    case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+    case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+        return partialTypeless;
+
+    case 119 /* DXGI_FORMAT_R16_UNORM_X8_TYPELESS */:
+    case 120 /* DXGI_FORMAT_X16_TYPELESS_G8_UINT */:
+        // These are Xbox One platform specific types
+        return partialTypeless;
+
+    default:
+        return false;
+    }
+}
 
 ComputableTexture::ComputableTexture()
 	:g_pTex_Output(NULL)

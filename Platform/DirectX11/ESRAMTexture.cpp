@@ -1,16 +1,19 @@
 #ifdef _XBOX_ONE
 #include "ESRAMTexture.h"
 #include <xg.h>
+#include <algorithm>
 #include "CreateEffectDX1x.h"
 #include "Utilities.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/DirectX11/ESRAMManager.h"
 
 #include <string>
 
 using namespace simul;
 using namespace dx11;
+extern ESRAMManager *eSRAMManager;
 
 template< typename t_A, typename t_B >
 t_A RoundUpToNextMultiple( const t_A& a, const t_B& b )
@@ -70,7 +73,7 @@ ESRAMTexture::~ESRAMTexture()
 {
 }
 
-void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
+void dx11::ESRAMTexture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
 												 ,int w,int l
 												 ,crossplatform::PixelFormat pixelFormat
 												 ,bool computable,bool rendertarget,bool depthstencil
@@ -133,7 +136,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		textureDesc.Width					=width=w;
 		textureDesc.Height					=length=l;
 		depth								=1;
-		textureDesc.Format					=texture2dFormat;
+		textureDesc.Format					=format;// don't pass texture2dFormat to ESRAMManager as it doesn't know what to do with typeless formats;
 		textureDesc.MipLevels				=1;
 		textureDesc.ArraySize				=1;
 		textureDesc.Usage					=(computable||rendertarget||depthstencil)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
@@ -142,12 +145,9 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		textureDesc.MiscFlags				=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
 		textureDesc.SampleDesc.Count		=num_samples;
 		textureDesc.SampleDesc.Quality		=aa_quality;
-		
-		if(!esram)
-		{
-			V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
-		}
-		else
+#if 1
+		eSRAMManager->Create(textureDesc,*this);
+#else
 		{
 			XG_FORMAT xgFormat					=ToXgFormat(pixelFormat);
 			// Figure out size and alignment for ESRAM surface
@@ -307,8 +307,9 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		srv_desc.Texture2D.MostDetailedMip	=0;
 		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
 		SetDebugObjectName(shaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat shaderResourceView");
-
+#endif
 	}
+#if 0
 	if(computable&&(!unorderedAccessView||!ok))
 	{
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
@@ -344,5 +345,6 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		depthDesc.Texture2D			=dsv;
 		V_CHECK(pd3dDevice->CreateDepthStencilView(texture,&depthDesc,&depthStencilView));
 	}
+#endif
 }
 #endif

@@ -15,136 +15,139 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\DirectX11\CompileShaderDX1x.h">
+    <ClInclude Include="CompileShaderDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\CreateEffectDX1x.h">
+    <ClInclude Include="CreateEffectDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\CubemapFramebuffer.h">
+    <ClInclude Include="CubemapFramebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Direct3D11CallbackInterface.h">
+    <ClInclude Include="Direct3D11CallbackInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Direct3D11Manager.h">
+    <ClInclude Include="Direct3D11Manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Direct3D11ManagerInterface.h">
+    <ClInclude Include="Direct3D11ManagerInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Direct3D11Renderer.h">
+    <ClInclude Include="Direct3D11Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\DX11Exception.h">
+    <ClInclude Include="DX11Exception.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Export.h">
+    <ClInclude Include="Export.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Framebuffer3D.h">
+    <ClInclude Include="Framebuffer3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\FramebufferDX1x.h">
+    <ClInclude Include="FramebufferDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\GpuCloudGenerator.h">
+    <ClInclude Include="GpuCloudGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\GpuSkyGenerator.h">
+    <ClInclude Include="GpuSkyGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Light.h">
+    <ClInclude Include="Light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\LightningRenderer.h">
+    <ClInclude Include="LightningRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\MacrosDx1x.h">
+    <ClInclude Include="MacrosDx1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Material.h">
+    <ClInclude Include="Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Mesh.h">
+    <ClInclude Include="Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\OceanRenderer.h">
+    <ClInclude Include="OceanRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\OceanSimulator.h">
+    <ClInclude Include="OceanSimulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\PrecipitationRenderer.h">
+    <ClInclude Include="PrecipitationRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Profiler.h">
+    <ClInclude Include="Profiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\RenderPlatform.h">
+    <ClInclude Include="RenderPlatform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\resource.h">
+    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\ResourcesDx1x.h">
+    <ClInclude Include="ResourcesDx1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\SaveTextureDX1x.h">
+    <ClInclude Include="SaveTextureDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Simul2DCloudRendererDX1x.h">
+    <ClInclude Include="Simul2DCloudRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\SimulAtmosphericsRendererDX1x.h">
+    <ClInclude Include="SimulAtmosphericsRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\SimulCloudRendererDX1x.h">
+    <ClInclude Include="SimulCloudRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\SimulHDRRendererDX1x.h">
+    <ClInclude Include="SimulHDRRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\SimulOpticsRendererDX1x.h">
+    <ClInclude Include="SimulOpticsRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\SimulSkyRendererDX1x.h">
+    <ClInclude Include="SimulSkyRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\SimulWeatherRendererDX11.h">
+    <ClInclude Include="SimulWeatherRendererDX11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\TerrainRenderer.h">
+    <ClInclude Include="TerrainRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\TextRenderer.h">
+    <ClInclude Include="TextRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Texture.h">
+    <ClInclude Include="Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Utilities.h">
+    <ClInclude Include="Utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\SimulDirectXHeader.h">
+    <ClInclude Include="SimulDirectXHeader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Effect.h">
+    <ClInclude Include="Effect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\CSFFT\fft_512x512.h">
+    <ClInclude Include="CSFFT\fft_512x512.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\MixedResolutionView.h">
+    <ClInclude Include="MixedResolutionView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Buffer.h">
+    <ClInclude Include="Buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\DirectX11\Layout.h">
+    <ClInclude Include="Layout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ESRAMTexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ESRAMManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -155,115 +158,118 @@
     <ClCompile Include="GameLibrary.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\CompileShaderDX1x.cpp">
+    <ClCompile Include="CompileShaderDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\CreateEffectDX1x.cpp">
+    <ClCompile Include="CreateEffectDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\CubemapFramebuffer.cpp">
+    <ClCompile Include="CubemapFramebuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Direct3D11Manager.cpp">
+    <ClCompile Include="Direct3D11Manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Direct3D11Renderer.cpp">
+    <ClCompile Include="Direct3D11Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\DX11Exception.cpp">
+    <ClCompile Include="DX11Exception.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Framebuffer3D.cpp">
+    <ClCompile Include="Framebuffer3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\FramebufferDX1x.cpp">
+    <ClCompile Include="FramebufferDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\GpuCloudGenerator.cpp">
+    <ClCompile Include="GpuCloudGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\GpuSkyGenerator.cpp">
+    <ClCompile Include="GpuSkyGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Light.cpp">
+    <ClCompile Include="Light.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\LightningRenderer.cpp">
+    <ClCompile Include="LightningRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Material.cpp">
+    <ClCompile Include="Material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Mesh.cpp">
+    <ClCompile Include="Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\OceanRenderer.cpp">
+    <ClCompile Include="OceanRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\OceanSimulator.cpp">
+    <ClCompile Include="OceanSimulator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\PrecipitationRenderer.cpp">
+    <ClCompile Include="PrecipitationRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Profiler.cpp">
+    <ClCompile Include="Profiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\RenderPlatform.cpp">
+    <ClCompile Include="RenderPlatform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\SaveTextureDX1x.cpp">
+    <ClCompile Include="SaveTextureDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Simul2DCloudRendererDX1x.cpp">
+    <ClCompile Include="Simul2DCloudRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\SimulAtmosphericsRendererDX1x.cpp">
+    <ClCompile Include="SimulAtmosphericsRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\SimulCloudRendererDX1x.cpp">
+    <ClCompile Include="SimulCloudRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\SimulHDRRendererDX1x.cpp">
+    <ClCompile Include="SimulHDRRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\SimulOpticsRendererDX1x.cpp">
+    <ClCompile Include="SimulOpticsRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\SimulSkyRendererDX1x.cpp">
+    <ClCompile Include="SimulSkyRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\SimulWeatherRendererDX11.cpp">
+    <ClCompile Include="SimulWeatherRendererDX11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\TerrainRenderer.cpp">
+    <ClCompile Include="TerrainRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\TextRenderer.cpp">
+    <ClCompile Include="TextRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Texture.cpp">
+    <ClCompile Include="Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Utilities.cpp">
+    <ClCompile Include="Utilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Effect.cpp">
+    <ClCompile Include="Effect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\CSFFT\fft_512x512.cpp">
+    <ClCompile Include="CSFFT\fft_512x512.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\MixedResolutionView.cpp">
+    <ClCompile Include="MixedResolutionView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Buffer.cpp">
+    <ClCompile Include="Buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\DirectX11\Layout.cpp">
+    <ClCompile Include="Layout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ESRAMTexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ESRAMManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

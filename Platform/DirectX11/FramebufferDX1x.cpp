@@ -92,8 +92,8 @@ void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	SAFE_DELETE(buffer_texture);
 	if(renderPlatform)
 	{
-		buffer_depth_texture=renderPlatform->CreateTexture();
-		buffer_texture=renderPlatform->CreateTexture();
+		buffer_texture=renderPlatform->CreateTexture(useESRAM?"ESRAM":NULL);
+		buffer_depth_texture=renderPlatform->CreateTexture(useESRAMforDepth?"ESRAM":NULL);
 	}
 }
 
@@ -184,7 +184,7 @@ bool Framebuffer::CreateBuffers()
 	static int quality=0;
 	if(target_format!=0)
 	{
-		buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(target_format),false,true,false,numAntialiasingSamples,quality,useESRAM);
+		buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(target_format),false,true,false,numAntialiasingSamples,quality);
 	
 												
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
@@ -202,7 +202,7 @@ bool Framebuffer::CreateBuffers()
 	// Try creating a depth texture
 	if(depth_format!=DXGI_FORMAT_UNKNOWN)
 	{
-		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(depth_format),false,false,true,numAntialiasingSamples,quality,useESRAMforDepth);
+		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(depth_format),false,false,true,numAntialiasingSamples,quality);
 	}
 	return true;
 }

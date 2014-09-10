@@ -47,13 +47,44 @@ namespace simul
 {
 	namespace dx11
 	{
+		/*!
+		The Simul DirectX 11 GPU profiler. Usage is as follows:
+
+		* On initialization, when you have a device pointer:
+		
+				simul::dx11::Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
+
+		* On shutdown, or whenever the device is changed or lost:
+
+				simul::dx11::Profiler::GetGlobalProfiler().Uninitialize();
+
+		* Per-frame, at the start of the frame:
+
+				simul::base::SetGpuProfilingInterface(deviceContext.platform_context,&simul::dx11::Profiler::GetGlobalProfiler());
+				SIMUL_COMBINED_PROFILE_STARTFRAME(deviceContext.platform_context)
+
+		*  Wrap these around anything you want to measure:
+
+				SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Element name")
+				SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+
+		* At frame-end:
+
+				SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+
+		* To obtain the profiling results - pass true if you want HTML output:
+
+				const char *text=simul::dx11::Profiler::GetGlobalProfiler().GetDebugText(as_html);
+		*/
 		SIMUL_DIRECTX11_EXPORT_CLASS Profiler:public simul::base::GpuProfilingInterface
 		{
 		public:
 			static Profiler &GetGlobalProfiler();
 			Profiler();
 			~Profiler();
+			/// Call this when the profiler is to be initialized with a device pointer - must be done before use.
 			void Initialize(ID3D11Device* device);
+			/// Call this when the profiler is to be shut-down, or the device pointer has been lost or changed.
 			void Uninitialize();
 			void Begin(void *context,const char *name);
 			void End();
