@@ -35,7 +35,7 @@ CubemapFramebuffer::~CubemapFramebuffer()
 void CubemapFramebuffer::SetWidthAndHeight(int w,int h)
 {
 	Width=w;
-	Height=w;
+	Height=h;
 	assert(h==w);
 }
 

@@ -20,23 +20,23 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
 			bool IsValid() const;
-			ID3D11Texture2D *AsD3D11Texture2D()
+			virtual ID3D11Texture2D *AsD3D11Texture2D()
 			{
 				return (ID3D11Texture2D*)texture;
 			}
-			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
+			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
 				return shaderResourceView;
 			}
-			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
 			{
 				return unorderedAccessView;
 			}
-			ID3D11DepthStencilView *AsD3D11DepthStencilView()
+			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView()
 			{
 				return depthStencilView;
 			}
-			ID3D11RenderTargetView *AsD3D11RenderTargetView()
+			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView()
 			{
 				return renderTargetView;
 			}
@@ -62,10 +62,10 @@ namespace simul
 			void copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
 			void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
-			void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips=1);
-			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
-				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool esram=false);
-			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
+			virtual void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips=1);
+			virtual void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
+				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0);
+			virtual void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void map(ID3D11DeviceContext *context);
 			bool isMapped() const;
 			void unmap();

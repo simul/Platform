@@ -29,7 +29,7 @@ void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	{
 		hdrFramebuffer.RestoreDeviceObjects(renderPlatform);
 #ifdef _XBOX_ONE
-		hdrFramebuffer.SetUseESRAM(true,false);
+		hdrFramebuffer.SetUseESRAM(false,false);
 #endif
 		hdrFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
 		hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);

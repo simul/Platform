@@ -80,6 +80,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,AllOsds(true)
 		,demoOverlay(NULL)
 {
+	sc;
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
 	simulOpticsRenderer		=::new(memoryInterface) SimulOpticsRendererDX1x(memoryInterface);
@@ -604,7 +605,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 
 void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceContext,const camera::CameraViewStruct &cameraViewStruct)
-	{
+{
 	ID3D11DeviceContext* pContext=deviceContext.asD3D11DeviceContext();
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Render")
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"1")
@@ -612,17 +613,17 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 	MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
 	bool hdr=simulHDRRenderer&&UseHdrPostprocessor;
 	float exposure=hdr?1.f:cameraViewStruct.exposure,gamma=hdr?1.f:cameraViewStruct.gamma;
-		if(hdr)
-		{
-			view->GetFramebuffer()->Activate(deviceContext);
+	if(hdr)
+	{
+		view->GetFramebuffer()->Activate(deviceContext);
 		view->GetFramebuffer()->Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
-		}
-		else
-		{
-			float clearColor[4]={0,0,0,0};
-			pContext->ClearRenderTargetView(mainRenderTarget,clearColor);
-			pContext->ClearDepthStencilView(mainDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,ReverseDepth?0.f:1.f, 0);
-		}
+	}
+	else
+	{
+		float clearColor[4]={0,0,0,0};
+		pContext->ClearRenderTargetView(mainRenderTarget,clearColor);
+		pContext->ClearDepthStencilView(mainDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,ReverseDepth?0.f:1.f, 0);
+	}
 	// Here we render the depth elements. There are two possibilities:
 	//		1. We render depth elements to the main view framebuffer, which is non-MSAA. Then we deactivate the depth buffer, and use it to continue rendering to the same buffer.
 	//		2. We render depth elements to a MSAA framebuffer, then resolve this down to the main framebuffer. Then we use the MSAA depth buffer to continue rendering.
