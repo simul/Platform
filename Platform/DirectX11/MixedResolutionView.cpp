@@ -360,7 +360,7 @@ void MixedResolutionViewManager::Clear()
 }
 
 void MixedResolutionViewManager::DownscaleDepth(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture
-												,const crossplatform::Viewport *v,int lowResDownscale,int hiResDownscale
+												,const crossplatform::Viewport *v,int hiResDownscale,int lowResDownscale
 												,float max_dist_metres,bool includeLowRes)
 {
 	MixedResolutionView *view=GetView(deviceContext.viewStruct.view_id);

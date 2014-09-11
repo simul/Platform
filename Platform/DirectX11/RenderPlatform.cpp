@@ -122,6 +122,7 @@ RenderPlatform::~RenderPlatform()
 {
 	InvalidateDeviceObjects();
 }
+
 #ifdef _XBOX_ONE
 ESRAMManager *eSRAMManager=NULL;
 #endif

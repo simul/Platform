@@ -155,7 +155,7 @@ namespace simul
 			void RecompileShaders();
 
 			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *simulViewport,MixedResolutionView *view
-											 ,int lowResDownscale,int hiResDownscale,vec4 depthToLinFadeDistParams
+											 ,int hiResDownscale,int lowResDownscale,vec4 depthToLinFadeDistParams
 								,bool includeLowResDepth);
 		protected:
 			/// The render platform.
@@ -189,7 +189,7 @@ namespace simul
 
 			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext
 																			,crossplatform::Texture *depthTexture,const crossplatform::Viewport *v
-																	,int lowResDownscale,int hiResDownscale
+																	,int hiResDownscale,int lowResDownscale
 ,float max_dist_metres,bool includeLowResDepth);
 
 			/// Gets a view.
