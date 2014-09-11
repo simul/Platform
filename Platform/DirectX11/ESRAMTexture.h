@@ -56,11 +56,17 @@ namespace simul
 			// The texture resource in ESRAM : use "texture"
 			//XSF::D3DTexture2DPtr                m_spTexture;
 			ESRAMResource                       m_esramResource;
+			// Keep track of whether the "current" version is in ESRAM or DRAM.
+			bool								in_esram;
 		public:
 			ESRAMTexture();
 			virtual ~ESRAMTexture();
 			virtual void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
 				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0) override;
+
+			void MoveFromDRAMToESRAM();
+			void MoveFromESRAMToDRAM();
+
 			friend class ESRAMManager;
 		};
 	}
