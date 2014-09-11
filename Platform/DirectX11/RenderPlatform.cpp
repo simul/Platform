@@ -133,7 +133,7 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	eSRAMManager=new ESRAMManager(device);
 #endif
 	solidConstants.RestoreDeviceObjects(this);
-	textRenderer.RestoreDeviceObjects(device);
+	textRenderer.RestoreDeviceObjects(this);
 
 	RecompileShaders();
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -987,11 +987,15 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
-void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *text)
+void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *text,const float* colr,const float* bkg)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	float clr[]={1.f,1.f,0.f,1.f};
-	float black[]={0.f,0.f,0.f,0.5f};
+	float black[]={0.f,0.f,0.f,0.0f};
+	if(!colr)
+		colr=clr;
+	if(!bkg)
+		bkg=black;
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
@@ -1000,7 +1004,7 @@ void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int
 	
 	while(*text!=0)
 	{
-		textRenderer.Render(deviceContext,(float)x,(float)y,(float)viewport.Width,(float)h,text,clr,black,mirrorY2);
+		textRenderer.Render(deviceContext,(float)x,(float)y,(float)viewport.Width,(float)h,text,colr,bkg,mirrorY2);
 		while(*text!='\n'&&*text!=0)
 		{
 			text++;
@@ -1223,14 +1227,17 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 	static bool ml=true;
 	vec2 pos;
 	pos.x=(1.0f+clip_pos.x)/2.0f;
-	pos.y=(1.0f-clip_pos.y)/2.0f;
+	if(mirrorY)
+		pos.y=(1.0f+clip_pos.y)/2.0f;
+	else
+		pos.y=(1.0f-clip_pos.y)/2.0f;
 	if(ml)
 	{
 		pos.x*=viewport.Width;
 		pos.y*=viewport.Height;
 	}
 
-	Print(deviceContext,pos.x+offsetx,pos.y+offsety,text);
+	Print(deviceContext,(int)pos.x+offsetx,(int)pos.y+offsety,text,colr,NULL);
 }
 
 void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)

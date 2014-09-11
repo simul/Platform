@@ -8,6 +8,8 @@
 #endif
 #include <fstream>
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/CrossPlatform/Texture.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 namespace simul
 {
@@ -32,7 +34,7 @@ namespace simul
 			TextRenderer();
 			~TextRenderer();
 
-			void RestoreDeviceObjects(ID3D11Device*);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			//void Render(crossplatform::DeviceContext &deviceContext, float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL);
@@ -41,13 +43,11 @@ namespace simul
 		private:
 
 		private:
-			ID3D11Device						*m_pd3dDevice;
 			ID3DX11Effect						*effect;
 	
 			ConstantBuffer<ConstantBufferType>	constantBuffer;
-			ID3D11SamplerState* m_sampleState;
-			ID3D11Buffer* m_pixelBuffer;
-			ID3D11ShaderResourceView*			font_texture_SRV;
+			crossplatform::Texture*			font_texture;
+			crossplatform::RenderPlatform *renderPlatform;
 		};
 	}
 }

@@ -48,7 +48,7 @@ namespace simul
 			void DrawDepth			(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex);
 			void DrawQuad			(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique);
 			void DrawQuad			(crossplatform::DeviceContext &deviceContext);
-			void Print				(crossplatform::DeviceContext &deviceContext,int x	,int y	,const char *text);
+			void Print				(crossplatform::DeviceContext &deviceContext,int x	,int y	,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			void DrawLines			(crossplatform::DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false,bool test_depth=false);
 			void Draw2dLines		(crossplatform::DeviceContext &deviceContext,Vertext *lines,int count,bool strip);
 			void PrintAt3dPos		(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);

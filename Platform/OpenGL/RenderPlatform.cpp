@@ -380,12 +380,15 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &)
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 #endif
 
-void RenderPlatform::Print(crossplatform::DeviceContext &,int x,int y	,const char *string)
+void RenderPlatform::Print(crossplatform::DeviceContext &,int x,int y,const char *string,const float* colr,const float* bkg)
 {
 	if(!string)
 		return;
 	void *font=GLUT_BITMAP_HELVETICA_12;
-	glColor4f(1.f,1.f,1.f,1.f);
+	if(colr)
+		glColor4fv(colr);
+	else
+		glColor4f(1.f,1.f,1.f,1.f);
 	int viewport[4];
 	glGetIntegerv(GL_VIEWPORT,viewport);
 	int win_h=viewport[3];

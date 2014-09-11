@@ -276,13 +276,12 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		// if using rendertarget we must rescale the texCoords.
 		mixedResolutionConstants.Apply(deviceContext);
 		uint2 subgrid						=uint2((view->GetLowResDepthTexture()->GetWidth()+BLOCKWIDTH-1)/BLOCKWIDTH,(view->GetLowResDepthTexture()->GetLength()+BLOCKWIDTH-1)/BLOCKWIDTH);
-	
 		{
 			effect->SetTexture				(deviceContext,"sourceDepthTexture"		,view->GetHiResDepthTexture());
 			crossplatform::Texture *targ=view->GetLowResDepthTexture();
 			effect->SetUnorderedAccessView	(deviceContext,"target2DTexture",targ);
-		simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near_from_hires");
-		pContext->Dispatch(subgrid.x,subgrid.y,1);
+			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near_from_hires");
+			pContext->Dispatch(subgrid.x,subgrid.y,1);
 		}
 		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceDepthTexture"		,NULL);
 		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceMSDepthTexture"		,NULL);

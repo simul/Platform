@@ -37,81 +37,81 @@ FontIndex fontIndices[]={
 {0.107422f	,0.113281f		,6},
 {0.114258f	,0.120117f		,6},
 {0.121094f	,0.126953f		,6},
-{0.12793f,0.133789f,6},
-{0.134766f,0.140625f,6},
-{0.141602f,0.142578f,1},
-{0.143555f,0.144531f,1},
-{0.145508f,0.151367f,6},
-{0.152344f,0.15918f,7},
-{0.160156f,0.166016f,6},
-{0.166992f,0.171875f,5},
-{0.172852f,0.18457f,12},
-{0.185547f,0.194336f,9},
-{0.195313f,0.202148f,7},
-{0.203125f,0.209961f,7},
-{0.210938f,0.217773f,7},
-{0.21875f,0.225586f,7},
-{0.226563f,0.232422f,6},
-{0.233398f,0.241211f,8},
-{0.242188f,0.249023f,7},
-{0.25f,0.250977f,1},
-{0.251953f,0.256836f,5},
-{0.257813f,0.265625f,8},
-{0.266602f,0.272461f,6},
-{0.273438f,0.282227f,9},
-{0.283203f,0.290039f,7},
-{0.291016f,0.298828f,8},
-{0.299805f,0.306641f,7},
-{0.307617f,0.31543f,8},
-{0.316406f,0.323242f,7},
-{0.324219f,0.331055f,7},
-{0.332031f,0.338867f,7},
-{0.339844f,0.34668f,7},
-{0.347656f,0.356445f,9},
-{0.357422f,0.370117f,13},
-{0.371094f,0.37793f,7},
-{0.378906f,0.385742f,7},
-{0.386719f,0.393555f,7},
-{0.394531f,0.396484f,2},
-{0.397461f,0.401367f,4},
-{0.402344f,0.404297f,2},
-{0.405273f,0.410156f,5},
-{0.411133f,0.417969f,7},
-{0.418945f,0.420898f,2},
-{0.421875f,0.426758f,5},
-{0.427734f,0.432617f,5},
-{0.433594f,0.438477f,5},
-{0.439453f,0.444336f,5},
-{0.445313f,0.450195f,5},
-{0.451172f,0.455078f,4},
-{0.456055f,0.460938f,5},
-{0.461914f,0.466797f,5},
-{0.467773f,0.46875f,1},
-{0.469727f,0.472656f,3},
-{0.473633f,0.478516f,5},
-{0.479492f,0.480469f,1},
-{0.481445f,0.490234f,9},
-{0.491211f,0.496094f,5},
-{0.49707f,0.501953f,5},
-{0.50293f,0.507813f,5},
-{0.508789f,0.513672f,5},
-{0.514648f,0.517578f,3},
-{0.518555f,0.523438f,5},
-{0.524414f,0.527344f,3},
-{0.52832f,0.533203f,5},
-{0.53418f,0.539063f,5},
-{0.540039f,0.548828f,9},
-{0.549805f,0.554688f,5},
-{0.555664f,0.560547f,5},
-{0.561523f,0.566406f,5},
-{0.567383f,0.570313f,3},
-{0.571289f,0.572266f,1},
-{0.573242f,0.576172f,3},
-{0.577148f,0.583984f,7},
+{0.12793f	,0.133789f		,6},
+{0.134766f	,0.140625f		,6},
+{0.141602f	,0.142578f		,1},
+{0.143555f	,0.144531f		,1},
+{0.145508f	,0.151367f		,6},
+{0.152344f	,0.15918f		,7},
+{0.160156f	,0.166016f		,6},
+{0.166992f	,0.171875f		,5},
+{0.172852f	,0.18457f		,12},
+{0.185547f	,0.194336f		,9},
+{0.195313f	,0.202148f		,7},
+{0.203125f	,0.209961f		,7},
+{0.210938f	,0.217773f		,7},
+{0.21875f	,0.225586f		,7},
+{0.226563f	,0.232422f		,6},
+{0.233398f	,0.241211f		,8},
+{0.242188f	,0.249023f		,7},
+{0.25f		,0.250977f		,1},
+{0.251953f	,0.256836f		,5},
+{0.257813f	,0.265625f		,8},
+{0.266602f	,0.272461f		,6},
+{0.273438f	,0.282227f		,9},
+{0.283203f	,0.290039f		,7},
+{0.291016f	,0.298828f		,8},
+{0.299805f	,0.306641f		,7},
+{0.307617f	,0.31543f		,8},
+{0.316406f	,0.323242f		,7},
+{0.324219f	,0.331055f		,7},
+{0.332031f	,0.338867f		,7},
+{0.339844f	,0.34668f		,7},
+{0.347656f	,0.356445f		,9},
+{0.357422f	,0.370117f		,13},
+{0.371094f	,0.37793f		,7},
+{0.378906f	,0.385742f		,7},
+{0.386719f	,0.393555f		,7},
+{0.394531f	,0.396484f		,2},
+{0.397461f	,0.401367f		,4},
+{0.402344f	,0.404297f		,2},
+{0.405273f	,0.410156f		,5},
+{0.411133f	,0.417969f		,7},
+{0.418945f	,0.420898f		,2},
+{0.421875f	,0.426758f		,5},
+{0.427734f	,0.432617f		,5},
+{0.433594f	,0.438477f		,5},
+{0.439453f	,0.444336f		,5},
+{0.445313f	,0.450195f		,5},
+{0.451172f	,0.455078f		,4},
+{0.456055f	,0.460938f		,5},
+{0.461914f	,0.466797f		,5},
+{0.467773f	,0.46875f		,1},
+{0.469727f	,0.472656f		,3},
+{0.473633f	,0.478516f		,5},
+{0.479492f	,0.480469f		,1},
+{0.481445f	,0.490234f		,9},
+{0.491211f	,0.496094f		,5},
+{0.49707f	,0.501953f		,5},
+{0.50293f	,0.507813f		,5},
+{0.508789f	,0.513672f		,5},
+{0.514648f	,0.517578f		,3},
+{0.518555f	,0.523438f		,5},
+{0.524414f	,0.527344f		,3},
+{0.52832f	,0.533203f		,5},
+{0.53418f	,0.539063f		,5},
+{0.540039f	,0.548828f		,9},
+{0.549805f	,0.554688f		,5},
+{0.555664f	,0.560547f		,5},
+{0.561523f	,0.566406f		,5},
+{0.567383f	,0.570313f		,3},
+{0.571289f	,0.572266f		,1},
+{0.573242f	,0.576172f		,3},
+{0.577148f	,0.583984f		,7},
 };
 
 TextRenderer::TextRenderer()
-	:m_pd3dDevice(NULL),effect(NULL),font_texture_SRV(NULL)
+	:renderPlatform(NULL),effect(NULL),font_texture(NULL)
 {
 }
 
@@ -120,30 +120,30 @@ TextRenderer::~TextRenderer()
 	InvalidateDeviceObjects();
 }
 
-void TextRenderer::RestoreDeviceObjects(ID3D11Device* device)
+void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	m_pd3dDevice=device;
-	constantBuffer.RestoreDeviceObjects(m_pd3dDevice);
+	renderPlatform=r;
+	constantBuffer.RestoreDeviceObjects(renderPlatform->AsD3D11Device());
 	RecompileShaders();
-	SAFE_RELEASE(font_texture_SRV);
-	font_texture_SRV=simul::dx11::LoadTexture(m_pd3dDevice,"Font16.png");
+	SAFE_DELETE(font_texture);
+	font_texture=r->CreateTexture("Font16.png");
 }
 
 void TextRenderer::InvalidateDeviceObjects()
 {
 	constantBuffer.InvalidateDeviceObjects();
 	SAFE_RELEASE(effect);
-	SAFE_RELEASE(font_texture_SRV);
-	m_pd3dDevice=NULL;
+	SAFE_DELETE(font_texture);
+	renderPlatform=NULL;
 }
 
 void TextRenderer::RecompileShaders()
 {
-	if(!m_pd3dDevice)
+	if(!renderPlatform)
 		return;
 	std::map<std::string,std::string> defines;
 	SAFE_RELEASE(effect);
-	effect=LoadEffect(m_pd3dDevice,"font.fx",defines);
+	effect=LoadEffect(renderPlatform->AsD3D11Device(),"font.fx",defines);
 	constantBuffer.LinkToEffect(effect,"FontConstants");
 }
 
@@ -155,7 +155,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		clr=white;
 	if(!bck)
 		bck=transp;
-	simul::dx11::setTexture(effect,"fontTexture"	,font_texture_SRV);
+	simul::dx11::setTexture(effect,"fontTexture"	,font_texture->AsD3D11ShaderResourceView());
 	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	pContext->IAGetPrimitiveTopology(&previousTopology);
