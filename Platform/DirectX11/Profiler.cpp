@@ -14,7 +14,7 @@
 #include "Simul/Base/StringFunctions.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
-#ifdef _XBOX_ONE
+#ifdef SIMUL_ENABLE_PIX
 #include "pix.h"
 #endif
 using namespace simul;
@@ -134,7 +134,7 @@ void Profiler::Begin(void *ctx,const char *name)
 		profileData->wUnqualifiedName=base::StringToWString(name);
 	pUserDefinedAnnotation->BeginEvent(profileData->wUnqualifiedName.c_str());
 #endif
-#ifdef _XBOX_ONE
+#ifdef SIMUL_ENABLE_PIX
 	PIXBeginEvent( 0, profileData->wUnqualifiedName.c_str(), name );
 #endif
 	int new_child_index=0;
@@ -231,7 +231,7 @@ void Profiler::End()
 	if(pUserDefinedAnnotation)
 		pUserDefinedAnnotation->EndEvent();
 #endif
-#ifdef _XBOX_ONE
+#ifdef SIMUL_ENABLE_PIX
 	PIXEndEvent(  );
 #endif
 }
