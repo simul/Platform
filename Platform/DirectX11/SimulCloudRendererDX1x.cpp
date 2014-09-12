@@ -133,34 +133,6 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
 	CreateLightningTexture();
 	cloudConstants.RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
-	D3D11_SHADER_RESOURCE_VIEW_DESC texdesc;
-
-	texdesc.Format=DXGI_FORMAT_R32G32B32A32_FLOAT;
-	texdesc.ViewDimension=D3D11_SRV_DIMENSION_TEXTURE3D;
-	texdesc.Texture3D.MostDetailedMip=0;
-	texdesc.Texture3D.MipLevels=1;
-	/*
-	const D3D11_INPUT_ELEMENT_DESC decl[] =
-    {
-        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		
-        { "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		1,	0,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },//noiseOffset	
-        { "TEXCOORD",	1, DXGI_FORMAT_R32G32_FLOAT,		1,	8,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  elevationRange	
-        { "TEXCOORD",	2, DXGI_FORMAT_R32_FLOAT,			1,	16,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	// noiseScale	
-        { "TEXCOORD",	3, DXGI_FORMAT_R32_FLOAT,			1,	20,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  layerFade		
-        { "TEXCOORD",	4, DXGI_FORMAT_R32_FLOAT,			1,	24,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  layerDistance	
-    };
-	const D3D11_INPUT_ELEMENT_DESC std_decl[] =
-    {
-        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    };
-	D3DX11_PASS_DESC PassDesc;
-	ID3DX11EffectPass *pass=effect->GetTechniqueByIndex(0)->asD3DX11EffectTechnique()->GetPassByIndex(0);
-	HRESULT hr=pass->GetDesc(&PassDesc);
-
-	// Get a count of the elements in the layout.
-	int numElements = sizeof(decl) / sizeof(decl[0]);*/
 
 	ClearIterators();
 	layerBuffer.RestoreDeviceObjects(m_pd3dDevice,SIMUL_MAX_CLOUD_RAYTRACE_STEPS);

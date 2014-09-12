@@ -15,6 +15,24 @@ using namespace simul;
 using namespace dx11;
 extern ESRAMManager *eSRAMManager;
 
+ESRAMTextureData::ESRAMTextureData():
+				m_pESRAMTexture2D(NULL)
+				,m_pESRAMSRV(NULL)
+				,m_pESRAMUAV(NULL)
+				,m_pESRAMRTV(NULL)
+				,m_pESRAMDSV(NULL)
+{
+}
+
+ESRAMTextureData::~ESRAMTextureData()
+{
+	SAFE_RELEASE(m_pESRAMTexture2D)
+	SAFE_RELEASE(m_pESRAMSRV)
+	SAFE_RELEASE(m_pESRAMUAV)
+	SAFE_RELEASE(m_pESRAMRTV)
+	SAFE_RELEASE(m_pESRAMDSV)
+}
+
 template< typename t_A, typename t_B >
 t_A RoundUpToNextMultiple( const t_A& a, const t_B& b )
 {
@@ -65,6 +83,7 @@ XG_FORMAT ToXgFormat(crossplatform::PixelFormat p)
 static UINT64 iCurrentESRAMOffset = 0; // We allow this to grow beyond ESRAM_SIZE
 
 ESRAMTexture::ESRAMTexture()
+	:in_esram(false)
 {
 }
 
@@ -73,7 +92,53 @@ ESRAMTexture::~ESRAMTexture()
 {
 }
 
-void dx11::ESRAMTexture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
+ID3D11Texture2D *ESRAMTexture::AsD3D11Texture2D()
+{
+	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );    
+	if(in_esram)
+	{
+		return esramTextureData.m_pESRAMTexture2D;
+	}
+	else
+		return (ID3D11Texture2D*)texture;
+}
+ID3D11ShaderResourceView *ESRAMTexture::AsD3D11ShaderResourceView()
+{
+	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );   
+	if(in_esram)
+	{
+		return esramTextureData.m_pESRAMSRV;
+	}
+	return shaderResourceView;
+}
+ID3D11UnorderedAccessView *ESRAMTexture::AsD3D11UnorderedAccessView()
+{
+	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );   
+	if(in_esram)
+	{
+		return esramTextureData.m_pESRAMUAV;
+	}
+	return unorderedAccessView;
+}
+ID3D11DepthStencilView *ESRAMTexture::AsD3D11DepthStencilView()
+{
+	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );   
+	if(in_esram)
+	{
+		return esramTextureData.m_pESRAMDSV;
+	}
+	return depthStencilView;
+}
+ID3D11RenderTargetView *ESRAMTexture::AsD3D11RenderTargetView()
+{
+	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );   
+	if(in_esram)
+	{
+		return esramTextureData.m_pESRAMRTV;
+	}
+	return renderTargetView;
+}
+void ESRAMTexture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
 												 ,int w,int l
 												 ,crossplatform::PixelFormat pixelFormat
 												 ,bool computable,bool rendertarget,bool depthstencil
@@ -83,7 +148,30 @@ void dx11::ESRAMTexture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatf
 												 , w, l
 												 , pixelFormat
 												 , computable, rendertarget, depthstencil
-												 , num_samples, aa_quality)
-		eSRAMManager->Create(textureDesc,*this);
+												 , num_samples, aa_quality);
+	if(in_esram)
+		MoveToFastRAM();
+}
+
+void ESRAMTexture::MoveToFastRAM()
+{
+	DiscardFromFastRAM();
+	if(texture)
+		eSRAMManager->Prefetch((ID3D11Texture2D*)texture,esramTextureData);
+	in_esram=true;
+}
+
+void ESRAMTexture::MoveToSlowRAM()
+{
+	if(texture)
+	{
+		eSRAMManager->Writeback(esramTextureData,(ID3D11Texture2D*)texture);
+	}
+	in_esram=false;
+}
+
+void ESRAMTexture::DiscardFromFastRAM()
+{
+	eSRAMManager->Discard(esramTextureData);
 }
 #endif

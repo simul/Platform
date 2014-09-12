@@ -95,14 +95,6 @@ namespace simul
 				init.SysMemPitch		=sizeof(T);
 				init.SysMemSlicePitch	=0;
 				V_CHECK(pd3dDevice->CreateBuffer(&desc,data?(&init):NULL,&vertexBuffer));
-			/*	D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-				ZeroMemory(&uav_desc,sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-				uav_desc.Format					=DXGI_FORMAT_R32_FLOAT;
-				uav_desc.ViewDimension			=D3D11_UAV_DIMENSION_BUFFER;
-				uav_desc.Buffer.FirstElement	=0;
-				uav_desc.Buffer.NumElements		=numVertices;
-				uav_desc.Buffer.Flags			=0;
-				V_CHECK(pd3dDevice->CreateUnorderedAccessView(vertexBuffer, &uav_desc, &unorderedAccessView));*/
 			}
 			D3D11_MAPPED_SUBRESOURCE mapped;
 			T *Map(ID3D11DeviceContext *pContext)

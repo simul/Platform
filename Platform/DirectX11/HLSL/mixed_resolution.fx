@@ -148,14 +148,26 @@ vec4 PS_DownscaleDepthFarNear_MSAA16(posTexVertexOutput IN):SV_Target
 	return DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,source_dims,source_offset,cornerOffset,16,pos,scale,depthToLinFadeDistParams);
 }
 
-
-	
-#if 1
-[numthreads(1,BLOCK_SIZE,1)]
-void CS_DownscaleDepthFarNear(uint3 pos : SV_DispatchThreadID )
+[numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
+void CS_DownscaleDepthFarNear2(uint3 pos : SV_DispatchThreadID )
 {
 	vec4 res	=DownscaleDepthFarNear2(sourceDepthTexture,source_dims,source_offset,cornerOffset,pos.xy,depthToLinFadeDistParams);
-	//res.xyzw=vec4(1,1,1,1);
+	target2DTexture[pos.xy]=res;
+}
+
+
+[numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
+void CS_DownscaleDepthFarNear4(uint3 pos : SV_DispatchThreadID )
+{
+	vec4 res	=DownscaleDepthFarNear4(sourceDepthTexture,source_dims,source_offset,cornerOffset,pos.xy,depthToLinFadeDistParams);
+	target2DTexture[pos.xy]=res;
+}
+	
+#if 1
+[numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
+void CS_DownscaleDepthFarNear(uint3 pos : SV_DispatchThreadID )
+{
+	vec4 res	=DownscaleDepthFarNear(sourceDepthTexture,source_dims,source_offset,cornerOffset,pos.xy,scale,depthToLinFadeDistParams);
 	target2DTexture[pos.xy]=res;
 }
 #else
@@ -441,6 +453,14 @@ technique11 cs_downscale_depth_far_near
     pass main
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear()));
+    }
+    pass main2
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear2()));
+    }
+    pass main4
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear4()));
     }
     pass msaa1
     {

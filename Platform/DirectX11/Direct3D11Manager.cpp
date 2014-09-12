@@ -336,7 +336,7 @@ Direct3D11Manager::~Direct3D11Manager()
 	Shutdown();
 }
 
-void Direct3D11Manager::Initialize(bool use_debug)
+void Direct3D11Manager::Initialize(bool use_debug,bool instrument)
 {
 	std::cout<<"1"<<std::endl;
 	HRESULT result;
@@ -412,6 +412,10 @@ void Direct3D11Manager::Initialize(bool use_debug)
 	UINT flags=0;
 	if(use_debug)
 		flags|=D3D11_CREATE_DEVICE_DEBUG;
+#ifdef _XBOX_ONE
+	if(instrument)
+		flags|=D3D11_CREATE_DEVICE_INSTRUMENTED;
+#endif
 	//std::cout<<"D3D11CreateDevice "<<std::endl;
 	result=D3D11CreateDevice(NULL,D3D_DRIVER_TYPE_HARDWARE,NULL,flags, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
 	//std::cout<<"D3D11CreateDevice result "<<result<<std::endl;

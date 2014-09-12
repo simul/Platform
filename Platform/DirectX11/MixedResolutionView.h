@@ -90,7 +90,7 @@ namespace simul
 			/// \return	null if it fails, else the hi resource depth texture.
 			crossplatform::Texture					*GetHiResDepthTexture()
 			{
-				return &hiResDepthTexture;
+				return hiResDepthTexture;
 			}
 
 			/// Gets low resource depth texture.
@@ -119,7 +119,7 @@ namespace simul
 			///      A framebuffer with depth.
 			simul::dx11::Framebuffer		hdrFramebuffer;
 			/// The depth from the HDR framebuffer can be resolved into this texture:
-			simul::dx11::Texture			hiResDepthTexture;
+			simul::crossplatform::Texture	*hiResDepthTexture;
 			/// The low  depth texture.
 			simul::dx11::Texture			lowResDepthTexture;
 			/// The low-res scratch.

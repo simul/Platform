@@ -26,20 +26,20 @@ namespace simul
 			ESRAMManager(ID3D11Device* const pDevice );
 
 			// Create a resource in ESRAM without any initial contents
-			void Create(D3D11_BUFFER_DESC desc, _Out_ ESRAMBuffer& esramDest );
-			void Create(D3D11_TEXTURE2D_DESC desc, _Out_ ESRAMTexture& esramDest );
+			void Create(D3D11_BUFFER_DESC desc,  ESRAMBuffer& esramDest );
+			void Create(D3D11_TEXTURE2D_DESC desc,  ESRAMTextureData& esramDest );
 
 			// Load a DRAM resource into ESRAM
-			void Prefetch(ID3D11Buffer* const pDRAMSource, _Out_ ESRAMBuffer& esramDest );
-			void Prefetch(ID3D11Texture2D* const pDRAMSource, _Out_ ESRAMTexture& esramDest );
+			void Prefetch(ID3D11Buffer* const pDRAMSource,  ESRAMBuffer& esramDest );
+			void Prefetch(ID3D11Texture2D* const pDRAMSource,  ESRAMTextureData& esramDest );
 
 			// Copy an ESRAM resource into DRAM
 			void Writeback(ESRAMBuffer& esramSource,ID3D11Buffer* const pDRAMDest );
-			void Writeback(ESRAMTexture& esramSource,ID3D11Texture2D* const pDRAMDest );
+			void Writeback(ESRAMTextureData& esramSource,ID3D11Texture2D* const pDRAMDest );
 
 			// Mark an ESRAM resource as no longer in use, so its memory can be reclaimed
 			void Discard(ESRAMBuffer& esramBuffer );
-			void Discard(ESRAMTexture& esramTexture );
+			void Discard(ESRAMTextureData& esramTexture );
 
 			// Free memory belonging to discarded resources
 			void GarbageCollect();
@@ -52,7 +52,7 @@ namespace simul
 			void DiscardInternal(ESRAMResource& esramResource );
 
 			// We allocate ESRAM in 4K blocks, using a simple first-fit freelist allocator
-			void Allocate( UINT numBytes, UINT alignment, _Out_ ESRAMAllocation& alloc );
+			void Allocate( UINT numBytes, UINT alignment,ESRAMAllocation& alloc );
 			void Free(ESRAMAllocation& alloc );
 
 			// An area of free space in ESRAM

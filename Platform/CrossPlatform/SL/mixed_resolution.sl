@@ -113,48 +113,67 @@ vec4 DownscaleDepthFarNear2(Texture2D sourceDepthTexture,uint2 source_dims,uint2
 #else
 	vec2 farthest_nearest		=vec2(0.0,1.0);
 #endif
-	//pos2-=cornerOffset;
-	//pos2.x=clamp(pos2.x,(int)1,(int)source_dims.x-(int)3);
-	//pos2.y=clamp(pos2.y,(int)1,(int)source_dims.y-(int)3);
-	//pos2+=source_offset;
 	for(int i=0;i<4;i++)
 	{
-#if 1
 		int2 hires_pos		=pos2+int2(i-1,-1);
 		vec4 u				=vec4(	sourceDepthTexture[int2(hires_pos.x,hires_pos.y+0)].x
 									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+1)].x
 									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+2)].x
 									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+3)].x);
 		ExtendDepths(farthest_nearest,u.xyzw);
-#else
-		int2 hires_pos		=pos2+int2(i-1,-1);
-		vec4 u				=vec4(	sourceDepthTexture[int2(hires_pos.x,hires_pos.y+0)].x
-									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+1)].x
-									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+2)].x
-									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+3)].x);
-#if REVERSE_DEPTH==1
-		vec2 v				=max(u.xy,u.zw);
-		farthest_nearest.y	=max(v.x,v.y);
-		vec2 m				=min(u.xy,u.zw);
-		farthest_nearest.x	=min(m.x,m.y);
-#else
-		vec2 v				=max(u.xy,u.zw);
-		farthest_nearest.x	=max(v.x,v.y);
-		vec2 m				=min(u.xy,u.zw);
-		farthest_nearest.y	=min(m.x,m.y);
-#endif
-#endif
 	}
 	float edge=0.0;
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
 		vec2 fn	=depthToLinearDistance(farthest_nearest.xy,depthToLinFadeDistParams);
-	//fn =saturate(0.07 / (farthest_nearest.xy*depthToLinFadeDistParams.y ));
 		edge	=abs(fn.x-fn.y);
 		edge	=step(EDGE_FACTOR,edge);
 	}
 	vec4 res=vec4(farthest_nearest,edge,0);
 	return res;
+}
+
+
+
+vec4 DownscaleDepthFarNear4(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,vec4 depthToLinFadeDistParams)
+{
+	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
+	int2 pos2					=pos*4;
+	pos2		-=cornerOffset;
+	int2 max_pos=source_dims-int2(7,7);
+	int2 min_pos=int2(1,1);
+	pos2		=int2	(max(min_pos.x,min(pos2.x,max_pos.x))
+						,max(min_pos.y,min(pos2.y,max_pos.y)));
+	pos2		+=source_offset;
+#if REVERSE_DEPTH==1
+	vec2 farthest_nearest		=vec2(1.0,0.0);
+#else
+	vec2 farthest_nearest		=vec2(0.0,1.0);
+#endif
+	for(int i=0;i<6;i++)
+	{
+		for(int j=0;j<6;j++)
+		{
+			int2 hires_pos		=pos2+int2(i-1,j-1);
+			float d				=sourceDepthTexture[hires_pos].x;
+#if REVERSE_DEPTH==1
+				farthest_nearest.y=max(farthest_nearest.y,d);
+				farthest_nearest.x=min(farthest_nearest.x,d);
+#else
+				farthest_nearest.y=min(farthest_nearest.y,d);
+				farthest_nearest.x=max(farthest_nearest.x,d);
+#endif
+		}
+	}
+	float edge=0.0;
+	if(farthest_nearest.x!=farthest_nearest.y)
+	{
+		vec2 fn	=depthToLinearDistance(farthest_nearest.xy,depthToLinFadeDistParams);
+		edge	=abs(fn.x-fn.y);
+		//edge	=abs(farthest_nearest.x-farthest_nearest.y);
+		edge	=step(EDGE_FACTOR,edge);
+	}
+	return		vec4(farthest_nearest,edge,0.0);
 }
 
 vec4 DownscaleDepthFarNear_MSAA4(Texture2DMS<float4> sourceMSDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,vec2 scale,vec4 depthToLinFadeDistParams)
@@ -273,18 +292,14 @@ vec4 DownscaleDepthFarNear(Texture2D sourceDepthTexture,uint2 source_dims,uint2 
 			int2 hires_pos		=pos2+int2(i-1,j-1);
 			float d				=sourceDepthTexture[hires_pos].x;
 #if REVERSE_DEPTH==1
-				if(d>farthest_nearest.y)
-					farthest_nearest.y	=d;
-				if(d<farthest_nearest.x)
-					farthest_nearest.x	=d;
+				farthest_nearest.y=max(farthest_nearest.y,d);
+				farthest_nearest.x=min(farthest_nearest.x,d);
 #else
-				if(d<farthest_nearest.y)
-					farthest_nearest.y	=d;
-				if(d>farthest_nearest.x)
-					farthest_nearest.x	=d;
+				farthest_nearest.y=min(farthest_nearest.y,d);
+				farthest_nearest.x=max(farthest_nearest.x,d);
 #endif
-			}
 		}
+	}
 	float edge=0.0;
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
