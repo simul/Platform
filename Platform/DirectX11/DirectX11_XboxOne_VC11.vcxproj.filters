@@ -161,9 +161,6 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GameLibrary.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CompileShaderDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

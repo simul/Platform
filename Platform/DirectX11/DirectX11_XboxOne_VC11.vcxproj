@@ -257,7 +257,6 @@
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ESRAMTexture.cpp" />
-    <ClCompile Include="GameLibrary.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
