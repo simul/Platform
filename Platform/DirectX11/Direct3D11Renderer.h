@@ -70,10 +70,7 @@ namespace simul
 			virtual ~Direct3D11Renderer();
 			META_BeginProperties
 				META_ValueProperty(bool,ShowFlares				,"Whether to draw light flares around the sun and moon.")
-				META_ValueProperty(bool,ShowCloudCrossSections	,"Show the cloud textures as an overlay.")
-				META_ValueProperty(bool,Show2DCloudTextures		,"Show the 2D cloud textures as an overlay.")
 				META_ValueProperty(bool,ShowWaterTextures		,"Show the textures generated for water effects as an overlay.")
-				META_ValueProperty(bool,ShowFades				,"Show the fade textures as an overlay.")
 				META_ValueProperty(bool,ShowTerrain				,"Whether to draw the terrain.")
 				META_ValueProperty(bool,ShowMap					,"Show the terrain map as an overlay.")
 				META_ValueProperty(clouds::TrueSkyRenderMode,trueSkyRenderMode		,"Whether to use the mixed-resolution renderer.")
@@ -83,12 +80,10 @@ namespace simul
 				META_ValueProperty(bool,ShowCompositing			,"Show the multi-resolution compositing textures.")
 				META_ValueProperty(bool,ShowHDRTextures			,"Show the HDR glow textures.")
 				META_ValueProperty(bool,ShowLightVolume			,"Show the cloud light volume as a wireframe box.")
-				META_ValueProperty(bool,CelestialDisplay		,"Show geographical and sidereal overlay.")
 				META_ValueProperty(bool,ShowGroundGrid			,"Show a metre-scale grid at ground level.")
 				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")
 				META_ValueProperty(bool,MakeCubemap				,"Render a cubemap each frame.")
 				META_ValueProperty(bool,ShowCubemaps			,"Show any generated cubemaps onscreen.")
-				META_ValueProperty(bool,ShowRainTextures		,"Show rain textures onscreen.")
 				META_ValueRangeProperty(PerformanceTestLevel,PerformanceTest,DEFAULT,DEFAULT,FORCE_3840_2160,"Force rendering at a higher resolution to test performance");
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")

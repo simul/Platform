@@ -73,7 +73,7 @@ float4 PS_Main( vertexOutput IN) : SV_TARGET
 	vec4 texel	=mix(layer1,layer2,clamp(1.0-IN.wPosition.z/100.0,0.0,1.0));
 	vec3 light	=lightDir.zzz;
 
-	light		*=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,IN.wPosition.xyz).x;
+//	light		*=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,IN.wPosition.xyz).x;
 	result.rgb	=texel.rgb*(ambientColour.rgb+light.rgb*sunlight.rgb);
 	result.a	=1.0;
 	

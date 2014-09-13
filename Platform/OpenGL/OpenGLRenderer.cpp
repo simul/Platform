@@ -61,11 +61,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	,cam(NULL)
 	,ShowCompositing(false)
 	,ShowFlares(true)
-	,ShowFades(false)
 	,ShowTerrain(true)
-	,ShowCloudCrossSections(false)
-	,Show2DCloudTextures(false)
-	,CelestialDisplay(false)
 	,UseHdrPostprocessor(true)
 	,ShowOSD(false)
 	,ShowWater(true)
@@ -301,9 +297,6 @@ void OpenGLRenderer::paintGL()
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
 GL_ERROR_CHECK
-		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
-GL_ERROR_CHECK
 		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
 		bool vertical_screen=ScreenHeight>ScreenWidth;
 GL_ERROR_CHECK
@@ -313,27 +306,9 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 		}
 GL_ERROR_CHECK
-		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
-		{
-			int x0=ScreenWidth/2;
-			int y0=8;
-			if(vertical_screen)
-			{
-				x0=8;
-				y0=ScreenHeight/2;
-			}
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(deviceContext,x0,y0,ScreenWidth/2,ScreenHeight/2);
-		}
+		if(simulWeatherRenderer)
+			simulWeatherRenderer->RenderOverlays(deviceContext);
 GL_ERROR_CHECK
-		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
-		{
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth/2,ScreenHeight/2);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext,0,0,ScreenWidth/2,ScreenHeight/2);
-		}
-		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
-		{
-			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth,ScreenHeight);
-		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,ScreenWidth,ScreenHeight);
 	}

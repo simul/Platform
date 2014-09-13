@@ -34,11 +34,8 @@ using namespace simul;
 using namespace dx11;
 
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m):
-		ShowCloudCrossSections(false)
-		,ShowFlares(true)
-		,Show2DCloudTextures(false)
+		ShowFlares(true)
 		,ShowWaterTextures(false)
-		,ShowFades(false)
 		,ShowTerrain(true)
 		,ShowMap(false)
 		,trueSkyRenderMode(clouds::MIXED_RESOLUTION)
@@ -48,12 +45,10 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,ShowCompositing(false)
 		,ShowHDRTextures(false)
 		,ShowLightVolume(false)
-		,CelestialDisplay(false)
 		,ShowGroundGrid(false)
 		,ShowWater(true)
 		,MakeCubemap(true)
 		,ShowCubemaps(false)
-		,ShowRainTextures(false)
 		,PerformanceTest(DEFAULT)
 		,ReverseDepth(false)
 		,ShowOSD(false)
@@ -746,8 +741,7 @@ void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceCont
 	}
 	if(simulWeatherRenderer)
 	{
-		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(deviceContext);
+		simulWeatherRenderer->RenderOverlays(deviceContext);
 		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
 		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth());
 		D3D11_VIEWPORT				viewport;
@@ -758,49 +752,18 @@ void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceCont
 		int H1=(int)viewport.Height;
 		int W2=W1/2;
 		int H2=H1/2;
-		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
-		{
-			int x0=W2/2;
-			int y0=8;
-			int w=W2/2;
-			int h=H2/2;
-			if(vertical_screen)
-			{
-				x0=8;
-				y0=H2/2;
-				w=W2;
-				h=H2/2;
-			}
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(deviceContext,x0,y0,w,h);
-		}
-		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
-		{
-			int w=W2/2;
-			if(vertical_screen)
-				w=W2;
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext		,0,0,w,H2);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(deviceContext	,0,H2,w,H2);
-		}
 		if(ShowCompositing)
 		{
 			RenderDepthBuffers(deviceContext,W2,0,W2,H2);
 		}
 		{
-			char txt[40];
-			sprintf(txt,"%4.4f %4.4f", view->pixelOffset.x,view->pixelOffset.y);	
-		renderPlatformDx11.Print(deviceContext,16,16,txt);
+			//char txt[40];
+			//sprintf(txt,"%4.4f %4.4f", view->pixelOffset.x,view->pixelOffset.y);	
+			//renderPlatformDx11.Print(deviceContext,16,16,txt);
 		}
 		if(ShowHDRTextures&&simulHDRRenderer)
 		{
 			simulHDRRenderer->RenderDebug(deviceContext,W2,H2,W2,H2);
-		}
-		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
-		{
-			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(deviceContext,0,0,view->GetScreenWidth(),view->GetScreenHeight());
-		}
-		if(simulWeatherRenderer->GetBasePrecipitationRenderer()&&ShowRainTextures)
-		{
-			simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(deviceContext,0,H2,W2,H2);
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{
