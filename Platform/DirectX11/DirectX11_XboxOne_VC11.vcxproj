@@ -245,19 +245,136 @@
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
-    <ClCompile Include="dllmain.cpp">
-      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</CompileAsManaged>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">
-      </PrecompiledHeader>
-      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Durango'">false</CompileAsManaged>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Durango'">
-      </PrecompiledHeader>
-      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Profile|Durango'">false</CompileAsManaged>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Profile|Durango'">
-      </PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="ESRAMTexture.cpp" />
-    <ClCompile Include="GameLibrary.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\CrossPlatform\SL\atmospherics.sl" />
+    <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
+    <None Include="..\CrossPlatform\SL\cloud_shadow.sl" />
+    <None Include="..\CrossPlatform\SL\colour_packing.sl" />
+    <None Include="..\CrossPlatform\SL\compositing_constants.sl" />
+    <None Include="..\CrossPlatform\SL\CppSl.hs" />
+    <None Include="..\CrossPlatform\SL\depth.sl" />
+    <None Include="..\CrossPlatform\SL\earth_shadow.sl" />
+    <None Include="..\CrossPlatform\SL\earth_shadow_fade.sl" />
+    <None Include="..\CrossPlatform\SL\earth_shadow_uniforms.sl" />
+    <None Include="..\CrossPlatform\SL\godrays.sl" />
+    <None Include="..\CrossPlatform\SL\gpu_cloud_constants.sl" />
+    <None Include="..\CrossPlatform\SL\hdr_constants.sl" />
+    <None Include="..\CrossPlatform\SL\illumination.sl" />
+    <None Include="..\CrossPlatform\SL\image_constants.sl" />
+    <None Include="..\CrossPlatform\SL\lightning_constants.sl" />
+    <None Include="..\CrossPlatform\SL\light_probe_constants.sl" />
+    <None Include="..\CrossPlatform\SL\mixed_resolution.sl" />
+    <None Include="..\CrossPlatform\SL\mixed_resolution_constants.sl" />
+    <None Include="..\CrossPlatform\SL\noise.sl" />
+    <None Include="..\CrossPlatform\SL\noise_constants.sl" />
+    <None Include="..\CrossPlatform\SL\ocean_constants.sl" />
+    <None Include="..\CrossPlatform\SL\optics_constants.sl" />
+    <None Include="..\CrossPlatform\SL\rain_constants.sl" />
+    <None Include="..\CrossPlatform\SL\raytrace_new.sl" />
+    <None Include="..\CrossPlatform\SL\simul_2d_clouds.hs" />
+    <None Include="..\CrossPlatform\SL\simul_2d_clouds.sl" />
+    <None Include="..\CrossPlatform\SL\simul_2d_cloud_detail.sl" />
+    <None Include="..\CrossPlatform\SL\simul_clouds.sl" />
+    <None Include="..\CrossPlatform\SL\simul_cloud_constants.sl" />
+    <None Include="..\CrossPlatform\SL\simul_gpu_clouds.sl" />
+    <None Include="..\CrossPlatform\SL\simul_gpu_sky.sl" />
+    <None Include="..\CrossPlatform\SL\simul_inscatter_fns.sl" />
+    <None Include="..\CrossPlatform\SL\simul_terrain_constants.sl" />
+    <None Include="..\CrossPlatform\SL\sky.sl" />
+    <None Include="..\CrossPlatform\SL\sky_constants.sl" />
+    <None Include="..\CrossPlatform\SL\solid_constants.sl" />
+    <None Include="..\CrossPlatform\SL\spherical_harmonics.sl" />
+    <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
+    <None Include="..\CrossPlatform\SL\states.sl" />
+    <None Include="HLSL\atmospherics.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\CppHLSL.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\fft_512x512_c2c.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\font.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\gaussian.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\lightning.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\light_probes.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\MixClouds_c.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\mixed_resolution.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\ocean.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\ocean_simulator_cs.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\ocean_simulator_vs_ps.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\optics.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\rain.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_clouds.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_clouds_2d.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_debug.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_gaussian.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_gpu_clouds.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_gpu_sky.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_gpu_sky.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_hdr.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_rendernoise.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_render_cubemap.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_terrain.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\sky.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\solid.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\spherical_harmonics.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\states.hlsl">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -189,7 +189,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	}
 	if(light_table)
 		light_table->ensureTexture3DSizeAndFormat(renderPlatform,(int)p.altitudes_km.size()*32,3,4,crossplatform::RGBA_32_FLOAT,true);
-	density_texture->SetResource(dens_tex.shaderResourceView);
+	density_texture->SetResource(dens_tex.AsD3D11ShaderResourceView());
 	//SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
 	//SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 2")
 
@@ -204,7 +204,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	}
 	
 	loss_texture->SetResource(finalLoss[cycled_index]->AsD3D11ShaderResourceView());
-	optical_depth_texture->SetResource(optd_tex.shaderResourceView);
+	optical_depth_texture->SetResource(optd_tex.AsD3D11ShaderResourceView());
 	if(subgrid_insc>0)
 	{
 		simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalInsc[cycled_index]->AsD3D11UnorderedAccessView());
@@ -231,7 +231,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		int end_light			=range(end_step-2*xy_size	,0,x_size);
 		int num_light			=range(end_light-start_light,0,x_size);
 		loss_texture			->SetResource(finalLoss[cycled_index]->AsD3D11ShaderResourceView());
-		optical_depth_texture	->SetResource(optd_tex.shaderResourceView);
+		optical_depth_texture	->SetResource(optd_tex.AsD3D11ShaderResourceView());
 		insc_texture			->SetResource(finalInsc[cycled_index]->AsD3D11ShaderResourceView());
 		if(num_light>0)
 		{

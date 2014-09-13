@@ -32,6 +32,12 @@ namespace simul
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(){return 0;}
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(){return 0;}
+			/// Asynchronously move this texture to fast RAM.
+			/// Some hardware has "fast RAM" that we can prefetch textures into.
+			virtual void MoveToFastRAM() {}
+			/// Asynchronously move this texture to slow RAM.
+			virtual void MoveToSlowRAM() {}
+			virtual void DiscardFromFastRAM() {}
 			virtual GLuint AsGLuint(){return 0;}
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0)=0;

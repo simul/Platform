@@ -14,6 +14,7 @@ using namespace dx11;
 	:camera(NULL)
 	,viewType(MAIN_3D_VIEW)
 	,useExternalFramebuffer(false)
+	,hiResDepthTexture(NULL)
  {
  }
 
@@ -25,12 +26,15 @@ using namespace dx11;
 void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
+	SAFE_DELETE(hiResDepthTexture);
+	hiResDepthTexture=renderPlatform->CreateTexture("ESRAM");
+	hiResDepthTexture->MoveToFastRAM();
 	if(renderPlatform&&!useExternalFramebuffer)
 	{
 		hdrFramebuffer.RestoreDeviceObjects(renderPlatform);
-#ifdef _XBOX_ONE
-		hdrFramebuffer.SetUseESRAM(true,true);
-#endif
+
+		hdrFramebuffer.SetUseFastRAM(true,true);
+
 		hdrFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
 		hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 	}
@@ -42,7 +46,9 @@ void MixedResolutionView::InvalidateDeviceObjects()
 	lowResScratch.InvalidateDeviceObjects();
 	hiResScratch.InvalidateDeviceObjects();
 	lowResDepthTexture.InvalidateDeviceObjects();
-	hiResDepthTexture.InvalidateDeviceObjects();
+	if(hiResDepthTexture)
+		hiResDepthTexture->InvalidateDeviceObjects();
+	SAFE_DELETE(hiResDepthTexture);
 	resolvedTexture.InvalidateDeviceObjects();
 }
 
@@ -80,7 +86,7 @@ void MixedResolutionView::ResolveFramebuffer(crossplatform::DeviceContext &devic
 			SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"ResolveFramebuffer")
 			resolvedTexture.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,ScreenWidth,ScreenHeight,crossplatform::RGBA_16_FLOAT,false,true);
 			ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.platform_context;
-			pContext->ResolveSubresource(resolvedTexture.texture,0,hdrFramebuffer.GetColorTexture(),0,dx11::RenderPlatform::ToDxgiFormat(crossplatform::RGBA_16_FLOAT));
+			pContext->ResolveSubresource(resolvedTexture.AsD3D11Texture2D(),0,hdrFramebuffer.GetColorTexture(),0,dx11::RenderPlatform::ToDxgiFormat(crossplatform::RGBA_16_FLOAT));
 			SIMUL_COMBINED_PROFILE_END(pContext)
 		}
 	}
@@ -107,7 +113,7 @@ void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &devic
 	deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,depthTexture	);
 	
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0		,"Main Depth");
-	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0+l	,w,l,&hiResDepthTexture	);
+	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0+l	,w,l,GetHiResDepthTexture()	);
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0+l	,"Hi-Res Depth");
 	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0+w	,y0+l	,w,l,&lowResDepthTexture);
 	deviceContext.renderPlatform->Print(deviceContext			,x0+w	,y0+l	,"Lo-Res Depth");
@@ -116,7 +122,7 @@ void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &devic
 ID3D11ShaderResourceView *MixedResolutionView::GetResolvedHDRBuffer()
 {
 	if(hdrFramebuffer.numAntialiasingSamples>1)
-		return resolvedTexture.shaderResourceView;
+		return resolvedTexture.AsD3D11ShaderResourceView();
 	else
 		return (ID3D11ShaderResourceView*)hdrFramebuffer.GetColorTex();
 }
@@ -220,7 +226,7 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	bool msaa=(depthTexture->GetSampleCount()>0);
 	
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups.
-	static bool use_rt=true;
+	static bool use_rt=false;
 	{
 		view->GetHiResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/true);
 		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Make Hi-res Depth")
@@ -233,7 +239,7 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		mixedResolutionConstants.source_offset				=uint2(StartX,StartY);
 		mixedResolutionConstants.cornerOffset				=uint2((int)hiResPixelOffset.x,(int)hiResPixelOffset.y);
 		mixedResolutionConstants.Apply(deviceContext);
-		uint2 subgrid						=uint2((view->hiResDepthTexture.width+BLOCKWIDTH-1)/BLOCKWIDTH,(view->hiResDepthTexture.length+BLOCKWIDTH-1)/BLOCKWIDTH);
+		uint2 subgrid						=uint2((view->GetHiResDepthTexture()->width+BLOCKWIDTH-1)/BLOCKWIDTH,(view->GetHiResDepthTexture()->length+BLOCKWIDTH-1)/BLOCKWIDTH);
 		if(msaa)
 			simul::dx11::setTexture			(effect->asD3DX11Effect(),"sourceMSDepthTexture"	,depthTexture->AsD3D11ShaderResourceView());
 		else
@@ -241,6 +247,8 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		std::string pass_name=msaa?"msaa":"main";
 		if(msaa)
 			pass_name+=('0'+depthTexture->GetSampleCount());
+		else if(hiResDownscale==2||hiResDownscale==4)
+			pass_name+=('0'+hiResDownscale);
 		if(use_rt)
 		{
 			crossplatform::Texture *targ=view->GetHiResDepthTexture();
@@ -364,7 +372,7 @@ void MixedResolutionViewManager::DownscaleDepth(crossplatform::DeviceContext &de
 												,float max_dist_metres,bool includeLowRes)
 {
 	MixedResolutionView *view=GetView(deviceContext.viewStruct.view_id);
-	mixedResolutionRenderer.DownscaleDepth(deviceContext,depthTexture,v,view,lowResDownscale, hiResDownscale
+	mixedResolutionRenderer.DownscaleDepth(deviceContext,depthTexture,v,view, hiResDownscale,lowResDownscale
 		,(const float *)simul::camera::GetDepthToDistanceParameters(deviceContext.viewStruct,max_dist_metres),includeLowRes);
 }
 

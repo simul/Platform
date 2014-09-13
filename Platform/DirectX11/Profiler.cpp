@@ -14,6 +14,9 @@
 #include "Simul/Base/StringFunctions.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
+#ifdef SIMUL_ENABLE_PIX
+#include "pix.h"
+#endif
 using namespace simul;
 using namespace dx11;
 using std::string;
@@ -131,6 +134,9 @@ void Profiler::Begin(void *ctx,const char *name)
 		profileData->wUnqualifiedName=base::StringToWString(name);
 	pUserDefinedAnnotation->BeginEvent(profileData->wUnqualifiedName.c_str());
 #endif
+#ifdef SIMUL_ENABLE_PIX
+	PIXBeginEvent( 0, profileData->wUnqualifiedName.c_str(), name );
+#endif
 	int new_child_index=0;
     ProfileData *parentData=NULL;
 	if(parent.length())
@@ -188,7 +194,6 @@ void Profiler::Begin(void *ctx,const char *name)
 	    profileData->QueryStarted = TRUE;
 	}
 }
-
 void Profiler::End()
 {
 	level--;
@@ -225,6 +230,9 @@ void Profiler::End()
 #ifdef SIMUL_WIN8_SDK
 	if(pUserDefinedAnnotation)
 		pUserDefinedAnnotation->EndEvent();
+#endif
+#ifdef SIMUL_ENABLE_PIX
+	PIXEndEvent(  );
 #endif
 }
 

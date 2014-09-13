@@ -300,7 +300,7 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const c
 	if(t)
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
-		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,T->unorderedAccessView);
+		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,T->AsD3D11UnorderedAccessView());
 	}
 	else
 		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,NULL);
@@ -314,7 +314,7 @@ void dx11::Effect::SetTexture(const char *name,ID3D11ShaderResourceView *tex)
 void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture &t)
 {
 	dx11::Texture *T=(dx11::Texture*)&t;
-	simul::dx11::setTexture(asD3DX11Effect(),name,T->shaderResourceView);
+	simul::dx11::setTexture(asD3DX11Effect(),name,T->AsD3D11ShaderResourceView());
 }
 
 
@@ -323,7 +323,7 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,cr
 	if(t)
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
-		simul::dx11::setTexture(asD3DX11Effect(),name,T->shaderResourceView);
+		simul::dx11::setTexture(asD3DX11Effect(),name,T->AsD3D11ShaderResourceView());
 	}
 	else
 		simul::dx11::setTexture(asD3DX11Effect(),name,NULL);

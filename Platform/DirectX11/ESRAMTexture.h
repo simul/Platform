@@ -50,23 +50,40 @@ namespace simul
 			ID3D11Buffer	                   *m_spBuffer;
 			ESRAMResource                       m_esramResource;
 		};
-
-		class ESRAMTexture :public Texture
+		struct ESRAMTextureData
 		{
-			// The texture resource in ESRAM : use "texture"
-			//XSF::D3DTexture2DPtr                m_spTexture;
+			ESRAMTextureData();
+			~ESRAMTextureData();
+			// These are the "ESRAM" versions of the texture and its views:
+			ID3D11Texture2D						*m_pESRAMTexture2D;
+			ID3D11ShaderResourceView			*m_pESRAMSRV;
+			ID3D11UnorderedAccessView			*m_pESRAMUAV;
+			ID3D11RenderTargetView				*m_pESRAMRTV;
+			ID3D11DepthStencilView				*m_pESRAMDSV;
+
 			ESRAMResource                       m_esramResource;
-			// Keep track of whether the "current" version is in ESRAM or DRAM.
+		};
+		class ESRAMTexture : public Texture
+		{
+			ESRAMTextureData					esramTextureData;
+			// Keep track of whether the "current" version is in/heading to ESRAM or DRAM.
 			bool								in_esram;
 		public:
 			ESRAMTexture();
 			virtual ~ESRAMTexture();
+			// 
+			virtual ID3D11Texture2D *AsD3D11Texture2D();
+			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView();
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView();
+			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView();
+			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView();
 			virtual void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
 				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0) override;
-
-			void MoveFromDRAMToESRAM();
-			void MoveFromESRAMToDRAM();
-
+			/// Asynchronously move this texture to ESRAM.
+			void MoveToFastRAM() override;
+			/// Asynchronously move this texture to DRAM.
+			void MoveToSlowRAM() override;
+			void DiscardFromFastRAM() override;
 			friend class ESRAMManager;
 		};
 	}

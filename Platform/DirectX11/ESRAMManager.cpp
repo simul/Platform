@@ -94,11 +94,15 @@ void ESRAMManager::Create(  D3D11_BUFFER_DESC desc, ESRAMBuffer& esramDest )
 // Desc: Create a texture in ESRAM without any initial contents
 //--------------------------------------------------------------------------------------
 _Use_decl_annotations_
-void ESRAMManager::Create(  D3D11_TEXTURE2D_DESC desc, ESRAMTexture& esramDest )
+void ESRAMManager::Create(  D3D11_TEXTURE2D_DESC desc, ESRAMTextureData& esramDest )
 {
     if( IsTypeless( desc.Format,false) )
     {
-        SIMUL_BREAK( "Typeless formats are not supported because we don't know what typed format to pass when creating views." );
+		if(desc.Format==DXGI_FORMAT_R32_TYPELESS)
+			desc.Format	=DXGI_FORMAT_D32_FLOAT;
+		else if(desc.Format==DXGI_FORMAT_R16_TYPELESS)
+			desc.Format	=DXGI_FORMAT_D16_UNORM;
+		else SIMUL_BREAK("Unknown typeless format");
     }
 	DXGI_FORMAT mainFormat=desc.Format;
 	DXGI_FORMAT srvFormat=desc.Format;
@@ -160,7 +164,7 @@ void ESRAMManager::Create(  D3D11_TEXTURE2D_DESC desc, ESRAMTexture& esramDest )
     desc.ESRAMUsageBytes = 0;
 	ID3D11Texture2D*t=NULL;
     V_CHECK( pDevice->CreateTexture2D( &desc, nullptr, &t ) );
-	esramDest.texture=t;
+	esramDest.m_pESRAMTexture2D=t;
     // Create the appropriate Views for this texture
     if( desc.BindFlags & D3D11_BIND_SHADER_RESOURCE )
     {
@@ -170,19 +174,19 @@ void ESRAMManager::Create(  D3D11_TEXTURE2D_DESC desc, ESRAMTexture& esramDest )
 		srv_desc.ViewDimension				=desc.SampleDesc.Count>1?D3D11_SRV_DIMENSION_TEXTURE2DMS:D3D11_SRV_DIMENSION_TEXTURE2D;
 		srv_desc.Texture2D.MipLevels		=1;
 		srv_desc.Texture2D.MostDetailedMip	=0;
-        V_CHECK( pDevice->CreateShaderResourceView( t, nullptr, &esramDest.shaderResourceView ) );
+        V_CHECK( pDevice->CreateShaderResourceView( t, nullptr, &esramDest.m_pESRAMSRV ) );
     }
     if( desc.BindFlags & D3D11_BIND_UNORDERED_ACCESS )
     {
-        V_CHECK( pDevice->CreateUnorderedAccessView( t, nullptr, &esramDest.unorderedAccessView ) );
+        V_CHECK( pDevice->CreateUnorderedAccessView( t, nullptr, &esramDest.m_pESRAMUAV ) );
     }
     if( desc.BindFlags & D3D11_BIND_RENDER_TARGET )
     {
-        V_CHECK( pDevice->CreateRenderTargetView( t, nullptr, &esramDest.renderTargetView ) );
+        V_CHECK( pDevice->CreateRenderTargetView( t, nullptr, &esramDest.m_pESRAMRTV ) );
     }
     if( desc.BindFlags & D3D11_BIND_DEPTH_STENCIL )
     {
-        V_CHECK( pDevice->CreateDepthStencilView( t, nullptr, &esramDest.depthStencilView ) );
+        V_CHECK( pDevice->CreateDepthStencilView( t, nullptr, &esramDest.m_pESRAMDSV ) );
     }
 }
 
@@ -213,7 +217,7 @@ void ESRAMManager::Prefetch(  ID3D11Buffer* const pDRAMSource, ESRAMBuffer& esra
 // Desc: Load a DRAM texture into ESRAM
 //--------------------------------------------------------------------------------------
 _Use_decl_annotations_
-void ESRAMManager::Prefetch(  ID3D11Texture2D* const pDRAMSource, ESRAMTexture& esramDest )
+void ESRAMManager::Prefetch(  ID3D11Texture2D* const pDRAMSource, ESRAMTextureData& esramDest )
 {
     D3D11_TEXTURE2D_DESC desc;
     pDRAMSource->GetDesc( &desc );
@@ -222,12 +226,11 @@ void ESRAMManager::Prefetch(  ID3D11Texture2D* const pDRAMSource, ESRAMTexture& 
 
     // Prefetch should be used for resources not written to by the GPU, so we don't need to sync 
     //  with the GPU like we do in Writeback
-    m_spDmaContext->CopyResource( esramDest.texture, pDRAMSource, 0 );
+    m_spDmaContext->CopyResource( esramDest.m_pESRAMTexture2D, pDRAMSource, 0 );
 
     // Insert a fence after the copy and kickoff the DMA engine
     esramDest.m_esramResource.m_fence = m_spDmaContext->InsertFence( 0 );
 }
-
 
 //--------------------------------------------------------------------------------------
 // Name: Writeback
@@ -256,17 +259,19 @@ void ESRAMManager::Writeback( ESRAMBuffer& esramSource, ID3D11Buffer* pDRAMDest 
 // Desc: Copy an ESRAM texture into DRAM
 //--------------------------------------------------------------------------------------
 _Use_decl_annotations_
-void ESRAMManager::Writeback( ESRAMTexture& esramSource, ID3D11Texture2D* pDRAMDest )
+void ESRAMManager::Writeback( ESRAMTextureData& esramSource, ID3D11Texture2D* pDRAMDest )
 {
+	if(esramSource.m_pESRAMDSV||esramSource.m_pESRAMRTV)
+		m_spImmediateContext->DecompressResource( esramSource.m_pESRAMTexture2D, 0, nullptr, esramSource.m_pESRAMTexture2D, 0, nullptr, DXGI_FORMAT_UNKNOWN, D3D11X_DECOMPRESS_ALL );
     // Writeback is typically used for resources that are written by the GPU. Thus we need to ensure that 
     //  the GPU is done using this resource before we start the DMA operation. We insert a GPU fence and wait
     //  on it with the DMA engine. Once we get an API to access the internal write fence for a given resource,  
     //  we can wait on that instead.
-    m_spImmediateContext->FlushGpuCaches( esramSource.texture );
+    m_spImmediateContext->FlushGpuCaches( esramSource.m_pESRAMTexture2D );
     UINT64 fence = m_spImmediateContext->InsertFence( 0 );
     m_spDmaContext->InsertWaitOnFence( 0, fence );
 
-    m_spDmaContext->CopyResource( pDRAMDest, esramSource.texture, 0 );
+    m_spDmaContext->CopyResource( pDRAMDest, esramSource.m_pESRAMTexture2D, 0 );
 
     // Insert a fence after the copy and kickoff the DMA engine
     esramSource.m_esramResource.m_fence = m_spDmaContext->InsertFence( 0 );
@@ -288,11 +293,11 @@ void ESRAMManager::Discard( ESRAMBuffer& esramBuffer )
 }
 
 _Use_decl_annotations_
-void ESRAMManager::Discard( ESRAMTexture& esramTexture )
+void ESRAMManager::Discard( ESRAMTextureData& esramTexture )
 {
     // Flush the GPU caches to ensure the result of any GPU writes takes effect before we reclaim
     //  the memory for another purpose
-    m_spImmediateContext->FlushGpuCaches( esramTexture.texture );
+    m_spImmediateContext->FlushGpuCaches( esramTexture.m_pESRAMTexture2D );
 
     DiscardInternal( esramTexture.m_esramResource );
 }

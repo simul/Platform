@@ -23,13 +23,11 @@ namespace simul
 			void SetFormat(int f);
 			void SetDepthFormat(int f);
 			bool IsValid() const;
-#ifdef _XBOX_ONE
-			void SetUseESRAM(bool colour,bool depth)
+			void SetUseFastRAM(bool colour,bool depth)
 			{
 				useESRAM=colour;
 				useESRAMforDepth=depth;
 			}
-#endif
 			void SetAntialiasing(int a)
 			{
 				if(numAntialiasingSamples!=a)
@@ -44,6 +42,9 @@ namespace simul
 			bool CreateBuffers();
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
+			void MoveToFastRAM();
+			void MoveToSlowRAM();
+			void MoveDepthToSlowRAM();
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 			void Activate(crossplatform::DeviceContext &deviceContext);
 			void ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4]);

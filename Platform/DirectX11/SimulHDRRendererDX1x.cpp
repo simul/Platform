@@ -201,7 +201,7 @@ void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,vo
 	{
 		RenderGlowTexture(deviceContext,texture_srv);
 		tech=glowExposureGammaTechnique;
-		simul::dx11::setTexture(hdr_effect->asD3DX11Effect(),"glowTexture",glowTexture.shaderResourceView);
+		simul::dx11::setTexture(hdr_effect->asD3DX11Effect(),"glowTexture",glowTexture.AsD3D11ShaderResourceView());
 	}
 	hdr_effect->Apply(deviceContext,tech,(msaa?"msaa":"main"));
 	simul::dx11::UtilityRenderer::DrawQuad(deviceContext);
@@ -247,7 +247,7 @@ void SimulHDRRendererDX1x::RenderWithOculusCorrection(crossplatform::DeviceConte
 	if(Glow)
 	{
 		RenderGlowTexture(deviceContext,texture_srv);
-		simul::dx11::setTexture(hdr_effect->asD3DX11Effect(),"glowTexture",glowTexture.shaderResourceView);
+		simul::dx11::setTexture(hdr_effect->asD3DX11Effect(),"glowTexture",glowTexture.AsD3D11ShaderResourceView());
 		hdr_effect->Apply(deviceContext,warpGlowExposureGamma,0);
 	}
 	else
@@ -351,7 +351,7 @@ void SimulHDRRendererDX1x::RenderDebug(crossplatform::DeviceContext &deviceConte
 {
 	renderPlatform->DrawTexture(deviceContext,x0,y0,w/2,h/2,glow_fb.GetTexture());
 	//renderPlatform->DrawTexture(deviceContext,x0+w/2,y0,w/2,h/2,&glowTexture);
-	simul::dx11::setTexture(hdr_effect->asD3DX11Effect(),"glowTexture",glowTexture.shaderResourceView);
+	simul::dx11::setTexture(hdr_effect->asD3DX11Effect(),"glowTexture",glowTexture.AsD3D11ShaderResourceView());
 	renderPlatform->DrawQuad(deviceContext,x0+w/2,y0,w/2,h/2,hdr_effect,hdr_effect->GetTechniqueByName("show_compressed_texture"));
 }
 

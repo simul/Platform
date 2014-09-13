@@ -63,11 +63,14 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	hiResFarFramebufferDx11		.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
 	hiResNearFramebufferDx11	.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
 
-	lowResFarFramebufferDx11	.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+	lowResFarFramebufferDx11	.SetDepthFormat(DXGI_FORMAT_D16_UNORM);
 	lowResNearFramebufferDx11	.SetDepthFormat(0);
 	hiResFarFramebufferDx11		.SetDepthFormat(0);
 	hiResNearFramebufferDx11	.SetDepthFormat(0);
-
+	lowResFarFramebufferDx11.SetUseFastRAM(true,true);
+	lowResNearFramebufferDx11.SetUseFastRAM(true,true);
+	hiResFarFramebufferDx11.SetUseFastRAM(true,true);
+	hiResNearFramebufferDx11.SetUseFastRAM(true,true);
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
 	int BufferWidth				=(Width+Downscale-1)/Downscale+1;
 	int BufferHeight			=(Height+Downscale-1)/Downscale+1;
@@ -141,6 +144,7 @@ void TwoResFramebuffer::ActivateLowRes(crossplatform::DeviceContext &deviceConte
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	if(!pContext)
 		return;
+	
 	if(!GetLowResFarFramebuffer()->IsValid())
 		GetLowResFarFramebuffer()->CreateBuffers();
 	if(!GetLowResNearFramebuffer()->IsValid())
