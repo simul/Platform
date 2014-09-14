@@ -3,7 +3,6 @@
 #ifndef PI
 #define PI (3.1415926536)
 #endif
-
 // Given a full-res, non-MS depth texture, and a half-res near far depth, 
 void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
 	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,vec4 depthToLinFadeDistParams,vec2 tanHalfFov)
@@ -89,14 +88,14 @@ void CalcInsc(	Texture2D inscTexture
                 ,out vec3 skyl)
 {
 	fade_texc.x			=pow(dist,0.5f);
-	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
+	vec4 illum_lookup	=texture_wrap_mirror_lod(illuminationTexture,illum_texc,0);
 	vec2 nearFarTexc	=illum_lookup.xy;
 	vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
-	vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
-	vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
+	vec4 insc_near		=texture_clamp_mirror_lod(inscTexture,near_texc,0);
+	vec4 insc_far		=texture_clamp_mirror_lod(inscTexture,far_texc,0);
 	insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
-    skyl                =texture_clamp_mirror(skylTexture,fade_texc).rgb;
+    skyl                =texture_clamp_mirror_lod(skylTexture,fade_texc,0).rgb;
 }
 
 vec4 Inscatter(	Texture2D inscTexture
@@ -469,7 +468,10 @@ vec4 ScatteringVolume(	int3 idx
 	float y			=cos(azimuth)*se;
 	vec3 dir		=x*xAxis+y*yAxis+lightDir*ce;
 	float dist		=(float)idx.z/32.0*maxFadeDistanceMetres;
-
+	
+	float sine		=dir.z;
+	vec2 fade_texc	=vec2(pow(dist,0.5),0.5*(1.0-sine));
+	vec2 illum_texc	=vec2(atan2(dir.x,dir.y)/(PI*2.0),fade_texc.y);
 	
 	vec4 insc;
 	vec3 skyl;
@@ -487,10 +489,11 @@ vec4 ScatteringVolume(	int3 idx
     float final_radiance=colour.x+colour.y+colour.z;
 	return vec4(final_radiance,final_radiance,final_radiance,final_radiance);
 #else
-	float cos0		=dot(view,lightDir);
+	float cos0		=ce;
 	vec3 colour	    =InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour			+=skyl.rgb;
 	return vec4(colour,1.0);
+#endif
 }
 
 

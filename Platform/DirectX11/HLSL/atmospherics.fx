@@ -22,7 +22,9 @@ Texture2D cloudGodraysTexture;
 
 Texture2D moistureTexture;
 
-SamplerState samplerState: register(s1)
+RWTexture3D<float4> targetVolume;
+
+	SamplerState samplerState: register(s1)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
