@@ -450,6 +450,22 @@ vec4 PS_NearRainShadow(atmosVertexOutput IN) : SV_TARGET
 	
 	return res;
 }
+
+[numthreads(8,8,8)]
+void CS_ScatteringVolume(uint3 idx: SV_DispatchThreadID)
+{
+	targetVolume[idx]=ScatteringVolume(idx
+									,inscTexture
+									,skylTexture
+									,illuminationTexture
+									,xAxis
+									,yAxis
+									,lightDir
+									,hazeEccentricity
+									,mieRayleighRatio
+									,maxFadeDistanceMetres);
+}
+
 technique11 loss_composite
 {
     pass p0
@@ -725,4 +741,12 @@ technique11 near_depth_godrays
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_NearRainShadow()));
     }*/
+}
+
+technique11 scattering_volume
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_ScatteringVolume()));
+    }
 }

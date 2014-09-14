@@ -1,5 +1,8 @@
 #ifndef ATMOSPHERICS_SL
 #define ATMOSPHERICS_SL
+#ifndef PI
+#define PI (3.1415926536)
+#endif
 
 // Given a full-res, non-MS depth texture, and a half-res near far depth, 
 void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
@@ -443,6 +446,52 @@ vec4 Inscatter(	Texture2D inscTexture
     return float4(colour.rgb,1.f);
 }
 
+// With this function we will create a 3D volume texture that encompasses the scattering for a frame,
+// where the x-axis is azimuth around the light source, y-axis is angle from the light source (maximum = 180 deg)
+// and z-axis is distance from the viewer.
+vec4 ScatteringVolume(	int3 idx
+						,Texture2D inscTexture
+						,Texture2D skylTexture
+						,Texture2D illuminationTexture
+						,vec3 xAxis
+						,vec3 yAxis
+						,vec3 lightDir
+						,float hazeEccentricity
+						,vec3 mieRayleighRatio
+						,float maxFadeDistanceMetres)
+{
+	// We must convert the idx values into a direction and distance in real space.
+	float azimuth	=(float)idx.x/32.0*2.0*PI;
+	float elevation	=(float)idx.y/32.0*PI;
+	float se		=sin(elevation);
+	float ce		=cos(elevation);
+	float x			=sin(azimuth)*se;
+	float y			=cos(azimuth)*se;
+	vec3 dir		=x*xAxis+y*yAxis+lightDir*ce;
+	float dist		=(float)idx.z/32.0*maxFadeDistanceMetres;
+
+	
+	vec4 insc;
+	vec3 skyl;
+	CalcInsc(	inscTexture
+				,skylTexture
+				,illuminationTexture
+				,dist
+				,fade_texc
+				,illum_texc
+				,insc
+				,skyl);
+#ifdef INFRARED
+	vec3 colour		=skyl.rgb;
+    colour.rgb		*=infraredIntegrationFactors.xyz;
+    float final_radiance=colour.x+colour.y+colour.z;
+	return vec4(final_radiance,final_radiance,final_radiance,final_radiance);
+#else
+	float cos0		=dot(view,lightDir);
+	vec3 colour	    =InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
+	colour			+=skyl.rgb;
+	return vec4(colour,1.0);
+}
 
 
 #endif
