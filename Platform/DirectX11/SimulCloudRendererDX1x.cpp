@@ -510,8 +510,8 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	effect->SetTexture(deviceContext,"noiseTexture"			,noise_texture);
 	effect->SetTexture(deviceContext,"illuminationTexture"	,illuminationTexture);
 
-	effect->SetTexture(deviceContext,"rainbowLookupTexture",rainbowLookupTexture);
-	effect->SetTexture(deviceContext,"coronaLookupTexture",coronaLookupTexture);
+	effect->SetTexture(deviceContext,"rainbowLookupTexture"	,rainbowLookupTexture);
+	effect->SetTexture(deviceContext,"coronaLookupTexture"	,coronaLookupTexture);
 	
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 	if(cloudProperties.GetWrap())
