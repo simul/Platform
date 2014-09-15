@@ -648,7 +648,7 @@ void SimulGLCloudRenderer::New()
 #pragma warning(disable:4127) // "Conditional expression is constant".
 void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 {
-	sky::int3 i=cloudKeyframer->GetTextureSizes();
+	int3 i=cloudKeyframer->GetTextureSizes();
 	int width_x=i.x;
 	int length_y=i.y;
 	int depth_z=i.z;

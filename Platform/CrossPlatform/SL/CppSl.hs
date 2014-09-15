@@ -350,6 +350,30 @@
 			z=v[2];
 		}
 	};
+	struct int3
+	{
+		int x,y,z;
+		int3(int x=0,int y=0,int z=0)
+		{
+			this->x=x;
+			this->y=y;
+			this->z=z;
+		}
+		int3(const int *v)
+		{
+			operator=(v);
+		}
+		operator const int *()
+		{
+			return &x;
+		}
+		void operator=(const int *v)
+		{
+			x=v[0];
+			y=v[1];
+			z=v[2];
+		}
+	};
 	//! Very simple 3 vector of doubles.
 	struct vec3d
 	{

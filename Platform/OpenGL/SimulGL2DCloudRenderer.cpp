@@ -125,7 +125,7 @@ GL_ERROR_CHECK
 void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()
 {
 	GL_ERROR_CHECK
-	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
+	int3 i=cloudKeyframer->GetTextureSizes();
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 	int width_x=i.x;
 	int length_y=i.y;

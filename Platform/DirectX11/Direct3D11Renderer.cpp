@@ -757,9 +757,9 @@ void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceCont
 			RenderDepthBuffers(deviceContext,W2,0,W2,H2);
 		}
 		{
-			//char txt[40];
-			//sprintf(txt,"%4.4f %4.4f", view->pixelOffset.x,view->pixelOffset.y);	
-			//renderPlatformDx11.Print(deviceContext,16,16,txt);
+			char txt[40];
+			sprintf(txt,"%4.4f %4.4f", view->pixelOffset.x,view->pixelOffset.y);	
+			renderPlatformDx11.Print(deviceContext,16,16,txt);
 		}
 		if(ShowHDRTextures&&simulHDRRenderer)
 		{

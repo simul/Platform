@@ -5,6 +5,11 @@
 #else
 #define EDGE_FACTOR (0.0005)
 #endif
+
+#ifndef PI
+#define PI (3.1415926536)
+#endif
+
 struct TwoColourCompositeOutput
 {
 	vec4 add		SIMUL_RENDERTARGET_OUTPUT(0);
@@ -1081,6 +1086,62 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 	result.add.rgb				+=insc.rgb*result.add.a;
     return result;
 }
+
+TwoColourCompositeOutput CompositeAtmospherics2(vec2 texCoords
+				,Texture2D lowResFarTexture
+				,Texture2D hiResDepthTexture
+				,int2 hiResDims
+				,int2 lowResDims
+				,Texture2D<vec4> depthTexture
+				,int2 fullResDims
+				,vec4 viewportToTexRegionScaleBias
+				,vec4 depthToLinFadeDistParams
+				,vec4 fullResToLowResTransformXYWH
+				,vec4 fullResToHighResTransformXYWH
+				,Texture2D farInscatterTexture
+				,Texture2D nearInscatterTexture
+				,mat4 clipPosToScatteringVolumeMatrix
+				,Texture3D inscatterVolumeTexture
+				,Texture2D<uint4> lossTexture)
+{
+	// texCoords.y is positive DOWNwards
+	TwoColourCompositeOutput result;
+	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+
+	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
+	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
+	vec2 hiResTexCoords			=fullResToHighResTransformXYWH.xy+texCoords*fullResToHighResTransformXYWH.zw;
+	vec4 hires_depths			=texture_clamp_lod(hiResDepthTexture	,hiResTexCoords		,0);
+	float hires_edge			=hires_depths.z;
+	result.add					=vec4(0,0,0,1.0);
+	float depth					=depthTexture[fullres_depth_pos2].x;
+	float dist					=depthToLinearDistance(depth		,depthToLinFadeDistParams);
+	vec4 cloud					=texture_clamp_lod(lowResFarTexture	,lowResTexCoords,0);
+	
+	float far					=step(1.0,dist);
+	result.add					=lerp(result.add,cloud,far);
+	
+	// To obtain the inscatter value: transform the clip position into a position in the scattering volume's space.
+	
+	vec4 clip_pos				=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x					+=2.0*texCoords.x;
+	clip_pos.y					-=2.0*texCoords.y;
+	vec3 view_sc				=mul(clipPosToScatteringVolumeMatrix,clip_pos).xyz;
+	view_sc						/=length(view_sc);
+	float azimuth				=atan2(view_sc.x,view_sc.y);
+	float elevation				=acos(view_sc.z);
+	vec3 sc_texc				=vec3(azimuth/(PI*2.0),elevation/PI,dist);
+	vec4 insc					=texture_wmc_lod(inscatterVolumeTexture,sc_texc,0);
+
+
+	vec2 inscTexc_unit			=hiResTexCoords*hiResDims-vec2(.5,.5);
+	uint2 loss					=image_load(lossTexture,inscTexc_unit).xy;
+	result.multiply				=vec4(uint2_to_colour3(loss.xy),1.0)*result.add.a;
+	
+	result.add.rgb				+=insc.rgb*result.add.a;
+    return result;
+}
+
 
 TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 				,Texture2D cloudTexture

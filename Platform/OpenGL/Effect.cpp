@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include <stdlib.h>
 #include <stdio.h>
+//#define SIMUL_USE_NVFX
 #ifdef SIMUL_USE_NVFX
 #include <FXParser.h>
 #ifdef _DEBUG

@@ -2,6 +2,8 @@
 #define HDR_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(HdrConstants,12)
+	uniform mat4 clipPosToScatteringVolumeMatrix;
+
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec4 fullResToLowResTransformXYWH;
 	uniform vec4 fullResToHighResTransformXYWH;

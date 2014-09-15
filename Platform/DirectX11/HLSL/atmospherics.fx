@@ -453,16 +453,18 @@ vec4 PS_NearRainShadow(atmosVertexOutput IN) : SV_TARGET
 	return res;
 }
 
-[numthreads(8,8,8)]
+[numthreads(8,8,1)]
 void CS_ScatteringVolume(uint3 idx: SV_DispatchThreadID)
 {
-	targetVolume[idx]=ScatteringVolume(idx
+	ScatteringVolume(targetVolume,	idx
 									,inscTexture
 									,skylTexture
 									,illuminationTexture
+									,cloudShadowTexture,invShadowMatrix,viewPosition
 									,xAxis
 									,yAxis
 									,lightDir
+									,scatteringVolumeDims
 									,hazeEccentricity
 									,mieRayleighRatio
 									,maxFadeDistanceMetres);

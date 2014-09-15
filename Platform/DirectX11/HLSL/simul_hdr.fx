@@ -17,6 +17,8 @@ Texture2D inscatterTexture;			// Far, or default inscatter
 Texture2D nearInscatterTexture;		// Near inscatter.
 Texture2D<uint4> lossTexture;
 
+Texture3D inscatterVolumeTexture;
+
 struct a2v
 {
 	uint vertex_id	: SV_VertexID;
@@ -189,10 +191,17 @@ vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_TARGET
 	c.rgb=pow(c.rgb,gamma);
     return vec4(c.rgb,1.0);
 }
+
 float4 PS_ShowCompressed(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 glow=texture_int(glowTexture,IN.texCoords);
     return vec4(glow.rgb,1.0);
+}
+
+float4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 sc=texture_clamp(inscatterVolumeTexture,vec3(IN.texCoords.xy,1.0));
+    return vec4(sc.rgb,1.0);
 }
 
 vec4 ExposureGammaPS(v2f IN) : SV_TARGET
@@ -420,6 +429,24 @@ TwoColourCompositeOutput PS_Composite(v2f IN)
 
 TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN) 
 {
+#if 0
+	TwoColourCompositeOutput result	=CompositeAtmospherics2(IN.texCoords.xy
+												,imageTexture
+												,hiResDepthTexture
+												,hiResDims
+												,lowResDims
+												,depthTexture
+												,fullResDims
+												,viewportToTexRegionScaleBias
+												,depthToLinFadeDistParams
+												,fullResToLowResTransformXYWH
+												,fullResToHighResTransformXYWH
+												,inscatterTexture
+												,nearInscatterTexture
+												,clipPosToScatteringVolumeMatrix
+												,inscatterVolumeTexture
+												,lossTexture);
+#else
 	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.texCoords.xy
 												,imageTexture
 												,hiResDepthTexture
@@ -434,6 +461,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN)
 												,inscatterTexture
 												,nearInscatterTexture
 												,lossTexture);
+#endif
 	result.add.rgb	=pow(result.add.rgb,gamma);
 	result.add.rgb	*=exposure;
 	return result;
@@ -813,5 +841,18 @@ technique11 show_compressed_texture
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowCompressed()));
+    }
+}
+
+technique11 show_scattering_volume
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowScatteringVolume()));
     }
 }

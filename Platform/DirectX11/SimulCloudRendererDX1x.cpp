@@ -482,9 +482,9 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 		
 	//SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"0")
 	ID3D11DeviceContext* pContext	=deviceContext.asD3D11DeviceContext();
-	ID3D11ShaderResourceView *depthTexture_SRV=NULL;
-	if(depth_tex)
-		depthTexture_SRV=depth_tex->AsD3D11ShaderResourceView();
+	
+
+		
 	
 	math::Vector3 cam_pos	=GetCameraPosVector(deviceContext.viewStruct.view);
 	float blendFactor[]		={0,0,0,0};
@@ -720,7 +720,7 @@ crossplatform::Texture *SimulCloudRendererDX1x::GetRandomTexture3D()
 
 void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 {
-	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
+	int3 i=cloudKeyframer->GetTextureSizes();
 	int width_x=i.x;
 	int length_y=i.y;
 	int depth_z=i.z;

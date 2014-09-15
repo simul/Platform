@@ -82,12 +82,12 @@ void CalcInsc(	Texture2D inscTexture
 				,Texture2D skylTexture
 				,Texture2D illuminationTexture
 				,float dist
-				,vec2 fade_texc
+				,float fade_texc_y
 				,vec2 illum_texc
                 ,out vec4 insc
                 ,out vec3 skyl)
 {
-	fade_texc.x			=pow(dist,0.5f);
+	vec2 fade_texc		=vec2(pow(dist,0.5f),fade_texc_y);
 	vec4 illum_lookup	=texture_wrap_mirror_lod(illuminationTexture,illum_texc,0);
 	vec2 nearFarTexc	=illum_lookup.xy;
 	vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
@@ -134,7 +134,7 @@ vec4 Inscatter(	Texture2D inscTexture
 				,skylTexture
 				,illuminationTexture
 				,dist
-				,fade_texc
+				,fade_texc.y
 				,illum_texc
 				,insc
 				,skyl);
@@ -204,7 +204,7 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 				,skylTexture
 				,illuminationTexture
 				,dist
-				,fade_texc
+				,fade_texc.y
 				,illum_texc
                 ,insc
 				,skyl);
@@ -267,7 +267,7 @@ FarNearOutput Inscatter_Both(	Texture2D inscTexture
 				,skylTexture
 				,illuminationTexture
 				,dist.x
-				,fade_texc
+				,fade_texc.y
 				,illum_texc
                 ,inscFar
 				,skylFar);
@@ -289,7 +289,7 @@ FarNearOutput Inscatter_Both(	Texture2D inscTexture
 					,skylTexture
 					,illuminationTexture
 					,dist.y
-					,fade_texc
+					,fade_texc.y
 					,illum_texc
 					,inscNear
 					,skylNear);
@@ -364,7 +364,7 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 						,skylTexture
 						,illuminationTexture
 						,dist
-						,fade_texc
+						,fade_texc.y
 						,illum_texc
 						,insc_i
 						,skyl_i);
@@ -378,7 +378,7 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 					,skylTexture
 					,illuminationTexture
 					,extreme_dist
-					,fade_texc
+					,fade_texc.y
 					,illum_texc
                     ,insc
 					,skyl);}
@@ -435,7 +435,7 @@ vec4 Inscatter(	Texture2D inscTexture
 				,skylTexture
 				,illuminationTexture
 				,dist
-				,fade_texc
+				,fade_texc.y
 				,illum_texc
 				,insc
 				,skyl);
@@ -448,52 +448,64 @@ vec4 Inscatter(	Texture2D inscTexture
 // With this function we will create a 3D volume texture that encompasses the scattering for a frame,
 // where the x-axis is azimuth around the light source, y-axis is angle from the light source (maximum = 180 deg)
 // and z-axis is distance from the viewer.
-vec4 ScatteringVolume(	int3 idx
+void ScatteringVolume(	RWTexture3D<float4> targetVolume,int3 idx
 						,Texture2D inscTexture
 						,Texture2D skylTexture
 						,Texture2D illuminationTexture
+						,Texture2D cloudShadowTexture
+						,mat4 worldspaceToShadowspaceMatrix
+						,vec3 eyePos
 						,vec3 xAxis
 						,vec3 yAxis
 						,vec3 lightDir
+						,int3 scatteringVolumeDims
 						,float hazeEccentricity
 						,vec3 mieRayleighRatio
 						,float maxFadeDistanceMetres)
 {
 	// We must convert the idx values into a direction and distance in real space.
-	float azimuth	=(float)idx.x/32.0*2.0*PI;
-	float elevation	=(float)idx.y/32.0*PI;
-	float se		=sin(elevation);
-	float ce		=cos(elevation);
-	float x			=sin(azimuth)*se;
-	float y			=cos(azimuth)*se;
-	vec3 dir		=x*xAxis+y*yAxis+lightDir*ce;
-	float dist		=(float)idx.z/32.0*maxFadeDistanceMetres;
-	
-	float sine		=dir.z;
-	vec2 fade_texc	=vec2(pow(dist,0.5),0.5*(1.0-sine));
-	vec2 illum_texc	=vec2(atan2(dir.x,dir.y)/(PI*2.0),fade_texc.y);
-	
-	vec4 insc;
-	vec3 skyl;
-	CalcInsc(	inscTexture
-				,skylTexture
-				,illuminationTexture
-				,dist
-				,fade_texc
-				,illum_texc
-				,insc
-				,skyl);
-#ifdef INFRARED
-	vec3 colour		=skyl.rgb;
-    colour.rgb		*=infraredIntegrationFactors.xyz;
-    float final_radiance=colour.x+colour.y+colour.z;
-	return vec4(final_radiance,final_radiance,final_radiance,final_radiance);
-#else
-	float cos0		=ce;
-	vec3 colour	    =InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-	colour			+=skyl.rgb;
-	return vec4(colour,1.0);
+	float azimuth		=(float)idx.x/(float)scatteringVolumeDims.x*2.0*PI;
+	float elevation		=(float)idx.y/(float)(scatteringVolumeDims.y-1)*PI;
+	float se			=sin(elevation);
+	float ce			=cos(elevation);
+	float x				=sin(azimuth)*se;
+	float y				=cos(azimuth)*se;
+	vec3 dir			=x*xAxis+y*yAxis+lightDir*ce;
+
+	float sine			=dir.z;
+	float fade_texc_y	=0.5*(1.0-sine);
+	vec2 illum_texc		=vec2(atan2(dir.x,dir.y)/(PI*2.0),fade_texc_y);
+	vec4 colour			=vec4(0,0,0,0);
+	vec4 last			=vec4(0,0,0,0);
+	for(int i=0;i<scatteringVolumeDims.z;i++)
+	{
+		float dist			=(float)i/(float)(scatteringVolumeDims.z-1);
+		vec4 insc;
+		vec3 skyl;
+		CalcInsc(	inscTexture
+					,skylTexture
+					,illuminationTexture
+					,dist
+					,fade_texc_y
+					,illum_texc
+					,insc
+					,skyl);
+
+		float shadow	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist*dir*maxFadeDistanceMetres).x;
+	#ifdef INFRARED
+		vec3 colour		=skyl.rgb;
+		colour.rgb		*=infraredIntegrationFactors.xyz;
+		float final_radiance=colour.x+colour.y+colour.z;
+		vec4 colour=vec4(final_radiance,final_radiance,final_radiance,final_radiance);
+	#else
+		float cos0		=ce;
+		vec4 next	    =vec4(InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio),1.0);
+		next.rgb		+=skyl.rgb;
+		colour			+=max(vec4(0,0,0,0),(next-last))*shadow;
 #endif
+		targetVolume[int3(idx.xy,i)]=colour;
+		last			=next;
+	}
 }
 
 

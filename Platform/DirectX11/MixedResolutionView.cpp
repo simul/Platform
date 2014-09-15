@@ -27,16 +27,19 @@ void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
 	SAFE_DELETE(hiResDepthTexture);
-	hiResDepthTexture=renderPlatform->CreateTexture("ESRAM");
-	hiResDepthTexture->MoveToFastRAM();
-	if(renderPlatform&&!useExternalFramebuffer)
+	if(renderPlatform)
 	{
-		hdrFramebuffer.RestoreDeviceObjects(renderPlatform);
+		hiResDepthTexture=renderPlatform->CreateTexture("ESRAM");
+		hiResDepthTexture->MoveToFastRAM();
+		if(!useExternalFramebuffer)
+		{
+			hdrFramebuffer.RestoreDeviceObjects(renderPlatform);
 
-		hdrFramebuffer.SetUseFastRAM(true,true);
+			hdrFramebuffer.SetUseFastRAM(true,true);
 
-		hdrFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
-		hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+			hdrFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
+			hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+		}
 	}
 }
 
