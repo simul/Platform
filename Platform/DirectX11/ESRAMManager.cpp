@@ -174,7 +174,7 @@ void ESRAMManager::Create(  D3D11_TEXTURE2D_DESC desc, ESRAMTextureData& esramDe
 		srv_desc.ViewDimension				=desc.SampleDesc.Count>1?D3D11_SRV_DIMENSION_TEXTURE2DMS:D3D11_SRV_DIMENSION_TEXTURE2D;
 		srv_desc.Texture2D.MipLevels		=1;
 		srv_desc.Texture2D.MostDetailedMip	=0;
-        V_CHECK( pDevice->CreateShaderResourceView( t, nullptr, &esramDest.m_pESRAMSRV ) );
+        V_CHECK( pDevice->CreateShaderResourceView( t, &srv_desc, &esramDest.m_pESRAMSRV ) );
     }
     if( desc.BindFlags & D3D11_BIND_UNORDERED_ACCESS )
     {
@@ -186,7 +186,12 @@ void ESRAMManager::Create(  D3D11_TEXTURE2D_DESC desc, ESRAMTextureData& esramDe
     }
     if( desc.BindFlags & D3D11_BIND_DEPTH_STENCIL )
     {
-        V_CHECK( pDevice->CreateDepthStencilView( t, nullptr, &esramDest.m_pESRAMDSV ) );
+		D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc;
+		ZeroMemory(&dsv_desc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+		dsv_desc.Format						=mainFormat;
+		dsv_desc.Texture2D.MipSlice=0;
+		dsv_desc.ViewDimension				=desc.SampleDesc.Count>1?D3D11_DSV_DIMENSION_TEXTURE2DMS:D3D11_DSV_DIMENSION_TEXTURE2D;
+        V_CHECK( pDevice->CreateDepthStencilView( t, &dsv_desc, &esramDest.m_pESRAMDSV ) );
     }
 }
 

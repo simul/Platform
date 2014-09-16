@@ -53,7 +53,7 @@ bool Simul2DCloudRendererDX11::Render(crossplatform::DeviceContext &deviceContex
 	crossplatform::EffectTechnique*		tech			=technique;
 	if(depthTexture&&depthTexture->GetSampleCount()>1)
 	{
-			tech=msaaTechnique;
+		tech=msaaTechnique;
 	}
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Set constants")
 	float ir_integration_factors[]={0,0,0,0};
