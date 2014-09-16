@@ -1,7 +1,7 @@
 #include <GL/glew.h>
 #include <stdlib.h>
 #include <stdio.h>
-//#define SIMUL_USE_NVFX
+#define SIMUL_USE_NVFX
 #ifdef SIMUL_USE_NVFX
 #include <FXParser.h>
 #ifdef _DEBUG
@@ -84,7 +84,11 @@ GL_ERROR_CHECK
 	GL_ERROR_CHECK
 			indexInShader=glGetUniformBlockIndex(program,name);
 			if(indexInShader==GL_INVALID_INDEX)
+			{
+				ResetGLError();
 				continue;
+			}
+	GL_ERROR_CHECK
 			if(indexInShader>=0)
 			{
 				any=true;
@@ -104,7 +108,9 @@ GL_ERROR_CHECK
 			///else
 			//	std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in pass "<<j<<" of "<<techname<<std::endl;
 		}
+	GL_ERROR_CHECK
 	}
+	GL_ERROR_CHECK
 	if(!any)
 		std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in the effect "<<effect->GetName()<<"."<<std::endl;
 }
@@ -154,7 +160,12 @@ void includeCallbackFunc(const char *incName, FILE *&fp, const char *&buf)
 void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	filename=filename_utf8;
-	filenameInUseUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,opengl::GetShaderPathsUtf8());
+#ifdef SIMUL_USE_NVFX
+	int pos=filename.find_last_of(".glfx");
+	if(pos>0)
+		filename=filename.substr(0,pos-4)+".nvfx";
+#endif
+	filenameInUseUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename.c_str(),opengl::GetShaderPathsUtf8());
 	if(!filenameInUseUtf8.length())
 		return;
 	bool retry=true;
@@ -164,11 +175,15 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 		nvFX::IContainer*   fx_Effect       = NULL;
 		nvFX::setErrorCallback(errorCallbackFunc);
 		nvFX::setIncludeCallback(includeCallbackFunc);
-		int pos=filenameUtf8.find_last_of(".glfx");
-		if(pos>0)
-			filenameUtf8=filenameUtf8.substr(0,pos-4)+".nvfx";
-		fx_Effect = nvFX::IContainer::create(filename_utf8);
-		bool bRes = nvFX::loadEffectFromFile(fx_Effect,filenameInUseUtf8.c_str());
+		fx_Effect = nvFX::IContainer::create(filenameInUseUtf8.c_str());
+		std::string effect_str=LoadAndPreprocessShaderSource(filenameInUseUtf8.c_str(),defines);
+		bool bRes = nvFX::loadEffect(fx_Effect,effect_str.c_str(),filenameInUseUtf8.c_str());
+	//	bool bRes = nvFX::loadEffectFromFile(fx_Effect,filenameInUseUtf8.c_str());
+		if(!bRes)
+		{
+			DebugBreak();
+			continue;
+		}
 		ERRNO_CHECK
 		platform_effect=fx_Effect;
 #else
@@ -217,8 +232,12 @@ bool Effect::FillInTechniques()
 	{
 #ifdef SIMUL_USE_NVFX
 		nvFX::ITechnique*   t = fx_Effect->findTechnique(i);
-		std::string name	=fx_Tech->getName();
-		t->validate();
+		std::string name	=t->getName();
+		if(!t->validate())
+		{
+			std::cerr<<filenameInUseUtf8.c_str()<<": error C7555:  there are errors in the technique "<<name.c_str()<<std::endl;
+			return false;
+		}
 #else
 		std::string name	=glfxGetProgramName(e,i);
 		GLuint t			=glfxCompileProgram(e,name.c_str());

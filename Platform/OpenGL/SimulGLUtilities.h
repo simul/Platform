@@ -61,6 +61,8 @@ namespace simul
 		extern SIMUL_OPENGL_EXPORT void DrawFullScreenQuad();
 		//! Get the current framerate - must be called once every frame to work correctly.
 		extern SIMUL_OPENGL_EXPORT float GetFramerate();
+		//! Reset the GL error - useful if we know there will be one and want to ignore it.
+		extern SIMUL_OPENGL_EXPORT void ResetGLError();
 		//! Check for a GL error, and halt the program if found.
 		extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_number);
 		//! Check the given error code, and halt the program if it is non-zero.

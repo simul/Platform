@@ -161,16 +161,18 @@ namespace simul
 			ERRNO_CHECK
 			return str;
 		}
-		void ProcessIncludes(string &src,string &filenameUtf8,bool line_source_filenames,vector<string> &sourceFilesUtf8)
+		void ProcessIncludes(string &src,const string &filenameUtf8,bool line_source_filenames,vector<string> &sourceFilesUtf8)
 		{
 			size_t pos			=0;
 			// problem: if we insert this at line 0, SOME Glsl compilers will moan about #version not being the first line.
 			//src					=src.insert(0,base::stringFormat("#line 1 \"%s\"\n",filenameUtf8.c_str()));
-
-			// instead we find '#version' and insert after that.
-			int first			=(int)src.find("#version");
-			if(first>=0)
-				pos				=src.find('\n',first)+1;
+			if(filenameUtf8.find_last_of(".nvfx")>=filenameUtf8.length())
+			{
+				// instead we find '#version' and insert after that.
+				int first			=(int)src.find("#version");
+				if(first>=0)
+					pos				=src.find('\n',first)+1;
+			}
 			// Is this file in the source list?
 			int index			=(int)(find(sourceFilesUtf8.begin(), sourceFilesUtf8.end(), filenameUtf8)-sourceFilesUtf8.begin());
 			// And SOME Glsl compilers will give a syntax error
@@ -420,14 +422,9 @@ namespace simul
 			return CompileShaderFromSource(sh,source,defines,sourceFilesUtf8);
 		}
 		
-		GLint CreateEffect(const char *filename_utf8,const std::map<std::string,std::string>&defines)
+		std::string LoadAndPreprocessShaderSource(const char *filenameUtf8,const std::map<std::string,std::string>&defines)
 		{
-			std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,shaderPathsUtf8);
-			if(!filenameUtf8.length())
-				return -1;
-			GLint effect=glfxGenEffect();
-#if 1
-			std::string src		=loadShaderSource(filenameUtf8.c_str());
+			std::string src		=loadShaderSource(filenameUtf8);
 			effectSourceFilesUtf8.clear();
 			ProcessIncludes(src,filenameUtf8,false,effectSourceFilesUtf8);
 			InsertDefines(src,defines);
@@ -437,6 +434,16 @@ namespace simul
 				src.replace(pos,2,"\n");
 				pos=(int)src.find("\r\n",pos+1);
 			}
+			return src;
+		}
+		GLint CreateEffect(const char *filename_utf8,const std::map<std::string,std::string>&defines)
+		{
+			std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,shaderPathsUtf8);
+			if(!filenameUtf8.length())
+				return -1;
+			GLint effect=glfxGenEffect();
+#if 1
+			std::string src=LoadAndPreprocessShaderSource(filenameUtf8.c_str(),defines);
 			const char **filenames=new const char*[effectSourceFilesUtf8.size()+1];
 			for(size_t i=0;i<effectSourceFilesUtf8.size();i++)
 			{

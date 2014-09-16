@@ -1,5 +1,6 @@
 #ifndef SIMUL_SATURATE_GLSL
 #define SIMUL_SATURATE_GLSL
+
 float saturate(float x)
 {
 	return clamp(x,0.0,1.0);

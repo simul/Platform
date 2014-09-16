@@ -1,6 +1,3 @@
-#ifndef SKYFX
-#define SKYFX
-#endif
 #extension GL_ARB_separate_shader_objects : enable
 
 uniform global vec4 scaleBias = {0,0,0,1.0}; // x,y,z bias and w==scale
@@ -64,6 +61,12 @@ DepthStencilState dstStateFloor
 //
 GLSLShader 
 {
+	#include "CppGlSl.hs"
+	#include "../../CrossPlatform/SL/sky_constants.sl"
+	#include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
+	#include "../../CrossPlatform/SL/earth_shadow.sl"
+	#include "../../CrossPlatform/SL/illumination.sl"
+	#include "../../CrossPlatform/SL/sky.sl"
     #version 420 compatibility
     // forward declarations
     void getMatValues(vec3 tc, out vec4 diff, out vec4 spec);

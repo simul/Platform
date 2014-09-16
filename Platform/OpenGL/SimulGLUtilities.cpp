@@ -298,6 +298,11 @@ float simul::opengl::GetFramerate()
 	return framerate;
 }
 
+void simul::opengl::ResetGLError()
+{
+	glGetError();
+}
+
 void simul::opengl::CheckGLError(const char *filename,int line_number)
 {
 	int err=glGetError();

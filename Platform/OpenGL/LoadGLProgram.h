@@ -20,7 +20,8 @@ namespace simul
 		extern SIMUL_OPENGL_EXPORT GLuint SetShaders(const char *vert_src,const char *frag_src,const std::map<std::string,std::string> &defines);
 		extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename);
 		extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const std::map<std::string,std::string> &defines);
-
+		
+		extern std::string LoadAndPreprocessShaderSource(const char *filenameUtf8,const std::map<std::string,std::string>&defines);
 		extern SIMUL_OPENGL_EXPORT GLuint LoadShader(const char *filename,const std::map<std::string,std::string> &defines);
 
 		extern SIMUL_OPENGL_EXPORT void printProgramInfoLog(GLuint obj);

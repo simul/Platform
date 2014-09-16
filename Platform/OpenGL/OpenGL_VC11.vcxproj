@@ -86,7 +86,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;$(SIMUL)/External/nvFX/include;$(SIMUL)/External/wave;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -102,7 +102,7 @@
       <OutputFile>$(OutDir)$(TargetName).dll</OutputFile>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/lib/$(Platform)/VC11/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/OpenGL/lib/Win32;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/glew/lib/VC11/$(Configuration)/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/lib/$(Platform)/VC11/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/OpenGL/lib/Win32;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/glew/lib/VC11/$(Configuration)/$(Platform);$(SIMUL)/External/nvFX/lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName).lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
@@ -115,7 +115,7 @@
     <ClCompile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;$(SIMUL)/External/nvFX/include;$(SIMUL)/External/wave;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -130,7 +130,7 @@
     <Link>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/lib/$(Platform)/VC11/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/OpenGL/lib/Win32;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/glew/lib/VC11/$(Configuration)/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/lib/$(Platform)/VC11/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/OpenGL/lib/Win32;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/glew/lib/VC11/$(Configuration)/$(Platform);$(SIMUL)/External/nvFX/lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName).lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
@@ -145,7 +145,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;$(SIMUL)/External/nvFX/include;$(SIMUL)/External/wave;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;FREEGLUT_STATIC;GLFX_STATIC;GLEW_STATIC;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
@@ -163,7 +163,7 @@
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glfx/include;$(SIMUL)/External/nvFX/include;$(SIMUL)/External/wave;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;FREEGLUT_STATIC;GLFX_STATIC;GLEW_STATIC;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
