@@ -128,7 +128,8 @@ int EffectTechnique::NumPasses() const
 }
 
 Effect::Effect()
-	:current_texture_number(0)
+	:current_prog(0)
+	,current_texture_number(0)
 {
 }
 //------------------------------------------------------------------------------
@@ -497,12 +498,14 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 	currentTechnique		=effectTechnique;
 	currentPass				=pass;
 	CHECK_TECH_EXISTS
-	glUseProgram(effectTechnique->passAsGLuint(pass));
+	current_prog	=effectTechnique->passAsGLuint(pass);
+	glUseProgram(current_prog);
 	GL_ERROR_CHECK
 	current_texture_number	=0;
 	EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 	if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
 		glEffectTechnique->passStates[currentPass]->Apply();
+	GL_ERROR_CHECK
 }
 
 void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique *effectTechnique,const char *pass)
@@ -524,7 +527,7 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 	glUseProgram(prog);
 	GL_ERROR_CHECK
 	current_texture_number	=0;
-	current_pass	=prog;
+	current_prog	=prog;
 	EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 	if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
 		glEffectTechnique->passStates[currentPass]->Apply();
@@ -534,12 +537,14 @@ void Effect::Reapply(crossplatform::DeviceContext &)
 {
 	if(apply_count!=1)
 		SIMUL_BREAK("Effect::Reapply can only be called after Apply and before Unapply!")
-	GLuint prog=current_pass;
+	GLuint prog=current_prog;
 	glUseProgram(prog);
+	GL_ERROR_CHECK
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &)
 {
+	GL_ERROR_CHECK
 	glUseProgram(0);
 	if(apply_count<=0)
 		SIMUL_BREAK("Effect::Unapply without a corresponding Apply!")

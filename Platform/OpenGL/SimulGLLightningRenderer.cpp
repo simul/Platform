@@ -100,7 +100,7 @@ bool SimulGLLightningRenderer::CreateLightningTexture()
 	unsigned size=64;
 	unsigned char *lightning_tex_data=new unsigned char[size*4];
 	glGenTextures(1,&lightning_texture);
-	glEnable(GL_TEXTURE_1D);
+	
     glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_1D,lightning_texture);
 	glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -144,6 +144,6 @@ bool SimulGLLightningRenderer::CreateLightningTexture()
 		lightning_tex_data);
 	GL_ERROR_CHECK
 	delete [] lightning_tex_data;
-	glDisable(GL_TEXTURE_1D);
+	
 	return true;
 }

@@ -95,7 +95,7 @@ void SimulOpticsRendererGL::RenderFlare(simul::crossplatform::DeviceContext &,fl
 	
 	glBlendFunc(GL_ONE,GL_ONE);
 	
-	glEnable(GL_TEXTURE_2D);
+	
     glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)((long int)flare_texture));
 

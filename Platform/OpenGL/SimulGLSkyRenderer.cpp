@@ -124,9 +124,9 @@ GL_ERROR_CHECK
 bool SimulGLSkyRenderer::RenderFades(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
 GL_ERROR_CHECK
-	glDisable(GL_TEXTURE_1D);
-	glEnable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_3D);
+	
+	
+	
 	BaseSkyRenderer::RenderFades(deviceContext,x0, y0, width, height);
 GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0);

@@ -209,12 +209,11 @@ void Material::gl() const
 		{ 0.6f, 0.6f, 0.6f, average_transp };
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
 		glActiveTexture(GL_TEXTURE0);
-		glEnable(GL_TEXTURE_2D);
+		
 		// apply texture
 		glBindTexture(GL_TEXTURE_2D, gltex_Kd);
 	}
-	else
-		glDisable(GL_TEXTURE_2D);
+		
 }
 
 Surface::Surface() :

@@ -141,7 +141,7 @@ void opengl::Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::Shadi
     if (pShadingMode == crossplatform::SHADING_MODE_SHADED)
     {
         glEnable(GL_LIGHTING);
-        glEnable(GL_TEXTURE_2D);
+        
         glDisable(GL_NORMALIZE);
 		glEnable(GL_LIGHT0);
 		glDisable(GL_LIGHT1);

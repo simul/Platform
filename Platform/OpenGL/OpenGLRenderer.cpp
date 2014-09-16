@@ -320,11 +320,11 @@ GL_ERROR_CHECK
 void OpenGLRenderer::renderUI()
 {
 	glUseProgram(0);
-	glDisable(GL_TEXTURE_3D);
-	glEnable(GL_TEXTURE_2D);
+	
+	
 	glBindTexture(GL_TEXTURE_2D,0);
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_1D);
+	
+	
 	SetOrthoProjection(ScreenWidth,ScreenHeight);
 	static char text[500];
 	int y=12;

@@ -129,9 +129,9 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 	crossplatform::BaseFramebuffer *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
-	//glEnable(GL_TEXTURE_1D);
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_TEXTURE_3D);
+	//
+	
+	
 	GLuint dens_tex=make2DTexture(a.table_size,1,(const float *)a.density_table);
 	this->SetGpuSkyConstants(gpuSkyConstants,p,a,ir);
 	for(int i=0;i<3;i++)
@@ -443,9 +443,9 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 	glBindTexture(GL_TEXTURE_2D,0);
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_3D,0);
-//	glDisable(GL_TEXTURE_1D);
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_3D);
+//	
+	
+	
 	fadeTexIndex[cycled_index]=p.fill_up_to_texels;
 }
 void GpuSkyGenerator::CopyToMemory(int /*cycled_index*/,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl)

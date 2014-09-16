@@ -283,7 +283,7 @@ void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *m
 void RenderPlatform::DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,GLuint tex,float /*mult*/,bool blend)
 {
 GL_ERROR_CHECK
-	glEnable(GL_TEXTURE_2D);
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,tex);
 	if(blend)
@@ -305,7 +305,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex)
 {
 GL_ERROR_CHECK
-	glEnable(GL_TEXTURE_2D);
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
 GL_ERROR_CHECK
@@ -712,9 +712,9 @@ void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,Vertext *lines,
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-    glDisable(GL_TEXTURE_1D);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_3D);
+    
+    
+    
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_CULL_FACE);
 	glDepthMask(GL_FALSE);
