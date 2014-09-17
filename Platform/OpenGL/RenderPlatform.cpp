@@ -482,7 +482,7 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 		fn+=".glfx";
 	opengl::Effect *e=new opengl::Effect();
 	e->Load(this,fn.c_str(),defines);
-	e->SetName(filename_utf8);
+	e->SetName(fn.c_str());
 	if(e->platform_effect==(void*)0xFFFFFFFF)
 	{
 		SAFE_DELETE(e);

@@ -1,7 +1,7 @@
 #include <GL/glew.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define SIMUL_USE_NVFX
+//#define SIMUL_USE_NVFX
 #ifdef SIMUL_USE_NVFX
 #include <FXParser.h>
 #ifdef _DEBUG
@@ -166,20 +166,24 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 	if(pos>0)
 		filename=filename.substr(0,pos-4)+".nvfx";
 #endif
-	filenameInUseUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename.c_str(),opengl::GetShaderPathsUtf8());
-	if(!filenameInUseUtf8.length())
-		return;
 	bool retry=true;
 	while(retry)
 	{
+		filenameInUseUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename.c_str(),opengl::GetShaderPathsUtf8());
+		if(!filenameInUseUtf8.length())
+		{
+			std::cerr<<"Effect::Load - file not found: "<<filename.c_str()<<std::endl;
+			DebugBreak();
+			continue;
+		}
 #ifdef SIMUL_USE_NVFX
 		nvFX::IContainer*   fx_Effect       = NULL;
 		nvFX::setErrorCallback(errorCallbackFunc);
 		nvFX::setIncludeCallback(includeCallbackFunc);
 		fx_Effect = nvFX::IContainer::create(filenameInUseUtf8.c_str());
 		std::string effect_str=LoadAndPreprocessShaderSource(filenameInUseUtf8.c_str(),defines);
-		bool bRes = nvFX::loadEffect(fx_Effect,effect_str.c_str(),filenameInUseUtf8.c_str());
-	//	bool bRes = nvFX::loadEffectFromFile(fx_Effect,filenameInUseUtf8.c_str());
+	//	bool bRes = nvFX::loadEffect(fx_Effect,effect_str.c_str(),filenameInUseUtf8.c_str());
+		bool bRes = nvFX::loadEffectFromFile(fx_Effect,filenameInUseUtf8.c_str());
 		if(!bRes)
 		{
 			DebugBreak();

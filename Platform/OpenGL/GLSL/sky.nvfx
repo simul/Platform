@@ -350,6 +350,7 @@ Technique ObjectWithTex
         FragmentProgram<"FragOut"> = fragmentOutputDefault;
     }
 }
+
 Technique ObjectNoTex
 {
     Pass p0
