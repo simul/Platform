@@ -39,7 +39,7 @@ namespace simul
 			void RecompileShaders();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform*);
 			void InvalidateDeviceObjects();
-			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
+			void RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext);
 			//! Render the clouds.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,crossplatform::NearFarPass nearFarPass
 				,crossplatform::Texture *depth_alpha_tex,bool write_alpha
@@ -80,19 +80,8 @@ namespace simul
 			void EnsureIlluminationTexturesAreUpToDate();
 			void EnsureTextureCycle();
 
-			GLuint clouds_background_program;
-			GLuint clouds_foreground_program;
-			GLuint noise_prog;
-			GLuint edge_noise_prog;
-			GLuint current_program;
 			void UseShader(GLuint program);
-
-			GLuint cross_section_program;
 			
-#ifdef USE_GLFX
-			GLint effect;
-#endif
-			GLuint cloud_shadow_program;
 			GLint eyePosition_param;
 
 			GLint cloudDensity1_param;
@@ -106,10 +95,8 @@ namespace simul
 	
 			unsigned short *pIndices;
 
-			simul::opengl::ConstantBuffer<CloudConstants> cloudConstants;
-			simul::opengl::ConstantBuffer<CloudPerViewConstants> cloudPerViewConstants;
-			simul::opengl::ConstantBuffer<LayerConstants> layerConstants;
-			simul::opengl::ConstantBuffer<SingleLayerConstants> singleLayerConstants;
+			//simul::opengl::ConstantBuffer<CloudConstants> cloudConstants;
+			//simul::opengl::ConstantBuffer<CloudPerViewConstants> cloudPerViewConstants;
 
 			GLint hazeEccentricity_param;
 			GLint mieRayleighRatio_param;

@@ -2,8 +2,6 @@
 #include "CppGlsl.hs"
 #include "../../CrossPlatform/SL/simul_cloud_constants.sl"
 
-uniform mat4 worldViewProj;
-
 uniform int layerNumber;
 
 in vec3 vertex;

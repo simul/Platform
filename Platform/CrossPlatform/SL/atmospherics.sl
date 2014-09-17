@@ -40,9 +40,9 @@ void LossCompositeShadowed(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarD
 	vec2 sharp_mul	=vec2(1.0,1.0)+500.0*cloudShadowSharpness*(vec2(1.0,1.0)-texx);
 	vec2 shadow		=saturate(vec2(0.5,0.5)+sharp_mul*vec2(0.5-shadow1.x,0.5-shadow2.x));
 #ifdef REVERSE_DEPTH1
-	shadow			*=step(0.0,depth.y)*cloudShadowing;
+	shadow			*=cloudShadowing*(1.0-step(0.0,-depth.y));
 #else
-	shadow			*=(1.0-step(1.0,depth.y))*cloudShadowing;
+	shadow			*=step(1.0,depth.y)*cloudShadowing;
 #endif
 	shadow			=saturate(vec2(1.0,1.0)-shadow);
 	farLoss			=shadow.x*texture_clamp_mirror(lossTexture,vec2(texx.x,texy)).rgb;

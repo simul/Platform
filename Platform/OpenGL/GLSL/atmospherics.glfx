@@ -14,8 +14,6 @@ uniform sampler2D cloudShadowTexture;
 #include "../../CrossPlatform/SL/earth_shadow.sl"
 #include "view_dir.glsl"
 
-
-
 shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords, out vec2 pos)
 {
 	vec2 poss[4];

@@ -68,11 +68,9 @@
 #else
 	#define LAYOUT(u,v,w)
 #endif
+
 #else
 	#define STATIC static
-#endif
-
-#ifdef __cplusplus
 	// To C++, samplers are just GLints.
 	typedef int sampler1D;
 	typedef int sampler2D;

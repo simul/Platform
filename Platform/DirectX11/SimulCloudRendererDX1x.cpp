@@ -66,7 +66,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,m_pTechniqueCrossSection(NULL)
 	,m_pd3dDevice(NULL)
 	,cloudPerViewConstantBuffer(NULL)
-	,layerConstantsBuffer(NULL)
 	,lightning_texture(NULL)
 	,illumination_texture(NULL)
 	,m_pComputeShader(NULL)
@@ -97,7 +96,6 @@ void SimulCloudRendererDX1x::Recompile()
 	MAKE_CONSTANT_BUFFER(computeConstantBuffer,MixCloudsConstants)
 	//m_pComputeShader=LoadComputeShader(m_pd3dDevice,"MixClouds_c.hlsl");
 	MAKE_CONSTANT_BUFFER(cloudPerViewConstantBuffer,CloudPerViewConstants);
-	MAKE_CONSTANT_BUFFER(layerConstantsBuffer,LayerConstants);
 	
 	SAFE_RELEASE(blendAndWriteAlpha);
 	SAFE_RELEASE(blendAndDontWriteAlpha);
@@ -131,7 +129,6 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
 	// Allow the GPU cloud generator to directly create and modify the target textures.
 	gpuCloudGenerator.SetDirectTargets(cloud_textures);
 	CreateLightningTexture();
-	cloudConstants.RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 
 	ClearIterators();
@@ -184,7 +181,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pComputeShader);
 	SAFE_RELEASE(computeConstantBuffer);
 	SAFE_RELEASE(cloudPerViewConstantBuffer);
-	SAFE_RELEASE(layerConstantsBuffer);
+
 	SAFE_DELETE(effect);
 	cloud_texture.InvalidateDeviceObjects();
 	// Set the stored texture sizes to zero, so the textures will be re-created.
@@ -342,6 +339,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	m_pTechniqueCrossSection		=effect->GetTechniqueByName("cross_section");
 
 	cloudConstants.LinkToEffect(effect,"CloudConstants");
+	layerConstants.LinkToEffect(effect,"LayerConstants");
 	return true;
 }
 
@@ -451,17 +449,16 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(crossplatform::DeviceConte
 
 void SimulCloudRendererDX1x::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)deviceContext.platform_context;
 	if(recompile_shaders)
 	{
 		Recompile();
 	}
-    SIMUL_COMBINED_PROFILE_START(pContext,"SimulCloudRendererDX1x::PreRenderUpdate")
+    SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"SimulCloudRendererDX1x::PreRenderUpdate")
 	EnsureTexturesAreUpToDate(deviceContext);
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply(deviceContext);
 	RenderCombinedCloudTexture(deviceContext);
-    SIMUL_COMBINED_PROFILE_END(pContext)
+    SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	//set up matrices
 // Commented this out and moved to Render as was causing cloud noise problem due to the camera
 // matrix it was using being for light probes rather than the main view.
@@ -560,11 +557,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	int numInstances=(int)helper->GetSlices().size();
 	if(select_slice>=0)
 		numInstances=1;
-
-	UPDATE_CONSTANT_BUFFER(pContext,layerConstantsBuffer,LayerConstants,layerConstants)
-	ID3DX11EffectConstantBuffer* cbLayerConstants=effect->asD3DX11Effect()->GetConstantBufferByName("LayerConstants");
-	if(cbLayerConstants)
-		cbLayerConstants->SetConstantBuffer(layerConstantsBuffer);
+	layerConstants.Apply(deviceContext);
 	crossplatform::EffectTechniqueGroup *group	=effect->GetTechniqueGroupByName("raytrace");
 	crossplatform::EffectTechnique *tech		=NULL;
 	if(group)

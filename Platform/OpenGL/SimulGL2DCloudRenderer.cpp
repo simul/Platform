@@ -495,7 +495,6 @@ void SimulGL2DCloudRenderer::InvalidateDeviceObjects()
 	glDeleteBuffersARB(1,&cloud2DConstantsUBO);
 	cloud2DConstants=-1;
 	cloud2DConstantsUBO=0;
-	
 }
 
 bool SimulGL2DCloudRenderer::Create()

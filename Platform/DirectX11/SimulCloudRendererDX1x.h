@@ -122,7 +122,6 @@ namespace simul
 
 			crossplatform::EffectTechnique*			m_pTechniqueCrossSection;
 			
-			crossplatform::ConstantBuffer<CloudConstants>			cloudConstants;
 			StructuredBuffer<SmallLayerData>		layerBuffer;
 			ID3D11Buffer*							cloudPerViewConstantBuffer;
 			ID3D11Buffer*							layerConstantsBuffer;

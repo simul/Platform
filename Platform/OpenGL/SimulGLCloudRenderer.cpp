@@ -93,13 +93,6 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,sim
 	,scale(2.f)
 	,texture_effect(1.f)
 	,init(false)
-	,clouds_background_program(0)
-	,clouds_foreground_program(0)
-	,noise_prog(0)
-	,edge_noise_prog(0)
-	,current_program(0)
-	,cross_section_program(0)
-	,cloud_shadow_program(0)
 #ifdef USE_GLFX
 	,effect(0)
 #endif
@@ -146,10 +139,9 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 	Inv(3,3)=1.f;
 }
 
-void SimulGLCloudRenderer::PreRenderUpdate(crossplatform::DeviceContext &deviceContext)
+void SimulGLCloudRenderer::RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext)
 {
 GL_ERROR_CHECK
-	EnsureTexturesAreUpToDate(deviceContext);
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -158,7 +150,7 @@ GL_ERROR_CHECK
 	cloud_shadow.ensureTexture2DSizeAndFormat(renderPlatform,cloud_tex_width_x,cloud_tex_length_y,crossplatform::RGBA_32_FLOAT,false,true);
 	//cloud_shadow.SetWrapClampMode(GL_REPEAT);
 	//cloud_shadow.InitColor_Tex(0,GL_RGBA);
-	
+	GLuint cloud_shadow_program=effect->GetTechniqueByName("cloud_shadow")->passAsGLuint(0);
 	glUseProgram(cloud_shadow_program);
 	
 	glActiveTexture(GL_TEXTURE0);
@@ -271,8 +263,6 @@ GL_ERROR_CHECK
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 GL_ERROR_CHECK
 	
-	
-
     glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+0)%3]->AsGLuint());
 
@@ -295,12 +285,12 @@ GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,illuminationTexture->AsGLuint());
 GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE7);
-	GLuint program=clouds_background_program;
+	GLuint program=effect->GetTechniqueByName(depth_alpha_tex?"layers_depth":"layers")->passAsGLuint(0);
+		
 GL_ERROR_CHECK
 	if(depth_alpha_tex)
 	{
 		glBindTexture(GL_TEXTURE_2D,depth_alpha_tex->AsGLuint());
-		program=depth_alpha_tex->AsGLuint()>0?clouds_foreground_program:clouds_background_program;
 	}
 
 GL_ERROR_CHECK
@@ -318,9 +308,6 @@ GL_ERROR_CHECK
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
-//const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
-
-	//CloudPerViewConstants cloudPerViewConstants;
 GL_ERROR_CHECK
 	const clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
 
@@ -372,11 +359,11 @@ GL_ERROR_CHECK
 	helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),false,X1.z,false);
 
 	SetCloudConstants(cloudConstants);
-	cloudConstants.Apply();
+	cloudConstants.Apply(deviceContext);
 
 	//UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
 	cloudPerViewConstants.layerIndex=18;
-	cloudPerViewConstants.Apply();
+	cloudPerViewConstants.Apply(deviceContext);
 	// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
 	// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
 	// a) are in the view frustum
@@ -385,8 +372,7 @@ GL_ERROR_CHECK
 	GL_ERROR_CHECK
 	SetLayerConstants(helper,layerConstants);
 	layerConstants.thisLayerIndex=18;
-	layerConstants.Apply();
-//	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
+	layerConstants.Apply(deviceContext);
 	int idx=0;
 	static int isolate_layer=-1;
 	sphereMesh.BeginDraw(deviceContext,crossplatform::SHADING_MODE_SHADED);
@@ -404,31 +390,10 @@ GL_ERROR_CHECK
 		singleLayerConstants.layerFade_		=L.layerFade;
 		singleLayerConstants.layerDistance_	=L.layerDistance;
 		singleLayerConstants.verticalShift_	=L.verticalShift;
-		singleLayerConstants.Apply();
+		singleLayerConstants.Apply(deviceContext);
 		if(isolate_layer>=0&&idx!=isolate_layer)
 			continue;
-#if 1
 		sphereMesh.Draw(deviceContext,0,crossplatform::SHADING_MODE_SHADED);
-#else
-		glBegin(GL_QUAD_STRIP);
-		if(quad_strip_vertices.size())
-		for(QuadStripVector::const_iterator j=s.quadStrips.begin();
-			j!=s.quadStrips.end();j++)
-		{
-			// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?
-			for(unsigned k=0;k<j->num_vertices;k++,qs_vert++)
-			{
-				if(qs_vert<0||qs_vert>=quad_strip_vertices.size())
-					continue;
-				int v=quad_strip_vertices[qs_vert];
-				if(v<0||v>=(int)s.vertices.size())
-					continue;
-				const Vertex &V=s.vertices[v];
-				glVertex3f(V.x,V.y,V.z);
-			}
-		}
-		glEnd();
-#endif
 	GL_ERROR_CHECK
 	}
 	sphereMesh.EndDraw(deviceContext);
@@ -447,13 +412,8 @@ GL_ERROR_CHECK
 
 void SimulGLCloudRenderer::UseShader(GLuint program)
 {
-	if(current_program==program)
-		return;
 GL_ERROR_CHECK
-	current_program=program;
 	eyePosition_param				=glGetUniformLocation(program,"eyePosition");
-	//hazeEccentricity_param		=glGetUniformLocation(program,"hazeEccentricity");
-	//mieRayleighRatio_param		=glGetUniformLocation(program,"mieRayleighRatio");
 	maxFadeDistanceMetres_param		=glGetUniformLocation(program,"maxFadeDistanceMetres");
 
 	cloudDensity1_param				=glGetUniformLocation(program,"cloudDensity1");
@@ -467,10 +427,7 @@ GL_ERROR_CHECK
 
 GL_ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
-	cloudConstants			.LinkToProgram(program,"CloudConstants",2);
-	layerConstants			.LinkToProgram(program,"LayerConstants",4);
-	singleLayerConstants	.LinkToProgram(program,"SingleLayerConstants",5);
-	cloudPerViewConstants.LinkToProgram(program,"CloudPerViewConstants",13);
+	//cloudConstants			.LinkToProgram(program,"CloudConstants",2);
 GL_ERROR_CHECK
 }
 
@@ -478,56 +435,30 @@ void SimulGLCloudRenderer::RecompileShaders()
 {
 	if(!init)
 		return;
-current_program=0;
 GL_ERROR_CHECK
 	gpuCloudGenerator.RecompileShaders();
-	SAFE_DELETE_PROGRAM(clouds_background_program);
-	SAFE_DELETE_PROGRAM(clouds_foreground_program);
 	
-	SAFE_DELETE_PROGRAM(noise_prog);
-	SAFE_DELETE_PROGRAM(edge_noise_prog);
 
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	defines["DETAIL_NOISE"]="1";
-	clouds_background_program	=MakeProgram("simul_clouds",defines);
 	defines["USE_DEPTH_TEXTURE"]="1";
-	clouds_foreground_program	=MakeProgram("simul_clouds",defines);
-	noise_prog					=MakeProgram("simple.vert",NULL,"simul_noise.frag");
-	edge_noise_prog				=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
 
-	cross_section_program		=MakeProgram("simul_cloud_cross_section");
-
-#ifdef USE_GLFX
-	glfxDeleteEffect(effect);
-	effect=-1;
-	while(effect==-1)
-		effect						=opengl::CreateEffect("clouds.glfx",defines);
-	if(effect>=0)
-	{
-		GLuint p				=glfxCompileProgram(effect, "cross_section");
-		if (!p)
-			printEffectLog(effect);
-		else
-			cross_section_program=p;
-	}
-#endif
-	SAFE_DELETE_PROGRAM(cloud_shadow_program);
-	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
-	cloudConstants.LinkToProgram(cross_section_program,"CloudConstants",2);
-	cloudConstants.LinkToProgram(clouds_background_program,"CloudConstants",2);
-	cloudConstants.LinkToProgram(clouds_foreground_program,"CloudConstants",2);
-	//glBindBufferRange(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO,0, sizeof(CloudConstants));
-//	glBindBufferRange(GL_UNIFORM_BUFFER,layerDataConstantsBindingIndex,layerDataConstantsUBO,0, sizeof(LayerConstants));
-	//glBindBufferRange(GL_UNIFORM_BUFFER,cloudPerViewConstantsBindingIndex,cloudPerViewConstantsUBO,0, sizeof(CloudPerViewConstants));
-	cloudPerViewConstants.LinkToProgram(clouds_background_program,"CloudPerViewConstants",13);
-	cloudPerViewConstants.LinkToProgram(clouds_foreground_program,"CloudPerViewConstants",13);
-
-	layerConstants.LinkToProgram(clouds_background_program,"LayerConstants",4);
-	layerConstants.LinkToProgram(clouds_foreground_program,"LayerConstants",4);
 	
-	singleLayerConstants.LinkToProgram(clouds_background_program,"SingleLayerConstants",5);
-	singleLayerConstants.LinkToProgram(clouds_foreground_program,"SingleLayerConstants",5);
+	SAFE_DELETE(effect);
+	effect								=renderPlatform->CreateEffect("clouds",defines);
+	GLuint clouds_background_program	=effect->GetTechniqueByName("layers")->passAsGLuint(0);
+	GLuint clouds_foreground_program	=effect->GetTechniqueByName("layers_depth")->passAsGLuint(0);
+
+	GLuint cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
+	GLuint	cross_section_program		=effect->GetTechniqueByName("cross_section")->passAsGLuint(0);
+	cloudConstants.LinkToEffect(effect,"CloudConstants");
+
+	cloudPerViewConstants.LinkToEffect(effect,"CloudPerViewConstants");
+
+	layerConstants.LinkToEffect(effect,"LayerConstants");
+	
+	singleLayerConstants.LinkToEffect(effect,"SingleLayerConstants");
 	
 GL_ERROR_CHECK
 	glUseProgram(0);
@@ -540,10 +471,6 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	gpuCloudGenerator.SetDirectTargets(cloud_textures);
 	
-	cloudConstants.RestoreDeviceObjects();
-	layerConstants.RestoreDeviceObjects();
-	singleLayerConstants.RestoreDeviceObjects();
-	cloudPerViewConstants.RestoreDeviceObjects();
 
 	RecompileShaders();
 	using namespace simul::clouds;
@@ -574,28 +501,14 @@ GL_ERROR_CHECK
 	return true;
 }
 
-
 void SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
 	init=false;
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	
-#ifdef USE_GLFX
-	glfxDeleteEffect(effect);
-#endif
 	BaseCloudRenderer::InvalidateDeviceObjects();
-	SAFE_DELETE_PROGRAM(cross_section_program);
 
-	SAFE_DELETE_PROGRAM(clouds_background_program);
-	SAFE_DELETE_PROGRAM(cloud_shadow_program);
-	SAFE_DELETE_PROGRAM(clouds_foreground_program);
-	SAFE_DELETE_PROGRAM(noise_prog);
-	SAFE_DELETE_PROGRAM(edge_noise_prog);
-
-	clouds_background_program				=0;
 	eyePosition_param			=0;
-	//hazeEccentricity_param		=0;
-	//mieRayleighRatio_param		=0;
 	
 	cloudDensity1_param			=0;
 	cloudDensity2_param			=0;
@@ -605,13 +518,6 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	glDeleteBuffers(1,&sphere_vbo);
 	glDeleteBuffers(1,&sphere_ibo);
 	sphere_vbo=sphere_ibo=0;
-
-	//glDeleteBuffers(1,&cloudConstantsUBO);
-	cloudConstants.Release();
-	cloudPerViewConstants.Release();
-	layerConstants.Release();
-	singleLayerConstants.Release();
-	//cloudConstantsUBO=0;
 	
 	ClearIterators();
 }
@@ -729,15 +635,15 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 	}
 }
 
-void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height)
+void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
+	BaseCloudRenderer::RenderCrossSections(deviceContext,x0,y0,width,height);
 GL_ERROR_CHECK
 	glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	
-	
-	glUseProgram(cross_section_program);
+	effect->Apply(deviceContext,effect->GetTechniqueByName("cross_section"),0);
 
 	static int u=4;
 	int w=(width-8)/u;
@@ -762,15 +668,15 @@ GL_ERROR_CHECK
 		h=(int)(kf->cloud_height_km*1000.f/cloudProperties.GetCloudWidth()*(float)w);
 		sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 GL_ERROR_CHECK
-		set3DTexture(cross_section_program,"cloudDensity",0,cloud_textures[(texture_cycle+i)%3]->AsGLuint());
-		
+		effect->SetTexture(deviceContext,"cloudDensity",cloud_textures[(texture_cycle+i)%3]);
+		effect->Reapply(deviceContext);
 		cloudConstants.lightResponse		=light_response;
 		cloudConstants.crossSectionOffset	=vec3(0.5f,0.5f,0.f);
 		cloudConstants.yz					=0.f;
-		cloudConstants.Apply();
+		cloudConstants.Apply(deviceContext);
 		//deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+4,w,h,effect,(void*)cross_section_program);
 		cloudConstants.yz					=1.f;
-		cloudConstants.Apply();
+		cloudConstants.Apply(deviceContext);
 		//deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+h+8,w,w,effect,(void*)cross_section_program);
 	}
 	glActiveTexture(GL_TEXTURE0);
@@ -778,6 +684,7 @@ GL_ERROR_CHECK
 	glUseProgram(Utilities::GetSingleton().simple_program);
 	DrawQuad(x0+width-(w+8),y0+height-(w+8),w,w);
 	glUseProgram(0);
+	effect->Unapply(deviceContext);
 }
 
 void SimulGLCloudRenderer::RenderAuxiliaryTextures(crossplatform::DeviceContext &,int x0,int y0,int width,int height)

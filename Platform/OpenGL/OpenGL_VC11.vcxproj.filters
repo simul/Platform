@@ -396,6 +396,9 @@
     <None Include="GLSL\atmospherics.nvfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\simul_cloud_shadow.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />
