@@ -36,7 +36,7 @@ namespace simul
 		};
 		class SIMUL_OPENGL_EXPORT Effect:public crossplatform::Effect
 		{
-			GLuint current_pass;
+			GLuint current_prog;
 			int current_texture_number;
 			bool FillInTechniques();
 		public:

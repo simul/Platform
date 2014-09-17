@@ -34,7 +34,7 @@ RaytracePixelOutput RaytraceNew(Texture3D cloudDensity1
 	float max_texc_z	=1.0-min_texc_z;
 
 	float depth;
-	if(near_pass)
+	/*if(near_pass)
 	{
 		if(dlookup.z==0)
 			discard;
@@ -43,8 +43,8 @@ RaytracePixelOutput RaytraceNew(Texture3D cloudDensity1
 	else
 	{
 		depth			=dlookup.x;
-	}
-	float d				=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	}*/
+	float d				=1.0;//depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
 	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
 	// Lookup in the illumination texture.

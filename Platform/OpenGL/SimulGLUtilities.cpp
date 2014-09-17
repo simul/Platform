@@ -424,9 +424,9 @@ void simul::opengl::DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip,b
 	glDisable(GL_ALPHA_TEST);
     test_depth?glEnable(GL_DEPTH_TEST):glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-    glDisable(GL_TEXTURE_1D);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_3D);
+    
+    
+    
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_CULL_FACE);
 	glDepthMask(GL_FALSE);

@@ -355,13 +355,14 @@ FarNearPixelOutput PS_RaytraceNewBothPasses(posTexVertexOutput IN)
 									,true
 									,true
 									,false);
-	
+	f.colour.r=0.0;
+	f.colour.a=0.5;
 	if(f.colour.a>=1.0)
 	   discard;
 	FarNearPixelOutput fn;
-	fn.farColour=f.colour;
-	fn.nearColour=n.colour;
-	fn.depth	=f.depth;
+	fn.farColour	=f.colour;
+	fn.nearColour	=n.colour;
+	fn.depth		=f.depth;
 	return fn;
 }
 

@@ -262,11 +262,11 @@ GL_ERROR_CHECK
 	cloudProperties.GetExtents(X1,X2);
 	simul::math::Vector3 DX=X2-X1;
 GL_ERROR_CHECK
-    glEnable(GL_TEXTURE_2D);
+    
 GL_ERROR_CHECK
-    glDisable(GL_TEXTURE_3D);
+    
 GL_ERROR_CHECK
-    glDisable(GL_TEXTURE_1D);
+    
 GL_ERROR_CHECK
     glEnable(GL_BLEND);
 GL_ERROR_CHECK
@@ -368,7 +368,7 @@ GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,0);
     glDisable(GL_BLEND);
-    glDisable(GL_TEXTURE_2D);
+    
 	glUseProgram(0);
 //	glPopAttrib();
 GL_ERROR_CHECK
@@ -395,7 +395,7 @@ void SimulGL2DCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &,
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 GL_ERROR_CHECK
-	glEnable(GL_TEXTURE_2D);
+	
 	glUseProgram(cross_section_program);
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 GL_ERROR_CHECK

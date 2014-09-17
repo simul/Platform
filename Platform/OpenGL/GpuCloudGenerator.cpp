@@ -125,7 +125,7 @@ void GpuCloudGenerator::CycleTexturesForward()
 
 void CopyTo3DTexture(int start_texel,int texels,const int grid[3])
 {
-	glEnable(GL_TEXTURE_3D);
+	
 	// Now instead of reading the pixels back to memory, we will copy them layer-by-layer into the volume texture.
 	int Y=start_texel/grid[0];
 	int H=texels/grid[0];
@@ -168,7 +168,7 @@ GL_ERROR_CHECK
 }
 static void CopyTo3DTextureLayer(int z,const int grid[3])
 {
-	glEnable(GL_TEXTURE_3D);
+	
 	glCopyTexSubImage3D(	GL_TEXTURE_3D,
 							0,							//	level
 							0,							//	x offset in 3D texture
@@ -222,7 +222,7 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	gpuCloudConstants.zPixel			=1.f/(float)params.density_grid[2];
 	gpuCloudConstants.zSize				=(float)params.density_grid[2];
 	gpuCloudConstants.Apply();
-	glEnable(GL_TEXTURE_3D);
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,volume_noise_tex);
 	glActiveTexture(GL_TEXTURE1);
@@ -260,7 +260,7 @@ GL_ERROR_CHECK
 		CopyTo3DTexture(start_texel,texels,params.density_grid);
 		dens_fb.Deactivate(deviceContext);
 	}
-	glDisable(GL_TEXTURE_3D);
+	
 	glUseProgram(0);
 GL_ERROR_CHECK
 GL_ERROR_CHECK
@@ -314,9 +314,9 @@ GL_ERROR_CHECK
 	FramebufferGL *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
-	glDisable(GL_TEXTURE_1D);
-	glDisable(GL_TEXTURE_3D);
-	glEnable(GL_TEXTURE_3D);
+	
+	
+	
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,density_texture);
 	glActiveTexture(GL_TEXTURE0);
@@ -382,8 +382,8 @@ F[1]->Clear(NULL,u,u,u,u,1.f);
 			target+=params.light_grid[0]*params.light_grid[1]*4;
 	}
 	glUseProgram(0);
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_3D);
+	
+	
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -423,8 +423,8 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	gpuCloudConstants.zSize				=(float)params.density_grid[2];
 
 	gpuCloudConstants.Apply();
-	glEnable(GL_TEXTURE_3D);
-	glEnable(GL_TEXTURE_2D);
+	
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,density_texture);
 	glActiveTexture(GL_TEXTURE1);
@@ -462,8 +462,8 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 		//target+=density_grid[0]*density_grid[1]*4;
 	}
 	glUseProgram(0);
-	glDisable(GL_TEXTURE_3D);
-	glDisable(GL_TEXTURE_2D);
+	
+	
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

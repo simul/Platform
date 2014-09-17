@@ -160,7 +160,7 @@ GL_ERROR_CHECK
 	//cloud_shadow.InitColor_Tex(0,GL_RGBA);
 	
 	glUseProgram(cloud_shadow_program);
-	glEnable(GL_TEXTURE_3D);
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+0)%3]->AsGLuint());
 	glActiveTexture(GL_TEXTURE1);
@@ -183,7 +183,7 @@ GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_3D,0);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,0);
-	glDisable(GL_TEXTURE_3D);
+	
 	glUseProgram(0);
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
@@ -270,8 +270,8 @@ GL_ERROR_CHECK
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 GL_ERROR_CHECK
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_TEXTURE_3D);
+	
+	
 
     glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+0)%3]->AsGLuint());
@@ -437,8 +437,8 @@ GL_ERROR_CHECK
     glPopMatrix();
     glDisable(GL_BLEND);
     glUseProgram(NULL);
-	glDisable(GL_TEXTURE_3D);
-	glDisable(GL_TEXTURE_2D);
+	
+	
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 	glPopAttrib();
 GL_ERROR_CHECK
@@ -735,8 +735,8 @@ GL_ERROR_CHECK
 	glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_TEXTURE_3D);
+	
+	
 	glUseProgram(cross_section_program);
 
 	static int u=4;
