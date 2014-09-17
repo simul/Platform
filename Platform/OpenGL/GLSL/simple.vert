@@ -1,7 +1,7 @@
-#version 140
+#version 420
 
-in int gl_VertexID;
-in vec4 gl_Vertex;
+//in int gl_VertexID;
+//in vec4 gl_Vertex;
 out vec2 texCoords;
 
 void main(void)

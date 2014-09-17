@@ -34,8 +34,8 @@ int Utilities::instance_count=0;
 int Utilities::screen_width=0;
 int Utilities::screen_height=0;
 Utilities *Utilities::ut=NULL;
-
-
+static int num_warnings=0;
+#define MAX_GL_WARNINGS (20)
 struct UtKiller
 {
 	~UtKiller()
@@ -535,7 +535,11 @@ void simul::opengl::setParameter(GLuint program,const char *name,int value)
 {
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<0)
-		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	{
+		if(num_warnings<MAX_GL_WARNINGS)
+			std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		num_warnings++;
+	}
 	else
 		glUniform1i(loc,value);
 	GL_ERROR_CHECK
@@ -605,7 +609,11 @@ GL_ERROR_CHECK
 	GLint loc	=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
 	if(loc<0)
-		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	{
+		if(num_warnings<MAX_GL_WARNINGS)
+			std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		num_warnings++;
+	}
 	else
 		glUniform1i(loc,texture_number);
 GL_ERROR_CHECK
@@ -620,7 +628,11 @@ GL_ERROR_CHECK
 	GLint loc	=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
 	if(loc<0)
-		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: 3D texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	{
+		if(num_warnings<MAX_GL_WARNINGS)
+			std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: 3D texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
+		num_warnings++;
+	}
 	else
 		glUniform1i(loc,texture_number);
 GL_ERROR_CHECK

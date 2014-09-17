@@ -262,12 +262,6 @@ GL_ERROR_CHECK
 	cloudProperties.GetExtents(X1,X2);
 	simul::math::Vector3 DX=X2-X1;
 GL_ERROR_CHECK
-    
-GL_ERROR_CHECK
-    
-GL_ERROR_CHECK
-    
-GL_ERROR_CHECK
     glEnable(GL_BLEND);
 GL_ERROR_CHECK
 	glBlendEquation(GL_FUNC_ADD);
@@ -287,7 +281,7 @@ GL_ERROR_CHECK
 	Set2DTexture(lossTexture,skyLossTexture->AsGLuint(),2);
 	Set2DTexture(inscatterSampler_param,overcInscTexture->AsGLuint(),3);
 	Set2DTexture(skylightSampler_param,skylightTexture->AsGLuint(),4);
-	setTexture(clouds_program,"depthTexture",5,depth_texture);
+//	setTexture(clouds_program,"depthTexture",5,depth_texture);
 
 	simul::math::Vector3 wind_offset=cloudKeyframer->GetWindOffset();
 

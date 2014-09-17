@@ -48,24 +48,24 @@ shader PS_CloudShadow(in vec2 texCoords)
     gl_FragColor=density;
 }
 
-shader VS_Layers(in vec3 vertex,out float layerDensity,
-			out float rainFade,
-			out vec4 texCoords,
-			out vec2 noise_texc,
-			out vec3 wPosition,
-			out vec3 texCoordLightning,
-			out vec2 fade_texc,
-			out vec3 view,
-			out vec4 transformed_pos)
+shader VS_Layers(in vec3 vertex
+				,out float layerDensity
+				,out float rainFade
+				,out vec4 texCoords
+				,out vec2 noise_texc
+				,out vec3 wPosition
+				,out vec3 texCoordLightning
+				,out vec2 fade_texc
+				,out vec3 view
+				,out vec4 transformed_pos)
 {
-	LayerData layer		=layers[layerIndex];//layerCount-1-layerNumber];
+	LayerData layer		=layers[layerIndex];
 	vec3 pos			=vertex.xyz*layerDistance_;
-//	pos.xyz				*=layer.layerDistance;
+
     wPosition			=pos.xyz;
     transformed_pos		=vec4(vertex.xyz,1.0)*worldViewProj;
 #if 0
 	gl_Position	=vec4(vec2(-1.0,-1.0)+2.0*vertex.xy,1.0,1.0);
-
 #else
     gl_Position			=transformed_pos;
 	gl_Position.z		=gl_Position.w;

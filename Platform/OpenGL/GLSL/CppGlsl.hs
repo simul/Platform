@@ -13,6 +13,10 @@
 #define GLSL
 
 #ifndef __cplusplus
+// Some GLSL compilers can't abide seeing a "discard" in the source of a shader that isn't a fragment shader, even if it's in unused, shared code.
+	#if !defined(GL_FRAGMENT_SHADER)
+		#define discard
+	#endif
 	#define uniform_buffer layout(std140) uniform
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) uniform_buffer name {
 	#define SIMUL_CONSTANT_BUFFER_END };

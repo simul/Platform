@@ -210,7 +210,7 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	//using noise_size and noise_src_ptr, make a 3d texture:
 	glUseProgram(density_program);
 	setParameter(density_program,"volumeNoiseTexture"	,0);
-	setParameter(density_program,"maskTexture"			,1);
+//	setParameter(density_program,"maskTexture"			,1);
 	//MakeVertexMatrix(params.density_grid,start_texel,texels);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();

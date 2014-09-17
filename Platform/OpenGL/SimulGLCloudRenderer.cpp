@@ -46,6 +46,7 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
 #include "LoadGLProgram.h"
+#include "Simul/Camera/Camera.h"
 
 #include <algorithm>
 #include <stdint.h>  // for uintptr_t
@@ -93,9 +94,6 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,sim
 	,scale(2.f)
 	,texture_effect(1.f)
 	,init(false)
-#ifdef USE_GLFX
-	,effect(0)
-#endif
 {
 	for(int i=0;i<3;i++)
 	{
@@ -110,7 +108,6 @@ bool SimulGLCloudRenderer::Create()
 	return true;
 }
 
-	
 void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned ,unsigned ,unsigned )
 {
 }
@@ -157,9 +154,9 @@ GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+0)%3]->AsGLuint());
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+1)%3]->AsGLuint());
-	setParameter(cloud_shadow_program,"cloudTexture1"	,0);
-	setParameter(cloud_shadow_program,"cloudTexture2"	,1);
-	setParameter(cloud_shadow_program,"interp"			,cloudKeyframer->GetInterpolation());
+	setParameter(cloud_shadow_program,"cloudDensity1"	,0);
+	setParameter(cloud_shadow_program,"cloudDensity2"	,1);
+	setParameter(cloud_shadow_program,"cloud_interp"			,cloudKeyframer->GetInterpolation());
 	
 	cloud_shadow.activateRenderTarget(deviceContext);
 		//cloud_shadow.Clear(0.f,0.f,0.f,0.f);
@@ -197,7 +194,6 @@ simul::math::Matrix4x4 ConvertReversedToRegularProjectionMatrix(const simul::mat
 	}
 	return p;
 }
-#include "Simul/Camera/Camera.h"
 static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
@@ -215,8 +211,6 @@ GL_ERROR_CHECK
 	cubemap;
 //cloud buffer alpha to screen = ?
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,write_alpha?GL_TRUE:GL_FALSE);
-	if(glStringMarkerGREMEDY)
-		glStringMarkerGREMEDY(38,"SimulGLCloudRenderer::Render");
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	using namespace simul::clouds;
 	simul::math::Vector3 X1,X2;
@@ -268,6 +262,9 @@ GL_ERROR_CHECK
 
     glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+1)%3]->AsGLuint());
+	
+	effect->SetTexture(deviceContext,"cloudDensity1",cloud_textures[(texture_cycle+0)%3]);
+	effect->SetTexture(deviceContext,"cloudDensity2",cloud_textures[(texture_cycle+1)%3]);
 
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,noise_texture->AsGLuint());
@@ -342,9 +339,6 @@ GL_ERROR_CHECK
 	cloudPerViewConstants.exposure=exposure;
 
 	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
-	simul::math::Matrix4x4 worldViewProj;
-	simul::math::Multiply4x4(worldViewProj,modelview,deviceContext.viewStruct.proj);
-	setMatrixTranspose(program,"worldViewProj",worldViewProj);
 
 	float left	=deviceContext.viewStruct.proj(0,0)+deviceContext.viewStruct.proj(0,3);
 	float right	=deviceContext.viewStruct.proj(0,0)-deviceContext.viewStruct.proj(0,3);
@@ -353,7 +347,7 @@ GL_ERROR_CHECK
 	float tan_half_fov_horizontal		=std::max(1.f/left,1.f/right);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	float effective_world_radius_metres	=6378000.f;
-	float base_alt=K.cloud_base_km*1000.f;//
+	float base_alt=K.cloud_base_km*1000.f;
 	if(cloudKeyframer->GetMeetHorizon())
 		effective_world_radius_metres	=helper->GetEffectiveEarthRadiusToMeetHorizon(base_alt,helper->GetMaxCloudDistance());
 	helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),false,X1.z,false);
@@ -381,10 +375,6 @@ GL_ERROR_CHECK
 	GL_ERROR_CHECK
 		simul::clouds::Slice *RS=*i;
 		clouds::SliceInstance s=helper->MakeLayerGeometry(RS,effective_world_radius_metres);
-//		const simul::clouds::IntVector &quad_strip_vertices=s.quad_strip_indices;
-//		size_t qs_vert=0;
-//		int layer=(int)helper->GetSlices().size()-1-idx;
-//		setParameter(program,"layerNumber",layer);
 		const LayerData &L=layerConstants.layers[helper->GetSlices().size()-1-idx];
 		singleLayerConstants.noiseOffset_	=L.noiseOffset;
 		singleLayerConstants.layerFade_		=L.layerFade;
@@ -425,9 +415,6 @@ GL_ERROR_CHECK
 	skylightSampler_param			=glGetUniformLocation(program,"skylightSampler");
 	depthTexture					=glGetUniformLocation(program,"depthTexture");
 
-GL_ERROR_CHECK
-	// If that block IS in the shader program, then BIND it to the relevant UBO.
-	//cloudConstants			.LinkToProgram(program,"CloudConstants",2);
 GL_ERROR_CHECK
 }
 
@@ -601,7 +588,11 @@ void SimulGLCloudRenderer::EnsureTexturesAreUpToDate(crossplatform::DeviceContex
 		noise_checksum=check;
 	}
 	if(!noise_texture)
+	{
+		//while(!noise_texture)
+		//	crossplatform::Effect *e=renderPlatform->CreateEffect("temp");
 		CreateNoiseTexture(deviceContext);
+	}
 	EnsureCorrectTextureSizes();
 GL_ERROR_CHECK
 	EnsureTextureCycle();
