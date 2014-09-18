@@ -15,6 +15,7 @@ SamplerState::SamplerState()
 }
 SamplerState::~SamplerState()
 {
+	SAFE_RELEASE(m_pd3D11SamplerState);
 }
 
 

@@ -220,7 +220,7 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	int h=(FullHeight+lowResDownscale-1)/lowResDownscale+1;
 	if(includeLowResDepth)
 	{
-	view->GetLowResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/false);
+		view->GetLowResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,w,h,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/false);
 	}
 	else
 	{
@@ -229,7 +229,7 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	bool msaa=(depthTexture->GetSampleCount()>0);
 	
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups.
-	static bool use_rt=false;
+	static bool use_rt=true;
 	{
 		view->GetHiResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/true);
 		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Make Hi-res Depth")
@@ -250,7 +250,7 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		std::string pass_name=msaa?"msaa":"main";
 		if(msaa)
 			pass_name+=('0'+depthTexture->GetSampleCount());
-		else if(hiResDownscale==2||hiResDownscale==4)
+		else if(!use_rt&&(hiResDownscale==2||hiResDownscale==4))
 			pass_name+=('0'+hiResDownscale);
 		if(use_rt)
 		{

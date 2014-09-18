@@ -80,10 +80,7 @@ namespace simul
 			void RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height);
 			//! Return true if the camera is above the cloudbase altitude.
 			bool IsCameraAboveCloudBase() const;
-			void SetEnableStorms(bool s);
 			float GetTiming() const;
-			//! Get the list of three textures used for cloud rendering.
-			CloudShadowStruct GetCloudShadowTexture(math::Vector3 cam_pos);
 			crossplatform::Texture *GetRandomTexture3D();
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 
@@ -106,26 +103,11 @@ namespace simul
 			// Make up to date with respect to keyframer:
 			void EnsureCorrectTextureSizes();
 			void EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext);
-			void EnsureCorrectIlluminationTextureSizes();
-			void EnsureIlluminationTexturesAreUpToDate();
-			void EnsureTextureCycle();
 
-			void Unmap();
-			void Map(crossplatform::DeviceContext &deviceContext,int texture_index);
 			unsigned texel_index[4];
 			bool lightning_active;
 			ID3D11Device*							m_pd3dDevice;
 
-			crossplatform::EffectTechnique*			m_pTechniqueCrossSection;
-			
-			StructuredBuffer<SmallLayerData>		layerBuffer;
-			ID3D11Buffer*							cloudPerViewConstantBuffer;
-			ID3D11Buffer*							layerConstantsBuffer;
-
-			simul::dx11::Texture					cloud_texture;
-			
-			ID3D11Buffer*							computeConstantBuffer;
-			ID3D11ComputeShader*					m_pComputeShader;
 
 			ID3D11Texture3D*						illumination_texture;
 			
@@ -143,7 +125,6 @@ namespace simul
 			bool CreateLightningTexture();
 			bool CreateCloudEffect();
 			
-			bool enable_lightning;
 		};
 	}
 }

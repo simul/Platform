@@ -824,6 +824,7 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 	//result.add.r=1.0;
 	}
 	result.add.rgb				+=insc.rgb*result.add.a;
+	result.add.a=result.multiply.r;
     return result;
 }
 
