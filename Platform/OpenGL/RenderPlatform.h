@@ -85,7 +85,6 @@ namespace simul
 			static GLuint ToGLFormat(crossplatform::PixelFormat p);
 			static int FormatCount(crossplatform::PixelFormat p);
 		protected:
-			void DrawTexture		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,GLuint tex,float mult=1.f,bool blend=false);
 			crossplatform::Effect *effect;
 		};
 	}

@@ -420,6 +420,9 @@
     <None Include="GLSL\light_pass.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\debug.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

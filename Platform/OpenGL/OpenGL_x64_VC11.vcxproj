@@ -231,6 +231,7 @@
     <None Include="GLSL\CloudConstants.glsl" />
     <None Include="GLSL\clouds.glfx" />
     <None Include="GLSL\CppGlsl.hs" />
+    <None Include="GLSL\debug.glfx" />
     <None Include="GLSL\hdr.glfx" />
     <None Include="GLSL\illumination_buffer.frag" />
     <None Include="GLSL\light_pass.glfx" />

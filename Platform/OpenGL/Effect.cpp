@@ -387,7 +387,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex)
 {
 	int texture_number=current_texture_number;
-#if 0
+#if 1
 	std::string n(name);
 	if(textureNumberMap.find(n)!=textureNumberMap.end())
 	{
@@ -539,7 +539,7 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 	current_prog	=effectTechnique->passAsGLuint(pass);
 	glUseProgram(current_prog);
 	GL_ERROR_CHECK
-	current_texture_number	=0;
+	//current_texture_number	=0;
 	EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 	if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
 		glEffectTechnique->passStates[currentPass]->Apply();
@@ -564,7 +564,7 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 	//currentPass=effectTechnique->passes_by_index.find((void*)prog);
 	glUseProgram(prog);
 	GL_ERROR_CHECK
-	current_texture_number	=0;
+	//current_texture_number	=0;
 	current_prog	=prog;
 	EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 	if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
@@ -590,7 +590,7 @@ void Effect::Unapply(crossplatform::DeviceContext &)
 		SIMUL_BREAK("Effect::Apply has been called too many times!")
 	currentTechnique=NULL;
 	apply_count--;
-	current_texture_number	=0;
+	//current_texture_number	=0;
 GL_ERROR_CHECK
 }
 
