@@ -684,10 +684,18 @@ void RenderPlatform::EnsureEffectIsBuilt				(const char *filename_utf8,const std
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
 }
 
 void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &)
 {
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 	glPopAttrib();
 }
 

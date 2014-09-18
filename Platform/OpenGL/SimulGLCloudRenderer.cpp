@@ -139,11 +139,7 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 void SimulGLCloudRenderer::RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext)
 {
 GL_ERROR_CHECK
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
+	renderPlatform->StoreRenderState(deviceContext);
 	cloud_shadow.ensureTexture2DSizeAndFormat(renderPlatform,cloud_tex_width_x,cloud_tex_length_y,crossplatform::RGBA_32_FLOAT,false,true);
 	//cloud_shadow.SetWrapClampMode(GL_REPEAT);
 	//cloud_shadow.InitColor_Tex(0,GL_RGBA);
@@ -174,11 +170,7 @@ GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_3D,0);
 	
 	glUseProgram(0);
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-	glPopAttrib();
+    renderPlatform->RestoreRenderState(deviceContext);
 GL_ERROR_CHECK
 }
 
