@@ -262,9 +262,6 @@ GL_ERROR_CHECK
 
     glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+1)%3]->AsGLuint());
-	
-	effect->SetTexture(deviceContext,"cloudDensity1",cloud_textures[(texture_cycle+0)%3]);
-	effect->SetTexture(deviceContext,"cloudDensity2",cloud_textures[(texture_cycle+1)%3]);
 
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,noise_texture->AsGLuint());
@@ -293,6 +290,9 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	UseShader(program);
 	glUseProgram(program);
+	effect->Apply(deviceContext,effect->GetTechniqueByName(depth_alpha_tex?"layers_depth":"layers"),0);
+	effect->SetTexture(deviceContext,"cloudDensity1",cloud_textures[(texture_cycle+0)%3]);
+	effect->SetTexture(deviceContext,"cloudDensity2",cloud_textures[(texture_cycle+1)%3]);
 
 	glUniform1i(cloudDensity1_param,0);
 	glUniform1i(cloudDensity2_param,1);
@@ -392,7 +392,7 @@ GL_ERROR_CHECK
     glPopMatrix();
     glDisable(GL_BLEND);
     glUseProgram(NULL);
-	
+	effect->Unapply(deviceContext);
 	
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 	glPopAttrib();
@@ -434,11 +434,11 @@ GL_ERROR_CHECK
 	
 	SAFE_DELETE(effect);
 	effect								=renderPlatform->CreateEffect("clouds",defines);
-	GLuint clouds_background_program	=effect->GetTechniqueByName("layers")->passAsGLuint(0);
-	GLuint clouds_foreground_program	=effect->GetTechniqueByName("layers_depth")->passAsGLuint(0);
+//	GLuint clouds_background_program	=effect->GetTechniqueByName("layers")->passAsGLuint(0);
+//	GLuint clouds_foreground_program	=effect->GetTechniqueByName("layers_depth")->passAsGLuint(0);
 
-	GLuint cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
-	GLuint	cross_section_program		=effect->GetTechniqueByName("cross_section")->passAsGLuint(0);
+//	GLuint cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
+//	GLuint	cross_section_program		=effect->GetTechniqueByName("cross_section")->passAsGLuint(0);
 	cloudConstants.LinkToEffect(effect,"CloudConstants");
 
 	cloudPerViewConstants.LinkToEffect(effect,"CloudPerViewConstants");
