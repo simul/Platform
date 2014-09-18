@@ -95,25 +95,25 @@ void MixedResolutionView::ResolveFramebuffer(crossplatform::DeviceContext &devic
 	}
 }
 
-void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,int x0,int y0,int dx,int dy)
+void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy)
 {
-	int w=dx/2;
+	int w		=dx/2;
 	int l		=0;
 	if(lowResDepthTexture.width>0)
-		l=(lowResDepthTexture.length*w)/lowResDepthTexture.width;
+		l		=(lowResDepthTexture.length*w)/lowResDepthTexture.width;
 	if(l==0&&depthTexture&&depthTexture->width)
 	{
-		l=(depthTexture->length*w)/depthTexture->width;
+		l		=(depthTexture->length*w)/depthTexture->width;
 	}
 	if(l>dy/20)
 	{
-		l=dy/2;
+		l		=dy/2;
 		if(lowResDepthTexture.length>0)
-		w		=(lowResDepthTexture.width*l)/lowResDepthTexture.length;
+			w		=(lowResDepthTexture.width*l)/lowResDepthTexture.length;
 		else if(depthTexture&&depthTexture->length)
 			w		=(depthTexture->width*l)/depthTexture->length;
 	}
-	deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,depthTexture	);
+	deviceContext.renderPlatform->DrawDepth(deviceContext	,x0		,y0		,w,l,depthTexture,viewport);
 	
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0		,"Main Depth");
 	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0+l	,w,l,GetHiResDepthTexture()	);
@@ -207,7 +207,7 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	view->pixelOffset		=vec2(intOffset.x+fracOffset.x,intOffset.y+fracOffset.y);
 	vec2 hiResPixelOffset	=crossplatform::MixedResolutionView::LoResToHiResOffset(view->pixelOffset,hiResDownscale);
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"DownscaleDepth")
-	static int BLOCKWIDTH								=8;
+	static int BLOCKWIDTH	=8;
 	crossplatform::Effect *effect=depthForwardEffect;
 	simul::camera::Frustum frustum=camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	if(frustum.reverseDepth)

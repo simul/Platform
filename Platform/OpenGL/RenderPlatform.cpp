@@ -296,7 +296,7 @@ glDisable(GL_CULL_FACE);
 GL_ERROR_CHECK
 }
 
-void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex)
+void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v)
 {
 GL_ERROR_CHECK
 	

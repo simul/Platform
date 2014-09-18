@@ -744,17 +744,14 @@ void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceCont
 		simulWeatherRenderer->RenderOverlays(deviceContext);
 		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
 		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth());
-		D3D11_VIEWPORT				viewport;
-		memset(&viewport,0,sizeof(D3D11_VIEWPORT));
-		UINT numv=1;
-		deviceContext.asD3D11DeviceContext()->RSGetViewports(&numv, &viewport);
-		int W1=(int)viewport.Width;
-		int H1=(int)viewport.Height;
+		crossplatform::Viewport v=renderPlatformDx11.GetViewport(deviceContext,0);
+		int W1=(int)v.w;
+		int H1=(int)v.h;
 		int W2=W1/2;
 		int H2=H1/2;
 		if(ShowCompositing)
 		{
-			RenderDepthBuffers(deviceContext,W2,0,W2,H2);
+			RenderDepthBuffers(deviceContext,v,W2,0,W2,H2);
 		}
 		{
 			char txt[40];
@@ -777,7 +774,7 @@ void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceCont
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
 
-void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
+void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Viewport viewport,int x0,int y0,int dx,int dy)
 {
 	ID3D11DeviceContext* pContext=deviceContext.asD3D11DeviceContext();
 	MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
@@ -786,7 +783,7 @@ void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &device
 		depthTexture	=msaaFramebuffer.GetDepthTexture();
 	else
 		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
-	view->RenderDepthBuffers(deviceContext,depthTexture,x0,y0,dx,dy);
+	view->RenderDepthBuffers(deviceContext,depthTexture,&viewport,x0,y0,dx,dy);
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->RenderFramebufferDepth(deviceContext,x0+dx/2	,y0	,dx/2,dy/2);

@@ -284,7 +284,7 @@ vec4 DownscaleDepthFarNear(Texture2D sourceDepthTexture,uint2 source_dims,uint2 
 	int2 min_pos=int2(1,1);
 	pos2		=int2	(max(min_pos.x,min(pos2.x,max_pos.x))
 						,max(min_pos.y,min(pos2.y,max_pos.y)));
-	pos2		+=source_offset;
+	pos2		+=source_offset+int2(1,1);
 #if REVERSE_DEPTH==1
 	vec2 farthest_nearest		=vec2(1.0,0.0);
 #else
@@ -738,7 +738,7 @@ TwoColourCompositeOutput Composite(vec2 texCoords
 {
 	// texCoords.y is positive DOWNwards
 	TwoColourCompositeOutput result;
-	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,vec4(1,1,0,0));
+	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 
 	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
 	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;

@@ -70,7 +70,7 @@ namespace simul
 			/// \param	y0					 	The y coordinate 0.
 			/// \param	dx					 	The dx.
 			/// \param	dy					 	The dy.
-			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,int x0,int y0,int dx,int dy);
+			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy);
 
 			/// Gets resolved header buffer.
 			///

@@ -131,7 +131,7 @@ namespace simul
 			void SaveScreenshot(const char *filename_utf8,int width=0,int height=0,float exposure=1.0f,float gamma=0.44f);
 			simul::dx11::RenderPlatform renderPlatformDx11;
 		protected:
-			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
+			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Viewport viewport,int x0,int y0,int w,int h);
 			/// Parts of the scene that go into the main buffer with depth active.
 			void RenderDepthElements(crossplatform::DeviceContext &deviceContext
 				,float exposure

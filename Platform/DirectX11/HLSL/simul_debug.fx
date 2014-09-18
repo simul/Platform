@@ -18,6 +18,7 @@ uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 	uniform float radius;
 	uniform float multiplier;
 	uniform float exposure;
+	uniform vec4 viewport;
 	uniform vec4 colour;
 	uniform vec4 depthToLinFadeDistParams;
 	uniform vec2 tanHalfFov;
@@ -130,6 +131,9 @@ vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 	vec4 depth		=texture_nearest_lod(imageTexture,IN.texCoords,0);
 	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
     vec4 result		=vec4(pow(dist.xy,0.44),depth.z,1.0);
+	if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
+		||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
+		result*=0.25;
 	return result;
 }
 
@@ -141,7 +145,11 @@ vec4 ShowDepthMS_PS(posTexVertexOutput IN) : SV_TARGET
 	uint2 pos	=uint2(IN.texCoords.xy*vec2(dims.xy));
 	vec4 depth		=imageTextureMS.Load(pos,0);
 	vec2 dist		=depthToFadeDistance(depth.xx,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
-	return vec4(pow(dist.xy,0.44),depth.z,1.0);
+	vec4 result=vec4(pow(dist.xy,0.44),depth.z,1.0);
+	if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
+		||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
+		result*=0.25;
+	return result;
 }
 struct vec3input
 {

@@ -29,7 +29,6 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/TextureGenerator.h"
-#include "Simul/Clouds/CloudGeometryHelper.h"
 #include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"

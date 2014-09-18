@@ -957,7 +957,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsD3D11ShaderResourceView(),mult,blend);
 }
 
-void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex)
+void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v)
 {
 	crossplatform::EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("show_depth");
 	if(tex->GetSampleCount()>0)
@@ -984,6 +984,10 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 		dy*=-1;
 	}
 	{
+		if(v)
+			setParameter(m_pDebugEffect->asD3DX11Effect(),"viewport",(float)v->x/(float)tex->width,(float)v->y/(float)tex->length,(float)v->w/(float)tex->width,(float)v->h/(float)tex->length);
+		else
+			setParameter(m_pDebugEffect->asD3DX11Effect(),"viewport",0.f,0.f,1.f,1.f);
 		UtilityRenderer::DrawQuad2(deviceContext
 			,2.f*(float)x1/(float)viewport.Width-1.f
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
