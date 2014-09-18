@@ -33,7 +33,7 @@ namespace simul
 		{
 		public:
 			virtual ~SamplerState();
-			ID3D11SamplerState *asD3D11SamplerState()
+			virtual ID3D11SamplerState *asD3D11SamplerState()
 			{
 				return NULL;
 			}

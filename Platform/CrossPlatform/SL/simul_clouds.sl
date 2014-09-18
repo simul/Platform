@@ -45,17 +45,7 @@ struct FarNearPixelOutput
 	vec4 nearColour SIMUL_RENDERTARGET_OUTPUT(1);
 	float depth	SIMUL_DEPTH_OUTPUT;
 };
-/*
-vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texc,float layerFade,float cloud_interp)
-{
-	vec4 density1=sampleLod(cloudDensity1,cloudSamplerState,texc,0);
-	vec4 density2=sampleLod(cloudDensity2,cloudSamplerState,texc,0);
-	vec4 density=lerp(density1,density2,cloud_interp);
-	density.z*=layerFade;
-	density.z=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness);
-	return density;
-}
-*/
+
 vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float cloud_interp)
 {
 	vec3 pos=texCoords.xyz+fractalScale.xyz*noiseval.xyz;

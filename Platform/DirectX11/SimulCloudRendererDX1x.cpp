@@ -383,11 +383,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"SimulCloudRendererDX1x::Render")
 		
-	//SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"0")
 	ID3D11DeviceContext* pContext	=deviceContext.asD3D11DeviceContext();
-	
-
-		
 	
 	math::Vector3 cam_pos	=GetCameraPosVector(deviceContext.viewStruct.view);
 	float blendFactor[]		={0,0,0,0};
@@ -422,19 +418,11 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	else
 		simul::dx11::setSamplerState(effect->asD3DX11Effect(),"cloudSamplerState",m_pClampSamplerState->asD3D11SamplerState());
 	
-	//SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
-	//SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"2")
-	CloudPerViewConstants cloudPerViewConstants;
 	SetCloudPerViewConstants(cloudPerViewConstants,deviceContext.viewStruct,exposure,viewportTextureRegionXYWH,mixedResTransformXYWH);
-	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
-	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=effect->asD3DX11Effect()->GetConstantBufferByName("CloudPerViewConstants");
-	if(cbCloudPerViewConstants)
-		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
+	cloudPerViewConstants.Apply(deviceContext);
 	ERRNO_CHECK
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(deviceContext.viewStruct.view_id);
 	ERRNO_CHECK
-	//SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
-	//SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"3")
 	{
 		//set up matrices
 		simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
@@ -447,16 +435,12 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 		simul::math::Vector3 up(deviceContext.viewStruct.view._12,deviceContext.viewStruct.view._22,deviceContext.viewStruct.view._32);
 		helper->SetChurn(cloudProperties.GetChurn());
 		helper->Update((const float*)cam_pos,wind_offset,view_dir,up,1.0,cubemap);
-	//SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
-	//SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"4")
 		float tan_half_fov_vertical=1.f/deviceContext.viewStruct.proj._22;
 		float tan_half_fov_horizontal=1.f/deviceContext.viewStruct.proj._11;
 		helper->SetNoFrustumLimit(true);
 		helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 		helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),enable_lightning);
 	}
-	//SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
-	//SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"5")
 	ERRNO_CHECK
 	static int select_slice=-1;
 	SetLayerConstants(helper,layerConstants);
@@ -489,12 +473,12 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 
 	pContext->OMSetBlendState(NULL, blendFactor, sampleMask);
 	effect->UnbindTextures(deviceContext);
-	effect->SetTexture(deviceContext,"noiseTexture",NULL);
-	effect->SetTexture(deviceContext,"noiseTexture3D",NULL);
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
+	effect->SetTexture(deviceContext,"noiseTexture"			,NULL);
+	effect->SetTexture(deviceContext,"noiseTexture3D"		,NULL);
+	effect->SetTexture(deviceContext,"illuminationTexture"	,NULL);
 	effect->SetTexture(deviceContext,"rainMapTexture"		,NULL);
-	effect->SetTexture(deviceContext,"rainbowLookupTexture",NULL);
-	effect->SetTexture(deviceContext,"coronaLookupTexture",NULL);
+	effect->SetTexture(deviceContext,"rainbowLookupTexture"	,NULL);
+	effect->SetTexture(deviceContext,"coronaLookupTexture"	,NULL);
 // To prevent DX11 warning, we re-apply the pass with the textures unbound:
 	effect->Unapply(deviceContext);
 	ERRNO_CHECK
