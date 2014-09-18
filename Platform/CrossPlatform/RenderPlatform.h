@@ -29,6 +29,7 @@ namespace simul
 		struct EffectDefineOptions;
 		class Light;
 		class Texture;
+		class SamplerState;
 		class Mesh;
 		class PlatformConstantBuffer;
 		class PlatformStructuredBuffer;
@@ -36,6 +37,7 @@ namespace simul
 		class Layout;
 		struct DeviceContext;
 		struct LayoutDesc;
+		struct SamplerStateDesc;
 		struct PhysicalLightRenderData;
 		/// A crossplatform viewport structure.
 		struct Viewport
@@ -103,6 +105,8 @@ namespace simul
 			virtual Light					*CreateLight					()	=0;
 			/// Create a platform-specific texture instance.
 			virtual Texture					*CreateTexture					(const char *lFileNameUtf8=NULL)	=0;
+			/// Create a platform-specific sampler state instance.
+			virtual SamplerState			*CreateSamplerState				(SamplerStateDesc *)	=0;
 			/// Create a platform-specific effect instance.
 			Effect							*CreateEffect					(const char *filename_utf8);
 			/// Create a platform-specific effect instance.

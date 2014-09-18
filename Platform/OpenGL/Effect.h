@@ -56,6 +56,7 @@ namespace simul
 			void SetUnorderedAccessView(crossplatform::DeviceContext&,const char *name,crossplatform::Texture *tex);
 			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture *tex);
 			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture &t);
+			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);
 			void SetParameter	(const char *name	,float value)		;
 			void SetParameter	(const char *name	,vec2)				;
 			void SetParameter	(const char *name	,vec3)				;

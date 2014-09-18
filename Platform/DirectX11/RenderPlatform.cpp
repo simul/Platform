@@ -521,6 +521,42 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	return tex;
 }
 
+static D3D11_TEXTURE_ADDRESS_MODE toD3d11TextureAddressMode(crossplatform::SamplerStateDesc::Wrapping f)
+{
+	if(f==crossplatform::SamplerStateDesc::CLAMP)
+		return D3D11_TEXTURE_ADDRESS_CLAMP;
+	if(f==crossplatform::SamplerStateDesc::WRAP)
+		return D3D11_TEXTURE_ADDRESS_WRAP;
+	if(f==crossplatform::SamplerStateDesc::MIRROR)
+		return D3D11_TEXTURE_ADDRESS_MIRROR;
+	return D3D11_TEXTURE_ADDRESS_WRAP;
+}
+D3D11_FILTER toD3d11Filter(crossplatform::SamplerStateDesc::Filtering f)
+{
+	if(f==crossplatform::SamplerStateDesc::LINEAR)
+		return D3D11_FILTER_ANISOTROPIC;
+	return D3D11_FILTER_MIN_MAG_MIP_POINT;
+}
+crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::SamplerStateDesc *d)
+{
+	dx11::SamplerState *s=new dx11::SamplerState();
+	
+	D3D11_SAMPLER_DESC samplerDesc;
+	
+    ZeroMemory( &samplerDesc, sizeof( D3D11_SAMPLER_DESC ) );
+    samplerDesc.Filter = toD3d11Filter (d->filtering) ;
+    samplerDesc.AddressU = toD3d11TextureAddressMode(d->x);
+    samplerDesc.AddressV = toD3d11TextureAddressMode(d->y);
+    samplerDesc.AddressW = toD3d11TextureAddressMode(d->z);
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MaxAnisotropy = 16;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	
+	AsD3D11Device()->CreateSamplerState(&samplerDesc,&s->m_pd3D11SamplerState);
+	return s;
+}
+
 crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	std::string fn(filename_utf8);

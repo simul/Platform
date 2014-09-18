@@ -8,6 +8,7 @@ struct ID3D11UnorderedAccessView;
 struct ID3D11DepthStencilView;
 struct ID3D11RenderTargetView;
 struct ID3D11Texture2D;
+struct ID3D11SamplerState;
 typedef unsigned GLuint;
 namespace simul
 {
@@ -15,6 +16,28 @@ namespace simul
 	{
 		class RenderPlatform;
 		struct DeviceContext;
+		struct SamplerStateDesc
+		{
+			enum Wrapping
+			{
+				WRAP,CLAMP,MIRROR
+			};
+			enum Filtering
+			{
+				POINT,LINEAR
+			};
+			Wrapping x,y,z;
+			Filtering filtering;
+		};
+		class SIMUL_CROSSPLATFORM_EXPORT SamplerState
+		{
+		public:
+			virtual ~SamplerState();
+			ID3D11SamplerState *asD3D11SamplerState()
+			{
+				return NULL;
+			}
+		};
 		class SIMUL_CROSSPLATFORM_EXPORT Texture
 		{
 		public:

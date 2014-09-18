@@ -163,6 +163,7 @@ namespace simul
 			int count;
 		};
 		class Texture;
+		class SamplerState;
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique
 		{
 		public:
@@ -255,6 +256,7 @@ namespace simul
 			virtual void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,Texture *tex)	=0;
 			virtual void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name	,Texture *tex)		=0;
 			virtual void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name	,Texture &t)		=0;
+			virtual void SetSamplerState(crossplatform::DeviceContext &deviceContext,const char *name	,SamplerState *s)		=0;
 			virtual void SetParameter	(const char *name	,float value)		=0;
 			virtual void SetParameter	(const char *name	,vec2)				=0;
 			virtual void SetParameter	(const char *name	,vec3)				=0;

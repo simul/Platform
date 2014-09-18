@@ -4,8 +4,12 @@
 using namespace simul;
 using namespace crossplatform;
 
+SamplerState::~SamplerState()
+{
+}
+
+
 Texture::~Texture()
 {
-	//std::cout<<"~texture"<<std::endl;
 }
 

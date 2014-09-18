@@ -78,7 +78,6 @@ namespace simul
 			void RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
 			void RenderTestXXX(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
 			void RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height);
-			void RenderCloudShadowTexture(crossplatform::DeviceContext &deviceContext);
 			//! Return true if the camera is above the cloudbase altitude.
 			bool IsCameraAboveCloudBase() const;
 			void SetEnableStorms(bool s);
@@ -116,9 +115,6 @@ namespace simul
 			unsigned texel_index[4];
 			bool lightning_active;
 			ID3D11Device*							m_pd3dDevice;
-		
-			ID3D11SamplerState*						m_pWrapSamplerState;
-			ID3D11SamplerState*						m_pClampSamplerState;
 
 			crossplatform::EffectTechnique*			m_pTechniqueCrossSection;
 			
@@ -126,10 +122,6 @@ namespace simul
 			ID3D11Buffer*							cloudPerViewConstantBuffer;
 			ID3D11Buffer*							layerConstantsBuffer;
 
-			// A texture whose x-axis represents azimuth, and whose y-axis represents distance
-			// as a proportion of shadow range. The texels represent how much illumination accumulates between the viewer
-			// and that distance.
-			simul::dx11::Texture					godrays_texture;
 			simul::dx11::Texture					cloud_texture;
 			
 			ID3D11Buffer*							computeConstantBuffer;

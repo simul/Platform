@@ -86,6 +86,7 @@ namespace simul
 			crossplatform::Mesh						*CreateMesh();
 			crossplatform::Light					*CreateLight();
 			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8=NULL);
+			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d);
 			crossplatform::Effect					*CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer();
 			crossplatform::PlatformStructuredBuffer	*CreatePlatformStructuredBuffer();

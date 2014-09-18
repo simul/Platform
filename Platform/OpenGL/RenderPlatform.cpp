@@ -469,6 +469,11 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	return tex;
 }
 
+crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::SamplerStateDesc *)
+{
+	return new opengl::SamplerState();
+}
+
 crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	std::string fn(filename_utf8);

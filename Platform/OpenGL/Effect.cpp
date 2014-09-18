@@ -452,6 +452,9 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *
 {
 	SetTexture(deviceContext,name,&t);
 }
+void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)
+{
+}
 
 void Effect::SetParameter	(const char *name	,float value)
 {

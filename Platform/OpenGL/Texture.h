@@ -9,6 +9,9 @@ namespace simul
 {
 	namespace opengl
 	{
+		class SIMUL_OPENGL_EXPORT SamplerState:public simul::crossplatform::SamplerState
+		{
+		};
 		class SIMUL_OPENGL_EXPORT Texture:public simul::crossplatform::Texture
 		{
 			GLuint m_fb;

@@ -10,6 +10,14 @@
 using namespace simul;
 using namespace dx11;
 
+SamplerState::SamplerState()
+{
+}
+SamplerState::~SamplerState()
+{
+}
+
+
 dx11::Texture::Texture()
 	:texture(NULL)
 	,shaderResourceView(NULL)
