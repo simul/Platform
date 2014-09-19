@@ -108,18 +108,6 @@ bool SimulGLCloudRenderer::Create()
 	return true;
 }
 
-void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned ,unsigned ,unsigned )
-{
-}
-
-void SimulGLCloudRenderer::FillIlluminationSequentially(int ,int ,int ,const unsigned char *)
-{
-}
-
-void SimulGLCloudRenderer::FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *)
-{
-}
-
 void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 {
 	const simul::math::Vector3 *XX=reinterpret_cast<const simul::math::Vector3*>(Mat.RowPointer(0));

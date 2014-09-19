@@ -55,14 +55,6 @@ namespace simul
 			CloudShadowStruct GetCloudShadowTexture(math::Vector3);
 			const char *GetDebugText();
 	
-			void SetIlluminationGridSize(unsigned ,unsigned ,unsigned );
-			void FillIlluminationSequentially(int ,int ,int ,const unsigned char *);
-			void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *);
-			void GPUTransferDataToTexture(int index,unsigned char *target_texture
-											,const unsigned char *direct_grid
-											,const unsigned char *indirect_grid
-											,const unsigned char *ambient_grid
-											,bool wrap_light_tex);
 
 			// a callback function that translates from daytime values to overcast settings. Used for
 			// clouds to tell sky when it is overcast.

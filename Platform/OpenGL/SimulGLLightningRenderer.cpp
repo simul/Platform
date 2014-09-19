@@ -54,10 +54,10 @@ enable_geometry_shaders=false;
 	{
 		std::cout<<"Enabled geometry shaders for lightning."<<std::endl;
 		lightning_program		=MakeProgramWithGS("simul_lightning");
+		glow_program				=MakeProgram("simul_lightning.vert","simul_lightning.geom","simul_lightning_glow.frag");
 	}
 	else
 		lightning_program		=MakeProgram("simul_simple_lightning");
-	glow_program				=MakeProgram("simul_lightning.vert","simul_lightning.geom","simul_lightning_glow.frag");
 	lightningTexture_param		=glGetUniformLocation(lightning_program,"lightningTexture");
 	
 	glUseProgram(NULL);
