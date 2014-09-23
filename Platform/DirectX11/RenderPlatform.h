@@ -73,7 +73,7 @@ namespace simul
 			void DrawQuad		(crossplatform::DeviceContext &deviceContext);
 
 			void Print			(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *text,const float* colr=NULL,const float* bkg=NULL);
-			void DrawLines		(crossplatform::DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false,bool test_depth=false);
+			void DrawLines		(crossplatform::DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false);
 			void Draw2dLines	(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip);
 			void DrawCircle		(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false);
 			void DrawCube		(crossplatform::DeviceContext &deviceContext);

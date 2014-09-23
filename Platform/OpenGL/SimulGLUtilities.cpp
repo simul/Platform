@@ -417,31 +417,6 @@ void simul::opengl::PrintAt3dPos(const float *p,const char *text,const float* co
 	glPopAttrib();
 }
 
-void simul::opengl::DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip,bool test_depth)
-{
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glUseProgram(Utilities::GetSingleton().linedraw_program);
-	glDisable(GL_ALPHA_TEST);
-    test_depth?glEnable(GL_DEPTH_TEST):glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
-    
-    
-    
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_CULL_FACE);
-	glDepthMask(GL_FALSE);
-	glBegin(strip?GL_LINE_STRIP:GL_LINES);
-	for(int i=0;i<vertex_count;i++)
-	{
-		VertexXyzRgba &V=lines[i];
-		glColor4f(V.r,V.g,V.b,V.a);
-		glVertex3f(V.x,V.y,V.z);
-	}
-	glEnd();
-	glUseProgram(0);
-	glPopAttrib();
-}
-
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 {
 	glGetFloatv(src,m);

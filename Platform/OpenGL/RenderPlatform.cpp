@@ -709,9 +709,26 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &,int num_verts,int start
 	glDrawArrays(GL_POINTS, start_vert, num_verts); 
 }
 
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &,Vertext *lines,int vertex_count,bool strip,bool test_depth)
+void RenderPlatform::DrawLines(crossplatform::DeviceContext &,Vertext *lines,int vertex_count,bool strip,bool test_depth,bool view_centred)
 {
-	::DrawLines((VertexXyzRgba*)lines,vertex_count,strip,test_depth);
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glUseProgram(Utilities::GetSingleton().linedraw_program);
+	glDisable(GL_ALPHA_TEST);
+    test_depth?glEnable(GL_DEPTH_TEST):glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+	glDepthMask(GL_FALSE);
+	glBegin(strip?GL_LINE_STRIP:GL_LINES);
+	for(int i=0;i<vertex_count;i++)
+	{
+		const Vertext &V=lines[i];
+		glColor4f(V.colour.x,V.colour.y,V.colour.z,V.colour.w);
+		glVertex3f(V.pos.x,V.pos.y,V.pos.z);
+	}
+	glEnd();
+	glUseProgram(0);
+	glPopAttrib();
 }
 
 void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,Vertext *lines,int vertex_count,bool strip)

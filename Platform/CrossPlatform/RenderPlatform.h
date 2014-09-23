@@ -91,7 +91,7 @@ namespace simul
 			virtual void DrawQuad			(DeviceContext &deviceContext)=0;
 
 			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL)							=0;
-			virtual void DrawLines			(DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false,bool test_depth=false)		=0;
+			virtual void DrawLines			(DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false)		=0;
 			virtual void Draw2dLines		(DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)		=0;
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false)		=0;
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0)		=0;

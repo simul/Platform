@@ -1059,22 +1059,25 @@ void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int
 	}
 }
 
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *line_vertices,int vertex_count,bool strip,bool test_depth)
+void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *line_vertices,int vertex_count,bool strip,bool test_depth,bool view_centred)
 {
 	if(!vertex_count)
 		return;
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	{
 		HRESULT hr=S_OK;
-		D3DXMATRIX world, tmp1, tmp2;
-		D3DXMatrixIdentity(&world);
+		D3DXMATRIX  tmp1, tmp2;
 		crossplatform::EffectTechniqueGroup *g=m_pDebugEffect->GetTechniqueGroupByName(test_depth?"lines_3d_depth":"lines_3d");
 		camera::Frustum f=camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 			crossplatform::EffectTechnique *tech=g->GetTechniqueByIndex(0);
 		if(test_depth)
 			tech=g->GetTechniqueByName(f.reverseDepth?"depth_reverse":"depth_forward");
 		D3DXMATRIX wvp;
-		camera::MakeWorldViewProjMatrix((float*)&wvp,(const float*)&world,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+		if(view_centred)
+			camera::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+		else
+			camera::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+			
 		m_pDebugEffect->SetMatrix("worldViewProj",&wvp._11);
 	
 		ID3D11Buffer *					vertexBuffer=NULL;
