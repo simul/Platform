@@ -186,13 +186,13 @@ void SimulGLSkyRenderer::EnsureTexturesAreUpToDate(void *)
 		{
 			if(p.fill_up_to_texels==32768)
 				p.fill_up_to_texels=5461;
-			gpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+			gpuSkyGenerator.MakeLossAndInscatterTextures(skyKeyframer->GetColourWavelengthsNm(),cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
 			if(p.fill_up_to_texels==5461)
 				p.fill_up_to_texels=32768;
-			gpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+			gpuSkyGenerator.MakeLossAndInscatterTextures(skyKeyframer->GetColourWavelengthsNm(),cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
 		}
 		else
-			skyKeyframer->cpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+			skyKeyframer->cpuSkyGenerator.MakeLossAndInscatterTextures(skyKeyframer->GetColourWavelengthsNm(),cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
 	}
 }
 
