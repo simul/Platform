@@ -89,7 +89,7 @@ static int range(int x,int start,int end)
 	return x;
 }
 
-void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
+void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *
 				,const simul::sky::GpuSkyParameters &p
 				,const simul::sky::GpuSkyAtmosphereParameters &a

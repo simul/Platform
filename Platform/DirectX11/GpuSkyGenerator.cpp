@@ -84,8 +84,9 @@ bool GpuSkyGenerator::CanPerformGPUGeneration() const
 }
 
 void GpuSkyGenerator::MakeLossAndInscatterTextures(
-				int cycled_index,
-				simul::sky::AtmosphericScatteringInterface *skyInterface
+				sky::float4 wavelengthsNm
+				,int cycled_index
+				,simul::sky::AtmosphericScatteringInterface *skyInterface
 				,const sky::GpuSkyParameters &p
 				,const sky::GpuSkyAtmosphereParameters &a
 				,const sky::GpuSkyInfraredParameters &ir

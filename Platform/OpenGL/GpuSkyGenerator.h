@@ -17,7 +17,7 @@ namespace simul
 			void RecompileShaders();
 			//! Return true if the derived class can make sky tables using the GPU.
 			bool CanPerformGPUGeneration() const;
-			void MakeLossAndInscatterTextures(int cycled_index,
+			void MakeLossAndInscatterTextures(sky::float4 wavelengthsNmm,int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *skyInterface
 				,const simul::sky::GpuSkyParameters &gpuSkyParameters
 				,const simul::sky::GpuSkyAtmosphereParameters &gpuSkyAtmosphereParameters

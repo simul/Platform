@@ -115,14 +115,15 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate(void *context)
 	sky::GpuSkyParameters p;
 	sky::GpuSkyAtmosphereParameters a;
 	sky::GpuSkyInfraredParameters ir;
+	sky::float4 wavelengthsNm=skyKeyframer->GetColourWavelengthsNm();
 	for(int i=0;i<3;i++)
 	{
 		skyKeyframer->GetGpuSkyParameters(p,a,ir,i);
 		int cycled_index=(texture_cycle+i)%3;
 		if(gpuSkyGenerator.GetEnabled())
-			gpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+			gpuSkyGenerator.MakeLossAndInscatterTextures( wavelengthsNm,cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
 		else
-			skyKeyframer->cpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+			skyKeyframer->cpuSkyGenerator.MakeLossAndInscatterTextures( wavelengthsNm,cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
