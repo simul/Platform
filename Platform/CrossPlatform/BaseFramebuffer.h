@@ -47,7 +47,7 @@ namespace simul
 			virtual void ClearColour(void* context,float,float,float,float)=0;
 			virtual void SetWidthAndHeight(int w,int h)=0;
 			//! Some hardware has fast RAM that's good for framebuffers.
-			virtual void SetUseFastRAM(bool colour,bool depth){};
+			virtual void SetUseFastRAM(bool /*colour*/,bool /*depth*/){};
 			virtual void SetAntialiasing(int s)=0;
 			//! Get the API-dependent pointer or id for the colour buffer target.
 			virtual void* GetColorTex()=0;
