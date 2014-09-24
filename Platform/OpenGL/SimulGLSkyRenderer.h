@@ -40,7 +40,6 @@ namespace simul
 			void						RestoreDeviceObjects(simul::crossplatform::RenderPlatform *);
 			//! Destroy the API-specific objects used in rendering.
 			void						InvalidateDeviceObjects();
-			void						ReloadTextures();
 			void						RecompileShaders();
 			//! GL Implementation of render function.
 			bool						Render(void *,bool blend);

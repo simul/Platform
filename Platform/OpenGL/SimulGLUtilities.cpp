@@ -389,7 +389,7 @@ bool simul::opengl::RenderAngledQuad(const float *dir,float half_angle_radians)
 	return true;
 }
 
-void simul::opengl::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
+void simul::opengl::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety,bool centred)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glDisable(GL_ALPHA_TEST);

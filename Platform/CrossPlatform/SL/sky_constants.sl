@@ -5,6 +5,7 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	mat4 worldViewProj;
 	mat4 proj;
 	mat4 cubemapViews[6];
+	mat4 invViewProj;
 	vec4 eyePosition;
 	vec4 lightDir;
 	vec4 mieRayleighRatio;

@@ -244,7 +244,7 @@ void dx11::Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 	SAFE_RELEASE(stagingBuffer);
 }
 
-void dx11::Texture::InitFromExternalD3D11Texture2D(ID3D11Texture2D *t,ID3D11ShaderResourceView *srv)
+void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv)
 {
 	if(shaderResourceView)
 		SAFE_RELEASE(shaderResourceView);
@@ -264,6 +264,10 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(ID3D11Texture2D *t,ID3D11Shad
 			length=textureDesc.Height;
 		}
 		SAFE_RELEASE(ppd);
+		if(!srv)
+		{
+			V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, NULL,&shaderResourceView));
+		}
 	}
 	depth=1;
 	dim=2;

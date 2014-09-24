@@ -112,6 +112,7 @@ namespace simul
 				return simulTerrainRenderer;
 			}
 			void						RecompileShaders();
+			void						ReloadTextures();
 			void						RenderCubemap(crossplatform::DeviceContext &deviceContext,const float *cam_pos);
 			void						RenderEnvmap(crossplatform::DeviceContext &deviceContext);
 			// D3D11CallbackInterface

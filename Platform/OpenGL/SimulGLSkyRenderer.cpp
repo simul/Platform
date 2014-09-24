@@ -209,12 +209,6 @@ GL_ERROR_CHECK
 	}
 }
 
-void SimulGLSkyRenderer::ReloadTextures()
-{
-	moon_texture=renderPlatform->CreateTexture(skyKeyframer->GetMoonTexture().c_str());
-	SetPlanetImage(moon_index,moon_texture);
-}
-
 void SimulGLSkyRenderer::RecompileShaders()
 {
 	gpuSkyGenerator.RecompileShaders();

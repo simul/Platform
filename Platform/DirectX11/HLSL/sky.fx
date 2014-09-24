@@ -1,9 +1,12 @@
 #include "CppHLSL.hlsl"
 #define pi (3.1415926536f)
 
+Texture2D backgroundTexture;
+TextureCube backgroundCubemap;
 Texture2D inscTexture;
 Texture2D skylTexture;
 Texture2D lossTexture;
+Texture2D depthTexture;
 Texture2D illuminationTexture;
 SamplerState samplerState
 {
@@ -97,6 +100,30 @@ vec4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 	float alt_km		=eyePosition.z/1000.0;
 	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm
 			,maxFadeDistance,terminatorDistance,radiusOnCylinder,earthShadowNormal,sunDir);
+}
+
+vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN): SV_TARGET
+{
+	float depth			=texture(depthTexture,IN.texCoords.xy).x;
+#if REVERSE_DEPTH==1
+	if(depth!=0.0)
+		discard;
+#else
+	if(depth<1.0)
+		discard;
+#endif
+	vec2 clip_pos		=vec2(-1.0,1.0);
+	clip_pos.x			+=2.0*IN.texCoords.x;
+	clip_pos.y			-=2.0*IN.texCoords.y;
+	vec3 view			=normalize(mul(invViewProj,vec4(clip_pos,1.0,1.0)).xyz);
+	// Plate-carree projection:
+	float ang			=atan2(view.y,-view.x);
+	if(ang<0)
+		ang+=2.0*pi;
+	vec2 lat_long_texc	=vec2(ang/(pi*2.0),0.5-asin(view.z)/pi);//0.5*(view.z+1.0));
+	//lat_long_texc.x		=0.5+(lat_long_texc.x-0.5)*0.1;
+	vec4 result			=starBrightness*texture_wrap(backgroundTexture,lat_long_texc);
+	return result;
 }
 
 vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 
@@ -334,16 +361,15 @@ vec4 PS_Flare( svertexOutput IN): SV_TARGET
 	return vec4(output,1.f);
 }
 
-vec4 PS_Planet(svertexOutput IN): SV_TARGET
+vec4 Planet(vec4 result,vec2 tex)
 {
-	vec4 result=flareTexture.Sample(flareSamplerState,vec2(.5f,.5f)-0.5f*IN.tex);
 	// IN.tex is +- 1.
 	vec3 normal;
-	normal.x=IN.tex.x;
-	normal.y=IN.tex.y;
-	float l=length(IN.tex);
+	normal.x=tex.x;
+	normal.y=tex.y;
+	float l=length(tex);
 	if(l>1.0)
-		return vec4(0,0.0,0,1.0);
+		return vec4(0,0.0,0,0.0);
 	//	discard;
 	normal.z	=-sqrt(1.0-l*l);
 	float light	=approx_oren_nayar(0.2,vec3(0,0,1.0),normal,lightDir.xyz);
@@ -352,7 +378,17 @@ vec4 PS_Planet(svertexOutput IN): SV_TARGET
 	result.a	*=saturate((0.97-l)/0.03);
 	return result;
 }
+vec4 PS_Planet(svertexOutput IN): SV_TARGET
+{
+	vec4 result=flareTexture.Sample(flareSamplerState,vec2(.5f,.5f)-0.5f*IN.tex);
+	return Planet(result,IN.tex);
+}
 
+vec4 PS_PlanetUntextured(svertexOutput IN): SV_TARGET
+{
+	vec4 result=vec4(1.0,1.0,1.0,1.0);
+	return Planet(result,IN.tex);
+}
 technique11 show_fade_table
 {
     pass p0
@@ -573,10 +609,37 @@ technique11 planet
     }
 }
 
+technique11 planet_untextured
+{
+    pass p0
+    {		
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
+		SetPixelShader(CompileShader(ps_4_0,PS_PlanetUntextured()));
+		SetDepthStencilState(TestDepth,0);
+		SetBlendState(AlphaBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+    }
+}
+
 technique11 interp_light_table
 {
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_InterpLightTable()));
+    }
+}
+
+
+technique11 background_latlongsphere
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( TestDepth, 0 );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_BackgroundLatLongSphere()));
     }
 }

@@ -632,8 +632,9 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 		msaaFramebuffer.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f, 0);
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
+		// Don't need to pass a depth texture because we know depth is active here.
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->RenderCelestialBackground(deviceContext,exposure);
+		simulWeatherRenderer->RenderCelestialBackground(deviceContext,NULL,exposure);
 	SIMUL_COMBINED_PROFILE_END(pContext)
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"2")
 	RenderDepthElements(deviceContext,exposure,gamma);
@@ -918,6 +919,12 @@ void Direct3D11Renderer::RecompileShaders()
 		V_CHECK(dx11::CreateEffect(m_pd3dDevice,&lightProbesEffect,"light_probes.fx",defines));
 		lightProbeConstants.LinkToEffect(lightProbesEffect,"LightProbeConstants");
 	}
+}
+
+void Direct3D11Renderer::ReloadTextures()
+{
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->ReloadTextures();
 }
 
 void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
