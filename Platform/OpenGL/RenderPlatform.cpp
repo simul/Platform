@@ -655,6 +655,7 @@ void *RenderPlatform::GetDevice()
 
 void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &,int ,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout)
 {
+	GL_ERROR_CHECK
 	/*
 	for(int i=0;i<num_buffers;i++)
 	{
@@ -716,20 +717,28 @@ void RenderPlatform::EnsureEffectIsBuilt				(const char *filename_utf8,const std
 
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)
 {
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	GL_ERROR_CHECK
+//	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	GL_ERROR_CHECK
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
+	GL_ERROR_CHECK
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
+	GL_ERROR_CHECK
 }
 
 void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &)
 {
+	GL_ERROR_CHECK
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
+	GL_ERROR_CHECK
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-	glPopAttrib();
+	GL_ERROR_CHECK
+//	glPopAttrib();
+	GL_ERROR_CHECK
 }
 
 GLenum toGLTopology(crossplatform::Topology t)

@@ -48,8 +48,8 @@ namespace simul
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! Render: write the given texture to screen using the HDR rendering shaders
-			void Render(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma,float offsetX);
-			void Render(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma);
+			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
+			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma);
 			void RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
 			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext,void *texture_srv);

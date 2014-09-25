@@ -16,6 +16,9 @@ using namespace dx11;
 	,viewType(MAIN_3D_VIEW)
 	,useExternalFramebuffer(false)
 	,hiResDepthTexture(NULL)
+	,hdrFramebuffer(NULL)
+	,lowResDepthTexture(NULL)
+	,resolvedTexture(NULL)
  {
  }
 
@@ -309,16 +312,17 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 			effect->SetUnorderedAccessView	(deviceContext,"target2DTexture",targ);
 			effect->Apply(deviceContext,effect->GetTechniqueByName("downscale_depth_far_near_from_hires"),0);
 			pContext->Dispatch(subgrid.x,subgrid.y,1);
+			effect->Unapply(deviceContext);
 		}
 		effect->SetTexture(deviceContext,"sourceDepthTexture"		,NULL);
 		effect->SetTexture(deviceContext,"sourceMSDepthTexture"		,NULL);
 		effect->UnbindTextures(deviceContext);
-		effect->Apply(deviceContext,effect->GetTechniqueByName("downscale_depth_far_near_from_hires"),0);
 		SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 			
 		effect->SetTexture(deviceContext,"sourceMSDepthTexture",NULL);
 		effect->SetTexture(deviceContext,"sourceDepthTexture"	,NULL);
 		effect->Apply(deviceContext,effect->GetTechniqueByName("downscale_depth_far_near_from_hires"),0);
+		effect->Unapply(deviceContext);
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }

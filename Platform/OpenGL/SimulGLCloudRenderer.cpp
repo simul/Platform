@@ -183,7 +183,7 @@ bool SimulGLCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,fl
 								  ,const simul::sky::float4& mixedResTransformXYWH)
 {
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	simul::opengl::ProfileBlock profileBlock("SimulGLCloudRenderer::Render");
@@ -375,7 +375,7 @@ GL_ERROR_CHECK
 	effect->Unapply(deviceContext);
 	
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
-	glPopAttrib();
+	//glPopAttrib();
 GL_ERROR_CHECK
 	return true;
 }

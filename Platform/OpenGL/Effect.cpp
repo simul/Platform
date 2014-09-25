@@ -386,6 +386,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 
 void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex)
 {
+	GL_ERROR_CHECK
 	int texture_number=current_texture_number;
 #if 1
 	std::string n(name);
@@ -401,6 +402,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crosspla
 #else
 	current_texture_number++;
 #endif
+	GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE0+texture_number);
 	// Fall out silently if this texture is not set.
 	if(!tex)

@@ -1,6 +1,8 @@
 #ifndef SKY_SL
 #define SKY_SL
-
+#ifndef pi
+#define pi 3.1415926536
+#endif
 float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 {
 	float roughness2 = roughness * roughness;
@@ -18,6 +20,21 @@ float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 	float diffuse_oren_nayar = cos_phi * sin_theta / max(0.00001,max(cos_theta.x, cos_theta.y));
 	float diffuse = cos_theta.x * (oren_nayar.x + oren_nayar.y * diffuse_oren_nayar);
 	return diffuse;
+}
+
+vec4 BackgroundLatLongSphere(Texture2D backgroundTexture,vec2 texCoords)
+{
+	vec2 clip_pos		=vec2(-1.0,1.0);
+	clip_pos.x			+=2.0*texCoords.x;
+	clip_pos.y			-=2.0*texCoords.y;
+	vec3 view			=normalize(mul(invViewProj,vec4(clip_pos,1.0,1.0)).xyz);
+	// Plate-carree projection:
+	float ang			=atan2(view.y,-view.x);
+	if(ang<0)
+		ang+=2.0*pi;
+	vec2 lat_long_texc	=vec2(ang/(pi*2.0),0.5-asin(view.z)/pi);
+	vec4 result			=starBrightness*texture_wrap(backgroundTexture,lat_long_texc);
+	return result;
 }
 
 #endif

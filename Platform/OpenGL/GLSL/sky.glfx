@@ -7,6 +7,8 @@
 
 uniform sampler3D fadeTexture1;
 uniform sampler3D fadeTexture2;
+uniform sampler2D backgroundTexture;
+uniform sampler2D depthTexture;
 uniform sampler2D flareTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D illuminationTexture;
@@ -159,9 +161,22 @@ shader PS_Show3DLightTable(in vec2 texCoords,out vec4 FragColor)
 shader PS_Show2DLightTable(in vec2 texCoords,out vec4 FragColor)
 {
 	vec4 result=texture_nearest_lod(lightTable2DTexture,texCoords.yx,0);
-
     FragColor= vec4(result.rgb,1);
 }
+
+shader PS_BackgroundLatLongSphere(in vec2 texCoords,out vec4 FragColor)
+{
+	float depth			=texture(depthTexture,texCoords.xy).x;
+#if REVERSE_DEPTH==1
+	if(depth!=0.0)
+		discard;
+#else
+	if(depth<1.0)
+		discard;
+#endif
+	FragColor= BackgroundLatLongSphere(backgroundTexture,texCoords.xy);
+}
+
 program fade_3d_to_2d
 {
     vs(430) = VS_FullScreen();
@@ -225,4 +240,10 @@ program show_light_table
 {
     vs(430) = VS_ScreenQuad();
     fs(430) = PS_Show3DLightTable();
+};
+
+program background_latlongsphere
+{
+    vs(430) = VS_ScreenQuad();
+    fs(430) = PS_BackgroundLatLongSphere();
 };

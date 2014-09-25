@@ -175,23 +175,19 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 	Destroy();
 }
 
-void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma)
+void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma)
 {
-	Render(deviceContext,texture_srv,0,Exposure, Gamma);
+	Render(deviceContext,texture,0,Exposure, Gamma);
 }
 
-void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,void *texture_srv,float offsetX,float Exposure,float Gamma)
+void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float offsetX,float Exposure,float Gamma)
 {
-	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	SIMUL_COMBINED_PROFILE_START(pContext,"HDR")
-	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
-	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-	textureSRV->GetDesc(&desc);
-	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"HDR")
+	bool msaa=(texture->GetSampleCount()>1);
 	if(msaa)
-		dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTextureMS"	,textureSRV);
+		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
 	else
-		dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTexture"	,textureSRV);
+		hdr_effect->SetTexture(deviceContext,"imageTexture"	,texture);
 	hdrConstants.gamma		=Gamma;
 	hdrConstants.exposure	=Exposure;
 	hdrConstants.Apply(deviceContext);
@@ -199,7 +195,7 @@ void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,vo
 	crossplatform::EffectTechnique *tech=exposureGammaTechnique;
 	if(Glow)
 	{
-		RenderGlowTexture(deviceContext,texture_srv);
+		RenderGlowTexture(deviceContext,texture);
 		tech=glowExposureGammaTechnique;
 		simul::dx11::setTexture(hdr_effect->asD3DX11Effect(),"glowTexture",glowTexture.AsD3D11ShaderResourceView());
 	}
@@ -212,7 +208,7 @@ void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,vo
 	imageConstants.Unbind(deviceContext);
 	
 	hdr_effect->Unapply(deviceContext);
-	SIMUL_COMBINED_PROFILE_END(pContext)
+	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
 
 void SimulHDRRendererDX1x::RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,void *texture_srv
