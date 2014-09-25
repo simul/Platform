@@ -3,9 +3,10 @@
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/DirectX11/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/Macros.h"
+#include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Camera/Camera.h"
-#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx11;
@@ -27,32 +28,44 @@ void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
 	SAFE_DELETE(hiResDepthTexture);
+	SAFE_DELETE(hdrFramebuffer);
+	SAFE_DELETE(lowResDepthTexture);
+	SAFE_DELETE(resolvedTexture);
 	if(renderPlatform)
 	{
-		hiResDepthTexture=renderPlatform->CreateTexture("ESRAM");
+		hdrFramebuffer		=renderPlatform->CreateFramebuffer();
+		lowResDepthTexture	=renderPlatform->CreateTexture();		
+		resolvedTexture		=renderPlatform->CreateTexture();	
+
+		hiResDepthTexture	=renderPlatform->CreateTexture("ESRAM");
+
 		hiResDepthTexture->MoveToFastRAM();
 		if(!useExternalFramebuffer)
 		{
-			hdrFramebuffer.RestoreDeviceObjects(renderPlatform);
+			hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
 
-			hdrFramebuffer.SetUseFastRAM(true,true);
+			hdrFramebuffer->SetUseFastRAM(true,true);
 
-			hdrFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
-			hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+			hdrFramebuffer->SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
+			hdrFramebuffer->SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 		}
 	}
 }
 
 void MixedResolutionView::InvalidateDeviceObjects()
 {
-	hdrFramebuffer.InvalidateDeviceObjects();
-	lowResScratch.InvalidateDeviceObjects();
-	hiResScratch.InvalidateDeviceObjects();
-	lowResDepthTexture.InvalidateDeviceObjects();
+	hdrFramebuffer->InvalidateDeviceObjects();
+	if(lowResDepthTexture)
+		lowResDepthTexture->InvalidateDeviceObjects();
+	SAFE_DELETE(lowResDepthTexture);
 	if(hiResDepthTexture)
 		hiResDepthTexture->InvalidateDeviceObjects();
+	if(resolvedTexture)
+		resolvedTexture->InvalidateDeviceObjects();
 	SAFE_DELETE(hiResDepthTexture);
-	resolvedTexture.InvalidateDeviceObjects();
+	SAFE_DELETE(hdrFramebuffer);
+	SAFE_DELETE(lowResDepthTexture);
+	SAFE_DELETE(resolvedTexture);
 }
 
 int MixedResolutionView::GetScreenWidth() const
@@ -76,31 +89,31 @@ void MixedResolutionView::SetExternalFramebuffer(bool e)
 	if(useExternalFramebuffer!=e)
 	{
 		useExternalFramebuffer=e;
-		hdrFramebuffer.InvalidateDeviceObjects();
+		hdrFramebuffer->InvalidateDeviceObjects();
 	}
 }
 
 void MixedResolutionView::ResolveFramebuffer(crossplatform::DeviceContext &deviceContext)
 {
-	if(!useExternalFramebuffer)
+/*	if(!useExternalFramebuffer)
 	{
-		if(hdrFramebuffer.numAntialiasingSamples>1)
+		if(hdrFramebuffer->numAntialiasingSamples>1)
 		{
 			SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"ResolveFramebuffer")
-			resolvedTexture.ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,ScreenWidth,ScreenHeight,crossplatform::RGBA_16_FLOAT,false,true);
+			resolvedTexture->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,ScreenWidth,ScreenHeight,crossplatform::RGBA_16_FLOAT,false,true);
 			ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.platform_context;
-			pContext->ResolveSubresource(resolvedTexture.AsD3D11Texture2D(),0,hdrFramebuffer.GetColorTexture(),0,dx11::RenderPlatform::ToDxgiFormat(crossplatform::RGBA_16_FLOAT));
+			pContext->ResolveSubresource(resolvedTexture->AsD3D11Texture2D(),0,hdrFramebuffer->GetTexture(),0,dx11::RenderPlatform::ToDxgiFormat(crossplatform::RGBA_16_FLOAT));
 			SIMUL_COMBINED_PROFILE_END(pContext)
 		}
-	}
+	}*/
 }
 
 void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy)
 {
 	int w		=dx/2;
 	int l		=0;
-	if(lowResDepthTexture.width>0)
-		l		=(lowResDepthTexture.length*w)/lowResDepthTexture.width;
+	if(lowResDepthTexture->width>0)
+		l		=(lowResDepthTexture->length*w)/lowResDepthTexture->width;
 	if(l==0&&depthTexture&&depthTexture->width)
 	{
 		l		=(depthTexture->length*w)/depthTexture->width;
@@ -108,8 +121,8 @@ void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &devic
 	if(l>dy/20)
 	{
 		l		=dy/2;
-		if(lowResDepthTexture.length>0)
-			w		=(lowResDepthTexture.width*l)/lowResDepthTexture.length;
+		if(lowResDepthTexture->length>0)
+			w		=(lowResDepthTexture->width*l)/lowResDepthTexture->length;
 		else if(depthTexture&&depthTexture->length)
 			w		=(depthTexture->width*l)/depthTexture->length;
 	}
@@ -118,16 +131,16 @@ void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &devic
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0		,"Main Depth");
 	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0+l	,w,l,GetHiResDepthTexture()	);
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0+l	,"Hi-Res Depth");
-	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0+w	,y0+l	,w,l,&lowResDepthTexture);
+	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0+w	,y0+l	,w,l,lowResDepthTexture);
 	deviceContext.renderPlatform->Print(deviceContext			,x0+w	,y0+l	,"Lo-Res Depth");
 }
 
-ID3D11ShaderResourceView *MixedResolutionView::GetResolvedHDRBuffer()
+crossplatform::Texture *MixedResolutionView::GetResolvedHDRBuffer()
 {
-	if(hdrFramebuffer.numAntialiasingSamples>1)
-		return resolvedTexture.AsD3D11ShaderResourceView();
+	if(hdrFramebuffer->numAntialiasingSamples>1)
+		return resolvedTexture;
 	else
-		return (ID3D11ShaderResourceView*)hdrFramebuffer.GetColorTex();
+		return hdrFramebuffer->GetTexture();
 }
 
 MixedResolutionRenderer::MixedResolutionRenderer()
@@ -244,9 +257,9 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		mixedResolutionConstants.Apply(deviceContext);
 		uint2 subgrid						=uint2((view->GetHiResDepthTexture()->width+BLOCKWIDTH-1)/BLOCKWIDTH,(view->GetHiResDepthTexture()->length+BLOCKWIDTH-1)/BLOCKWIDTH);
 		if(msaa)
-			simul::dx11::setTexture			(effect->asD3DX11Effect(),"sourceMSDepthTexture"	,depthTexture->AsD3D11ShaderResourceView());
+			effect->SetTexture			(deviceContext,"sourceMSDepthTexture"	,depthTexture);
 		else
-			simul::dx11::setTexture			(effect->asD3DX11Effect(),"sourceDepthTexture"		,depthTexture->AsD3D11ShaderResourceView());
+			effect->SetTexture			(deviceContext,"sourceDepthTexture"		,depthTexture);
 		std::string pass_name=msaa?"msaa":"main";
 		if(msaa)
 			pass_name+=('0'+depthTexture->GetSampleCount());
@@ -256,21 +269,24 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		{
 			crossplatform::Texture *targ=view->GetHiResDepthTexture();
 			targ->activateRenderTarget(deviceContext);
-			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near",pass_name.c_str());
+			effect->Apply(deviceContext,effect->GetTechniqueByName("downscale_depth_far_near"),pass_name.c_str());
 			renderPlatform->DrawQuad(deviceContext);
 			targ->deactivateRenderTarget();
+			effect->Unapply(deviceContext);
 		}
 		else
 		{
 			effect->SetUnorderedAccessView	(deviceContext,"target2DTexture"	,view->GetHiResDepthTexture());
-			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"cs_downscale_depth_far_near",pass_name.c_str());
+			effect->Apply(deviceContext,effect->GetTechniqueByName("cs_downscale_depth_far_near"),pass_name.c_str());
 			pContext->Dispatch(subgrid.x,subgrid.y,1);
+			effect->Unapply(deviceContext);
 		}
 		effect->SetUnorderedAccessView	(deviceContext,"target2DTexture"	,NULL);
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceDepthTexture"		,NULL);
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceMSDepthTexture"		,NULL);
-		unbindTextures(effect->asD3DX11Effect());
-		simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"cs_downscale_depth_far_near",pass_name.c_str());
+		effect->SetTexture(deviceContext,"sourceDepthTexture"		,NULL);
+		effect->SetTexture(deviceContext,"sourceMSDepthTexture"		,NULL);
+		effect->UnbindTextures(deviceContext);
+		effect->Apply(deviceContext,effect->GetTechniqueByName("cs_downscale_depth_far_near"),pass_name.c_str());
+		effect->Unapply(deviceContext);
 		SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	}
 	if(includeLowResDepth)
@@ -291,18 +307,18 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 			effect->SetTexture				(deviceContext,"sourceDepthTexture"		,view->GetHiResDepthTexture());
 			crossplatform::Texture *targ=view->GetLowResDepthTexture();
 			effect->SetUnorderedAccessView	(deviceContext,"target2DTexture",targ);
-			simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near_from_hires");
+			effect->Apply(deviceContext,effect->GetTechniqueByName("downscale_depth_far_near_from_hires"),0);
 			pContext->Dispatch(subgrid.x,subgrid.y,1);
 		}
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceDepthTexture"		,NULL);
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceMSDepthTexture"		,NULL);
-		unbindTextures(effect->asD3DX11Effect());
-		simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near_from_hires");
+		effect->SetTexture(deviceContext,"sourceDepthTexture"		,NULL);
+		effect->SetTexture(deviceContext,"sourceMSDepthTexture"		,NULL);
+		effect->UnbindTextures(deviceContext);
+		effect->Apply(deviceContext,effect->GetTechniqueByName("downscale_depth_far_near_from_hires"),0);
 		SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 			
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceMSDepthTexture",NULL);
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"sourceDepthTexture"	,NULL);
-		simul::dx11::applyPass(pContext,effect->asD3DX11Effect(),"downscale_depth_far_near_from_hires");
+		effect->SetTexture(deviceContext,"sourceMSDepthTexture",NULL);
+		effect->SetTexture(deviceContext,"sourceDepthTexture"	,NULL);
+		effect->Apply(deviceContext,effect->GetTechniqueByName("downscale_depth_far_near_from_hires"),0);
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }

@@ -374,7 +374,7 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	//pContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
 
 	renderPlatform->SetIndexBuffer(deviceContext,indexBuffer);
-	renderPlatform->SetVertexBuffers(deviceContext,0,1,&vertexBuffer);
+	renderPlatform->SetVertexBuffers(deviceContext,0,1,&vertexBuffer,layout);
 
 	layout->Apply(deviceContext);
 	// Constants
@@ -487,7 +487,7 @@ void OceanRenderer::RenderWireframe(crossplatform::DeviceContext &deviceContext)
 	renderPlatform->SetIndexBuffer(deviceContext,indexBuffer);
 
 	//pContext->IASetVertexBuffers(0, 1, &vbs[0], &strides[0], &offsets[0]);
-	renderPlatform->SetVertexBuffers(deviceContext,0,1,&vertexBuffer);
+	renderPlatform->SetVertexBuffers(deviceContext,0,1,&vertexBuffer,layout);
 	layout->Apply(deviceContext);
 	// Constants
 	shadingConstants.Apply(deviceContext);

@@ -399,6 +399,9 @@
     <None Include="GLSL\simul_cloud_shadow.frag">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\simul_clouds_2d.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

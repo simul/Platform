@@ -23,12 +23,14 @@ namespace simul
 	/// The namespace and library for cross-platform base classes, which abstract rendering functionality.
 	namespace crossplatform
 	{
+		enum Topology;
 		class Material;
 		class Effect;
 		class EffectTechnique;
 		struct EffectDefineOptions;
 		class Light;
 		class Texture;
+		class BaseFramebuffer;
 		class SamplerState;
 		class Mesh;
 		class PlatformConstantBuffer;
@@ -78,6 +80,7 @@ namespace simul
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			virtual void ApplyShaderPass	(DeviceContext &deviceContext,Effect *,EffectTechnique *,int)=0;
 			virtual void Draw				(DeviceContext &deviceContext,int num_verts,int start_vert)=0;
+			virtual void DrawIndexed		(DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0)=0;
 			virtual void DrawMarker			(DeviceContext &deviceContext,const double *matrix)			=0;
 			virtual void DrawLine			(DeviceContext &deviceContext,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)=0;
 			virtual void DrawCrossHair		(DeviceContext &deviceContext,const double *pGlobalPosition)	=0;
@@ -105,6 +108,8 @@ namespace simul
 			virtual Light					*CreateLight					()	=0;
 			/// Create a platform-specific texture instance.
 			virtual Texture					*CreateTexture					(const char *lFileNameUtf8=NULL)	=0;
+			/// Create a platform-specific framebuffer instance - i.e. an optional colour and an optional depth rendertarget.
+			virtual BaseFramebuffer			*CreateFramebuffer				()	=0;
 			/// Create a platform-specific sampler state instance.
 			virtual SamplerState			*CreateSamplerState				(SamplerStateDesc *)	=0;
 			/// Create a platform-specific effect instance.
@@ -123,7 +128,7 @@ namespace simul
 			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *layoutDesc,Buffer *buffer)	=0;
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
-			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers)=0;
+			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers,const crossplatform::Layout *layout)=0;
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
 			virtual void					SetViewports(DeviceContext &deviceContext,int num,Viewport *vps)=0;
@@ -131,6 +136,8 @@ namespace simul
 			virtual Viewport				GetViewport(DeviceContext &deviceContext,int index)=0;
 			/// Activate the specified index buffer in preparation for rendering.
 			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer)=0;
+			/// Set the topology for following draw calls, e.g. TRIANGLELIST etc.
+			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t)=0;
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 			/// Called to store the render state - blending, depth check, etc. - for later retrieval with RestoreRenderState.

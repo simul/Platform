@@ -10,6 +10,7 @@ namespace simul
 		class Layout:public crossplatform::Layout
 		{
 			ID3D11InputLayout* previousInputLayout;
+			D3D_PRIMITIVE_TOPOLOGY topology;
 			D3D_PRIMITIVE_TOPOLOGY previousTopology;
 		public:
 			ID3D11InputLayout *d3d11InputLayout;

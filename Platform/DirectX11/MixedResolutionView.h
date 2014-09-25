@@ -4,10 +4,8 @@
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
 #include "Simul/Platform/CrossPlatform/Effect.h"
-#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
-#include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Platform/DirectX11/Texture.h"
 #include "Simul/Camera/Camera.h"
 #include <set>
 
@@ -75,14 +73,14 @@ namespace simul
 			/// Gets resolved header buffer.
 			///
 			/// \return	null if it fails, else the resolved header buffer.
-			ID3D11ShaderResourceView *MixedResolutionView::GetResolvedHDRBuffer();
+			crossplatform::Texture *GetResolvedHDRBuffer();
 
 			/// Gets the framebuffer.
 			///
 			/// \return	null if it fails, else the framebuffer.
 			crossplatform::BaseFramebuffer			*GetFramebuffer()
 			{
-				return &hdrFramebuffer;
+				return hdrFramebuffer;
 			}
 
 			/// Gets hi resource depth texture.
@@ -98,38 +96,22 @@ namespace simul
 			/// \return	null if it fails, else the low resource depth texture.
 			crossplatform::Texture					*GetLowResDepthTexture()
 			{
-				return &lowResDepthTexture;
-			}
-
-			/// Gets low resource scratch texture.
-			///
-			/// \return	null if it fails, else the low resource scratch texture.
-			crossplatform::Texture					*GetLowResScratchTexture()
-			{
-				return &lowResScratch;
-			}
-			crossplatform::Texture					*GetHiResScratchTexture()
-			{
-				return &hiResScratch;
+				return lowResDepthTexture;
 			}
 			/// Type of the view.
 			ViewType						viewType;
 
 			/// private:
 			///      A framebuffer with depth.
-			simul::dx11::Framebuffer		hdrFramebuffer;
+			simul::crossplatform::BaseFramebuffer		*hdrFramebuffer;
 			/// The depth from the HDR framebuffer can be resolved into this texture:
 			simul::crossplatform::Texture	*hiResDepthTexture;
 			/// The low  depth texture.
-			simul::dx11::Texture			lowResDepthTexture;
-			/// The low-res scratch.
-			simul::dx11::Texture			lowResScratch;
-			/// The high-res scratch.
-			simul::dx11::Texture			hiResScratch;
+			simul::crossplatform::Texture			*lowResDepthTexture;
 			/// The resolved texture.
-			simul::dx11::Texture			resolvedTexture;
+			simul::crossplatform::Texture			*resolvedTexture;
 			/// The render platform.
-			crossplatform::RenderPlatform	*renderPlatform;
+			crossplatform::RenderPlatform			*renderPlatform;
 			/// The camera.
 			const simul::camera::CameraOutputInterface	*camera;
 		public:

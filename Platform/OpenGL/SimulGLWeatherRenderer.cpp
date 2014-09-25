@@ -9,7 +9,6 @@
 #include "SimulGLWeatherRenderer.h"
 #include "SimulGLSkyRenderer.h"
 #include "SimulGLCloudRenderer.h"
-#include "SimulGL2DCloudRenderer.h"
 #include "SimulGLLightningRenderer.h"
 #include "SimulGLAtmosphericsRenderer.h"
 #include "SimulGLPrecipitationRenderer.h"
@@ -19,6 +18,7 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
+#include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Camera/Camera.h"
@@ -131,8 +131,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 	baseCloudRenderer=simulCloudRenderer;
 	if(env->cloud2DKeyframer)
 	{
-		base2DCloudRenderer				=simul2DCloudRenderer
-										=::new SimulGL2DCloudRenderer(ck2d,mem);
+		base2DCloudRenderer				=::new clouds::Base2DCloudRenderer(ck2d,mem);
 	}	
 	simulLightningRenderer				=::new(memoryInterface) SimulGLLightningRenderer(ck3d,sk);
 	baseLightningRenderer=simulLightningRenderer;
@@ -150,11 +149,10 @@ void SimulGLWeatherRenderer::EnableCloudLayers()
 {
 	if(simulCloudRenderer)
 		simulCloudRenderer->Create();
-	if(simul2DCloudRenderer)
+	if(base2DCloudRenderer)
 	{
-		simul2DCloudRenderer->Create();
 		if(simulSkyRenderer)
-			simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetBaseSkyInterface());
+			base2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetBaseSkyInterface());
 	}
 	if(device_initialized)
 	{
@@ -165,8 +163,8 @@ GL_ERROR_CHECK
 		if(simulPrecipitationRenderer)
 			simulPrecipitationRenderer->RestoreDeviceObjects(renderPlatform);
 GL_ERROR_CHECK
-		if(simul2DCloudRenderer)
-			simul2DCloudRenderer->RestoreDeviceObjects(renderPlatform);
+		if(base2DCloudRenderer)
+			base2DCloudRenderer->RestoreDeviceObjects(renderPlatform);
 GL_ERROR_CHECK
 		if(simulCloudRenderer)
 			simulCloudRenderer->RestoreDeviceObjects(renderPlatform);
@@ -181,7 +179,7 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 	InvalidateDeviceObjects();
 	operator delete(simulSkyRenderer,memoryInterface);
 	operator delete(simulCloudRenderer,memoryInterface);
-	operator delete(simul2DCloudRenderer,memoryInterface);
+	operator delete(base2DCloudRenderer,memoryInterface);
 	operator delete(simulLightningRenderer,memoryInterface);
 	operator delete(simulPrecipitationRenderer,memoryInterface);
 	operator delete(simulAtmosphericsRenderer,memoryInterface);
@@ -302,7 +300,12 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(deviceContext, mainDepthTexture,exposure,depthViewportXYWH);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
+	{
+		glEnable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
 		base2DCloudRenderer->Render(deviceContext,exposure,false,crossplatform::FAR_PASS,mainDepthTexture,false,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
+	}
 	if(buffered)
 	{
 		fb->GetLowResFarFramebuffer()->Activate(deviceContext);
@@ -403,11 +406,6 @@ class SimulGLSkyRenderer *SimulGLWeatherRenderer::GetSkyRenderer()
 class SimulGLCloudRenderer *SimulGLWeatherRenderer::GetCloudRenderer()
 {
 	return simulCloudRenderer;
-}
-
-class SimulGL2DCloudRenderer *SimulGLWeatherRenderer::Get2DCloudRenderer()
-{
-	return simul2DCloudRenderer;
 }
 
 GLuint SimulGLWeatherRenderer::GetFramebufferTexture(int view_id)

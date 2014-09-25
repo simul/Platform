@@ -8,6 +8,7 @@
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
 #include "Simul/Platform/OpenGL/Buffer.h"
+#include "Simul/Platform/OpenGL/FrameBufferGL.h"
 #include "Simul/Platform/OpenGL/Layout.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
@@ -24,6 +25,7 @@ RenderPlatform::RenderPlatform()
 	:solid_program(0)
 	,reverseDepth(false)
 	,effect(NULL)
+	,currentTopology(crossplatform::TRIANGLELIST)
 {
 }
 
@@ -469,6 +471,12 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	return tex;
 }
 
+crossplatform::BaseFramebuffer	*RenderPlatform::CreateFramebuffer()
+{
+	opengl::FramebufferGL * b=new opengl::FramebufferGL;
+	return b;
+}
+
 crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::SamplerStateDesc *)
 {
 	return new opengl::SamplerState();
@@ -525,6 +533,8 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 		return GL_RGBA;
 	case RGBA_8_SNORM:
 		return GL_RGBA;
+	case R_8_UNORM:
+		return GL_R8;// not GL_R...!
 	case D_32_FLOAT:
 		return GL_DEPTH_COMPONENT32F;
 	default:
@@ -571,7 +581,7 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 		return 0;
 	};
 }
-GLenum DataType(crossplatform::PixelFormat p)
+GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 {
 	using namespace crossplatform;
 	switch(p)
@@ -614,6 +624,7 @@ GLenum DataType(crossplatform::PixelFormat p)
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatform::LayoutDesc *desc,crossplatform::Buffer *buffer)
 {
 	opengl::Layout *l=new opengl::Layout();
+	l->SetDesc(desc,num_elements);
 GL_ERROR_CHECK
 	SAFE_DELETE_VAO(l->vao);
 	glGenVertexArrays(1,&l->vao );
@@ -623,13 +634,13 @@ GL_ERROR_CHECK
 	for(int i=0;i<num_elements;i++)
 	{
 		const crossplatform::LayoutDesc &d=desc[i];
-			glEnableVertexAttribArray( i );
-			glVertexAttribPointer( i						// Attribute bind location
-									,FormatCount(d.format)	// Data type count
-									,DataType(d.format)				// Data type
-									,GL_FALSE				// Normalise this data type?
-									,buffer->stride			// Stride to the next vertex
-									,(GLvoid*)d.alignedByteOffset );	// Vertex Buffer starting offset
+		glEnableVertexAttribArray( i );
+		glVertexAttribPointer( i						// Attribute bind location
+								,FormatCount(d.format)	// Data type count
+								,DataType(d.format)				// Data type
+								,GL_FALSE				// Normalise this data type?
+								,buffer->stride			// Stride to the next vertex
+								,(GLvoid*)d.alignedByteOffset );	// Vertex Buffer starting offset
 	};
 	
 	glBindVertexArray( 0 ); 
@@ -642,17 +653,26 @@ void *RenderPlatform::GetDevice()
 	return NULL;
 }
 
-void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &,int ,int num_buffers,crossplatform::Buffer **buffers)
+void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &,int ,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout)
 {
+	/*
 	for(int i=0;i<num_buffers;i++)
 	{
 		crossplatform::Buffer *buffer=buffers[i];
 GL_ERROR_CHECK
 		GLuint buf=buffer->AsGLuint();
-		GLint prog;
-		glGetIntegerv(GL_CURRENT_PROGRAM,&prog);
+		//GLint prog;
+		//glGetIntegerv(GL_CURRENT_PROGRAM,&prog);
 		glBindBuffer(GL_ARRAY_BUFFER,buf);
-	}
+	GL_ERROR_CHECK
+		glEnableVertexAttribArray(i);
+	GL_ERROR_CHECK
+		// We pass:
+		// 	GLuint index, 	GLint size, 	GLenum type, 	GLboolean normalized, 	GLsizei stride, 	const GLvoid * pointer
+		// size 
+		glVertexAttribPointer(i,buffer->stride,GL_FLOAT,false,0,0);
+	GL_ERROR_CHECK
+	}*/
 }
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
@@ -674,8 +694,16 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
 {
+	GL_ERROR_CHECK
 	GLuint buf=buffer->AsGLuint();
-    glBindBuffer(GL_ARRAY_BUFFER, buf);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf);
+	GL_ERROR_CHECK
+}
+
+void RenderPlatform::SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t)
+{
+	currentTopology=t;
+	GL_ERROR_CHECK
 }
 
 void RenderPlatform::EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options)
@@ -704,9 +732,43 @@ void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &)
 	glPopAttrib();
 }
 
+GLenum toGLTopology(crossplatform::Topology t)
+{
+	switch(t)
+	{
+	case crossplatform::POINTLIST:
+		return GL_POINTS;
+	case crossplatform::LINELIST:
+		return GL_LINES;
+	case crossplatform::LINESTRIP:
+		return GL_LINE_STRIP;	
+	case crossplatform::TRIANGLELIST:
+		return GL_TRIANGLES;	
+	case crossplatform::TRIANGLESTRIP	:
+		return GL_TRIANGLE_STRIP;	
+	case crossplatform::LINELIST_ADJ	:
+		return GL_LINES;	
+	case crossplatform::LINESTRIP_ADJ	:
+		return GL_LINE_STRIP;	
+	case crossplatform::TRIANGLELIST_ADJ:
+		return GL_TRIANGLES;	
+	case crossplatform::TRIANGLESTRIP_ADJ:
+		return GL_TRIANGLE_STRIP;
+	default:
+		break;
+	};
+	return GL_LINE_LOOP;
+}
 void RenderPlatform::Draw(crossplatform::DeviceContext &,int num_verts,int start_vert)
 {
-	glDrawArrays(GL_POINTS, start_vert, num_verts); 
+	glDrawArrays(toGLTopology(currentTopology), start_vert, num_verts); 
+}
+
+void RenderPlatform::DrawIndexed		(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
+{
+	GL_ERROR_CHECK
+	glDrawElements(toGLTopology(currentTopology),num_indices,GL_UNSIGNED_SHORT,(void*)base_vertex);
+	GL_ERROR_CHECK
 }
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &,Vertext *lines,int vertex_count,bool strip,bool test_depth,bool view_centred)

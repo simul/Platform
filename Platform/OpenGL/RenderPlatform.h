@@ -39,6 +39,7 @@ namespace simul
 			void DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
 			void ApplyShaderPass	(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int);
 			void Draw				(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
+			void DrawIndexed		(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0);
 			void DrawMarker			(crossplatform::DeviceContext &deviceContext,const double *matrix);
 			void DrawLine			(crossplatform::DeviceContext &deviceContext,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width);
 			void DrawCrossHair		(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition);
@@ -59,6 +60,7 @@ namespace simul
 			crossplatform::Mesh						*CreateMesh();
 			crossplatform::Light					*CreateLight();
 			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8);
+			crossplatform::BaseFramebuffer			*CreateFramebuffer();
 			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *);
 			crossplatform::Effect					*CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer();
@@ -66,13 +68,15 @@ namespace simul
 			crossplatform::Buffer					*CreateBuffer();
 			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *,crossplatform::Buffer *);
 			void									*GetDevice();
-			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers);
+			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout);
 			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);
 	
 			crossplatform::Viewport					GetViewport(crossplatform::DeviceContext &deviceContext,int index);
 			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Viewport *vps);
 
 			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer);
+			
+			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
 			void									EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options);
 
 			void StoreRenderState(crossplatform::DeviceContext &deviceContext);
@@ -84,9 +88,11 @@ namespace simul
 			bool reverseDepth;
 			// OpenGL-specific stuff:
 			static GLuint ToGLFormat(crossplatform::PixelFormat p);
+			static GLenum DataType(crossplatform::PixelFormat p);
 			static int FormatCount(crossplatform::PixelFormat p);
 		protected:
 			crossplatform::Effect *effect;
+			crossplatform::Topology currentTopology;
 		};
 	}
 }

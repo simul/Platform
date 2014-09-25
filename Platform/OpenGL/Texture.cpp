@@ -58,13 +58,16 @@ void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform 
 {
 GL_ERROR_CHECK
 	pixelFormat=p;
-	GLuint frmt=opengl::RenderPlatform::ToGLFormat(pixelFormat);
+	GLuint internal_format=opengl::RenderPlatform::ToGLFormat(pixelFormat);
 	width=w;
 	length=l;
 	dim=2;
 	glGenTextures(1,&pTextureObject);
+GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,pTextureObject);
-	glTexImage2D(GL_TEXTURE_2D,0,frmt,w,l,0,GL_RGBA,GL_UNSIGNED_INT,NULL);
+GL_ERROR_CHECK
+	glTexImage2D(GL_TEXTURE_2D,0,internal_format,w,l,0,GL_RGBA,RenderPlatform::DataType(pixelFormat),NULL);
+GL_ERROR_CHECK
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);

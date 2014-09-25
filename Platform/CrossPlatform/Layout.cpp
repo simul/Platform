@@ -17,3 +17,13 @@ Layout::~Layout()
 {
 	SIMUL_ASSERT(apply_count==0);
 }
+
+void Layout::SetDesc(const LayoutDesc *d,int num)
+{
+	parts.clear();
+	for(int i=0;i<num;i++)
+	{
+		parts.push_back(*d);
+		d++;
+	}
+}

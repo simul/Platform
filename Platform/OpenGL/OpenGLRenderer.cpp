@@ -12,7 +12,6 @@
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/SimulGLSkyRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLCloudRenderer.h"
-#include "Simul/Platform/OpenGL/SimulGL2DCloudRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
@@ -263,6 +262,7 @@ void OpenGLRenderer::paintGL()
 		
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render(deviceContext,1.f);
+	//	simulWeatherRenderer->Render(deviceContext,false,exposure,gamma,depthFramebuffer.GetDepthTexture(),
 		simulWeatherRenderer->RenderCelestialBackground(deviceContext,depthFramebuffer.GetDepthTexture(),exposure);
 		depthFramebuffer.Deactivate(deviceContext);
 		{

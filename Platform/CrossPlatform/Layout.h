@@ -1,6 +1,7 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
+#include <vector>
 struct ID3D11InputLayout;
 namespace simul
 {
@@ -8,6 +9,19 @@ namespace simul
 	{
 		class RenderPlatform;
 		struct DeviceContext;
+		enum Topology
+		{
+			UNDEFINED			
+			,POINTLIST			
+			,LINELIST			
+			,LINESTRIP			
+			,TRIANGLELIST		
+			,TRIANGLESTRIP		
+			,LINELIST_ADJ		
+			,LINESTRIP_ADJ		
+			,TRIANGLELIST_ADJ	
+			,TRIANGLESTRIP_ADJ
+		};
 		//! A cross-platform equivalent to D3D11_INPUT_ELEMENT_DESC, used
 		//! to create layouts.
 		struct LayoutDesc
@@ -25,9 +39,11 @@ namespace simul
 		{
 		protected:
 			int apply_count;
+			std::vector<LayoutDesc> parts;
 		public:
 			Layout();
 			virtual ~Layout();
+			void SetDesc(const LayoutDesc *d,int num);
 			virtual void InvalidateDeviceObjects(){}
 			virtual ID3D11InputLayout *AsD3D11InputLayout()
 			{

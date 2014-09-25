@@ -1,0 +1,166 @@
+#include "CppGlsl.hs"
+uniform sampler2D imageTexture;
+uniform sampler2D coverageTexture;
+uniform sampler2D lossTexture;
+uniform sampler2D inscTexture;
+uniform sampler2D skylTexture;
+uniform sampler2D noiseTexture;
+uniform sampler2D depthTexture;
+uniform sampler2D illuminationTexture;
+
+
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
+#include "../../CrossPlatform/SL/depth.sl"
+
+#include "../../CrossPlatform/SL/simul_2d_clouds.hs"
+#include "../../CrossPlatform/SL/earth_shadow.sl"
+#include "../../CrossPlatform/SL/earth_shadow_fade.sl"
+#include "../../CrossPlatform/SL/simul_2d_clouds.sl"
+#include "../../CrossPlatform/SL/simul_2d_cloud_detail.sl"
+
+
+float rand(vec2 co)
+{
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+shader VS_FullScreen(out vec2 texCoords, out vec2 pos)
+{
+	vec2 poss[4];
+	poss[0]		=vec2(1.0, 0.0);
+	poss[1]		=vec2(1.0, 1.0);
+	poss[2]		=vec2(0.0, 0.0);
+	poss[3]		=vec2(0.0, 1.0);
+	pos			=poss[gl_VertexID];
+	gl_Position	=vec4(vec2(-1.0,-1.0)+2.0*pos.xy,1.0,1.0);
+    texCoords	=pos.xy;
+}
+
+shader VS_ScreenQuad(in int gl_VertexID,out vec2 texCoords)
+{
+	vec2 poss[4]=
+	{
+		{ 1.0, 0.0},
+		{ 1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
+	};
+	vec2 pos	=poss[gl_VertexID];
+	gl_Position	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
+    texCoords	=pos;
+}
+
+shader PS_Simple(in vec2 texCoords)
+{
+	gl_FragColor=texture2D(imageTexture,.5+texCoords);
+}
+
+shader PS_Coverage(in vec2 texCoords) 
+{
+	gl_FragColor= Coverage(texCoords,humidity,diffusivity,coverageOctaves,coveragePersistence,time,noiseTexture,noiseTextureScale);
+}
+
+shader PS_ShowDetailTexture(in vec2 texCoords) 
+{
+	gl_FragColor=ShowDetailTexture(imageTexture,texCoords,sunlight,lightResponse);
+}
+
+shader PS_Random(in vec2 texCoords) 
+{
+    vec4 c	=vec4(rand(texCoords),rand(1.7*texCoords),rand(0.11*texCoords),rand(513.1*texCoords));
+    gl_FragColor= fract(c);
+}
+
+shader PS_Detail(in vec2 texCoords) 
+{
+    gl_FragColor= DetailDensity(texCoords,imageTexture,amplitude);
+}
+
+shader PS_DetailLighting(in vec2 texCoords) 
+{
+    gl_FragColor= DetailLighting(texCoords,imageTexture);
+}
+
+shader VS_Clouds2D(in int gl_VertexID,in vec4 gl_Vertex,out vec2 texc_global,out vec2 texc_detail,out vec4 clip_pos,out vec3 wPosition)
+{
+	Clouds2DVS(gl_Vertex.xyz,gl_Position,clip_pos,wPosition);
+}
+
+
+shader PS_Clouds2D(in vec2 texc_global,in vec2 texc_detail,in vec3 wPosition,in vec4 clip_pos)
+{
+	vec3 depth_pos	=clip_pos.xyz/clip_pos.w;
+	//depth_pos.z	=clip_pos.z;
+	vec3 depth_texc	=0.5*(depth_pos+vec3(1.0,1.0,1.0));
+
+    float depth			=texture(depthTexture,depth_texc.xy).x;
+
+#if REVERSE_DEPTH==1
+	if(depth>0)
+		discard;
+#else
+	if(1.0>depth)
+		discard;
+#endif
+	float dist		=depthToFadeDistance(depth,depth_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec3 wEyeToPos	=wPosition-eyePosition;
+	vec4 ret		=Clouds2DPS(imageTexture
+						,coverageTexture
+						,lossTexture
+						,inscTexture
+						,skylTexture
+						,texc_global
+						,texc_detail
+						,wEyeToPos
+						,sunlight.rgb
+						,ambientLight.rgb
+						,lightDir.xyz
+						,lightResponse);
+	ret.rgb			*=exposure;
+	gl_FragColor	=ret;//vec4(depth_texc.zzz,ret.a);
+}
+
+program coverage
+{
+   vs(430) =VS_FullScreen();
+   fs(430) =PS_Coverage();
+};
+
+program simple
+{
+    vs(430) =VS_ScreenQuad();
+	fs(430) =PS_Simple();
+};
+
+program show_detail_texture
+{
+	vs(430) =VS_ScreenQuad();
+	fs(430) =PS_ShowDetailTexture();
+};
+
+
+program random
+{
+	vs(430) =VS_FullScreen();
+	fs(430) =PS_Random();
+};
+
+
+program detail_density
+{
+	vs(430) =VS_FullScreen();
+	fs(430) =PS_Detail();
+};
+
+program detail_lighting
+{
+	vs(430) =VS_FullScreen();
+	fs(430) =PS_DetailLighting();
+};
+
+program simul_clouds_2d
+{
+    vs(430)	=VS_Clouds2D();
+    fs(430)	=PS_Clouds2D();
+};

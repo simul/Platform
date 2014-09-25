@@ -48,8 +48,8 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 	SAFE_DELETE_BUFFER(buf)
     glGenBuffers(1, &buf);
     // Save vertex attributes into GPU
-    glBindBuffer(GL_ARRAY_BUFFER, buf);
-    glBufferData(GL_ARRAY_BUFFER, num_indices * index_size_bytes, data, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER,buf);
+    glBufferData(GL_ARRAY_BUFFER,num_indices * index_size_bytes, data, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER,0);
 	stride=index_size_bytes;
 }

@@ -25,14 +25,6 @@ namespace simul
 		public:
 			Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck2d,simul::base::MemoryInterface *mem);
 			virtual ~Simul2DCloudRendererDX11();
-			bool Render(crossplatform::DeviceContext &deviceContext
-							,float exposure
-							,bool cubemap
-							,crossplatform::NearFarPass nearFarPass
-							,crossplatform::Texture *depth_tex
-							,bool write_alpha
-							,const simul::sky::float4& viewportTextureRegionXYWH
-							,const simul::sky::float4& );
 		};
 	}
 }

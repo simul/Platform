@@ -42,7 +42,6 @@ namespace simul
 		class SimulGLPrecipitationRenderer;
 		class SimulGLSkyRenderer;
 		class SimulGLCloudRenderer;
-		class SimulGL2DCloudRenderer;
 		struct TwoResFramebuffer:public simul::crossplatform::TwoResFramebuffer
 		{
 			TwoResFramebuffer();
@@ -113,8 +112,6 @@ namespace simul
 			SimulGLSkyRenderer *GetSkyRenderer();
 			//! Get a pointer to the 3d cloud renderer owned by this class instance.
 			SimulGLCloudRenderer *GetCloudRenderer();
-			//! Get a pointer to the 2d cloud renderer owned by this class instance.
-			SimulGL2DCloudRenderer *Get2DCloudRenderer();
 			//! Get a pointer to the rain renderer owned by this class instance.
 			//class SimulGLPrecipitationRenderer *GetPrecipitationRenderer();
 			//! Get a pointer to the atmospherics renderer owned by this class instance.
@@ -141,7 +138,6 @@ namespace simul
 			RenderDepthBufferCallback *renderDepthBufferCallback;
 			SimulGLSkyRenderer *simulSkyRenderer;
 			SimulGLCloudRenderer *simulCloudRenderer;
-			SimulGL2DCloudRenderer *simul2DCloudRenderer;
 			SimulGLLightningRenderer *simulLightningRenderer;
 			SimulGLPrecipitationRenderer *simulPrecipitationRenderer;
 			SimulGLAtmosphericsRenderer *simulAtmosphericsRenderer;

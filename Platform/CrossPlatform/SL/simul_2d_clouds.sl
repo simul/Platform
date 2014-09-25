@@ -1,6 +1,28 @@
 #ifndef SIMUL_2D_CLOUDS_SL
 #define SIMUL_2D_CLOUDS_SL
 
+void Clouds2DVS(in vec3 position,out vec4 hPosition,out vec4 clip_pos,out vec3 wPosition)
+{
+	vec3 pos			=maxCloudDistanceMetres*position.xyz;
+	pos.z				+=origin.z;
+	float Rh			=planetRadius+origin.z;
+	float dist			=length(pos.xy);
+	float vertical_shift=sqrt(Rh*Rh-dist*dist)-Rh;
+	pos.z				+=vertical_shift;
+	pos.xy				+=eyePosition.xy;
+	clip_pos		=mul(worldViewProj,vec4(pos.xyz,1.0));
+	// Prevent clipping:
+#if REVERSE_DEPTH==1
+	if(clip_pos.z<0)
+		clip_pos.z=0;
+#else
+	if(clip_pos.z>clip_pos.w)
+		clip_pos.z=clip_pos.w;
+#endif
+	hPosition		=clip_pos;
+    wPosition		=pos.xyz;
+}
+
 float NoiseFunction(Texture2D noiseTexture,vec2 pos,float octaves,float persistence,float time)
 {
 	float dens=0.0;

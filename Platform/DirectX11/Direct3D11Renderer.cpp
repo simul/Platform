@@ -427,7 +427,7 @@ void Direct3D11Renderer::RenderMixedResolutionSky(crossplatform::DeviceContext &
 														,gamma
 														,depthTexture
 														,view->GetHiResDepthTexture()
-														,trueSkyRenderMode==clouds::MIXED_RESOLUTION?&view->lowResDepthTexture:NULL
+														,trueSkyRenderMode==clouds::MIXED_RESOLUTION?view->GetLowResDepthTexture():NULL
 														,depthViewportXYWH,view->pixelOffset);
 		simulWeatherRenderer->CompositeCloudsToScreen(deviceContext
 														,exposure
@@ -435,7 +435,7 @@ void Direct3D11Renderer::RenderMixedResolutionSky(crossplatform::DeviceContext &
 														,DepthBasedComposite
 														,depthTexture
 														,view->GetHiResDepthTexture()
-														,trueSkyRenderMode==clouds::MIXED_RESOLUTION?&view->lowResDepthTexture:NULL
+														,trueSkyRenderMode==clouds::MIXED_RESOLUTION?view->GetLowResDepthTexture():NULL
 														,depthViewportXYWH
 														,view->pixelOffset);
 		simulWeatherRenderer->RenderPrecipitation(deviceContext,view->GetHiResDepthTexture(),depthViewportXYWH);
@@ -626,7 +626,7 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 	{
 		msaaFramebuffer.SetAntialiasing(Antialiasing);
 		msaaFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
-		msaaFramebuffer.SetDepthFormat(DXGI_FORMAT_D16_UNORM);
+		msaaFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);// NOTE: D16_UNORM does NOT work well here.
 		msaaFramebuffer.SetWidthAndHeight(view->ScreenWidth,view->ScreenHeight);
 		msaaFramebuffer.Activate(deviceContext);
 		msaaFramebuffer.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f, 0);
@@ -756,7 +756,10 @@ void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceCont
 		}
 		{
 			char txt[40];
-			sprintf(txt,"%4.4f %4.4f", view->pixelOffset.x,view->pixelOffset.y);	
+		//	sprintf(txt,"%4.4f %4.4f", view->pixelOffset.x,view->pixelOffset.y);
+			math::Vector3 cam_pos	=GetCameraPosVector(deviceContext.viewStruct.view);
+			float c=simulWeatherRenderer->GetEnvironment()->cloudKeyframer->GetCloudiness(cam_pos);
+			sprintf(txt,"In cloud: %4.4f", c);	
 			renderPlatformDx11.Print(deviceContext,16,16,txt);
 		}
 		if(ShowHDRTextures&&simulHDRRenderer)
@@ -777,7 +780,6 @@ void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceCont
 
 void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Viewport viewport,int x0,int y0,int dx,int dy)
 {
-	ID3D11DeviceContext* pContext=deviceContext.asD3D11DeviceContext();
 	MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
 	crossplatform::Texture *depthTexture=NULL;
 	if(Antialiasing>1)
