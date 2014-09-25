@@ -267,7 +267,7 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 		if(!srv)
 		{
 			V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, NULL,&shaderResourceView));
-		}
+	}
 	}
 	depth=1;
 	dim=2;
