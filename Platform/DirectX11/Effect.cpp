@@ -13,7 +13,16 @@
 
 using namespace simul;
 using namespace dx11;
-
+RenderState::RenderState()
+	:m_depthStencilState(NULL)
+	,m_blendState(NULL)
+{
+}
+RenderState::~RenderState()
+{
+	SAFE_RELEASE(m_depthStencilState)
+	SAFE_RELEASE(m_blendState)
+}
 void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data)
 {
 	InvalidateDeviceObjects();

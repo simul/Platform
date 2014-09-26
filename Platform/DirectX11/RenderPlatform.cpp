@@ -777,6 +777,125 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatfo
 	delete [] decl;
 	return l;
 }
+static D3D11_COMPARISON_FUNC toD3dComparison(crossplatform::DepthComparison d)
+{
+	switch(d)
+	{
+	case crossplatform::DEPTH_LESS:
+		return D3D11_COMPARISON_LESS;
+	case crossplatform::DEPTH_EQUAL:
+		return D3D11_COMPARISON_EQUAL;
+	case crossplatform::DEPTH_LESS_EQUAL:
+		return D3D11_COMPARISON_LESS_EQUAL;
+	case crossplatform::DEPTH_GREATER:
+		return D3D11_COMPARISON_GREATER;
+	case crossplatform::DEPTH_NOT_EQUAL:
+		return D3D11_COMPARISON_NOT_EQUAL;
+	case crossplatform::DEPTH_GREATER_EQUAL:
+		return D3D11_COMPARISON_GREATER_EQUAL;
+	default:
+		break;
+	};
+	return D3D11_COMPARISON_LESS;
+}
+static D3D11_BLEND toD3dBlendOp(crossplatform::BlendOption o)
+{
+	switch(o)
+	{
+	case crossplatform::BLEND_ZERO:
+		return D3D11_BLEND_ZERO;
+	case crossplatform::BLEND_ONE:
+		return D3D11_BLEND_ONE;
+	case crossplatform::BLEND_SRC_COLOR:
+		return D3D11_BLEND_SRC_COLOR;
+	case crossplatform::BLEND_INV_SRC_COLOR:
+		return D3D11_BLEND_INV_SRC_COLOR;
+	case crossplatform::BLEND_SRC_ALPHA:
+		return D3D11_BLEND_SRC_ALPHA;
+	case crossplatform::BLEND_INV_SRC_ALPHA:
+		return D3D11_BLEND_INV_SRC_ALPHA;
+	case crossplatform::BLEND_DEST_ALPHA:
+		return D3D11_BLEND_DEST_ALPHA;
+	case crossplatform::BLEND_INV_DEST_ALPHA:
+		return D3D11_BLEND_INV_DEST_ALPHA;
+	case crossplatform::BLEND_DEST_COLOR:
+		return D3D11_BLEND_DEST_COLOR;
+	case crossplatform::BLEND_INV_DEST_COLOR:
+		return D3D11_BLEND_INV_DEST_COLOR;
+	case crossplatform::BLEND_SRC_ALPHA_SAT:
+		return D3D11_BLEND_SRC_ALPHA_SAT;
+	case crossplatform::BLEND_BLEND_FACTOR:
+		return D3D11_BLEND_BLEND_FACTOR;
+	case crossplatform::BLEND_INV_BLEND_FACTOR:
+		return D3D11_BLEND_INV_BLEND_FACTOR;
+	case crossplatform::BLEND_SRC1_COLOR:
+		return D3D11_BLEND_SRC1_COLOR;
+	case crossplatform::BLEND_INV_SRC1_COLOR:
+		return D3D11_BLEND_INV_SRC1_COLOR;
+	case crossplatform::BLEND_SRC1_ALPHA:
+		return D3D11_BLEND_SRC1_ALPHA;
+	case crossplatform::BLEND_INV_SRC1_ALPHA:
+		return D3D11_BLEND_INV_SRC1_ALPHA;
+	default:
+		break;
+	};
+	return D3D11_BLEND_ONE;
+}
+
+crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatform::RenderStateDesc &desc)
+{
+	dx11::RenderState *s=new dx11::RenderState();
+	s->type=desc.type;
+	if(desc.type==crossplatform::BLEND)
+	{
+		D3D11_BLEND_DESC omDesc;
+		ZeroMemory( &omDesc, sizeof( D3D11_BLEND_DESC ) );
+		for(int i=0;i<desc.blend.numRTs;i++)
+		{
+			omDesc.RenderTarget[i].BlendEnable				=desc.blend.RenderTarget[i].BlendEnable;
+			omDesc.RenderTarget[i].BlendOp					=D3D11_BLEND_OP_ADD;
+			omDesc.RenderTarget[i].SrcBlend					=toD3dBlendOp(desc.blend.RenderTarget[i].SrcBlend);
+			omDesc.RenderTarget[i].DestBlend				=toD3dBlendOp(desc.blend.RenderTarget[i].DestBlend);
+			omDesc.RenderTarget[i].BlendOpAlpha				=D3D11_BLEND_OP_ADD;
+			omDesc.RenderTarget[i].SrcBlendAlpha			=toD3dBlendOp(desc.blend.RenderTarget[i].SrcBlendAlpha);
+			omDesc.RenderTarget[i].DestBlendAlpha			=toD3dBlendOp(desc.blend.RenderTarget[i].DestBlendAlpha);
+			omDesc.RenderTarget[i].RenderTargetWriteMask	=desc.blend.RenderTarget[i].RenderTargetWriteMask;
+		}
+		omDesc.IndependentBlendEnable			=desc.blend.IndependentBlendEnable;
+		omDesc.AlphaToCoverageEnable			=desc.blend.AlphaToCoverageEnable;
+		AsD3D11Device()->CreateBlendState(&omDesc,&s->m_blendState);
+	}
+	else
+	{
+		D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+		//Initialize the description of the stencil state.
+		ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+
+		// Set up the description of the stencil state.
+		depthStencilDesc.DepthEnable		=desc.depth.test;
+		depthStencilDesc.DepthWriteMask		=desc.depth.write? D3D11_DEPTH_WRITE_MASK_ALL:D3D11_DEPTH_WRITE_MASK_ZERO;
+		depthStencilDesc.DepthFunc			= toD3dComparison(desc.depth.comparison);
+
+		depthStencilDesc.StencilEnable = false;
+		depthStencilDesc.StencilReadMask = 0xFF;
+		depthStencilDesc.StencilWriteMask = 0xFF;
+
+		// Stencil operations if pixel is front-facing.
+		depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+		depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+		// Stencil operations if pixel is back-facing.
+		depthStencilDesc.BackFace.StencilFailOp		= D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.BackFace.StencilDepthFailOp= D3D11_STENCIL_OP_DECR;
+		depthStencilDesc.BackFace.StencilPassOp		= D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.BackFace.StencilFunc		= D3D11_COMPARISON_ALWAYS;
+		
+		AsD3D11Device()->CreateDepthStencilState(&depthStencilDesc, &s->m_depthStencilState);
+	}
+	return s;
+}
 
 void *RenderPlatform::GetDevice()
 {
@@ -875,6 +994,23 @@ void RenderPlatform::SetTopology(crossplatform::DeviceContext &deviceContext,cro
 {
 	D3D11_PRIMITIVE_TOPOLOGY T=(D3D11_PRIMITIVE_TOPOLOGY)((int)t-(int)crossplatform::POINTLIST+(int)D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	deviceContext.asD3D11DeviceContext()->IASetPrimitiveTopology(T);
+}
+
+void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s)
+{
+	if(!s)
+		return;
+	dx11::RenderState *ds=(dx11::RenderState *)(s);
+	if(ds->type==crossplatform::BLEND)
+	{
+		float blendFactor[]		={0,0,0,0};
+		UINT sampleMask			=0xffffffff;
+		deviceContext.asD3D11DeviceContext()->OMSetBlendState(ds->m_blendState,blendFactor,sampleMask);
+	}
+	if(ds->type==crossplatform::DEPTH)
+	{
+		deviceContext.asD3D11DeviceContext()->OMSetDepthStencilState(ds->m_depthStencilState,0);
+	}
 }
 
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )

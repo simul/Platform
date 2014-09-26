@@ -10,7 +10,7 @@
 #include "SimulGLSkyRenderer.h"
 #include "SimulGLCloudRenderer.h"
 #include "SimulGLLightningRenderer.h"
-#include "SimulGLAtmosphericsRenderer.h"
+#include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "SimulGLPrecipitationRenderer.h"
 #include "SimulGLUtilities.h"
 #include "Simul/Clouds/CloudInterface.h"
@@ -136,8 +136,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 	simulLightningRenderer				=::new(memoryInterface) SimulGLLightningRenderer(ck3d,sk);
 	baseLightningRenderer=simulLightningRenderer;
 
-	simulAtmosphericsRenderer			=::new(memoryInterface) SimulGLAtmosphericsRenderer(mem);
-	baseAtmosphericsRenderer			=simulAtmosphericsRenderer;
+	baseAtmosphericsRenderer			=::new(memoryInterface) sky::BaseAtmosphericsRenderer(mem);
 	basePrecipitationRenderer			=simulPrecipitationRenderer
 										=::new(memoryInterface) SimulGLPrecipitationRenderer();
 
@@ -182,7 +181,7 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 	operator delete(base2DCloudRenderer,memoryInterface);
 	operator delete(simulLightningRenderer,memoryInterface);
 	operator delete(simulPrecipitationRenderer,memoryInterface);
-	operator delete(simulAtmosphericsRenderer,memoryInterface);
+	operator delete(baseAtmosphericsRenderer,memoryInterface);
 }
 
 void SimulGLWeatherRenderer::SetScreenSize(int view_id,int w,int h)
@@ -222,7 +221,7 @@ ERRNO_CHECK
 	simulCloudRenderer->RestoreDeviceObjects(renderPlatform);
 	simulLightningRenderer->RestoreDeviceObjects();
 ERRNO_CHECK
-	simulAtmosphericsRenderer->RestoreDeviceObjects(renderPlatform);
+	baseAtmosphericsRenderer->RestoreDeviceObjects(renderPlatform);
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
@@ -238,8 +237,8 @@ GL_ERROR_CHECK
 		simulCloudRenderer->InvalidateDeviceObjects();
 	if(simulLightningRenderer)
 		simulLightningRenderer->InvalidateDeviceObjects();
-	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->InvalidateDeviceObjects();
+	if(baseAtmosphericsRenderer)
+		baseAtmosphericsRenderer->InvalidateDeviceObjects();
 	if(simulPrecipitationRenderer)
 		simulPrecipitationRenderer->InvalidateDeviceObjects();
 	for(FramebufferMap::iterator i=framebuffers.begin();i!=framebuffers.end();i++)

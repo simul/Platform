@@ -118,7 +118,6 @@ namespace simul
 			class SimulSkyRendererDX1x					*simulSkyRenderer;
 			class SimulCloudRendererDX1x				*simulCloudRenderer;
 			class PrecipitationRenderer					*simulPrecipitationRenderer;
-			class SimulAtmosphericsRendererDX1x			*simulAtmosphericsRenderer;
 			class Simul2DCloudRendererDX11				*simul2DCloudRenderer;
 			class LightningRenderer						*simulLightningRenderer;
 			simul::crossplatform::TwoResFramebuffer *	GetFramebuffer(int view_id);

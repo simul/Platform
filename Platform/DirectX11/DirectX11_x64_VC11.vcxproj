@@ -193,7 +193,6 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="MixedResolutionView.cpp" />
     <ClCompile Include="OceanRenderer.cpp" />
     <ClCompile Include="OceanSimulator.cpp" />
     <ClCompile Include="PrecipitationRenderer.cpp" />
@@ -201,7 +200,6 @@
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
     <ClCompile Include="Simul2DCloudRendererDX1x.cpp" />
-    <ClCompile Include="SimulAtmosphericsRendererDX1x.cpp" />
     <ClCompile Include="SimulCloudRendererDX1x.cpp" />
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
     <ClCompile Include="LightningRenderer.cpp" />
@@ -235,7 +233,6 @@
     <ClInclude Include="MacrosDx1x.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="MixedResolutionView.h" />
     <ClInclude Include="OceanRenderer.h" />
     <ClInclude Include="OceanSimulator.h" />
     <ClInclude Include="precipitationrenderer.h" />
@@ -245,7 +242,6 @@
     <ClInclude Include="ResourcesDx1x.h" />
     <ClInclude Include="SaveTextureDX1x.h" />
     <ClInclude Include="Simul2DCloudRendererDX1x.h" />
-    <ClInclude Include="SimulAtmosphericsRendererDX1x.h" />
     <ClInclude Include="SimulCloudRendererDX1x.h" />
     <ClInclude Include="SimulHDRRendererDX1x.h" />
     <ClInclude Include="LightningRenderer.h" />
@@ -299,7 +295,6 @@
     <None Include="HLSL\ocean_shading.hlsl" />
     <None Include="HLSL\ocean_simulator_cs.hlsl" />
     <None Include="HLSL\ocean_simulator_vs_ps.hlsl" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
     <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\simul_gpu_sky.hlsl" />
     <None Include="HLSL\simul_inscatter_fns.hlsl" />

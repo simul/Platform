@@ -203,7 +203,6 @@ void LightningRenderer::Render(crossplatform::DeviceContext &deviceContext,cross
 		lightningConstants.lightningColour	=props.colour;
 		lightningConstants.Apply(deviceContext);
 
-		//dx11::setParameter(effect,"lightningColour",props.colour);
 		simul::math::Vector3 cam_pos=GetCameraPosVector((const float*)&deviceContext.viewStruct.view);
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
 		Walk(props

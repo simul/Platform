@@ -24,7 +24,7 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Camera/Camera.h"
 #include "SimulSkyRendererDX1x.h"
-#include "SimulAtmosphericsRendererDX1x.h"
+#include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "PrecipitationRenderer.h"
 
 #include "Simul/Platform/DirectX11/SaveTextureDX1x.h"
@@ -208,7 +208,6 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	,simulSkyRenderer(NULL)
 	,simulCloudRenderer(NULL)
 	,simulPrecipitationRenderer(NULL)
-	,simulAtmosphericsRenderer(NULL)
 	,simul2DCloudRenderer(NULL)
 	,simulLightningRenderer(NULL)
 	,exposure_multiplier(1.f)
@@ -226,7 +225,7 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	if(env->cloud2DKeyframer)
 		base2DCloudRenderer		=simul2DCloudRenderer		=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
 	basePrecipitationRenderer	=simulPrecipitationRenderer	=::new(memoryInterface) PrecipitationRenderer();
-	baseAtmosphericsRenderer	=simulAtmosphericsRenderer	=::new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
+	baseAtmosphericsRenderer		=::new(memoryInterface) sky::BaseAtmosphericsRenderer(mem);
 	
 	ConnectInterfaces();
 }
@@ -279,8 +278,8 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	if(simulPrecipitationRenderer)
 		simulPrecipitationRenderer->RestoreDeviceObjects(renderPlatform);
 
-	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->RestoreDeviceObjects(renderPlatform);
+	if(baseAtmosphericsRenderer)
+		baseAtmosphericsRenderer->RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 }
 
@@ -311,8 +310,8 @@ void SimulWeatherRendererDX11::InvalidateDeviceObjects()
 		simul2DCloudRenderer->InvalidateDeviceObjects();
 	if(simulPrecipitationRenderer)
 		simulPrecipitationRenderer->InvalidateDeviceObjects();
-	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->InvalidateDeviceObjects();
+	if(baseAtmosphericsRenderer)
+		baseAtmosphericsRenderer->InvalidateDeviceObjects();
 	if(simulLightningRenderer)
 		simulLightningRenderer->InvalidateDeviceObjects();
 	BaseWeatherRenderer::InvalidateDeviceObjects();
@@ -332,7 +331,6 @@ bool SimulWeatherRendererDX11::Destroy()
 	
 	simulCloudRenderer=NULL;
 
-	simulAtmosphericsRenderer=NULL;
 	return (hr==S_OK);
 }
 
@@ -344,7 +342,7 @@ SimulWeatherRendererDX11::~SimulWeatherRendererDX11()
 	del(simulSkyRenderer,memoryInterface);
 	del(simulCloudRenderer,memoryInterface);
 	del(simulPrecipitationRenderer,memoryInterface);
-	del(simulAtmosphericsRenderer,memoryInterface);
+	del(baseAtmosphericsRenderer,memoryInterface);
 	del(simul2DCloudRenderer,memoryInterface);
 	del(simulLightningRenderer,memoryInterface);
 }

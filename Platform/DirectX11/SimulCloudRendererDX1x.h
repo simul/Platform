@@ -116,8 +116,8 @@ namespace simul
 			ID3D11Texture1D*						lightning_texture;
 			ID3D11Texture2D*						cloud_cubemap;
 			
-			ID3D11BlendState*						blendAndWriteAlpha;
-			ID3D11BlendState*						blendAndDontWriteAlpha;
+			crossplatform::RenderState*						blendAndWriteAlpha;
+			crossplatform::RenderState*						blendAndDontWriteAlpha;
 
 			bool UpdateIlluminationTexture(float dt);
 			float LookupLargeScaleTexture(float x,float y);

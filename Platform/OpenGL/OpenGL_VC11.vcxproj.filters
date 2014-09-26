@@ -44,9 +44,6 @@
     <ClCompile Include="SimulGL2DCloudRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulGLAtmosphericsRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SimulGLCloudRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -131,9 +128,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulGL2DCloudRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimulGLAtmosphericsRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulGLCloudRenderer.h">

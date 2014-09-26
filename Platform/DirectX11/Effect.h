@@ -14,6 +14,13 @@ namespace simul
 {
 	namespace dx11
 	{
+		struct SIMUL_DIRECTX11_EXPORT RenderState:public crossplatform::RenderState
+		{
+			ID3D11DepthStencilState		*m_depthStencilState;
+			ID3D11BlendState			*m_blendState;
+			RenderState();
+			virtual ~RenderState();
+		};
 		// Platform-specific data for constant buffer, managed by RenderPlatform.
 		class PlatformConstantBuffer : public crossplatform::PlatformConstantBuffer
 		{

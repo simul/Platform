@@ -38,7 +38,6 @@ namespace simul
 	namespace opengl
 	{
 		class SimulGLLightningRenderer;
-		class SimulGLAtmosphericsRenderer;
 		class SimulGLPrecipitationRenderer;
 		class SimulGLSkyRenderer;
 		class SimulGLCloudRenderer;
@@ -112,10 +111,6 @@ namespace simul
 			SimulGLSkyRenderer *GetSkyRenderer();
 			//! Get a pointer to the 3d cloud renderer owned by this class instance.
 			SimulGLCloudRenderer *GetCloudRenderer();
-			//! Get a pointer to the rain renderer owned by this class instance.
-			//class SimulGLPrecipitationRenderer *GetPrecipitationRenderer();
-			//! Get a pointer to the atmospherics renderer owned by this class instance.
-			//class SimulGLAtmosphericsRenderer *GetAtmosphericsRenderer();
 			//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 			void EnableRain(bool e=true);
@@ -140,7 +135,6 @@ namespace simul
 			SimulGLCloudRenderer *simulCloudRenderer;
 			SimulGLLightningRenderer *simulLightningRenderer;
 			SimulGLPrecipitationRenderer *simulPrecipitationRenderer;
-			SimulGLAtmosphericsRenderer *simulAtmosphericsRenderer;
 			void CreateBuffers();
 			void RenderBufferToScreen(GLuint texture,int w,int h,bool use_shader,bool blend=false);
 			crossplatform::TwoResFramebuffer *GetFramebuffer(int view_id);

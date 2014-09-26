@@ -6,6 +6,16 @@ namespace simul
 {
 	namespace opengl
 	{
+		struct SIMUL_OPENGL_EXPORT RenderState:public crossplatform::RenderState
+		{
+			crossplatform::RenderStateDesc desc;
+			RenderState()
+			{
+			}
+			virtual ~RenderState()
+			{
+			}
+		};
 		// Platform-specific data for constant buffer, managed by RenderPlatform.
 		class SIMUL_OPENGL_EXPORT PlatformConstantBuffer : public crossplatform::PlatformConstantBuffer
 		{

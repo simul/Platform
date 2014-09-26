@@ -25,7 +25,7 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/RandomNumberGenerator.h"
 #include "CreateEffectDX1x.h"
-#include "SimulAtmosphericsRendererDX1x.h"
+#include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "MacrosDX1x.h"
 #include "Utilities.h"
 #include "Simul/Math/Pi.h"

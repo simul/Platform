@@ -654,6 +654,101 @@ GL_ERROR_CHECK
 	return l;
 }
 
+crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatform::RenderStateDesc &desc)
+{
+	opengl::RenderState *s=new opengl::RenderState;
+	s->desc=desc;
+	s->type=desc.type;
+	return s;
+}
+
+static GLenum toGlComparison(crossplatform::DepthComparison d)
+{
+	switch(d)
+	{
+	case crossplatform::DEPTH_LESS:
+		return GL_LESS;
+	case crossplatform::DEPTH_EQUAL:
+		return GL_EQUAL;
+	case crossplatform::DEPTH_LESS_EQUAL:
+		return GL_LEQUAL;
+	case crossplatform::DEPTH_GREATER:
+		return GL_GREATER;
+	case crossplatform::DEPTH_NOT_EQUAL:
+		return GL_NOTEQUAL;
+	case crossplatform::DEPTH_GREATER_EQUAL:
+		return GL_GEQUAL;
+	default:
+		break;
+	};
+	return GL_LESS;
+}
+static GLenum toGlBlendOp(crossplatform::BlendOption o)
+{
+	switch(o)
+	{
+	case crossplatform::BLEND_ZERO:
+		return GL_ZERO;
+	case crossplatform::BLEND_ONE:
+		return GL_ONE;
+	case crossplatform::BLEND_SRC_COLOR:
+		return GL_SRC_COLOR;
+	case crossplatform::BLEND_INV_SRC_COLOR:
+		return GL_ONE_MINUS_SRC_COLOR;
+	case crossplatform::BLEND_SRC_ALPHA:
+		return GL_SRC_ALPHA;
+	case crossplatform::BLEND_INV_SRC_ALPHA:
+		return GL_ONE_MINUS_SRC_ALPHA;
+	case crossplatform::BLEND_DEST_ALPHA:
+		return GL_DST_ALPHA;
+	case crossplatform::BLEND_INV_DEST_ALPHA:
+		return GL_ONE_MINUS_DST_ALPHA;
+	case crossplatform::BLEND_DEST_COLOR:
+		return GL_DST_COLOR;
+	case crossplatform::BLEND_INV_DEST_COLOR:
+		return GL_ONE_MINUS_DST_COLOR;
+	case crossplatform::BLEND_SRC_ALPHA_SAT:
+		return 0;
+	case crossplatform::BLEND_BLEND_FACTOR:
+		return 0;
+	case crossplatform::BLEND_INV_BLEND_FACTOR:
+		return 0;
+	case crossplatform::BLEND_SRC1_COLOR:
+		return GL_SRC1_COLOR;
+	case crossplatform::BLEND_INV_SRC1_COLOR:
+		return GL_ONE_MINUS_SRC1_COLOR;
+	case crossplatform::BLEND_SRC1_ALPHA:
+		return GL_SRC1_ALPHA;
+	case crossplatform::BLEND_INV_SRC1_ALPHA:
+		return GL_ONE_MINUS_SRC1_ALPHA;
+	default:
+		break;
+	};
+	return GL_ONE;
+}
+void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s)
+{
+	opengl::RenderState *S=(opengl::RenderState*)s;
+	if(S->desc.type==crossplatform::BLEND)
+	{
+		if(S->desc.blend.RenderTarget[0].BlendEnable)
+			glEnable(GL_BLEND);
+		else
+			glDisable(GL_BLEND);
+		for(int i=0;i<S->desc.blend.numRTs;i++)
+		{
+			const crossplatform::RTBlendDesc &d=S->desc.blend.RenderTarget[i];
+			//glBlendEquationi((unsigned)i, GL_FUNC_ADD);
+			glBlendEquationSeparatei((unsigned)i, GL_FUNC_ADD,GL_FUNC_ADD);
+
+			//glBlendFunci((unsigned)i, toGlBlendOp(d.SrcBlend), toGlBlendOp(d.DestBlend));
+
+			glBlendFuncSeparatei((unsigned)i, toGlBlendOp(d.SrcBlend), toGlBlendOp(d.DestBlend),
+								   toGlBlendOp(d.SrcBlendAlpha), toGlBlendOp(d.DestBlendAlpha));
+		}
+	}
+}
+
 void *RenderPlatform::GetDevice()
 {
 	return NULL;

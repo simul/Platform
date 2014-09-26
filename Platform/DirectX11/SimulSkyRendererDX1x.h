@@ -90,7 +90,6 @@ namespace simul
 			Query									sunQuery;
 
 			// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
-
 			simul::dx11::GpuSkyGenerator		gpuSkyGenerator;
 		};
 	}

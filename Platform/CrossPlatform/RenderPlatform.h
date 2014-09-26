@@ -37,6 +37,8 @@ namespace simul
 		class PlatformStructuredBuffer;
 		class Buffer;
 		class Layout;
+		struct RenderState;
+		struct RenderStateDesc;
 		struct DeviceContext;
 		struct LayoutDesc;
 		struct SamplerStateDesc;
@@ -126,6 +128,8 @@ namespace simul
 			virtual Buffer					*CreateBuffer					()	=0;
 			/// Create a platform-specific layout instance based on the given layout description \em layoutDesc and buffer \em buffer.
 			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *layoutDesc,Buffer *buffer)	=0;
+			/// Create a platform-specific RenderState object - e.g. a Blend state, Depth state, etc.
+			virtual RenderState				*CreateRenderState				(const RenderStateDesc &desc)=0;
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers,const crossplatform::Layout *layout)=0;
@@ -146,6 +150,8 @@ namespace simul
 			/// Called to restore the render state previously stored with StoreRenderState. There must be exactly one call of RestoreRenderState
 			/// for each StoreRenderState call, and they are not expected to be nested.
 			virtual void					RestoreRenderState(crossplatform::DeviceContext &deviceContext)=0;
+			/// Apply the RenderState to the device context - e.g. blend state, depth masking etc.
+			virtual void					SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s)=0;
 		protected:
 		private:
 			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);

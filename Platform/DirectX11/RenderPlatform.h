@@ -94,7 +94,9 @@ namespace simul
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer();
 			crossplatform::PlatformStructuredBuffer	*CreatePlatformStructuredBuffer();
 			crossplatform::Buffer					*CreateBuffer();
-			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *,crossplatform::Buffer *);
+			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *,crossplatform::Buffer *);			
+			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
+
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout);
 			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);
@@ -105,8 +107,10 @@ namespace simul
 			
 			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
 
-			void StoreRenderState(crossplatform::DeviceContext &deviceContext);
-			void RestoreRenderState(crossplatform::DeviceContext &deviceContext);
+			void									StoreRenderState(crossplatform::DeviceContext &deviceContext);
+			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
+
+			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
 
 			crossplatform::Effect *solidEffect;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;

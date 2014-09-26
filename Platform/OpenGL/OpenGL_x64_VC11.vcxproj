@@ -180,7 +180,6 @@
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SimulGL2DCloudRenderer.cpp" />
-    <ClCompile Include="SimulGLAtmosphericsRenderer.cpp" />
     <ClCompile Include="SimulGLCloudRenderer.cpp" />
     <ClCompile Include="SimulGLHDRRenderer.cpp" />
     <ClCompile Include="SimulGLLightningRenderer.cpp" />
@@ -214,7 +213,6 @@
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SimulGL2DCloudRenderer.h" />
-    <ClInclude Include="SimulGLAtmosphericsRenderer.h" />
     <ClInclude Include="SimulGLCloudRenderer.h" />
     <ClInclude Include="SimulGLHDRRenderer.h" />
     <ClInclude Include="SimulGLLightningRenderer.h" />

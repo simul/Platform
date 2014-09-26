@@ -79,26 +79,28 @@ void SimulCloudRendererDX1x::Recompile()
 	if(!m_pd3dDevice)
 		return;
 	
-	SAFE_RELEASE(blendAndWriteAlpha);
-	SAFE_RELEASE(blendAndDontWriteAlpha);
+	SAFE_DELETE(blendAndWriteAlpha);
+	SAFE_DELETE(blendAndDontWriteAlpha);
+	crossplatform::RenderStateDesc desc;
 	// two possible blend states for clouds - with alpha written, and without.
-	D3D11_BLEND_DESC omDesc;
-	ZeroMemory( &omDesc, sizeof( D3D11_BLEND_DESC ) );
-	omDesc.RenderTarget[0].BlendEnable		= true;
-	omDesc.RenderTarget[0].BlendOp			= D3D11_BLEND_OP_ADD;
-	omDesc.RenderTarget[0].BlendOpAlpha		= D3D11_BLEND_OP_ADD;
-	omDesc.RenderTarget[0].SrcBlend			= D3D11_BLEND_ONE;
-	omDesc.RenderTarget[0].DestBlend		= D3D11_BLEND_SRC_ALPHA;
-	omDesc.RenderTarget[0].SrcBlendAlpha	= D3D11_BLEND_ZERO;
-	omDesc.RenderTarget[0].DestBlendAlpha	= D3D11_BLEND_SRC_ALPHA;
-	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	omDesc.IndependentBlendEnable			=true;
-	omDesc.AlphaToCoverageEnable			=false;
-	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndWriteAlpha );
-	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED
-										| D3D11_COLOR_WRITE_ENABLE_GREEN
-										| D3D11_COLOR_WRITE_ENABLE_BLUE;
-	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndDontWriteAlpha );
+
+	ZeroMemory( &desc, sizeof( crossplatform::RenderStateDesc ) );
+	desc.type=crossplatform::BLEND;
+	desc.blend.numRTs=1;
+	desc.blend.RenderTarget[0].BlendEnable		= true;
+	desc.blend.RenderTarget[0].SrcBlend			= crossplatform::BLEND_ONE;
+	desc.blend.RenderTarget[0].DestBlend		= crossplatform::BLEND_SRC_ALPHA;
+	desc.blend.RenderTarget[0].SrcBlendAlpha	= crossplatform::BLEND_ZERO;
+	desc.blend.RenderTarget[0].DestBlendAlpha	= crossplatform::BLEND_SRC_ALPHA;
+	desc.blend.RenderTarget[0].RenderTargetWriteMask = 15;
+	desc.blend.IndependentBlendEnable			=true;
+	desc.blend.AlphaToCoverageEnable			=false;
+
+	blendAndWriteAlpha=renderPlatform->CreateRenderState(desc);
+
+	// write only r g and b:
+	desc.blend.RenderTarget[0].RenderTargetWriteMask = 7;
+	blendAndDontWriteAlpha=renderPlatform->CreateRenderState(desc);
 	gpuCloudGenerator.RecompileShaders();
 	recompile_shaders=false;
 }
@@ -146,8 +148,8 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	cloud_tex_width_x=cloud_tex_length_y=cloud_tex_depth_z=0;
 	SAFE_RELEASE(lightning_texture);
 	SAFE_RELEASE(illumination_texture);
-	SAFE_RELEASE(blendAndWriteAlpha);
-	SAFE_RELEASE(blendAndDontWriteAlpha);
+	SAFE_DELETE(blendAndWriteAlpha);
+	SAFE_DELETE(blendAndDontWriteAlpha);
 
 	cloudConstants.InvalidateDeviceObjects();
 	ClearIterators();
@@ -348,9 +350,12 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 	float blendFactor[]		={0,0,0,0};
 	UINT sampleMask			=0xffffffff;
 	if(write_alpha)
-		pContext->OMSetBlendState(blendAndWriteAlpha,blendFactor,sampleMask);
+		renderPlatform->SetRenderState(deviceContext,blendAndWriteAlpha);
+		//pContext->OMSetBlendState(blendAndWriteAlpha,blendFactor,sampleMask);
 	else
-		pContext->OMSetBlendState(blendAndDontWriteAlpha,blendFactor,sampleMask);
+		renderPlatform->SetRenderState(deviceContext,blendAndDontWriteAlpha);
+		//pContext->OMSetBlendState(blendAndDontWriteAlpha,blendFactor,sampleMask);
+	
 	BaseCloudRenderer::Render(deviceContext,exposure,cubemap
 				,nearFarPass,depth_tex
 				,write_alpha

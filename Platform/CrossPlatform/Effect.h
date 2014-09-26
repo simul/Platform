@@ -23,6 +23,79 @@ namespace simul
 		struct DeviceContext;
 		class RenderPlatform;
 		class Effect;
+		
+		enum BlendOption
+		{
+			BLEND_ZERO
+			,BLEND_ONE
+			,BLEND_SRC_COLOR
+			,BLEND_INV_SRC_COLOR
+			,BLEND_SRC_ALPHA
+			,BLEND_INV_SRC_ALPHA
+			,BLEND_DEST_ALPHA
+			,BLEND_INV_DEST_ALPHA
+			,BLEND_DEST_COLOR
+			,BLEND_INV_DEST_COLOR
+			,BLEND_SRC_ALPHA_SAT
+			,BLEND_BLEND_FACTOR
+			,BLEND_INV_BLEND_FACTOR
+			,BLEND_SRC1_COLOR
+			,BLEND_INV_SRC1_COLOR
+			,BLEND_SRC1_ALPHA
+			,BLEND_INV_SRC1_ALPHA
+		};
+		struct RTBlendDesc
+		{
+			bool BlendEnable;
+			BlendOption SrcBlend;
+			BlendOption DestBlend;
+			BlendOption SrcBlendAlpha;
+			BlendOption DestBlendAlpha;
+			unsigned char RenderTargetWriteMask;
+		};
+		struct BlendDesc
+		{
+			bool AlphaToCoverageEnable;
+			bool IndependentBlendEnable;
+			int numRTs;
+			RTBlendDesc RenderTarget[8];
+		};
+		enum DepthComparison
+		{
+			DEPTH_LESS,
+			DEPTH_EQUAL,
+			DEPTH_LESS_EQUAL,
+			DEPTH_GREATER,
+			DEPTH_NOT_EQUAL,
+			DEPTH_GREATER_EQUAL
+		} ;
+		struct DepthStencilDesc
+		{
+			bool test;
+			bool write;
+			DepthComparison comparison;
+		};
+		enum RenderStateType
+		{
+			NONE,BLEND,DEPTH
+		};
+		/// An initialization structure for a RenderState. Create a RenderStateDesc and pass it to RenderPlatform::CreateRenderState,
+		/// then store the returned pointer. Delete the pointer when done.
+		struct RenderStateDesc
+		{
+			RenderStateType type;
+			union
+			{
+				DepthStencilDesc depth;
+				BlendDesc blend;
+			};
+		};
+		struct SIMUL_CROSSPLATFORM_EXPORT RenderState
+		{
+			RenderStateType type;
+			RenderState():type(NONE){}
+			virtual ~RenderState(){}
+		};
 		class ConstantBufferBase
 		{
 		public:
