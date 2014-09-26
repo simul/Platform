@@ -45,15 +45,12 @@ namespace simul
 		{
 		public:
 			SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem);
-			virtual ~SimulSkyRendererDX1x();
 			//standard d3d object interface functions
 			void RecompileShaders();
 			//! Call this when the D3D device has been created or reset.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			//! Call this when the D3D device has been shut down.
 			void InvalidateDeviceObjects();
-			//! Call this to release the memory for D3D device objects.
-			bool Destroy();
 			//! \deprecated This function is no longer used, as the sky is drawn by the atmospherics renderer. See simul::sky::BaseAtmosphericsRenderer.
 			bool Render(void *context,bool blend);
 			//! Draw the fade textures to screen
@@ -67,14 +64,8 @@ namespace simul
 			//! uses a hardware occlusion query to see how many pixels have passed the z-test.
 			float CalcSunOcclusion(crossplatform::DeviceContext &deviceContext,float cloud_occlusion=0.f);
 
-			float GetFadeInterp() const;
-			void SetStepsPerDay(unsigned steps);
 		//! Initialize textures
 			void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
-			void FillFadeTex(ID3D11DeviceContext *context,int texture_index,int texel_index,int num_texels,
-								const simul::sky::float4 *loss_float4_array,
-								const simul::sky::float4 *inscatter_float4_array,
-								const simul::sky::float4 *skylight_float4_array);
 			void CycleTexturesForward();
 
 			// for testing:

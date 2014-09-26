@@ -44,10 +44,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 {
 }
 
-void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
-{
-	skyKeyframer->SetUniformKeyframes(steps);
-}
 
 void SimulSkyRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
@@ -75,35 +71,9 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r
 void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-	if(light_table)
-		light_table->InvalidateDeviceObjects();
-	if(light_table_2d)
-		light_table_2d->InvalidateDeviceObjects();
-	// Set the stored texture sizes to zero, so the textures will be re-created.
-	numFadeDistances=numFadeElevations=numAltitudes=0;
 	sunQuery.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
 	BaseSkyRenderer::InvalidateDeviceObjects();
-}
-
-bool SimulSkyRendererDX1x::Destroy()
-{
-	InvalidateDeviceObjects();
-	::operator delete(loss_2d,memoryInterface);
-	::operator delete(insc_2d,memoryInterface);
-	::operator delete(over_2d,memoryInterface);
-	::operator delete(skyl_2d,memoryInterface);
-	return true;
-}
-
-SimulSkyRendererDX1x::~SimulSkyRendererDX1x()
-{
-	Destroy();
-}
-
-float SimulSkyRendererDX1x::GetFadeInterp() const
-{
-	return skyKeyframer->GetSubdivisionInterpolation(skyKeyframer->GetTime()).interpolation;
 }
 
 void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate(void *context)
@@ -147,58 +117,6 @@ void SimulSkyRendererDX1x::EnsureTextureCycle()
 		texture_cycle=texture_cycle%3;
 		if(texture_cycle<0)
 			texture_cycle+=3;
-	}
-}
-
-void SimulSkyRendererDX1x::FillFadeTex(ID3D11DeviceContext *pContext,int texture_index,int texel_index,int num_texels,
-						const simul::sky::float4 *loss_float4_array,
-						const simul::sky::float4 *insc_float4_array,
-						const simul::sky::float4 *skyl_float4_array)
-{
-	int slice_size	=numFadeElevations*numAltitudes;
-	int end_slice	=(texel_index+num_texels-1)/(slice_size);
-	int end_row		=(texel_index+num_texels-1)/numAltitudes-end_slice*numFadeElevations;
-	
-	dx11::Texture *L=static_cast<dx11::Texture*>(loss_textures[(texture_cycle+texture_index)%3]);
-	dx11::Texture *I=static_cast<dx11::Texture*>(insc_textures[(texture_cycle+texture_index)%3]);
-	dx11::Texture *S=static_cast<dx11::Texture*>(skyl_textures[(texture_cycle+texture_index)%3]);
-
-	int row_width	=L->mapped.RowPitch/sizeof(simul::sky::float4);
-	int row_skip	=row_width-numAltitudes;
-	int slice_width	=L->mapped.DepthPitch/sizeof(simul::sky::float4);
-	int slice_skip	=slice_width-numFadeElevations*row_width;
-	int end_texel=texel_index+num_texels;
-	int last_row=0,last_slice=0;
-	while(texel_index<end_texel)
-	{
-		int num_left=end_texel-texel_index;
-		int slice	=texel_index/slice_size;
-		int row		=texel_index/numAltitudes-slice*numFadeElevations;
-		int col		=texel_index-(row+slice*numFadeElevations)*numAltitudes;
-		simul::sky::float4 *loss_ptr=(simul::sky::float4 *)(L->mapped.pData);
-		simul::sky::float4 *insc_ptr=(simul::sky::float4 *)(I->mapped.pData);
-		simul::sky::float4 *skyl_ptr=(simul::sky::float4 *)(S->mapped.pData);
-		loss_ptr+=slice*slice_width+row*row_width+col;
-		insc_ptr+=slice*slice_width+row*row_width+col;
-		skyl_ptr+=slice*slice_width+row*row_width+col;
-		if(slice!=end_slice)
-		{
-			num_left=(slice+1)*slice_size-texel_index;
-			if(row!=numFadeElevations-1)
-				num_left=slice*slice_size+(row+1)*numAltitudes-texel_index;
-		}
-		else
-			if(row!=end_row)
-				num_left=slice*slice_size+(row+1)*numAltitudes-texel_index;
-		memcpy(loss_ptr,loss_float4_array	,num_left*sizeof(simul::sky::float4));
-		memcpy(insc_ptr,insc_float4_array	,num_left*sizeof(simul::sky::float4));
-		memcpy(skyl_ptr,skyl_float4_array	,num_left*sizeof(simul::sky::float4));
-		loss_float4_array+=num_left;
-		insc_float4_array+=num_left;
-		skyl_float4_array+=num_left;
-		last_row=row;
-		last_slice=slice;
-		texel_index+=num_left;
 	}
 }
 

@@ -404,7 +404,10 @@ bool simul::dx11::setTexture(ID3DX11Effect *effect,const char *name			,ID3D11Sha
 	if(!effect)
 		return false;
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
-	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
+	if(!var->IsValid())
+	{
+		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader texture ")+name).c_str());
+	}
 	var->SetResource(value);
 	if(var->IsValid()!=0)
 		return true;
