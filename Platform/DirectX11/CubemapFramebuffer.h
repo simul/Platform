@@ -26,8 +26,8 @@ namespace simul
 			virtual ~CubemapFramebuffer();
 			void SetWidthAndHeight(int w,int h);
 			void SetAntialiasing(int ){}
-			void SetFormat(int i);
-			void SetDepthFormat(int){}
+			void SetFormat(crossplatform::PixelFormat f);
+			void SetDepthFormat(crossplatform::PixelFormat ){}
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform	*renderPlatform);
 			bool CreateBuffers();

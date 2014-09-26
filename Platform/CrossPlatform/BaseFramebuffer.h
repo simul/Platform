@@ -9,6 +9,7 @@ namespace simul
 		class Texture;
 		struct DeviceContext;
 		class RenderPlatform;
+		enum PixelFormat;
 		//! A base class for API-dependent framebuffer classes.
 		SIMUL_CROSSPLATFORM_EXPORT_CLASS BaseFramebuffer
 		{
@@ -34,13 +35,13 @@ namespace simul
 			//! Return true if the framebuffer's colour buffer has been activated and not yet deactivated.
 			virtual bool IsColourActive() const;
 			//! Deactivate the framebuffer - must be preceded a call to \ref Activate().
-			virtual void Deactivate(crossplatform::DeviceContext &)=0;
+			virtual void Deactivate(DeviceContext &)=0;
 			//! Deactivate only the depth buffer, so it can be used as a texture for rendering to the colour buffer.
-			virtual void DeactivateDepth(crossplatform::DeviceContext &){}
+			virtual void DeactivateDepth(DeviceContext &){}
 			//! Set the API-dependent colour buffer format for this framebuffer. Across all API's, setting 0 means no rendering to colour.
-			virtual void SetFormat(int)=0;
+			virtual void SetFormat(PixelFormat)=0;
 			//! Set the API-dependent colour depth format for this framebuffer. Across all API's, setting 0 means no rendering to depth.
-			virtual void SetDepthFormat(int)=0;
+			virtual void SetDepthFormat(PixelFormat)=0;
 			//! Clear the colour and depth buffers if present.
 			virtual void Clear(void* context,float R,float G,float B,float A,float depth,int mask=0)=0;
 			//! Set the size of the framebuffer in pixel height and width.

@@ -62,18 +62,18 @@ void Framebuffer::SetWidthAndHeight(int w,int h)
 	}
 }
 
-void Framebuffer::SetFormat(int f)
+void Framebuffer::SetFormat(crossplatform::PixelFormat f)
 {
-	DXGI_FORMAT F=(DXGI_FORMAT)f;
+	DXGI_FORMAT F=dx11::RenderPlatform::ToDxgiFormat(f);
 	if(F==target_format)
 		return;
 	target_format=F;
 	InvalidateDeviceObjects();
 }
 
-void Framebuffer::SetDepthFormat(int f)
+void Framebuffer::SetDepthFormat(crossplatform::PixelFormat f)
 {
-	DXGI_FORMAT F=(DXGI_FORMAT)f;
+	DXGI_FORMAT F=dx11::RenderPlatform::ToDxgiFormat(f);
 	if(F==depth_format)
 		return;
 	depth_format=F;

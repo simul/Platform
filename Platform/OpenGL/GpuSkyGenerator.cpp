@@ -113,7 +113,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int
 	for(int i=0;i<2;i++)
 	{
 		fb[i].SetWidthAndHeight((int)p.altitudes_km.size(),p.numElevations);
-		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB);
+		fb[i].InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
 	}
 	int new_cache_size=(int)p.altitudes_km.size()*p.numElevations*p.numDistances;
 	if(new_cache_size>cache_size)

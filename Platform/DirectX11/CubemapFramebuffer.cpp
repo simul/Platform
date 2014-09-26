@@ -1,7 +1,7 @@
 #define NOMINMAX
 #include "CubemapFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "D3dx11effect.h"
 #include <assert.h>
 const int MIPLEVELS=1;
@@ -39,9 +39,9 @@ void CubemapFramebuffer::SetWidthAndHeight(int w,int h)
 	assert(h==w);
 }
 
-void CubemapFramebuffer::SetFormat(int f)
+void CubemapFramebuffer::SetFormat(crossplatform::PixelFormat f)
 {
-	DXGI_FORMAT F=(DXGI_FORMAT)f;
+	DXGI_FORMAT F=dx11::RenderPlatform::ToDxgiFormat(f);
 	if(F==format)
 		return;
 	format=F;

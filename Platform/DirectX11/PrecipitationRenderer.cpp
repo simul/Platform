@@ -175,7 +175,7 @@ void PrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *
 	
 	moisture_fb.RestoreDeviceObjects(renderPlatform);
 	moisture_fb.SetWidthAndHeight(512,512);
-	moisture_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
+	moisture_fb.SetFormat(crossplatform::RGBA_8_UNORM);
 
     RecompileShaders();
 }

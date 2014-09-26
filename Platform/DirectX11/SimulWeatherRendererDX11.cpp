@@ -58,15 +58,15 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	m_pd3dDevice=(ID3D11Device*	)r->AsD3D11Device();
 	if(Width<=0||Height<=0||Downscale<=0)
 		return;
-	lowResFarFramebufferDx11	.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
-	lowResNearFramebufferDx11	.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
-	hiResFarFramebufferDx11		.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
-	hiResNearFramebufferDx11	.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
+	lowResFarFramebufferDx11	.SetFormat(crossplatform::RGBA_16_FLOAT);
+	lowResNearFramebufferDx11	.SetFormat(crossplatform::RGBA_16_FLOAT);
+	hiResFarFramebufferDx11		.SetFormat(crossplatform::RGBA_16_FLOAT);
+	hiResNearFramebufferDx11	.SetFormat(crossplatform::RGBA_16_FLOAT);
 
-	lowResFarFramebufferDx11	.SetDepthFormat(DXGI_FORMAT_D16_UNORM);
-	lowResNearFramebufferDx11	.SetDepthFormat(0);
-	hiResFarFramebufferDx11		.SetDepthFormat(0);
-	hiResNearFramebufferDx11	.SetDepthFormat(0);
+	lowResFarFramebufferDx11	.SetDepthFormat(crossplatform::D_16_UNORM);
+	lowResNearFramebufferDx11	.SetDepthFormat(crossplatform::UNKNOWN);
+	hiResFarFramebufferDx11		.SetDepthFormat(crossplatform::UNKNOWN);
+	hiResNearFramebufferDx11	.SetDepthFormat(crossplatform::UNKNOWN);
 	lowResFarFramebufferDx11.SetUseFastRAM(true,true);
 	lowResNearFramebufferDx11.SetUseFastRAM(true,true);
 	hiResFarFramebufferDx11.SetUseFastRAM(true,true);
@@ -359,7 +359,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 	CubemapFramebuffer	fb_cubemap;
 	static int cubesize=1024;
 	fb_cubemap.SetWidthAndHeight(cubesize,cubesize);
-	fb_cubemap.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
+	fb_cubemap.SetFormat(crossplatform::RGBA_32_FLOAT);
 	fb_cubemap.RestoreDeviceObjects(renderPlatform);
 	dx11::Framebuffer gamma_correct;
 	gamma_correct.SetWidthAndHeight(cubesize,cubesize);

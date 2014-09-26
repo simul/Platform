@@ -94,10 +94,10 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 #endif
 	ReverseDepthChanged();
 	
-	cubemapFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
-	cubemapFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
-	envmapFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
-	envmapFramebuffer.SetDepthFormat(DXGI_FORMAT_UNKNOWN);
+	cubemapFramebuffer.SetFormat(crossplatform::RGBA_16_FLOAT);
+	cubemapFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
+	envmapFramebuffer.SetFormat(crossplatform::RGBA_16_FLOAT);
+	envmapFramebuffer.SetDepthFormat(crossplatform::UNKNOWN);
 }
 
 Direct3D11Renderer::~Direct3D11Renderer()
@@ -182,7 +182,7 @@ void Direct3D11Renderer::RemoveView			(int view_id)
 
 void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
-	MixedResolutionView *view			=viewManager.GetView(view_id);
+	crossplatform::MixedResolutionView *view			=viewManager.GetView(view_id);
 	if(view)
 	{	
 		view->RestoreDeviceObjects(&renderPlatformDx11);
@@ -193,7 +193,7 @@ void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBu
 
 void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
 {
-	MixedResolutionView *view			=viewManager.GetView(view_id);
+	crossplatform::MixedResolutionView *view			=viewManager.GetView(view_id);
 	if(!view)
 		return;
 	static bool lockx=false,locky=false;
@@ -236,7 +236,7 @@ void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
 	}
 	W=view->GetScreenWidth();
 	H=view->GetScreenHeight();
-	if(view->viewType==OCULUS_VR)
+	if(view->viewType==crossplatform::OCULUS_VR)
 		W=view->GetScreenWidth()/2;
 	if(simulHDRRenderer)
 		simulHDRRenderer->SetBufferSize(W,H);
@@ -414,7 +414,7 @@ void Direct3D11Renderer::RenderMixedResolutionSky(crossplatform::DeviceContext &
 		{
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderMixedResolutionSky")
-	MixedResolutionView *view=viewManager.GetView(deviceContext.viewStruct.view_id);
+	crossplatform::MixedResolutionView *view=viewManager.GetView(deviceContext.viewStruct.view_id);
 	// now we process that depth buffer:
 	// Now we render using the data from these depth buffers into our offscreen sky/cloud buffers.
 	if(simulWeatherRenderer)
@@ -451,12 +451,12 @@ void Direct3D11Renderer::RenderMixedResolutionSky(crossplatform::DeviceContext &
 
 void Direct3D11Renderer::RenderToOculus(crossplatform::DeviceContext &deviceContext
 				,const camera::CameraViewStruct &cameraViewStruct)
-		{
+{
 	D3D11_VIEWPORT				viewport;
 	memset(&viewport,0,sizeof(D3D11_VIEWPORT));
 	viewport.MinDepth			=0.0f;
 	viewport.MaxDepth			=1.0f;
-	MixedResolutionView *view=viewManager.GetView(deviceContext.viewStruct.view_id);
+	crossplatform::MixedResolutionView *view=viewManager.GetView(deviceContext.viewStruct.view_id);
 	viewport.Width				=(float)view->GetScreenWidth()/2;
 	viewport.Height				=(float)view->GetScreenHeight();
 	bool hdr=simulHDRRenderer&&UseHdrPostprocessor;
@@ -542,7 +542,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	if(!enabled)
 		return;
 	simul::base::SetGpuProfilingInterface(pContext,&simul::dx11::Profiler::GetGlobalProfiler());
-	MixedResolutionView *view=viewManager.GetView(view_id);
+	crossplatform::MixedResolutionView *view=viewManager.GetView(view_id);
 	if(!view)
 		return;
 	pContext->OMGetRenderTargets(	1,
@@ -587,17 +587,17 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		RenderEnvmap(deviceContext);
 		SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	}
-	if(view->viewType==OCULUS_VR)
+	if(view->viewType==crossplatform::OCULUS_VR)
 		RenderToOculus(deviceContext,cameraViewStruct);
-		else
-		{
+	else
+	{
 		RenderStandard(deviceContext,cameraViewStruct);
 		RenderOverlays(deviceContext,cameraViewStruct);
-		}
+	}
 	SAFE_RELEASE(mainRenderTarget);
 	SAFE_RELEASE(mainDepthSurface);
 	SIMUL_COMBINED_PROFILE_ENDFRAME(pContext)
-		}
+}
 
 void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceContext,const camera::CameraViewStruct &cameraViewStruct)
 {
@@ -605,7 +605,7 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Render")
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"1")
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Clear")
-	MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
+	crossplatform::MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
 	bool hdr=simulHDRRenderer&&UseHdrPostprocessor;
 	float exposure=hdr?1.f:cameraViewStruct.exposure,gamma=hdr?1.f:cameraViewStruct.gamma;
 	if(hdr)
@@ -625,8 +625,8 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 	if(Antialiasing>1)
 	{
 		msaaFramebuffer.SetAntialiasing(Antialiasing);
-		msaaFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
-		msaaFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);// NOTE: D16_UNORM does NOT work well here.
+		msaaFramebuffer.SetFormat(crossplatform::RGBA_16_FLOAT);
+		msaaFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);// NOTE: D16_UNORM does NOT work well here.
 		msaaFramebuffer.SetWidthAndHeight(view->ScreenWidth,view->ScreenHeight);
 		msaaFramebuffer.Activate(deviceContext);
 		msaaFramebuffer.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f, 0);
@@ -733,7 +733,7 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceContext,const camera::CameraViewStruct &cameraViewStruct)
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Overlays")
-	MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
+	crossplatform::MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
 	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
 	{
 		static float x=0.35f,y=0.4f;
@@ -780,7 +780,7 @@ void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceCont
 
 void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Viewport viewport,int x0,int y0,int dx,int dy)
 {
-	MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
+	crossplatform::MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
 	crossplatform::Texture *depthTexture=NULL;
 	if(Antialiasing>1)
 		depthTexture	=msaaFramebuffer.GetDepthTexture();
@@ -799,7 +799,7 @@ void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &device
 void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8,int width,int height,float exposure,float gamma)
 {
 	std::string screenshotFilenameUtf8=filename_utf8;
-	MixedResolutionView *view=viewManager.GetView(0);
+	crossplatform::MixedResolutionView *view=viewManager.GetView(0);
 	if(!view)
 		return;
 	try
@@ -945,9 +945,9 @@ const char *Direct3D11Renderer::GetDebugText() const
 	return str.c_str();
 }
 
-void Direct3D11Renderer::SetViewType(int view_id,ViewType vt)
+void Direct3D11Renderer::SetViewType(int view_id,crossplatform::ViewType vt)
 {
-	MixedResolutionView *v=viewManager.GetView(view_id);
+	crossplatform::MixedResolutionView *v=viewManager.GetView(view_id);
 	if(!v)
 		return;
 	v->viewType=vt;

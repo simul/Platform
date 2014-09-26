@@ -61,7 +61,7 @@ void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
 	{
 		glowTexture.ensureTexture2DSizeAndFormat(renderPlatform,Width/2,Height/2,crossplatform::R_32_UINT,true);
 		
-		glow_fb.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
+		glow_fb.SetFormat(crossplatform::RGBA_16_FLOAT);
 		glow_fb.SetWidthAndHeight(Width/2,Height/2);
 	}
 	RecompileShaders();

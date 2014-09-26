@@ -6,6 +6,7 @@
 #include "SimulGLUtilities.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/OpenGL/RenderPlatform.h"
 #ifdef _MSC_VER
 #include <windows.h>
 #else
@@ -21,16 +22,12 @@ FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageS
 	,m_target(target)
 	,m_samples(samples)
 	,m_coverageSamples(coverageSamples)
-//	,m_tex_depth(0)
-//	,m_rb_depth(0)
 	,m_fb(0)
 	,initialized(false)
-	,depth_iformat(0)
-	,colour_iformat(0)
+	,depth_iformat(crossplatform::UNKNOWN)
+	,colour_iformat(crossplatform::UNKNOWN)
 	,wrap_clamp(GL_CLAMP_TO_EDGE)
 {
- //   for(int i = 0; i < num_col_buffers; i++)
-//        m_tex_col[i] = 0;
 	if(fb_stack.size()==0)
 		fb_stack.push((GLuint)0);
 }
@@ -75,18 +72,20 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 	}
 }
 
-void FramebufferGL::SetFormat(int f)
+void FramebufferGL::SetFormat(crossplatform::PixelFormat p)
 {
-	if((GLenum)f!=colour_iformat)
+//	GLenum f=opengl::RenderPlatform::ToGLFormat(p);
+	if(p!=colour_iformat)
 		InvalidateDeviceObjects();
-	colour_iformat=f;
+	colour_iformat=p;
 }
 
-void FramebufferGL::SetDepthFormat(int f)
+void FramebufferGL::SetDepthFormat(crossplatform::PixelFormat p)
 {
-	if((GLenum)f!=depth_iformat)
+	//GLenum f=opengl::RenderPlatform::ToGLFormat(p);
+	if(p!=depth_iformat)
 		InvalidateDeviceObjects();
-	depth_iformat=f;
+	depth_iformat=p;
 }
 
 void FramebufferGL::SetWrapClampMode(GLint wr)
@@ -94,9 +93,9 @@ void FramebufferGL::SetWrapClampMode(GLint wr)
 	wrap_clamp=wr;
 }
 
-bool FramebufferGL::InitColor_Tex(int , GLenum iformat)
+bool FramebufferGL::InitColor_Tex(int , crossplatform::PixelFormat p)
 {
-	SetFormat(iformat);
+	SetFormat(p);
 	return CreateBuffers();
 }
 
@@ -116,7 +115,7 @@ GL_ERROR_CHECK
 	buffer_depth_texture.dim=2;
 	//buffer_texture.ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,GL_RGBA,false,true,1,0);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
-	if(colour_iformat)
+	if(colour_iformat!=crossplatform::UNKNOWN)
 	{
 		glGenTextures(1, &buffer_texture.pTextureObject);//m_tex_col[0]);
 		glBindTexture(GL_TEXTURE_2D, buffer_texture.pTextureObject);//m_tex_col[0]);
@@ -125,14 +124,15 @@ GL_ERROR_CHECK
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D,0, colour_iformat, Width, Height,0,GL_RGBA, GL_UNSIGNED_INT, NULL);
+		GLenum f=opengl::RenderPlatform::ToGLFormat(colour_iformat);
+		glTexImage2D(GL_TEXTURE_2D,0, f, Width, Height,0,GL_RGBA, GL_UNSIGNED_INT, NULL);
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffer_texture.pTextureObject, 0);
 		
 		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(status!=GL_FRAMEBUFFER_COMPLETE)
 			return false;
 	}
-	if(depth_iformat)
+	if(depth_iformat!=crossplatform::UNKNOWN)
 	{
 		glGenTextures(1, &buffer_depth_texture.pTextureObject);
 		glBindTexture(GL_TEXTURE_2D, buffer_depth_texture.pTextureObject);
@@ -143,7 +143,8 @@ GL_ERROR_CHECK
 		//glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-		glTexImage2D(GL_TEXTURE_2D, 0, depth_iformat, Width, Height, 0,GL_DEPTH_COMPONENT,GL_UNSIGNED_INT, NULL);
+		GLenum f=opengl::RenderPlatform::ToGLFormat(depth_iformat);
+		glTexImage2D(GL_TEXTURE_2D, 0, f, Width, Height, 0,GL_DEPTH_COMPONENT,GL_UNSIGNED_INT, NULL);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,buffer_depth_texture.pTextureObject,0);
 		
@@ -159,18 +160,18 @@ GL_ERROR_CHECK
 
 // In order to use a depth buffer, either
 // InitDepth_RB or InitDepth_Tex needs to be called.
-void FramebufferGL::InitDepth_RB(GLenum iformat)
+void FramebufferGL::InitDepth_RB(crossplatform::PixelFormat p)
 {
-	SetDepthFormat(iformat);
+	SetDepthFormat(p);
 }
 
 void FramebufferGL::NoDepth()
 {
 }
 
-void FramebufferGL::InitDepth_Tex(GLenum iformat)
+void FramebufferGL::InitDepth_Tex(crossplatform::PixelFormat p)
 {
-	SetDepthFormat(iformat);
+	SetDepthFormat(p);
 }
 
 bool FramebufferGL::IsValid() const

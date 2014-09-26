@@ -15,7 +15,7 @@
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
-#include "Simul/Platform/DirectX11/MixedResolutionView.h"
+#include "Simul/Platform/CrossPlatform/MixedResolutionView.h"
 #include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
 #pragma warning(push)
 #pragma warning(disable:4251)
@@ -127,7 +127,7 @@ namespace simul
 			virtual bool				OnDeviceRemoved		();
 			virtual void				OnFrameMove			(double fTime,float fTimeStep);
 			virtual const char *		GetDebugText		() const;
-			void SetViewType(int view_id,ViewType vt);
+			void SetViewType(int view_id,crossplatform::ViewType vt);
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
 			void SaveScreenshot(const char *filename_utf8,int width=0,int height=0,float exposure=1.0f,float gamma=0.44f);
 			simul::dx11::RenderPlatform renderPlatformDx11;
@@ -169,7 +169,7 @@ namespace simul
 			TerrainRenderer								*simulTerrainRenderer;
 			OceanRenderer								*oceanRenderer;
 			simul::scene::BaseSceneRenderer				*sceneRenderer;
-			MixedResolutionViewManager					viewManager;
+			crossplatform::MixedResolutionViewManager	viewManager;
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
 			simul::dx11::Framebuffer					msaaFramebuffer;

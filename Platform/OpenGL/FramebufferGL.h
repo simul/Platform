@@ -32,17 +32,17 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void SetWidthAndHeight(int w,int h);
 			void SetAntialiasing(int ){}
-			void SetFormat(int);
-			void SetDepthFormat(int);
+			void SetFormat(crossplatform::PixelFormat p);
+			void SetDepthFormat(crossplatform::PixelFormat p);
 			void SetWrapClampMode(GLint wr);
 			// In order to use a color buffer, either
 			// InitColor_RB or InitColor_Tex needs to be called.
 			//void InitColor_RB(int index, GLenum internal_format);
-			bool InitColor_Tex(int index, GLenum internal_format);
+			bool InitColor_Tex(int index, crossplatform::PixelFormat p);
 			// In order to use a depth buffer, either
 			// InitDepth_RB or InitDepth_Tex needs to be called.
-			void InitDepth_RB(GLenum iformat = GL_DEPTH_COMPONENT24);
-			void InitDepth_Tex(GLenum iformat = GL_DEPTH_COMPONENT24);
+			void InitDepth_RB(crossplatform::PixelFormat p = crossplatform::D_32_FLOAT);//GL_DEPTH_COMPONENT24
+			void InitDepth_Tex(crossplatform::PixelFormat p = crossplatform::D_32_FLOAT);//GL_DEPTH_COMPONENT24
 			/// Use the existing depth buffer
 			void NoDepth();
 			/// Activate / deactivate the FBO as a render target
@@ -124,7 +124,7 @@ namespace simul
 			//GLuint m_tex_col[num_col_buffers];//, m_rb_col[num_col_buffers];
 			//GLuint m_tex_depth;
 			//GLuint m_rb_depth;
-			GLenum colour_iformat,depth_iformat;
+			crossplatform::PixelFormat colour_iformat,depth_iformat;
 			bool initialized;
 			GLint wrap_clamp;
 		public:

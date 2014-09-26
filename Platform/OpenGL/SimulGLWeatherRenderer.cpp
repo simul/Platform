@@ -60,14 +60,14 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		return;
 	if(!renderPlatform)
 		return;
-	lowResFarFramebuffer	.SetFormat(GL_RGBA32F_ARB);
-	lowResNearFramebuffer	.SetFormat(GL_RGBA32F_ARB);
-	hiResFarFramebuffer		.SetFormat(GL_RGBA32F_ARB);
-	hiResNearFramebuffer	.SetFormat(GL_RGBA32F_ARB);
-	lowResFarFramebuffer	.SetDepthFormat(GL_DEPTH_COMPONENT32F);
-	lowResNearFramebuffer	.SetDepthFormat(0);
-	hiResFarFramebuffer		.SetDepthFormat(0);
-	hiResNearFramebuffer	.SetDepthFormat(0);
+	lowResFarFramebuffer	.SetFormat(crossplatform::RGBA_32_FLOAT);
+	lowResNearFramebuffer	.SetFormat(crossplatform::RGBA_32_FLOAT);
+	hiResFarFramebuffer		.SetFormat(crossplatform::RGBA_32_FLOAT);
+	hiResNearFramebuffer	.SetFormat(crossplatform::RGBA_32_FLOAT);
+	lowResFarFramebuffer	.SetDepthFormat(crossplatform::D_32_FLOAT);
+	lowResNearFramebuffer	.SetDepthFormat(crossplatform::UNKNOWN);
+	hiResFarFramebuffer		.SetDepthFormat(crossplatform::UNKNOWN);
+	hiResNearFramebuffer	.SetDepthFormat(crossplatform::UNKNOWN);
 
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
 	int BufferWidth		=(Width+Downscale-1)/Downscale;

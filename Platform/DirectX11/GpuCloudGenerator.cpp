@@ -50,7 +50,7 @@ void GpuCloudGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	// Mask must have depth as that's how it merges.
-	mask_fb.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+	mask_fb.SetDepthFormat(crossplatform::D_32_FLOAT);
 	mask_fb.RestoreDeviceObjects(renderPlatform);
 	gpuCloudConstants.RestoreDeviceObjects(m_pd3dDevice);
 	SAFE_RELEASE(m_pWwcSamplerState);

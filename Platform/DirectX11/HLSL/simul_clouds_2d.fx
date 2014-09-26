@@ -44,7 +44,7 @@ struct v2f
 v2f VS_Main(a2v IN)
 {
 	v2f OUT;
-	Clouds2DVS(IN.position,OUT.hPosition,OUT.clip_pos,OUT.wPosition);
+	Clouds2DVS(IN.position,mixedResTransformXYWH,OUT.hPosition,OUT.clip_pos,OUT.wPosition);
     return OUT;
 }
 

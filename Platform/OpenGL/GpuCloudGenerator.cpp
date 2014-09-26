@@ -37,7 +37,7 @@ GpuCloudGenerator::~GpuCloudGenerator()
 
 void GpuCloudGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *)
 {
-	iformat=GL_LUMINANCE32F_ARB;
+	iformat=crossplatform::INT_32_FLOAT;
 	itype=GL_LUMINANCE;
 	RecompileShaders();
 	density_texture=0;
@@ -90,17 +90,17 @@ static GLuint make3DTexture(int w,int l,int d,int stride,bool wrap_z,const float
 
 int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 {
-	if(iformat==GL_LUMINANCE32F_ARB)
+	if(iformat==crossplatform::LUM_32_FLOAT)
 	{
 		dens_fb.SetWidthAndHeight(grid[0],grid[1]*grid[2]);
 		if(!dens_fb.InitColor_Tex(0,iformat))
 		{
 			itype=GL_INTENSITY;
-			iformat=GL_INTENSITY32F_ARB;
+			iformat=crossplatform::INT_32_FLOAT;
 			if(!dens_fb.InitColor_Tex(0,iformat))
 			{
 				itype=GL_RGBA;
-				iformat=GL_RGBA32F_ARB;
+				iformat=crossplatform::RGBA_32_FLOAT;
 				dens_fb.InitColor_Tex(0,iformat);
 			}
 		}
@@ -197,11 +197,11 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	if(!dens_fb.InitColor_Tex(0,iformat))
 	{
 		itype=GL_INTENSITY;
-		iformat=GL_INTENSITY32F_ARB;
+		iformat=crossplatform::INT_32_FLOAT;
 		if(!dens_fb.InitColor_Tex(0,iformat))
 		{
 			itype=GL_RGBA;
-			iformat=GL_RGBA32F_ARB;
+			iformat=crossplatform::RGBA_32_FLOAT;
 			dens_fb.InitColor_Tex(0,iformat);
 		}
 	}
@@ -287,7 +287,7 @@ GL_ERROR_CHECK
 	for(int i=0;i<2;i++)
 	{
 		fb[i].SetWidthAndHeight(params.light_grid[0],params.light_grid[1]);
-		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB);
+		fb[i].InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
 	}
 	directLightTextures[light_index].ensureTexture3DSizeAndFormat(NULL
 				,params.light_grid[0],params.light_grid[1],params.light_grid[2]
@@ -408,7 +408,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	int total_texels=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]*params.density_grid[2]);
-	world_fb.InitColor_Tex(0,GL_RGBA);
+	world_fb.InitColor_Tex(0,crossplatform::RGBA_8_UNORM);
 	glUseProgram(transform_program);
 	setParameter(transform_program,"density_texture",0);
 	setParameter(transform_program,"light_texture",1);

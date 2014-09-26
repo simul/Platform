@@ -84,7 +84,7 @@ shader PS_DetailLighting(in vec2 texCoords)
 
 shader VS_Clouds2D(in int gl_VertexID,in vec4 gl_Vertex,out vec2 texc_global,out vec2 texc_detail,out vec4 clip_pos,out vec3 wPosition)
 {
-	Clouds2DVS(gl_Vertex.xyz,gl_Position,clip_pos,wPosition);
+	Clouds2DVS(gl_Vertex.xyz,mixedResTransformXYWH,gl_Position,clip_pos,wPosition);
 }
 
 

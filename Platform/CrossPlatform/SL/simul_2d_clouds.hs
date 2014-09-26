@@ -4,6 +4,7 @@
 SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform mat4 worldViewProj;
+	uniform vec4 mixedResTransformXYWH;
 	uniform vec3 origin;
 	uniform float globalScale;
 

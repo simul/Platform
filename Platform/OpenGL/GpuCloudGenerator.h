@@ -57,7 +57,7 @@ namespace simul
 			GLuint			lighting_program;
 			GLuint			transform_program;
 			GLuint			volume_noise_tex;
-			GLenum			iformat;
+			crossplatform::PixelFormat			iformat;
 			GLenum			itype;
 			GLuint			density_texture;
 			crossplatform::Texture	*finalTexture[3];

@@ -156,8 +156,8 @@ GL_ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
 GL_ERROR_CHECK
-	depthFramebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
-	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);
+	depthFramebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
+	depthFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
 ERRNO_CHECK
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(renderPlatform);

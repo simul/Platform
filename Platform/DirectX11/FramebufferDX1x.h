@@ -20,8 +20,8 @@ namespace simul
 			Framebuffer(int w=0,int h=0);
 			virtual ~Framebuffer();
 			void SetWidthAndHeight(int w,int h);
-			void SetFormat(int f);
-			void SetDepthFormat(int f);
+			void SetFormat(crossplatform::PixelFormat f);
+			void SetDepthFormat(crossplatform::PixelFormat f);
 			bool IsValid() const;
 			void SetUseFastRAM(bool colour,bool depth)
 			{

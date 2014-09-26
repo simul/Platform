@@ -209,7 +209,6 @@
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
-    <ClCompile Include="MixedResolutionView.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Buffer.h" />
@@ -253,7 +252,6 @@
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />
-    <ClInclude Include="MixedResolutionView.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />

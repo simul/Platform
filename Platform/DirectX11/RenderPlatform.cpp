@@ -626,6 +626,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R32_FLOAT;
 	case LUM_32_FLOAT:
 		return DXGI_FORMAT_R32_FLOAT;
+	case INT_32_FLOAT:
+		return DXGI_FORMAT_R32_FLOAT;
 	case RGBA_8_UNORM:
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case RGBA_8_SNORM:
