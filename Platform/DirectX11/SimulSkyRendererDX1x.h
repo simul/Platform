@@ -62,24 +62,15 @@ namespace simul
 			//! objects like mountains etc. in it, and make sure these have already been drawn.
 			//! GetSunOcclusion executes a pseudo-render of an invisible billboard, then
 			//! uses a hardware occlusion query to see how many pixels have passed the z-test.
-			float CalcSunOcclusion(crossplatform::DeviceContext &deviceContext,float cloud_occlusion=0.f);
 
 		//! Initialize textures
 			void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
-			void CycleTexturesForward();
 
 			// for testing:
 			void DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView*	m_pCubeEnvMapSRV);
 			simul::sky::BaseGpuSkyGenerator *GetBaseGpuSkyGenerator(){return &gpuSkyGenerator;}
 		protected:
-			int cycle;
-
 			void EnsureTexturesAreUpToDate(void *c);
-			void EnsureTextureCycle();
-	
-			ID3D11Device*							m_pd3dDevice;
-			Query									sunQuery;
-
 			// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
 			simul::dx11::GpuSkyGenerator		gpuSkyGenerator;
 		};

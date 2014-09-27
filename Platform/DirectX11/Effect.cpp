@@ -13,6 +13,57 @@
 
 using namespace simul;
 using namespace dx11;
+
+D3D11_QUERY toD3dQueryType(crossplatform::QueryType t)
+{
+	switch(t)
+	{
+		case crossplatform::QUERY_OCCLUSION:
+			return D3D11_QUERY_OCCLUSION;
+		case crossplatform::QUERY_TIMESTAMP:
+			return D3D11_QUERY_TIMESTAMP;
+		case crossplatform::QUERY_TIMESTAMP_DISJOINT:
+			return D3D11_QUERY_TIMESTAMP_DISJOINT;
+		default:
+			return D3D11_QUERY_EVENT;
+	};
+}
+
+void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+{
+	ID3D11Device *m_pd3dDevice=r->AsD3D11Device();
+	D3D11_QUERY_DESC qdesc=
+	{
+		toD3dQueryType(type),0
+	};
+	for(int i=0;i<QueryLatency;i++)
+		m_pd3dDevice->CreateQuery(&qdesc,&d3d11Query[i]);
+}
+void Query::InvalidateDeviceObjects() 
+{
+	for(int i=0;i<QueryLatency;i++)
+		SAFE_RELEASE(d3d11Query[i]);
+}
+
+void Query::Begin(crossplatform::DeviceContext &deviceContext)
+{
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	pContext->Begin(d3d11Query[currFrame]);
+}
+
+void Query::End(crossplatform::DeviceContext &deviceContext)
+{
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	pContext->End(d3d11Query[currFrame]);
+	currFrame = (currFrame + 1) % QueryLatency;  
+}
+
+void Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)
+{
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	while (pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0) == S_FALSE);
+}
+
 RenderState::RenderState()
 	:m_depthStencilState(NULL)
 	,m_blendState(NULL)

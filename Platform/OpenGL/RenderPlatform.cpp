@@ -662,6 +662,12 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
 	return s;
 }
 
+crossplatform::Query *RenderPlatform::CreateQuery(crossplatform::QueryType type)
+{
+	opengl::Query *q=new opengl::Query(type);
+	return q;
+}
+
 static GLenum toGlComparison(crossplatform::DepthComparison d)
 {
 	switch(d)

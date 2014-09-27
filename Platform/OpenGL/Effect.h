@@ -6,6 +6,24 @@ namespace simul
 {
 	namespace opengl
 	{
+		struct SIMUL_OPENGL_EXPORT Query:public crossplatform::Query
+		{
+			GLuint glQuery[crossplatform::Query::QueryLatency];
+			Query(crossplatform::QueryType t):crossplatform::Query(t)
+			{
+				for(int i=0;i<QueryLatency;i++)
+					glQuery[i]		=0;
+			}
+			~Query()
+			{
+				InvalidateDeviceObjects();
+			}
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
+			void InvalidateDeviceObjects() override;
+			void Begin(crossplatform::DeviceContext &deviceContext) override;
+			void End(crossplatform::DeviceContext &deviceContext) override;
+			void GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
+		};
 		struct SIMUL_OPENGL_EXPORT RenderState:public crossplatform::RenderState
 		{
 			crossplatform::RenderStateDesc desc;

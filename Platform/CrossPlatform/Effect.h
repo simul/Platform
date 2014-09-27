@@ -23,6 +23,36 @@ namespace simul
 		struct DeviceContext;
 		class RenderPlatform;
 		class Effect;
+		enum QueryType
+		{
+			QUERY_UNKNWON
+			,QUERY_OCCLUSION		// Like GL_SAMPLES_PASSED
+			,QUERY_TIMESTAMP		// like GL_TIMESTAMP
+			,QUERY_TIMESTAMP_DISJOINT
+		};
+		struct SIMUL_CROSSPLATFORM_EXPORT Query
+		{
+			static const int QueryLatency = 5;
+			bool QueryStarted;
+			bool QueryFinished;
+			int currFrame;
+			QueryType type;
+			Query(QueryType t)
+				:QueryStarted(false)
+				,QueryFinished(false)
+				,currFrame(0)
+				,type(t)
+			{
+			}
+			virtual ~Query()
+			{
+			}
+			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r)=0;
+			virtual void InvalidateDeviceObjects()=0;
+			virtual void Begin(DeviceContext &deviceContext) =0;
+			virtual void End(DeviceContext &deviceContext) =0;
+			virtual void GetData(DeviceContext &deviceContext,void *data,size_t sz) =0;
+		};
 		
 		enum BlendOption
 		{

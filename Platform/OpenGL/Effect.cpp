@@ -45,6 +45,62 @@ using namespace opengl;
 		return;\
 	}
 
+GLenum toGlQueryType(crossplatform::QueryType t)
+{
+	switch(t)
+	{
+		case crossplatform::QUERY_OCCLUSION:
+			return GL_SAMPLES_PASSED;
+		case crossplatform::QUERY_TIMESTAMP:
+			return GL_TIMESTAMP;
+		default:
+			return 0;
+	};
+}
+
+void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+{
+GL_ERROR_CHECK
+	glGenQueries(QueryLatency,glQuery);
+GL_ERROR_CHECK
+}
+
+void Query::InvalidateDeviceObjects() 
+{
+GL_ERROR_CHECK
+	glDeleteQueries(QueryLatency,glQuery);
+GL_ERROR_CHECK
+	for(int i=0;i<QueryLatency;i++)
+		glQuery[i]=0;
+}
+
+void Query::Begin(crossplatform::DeviceContext &deviceContext)
+{
+GL_ERROR_CHECK
+	glBeginQuery(toGlQueryType(type),glQuery[currFrame]);
+GL_ERROR_CHECK
+}
+
+void Query::End(crossplatform::DeviceContext &deviceContext)
+{
+GL_ERROR_CHECK
+	glEndQuery(glQuery[currFrame]);
+GL_ERROR_CHECK
+	currFrame = (currFrame + 1) % QueryLatency;  
+}
+
+void Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)
+{
+GL_ERROR_CHECK
+	GLuint ok=0;
+	glGetQueryObjectuiv(glQuery[currFrame],GL_QUERY_RESULT_AVAILABLE,&ok);
+GL_ERROR_CHECK
+	if(ok==GL_TRUE)
+		glGetQueryObjectuiv(glQuery[currFrame],GL_QUERY_RESULT,(GLuint*)data);
+GL_ERROR_CHECK
+}
+
+
 void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *,size_t sz,void *addr)
 {
 	InvalidateDeviceObjects();

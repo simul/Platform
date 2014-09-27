@@ -39,8 +39,6 @@ using namespace dx11;
 
 SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem)
 	:simul::sky::BaseSkyRenderer(sk,mem)
-	,m_pd3dDevice(NULL)
-	,cycle(0)
 {
 }
 
@@ -51,8 +49,6 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r
 		return;
 	renderPlatform=r;
 	BaseSkyRenderer::RestoreDeviceObjects(r);
-	m_pd3dDevice=renderPlatform->AsD3D11Device();
-	sunQuery.RestoreDeviceObjects(m_pd3dDevice);
 	HRESULT hr=S_OK;
 	gpuSkyGenerator.RestoreDeviceObjects(renderPlatform);
 	crossplatform::Texture *loss[3],*insc[3],*skyl[3];
@@ -71,7 +67,6 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform *r
 void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-	sunQuery.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
 	BaseSkyRenderer::InvalidateDeviceObjects();
 }
@@ -98,78 +93,12 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate(void *context)
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
-void SimulSkyRendererDX1x::CycleTexturesForward()
-{
-	cycle++;
-	std::swap(fade_texture_iterator[0],fade_texture_iterator[1]);
-	std::swap(fade_texture_iterator[1],fade_texture_iterator[2]);
-	for(int i=0;i<3;i++)
-		fade_texture_iterator[i].texture_index=i;
-}
-
-void SimulSkyRendererDX1x::EnsureTextureCycle()
-{
-	int cyc=(skyKeyframer->GetTextureCycle())%3;
-	while(texture_cycle!=cyc)
-	{
-		this->CycleTexturesForward();
-		texture_cycle++;
-		texture_cycle=texture_cycle%3;
-		if(texture_cycle<0)
-			texture_cycle+=3;
-	}
-}
-
 void SimulSkyRendererDX1x::RecompileShaders()
 {
-	HRESULT hr=S_OK;
-
-	if(!m_pd3dDevice)
+	if(!renderPlatform)
 		return;
 	BaseSkyRenderer::RecompileShaders();
-			 
-	techQuery			=effect->GetTechniqueByName("sun_query");
-
-	earthShadowUniforms.LinkToEffect(effect,"EarthShadowUniforms");
-	skyConstants.LinkToEffect(effect,"SkyConstants");
 	gpuSkyGenerator.RecompileShaders();
-}
-
-float SimulSkyRendererDX1x::CalcSunOcclusion(crossplatform::DeviceContext &deviceContext,float cloud_occlusion)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-#ifndef _XBOX_ONE
-	sun_occlusion=cloud_occlusion;
-	if(!techQuery||!techQuery->asD3DX11EffectTechnique()->IsValid())
-		return sun_occlusion;
-	// Start the query
-	vec3 sun_dir(skyKeyframer->GetDirectionToSun());
-	SetConstantsForPlanet(skyConstants,deviceContext.viewStruct.view,deviceContext.viewStruct.proj,sun_dir,skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f,sky::float4(1,1,1,1),sun_dir);
-	// 2 * sun radius because we want glow arprofileData.DisjointQuery[currFrame]ound it.
-	skyConstants.Apply(deviceContext);
-/*d3dQuery->Begin();*/
-	// Start the query
-    sunQuery.Begin(pContext);
-	{
-		ApplyPass(pContext,techQuery->asD3DX11EffectTechnique()->GetPassByIndex(0));
-		UtilityRenderer::DrawQuad(deviceContext);
-	}
-	// End the query, get the data
-	sunQuery.End(pContext);
-	D3D11_VIEWPORT viewport;
-	UINT num_v=1;
-	pContext->RSGetViewports(&num_v,&viewport);
-	float tan_half_fov_horizontal=1.f/deviceContext.viewStruct.proj._11;
-	float pixelRadius		=tan(skyConstants.radiusRadians/2.f)*viewport.Width/tan_half_fov_horizontal;
-	float maxPixelsVisible	=pi*pixelRadius*pixelRadius;
-    UINT64 pixelsVisible	=0;
-	sunQuery.GetData(pContext,&pixelsVisible,sizeof(UINT64));
- 	sun_occlusion			=1.f-(float)pixelsVisible/maxPixelsVisible;
-	if(sun_occlusion<0)
-		sun_occlusion		=0;
-	sun_occlusion			=1.f-(1.f-cloud_occlusion)*(1.f-sun_occlusion);
-#endif
-	return sun_occlusion;
 }
 
 

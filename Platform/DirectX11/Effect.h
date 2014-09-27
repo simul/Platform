@@ -14,6 +14,24 @@ namespace simul
 {
 	namespace dx11
 	{
+		struct SIMUL_DIRECTX11_EXPORT Query:public crossplatform::Query
+		{
+			ID3D11Query *d3d11Query[crossplatform::Query::QueryLatency];
+			Query(crossplatform::QueryType t):crossplatform::Query(t)
+			{
+				for(int i=0;i<QueryLatency;i++)
+					d3d11Query[i]		=0;
+			}
+			~Query() override
+			{
+				InvalidateDeviceObjects();
+			}
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
+			void InvalidateDeviceObjects() override;
+			void Begin(crossplatform::DeviceContext &deviceContext) override;
+			void End(crossplatform::DeviceContext &deviceContext) override;
+			void GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
+		};
 		struct SIMUL_DIRECTX11_EXPORT RenderState:public crossplatform::RenderState
 		{
 			ID3D11DepthStencilState		*m_depthStencilState;

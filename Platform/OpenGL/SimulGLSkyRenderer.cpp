@@ -212,17 +212,7 @@ GL_ERROR_CHECK
 void SimulGLSkyRenderer::RecompileShaders()
 {
 	gpuSkyGenerator.RecompileShaders();
-
 	BaseSkyRenderer::RecompileShaders();
-	
-	std::map<std::string,std::string> defines;
-	//sun_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag",defines);
-	//sunlight_param				=glGetUniformLocation(sun_program,"sunlight");
-GL_ERROR_CHECK
-	
-GL_ERROR_CHECK
-	skyConstants					.LinkToEffect(effect,"SkyConstants");
-	earthShadowUniforms				.LinkToEffect(effect,"EarthShadowUniforms");
 }
 
 void SimulGLSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
@@ -241,8 +231,6 @@ GL_ERROR_CHECK
 	}
 GL_ERROR_CHECK
 	gpuSkyGenerator.SetDirectTargets(loss,insc,skyl,&light_table);
-	
-GL_ERROR_CHECK
 GL_ERROR_CHECK
 	RecompileShaders();
 	glUseProgram(NULL);

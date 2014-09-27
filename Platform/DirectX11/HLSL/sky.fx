@@ -559,7 +559,7 @@ technique11 sun_gaussian
     }
 }
 
-technique11 query
+technique11 sun_query
 {
     pass p0
     {

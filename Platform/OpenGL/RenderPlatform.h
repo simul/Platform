@@ -68,6 +68,7 @@ namespace simul
 			crossplatform::Buffer					*CreateBuffer();
 			crossplatform::Layout					*CreateLayout(int num_elements,crossplatform::LayoutDesc *,crossplatform::Buffer *);
 			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
+			crossplatform::Query					*CreateQuery(crossplatform::QueryType type) override;
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout);
 			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);

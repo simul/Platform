@@ -43,6 +43,8 @@ namespace simul
 		struct LayoutDesc;
 		struct SamplerStateDesc;
 		struct PhysicalLightRenderData;
+		enum QueryType;
+		struct Query;
 		/// A crossplatform viewport structure.
 		struct Viewport
 		{
@@ -130,6 +132,8 @@ namespace simul
 			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *layoutDesc,Buffer *buffer)	=0;
 			/// Create a platform-specific RenderState object - e.g. a Blend state, Depth state, etc.
 			virtual RenderState				*CreateRenderState				(const RenderStateDesc &desc)=0;
+			/// Create an API-specific query object, e.g. for occlusion or timing tests.
+			virtual Query					*CreateQuery					(QueryType q)=0;
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers,const crossplatform::Layout *layout)=0;

@@ -897,6 +897,12 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
 	return s;
 }
 
+crossplatform::Query *RenderPlatform::CreateQuery(crossplatform::QueryType type)
+{
+	dx11::Query *q=new dx11::Query(type);
+	return q;
+}
+
 void *RenderPlatform::GetDevice()
 {
 	return device;
