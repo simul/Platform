@@ -140,6 +140,7 @@ ESRAMManager *eSRAMManager=NULL;
 void RenderPlatform::RestoreDeviceObjects(void *d)
 {
 	device=(ID3D11Device*)d;
+	crossplatform::RenderPlatform::RestoreDeviceObjects(d);
 #ifdef _XBOX_ONE
 	delete eSRAMManager;
 	eSRAMManager=new ESRAMManager(device);
@@ -184,6 +185,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 #ifdef _XBOX_ONE
 	delete eSRAMManager;
 #endif
+	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	solidConstants.InvalidateDeviceObjects();
 	textRenderer.InvalidateDeviceObjects();
 	SAFE_DELETE(solidEffect);

@@ -45,32 +45,10 @@ namespace simul
 		{
 		public:
 			SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem);
-			//standard d3d object interface functions
-			void RecompileShaders();
-			//! Call this when the D3D device has been created or reset.
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
-			//! Call this when the D3D device has been shut down.
-			void InvalidateDeviceObjects();
-			//! \deprecated This function is no longer used, as the sky is drawn by the atmospherics renderer. See simul::sky::BaseAtmosphericsRenderer.
-			bool Render(void *context,bool blend);
-			//! Draw the fade textures to screen
-			bool RenderFades(crossplatform::DeviceContext &deviceContext,int x,int y,int w,int h);
-			//! Call this to draw the sun flare, usually drawn last, on the main render target.
-			bool RenderFlare(float exposure);
-			//! Get a value, from zero to one, which represents how much of the sun is visible.
-			//! Call this when the current rendering surface is the one that has obscuring
-			//! objects like mountains etc. in it, and make sure these have already been drawn.
-			//! GetSunOcclusion executes a pseudo-render of an invisible billboard, then
-			//! uses a hardware occlusion query to see how many pixels have passed the z-test.
-
-		//! Initialize textures
-			void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
-
+	
 			// for testing:
-			void DrawCubemap(crossplatform::DeviceContext &deviceContext,ID3D11ShaderResourceView*	m_pCubeEnvMapSRV);
 			simul::sky::BaseGpuSkyGenerator *GetBaseGpuSkyGenerator(){return &gpuSkyGenerator;}
 		protected:
-			void EnsureTexturesAreUpToDate(void *c);
 			// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
 			simul::dx11::GpuSkyGenerator		gpuSkyGenerator;
 		};

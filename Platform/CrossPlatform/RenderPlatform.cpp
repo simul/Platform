@@ -1,9 +1,38 @@
 #include "RenderPlatform.h"
 #include "Simul/Base/EnvironmentVariables.h"
+#include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Effect.h"
 
 using namespace simul;
 using namespace crossplatform;
+
+void RenderPlatform::RestoreDeviceObjects(void*)
+{
+	crossplatform::RenderStateDesc desc;
+	memset(&desc,0,sizeof(desc));
+	desc.type=crossplatform::BLEND;
+	desc.blend.numRTs=1;
+	desc.blend.RenderTarget[0].BlendEnable			=false;
+	desc.blend.RenderTarget[0].RenderTargetWriteMask=15;
+	desc.blend.RenderTarget[0].SrcBlend				=crossplatform::BLEND_ONE;
+	desc.blend.RenderTarget[0].DestBlend			=crossplatform::BLEND_ZERO;
+	desc.blend.RenderTarget[0].SrcBlendAlpha		=crossplatform::BLEND_ONE;
+	desc.blend.RenderTarget[0].DestBlendAlpha		=crossplatform::BLEND_ZERO;
+	RenderState *opaque=standardRenderStates[STANDARD_OPAQUE_BLENDING]=CreateRenderState(desc);
+	
+	desc.blend.RenderTarget[0].SrcBlend				=crossplatform::BLEND_SRC_ALPHA;
+	desc.blend.RenderTarget[0].DestBlend			=crossplatform::BLEND_INV_SRC_ALPHA;
+	desc.blend.RenderTarget[0].SrcBlendAlpha		=crossplatform::BLEND_SRC_ALPHA;
+	desc.blend.RenderTarget[0].DestBlendAlpha		=crossplatform::BLEND_INV_SRC_ALPHA;
+	RenderState *alpha=standardRenderStates[STANDARD_ALPHA_BLENDING]=CreateRenderState(desc);
+}
+
+void RenderPlatform::InvalidateDeviceObjects()
+{
+	for(std::map<StandardRenderState,RenderState*>::iterator i=standardRenderStates.begin();i!=standardRenderStates.end();i++)
+		SAFE_DELETE(i->second);
+	standardRenderStates.clear();
+}
 
 void RenderPlatform::EnsureEffectIsBuiltPartialSpec(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options,const std::map<std::string,std::string> &defines)
 {
@@ -87,4 +116,9 @@ namespace simul
 			delete[] lines;
 		}
 	}
+}
+
+void RenderPlatform::SetStandardRenderState	(DeviceContext &deviceContext,StandardRenderState s)
+{
+	SetRenderState(deviceContext,standardRenderStates[s]);
 }

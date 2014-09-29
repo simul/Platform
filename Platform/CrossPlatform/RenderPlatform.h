@@ -38,6 +38,7 @@ namespace simul
 		class Buffer;
 		class Layout;
 		struct RenderState;
+		enum StandardRenderState;
 		struct RenderStateDesc;
 		struct DeviceContext;
 		struct LayoutDesc;
@@ -75,6 +76,12 @@ namespace simul
 				vec4 colour;
 			};
 			virtual ID3D11Device *AsD3D11Device()=0;
+			//! Call this once, when the 3D graphics device has been initialized, and pass the API-specific device pointer/identifier.
+			virtual void RestoreDeviceObjects(void*);
+			//! Call this once, when the 3d graphics device object is being shut down.
+			virtual void InvalidateDeviceObjects();
+			//! Optional - call this to recompile the standard shaders.
+			virtual void RecompileShaders	()=0;
 			virtual void PushTexturePath	(const char *pathUtf8)=0;
 			virtual void PopTexturePath		()=0;
 			virtual void StartRender		()=0;
@@ -150,14 +157,17 @@ namespace simul
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 			/// Called to store the render state - blending, depth check, etc. - for later retrieval with RestoreRenderState.
 			/// Some platforms may not support this.
-			virtual void					StoreRenderState(crossplatform::DeviceContext &deviceContext)=0;
+			virtual void					StoreRenderState				(DeviceContext &deviceContext)=0;
 			/// Called to restore the render state previously stored with StoreRenderState. There must be exactly one call of RestoreRenderState
 			/// for each StoreRenderState call, and they are not expected to be nested.
-			virtual void					RestoreRenderState(crossplatform::DeviceContext &deviceContext)=0;
+			virtual void					RestoreRenderState				(DeviceContext &deviceContext)=0;
 			/// Apply the RenderState to the device context - e.g. blend state, depth masking etc.
-			virtual void					SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s)=0;
+			virtual void					SetRenderState					(DeviceContext &deviceContext,const RenderState *s)=0;
+			/// Apply a standard renderstate - e.g. opaque blending
+			virtual void					SetStandardRenderState			(DeviceContext &deviceContext,StandardRenderState s);
 		protected:
 		private:
+			std::map<StandardRenderState,RenderState*> standardRenderStates;
 			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};
 

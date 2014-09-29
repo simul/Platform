@@ -22,9 +22,9 @@ namespace simul
 		public:
 			RenderPlatform();
 			virtual ~RenderPlatform();
-			void RestoreDeviceObjects(void*);
-			void InvalidateDeviceObjects();
-			void RecompileShaders();
+			void RestoreDeviceObjects(void*) override;
+			void InvalidateDeviceObjects() override;
+			void RecompileShaders() override;
 			
 			virtual ID3D11Device *AsD3D11Device()
 			{

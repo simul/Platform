@@ -31,6 +31,7 @@ D3D11_QUERY toD3dQueryType(crossplatform::QueryType t)
 
 void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	InvalidateDeviceObjects();
 	ID3D11Device *m_pd3dDevice=r->AsD3D11Device();
 	D3D11_QUERY_DESC qdesc=
 	{

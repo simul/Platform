@@ -34,14 +34,16 @@ RenderPlatform::~RenderPlatform()
 	InvalidateDeviceObjects();
 }
 
-void RenderPlatform::RestoreDeviceObjects(void*)
+void RenderPlatform::RestoreDeviceObjects(void *unused)
 {
 	solidConstants.RestoreDeviceObjects();
+	crossplatform::RenderPlatform::RestoreDeviceObjects(unused);
 	RecompileShaders();
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
+	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	solidConstants.Release();
 	SAFE_DELETE_PROGRAM(solid_program);
 	delete effect;
@@ -942,4 +944,41 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &,const float *p,
 
 void RenderPlatform::DrawCircle		(crossplatform::DeviceContext &,const float *,float ,const float *,bool)
 {
+}
+
+static vec4 lerp(float s,vec4 x1,vec4 x2)
+{
+	vec4 r;
+	r.x=s*x2.x+(1.0f-s)*x1.x;
+	r.y=s*x2.y+(1.0f-s)*x1.y;
+	r.z=s*x2.z+(1.0f-s)*x1.z;
+	r.w=s*x2.w+(1.0f-s)*x1.w;
+	return r;
+}
+
+static vec4 Lookup(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *tex,float distance_texcoord,float elevation_texcoord)
+{
+	distance_texcoord*=(float)tex->GetWidth();
+	int x=(int)(distance_texcoord);
+	if(x<0)
+		x=0;
+	if(x>tex->GetWidth()-2)
+		x=tex->GetWidth()-2;
+	float x_interp=distance_texcoord-x;
+	elevation_texcoord*=(float)tex->GetLength();
+	int  	y=(int)(elevation_texcoord);
+	if(y<0)
+		y=0;
+	if(y>tex->GetWidth()-2)
+		y=tex->GetWidth()-2;
+	float y_interp=elevation_texcoord-y;
+	// four floats per texel, four texels.
+	vec4 data[4];
+	tex->activateRenderTarget(deviceContext);
+	glReadPixels(x,y,2,2,GL_RGBA,GL_FLOAT,(GLvoid*)data);
+	tex->deactivateRenderTarget();
+	vec4 bottom		=lerp(x_interp,data[0],data[1]);
+	vec4 top		=lerp(x_interp,data[2],data[3]);
+	vec4 ret		=lerp(y_interp,bottom,top);
+	return ret;
 }

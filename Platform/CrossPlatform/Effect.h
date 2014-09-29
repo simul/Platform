@@ -109,6 +109,11 @@ namespace simul
 		{
 			NONE,BLEND,DEPTH
 		};
+		enum StandardRenderState
+		{
+			STANDARD_OPAQUE_BLENDING
+			,STANDARD_ALPHA_BLENDING
+		};
 		/// An initialization structure for a RenderState. Create a RenderStateDesc and pass it to RenderPlatform::CreateRenderState,
 		/// then store the returned pointer. Delete the pointer when done.
 		struct RenderStateDesc
