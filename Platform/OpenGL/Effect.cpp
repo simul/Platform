@@ -37,12 +37,19 @@ using namespace opengl;
 		std::cout<<filename.c_str()<<"(1): warning B0001: parameter "<<name<<" was not found."<<filename.c_str()<<std::endl;\
 		return;\
 	}
+
+/// Here we break if we have a null technique - but only once.
 #define CHECK_TECH_EXISTS\
 	if(currentTechnique==NULL)\
 	{\
-		std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: currentTechnique is NULL in "<<filename.c_str()<<std::endl;\
-		BREAK_IF_DEBUGGING\
-		return;\
+		static bool ignore=false;\
+		if(!ignore)\
+		{\
+			std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: currentTechnique is NULL in "<<filename.c_str()<<std::endl;\
+			BREAK_IF_DEBUGGING\
+			ignore=true;\
+			return;\
+		}\
 	}
 
 GLenum toGlQueryType(crossplatform::QueryType t)
@@ -478,7 +485,10 @@ GL_ERROR_CHECK
 		GLuint program	=currentTechnique->passAsGLuint(currentPass);
 		GLint loc		=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
-	CHECK_PARAM_EXISTS
+		if(loc<0)
+		{
+			CHECK_PARAM_EXISTS
+		}
 		glUniform1i(loc,texture_number);
 	}
 	else
@@ -545,7 +555,10 @@ void Effect::SetParameter	(const char *name	,vec4 value)
 {
 	CHECK_TECH_EXISTS
 	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
-	CHECK_PARAM_EXISTS
+	if(loc<0)
+	{
+		CHECK_PARAM_EXISTS
+	}
 	glUniform4fv(loc,1,value);
 	GL_ERROR_CHECK
 }
@@ -597,14 +610,17 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 	currentTechnique		=effectTechnique;
 	currentPass				=pass;
 	CHECK_TECH_EXISTS
-	current_prog	=effectTechnique->passAsGLuint(pass);
-	glUseProgram(current_prog);
-	GL_ERROR_CHECK
-	//current_texture_number	=0;
-	EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
-	if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
-		glEffectTechnique->passStates[currentPass]->Apply();
-	GL_ERROR_CHECK
+	if(effectTechnique)
+	{
+		current_prog	=effectTechnique->passAsGLuint(pass);
+		glUseProgram(current_prog);
+		GL_ERROR_CHECK
+		//current_texture_number	=0;
+		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
+		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
+			glEffectTechnique->passStates[currentPass]->Apply();
+		GL_ERROR_CHECK
+	}
 }
 
 void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique *effectTechnique,const char *pass)

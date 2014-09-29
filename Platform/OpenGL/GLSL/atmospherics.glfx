@@ -36,7 +36,7 @@ shader PS_Loss(in vec2 texCoords,in vec2 pos,out vec4 FragColor)
 	float dist=depthToFadeDistance(depth,pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec2 fade_texc=vec2(pow(dist,0.5),0.5*(1.0-sine));
 	vec3 loss=texture(lossTexture,fade_texc).rgb;
-    FragColor=vec4(loss,1.0);
+    FragColor=vec4(loss.rgb,1.0);
 }
 
 shader PS_Inscatter(in vec2 texCoords,in vec2 pos, out vec4 FragColor)

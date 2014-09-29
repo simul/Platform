@@ -7,8 +7,8 @@ uniform float offset;
 uniform vec3 lightColour;
 uniform vec3 lightDir;
 
-varying vec3 texc;
-varying vec3 view;
+in vec3 texc;
+in vec3 view;
 #define pi (3.1415926536)
 float HenyeyGreenstein(float g,float cos0)
 {

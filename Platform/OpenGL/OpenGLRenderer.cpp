@@ -302,6 +302,7 @@ GL_ERROR_CHECK
 		if(ShowCompositing)
 		{
 			RenderDepthBuffers(deviceContext,ScreenWidth/2,0,ScreenWidth/2,ScreenHeight/2);
+			simulWeatherRenderer->RenderCompositingTextures(deviceContext,ScreenWidth/2,0,ScreenWidth/2,ScreenHeight/2);
 GL_ERROR_CHECK
 		}
 GL_ERROR_CHECK

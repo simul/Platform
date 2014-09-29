@@ -41,3 +41,9 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	:simul::sky::BaseSkyRenderer(sk,mem)
 {
 }
+
+void SimulSkyRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
+{
+	baseGpuSkyGenerator =&gpuSkyGenerator;
+	BaseSkyRenderer::RestoreDeviceObjects(r);
+}

@@ -141,6 +141,10 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 {
 	device=(ID3D11Device*)d;
 	crossplatform::RenderPlatform::RestoreDeviceObjects(d);
+	
+	ID3D11DeviceContext *pImmediateContext;
+	AsD3D11Device()->GetImmediateContext(&pImmediateContext);
+	immediateContext.platform_context=pImmediateContext;
 #ifdef _XBOX_ONE
 	delete eSRAMManager;
 	eSRAMManager=new ESRAMManager(device);
@@ -198,19 +202,9 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_DELETE(m_pDebugEffect);
-	/*
-    SAFE_RELEASE( m_pDepthStencilStateStored11 );
-    SAFE_RELEASE( m_pRasterizerStateStored11 );
-    SAFE_RELEASE( m_pBlendStateStored11 );
-	for(int i=0;i<D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;i++)
-	{
-	    SAFE_RELEASE( m_pSamplerStateStored11[i]);
-	    SAFE_RELEASE( m_pVertexSamplerStateStored11[i]);
-	}
-	m_StencilRefStored11=0;
-	m_SampleMaskStored11=0;
-	for(int i=0;i<4;i++)
-		m_BlendFactorStored11[i];*/
+	ID3D11DeviceContext* c=immediateContext.asD3D11DeviceContext();
+	SAFE_RELEASE(c);
+	immediateContext.platform_context=NULL;
 }
 
 void RenderPlatform::RecompileShaders()

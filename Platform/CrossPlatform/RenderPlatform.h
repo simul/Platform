@@ -8,6 +8,7 @@
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4251)
@@ -82,6 +83,8 @@ namespace simul
 			virtual void InvalidateDeviceObjects();
 			//! Optional - call this to recompile the standard shaders.
 			virtual void RecompileShaders	()=0;
+			//! Gets an object containing immediate-context API-specific values.
+			DeviceContext &GetImmediateContext();
 			virtual void PushTexturePath	(const char *pathUtf8)=0;
 			virtual void PopTexturePath		()=0;
 			virtual void StartRender		()=0;
@@ -166,6 +169,7 @@ namespace simul
 			/// Apply a standard renderstate - e.g. opaque blending
 			virtual void					SetStandardRenderState			(DeviceContext &deviceContext,StandardRenderState s);
 		protected:
+			DeviceContext					immediateContext;
 		private:
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
 			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);

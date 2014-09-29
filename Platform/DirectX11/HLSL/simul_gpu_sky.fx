@@ -1,18 +1,11 @@
-#define uniform
-#define vec2 float2
-#define vec3 float3
-#define vec4 float4
-#define sampler1D texture1D
-#define sampler2D texture2D
-#define sampler3D texture3D
-#define texture(tex,texCoords) tex.Sample(samplerState,texCoords)
+#include "CppHlsl.hlsl"
 uniform sampler2D input_texture;
 uniform sampler2D density_texture;
 uniform sampler3D loss_texture;
 uniform sampler3D insc_texture;
 uniform sampler2D optical_depth_texture;
 uniform sampler2D blackbody_texture;
-RWTexture3D<float4> targetTexture;
+RWTexture3D<vec4> targetTexture;
 
 SamplerState samplerState 
 {
@@ -21,7 +14,6 @@ SamplerState samplerState
 	AddressV = Mirror;
 	AddressW = Clamp;
 };
-#include "CppHlsl.hlsl"
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/simul_gpu_sky.sl"
@@ -29,63 +21,36 @@ SamplerState samplerState
 struct vertexInput
 {
     float3 position		: POSITION;
-    float2 texCoords	: TEXCOORD0;
+    vec2 texCoords	: TEXCOORD0;
 };
 
 struct vertexOutput
 {
-    float4 hPosition	: SV_POSITION;
-	float2 texCoords	: TEXCOORD0;		
+    vec4 hPosition	: SV_POSITION;
+	vec2 texCoords	: TEXCOORD0;		
 };
 
 vertexOutput VS_Main(idOnly IN)
 {
     vertexOutput OUT;
-	float2 poss[4]=
+	vec2 poss[4]=
 	{
 		{ 1.0, 0.0},
 		{ 1.0, 1.0},
 		{ 0.0, 0.0},
 		{ 0.0, 1.0},
 	};
-	float2 pos		=poss[IN.vertex_id];
+	vec2 pos		=poss[IN.vertex_id];
 	pos.y			=yRange.x+pos.y*yRange.y;
-	float4 vert_pos	=float4(float2(-1.0,1.0)+2.0*vec2(pos.x,-pos.y),1.0,1.0);
+	vec4 vert_pos	=vec4(vec2(-1.0,1.0)+2.0*vec2(pos.x,-pos.y),1.0,1.0);
     OUT.hPosition	=vert_pos;
     OUT.texCoords	=pos;
     return OUT;
 }
 
-float4 PS_Loss(vertexOutput IN) : SV_TARGET
+vec4 PS_Loss(vertexOutput IN) : SV_TARGET
 {
-	vec4 previous_loss	=texture(input_texture,IN.texCoords.xy);
-	float sin_e			=clamp(1.0-2.0*(IN.texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
-	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(IN.texCoords.x*texSize.x-texelOffset)/(texSize.x-1.0);
-	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
-	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
-	float maxd			=min(spaceDistKm,distanceKm);
-	float mind			=min(spaceDistKm,prevDistanceKm);
-	float dist			=0.5*(mind+maxd);
-	float stepLengthKm	=max(0.0,maxd-mind);
-	float y				=planetRadiusKm+viewAltKm+dist*sin_e;
-	float x				=dist*cos_e;
-	float r				=sqrt(x*x+y*y);
-	float alt_km		=r-planetRadiusKm;
-	// lookups is: dens_factor,ozone_factor,haze_factor;
-	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-	vec4 lookups		=texture(density_texture,dens_texc);
-	float dens_factor	=lookups.x;
-	float ozone_factor	=lookups.y;
-	float haze_factor	=getHazeFactorAtAltitude(alt_km);
-	vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie+ozone*ozone_factor;
-	vec4 loss;
-	loss.rgb			=exp(-extinction*stepLengthKm);
-	loss.a				=(loss.r+loss.g+loss.b)/3.0;
-
-	loss				*=previous_loss;
-
-    return			loss;
+	return PSLoss(input_texture,density_texture,IN.texCoords.xy);
 }
 
 [numthreads(8,1,1)]
@@ -162,11 +127,8 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 		float ozone_factor	=lookups.y;
 		float haze_factor	=getHazeFactorAtAltitude(alt_km);
 		vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(optical_depth_texture,alt_km,lightDir);
-		light.rgb*=RAYLEIGH_BETA_FACTOR;
+		light.rgb			*=RAYLEIGH_BETA_FACTOR;
 		vec4 insc			=light;
-
-		// We don't do this anymore - overcast is applied separately.
-		//insc				*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
 
 		vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
 		vec3 total_ext		=extinction+ozone*ozone_factor;
@@ -177,9 +139,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 	
 		insc.rgb			*=previous_loss.rgb;
 		insc.rgb			+=previous_insc.rgb;
-		//float lossw=1.0;
-		//insc.w				=(lossw)*(1.0-previous_insc.w)*insc.w+previous_insc.w;
-		//final.w=::saturate((1.0-mie_factor)/(1.0-total_loss.x+0.0001f));
+
 		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
 		targetTexture[idx]	=vec4(insc.rgb,insc.a);
 		prevDist_km			=dist_km;
@@ -203,7 +163,7 @@ vec4 PS_Insc(vertexOutput IN) : SV_TARGET
 	return Insc(input_texture,loss_texture,density_texture,optical_depth_texture,IN.texCoords);
 }
 
-float4 PS_Skyl(vertexOutput IN) : SV_TARGET
+vec4 PS_Skyl(vertexOutput IN) : SV_TARGET
 {
 	vec4 previous_skyl	=texture(input_texture,IN.texCoords.xy);
 	vec3 previous_loss	=texture(loss_texture,vec3(IN.texCoords.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;
@@ -265,7 +225,7 @@ technique11 simul_gpu_loss
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Loss()));
@@ -278,7 +238,7 @@ technique11 simul_gpu_insc
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Insc()));
@@ -291,7 +251,7 @@ technique11 simul_gpu_skyl
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Skyl()));

@@ -56,6 +56,8 @@ bool opengl::Texture::IsValid() const
 void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
 	,crossplatform::PixelFormat p,bool computable,bool rendertarget,bool depthstencil,int num_samples,int aa_quality)
 {
+	if(w==width&&l==length)
+		return;
 GL_ERROR_CHECK
 	pixelFormat=p;
 	GLuint internal_format=opengl::RenderPlatform::ToGLFormat(pixelFormat);
@@ -110,7 +112,11 @@ GL_ERROR_CHECK
 void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)
 {
 	glBindTexture(GL_TEXTURE_2D,pTextureObject);
-	GLuint frmt=opengl::RenderPlatform::ToGLFormat(pixelFormat);
+	GLuint frmt		=opengl::RenderPlatform::ToGLFormat(pixelFormat);
+	GLenum ext_frmt	=opengl::RenderPlatform::ToGLExternalFormat(pixelFormat);
+	GLenum dt		=opengl::RenderPlatform::DataType(pixelFormat);
+	if(texel_index==0&&num_texels==width*length)
+		glTexImage2D(GL_TEXTURE_2D,0,frmt,width,length,0,ext_frmt,dt,src);
 #if 0
 	int start_slice				=it.texel_index/sliceStride;
 	int start_texel_in_slice	=it.texel_index-start_slice*sliceStride;

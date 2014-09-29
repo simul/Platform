@@ -68,13 +68,6 @@ GL_ERROR_CHECK
 
 void SimulGLSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 {
+	baseGpuSkyGenerator =&gpuSkyGenerator;
 	BaseSkyRenderer::RestoreDeviceObjects(r);
-GL_ERROR_CHECK
-	initialized=true;
-GL_ERROR_CHECK
-}
-
-SimulGLSkyRenderer::~SimulGLSkyRenderer()
-{
-	InvalidateDeviceObjects();
 }

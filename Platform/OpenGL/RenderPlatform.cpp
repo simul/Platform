@@ -546,6 +546,37 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 	};
 }
 
+GLuint RenderPlatform::ToGLExternalFormat(crossplatform::PixelFormat p)
+{
+	using namespace crossplatform;
+	switch(p)
+	{
+	case RGBA_16_FLOAT:
+		return GL_RGBA;
+	case RGBA_32_FLOAT:
+		return GL_RGBA;
+	case RGB_32_FLOAT:
+		return GL_RGB;
+	case RG_32_FLOAT:
+		return GL_RG;
+	case R_32_FLOAT:
+		return GL_RED;
+	case LUM_32_FLOAT:
+		return GL_LUMINANCE;
+	case INT_32_FLOAT:
+		return GL_INTENSITY;
+	case RGBA_8_UNORM:
+		return GL_RGBA;
+	case RGBA_8_SNORM:
+		return GL_RGBA;
+	case R_8_UNORM:
+		return GL_RED;// not GL_R...!
+	case D_32_FLOAT:
+		return GL_RED;
+	default:
+		return GL_RGBA;
+	};
+}
 int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 {
 	using namespace crossplatform;
@@ -740,20 +771,22 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,
 	if(S->desc.type==crossplatform::BLEND)
 	{
 		if(S->desc.blend.RenderTarget[0].BlendEnable)
+		{
 			glEnable(GL_BLEND);
+			for(int i=0;i<S->desc.blend.numRTs;i++)
+			{
+				const crossplatform::RTBlendDesc &d=S->desc.blend.RenderTarget[i];
+				//glBlendEquationi((unsigned)i, GL_FUNC_ADD);
+				glBlendEquationSeparatei((unsigned)i, GL_FUNC_ADD,GL_FUNC_ADD);
+
+				//glBlendFunci((unsigned)i, toGlBlendOp(d.SrcBlend), toGlBlendOp(d.DestBlend));
+
+				glBlendFuncSeparatei((unsigned)i, toGlBlendOp(d.SrcBlend), toGlBlendOp(d.DestBlend),
+									   toGlBlendOp(d.SrcBlendAlpha), toGlBlendOp(d.DestBlendAlpha));
+			}
+		}
 		else
 			glDisable(GL_BLEND);
-		for(int i=0;i<S->desc.blend.numRTs;i++)
-		{
-			const crossplatform::RTBlendDesc &d=S->desc.blend.RenderTarget[i];
-			//glBlendEquationi((unsigned)i, GL_FUNC_ADD);
-			glBlendEquationSeparatei((unsigned)i, GL_FUNC_ADD,GL_FUNC_ADD);
-
-			//glBlendFunci((unsigned)i, toGlBlendOp(d.SrcBlend), toGlBlendOp(d.DestBlend));
-
-			glBlendFuncSeparatei((unsigned)i, toGlBlendOp(d.SrcBlend), toGlBlendOp(d.DestBlend),
-								   toGlBlendOp(d.SrcBlendAlpha), toGlBlendOp(d.DestBlendAlpha));
-		}
 	}
 }
 

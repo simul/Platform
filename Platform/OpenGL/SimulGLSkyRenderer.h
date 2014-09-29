@@ -32,13 +32,11 @@ namespace simul
 		{
 		public:
 			SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *m);
-			virtual ~SimulGLSkyRenderer();
 			//standard ogl object interface functions
 
 			//! Create the API-specific objects to be used in rendering. This is usually called from the SimulGLWeatherRenderer that
 			//! owns this object.
 			void						RestoreDeviceObjects(simul::crossplatform::RenderPlatform *);
-			simul::sky::BaseGpuSkyGenerator *GetBaseGpuSkyGenerator(){return &gpuSkyGenerator;}
 		protected:
 			simul::opengl::GpuSkyGenerator	gpuSkyGenerator;
 

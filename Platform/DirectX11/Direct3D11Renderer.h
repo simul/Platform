@@ -11,7 +11,7 @@
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
-#include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
+#include "Simul/Sky/BaseGpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"

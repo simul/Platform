@@ -1,8 +1,7 @@
 #ifndef GPU_SKY_CONSTANTS_SL
 #define GPU_SKY_CONSTANTS_SL
 
-uniform_buffer GpuSkyConstants SIMUL_BUFFER_REGISTER(8)
-{
+SIMUL_CONSTANT_BUFFER(GpuSkyConstants,8)
 	uniform vec2 texSize;
 	uniform vec2 tableSize;
 	
@@ -46,8 +45,7 @@ uniform_buffer GpuSkyConstants SIMUL_BUFFER_REGISTER(8)
 
 	uniform float texCoordZ;
 	uniform float AHERaH,ASJET,AETJAETJ;
-
-};
+SIMUL_CONSTANT_BUFFER_END
 
 #ifndef __cplusplus
 
@@ -168,6 +166,37 @@ float getDistanceToSpace(float sine_elevation,float h_km)
 	return getShortestDistanceToAltitude(sine_elevation,h_km,maxDensityAltKm);
 }
 
+
+vec4 PSLoss(Texture2D input_loss_texture,Texture2D density_texture,vec2 texCoords)
+{
+	vec4 previous_loss	=texture(input_loss_texture,texCoords);
+	float sin_e			=clamp(1.0-2.0*(texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
+	float cos_e			=sqrt(1.0-sin_e*sin_e);
+	float altTexc		=(texCoords.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
+	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
+	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
+	float maxd			=min(spaceDistKm,distanceKm);
+	float mind			=min(spaceDistKm,prevDistanceKm);
+	float dist			=0.5*(mind+maxd);
+	float stepLengthKm	=max(0.0,maxd-mind);
+	float y				=planetRadiusKm+viewAltKm+dist*sin_e;
+	float x				=dist*cos_e;
+	float r				=sqrt(x*x+y*y);
+	float alt_km		=r-planetRadiusKm;
+	// lookups is: dens_factor,ozone_factor,haze_factor;
+	float dens_texc		=clamp((alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x,0.0,1.0);
+	vec4 lookups		=texture(density_texture,vec2(dens_texc,dens_texc));
+	float dens_factor	=lookups.x;
+	float ozone_factor	=lookups.y;
+	float haze_factor	=getHazeFactorAtAltitude(alt_km);
+	vec3 extinction		=(dens_factor*rayleigh+haze_factor*hazeMie+ozone*ozone_factor);
+	vec4 loss;
+	loss.rgb			=exp(-extinction*stepLengthKm);
+	loss.a				=(loss.r+loss.g+loss.b)/3.0;
+	loss				*=previous_loss;
+    return			loss;
+}
+
 vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_texture,Texture2D optical_depth_texture,vec2 texCoords)
 {
 	vec4 previous_insc	=texture_nearest_lod(input_texture,texCoords.xy,0);
@@ -205,10 +234,10 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_textu
 	insc.rgb			+=previous_insc.rgb;
 
 	insc.w				=saturate((1.0-mie_factor)/(1.0-total_ext.x+0.0001));
-	float lossw=1.0;
+	float lossw			=1.0;
 	insc.w				=(lossw)*(1.0-previous_insc.w)*insc.w+previous_insc.w;
-//insc.rgb=loss.rgb;//RAYLEIGH_BETA_FACTOR*insc.rgb;
-    return			insc;
+
+    return				insc;
 }
 
 // What spectral radiance is added on a light path towards the viewer, due to illumination of

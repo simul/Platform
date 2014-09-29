@@ -6,6 +6,11 @@
 using namespace simul;
 using namespace crossplatform;
 
+DeviceContext &RenderPlatform::GetImmediateContext()
+{
+	return immediateContext;
+}
+
 void RenderPlatform::RestoreDeviceObjects(void*)
 {
 	crossplatform::RenderStateDesc desc;

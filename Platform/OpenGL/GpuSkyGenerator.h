@@ -22,21 +22,9 @@ namespace simul
 				,const simul::sky::GpuSkyParameters &gpuSkyParameters
 				,const simul::sky::GpuSkyAtmosphereParameters &gpuSkyAtmosphereParameters
 				,const simul::sky::GpuSkyInfraredParameters &gpuSkyInfraredParameters);
-			virtual void CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl);
-	
 		protected:
 		// framebuffer to render out by distance.
 			FramebufferGL		fb[2];
-			GLuint				loss_program;
-			GLuint				insc_program;
-			GLuint				skyl_program;
-			GLuint				copy_program;
-			simul::opengl::ConstantBuffer<GpuSkyConstants> gpuSkyConstants;
-			Texture		dens_tex,optd_tex;
-			simul::sky::float4	*loss_cache;
-			simul::sky::float4	*insc_cache;
-			simul::sky::float4	*skyl_cache;
-			int					cache_size;
 		};
 	}
 }

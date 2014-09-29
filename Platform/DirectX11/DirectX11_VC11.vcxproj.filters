@@ -39,9 +39,6 @@
     <ClCompile Include="GpuCloudGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GpuSkyGenerator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Profiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -147,9 +144,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GpuCloudGenerator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GpuSkyGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MacrosDx1x.h">

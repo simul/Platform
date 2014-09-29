@@ -298,6 +298,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	UpdateSkyAndCloudHookup();
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(deviceContext, mainDepthTexture,exposure,depthViewportXYWH);
+#if 1
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
 		glEnable(GL_BLEND);
@@ -357,6 +358,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 		}
 		glUseProgram(0);
 	}
+#endif
 }
 void SimulGLWeatherRenderer::RenderLateCloudLayer(crossplatform::DeviceContext &deviceContext,float exposure,bool
 												  ,const simul::sky::float4 &depthViewportXYWH)

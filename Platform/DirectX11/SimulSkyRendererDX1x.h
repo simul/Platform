@@ -22,7 +22,7 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
-#include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
+#include "Simul/Sky/BaseGpuSkyGenerator.h"
 
 struct ID3DX11EffectShaderResourceVariable;
 namespace simul
@@ -45,12 +45,10 @@ namespace simul
 		{
 		public:
 			SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem);
-	
-			// for testing:
-			simul::sky::BaseGpuSkyGenerator *GetBaseGpuSkyGenerator(){return &gpuSkyGenerator;}
+			void						RestoreDeviceObjects(simul::crossplatform::RenderPlatform *);
 		protected:
 			// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
-			simul::dx11::GpuSkyGenerator		gpuSkyGenerator;
+			simul::sky::BaseGpuSkyGenerator		gpuSkyGenerator;
 		};
 	}
 }
