@@ -66,7 +66,7 @@ void CS_Loss(uint3 sub_pos	: SV_DispatchThreadID )
 CS_LAYOUT(1,1,1)
 void CS_LightTable( uint3 sub_pos : SV_DispatchThreadID )
 {
-	MakeLightTable(targetTexture,insc_texture,sub_pos);
+	MakeLightTable(targetTexture,insc_texture,optical_depth_texture,sub_pos,targetSize);
 }
 
 CS_LAYOUT(8,1,1)
