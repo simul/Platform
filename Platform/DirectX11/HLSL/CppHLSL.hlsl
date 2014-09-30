@@ -69,6 +69,12 @@
 
 	#define Y(texel) texel.z
 	
+	#define CS_LAYOUT(u,v,w) [numthreads(u,v,w)]
+	
+	#define	IMAGESTORE(a,b,c) a[b]	=c;
+
+	#define RW_TEXTURE3D_FLOAT4 RWTexture3D<float4>
+
 	SamplerState samplerStateClampMirror 
 	{
 		Filter = MIN_MAG_MIP_LINEAR;

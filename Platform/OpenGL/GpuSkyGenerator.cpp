@@ -58,7 +58,7 @@ static int range(int x,int start,int end)
 		x=end;
 	return x;
 }
-
+#if 0
 void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *
 				,const simul::sky::GpuSkyParameters &p
@@ -344,3 +344,4 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int
 	}
 	fadeTexIndex[cycled_index]=p.fill_up_to_texels;
 }
+#endif

@@ -45,6 +45,9 @@ SIMUL_CONSTANT_BUFFER(GpuSkyConstants,8)
 
 	uniform float texCoordZ;
 	uniform float AHERaH,ASJET,AETJAETJ;
+
+	uniform int3 targetSize;
+	uniform float fuyofyu;
 SIMUL_CONSTANT_BUFFER_END
 
 #ifndef __cplusplus
@@ -56,6 +59,13 @@ uint3 LinearThreadToPos2D(uint linear_pos,uint3 dims)
 	uint Y				=linear_pos/dims.x;
 	uint X				=linear_pos-Y*dims.x;
 	uint3 pos			=uint3(X,Y,0);
+	return pos;
+}
+int3 LinearThreadToPos2D(uint linear_pos,int3 dims)
+{
+	int Y				=int(linear_pos)/dims.x;
+	int X				=int(linear_pos)-Y*dims.x;
+	int3 pos			=int3(X,Y,0);
 	return pos;
 }
 
@@ -363,7 +373,7 @@ void CSLoss(RWTexture3D<float4> targetTexture,Texture2D density_texture,uint3 po
 		loss.rgb			=exp(-extinction*stepLengthKm);
 		loss.a				=(loss.r+loss.g+loss.b)/3.0;
 		loss				*=previous_loss;
-		targetTexture[idx]	=vec4(loss.rgb,1.0);
+		IMAGESTORE(targetTexture,idx, vec4(loss.rgb,1.0));
 		prevDist_km			=dist_km;
 		previous_loss		=loss;
 	}
@@ -408,20 +418,18 @@ void CSSkyl(RWTexture3D<float4> targetTexture,Texture3D loss_texture,Texture3D i
 									,prevDist_km
 									,sin_e
 									,cos_e);
-#if 0
- #endif
-		targetTexture[idx]	=skyl;
+
+		IMAGESTORE(targetTexture,idx, skyl);
 		prevDist_km			=dist_km;
 		previous_skyl		=skyl;
 	}
 }
 
-void MakeLightTable(RWTexture3D<float4> targetTexture, Texture3D insc_texture, uint3 sub_pos)
+#endif
+void MakeLightTable(RW_TEXTURE3D_FLOAT4 targetTexture, Texture3D insc_texture,Texture2D optical_depth_texture, uint3 sub_pos,uint3 dims)
 {
 	// threadOffset.y determines the cycled index.
 	uint3 pos			=sub_pos+threadOffset;
-	uint3 dims;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y)
 		return;
 	float alt_texc			=float(pos.x)/float(dims.x);
@@ -433,17 +441,16 @@ void MakeLightTable(RWTexture3D<float4> targetTexture, Texture3D insc_texture, u
 	// equivalent to GetAnisotropicInscatterFactor(true,altitude_km,pi/2.f,0,1e5f,sun_irradiance,starlight,dir_to_sun,dir_to_moon,haze,overcast,false,0):
 	vec4 ambientLight		=vec4(getSkylight(alt_km, insc_texture),1.0);
 	uint3 pos_sun			=uint3(pos.xy,0);
-    targetTexture[pos_sun]	=sunlight;
+	IMAGESTORE(targetTexture,pos_sun, sunlight);
 	uint3 pos_moon			=uint3(pos.xy,1);
-    targetTexture[pos_moon]	=moonlight;
+	IMAGESTORE(targetTexture,pos_moon, moonlight);
 	uint3 pos_amb			=uint3(pos.xy,2);
-    targetTexture[pos_amb]	=ambientLight;
+	IMAGESTORE(targetTexture,pos_amb, ambientLight);
 
 	// Combined sun and moonlight:
 	uint3 pos_both		=uint3(pos.xy,3);
-    targetTexture[pos_both]	=sunlight+moonlight;
+	IMAGESTORE(targetTexture,pos_both, sunlight+moonlight);
 }
-#endif
 #endif
 
 #endif

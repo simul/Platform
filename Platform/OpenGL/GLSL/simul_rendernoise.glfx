@@ -36,8 +36,8 @@ shader PS_Noise2D(in vec2 texCoords,out vec4 FragColour)
     FragColour= Noise(noise_texture,texCoords,persistence,octaves);
 }
 
-LAYOUT(8,8,8)
-shader CS_Random3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
+
+shader CS_LAYOUT(8,8,8) CS_Random3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
 {
 	// NOTE: could use shader_image_size(targetTexture)
 	uint3 pos=gl_GlobalInvocationID;
@@ -51,8 +51,8 @@ shader CS_Random3D()	//gl_GlobalInvocationID gives the combined id in each dimen
 	imageStore(targetTexture,ivec3(pos), c);
 }
 
-LAYOUT(8,8,8)
-shader CS_Noise3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
+
+shader CS_LAYOUT(8,8,8) CS_Noise3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
 {
 	uint3 pos=gl_GlobalInvocationID;
 	//uint3 dims;

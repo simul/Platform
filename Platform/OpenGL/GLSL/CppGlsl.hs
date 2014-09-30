@@ -67,12 +67,14 @@
 	{
 		return m*v;
 	}
-#ifdef USE_GL_COMPUTE_SHADER
-	#define LAYOUT(u,v,w) layout(local_size_x=u,local_size_y=v,local_size_z=w) in;
-#else
-	#define LAYOUT(u,v,w)
-#endif
-
+	#ifdef USE_GL_COMPUTE_SHADER
+		#define CS_LAYOUT(u,v,w) layout(local_size_x=u,local_size_y=v,local_size_z=w) in;
+	#else
+		#define CS_LAYOUT(u,v,w)
+	#endif
+	
+	#define IMAGESTORE(a,b,c) imageStore(a,ivec3(b),c)
+	#define RW_TEXTURE3D_FLOAT4 image3D
 #else
 	#define STATIC static
 	// To C++, samplers are just GLints.

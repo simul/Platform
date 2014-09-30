@@ -53,7 +53,7 @@ vec4 PS_Loss(vertexOutput IN) : SV_TARGET
 	return PSLoss(input_texture,density_texture,IN.texCoords.xy);
 }
 
-[numthreads(8,1,1)]
+CS_LAYOUT(8,1,1)
 void CS_Loss(uint3 sub_pos	: SV_DispatchThreadID )
 {
 	uint3 dims;
@@ -63,36 +63,36 @@ void CS_Loss(uint3 sub_pos	: SV_DispatchThreadID )
 	CSLoss(targetTexture,density_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm);
 }
 
-[numthreads(1,1,1)]
+CS_LAYOUT(1,1,1)
 void CS_LightTable( uint3 sub_pos : SV_DispatchThreadID )
 {
 	MakeLightTable(targetTexture,insc_texture,sub_pos);
 }
 
-[numthreads(8,1,1)]
+CS_LAYOUT(8,1,1)
 void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 {
 	int3 dims;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
-	uint linear_pos		=sub_pos.x+threadOffset.x;
+	uint linear_pos			=sub_pos.x+threadOffset.x;
 	
-	int3 pos			=LinearThreadToPos2D(linear_pos,dims);
+	int3 pos				=LinearThreadToPos2D(linear_pos,dims);
 	if(pos.x>=dims.x||pos.y>=dims.y)
 		return;
 	
-	vec2 texc			=(pos.xy+0.5)/vec2(dims.xy);
+	vec2 texc				=(pos.xy+0.5)/vec2(dims.xy);
 
-	vec4 previous_insc	=vec4(0.0,0.0,0.0,0.0);
-	float sin_e			=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
-	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
-	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
-	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
+	vec4 previous_insc		=vec4(0.0,0.0,0.0,0.0);
+	float sin_e				=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
+	float cos_e				=sqrt(1.0-sin_e*sin_e);
+	float altTexc			=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
+	float viewAltKm			=altTexc*altTexc*maxOutputAltKm;
+	float spaceDistKm		=getDistanceToSpace(sin_e,viewAltKm);
 	
-	float prevDist_km	=0.0;
+	float prevDist_km		=0.0;
 	
-	targetTexture[pos]	=previous_insc;
-	vec3 mie_factor		=vec3(1.0,1.0,1.0);
+	targetTexture[pos]		=previous_insc;
+	vec3 mie_factor			=vec3(1.0,1.0,1.0);
 	for(int i=1;i<dims.z;i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
@@ -147,7 +147,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 	}
 }
 
-[numthreads(8,1,1)]
+CS_LAYOUT(8,1,1)
 void CS_Skyl( uint3 sub_pos : SV_DispatchThreadID )
 {
 	uint3 dims;
