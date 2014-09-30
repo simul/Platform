@@ -126,10 +126,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int
 	gpuSkyConstants.texCoordZ		=((float)start_loss-uu)/(float)p.numDistances;
 	renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_OPAQUE_BLENDING);
 	gpuSkyConstants.Apply(deviceContext);
-	glDisable(GL_BLEND);
 	if(num_loss>0)
 	{
-		GL_ERROR_CHECK
 		float prevDistKm=pow((float)(std::max(start_loss-1,0))/((float)p.numDistances-1.f),2.f)*p.max_distance_km;
 		// Copy layer to initial texture
 		if(start_loss>0)
@@ -156,9 +154,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int
 			gpuSkyConstants.prevDistanceKm	=prevDistKm;
 			gpuSkyConstants.texCoordZ		=((float)i)/(float)p.numDistances;
 			gpuSkyConstants.Apply(deviceContext);
-		GL_ERROR_CHECK
 			F[1]->Activate(deviceContext);
-		GL_ERROR_CHECK
 			if(i==0)
 			{
 				F[1]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
@@ -174,6 +170,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int
 				effect->UnbindTextures(deviceContext);
 				effect->Unapply(deviceContext);
 			}
+			// Now we will copy the active framebuffer to slice i of the target volumetric texture.
+			finalLoss[cycled_index]->CopyTexture(deviceContext,
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 		GL_ERROR_CHECK
 			if(finalLoss[cycled_index])
@@ -190,14 +188,11 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int
  								,(GLsizei)p.altitudes_km.size()
 								,p.numElevations);
 			}
-	//std::cout<<"\tGpu sky: loss read"<<i<<" "<<timer.UpdateTime()<<std::endl;
 			F[1]->Deactivate(deviceContext);
-			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 			std::swap(F[0],F[1]);
 			prevDistKm=distKm;
 		}
 	}
-	glUseProgram(0);
 	// Now we will generate the inscatter texture.
 	
 	int start_insc	=range(start_step-p.numDistances	,0,p.numDistances);
@@ -268,7 +263,6 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int
 		GL_ERROR_CHECK
 			}
 			F[1]->Deactivate(deviceContext);
-			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 			std::swap(F[0],F[1]);
 			prevDistKm=distKm;
 		}
@@ -278,7 +272,6 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int
 	int end_skyl	=range(end_step		-2*p.numDistances	,0	,p.numDistances);
 	int num_skyl	=range(end_skyl-start_skyl				,0	,p.numDistances);
 	
-	GLuint insc_tex=finalInsc[cycled_index]->AsGLuint();
 	if(num_skyl>0)
 	{
 		// Copy layer to initial texture
@@ -298,9 +291,6 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int
 			effect->Unapply(deviceContext);
 		}
 		// Finally we will generate the skylight texture.
-		// First we make the inscatter into a 3D texture.
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_3D,insc_tex);
 		// Now render out the skylight.
 		gpuSkyConstants.Apply(deviceContext);
 	GL_ERROR_CHECK
@@ -348,22 +338,9 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int
 		GL_ERROR_CHECK
 			}
 			F[1]->Deactivate(deviceContext);
-			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 			std::swap(F[0],F[1]);
 			prevDistKm=distKm;
 		}
 	}
-	glUseProgram(0);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,0);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D,0);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_3D,0);
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D,0);
-	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_3D,0);
-//	
 	fadeTexIndex[cycled_index]=p.fill_up_to_texels;
 }
