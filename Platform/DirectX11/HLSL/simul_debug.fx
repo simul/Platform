@@ -103,7 +103,7 @@ vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 	uint2 dims;
 	imageTextureUint4.GetDimensions(dims.x,dims.y);
 	uint2 pos			=IN.texCoords*dims;
-	uint4 lookup		=image_load(imageTextureUint4,pos);
+	uint4 lookup		=IMAGE_LOAD(imageTextureUint4,pos);
 	vec3 clr1=uint2_to_colour3(lookup.xy);
 	vec3 clr2=uint2_to_colour3(lookup.zw);
 #if 0

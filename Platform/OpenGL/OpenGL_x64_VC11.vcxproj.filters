@@ -417,6 +417,24 @@
     <None Include="GLSL\debug.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\atmospherics.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_clouds_2d.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_sky.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_rendernoise.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\sky.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\temp.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />
