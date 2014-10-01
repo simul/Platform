@@ -6,7 +6,8 @@
 uniform sampler2D image_texture;
 uniform sampler2D noise_texture ;
 uniform sampler3D random_texture_3d;
-layout(rgba32f,binding = 0) uniform image3D targetTexture;
+layout(rgba32f,binding = 0) uniform image3D targetTexture32;
+layout(rgba8_snorm,binding = 0) uniform image3D targetTexture8;
 uniform vec4 rect;
 uniform vec4 depthToLinFadeDistParams;
 uniform vec2 tanHalfFov;
@@ -36,10 +37,9 @@ shader PS_Noise2D(in vec2 texCoords,out vec4 FragColour)
     FragColour= Noise(noise_texture,texCoords,persistence,octaves);
 }
 
-
 shader CS_LAYOUT(8,8,8) CS_Random3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
 {
-	// NOTE: could use shader_image_size(targetTexture)
+	// NOTE: could use shader_image_size(targetTexture32)
 	uint3 pos=gl_GlobalInvocationID;
 	if(pos.x>=noise_texture_size||pos.y>=noise_texture_size||pos.z>=noise_texture_size)
 		return;
@@ -47,16 +47,14 @@ shader CS_LAYOUT(8,8,8) CS_Random3D()	//gl_GlobalInvocationID gives the combined
 	vec2 texc2		=texCoords.xy+noise_texture_size*texCoords.z;
 	// Range from -1 to 1.
     vec4 c=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
-  //  targetTexture[pos]			= c;
-	imageStore(targetTexture,ivec3(pos), c);
+	imageStore(targetTexture32,ivec3(pos),c);
 }
-
 
 shader CS_LAYOUT(8,8,8) CS_Noise3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
 {
 	uint3 pos=gl_GlobalInvocationID;
 	//uint3 dims;
-	/*targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	/*targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;*/
 	vec4 result		=vec4(0,0,0,0);
@@ -73,7 +71,7 @@ shader CS_LAYOUT(8,8,8) CS_Noise3D()	//gl_GlobalInvocationID gives the combined 
     }
 	// divide by total to get the range -1,1.
 	result*=1.0/total;*/
-	imageStore(targetTexture,ivec3(pos), result);
+	imageStore(targetTexture32,ivec3(pos), result);
 }
 
 program simul_random

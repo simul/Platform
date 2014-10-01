@@ -111,6 +111,7 @@ GL_ERROR_CHECK
 
 void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable)
 {
+	pixelFormat=f;
 	SIMUL_BREAK("Not Implemented");
 }
 
@@ -270,8 +271,9 @@ void simul::opengl::Texture::setTexels(void *,const void *src,int x,int y,int z,
 						src);
 }
 
-void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pixelFormat,bool /*computable*/,int mips)
+void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pf,bool /*computable*/,int mips)
 {
+	pixelFormat=pf;
 	GLuint frmt=opengl::RenderPlatform::ToGLFormat(pixelFormat);
 	dim=3;
 	width=w;

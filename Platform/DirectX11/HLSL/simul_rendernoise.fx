@@ -5,7 +5,8 @@
 
 Texture2D noise_texture SIMUL_TEXTURE_REGISTER(0);
 Texture3D random_texture_3d SIMUL_TEXTURE_REGISTER(1);
-RWTexture3D<vec4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
+RWTexture3D<vec4> targetTexture32 SIMUL_RWTEXTURE_REGISTER(0);
+RWTexture3D<vec4> targetTexture8 SIMUL_RWTEXTURE_REGISTER(0);
 
 SamplerState samplerState 
 {
@@ -58,21 +59,21 @@ vec4 NoisePS(v2f IN) : SV_TARGET
 void CS_Random3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 dims;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	vec3 texCoords	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec2 texc2		=texCoords.xy+dims.y*texCoords.z;
 	// Range from -1 to 1.
-    vec4 c=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
-    targetTexture[pos]			= c;
+    vec4 c					=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
+    targetTexture32[pos]	=c;
 }
 
 [numthreads(8,8,8)]
 void CS_Noise3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 dims;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	vec4 result		=vec4(0,0,0,0);
@@ -88,8 +89,8 @@ void CS_Noise3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives th
 		mult		*=persistence;
     }
 	// divide by total to get the range -1,1.
-	result*=1.0/total;
-	targetTexture[pos]			=result;
+	result					*=1.0/total;
+	targetTexture8[pos]		=result;
 }
 
 DepthStencilState DisableDepth

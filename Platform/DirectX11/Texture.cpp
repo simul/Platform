@@ -273,9 +273,9 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 	dim=2;
 }
 
-void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips)
+void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int mips)
 {
-	pixelFormat=f;
+	pixelFormat=pf;
 	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	dim=3;
 	D3D11_TEXTURE3D_DESC textureDesc;
@@ -486,9 +486,9 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(pArrayTexture,NULL,&unorderedAccessView));
 }
 
-void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable)
+void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat pf,bool computable)
 {
-	pixelFormat=f;
+	pixelFormat=pf;
 	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	dim=1;
 	D3D11_TEXTURE1D_DESC textureDesc;
