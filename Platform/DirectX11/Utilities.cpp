@@ -137,14 +137,6 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 		if(!textures[i])
 			return;
 		textures[i]->GetDesc(&desc);
-	/*	D3D11_MAPPED_SUBRESOURCE mapped_res;
-		HRESULT hr=pContext->Map(textures[i],0,D3D11_MAP_READ,0,&mapped_res);	
-		if(hr==S_OK)
-		{
-		subResources[i].pSysMem			=mapped_res.pData;
-		subResources[i].SysMemPitch		=mapped_res.RowPitch;
-		subResources[i].SysMemSlicePitch=mapped_res.DepthPitch;
-		}*/
 	}
 	static int num_mips=5;
 	desc.BindFlags=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_RENDER_TARGET;
@@ -186,9 +178,6 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 {
 	release();
 	D3D11_TEXTURE2D_DESC desc;
-//	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[num];
-	//ID3D11DeviceContext *pContext=NULL;
-	//pd3dDevice->GetImmediateContext(&pContext);
 	static int num_mips		=5;
 	desc.Width				=w;
 	desc.Height				=l;

@@ -9,7 +9,6 @@
 #include "Simul/Platform/DirectX11/Light.h"
 #include "Simul/Platform/DirectX11/Effect.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
-#include "Simul/Platform/DirectX11/TextRenderer.h"
 #include "Simul/Platform/DirectX11/Buffer.h"
 #include "Simul/Platform/DirectX11/Layout.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
@@ -29,14 +28,6 @@
 
 using namespace simul;
 using namespace dx11;
-namespace simul
-{
-	namespace dx11
-	{
-		TextRenderer textRenderer;
-	}
-}
-
 
 struct Vertex3_t
 {
@@ -124,8 +115,6 @@ RenderPlatform::RenderPlatform()
 	,m_pVertexBuffer(NULL)
 	,solidEffect(NULL)
 	,reverseDepth(false)
-	,mirrorY(false)
-	,mirrorY2(false)
 {
 }
 
@@ -150,7 +139,6 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	eSRAMManager=new ESRAMManager(device);
 #endif
 	solidConstants.RestoreDeviceObjects(this);
-	textRenderer.RestoreDeviceObjects(this);
 
 	RecompileShaders();
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -191,7 +179,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 #endif
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	solidConstants.InvalidateDeviceObjects();
-	textRenderer.InvalidateDeviceObjects();
 	SAFE_DELETE(solidEffect);
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
@@ -225,7 +212,7 @@ void RenderPlatform::RecompileShaders()
 		dx11::Material *mat=(dx11::Material*)(*i);
 		mat->SetEffect(solidEffect);
 	}
-	textRenderer.RecompileShaders();
+	crossplatform::RenderPlatform::RecompileShaders();
 }
 
 void RenderPlatform::PushTexturePath(const char *pathUtf8)
@@ -727,6 +714,11 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatfo
 		case DXGI_FORMAT_R32_FLOAT:
 			format="float";
 			break;
+		case DXGI_FORMAT_R32_UINT:
+			format="uint";
+			break;
+		default:
+			SIMUL_CERR<<"Unhandled type "<<std::endl;
 		};
 		dummy_shader+="   ";
 		dummy_shader+=format+" ";
@@ -737,21 +729,21 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatfo
 		dummy_shader+="_";
 		dummy_shader+=" : ";
 		dummy_shader+=name;
-		dummy_shader+=";";
+		dummy_shader+=";\n";
 				//"	float3 position		: POSITION;"
 				//"	float texCoords		: TEXCOORD0;";
 	}
-	dummy_shader+="};"
-				"struct vertexOutput"
-				"{"
-				"	float4 hPosition	: SV_POSITION;"
-				"};"
-				"vertexOutput VS_Main(vertexInput IN) "
-				"{"
-				"	vertexOutput OUT;"
-				"	OUT.hPosition	=float4(1.0,1.0,1.0,1.0);"
-				"	return OUT;"
-				"}";
+	dummy_shader+="};\n"
+				"struct vertexOutput\n"
+				"{\n"
+				"	float4 hPosition	: SV_POSITION;\n"
+				"};\n"
+				"vertexOutput VS_Main(vertexInput IN)\n"
+				"{\n"
+				"	vertexOutput OUT;\n"
+				"	OUT.hPosition	=float4(1.0,1.0,1.0,1.0);\n"
+				"	return OUT;\n"
+				"}\n";
 	const char *str=dummy_shader.c_str();
 	size_t len=strlen(str);
 #if WINVER<0x602
@@ -1196,37 +1188,6 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 	pContext->IASetInputLayout(NULL);
 	pContext->Draw(4,0);
 	pContext->IASetPrimitiveTopology(previousTopology);
-}
-
-void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *text,const float* colr,const float* bkg)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	float clr[]={1.f,1.f,0.f,1.f};
-	float black[]={0.f,0.f,0.f,0.0f};
-	if(!colr)
-		colr=clr;
-	if(!bkg)
-		bkg=black;
-	unsigned int num_v=1;
-	D3D11_VIEWPORT viewport;
-	pContext->RSGetViewports(&num_v,&viewport);
-	int h=(int)viewport.Height;
-	int pos=0;
-	
-	while(*text!=0)
-	{
-		textRenderer.Render(deviceContext,(float)x,(float)y,(float)viewport.Width,(float)h,text,colr,bkg,mirrorY2);
-		while(*text!='\n'&&*text!=0)
-		{
-			text++;
-			pos++;
-		}
-		if(!(*text))
-			break;
-		text++;
-		pos++;
-		y+=16;
-	}
 }
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *line_vertices,int vertex_count,bool strip,bool test_depth,bool view_centred)

@@ -459,6 +459,30 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	}
 }
 
+void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat pixelFormat,bool computable)
+{
+	InvalidateDeviceObjects();
+	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	D3D11_TEXTURE2D_DESC desc;
+	static int num_mips		=5;
+	desc.Width				=w;
+	desc.Height				=l;
+	desc.Format				=format;
+	desc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_UNORDERED_ACCESS|D3D11_BIND_RENDER_TARGET ;
+	desc.Usage				=D3D11_USAGE_DEFAULT;
+	desc.CPUAccessFlags		=0;
+	desc.ArraySize			=num;
+	desc.MiscFlags			=D3D11_RESOURCE_MISC_GENERATE_MIPS;
+	desc.MipLevels			=num_mips;
+	desc.SampleDesc.Count	=1;
+	desc.SampleDesc.Quality	=0;
+	ID3D11Texture2D *pArrayTexture;
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,NULL,&pArrayTexture));
+	texture=pArrayTexture;
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(pArrayTexture,NULL,&shaderResourceView));
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(pArrayTexture,NULL,&unorderedAccessView));
+}
+
 void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat pixelFormat,bool computable)
 {
 	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);

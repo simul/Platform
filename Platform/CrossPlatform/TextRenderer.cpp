@@ -1,9 +1,9 @@
 #include "TextRenderer.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "D3dx11effect.h"
+#include "Simul/Platform/CrossPlatform/Macros.h"
 
 using namespace simul;
-using namespace dx11;
+using namespace crossplatform;
 
 struct FontIndex
 {
@@ -123,7 +123,7 @@ TextRenderer::~TextRenderer()
 void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
-	constantBuffer.RestoreDeviceObjects(renderPlatform->AsD3D11Device());
+	constantBuffer.RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 	SAFE_DELETE(font_texture);
 	font_texture=r->CreateTexture("Font16.png");
@@ -132,7 +132,7 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 void TextRenderer::InvalidateDeviceObjects()
 {
 	constantBuffer.InvalidateDeviceObjects();
-	SAFE_RELEASE(effect);
+	SAFE_DELETE(effect);
 	SAFE_DELETE(font_texture);
 	renderPlatform=NULL;
 }
@@ -142,9 +142,9 @@ void TextRenderer::RecompileShaders()
 	if(!renderPlatform)
 		return;
 	std::map<std::string,std::string> defines;
-	SAFE_RELEASE(effect);
-	effect=LoadEffect(renderPlatform->AsD3D11Device(),"font.fx",defines);
-	constantBuffer.LinkToEffect(effect,"FontConstants");
+	SAFE_DELETE(effect);
+	effect=renderPlatform->CreateEffect("font",defines);
+	constantBuffer.LinkToEffect(effect,"TextConstants");
 }
 
 void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
@@ -155,11 +155,11 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		clr=white;
 	if(!bck)
 		bck=transp;
-	simul::dx11::setTexture(effect,"fontTexture"	,font_texture->AsD3D11ShaderResourceView());
-	D3D_PRIMITIVE_TOPOLOGY previousTopology;
+	renderPlatform->StoreRenderState(deviceContext);
+	/*D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	pContext->IAGetPrimitiveTopology(&previousTopology);
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);*/
 	constantBuffer.colour		=vec4(clr);
 	constantBuffer.background	=vec4(bck);
 	// Calc width and draw background:
@@ -174,7 +174,9 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		const FontIndex &f=fontIndices[idx];
 		w+=f.pixel_width+1;
 	}
-	ApplyPass(pContext,effect->GetTechniqueByName("backg")->GetPassByIndex(0));
+	renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
+	effect->SetTexture(deviceContext,"fontTexture"	,font_texture);
+	effect->Apply(deviceContext,effect->GetTechniqueByName("backg"),0);
 	constantBuffer.rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+16.f)/screen_height,2.0f*(float)w/screen_width,2.0f*16.f/screen_height);
 	if(mirrorY)
 	{
@@ -182,8 +184,9 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		constantBuffer.rect.w*=-1.0f;
 	}
 	constantBuffer.Apply(deviceContext);
-	pContext->Draw(4,0);
-	ApplyPass(pContext,effect->GetTechniqueByName("text")->GetPassByIndex(0));
+	renderPlatform->DrawQuad(deviceContext);
+	effect->Unapply(deviceContext);
+	effect->Apply(deviceContext,effect->GetTechniqueByName("text"),0);
 
 	for(int i=0;i<70;i++)
 	{
@@ -200,9 +203,11 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 			static float u			=1024.f/598.f;
 			constantBuffer.texc		=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
 			constantBuffer.Apply(deviceContext);
-			pContext->Draw(4,0);
+			renderPlatform->DrawQuad(deviceContext);
 		}
 		x+=f.pixel_width+1;
 	}
-	pContext->IASetPrimitiveTopology(previousTopology);
+	effect->UnbindTextures(deviceContext);
+	effect->Unapply(deviceContext);
+	renderPlatform->RestoreRenderState(deviceContext);
 }

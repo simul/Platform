@@ -59,6 +59,7 @@ void RenderPlatform::RecompileShaders()
 	solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
 
 	effect=CreateEffect("debug",defines);
+	crossplatform::RenderPlatform::RecompileShaders();
 }
 
 void RenderPlatform::PushTexturePath(const char *pathUtf8)
@@ -372,7 +373,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &)
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); 
 	GL_ERROR_CHECK
 }
-
+/*
 
 #ifndef GLUT_BITMAP_HELVETICA_12
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
@@ -409,7 +410,7 @@ void RenderPlatform::Print(crossplatform::DeviceContext &,int x,int y,const char
 #endif
 		s++;
 	}
-}
+}*/
 
 void RenderPlatform::ApplyDefaultMaterial()
 {

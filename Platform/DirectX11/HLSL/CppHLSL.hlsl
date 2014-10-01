@@ -71,7 +71,7 @@
 	
 	#define CS_LAYOUT(u,v,w) [numthreads(u,v,w)]
 	
-	#define	IMAGESTORE(a,b,c) a[b]	=c;
+	#define	IMAGESTORE(a,b,c) a[b]=c;
 
 	#define RW_TEXTURE3D_FLOAT4 RWTexture3D<float4>
 

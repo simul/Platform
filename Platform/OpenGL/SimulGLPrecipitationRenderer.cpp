@@ -27,13 +27,10 @@ SimulGLPrecipitationRenderer::SimulGLPrecipitationRenderer() :
 
 void SimulGLPrecipitationRenderer::TextureRepeatChanged()
 {
-	MakeMesh();
 }
 
 void SimulGLPrecipitationRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *)
 {
-	MakeMesh();
-	RecompileShaders();
 }
 
 bool SimulGLPrecipitationRenderer::SetExternalRainTexture(void* )
@@ -43,32 +40,18 @@ bool SimulGLPrecipitationRenderer::SetExternalRainTexture(void* )
 
 void SimulGLPrecipitationRenderer::InvalidateDeviceObjects()
 {
-	SAFE_DELETE_PROGRAM(program);
-	SAFE_DELETE_TEXTURE(rain_texture);
 }
 
 void SimulGLPrecipitationRenderer::RecompileShaders()
 {
-	SAFE_DELETE_PROGRAM(program);
-	SAFE_DELETE_TEXTURE(rain_texture);
-GL_ERROR_CHECK
-	program						=MakeProgram("simul_rain");
-GL_ERROR_CHECK
-	rain_texture				=LoadGLImage("Rain.jpg",GL_REPEAT);
-GL_ERROR_CHECK
 }
 
 SimulGLPrecipitationRenderer::~SimulGLPrecipitationRenderer()
 {
-	InvalidateDeviceObjects();
 }
 
 void SimulGLPrecipitationRenderer::Render(crossplatform::DeviceContext &/*deviceContext*/,crossplatform::Texture * /*depth_tex*/
 				,float /*max_fade_distance_metres*/
 				,simul::sky::float4 /*viewportTextureRegionXYWH*/)
 {
-	if(!baseSkyInterface)
-		return;
-	if(Intensity<=0)
-		return;
 }

@@ -75,7 +75,37 @@
 	
 	#define IMAGESTORE(a,b,c) imageStore(a,ivec3(b),c)
 	#define IMAGE_LOAD(a,b) texelFetch(a,ivec3(b),0)
-	#define RW_TEXTURE3D_FLOAT4 image3D
+	#define RW_TEXTURE3D_FLOAT4 layout(rgba32f,binding = 0) image3D
+	
+#ifdef GLFX
+	shader VS_ScreenQuad(in int gl_VertexID, out vec2 texCoords)
+	{
+		vec2 poss[4];
+		poss[0]		=vec2(1.0, 0.0);
+		poss[1]		=vec2(1.0, 1.0);
+		poss[2]		=vec2(0.0, 0.0);
+		poss[3]		=vec2(0.0, 1.0);
+		vec2 pos	=poss[gl_VertexID];
+		gl_Position	=vec4(rect.xy+rect.zw*pos.xy,1.0,1.0);
+		texCoords	=pos.xy;
+		texCoords.y	=1.0-texCoords.y;
+	}
+
+	shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
+	{
+		vec2 poss[4];
+		poss[0]			=vec2(1.0,0.0);
+		poss[1]			=vec2(1.0,1.0);
+		poss[2]			=vec2(0.0,0.0);
+		poss[3]			=vec2(0.0,1.0);
+		vec2 pos		=poss[gl_VertexID];
+		pos.y			=yRange.x+pos.y*yRange.y;
+		vec4 vert_pos	=vec4(vec2(-1.0,-1.0)+2.0*vec2(pos.x,pos.y),1.0,1.0);
+		gl_Position		=vert_pos;
+		texCoords		=pos.xy;
+	}
+
+#endif
 #else
 	#define STATIC static
 	// To C++, samplers are just GLints.

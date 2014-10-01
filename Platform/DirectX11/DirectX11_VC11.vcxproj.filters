@@ -93,9 +93,6 @@
     <ClCompile Include="PrecipitationRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TextRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="LightningRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -207,9 +204,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TerrainRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TextRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RenderPlatform.h">

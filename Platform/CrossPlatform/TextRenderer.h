@@ -1,34 +1,20 @@
 #ifndef TEXTRENDERER_H
 #define TEXTRENDERER_H
 
-#include "SimulDirectXHeader.h"
-#ifndef SIMUL_WIN8_SDK
-#include <d3dx10math.h>
-#include <d3dx11async.h>
-#endif
 #include <fstream>
-#include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/SL/text_constants.sl"
 namespace simul
 {
 	namespace crossplatform
 	{
 		struct DeviceContext;
-	}
-	namespace dx11
-	{
 		class TextRenderer
 		{
 		private:
-			struct ConstantBufferType
-			{
-				vec4	rect;
-				vec4	texc;
-				vec4	colour;
-				vec4	background;
-			};
 
 		public:
 			TextRenderer();
@@ -43,9 +29,9 @@ namespace simul
 		private:
 
 		private:
-			ID3DX11Effect						*effect;
+			crossplatform::Effect						*effect;
 	
-			ConstantBuffer<ConstantBufferType>	constantBuffer;
+			crossplatform::ConstantBuffer<TextConstants>	constantBuffer;
 			crossplatform::Texture*			font_texture;
 			crossplatform::RenderPlatform *renderPlatform;
 		};

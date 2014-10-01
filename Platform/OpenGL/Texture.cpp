@@ -9,6 +9,7 @@
 using namespace simul;
 using namespace opengl;
 #if defined(_MSC_VER) && (defined(WIN32) || defined(WIN64))
+#include <windows.h>
 #else
 #include <stdio.h>
 #include <strings.h>
@@ -44,7 +45,7 @@ void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *,const char *p
 	pTextureObject		=0;
 	if(dot_pos>=0&&dot_pos<(int)filename.length())
 		extension		=filename.substr(dot_pos+1,filename.length()-dot_pos-1);
-	pTextureObject		=LoadGLImage(pFilePathUtf8,GL_REPEAT);
+	pTextureObject		=LoadGLImage(pFilePathUtf8,GL_REPEAT,&width,&length);
 	return ;
 }
 
@@ -107,6 +108,11 @@ GL_ERROR_CHECK
 	}
 	glBindTexture(GL_TEXTURE_2D,0);
 GL_ERROR_CHECK
+}
+
+void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable)
+{
+	SIMUL_BREAK("Not Implemented");
 }
 
 void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)

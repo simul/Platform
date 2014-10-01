@@ -179,6 +179,7 @@
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="ShaderMode.h" />
     <ClInclude Include="TextInputOutput.h" />
+    <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
@@ -217,6 +218,7 @@
     <None Include="SL\spherical_harmonics.sl" />
     <None Include="SL\spherical_harmonics_constants.sl" />
     <None Include="SL\states.sl" />
+    <None Include="SL\text_constants.sl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BaseFramebuffer.cpp" />
@@ -230,6 +232,7 @@
     <ClCompile Include="MixedResolutionView.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="TextInputOutput.cpp" />
+    <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -28,6 +28,7 @@ namespace simul
 		class Material;
 		class Effect;
 		class EffectTechnique;
+		class TextRenderer;
 		struct EffectDefineOptions;
 		class Light;
 		class Texture;
@@ -71,6 +72,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
 		public:
+			RenderPlatform();
 			struct Vertext
 			{
 				vec3 pos;
@@ -82,7 +84,7 @@ namespace simul
 			//! Call this once, when the 3d graphics device object is being shut down.
 			virtual void InvalidateDeviceObjects();
 			//! Optional - call this to recompile the standard shaders.
-			virtual void RecompileShaders	()=0;
+			virtual void RecompileShaders	();
 			//! Gets an object containing immediate-context API-specific values.
 			DeviceContext &GetImmediateContext();
 			virtual void PushTexturePath	(const char *pathUtf8)=0;
@@ -107,7 +109,7 @@ namespace simul
 			virtual void DrawQuad			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)=0;
 			virtual void DrawQuad			(DeviceContext &deviceContext)=0;
 
-			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL)							=0;
+			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			virtual void DrawLines			(DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false)		=0;
 			virtual void Draw2dLines		(DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)		=0;
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false)		=0;
@@ -170,7 +172,10 @@ namespace simul
 			virtual void					SetStandardRenderState			(DeviceContext &deviceContext,StandardRenderState s);
 		protected:
 			DeviceContext					immediateContext;
+			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
+			bool mirrorY,mirrorY2;
 		private:
+			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
 			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};

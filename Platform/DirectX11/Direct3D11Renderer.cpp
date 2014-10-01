@@ -721,10 +721,7 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 		light					=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 		float occ				=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 		float exp				=(hdr?cameraViewStruct.exposure:1.f)*(1.f-occ);
-		void *moistureTexture	=NULL;
-		if(simulWeatherRenderer->GetBasePrecipitationRenderer())
-			moistureTexture		=simulWeatherRenderer->GetBasePrecipitationRenderer()->GetMoistureTexture();
-		simulOpticsRenderer->RenderFlare(deviceContext,exp,moistureTexture,dir,light);
+		simulOpticsRenderer->RenderFlare(deviceContext,exp,NULL,dir,light);
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)

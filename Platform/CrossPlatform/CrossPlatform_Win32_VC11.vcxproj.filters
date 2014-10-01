@@ -58,6 +58,7 @@
     <ClInclude Include="DemoOverlay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TextRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -165,6 +166,7 @@
     <None Include="SL\states.sl">
       <Filter>SL</Filter>
     </None>
+    <None Include="SL\text_constants.sl" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SL">
@@ -214,5 +216,6 @@
     <ClCompile Include="DemoOverlay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TextRenderer.cpp" />
   </ItemGroup>
 </Project>

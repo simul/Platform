@@ -370,7 +370,7 @@ void CSLoss(RW_TEXTURE3D_FLOAT4 targetTexture,Texture2D density_texture,uint3 po
 		loss.rgb			=exp(-extinction*stepLengthKm);
 		loss.a				=(loss.r+loss.g+loss.b)/3.0;
 		loss				*=previous_loss;
-		IMAGESTORE(targetTexture,idx, vec4(loss.rgb,1.0));
+		IMAGESTORE(targetTexture,idx,vec4(loss.rgb,1.0));
 		prevDist_km			=dist_km;
 		previous_loss		=loss;
 	}

@@ -60,7 +60,7 @@ void CS_Loss(uint3 sub_pos	: SV_DispatchThreadID )
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
 	uint linear_pos		=sub_pos.x+threadOffset.x;
 	uint3 pos			=LinearThreadToPos2D(linear_pos,dims);
-	CSLoss(targetTexture,density_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm);
+	CSLoss(targetTexture,density_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm,targetSize);
 }
 
 CS_LAYOUT(1,1,1)
@@ -154,7 +154,7 @@ void CS_Skyl( uint3 sub_pos : SV_DispatchThreadID )
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
 	uint linear_pos		=sub_pos.x+threadOffset.x;
 	uint3 pos			=LinearThreadToPos2D(linear_pos,dims);
-	CSSkyl(targetTexture,loss_texture,insc_texture,density_texture,blackbody_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm);
+	CSSkyl(targetTexture,loss_texture,insc_texture,density_texture,blackbody_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm,targetSize);
 	
 }
 

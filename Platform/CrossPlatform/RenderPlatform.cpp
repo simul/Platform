@@ -1,11 +1,19 @@
 #include "RenderPlatform.h"
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
+#include "Simul/Platform/CrossPlatform/TextRenderer.h"
 #include "Effect.h"
 
 using namespace simul;
 using namespace crossplatform;
 
+
+RenderPlatform::RenderPlatform()
+	:mirrorY(false)
+	,mirrorY2(false)
+	,textRenderer(NULL)
+{
+}
 DeviceContext &RenderPlatform::GetImmediateContext()
 {
 	return immediateContext;
@@ -30,13 +38,52 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	desc.blend.RenderTarget[0].SrcBlendAlpha		=crossplatform::BLEND_SRC_ALPHA;
 	desc.blend.RenderTarget[0].DestBlendAlpha		=crossplatform::BLEND_INV_SRC_ALPHA;
 	RenderState *alpha=standardRenderStates[STANDARD_ALPHA_BLENDING]=CreateRenderState(desc);
+	SAFE_DELETE(textRenderer);
+	textRenderer=new TextRenderer;
+	textRenderer->RestoreDeviceObjects(this);
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
+	if(textRenderer)
+		textRenderer->InvalidateDeviceObjects();
 	for(std::map<StandardRenderState,RenderState*>::iterator i=standardRenderStates.begin();i!=standardRenderStates.end();i++)
 		SAFE_DELETE(i->second);
 	standardRenderStates.clear();
+	SAFE_DELETE(textRenderer);
+}
+void RenderPlatform::RecompileShaders()
+{
+	textRenderer->RecompileShaders();
+}
+
+void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *text,const float* colr,const float* bkg)
+{
+	float clr[]={1.f,1.f,0.f,1.f};
+	float black[]={0.f,0.f,0.f,0.0f};
+	if(!colr)
+		colr=clr;
+	if(!bkg)
+		bkg=black;
+	unsigned int num_v=1;
+	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
+	int h=(int)viewport.h;
+	int pos=0;
+	
+	while(*text!=0)
+	{
+		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)h,text,colr,bkg,mirrorY2);
+		while(*text!='\n'&&*text!=0)
+		{
+			text++;
+			pos++;
+		}
+		if(!(*text))
+			break;
+		text++;
+		pos++;
+		y+=16;
+	}
 }
 
 void RenderPlatform::EnsureEffectIsBuiltPartialSpec(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options,const std::map<std::string,std::string> &defines)

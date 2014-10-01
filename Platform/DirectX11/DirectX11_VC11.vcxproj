@@ -204,7 +204,6 @@
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="TerrainRenderer.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
-    <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
@@ -245,7 +244,6 @@
     <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="TerrainRenderer.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />
-    <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>

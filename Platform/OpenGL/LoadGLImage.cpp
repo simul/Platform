@@ -73,7 +73,8 @@ ERRNO_CHECK
 	FIBITMAP *dib = FreeImage_LoadU(fif,wstr.c_str());
 	if(!dib)
 	{
-		throw simul::base::RuntimeError(string("Failed to load bitmap ")+string(filename_utf8));
+		SIMUL_CERR<<"Failed to load bitmap "<<filename_utf8<<std::endl;
+		return 0;
 	}
 
 	width  = FreeImage_GetWidth(dib),
@@ -90,12 +91,18 @@ ERRNO_CHECK
 #endif
 }
 
-GLuint LoadTexture(const char *filename_utf8,unsigned wrap)
+#include "Simul/Base/FileLoader.h"
+GLuint LoadGLImage(const char *filename_utf8,unsigned wrap,int *w,int *h)
 {
+	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
+	if(!FileExists(fn.c_str()))
+		return 0;
 #ifdef _MSC_VER
 	unsigned bpp=0;
 	unsigned width,height;
-	BYTE *pixels=(BYTE*)LoadBitmap(filename_utf8,bpp,width,height);
+	BYTE *pixels=(BYTE*)LoadBitmap(fn.c_str(),bpp,width,height);
+	if(!pixels)
+		return 0;
 	GLuint image_tex=0;
     glGenTextures(1,&image_tex);
     glBindTexture(GL_TEXTURE_2D,image_tex);
@@ -104,22 +111,22 @@ GLuint LoadTexture(const char *filename_utf8,unsigned wrap)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,wrap);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap);
-	if(bpp==24)
+	if(bpp==1||bpp==8)
+		glTexImage2D(GL_TEXTURE_2D,0, GL_RGB8,width,height,0,GL_LUMINANCE,GL_UNSIGNED_BYTE,pixels);
+	else if(bpp==24)
 		glTexImage2D(GL_TEXTURE_2D,0, GL_RGB8,width,height,0,GL_BGR,GL_UNSIGNED_BYTE,pixels);
-	if(bpp==32)
+	else if(bpp==32)
 		glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
+	else
+		SIMUL_CERR<<"Unkown bits-per-pixel value: "<<bpp<<std::endl;
+	if(w)
+		*w=width;
+	if(h)
+		*h=height;
 	return image_tex;
 #else
 	return 0;
 #endif
-}
-#include "Simul/Base/FileLoader.h"
-GLuint LoadGLImage(const char *filename_utf8,unsigned wrap)
-{
-	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
-	if(!FileExists(fn.c_str()))
-		return 0;
-	return LoadTexture(fn.c_str(),wrap);
 }
 
 void SaveGLImage(const char *filename_utf8,GLuint tex)

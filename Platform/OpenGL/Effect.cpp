@@ -444,10 +444,10 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex)
 {
-	SetTexture(deviceContext,name,tex);
+	SetTex(name,tex,true);
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex)
+void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write)
 {
 	GL_ERROR_CHECK
 	int texture_number=current_texture_number;
@@ -473,9 +473,32 @@ void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crosspla
 	if(!tex->AsGLuint())
 		return;
 	if(tex->GetDimension()==2)
-		glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
+	{
+		if(write)
+			glBindImageTexture(	0,
+ 				tex->AsGLuint(),
+ 				0,
+ 				GL_FALSE,
+ 				0,
+ 				GL_READ_WRITE,
+ 				GL_RGBA32F);
+		//glBindImageTexture(0, volume_tid, 0, /*layered=*/GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+		else
+			glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
+	}
 	else if(tex->GetDimension()==3)
-		glBindTexture(GL_TEXTURE_3D,tex->AsGLuint());
+	{
+		if(write)
+			glBindImageTexture(	0,
+ 				tex->AsGLuint(),
+ 				0,
+ 				GL_TRUE,
+ 				0,
+ 				GL_READ_WRITE,
+ 				GL_RGBA32F);
+		else
+			glBindTexture(GL_TEXTURE_3D,tex->AsGLuint());
+	}
 	else
 		throw simul::base::RuntimeError("Unknown texture dimension!");
     glActiveTexture(GL_TEXTURE0+texture_number);
@@ -514,6 +537,10 @@ GL_ERROR_CHECK
 		}
 	}
 GL_ERROR_CHECK
+}
+void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex)
+{
+	SetTex(name,tex,false);
 }
 
 void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture &t)

@@ -1,15 +1,8 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
 #include "../../CrossPlatform/SL/states.sl"
+#include "../../CrossPlatform/SL/text_constants.sl"
 Texture2D fontTexture;
-
-cbuffer FontConstants
-{
-	vec4	rect;
-	vec4	texc;
-	vec4	colour;
-	vec4	background;
-};
 
 posTexVertexOutput FontVertexShader(idOnly IN)
 {
@@ -44,8 +37,6 @@ technique11 backg
 		SetPixelShader(CompileShader(ps_4_0,FontBackgroundShader()));
     }
 }
-
-
 
 technique11 text
 {
