@@ -915,6 +915,15 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 									offsets );						// array of offset values, one for each buffer
 };
 
+void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *vertexBuffer)
+{
+	ID3D11Buffer *b=NULL;
+	if(vertexBuffer)
+		b=vertexBuffer->AsD3D11Buffer();
+	UINT offset = 0;
+	deviceContext.asD3D11DeviceContext()->SOSetTargets(1,&b,&offset );
+}
+
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {
 	ID3D11RenderTargetView *rt[4];

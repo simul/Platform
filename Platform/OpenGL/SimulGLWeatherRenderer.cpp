@@ -196,7 +196,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 
 void SimulGLWeatherRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	renderPlatform=r;
+	BaseWeatherRenderer::RestoreDeviceObjects(r);
 ERRNO_CHECK
 	glewInit();
 ERRNO_CHECK

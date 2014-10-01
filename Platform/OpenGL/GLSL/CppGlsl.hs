@@ -75,7 +75,10 @@
 	
 	#define IMAGESTORE(a,b,c) imageStore(a,ivec3(b),c)
 	#define IMAGE_LOAD(a,b) texelFetch(a,ivec3(b),0)
-	#define RW_TEXTURE3D_FLOAT4 layout(rgba32f,binding = 0) image3D
+	// SOME GLSL compilers like this version:
+//	#define RW_TEXTURE3D_FLOAT4 layout(rgba32f,binding = 0) image3D
+	// SOME GLSL compilers like it like this:
+	#define RW_TEXTURE3D_FLOAT4 image3D
 	
 #ifdef GLFX
 	shader VS_ScreenQuad(in int gl_VertexID, out vec2 texCoords)

@@ -89,7 +89,6 @@ namespace simul
 			void InvalidateDeviceObjects();
 			bool Destroy();
 	
-			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH);
 			void RenderLightning(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *low_res_depth_tex);
 			void SaveCubemapToFile(crossplatform::RenderPlatform *renderPlatform,const char *filename,float exposure,float gamma);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
@@ -117,7 +116,6 @@ namespace simul
 			bool RenderBufferToScreen(ID3D11ShaderResourceView* texture,int w,int h,bool do_tonemap);
 			class SimulSkyRendererDX1x					*simulSkyRenderer;
 			class SimulCloudRendererDX1x				*simulCloudRenderer;
-			class PrecipitationRenderer					*simulPrecipitationRenderer;
 			class Simul2DCloudRendererDX11				*simul2DCloudRenderer;
 			class LightningRenderer						*simulLightningRenderer;
 			simul::crossplatform::TwoResFramebuffer *	GetFramebuffer(int view_id);

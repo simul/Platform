@@ -45,7 +45,8 @@ namespace simul
 				:width(0)
 				,length(0)
 				,depth(0)
-				,dim(0){}
+				,dim(0)
+	,pixelFormat(crossplatform::UNKNOWN){}
 			virtual ~Texture();
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
 			virtual bool IsValid() const=0;
@@ -62,6 +63,10 @@ namespace simul
 			virtual void MoveToSlowRAM() {}
 			virtual void DiscardFromFastRAM() {}
 			virtual GLuint AsGLuint(){return 0;}
+			PixelFormat GetFormat() const
+			{
+				return pixelFormat;
+			}
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0)=0;
 			virtual void ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,PixelFormat f,bool computable)=0;
@@ -77,6 +82,7 @@ namespace simul
 			virtual int GetSampleCount() const=0;
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
 			int width,length,depth,dim;
+			PixelFormat pixelFormat;
 		};
 	}
 }

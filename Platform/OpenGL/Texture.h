@@ -16,7 +16,6 @@ namespace simul
 		{
 			GLuint m_fb;
 			int main_viewport[4];
-			crossplatform::PixelFormat pixelFormat;
 		public:
 			Texture();
 			~Texture();

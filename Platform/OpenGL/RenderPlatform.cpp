@@ -819,6 +819,10 @@ GL_ERROR_CHECK
 	}*/
 }
 
+void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
+{
+}
+
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {
 }

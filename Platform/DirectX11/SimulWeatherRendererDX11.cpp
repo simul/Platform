@@ -25,7 +25,7 @@
 #include "Simul/Camera/Camera.h"
 #include "SimulSkyRendererDX1x.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
-#include "PrecipitationRenderer.h"
+#include "Simul/Clouds/BasePrecipitationRenderer.h"
 
 #include "Simul/Platform/DirectX11/SaveTextureDX1x.h"
 #include "SimulCloudRendererDX1x.h"
@@ -207,7 +207,6 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	m_pd3dDevice(NULL)
 	,simulSkyRenderer(NULL)
 	,simulCloudRenderer(NULL)
-	,simulPrecipitationRenderer(NULL)
 	,simul2DCloudRenderer(NULL)
 	,simulLightningRenderer(NULL)
 	,exposure_multiplier(1.f)
@@ -223,8 +222,8 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	baseCloudRenderer				=simulCloudRenderer;
 	baseLightningRenderer			=simulLightningRenderer	=::new(memoryInterface) LightningRenderer(ck3d,sk);
 	if(env->cloud2DKeyframer)
-		base2DCloudRenderer			=simul2DCloudRenderer		=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
-	basePrecipitationRenderer		=simulPrecipitationRenderer	=::new(memoryInterface) PrecipitationRenderer();
+		base2DCloudRenderer			=simul2DCloudRenderer	=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
+	basePrecipitationRenderer		=::new(memoryInterface) clouds::BasePrecipitationRenderer();
 	baseAtmosphericsRenderer		=::new(memoryInterface) sky::BaseAtmosphericsRenderer(mem);
 	
 	ConnectInterfaces();
@@ -251,7 +250,7 @@ void SimulWeatherRendererDX11::SetScreenSize(int view_id,int w,int h)
 void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	HRESULT hr=S_OK;
-	renderPlatform=r;
+	BaseWeatherRenderer::RestoreDeviceObjects(r);
 	m_pd3dDevice=renderPlatform->AsD3D11Device();
 	for(FramebufferMap::iterator i=framebuffers.begin();i!=framebuffers.end();i++)
 		i->second->RestoreDeviceObjects(renderPlatform);
@@ -275,8 +274,6 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(crossplatform::RenderPlatfor
 
 	if(simul2DCloudRenderer)
 		simul2DCloudRenderer->RestoreDeviceObjects(renderPlatform);
-	if(simulPrecipitationRenderer)
-		simulPrecipitationRenderer->RestoreDeviceObjects(renderPlatform);
 
 	if(baseAtmosphericsRenderer)
 		baseAtmosphericsRenderer->RestoreDeviceObjects(renderPlatform);
@@ -308,8 +305,6 @@ void SimulWeatherRendererDX11::InvalidateDeviceObjects()
 		simulCloudRenderer->InvalidateDeviceObjects();
 	if(simul2DCloudRenderer)
 		simul2DCloudRenderer->InvalidateDeviceObjects();
-	if(simulPrecipitationRenderer)
-		simulPrecipitationRenderer->InvalidateDeviceObjects();
 	if(baseAtmosphericsRenderer)
 		baseAtmosphericsRenderer->InvalidateDeviceObjects();
 	if(simulLightningRenderer)
@@ -331,7 +326,6 @@ SimulWeatherRendererDX11::~SimulWeatherRendererDX11()
 	Destroy();
 	del(simulSkyRenderer,memoryInterface);
 	del(simulCloudRenderer,memoryInterface);
-	del(simulPrecipitationRenderer,memoryInterface);
 	del(baseAtmosphericsRenderer,memoryInterface);
 	del(simul2DCloudRenderer,memoryInterface);
 	del(simulLightningRenderer,memoryInterface);
@@ -431,20 +425,6 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 	}
 	GetBaseAtmosphericsRenderer()->SetShowGodrays(godrays);
 }
-
-void SimulWeatherRendererDX11::RenderPrecipitation(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex
-												   ,simul::sky::float4 depthViewportXYWH)
-{
-	math::Vector3 cam_pos=GetCameraPosVector(deviceContext.viewStruct.view);
-	if(basePrecipitationRenderer)
-		basePrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
-	float max_fade_dist_metres=1.f;
-	if(environment->skyKeyframer)
-		max_fade_dist_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
-	if(simulPrecipitationRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render(deviceContext,depth_tex,max_fade_dist_metres,depthViewportXYWH);
-}
-
 void SimulWeatherRendererDX11::RenderLightning(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depth_tex,simul::sky::float4 depthViewportXYWH,crossplatform::Texture *low_res_depth_tex)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())

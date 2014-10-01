@@ -273,8 +273,9 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 	dim=2;
 }
 
-void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pixelFormat,bool computable,int mips)
+void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips)
 {
+	pixelFormat=f;
 	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	dim=3;
 	D3D11_TEXTURE3D_DESC textureDesc;
@@ -337,10 +338,11 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 
 void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
 												 ,int w,int l
-												 ,crossplatform::PixelFormat pixelFormat
+												 ,crossplatform::PixelFormat f
 												 ,bool computable,bool rendertarget,bool depthstencil
 												 ,int num_samples,int aa_quality)
 {
+	pixelFormat=f;
 	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	DXGI_FORMAT texture2dFormat=format;
 	DXGI_FORMAT srvFormat=format;
@@ -459,8 +461,9 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	}
 }
 
-void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat pixelFormat,bool computable)
+void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable)
 {
+	pixelFormat=f;
 	InvalidateDeviceObjects();
 	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	D3D11_TEXTURE2D_DESC desc;
@@ -483,8 +486,9 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(pArrayTexture,NULL,&unorderedAccessView));
 }
 
-void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat pixelFormat,bool computable)
+void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable)
 {
+	pixelFormat=f;
 	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	dim=1;
 	D3D11_TEXTURE1D_DESC textureDesc;

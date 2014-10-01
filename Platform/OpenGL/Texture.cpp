@@ -19,7 +19,6 @@ using namespace opengl;
 opengl::Texture::Texture()
 	:pTextureObject(0)
 	,m_fb(0)
-	,pixelFormat(crossplatform::UNKNOWN)
 {
 }
 

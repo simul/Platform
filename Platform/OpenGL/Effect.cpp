@@ -25,6 +25,7 @@
 #include "Simul/Platform/OpenGL/Effect.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
+#include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 
 using namespace simul;
@@ -468,6 +469,7 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write)
 	GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE0+texture_number);
 	// Fall out silently if this texture is not set.
+GL_ERROR_CHECK
 	if(!tex)
 		return;
 	if(!tex->AsGLuint())
@@ -481,10 +483,11 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write)
  				GL_FALSE,
  				0,
  				GL_READ_WRITE,
- 				GL_RGBA32F);
+				opengl::RenderPlatform::ToGLFormat(tex->GetFormat()));
 		//glBindImageTexture(0, volume_tid, 0, /*layered=*/GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 		else
 			glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
+GL_ERROR_CHECK
 	}
 	else if(tex->GetDimension()==3)
 	{
@@ -495,9 +498,11 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write)
  				GL_TRUE,
  				0,
  				GL_READ_WRITE,
- 				GL_RGBA32F);
+				opengl::RenderPlatform::ToGLFormat(tex->GetFormat()));
+		//GL_RGBA32F);
 		else
 			glBindTexture(GL_TEXTURE_3D,tex->AsGLuint());
+GL_ERROR_CHECK
 	}
 	else
 		throw simul::base::RuntimeError("Unknown texture dimension!");
