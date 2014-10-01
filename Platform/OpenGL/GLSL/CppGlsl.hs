@@ -74,7 +74,7 @@
 	#endif
 	
 	#define IMAGESTORE(a,b,c) imageStore(a,ivec3(b),c)
-	#define IMAGE_LOAD(a,b) texelFetch(a, b);
+	#define IMAGE_LOAD(a,b) texelFetch(a,ivec3(b),0)
 	#define RW_TEXTURE3D_FLOAT4 image3D
 #else
 	#define STATIC static

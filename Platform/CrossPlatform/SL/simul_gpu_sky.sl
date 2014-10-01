@@ -330,16 +330,13 @@ vec4 Skyl(Texture3D insc_texture
 	skyl.w				=(lossw)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 	return skyl;
 }
-#ifndef GLSL
 
 
-void CSLoss(RWTexture3D<float4> targetTexture,Texture2D density_texture,uint3 pos,float maxOutputAltKm,float maxDistanceKm,float maxDensityAltKm)
+void CSLoss(RW_TEXTURE3D_FLOAT4 targetTexture,Texture2D density_texture,uint3 pos,float maxOutputAltKm,float maxDistanceKm,float maxDensityAltKm,uint3 targetSize)
 {
-	uint3 dims;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
-	if(pos.x>=dims.x||pos.y>=dims.y)
+	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
-	vec2 texc			=(pos.xy+vec2(0.5,0.5))/vec2(dims.xy);
+	vec2 texc			=(pos.xy+vec2(0.5,0.5))/vec2(targetSize.xy);
 	vec4 previous_loss	=vec4(1.0,1.0,1.0,1.0);//texture_clamp(input_loss_texture,texc.xy);
 	float sin_e			=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
@@ -347,12 +344,12 @@ void CSLoss(RWTexture3D<float4> targetTexture,Texture2D density_texture,uint3 po
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float prevDist_km	=0.0;
-	for(uint i=0;i<dims.z;i++)
+	for(uint i=0;i<targetSize.z;i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
-		float zPosition		=pow((float)(i)/((float)dims.z-1.0),2.0);
+		float zPosition		=pow(float(i)/(float(targetSize.z)-1.0),2.0);
 		float dist_km		=zPosition*maxDistanceKm;
-		if(i==dims.z-1)
+		if(i==targetSize.z-1)
 			dist_km=12000.0;
 		float maxd			=min(spaceDistKm,dist_km);
 		float mind			=min(spaceDistKm,prevDist_km);
@@ -364,7 +361,7 @@ void CSLoss(RWTexture3D<float4> targetTexture,Texture2D density_texture,uint3 po
 		float alt_km		=r-planetRadiusKm;
 		// lookups is: dens_factor,ozone_factor,haze_factor;
 		float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-		vec4 lookups		=texture_clamp_lod(density_texture,dens_texc,0);
+		vec4 lookups		=texture_clamp_lod(density_texture,vec2(dens_texc,.5),0);
 		float dens_factor	=lookups.x;
 		float ozone_factor	=lookups.y;
 		float haze_factor	=getHazeFactorAtAltitude(alt_km);
@@ -378,14 +375,12 @@ void CSLoss(RWTexture3D<float4> targetTexture,Texture2D density_texture,uint3 po
 		previous_loss		=loss;
 	}
 }
-void CSSkyl(RWTexture3D<float4> targetTexture,Texture3D loss_texture,Texture3D insc_texture
-	,Texture2D density_texture,Texture2D blackbody_texture,uint3 pos,float maxOutputAltKm,float maxDistanceKm,float maxDensityAltKm)
+void CSSkyl(RW_TEXTURE3D_FLOAT4 targetTexture,Texture3D loss_texture,Texture3D insc_texture
+	,Texture2D density_texture,Texture2D blackbody_texture,uint3 pos,float maxOutputAltKm,float maxDistanceKm,float maxDensityAltKm,uint3 targetSize)
 {
-	uint3 dims;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
-	if(pos.x>=dims.x||pos.y>=dims.y)
+	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
-	vec2 texc			=(pos.xy+vec2(0.5,0.5))/vec2(dims.xy);
+	vec2 texc			=(pos.xy+vec2(0.5,0.5))/vec2(targetSize.xy);
 	
 	vec4 previous_skyl	=vec4(0.0,0.0,0.0,1.0);
 	float sin_e			=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
@@ -396,13 +391,14 @@ void CSSkyl(RWTexture3D<float4> targetTexture,Texture3D loss_texture,Texture3D i
 
 	float prevDist_km	=0.0;
 	// The midpoint of the step represented by this layer
-	for(int i=0;i<int(dims.z);i++)
+	for(int i=0;i<int(targetSize.z);i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
-		float zPosition		=pow((float)(i)/((float)dims.z-1.0),2.0);
-		vec3 previous_loss	=loss_texture[idx].rgb;//vec3(IN.texc.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;// should adjust texc - we want the PREVIOUS loss!
+		float zPosition		=pow(float(i)/(float(targetSize.z)-1.0),2.0);
+		
+		vec3 previous_loss	=IMAGE_LOAD(loss_texture,idx).rgb;
 		float dist_km		=zPosition*maxDistanceKm;
-		if(i==dims.z-1)
+		if(i==targetSize.z-1)
 			dist_km=1000.0;
 		vec4 skyl	=Skyl(insc_texture
 									,density_texture
@@ -425,14 +421,13 @@ void CSSkyl(RWTexture3D<float4> targetTexture,Texture3D loss_texture,Texture3D i
 	}
 }
 
-#endif
-void MakeLightTable(RW_TEXTURE3D_FLOAT4 targetTexture, Texture3D insc_texture,Texture2D optical_depth_texture, uint3 sub_pos,uint3 dims)
+void MakeLightTable(RW_TEXTURE3D_FLOAT4 targetTexture, Texture3D insc_texture,Texture2D optical_depth_texture, uint3 sub_pos,uint3 targetSize)
 {
 	// threadOffset.y determines the cycled index.
 	uint3 pos			=sub_pos+threadOffset;
-	if(pos.x>=dims.x||pos.y>=dims.y)
+	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
-	float alt_texc			=float(pos.x)/float(dims.x);
+	float alt_texc			=float(pos.x)/float(targetSize.x);
 	float alt_km			=maxOutputAltKm*alt_texc;
 	vec4 sunlight			=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,alt_km,lightDir);
 	float moon_angular_radius=pi/180.0/2.0;
