@@ -64,3 +64,14 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 	renderPlatform->AsD3D11Device()->CreateBuffer(&ib_desc, &init_data, &d3d11Buffer);
 	stride=index_size_bytes;
 }
+
+void *Buffer::Map(crossplatform::DeviceContext &deviceContext)
+{
+	HRESULT hr=deviceContext.asD3D11DeviceContext()->Map(d3d11Buffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+	return (void*)mapped.pData;
+}
+
+void Buffer::Unmap(crossplatform::DeviceContext &deviceContext)
+{
+	deviceContext.asD3D11DeviceContext()->Unmap(d3d11Buffer,0);
+}

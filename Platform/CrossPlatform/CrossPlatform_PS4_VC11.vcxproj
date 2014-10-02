@@ -55,6 +55,7 @@
   <ItemGroup>
     <ClCompile Include="BaseFramebuffer.cpp" />
     <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="DemoOverlay.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
@@ -64,6 +65,7 @@
     <ClCompile Include="prx.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="TextInputOutput.cpp" />
+    <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -71,6 +73,7 @@
     <ClInclude Include="BaseRenderer.h" />
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="CommandLineParams.h" />
+    <ClInclude Include="DemoOverlay.h" />
     <ClInclude Include="DeviceContext.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
@@ -84,7 +87,9 @@
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="ShaderMode.h" />
     <ClInclude Include="TextInputOutput.h" />
+    <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="Topology.h" />
   </ItemGroup>
   <Import Condition="'$(ConfigurationType)' == 'Makefile' and Exists('$(VCTargetsPath)\Platforms\$(Platform)\SCE.Makefile.$(Platform).targets')" Project="$(VCTargetsPath)\Platforms\$(Platform)\SCE.Makefile.$(Platform).targets" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

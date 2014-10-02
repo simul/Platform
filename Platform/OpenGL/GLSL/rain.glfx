@@ -1,0 +1,18 @@
+#include "CppGlSl.hs"
+
+#include "../../CrossPlatform/SL/rain_constants.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/noise.sl"
+#include "../../CrossPlatform/SL/rain.sl"
+
+shader PS_Overlay(out vec4 FragColor)
+{
+	FragColor=vec4(1,0,0,1);
+}
+
+program simul_rain
+{
+	vs(410)=VS_FullScreen();
+	fs(410)=PS_Overlay();
+};

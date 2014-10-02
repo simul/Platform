@@ -53,3 +53,12 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
     glBindBuffer(GL_ARRAY_BUFFER,0);
 	stride=index_size_bytes;
 }
+
+void *Buffer::Map(crossplatform::DeviceContext &deviceContext)
+{
+	return NULL;
+}
+
+void Buffer::Unmap(crossplatform::DeviceContext &deviceContext)
+{
+}

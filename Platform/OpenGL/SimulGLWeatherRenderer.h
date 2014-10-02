@@ -38,7 +38,6 @@ namespace simul
 	namespace opengl
 	{
 		class SimulGLLightningRenderer;
-		class SimulGLPrecipitationRenderer;
 		class SimulGLSkyRenderer;
 		class SimulGLCloudRenderer;
 		struct TwoResFramebuffer:public simul::crossplatform::TwoResFramebuffer
@@ -134,7 +133,6 @@ namespace simul
 			SimulGLSkyRenderer *simulSkyRenderer;
 			SimulGLCloudRenderer *simulCloudRenderer;
 			SimulGLLightningRenderer *simulLightningRenderer;
-			SimulGLPrecipitationRenderer *simulPrecipitationRenderer;
 			void CreateBuffers();
 			void RenderBufferToScreen(GLuint texture,int w,int h,bool use_shader,bool blend=false);
 			crossplatform::TwoResFramebuffer *GetFramebuffer(int view_id);

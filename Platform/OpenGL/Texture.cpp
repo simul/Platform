@@ -109,10 +109,35 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable)
+void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num_layers,crossplatform::PixelFormat f,bool computable)
 {
 	pixelFormat=f;
-	SIMUL_BREAK("Not Implemented");
+	if(w==width&&l==length)
+		return;
+	pixelFormat=f;
+	GLuint internal_format=opengl::RenderPlatform::ToGLFormat(pixelFormat);
+	GLuint layout=opengl::RenderPlatform::ToGLExternalFormat(pixelFormat);
+	GLenum datatype=opengl::RenderPlatform::DataType(pixelFormat);
+	width=w;
+	length=l;
+	dim=2;
+	glGenTextures(1,&pTextureObject);
+	glBindTexture(GL_TEXTURE_2D,pTextureObject);
+	int m=1;
+	
+	for(int i=0;i<1;i++)//num_mips
+	{
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, i,internal_format	,width/m,length/m,num_layers,0,layout, datatype, NULL);
+	GL_ERROR_CHECK
+		//if(i==0)
+		{
+			//glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,0,width/m,length/m,1,layout,datatype,NULL);
+	GL_ERROR_CHECK
+			//glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,1,width/m,length/m,1,layout,datatype,NULL);
+		}
+	GL_ERROR_CHECK
+		m*=2;
+	}
 }
 
 void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)

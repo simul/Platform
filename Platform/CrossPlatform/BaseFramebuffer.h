@@ -1,6 +1,7 @@
 #ifndef BASE_FRAMEBUFFER_H
 #define BASE_FRAMEBUFFER_H
 #include "Simul/Platform/CrossPlatform/Export.h"
+#include "Simul/Platform/CrossPlatform/PixelFormat.h"
 
 namespace simul
 {
@@ -9,7 +10,6 @@ namespace simul
 		class Texture;
 		struct DeviceContext;
 		class RenderPlatform;
-		enum PixelFormat;
 		//! A base class for API-dependent framebuffer classes.
 		SIMUL_CROSSPLATFORM_EXPORT_CLASS BaseFramebuffer
 		{

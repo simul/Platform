@@ -9,6 +9,7 @@
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/Topology.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4251)
@@ -24,7 +25,6 @@ namespace simul
 	/// The namespace and library for cross-platform base classes, which abstract rendering functionality.
 	namespace crossplatform
 	{
-		enum Topology;
 		class Material;
 		class Effect;
 		class EffectTechnique;
@@ -40,13 +40,11 @@ namespace simul
 		class Buffer;
 		class Layout;
 		struct RenderState;
-		enum StandardRenderState;
 		struct RenderStateDesc;
 		struct DeviceContext;
 		struct LayoutDesc;
 		struct SamplerStateDesc;
 		struct PhysicalLightRenderData;
-		enum QueryType;
 		struct Query;
 		/// A crossplatform viewport structure.
 		struct Viewport

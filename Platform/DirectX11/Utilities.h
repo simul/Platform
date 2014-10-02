@@ -100,7 +100,6 @@ namespace simul
 			T *Map(ID3D11DeviceContext *pContext)
 			{
 				HRESULT hr=pContext->Map(vertexBuffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
-		//		SIMUL_ASSERT(hr==S_OK);
 				return (T*)mapped.pData;
 			}
 			void Unmap(ID3D11DeviceContext *pContext)

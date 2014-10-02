@@ -6,7 +6,7 @@
 Texture2D noise_texture SIMUL_TEXTURE_REGISTER(0);
 Texture3D random_texture_3d SIMUL_TEXTURE_REGISTER(1);
 RWTexture3D<vec4> targetTexture32 SIMUL_RWTEXTURE_REGISTER(0);
-RWTexture3D<vec4> targetTexture8 SIMUL_RWTEXTURE_REGISTER(0);
+RWTexture3D<vec4> targetTexture8 SIMUL_RWTEXTURE_REGISTER(1);
 
 SamplerState samplerState 
 {

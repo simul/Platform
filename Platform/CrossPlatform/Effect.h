@@ -23,13 +23,6 @@ namespace simul
 		struct DeviceContext;
 		class RenderPlatform;
 		class Effect;
-		enum QueryType
-		{
-			QUERY_UNKNWON
-			,QUERY_OCCLUSION		// Like GL_SAMPLES_PASSED
-			,QUERY_TIMESTAMP		// like GL_TIMESTAMP
-			,QUERY_TIMESTAMP_DISJOINT
-		};
 		struct SIMUL_CROSSPLATFORM_EXPORT Query
 		{
 			static const int QueryLatency = 5;
@@ -109,11 +102,6 @@ namespace simul
 		{
 			NONE,BLEND,DEPTH
 		};
-		enum StandardRenderState
-		{
-			STANDARD_OPAQUE_BLENDING
-			,STANDARD_ALPHA_BLENDING
-		};
 		/// An initialization structure for a RenderState. Create a RenderStateDesc and pass it to RenderPlatform::CreateRenderState,
 		/// then store the returned pointer. Delete the pointer when done.
 		struct RenderStateDesc
@@ -190,12 +178,14 @@ namespace simul
 			//! Apply the stored data using the given context, in preparation for rendering.
 			void Apply(DeviceContext &deviceContext)
 			{
-				platformConstantBuffer->Apply(deviceContext,sizeof(T),(T*)this);
+				if(platformConstantBuffer)
+					platformConstantBuffer->Apply(deviceContext,sizeof(T),(T*)this);
 			}
 			//! Unbind from the effect.
 			void Unbind(DeviceContext &deviceContext)
 			{
-				platformConstantBuffer->Unbind(deviceContext);
+				if(platformConstantBuffer)
+					platformConstantBuffer->Unbind(deviceContext);
 			}
 		};
 		/// A base class for structured buffers, used by StructuredBuffer internally.

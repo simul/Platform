@@ -53,6 +53,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TextInputOutput.h" />
+    <ClInclude Include="DemoOverlay.h" />
+    <ClInclude Include="TextRenderer.h" />
+    <ClInclude Include="Topology.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SL">
@@ -100,5 +103,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TextInputOutput.cpp" />
+    <ClCompile Include="DemoOverlay.cpp" />
+    <ClCompile Include="TextRenderer.cpp" />
   </ItemGroup>
 </Project>

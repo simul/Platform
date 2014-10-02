@@ -193,7 +193,6 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="OceanRenderer.cpp" />
     <ClCompile Include="OceanSimulator.cpp" />
-    <ClCompile Include="PrecipitationRenderer.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
@@ -231,7 +230,6 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="OceanRenderer.h" />
     <ClInclude Include="OceanSimulator.h" />
-    <ClInclude Include="PrecipitationRenderer.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="resource.h" />
@@ -270,6 +268,7 @@
     <None Include="..\CrossPlatform\SL\noise_constants.sl" />
     <None Include="..\CrossPlatform\SL\ocean_constants.sl" />
     <None Include="..\CrossPlatform\SL\optics_constants.sl" />
+    <None Include="..\CrossPlatform\SL\rain.sl" />
     <None Include="..\CrossPlatform\SL\rain_constants.sl" />
     <None Include="..\CrossPlatform\SL\raytrace_new.sl" />
     <None Include="..\CrossPlatform\SL\simul_2d_clouds.hs" />

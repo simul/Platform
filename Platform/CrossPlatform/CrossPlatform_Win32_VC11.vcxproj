@@ -181,6 +181,7 @@
     <ClInclude Include="TextInputOutput.h" />
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="Topology.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics.sl" />

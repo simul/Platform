@@ -55,15 +55,6 @@ struct SplashVertex
 	float strength;
 };
 
-#ifndef __cplusplus
-struct PrecipitationVertexInput
-{
-    vec3 position	: POSITION;         //position of the particle
-	uint type		: TYPE;             //particle type
-	vec3 velocity	: VELOCITY;
-};
-#endif
-
 struct TransformedParticle
 {
     vec4 position;

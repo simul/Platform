@@ -21,6 +21,8 @@ namespace simul
 			GLuint AsGLuint();
 			void EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,int struct_size,const void *data);
 			void EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data);
+			void *Map(crossplatform::DeviceContext &deviceContext) override;
+			void Unmap(crossplatform::DeviceContext &deviceContext) override;
 		};
 	}
 };

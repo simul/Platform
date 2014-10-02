@@ -90,9 +90,6 @@
     <ClCompile Include="TerrainRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrecipitationRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="LightningRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -192,9 +189,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Framebuffer3D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PrecipitationRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Direct3D11Manager.h">
@@ -443,6 +437,9 @@
       <Filter>HLSL</Filter>
     </None>
     <None Include="..\CrossPlatform\SL\colour_packing.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\rain.sl">
       <Filter>CrossPlatform</Filter>
     </None>
   </ItemGroup>

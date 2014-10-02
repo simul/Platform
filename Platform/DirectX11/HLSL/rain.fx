@@ -9,8 +9,27 @@ float particleZoneSize=15.0;	// = 625 m^3
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/depth.sl"
 #include "../../CrossPlatform/SL/noise.sl"
+#include "../../CrossPlatform/SL/rain.sl"
+
 texture3D randomTexture3D;
 texture2D rainMapTexture;
+texture2D randomTexture;
+TextureCube cubeTexture;
+texture2D rainTexture;
+texture2D showTexture;
+// The RESOLVED depth texture at full resolution
+texture2D depthTexture;
+Texture2DArray rainTextureArray;
+RWTexture2DArray<vec4> targetTextureArray;
+RWStructuredBuffer<PrecipitationVertex> targetVertexBuffer;
+
+struct PrecipitationVertexInput
+{
+    vec3 position	: POSITION;         //position of the particle
+	uint type		: TYPE;             //particle type
+	vec3 velocity	: VELOCITY;
+};
+
 // Same as transformedParticle, but with semantics
 struct particleVertexOutput
 {
@@ -21,17 +40,6 @@ struct particleVertexOutput
 	vec3 view			:TEXCOORD1;
 	float fade			:TEXCOORD3;
 };
-
-texture2D randomTexture;
-TextureCube cubeTexture;
-texture2D rainTexture;
-texture2D showTexture;
-// The RESOLVED depth texture at full resolution
-texture2D depthTexture;
-Texture2DArray rainTextureArray;
-
-RWTexture2DArray<vec4> targetTextureArray;
-RWStructuredBuffer<PrecipitationVertex> targetVertexBuffer;
 
 
 vec3 WrapParticleZone(vec3 pos)

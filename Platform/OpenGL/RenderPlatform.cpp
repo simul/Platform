@@ -537,7 +537,7 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 	case RGBA_8_UNORM:
 		return GL_RGBA;
 	case RGBA_8_SNORM:
-		return GL_RGBA;
+		return GL_RGBA8_SNORM;
 	case R_8_UNORM:
 		return GL_R8;// not GL_R...!
 	case D_32_FLOAT:

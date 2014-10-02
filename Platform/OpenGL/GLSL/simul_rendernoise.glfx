@@ -6,8 +6,8 @@
 uniform sampler2D image_texture;
 uniform sampler2D noise_texture ;
 uniform sampler3D random_texture_3d;
-layout(rgba32f,binding = 0) uniform image3D targetTexture32;
-layout(rgba8_snorm,binding = 0) uniform image3D targetTexture8;
+layout(rgba32f) uniform image3D targetTexture32;
+layout(rgba8_snorm) uniform image3D targetTexture8;
 uniform vec4 rect;
 uniform vec4 depthToLinFadeDistParams;
 uniform vec2 tanHalfFov;

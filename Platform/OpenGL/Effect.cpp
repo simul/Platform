@@ -477,7 +477,7 @@ GL_ERROR_CHECK
 	if(tex->GetDimension()==2)
 	{
 		if(write)
-			glBindImageTexture(	0,
+			glBindImageTexture(0,
  				tex->AsGLuint(),
  				0,
  				GL_FALSE,
@@ -492,7 +492,8 @@ GL_ERROR_CHECK
 	else if(tex->GetDimension()==3)
 	{
 		if(write)
-			glBindImageTexture(	0,
+		{
+			glBindImageTexture(0,
  				tex->AsGLuint(),
  				0,
  				GL_TRUE,
@@ -500,6 +501,7 @@ GL_ERROR_CHECK
  				GL_READ_WRITE,
 				opengl::RenderPlatform::ToGLFormat(tex->GetFormat()));
 		//GL_RGBA32F);
+		}
 		else
 			glBindTexture(GL_TEXTURE_3D,tex->AsGLuint());
 GL_ERROR_CHECK
