@@ -66,7 +66,7 @@ GLenum toGlQueryType(crossplatform::QueryType t)
 	};
 }
 
-void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *)
 {
 GL_ERROR_CHECK
 	glGenQueries(QueryLatency,glQuery);
@@ -82,14 +82,14 @@ GL_ERROR_CHECK
 		glQuery[i]=0;
 }
 
-void Query::Begin(crossplatform::DeviceContext &deviceContext)
+void Query::Begin(crossplatform::DeviceContext &)
 {
 GL_ERROR_CHECK
 	glBeginQuery(toGlQueryType(type),glQuery[currFrame]);
 GL_ERROR_CHECK
 }
 
-void Query::End(crossplatform::DeviceContext &deviceContext)
+void Query::End(crossplatform::DeviceContext &)
 {
 GL_ERROR_CHECK
 	glEndQuery(glQuery[currFrame]);
@@ -97,7 +97,7 @@ GL_ERROR_CHECK
 	currFrame = (currFrame + 1) % QueryLatency;  
 }
 
-void Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)
+void Query::GetData(crossplatform::DeviceContext &,void *data,size_t sz)
 {
 GL_ERROR_CHECK
 	GLuint ok=0;

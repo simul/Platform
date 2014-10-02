@@ -163,7 +163,7 @@ void opengl::Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::Shadi
 	//glUseProgram(0);
 }
 
-void opengl::Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
+void opengl::Mesh::Draw(crossplatform::DeviceContext &,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
 {
     // Where to start.
 	const SubMesh *subMesh=GetSubMesh(pMaterialIndex);
@@ -198,7 +198,7 @@ void opengl::Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMateria
     }
 }
 
-void opengl::Mesh::EndDraw(crossplatform::DeviceContext &deviceContext) const
+void opengl::Mesh::EndDraw(crossplatform::DeviceContext &) const
 {
     // Reset VBO binding.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

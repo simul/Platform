@@ -4,6 +4,7 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Texture.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 
 #include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
@@ -66,12 +67,12 @@ namespace simul
 			ID3D11Device*						m_pd3dDevice;
 			ID3D11DeviceContext*				m_pImmediateContext;
 			crossplatform::Effect*				effect;
-			ID3DX11EffectTechnique*				densityComputeTechnique;
-			ID3DX11EffectTechnique*				maskTechnique;
-			ID3DX11EffectTechnique*				lightingComputeTechnique;
-			ID3DX11EffectTechnique*				secondaryLightingComputeTechnique;
-			ID3DX11EffectTechnique*				secondaryHarmonicTechnique;
-			ID3DX11EffectTechnique*				transformComputeTechnique;
+			crossplatform::EffectTechnique*		densityComputeTechnique;
+			crossplatform::EffectTechnique*		maskTechnique;
+			crossplatform::EffectTechnique*		lightingComputeTechnique;
+			crossplatform::EffectTechnique*		secondaryLightingComputeTechnique;
+			crossplatform::EffectTechnique*		secondaryHarmonicTechnique;
+			crossplatform::EffectTechnique*		transformComputeTechnique;
 
 			ID3D11Texture3D						*volume_noise_tex;
 			ID3D11ShaderResourceView			*volume_noise_tex_srv;

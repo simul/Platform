@@ -992,14 +992,14 @@ PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint ve
 	// 
     return input;
 }
-
-GeometryShader gsStreamOut = ConstructGSWithSO(CompileShader(vs_5_0,VS_InitParticles()),"POSITION.xyz; TYPE.x; VELOCITY.xyz" );
+VertexShader vsInit=CompileShader(vs_5_0,VS_InitParticles());
+GeometryShader gsStreamOut = ConstructGSWithSO(vsInit,"0:POSITION.xyz;1:TYPE.x;2:VELOCITY.xyz" );
 
 technique11 init_particles
 {
     pass p0
     {
-        SetVertexShader(CompileShader(vs_5_0,VS_InitParticles()));
+        SetVertexShader(vsInit);
         SetGeometryShader(gsStreamOut);
         SetPixelShader(NULL);
         SetDepthStencilState(DisableDepth,0);
