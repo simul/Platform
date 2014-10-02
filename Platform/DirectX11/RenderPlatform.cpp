@@ -993,9 +993,38 @@ void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,
 	deviceContext.asD3D11DeviceContext()->IASetIndexBuffer(buffer->AsD3D11Buffer(), f, 0);
 }
 
+static D3D11_PRIMITIVE_TOPOLOGY toD3dTopology(crossplatform::Topology t)
+{
+	using namespace crossplatform;
+	switch(t)
+	{			
+	case POINTLIST:
+		return D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+	case LINELIST:
+		return D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	case LINESTRIP:
+		return D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
+	case TRIANGLELIST:
+		return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	case TRIANGLESTRIP:
+		return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+	case LINELIST_ADJ:
+		return D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
+	case LINESTRIP_ADJ:
+		return D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
+	case TRIANGLELIST_ADJ:
+		return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
+	case TRIANGLESTRIP_ADJ:
+		return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
+	default:
+		return D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+	};
+}
+
 void RenderPlatform::SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t)
 {
-	D3D11_PRIMITIVE_TOPOLOGY T=(D3D11_PRIMITIVE_TOPOLOGY)((int)t-(int)crossplatform::POINTLIST+(int)D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	D3D11_PRIMITIVE_TOPOLOGY T=toD3dTopology(t);
+	//(D3D11_PRIMITIVE_TOPOLOGY)((int)t-(int)crossplatform::POINTLIST+(int)D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	deviceContext.asD3D11DeviceContext()->IASetPrimitiveTopology(T);
 }
 

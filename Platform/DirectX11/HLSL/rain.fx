@@ -26,8 +26,8 @@ RWStructuredBuffer<PrecipitationVertex> targetVertexBuffer;
 struct PrecipitationVertexInput
 {
     vec3 position	: POSITION;         //position of the particle
-	uint type		: TYPE;             //particle type
-	vec3 velocity	: VELOCITY;
+	uint type		: TYPE0;             //particle type
+	vec3 velocity	: VELOCITY0;
 };
 
 // Same as transformedParticle, but with semantics
@@ -993,7 +993,7 @@ PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint ve
     return input;
 }
 VertexShader vsInit=CompileShader(vs_5_0,VS_InitParticles());
-GeometryShader gsStreamOut = ConstructGSWithSO(vsInit,"0:POSITION.xyz;1:TYPE.x;2:VELOCITY.xyz" );
+GeometryShader gsStreamOut = ConstructGSWithSO(vsInit,"0:POSITION.xyz;1:TYPE0.x;2:VELOCITY0.xyz" );
 
 technique11 init_particles
 {
@@ -1006,7 +1006,7 @@ technique11 init_particles
     }  
 }
 
-GeometryShader gsStreamOut2=ConstructGSWithSO(CompileShader(vs_5_0,VS_MoveParticles() ),"POSITION.xyz; TYPE.x; VELOCITY.xyz" );
+GeometryShader gsStreamOut2=ConstructGSWithSO(CompileShader(vs_5_0,VS_MoveParticles() ),"POSITION.xyz; TYPE0.x; VELOCITY0.xyz" );
 
 technique11 move_particles
 {

@@ -123,7 +123,8 @@ void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 
 void MixedResolutionView::InvalidateDeviceObjects()
 {
-	hdrFramebuffer->InvalidateDeviceObjects();
+	if(hdrFramebuffer)
+		hdrFramebuffer->InvalidateDeviceObjects();
 	if(lowResDepthTexture)
 		lowResDepthTexture->InvalidateDeviceObjects();
 	SAFE_DELETE(lowResDepthTexture);
