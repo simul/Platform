@@ -10,7 +10,7 @@
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/DirectX11/SimulCloudRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
-#include "Simul/Platform/DirectX11/Simul2DCloudRendererDX1x.h"
+#include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Platform/DirectX11/SimulOpticsRendererDX1x.h"

@@ -98,8 +98,6 @@ namespace simul
 			class SimulSkyRendererDX1x *GetSkyRenderer();
 			//! Get a pointer to the 3d cloud renderer owned by this class instance.
 			class SimulCloudRendererDX1x *GetCloudRenderer();
-			//! Get a pointer to the 2d cloud renderer owned by this class instance.
-			class Simul2DCloudRendererDX11 *Get2DCloudRenderer();
 			//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 			crossplatform::Texture *GetCloudDepthTexture(int view_id);
@@ -116,8 +114,6 @@ namespace simul
 			bool RenderBufferToScreen(ID3D11ShaderResourceView* texture,int w,int h,bool do_tonemap);
 			class SimulSkyRendererDX1x					*simulSkyRenderer;
 			class SimulCloudRendererDX1x				*simulCloudRenderer;
-			class Simul2DCloudRendererDX11				*simul2DCloudRenderer;
-			class LightningRenderer						*simulLightningRenderer;
 			simul::crossplatform::TwoResFramebuffer *	GetFramebuffer(int view_id);
 			float										exposure;
 			float										gamma;

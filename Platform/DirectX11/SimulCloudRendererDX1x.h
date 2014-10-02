@@ -113,7 +113,6 @@ namespace simul
 			
 			D3D1x_MAPPED_TEXTURE3D					mapped_illumination;
 
-			ID3D11Texture1D*						lightning_texture;
 			ID3D11Texture2D*						cloud_cubemap;
 			
 			crossplatform::RenderState*						blendAndWriteAlpha;

@@ -11,7 +11,7 @@ namespace simul
 		class RenderPlatform;
 		struct DeviceContext;
 		//! A cross-platform equivalent to D3D11_INPUT_ELEMENT_DESC, used
-		//! to create layouts.
+		//! to create layouts. MEMBERS: const char *semanticName,int semanticIndex,	PixelFormat	format,	int inputSlot,	int alignedByteOffset,	bool perInstance,int instanceDataStepRate
 		struct LayoutDesc
 		{
 			const char *semanticName;

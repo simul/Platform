@@ -53,9 +53,6 @@
     <ClCompile Include="SimulGLLightningRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulGLPrecipitationRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SimulGLSkyRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -143,9 +140,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulGLLightningRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimulGLPrecipitationRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulGLSkyRenderer.h">

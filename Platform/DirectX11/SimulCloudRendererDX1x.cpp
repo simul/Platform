@@ -64,7 +64,6 @@ PosTexVert_t *lightning_vertices=NULL;
 SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem) :
 	simul::clouds::BaseCloudRenderer(ck,mem)
 	,m_pd3dDevice(NULL)
-	,lightning_texture(NULL)
 	,illumination_texture(NULL)
 	,blendAndWriteAlpha(NULL)
 	,blendAndDontWriteAlpha(NULL)
@@ -146,7 +145,6 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_DELETE(cloud_texture);
 	// Set the stored texture sizes to zero, so the textures will be re-created.
 	cloud_tex_width_x=cloud_tex_length_y=cloud_tex_depth_z=0;
-	SAFE_RELEASE(lightning_texture);
 	SAFE_RELEASE(illumination_texture);
 	SAFE_DELETE(blendAndWriteAlpha);
 	SAFE_DELETE(blendAndDontWriteAlpha);
@@ -179,48 +177,6 @@ static int PowerOfTwo(int unum)
 bool SimulCloudRendererDX1x::CreateLightningTexture()
 {
 	HRESULT hr=S_OK;
-	unsigned size=64;
-	SAFE_RELEASE(lightning_texture);
-	D3D11_TEXTURE1D_DESC textureDesc=
-	{
-		size,
-		1,
-		1,
-		DXGI_FORMAT_R8G8B8A8_UNORM,
-		D3D11_USAGE_DYNAMIC,
-		D3D11_BIND_SHADER_RESOURCE,
-		D3D11_CPU_ACCESS_WRITE,
-		0
-	};
-	if(FAILED(hr=m_pd3dDevice->CreateTexture1D(&textureDesc,NULL,&lightning_texture)))
-		return (hr==S_OK);
-	D3D1x_MAPPED_TEXTURE2D resource;
-	ID3D11DeviceContext* pContext;
-	m_pd3dDevice->GetImmediateContext(&pContext);
-	hr=pContext->Map(lightning_texture,0,D3D1x_MAP_WRITE_DISCARD,0,&resource);
-	if(FAILED(hr))
-		return (hr==S_OK);
-	unsigned char *lightning_tex_data=(unsigned char *)(resource.pData);
-	for(unsigned i=0;i<size;i++)
-	{
-		float linear=1.f-fabs((float)(i+.5f)*2.f/(float)size-1.f);
-		float level=.5f*linear*linear+5.f*(linear>.97f);
-		float r=level;
-		float g=level;
-		float b=level;
-		if(r>1.f)
-			r=1.f;
-		if(g>1.f)
-			g=1.f;
-		if(b>1.f)
-			b=1.f;
-		lightning_tex_data[4*i+0]=(unsigned char)(255.f*b);
-		lightning_tex_data[4*i+1]=(unsigned char)(255.f*b);
-		lightning_tex_data[4*i+2]=(unsigned char)(255.f*g);
-		lightning_tex_data[4*i+3]=(unsigned char)(255.f*r);
-	}
-	pContext->Unmap(lightning_texture,0);
-	SAFE_RELEASE(pContext)
 	return (hr==S_OK);
 }
 

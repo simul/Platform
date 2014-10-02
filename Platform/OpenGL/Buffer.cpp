@@ -32,13 +32,15 @@ GLuint Buffer::AsGLuint()
 	return buf;
 }
 
-void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,int struct_size,const void *data)
+void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,int struct_size,const void *data,bool cpu_access)
 {
 	SAFE_DELETE_BUFFER(buf)
     glGenBuffers(1, &buf);
     // Save vertex attributes into GPU
     glBindBuffer(GL_ARRAY_BUFFER, buf);
-    glBufferData(GL_ARRAY_BUFFER, num_vertices * struct_size, data, GL_STATIC_DRAW);
+	//usage Specifies the expected usage pattern of the data store. The symbolic constant must be
+	//GL_STREAM_DRAW, GL_STREAM_READ, GL_STREAM_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STATIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, or GL_DYNAMIC_COPY.
+    glBufferData(GL_ARRAY_BUFFER, num_vertices * struct_size, data, cpu_access?GL_DYNAMIC_DRAW:GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 	stride=struct_size;
 }

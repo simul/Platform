@@ -183,7 +183,6 @@
     <ClCompile Include="SimulGLCloudRenderer.cpp" />
     <ClCompile Include="SimulGLHDRRenderer.cpp" />
     <ClCompile Include="SimulGLLightningRenderer.cpp" />
-    <ClCompile Include="SimulGLPrecipitationRenderer.cpp" />
     <ClCompile Include="SimulGLSkyRenderer.cpp" />
     <ClCompile Include="SimulGLTerrainRenderer.cpp" />
     <ClCompile Include="SimulGLUnderwaterRenderer.cpp" />
@@ -216,7 +215,6 @@
     <ClInclude Include="SimulGLCloudRenderer.h" />
     <ClInclude Include="SimulGLHDRRenderer.h" />
     <ClInclude Include="SimulGLLightningRenderer.h" />
-    <ClInclude Include="SimulGLPrecipitationRenderer.h" />
     <ClInclude Include="SimulGLSkyRenderer.h" />
     <ClInclude Include="SimulGLTerrainRenderer.h" />
     <ClInclude Include="SimulGLUnderwaterRenderer.h" />
