@@ -23,23 +23,11 @@ namespace simul
 		public:
 			GpuCloudGenerator();
 			~GpuCloudGenerator();
-			void SetHarmonicLighting(bool h)
-			{
-				harmonic_secondary=h;
-			}
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
-			void InvalidateDeviceObjects();
-			void RecompileShaders();
 			bool CanPerformGPULighting() const
 			{
 				return Enabled&&renderPlatform!=NULL;
 			}
 			int GetDensityGridsize(const int *grid);
-			crossplatform::Texture* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr,int generation_number);
-			void FillDensityGrid(	int index
-									,const clouds::GpuCloudsParameters &params
-									,int start_texel
-									,int texels);
 			void PerformGPURelight(	int light_index
 									,const clouds::GpuCloudsParameters &params
 									,float *target
@@ -50,17 +38,6 @@ namespace simul
 											,unsigned char *target
 											,int start_texel
 											,int texels);
-			// If we want the generator to put the data directly into 3d textures:
-			void SetDirectTargets(crossplatform::Texture **textures)
-			{
-				for(int i=0;i<3;i++)
-				{
-					if(textures)
-						finalTexture[i]=textures[i];
-					else
-						finalTexture[i]=NULL;
-				}
-			}
 		protected:
 		};
 	}

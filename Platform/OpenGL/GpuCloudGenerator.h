@@ -38,17 +38,6 @@ namespace simul
 												,unsigned char *target
 												,int start_texel
 												,int texels);
-			// If we want the generator to put the data directly into 3d textures:
-			void SetDirectTargets(crossplatform::Texture **textures)
-			{
-				for(int i=0;i<3;i++)
-				{
-					if(textures)
-						finalTexture[i]=textures[i];
-					else
-						finalTexture[i]=NULL;
-				}
-			}
 		protected:
 			FramebufferGL	fb[2];
 			FramebufferGL	world_fb;
