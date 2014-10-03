@@ -299,6 +299,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	if(x1>x0)
 	{
 		simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture1",directLightTextures[light_index].AsD3D11UnorderedAccessView());
+	densityTexture->SetResource(density_texture.AsD3D11ShaderResourceView());
 		effect->Apply(deviceContext,lightingComputeTechnique,0);
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,1);
 		effect->Unapply(deviceContext);
@@ -313,6 +314,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 			gpuCloudConstants.Apply(deviceContext);
 			setTexture(effect->asD3DX11Effect(),"lightTexture1"				,directLightTextures[light_index].AsD3D11ShaderResourceView());
 			simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture1",indirectLightTextures[light_index].AsD3D11UnorderedAccessView());
+	densityTexture->SetResource(density_texture.AsD3D11ShaderResourceView());
 			effect->Apply(deviceContext,secondaryHarmonicTechnique,0);
 			m_pImmediateContext->Dispatch(subgrid.x,subgrid.y,subgrid.z);
 			simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture1",(ID3D11UnorderedAccessView*)NULL);
@@ -324,8 +326,9 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 		{
 			gpuCloudConstants.threadOffset=uint3(0,0,z);
 			gpuCloudConstants.Apply(deviceContext);
-			setTexture(effect->asD3DX11Effect(),"lightTexture1"				,directLightTextures[light_index].AsD3D11ShaderResourceView());
 			simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture1",indirectLightTextures[light_index].AsD3D11UnorderedAccessView());
+			setTexture(effect->asD3DX11Effect(),"lightTexture1"				,directLightTextures[light_index].AsD3D11ShaderResourceView());
+	densityTexture->SetResource(density_texture.AsD3D11ShaderResourceView());
 			effect->Apply(deviceContext,secondaryLightingComputeTechnique,0);
 			m_pImmediateContext->Dispatch(subgrid.x,subgrid.y,1);
 			simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"targetTexture1",(ID3D11UnorderedAccessView*)NULL);
