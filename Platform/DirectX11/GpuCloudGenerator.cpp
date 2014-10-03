@@ -21,18 +21,6 @@ using namespace simul;
 using namespace dx11;
 
 GpuCloudGenerator::GpuCloudGenerator()
-			:mask_fb(NULL)
-			,effect(NULL)
-			,densityComputeTechnique(NULL)
-			,lightingComputeTechnique(NULL)
-			,secondaryLightingComputeTechnique(NULL)
-			,transformComputeTechnique(NULL)
-			,volume_noise_tex(NULL)
-			,density_texture(NULL)
-			,m_pWwcSamplerState(NULL)
-			,m_pCwcSamplerState(NULL)
-			,m_pWccSamplerState(NULL)
-				,harmonic_secondary(false)
 {
 	for(int i=0;i<3;i++)
 		finalTexture[i]=NULL;

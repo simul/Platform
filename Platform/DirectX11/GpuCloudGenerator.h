@@ -62,27 +62,6 @@ namespace simul
 				}
 			}
 		protected:
-			crossplatform::BaseFramebuffer		*mask_fb;
-			
-			crossplatform::Effect*				effect;
-			crossplatform::EffectTechnique*		densityComputeTechnique;
-			crossplatform::EffectTechnique*		maskTechnique;
-			crossplatform::EffectTechnique*		lightingComputeTechnique;
-			crossplatform::EffectTechnique*		secondaryLightingComputeTechnique;
-			crossplatform::EffectTechnique*		secondaryHarmonicTechnique;
-			crossplatform::EffectTechnique*		transformComputeTechnique;
-
-			crossplatform::Texture				*volume_noise_tex;
-
-			crossplatform::Texture				*density_texture;
-			crossplatform::Texture				*finalTexture[3];
-			crossplatform::Texture				*directLightTextures[2];
-			crossplatform::Texture				*indirectLightTextures[2];
-			crossplatform::ConstantBuffer<GpuCloudConstants>	gpuCloudConstants;
-			crossplatform::SamplerState*	m_pWwcSamplerState;
-			crossplatform::SamplerState*	m_pWccSamplerState;
-			crossplatform::SamplerState*	m_pCwcSamplerState;
-	bool harmonic_secondary;
 		};
 	}
 }

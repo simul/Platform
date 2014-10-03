@@ -60,7 +60,6 @@ namespace simul
 			crossplatform::PixelFormat			iformat;
 			GLenum			itype;
 			GLuint			density_texture;
-			crossplatform::Texture	*finalTexture[3];
 			bool			readback_to_cpu;
 			float			*density;	// used if we are using CPU to read back the density texture.
 			int				density_gridsize;
