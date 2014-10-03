@@ -59,6 +59,7 @@ glDeleteSamplers(1, &sampler_state);
 				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0);
 			void ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable) override;
 			void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int mips=1);
+			void GenerateMips(crossplatform::DeviceContext &deviceContext);
 			void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
 			void activateRenderTarget(crossplatform::DeviceContext &deviceContext);
 			void deactivateRenderTarget();

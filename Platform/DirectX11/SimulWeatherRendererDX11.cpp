@@ -43,11 +43,18 @@ using namespace simul;
 using namespace dx11;
 
 TwoResFramebuffer::TwoResFramebuffer()
-	:m_pd3dDevice(NULL)
-	,numOldViewports(0)
+	:numOldViewports(0)
 	,m_pOldDepthSurface(NULL)
+	,lowResFarFramebufferDx11(NULL)
+	,lowResNearFramebufferDx11(NULL)
+	,hiResFarFramebufferDx11(NULL)
+	,hiResNearFramebufferDx11(NULL)
 {
 	m_pOldRenderTargets[0]=m_pOldRenderTargets[1]=NULL;
+}
+TwoResFramebuffer::~TwoResFramebuffer()
+{
+	InvalidateDeviceObjects();
 }
 
 void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -55,37 +62,47 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	crossplatform::TwoResFramebuffer::RestoreDeviceObjects(r);
 	if(!r)
 		return;
-	m_pd3dDevice=(ID3D11Device*	)r->AsD3D11Device();
 	if(Width<=0||Height<=0||Downscale<=0)
 		return;
-	lowResFarFramebufferDx11	.SetFormat(crossplatform::RGBA_16_FLOAT);
-	lowResNearFramebufferDx11	.SetFormat(crossplatform::RGBA_16_FLOAT);
-	hiResFarFramebufferDx11		.SetFormat(crossplatform::RGBA_16_FLOAT);
-	hiResNearFramebufferDx11	.SetFormat(crossplatform::RGBA_16_FLOAT);
+	SAFE_DELETE(lowResFarFramebufferDx11);
+	SAFE_DELETE(lowResNearFramebufferDx11);
+	SAFE_DELETE(hiResFarFramebufferDx11);
+	SAFE_DELETE(hiResNearFramebufferDx11);
+	lowResFarFramebufferDx11	=renderPlatform->CreateFramebuffer();
+	lowResNearFramebufferDx11	=renderPlatform->CreateFramebuffer();
+	hiResFarFramebufferDx11		=renderPlatform->CreateFramebuffer();
+	hiResNearFramebufferDx11	=renderPlatform->CreateFramebuffer();
 
-	lowResFarFramebufferDx11	.SetDepthFormat(crossplatform::D_16_UNORM);
-	lowResNearFramebufferDx11	.SetDepthFormat(crossplatform::UNKNOWN);
-	hiResFarFramebufferDx11		.SetDepthFormat(crossplatform::UNKNOWN);
-	hiResNearFramebufferDx11	.SetDepthFormat(crossplatform::UNKNOWN);
-	lowResFarFramebufferDx11.SetUseFastRAM(true,true);
-	lowResNearFramebufferDx11.SetUseFastRAM(true,true);
-	hiResFarFramebufferDx11.SetUseFastRAM(true,true);
-	hiResNearFramebufferDx11.SetUseFastRAM(true,true);
+
+
+	lowResFarFramebufferDx11	->SetFormat(crossplatform::RGBA_16_FLOAT);
+	lowResNearFramebufferDx11	->SetFormat(crossplatform::RGBA_16_FLOAT);
+	hiResFarFramebufferDx11		->SetFormat(crossplatform::RGBA_16_FLOAT);
+	hiResNearFramebufferDx11	->SetFormat(crossplatform::RGBA_16_FLOAT);
+
+	lowResFarFramebufferDx11	->SetDepthFormat(crossplatform::D_16_UNORM);
+	lowResNearFramebufferDx11	->SetDepthFormat(crossplatform::UNKNOWN);
+	hiResFarFramebufferDx11		->SetDepthFormat(crossplatform::UNKNOWN);
+	hiResNearFramebufferDx11	->SetDepthFormat(crossplatform::UNKNOWN);
+	lowResFarFramebufferDx11	->SetUseFastRAM(true,true);
+	lowResNearFramebufferDx11	->SetUseFastRAM(true,true);
+	hiResFarFramebufferDx11		->SetUseFastRAM(true,true);
+	hiResNearFramebufferDx11	->SetUseFastRAM(true,true);
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
 	int BufferWidth				=(Width+Downscale-1)/Downscale+1;
 	int BufferHeight			=(Height+Downscale-1)/Downscale+1;
 	int W						=(Width+HiResDownscale-1)/HiResDownscale+1;
 	int H						=(Height+HiResDownscale-1)/HiResDownscale+1;
-	lowResFarFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
-	lowResNearFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
-	hiResFarFramebufferDx11		.SetWidthAndHeight(W,H);
-	hiResNearFramebufferDx11	.SetWidthAndHeight(W,H);
+	lowResFarFramebufferDx11	->SetWidthAndHeight(BufferWidth,BufferHeight);
+	lowResNearFramebufferDx11	->SetWidthAndHeight(BufferWidth,BufferHeight);
+	hiResFarFramebufferDx11		->SetWidthAndHeight(W,H);
+	hiResNearFramebufferDx11	->SetWidthAndHeight(W,H);
 	// We're going to TRY to encode near and far loss into two UINT's, for faster results
 	lossTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_32_UINT,false,true);
-	lowResFarFramebufferDx11	.RestoreDeviceObjects(r);
-	lowResNearFramebufferDx11	.RestoreDeviceObjects(r);
-	hiResFarFramebufferDx11		.RestoreDeviceObjects(r);
-	hiResNearFramebufferDx11	.RestoreDeviceObjects(r);
+	lowResFarFramebufferDx11	->RestoreDeviceObjects(r);
+	lowResNearFramebufferDx11	->RestoreDeviceObjects(r);
+	hiResFarFramebufferDx11		->RestoreDeviceObjects(r);
+	hiResNearFramebufferDx11	->RestoreDeviceObjects(r);
 }
 
 void TwoResFramebuffer::SaveOldRTs(crossplatform::DeviceContext &deviceContext)
@@ -174,10 +191,10 @@ void TwoResFramebuffer::DeactivateLowRes(crossplatform::DeviceContext &deviceCon
 
 void TwoResFramebuffer::InvalidateDeviceObjects()
 {
-	lowResFarFramebufferDx11	.InvalidateDeviceObjects();
-	lowResNearFramebufferDx11	.InvalidateDeviceObjects();
-	hiResFarFramebufferDx11		.InvalidateDeviceObjects();
-	hiResNearFramebufferDx11	.InvalidateDeviceObjects();
+	SAFE_DELETE(lowResFarFramebufferDx11);
+	SAFE_DELETE(lowResNearFramebufferDx11);
+	SAFE_DELETE(hiResFarFramebufferDx11);
+	SAFE_DELETE(hiResNearFramebufferDx11);
 	crossplatform::TwoResFramebuffer::InvalidateDeviceObjects();
 }
 

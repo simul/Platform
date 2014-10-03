@@ -18,8 +18,6 @@ using namespace simul;
 using namespace opengl;
 
 GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
-	,density_program(0)
-	,lighting_program(0)
 	,transform_program(0)
 	,density(NULL)
 	,density_gridsize(0)
@@ -32,11 +30,13 @@ GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
 
 GpuCloudGenerator::~GpuCloudGenerator()
 {
+	InvalidateDeviceObjects();
 	delete [] density;
 }
 
-void GpuCloudGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *)
+void GpuCloudGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	BaseGpuCloudGenerator::RestoreDeviceObjects(r);
 	iformat=crossplatform::INT_32_FLOAT;
 	itype=GL_LUMINANCE;
 	RecompileShaders();
@@ -47,13 +47,12 @@ void GpuCloudGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *)
 
 void GpuCloudGenerator::InvalidateDeviceObjects()
 {
+	BaseGpuCloudGenerator::InvalidateDeviceObjects();
 	for(int i=0;i<2;i++)
 	{
 		fb[i].InvalidateDeviceObjects();
 	}
-	SAFE_DELETE_PROGRAM(density_program);
 	SAFE_DELETE_PROGRAM(transform_program);
-	SAFE_DELETE_PROGRAM(lighting_program);
 	SAFE_DELETE_TEXTURE(density_texture);
 	gpuCloudConstants.Release();
 	maskTexture.InvalidateDeviceObjects();
@@ -62,14 +61,11 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 
 void GpuCloudGenerator::RecompileShaders()
 {
-	SAFE_DELETE_PROGRAM(density_program);
+	BaseGpuCloudGenerator::RecompileShaders();
 	SAFE_DELETE_PROGRAM(transform_program);
-	SAFE_DELETE_PROGRAM(lighting_program);
-	density_program		=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_density.frag");
-	lighting_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_clouds.frag");
 	transform_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_transform.frag");
-	gpuCloudConstants	.LinkToProgram(density_program	,"GpuCloudConstants",8);
-	gpuCloudConstants	.LinkToProgram(lighting_program	,"GpuCloudConstants",8);
+	gpuCloudConstants	.LinkToProgram(effect->GetTechniqueByName("gpu_density")->passAsGLuint(0),"GpuCloudConstants",8);
+	gpuCloudConstants	.LinkToProgram(effect->GetTechniqueByName("gpu_lighting")->passAsGLuint(0),"GpuCloudConstants",8);
 	gpuCloudConstants	.LinkToProgram(transform_program,"GpuCloudConstants",8);
 }
 
@@ -184,12 +180,8 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 											,int start_texel
 											,int texels)
 {
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
 	int total_texels=GetDensityGridsize(params.density_grid);
-	if(!density_program)
+	if(!effect)
 		RecompileShaders();
 	crossplatform::DeviceContext deviceContext;
 	// We render out a 2D texture with each XY layer laid end-to-end, and copy it to the target.
@@ -208,8 +200,16 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	int stride=(iformat==GL_RGBA32F_ARB)?4:1;
 	simul::math::Vector3 noise_scale(1.f,1.f,(float)params.density_grid[2]/(float)params.density_grid[0]);
 	//using noise_size and noise_src_ptr, make a 3d texture:
-	glUseProgram(density_program);
-	setParameter(density_program,"volumeNoiseTexture"	,0);
+	//glUseProgram(density_program);
+	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("gpu_density");
+	if(!tech)
+		return;
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	effect->Apply(deviceContext,tech,0);
+	setParameter(tech->passAsGLuint(0),"volumeNoiseTexture"	,0);
 //	setParameter(density_program,"maskTexture"			,1);
 	//MakeVertexMatrix(params.density_grid,start_texel,texels);
 	glMatrixMode(GL_PROJECTION);
@@ -232,7 +232,7 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	{
 GL_ERROR_CHECK
 		dens_fb.Activate(deviceContext);
-//dens_fb.Clear(1,0,0,0);
+
 GL_ERROR_CHECK
 		DrawQuad(0.f,y_start,1.f,y_end-y_start);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
@@ -260,8 +260,8 @@ GL_ERROR_CHECK
 		CopyTo3DTexture(start_texel,texels,params.density_grid);
 		dens_fb.Deactivate(deviceContext);
 	}
-	
-	glUseProgram(0);
+	effect->Unapply(deviceContext);
+//	glUseProgram(0);
 GL_ERROR_CHECK
 GL_ERROR_CHECK
 	glMatrixMode(GL_MODELVIEW);
@@ -280,10 +280,6 @@ void GpuCloudGenerator::PerformGPURelight(int light_index
 {
 	crossplatform::DeviceContext deviceContext;
 GL_ERROR_CHECK
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
 	for(int i=0;i<2;i++)
 	{
 		fb[i].SetWidthAndHeight(params.light_grid[0],params.light_grid[1]);
@@ -299,10 +295,16 @@ GL_ERROR_CHECK
 	// because we don't need to do any filtering.
 	//GLuint density_texture	=dens_fb.GetColorTex();
 	// blit from dens_fb...
-	glUseProgram(lighting_program);
-	setParameter(lighting_program,"input_light_texture",0);
-	setParameter(lighting_program,"density_texture",1);
-
+	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("gpu_lighting");
+	if(!tech)
+		return;
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	effect->Apply(deviceContext,tech,0);
+	setParameter(tech->passAsGLuint(0),"input_light_texture",0);
+	setParameter(tech->passAsGLuint(0),"density_texture",1);
 	int total_texels=params.light_grid[0]*params.light_grid[1]*params.light_grid[2];
 	float y_start=(float)start_texel/(float)total_texels;
 	float y_end=(float)(start_texel+texels)/(float)total_texels;
@@ -314,8 +316,6 @@ GL_ERROR_CHECK
 	FramebufferGL *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
-	
-	
 	
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,density_texture);
@@ -365,6 +365,7 @@ F[1]->Clear(NULL,u,u,u,u,1.f);
 			// input light values:
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
+			effect->Reapply(deviceContext);
 			DrawQuad(0,0,1,1);
 			GL_ERROR_CHECK
 		// Copy F[1] contents to the target
@@ -381,7 +382,7 @@ F[1]->Clear(NULL,u,u,u,u,1.f);
 		if(target)
 			target+=params.light_grid[0]*params.light_grid[1]*4;
 	}
-	glUseProgram(0);
+	effect->Unapply(deviceContext);
 	
 	
 	glMatrixMode(GL_MODELVIEW);

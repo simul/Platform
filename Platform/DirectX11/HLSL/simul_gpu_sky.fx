@@ -77,74 +77,10 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 	uint linear_pos			=sub_pos.x+threadOffset.x;
 	
 	int3 pos				=LinearThreadToPos2D(linear_pos,dims);
-	if(pos.x>=dims.x||pos.y>=dims.y)
+	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
+	CSInsc(targetTexture,density_texture,optical_depth_texture,loss_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm,targetSize);
 	
-	vec2 texc				=(pos.xy+0.5)/vec2(dims.xy);
-
-	vec4 previous_insc		=vec4(0.0,0.0,0.0,0.0);
-	float sin_e				=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
-	float cos_e				=sqrt(1.0-sin_e*sin_e);
-	float altTexc			=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
-	float viewAltKm			=altTexc*altTexc*maxOutputAltKm;
-	float spaceDistKm		=getDistanceToSpace(sin_e,viewAltKm);
-	
-	float prevDist_km		=0.0;
-	
-	targetTexture[pos]		=previous_insc;
-	vec3 mie_factor			=vec3(1.0,1.0,1.0);
-	for(int i=1;i<dims.z;i++)
-	{
-		uint3 idx			=uint3(pos.xy,i);
-		float zPosition		=pow((float)(i)/((float)dims.z-1.0),2.0);
-		
-		vec3 previous_loss	=loss_texture[idx].rgb;
-
-		float dist_km		=zPosition*maxDistanceKm;
-		if(i==dims.z-1)
-			dist_km=1000.0;
-		float maxd			=min(spaceDistKm,dist_km);
-		float mind			=min(spaceDistKm,prevDist_km);
-		float dist			=0.5*(mind+maxd);
-		float stepLengthKm	=max(0.0,maxd-mind);
-		float y				=planetRadiusKm+viewAltKm+dist*sin_e;
-		float x				=dist*cos_e;
-		float r				=sqrt(x*x+y*y);
-		float alt_km		=r-planetRadiusKm;
-	
-		float x1			=mind*cos_e;
-		float r1			=sqrt(x1*x1+y*y);
-		float alt_1_km		=r1-planetRadiusKm;
-	
-		float x2			=maxd*cos_e;
-		float r2			=sqrt(x2*x2+y*y);
-		float alt_2_km		=r2-planetRadiusKm;
-	
-		// lookups is: dens_factor,ozone_factor,haze_factor;
-		float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-		vec4 lookups		=texture_clamp_lod(density_texture,dens_texc,0);
-		float dens_factor	=lookups.x;
-		float ozone_factor	=lookups.y;
-		float haze_factor	=getHazeFactorAtAltitude(alt_km);
-		vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(optical_depth_texture,alt_km,lightDir);
-		light.rgb			*=RAYLEIGH_BETA_FACTOR;
-		vec4 insc			=light;
-
-		vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
-		vec3 total_ext		=extinction+ozone*ozone_factor;
-		vec3 loss;
-		loss				=exp(-extinction*stepLengthKm);
-		insc.rgb			*=vec3(1.0,1.0,1.0)-loss;
-		mie_factor			*=exp(-insc.w*stepLengthKm*haze_factor*hazeMie);
-	
-		insc.rgb			*=previous_loss.rgb;
-		insc.rgb			+=previous_insc.rgb;
-
-		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
-		targetTexture[idx]	=vec4(insc.rgb,insc.a);
-		prevDist_km			=dist_km;
-		previous_insc		=insc;
-	}
 }
 
 CS_LAYOUT(8,1,1)

@@ -42,8 +42,6 @@ namespace simul
 			FramebufferGL	fb[2];
 			FramebufferGL	world_fb;
 			FramebufferGL	dens_fb;
-			GLuint			density_program;
-			GLuint			lighting_program;
 			GLuint			transform_program;
 			GLuint			volume_noise_tex;
 			crossplatform::PixelFormat			iformat;

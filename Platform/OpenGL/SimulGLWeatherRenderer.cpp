@@ -9,7 +9,7 @@
 #include "SimulGLWeatherRenderer.h"
 #include "SimulGLSkyRenderer.h"
 #include "SimulGLCloudRenderer.h"
-#include "SimulGLLightningRenderer.h"
+#include "Simul/Clouds/BaseLightningRenderer.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
 #include "SimulGLUtilities.h"
@@ -133,8 +133,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 	{
 		base2DCloudRenderer				=::new clouds::Base2DCloudRenderer(ck2d,mem);
 	}	
-	simulLightningRenderer				=::new(memoryInterface) SimulGLLightningRenderer(ck3d,sk);
-	baseLightningRenderer=simulLightningRenderer;
+	baseLightningRenderer				=::new(memoryInterface) clouds::BaseLightningRenderer(ck3d,sk);
 
 	baseAtmosphericsRenderer			=::new(memoryInterface) sky::BaseAtmosphericsRenderer(mem);
 	basePrecipitationRenderer			=::new(memoryInterface) clouds::BasePrecipitationRenderer();
@@ -166,8 +165,8 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 		if(simulCloudRenderer)
 			simulCloudRenderer->RestoreDeviceObjects(renderPlatform);
-		if(simulLightningRenderer)
-			simulLightningRenderer->RestoreDeviceObjects();
+		if(baseLightningRenderer)
+			baseLightningRenderer->RestoreDeviceObjects(renderPlatform);
 	}
 	ConnectInterfaces();
 }
@@ -178,7 +177,7 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 	operator delete(simulSkyRenderer,memoryInterface);
 	operator delete(simulCloudRenderer,memoryInterface);
 	operator delete(base2DCloudRenderer,memoryInterface);
-	operator delete(simulLightningRenderer,memoryInterface);
+	operator delete(baseLightningRenderer,memoryInterface);
 	operator delete(baseAtmosphericsRenderer,memoryInterface);
 }
 
@@ -217,7 +216,7 @@ GL_ERROR_CHECK
 ERRNO_CHECK
 	simulSkyRenderer->RestoreDeviceObjects(renderPlatform);
 	simulCloudRenderer->RestoreDeviceObjects(renderPlatform);
-	simulLightningRenderer->RestoreDeviceObjects();
+	baseLightningRenderer->RestoreDeviceObjects(renderPlatform);
 ERRNO_CHECK
 	baseAtmosphericsRenderer->RestoreDeviceObjects(renderPlatform);
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
@@ -233,8 +232,8 @@ GL_ERROR_CHECK
 		simulSkyRenderer->InvalidateDeviceObjects();
 	if(simulCloudRenderer)
 		simulCloudRenderer->InvalidateDeviceObjects();
-	if(simulLightningRenderer)
-		simulLightningRenderer->InvalidateDeviceObjects();
+	if(baseLightningRenderer)
+		baseLightningRenderer->InvalidateDeviceObjects();
 	if(baseAtmosphericsRenderer)
 		baseAtmosphericsRenderer->InvalidateDeviceObjects();
 	if(basePrecipitationRenderer)
@@ -385,8 +384,8 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(crossplatform::DeviceContext &
 void SimulGLWeatherRenderer::RenderLightning(simul::crossplatform::DeviceContext &deviceContext)
 {
 	math::Matrix4x4 view,proj;
-	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		simulLightningRenderer->Render(deviceContext,NULL,simul::sky::float4(0,0,1.f,1.f),NULL);
+	if(simulCloudRenderer&&baseLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+		baseLightningRenderer->Render(deviceContext,NULL,simul::sky::float4(0,0,1.f,1.f),NULL);
 }
 
 void SimulGLWeatherRenderer::RenderPrecipitation(crossplatform::DeviceContext &deviceContext)

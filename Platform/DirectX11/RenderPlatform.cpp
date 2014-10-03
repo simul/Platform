@@ -695,8 +695,8 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatfo
 	ID3DBlob *VS;
 	ID3DBlob *errorMsgs=NULL;
 	std::string dummy_shader;
-	dummy_shader="struct vertexInput"
-				"{";
+	dummy_shader="struct vertexInput\n"
+				"{\n";
 	for(int i=0;i<num_elements;i++)
 	{
 		D3D11_INPUT_ELEMENT_DESC &dec=decl[i];

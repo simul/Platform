@@ -34,9 +34,15 @@ using namespace opengl;
 #define CHECK_PARAM_EXISTS\
 	if(loc<0)\
 	{\
-		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLFX program "<<filename.c_str()<<std::endl;\
-		std::cout<<filenameInUseUtf8.c_str()<<"(1): warning B0001: parameter "<<name<<" was not found."<<filename.c_str()<<std::endl;\
-		return;\
+		static bool ignore=false;\
+		if(!ignore)\
+		{\
+			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLFX program "<<filename.c_str()<<std::endl;\
+			std::cerr<<filenameInUseUtf8.c_str()<<"(1): warning B0001: parameter "<<name<<" was not found."<<filename.c_str()<<std::endl;\
+			std::cerr<<"Further errors of this type will not be shown."<<std::endl;\
+			ignore=true;\
+			return;\
+		}\
 	}
 
 /// Here we break if we have a null technique - but only once.
@@ -48,6 +54,7 @@ using namespace opengl;
 		{\
 			std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: currentTechnique is NULL in "<<filename.c_str()<<std::endl;\
 			BREAK_IF_DEBUGGING\
+			std::cerr<<"Further errors of this type will not be shown."<<std::endl;\
 			ignore=true;\
 			return;\
 		}\
@@ -128,8 +135,8 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const ch
 {
 GL_ERROR_CHECK
 	static int lastBindingIndex=21;
-	if(lastBindingIndex>=GL_MAX_UNIFORM_BUFFER_BINDINGS)
-		lastBindingIndex=1;
+	if(lastBindingIndex>=85)
+		lastBindingIndex=21;
 	bindingIndex=lastBindingIndex;
 	lastBindingIndex++;
 GL_ERROR_CHECK
@@ -183,10 +190,13 @@ void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &,size_t 
 {
 GL_ERROR_CHECK
 	glBindBuffer(GL_UNIFORM_BUFFER,ubo);
-	glBufferSubData(GL_UNIFORM_BUFFER,0,size,addr);
-	glBindBuffer(GL_UNIFORM_BUFFER,0);
-	glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 GL_ERROR_CHECK
+	glBufferSubData(GL_UNIFORM_BUFFER,0,size,addr);
+GL_ERROR_CHECK
+	glBindBuffer(GL_UNIFORM_BUFFER,0);
+GL_ERROR_CHECK
+//	glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
+//GL_ERROR_CHECK
 }
 
 void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &)
@@ -270,6 +280,8 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 
 Effect::~Effect()
 {
+	glfxDeleteEffect(asGLint());
+	platform_effect=0;
 #ifdef SIMUL_USE_NVFX
 	nvFX::IContainer*   fx_Effect       = (nvFX::IContainer* )platform_effect; 
     nvFX::IContainer::destroy(fx_Effect);

@@ -214,6 +214,12 @@
 			r.z=z-v.z;
 			return r;
 		}
+		void operator*=(const float *v)
+		{
+			x*=v[0];
+			y*=v[1];
+			z*=v[2];
+		}
 	};
 	struct vec4
 	{
@@ -242,6 +248,20 @@
 			y=v[1];
 			z=v[2];
 			w=v[3];
+		}
+		void operator*=(float m)
+		{
+			x*=m;
+			y*=m;
+			z*=m;
+			w*=m;
+		}
+		void operator*=(const float *v)
+		{
+			x*=v[0];
+			y*=v[1];
+			z*=v[2];
+			w*=v[3];
 		}
 	};
 	inline vec4 operator*(const mat4 &m,vec4 &v)

@@ -51,44 +51,44 @@ shader VS_ScreenQuad(out vec2 texCoords)
     texCoords	=pos;
 }
 
-shader PS_Simple(in vec2 texCoords)
+shader PS_Simple(in vec2 texCoords,out vec4 FragColour)
 {
-	gl_FragColor=texture2D(imageTexture,.5+texCoords);
+	FragColour=texture2D(imageTexture,.5+texCoords);
 }
 
-shader PS_Coverage(in vec2 texCoords) 
+shader PS_Coverage(in vec2 texCoords,out vec4 FragColour) 
 {
-	gl_FragColor= Coverage(texCoords,humidity,diffusivity,coverageOctaves,coveragePersistence,time,noiseTexture,noiseTextureScale);
+	FragColour= Coverage(texCoords,humidity,diffusivity,coverageOctaves,coveragePersistence,time,noiseTexture,noiseTextureScale);
 }
 
-shader PS_ShowDetailTexture(in vec2 texCoords) 
+shader PS_ShowDetailTexture(in vec2 texCoords,out vec4 FragColour) 
 {
-	gl_FragColor=ShowDetailTexture(imageTexture,texCoords,sunlight,lightResponse);
+	FragColour=ShowDetailTexture(imageTexture,texCoords,sunlight,lightResponse);
 }
 
-shader PS_Random(in vec2 texCoords) 
+shader PS_Random(in vec2 texCoords,out vec4 FragColour) 
 {
     vec4 c	=vec4(rand(texCoords),rand(1.7*texCoords),rand(0.11*texCoords),rand(513.1*texCoords));
-    gl_FragColor= fract(c);
+    FragColour= fract(c);
 }
 
-shader PS_Detail(in vec2 texCoords) 
+shader PS_Detail(in vec2 texCoords,out vec4 FragColour) 
 {
-    gl_FragColor= DetailDensity(texCoords,imageTexture,amplitude);
+    FragColour= DetailDensity(texCoords,imageTexture,amplitude);
 }
 
-shader PS_DetailLighting(in vec2 texCoords) 
+shader PS_DetailLighting(in vec2 texCoords,out vec4 FragColour) 
 {
-    gl_FragColor= DetailLighting(texCoords,imageTexture);
+    FragColour= DetailLighting(texCoords,imageTexture);
 }
 
-shader VS_Clouds2D(out vec2 texc_global,out vec2 texc_detail,out vec4 clip_pos,out vec3 wPosition)
+shader VS_Clouds2D(in vec4 vertex,out vec2 texc_global,out vec2 texc_detail,out vec4 clip_pos,out vec3 wPosition)
 {
-	Clouds2DVS(gl_Vertex.xyz,mixedResTransformXYWH,gl_Position,clip_pos,wPosition);
+	Clouds2DVS(vertex.xyz,mixedResTransformXYWH,gl_Position,clip_pos,wPosition);
 }
 
 
-shader PS_Clouds2D(in vec2 texc_global,in vec2 texc_detail,in vec3 wPosition,in vec4 clip_pos)
+shader PS_Clouds2D(in vec2 texc_global,in vec2 texc_detail,in vec3 wPosition,in vec4 clip_pos,out vec4 FragColour)
 {
 	vec3 depth_pos	=clip_pos.xyz/clip_pos.w;
 	//depth_pos.z	=clip_pos.z;
@@ -118,7 +118,7 @@ shader PS_Clouds2D(in vec2 texc_global,in vec2 texc_detail,in vec3 wPosition,in 
 						,lightDir.xyz
 						,lightResponse);
 	ret.rgb			*=exposure;
-	gl_FragColor	=ret;//vec4(depth_texc.zzz,ret.a);
+	FragColour		=ret;//vec4(depth_texc.zzz,ret.a);
 }
 
 program coverage

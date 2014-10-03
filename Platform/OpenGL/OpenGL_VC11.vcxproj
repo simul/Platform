@@ -193,10 +193,8 @@
     <ClCompile Include="OpenGLRenderer.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
-    <ClCompile Include="SimulGL2DCloudRenderer.cpp" />
     <ClCompile Include="SimulGLCloudRenderer.cpp" />
     <ClCompile Include="SimulGLHDRRenderer.cpp" />
-    <ClCompile Include="SimulGLLightningRenderer.cpp" />
     <ClCompile Include="SimulGLSkyRenderer.cpp" />
     <ClCompile Include="SimulGLTerrainRenderer.cpp" />
     <ClCompile Include="SimulGLUtilities.cpp" />
@@ -222,10 +220,8 @@
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="SimulGL2DCloudRenderer.h" />
     <ClInclude Include="SimulGLCloudRenderer.h" />
     <ClInclude Include="SimulGLHDRRenderer.h" />
-    <ClInclude Include="SimulGLLightningRenderer.h" />
     <ClInclude Include="SimulGLSkyRenderer.h" />
     <ClInclude Include="SimulGLTerrainRenderer.h" />
     <ClInclude Include="SimulGLUtilities.h" />

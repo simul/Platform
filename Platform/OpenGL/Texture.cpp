@@ -348,6 +348,10 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 	}
 }
 
+void Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
+{
+}
+
 void Texture::copyToMemory(crossplatform::DeviceContext &,void *,int ,int )
 {
 }

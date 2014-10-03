@@ -324,46 +324,7 @@ bool SimulCloudRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,
 
 void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	static int u=3;
-	int w=(width-8)/u;
-	if(w>height)
-		w=height;
-	simul::clouds::CloudGridInterface *gi=GetCloudGridInterface();
-	int h=w/gi->GetGridWidth();
-	if(h<1)
-		h=1;
-	h*=gi->GetGridHeight();
-
-	crossplatform::EffectTechnique*			m_pTechniqueCrossSection		=effect->GetTechniqueByName("cross_section");
-	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
-	if(skyInterface)
-	for(int i=0;i<3;i++)
-	{
-		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
-				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
-		if(!kf)
-			break;
-		h=(int)(kf->cloud_height_km*1000.f/cloudProperties.GetCloudWidth()*(float)w);
-		sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
-		effect->SetTexture(deviceContext,"cloudDensity1",cloud_textures[(i+texture_cycle)%3]);
-		effect->SetTexture(deviceContext,"cloudDensity2",cloud_textures[(i+texture_cycle)%3]);
-		effect->SetTexture(deviceContext,"cloudDensity",cloud_textures[(i+texture_cycle)%3]);
-
-		cloudConstants.lightResponse		=light_response;
-		cloudConstants.crossSectionOffset	=vec3(0.5f,0.5f,0.f);
-		cloudConstants.yz					=0.f;
-		cloudConstants.Apply(deviceContext);
-		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+4,w,h,effect,m_pTechniqueCrossSection);
-		cloudConstants.yz					=1.f;
-		cloudConstants.Apply(deviceContext);
-		deviceContext.renderPlatform->DrawQuad(deviceContext,x0+i*(w+1)+4,y0+h+8,w,w,effect,m_pTechniqueCrossSection);
-	}
-	deviceContext.renderPlatform->Print(deviceContext,x0,w,simul::base::stringFormat("%4.4f",cloudConstants.cloud_interp).c_str());
-	effect->Apply(deviceContext,m_pTechniqueCrossSection,0);
-	effect->UnbindTextures(deviceContext);
-	effect->Unapply(deviceContext);
+	BaseCloudRenderer::RenderCrossSections(deviceContext,x0,y0,width,height);
 }
 
 void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
@@ -380,10 +341,10 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(simul::crossplatform::Devic
 		h=1;
 	h*=gi->GetGridHeight();
 	effect->SetTexture(deviceContext,"noiseTexture",noise_texture);
-	UtilityRenderer::DrawQuad2(deviceContext				,x0+width-w		,y0+height-w		,w,w		,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_noise"));
-	renderPlatform->Print(deviceContext						,x0+width-w		,y0+height-w					,"2D Noise");
-	effect->SetTexture(deviceContext					,"cloudShadowTexture",shadow_fb);
-	effect->SetTexture(deviceContext					,"cloudGodraysTexture",godrays_texture);
+	UtilityRenderer::DrawQuad2(deviceContext	,x0+width-w		,y0+height-w		,w,w		,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_noise"));
+	renderPlatform->Print(deviceContext			,x0+width-w		,y0+height-w					,"2D Noise");
+	effect->SetTexture(deviceContext			,"cloudShadowTexture"	,shadow_fb);
+	effect->SetTexture(deviceContext			,"cloudGodraysTexture"	,godrays_texture);
 	renderPlatform->DrawQuad(deviceContext		,x0+width-w-w	,y0+height-w		,w,w,effect,effect->GetTechniqueByName("show_shadow"));
 	renderPlatform->Print(deviceContext			,x0+width-w-w	,y0+height-w					,"shadow texture");
 

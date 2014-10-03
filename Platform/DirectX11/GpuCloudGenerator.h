@@ -23,21 +23,6 @@ namespace simul
 		public:
 			GpuCloudGenerator();
 			~GpuCloudGenerator();
-			bool CanPerformGPULighting() const
-			{
-				return Enabled&&renderPlatform!=NULL;
-			}
-			int GetDensityGridsize(const int *grid);
-			void PerformGPURelight(	int light_index
-									,const clouds::GpuCloudsParameters &params
-									,float *target
-									,int start_texel
-									,int texels);
-			void GPUTransferDataToTexture(	int cycled_index
-											,const clouds::GpuCloudsParameters &params
-											,unsigned char *target
-											,int start_texel
-											,int texels);
 		protected:
 		};
 	}

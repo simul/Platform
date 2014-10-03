@@ -41,16 +41,10 @@
     <ClCompile Include="Profiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulGL2DCloudRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SimulGLCloudRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SimulGLHDRRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SimulGLLightningRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SimulGLSkyRenderer.cpp">
@@ -124,16 +118,10 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulGL2DCloudRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SimulGLCloudRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulGLHDRRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimulGLLightningRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulGLSkyRenderer.h">

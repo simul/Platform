@@ -40,36 +40,36 @@ namespace simul
 		struct TwoResFramebuffer:public simul::crossplatform::TwoResFramebuffer
 		{
 			TwoResFramebuffer();
+			~TwoResFramebuffer();
 			crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()
 			{
-				return &lowResFarFramebufferDx11;
+				return lowResFarFramebufferDx11;
 			}
 			crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()
 			{
-				return &lowResNearFramebufferDx11;
+				return lowResNearFramebufferDx11;
 			}
 			crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()
 			{
-				return &hiResFarFramebufferDx11;
+				return hiResFarFramebufferDx11;
 			}
 			crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()
 			{
-				return &hiResNearFramebufferDx11;
+				return hiResNearFramebufferDx11;
 			}
 			void ActivateHiRes(crossplatform::DeviceContext &deviceContext);
 			void DeactivateHiRes(crossplatform::DeviceContext &deviceContext);
 			void ActivateLowRes(crossplatform::DeviceContext &deviceContext);
 			void DeactivateLowRes(crossplatform::DeviceContext &deviceContext);
-			dx11::Framebuffer	lowResFarFramebufferDx11;
-			dx11::Framebuffer	lowResNearFramebufferDx11;
-			dx11::Framebuffer	hiResFarFramebufferDx11;
-			dx11::Framebuffer	hiResNearFramebufferDx11;
+			crossplatform::BaseFramebuffer	*lowResFarFramebufferDx11;
+			crossplatform::BaseFramebuffer	*lowResNearFramebufferDx11;
+			crossplatform::BaseFramebuffer	*hiResFarFramebufferDx11;
+			crossplatform::BaseFramebuffer	*hiResNearFramebufferDx11;
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale,int hiResDownscale);
 			void GetDimensions(int &w,int &h,int &downscale,int &hiResDownscale);
 		protected:
-			ID3D11Device*	m_pd3dDevice;
 			void SaveOldRTs(crossplatform::DeviceContext &deviceContext);
 			unsigned numOldViewports;
 			ID3D11RenderTargetView*				m_pOldRenderTargets[2];

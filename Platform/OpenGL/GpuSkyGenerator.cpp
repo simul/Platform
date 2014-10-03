@@ -49,6 +49,7 @@ bool GpuSkyGenerator::CanPerformGPUGeneration() const
 {
 	return Enabled;
 }
+#if 0
 
 static int range(int x,int start,int end)
 {
@@ -58,7 +59,6 @@ static int range(int x,int start,int end)
 		x=end;
 	return x;
 }
-#if 0
 void GpuSkyGenerator::MakeLossAndInscatterTextures(sky::float4 wavelengthsNm,int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *
 				,const simul::sky::GpuSkyParameters &p

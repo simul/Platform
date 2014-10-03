@@ -23,6 +23,15 @@ Texture2DArray rainTextureArray;
 RWTexture2DArray<vec4> targetTextureArray;
 RWStructuredBuffer<PrecipitationVertex> targetVertexBuffer;
 
+
+SamplerState samAniso
+{
+    Filter = ANISOTROPIC;
+    AddressU = Wrap;
+    AddressV = Wrap;
+};
+
+
 struct PrecipitationVertexInput
 {
     vec3 position	: POSITION;         //position of the particle
@@ -137,6 +146,17 @@ vec4 PS_ShowTexture(posTexVertexOutput In): SV_TARGET
     return texture_wrap_lod(showTexture,In.texCoords,0);
 }
 
+vec4 PS_ShowArrayTexture(posTexVertexOutput IN): SV_TARGET
+{
+	// 16x512, 32 slices.
+	vec2 pos	=IN.texCoords.xy*vec2(16.0*32.0,512.0);
+	int slice	=int(IN.texCoords.x*32.0);
+	pos.x		-=slice*32.0;
+	vec2 texc	=pos/vec2(16.0,512.0);
+	vec4 r		=rainTextureArray.Sample(samAniso,vec3(texc,slice));
+    return r;
+}
+
 void transf(out TransformedParticle p,in vec3 position,int i)
 {
 	vec3 particlePos	=position.xyz;//+offset[i].xyz;
@@ -156,7 +176,7 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 	p.fade				=saturate(10000.0/dist);///length(clip_pos-viewPos);
 }
 
-[numthreads(1,1,1)]
+[numthreads(8,8,8)]
 void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 {
 	int X,Y,N;
@@ -610,14 +630,6 @@ vec4 clip_pos				=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
         SpriteStream.RestartStrip();
     }   
 }
-
-SamplerState samAniso
-{
-    Filter = ANISOTROPIC;
-    AddressU = Wrap;
-    AddressV = Wrap;
-};
-
 void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, float3 lightColor, float3 eyeVector, bool fallOffFactor, inout float4 rainResponseVal)
 {
     float opacity = 0.0;
@@ -760,7 +772,7 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
 vec4 PS_RainParticles(PSSceneIn IN) : SV_Target
 {
 	vec3 light			=cubeTexture.Sample(wrapSamplerState,-IN.view).rgb;
-	vec4 texel			=.5*rainTextureArray.Sample(samAniso,vec3(IN.texCoords,IN.type));
+	vec4 texel			=0.5*rainTextureArray.Sample(samAniso,vec3(IN.texCoords,IN.type));
 	//directional lighting---------------------------------------------------------------------------------
 	vec4 directionalLight	=vec4(1,1,1,1);
 	//rainResponse(IN, IN.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*IN.random, float3(1.0,1.0,1.0), input.eyeVec, false, directionalLight);
@@ -945,6 +957,19 @@ technique11 show_texture
     }
 }
 
+technique11 show_array_texture
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_ShowTexture()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowArrayTexture()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+    }
+}
+
 technique11 moisture
 {
     pass p0 
@@ -993,7 +1018,8 @@ PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint ve
     return input;
 }
 VertexShader vsInit=CompileShader(vs_5_0,VS_InitParticles());
-GeometryShader gsStreamOut = ConstructGSWithSO(vsInit,"0:POSITION.xyz;1:TYPE0.x;2:VELOCITY0.xyz" );
+VertexShader vsMove=CompileShader(vs_5_0,VS_MoveParticles());
+GeometryShader gsStreamOut = ConstructGSWithSO(vsInit,"POSITION.xyz;TYPE0.x;VELOCITY0.xyz" );
 
 technique11 init_particles
 {
@@ -1006,13 +1032,13 @@ technique11 init_particles
     }  
 }
 
-GeometryShader gsStreamOut2=ConstructGSWithSO(CompileShader(vs_5_0,VS_MoveParticles() ),"POSITION.xyz; TYPE0.x; VELOCITY0.xyz" );
+GeometryShader gsStreamOut2=ConstructGSWithSO(vsMove,"POSITION.xyz; TYPE0.x; VELOCITY0.xyz" );
 
 technique11 move_particles
 {
     pass p0
     {
-        SetVertexShader(CompileShader(vs_5_0,VS_MoveParticles()));
+        SetVertexShader(vsMove);
         SetGeometryShader(gsStreamOut2);
         SetPixelShader(NULL);
         SetDepthStencilState(DisableDepth,0);

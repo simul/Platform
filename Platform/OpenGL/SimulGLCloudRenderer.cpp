@@ -435,7 +435,7 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r
 {
 	init=true;
 	BaseCloudRenderer::RestoreDeviceObjects(r);
-	gpuCloudGenerator.RestoreDeviceObjects(NULL);
+	gpuCloudGenerator.RestoreDeviceObjects(r);
 	gpuCloudGenerator.SetDirectTargets(cloud_textures);
 	
 

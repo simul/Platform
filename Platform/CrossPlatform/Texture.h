@@ -63,16 +63,25 @@ namespace simul
 			virtual void MoveToSlowRAM() {}
 			virtual void DiscardFromFastRAM() {}
 			virtual GLuint AsGLuint(){return 0;}
+			//! Get the crossplatform pixel format.
 			PixelFormat GetFormat() const
 			{
 				return pixelFormat;
 			}
+			//! Initialize as a normal 2D texture.
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0)=0;
+			//! Initialize as an array texture.
 			virtual void ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,PixelFormat f,bool computable)=0;
+			//! Initialize as a volume texture.
 			virtual void ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1)=0;
+			//! Generate the mipmaps automatically.
+			virtual void GenerateMips(DeviceContext &deviceContext)=0;
+			//! Set the texture data from CPU memory.
 			virtual void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)=0;
+			//! Activate as a rendertarget - must call deactivateRenderTarget afterwards.
 			virtual void activateRenderTarget(DeviceContext &deviceContext)=0;
+			//! Deactivate as a rendertarget.
 			virtual void deactivateRenderTarget()=0;
 			virtual int GetLength() const=0;
 			virtual int GetWidth() const=0;

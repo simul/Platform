@@ -170,10 +170,10 @@ namespace simul
 			virtual void					SetRenderState					(DeviceContext &deviceContext,const RenderState *s)=0;
 			/// Apply a standard renderstate - e.g. opaque blending
 			virtual void					SetStandardRenderState			(DeviceContext &deviceContext,StandardRenderState s);
-		protected:
-			DeviceContext					immediateContext;
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY,mirrorY2;
+		protected:
+			DeviceContext					immediateContext;
 		private:
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;

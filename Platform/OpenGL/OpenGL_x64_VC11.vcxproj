@@ -179,10 +179,8 @@
     <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
-    <ClCompile Include="SimulGL2DCloudRenderer.cpp" />
     <ClCompile Include="SimulGLCloudRenderer.cpp" />
     <ClCompile Include="SimulGLHDRRenderer.cpp" />
-    <ClCompile Include="SimulGLLightningRenderer.cpp" />
     <ClCompile Include="SimulGLSkyRenderer.cpp" />
     <ClCompile Include="SimulGLTerrainRenderer.cpp" />
     <ClCompile Include="SimulGLUnderwaterRenderer.cpp" />
@@ -211,10 +209,8 @@
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="SimulGL2DCloudRenderer.h" />
     <ClInclude Include="SimulGLCloudRenderer.h" />
     <ClInclude Include="SimulGLHDRRenderer.h" />
-    <ClInclude Include="SimulGLLightningRenderer.h" />
     <ClInclude Include="SimulGLSkyRenderer.h" />
     <ClInclude Include="SimulGLTerrainRenderer.h" />
     <ClInclude Include="SimulGLUnderwaterRenderer.h" />
@@ -231,6 +227,7 @@
     <None Include="GLSL\debug.glfx" />
     <None Include="GLSL\hdr.glfx" />
     <None Include="GLSL\illumination_buffer.frag" />
+    <None Include="GLSL\lightning.glfx" />
     <None Include="GLSL\light_pass.glfx" />
     <None Include="GLSL\overcast_inscatter.frag" />
     <None Include="GLSL\saturate.glsl" />
@@ -258,6 +255,7 @@
     <None Include="GLSL\simul_fade_3d_to_2d.vert" />
     <None Include="GLSL\simul_flare.frag" />
     <None Include="GLSL\simul_glow.frag" />
+    <None Include="GLSL\simul_gpu_clouds.glfx" />
     <None Include="GLSL\simul_gpu_cloud_density.frag" />
     <None Include="GLSL\simul_gpu_cloud_density.vert" />
     <None Include="GLSL\simul_gpu_cloud_transform.frag" />

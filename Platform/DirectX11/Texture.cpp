@@ -548,6 +548,12 @@ void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 	}
 }
 
+void dx11::Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
+{
+	// We can't detect if this has worked or not.
+	deviceContext.asD3D11DeviceContext()->GenerateMips(AsD3D11ShaderResourceView());
+}
+
 void dx11::Texture::map(ID3D11DeviceContext *context)
 {
 	if(mapped.pData!=NULL)

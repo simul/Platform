@@ -15,7 +15,6 @@
 	#pragma warning(disable:4251)
 #endif
 typedef unsigned GLuint;
-class SimulGLLightningRenderer;
 namespace simul
 {
 	namespace clouds
@@ -37,7 +36,6 @@ namespace simul
 	//! The namespace for the OpenGL platform library and its rendering classes.
 	namespace opengl
 	{
-		class SimulGLLightningRenderer;
 		class SimulGLSkyRenderer;
 		class SimulGLCloudRenderer;
 		struct TwoResFramebuffer:public simul::crossplatform::TwoResFramebuffer
@@ -132,7 +130,6 @@ namespace simul
 			RenderDepthBufferCallback *renderDepthBufferCallback;
 			SimulGLSkyRenderer *simulSkyRenderer;
 			SimulGLCloudRenderer *simulCloudRenderer;
-			SimulGLLightningRenderer *simulLightningRenderer;
 			void CreateBuffers();
 			void RenderBufferToScreen(GLuint texture,int w,int h,bool use_shader,bool blend=false);
 			crossplatform::TwoResFramebuffer *GetFramebuffer(int view_id);

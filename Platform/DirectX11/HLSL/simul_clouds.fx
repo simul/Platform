@@ -686,7 +686,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 	int i=0;
 	vec3 accum=vec3(0.0,0.5,1.0);
 	texc.y+=0.5*(1.0-yz)/(float)CROSS_SECTION_STEPS;
-	texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
+	//texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
 		vec4 density=texture_wwc(cloudDensity1,texc);
