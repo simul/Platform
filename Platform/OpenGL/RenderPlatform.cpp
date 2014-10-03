@@ -295,7 +295,6 @@ GL_ERROR_CHECK
 	else
 		glDisable(GL_BLEND);
 GL_ERROR_CHECK
-glDisable(GL_BLEND);
 glDisable(GL_CULL_FACE);
 	DrawQuad(deviceContext,x1,y1,dx,dy,effect,effect->GetTechniqueByName("show_texture"));
 GL_ERROR_CHECK

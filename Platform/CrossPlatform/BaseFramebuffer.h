@@ -15,6 +15,7 @@ namespace simul
 		{
 		public:
 			BaseFramebuffer(int w=0,int h=0);
+			virtual ~BaseFramebuffer(){};
 			//! Call this when the API-dependent device has been created.
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r)=0;
 			//! Call this when the API-dependent device has been lost or is shutting down.

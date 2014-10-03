@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Simul/Clouds/BaseGpuCloudGenerator.h"
-#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Texture.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 
 #include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
@@ -32,10 +32,10 @@ namespace simul
 			void RecompileShaders();
 			bool CanPerformGPULighting() const
 			{
-				return Enabled&&m_pd3dDevice!=NULL;
+				return Enabled&&renderPlatform!=NULL;
 			}
 			int GetDensityGridsize(const int *grid);
-			void* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr,int generation_number);
+			crossplatform::Texture* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr,int generation_number);
 			void FillDensityGrid(	int index
 									,const clouds::GpuCloudsParameters &params
 									,int start_texel
@@ -62,10 +62,8 @@ namespace simul
 				}
 			}
 		protected:
-			simul::dx11::Framebuffer			mask_fb;
+			crossplatform::BaseFramebuffer		*mask_fb;
 			
-			ID3D11Device*						m_pd3dDevice;
-			ID3D11DeviceContext*				m_pImmediateContext;
 			crossplatform::Effect*				effect;
 			crossplatform::EffectTechnique*		densityComputeTechnique;
 			crossplatform::EffectTechnique*		maskTechnique;
@@ -74,17 +72,16 @@ namespace simul
 			crossplatform::EffectTechnique*		secondaryHarmonicTechnique;
 			crossplatform::EffectTechnique*		transformComputeTechnique;
 
-			ID3D11Texture3D						*volume_noise_tex;
-			ID3D11ShaderResourceView			*volume_noise_tex_srv;
+			crossplatform::Texture				*volume_noise_tex;
 
-			dx11::Texture						density_texture;
+			crossplatform::Texture				*density_texture;
 			crossplatform::Texture				*finalTexture[3];
-			dx11::Texture						directLightTextures[2];
-			dx11::Texture						indirectLightTextures[2];
-			ConstantBuffer<GpuCloudConstants>	gpuCloudConstants;
-			ID3D11SamplerState*					m_pWwcSamplerState;
-			ID3D11SamplerState*					m_pWccSamplerState;
-			ID3D11SamplerState*					m_pCwcSamplerState;
+			crossplatform::Texture				*directLightTextures[2];
+			crossplatform::Texture				*indirectLightTextures[2];
+			crossplatform::ConstantBuffer<GpuCloudConstants>	gpuCloudConstants;
+			crossplatform::SamplerState*	m_pWwcSamplerState;
+			crossplatform::SamplerState*	m_pWccSamplerState;
+			crossplatform::SamplerState*	m_pCwcSamplerState;
 	bool harmonic_secondary;
 		};
 	}

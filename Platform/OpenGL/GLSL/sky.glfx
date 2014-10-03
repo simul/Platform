@@ -15,7 +15,7 @@ uniform sampler2D illuminationTexture;
 uniform sampler2D lightTable2DTexture;
 uniform vec4 rect;
 
-shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
+shader VS_FullScreen( out vec2 texCoords)
 {
 	vec2 poss[4];
 	poss[0]		=vec2(1.0, 0.0);
@@ -27,7 +27,7 @@ shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
     texCoords	=pos.xy;
 }
 
-shader VS_ScreenQuad(in int gl_VertexID, out vec2 texCoords)
+shader VS_ScreenQuad( out vec2 texCoords)
 {
 	vec2 poss[4];
 	poss[0]		=vec2(1.0, 0.0);
@@ -39,7 +39,7 @@ shader VS_ScreenQuad(in int gl_VertexID, out vec2 texCoords)
     texCoords	=pos.xy;
 }
 
-shader VS_Sun(in int gl_VertexID, out vec2 texCoords) 
+shader VS_Sun( out vec2 texCoords) 
 {
 	vec2 poss[4]=
 	{

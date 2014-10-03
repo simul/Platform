@@ -3,7 +3,7 @@
 uniform sampler2D imageTexture;
 in vec2 texCoords;
 in vec3 normal;
-out vec4 gl_FragColor;
+out vec4 FragColor;
 
 void main(void)
 {
@@ -11,5 +11,5 @@ void main(void)
 	c.a=1.0;
 	float light=clamp(normal.z,0.0,1.0);
 	c.rgb*=light;
-    gl_FragColor=c;
+    FragColor=c;
 }

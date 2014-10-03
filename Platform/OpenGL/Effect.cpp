@@ -35,7 +35,7 @@ using namespace opengl;
 	if(loc<0)\
 	{\
 		std::cout<<__FILE__<<"("<<__LINE__<<"): warning B0001: parameter "<<name<<" was not found in GLFX program "<<filename.c_str()<<std::endl;\
-		std::cout<<filename.c_str()<<"(1): warning B0001: parameter "<<name<<" was not found."<<filename.c_str()<<std::endl;\
+		std::cout<<filenameInUseUtf8.c_str()<<"(1): warning B0001: parameter "<<name<<" was not found."<<filename.c_str()<<std::endl;\
 		return;\
 	}
 
@@ -614,7 +614,6 @@ void Effect::SetParameter	(const char *name	,int2 value)
 	glUniform2i(loc,value.x,value.y);
 	GL_ERROR_CHECK
 }
-
 
 void Effect::SetVector		(const char *name	,const float *value)	
 {

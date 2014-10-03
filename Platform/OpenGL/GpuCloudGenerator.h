@@ -23,7 +23,7 @@ namespace simul
 				return Enabled;
 			}
 			int GetDensityGridsize(const int *grid);
-			void* Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int generation_number);
+			crossplatform::Texture* Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int generation_number);
 			void CycleTexturesForward();
 			void FillDensityGrid(int index,const clouds::GpuCloudsParameters &params
 									,int start_texel

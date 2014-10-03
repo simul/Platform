@@ -1,6 +1,5 @@
 #version 420
 
-in vec4 gl_Vertex;
 out vec2 texCoords;
 
 void main(void)

@@ -37,7 +37,7 @@ shader VS_FullScreen(out vec2 texCoords, out vec2 pos)
     texCoords	=pos.xy;
 }
 
-shader VS_ScreenQuad(in int gl_VertexID,out vec2 texCoords)
+shader VS_ScreenQuad(out vec2 texCoords)
 {
 	vec2 poss[4]=
 	{
@@ -82,7 +82,7 @@ shader PS_DetailLighting(in vec2 texCoords)
     gl_FragColor= DetailLighting(texCoords,imageTexture);
 }
 
-shader VS_Clouds2D(in int gl_VertexID,in vec4 gl_Vertex,out vec2 texc_global,out vec2 texc_detail,out vec4 clip_pos,out vec3 wPosition)
+shader VS_Clouds2D(out vec2 texc_global,out vec2 texc_detail,out vec4 clip_pos,out vec3 wPosition)
 {
 	Clouds2DVS(gl_Vertex.xyz,mixedResTransformXYWH,gl_Position,clip_pos,wPosition);
 }

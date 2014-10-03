@@ -108,15 +108,15 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 	return grid[0]*grid[1]*grid[2];
 }
 
-void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int generation_number)
+crossplatform::Texture* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int generation_number)
 {
 	if(generation_number==last_generation_number&&volume_noise_tex)
-		return (void*)volume_noise_tex;
+		return NULL;
 	last_generation_number	=generation_number;
 	noiseSize				=noise_size;
 	SAFE_DELETE_TEXTURE(volume_noise_tex);
 	volume_noise_tex		=(GLuint)make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
-	return (void*)volume_noise_tex;
+	return NULL;
 }
 
 void GpuCloudGenerator::CycleTexturesForward()

@@ -11,6 +11,7 @@ using namespace simul;
 using namespace dx11;
 
 SamplerState::SamplerState()
+	:m_pd3D11SamplerState(NULL)
 {
 }
 SamplerState::~SamplerState()

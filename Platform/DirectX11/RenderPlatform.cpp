@@ -558,6 +558,7 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
     samplerDesc.MinLOD = 0;
     samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	
+	SAFE_RELEASE(s->m_pd3D11SamplerState);
 	AsD3D11Device()->CreateSamplerState(&samplerDesc,&s->m_pd3D11SamplerState);
 	return s;
 }
@@ -756,6 +757,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatfo
 		const char *e=(const char*)errorMsgs->GetBufferPointer();
 		std::cerr<<e<<std::endl;
 	}
+	SAFE_RELEASE(l->d3d11InputLayout);
 	AsD3D11Device()->CreateInputLayout(decl, num_elements, VS->GetBufferPointer(), VS->GetBufferSize(), &l->d3d11InputLayout);
 	
 	if(VS)

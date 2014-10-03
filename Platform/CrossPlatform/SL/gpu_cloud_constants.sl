@@ -1,8 +1,7 @@
 #ifndef SIMUL_CROSSPLATFORM_GPU_CLOUD_CONSTANTS_SL
 #define SIMUL_CROSSPLATFORM_GPU_CLOUD_CONSTANTS_SL
 
-uniform_buffer GpuCloudConstants SIMUL_BUFFER_REGISTER(8)
-{
+SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform mat4 transformMatrix;
 	uniform vec4 yRange;
 	uniform vec3 noiseScale;
@@ -32,6 +31,6 @@ uniform_buffer GpuCloudConstants SIMUL_BUFFER_REGISTER(8)
 	uniform vec2 maskCentre;
 	uniform float maskRadius;
 	uniform float maskFeather;
-};
+SIMUL_CONSTANT_BUFFER_END
 
 #endif

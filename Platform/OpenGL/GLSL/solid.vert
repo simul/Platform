@@ -6,7 +6,6 @@ in vec3 vertex;
 in vec2 in_coord;
 in vec3 in_normal;
 
-out vec4 gl_Position;
 out vec2 texCoords;
 out vec3 normal;
 
