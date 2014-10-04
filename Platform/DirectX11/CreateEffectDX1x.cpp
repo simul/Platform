@@ -441,7 +441,10 @@ void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,
 bool simul::dx11::setUnorderedAccessView(ID3DX11Effect *effect,const char *name	,ID3D11UnorderedAccessView * value)
 {
 	ID3DX11EffectUnorderedAccessViewVariable*	var	=effect->GetVariableByName(name)->AsUnorderedAccessView();
-	SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
+	if (!var->IsValid())
+	{
+		SIMUL_ASSERT_WARN(var->IsValid() != 0, (std::string("Invalid shader variable ") + name).c_str());
+	}
 	var->SetUnorderedAccessView(value);
 	if(value&&var->IsValid()!=0)
 		return true;

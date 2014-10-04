@@ -77,7 +77,6 @@ namespace simul
 				META_ValueProperty(bool,DepthBasedComposite		,"Whether to blend the sky and clouds using depth.")
 				META_ValueProperty(bool,UseHdrPostprocessor		,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
 				META_ValueProperty(bool,UseSkyBuffer			,"Render the sky to a low-res buffer to increase performance.")
-				META_ValueProperty(bool,ShowCompositing			,"Show the multi-resolution compositing textures.")
 				META_ValueProperty(bool,ShowHDRTextures			,"Show the HDR glow textures.")
 				META_ValueProperty(bool,ShowLightVolume			,"Show the cloud light volume as a wireframe box.")
 				META_ValueProperty(bool,ShowGroundGrid			,"Show a metre-scale grid at ground level.")

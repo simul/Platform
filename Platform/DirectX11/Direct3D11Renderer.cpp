@@ -42,7 +42,6 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,DepthBasedComposite(true)
 		,UseHdrPostprocessor(true)
 		,UseSkyBuffer(true)
-		,ShowCompositing(false)
 		,ShowHDRTextures(false)
 		,ShowLightVolume(false)
 		,ShowGroundGrid(false)
@@ -747,7 +746,7 @@ void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceCont
 		int H1=(int)v.h;
 		int W2=W1/2;
 		int H2=H1/2;
-		if(ShowCompositing)
+		if (simulWeatherRenderer->GetShowCompositing())
 		{
 			RenderDepthBuffers(deviceContext,v,W2,0,W2,H2);
 		}
@@ -789,7 +788,6 @@ void Direct3D11Renderer::RenderDepthBuffers(crossplatform::DeviceContext &device
 		simulWeatherRenderer->RenderFramebufferDepth(deviceContext,x0+dx/2	,y0	,dx/2,dy/2);
 		//UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,(ID3D11ShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
 		//renderPlatformDx11.Print(pContext			,2.f*w	,0.f,"Near overlay");
-		simulWeatherRenderer->RenderCompositingTextures(deviceContext,x0,y0+dy,dx,dy);
 	}
 }
 
