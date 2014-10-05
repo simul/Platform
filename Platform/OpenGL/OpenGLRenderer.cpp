@@ -257,11 +257,9 @@ void OpenGLRenderer::paintGL()
 			physicalLightRenderData.dirToLight=simulWeatherRenderer->GetSkyKeyframer()->GetDirectionToLight(0.0f);
 			sceneRenderer->Render(deviceContext,physicalLightRenderData);
 		}
-//		gScene->OnTimerClick();
 		
-		if(simulTerrainRenderer&&ShowTerrain)
-			simulTerrainRenderer->Render(deviceContext,1.f);
-	//	simulWeatherRenderer->Render(deviceContext,false,exposure,gamma,depthFramebuffer.GetDepthTexture(),
+	//	if(simulTerrainRenderer&&ShowTerrain)
+	//		simulTerrainRenderer->Render(deviceContext,1.f);
 		simulWeatherRenderer->RenderCelestialBackground(deviceContext,depthFramebuffer.GetDepthTexture(),exposure);
 		depthFramebuffer.Deactivate(deviceContext);
 		{

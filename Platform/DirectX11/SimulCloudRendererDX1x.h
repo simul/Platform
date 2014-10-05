@@ -69,8 +69,6 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			//! Call this when the 3D device has been lost.
 			void InvalidateDeviceObjects();
-			//! Call this to release the memory for D3D device objects.
-			bool Destroy();
 			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
 			//! Call this to draw the clouds, including any illumination by lightning.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure
@@ -86,7 +84,6 @@ namespace simul
 
 			void CycleTexturesForward(){}
 
-			void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 			void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array);
 			void FillIlluminationBlock(int,int,int,int,int,int,int,const unsigned char *){}
 
@@ -107,21 +104,14 @@ namespace simul
 			unsigned texel_index[4];
 			bool lightning_active;
 			ID3D11Device*							m_pd3dDevice;
-
-
-			ID3D11Texture3D*						illumination_texture;
 			
 			D3D1x_MAPPED_TEXTURE3D					mapped_illumination;
 
 			ID3D11Texture2D*						cloud_cubemap;
-			
-			crossplatform::RenderState*						blendAndWriteAlpha;
-			crossplatform::RenderState*						blendAndDontWriteAlpha;
 
 			bool UpdateIlluminationTexture(float dt);
 			float LookupLargeScaleTexture(float x,float y);
 
-			bool CreateLightningTexture();
 			bool CreateCloudEffect();
 			
 		};

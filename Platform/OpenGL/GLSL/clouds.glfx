@@ -7,11 +7,11 @@
 #include "../../CrossPlatform/SL/noise_constants.sl"
 uniform sampler2D noise_texture;
 
-shader VS_FullScreen(in int gl_VertexID,in vec4 gl_Vertex,out vec2 texCoords)
+shader VS_FullScreen(in int vertexID,in vec4 vertex,out vec2 texCoords)
 {
-    vec2 pos		=vec2(-1.0,-1.0)+gl_Vertex.xy*2.0;
+    vec2 pos		=vec2(-1.0,-1.0)+vertex.xy*2.0;
 	gl_Position		=vec4(pos.xy,1.0,1.0);
-    texCoords		=gl_Vertex.xy;
+    texCoords		=vertex.xy;
 }
 
 shader PS_Noise(in vec2 texCoords)
@@ -41,11 +41,11 @@ uniform sampler2D gColorMap;
 
 shader PS_CloudShadow(in vec2 texCoords)
 {
-	vec3 texcoord=vec3(texCoords.xy,0.0);
-	vec4 density=texture3D(cloudDensity1,texcoord);
-	vec4 density2=texture3D(cloudDensity2,texcoord);
-	density					=mix(density,density2,cloud_interp);
-    gl_FragColor=density;
+	vec3 texcoord	=vec3(texCoords.xy,0.0);
+	vec4 density	=texture3D(cloudDensity1,texcoord);
+	vec4 density2	=texture3D(cloudDensity2,texcoord);
+	density			=mix(density,density2,cloud_interp);
+    gl_FragColor	=density;
 }
 
 shader VS_Layers(in vec3 vertex

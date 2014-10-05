@@ -6,9 +6,11 @@
 uint3 LinearThreadToPos3D(uint linear_pos,uint3 dims)
 {
 	uint Z			=linear_pos/dims.x/dims.y;
-	uint Y			=(linear_pos-Z*dims.x*dims.y)/dims.x;
-	uint X			=linear_pos-Y*(dims.x+Z*dims.y);
-	uint3 pos		=uint3(X,Y,Z);
+	float c			=(float(linear_pos)-float(Z)*float(dims.x)*float(dims.y));
+	float y			=c/float(dims.x);
+	uint yy			=uint(y);
+	uint X			=uint(float(linear_pos)-float(yy)*(float(dims.x)+float(Z)*float(dims.y)));
+	uint3 pos		=uint3(X,y,Z);
 	return pos;
 }
 

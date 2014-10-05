@@ -50,23 +50,9 @@ const char *GetErrorText(HRESULT hr)
 	return err;
 }
 
-DXGI_FORMAT illumination_tex_format=DXGI_FORMAT_R8G8B8A8_UNORM;
-
-struct PosTexVert_t
-{
-    vec3 position;	
-    vec2 texCoords;
-};
-
-PosTexVert_t *lightning_vertices=NULL;
-#define MAX_VERTICES (12000)
-
 SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem) :
 	simul::clouds::BaseCloudRenderer(ck,mem)
 	,m_pd3dDevice(NULL)
-	,illumination_texture(NULL)
-	,blendAndWriteAlpha(NULL)
-	,blendAndDontWriteAlpha(NULL)
 	,lightning_active(false)
 {
 	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
@@ -77,29 +63,7 @@ void SimulCloudRendererDX1x::Recompile()
 	CreateCloudEffect();
 	if(!m_pd3dDevice)
 		return;
-	
-	SAFE_DELETE(blendAndWriteAlpha);
-	SAFE_DELETE(blendAndDontWriteAlpha);
-	crossplatform::RenderStateDesc desc;
-	// two possible blend states for clouds - with alpha written, and without.
-
-	ZeroMemory( &desc, sizeof( crossplatform::RenderStateDesc ) );
-	desc.type=crossplatform::BLEND;
-	desc.blend.numRTs=1;
-	desc.blend.RenderTarget[0].BlendEnable		= true;
-	desc.blend.RenderTarget[0].SrcBlend			= crossplatform::BLEND_ONE;
-	desc.blend.RenderTarget[0].DestBlend		= crossplatform::BLEND_SRC_ALPHA;
-	desc.blend.RenderTarget[0].SrcBlendAlpha	= crossplatform::BLEND_ZERO;
-	desc.blend.RenderTarget[0].DestBlendAlpha	= crossplatform::BLEND_SRC_ALPHA;
-	desc.blend.RenderTarget[0].RenderTargetWriteMask = 15;
-	desc.blend.IndependentBlendEnable			=true;
-	desc.blend.AlphaToCoverageEnable			=false;
-
-	blendAndWriteAlpha=renderPlatform->CreateRenderState(desc);
-
-	// write only r g and b:
-	desc.blend.RenderTarget[0].RenderTargetWriteMask = 7;
-	blendAndDontWriteAlpha=renderPlatform->CreateRenderState(desc);
+	BaseCloudRenderer::Recompile();
 	gpuCloudGenerator.RecompileShaders();
 	recompile_shaders=false;
 }
@@ -111,17 +75,8 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(crossplatform::RenderPlatform 
 	gpuCloudGenerator.RestoreDeviceObjects(renderPlatform);
 	// Allow the GPU cloud generator to directly create and modify the target textures.
 	gpuCloudGenerator.SetDirectTargets(cloud_textures);
-	CreateLightningTexture();
 	RecompileShaders();
-
 	ClearIterators();
-
-	SAFE_DELETE(shadow_fb);
-	shadow_fb=renderPlatform->CreateTexture();
-	SAFE_DELETE(moisture_fb);
-	moisture_fb=renderPlatform->CreateTexture();
-	SAFE_DELETE(rain_map);
-	rain_map=renderPlatform->CreateTexture();
 }
 
 void SimulCloudRendererDX1x::InvalidateDeviceObjects()
@@ -129,39 +84,12 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 	BaseCloudRenderer::InvalidateDeviceObjects();
 	gpuCloudGenerator.InvalidateDeviceObjects();
-	if(shadow_fb)
-		shadow_fb->InvalidateDeviceObjects();
-	if(godrays_texture)
-		godrays_texture->InvalidateDeviceObjects();
-	if(moisture_fb)
-		moisture_fb->InvalidateDeviceObjects();
-	if(rain_map)
-		rain_map->InvalidateDeviceObjects();
-
-	SAFE_DELETE(effect);
-	if(cloud_texture)
-		cloud_texture->InvalidateDeviceObjects();
-	
-	SAFE_DELETE(cloud_texture);
-	// Set the stored texture sizes to zero, so the textures will be re-created.
-	cloud_tex_width_x=cloud_tex_length_y=cloud_tex_depth_z=0;
-	SAFE_RELEASE(illumination_texture);
-	SAFE_DELETE(blendAndWriteAlpha);
-	SAFE_DELETE(blendAndDontWriteAlpha);
-
-	cloudConstants.InvalidateDeviceObjects();
 	ClearIterators();
-}
-
-bool SimulCloudRendererDX1x::Destroy()
-{
-	InvalidateDeviceObjects();
-	return true;
 }
 
 SimulCloudRendererDX1x::~SimulCloudRendererDX1x()
 {
-	Destroy();
+	InvalidateDeviceObjects();
 }
 
 static int PowerOfTwo(int unum)
@@ -172,28 +100,6 @@ static int PowerOfTwo(int unum)
 	float Exp=log(num);
 	Exp/=log(2.f);
 	return (int)Exp;
-}
-
-bool SimulCloudRendererDX1x::CreateLightningTexture()
-{
-	HRESULT hr=S_OK;
-	return (hr==S_OK);
-}
-
-void SimulCloudRendererDX1x::SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z)
-{
-	SAFE_RELEASE(illumination_texture);
-	D3D11_TEXTURE3D_DESC textureDesc=
-	{
-		width_x,length_y,depth_z,
-		1,
-		DXGI_FORMAT_R8G8B8A8_UNORM,
-		D3D11_USAGE_DYNAMIC,
-		D3D11_BIND_SHADER_RESOURCE,
-		D3D11_CPU_ACCESS_WRITE,
-		0
-	};
-	HRESULT hr=m_pd3dDevice->CreateTexture3D(&textureDesc,0,&illumination_texture);
 }
 
 void SimulCloudRendererDX1x::FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array)

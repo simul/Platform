@@ -268,7 +268,7 @@ static float CalculateBoxFilterWidth(float radius, int pass)
 
 void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,void *texture_srv)
 {
-	if(!m_pGaussianEffect)
+//	if(!m_pGaussianEffect)
 		return;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();

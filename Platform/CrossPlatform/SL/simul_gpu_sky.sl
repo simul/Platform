@@ -54,18 +54,20 @@ SIMUL_CONSTANT_BUFFER_END
 
 #define pi (3.1415926536)
 
-uint3 LinearThreadToPos2D(uint linear_pos,uint3 dims)
+uint3 LinearThreadToPos2D(int linear_pos,uint3 dims)
 {
-	uint Y				=linear_pos/dims.x;
-	uint X				=linear_pos-Y*dims.x;
-	uint3 pos			=uint3(X,Y,0);
-	return pos;
+	int yy				=int(float(linear_pos)/float(dims.x));
+	int xx				=int(linear_pos)-yy*int(dims.x);
+	int3 pos			=int3(xx,yy,0);
+
+	return uint3(xx,yy,0);
 }
-int3 LinearThreadToPos2D(uint linear_pos,int3 dims)
+
+int3 LinearThreadToPos2D(uint linear_pos,uint3 dims)
 {
-	int Y				=int(linear_pos)/dims.x;
-	int X				=int(linear_pos)-Y*dims.x;
-	int3 pos			=int3(X,Y,0);
+	int yy				=int(float(linear_pos)/float(dims.x));
+	int xx				=int(linear_pos)-yy*int(dims.x);
+	int3 pos			=int3(xx,yy,0);
 	return pos;
 }
 

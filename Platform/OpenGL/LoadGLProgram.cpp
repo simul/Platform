@@ -164,14 +164,15 @@ namespace simul
 		void ProcessIncludes(string &src,const string &filenameUtf8,bool line_source_filenames,vector<string> &sourceFilesUtf8)
 		{
 			size_t pos			=0;
-			// problem: if we insert this at line 0, SOME Glsl compilers will moan about #version not being the first line.
-			//src					=src.insert(0,base::stringFormat("#line 1 \"%s\"\n",filenameUtf8.c_str()));
-			if(filenameUtf8.find_last_of(".nvfx")>=filenameUtf8.length())
+			// problem: if we insert a #line directive at line 0, SOME Glsl compilers will moan about #version not being the first line.
+			// Solution: should find the "#version" line and put it after that.
 			{
 				// instead we find '#version' and insert after that.
-				int first			=(int)src.find("#version");
-				if(first>=0)
-					pos				=src.find('\n',first)+1;
+				int first = (int)src.find("#version");
+				if (first >= 0)
+					pos = src.find('\n', first) + 1;
+				else
+					pos = 0;
 			}
 			// Is this file in the source list?
 			int index			=(int)(find(sourceFilesUtf8.begin(), sourceFilesUtf8.end(), filenameUtf8)-sourceFilesUtf8.begin());

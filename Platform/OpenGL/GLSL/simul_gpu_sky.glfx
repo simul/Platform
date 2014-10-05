@@ -76,7 +76,7 @@ shader CS_LAYOUT(8,1,1) CS_Loss()
 {
 	uint3 sub_pos		=gl_GlobalInvocationID;
 	uint linear_pos		=sub_pos.x+threadOffset.x;
-	uint3 pos			=uint3(LinearThreadToPos2D(linear_pos,uint3(targetSize)));
+	uint3 pos			=uint3(LinearThreadToPos2D(linear_pos,int3(targetSize)));
 	CSLoss(targetTexture,density_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm,targetSize);
 }
 
