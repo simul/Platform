@@ -24,7 +24,6 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
-#include "Simul/Platform/DirectX11/GpuCloudGenerator.h"
 struct ID3DX11EffectMatrixVariable;
 struct ID3DX11EffectShaderResourceVariable;
 namespace simul
@@ -92,10 +91,10 @@ namespace simul
 			std::istream &Load(std::istream &is) const;
 			//! Clear the sequence()
 			void New();
-			simul::dx11::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
+			simul::clouds::BaseGpuCloudGenerator *GetGpuCloudGenerator(){ return &gpuCloudGenerator; }
 		protected:
 			void Recompile();
-			simul::dx11::GpuCloudGenerator gpuCloudGenerator;
+			simul::clouds::BaseGpuCloudGenerator gpuCloudGenerator;
 			void RenderCombinedCloudTexture(crossplatform::DeviceContext &deviceContext);
 			// Make up to date with respect to keyframer:
 			void EnsureCorrectTextureSizes();
