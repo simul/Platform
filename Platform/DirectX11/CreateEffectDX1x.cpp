@@ -808,7 +808,7 @@ static const DWORD default_effect_flags=0;
         hr=DXTRACE_ERR( L"CreateEffect", hr );
 #endif
 		BREAK_IF_DEBUGGING;
- 	}
+` 	}
 	assert((*effect)->IsValid());
 
 	// Name stuff:
