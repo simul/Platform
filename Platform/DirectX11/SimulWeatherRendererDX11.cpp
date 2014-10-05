@@ -141,7 +141,7 @@ void TwoResFramebuffer::ActivateHiRes(crossplatform::DeviceContext &deviceContex
 	renderPlatform->SetViewports(deviceContext,2,v);
 }
 
-void TwoResFramebuffer::DeactivateHiRes(crossplatform::DeviceContext &deviceContext)
+void TwoResFramebuffer::RestoreRTs(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->OMSetRenderTargets(	numOldViewports,
@@ -153,6 +153,11 @@ void TwoResFramebuffer::DeactivateHiRes(crossplatform::DeviceContext &deviceCont
 	SAFE_RELEASE(m_pOldDepthSurface);
 	if(numOldViewports>0)
 		pContext->RSSetViewports(numOldViewports,m_OldViewports);
+}
+
+void TwoResFramebuffer::DeactivateHiRes(crossplatform::DeviceContext &deviceContext)
+{
+	RestoreRTs(deviceContext);
 }
 
 void TwoResFramebuffer::ActivateLowRes(crossplatform::DeviceContext &deviceContext)

@@ -71,6 +71,7 @@ namespace simul
 			void GetDimensions(int &w,int &h,int &downscale,int &hiResDownscale);
 		protected:
 			void SaveOldRTs(crossplatform::DeviceContext &deviceContext);
+			void RestoreRTs(crossplatform::DeviceContext &deviceContext);
 			unsigned numOldViewports;
 			ID3D11RenderTargetView*				m_pOldRenderTargets[2];
 			ID3D11DepthStencilView*				m_pOldDepthSurface;
