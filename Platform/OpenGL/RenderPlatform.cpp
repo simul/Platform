@@ -523,6 +523,8 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 		return GL_RGBA16F;
 	case RGBA_32_FLOAT:
 		return GL_RGBA32F;
+	case RGBA_32_UINT:
+		return GL_RGBA32UI;
 	case RGB_32_FLOAT:
 		return GL_RGB32F;
 	case RG_32_FLOAT:
@@ -541,6 +543,8 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 		return GL_R8;// not GL_R...!
 	case D_32_FLOAT:
 		return GL_DEPTH_COMPONENT32F;
+	case D_16_UNORM:
+		return GL_DEPTH_COMPONENT16;
 	default:
 		return 0;
 	};
@@ -557,6 +561,8 @@ GLuint RenderPlatform::ToGLExternalFormat(crossplatform::PixelFormat p)
 		return GL_RGBA;
 	case RGB_32_FLOAT:
 		return GL_RGB;
+	case RGBA_32_UINT:
+		return GL_RGBA_INTEGER;
 	case RG_32_FLOAT:
 		return GL_RG;
 	case R_32_FLOAT:
@@ -572,7 +578,9 @@ GLuint RenderPlatform::ToGLExternalFormat(crossplatform::PixelFormat p)
 	case R_8_UNORM:
 		return GL_RED;// not GL_R...!
 	case D_32_FLOAT:
-		return GL_RED;
+		return GL_DEPTH_COMPONENT;
+	case D_16_UNORM:
+		return GL_DEPTH_COMPONENT;
 	default:
 		return GL_RGBA;
 	};
@@ -613,6 +621,8 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 	case RGBA_32_UINT:
 		return 4;
 	case D_32_FLOAT:
+		return 1;
+	case D_16_UNORM:
 		return 1;
 	default:
 		return 0;
@@ -655,6 +665,8 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 		return GL_UNSIGNED_INT;
 	case D_32_FLOAT:
 		return GL_FLOAT;
+	case D_16_UNORM:
+		return GL_UNSIGNED_SHORT;
 	default:
 		return 0;
 	};
@@ -885,6 +897,32 @@ void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &)
 	GL_ERROR_CHECK
 //	glPopAttrib();
 	GL_ERROR_CHECK
+}
+
+void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &deviceContext)
+{
+	GLint current_fb=0;
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING,&current_fb);
+	crossplatform::Viewport viewport;
+	GLint vp[4];
+	glGetIntegerv(GL_VIEWPORT,vp);
+	viewport.x=vp[0];
+	viewport.y=vp[1];
+	viewport.w=vp[2];
+	viewport.h=vp[3];
+	fb_stack.push_back(current_fb);
+	viewport_stack.push_back(viewport);
+}
+
+void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContext)
+{
+	GLuint last_fb=fb_stack.back();
+    glBindFramebuffer(GL_FRAMEBUFFER,last_fb);
+	crossplatform::Viewport viewport=viewport_stack.back();
+	GLint vp[]={viewport.x,viewport.y,viewport.w,viewport.h};
+	glViewport(vp[0],vp[1],vp[2],vp[3]);
+	fb_stack.pop_back();
+	viewport_stack.pop_back();
 }
 
 GLenum toGLTopology(crossplatform::Topology t)

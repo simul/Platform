@@ -35,7 +35,6 @@ namespace simul
 			SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudKeyframer,simul::base::MemoryInterface *mem);
 			virtual ~SimulGLCloudRenderer();
 			//standard ogl object interface functions
-			bool Create();
 			void RecompileShaders();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform*);
 			void InvalidateDeviceObjects();

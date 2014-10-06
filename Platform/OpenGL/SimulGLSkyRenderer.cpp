@@ -42,7 +42,6 @@ GLenum internal_format=GL_RGBA32F_ARB;
 SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *m)
 	:BaseSkyRenderer(sk,m)
 {
-	gpuSkyGenerator.SetEnabled(true);
 
 }
 // Here we blend the four 3D fade textures (distance x elevation x altitude at two keyframes, for loss and inscatter)
@@ -68,6 +67,5 @@ GL_ERROR_CHECK
 
 void SimulGLSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 {
-	baseGpuSkyGenerator =&gpuSkyGenerator;
 	BaseSkyRenderer::RestoreDeviceObjects(r);
 }

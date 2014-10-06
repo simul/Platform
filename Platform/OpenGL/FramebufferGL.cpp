@@ -131,10 +131,13 @@ GL_ERROR_CHECK
 		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(status!=GL_FRAMEBUFFER_COMPLETE)
 			return false;
+		buffer_texture.width=Width;
+		buffer_texture.length=Height;
 	}
 	if(depth_iformat!=crossplatform::UNKNOWN)
 	{
-		glGenTextures(1, &buffer_depth_texture.pTextureObject);
+		buffer_depth_texture.ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,depth_iformat,false,false,false);
+	/*	glGenTextures(1, &buffer_depth_texture.pTextureObject);
 		glBindTexture(GL_TEXTURE_2D, buffer_depth_texture.pTextureObject);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_clamp);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_clamp);
@@ -144,13 +147,15 @@ GL_ERROR_CHECK
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 		GLenum f=opengl::RenderPlatform::ToGLFormat(depth_iformat);
-		glTexImage2D(GL_TEXTURE_2D, 0, f, Width, Height, 0,GL_DEPTH_COMPONENT,GL_UNSIGNED_INT, NULL);
-
+		glTexImage2D(GL_TEXTURE_2D, 0, f, Width, Height, 0,GL_DEPTH_COMPONENT,GL_UNSIGNED_INT, NULL);*/
+GL_ERROR_CHECK
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,buffer_depth_texture.pTextureObject,0);
-		
+GL_ERROR_CHECK
 		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(status!=GL_FRAMEBUFFER_COMPLETE)
 			return false;
+		buffer_depth_texture.width=Width;
+		buffer_depth_texture.length=Height;
 	}
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -303,11 +308,11 @@ GL_ERROR_CHECK
 }
 
 
-void FramebufferGL::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
+void FramebufferGL::Clear(crossplatform::DeviceContext &deviceContext,float r,float g,float b,float a,float depth,int mask)
 {
 	if(!mask)
 		mask=GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT;
-	ClearColour(context,r,g,b,a);
+	ClearColour(deviceContext,r,g,b,a);
 	if(mask&GL_COLOR_BUFFER_BIT)
 		 glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 	// AMAZINGLY, OpenGL requires depth mask to be set to clear the depth buffer.
@@ -317,7 +322,7 @@ void FramebufferGL::Clear(void *context,float r,float g,float b,float a,float de
 	glClear(mask);
 }
 
-void FramebufferGL::ClearColour(void*,float r,float g,float b,float a)
+void FramebufferGL::ClearColour(crossplatform::DeviceContext &,float r,float g,float b,float a)
 {
 	glClearColor(r,g,b,a);
 }

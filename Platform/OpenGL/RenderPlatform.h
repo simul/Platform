@@ -84,6 +84,8 @@ namespace simul
 
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
+			void									PushRenderTargets(crossplatform::DeviceContext &deviceContext);
+			void									PopRenderTargets(crossplatform::DeviceContext &deviceContext);
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s);
 
 			GLuint solid_program;
@@ -96,6 +98,8 @@ namespace simul
 			static GLenum DataType(crossplatform::PixelFormat p);
 			static int FormatCount(crossplatform::PixelFormat p);
 		protected:
+			std::vector<GLuint> fb_stack;
+			std::vector<crossplatform::Viewport> viewport_stack;
 			crossplatform::Effect *effect;
 			crossplatform::Topology currentTopology;
 		};

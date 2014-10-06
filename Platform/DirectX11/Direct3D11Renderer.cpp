@@ -11,7 +11,7 @@
 #include "Simul/Platform/DirectX11/SimulCloudRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
-#include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
+#include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Platform/DirectX11/SimulOpticsRendererDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
@@ -231,7 +231,7 @@ void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
 			H=2160;
 		}
 		view->SetResolution(W,H);
-		simulWeatherRenderer->SetScreenSize(view_id,W,H);
+//		simulWeatherRenderer->SetScreenSize(view_id,W,H);
 	}
 	W=view->GetScreenWidth();
 	H=view->GetScreenHeight();
@@ -667,7 +667,7 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 	{
 			std::map<std::string,std::string> defines;
 			defines["REVERSE_DEPTH"]="0";
-			linearizeDepthEffect=renderPlatformDx11.CreateEffect("simul_hdr",defines);
+			linearizeDepthEffect=renderPlatformDx11.CreateEffect("hdr",defines);
 	}
 		// Now we will create a linear depth texture:
 		SIMUL_GPU_PROFILE_START(deviceContext.platform_context,"Linearize depth buffer")
@@ -712,13 +712,13 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 		if(simulHDRRenderer)
 			simulHDRRenderer->Render(deviceContext,view->GetResolvedHDRBuffer(),cameraViewStruct.exposure,cameraViewStruct.gamma);
 	}
-	if(simulOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetSkyRenderer())
+	if(simulOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetBaseSkyRenderer())
 	{
 		simul::sky::float4 dir,light;
 		math::Vector3 cam_pos	=GetCameraPosVector(deviceContext.viewStruct.view);
 		dir						=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
 		light					=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
-		float occ				=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
+		float occ				=simulWeatherRenderer->GetBaseSkyRenderer()->GetSunOcclusion();
 		float exp				=(hdr?cameraViewStruct.exposure:1.f)*(1.f-occ);
 		simulOpticsRenderer->RenderFlare(deviceContext,exp,NULL,dir,light);
 	}
@@ -762,9 +762,9 @@ void Direct3D11Renderer::RenderOverlays(crossplatform::DeviceContext &deviceCont
 		{
 			simulHDRRenderer->RenderDebug(deviceContext,W2,H2,W2,H2);
 		}
-		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
+		if(ShowOSD&&simulWeatherRenderer->GetBaseCloudRenderer())
 		{
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,W1,H1);
+			simulWeatherRenderer->GetBaseCloudRenderer()->RenderDebugInfo(deviceContext,W1,H1);
 #ifdef _XBOX_ONE
 			const char *txt=Profiler::GetGlobalProfiler().GetDebugText();
 			renderPlatformDx11.Print(deviceContext			,12	,12,txt);

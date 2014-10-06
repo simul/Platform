@@ -21,7 +21,7 @@
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "SimulCloudRendererDX1x.h"
-#include "SimulSkyRendererDX1x.h"
+#include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/RandomNumberGenerator.h"
 #include "CreateEffectDX1x.h"
@@ -120,7 +120,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defs;
-	hdr_effect					=renderPlatform->CreateEffect("simul_hdr",defs);
+	hdr_effect					=renderPlatform->CreateEffect("hdr",defs);
 	exposureGammaTechnique		=hdr_effect->GetTechniqueByName("exposure_gamma");
 	glowExposureGammaTechnique	=hdr_effect->GetTechniqueByName("glow_exposure_gamma");
 	warpExposureGamma			=hdr_effect->GetTechniqueByName("warp_exposure_gamma");

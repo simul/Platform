@@ -103,11 +103,6 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,sim
 		seq_illum_texture_iterator[i].texture_index=i;
 }
 
-bool SimulGLCloudRenderer::Create()
-{
-	return true;
-}
-
 void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 {
 	const simul::math::Vector3 *XX=reinterpret_cast<const simul::math::Vector3*>(Mat.RowPointer(0));

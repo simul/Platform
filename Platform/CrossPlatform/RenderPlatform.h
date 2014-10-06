@@ -170,6 +170,10 @@ namespace simul
 			virtual void					SetRenderState					(DeviceContext &deviceContext,const RenderState *s)=0;
 			/// Apply a standard renderstate - e.g. opaque blending
 			virtual void					SetStandardRenderState			(DeviceContext &deviceContext,StandardRenderState s);
+			//! Store the current rendertargets and viewports at the top of the stack
+			virtual void					PushRenderTargets(DeviceContext &deviceContext)=0;
+			//! Restore rendertargets and viewports from the top of the stack.
+			virtual void					PopRenderTargets(DeviceContext &deviceContext)=0;
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY,mirrorY2;
 		protected:

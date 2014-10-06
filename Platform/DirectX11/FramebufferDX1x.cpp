@@ -476,32 +476,29 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 	depth_active=false;
 }
 
-void Framebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
+void Framebuffer::Clear(crossplatform::DeviceContext &context,float r,float g,float b,float a,float depth,int mask)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	// Clear the screen to black:
     float clearColor[4]={r,g,b,a};
     if(!mask)
 		mask=D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL;
 	if(buffer_texture->AsD3D11RenderTargetView())
-		pContext->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(),clearColor);
+		context.asD3D11DeviceContext()->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(),clearColor);
 	if(buffer_depth_texture->AsD3D11DepthStencilView())
-		pContext->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(),mask,depth,0);
+		context.asD3D11DeviceContext()->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(),mask,depth,0);
 }
 
-void Framebuffer::ClearDepth(void *context,float depth)
+void Framebuffer::ClearDepth(crossplatform::DeviceContext &context,float depth)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	if(buffer_depth_texture->AsD3D11DepthStencilView())
-		pContext->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,depth,0);
+		context.asD3D11DeviceContext()->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,depth,0);
 }
 
-void Framebuffer::ClearColour(void *context,float r,float g,float b,float a)
+void Framebuffer::ClearColour(crossplatform::DeviceContext &context,float r,float g,float b,float a)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	float clearColor[4]={r,g,b,a};
 	if(buffer_texture->AsD3D11RenderTargetView())
-		pContext->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(),clearColor);
+		context.asD3D11DeviceContext()->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(),clearColor);
 }
 
 void Framebuffer::GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const

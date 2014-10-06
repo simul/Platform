@@ -53,9 +53,9 @@ namespace simul
 			void ActivateColour(crossplatform::DeviceContext &context);
 			void Deactivate(crossplatform::DeviceContext &context);
 			void DeactivateDepth(crossplatform::DeviceContext &context);
-			void Clear(void *context,float,float,float,float,float,int mask=0);
-			void ClearDepth(void *context,float);
-			void ClearColour(void* context, float, float, float, float );
+			void Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);
+			void ClearDepth(crossplatform::DeviceContext &context,float);
+			void ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
 			ID3D11ShaderResourceView *GetBufferResource()
 			{
 				return buffer_texture->AsD3D11ShaderResourceView();

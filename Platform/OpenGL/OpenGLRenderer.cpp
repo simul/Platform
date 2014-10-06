@@ -274,20 +274,20 @@ void OpenGLRenderer::paintGL()
 			depthFramebuffer.Render(context,false);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
-		simulWeatherRenderer->RenderLightning(deviceContext);
+	//	simulWeatherRenderer->RenderLightning(deviceContext,depthFramebuffer.GetTexture(),viewport);
 		
 		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTexture()
 			,depthFramebuffer.GetDepthTexture()
 			,simul::sky::float4(0,0,1.f,1.f),true);
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
-		simulWeatherRenderer->RenderPrecipitation(deviceContext);
+//		simulWeatherRenderer->RenderPrecipitation(deviceContext);
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light,cam_pos;
 			dir=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
 			CalcCameraPosition(cam_pos);
 			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
-			float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
+			float occ=simulWeatherRenderer->GetBaseSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
 			simulOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTex(),dir,light);
 		}
@@ -295,7 +295,7 @@ void OpenGLRenderer::paintGL()
 			simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
 GL_ERROR_CHECK
 		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
-		bool vertical_screen=ScreenHeight>ScreenWidth;
+//		bool vertical_screen=ScreenHeight>ScreenWidth;
 GL_ERROR_CHECK
 		if(ShowCompositing)
 		{
@@ -307,8 +307,8 @@ GL_ERROR_CHECK
 		if(simulWeatherRenderer)
 			simulWeatherRenderer->RenderOverlays(deviceContext);
 GL_ERROR_CHECK
-		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(deviceContext,ScreenWidth,ScreenHeight);
+		if(ShowOSD&&simulWeatherRenderer->GetBaseCloudRenderer())
+			simulWeatherRenderer->GetBaseCloudRenderer()->RenderDebugInfo(deviceContext,ScreenWidth,ScreenHeight);
 	}
 	renderUI();
 	glPopAttrib();

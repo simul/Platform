@@ -68,7 +68,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,pTextureObject);
 GL_ERROR_CHECK
-	glTexImage2D(GL_TEXTURE_2D,0,internal_format,w,l,0,GL_RGBA,RenderPlatform::DataType(pixelFormat),NULL);
+	glTexImage2D(GL_TEXTURE_2D,0,internal_format,w,l,0,RenderPlatform::ToGLExternalFormat(pixelFormat),RenderPlatform::DataType(pixelFormat),NULL);
 GL_ERROR_CHECK
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);

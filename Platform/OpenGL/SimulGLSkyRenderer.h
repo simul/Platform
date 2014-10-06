@@ -10,7 +10,7 @@
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
-#include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
+#include "Simul/Sky/BaseGpuSkyGenerator.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include <cstdlib>
 
@@ -38,7 +38,6 @@ namespace simul
 			//! owns this object.
 			void						RestoreDeviceObjects(simul::crossplatform::RenderPlatform *);
 		protected:
-			simul::opengl::GpuSkyGenerator	gpuSkyGenerator;
 
 			bool		Render2DFades(simul::crossplatform::DeviceContext &deviceContext);
 			void		CreateSkyTextures();

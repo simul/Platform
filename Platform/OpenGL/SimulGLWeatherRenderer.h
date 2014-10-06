@@ -38,39 +38,6 @@ namespace simul
 	{
 		class SimulGLSkyRenderer;
 		class SimulGLCloudRenderer;
-		struct TwoResFramebuffer:public simul::crossplatform::TwoResFramebuffer
-		{
-			TwoResFramebuffer();
-			crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()
-			{
-				return &lowResFarFramebuffer;
-			}
-			crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()
-			{
-				return &lowResNearFramebuffer;
-			}
-			crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()
-			{
-				return &hiResFarFramebuffer;
-			}
-			crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()
-			{
-				return &hiResNearFramebuffer;
-			}
-			FramebufferGL	lowResFarFramebuffer;
-			FramebufferGL	lowResNearFramebuffer;
-			FramebufferGL	hiResFarFramebuffer;
-			FramebufferGL	hiResNearFramebuffer;
-			void ActivateHiRes(crossplatform::DeviceContext &);
-			void DeactivateHiRes(crossplatform::DeviceContext &);
-			void ActivateLowRes(crossplatform::DeviceContext &);
-			void DeactivateLowRes(crossplatform::DeviceContext &);
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *);
-			void InvalidateDeviceObjects();
-			void SetDimensions(int w,int h,int downscale,int hiResDownscale);
-			void GetDimensions(int &w,int &h,int &downscale,int &hiResDownscale);
-			int Width,Height,Downscale;
-		};
 		//! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within an OpenGL program.
 		//! You can take this entire class and use it as source in your project.
 		//! Make appropriate modifications where required.
@@ -97,27 +64,15 @@ namespace simul
 											,crossplatform::Texture* lowResDepthTexture
 											,const sky::float4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite);
-			//! Call this to draw the clouds
-			void RenderLateCloudLayer(crossplatform::DeviceContext &deviceContext
-				,float exposure,bool buf,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
-			//! Call this to draw lightning.
-			void RenderLightning(simul::crossplatform::DeviceContext &deviceContext);
-			//! Call this to draw rain etc.
-			void RenderPrecipitation(crossplatform::DeviceContext &deviceContext);
-			//! Get a pointer to the sky renderer owned by this class instance.
-			SimulGLSkyRenderer *GetSkyRenderer();
-			//! Get a pointer to the 3d cloud renderer owned by this class instance.
-			SimulGLCloudRenderer *GetCloudRenderer();
 			//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 			void EnableRain(bool e=true);
 			void EnableCloudLayers();
-			GLuint GetFramebufferTexture(int view_id);
 		protected:
 			std::string shader;
 			//! This is set once the GL device has been initialized - then we can create textures and so forth.
 			bool					device_initialized;
-			typedef std::map<int,simul::opengl::TwoResFramebuffer*> FramebufferMap;
+			typedef std::map<int,simul::crossplatform::TwoResFramebuffer*> FramebufferMap;
 			FramebufferMap			framebuffers;
 			bool					externally_defined_buffers;
 			bool					auto_exposure;
@@ -126,13 +81,9 @@ namespace simul
 			float					gamma;
 			bool					use_buffer;
 			bool					tone_map;
-			GLuint					cloud_overlay_program;
 			RenderDepthBufferCallback *renderDepthBufferCallback;
-			SimulGLSkyRenderer *simulSkyRenderer;
-			SimulGLCloudRenderer *simulCloudRenderer;
 			void CreateBuffers();
 			void RenderBufferToScreen(GLuint texture,int w,int h,bool use_shader,bool blend=false);
-			crossplatform::TwoResFramebuffer *GetFramebuffer(int view_id);
 		};
 	}
 }

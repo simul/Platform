@@ -69,22 +69,12 @@ namespace simul
 			//! Call this when the 3D device has been lost.
 			void InvalidateDeviceObjects();
 			void PreRenderUpdate(crossplatform::DeviceContext &deviceContext);
-			//! Call this to draw the clouds, including any illumination by lightning.
-			bool Render(crossplatform::DeviceContext &deviceContext,float exposure
-				,bool cubemap,crossplatform::NearFarPass nearFarPass,crossplatform::Texture *depth_tex,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH,const simul::sky::float4& mixedResTransformXYWH);
-			void RenderAuxiliaryTextures(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
 			void RenderTestXXX(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height);
-			void RenderCrossSections(crossplatform::DeviceContext &,int x0,int y0,int width,int height);
 			//! Return true if the camera is above the cloudbase altitude.
 			bool IsCameraAboveCloudBase() const;
 			float GetTiming() const;
 			crossplatform::Texture *GetRandomTexture3D();
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
-
-			void CycleTexturesForward(){}
-
-			void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array);
-			void FillIlluminationBlock(int,int,int,int,int,int,int,const unsigned char *){}
 
 			// Save and load a sky sequence
 			std::ostream &Save(std::ostream &os) const;
@@ -95,20 +85,10 @@ namespace simul
 		protected:
 			void Recompile();
 			simul::clouds::BaseGpuCloudGenerator gpuCloudGenerator;
-			void RenderCombinedCloudTexture(crossplatform::DeviceContext &deviceContext);
 			// Make up to date with respect to keyframer:
 			void EnsureCorrectTextureSizes();
 			void EnsureTexturesAreUpToDate(crossplatform::DeviceContext &deviceContext);
 
-			unsigned texel_index[4];
-			bool lightning_active;
-			ID3D11Device*							m_pd3dDevice;
-			
-			D3D1x_MAPPED_TEXTURE3D					mapped_illumination;
-
-			ID3D11Texture2D*						cloud_cubemap;
-
-			bool UpdateIlluminationTexture(float dt);
 			float LookupLargeScaleTexture(float x,float y);
 
 			bool CreateCloudEffect();

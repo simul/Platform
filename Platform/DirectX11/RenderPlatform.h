@@ -110,6 +110,8 @@ namespace simul
 
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
+			void									PushRenderTargets(crossplatform::DeviceContext &deviceContext);
+			void									PopRenderTargets(crossplatform::DeviceContext &deviceContext);
 
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
 
@@ -143,6 +145,7 @@ namespace simul
 				UINT m_VertexOffsets[32];
 			};
 			std::vector<StoredState> storedStates;
+			std::vector<struct RTState*> storedRTStates;
 			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *tex,float mult,bool blend=false);
 		};
 	}

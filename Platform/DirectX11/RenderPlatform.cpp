@@ -1544,3 +1544,55 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	UtilityRenderer::DrawSphere(deviceContext,16,32);
 	pContext->RSSetViewports(num_v,m_OldViewports);
 }
+namespace simul
+{
+	namespace dx11
+	{
+		struct RTState
+		{
+			RTState():depthSurface(NULL),numViewports(0)
+			{
+				memset(renderTargets,0,sizeof(renderTargets));
+				memset(viewports,0,sizeof(viewports));
+			}
+			ID3D11RenderTargetView*				renderTargets[16];
+			ID3D11DepthStencilView*				depthSurface;
+			D3D11_VIEWPORT						viewports[16];
+			unsigned							numViewports;
+		};
+	}
+}
+
+void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &deviceContext)
+{
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	RTState *state=new RTState;
+	pContext->RSGetViewports(&state->numViewports,NULL);
+	if(state->numViewports>0)
+		pContext->RSGetViewports(&state->numViewports,state->viewports);
+	
+	pContext->OMGetRenderTargets(	state->numViewports,
+									state->renderTargets,
+									&state->depthSurface
+									);
+	storedRTStates.push_back(state);
+}
+
+void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContext)
+{
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	RTState *state=storedRTStates.back();
+	pContext->OMSetRenderTargets(	state->numViewports,
+									state->renderTargets,
+									state->depthSurface
+									);
+	for(int i=0;i<state->numViewports;i++)
+	{
+		SAFE_RELEASE(state->renderTargets[i]);
+	}
+	SAFE_RELEASE(state->depthSurface);
+	if(state->numViewports>0)
+		pContext->RSSetViewports(state->numViewports,state->viewports);
+	delete state;
+	storedRTStates.pop_back();
+}

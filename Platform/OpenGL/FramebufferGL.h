@@ -53,8 +53,8 @@ namespace simul
 			void ActivateViewport(crossplatform::DeviceContext &,float viewportX, float viewportY, float viewportW, float viewportH);
 			void Deactivate(crossplatform::DeviceContext &);
 			void CopyDepthFromFramebuffer();
-			void Clear(void*,float r,float g,float b,float a,float depth,int mask=0);
-			void ClearColour(void*,float r,float g,float b,float a);
+			void Clear(crossplatform::DeviceContext &,float r,float g,float b,float a,float depth,int mask=0);
+			void ClearColour(crossplatform::DeviceContext &,float r,float g,float b,float a);
 			void DeactivateAndRender(crossplatform::DeviceContext &deviceContext,bool blend);
 			void Render(void *,bool blend);
 			// Get the dimension of the surface

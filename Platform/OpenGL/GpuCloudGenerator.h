@@ -51,9 +51,9 @@ namespace simul
 			float			*density;	// used if we are using CPU to read back the density texture.
 			int				density_gridsize;
 			simul::opengl::ConstantBuffer<GpuCloudConstants> gpuCloudConstants;
-			Texture	directLightTextures[2];
-			Texture	indirectLightTextures[2];
-			Texture	maskTexture;
+			Texture			directLightTextures[2];
+			Texture			indirectLightTextures[2];
+			Texture			maskTexture;
 			int				last_generation_number;
 		};
 	}

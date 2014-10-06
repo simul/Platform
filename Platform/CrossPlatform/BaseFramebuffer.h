@@ -44,9 +44,9 @@ namespace simul
 			//! Set the API-dependent colour depth format for this framebuffer. Across all API's, setting 0 means no rendering to depth.
 			virtual void SetDepthFormat(PixelFormat)=0;
 			//! Clear the colour and depth buffers if present.
-			virtual void Clear(void* context,float R,float G,float B,float A,float depth,int mask=0)=0;
+			virtual void Clear(crossplatform::DeviceContext &context,float R,float G,float B,float A,float depth,int mask=0)=0;
 			//! Set the size of the framebuffer in pixel height and width.
-			virtual void ClearColour(void* context,float,float,float,float)=0;
+			virtual void ClearColour(crossplatform::DeviceContext &context,float,float,float,float)=0;
 			virtual void SetWidthAndHeight(int w,int h)=0;
 			//! Some hardware has fast RAM that's good for framebuffers.
 			virtual void SetUseFastRAM(bool /*colour*/,bool /*depth*/){};
@@ -57,7 +57,7 @@ namespace simul
 			virtual Texture *GetDepthTexture()=0;
 			//! Copy from the rt to the given target memory. If not starting at the top of the texture (start_texel>0), the first byte written
 			//! is at \em target, which is the address to copy the given chunk to, not the base address of the whole in-memory texture.
-			virtual void CopyToMemory(void *context,void *target,int start_texel=0,int texels=0)=0;
+			virtual void CopyToMemory(crossplatform::DeviceContext &context,void *target,int start_texel=0,int texels=0)=0;
 			// Get the dimensions of the specified texture - temporary, do not use.
 			virtual void GetTextureDimensions(const void* /*tex*/, unsigned int& /*widthOut*/, unsigned int& /*heightOut*/) const {}
 		//protected:
@@ -69,27 +69,36 @@ namespace simul
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT TwoResFramebuffer
 		{
-			TwoResFramebuffer():HiResDownscale(2),renderPlatform(0),lossTexture(0)
-				,Width(0)
-				,Height(0)
-				,Downscale(0){}
-			virtual crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()=0;
-			virtual crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()=0;
-			virtual crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()=0;
-			virtual crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()=0;
+			TwoResFramebuffer();
+			crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()
+			{
+				return lowResFarFramebufferDx11;
+			}
+			crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()
+			{
+				return lowResNearFramebufferDx11;
+			}
+			crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()
+			{
+				return hiResFarFramebufferDx11;
+			}
+			crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()
+			{
+				return hiResNearFramebufferDx11;
+			}
 			crossplatform::Texture *GetLossTexture();
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			virtual void InvalidateDeviceObjects();
-			virtual void SetDimensions(int w,int h,int downscale,int hiResDownscale)=0;
-			virtual void GetDimensions(int &w,int &h,int &downscale,int &hiResDownscale)=0;
+			virtual void SetDimensions(int w,int h,int downscale,int hiResDownscale);
+			virtual void GetDimensions(int &w,int &h,int &downscale,int &hiResDownscale);
 			/// Activate BOTH Hi-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivateHiRes after rendering.
-			virtual void ActivateHiRes(crossplatform::DeviceContext &)=0;
+			virtual void ActivateHiRes(crossplatform::DeviceContext &);
 			/// Deactivate both hi-res framebuffers.
-			virtual void DeactivateHiRes(crossplatform::DeviceContext &)=0;
+			virtual void DeactivateHiRes(crossplatform::DeviceContext &);
 			/// Activate BOTH low-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivatelLowRes after rendering.
-			virtual void ActivateLowRes(crossplatform::DeviceContext &)=0;
+			virtual void ActivateLowRes(crossplatform::DeviceContext &);
 			/// Deactivate both low-res framebuffers.
-			virtual void DeactivateLowRes(crossplatform::DeviceContext &)=0;
+			virtual void DeactivateLowRes(crossplatform::DeviceContext &);
 			/// Deactivate the depth buffer
 			virtual void DeactivateDepth(crossplatform::DeviceContext &);
 		protected:
@@ -97,6 +106,10 @@ namespace simul
 			crossplatform::Texture *lossTexture;
 			int HiResDownscale;
 			int Width,Height,Downscale;
+			crossplatform::BaseFramebuffer	*lowResFarFramebufferDx11;
+			crossplatform::BaseFramebuffer	*lowResNearFramebufferDx11;
+			crossplatform::BaseFramebuffer	*hiResFarFramebufferDx11;
+			crossplatform::BaseFramebuffer	*hiResNearFramebufferDx11;
 		};
 	}
 }
