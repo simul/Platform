@@ -209,28 +209,17 @@ void OpenGLRenderer::paintGL()
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->SetReverseDepth(ReverseDepth);
-	glClearColor(0,0,0,1);
+	glClearColor(0,1,0,1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	glPushAttrib(GL_ENABLE_BIT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(deviceContext.viewStruct.proj);
 	glViewport(0,0,ScreenWidth,ScreenHeight);
-/*	crossplatform::ViewStruct viewStruct={	viewport_id
-												,view
-												,proj
-												};*/
 	static float exposure=1.0f;
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->PreRenderUpdate(deviceContext);
-		/*GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
-		GLuint fogfilter=0;								// Which Fog To Use
-		simul::sky::float4 fogColor=simulWeatherRenderer->GetHorizonColour(0.001f*cam->GetPosition()[2]);
-		glFogi(GL_FOG_MODE,fogMode[fogfilter]);			// Fog Mode
-		glFogfv(GL_FOG_COLOR,fogColor);					// Set Fog Color
-		glFogf(GL_FOG_DENSITY,0.35f);					// How Dense Will The Fog Be
-		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
-		glFogf(GL_FOG_END,5.0f);						// Fog End Depth*/
+		
 		glDisable(GL_FOG);
 		GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
@@ -246,8 +235,8 @@ void OpenGLRenderer::paintGL()
 			glDepthMask(GL_TRUE);
 			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		}
-		depthFramebuffer.Activate(deviceContext);
-		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+		/*depthFramebuffer.Activate(deviceContext);
+		depthFramebuffer.Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, 1.f, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		
 		if(sceneRenderer)
 		{
@@ -258,8 +247,8 @@ void OpenGLRenderer::paintGL()
 			sceneRenderer->Render(deviceContext,physicalLightRenderData);
 		}
 		
-	//	if(simulTerrainRenderer&&ShowTerrain)
-	//		simulTerrainRenderer->Render(deviceContext,1.f);
+		if(simulTerrainRenderer&&ShowTerrain)
+			simulTerrainRenderer->Render(deviceContext,1.f);
 		simulWeatherRenderer->RenderCelestialBackground(deviceContext,depthFramebuffer.GetDepthTexture(),exposure);
 		depthFramebuffer.Deactivate(deviceContext);
 		{
@@ -274,13 +263,11 @@ void OpenGLRenderer::paintGL()
 			depthFramebuffer.Render(context,false);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
-	//	simulWeatherRenderer->RenderLightning(deviceContext,depthFramebuffer.GetTexture(),viewport);
-		
 		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTexture()
 			,depthFramebuffer.GetDepthTexture()
 			,simul::sky::float4(0,0,1.f,1.f),true);
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
-//		simulWeatherRenderer->RenderPrecipitation(deviceContext);
+
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light,cam_pos;
@@ -290,11 +277,9 @@ void OpenGLRenderer::paintGL()
 			float occ=simulWeatherRenderer->GetBaseSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
 			simulOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTex(),dir,light);
-		}
+		}*/
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
-GL_ERROR_CHECK
-		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
 //		bool vertical_screen=ScreenHeight>ScreenWidth;
 GL_ERROR_CHECK
 		if(ShowCompositing)

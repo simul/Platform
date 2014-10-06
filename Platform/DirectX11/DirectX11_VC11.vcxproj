@@ -194,7 +194,6 @@
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
-    <ClCompile Include="SimulCloudRendererDX1x.cpp" />
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
     <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
     <ClCompile Include="TerrainRenderer.cpp" />
@@ -229,7 +228,6 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
     <ClInclude Include="SaveTextureDX1x.h" />
-    <ClInclude Include="SimulCloudRendererDX1x.h" />
     <ClInclude Include="SimulHDRRendererDX1x.h" />
     <ClInclude Include="SimulOpticsRendererDX1x.h" />
     <ClInclude Include="TerrainRenderer.h" />
@@ -282,7 +280,7 @@
     <None Include="HLSL\ocean.fx" />
     <None Include="HLSL\mixed_resolution.fx" />
     <None Include="HLSL\rain.fx" />
-    <None Include="HLSL\simul_clouds.fx" />
+    <None Include="HLSL\clouds.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
     <None Include="HLSL\simul_debug.fx" />
     <None Include="HLSL\simul_foliage.fx" />

@@ -241,12 +241,11 @@ ID3D11Texture2D* makeStagingTexture(ID3D11Device *m_pd3dDevice
 	return tex;
 }
 
-void Framebuffer::CopyToMemory(void *context,void *target,int start_texel,int texels)
+void Framebuffer::CopyToMemory(crossplatform::DeviceContext &deviceContext, void *target, int start_texel, int texels)
 {
-	ID3D11DeviceContext *pContext=NULL;
+	ID3D11DeviceContext *pContext = deviceContext.asD3D11DeviceContext();
 	if(texels==0)
 		texels=Width*Height;
-	renderPlatform->AsD3D11Device()->GetImmediateContext(&pContext);
 
 	if(!stagingTexture)
 		stagingTexture=makeStagingTexture(renderPlatform->AsD3D11Device(),Width,Height,target_format);
@@ -287,7 +286,6 @@ HRESULT hr=S_OK;
 	}
 	// copy data
 	pContext->Unmap(stagingTexture, 0);
-	SAFE_RELEASE(pContext)
 }
 
 void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4])

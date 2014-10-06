@@ -5,6 +5,7 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/DirectX11/Effect.h"
+#include "Simul/Platform/DirectX11/DX11Exception.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Math/Vector3.h"
@@ -15,6 +16,12 @@
 #include "D3dx11effect.h"
 using namespace simul;
 using namespace dx11;
+
+const char *GetErrorText(HRESULT hr)
+{
+	const char *err = DXGetErrorStringA(hr);
+	return err;
+}
 
 bool simul::dx11::IsTypeless( DXGI_FORMAT fmt, bool partialTypeless )
 {

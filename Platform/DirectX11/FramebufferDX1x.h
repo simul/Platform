@@ -50,9 +50,9 @@ namespace simul
 			void ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4]);
 			void ActivateDepth(crossplatform::DeviceContext &deviceContext);
 			void ActivateViewport(crossplatform::DeviceContext &deviceContext, float viewportX, float viewportY, float viewportW, float viewportH );
-			void ActivateColour(crossplatform::DeviceContext &context);
-			void Deactivate(crossplatform::DeviceContext &context);
-			void DeactivateDepth(crossplatform::DeviceContext &context);
+			void ActivateColour(crossplatform::DeviceContext &deviceContext);
+			void Deactivate(crossplatform::DeviceContext &deviceContext);
+			void DeactivateDepth(crossplatform::DeviceContext &deviceContext);
 			void Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);
 			void ClearDepth(crossplatform::DeviceContext &context,float);
 			void ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
@@ -79,7 +79,7 @@ namespace simul
 			}
 			//! Copy from the rt to the given target memory. If not starting at the top of the texture (start_texel>0), the first byte written
 			//! is at \em target, which is the address to copy the given chunk to, not the base address of the whole in-memory texture.
-			void CopyToMemory(void *context,void *target,int start_texel=0,int texels=0);
+			void CopyToMemory(crossplatform::DeviceContext &deviceContext, void *target, int start_texel = 0, int texels = 0);
 			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
 			dx11::Texture *GetTexture()
 			{

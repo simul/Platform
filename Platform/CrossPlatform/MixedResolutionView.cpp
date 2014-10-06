@@ -263,7 +263,7 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 											,int lowResDownscale
 											,vec4 depthToLinFadeDistParams,bool includeLowResDepth)
 {
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+//	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	int FullWidth=0,FullHeight=0;
 	int StartX=0,StartY=0;
 	if(!depthTexture)
@@ -332,7 +332,7 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 			effect->SetTexture			(deviceContext,"sourceDepthTexture"		,depthTexture);
 		std::string pass_name=msaa?"msaa":"main";
 		if(msaa)
-			pass_name+=('0'+depthTexture->GetSampleCount());
+			pass_name+=(char)((int)'0'+depthTexture->GetSampleCount());
 		else if(!use_rt&&(hiResDownscale==2||hiResDownscale==4))
 			pass_name+=('0'+hiResDownscale);
 		if(use_rt)

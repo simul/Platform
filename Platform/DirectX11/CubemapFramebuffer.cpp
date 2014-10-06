@@ -359,9 +359,9 @@ void CubemapFramebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceCon
 	pContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV[current_face],NULL);
 }
 
-void CubemapFramebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
+void CubemapFramebuffer::Clear(crossplatform::DeviceContext &deviceContext, float r, float g, float b, float a, float depth, int mask)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext = deviceContext.asD3D11DeviceContext();
 	if(!mask)
 		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
 	// Clear the screen to the colour specified:
@@ -383,13 +383,12 @@ void CubemapFramebuffer::Clear(void *context,float r,float g,float b,float a,flo
 	}
 }
 
-void CubemapFramebuffer::ClearColour(void *context,float r,float g,float b,float a)
+void CubemapFramebuffer::ClearColour(crossplatform::DeviceContext &deviceContext, float r, float g, float b, float a)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	float clearColor[4]={r,g,b,a};
 	for(int i=0;i<6;i++)
 	{
-		pContext->ClearRenderTargetView(m_pCubeEnvMapRTV[i],clearColor);
+		deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(m_pCubeEnvMapRTV[i], clearColor);
 	}
 }
 

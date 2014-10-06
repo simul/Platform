@@ -400,7 +400,6 @@ void SimulGLCloudRenderer::RecompileShaders()
 GL_ERROR_CHECK
 	gpuCloudGenerator.RecompileShaders();
 	
-
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	defines["DETAIL_NOISE"]="1";

@@ -8,7 +8,6 @@
 #include "Simul/Platform/DirectX11/SimulWeatherRendererDX11.h"
 #include "Simul/Platform/DirectX11/TerrainRenderer.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
-#include "Simul/Platform/DirectX11/SimulCloudRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
@@ -156,8 +155,8 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 		m_pd3dDevice->GetImmediateContext(&pImmediateContext);
 		deviceContext.platform_context=pImmediateContext;
 
-		cubemapFramebuffer.Clear(deviceContext.platform_context,0.5f,0.5f,0.5,0.f,0.f);
-		envmapFramebuffer.Clear(deviceContext.platform_context,0.5f,0.5f,0.5,0.f,0.f);
+		cubemapFramebuffer.Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
+		envmapFramebuffer.Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
 		SAFE_RELEASE(pImmediateContext);
 	}
 	//if(!demoOverlay)
@@ -270,7 +269,7 @@ ERRNO_CHECK
 	{
 ERRNO_CHECK
 		cubemapFramebuffer.SetCurrentFace(i);
-	cubemapFramebuffer.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+	cubemapFramebuffer.Clear(deviceContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		cubemapFramebuffer.Activate(deviceContext);
 		static float nearPlane	=10.f;
 		static float farPlane	=200000.f;
@@ -470,7 +469,7 @@ void Direct3D11Renderer::RenderToOculus(crossplatform::DeviceContext &deviceCont
 	if(hdr)
 	{
 		view->GetFramebuffer()->Activate(deviceContext);
-		view->GetFramebuffer()->Clear(deviceContext.asD3D11DeviceContext(),0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+		view->GetFramebuffer()->Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f);
 		}
 	else
 	{
@@ -508,7 +507,7 @@ void Direct3D11Renderer::RenderToOculus(crossplatform::DeviceContext &deviceCont
 	if(hdr)
 	{
 		view->GetFramebuffer()->Activate(deviceContext);
-		view->GetFramebuffer()->Clear(deviceContext.asD3D11DeviceContext(),0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+		view->GetFramebuffer()->Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f);
 	}
 	else
 	{
@@ -610,7 +609,7 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 	if(hdr)
 	{
 		view->GetFramebuffer()->Activate(deviceContext);
-		view->GetFramebuffer()->Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+		view->GetFramebuffer()->Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f);
 	}
 	else
 	{
@@ -628,7 +627,7 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 		msaaFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);// NOTE: D16_UNORM does NOT work well here.
 		msaaFramebuffer.SetWidthAndHeight(view->ScreenWidth,view->ScreenHeight);
 		msaaFramebuffer.Activate(deviceContext);
-		msaaFramebuffer.Clear(deviceContext.platform_context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f, 0);
+		msaaFramebuffer.Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f, 0);
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
 		// Don't need to pass a depth texture because we know depth is active here.

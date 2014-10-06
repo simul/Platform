@@ -176,7 +176,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	if(buffered)
 	{
 		fb->GetLowResFarFramebuffer()->Activate(deviceContext);
-		fb->GetLowResFarFramebuffer()->Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.f:1.f);
+		fb->GetLowResFarFramebuffer()->Clear(deviceContext, 0.0f, 0.0f, 0.f, 1.f, ReverseDepth ? 0.f : 1.f);
 	}
 	math::Vector3 cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
 	if(baseSkyRenderer)

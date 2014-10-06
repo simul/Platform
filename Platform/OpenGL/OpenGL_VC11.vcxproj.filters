@@ -384,6 +384,9 @@
     <None Include="GLSL\rain.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\simul_clouds.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

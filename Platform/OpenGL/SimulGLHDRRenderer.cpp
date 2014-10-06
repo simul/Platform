@@ -93,7 +93,7 @@ void SimulGLHDRRenderer::InvalidateDeviceObjects()
 bool SimulGLHDRRenderer::StartRender(crossplatform::DeviceContext &deviceContext)
 {
 	framebuffer.Activate(deviceContext);
-	framebuffer.Clear(deviceContext.platform_context,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	framebuffer.Clear(deviceContext, 1.f, 0.f, 0.f, 1.f, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	GL_ERROR_CHECK
 	return true;
 }

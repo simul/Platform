@@ -44,9 +44,9 @@ namespace simul
 			void Deactivate(crossplatform::DeviceContext &context);
 			void DeactivateDepth(crossplatform::DeviceContext &context);
 			void Render(bool){}
-			void Clear(void *context,float,float,float,float,float,int mask=0);
-			void ClearColour(void* context, float, float, float, float );
-			void CopyToMemory(void* /*context*/,void *,int,int){}
+			void Clear(crossplatform::DeviceContext &context, float, float, float, float, float, int mask = 0);
+			void ClearColour(crossplatform::DeviceContext &context, float, float, float, float);
+			void CopyToMemory(crossplatform::DeviceContext &context, void *, int, int){}
 			virtual void* GetColorTex()
 			{
 				return (void*)texture->AsD3D11ShaderResourceView();

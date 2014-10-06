@@ -28,7 +28,6 @@
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
 
 #include "Simul/Platform/DirectX11/SaveTextureDX1x.h"
-#include "SimulCloudRendererDX1x.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Clouds/BaseLightningRenderer.h"
 #include "Simul/Base/Timer.h"
@@ -50,7 +49,7 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	sky::SkyKeyframer *sk			=env->skyKeyframer;
 	clouds::CloudKeyframer *ck3d	=env->cloudKeyframer;
 	baseSkyRenderer					=::new(memoryInterface) sky::BaseSkyRenderer(sk, memoryInterface);
-	baseCloudRenderer				=::new(memoryInterface) SimulCloudRendererDX1x(ck3d, memoryInterface);
+	baseCloudRenderer				=::new(memoryInterface) clouds::BaseCloudRenderer(ck3d, memoryInterface);
 
 	ConnectInterfaces();
 }
@@ -99,7 +98,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 		if(gamma_correction)
 		{
 			gamma_correct.Activate(deviceContext);
-			gamma_correct.Clear(deviceContext.asD3D11DeviceContext(),0.f,0.f,0.f,0.f,0.f);
+			gamma_correct.Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, 0.f);
 		}
 		if(baseSkyRenderer)
 		{

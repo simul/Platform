@@ -40,5 +40,6 @@ void main(void)
     // gamma correction
 	//../c.rgb = pow(c.rgb,vec3(gamma,gamma,gamma));
 	//c.a=1.0-pow(1.0-c.a,gamma);
+	c.b=1.0;
     FragColor=c;
 }

@@ -57,11 +57,14 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	gpuCloudConstants.Release();
 	maskTexture.InvalidateDeviceObjects();
 	SAFE_DELETE_TEXTURE(volume_noise_tex);
+	renderPlatform = NULL;
 }
 
 void GpuCloudGenerator::RecompileShaders()
 {
 	BaseGpuCloudGenerator::RecompileShaders();
+	if (!renderPlatform)
+		return;
 	SAFE_DELETE_PROGRAM(transform_program);
 	transform_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_transform.frag");
 	gpuCloudConstants	.LinkToProgram(effect->GetTechniqueByName("gpu_density")->passAsGLuint(0),"GpuCloudConstants",8);
@@ -334,7 +337,7 @@ GL_ERROR_CHECK
 	if(z0==0)
 	{
 		F[0]->Activate(deviceContext);
-			F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
+		F[0]->Clear(deviceContext, 1.f, 1.f, 1.f, 1.f, 1.f);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			if(target)
 				glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
@@ -356,7 +359,7 @@ GL_ERROR_CHECK
 		gpuCloudConstants.Apply();
 		F[1]->Activate(deviceContext);
 float u=(float)i/(float)z1;
-F[1]->Clear(NULL,u,u,u,u,1.f);
+F[1]->Clear(deviceContext, u, u, u, u, 1.f);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
 			glOrtho(0,1.0,0,1.0,-1.0,1.0);

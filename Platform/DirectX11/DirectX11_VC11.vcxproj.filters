@@ -42,9 +42,6 @@
     <ClCompile Include="SaveTextureDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulCloudRendererDX1x.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SimulHDRRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -140,9 +137,6 @@
     <ClInclude Include="SaveTextureDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulCloudRendererDX1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SimulHDRRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -233,9 +227,6 @@
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_debug.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_clouds.fx">
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_clouds_2d.fx">
@@ -416,6 +407,9 @@
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="HLSL\hdr.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\clouds.fx">
       <Filter>FX</Filter>
     </None>
   </ItemGroup>
