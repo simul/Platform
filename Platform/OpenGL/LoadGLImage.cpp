@@ -48,7 +48,7 @@ static bool FileExists(const string& filename_utf8)
 	return bExists;
 }
 
-unsigned char *LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
+unsigned char *LoadBitmap(const char *filename_utf8,unsigned &bpp,int &width,int &height)
 {
 ERRNO_CHECK
 #ifdef _MSC_VER
@@ -99,7 +99,7 @@ GLuint LoadGLImage(const char *filename_utf8,unsigned wrap,int *w,int *h)
 		return 0;
 #ifdef _MSC_VER
 	unsigned bpp=0;
-	unsigned width,height;
+	int width,height;
 	BYTE *pixels=(BYTE*)LoadBitmap(fn.c_str(),bpp,width,height);
 	if(!pixels)
 		return 0;
@@ -192,7 +192,7 @@ GL_ERROR_CHECK
 	delete [] pixels;
 }
 #include "Simul/Base/FileLoader.h"
-unsigned char *LoadGLBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
+unsigned char *LoadGLBitmap(const char *filename_utf8,unsigned &bpp,int &width,int &height)
 {
 ERRNO_CHECK
 	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);

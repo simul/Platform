@@ -1,8 +1,7 @@
 #ifndef OPTICS_CONSTANTS_SL
 #define OPTICS_CONSTANTS_SL
 
-uniform_buffer OpticsConstants SIMUL_BUFFER_REGISTER(10)
-{
+SIMUL_CONSTANT_BUFFER(OpticsConstants,10)
 	uniform mat4 worldViewProj;
 	uniform vec4 colour;
 	uniform mat4 view;			// Necessary??
@@ -16,6 +15,6 @@ uniform_buffer OpticsConstants SIMUL_BUFFER_REGISTER(10)
 
 	uniform float rainbowIntensity;
 	uniform float dropletRadius,ahgage,aejhue;
-};
+SIMUL_CONSTANT_BUFFER_END
 
 #endif

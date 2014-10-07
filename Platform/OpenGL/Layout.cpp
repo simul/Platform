@@ -4,7 +4,7 @@
 using namespace simul;
 using namespace opengl;
 
-Layout::Layout():vao(0)
+Layout::Layout()
 {
 }
 
@@ -23,8 +23,6 @@ void Layout::Apply(crossplatform::DeviceContext &)
 	//glEnableClientState(GL_VERTEX_ARRAY);
 	//glClientActiveTexture(GL_TEXTURE0);
 //	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	GL_ERROR_CHECK
-	glBindVertexArray( vao );
 	GL_ERROR_CHECK
 }
 void Layout::Unapply(crossplatform::DeviceContext &)

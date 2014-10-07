@@ -48,6 +48,60 @@ void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *,const char *p
 	return ;
 }
 
+void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files)
+{
+ERRNO_CHECK
+	glGenTextures(1, &pTextureObject);
+	if(!IsExtensionSupported("GL_EXT_texture_array"))
+	{
+		simul::base::RuntimeError("LoadTextureArray needs the GL_EXT_texture_array extension.");
+		return;
+	}
+ERRNO_CHECK
+	//GL_TEXTURE_2D_ARRAY_EXT
+	glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, pTextureObject);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//glTexParameterfv(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_BORDER_COLOR, borderColor);
+	unsigned bpp;
+	GL_ERROR_CHECK
+	unsigned char *data=LoadGLBitmap(texture_files[0].c_str(),bpp,width,length);
+ERRNO_CHECK
+	if(!data)
+		return;
+	delete [] data;
+	GL_ERROR_CHECK
+	dim=2;
+	depth=texture_files.size();
+	int num_mips=8;
+	int m=1;
+	for(int i=0;i<num_mips;i++)
+	{
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, i,GL_RGBA	,width/m,length/m,depth,0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	GL_ERROR_CHECK
+		if(i==0)
+		{
+			for(int j=0;j<depth;j++)
+			{
+				unsigned char *data=LoadGLBitmap(texture_files[j].c_str(),bpp,width,length);
+				glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,j,width/m,length/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,data);
+			}
+		}
+	GL_ERROR_CHECK
+		m*=2;
+	}
+	GL_ERROR_CHECK
+	//glTexImage3D	(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA, width/2, height/2, num_layers, ...);
+	//glTexImage3D	(GL_TEXTURE_2D_ARRAY, 2, GL_RGBA, width/4, height/4, num_layers, ...);
+
+	glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+	GL_ERROR_CHECK
+ERRNO_CHECK
+}
+
 bool opengl::Texture::IsValid() const
 {
 	return (pTextureObject>0);

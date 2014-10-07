@@ -67,10 +67,6 @@ void SimulGLHDRRenderer::RecompileShaders()
 {
 	GL_ERROR_CHECK
 ERRNO_CHECK
-
-	glow_program		=MakeProgram("simple.vert",NULL,"simul_glow.frag");
-	blur_program		=MakeProgram("simple.vert",NULL,"simul_hdr_blur.frag");
-ERRNO_CHECK
 	std::map<std::string,std::string> defines;
 	effect				=renderPlatform->CreateEffect("hdr",defines);
 	tech				=effect->GetTechniqueByName("tonemap");
@@ -98,8 +94,6 @@ GL_ERROR_CHECK
 	framebuffer.Deactivate(deviceContext);
 	RenderGlowTexture(deviceContext);
 	effect->Apply(deviceContext,tech,0);
-	//effect->SetParameter("exposure",exposure);
-	//effect->SetParameter("gamma",gamma);
 	
 	effect->SetTexture(deviceContext,"image_texture",framebuffer.GetTexture());
 	effect->SetTexture(deviceContext,"glowTexture",glow_fb.GetTexture());
@@ -124,28 +118,30 @@ void SimulGLHDRRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceC
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	// Render to the low-res glow.
 	glDisable(GL_BLEND);
-	glUseProgram(glow_program);
+	effect->Apply(deviceContext,effect->GetTechniqueByName("glow"),0);
 	glow_fb.Activate(deviceContext);
 	{
-		setTexture(glow_program,"image_texture",0,(GLuint)framebuffer.GetColorTex());
+		effect->SetTexture(deviceContext,"image_texture",framebuffer.GetTexture());
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
 		SetOrthoProjection(glow_viewport[2],glow_viewport[3]);
-		setParameter(glow_program,"offset",1.f/(float)main_viewport[2],1.f/main_viewport[3]);
-		setParameter(glow_program,"exposure",Exposure);
+		hdrConstants.offset=vec2(1.f/(float)main_viewport[2],1.f/main_viewport[3]);
+		hdrConstants.exposure=Exposure;
+		hdrConstants.Apply(deviceContext);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
 	glow_fb.Deactivate(deviceContext);
-
+	effect->Unapply(deviceContext);
 	// blur horizontally:
-	glUseProgram(blur_program);
+	effect->Apply(deviceContext,effect->GetTechniqueByName("blur"),0);
 	alt_fb.Activate(deviceContext);
 	{
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
 		SetOrthoProjection(glow_viewport[2],glow_viewport[3]);
-		setTexture(blur_program,"image_texture",0,(GLuint)glow_fb.GetColorTex());
-		setParameter(blur_program,"offset",1.f/(float)glow_viewport[2],0.f);
+		effect->SetTexture(deviceContext,"image_texture",glow_fb.GetTexture());
+		hdrConstants.offset=vec2(1.f/(float)glow_viewport[2],0.f);
+		hdrConstants.Apply(deviceContext);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
 	alt_fb.Deactivate(deviceContext);
@@ -155,11 +151,12 @@ void SimulGLHDRRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceC
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
 		SetOrthoProjection(glow_viewport[2],glow_viewport[3]);
-		setTexture(blur_program,"image_texture",0,(GLuint)alt_fb.GetColorTex());
-		setParameter(blur_program,"offset",0.f,0.5f/(float)glow_viewport[3]);
+		effect->SetTexture(deviceContext,"image_texture",alt_fb.GetTexture());
+		hdrConstants.offset=vec2(0.f,0.5f/(float)glow_viewport[3]);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
 	glow_fb.Deactivate(deviceContext);
+	effect->Unapply(deviceContext);
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);

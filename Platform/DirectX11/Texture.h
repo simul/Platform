@@ -31,6 +31,7 @@ namespace simul
 			~Texture();
 			void InvalidateDeviceObjects();
 			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
+			void LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files);
 			bool IsValid() const;
 			virtual ID3D11Texture2D *AsD3D11Texture2D()
 			{

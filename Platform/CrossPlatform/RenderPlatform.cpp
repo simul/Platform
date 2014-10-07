@@ -38,6 +38,21 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	desc.blend.RenderTarget[0].SrcBlendAlpha		=crossplatform::BLEND_SRC_ALPHA;
 	desc.blend.RenderTarget[0].DestBlendAlpha		=crossplatform::BLEND_INV_SRC_ALPHA;
 	RenderState *alpha=standardRenderStates[STANDARD_ALPHA_BLENDING]=CreateRenderState(desc);
+	
+	memset(&desc,0,sizeof(desc));
+	desc.type=crossplatform::DEPTH;
+	desc.depth.comparison	=crossplatform::DepthComparison::DEPTH_GREATER_EQUAL;
+	desc.depth.test			=true;
+	desc.depth.write		=true;
+
+	RenderState *depth_ge=standardRenderStates[STANDARD_DEPTH_GREATER_EQUAL]=CreateRenderState(desc);
+	desc.depth.comparison	=crossplatform::DepthComparison::DEPTH_LESS_EQUAL;
+	RenderState *depth_le=standardRenderStates[STANDARD_DEPTH_LESS_EQUAL]=CreateRenderState(desc);
+	desc.depth.test			=false;
+	desc.depth.write		=false;
+	RenderState *depth_no=standardRenderStates[STANDARD_DEPTH_DISABLE]=CreateRenderState(desc);
+
+
 	SAFE_DELETE(textRenderer);
 	textRenderer=new TextRenderer;
 	textRenderer->RestoreDeviceObjects(this);

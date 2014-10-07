@@ -27,7 +27,7 @@ namespace simul
 	namespace camera
 	{
 		class CameraOutputInterface;
-		class CameraOutputInterface;
+		class BaseOpticsRenderer;
 	}
 	namespace clouds
 	{
@@ -58,7 +58,6 @@ namespace simul
 		class SimulHDRRendererDX1x;
 		class TerrainRenderer;
 		class OceanRenderer;
-		class SimulOpticsRendererDX1x;
 		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface
@@ -162,7 +161,7 @@ namespace simul
 			ID3D11Device								*m_pd3dDevice;
 			ID3DX11Effect								*lightProbesEffect;
 			crossplatform::Effect						*linearizeDepthEffect;
-			SimulOpticsRendererDX1x						*simulOpticsRenderer;
+			camera::BaseOpticsRenderer					*baseOpticsRenderer;
 			SimulWeatherRendererDX11					*simulWeatherRenderer;
 			SimulHDRRendererDX1x						*simulHDRRenderer;
 			TerrainRenderer								*simulTerrainRenderer;

@@ -194,11 +194,8 @@
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SimulGLCloudRenderer.cpp" />
     <ClCompile Include="SimulGLHDRRenderer.cpp" />
-    <ClCompile Include="SimulGLSkyRenderer.cpp" />
-    <ClCompile Include="SimulGLTerrainRenderer.cpp" />
     <ClCompile Include="SimulGLUtilities.cpp" />
     <ClCompile Include="SimulGLWeatherRenderer.cpp" />
-    <ClCompile Include="SimulOpticsRendererGL.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -220,11 +217,8 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="SimulGLCloudRenderer.h" />
     <ClInclude Include="SimulGLHDRRenderer.h" />
-    <ClInclude Include="SimulGLSkyRenderer.h" />
-    <ClInclude Include="SimulGLTerrainRenderer.h" />
     <ClInclude Include="SimulGLUtilities.h" />
     <ClInclude Include="SimulGLWeatherRenderer.h" />
-    <ClInclude Include="SimulOpticsRendererGL.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
@@ -237,6 +231,7 @@
     <None Include="GLSL\debug.glfx" />
     <None Include="GLSL\font.glfx" />
     <None Include="GLSL\hdr.glfx" />
+    <None Include="GLSL\optics.glfx" />
     <None Include="GLSL\rain.glfx" />
     <None Include="GLSL\saturate.glsl" />
     <None Include="GLSL\simple.frag" />
@@ -302,6 +297,7 @@
     <None Include="GLSL\simul_terrain.vert" />
     <None Include="GLSL\sky.glfx" />
     <None Include="GLSL\sky.nvfx" />
+    <None Include="GLSL\terrain.glfx" />
     <None Include="GLSL\tonemap.frag" />
     <None Include="GLSL\tonemap.vert" />
   </ItemGroup>

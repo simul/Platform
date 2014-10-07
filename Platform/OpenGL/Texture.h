@@ -41,6 +41,7 @@ glDeleteSamplers(1, &sampler_state);
 			Texture();
 			~Texture();
 			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
+			void LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files);
 			bool IsValid() const;
 			void InvalidateDeviceObjects();
 			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()

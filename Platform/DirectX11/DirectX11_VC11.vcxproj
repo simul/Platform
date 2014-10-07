@@ -195,7 +195,6 @@
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
-    <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
     <ClCompile Include="TerrainRenderer.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
     <ClCompile Include="Texture.cpp" />
@@ -229,7 +228,6 @@
     <ClInclude Include="ResourcesDx1x.h" />
     <ClInclude Include="SaveTextureDX1x.h" />
     <ClInclude Include="SimulHDRRendererDX1x.h" />
-    <ClInclude Include="SimulOpticsRendererDX1x.h" />
     <ClInclude Include="TerrainRenderer.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />
     <ClInclude Include="Texture.h" />
@@ -292,7 +290,7 @@
     <None Include="HLSL\simul_lightning.fx" />
     <None Include="HLSL\simul_rendernoise.fx" />
     <None Include="HLSL\sky.fx" />
-    <None Include="HLSL\simul_terrain.fx" />
+    <None Include="HLSL\terrain.fx" />
     <None Include="HLSL\spherical_harmonics.fx" />
   </ItemGroup>
   <ItemGroup>

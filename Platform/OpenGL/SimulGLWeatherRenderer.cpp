@@ -7,9 +7,9 @@
 #include "FramebufferGL.h"
 #include "LoadGLProgram.h"
 #include "SimulGLWeatherRenderer.h"
-#include "SimulGLSkyRenderer.h"
 #include "SimulGLCloudRenderer.h"
 #include "Simul/Clouds/BaseLightningRenderer.h"
+#include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
 #include "SimulGLUtilities.h"
@@ -41,7 +41,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 {
 	simul::sky::SkyKeyframer *sk=environment->skyKeyframer;
 	simul::clouds::CloudKeyframer *ck3d=environment->cloudKeyframer;
-	baseSkyRenderer						=::new(memoryInterface) SimulGLSkyRenderer(sk,memoryInterface);
+	baseSkyRenderer						=::new(memoryInterface) sky::BaseSkyRenderer(sk,memoryInterface);
 	baseCloudRenderer					=::new(memoryInterface) SimulGLCloudRenderer(ck3d,mem);
 
 	EnableCloudLayers();

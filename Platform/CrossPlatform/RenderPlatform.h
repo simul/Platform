@@ -50,7 +50,7 @@ namespace simul
 		struct Viewport
 		{
 			int x,y;
-			unsigned w,h;
+			int w,h;
 			float znear,zfar;
 		};
 		/// Base class for API-specific rendering.
@@ -112,7 +112,7 @@ namespace simul
 			virtual void Draw2dLines		(DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)		=0;
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false)		=0;
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0,bool centred=false)		=0;
-			virtual void					SetModelMatrix					(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData)	=0;
+			virtual void SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData)	=0;
 			virtual void					ApplyDefaultMaterial			()	=0;
 			/// Create a platform-specific material instance.
 			virtual Material				*CreateMaterial					()	=0;
@@ -139,7 +139,7 @@ namespace simul
 			/// Create a platform-specific buffer instance - e.g. vertex buffers, index buffers etc.
 			virtual Buffer					*CreateBuffer					()	=0;
 			/// Create a platform-specific layout instance based on the given layout description \em layoutDesc and buffer \em buffer.
-			virtual Layout					*CreateLayout					(int num_elements,LayoutDesc *layoutDesc,Buffer *buffer)	=0;
+			virtual Layout					*CreateLayout					(int num_elements,const LayoutDesc *layoutDesc)	=0;
 			/// Create a platform-specific RenderState object - e.g. a Blend state, Depth state, etc.
 			virtual RenderState				*CreateRenderState				(const RenderStateDesc &desc)=0;
 			/// Create an API-specific query object, e.g. for occlusion or timing tests.

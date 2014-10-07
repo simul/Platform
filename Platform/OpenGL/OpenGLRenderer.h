@@ -2,7 +2,7 @@
 #include "Simul/Platform/OpenGL/OpenGLCallbackInterface.h"
 #include "Simul/Platform/OpenGL/SimulGLWeatherRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLHDRRenderer.h"
-#include "Simul/Platform/OpenGL/SimulOpticsRendererGL.h"
+#include "Simul/Camera/BaseOpticsRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Base/PropertyMacros.h"
@@ -27,6 +27,10 @@ namespace simul
 	{
 		class Scene;
 		class BaseSceneRenderer;
+	}
+	namespace terrain
+	{
+		class BaseTerrainRenderer;
 	}
 	namespace opengl
 	{
@@ -57,7 +61,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			simul::opengl::SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer;}
 			SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer;}
-			class SimulGLTerrainRenderer *GetTerrainRenderer(){return simulTerrainRenderer;}
+			class simul::terrain::BaseTerrainRenderer *GetTerrainRenderer(){return baseTerrainRenderer;}
 			void SetCamera(simul::camera::Camera *c);
 			void ReloadTextures();
 			void RecompileShaders();
@@ -67,8 +71,8 @@ namespace simul
 			void ReverseDepthChanged();
 			simul::opengl::SimulGLWeatherRenderer *simulWeatherRenderer;
 			SimulGLHDRRenderer *simulHDRRenderer;
-			SimulOpticsRendererGL *simulOpticsRenderer;
-			class SimulGLTerrainRenderer *simulTerrainRenderer;
+			simul::camera::BaseOpticsRenderer *baseOpticsRenderer;
+			class simul::terrain::BaseTerrainRenderer *baseTerrainRenderer;
 			scene::BaseSceneRenderer *sceneRenderer;
 			FramebufferGL depthFramebuffer;
 			simul::camera::Camera *cam;

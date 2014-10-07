@@ -85,7 +85,7 @@ float4 PS_Main( vertexOutput IN) : SV_TARGET
     return result;
 }
 
-technique11 simul_terrain
+technique11 terrain
 {
     pass base 
     {

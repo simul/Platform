@@ -10,6 +10,8 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 
 	uniform vec2 offset;
 	uniform float nearZ,farZ;
+	
+	uniform vec4 colour2;
 
 	uniform vec2 tanHalfFov;
 	uniform float exposure;
@@ -31,7 +33,8 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform uint2 lowResDims;
 
 	uniform uint2 fullResDims;
-	uniform int numSamples,dlydyk;
+	uniform int numSamples;
+	uniform float ahhrastjk;
 SIMUL_CONSTANT_BUFFER_END
 	
 SIMUL_CONSTANT_BUFFER(rectConstants,11)

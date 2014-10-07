@@ -498,7 +498,13 @@ GL_ERROR_CHECK
 				opengl::RenderPlatform::ToGLFormat(tex->GetFormat()));
 		//glBindImageTexture(0, volume_tid, 0, /*layered=*/GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 		else
-			glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
+		{
+			// 2D but depth>1? That's an ARRAY texture.
+			if(tex->GetDepth()>1)
+				glBindTexture(GL_TEXTURE_2D_ARRAY, tex->AsGLuint());
+			else
+				glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
+		}
 GL_ERROR_CHECK
 	}
 	else if(tex->GetDimension()==3)

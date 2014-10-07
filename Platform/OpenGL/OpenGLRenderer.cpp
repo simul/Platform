@@ -10,9 +10,8 @@
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
-#include "Simul/Platform/OpenGL/SimulGLSkyRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLCloudRenderer.h"
-#include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
+#include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Scene/Scene.h"
 #include "Simul/Scene/Object.h"
@@ -20,6 +19,8 @@
 #include "Simul/Scene/BaseSceneRenderer.h"
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Terrain/BaseTerrainRenderer.h"
+#include "Simul/Camera/BaseOpticsRenderer.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
@@ -71,9 +72,9 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 {
 	simulHDRRenderer		=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
 	simulWeatherRenderer	=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
-	simulOpticsRenderer		=new SimulOpticsRendererGL(m);
-	simulTerrainRenderer	=new SimulGLTerrainRenderer(NULL);
-	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
+	baseOpticsRenderer		=new simul::camera::BaseOpticsRenderer(m);
+	baseTerrainRenderer		=new simul::terrain::BaseTerrainRenderer(NULL);
+	baseTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	if(!renderPlatform)
 		renderPlatform		=new opengl::RenderPlatform;
 	if(sc)
@@ -100,8 +101,8 @@ ERRNO_CHECK
 GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(simple_program);
 GL_ERROR_CHECK
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->InvalidateDeviceObjects();
+	if(baseTerrainRenderer)
+		baseTerrainRenderer->InvalidateDeviceObjects();
 GL_ERROR_CHECK
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
@@ -123,8 +124,8 @@ GL_ERROR_CHECK
 	delete renderPlatform;
 	delete simulHDRRenderer;
 	delete simulWeatherRenderer;
-	delete simulOpticsRenderer;
-	delete simulTerrainRenderer;
+	delete baseOpticsRenderer;
+	delete baseTerrainRenderer;
 }
 
 void OpenGLRenderer::initializeGL()
@@ -158,19 +159,19 @@ GL_ERROR_CHECK
 	depthFramebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
 	depthFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
 ERRNO_CHECK
+	renderPlatform->RestoreDeviceObjects(NULL);
+ERRNO_CHECK
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(renderPlatform);
 ERRNO_CHECK
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects(renderPlatform);
 ERRNO_CHECK
-	if(simulOpticsRenderer)
-		simulOpticsRenderer->RestoreDeviceObjects(NULL);
+	if(baseOpticsRenderer)
+		baseOpticsRenderer->RestoreDeviceObjects(renderPlatform);
 ERRNO_CHECK
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->RestoreDeviceObjects(NULL);
-ERRNO_CHECK
-	renderPlatform->RestoreDeviceObjects(NULL);
+	if(baseTerrainRenderer)
+		baseTerrainRenderer->RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 ERRNO_CHECK
 }
@@ -206,8 +207,8 @@ void OpenGLRenderer::paintGL()
 		renderPlatform->SetReverseDepth(ReverseDepth);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->SetReverseDepth(ReverseDepth);
+	if(baseTerrainRenderer)
+		baseTerrainRenderer->SetReverseDepth(ReverseDepth);
 	glClearColor(0,1,0,1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	glPushAttrib(GL_ENABLE_BIT);
@@ -246,8 +247,8 @@ void OpenGLRenderer::paintGL()
 			sceneRenderer->Render(deviceContext,physicalLightRenderData);
 		}
 		
-		if(simulTerrainRenderer&&ShowTerrain)
-			simulTerrainRenderer->Render(deviceContext,1.f);
+		if(baseTerrainRenderer&&ShowTerrain)
+			baseTerrainRenderer->Render(deviceContext,1.f);
 		simulWeatherRenderer->RenderCelestialBackground(deviceContext,depthFramebuffer.GetDepthTexture(),exposure);
 		depthFramebuffer.Deactivate(deviceContext);
 		{
@@ -267,7 +268,7 @@ void OpenGLRenderer::paintGL()
 			,simul::sky::float4(0,0,1.f,1.f),true);
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
 
-		if(simulOpticsRenderer&&ShowFlares)
+		if(baseOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light,cam_pos;
 			dir=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
@@ -275,7 +276,7 @@ void OpenGLRenderer::paintGL()
 			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ=simulWeatherRenderer->GetBaseSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-			simulOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTex(),dir,light);
+			baseOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTex(),dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
@@ -363,8 +364,8 @@ void OpenGLRenderer::RecompileShaders()
 		simulHDRRenderer->RecompileShaders();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RecompileShaders();
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->RecompileShaders();
+	if(baseTerrainRenderer)
+		baseTerrainRenderer->RecompileShaders();
 	SAFE_DELETE_PROGRAM(simple_program);
 	simple_program=MakeProgram("simple.vert",NULL,"simple.frag");
 }

@@ -27,11 +27,16 @@ namespace simul
 		{
 		protected:
 			int apply_count;
+			int struct_size;
 			std::vector<LayoutDesc> parts;
 		public:
 			Layout();
 			virtual ~Layout();
 			void SetDesc(const LayoutDesc *d,int num);
+			const std::vector<LayoutDesc> &GetDesc() const
+			{
+				return parts;
+			}
 			virtual void InvalidateDeviceObjects(){}
 			virtual ID3D11InputLayout *AsD3D11InputLayout()
 			{
@@ -39,6 +44,7 @@ namespace simul
 			}
 			virtual void Apply(DeviceContext &deviceContext)=0;
 			virtual void Unapply(DeviceContext &deviceContext)=0;
+			int GetStructSize() const;
 		};
 	}
 }

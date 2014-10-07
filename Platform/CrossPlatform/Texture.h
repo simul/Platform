@@ -3,6 +3,8 @@
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include <vector>
+#include <string>
 struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 struct ID3D11DepthStencilView;
@@ -49,6 +51,7 @@ namespace simul
 	,pixelFormat(crossplatform::UNKNOWN){}
 			virtual ~Texture();
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
+			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
@@ -83,9 +86,22 @@ namespace simul
 			virtual void activateRenderTarget(DeviceContext &deviceContext)=0;
 			//! Deactivate as a rendertarget.
 			virtual void deactivateRenderTarget()=0;
-			virtual int GetLength() const=0;
-			virtual int GetWidth() const=0;
-			virtual int GetDimension() const=0;
+			virtual int GetLength() const
+			{
+				return length;
+			}
+			virtual int GetWidth() const
+			{
+				return width;
+			}
+			virtual int GetDepth() const
+			{
+				return depth;
+			}
+			virtual int GetDimension() const
+			{
+				return dim;
+			}
 			//! If the texture is multisampled, this returns the samples per texel. Zero means it is not an MS texture,
 			//! while 1 means it is MS, even though the sample count is unity.
 			virtual int GetSampleCount() const=0;

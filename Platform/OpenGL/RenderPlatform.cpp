@@ -672,30 +672,10 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 	};
 }
 
-crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,crossplatform::LayoutDesc *desc,crossplatform::Buffer *buffer)
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
 {
 	opengl::Layout *l=new opengl::Layout();
 	l->SetDesc(desc,num_elements);
-GL_ERROR_CHECK
-	SAFE_DELETE_VAO(l->vao);
-	glGenVertexArrays(1,&l->vao );
-	glBindVertexArray(l->vao);
-	SIMUL_ASSERT(buffer->AsGLuint()!=0);
-	glBindBuffer(GL_ARRAY_BUFFER,buffer->AsGLuint());
-	for(int i=0;i<num_elements;i++)
-	{
-		const crossplatform::LayoutDesc &d=desc[i];
-		glEnableVertexAttribArray( i );
-		glVertexAttribPointer( i						// Attribute bind location
-								,FormatCount(d.format)	// Data type count
-								,DataType(d.format)				// Data type
-								,GL_FALSE				// Normalise this data type?
-								,buffer->stride			// Stride to the next vertex
-								,(GLvoid*)d.alignedByteOffset );	// Vertex Buffer starting offset
-	};
-	
-	glBindVertexArray( 0 ); 
-GL_ERROR_CHECK
 	return l;
 }
 
@@ -800,6 +780,18 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,
 		else
 			glDisable(GL_BLEND);
 	}
+	else if(S->desc.type==crossplatform::DEPTH)
+	{
+		if(S->desc.depth.test)
+			glEnable(GL_DEPTH_TEST);
+		else
+			glDisable(GL_DEPTH_TEST);
+		if(S->desc.depth.write)
+			glDepthMask(GL_TRUE);
+		else
+			glDepthMask(GL_FALSE);
+		glDepthFunc(toGlComparison(S->desc.depth.comparison));
+	}
 }
 
 void *RenderPlatform::GetDevice()
@@ -809,6 +801,8 @@ void *RenderPlatform::GetDevice()
 
 void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &,int ,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout)
 {
+	GL_ERROR_CHECK
+	glBindVertexArray(((opengl::Buffer*)buffers[0])->vao );
 	GL_ERROR_CHECK
 	/*
 	for(int i=0;i<num_buffers;i++)

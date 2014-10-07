@@ -9,10 +9,11 @@
 #include "Simul/Platform/DirectX11/TerrainRenderer.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
+#include "Simul/Camera/BaseOpticsRenderer.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
-#include "Simul/Platform/DirectX11/SimulOpticsRendererDX1x.h"
+#include "Simul/Camera/BaseOpticsRenderer.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
@@ -58,7 +59,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,m_pd3dDevice(NULL)
 		,lightProbesEffect(NULL)
 		,linearizeDepthEffect(NULL)
-		,simulOpticsRenderer(NULL)
+		,baseOpticsRenderer(NULL)
 		,simulWeatherRenderer(NULL)
 		,simulHDRRenderer(NULL)
 		,simulTerrainRenderer(NULL)
@@ -76,7 +77,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 	sc;
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
-	simulOpticsRenderer		=::new(memoryInterface) SimulOpticsRendererDX1x(memoryInterface);
+	baseOpticsRenderer		=::new(memoryInterface) camera::BaseOpticsRenderer(memoryInterface);
 	simulTerrainRenderer	=::new(memoryInterface) TerrainRenderer(memoryInterface);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 
@@ -104,7 +105,7 @@ Direct3D11Renderer::~Direct3D11Renderer()
 #ifdef SIMUL_USE_SCENE
 	del(sceneRenderer,memoryInterface);
 #endif
-	del(simulOpticsRenderer,memoryInterface);
+	del(baseOpticsRenderer,memoryInterface);
 	del(simulWeatherRenderer,memoryInterface);
 	del(simulHDRRenderer,memoryInterface);
 	del(simulTerrainRenderer,memoryInterface);
@@ -136,8 +137,8 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 		simulHDRRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(&renderPlatformDx11);
-	if(simulOpticsRenderer)
-		simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
+	if(baseOpticsRenderer)
+		baseOpticsRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	if(oceanRenderer)
@@ -711,7 +712,7 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 		if(simulHDRRenderer)
 			simulHDRRenderer->Render(deviceContext,view->GetResolvedHDRBuffer(),cameraViewStruct.exposure,cameraViewStruct.gamma);
 	}
-	if(simulOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetBaseSkyRenderer())
+	if(baseOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetBaseSkyRenderer())
 	{
 		simul::sky::float4 dir,light;
 		math::Vector3 cam_pos	=GetCameraPosVector(deviceContext.viewStruct.view);
@@ -719,7 +720,7 @@ void Direct3D11Renderer::RenderStandard(crossplatform::DeviceContext &deviceCont
 		light					=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 		float occ				=simulWeatherRenderer->GetBaseSkyRenderer()->GetSunOcclusion();
 		float exp				=(hdr?cameraViewStruct.exposure:1.f)*(1.f-occ);
-		simulOpticsRenderer->RenderFlare(deviceContext,exp,NULL,dir,light);
+		baseOpticsRenderer->RenderFlare(deviceContext,exp,NULL,dir,light);
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
@@ -853,8 +854,8 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 		simulWeatherRenderer->InvalidateDeviceObjects();
 	if(simulHDRRenderer)
 		simulHDRRenderer->InvalidateDeviceObjects();
-	if(simulOpticsRenderer)
-		simulOpticsRenderer->InvalidateDeviceObjects();
+	if(baseOpticsRenderer)
+		baseOpticsRenderer->InvalidateDeviceObjects();
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
 	if(oceanRenderer)
@@ -895,8 +896,8 @@ void Direct3D11Renderer::RecompileShaders()
 	renderPlatformDx11.RecompileShaders();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RecompileShaders();
-	if(simulOpticsRenderer)
-		simulOpticsRenderer->RecompileShaders();
+	if(baseOpticsRenderer)
+		baseOpticsRenderer->RecompileShaders();
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RecompileShaders();
 	if(oceanRenderer)

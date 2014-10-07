@@ -73,12 +73,6 @@ void OceanRenderer::RecompileShaders()
 	defines["FX"]="1";
 	effect=renderPlatform->CreateEffect("ocean.fx",defines);
 
-	SAFE_DELETE(layout);
-	crossplatform::LayoutDesc desc[]=
-	{
-		{ "POSITION",	0, crossplatform::RG_32_FLOAT	,		0,	0,	false, 0 },
-	};
-	layout=renderPlatform->CreateLayout(1,desc,vertexBuffer);
 
 	if(oceanSimulator)
 		oceanSimulator->SetShader(effect);
@@ -180,10 +174,16 @@ void OceanRenderer::createSurfaceMesh()
 	init_data.pSysMem = pV;
 	init_data.SysMemPitch = 0;
 	init_data.SysMemSlicePitch = 0;
-
+	
+	SAFE_DELETE(layout);
+	crossplatform::LayoutDesc desc[]=
+	{
+		{ "POSITION",	0, crossplatform::RG_32_FLOAT	,		0,	0,	false, 0 },
+	};
+	layout=renderPlatform->CreateLayout(1,desc);
 	SAFE_DELETE(vertexBuffer);
 	vertexBuffer=renderPlatform->CreateBuffer();
-	vertexBuffer->EnsureVertexBuffer(renderPlatform,num_verts,sizeof(ocean_vertex),pV);
+	vertexBuffer->EnsureVertexBuffer(renderPlatform,num_verts,layout,pV);
 	SAFE_DELETE_ARRAY(pV);
 
 	// --------------------------------- Index Buffer -------------------------------

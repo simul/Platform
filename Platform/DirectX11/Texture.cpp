@@ -107,6 +107,60 @@ void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,c
 	}
 }
 
+void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files)
+{
+	InvalidateDeviceObjects();
+	std::vector<ID3D11Texture2D *> textures;
+	for(unsigned i=0;i<texture_files.size();i++)
+	{
+		textures.push_back(simul::dx11::LoadStagingTexture(r->AsD3D11Device(),texture_files[i].c_str()));
+	}
+	D3D11_TEXTURE2D_DESC desc;
+	ID3D11DeviceContext *pContext=NULL;
+	r->AsD3D11Device()->GetImmediateContext(&pContext);
+	for(int i=0;i<(int)textures.size();i++)
+	{
+		if(!textures[i])
+			return;
+		textures[i]->GetDesc(&desc);
+	}
+	static int num_mips=5;
+	desc.BindFlags=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_RENDER_TARGET;
+	desc.Usage=D3D11_USAGE_DEFAULT;
+	desc.CPUAccessFlags=0;
+	desc.ArraySize=(UINT)textures.size();
+	desc.MiscFlags=D3D11_RESOURCE_MISC_GENERATE_MIPS;
+	desc.MipLevels=num_mips;
+	ID3D11Texture2D *tex;
+	r->AsD3D11Device()->CreateTexture2D(&desc,NULL,&tex);
+	texture=tex;
+	if(tex)
+	for(unsigned i=0;i<textures.size();i++)
+	{
+		// Copy the resource directly, no CPU mapping
+		pContext->CopySubresourceRegion(
+						tex
+						,i*num_mips
+						,0
+						,0
+						,0
+						,textures[i]
+						,0
+						,NULL
+						);
+		//pContext->UpdateSubresource(m_pArrayTexture,i*num_mips, NULL,subResources[i].pSysMem,subResources[i].SysMemPitch,subResources[i].SysMemSlicePitch);
+	}
+	r->AsD3D11Device()->CreateShaderResourceView(tex,NULL,&shaderResourceView);
+	//delete [] subResources;
+	for(unsigned i=0;i<textures.size();i++)
+	{
+	//	pContext->Unmap(textures[i],0);
+		SAFE_RELEASE(textures[i])
+	}
+	pContext->GenerateMips(shaderResourceView);
+	SAFE_RELEASE(pContext)
+}
+
 bool dx11::Texture::IsValid() const
 {
 	return (shaderResourceView!=NULL);

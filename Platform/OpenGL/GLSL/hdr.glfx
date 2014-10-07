@@ -3,7 +3,6 @@
 
 uniform sampler2D image_texture;
 uniform sampler2D glowTexture;
-uniform vec4 colour2;
 
 shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
 {
@@ -15,6 +14,39 @@ shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
 	vec2 pos	=poss[gl_VertexID];
 	gl_Position	=vec4(vec2(-1.0,-1.0)+2.0*pos.xy,1.0,1.0);
     texCoords	=pos.xy;
+}
+
+shader PS_Glow(in vec2 texCoords, out vec4 FragColor)
+{
+    // original image has double the resulution, so we sample 2x2
+    vec4 c=vec4(0,0,0,0);
+	c+=texture2D(image_texture,texCoords+offset/2.0);
+	c+=texture2D(image_texture,texCoords-offset/2.0);
+	vec2 offset2=offset;
+	offset2.x=-offset.x;
+	c+=texture2D(image_texture,texCoords+offset2/2.0);
+	c+=texture2D(image_texture,texCoords-offset2/2.0);
+	c=c*exposure/4.0;
+	c-=1.0*vec4(1.0,1.0,1.0,1.0);
+	c=clamp(c,vec4(0.0,0.0,0.0,0.0),vec4(10.0,10.0,10.0,10.0));
+    FragColor=c;
+}
+
+shader PS_Blur(in vec2 texCoords, out vec4 FragColor)
+{
+	vec4 colour	=vec4(0.0,0.0,0.0,0.0);
+	vec2 offs	=offset;
+    // original image
+	for(int i=int(-25);i<int(25);i++)
+	{
+		vec2 d=offs*float(i);
+		vec2 t=texCoords+d;
+		float ii=float(i*i);
+		float str=0.04*exp(-ii/125.0);
+		vec4 c=str*texture2D(image_texture,t);
+		colour+=c;
+	}
+    FragColor=colour;
 }
 
 shader PS_Tonemap(in vec2 texCoords, out vec4 FragColor)
@@ -33,4 +65,16 @@ program tonemap
 {
     vs(430) = VS_FullScreen();
     fs(430) = PS_Tonemap();
+};
+
+program glow
+{
+    vs(430) = VS_FullScreen();
+    fs(430) = PS_Glow();
+};
+
+program blur
+{
+    vs(430) = VS_FullScreen();
+    fs(430) = PS_Blur();
 };

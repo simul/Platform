@@ -18,7 +18,6 @@ using namespace simul;
 using namespace opengl;
 
 GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
-	,transform_program(0)
 	,density(NULL)
 	,density_gridsize(0)
 	,readback_to_cpu(true)
@@ -52,7 +51,6 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	{
 		fb[i].InvalidateDeviceObjects();
 	}
-	SAFE_DELETE_PROGRAM(transform_program);
 	SAFE_DELETE_TEXTURE(density_texture);
 	gpuCloudConstants.Release();
 	maskTexture.InvalidateDeviceObjects();
@@ -65,11 +63,9 @@ void GpuCloudGenerator::RecompileShaders()
 	BaseGpuCloudGenerator::RecompileShaders();
 	if (!renderPlatform)
 		return;
-	SAFE_DELETE_PROGRAM(transform_program);
-	transform_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_transform.frag");
 	gpuCloudConstants	.LinkToProgram(effect->GetTechniqueByName("gpu_density")->passAsGLuint(0),"GpuCloudConstants",8);
 	gpuCloudConstants	.LinkToProgram(effect->GetTechniqueByName("gpu_lighting")->passAsGLuint(0),"GpuCloudConstants",8);
-	gpuCloudConstants	.LinkToProgram(transform_program,"GpuCloudConstants",8);
+	gpuCloudConstants	.LinkToProgram(effect->GetTechniqueByName("gpu_transform")->passAsGLuint(0),"GpuCloudConstants",8);
 }
 
 static GLuint make3DTexture(int w,int l,int d,int stride,bool wrap_z,const float *src)
@@ -413,10 +409,10 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]*params.density_grid[2]);
 	world_fb.InitColor_Tex(0,crossplatform::RGBA_8_UNORM);
-	glUseProgram(transform_program);
-	setParameter(transform_program,"density_texture",0);
-	setParameter(transform_program,"light_texture",1);
-	setParameter(transform_program,"ambient_texture",2);
+	effect->Apply(deviceContext,effect->GetTechniqueByName("gpu_transform"),0);
+	setParameter(effect->GetTechniqueByName("gpu_transform")->passAsGLuint(0),"density_texture",0);
+	setParameter(effect->GetTechniqueByName("gpu_transform")->passAsGLuint(0),"light_texture",1);
+	setParameter(effect->GetTechniqueByName("gpu_transform")->passAsGLuint(0),"ambient_texture",2);
 
 	float y_start=(float)start_texel/(float)total_texels;
 	float y_end=(float)(start_texel+texels)/(float)total_texels;
@@ -428,7 +424,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 
 	gpuCloudConstants.Apply();
 	
-	
+	//effect->SetTexture(deviceContext,"density_texture",density_texture);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,density_texture);
 	glActiveTexture(GL_TEXTURE1);
@@ -465,7 +461,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 			GL_ERROR_CHECK
 		//target+=density_grid[0]*density_grid[1]*4;
 	}
-	glUseProgram(0);
+	effect->Unapply(deviceContext);
 	
 	
 	glMatrixMode(GL_MODELVIEW);
