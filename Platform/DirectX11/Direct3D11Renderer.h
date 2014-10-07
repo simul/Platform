@@ -45,6 +45,10 @@ namespace simul
 		class Scene;
 		class BaseSceneRenderer;
 	}
+	namespace terrain
+	{
+		class BaseTerrainRenderer;
+	}
 	namespace dx11
 	{
 		enum PerformanceTestLevel
@@ -105,9 +109,9 @@ namespace simul
 			{
 				return oceanRenderer;
 			}
-			TerrainRenderer	*GetTerrainRenderer()
+			terrain::BaseTerrainRenderer	*GetTerrainRenderer()
 			{
-				return simulTerrainRenderer;
+				return baseTerrainRenderer;
 			}
 			void						RecompileShaders();
 			void						ReloadTextures();
@@ -164,7 +168,7 @@ namespace simul
 			camera::BaseOpticsRenderer					*baseOpticsRenderer;
 			SimulWeatherRendererDX11					*simulWeatherRenderer;
 			SimulHDRRendererDX1x						*simulHDRRenderer;
-			TerrainRenderer								*simulTerrainRenderer;
+			terrain::BaseTerrainRenderer				*baseTerrainRenderer;
 			OceanRenderer								*oceanRenderer;
 			simul::scene::BaseSceneRenderer				*sceneRenderer;
 			crossplatform::MixedResolutionViewManager	viewManager;

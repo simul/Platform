@@ -289,6 +289,10 @@ Effect::~Effect()
 #endif
 }
 
+EffectTechnique *Effect::CreateTechnique()
+{
+	return new opengl::EffectTechnique;
+}
 // convert GL programs into techniques and passes.
 bool Effect::FillInTechniques()
 {
@@ -333,52 +337,19 @@ bool Effect::FillInTechniques()
 		std::string groupname;
 		std::string techname=name;
 		std::string passname="main";
-		int dotpos1=(int)techname.find("::");
+		int dotpos1			=(int)techname.find("::");
 		if(dotpos1>=0)
 		{
 			groupname	=name.substr(0,dotpos1);
 			techname	=name.substr(dotpos1+2,techname.length()-dotpos1-2);
 		}
-		int dotpos2=(int)techname.find_last_of(".");
+		int dotpos2		=(int)techname.find_last_of(".");
 		if(dotpos2>=0)
 		{
 			passname	=techname.substr(dotpos2+1,techname.length()-dotpos2-1);
 			techname	=techname.substr(0,dotpos2);
 		}
-		crossplatform::EffectTechnique *tech=NULL;
-		if(groupname.size()>0)
-		{
-			if(groups.find(groupname)==groups.end())
-			{
-				groups[groupname]=new crossplatform::EffectTechniqueGroup;
-			}
-			crossplatform::EffectTechniqueGroup *group=groups[groupname];
-			if(group->techniques.find(techname)!=group->techniques.end())
-				tech=group->techniques[techname];
-			else
-			{
-				tech								=new opengl::EffectTechnique; 
-				int index							=(int)group->techniques.size();
-				group->techniques[techname]			=tech;
-				group->techniques_by_index[index]	=tech;
-			}
-			techname=(groupname+"::")+techname;
-		}
-		if(techniques.find(techname)!=techniques.end())
-		{
-			if(!tech)
-				tech=techniques[techname];
-			else
-				techniques[techname]=tech;
-		}
-		else
-		{
-			if(!tech)
-				tech						=new opengl::EffectTechnique; 
-			techniques[techname]		=tech;
-			int index					=(int)techniques_by_index.size();
-			techniques_by_index[index]	=tech;
-		}
+		crossplatform::EffectTechnique *tech=EnsureTechniqueExists(groupname,techname,passname);
 		tech->passes_by_name[passname]	=(void*)t;
 		int pass_idx					=(int)tech->passes_by_index.size();
 		tech->passes_by_index[pass_idx]	=(void*)t;
@@ -386,6 +357,7 @@ bool Effect::FillInTechniques()
 	}
 	return true;
 }
+
 
 crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 {

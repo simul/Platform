@@ -531,6 +531,8 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 		return GL_RG32F;
 	case R_32_FLOAT:
 		return GL_R32F;
+	case R_16_FLOAT:
+		return GL_R16F;
 	case LUM_32_FLOAT:
 		return GL_LUMINANCE32F_ARB;
 	case INT_32_FLOAT:
@@ -565,6 +567,8 @@ GLuint RenderPlatform::ToGLExternalFormat(crossplatform::PixelFormat p)
 		return GL_RGBA_INTEGER;
 	case RG_32_FLOAT:
 		return GL_RG;
+	case R_16_FLOAT:
+		return GL_RED;
 	case R_32_FLOAT:
 		return GL_RED;
 	case LUM_32_FLOAT:
@@ -599,6 +603,8 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 	case RG_32_FLOAT:
 		return 2;
 	case R_32_FLOAT:
+		return 1;
+	case R_16_FLOAT:
 		return 1;
 	case LUM_32_FLOAT:
 		return 1;
@@ -642,6 +648,8 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 	case RG_32_FLOAT:
 		return GL_FLOAT;
 	case R_32_FLOAT:
+		return GL_FLOAT;
+	case R_16_FLOAT:
 		return GL_FLOAT;
 	case LUM_32_FLOAT:
 		return GL_FLOAT;
@@ -775,6 +783,12 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,
 
 				glBlendFuncSeparatei((unsigned)i, toGlBlendOp(d.SrcBlend), toGlBlendOp(d.DestBlend),
 									   toGlBlendOp(d.SrcBlendAlpha), toGlBlendOp(d.DestBlendAlpha));
+
+				d.RenderTargetWriteMask;
+				glColorMask(d.RenderTargetWriteMask&1
+							,d.RenderTargetWriteMask&2
+							,d.RenderTargetWriteMask&4
+							,d.RenderTargetWriteMask&8);
 			}
 		}
 		else
@@ -790,6 +804,7 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,
 			glDepthMask(GL_TRUE);
 		else
 			glDepthMask(GL_FALSE);
+		glDisable(GL_STENCIL_TEST);
 		glDepthFunc(toGlComparison(S->desc.depth.comparison));
 	}
 }

@@ -16,8 +16,14 @@ namespace simul
 			Buffer();
 			virtual ~Buffer();
 			virtual void InvalidateDeviceObjects()=0;
-			virtual ID3D11Buffer *AsD3D11Buffer()=0;
-			virtual GLuint AsGLuint()=0;
+			virtual ID3D11Buffer *AsD3D11Buffer()
+			{
+				return NULL;
+			}
+			virtual GLuint AsGLuint()
+			{
+				return 0;
+			}
 			//! Set up as a vertex buffer. You must pass a pointer to an already-created Layout, and don't destroy the layout until after destroying the vertex buffer.
 			virtual void EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const Layout *layout,const void *data,bool cpu_access=false,bool streamout_target=false)=0;
 			//! Set up as an index buffer.

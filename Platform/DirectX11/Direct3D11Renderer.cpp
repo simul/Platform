@@ -6,7 +6,7 @@
 #include "Simul/Platform/Crossplatform/DemoOverlay.h"
 #include "Simul/Platform/DirectX11/Direct3D11Renderer.h"
 #include "Simul/Platform/DirectX11/SimulWeatherRendererDX11.h"
-#include "Simul/Platform/DirectX11/TerrainRenderer.h"
+#include "Simul/Terrain/BaseTerrainRenderer.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
 #include "Simul/Camera/BaseOpticsRenderer.h"
@@ -62,7 +62,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 		,baseOpticsRenderer(NULL)
 		,simulWeatherRenderer(NULL)
 		,simulHDRRenderer(NULL)
-		,simulTerrainRenderer(NULL)
+		,baseTerrainRenderer(NULL)
 		,oceanRenderer(NULL)
 #ifdef SIMUL_USE_SCENE
 		,sceneRenderer(NULL)
@@ -78,8 +78,8 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
 	baseOpticsRenderer		=::new(memoryInterface) camera::BaseOpticsRenderer(memoryInterface);
-	simulTerrainRenderer	=::new(memoryInterface) TerrainRenderer(memoryInterface);
-	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
+	baseTerrainRenderer		=::new(memoryInterface) terrain::BaseTerrainRenderer(memoryInterface);
+	baseTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 
 	if((simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
 	{
@@ -108,7 +108,7 @@ Direct3D11Renderer::~Direct3D11Renderer()
 	del(baseOpticsRenderer,memoryInterface);
 	del(simulWeatherRenderer,memoryInterface);
 	del(simulHDRRenderer,memoryInterface);
-	del(simulTerrainRenderer,memoryInterface);
+	del(baseTerrainRenderer,memoryInterface);
 	del(oceanRenderer,memoryInterface);
 }
 
@@ -139,8 +139,8 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 		simulWeatherRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	if(baseOpticsRenderer)
 		baseOpticsRenderer->RestoreDeviceObjects(&renderPlatformDx11);
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->RestoreDeviceObjects(&renderPlatformDx11);
+	if(baseTerrainRenderer)
+		baseTerrainRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	if(oceanRenderer)
 		oceanRenderer->RestoreDeviceObjects(&renderPlatformDx11);
 	cubemapFramebuffer.SetWidthAndHeight(32,32);
@@ -255,9 +255,9 @@ ERRNO_CHECK
 	deviceContext.platform_context	=parentDeviceContext.platform_context;
 	deviceContext.renderPlatform	=parentDeviceContext.renderPlatform;
 	deviceContext.viewStruct.view_id=cubemap_view_id;
-	if(simulTerrainRenderer)
+	if(baseTerrainRenderer)
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
-			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
+			baseTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
 	// We want to limit the number of raytrace steps for clouds in the cubemap.
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
 	{
@@ -307,12 +307,12 @@ ERRNO_CHECK
 					lightningIllumination.colour	=props.colour;
 					lightningIllumination.colour	*=brightness;
 				}
-				if(simulTerrainRenderer)
-				simulTerrainRenderer->SetLightningProperties(lightningIllumination);
+				if(baseTerrainRenderer)
+				baseTerrainRenderer->SetLightningProperties(lightningIllumination);
 			}
 		}
-		if(simulTerrainRenderer&&ShowTerrain)
-			simulTerrainRenderer->Render(deviceContext,1.f);
+		if(baseTerrainRenderer&&ShowTerrain)
+			baseTerrainRenderer->Render(deviceContext,1.f);
 		if(oceanRenderer&&ShowWater)
 		{
 			//oceanRenderer->Render(deviceContext,1.f);
@@ -380,12 +380,12 @@ void Direct3D11Renderer::RenderDepthElements(crossplatform::DeviceContext &devic
 									 ,float exposure
 									 ,float gamma)
 {
-	if(simulTerrainRenderer&&ShowTerrain)
+	if(baseTerrainRenderer&&ShowTerrain)
 	{
 		math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view,false);
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
-			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
-		simulTerrainRenderer->Render(deviceContext,1.f);	
+			baseTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
+		baseTerrainRenderer->Render(deviceContext,1.f);	
 	}
 #ifdef SIMUL_USE_SCENE
 	if(sceneRenderer)
@@ -856,8 +856,8 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 		simulHDRRenderer->InvalidateDeviceObjects();
 	if(baseOpticsRenderer)
 		baseOpticsRenderer->InvalidateDeviceObjects();
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->InvalidateDeviceObjects();
+	if(baseTerrainRenderer)
+		baseTerrainRenderer->InvalidateDeviceObjects();
 	if(oceanRenderer)
 		oceanRenderer->InvalidateDeviceObjects();
 #ifdef SIMUL_USE_SCENE
@@ -898,8 +898,8 @@ void Direct3D11Renderer::RecompileShaders()
 		simulWeatherRenderer->RecompileShaders();
 	if(baseOpticsRenderer)
 		baseOpticsRenderer->RecompileShaders();
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->RecompileShaders();
+	if(baseTerrainRenderer)
+		baseTerrainRenderer->RecompileShaders();
 	if(oceanRenderer)
 		oceanRenderer->RecompileShaders();
 	if(simulHDRRenderer)
@@ -960,8 +960,8 @@ void Direct3D11Renderer::ReverseDepthChanged()
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	if(simulHDRRenderer)
 		simulHDRRenderer->SetReverseDepth(ReverseDepth);
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->SetReverseDepth(ReverseDepth);
+	if(baseTerrainRenderer)
+		baseTerrainRenderer->SetReverseDepth(ReverseDepth);
 	if(oceanRenderer)
 		oceanRenderer->SetReverseDepth(ReverseDepth);
 	RecompileShaders();

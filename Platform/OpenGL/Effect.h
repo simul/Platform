@@ -72,6 +72,7 @@ namespace simul
 			std::map<std::string,int> textureNumberMap;
 			bool FillInTechniques();
 			void SetTex(const char *name,crossplatform::Texture *tex,bool write);
+			EffectTechnique *CreateTechnique();
 		public:
 			Effect();
 			~Effect();

@@ -36,8 +36,8 @@ bool BaseFramebuffer::IsColourActive() const
 }
 
 TwoResFramebuffer::TwoResFramebuffer()
-	:HiResDownscale(2)
-	,renderPlatform(0)
+	:renderPlatform(0)
+	,HiResDownscale(2)
 	,lossTexture(0)
 	,Width(0)
 	,Height(0)

@@ -324,6 +324,8 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{
 		protected:
+			virtual EffectTechnique *CreateTechnique()=0;
+			EffectTechnique *EnsureTechniqueExists(const std::string &groupname,const std::string &techname,const std::string &passname);
 		public:
 			GroupMap groups;
 			TechniqueMap techniques;

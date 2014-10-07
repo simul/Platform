@@ -195,7 +195,6 @@
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
-    <ClCompile Include="TerrainRenderer.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
@@ -228,7 +227,6 @@
     <ClInclude Include="ResourcesDx1x.h" />
     <ClInclude Include="SaveTextureDX1x.h" />
     <ClInclude Include="SimulHDRRendererDX1x.h" />
-    <ClInclude Include="TerrainRenderer.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />

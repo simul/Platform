@@ -7,6 +7,7 @@
 
 using namespace simul;
 using namespace crossplatform;
+using namespace std;
 
 Effect::Effect()
 	:apply_count(0)
@@ -65,4 +66,44 @@ EffectDefineOptions simul::crossplatform::CreateDefineOptions(const char *name,c
 	o.options.push_back(std::string(option2));
 	o.options.push_back(std::string(option3));
 	return o;
+}
+
+EffectTechnique *Effect::EnsureTechniqueExists(const string &groupname,const string &techname_,const string &passname)
+{
+	EffectTechnique *tech=NULL;
+	string techname=techname_;
+	if(groupname.size()>0)
+	{
+		if(groups.find(groupname)==groups.end())
+		{
+			groups[groupname]=new crossplatform::EffectTechniqueGroup;
+		}
+		crossplatform::EffectTechniqueGroup *group=groups[groupname];
+		if(group->techniques.find(techname)!=group->techniques.end())
+			tech=group->techniques[techname];
+		else
+		{
+			tech								=CreateTechnique(); 
+			int index							=(int)group->techniques.size();
+			group->techniques[techname]			=tech;
+			group->techniques_by_index[index]	=tech;
+		}
+		techname=(groupname+"::")+techname;
+	}
+	if(techniques.find(techname)!=techniques.end())
+	{
+		if(!tech)
+			tech=techniques[techname];
+		else
+			techniques[techname]=tech;
+	}
+	else
+	{
+		if(!tech)
+			tech					=CreateTechnique(); 
+		techniques[techname]		=tech;
+		int index					=(int)techniques_by_index.size();
+		techniques_by_index[index]	=tech;
+	}
+	return tech;
 }

@@ -36,8 +36,6 @@ uniform sampler2D depthTexture;
 
 uniform sampler3D cloudDensity;
 
-uniform sampler2D gColorMap;
-
 
 shader PS_CloudShadow(in vec2 texCoords)
 {
