@@ -46,10 +46,6 @@ namespace simul
 			// shaders
 			crossplatform::Effect *effect;
 			crossplatform::EffectTechnique *tech;
-			GLuint tonemap_program;
-			GLint exposure_param;
-			GLint gamma_param;
-			GLint buffer_tex_param;
 			GLuint glow_program;
 			GLuint blur_program;
 		};

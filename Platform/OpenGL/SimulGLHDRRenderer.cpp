@@ -20,7 +20,6 @@ using namespace opengl;
 SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h)
 	:Gamma(0.45f),Exposure(1.f)
 	,initialized(false)
-	,tonemap_program(0)
 	,glow_fb(w/2,h/2,GL_TEXTURE_2D)
 	,alt_fb(w/2,h/2,GL_TEXTURE_2D)
 	,effect(NULL)
@@ -66,11 +65,6 @@ ERRNO_CHECK
 
 void SimulGLHDRRenderer::RecompileShaders()
 {
-ERRNO_CHECK
-	tonemap_program		=MakeProgram("simple.vert",NULL,"tonemap.frag");
-    exposure_param		=glGetUniformLocation(tonemap_program,"exposure");
-    gamma_param			=glGetUniformLocation(tonemap_program,"gamma");
-    buffer_tex_param	=glGetUniformLocation(tonemap_program,"image_texture");
 	GL_ERROR_CHECK
 ERRNO_CHECK
 
@@ -79,7 +73,7 @@ ERRNO_CHECK
 ERRNO_CHECK
 	std::map<std::string,std::string> defines;
 	effect				=renderPlatform->CreateEffect("hdr",defines);
-	tech=effect->GetTechniqueByName("tonemap");
+	tech				=effect->GetTechniqueByName("tonemap");
 	hdrConstants.LinkToEffect(effect,"HdrConstants");
 }
 

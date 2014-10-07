@@ -181,7 +181,6 @@ void OpenGLRenderer::shutdownGL()
 
 void OpenGLRenderer::paintGL()
 {
-	void *context=NULL;
 	static int viewport_id=0;
 	
 	const camera::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
@@ -235,7 +234,7 @@ void OpenGLRenderer::paintGL()
 			glDepthMask(GL_TRUE);
 			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		}
-		/*depthFramebuffer.Activate(deviceContext);
+		depthFramebuffer.Activate(deviceContext);
 		depthFramebuffer.Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, 1.f, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		
 		if(sceneRenderer)
@@ -260,7 +259,7 @@ void OpenGLRenderer::paintGL()
 			glDisable(GL_DEPTH_TEST);
 			glDepthMask(GL_FALSE);
 			glDisable(GL_BLEND);
-			depthFramebuffer.Render(context,false);
+			depthFramebuffer.Render(deviceContext.platform_context, false);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
 		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTexture()
@@ -277,7 +276,7 @@ void OpenGLRenderer::paintGL()
 			float occ=simulWeatherRenderer->GetBaseSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
 			simulOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTex(),dir,light);
-		}*/
+		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
 //		bool vertical_screen=ScreenHeight>ScreenWidth;
