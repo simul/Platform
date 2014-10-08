@@ -16,6 +16,11 @@ SamplerState::SamplerState()
 }
 SamplerState::~SamplerState()
 {
+	void InvalidateDeviceObjects();
+}
+
+void SamplerState::InvalidateDeviceObjects()
+{
 	SAFE_RELEASE(m_pd3D11SamplerState);
 }
 
@@ -395,7 +400,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 												 ,int w,int l
 												 ,crossplatform::PixelFormat f
 												 ,bool computable,bool rendertarget,bool depthstencil
-												 ,int num_samples,int aa_quality)
+												 ,int num_samples,int aa_quality,bool )
 {
 	pixelFormat=f;
 	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);

@@ -1,4 +1,4 @@
-#include "GL/glew.h"
+﻿#include "GL/glew.h"
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Platform/OpenGL/Material.h"
 #include "Simul/Platform/OpenGL/Mesh.h"
@@ -478,10 +478,46 @@ crossplatform::BaseFramebuffer	*RenderPlatform::CreateFramebuffer()
 	opengl::FramebufferGL * b=new opengl::FramebufferGL;
 	return b;
 }
-
-crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::SamplerStateDesc *)
+static GLenum toGLWrapping(crossplatform::SamplerStateDesc::Wrapping w)
 {
-	return new opengl::SamplerState();
+	switch(w)
+	{
+	case crossplatform::SamplerStateDesc::WRAP:
+		return GL_REPEAT;
+		break;
+	case crossplatform::SamplerStateDesc::CLAMP:
+		return GL_CLAMP_TO_EDGE;
+		break;
+	case crossplatform::SamplerStateDesc::MIRROR:
+		return GL_MIRRORED_REPEAT;
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::SamplerStateDesc *desc)
+{
+	opengl::SamplerState *s=new opengl::SamplerState();
+	glGenSamplers(1,&s->sampler_state);
+	switch(desc->filtering)
+	{
+	case crossplatform::SamplerStateDesc::POINT:
+		glSamplerParameteri(s->sampler_state,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+		glSamplerParameteri(s->sampler_state,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+		break;
+	case crossplatform::SamplerStateDesc::LINEAR:
+		glSamplerParameteri(s->sampler_state,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+		glSamplerParameteri(s->sampler_state,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
+		break;
+	default:
+		break;
+	}
+	glSamplerParameteri(s->sampler_state,GL_TEXTURE_WRAP_S,toGLWrapping(desc->x));
+	glSamplerParameteri(s->sampler_state,GL_TEXTURE_WRAP_T,toGLWrapping(desc->y));
+	glSamplerParameteri(s->sampler_state,GL_TEXTURE_WRAP_R,toGLWrapping(desc->z));
+	return s;
 }
 
 crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)

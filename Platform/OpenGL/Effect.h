@@ -73,6 +73,7 @@ namespace simul
 			bool FillInTechniques();
 			void SetTex(const char *name,crossplatform::Texture *tex,bool write);
 			EffectTechnique *CreateTechnique();
+			void AddPass(std::string techname, std::string passname, GLuint t);
 		public:
 			Effect();
 			~Effect();

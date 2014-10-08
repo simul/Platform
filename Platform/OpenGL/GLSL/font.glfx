@@ -31,15 +31,20 @@ shader PS_Background(out vec4 outColor)
     outColor=background;
 }
 
-
-program backg
+technique backg
 {
-    vs(430) = VS_Font();
-    fs(430) = PS_Background();
-};
+	pass p0
+	{
+		vs(430) = VS_Font();
+		fs(430) = PS_Background();
+	}
+}
 
-program text
+technique text
 {
-    vs(430) = VS_Font();
-    fs(430) = PS_Font();
-};
+	pass p1
+	{
+		vs(430) = VS_Font();
+		fs(430) = PS_Font();
+	}
+}

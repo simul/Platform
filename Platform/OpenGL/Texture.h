@@ -9,8 +9,17 @@ namespace simul
 {
 	namespace opengl
 	{
-		class SIMUL_OPENGL_EXPORT SamplerState:public simul::crossplatform::SamplerState
+		class SIMUL_OPENGL_EXPORT SamplerState:public crossplatform::SamplerState
 		{
+		public:
+			GLuint sampler_state;
+			SamplerState();
+			virtual ~SamplerState();
+			void InvalidateDeviceObjects();
+			GLuint asGLuint()
+			{
+				return sampler_state;
+			}
 			/*
 			GLuint sampler_state = 0;
 glGenSamplers(1, &sampler_state);
@@ -57,7 +66,7 @@ glDeleteSamplers(1, &sampler_state);
 				return pTextureObject;
 			}
 			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
-				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0);
+				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false);
 			void ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable) override;
 			void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int mips=1);
 			void GenerateMips(crossplatform::DeviceContext &deviceContext);

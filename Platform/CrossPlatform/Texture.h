@@ -42,9 +42,14 @@ namespace simul
 		{
 		public:
 			virtual ~SamplerState();
+			virtual void InvalidateDeviceObjects()=0;
 			virtual ID3D11SamplerState *asD3D11SamplerState()
 			{
 				return NULL;
+			}
+			virtual GLuint asGLuint()
+			{
+				return 0;
 			}
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT Texture
@@ -55,7 +60,7 @@ namespace simul
 				,length(0)
 				,depth(0)
 				,dim(0)
-	,pixelFormat(crossplatform::UNKNOWN){}
+				,pixelFormat(crossplatform::UNKNOWN){}
 			virtual ~Texture();
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files)=0;
@@ -79,9 +84,9 @@ namespace simul
 			{
 				return pixelFormat;
 			}
-			//! Initialize as a normal 2D texture.
+			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified.
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
-				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0)=0;
+				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false)=0;
 			//! Initialize as an array texture.
 			virtual void ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,PixelFormat f,bool computable)=0;
 			//! Initialize as a volume texture.

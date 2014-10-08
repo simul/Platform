@@ -61,10 +61,6 @@ SIMUL_CONSTANT_BUFFER(Detail2DConstants,12)
 	uniform float detailTextureSize,bbbbbbbb,cccccc;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(CloudCrossSection2DConstants,13)
-	uniform vec4 rect;
-SIMUL_CONSTANT_BUFFER_END
-
 #ifndef __cplusplus
 #endif
 #endif

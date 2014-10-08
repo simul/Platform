@@ -293,69 +293,75 @@ EffectTechnique *Effect::CreateTechnique()
 {
 	return new opengl::EffectTechnique;
 }
+void Effect::AddPass(std::string techname, std::string passname, GLuint t)
+{
+	// Now the name will determine what technique and pass it is.
+	std::string groupname;
+	int dotpos1 = (int)techname.find("::");
+	if (dotpos1 >= 0)
+	{
+		groupname = techname.substr(0, dotpos1);
+		techname = techname.substr(dotpos1 + 2, techname.length() - dotpos1 - 2);
+	}
+	int dotpos2 = (int)techname.find_last_of(".");
+	if (dotpos2 >= 0)
+	{
+		passname = techname.substr(dotpos2 + 1, techname.length() - dotpos2 - 1);
+		techname = techname.substr(0, dotpos2);
+	}
+	crossplatform::EffectTechnique *tech = EnsureTechniqueExists(groupname, techname, passname);
+	tech->passes_by_name[passname] = (void*)t;
+	int pass_idx = (int)tech->passes_by_index.size();
+	tech->passes_by_index[pass_idx] = (void*)t;
+	tech->pass_indices[passname] = pass_idx;
+}
 // convert GL programs into techniques and passes.
 bool Effect::FillInTechniques()
 {
 	GLint e				=asGLint();
 	if(e<0)
 		return false;
-#ifdef SIMUL_USE_NVFX
-	nvFX::ITechnique*   fx_Tech         = NULL;
-	int nump=0;
-	nvFX::IContainer*   fx_Effect       = (nvFX::IContainer* )platform_effect; 
-	for(int t=0; fx_Tech = fx_Effect->findTechnique(t); t++)
-	{
-		nump++;
-	}
-#else
-	int nump			=glfxGetProgramCount(e);
-#endif
-	if(!nump)
-		return false;
 	groups.clear();
-	for(int i=0;i<nump;i++)
-	{
-#ifdef SIMUL_USE_NVFX
-		nvFX::ITechnique*   t = fx_Effect->findTechnique(i);
-		std::string name	=t->getName();
-		if(!t->validate())
+	int numt = glfxGetTechniqueCount(e);
+	if (numt)
+	{ 
+		for (int i = 0; i < numt; i++)
 		{
-			std::cerr<<filenameInUseUtf8.c_str()<<": error C7555:  there are errors in the technique "<<name.c_str()<<std::endl;
-			return false;
+			std::string tech_name = glfxGetTechniqueName(e, i);
+			int num_passes = glfxGetPassCount(e, tech_name.c_str());
+			for (int j = 0; j < num_passes; j++)
+			{
+				std::string pass_name = glfxGetPassName(e, tech_name.c_str(), j);
+				GLuint t = glfxCompilePass(e, tech_name.c_str(), pass_name.c_str());
+				if (!t)
+				{
+					std::cerr << filenameInUseUtf8.c_str()
+						<< ": error C7555:  there are errors in pass "<<pass_name.c_str()<<" of technique "
+						<< tech_name.c_str() << std::endl;
+					opengl::printEffectLog(asGLint());
+					return false;
+				}
+				AddPass(tech_name, pass_name, t);
+			}
 		}
-#else
-		std::string name	=glfxGetProgramName(e,i);
-		GLuint t			=glfxCompileProgram(e,name.c_str());
-		if(!t)
-		{
-			std::cerr<<filenameInUseUtf8.c_str()<<": error C7555:  there are errors in the technique "<<name.c_str()<<std::endl;
-			opengl::printEffectLog(asGLint());
-			return false;
-		}
-#endif
-		// Now the name will determine what technique and pass it is.
-		std::string groupname;
-		std::string techname=name;
-		std::string passname="main";
-		int dotpos1			=(int)techname.find("::");
-		if(dotpos1>=0)
-		{
-			groupname	=name.substr(0,dotpos1);
-			techname	=name.substr(dotpos1+2,techname.length()-dotpos1-2);
-		}
-		int dotpos2		=(int)techname.find_last_of(".");
-		if(dotpos2>=0)
-		{
-			passname	=techname.substr(dotpos2+1,techname.length()-dotpos2-1);
-			techname	=techname.substr(0,dotpos2);
-		}
-		crossplatform::EffectTechnique *tech=EnsureTechniqueExists(groupname,techname,passname);
-		tech->passes_by_name[passname]	=(void*)t;
-		int pass_idx					=(int)tech->passes_by_index.size();
-		tech->passes_by_index[pass_idx]	=(void*)t;
-		tech->pass_indices[passname]	=pass_idx;
 	}
-	return true;
+	int nump			=glfxGetProgramCount(e);
+	if (nump)
+	{
+		for (int i = 0; i < nump; i++)
+		{
+			std::string name = glfxGetProgramName(e, i);
+			GLuint t = glfxCompileProgram(e,NULL,name.c_str());
+			if (!t)
+			{
+				std::cerr << filenameInUseUtf8.c_str() << ": error C7555:  there are errors in the technique " << name.c_str() << std::endl;
+				opengl::printEffectLog(asGLint());
+				return false;
+			}
+			AddPass(name, "main", t);
+		}
+	}
+	return (numt!=0||nump!=0);
 }
 
 
@@ -372,7 +378,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	nvFX::IContainer*   fx_Effect	=(nvFX::IContainer*)platform_effect; 
 	nvFX::ITechnique*   t			=fx_Effect->findTechnique(name);
 #else
-	GLuint t						=glfxCompileProgram(e,name);
+	GLuint t = glfxCompileProgram(e, NULL,name);
 #endif
 	if(!t)
 	{
@@ -413,7 +419,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 	const char *name	=t->getName();
 #else
 	const char *name	=glfxGetProgramName(e,index);
-	GLuint t			=glfxCompileProgram(e,name);
+	GLuint t			=glfxCompileProgram(e,NULL,name);
 #endif
 	if(!t)
 	{
@@ -544,6 +550,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *
 {
 	SetTexture(deviceContext,name,&t);
 }
+
 void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)
 {
 }

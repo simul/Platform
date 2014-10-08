@@ -263,17 +263,6 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 		cloud_textures[i]->ensureTexture3DSizeAndFormat(renderPlatform,width_x,length_y,depth_z,crossplatform::RGBA_8_UNORM,true);
 GL_ERROR_CHECK
 		glBindTexture(GL_TEXTURE_3D,cloud_textures[i]->AsGLuint());
-		if(cloudProperties.GetWrap())
-		{
-			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-		}
-		else
-		{
-			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-		}
-		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
 	}
 	int shadow_tex_size = cloudKeyframer->GetShadowTextureSize();
 	shadow_fb->ensureTexture2DSizeAndFormat(renderPlatform, shadow_tex_size, cloudKeyframer->GetGodraysSteps(), crossplatform::RGBA_8_UNORM, false, true);
@@ -287,8 +276,5 @@ GL_ERROR_CHECK
 	cloud_tex_width_x = width_x;
 	cloud_tex_length_y = length_y;
 	cloud_tex_depth_z = depth_z;
-// lighting is done in CreateCloudTexture, so memory has now been allocated
-	unsigned cloud_mem=cloudKeyframer->GetMemoryUsage();
-	std::cout<<"Cloud memory usage: "<<cloud_mem/1024<<"k"<<std::endl;
 
 }

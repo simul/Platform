@@ -16,6 +16,24 @@ using namespace opengl;
 #define _stricmp strcasecmp
 #endif
 
+SamplerState::SamplerState()
+	:sampler_state(0)
+{
+}
+
+SamplerState::~SamplerState()
+{
+	void InvalidateDeviceObjects();
+}
+
+void SamplerState::InvalidateDeviceObjects()
+{
+	if(sampler_state)
+		glDeleteSamplers(1,&sampler_state);
+	sampler_state=0;
+}
+
+
 opengl::Texture::Texture()
 	:pTextureObject(0)
 	,m_fb(0)
@@ -108,7 +126,7 @@ bool opengl::Texture::IsValid() const
 }
 
 void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
-	,crossplatform::PixelFormat p,bool computable,bool rendertarget,bool depthstencil,int num_samples,int aa_quality)
+	,crossplatform::PixelFormat p,bool computable,bool rendertarget,bool depthstencil,int num_samples,int aa_quality,bool wrap)
 {
 	if(w==width&&l==length)
 		return;
@@ -126,8 +144,8 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap?GL_REPEAT:GL_CLAMP_TO_EDGE);//
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap?GL_REPEAT:GL_CLAMP_TO_EDGE);//
 GL_ERROR_CHECK
 	if(rendertarget)
 	{

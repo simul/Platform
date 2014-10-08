@@ -29,6 +29,10 @@ SamplerState samplerState
 #include "../../CrossPlatform/SL/simul_2d_cloud_detail.sl"
 #include "../../CrossPlatform/SL/depth.sl"
 
+SIMUL_CONSTANT_BUFFER(CloudCrossSection2DConstants,13)
+uniform vec4 rect;
+SIMUL_CONSTANT_BUFFER_END
+
 struct a2v
 {
     vec3 position	: POSITION;

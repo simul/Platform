@@ -400,6 +400,7 @@ void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,cro
 	ID3DX11EffectSamplerVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsSampler();
 	var->SetSampler(0,s->asD3D11SamplerState());
 }
+
 void Effect::SetParameter(const char *name	,float value)
 {
 	ID3DX11EffectScalarVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsScalar();

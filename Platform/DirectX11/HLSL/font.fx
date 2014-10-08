@@ -25,6 +25,7 @@ vec4 FontBackgroundShader(posTexVertexOutput input) : SV_TARGET
     return background;
 }
 
+VertexShader vs = CompileShader(vs_4_0, FontVertexShader());
 technique11 backg
 {
     pass p0
@@ -33,7 +34,7 @@ technique11 backg
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,FontVertexShader()));
+		SetVertexShader(vs);
 		SetPixelShader(CompileShader(ps_4_0,FontBackgroundShader()));
     }
 }
@@ -46,7 +47,7 @@ technique11 text
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,FontVertexShader()));
+		SetVertexShader(vs);
 		SetPixelShader(CompileShader(ps_4_0,FontPixelShader()));
     }
 }

@@ -13,18 +13,19 @@ namespace simul
 {
 	namespace dx11
 	{
-		class SIMUL_DIRECTX11_EXPORT SamplerState:public simul::crossplatform::SamplerState
+		class SIMUL_DIRECTX11_EXPORT SamplerState:public crossplatform::SamplerState
 		{
 		public:
 			ID3D11SamplerState *m_pd3D11SamplerState;
 			SamplerState();
 			virtual ~SamplerState();
+			void InvalidateDeviceObjects();
 			ID3D11SamplerState *asD3D11SamplerState()
 			{
 				return m_pd3D11SamplerState;
 			}
 		};
-		class SIMUL_DIRECTX11_EXPORT Texture:public simul::crossplatform::Texture
+		class SIMUL_DIRECTX11_EXPORT Texture:public crossplatform::Texture
 		{
 		public:
 			Texture();
@@ -71,7 +72,8 @@ namespace simul
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
 			void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips=1);
 			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
-				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0);
+				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false
+				,int num_samples=1,int aa_quality=0,bool wrap=false);
 			void ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable) override;
 			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void GenerateMips(crossplatform::DeviceContext &deviceContext) override;
