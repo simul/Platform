@@ -260,6 +260,11 @@ dx11::Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *f
 	Load(renderPlatform,filename_utf8,defines);
 }
 
+EffectTechnique *Effect::CreateTechnique()
+{
+	return new dx11::EffectTechnique;
+}
+
 void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;

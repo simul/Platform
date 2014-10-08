@@ -99,6 +99,8 @@ namespace simul
 		};
 		class SIMUL_DIRECTX11_EXPORT Effect:public simul::crossplatform::Effect
 		{
+		protected:
+			EffectTechnique *CreateTechnique();
 		public:
 			Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			Effect();
