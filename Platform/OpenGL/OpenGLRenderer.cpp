@@ -305,11 +305,7 @@ void OpenGLRenderer::renderUI()
 {
 	GL_ERROR_CHECK
 	glUseProgram(0);
-	
-	
 	glBindTexture(GL_TEXTURE_2D,0);
-	
-	
 	SetOrthoProjection(ScreenWidth,ScreenHeight);
 	static char text[500];
 	int y=12;

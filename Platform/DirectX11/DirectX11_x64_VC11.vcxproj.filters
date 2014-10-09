@@ -39,25 +39,13 @@
     <ClCompile Include="FramebufferDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GpuCloudGenerator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Profiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SaveTextureDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulCloudRendererDX1x.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SimulHDRRendererDX1x.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SimulOpticsRendererDX1x.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SimulSkyRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Utilities.cpp">
@@ -79,9 +67,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="OceanSimulator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TerrainRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CSFFT\fft_512x512.cpp">
@@ -134,9 +119,6 @@
     <ClInclude Include="FramebufferDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GpuCloudGenerator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MacrosDx1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -152,16 +134,7 @@
     <ClInclude Include="SaveTextureDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulCloudRendererDX1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SimulHDRRendererDX1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimulOpticsRendererDX1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimulSkyRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utilities.h">
@@ -186,9 +159,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OceanSimulator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TerrainRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CSFFT\fft_512x512.h">

@@ -2,6 +2,7 @@
 #include "states.hlsl"
 #include "../../CrossPlatform/SL/depth.sl"
 #include "../../CrossPlatform/SL/colour_packing.sl"
+#include "../../CrossPlatform/SL/debug_constants.sl"
 
 sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 Texture2DMS<float4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
@@ -10,20 +11,6 @@ Texture2D<uint> imageTextureUint SIMUL_TEXTURE_REGISTER(3);
 Texture2D<uint2> imageTextureUint2 SIMUL_TEXTURE_REGISTER(4);
 Texture2D<uint3> imageTextureUint3 SIMUL_TEXTURE_REGISTER(5);
 Texture2D<uint4> imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
-
-uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
-{
-	uniform mat4 worldViewProj;
-	uniform int latitudes,longitudes;
-	uniform float radius;
-	uniform float multiplier;
-	uniform float exposure;
-	uniform vec4 viewport;
-	uniform vec4 colour;
-	uniform vec4 depthToLinFadeDistParams;
-	uniform vec2 tanHalfFov;
-	uniform float gamma;
-};
 
 cbuffer cbPerObject : register(b11)
 {

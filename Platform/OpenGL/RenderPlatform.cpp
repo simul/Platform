@@ -501,7 +501,7 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 {
 	opengl::SamplerState *s=new opengl::SamplerState();
 	glGenSamplers(1,&s->sampler_state);
-	/*switch(desc->filtering)
+	switch(desc->filtering)
 	{
 	case crossplatform::SamplerStateDesc::POINT:
 		glSamplerParameteri(s->sampler_state,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
@@ -509,14 +509,14 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 		break;
 	case crossplatform::SamplerStateDesc::LINEAR:
 		glSamplerParameteri(s->sampler_state,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-		glSamplerParameteri(s->sampler_state,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
+		glSamplerParameteri(s->sampler_state,GL_TEXTURE_MIN_FILTER,GL_LINEAR);// GL_NEAREST_MIPMAP_LINEAR etc causes problems here.
 		break;
 	default:
 		break;
 	}
 	glSamplerParameteri(s->sampler_state,GL_TEXTURE_WRAP_S,toGLWrapping(desc->x));
 	glSamplerParameteri(s->sampler_state,GL_TEXTURE_WRAP_T,toGLWrapping(desc->y));
-	glSamplerParameteri(s->sampler_state,GL_TEXTURE_WRAP_R,toGLWrapping(desc->z));*/
+	glSamplerParameteri(s->sampler_state,GL_TEXTURE_WRAP_R,toGLWrapping(desc->z));
 	return s;
 }
 

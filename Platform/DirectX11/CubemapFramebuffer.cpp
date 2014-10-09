@@ -14,7 +14,7 @@ CubemapFramebuffer::CubemapFramebuffer()
 	,texture(NULL)
 	,Width(0)
 	,Height(0)
-	,current_face(0)
+	,current_face(-1)
 	,format(DXGI_FORMAT_R8G8B8A8_UNORM)
 	,stagingTexture(NULL)
 	,sphericalHarmonicsEffect(NULL)
@@ -370,7 +370,7 @@ void CubemapFramebuffer::Clear(crossplatform::DeviceContext &deviceContext, floa
 	{
 		pContext->ClearRenderTargetView(m_pCubeEnvMapRTV[current_face],clearColor);
 		if(m_pCubeEnvDepthMap[current_face]->AsD3D11DepthStencilView())
-			pContext->ClearDepthStencilView(m_pCubeEnvDepthMap[current_face]->AsD3D11DepthStencilView(),mask,depth, 0);
+			pContext->ClearDepthStencilView(m_pCubeEnvDepthMap[current_face]->AsD3D11DepthStencilView(),mask,depth,0);
 	}
 	else
 	{

@@ -41,6 +41,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT SamplerState
 		{
 		public:
+			SamplerState();
 			virtual ~SamplerState();
 			virtual void InvalidateDeviceObjects()=0;
 			virtual ID3D11SamplerState *asD3D11SamplerState()

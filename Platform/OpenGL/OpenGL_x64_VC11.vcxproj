@@ -167,7 +167,6 @@
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="FramebufferGL.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
-    <ClCompile Include="GpuSkyGenerator.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="LoadGLImage.cpp" />
@@ -181,12 +180,9 @@
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SimulGLCloudRenderer.cpp" />
     <ClCompile Include="SimulGLHDRRenderer.cpp" />
-    <ClCompile Include="SimulGLSkyRenderer.cpp" />
-    <ClCompile Include="SimulGLTerrainRenderer.cpp" />
     <ClCompile Include="SimulGLUnderwaterRenderer.cpp" />
     <ClCompile Include="SimulGLUtilities.cpp" />
     <ClCompile Include="SimulGLWeatherRenderer.cpp" />
-    <ClCompile Include="SimulOpticsRendererGL.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -195,7 +191,6 @@
     <ClInclude Include="Export.h" />
     <ClInclude Include="FramebufferGL.h" />
     <ClInclude Include="GpuCloudGenerator.h" />
-    <ClInclude Include="GpuSkyGenerator.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="LoadGLImage.h" />
@@ -211,12 +206,9 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="SimulGLCloudRenderer.h" />
     <ClInclude Include="SimulGLHDRRenderer.h" />
-    <ClInclude Include="SimulGLSkyRenderer.h" />
-    <ClInclude Include="SimulGLTerrainRenderer.h" />
     <ClInclude Include="SimulGLUnderwaterRenderer.h" />
     <ClInclude Include="SimulGLUtilities.h" />
     <ClInclude Include="SimulGLWeatherRenderer.h" />
-    <ClInclude Include="SimulOpticsRendererGL.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>

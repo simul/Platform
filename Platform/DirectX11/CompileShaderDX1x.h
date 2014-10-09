@@ -32,7 +32,7 @@ class DetectChangesIncludeHandler : public ID3DInclude
 {
 public:
 	DetectChangesIncludeHandler(const char* shaderDirUtf8,double binaryTime=0.0)
-		: m_ShaderDirUtf8(shaderDirUtf8), lastCompileTime(binaryTime)
+		: m_ShaderDirUtf8(shaderDirUtf8), lastCompileTime(binaryTime),newest(0.0)
 	{
 	}
 	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType,LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);

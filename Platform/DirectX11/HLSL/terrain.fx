@@ -80,7 +80,7 @@ float4 PS_Main( vertexOutput IN) : SV_TARGET
 	float from_lightning_centre_km	=0.001*length(IN.wPosition.xy-lightningCentre.xy);
 	vec3 lightning					=lightningColour.rgb*saturate(1.0/pow(from_lightning_centre_km+.0001,2.0));
 	result.rgb						+=lightning;
-
+	//result=vec4(.5,.5,0,1);
 //result.rgb=frac(mul(invShadowMatrix,vec4(IN.wPosition.xyz,1.0)).xyy);
     return result;
 }

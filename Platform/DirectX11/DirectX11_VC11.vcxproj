@@ -238,6 +238,7 @@
     <None Include="..\CrossPlatform\SL\colour_packing.sl" />
     <None Include="..\CrossPlatform\SL\compositing_constants.sl" />
     <None Include="..\CrossPlatform\SL\CppSl.hs" />
+    <None Include="..\CrossPlatform\SL\debug_constants.sl" />
     <None Include="..\CrossPlatform\SL\depth.sl" />
     <None Include="..\CrossPlatform\SL\earth_shadow.sl" />
     <None Include="..\CrossPlatform\SL\earth_shadow_fade.sl" />

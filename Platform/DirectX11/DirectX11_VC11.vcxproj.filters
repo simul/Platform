@@ -400,6 +400,9 @@
     <None Include="HLSL\terrain.fx">
       <Filter>FX</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\debug_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">

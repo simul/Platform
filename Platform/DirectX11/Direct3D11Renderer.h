@@ -63,14 +63,12 @@ namespace simul
 		class TerrainRenderer;
 		class OceanRenderer;
 		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
-		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
-			:public Direct3D11CallbackInterface
-			,public simul::base::Referenced
+		class SIMUL_DIRECTX11_EXPORT TrueSkyRenderer
 		{
 		public:
 			//! Constructor - pass a pointer to your Environment, and either an implementation of MemoryInterface, or NULL.
-			Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);
-			virtual ~Direct3D11Renderer();
+			TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);
+			virtual ~TrueSkyRenderer();
 			META_BeginProperties
 				META_ValueProperty(bool,ShowFlares				,"Whether to draw light flares around the sun and moon.")
 				META_ValueProperty(bool,ShowWaterTextures		,"Show the textures generated for water effects as an overlay.")
@@ -93,6 +91,14 @@ namespace simul
 				META_ValuePropertyWithSetCall(int,Antialiasing	,AntialiasingChanged,"How many antialiasing samples to use.")
 				META_ValueProperty(int,SphericalHarmonicsBands	,"How many bands to use for spherical harmonics.")
 			META_EndProperties
+			void RestoreDeviceObjects	(struct ID3D11Device* pd3dDevice);
+			void InvalidateDeviceObjects();
+			// Also in Direct3D11Renderer pass-through to here:
+			int	 AddView				(bool external_fb);
+			void RemoveView			(int);
+			void ResizeView			(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
+			void Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext);
+			///////////////////////////
 			bool IsEnabled()const
 			{
 				return enabled;
@@ -118,16 +124,8 @@ namespace simul
 			void						RenderCubemap(crossplatform::DeviceContext &deviceContext,const float *cam_pos);
 			void						RenderEnvmap(crossplatform::DeviceContext &deviceContext);
 			// D3D11CallbackInterface
-			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
-			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);
-			virtual int					AddView				(bool external_fb);
-			virtual void				RemoveView			(int);
-			virtual void				ResizeView			(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
-			virtual void				Render				(int,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext);
-			virtual void				OnD3D11LostDevice	();
-			virtual void				OnD3D11DestroyDevice();
-			virtual bool				OnDeviceRemoved		();
-			virtual void				OnFrameMove			(double fTime,float fTimeStep);
+	/*		virtual bool				OnDeviceRemoved		();
+			virtual void				OnFrameMove			(double fTime,float fTimeStep);*/
 			virtual const char *		GetDebugText		() const;
 			void SetViewType(int view_id,crossplatform::ViewType vt);
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
@@ -163,7 +161,7 @@ namespace simul
 			bool										enabled;
 			std::string									screenshotFilenameUtf8;
 			ID3D11Device								*m_pd3dDevice;
-			ID3DX11Effect								*lightProbesEffect;
+			crossplatform::Effect						*lightProbesEffect;
 			crossplatform::Effect						*linearizeDepthEffect;
 			camera::BaseOpticsRenderer					*baseOpticsRenderer;
 			SimulWeatherRendererDX11					*simulWeatherRenderer;
@@ -175,7 +173,7 @@ namespace simul
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
 			simul::dx11::Framebuffer					msaaFramebuffer;
-			ConstantBuffer<LightProbeConstants>			lightProbeConstants;
+			crossplatform::ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;
 			ID3D11RenderTargetView	*mainRenderTarget;
 			ID3D11DepthStencilView	*mainDepthSurface;
@@ -183,6 +181,25 @@ namespace simul
 			std::map<int,const simul::camera::CameraOutputInterface *> cameras;
 			bool AllOsds;
 			crossplatform::DemoOverlay *demoOverlay;
+		};
+		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
+			:public Direct3D11CallbackInterface
+		{
+		public:
+			Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);
+			~Direct3D11Renderer();
+			TrueSkyRenderer *GetTrueSkyRenderer()
+			{
+				return &trueSkyRenderer;
+			}
+			TrueSkyRenderer trueSkyRenderer;
+			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
+			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);
+			virtual int					AddView				(bool external_fb);
+			virtual void				RemoveView			(int);
+			virtual void				ResizeView			(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
+			virtual void				Render				(int,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext);
+			virtual void				OnD3D11LostDevice	();
 		};
 	}
 }

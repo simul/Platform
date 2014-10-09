@@ -139,7 +139,7 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	eSRAMManager=new ESRAMManager(device);
 #endif
 	solidConstants.RestoreDeviceObjects(this);
-
+	debugConstants.RestoreDeviceObjects(this);
 	RecompileShaders();
 	SAFE_RELEASE(m_pVertexBuffer);
 	// Vertex declaration
@@ -179,6 +179,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 #endif
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	solidConstants.InvalidateDeviceObjects();
+	debugConstants.InvalidateDeviceObjects();
 	SAFE_DELETE(solidEffect);
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
@@ -206,7 +207,7 @@ void RenderPlatform::RecompileShaders()
 		defines["REVERSE_DEPTH"]="1";
 	solidEffect=CreateEffect("solid",defines);
 	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
-	//solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
+	debugConstants.LinkToEffect(m_pDebugEffect,"DebugConstants");
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
@@ -1116,7 +1117,8 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTexture",srv);
-	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"multiplier",mult);
+	debugConstants.multiplier=mult;
+	debugConstants.Apply(deviceContext);
 	crossplatform::EffectTechnique *tech=m_pDebugEffect->GetTechniqueByName("textured");
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	int pass=(blend==true)?1:0;
@@ -1172,10 +1174,10 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 		m_pDebugEffect->SetTexture(deviceContext,"imageTexture",tex);
 	}
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
-	m_pDebugEffect->SetParameter("tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
+	debugConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	static float cc=300000.f;
 	vec4 depthToLinFadeDistParams=camera::GetDepthToDistanceParameters(deviceContext.viewStruct,cc);//(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
-	m_pDebugEffect->SetParameter("depthToLinFadeDistParams",depthToLinFadeDistParams);
+	debugConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;
@@ -1187,9 +1189,10 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	}
 	{
 		if(v)
-			setParameter(m_pDebugEffect->asD3DX11Effect(),"viewport",(float)v->x/(float)tex->width,(float)v->y/(float)tex->length,(float)v->w/(float)tex->width,(float)v->h/(float)tex->length);
+			debugConstants.viewport=vec4((float)v->x/(float)tex->width,(float)v->y/(float)tex->length,(float)v->w/(float)tex->width,(float)v->h/(float)tex->length);
 		else
-			setParameter(m_pDebugEffect->asD3DX11Effect(),"viewport",0.f,0.f,1.f,1.f);
+			debugConstants.viewport=vec4(0.f,0.f,1.f,1.f);
+		debugConstants.Apply(deviceContext);
 		UtilityRenderer::DrawQuad2(deviceContext
 			,2.f*(float)x1/(float)viewport.Width-1.f
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
@@ -1249,8 +1252,9 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 		else
 			camera::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 			
-		m_pDebugEffect->SetMatrix("worldViewProj",&wvp._11);
-	
+		debugConstants.worldViewProj=wvp;
+		debugConstants.worldViewProj.transpose();
+		debugConstants.Apply(deviceContext);
 		ID3D11Buffer *					vertexBuffer=NULL;
 		// Create the vertex buffer:
 		D3D11_BUFFER_DESC desc=
@@ -1408,9 +1412,11 @@ void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,cons
 		simul::math::Multiply4x4(tmp1,world,view);
 		simul::math::Multiply4x4(tmp2,tmp1,deviceContext.viewStruct.proj);
 		camera::MakeWorldViewProjMatrix(tmp2,world,view,deviceContext.viewStruct.proj);
-		m_pDebugEffect->SetMatrix("worldViewProj",&tmp2._11);
-		m_pDebugEffect->SetParameter("radius",rads);
-		m_pDebugEffect->SetVector("colour",colr);
+		debugConstants.worldViewProj=tmp2;
+		debugConstants.worldViewProj.transpose();
+		debugConstants.radius	=rads;
+		debugConstants.colour	=colr;
+		debugConstants.Apply(deviceContext);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
 	}
 	pContext->Draw(fill?64:32,0);
@@ -1529,19 +1535,21 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	world._42=offs.y;
 	world._43=offs.z;
 	camera::MakeWorldViewProjMatrix(wvp,world,view,proj);
-	simul::dx11::setMatrix(m_pDebugEffect->asD3DX11Effect(),"worldViewProj",&wvp._11);
-	//ID3DX11EffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
-	ID3DX11EffectTechnique*				tech		=m_pDebugEffect->asD3DX11Effect()->GetTechniqueByName("draw_cubemap_sphere");
-	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pDebugEffect->asD3DX11Effect()->GetVariableByName("cubeTexture")->AsShaderResource();
-	cubeTexture->SetResource(cubemap->AsD3D11ShaderResourceView());
-	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));
-	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"latitudes",16);
-	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"longitudes",32);
+	debugConstants.worldViewProj=wvp;
+	debugConstants.worldViewProj.transpose();
+	//crossplatform::EffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
+	crossplatform::EffectTechnique*		tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");
+	m_pDebugEffect->SetTexture(deviceContext,"cubeTexture",cubemap);
 	static float rr=6.f;
-	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"radius",rr);
-	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"exposure",exposure);
-	simul::dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"gamma",gamma);
+	debugConstants.latitudes		=16;
+	debugConstants.longitudes		=32;
+	debugConstants.radius			=rr;
+	debugConstants.exposure			=exposure;
+	debugConstants.gamma			=gamma;
+	debugConstants.Apply(deviceContext);
+	m_pDebugEffect->Apply(deviceContext,tech,0);
 	UtilityRenderer::DrawSphere(deviceContext,16,32);
+	m_pDebugEffect->Unapply(deviceContext);
 	pContext->RSSetViewports(num_v,m_OldViewports);
 }
 namespace simul

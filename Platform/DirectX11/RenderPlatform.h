@@ -3,6 +3,7 @@
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
@@ -117,6 +118,7 @@ namespace simul
 
 			crossplatform::Effect *solidEffect;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
+			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
 			std::set<crossplatform::Material*> materials;
 			bool reverseDepth;
 			// DX11-specific stuff:

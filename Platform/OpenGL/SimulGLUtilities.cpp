@@ -178,15 +178,18 @@ GL_ERROR_CHECK
 static int win_h=0;
 void simul::opengl::SetOrthoProjection(int w,int h)
 {
+	GL_ERROR_CHECK
 	win_h=h;
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
+	GL_ERROR_CHECK
 	glOrtho(0,w,0,h,-1.0,1.0);
-	glMatrixMode(GL_TEXTURE);
-	glLoadIdentity();
+	GL_ERROR_CHECK
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	GL_ERROR_CHECK
 	glViewport(0,0,w,h);
+	GL_ERROR_CHECK
 }
 
 void simul::opengl::Ortho()

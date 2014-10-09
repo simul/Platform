@@ -14,9 +14,10 @@ SamplerState::SamplerState()
 	:m_pd3D11SamplerState(NULL)
 {
 }
+
 SamplerState::~SamplerState()
 {
-	void InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
 }
 
 void SamplerState::InvalidateDeviceObjects()

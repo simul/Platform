@@ -90,8 +90,7 @@ shader CS_LAYOUT(8,1,1) CS_Insc()
 {
 	uint3 sub_pos		=gl_GlobalInvocationID;
 	uint linear_pos		=sub_pos.x+threadOffset.x;
-	
-	int3 pos			=LinearThreadToPos2D(linear_pos,targetSize);
+	uint3 pos			=uint3(LinearThreadToPos2D(linear_pos,int3(targetSize)));
 	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
 	CSInsc(targetTexture,density_texture,optical_depth_texture,loss_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm,targetSize);

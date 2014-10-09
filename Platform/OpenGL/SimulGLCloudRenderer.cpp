@@ -101,9 +101,9 @@ GL_ERROR_CHECK
     effect->SetTexture(deviceContext,"illumSampler",illuminationTexture);
 	if(cloudProperties.GetWrap())
 	{
-	//	effect->SetSamplerState(deviceContext,"cloudDensity1",m_pWrapSamplerState);
+		effect->SetSamplerState(deviceContext,"cloudDensity1",m_pWrapSamplerState);
 		effect->SetSamplerState(deviceContext,"cloudDensity2",m_pWrapSamplerState);
-	//	effect->SetSamplerState(deviceContext,"cloudSamplerState",m_pWrapSamplerState);
+		effect->SetSamplerState(deviceContext,"cloudSamplerState",m_pWrapSamplerState);
 	}
 	else
 	{

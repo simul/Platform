@@ -2,6 +2,8 @@
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/TextRenderer.h"
+#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Effect.h"
 
 using namespace simul;
@@ -136,8 +138,6 @@ void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::ve
 		EnsureEffectIsBuiltPartialSpec(filename_utf8,opts,defines);
 }
 
-#include "Simul/Camera/Camera.h"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 namespace simul
 {
 	namespace crossplatform

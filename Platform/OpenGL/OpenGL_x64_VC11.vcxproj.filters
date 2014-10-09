@@ -23,9 +23,6 @@
     <ClCompile Include="GpuCloudGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GpuSkyGenerator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="LoadGLImage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -47,19 +44,10 @@
     <ClCompile Include="SimulGLHDRRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulGLSkyRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SimulGLTerrainRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SimulGLUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SimulGLWeatherRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SimulOpticsRendererGL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RenderPlatform.cpp">
@@ -103,9 +91,6 @@
     <ClInclude Include="GpuCloudGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GpuSkyGenerator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="LoadGLImage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -130,19 +115,10 @@
     <ClInclude Include="SimulGLHDRRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulGLSkyRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimulGLTerrainRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SimulGLUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulGLWeatherRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimulOpticsRendererGL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RenderPlatform.h">

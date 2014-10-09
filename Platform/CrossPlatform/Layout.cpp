@@ -27,6 +27,7 @@ Layout::~Layout()
 void Layout::SetDesc(const LayoutDesc *d,int num)
 {
 	parts.clear();
+	struct_size=0;
 	for(int i=0;i<num;i++)
 	{
 		parts.push_back(*d);

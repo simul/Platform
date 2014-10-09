@@ -187,7 +187,6 @@
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="Framebuffer3D.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
-    <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
@@ -197,12 +196,8 @@
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
-    <ClCompile Include="SimulCloudRendererDX1x.cpp" />
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
-    <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
-    <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
-    <ClCompile Include="TerrainRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
@@ -221,7 +216,6 @@
     <ClInclude Include="Export.h" />
     <ClInclude Include="Framebuffer3D.h" />
     <ClInclude Include="FramebufferDX1x.h" />
-    <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="MacrosDx1x.h" />
@@ -234,12 +228,8 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
     <ClInclude Include="SaveTextureDX1x.h" />
-    <ClInclude Include="SimulCloudRendererDX1x.h" />
     <ClInclude Include="SimulHDRRendererDX1x.h" />
-    <ClInclude Include="SimulOpticsRendererDX1x.h" />
-    <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />
-    <ClInclude Include="TerrainRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
