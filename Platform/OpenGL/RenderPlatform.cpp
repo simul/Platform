@@ -494,14 +494,14 @@ static GLenum toGLWrapping(crossplatform::SamplerStateDesc::Wrapping w)
 	default:
 		break;
 	}
-	return 0;
+	return GL_REPEAT;
 }
 
 crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::SamplerStateDesc *desc)
 {
 	opengl::SamplerState *s=new opengl::SamplerState();
 	glGenSamplers(1,&s->sampler_state);
-	switch(desc->filtering)
+	/*switch(desc->filtering)
 	{
 	case crossplatform::SamplerStateDesc::POINT:
 		glSamplerParameteri(s->sampler_state,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
@@ -516,7 +516,7 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 	}
 	glSamplerParameteri(s->sampler_state,GL_TEXTURE_WRAP_S,toGLWrapping(desc->x));
 	glSamplerParameteri(s->sampler_state,GL_TEXTURE_WRAP_T,toGLWrapping(desc->y));
-	glSamplerParameteri(s->sampler_state,GL_TEXTURE_WRAP_R,toGLWrapping(desc->z));
+	glSamplerParameteri(s->sampler_state,GL_TEXTURE_WRAP_R,toGLWrapping(desc->z));*/
 	return s;
 }
 

@@ -294,6 +294,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 		if(ShowOSD&&simulWeatherRenderer->GetBaseCloudRenderer())
 			simulWeatherRenderer->GetBaseCloudRenderer()->RenderDebugInfo(deviceContext,ScreenWidth,ScreenHeight);
+	GL_ERROR_CHECK
 	}
 	renderUI();
 	glPopAttrib();
@@ -302,6 +303,7 @@ GL_ERROR_CHECK
 
 void OpenGLRenderer::renderUI()
 {
+	GL_ERROR_CHECK
 	glUseProgram(0);
 	
 	
@@ -313,6 +315,7 @@ void OpenGLRenderer::renderUI()
 	int y=12;
 	static int line_height=16;
 	crossplatform::DeviceContext deviceContext;
+	GL_ERROR_CHECK
 	renderPlatform->Print(deviceContext,12,y+=line_height,"OpenGL");
 	if(ShowOSD)
 	{

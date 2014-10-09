@@ -99,6 +99,18 @@ GL_ERROR_CHECK
     effect->SetTexture(deviceContext,"inscatterSampler",overcInscTexture);
     effect->SetTexture(deviceContext,"skylightSampler",skylightTexture);
     effect->SetTexture(deviceContext,"illumSampler",illuminationTexture);
+	if(cloudProperties.GetWrap())
+	{
+	//	effect->SetSamplerState(deviceContext,"cloudDensity1",m_pWrapSamplerState);
+		effect->SetSamplerState(deviceContext,"cloudDensity2",m_pWrapSamplerState);
+	//	effect->SetSamplerState(deviceContext,"cloudSamplerState",m_pWrapSamplerState);
+	}
+	else
+	{
+		effect->SetSamplerState(deviceContext,"cloudDensity1",m_pClampSamplerState);
+		effect->SetSamplerState(deviceContext,"cloudDensity2",m_pClampSamplerState);
+		effect->SetSamplerState(deviceContext,"cloudSamplerState",m_pClampSamplerState);
+	}
 GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE7);
 	GLuint program=effect->GetTechniqueByName(depth_alpha_tex?"layers_depth":"layers")->passAsGLuint(0);

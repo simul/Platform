@@ -79,7 +79,7 @@ shader PS_Clouds2D(in vec2 texc_global,in vec2 texc_detail,in vec3 wPosition,in 
 	uint2 depthDims;
 	uint depthSamples;
 	vec2 depthTexCoords=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
-	float dlookup=texture_clamp_lod(depthTexture,depthTexCoords,0);
+	float dlookup=texture_clamp_lod(depthTexture,depthTexCoords,0).x;
 #if REVERSE_DEPTH==1
 	if(dlookup!=0)
 		discard;

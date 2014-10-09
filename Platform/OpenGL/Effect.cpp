@@ -30,6 +30,7 @@
 
 using namespace simul;
 using namespace opengl;
+using namespace std;
 
 #define CHECK_PARAM_EXISTS\
 	if(loc<0)\
@@ -293,6 +294,7 @@ EffectTechnique *Effect::CreateTechnique()
 {
 	return new opengl::EffectTechnique;
 }
+
 void Effect::AddPass(std::string techname, std::string passname, GLuint t)
 {
 	// Now the name will determine what technique and pass it is.
@@ -315,6 +317,7 @@ void Effect::AddPass(std::string techname, std::string passname, GLuint t)
 	tech->passes_by_index[pass_idx] = (void*)t;
 	tech->pass_indices[passname] = pass_idx;
 }
+
 // convert GL programs into techniques and passes.
 bool Effect::FillInTechniques()
 {
@@ -363,7 +366,6 @@ bool Effect::FillInTechniques()
 	}
 	return (numt!=0||nump!=0);
 }
-
 
 crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 {
@@ -442,7 +444,6 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write)
 {
 	GL_ERROR_CHECK
 	int texture_number=current_texture_number;
-#if 1
 	std::string n(name);
 	if(textureNumberMap.find(n)!=textureNumberMap.end())
 	{
@@ -453,9 +454,6 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write)
 		textureNumberMap[n]=current_texture_number;
 		current_texture_number++;
 	}
-#else
-	current_texture_number++;
-#endif
 	GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE0+texture_number);
 	// Fall out silently if this texture is not set.
@@ -551,8 +549,37 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *
 	SetTexture(deviceContext,name,&t);
 }
 
-void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)
+void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::SamplerState *s)
 {
+	GLuint sampler_state=0;
+	if(s)
+		sampler_state=s->asGLuint();
+	GL_ERROR_CHECK
+	int texture_number=current_texture_number;
+	std::string n(name);
+	if(textureNumberMap.find(n)!=textureNumberMap.end())
+	{
+		texture_number=textureNumberMap[n];
+	}
+	else
+	{
+		textureNumberMap[n]=current_texture_number;
+		current_texture_number++;
+	}
+	// There are two possibilities - we are either within an "apply" state, or not.
+	if(apply_count)
+		glBindSampler(texture_number, sampler_state);
+	if(s)
+		prepared_sampler_states[texture_number]=sampler_state;
+	else
+	{
+		map<GLuint,GLuint>::iterator i=prepared_sampler_states.find(texture_number);
+		if(i!=prepared_sampler_states.end())
+			prepared_sampler_states.erase(i);
+	}
+	// If we're in an "apply" state, we can remember to unbind the sampler at the corresponding "unapply"
+	// But if we're not, can we be SURE that we'll hit the unapply? We might then have a stray sampler state left behind.
+	// So instead of binding the sampler now, we store the information and wait for "apply".
 }
 
 void Effect::SetParameter	(const char *name	,float value)
@@ -645,6 +672,8 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 		current_prog	=effectTechnique->passAsGLuint(pass);
 		glUseProgram(current_prog);
 		GL_ERROR_CHECK
+		for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
+			glBindSampler(i->first,i->second);
 		//current_texture_number	=0;
 		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
@@ -661,21 +690,25 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 	apply_count++;
 	currentTechnique		=effectTechnique;
 	CHECK_TECH_EXISTS
-	GLuint prog=effectTechnique->passAsGLuint(pass);
-	for(EffectTechnique::PassIndexMap::iterator i=effectTechnique->passes_by_index.begin();
-		i!=effectTechnique->passes_by_index.end();i++)
+	if(effectTechnique)
 	{
-		if(i->second==(void*)prog)
-			currentPass				=i->first;
+		GLuint prog=effectTechnique->passAsGLuint(pass);
+		for(EffectTechnique::PassIndexMap::iterator i=effectTechnique->passes_by_index.begin();
+			i!=effectTechnique->passes_by_index.end();i++)
+		{
+			if(i->second==(void*)prog)
+				currentPass				=i->first;
+		}
+		glUseProgram(prog);
+		GL_ERROR_CHECK
+		for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
+			glBindSampler(i->first,i->second);
+		//current_texture_number	=0;
+		current_prog	=prog;
+		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
+		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
+			glEffectTechnique->passStates[currentPass]->Apply();
 	}
-	//currentPass=effectTechnique->passes_by_index.find((void*)prog);
-	glUseProgram(prog);
-	GL_ERROR_CHECK
-	//current_texture_number	=0;
-	current_prog	=prog;
-	EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
-	if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
-		glEffectTechnique->passStates[currentPass]->Apply();
 }
 
 void Effect::Reapply(crossplatform::DeviceContext &)
@@ -697,7 +730,8 @@ void Effect::Unapply(crossplatform::DeviceContext &)
 		SIMUL_BREAK("Effect::Apply has been called too many times!")
 	currentTechnique=NULL;
 	apply_count--;
-	//current_texture_number	=0;
+	for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
+		glBindSampler(i->first,0);
 GL_ERROR_CHECK
 }
 
