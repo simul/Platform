@@ -38,7 +38,7 @@ GLuint Buffer::AsGLuint()
 	return buf;
 }
 
-void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access,bool streamout_target)
+void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access,bool streamout_target)
 {
 	SAFE_DELETE_BUFFER(buf)
     glGenBuffers(1, &buf);
@@ -72,7 +72,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data)
+void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *,int num_indices,int index_size_bytes,const void *data)
 {
 	SAFE_DELETE_BUFFER(buf)
     glGenBuffers(1, &buf);
@@ -83,7 +83,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 	stride=index_size_bytes;
 }
 
-void *Buffer::Map(crossplatform::DeviceContext &deviceContext)
+void *Buffer::Map(crossplatform::DeviceContext &)
 {
 	if(mapped!=NULL)
 		SIMUL_BREAK("Buffer::Map - Already mapped");
@@ -93,7 +93,7 @@ void *Buffer::Map(crossplatform::DeviceContext &deviceContext)
 	return mapped;
 }
 
-void Buffer::Unmap(crossplatform::DeviceContext &deviceContext)
+void Buffer::Unmap(crossplatform::DeviceContext &)
 {
 	// if the pointer is valid(mapped), update VBO
 	if(mapped)

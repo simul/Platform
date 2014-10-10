@@ -287,6 +287,19 @@ vec4 TextFileInput::Get(const char *name,vec4 dflt)
 	return ret;
 }
 
+const char *TextFileInput::Get(int propertyIndex)
+{
+	std::map<std::string,std::string>::iterator i=properties.begin();
+	if(propertyIndex>=properties.size())
+		return NULL;
+	for(int j=0;j<propertyIndex;j++,i++)
+	{
+	}
+	if(i==properties.end())
+		return NULL;
+	return i->first.c_str();
+}
+
 TextInput *TextFileInput::GetSubElement(const char *name)
 {
 	return &subElements[name];

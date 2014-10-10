@@ -33,14 +33,16 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	desc.blend.RenderTarget[0].DestBlend			=crossplatform::BLEND_ZERO;
 	desc.blend.RenderTarget[0].SrcBlendAlpha		=crossplatform::BLEND_ONE;
 	desc.blend.RenderTarget[0].DestBlendAlpha		=crossplatform::BLEND_ZERO;
-	RenderState *opaque=standardRenderStates[STANDARD_OPAQUE_BLENDING]=CreateRenderState(desc);
-	
+	RenderState *opaque=CreateRenderState(desc);
+	standardRenderStates[STANDARD_OPAQUE_BLENDING]=opaque;
+
 	desc.blend.RenderTarget[0].BlendEnable			=true;
 	desc.blend.RenderTarget[0].SrcBlend				=crossplatform::BLEND_SRC_ALPHA;
 	desc.blend.RenderTarget[0].DestBlend			=crossplatform::BLEND_INV_SRC_ALPHA;
 	desc.blend.RenderTarget[0].SrcBlendAlpha		=crossplatform::BLEND_SRC_ALPHA;
 	desc.blend.RenderTarget[0].DestBlendAlpha		=crossplatform::BLEND_INV_SRC_ALPHA;
-	RenderState *alpha=standardRenderStates[STANDARD_ALPHA_BLENDING]=CreateRenderState(desc);
+	RenderState *alpha=CreateRenderState(desc);
+	standardRenderStates[STANDARD_ALPHA_BLENDING]=alpha;
 	
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::DEPTH;
@@ -48,13 +50,23 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	desc.depth.test			=true;
 	desc.depth.write		=true;
 
-	RenderState *depth_ge=standardRenderStates[STANDARD_DEPTH_GREATER_EQUAL]=CreateRenderState(desc);
+	RenderState *depth_ge=CreateRenderState(desc);
+	standardRenderStates[STANDARD_DEPTH_GREATER_EQUAL]=depth_ge;
 	desc.depth.comparison	=crossplatform::DepthComparison::DEPTH_LESS_EQUAL;
-	RenderState *depth_le=standardRenderStates[STANDARD_DEPTH_LESS_EQUAL]=CreateRenderState(desc);
-	desc.depth.test			=false;
-	desc.depth.write		=false;
-	RenderState *depth_no=standardRenderStates[STANDARD_DEPTH_DISABLE]=CreateRenderState(desc);
+	RenderState *depth_le=CreateRenderState(desc);
+	standardRenderStates[STANDARD_DEPTH_LESS_EQUAL]=depth_le;
 
+	desc.depth.write			=false;
+	RenderState *depth_tle=CreateRenderState(desc);
+	standardRenderStates[STANDARD_TEST_DEPTH_LESS_EQUAL]=depth_tle;
+
+	desc.depth.comparison	=crossplatform::DepthComparison::DEPTH_GREATER_EQUAL;
+	RenderState *depth_tge=CreateRenderState(desc);
+	standardRenderStates[STANDARD_TEST_DEPTH_GREATER_EQUAL]=depth_tge;
+
+	desc.depth.test			=false;
+	RenderState *depth_no=CreateRenderState(desc);
+	standardRenderStates[STANDARD_DEPTH_DISABLE]=depth_no;
 
 	SAFE_DELETE(textRenderer);
 	textRenderer=new TextRenderer;

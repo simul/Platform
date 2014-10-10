@@ -801,7 +801,7 @@ static GLenum toGlBlendOp(crossplatform::BlendOption o)
 	};
 	return GL_ONE;
 }
-void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s)
+void RenderPlatform::SetRenderState(crossplatform::DeviceContext &,const crossplatform::RenderState *s)
 {
 	opengl::RenderState *S=(opengl::RenderState*)s;
 	if(S->desc.type==crossplatform::BLEND)
@@ -875,15 +875,15 @@ GL_ERROR_CHECK
 	}*/
 }
 
-void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
+void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplatform::Buffer *buffer)
 {
 }
 
-void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
+void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {
 }
 
-crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &deviceContext,int index)
+crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &,int index)
 {
 	crossplatform::Viewport viewport;
 	GL_ERROR_CHECK
@@ -892,11 +892,11 @@ crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext
 	return viewport;
 }
 
-void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Viewport *vps)
+void RenderPlatform::SetViewports(crossplatform::DeviceContext &,int num,crossplatform::Viewport *vps)
 {
 }
 
-void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
+void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &,crossplatform::Buffer *buffer)
 {
 	GL_ERROR_CHECK
 	GLuint buf=buffer->AsGLuint();
@@ -944,7 +944,7 @@ void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &)
 	GL_ERROR_CHECK
 }
 
-void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &)
 {
 	GLint current_fb=0;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING,&current_fb);
@@ -959,7 +959,7 @@ void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &deviceConte
 	viewport_stack.push_back(viewport);
 }
 
-void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &)
 {
 	GLuint last_fb=fb_stack.back();
     glBindFramebuffer(GL_FRAMEBUFFER,last_fb);
@@ -1002,7 +1002,7 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &,int num_verts,int start
 	glDrawArrays(toGLTopology(currentTopology), start_vert, num_verts); 
 }
 
-void RenderPlatform::DrawIndexed		(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
+void RenderPlatform::DrawIndexed		(crossplatform::DeviceContext &,int num_indices,int start_index,int base_vertex)
 {
 	GL_ERROR_CHECK
 	glDrawElements(toGLTopology(currentTopology),num_indices,GL_UNSIGNED_SHORT,(void*)base_vertex);

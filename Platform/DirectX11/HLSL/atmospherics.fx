@@ -83,8 +83,7 @@ uint4 PS_LossComposite(atmosVertexOutput IN) : SV_TARGET
 					,IN.pos
 					,depthToLinFadeDistParams
 					,tanHalfFov);
-	//uint faru		=colour3_to_uint(farLoss);
-	//uint nearu	=colour3_to_uint(nearLoss);
+
 	uint2 faru		=colour3_to_uint2(farLoss);
 	uint2 nearu		=colour3_to_uint2(nearLoss);
     return uint4(faru,nearu);

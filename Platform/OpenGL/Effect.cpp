@@ -228,12 +228,12 @@ void includeCallbackFunc(const char *incName, FILE *&fp, const char *&buf)
 		fp=NULL;
 		return;
 	}
-    char fullpath[200];
+  //  char fullpath[200];
     fp = fopen(filenameUtf8.c_str(),"r");
 	ERRNO_CHECK
 }
 
-void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	filename=filename_utf8;
 #ifdef SIMUL_USE_NVFX
@@ -325,13 +325,13 @@ bool Effect::FillInTechniques()
 	if(e<0)
 		return false;
 	groups.clear();
-	int numt = glfxGetTechniqueCount(e);
+	int numt = (int)glfxGetTechniqueCount(e);
 	if (numt)
 	{ 
 		for (int i = 0; i < numt; i++)
 		{
 			std::string tech_name = glfxGetTechniqueName(e, i);
-			int num_passes = glfxGetPassCount(e, tech_name.c_str());
+			int num_passes = (int)glfxGetPassCount(e, tech_name.c_str());
 			for (int j = 0; j < num_passes; j++)
 			{
 				std::string pass_name = glfxGetPassName(e, tech_name.c_str(), j);
@@ -435,7 +435,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 	return tech;
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex)
 {
 	SetTex(name,tex,true);
 }
@@ -549,7 +549,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *
 	SetTexture(deviceContext,name,&t);
 }
 
-void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::SamplerState *s)
+void Effect::SetSamplerState(crossplatform::DeviceContext &,const char *name,crossplatform::SamplerState *s)
 {
 	GLuint sampler_state=0;
 	if(s)

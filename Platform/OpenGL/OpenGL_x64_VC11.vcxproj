@@ -294,9 +294,6 @@
     <None Include="GLSL\tonemap.vert" />
     <None Include="GLSL\view_dir.glsl" />
   </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="OpenGL.rc" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

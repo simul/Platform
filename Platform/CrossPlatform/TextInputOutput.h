@@ -14,6 +14,41 @@ namespace simul
 {
 	namespace crossplatform
 	{
+#if 0
+		//! A simple float4 for use in Variant.
+		struct f4
+		{
+			float x,y,z,w;
+		};
+		//! A super-simple variant struct for use in IO.
+		struct Variant
+		{
+			enum Type
+			{
+				BOOL,INT,DOUBLE,FLOAT,VEC4,UNKNOWN
+			};
+			union
+			{
+				bool Bool;
+				int Int;
+				double Double;
+				float Float;
+				f4 F4;
+			};
+			Variant(Type t):type(t){}
+			inline bool		AsBool() const	{return Bool;}
+			inline int		AsInt() const	{return Int;}
+			inline double	AsDouble() const{return Double;}
+			inline float	AsFloat() const	{return Float;}
+			inline f4		AsF4() const	{return F4;}
+			inline void operator=(bool b)	{Bool=b;}
+			inline void operator=(int i)	{Int=i;}
+			inline void operator=(double d)	{Double=d;}
+			inline void operator=(float f)	{Float=f;}
+			inline void operator=(f4 f)		{F4=f;}
+			Type type;
+		};
+#endif
 		class TextInput
 		{
 		public:
@@ -22,19 +57,21 @@ namespace simul
 
 			virtual ~TextInput(){}
 			virtual bool Good()=0;
-			// Text value of the specified element.
+			//! Text value of the specified element.
 			virtual const char *Get(const char *name,const char *default_)=0;
-			// Boolean value of the specified element.
+			//! Boolean value of the specified element.
 			virtual bool Get(const char *name,bool default_)=0;
-			// Integer value of the specified element.
+			//! Integer value of the specified element.
 			virtual int Get(const char *name,int default_)=0;
-			// Floating-point value of the specified element.
+			//! Floating-point value of the specified element.
 			virtual double Get(const char *name,double default_)=0;
-			// Floating-point value of the specified element.
+			//! Floating-point value of the specified element.
 			virtual float Get(const char *name,float default_)=0;
-			// Floating-point value of the specified element.
+			//! Floating-point value of the specified element.
 			virtual vec4 Get(const char *name,vec4 default_)=0;
-			// Sub-element with the given name. If null, the Value() should be non-null.
+			//! The property at the given index. type should be Variant::UNKNOWN at the end of the list.
+			virtual const char *Get(int propertyIndex)=0;
+			//! Sub-element with the given name. If null, the Value() should be non-null.
 			virtual TextInput *GetSubElement(const char *name)=0;
 			typedef std::vector<TextInput*> Array;
 			virtual Array &GetArray(const char *name)=0;
@@ -54,6 +91,7 @@ namespace simul
 			virtual void Set(const char *name,int value)=0;
 			virtual void Set(const char *name,double value)=0;
 			virtual void Set(const char *name,float value)=0;
+			//virtual void Set(const char *name,Variant v)=0;
 			// Floating-point value of the specified element.
 			virtual void Set(const char *name,vec4 value)=0;
 			// Make a sub-element with the given name.
@@ -84,6 +122,7 @@ namespace simul
 			float Get(const char *name,float default_);
 			// Floating-point value of the specified element.
 			vec4 Get(const char *name,vec4 default_);
+			virtual const char *Get(int propertyIndex);
 			// Sub-element with the given name. If null, the Value() should be non-null.
 			TextInput *GetSubElement(const char *name);
 			Array &GetArray(const char *name);
