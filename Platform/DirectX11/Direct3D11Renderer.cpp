@@ -124,7 +124,7 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	enabled=true;
 	msaaFramebuffer.RestoreDeviceObjects(renderPlatform);
 	//Set a global device pointer for use by various classes.
-	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
+	Profiler::GetGlobalProfiler().Initialize(renderPlatform->AsD3D11Device());
 	viewManager.RestoreDeviceObjects(renderPlatform);
 	lightProbeConstants.RestoreDeviceObjects(renderPlatform);
 	if(simulHDRRenderer)
@@ -814,7 +814,7 @@ void TrueSkyRenderer::SaveScreenshot(const char *filename_utf8,int width,int hei
 	s.gamma=gamma/0.44f;
 	cam->SetCameraViewStruct(s);
 	AllOsds=false;
-	Render(0,m_pd3dDevice,pImmediateContext);
+	Render(0,pImmediateContext);
 	AllOsds=true;
 	UseHdrPostprocessor=t;
 	fb.Deactivate(deviceContext);
@@ -868,7 +868,8 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 void TrueSkyRenderer::RecompileShaders()
 {
 	cubemapFramebuffer.RecompileShaders();
-	renderPlatform->RecompileShaders();
+	if(renderPlatform)
+		renderPlatform->RecompileShaders();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RecompileShaders();
 	if(baseOpticsRenderer)
@@ -926,7 +927,8 @@ void TrueSkyRenderer::SetCamera(int view_id,const simul::camera::CameraOutputInt
 
 void TrueSkyRenderer::ReverseDepthChanged()
 {
-	renderPlatform->SetReverseDepth(ReverseDepth);
+	if(renderPlatform)
+		renderPlatform->SetReverseDepth(ReverseDepth);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	if(simulHDRRenderer)
