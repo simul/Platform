@@ -57,7 +57,6 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 		,renderPlatform(NULL)
 		,cubemap_view_id(-1)
 		,enabled(false)
-		,m_pd3dDevice(NULL)
 		,lightProbesEffect(NULL)
 		,linearizeDepthEffect(NULL)
 		,baseOpticsRenderer(NULL)
@@ -142,17 +141,11 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	envmapFramebuffer.SetWidthAndHeight(8,8);
 	envmapFramebuffer.RestoreDeviceObjects(renderPlatform);
 	//envmapFramebuffer.Clear(pContext,0.f,0.f,0.f,1.f,0.f);
-	if(m_pd3dDevice)
+	if(renderPlatform)
 	{
-		crossplatform::DeviceContext deviceContext;
-		deviceContext.renderPlatform=renderPlatform;
-		ID3D11DeviceContext *pImmediateContext;
-		m_pd3dDevice->GetImmediateContext(&pImmediateContext);
-		deviceContext.platform_context=pImmediateContext;
-
+		crossplatform::DeviceContext deviceContext=renderPlatform->GetImmediateContext();
 		cubemapFramebuffer.Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
 		envmapFramebuffer.Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
-		SAFE_RELEASE(pImmediateContext);
 	}
 	//if(!demoOverlay)
 	//	demoOverlay=new crossplatform::DemoOverlay();
@@ -332,6 +325,8 @@ ERRNO_CHECK
 
 void TrueSkyRenderer::RenderEnvmap(crossplatform::DeviceContext &deviceContext)
 {
+	if(!lightProbesEffect)
+		return;
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderEnvmap CalcSphericalHarmonics")
 	cubemapFramebuffer.SetBands(SphericalHarmonicsBands);
@@ -796,31 +791,26 @@ void TrueSkyRenderer::SaveScreenshot(const char *filename_utf8,int width,int hei
 			width=view->GetScreenWidth();
 		if(height==0)
 			height=view->GetScreenHeight();
-	simul::dx11::Framebuffer fb(width,height);
-	fb.RestoreDeviceObjects(renderPlatform);
-	crossplatform::DeviceContext deviceContext;
-	deviceContext.renderPlatform=renderPlatform;
-	ID3D11DeviceContext *pImmediateContext;
-	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
-	deviceContext.platform_context=pImmediateContext;
-	fb.Activate(deviceContext);
-	bool t=UseHdrPostprocessor;
-	UseHdrPostprocessor=true;
+		simul::dx11::Framebuffer fb(width,height);
+		fb.RestoreDeviceObjects(renderPlatform);
+		crossplatform::DeviceContext deviceContext=renderPlatform->GetImmediateContext();
+		fb.Activate(deviceContext);
+		bool t=UseHdrPostprocessor;
+		UseHdrPostprocessor=true;
 	
-	camera::CameraOutputInterface *cam		=const_cast<camera::CameraOutputInterface *>(cameras[0]);
-	camera::CameraViewStruct s0=cam->GetCameraViewStruct();
-	camera::CameraViewStruct s=s0;
-	s.exposure=exposure;
-	s.gamma=gamma/0.44f;
-	cam->SetCameraViewStruct(s);
-	AllOsds=false;
-	Render(0,pImmediateContext);
-	AllOsds=true;
-	UseHdrPostprocessor=t;
-	fb.Deactivate(deviceContext);
-	cam->SetCameraViewStruct(s0);
-	simul::dx11::SaveTexture(m_pd3dDevice,(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());
-	SAFE_RELEASE(pImmediateContext);
+		camera::CameraOutputInterface *cam		=const_cast<camera::CameraOutputInterface *>(cameras[0]);
+		camera::CameraViewStruct s0=cam->GetCameraViewStruct();
+		camera::CameraViewStruct s=s0;
+		s.exposure=exposure;
+		s.gamma=gamma/0.44f;
+		cam->SetCameraViewStruct(s);
+		AllOsds=false;
+		Render(0,deviceContext.asD3D11DeviceContext());
+		AllOsds=true;
+		UseHdrPostprocessor=t;
+		fb.Deactivate(deviceContext);
+		cam->SetCameraViewStruct(s0);
+		simul::dx11::SaveTexture(renderPlatform->AsD3D11Device(),(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());
 	}
 	catch(...)
 	{
@@ -887,7 +877,7 @@ void TrueSkyRenderer::RecompileShaders()
 	viewManager.RecompileShaders();
 	SAFE_DELETE(lightProbesEffect);
 	SAFE_DELETE(linearizeDepthEffect);
-	if(m_pd3dDevice)
+	if(renderPlatform)
 	{
 		lightProbesEffect=renderPlatform->CreateEffect("light_probes.fx",defines);
 		lightProbeConstants.LinkToEffect(lightProbesEffect,"LightProbeConstants");

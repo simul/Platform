@@ -159,7 +159,6 @@ namespace simul
 			int											cubemap_view_id;
 			bool										enabled;
 			std::string									screenshotFilenameUtf8;
-			ID3D11Device								*m_pd3dDevice;
 			crossplatform::Effect						*lightProbesEffect;
 			crossplatform::Effect						*linearizeDepthEffect;
 			camera::BaseOpticsRenderer					*baseOpticsRenderer;
