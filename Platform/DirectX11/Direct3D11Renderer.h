@@ -91,13 +91,13 @@ namespace simul
 				META_ValuePropertyWithSetCall(int,Antialiasing	,AntialiasingChanged,"How many antialiasing samples to use.")
 				META_ValueProperty(int,SphericalHarmonicsBands	,"How many bands to use for spherical harmonics.")
 			META_EndProperties
-			void RestoreDeviceObjects	(struct ID3D11Device* pd3dDevice);
+			void RestoreDeviceObjects	(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 			// Also in Direct3D11Renderer pass-through to here:
-			int	 AddView				(bool external_fb);
+			int	 AddView			(bool external_fb);
 			void RemoveView			(int);
 			void ResizeView			(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
-			void Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext);
+			void Render(int view_id,ID3D11DeviceContext* pContext);
 			///////////////////////////
 			bool IsEnabled()const
 			{
@@ -111,11 +111,11 @@ namespace simul
 			{
 				return simulHDRRenderer;
 			}
-			OceanRenderer				*GetOceanRenderer()
+			OceanRenderer *GetOceanRenderer()
 			{
 				return oceanRenderer;
 			}
-			terrain::BaseTerrainRenderer	*GetTerrainRenderer()
+			terrain::BaseTerrainRenderer *GetTerrainRenderer()
 			{
 				return baseTerrainRenderer;
 			}
@@ -124,14 +124,13 @@ namespace simul
 			void						RenderCubemap(crossplatform::DeviceContext &deviceContext,const float *cam_pos);
 			void						RenderEnvmap(crossplatform::DeviceContext &deviceContext);
 			// D3D11CallbackInterface
-	/*		virtual bool				OnDeviceRemoved		();
-			virtual void				OnFrameMove			(double fTime,float fTimeStep);*/
 			virtual const char *		GetDebugText		() const;
 			void SetViewType(int view_id,crossplatform::ViewType vt);
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
 			void SaveScreenshot(const char *filename_utf8,int width=0,int height=0,float exposure=1.0f,float gamma=0.44f);
-			simul::dx11::RenderPlatform renderPlatformDx11;
+			
 		protected:
+			simul::crossplatform::RenderPlatform *renderPlatform;
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Viewport viewport,int x0,int y0,int w,int h);
 			/// Parts of the scene that go into the main buffer with depth active.
 			void RenderDepthElements(crossplatform::DeviceContext &deviceContext
@@ -188,6 +187,7 @@ namespace simul
 		public:
 			Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);
 			~Direct3D11Renderer();
+			simul::dx11::RenderPlatform renderPlatformDx11;
 			TrueSkyRenderer *GetTrueSkyRenderer()
 			{
 				return &trueSkyRenderer;

@@ -35,6 +35,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	desc.blend.RenderTarget[0].DestBlendAlpha		=crossplatform::BLEND_ZERO;
 	RenderState *opaque=standardRenderStates[STANDARD_OPAQUE_BLENDING]=CreateRenderState(desc);
 	
+	desc.blend.RenderTarget[0].BlendEnable			=true;
 	desc.blend.RenderTarget[0].SrcBlend				=crossplatform::BLEND_SRC_ALPHA;
 	desc.blend.RenderTarget[0].DestBlend			=crossplatform::BLEND_INV_SRC_ALPHA;
 	desc.blend.RenderTarget[0].SrcBlendAlpha		=crossplatform::BLEND_SRC_ALPHA;
@@ -74,7 +75,11 @@ void RenderPlatform::RecompileShaders()
 	textRenderer->RecompileShaders();
 }
 
-void RenderPlatform::Print(crossplatform::DeviceContext &deviceContext,int x,int y	,const char *text,const float* colr,const float* bkg)
+void RenderPlatform::DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float exposure,float gamma)
+{
+}
+
+void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y	,const char *text,const float* colr,const float* bkg)
 {
 	float clr[]={1.f,1.f,0.f,1.f};
 	float black[]={0.f,0.f,0.f,0.0f};

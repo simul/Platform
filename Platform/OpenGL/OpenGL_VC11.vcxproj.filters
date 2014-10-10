@@ -376,7 +376,4 @@
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="OpenGL.rc" />
-  </ItemGroup>
 </Project>

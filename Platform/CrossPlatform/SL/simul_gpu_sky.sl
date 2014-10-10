@@ -313,22 +313,21 @@ vec4 Skyl(Texture3D insc_texture
 	float mie_factor	=exp(-skyl.w*stepLengthKm*haze_factor*hazeMie.x);
 	skyl.w				=saturate((1.0-mie_factor)/(1.0-total_ext.x+0.0001));
 #if 1//def BLACKBODY
-	float dens_dist	=dens_factor*stepLengthKm;
-	float emis_ext  =exp(-emissivity*dens_dist);
+	float dens_dist		=dens_factor*stepLengthKm;
+	float emis_ext		=exp(-emissivity*dens_dist);
 	vec3 bb;
-	float T         =seaLevelTemperatureK*lookups.w;
-	bb.xyz          =Blackbody(blackbody_texture,T);
+	float T				=seaLevelTemperatureK*lookups.w;
+	bb.xyz				=Blackbody(blackbody_texture,T);
 
-	skyl            *=emis_ext;
-	bb              *=1.0-emis_ext;
-	skyl.rgb        +=bb;
-	//skyl.rgb        =0.000001*skyl.rgb+Blackbody(T);
+	skyl				*=emis_ext;
+	bb					*=1.0-emis_ext;
+	skyl.rgb			+=bb;
  #endif
 	//skyl.w			=(loss.w)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 	skyl.rgb			*=previous_loss.rgb;
 	skyl.rgb			+=previous_skyl.rgb;
 		
-	float lossw=1.0;
+	float lossw			=1.0;
 	skyl.w				=(lossw)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 	return skyl;
 }
