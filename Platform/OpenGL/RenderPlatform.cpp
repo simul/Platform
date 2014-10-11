@@ -844,6 +844,27 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext &,const crosspl
 		glDepthFunc(toGlComparison(S->desc.depth.comparison));
 	}
 }
+void RenderPlatform::Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
+{
+	GL_ERROR_CHECK
+	//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	glBindFramebuffer( GL_READ_FRAMEBUFFER, ((opengl::Texture*)source)->FramebufferAsGLuint() );
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER,  ((opengl::Texture*)destination)->FramebufferAsGLuint() );
+	/*if (offscreen.depth&&ms_offscreen.depth)
+	{
+	glBlitFramebuffer( 0, 0, vpw, vph, 0, 0, vpw, vph, GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+	glError();
+	}*/
+	glBlitFramebuffer( 0, 0, source->width, source->length, 0, 0, destination->width, destination->length, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+	glBindFramebuffer( GL_READ_FRAMEBUFFER, 0 );
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+	GL_ERROR_CHECK
+}
+
+void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
+{
+	SaveGLImage(lFileNameUtf8,texture->AsGLuint());
+}
 
 void *RenderPlatform::GetDevice()
 {

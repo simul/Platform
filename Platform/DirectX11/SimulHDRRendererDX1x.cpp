@@ -210,13 +210,12 @@ void SimulHDRRendererDX1x::Render(crossplatform::DeviceContext &deviceContext,cr
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
 
-void SimulHDRRendererDX1x::RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,void *texture_srv
+void SimulHDRRendererDX1x::RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture
 	,float offsetX,float Exposure,float Gamma)
 {
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
-	dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTexture",textureSRV);
-	dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTextureMS",textureSRV);
+	hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
+	hdr_effect->SetTexture(deviceContext,"imageTextureMS",texture);
 	hdrConstants.gamma				=Gamma;
 	hdrConstants.exposure			=Exposure;
 	
@@ -241,7 +240,7 @@ void SimulHDRRendererDX1x::RenderWithOculusCorrection(crossplatform::DeviceConte
 	simul::dx11::setParameter(hdr_effect->asD3DX11Effect(),"offset",offsetX,0.f);
 	if(Glow)
 	{
-		RenderGlowTexture(deviceContext,texture_srv);
+		RenderGlowTexture(deviceContext,texture);
 		simul::dx11::setTexture(hdr_effect->asD3DX11Effect(),"glowTexture",glowTexture.AsD3D11ShaderResourceView());
 		hdr_effect->Apply(deviceContext,warpGlowExposureGamma,0);
 	}
@@ -265,11 +264,10 @@ static float CalculateBoxFilterWidth(float radius, int pass)
 	return box_width;
 }
 
-void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,void *texture_srv)
+void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture)
 {
 //	if(!m_pGaussianEffect)
 		return;
-	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	static int g_NumApproxPasses=3;
 	static int	g_MaxApproxPasses = 8;
@@ -277,8 +275,8 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 	// Render to the low-res glow.
 	if(glowTechnique)
 	{
-		dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTexture",textureSRV);
-		dx11::setTexture(hdr_effect->asD3DX11Effect(),"imageTextureMS",textureSRV);
+		hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
+		hdr_effect->SetTexture(deviceContext,"imageTextureMS",texture);
 		simul::dx11::setParameter(hdr_effect->asD3DX11Effect(),"offset",1.f/Width,1.f/Height);
 		hdr_effect->Apply(deviceContext,glowTechnique,(0));
 		glow_fb.Activate(deviceContext);
@@ -288,8 +286,8 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 		hdr_effect->Unapply(deviceContext);
 	}
     D3D11_TEXTURE2D_DESC tex_desc;
-	ID3D1xTexture2D *texture=glow_fb.GetColorTexture();
-	texture->GetDesc(&tex_desc);
+	ID3D1xTexture2D *t=glow_fb.GetColorTexture();
+	t->GetDesc(&tex_desc);
 
 	float box_width					= CalculateBoxFilterWidth(g_FilterRadius, g_NumApproxPasses);
 	float half_box_width			= box_width * 0.5f;

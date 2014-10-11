@@ -87,6 +87,8 @@ namespace simul
 			void									PushRenderTargets(crossplatform::DeviceContext &deviceContext);
 			void									PopRenderTargets(crossplatform::DeviceContext &deviceContext);
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s);
+			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source);
+			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8);
 
 			GLuint solid_program;
 			simul::opengl::ConstantBuffer<SolidConstants> solidConstants;

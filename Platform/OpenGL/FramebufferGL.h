@@ -84,7 +84,6 @@ namespace simul
 			{
 				return m_fb;
 			}
-			void CopyToMemory(crossplatform::DeviceContext &context, void *target, int start_texel, int num_texels);
 			simul::crossplatform::Texture *GetTexture()
 			{
 				return &buffer_texture;

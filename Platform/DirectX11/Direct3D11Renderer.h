@@ -170,11 +170,9 @@ namespace simul
 			crossplatform::MixedResolutionViewManager	viewManager;
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
-			simul::dx11::Framebuffer					msaaFramebuffer;
+			simul::crossplatform::BaseFramebuffer		*msaaFramebuffer;
 			crossplatform::ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;
-			ID3D11RenderTargetView	*mainRenderTarget;
-			ID3D11DepthStencilView	*mainDepthSurface;
 			simul::crossplatform::Texture				*linearDepthTexture;
 			std::map<int,const simul::camera::CameraOutputInterface *> cameras;
 			bool AllOsds;

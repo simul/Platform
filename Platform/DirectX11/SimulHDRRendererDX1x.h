@@ -50,9 +50,9 @@ namespace simul
 			//! Render: write the given texture to screen using the HDR rendering shaders
 			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
 			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma);
-			void RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,void *texture_srv,float Exposure,float Gamma,float offsetX);
+			void RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
-			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext,void *texture_srv);
+			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture);
 			void RenderDebug(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			//! Get the current debug text as a c-string pointer.
 			const char *GetDebugText() const;

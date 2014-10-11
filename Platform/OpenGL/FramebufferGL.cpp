@@ -327,11 +327,6 @@ void FramebufferGL::ClearColour(crossplatform::DeviceContext &,float r,float g,f
 	glClearColor(r,g,b,a);
 }
 
-void FramebufferGL::CopyToMemory(crossplatform::DeviceContext &, void * /*target*/, int /*start_texel*/, int /*num_texels*/)
-{
-
-}
-
 void FramebufferGL::CheckFramebufferStatus()
 {
     GLenum status;

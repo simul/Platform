@@ -52,12 +52,8 @@ namespace simul
 			virtual void SetUseFastRAM(bool /*colour*/,bool /*depth*/){};
 			virtual void SetAntialiasing(int s)=0;
 			//! Get the API-dependent pointer or id for the colour buffer target.
-			virtual void* GetColorTex()=0;
 			virtual Texture *GetTexture()=0;
 			virtual Texture *GetDepthTexture()=0;
-			//! Copy from the rt to the given target memory. If not starting at the top of the texture (start_texel>0), the first byte written
-			//! is at \em target, which is the address to copy the given chunk to, not the base address of the whole in-memory texture.
-			virtual void CopyToMemory(crossplatform::DeviceContext &context,void *target,int start_texel=0,int texels=0)=0;
 			// Get the dimensions of the specified texture - temporary, do not use.
 			virtual void GetTextureDimensions(const void* /*tex*/, unsigned int& /*widthOut*/, unsigned int& /*heightOut*/) const {}
 		//protected:
@@ -66,6 +62,10 @@ namespace simul
 			int numAntialiasingSamples;
 			bool depth_active, colour_active;
 			crossplatform::RenderPlatform *renderPlatform;
+		};
+		class SIMUL_CROSSPLATFORM_EXPORT CubemapFramebuffer:public BaseFramebuffer
+		{
+			virtual void SetCurrentFace(int i)=0;
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT TwoResFramebuffer
 		{

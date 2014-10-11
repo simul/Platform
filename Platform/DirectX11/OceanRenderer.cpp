@@ -568,7 +568,6 @@ void OceanRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,i
 	int w=(width-8)/u;
 	if(w>height/3)
 		w=height/3;
-	UtilityRenderer::SetScreenSize(width,height);
 	int x=8;
 	int y=height-w;
 	renderPlatform->DrawTexture(deviceContext,x,y,w,w,perlinNoise);

@@ -204,8 +204,6 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 }
 
 int UtilityRenderer::instance_count=0;
-int UtilityRenderer::screen_width=0;
-int UtilityRenderer::screen_height=0;
 UtilityRenderer utilityRenderer;
 
 UtilityRenderer::UtilityRenderer()
@@ -225,19 +223,6 @@ struct Vertext
 	D3DXVECTOR2 tex;
 };
 
-void UtilityRenderer::SetScreenSize(int w,int h)
-{
-	screen_width=w;
-	screen_height=h;
-}
-
-void UtilityRenderer::GetScreenSize(int& w,int& h)
-{
-	w=screen_width;
-	h=screen_height;
-}
-
-
 void UtilityRenderer::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
 	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
@@ -251,11 +236,14 @@ void UtilityRenderer::DrawQuad(crossplatform::DeviceContext &deviceContext)
 
 void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech,int pass)
 {
+	unsigned int num_v=1;
+	D3D11_VIEWPORT viewport;
+	deviceContext.asD3D11DeviceContext()->RSGetViewports(&num_v,&viewport);
 	DrawQuad2(deviceContext
-		,2.f*(float)x1/(float)screen_width-1.f
-		,1.f-2.f*(float)(y1+dy)/(float)screen_height
-		,2.f*(float)dx/(float)screen_width
-		,2.f*(float)dy/(float)screen_height
+		,2.f*(float)x1/(float)viewport.Width-1.f
+		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
+		,2.f*(float)dx/(float)viewport.Width
+		,2.f*(float)dy/(float)viewport.Height
 		,eff,tech,pass);
 }
 

@@ -29,6 +29,7 @@
 	#define uint2 uvec2
 	#define uint3 uvec3
 	#define uint4 uvec4
+	#define frac fract
 	#define texture_clamp(tex,texc) texture(tex,texc)
 	#define texture_wrap(tex,texc) texture(tex,texc)
 	#define texture_clamp_mirror(tex,texc) texture(tex,texc)

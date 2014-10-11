@@ -138,13 +138,9 @@ namespace simul
 		class SIMUL_DIRECTX11_EXPORT UtilityRenderer
 		{
 			static int instance_count;
-			static int screen_width;
-			static int screen_height;
 		public:
 			UtilityRenderer();
 			~UtilityRenderer();
-			static void SetScreenSize(int w,int h);
-			static void GetScreenSize(int& w,int& h);
 			static void RenderAngledQuad(	crossplatform::DeviceContext &deviceContext,const float *dir,float half_angle_radians,ID3DX11Effect* effect,ID3DX11EffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
 			static void DrawQuad(			crossplatform::DeviceContext &deviceContext,float x1,float y1,float dx,float dy,ID3DX11EffectTechnique* tech);	
 			static void DrawQuad2(			crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech,int pass=0);

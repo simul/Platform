@@ -228,7 +228,8 @@ namespace simul
 			{
 				count=ct;
 //				unit_size=sizeof(T);
-				SAFE_DELETE(platformStructuredBuffer);
+				delete platformStructuredBuffer;
+				platformStructuredBuffer=NULL;
 				platformStructuredBuffer=p->CreatePlatformStructuredBuffer();
 				platformStructuredBuffer->RestoreDeviceObjects(p,count,sizeof(T),computable,data);
 			}
@@ -256,7 +257,8 @@ namespace simul
 			{
 				if(platformStructuredBuffer)
 					platformStructuredBuffer->InvalidateDeviceObjects();
-				SAFE_DELETE(platformStructuredBuffer);
+				delete platformStructuredBuffer;
+				platformStructuredBuffer=NULL;
 				count=0;
 			}
 			int count;

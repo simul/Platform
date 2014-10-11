@@ -175,6 +175,10 @@ namespace simul
 			virtual void					PushRenderTargets(DeviceContext &deviceContext)=0;
 			//! Restore rendertargets and viewports from the top of the stack.
 			virtual void					PopRenderTargets(DeviceContext &deviceContext)=0;
+			//! Resolve a MSAA texture to a normal texture.
+			virtual void					Resolve(DeviceContext &deviceContext,Texture *destination,Texture *source)=0;
+			//! Save a texture to disk.
+			virtual void					SaveTexture(Texture *texture,const char *lFileNameUtf8)=0;
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY,mirrorY2;
 		protected:

@@ -113,9 +113,9 @@ namespace simul
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									PushRenderTargets(crossplatform::DeviceContext &deviceContext);
 			void									PopRenderTargets(crossplatform::DeviceContext &deviceContext);
-
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
-
+			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
+			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			crossplatform::Effect *solidEffect;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;

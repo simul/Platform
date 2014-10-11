@@ -77,9 +77,6 @@ namespace simul
 			{
 				return (ID3D11Texture2D*)buffer_depth_texture->AsD3D11Texture2D();
 			}
-			//! Copy from the rt to the given target memory. If not starting at the top of the texture (start_texel>0), the first byte written
-			//! is at \em target, which is the address to copy the given chunk to, not the base address of the whole in-memory texture.
-			void CopyToMemory(crossplatform::DeviceContext &deviceContext, void *target, int start_texel = 0, int texels = 0);
 			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
 			dx11::Texture *GetTexture()
 			{
@@ -90,11 +87,10 @@ namespace simul
 				return (dx11::Texture*)buffer_depth_texture;
 			}
 		protected:
-			DXGI_FORMAT target_format;
-			DXGI_FORMAT depth_format;
+			crossplatform::PixelFormat target_format;
+			crossplatform::PixelFormat depth_format;
 			bool Destroy();
 		protected:
-			ID3D11Texture2D *stagingTexture;	// Only initialized if CopyToMemory is invoked.
 			
 			ID3D11RenderTargetView*				m_pOldRenderTarget;
 			ID3D11DepthStencilView*				m_pOldDepthSurface;
@@ -108,7 +104,6 @@ namespace simul
 			//! The depth buffer.
 			crossplatform::Texture				*buffer_depth_texture;
 			bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
-			ID3D1xRenderTargetView* MakeRenderTarget(const ID3D1xTexture2D* pTexture);
 			float timing;
 			bool GenerateMips;
 			void SaveOldRTs(void *context);

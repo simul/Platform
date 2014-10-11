@@ -1,5 +1,6 @@
 #define NOMINMAX
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/Material.h"
 #include "Simul/Platform/DirectX11/Mesh.h"
@@ -14,7 +15,6 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
-#include "Simul/Base/RuntimeError.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Camera/Camera.h"
@@ -1046,6 +1046,24 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,
 	{
 		deviceContext.asD3D11DeviceContext()->OMSetDepthStencilState(ds->m_depthStencilState,0);
 	}
+}
+
+void RenderPlatform::Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
+{
+	deviceContext.asD3D11DeviceContext()->ResolveSubresource(destination->AsD3D11Texture2D(),0,source->AsD3D11Texture2D(),0,dx11::RenderPlatform::ToDxgiFormat(destination->GetFormat()));
+}
+
+void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
+{
+	std::string fn_utf8=lFileNameUtf8;
+	bool as_dds=false;
+	if(fn_utf8.find(".dds")<fn_utf8.length())
+		as_dds=true;
+	std::wstring wfilename=simul::base::Utf8ToWString(fn_utf8);
+	ID3D11DeviceContext*			m_pImmediateContext;
+	AsD3D11Device()->GetImmediateContext(&m_pImmediateContext);
+	D3DX11SaveTextureToFileW(m_pImmediateContext,texture->AsD3D11Texture2D(),as_dds?D3DX11_IFF_DDS:D3DX11_IFF_PNG,wfilename.c_str());
+	SAFE_RELEASE(m_pImmediateContext);
 }
 
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )

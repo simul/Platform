@@ -41,10 +41,9 @@ Framebuffer::Framebuffer(int w,int h) :
 	,num_OldViewports(0)
 	,buffer_texture(NULL)
 	,buffer_depth_texture(NULL)
-	,stagingTexture(NULL)
 	,timing(0.f)
-	,target_format(DXGI_FORMAT_R32G32B32A32_FLOAT)
-	,depth_format(DXGI_FORMAT_UNKNOWN) //The usual case is for the user to supply depth look-up textures, which is all we need for the majority of cases... So let's avoid needless construction of depth buffers unless otherwise indicated with a SetDepthFormat(...)
+	,target_format(crossplatform::RGBA_32_FLOAT)
+	,depth_format(crossplatform::UNKNOWN) //The usual case is for the user to supply depth look-up textures, which is all we need for the majority of cases... So let's avoid needless construction of depth buffers unless otherwise indicated with a SetDepthFormat(...)
 	,GenerateMips(false)
 	,useESRAM(false)
 	,useESRAMforDepth(false)
@@ -64,19 +63,17 @@ void Framebuffer::SetWidthAndHeight(int w,int h)
 
 void Framebuffer::SetFormat(crossplatform::PixelFormat f)
 {
-	DXGI_FORMAT F=dx11::RenderPlatform::ToDxgiFormat(f);
-	if(F==target_format)
+	if(f==target_format)
 		return;
-	target_format=F;
+	target_format=f;
 	InvalidateDeviceObjects();
 }
 
 void Framebuffer::SetDepthFormat(crossplatform::PixelFormat f)
 {
-	DXGI_FORMAT F=dx11::RenderPlatform::ToDxgiFormat(f);
-	if(F==depth_format)
+	if(f==depth_format)
 		return;
-	depth_format=F;
+	depth_format=f;
 	InvalidateDeviceObjects();
 }
 
@@ -107,7 +104,6 @@ void Framebuffer::InvalidateDeviceObjects()
 
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
-	SAFE_RELEASE(stagingTexture);
 }
 
 bool Framebuffer::Destroy()
@@ -170,8 +166,6 @@ bool Framebuffer::CreateBuffers()
 		return true;
 	if(buffer_depth_texture&&buffer_depth_texture->AsD3D11Texture2D())
 		return true;
-		
-	HRESULT hr=S_OK;
 	if(buffer_texture)
 		buffer_texture->InvalidateDeviceObjects();
 	if(buffer_depth_texture)
@@ -180,45 +174,16 @@ bool Framebuffer::CreateBuffers()
 		buffer_texture=renderPlatform->CreateTexture();
 	if(!buffer_depth_texture)
 		buffer_depth_texture=renderPlatform->CreateTexture();
-	SAFE_RELEASE(stagingTexture);
 	static int quality=0;
-	if(target_format!=0)
+	if(target_format!=crossplatform::UNKNOWN)
 	{
-		buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(target_format),false,true,false,numAntialiasingSamples,quality);
-	
-												
-		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-		renderTargetViewDesc.Format				=target_format;
-		renderTargetViewDesc.ViewDimension		=numAntialiasingSamples>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
-		renderTargetViewDesc.Texture2D.MipSlice	=0;
+		buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,target_format,false,true,false,numAntialiasingSamples,quality);
 	}
-	//DXGI_FORMAT fmtDepthTex = depth_format;
-	/*DXGI_FORMAT possibles[]={
-		DXGI_FORMAT_D24_UNORM_S8_UINT,
-		DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
-		DXGI_FORMAT_D32_FLOAT,
-		DXGI_FORMAT_D16_UNORM,
-		DXGI_FORMAT_UNKNOWN};*/
-	// Try creating a depth texture
-	if(depth_format!=DXGI_FORMAT_UNKNOWN)
+	if(depth_format!=crossplatform::UNKNOWN)
 	{
-		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,dx11::RenderPlatform::FromDxgiFormat(depth_format),false,false,true,numAntialiasingSamples,quality);
+		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,depth_format,false,false,true,numAntialiasingSamples,quality);
 	}
 	return true;
-}
-
-ID3D1xRenderTargetView* Framebuffer::MakeRenderTarget(const ID3D1xTexture2D* pTexture)
-{
-	ID3D1xRenderTargetView* pRenderTargetView;
-	HRESULT hr;
-	// Setup the description of the render target view.
-	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-	renderTargetViewDesc.Format				=target_format;
-	renderTargetViewDesc.ViewDimension		=numAntialiasingSamples>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
-	renderTargetViewDesc.Texture2D.MipSlice	=0;
-	// Create the render target in DX11:
-	hr=renderPlatform->AsD3D11Device()->CreateRenderTargetView((ID3D1xResource*)pTexture,&renderTargetViewDesc, &pRenderTargetView);
-	return pRenderTargetView;
 }
 
 ID3D11Texture2D* makeStagingTexture(ID3D11Device *m_pd3dDevice
@@ -239,53 +204,6 @@ ID3D11Texture2D* makeStagingTexture(ID3D11Device *m_pd3dDevice
 	};
 	m_pd3dDevice->CreateTexture2D(&textureDesc,NULL,&tex);
 	return tex;
-}
-
-void Framebuffer::CopyToMemory(crossplatform::DeviceContext &deviceContext, void *target, int start_texel, int texels)
-{
-	ID3D11DeviceContext *pContext = deviceContext.asD3D11DeviceContext();
-	if(texels==0)
-		texels=Width*Height;
-
-	if(!stagingTexture)
-		stagingTexture=makeStagingTexture(renderPlatform->AsD3D11Device(),Width,Height,target_format);
-	D3D11_BOX sourceRegion;
-	sourceRegion.left = 0;
-	sourceRegion.right = Width;
-	sourceRegion.top = 0;
-	sourceRegion.bottom = Height;
-	sourceRegion.front = 0;
-	sourceRegion.back = 1;
-	pContext->CopySubresourceRegion(stagingTexture,0,0,0,0,GetColorTexture(),0,&sourceRegion);
-HRESULT hr=S_OK;
-	D3D11_MAPPED_SUBRESOURCE msr;
-	V_CHECK(pContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &msr));
-	int byteSize=simul::dx11::ByteSizeOfFormatElement(target_format);
-	int required_pitch=Width*byteSize;
-	char *dst=(char*)target;
-	if(msr.RowPitch==required_pitch)
-	{
-		const char *dat=(const char *)msr.pData;
-		dat+=start_texel*byteSize;
-		//dst+=start_texel*byteSize;
-		memcpy(dst,dat,texels*byteSize);
-	}
-	else
-	{
-		char *src=(char*)msr.pData;
-		int h0=start_texel/Width;
-		int h1=h0+texels/Width;
-		src+=msr.RowPitch*h0;
-		//dst+=byteSize*Width*h0;
-		for(int i=h0;i<h1;i++)
-		{
-			memcpy(dst,src,required_pitch);
-			dst+=required_pitch;
-			src+=msr.RowPitch;
-		}
-	}
-	// copy data
-	pContext->Unmap(stagingTexture, 0);
 }
 
 void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4])

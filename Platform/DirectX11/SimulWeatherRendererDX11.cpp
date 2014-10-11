@@ -128,8 +128,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 		}
 		fb_cubemap.Deactivate(deviceContext);
 	}
-	ID3D11Texture2D *tex=fb_cubemap.GetCopy(deviceContext.asD3D11DeviceContext());
-	
+	ID3D11Texture2D *tex=fb_cubemap.GetCopy(deviceContext);
 	
 	HRESULT hr=D3DX11SaveTextureToFileW(deviceContext.asD3D11DeviceContext(),tex,D3DX11_IFF_DDS,filenamew.c_str());
 

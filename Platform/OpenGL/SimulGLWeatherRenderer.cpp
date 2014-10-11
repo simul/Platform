@@ -210,7 +210,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 			Ortho();
   
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)fb->GetLowResFarFramebuffer()->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,fb->GetLowResFarFramebuffer()->GetTexture()->AsGLuint());
 			glDisable(GL_ALPHA_TEST);
 			glDepthMask(GL_FALSE);
 		GL_ERROR_CHECK

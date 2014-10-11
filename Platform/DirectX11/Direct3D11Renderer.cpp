@@ -26,7 +26,6 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/pi.h"
-#include "D3dx11effect.h"
 #ifdef SIMUL_USE_SCENE
 #include "Simul/Scene/BaseSceneRenderer.h"
 #endif
@@ -67,9 +66,8 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 #ifdef SIMUL_USE_SCENE
 		,sceneRenderer(NULL)
 #endif
+		,msaaFramebuffer(NULL)
 		,memoryInterface(m)
-		,mainRenderTarget(NULL)
-		,mainDepthSurface(NULL)
 		,linearDepthTexture(NULL)
 		,AllOsds(true)
 		,demoOverlay(NULL)
@@ -121,9 +119,10 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		return;
 	}
 	enabled=true;
-	msaaFramebuffer.RestoreDeviceObjects(renderPlatform);
+	SAFE_DELETE(msaaFramebuffer);
+	msaaFramebuffer=renderPlatform->CreateFramebuffer();
+	msaaFramebuffer->RestoreDeviceObjects(renderPlatform);
 	//Set a global device pointer for use by various classes.
-	Profiler::GetGlobalProfiler().Initialize(renderPlatform->AsD3D11Device());
 	viewManager.RestoreDeviceObjects(renderPlatform);
 	lightProbeConstants.RestoreDeviceObjects(renderPlatform);
 	if(simulHDRRenderer)
@@ -295,7 +294,7 @@ ERRNO_CHECK
 					lightningIllumination.colour	*=brightness;
 				}
 				if(baseTerrainRenderer)
-				baseTerrainRenderer->SetLightningProperties(lightningIllumination);
+					baseTerrainRenderer->SetLightningProperties(lightningIllumination);
 			}
 		}
 		if(baseTerrainRenderer&&ShowTerrain)
@@ -308,8 +307,7 @@ ERRNO_CHECK
 		if(simulWeatherRenderer)
 		{
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext
-				,true,1.f,1.f,false,cubemapFramebuffer.GetDepthTexture(),relativeViewportTextureRegionXYWH,true,vec2(0,0));
+			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,true,1.f,1.f,false,cubemapFramebuffer.GetDepthTexture(),relativeViewportTextureRegionXYWH,true,vec2(0,0));
 		}
 		static const char *txt[]={	"+X",
 									"-X",
@@ -317,8 +315,9 @@ ERRNO_CHECK
 									"-Y",
 									"+Z",
 									"-Z"};
-		//renderPlatformDx11.Print(deviceContext,16,16,txt[i]);
+		//renderPlatform->Print(deviceContext,16,16,txt[i]);
 		cubemapFramebuffer.Deactivate(deviceContext);
+	//	renderPlatform->DrawDepth(deviceContext,0,0,64,64,cubemapFramebuffer.GetDepthTexture());
 	}
 ERRNO_CHECK
 }
@@ -351,12 +350,13 @@ void TrueSkyRenderer::RenderEnvmap(crossplatform::DeviceContext &deviceContext)
 			camera::MakeInvViewProjMatrix(invViewProj,(const float*)&view_matrices[i],cube_proj);
 			lightProbeConstants.invViewProj	=invViewProj;
 			lightProbeConstants.numSHBands	=SphericalHarmonicsBands;
+			lightProbeConstants.alpha		=0.05f;
 			lightProbeConstants.Apply(deviceContext);
-			simul::dx11::setTexture(lightProbesEffect->asD3DX11Effect(),"basisBuffer"	,cubemapFramebuffer.GetSphericalHarmonics().shaderResourceView);
-			ApplyPass(pContext,tech->asD3DX11EffectTechnique()->GetPassByIndex(0));
-			UtilityRenderer::DrawQuad(deviceContext);
-			simul::dx11::setTexture(lightProbesEffect->asD3DX11Effect(),"basisBuffer"	,NULL);
-			ApplyPass(pContext,tech->asD3DX11EffectTechnique()->GetPassByIndex(0));
+			cubemapFramebuffer.GetSphericalHarmonics().Apply(deviceContext, lightProbesEffect,"basisBuffer");
+			lightProbesEffect->Apply(deviceContext,tech,0);
+			renderPlatform->DrawQuad(deviceContext);
+			lightProbesEffect->SetTexture(deviceContext,"basisBuffer"	,NULL);
+			lightProbesEffect->Unapply(deviceContext);
 		}
 		envmapFramebuffer.Deactivate(deviceContext);
 	}
@@ -370,7 +370,7 @@ void TrueSkyRenderer::RenderDepthElements(crossplatform::DeviceContext &deviceCo
 {
 	if(baseTerrainRenderer&&ShowTerrain)
 	{
-		math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view,false);
+		math::Vector3 cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
 			baseTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
 		baseTerrainRenderer->Render(deviceContext,1.f);	
@@ -426,10 +426,10 @@ void TrueSkyRenderer::RenderMixedResolutionSky(crossplatform::DeviceContext &dev
 														,depthViewportXYWH
 														,view->pixelOffset);
 		simulWeatherRenderer->RenderPrecipitation(deviceContext,view->GetHiResDepthTexture(),depthViewportXYWH);
-		if(simulHDRRenderer&&UseHdrPostprocessor)
+		//if(simulHDRRenderer&&UseHdrPostprocessor)
 			view->GetFramebuffer()->ActivateDepth(deviceContext);
-		else
-			pContext->OMSetRenderTargets(1,&mainRenderTarget,mainDepthSurface);
+		//else
+		//	pContext->OMSetRenderTargets(1,&mainRenderTarget,mainDepthSurface);
 		simulWeatherRenderer->RenderLightning(deviceContext,view->GetHiResDepthTexture(),depthViewportXYWH,simulWeatherRenderer->GetCloudDepthTexture(deviceContext.viewStruct.view_id));
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
 	}
@@ -455,23 +455,12 @@ void TrueSkyRenderer::RenderToOculus(crossplatform::DeviceContext &deviceContext
 		deviceContext.viewStruct.proj=cam->MakeStereoProjectionMatrix(simul::camera::LEFT_EYE,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
 		deviceContext.viewStruct.view=cam->MakeStereoViewMatrix(simul::camera::LEFT_EYE);
 	}
-	if(hdr)
-	{
-		view->GetFramebuffer()->Activate(deviceContext);
-		view->GetFramebuffer()->Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f);
-		}
-	else
-	{
-		float clearColor[4]={0,0,0,0};
-		deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(mainRenderTarget,clearColor);
-		deviceContext.asD3D11DeviceContext()->ClearDepthStencilView(mainDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,ReverseDepth?0.f:1.f, 0);
-	}
+	view->GetFramebuffer()->Activate(deviceContext);
+	view->GetFramebuffer()->Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f);
+	
 	{
 		RenderDepthElements(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
-		if(simulHDRRenderer&&UseHdrPostprocessor)
-			view->GetFramebuffer()->DeactivateDepth(deviceContext);
-		else
-			deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&mainRenderTarget,NULL);
+		view->GetFramebuffer()->DeactivateDepth(deviceContext);
 	}
 	if(simulWeatherRenderer)
 	{
@@ -483,7 +472,7 @@ void TrueSkyRenderer::RenderToOculus(crossplatform::DeviceContext &deviceContext
 	if(hdr)
 	{
 		view->GetFramebuffer()->Deactivate(deviceContext);
-		simulHDRRenderer->RenderWithOculusCorrection(deviceContext,view->GetFramebuffer()->GetColorTex(),cameraViewStruct.exposure,cameraViewStruct.gamma,0.f);
+		simulHDRRenderer->RenderWithOculusCorrection(deviceContext,view->GetFramebuffer()->GetTexture(),cameraViewStruct.exposure,cameraViewStruct.gamma,0.f);
 	}
 	//right eye
 	if(cam)
@@ -492,25 +481,12 @@ void TrueSkyRenderer::RenderToOculus(crossplatform::DeviceContext &deviceContext
 		deviceContext.viewStruct.view	=cam->MakeStereoViewMatrix(simul::camera::RIGHT_EYE);
 	}
 	viewport.TopLeftX			=view->GetScreenWidth()/2.f;
-	deviceContext.asD3D11DeviceContext()->RSSetViewports(1, &viewport);
-	if(hdr)
-	{
-		view->GetFramebuffer()->Activate(deviceContext);
-		view->GetFramebuffer()->Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f);
-	}
-	else
-	{
-		float clearColor[4]={0,0,0,0};
-		deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(mainRenderTarget,clearColor);
-		deviceContext.asD3D11DeviceContext()->ClearDepthStencilView(mainDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,ReverseDepth?0.f:1.f, 0);
-	}
-	{
-		RenderDepthElements(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
-		if(simulHDRRenderer&&UseHdrPostprocessor)
-			view->GetFramebuffer()->DeactivateDepth(deviceContext);
-		else
-			deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&mainRenderTarget,NULL);
-	}
+	view->GetFramebuffer()->Activate(deviceContext);
+	view->GetFramebuffer()->Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f);
+	
+	RenderDepthElements(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
+	view->GetFramebuffer()->DeactivateDepth(deviceContext);
+	
 	if(simulWeatherRenderer)
 	{
 		crossplatform::Viewport viewport={0,0,view->GetFramebuffer()->GetDepthTexture()->width,view->GetFramebuffer()->GetDepthTexture()->length,0.f,1.f};
@@ -520,7 +496,7 @@ void TrueSkyRenderer::RenderToOculus(crossplatform::DeviceContext &deviceContext
 	if(hdr)
 	{
 		view->GetFramebuffer()->Deactivate(deviceContext);
-		simulHDRRenderer->RenderWithOculusCorrection(deviceContext,view->GetFramebuffer()->GetColorTex(),cameraViewStruct.exposure,cameraViewStruct.gamma,1.f);
+		simulHDRRenderer->RenderWithOculusCorrection(deviceContext,view->GetFramebuffer()->GetTexture(),cameraViewStruct.exposure,cameraViewStruct.gamma,1.f);
 	}
 }
 
@@ -528,15 +504,20 @@ void TrueSkyRenderer::Render(int view_id,ID3D11DeviceContext* pContext)
 {
 	if(!enabled)
 		return;
-	simul::base::SetGpuProfilingInterface(pContext,&simul::dx11::Profiler::GetGlobalProfiler());
 	crossplatform::MixedResolutionView *view=viewManager.GetView(view_id);
 	if(!view)
 		return;
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.platform_context	=pContext;
+	deviceContext.renderPlatform	=renderPlatform;
+	deviceContext.viewStruct.view_id=view_id;
+	/*		ID3D11RenderTargetView						*mainRenderTarget;
+			ID3D11DepthStencilView						*mainDepthSurface;
 	pContext->OMGetRenderTargets(	1,
 									&mainRenderTarget,
 									&mainDepthSurface
-									);
-	SIMUL_COMBINED_PROFILE_STARTFRAME(pContext)
+									);*/
+	SIMUL_COMBINED_PROFILE_STARTFRAME(deviceContext.platform_context)
 	D3D11_VIEWPORT				viewport;
 	memset(&viewport,0,sizeof(D3D11_VIEWPORT));
 	UINT numv=1;
@@ -546,10 +527,6 @@ void TrueSkyRenderer::Render(int view_id,ID3D11DeviceContext* pContext)
 	const camera::CameraOutputInterface *cam		=cameras[view_id];
 	SIMUL_ASSERT(cam!=NULL);
 	const camera::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
-	crossplatform::DeviceContext deviceContext;
-	deviceContext.platform_context	=pContext;
-	deviceContext.renderPlatform	=renderPlatform;
-	deviceContext.viewStruct.view_id=view_id;
 	
 	SetReverseDepth(cameraViewStruct.projection==camera::DEPTH_REVERSE);
 	if(cam)
@@ -567,7 +544,7 @@ void TrueSkyRenderer::Render(int view_id,ID3D11DeviceContext* pContext)
 	if(MakeCubemap)
 	{
 		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Cubemap")
-		const float *cam_pos=simul::dx11::GetCameraPosVector(deviceContext.viewStruct.view);
+		const float *cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
 		RenderCubemap(deviceContext,cam_pos);
 		SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Envmap")
@@ -581,8 +558,6 @@ void TrueSkyRenderer::Render(int view_id,ID3D11DeviceContext* pContext)
 		RenderStandard(deviceContext,cameraViewStruct);
 		RenderOverlays(deviceContext,cameraViewStruct);
 	}
-	SAFE_RELEASE(mainRenderTarget);
-	SAFE_RELEASE(mainDepthSurface);
 	SIMUL_COMBINED_PROFILE_ENDFRAME(pContext)
 }
 
@@ -595,53 +570,43 @@ void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext
 	crossplatform::MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
 	bool hdr=simulHDRRenderer&&UseHdrPostprocessor;
 	float exposure=hdr?1.f:cameraViewStruct.exposure,gamma=hdr?1.f:cameraViewStruct.gamma;
-	if(hdr)
-	{
-		view->GetFramebuffer()->Activate(deviceContext);
-		view->GetFramebuffer()->Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f);
-	}
-	else
-	{
-		float clearColor[4]={0,0,0,0};
-		pContext->ClearRenderTargetView(mainRenderTarget,clearColor);
-		pContext->ClearDepthStencilView(mainDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,ReverseDepth?0.f:1.f, 0);
-	}
+
+	view->GetFramebuffer()->Activate(deviceContext);
+	view->GetFramebuffer()->Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f);
+	
 	// Here we render the depth elements. There are two possibilities:
 	//		1. We render depth elements to the main view framebuffer, which is non-MSAA. Then we deactivate the depth buffer, and use it to continue rendering to the same buffer.
 	//		2. We render depth elements to a MSAA framebuffer, then resolve this down to the main framebuffer. Then we use the MSAA depth buffer to continue rendering.
 	if(Antialiasing>1)
 	{
-		msaaFramebuffer.SetAntialiasing(Antialiasing);
-		msaaFramebuffer.SetFormat(crossplatform::RGBA_16_FLOAT);
-		msaaFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);// NOTE: D16_UNORM does NOT work well here.
-		msaaFramebuffer.SetWidthAndHeight(view->ScreenWidth,view->ScreenHeight);
-		msaaFramebuffer.Activate(deviceContext);
-		msaaFramebuffer.Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f, 0);
+		msaaFramebuffer->SetAntialiasing(Antialiasing);
+		msaaFramebuffer->SetFormat(crossplatform::RGBA_16_FLOAT);
+		msaaFramebuffer->SetDepthFormat(crossplatform::D_32_FLOAT);// NOTE: D16_UNORM does NOT work well here.
+		msaaFramebuffer->SetWidthAndHeight(view->ScreenWidth,view->ScreenHeight);
+		msaaFramebuffer->Activate(deviceContext);
+		msaaFramebuffer->Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f, 0);
 	}
-	SIMUL_COMBINED_PROFILE_END(pContext)
+	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 		// Don't need to pass a depth texture because we know depth is active here.
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RenderCelestialBackground(deviceContext,NULL,exposure);
-	SIMUL_COMBINED_PROFILE_END(pContext)
+	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"2")
 	RenderDepthElements(deviceContext,exposure,gamma);
 	if(Antialiasing>1)
 	{
-		msaaFramebuffer.Deactivate(deviceContext);
+		msaaFramebuffer->Deactivate(deviceContext);
 		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Resolve MSAA Framebuffer")
-		ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.platform_context;
-		pContext->ResolveSubresource(view->GetFramebuffer()->GetTexture()->AsD3D11Texture2D(),0,msaaFramebuffer.GetColorTexture(),0,dx11::RenderPlatform::ToDxgiFormat(crossplatform::RGBA_16_FLOAT));
-		SIMUL_COMBINED_PROFILE_END(pContext)
+		renderPlatform->Resolve(deviceContext,view->GetFramebuffer()->GetTexture(),msaaFramebuffer->GetTexture());
+		SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	}
-	else if(simulHDRRenderer&&UseHdrPostprocessor)
-		view->GetFramebuffer()->DeactivateDepth(deviceContext);
 	else
-		pContext->OMSetRenderTargets(1,&mainRenderTarget,NULL);
-		SIMUL_COMBINED_PROFILE_END(pContext)
+		view->GetFramebuffer()->DeactivateDepth(deviceContext);
+	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"3")
 	crossplatform::Texture *depthTexture=NULL;
 	if(Antialiasing>1)
-		depthTexture	=msaaFramebuffer.GetDepthTexture();
+		depthTexture	=msaaFramebuffer->GetDepthTexture();
 	else
 		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
 	// Suppose we want a linear depth texture? In that case, we make it here:
@@ -650,13 +615,13 @@ void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext
 		if(!linearDepthTexture)
 		{
 			linearDepthTexture=renderPlatform->CreateTexture();
-	}
+		}
 		if(!linearizeDepthEffect)
-	{
+		{
 			std::map<std::string,std::string> defines;
 			defines["REVERSE_DEPTH"]="0";
 			linearizeDepthEffect=renderPlatform->CreateEffect("hdr",defines);
-	}
+		}
 		// Now we will create a linear depth texture:
 		SIMUL_GPU_PROFILE_START(deviceContext.platform_context,"Linearize depth buffer")
 		// Have to make a non-MSAA texture, can't copy the AA across.
@@ -666,7 +631,7 @@ void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext
 			linearizeDepthEffect->Apply(deviceContext,linearizeDepthEffect->GetTechniqueByName("linearize_depth"),Antialiasing>1?"msaa":"main");
 			if(Antialiasing>1)
 				linearizeDepthEffect->SetTexture(deviceContext,"depthTextureMS",depthTexture);
-	else
+			else
 				linearizeDepthEffect->SetTexture(deviceContext,"depthTexture",depthTexture);
 			camera::Frustum f=camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 			static float cc=300000.f;
@@ -675,7 +640,7 @@ void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext
 			renderPlatform->DrawQuad(deviceContext);
 			linearizeDepthEffect->Unapply(deviceContext);
 			linearDepthTexture->deactivateRenderTarget();
-	}
+		}
 		depthTexture=linearDepthTexture;
 		deviceContext.viewStruct.depthTextureStyle=crossplatform::DISTANCE_FROM_NEAR_PLANE;
 		SIMUL_GPU_PROFILE_END(pContext)
@@ -694,12 +659,10 @@ void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext
 	}
 	if(trueSkyRenderMode==clouds::MIXED_RESOLUTION||trueSkyRenderMode==clouds::COMPOSITED_ATMOSPHERICS)
 		RenderMixedResolutionSky(deviceContext,depthTexture,exposure,gamma);
-	if(hdr)
-	{
-		view->GetFramebuffer()->Deactivate(deviceContext);
-		if(simulHDRRenderer)
-			simulHDRRenderer->Render(deviceContext,view->GetResolvedHDRBuffer(),cameraViewStruct.exposure,cameraViewStruct.gamma);
-	}
+	view->GetFramebuffer()->Deactivate(deviceContext);
+	if(hdr&&simulHDRRenderer)
+		simulHDRRenderer->Render(deviceContext,view->GetResolvedHDRBuffer(),cameraViewStruct.exposure,cameraViewStruct.gamma);
+	
 	if(baseOpticsRenderer&&ShowFlares&&simulWeatherRenderer->GetBaseSkyRenderer())
 	{
 		simul::sky::float4 dir,light;
@@ -716,6 +679,8 @@ void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext
 
 void TrueSkyRenderer::RenderOverlays(crossplatform::DeviceContext &deviceContext,const camera::CameraViewStruct &cameraViewStruct)
 {
+	if(!AllOsds)
+		return;
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Overlays")
 	crossplatform::MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
 	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
@@ -727,7 +692,6 @@ void TrueSkyRenderer::RenderOverlays(crossplatform::DeviceContext &deviceContext
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->RenderOverlays(deviceContext);
-		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
 		bool vertical_screen=(view->GetScreenHeight()>view->GetScreenWidth());
 		crossplatform::Viewport v=renderPlatform->GetViewport(deviceContext,0);
 		int W1=(int)v.w;
@@ -767,7 +731,7 @@ void TrueSkyRenderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceCon
 	crossplatform::MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
 	crossplatform::Texture *depthTexture=NULL;
 	if(Antialiasing>1)
-		depthTexture	=msaaFramebuffer.GetDepthTexture();
+		depthTexture	=msaaFramebuffer->GetDepthTexture();
 	else
 		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
 	view->RenderDepthBuffers(deviceContext,depthTexture,&viewport,x0,y0,dx,dy);
@@ -791,10 +755,11 @@ void TrueSkyRenderer::SaveScreenshot(const char *filename_utf8,int width,int hei
 			width=view->GetScreenWidth();
 		if(height==0)
 			height=view->GetScreenHeight();
-		simul::dx11::Framebuffer fb(width,height);
-		fb.RestoreDeviceObjects(renderPlatform);
+		crossplatform::BaseFramebuffer *fb=renderPlatform->CreateFramebuffer();
+		fb->SetWidthAndHeight(width,height);
+		fb->RestoreDeviceObjects(renderPlatform);
 		crossplatform::DeviceContext deviceContext=renderPlatform->GetImmediateContext();
-		fb.Activate(deviceContext);
+		fb->Activate(deviceContext);
 		bool t=UseHdrPostprocessor;
 		UseHdrPostprocessor=true;
 	
@@ -808,9 +773,10 @@ void TrueSkyRenderer::SaveScreenshot(const char *filename_utf8,int width,int hei
 		Render(0,deviceContext.asD3D11DeviceContext());
 		AllOsds=true;
 		UseHdrPostprocessor=t;
-		fb.Deactivate(deviceContext);
+		fb->Deactivate(deviceContext);
 		cam->SetCameraViewStruct(s0);
-		simul::dx11::SaveTexture(renderPlatform->AsD3D11Device(),(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());
+		renderPlatform->SaveTexture(fb->GetTexture(),screenshotFilenameUtf8.c_str());
+		SAFE_DELETE(fb);
 	}
 	catch(...)
 	{
@@ -827,11 +793,9 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 #endif
 	if(demoOverlay)
 		demoOverlay->InvalidateDeviceObjects();
-	SAFE_RELEASE(mainRenderTarget);
-	SAFE_RELEASE(mainDepthSurface);
 	std::cout<<"TrueSkyRenderer::OnD3D11LostDevice"<<std::endl;
 	Profiler::GetGlobalProfiler().Uninitialize();
-	msaaFramebuffer.InvalidateDeviceObjects();
+	SAFE_DELETE(msaaFramebuffer);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
 	if(simulHDRRenderer)
@@ -948,6 +912,7 @@ Direct3D11Renderer::~Direct3D11Renderer()
 
 void Direct3D11Renderer::OnD3D11CreateDevice	(ID3D11Device* pd3dDevice)
 {
+	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
 	renderPlatformDx11.RestoreDeviceObjects(pd3dDevice);
 	trueSkyRenderer.RestoreDeviceObjects(&renderPlatformDx11);
 }
@@ -979,5 +944,6 @@ void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBu
 }
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)
 {
+	simul::base::SetGpuProfilingInterface(pContext,&simul::dx11::Profiler::GetGlobalProfiler());
 	trueSkyRenderer.Render(view_id,pContext);
 }
