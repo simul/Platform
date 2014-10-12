@@ -1555,7 +1555,6 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	camera::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.worldViewProj=wvp;
 	debugConstants.worldViewProj.transpose();
-	//crossplatform::EffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
 	crossplatform::EffectTechnique*		tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");
 	m_pDebugEffect->SetTexture(deviceContext,"cubeTexture",cubemap);
 	static float rr=6.f;
@@ -1596,11 +1595,9 @@ void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &deviceConte
 	pContext->RSGetViewports(&state->numViewports,NULL);
 	if(state->numViewports>0)
 		pContext->RSGetViewports(&state->numViewports,state->viewports);
-	
 	pContext->OMGetRenderTargets(	state->numViewports,
 									state->renderTargets,
-									&state->depthSurface
-									);
+									&state->depthSurface);
 	storedRTStates.push_back(state);
 }
 
@@ -1610,8 +1607,7 @@ void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContex
 	RTState *state=storedRTStates.back();
 	pContext->OMSetRenderTargets(	state->numViewports,
 									state->renderTargets,
-									state->depthSurface
-									);
+									state->depthSurface);
 	for(int i=0;i<state->numViewports;i++)
 	{
 		SAFE_RELEASE(state->renderTargets[i]);

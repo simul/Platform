@@ -169,7 +169,7 @@ namespace simul
 			simul::scene::BaseSceneRenderer				*sceneRenderer;
 			crossplatform::MixedResolutionViewManager	viewManager;
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
-			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
+			simul::crossplatform::BaseFramebuffer		*envmapFramebuffer;
 			simul::crossplatform::BaseFramebuffer		*msaaFramebuffer;
 			crossplatform::ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;

@@ -1,7 +1,10 @@
 #ifndef BASE_FRAMEBUFFER_H
 #define BASE_FRAMEBUFFER_H
 #include "Simul/Platform/CrossPlatform/Export.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/SL/spherical_harmonics_constants.sl"
 
 namespace simul
 {
@@ -47,21 +50,70 @@ namespace simul
 			virtual void Clear(crossplatform::DeviceContext &context,float R,float G,float B,float A,float depth,int mask=0)=0;
 			//! Set the size of the framebuffer in pixel height and width.
 			virtual void ClearColour(crossplatform::DeviceContext &context,float,float,float,float)=0;
+			//! Set this to be a cubemap framebuffer, so that its texture object will be a cubemap. Equivalent to SetWidthAndHeight.
+			virtual void SetAsCubemap(int face_size)=0;
+			//! Set the face to be used for rendering, if this is a cubemap framebuffer.
+			virtual void SetCubeFace(int f)=0;
+			//! Set the width and height of the framebuffer.
 			virtual void SetWidthAndHeight(int w,int h)=0;
 			//! Some hardware has fast RAM that's good for framebuffers.
 			virtual void SetUseFastRAM(bool /*colour*/,bool /*depth*/){};
 			virtual void SetAntialiasing(int s)=0;
-			//! Get the API-dependent pointer or id for the colour buffer target.
-			virtual Texture *GetTexture()=0;
-			virtual Texture *GetDepthTexture()=0;
-			// Get the dimensions of the specified texture - temporary, do not use.
-			virtual void GetTextureDimensions(const void* /*tex*/, unsigned int& /*widthOut*/, unsigned int& /*heightOut*/) const {}
+			//! Get the texture for the colour buffer target.
+			Texture *GetTexture()
+			{
+				return buffer_texture;
+			}
+			//! Get the texture for the depth buffer target.
+			Texture *GetDepthTexture()
+			{
+				return buffer_depth_texture;
+			}
+			//! Get the dimension of the surface
+			inline int GetWidth()
+			{
+				return Width;
+			}
+			//! Get the dimension of the surface
+			inline int GetHeight()
+			{
+				return Height;
+			}
 		//protected:
 			//! The size of the buffer
 			int Width,Height;
 			int numAntialiasingSamples;
 			bool depth_active, colour_active;
 			crossplatform::RenderPlatform *renderPlatform;
+			crossplatform::StructuredBuffer<vec4> &GetSphericalHarmonics()
+			{
+				return sphericalHarmonics;
+			}
+			void SetBands(int b)
+			{
+				if(b>MAX_SH_BANDS)
+					b=MAX_SH_BANDS;
+				if(bands!=b)
+				{
+					bands=b;
+					sphericalHarmonics.InvalidateDeviceObjects();
+				}
+			}
+		protected:
+			//! The depth buffer.
+			crossplatform::Texture				*buffer_texture;
+			crossplatform::Texture				*buffer_depth_texture;
+			bool GenerateMips;
+			bool is_cubemap;
+			int	current_face;
+			crossplatform::PixelFormat target_format;
+			crossplatform::PixelFormat depth_format;
+			int bands;
+
+			crossplatform::ConstantBuffer<SphericalHarmonicsConstants>	sphericalHarmonicsConstants;
+			crossplatform::StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
+			crossplatform::StructuredBuffer<vec4>						sphericalHarmonics;
+			crossplatform::Effect										*sphericalHarmonicsEffect;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT CubemapFramebuffer:public BaseFramebuffer
 		{

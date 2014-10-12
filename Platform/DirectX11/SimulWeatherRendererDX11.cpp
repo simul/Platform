@@ -93,7 +93,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 	}
 	for(int i=0;i<6;i++)
 	{
-		fb_cubemap.SetCurrentFace(i);
+		fb_cubemap.SetCubeFace(i);
 		fb_cubemap.Activate(deviceContext);
 		if(gamma_correction)
 		{
@@ -117,7 +117,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 			if(gamma_correction)
 			{
 				gamma_correct.Deactivate(deviceContext);
-				simul::dx11::setTexture((ID3DX11Effect*)effect->platform_effect,"imageTexture",gamma_correct.GetBufferResource());
+				effect->SetTexture(deviceContext,"imageTexture",gamma_correct.GetTexture());
 				hdrConstants.gamma=gamma;
 				hdrConstants.exposure=exposure;
 				hdrConstants.Apply(deviceContext);

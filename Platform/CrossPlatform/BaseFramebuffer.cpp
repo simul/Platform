@@ -13,6 +13,15 @@ BaseFramebuffer::BaseFramebuffer(int w,int h)
 	,depth_active(false)
 	,colour_active(false)
 	,renderPlatform(0)
+	,buffer_texture(NULL)
+	,buffer_depth_texture(NULL)
+	,is_cubemap(false)
+	,current_face(-1)
+	,GenerateMips(false)
+	,target_format(crossplatform::RGBA_32_FLOAT)
+	,depth_format(crossplatform::UNKNOWN)
+	,bands(4)
+	,sphericalHarmonicsEffect(NULL)
 {
 }
 

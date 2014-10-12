@@ -36,6 +36,10 @@ GpuCloudGenerator::~GpuCloudGenerator()
 void GpuCloudGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	BaseGpuCloudGenerator::RestoreDeviceObjects(r);
+	fb[0].RestoreDeviceObjects(r);
+	fb[1].RestoreDeviceObjects(r);
+	world_fb.RestoreDeviceObjects(r);
+	dens_fb.RestoreDeviceObjects(r);
 	iformat=crossplatform::INT_32_FLOAT;
 	itype=GL_LUMINANCE;
 	RecompileShaders();
@@ -319,7 +323,7 @@ GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,density_texture);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetTexture()->AsGLuint());
 	GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,0);
 	GL_ERROR_CHECK
@@ -363,7 +367,7 @@ F[1]->Clear(deviceContext, u, u, u, u, 1.f);
 			glLoadIdentity();
 			// input light values:
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetTexture()->AsGLuint());
 			effect->Reapply(deviceContext);
 			DrawQuad(0,0,1,1);
 			GL_ERROR_CHECK

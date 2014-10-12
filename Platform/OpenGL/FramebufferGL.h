@@ -31,6 +31,8 @@ namespace simul
 			bool CreateBuffers();
 			void InvalidateDeviceObjects();
 			void SetWidthAndHeight(int w,int h);
+			void SetAsCubemap(int face_size);
+			void SetCubeFace(int f);
 			void SetAntialiasing(int ){}
 			void SetFormat(crossplatform::PixelFormat p);
 			void SetDepthFormat(crossplatform::PixelFormat p);
@@ -39,10 +41,6 @@ namespace simul
 			// InitColor_RB or InitColor_Tex needs to be called.
 			//void InitColor_RB(int index, GLenum internal_format);
 			bool InitColor_Tex(int index, crossplatform::PixelFormat p);
-			// In order to use a depth buffer, either
-			// InitDepth_RB or InitDepth_Tex needs to be called.
-			void InitDepth_RB(crossplatform::PixelFormat p = crossplatform::D_32_FLOAT);//GL_DEPTH_COMPONENT24
-			void InitDepth_Tex(crossplatform::PixelFormat p = crossplatform::D_32_FLOAT);//GL_DEPTH_COMPONENT24
 			/// Use the existing depth buffer
 			void NoDepth();
 			/// Activate / deactivate the FBO as a render target
@@ -57,40 +55,9 @@ namespace simul
 			void ClearColour(crossplatform::DeviceContext &,float r,float g,float b,float a);
 			void DeactivateAndRender(crossplatform::DeviceContext &deviceContext,bool blend);
 			void Render(void *,bool blend);
-			// Get the dimension of the surface
-			inline int GetWidth()
-			{
-				return Width;
-			}
-			inline int GetHeight()
-			{
-				return Height;
-			}
-			// Get the internal texture object IDs.
-			void* GetColorTex()
-			{
-				return (void*) (uintptr_t)buffer_texture.pTextureObject;//m_tex_col[0];
-			}
-			void* GetDepthTex()
-			{
-				return (void*)(uintptr_t)buffer_depth_texture.pTextureObject;//m_tex_depth;
-			}
-			// Get the target texture format (texture2d or texture_rectangle)
-			inline GLenum GetTarget()
-			{
-				return m_target;
-			}
 			inline GLuint GetFramebuffer()
 			{
 				return m_fb;
-			}
-			simul::crossplatform::Texture *GetTexture()
-			{
-				return &buffer_texture;
-			}
-			simul::crossplatform::Texture *GetDepthTexture()
-			{
-				return &buffer_depth_texture;
 			}
 			static void CheckFramebufferStatus();
 			static std::stack<GLuint> fb_stack;
@@ -98,7 +65,7 @@ namespace simul
 			// Bind the internal textures
 			void BindColor()
 			{
-				glBindTexture(m_target, buffer_texture.pTextureObject);//m_tex_col[0]);
+				glBindTexture(m_target, buffer_texture->AsGLuint());//m_tex_col[0]);
 			}
 			inline void Bind()
 			{
@@ -108,7 +75,7 @@ namespace simul
 			// from the pbuffer implementation.
 			void BindDepth()
 			{
-				glBindTexture(m_target,buffer_depth_texture.pTextureObject);// m_tex_depth);
+				glBindTexture(m_target,buffer_depth_texture->AsGLuint());// m_tex_depth);
 			}
 			void Release()
 			{
@@ -120,17 +87,8 @@ namespace simul
 			int m_samples; // 0 if not multisampled
 			int m_coverageSamples; // for CSAA
 			GLuint m_fb;
-			//GLuint m_tex_col[num_col_buffers];//, m_rb_col[num_col_buffers];
-			//GLuint m_tex_depth;
-			//GLuint m_rb_depth;
-			crossplatform::PixelFormat colour_iformat,depth_iformat;
 			bool initialized;
 			GLint wrap_clamp;
-		public:
-			simul::opengl::Texture buffer_texture;
-		protected:
-			//! The depth buffer.
-			simul::opengl::Texture buffer_depth_texture;
 		};
 	}
 }

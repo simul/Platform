@@ -156,10 +156,11 @@ GL_ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
 GL_ERROR_CHECK
+	renderPlatform->RestoreDeviceObjects(NULL);
+	depthFramebuffer.RestoreDeviceObjects(renderPlatform);
 	depthFramebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
 	depthFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
 ERRNO_CHECK
-	renderPlatform->RestoreDeviceObjects(NULL);
 ERRNO_CHECK
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(renderPlatform);
@@ -253,7 +254,7 @@ void OpenGLRenderer::paintGL()
 		depthFramebuffer.Deactivate(deviceContext);
 		{
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)depthFramebuffer.GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)depthFramebuffer.GetTexture()->AsGLuint());
 			glUseProgram(simple_program);
 			GLint image_texture		=glGetUniformLocation(simple_program,"image_texture");
 			glUniform1i(image_texture,0);
@@ -276,7 +277,7 @@ void OpenGLRenderer::paintGL()
 			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ=simulWeatherRenderer->GetBaseSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-			baseOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTex(),dir,light);
+			baseOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTexture(),dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
@@ -371,7 +372,7 @@ void OpenGLRenderer::RecompileShaders()
 
 void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)
 {
-	SaveGLImage(filename_utf8,(GLuint)(simulHDRRenderer->framebuffer.GetColorTex()));
+	SaveGLImage(filename_utf8,(simulHDRRenderer->framebuffer.GetTexture()->AsGLuint()));
 }
 
 void OpenGLRenderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)

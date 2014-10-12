@@ -19,16 +19,18 @@ namespace simul
 		public:
 			Framebuffer(int w=0,int h=0);
 			virtual ~Framebuffer();
-			void SetWidthAndHeight(int w,int h);
-			void SetFormat(crossplatform::PixelFormat f);
-			void SetDepthFormat(crossplatform::PixelFormat f);
+			virtual void SetWidthAndHeight(int w,int h);
+			virtual void SetAsCubemap(int w);
+			virtual void SetCubeFace(int f);
+			virtual void SetFormat(crossplatform::PixelFormat f);
+			virtual void SetDepthFormat(crossplatform::PixelFormat f);
 			bool IsValid() const;
-			void SetUseFastRAM(bool colour,bool depth)
+			virtual void SetUseFastRAM(bool colour,bool depth)
 			{
 				useESRAM=colour;
 				useESRAMforDepth=depth;
 			}
-			void SetAntialiasing(int a)
+			virtual void SetAntialiasing(int a)
 			{
 				if(numAntialiasingSamples!=a)
 				{
@@ -36,78 +38,45 @@ namespace simul
 					InvalidateDeviceObjects();
 				}
 			}
-			void SetGenerateMips(bool);
+			virtual void SetGenerateMips(bool);
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-			void RestoreDeviceObjects(crossplatform::RenderPlatform	*renderPlatform);
+			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform	*renderPlatform);
 			bool CreateBuffers();
+			void RecompileShaders();
 			//! Call this when the device has been lost.
-			void InvalidateDeviceObjects();
-			void MoveToFastRAM();
-			void MoveToSlowRAM();
-			void MoveDepthToSlowRAM();
+			virtual void InvalidateDeviceObjects();
+			virtual void MoveToFastRAM();
+			virtual void MoveToSlowRAM();
+			virtual void MoveDepthToSlowRAM();
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-			void Activate(crossplatform::DeviceContext &deviceContext);
-			void ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4]);
-			void ActivateDepth(crossplatform::DeviceContext &deviceContext);
-			void ActivateViewport(crossplatform::DeviceContext &deviceContext, float viewportX, float viewportY, float viewportW, float viewportH );
-			void ActivateColour(crossplatform::DeviceContext &deviceContext);
-			void Deactivate(crossplatform::DeviceContext &deviceContext);
-			void DeactivateDepth(crossplatform::DeviceContext &deviceContext);
-			void Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);
-			void ClearDepth(crossplatform::DeviceContext &context,float);
-			void ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
-			ID3D11ShaderResourceView *GetBufferResource()
-			{
-				return buffer_texture->AsD3D11ShaderResourceView();
-			}
-			void* GetColorTex()
-			{
-				return (void*)buffer_texture->AsD3D11ShaderResourceView();
-			}
-			//! Get the API-dependent pointer or id for the depth buffer target.
-			ID3D11ShaderResourceView* GetDepthSRV()
-			{
-				return buffer_depth_texture->AsD3D11ShaderResourceView();
-			}
-			ID3D11Texture2D* GetColorTexture()
-			{
-				return (ID3D11Texture2D*)buffer_texture->AsD3D11Texture2D();
-			}
-			ID3D11Texture2D* GetDepthTexture2D()
-			{
-				return (ID3D11Texture2D*)buffer_depth_texture->AsD3D11Texture2D();
-			}
-			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
-			dx11::Texture *GetTexture()
-			{
-				return (dx11::Texture*)buffer_texture;
-			}
-			Texture *GetDepthTexture()
-			{
-				return (dx11::Texture*)buffer_depth_texture;
-			}
+			virtual void Activate(crossplatform::DeviceContext &deviceContext);
+			virtual void ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4]);
+			virtual void ActivateDepth(crossplatform::DeviceContext &deviceContext);
+			virtual void ActivateViewport(crossplatform::DeviceContext &deviceContext, float viewportX, float viewportY, float viewportW, float viewportH );
+			virtual void ActivateColour(crossplatform::DeviceContext &deviceContext);
+			virtual void Deactivate(crossplatform::DeviceContext &deviceContext);
+			virtual void DeactivateDepth(crossplatform::DeviceContext &deviceContext);
+			virtual void Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);
+			virtual void ClearDepth(crossplatform::DeviceContext &context,float);
+			virtual void ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
+			//! Calculate the spherical harmonics of this cubemap and store the result internally.
+			//! Changing the number of bands will resize the internal storeage.
+			void CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext);
 		protected:
-			crossplatform::PixelFormat target_format;
-			crossplatform::PixelFormat depth_format;
 			bool Destroy();
 		protected:
-			
 			ID3D11RenderTargetView*				m_pOldRenderTarget;
 			ID3D11DepthStencilView*				m_pOldDepthSurface;
 			D3D11_VIEWPORT						m_OldViewports[16];
 			unsigned							num_OldViewports;
-			//! The texture the scene is rendered to.
-		public:
-			crossplatform::Texture				*buffer_texture;
+
+			// One Environment map texture, one Shader Resource View on it, and six Render Target Views on it.
+			ID3D11RenderTargetView*				m_pCubeEnvMapRTV[6];
 		protected:
 			bool useESRAM,useESRAMforDepth;
-			//! The depth buffer.
-			crossplatform::Texture				*buffer_depth_texture;
 			bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
-			float timing;
-			bool GenerateMips;
-			void SaveOldRTs(void *context);
-			void SetViewport(void *context,float X,float Y,float W,float H,float Z,float D);
+			void SaveOldRTs(crossplatform::DeviceContext &deviceContext);
+			void SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float Z=0.0f,float D=1.0f);
 		};
 	}
 }

@@ -48,14 +48,17 @@ void SimulGLHDRRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	hdrConstants.RestoreDeviceObjects(r);
 ERRNO_CHECK
 	initialized=true;
+	framebuffer.RestoreDeviceObjects(renderPlatform);
+	glow_fb.RestoreDeviceObjects(renderPlatform);
+	alt_fb.RestoreDeviceObjects(renderPlatform);
 	framebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
 	glow_fb.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
 	alt_fb.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
 ERRNO_CHECK
 	{
-		framebuffer.InitDepth_RB(crossplatform::D_32_FLOAT);
-		glow_fb.InitDepth_RB(crossplatform::D_32_FLOAT);
-		alt_fb.InitDepth_RB(crossplatform::D_32_FLOAT);
+		framebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
+		glow_fb.SetDepthFormat(crossplatform::D_32_FLOAT);
+		alt_fb.SetDepthFormat(crossplatform::D_32_FLOAT);
 	}
 ERRNO_CHECK
 	GL_ERROR_CHECK

@@ -20,27 +20,6 @@ namespace simul
 			{
 				return sampler_state;
 			}
-			/*
-			GLuint sampler_state = 0;
-glGenSamplers(1, &sampler_state);
-glSamplerParameteri(sampler_state, GL_TEXTURE_WRAP_S, GL_REPEAT);
-glSamplerParameteri(sampler_state, GL_TEXTURE_WRAP_T, GL_REPEAT);
-glSamplerParameteri(sampler_state, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-glSamplerParameteri(sampler_state, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-glSamplerParameterf(sampler_state, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f);
-
- Use of the sampler
-
-GLuint texture_unit = 0;
-glBindSampler(texture_unit, sampler_state);
-
-When a sampler is no longer necessary on a texture unit, just bind the sampler zero:
-
-glBindSampler(texture_unit, 0);
-Sampler releasing:
-
-glDeleteSamplers(1, &sampler_state);
-			*/
 		};
 		class SIMUL_OPENGL_EXPORT Texture:public simul::crossplatform::Texture
 		{
@@ -71,7 +50,7 @@ glDeleteSamplers(1, &sampler_state);
 			}
 			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
 				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false);
-			void ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable) override;
+			void ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable,bool cubemap) override;
 			void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int mips=1);
 			void GenerateMips(crossplatform::DeviceContext &deviceContext);
 			void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);

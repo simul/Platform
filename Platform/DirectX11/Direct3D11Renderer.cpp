@@ -69,11 +69,12 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 		,msaaFramebuffer(NULL)
 		,memoryInterface(m)
 		,linearDepthTexture(NULL)
+		,envmapFramebuffer(NULL)
 		,AllOsds(true)
 		,demoOverlay(NULL)
 {
 	sc;
-	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
+	/*simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
 	baseOpticsRenderer		=::new(memoryInterface) camera::BaseOpticsRenderer(memoryInterface);
 	baseTerrainRenderer		=::new(memoryInterface) terrain::BaseTerrainRenderer(memoryInterface);
@@ -84,7 +85,7 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 		oceanRenderer			=new(memoryInterface) OceanRenderer(env->seaKeyframer);
 		oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	}
-	
+
 #ifdef SIMUL_USE_SCENE
 	if(sc)
 		sceneRenderer			=new(memoryInterface) scene::BaseSceneRenderer(sc,renderPlatform);
@@ -93,8 +94,8 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 	
 	cubemapFramebuffer.SetFormat(crossplatform::RGBA_16_FLOAT);
 	cubemapFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
-	envmapFramebuffer.SetFormat(crossplatform::RGBA_16_FLOAT);
-	envmapFramebuffer.SetDepthFormat(crossplatform::UNKNOWN);
+	envmapFramebuffer->SetFormat(crossplatform::RGBA_16_FLOAT);
+	envmapFramebuffer->SetDepthFormat(crossplatform::UNKNOWN);	*/
 }
 
 TrueSkyRenderer::~TrueSkyRenderer()
@@ -108,6 +109,7 @@ TrueSkyRenderer::~TrueSkyRenderer()
 	del(simulHDRRenderer,memoryInterface);
 	del(baseTerrainRenderer,memoryInterface);
 	del(oceanRenderer,memoryInterface);
+	SAFE_DELETE(envmapFramebuffer);
 }
 
 void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -119,6 +121,8 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		return;
 	}
 	enabled=true;
+	SAFE_DELETE(envmapFramebuffer);
+	envmapFramebuffer=renderPlatform->CreateFramebuffer();
 	SAFE_DELETE(msaaFramebuffer);
 	msaaFramebuffer=renderPlatform->CreateFramebuffer();
 	msaaFramebuffer->RestoreDeviceObjects(renderPlatform);
@@ -135,16 +139,16 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		baseTerrainRenderer->RestoreDeviceObjects(renderPlatform);
 	if(oceanRenderer)
 		oceanRenderer->RestoreDeviceObjects(renderPlatform);
-	cubemapFramebuffer.SetWidthAndHeight(32,32);
+	cubemapFramebuffer.SetAsCubemap(32);
 	cubemapFramebuffer.RestoreDeviceObjects(renderPlatform);
-	envmapFramebuffer.SetWidthAndHeight(8,8);
-	envmapFramebuffer.RestoreDeviceObjects(renderPlatform);
-	//envmapFramebuffer.Clear(pContext,0.f,0.f,0.f,1.f,0.f);
+	envmapFramebuffer->SetAsCubemap(8);
+	envmapFramebuffer->RestoreDeviceObjects(renderPlatform);
+	//envmapFramebuffer->Clear(pContext,0.f,0.f,0.f,1.f,0.f);
 	if(renderPlatform)
 	{
 		crossplatform::DeviceContext deviceContext=renderPlatform->GetImmediateContext();
 		cubemapFramebuffer.Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
-		envmapFramebuffer.Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
+		envmapFramebuffer->Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
 	}
 	//if(!demoOverlay)
 	//	demoOverlay=new crossplatform::DemoOverlay();
@@ -255,7 +259,7 @@ ERRNO_CHECK
 	i=i%6;
 	{
 ERRNO_CHECK
-		cubemapFramebuffer.SetCurrentFace(i);
+		cubemapFramebuffer.SetCubeFace(i);
 		cubemapFramebuffer.Clear(deviceContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		cubemapFramebuffer.Activate(deviceContext);
 		static float nearPlane	=10.f;
@@ -343,8 +347,8 @@ void TrueSkyRenderer::RenderEnvmap(crossplatform::DeviceContext &deviceContext)
 	i=i%6;
 	//for(int i=0;i<6;i++)
 	{
-		envmapFramebuffer.SetCurrentFace(i);
-		envmapFramebuffer.Activate(deviceContext);
+		envmapFramebuffer->SetCubeFace(i);
+		envmapFramebuffer->Activate(deviceContext);
 		math::Matrix4x4 cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,1.f,200000.f);
 		{
 			camera::MakeInvViewProjMatrix(invViewProj,(const float*)&view_matrices[i],cube_proj);
@@ -358,7 +362,7 @@ void TrueSkyRenderer::RenderEnvmap(crossplatform::DeviceContext &deviceContext)
 			lightProbesEffect->SetTexture(deviceContext,"basisBuffer"	,NULL);
 			lightProbesEffect->Unapply(deviceContext);
 		}
-		envmapFramebuffer.Deactivate(deviceContext);
+		envmapFramebuffer->Deactivate(deviceContext);
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }
@@ -379,7 +383,7 @@ void TrueSkyRenderer::RenderDepthElements(crossplatform::DeviceContext &deviceCo
 	if(sceneRenderer)
 	{
 		crossplatform::PhysicalLightRenderData physicalLightRenderData;
-		physicalLightRenderData.diffuseCubemap=envmapFramebuffer.GetTexture();
+		physicalLightRenderData.diffuseCubemap=envmapFramebuffer->GetTexture();
 			physicalLightRenderData.lightColour=simulWeatherRenderer->GetSkyKeyframer()->GetLocalSunIrradiance(simulWeatherRenderer->GetSkyKeyframer()->GetTime(),0.f);//GetLocalIrradiance(0.0f);
 			physicalLightRenderData.dirToLight=simulWeatherRenderer->GetSkyKeyframer()->GetDirectionToLight(0.0f);
 		sceneRenderer->Render(deviceContext,physicalLightRenderData);
@@ -406,7 +410,7 @@ void TrueSkyRenderer::RenderMixedResolutionSky(crossplatform::DeviceContext &dev
 	// Now we render using the data from these depth buffers into our offscreen sky/cloud buffers.
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer.GetTexture());
+		simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer->GetTexture());
 		simul::sky::float4 depthViewportXYWH(0.0f,0.0f,1.0f,1.0f);
 		simulWeatherRenderer->RenderMixedResolution(deviceContext
 														,false
@@ -686,8 +690,9 @@ void TrueSkyRenderer::RenderOverlays(crossplatform::DeviceContext &deviceContext
 	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
 	{
 		static float x=0.35f,y=0.4f;
-		renderPlatform->DrawCubemap(deviceContext,cubemapFramebuffer.GetTexture(),-x		,y		,cameraViewStruct.exposure,cameraViewStruct.gamma);
-		renderPlatform->DrawCubemap(deviceContext,envmapFramebuffer.GetTexture()	,x		,y		,cameraViewStruct.exposure,cameraViewStruct.gamma);
+		renderPlatform->DrawCubemap(deviceContext,cubemapFramebuffer.GetTexture()	,-x		,y		,cameraViewStruct.exposure,cameraViewStruct.gamma);
+		if(envmapFramebuffer->IsValid())
+			renderPlatform->DrawCubemap(deviceContext,envmapFramebuffer->GetTexture()	,x		,y		,cameraViewStruct.exposure,cameraViewStruct.gamma);
 	}
 	if(simulWeatherRenderer)
 	{

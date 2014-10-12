@@ -285,9 +285,6 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 		glow_fb.Deactivate(deviceContext);
 		hdr_effect->Unapply(deviceContext);
 	}
-    D3D11_TEXTURE2D_DESC tex_desc;
-	ID3D1xTexture2D *t=glow_fb.GetColorTexture();
-	t->GetDesc(&tex_desc);
 
 	float box_width					= CalculateBoxFilterWidth(g_FilterRadius, g_NumApproxPasses);
 	float half_box_width			= box_width * 0.5f;
@@ -299,9 +296,9 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 	m_pGaussianEffect->SetTexture(deviceContext,"g_texInput",glow_fb.GetTexture());
 	// Output texture
 	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",&glowTexture);
-	imageConstants.imageSize					=uint2(tex_desc.Width,tex_desc.Height);
+	imageConstants.imageSize					=uint2(glow_fb.Width,glow_fb.Height);
 	// Each thread is a chunk of threadsPerGroup(=128) texels, so to cover all of them we divide by threadsPerGroup
-	imageConstants.texelsPerThread				=(tex_desc.Height + threadsPerGroup - 1)/threadsPerGroup;
+	imageConstants.texelsPerThread				=(glow_fb.Height + threadsPerGroup - 1)/threadsPerGroup;
 	imageConstants.g_NumApproxPasses			=g_NumApproxPasses-1;
 	imageConstants.g_HalfBoxFilterWidth			=half_box_width;
 	imageConstants.g_FracHalfBoxFilterWidth		=frac_half_box_width;
@@ -312,7 +309,7 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 	gaussianColTechnique						=m_pGaussianEffect->GetTechniqueByName("simul_gaussian_col");
 	m_pGaussianEffect->Apply(deviceContext,gaussianColTechnique,0);
 	// We perform the Gaussian blur for each column. Each group is a column, and each thread 
-	pContext->Dispatch(tex_desc.Width,1,1);
+	pContext->Dispatch(glow_fb.Width,1,1);
 
 	// Unbound CS resource and output
 	ID3D11ShaderResourceView* srv_array[] = {NULL, NULL, NULL, NULL};
@@ -326,12 +323,12 @@ void SimulHDRRendererDX1x::RenderGlowTexture(crossplatform::DeviceContext &devic
 	m_pGaussianEffect->SetTexture(deviceContext,"g_texInput",glow_fb.GetTexture());
 	// Output texture
 	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",&glowTexture);
-	imageConstants.texelsPerThread				=(tex_desc.Width + threadsPerGroup - 1)/threadsPerGroup;
+	imageConstants.texelsPerThread				=(glow_fb.Width + threadsPerGroup - 1)/threadsPerGroup;
 	imageConstants.Apply(deviceContext);
 	// Select pass
 	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");
 	m_pGaussianEffect->Apply(deviceContext,gaussianRowTechnique,0);
-	pContext->Dispatch(tex_desc.Height,1,1);
+	pContext->Dispatch(glow_fb.Height,1,1);
 
 	// Unbound CS resource and output
 	pContext->CSSetShaderResources(0,4,srv_array);

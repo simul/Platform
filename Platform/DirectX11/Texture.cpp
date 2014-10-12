@@ -520,9 +520,10 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		depthDesc.Texture2D			=dsv;
 		V_CHECK(pd3dDevice->CreateDepthStencilView(texture,&depthDesc,&depthStencilView));
 	}
+	SetDebugObjectName(texture,"ensureTexture2DSizeAndFormat");
 }
 
-void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable)
+void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable,bool cubemap)
 {
 	pixelFormat=f;
 	InvalidateDeviceObjects();
@@ -545,6 +546,7 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 	texture=pArrayTexture;
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(pArrayTexture,NULL,&shaderResourceView));
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(pArrayTexture,NULL,&unorderedAccessView));
+SetDebugObjectName(texture,"ensureTextureArraySizeAndFormat");
 }
 
 void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat pf,bool computable)
