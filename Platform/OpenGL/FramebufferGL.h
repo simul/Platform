@@ -61,6 +61,7 @@ namespace simul
 			}
 			static void CheckFramebufferStatus();
 			static std::stack<GLuint> fb_stack;
+			void CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext);
 		private:
 			// Bind the internal textures
 			void BindColor()

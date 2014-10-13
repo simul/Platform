@@ -375,3 +375,7 @@ void FramebufferGL::CheckFramebufferStatus()
 			std::cerr<<"Unknown error "<<(int)status<<std::endl;
     }
 }
+
+void FramebufferGL::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)
+{
+}

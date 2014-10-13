@@ -54,7 +54,7 @@ ERRNO_CHECK
 #ifdef _MSC_VER
 	string fn			=filename_utf8;
 	FREE_IMAGE_FORMAT fif	=FIF_UNKNOWN;
-
+	GL_ERROR_CHECK
 	wstring wstr		=simul::base::Utf8ToWString(fn);
 	fif						=FreeImage_GetFileTypeU(wstr.c_str(), 0);
 	if(fif == FIF_UNKNOWN)
@@ -68,24 +68,33 @@ ERRNO_CHECK
 	{
 		throw simul::base::RuntimeError(string("Can't determine bitmap type from filename: ")+string(filename_utf8));
 	}
+	GL_ERROR_CHECK
 ERRNO_CHECK
 	// ok, let's load the file
 	FIBITMAP *dib = FreeImage_LoadU(fif,wstr.c_str());
+	GL_ERROR_CHECK
 	if(!dib)
 	{
 		SIMUL_CERR<<"Failed to load bitmap "<<filename_utf8<<std::endl;
 		return 0;
 	}
+	GL_ERROR_CHECK
 
 	width  = FreeImage_GetWidth(dib),
 	height = FreeImage_GetHeight(dib);
+	GL_ERROR_CHECK
 
 	bpp=FreeImage_GetBPP(dib);
 	//if(bpp!=24)
 	//	return 0;
+    unsigned int byte_size = width * height*(bpp/8);
 	BYTE *pixels = (BYTE*)FreeImage_GetBits(dib);
+	unsigned char *data=new unsigned char[byte_size];
+	memcpy_s(data,byte_size,pixels,byte_size);
+    FreeImage_Unload(dib);
 ERRNO_CHECK
-	return pixels;
+	GL_ERROR_CHECK
+	return data;
 #else
 	return NULL;
 #endif

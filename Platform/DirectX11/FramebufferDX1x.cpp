@@ -42,8 +42,6 @@ Framebuffer::Framebuffer(int w,int h) :
 	,useESRAM(false)
 	,useESRAMforDepth(false)
 {
-	for(int i=0;i<6;i++)
-		m_pCubeEnvMapRTV[i]=NULL;
 }
 
 void Framebuffer::SetWidthAndHeight(int w,int h)
@@ -115,11 +113,6 @@ void Framebuffer::InvalidateDeviceObjects()
 	sphericalHarmonicsConstants.InvalidateDeviceObjects();
 	SAFE_DELETE(buffer_texture);
 	SAFE_DELETE(buffer_depth_texture);
-	for(int i=0;i<6;i++)
-	{
-//		SAFE_DELETE(m_pCubeEnvDepthMap[i]);
-		SAFE_RELEASE(m_pCubeEnvMapRTV[i]);
-	}
 	sphericalHarmonics.InvalidateDeviceObjects();
 	SAFE_DELETE(sphericalHarmonicsEffect);
 	sphericalSamples.InvalidateDeviceObjects();
@@ -173,10 +166,6 @@ struct Vertext
 
 bool Framebuffer::CreateBuffers()
 {
-	for(int i=0;i<6;i++)
-	{
-		SAFE_RELEASE(m_pCubeEnvMapRTV[i]);
-	}
 	if(!Width||!Height)
 		return false;
 	if(!renderPlatform)
@@ -251,6 +240,9 @@ void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext,con
 	{
 		colour_active=true;
 		ID3D11RenderTargetView *renderTargetView=buffer_texture->AsD3D11RenderTargetView();
+		dx11::Texture *t=(dx11::Texture *)buffer_texture;
+		if(is_cubemap)
+			renderTargetView=t->ArrayD3D11RenderTargetView(current_face);
 		pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
 	}
 	else 
@@ -310,9 +302,15 @@ void Framebuffer::ActivateViewport(crossplatform::DeviceContext &deviceContext, 
 void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 {
 	SaveOldRTs(deviceContext);
-	CreateBuffers();
+	if((!buffer_texture||!buffer_texture->AsD3D11Texture2D())&&(!buffer_depth_texture||!buffer_depth_texture->AsD3D11Texture2D()))
+		CreateBuffers();
 	SIMUL_ASSERT(IsValid());
-	ID3D11RenderTargetView *renderTargetView=buffer_texture->AsD3D11RenderTargetView();
+	ID3D11RenderTargetView *renderTargetView=NULL;
+	dx11::Texture *t=(dx11::Texture *)buffer_texture;
+	if(is_cubemap)
+		renderTargetView=t->ArrayD3D11RenderTargetView(current_face);
+	else
+		renderTargetView=buffer_texture->AsD3D11RenderTargetView();
 	if(renderTargetView)
 	{
 		colour_active=true;
@@ -344,7 +342,8 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	if(!pContext)
 		return;
-	CreateBuffers();
+	if((!buffer_texture||!buffer_texture->AsD3D11Texture2D())&&(!buffer_depth_texture||!buffer_depth_texture->AsD3D11Texture2D()))
+		CreateBuffers();
 	HRESULT hr=S_OK;
 	
 	ID3D11RenderTargetView *renderTargetView=buffer_texture->AsD3D11RenderTargetView();
@@ -379,7 +378,8 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 
 void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext)
 {
-	CreateBuffers();
+	if((!buffer_texture||!buffer_texture->AsD3D11Texture2D())&&(!buffer_depth_texture||!buffer_depth_texture->AsD3D11Texture2D()))
+		CreateBuffers();
 	if(!buffer_texture->AsD3D11RenderTargetView())
 		return;
 	SaveOldRTs(deviceContext);
@@ -412,20 +412,43 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 		return;
 	}
 	ID3D11RenderTargetView *renderTargetView=buffer_texture->AsD3D11RenderTargetView();
+		dx11::Texture *t=(dx11::Texture *)buffer_texture;
+	if(is_cubemap)
+		renderTargetView=t->ArrayD3D11RenderTargetView(current_face);
 	pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
 	depth_active=false;
 }
 
-void Framebuffer::Clear(crossplatform::DeviceContext &context,float r,float g,float b,float a,float depth,int mask)
+void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,float g,float b,float a,float depth,int mask)
 {
+	ID3D11DeviceContext *pContext = deviceContext.asD3D11DeviceContext();
 	// Clear the screen to black:
     float clearColor[4]={r,g,b,a};
     if(!mask)
 		mask=D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL;
-	if(buffer_texture->AsD3D11RenderTargetView())
-		context.asD3D11DeviceContext()->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(),clearColor);
-	if(buffer_depth_texture->AsD3D11DepthStencilView())
-		context.asD3D11DeviceContext()->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(),mask,depth,0);
+	if(is_cubemap)
+	{
+		dx11::Texture *t=(dx11::Texture *)buffer_texture;
+		if(current_face>=0)
+		{
+			pContext->ClearRenderTargetView(t->ArrayD3D11RenderTargetView(current_face),clearColor);
+		}
+		else
+		{
+			for(int i=0;i<6;i++)
+			{
+				if(t->ArrayD3D11RenderTargetView(i))
+					pContext->ClearRenderTargetView(t->ArrayD3D11RenderTargetView(i),clearColor);
+			}
+		}
+	}
+	else
+	{
+		if(buffer_texture&&buffer_texture->AsD3D11RenderTargetView())
+			pContext->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(),clearColor);
+	}
+	if(buffer_depth_texture&&buffer_depth_texture->AsD3D11DepthStencilView())
+		pContext->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(),mask,depth,0);
 }
 
 void Framebuffer::ClearDepth(crossplatform::DeviceContext &context,float depth)
@@ -434,15 +457,24 @@ void Framebuffer::ClearDepth(crossplatform::DeviceContext &context,float depth)
 		context.asD3D11DeviceContext()->ClearDepthStencilView(buffer_depth_texture->AsD3D11DepthStencilView(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,depth,0);
 }
 
-void Framebuffer::ClearColour(crossplatform::DeviceContext &context,float r,float g,float b,float a)
+void Framebuffer::ClearColour(crossplatform::DeviceContext &deviceContext,float r,float g,float b,float a)
 {
 	float clearColor[4]={r,g,b,a};
-	if(buffer_texture->AsD3D11RenderTargetView())
-		context.asD3D11DeviceContext()->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(),clearColor);
+	if(is_cubemap)
+	{
+		dx11::Texture *t=(dx11::Texture *)buffer_texture;
+		for(int i=0;i<6;i++)
+		{
+			deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(t->ArrayD3D11RenderTargetView(i), clearColor);
+		}
+	}
+	else if(buffer_texture->AsD3D11RenderTargetView())
+		deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(),clearColor);
 }
 
 void Framebuffer::RecompileShaders()
 {
+	BaseFramebuffer::RecompileShaders();
 	SAFE_DELETE(sphericalHarmonicsEffect);
 	if(!renderPlatform)
 		return;

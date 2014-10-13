@@ -113,8 +113,6 @@ RenderPlatform::RenderPlatform()
 	,m_pDebugEffect(NULL)
 	,m_pCubemapVtxDecl(NULL)
 	,m_pVertexBuffer(NULL)
-	,solidEffect(NULL)
-	,reverseDepth(false)
 {
 }
 
@@ -1608,7 +1606,7 @@ void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContex
 	pContext->OMSetRenderTargets(	state->numViewports,
 									state->renderTargets,
 									state->depthSurface);
-	for(int i=0;i<state->numViewports;i++)
+	for(int i=0;i<(int)state->numViewports;i++)
 	{
 		SAFE_RELEASE(state->renderTargets[i]);
 	}

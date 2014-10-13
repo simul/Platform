@@ -32,7 +32,8 @@ dx11::Texture::Texture()
 	,unorderedAccessView(NULL)
 	,depthStencilView(NULL)
 	,unorderedAccessViewMips(NULL)
-	,renderTargetView(NULL)
+	,renderTargetViews(NULL)
+	,num_rt(0)
 	,stagingBuffer(NULL)
 	,last_context(NULL)
 	,m_pOldRenderTarget(NULL)
@@ -50,6 +51,14 @@ dx11::Texture::~Texture()
 
 void dx11::Texture::InvalidateDeviceObjects()
 {
+	if(renderTargetViews)
+	{
+		for(int i=0;i<num_rt;i++)
+			SAFE_RELEASE(renderTargetViews[i]);
+		num_rt=0;
+		delete [] renderTargetViews;
+		renderTargetViews=NULL;
+	}
 	if(last_context&&mapped.pData)
 	{
 		last_context->Unmap(texture,0);
@@ -59,7 +68,6 @@ void dx11::Texture::InvalidateDeviceObjects()
 	SAFE_RELEASE(shaderResourceView);
 	SAFE_RELEASE(unorderedAccessView);
 	SAFE_RELEASE(depthStencilView);
-	SAFE_RELEASE(renderTargetView);
 	SAFE_RELEASE(stagingBuffer);
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
@@ -69,48 +77,8 @@ void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,c
 {
 	InvalidateDeviceObjects();
 	SAFE_RELEASE(shaderResourceView);
-	std::string str(pFilePathUtf8);
-	if(str.find(".rgb")<str.length())
-	{
-		void *f=NULL;
-		unsigned int bytes=0;
-		std::string str		=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(pFilePathUtf8,dx11::GetTexturePathsUtf8());
-		if(!str.length())
-			return;
-		base::FileLoader::GetFileLoader()->AcquireFileContents(f,bytes,str.c_str(),false);
-		char *src=(char*)f+bytes-32768*4;
-		ensureTexture2DSizeAndFormat(renderPlatform,256,128,crossplatform::RGBA_8_UNORM,false,false);
-		ID3D11DeviceContext *ctx=NULL;
-		renderPlatform->AsD3D11Device()->GetImmediateContext(&ctx);
-
-		char *interleaved=new char[bytes];
-		char *target=interleaved;
-		char *r=src;
-		char *g=src+32768;
-		char *b=src+2*32768;
-		char *a=src+3*32768;
-		for(int i=0;i<32768;i++)
-		{
-			*(target++)=r[i];
-			*(target++)=g[i];
-			*(target++)=b[i];
-			*(target++)=a[i];
-		}
-		
-		crossplatform::DeviceContext deviceContext;
-		deviceContext.renderPlatform=renderPlatform;
-		deviceContext.platform_context=ctx;
-		setTexels(deviceContext,interleaved,0,32768);
-		SAFE_RELEASE(ctx)
-		base::FileLoader::GetFileLoader()->ReleaseFileContents(f);
-		delete [] interleaved;
-		return;
-	}
-	else
-	{
-		shaderResourceView	=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8);
-		SetDebugObjectName(texture,pFilePathUtf8);
-	}
+	shaderResourceView	=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8);
+	SetDebugObjectName(texture,pFilePathUtf8);
 }
 
 void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files)
@@ -497,17 +465,25 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));
 		SetDebugObjectName(unorderedAccessView,"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 	}
-	if(rendertarget&&(!renderTargetView||!ok))
+	if(rendertarget&&(!renderTargetViews||!ok))
 	{
+		if(renderTargetViews)
+		{
+			for(int i=0;i<num_rt;i++)
+				SAFE_RELEASE(renderTargetViews[i]);
+			delete [] renderTargetViews;
+			renderTargetViews=NULL;
+		}
+		num_rt=1;
+		renderTargetViews=new ID3D11RenderTargetView*[num_rt];
 		// Setup the description of the render target view.
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 		renderTargetViewDesc.Format				=texture2dFormat;
 		renderTargetViewDesc.ViewDimension		=num_samples>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 		// Create the render target in DX11:
-		SAFE_RELEASE(renderTargetView);
-		V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&renderTargetView));
-		SetDebugObjectName(renderTargetView,"dx11::Texture::ensureTexture2DSizeAndFormat renderTargetView");
+		V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,renderTargetViews));
+		SetDebugObjectName(*renderTargetViews,"dx11::Texture::ensureTexture2DSizeAndFormat renderTargetView");
 	}
 	if(depthstencil&&(!depthStencilView||!ok))
 	{
@@ -529,7 +505,7 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 	InvalidateDeviceObjects();
 	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	D3D11_TEXTURE2D_DESC desc;
-	int num_mips			=5;
+	int num_mips			=cubemap?1:5;
 	int s=2<<num_mips;
 	while(num_mips>1&&(s>w||s>l))
 	{
@@ -555,7 +531,7 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
 	SRVDesc.Format						=format;
-	SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURECUBE;
+	SRVDesc.ViewDimension				=cubemap?D3D11_SRV_DIMENSION_TEXTURECUBE:D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 	SRVDesc.TextureCube.MipLevels		=num_mips;
 	SRVDesc.TextureCube.MostDetailedMip =0;
 
@@ -566,6 +542,15 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 	}
 	if(rendertarget)
 	{
+		if(renderTargetViews)
+		{
+			for(int i=0;i<num_rt;i++)
+				SAFE_RELEASE(renderTargetViews[i]);
+			delete [] renderTargetViews;
+			renderTargetViews=NULL;
+		}
+		num_rt=num;
+		renderTargetViews=new ID3D11RenderTargetView*[num_rt];
 		// Create the multi-face render target view
 		D3D11_RENDER_TARGET_VIEW_DESC DescRT;
 		DescRT.Format							=format;
@@ -577,7 +562,7 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 		{
 			DescRT.Texture2DArray.FirstArraySlice = i;
 			DescRT.Texture2DArray.ArraySize = 1;
-			V_CHECK(renderPlatform->AsD3D11Device()->CreateRenderTargetView(pArrayTexture, &DescRT, &(m_pCubeEnvMapRTV[i])));
+			V_CHECK(renderPlatform->AsD3D11Device()->CreateRenderTargetView(pArrayTexture, &DescRT, &(renderTargetViews[i])));
 		}
 	}
 	SetDebugObjectName(texture,"ensureTextureArraySizeAndFormat");
@@ -647,7 +632,7 @@ void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 void dx11::Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
 {
 	// We can't detect if this has worked or not.
-	if(renderTargetView)
+	if(renderTargetViews&&*renderTargetViews)
 		deviceContext.asD3D11DeviceContext()->GenerateMips(AsD3D11ShaderResourceView());
 }
 
@@ -769,8 +754,8 @@ void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceCon
 											&m_pOldDepthSurface
 											);
 	}
-	SIMUL_ASSERT(renderTargetView!=NULL);
-	last_context->OMSetRenderTargets(1,&renderTargetView,NULL);
+	SIMUL_ASSERT(renderTargetViews!=NULL);
+	last_context->OMSetRenderTargets(1,renderTargetViews,NULL);
 	{
 		ID3D11Texture2D* ppd(NULL);
 		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)

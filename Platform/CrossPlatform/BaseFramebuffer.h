@@ -59,13 +59,17 @@ namespace simul
 			//! Some hardware has fast RAM that's good for framebuffers.
 			virtual void SetUseFastRAM(bool /*colour*/,bool /*depth*/){};
 			virtual void SetAntialiasing(int s)=0;
+			//! Calculate the spherical harmonics of this cubemap and store the result internally.
+			//! Changing the number of bands will resize the internal storeage.
+			virtual void CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)=0;
+			virtual void RecompileShaders(){}
 			//! Get the texture for the colour buffer target.
-			Texture *GetTexture()
+			inline Texture *GetTexture()
 			{
 				return buffer_texture;
 			}
 			//! Get the texture for the depth buffer target.
-			Texture *GetDepthTexture()
+			inline Texture *GetDepthTexture()
 			{
 				return buffer_depth_texture;
 			}

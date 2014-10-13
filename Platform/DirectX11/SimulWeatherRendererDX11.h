@@ -10,7 +10,6 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
-#include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/DirectX11/SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>

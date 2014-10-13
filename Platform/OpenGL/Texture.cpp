@@ -87,9 +87,11 @@ ERRNO_CHECK
 	unsigned bpp;
 	GL_ERROR_CHECK
 	unsigned char *data=LoadGLBitmap(texture_files[0].c_str(),bpp,width,length);
+	GL_ERROR_CHECK
 ERRNO_CHECK
 	if(!data)
 		return;
+	GL_ERROR_CHECK
 	delete [] data;
 	GL_ERROR_CHECK
 	dim=2;

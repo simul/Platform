@@ -70,6 +70,7 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 		,memoryInterface(m)
 		,linearDepthTexture(NULL)
 		,envmapFramebuffer(NULL)
+		,cubemapFramebuffer(NULL)
 		,AllOsds(true)
 		,demoOverlay(NULL)
 {
@@ -80,20 +81,11 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 	baseTerrainRenderer		=::new(memoryInterface) terrain::BaseTerrainRenderer(memoryInterface);
 	baseTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 
-	if((simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
-	{
-		oceanRenderer			=new(memoryInterface) OceanRenderer(env->seaKeyframer);
-		oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
-	}
-
 #ifdef SIMUL_USE_SCENE
 	if(sc)
 		sceneRenderer			=new(memoryInterface) scene::BaseSceneRenderer(sc,renderPlatform);
 #endif
 	ReverseDepthChanged();
-	
-	cubemapFramebuffer.SetFormat(crossplatform::RGBA_16_FLOAT);
-	cubemapFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
 }
 
 TrueSkyRenderer::~TrueSkyRenderer()
@@ -108,6 +100,7 @@ TrueSkyRenderer::~TrueSkyRenderer()
 	del(baseTerrainRenderer,memoryInterface);
 	del(oceanRenderer,memoryInterface);
 	SAFE_DELETE(envmapFramebuffer);
+	SAFE_DELETE(cubemapFramebuffer);
 }
 
 void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -119,8 +112,13 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		return;
 	}
 	enabled=true;
+	if(!oceanRenderer&&simulWeatherRenderer&&(simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
+	{
+		oceanRenderer			=new(memoryInterface) OceanRenderer(simulWeatherRenderer->GetEnvironment()->seaKeyframer);
+		oceanRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetEnvironment()->skyKeyframer);
+	}
 	SAFE_DELETE(envmapFramebuffer);
-	envmapFramebuffer=new CubemapFramebuffer;//renderPlatform->CreateFramebuffer();
+	envmapFramebuffer= renderPlatform->CreateFramebuffer();
 	envmapFramebuffer->SetFormat(crossplatform::RGBA_16_FLOAT);
 	envmapFramebuffer->SetDepthFormat(crossplatform::UNKNOWN);
 	SAFE_DELETE(msaaFramebuffer);
@@ -139,15 +137,19 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		baseTerrainRenderer->RestoreDeviceObjects(renderPlatform);
 	if(oceanRenderer)
 		oceanRenderer->RestoreDeviceObjects(renderPlatform);
-	cubemapFramebuffer.SetAsCubemap(32);
-	cubemapFramebuffer.RestoreDeviceObjects(renderPlatform);
+	SAFE_DELETE(cubemapFramebuffer);
+	cubemapFramebuffer= renderPlatform->CreateFramebuffer();
+	cubemapFramebuffer->SetFormat(crossplatform::RGBA_16_FLOAT);
+	cubemapFramebuffer->SetDepthFormat(crossplatform::D_32_FLOAT);
+	cubemapFramebuffer->SetAsCubemap(32);
+	cubemapFramebuffer->RestoreDeviceObjects(renderPlatform);
 	envmapFramebuffer->SetAsCubemap(8);
 	envmapFramebuffer->RestoreDeviceObjects(renderPlatform);
 	//envmapFramebuffer->Clear(pContext,0.f,0.f,0.f,1.f,0.f);
 	if(renderPlatform)
 	{
 		crossplatform::DeviceContext deviceContext=renderPlatform->GetImmediateContext();
-		cubemapFramebuffer.Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
+		cubemapFramebuffer->Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
 		envmapFramebuffer->Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
 	}
 	//if(!demoOverlay)
@@ -259,9 +261,9 @@ ERRNO_CHECK
 	i=i%6;
 	{
 ERRNO_CHECK
-		cubemapFramebuffer.SetCubeFace(i);
-		cubemapFramebuffer.Clear(deviceContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
-		cubemapFramebuffer.Activate(deviceContext);
+		cubemapFramebuffer->SetCubeFace(i);
+		cubemapFramebuffer->Clear(deviceContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+		cubemapFramebuffer->Activate(deviceContext);
 		static float nearPlane	=10.f;
 		static float farPlane	=200000.f;
 ERRNO_CHECK
@@ -305,13 +307,13 @@ ERRNO_CHECK
 			baseTerrainRenderer->Render(deviceContext,1.f);
 		if(oceanRenderer&&ShowWater)
 		{
-			//oceanRenderer->Render(deviceContext,1.f);
+			oceanRenderer->Render(deviceContext,1.f);
 		}
-		cubemapFramebuffer.DeactivateDepth(deviceContext);
+		cubemapFramebuffer->DeactivateDepth(deviceContext);
 		if(simulWeatherRenderer)
 		{
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,true,1.f,1.f,false,cubemapFramebuffer.GetDepthTexture(),relativeViewportTextureRegionXYWH,true,vec2(0,0));
+			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,true,1.f,1.f,false,cubemapFramebuffer->GetDepthTexture(),relativeViewportTextureRegionXYWH,true,vec2(0,0));
 		}
 		static const char *txt[]={	"+X",
 									"-X",
@@ -320,8 +322,8 @@ ERRNO_CHECK
 									"+Z",
 									"-Z"};
 		//renderPlatform->Print(deviceContext,16,16,txt[i]);
-		cubemapFramebuffer.Deactivate(deviceContext);
-	//	renderPlatform->DrawDepth(deviceContext,0,0,64,64,cubemapFramebuffer.GetDepthTexture());
+		cubemapFramebuffer->Deactivate(deviceContext);
+	//	renderPlatform->DrawDepth(deviceContext,0,0,64,64,cubemapFramebuffer->GetDepthTexture());
 	}
 ERRNO_CHECK
 }
@@ -332,8 +334,8 @@ void TrueSkyRenderer::RenderEnvmap(crossplatform::DeviceContext &deviceContext)
 		return;
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderEnvmap CalcSphericalHarmonics")
-	cubemapFramebuffer.SetBands(SphericalHarmonicsBands);
-	cubemapFramebuffer.CalcSphericalHarmonics(deviceContext);
+	cubemapFramebuffer->SetBands(SphericalHarmonicsBands);
+	cubemapFramebuffer->CalcSphericalHarmonics(deviceContext);
 	math::Matrix4x4 invViewProj;
 	math::Matrix4x4 view_matrices[6];
 	float cam_pos[]={0,0,0};
@@ -356,7 +358,7 @@ void TrueSkyRenderer::RenderEnvmap(crossplatform::DeviceContext &deviceContext)
 			lightProbeConstants.numSHBands	=SphericalHarmonicsBands;
 			lightProbeConstants.alpha		=0.05f;
 			lightProbeConstants.Apply(deviceContext);
-			cubemapFramebuffer.GetSphericalHarmonics().Apply(deviceContext, lightProbesEffect,"basisBuffer");
+			cubemapFramebuffer->GetSphericalHarmonics().Apply(deviceContext, lightProbesEffect,"basisBuffer");
 			lightProbesEffect->Apply(deviceContext,tech,0);
 			renderPlatform->DrawQuad(deviceContext);
 			lightProbesEffect->SetTexture(deviceContext,"basisBuffer"	,NULL);
@@ -687,10 +689,10 @@ void TrueSkyRenderer::RenderOverlays(crossplatform::DeviceContext &deviceContext
 		return;
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Overlays")
 	crossplatform::MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
-	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
+	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer->IsValid())
 	{
 		static float x=0.35f,y=0.4f;
-		renderPlatform->DrawCubemap(deviceContext,cubemapFramebuffer.GetTexture()	,-x		,y		,cameraViewStruct.exposure,cameraViewStruct.gamma);
+		renderPlatform->DrawCubemap(deviceContext,cubemapFramebuffer->GetTexture()	,-x		,y		,cameraViewStruct.exposure,cameraViewStruct.gamma);
 		if(envmapFramebuffer->IsValid())
 			renderPlatform->DrawCubemap(deviceContext,envmapFramebuffer->GetTexture()	,x		,y		,cameraViewStruct.exposure,cameraViewStruct.gamma);
 	}
@@ -816,7 +818,7 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 		sceneRenderer->InvalidateDeviceObjects();
 #endif
 	viewManager.Clear();
-	cubemapFramebuffer.InvalidateDeviceObjects();
+	cubemapFramebuffer->InvalidateDeviceObjects();
 	SAFE_DELETE(lightProbesEffect);
 	SAFE_DELETE(linearizeDepthEffect);
 	SAFE_DELETE(linearDepthTexture);
@@ -826,7 +828,8 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 
 void TrueSkyRenderer::RecompileShaders()
 {
-	cubemapFramebuffer.RecompileShaders();
+	if(cubemapFramebuffer)
+		cubemapFramebuffer->RecompileShaders();
 	if(renderPlatform)
 		renderPlatform->RecompileShaders();
 	if(simulWeatherRenderer)

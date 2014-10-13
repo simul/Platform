@@ -3,7 +3,7 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/ocean_constants.sl"
-
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 
 //Memory access coherency (in threads)
 #define COHERENCY_GRANULARITY 128
@@ -17,10 +17,10 @@ struct Fft
 {
 	Fft();
 	~Fft();
-	void RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT slices,int size);
+	void RestoreDeviceObjects(simul::crossplatform::RenderPlatform* r, UINT slices,int size);
 	void InvalidateDeviceObjects();
 	void RecompileShaders();
-	void CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices,int size);
+	void CreateCBuffers( UINT slices,int size);
 	void fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
 							ID3D11ShaderResourceView* pSRV_Dst,
 							ID3D11ShaderResourceView* pSRV_Src,int size);
@@ -29,9 +29,8 @@ struct Fft
 				   UINT thread_count,
 				   UINT istride);
 protected:
-	ID3D11Device				*m_pd3dDevice;
+	simul::crossplatform::RenderPlatform* renderPlatform;
 	// D3D11 objects
-	ID3D11DeviceContext			*pd3dImmediateContext;
 	ID3D11ComputeShader			*pRadix008A_CS;
 	ID3D11ComputeShader			*pRadix008A_CS2;
 

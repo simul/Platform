@@ -14,8 +14,15 @@ RenderPlatform::RenderPlatform()
 	:mirrorY(false)
 	,mirrorY2(false)
 	,textRenderer(NULL)
+	,solidEffect(NULL)
+	,reverseDepth(false)
 {
 }
+ID3D11Device *RenderPlatform::AsD3D11Device()
+{
+	return NULL;
+}
+
 DeviceContext &RenderPlatform::GetImmediateContext()
 {
 	return immediateContext;

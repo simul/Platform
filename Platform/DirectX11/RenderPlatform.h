@@ -1,11 +1,10 @@
 #pragma once
 #include "Export.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
-#include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
-#include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
 #include "Simul/Platform/DirectX11/Utilities.h"
 
 #include "SimulDirectXHeader.h"
@@ -116,15 +115,12 @@ namespace simul
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
-			crossplatform::Effect *solidEffect;
-			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
-			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
-			std::set<crossplatform::Material*> materials;
-			bool reverseDepth;
 			// DX11-specific stuff:
 			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 		protected:
+			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
+			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
 			/// \todo The stored states are implemented per-RenderPlatform for DX11, but need to be implemented per-DeviceContext.
 			struct StoredState
 			{

@@ -59,8 +59,6 @@ namespace simul
 			virtual void Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);
 			virtual void ClearDepth(crossplatform::DeviceContext &context,float);
 			virtual void ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
-			//! Calculate the spherical harmonics of this cubemap and store the result internally.
-			//! Changing the number of bands will resize the internal storeage.
 			void CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext);
 		protected:
 			bool Destroy();
@@ -69,9 +67,6 @@ namespace simul
 			ID3D11DepthStencilView*				m_pOldDepthSurface;
 			D3D11_VIEWPORT						m_OldViewports[16];
 			unsigned							num_OldViewports;
-
-			// One Environment map texture, one Shader Resource View on it, and six Render Target Views on it.
-			ID3D11RenderTargetView*				m_pCubeEnvMapRTV[6];
 		protected:
 			bool useESRAM,useESRAMforDepth;
 			bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);

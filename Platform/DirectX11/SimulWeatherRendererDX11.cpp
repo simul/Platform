@@ -63,9 +63,9 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 {
 	std::wstring filenamew=simul::base::Utf8ToWString(filename_utf8);
 	crossplatform::DeviceContext deviceContext=renderPlatform->GetImmediateContext();
-	CubemapFramebuffer	fb_cubemap;
+	Framebuffer	fb_cubemap;
 	static int cubesize=1024;
-	fb_cubemap.SetWidthAndHeight(cubesize,cubesize);
+	fb_cubemap.SetAsCubemap(cubesize);
 	fb_cubemap.SetFormat(crossplatform::RGBA_32_FLOAT);
 	fb_cubemap.RestoreDeviceObjects(renderPlatform);
 	dx11::Framebuffer gamma_correct;
@@ -128,7 +128,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 		}
 		fb_cubemap.Deactivate(deviceContext);
 	}
-	ID3D11Texture2D *tex=fb_cubemap.GetCopy(deviceContext);
+	ID3D11Texture2D *tex=fb_cubemap.GetTexture()->AsD3D11Texture2D();
 	
 	HRESULT hr=D3DX11SaveTextureToFileW(deviceContext.asD3D11DeviceContext(),tex,D3DX11_IFF_DDS,filenamew.c_str());
 

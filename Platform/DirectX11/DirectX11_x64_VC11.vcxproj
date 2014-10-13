@@ -180,12 +180,10 @@
     <ClCompile Include="CompileShaderDX1x.cpp" />
     <ClCompile Include="CreateEffectDX1x.cpp" />
     <ClCompile Include="CSFFT\fft_512x512.cpp" />
-    <ClCompile Include="CubemapFramebuffer.cpp" />
     <ClCompile Include="Direct3D11Manager.cpp" />
     <ClCompile Include="Direct3D11Renderer.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
     <ClCompile Include="Effect.cpp" />
-    <ClCompile Include="Framebuffer3D.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
@@ -206,7 +204,6 @@
     <ClInclude Include="CompileShaderDX1x.h" />
     <ClInclude Include="CreateEffectDX1x.h" />
     <ClInclude Include="CSFFT\fft_512x512.h" />
-    <ClInclude Include="cubemapframebuffer.h" />
     <ClInclude Include="Direct3D11CallbackInterface.h" />
     <ClInclude Include="Direct3D11Manager.h" />
     <ClInclude Include="Direct3D11ManagerInterface.h" />
@@ -214,7 +211,6 @@
     <ClInclude Include="DX11Exception.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
-    <ClInclude Include="Framebuffer3D.h" />
     <ClInclude Include="FramebufferDX1x.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="Light.h" />

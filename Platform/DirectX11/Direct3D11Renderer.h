@@ -12,7 +12,6 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Sky/BaseGpuSkyGenerator.h"
-#include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/CrossPlatform/MixedResolutionView.h"
@@ -168,7 +167,7 @@ namespace simul
 			OceanRenderer								*oceanRenderer;
 			simul::scene::BaseSceneRenderer				*sceneRenderer;
 			crossplatform::MixedResolutionViewManager	viewManager;
-			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
+			simul::crossplatform::BaseFramebuffer		*cubemapFramebuffer;
 			simul::crossplatform::BaseFramebuffer		*envmapFramebuffer;
 			simul::crossplatform::BaseFramebuffer		*msaaFramebuffer;
 			crossplatform::ConstantBuffer<LightProbeConstants>			lightProbeConstants;

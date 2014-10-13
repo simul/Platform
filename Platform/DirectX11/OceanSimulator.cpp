@@ -115,7 +115,7 @@ void OceanSimulator::EnsureTablesInitialized(simul::crossplatform::DeviceContext
 	{
 		gridSize = m_param->dmap_dim;
 		propertiesChecksum=m_param->CalcChecksum();
-		m_fft.RestoreDeviceObjects(renderPlatform->AsD3D11Device(), 3,gridSize);
+		m_fft.RestoreDeviceObjects(renderPlatform, 3,gridSize);
 		int input_full_size = (gridSize + 4) * (gridSize + 1);
 		// This value should be (hmap_dim / 2 + 1) * hmap_dim, but we use full sized buffer here for simplicity.
 		int input_half_size = gridSize * gridSize;

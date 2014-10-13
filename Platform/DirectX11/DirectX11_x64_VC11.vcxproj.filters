@@ -33,9 +33,6 @@
     <ClCompile Include="DX11Exception.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Framebuffer3D.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="FramebufferDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -52,9 +49,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SimulWeatherRendererDX11.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CubemapFramebuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Direct3D11Renderer.cpp">
@@ -113,9 +107,6 @@
     <ClInclude Include="Export.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Framebuffer3D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="FramebufferDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -141,9 +132,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulWeatherRendererDX11.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="cubemapframebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="direct3d11renderer.h">

@@ -10,6 +10,7 @@
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Topology.h"
+#include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4251)
@@ -76,7 +77,7 @@ namespace simul
 				vec3 pos;
 				vec4 colour;
 			};
-			virtual ID3D11Device *AsD3D11Device()=0;
+			virtual ID3D11Device *AsD3D11Device();
 			//! Call this once, when the 3D graphics device has been initialized, and pass the API-specific device pointer/identifier.
 			virtual void RestoreDeviceObjects(void*);
 			//! Call this once, when the 3d graphics device object is being shut down.
@@ -181,6 +182,9 @@ namespace simul
 			virtual void					SaveTexture(Texture *texture,const char *lFileNameUtf8)=0;
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY,mirrorY2;
+			crossplatform::Effect *solidEffect;
+			std::set<crossplatform::Material*> materials;
+			bool reverseDepth;
 		protected:
 			DeviceContext					immediateContext;
 		private:

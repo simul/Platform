@@ -29,6 +29,7 @@ namespace simul
 			int apply_count;
 			int struct_size;
 			std::vector<LayoutDesc> parts;
+			Topology topology;
 		public:
 			Layout();
 			virtual ~Layout();

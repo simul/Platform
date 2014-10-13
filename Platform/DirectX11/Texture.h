@@ -34,39 +34,46 @@ namespace simul
 			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
 			void LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files);
 			bool IsValid() const;
-			virtual ID3D11Texture2D *AsD3D11Texture2D()
+			ID3D11Texture2D *AsD3D11Texture2D()
 			{
 				return (ID3D11Texture2D*)texture;
 			}
-			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
+			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
 				return shaderResourceView;
 			}
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
+			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
 			{
 				return unorderedAccessView;
 			}
-			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView()
+			ID3D11DepthStencilView *AsD3D11DepthStencilView()
 			{
 				return depthStencilView;
 			}
-			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView()
+			ID3D11RenderTargetView *AsD3D11RenderTargetView()
 			{
-				return renderTargetView;
+				if(!renderTargetViews)
+					return NULL;
+				return *renderTargetViews;
 			}
 			GLuint AsGLuint()
 			{
 				return 0;
 			}
+			ID3D11RenderTargetView *ArrayD3D11RenderTargetView(int index)
+			{
+				if(!renderTargetViews||index<0||index>=num_rt)
+					return NULL;
+				return renderTargetViews[index];
+			}
 			// Use this dx11::Texture as a wrapper for a texture and its corresponding SRV. Both pointers are needed.
 			void InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv);
 
-			
-			ID3D11UnorderedAccessView**  unorderedAccessViewMips;
-			ID3D11Resource*				stagingBuffer;
+			ID3D11UnorderedAccessView	**unorderedAccessViewMips;
+			ID3D11Resource				*stagingBuffer;
 
 			D3D11_MAPPED_SUBRESOURCE	mapped;
-			DXGI_FORMAT format;
+			DXGI_FORMAT					format;
 			void copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
 			void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
@@ -104,8 +111,8 @@ namespace simul
 			ID3D11ShaderResourceView*   shaderResourceView;
 			ID3D11UnorderedAccessView*  unorderedAccessView;
 			ID3D11DepthStencilView*		depthStencilView;
-			ID3D11RenderTargetView*		renderTargetView;
-			ID3D11RenderTargetView*		m_pCubeEnvMapRTV[6];
+			ID3D11RenderTargetView**	renderTargetViews;
+			int num_rt;
 			D3D11_VIEWPORT						m_OldViewports[16];
 			unsigned							num_OldViewports;
 			friend class CubemapFramebuffer;

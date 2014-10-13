@@ -17,7 +17,7 @@
 #include <assert.h>
 
 #include "fft_512x512.h"
-
+using namespace simul;
 ////////////////////////////////////////////////////////////////////////////////
 // Common constants
 ////////////////////////////////////////////////////////////////////////////////
@@ -32,9 +32,7 @@
 HRESULT CompileShaderFromFile( const char* szFileName, const char* szEntryPoint, const char* szShaderModel, ID3DBlob** ppBlobOut );
 
 Fft::Fft()
-	:m_pd3dDevice(NULL)
-	//,size(512)
-	,pd3dImmediateContext(NULL)
+	:renderPlatform(NULL)
 	,pRadix008A_CS(NULL)
 	,pRadix008A_CS2(NULL)
 	,pBuffer_Tmp(NULL)
@@ -49,19 +47,18 @@ Fft::~Fft()
 	InvalidateDeviceObjects();
 }
 
-void Fft::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s,int size)
+void Fft::RestoreDeviceObjects(crossplatform::RenderPlatform* r, UINT s,int size)
 {
 	InvalidateDeviceObjects();
-	m_pd3dDevice=pd3dDevice;
+	renderPlatform=r;
 	slices = s;
 
 	// Context
-	pd3dDevice->GetImmediateContext(&pd3dImmediateContext);
 	RecompileShaders();
 
 	// Constants
 	// Create 6 cbuffers for 512x512 transform
-	CreateCBuffers(pd3dDevice, slices,size);
+	CreateCBuffers(slices,size);
 
 	// Temp buffer
 	D3D11_BUFFER_DESC buf_desc;
@@ -72,7 +69,7 @@ void Fft::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s,int size)
     buf_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
     buf_desc.StructureByteStride = sizeof(float) * 2;
 
-	pd3dDevice->CreateBuffer(&buf_desc, NULL, &pBuffer_Tmp);
+	renderPlatform->AsD3D11Device()->CreateBuffer(&buf_desc, NULL, &pBuffer_Tmp);
 	assert(pBuffer_Tmp);
 
 	// Temp undordered access view
@@ -83,7 +80,7 @@ void Fft::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s,int size)
 	uav_desc.Buffer.NumElements = (size * slices) * size;
 	uav_desc.Buffer.Flags = 0;
 
-	pd3dDevice->CreateUnorderedAccessView(pBuffer_Tmp, &uav_desc, &pUAV_Tmp);
+	renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(pBuffer_Tmp, &uav_desc, &pUAV_Tmp);
 
 	// Temp shader resource view
 	D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
@@ -92,12 +89,12 @@ void Fft::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s,int size)
 	srv_desc.Buffer.FirstElement = 0;
 	srv_desc.Buffer.NumElements = (size * slices) * size;
 
-	pd3dDevice->CreateShaderResourceView(pBuffer_Tmp, &srv_desc, &pSRV_Tmp);
+	renderPlatform->AsD3D11Device()->CreateShaderResourceView(pBuffer_Tmp, &srv_desc, &pSRV_Tmp);
 }
 
 void Fft::RecompileShaders()
 {
-	if(!m_pd3dDevice)
+	if(!renderPlatform)
 		return;
 	// Compute shaders
     ID3DBlob* pBlobCS = NULL;
@@ -108,8 +105,8 @@ void Fft::RecompileShaders()
 	
 	SAFE_RELEASE(pRadix008A_CS);
 	SAFE_RELEASE(pRadix008A_CS2);
-    m_pd3dDevice->CreateComputeShader(pBlobCS->GetBufferPointer(), pBlobCS->GetBufferSize(), NULL, &pRadix008A_CS);
-    m_pd3dDevice->CreateComputeShader(pBlobCS2->GetBufferPointer(), pBlobCS2->GetBufferSize(), NULL, &pRadix008A_CS2);
+    renderPlatform->AsD3D11Device()->CreateComputeShader(pBlobCS->GetBufferPointer(), pBlobCS->GetBufferSize(), NULL, &pRadix008A_CS);
+    renderPlatform->AsD3D11Device()->CreateComputeShader(pBlobCS2->GetBufferPointer(), pBlobCS2->GetBufferSize(), NULL, &pRadix008A_CS2);
     
     SAFE_RELEASE(pBlobCS);
     SAFE_RELEASE(pBlobCS2);
@@ -122,7 +119,6 @@ void Fft::InvalidateDeviceObjects()
 	SAFE_RELEASE(pBuffer_Tmp);
 	SAFE_RELEASE(pRadix008A_CS);
 	SAFE_RELEASE(pRadix008A_CS2);
-	SAFE_RELEASE(pd3dImmediateContext);
 	
 	if(ppRadix008A_CB)
 	{
@@ -131,6 +127,7 @@ void Fft::InvalidateDeviceObjects()
 	}
 	ppRadix008A_CB=NULL;
 	numBuffers=0;
+	renderPlatform=NULL;
 }
 
 void Fft::radix008A(	ID3D11UnorderedAccessView* pUAV_Dst,
@@ -142,34 +139,36 @@ void Fft::radix008A(	ID3D11UnorderedAccessView* pUAV_Dst,
 	UINT grid = thread_count / COHERENCY_GRANULARITY;
 	// Buffers -
 	//		source
-	pd3dImmediateContext->CSSetShaderResources(0, 1,&pSRV_Src);
+	crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
+	immediateContext.asD3D11DeviceContext()->CSSetShaderResources(0, 1,&pSRV_Src);
 	//		destination
-	pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1,&pUAV_Dst, 0);
+	immediateContext.asD3D11DeviceContext()->CSSetUnorderedAccessViews(0, 1,&pUAV_Dst, 0);
 	// Shader
 	if (istride > 1)
-		pd3dImmediateContext->CSSetShader(pRadix008A_CS,NULL,0);
+		immediateContext.asD3D11DeviceContext()->CSSetShader(pRadix008A_CS,NULL,0);
 	else
-		pd3dImmediateContext->CSSetShader(pRadix008A_CS2,NULL,0);
+		immediateContext.asD3D11DeviceContext()->CSSetShader(pRadix008A_CS2,NULL,0);
 	// Dispatch means run the compute shader.
-	pd3dImmediateContext->Dispatch(grid, 1, 1);
+	immediateContext.asD3D11DeviceContext()->Dispatch(grid, 1, 1);
 	// Unbind resource
 	ID3D11ShaderResourceView* cs_srvs[1] = {NULL};
-	pd3dImmediateContext->CSSetShaderResources(0, 1, cs_srvs);
+	immediateContext.asD3D11DeviceContext()->CSSetShaderResources(0, 1, cs_srvs);
 	ID3D11UnorderedAccessView* cs_uavs[1] = {NULL};
-	pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1, cs_uavs,0);
+	immediateContext.asD3D11DeviceContext()->CSSetUnorderedAccessViews(0, 1, cs_uavs,0);
 
 	// THEN REDO THIS!
 	// Shader
 	if (istride > 1)
-		pd3dImmediateContext->CSSetShader(pRadix008A_CS,NULL,0);
+		immediateContext.asD3D11DeviceContext()->CSSetShader(pRadix008A_CS,NULL,0);
 	else
-		pd3dImmediateContext->CSSetShader(pRadix008A_CS2,NULL,0);
+		immediateContext.asD3D11DeviceContext()->CSSetShader(pRadix008A_CS2,NULL,0);
 }
 					 
 void Fft::fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
 									ID3D11ShaderResourceView* pSRV_Dst,
 									ID3D11ShaderResourceView* pSRV_Src,int grid_size)
 {
+	crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
 	const UINT thread_count = slices * (grid_size * grid_size) / 8;
 	ID3D11Buffer* cs_cbs[1];
 	UINT istride = grid_size * grid_size / 8;
@@ -189,7 +188,7 @@ void Fft::fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
 	while(istride>0)
 	{
 		cs_cbs[0] = ppRadix008A_CB[i];
-		pd3dImmediateContext->CSSetConstantBuffers(0, 1, &cs_cbs[0]);
+		immediateContext.asD3D11DeviceContext()->CSSetConstantBuffers(0, 1, &cs_cbs[0]);
 		// current source for the operation is either pSRV_Src (the first time), or swaps between pSRV_Tmp and pSRV_Dst.
 		ID3D11ShaderResourceView *srv=(i%2==0?(i==0?pSRV_Src:pSRV_Dst):pSRV_Tmp);
 		// destination for the operation alternates between pUAV_Tmp and pUAV_Dst. The final one should always be pUAV_Dst,
@@ -201,7 +200,7 @@ void Fft::fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
 	}
 }
 
-void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices,int size)
+void Fft::CreateCBuffers( UINT slices,int size)
 {
 	// Create 6 cbuffers for 512x512 transform.
 
@@ -264,7 +263,7 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices,int size)
 		};
 		cb_data.pSysMem = &cb_data_buf0;
 
-		pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[i]);
+		renderPlatform->AsD3D11Device()->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[i]);
 		assert(ppRadix008A_CB[i]);
 		istride /= 8;
 		phase_base *= 8.0;
@@ -276,7 +275,7 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices,int size)
 	}
 #else
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[0]);
+	renderPlatform->AsD3D11Device()->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[0]);
 
 	// Buffer 1
 	istride /= 8;
@@ -292,7 +291,7 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices,int size)
 	};
 	cb_data.pSysMem = &cb_data_buf1;
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[1]);
+	renderPlatform->AsD3D11Device()->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[1]);
 
 	// Buffer 2
 	istride /= 8;
@@ -308,7 +307,7 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices,int size)
 	};
 	cb_data.pSysMem = &cb_data_buf2;
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[2]);
+	renderPlatform->AsD3D11Device()->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[2]);
 	assert(ppRadix008A_CB[2]);
 
 	// Buffer 3
@@ -326,7 +325,7 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices,int size)
 	};
 	cb_data.pSysMem = &cb_data_buf3;
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[3]);
+	renderPlatform->AsD3D11Device()->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[3]);
 	assert(ppRadix008A_CB[3]);
 
 	// Buffer 4
@@ -343,7 +342,7 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices,int size)
 	};
 	cb_data.pSysMem = &cb_data_buf4;
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[4]);
+	renderPlatform->AsD3D11Device()->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[4]);
 	assert(ppRadix008A_CB[4]);
 
 	// Buffer 5
@@ -360,7 +359,7 @@ void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices,int size)
 	};
 	cb_data.pSysMem = &cb_data_buf5;
 
-	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[5]);
+	renderPlatform->AsD3D11Device()->CreateBuffer(&cb_desc, &cb_data, &ppRadix008A_CB[5]);
 	assert(ppRadix008A_CB[5]);
 #endif
 }
