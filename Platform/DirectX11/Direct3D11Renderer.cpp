@@ -74,7 +74,7 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 		,demoOverlay(NULL)
 {
 	sc;
-	/*simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
+	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
 	baseOpticsRenderer		=::new(memoryInterface) camera::BaseOpticsRenderer(memoryInterface);
 	baseTerrainRenderer		=::new(memoryInterface) terrain::BaseTerrainRenderer(memoryInterface);
@@ -94,8 +94,6 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 	
 	cubemapFramebuffer.SetFormat(crossplatform::RGBA_16_FLOAT);
 	cubemapFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
-	envmapFramebuffer->SetFormat(crossplatform::RGBA_16_FLOAT);
-	envmapFramebuffer->SetDepthFormat(crossplatform::UNKNOWN);	*/
 }
 
 TrueSkyRenderer::~TrueSkyRenderer()
@@ -122,7 +120,9 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	}
 	enabled=true;
 	SAFE_DELETE(envmapFramebuffer);
-	envmapFramebuffer=renderPlatform->CreateFramebuffer();
+	envmapFramebuffer=new CubemapFramebuffer;//renderPlatform->CreateFramebuffer();
+	envmapFramebuffer->SetFormat(crossplatform::RGBA_16_FLOAT);
+	envmapFramebuffer->SetDepthFormat(crossplatform::UNKNOWN);
 	SAFE_DELETE(msaaFramebuffer);
 	msaaFramebuffer=renderPlatform->CreateFramebuffer();
 	msaaFramebuffer->RestoreDeviceObjects(renderPlatform);

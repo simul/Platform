@@ -181,7 +181,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num_layers,crossplatform::PixelFormat f,bool computable,bool cubemap)
+void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num_layers,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
 {
 	pixelFormat=f;
 	if(w==width&&l==length)

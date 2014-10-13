@@ -20,9 +20,9 @@ bool CubemapFramebuffer::CreateBuffers()
 
 	if(depth_format!=crossplatform::UNKNOWN)
 		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,depth_format,false,false,true);
-
+	buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform,Width,Height,6,target_format,false,true);
 	// Create the cube map for env map render target
-	D3D11_TEXTURE2D_DESC tex2dDesc;
+/*	D3D11_TEXTURE2D_DESC tex2dDesc;
 	tex2dDesc.Width					=Width;
 	tex2dDesc.Height				=Width;
 	tex2dDesc.ArraySize				=6;
@@ -37,11 +37,11 @@ bool CubemapFramebuffer::CreateBuffers()
 	dx11::Texture *t				=(dx11::Texture *)buffer_texture;
 	ID3D11Texture2D *tex2d			=(ID3D11Texture2D*)t->texture;
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&tex2dDesc,NULL,&tex2d));
-	t->texture=tex2d;
+	t->texture=tex2d;*/
 
 	// Create the 6-face render target view
 	D3D11_RENDER_TARGET_VIEW_DESC DescRT;
-	DescRT.Format							=tex2dDesc.Format;
+	DescRT.Format							=RenderPlatform::ToDxgiF ormat(target_format);
 	DescRT.ViewDimension					=D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 	DescRT.Texture2DArray.FirstArraySlice	=0;
 	DescRT.Texture2DArray.ArraySize			=6;

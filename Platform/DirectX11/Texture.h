@@ -74,7 +74,7 @@ namespace simul
 			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
 				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false
 				,int num_samples=1,int aa_quality=0,bool wrap=false);
-			void ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable,bool cubemap) override;
+			void ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false) override;
 			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void GenerateMips(crossplatform::DeviceContext &deviceContext) override;
 			void map(ID3D11DeviceContext *context);
@@ -105,7 +105,7 @@ namespace simul
 			ID3D11UnorderedAccessView*  unorderedAccessView;
 			ID3D11DepthStencilView*		depthStencilView;
 			ID3D11RenderTargetView*		renderTargetView;
-			
+			ID3D11RenderTargetView*		m_pCubeEnvMapRTV[6];
 			D3D11_VIEWPORT						m_OldViewports[16];
 			unsigned							num_OldViewports;
 			friend class CubemapFramebuffer;

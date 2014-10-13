@@ -523,30 +523,64 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	SetDebugObjectName(texture,"ensureTexture2DSizeAndFormat");
 }
 
-void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable,bool cubemap)
+void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
 {
 	pixelFormat=f;
 	InvalidateDeviceObjects();
 	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	D3D11_TEXTURE2D_DESC desc;
-	static int num_mips		=5;
+	int num_mips			=5;
+	int s=2<<num_mips;
+	while(num_mips>1&&(s>w||s>l))
+	{
+		num_mips--;
+		s=2<<num_mips;
+	}
 	desc.Width				=w;
 	desc.Height				=l;
 	desc.Format				=format;
-	desc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_UNORDERED_ACCESS|D3D11_BIND_RENDER_TARGET ;
+	desc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0);
 	desc.Usage				=D3D11_USAGE_DEFAULT;
 	desc.CPUAccessFlags		=0;
 	desc.ArraySize			=num;
-	desc.MiscFlags			=D3D11_RESOURCE_MISC_GENERATE_MIPS;
+	desc.MiscFlags			=(rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0)|(cubemap?D3D11_RESOURCE_MISC_TEXTURECUBE:0);
 	desc.MipLevels			=num_mips;
 	desc.SampleDesc.Count	=1;
 	desc.SampleDesc.Quality	=0;
 	ID3D11Texture2D *pArrayTexture;
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,NULL,&pArrayTexture));
 	texture=pArrayTexture;
-	V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(pArrayTexture,NULL,&shaderResourceView));
-	V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(pArrayTexture,NULL,&unorderedAccessView));
-SetDebugObjectName(texture,"ensureTextureArraySizeAndFormat");
+
+	
+	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
+	SRVDesc.Format						=format;
+	SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURECUBE;
+	SRVDesc.TextureCube.MipLevels		=num_mips;
+	SRVDesc.TextureCube.MostDetailedMip =0;
+
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(pArrayTexture,cubemap?&SRVDesc:NULL,&shaderResourceView));
+	if(computable)
+	{
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(pArrayTexture,NULL,&unorderedAccessView));
+	}
+	if(rendertarget)
+	{
+		// Create the multi-face render target view
+		D3D11_RENDER_TARGET_VIEW_DESC DescRT;
+		DescRT.Format							=format;
+		DescRT.ViewDimension					=D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		DescRT.Texture2DArray.FirstArraySlice	=0;
+		DescRT.Texture2DArray.ArraySize			=num;
+		DescRT.Texture2DArray.MipSlice			=0;
+		for(int i=0;i<num;i++)
+		{
+			DescRT.Texture2DArray.FirstArraySlice = i;
+			DescRT.Texture2DArray.ArraySize = 1;
+			V_CHECK(renderPlatform->AsD3D11Device()->CreateRenderTargetView(pArrayTexture, &DescRT, &(m_pCubeEnvMapRTV[i])));
+		}
+	}
+	SetDebugObjectName(texture,"ensureTextureArraySizeAndFormat");
 }
 
 void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat pf,bool computable)
@@ -613,7 +647,8 @@ void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 void dx11::Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
 {
 	// We can't detect if this has worked or not.
-	deviceContext.asD3D11DeviceContext()->GenerateMips(AsD3D11ShaderResourceView());
+	if(renderTargetView)
+		deviceContext.asD3D11DeviceContext()->GenerateMips(AsD3D11ShaderResourceView());
 }
 
 void dx11::Texture::map(ID3D11DeviceContext *context)

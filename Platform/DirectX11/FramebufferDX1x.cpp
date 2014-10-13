@@ -200,7 +200,10 @@ bool Framebuffer::CreateBuffers()
 	static int quality=0;
 	if(target_format!=crossplatform::UNKNOWN)
 	{
-		buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,target_format,false,true,false,numAntialiasingSamples,quality);
+		if(!is_cubemap)
+			buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,target_format,false,true,false,numAntialiasingSamples,quality);
+		else
+			buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform,Width,Height,6,target_format,false,true,true);
 	}
 	if(depth_format!=crossplatform::UNKNOWN)
 	{
@@ -272,7 +275,7 @@ void Framebuffer::SaveOldRTs(crossplatform::DeviceContext &deviceContext)
 
 bool Framebuffer::IsValid() const
 {
-	bool ok=(buffer_texture->AsD3D11RenderTargetView()!=NULL)||(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
+	bool ok=(buffer_texture!=NULL)||(buffer_depth_texture!=NULL);
 	return ok;
 }
 
