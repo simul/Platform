@@ -3,6 +3,9 @@
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/Topology.h"
 #include <vector>
+#ifdef _MSC_VER
+#pragma warning(disable:4251)
+#endif
 struct ID3D11InputLayout;
 namespace simul
 {

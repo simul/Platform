@@ -634,6 +634,8 @@ void dx11::Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
 	// We can't detect if this has worked or not.
 	if(renderTargetViews&&*renderTargetViews)
 		deviceContext.asD3D11DeviceContext()->GenerateMips(AsD3D11ShaderResourceView());
+	else
+		SIMUL_CERR<<"Can't use GenerateMips on texture "<<this<<" not created as rendertarget.\n";
 }
 
 void dx11::Texture::map(ID3D11DeviceContext *context)

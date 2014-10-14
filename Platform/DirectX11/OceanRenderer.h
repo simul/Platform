@@ -1,12 +1,13 @@
 #ifndef SIMUL_OCEAN_RENDERER_DX1X_H
 #define SIMUL_OCEAN_RENDERER_DX1X_H
 
-
 #include "OceanSimulator.h"
-#include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/Effect.h"
 #include "Simul/Platform/CrossPlatform/Buffer.h"
 #include "Simul/Terrain/BaseSeaRenderer.h"
+#include "Simul/Platform/DirectX11/MacrosDX1x.h"
+#include "D3dx11effect.h"
 
 #pragma warning(push)
 #pragma warning(disable:4251)
@@ -50,9 +51,9 @@ namespace simul
 			// Environment maps
 			crossplatform::Texture		*cubemapTexture;
 			// Atmospheric scattering
-			ID3D11ShaderResourceView	*skyLossTexture_SRV;
-			ID3D11ShaderResourceView	*skyInscatterTexture_SRV;
-			ID3D11ShaderResourceView	*skylightTexture_SRV;
+			crossplatform::Texture		*skyLossTexture;
+			crossplatform::Texture		*skyInscatterTexture;
+			crossplatform::Texture		*skylightTexture;
 			crossplatform::ConstantBuffer<cbShading>		shadingConstants;
 			crossplatform::ConstantBuffer<cbChangePerCall>	changePerCallConstants;
 	

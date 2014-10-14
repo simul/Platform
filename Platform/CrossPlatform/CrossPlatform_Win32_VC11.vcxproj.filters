@@ -64,6 +64,10 @@
     <ClInclude Include="Topology.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraInterface.h" />
+    <ClInclude Include="BaseOpticsRenderer.h" />
+    <ClInclude Include="LensFlare.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -226,5 +230,9 @@
     <ClCompile Include="TextRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraInterface.cpp" />
+    <ClCompile Include="BaseOpticsRenderer.cpp" />
+    <ClCompile Include="LensFlare.cpp" />
   </ItemGroup>
 </Project>

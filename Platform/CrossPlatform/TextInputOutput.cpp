@@ -252,6 +252,10 @@ int TextFileInput::Get(const char *name,int dflt)
 {
 	if(properties.find(name)==properties.end())
 		return dflt;
+	if(_stricmp(properties[name].c_str(),"true")==0)
+		return 1;
+	if(_stricmp(properties[name].c_str(),"false")==0)
+		return 0;
 	return atoi(properties[name].c_str());
 }
 

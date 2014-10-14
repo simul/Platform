@@ -717,6 +717,10 @@ void TrueSkyRenderer::RenderOverlays(crossplatform::DeviceContext &deviceContext
 			sprintf(txt,"In cloud: %4.4f", c);	
 			renderPlatform->Print(deviceContext,16,16,txt);
 		}
+		if(oceanRenderer&&ShowWaterTextures)
+		{
+			oceanRenderer->RenderTextures(deviceContext,v.w,v.h);
+		}
 		if(ShowHDRTextures&&simulHDRRenderer)
 		{
 			simulHDRRenderer->RenderDebug(deviceContext,W2,H2,W2,H2);

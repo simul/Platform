@@ -2,15 +2,9 @@
 #ifndef _OCEAN_WAVE_H
 #define _OCEAN_WAVE_H
 
-#include "SimulDirectXHeader.h"
-#ifndef SIMUL_WIN8_SDK
-#include <D3DX9.h>
-#endif
-
 #include "Simul/Terrain/BaseSeaRenderer.h"
 #include "CSFFT/fft_512x512.h"
-#include "Simul/Platform/DirectX11/Utilities.h"
-#include "Simul/Platform/DirectX11/Texture.h"
+#include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 
 //#define CS_DEBUG_BUFFER
@@ -35,9 +29,9 @@ namespace simul
 			void updateDisplacementMap(simul::crossplatform::DeviceContext &deviceContext,float time);
 
 			// Texture access
-			ID3D11ShaderResourceView* GetFftInput();
-			ID3D11ShaderResourceView* GetFftOutput();
-			ID3D11ShaderResourceView* GetSpectrum();
+			crossplatform::StructuredBuffer<vec2> &GetFftInput();
+			crossplatform::StructuredBuffer<vec2> &GetFftOutput();
+			crossplatform::StructuredBuffer<vec2> &GetSpectrum();
 			crossplatform::Texture* getDisplacementMap();
 			crossplatform::Texture* getGradientMap();
 
@@ -47,8 +41,6 @@ namespace simul
 			void EnsureTablesInitialized(simul::crossplatform::DeviceContext &deviceContext);
 			terrain::SeaKeyframer *m_param;
 			int gridSize;
-			// ---------------------------------- GPU shading assets -----------------------------------
-			// D3D objects
 			crossplatform::RenderPlatform *renderPlatform;
 			crossplatform::Effect		*effect;
 	

@@ -146,17 +146,6 @@ vec4 PS_ShowTexture(posTexVertexOutput In): SV_TARGET
     return texture_wrap_lod(showTexture,In.texCoords,0);
 }
 
-vec4 PS_ShowArrayTexture(posTexVertexOutput IN): SV_TARGET
-{
-	// 16x512, 32 slices.
-	vec2 pos	=IN.texCoords.xy*vec2(16.0*32.0,512.0);
-	int slice	=int(IN.texCoords.x*32.0);
-	pos.x		-=slice*32.0;
-	vec2 texc	=pos/vec2(16.0,512.0);
-	vec4 r		=rainTextureArray.Sample(samAniso,vec3(texc,slice));
-    return r;
-}
-
 void transf(out TransformedParticle p,in vec3 position,int i)
 {
 	vec3 particlePos	=position.xyz;//+offset[i].xyz;
@@ -769,23 +758,28 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
 	rainResponseVal = float4(lightColor,opacity);
 }
 
+vec4 PS_ShowArrayTexture(posTexVertexOutput IN): SV_TARGET
+{
+	// 16x512, 32 slices.
+	vec2 pos	=IN.texCoords.xy*vec2(16.0*32.0,512.0);
+	int slice	=int(IN.texCoords.x*32.0);
+	pos.x		-=slice*32.0;
+	vec2 texc	=pos/vec2(16.0,512.0);
+	vec4 r		=rainTextureArray.Sample(samAniso,vec3(texc,slice));
+    return r;
+}
+
 vec4 PS_RainParticles(PSSceneIn IN) : SV_Target
 {
 	vec3 light			=cubeTexture.Sample(wrapSamplerState,-IN.view).rgb;
-	vec4 texel			=0.5*rainTextureArray.Sample(samAniso,vec3(IN.texCoords,IN.type));
-	//directional lighting---------------------------------------------------------------------------------
-	vec4 directionalLight	=vec4(1,1,1,1);
-	//rainResponse(IN, IN.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*IN.random, float3(1.0,1.0,1.0), input.eyeVec, false, directionalLight);
-
-	//point lighting---------------------------------------------------------------------------------------
-	vec4 pointLight		=vec4(0,0,0,0);
+	vec4 texel			=rainTextureArray.Sample(samAniso,vec3(IN.texCoords.xy,IN.type));
+	texel.rgb			*=light;
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
 				
 	vec2 depth;
 	depth.x				=texture_clamp(depthTexture,depth_texc.xy).x;
 	depth.y				=IN.clip_pos.z;
 	vec2 dist			=depthToFadeDistance(depth.xy,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-//	 dist.y			=depthToFadeDistance(1.0,vec2(0,0),vec4(0.0204173792,2000000.00,0.0408347584,0),vec2(1,1));
 		
 	if(dist.y>dist.x-splashDelta)
 	{
@@ -793,12 +787,13 @@ vec4 PS_RainParticles(PSSceneIn IN) : SV_Target
 	}
 	vec3 map_texc=mul(vec4(offset[1].xyz,1.0),rainMapMatrix).xyz;
 	float mapped_rain=texture_wrap(rainMapTexture,map_texc.xy).x;
-	texel.a*=mapped_rain;
+	
+	texel.a*=saturate(light.r+light.g+light.b);
+	texel.a=saturate(texel.a*mapped_rain);
 	if(mapped_rain<=0||dist.y>dist.x)
 	{
 		discard;
 	}
-	float totalOpacity	=pointLight.a+directionalLight.a;
 	return vec4(texel.rgb,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
 

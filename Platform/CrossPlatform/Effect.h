@@ -196,8 +196,9 @@ namespace simul
 			virtual ~PlatformStructuredBuffer(){}
 			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,bool computable,void *init_data)=0;
 			virtual void InvalidateDeviceObjects()=0;
-			virtual void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)=0;
-			virtual void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)=0;
+			virtual void LinkToEffect(Effect *effect,const char *name,int bindingIndex)=0;
+			virtual void Apply(DeviceContext &deviceContext,Effect *effect,const char *name)=0;
+			virtual void ApplyAsUnorderedAccessView(DeviceContext &deviceContext,Effect *effect,const char *name)=0;
 			virtual void Unbind(DeviceContext &deviceContext)=0;
 			virtual void *GetBuffer(crossplatform::DeviceContext &deviceContext)=0;
 			virtual void SetData(crossplatform::DeviceContext &deviceContext,void *data)=0;
@@ -252,6 +253,10 @@ namespace simul
 			void Apply(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
 			{
 				platformStructuredBuffer->Apply(pContext,effect,name);
+			}
+			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
+			{
+				platformStructuredBuffer->ApplyAsUnorderedAccessView(pContext,effect,name);
 			}
 			void InvalidateDeviceObjects()
 			{

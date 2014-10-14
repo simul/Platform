@@ -1,14 +1,11 @@
 
 #define NOMINMAX
-#include "CreateEffectDX1x.h"
-
 #include <assert.h>
 #include "OceanSimulator.h"
 #include "Utilities.h"
-#include "CompileShaderDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "D3dx11effect.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Math/Pi.h"
 using namespace simul;
 using namespace dx11;
@@ -105,8 +102,6 @@ void OceanSimulator::RestoreDeviceObjects(simul::crossplatform::RenderPlatform *
 
 	m_fft.RestoreDeviceObjects(renderPlatform);
 	gridSize=0;
-	// FFT
-	//fft512x512_create_plan(&m_fft, pd3dDevice, 3);
 }
 
 void OceanSimulator::EnsureTablesInitialized(simul::crossplatform::DeviceContext &deviceContext)
@@ -116,6 +111,7 @@ void OceanSimulator::EnsureTablesInitialized(simul::crossplatform::DeviceContext
 		gridSize = m_param->dmap_dim;
 		propertiesChecksum=m_param->CalcChecksum();
 		m_fft.RestoreDeviceObjects(renderPlatform, 3,gridSize);
+		m_fft.SetShader(effect);
 		int input_full_size = (gridSize + 4) * (gridSize + 1);
 		// This value should be (hmap_dim / 2 + 1) * hmap_dim, but we use full sized buffer here for simplicity.
 		int input_half_size = gridSize * gridSize;
@@ -157,7 +153,7 @@ void OceanSimulator::EnsureTablesInitialized(simul::crossplatform::DeviceContext
 	}
 	// Have now created: H0, Ht, Omega, Dxyz - as both UAV's and SRV's.
 
-	// D3D11 Textures - these ar the outputs of the ocean simulator.
+	//  Textures - these ar the outputs of the ocean simulator.
 	displacement->ensureTexture2DSizeAndFormat(renderPlatform,gridSize,gridSize,crossplatform::RGBA_32_FLOAT,false,true);
 	gradient->ensureTexture2DSizeAndFormat(renderPlatform,gridSize,gridSize,crossplatform::RGBA_16_FLOAT,false,true);
 }
@@ -254,10 +250,10 @@ void OceanSimulator::updateDisplacementMap(simul::crossplatform::DeviceContext &
 	// Compute shader
 	crossplatform::EffectTechnique *tech	=effect->GetTechniqueByName("update_spectrum");
 	// Buffers
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputH0"	,H0.AsD3D11ShaderResourceView());
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputOmega"	,Omega.AsD3D11ShaderResourceView());
+	H0.Apply(deviceContext,effect,"g_InputH0");
+	Omega.Apply(deviceContext,effect,"g_InputOmega");
 
-	simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"g_OutputHt",Choppy.AsD3D11UnorderedAccessView());
+	Choppy.ApplyAsUnorderedAccessView(deviceContext,effect,"g_OutputHt");
 	if(start_time==0)
 		start_time=time;
 	float time_seconds						=(time-start_time)*3600.f*24.f;
@@ -274,80 +270,66 @@ void OceanSimulator::updateDisplacementMap(simul::crossplatform::DeviceContext &
 	effect->Apply(deviceContext,tech,0);
 	renderPlatform->DispatchCompute(deviceContext,group_count_x,group_count_y,1);
 
-	simul::dx11::unbindTextures(effect->asD3DX11Effect());
-	simul::dx11::setUnorderedAccessView(effect->asD3DX11Effect(),"g_OutputHt",NULL);
+	effect->UnbindTextures(deviceContext);
+	effect->SetUnorderedAccessView(deviceContext,"g_OutputHt",NULL);
 	effect->Unapply(deviceContext);
 	// Perform Fast (inverse) Fourier Transform from the source Ht to the destination Dxyz.
 	// NOTE: we also provide the SRV of Dxyz so that FFT can use it as a temporary buffer and save space.
-	m_fft.fft_512x512_c2c(deviceContext,dxyz.AsD3D11UnorderedAccessView(),dxyz.AsD3D11ShaderResourceView(),Choppy.AsD3D11ShaderResourceView(),gridSize);
+	m_fft.fft_512x512_c2c(deviceContext,dxyz,Choppy,gridSize);
 	// Now we will use the transformed Dxyz to create our displacement map
 	// --------------------------------- Wrap Dx, Dy and Dz ---------------------------------------
 	// Save the current RenderTarget and viewport:
-	ID3D11RenderTargetView* old_target;
-	ID3D11DepthStencilView* old_depth;
-	deviceContext.asD3D11DeviceContext()->OMGetRenderTargets(1, &old_target, &old_depth); 
-	D3D11_VIEWPORT old_viewport;
-	UINT num_viewport = 1;
-	deviceContext.asD3D11DeviceContext()->RSGetViewports(&num_viewport, &old_viewport);
+	renderPlatform->PushRenderTargets(deviceContext);
 	// Set the new viewport as equal to the size of the displacement texture we're writing to:
-	D3D11_VIEWPORT new_vp={0,0,(float)m_param->dmap_dim,(float)m_param->dmap_dim,0.0f,1.0f};
-	deviceContext.asD3D11DeviceContext()->RSSetViewports(1, &new_vp);
+	crossplatform::Viewport new_vp={0,0,m_param->dmap_dim,m_param->dmap_dim,0.0f,1.0f};
+	renderPlatform->SetViewports(deviceContext,1,&new_vp);
 	// Set the RenderTarget as the displacement map:
 	{
 		displacement->activateRenderTarget(deviceContext);
-	//	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1, &displacement.renderTargetView, NULL);
 		// Assign the constant-buffers to the pixel shader:
 		immutableConstants		.Apply(deviceContext);
 		changePerFrameConstants	.Apply(deviceContext);
 		// Assign the Dxyz source as a resource for the pixel shader:
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz"				,dxyz.AsD3D11ShaderResourceView());
+		dxyz.Apply(deviceContext,effect,"g_InputDxyz");
 		// Assign the shaders:
 		effect->Apply(deviceContext,effect->GetTechniqueByName("update_displacement"),0);
 		UtilityRenderer::DrawQuad(deviceContext);
 		// Unbind the shader resource (i.e. the input texture map). Must do this or we get a DX warning when we
 		// try to write to the texture again:
-		simul::dx11::unbindTextures(effect->asD3DX11Effect());
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz"				,NULL);
+		effect->UnbindTextures(deviceContext);
+		effect->SetTexture(deviceContext,"g_InputDxyz",NULL);
 		effect->Unapply(deviceContext);
-		unbindTextures(effect->asD3DX11Effect());
 		// Now generate the gradient map.
 		// Set the gradient texture as the RenderTarget:
 		displacement->deactivateRenderTarget();
 	}
 	{
 		gradient->activateRenderTarget(deviceContext);
-		//deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1, &gradient.renderTargetView, NULL);
-		// VS & PS
-		// Use the Displacement map as the texture input:
 		effect->SetTexture(deviceContext,"g_samplerDisplacementMap"	,displacement);
 		// Perform draw call
 		effect->Apply(deviceContext,effect->GetTechniqueByName("gradient_folding"),0);
 		UtilityRenderer::DrawQuad(deviceContext);
 		// Unbind the shader resource (the texture):
-		simul::dx11::unbindTextures(effect->asD3DX11Effect());
-		simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz"				,(ID3D11ShaderResourceView*)NULL);
-		effect->GetTechniqueByName("gradient_folding")->asD3DX11EffectTechnique()->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext());
+		effect->UnbindTextures(deviceContext);
+		effect->SetTexture(deviceContext,"g_InputDxyz",NULL);
 		// Reset the renderTarget to what it was before:
 		gradient->deactivateRenderTarget();
 		effect->UnbindTextures(deviceContext);
 		effect->Unapply(deviceContext);
 	}
-	deviceContext.asD3D11DeviceContext()->RSSetViewports(1, &old_viewport);
-	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1, &old_target, old_depth);
-	SAFE_RELEASE(old_target);
-	SAFE_RELEASE(old_depth);
+	renderPlatform->PopRenderTargets(deviceContext);
 	// Make mipmaps for the gradient texture, apparently this is a quick operation:
-	deviceContext.asD3D11DeviceContext()->GenerateMips(gradient->AsD3D11ShaderResourceView());
+	gradient->GenerateMips(deviceContext);
 }
 
-ID3D11ShaderResourceView* OceanSimulator::GetFftOutput()
+crossplatform::StructuredBuffer<vec2> &OceanSimulator::GetFftOutput()
 {
-	return dxyz.AsD3D11ShaderResourceView();//m_pSRV_Dxyz;
+	return dxyz;//m_pSRV_Dxyz;
 }
 
-ID3D11ShaderResourceView* OceanSimulator::GetFftInput()
+crossplatform::StructuredBuffer<vec2> &OceanSimulator::GetFftInput()
 {
-	return H0.AsD3D11ShaderResourceView();//m_pSRV_Dxyz;
+	return H0;//m_pSRV_Dxyz;
 }
 
 crossplatform::Texture* OceanSimulator::getDisplacementMap()
@@ -355,9 +337,9 @@ crossplatform::Texture* OceanSimulator::getDisplacementMap()
 	return displacement;
 }
 
-ID3D11ShaderResourceView* OceanSimulator::GetSpectrum()
+crossplatform::StructuredBuffer<vec2> &OceanSimulator::GetSpectrum()
 {
-	return Choppy.AsD3D11ShaderResourceView();
+	return Choppy;
 }
 
 crossplatform::Texture* OceanSimulator::getGradientMap()

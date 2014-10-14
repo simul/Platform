@@ -158,13 +158,22 @@ void PlatformStructuredBuffer::LinkToEffect(crossplatform::Effect *effect,const 
 {
 	ID3DX11EffectShaderResourceVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsShaderResource();
 }
+
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
 {
 	if(lastContext&&mapped.pData)
 		lastContext->Unmap(buffer,0);
-	memset(&mapped,0,sizeof(mapped));
+//	memset(&mapped,0,sizeof(mapped));
 	ID3DX11EffectShaderResourceVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsShaderResource();
 	var->SetResource(shaderResourceView);
+}
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
+{
+	if(lastContext&&mapped.pData)
+		lastContext->Unmap(buffer,0);
+	//memset(&mapped,0,sizeof(mapped));
+	ID3DX11EffectUnorderedAccessViewVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsUnorderedAccessView();
+	var->SetUnorderedAccessView(unorderedAccessView);
 }
 void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &deviceContext)
 {

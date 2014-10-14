@@ -10,7 +10,7 @@ SIMUL_CONSTANT_BUFFER(FftConstants,0)
 	float ahehsj,tdjtdjt,jttztjz;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbImmutable,0)
+SIMUL_CONSTANT_BUFFER(cbImmutable,1)
 	uniform uint g_ActualDim;
 	uniform uint g_InWidth;
 	uniform uint g_OutWidth;
@@ -19,13 +19,13 @@ SIMUL_CONSTANT_BUFFER(cbImmutable,0)
 	uniform uint g_DyAddressOffset;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbChangePerFrame,1)
+SIMUL_CONSTANT_BUFFER(cbChangePerFrame,2)
 	uniform float g_Time;
 	uniform float g_ChoppyScale;
 	uniform float g_GridLen;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(cbShading,2)
+SIMUL_CONSTANT_BUFFER(cbShading,3)
 	// The color of bottomless water body
 	uniform vec3		g_WaterbodyColor;
 

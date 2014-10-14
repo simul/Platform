@@ -18,7 +18,6 @@
 #include <string>
 #include <map>
 #include <assert.h>
-#include "D3dx11effect.h"
 using namespace std;
 using namespace simul;
 using namespace dx11;
@@ -44,7 +43,6 @@ OceanRenderer::OceanRenderer(simul::terrain::SeaKeyframer *s)
 	:simul::terrain::BaseSeaRenderer(s)
 	,oceanSimulator(NULL)
 	,effect(NULL)
-	// D3D11 buffers and layout
 	,vertexBuffer(NULL)
 	,indexBuffer(NULL)
 	,layout(NULL)
@@ -53,8 +51,8 @@ OceanRenderer::OceanRenderer(simul::terrain::SeaKeyframer *s)
 	,perlinNoise(NULL)
 	// Environment maps
 	,cubemapTexture(NULL)
-	,skyLossTexture_SRV(NULL)
-	,skyInscatterTexture_SRV(NULL)
+	,skyLossTexture(NULL)
+	,skyInscatterTexture(NULL)
 {
 }
 
@@ -72,7 +70,6 @@ void OceanRenderer::RecompileShaders()
 	defines["REVERSE_DEPTH"]=ReverseDepth?"1":"0";
 	defines["FX"]="1";
 	effect=renderPlatform->CreateEffect("ocean.fx",defines);
-
 
 	if(oceanSimulator)
 		oceanSimulator->SetShader(effect);
@@ -94,17 +91,12 @@ void OceanRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	RecompileShaders();
 	
 	// Update the simulation for the first time.
-	crossplatform::DeviceContext deviceContext;
-	deviceContext.renderPlatform=renderPlatform;
-	ID3D11DeviceContext *pImmediateContext;
-	renderPlatform->AsD3D11Device()->GetImmediateContext(&pImmediateContext);
-	deviceContext.platform_context=pImmediateContext;
-	oceanSimulator->updateDisplacementMap(deviceContext,0);
-	// D3D buffers
+	crossplatform::DeviceContext immediateContext=renderPlatform->GetImmediateContext();
+	oceanSimulator->updateDisplacementMap(immediateContext,0);
+
 	createSurfaceMesh();
-	createFresnelMap(deviceContext);
+	createFresnelMap(immediateContext);
 	loadTextures();
-	SAFE_RELEASE(pImmediateContext);
 }
 
 void OceanRenderer::SetCubemapTexture(crossplatform::Texture *c)
@@ -114,9 +106,9 @@ void OceanRenderer::SetCubemapTexture(crossplatform::Texture *c)
 
 void OceanRenderer::SetLossAndInscatterTextures(crossplatform::Texture *l,crossplatform::Texture *i,crossplatform::Texture *s)
 {
-	skyLossTexture_SRV		=l->AsD3D11ShaderResourceView();
-	skyInscatterTexture_SRV	=i->AsD3D11ShaderResourceView();
-	skylightTexture_SRV		=s->AsD3D11ShaderResourceView();
+	skyLossTexture		=l;
+	skyInscatterTexture	=i;
+	skylightTexture		=s;
 }
 
 void OceanRenderer::InvalidateDeviceObjects()
@@ -365,10 +357,10 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	effect->SetTexture(deviceContext	,"g_texGradient"		,gradient_map);
 	effect->SetTexture(deviceContext	,"g_texReflectCube"		,cubemapTexture);
 	effect->SetTexture(deviceContext	,"g_texPerlin"			,perlinNoise);
-	//setTexture(effect->asD3DX11Effect()	,"g_texFresnel"		,g_pSRV_Fresnel);
+
 	effect->SetTexture(deviceContext	,"g_texFresnel"			,fresnelMap);
-	setTexture(effect->asD3DX11Effect()	,"g_skyLossTexture"		,skyLossTexture_SRV);
-	setTexture(effect->asD3DX11Effect()	,"g_skyInscatterTexture",skyInscatterTexture_SRV);
+	effect->SetTexture(deviceContext	,"g_skyLossTexture"		,skyLossTexture);
+	effect->SetTexture(deviceContext	,"g_skyInscatterTexture",skyInscatterTexture);
 
 	// IA setup
 	//pContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
@@ -574,23 +566,23 @@ void OceanRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,i
 	x+=w+2;
 	float gridSize=(float)seaKeyframer->dmap_dim;
 	// structured buffer
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz",oceanSimulator->GetFftInput());
+	oceanSimulator->GetFftInput().Apply(deviceContext,effect,"g_InputDxyz");
 	static float hh=100000.0f;
-	simul::dx11::setParameter(effect->asD3DX11Effect(),"showMultiplier",hh);
-	simul::dx11::setParameter(effect->asD3DX11Effect(),"bufferGrid",vec2(gridSize+4,gridSize+1));
+	effect->SetParameter("showMultiplier",hh);
+	effect->SetParameter("bufferGrid",vec2(gridSize+4,gridSize+1));
 	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer"));
 	renderPlatform->Print(deviceContext,x,y,"H0");
 	x+=w+2;
 	static float spectrum_multiplier=10000.0f;
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz",oceanSimulator->GetSpectrum());
-	simul::dx11::setParameter(effect->asD3DX11Effect(),"showMultiplier",spectrum_multiplier);
-	simul::dx11::setParameter(effect->asD3DX11Effect(),"bufferGrid",vec2(gridSize,gridSize));
+	oceanSimulator->GetSpectrum().Apply(deviceContext,effect,"g_InputDxyz");
+	effect->SetParameter("showMultiplier",spectrum_multiplier);
+	effect->SetParameter("bufferGrid",vec2(gridSize,gridSize));
 	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer"));
 	renderPlatform->Print(deviceContext,x,y,"choppy");
 	x+=w+2;
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz",oceanSimulator->GetFftOutput());
-	simul::dx11::setParameter(effect->asD3DX11Effect(),"showMultiplier",0.01f);
-	simul::dx11::setParameter(effect->asD3DX11Effect(),"bufferGrid",vec2(gridSize,gridSize));
+	oceanSimulator->GetFftOutput().Apply(deviceContext,effect,"g_InputDxyz");
+	effect->SetParameter("showMultiplier",0.01f);
+	effect->SetParameter("bufferGrid",vec2(gridSize,gridSize));
 	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer"));
 	renderPlatform->Print(deviceContext,x,y,"Dxyz");
 	x+=w+2;
@@ -609,7 +601,7 @@ void OceanRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,i
 	//UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
 	x+=w+2;
 
-	simul::dx11::setTexture(effect->asD3DX11Effect(),"g_InputDxyz",NULL);
+	effect->SetTexture(deviceContext,"g_InputDxyz",NULL);
 	simul::dx11::unbindTextures(effect->asD3DX11Effect());
 	effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer")->GetPassByIndex(0)->Apply(0,pContext);
 }

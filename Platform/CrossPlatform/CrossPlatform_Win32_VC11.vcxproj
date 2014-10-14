@@ -163,13 +163,17 @@
   <ItemGroup>
     <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
     <ClInclude Include="BaseFramebuffer.h" />
+    <ClInclude Include="BaseOpticsRenderer.h" />
     <ClInclude Include="Buffer.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraInterface.h" />
     <ClInclude Include="CommandLineParams.h" />
     <ClInclude Include="DemoOverlay.h" />
     <ClInclude Include="DeviceContext.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Layout.h" />
+    <ClInclude Include="LensFlare.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Material.h" />
@@ -223,10 +227,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BaseFramebuffer.cpp" />
+    <ClCompile Include="BaseOpticsRenderer.cpp" />
     <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraInterface.cpp" />
     <ClCompile Include="DemoOverlay.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="Layout.cpp" />
+    <ClCompile Include="LensFlare.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />

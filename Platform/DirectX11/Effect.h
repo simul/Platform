@@ -70,6 +70,7 @@ namespace simul
 				,buffer(0)
 				,shaderResourceView(0)
 				,unorderedAccessView(0)
+				,lastContext(NULL)
 			{
 				memset(&mapped,0,sizeof(mapped));
 			}
@@ -91,6 +92,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex);
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
+			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
 			void Unbind(crossplatform::DeviceContext &deviceContext);
 		};
 		class SIMUL_DIRECTX11_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
