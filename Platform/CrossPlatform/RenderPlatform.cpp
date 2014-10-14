@@ -2,7 +2,7 @@
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/TextRenderer.h"
-#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Effect.h"
 
@@ -172,7 +172,7 @@ namespace simul
 			numLines++;
 			crossplatform::RenderPlatform::Vertext *lines=new crossplatform::RenderPlatform::Vertext[2*numLines*2];
 			// one metre apart
-			vec3 cam_pos=camera::GetCameraPosVector(deviceContext.viewStruct.view);
+			vec3 cam_pos=crossplatform::GetCameraPosVector(deviceContext.viewStruct.view);
 			vec3 centrePos(square_size*(int)(cam_pos.x/square_size),square_size*(int)(cam_pos.y/square_size),0);
 			crossplatform::RenderPlatform::Vertext *vertex=lines;
 			int halfOffset=numLines/2;

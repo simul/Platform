@@ -2,7 +2,7 @@
 #include "Simul/Platform/OpenGL/OpenGLCallbackInterface.h"
 #include "Simul/Platform/OpenGL/SimulGLWeatherRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLHDRRenderer.h"
-#include "Simul/Camera/BaseOpticsRenderer.h"
+#include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Base/PropertyMacros.h"
@@ -19,7 +19,7 @@ namespace simul
 	{
 		class Environment;
 	}
-	namespace camera
+	namespace crossplatform
 	{
 		class Camera;
 	}
@@ -62,7 +62,7 @@ namespace simul
 			simul::opengl::SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer;}
 			SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer;}
 			class simul::terrain::BaseTerrainRenderer *GetTerrainRenderer(){return baseTerrainRenderer;}
-			void SetCamera(simul::camera::Camera *c);
+			void SetCamera(simul::crossplatform::Camera *c);
 			void ReloadTextures();
 			void RecompileShaders();
 			void SaveScreenshot(const char *filename_utf8);
@@ -71,11 +71,11 @@ namespace simul
 			void ReverseDepthChanged();
 			simul::opengl::SimulGLWeatherRenderer *simulWeatherRenderer;
 			SimulGLHDRRenderer *simulHDRRenderer;
-			simul::camera::BaseOpticsRenderer *baseOpticsRenderer;
+			simul::crossplatform::BaseOpticsRenderer *baseOpticsRenderer;
 			class simul::terrain::BaseTerrainRenderer *baseTerrainRenderer;
 			scene::BaseSceneRenderer *sceneRenderer;
 			FramebufferGL depthFramebuffer;
-			simul::camera::Camera *cam;
+			simul::crossplatform::Camera *cam;
 			int ScreenWidth,ScreenHeight;
 			GLuint simple_program;
 		};

@@ -18,7 +18,7 @@
 
 #pragma warning(disable:4505)	// Fix GLUT warnings
 #include <GL/glut.h>
-#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 using namespace simul;
 using namespace opengl;
 RenderPlatform::RenderPlatform()
@@ -309,9 +309,9 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 glDisable(GL_BLEND);
 glDisable(GL_CULL_FACE);
-	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	static float cc=300000.f;
-	vec4 depthToLinFadeDistParams=camera::GetDepthToDistanceParameters(deviceContext.viewStruct,cc);//(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
+	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,cc);//(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
 	struct Viewport
 	{
 		int X,Y,Width,Height;

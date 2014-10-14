@@ -103,7 +103,7 @@ void OceanSimulator::RestoreDeviceObjects(simul::crossplatform::RenderPlatform *
 	immutableConstants		.RestoreDeviceObjects(renderPlatform);
 	changePerFrameConstants	.RestoreDeviceObjects(renderPlatform);
 
-
+	m_fft.RestoreDeviceObjects(renderPlatform);
 	gridSize=0;
 	// FFT
 	//fft512x512_create_plan(&m_fft, pd3dDevice, 3);
@@ -167,6 +167,7 @@ void OceanSimulator::SetShader(crossplatform::Effect		*e)
 	if(!renderPlatform)
 		return;
 	effect=e;
+	m_fft					.SetShader(e);
 	m_fft					.RecompileShaders();
 	immutableConstants		.LinkToEffect(effect,"cbImmutable");
 	changePerFrameConstants	.LinkToEffect(effect,"cbChangePerFrame");
@@ -278,7 +279,7 @@ void OceanSimulator::updateDisplacementMap(simul::crossplatform::DeviceContext &
 	effect->Unapply(deviceContext);
 	// Perform Fast (inverse) Fourier Transform from the source Ht to the destination Dxyz.
 	// NOTE: we also provide the SRV of Dxyz so that FFT can use it as a temporary buffer and save space.
-	m_fft.fft_512x512_c2c(dxyz.AsD3D11UnorderedAccessView(),dxyz.AsD3D11ShaderResourceView(),Choppy.AsD3D11ShaderResourceView(),gridSize);
+	m_fft.fft_512x512_c2c(deviceContext,dxyz.AsD3D11UnorderedAccessView(),dxyz.AsD3D11ShaderResourceView(),Choppy.AsD3D11ShaderResourceView(),gridSize);
 	// Now we will use the transformed Dxyz to create our displacement map
 	// --------------------------------- Wrap Dx, Dy and Dz ---------------------------------------
 	// Save the current RenderTarget and viewport:

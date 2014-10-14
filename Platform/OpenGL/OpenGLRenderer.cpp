@@ -8,7 +8,7 @@
 // For font definition define:
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
-#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/SimulGLCloudRenderer.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
@@ -20,7 +20,7 @@
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Terrain/BaseTerrainRenderer.h"
-#include "Simul/Camera/BaseOpticsRenderer.h"
+#include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
@@ -72,7 +72,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 {
 	simulHDRRenderer		=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
 	simulWeatherRenderer	=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
-	baseOpticsRenderer		=new simul::camera::BaseOpticsRenderer(m);
+	baseOpticsRenderer		=new simul::crossplatform::BaseOpticsRenderer(m);
 	baseTerrainRenderer		=new simul::terrain::BaseTerrainRenderer(NULL);
 	baseTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	if(!renderPlatform)
@@ -185,7 +185,7 @@ void OpenGLRenderer::paintGL()
 {
 	static int viewport_id=0;
 	
-	const camera::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
+	const crossplatform::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.renderPlatform=renderPlatform;
 	deviceContext.viewStruct.view_id=viewport_id;
@@ -346,7 +346,7 @@ void OpenGLRenderer::resizeGL(int w,int h)
 	depthFramebuffer.SetWidthAndHeight(ScreenWidth,ScreenHeight);
 }
 
-void OpenGLRenderer::SetCamera(simul::camera::Camera *c)
+void OpenGLRenderer::SetCamera(simul::crossplatform::Camera *c)
 {
 	cam=c;
 }

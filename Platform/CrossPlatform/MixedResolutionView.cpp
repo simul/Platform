@@ -1,9 +1,9 @@
 #include "MixedResolutionView.h"
 #include "Simul/Math/Vector3.h"
-#include "Simul/Camera/Camera.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Base/RuntimeError.h"
 #ifdef _MSC_VER
@@ -17,7 +17,6 @@ MixedResolutionView::MixedResolutionView()
 	,pixelOffset(0.f,0.f)
 	,ScreenWidth(0)
 	,ScreenHeight(0)
-	,camera(NULL)
 	,viewType(MAIN_3D_VIEW)
 	,useExternalFramebuffer(false)
 	,hiResDepthTexture(NULL)
@@ -48,7 +47,7 @@ void MixedResolutionView::UpdatePixelOffset(const crossplatform::ViewStruct &vie
 	using namespace math;
 	// Update the orientation due to changing view_dir:
 	Vector3 cam_pos,new_view_dir,new_view_dir_local,new_up_dir;
-	simul::camera::GetCameraPosVector(viewStruct.view,cam_pos,new_view_dir,new_up_dir);
+	simul::crossplatform::GetCameraPosVector(viewStruct.view,cam_pos,new_view_dir,new_up_dir);
 	new_view_dir.Normalize();
 	view_o.GlobalToLocalDirection(new_view_dir_local,new_view_dir);
 	float dx			= new_view_dir*view_o.Tx();
@@ -292,7 +291,7 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"DownscaleDepth")
 	static int BLOCKWIDTH	=8;
 	crossplatform::Effect *effect=depthForwardEffect;
-	simul::camera::Frustum frustum=camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	simul::crossplatform::Frustum frustum=crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	if(frustum.reverseDepth)
 		effect=depthReverseEffect;
 	SIMUL_ASSERT(depthTexture!=NULL);
@@ -463,7 +462,7 @@ void MixedResolutionViewManager::DownscaleDepth(crossplatform::DeviceContext &de
 {
 	MixedResolutionView *view=GetView(deviceContext.viewStruct.view_id);
 	mixedResolutionRenderer.DownscaleDepth(deviceContext,depthTexture,v,view, hiResDownscale,lowResDownscale
-		,(const float *)simul::camera::GetDepthToDistanceParameters(deviceContext.viewStruct,max_dist_metres),includeLowRes);
+		,(const float *)simul::crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,max_dist_metres),includeLowRes);
 }
 
 void MixedResolutionViewManager::RecompileShaders()

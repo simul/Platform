@@ -21,7 +21,7 @@
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
-#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Math/Decay.h"
 #include <stdint.h>  // for uintptr_t
 
@@ -178,7 +178,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 		fb->GetLowResFarFramebuffer()->Activate(deviceContext);
 		fb->GetLowResFarFramebuffer()->Clear(deviceContext, 0.0f, 0.0f, 0.f, 1.f, ReverseDepth ? 0.f : 1.f);
 	}
-	math::Vector3 cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
+	math::Vector3 cam_pos=simul::crossplatform::GetCameraPosVector(deviceContext.viewStruct.view);
 	if(baseSkyRenderer)
 	{
 		float cloud_occlusion=0;

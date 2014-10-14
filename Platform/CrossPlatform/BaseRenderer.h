@@ -1,7 +1,6 @@
 #ifndef SIMUL_PLATFORM_CROSSPLATFORM_BASERENDERER_H
 #define SIMUL_PLATFORM_CROSSPLATFORM_BASERENDERER_H
 #include "Simul/Math/Matrix4x4.h"
-#include "Simul/Camera/Camera.h"
 #include "SL/CppSl.hs"
 
 namespace simul

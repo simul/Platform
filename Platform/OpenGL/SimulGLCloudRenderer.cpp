@@ -46,7 +46,7 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
 #include "LoadGLProgram.h"
-#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 
 #include <algorithm>
 #include <stdint.h>  // for uintptr_t
@@ -145,7 +145,7 @@ GL_ERROR_CHECK
 	simul::math::Vector3 view_pos;
 	simul::math::Vector3 eye_dir;
 	simul::math::Vector3 up_dir;
-	camera::GetCameraPosVector(deviceContext.viewStruct.view,view_pos,eye_dir,up_dir);
+	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,view_pos,eye_dir,up_dir);
 	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
 	if(!last_time)
 		delta_t=0;

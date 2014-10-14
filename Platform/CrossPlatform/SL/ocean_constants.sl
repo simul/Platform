@@ -1,6 +1,15 @@
 #ifndef OCEAN_CONSTANTS_SL
 #define OCEAN_CONSTANTS_SL
 
+SIMUL_CONSTANT_BUFFER(FftConstants,0)
+	uint thread_count;
+	uint ostride;
+	uint istride;
+	uint pstride;
+	float phase_base;
+	float ahehsj,tdjtdjt,jttztjz;
+SIMUL_CONSTANT_BUFFER_END
+
 SIMUL_CONSTANT_BUFFER(cbImmutable,0)
 	uniform uint g_ActualDim;
 	uniform uint g_InWidth;

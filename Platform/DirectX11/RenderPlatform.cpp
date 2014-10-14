@@ -15,9 +15,9 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
-#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Math/Matrix4x4.h"
-#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 #include "D3dx11effect.h"
 #ifdef _XBOX_ONE
 #include "Simul/Platform/DirectX11/ESRAMManager.h"
@@ -1189,10 +1189,10 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	{
 		m_pDebugEffect->SetTexture(deviceContext,"imageTexture",tex);
 	}
-	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	debugConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	static float cc=300000.f;
-	vec4 depthToLinFadeDistParams=camera::GetDepthToDistanceParameters(deviceContext.viewStruct,cc);//(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
+	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,cc);//(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
 	debugConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	unsigned int num_v=1;
@@ -1258,15 +1258,15 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 		HRESULT hr=S_OK;
 		D3DXMATRIX  tmp1, tmp2;
 		crossplatform::EffectTechniqueGroup *g=m_pDebugEffect->GetTechniqueGroupByName(test_depth?"lines_3d_depth":"lines_3d");
-		camera::Frustum f=camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+		crossplatform::Frustum f=crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 			crossplatform::EffectTechnique *tech=g->GetTechniqueByIndex(0);
 		if(test_depth)
 			tech=g->GetTechniqueByName(f.reverseDepth?"depth_reverse":"depth_forward");
 		D3DXMATRIX wvp;
 		if(view_centred)
-			camera::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+			crossplatform::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 		else
-			camera::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+			crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 			
 		debugConstants.worldViewProj=wvp;
 		debugConstants.worldViewProj.transpose();
@@ -1427,7 +1427,7 @@ void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,cons
 		view._43=0.f;
 		simul::math::Multiply4x4(tmp1,world,view);
 		simul::math::Multiply4x4(tmp2,tmp1,deviceContext.viewStruct.proj);
-		camera::MakeWorldViewProjMatrix(tmp2,world,view,deviceContext.viewStruct.proj);
+		crossplatform::MakeWorldViewProjMatrix(tmp2,world,view,deviceContext.viewStruct.proj);
 		debugConstants.worldViewProj=tmp2;
 		debugConstants.worldViewProj.transpose();
 		debugConstants.radius	=rads;
@@ -1452,9 +1452,9 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 	v._43=0;*/
 	mat4 wvp;
 	if(centred)
-		camera::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+		crossplatform::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	else
-	camera::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+	crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	static bool tr=false;
 	if(tr)
 		wvp.transpose();
@@ -1532,7 +1532,7 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	pContext->RSSetViewports(1,&viewport);
 	
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
-	math::Matrix4x4 proj=camera::Camera::MakeProjectionMatrix(1.f,(float)viewport.Height/(float)viewport.Width,1.f,100.f);
+	math::Matrix4x4 proj=crossplatform::Camera::MakeProjectionMatrix(1.f,(float)viewport.Height/(float)viewport.Width,1.f,100.f);
 	// Create the viewport.
 	math::Matrix4x4 wvp,world;
 	world.Identity();
@@ -1550,7 +1550,7 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	world._41=offs.x;
 	world._42=offs.y;
 	world._43=offs.z;
-	camera::MakeWorldViewProjMatrix(wvp,world,view,proj);
+	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.worldViewProj=wvp;
 	debugConstants.worldViewProj.transpose();
 	crossplatform::EffectTechnique*		tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");

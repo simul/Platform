@@ -15,6 +15,7 @@
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/CrossPlatform/MixedResolutionView.h"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
 #pragma warning(push)
 #pragma warning(disable:4251)
@@ -23,7 +24,7 @@
 #endif
 namespace simul
 {
-	namespace camera
+	namespace crossplatform
 	{
 		class CameraOutputInterface;
 		class BaseOpticsRenderer;
@@ -125,7 +126,7 @@ namespace simul
 			// D3D11CallbackInterface
 			virtual const char *		GetDebugText		() const;
 			void SetViewType(int view_id,crossplatform::ViewType vt);
-			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
+			void SetCamera(int view_id,const simul::crossplatform::CameraOutputInterface *c);
 			void SaveScreenshot(const char *filename_utf8,int width=0,int height=0,float exposure=1.0f,float gamma=0.44f);
 			
 		protected:
@@ -144,11 +145,9 @@ namespace simul
 				,crossplatform::Texture *depthTexture
 				,float exposure
 				,float gamma);
-			void RenderStandard(crossplatform::DeviceContext &deviceContext
-				,const camera::CameraViewStruct &cameraViewStruct);
-			void RenderToOculus(crossplatform::DeviceContext &deviceContext
-				,const camera::CameraViewStruct &cameraViewStruct);
-			void RenderOverlays(crossplatform::DeviceContext &deviceContext,const camera::CameraViewStruct &cameraViewStruct);
+			void RenderStandard(crossplatform::DeviceContext &deviceContext,const crossplatform::CameraViewStruct &cameraViewStruct);
+			void RenderToOculus(crossplatform::DeviceContext &deviceContext,const crossplatform::CameraViewStruct &cameraViewStruct);
+			void RenderOverlays(crossplatform::DeviceContext &deviceContext,const crossplatform::CameraViewStruct &cameraViewStruct);
 			// Different kinds of view for Render() to call:
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
 			void ReverseDepthChanged();
@@ -160,7 +159,7 @@ namespace simul
 			std::string									screenshotFilenameUtf8;
 			crossplatform::Effect						*lightProbesEffect;
 			crossplatform::Effect						*linearizeDepthEffect;
-			camera::BaseOpticsRenderer					*baseOpticsRenderer;
+			crossplatform::BaseOpticsRenderer			*baseOpticsRenderer;
 			SimulWeatherRendererDX11					*simulWeatherRenderer;
 			SimulHDRRendererDX1x						*simulHDRRenderer;
 			terrain::BaseTerrainRenderer				*baseTerrainRenderer;
@@ -173,7 +172,7 @@ namespace simul
 			crossplatform::ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;
 			simul::crossplatform::Texture				*linearDepthTexture;
-			std::map<int,const simul::camera::CameraOutputInterface *> cameras;
+			std::map<int,const simul::crossplatform::CameraOutputInterface *> cameras;
 			bool AllOsds;
 			crossplatform::DemoOverlay *demoOverlay;
 		};

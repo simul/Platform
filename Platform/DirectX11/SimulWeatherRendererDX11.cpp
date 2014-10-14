@@ -22,7 +22,7 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Base/RuntimeError.h"
-#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
@@ -77,7 +77,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(crossplatform::RenderPlatform *
 	view.Identity();
 	math::Vector3 cam_pos=GetCameraPosVector(view);
 	math::Matrix4x4 view_matrices[6];
-	camera::MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
+	crossplatform::MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 	bool noise3d=environment->cloudKeyframer->GetUse3DNoise();
 	bool godrays=GetBaseAtmosphericsRenderer()->GetShowGodrays();
 	GetBaseAtmosphericsRenderer()->SetShowGodrays(false);

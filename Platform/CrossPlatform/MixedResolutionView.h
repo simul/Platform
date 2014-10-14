@@ -116,8 +116,6 @@ namespace simul
 			simul::crossplatform::Texture				*resolvedTexture;
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;
-			/// The camera.
-			const simul::camera::CameraOutputInterface	*camera;
 		public:
 			crossplatform::PixelFormat GetDepthFormat() const;
 			void SetDepthFormat(crossplatform::PixelFormat p);

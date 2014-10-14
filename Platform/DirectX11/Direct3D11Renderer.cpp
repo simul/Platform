@@ -9,17 +9,17 @@
 #include "Simul/Terrain/BaseTerrainRenderer.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
-#include "Simul/Camera/BaseOpticsRenderer.h"
+#include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
-#include "Simul/Camera/BaseOpticsRenderer.h"
+#include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/SaveTextureDx1x.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
-#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
@@ -77,7 +77,7 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 	sc;
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
-	baseOpticsRenderer		=::new(memoryInterface) camera::BaseOpticsRenderer(memoryInterface);
+	baseOpticsRenderer		=::new(memoryInterface) crossplatform::BaseOpticsRenderer(memoryInterface);
 	baseTerrainRenderer		=::new(memoryInterface) terrain::BaseTerrainRenderer(memoryInterface);
 	baseTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 
@@ -239,7 +239,7 @@ void TrueSkyRenderer::EnsureCorrectBufferSizes(int view_id)
 void TrueSkyRenderer::RenderCubemap(crossplatform::DeviceContext &parentDeviceContext,const float *cam_pos)
 {
 	simul::math::Matrix4x4 view_matrices[6];
-	camera::MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
+	crossplatform::MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 ERRNO_CHECK
 	if(cubemap_view_id<0)
 		cubemap_view_id=viewManager.AddView(false);
@@ -268,9 +268,9 @@ ERRNO_CHECK
 		static float farPlane	=200000.f;
 ERRNO_CHECK
 		if(ReverseDepth)
-			deviceContext.viewStruct.proj=simul::camera::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane);
+			deviceContext.viewStruct.proj=simul::crossplatform::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane);
 		else
-			deviceContext.viewStruct.proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane);
+			deviceContext.viewStruct.proj=simul::crossplatform::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane);
 ERRNO_CHECK
 		deviceContext.viewStruct.view_id=cubemap_view_id;
 		deviceContext.viewStruct.view	=view_matrices[i];
@@ -340,7 +340,7 @@ void TrueSkyRenderer::RenderEnvmap(crossplatform::DeviceContext &deviceContext)
 	math::Matrix4x4 view_matrices[6];
 	float cam_pos[]={0,0,0};
 	crossplatform::EffectTechnique *tech=lightProbesEffect->GetTechniqueByName("irradiance_map");
-	camera::MakeCubeMatrices(view_matrices,cam_pos,false);
+	crossplatform::MakeCubeMatrices(view_matrices,cam_pos,false);
 	SIMUL_COMBINED_PROFILE_END(pContext)
 	// For each face, 
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderEnvmap draw")
@@ -351,9 +351,9 @@ void TrueSkyRenderer::RenderEnvmap(crossplatform::DeviceContext &deviceContext)
 	{
 		envmapFramebuffer->SetCubeFace(i);
 		envmapFramebuffer->Activate(deviceContext);
-		math::Matrix4x4 cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,1.f,200000.f);
+		math::Matrix4x4 cube_proj=simul::crossplatform::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,1.f,200000.f);
 		{
-			camera::MakeInvViewProjMatrix(invViewProj,(const float*)&view_matrices[i],cube_proj);
+			crossplatform::MakeInvViewProjMatrix(invViewProj,(const float*)&view_matrices[i],cube_proj);
 			lightProbeConstants.invViewProj	=invViewProj;
 			lightProbeConstants.numSHBands	=SphericalHarmonicsBands;
 			lightProbeConstants.alpha		=0.05f;
@@ -376,7 +376,7 @@ void TrueSkyRenderer::RenderDepthElements(crossplatform::DeviceContext &deviceCo
 {
 	if(baseTerrainRenderer&&ShowTerrain)
 	{
-		math::Vector3 cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
+		math::Vector3 cam_pos=simul::crossplatform::GetCameraPosVector(deviceContext.viewStruct.view);
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
 			baseTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
 		baseTerrainRenderer->Render(deviceContext,1.f);	
@@ -443,7 +443,7 @@ void TrueSkyRenderer::RenderMixedResolutionSky(crossplatform::DeviceContext &dev
 }
 
 void TrueSkyRenderer::RenderToOculus(crossplatform::DeviceContext &deviceContext
-				,const camera::CameraViewStruct &cameraViewStruct)
+				,const crossplatform::CameraViewStruct &cameraViewStruct)
 {
 	D3D11_VIEWPORT				viewport;
 	memset(&viewport,0,sizeof(D3D11_VIEWPORT));
@@ -454,12 +454,12 @@ void TrueSkyRenderer::RenderToOculus(crossplatform::DeviceContext &deviceContext
 	viewport.Height				=(float)view->GetScreenHeight();
 	bool hdr=simulHDRRenderer&&UseHdrPostprocessor;
 	deviceContext.asD3D11DeviceContext()->RSSetViewports(1, &viewport);
-	const camera::CameraOutputInterface *cam		=cameras[deviceContext.viewStruct.view_id];
+	const crossplatform::CameraOutputInterface *cam		=cameras[deviceContext.viewStruct.view_id];
 	//left eye
 	if(cam)
 	{
-		deviceContext.viewStruct.proj=cam->MakeStereoProjectionMatrix(simul::camera::LEFT_EYE,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
-		deviceContext.viewStruct.view=cam->MakeStereoViewMatrix(simul::camera::LEFT_EYE);
+		deviceContext.viewStruct.proj=cam->MakeStereoProjectionMatrix(simul::crossplatform::LEFT_EYE,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
+		deviceContext.viewStruct.view=cam->MakeStereoViewMatrix(simul::crossplatform::LEFT_EYE);
 	}
 	view->GetFramebuffer()->Activate(deviceContext);
 	view->GetFramebuffer()->Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, ReverseDepth ? 0.f : 1.f);
@@ -483,8 +483,8 @@ void TrueSkyRenderer::RenderToOculus(crossplatform::DeviceContext &deviceContext
 	//right eye
 	if(cam)
 	{
-		deviceContext.viewStruct.proj	=cam->MakeStereoProjectionMatrix(simul::camera::RIGHT_EYE,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
-		deviceContext.viewStruct.view	=cam->MakeStereoViewMatrix(simul::camera::RIGHT_EYE);
+		deviceContext.viewStruct.proj	=cam->MakeStereoProjectionMatrix(simul::crossplatform::RIGHT_EYE,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
+		deviceContext.viewStruct.view	=cam->MakeStereoViewMatrix(simul::crossplatform::RIGHT_EYE);
 	}
 	viewport.TopLeftX			=view->GetScreenWidth()/2.f;
 	view->GetFramebuffer()->Activate(deviceContext);
@@ -530,11 +530,11 @@ void TrueSkyRenderer::Render(int view_id,ID3D11DeviceContext* pContext)
 	pContext->RSGetViewports(&numv, &viewport);
 	view->SetResolution((int)viewport.Width,(int)viewport.Height);
 	EnsureCorrectBufferSizes(view_id);
-	const camera::CameraOutputInterface *cam		=cameras[view_id];
+	const crossplatform::CameraOutputInterface *cam		=cameras[view_id];
 	SIMUL_ASSERT(cam!=NULL);
-	const camera::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
+	const crossplatform::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	
-	SetReverseDepth(cameraViewStruct.projection==camera::DEPTH_REVERSE);
+	SetReverseDepth(cameraViewStruct.projection==crossplatform::DEPTH_REVERSE);
 	if(cam)
 	{
 		float aspect=(float)view->GetScreenWidth()/(float)view->GetScreenHeight();
@@ -550,7 +550,7 @@ void TrueSkyRenderer::Render(int view_id,ID3D11DeviceContext* pContext)
 	if(MakeCubemap)
 	{
 		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Cubemap")
-		const float *cam_pos=simul::camera::GetCameraPosVector(deviceContext.viewStruct.view);
+		const float *cam_pos=simul::crossplatform::GetCameraPosVector(deviceContext.viewStruct.view);
 		RenderCubemap(deviceContext,cam_pos);
 		SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Envmap")
@@ -567,7 +567,7 @@ void TrueSkyRenderer::Render(int view_id,ID3D11DeviceContext* pContext)
 	SIMUL_COMBINED_PROFILE_ENDFRAME(pContext)
 }
 
-void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext,const camera::CameraViewStruct &cameraViewStruct)
+void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext,const crossplatform::CameraViewStruct &cameraViewStruct)
 {
 	ID3D11DeviceContext* pContext=deviceContext.asD3D11DeviceContext();
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Render")
@@ -616,7 +616,7 @@ void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext
 	else
 		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
 	// Suppose we want a linear depth texture? In that case, we make it here:
-	if(cameraViewStruct.projection==camera::LINEAR)
+	if(cameraViewStruct.projection==crossplatform::LINEAR)
 	{
 		if(!linearDepthTexture)
 		{
@@ -639,7 +639,7 @@ void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext
 				linearizeDepthEffect->SetTexture(deviceContext,"depthTextureMS",depthTexture);
 			else
 				linearizeDepthEffect->SetTexture(deviceContext,"depthTexture",depthTexture);
-			camera::Frustum f=camera::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+			crossplatform::Frustum f=crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 			static float cc=300000.f;
 			linearizeDepthEffect->SetParameter("fullResDims",int2(depthTexture->width,depthTexture->length));
 			linearizeDepthEffect->SetParameter("depthToLinFadeDistParams",vec4(deviceContext.viewStruct.proj[3*4+2],f.farZ,deviceContext.viewStruct.proj[2*4+2]*f.farZ,0.0f));
@@ -683,7 +683,7 @@ void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
 
-void TrueSkyRenderer::RenderOverlays(crossplatform::DeviceContext &deviceContext,const camera::CameraViewStruct &cameraViewStruct)
+void TrueSkyRenderer::RenderOverlays(crossplatform::DeviceContext &deviceContext,const crossplatform::CameraViewStruct &cameraViewStruct)
 {
 	if(!AllOsds)
 		return;
@@ -770,9 +770,9 @@ void TrueSkyRenderer::SaveScreenshot(const char *filename_utf8,int width,int hei
 		bool t=UseHdrPostprocessor;
 		UseHdrPostprocessor=true;
 	
-		camera::CameraOutputInterface *cam		=const_cast<camera::CameraOutputInterface *>(cameras[0]);
-		camera::CameraViewStruct s0=cam->GetCameraViewStruct();
-		camera::CameraViewStruct s=s0;
+		crossplatform::CameraOutputInterface *cam		=const_cast<crossplatform::CameraOutputInterface *>(cameras[0]);
+		crossplatform::CameraViewStruct s0=cam->GetCameraViewStruct();
+		crossplatform::CameraViewStruct s=s0;
 		s.exposure=exposure;
 		s.gamma=gamma/0.44f;
 		cam->SetCameraViewStruct(s);
@@ -882,7 +882,7 @@ void TrueSkyRenderer::SetViewType(int view_id,crossplatform::ViewType vt)
 	v->viewType=vt;
 }
 
-void TrueSkyRenderer::SetCamera(int view_id,const simul::camera::CameraOutputInterface *c)
+void TrueSkyRenderer::SetCamera(int view_id,const simul::crossplatform::CameraOutputInterface *c)
 {
 	cameras[view_id]=c;
 }
