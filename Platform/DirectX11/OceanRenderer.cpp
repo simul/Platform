@@ -154,18 +154,6 @@ void OceanRenderer::createSurfaceMesh()
 		}
 	}
 
-	D3D11_BUFFER_DESC vb_desc;
-	vb_desc.ByteWidth			= num_verts * sizeof(ocean_vertex);
-	vb_desc.Usage				= D3D11_USAGE_IMMUTABLE;
-	vb_desc.BindFlags			= D3D11_BIND_VERTEX_BUFFER;
-	vb_desc.CPUAccessFlags		= 0;
-	vb_desc.MiscFlags			= 0;
-	vb_desc.StructureByteStride	= sizeof(ocean_vertex);
-
-	D3D11_SUBRESOURCE_DATA init_data;
-	init_data.pSysMem = pV;
-	init_data.SysMemPitch = 0;
-	init_data.SysMemSlicePitch = 0;
 	
 	SAFE_DELETE(layout);
 	crossplatform::LayoutDesc desc[]=
@@ -194,15 +182,7 @@ void OceanRenderer::createSurfaceMesh()
 	DWORD* index_array = new DWORD[index_size_lookup[g_Lods]];
 	assert(index_array);
 	EnumeratePatterns(index_array);
-	D3D11_BUFFER_DESC ib_desc;
-	ib_desc.ByteWidth = index_size_lookup[g_Lods] * sizeof(DWORD);
-	ib_desc.Usage = D3D11_USAGE_IMMUTABLE;
-	ib_desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	ib_desc.CPUAccessFlags = 0;
-	ib_desc.MiscFlags = 0;
-	ib_desc.StructureByteStride = sizeof(DWORD);
 
-	init_data.pSysMem = index_array;
 
 	SAFE_DELETE(indexBuffer);
 	indexBuffer=renderPlatform->CreateBuffer();
@@ -287,11 +267,8 @@ void OceanRenderer::createFresnelMap(crossplatform::DeviceContext &deviceContext
 
 void OceanRenderer::loadTextures()
 {
-//    WCHAR strPath[MAX_PATH];
 	SAFE_DELETE(perlinNoise);
 	perlinNoise=renderPlatform->CreateTexture("perlin_noise.dds");
-	//D3DX11CreateShaderResourceViewFromFile(m_pd3dDevice, strPath, NULL, NULL, &g_pSRV_Perlin, NULL);
-	//assert(g_pSRV_Perlin);
 }
 
 void OceanRenderer::SetMatrices(const float *v,const float *p)
@@ -333,7 +310,6 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 
 	oceanSimulator->updateDisplacementMap(deviceContext,(float)app_time);
 
-	ID3D11DeviceContext*	pContext		=deviceContext.asD3D11DeviceContext();
 	crossplatform::Texture* displacement_map=oceanSimulator->getDisplacementMap();
 	crossplatform::Texture* gradient_map	=oceanSimulator->getGradientMap();
 
@@ -343,6 +319,32 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 	QuadNode root_node ={math::float2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
 	buildNodeList(root_node,seaKeyframer->patch_length,(const float *)&deviceContext.viewStruct.view,(const float *)&deviceContext.viewStruct.proj);
 
+#if 0
+		math::Matrix4x4 matWorld=math::Matrix4x4::Translation(node.bottom_left.x, node.bottom_left.y, 0);
+	//	D3DXMatrixTranslation((D3DXMATRIX*)&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
+//		D3DXMatrixTranspose((D3DXMATRIX*)&changePerCallConstants.g_matWorld, &matWorld);
+		changePerCallConstants.g_matWorld=matWorld;
+		math::Matrix4x4 matWVP ;
+		crossplatform::MakeWorldViewProjMatrix(matWVP,matWorld,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+		changePerCallConstants.g_matWorldViewProj=matWVP;
+		//=D3DXMatrixMultiply(matWorld,D3DXMatrixMultiply(matView,matProj));
+		//D3DXMatrixTranspose((D3DXMATRIX*)&changePerCallConstants.g_matWorldViewProj, &matWVP);
+		// Texcoord for perlin noise
+		math::float2 uv_base = node.bottom_left / seaKeyframer->patch_length * g_PerlinSize;
+		changePerCallConstants.g_UVBase = uv_base;
+		// Constant g_PerlinSpeed need to be adjusted mannually
+		math::float2 perlin_move =math::float2(seaKeyframer->wind_dir)*(-(float)app_time)* g_PerlinSpeed;
+		changePerCallConstants.g_PerlinMovement = perlin_move;
+		// Eye point
+		math::Matrix4x4 matInvWV;//D3DXMatrixMultiply(matWorld ,matView);
+		math::Matrix4x4 wv;
+		math::Multiply4x4(wv,matWorld,deviceContext.viewStruct.view);
+//		D3DXMatrixInverse(&matInvWV, NULL, &matInvWV);
+		wv.Inverse(matInvWV);
+		vec3 vLocalEye(0, 0, 0);
+		//D3DXVec3TransformCoord(&vLocalEye, &vLocalEye, &matInvWV);
+	//	changePerCallConstants.g_LocalEye = (const float*)&vLocalEye;
+#endif
 	// Matrices
 	D3DXMATRIX matView = deviceContext.viewStruct.view;
 	D3DXMATRIX  matProj = deviceContext.viewStruct.proj;
@@ -397,7 +399,10 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 		// WVP matrix
 		D3DXMATRIX matWorld;
 		D3DXMatrixTranslation((D3DXMATRIX*)&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
+		math::Matrix4x4 world=math::Matrix4x4::Translation(node.bottom_left.x, node.bottom_left.y, 0);
 		D3DXMatrixTranspose((D3DXMATRIX*)&changePerCallConstants.g_matWorld, &matWorld);
+		changePerCallConstants.g_matWorld=world;
+		changePerCallConstants.g_matWorld.transpose();
 		D3DXMATRIX matWVP =D3DXMatrixMultiply(matWorld,D3DXMatrixMultiply(matView,matProj));
 		D3DXMatrixTranspose((D3DXMATRIX*)&changePerCallConstants.g_matWorldViewProj, &matWVP);
 		// Texcoord for perlin noise
@@ -433,14 +438,14 @@ void OceanRenderer::Render(crossplatform::DeviceContext &deviceContext,float exp
 		if (render_param.num_inner_faces > 0)
 		{
 			// Inner mesh of the patch
-			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-			pContext->DrawIndexed(render_param.num_inner_faces + 2, render_param.inner_start_index, 0);
+			deviceContext.asD3D11DeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			deviceContext.asD3D11DeviceContext()->DrawIndexed(render_param.num_inner_faces + 2, render_param.inner_start_index, 0);
 		}
 		if (render_param.num_boundary_faces > 0)
 		{
 			// Boundary mesh of the patch
-			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			pContext->DrawIndexed(render_param.num_boundary_faces * 3, render_param.boundary_start_index, 0);
+			deviceContext.asD3D11DeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			deviceContext.asD3D11DeviceContext()->DrawIndexed(render_param.num_boundary_faces * 3, render_param.boundary_start_index, 0);
 		}
 	}
 	effect->UnbindTextures(deviceContext);
@@ -455,7 +460,6 @@ void OceanRenderer::RenderWireframe(crossplatform::DeviceContext &deviceContext)
 	double app_time=0.0;
 	if(skyInterface)
 		app_time=skyInterface->GetTime();
-	ID3D11DeviceContext*	pContext			=deviceContext.asD3D11DeviceContext();
 	crossplatform::Texture* displacement_map	=oceanSimulator->getDisplacementMap();
 	// Build rendering list
 	g_render_list.clear();
@@ -535,14 +539,16 @@ void OceanRenderer::RenderWireframe(crossplatform::DeviceContext &deviceContext)
 		if (render_param.num_inner_faces > 0)
 		{
 			// Inner mesh of the patch
-			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-			pContext->DrawIndexed(render_param.num_inner_faces + 2, render_param.inner_start_index, 0);
+			renderPlatform->SetTopology(deviceContext,crossplatform::TRIANGLESTRIP);
+			//deviceContext.asD3D11DeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			deviceContext.asD3D11DeviceContext()->DrawIndexed(render_param.num_inner_faces + 2, render_param.inner_start_index, 0);
 		}
 		if (render_param.num_boundary_faces > 0)
 		{
 			// Boundary mesh of the patch
-			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			pContext->DrawIndexed(render_param.num_boundary_faces * 3, render_param.boundary_start_index, 0);
+			renderPlatform->SetTopology(deviceContext,crossplatform::TRIANGLELIST);
+			//deviceContext.asD3D11DeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			deviceContext.asD3D11DeviceContext()->DrawIndexed(render_param.num_boundary_faces * 3, render_param.boundary_start_index, 0);
 		}
 	}
 	layout->Unapply(deviceContext);
@@ -553,8 +559,6 @@ void OceanRenderer::RenderWireframe(crossplatform::DeviceContext &deviceContext)
 
 void OceanRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,int width,int height)
 {
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-
 	HRESULT hr=S_OK;
 	static int u=8;
 	int w=(width-8)/u;
@@ -570,20 +574,20 @@ void OceanRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,i
 	static float hh=100000.0f;
 	effect->SetParameter("showMultiplier",hh);
 	effect->SetParameter("bufferGrid",vec2(gridSize+4,gridSize+1));
-	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer"));
+	renderPlatform->DrawQuad(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
 	renderPlatform->Print(deviceContext,x,y,"H0");
 	x+=w+2;
 	static float spectrum_multiplier=10000.0f;
 	oceanSimulator->GetSpectrum().Apply(deviceContext,effect,"g_InputDxyz");
 	effect->SetParameter("showMultiplier",spectrum_multiplier);
 	effect->SetParameter("bufferGrid",vec2(gridSize,gridSize));
-	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer"));
+	renderPlatform->DrawQuad(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
 	renderPlatform->Print(deviceContext,x,y,"choppy");
 	x+=w+2;
 	oceanSimulator->GetFftOutput().Apply(deviceContext,effect,"g_InputDxyz");
 	effect->SetParameter("showMultiplier",0.01f);
 	effect->SetParameter("bufferGrid",vec2(gridSize,gridSize));
-	UtilityRenderer::DrawQuad2(deviceContext,x,y,w,w,effect->asD3DX11Effect(),effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer"));
+	renderPlatform->DrawQuad(deviceContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
 	renderPlatform->Print(deviceContext,x,y,"Dxyz");
 	x+=w+2;
 	//simul::dx11::setTexture(effect,"showTexture",oceanSimulator->getDisplacementMap());
@@ -602,6 +606,7 @@ void OceanRenderer::RenderTextures(crossplatform::DeviceContext &deviceContext,i
 	x+=w+2;
 
 	effect->SetTexture(deviceContext,"g_InputDxyz",NULL);
-	simul::dx11::unbindTextures(effect->asD3DX11Effect());
-	effect->asD3DX11Effect()->GetTechniqueByName("show_structured_buffer")->GetPassByIndex(0)->Apply(0,pContext);
+	effect->Apply(deviceContext,effect->GetTechniqueByIndex(0),0);
+	effect->UnbindTextures(deviceContext);
+	effect->Unapply(deviceContext);
 }
