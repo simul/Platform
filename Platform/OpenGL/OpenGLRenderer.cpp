@@ -78,7 +78,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	if(!renderPlatform)
 		renderPlatform		=new opengl::RenderPlatform;
 	if(sc)
-		sceneRenderer		=new scene::BaseSceneRenderer(sc,renderPlatform);
+		sceneRenderer		=new scene::BaseSceneRenderer(sc);
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 	
 	//sceneCache=new scene::BaseObjectRenderer(gScene,&renderPlatform);
@@ -173,6 +173,8 @@ ERRNO_CHECK
 ERRNO_CHECK
 	if(baseTerrainRenderer)
 		baseTerrainRenderer->RestoreDeviceObjects(renderPlatform);
+	if(sceneRenderer)
+		sceneRenderer->RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 ERRNO_CHECK
 }

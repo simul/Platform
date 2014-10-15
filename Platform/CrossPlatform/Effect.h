@@ -165,7 +165,7 @@ namespace simul
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(Effect *effect,const char *name)
 			{
-				if (platformConstantBuffer)
+				if (effect&&platformConstantBuffer)
 					platformConstantBuffer->LinkToEffect(effect,name,T::bindingIndex);
 			}
 			//! Free the allocated buffer.

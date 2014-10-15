@@ -45,11 +45,9 @@ namespace simul
 			GLuint			volume_noise_tex;
 			crossplatform::PixelFormat			iformat;
 			GLenum			itype;
-			GLuint			density_texture;
 			bool			readback_to_cpu;
 			float			*density;	// used if we are using CPU to read back the density texture.
 			int				density_gridsize;
-			simul::opengl::ConstantBuffer<GpuCloudConstants> gpuCloudConstants;
 			Texture			directLightTextures[2];
 			Texture			indirectLightTextures[2];
 			Texture			maskTexture;

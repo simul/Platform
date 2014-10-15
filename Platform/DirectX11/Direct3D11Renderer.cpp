@@ -83,7 +83,7 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 
 #ifdef SIMUL_USE_SCENE
 	if(sc)
-		sceneRenderer			=new(memoryInterface) scene::BaseSceneRenderer(sc,renderPlatform);
+		sceneRenderer			=new(memoryInterface) scene::BaseSceneRenderer(sc);
 #endif
 	ReverseDepthChanged();
 }
@@ -137,6 +137,8 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		baseTerrainRenderer->RestoreDeviceObjects(renderPlatform);
 	if(oceanRenderer)
 		oceanRenderer->RestoreDeviceObjects(renderPlatform);
+	if(sceneRenderer)
+		sceneRenderer->RestoreDeviceObjects(renderPlatform);
 	SAFE_DELETE(cubemapFramebuffer);
 	cubemapFramebuffer= renderPlatform->CreateFramebuffer();
 	cubemapFramebuffer->SetFormat(crossplatform::RGBA_16_FLOAT);
@@ -307,6 +309,8 @@ ERRNO_CHECK
 			baseTerrainRenderer->Render(deviceContext,1.f);
 		if(oceanRenderer&&ShowWater)
 		{
+			if(cubemapFramebuffer)
+				oceanRenderer->SetCubemapTexture(cubemapFramebuffer->GetTexture());
 			oceanRenderer->Render(deviceContext,1.f);
 		}
 		cubemapFramebuffer->DeactivateDepth(deviceContext);

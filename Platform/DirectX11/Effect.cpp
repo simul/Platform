@@ -213,6 +213,8 @@ void dx11::PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPla
 //! Find the constant buffer in the given effect, and link to it.
 void dx11::PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int )
 {
+	if(!effect)
+		return;
 	if(!effect->asD3DX11Effect())
 		return;
 	m_pD3DX11EffectConstantBuffer=effect->asD3DX11Effect()->GetConstantBufferByName(name);

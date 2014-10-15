@@ -13,6 +13,7 @@
 #include "Simul/Platform/CrossPlatform/SL/gpu_cloud_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/simul_gpu_clouds.sl"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/Macros.h"
 
 using namespace simul;
 using namespace opengl;
@@ -43,9 +44,8 @@ void GpuCloudGenerator::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	iformat=crossplatform::INT_32_FLOAT;
 	itype=GL_LUMINANCE;
 	RecompileShaders();
-	density_texture=0;
 	maskTexture.ensureTexture2DSizeAndFormat(renderPlatform,16,16,crossplatform::RGBA_16_FLOAT,false,true);
-	gpuCloudConstants.RestoreDeviceObjects();
+	gpuCloudConstants.RestoreDeviceObjects(renderPlatform);
 }
 
 void GpuCloudGenerator::InvalidateDeviceObjects()
@@ -55,8 +55,7 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	{
 		fb[i].InvalidateDeviceObjects();
 	}
-	SAFE_DELETE_TEXTURE(density_texture);
-	gpuCloudConstants.Release();
+	gpuCloudConstants.InvalidateDeviceObjects();
 	maskTexture.InvalidateDeviceObjects();
 	SAFE_DELETE_TEXTURE(volume_noise_tex);
 	renderPlatform = NULL;
@@ -67,9 +66,9 @@ void GpuCloudGenerator::RecompileShaders()
 	BaseGpuCloudGenerator::RecompileShaders();
 	if (!renderPlatform)
 		return;
-	gpuCloudConstants	.LinkToProgram(effect->GetTechniqueByName("gpu_density")->passAsGLuint(0),"GpuCloudConstants",8);
-	gpuCloudConstants	.LinkToProgram(effect->GetTechniqueByName("gpu_lighting")->passAsGLuint(0),"GpuCloudConstants",8);
-	gpuCloudConstants	.LinkToProgram(effect->GetTechniqueByName("gpu_transform")->passAsGLuint(0),"GpuCloudConstants",8);
+	gpuCloudConstants	.LinkToEffect(effect,"GpuCloudConstants");
+	gpuCloudConstants	.LinkToEffect(effect,"GpuCloudConstants");
+	gpuCloudConstants	.LinkToEffect(effect,"GpuCloudConstants");
 }
 
 static GLuint make3DTexture(int w,int l,int d,int stride,bool wrap_z,const float *src)
@@ -224,7 +223,7 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	SetGpuCloudConstants(gpuCloudConstants,params,y_start,y_end-y_start);
 	gpuCloudConstants.zPixel			=1.f/(float)params.density_grid[2];
 	gpuCloudConstants.zSize				=(float)params.density_grid[2];
-	gpuCloudConstants.Apply();
+	gpuCloudConstants.Apply(deviceContext);
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,volume_noise_tex);
@@ -241,25 +240,25 @@ GL_ERROR_CHECK
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D,density_texture);
+		glBindTexture(GL_TEXTURE_3D,density_texture->AsGLuint());
 
 		int w,l,d;
 		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_WIDTH	,&w);
 		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_HEIGHT	,&l);
 		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_DEPTH	,&d);
-
+		
 		if(!density_texture||density_gridsize!=total_texels*stride||w!=params.density_grid[0]||l!=params.density_grid[1]||d!=params.density_grid[2])
 		{
-			SAFE_DELETE_TEXTURE(density_texture);
-			glBindTexture(GL_TEXTURE_3D,0);
+			density_texture->ensureTexture3DSizeAndFormat(renderPlatform
+				,params.density_grid[0],params.density_grid[1],params.density_grid[2]
+				,crossplatform::R_32_FLOAT,true);
 			if(readback_to_cpu&&total_texels*stride>density_gridsize)
 			{
 				density_gridsize=total_texels*stride;
 			}
-			density_texture	=make3DTexture(params.density_grid[0],params.density_grid[1],params.density_grid[2],iformat==GL_RGBA32F_ARB?4:1,false,NULL);
-			glBindTexture(GL_TEXTURE_3D,density_texture);
 		}
 	GL_ERROR_CHECK
+			glBindTexture(GL_TEXTURE_3D,density_texture->AsGLuint());
 		CopyTo3DTexture(start_texel,texels,params.density_grid);
 		dens_fb.Deactivate(deviceContext);
 	}
@@ -314,14 +313,14 @@ GL_ERROR_CHECK
 	gpuCloudConstants.transformMatrix	=params.Matrix4x4LightToDensityTexcoords;
 	SetGpuCloudConstants(gpuCloudConstants,params,y_start,y_end-y_start);
 	gpuCloudConstants.extinctions		=params.lightspace_extinctions;
-	gpuCloudConstants.Apply();
+	gpuCloudConstants.Apply(deviceContext);
 	// initialize the first input texture.
 	FramebufferGL *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
 	
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_3D,density_texture);
+	glBindTexture(GL_TEXTURE_3D,density_texture->AsGLuint());
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetTexture()->AsGLuint());
 	GL_ERROR_CHECK
@@ -356,7 +355,7 @@ GL_ERROR_CHECK
 		float zPosition=((float)i-0.5f)/(float)params.light_grid[2];
 
 		gpuCloudConstants.zPosition=zPosition;
-		gpuCloudConstants.Apply();
+		gpuCloudConstants.Apply(deviceContext);
 		F[1]->Activate(deviceContext);
 float u=(float)i/(float)z1;
 F[1]->Clear(deviceContext, u, u, u, u, 1.f);
@@ -426,11 +425,11 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	gpuCloudConstants.zPixel			=1.f/(float)params.density_grid[2];
 	gpuCloudConstants.zSize				=(float)params.density_grid[2];
 
-	gpuCloudConstants.Apply();
+	gpuCloudConstants.Apply(deviceContext);
 	
 	//effect->SetTexture(deviceContext,"density_texture",density_texture);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D,density_texture);
+	glBindTexture(GL_TEXTURE_3D,density_texture->AsGLuint());
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,directLightTextures[1].AsGLuint());
 	glActiveTexture(GL_TEXTURE2);
