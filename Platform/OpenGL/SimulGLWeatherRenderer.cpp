@@ -39,9 +39,8 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 		,BufferHeight(0)
 		,device_initialized(false)
 {
-	simul::sky::SkyKeyframer *sk=environment->skyKeyframer;
 	simul::clouds::CloudKeyframer *ck3d=environment->cloudKeyframer;
-	baseSkyRenderer						=::new(memoryInterface) sky::BaseSkyRenderer(sk,memoryInterface);
+	del(baseCloudRenderer,memoryInterface);
 	baseCloudRenderer					=::new(memoryInterface) SimulGLCloudRenderer(ck3d,mem);
 
 	EnableCloudLayers();

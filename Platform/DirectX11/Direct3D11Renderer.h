@@ -13,7 +13,6 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Sky/BaseGpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
-#include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/CrossPlatform/MixedResolutionView.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
@@ -48,6 +47,7 @@ namespace simul
 	namespace terrain
 	{
 		class BaseTerrainRenderer;
+		class BaseSeaRenderer;
 	}
 	namespace dx11
 	{
@@ -58,10 +58,7 @@ namespace simul
 			,FORCE_2560_1600
 			,FORCE_3840_2160
 		};
-		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
-		class TerrainRenderer;
-		class OceanRenderer;
 		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
 		class SIMUL_DIRECTX11_EXPORT TrueSkyRenderer
 		{
@@ -103,7 +100,7 @@ namespace simul
 			{
 				return enabled;
 			}
-			class SimulWeatherRendererDX11 *GetSimulWeatherRenderer()
+			class clouds::BaseWeatherRenderer *GetSimulWeatherRenderer()
 			{
 				return simulWeatherRenderer;
 			}
@@ -111,7 +108,7 @@ namespace simul
 			{
 				return simulHDRRenderer;
 			}
-			OceanRenderer *GetOceanRenderer()
+			terrain::BaseSeaRenderer *GetOceanRenderer()
 			{
 				return oceanRenderer;
 			}
@@ -160,10 +157,10 @@ namespace simul
 			crossplatform::Effect						*lightProbesEffect;
 			crossplatform::Effect						*linearizeDepthEffect;
 			crossplatform::BaseOpticsRenderer			*baseOpticsRenderer;
-			SimulWeatherRendererDX11					*simulWeatherRenderer;
+			clouds::BaseWeatherRenderer					*simulWeatherRenderer;
 			SimulHDRRendererDX1x						*simulHDRRenderer;
 			terrain::BaseTerrainRenderer				*baseTerrainRenderer;
-			OceanRenderer								*oceanRenderer;
+			terrain::BaseSeaRenderer					*oceanRenderer;
 			simul::scene::BaseSceneRenderer				*sceneRenderer;
 			crossplatform::MixedResolutionViewManager	viewManager;
 			simul::crossplatform::BaseFramebuffer		*cubemapFramebuffer;

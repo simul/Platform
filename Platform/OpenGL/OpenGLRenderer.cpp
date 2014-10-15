@@ -219,6 +219,7 @@ void OpenGLRenderer::paintGL()
 	static float exposure=1.0f;
 	if(simulWeatherRenderer)
 	{
+		GL_ERROR_CHECK
 		simulWeatherRenderer->PreRenderUpdate(deviceContext);
 		
 		glDisable(GL_FOG);

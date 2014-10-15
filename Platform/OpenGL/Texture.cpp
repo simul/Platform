@@ -216,12 +216,28 @@ void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *ren
 
 void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)
 {
-	glBindTexture(GL_TEXTURE_2D,pTextureObject);
+	GL_ERROR_CHECK
 	GLuint frmt		=opengl::RenderPlatform::ToGLFormat(pixelFormat);
 	GLenum ext_frmt	=opengl::RenderPlatform::ToGLExternalFormat(pixelFormat);
 	GLenum dt		=opengl::RenderPlatform::DataType(pixelFormat);
-	if(texel_index==0&&num_texels==width*length)
-		glTexImage2D(GL_TEXTURE_2D,0,frmt,width,length,0,ext_frmt,dt,src);
+	if(dim==2)
+	{
+		glBindTexture(GL_TEXTURE_2D,pTextureObject);
+		GL_ERROR_CHECK
+		if(texel_index==0&&num_texels==width*length)
+			glTexImage2D(GL_TEXTURE_2D,0,frmt,width,length,0,ext_frmt,dt,src);
+		GL_ERROR_CHECK
+	glBindTexture(GL_TEXTURE_2D,0);
+	}
+	else if(dim==3)
+	{
+		glBindTexture(GL_TEXTURE_3D,pTextureObject);
+		GL_ERROR_CHECK
+		if(texel_index==0&&num_texels==width*length)
+			glTexImage3D(GL_TEXTURE_3D,0,frmt,width,length,depth,0,ext_frmt,dt,src);
+		GL_ERROR_CHECK
+		glBindTexture(GL_TEXTURE_3D,0);
+	}
 #if 0
 	int start_slice				=it.texel_index/sliceStride;
 	int start_texel_in_slice	=it.texel_index-start_slice*sliceStride;
@@ -305,7 +321,6 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 	}
 
 #endif
-	glBindTexture(GL_TEXTURE_2D,0);
 }
 
 void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &)
@@ -372,6 +387,7 @@ void simul::opengl::Texture::setTexels(void *,const void *src,int x,int y,int z,
 
 void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pf,bool /*computable*/,int mips)
 {
+	GL_ERROR_CHECK
 	pixelFormat=pf;
 	GLuint frmt=opengl::RenderPlatform::ToGLFormat(pixelFormat);
 	dim=3;
@@ -390,6 +406,7 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 			SAFE_DELETE_TEXTURE(pTextureObject);
 		}
 	}
+	GL_ERROR_CHECK
 	if(!pTextureObject)
 	{
 		glGenTextures(1,&(pTextureObject));
@@ -420,6 +437,7 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	}
+	GL_ERROR_CHECK
 }
 
 void Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)

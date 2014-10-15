@@ -5,9 +5,9 @@
 #include "Simul/Platform/Crossplatform/Material.h"
 #include "Simul/Platform/Crossplatform/DemoOverlay.h"
 #include "Simul/Platform/DirectX11/Direct3D11Renderer.h"
-#include "Simul/Platform/DirectX11/SimulWeatherRendererDX11.h"
+#include "Simul/Clouds/BaseWeatherRenderer.h"
 #include "Simul/Terrain/BaseTerrainRenderer.h"
-#include "Simul/Platform/DirectX11/OceanRenderer.h"
+#include "Simul/Terrain/BaseSeaRenderer.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
 #include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
@@ -76,7 +76,7 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 {
 	sc;
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
-	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
+	simulWeatherRenderer	=::new(memoryInterface) clouds::BaseWeatherRenderer(env,memoryInterface);
 	baseOpticsRenderer		=::new(memoryInterface) crossplatform::BaseOpticsRenderer(memoryInterface);
 	baseTerrainRenderer		=::new(memoryInterface) terrain::BaseTerrainRenderer(memoryInterface);
 	baseTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
@@ -114,7 +114,7 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	enabled=true;
 	if(!oceanRenderer&&simulWeatherRenderer&&(simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
 	{
-		oceanRenderer			=new(memoryInterface) OceanRenderer(simulWeatherRenderer->GetEnvironment()->seaKeyframer);
+		oceanRenderer			=new(memoryInterface) terrain::BaseSeaRenderer(simulWeatherRenderer->GetEnvironment()->seaKeyframer);
 		oceanRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetEnvironment()->skyKeyframer);
 	}
 	SAFE_DELETE(envmapFramebuffer);
