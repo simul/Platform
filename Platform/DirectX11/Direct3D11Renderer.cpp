@@ -137,8 +137,10 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		baseTerrainRenderer->RestoreDeviceObjects(renderPlatform);
 	if(oceanRenderer)
 		oceanRenderer->RestoreDeviceObjects(renderPlatform);
+#ifdef SIMUL_USE_SCENE
 	if(sceneRenderer)
 		sceneRenderer->RestoreDeviceObjects(renderPlatform);
+#endif
 	SAFE_DELETE(cubemapFramebuffer);
 	cubemapFramebuffer= renderPlatform->CreateFramebuffer();
 	cubemapFramebuffer->SetFormat(crossplatform::RGBA_16_FLOAT);
@@ -719,7 +721,7 @@ void TrueSkyRenderer::RenderOverlays(crossplatform::DeviceContext &deviceContext
 			math::Vector3 cam_pos	=GetCameraPosVector(deviceContext.viewStruct.view);
 			float c=simulWeatherRenderer->GetEnvironment()->cloudKeyframer->GetCloudiness(cam_pos);
 			sprintf(txt,"In cloud: %4.4f", c);	
-			renderPlatform->Print(deviceContext,16,16,txt);
+			//renderPlatform->Print(deviceContext,16,16,txt);
 		}
 		if(oceanRenderer&&ShowWaterTextures)
 		{

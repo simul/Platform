@@ -50,7 +50,6 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *,int num_vertices
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 	stride=layout->GetStructSize();
 
-	
 GL_ERROR_CHECK
 	SAFE_DELETE_VAO(vao);
 	glGenVertexArrays(1,&vao );
