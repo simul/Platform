@@ -56,6 +56,10 @@
     <ClInclude Include="DemoOverlay.h" />
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Topology.h" />
+    <ClInclude Include="BaseOpticsRenderer.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraInterface.h" />
+    <ClInclude Include="LensFlare.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SL">
@@ -105,5 +109,9 @@
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="DemoOverlay.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
+    <ClCompile Include="BaseOpticsRenderer.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraInterface.cpp" />
+    <ClCompile Include="LensFlare.cpp" />
   </ItemGroup>
 </Project>

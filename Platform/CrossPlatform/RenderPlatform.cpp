@@ -10,8 +10,9 @@ using namespace simul;
 using namespace crossplatform;
 
 
-RenderPlatform::RenderPlatform()
-	:mirrorY(false)
+RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
+	:memoryInterface(m)
+	,mirrorY(false)
 	,mirrorY2(false)
 	,textRenderer(NULL)
 	,solidEffect(NULL)
@@ -212,4 +213,19 @@ namespace simul
 void RenderPlatform::SetStandardRenderState	(DeviceContext &deviceContext,StandardRenderState s)
 {
 	SetRenderState(deviceContext,standardRenderStates[s]);
+}
+
+
+
+void RenderPlatform::PushTexturePath(const char *path_utf8)
+{
+	texturePathsUtf8.push_back(path_utf8);
+}
+void RenderPlatform::PopTexturePath()
+{ 
+	texturePathsUtf8.pop_back();
+}
+std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
+{
+	return texturePathsUtf8;
 }

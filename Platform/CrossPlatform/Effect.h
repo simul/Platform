@@ -1,6 +1,7 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/Topology.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include <string>
 #include <map>
@@ -20,8 +21,29 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		/*!
+				OpenGL					|	Direct3D
+				-------------------------------------------
+				Vertex Shader			|	Vertex Shader
+				Tessellation Control	|	Hull Shader
+				Tessellation Evaluation	|	Domain Shader
+				Geometry Shader			|	Geometry Shader
+				Fragment Shader			|	Pixel Shader
+				Compute Shader			|	Compute Shader
+		*/
+		enum ShaderType
+		{
+			SHADERTYPE_VERTEX,
+			SHADERTYPE_HULL,		// tesselation control.
+			SHADERTYPE_DOMAIN,		// tesselation evaluation.
+			SHADERTYPE_GEOMETRY,
+			SHADERTYPE_PIXEL,
+			SHADERTYPE_COMPUTE,
+			SHADERTYPE_COUNT
+		};
 		struct DeviceContext;
 		class RenderPlatform;
+		struct Query;
 		class Effect;
 		struct SIMUL_CROSSPLATFORM_EXPORT Query
 		{
@@ -202,8 +224,8 @@ namespace simul
 			virtual void Unbind(DeviceContext &deviceContext)=0;
 			virtual void *GetBuffer(crossplatform::DeviceContext &deviceContext)=0;
 			virtual void SetData(crossplatform::DeviceContext &deviceContext,void *data)=0;
-			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView()=0;
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()=0;
+			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return NULL;}
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(){return NULL;}
 		};
 
 		/// Templated structured buffer, which uses platform-specific implementations of PlatformStructuredBuffer.
@@ -361,10 +383,10 @@ namespace simul
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
-			virtual void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,Texture *tex)	=0;
-			virtual void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name	,Texture *tex)		=0;
-			virtual void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name	,Texture &t)		=0;
-			virtual void SetSamplerState(crossplatform::DeviceContext &deviceContext,const char *name	,SamplerState *s)		=0;
+			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex)	=0;
+			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex)		=0;
+			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture &t)		=0;
+			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s)		=0;
 			virtual void SetParameter	(const char *name	,float value)		=0;
 			virtual void SetParameter	(const char *name	,vec2)				=0;
 			virtual void SetParameter	(const char *name	,vec3)				=0;

@@ -3,6 +3,7 @@
 #endif
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include <iostream>
 
 using namespace simul;

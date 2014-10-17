@@ -10,6 +10,14 @@
 using namespace simul;
 using namespace crossplatform;
 using std::string;
+#ifndef _MSC_VER
+#include <stdio.h>
+#include <strings.h>
+#include <string.h> // for memset
+#define _stricmp strcasecmp
+#else
+#include <windows.h>
+#endif
 
 TextFileInput::TextFileInput(simul::base::MemoryInterface *m)
 	:good(true)

@@ -6,11 +6,14 @@
 #include <vector>
 #include "Export.h"
 #include "Simul/Base/PropertyMacros.h"
+#include "Simul/Base/MemoryInterface.h"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Topology.h"
 #include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
+#include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4251)
@@ -71,7 +74,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
 		public:
-			RenderPlatform();
+			RenderPlatform(simul::base::MemoryInterface*m=NULL);
 			struct Vertext
 			{
 				vec3 pos;
@@ -86,8 +89,8 @@ namespace simul
 			virtual void RecompileShaders	();
 			//! Gets an object containing immediate-context API-specific values.
 			DeviceContext &GetImmediateContext();
-			virtual void PushTexturePath	(const char *pathUtf8)=0;
-			virtual void PopTexturePath		()=0;
+			virtual void PushTexturePath	(const char *pathUtf8);
+			virtual void PopTexturePath		();
 			virtual void StartRender		()=0;
 			virtual void EndRender			()=0;
 			virtual void SetReverseDepth	(bool)=0;
@@ -185,6 +188,24 @@ namespace simul
 			crossplatform::Effect *solidEffect;
 			std::set<crossplatform::Material*> materials;
 			bool reverseDepth;
+			std::vector<std::string> GetTexturePathsUtf8();
+			void SetShaderBinaryPathUtf8(const char *path_utf8)
+			{
+				shaderBinaryPathUtf8=path_utf8;
+			}
+			const char *GetShaderBinaryPathUtf8()
+			{
+				return shaderBinaryPathUtf8.c_str();
+			}
+			simul::base::MemoryInterface *GetMemoryInterface()
+			{
+				return memoryInterface;
+			}
+		protected:
+			simul::base::MemoryInterface *memoryInterface;
+			std::vector<std::string> shaderPathsUtf8;
+			std::vector<std::string> texturePathsUtf8;
+			std::string shaderBinaryPathUtf8;
 		protected:
 			DeviceContext					immediateContext;
 		private:

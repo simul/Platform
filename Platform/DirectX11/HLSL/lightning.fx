@@ -6,7 +6,7 @@
 
 Texture2D lightningTexture;
 Texture2D depthTexture;
-Texture2DMS<vec4> depthTextureMS;
+Texture2DMS<float4> depthTextureMS;
 Texture2D cloudDepthTexture;
 
 struct transformedVertex
@@ -100,8 +100,8 @@ void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStream<trans
 	if(p1.y<-area.y||p1.y>area.y) return;
 	if(p2.x<-area.x||p2.x>area.x) return;
 	if(p2.y<-area.y||p2.y>area.y) return;
-	if(input[0].depth<0) return;
-	if(input[0].depth>1.0) return;
+	if(input[0].position.z<0) return;
+	if(input[0].position.z>1.0) return;
     vec4 start			=input[1].position;
     vec4 end			=input[2].position;
 	// determine the direction of each of the 3 segments (previous, current, next
@@ -229,7 +229,7 @@ vec4 PS_Test(posTexVertexOutput IN): SV_TARGET
 	vec2 dist			=depthToFadeDistance(dlookup.xy,vec2(0,0),depthToLinFadeDistParams,tanHalfFov);
 	return vec4(dist,dlookup.z,0.5);
 }
-vec4 PS_Main(transformedVertex IN): SV_TARGET
+float4 PS_Main(transformedVertex IN): SV_TARGET
 {
 	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec4 dlookup 		=texture_wrap(depthTexture,texc.xy);
@@ -252,13 +252,13 @@ vec4 PS_Main(transformedVertex IN): SV_TARGET
 //	br				*=exp(-2.0*d);
 	if(br<0)
 		br=0;
-	vec4 colour	=br*lightningColour*lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	float4 colour	=br*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
-	colour=lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	
     return colour;
 }
 
-vec4 PS_Thin(transformedThinVertex IN): SV_TARGET
+float4 PS_Thin(transformedThinVertex IN): SV_TARGET
 {
 	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec4 dlookup 		=texture_clamp(depthTexture,texc.xy);
@@ -272,16 +272,9 @@ vec4 PS_Thin(transformedThinVertex IN): SV_TARGET
 	//if(dist.x<dist.y)
 	//	discard;
 	
-	vec4 colour		=lightningColour*IN.texCoords.w;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	float4 colour=lightningColour*IN.texCoords.w;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
     return colour;
-}
-
-vec4 PS_CreateLightningTexture(posTexVertexOutput IN):SV_TARGET
-{
-	float offset=2.0*(IN.texCoords.x-0.5);
-	float b=exp(-5*offset*offset);
-	return vec4(b,b,b,1.0);
 }
 
 technique11 lightning_thick
@@ -335,18 +328,5 @@ technique11 test
 		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Test()));
-    }
-}
-
-technique11 create_lightning_texture
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_CreateLightningTexture()));
     }
 }
