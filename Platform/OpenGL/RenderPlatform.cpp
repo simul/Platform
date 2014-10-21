@@ -22,9 +22,9 @@
 using namespace simul;
 using namespace opengl;
 RenderPlatform::RenderPlatform()
-	:solid_program(0)
-	,reverseDepth(false)
+	:reverseDepth(false)
 	,effect(NULL)
+	,solidEffect(NULL)
 	,currentTopology(crossplatform::TRIANGLELIST)
 {
 }
@@ -36,7 +36,7 @@ RenderPlatform::~RenderPlatform()
 
 void RenderPlatform::RestoreDeviceObjects(void *unused)
 {
-	solidConstants.RestoreDeviceObjects();
+	solidConstants.RestoreDeviceObjects(this);
 	crossplatform::RenderPlatform::RestoreDeviceObjects(unused);
 	RecompileShaders();
 }
@@ -44,8 +44,8 @@ void RenderPlatform::RestoreDeviceObjects(void *unused)
 void RenderPlatform::InvalidateDeviceObjects()
 {
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
-	solidConstants.Release();
-	SAFE_DELETE_PROGRAM(solid_program);
+	solidConstants.InvalidateDeviceObjects();
+	SAFE_DELETE(solidEffect);
 	delete effect;
 	effect=NULL;
 }
@@ -54,10 +54,9 @@ void RenderPlatform::RecompileShaders()
 {
 	std::map<std::string,std::string> defines;
 	defines["REVERSE_DEPTH"]="0";
-	SAFE_DELETE_PROGRAM(solid_program);
-	solid_program	=MakeProgram("solid",defines);
-	solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
-
+	SAFE_DELETE(solidEffect);
+	solidEffect	=CreateEffect("solid",defines);
+	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
 	effect=CreateEffect("debug",defines);
 	crossplatform::RenderPlatform::RecompileShaders();
 }
@@ -72,7 +71,7 @@ void RenderPlatform::PopTexturePath()
 	simul::opengl::PopTexturePath();
 }
 
-void RenderPlatform::StartRender()
+void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 {
 	glPushAttrib(GL_ENABLE_BIT);
 	glPushAttrib(GL_LIGHTING_BIT);
@@ -80,12 +79,17 @@ void RenderPlatform::StartRender()
 	// Draw the front face only, except for the texts and lights.
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_CULL_FACE);
-	glUseProgram(solid_program);
+	SetStandardRenderState(deviceContext,crossplatform::STANDARD_OPAQUE_BLENDING);
+	
+	SetStandardRenderState(deviceContext
+							,crossplatform::STANDARD_DEPTH_LESS_EQUAL);
+	SetStandardRenderState(deviceContext,crossplatform::STANDARD_OPAQUE_BLENDING);
+	solidEffect->Apply(deviceContext,solidEffect->GetTechniqueByIndex(0),0);
 }
 
-void RenderPlatform::EndRender()
+void RenderPlatform::EndRender(crossplatform::DeviceContext &deviceContext)
 {
-	glUseProgram(0);
+	solidEffect->Unapply(deviceContext);
 	glPopAttrib();
 	glPopAttrib();
 }
@@ -434,18 +438,18 @@ void MakeWorldViewProjMatrix(float *wvp,const double *w,const float *v,const flo
 
 void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *m,const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
 {
-	simul::math::Matrix4x4 proj;
-	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
-	simul::math::Matrix4x4 view;
-	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
 	simul::math::Matrix4x4 wvp;
-	simul::math::Matrix4x4 viewproj;
-	simul::math::Matrix4x4 modelviewproj;
-	simul::math::Multiply4x4(viewproj,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	simul::math::Matrix4x4 model(m);
-	simul::math::Multiply4x4(modelviewproj,model,viewproj);
-	solidConstants.worldViewProj=modelviewproj;
-	solidConstants.Apply();
+	crossplatform::MakeWorldViewProjMatrix(wvp,model,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+	solidConstants.worldViewProj=wvp;
+	solidConstants.worldViewProj.transpose();
+	solidConstants.world=model;
+	solidConstants.world.transpose();
+	
+	solidConstants.lightIrradiance	=physicalLightRenderData.lightColour;
+	solidConstants.lightDir			=physicalLightRenderData.dirToLight;
+	solidConstants.Apply(deviceContext);
+	
 }
 
 crossplatform::Material *RenderPlatform::CreateMaterial()

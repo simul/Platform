@@ -375,5 +375,14 @@
     <None Include="GLSL\optics.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\solid.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\solid.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\solid.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

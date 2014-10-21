@@ -27,11 +27,11 @@ void Material::Apply(crossplatform::DeviceContext &,crossplatform::PhysicalLight
     glMaterialf	(GL_FRONT_AND_BACK	,GL_SHININESS	,mShininess);
 	if(mDiffuse.mTextureName)
 	{
-		glBindTexture(GL_TEXTURE_2D	,((opengl::Texture *)mDiffuse.mTextureName)->pTextureObject);
+		glBindTexture(GL_TEXTURE_2D	,mDiffuse.mTextureName->AsGLuint());
 		for(int i=1;i<2;i++)
 		{
 			glActiveTexture(GL_TEXTURE0+i);
-			glBindTexture(GL_TEXTURE_2D	,((opengl::Texture *)mDiffuse.mTextureName)->pTextureObject);
+			glBindTexture(GL_TEXTURE_2D	,mDiffuse.mTextureName->AsGLuint());
 		}
 	}
 	else

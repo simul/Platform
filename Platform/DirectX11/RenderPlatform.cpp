@@ -224,7 +224,7 @@ void RenderPlatform::PopTexturePath()
 	simul::dx11::PopTexturePath();
 }
 
-void RenderPlatform::StartRender()
+void RenderPlatform::StartRender(crossplatform::DeviceContext &)
 {
 	/*glPushAttrib(GL_ENABLE_BIT);
 	glPushAttrib(GL_LIGHTING_BIT);
@@ -235,7 +235,7 @@ void RenderPlatform::StartRender()
 	glUseProgram(solid_program);*/
 }
 
-void RenderPlatform::EndRender()
+void RenderPlatform::EndRender(crossplatform::DeviceContext &)
 {
 	/*glUseProgram(0);
 	glPopAttrib();

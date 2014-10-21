@@ -242,6 +242,8 @@ void OpenGLRenderer::paintGL()
 		depthFramebuffer.Activate(deviceContext);
 		depthFramebuffer.Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, 1.f, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		
+		if(baseTerrainRenderer&&ShowTerrain)
+			baseTerrainRenderer->Render(deviceContext,1.f);
 		if(sceneRenderer)
 		{
 			crossplatform::PhysicalLightRenderData physicalLightRenderData;
@@ -251,8 +253,6 @@ void OpenGLRenderer::paintGL()
 			sceneRenderer->Render(deviceContext,physicalLightRenderData);
 		}
 		
-		if(baseTerrainRenderer&&ShowTerrain)
-			baseTerrainRenderer->Render(deviceContext,1.f);
 		simulWeatherRenderer->RenderCelestialBackground(deviceContext,depthFramebuffer.GetDepthTexture(),exposure);
 		depthFramebuffer.Deactivate(deviceContext);
 		{
@@ -267,9 +267,9 @@ void OpenGLRenderer::paintGL()
 			depthFramebuffer.Render(deviceContext.platform_context, false);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
-		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTexture()
+		/*simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTexture()
 			,depthFramebuffer.GetDepthTexture()
-			,simul::sky::float4(0,0,1.f,1.f),true);
+			,simul::sky::float4(0,0,1.f,1.f),true);*/
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
 
 		if(baseOpticsRenderer&&ShowFlares)

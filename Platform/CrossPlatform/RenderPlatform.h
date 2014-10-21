@@ -91,8 +91,8 @@ namespace simul
 			DeviceContext &GetImmediateContext();
 			virtual void PushTexturePath	(const char *pathUtf8);
 			virtual void PopTexturePath		();
-			virtual void StartRender		()=0;
-			virtual void EndRender			()=0;
+			virtual void StartRender		(DeviceContext &deviceContext)=0;
+			virtual void EndRender			(DeviceContext &deviceContext)=0;
 			virtual void SetReverseDepth	(bool)=0;
 			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;

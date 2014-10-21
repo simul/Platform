@@ -4,6 +4,7 @@
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 
 #ifdef _MSC_VER
@@ -32,8 +33,8 @@ namespace simul
 			}
 			void PushTexturePath(const char *pathUtf8);
 			void PopTexturePath();
-			void StartRender();
-			void EndRender();
+			void StartRender(crossplatform::DeviceContext &deviceContext);
+			void EndRender(crossplatform::DeviceContext &deviceContext);
 			void SetReverseDepth(bool);
 			void IntializeLightingEnvironment(const float pAmbientLight[3]);
 			void DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
@@ -90,8 +91,7 @@ namespace simul
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source);
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8);
 
-			GLuint solid_program;
-			simul::opengl::ConstantBuffer<SolidConstants> solidConstants;
+			simul::crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 			std::set<opengl::Material*> materials;
 			bool reverseDepth;
 			// OpenGL-specific stuff:
@@ -103,6 +103,7 @@ namespace simul
 			std::vector<GLuint> fb_stack;
 			std::vector<crossplatform::Viewport> viewport_stack;
 			crossplatform::Effect *effect;
+			crossplatform::Effect *solidEffect;
 			crossplatform::Topology currentTopology;
 		};
 	}
