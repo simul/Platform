@@ -21,9 +21,11 @@ shader PS_Main(in vec2 texCoords, in vec3 normal,out vec4 FragColor)
     FragColor=c;
 }
 
-
-program solid
+technique solid
 {
-    vs(430) = VS_Solid();
-    fs(430) = PS_Main();
+	pass solid
+	{
+		vs(430) = VS_Solid();
+		fs(430) = PS_Main();
+	}
 };

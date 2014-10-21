@@ -79,11 +79,9 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 	// Draw the front face only, except for the texts and lights.
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_CULL_FACE);
+	//glFrontFace(GL_CCW);
 	SetStandardRenderState(deviceContext,crossplatform::STANDARD_OPAQUE_BLENDING);
-	
-	SetStandardRenderState(deviceContext
-							,crossplatform::STANDARD_DEPTH_LESS_EQUAL);
-	SetStandardRenderState(deviceContext,crossplatform::STANDARD_OPAQUE_BLENDING);
+	SetStandardRenderState(deviceContext,crossplatform::STANDARD_DEPTH_LESS_EQUAL);
 	solidEffect->Apply(deviceContext,solidEffect->GetTechniqueByIndex(0),0);
 }
 

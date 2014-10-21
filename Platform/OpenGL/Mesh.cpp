@@ -174,9 +174,9 @@ void opengl::Mesh::Draw(crossplatform::DeviceContext &,int pMaterialIndex,crossp
 		{
 			const GLsizei lElementCount = subMesh->TriangleCount*3;
 
-			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_BLEND);
-			glDepthMask(GL_TRUE);
+		//	glDisable(GL_DEPTH_TEST);
+		//	glDisable(GL_BLEND);
+		//	glDepthMask(GL_TRUE);
 
 			glDrawElements(GL_TRIANGLES,lElementCount,GL_UNSIGNED_INT,reinterpret_cast<const GLvoid *>(lOffset));
 		}
