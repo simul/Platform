@@ -267,9 +267,9 @@ void OpenGLRenderer::paintGL()
 			depthFramebuffer.Render(deviceContext.platform_context, false);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
-		/*simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTexture()
+		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTexture()
 			,depthFramebuffer.GetDepthTexture()
-			,simul::sky::float4(0,0,1.f,1.f),true);*/
+			,simul::sky::float4(0,0,1.f,1.f),true);
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
 
 		if(baseOpticsRenderer&&ShowFlares)
