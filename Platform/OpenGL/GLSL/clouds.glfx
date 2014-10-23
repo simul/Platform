@@ -189,7 +189,6 @@ shader PS_Layers_depth(in float layerDensity,
 						,dist);
 }
 
-
 shader VS_CrossSection(in int gl_VertexID, out vec2 texCoords)
 {
 	vec2 poss[4];
@@ -226,8 +225,8 @@ shader PS_CrossSection(in vec2 texCoords, out vec4 FragColor)
 
 program layers
 {
-    vs(430) = VS_Layers();
-    fs(430) = PS_Layers();
+    SetVertexShader(VS_Layers);
+    SetFragmentShader(PS_Layers);
 };
 
 program layers_depth
@@ -244,8 +243,8 @@ program cloud_shadow
 
 program cross_section
 {
-    vs(410) = VS_CrossSection();
-    fs(410) = PS_CrossSection();
+    SetVertexShader(VS_CrossSection);
+    SetFragmentShader(PS_CrossSection);
 };
 
 program noise

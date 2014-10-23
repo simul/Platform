@@ -61,10 +61,13 @@ shader PS_Tonemap(in vec2 texCoords, out vec4 FragColour)
     FragColour=c;
 }
 
-program tonemap
+technique tonemap
 {
-    vs(430) = VS_FullScreen();
-    fs(430) = PS_Tonemap();
+	pass p0
+	{
+		vs(430) = VS_FullScreen();
+		SetPixelShader(PS_Tonemap);
+	}
 };
 
 program glow
