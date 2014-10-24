@@ -1,21 +1,7 @@
 #include <GL/glew.h>
 #include <stdlib.h>
 #include <stdio.h>
-//#define SIMUL_USE_NVFX
-#ifdef SIMUL_USE_NVFX
-#include <FXParser.h>
-#ifdef _DEBUG
-#pragma comment(lib,"FxLibD")
-#pragma comment(lib,"FxLibGLD")
-#pragma comment(lib,"FxParserD")
-#else
-#pragma comment(lib,"FxLib")
-#pragma comment(lib,"FxLibGL")
-#pragma comment(lib,"FxParser")
-#endif
-#else
 #include <GL/glfx.h>
-#endif
 
 #ifdef _MSC_VER
 #include <windows.h>
@@ -236,11 +222,6 @@ void includeCallbackFunc(const char *incName, FILE *&fp, const char *&buf)
 void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	filename=filename_utf8;
-#ifdef SIMUL_USE_NVFX
-	int pos=filename.find_last_of(".glfx");
-	if(pos>0)
-		filename=filename.substr(0,pos-4)+".nvfx";
-#endif
 	bool retry=true;
 	while(retry)
 	{
@@ -251,24 +232,19 @@ void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,cons
 			DebugBreak();
 			continue;
 		}
-#ifdef SIMUL_USE_NVFX
-		nvFX::IContainer*   fx_Effect       = NULL;
-		nvFX::setErrorCallback(errorCallbackFunc);
-		nvFX::setIncludeCallback(includeCallbackFunc);
-		fx_Effect = nvFX::IContainer::create(filenameInUseUtf8.c_str());
-		std::string effect_str=LoadAndPreprocessShaderSource(filenameInUseUtf8.c_str(),defines);
-	//	bool bRes = nvFX::loadEffect(fx_Effect,effect_str.c_str(),filenameInUseUtf8.c_str());
-		bool bRes = nvFX::loadEffectFromFile(fx_Effect,filenameInUseUtf8.c_str());
-		if(!bRes)
+		GLint effect		=glfxGenEffect();
+		vector<string> p	=opengl::GetShaderPathsUtf8();
+		const char **paths	=new const char *[p.size()+1];
+		for(int i=0;i<p.size();i++)
+			paths[i]		=p[i].c_str();
+		paths[p.size()]=NULL;
+		if(!glfxParseEffectFromFile(effect,filename_utf8,paths))
 		{
-			DebugBreak();
-			continue;
+			std::string log	=glfxGetEffectLog(effect);
+			std::cerr<<log<<std::endl;
 		}
-		ERRNO_CHECK
-		platform_effect=fx_Effect;
-#else
-		platform_effect		=(void*)opengl::CreateEffect(filename_utf8,defines);
-#endif
+		delete paths;
+		platform_effect		=(void*)effect;
 	// If any technique fails, we don't want to proceed until the problem is fixed.
 		if(!FillInTechniques()&&IsDebuggerPresent())
 		{
@@ -283,11 +259,6 @@ Effect::~Effect()
 {
 	glfxDeleteEffect(asGLint());
 	platform_effect=0;
-#ifdef SIMUL_USE_NVFX
-	nvFX::IContainer*   fx_Effect       = (nvFX::IContainer* )platform_effect; 
-    nvFX::IContainer::destroy(fx_Effect);
-	fx_Effect=NULL;
-#endif
 }
 
 EffectTechnique *Effect::CreateTechnique()
@@ -376,12 +347,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	if(asGLint()==-1)
 		return NULL;
 	GLint e									=asGLint();
-#ifdef SIMUL_USE_NVFX
-	nvFX::IContainer*   fx_Effect	=(nvFX::IContainer*)platform_effect; 
-	nvFX::ITechnique*   t			=fx_Effect->findTechnique(name);
-#else
 	GLuint t = glfxCompileProgram(e, NULL,name);
-#endif
 	if(!t)
 	{
 		opengl::printEffectLog(e);
@@ -392,14 +358,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	tech->platform_technique				=(void*)t;
 	techniques[name]						=tech;
 	// Now it needs to be in the techniques_by_index list.
-#ifdef SIMUL_USE_NVFX
-	size_t index=0;
-	for(int i=0;i<techniques.size();i++)
-		if(fx_Effect->findTechnique(i)==t)
-			index=i;
-#else
 	size_t index							=glfxGetProgramIndex(e,name);
-#endif
 	techniques_by_index[(int)index]			=tech;
 	return tech;
 }
@@ -415,14 +374,8 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 	GLint e				=asGLint();
 	if(index>=(int)techniques.size())
 		return NULL;
-#ifdef SIMUL_USE_NVFX
-	nvFX::IContainer*   fx_Effect	=(nvFX::IContainer*)platform_effect; 
-	nvFX::ITechnique*   t			=fx_Effect->findTechnique(index);
-	const char *name	=t->getName();
-#else
 	const char *name	=glfxGetProgramName(e,index);
 	GLuint t			=glfxCompileProgram(e,NULL,name);
-#endif
 	if(!t)
 	{
 		opengl::printEffectLog(e);

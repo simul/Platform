@@ -437,36 +437,6 @@ namespace simul
 			}
 			return src;
 		}
-		GLint CreateEffect(const char *filename_utf8,const std::map<std::string,std::string>&defines)
-		{
-			std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,shaderPathsUtf8);
-			if(!filenameUtf8.length())
-				return -1;
-			GLint effect=glfxGenEffect();
-#if 1
-			std::string src=LoadAndPreprocessShaderSource(filenameUtf8.c_str(),defines);
-			const char **filenames=new const char*[effectSourceFilesUtf8.size()+1];
-			for(size_t i=0;i<effectSourceFilesUtf8.size();i++)
-			{
-				filenames[i]=effectSourceFilesUtf8[i].c_str();
-			}
-			filenames[effectSourceFilesUtf8.size()]=0;
-			if(!glfxParseEffectFromTextSIMUL( effect, src.c_str(),filenames))
-			{
-   				std::string log = glfxGetEffectLog(effect);
-   				std::cerr <<  log << std::endl;
-				effect=-1;
-			}
-			delete filenames;
-#else
-			if (!glfxParseEffectFromFile(effect,filenameUtf8.c_str()))
-			{
-   				std::string log = glfxGetEffectLog(effect);
-   				std::cerr <<  log << std::endl;
-			}
-#endif
-			return effect;
-		}
 
 		GLuint MakeProgram(const char *filename)
 		{
