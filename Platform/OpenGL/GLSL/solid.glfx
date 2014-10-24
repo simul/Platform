@@ -3,14 +3,12 @@
 
 uniform sampler2D imageTexture;
 
-
 shader VS_Solid(in vec3 vertex,in vec2 in_coord,in vec3 in_normal, out vec2 texCoords, out vec3 normal)
 {
     gl_Position		=worldViewProj*vec4(vertex.xyz,1.0);
     texCoords		=in_coord;
     normal			=in_normal;
 }
-
 
 shader PS_Main(in vec2 texCoords, in vec3 normal,out vec4 FragColor)
 {

@@ -384,5 +384,8 @@
     <None Include="GLSL\solid.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\depth.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
 </Project>

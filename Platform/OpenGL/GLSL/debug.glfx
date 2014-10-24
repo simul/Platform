@@ -1,3 +1,4 @@
+#define GLFX
 #include "CppGlSl.hs"
 #include "../../CrossPlatform/SL/depth.sl"
 
