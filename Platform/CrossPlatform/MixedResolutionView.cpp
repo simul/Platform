@@ -177,7 +177,7 @@ void MixedResolutionView::ResolveFramebuffer(crossplatform::DeviceContext &devic
 	}*/
 }
 
-void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy)
+void MixedResolutionView::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy)
 {
 	int w		=dx/2;
 	int l		=0;
