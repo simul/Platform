@@ -15,6 +15,7 @@
 
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/hdr_constants.sl"
+#include "Simul/Platform/CrossPlatform/HdrRenderer.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
@@ -32,7 +33,7 @@ namespace simul
 	namespace dx11
 	{
 		//! A class that provides gamma-correction of an HDR render to the screen.
-		SIMUL_DIRECTX11_EXPORT_CLASS SimulHDRRendererDX1x: public simul::base::Referenced
+		SIMUL_DIRECTX11_EXPORT_CLASS SimulHDRRendererDX1x: public simul::crossplatform::HdrRenderer
 		{
 		public:
 			SimulHDRRendererDX1x(int w,int h);

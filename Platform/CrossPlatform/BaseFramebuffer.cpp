@@ -175,6 +175,10 @@ void TwoResFramebuffer::DeactivateLowRes(crossplatform::DeviceContext &deviceCon
 
 void TwoResFramebuffer::SetDimensions(int w,int h,int downscale,int hiResDownscale)
 {
+	if(downscale<1)
+		downscale=1;
+	if(hiResDownscale<1)
+		hiResDownscale=1;
 	if(Width!=w||Height!=h||Downscale!=downscale||HiResDownscale!=hiResDownscale)
 	{
 		Width=w;

@@ -13,14 +13,11 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Sky/BaseGpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/MixedResolutionView.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
+#include "Simul/Clouds/TrueSkyRenderer.h"
 #pragma warning(push)
 #pragma warning(disable:4251)
-#if !defined(_XBOX_ONE) && defined(SIMUL_DYNAMIC_LINK)
-#define SIMUL_USE_SCENE
-#endif
 namespace simul
 {
 	namespace crossplatform
@@ -51,59 +48,22 @@ namespace simul
 	}
 	namespace dx11
 	{
-		enum PerformanceTestLevel
-		{
-			DEFAULT
-			,FORCE_1920_1080
-			,FORCE_2560_1600
-			,FORCE_3840_2160
-		};
 		class SimulHDRRendererDX1x;
 		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
-		class SIMUL_DIRECTX11_EXPORT TrueSkyRenderer
+		class SIMUL_DIRECTX11_EXPORT TrueSkyRenderer:public clouds::TrueSkyRenderer
 		{
 		public:
 			//! Constructor - pass a pointer to your Environment, and either an implementation of MemoryInterface, or NULL.
 			TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);
 			virtual ~TrueSkyRenderer();
 			META_BeginProperties
-				META_ValueProperty(bool,ShowFlares				,"Whether to draw light flares around the sun and moon.")
-				META_ValueProperty(bool,ShowWaterTextures		,"Show the textures generated for water effects as an overlay.")
-				META_ValueProperty(bool,ShowTerrain				,"Whether to draw the terrain.")
-				META_ValueProperty(bool,ShowMap					,"Show the terrain map as an overlay.")
-				META_ValueProperty(clouds::TrueSkyRenderMode,trueSkyRenderMode		,"Whether to use the mixed-resolution renderer.")
-				META_ValueProperty(bool,DepthBasedComposite		,"Whether to blend the sky and clouds using depth.")
-				META_ValueProperty(bool,UseHdrPostprocessor		,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
-				META_ValueProperty(bool,UseSkyBuffer			,"Render the sky to a low-res buffer to increase performance.")
-				META_ValueProperty(bool,ShowHDRTextures			,"Show the HDR glow textures.")
-				META_ValueProperty(bool,ShowLightVolume			,"Show the cloud light volume as a wireframe box.")
-				META_ValueProperty(bool,ShowGroundGrid			,"Show a metre-scale grid at ground level.")
 				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")
-				META_ValueProperty(bool,MakeCubemap				,"Render a cubemap each frame.")
-				META_ValueProperty(bool,ShowCubemaps			,"Show any generated cubemaps onscreen.")
-				META_ValueRangeProperty(PerformanceTestLevel,PerformanceTest,DEFAULT,DEFAULT,FORCE_3840_2160,"Force rendering at a higher resolution to test performance");
-				META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
-				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
-				META_ValueProperty(float,SkyBrightness			,"Brightness of the sky (only).")
-				META_ValuePropertyWithSetCall(int,Antialiasing	,AntialiasingChanged,"How many antialiasing samples to use.")
-				META_ValueProperty(int,SphericalHarmonicsBands	,"How many bands to use for spherical harmonics.")
+				META_ValueProperty(bool,ShowWaterTextures		,"Show the textures generated for water effects as an overlay.")
 			META_EndProperties
 			void RestoreDeviceObjects	(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
-			// Also in Direct3D11Renderer pass-through to here:
-			int	 AddView			(bool external_fb);
-			void RemoveView			(int);
-			void ResizeView			(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
 			void Render(int view_id,ID3D11DeviceContext* pContext);
 			///////////////////////////
-			bool IsEnabled()const
-			{
-				return enabled;
-			}
-			class clouds::BaseWeatherRenderer *GetSimulWeatherRenderer()
-			{
-				return simulWeatherRenderer;
-			}
 			class SimulHDRRendererDX1x *GetSimulHDRRenderer()
 			{
 				return simulHDRRenderer;
@@ -112,36 +72,24 @@ namespace simul
 			{
 				return oceanRenderer;
 			}
-			terrain::BaseTerrainRenderer *GetTerrainRenderer()
-			{
-				return baseTerrainRenderer;
-			}
-			void						RecompileShaders();
-			void						ReloadTextures();
-			void						RenderCubemap(crossplatform::DeviceContext &deviceContext,const float *cam_pos);
-			void						RenderEnvmap(crossplatform::DeviceContext &deviceContext);
-			// D3D11CallbackInterface
-			virtual const char *		GetDebugText		() const;
-			void SetViewType(int view_id,crossplatform::ViewType vt);
-			void SetCamera(int view_id,const simul::crossplatform::CameraOutputInterface *c);
-			void SaveScreenshot(const char *filename_utf8,int width=0,int height=0,float exposure=1.0f,float gamma=0.44f);
-			
+			void	RecompileShaders();
+			void	ReloadTextures();
+			void	RenderCubemap(crossplatform::DeviceContext &deviceContext,const float *cam_pos);
+			void	RenderEnvmap(crossplatform::DeviceContext &deviceContext);
+			void	SetViewType(int view_id,crossplatform::ViewType vt);
+			void	SetCamera(int view_id,const simul::crossplatform::CameraOutputInterface *c);
+			void	SaveScreenshot(const char *filename_utf8,int width=0,int height=0,float exposure=1.0f,float gamma=0.44f);
 		protected:
-			simul::crossplatform::RenderPlatform *renderPlatform;
-			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Viewport viewport,int x0,int y0,int w,int h);
+			void	RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Viewport viewport,int x0,int y0,int w,int h);
 			/// Parts of the scene that go into the main buffer with depth active.
-			void RenderDepthElements(crossplatform::DeviceContext &deviceContext
-				,float exposure
-				,float gamma);
-			/// Draw the trueSKY elements as background. Use with RenderForegroundSky in place of RenderMixedResolutionSky for faster performance.
-			void RenderBackgroundSky(crossplatform::DeviceContext &deviceContext
-									 ,float exposure
-									 ,float gamma);
+			void	RenderDepthElements(crossplatform::DeviceContext &deviceContext
+									,float exposure
+									,float gamma);
 			/// Render the sky.
-			void RenderMixedResolutionSky(crossplatform::DeviceContext &deviceContext
-				,crossplatform::Texture *depthTexture
-				,float exposure
-				,float gamma);
+			void	RenderMixedResolutionSky(crossplatform::DeviceContext &deviceContext
+									,crossplatform::Texture *depthTexture
+									,float exposure
+									,float gamma);
 			void RenderStandard(crossplatform::DeviceContext &deviceContext,const crossplatform::CameraViewStruct &cameraViewStruct);
 			void RenderToOculus(crossplatform::DeviceContext &deviceContext,const crossplatform::CameraViewStruct &cameraViewStruct);
 			void RenderOverlays(crossplatform::DeviceContext &deviceContext,const crossplatform::CameraViewStruct &cameraViewStruct);
@@ -150,28 +98,9 @@ namespace simul
 			void ReverseDepthChanged();
 			void AntialiasingChanged();
 			void EnsureCorrectBufferSizes(int view_id);
-
-			int											cubemap_view_id;
-			bool										enabled;
-			std::string									screenshotFilenameUtf8;
-			crossplatform::Effect						*lightProbesEffect;
-			crossplatform::Effect						*linearizeDepthEffect;
-			crossplatform::BaseOpticsRenderer			*baseOpticsRenderer;
-			clouds::BaseWeatherRenderer					*simulWeatherRenderer;
-			SimulHDRRendererDX1x						*simulHDRRenderer;
-			terrain::BaseTerrainRenderer				*baseTerrainRenderer;
+			
 			terrain::BaseSeaRenderer					*oceanRenderer;
-			simul::scene::BaseSceneRenderer				*sceneRenderer;
-			crossplatform::MixedResolutionViewManager	viewManager;
-			simul::crossplatform::BaseFramebuffer		*cubemapFramebuffer;
-			simul::crossplatform::BaseFramebuffer		*envmapFramebuffer;
-			simul::crossplatform::BaseFramebuffer		*msaaFramebuffer;
-			crossplatform::ConstantBuffer<LightProbeConstants>			lightProbeConstants;
-			simul::base::MemoryInterface				*memoryInterface;
-			simul::crossplatform::Texture				*linearDepthTexture;
-			std::map<int,const simul::crossplatform::CameraOutputInterface *> cameras;
-			bool AllOsds;
-			crossplatform::DemoOverlay *demoOverlay;
+			SimulHDRRendererDX1x						*simulHDRRenderer;
 		};
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface

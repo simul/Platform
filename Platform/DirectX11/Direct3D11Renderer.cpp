@@ -32,47 +32,12 @@
 using namespace simul;
 using namespace dx11;
 
-TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m):
-		ShowFlares(true)
+TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m)
+		:clouds::TrueSkyRenderer(env,sc,m)
 		,ShowWaterTextures(false)
-		,ShowTerrain(true)
-		,ShowMap(false)
-		,trueSkyRenderMode(clouds::MIXED_RESOLUTION)
-		,DepthBasedComposite(true)
-		,UseHdrPostprocessor(true)
-		,UseSkyBuffer(true)
-		,ShowHDRTextures(false)
-		,ShowLightVolume(false)
-		,ShowGroundGrid(false)
 		,ShowWater(true)
-		,MakeCubemap(true)
-		,ShowCubemaps(false)
-		,PerformanceTest(DEFAULT)
-		,ReverseDepth(false)
-		,ShowOSD(false)
-		,SkyBrightness(1.f)
-		,Antialiasing(1)
-		,SphericalHarmonicsBands(4)
-		,renderPlatform(NULL)
-		,cubemap_view_id(-1)
-		,enabled(false)
-		,lightProbesEffect(NULL)
-		,linearizeDepthEffect(NULL)
-		,baseOpticsRenderer(NULL)
-		,simulWeatherRenderer(NULL)
 		,simulHDRRenderer(NULL)
-		,baseTerrainRenderer(NULL)
 		,oceanRenderer(NULL)
-#ifdef SIMUL_USE_SCENE
-		,sceneRenderer(NULL)
-#endif
-		,msaaFramebuffer(NULL)
-		,memoryInterface(m)
-		,linearDepthTexture(NULL)
-		,envmapFramebuffer(NULL)
-		,cubemapFramebuffer(NULL)
-		,AllOsds(true)
-		,demoOverlay(NULL)
 {
 	sc;
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
@@ -105,13 +70,12 @@ TrueSkyRenderer::~TrueSkyRenderer()
 
 void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	clouds::TrueSkyRenderer::RestoreDeviceObjects(r);
 	renderPlatform=r;
 	if(!renderPlatform)
 	{
-		enabled=false;
 		return;
 	}
-	enabled=true;
 	if(!oceanRenderer&&simulWeatherRenderer&&(simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
 	{
 		oceanRenderer			=new(memoryInterface) terrain::BaseSeaRenderer(simulWeatherRenderer->GetEnvironment()->seaKeyframer);
@@ -163,29 +127,6 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	RecompileShaders();
 }
 
-int	TrueSkyRenderer::AddView				(bool external_fb)
-{
-	int view_id=viewManager.AddView(external_fb);
-	viewManager.GetView(view_id)->RestoreDeviceObjects(renderPlatform);
-	return view_id;
-}
-
-void TrueSkyRenderer::RemoveView			(int view_id)
-{
-	viewManager.RemoveView(view_id);
-}
-
-void TrueSkyRenderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
-{
-	crossplatform::MixedResolutionView *view			=viewManager.GetView(view_id);
-	if(view)
-	{	
-		view->RestoreDeviceObjects(renderPlatform);
-		// RVK: Downscale here to get a closeup view of small-scale pixel effects.
-		view->SetResolution(pBackBufferSurfaceDesc->Width,pBackBufferSurfaceDesc->Height);
-	}
-}
-
 void TrueSkyRenderer::EnsureCorrectBufferSizes(int view_id)
 {
 	crossplatform::MixedResolutionView *view			=viewManager.GetView(view_id);
@@ -201,27 +142,27 @@ void TrueSkyRenderer::EnsureCorrectBufferSizes(int view_id)
 	{
 		if(lockx)
 		{
-			int s					=simulWeatherRenderer->GetDownscale();
-			int w					=W/s;
-			W						=w*s;
+			int s	=simulWeatherRenderer->GetDownscale();
+			int w	=W/s;
+			W		=w*s;
 		}
 		if(locky)
 		{
-			int s					=simulWeatherRenderer->GetDownscale();
-			int h					=H/s;
-			H						=h*s;
+			int s	=simulWeatherRenderer->GetDownscale();
+			int h	=H/s;
+			H		=h*s;
 		}
-		if(PerformanceTest==FORCE_1920_1080)
+		if(PerformanceTest==clouds::FORCE_1920_1080)
 		{
 			W=1920;
 			H=1080;
 		}
-		if(PerformanceTest==FORCE_2560_1600)
+		if(PerformanceTest==clouds::FORCE_2560_1600)
 		{
 			W=2560;
 			H=1600;
 		}
-		else if(PerformanceTest==FORCE_3840_2160)
+		else if(PerformanceTest==clouds::FORCE_3840_2160)
 		{
 			W=3840;
 			H=2160;
@@ -514,7 +455,7 @@ void TrueSkyRenderer::RenderToOculus(crossplatform::DeviceContext &deviceContext
 
 void TrueSkyRenderer::Render(int view_id,ID3D11DeviceContext* pContext)
 {
-	if(!enabled)
+	if(!renderPlatform)
 		return;
 	crossplatform::MixedResolutionView *view=viewManager.GetView(view_id);
 	if(!view)
@@ -739,6 +680,8 @@ void TrueSkyRenderer::RenderOverlays(crossplatform::DeviceContext &deviceContext
 			renderPlatform->Print(deviceContext			,12	,12,txt);
 #endif
 		}
+		std::string str="DirectX 11\n";
+		renderPlatform->Print(deviceContext			,12	,12,str.c_str());
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
@@ -832,7 +775,7 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE(lightProbesEffect);
 	SAFE_DELETE(linearizeDepthEffect);
 	SAFE_DELETE(linearDepthTexture);
-	viewManager.InvalidateDeviceObjects();
+	clouds::TrueSkyRenderer::InvalidateDeviceObjects();
 	renderPlatform=NULL;
 }
 
@@ -870,18 +813,6 @@ void TrueSkyRenderer::ReloadTextures()
 {
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->ReloadTextures();
-}
-
-const char *TrueSkyRenderer::GetDebugText() const
-{
-	if(!ShowOSD)
-		return " ";
-	static std::string str;
-	str="DirectX 11\n";
-	//if(simulWeatherRenderer)
-//		str+=simulWeatherRenderer->GetDebugText();
-	str+=Profiler::GetGlobalProfiler().GetDebugText();
-	return str.c_str();
 }
 
 void TrueSkyRenderer::SetViewType(int view_id,crossplatform::ViewType vt)
@@ -958,7 +889,7 @@ void Direct3D11Renderer::RemoveView			(int view_id)
 
 void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
-	return trueSkyRenderer.ResizeView(view_id,pBackBufferSurfaceDesc);
+	return trueSkyRenderer.ResizeView(view_id,pBackBufferSurfaceDesc->Width,pBackBufferSurfaceDesc->Height);
 }
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)
 {

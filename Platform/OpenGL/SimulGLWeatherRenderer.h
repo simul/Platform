@@ -59,11 +59,12 @@ namespace simul
 			void RenderSkyAsOverlay(crossplatform::DeviceContext &deviceContext
 											,bool is_cubemap
 											,float exposure
-											,bool buffered
-											,crossplatform::Texture *mainDepthTexture
-											,crossplatform::Texture* lowResDepthTexture
+											,float gamma
+											,bool doLowResBufferRender
+											,crossplatform::Texture *depthTexture
 											,const sky::float4& depthViewportXYWH
-											,bool doFinalCloudBufferToScreenComposite);
+											,bool doFinalCloudBufferToScreenComposite
+											,vec2 pixelOffset) override;
 			//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 			void EnableRain(bool e=true);
