@@ -41,7 +41,7 @@ namespace simul
 			crossplatform::RenderPlatform*			renderPlatform;
 			crossplatform::Effect*					effect;
 			crossplatform::EffectTechnique*			m_hTechniqueFlare;
-			crossplatform::Texture*				flare_texture;
+			crossplatform::Texture*					flare_texture;
 			std::vector<crossplatform::Texture*>	halo_textures;
 		protected:
 			std::string								FlareTexture;

@@ -40,7 +40,7 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 		,oceanRenderer(NULL)
 {
 	sc;
-	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
+	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x();
 	simulWeatherRenderer	=::new(memoryInterface) clouds::BaseWeatherRenderer(env,memoryInterface);
 	baseOpticsRenderer		=::new(memoryInterface) crossplatform::BaseOpticsRenderer(memoryInterface);
 	baseTerrainRenderer		=::new(memoryInterface) terrain::BaseTerrainRenderer(memoryInterface);
