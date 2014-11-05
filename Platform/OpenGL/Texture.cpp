@@ -130,7 +130,7 @@ bool opengl::Texture::IsValid() const
 void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
 	,crossplatform::PixelFormat p,bool computable,bool rendertarget,bool depthstencil,int num_samples,int aa_quality,bool wrap)
 {
-	if(w==width&&l==length)
+	if(w==width&&l==length&&pixelFormat==p)
 		return;
 GL_ERROR_CHECK
 	pixelFormat=p;

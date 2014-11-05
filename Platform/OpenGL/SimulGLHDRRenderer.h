@@ -8,6 +8,7 @@
 #pragma once
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
+#include "Simul/Platform/CrossPlatform/HdrRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/hdr_constants.sl"
@@ -19,7 +20,7 @@ namespace simul
 	namespace opengl
 	{
 		class Effect;
-		SIMUL_OPENGL_EXPORT_CLASS SimulGLHDRRenderer
+		SIMUL_OPENGL_EXPORT_CLASS SimulGLHDRRenderer:public crossplatform::HdrRenderer
 		{
 		public:
 			SimulGLHDRRenderer(int w,int h);
@@ -37,15 +38,6 @@ namespace simul
 			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext);
 			FramebufferGL framebuffer;
 		protected:
-			crossplatform::RenderPlatform *renderPlatform;
-			//__declspec(align(32))
-			crossplatform::ConstantBuffer<HdrConstants> hdrConstants;
-			FramebufferGL glow_fb;
-			FramebufferGL alt_fb;
-			bool initialized;
-			// shaders
-			crossplatform::Effect *effect;
-			crossplatform::EffectTechnique *tech;
 		};
 	}
 }

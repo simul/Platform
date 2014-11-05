@@ -37,6 +37,7 @@ namespace simul
 		protected:
 			crossplatform::RenderPlatform		*renderPlatform;
 			crossplatform::BaseFramebuffer		*glow_fb;
+			crossplatform::BaseFramebuffer		*alt_fb;
 			int Width,Height;
 			
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.

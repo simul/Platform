@@ -22,6 +22,7 @@ using namespace crossplatform;
 HdrRenderer::HdrRenderer()
 	:renderPlatform(NULL)
 	,glow_fb(NULL)
+	,alt_fb(NULL)
 	,hdr_effect(NULL)
 	,m_pGaussianEffect(NULL)
 	,Width(0)
@@ -48,10 +49,10 @@ void HdrRenderer::SetBufferSize(int w,int h)
 	Height=h;
 	if(Width>0&&Height>0)
 	{
-		glowTexture->ensureTexture2DSizeAndFormat(renderPlatform,Width/2,Height/2,crossplatform::R_32_UINT,true);
-		
-		glow_fb->SetFormat(crossplatform::RGBA_16_FLOAT);
-		glow_fb->SetWidthAndHeight(Width/2,Height/2);
+		if(glow_fb)
+			glow_fb->SetWidthAndHeight(Width/2,Height/2);
+		if(alt_fb)
+			alt_fb->SetWidthAndHeight(Width/2,Height/2);
 	}
 	RecompileShaders();
 }
@@ -60,8 +61,16 @@ void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
 	SAFE_DELETE(glow_fb);
+	SAFE_DELETE(alt_fb);
 	glow_fb=renderPlatform->CreateFramebuffer();
 	glow_fb->RestoreDeviceObjects(renderPlatform);
+	alt_fb=renderPlatform->CreateFramebuffer();
+	alt_fb->RestoreDeviceObjects(renderPlatform);
+	glow_fb->SetFormat(crossplatform::RGBA_16_FLOAT);
+	alt_fb->SetFormat(crossplatform::RGBA_16_FLOAT);
+	glow_fb->SetWidthAndHeight(Width/2,Height/2);
+	alt_fb->SetWidthAndHeight(Width/2,Height/2);
+	
 	SAFE_DELETE(glowTexture);
 	glowTexture=renderPlatform->CreateTexture();
 
@@ -247,6 +256,8 @@ void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,
 {
 //	if(!m_pGaussianEffect)
 		return;
+	glowTexture->ensureTexture2DSizeAndFormat(renderPlatform,Width/2,Height/2,crossplatform::R_32_UINT,true);
+		
 	static int g_NumApproxPasses=3;
 	static int	g_MaxApproxPasses = 8;
 	static float g_FilterRadius = 30;

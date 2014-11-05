@@ -19,10 +19,6 @@ using namespace opengl;
 
 SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h)
 	:Gamma(0.45f),Exposure(1.f)
-	,initialized(false)
-	,glow_fb(w/2,h/2,GL_TEXTURE_2D)
-	,alt_fb(w/2,h/2,GL_TEXTURE_2D)
-	,effect(NULL)
 {
 }
 
@@ -34,31 +30,26 @@ void SimulGLHDRRenderer::SetBufferSize(int w,int h)
 {
 	if(w!=framebuffer.GetWidth()||h!=framebuffer.GetHeight())
 	{
-		framebuffer.SetWidthAndHeight(w,h);
-		glow_fb.SetWidthAndHeight(w/2,h/2);
-		alt_fb.SetWidthAndHeight(w/2,h/2);
-		if(initialized)
+		HdrRenderer::SetBufferSize(w,h);
+		if(renderPlatform)
 			RestoreDeviceObjects(renderPlatform);
 	}
 }
 
 void SimulGLHDRRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	renderPlatform=r;
+	HdrRenderer::RestoreDeviceObjects(r);
 	hdrConstants.RestoreDeviceObjects(r);
 ERRNO_CHECK
-	initialized=true;
 	framebuffer.RestoreDeviceObjects(renderPlatform);
-	glow_fb.RestoreDeviceObjects(renderPlatform);
-	alt_fb.RestoreDeviceObjects(renderPlatform);
 	framebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
-	glow_fb.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
-	alt_fb.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
+	glow_fb->SetFormat(crossplatform::RGBA_32_FLOAT);
+	alt_fb->SetFormat(crossplatform::RGBA_32_FLOAT);
 ERRNO_CHECK
 	{
 		framebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
-		glow_fb.SetDepthFormat(crossplatform::D_32_FLOAT);
-		alt_fb.SetDepthFormat(crossplatform::D_32_FLOAT);
+		glow_fb->SetDepthFormat(crossplatform::D_32_FLOAT);
+		alt_fb->SetDepthFormat(crossplatform::D_32_FLOAT);
 	}
 ERRNO_CHECK
 	GL_ERROR_CHECK
@@ -69,18 +60,13 @@ ERRNO_CHECK
 void SimulGLHDRRenderer::RecompileShaders()
 {
 	GL_ERROR_CHECK
-ERRNO_CHECK
-	std::map<std::string,std::string> defines;
-	effect				=renderPlatform->CreateEffect("hdr",defines);
-	tech				=effect->GetTechniqueByName("tonemap");
-	hdrConstants.LinkToEffect(effect,"HdrConstants");
+		HdrRenderer::RecompileShaders();
+GL_ERROR_CHECK
 }
 
 void SimulGLHDRRenderer::InvalidateDeviceObjects()
 {
-	delete effect;
-	effect=NULL;
-	hdrConstants.InvalidateDeviceObjects();
+	HdrRenderer::InvalidateDeviceObjects();
 }
 
 bool SimulGLHDRRenderer::StartRender(crossplatform::DeviceContext &deviceContext)
@@ -96,17 +82,17 @@ bool SimulGLHDRRenderer::FinishRender(crossplatform::DeviceContext &deviceContex
 GL_ERROR_CHECK
 	framebuffer.Deactivate(deviceContext);
 	RenderGlowTexture(deviceContext);
-	effect->Apply(deviceContext,tech,0);
+	hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName("tonemap"),0);
 	
-	effect->SetTexture(deviceContext,"image_texture",framebuffer.GetTexture());
-	effect->SetTexture(deviceContext,"glowTexture",glow_fb.GetTexture());
+	hdr_effect->SetTexture(deviceContext,"image_texture",framebuffer.GetTexture());
+	hdr_effect->SetTexture(deviceContext,"glowTexture",glow_fb->GetTexture());
 GL_ERROR_CHECK
 	hdrConstants.exposure	=exposure;//=vec4(1.0,0,1.0,0.5);
 	hdrConstants.gamma		=gamma;
 	hdrConstants.Apply(deviceContext);
 GL_ERROR_CHECK
 	deviceContext.renderPlatform->DrawQuad(deviceContext);
-	effect->Unapply(deviceContext);
+	hdr_effect->Unapply(deviceContext);
 GL_ERROR_CHECK
 	return true;
 }
@@ -121,10 +107,10 @@ void SimulGLHDRRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceC
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	// Render to the low-res glow.
 	glDisable(GL_BLEND);
-	effect->Apply(deviceContext,effect->GetTechniqueByName("glow"),0);
-	glow_fb.Activate(deviceContext);
+	hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName("glow"),0);
+	glow_fb->Activate(deviceContext);
 	{
-		effect->SetTexture(deviceContext,"image_texture",framebuffer.GetTexture());
+		hdr_effect->SetTexture(deviceContext,"image_texture",framebuffer.GetTexture());
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
 		SetOrthoProjection(glow_viewport[2],glow_viewport[3]);
@@ -133,33 +119,33 @@ void SimulGLHDRRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceC
 		hdrConstants.Apply(deviceContext);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
-	glow_fb.Deactivate(deviceContext);
-	effect->Unapply(deviceContext);
+	glow_fb->Deactivate(deviceContext);
+	hdr_effect->Unapply(deviceContext);
 	// blur horizontally:
-	effect->Apply(deviceContext,effect->GetTechniqueByName("blur"),0);
-	alt_fb.Activate(deviceContext);
+	hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName("blur"),0);
+	alt_fb->Activate(deviceContext);
 	{
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
 		SetOrthoProjection(glow_viewport[2],glow_viewport[3]);
-		effect->SetTexture(deviceContext,"image_texture",glow_fb.GetTexture());
+		hdr_effect->SetTexture(deviceContext,"image_texture",glow_fb->GetTexture());
 		hdrConstants.offset=vec2(1.f/(float)glow_viewport[2],0.f);
 		hdrConstants.Apply(deviceContext);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
-	alt_fb.Deactivate(deviceContext);
+	alt_fb->Deactivate(deviceContext);
 
-	glow_fb.Activate(deviceContext);
+	glow_fb->Activate(deviceContext);
 	{
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
 		SetOrthoProjection(glow_viewport[2],glow_viewport[3]);
-		effect->SetTexture(deviceContext,"image_texture",alt_fb.GetTexture());
+		hdr_effect->SetTexture(deviceContext,"image_texture",alt_fb->GetTexture());
 		hdrConstants.offset=vec2(0.f,0.5f/(float)glow_viewport[3]);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
-	glow_fb.Deactivate(deviceContext);
-	effect->Unapply(deviceContext);
+	glow_fb->Deactivate(deviceContext);
+	hdr_effect->Unapply(deviceContext);
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
