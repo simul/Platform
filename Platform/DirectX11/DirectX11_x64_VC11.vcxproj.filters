@@ -42,9 +42,6 @@
     <ClCompile Include="SaveTextureDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulHDRRendererDX1x.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Utilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -113,9 +110,6 @@
     <ClInclude Include="SaveTextureDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulHDRRendererDX1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -150,6 +144,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Layout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulDirectXHeader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -189,7 +189,6 @@
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
-    <ClCompile Include="SimulHDRRendererDX1x.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
@@ -215,7 +214,6 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
     <ClInclude Include="SaveTextureDX1x.h" />
-    <ClInclude Include="SimulHDRRendererDX1x.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>

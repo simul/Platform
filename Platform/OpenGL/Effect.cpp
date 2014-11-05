@@ -106,10 +106,13 @@ GL_ERROR_CHECK
 void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *,size_t sz,void *addr)
 {
 	InvalidateDeviceObjects();
+	GL_ERROR_CHECK
 	glGenBuffers(1, &ubo);
+	GL_ERROR_CHECK
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 	glBufferData(GL_UNIFORM_BUFFER, sz, addr, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	GL_ERROR_CHECK
 	size=sz;
 }
 
@@ -223,14 +226,14 @@ void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,cons
 {
 	filename=filename_utf8;
 	bool retry=true;
+	platform_effect = (void*)0xFFFFFFFF;
 	while(retry)
 	{
 		filenameInUseUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename.c_str(),opengl::GetShaderPathsUtf8());
 		if(!filenameInUseUtf8.length())
 		{
-			std::cerr<<"Effect::Load - file not found: "<<filename.c_str()<<std::endl;
-			DebugBreak();
-			continue;
+			SIMUL_CERR<<"Effect::Load - file not found: "<<filename.c_str()<<std::endl;
+			return;
 		}
 		GLint effect		=glfxGenEffect();
 		vector<string> p	=opengl::GetShaderPathsUtf8();

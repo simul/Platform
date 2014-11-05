@@ -128,12 +128,6 @@ void HdrRenderer::RecompileShaders()
 	glowTechnique				=hdr_effect->GetTechniqueByName("simul_glow");
 	hdrConstants.LinkToEffect(hdr_effect,"HdrConstants");
 	
-
-//static const uint THREADS_PER_GROUP = 128;
-//static const uint SCAN_SMEM_SIZE = 1200;
-//static const uint TEXELS_PER_THREAD = 5;
-//static const uint NUM_IMAGE_ROWS = 1200;
-//static const uint NUM_IMAGE_COLS = 1600;
 	int W=Width;
 	int H=Height;
 	if(!H||!W)
@@ -142,13 +136,8 @@ void HdrRenderer::RecompileShaders()
 	int scan_smem_size			=1920;//max3(H,W,(int)threadsPerGroup*2);//1920;//
 	defs["SCAN_SMEM_SIZE"]		=string_format("%d",scan_smem_size);
 	defs["THREADS_PER_GROUP"]	=string_format("%d",threadsPerGroup);
-
-	//int texels_per_thread		=(std::max(H,W) + threadsPerGroup - 1) / threadsPerGroup;
-	//defs["TEXELS_PER_THREAD"]	=string_format("%d",texels_per_thread);
-	//defs["NUM_IMAGE_COLS"]		=string_format("%d",W);
-	//defs["NUM_IMAGE_ROWS"]		=string_format("%d",H);
 	
-	m_pGaussianEffect			=renderPlatform->CreateEffect("simul_gaussian",defs);
+	m_pGaussianEffect			=renderPlatform->CreateEffect("gaussian",defs);
 	hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
 	imageConstants.LinkToEffect(m_pGaussianEffect,"ImageConstants");
 }

@@ -62,7 +62,6 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	,ShowWater(true)
 	,Exposure(1.0f)
 	,simple_program(0)
-	,sceneRenderer(NULL)
 {
 	simulHDRRenderer		=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
 	simulWeatherRenderer	=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
@@ -71,8 +70,6 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	baseTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	if(!renderPlatformOpenGL)
 		renderPlatformOpenGL		=new opengl::RenderPlatform;
-	if(sc)
-		sceneRenderer		=new scene::BaseSceneRenderer(sc);
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 	
 	//sceneCache=new scene::BaseObjectRenderer(gScene,&renderPlatform);
@@ -130,7 +127,6 @@ void OpenGLRenderer::initializeGL()
 
 void OpenGLRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	clouds::TrueSkyRenderer::RestoreDeviceObjects(r);
 GL_ERROR_CHECK
 ERRNO_CHECK
     GLenum glewError = glewInit();
@@ -156,7 +152,8 @@ ERRNO_CHECK
 GL_ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
-GL_ERROR_CHECK
+	GL_ERROR_CHECK
+	clouds::TrueSkyRenderer::RestoreDeviceObjects(r);
 	renderPlatform->RestoreDeviceObjects(NULL);
 	depthFramebuffer.RestoreDeviceObjects(renderPlatform);
 	depthFramebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);

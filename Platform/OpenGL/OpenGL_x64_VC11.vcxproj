@@ -217,6 +217,7 @@
     <None Include="GLSL\clouds.glfx" />
     <None Include="GLSL\CppGlsl.hs" />
     <None Include="GLSL\debug.glfx" />
+    <None Include="GLSL\gaussian.glfx" />
     <None Include="GLSL\hdr.glfx" />
     <None Include="GLSL\illumination_buffer.frag" />
     <None Include="GLSL\lightning.glfx" />

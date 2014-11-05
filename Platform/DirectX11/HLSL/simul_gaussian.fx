@@ -111,7 +111,7 @@ inline float3 scan_top_inclusive(uint thread_id, float3 value, uint size)
 	// Grab top warp elements
 	float3 top_value = gs_ScanData[thread_id];
 
-	// Calculate exclsive scan and write back to shared memory
+	// Calculate exclusive scan and write back to shared memory
 	gs_ScanData[thread_id] = scan_warp_exclusive(thread_id, top_value, THREADS_PER_GROUP >> SCAN_LOG2_WARP_SIZE);
 
 	// Wait for the result of top element scan
@@ -129,11 +129,10 @@ inline float3 scan_top_exclusive(uint thread_id, float3 value, uint size)
 inline void scan_inclusive(uint thread_id, uint size)
 {
 	uint i;
-
 	// Each thread deals the number of "texelsPerThread" texels
 	uint location = thread_id * texelsPerThread;
 	// The lowest level (level-0) are stored in register space
-	float3 local_data[MAX_TEXELS_PER_THREAD];
+	vec3 local_data[MAX_TEXELS_PER_THREAD];
 
 	// Read back data from shared memory to register space
 	for (i = 0; i < texelsPerThread; i ++)
@@ -147,8 +146,8 @@ inline void scan_inclusive(uint thread_id, uint size)
 	GroupMemoryBarrierWithGroupSync();
 
 	// Level-1 exclusive scan
-	float3 top_value = local_data[texelsPerThread - 1];
-	float3 top_result = scan_top_exclusive(thread_id, top_value, THREADS_PER_GROUP);
+	vec3 top_value	=local_data[texelsPerThread - 1];
+	vec3 top_result	=scan_top_exclusive(thread_id, top_value, THREADS_PER_GROUP);
 
 	// Wait until top level scan finished
 	GroupMemoryBarrierWithGroupSync();

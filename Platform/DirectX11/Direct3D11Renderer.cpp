@@ -8,7 +8,7 @@
 #include "Simul/Clouds/BaseWeatherRenderer.h"
 #include "Simul/Terrain/BaseTerrainRenderer.h"
 #include "Simul/Terrain/BaseSeaRenderer.h"
-#include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
+#include "Simul/Platform/CrossPlatform/HDRRenderer.h"
 #include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
@@ -36,36 +36,23 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 		:clouds::TrueSkyRenderer(env,sc,m)
 		,ShowWaterTextures(false)
 		,ShowWater(true)
-		,simulHDRRenderer(NULL)
 		,oceanRenderer(NULL)
 {
 	sc;
-	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x();
 	simulWeatherRenderer	=::new(memoryInterface) clouds::BaseWeatherRenderer(env,memoryInterface);
 	baseOpticsRenderer		=::new(memoryInterface) crossplatform::BaseOpticsRenderer(memoryInterface);
 	baseTerrainRenderer		=::new(memoryInterface) terrain::BaseTerrainRenderer(memoryInterface);
 	baseTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
-
-#ifdef SIMUL_USE_SCENE
-	if(sc)
-		sceneRenderer			=new(memoryInterface) scene::BaseSceneRenderer(sc);
-#endif
 	ReverseDepthChanged();
 }
 
 TrueSkyRenderer::~TrueSkyRenderer()
 {
 	InvalidateDeviceObjects();
-#ifdef SIMUL_USE_SCENE
-	del(sceneRenderer,memoryInterface);
-#endif
 	del(baseOpticsRenderer,memoryInterface);
 	del(simulWeatherRenderer,memoryInterface);
-	del(simulHDRRenderer,memoryInterface);
 	del(baseTerrainRenderer,memoryInterface);
 	del(oceanRenderer,memoryInterface);
-	SAFE_DELETE(envmapFramebuffer);
-	SAFE_DELETE(cubemapFramebuffer);
 }
 
 void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -73,57 +60,14 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	clouds::TrueSkyRenderer::RestoreDeviceObjects(r);
 	renderPlatform=r;
 	if(!renderPlatform)
-	{
 		return;
-	}
 	if(!oceanRenderer&&simulWeatherRenderer&&(simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
 	{
 		oceanRenderer			=new(memoryInterface) terrain::BaseSeaRenderer(simulWeatherRenderer->GetEnvironment()->seaKeyframer);
 		oceanRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetEnvironment()->skyKeyframer);
 	}
-	SAFE_DELETE(envmapFramebuffer);
-	envmapFramebuffer= renderPlatform->CreateFramebuffer();
-	envmapFramebuffer->SetFormat(crossplatform::RGBA_16_FLOAT);
-	envmapFramebuffer->SetDepthFormat(crossplatform::UNKNOWN);
-	SAFE_DELETE(msaaFramebuffer);
-	msaaFramebuffer=renderPlatform->CreateFramebuffer();
-	msaaFramebuffer->RestoreDeviceObjects(renderPlatform);
-	//Set a global device pointer for use by various classes.
-	viewManager.RestoreDeviceObjects(renderPlatform);
-	lightProbeConstants.RestoreDeviceObjects(renderPlatform);
-	if(simulHDRRenderer)
-		simulHDRRenderer->RestoreDeviceObjects(renderPlatform);
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->RestoreDeviceObjects(renderPlatform);
-	if(baseOpticsRenderer)
-		baseOpticsRenderer->RestoreDeviceObjects(renderPlatform);
-	if(baseTerrainRenderer)
-		baseTerrainRenderer->RestoreDeviceObjects(renderPlatform);
 	if(oceanRenderer)
 		oceanRenderer->RestoreDeviceObjects(renderPlatform);
-#ifdef SIMUL_USE_SCENE
-	if(sceneRenderer)
-		sceneRenderer->RestoreDeviceObjects(renderPlatform);
-#endif
-	SAFE_DELETE(cubemapFramebuffer);
-	cubemapFramebuffer= renderPlatform->CreateFramebuffer();
-	cubemapFramebuffer->SetFormat(crossplatform::RGBA_16_FLOAT);
-	cubemapFramebuffer->SetDepthFormat(crossplatform::D_32_FLOAT);
-	cubemapFramebuffer->SetAsCubemap(32);
-	cubemapFramebuffer->RestoreDeviceObjects(renderPlatform);
-	envmapFramebuffer->SetAsCubemap(8);
-	envmapFramebuffer->RestoreDeviceObjects(renderPlatform);
-	//envmapFramebuffer->Clear(pContext,0.f,0.f,0.f,1.f,0.f);
-	if(renderPlatform)
-	{
-		crossplatform::DeviceContext deviceContext=renderPlatform->GetImmediateContext();
-		cubemapFramebuffer->Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
-		envmapFramebuffer->Clear(deviceContext, 0.5f, 0.5f, 0.5, 0.f, 0.f);
-	}
-	//if(!demoOverlay)
-	//	demoOverlay=new crossplatform::DemoOverlay();
-	if(demoOverlay)
-	demoOverlay->RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 }
 
@@ -747,34 +691,12 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 {
 	if(!renderPlatform)
 		return;
-#ifdef SIMUL_USE_SCENE
-	if(sceneRenderer)
-		sceneRenderer->InvalidateDeviceObjects();
-#endif
 	if(demoOverlay)
 		demoOverlay->InvalidateDeviceObjects();
 	std::cout<<"TrueSkyRenderer::OnD3D11LostDevice"<<std::endl;
 	Profiler::GetGlobalProfiler().Uninitialize();
-	SAFE_DELETE(msaaFramebuffer);
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->InvalidateDeviceObjects();
-	if(simulHDRRenderer)
-		simulHDRRenderer->InvalidateDeviceObjects();
-	if(baseOpticsRenderer)
-		baseOpticsRenderer->InvalidateDeviceObjects();
-	if(baseTerrainRenderer)
-		baseTerrainRenderer->InvalidateDeviceObjects();
 	if(oceanRenderer)
 		oceanRenderer->InvalidateDeviceObjects();
-#ifdef SIMUL_USE_SCENE
-	if(sceneRenderer)
-		sceneRenderer->InvalidateDeviceObjects();
-#endif
-	viewManager.Clear();
-	cubemapFramebuffer->InvalidateDeviceObjects();
-	SAFE_DELETE(lightProbesEffect);
-	SAFE_DELETE(linearizeDepthEffect);
-	SAFE_DELETE(linearDepthTexture);
 	clouds::TrueSkyRenderer::InvalidateDeviceObjects();
 	renderPlatform=NULL;
 }

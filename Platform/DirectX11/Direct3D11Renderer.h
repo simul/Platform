@@ -36,11 +36,6 @@ namespace simul
 		struct DeviceContext;
 		class DemoOverlay;
 	}
-	namespace scene
-	{
-		class Scene;
-		class BaseSceneRenderer;
-	}
 	namespace terrain
 	{
 		class BaseTerrainRenderer;
@@ -48,7 +43,6 @@ namespace simul
 	}
 	namespace dx11
 	{
-		class SimulHDRRendererDX1x;
 		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
 		class SIMUL_DIRECTX11_EXPORT TrueSkyRenderer:public clouds::TrueSkyRenderer
 		{
@@ -64,7 +58,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void Render(int view_id,ID3D11DeviceContext* pContext);
 			///////////////////////////
-			class SimulHDRRendererDX1x *GetSimulHDRRenderer()
+			crossplatform::HdrRenderer *GetSimulHDRRenderer()
 			{
 				return simulHDRRenderer;
 			}
@@ -100,7 +94,6 @@ namespace simul
 			void EnsureCorrectBufferSizes(int view_id);
 			
 			terrain::BaseSeaRenderer					*oceanRenderer;
-			SimulHDRRendererDX1x						*simulHDRRenderer;
 		};
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface

@@ -399,5 +399,8 @@
     <None Include="GLSL\lightning.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\gaussian.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

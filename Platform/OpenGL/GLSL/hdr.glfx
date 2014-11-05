@@ -1,7 +1,7 @@
 #include "CppGlSl.hs"
 #include "../../CrossPlatform/SL/hdr_constants.sl"
 
-uniform sampler2D image_texture;
+uniform sampler2D imageTexture;
 uniform sampler2D glowTexture;
 
 shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
@@ -20,12 +20,12 @@ shader PS_Glow(in vec2 texCoords, out vec4 FragColor)
 {
     // original image has double the resulution, so we sample 2x2
     vec4 c=vec4(0,0,0,0);
-	c+=texture2D(image_texture,texCoords+offset/2.0);
-	c+=texture2D(image_texture,texCoords-offset/2.0);
+	c+=texture2D(imageTexture,texCoords+offset/2.0);
+	c+=texture2D(imageTexture,texCoords-offset/2.0);
 	vec2 offset2=offset;
 	offset2.x=-offset.x;
-	c+=texture2D(image_texture,texCoords+offset2/2.0);
-	c+=texture2D(image_texture,texCoords-offset2/2.0);
+	c+=texture2D(imageTexture,texCoords+offset2/2.0);
+	c+=texture2D(imageTexture,texCoords-offset2/2.0);
 	c=c*exposure/4.0;
 	c-=1.0*vec4(1.0,1.0,1.0,1.0);
 	c=clamp(c,vec4(0.0,0.0,0.0,0.0),vec4(10.0,10.0,10.0,10.0));
@@ -43,7 +43,7 @@ shader PS_Blur(in vec2 texCoords, out vec4 FragColor)
 		vec2 t=texCoords+d;
 		float ii=float(i*i);
 		float str=0.04*exp(-ii/125.0);
-		vec4 c=str*texture2D(image_texture,t);
+		vec4 c=str*texture2D(imageTexture,t);
 		colour+=c;
 	}
     FragColor=colour;
@@ -51,22 +51,22 @@ shader PS_Blur(in vec2 texCoords, out vec4 FragColor)
 
 shader PS_Tonemap(in vec2 texCoords, out vec4 FragColour)
 {
-    vec4 c = texture2D(image_texture,texCoords);
-	/*
+    vec4 c = texture2D(imageTexture,texCoords);
+	
 	c.rgb*=exposure;
-	vec4 glow=texture2D(glowTexture,texCoords);
+	/*	vec4 glow=texture2D(glowTexture,texCoords);
 	c.rgb+=glow.rgb;*/
 	c.rgb = pow(c.rgb,vec3(gamma,gamma,gamma));
-	//c.a=1.0-pow(1.0-c.a,gamma);
+	c.a=1.0-pow(1.0-c.a,gamma);
     FragColour=c;
 }
 
-technique tonemap
+technique exposure_gamma
 {
-	pass p0
+	pass main
 	{
 		vs(430) = VS_FullScreen();
-		SetPixelShader(PS_Tonemap);
+		fs(430) = PS_Tonemap();
 	}
 };
 

@@ -581,6 +581,12 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 		return GL_RGBA8_SNORM;
 	case R_8_UNORM:
 		return GL_R8;// not GL_R...!
+	case R_32_UINT:
+		return GL_R32UI;
+	case RG_32_UINT:
+		return GL_RG32UI;
+	case RGB_32_UINT:
+		return GL_RGB32UI;
 	case D_32_FLOAT:
 		return GL_DEPTH_COMPONENT32F;
 	case D_16_UNORM:
@@ -603,6 +609,12 @@ GLuint RenderPlatform::ToGLExternalFormat(crossplatform::PixelFormat p)
 		return GL_RGB;
 	case RGBA_32_UINT:
 		return GL_RGBA_INTEGER;
+	case R_32_UINT:
+		return GL_RED_INTEGER;
+	case RG_32_UINT:
+		return GL_RG_INTEGER;
+	case RGB_32_UINT:
+		return GL_RGB_INTEGER;
 	case RG_32_FLOAT:
 		return GL_RG;
 	case R_16_FLOAT:

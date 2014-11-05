@@ -64,9 +64,6 @@ namespace simul
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			void ReverseDepthChanged();
 			SimulGLHDRRenderer *simulHDRRenderer;
-			simul::crossplatform::BaseOpticsRenderer *baseOpticsRenderer;
-			class simul::terrain::BaseTerrainRenderer *baseTerrainRenderer;
-			scene::BaseSceneRenderer *sceneRenderer;
 			FramebufferGL depthFramebuffer;
 			simul::crossplatform::Camera *cam;
 			int ScreenWidth,ScreenHeight;

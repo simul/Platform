@@ -31,6 +31,7 @@ void SimulGLHDRRenderer::SetBufferSize(int w,int h)
 	if(w!=framebuffer.GetWidth()||h!=framebuffer.GetHeight())
 	{
 		HdrRenderer::SetBufferSize(w,h);
+		framebuffer.SetWidthAndHeight(w, h);
 		if(renderPlatform)
 			RestoreDeviceObjects(renderPlatform);
 	}
@@ -72,28 +73,17 @@ void SimulGLHDRRenderer::InvalidateDeviceObjects()
 bool SimulGLHDRRenderer::StartRender(crossplatform::DeviceContext &deviceContext)
 {
 	framebuffer.Activate(deviceContext);
-	framebuffer.Clear(deviceContext, 1.f, 0.f, 0.f, 1.f, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	framebuffer.Clear(deviceContext, 0.f, 0.f, 0.f, 1.f, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	GL_ERROR_CHECK
 	return true;
 }
 
 bool SimulGLHDRRenderer::FinishRender(crossplatform::DeviceContext &deviceContext,float exposure,float gamma)
 {
-GL_ERROR_CHECK
+	GL_ERROR_CHECK
 	framebuffer.Deactivate(deviceContext);
 	RenderGlowTexture(deviceContext);
-	hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName("tonemap"),0);
-	
-	hdr_effect->SetTexture(deviceContext,"image_texture",framebuffer.GetTexture());
-	hdr_effect->SetTexture(deviceContext,"glowTexture",glow_fb->GetTexture());
-GL_ERROR_CHECK
-	hdrConstants.exposure	=exposure;//=vec4(1.0,0,1.0,0.5);
-	hdrConstants.gamma		=gamma;
-	hdrConstants.Apply(deviceContext);
-GL_ERROR_CHECK
-	deviceContext.renderPlatform->DrawQuad(deviceContext);
-	hdr_effect->Unapply(deviceContext);
-GL_ERROR_CHECK
+	Render(deviceContext, framebuffer.GetTexture(), exposure, gamma);
 	return true;
 }
 

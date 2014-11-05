@@ -225,8 +225,8 @@ shader PS_CrossSection(in vec2 texCoords, out vec4 FragColor)
 
 program layers
 {
-    SetVertexShader(VS_Layers);
-    SetFragmentShader(PS_Layers);
+	SetVertexShader(430, VS_Layers);
+	SetFragmentShader(430, PS_Layers);
 };
 
 program layers_depth
@@ -243,8 +243,8 @@ program cloud_shadow
 
 program cross_section
 {
-    SetVertexShader(VS_CrossSection);
-    SetFragmentShader(PS_CrossSection);
+	SetVertexShader(430,VS_CrossSection);
+	SetFragmentShader(430,PS_CrossSection);
 };
 
 program noise
