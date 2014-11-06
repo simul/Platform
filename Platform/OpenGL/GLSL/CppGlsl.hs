@@ -68,7 +68,7 @@
 	{
 		return m*v;
 	}
-	#if USE_GL_COMPUTE_SHADER
+	#ifdef USE_GL_COMPUTE_SHADER
 		#define CS_LAYOUT(u,v,w) layout(local_size_x=u,local_size_y=v,local_size_z=w) in;
 	#else
 		#define CS_LAYOUT(u,v,w)
