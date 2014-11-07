@@ -5,7 +5,6 @@
 // These definitions translate the HLSL terms cbuffer and R0 for GLSL or C++
 #define SIMUL_BUFFER_REGISTER(buff_num)
 #define SIMUL_SAMPLER_REGISTER(buff_num)
-#define SIMUL_BUFFER_REGISTER(buff_num)
 #define SIMUL_TARGET_OUTPUT
 #define SIMUL_RENDERTARGET_OUTPUT(n)
 #define	SIMUL_DEPTH_OUTPUT
