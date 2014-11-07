@@ -1,5 +1,5 @@
 #include "CppHLSL.hlsl"
-#include "states.hlsl"
+#include "../../CrossPlatform/SL/render_states.sl"
 Texture2D nearFarTexture : register(t3);
 Texture2D cloudGodraysTexture;
 Texture2D rainMapTexture;

@@ -1,8 +1,8 @@
 #include "CppHlsl.hlsl"
-#include "states.hlsl"
+#include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/lightning_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
-#include "states.hlsl"
+#include "../../CrossPlatform/SL/render_states.sl"
 
 Texture2D lightningTexture;
 Texture2D depthTexture;

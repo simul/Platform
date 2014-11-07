@@ -686,11 +686,11 @@ ERRNO_CHECK
 	{
 		char *errs=(char*)errorMsgs->GetBufferPointer();
 		std::string err(errs);
-		int pos=0;
+		int pos = 0;
+		int last = pos;
+		pos = (int)err.find("\n");
 		while(pos>=0&&pos<(int)err.length())
 		{
-			int last=pos;
-			pos=(int)err.find("\n",pos+1);
 			std::string line=err.substr(last,pos-last);
 			if(line.find(":")>3)
 			{
@@ -701,7 +701,9 @@ ERRNO_CHECK
 				path+="/";
 				line=path+line;
 			}
-			std::cerr<<line.c_str()<<std::endl;
+			std::cerr << line.c_str() << std::endl;
+			last = pos + 1;
+			pos = (int)err.find("\n", pos + 1);
 		};//text_filename_utf8.c_str()<<
 	}
 	if(binaryBlob)

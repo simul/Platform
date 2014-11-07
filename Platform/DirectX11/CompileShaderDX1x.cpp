@@ -20,17 +20,24 @@ namespace simul
 
 using namespace simul::dx11;
 
+ShaderIncludeHandler::ShaderIncludeHandler(const char* shaderDirUtf8, const char* systemDirUtf8)
+	: m_ShaderDirUtf8(shaderDirUtf8), m_SystemDirUtf8(systemDirUtf8)
+{
+	m_pathsUtf8 = shaderPathsUtf8;
+	m_pathsUtf8.push_back(shaderDirUtf8);
+	m_pathsUtf8.push_back(systemDirUtf8);
+}
 
 HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
 {
 	try
 	{
-ERRNO_CHECK
+		ERRNO_CHECK
 		std::string finalPathUtf8;
 		switch(IncludeType)
 		{
 		case D3D_INCLUDE_LOCAL:
-			finalPathUtf8	=m_ShaderDirUtf8+"\\"+pFileNameUtf8;
+			finalPathUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(pFileNameUtf8, m_pathsUtf8); //m_ShaderDirUtf8 + "\\" + pFileNameUtf8;
 			break;
 		case D3D_INCLUDE_SYSTEM:
 			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;
@@ -46,6 +53,14 @@ ERRNO_CHECK
 		*pBytes = (UINT)fileSize;
 		if(!*ppData)
 			return E_FAIL;
+		std::string pathOnly = finalPathUtf8;
+		int last_slash = pathOnly.find_last_of("/");
+		int last_bslash = pathOnly.find_last_of("\\");
+		if (last_bslash>last_slash)
+			last_slash = last_bslash;
+		if (last_slash>0)
+			pathOnly = pathOnly.substr(0, last_slash);
+		m_pathsUtf8.push_back(pathOnly);
 		return S_OK;
 	}
 	catch(std::exception& e)
@@ -61,6 +76,13 @@ HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
 	return S_OK;
 }
 
+DetectChangesIncludeHandler::DetectChangesIncludeHandler(const char* shaderDirUtf8, double binaryTime )
+	: m_ShaderDirUtf8(shaderDirUtf8), lastCompileTime(binaryTime), newest(0.0)
+{
+	m_pathsUtf8 = shaderPathsUtf8;
+	m_pathsUtf8.push_back(shaderDirUtf8);
+}
+
 HRESULT __stdcall DetectChangesIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
 {
 	try
@@ -70,7 +92,7 @@ ERRNO_CHECK
 		switch(IncludeType)
 		{
 		case D3D_INCLUDE_LOCAL:
-			finalPathUtf8	=m_ShaderDirUtf8+"\\"+pFileNameUtf8;
+			finalPathUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(pFileNameUtf8, m_pathsUtf8); //m_ShaderDirUtf8 + "\\" + pFileNameUtf8;
 			break;
 		case D3D_INCLUDE_SYSTEM:
 			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;
@@ -93,6 +115,14 @@ ERRNO_CHECK
 		*pBytes = (UINT)fileSize;
 		if(!*ppData)
 			return E_FAIL;
+		std::string pathOnly = finalPathUtf8;
+		int last_slash = pathOnly.find_last_of("/");
+		int last_bslash = pathOnly.find_last_of("\\");
+		if (last_bslash>last_slash)
+			last_slash = last_bslash;
+		if (last_slash>0)
+			pathOnly = pathOnly.substr(0, last_slash);
+		m_pathsUtf8.push_back(pathOnly);
 		return S_OK;
 	}
 	catch(std::exception& e)
@@ -107,8 +137,6 @@ HRESULT __stdcall DetectChangesIncludeHandler::Close(LPCVOID pData)
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
 	return S_OK;
 }
-
-
 
 HRESULT CompileShaderFromFile( const char* filename_utf8, const char* szEntryPoint, const char* szShaderModel, ID3DBlob** ppBlobOut )
 {

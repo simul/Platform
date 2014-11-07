@@ -1,5 +1,5 @@
 #include "CppHlsl.hlsl"
-#include "states.hlsl"
+#include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/text_constants.sl"
 Texture2D fontTexture;

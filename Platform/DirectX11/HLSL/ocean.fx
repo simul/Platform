@@ -1,5 +1,5 @@
 #include "CppHLSL.hlsl"
-#include "states.hlsl"
+#include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/ocean_constants.sl"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"

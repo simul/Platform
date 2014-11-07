@@ -1,5 +1,5 @@
 #include "CppHlsl.hlsl"
-#include "states.hlsl"
+#include "../../CrossPlatform/SL/render_states.sl"
 uniform sampler2D imageTexture;
 uniform sampler2D noiseTexture;
 uniform sampler2D coverageTexture;

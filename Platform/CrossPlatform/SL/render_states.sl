@@ -155,12 +155,6 @@ BlendState SubtractBlend
 	DestBlend		=ONE;
 };
 
-BlendState DontBlend
-{
-	BlendEnable[0] = FALSE;
-	BlendEnable[1]	=FALSE;
-};
-
 RasterizerState RenderNoCull
 {
 	CullMode = none;
@@ -188,6 +182,13 @@ RasterizerState wireframeRasterizer
 	ScissorEnable				= false;
 	MultisampleEnable			= false;
 	AntialiasedLineEnable		= true;
+};
+
+
+BlendState DontBlend
+{
+	BlendEnable[0] = FALSE;
+	BlendEnable[1]	=FALSE;
 };
 
 BlendState NoBlend

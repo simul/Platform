@@ -1,0 +1,38 @@
+#include "CppGlSl.hs"
+#include "../../CrossPlatform/SL/hdr_constants.sl"
+
+uniform sampler2D imageTexture;
+uniform sampler2D glowTexture;
+
+shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
+{
+	vec2 poss[4];
+	poss[0]		=vec2(1.0, 0.0);
+	poss[1]		=vec2(1.0, 1.0);
+	poss[2]		=vec2(0.0, 0.0);
+	poss[3]		=vec2(0.0, 1.0);
+	vec2 pos	=poss[gl_VertexID];
+	gl_Position	=vec4(vec2(-1.0,-1.0)+2.0*pos.xy,1.0,1.0);
+    texCoords	=pos.xy;
+}
+
+shader PS_Tonemap(in vec2 texCoords, out vec4 FragColour)
+{
+    vec4 c = texture2D(imageTexture,texCoords);
+	
+	c.rgb*=exposure;
+	/*	vec4 glow=texture2D(glowTexture,texCoords);
+	c.rgb+=glow.rgb;*/
+	c.rgb = pow(c.rgb,vec3(gamma,gamma,gamma));
+	c.a=1.0-pow(1.0-c.a,gamma);
+    FragColour=c;
+}
+
+technique tonemap
+{
+	pass p0
+	{
+		vs(430) = VS_FullScreen();
+		fs(430) = PS_Tonemap();
+	}
+};

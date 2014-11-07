@@ -3,12 +3,17 @@
 #include "../../CrossPlatform/SL/cloud_shadow.sl"
 uniform sampler2DArray textureArray;
 
+interface VSOutput
+{
+	vec3 wPosition;
+	vec2 texcoord;
+};
 
-shader VS_Terrain(in vec3 vertex,out vec3 wPosition,out vec2 texcoord)
+shader VS_Terrain(in vec3 vertex, out VSOutput OUT)
 {
     gl_Position		=worldViewProj*vec4(vertex,1.0);
-	wPosition		=vertex;
-	texcoord		=vec2(wPosition.xy/2000.0);
+	OUT.wPosition = vertex;
+	OUT.texcoord = vec2(OUT.wPosition.xy / 2000.0);
 }
 
 shader GS_Terrain()
@@ -62,14 +67,14 @@ float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 	return diffuse;
 }
 
-shader PS_Terrain(in vec3 wPosition,in vec2 texcoord,out vec4 FragColour)
+shader PS_Terrain(in VSOutput IN, out vec4 FragColour)
 {
 	vec4 result;
-	vec2 texcoord=vec2(wPosition.xy/2000.0);
-	vec4 layer1=texture(textureArray,vec3(texcoord,0.0));
-	vec4 layer2=texture(textureArray,vec3(texcoord,1.0));
-	vec4 texel=mix(layer1,layer2,clamp(1.0-wPosition.z/100.0,0.0,1.0));
-	result.rgb=texel.rgb*lightDir.z*sunlight;
+	vec2 texcoord	= vec2(IN.wPosition.xy / 2000.0);
+	vec4 layer1 = texture(textureArray, vec3(IN.texcoord, 0.0));
+	vec4 layer2 = texture(textureArray, vec3(IN.texcoord, 1.0));
+	vec4 texel = mix(layer1, layer2, clamp(1.0 - IN.wPosition.z / 100.0, 0.0, 1.0));
+	result.rgb		=texel.rgb*lightDir.z*sunlight;
 	// Distance
 	result.a=1.0;
     FragColour=result;

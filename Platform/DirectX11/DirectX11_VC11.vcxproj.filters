@@ -22,6 +22,9 @@
     <Filter Include="HLSL">
       <UniqueIdentifier>{6e6134bb-9684-4650-8c68-4dcd8bd337e4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SFX">
+      <UniqueIdentifier>{94ec42ba-dd71-435c-808d-a241878d2262}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CompileShaderDX1x.cpp">
@@ -360,6 +363,9 @@
     </None>
     <None Include="..\CrossPlatform\SL\debug_constants.sl">
       <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\hdr.sfx">
+      <Filter>SFX</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

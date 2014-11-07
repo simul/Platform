@@ -1,5 +1,5 @@
 #include "CppHlsl.hlsl"
-#include "states.hlsl"
+#include "../../CrossPlatform/SL/render_states.sl"
 float particleZoneSize=15.0;	// = 625 m^3
 // Brittanica.com: http://www.britannica.com/EBchecked/topic/489827/rain#ref259264
 // Concentrations of raindrops typically range from 100 to 1,000 per cubic m (3 to 30 per cubic foot);

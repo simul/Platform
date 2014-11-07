@@ -1,22 +1,22 @@
 #include "CppGlsl.hs"
 uniform sampler2D imageTexture;
+uniform sampler2D noiseTexture;
 uniform sampler2D coverageTexture;
 uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylTexture;
-uniform sampler2D noiseTexture;
 uniform sampler2D depthTexture;
 uniform sampler2D illuminationTexture;
 
+#include "../../CrossPlatform/SL/simul_2d_clouds.hs"
+
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
-#include "../../CrossPlatform/SL/depth.sl"
-
-#include "../../CrossPlatform/SL/simul_2d_clouds.hs"
 #include "../../CrossPlatform/SL/earth_shadow.sl"
 #include "../../CrossPlatform/SL/earth_shadow_fade.sl"
 #include "../../CrossPlatform/SL/simul_2d_clouds.sl"
 #include "../../CrossPlatform/SL/simul_2d_cloud_detail.sl"
+#include "../../CrossPlatform/SL/depth.sl"
 
 uniform vec4 rect;
 

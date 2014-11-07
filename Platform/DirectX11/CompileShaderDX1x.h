@@ -11,18 +11,17 @@
 #endif
 #endif
 #include <string>
+#include <vector>
 
 //! An include-handler for Direct3D 11 shader compilation.
 class ShaderIncludeHandler : public ID3DInclude
 {
 public:
-	ShaderIncludeHandler(const char* shaderDirUtf8, const char* systemDirUtf8)
-		: m_ShaderDirUtf8(shaderDirUtf8), m_SystemDirUtf8(systemDirUtf8)
-	{
-	}
+	ShaderIncludeHandler(const char* shaderDirUtf8, const char* systemDirUtf8);
 	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType,LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
 	HRESULT __stdcall Close(LPCVOID pData);
 private:
+	std::vector<std::string> m_pathsUtf8;
 	std::string m_ShaderDirUtf8;
 	std::string m_SystemDirUtf8;
 };
@@ -31,10 +30,7 @@ private:
 class DetectChangesIncludeHandler : public ID3DInclude
 {
 public:
-	DetectChangesIncludeHandler(const char* shaderDirUtf8,double binaryTime=0.0)
-		: m_ShaderDirUtf8(shaderDirUtf8), lastCompileTime(binaryTime),newest(0.0)
-	{
-	}
+	DetectChangesIncludeHandler(const char* shaderDirUtf8, double binaryTime = 0.0);
 	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType,LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
 	HRESULT __stdcall Close(LPCVOID pData);
 	double GetNewestIncludeDateJDN() const
@@ -42,6 +38,7 @@ public:
 		return newest;
 	}
 private:
+	std::vector<std::string> m_pathsUtf8;
 	std::string m_ShaderDirUtf8;
 	std::string m_SystemDirUtf8;
 	double lastCompileTime;

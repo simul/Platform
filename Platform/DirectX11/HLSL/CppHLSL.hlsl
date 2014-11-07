@@ -3,6 +3,10 @@
 #include "../../CrossPlatform/SL/CppSl.hs"
 
 #ifndef __cplusplus
+
+#define shader
+#define technique technique11
+
 #define texture_clamp_mirror(tex,texc) tex.Sample(samplerStateClampMirror,texc)
 #define texture_clamp(tex,texc) tex.Sample(clampSamplerState,texc)
 #define texture_wrap_clamp(tex,texc) tex.Sample(wrapClampSamplerState,texc)

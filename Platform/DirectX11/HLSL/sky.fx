@@ -34,7 +34,7 @@ cbuffer cbPerObject : register(b11)
 	vec4 rect;
 };
 
-#include "states.hlsl"
+#include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
 #include "../../CrossPlatform/SL/earth_shadow.sl"

@@ -1,5 +1,5 @@
 #include "CppHlsl.hlsl"
-#include "states.hlsl"
+#include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/spherical_harmonics_constants.sl"
 #include "../../CrossPlatform/SL/noise.sl"
 #include "../../CrossPlatform/SL/spherical_harmonics.sl"

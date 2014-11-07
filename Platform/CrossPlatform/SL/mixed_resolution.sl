@@ -186,7 +186,7 @@ vec4 DownscaleDepthFarNear_MSAA4(Texture2DMS<float4> sourceMSDepthTexture,uint2 
 	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
 	int2 pos2					=pos*scale;
 	pos2-=cornerOffset;
-	pos2=max(int2(1,1),min(pos2,source_dims-int2(3,3)));
+	pos2=max(int2(1,1),min(pos2,(int2)source_dims-int2(3,3)));
 	pos2+=source_offset;
 #if REVERSE_DEPTH==1
 	vec2 farthest_nearest		=vec2(1.0,0.0);

@@ -227,26 +227,42 @@ void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,cons
 	filename=filename_utf8;
 	bool retry=true;
 	platform_effect = (void*)0xFFFFFFFF;
-	while(retry)
+	while (retry)
 	{
-		filenameInUseUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename.c_str(),opengl::GetShaderPathsUtf8());
-		if(!filenameInUseUtf8.length())
+		filenameInUseUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename.c_str(), opengl::GetShaderPathsUtf8());
+		if (!filenameInUseUtf8.length())
 		{
-			SIMUL_CERR<<"Effect::Load - file not found: "<<filename.c_str()<<std::endl;
+			SIMUL_CERR << "Effect::Load - file not found: " << filename.c_str() << std::endl;
 			return;
 		}
-		GLint effect		=glfxGenEffect();
-		vector<string> p	=opengl::GetShaderPathsUtf8();
-		const char **paths	=new const char *[p.size()+1];
-		for(int i=0;i<p.size();i++)
-			paths[i]		=p[i].c_str();
-		paths[p.size()]=NULL;
-		if(!glfxParseEffectFromFile(effect,filename_utf8,paths))
+		GLint effect = glfxGenEffect();
+		vector<string> p = opengl::GetShaderPathsUtf8();
+
+		const char **paths = new const char *[p.size() + 1];
+		for (int i = 0; i < p.size(); i++)
+			paths[i] = p[i].c_str();
+		paths[p.size()] = NULL;
+
+
+		const char **macros = new const char *[defines.size() + 1];
+		const char **defs = new const char *[defines.size() + 1];
+		const char **m = macros, **d = defs;
+		for (map<string, string>::const_iterator i = defines.begin(); i != defines.end(); i++)
+		{
+			*m = i->first.c_str();
+			*d = i->second.c_str();
+			m++;
+			d++;
+		}
+		*m=*d = NULL;
+
+		if (!glfxParseEffectFromFile(effect, filename_utf8, paths, macros,defs))
 		{
 			std::string log	=glfxGetEffectLog(effect);
 			std::cerr<<log<<std::endl;
 		}
 		delete paths;
+		delete defs;
 		platform_effect		=(void*)effect;
 	// If any technique fails, we don't want to proceed until the problem is fixed.
 		if(!FillInTechniques()&&IsDebuggerPresent())
