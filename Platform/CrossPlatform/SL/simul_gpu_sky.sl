@@ -181,7 +181,7 @@ float getDistanceToSpace(float sine_elevation,float h_km)
 
 vec4 PSLoss(Texture2D input_loss_texture,Texture2D density_texture,vec2 texCoords)
 {
-	vec4 previous_loss	=texture_clamp_lod(input_loss_texture,texCoords,0);
+	vec4 previous_loss	=texture(input_loss_texture,texCoords);
 	float sin_e			=clamp(1.0-2.0*(texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texCoords.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
@@ -197,7 +197,7 @@ vec4 PSLoss(Texture2D input_loss_texture,Texture2D density_texture,vec2 texCoord
 	float alt_km		=r-planetRadiusKm;
 	// lookups is: dens_factor,ozone_factor,haze_factor;
 	float dens_texc		=clamp((alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x,0.0,1.0);
-	vec4 lookups		=texture_clamp_lod(density_texture,vec2(dens_texc,dens_texc),0);
+	vec4 lookups		=texture(density_texture,vec2(dens_texc,dens_texc));
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
@@ -312,7 +312,7 @@ vec4 Skyl(Texture3D insc_texture
 	skyl.rgb			*=vec3(1.0,1.0,1.0)-loss;
 	float mie_factor	=exp(-skyl.w*stepLengthKm*haze_factor*hazeMie.x);
 	skyl.w				=saturate((1.0-mie_factor)/(1.0-total_ext.x+0.0001));
-//
+#if 1//def BLACKBODY
 	float dens_dist		=dens_factor*stepLengthKm;
 	float emis_ext		=exp(-emissivity*dens_dist);
 	vec3 bb;
@@ -322,7 +322,7 @@ vec4 Skyl(Texture3D insc_texture
 	skyl				*=emis_ext;
 	bb					*=1.0-emis_ext;
 	skyl.rgb			+=bb;
- //
+ #endif
 	//skyl.w			=(loss.w)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 	skyl.rgb			*=previous_loss.rgb;
 	skyl.rgb			+=previous_skyl.rgb;

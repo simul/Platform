@@ -272,50 +272,11 @@ void dx11::Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 	pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView);
 	SAFE_RELEASE(stagingBuffer);
 }
-static DXGI_FORMAT GetSrvFormat(DXGI_FORMAT main_format)
-{
-	DXGI_FORMAT srvFormat = main_format;
-	if (main_format == DXGI_FORMAT_D32_FLOAT || main_format == DXGI_FORMAT_R32_TYPELESS)
-	{
-		srvFormat = DXGI_FORMAT_R32_FLOAT;
-	}
-	else if (main_format == DXGI_FORMAT_D16_UNORM || main_format == DXGI_FORMAT_R16_TYPELESS)
-	{
-		srvFormat = DXGI_FORMAT_R16_UNORM;
-	}
-	else if(main_format == DXGI_FORMAT_R16G16B16A16_TYPELESS)
-	{
-		srvFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	}
-	else if(main_format == DXGI_FORMAT_R32G32B32A32_TYPELESS)
-	{
-		srvFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	}
-	else if (main_format == DXGI_FORMAT_R16G16_TYPELESS)
-	{
-		srvFormat = DXGI_FORMAT_R16G16_FLOAT;
-	}
-	else if (main_format == DXGI_FORMAT_R32G32B32_TYPELESS)
-	{
-		srvFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-	}
-	else if (main_format == DXGI_FORMAT_R32G32_TYPELESS)
-	{
-		srvFormat = DXGI_FORMAT_R32G32_FLOAT;
-	}
-	else if(main_format == DXGI_FORMAT_R8G8B8A8_TYPELESS)
-	{
-		srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-	}
-	return srvFormat;
-}
 
 void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv)
 {
 	if(shaderResourceView)
 		SAFE_RELEASE(shaderResourceView);
-	if (texture == t)
-		return;
 	texture=t;
 	shaderResourceView=srv;
 	if(shaderResourceView)
@@ -325,23 +286,17 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 		texture->AddRef();
 		ID3D11Texture2D* ppd(NULL);
 		D3D11_TEXTURE2D_DESC textureDesc;
-		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
 		{
 			ppd->GetDesc(&textureDesc);
 			width=textureDesc.Width;
-			length = textureDesc.Height;
-			srv_desc.Format = GetSrvFormat(textureDesc.Format);
-			srv_desc.ViewDimension = textureDesc.SampleDesc.Count>1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
-			srv_desc.Texture2D.MipLevels = textureDesc.MipLevels;
-			srv_desc.Texture2D.MostDetailedMip = 0;
+			length=textureDesc.Height;
 		}
 		SAFE_RELEASE(ppd);
 		if(!srv)
 		{
-			V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &srv_desc, &shaderResourceView));
-		}
+			V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, NULL,&shaderResourceView));
+	}
 	}
 	depth=1;
 	dim=2;
@@ -409,6 +364,7 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 		V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
 	}
 }
+
 void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
 												 ,int w,int l
 												 ,crossplatform::PixelFormat f
@@ -418,7 +374,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	pixelFormat=f;
 	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	DXGI_FORMAT texture2dFormat=format;
-	DXGI_FORMAT srvFormat=GetSrvFormat(format);
+	DXGI_FORMAT srvFormat=format;
 	if(texture2dFormat==DXGI_FORMAT_D32_FLOAT)
 	{
 		texture2dFormat	=DXGI_FORMAT_R32_TYPELESS;
