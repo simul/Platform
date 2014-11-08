@@ -529,7 +529,7 @@ shader vec4 GlowPS(v2f IN) : SV_TARGET
 }
 
 VertexShader mainvs_4_0=CompileShader(vs_4_0,MainVS());
-VertexShader mainvs_5_0=mainvs_5_0;
+VertexShader mainvs_5_0=CompileShader(vs_5_0,MainVS());
 
 technique exposure_gamma
 {

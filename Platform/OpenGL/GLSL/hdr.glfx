@@ -1,6 +1,7 @@
 #include "CppGlSl.hs"
 #include "../../CrossPlatform/SL/hdr_constants.sl"
-
+#include "../../CrossPlatform/SFX/hdr.sfx"
+#if 0
 uniform sampler2D imageTexture;
 uniform sampler2D glowTexture;
 
@@ -81,3 +82,4 @@ program blur
     vs(430) = VS_FullScreen();
     fs(430) = PS_Blur();
 };
+#endif
