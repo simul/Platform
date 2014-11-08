@@ -14,7 +14,7 @@ uniform sampler2D cloudShadowTexture;
 #include "../../CrossPlatform/SL/earth_shadow.sl"
 #include "view_dir.glsl"
 
-shader VS_FullScreen(out vec2 texCoords, out vec2 pos)
+shader void VS_FullScreen(out vec2 texCoords, out vec2 pos)
 {
 	vec2 poss[4];
 	poss[0]		=vec2(1.0, 0.0);
@@ -27,7 +27,7 @@ shader VS_FullScreen(out vec2 texCoords, out vec2 pos)
 }
 
 
-shader PS_Loss(in vec2 texCoords,in vec2 pos,out vec4 FragColor)
+shader void PS_Loss(in vec2 texCoords,in vec2 pos,out vec4 FragColor)
 {
 	vec3 view=texCoordToViewDirection(texCoords);
 	float sine=view.z;
@@ -39,7 +39,7 @@ shader PS_Loss(in vec2 texCoords,in vec2 pos,out vec4 FragColor)
     FragColor=vec4(loss.rgb,1.0);
 }
 
-shader PS_Inscatter(in vec2 texCoords,in vec2 pos, out vec4 FragColor)
+shader void PS_Inscatter(in vec2 texCoords,in vec2 pos, out vec4 FragColor)
 {
 	vec3 view=texCoordToViewDirection(texCoords);
 	float sine=view.z;
@@ -57,7 +57,7 @@ shader PS_Inscatter(in vec2 texCoords,in vec2 pos, out vec4 FragColor)
 }
 
 
-shader PS_EarthShadowInscatter(in vec2 texCoords,in vec2 pos, out vec4 FragColor)
+shader void PS_EarthShadowInscatter(in vec2 texCoords,in vec2 pos, out vec4 FragColor)
 {
 	vec3 view			=texCoordToViewDirection(texCoords);
 	float sine			=view.z;
@@ -84,28 +84,31 @@ shader PS_EarthShadowInscatter(in vec2 texCoords,in vec2 pos, out vec4 FragColor
     FragColor			=vec4(colour.rgb,1.0);
 }
 
-program atmospherics_overlay::standard.loss
+technique atmospherics_overlay::standard
 {
-    vs(430) = VS_FullScreen();
-    fs(430) = PS_Loss();
+	pass loss
+	{
+		vs(430) = VS_FullScreen();
+		fs(430) = PS_Loss();
+	}
+	pass inscatter
+	{
+		vs(430) = VS_FullScreen();
+		fs(430) = PS_Inscatter();
+	}
 };
-
-program atmospherics_overlay::standard.inscatter
+technique loss
 {
-    vs(430) = VS_FullScreen();
-    fs(430) = PS_Inscatter();
-};
-
-program loss.near
-{
-    vs(430) = VS_FullScreen();
-    fs(430) = PS_Loss();
-};
-
-program loss.far
-{
-    vs(430) = VS_FullScreen();
-    fs(430) = PS_Loss();
+	pass near
+	{
+		vs(430) = VS_FullScreen();
+		fs(430) = PS_Loss();
+	}
+	pass far
+	{
+		vs(430) = VS_FullScreen();
+		fs(430) = PS_Loss();
+	}
 };
 
 program inscatter

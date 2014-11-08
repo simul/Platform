@@ -78,7 +78,7 @@
 	#define RW_TEXTURE3D_FLOAT4 layout(rgba32f) image3D
 	
 #ifdef GLFX
-	shader vec2 VS_ScreenQuad( out vec2 texCoords)
+	shader void VS_ScreenQuad( out vec2 texCoords)
 	{
 		vec2 poss[4];
 		poss[0]		=vec2(1.0, 0.0);
@@ -91,7 +91,7 @@
 		texCoords.y	=1.0-texCoords.y;
 	}
 
-	shader vec2 VS_FullScreen(out vec2 texCoords)
+	shader void VS_FullScreen(out vec2 texCoords)
 	{
 		vec2 poss[4];
 		poss[0]			=vec2(1.0,0.0);

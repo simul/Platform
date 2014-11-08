@@ -25,7 +25,7 @@ float rand(vec2 co)
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-shader VS_FullScreen(out vec2 texCoords)
+shader void VS_FullScreen(out vec2 texCoords)
 {
 	vec2 poss[4];
 	poss[0]		=vec2(1.0, 0.0);
@@ -36,43 +36,43 @@ shader VS_FullScreen(out vec2 texCoords)
 	gl_Position	=vec4(vec2(-1.0,-1.0)+2.0*texCoords.xy,1.0,1.0);
 }
 
-shader PS_Simple(in vec2 texCoords,out vec4 FragColour)
+shader void PS_Simple(in vec2 texCoords,out vec4 FragColour)
 {
 	FragColour=texture2D(imageTexture,texCoords);
 }
 
-shader PS_Coverage(in vec2 texCoords,out vec4 FragColour) 
+shader void PS_Coverage(in vec2 texCoords,out vec4 FragColour) 
 {
 	FragColour		=Coverage(texCoords,humidity,diffusivity,coverageOctaves,coveragePersistence,time,noiseTexture,noiseTextureScale);
 }
 
-shader PS_ShowDetailTexture(in vec2 texCoords,out vec4 FragColour) 
+shader void PS_ShowDetailTexture(in vec2 texCoords,out vec4 FragColour) 
 {
 	FragColour		=ShowDetailTexture(imageTexture, texCoords, sunlight, lightResponse);
 }
 
-shader PS_Random(in vec2 texCoords,out vec4 FragColour) 
+shader void PS_Random(in vec2 texCoords,out vec4 FragColour) 
 {
     vec4 c	=vec4(rand(texCoords),rand(1.7*texCoords),rand(0.11*texCoords),rand(513.1*texCoords));
     FragColour= fract(c);
 }
 
-shader PS_Detail(in vec2 texCoords,out vec4 FragColour) 
+shader void PS_Detail(in vec2 texCoords,out vec4 FragColour) 
 {
     FragColour= DetailDensity(texCoords,imageTexture,amplitude);
 }
 
-shader PS_DetailLighting(in vec2 texCoords,out vec4 FragColour) 
+shader void PS_DetailLighting(in vec2 texCoords,out vec4 FragColour) 
 {
 	FragColour=DetailLighting(texCoords,imageTexture);
 }
 
-shader VS_Clouds2D(in vec4 vertex,out vec2 texc_global,out vec2 texc_detail,out vec4 clip_pos,out vec3 wPosition)
+shader void VS_Clouds2D(in vec4 vertex,out vec2 texc_global,out vec2 texc_detail,out vec4 clip_pos,out vec3 wPosition)
 {
 	Clouds2DVS(vertex.xyz,mixedResTransformXYWH,gl_Position,clip_pos,wPosition);
 }
 
-shader PS_Clouds2D(in vec2 texc_global,in vec2 texc_detail,in vec3 wPosition,in vec4 clip_pos,out vec4 FragColour)
+shader void PS_Clouds2D(in vec2 texc_global,in vec2 texc_detail,in vec3 wPosition,in vec4 clip_pos,out vec4 FragColour)
 {
 	vec2 viewportTexCoords=0.5*(vec2(1.0,1.0)+(clip_pos.xy/clip_pos.w));
 	viewportTexCoords.y=1.0-viewportTexCoords.y;

@@ -111,8 +111,6 @@ OpenGLRenderer::~OpenGLRenderer()
 GL_ERROR_CHECK
 	InvalidateDeviceObjects();
 GL_ERROR_CHECK
-	delete sceneRenderer;
-GL_ERROR_CHECK
 	delete renderPlatformOpenGL;
 	delete simulHDRRenderer;
 	delete simulWeatherRenderer;
@@ -159,7 +157,6 @@ GL_ERROR_CHECK
 	depthFramebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
 	depthFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
 ERRNO_CHECK
-ERRNO_CHECK
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(renderPlatform);
 ERRNO_CHECK
@@ -176,6 +173,7 @@ ERRNO_CHECK
 	RecompileShaders();
 ERRNO_CHECK
 }
+
 void OpenGLRenderer::shutdownGL()
 {
 	InvalidateDeviceObjects();

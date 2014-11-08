@@ -7,7 +7,7 @@
 #include "../../CrossPlatform/SL/noise.sl"
 #include "../../CrossPlatform/SL/rain.sl"
 
-shader PS_Overlay(out vec4 FragColor)
+shader void PS_Overlay(out vec4 FragColor)
 {
 	FragColor=vec4(1,0,0,1);
 }

@@ -1,11 +1,11 @@
 #include "CppGlSl.hs"
 #include "../../CrossPlatform/SL/hdr_constants.sl"
-#include "../../CrossPlatform/SFX/hdr.sfx"
-#if 0
+//#include "../../CrossPlatform/SFX/hdr.sfx"
+#if 1
 uniform sampler2D imageTexture;
 uniform sampler2D glowTexture;
 
-shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
+shader void VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
 {
 	vec2 poss[4];
 	poss[0]		=vec2(1.0, 0.0);
@@ -17,7 +17,7 @@ shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
     texCoords	=pos.xy;
 }
 
-shader PS_Glow(in vec2 texCoords, out vec4 FragColor)
+shader void PS_Glow(in vec2 texCoords, out vec4 FragColor)
 {
     // original image has double the resulution, so we sample 2x2
     vec4 c=vec4(0,0,0,0);
@@ -33,7 +33,7 @@ shader PS_Glow(in vec2 texCoords, out vec4 FragColor)
     FragColor=c;
 }
 
-shader PS_Blur(in vec2 texCoords, out vec4 FragColor)
+shader void PS_Blur(in vec2 texCoords, out vec4 FragColor)
 {
 	vec4 colour	=vec4(0.0,0.0,0.0,0.0);
 	vec2 offs	=offset;
@@ -50,7 +50,7 @@ shader PS_Blur(in vec2 texCoords, out vec4 FragColor)
     FragColor=colour;
 }
 
-shader PS_Tonemap(in vec2 texCoords, out vec4 FragColour)
+shader void PS_Tonemap(in vec2 texCoords, out vec4 FragColour)
 {
     vec4 c = texture2D(imageTexture,texCoords);
 	

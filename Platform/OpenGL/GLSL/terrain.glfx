@@ -9,14 +9,14 @@ interface VSOutput
 	vec2 texcoord;
 };
 
-shader VS_Terrain(in vec3 vertex, out VSOutput OUT)
+shader void VS_Terrain(in vec3 vertex, out VSOutput OUT)
 {
     gl_Position		=worldViewProj*vec4(vertex,1.0);
 	OUT.wPosition = vertex;
 	OUT.texcoord = vec2(OUT.wPosition.xy / 2000.0);
 }
 
-shader GS_Terrain()
+shader void GS_Terrain()
 {
 	//increment variable
 	int i;
@@ -67,7 +67,7 @@ float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 	return diffuse;
 }
 
-shader PS_Terrain(in VSOutput IN, out vec4 FragColour)
+shader void PS_Terrain(in VSOutput IN, out vec4 FragColour)
 {
 	vec4 result;
 	vec2 texcoord	= vec2(IN.wPosition.xy / 2000.0);

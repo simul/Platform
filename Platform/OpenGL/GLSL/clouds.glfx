@@ -7,20 +7,20 @@
 #include "../../CrossPlatform/SL/noise_constants.sl"
 uniform sampler2D noise_texture;
 
-shader VS_FullScreen(in int vertexID,in vec4 vertex,out vec2 texCoords)
+shader void VS_FullScreen(in int vertexID,in vec4 vertex,out vec2 texCoords)
 {
     vec2 pos		=vec2(-1.0,-1.0)+vertex.xy*2.0;
 	gl_Position		=vec4(pos.xy,1.0,1.0);
     texCoords		=vertex.xy;
 }
 
-shader PS_Noise(in vec2 texCoords)
+shader void PS_Noise(in vec2 texCoords)
 {
     vec4 c=vec4(rand(texCoords),rand(1.7*texCoords),rand(0.11*texCoords),rand(513.1*texCoords));
     gl_FragColor=c;
 }
 
-shader PS_EdgeNoise(in vec2 texCoords,out vec4 gl_FragColor)
+shader void PS_EdgeNoise(in vec2 texCoords,out vec4 gl_FragColor)
 {
 	gl_FragColor=Noise(noise_texture,texCoords,persistence,octaves);
 }
@@ -37,7 +37,7 @@ uniform sampler2D depthTexture;
 uniform sampler3D cloudDensity;
 
 
-shader PS_CloudShadow(in vec2 texCoords)
+shader void PS_CloudShadow(in vec2 texCoords)
 {
 	vec3 texcoord	=vec3(texCoords.xy,0.0);
 	vec4 density	=texture3D(cloudDensity1,texcoord);
@@ -46,7 +46,7 @@ shader PS_CloudShadow(in vec2 texCoords)
     gl_FragColor	=density;
 }
 
-shader VS_Layers(in vec3 vertex
+shader void VS_Layers(in vec3 vertex
 				,out float layerDensity
 				,out float rainFade
 				,out vec4 texCoords
@@ -141,7 +141,7 @@ vec4 Layers(float layerDensity,
 }
 
 
-shader PS_Layers(in float layerDensity,
+shader void PS_Layers(in float layerDensity,
 			in float rainFade,
 			in vec4 texCoords,
 			in vec2 noise_texc,
@@ -162,7 +162,7 @@ shader PS_Layers(in float layerDensity,
 						transformed_pos
 						,1.0);
 }
-shader PS_Layers_depth(in float layerDensity,
+shader void PS_Layers_depth(in float layerDensity,
 			in float rainFade,
 			in vec4 texCoords,
 			in vec2 noise_texc,
@@ -189,7 +189,7 @@ shader PS_Layers_depth(in float layerDensity,
 						,dist);
 }
 
-shader VS_CrossSection(in int gl_VertexID, out vec2 texCoords)
+shader void VS_CrossSection(in int gl_VertexID, out vec2 texCoords)
 {
 	vec2 poss[4];
 	poss[0]=vec2(1.0, 0.0);
@@ -202,7 +202,7 @@ shader VS_CrossSection(in int gl_VertexID, out vec2 texCoords)
 }
 
 #define CROSS_SECTION_STEPS 32
-shader PS_CrossSection(in vec2 texCoords, out vec4 FragColor)
+shader void PS_CrossSection(in vec2 texCoords, out vec4 FragColor)
 {
 	vec3 texc=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
 	int i=0;

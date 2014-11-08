@@ -7,13 +7,13 @@ uniform vec4 rect;
 uniform vec4 depthToLinFadeDistParams;
 uniform vec2 tanHalfFov;
 
-shader PS_ShowTexture(in vec2 texCoords, out vec4 FragColor)
+shader void PS_ShowTexture(in vec2 texCoords, out vec4 FragColor)
 {
     vec4 c		=texture2D(image_texture,texCoords);
     FragColor	=c;
 }
 
-shader PS_ShowDepth(in vec2 texCoords, out vec4 FragColor)
+shader void PS_ShowDepth(in vec2 texCoords, out vec4 FragColor)
 {
 	vec4 depth	=texture2D(image_texture,texCoords);
 	vec2 dist	=depthToFadeDistance(depth.xy,2.0*(texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);

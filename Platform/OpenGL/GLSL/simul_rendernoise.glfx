@@ -12,7 +12,7 @@ uniform vec4 rect;
 uniform vec4 depthToLinFadeDistParams;
 uniform vec2 tanHalfFov;
 
-shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
+shader void VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
 {
 	vec2 poss[4];
 	poss[0]		=vec2( 1.0,-1.0);
@@ -25,19 +25,19 @@ shader VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
 	//texCoords.y	=1.0-texCoords.y;
 }
 
-shader RandomPS(in vec2 texCoords,out vec4 FragColour)
+shader void RandomPS(in vec2 texCoords,out vec4 FragColour)
 {
 	// Range from -1 to 1.
     vec4 c=2.0*vec4(rand(texCoords),rand(1.7*texCoords),rand(0.11*texCoords),rand(513.1*texCoords))-1.0;
     FragColour=c;
 }
 
-shader PS_Noise2D(in vec2 texCoords,out vec4 FragColour) 
+shader void PS_Noise2D(in vec2 texCoords,out vec4 FragColour) 
 {
     FragColour= Noise(noise_texture,texCoords,persistence,octaves);
 }
 
-shader CS_LAYOUT(8,8,8) CS_Random3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
+shader CS_LAYOUT(8,8,8) void CS_Random3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
 {
 	// NOTE: could use shader_image_size(targetTexture32)
 	uint3 pos=gl_GlobalInvocationID;
@@ -50,7 +50,7 @@ shader CS_LAYOUT(8,8,8) CS_Random3D()	//gl_GlobalInvocationID gives the combined
 	imageStore(targetTexture32,ivec3(pos),c);
 }
 
-shader CS_LAYOUT(8,8,8) CS_Noise3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
+shader CS_LAYOUT(8,8,8) void CS_Noise3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
 {
 	uint3 pos=gl_GlobalInvocationID;
 	//uint3 dims;

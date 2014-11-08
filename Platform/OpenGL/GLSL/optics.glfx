@@ -5,7 +5,7 @@ uniform sampler2D flareTexture;
 uniform vec4 rect;
 
 
-shader VS_Sun( out vec2 texCoords) 
+shader void VS_Sun( out vec2 texCoords) 
 {
 	vec2 poss[4]=
 	{
@@ -25,7 +25,7 @@ shader VS_Sun( out vec2 texCoords)
     texCoords=pos.xy;
 }
 
-shader PS_Flare( in vec2 texCoords, out vec4 FragColor)
+shader void PS_Flare( in vec2 texCoords, out vec4 FragColor)
 {
 	vec3 res=colour.rgb*texture_clamp(flareTexture,vec2(.5,.5)+0.5*texCoords).rgb;
 	FragColor=vec4(res,1.0);

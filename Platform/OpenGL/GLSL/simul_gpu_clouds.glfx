@@ -9,7 +9,7 @@ uniform sampler3D ambient_texture;
 #include "../../CrossPlatform/SL/gpu_cloud_constants.sl"
 #include "../../CrossPlatform/SL/simul_gpu_clouds.sl"
 
-shader PS_Density(in vec2 texCoords,out vec4 FragColour)
+shader void PS_Density(in vec2 texCoords,out vec4 FragColour)
 {
 	float dens					=CloudDensity(volumeNoiseTexture,maskTexture,texCoords,humidity,diffusivity,octaves,persistence,time,zPixel,zSize,noiseDimsZ
 					, noiseScale
@@ -21,7 +21,7 @@ shader PS_Density(in vec2 texCoords,out vec4 FragColour)
 }
 
 
-shader PS_Lighting(in vec2 texCoords,out vec4 FragColour)
+shader void PS_Lighting(in vec2 texCoords,out vec4 FragColour)
 {
 	vec2 texcoord				=texCoords.xy;//+texCoordOffset;
 	vec4 previous_light			=texture(input_light_texture,texcoord.xy);
@@ -33,7 +33,7 @@ shader PS_Lighting(in vec2 texCoords,out vec4 FragColour)
     FragColour				=vec4(direct_light,indirect_light,1,1);
 }
 
-shader PS_Transform(in vec2 texCoords,out vec4 FragColour)
+shader void PS_Transform(in vec2 texCoords,out vec4 FragColour)
 {	
 	vec3 densityspace_texcoord	=assemble3dTexcoord(texCoords.xy,zPixel, zSize);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
