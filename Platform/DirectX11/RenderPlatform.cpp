@@ -1075,6 +1075,9 @@ void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceConte
     pContext->PSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, s.m_pSamplerStateStored11 );
     pContext->VSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT , s.m_pVertexSamplerStateStored11 );
 
+	pContext->PSGetShaderResources(0,D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,s.m_pShaderResourceViews);
+	pContext->CSGetUnorderedAccessViews(0,D3D11_PS_CS_UAV_REGISTER_COUNT,s.m_pUnorderedAccessViews);
+		 
 	pContext->IAGetInputLayout( &s.m_previousInputLayout );
 	pContext->IAGetPrimitiveTopology(&s.m_previousTopology);
 
@@ -1098,6 +1101,10 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
     pContext->OMSetBlendState(s.m_pBlendStateStored11,s.m_BlendFactorStored11,s.m_SampleMaskStored11 );
     pContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pSamplerStateStored11 );
     pContext->VSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pVertexSamplerStateStored11 );
+
+	pContext->PSSetShaderResources(0,D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,s.m_pShaderResourceViews);
+	// TODO: handle produce-consume buffers below
+	pContext->CSSetUnorderedAccessViews(0,D3D11_PS_CS_UAV_REGISTER_COUNT,s.m_pUnorderedAccessViews,NULL);
 
     SAFE_RELEASE(s.m_pDepthStencilStateStored11 );
     SAFE_RELEASE(s.m_pRasterizerStateStored11 );

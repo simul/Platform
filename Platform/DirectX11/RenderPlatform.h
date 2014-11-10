@@ -138,6 +138,8 @@ namespace simul
 				float m_BlendFactorStored11[4];
 				ID3D11SamplerState* m_pSamplerStateStored11[16];
 				ID3D11SamplerState* m_pVertexSamplerStateStored11[16];
+				ID3D11ShaderResourceView* m_pShaderResourceViews[128];
+				ID3D11UnorderedAccessView* m_pUnorderedAccessViews[8];
 				ID3D11Buffer *m_pVertexBuffersStored11[32];
 				UINT m_VertexStrides[32];
 				UINT m_VertexOffsets[32];
