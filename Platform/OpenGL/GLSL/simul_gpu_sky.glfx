@@ -72,7 +72,8 @@ shader void PS_Copy(in vec2 texCoords,out vec4 outColor)
 	outColor			=texture(source_texture,vec3(texCoords.xy,tz));
 }
 
-shader CS_LAYOUT(8,1,1) void CS_Loss() 
+CS_LAYOUT(8,1,1)
+shader void CS_Loss() 
 {
 	uint3 sub_pos		=gl_GlobalInvocationID;
 	uint linear_pos		=sub_pos.x+threadOffset.x;
@@ -80,13 +81,15 @@ shader CS_LAYOUT(8,1,1) void CS_Loss()
 	CSLoss(targetTexture,density_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm,targetSize);
 }
 
-shader CS_LAYOUT(1,1,1) void CS_LightTable()
+CS_LAYOUT(1,1,1)
+shader void CS_LightTable()
 {
 	uint3 sub_pos	=gl_GlobalInvocationID;
 	MakeLightTable(targetTexture,insc_texture,optical_depth_texture,sub_pos,uint3(targetSize));
 }
 
-shader CS_LAYOUT(8,1,1) void CS_Insc()
+CS_LAYOUT(8,1,1)
+shader void CS_Insc()
 {
 	uint3 sub_pos		=gl_GlobalInvocationID;
 	uint linear_pos		=sub_pos.x+threadOffset.x;
@@ -96,7 +99,8 @@ shader CS_LAYOUT(8,1,1) void CS_Insc()
 	CSInsc(targetTexture,density_texture,optical_depth_texture,loss_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm,targetSize);
 }
 
-shader CS_LAYOUT(8,1,1) void CS_Skyl()
+CS_LAYOUT(8,1,1)
+shader void CS_Skyl()
 {
 	uint3 sub_pos=gl_GlobalInvocationID;
 	uint linear_pos		=sub_pos.x+threadOffset.x;

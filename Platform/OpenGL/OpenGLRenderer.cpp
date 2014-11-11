@@ -56,15 +56,12 @@ simul::opengl::RenderPlatform *renderPlatformOpenGL=NULL;
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut)
 		:clouds::TrueSkyRenderer(env,sc,m)
-	,ScreenWidth(0)
-	,ScreenHeight(0)
-	,cam(NULL)
 	,ShowWater(true)
 	,Exposure(1.0f)
 	,simple_program(0)
 {
-	simulHDRRenderer		=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
-	simulWeatherRenderer	=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
+	simulHDRRenderer		=new SimulGLHDRRenderer(1,1);
+	simulWeatherRenderer	=new SimulGLWeatherRenderer(env,NULL,1,1);
 	baseOpticsRenderer		=new simul::crossplatform::BaseOpticsRenderer(m);
 	baseTerrainRenderer		=new simul::terrain::BaseTerrainRenderer(NULL);
 	baseTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
@@ -181,17 +178,20 @@ void OpenGLRenderer::shutdownGL()
 
 void OpenGLRenderer::paintGL()
 {
-	static int viewport_id=0;
-	
+	static int view_id=0;
+	const crossplatform::CameraOutputInterface *cam=cameras[view_id];
 	const crossplatform::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	crossplatform::DeviceContext deviceContext;
-	deviceContext.renderPlatform=renderPlatform;
-	deviceContext.viewStruct.view_id=viewport_id;
+	deviceContext.renderPlatform	=renderPlatform;
+	deviceContext.viewStruct.view_id=view_id;
 	deviceContext.viewStruct.view	=cam->MakeViewMatrix();
+	
+	crossplatform::Viewport 		viewport=renderPlatform->GetViewport(deviceContext,view_id);
+
 	if(ReverseDepth)
-		deviceContext.viewStruct.proj	=(cam->MakeDepthReversedProjectionMatrix((float)ScreenWidth/(float)ScreenHeight));
+		deviceContext.viewStruct.proj	=(cam->MakeDepthReversedProjectionMatrix((float)viewport.w/(float)viewport.h));
 	else
-		deviceContext.viewStruct.proj	=(cam->MakeProjectionMatrix((float)ScreenWidth/(float)ScreenHeight));
+		deviceContext.viewStruct.proj	=(cam->MakeProjectionMatrix((float)viewport.w/(float)viewport.h));
 	
 	//simul::math::Matrix4x4 view;
 	//glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
@@ -213,7 +213,7 @@ void OpenGLRenderer::paintGL()
 	glPushAttrib(GL_ENABLE_BIT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(deviceContext.viewStruct.proj);
-	glViewport(0,0,ScreenWidth,ScreenHeight);
+	glViewport(0,0,viewport.w,viewport.h);
 	static float exposure=1.0f;
 	if(simulWeatherRenderer)
 	{
@@ -282,8 +282,8 @@ void OpenGLRenderer::paintGL()
 GL_ERROR_CHECK
 		if(simulWeatherRenderer->GetShowCompositing())
 		{
-			RenderDepthBuffers(deviceContext,ScreenWidth/2,0,ScreenWidth/2,ScreenHeight/2);
-			simulWeatherRenderer->RenderCompositingTextures(deviceContext,ScreenWidth/2,ScreenHeight/2,ScreenWidth/2,ScreenHeight/2);
+			RenderDepthBuffers(deviceContext,viewport.w/2,0,viewport.w/2,viewport.h/2);
+			simulWeatherRenderer->RenderCompositingTextures(deviceContext,viewport.w/2,viewport.h/2,viewport.w/2,viewport.h/2);
 GL_ERROR_CHECK
 		}
 GL_ERROR_CHECK
@@ -291,7 +291,7 @@ GL_ERROR_CHECK
 			simulWeatherRenderer->RenderOverlays(deviceContext);
 GL_ERROR_CHECK
 		if(ShowOSD&&simulWeatherRenderer->GetBaseCloudRenderer())
-			simulWeatherRenderer->GetBaseCloudRenderer()->RenderDebugInfo(deviceContext,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->GetBaseCloudRenderer()->RenderDebugInfo(deviceContext,viewport.w,viewport.h);
 	GL_ERROR_CHECK
 	}
 	renderUI();
@@ -304,7 +304,6 @@ void OpenGLRenderer::renderUI()
 	GL_ERROR_CHECK
 	glUseProgram(0);
 	glBindTexture(GL_TEXTURE_2D,0);
-	SetOrthoProjection(ScreenWidth,ScreenHeight);
 	static char text[500];
 	int y=12;
 	static int line_height=16;
@@ -334,16 +333,14 @@ void OpenGLRenderer::renderUI()
 
 void OpenGLRenderer::resizeGL(int w,int h)
 {
-	ScreenWidth=w;
-	ScreenHeight=h;
 	if(simulHDRRenderer)
-		simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
-	depthFramebuffer.SetWidthAndHeight(ScreenWidth,ScreenHeight);
+		simulHDRRenderer->SetBufferSize(w,h);
+	depthFramebuffer.SetWidthAndHeight(w,h);
 }
 
-void OpenGLRenderer::SetCamera(simul::crossplatform::Camera *c)
+void OpenGLRenderer::SetCamera(int view_id,const simul::crossplatform::CameraOutputInterface *c)
 {
-	cam=c;
+	cameras[view_id]=c;
 }
 
 void OpenGLRenderer::ReloadTextures()

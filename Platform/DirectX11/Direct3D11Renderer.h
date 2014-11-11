@@ -54,7 +54,7 @@ namespace simul
 				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")
 				META_ValueProperty(bool,ShowWaterTextures		,"Show the textures generated for water effects as an overlay.")
 			META_EndProperties
-			void RestoreDeviceObjects	(crossplatform::RenderPlatform *r);
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 			void Render(int view_id,ID3D11DeviceContext* pContext);
 			///////////////////////////
@@ -67,18 +67,13 @@ namespace simul
 				return oceanRenderer;
 			}
 			void	RecompileShaders();
-			void	ReloadTextures();
-			void	RenderCubemap(crossplatform::DeviceContext &deviceContext,const float *cam_pos);
-			void	RenderEnvmap(crossplatform::DeviceContext &deviceContext);
-			void	SetViewType(int view_id,crossplatform::ViewType vt);
-			void	SetCamera(int view_id,const simul::crossplatform::CameraOutputInterface *c);
 			void	SaveScreenshot(const char *filename_utf8,int width=0,int height=0,float exposure=1.0f,float gamma=0.44f);
 		protected:
 			void	RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Viewport viewport,int x0,int y0,int w,int h);
 			/// Parts of the scene that go into the main buffer with depth active.
 			void	RenderDepthElements(crossplatform::DeviceContext &deviceContext
-									,float exposure
-									,float gamma);
+										,float exposure
+										,float gamma);
 			/// Render the sky.
 			void	RenderMixedResolutionSky(crossplatform::DeviceContext &deviceContext
 									,crossplatform::Texture *depthTexture
@@ -90,8 +85,6 @@ namespace simul
 			// Different kinds of view for Render() to call:
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
 			void ReverseDepthChanged();
-			void AntialiasingChanged();
-			void EnsureCorrectBufferSizes(int view_id);
 			
 			terrain::BaseSeaRenderer					*oceanRenderer;
 		};

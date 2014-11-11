@@ -76,7 +76,9 @@
     <ClInclude Include="LensFlare.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HdrRenderer.h" />
+    <ClInclude Include="HdrRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics_constants.sl">
@@ -251,6 +253,8 @@
     <ClCompile Include="LensFlare.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HdrRenderer.cpp" />
+    <ClCompile Include="HdrRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

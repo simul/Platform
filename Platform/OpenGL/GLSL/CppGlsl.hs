@@ -69,7 +69,6 @@
 	}
 	#define CS_LAYOUT(u,v,w) layout(local_size_x=u,local_size_y=v,local_size_z=w) in;
 	
-	
 	#define IMAGESTORE(a,b,c) imageStore(a,ivec3(b),c)
 	#define IMAGE_LOAD(a,b) texelFetch(a,ivec3(b),0)
 	// SOME GLSL compilers like this version:

@@ -56,7 +56,7 @@ namespace simul
 			simul::clouds::BaseWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer;}
 			SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer;}
 			class simul::terrain::BaseTerrainRenderer *GetTerrainRenderer(){return baseTerrainRenderer;}
-			void SetCamera(simul::crossplatform::Camera *c);
+			void	SetCamera(int view_id,const simul::crossplatform::CameraOutputInterface *c);
 			void ReloadTextures();
 			void RecompileShaders();
 			void SaveScreenshot(const char *filename_utf8);
@@ -65,8 +65,6 @@ namespace simul
 			void ReverseDepthChanged();
 			SimulGLHDRRenderer *simulHDRRenderer;
 			FramebufferGL depthFramebuffer;
-			simul::crossplatform::Camera *cam;
-			int ScreenWidth,ScreenHeight;
 			GLuint simple_program;
 		};
 	}

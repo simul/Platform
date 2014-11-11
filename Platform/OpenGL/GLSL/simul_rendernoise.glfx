@@ -22,7 +22,6 @@ shader void VS_FullScreen(in int gl_VertexID, out vec2 texCoords)
 	vec2 pos	=poss[gl_VertexID];
 	gl_Position	=vec4(pos,0.0,1.0);
     texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,pos.y));
-	//texCoords.y	=1.0-texCoords.y;
 }
 
 shader void RandomPS(in vec2 texCoords,out vec4 FragColour)
@@ -37,7 +36,8 @@ shader void PS_Noise2D(in vec2 texCoords,out vec4 FragColour)
     FragColour= Noise(noise_texture,texCoords,persistence,octaves);
 }
 
-shader CS_LAYOUT(8,8,8) void CS_Random3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
+CS_LAYOUT(8,8,8)
+shader void CS_Random3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
 {
 	// NOTE: could use shader_image_size(targetTexture32)
 	uint3 pos=gl_GlobalInvocationID;
@@ -50,7 +50,8 @@ shader CS_LAYOUT(8,8,8) void CS_Random3D()	//gl_GlobalInvocationID gives the com
 	imageStore(targetTexture32,ivec3(pos),c);
 }
 
-shader CS_LAYOUT(8,8,8) void CS_Noise3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
+CS_LAYOUT(8,8,8)
+shader void CS_Noise3D()	//gl_GlobalInvocationID gives the combined id in each dimension.
 {
 	uint3 pos=gl_GlobalInvocationID;
 	//uint3 dims;

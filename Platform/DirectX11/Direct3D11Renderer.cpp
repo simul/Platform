@@ -68,196 +68,6 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		oceanRenderer->RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 }
-
-void TrueSkyRenderer::EnsureCorrectBufferSizes(int view_id)
-{
-	crossplatform::MixedResolutionView *view			=viewManager.GetView(view_id);
-	if(!view)
-		return;
-	static bool lockx=false,locky=false;
-	static int magnify=1;
-	// Must have a whole number of full-res pixels per low-res pixel.
-	int W=view->GetScreenWidth(),H=view->GetScreenHeight();
-	W=W/magnify;
-	H=H/magnify;
- 	if(simulWeatherRenderer)
-	{
-		if(lockx)
-		{
-			int s	=simulWeatherRenderer->GetDownscale();
-			int w	=W/s;
-			W		=w*s;
-		}
-		if(locky)
-		{
-			int s	=simulWeatherRenderer->GetDownscale();
-			int h	=H/s;
-			H		=h*s;
-		}
-		if(PerformanceTest==clouds::FORCE_1920_1080)
-		{
-			W=1920;
-			H=1080;
-		}
-		if(PerformanceTest==clouds::FORCE_2560_1600)
-		{
-			W=2560;
-			H=1600;
-		}
-		else if(PerformanceTest==clouds::FORCE_3840_2160)
-		{
-			W=3840;
-			H=2160;
-		}
-		view->SetResolution(W,H);
-//		simulWeatherRenderer->SetScreenSize(view_id,W,H);
-	}
-	W=view->GetScreenWidth();
-	H=view->GetScreenHeight();
-	if(view->viewType==crossplatform::OCULUS_VR)
-		W=view->GetScreenWidth()/2;
-	if(simulHDRRenderer)
-		simulHDRRenderer->SetBufferSize(W,H);
-	view->GetFramebuffer()->SetWidthAndHeight(W,H);
-	// This buffer won't be used for multisampling, we will RESOLVE the msaa buffer to this one.
-	view->GetFramebuffer()->SetAntialiasing(1);
-}
-
-void TrueSkyRenderer::RenderCubemap(crossplatform::DeviceContext &parentDeviceContext,const float *cam_pos)
-{
-	simul::math::Matrix4x4 view_matrices[6];
-	crossplatform::MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
-ERRNO_CHECK
-	if(cubemap_view_id<0)
-		cubemap_view_id=viewManager.AddView(false);
-	crossplatform::DeviceContext deviceContext;
-	deviceContext.platform_context	=parentDeviceContext.platform_context;
-	deviceContext.renderPlatform	=parentDeviceContext.renderPlatform;
-	deviceContext.viewStruct.view_id=cubemap_view_id;
-	if(baseTerrainRenderer)
-		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
-			baseTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture(cam_pos));
-	// We want to limit the number of raytrace steps for clouds in the cubemap.
-	if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
-	{
-		simulWeatherRenderer->GetBaseCloudRenderer()->SetMaxSlices(cubemap_view_id,20);
-	}
-	//for(int i=0;i<6;i++)
-	static int i=0;
-	i++;
-	i=i%6;
-	{
-ERRNO_CHECK
-		cubemapFramebuffer->SetCubeFace(i);
-		cubemapFramebuffer->Clear(deviceContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
-		cubemapFramebuffer->Activate(deviceContext);
-		static float nearPlane	=10.f;
-		static float farPlane	=200000.f;
-ERRNO_CHECK
-		if(ReverseDepth)
-			deviceContext.viewStruct.proj=simul::crossplatform::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane);
-		else
-			deviceContext.viewStruct.proj=simul::crossplatform::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane);
-ERRNO_CHECK
-		deviceContext.viewStruct.view_id=cubemap_view_id;
-		deviceContext.viewStruct.view	=view_matrices[i];
-		if(simulWeatherRenderer)
-		{
-			float time=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetTime();
-			for(int i=0;i<simulWeatherRenderer->GetEnvironment()->cloudKeyframer->GetNumLightningBolts(time);i++)
-			{
-				const simul::clouds::LightningRenderInterface *lightningRenderInterface=simulWeatherRenderer->GetEnvironment()->cloudKeyframer->GetLightningBolt(time,i);
-				if(!lightningRenderInterface)
-					continue;
-				simul::terrain::LightningIllumination lightningIllumination;
-				simul::clouds::LightningProperties props	=simulWeatherRenderer->GetEnvironment()->cloudKeyframer->GetLightningProperties(time,i);
-				lightningIllumination.colour				=vec3(0,0,0);
-				const simul::clouds::CloudKeyframer *cloudKeyframer=simulWeatherRenderer->GetEnvironment()->cloudKeyframer;
-				for(int i=0;i<cloudKeyframer->GetNumLightningBolts(time);i++)
-				{
-					const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,i);
-					if(!lightningRenderInterface)
-						continue;
-					simul::clouds::LightningProperties props	=cloudKeyframer->GetLightningProperties(time,i);
-					if(!props.numLevels)
-						continue;
-					float brightness							=lightningRenderInterface->GetBrightness(props,time,0,0);
-					lightningIllumination.centre	=props.startX;
-					lightningIllumination.colour	=props.colour;
-					lightningIllumination.colour	*=brightness;
-				}
-				if(baseTerrainRenderer)
-					baseTerrainRenderer->SetLightningProperties(lightningIllumination);
-			}
-		}
-		if(baseTerrainRenderer&&ShowTerrain)
-			baseTerrainRenderer->Render(deviceContext,1.f);
-		if(oceanRenderer&&ShowWater)
-		{
-			if(cubemapFramebuffer)
-				oceanRenderer->SetCubemapTexture(cubemapFramebuffer->GetTexture());
-			oceanRenderer->Render(deviceContext,1.f);
-		}
-		cubemapFramebuffer->DeactivateDepth(deviceContext);
-		if(simulWeatherRenderer)
-		{
-			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-			simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,true,1.f,1.f,false,cubemapFramebuffer->GetDepthTexture(),relativeViewportTextureRegionXYWH,true,vec2(0,0));
-		}
-		static const char *txt[]={	"+X",
-									"-X",
-									"+Y",
-									"-Y",
-									"+Z",
-									"-Z"};
-		//renderPlatform->Print(deviceContext,16,16,txt[i]);
-		cubemapFramebuffer->Deactivate(deviceContext);
-	//	renderPlatform->DrawDepth(deviceContext,0,0,64,64,cubemapFramebuffer->GetDepthTexture());
-	}
-ERRNO_CHECK
-}
-
-void TrueSkyRenderer::RenderEnvmap(crossplatform::DeviceContext &deviceContext)
-{
-	if(!lightProbesEffect)
-		return;
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	SIMUL_COMBINED_PROFILE_START(pContext,"RenderEnvmap CalcSphericalHarmonics")
-	cubemapFramebuffer->SetBands(SphericalHarmonicsBands);
-	cubemapFramebuffer->CalcSphericalHarmonics(deviceContext);
-	math::Matrix4x4 invViewProj;
-	math::Matrix4x4 view_matrices[6];
-	float cam_pos[]={0,0,0};
-	crossplatform::EffectTechnique *tech=lightProbesEffect->GetTechniqueByName("irradiance_map");
-	crossplatform::MakeCubeMatrices(view_matrices,cam_pos,false);
-	SIMUL_COMBINED_PROFILE_END(pContext)
-	// For each face, 
-	SIMUL_COMBINED_PROFILE_START(pContext,"RenderEnvmap draw")
-	static int i=0;
-	i++;
-	i=i%6;
-	//for(int i=0;i<6;i++)
-	{
-		envmapFramebuffer->SetCubeFace(i);
-		envmapFramebuffer->Activate(deviceContext);
-		math::Matrix4x4 cube_proj=simul::crossplatform::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,1.f,200000.f);
-		{
-			crossplatform::MakeInvViewProjMatrix(invViewProj,(const float*)&view_matrices[i],cube_proj);
-			lightProbeConstants.invViewProj	=invViewProj;
-			lightProbeConstants.numSHBands	=SphericalHarmonicsBands;
-			lightProbeConstants.alpha		=0.05f;
-			lightProbeConstants.Apply(deviceContext);
-			cubemapFramebuffer->GetSphericalHarmonics().Apply(deviceContext, lightProbesEffect,"basisBuffer");
-			lightProbesEffect->Apply(deviceContext,tech,0);
-			renderPlatform->DrawQuad(deviceContext);
-			lightProbesEffect->SetTexture(deviceContext,"basisBuffer"	,NULL);
-			lightProbesEffect->Unapply(deviceContext);
-		}
-		envmapFramebuffer->Deactivate(deviceContext);
-	}
-	SIMUL_COMBINED_PROFILE_END(pContext)
-}
-
 // The elements in the main colour/depth buffer, with depth test and optional MSAA
 void TrueSkyRenderer::RenderDepthElements(crossplatform::DeviceContext &deviceContext
 									 ,float exposure
@@ -413,11 +223,8 @@ void TrueSkyRenderer::Render(int view_id,ID3D11DeviceContext* pContext)
 									&mainDepthSurface
 									);*/
 	SIMUL_COMBINED_PROFILE_STARTFRAME(deviceContext.platform_context)
-	D3D11_VIEWPORT				viewport;
-	memset(&viewport,0,sizeof(D3D11_VIEWPORT));
-	UINT numv=1;
-	pContext->RSGetViewports(&numv, &viewport);
-	view->SetResolution((int)viewport.Width,(int)viewport.Height);
+	crossplatform::Viewport 		viewport=renderPlatform->GetViewport(deviceContext,view_id);
+	view->SetResolution((int)viewport.w,(int)viewport.h);
 	EnsureCorrectBufferSizes(view_id);
 	const crossplatform::CameraOutputInterface *cam		=cameras[view_id];
 	SIMUL_ASSERT(cam!=NULL);
@@ -701,51 +508,11 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 
 void TrueSkyRenderer::RecompileShaders()
 {
-	if(cubemapFramebuffer)
-		cubemapFramebuffer->RecompileShaders();
-	if(renderPlatform)
-		renderPlatform->RecompileShaders();
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->RecompileShaders();
-	if(baseOpticsRenderer)
-		baseOpticsRenderer->RecompileShaders();
-	if(baseTerrainRenderer)
-		baseTerrainRenderer->RecompileShaders();
+	clouds::TrueSkyRenderer::RecompileShaders();
 	if(oceanRenderer)
 		oceanRenderer->RecompileShaders();
 	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
-
-	std::map<std::string,std::string> defines;
-	//["REVERSE_DEPTH"]		=ReverseDepth?"1":"0";
-	//defines["NUM_AA_SAMPLES"]		=base::stringFormat("%d",Antialiasing);
-	viewManager.RecompileShaders();
-	SAFE_DELETE(lightProbesEffect);
-	SAFE_DELETE(linearizeDepthEffect);
-	if(renderPlatform)
-	{
-		lightProbesEffect=renderPlatform->CreateEffect("light_probes.fx",defines);
-		lightProbeConstants.LinkToEffect(lightProbesEffect,"LightProbeConstants");
-	}
-}
-
-void TrueSkyRenderer::ReloadTextures()
-{
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->ReloadTextures();
-}
-
-void TrueSkyRenderer::SetViewType(int view_id,crossplatform::ViewType vt)
-{
-	crossplatform::MixedResolutionView *v=viewManager.GetView(view_id);
-	if(!v)
-		return;
-	v->viewType=vt;
-}
-
-void TrueSkyRenderer::SetCamera(int view_id,const simul::crossplatform::CameraOutputInterface *c)
-{
-	cameras[view_id]=c;
 }
 
 void TrueSkyRenderer::ReverseDepthChanged()
@@ -760,11 +527,6 @@ void TrueSkyRenderer::ReverseDepthChanged()
 		baseTerrainRenderer->SetReverseDepth(ReverseDepth);
 	if(oceanRenderer)
 		oceanRenderer->SetReverseDepth(ReverseDepth);
-	RecompileShaders();
-}
-
-void TrueSkyRenderer::AntialiasingChanged()
-{
 	RecompileShaders();
 }
 
