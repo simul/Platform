@@ -64,6 +64,16 @@ void discardOnFar(float depth)
 		discard;
 #endif
 }
+void discardUnlessFar(float depth)
+{
+#ifdef REVERSE_DEPTH1
+	if (depth > 0)
+		discard;
+#else
+	if (depth < 1.0)
+		discard;
+#endif
+}
 #endif
 
 // This converts a z-buffer depth into a distance in the units of nearZ and farZ,

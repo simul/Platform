@@ -291,7 +291,7 @@ void TrueSkyRenderer::RenderStandard(crossplatform::DeviceContext &deviceContext
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 		// Don't need to pass a depth texture because we know depth is active here.
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->RenderCelestialBackground(deviceContext,NULL,exposure);
+		simulWeatherRenderer->RenderCelestialBackground(deviceContext, NULL,sky::float4(0,0,1.0f,1.0f), exposure);
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"2")
 	RenderDepthElements(deviceContext,exposure,gamma);

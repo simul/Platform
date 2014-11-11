@@ -13,7 +13,7 @@
 
 using namespace simul;
 using namespace dx11;
-
+#pragma optimize("",off)
 D3D11_QUERY toD3dQueryType(crossplatform::QueryType t)
 {
 	switch(t)
@@ -262,7 +262,7 @@ int EffectTechnique::NumPasses() const
 	return (int)desc.Passes;
 }
 
-dx11::Effect::Effect()
+dx11::Effect::Effect() :currentPass(NULL)
 {
 }
 
@@ -394,7 +394,6 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,cr
 	simul::dx11::setTexture(asD3DX11Effect(),name,T->AsD3D11ShaderResourceView());
 }
 
-
 void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *t)
 {
 	if(t)
@@ -476,8 +475,8 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	currentTechnique				=effectTechnique;
 	ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
-	ID3DX11EffectPass *pass			=tech->GetPassByIndex(pass_num);
-	HRESULT hr						=pass->Apply(0,deviceContext.asD3D11DeviceContext());
+	currentPass						=tech->GetPassByIndex(pass_num);
+	HRESULT hr						= currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
 	V_CHECK(hr);
 }
 
@@ -491,13 +490,13 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	if(effectTechnique)
 	{
 		ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
-		ID3DX11EffectPass *pass			=tech->GetPassByName(passname);
-		if(!pass->IsValid())
+		currentPass = tech->GetPassByName(passname);
+		if (!currentPass->IsValid())
 		{
 			const char *techname="";//effectTechnique->getName();
 			SIMUL_BREAK(base::QuickFormat("Invalid pass %s sent to Effect::Apply for technique %s of shader %s\n",passname,techname,this->filename.c_str()));
 		}
-		HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
+		HRESULT hr = currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
 		V_CHECK(hr);
 	}
 	else
@@ -512,8 +511,7 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 		SIMUL_BREAK(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n",this->filename.c_str()));
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
-	ID3DX11EffectPass *pass			=tech->GetPassByIndex(0);
-	HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
+	HRESULT hr = currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
@@ -525,9 +523,9 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 	apply_count--;
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
-	ID3DX11EffectPass *pass			=tech->GetPassByIndex(0);
-	HRESULT hr=pass->Apply(0,deviceContext.asD3D11DeviceContext());
+	HRESULT hr = currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
 	currentTechnique=NULL;
+	currentPass = NULL;
 }
 void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 {

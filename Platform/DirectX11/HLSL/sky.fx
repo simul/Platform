@@ -41,6 +41,7 @@ cbuffer cbPerObject : register(b11)
 #include "../../CrossPlatform/SL/sky_constants.sl"
 #include "../../CrossPlatform/SL/illumination.sl"
 #include "../../CrossPlatform/SL/sky.sl"
+#include "../../CrossPlatform/SL/depth.sl"
 
 struct vertexInput
 {
@@ -249,13 +250,15 @@ struct indexVertexInput
 struct svertexOutput
 {
     vec4 hPosition		: SV_POSITION;
-    vec2 tex				: TEXCOORD0;
+	vec2 tex			: TEXCOORD0;
+	vec2 depthTexc		: TEXCOORD1;
 };
 
 struct starsVertexOutput
 {
     vec4 hPosition		: SV_POSITION;
-    float tex				: TEXCOORD0;
+    float tex			: TEXCOORD0;
+	vec2 depthTexc		: TEXCOORD1;
 };
 
 svertexOutput VS_Sun(indexVertexInput IN) 
@@ -276,7 +279,10 @@ svertexOutput VS_Sun(indexVertexInput IN)
 #else
 	OUT.hPosition.z = OUT.hPosition.w; 
 #endif
-    OUT.tex=pos.xy;
+	OUT.tex = pos.xy;
+	OUT.depthTexc = OUT.hPosition.xy / OUT.hPosition.w;
+	OUT.depthTexc.y *= -1.0;
+	OUT.depthTexc = 0.5*(OUT.depthTexc + vec2(1.0, 1.0));
     return OUT;
 }
 
@@ -289,11 +295,14 @@ struct starsVertexInput
 starsVertexOutput VS_Stars(starsVertexInput IN) 
 {
     starsVertexOutput OUT;
-    OUT.hPosition=mul(worldViewProj,vec4(IN.position.xyz,1.0));
+    OUT.hPosition	=mul(worldViewProj,vec4(IN.position.xyz,1.0));
 
+	OUT.depthTexc = OUT.hPosition.xy / OUT.hPosition.w;
+	OUT.depthTexc.y *= -1.0;
+	OUT.depthTexc = 0.5*(OUT.depthTexc + vec2(1.0, 1.0));
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
 #if REVERSE_DEPTH==1
-	OUT.hPosition.z = 0.0f; 
+	OUT.hPosition.z	= 0.0f; 
 #else
 	OUT.hPosition.z = OUT.hPosition.w; 
 #endif
@@ -301,8 +310,17 @@ starsVertexOutput VS_Stars(starsVertexInput IN)
     return OUT;
 }
 
-vec4 PS_Stars( starsVertexOutput IN): SV_TARGET
+vec4 PS_Stars(starsVertexOutput IN) : SV_TARGET
 {
+	vec3 colour = vec3(1.0, 1.0, 1.0)*(starBrightness*IN.tex);
+	return vec4(colour, 1.0);
+}
+
+vec4 PS_StarsDepthTex(starsVertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc	= viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
+	float depth		= texture_clamp_lod(depthTexture, IN.depthTexc.xy, 0).x;
+	discardUnlessFar(depth);
 	vec3 colour=vec3(1.0,1.0,1.0)*(starBrightness*IN.tex);
 	return vec4(colour,1.0);
 }
@@ -315,11 +333,27 @@ vec4 PS_Sun( svertexOutput IN): SV_TARGET
 	if(r>4.0)
 		discard;
 	float brightness=1.0;
-	if(r>1.0)
-		discard;
+	//if(r>1.0)
+//		discard;
 		//brightness=1.0/pow(r,4.0);//();//colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
 	vec3 result=brightness*colour.rgb*colour.a;
 	return vec4(result,1.f);
+}
+vec4 PS_SunDepthTexture(svertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc = viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
+	float depth = texture_clamp_lod(depthTexture, IN.depthTexc.xy, 0).x;
+	discardUnlessFar(depth);
+	float r = 4.0*length(IN.tex);
+	if (r>4.0)
+		discard;
+	float brightness = 1.0;
+	if (r>1.0)
+		discard;
+	//brightness=1.0/pow(r,4.0);//();//colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
+	vec3 result = brightness*colour.rgb*colour.a;
+	result.rgb = depth;
+	return vec4(result, 1.f);
 }
 
 vec4 PS_SunGaussian( svertexOutput IN): SV_TARGET
@@ -369,14 +403,32 @@ vec4 Planet(vec4 result,vec2 tex)
 }
 vec4 PS_Planet(svertexOutput IN): SV_TARGET
 {
-	vec4 result=flareTexture.Sample(flareSamplerState,vec2(.5f,.5f)-0.5f*IN.tex);
+	vec4 result = flareTexture.Sample(flareSamplerState, vec2(.5f, .5f) - 0.5f*IN.tex);
+	return vec4(1, 0, 1,1);
 	return Planet(result,IN.tex);
+}
+
+vec4 PS_PlanetDepthTexture(svertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc = viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
+	float depth = texture_clamp(depthTexture, depth_texc).x;
+	discardUnlessFar(depth);
+	vec4 result = flareTexture.Sample(flareSamplerState, vec2(.5f, .5f) - 0.5f*IN.tex);
+	return vec4( depth_texc.xy,0,1);
+	return Planet(result, IN.tex);
 }
 
 vec4 PS_PlanetUntextured(svertexOutput IN): SV_TARGET
 {
-	vec4 result=vec4(1.0,1.0,1.0,1.0);
+	vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
 	return Planet(result,IN.tex);
+}
+vec4 PS_PlanetUntexturedDepthTexture(svertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc = viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
+	discardUnlessFar(texture_clamp(depthTexture, depth_texc).x);
+	vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
+	return Planet(result, IN.tex);
 }
 technique11 show_fade_table
 {
@@ -523,20 +575,29 @@ technique11 illumination_buffer
 
 technique11 stars
 {
-    pass p0
+    pass depth_test
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Stars()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Stars()));
+		SetPixelShader(CompileShader(ps_4_0, PS_Stars()));
 		SetDepthStencilState( TestDepth, 0 );
 		SetBlendState(AddBlend, vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
-    }
+	}
+	pass depth_texture
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0, VS_Stars()));
+		SetPixelShader(CompileShader(ps_4_0, PS_StarsDepthTex()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+	}
 }
 
 technique11 sun
 {
-    pass p0
+	pass depth_test
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
@@ -544,7 +605,16 @@ technique11 sun
 		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
 		SetDepthStencilState(TestDepth,0);
 		SetBlendState(AddBlend,vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
-    }
+	}
+	pass depth_texture
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0, VS_Sun()));
+		SetPixelShader(CompileShader(ps_4_0, PS_SunDepthTexture()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+	}
 }
 technique11 sun_gaussian
 {
@@ -587,20 +657,29 @@ technique11 flare
 
 technique11 planet
 {
-    pass p0
+    pass depth_test
     {		
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
+		SetPixelShader(CompileShader(ps_4_0, PS_Flare()));
 		SetDepthStencilState(TestDepth,0);
 		SetBlendState(AlphaBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
-    }
+	}
+	pass depth_texture
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0, VS_Sun()));
+		SetPixelShader(CompileShader(ps_4_0, PS_PlanetDepthTexture()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlend, vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
 }
 
 technique11 planet_untextured
 {
-    pass p0
+	pass depth_test
     {		
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
@@ -608,7 +687,16 @@ technique11 planet_untextured
 		SetPixelShader(CompileShader(ps_4_0,PS_PlanetUntextured()));
 		SetDepthStencilState(TestDepth,0);
 		SetBlendState(AlphaBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
-    }
+	}
+	pass depth_texture
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0, VS_Sun()));
+		SetPixelShader(CompileShader(ps_4_0, PS_PlanetUntexturedDepthTexture()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlend, vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
 }
 
 technique11 interp_light_table

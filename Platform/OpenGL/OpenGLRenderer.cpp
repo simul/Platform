@@ -247,7 +247,7 @@ void OpenGLRenderer::paintGL()
 			sceneRenderer->Render(deviceContext,physicalLightRenderData);
 		}
 		
-		simulWeatherRenderer->RenderCelestialBackground(deviceContext,depthFramebuffer.GetDepthTexture(),exposure);
+		simulWeatherRenderer->RenderCelestialBackground(deviceContext, depthFramebuffer.GetDepthTexture(), simul::sky::float4(0, 0, 1.f, 1.f),exposure);
 		depthFramebuffer.Deactivate(deviceContext);
 		{
 			glActiveTexture(GL_TEXTURE0);

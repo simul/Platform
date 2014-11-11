@@ -9,7 +9,7 @@
 
 struct ID3D11Buffer;
 struct ID3DX11EffectConstantBuffer;
-
+struct ID3DX11EffectPass;
 namespace simul
 {
 	namespace dx11
@@ -103,6 +103,7 @@ namespace simul
 		{
 		protected:
 			EffectTechnique *CreateTechnique();
+			ID3DX11EffectPass *currentPass;
 		public:
 			Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			Effect();

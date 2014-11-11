@@ -267,7 +267,6 @@
     <None Include="HLSL\simul_inscatter_fns.hlsl" />
     <None Include="HLSL\states.hlsl" />
     <None Include="HLSL\atmospherics.fx" />
-    <None Include="HLSL\simul_clouds.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
     <None Include="HLSL\simul_debug.fx" />
     <None Include="HLSL\simul_foliage.fx" />
@@ -329,6 +328,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\ocean.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\clouds.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
