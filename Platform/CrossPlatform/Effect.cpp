@@ -108,3 +108,13 @@ EffectTechnique *Effect::EnsureTechniqueExists(const string &groupname,const str
 	}
 	return tech;
 }
+
+const char *Effect::GetTechniqueName(const EffectTechnique *t) const
+{
+	for(crossplatform::TechniqueMap::const_iterator i=techniques.begin();i!=techniques.end();i++)
+	{
+		if(i->second==t)
+			return i->first.c_str();
+	}
+	return "";
+}

@@ -183,10 +183,18 @@ program fade_3d_to_2d
     fs(430) = PS_Fade3DTo2D();
 };
 
-program sun
+technique sun
 {
-    vs(430) = VS_Sun();
-    fs(430) = PS_Sun();
+	pass depth_test
+	{
+		vs(430) = VS_Sun();
+		fs(430) = PS_Sun();
+	}
+	pass depth_texture
+	{
+		vs(430) = VS_Sun();
+		fs(430) = PS_Sun();
+	}
 };
 
 program flare
@@ -195,16 +203,32 @@ program flare
     fs(430) = PS_Flare();
 };
 
-program planet
+technique planet
 {
-    vs(430) = VS_Sun();
-    fs(430) = PS_Planet();
+	pass depth_test
+	{
+		vs(430) = VS_Sun();
+		fs(430) = PS_Planet();
+	}
+	pass depth_texture
+	{
+		vs(430) = VS_Sun();
+		fs(430) = PS_Planet();
+	}
 };
 
-program stars
+technique stars
 {
-    vs(430) = VS_Stars();
-    fs(430) = PS_Stars();
+	pass depth_test
+	{
+		vs(430) = VS_Stars();
+		fs(430) = PS_Stars();
+	}
+	pass depth_texture
+	{
+		vs(430) = VS_Stars();
+		fs(430) = PS_Stars();
+	}
 };
 
 program illumination_buffer

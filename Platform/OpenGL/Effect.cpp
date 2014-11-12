@@ -198,6 +198,23 @@ int EffectTechnique::NumPasses() const
 	return (int)passes_by_index.size();
 }
 
+GLuint EffectTechnique::passAsGLuint(int p)
+{
+	PassIndexMap::const_iterator i=passes_by_index.find(p);
+	if(i!=passes_by_index.end())
+		return (GLuint)((uintptr_t)(i->second));
+	return 0;
+}
+
+GLuint EffectTechnique::passAsGLuint(const char *name)
+{
+	std::string n(name);
+	PassMap::const_iterator i=passes_by_name.find(n);
+	if(i!=passes_by_name.end())
+		return (GLuint)((uintptr_t)(i->second));
+	return 0;
+}
+
 Effect::Effect()
 	:current_prog(0)
 	,current_texture_number(0)
@@ -479,6 +496,9 @@ GL_ERROR_CHECK
 	if(currentTechnique)
 	{
 		GLuint program	=currentTechnique->passAsGLuint(currentPass);
+		// If we didn't find this pass already, we've already reported the error. Fail silently this time, therefore.
+		if(program==0)
+			return;
 		GLint loc		=glGetUniformLocation(program,name);
 GL_ERROR_CHECK
 		if(loc<0)
@@ -486,6 +506,7 @@ GL_ERROR_CHECK
 			CHECK_PARAM_EXISTS
 		}
 		glUniform1i(loc,texture_number);
+GL_ERROR_CHECK
 	}
 	else
 	{
@@ -665,6 +686,13 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 	if(effectTechnique)
 	{
 		GLuint prog=effectTechnique->passAsGLuint(pass);
+		if(prog==0)
+		{
+			SIMUL_FILE_CERR(this->filenameInUseUtf8.c_str())<<"Pass \""<<pass<<"\" not found in technique \""<<GetTechniqueName(effectTechnique)<<"\" of Effect "<<this->filename.c_str()<<std::endl;
+			currentPass=-1;
+			current_prog=0;
+			return;
+		}
 		for(EffectTechnique::PassIndexMap::iterator i=effectTechnique->passes_by_index.begin();
 			i!=effectTechnique->passes_by_index.end();i++)
 		{

@@ -185,7 +185,8 @@ void OpenGLRenderer::paintGL()
 	deviceContext.renderPlatform	=renderPlatform;
 	deviceContext.viewStruct.view_id=view_id;
 	deviceContext.viewStruct.view	=cam->MakeViewMatrix();
-	
+	TrueSkyRenderer::Render(deviceContext);
+	return;
 	crossplatform::Viewport 		viewport=renderPlatform->GetViewport(deviceContext,view_id);
 
 	if(ReverseDepth)
@@ -193,10 +194,6 @@ void OpenGLRenderer::paintGL()
 	else
 		deviceContext.viewStruct.proj	=(cam->MakeProjectionMatrix((float)viewport.w/(float)viewport.h));
 	
-	//simul::math::Matrix4x4 view;
-	//glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
-	//simul::math::Matrix4x4 proj;
-	//glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
 	// If called from some other OpenGL program, we should already have a modelview and projection matrix.
 	// Here we will generate the modelview matrix from the camera class:
     glMatrixMode(GL_MODELVIEW);
@@ -331,11 +328,19 @@ void OpenGLRenderer::renderUI()
 	}
 }
 
-void OpenGLRenderer::resizeGL(int w,int h)
+void OpenGLRenderer::resizeGL(int view_id,int w,int h)
 {
 	if(simulHDRRenderer)
 		simulHDRRenderer->SetBufferSize(w,h);
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.renderPlatform	=renderPlatform;
+	deviceContext.viewStruct.view_id=view_id;
 	depthFramebuffer.SetWidthAndHeight(w,h);
+	crossplatform::Viewport viewport;
+	memset(&viewport,0,sizeof(viewport));
+	viewport.w=w;
+	viewport.h=h;
+	renderPlatformOpenGL->SetViewports(deviceContext,1,&viewport);
 }
 
 void OpenGLRenderer::SetCamera(int view_id,const simul::crossplatform::CameraOutputInterface *c)

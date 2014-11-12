@@ -22,7 +22,7 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	uniform float overcastBaseKm;
 	uniform float overcastRangeKm;
 	
-	uniform uniform uint3 threadOffset;
+	uniform uint3 threadOffset;
 	uniform float maxFadeDistanceKm;
 
 	uniform float cloudShadowRange;		// As a distance texcoord

@@ -315,13 +315,13 @@ namespace simul
 			{
 				return (ID3DX11EffectTechnique*)platform_technique;
 			}
-			inline GLuint passAsGLuint(int p)
+			virtual GLuint passAsGLuint(int )
 			{
-				return (GLuint)((uintptr_t)passes_by_index[p]);
+				return (GLuint)0;
 			}
-			inline GLuint passAsGLuint(const char *name)
+			virtual GLuint passAsGLuint(const char *)
 			{
-				return (GLuint)((uintptr_t)(passes_by_name[std::string(name)]));
+				return (GLuint)0;
 			}
 			inline int GetPassIndex(const char *name)
 			{
@@ -359,6 +359,7 @@ namespace simul
 		protected:
 			virtual EffectTechnique *CreateTechnique()=0;
 			EffectTechnique *EnsureTechniqueExists(const std::string &groupname,const std::string &techname,const std::string &passname);
+			const char *GetTechniqueName(const EffectTechnique *t) const;
 		public:
 			GroupMap groups;
 			TechniqueMap techniques;

@@ -49,7 +49,7 @@ namespace simul
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
 			void InvalidateDeviceObjects() override;
 			virtual void paintGL();
-			virtual void resizeGL(int w,int h);
+			virtual void resizeGL(int view_id,int w,int h);
 			virtual void initializeGL();
 			virtual void shutdownGL();
 			virtual void renderUI();

@@ -56,7 +56,6 @@ namespace simul
 			META_EndProperties
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
-			void Render(int view_id,ID3D11DeviceContext* pContext);
 			///////////////////////////
 			crossplatform::HdrRenderer *GetSimulHDRRenderer()
 			{
@@ -67,21 +66,11 @@ namespace simul
 				return oceanRenderer;
 			}
 			void	RecompileShaders();
-			void	SaveScreenshot(const char *filename_utf8,int width=0,int height=0,float exposure=1.0f,float gamma=0.44f);
 		protected:
-			void	RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Viewport viewport,int x0,int y0,int w,int h);
 			/// Parts of the scene that go into the main buffer with depth active.
 			void	RenderDepthElements(crossplatform::DeviceContext &deviceContext
 										,float exposure
 										,float gamma);
-			/// Render the sky.
-			void	RenderMixedResolutionSky(crossplatform::DeviceContext &deviceContext
-									,crossplatform::Texture *depthTexture
-									,float exposure
-									,float gamma);
-			void RenderStandard(crossplatform::DeviceContext &deviceContext,const crossplatform::CameraViewStruct &cameraViewStruct);
-			void RenderToOculus(crossplatform::DeviceContext &deviceContext,const crossplatform::CameraViewStruct &cameraViewStruct);
-			void RenderOverlays(crossplatform::DeviceContext &deviceContext,const crossplatform::CameraViewStruct &cameraViewStruct);
 			// Different kinds of view for Render() to call:
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
 			void ReverseDepthChanged();

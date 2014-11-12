@@ -929,6 +929,7 @@ crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext &,int num,crossplatform::Viewport *vps)
 {
+	glViewport(vps->x,vps->y,vps->w,vps->h);
 }
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &,crossplatform::Buffer *buffer)

@@ -61,6 +61,8 @@ namespace simul
 			typedef std::map<int,PassState *> PassStateMap;
 			PassStateMap passStates;
 			int NumPasses() const;
+			GLuint passAsGLuint(int p) override;
+			GLuint passAsGLuint(const char *name) override;
 		};
 		/// The OpenGL implementation of simul::crossplatform::Effect.
 		class SIMUL_OPENGL_EXPORT Effect:public crossplatform::Effect
