@@ -367,6 +367,9 @@
     <None Include="..\CrossPlatform\SFX\hdr.sfx">
       <Filter>SFX</Filter>
     </None>
+    <None Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
+      <Filter>SFX</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">
