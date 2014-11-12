@@ -4,7 +4,7 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Base/FileLoader.h"
 #include <vector>
-
+#pragma optimize("",off)
 #define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
