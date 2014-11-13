@@ -356,6 +356,7 @@ void OpenGLRenderer::ReloadTextures()
 
 void OpenGLRenderer::RecompileShaders()
 {
+	//TrueSkyRenderer::RecompileShaders();
 	renderPlatform->RecompileShaders();
 	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
