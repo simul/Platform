@@ -17,7 +17,7 @@ uniform sampler2D depthTexture;
 
 uniform int layerNumber;
 
-shader VS_Clouds(in vec3 vertex,out float layerDensity,
+shader void VS_Clouds(in vec3 vertex,out float layerDensity,
 								out float rainFade,
 								out vec4 texCoords,
 								out vec2 noise_texc,
@@ -55,7 +55,7 @@ shader VS_Clouds(in vec3 vertex,out float layerDensity,
 	rainFade			=1.0-exp(-layer.layerDistance/10000.0);
 }
 
-shader PS_Clouds(in float layerDensity,
+shader void PS_Clouds(in float layerDensity,
 				in float rainFade,
 				in vec4 texCoords,
 				in vec2 noise_texc,

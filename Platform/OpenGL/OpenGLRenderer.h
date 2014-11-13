@@ -64,7 +64,7 @@ namespace simul
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			void ReverseDepthChanged();
 			SimulGLHDRRenderer *simulHDRRenderer;
-			FramebufferGL depthFramebuffer;
+		//	FramebufferGL depthFramebuffer;
 			GLuint simple_program;
 		};
 	}

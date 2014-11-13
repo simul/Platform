@@ -232,6 +232,7 @@
     <None Include="GLSL\debug.glfx" />
     <None Include="GLSL\font.glfx" />
     <None Include="GLSL\hdr.glfx" />
+    <None Include="GLSL\mixed_resolution.glfx" />
     <None Include="GLSL\optics.glfx" />
     <None Include="GLSL\rain.glfx" />
     <None Include="GLSL\saturate.glsl" />

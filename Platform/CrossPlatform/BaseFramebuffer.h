@@ -113,6 +113,7 @@ namespace simul
 			crossplatform::PixelFormat target_format;
 			crossplatform::PixelFormat depth_format;
 			int bands;
+			int activate_count;
 
 			crossplatform::ConstantBuffer<SphericalHarmonicsConstants>	sphericalHarmonicsConstants;
 			crossplatform::StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;

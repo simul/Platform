@@ -24,6 +24,7 @@ FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageS
 	,m_samples(samples)
 	,m_coverageSamples(coverageSamples)
 	,m_fb(0)
+	,m_noDepthFb(0)
 	,initialized(false)
 	,wrap_clamp(GL_CLAMP_TO_EDGE)
 {
@@ -51,6 +52,7 @@ void FramebufferGL::InvalidateDeviceObjects()
 	//SAFE_DELETE_TEXTURE(m_tex_depth);
 	//SAFE_DELETE_RENDERBUFFER(m_rb_depth);
 	SAFE_DELETE_FRAMEBUFFER(m_fb);
+	SAFE_DELETE_FRAMEBUFFER(m_noDepthFb);
 	GL_ERROR_CHECK
 }
 
@@ -160,17 +162,6 @@ GL_ERROR_CHECK
 	if(depth_format!=crossplatform::UNKNOWN)
 	{
 		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,depth_format,false,false,false);
-	/*	glGenTextures(1, &buffer_depth_texture.pTextureObject);
-		glBindTexture(GL_TEXTURE_2D, buffer_depth_texture.pTextureObject);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_clamp);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_clamp);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		//glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-		GLenum f=opengl::RenderPlatform::ToGLFormat(depth_format);
-		glTexImage2D(GL_TEXTURE_2D, 0, f, Width, Height, 0,GL_DEPTH_COMPONENT,GL_UNSIGNED_INT, NULL);*/
 GL_ERROR_CHECK
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,buffer_depth_texture->AsGLuint(),0);
 GL_ERROR_CHECK
@@ -182,6 +173,18 @@ GL_ERROR_CHECK
 	}
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+/*	if(!m_noDepthFb)
+		glGenFramebuffers(1, &m_noDepthFb);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_noDepthFb);
+	if(buffer_texture&&buffer_depth_texture)
+	{GL_ERROR_CHECK
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffer_texture->AsGLuint(), 0);
+GL_ERROR_CHECK
+		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
+GL_ERROR_CHECK
+		SIMUL_ASSERT(status!=GL_FRAMEBUFFER_COMPLETE,"Bad framebuffer status ");
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
 GL_ERROR_CHECK
 	return true;
 }
@@ -208,6 +211,8 @@ void FramebufferGL::Activate(crossplatform::DeviceContext &)
 	glViewport(0,0,Width,Height);
 	GL_ERROR_CHECK
 	fb_stack.push(m_fb);
+	SIMUL_ASSERT(activate_count==0);
+	activate_count++;
 }
 
 void FramebufferGL::ActivateDepth(crossplatform::DeviceContext &)
@@ -228,6 +233,8 @@ void FramebufferGL::ActivateColour(crossplatform::DeviceContext &,const float /*
 	glViewport(0,0,Width,Height);
 	GL_ERROR_CHECK
 	fb_stack.push(m_fb);
+	SIMUL_ASSERT(activate_count==0);
+	activate_count++;
 }
 // Activate the FBO as a render target
 // The FBO needs to be deactivated when using the associated Textures.
@@ -246,6 +253,8 @@ void FramebufferGL::ActivateViewport(crossplatform::DeviceContext &,float viewpo
 			,(int)((float)Width*viewportW),(int)((float)Height*viewportH));
 	GL_ERROR_CHECK
 	fb_stack.push(m_fb);
+	SIMUL_ASSERT(activate_count==0);
+	activate_count++;
 }
 
 void FramebufferGL::Deactivate(crossplatform::DeviceContext &)
@@ -256,6 +265,8 @@ void FramebufferGL::Deactivate(crossplatform::DeviceContext &)
 	GL_ERROR_CHECK
 	// remove m_fb from the stack and...
 	fb_stack.pop();
+	activate_count--;
+	SIMUL_ASSERT(activate_count==0);
 	// ..restore the n one down.
 	GLuint last_fb=fb_stack.top();
 	GL_ERROR_CHECK
@@ -281,6 +292,11 @@ void FramebufferGL::DeactivateAndRender(crossplatform::DeviceContext &d,bool ble
 	GL_ERROR_CHECK
 	Deactivate(d);
 	Render(d.platform_context,blend);
+}
+
+void FramebufferGL::DeactivateDepth(crossplatform::DeviceContext &)
+{
+  //  glBindFramebuffer(GL_FRAMEBUFFER,m_noDepthFb);
 }
 
 void FramebufferGL::Render(void *,bool blend)

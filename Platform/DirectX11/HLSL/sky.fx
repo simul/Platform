@@ -401,7 +401,6 @@ vec4 Planet(vec4 result,vec2 tex)
 	result.a	*=saturate((0.97-l)/0.03);
 	return result;
 }
-
 vec4 PS_Planet(svertexOutput IN): SV_TARGET
 {
 	vec4 result = flareTexture.Sample(flareSamplerState, vec2(.5f, .5f) - 0.5f*IN.tex);

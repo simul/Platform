@@ -21,6 +21,7 @@ BaseFramebuffer::BaseFramebuffer(int w,int h)
 	,target_format(crossplatform::RGBA_32_FLOAT)
 	,depth_format(crossplatform::UNKNOWN)
 	,bands(4)
+	,activate_count(0)
 	,sphericalHarmonicsEffect(NULL)
 {
 }

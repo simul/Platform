@@ -387,5 +387,8 @@
     <None Include="..\CrossPlatform\SL\depth.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="GLSL\mixed_resolution.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

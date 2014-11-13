@@ -50,6 +50,7 @@ namespace simul
 			void ActivateColour(crossplatform::DeviceContext &,const float [4]);
 			void ActivateViewport(crossplatform::DeviceContext &,float viewportX, float viewportY, float viewportW, float viewportH);
 			void Deactivate(crossplatform::DeviceContext &);
+			void DeactivateDepth(crossplatform::DeviceContext &);
 			void CopyDepthFromFramebuffer();
 			void Clear(crossplatform::DeviceContext &,float r,float g,float b,float a,float depth,int mask=0);
 			void ClearColour(crossplatform::DeviceContext &,float r,float g,float b,float a);
@@ -88,6 +89,7 @@ namespace simul
 			int m_samples; // 0 if not multisampled
 			int m_coverageSamples; // for CSAA
 			GLuint m_fb;
+			GLuint m_noDepthFb;
 			bool initialized;
 			GLint wrap_clamp;
 		};

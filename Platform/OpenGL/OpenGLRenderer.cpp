@@ -99,7 +99,7 @@ GL_ERROR_CHECK
 	if(simulHDRRenderer)
 		simulHDRRenderer->InvalidateDeviceObjects();
 	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
-	depthFramebuffer.InvalidateDeviceObjects();
+//	depthFramebuffer.InvalidateDeviceObjects();
 GL_ERROR_CHECK
 }
 
@@ -109,10 +109,6 @@ GL_ERROR_CHECK
 	InvalidateDeviceObjects();
 GL_ERROR_CHECK
 	delete renderPlatformOpenGL;
-	delete simulHDRRenderer;
-	delete simulWeatherRenderer;
-	delete baseOpticsRenderer;
-	delete baseTerrainRenderer;
 }
 
 void OpenGLRenderer::initializeGL()
@@ -150,9 +146,9 @@ GL_ERROR_CHECK
 	GL_ERROR_CHECK
 	clouds::TrueSkyRenderer::RestoreDeviceObjects(r);
 	renderPlatform->RestoreDeviceObjects(NULL);
-	depthFramebuffer.RestoreDeviceObjects(renderPlatform);
-	depthFramebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
-	depthFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
+	//depthFramebuffer.RestoreDeviceObjects(renderPlatform);
+	//depthFramebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
+	//depthFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
 ERRNO_CHECK
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(renderPlatform);
@@ -178,17 +174,22 @@ void OpenGLRenderer::shutdownGL()
 
 void OpenGLRenderer::paintGL()
 {
-	static int view_id=0;
+	static int view_id=-1;
+	if(view_id<0)
+		view_id=AddView(false);
+	crossplatform::MixedResolutionView *view	=viewManager.GetView(view_id);
 	const crossplatform::CameraOutputInterface *cam=cameras[view_id];
 	const crossplatform::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.renderPlatform	=renderPlatform;
 	deviceContext.viewStruct.view_id=view_id;
 	deviceContext.viewStruct.view	=cam->MakeViewMatrix();
-	TrueSkyRenderer::Render(deviceContext);
-	return;
 	crossplatform::Viewport 		viewport=renderPlatform->GetViewport(deviceContext,view_id);
 
+	view->SetResolution(viewport.w,viewport.h);
+	EnsureCorrectBufferSizes(view_id);
+//	TrueSkyRenderer::Render(deviceContext);
+	//return;
 	if(ReverseDepth)
 		deviceContext.viewStruct.proj	=(cam->MakeDepthReversedProjectionMatrix((float)viewport.w/(float)viewport.h));
 	else
@@ -205,7 +206,7 @@ void OpenGLRenderer::paintGL()
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	if(baseTerrainRenderer)
 		baseTerrainRenderer->SetReverseDepth(ReverseDepth);
-	glClearColor(0,1,0,1);
+	glClearColor(0,0,0,1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	glPushAttrib(GL_ENABLE_BIT);
 	glMatrixMode(GL_PROJECTION);
@@ -220,7 +221,7 @@ void OpenGLRenderer::paintGL()
 		GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
-			simulHDRRenderer->StartRender(deviceContext);
+			//simulHDRRenderer->StartRender(deviceContext);
 			//simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 		}
 		else
@@ -230,25 +231,28 @@ void OpenGLRenderer::paintGL()
 			glDepthMask(GL_TRUE);
 			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		}
-		depthFramebuffer.Activate(deviceContext);
-		depthFramebuffer.Clear(deviceContext, 0.f, 0.f, 0.f, 0.f, 1.f, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		
+		//depthFramebuffer.Activate(deviceContext);
+		view->GetFramebuffer()->Activate(deviceContext);
+		view->GetFramebuffer()->Clear(deviceContext, 0.0f, 0.f, 0.f, 0.f, 1.f, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+#if 1
 		if(baseTerrainRenderer&&ShowTerrain)
 			baseTerrainRenderer->Render(deviceContext,1.f);
 		if(sceneRenderer)
 		{
 			crossplatform::PhysicalLightRenderData physicalLightRenderData;
 			physicalLightRenderData.diffuseCubemap=NULL;
-			physicalLightRenderData.lightColour=simulWeatherRenderer->GetSkyKeyframer()->GetLocalIrradiance(0.0f);
-			physicalLightRenderData.dirToLight=simulWeatherRenderer->GetSkyKeyframer()->GetDirectionToLight(0.0f);
+			physicalLightRenderData.lightColour	=simulWeatherRenderer->GetSkyKeyframer()->GetLocalIrradiance(0.0f);
+			physicalLightRenderData.dirToLight	=simulWeatherRenderer->GetSkyKeyframer()->GetDirectionToLight(0.0f);
 			sceneRenderer->Render(deviceContext,physicalLightRenderData);
 		}
+		view->GetFramebuffer()->DeactivateDepth(deviceContext);
+		crossplatform::Texture *depthTexture=NULL;
+		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
+		simulWeatherRenderer->RenderCelestialBackground(deviceContext,depthTexture,simul::sky::float4(0, 0, 1.f, 1.f),exposure);
 		
-		simulWeatherRenderer->RenderCelestialBackground(deviceContext, depthFramebuffer.GetDepthTexture(), simul::sky::float4(0, 0, 1.f, 1.f),exposure);
-		depthFramebuffer.Deactivate(deviceContext);
-		{
+	/*	{
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)depthFramebuffer.GetTexture()->AsGLuint());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)depthTexture->AsGLuint());
 			glUseProgram(simple_program);
 			GLint image_texture		=glGetUniformLocation(simple_program,"image_texture");
 			glUniform1i(image_texture,0);
@@ -257,9 +261,20 @@ void OpenGLRenderer::paintGL()
 			glDisable(GL_BLEND);
 			depthFramebuffer.Render(deviceContext.platform_context, false);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
+		}*/
+		if(simulWeatherRenderer)
+		{
+			crossplatform::Viewport viewport={0,0,depthTexture->width,depthTexture->length,0.f,1.f};
+			viewManager.DownscaleDepth(deviceContext
+										,depthTexture
+										,NULL
+										,simulWeatherRenderer->GetAtmosphericDownscale()
+										,simulWeatherRenderer->GetDownscale()
+										,simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetMaxDistanceKm()*1000.0f
+										,trueSkyRenderMode==clouds::MIXED_RESOLUTION);
 		}
 		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,1.0f,UseSkyBuffer
-			,depthFramebuffer.GetDepthTexture()
+			,depthTexture
 			,simul::sky::float4(0,0,1.f,1.f),true,vec2(0,0));
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
 
@@ -271,10 +286,14 @@ void OpenGLRenderer::paintGL()
 			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ=simulWeatherRenderer->GetBaseSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-			baseOpticsRenderer->RenderFlare(deviceContext,exp,depthFramebuffer.GetDepthTexture(),dir,light);
+			baseOpticsRenderer->RenderFlare(deviceContext,exp,depthTexture,dir,light);
 		}
+#endif
+		view->GetFramebuffer()->Deactivate(deviceContext);
 		if(simulHDRRenderer&&UseHdrPostprocessor)
-			simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
+		//	simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
+			simulHDRRenderer->Render(deviceContext,view->GetResolvedHDRBuffer(),cameraViewStruct.exposure,cameraViewStruct.gamma);
+	
 //		bool vertical_screen=ScreenHeight>ScreenWidth;
 GL_ERROR_CHECK
 		if(simulWeatherRenderer->GetShowCompositing())
@@ -284,8 +303,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 		}
 GL_ERROR_CHECK
-		if(simulWeatherRenderer)
-			simulWeatherRenderer->RenderOverlays(deviceContext);
+		RenderOverlays(deviceContext,cameraViewStruct);
 GL_ERROR_CHECK
 		if(ShowOSD&&simulWeatherRenderer->GetBaseCloudRenderer())
 			simulWeatherRenderer->GetBaseCloudRenderer()->RenderDebugInfo(deviceContext,viewport.w,viewport.h);
@@ -335,7 +353,7 @@ void OpenGLRenderer::resizeGL(int view_id,int w,int h)
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.renderPlatform	=renderPlatform;
 	deviceContext.viewStruct.view_id=view_id;
-	depthFramebuffer.SetWidthAndHeight(w,h);
+	//depthFramebuffer.SetWidthAndHeight(w,h);
 	crossplatform::Viewport viewport;
 	memset(&viewport,0,sizeof(viewport));
 	viewport.w=w;
@@ -356,7 +374,6 @@ void OpenGLRenderer::ReloadTextures()
 
 void OpenGLRenderer::RecompileShaders()
 {
-	//TrueSkyRenderer::RecompileShaders();
 	renderPlatform->RecompileShaders();
 	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
@@ -375,7 +392,10 @@ void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)
 
 void OpenGLRenderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
 {
-	renderPlatform->DrawDepth(deviceContext,x0,y0,dx/2,dy/2,depthFramebuffer.GetDepthTexture());
+	crossplatform::Texture *depthTexture=NULL;
+	crossplatform::MixedResolutionView *view	=viewManager.GetView(deviceContext.viewStruct.view_id);
+		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
+	renderPlatform->DrawDepth(deviceContext,x0,y0,dx/2,dy/2,depthTexture);
 GL_ERROR_CHECK
 	//MixedResolutionView *view	=viewManager.GetView(view_id);
 	//view->RenderDepthBuffers(deviceContext,x0,y0,dx,dy);

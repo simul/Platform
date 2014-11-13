@@ -294,6 +294,8 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	simul::crossplatform::Frustum frustum=crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	if(frustum.reverseDepth)
 		effect=depthReverseEffect;
+	if(!effect)
+		return;
 	SIMUL_ASSERT(depthTexture!=NULL);
 	int W=(FullWidth+hiResDownscale-1)	/hiResDownscale+1;
 	int H=(FullHeight+hiResDownscale-1)	/hiResDownscale+1;

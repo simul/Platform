@@ -3,14 +3,9 @@
 #include <algorithm>			// for std::min / max
 #include <assert.h>
 #include <stdarg.h>
-#include "Simul/Sky/SkyInterface.h"
-#include "Simul/Sky/Float4.h"
-#include "Simul/Clouds/CloudInterface.h"
-#include "Simul/Clouds/LightningRenderInterface.h"
-#include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Base/Timer.h"
+#include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Math/RandomNumberGenerator.h"
-#include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
