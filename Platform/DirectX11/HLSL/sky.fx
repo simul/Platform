@@ -404,7 +404,6 @@ vec4 Planet(vec4 result,vec2 tex)
 vec4 PS_Planet(svertexOutput IN): SV_TARGET
 {
 	vec4 result = flareTexture.Sample(flareSamplerState, vec2(.5f, .5f) - 0.5f*IN.tex);
-	return vec4(1, 0, 1,1);
 	return Planet(result,IN.tex);
 }
 
@@ -414,7 +413,6 @@ vec4 PS_PlanetDepthTexture(svertexOutput IN) : SV_TARGET
 	float depth = texture_clamp(depthTexture, depth_texc).x;
 	discardUnlessFar(depth);
 	vec4 result = flareTexture.Sample(flareSamplerState, vec2(.5f, .5f) - 0.5f*IN.tex);
-	return vec4( depth_texc.xy,0,1);
 	return Planet(result, IN.tex);
 }
 

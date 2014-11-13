@@ -184,7 +184,7 @@ namespace simul
 			//! Save a texture to disk.
 			virtual void					SaveTexture(Texture *texture,const char *lFileNameUtf8)=0;
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
-			bool mirrorY,mirrorY2;
+			bool mirrorY, mirrorY2, mirrorYText;
 			crossplatform::Effect *solidEffect;
 			std::set<crossplatform::Material*> materials;
 			bool reverseDepth;

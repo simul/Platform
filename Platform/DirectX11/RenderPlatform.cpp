@@ -1207,8 +1207,8 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	pContext->RSGetViewports(&num_v,&viewport);
 	if(mirrorY2)
 	{
-		y1=(int)viewport.Height-y1;
-		dy*=-1;
+		y1=(int)viewport.Height-y1-dy;
+		//dy*=-1;
 	}
 	{
 		if(v)

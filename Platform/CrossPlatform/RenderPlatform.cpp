@@ -14,6 +14,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	:memoryInterface(m)
 	,mirrorY(false)
 	,mirrorY2(false)
+	,mirrorYText(false)
 	,textRenderer(NULL)
 	,solidEffect(NULL)
 	,reverseDepth(false)
@@ -114,7 +115,7 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y	,const char 
 	
 	while(*text!=0)
 	{
-		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)h,text,colr,bkg,mirrorY2);
+		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)h,text,colr,bkg,mirrorYText);
 		while(*text!='\n'&&*text!=0)
 		{
 			text++;
