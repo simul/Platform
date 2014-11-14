@@ -85,6 +85,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_DEPTH_DISABLE);
 	renderPlatform->SetRenderState(deviceContext,blendAndWriteAlpha);
+ 
 	// disable alpha testing - if we enable this, the usual reference alpha is reversed because
 	// the shaders return transparency, not opacity, in the alpha channel.
     glDisable(GL_ALPHA_TEST);
@@ -188,8 +189,8 @@ GL_ERROR_CHECK
 	layerConstants.thisLayerIndex=18;
 	layerConstants.Apply(deviceContext);
 	int idx=0;
-	static int isolate_layer=-1;
-	sphereMesh.BeginDraw(deviceContext,crossplatform::SHADING_MODE_SHADED);
+	static int min_layer=-1;
+	static int max_layer=-1;
 	for(SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
 	GL_ERROR_CHECK
@@ -201,12 +202,13 @@ GL_ERROR_CHECK
 		singleLayerConstants.layerDistance_	=L.layerDistance;
 		singleLayerConstants.verticalShift_	=L.verticalShift;
 		singleLayerConstants.Apply(deviceContext);
-		if(isolate_layer>=0&&idx!=isolate_layer)
+		if(min_layer>=0&&max_layer>=0&&(idx<min_layer||idx>max_layer))
 			continue;
+	sphereMesh.BeginDraw(deviceContext,crossplatform::SHADING_MODE_SHADED);
 		sphereMesh.Draw(deviceContext,0,crossplatform::SHADING_MODE_SHADED);
 	GL_ERROR_CHECK
-	}
 	sphereMesh.EndDraw(deviceContext);
+	}
 GL_ERROR_CHECK
     glDisable(GL_BLEND);
     glUseProgram(NULL);
@@ -224,6 +226,7 @@ void SimulGLCloudRenderer::RecompileShaders()
 		return;
 GL_ERROR_CHECK
 	GetBaseGpuCloudGenerator()->RecompileShaders();
+	BaseCloudRenderer::RecompileShaders();
 }
 
 void SimulGLCloudRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)

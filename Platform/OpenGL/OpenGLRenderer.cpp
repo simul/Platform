@@ -111,7 +111,11 @@ GL_ERROR_CHECK
 	delete renderPlatformOpenGL;
 }
 
-void OpenGLRenderer::initializeGL()
+int OpenGLRenderer::AddGLView() 
+{
+	return TrueSkyRenderer::AddView(false);
+}
+void OpenGLRenderer::InitializeGL()
 {
 	RestoreDeviceObjects(renderPlatformOpenGL);
 }
@@ -167,16 +171,13 @@ ERRNO_CHECK
 ERRNO_CHECK
 }
 
-void OpenGLRenderer::shutdownGL()
+void OpenGLRenderer::ShutdownGL()
 {
 	InvalidateDeviceObjects();
 }
 
-void OpenGLRenderer::paintGL()
+void OpenGLRenderer::RenderGL(int view_id)
 {
-	static int view_id=-1;
-	if(view_id<0)
-		view_id=AddView(false);
 	crossplatform::MixedResolutionView *view	=viewManager.GetView(view_id);
 	const crossplatform::CameraOutputInterface *cam=cameras[view_id];
 	const crossplatform::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
@@ -265,13 +266,13 @@ void OpenGLRenderer::paintGL()
 		if(simulWeatherRenderer)
 		{
 			crossplatform::Viewport viewport={0,0,depthTexture->width,depthTexture->length,0.f,1.f};
-			viewManager.DownscaleDepth(deviceContext
+	/*		viewManager.DownscaleDepth(deviceContext
 										,depthTexture
 										,NULL
 										,simulWeatherRenderer->GetAtmosphericDownscale()
 										,simulWeatherRenderer->GetDownscale()
 										,simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetMaxDistanceKm()*1000.0f
-										,trueSkyRenderMode==clouds::MIXED_RESOLUTION);
+										,trueSkyRenderMode==clouds::MIXED_RESOLUTION);*/
 		}
 		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,1.0f,UseSkyBuffer
 			,depthTexture
@@ -309,45 +310,13 @@ GL_ERROR_CHECK
 			simulWeatherRenderer->GetBaseCloudRenderer()->RenderDebugInfo(deviceContext,viewport.w,viewport.h);
 	GL_ERROR_CHECK
 	}
-	renderUI();
 	glPopAttrib();
 	simul::opengl::Profiler::GetGlobalProfiler().EndFrame();
 }
 
-void OpenGLRenderer::renderUI()
+void OpenGLRenderer::ResizeGL(int view_id,int w,int h)
 {
-	GL_ERROR_CHECK
-	glUseProgram(0);
-	glBindTexture(GL_TEXTURE_2D,0);
-	static char text[500];
-	int y=12;
-	static int line_height=16;
-	crossplatform::DeviceContext deviceContext;
-	GL_ERROR_CHECK
-	renderPlatform->Print(deviceContext,12,y+=line_height,"OpenGL");
-	if(ShowOSD)
-	{
-	static simul::base::Timer timer;
-		timer.TimeSum=0;
-		float t=timer.FinishTime();
-		if(t<1.f)
-			t=1.f;
-		if(t>1000.f)
-			t=1000.f;
-		static float framerate=1.f;
-		framerate*=0.95f;
-		framerate+=0.05f*(1000.f/t);
-		static char osd_text[256];
-		sprintf_s(osd_text,256,"%3.3f fps",framerate);
-		renderPlatform->Print(deviceContext,12,y+=line_height,osd_text);
-		if(simulWeatherRenderer)
-			renderPlatform->Print(deviceContext,12,y+=line_height,simulWeatherRenderer->GetDebugText());
-		timer.StartTime();
-	}
-}
-
-void OpenGLRenderer::resizeGL(int view_id,int w,int h)
-{
+	TrueSkyRenderer::ResizeView(view_id,w,h);
 	if(simulHDRRenderer)
 		simulHDRRenderer->SetBufferSize(w,h);
 	crossplatform::DeviceContext deviceContext;

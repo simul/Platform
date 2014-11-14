@@ -390,5 +390,8 @@
     <None Include="GLSL\mixed_resolution.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\simul_gpu_clouds.glfx">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

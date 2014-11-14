@@ -48,11 +48,13 @@ namespace simul
 			META_EndProperties
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
 			void InvalidateDeviceObjects() override;
-			virtual void paintGL();
-			virtual void resizeGL(int view_id,int w,int h);
-			virtual void initializeGL();
-			virtual void shutdownGL();
-			virtual void renderUI();
+
+			int AddGLView() override;
+			void RenderGL(int) override;
+			void ResizeGL(int view_id,int w,int h) override;
+			void InitializeGL() override;
+			void ShutdownGL() override;
+
 			simul::clouds::BaseWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer;}
 			SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer;}
 			class simul::terrain::BaseTerrainRenderer *GetTerrainRenderer(){return baseTerrainRenderer;}

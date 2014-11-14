@@ -371,7 +371,10 @@ bool Effect::FillInTechniques()
 			AddPass(name, "main", t);
 		}
 	}
-	return (numt!=0||nump!=0);
+	// ZERO is a valid number of shaders to have in an effect:
+	if (numt==0&&nump==0)
+		return true;
+	return true;
 }
 
 crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)

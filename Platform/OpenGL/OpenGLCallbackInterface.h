@@ -17,10 +17,11 @@ public:
 class OpenGLCallbackInterface
 {
 public:
-	virtual void paintGL()=0;
-	virtual void resizeGL(int,int,int)=0;
-	virtual void initializeGL()=0;
-	virtual void shutdownGL()=0;
-	virtual void renderUI()=0;
+	//! Add a view. This tells the renderer to create any internal stuff it needs to handle a viewport, so that it is ready when Render() is called. It returns an identifier for that view.
+	virtual int AddGLView()=0;
+	virtual void RenderGL(int)=0;
+	virtual void ResizeGL(int,int,int)=0;
+	virtual void InitializeGL()=0;
+	virtual void ShutdownGL()=0;
 };
 #endif

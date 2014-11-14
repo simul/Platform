@@ -115,10 +115,10 @@ vec4 Layers(float layerDensity,
 	vec4 density2			=textureLod(cloudDensity2,pos,0);
 	density					=mix(density,density2,cloud_interp);
 	float opacity			=layerFade_*density.y;
-	if(opacity<=0.0)
+/*	if(opacity<=0.0)
 		discard;
 	if(dist<cloud_dist)
-		discard;
+		discard;*/
 	float Beta					=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
 	vec3 sunlightColour			=mix(sunlightColour1,sunlightColour2,saturate(texCoords.z));
 	vec3 final					=(density.z*Beta+lightResponse.y*density.w)*sunlightColour*earthshadowMultiplier+density.x*ambientColour.rgb;
@@ -136,7 +136,7 @@ vec4 Layers(float layerDensity,
 	final.rgb					*=loss_lookup;
 	final.rgb					+=InscatterFunction(insc_lookup,hazeEccentricity,cos0,mieRayleighRatio);
 	final.rgb					+=skyl_lookup;
-	//final.rgb=vec3(cloud_dist,cloud_dist,cloud_dist);
+
     return				vec4(final.rgb*opacity*exposure,1.0-opacity);
 }
 
@@ -151,7 +151,8 @@ shader void PS_Layers(in float layerDensity,
 			in vec3 view,
 			in vec4 transformed_pos)
 {
-	 gl_FragColor	=Layers(layerDensity,
+	gl_FragColor=vec4(.5,1,0,.5);
+/*	 gl_FragColor	=Layers(layerDensity,
 						rainFade,
 						texCoords,
 						noise_texc,
@@ -160,7 +161,7 @@ shader void PS_Layers(in float layerDensity,
 						fade_texc,
 						view,
 						transformed_pos
-						,1.0);
+						,1.0);*/
 }
 shader void PS_Layers_depth(in float layerDensity,
 			in float rainFade,
@@ -176,17 +177,16 @@ shader void PS_Layers_depth(in float layerDensity,
 	vec2 screenCoord		=screenCoordOffset+0.5*(clip_pos.xy)+vec2(0.5,0.5);
 	float depth				=texture(depthTexture,screenCoord).x;
 	float dist				=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-
-    gl_FragColor	=Layers(layerDensity,
-						rainFade,
-						texCoords,
-						noise_texc,
-						wPosition,
-						texCoordLightning,
-						fade_texc,
-						view,
-						transformed_pos
-						,dist);
+	gl_FragColor			=Layers(layerDensity,
+								rainFade,
+								texCoords,
+								noise_texc,
+								wPosition,
+								texCoordLightning,
+								fade_texc,
+								view,
+								transformed_pos
+								,dist);
 }
 
 shader void VS_CrossSection(in int gl_VertexID, out vec2 texCoords)
@@ -223,10 +223,13 @@ shader void PS_CrossSection(in vec2 texCoords, out vec4 FragColor)
     FragColor=vec4(accum,1);
 }
 
+VertexShader vs_layers=CompileShader(430,VS_Layers());
+PixelShader ps_layers=CompileShader(430,PS_Layers());
+
 program layers
 {
-	SetVertexShader(430, VS_Layers);
-	SetFragmentShader(430, PS_Layers);
+	SetVertexShader(vs_layers);
+	SetFragmentShader(ps_layers);
 };
 
 program layers_depth
