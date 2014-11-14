@@ -374,7 +374,7 @@ vec4 PS_SunQuery( svertexOutput IN): SV_TARGET
 	float r=2.0*length(IN.tex);
 	if(r>1.0)
 		discard;
-	return vec4(1.0,0.0,0.0,1.0);
+	return vec4(0.0,1.0,0.0,1.0);
 }
 
 vec4 PS_Flare( svertexOutput IN): SV_TARGET
@@ -636,7 +636,7 @@ technique11 sun_query
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_SunQuery()));
 		SetDepthStencilState(TestDepth,0);
-		SetBlendState(AddBlend,vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
+		SetBlendState(BlendWithoutWrite, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
     }
 }
 
