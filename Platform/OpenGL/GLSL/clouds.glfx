@@ -244,19 +244,19 @@ program cloud_shadow
     fs(410) = PS_CloudShadow();
 };
 
-VertexShader vs_crossection=CompileShader(430,VS_CrossSection());
-PixelShader ps_crossection=CompileShader(430,PS_CrossSection());
+VertexShader vs_cross_section=CompileShader(430,VS_CrossSection());
+PixelShader ps_cross_section=CompileShader(430,PS_CrossSection());
 
 program cross_section
 {
-	SetVertexShader(vs_crossection);
-	SetFragmentShader(ps_crossection);
+	SetVertexShader(vs_cross_section);
+	SetFragmentShader(ps_cross_section);
 };
 
 program noise
 {
 	vs(410)=VS_FullScreen();
-	fs(410)=PS_Noise();
+	SetFragmentShader(CompileShader(410,PS_Noise()));
 };
 
 program edge_noise
