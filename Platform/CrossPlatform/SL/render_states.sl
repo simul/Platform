@@ -136,6 +136,16 @@ BlendState AddAlphaBlend
 	DestBlend		=ONE;
 };
 
+BlendState BlendWithoutWrite
+{
+	BlendEnable[0] = TRUE;
+	BlendEnable[1] = TRUE;
+	SrcBlend = ONE;
+	DestBlend = ONE;
+	RenderTargetWriteMask[0] = 0;
+	RenderTargetWriteMask[1] = 0;
+};
+
 BlendState AddBlendDontWriteAlpha
 {
 	BlendEnable[0]	=TRUE;

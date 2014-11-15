@@ -28,8 +28,8 @@ using namespace std;
 			std::cerr<<filenameInUseUtf8.c_str()<<"(1): warning B0001: parameter "<<name<<" was not found."<<filename.c_str()<<std::endl;\
 			std::cerr<<"Further errors of this type will not be shown."<<std::endl;\
 			ignore=true;\
-			return;\
 		}\
+		return;\
 	}
 
 /// Here we break if we have a null technique - but only once.
@@ -43,8 +43,8 @@ using namespace std;
 			BREAK_IF_DEBUGGING\
 			std::cerr<<"Further errors of this type will not be shown."<<std::endl;\
 			ignore=true;\
-			return;\
 		}\
+		return;\
 	}
 
 GLenum toGlQueryType(crossplatform::QueryType t)
@@ -276,14 +276,16 @@ void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,cons
 		if (!glfxParseEffectFromFile(effect, filename_utf8, paths, macros,defs))
 		{
 			std::string log	=glfxGetEffectLog(effect);
-			std::cerr<<log<<std::endl;
+			std::cerr << log.c_str()<< std::endl;
+			DebugBreak();
+			delete paths;
+			delete defs;
+			continue;
 			delete paths;
 			delete defs;
 			DebugBreak();
 			continue;
 		}
-		delete paths;
-		delete defs;
 		platform_effect		=(void*)effect;
 	// If any technique fails, we don't want to proceed until the problem is fixed.
 		if(!FillInTechniques()&&IsDebuggerPresent())
