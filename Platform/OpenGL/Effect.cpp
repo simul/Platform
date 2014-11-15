@@ -277,6 +277,10 @@ void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,cons
 		{
 			std::string log	=glfxGetEffectLog(effect);
 			std::cerr<<log<<std::endl;
+			delete paths;
+			delete defs;
+			DebugBreak();
+			continue;
 		}
 		delete paths;
 		delete defs;
