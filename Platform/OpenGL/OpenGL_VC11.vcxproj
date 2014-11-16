@@ -243,7 +243,6 @@
     <None Include="GLSL\simul_2d_noise.frag" />
     <None Include="GLSL\simul_atmospherics.vert" />
     <None Include="GLSL\simul_atmospherics_godrays.frag" />
-    <None Include="GLSL\simul_clouds.glfx" />
     <None Include="GLSL\simul_clouds_2d.glfx" />
     <None Include="GLSL\simul_cloud_cross_section.frag" />
     <None Include="GLSL\simul_cloud_cross_section.vert" />

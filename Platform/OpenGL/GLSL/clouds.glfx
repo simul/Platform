@@ -223,6 +223,19 @@ shader void PS_CrossSection(in vec2 texCoords, out vec4 FragColor)
     FragColor=vec4(accum,1);
 }
 
+technique cloud_shadow
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_CloudShadow()));
+    }
+}
+
 VertexShader vs_layers=CompileShader(430,VS_Layers());
 PixelShader ps_layers=CompileShader(430,PS_Layers());
 
