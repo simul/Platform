@@ -222,7 +222,10 @@ shader void PS_CrossSection(in vec2 texCoords, out vec4 FragColor)
 	//accum=texture3D(cloud_density,vec3(crossSectionOffset+texCoords.x,crossSectionOffset+texCoords.y,0.35)).rgb;
     FragColor=vec4(accum,1);
 }
-
+profile vs_4_0(410);
+profile ps_4_0(410);
+profile vs_5_0(430);
+profile ps_5_0(430);
 technique cloud_shadow
 {
     pass p0 
@@ -236,8 +239,8 @@ technique cloud_shadow
     }
 }
 
-VertexShader vs_layers=CompileShader(430,VS_Layers());
-PixelShader ps_layers=CompileShader(430,PS_Layers());
+VertexShader vs_layers=CompileShader(vs_4_0,VS_Layers());
+PixelShader ps_layers=CompileShader(ps_4_0,PS_Layers());
 
 program layers
 {
@@ -257,8 +260,8 @@ program cloud_shadow
     fs(410) = PS_CloudShadow();
 };
 
-VertexShader vs_cross_section=CompileShader(430,VS_CrossSection());
-PixelShader ps_cross_section=CompileShader(430,PS_CrossSection());
+VertexShader vs_cross_section=CompileShader(vs_4_0,VS_CrossSection());
+PixelShader ps_cross_section=CompileShader(ps_4_0,PS_CrossSection());
 
 program cross_section
 {
@@ -269,7 +272,7 @@ program cross_section
 program noise
 {
 	vs(410)=VS_FullScreen();
-	SetFragmentShader(CompileShader(410,PS_Noise()));
+	SetFragmentShader(CompileShader(ps_4_0,PS_Noise()));
 };
 
 program edge_noise
