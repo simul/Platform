@@ -6,7 +6,6 @@
 #include "Simul/Platform/CrossPlatform/SL/optics_constants.sl"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 
-#include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Platform/CrossPlatform/LensFlare.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 
