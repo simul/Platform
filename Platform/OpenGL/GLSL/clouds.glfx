@@ -2,6 +2,7 @@
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/simul_cloud_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/render_states.sl"
 #include "saturate.glsl"
 #include "../../CrossPlatform/SL/noise.sl"
 #include "../../CrossPlatform/SL/noise_constants.sl"
@@ -173,11 +174,11 @@ shader void PS_Layers_depth(in float layerDensity,
 			in vec3 view,
 			in vec4 transformed_pos)
 {
-	vec2 clip_pos			=transformed_pos.xy/transformed_pos.w;
-	vec2 screenCoord		=screenCoordOffset+0.5*(clip_pos.xy)+vec2(0.5,0.5);
-	float depth				=texture(depthTexture,screenCoord).x;
-	float dist				=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	gl_FragColor			=Layers(layerDensity,
+	vec2 clip_pos		=transformed_pos.xy/transformed_pos.w;
+	vec2 screenCoord	=screenCoordOffset+0.5*(clip_pos.xy)+vec2(0.5,0.5);
+	float depth			=texture(depthTexture,screenCoord).x;
+	float dist			=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	gl_FragColor		=Layers(layerDensity,
 								rainFade,
 								texCoords,
 								noise_texc,
@@ -192,11 +193,11 @@ shader void PS_Layers_depth(in float layerDensity,
 shader void VS_CrossSection(in int gl_VertexID, out vec2 texCoords)
 {
 	vec2 poss[4];
-	poss[0]=vec2(1.0, 0.0);
-	poss[1]=vec2(1.0, 1.0);
-	poss[3]=vec2(0.0, 1.0);
-	poss[2]=vec2(0.0, 0.0);
-	vec2 pos		=poss[gl_VertexID];
+	poss[0]		=vec2(1.0, 0.0);
+	poss[1]		=vec2(1.0, 1.0);
+	poss[3]		=vec2(0.0, 1.0);
+	poss[2]		=vec2(0.0, 0.0);
+	vec2 pos	=poss[gl_VertexID];
 	gl_Position	=vec4(rect.xy+pos.xy*rect.zw,1.0,1.0);
     texCoords	=pos.xy;
 }
@@ -222,10 +223,12 @@ shader void PS_CrossSection(in vec2 texCoords, out vec4 FragColor)
 	//accum=texture3D(cloud_density,vec3(crossSectionOffset+texCoords.x,crossSectionOffset+texCoords.y,0.35)).rgb;
     FragColor=vec4(accum,1);
 }
+
 profile vs_4_0(410);
 profile ps_4_0(410);
 profile vs_5_0(430);
 profile ps_5_0(430);
+
 technique cloud_shadow
 {
     pass p0 

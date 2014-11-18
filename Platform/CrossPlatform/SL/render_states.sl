@@ -67,19 +67,19 @@ DepthStencilState EnableDepth
 
 BlendState DoBlend
 {
-	BlendEnable[0] = TRUE;
+	BlendEnable[0]	=TRUE;
 	BlendEnable[1]	=TRUE;
-	SrcBlend = One;
-	DestBlend = INV_SRC_ALPHA;
+	SrcBlend		=One;
+	DestBlend		=INV_SRC_ALPHA;
 };
 
 BlendState AlphaToCoverageBlend
 {
-	BlendEnable[0] = TRUE;
-	BlendEnable[1]	=TRUE;
-	AlphaToCoverageEnable = TRUE;
-	SrcBlend = SRC_ALPHA;
-	DestBlend = INV_SRC_ALPHA;
+	BlendEnable[0]			=TRUE;
+	BlendEnable[1]			=TRUE;
+	AlphaToCoverageEnable	=TRUE;
+	SrcBlend				=SRC_ALPHA;
+	DestBlend				=INV_SRC_ALPHA;
 };
 
 BlendState CloudBlend
