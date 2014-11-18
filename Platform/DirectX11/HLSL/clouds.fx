@@ -720,6 +720,8 @@ BlendState Blend1
     //RenderTargetWriteMask[0] = 0x0F;
 };
 
+VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_FullScreen());
+
 fxgroup raytrace
 {
 	technique11 full
@@ -728,14 +730,14 @@ fxgroup raytrace
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceForward()));
 		}
 		pass near 
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNearPass()));
 		}
 		pass both 
@@ -743,7 +745,7 @@ fxgroup raytrace
 			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceBothPasses()));
 		}
 		pass background 
@@ -751,7 +753,7 @@ fxgroup raytrace
 			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceBackground()));
 		}
 	}
@@ -761,14 +763,14 @@ fxgroup raytrace
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNoRainFar()));
 		}
 		pass near 
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNoRainNear()));
 		}
 		pass both 
@@ -776,7 +778,7 @@ fxgroup raytrace
 			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNoRainBothPasses()));
 		}
 		pass background 
@@ -784,7 +786,7 @@ fxgroup raytrace
 			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNoRainBackground()));
 		}
 	}
@@ -794,28 +796,28 @@ fxgroup raytrace
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNew()));
 		}
 		pass near 
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNewNearPass()));
 		}
 		pass both 
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNewBothPasses()));
 		}
 		pass background 
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNew()));
 		}
 	}
@@ -825,14 +827,14 @@ fxgroup raytrace
 		{
 			SetDepthStencilState(DisableDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace()));
 		}
 		pass background 
 		{
 			SetDepthStencilState(DisableDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace()));
 		}
 	}
@@ -842,14 +844,14 @@ fxgroup raytrace
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoise()));
 		}
 		pass near 
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseNearPass()));
 		}
 		pass both 
@@ -857,7 +859,7 @@ fxgroup raytrace
 			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseBothPasses()));
 		}
 		pass background 
@@ -865,7 +867,7 @@ fxgroup raytrace
 			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseBackground()));
 		}
 	}
@@ -875,14 +877,14 @@ fxgroup raytrace
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseNoRainFar()));
 		}
 		pass near 
 		{
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseNoRainNear()));
 		}
 		pass both 
@@ -890,7 +892,7 @@ fxgroup raytrace
 			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseNoRainBothPasses()));
 		}
 		pass background 
@@ -898,7 +900,7 @@ fxgroup raytrace
 			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
-			SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseNoRainBackground()));
 		}
 	}
@@ -911,9 +913,9 @@ technique11 cloud_shadow
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
 		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+		SetVertexShader(vs_fullscreen_5_0);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_CloudShadow()));
+		SetPixelShader(CompileShader(ps_5_0,PS_CloudShadow()));
     }
 }
 
@@ -925,9 +927,9 @@ technique11 rain_map
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
 		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+		SetVertexShader(vs_fullscreen_5_0);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_RainMap()));
+		SetPixelShader(CompileShader(ps_5_0,PS_RainMap()));
     }
 }
 
@@ -953,9 +955,9 @@ technique11 moisture_accumulation
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+		SetVertexShader(vs_fullscreen_5_0);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_MoistureAccumulation()));
+		SetPixelShader(CompileShader(ps_5_0,PS_MoistureAccumulation()));
     }
 }
 

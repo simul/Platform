@@ -14,41 +14,6 @@ namespace simul
 {
 	namespace crossplatform
 	{
-#if 0
-		//! A simple float4 for use in Variant.
-		struct f4
-		{
-			float x,y,z,w;
-		};
-		//! A super-simple variant struct for use in IO.
-		struct Variant
-		{
-			enum Type
-			{
-				BOOL,INT,DOUBLE,FLOAT,VEC4,UNKNOWN
-			};
-			union
-			{
-				bool Bool;
-				int Int;
-				double Double;
-				float Float;
-				f4 F4;
-			};
-			Variant(Type t):type(t){}
-			inline bool		AsBool() const	{return Bool;}
-			inline int		AsInt() const	{return Int;}
-			inline double	AsDouble() const{return Double;}
-			inline float	AsFloat() const	{return Float;}
-			inline f4		AsF4() const	{return F4;}
-			inline void operator=(bool b)	{Bool=b;}
-			inline void operator=(int i)	{Int=i;}
-			inline void operator=(double d)	{Double=d;}
-			inline void operator=(float f)	{Float=f;}
-			inline void operator=(f4 f)		{F4=f;}
-			Type type;
-		};
-#endif
 		class TextInput
 		{
 		public:
@@ -91,7 +56,6 @@ namespace simul
 			virtual void Set(const char *name,int value)=0;
 			virtual void Set(const char *name,double value)=0;
 			virtual void Set(const char *name,float value)=0;
-			//virtual void Set(const char *name,Variant v)=0;
 			// Floating-point value of the specified element.
 			virtual void Set(const char *name,vec4 value)=0;
 			// Make a sub-element with the given name.
