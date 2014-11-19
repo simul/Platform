@@ -186,8 +186,8 @@ RasterizerState wireframeRasterizer
 	CullMode					= none;
 	FrontCounterClockwise		= false;
 	DepthBias					= 0;//DEPTH_BIAS_D32_FLOAT(-0.00001);
-	DepthBiasClamp				= 0.f;
-	SlopeScaledDepthBias		= 0.f;
+	DepthBiasClamp				= 0.0;
+	SlopeScaledDepthBias		= 0.0;
 	DepthClipEnable				= false;
 	ScissorEnable				= false;
 	MultisampleEnable			= false;

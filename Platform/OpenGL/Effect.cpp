@@ -275,15 +275,11 @@ void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,cons
 
 		if (!glfxParseEffectFromFile(effect, filename_utf8, paths, macros,defs))
 		{
-			std::string log	=glfxGetEffectLog(effect);
-			std::cerr << log.c_str()<< std::endl;
+			std::string log=glfxGetEffectLog(effect);
+			std::cerr<<log.c_str()<<std::endl;
 			DebugBreak();
 			delete paths;
 			delete defs;
-			continue;
-			delete paths;
-			delete defs;
-			DebugBreak();
 			continue;
 		}
 		platform_effect		=(void*)effect;
