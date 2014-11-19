@@ -821,7 +821,7 @@ shader vec4 TexturedPS(posTexVertexOutput IN) : SV_TARGET
 }
 
 
-technique11 textured
+technique textured
 {
     pass p0
     {
@@ -834,7 +834,7 @@ technique11 textured
     }
 }
 
-technique11 show_compressed_texture
+technique show_compressed_texture
 {
     pass p0
     {

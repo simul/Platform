@@ -1511,7 +1511,7 @@ vec4 ForegroundComposite_MSAA(vec2 texCoords
 		vec4 insc			=texture_clamp_lod(farInscatterTexture,hiResTexCoords,0);
 		add.rgb				+=insc.rgb*add.a;
 		vec2 isncTexc_unit	=hiResTexCoords*hiResDims-vec2(.5,.5);
-		uint2 loss			=IMAGE_LOAD(lossTexture,isncTexc_unit).xy;
+		uint2 loss			=IMAGE_LOAD(lossTexture,uint2(isncTexc_unit)).xy;
 		multiply			=vec4(uint2_to_colour3(loss.xy),1.0);
 		add.a				=1.0-multiply.r;
 	}
