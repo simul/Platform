@@ -120,6 +120,14 @@ namespace simul
 			bool write;
 			DepthComparison comparison;
 		};
+		enum RenderStateType
+		{
+			NONE
+			,BLEND
+			,DEPTH
+			,RASTERIZER
+			,NUM_RENDERSTATE_TYPES
+		};
 		/// An initialization structure for a RenderState. Create a RenderStateDesc and pass it to RenderPlatform::CreateRenderState,
 		/// then store the returned pointer. Delete the pointer when done.
 		struct RenderStateDesc
