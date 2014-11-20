@@ -295,6 +295,11 @@
     <None Include="GLSL\tonemap.vert" />
     <None Include="GLSL\view_dir.glsl" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\External\glfx\glfx_x64_VC11.vcxproj">
+      <Project>{3c16e3f9-ba50-45a0-a7ff-c985c7721beb}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

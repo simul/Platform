@@ -123,6 +123,10 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 
 void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int )
 {
+		if(errno!=0)
+		{
+			DebugBreak();
+		}
 GL_ERROR_CHECK
 	static int lastBindingIndex=21;
 	if(lastBindingIndex>=85)
