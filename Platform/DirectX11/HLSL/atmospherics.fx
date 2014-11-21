@@ -161,7 +161,8 @@ vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 								,tanHalfFov
 								,true
 								,false);
-    return float4(insc.rgb*exposure,1.0);
+    vec4 res=vec4(insc.rgb*exposure,1.0);
+	return res;
 }
 
 vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET

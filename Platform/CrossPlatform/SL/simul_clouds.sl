@@ -301,16 +301,16 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float max_texc_z	=1.0-min_texc_z;
 	if(do_rain_effect)
 		min_texc_z		=-12.0;
-	else if(view.z<-0.1&&viewPos.z<cornerPos.z-fractalScale.z/inverseScales.z)
-		return res;
+	//else if(view.z<-0.1&&viewPos.z<cornerPos.z-fractalScale.z/inverseScales.z)
+	//	return res;
 	float depth;
 	if(near_pass)
 	{
 		if(dlookup.z==0)
 		{
-			res.colour=vec4(0,0,0,1.0);
-			res.depth=0.0;
-			return res;
+	//		res.colour=vec4(0,0,0,1.0);
+	//		res.depth=0.0;
+	//		return res;
 		}
 		depth			=dlookup.y;
 	}
@@ -428,6 +428,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
     res.colour			=vec4(exposure*colour.rgb,colour.a);
 	res.depth			=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
+	res.colour.rgb = (view.xyz);
+	res.colour.a = 0;
 	return res;
 }
 #endif
