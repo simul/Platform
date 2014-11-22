@@ -407,6 +407,11 @@ vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 	vec4 dlookup 	=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords =  mixedResTransformXYWH.xy + IN.texCoords.xy*mixedResTransformXYWH.zw;
 
+	vec4 clip_pos = vec4(-1.0, 1.0, 1.0, 1.0);
+	clip_pos.x += 2.0*texCoords.x;
+	clip_pos.y -= 2.0*texCoords.y;
+	vec3 view = normalize(mul(invViewProj, clip_pos).xyz);
+
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2
@@ -421,6 +426,8 @@ vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 									,false
 									,false
 									,false);
+	//p.colour.rgb = view;
+	//p.colour.a = 0.0;
 	if(p.colour.a>=1.0)
 	   discard;
 	return p.colour;
