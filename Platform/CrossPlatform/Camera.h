@@ -73,7 +73,7 @@ namespace simul
 		};
 		enum Projection
 		{
-			FORWARD,LINEAR,DEPTH_REVERSE
+			FORWARD,DEPTH_REVERSE
 		};
 		// A struct containing information on how to interpret camera properties in a rendered view.
 		struct SIMUL_CROSSPLATFORM_EXPORT CameraViewStruct

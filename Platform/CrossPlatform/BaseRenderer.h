@@ -37,10 +37,19 @@ namespace simul
 			{
 				this->W=W;
 				this->H=H;
-				w=(W+s-1)/s+1;
-				h=(H+s-1)/s+1;
+				if (s > 1)
+				{
+					w = (W + s - 1) / s + 1;
+					h = (H + s - 1) / s + 1;
+					pixelOffset = offs;
+				}
+				else
+				{
+					w = W;
+					h = H;
+					pixelOffset = vec2(0,0);
+				}
 				downscale=s;
-				pixelOffset=offs;
 			}
 			int W,H;
 			int w,h;

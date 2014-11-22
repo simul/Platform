@@ -40,6 +40,17 @@ namespace simul
 			}
 			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
+				/*if (shaderResourceView)
+				{
+					int r = shaderResourceView->AddRef();
+					static int cc = 50;
+					if (r >= cc)
+					{
+						DebugBreak();
+						cc *= 2;
+					}
+					shaderResourceView->Release();
+				}*/
 				return shaderResourceView;
 			}
 			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()

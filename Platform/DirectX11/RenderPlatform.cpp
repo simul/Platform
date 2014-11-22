@@ -100,6 +100,14 @@ RenderPlatform::StoredState::StoredState()
 		m_pSamplerStateStored11[i]=NULL;
 		m_pVertexSamplerStateStored11[i]=NULL;
 	}
+	for (int i = 0; i<D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+	{
+		m_pShaderResourceViews[i]=NULL;
+	}
+	for (int i = 0; i<D3D11_PS_CS_UAV_REGISTER_COUNT; i++)
+	{
+		m_pUnorderedAccessViews[i] = NULL;
+	}
 	for(int i=0;i<D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;i++)
 	{
 		m_pVertexBuffersStored11[i]=NULL;
@@ -1103,8 +1111,16 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
     pContext->VSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pVertexSamplerStateStored11 );
 
 	pContext->PSSetShaderResources(0,D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,s.m_pShaderResourceViews);
+	for (int i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+	{
+		SAFE_RELEASE(s.m_pShaderResourceViews[i]);
+	}
 	// TODO: handle produce-consume buffers below
-	pContext->CSSetUnorderedAccessViews(0,D3D11_PS_CS_UAV_REGISTER_COUNT,s.m_pUnorderedAccessViews,NULL);
+	pContext->CSSetUnorderedAccessViews(0, D3D11_PS_CS_UAV_REGISTER_COUNT, s.m_pUnorderedAccessViews, NULL);
+	for (int i = 0; i < D3D11_PS_CS_UAV_REGISTER_COUNT; i++)
+	{
+		SAFE_RELEASE(s.m_pUnorderedAccessViews[i]);
+	}
 
     SAFE_RELEASE(s.m_pDepthStencilStateStored11 );
     SAFE_RELEASE(s.m_pRasterizerStateStored11 );
@@ -1118,7 +1134,6 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 	pContext->IASetInputLayout(s.m_previousInputLayout );
 	SAFE_RELEASE(s.m_previousInputLayout);
 
-	
 	pContext->IASetVertexBuffers(	0,
 									D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT,
 									s.m_pVertexBuffersStored11,
@@ -1570,7 +1585,8 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	debugConstants.gamma			=gamma;
 	debugConstants.Apply(deviceContext);
 	m_pDebugEffect->Apply(deviceContext,tech,0);
-	UtilityRenderer::DrawSphere(deviceContext,16,32);
+	UtilityRenderer::DrawSphere(deviceContext, 16, 32);
+	m_pDebugEffect->SetTexture(deviceContext, "cubeTexture", NULL);
 	m_pDebugEffect->Unapply(deviceContext);
 	pContext->RSSetViewports(num_v,m_OldViewports);
 }

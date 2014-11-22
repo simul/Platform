@@ -477,6 +477,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
 	currentPass						=tech->GetPassByIndex(pass_num);
 	HRESULT hr						= currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
+	UnbindTextures(deviceContext);
 	V_CHECK(hr);
 }
 
@@ -526,6 +527,7 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 	HRESULT hr = currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
 	currentTechnique=NULL;
 	currentPass = NULL;
+	UnbindTextures(deviceContext);
 }
 void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 {

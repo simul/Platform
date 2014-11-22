@@ -518,9 +518,9 @@ void simul::dx11::setConstantBuffer(ID3DX11Effect *effect	,const char *name	,ID3
 
 void simul::dx11::unbindTextures(ID3DX11Effect *effect)
 {
-	D3DX11_EFFECT_DESC desc;
-	effect->GetDesc(&desc);
-	for(unsigned i=0;i<desc.GlobalVariables;i++)
+	D3DX11_EFFECT_DESC edesc;
+	effect->GetDesc(&edesc);
+	for(unsigned i=0;i<edesc.GlobalVariables;i++)
 	{
 		ID3DX11EffectVariable *var	=effect->GetVariableByIndex(i);
 		D3DX11_EFFECT_VARIABLE_DESC desc;

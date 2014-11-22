@@ -301,16 +301,16 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float max_texc_z	=1.0-min_texc_z;
 	if(do_rain_effect)
 		min_texc_z		=-12.0;
-	//else if(view.z<-0.1&&viewPos.z<cornerPos.z-fractalScale.z/inverseScales.z)
-	//	return res;
+	else if(view.z<-0.1&&viewPos.z<cornerPos.z-fractalScale.z/inverseScales.z)
+		return res;
 	float depth;
 	if(near_pass)
 	{
 		if(dlookup.z==0)
 		{
-	//		res.colour=vec4(0,0,0,1.0);
-	//		res.depth=0.0;
-	//		return res;
+			res.colour=vec4(0,0,0,1.0);
+			res.depth=0.0;
+			return res;
 		}
 		depth			=dlookup.y;
 	}
@@ -348,8 +348,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		world_pos.z						-=layer.verticalShift;
 		vec3 cloudWorldOffset			=(world_pos-cornerPos);
 		vec3 cloudTexCoords				=cloudWorldOffset*inverseScales;
-	//	if((view.z<0&&cloudTexCoords.z<min_texc_z)||(view.z>0&&cloudTexCoords.z>max_texc_z))
-	//		break;
+		if((view.z<0&&cloudTexCoords.z<min_texc_z)||(view.z>0&&cloudTexCoords.z>max_texc_z))
+			break;
 		float layerFade					=layer.layerFade;
 		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
@@ -375,7 +375,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 					noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyzw;
 				}
 			}
-			density						=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
+			density =  calcDensity(cloudDensity1, cloudDensity2, cloudTexCoords, layer.layerFade, noiseval, fractalScale, cloud_interp);
 			// The rain fall angle is used:
 			vec3 rain_texc				=cloudWorldOffset;
 			rain_texc.xy				+=rain_texc.z*rainTangent;
@@ -428,8 +428,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
     res.colour			=vec4(exposure*colour.rgb,colour.a);
 	res.depth			=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
-	res.colour.rgb = (view.xyz);
-	res.colour.a = 0;
+	//res.colour.rgb = (view.xyz);
+	//res.colour.a = 0;
 	return res;
 }
 #endif
