@@ -27,14 +27,17 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform vec2 warpScale;
 
 	uniform vec2 warpScaleIn;
-	uniform vec2 padHdrConstants2;
+	uniform vec2 padHdrConstants1;
 
 	uniform uint2 hiResDims;
 	uniform uint2 lowResDims;
 
 	uniform uint2 fullResDims;
 	uniform int numSamples;
-	uniform float ahhrastjk;
+	uniform float padHdrConstants2;
+
+	uniform vec3 infraredIntegrationFactors;
+	uniform float padHdrConstants3;
 SIMUL_CONSTANT_BUFFER_END
 	
 SIMUL_CONSTANT_BUFFER(rectConstants,11)

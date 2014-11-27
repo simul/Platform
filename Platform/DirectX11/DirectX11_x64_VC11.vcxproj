@@ -242,6 +242,7 @@
     <None Include="..\CrossPlatform\SL\ocean_constants.sl" />
     <None Include="..\CrossPlatform\SL\optics_constants.sl" />
     <None Include="..\CrossPlatform\SL\rain_constants.sl" />
+    <None Include="..\CrossPlatform\SL\raytrace_new.sl" />
     <None Include="..\CrossPlatform\SL\simul_2d_clouds.hs" />
     <None Include="..\CrossPlatform\SL\simul_2d_clouds.sl" />
     <None Include="..\CrossPlatform\SL\simul_2d_cloud_detail.sl" />
@@ -273,7 +274,6 @@
     <None Include="HLSL\simul_gaussian.fx" />
     <None Include="HLSL\simul_gpu_clouds.fx" />
     <None Include="HLSL\simul_gpu_sky.fx" />
-    <None Include="HLSL\simul_hdr.fx" />
     <None Include="HLSL\lightning.fx" />
     <None Include="HLSL\simul_rendernoise.fx" />
     <None Include="HLSL\simul_terrain.fx" />
@@ -333,6 +333,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\clouds.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\hdr.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

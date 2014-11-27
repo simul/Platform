@@ -269,7 +269,7 @@ vec3 getSkylight(float alt_km, Texture3D insc_texture)
 
 vec3 Blackbody(Texture2D blackbody_texture,float T_K)
 {
-    float tc    =saturate((T_K-200.0)/200.0);
+    float tc    =saturate((T_K-100.0)/400.0);
     tc          =saturate(tc+texelOffset/tableSize.x);
 	vec3 bb		=texture_clamp_lod(blackbody_texture,vec2(tc,tc),0).rgb;
     return bb;

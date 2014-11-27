@@ -12,6 +12,7 @@
 
 #ifdef __cplusplus
 #ifdef _MSC_VER
+	#pragma warning(push)
 	#pragma warning(disable:4324)
 	#define ALIGN_16 __declspec( align( 16 ) )
 #else
@@ -57,7 +58,6 @@
 		}
 	};
 #ifdef _MSC_VER
-#pragma warning(push)
 #pragma warning(disable:4201) // anonymous unions warning
 #endif
 	struct mat4

@@ -29,6 +29,7 @@ namespace simul
 			//! Render: write the given texture to screen using the HDR rendering shaders
 			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
 			void Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma);
+			void RenderInfraRed(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,vec3 infrared_integration_factors,float Exposure,float Gamma);
 			void RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
 			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture);

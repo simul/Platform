@@ -202,9 +202,6 @@
     <None Include="HLSL\simul_gpu_sky.fx">
       <Filter>FX</Filter>
     </None>
-    <None Include="HLSL\simul_hdr.fx">
-      <Filter>FX</Filter>
-    </None>
     <None Include="HLSL\simul_rendernoise.fx">
       <Filter>FX</Filter>
     </None>
@@ -356,6 +353,12 @@
     </None>
     <None Include="HLSL\clouds.fx">
       <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\hdr.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\raytrace_new.sl">
+      <Filter>CrossPlatform</Filter>
     </None>
   </ItemGroup>
 </Project>

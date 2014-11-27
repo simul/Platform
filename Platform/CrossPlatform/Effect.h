@@ -15,7 +15,8 @@ struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 typedef unsigned int GLuint;
 #ifdef _MSC_VER
-#pragma warning(disable:4251)
+    #pragma warning(push)
+    #pragma warning(disable:4251)
 #endif
 namespace simul
 {
@@ -413,3 +414,7 @@ namespace simul
 		};
 	}
 }
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif

@@ -230,7 +230,7 @@ vec3 applyFades2(vec3 final,vec2 fade_texc,float BetaRayleigh,float BetaMie,floa
 	vec3 skyl		=sampleLod(skylTexture		,cmcSamplerState,fade_texc,0).rgb;
 	final			*=loss;
 #ifdef INFRARED
-	final			=skyl.rgb;
+	//final			=skyl.rgb;
 #else
 	vec4 insc		=sampleLod(inscTexture		,cmcSamplerState,fade_texc,0);
 	vec3 inscatter	=earthshadowMultiplier*PrecalculatedInscatterFunction(insc,BetaRayleigh,BetaMie,mieRayleighRatio);
@@ -278,7 +278,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,bool near_pass
 											,bool noise
 											,bool noise_3d
-											,bool do_rain_effect)
+											,bool do_rain_effect
+											,vec3 cloudIrRadiance1,vec3 cloudIrRadiance2)
 {
 	RaytracePixelOutput res;
 	res.colour=vec4(0,0,0,1.0);
@@ -375,7 +376,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 					noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyzw;
 				}
 			}
-			density =  calcDensity(cloudDensity1, cloudDensity2, cloudTexCoords, layer.layerFade, noiseval, fractalScale, cloud_interp);
+			density						=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
 			// The rain fall angle is used:
 			vec3 rain_texc				=cloudWorldOffset;
 			rain_texc.xy				+=rain_texc.z*rainTangent;
@@ -410,7 +411,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				fade_texc.x				=sqrt(fadeDistance);
 				float sh				=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 #ifdef INFRARED
-				c.rgb					=cloudIrRadiance*c.a;
+				c.rgb					=lerp(cloudIrRadiance1,cloudIrRadiance2,saturate(cloudTexCoords.z));//*c.a;
 #endif
 				c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
 				colour.rgb				+=c.rgb*c.a*(colour.a);
@@ -427,9 +428,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	meanFadeDistance	+=colour.a;
     res.colour			=vec4(exposure*colour.rgb,colour.a);
 	res.depth			=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+#ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
-	//res.colour.rgb = (view.xyz);
-	//res.colour.a = 0;
+#endif
 	return res;
 }
 #endif

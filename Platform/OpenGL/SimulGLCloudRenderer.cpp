@@ -128,7 +128,7 @@ GL_ERROR_CHECK
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
 GL_ERROR_CHECK
-	const clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
+	const clouds::CloudKeyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
 
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;

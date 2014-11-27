@@ -58,7 +58,8 @@ RaytracePixelOutput PS_RaytraceForward(posTexVertexOutput IN)
 									,false
 									,true
 									,false
-									,true);
+									,true
+									,cloudIrRadiance1,cloudIrRadiance2);
 	if(texCoords.y>1.0)
 		p.colour.r=1;
 	if(p.colour.a>=1.0)
@@ -87,7 +88,8 @@ RaytracePixelOutput PS_RaytraceBackground(posTexVertexOutput IN)
 									,false
 									,true
 									,false
-									,true);
+									,true
+									,cloudIrRadiance1,cloudIrRadiance2);
 	if(p.colour.a>=1.0)
 	   discard;
 	return p;
@@ -110,7 +112,8 @@ RaytracePixelOutput PS_RaytraceNearPass(posTexVertexOutput IN)
 									,true
 									,true
 									,false
-									,true);
+									,true
+									,cloudIrRadiance1,cloudIrRadiance2);
 
 	if(p.colour.a>=1.0)
 	   discard;
@@ -134,7 +137,8 @@ FarNearPixelOutput PS_RaytraceBothPasses(posTexVertexOutput IN)
 									,false
 									,true
 									,false
-									,true);
+									,true
+									,cloudIrRadiance1,cloudIrRadiance2);
 	RaytracePixelOutput n;
 	if(dlookup.z>0)
 	{
@@ -151,7 +155,8 @@ FarNearPixelOutput PS_RaytraceBothPasses(posTexVertexOutput IN)
 									,true
 									,true
 									,false
-									,true);
+									,true
+									,cloudIrRadiance1,cloudIrRadiance2);
 	}
 	else
 		n=f;
@@ -181,7 +186,8 @@ FarNearPixelOutput PS_RaytraceNoRainBothPasses(posTexVertexOutput IN)
 									,false
 									,true
 									,false
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 	RaytracePixelOutput n;
 	if(dlookup.z>0)
 	{
@@ -198,7 +204,8 @@ FarNearPixelOutput PS_RaytraceNoRainBothPasses(posTexVertexOutput IN)
 									,true
 									,true
 									,false
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 	}
 	else
 		n=f;
@@ -227,7 +234,8 @@ RaytracePixelOutput PS_RaytraceNoRainFar(posTexVertexOutput IN)
 									,false
 									,true
 									,false
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 	if(f.colour.a>=1.0)
 	   discard;
 	return f;
@@ -251,7 +259,8 @@ RaytracePixelOutput PS_RaytraceNoRainNear(posTexVertexOutput IN)
 									,true
 									,true
 									,false
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 	if(n.colour.a>=1.0)
 	   discard;
 	return n;
@@ -279,7 +288,8 @@ RaytracePixelOutput PS_RaytraceNoRainBackground(posTexVertexOutput IN)
 									,false
 									,true
 									,false
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 	if(n.colour.a>=1.0)
 	   discard;
 	return n;
@@ -301,7 +311,8 @@ RaytracePixelOutput PS_RaytraceNew(posTexVertexOutput IN)
 									,texCoords
 									,false
 									,true
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 	
 	return p;
 }
@@ -321,7 +332,8 @@ RaytracePixelOutput PS_RaytraceNewNearPass(posTexVertexOutput IN)
 									,texCoords
 									,true
 									,true
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 
 	return p;
 }
@@ -341,7 +353,8 @@ FarNearPixelOutput PS_RaytraceNewBothPasses(posTexVertexOutput IN)
 									,texCoords
 									,true
 									,true
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 	RaytracePixelOutput n	=RaytraceNew(
 									cloudDensity1
 									,cloudDensity2
@@ -354,7 +367,8 @@ FarNearPixelOutput PS_RaytraceNewBothPasses(posTexVertexOutput IN)
 									,texCoords
 									,true
 									,true
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 	f.colour.r=0.0;
 	f.colour.a=0.5;
 	if(f.colour.a>=1.0)
@@ -425,7 +439,8 @@ vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 									,false
 									,false
 									,false
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 	//p.colour.rgb = view;
 	//p.colour.a = 0.0;
 	if(p.colour.a>=1.0)
@@ -450,7 +465,8 @@ RaytracePixelOutput PS_Raytrace3DNoise(posTexVertexOutput IN)
 									,false
 									,true
 									,true
-									,true);
+									,true
+									,cloudIrRadiance1,cloudIrRadiance2);
 	if(r.colour.a>=1.0)
 	   discard;
 	return r;
@@ -473,7 +489,8 @@ RaytracePixelOutput PS_Raytrace3DNoiseNearPass(posTexVertexOutput IN)
 									,true
 									,true
 									,true
-									,true);
+									,true
+									,cloudIrRadiance1,cloudIrRadiance2);
 	if(r.colour.a>=1.0)
 	   discard;
 	return r;
@@ -496,7 +513,8 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 									,false
 									,true
 									,true
-									,true);
+									,true
+									,cloudIrRadiance1,cloudIrRadiance2);
 	RaytracePixelOutput n;
 	if(dlookup.z>0)
 	{
@@ -513,7 +531,8 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 									,true
 									,true
 									,true
-									,true);
+									,true
+									,cloudIrRadiance1,cloudIrRadiance2);
 		//n.colour.a=.4;
 		//n.colour.r=1;
 	}
@@ -550,7 +569,8 @@ RaytracePixelOutput PS_Raytrace3DNoiseBackground(posTexVertexOutput IN)
 									,false
 									,true
 									,true
-									,true);
+									,true
+									,cloudIrRadiance1,cloudIrRadiance2);
 	if(r.colour.a>=1.0)
 	   discard;
 	return r;
@@ -572,7 +592,8 @@ RaytracePixelOutput NoRain3DNoiseNear(vec4 dlookup,vec2 texCoords)
 									,true
 									,true
 									,true
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 	return n;
 }
 
@@ -601,7 +622,8 @@ RaytracePixelOutput NoRain3DNoiseFar(vec4 dlookup,vec2 texCoords)
 									,false
 									,true
 									,true
-									,false);
+									,false
+									,cloudIrRadiance1,cloudIrRadiance2);
 	return f;
 }
 

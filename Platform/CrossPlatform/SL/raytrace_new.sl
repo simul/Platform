@@ -13,7 +13,9 @@ RaytracePixelOutput RaytraceNew(Texture3D cloudDensity1
 											,vec2 texCoords
 											,bool near_pass
 											,bool noise
-											,bool noise_3d)
+											,bool noise_3d
+											,vec3 cloudIrRadiance1
+											,vec3 cloudIrRadiance2)
 {
 	vec4 dlookup 		=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
@@ -130,7 +132,7 @@ RaytracePixelOutput RaytraceNew(Texture3D cloudDensity1
 				fade_texc.x				=sqrt(fadeDistance);
 				float sh				=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 #ifdef INFRARED
-				c.rgb					=cloudIrRadiance*c.a;
+				c.rgb					=cloudIrRadiance1*c.a;
 #endif
 				c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
 				colour.rgb				+=c.rgb*c.a*(colour.a);

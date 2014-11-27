@@ -191,6 +191,28 @@ shader vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_TARGET
     return vec4(c.rgb,1.0);
 }
 
+shader vec4 PS_InfraRed(v2f IN) : SV_TARGET
+{
+	vec4 c					=texture_clamp(imageTexture,IN.texCoords);
+    c.rgb					*=infraredIntegrationFactors.xyz;
+    float final_radiance	=c.x+c.y+c.z;
+	c=vec4(final_radiance,final_radiance,final_radiance,c.a);
+	c.rgb*=exposure;
+	c.rgb=pow(c.rgb,gamma);
+	return vec4(c.rgb,1.0);
+}
+
+shader vec4 PS_InfraRed_MSAA(v2f IN) : SV_TARGET
+{
+	vec4 c=texture_resolve(imageTextureMS,IN.texCoords);
+    c.rgb					*=infraredIntegrationFactors.xyz;
+    float final_radiance	=c.x+c.y+c.z;
+	c=vec4(final_radiance,final_radiance,final_radiance,c.a);
+	c.rgb*=exposure;
+	c.rgb=pow(c.rgb,gamma);
+	return vec4(c.rgb,1.0);
+}
+
 shader float4 PS_ShowCompressed(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 glow=texture_int(glowTexture,IN.texCoords);
@@ -422,6 +444,11 @@ shader TwoColourCompositeOutput PS_Composite(v2f IN)
 							,inscatterTexture
 							,nearInscatterTexture
 							,lossTexture);
+#ifdef INFRARED_IN_COMPOSITOR
+	vec3 temp=result.add.rgb*infraRedIntegrationFactors;
+	float radiance=temp.x+temp.y+temp.z;
+	result.add.rgb=radiance;
+#endif
 	result.add.rgb	=pow(result.add.rgb,gamma);
 	result.add.rgb	*=exposure;
 	return result;
@@ -507,6 +534,11 @@ shader TwoColourCompositeOutput PS_Composite_MSAA(v2f IN) : SV_TARGET
 							,inscatterTexture
 							,nearInscatterTexture
 							,lossTexture);
+#ifdef INFRARED_IN_COMPOSITOR
+	vec3 temp=result.add.rgb*infraRedIntegrationFactors;
+	float radiance=temp.x+temp.y+temp.z;
+	result.add.rgb=radiance;
+#endif
 	result.add.rgb	=pow(result.add.rgb,gamma);
 	result.add.rgb	*=exposure;
 	return result;
@@ -564,6 +596,28 @@ technique warp_exposure_gamma
 		SetVertexShader(CompileShader(vs_4_0,OffsetVS()));
 		SetPixelShader(CompileShader(ps_4_0,WarpExposureGammaPS()));
     }
+}
+
+technique infra_red
+{
+	pass main
+	{
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_InfraRed()));
+	}
+	pass msaa
+	{
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_InfraRed_MSAA()));
+	}
 }
 
 technique warp_glow_exposure_gamma

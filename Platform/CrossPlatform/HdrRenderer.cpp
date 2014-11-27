@@ -182,6 +182,31 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 	hdr_effect->Unapply(deviceContext);
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
+void HdrRenderer::RenderInfraRed(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,vec3 infrared_integration_factors,float Exposure,float Gamma)
+{
+	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderInfraRed")
+	bool msaa=(texture->GetSampleCount()>1);
+	if(msaa)
+		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
+	else
+		hdr_effect->SetTexture(deviceContext,"imageTexture"	,texture);
+	hdrConstants.gamma						=Gamma;
+	hdrConstants.exposure					=Exposure;
+	hdrConstants.infraredIntegrationFactors	=infrared_integration_factors;
+	hdrConstants.offset						=vec2(0.f,0.f);
+	hdrConstants.Apply(deviceContext);
+	crossplatform::EffectTechnique *tech=hdr_effect->GetTechniqueByName("infra_red");
+	hdr_effect->Apply(deviceContext,tech,(msaa?"msaa":"main"));
+	renderPlatform->DrawQuad(deviceContext);
+
+	hdr_effect->SetTexture(deviceContext,"imageTexture",NULL);
+	hdr_effect->SetTexture(deviceContext,"imageTextureMS",NULL);
+	hdrConstants.Unbind(deviceContext);
+	imageConstants.Unbind(deviceContext);
+	hdr_effect->Unapply(deviceContext);
+	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+}
+
 
 void HdrRenderer::RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture
 	,float offsetX,float Exposure,float Gamma)

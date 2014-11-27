@@ -22,7 +22,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsUniforms,11)
 
 	uniform vec3 fogColour;
 	uniform float fogScaleHeight;
-    uniform vec3 infraredIntegrationFactors;
+    uniform vec3 infraredIntegrationFactorsUNUSED;
 	uniform float fogDensity;
     uniform vec3 yAxis;
 	uniform float pad9;

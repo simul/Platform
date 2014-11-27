@@ -140,15 +140,12 @@ vec4 Inscatter(	Texture2D inscTexture
 				,skyl);
 #ifdef INFRARED
 	vec3 colour			=skyl.rgb;
-    colour.rgb			*=infraredIntegrationFactors.xyz;
-    float final_radiance=colour.x+colour.y+colour.z;
-	return vec4(final_radiance,final_radiance,final_radiance,final_radiance);
 #else
 	float cos0			=dot(view,lightDir);
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl.rgb;
-	return vec4(colour,1.0);
 #endif
+	return vec4(colour,1.0);
 }
 
 
@@ -165,7 +162,7 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 				,vec4 viewportToTexRegionScaleBias
 				,vec4 depthToLinFadeDistParams
 				,vec2 tanHalfFov
-						,bool discardNear
+				,bool discardNear
 				,bool nearPass)
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
@@ -211,14 +208,11 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 	float cos0			=dot(view,lightDir);
 #ifdef INFRARED
 	vec3 colour			=skyl.rgb;
-    colour.rgb			*=infraredIntegrationFactors.xyz;
-    float final_radiance=colour.x+colour.y+colour.z;
-	return float4(final_radiance,final_radiance,final_radiance,1.f);
 #else
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;
-	return float4(colour.rgb,1.0);
 #endif
+	return float4(colour.rgb,1.0);
 }
 	
 struct FarNearOutput
@@ -272,11 +266,9 @@ FarNearOutput Inscatter_Both(	Texture2D inscTexture
                 ,inscFar
 				,skylFar);
 #ifdef INFRARED
-	vec3 colour			=skyl.rgb;
-    colour.rgb			*=infraredIntegrationFactors.xyz;
-    float final_radiance=colour.x+colour.y+colour.z;
-	fn.farColour=float4(final_radiance,final_radiance,final_radiance,1.f);
-	fn.nearColour=float4(final_radiance,final_radiance,final_radiance,1.f);
+	vec3 colour				=skylFar.rgb;
+	fn.farColour			=float4(colour,1.f);
+	fn.nearColour			=float4(colour,1.f);
 	return fn;
 #else
 	vec3 farColour	    =InscatterFunction(inscFar,hazeEccentricity,cos0,mieRayleighRatio);
@@ -390,15 +382,11 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 	float cos0			=dot(view,lightDir);
 #ifdef INFRARED
 	vec3 colour			=skyl.rgb;
-    colour.rgb			*=infraredIntegrationFactors.xyz;
-    float final_radiance=colour.x+colour.y+colour.z;
-	return float4(final_radiance,final_radiance,final_radiance,1.f);
 #else
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;
-
-	return float4(colour.rgb,1.0);
 #endif
+	return float4(colour.rgb,1.0);
 }
 
 vec4 Inscatter(	Texture2D inscTexture
@@ -491,18 +479,16 @@ void ScatteringVolume(	RWTexture3D<float4> targetVolume,int3 idx
 					,insc
 					,skyl);
 
-		float shadow	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist*dir*maxFadeDistanceMetres).x;
 	#ifdef INFRARED
-		vec3 colour		=skyl.rgb;
-		colour.rgb		*=infraredIntegrationFactors.xyz;
-		float final_radiance=colour.x+colour.y+colour.z;
-		vec4 colour=vec4(final_radiance,final_radiance,final_radiance,final_radiance);
+		vec4 next		=vec4(skyl.rgb,1.0);
+		float shadow	=1.0;
 	#else
+		float shadow	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist*dir*maxFadeDistanceMetres).x;
 		float cos0		=ce;
 		vec4 next	    =vec4(InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio),1.0);
 		next.rgb		+=skyl.rgb;
-		colour			+=max(vec4(0,0,0,0),(next-last))*shadow;
 #endif
+		colour			+=max(vec4(0,0,0,0),(next-last))*shadow;
 		targetVolume[int3(idx.xy,i)]=colour;
 		last			=next;
 	}

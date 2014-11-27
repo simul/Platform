@@ -16,7 +16,8 @@
 #include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
 
 #ifdef _MSC_VER
-#pragma warning(disable:4251)
+    #pragma warning(push)
+    #pragma warning(disable:4251)
 #endif
 struct ID3D11Device;
 struct VertexXyzRgba
@@ -221,4 +222,9 @@ namespace simul
 		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext,float square_size,float brightness,int numLines);
 	}
 }
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
+
 #endif

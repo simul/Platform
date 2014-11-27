@@ -95,12 +95,19 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform int noise3DOctaves;
 	uniform vec3 noise3DTexcoordScale;
 	uniform float rainEffect;
-	uniform vec3 cloudIrRadiance;
+	uniform vec3 cloudIrRadiance1;
 	uniform float yz;
+	uniform vec3 cloudIrRadiance2;
+	uniform float pad;
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
 	uniform float dropletRadius;
 	uniform float uageaeg,agpaeg,ageafaeg;
+	// RDE begin: added
+	uniform vec4 infraredIntegrationFactorsUNUSED;
+	// local cloud support
+	uniform vec4 localCloudPivot;    
+	uniform vec4 localCloudInvScale; 
 SIMUL_CONSTANT_BUFFER_END
 	
 										  

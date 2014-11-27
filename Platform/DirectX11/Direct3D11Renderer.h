@@ -50,11 +50,7 @@ namespace simul
 			//! Constructor - pass a pointer to your Environment, and either an implementation of MemoryInterface, or NULL.
 			TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);
 			virtual ~TrueSkyRenderer();
-			META_BeginProperties
-				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")
-				META_ValueProperty(bool,ShowWaterTextures		,"Show the textures generated for water effects as an overlay.")
-			META_EndProperties
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
+			void RestoreDeviceObjects	(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();
 			///////////////////////////
 			crossplatform::HdrRenderer *GetSimulHDRRenderer()
@@ -65,16 +61,16 @@ namespace simul
 			{
 				return oceanRenderer;
 			}
-			void	RecompileShaders();
+			void						RecompileShaders();
 		protected:
 			/// Parts of the scene that go into the main buffer with depth active.
-			void	RenderDepthElements(crossplatform::DeviceContext &deviceContext
-										,float exposure
-										,float gamma);
+			void RenderDepthElements(crossplatform::DeviceContext &deviceContext
+				,float exposure
+				,float gamma);
 			// Different kinds of view for Render() to call:
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
 			void ReverseDepthChanged();
-			
+
 			terrain::BaseSeaRenderer					*oceanRenderer;
 		};
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer

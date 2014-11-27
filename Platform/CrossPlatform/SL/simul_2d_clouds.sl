@@ -206,13 +206,15 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	insc.rgb				*=visible_light;
 	vec3 light				=sun_irr*visible_light+moon_irr;
 	vec4 colour				=vec4(light*(lightResponse.y+lightResponse.x*hg)*scattered_light+amb,opacity);
+
+#ifdef INFRARED
+	colour.rgb				=cloudIrRadiance.rgb;
+#endif
 	colour.rgb				*=loss;
 	colour.rgb				+=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-
 	vec4 skyl_lookup		=texture_cmc_lod(skylTexture,fade_texc,0);
 	colour.rgb				+=skyl_lookup.rgb;
-//colour.rgb=.05*insc.rgb;
-//	colour.rgb=insc_far.rgb;
+
 	return colour;
 }
 

@@ -7,8 +7,9 @@
 #include <string>
 #include <vector>
 #ifdef _MSC_VER
-#pragma warning(disable:4251)
-#pragma warning(disable:4275)
+    #pragma warning(push)
+    #pragma warning(disable:4251)
+    #pragma warning(disable:4275)
 #endif
 namespace simul
 {
@@ -129,3 +130,7 @@ namespace simul
 		};
 	}
 }
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif

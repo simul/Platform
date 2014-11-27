@@ -34,8 +34,6 @@ using namespace dx11;
 
 TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m)
 		:clouds::TrueSkyRenderer(env,sc,m)
-		,ShowWaterTextures(false)
-		,ShowWater(true)
 		,oceanRenderer(NULL)
 {
 	sc;
@@ -127,7 +125,7 @@ Direct3D11Renderer::~Direct3D11Renderer()
 	trueSkyRenderer.InvalidateDeviceObjects();
 }
 
-void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
+void Direct3D11Renderer::OnD3D11CreateDevice	(ID3D11Device* pd3dDevice)
 {
 	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
 	renderPlatformDx11.RestoreDeviceObjects(pd3dDevice);
@@ -150,7 +148,7 @@ int	Direct3D11Renderer::AddView(bool external_fb)
 	return trueSkyRenderer.AddView(external_fb);
 }
 
-void Direct3D11Renderer::RemoveView(int view_id)
+void Direct3D11Renderer::RemoveView			(int view_id)
 {
 	return trueSkyRenderer.RemoveView(view_id);
 }
