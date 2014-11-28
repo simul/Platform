@@ -61,7 +61,9 @@ public:
 		}
 		logFile.open(fn.c_str());
 		if(errno!=0)
-			simul::base::RuntimeError(strerror(errno));
+		{
+			ERRNO_CHECK
+		}
 		if(logFile.good())
 			to_logfile=true;
 	}

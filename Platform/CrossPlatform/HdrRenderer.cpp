@@ -218,7 +218,7 @@ void HdrRenderer::RenderWithOculusCorrection(crossplatform::DeviceContext &devic
 	
 	float direction=(offsetX-0.5f)*2.0f;
 	float x=offsetX/2.0f;
-	float y=0,w=0.5f,h=1.0f;
+//	float y=0,w=0.5f,h=1.0f;
     float as = float(640) / float(800);
 	
 	vec4 distortionK(1.0f,0.22f,0.24f,0.0f);

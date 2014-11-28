@@ -1,6 +1,10 @@
 #pragma once
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
 typedef unsigned GLuint;
 namespace simul
 {
@@ -107,3 +111,7 @@ namespace simul
 		};
 	}
 }
+
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif
