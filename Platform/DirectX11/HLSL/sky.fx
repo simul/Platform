@@ -660,7 +660,7 @@ technique11 planet
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
-		SetPixelShader(CompileShader(ps_4_0, PS_Flare()));
+		SetPixelShader(CompileShader(ps_4_0, PS_Planet()));
 		SetDepthStencilState(TestDepth,0);
 		SetBlendState(AlphaBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
 	}

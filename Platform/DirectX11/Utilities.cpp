@@ -67,6 +67,13 @@ bool simul::dx11::IsTypeless( DXGI_FORMAT fmt, bool partialTypeless )
     }
 }
 
+DXGI_FORMAT simul::dx11::TypelessToSrvFormat(DXGI_FORMAT fmt)
+{
+	if (!IsTypeless(fmt, true))
+		return fmt;
+	int u=fmt+ 1;
+	return(DXGI_FORMAT)u;
+}
 ComputableTexture::ComputableTexture()
 	:g_pTex_Output(NULL)
 	,g_pUAV_Output(NULL)
