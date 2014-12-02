@@ -221,6 +221,18 @@ struct FarNearOutput
 	vec4 nearColour SIMUL_RENDERTARGET_OUTPUT(1);
 };
 
+struct All8Output
+{
+	vec4 colour1 SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 colour2 SIMUL_RENDERTARGET_OUTPUT(1);
+	vec4 colour3 SIMUL_RENDERTARGET_OUTPUT(2);
+	vec4 colour4 SIMUL_RENDERTARGET_OUTPUT(3);
+	vec4 colour5 SIMUL_RENDERTARGET_OUTPUT(4);
+	vec4 colour6 SIMUL_RENDERTARGET_OUTPUT(5);
+	vec4 colour7 SIMUL_RENDERTARGET_OUTPUT(6);
+	vec4 colour8 SIMUL_RENDERTARGET_OUTPUT(7);
+};
+
 // In depthTextureNF, x=far, y=near, z=edge
 FarNearOutput Inscatter_Both(	Texture2D inscTexture
 							,Texture2D skylTexture
@@ -292,6 +304,55 @@ FarNearOutput Inscatter_Both(	Texture2D inscTexture
 	else
 		fn.nearColour		=fn.farColour;
 	return fn;
+}
+
+
+// In depthTextureNF, x=far, y=near, z=edge
+void Inscatter_All(out vec4 colours[8]
+								,Texture2D inscTexture
+								,Texture2D skylTexture
+								,Texture2D illuminationTexture
+								,vec4 depth_lookup
+								,vec2 texCoords
+								,mat4 invViewProj
+								,vec3 lightDir
+								,float hazeEccentricity
+								,vec3 mieRayleighRatio
+								,vec4 depthToLinFadeDistParams
+								,vec2 tanHalfFov)
+{
+	vec2 clip_pos		=vec2(-1.0,1.0);
+	clip_pos.x			+=2.0*texCoords.x;
+	clip_pos.y			-=2.0*texCoords.y;
+	vec3 view			=normalize(mul(invViewProj,vec4(clip_pos,1.0,1.0)).xyz);
+	view				=normalize(view);
+	float sine			=view.z;
+	float2 fade_texc	=vec2(0,0.5f*(1.f-sine));
+	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
+	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
+	
+	float cos0			=dot(view,lightDir);
+	vec4 insc			=vec4(0,0,0,0);
+	vec3 skyl			=vec3(0,0,0);
+	
+	float BetaRayleigh		=CalcRayleighBeta(cos0);
+	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
+	for(int i=0;i<8;i++)
+	{
+		float dist			=float(i)/7.f;
+		fade_texc.x			=dist;
+		vec2 nearFarTexc	=illum_lookup.xy;
+		vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
+		vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
+		vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
+		vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
+		insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
+		skyl                =texture_clamp_mirror(skylTexture,fade_texc).rgb;
+		
+		vec3 colour	    =PrecalculatedInscatterFunction(insc,BetaRayleigh,BetaMie,mieRayleighRatio);
+		colour			+=skyl;
+		colours[i]		=vec4(colour,1.0);
+	}
 }
 
 vec4 InscatterMSAA(	Texture2D inscTexture

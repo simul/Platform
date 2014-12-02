@@ -360,6 +360,38 @@ FarNearOutput PS_Inscatter_Both(atmosVertexOutput IN)
 	fn.nearColour.rgb	*=exposure;
 	return fn;
 }
+
+All8Output PS_Inscatter_Volume(atmosVertexOutput IN)
+{
+	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
+	vec2 texCoords		=mixedResolutionTransformXYWH.xy+IN.texCoords.xy*mixedResolutionTransformXYWH.zw;
+	vec4 colours[8];
+	Inscatter_All( colours
+					,inscTexture
+					,skylTexture
+					,illuminationTexture
+					,depth_lookup
+					,texCoords
+					,invViewProj
+					,lightDir
+					,hazeEccentricity
+					,mieRayleighRatio
+					,depthToLinFadeDistParams
+					,tanHalfFov);
+	
+	
+	All8Output all8Output;
+	all8Output.colour1	=colours[0]*exposure;
+	all8Output.colour2	=colours[1]*exposure;
+	all8Output.colour3	=colours[2]*exposure;
+	all8Output.colour4	=colours[3]*exposure;
+	all8Output.colour5	=colours[4]*exposure;
+	all8Output.colour6	=colours[5]*exposure;
+	all8Output.colour7	=colours[6]*exposure;
+	all8Output.colour8	=colours[7]*exposure;
+	return all8Output;
+}
+
 vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
@@ -581,6 +613,31 @@ technique11 inscatter_msaa
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Near_MSAA()));
     }
+}
+
+BlendState DontBlend8
+{
+	BlendEnable[0] = FALSE;
+	BlendEnable[1]	=FALSE;
+	BlendEnable[2] = FALSE;
+	BlendEnable[3]	=FALSE;
+	BlendEnable[4] = FALSE;
+	BlendEnable[5]	=FALSE;
+	BlendEnable[6] = FALSE;
+	BlendEnable[7]	=FALSE;
+};
+
+technique11 inscatter_volume
+{
+	pass all
+	{
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume()));
+	}
 }
 technique11 inscatter_far_near_2rts
 {

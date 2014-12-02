@@ -90,6 +90,20 @@ vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 	return vec4(1,dist,dist,1.0);
 }
 
+vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_TARGET
+{
+	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
+	vec4 colour		=texture_nearest_lod(inscatterVolumeTexture,vec3(IN.texCoords,z),0);
+	colour.r = colour.a;
+	return colour;
+}
+
+float4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 sc=texture_clamp(inscatterVolumeTexture,vec3(IN.texCoords.xy,1.0));
+	return vec4(sc.rgb,1.0);
+}
+
 vec4 convertInt(Texture2D<uint> glowTexture,uint2 location)
 {
 	uint int_color = glowTexture[location];
@@ -220,12 +234,6 @@ float4 PS_ShowCompressed(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 glow=texture_int(glowTexture,IN.texCoords);
 	return vec4(glow.rgb,1.0);
-}
-
-float4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_TARGET
-{
-	vec4 sc=texture_clamp(inscatterVolumeTexture,vec3(IN.texCoords.xy,1.0));
-	return vec4(sc.rgb,1.0);
 }
 
 vec4 ExposureGammaPS(v2f IN) : SV_TARGET
@@ -850,7 +858,18 @@ technique11 show_depth
 		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS()));
 	}
 }
-
+technique11 show_volume
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,QuadVS()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowVolume()));
+    }
+}
 posTexVertexOutput Debug2DVS(idOnly id)
 {
 	return VS_ScreenQuad(id,rect);

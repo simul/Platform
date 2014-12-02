@@ -609,6 +609,7 @@ RaytracePixelOutput PS_Raytrace3DNoiseNoRainNear(posTexVertexOutput IN)
 
 RaytracePixelOutput NoRain3DNoiseFar(vec4 dlookup,vec2 texCoords)
 {
+	texCoords				=mixedResTransformXYWH.xy+texCoords.xy*mixedResTransformXYWH.zw;
 	RaytracePixelOutput f	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2
@@ -630,20 +631,18 @@ RaytracePixelOutput NoRain3DNoiseFar(vec4 dlookup,vec2 texCoords)
 RaytracePixelOutput PS_Raytrace3DNoiseNoRainFar(posTexVertexOutput IN)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	RaytracePixelOutput f	=NoRain3DNoiseFar(dlookup,texCoords);
+	RaytracePixelOutput f	=NoRain3DNoiseFar(dlookup,IN.texCoords);
 	return f;
 }
 
 FarNearPixelOutput PS_Raytrace3DNoiseNoRainBothPasses(posTexVertexOutput IN)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	RaytracePixelOutput f	=NoRain3DNoiseFar(dlookup,texCoords);
+	RaytracePixelOutput f	=NoRain3DNoiseFar(dlookup,IN.texCoords);
 	RaytracePixelOutput n;
 	if(dlookup.z>0)
 	{
-		n	=NoRain3DNoiseNear(dlookup,texCoords);
+		n	=NoRain3DNoiseNear(dlookup,IN.texCoords);
 	}
 	else
 		n=f;
@@ -663,8 +662,7 @@ RaytracePixelOutput PS_Raytrace3DNoiseNoRainBackground(posTexVertexOutput IN)
 #else
 	vec4 dlookup			=vec4(1.0,0.0,0.0,0.0);
 #endif
-	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	RaytracePixelOutput f	=NoRain3DNoiseFar(dlookup,texCoords);
+	RaytracePixelOutput f	=NoRain3DNoiseFar(dlookup,IN.texCoords);
 	return f;
 }
 
