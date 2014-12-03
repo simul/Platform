@@ -935,8 +935,8 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceCont
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {
-	ID3D11RenderTargetView *rt[4];
-	SIMUL_ASSERT(num<=4);
+	ID3D11RenderTargetView *rt[8];
+	SIMUL_ASSERT(num<=8);
 	for(int i=0;i<num;i++)
 		rt[i]=targs[i]->AsD3D11RenderTargetView();
 	ID3D11DepthStencilView *d=NULL;
@@ -947,8 +947,8 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Viewport *vps)
 {
-	D3D11_VIEWPORT viewports[4];
-	SIMUL_ASSERT(num<=4);
+	D3D11_VIEWPORT viewports[8];
+	SIMUL_ASSERT(num<=8);
 	for(int i=0;i<num;i++)
 	{
 		viewports[i].Width		=(float)vps[i].w;
@@ -963,7 +963,7 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 
 crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &deviceContext,int index)
 {
-	D3D11_VIEWPORT viewports[4];
+	D3D11_VIEWPORT viewports[8];
 	unsigned num=0;
 	deviceContext.asD3D11DeviceContext()->RSGetViewports(&num,NULL);
 	deviceContext.asD3D11DeviceContext()->RSGetViewports(&num,viewports);

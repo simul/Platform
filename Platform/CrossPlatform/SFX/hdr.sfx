@@ -3,6 +3,7 @@
 #include "../SL/hdr_constants.sl"
 #include "../SL/colour_packing.sl"
 #include "../SL/mixed_resolution.sl"
+#include "../SL/composite.sl"
 Texture2D imageTexture;
 Texture2DMS<float4> imageTextureMS;
 Texture2D nearImageTexture;
@@ -225,6 +226,14 @@ shader float4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_TARGET
     return vec4(sc.rgb,1.0);
 }
 
+vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_TARGET
+{
+	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
+	vec4 colour		=texture_nearest_lod(inscatterVolumeTexture,vec3(IN.texCoords,z),0);
+	colour.r = colour.a;
+	return colour;
+}
+
 shader vec4 ExposureGammaPS(v2f IN) : SV_TARGET
 {
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
@@ -339,126 +348,19 @@ shader vec4 PS_ForegroundComposite_MSAA(v2f IN) : SV_TARGET
     return result;
 }
 
-shader vec4 PS_ForegroundComposite2(v2f IN) :SV_TARGET
-{
-	vec4 result	=ForegroundComposite(IN.texCoords.xy
-										,imageTexture
-										,hiResDepthTexture
-										,hiResDims
-										,depthTexture
-										,fullResDims
-										,viewportToTexRegionScaleBias
-										,depthToLinFadeDistParams
-										,fullResToLowResTransformXYWH
-										,fullResToHighResTransformXYWH
-										,inscatterTexture
-										,nearInscatterTexture
-										,lossTexture);
-	result.rgb	=pow(result.rgb,gamma);
-	result.rgb	*=exposure;
-	return result;
-}
-
-shader vec4 PS_ForegroundComposite2_MSAA(v2f IN) :SV_TARGET
-{
-	vec4 result	=ForegroundComposite_MSAA(IN.texCoords.xy
-														,imageTexture
-														,hiResDepthTexture
-														,hiResDims
-														,depthTextureMS
-														,numSamples
-														,fullResDims
-														,viewportToTexRegionScaleBias
-														,depthToLinFadeDistParams
-														,fullResToLowResTransformXYWH
-														,fullResToHighResTransformXYWH
-														,inscatterTexture
-														,nearInscatterTexture
-														,lossTexture);
-	result.rgb	=pow(result.rgb,gamma);
-	result.rgb	*=exposure;
-	return result;
-}
-
-// texture_clamp_lod texture_nearest_lod
-shader vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
-{
-	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy
-										,imageTexture
-										,nearImageTexture
-										,hiResDepthTexture
-										,lowResDepthTexture
-										,depthTexture
-										,depthTextureMS
-										,viewportToTexRegionScaleBias
-										,depthToLinFadeDistParams
-										,fullResToLowResTransformXYWH
-										,inscatterTexture
-										,nearInscatterTexture
-										,false);
-	result.rgb	=pow(result.rgb,gamma);
-	result.rgb	*=exposure;
-	return result;
-}
-
-shader vec4 NearFarDepthCloudBlendPS_MSAA(v2f IN) : SV_TARGET
-{
-	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy
-										,imageTexture
-										,nearImageTexture
-										,hiResDepthTexture
-										,lowResDepthTexture
-										,depthTexture
-										,depthTextureMS
-										,viewportToTexRegionScaleBias
-										,depthToLinFadeDistParams
-										,fullResToLowResTransformXYWH
-										,inscatterTexture
-										,nearInscatterTexture
-										,true);
-	result.rgb	=pow(result.rgb,gamma);
-	result.rgb	*=exposure;
-	return result;
-}
 
 CS_LAYOUT(8,8,1)
 shader void CS_Composite(uint3 sub_pos	: SV_DispatchThreadID )
 {
 }
 
-shader TwoColourCompositeOutput PS_Composite(v2f IN) 
-{
-	TwoColourCompositeOutput result	=Composite(IN.texCoords.xy
-							,imageTexture
-							,nearImageTexture
-							,hiResDepthTexture
-							,hiResDims
-							,lowResDepthTexture
-							,lowResDims
-							,depthTexture
-							,fullResDims
-							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
-							,fullResToLowResTransformXYWH
-							,fullResToHighResTransformXYWH
-							,inscatterTexture
-							,nearInscatterTexture
-							,lossTexture);
-#ifdef INFRARED_IN_COMPOSITOR
-	vec3 temp=result.add.rgb*infraRedIntegrationFactors;
-	float radiance=temp.x+temp.y+temp.z;
-	result.add.rgb=radiance;
-#endif
-	result.add.rgb	=pow(result.add.rgb,gamma);
-	result.add.rgb	*=exposure;
-	return result;
-}
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN) 
 {
 #if 0
 	TwoColourCompositeOutput result	=CompositeAtmospherics2(IN.texCoords.xy
 												,imageTexture
+												,nearImageTexture
 												,hiResDepthTexture
 												,hiResDims
 												,lowResDims
@@ -476,6 +378,7 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN)
 #else
 	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.texCoords.xy
 												,imageTexture
+												,nearImageTexture
 												,hiResDepthTexture
 												,hiResDims
 												,lowResDims
@@ -487,6 +390,7 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN)
 												,fullResToHighResTransformXYWH
 												,inscatterTexture
 												,nearInscatterTexture
+												,inscatterVolumeTexture
 												,lossTexture);
 #endif
 	result.add.rgb	=pow(result.add.rgb,gamma);
@@ -498,6 +402,7 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(v2f IN)
 {
 	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.texCoords.xy
 														,imageTexture
+														,nearImageTexture
 														,hiResDepthTexture
 														,hiResDims
 														,lowResDims
@@ -510,35 +415,8 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(v2f IN)
 														,fullResToHighResTransformXYWH
 														,inscatterTexture
 														,nearInscatterTexture
+														,inscatterVolumeTexture
 														,lossTexture);
-	result.add.rgb	=pow(result.add.rgb,gamma);
-	result.add.rgb	*=exposure;
-	return result;
-}
-shader TwoColourCompositeOutput PS_Composite_MSAA(v2f IN) : SV_TARGET
-{
-	TwoColourCompositeOutput result	=Composite_MSAA(IN.texCoords.xy
-							,imageTexture
-							,nearImageTexture
-							,hiResDepthTexture
-							,hiResDims
-							,lowResDepthTexture
-							,lowResDims
-							,depthTextureMS
-							,numSamples
-							,fullResDims
-							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
-							,fullResToLowResTransformXYWH
-							,fullResToHighResTransformXYWH
-							,inscatterTexture
-							,nearInscatterTexture
-							,lossTexture);
-#ifdef INFRARED_IN_COMPOSITOR
-	vec3 temp=result.add.rgb*infraRedIntegrationFactors;
-	float radiance=temp.x+temp.y+temp.z;
-	result.add.rgb=radiance;
-#endif
 	result.add.rgb	=pow(result.add.rgb,gamma);
 	result.add.rgb	*=exposure;
 	return result;
@@ -665,29 +543,6 @@ BlendState CompositeBlend
     BlendOp			=ADD;
 };
 
-technique foreground_composite
-{
-    pass main
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,PS_ForegroundComposite()));
-    }
-    pass msaa
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,PS_ForegroundComposite_MSAA()));
-    }
-}
-
-
 BlendState SpecialBlend
 {
 	BlendEnable[0]	=TRUE;
@@ -696,27 +551,6 @@ BlendState SpecialBlend
 	DestBlend		=INV_SRC_ALPHA;
 };
 
-technique foreground_composite_2
-{
-    pass main
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,PS_ForegroundComposite2()));
-    }
-    pass msaa
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(SpecialBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,PS_ForegroundComposite2_MSAA()));
-    }
-}
 
 technique simple_cloud_blend
 {
@@ -759,51 +593,6 @@ technique linearize_depth
         SetGeometryShader(NULL);
 		SetVertexShader(mainvs_5_0);
 		SetPixelShader(CompileShader(ps_5_0,LinearizeDepthPS_MSAA()));
-    }
-}
-
-technique far_near_depth_blend
-{
-    pass main
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(CloudBufferBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,NearFarDepthCloudBlendPS()));
-    }
-    pass msaa
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState( DisableDepth,0);
-		SetBlendState(CloudBufferBlend,vec4(1.0,1.0,1.0,1.0),0xFFFFFFFF);
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,NearFarDepthCloudBlendPS_MSAA()));
-    }
-}
-
-// This technique composites on the basis that clouds have an arbitrary integral downscale, and sky has downscale 2.
-technique composite_mixed_res
-{
-    pass main
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,PS_Composite()));
-    }
-    pass msaa
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,PS_Composite_MSAA()));
     }
 }
 
@@ -911,5 +700,17 @@ technique show_scattering_volume
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowScatteringVolume()));
+    }
+}
+technique11 show_volume
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,QuadVS()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowVolume()));
     }
 }

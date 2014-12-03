@@ -84,7 +84,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 	BufferWidth=w/Downscale;
 	BufferHeight=h/Downscale;
 	crossplatform::TwoResFramebuffer *fb=GetFramebuffer(view_id);
-	fb->SetDimensions(w,h,Downscale,AtmosphericDownscale);
+	fb->SetDimensions(w,h,Downscale,Downscale);
 	//scene_buffer->InitColor_Tex(0,internal_buffer_format);
 	//fb->RestoreDeviceObjects(0);
 }

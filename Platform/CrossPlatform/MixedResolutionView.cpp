@@ -66,6 +66,8 @@ vec2 MixedResolutionView::LoResToHiResOffset(vec2 pixelOffset,int hiResScale)
 {
 	if(hiResScale<1)
 		hiResScale=1;
+	if (hiResScale == 1)
+		return pixelOffset;
 	int2 intOffset=int2((int)pixelOffset.x,(int)pixelOffset.y);
 	vec2 fracOffset=pixelOffset-vec2((float)intOffset.x,(float)intOffset.y);
 	intOffset=int2(intOffset.x%hiResScale,intOffset.y%hiResScale);

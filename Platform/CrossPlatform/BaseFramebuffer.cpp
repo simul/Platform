@@ -48,7 +48,8 @@ bool BaseFramebuffer::IsColourActive() const
 TwoResFramebuffer::TwoResFramebuffer()
 	:renderPlatform(0)
 	,HiResDownscale(2)
-	,lossTexture(0)
+	,lossTexture(NULL)
+	,volumeTexture(NULL)
 	,Width(0)
 	,Height(0)
 	,Downscale(0)
@@ -63,6 +64,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform	=r;
 	SAFE_DELETE(lossTexture);
+	SAFE_DELETE(volumeTexture);
 	SAFE_DELETE(lowResFarFramebufferDx11);
 	SAFE_DELETE(lowResNearFramebufferDx11);
 	SAFE_DELETE(hiResFarFramebufferDx11);
@@ -72,6 +74,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	if(Width<=0||Height<=0||Downscale<=0)
 		return;
 	lossTexture		=renderPlatform->CreateTexture();
+	volumeTexture		=renderPlatform->CreateTexture();
 	lowResFarFramebufferDx11	=renderPlatform->CreateFramebuffer();
 	lowResNearFramebufferDx11	=renderPlatform->CreateFramebuffer();
 	hiResFarFramebufferDx11		=renderPlatform->CreateFramebuffer();
@@ -105,6 +108,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	lowResNearFramebufferDx11	->RestoreDeviceObjects(r);
 	hiResFarFramebufferDx11		->RestoreDeviceObjects(r);
 	hiResNearFramebufferDx11	->RestoreDeviceObjects(r);
+		volumeTexture->ensureTexture3DSizeAndFormat(renderPlatform,W,H,8,simul::crossplatform::RGBA_16_FLOAT,false,1,true);
 }
 
 void TwoResFramebuffer::InvalidateDeviceObjects()
@@ -114,6 +118,7 @@ void TwoResFramebuffer::InvalidateDeviceObjects()
 	SAFE_DELETE(hiResFarFramebufferDx11);
 	SAFE_DELETE(hiResNearFramebufferDx11);
 	SAFE_DELETE(lossTexture);
+	SAFE_DELETE(volumeTexture);
 }
 
 void TwoResFramebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
@@ -126,6 +131,12 @@ crossplatform::Texture *TwoResFramebuffer::GetLossTexture()
 {
 	return lossTexture;
 }
+crossplatform::Texture *TwoResFramebuffer::GetVolumeTexture()
+{
+	return volumeTexture;
+}
+
+
 void TwoResFramebuffer::ActivateHiRes(crossplatform::DeviceContext &deviceContext)
 {
 	renderPlatform->PushRenderTargets(deviceContext);
@@ -172,6 +183,30 @@ void TwoResFramebuffer::ActivateLowRes(crossplatform::DeviceContext &deviceConte
 void TwoResFramebuffer::DeactivateLowRes(crossplatform::DeviceContext &deviceContext)
 {
 	renderPlatform->PopRenderTargets(deviceContext);
+}
+
+void TwoResFramebuffer::ActivateVolume(crossplatform::DeviceContext &deviceContext)
+{
+	renderPlatform->PushRenderTargets(deviceContext);
+	// activate all of the rt's of this texture at once.
+	volumeTexture->activateRenderTarget(deviceContext);
+	crossplatform::Texture * depth = GetLowResFarFramebuffer()->GetDepthTexture();
+	ID3D11DepthStencilView *dsv = NULL;
+//	if (depth->width == volumeTexture->width&&depth->length == volumeTexture->length)
+//		dsv = depth->AsD3D11DepthStencilView();
+//	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(volumeTexture->depth, ((dx11::Texture*)volumeTexture)->renderTargetViews, dsv);
+	int w=GetHiResFarFramebuffer()->Width,h=GetHiResFarFramebuffer()->Height;
+	crossplatform::Viewport v[]={{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f}};
+	renderPlatform->SetViewports(deviceContext,volumeTexture->depth,v);
+}
+
+void TwoResFramebuffer::DeactivateVolume(crossplatform::DeviceContext &deviceContext)
+{
+	renderPlatform->PopRenderTargets(deviceContext);
+
+	//SAFE_RELEASE(m_pOldDepthSurface);
+	//if(numOldViewports>0)
+	//	pContext->RSSetViewports(numOldViewports,m_OldViewports);
 }
 
 void TwoResFramebuffer::SetDimensions(int w,int h,int downscale,int hiResDownscale)

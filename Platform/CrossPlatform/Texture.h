@@ -91,7 +91,7 @@ namespace simul
 			//! Initialize as an array texture.
 			virtual void ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
 			//! Initialize as a volume texture.
-			virtual void ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1)=0;
+			virtual void ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;
 			//! Generate the mipmaps automatically.
 			virtual void GenerateMips(DeviceContext &deviceContext)=0;
 			//! Set the texture data from CPU memory.

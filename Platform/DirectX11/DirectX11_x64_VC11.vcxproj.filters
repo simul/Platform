@@ -360,5 +360,8 @@
     <None Include="..\CrossPlatform\SL\raytrace_new.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\composite.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
 </Project>
