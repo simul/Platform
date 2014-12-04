@@ -282,7 +282,6 @@ void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char
 	SAFE_RELEASE(e);
 	if(!renderPlatform)
 		return;
-	this->filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,dx11::GetShaderPathsUtf8());
 	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_utf8,defines,0);//D3DCOMPILE_OPTIMIZATION_LEVEL3);
 	platform_effect	=e;
 	groups.clear();
@@ -336,15 +335,7 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 		return NULL;
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
 	crossplatform::EffectTechnique *tech=new dx11::EffectTechnique;
-	ID3DX11EffectTechnique *t=e->GetTechniqueByName(name);
-	if(!t->IsValid())
-	{
-		if(this->filenameInUseUtf8.length())
-			SIMUL_FILE_LINE_CERR(this->filenameInUseUtf8.c_str(),0)<<"Invalid Effect technique "<<name<<" in effect "<<std::endl;
-		else
-			SIMUL_CERR<<"Invalid Effect technique "<<name<<" in effect "<<this->filename.c_str()<<std::endl;
-	}
-	tech->platform_technique=t;
+	tech->platform_technique=e->GetTechniqueByName(name);
 	techniques[name]=tech;
 	if(!tech->platform_technique)
 	{

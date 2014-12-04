@@ -121,7 +121,7 @@ namespace simul
 		class Texture;
 	}
 }
-uniform_buffer CloudShadowStruct 
+struct CloudShadowStruct 
 {
 	simul::crossplatform::Texture *texture;					///< Cloud shadow texture.
 	simul::crossplatform::Texture *godraysTexture;			///< Texture represents accumulated illumination at a given angle and distance.

@@ -321,6 +321,8 @@ vec4 PS_StarsDepthTex(starsVertexOutput IN) : SV_TARGET
 	vec2 depth_texc	= viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
 	float depth		= texture_clamp_lod(depthTexture, IN.depthTexc.xy, 0).x;
 	discardUnlessFar(depth);
+	//..if(depth>0.5)
+	//	discard;
 	vec3 colour=vec3(1.0,1.0,1.0)*(starBrightness*IN.tex);
 	return vec4(colour,1.0);
 }
