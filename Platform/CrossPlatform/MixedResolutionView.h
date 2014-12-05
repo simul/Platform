@@ -90,21 +90,12 @@ namespace simul
 			{
 				return hdrFramebuffer;
 			}
-
-			/// Gets hi resource depth texture.
+			/// Gets hi res depth texture.
 			///
 			/// \return	null if it fails, else the hi resource depth texture.
 			crossplatform::Texture					*GetHiResDepthTexture()
 			{
 				return hiResDepthTexture;
-			}
-
-			/// Gets low resource depth texture.
-			///
-			/// \return	null if it fails, else the low resource depth texture.
-			crossplatform::Texture						*GetLowResDepthTexture()
-			{
-				return lowResDepthTexture;
 			}
 			/// Type of the view.
 			ViewType									viewType;
@@ -114,8 +105,6 @@ namespace simul
 			simul::crossplatform::BaseFramebuffer		*hdrFramebuffer;
 			/// The depth from the HDR framebuffer can be resolved into this texture:
 			simul::crossplatform::Texture				*hiResDepthTexture;
-			/// The low  depth texture.
-			simul::crossplatform::Texture				*lowResDepthTexture;
 			/// The resolved texture.
 			simul::crossplatform::Texture				*resolvedTexture;
 			/// The render platform.
@@ -158,8 +147,7 @@ namespace simul
 			void RecompileShaders();
 
 			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *simulViewport,MixedResolutionView *view
-											 ,int hiResDownscale,int lowResDownscale,vec4 depthToLinFadeDistParams
-								,bool includeLowResDepth);
+											 ,int downscale,vec4 depthToLinFadeDistParams);
 		protected:
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;
@@ -191,9 +179,8 @@ namespace simul
 			void							RecompileShaders		();
 
 			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext
-																			,crossplatform::Texture *depthTexture,const crossplatform::Viewport *v
-																	,int hiResDownscale,int lowResDownscale
-,float max_dist_metres,bool includeLowResDepth);
+																		,crossplatform::Texture *depthTexture,const crossplatform::Viewport *v
+																		,int downscale,float max_dist_metres);
 
 			/// Gets a view.
 			///

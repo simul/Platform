@@ -34,6 +34,8 @@ namespace simul
 			//! Floating-point value of the specified element.
 			virtual float Get(const char *name,float default_)=0;
 			//! Floating-point value of the specified element.
+			virtual vec3 Get(const char *name,vec3 default_)=0;
+			//! Floating-point value of the specified element.
 			virtual vec4 Get(const char *name,vec4 default_)=0;
 			//! The property at the given index. type should be Variant::UNKNOWN at the end of the list.
 			virtual const char *Get(int propertyIndex)=0;
@@ -57,6 +59,8 @@ namespace simul
 			virtual void Set(const char *name,int value)=0;
 			virtual void Set(const char *name,double value)=0;
 			virtual void Set(const char *name,float value)=0;
+			// Floating-point value of the specified element.
+			virtual void Set(const char *name,vec3 value)=0;
 			// Floating-point value of the specified element.
 			virtual void Set(const char *name,vec4 value)=0;
 			// Make a sub-element with the given name.
@@ -85,6 +89,8 @@ namespace simul
 			double Get(const char *name,double default_);
 			// Floating-point value of the specified element.
 			float Get(const char *name,float default_);
+			// Floating-point value of the specified element.
+			vec3 Get(const char *name,vec3 default_);
 			// Floating-point value of the specified element.
 			vec4 Get(const char *name,vec4 default_);
 			virtual const char *Get(int propertyIndex);
@@ -115,6 +121,8 @@ namespace simul
 			void Set(const char *name,int value);
 			void Set(const char *name,double value);
 			void Set(const char *name,float value);
+			// Floating-point value of the specified element.
+			void Set(const char *name,vec3 value);
 			// Floating-point value of the specified element.
 			void Set(const char *name,vec4 value);
 			// Make a sub-element with the given name.

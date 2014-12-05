@@ -313,9 +313,8 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 	dim=2;
 }
 
-void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int mips)
+void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pixelFormat,bool computable,int mips,bool rendertargets)
 {
-	pixelFormat=pf;
 	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	dim=3;
 	D3D11_TEXTURE3D_DESC textureDesc;
@@ -332,6 +331,8 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
+			if(rendertargets!=((textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET)==D3D11_BIND_RENDER_TARGET))
+				ok=false;
 		}
 		SAFE_RELEASE(ppd);
 	}
@@ -346,9 +347,9 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 		textureDesc.Depth			=depth=d;
 		textureDesc.Format			=format=f;
 		textureDesc.MipLevels		=mips;
-		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
-		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
-		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
+		textureDesc.Usage			=(computable|rendertargets)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertargets?D3D11_BIND_RENDER_TARGET:0);
+		textureDesc.CPUAccessFlags	=(computable|rendertargets)?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags		=0;
 		
 		V_CHECK(r->AsD3D11Device()->CreateTexture3D(&textureDesc,0,(ID3D11Texture3D**)(&texture)));
@@ -373,6 +374,30 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 
 		SAFE_RELEASE(unorderedAccessView);
 		V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
+	}
+	if(d<=8&&rendertargets&&(!renderTargetViews||!renderTargetViews[0]||!ok))
+	{
+		if(renderTargetViews)
+		{
+			for(int i=0;i<num_rt;i++)
+				SAFE_RELEASE(renderTargetViews[i]);
+			delete [] renderTargetViews;
+			renderTargetViews=NULL;
+}
+		num_rt=d;
+		renderTargetViews=new ID3D11RenderTargetView*[num_rt];
+		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+		renderTargetViewDesc.Format				=f;
+		renderTargetViewDesc.ViewDimension		=D3D11_RTV_DIMENSION_TEXTURE3D;
+		renderTargetViewDesc.Texture2D.MipSlice	=0;
+		renderTargetViewDesc.Texture3D.WSize	=1;
+		for(int i=0;i<num_rt;i++)
+		{
+			// Setup the description of the render target view.
+			renderTargetViewDesc.Texture3D.FirstWSlice=i;
+			// Create the render target in DX11:
+			V_CHECK(r->AsD3D11Device()->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[i])));
+		}
 	}
 }
 
@@ -768,7 +793,7 @@ void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceCon
 											);
 	}
 	SIMUL_ASSERT(renderTargetViews!=NULL);
-	last_context->OMSetRenderTargets(1,renderTargetViews,NULL);
+	last_context->OMSetRenderTargets(num_rt,renderTargetViews,NULL);
 	{
 		ID3D11Texture2D* ppd(NULL);
 		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)

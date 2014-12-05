@@ -55,7 +55,7 @@ GL_ERROR_CHECK
 	glGenVertexArrays(1,&vao );
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER,buf);
-	for(int i=0;i<layout->GetDesc().size();i++)
+	for(int i=0;i<(int)layout->GetDesc().size();i++)
 	{
 		const crossplatform::LayoutDesc &d=layout->GetDesc()[i];
 		glEnableVertexAttribArray( i );

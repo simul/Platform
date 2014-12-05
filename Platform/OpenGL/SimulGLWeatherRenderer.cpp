@@ -84,7 +84,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 	BufferWidth=w/Downscale;
 	BufferHeight=h/Downscale;
 	crossplatform::TwoResFramebuffer *fb=GetFramebuffer(view_id);
-	fb->SetDimensions(w,h,Downscale,AtmosphericDownscale);
+	fb->SetDimensions(w,h,Downscale);
 	//scene_buffer->InitColor_Tex(0,internal_buffer_format);
 	//fb->RestoreDeviceObjects(0);
 }
@@ -143,9 +143,9 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	if(doLowResBufferRender)
 	{
 		int w,h,s=1,a;
-		fb->GetDimensions(w,h,s,a);
+		fb->GetDimensions(w,h,s);
 		if(depthTexture)
-			fb->SetDimensions(depthTexture->width,depthTexture->length,s,a);
+			fb->SetDimensions(depthTexture->width,depthTexture->length,s);
 	}
 	void *context=deviceContext.platform_context;
 	RenderCloudsLate=false;

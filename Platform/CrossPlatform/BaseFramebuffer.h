@@ -139,38 +139,27 @@ namespace simul
 			{
 				return lowResNearFramebufferDx11;
 			}
-			crossplatform::BaseFramebuffer *GetHiResFarFramebuffer()
-			{
-				return hiResFarFramebufferDx11;
-			}
-			crossplatform::BaseFramebuffer *GetHiResNearFramebuffer()
-			{
-				return hiResNearFramebufferDx11;
-			}
 			crossplatform::Texture *GetLossTexture();
+			crossplatform::Texture *GetVolumeTexture();
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			virtual void InvalidateDeviceObjects();
-			virtual void SetDimensions(int w,int h,int downscale,int hiResDownscale);
-			virtual void GetDimensions(int &w,int &h,int &downscale,int &hiResDownscale);
-			/// Activate BOTH Hi-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivateHiRes after rendering.
-			virtual void ActivateHiRes(crossplatform::DeviceContext &);
-			/// Deactivate both hi-res framebuffers.
-			virtual void DeactivateHiRes(crossplatform::DeviceContext &);
+			virtual void SetDimensions(int w,int h,int downscale);
+			virtual void GetDimensions(int &w,int &h,int &downscale);
 			/// Activate BOTH low-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivatelLowRes after rendering.
 			virtual void ActivateLowRes(crossplatform::DeviceContext &);
 			/// Deactivate both low-res framebuffers.
 			virtual void DeactivateLowRes(crossplatform::DeviceContext &);
 			/// Deactivate the depth buffer
 			virtual void DeactivateDepth(crossplatform::DeviceContext &);
+			virtual void ActivateVolume(crossplatform::DeviceContext &);
+			virtual void DeactivateVolume(crossplatform::DeviceContext &);
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;
 			crossplatform::Texture *lossTexture;
-			int HiResDownscale;
+			crossplatform::Texture *volumeTexture;
 			int Width,Height,Downscale;
 			crossplatform::BaseFramebuffer	*lowResFarFramebufferDx11;
 			crossplatform::BaseFramebuffer	*lowResNearFramebufferDx11;
-			crossplatform::BaseFramebuffer	*hiResFarFramebufferDx11;
-			crossplatform::BaseFramebuffer	*hiResNearFramebufferDx11;
 		};
 	}
 }

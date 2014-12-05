@@ -217,7 +217,7 @@ void HdrRenderer::RenderWithOculusCorrection(crossplatform::DeviceContext &devic
 	hdrConstants.exposure			=Exposure;
 	
 	float direction=(offsetX-0.5f)*2.0f;
-	float x=offsetX/2.0f;
+//	float x=offsetX/2.0f;
 //	float y=0,w=0.5f,h=1.0f;
     float as = float(640) / float(800);
 	

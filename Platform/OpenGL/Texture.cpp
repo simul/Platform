@@ -385,7 +385,7 @@ void simul::opengl::Texture::setTexels(void *,const void *src,int x,int y,int z,
 						src);
 }
 
-void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pf,bool /*computable*/,int mips)
+void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pf,bool /*computable*/,int mips,bool rendertargets)
 {
 	GL_ERROR_CHECK
 	pixelFormat=pf;

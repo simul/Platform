@@ -281,6 +281,24 @@ float TextFileInput::Get(const char *name,float dflt)
 	return (float)atof(properties[name].c_str());
 }
 
+vec3 TextFileInput::Get(const char *name,vec3 dflt)
+{
+	if(properties.find(name)==properties.end())
+		return dflt;
+	float val[3];
+	size_t pos=0;
+	std::string str=properties[name];
+	for(int i=0;i<3;i++)
+	{
+		size_t comma_pos=str.find(",",pos+1);
+		string s=str.substr(pos,comma_pos-pos);
+		val[i]=(float)atof(s.c_str());
+		pos=comma_pos+1;
+	}
+	vec3 ret=val;
+	return ret;
+}
+
 vec4 TextFileInput::Get(const char *name,vec4 dflt)
 {
 	if(properties.find(name)==properties.end())
@@ -434,6 +452,11 @@ void TextFileOutput::Set(const char *name,double value)
 void TextFileOutput::Set(const char *name,float value)
 {
 	properties[name]=base::stringFormat("%16.16g",value);
+}
+
+void TextFileOutput::Set(const char *name,vec3 value)
+{
+	properties[name]=base::stringFormat("%16.16g,%16.16g,%16.16g",value.x,value.y,value.z);
 }
 
 void TextFileOutput::Set(const char *name,vec4 value)
