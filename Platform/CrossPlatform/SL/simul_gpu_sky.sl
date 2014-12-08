@@ -212,7 +212,8 @@ vec4 PSLoss(Texture2D input_loss_texture,Texture2D density_texture,vec2 texCoord
 vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_texture,Texture2D optical_depth_texture,vec2 texCoords)
 {
 	vec4 previous_insc	=texture_nearest_lod(input_texture,texCoords.xy,0);
-	vec3 previous_loss	=texture_nearest_lod(loss_texture,vec3(texCoords.xy,pow(distanceKm/maxDistanceKm,0.5)),0).rgb;// should adjust texCoords - we want the PREVIOUS loss!
+	vec3 u				=vec3(texCoords.xy,pow(distanceKm/maxDistanceKm,0.5));
+	vec3 previous_loss	=texture_nearest_lod(loss_texture,u,0).rgb;// should adjust texCoords - we want the PREVIOUS loss!
 	float sin_e			=clamp(1.0-2.0*(texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texCoords.x*texSize.x-texelOffset)/(texSize.x-1.0);

@@ -142,7 +142,8 @@ float DensityFunction(Texture3D volumeNoiseTexture,vec3 noisespace_texcoord,floa
 	int noiseDimension=8;
 	int noiseHeight=8;
 	// We want to distort the lookup by up to half a noise texel at the specified dimension.
-	noisespace_texcoord.xy	+=2.0/float(noiseDimension)*(texture_wrap_lod(volumeNoiseTexture,vec3(noisespace_texcoord.xy,0),0).xy-0.5);
+	vec3 u					=vec3(noisespace_texcoord.xy,0);
+	noisespace_texcoord.xy	+=2.0/float(noiseDimension)*(texture_wrap_lod(volumeNoiseTexture,u,0).xy-0.5);
 	float lookup			=CircularLookup(volumeNoiseTexture,vec3(noisespace_texcoord.xy,0),1.0,t,noiseDimension,noiseHeight);
 	return lookup;
 }

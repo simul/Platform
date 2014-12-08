@@ -339,10 +339,9 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 	ID3DX11EffectTechnique *t=e->GetTechniqueByName(name);
 	if(!t->IsValid())
 	{
+		SIMUL_CERR<<"Invalid Effect technique "<<name<<" in effect "<<this->filename.c_str()<<std::endl;
 		if(this->filenameInUseUtf8.length())
-			SIMUL_FILE_LINE_CERR(this->filenameInUseUtf8.c_str(),0)<<"Invalid Effect technique "<<name<<" in effect "<<std::endl;
-		else
-			SIMUL_CERR<<"Invalid Effect technique "<<name<<" in effect "<<this->filename.c_str()<<std::endl;
+			SIMUL_FILE_LINE_CERR(this->filenameInUseUtf8.c_str(),0)<<"See effect file."<<std::endl;
 	}
 	tech->platform_technique=t;
 	techniques[name]=tech;
