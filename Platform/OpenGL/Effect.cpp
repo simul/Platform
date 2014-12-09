@@ -385,6 +385,7 @@ bool Effect::FillInTechniques()
 
 crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 {
+	GL_ERROR_CHECK
 	if(techniques.find(name)!=techniques.end())
 	{
 		return techniques[name];
@@ -405,6 +406,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	// Now it needs to be in the techniques_by_index list.
 	size_t index							=glfxGetProgramIndex(e,name);
 	techniques_by_index[(int)index]			=tech;
+	GL_ERROR_CHECK
 	return tech;
 }
 

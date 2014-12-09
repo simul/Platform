@@ -4,8 +4,12 @@
 
 #include "../../CrossPlatform/SL/CppSl.hs"
 // These definitions translate the HLSL terms cbuffer and R0 for GLSL or C++
-#define SIMUL_BUFFER_REGISTER(buff_num)
-#define SIMUL_SAMPLER_REGISTER(buff_num)
+#define SIMUL_TEXTURE_REGISTER(tex_num) 
+#define SIMUL_SAMPLER_REGISTER(samp_num) 
+#define SIMUL_BUFFER_REGISTER(buff_num) 
+#define SIMUL_RWTEXTURE_REGISTER(rwtex_num)
+#define SIMUL_STATE_REGISTER(snum)
+
 #define SIMUL_TARGET_OUTPUT
 #define SIMUL_RENDERTARGET_OUTPUT(n)
 #define	SIMUL_DEPTH_OUTPUT
@@ -60,6 +64,7 @@
 	#define Texture1D sampler1D 
 	#define Y(texel) texel.y
 	#define STATIC
+
 	vec4 mul(mat4 m,vec4 v)
 	{
 		return m*v;
