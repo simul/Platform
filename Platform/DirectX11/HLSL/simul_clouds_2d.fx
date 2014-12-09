@@ -48,9 +48,12 @@ struct v2f
 v2f VS_Main(a2v IN)
 {
 	v2f OUT;
-	vec3 pos=IN.position;
-	pos.z=-pos.x;
-	Clouds2DVS(pos,mixedResTransformXYWH,OUT.hPosition,OUT.clip_pos,OUT.wPosition);
+	OUT.hPosition=vec4(IN.position,1.0);
+	OUT.clip_pos=vec4(0,0,0,0);
+	OUT.wPosition=vec3(0,0,0);
+//	vec3 pos=IN.position;
+//	pos.z=0;
+	//Clouds2DVS(pos,mixedResTransformXYWH,OUT.hPosition,OUT.clip_pos,OUT.wPosition);
     return OUT;
 }
 
@@ -106,7 +109,7 @@ vec4 msaaPS(v2f IN) : SV_TARGET
 
 vec4 MainPS(v2f IN) : SV_TARGET
 {
-	return vec4(1,0,0,.5);
+	return vec4(1,0,1,0.0);
 	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
 	viewportTexCoords.y		=1.0-viewportTexCoords.y;
 	uint2 depthDims;
@@ -314,7 +317,8 @@ BlendState AlphaBlendX
     SrcBlendAlpha = ZERO;
     DestBlendAlpha = INV_SRC_ALPHA;
     BlendOpAlpha = ADD;
-    //RenderTargetWriteMask[0]	=0x07;
+    RenderTargetWriteMask[0]	=0x15;
+    RenderTargetWriteMask[1]	=0x15;
 };
 
 technique11 simul_clouds_2d_msaa
@@ -330,15 +334,60 @@ technique11 simul_clouds_2d_msaa
     }
 }
 
+RasterizerState Rast1
+{
+	FillMode					= SOLID;
+	CullMode = none;
+	FrontCounterClockwise		= false;
+	DepthBias					= 0;//DEPTH_BIAS_D32_FLOAT(-0.00001);
+	DepthBiasClamp				= 0.0;
+	SlopeScaledDepthBias		= 0.0;
+	DepthClipEnable				= false;
+	ScissorEnable				= false;
+	MultisampleEnable			= false;
+	AntialiasedLineEnable		= true;
+};
+
+BlendState Blend1
+{
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=ONE;
+	RenderTargetWriteMask[0]=15;
+	RenderTargetWriteMask[1]=15;
+};
+
 technique11 simul_clouds_2d
 {
     pass p0
     {
-		SetRasterizerState(RenderNoCull);
+		SetRasterizerState(Rast1);
 		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AlphaBlendX,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(Blend1,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
 		SetPixelShader(CompileShader(ps_5_0,MainPS()));
+    }
+}
+posTexVertexOutput VS1(idOnly id)
+{
+    return VS_ScreenQuad(id,vec4(0,0,.5,.5));
+}
+vec4 PS1(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res=vec4(1,0,1,0.0);
+	return res;
+}
+technique11 simul_clouds_2d2
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS1()));
+		SetPixelShader(CompileShader(ps_4_0,PS1()));
     }
 }

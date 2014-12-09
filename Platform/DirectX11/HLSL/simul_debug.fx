@@ -81,7 +81,7 @@ float4 DebugPS(v2f IN) : SV_TARGET
 vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 res=multiplier*texture_nearest_lod(imageTexture,IN.texCoords.xy,0);
-	//res.r=res.a;
+	res.a=res.a;
 	return res;
 }
 
