@@ -167,16 +167,19 @@ BlendState SubtractBlend
 
 RasterizerState RenderNoCull
 {
+	FillMode					= SOLID;
 	CullMode = none;
 };
 
 RasterizerState RenderFrontfaceCull
 {
+	FillMode					= SOLID;
 	CullMode = front;
 };
 
 RasterizerState RenderBackfaceCull
 {
+	FillMode					= SOLID;
 	CullMode = back;
 };
 #define DEPTH_BIAS_D32_FLOAT(d) (d/(1/pow(2,23)))

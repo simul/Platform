@@ -48,7 +48,9 @@ struct v2f
 v2f VS_Main(a2v IN)
 {
 	v2f OUT;
-	Clouds2DVS(IN.position,mixedResTransformXYWH,OUT.hPosition,OUT.clip_pos,OUT.wPosition);
+	vec3 pos=IN.position;
+	pos.z=-pos.x;
+	Clouds2DVS(pos,mixedResTransformXYWH,OUT.hPosition,OUT.clip_pos,OUT.wPosition);
     return OUT;
 }
 
@@ -104,6 +106,7 @@ vec4 msaaPS(v2f IN) : SV_TARGET
 
 vec4 MainPS(v2f IN) : SV_TARGET
 {
+	return vec4(1,0,0,.5);
 	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
 	viewportTexCoords.y		=1.0-viewportTexCoords.y;
 	uint2 depthDims;
@@ -326,12 +329,13 @@ technique11 simul_clouds_2d_msaa
 		SetPixelShader(CompileShader(ps_5_0,msaaPS()));
     }
 }
+
 technique11 simul_clouds_2d
 {
     pass p0
     {
 		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(TestDepth,0);
+		SetDepthStencilState(DisableDepth,0);
 		SetBlendState(AlphaBlendX,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Main()));

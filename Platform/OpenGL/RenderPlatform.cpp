@@ -524,6 +524,7 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 
 crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
+GL_ERROR_CHECK
 	std::string fn(filename_utf8);
 	if(fn.find(".")>=fn.length())
 		fn+=".glfx";
@@ -534,6 +535,7 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 	{
 		SAFE_DELETE(e);
 	}
+GL_ERROR_CHECK
 	return e;
 }
 
