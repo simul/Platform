@@ -45,6 +45,16 @@ struct v2f
 	vec3 wPosition		: TEXCOORD1;
 };
 
+posTexVertexOutput VS1(idOnly id)
+{
+    return VS_ScreenQuad(id,vec4(0,0,.5,.5));
+}
+vec4 PS1(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res=vec4(1,0,1,0.0);
+	return res;
+}
+
 v2f VS_Main(a2v IN)
 {
 	v2f OUT;
@@ -369,15 +379,6 @@ technique11 simul_clouds_2d
 		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
 		SetPixelShader(CompileShader(ps_5_0,MainPS()));
     }
-}
-posTexVertexOutput VS1(idOnly id)
-{
-    return VS_ScreenQuad(id,vec4(0,0,.5,.5));
-}
-vec4 PS1(posTexVertexOutput IN) : SV_TARGET
-{
-	vec4 res=vec4(1,0,1,0.0);
-	return res;
 }
 technique11 simul_clouds_2d2
 {

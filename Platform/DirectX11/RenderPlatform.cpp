@@ -755,7 +755,7 @@ crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const cross
 	const char *str=dummy_shader.c_str();
 	size_t len=strlen(str);
 #if WINVER<0x602
-	HRESULT hr=D3DX11CompileFromMemory(str,len,"dummy",NULL,NULL,"VS_Main", "vs_4_0", 0, 0, 0, &VS, &errorMsgs, 0);
+	HRESULT hr=D3DX11CompileFromMemory(str,len,"dummy",NULL,NULL,"VS_Main", "vs_5_0",D3DCOMPILE_OPTIMIZATION_LEVEL0, 0, 0, &VS, &errorMsgs, 0);
 #else
 	HRESULT hr=D3DCompile(str,len,"dummy",NULL,NULL,"VS_Main", "vs_4_0", 0, 0, &VS, &errorMsgs);
 #endif
