@@ -36,6 +36,7 @@ SIMUL_CONSTANT_BUFFER_END
 struct a2v
 {
     vec3 position	: POSITION;
+	uint vertex_id			: SV_VertexID;
 };
 
 struct v2f
@@ -45,46 +46,46 @@ struct v2f
 	vec3 wPosition		: TEXCOORD1;
 };
 
-posTexVertexOutput VS1(idOnly id)
-{
-    return VS_ScreenQuad(id,vec4(0,0,.5,.5));
-}
-vec4 PS1(posTexVertexOutput IN) : SV_TARGET
-{
-	vec4 res=vec4(1,0,1,0.0);
-	return res;
-}
-
 v2f VS_Main(a2v IN)
 {
 	v2f OUT;
-	OUT.hPosition=vec4(IN.position,1.0);
-	OUT.clip_pos=vec4(0,0,0,0);
+	OUT.hPosition	=vec4(IN.position,IN.position.z);
+	OUT.clip_pos	=OUT.hPosition/OUT.hPosition.w;
 	OUT.wPosition=vec3(0,0,0);
-//	vec3 pos=IN.position;
-//	pos.z=0;
-	//Clouds2DVS(pos,mixedResTransformXYWH,OUT.hPosition,OUT.clip_pos,OUT.wPosition);
+	vec2 poss[4]=
+{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	vec2 p2		=poss[IN.vertex_id%4];
+	OUT.hPosition	=vec4(.5*p2,0.0,1.0);
+	OUT.hPosition.z	=0.0; 
+
+	vec3 pos			=maxCloudDistanceMetres*IN.position.xyz;
+	pos.z				+=origin.z;
+	float Rh			=planetRadius+origin.z;
+	float dist			=length(pos.xy);
+	float vertical_shift=sqrt(Rh*Rh-dist*dist)-Rh;
+	pos.z				+=vertical_shift;
+	pos.xy				+=eyePosition.xy;
+	OUT.clip_pos		=mul(worldViewProj,vec4(pos.xyz,1.0));
+	// Prevent clipping:
+#if REVERSE_DEPTH==1
+	if(OUT.clip_pos.z<0)
+		OUT.clip_pos.z=0;
+#else
+	if(OUT.clip_pos.z>OUT.clip_pos.w)
+		OUT.clip_pos.z=OUT.clip_pos.w;
+#endif
+	OUT.hPosition		=OUT.clip_pos;
+    OUT.wPosition		=pos.xyz;
     return OUT;
 }
 
-vec4 msaaPS(v2f IN) : SV_TARGET
+vec4 msaaPS(v2f IN)
 {
-	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
-	viewportTexCoords.y		=1.0-viewportTexCoords.y;
-	uint2 depthDims;
-	uint depthSamples;
-	vec2 depthTexCoords=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
-	depthTextureMS.GetDimensions(depthDims.x,depthDims.y,depthSamples);
-	uint2 depth_pos2	=uint2(depthTexCoords.xy*vec2(depthDims.xy));
-	float dlookup 		=depthTextureMS.Load(depth_pos2,0).r;
-#if REVERSE_DEPTH==1
-	if(dlookup!=0)
-		discard;
-#else
-	// RVK: dlookup < 1.0 seems to not have the required accuracy.
-	if(dlookup<0.9999999)
-		discard;
-#endif
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
@@ -117,22 +118,34 @@ vec4 msaaPS(v2f IN) : SV_TARGET
 	return ret;
 }
 
-vec4 MainPS(v2f IN) : SV_TARGET
+vec4 PS_msaa_depthTexture(v2f IN) : SV_TARGET
 {
-	return vec4(1,0,1,0.0);
-	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
-	viewportTexCoords.y		=1.0-viewportTexCoords.y;
 	uint2 depthDims;
 	uint depthSamples;
+	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
+	viewportTexCoords.y		=1.0-viewportTexCoords.y;
 	vec2 depthTexCoords	=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
-	float dlookup 		=texture_clamp_lod(depthTexture,depthTexCoords,0);
+	depthTextureMS.GetDimensions(depthDims.x,depthDims.y,depthSamples);
+	uint2 depth_pos2	=uint2(depthTexCoords.xy*vec2(depthDims.xy));
+	float dlookup 		=depthTextureMS.Load(depth_pos2,0).r;
 #if REVERSE_DEPTH==1
 	if(dlookup!=0)
 		discard;
 #else
-	if(dlookup<0.999999)
+	// RVK: dlookup < 1.0 seems to not have the required accuracy.
+	if(dlookup<0.9999999)
 		discard;
 #endif
+	return msaaPS(IN);
+}
+
+vec4 PS_msaa(v2f IN) : SV_TARGET
+{
+	return msaaPS(IN);
+}
+
+vec4 MainPS(v2f IN)
+{
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
@@ -163,6 +176,35 @@ vec4 MainPS(v2f IN) : SV_TARGET
 										,lightResponse);
 	ret.rgb				*=exposure;
 	return ret;
+}
+
+struct FarNearPixelOutput
+{
+	vec4 farColour SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 nearColour SIMUL_RENDERTARGET_OUTPUT(1);
+};
+
+vec4 PS_Main(v2f IN) SIMUL_RENDERTARGET_OUTPUT(0)
+{
+	return MainPS(IN);
+}
+
+vec4 PS_Main_depthTexture(v2f IN) : SV_TARGET
+{
+	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
+	viewportTexCoords.y		=1.0-viewportTexCoords.y;
+	uint2 depthDims;
+	uint depthSamples;
+	vec2 depthTexCoords	=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
+	float dlookup 		=texture_clamp_lod(depthTexture,depthTexCoords,0).x;
+#if REVERSE_DEPTH==1
+	if(dlookup!=0)
+		discard;
+#else
+	if(dlookup<0.999999)
+		discard;
+#endif
+	return MainPS(IN);
 }
 
 struct v2f2
@@ -320,75 +362,62 @@ technique11 detail_lighting
 BlendState AlphaBlendX
 {
 	BlendEnable[0] = TRUE;
-	BlendEnable[1] = TRUE;
+	BlendEnable[1] = FALSE;
 	SrcBlend = SRC_ALPHA;
 	DestBlend = INV_SRC_ALPHA;
     BlendOp = ADD;
     SrcBlendAlpha = ZERO;
     DestBlendAlpha = INV_SRC_ALPHA;
     BlendOpAlpha = ADD;
-    RenderTargetWriteMask[0]	=0x15;
-    RenderTargetWriteMask[1]	=0x15;
+    RenderTargetWriteMask[0]	=15;
+    RenderTargetWriteMask[1]	=15;
 };
-
+VertexShader main_vs=CompileShader(vs_5_0,VS_Main());
 technique11 simul_clouds_2d_msaa
 {
-    pass p0
+    pass depth_texture
     {
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(TestDepth,0);
-		SetBlendState(AlphaBlendX,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
-		SetPixelShader(CompileShader(ps_5_0,msaaPS()));
+		SetVertexShader(main_vs);
+		SetPixelShader(CompileShader(ps_5_0,PS_msaa_depthTexture()));
+    }
+    pass depth_check
+{
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(TestDepth,0);
+		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+        SetGeometryShader(NULL);
+		SetVertexShader(main_vs);
+		SetPixelShader(CompileShader(ps_5_0,PS_msaa()));
     }
 }
-
-RasterizerState Rast1
-{
-	FillMode					= SOLID;
-	CullMode = none;
-	FrontCounterClockwise		= false;
-	DepthBias					= 0;//DEPTH_BIAS_D32_FLOAT(-0.00001);
-	DepthBiasClamp				= 0.0;
-	SlopeScaledDepthBias		= 0.0;
-	DepthClipEnable				= false;
-	ScissorEnable				= false;
-	MultisampleEnable			= false;
-	AntialiasedLineEnable		= true;
-};
-
-BlendState Blend1
-{
-	BlendEnable[0]	=TRUE;
-	BlendEnable[1]	=TRUE;
-	SrcBlend		=ONE;
-	DestBlend		=ONE;
-	RenderTargetWriteMask[0]=15;
-	RenderTargetWriteMask[1]=15;
-};
-
 technique11 simul_clouds_2d
 {
-    pass p0
+    pass no_depth
     {
-		SetRasterizerState(Rast1);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(Blend1,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
-		SetPixelShader(CompileShader(ps_5_0,MainPS()));
+		SetVertexShader(main_vs);
+		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
     }
-}
-technique11 simul_clouds_2d2
+    pass depth_texture
 {
-    pass noblend
-    {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS1()));
-		SetPixelShader(CompileShader(ps_4_0,PS1()));
+		SetVertexShader(main_vs);
+		SetPixelShader(CompileShader(ps_5_0,PS_Main_depthTexture()));
+    }
+    pass depth_check
+    {
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(TestDepth,0);
+		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+        SetGeometryShader(NULL);
+		SetVertexShader(main_vs);
+		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
     }
 }

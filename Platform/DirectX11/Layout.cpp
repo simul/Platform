@@ -31,7 +31,6 @@ void Layout::Apply(crossplatform::DeviceContext &deviceContext)
 	deviceContext.asD3D11DeviceContext()->IAGetInputLayout( &previousInputLayout );
 	deviceContext.asD3D11DeviceContext()->IAGetPrimitiveTopology(&previousTopology);
 	deviceContext.asD3D11DeviceContext()->IASetInputLayout(AsD3D11InputLayout());
-	deviceContext.asD3D11DeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 }
 
 void Layout::Unapply(crossplatform::DeviceContext &deviceContext)

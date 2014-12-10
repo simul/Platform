@@ -475,7 +475,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		textureDesc.SampleDesc.Count		=num_samples;
 		textureDesc.SampleDesc.Quality		=aa_quality;
 		
-			V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
+		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 
 		
 		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
