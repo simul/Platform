@@ -73,7 +73,7 @@ void CS_Random3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives t
 void CS_Noise3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 dims;
-	targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
+	targetTexture8.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	vec4 result		=vec4(0,0,0,0);

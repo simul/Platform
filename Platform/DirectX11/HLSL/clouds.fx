@@ -1,12 +1,5 @@
 #include "CppHLSL.hlsl"
 #include "../../CrossPlatform/SL/render_states.sl"
-Texture2D nearFarTexture : register(t3);
-Texture2D cloudGodraysTexture;
-Texture2D rainMapTexture;
-TextureCube diffuseCubemap;
-RWTexture2D<float> targetTexture1;
-RWBuffer<float> occlusionBuffer;
-
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/simul_cloud_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
@@ -14,6 +7,29 @@ RWBuffer<float> occlusionBuffer;
 #include "../../CrossPlatform/SL/raytrace_new.sl"
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/earth_shadow_fade.sl"
+
+Texture3D cloudDensity1					: register(t0);
+Texture3D cloudDensity2					: register(t1);
+Texture2D noiseTexture					: register(t2);
+Texture2D cloudShadowTexture			: register(t2);
+Texture2D lossTexture					: register(t3);
+Texture2D inscTexture					: register(t4);
+Texture2D skylTexture					: register(t5);
+Texture2D depthTexture					: register(t6);
+Texture3D noiseTexture3D				: register(t7);
+Texture3D lightningIlluminationTexture	: register(t8);
+Texture3D cloudDensity					: register(t9);
+Texture2D illuminationTexture			: register(t10);
+Texture2D lightTableTexture				: register(t11);
+Texture2D rainbowLookupTexture			: register(t12);
+Texture2D coronaLookupTexture			: register(t13);
+Texture2D nearFarTexture;
+Texture2D cloudGodraysTexture;
+Texture2D rainMapTexture;
+TextureCube diffuseCubemap;
+RWTexture2D<float> targetTexture1;
+RWBuffer<float> occlusionBuffer;
+
 
 #ifndef DETAIL_NOISE
 	#define DETAIL_NOISE 1
@@ -52,6 +68,12 @@ RaytracePixelOutput PS_RaytraceForward(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+									,rainbowLookupTexture
+									,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -82,6 +104,12 @@ RaytracePixelOutput PS_RaytraceBackground(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -106,6 +134,12 @@ RaytracePixelOutput PS_RaytraceNearPass(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -131,6 +165,12 @@ FarNearPixelOutput PS_RaytraceBothPasses(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -149,6 +189,12 @@ FarNearPixelOutput PS_RaytraceBothPasses(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -180,6 +226,12 @@ FarNearPixelOutput PS_RaytraceNoRainBothPasses(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -198,6 +250,12 @@ FarNearPixelOutput PS_RaytraceNoRainBothPasses(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -228,6 +286,12 @@ RaytracePixelOutput PS_RaytraceNoRainFar(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -253,6 +317,12 @@ RaytracePixelOutput PS_RaytraceNoRainNear(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -282,6 +352,12 @@ RaytracePixelOutput PS_RaytraceNoRainBackground(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -307,6 +383,12 @@ RaytracePixelOutput PS_RaytraceNew(posTexVertexOutput IN)
 									,noiseTexture3D
 									,depthTexture
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,texCoords
 									,false
@@ -328,6 +410,12 @@ RaytracePixelOutput PS_RaytraceNewNearPass(posTexVertexOutput IN)
 									,noiseTexture3D
 									,depthTexture
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,texCoords
 									,true
@@ -349,6 +437,12 @@ FarNearPixelOutput PS_RaytraceNewBothPasses(posTexVertexOutput IN)
 									,noiseTexture3D
 									,depthTexture
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,texCoords
 									,true
@@ -363,6 +457,12 @@ FarNearPixelOutput PS_RaytraceNewBothPasses(posTexVertexOutput IN)
 									,noiseTexture3D
 									,depthTexture
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,texCoords
 									,true
@@ -433,6 +533,12 @@ vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,false
 									,dlookup
 									,texCoords
@@ -459,6 +565,12 @@ RaytracePixelOutput PS_Raytrace3DNoise(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -483,6 +595,12 @@ RaytracePixelOutput PS_Raytrace3DNoiseNearPass(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -507,6 +625,12 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -525,6 +649,12 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -563,6 +693,12 @@ RaytracePixelOutput PS_Raytrace3DNoiseBackground(posTexVertexOutput IN)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -586,6 +722,12 @@ RaytracePixelOutput NoRain3DNoiseNear(vec4 dlookup,vec2 texCoords)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -617,6 +759,12 @@ RaytracePixelOutput NoRain3DNoiseFar(vec4 dlookup,vec2 texCoords)
 									,noiseTexture
 									,noiseTexture3D
 									,lightTableTexture
+									,illuminationTexture
+			,rainbowLookupTexture
+			,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture
 									,true
 									,dlookup
 									,texCoords
@@ -699,6 +847,14 @@ vec4 PS_Simple( posTexVertexOutput IN):SV_TARGET
 vec4 PS_ShowNoise( posTexVertexOutput IN):SV_TARGET
 {
     vec4 lookup=noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
+	return vec4(0.5*(lookup.rgb+1.0),1.0);
+}
+
+
+vec4 PS_Show3DNoise( posTexVertexOutput IN):SV_TARGET
+{
+	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
+	vec4 lookup		=texture_nearest_lod(noiseTexture3D,vec3(IN.texCoords,z),0);
 	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
@@ -1025,6 +1181,19 @@ technique11 show_noise
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowNoise()));
+    }
+}
+
+technique11 show_3d_noise
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_Show3DNoise()));
     }
 }
 

@@ -199,7 +199,7 @@ GL_ERROR_CHECK
 		const LayerData &L=layerConstants.layers[helper->GetSlices().size()-1-idx];
 		singleLayerConstants.noiseOffset_	=L.noiseOffset;
 		singleLayerConstants.layerFade_		=L.layerFade;
-		singleLayerConstants.layerDistance_	=L.layerDistance;
+		singleLayerConstants.layerDistance_	=L.layerDistanceMetres;
 		singleLayerConstants.verticalShift_	=L.verticalShift;
 		singleLayerConstants.Apply(deviceContext);
 		if(min_layer>=0&&max_layer>=0&&(idx<min_layer||idx>max_layer))

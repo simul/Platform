@@ -8,7 +8,7 @@ struct LayerData
 	float pad11;
 	float pad12;
 	float layerFade;
-	float layerDistance;
+	float layerDistanceMetres;
 	float verticalShift;
 	float pad13;
 };
@@ -108,6 +108,8 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	// local cloud support
 	uniform vec4 localCloudPivot;    
 	uniform vec4 localCloudInvScale; 
+	uniform int3 cloudGrid;
+	uniform float aq0o84hq4hl;
 SIMUL_CONSTANT_BUFFER_END
 	
 										  

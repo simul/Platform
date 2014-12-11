@@ -1,7 +1,7 @@
 #ifndef EARTH_SHADOW_FADE_SL
 #define EARTH_SHADOW_FADE_SL
 
-vec3 ApplyFadeFromTexture(vec3 colour,vec3 offset,vec3 lightDir,vec3 mieRayleighRatio,float hazeEccentricity,float maxFadeDistMetres)
+vec3 ApplyFadeFromTexture(Texture2D lossTexture,Texture2D inscTexture,Texture2D skylTexture,Texture2D illuminationTexture,vec3 colour,vec3 offset,vec3 lightDir,vec3 mieRayleighRatio,float hazeEccentricity,float maxFadeDistMetres)
 {
 	vec3 view			=normalize(offset);
 	float sine			=view.z;

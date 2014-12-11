@@ -275,7 +275,7 @@ EffectTechnique *Effect::CreateTechnique()
 {
 	return new dx11::EffectTechnique;
 }
-
+#define D3DCOMPILE_DEBUG 1
 void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
@@ -283,7 +283,7 @@ void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char
 	if(!renderPlatform)
 		return;
 	this->filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,dx11::GetShaderPathsUtf8());
-	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_utf8,defines,0);//D3DCOMPILE_OPTIMIZATION_LEVEL3);
+	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_utf8,defines,0);//D3DCOMPILE_OPTIMIZATION_LEVEL3);D3DCOMPILE_DEBUG
 	platform_effect	=e;
 	groups.clear();
 	if(e)
