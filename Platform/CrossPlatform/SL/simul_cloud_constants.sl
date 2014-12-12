@@ -39,6 +39,8 @@ SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec4 viewportToTexRegionScaleBias;
+	uniform vec3 scaleOfGridCoords;
+	uniform float aq0o84hgeagq4hl;
 	uniform vec3 viewPos;
 	uniform uint layerIndex;
 	uniform mat4 invViewProj;
@@ -108,8 +110,8 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	// local cloud support
 	uniform vec4 localCloudPivot;    
 	uniform vec4 localCloudInvScale; 
-	uniform int3 cloudGrid;
-	uniform float aq0o84hq4hl;
+	//uniform int3 cloudGrid;
+	//uniform float aq0o84hq4hl;
 SIMUL_CONSTANT_BUFFER_END
 	
 										  

@@ -140,6 +140,7 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	ID3D11DeviceContext *pImmediateContext;
 	AsD3D11Device()->GetImmediateContext(&pImmediateContext);
 	immediateContext.platform_context=pImmediateContext;
+	immediateContext.renderPlatform=this;
 #ifdef _XBOX_ONE
 	delete eSRAMManager;
 	eSRAMManager=new ESRAMManager(device);
