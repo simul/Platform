@@ -538,9 +538,8 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 	else if(apply_count>1)
 		SIMUL_BREAK(base::QuickFormat("Effect::Apply has been called too many times! Effect: %s\n",this->filename.c_str()))
 	apply_count--;
-	ID3DX11Effect *effect			=asD3DX11Effect();
-	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
-	HRESULT hr = currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
+	if(currentPass)
+		currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
 	currentTechnique=NULL;
 	currentPass = NULL;
 	//UnbindTextures(deviceContext);

@@ -56,430 +56,6 @@ posTexVertexOutput VS_FullScreen(idOnly IN)
     OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
 	return OUT;
 }
-
-RaytracePixelOutput PS_RaytraceForward(posTexVertexOutput IN)
-{
-	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec2 texCoords			=IN.texCoords.xy;//mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	RaytracePixelOutput p	=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-									,rainbowLookupTexture
-									,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,dlookup
-									,texCoords
-									,false
-									,true
-									,false
-									,true
-									,cloudIrRadiance1,cloudIrRadiance2);
-	if(texCoords.y>1.0)
-		p.colour.r=1;
-	if(p.colour.a>=1.0)
-	   discard;
-	return p;
-}
-
-RaytracePixelOutput PS_RaytraceBackground(posTexVertexOutput IN)
-{
-#if REVERSE_DEPTH==1
-	vec4 dlookup			=vec4(0.0,0.0,0.0,0.0);
-#else
-	vec4 dlookup			=vec4(1.0,0.0,0.0,0.0);
-#endif
-	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	RaytracePixelOutput p	=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,dlookup
-									,texCoords
-									,false
-									,true
-									,false
-									,true
-									,cloudIrRadiance1,cloudIrRadiance2);
-	if(p.colour.a>=1.0)
-	   discard;
-	return p;
-}
-
-RaytracePixelOutput PS_RaytraceNearPass(posTexVertexOutput IN)
-{
-	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	RaytracePixelOutput p	=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,dlookup
-									,texCoords
-									,true
-									,true
-									,false
-									,true
-									,cloudIrRadiance1,cloudIrRadiance2);
-
-	if(p.colour.a>=1.0)
-	   discard;
-	return p;
-}
-
-FarNearPixelOutput PS_RaytraceBothPasses(posTexVertexOutput IN)
-{
-	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	RaytracePixelOutput f	=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,dlookup
-									,texCoords
-									,false
-									,true
-									,false
-									,true
-									,cloudIrRadiance1,cloudIrRadiance2);
-	RaytracePixelOutput n;
-	if(dlookup.z>0)
-	{
-		n=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,dlookup
-									,texCoords
-									,true
-									,true
-									,false
-									,true
-									,cloudIrRadiance1,cloudIrRadiance2);
-	}
-	else
-		n=f;
-	if(f.colour.a>=1.0)
-	   discard;
-	FarNearPixelOutput fn;
-	fn.farColour=f.colour;
-	fn.nearColour=n.colour;
-	fn.depth	=f.depth;
-	return fn;
-}
-
-FarNearPixelOutput PS_RaytraceNoRainBothPasses(posTexVertexOutput IN)
-{
-	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	RaytracePixelOutput f	=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,dlookup
-									,texCoords
-									,false
-									,true
-									,false
-									,false
-									,cloudIrRadiance1,cloudIrRadiance2);
-	RaytracePixelOutput n;
-	if(dlookup.z>0)
-	{
-		n=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,dlookup
-									,texCoords
-									,true
-									,true
-									,false
-									,false
-									,cloudIrRadiance1,cloudIrRadiance2);
-	}
-	else
-		n=f;
-	if(f.colour.a>=1.0)
-	   discard;
-	FarNearPixelOutput fn;
-	fn.farColour	=f.colour;
-	fn.nearColour	=n.colour;
-	fn.depth		=f.depth;
-	return fn;
-}
-RaytracePixelOutput PS_RaytraceNoRainFar(posTexVertexOutput IN)
-{
-	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	RaytracePixelOutput f	=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,dlookup
-									,texCoords
-									,false
-									,true
-									,false
-									,false
-									,cloudIrRadiance1,cloudIrRadiance2);
-	if(f.colour.a>=1.0)
-	   discard;
-	return f;
-}
-RaytracePixelOutput PS_RaytraceNoRainNear(posTexVertexOutput IN)
-{
-	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	if(dlookup.z<=0)
-		discard;
-	RaytracePixelOutput n=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,dlookup
-									,texCoords
-									,true
-									,true
-									,false
-									,false
-									,cloudIrRadiance1,cloudIrRadiance2);
-	if(n.colour.a>=1.0)
-	   discard;
-	return n;
-}
-
-
-RaytracePixelOutput PS_RaytraceNoRainBackground(posTexVertexOutput IN)
-{
-#if REVERSE_DEPTH==1
-	vec4 dlookup			=vec4(0.0,0.0,0.0,0.0);
-#else
-	vec4 dlookup			=vec4(1.0,0.0,0.0,0.0);
-#endif
-	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	RaytracePixelOutput n=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,dlookup
-									,texCoords
-									,false
-									,true
-									,false
-									,false
-									,cloudIrRadiance1,cloudIrRadiance2);
-	if(n.colour.a>=1.0)
-	   discard;
-	return n;
-}
-
-
-RaytracePixelOutput PS_RaytraceNew(posTexVertexOutput IN)
-{
-	vec2 texCoords			=IN.texCoords.xy;
-	RaytracePixelOutput p	=RaytraceNew(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,depthTexture
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,texCoords
-									,false
-									,true
-									,false
-									,cloudIrRadiance1,cloudIrRadiance2);
-	
-	return p;
-}
-
-RaytracePixelOutput PS_RaytraceNewNearPass(posTexVertexOutput IN)
-{
-	vec2 texCoords			=IN.texCoords.xy;
-	RaytracePixelOutput p	=RaytraceNew(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,depthTexture
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,texCoords
-									,true
-									,true
-									,false
-									,cloudIrRadiance1,cloudIrRadiance2);
-
-	return p;
-}
-
-FarNearPixelOutput PS_RaytraceNewBothPasses(posTexVertexOutput IN)
-{
-	vec2 texCoords			=IN.texCoords.xy;
-	RaytracePixelOutput f	=RaytraceNew(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,depthTexture
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,texCoords
-									,true
-									,true
-									,false
-									,cloudIrRadiance1,cloudIrRadiance2);
-	RaytracePixelOutput n	=RaytraceNew(
-									cloudDensity1
-									,cloudDensity2
-									,rainMapTexture
-									,noiseTexture
-									,noiseTexture3D
-									,depthTexture
-									,lightTableTexture
-									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture
-									,true
-									,texCoords
-									,true
-									,true
-									,false
-									,cloudIrRadiance1,cloudIrRadiance2);
-	f.colour.r=0.0;
-	f.colour.a=0.5;
-	if(f.colour.a>=1.0)
-	   discard;
-	FarNearPixelOutput fn;
-	fn.farColour	=f.colour;
-	fn.nearColour	=n.colour;
-	fn.depth		=f.depth;
-	return fn;
-}
-
 // Given texture position from texCoords, convert to a worldpos with shadowMatrix.
 // Then, trace towards sun to find initial intersection with cloud volume
 // Then trace down to find first intersection with clouds, if any.
@@ -509,12 +85,12 @@ float CloudsOcclusion(Texture3D cloudDensity1,Texture3D cloudDensity2,float clou
 {
 	return 0.f;
 }
+
 [numthreads(1,1,1)]
 void CS_Occlusion(uint3 idx: SV_DispatchThreadID)
 {
 	occlusionBuffer[idx.x]=CloudsOcclusion(cloudDensity1,cloudDensity2,cloud_interp,viewPos,directionToSun);
 }
-
 
 vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 {
@@ -596,8 +172,8 @@ RaytracePixelOutput PS_Raytrace3DNoiseNearPass(posTexVertexOutput IN)
 									,noiseTexture3D
 									,lightTableTexture
 									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
+									,rainbowLookupTexture
+									,coronaLookupTexture
 									,lossTexture
 									,inscTexture
 									,skylTexture
@@ -626,8 +202,8 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 									,noiseTexture3D
 									,lightTableTexture
 									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
+									,rainbowLookupTexture
+									,coronaLookupTexture
 									,lossTexture
 									,inscTexture
 									,skylTexture
@@ -650,8 +226,8 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 									,noiseTexture3D
 									,lightTableTexture
 									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
+									,rainbowLookupTexture
+									,coronaLookupTexture
 									,lossTexture
 									,inscTexture
 									,skylTexture
@@ -908,103 +484,6 @@ VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_FullScreen());
 
 fxgroup raytrace
 {
-	technique11 full
-	{
-		pass far 
-		{
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceForward()));
-		}
-		pass near 
-		{
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNearPass()));
-		}
-		pass both 
-		{
-			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceBothPasses()));
-		}
-		pass background 
-		{
-			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceBackground()));
-		}
-	}
-	technique11 no_rain
-	{
-		pass far 
-		{
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNoRainFar()));
-		}
-		pass near 
-		{
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNoRainNear()));
-		}
-		pass both 
-		{
-			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNoRainBothPasses()));
-		}
-		pass background 
-		{
-			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNoRainBackground()));
-		}
-	}
-	technique11 nonwrapping
-	{
-		pass far 
-		{
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNew()));
-		}
-		pass near 
-		{
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNewNearPass()));
-		}
-		pass both 
-		{
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNewBothPasses()));
-		}
-		pass background 
-		{
-			SetDepthStencilState(WriteDepth,0);
-			SetRasterizerState( RenderNoCull );
-			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNew()));
-		}
-	}
 	technique11 simple
 	{
 		pass far 
@@ -1022,7 +501,7 @@ fxgroup raytrace
 			SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace()));
 		}
 	}
-	technique11 noise3d
+	technique11 full
 	{
 		pass far 
 		{
@@ -1055,7 +534,7 @@ fxgroup raytrace
 			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseBackground()));
 		}
 	}
-	technique11 noise3d_no_rain
+	technique11 no_rain
 	{
 		pass far 
 		{

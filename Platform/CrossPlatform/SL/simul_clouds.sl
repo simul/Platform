@@ -268,29 +268,21 @@ vec4 calcColour(Texture2D lossTexture,Texture2D inscTexture,Texture2D skylTextur
 	return c;
 }
 
-vec4 MakeNoise(Texture2D noiseTexture,Texture3D noiseTexture3D,bool noise,bool noise_3d,vec2 noise_texc_0,float noise_centre_factor,vec3 cloudTexCoords,float layerDistanceMetres,vec2 layerNoiseOffset)
+vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec3 cloudTexCoords)
 {
 	vec4 noiseval				=vec4(0,0,0,0);
 	if(noise)
 	{
 		float noise_factor		=noise_centre_factor*lerp(baseNoiseFactor,1.0,saturate(cloudTexCoords.z));
-		if(noise_3d)
+		vec3 noise_texc		=cloudTexCoords.xyz*noise3DTexcoordScale;
+		float mult			=0.5;
+		for(int j=0;j<4;j++)
 		{
-			vec3 noise_texc		=cloudTexCoords.xyz*noise3DTexcoordScale;
-			float mult			=0.5;
-			for(int j=0;j<4;j++)
-			{
-				noiseval		+=(texture_wrap_lod(noiseTexture3D,noise_texc,0).xyzw)*mult;
-				noise_texc		*=2.0;
-				mult			*=noise3DPersistence;
-			}
-			noiseval			*=noise_factor;
+			noiseval		+=(texture_wrap_lod(noiseTexture3D,noise_texc,0).xyzw)*mult;
+			noise_texc		*=2.0;
+			mult			*=noise3DPersistence;
 		}
-		else
-		{
-			vec2 noise_texc		=noise_texc_0*layerDistanceMetres+layerNoiseOffset;
-			noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyzw;
-		}
+		noiseval			*=noise_factor;
 	}
 	return noiseval;
 }
@@ -317,26 +309,26 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,vec3 cloudIrRadiance1,vec3 cloudIrRadiance2)
 {
 	RaytracePixelOutput res;
-	res.colour=vec4(0,0,0,1.0);
-	res.depth=0.0;
-	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
-	clip_pos.x			+=2.0*texCoords.x;
-	clip_pos.y			-=2.0*texCoords.y;
-	vec3 view			=normalize(mul(invViewProj,clip_pos).xyz);
+	res.colour				=vec4(0,0,0,1.0);
+	res.depth				=0.0;
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 
-	float s				=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
-	vec3 lightDir		=lerp(directionToMoon,directionToSun,s);
+	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
+	vec3 lightDir			=lerp(directionToMoon,directionToSun,s);
 
-	float cos0			=dot(lightDir.xyz,view.xyz);
-	float sine			=view.z;
-	vec3 n				=vec3(clip_pos.xy*tanHalfFov,1.0);
-	n					=normalize(n);
-	vec2 noise_texc_0	=mul(noiseMatrix,vec4(n.xy,0,0)).xy/fractalRepeatLength;
+	float cos0				=dot(lightDir.xyz,view.xyz);
+	float sine				=view.z;
+	vec3 n					=vec3(clip_pos.xy*tanHalfFov,1.0);
+	n						=normalize(n);
+	vec2 noise_texc_0		=mul(noiseMatrix,vec4(n.xy,0,0)).xy/fractalRepeatLength;
 
-	float min_texc_z	=-fractalScale.z*1.5;
-	float max_texc_z	=1.0-min_texc_z;
+	float min_texc_z		=-fractalScale.z*1.5;
+	float max_texc_z		=1.0-min_texc_z;
 	if(do_rain_effect)
-		min_texc_z		=-12.0;
+		min_texc_z			=-12.0;
 	else if(view.z<-0.1&&viewPos.z<cornerPos.z-fractalScale.z/inverseScales.z)
 		return res;
 	float depth;
@@ -344,41 +336,39 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	{
 		if(dlookup.z==0)
 		{
-			res.colour=vec4(0,0,0,1.0);
-			res.depth=0.0;
+			res.colour		=vec4(0,0,0,1.0);
+			res.depth		=0.0;
 			return res;
 		}
-		depth			=dlookup.y;
+		depth				=dlookup.y;
 	}
 	else
 	{
-		depth			=dlookup.x;
+		depth				=dlookup.x;
 	}
-	float solid_dist	=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
-	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
+	float solid_dist		=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec4 colour				=vec4(0.0,0.0,0.0,1.0);
+	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	// Lookup in the illumination texture.
-	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
-	vec2 nearFarTexc	=illum_lookup.xy;
+	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
+	vec4 illum_lookup		=texture_wrap_mirror(illuminationTexture,illum_texc);
+	vec2 nearFarTexc		=illum_lookup.xy;
 	float meanFadeDistance	=0.0;
 	// Precalculate hg effects
-	float BetaClouds	=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-	float BetaRayleigh	=CalcRayleighBeta(cos0);
-	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
-#ifdef USE_LIGHT_TABLES0
-	vec3 amb			=ambientColour.rgb;
+	float BetaClouds		=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
+	float BetaRayleigh		=CalcRayleighBeta(cos0);
+	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
+#ifdef USE_LIGHT_TABLES0	
+	vec3 amb				=ambientColour.rgb;
 #endif
-	vec4 rainbowColour	=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
-										  rainbowIntensity,view,lightDir,texCoords.xy);
-	float moisture=0.0;
-	float noise_centre_factor=exp(-length(clip_pos.xy));
-//#define OLDSTYLE
-#ifdef OLDSTYLE
-#else
+	vec4 rainbowColour		=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
+												rainbowIntensity,view,lightDir,texCoords.xy);
+	float moisture				=0.0;
+	float noise_centre_factor	=exp(-length(clip_pos.xy));
+
 	vec3 world_pos					=viewPos;
 	float world_dist				=0.0;
-#endif
+
 	// This provides the range of texcoords that is lit.
 	int3 c_offset					=int3(sign(view.x),sign(view.y),sign(view.z));
 	int3 start_c_offset				=-c_offset;
@@ -391,81 +381,84 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	int3 W							=int3(0,0,1.0);
 	vec3 startWorldOffset			=world_pos-cornerPos;
 	int3 c							=floor(startWorldOffset/scaleOfGridCoords)+start_c_offset;
+
+	// We want to distribute samples close to the viewer.
+	// if we transition from a smaller to a larger step size, we must divide the integer offsets by 2,
+	// and multiply viewScale and scaleOfGridCoords.
+
+	// OR we can just multiply c_offset by 2.
+
+	//int t=16;
 	for(int i=0;i<layerCount;i++)
 	{
-		vec4 density					=vec4(0,0,0,0);
-#ifdef OLDSTYLE
-		const LayerData layer			=layers[i];
-		// Get values from layer:
-		float distanceMetres			=layer.layerDistanceMetres;
-		float fade						=layer.layerFade;
-		float verticalShift				=layer.verticalShift;
-		vec2 noiseOffset				=layer.noiseOffset;
-		vec3 world_pos					=viewPos+distanceMetres*view;
-		world_pos.z						-=verticalShift;
-#endif
+		vec4 density				=vec4(0,0,0,0);
 		world_pos+=view;
-		vec3 cloudWorldOffset			=world_pos-cornerPos;
-		vec3 cloudTexCoords				=cloudWorldOffset*inverseScales;
+		vec3 cloudWorldOffset		=world_pos-cornerPos;
+		vec3 cloudTexCoords			=cloudWorldOffset*inverseScales;
+
 		if((view.z<0&&cloudTexCoords.z<min_texc_z)||(view.z>0&&cloudTexCoords.z>max_texc_z))
 			break;
-#ifndef OLDSTYLE
-		int3 c_step=int3(c_offset.x,0,0);
+	/*	t--;
+		if(!t)
+		{
+			c_offset*=2;
+			t=16;
+		}*/
+		int3 c_step					=int3(c_offset.x,0,0);
 		// Next pos.
-		int3 c1							=c+c_offset;
-		float d=400.0;
+		int3 c1						=c+c_offset;
+		float d;
 
 		//find the correct d:
-		vec3 p0							=cloudWorldOffset/scaleOfGridCoords;
-		vec3 p1							=c1;
-		vec3 dp							=p1-p0;
-		vec3 D							=dp/viewScaled;
+		vec3 p0						=cloudWorldOffset/scaleOfGridCoords;
+		vec3 p1						=c1;
+		vec3 dp						=p1-p0;
+		vec3 D						=dp/viewScaled;
 #if 0
-		float e							=min(min(D.x,D.y),D.z);
-		vec3 N							=vec3(1.0,1.0,1.0);
+		float e						=min(min(D.x,D.y),D.z);
+		vec3 N						=vec3(1.0,1.0,1.0);
 #else
-		float e							=D.x;//min(min(D.x,D.y),D.z);
-		vec3 N							=vec3(1.0,0,0);
+		float e						=D.x;//min(min(D.x,D.y),D.z);
+		vec3 N						=vec3(1.0,0,0);
 		if(D.y<e)
 		{
-			e							=D.y;
-			N							=vec3(0,1.0,0);
-			c_step=int3(0,c_offset.y,0);
+			e						=D.y;
+			N						=vec3(0,1.0,0);
+			c_step					=int3(0,c_offset.y,0);
 		}
 		if(D.z<e)
 		{
-			e							=D.z;
-			N							=vec3(0,0,1.0);
-			c_step=int3(0,0,c_offset.z);
+			e						=D.z;
+			N						=vec3(0,0,1.0);
+			c_step					=int3(0,0,c_offset.z);
 		}
 #endif
-		d								=e*viewScale;
-		world_dist						+=d;
+		d							=e*viewScale;
+		world_dist					+=d;
 
 		// What offset was the original position from the centre of the cube?
-		vec3 d0							=normalize(2.0*abs(frac(p0+e*viewScaled)-vec3(.5,.5,.5)));
-		float angle_mult				=abs(dot(N,viewScaled));
+		vec3 d0						=normalize(2.0*abs(frac(p0+e*viewScaled)-vec3(.5,.5,.5)));
+		float angle_mult			=abs(dot(N,viewScaled));
 	
-		float distanceMetres			=world_dist;
-		float fade						=angle_mult;//(1.0-exp(-e))*smoothstep(0.0,0.5,angle_mult);//abs(d)/length(D)*);
-		float verticalShift				=0;
-		vec2 noiseOffset				=vec2(0,0);
+		float distanceMetres		=world_dist;
+		float fade					=angle_mult;//(1.0-exp(-e))*smoothstep(0.0,0.5,angle_mult);//abs(d)/length(D)*);
+		float verticalShift			=0;
+		vec2 noiseOffset			=vec2(0,0);
 		// Now sample at the halfway point:
-		world_pos						+=d*view;
-		cloudTexCoords					=(world_pos-cornerPos)*inverseScales;
+		world_pos					+=d*view;
+		cloudTexCoords				=(world_pos-cornerPos)*inverseScales;
 		c+=c_step;
-#endif
-		float fadeDistance				=saturate(distanceMetres/maxFadeDistanceMetres);
+		float fadeDistance			=saturate(distanceMetres/maxFadeDistanceMetres);
 		if(fade>0&&(fadeDistance<=solid_dist||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
-			vec4 noiseval				=MakeNoise(noiseTexture,noiseTexture3D,noise,noise_3d,noise_texc_0,noise_centre_factor,cloudTexCoords,distanceMetres,noiseOffset);
-		//	fade						*=abs(dot(d0+noiseval,viewScaled));
-			density						=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,fade,noiseval,fractalScale,cloud_interp);
+			vec4 noiseval			=MakeNoise(noiseTexture3D,noise,noise_centre_factor,cloudTexCoords);
+		//	fade					*=abs(dot(d0+noiseval,viewScaled));
+			density					=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,fade,noiseval,fractalScale,cloud_interp);
 			// The rain fall angle is used:
-			vec3 rain_texc				=cloudWorldOffset;
-			rain_texc.xy				+=rain_texc.z*rainTangent;
-			float rain_lookup			=texture_wrap_lod(rainMapTexture,rain_texc.xy*inverseScales.xy,0).x;
-			vec4 streak					=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
+			vec3 rain_texc			=cloudWorldOffset;
+			rain_texc.xy			+=rain_texc.z*rainTangent;
+			float rain_lookup		=texture_wrap_lod(rainMapTexture,rain_texc.xy*inverseScales.xy,0).x;
+			vec4 streak				=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
 			float dm=0.0;
 			if(do_rain_effect)
 			{
