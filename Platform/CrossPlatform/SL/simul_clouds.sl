@@ -380,15 +380,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	int3 V							=int3(0,1.0,0);
 	int3 W							=int3(0,0,1.0);
 	vec3 startWorldOffset			=world_pos-cornerPos;
-	int3 c							=floor(startWorldOffset/scaleOfGridCoords)+start_c_offset;
-
+	int3 c							=floor(startWorldOffset / scaleOfGridCoords) + start_c_offset;
+	vec3 gridScale					=scaleOfGridCoords;
+	int3 C							=floor(startWorldOffset / scaleOfGridCoords/2.0) + start_c_offset;
+//	c_offset *= 8;
 	// We want to distribute samples close to the viewer.
 	// if we transition from a smaller to a larger step size, we must divide the integer offsets by 2,
 	// and multiply viewScale and scaleOfGridCoords.
 
 	// OR we can just multiply c_offset by 2.
 
-	//int t=16;
+	int t=16;
 	for(int i=0;i<layerCount;i++)
 	{
 		vec4 density				=vec4(0,0,0,0);
@@ -398,19 +400,23 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 
 		if((view.z<0&&cloudTexCoords.z<min_texc_z)||(view.z>0&&cloudTexCoords.z>max_texc_z))
 			break;
-	/*	t--;
+		C = c >>1;
+		t--;
 		if(!t)
 		{
-			c_offset*=2;
+			c = C;
+			gridScale *= 2.0;
+			viewScale *= 2.0;
+			C = floor(startWorldOffset / gridScale / 2.0) + start_c_offset;
 			t=16;
-		}*/
+		}
 		int3 c_step					=int3(c_offset.x,0,0);
 		// Next pos.
 		int3 c1						=c+c_offset;
 		float d;
 
 		//find the correct d:
-		vec3 p0						=cloudWorldOffset/scaleOfGridCoords;
+		vec3 p0 = cloudWorldOffset / gridScale;
 		vec3 p1						=c1;
 		vec3 dp						=p1-p0;
 		vec3 D						=dp/viewScaled;

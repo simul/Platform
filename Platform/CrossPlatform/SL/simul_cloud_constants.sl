@@ -11,7 +11,7 @@ struct LayerData
 	float layerDistanceMetres;
 	float verticalShift;
 	float pad13;
-};2
+};
 
 SIMUL_CONSTANT_BUFFER(SingleLayerConstants,5)
 	vec2 noiseOffset_;

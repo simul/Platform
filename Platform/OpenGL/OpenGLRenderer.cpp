@@ -180,6 +180,8 @@ void OpenGLRenderer::RenderGL(int view_id)
 {
 	crossplatform::MixedResolutionView *view	=viewManager.GetView(view_id);
 	const crossplatform::CameraOutputInterface *cam=cameras[view_id];
+	if (!cam)
+		return;
 	const crossplatform::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.renderPlatform	=renderPlatform;

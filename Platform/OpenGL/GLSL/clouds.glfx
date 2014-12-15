@@ -86,7 +86,7 @@ shader void VS_Layers(in vec3 vertex
 
 	float sine			=view.z;
 	fade_texc			=vec2(sqrt(depth),0.5*(1.0-sine));
-	rainFade			=1.0-exp(-layer.layerDistance/10000.0);
+	rainFade = 1.0 - exp(-layer.layerDistanceMetres / 10000.0);
 }
 
 vec4 Layers(float layerDensity,
