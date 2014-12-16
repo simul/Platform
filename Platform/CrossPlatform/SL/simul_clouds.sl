@@ -380,17 +380,20 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	int3 V							=int3(0,1.0,0);
 	int3 W							=int3(0,0,1.0);
 	vec3 startWorldOffset			=world_pos-cornerPos;
-	int3 c							=floor(startWorldOffset / scaleOfGridCoords) + start_c_offset;
+	int3 c0							=floor(startWorldOffset / scaleOfGridCoords) + start_c_offset;
+	int3 c							=c0;
 	vec3 gridScale					=scaleOfGridCoords;
 	int3 C							=floor(startWorldOffset / scaleOfGridCoords/2.0) + start_c_offset;
+	int3 C0							=C;
+
 //	c_offset *= 8;
 	// We want to distribute samples close to the viewer.
 	// if we transition from a smaller to a larger step size, we must divide the integer offsets by 2,
 	// and multiply viewScale and scaleOfGridCoords.
 
 	// OR we can just multiply c_offset by 2.
-
-	int t=16;
+	vec3 colours[5]={{1,0,0},{0,0.5,0},{0,.25,0.75},{1,.5,0},{0.5,0.25,0.5}};
+	int idx=0;
 	for(int i=0;i<layerCount;i++)
 	{
 		vec4 density				=vec4(0,0,0,0);
@@ -400,15 +403,16 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 
 		if((view.z<0&&cloudTexCoords.z<min_texc_z)||(view.z>0&&cloudTexCoords.z>max_texc_z))
 			break;
-		C = c >>1;
-		t--;
-		if(!t)
+		C		= c>>1;
+		int3 B	=abs(C-C0);
+		if(idx<10&&max(max(B.x,B.y),B.z)>=16)
 		{
+			c0 = C0;
 			c = C;
 			gridScale *= 2.0;
 			viewScale *= 2.0;
-			C = floor(startWorldOffset / gridScale / 2.0) + start_c_offset;
-			t=16;
+			C0 = floor(startWorldOffset / gridScale / 2.0) + start_c_offset;
+			idx++;
 		}
 		int3 c_step					=int3(c_offset.x,0,0);
 		// Next pos.
@@ -416,9 +420,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		float d;
 
 		//find the correct d:
-		vec3 p0 = cloudWorldOffset / gridScale;
+		vec3 p						=cloudWorldOffset / gridScale;
 		vec3 p1						=c1;
-		vec3 dp						=p1-p0;
+		vec3 dp						=p1-p;
 		vec3 D						=dp/viewScaled;
 #if 0
 		float e						=min(min(D.x,D.y),D.z);
@@ -443,17 +447,27 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		world_dist					+=d;
 
 		// What offset was the original position from the centre of the cube?
-		vec3 d0						=normalize(2.0*abs(frac(p0+e*viewScaled)-vec3(.5,.5,.5)));
+		p1							=p+e*viewScaled;
+		vec3 d0						=normalize(2.0*abs(frac(p1)-vec3(.5,.5,.5)));
 		float angle_mult			=abs(dot(N,viewScaled));
 	
 		float distanceMetres		=world_dist;
 		float fade					=angle_mult;//(1.0-exp(-e))*smoothstep(0.0,0.5,angle_mult);//abs(d)/length(D)*);
+		// We fade out the intermediate steps as we approach the boundary of a detail change.
 		float verticalShift			=0;
 		vec2 noiseOffset			=vec2(0,0);
 		// Now sample at the halfway point:
 		world_pos					+=d*view;
 		cloudTexCoords				=(world_pos-cornerPos)*inverseScales;
-		c+=c_step;
+		c							+=c_step;
+		int3 intermediate			=c%2;
+		float is_inter				=dot(N,intermediate);
+		// A spherical shell, whose outer radius is W/2, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/4)^2).
+		// i.e. from (3*0.25^2)^0.5 to 0.5, from sqrt(3/16) to 0.5, from 0.433 to 0.5
+		const float range=(0.5-0.433)*63.0;
+		const float start=0.433*64.0;
+		float fade_inter			=saturate((world_dist/viewScale-start)/range);
+		fade						*=1.0-(is_inter*fade_inter);
 		float fadeDistance			=saturate(distanceMetres/maxFadeDistanceMetres);
 		if(fade>0&&(fadeDistance<=solid_dist||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
@@ -490,7 +504,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 													,world_pos,cloudTexCoords
 													,fade_texc,nearFarTexc
 													,brightness_factor);
-			//	c.rgb=angle_mult;
+		//		c.rgb=lerp(colours[idx%5],colours[(idx+1)%5],fade_inter);
+			//	if(is_inter!=0)
+				//	c.rgb=fade_inter;
+				//	if(fade_inter>=.5)
+			//		c.rgb=vec3(0,0,.5);
+				
 				colour.rgb				+=c.rgb*c.a*(colour.a);
 				meanFadeDistance		+=fadeDistance*c.a*colour.a;
 				colour.a				*=(1.0-c.a);
