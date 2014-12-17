@@ -403,17 +403,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 
 		if((view.z<0&&cloudTexCoords.z<min_texc_z)||(view.z>0&&cloudTexCoords.z>max_texc_z))
 			break;
-		C		= c>>1;
-		int3 B	=abs(C-C0);
-		if(idx<10&&max(max(B.x,B.y),B.z)>=16)
-		{
-			c0 = C0;
-			c = C;
-			gridScale *= 2.0;
-			viewScale *= 2.0;
-			C0 = floor(startWorldOffset / gridScale / 2.0) + start_c_offset;
-			idx++;
-		}
 		int3 c_step					=int3(c_offset.x,0,0);
 		// Next pos.
 		int3 c1						=c+c_offset;
@@ -459,16 +448,31 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		// Now sample at the halfway point:
 		world_pos					+=d*view;
 		cloudTexCoords				=(world_pos-cornerPos)*inverseScales;
-		c							+=c_step;
-		int3 intermediate			=c%2;
+		c+=c_step;
+		int3 b						=abs(c-2*C0);
+		vec3 intermediate			=abs(vec3(b.x%2,b.y%2,b.z%2));
 		float is_inter				=dot(N,intermediate);
-		// A spherical shell, whose outer radius is W/2, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/4)^2).
-		// i.e. from (3*0.25^2)^0.5 to 0.5, from sqrt(3/16) to 0.5, from 0.433 to 0.5
-		const float range=(0.5-0.433)*63.0;
-		const float start=0.433*64.0;
+		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
+		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
+		const float range			=(1.0-0.866)*31.0;
+		const float start			=0.866*32.0;
 		float fade_inter			=saturate((world_dist/viewScale-start)/range);
 		fade						*=1.0-(is_inter*fade_inter);
 		float fadeDistance			=saturate(distanceMetres/maxFadeDistanceMetres);
+		
+		C		= c>>1;
+		int3 B	=abs(C-C0);
+		float oo=0.0;
+	/*	if(idx==0&&max(max(B.x,B.y),B.z)>=16)
+		{
+			c0			= C0;
+			c			= C;
+			gridScale	*= 2.0;
+			viewScale	*= 2.0;
+			C0			= floor(startWorldOffset / gridScale / 2.0) + start_c_offset;
+			idx			++;
+			oo			=1.0;
+		}*/
 		if(fade>0&&(fadeDistance<=solid_dist||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
 			vec4 noiseval			=MakeNoise(noiseTexture3D,noise,noise_centre_factor,cloudTexCoords);
@@ -504,12 +508,14 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 													,world_pos,cloudTexCoords
 													,fade_texc,nearFarTexc
 													,brightness_factor);
-		//		c.rgb=lerp(colours[idx%5],colours[(idx+1)%5],fade_inter);
-			//	if(is_inter!=0)
-				//	c.rgb=fade_inter;
-				//	if(fade_inter>=.5)
-			//		c.rgb=vec3(0,0,.5);
-				
+			//	c.rgb=colours[idx%5]*fade_inter;
+			//	c.rgb=lerp(colours[idx%5],colours[(idx+1)%5],fade_inter);
+			/*	if(oo>0)
+				{
+					c.g=is_inter;
+					c.b=1;
+				}*/
+				c.a*=fade;
 				colour.rgb				+=c.rgb*c.a*(colour.a);
 				meanFadeDistance		+=fadeDistance*c.a*colour.a;
 				colour.a				*=(1.0-c.a);
