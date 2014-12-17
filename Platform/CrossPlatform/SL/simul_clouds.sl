@@ -376,9 +376,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	vec3 viewScaled					=view/scaleOfGridCoords;
 	viewScaled						=normalize(viewScaled);
 	float viewScale					=length(viewScaled*scaleOfGridCoords);
-	int3 U							=int3(1.0,0,0);
-	int3 V							=int3(0,1.0,0);
-	int3 W							=int3(0,0,1.0);
 	vec3 startWorldOffset			=world_pos-cornerPos;
 	int3 c0							=floor(startWorldOffset / scaleOfGridCoords) + start_c_offset;
 	int3 c							=c0;
@@ -394,6 +391,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	// OR we can just multiply c_offset by 2.
 	vec3 colours[5]={{1,0,0},{0,0.5,0},{0,.25,0.75},{1,.5,0},{0.5,0.25,0.5}};
 	int idx=0;
+	const float W=8;
 	for(int i=0;i<layerCount;i++)
 	{
 		vec4 density				=vec4(0,0,0,0);
@@ -419,7 +417,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 #else
 		float e						=D.x;//min(min(D.x,D.y),D.z);
 		vec3 N						=vec3(1.0,0,0);
-		if(D.y<e)
+	/*	if(D.y<e)
 		{
 			e						=D.y;
 			N						=vec3(0,1.0,0);
@@ -430,7 +428,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			e						=D.z;
 			N						=vec3(0,0,1.0);
 			c_step					=int3(0,0,c_offset.z);
-		}
+		}*/
 #endif
 		d							=e*viewScale;
 		world_dist					+=d;
@@ -438,7 +436,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		// What offset was the original position from the centre of the cube?
 		p1							=p+e*viewScaled;
 		vec3 d0						=normalize(2.0*abs(frac(p1)-vec3(.5,.5,.5)));
-		float angle_mult			=abs(dot(N,viewScaled));
+		float angle_mult			=1;//abs(dot(N,viewScaled));
 	
 		float distanceMetres		=world_dist;
 		float fade					=angle_mult;//(1.0-exp(-e))*smoothstep(0.0,0.5,angle_mult);//abs(d)/length(D)*);
@@ -454,26 +452,13 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		float is_inter				=dot(N,intermediate);
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
-		const float range			=(1.0-0.866)*31.0;
-		const float start			=0.866*32.0;
+		const float range			=(1.0-0.866)*(float)W;
+		const float start			=0.866*(float)W;
 		float fade_inter			=saturate((world_dist/viewScale-start)/range);
-		fade						*=1.0-(is_inter*fade_inter);
+		//fade						*=1.0-(is_inter*fade_inter);
 		float fadeDistance			=saturate(distanceMetres/maxFadeDistanceMetres);
 		
-		C		= c>>1;
-		int3 B	=abs(C-C0);
-		float oo=0.0;
-	/*	if(idx==0&&max(max(B.x,B.y),B.z)>=16)
-		{
-			c0			= C0;
-			c			= C;
-			gridScale	*= 2.0;
-			viewScale	*= 2.0;
-			C0			= floor(startWorldOffset / gridScale / 2.0) + start_c_offset;
-			idx			++;
-			oo			=1.0;
-		}*/
-		if(fade>0&&(fadeDistance<=solid_dist||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
+	//	if(fade>0&&(fadeDistance<=solid_dist||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
 			vec4 noiseval			=MakeNoise(noiseTexture3D,noise,noise_centre_factor,cloudTexCoords);
 		//	fade					*=abs(dot(d0+noiseval,viewScaled));
@@ -512,9 +497,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			//	c.rgb=lerp(colours[idx%5],colours[(idx+1)%5],fade_inter);
 			/*	if(oo>0)
 				{
-					c.g=is_inter;
 					c.b=1;
 				}*/
+				if(idx==0)
+					c.g=is_inter;//is_inter;
+				else
+					c.rgb=cloudTexCoords.z;
 				c.a*=fade;
 				colour.rgb				+=c.rgb*c.a*(colour.a);
 				meanFadeDistance		+=fadeDistance*c.a*colour.a;
@@ -525,6 +513,19 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 					break;
 				}
 			}
+		}
+		C		= c/2;
+		int3 B	=abs(C-C0);
+		float oo=0.0;
+		if(idx==0&&b.x>=W)//max(max(B.x,B.y),B.z)>=16)
+		{
+			c0			= C0;
+			c			= C;
+			gridScale	*= 2.0;
+			viewScale	*= 2.0;
+			C0			= floor(startWorldOffset / gridScale / 2.0) + start_c_offset;
+			idx			++;
+			oo			=1.0;
 		}
 	}
 	meanFadeDistance	+=colour.a;
