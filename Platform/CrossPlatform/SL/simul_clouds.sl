@@ -37,7 +37,6 @@ vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,
 	vec4 density1=sampleLod(cloudDensity1,cloudSamplerState,pos,0);
 	vec4 density2=sampleLod(cloudDensity2,cloudSamplerState,pos,0);
 	vec4 density=lerp(density1,density2,cloud_interp);
-	//density.z*=(0.6+0.4*noiseval.w);
 	density.z*=layerFade;
 	density.z=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness);
 	return density;
