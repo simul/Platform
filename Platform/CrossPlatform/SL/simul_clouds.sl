@@ -392,9 +392,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	world_pos	+=(min_z-world_pos.z)*offset_vec;
 	float distanceMetres				=distance(world_pos,viewPos);
 	int3 c							=c0;
-	int3 C							=C0;
 
-	const float W=16;
+	vec3 colours[]={{1.0,0.5,0.5},{0.0,1.0,0.0},{1.0,0.0,0.7},{0.0,1.0,1.0},{0.5,0.5,0.0}};
+//	int idx=0;
+	const float W=32;
 	for(int i=0;i<layerCount;i++)
 	{
 		vec4 density				=vec4(0,0,0,0);
@@ -429,19 +430,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			c_step					=int3(0,0,c_offset.z);
 		}
 
-		
 		float d						=e*viewScale;
 		distanceMetres				+=d;
 
 		// What offset was the original position from the centre of the cube?
 		p1							=p+e*viewScaled;
 		vec3 d0						=normalize(2.0*abs(frac(p1)-vec3(.5,.5,.5)));
-		float angle_mult			=abs(dot(N,viewScaled));
+		float fade					=abs(dot(N,viewScaled));
 	
-		float fade					=angle_mult;//(1.0-exp(-e))*smoothstep(0.0,0.5,angle_mult);//abs(d)/length(D)*);
+		//fade					*=1.0-exp(-e);
 		// We fade out the intermediate steps as we approach the boundary of a detail change.
-		float verticalShift			=0;
-		vec2 noiseOffset			=vec2(0,0);
+		//float verticalShift			=0;
 		// Now sample at the halfway point:
 		world_pos					+=d*view;
 		cloudTexCoords				=(world_pos-cornerPos)*inverseScales;
@@ -456,7 +455,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		float fade_inter			=saturate((distanceMetres/viewScale-start)/range);
 		fade						*=1.0-(is_inter*fade_inter);
 		float fadeDistance			=saturate(distanceMetres/maxFadeDistanceMetres);
-		
+	//	fade*=1-idx;
+		bool switching				=(max(max(b.x,b.y),b.z)>=W);
 		if(fade>0&&(fadeDistance<=solid_dist||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
 			vec4 noiseval			=MakeNoise(noiseTexture3D,noise,noise_centre_factor,cloudTexCoords);
@@ -471,11 +471,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			if(do_rain_effect)
 			{
 				dm					=fade*rainEffect*rain_lookup
-											*saturate((rainRadius-length(world_pos.xy-rainCentre.xy))*0.0003)
-											*saturate(1.0-10*cloudTexCoords.z)
-											*saturate(cloudTexCoords.z+1.0+4.0*streak.y)
-											*(0.4+0.6*streak.x)
-											;
+										*saturate((rainRadius-length(world_pos.xy-rainCentre.xy))*0.0003)
+										*saturate(1.0-10*cloudTexCoords.z)
+										*saturate(cloudTexCoords.z+1.0+4.0*streak.y)
+										*(0.4+0.6*streak.x)
+										;
 				moisture+=0.01*dm*density.x;
 				density.z=saturate(density.z+dm);
 			}
@@ -485,19 +485,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			{
 				float brightness_factor;
 				fade_texc.x				=sqrt(fadeDistance);
-				vec4 c					=calcColour(lossTexture,inscTexture,skylTexture,lightTableTexture
+				vec4 clr				=calcColour(lossTexture,inscTexture,skylTexture,lightTableTexture
 													,density
 													,BetaClouds,BetaRayleigh,BetaMie
 													,lightResponse,ambientColour
 													,world_pos,cloudTexCoords
 													,fade_texc,nearFarTexc
 													,brightness_factor);
-			//	c.rgb=colours[idx%5]*fade_inter;
-				c.a*=fade;
-				//c.rgb+=offset_vec;
-				colour.rgb				+=c.rgb*c.a*(colour.a);
-				meanFadeDistance		+=fadeDistance*c.a*colour.a;
-				colour.a				*=(1.0-c.a);
+				//clr.a					*=fade;
+				colour.rgb				+=clr.rgb*clr.a*(colour.a);
+				meanFadeDistance		+=fadeDistance*clr.a*colour.a;
+				colour.a				*=(1.0-clr.a);
 				if(colour.a*brightness_factor<0.003)
 				{
 					colour.a			=0.0;
@@ -505,16 +503,14 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				}
 			}
 		}
-		C		= c/2;
-		int3 B	=abs(C-C0);
-		if(max(max(b.x,b.y),b.z)>=W)
+		if(switching)
 		{
 			c0			= C0;
-			c			= C;
+			c			=  c/2+start_c_offset;
 			gridScale	*= 2.0;
 			viewScale	*= 2.0;
-			C0			= floor(startWorldOffset / gridScale / 2.0) + start_c_offset;
-			//idx			++;
+			C0			= floor(startWorldOffset/gridScale/2.0)+start_c_offset;
+		//	idx			++;
 		}
 	}
 	meanFadeDistance	+=colour.a;
