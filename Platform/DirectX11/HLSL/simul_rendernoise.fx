@@ -90,6 +90,7 @@ void CS_Noise3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives th
     }
 	// divide by total to get the range -1,1.
 	result					*=1.0/total;
+	//result.a		=0.5*(result.a+1.0);
 	targetTexture8[pos]		=result;
 }
 

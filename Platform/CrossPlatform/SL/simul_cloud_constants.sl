@@ -32,7 +32,7 @@ SIMUL_CONSTANT_BUFFER_END
 SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 scaleOfGridCoords;
-	uniform float aq0o84hgeagq4hl;
+	uniform int halfClipSize;			// Actually half the full clip size.
 	uniform vec3 viewPos;
 	uniform uint layerIndex;
 	uniform mat4 invViewProj;
@@ -92,7 +92,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 cloudIrRadiance1;
 	uniform float yz;
 	uniform vec3 cloudIrRadiance2;
-	uniform float pad;
+	uniform float noise3DOctaveScale;
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
 	uniform float dropletRadius;

@@ -92,6 +92,8 @@ RenderPlatform::StoredState::StoredState()
 				,m_pBlendStateStored11(NULL)
 				,pIndexBufferStored11(NULL)
 				,m_previousInputLayout(NULL)
+				,pVertexShader(NULL)
+				,pPixelShader(NULL)
 {
 	for(int i=0;i<4;i++)
 		m_BlendFactorStored11[i];
@@ -113,6 +115,16 @@ RenderPlatform::StoredState::StoredState()
 		m_pVertexBuffersStored11[i]=NULL;
 		m_VertexStrides[i]=0;
 		m_VertexOffsets[i]=0;
+	}
+	numPixelClassInstances=0;
+	for(int i=0;i<16;i++)
+	{
+		m_pPixelClassInstances[i]=NULL;
+	}
+	numVertexClassInstances=0;
+	for(int i=0;i<16;i++)
+	{
+		m_pVertexClassInstances[i]=NULL;
 	}
 }
 
@@ -1083,6 +1095,9 @@ void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceConte
     pContext->OMGetBlendState(&s.m_pBlendStateStored11,s.m_BlendFactorStored11, &s.m_SampleMaskStored11 );
     pContext->PSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, s.m_pSamplerStateStored11 );
     pContext->VSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT , s.m_pVertexSamplerStateStored11 );
+	
+	pContext->VSGetShader(&s.pVertexShader,s.m_pVertexClassInstances,&s.numVertexClassInstances);
+	pContext->PSGetShader(&s.pPixelShader,s.m_pPixelClassInstances,&s.numPixelClassInstances);
 
 	pContext->PSGetShaderResources(0,D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,s.m_pShaderResourceViews);
 	pContext->CSGetUnorderedAccessViews(0,D3D11_PS_CS_UAV_REGISTER_COUNT,s.m_pUnorderedAccessViews);
@@ -1110,6 +1125,8 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
     pContext->OMSetBlendState(s.m_pBlendStateStored11,s.m_BlendFactorStored11,s.m_SampleMaskStored11 );
     pContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pSamplerStateStored11 );
     pContext->VSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pVertexSamplerStateStored11 );
+	pContext->VSSetShader(s.pVertexShader,s.m_pVertexClassInstances,s.numVertexClassInstances);
+	pContext->PSSetShader(s.pPixelShader,s.m_pPixelClassInstances,s.numPixelClassInstances);
 
 	pContext->PSSetShaderResources(0,D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,s.m_pShaderResourceViews);
 	for (int i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
@@ -1197,7 +1214,10 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend)
 {
-	DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsD3D11ShaderResourceView(),mult,blend);
+	if(!tex)
+		DrawTexture(deviceContext,x1,y1,dx,dy,(ID3D11ShaderResourceView*)NULL,mult,blend);
+	else
+		DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsD3D11ShaderResourceView(),mult,blend);
 }
 
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v)

@@ -143,6 +143,14 @@ namespace simul
 				ID3D11Buffer *m_pVertexBuffersStored11[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
 				UINT m_VertexStrides[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
 				UINT m_VertexOffsets[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+
+				
+				 ID3D11VertexShader *pVertexShader;
+				 ID3D11PixelShader *pPixelShader;
+				 ID3D11ClassInstance *m_pPixelClassInstances[16];
+				 UINT numPixelClassInstances;
+				 ID3D11ClassInstance *m_pVertexClassInstances[16];
+				 UINT numVertexClassInstances;
 			};
 			std::vector<StoredState> storedStates;
 			std::vector<struct RTState*> storedRTStates;
