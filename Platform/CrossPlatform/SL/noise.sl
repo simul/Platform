@@ -13,13 +13,15 @@ float rand3(vec3 co)
 
 vec3 SphericalRandom(vec3 co)
 {
-	float r=1.f-pow(rand3(co),4.0);
-	float az=rand3(43.1138*co)*2*3.1415926536;
-	float el=asin(rand3(17.981)*2.0-1.0);
+	float r			=1.f-pow(rand3(co),4.0);
+	float az		=rand3(43.1138*co)*2*3.1415926536;
+	float sine_el	=rand3(17.981*co)*2.0-1.0;
+	float el		=asin(sine_el);
+	float cos_el	=cos(el);
 	vec3 v;
-	v.x=r*sin(az)*cos(el);
-	v.y=r*cos(az)*cos(el);
-	v.z=r*sin(el);
+	v.x				=r*sin(az)*cos_el;
+	v.y				=r*cos(az)*cos_el;
+	v.z				=r*sine_el;
 	return v;
 }
 

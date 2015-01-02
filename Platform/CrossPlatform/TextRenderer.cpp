@@ -123,6 +123,7 @@ TextRenderer::~TextRenderer()
 void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
+	constantBuffer.InvalidateDeviceObjects();
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 	SAFE_DELETE(font_texture);
@@ -156,10 +157,6 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	if(!bck)
 		bck=transp;
 	renderPlatform->StoreRenderState(deviceContext);
-	/*D3D_PRIMITIVE_TOPOLOGY previousTopology;
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	pContext->IAGetPrimitiveTopology(&previousTopology);
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);*/
 	constantBuffer.colour		=vec4(clr);
 	constantBuffer.background	=vec4(bck);
 	// Calc width and draw background:

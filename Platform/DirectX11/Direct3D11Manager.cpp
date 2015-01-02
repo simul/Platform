@@ -433,19 +433,22 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument)
 	if(use_debug)
 	{
 	#ifndef _XBOX_ONE
-	d3dDevice->QueryInterface( __uuidof(ID3D11Debug), (void**)&d3dDebug );
-	d3dDebug->QueryInterface( __uuidof(ID3D11InfoQueue), (void**)&d3dInfoQueue );
+		d3dDevice->QueryInterface( __uuidof(ID3D11Debug), (void**)&d3dDebug );
+		if(d3dDebug)
+			d3dDebug->QueryInterface( __uuidof(ID3D11InfoQueue), (void**)&d3dInfoQueue );
 	#endif
- 
-	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
-	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
-		d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, true );
+		if(d3dInfoQueue)
+		{
+			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
+			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
+			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, true );
 	
-	ReportMessageFilterState();
-	d3dInfoQueue->ClearStoredMessages();
-	d3dInfoQueue->ClearRetrievalFilter();
-	d3dInfoQueue->ClearStorageFilter();
-	ReportMessageFilterState();
+			ReportMessageFilterState();
+			d3dInfoQueue->ClearStoredMessages();
+			d3dInfoQueue->ClearRetrievalFilter();
+			d3dInfoQueue->ClearStorageFilter();
+			ReportMessageFilterState();
+		}
 	
 /*	D3D11_MESSAGE_CATEGORY cats[] = {/*D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED
 										,D3D11_MESSAGE_CATEGORY_MISCELLANEOUS	
@@ -466,24 +469,24 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument)
 		D3D11_MESSAGE_ID_DESTROY_PIXELSHADER,
 		D3D11_MESSAGE_ID_DESTROY_COMPUTESHADER };*/
 
-	D3D11_INFO_QUEUE_FILTER filter;
-	memset( &filter, 0, sizeof(filter) );
+		D3D11_INFO_QUEUE_FILTER filter;
+		memset( &filter, 0, sizeof(filter) );
 
-	// To set the type of messages to allow, 
-	// set filter.AllowList as follows:
-	//filter.AllowList.NumCategories = sizeof(cats) / sizeof(D3D11_MESSAGE_CATEGORY); 
-	//filter.AllowList.pCategoryList = cats;
-	filter.AllowList.NumSeverities = 2; 
-	filter.AllowList.pSeverityList = sevs;
-	filter.AllowList.NumIDs = 0;//sizeof(ids) / sizeof(UINT);
-	//..filter.AllowList.pIDList = ids;
+		// To set the type of messages to allow, 
+		// set filter.AllowList as follows:
+		//filter.AllowList.NumCategories = sizeof(cats) / sizeof(D3D11_MESSAGE_CATEGORY); 
+		//filter.AllowList.pCategoryList = cats;
+		filter.AllowList.NumSeverities = 2; 
+		filter.AllowList.pSeverityList = sevs;
+		filter.AllowList.NumIDs = 0;//sizeof(ids) / sizeof(UINT);
+		//..filter.AllowList.pIDList = ids;
 
-	// To set the type of messages to deny, set filter.DenyList 
-	// similarly to the preceding filter.AllowList.
-
-	// The following single call sets all of the preceding information.
-	V_CHECK(d3dInfoQueue->AddStorageFilterEntries( &filter ));
-	ReportMessageFilterState();
+		// To set the type of messages to deny, set filter.DenyList 
+		// similarly to the preceding filter.AllowList.
+		if(d3dInfoQueue)
+		// The following single call sets all of the preceding information.
+			V_CHECK(d3dInfoQueue->AddStorageFilterEntries( &filter ));
+		ReportMessageFilterState();
 	}
 	//d3dDevice->AddRef();
 	//UINT refcount2=d3dDevice->Release();

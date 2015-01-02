@@ -426,7 +426,6 @@ vec4 PS_ShowNoise( posTexVertexOutput IN):SV_TARGET
 	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
-
 vec4 PS_Show3DNoise( posTexVertexOutput IN):SV_TARGET
 {
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;

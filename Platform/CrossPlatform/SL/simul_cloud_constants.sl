@@ -42,7 +42,8 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform mat4 worldViewProj;
 	uniform vec4 depthToLinFadeDistParams;
 	uniform vec2 tanHalfFov;
-	uniform float exposure,CloudPerViewConstantsPad2;
+	uniform float exposure;
+	uniform float maxCloudDistanceMetres;
 	uniform float nearZ;
 	uniform float farZ;
 	uniform float extentZMetres;
@@ -95,8 +96,8 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float noise3DOctaveScale;
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
+	uniform vec3 noise3DTexcoordOffset;
 	uniform float dropletRadius;
-	uniform float uageaeg,agpaeg,ageafaeg;
 	// RDE begin: added
 	uniform vec4 infraredIntegrationFactorsUNUSED;
 	// local cloud support

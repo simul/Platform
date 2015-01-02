@@ -190,6 +190,14 @@
 			r.z=m*z;
 			return r;
 		}
+		vec3 operator/(float m) const
+		{
+			vec3 r;
+			r.x=x/m;
+			r.y=y/m;
+			r.z=z/m;
+			return r;
+		}
 		vec3 operator*(vec3 v) const
 		{
 			vec3 r;

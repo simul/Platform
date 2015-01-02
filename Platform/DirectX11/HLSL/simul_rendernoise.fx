@@ -67,7 +67,7 @@ void CS_Random3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives t
 	vec2 texc2				=texCoords.xy+dims.y*texCoords.z;
 	// Range from -1 to 1.
 	vec4 c					=vec4(SphericalRandom(texCoords),rand3(513.1*texCoords));
-   // vec4 c					=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
+   // vec4 c				=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
     targetTexture32[pos]	=c;
 }
 
