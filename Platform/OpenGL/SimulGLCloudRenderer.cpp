@@ -136,7 +136,6 @@ GL_ERROR_CHECK
 										,indirect_light_mult*K.indirect_light
 										,0,0);
 	
-	simul::sky::float4 fractal_scales=simul::clouds::CloudGeometryHelper::GetFractalScales(cloudKeyframer);
 
 //	float base_alt_km=X1.z*.001f;
 	float t=0.f;

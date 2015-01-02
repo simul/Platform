@@ -2,7 +2,7 @@
 #define CLOUDS_SL
 
 #ifndef GLSL
-SamplerState cloudSamplerState			: register( s0);
+SamplerState cloudSamplerState	: register( s0);
 #endif
 
 #ifdef __PSSL__
@@ -18,12 +18,15 @@ SamplerState cloudSamplerState			: register( s0);
 		#define USE_LIGHT_TABLES0
 	#endif
 #endif
+
 #define MIN_SUN_ELEV (0.2)
+
 struct RaytracePixelOutput
 {
 	vec4 colour SIMUL_TARGET_OUTPUT;
 	float depth	SIMUL_DEPTH_OUTPUT;
 };
+
 struct FarNearPixelOutput
 {
 	vec4 farColour SIMUL_RENDERTARGET_OUTPUT(0);
@@ -33,6 +36,8 @@ struct FarNearPixelOutput
 
 vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float cloud_interp)
 {
+	float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(texCoords.z));
+	noiseval.rgb			*=noise_factor;
 	vec3 pos=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
 	vec4 density1=sampleLod(cloudDensity1,cloudSamplerState,pos,0);
 	vec4 density2=sampleLod(cloudDensity2,cloudSamplerState,pos,0);
@@ -272,16 +277,14 @@ vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec
 	vec4 noiseval				=vec4(0,0,0,0);
 	if(noise)
 	{
-		float noise_factor	=noise_centre_factor*lerp(baseNoiseFactor,1.0,saturate(cloudTexCoords.z));
 		vec3 noise_texc		=cloudTexCoords.xyz*noise3DTexcoordScale;
 		float mult			=0.5;
 		for(int j=0;j<2;j++)
 		{
-			noiseval		+=(texture_wrap_lod(noiseTexture3D,noise_texc,0).xyzw)*mult;
+			noiseval		+=texture_wrap_lod(noiseTexture3D,noise_texc,0)*mult;
 			noise_texc		*=noise3DOctaveScale;
 			mult			*=noise3DPersistence;
 		}
-		noiseval			*=noise_factor;
 	}
 	return noiseval;
 }
@@ -364,7 +367,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	vec4 rainbowColour		=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
 												rainbowIntensity,view,lightDir,texCoords.xy);
 	float moisture				=0.0;
-	float noise_centre_factor	=exp(-length(clip_pos.xy));
+	float noise_centre_factor	=1.0;//exp(-length(clip_pos.xy));
 
 	vec3 world_pos					=viewPos;
 
@@ -492,6 +495,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 													,fade_texc,nearFarTexc
 													,brightness_factor);
 				//clr.a					*=fade;
+				//clr.rgb=abs(noiseval.www);
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
 				meanFadeDistance		+=fadeDistance*clr.a*colour.a;
 				colour.a				*=(1.0-clr.a);

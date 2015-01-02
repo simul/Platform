@@ -46,7 +46,8 @@ v2f MainVS(idOnly IN)
 vec4 RandomPS(v2f IN) : SV_TARGET
 {
 	// Range from -1 to 1.
-    vec4 c=2.0*vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords))-1.0;
+	vec4 c=2.0*vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords))-1.0;
+	//vec4 c=vec4(SphericalRandom(IN.texCoords),2.0*rand(513.1*IN.texCoords)-1.0);
     return c;
 }
 
@@ -62,36 +63,36 @@ void CS_Random3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives t
 	targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
-	vec3 texCoords	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
-	vec2 texc2		=texCoords.xy+dims.y*texCoords.z;
+	vec3 texCoords			=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
+	vec2 texc2				=texCoords.xy+dims.y*texCoords.z;
 	// Range from -1 to 1.
-    vec4 c					=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
+	vec4 c					=vec4(SphericalRandom(texCoords),rand3(513.1*texCoords));
+   // vec4 c					=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
     targetTexture32[pos]	=c;
 }
 
 [numthreads(8,8,8)]
-void CS_Noise3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+void CS_Noise3D_8(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 dims;
 	targetTexture8.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
-	vec4 result		=vec4(0,0,0,0);
-	vec3 texCoords	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
-	float mult		=0.5;
-	float total		=0.0;
-    for(int i=0;i<octaves;i++)
-    {
-		vec4 c		=texture_wrap_lod(random_texture_3d,texCoords,0);
-		texCoords	*=2.0;
-		total		+=mult;
-		result		+=mult*c;
-		mult		*=persistence;
-    }
-	// divide by total to get the range -1,1.
-	result					*=1.0/total;
-	//result.a		=0.5*(result.a+1.0);
-	targetTexture8[pos]		=result;
+	vec3 texCoords		=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
+	vec4 result			=Noise3D(random_texture_3d,texCoords,octaves, persistence);
+	targetTexture8[pos]	=result;
+}
+
+[numthreads(8,8,8)]
+void CS_Noise3D_float(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+{
+	uint3 dims;
+	targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;
+	vec3 texCoords			=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
+	vec4 result				=Noise3D(random_texture_3d,texCoords,octaves, persistence);
+	targetTexture32[pos]	=result;
 }
 
 DepthStencilState DisableDepth
@@ -147,10 +148,18 @@ technique11 random_3d_compute
 }
 
 
-technique11 noise_3d_compute
+technique11 noise_3d_compute_8bit
 {
     pass p0
 	{
-		SetComputeShader(CompileShader(cs_5_0,CS_Noise3D()));
+		SetComputeShader(CompileShader(cs_5_0,CS_Noise3D_8()));
+    }
+}
+
+technique11 noise_3d_compute_float
+{
+    pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Noise3D_float()));
     }
 }
