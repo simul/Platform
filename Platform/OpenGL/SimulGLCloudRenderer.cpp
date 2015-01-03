@@ -171,8 +171,8 @@ GL_ERROR_CHECK
 	if(cloudKeyframer->GetMeetHorizon())
 		effective_world_radius_metres	=helper->GetEffectiveEarthRadiusToMeetHorizon(base_alt,helper->GetMaxCloudDistance());
 	helper->MakeGeometry(cloudKeyframer,GetCloudGridInterface(),false,X1.z,false);
-
-	SetCloudConstants(cloudConstants);
+	float real_time=0.0f;
+	SetCloudConstants(cloudConstants,real_time);
 	cloudConstants.Apply(deviceContext);
 
 	//UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)

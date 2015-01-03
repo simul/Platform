@@ -420,16 +420,16 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 
 		float e						=D.x;
 		vec3 N						=vec3(1.0,0,0);
-		if(D.y<e)
+	//	if(D.y<e)
 		{
 			e						=D.y;
 			N						=vec3(0,1.0,0);
 		}
-		if(D.z<e)
+	/*	if(D.z<e)
 		{
 			e						=D.z;
 			N						=vec3(0,0,1.0);
-		}
+		}*/
 		
 		int3 c_step					=c_offset*int3(N);
 		float d						=e*viewScale;
@@ -492,8 +492,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 													,world_pos,cloudTexCoords
 													,fade_texc,nearFarTexc
 													,brightness_factor);
-				//if(texCoords.y>.9)
-				//	clr.rgb=colours[idx%5];
+				if(texCoords.y>.9)
+					clr.rgb=colours[idx%5];
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
 				meanFadeDistance		+=fadeDistance*clr.a*colour.a;
 				colour.a				*=(1.0-clr.a);
@@ -507,7 +507,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		if(max(max(b.x,b.y),b.z)>=halfClipSize)
 		{
 			c0			= C0;
-			c			= (c+start_c_offset)/2;//+2*start_c_offset;
+			c			= (c)/2;//+2*start_c_offset;
 			gridScale	*= 2.0;
 			viewScale	*= 2.0;
 			C0			= floor(startWorldOffset/gridScale/2.0)+start_c_offset;
