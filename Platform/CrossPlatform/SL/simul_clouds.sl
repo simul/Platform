@@ -447,9 +447,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		world_pos					+=d*view;
 		cloudTexCoords				=(world_pos-cornerPos)*inverseScales;
 		c							+=c_step;
-		int3 b						=abs(c-2*C0);
-		vec3 intermediate			=abs(vec3(b.x%2,b.y%2,b.z%2));
-		float is_inter				=dot(N,intermediate);
+		int3 intermediate			=abs(int3(c.x%2,c.y%2,c.z%2));
+		float is_inter				=dot(N,vec3(intermediate));
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
 		float fade_inter			=saturate((distanceMetres/viewScale-start)/range);
@@ -504,7 +503,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				}
 			}
 		}
+		int3 b			=abs(c-C0*2);//+start_c_offset
+		if(idx==0)
 		if(max(max(b.x,b.y),b.z)>=halfClipSize)
+	//	if(b.x>=halfClipSize)
 		{
 			c0			= C0;
 			c			= (c)/2;//+2*start_c_offset;
