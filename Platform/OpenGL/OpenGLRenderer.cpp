@@ -216,10 +216,11 @@ void OpenGLRenderer::RenderGL(int view_id)
 	glLoadMatrixf(deviceContext.viewStruct.proj);
 	glViewport(0,0,viewport.w,viewport.h);
 	static float exposure=1.0f;
+	float real_time=0;
 	if(simulWeatherRenderer)
 	{
 		GL_ERROR_CHECK
-		simulWeatherRenderer->PreRenderUpdate(deviceContext);
+		simulWeatherRenderer->PreRenderUpdate(deviceContext,real_time);
 		glDisable(GL_FOG);
 		GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
