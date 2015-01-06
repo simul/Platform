@@ -281,9 +281,6 @@
     <None Include="HLSL\spherical_harmonics.fx" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="DirectX11.rc" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="HLSL\light_probes.fx">
       <FileType>Document</FileType>
     </None>
