@@ -9,7 +9,6 @@ using namespace math;
 using namespace crossplatform;
 static const float DEG_TO_RAD=pi/180.f;
 static const float RAD_TO_DEG=180.f/pi;
-#pragma optimize("",off)
 /*
 The projection matrix converts cartesian coordinates in view-space (e.g. in metres relative to camera-fixed xyz axes) into projection space.
 Here is a symmetric projection matrix:
