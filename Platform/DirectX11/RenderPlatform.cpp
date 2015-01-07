@@ -586,9 +586,7 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	std::string fn(filename_utf8);
-	if(fn.find(".")>=fn.length())
-		fn+=".fx";
-	crossplatform::Effect *e= new dx11::Effect(this,fn.c_str(),defines);
+	crossplatform::Effect *e= new dx11::Effect(this,filename_utf8,defines);
 	e->SetName(filename_utf8);
 	return e;
 }

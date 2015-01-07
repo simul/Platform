@@ -221,6 +221,7 @@
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CrossPlatform\SFX\simul_rendernoise.sfx" />
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
     <None Include="..\CrossPlatform\SL\cloud_shadow.sl" />

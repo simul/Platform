@@ -22,6 +22,9 @@
     <Filter Include="FX">
       <UniqueIdentifier>{6114eb70-d5bb-4f18-b940-6c5a0d50e188}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SFX">
+      <UniqueIdentifier>{44db79cc-70d8-43ac-8367-1778f33a7ce0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CompileShaderDX1x.cpp">
@@ -362,6 +365,9 @@
     </None>
     <None Include="..\CrossPlatform\SL\composite.sl">
       <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
+      <Filter>SFX</Filter>
     </None>
   </ItemGroup>
 </Project>
