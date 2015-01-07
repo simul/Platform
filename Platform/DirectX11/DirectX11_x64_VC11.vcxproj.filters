@@ -369,5 +369,8 @@
     <None Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
       <Filter>SFX</Filter>
     </None>
+    <None Include="HLSL\shader_platform.sl">
+      <Filter>FX</Filter>
+    </None>
   </ItemGroup>
 </Project>

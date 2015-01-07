@@ -1,3 +1,4 @@
+#include "../SL/shader_platform.sl"
 #include "../SL/states.sl"
 #include "../SL/noise.sl"
 #include "../SL/noise_constants.sl"
