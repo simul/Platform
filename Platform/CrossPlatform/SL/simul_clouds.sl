@@ -272,17 +272,22 @@ vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec
 			mult			*=noise3DPersistence;
 		}
 	}
+	noiseval.w*=.5;
 	return noiseval;
 }
 
 vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float cloud_interp)
 {
 	float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(texCoords.z));
+	vec4 light1		=sampleLod(cloudDensity1,cloudSamplerState,texCoords,0);
+	vec4 light2		=sampleLod(cloudDensity2,cloudSamplerState,texCoords,0);
+	vec4 light		=lerp(light1,light2,cloud_interp);
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
 	vec4 density1		=sampleLod(cloudDensity1,cloudSamplerState,pos,0);
 	vec4 density2		=sampleLod(cloudDensity2,cloudSamplerState,pos,0);
 	vec4 density		=lerp(density1,density2,cloud_interp);
+	density.xyw			=light.xyw;
 	density.z			*=layerFade*(1.0-noiseval.w);
 	density.z			=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness);
 	return density;
@@ -461,7 +466,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
 		vec3 pw						=abs(p1-p0);//+start_c_offset
-		float fade_inter			=saturate((length(pw.xyz)/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
+		float fade_inter			=saturate((length(pw.xy)/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
 	//	if(idx==0)
 			fade					*=1.0-(fade_inter);
 		fade						*=saturate(distanceMetres/40.0);
@@ -533,6 +538,25 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			}
 		}
 	//	if(b.x>=halfClipSize)
+	/*	if(max(b.x,b.y)>=W)
+		{
+			c0.xy		=	C0.xy;
+			c.xy			+=	start_c_offset.xy;
+			c.xy			-=	abs(c.xy%2);
+			c.xy			=	c.xy/2;
+			gridScale.xy	*=	2.0;
+			viewScaled		=view/gridScale;
+			viewScaled		=normalize(viewScaled);
+			viewScale		=length(viewScaled*gridScale);
+			if(!idx)
+				W*=2;
+			p0.xy		=	P0.xy;
+			P0.xy		=	startOffsetFromOrigin.xy/gridScale.xy/2.0;
+			C0.xy		+=	start_c_offset.xy;
+			C0.xy		-=	abs(C0.xy%2);
+			C0.xy		=	C0.xy/2;
+			idx			++;
+		}*/
 		if(transition)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.

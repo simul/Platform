@@ -81,7 +81,8 @@ GL_ERROR_CHECK
 //cloud buffer alpha to screen = ?
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	simul::math::Vector3 X1,X2;
-	cloudProperties.GetExtents(X1,X2);
+	const clouds::CloudKeyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
+	cloudProperties.GetExtents(X1,X2,1000.0f*K.cloud_base_km,1000.0f*K.cloud_width_km,1000.0f*K.cloud_height_km);
 GL_ERROR_CHECK
 	renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_DEPTH_DISABLE);
 	renderPlatform->SetRenderState(deviceContext,blendAndWriteAlpha);
@@ -128,7 +129,6 @@ GL_ERROR_CHECK
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
 GL_ERROR_CHECK
-	const clouds::CloudKeyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
 
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
