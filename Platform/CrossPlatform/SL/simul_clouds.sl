@@ -264,7 +264,7 @@ vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec
 	vec4 noiseval				=vec4(0,0,0,0);
 	if(noise)
 	{
-		float mult			=0.5;
+		float mult			=1.0;///(1.0+noise3DPersistence);
 		for(int j=0;j<1;j++)
 		{
 			noiseval		+=texture_wrap_lod(noiseTexture3D,noise_texc,0)*mult;
@@ -272,16 +272,16 @@ vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec
 			mult			*=noise3DPersistence;
 		}
 	}
-	noiseval.w*=.5;
+	noiseval.w*=0.1;
 	return noiseval;
 }
 
 vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float cloud_interp)
 {
 	float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(texCoords.z));
-	vec4 light1		=sampleLod(cloudDensity1,cloudSamplerState,texCoords,0);
-	vec4 light2		=sampleLod(cloudDensity2,cloudSamplerState,texCoords,0);
-	vec4 light		=lerp(light1,light2,cloud_interp);
+	vec4 light1			=sampleLod(cloudDensity1,cloudSamplerState,texCoords,0);
+	vec4 light2			=sampleLod(cloudDensity2,cloudSamplerState,texCoords,0);
+	vec4 light			=lerp(light1,light2,cloud_interp);
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
 	vec4 density1		=sampleLod(cloudDensity1,cloudSamplerState,pos,0);
