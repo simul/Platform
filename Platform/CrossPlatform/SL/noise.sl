@@ -48,13 +48,29 @@ vec4 Noise3D(Texture3D random_texture_3d,vec3 texCoords,int octaves,float persis
 	vec4 result		=vec4(0,0,0,0);
 	float mult		=0.5;
 	float total		=0.0;
-    for(int i=0;i<octaves;i++)
-    {
+	float prevx		=1.0;
+	vec3 last;
+	{
 		vec4 c		=texture_wrap_lod(random_texture_3d,texCoords,0);
 		texCoords	*=2.0;
 		total		+=mult;
-		result		+=mult*c;
+		result		+=mult*prevx*c;
 		mult		*=persistence;
+		prevx		=c.a;
+		last		=c.rgb;
+	}
+    for(int i=1;i<octaves;i++)
+    {
+		vec4 c		=texture_wrap_lod(random_texture_3d,texCoords,0);
+		vec3 u		=cross(last.rgb,c.rgb);
+		u			=normalize(u)*length(c.rgb);
+		c.rgb		=u;
+		texCoords	*=2.0;
+		total		+=mult;
+		result		+=mult*prevx*c;
+		mult		*=persistence;
+		prevx		=c.a;
+		last		=c.rgb;
     }
 	// divide by total to get the range -1,1.
 	result			*=1.0/total;

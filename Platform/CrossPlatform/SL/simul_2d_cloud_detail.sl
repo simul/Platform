@@ -9,7 +9,7 @@ vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture,float amplitude)
     for(int i=0;i<octaves;i++)//
     {
 		vec4 c			=texture_wrap(imageTexture,texcoords);
-		vec2 u			=saturate(cos(2.0*3.14159*4*texcoords.xy)/(4.0+c.a)+c.a);//(c+current_phase));
+		vec2 u			=saturate(cos(2.0*3.14159*texcoords.xy)/(1.515+7.135*c.a)+c.a);//(c+current_phase));
 		
 		texcoords		*=2.0;
 		texcoords		+=mult*vec2(0.1,0.1)*amplitude*u.xy;
@@ -18,7 +18,8 @@ vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture,float amplitude)
 		current_phase	*=2.0;
     }
     vec4 result;
-	result.a			=saturate((dens+2.0*density+diffusivity-2.0)/diffusivity);
+	float a=amplitude/40.0;
+	result.a			=saturate((dens+2.0*density+diffusivity-2.0-a)/(1-a)/diffusivity);
 	result.xyz			=result.aaa;//saturate(dens*1.5);
     return result;
 }

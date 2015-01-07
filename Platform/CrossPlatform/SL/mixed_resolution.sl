@@ -25,7 +25,7 @@ void Resolve(Texture2DMS<float4> sourceTextureMS,RWTexture2D<float4> targetTextu
 	vec4 d=vec4(0,0,0,0);
 	for(uint k=0;k<numberOfSamples;k++)
 	{
-		d+=sourceTextureMS.Load(pos,k);
+		d+=sourceTextureMS.Load(int2(pos),k);
 	}
 	d/=float(numberOfSamples);
 	targetTexture[pos.xy]	=d;
@@ -33,7 +33,7 @@ void Resolve(Texture2DMS<float4> sourceTextureMS,RWTexture2D<float4> targetTextu
 
 // Find nearest and furthest depths in MSAA texture.
 // sourceDepthTexture, sourceMSDepthTexture, and targetTexture are ALL the SAME SIZE.
-vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> sourceMSDepthTexture,uint numberOfSamples,uint2 pos,vec4 depthToLinFadeDistParams)
+vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> sourceMSDepthTexture,uint numberOfSamples,int2 pos,vec4 depthToLinFadeDistParams)
 {
 #if REVERSE_DEPTH==1
 	float nearest_depth			=0.0;
@@ -195,9 +195,9 @@ vec4 DownscaleDepthFarNear4(Texture2D sourceDepthTexture,uint2 source_dims,uint2
 vec4 DownscaleDepthFarNear_MSAA4(Texture2DMS<float4> sourceMSDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,vec2 scale,vec4 depthToLinFadeDistParams)
 {
 	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
-	int2 pos2					=pos*scale;
+	int2 pos2					=int2(pos*scale);
 	pos2-=cornerOffset;
-	pos2=max(int2(1,1),min(pos2,source_dims-int2(3,3)));
+	pos2=max(int2(1,1),min(pos2,int2(source_dims)-int2(3,3)));
 	pos2+=source_offset;
 #if REVERSE_DEPTH==1
 	vec2 farthest_nearest		=vec2(1.0,0.0);

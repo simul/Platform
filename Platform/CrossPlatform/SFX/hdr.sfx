@@ -226,7 +226,7 @@ shader float4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_TARGET
     return vec4(sc.rgb,1.0);
 }
 
-vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_TARGET
 {
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
 	vec4 colour		=texture_nearest_lod(inscatterVolumeTexture,vec3(IN.texCoords,z),0);

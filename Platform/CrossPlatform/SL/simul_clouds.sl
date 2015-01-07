@@ -272,7 +272,7 @@ vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec
 			mult			*=noise3DPersistence;
 		}
 	}
-	noiseval.w*=0.1;
+	noiseval.w*=0.5;
 	return noiseval;
 }
 
@@ -383,7 +383,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	viewScaled						=normalize(viewScaled);
 
 	vec3 offset_vec	=vec3(0,0,0);
-/*	if(world_pos.z<min_z)
+	if(world_pos.z<min_z)
 	{
 		float a		=1.0/(view.z+0.00001);
 		offset_vec	=(min_z-world_pos.z)*vec3(view.x*a,view.y*a,1.0);
@@ -392,9 +392,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	{
 		float a		=1.0/(-view.z+0.00001);
 		offset_vec	=(world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
-	}*/
+	}
 	world_pos						+=offset_vec;
-	vec3 gridOriginPos				=cornerPos+0.15/inverseScales.z;
+	vec3 gridOriginPos				=cornerPos+0.25/inverseScales.z;
 	float viewScale					=length(viewScaled*scaleOfGridCoords);
 	vec3 startOffsetFromOrigin		=viewPos-gridOriginPos;
 	vec3 offsetFromOrigin			=startOffsetFromOrigin;
@@ -451,9 +451,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		// What offset was the original position from the centre of the cube?
 		p1							=p+e*viewScaled;
 		vec3 d0						=normalize(2.0*abs(frac(p1)-vec3(.5,.5,.5)));
-		float fade					=abs(dot(N,viewScaled));
+		float fade					=1.0;//vec3(0,0,1)));//,2.0);
 	
-	//	fade					*=1.0-exp(-e);
+	//	fade					*=1.0-exp(-10*e);
 		// We fade out the intermediate steps as we approach the boundary of a detail change.
 		//float verticalShift			=0;
 		// Now sample at the halfway point:
@@ -469,7 +469,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		float fade_inter			=saturate((length(pw.xy)/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
 	//	if(idx==0)
 			fade					*=1.0-(fade_inter);
-		fade						*=saturate(distanceMetres/40.0);
+	//	fade						*=saturate(distanceMetres/40.0);
 		float fadeDistance			=saturate(distanceMetres/maxFadeDistanceMetres);
 	//	fade*=1-idx;
 		int3 b						=abs(c-C0*2);//+start_c_offset
@@ -499,6 +499,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				moisture			+=0.01*dm*density.x;
 				density.z			=saturate(density.z+dm);
 			}
+			density.z=saturate(3.0*density.z);
+			density.z*=pow(abs(dot(N,viewScaled)),2.0);
 			if(do_depth_mix)
 				density.z				*=saturate((solid_dist-fadeDistance)/0.01);
 			if(density.z>0)

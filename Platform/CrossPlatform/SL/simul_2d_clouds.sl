@@ -179,7 +179,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
     vec4 detail				=texture_wrap(imageTexture,texc_detail+.2*noise.xy);
 	float dist_tc			=(length(wEyeToPos)/maxFadeDistanceMetres);
 	detail					=lerp(vec4(0.5,0.5,0.5,0.5),detail,saturate((abs(sine)+0.0001)));
-	float opacity			=saturate(detail.a*2.0*(coverage.x));//+2.0*Y(coverage)-1.0);
+	float opacity			=saturate(detail.a*(coverage.x));//+2.0*Y(coverage)-1.0);
 	if(opacity<=0)
 		discard;
 	float cos0	=dot(normalize(lightDir),view);

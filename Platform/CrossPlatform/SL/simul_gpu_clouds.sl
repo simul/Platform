@@ -1,8 +1,6 @@
 #ifndef SIMUL_GPU_CLOUDS_SL
 #define SIMUL_GPU_CLOUDS_SL
 
-#ifndef __cplusplus
-
 uint3 LinearThreadToPos3D(uint linear_pos,uint3 dims)
 {
 	uint Z			=linear_pos/dims.x/dims.y;
@@ -165,7 +163,7 @@ float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float pers
 		pos2.z		=clamp(pos2.z,zmin,zmax);
 		pos2.z		*=saturate(i);
 		float lookup=texture_wrap_lod(volumeNoiseTexture,pos2,0).x;
-		float val	=0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
+		float val	=cos(2.0*3.1415926536*(lookup+t));
 		dens		=dens+mult*val;
 		sum			=sum+mult;
 		mult		=mult*persistence;
@@ -208,7 +206,7 @@ void CS_CloudDensity(RWTexture3D<float4> targetTexture,Texture3D volumeNoiseText
 	float height				=noiseScale.z;
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
 	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z,baseLayer,transition,upperDensity)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
-	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
+	float dens					=saturate((noise_val+1.5*hm-1.0)/diffusivity);
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
 	dens						=saturate(dens);
 	targetTexture[pos]			=dens;
@@ -242,5 +240,4 @@ float CloudDensity(Texture3D volumeNoiseTexture,Texture2D maskTexture,vec2 texCo
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
     return dens;
 }
-#endif
 #endif
