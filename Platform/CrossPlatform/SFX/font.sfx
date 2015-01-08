@@ -1,4 +1,4 @@
-#include "CppHlsl.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/text_constants.sl"
@@ -26,7 +26,7 @@ vec4 FontBackgroundShader(posTexVertexOutput input) : SV_TARGET
 }
 
 VertexShader vs = CompileShader(vs_4_0, FontVertexShader());
-technique11 backg
+technique backg
 {
     pass p0
     {
@@ -39,7 +39,7 @@ technique11 backg
     }
 }
 
-technique11 text
+technique text
 {
     pass p0
     {

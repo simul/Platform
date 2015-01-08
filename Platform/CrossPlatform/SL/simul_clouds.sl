@@ -272,7 +272,7 @@ vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec
 			mult			*=noise3DPersistence;
 		}
 	}
-	noiseval.w*=0.5;
+	noiseval.w=length(noiseval);//0.5;
 	return noiseval;
 }
 

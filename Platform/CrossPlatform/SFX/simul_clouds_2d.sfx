@@ -1,4 +1,4 @@
-#include "CppHlsl.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 uniform sampler2D imageTexture;
 uniform sampler2D noiseTexture;
@@ -281,7 +281,7 @@ vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
     return DetailLighting(IN.texCoords,imageTexture);
 }
 
-technique11 coverage
+technique coverage
 {
     pass p0
     {
@@ -294,7 +294,7 @@ technique11 coverage
     }
 }
 
-technique11 simple
+technique simple
 {
     pass p0
     {
@@ -307,7 +307,7 @@ technique11 simple
     }
 }
 
-technique11 show_detail_texture
+technique show_detail_texture
 {
     pass p0
     {
@@ -320,7 +320,7 @@ technique11 show_detail_texture
     }
 }
 
-technique11 random
+technique random
 {
     pass p0
     {
@@ -333,7 +333,7 @@ technique11 random
     }
 }
 
-technique11 detail_density
+technique detail_density
 {
     pass p0
     {
@@ -346,7 +346,7 @@ technique11 detail_density
     }
 }
 
-technique11 detail_lighting
+technique detail_lighting
 {
     pass p0
     {
@@ -373,7 +373,7 @@ BlendState AlphaBlendX
     RenderTargetWriteMask[1]	=15;
 };
 VertexShader main_vs=CompileShader(vs_5_0,VS_Main());
-technique11 simul_clouds_2d_msaa
+technique simul_clouds_2d_msaa
 {
     pass depth_texture
     {
@@ -394,7 +394,7 @@ technique11 simul_clouds_2d_msaa
 		SetPixelShader(CompileShader(ps_5_0,PS_msaa()));
     }
 }
-technique11 simul_clouds_2d
+technique simul_clouds_2d
 {
     pass no_depth
     {

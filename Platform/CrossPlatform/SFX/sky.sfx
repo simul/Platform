@@ -1,4 +1,4 @@
-#include "CppHLSL.hlsl"
+#include "shader_platform.sl"
 #define pi (3.1415926536f)
 
 Texture2D backgroundTexture;
@@ -429,7 +429,7 @@ vec4 PS_PlanetUntexturedDepthTexture(svertexOutput IN) : SV_TARGET
 	vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
 	return Planet(result, IN.tex);
 }
-technique11 show_fade_table
+technique show_fade_table
 {
     pass p0
     {
@@ -442,7 +442,7 @@ technique11 show_fade_table
     }
 }
 
-technique11 show_illumination_buffer
+technique show_illumination_buffer
 {
     pass p0
     {
@@ -455,7 +455,7 @@ technique11 show_illumination_buffer
     }
 }
 
-technique11 show_fade_texture
+technique show_fade_texture
 {
     pass p0
     {
@@ -468,7 +468,7 @@ technique11 show_fade_texture
     }
 }
 
-technique11 colour_technique
+technique colour_technique
 {
     pass p0
     {
@@ -481,7 +481,7 @@ technique11 colour_technique
     }
 }
 
-technique11 show_light_table
+technique show_light_table
 {
     pass p0
     {
@@ -494,7 +494,7 @@ technique11 show_light_table
     }
 }
 
-technique11 show_2d_light_table
+technique show_2d_light_table
 {
     pass p0
     {
@@ -507,7 +507,7 @@ technique11 show_2d_light_table
     }
 }
 
-technique11 fade_3d_to_2d
+technique fade_3d_to_2d
 {
     pass p0
     {
@@ -520,7 +520,7 @@ technique11 fade_3d_to_2d
     }
 }
 
-technique11 show_cross_section
+technique show_cross_section
 {
     pass p0
     {
@@ -533,7 +533,7 @@ technique11 show_cross_section
     }
 }
  
-technique11 overcast_inscatter
+technique overcast_inscatter
 {
     pass p0
     {
@@ -546,7 +546,7 @@ technique11 overcast_inscatter
     }
 }
  
-technique11 skylight_and_overcast
+technique skylight_and_overcast
 {
     pass p0
     {
@@ -559,7 +559,7 @@ technique11 skylight_and_overcast
     }
 }
 
-technique11 illumination_buffer
+technique illumination_buffer
 {
     pass p0
     {
@@ -572,7 +572,7 @@ technique11 illumination_buffer
     }
 }
 
-technique11 stars
+technique stars
 {
     pass depth_test
     {
@@ -594,7 +594,7 @@ technique11 stars
 	}
 }
 
-technique11 sun
+technique sun
 {
 	pass depth_test
     {
@@ -615,7 +615,7 @@ technique11 sun
 		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
 	}
 }
-technique11 sun_gaussian
+technique sun_gaussian
 {
     pass p0
     {
@@ -628,7 +628,7 @@ technique11 sun_gaussian
     }
 }
 
-technique11 sun_query
+technique sun_query
 {
     pass p0
     {
@@ -641,7 +641,7 @@ technique11 sun_query
     }
 }
 
-technique11 flare
+technique flare
 {
     pass p0
     {
@@ -654,7 +654,7 @@ technique11 flare
     }
 }
 
-technique11 planet
+technique planet
 {
     pass depth_test
     {		
@@ -676,7 +676,7 @@ technique11 planet
 	}
 }
 
-technique11 planet_untextured
+technique planet_untextured
 {
 	pass depth_test
     {		
@@ -698,7 +698,7 @@ technique11 planet_untextured
 	}
 }
 
-technique11 interp_light_table
+technique interp_light_table
 {
     pass p0
     {
@@ -707,7 +707,7 @@ technique11 interp_light_table
 }
 
 
-technique11 background_latlongsphere
+technique background_latlongsphere
 {
     pass p0
     {

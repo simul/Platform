@@ -1,4 +1,4 @@
-#include "CppHlsl.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/spherical_harmonics_constants.sl"
 #include "../../CrossPlatform/SL/noise.sl"
@@ -63,7 +63,7 @@ vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	return max(result,vec4(0,0,0,0));
 }
 
-technique11 irradiance_map
+technique irradiance_map
 {
     pass p0 
     {

@@ -1,3 +1,4 @@
+#include "shader_platform.sl"
 #include "../SL/render_states.sl"
 #include "../SL/depth.sl"
 #include "../SL/hdr_constants.sl"
@@ -81,7 +82,7 @@ shader posTexVertexOutput QuadVS(idOnly id)
     return VS_ScreenQuad(id,rect);
 }
 
-shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
+shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_Target
 {
 	vec4 depth		=texture_clamp(depthTexture,IN.texCoords);
 	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
@@ -146,14 +147,14 @@ vec3 FilmicTone(vec3 x)
 	return c;
 }
 
-shader vec4 LinearizeDepthPS(v2f IN) : SV_TARGET
+shader vec4 LinearizeDepthPS(v2f IN) : SV_Target
 {
 	vec4 depth=texture_nearest_lod(depthTexture,IN.texCoords,0);
 	float dist=depthToLinearDistance(depth.x,depthToLinFadeDistParams);
     return vec4(dist,dist,dist,1.0);
 }
 
-shader vec4 LinearizeDepthPS_MSAA(v2f IN,in uint coverageMask:SV_COVERAGE,out uint outputCoverage:SV_COVERAGE) : SV_TARGET
+shader vec4 LinearizeDepthPS_MSAA(v2f IN,in uint coverageMask:SV_COVERAGE,out uint outputCoverage:SV_COVERAGE) : SV_Target
 {
 	int2 pos=vec2(fullResDims.xy)*IN.texCoords.xy;
 //	const uint FullMask = ( 1 << NumMSAASamples ) - 1; // 0xF
@@ -172,7 +173,7 @@ shader vec4 LinearizeDepthPS_MSAA(v2f IN,in uint coverageMask:SV_COVERAGE,out ui
     return vec4(0,0,0,1.0);
 }
 
-shader vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
+shader vec4 GlowExposureGammaPS(v2f IN) : SV_Target
 {
 	vec4 c		=texture_nearest_lod(imageTexture,IN.texCoords,0);
 	vec4 glow	=texture_int(glowTexture,IN.texCoords);
@@ -182,7 +183,7 @@ shader vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
     return vec4(c.rgb,1.0);
 }
 
-shader vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_TARGET
+shader vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_Target
 {
 	vec4 c=texture_resolve(imageTextureMS,IN.texCoords);
 	vec4 glow=texture_int(glowTexture,IN.texCoords);
@@ -192,7 +193,7 @@ shader vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_TARGET
     return vec4(c.rgb,1.0);
 }
 
-shader vec4 PS_InfraRed(v2f IN) : SV_TARGET
+shader vec4 PS_InfraRed(v2f IN) : SV_Target
 {
 	vec4 c					=texture_clamp(imageTexture,IN.texCoords);
     c.rgb					*=infraredIntegrationFactors.xyz;
@@ -203,7 +204,7 @@ shader vec4 PS_InfraRed(v2f IN) : SV_TARGET
 	return vec4(c.rgb,1.0);
 }
 
-shader vec4 PS_InfraRed_MSAA(v2f IN) : SV_TARGET
+shader vec4 PS_InfraRed_MSAA(v2f IN) : SV_Target
 {
 	vec4 c=texture_resolve(imageTextureMS,IN.texCoords);
     c.rgb					*=infraredIntegrationFactors.xyz;
@@ -214,19 +215,19 @@ shader vec4 PS_InfraRed_MSAA(v2f IN) : SV_TARGET
 	return vec4(c.rgb,1.0);
 }
 
-shader float4 PS_ShowCompressed(posTexVertexOutput IN) : SV_TARGET
+shader float4 PS_ShowCompressed(posTexVertexOutput IN) : SV_Target
 {
 	vec4 glow=texture_int(glowTexture,IN.texCoords);
     return vec4(glow.rgb,1.0);
 }
 
-shader float4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_TARGET
+shader float4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_Target
 {
 	vec4 sc=texture_clamp(inscatterVolumeTexture,vec3(IN.texCoords.xy,1.0));
     return vec4(sc.rgb,1.0);
 }
 
-shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 {
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
 	vec4 colour		=texture_nearest_lod(inscatterVolumeTexture,vec3(IN.texCoords,z),0);
@@ -234,7 +235,7 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_TARGET
 	return colour;
 }
 
-shader vec4 ExposureGammaPS(v2f IN) : SV_TARGET
+shader vec4 ExposureGammaPS(v2f IN) : SV_Target
 {
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
 	c.rgb*=exposure;
@@ -242,7 +243,7 @@ shader vec4 ExposureGammaPS(v2f IN) : SV_TARGET
     return vec4(c.rgb,1.0);
 }
 
-shader vec4 ExposureGammaPS_MSAA(v2f IN) : SV_TARGET
+shader vec4 ExposureGammaPS_MSAA(v2f IN) : SV_Target
 {
 	vec4 c=texture_resolve(imageTextureMS,IN.texCoords);
 	c.rgb*=exposure;
@@ -261,7 +262,7 @@ vec2 HmdWarp(vec2 texCoords)
 	return warpLensCentre+rvector*warpScale;
 }
 
-shader vec4 WarpExposureGammaPS(v2f IN) : SV_TARGET
+shader vec4 WarpExposureGammaPS(v2f IN) : SV_Target
 {
 	vec2 tc = HmdWarp(IN.texCoords);
 	//if(any(clamp(tc,warpScreenCentre-vec2(0.25,0.5),warpScreenCentre+vec2(0.25, 0.5))-tc))
@@ -294,7 +295,7 @@ bool IsSampleNearer(inout float MinDist,float Z,float ZFull)
 }
 
 
-shader vec4 DirectPS(v2f IN) : SV_TARGET
+shader vec4 DirectPS(v2f IN) : SV_Target
 {
 	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+IN.texCoords*fullResToLowResTransformXYWH.zw;
 	vec4 result	=texture_clamp(imageTexture,lowResTexCoords);
@@ -304,7 +305,7 @@ shader vec4 DirectPS(v2f IN) : SV_TARGET
     return result;
 }
 
-shader vec4 PS_ForegroundComposite(v2f IN) : SV_TARGET
+shader vec4 PS_ForegroundComposite(v2f IN) : SV_Target
 {
 	vec4 depthLookup			=texture_clamp(depthTexture,IN.texCoords);
 #if REVERSE_DEPTH==1
@@ -322,7 +323,7 @@ shader vec4 PS_ForegroundComposite(v2f IN) : SV_TARGET
 }
 
 // With an MSAA depth texture.
-shader vec4 PS_ForegroundComposite_MSAA(v2f IN) : SV_TARGET
+shader vec4 PS_ForegroundComposite_MSAA(v2f IN) : SV_Target
 {
 	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	int2 fullres_depth_pos2	=int2(depth_texc*vec2(fullResDims.xy));
@@ -422,7 +423,7 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(v2f IN)
 	return result;
 }
  
-shader vec4 GlowPS(v2f IN) : SV_TARGET
+shader vec4 GlowPS(v2f IN) : SV_Target
 {
     // original image has double the resulution, so we sample 2x2
     vec4 c=vec4(0,0,0,0);
@@ -657,7 +658,7 @@ shader posTexVertexOutput Debug2DVS(idOnly id)
     return VS_ScreenQuad(id,rect);
 }
 
-shader vec4 TexturedPS(posTexVertexOutput IN) : SV_TARGET
+shader vec4 TexturedPS(posTexVertexOutput IN) : SV_Target
 {
 	vec4 res=vec4(0,1,0,1);
 	return res;
@@ -702,7 +703,7 @@ technique show_scattering_volume
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowScatteringVolume()));
     }
 }
-technique11 show_volume
+technique show_volume
 {
     pass p0
     {

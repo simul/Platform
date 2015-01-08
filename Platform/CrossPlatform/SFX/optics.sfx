@@ -1,4 +1,4 @@
-#include "CppHLSL.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/optics_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
@@ -125,7 +125,7 @@ vec4 PS_rainbowAndCorona(rainbowVertexOutput IN) : SV_TARGET
 	return vec4(.1,0,0,0);//(coronaDiffracted + scattered)*rainbowIntensity*moisture.x;
 }
 
-technique11 simul_flare
+technique simul_flare
 {
     pass p0 
     {
@@ -138,7 +138,7 @@ technique11 simul_flare
     }
 }
 
-technique11 rainbow_and_corona
+technique rainbow_and_corona
 {
     pass p0 
     {

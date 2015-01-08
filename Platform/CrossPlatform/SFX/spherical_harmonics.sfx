@@ -1,4 +1,4 @@
-#include "CppHlsl.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/spherical_harmonics_constants.sl"
 #include "../../CrossPlatform/SL/noise.sl"
@@ -51,7 +51,7 @@ void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
 #endif
 }
 
-technique11 jitter
+technique jitter
 {
     pass p0 
     {
@@ -59,7 +59,7 @@ technique11 jitter
     }
 }
 
-technique11 clear
+technique clear
 {
     pass p0 
     {
@@ -67,7 +67,7 @@ technique11 clear
     }
 }
 
-technique11 encode
+technique encode
 {
     pass p0 
     {

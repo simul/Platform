@@ -1,4 +1,4 @@
-#include "CppHLSL.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/ocean_constants.sl"
@@ -500,7 +500,7 @@ vec4 PS_ShowStructuredBuffer( posTexVertexOutput In):SV_TARGET
 	return vec4(showMultiplier*lookup.rg,1.0,1.0);
 }
 
-technique11 ocean
+technique ocean
 {
     pass p0 
     {
@@ -513,7 +513,7 @@ technique11 ocean
 	}
 }
 
-technique11 show_texture
+technique show_texture
 {
     pass p0
     {
@@ -525,7 +525,7 @@ technique11 show_texture
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
     }
 }
-technique11 show_structured_buffer
+technique show_structured_buffer
 {
     pass p0
     {
@@ -538,7 +538,7 @@ technique11 show_structured_buffer
     }
 }
 
-technique11 wireframe
+technique wireframe
 {
     pass p0 
     {
@@ -551,7 +551,7 @@ technique11 wireframe
 	}
 }
 
-technique11 update_spectrum
+technique update_spectrum
 {
     pass p0 
     {
@@ -559,7 +559,7 @@ technique11 update_spectrum
 	}
 }
 
-technique11 radix_008a
+technique radix_008a
 {
     pass p0 
     {
@@ -568,7 +568,7 @@ technique11 radix_008a
 }
 
 
-technique11 radix_008a2
+technique radix_008a2
 {
     pass p0 
     {
@@ -577,7 +577,7 @@ technique11 radix_008a2
 }
 
 
-technique11 update_displacement
+technique update_displacement
 {
     pass p0
     {
@@ -590,7 +590,7 @@ technique11 update_displacement
     }
 }
 
-technique11 gradient_folding
+technique gradient_folding
 {
     pass p0
     {

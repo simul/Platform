@@ -1,4 +1,4 @@
-#include "CppHlsl.hlsl"
+#include "shader_platform.sl"
 uniform sampler2D input_texture;
 uniform sampler2D density_texture;
 uniform sampler3D loss_texture;
@@ -155,7 +155,7 @@ BlendState DontBlend
 };
 RasterizerState RenderNoCull { CullMode = none; };
 
-technique11 simul_gpu_loss
+technique simul_gpu_loss
 {
     pass p0 
     {
@@ -168,7 +168,7 @@ technique11 simul_gpu_loss
     }
 }
 
-technique11 simul_gpu_insc
+technique simul_gpu_insc
 {
     pass p0 
     {
@@ -181,7 +181,7 @@ technique11 simul_gpu_insc
     }
 }
 
-technique11 simul_gpu_skyl
+technique simul_gpu_skyl
 {
     pass p0 
     {
@@ -193,7 +193,7 @@ technique11 simul_gpu_skyl
 		SetPixelShader(CompileShader(ps_4_0,PS_Skyl()));
     }
 }
-technique11 gpu_light_table_compute
+technique gpu_light_table_compute
 {
     pass p0 
     {
@@ -201,7 +201,7 @@ technique11 gpu_light_table_compute
     }
 }
 
-technique11 gpu_loss_compute
+technique gpu_loss_compute
 {
     pass p0 
     {
@@ -209,7 +209,7 @@ technique11 gpu_loss_compute
     }
 }
 
-technique11 gpu_insc_compute
+technique gpu_insc_compute
 {
     pass p0 
     {
@@ -217,7 +217,7 @@ technique11 gpu_insc_compute
     }
 }
 
-technique11 gpu_skyl_compute
+technique gpu_skyl_compute
 {
     pass p0 
     {

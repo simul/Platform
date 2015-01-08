@@ -14,7 +14,7 @@
 
 #pragma warning(disable:3557)
 #pragma warning(disable:3574)
-#include "CppHLSL.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/image_constants.sl"
 
 //-----------------------------------------------------------------------------
@@ -350,7 +350,7 @@ void GaussianRow_CS(uint3 GroupID			: SV_GroupID,
 // Type: Technique
 // Desc: Provide the interface for column or row Gaussian filtering
 //-----------------------------------------------------------------------------
-technique11 simul_gaussian_row
+technique simul_gaussian_row
 {
 	pass Pass_GaussianColor
 	{
@@ -358,7 +358,7 @@ technique11 simul_gaussian_row
 	}
 }
 
-technique11 simul_gaussian_col
+technique simul_gaussian_col
 {
 	pass Pass_GaussianColor
 	{

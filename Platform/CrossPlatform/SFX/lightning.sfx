@@ -1,4 +1,4 @@
-#include "CppHlsl.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/lightning_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
@@ -277,7 +277,7 @@ float4 PS_Thin(transformedThinVertex IN): SV_TARGET
     return colour;
 }
 
-technique11 lightning_thick
+technique lightning_thick
 {
     pass p0 
     {
@@ -304,7 +304,7 @@ RasterizerState lightningLineRasterizer
 	AntialiasedLineEnable		= false;
 };
 
-technique11 lightning_thin
+technique lightning_thin
 {
     pass p0 
     {
@@ -318,7 +318,7 @@ technique11 lightning_thin
 }
 
 
-technique11 test
+technique test
 {
     pass p0
     {

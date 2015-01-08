@@ -1,4 +1,4 @@
-#include "CppHlsl.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/depth.sl"
 #include "../../CrossPlatform/SL/colour_packing.sl"
@@ -198,7 +198,7 @@ float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 
 fxgroup lines_3d_depth
 {
-	technique11 depth_forward
+	technique depth_forward
     {
 		pass lines3d
 		{
@@ -210,7 +210,7 @@ fxgroup lines_3d_depth
 			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
 		}
     }
-    technique11 depth_reverse
+    technique depth_reverse
     {
 		pass lines3d
 		{
@@ -225,7 +225,7 @@ fxgroup lines_3d_depth
 }
 fxgroup lines_3d
 {
-	technique11 lines_3d
+	technique lines_3d
 	{
 		pass lines3d
 		{
@@ -238,7 +238,7 @@ fxgroup lines_3d
 		}
 	}
 }
-technique11 lines_2d
+technique lines_2d
 {
     pass p0
     {
@@ -252,7 +252,7 @@ technique11 lines_2d
 }
 fxgroup circle
 {
-	technique11 outline
+	technique outline
 	{
 		pass p0
 		{
@@ -264,7 +264,7 @@ fxgroup circle
 			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
 		}
 	}
-	technique11 filled
+	technique filled
 	{
 		pass p0
 		{
@@ -278,7 +278,7 @@ fxgroup circle
 	}
 }
 
-technique11 textured
+technique textured
 {
     pass noblend
     {
@@ -300,7 +300,7 @@ technique11 textured
     }
 }
 
-technique11 texturedMS
+technique texturedMS
 {
     pass p0
     {
@@ -313,7 +313,7 @@ technique11 texturedMS
     }
 }
 
-technique11 compacted_texture
+technique compacted_texture
 {
     pass p0
     {
@@ -326,7 +326,7 @@ technique11 compacted_texture
     }
 }
 
-technique11 vec3_input_signature
+technique vec3_input_signature
 {
     pass p0
     {
@@ -339,7 +339,7 @@ technique11 vec3_input_signature
     }
 }
 
-technique11 draw_cubemap
+technique draw_cubemap
 {
     pass p0 
     {		
@@ -351,7 +351,7 @@ technique11 draw_cubemap
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 }
-technique11 draw_cubemap_sphere
+technique draw_cubemap_sphere
 {
     pass p0 
     {		
@@ -364,7 +364,7 @@ technique11 draw_cubemap_sphere
     }
 }
 
-technique11 show_depth
+technique show_depth
 {
     pass p0
     {
@@ -376,7 +376,7 @@ technique11 show_depth
 		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS()));
     }
 }
-technique11 show_depth_ms
+technique show_depth_ms
 {
     pass p0
     {

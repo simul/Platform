@@ -1,4 +1,4 @@
-#include "CppHlsl.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 float particleZoneSize=15.0;	// = 625 m^3
 // Brittanica.com: http://www.britannica.com/EBchecked/topic/489827/rain#ref259264
@@ -829,7 +829,7 @@ vec4 PS_RainParticles_NoCubemap(PSSceneIn IN) : SV_Target
 	}
 	return texel;//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
-technique11 rain_particles
+technique rain_particles
 {
     pass cubemap
     {
@@ -853,7 +853,7 @@ technique11 rain_particles
     }
 }
 
-technique11 splash
+technique splash
 {
     pass p0
     {
@@ -867,7 +867,7 @@ technique11 splash
     }  
 }
 
-technique11 snow
+technique snow
 {
     pass cubemap 
     {
@@ -891,7 +891,7 @@ technique11 snow
     }
 }
 
-technique11 simul_rain
+technique simul_rain
 {
     pass p0 
     {
@@ -904,7 +904,7 @@ technique11 simul_rain
     }
 }
 
-technique11 make_rain_texture_array
+technique make_rain_texture_array
 {
     pass p0 
     {
@@ -912,7 +912,7 @@ technique11 make_rain_texture_array
     }
 }
 
-technique11 create_rain_texture
+technique create_rain_texture
 {
     pass p0 
     {
@@ -925,7 +925,7 @@ technique11 create_rain_texture
     }
 }
 
-technique11 create_random_texture
+technique create_random_texture
 {
     pass p0 
     {
@@ -939,7 +939,7 @@ technique11 create_random_texture
 }
 
 
-technique11 show_texture
+technique show_texture
 {
     pass p0 
     {
@@ -952,7 +952,7 @@ technique11 show_texture
     }
 }
 
-technique11 show_array_texture
+technique show_array_texture
 {
     pass p0 
     {
@@ -965,7 +965,7 @@ technique11 show_array_texture
     }
 }
 
-technique11 moisture
+technique moisture
 {
     pass p0 
     {
@@ -1016,7 +1016,7 @@ VertexShader vsInit=CompileShader(vs_5_0,VS_InitParticles());
 VertexShader vsMove=CompileShader(vs_5_0,VS_MoveParticles());
 GeometryShader gsStreamOut = ConstructGSWithSO(vsInit,"POSITION.xyz;TYPE0.x;VELOCITY0.xyz" );
 
-technique11 init_particles
+technique init_particles
 {
     pass p0
     {
@@ -1029,7 +1029,7 @@ technique11 init_particles
 
 GeometryShader gsStreamOut2=ConstructGSWithSO(vsMove,"POSITION.xyz; TYPE0.x; VELOCITY0.xyz" );
 
-technique11 move_particles
+technique move_particles
 {
     pass p0
     {

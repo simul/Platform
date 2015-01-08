@@ -1,4 +1,4 @@
-#include "CppHlsl.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/simul_terrain_constants.sl"
 #include "../../CrossPlatform/SL/states.sl"
@@ -85,7 +85,7 @@ float4 PS_Main( vertexOutput IN) : SV_TARGET
     return result;
 }
 
-technique11 terrain
+technique terrain
 {
     pass base 
     {
@@ -98,7 +98,7 @@ technique11 terrain
     }
 }
 
-technique11 test_alpha_to_coverage
+technique test_alpha_to_coverage
 {
     pass base 
     {

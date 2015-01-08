@@ -1,4 +1,4 @@
-#include "CppHLSL.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/simul_cloud_constants.sl"
@@ -483,7 +483,7 @@ VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_FullScreen());
 
 fxgroup raytrace
 {
-	technique11 simple
+	technique simple
 	{
 		pass far 
 		{
@@ -500,7 +500,7 @@ fxgroup raytrace
 			SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace()));
 		}
 	}
-	technique11 full
+	technique full
 	{
 		pass far 
 		{
@@ -533,7 +533,7 @@ fxgroup raytrace
 			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseBackground()));
 		}
 	}
-	technique11 no_rain
+	technique no_rain
 	{
 		pass far 
 		{
@@ -568,7 +568,7 @@ fxgroup raytrace
 	}
 }
 
-technique11 cloud_shadow
+technique cloud_shadow
 {
     pass p0 
     {
@@ -582,7 +582,7 @@ technique11 cloud_shadow
 }
 
 
-technique11 rain_map
+technique rain_map
 {
     pass p0 
     {
@@ -595,14 +595,14 @@ technique11 rain_map
     }
 }
 
-technique11 godrays_accumulation
+technique godrays_accumulation
 {
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_GodraysAccumulation()));
     }
 }
-technique11 occlusion
+technique occlusion
 {
     pass p0
     {
@@ -610,7 +610,7 @@ technique11 occlusion
     }
 }
 
-technique11 moisture_accumulation
+technique moisture_accumulation
 {
     pass p0
     {
@@ -623,7 +623,7 @@ technique11 moisture_accumulation
     }
 }
 
-technique11 cross_section
+technique cross_section
 {
     pass p0 
     {
@@ -636,7 +636,7 @@ technique11 cross_section
     }
 }
 
-technique11 simple
+technique simple
 {
     pass p0
     {
@@ -649,7 +649,7 @@ technique11 simple
     }
 }
 
-technique11 show_noise
+technique show_noise
 {
     pass p0
     {
@@ -662,7 +662,7 @@ technique11 show_noise
     }
 }
 
-technique11 show_3d_noise
+technique show_3d_noise
 {
     pass p0
     {
@@ -675,7 +675,7 @@ technique11 show_3d_noise
     }
 }
 
-technique11 show_shadow
+technique show_shadow
 {
     pass p0
     {

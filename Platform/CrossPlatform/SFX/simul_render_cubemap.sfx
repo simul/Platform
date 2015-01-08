@@ -56,7 +56,7 @@ BlendState NoBlend
 	BlendEnable[0] = FALSE;
 };
 
-technique11 simul_cubemap
+technique simul_cubemap
 {
     pass p0
     {

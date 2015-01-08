@@ -1,4 +1,4 @@
-#include "CppHLSL.hlsl"
+#include "shader_platform.sl"
 uniform sampler2D inputTexture;
 uniform sampler3D densityTexture SIMUL_TEXTURE_REGISTER(0);
 uniform sampler3D lightTexture;
@@ -195,7 +195,7 @@ void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)	//SV_DispatchThreadID giv
 }
 
 
-technique11 density_mask
+technique density_mask
 {
     pass p0 
     {
@@ -208,7 +208,7 @@ technique11 density_mask
     }
 }
 
-technique11 gpu_density_compute
+technique gpu_density_compute
 {
     pass p0 
     {
@@ -216,7 +216,7 @@ technique11 gpu_density_compute
     }
 }
 
-technique11 gpu_lighting_compute
+technique gpu_lighting_compute
 {
     pass p0 
     {
@@ -224,7 +224,7 @@ technique11 gpu_lighting_compute
     }
 }
 
-technique11 gpu_secondary_compute
+technique gpu_secondary_compute
 {
     pass p0 
     {
@@ -232,7 +232,7 @@ technique11 gpu_secondary_compute
     }
 }
 
-technique11 gpu_transform_compute
+technique gpu_transform_compute
 {
     pass p0 
     {

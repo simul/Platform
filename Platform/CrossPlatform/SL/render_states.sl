@@ -1,7 +1,6 @@
 #ifndef RENDER_STATES_SL
 #define RENDER_STATES_SL
 #include "../../CrossPlatform/SL/states.sl"
-
 DepthStencilState DisableDepth
 {
 	DepthEnable = FALSE;

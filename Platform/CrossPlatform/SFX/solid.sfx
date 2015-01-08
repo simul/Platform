@@ -1,4 +1,4 @@
-#include "CppHlsl.hlsl"
+#include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/solid_constants.sl"
 
@@ -38,7 +38,7 @@ float4 PS_Solid(vertexOutput IN) : SV_TARGET
     return vec4(c.rgb,1.0);
 }
 
-technique11 solid
+technique solid
 {
     pass base 
     {
