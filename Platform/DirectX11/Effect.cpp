@@ -282,7 +282,7 @@ void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char
 	SAFE_RELEASE(e);
 	if(!renderPlatform)
 		return;
-	// PREFER to use the crossplatform shader:
+	// PREFER to use the platform shader:
 	std::string filename_fx(filename_utf8);
 	if(filename_fx.find(".")>=filename_fx.length())
 		filename_fx+=".fx";
@@ -291,7 +291,7 @@ void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char
 	{
 		std::string filename_sfx(filename_utf8);
 		if(filename_sfx.find(".")>=filename_fx.length())
-			filename_sfx+=".fx";
+			filename_sfx+=".sfx";
 		filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_sfx.c_str(),dx11::GetShaderPathsUtf8());
 	}
 	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_utf8,defines,0);//D3DCOMPILE_OPTIMIZATION_LEVEL3);D3DCOMPILE_DEBUG

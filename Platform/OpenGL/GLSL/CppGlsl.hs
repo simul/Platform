@@ -78,10 +78,11 @@
 	#define IMAGESTORE(a,b,c) imageStore(a,ivec3(b),c)
 	#define IMAGE_LOAD(a,b) texelFetch(a,ivec3(b),0)
 	// SOME GLSL compilers like this version:
-	//#define RW_TEXTURE3D_FLOAT4 layout(rgba32f,binding = 0) image3D
+//#define RW_TEXTURE3D_FLOAT4 layout(rgba32f,binding = 0) uniform image3D
+//#define RW_TEXTURE3D_CHAR4 layout(rgba8,binding = 0) uniform image3D
 	// SOME GLSL compilers like it like this:
-	#define RW_TEXTURE3D_FLOAT4 layout(rgba32f) image3D
-	
+	#define RW_TEXTURE3D_FLOAT4 layout(rgba32f) uniform image3D
+	#define RW_TEXTURE3D_CHAR4 layout(rgba8) uniform image3D
 #ifdef GLFX
 	shader void VS_ScreenQuad( out vec2 texCoords)
 	{

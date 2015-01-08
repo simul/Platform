@@ -224,6 +224,7 @@
     <None Include="GLSL\light_pass.glfx" />
     <None Include="GLSL\overcast_inscatter.frag" />
     <None Include="GLSL\saturate.glsl" />
+    <None Include="GLSL\shader_platform.sl" />
     <None Include="GLSL\show_illumination_buffer.frag" />
     <None Include="GLSL\simple.frag" />
     <None Include="GLSL\simple.vert" />

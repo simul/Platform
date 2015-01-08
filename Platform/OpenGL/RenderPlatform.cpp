@@ -525,12 +525,9 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 GL_ERROR_CHECK
-	std::string fn(filename_utf8);
-	if(fn.find(".")>=fn.length())
-		fn+=".glfx";
 	opengl::Effect *e=new opengl::Effect();
-	e->Load(this,fn.c_str(),defines);
-	e->SetName(fn.c_str());
+	e->Load(this,filename_utf8,defines);
+	e->SetName(filename_utf8);
 	if(e->platform_effect==(void*)0xFFFFFFFF)
 	{
 		SAFE_DELETE(e);

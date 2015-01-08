@@ -402,5 +402,8 @@
     <None Include="GLSL\gaussian.glfx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="GLSL\shader_platform.sl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

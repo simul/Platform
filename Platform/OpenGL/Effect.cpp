@@ -250,7 +250,22 @@ void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,cons
 	platform_effect = (void*)0xFFFFFFFF;
 	while (retry)
 	{
-		filenameInUseUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename.c_str(), opengl::GetShaderPathsUtf8());
+		std::string fn_utf8(filename_utf8);
+		// PREFER to use the platform shader:
+		std::string filename_fx(filename_utf8);
+		if(filename_fx.find(".")>=filename_fx.length())
+			filename_fx+=".glfx";
+		filenameInUseUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(), opengl::GetShaderPathsUtf8());
+		if(filenameInUseUtf8.length()==0)
+		{
+			std::string filename_sfx(filename_utf8);
+			if(filename_sfx.find(".")>=filename_fx.length())
+				filename_sfx+=".sfx";
+			filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_sfx.c_str(),opengl::GetShaderPathsUtf8());
+			fn_utf8+=".sfx";
+		}
+		else
+			fn_utf8+=".glfx";
 		if (!filenameInUseUtf8.length())
 		{
 			SIMUL_CERR << "Effect::Load - file not found: " << filename.c_str() << std::endl;
@@ -277,7 +292,7 @@ void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,cons
 		}
 		*m=*d = NULL;
 
-		if (!glfxParseEffectFromFile(effect, filename_utf8, paths, macros,defs))
+		if (!glfxParseEffectFromFile(effect,fn_utf8.c_str(),paths,macros,defs))
 		{
 			std::string log=glfxGetEffectLog(effect);
 			std::cerr<<log.c_str()<<std::endl;
