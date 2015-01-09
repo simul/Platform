@@ -54,7 +54,7 @@ vec4 Noise3D(Texture3D random_texture_3d,vec3 texCoords,int octaves,float persis
 		vec4 c		=texture_wrap_lod(random_texture_3d,texCoords,0);
 		texCoords	*=2.0;
 		total		+=mult;
-		result		+=mult*prevx*c;
+		result		+=mult*cos(2.0*3.1415926536*prevx)*c*1.414;
 		mult		*=persistence;
 		prevx		=c.a;
 		last		=c.rgb;
@@ -67,14 +67,14 @@ vec4 Noise3D(Texture3D random_texture_3d,vec3 texCoords,int octaves,float persis
 		c.rgb		=u;
 		texCoords	*=2.0;
 		total		+=mult;
-		result		+=mult*prevx*c;
+		result		+=mult*cos(2.0*3.1415926536*prevx)*c*1.414;
 		mult		*=persistence;
 		prevx		=c.a;
 		last		=c.rgb;
     }
 	// divide by total to get the range -1,1.
 	result			*=1.0/total;
-	//result.a		=0.5*(result.a+1.0);
+	result		=saturate(result);
 	return result;
 }
 #endif

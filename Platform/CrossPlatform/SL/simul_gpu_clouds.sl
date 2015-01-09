@@ -40,6 +40,14 @@ float GetHumidityMultiplier(float z,float baseLayer,float transition,float upper
 	return m;
 }
 
+float GetHumidityMultiplier2(float z,float baseLayer,float transition,float upperDensity)
+{
+	float i		=saturate(pow((z-baseLayer)/transition,2.0));
+	float m		=(1.0-i)+upperDensity*i;
+	m			*=sqrt(1.0-pow(lerp(0.75,1.0,saturate((1.0-z)/transition)),2.0));
+	return m;
+}
+
 /// scale should represent the desired noise size - either the size of the noise texture, or of the subset we're using.
 /// top means the maximum z, above which we consider the texture to be blank. If top>=scale, it has no effect.
 float CircularLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float sz,float t,int scale,int top)

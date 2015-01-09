@@ -263,15 +263,16 @@ vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec
 	vec4 noiseval				=vec4(0,0,0,0);
 	if(noise)
 	{
-		float mult			=1.0;///(1.0+noise3DPersistence);
+		float mult				=1.0;///(1.0+noise3DPersistence);
 		for(int j=0;j<1;j++)
 		{
-			noiseval		+=texture_wrap_lod(noiseTexture3D,noise_texc,lod)*mult;
-			noise_texc		*=noise3DOctaveScale;
-			mult			*=noise3DPersistence;
+			noiseval			+=texture_wrap_lod(noiseTexture3D,noise_texc,lod)*mult;
+			noise_texc			*=noise3DOctaveScale;
+			mult				*=noise3DPersistence;
 		}
 	}
-	noiseval.w=length(noiseval);//0.5;
+	noiseval.w			=length(noiseval);//0.5;
+	noiseval.xy*=2;
 	return noiseval;
 }
 
@@ -529,7 +530,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 #endif
 				//if(transition)
 				//	clr.r=0;
-				//	clr.rgb=0.5*(vec3(1,1,1)+noiseval.rgb);
+			//		clr.rgb=0.5*(vec3(1,1,1)+noiseval.rgb);
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
 				meanFadeDistance		+=fadeDistance*clr.a*colour.a;
 				colour.a				*=(1.0-clr.a);
