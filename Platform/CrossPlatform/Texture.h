@@ -61,6 +61,7 @@ namespace simul
 				,length(0)
 				,depth(0)
 				,dim(0)
+				,mips(1)
 				,pixelFormat(crossplatform::UNKNOWN){}
 			virtual ~Texture();
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
@@ -70,7 +71,7 @@ namespace simul
 			virtual sce::Gnm::Texture *AsGnmTexture(){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return 0;}
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(){return 0;}
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0){return 0;}
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(){return 0;}
 			/// Asynchronously move this texture to fast RAM.
@@ -116,11 +117,15 @@ namespace simul
 			{
 				return dim;
 			}
+			int GetMipCount() const
+			{
+				return mips;
+			}
 			//! If the texture is multisampled, this returns the samples per texel. Zero means it is not an MS texture,
 			//! while 1 means it is MS, even though the sample count is unity.
 			virtual int GetSampleCount() const=0;
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
-			int width,length,depth,dim;
+			int width,length,depth,dim,mips;
 			PixelFormat pixelFormat;
 		};
 	}

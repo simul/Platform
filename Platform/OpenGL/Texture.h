@@ -36,7 +36,7 @@ namespace simul
 			{
 				return NULL;
 			}
-			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
+			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0)
 			{
 				return NULL;
 			}

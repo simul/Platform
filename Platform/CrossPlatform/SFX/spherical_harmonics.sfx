@@ -23,7 +23,7 @@ void CS_Jitter(uint3 sub_pos: SV_DispatchThreadID )
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
 void CS_Clear(uint3 sub_pos: SV_DispatchThreadID )
 {
-	targetBuffer[sub_pos.x]				=vec4(0,0,0,0); 
+	targetBuffer[sub_pos.x]	=vec4(0,0,0,0);
 }
 
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]

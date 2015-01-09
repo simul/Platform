@@ -104,7 +104,7 @@ RaytracePixelOutput RaytraceNew(Texture3D cloudDensity1
 			layerFade=0;
 		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
-			vec4 noiseval				=MakeNoise(noiseTexture3D,noise,1.0,cloudTexCoords);
+			vec4 noiseval				=MakeNoise(noiseTexture3D,noise,1.0,cloudTexCoords,0);
 			density						=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,1.0,noiseval,fractalScale,cloud_interp);
             if(do_depth_mix)
 				density.z				*=saturate((d-fadeDistance)/0.01);

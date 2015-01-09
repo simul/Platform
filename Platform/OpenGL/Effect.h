@@ -78,7 +78,7 @@ namespace simul
 			std::map<std::string,int> textureNumberMap;
 			std::map<GLuint,GLuint> prepared_sampler_states;
 			bool FillInTechniques();
-			void SetTex(const char *name,crossplatform::Texture *tex,bool write);
+			void SetTex(const char *name,crossplatform::Texture *tex,bool write,int mip);
 			EffectTechnique *CreateTechnique();
 			void AddPass(std::string techname, std::string passname, GLuint t);
 		public:
@@ -91,7 +91,7 @@ namespace simul
 			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
-			void SetUnorderedAccessView(crossplatform::DeviceContext&,const char *name,crossplatform::Texture *tex);
+			void SetUnorderedAccessView(crossplatform::DeviceContext&,const char *name,crossplatform::Texture *tex,int mip=0);
 			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture *tex);
 			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture &t);
 			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);

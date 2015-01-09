@@ -34,7 +34,6 @@ struct FarNearPixelOutput
 	float depth	SIMUL_DEPTH_OUTPUT;
 };
 
-
 float MakeRainMap(Texture3D cloudDensity1,Texture3D cloudDensity2,float cloud_interp,vec2 texCoords)
 {
 	vec3 texc		=vec3(texCoords.xy,0.25);
@@ -259,7 +258,7 @@ vec4 calcColour(Texture2D lossTexture,Texture2D inscTexture,Texture2D skylTextur
 	return c;
 }
 
-vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec3 noise_texc)
+vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec3 noise_texc,float lod)
 {
 	vec4 noiseval				=vec4(0,0,0,0);
 	if(noise)
@@ -267,7 +266,7 @@ vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec
 		float mult			=1.0;///(1.0+noise3DPersistence);
 		for(int j=0;j<1;j++)
 		{
-			noiseval		+=texture_wrap_lod(noiseTexture3D,noise_texc,0)*mult;
+			noiseval		+=texture_wrap_lod(noiseTexture3D,noise_texc,lod)*mult;
 			noise_texc		*=noise3DOctaveScale;
 			mult			*=noise3DPersistence;
 		}
@@ -461,7 +460,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		vec3 cloudWorldOffset		=world_pos-cornerPos;
 		vec3 cloudTexCoords			=(cloudWorldOffset)*inverseScales;
 		c							+=c_step;
-		int3 intermediate			=abs(int3(c.x%2,c.y%2,c.z%2));
+		uint3 intermediate			=abs(uint3(c.x%2,c.y%2,c.z%2));
 		float is_inter				=dot(N,vec3(intermediate));
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
@@ -469,7 +468,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		float fade_inter			=saturate((length(pw.xy)/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
 	//	if(idx==0)
 			fade					*=1.0-(fade_inter);
-	//	fade						*=saturate(distanceMetres/40.0);
+		fade						*=saturate(distanceMetres/240.0);
 		float fadeDistance			=saturate(distanceMetres/maxFadeDistanceMetres);
 	//	fade*=1-idx;
 		int3 b						=abs(c-C0*2);//+start_c_offset
@@ -478,7 +477,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		if(fade>0&&(fadeDistance<=solid_dist||!do_depth_mix)&&world_pos.z<=max_z)
 		{
 			vec3 noise_texc			=cloudTexCoords.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
-			vec4 noiseval			=MakeNoise(noiseTexture3D,noise,noise_centre_factor,noise_texc);
+			float lod				=4.0*fadeDistance;
+			vec4 noiseval			=MakeNoise(noiseTexture3D,noise,noise_centre_factor,noise_texc,lod);
 		
 			density					=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,fade,noiseval,fractalScale,cloud_interp);
 		//	density.z				=fade*(cloudTexCoords.z>=0&&cloudTexCoords.z<1.0);
@@ -529,6 +529,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 #endif
 				//if(transition)
 				//	clr.r=0;
+				//	clr.rgb=0.5*(vec3(1,1,1)+noiseval.rgb);
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
 				meanFadeDistance		+=fadeDistance*clr.a*colour.a;
 				colour.a				*=(1.0-clr.a);

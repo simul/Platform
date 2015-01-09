@@ -230,7 +230,7 @@ namespace simul
 			virtual void *GetBuffer(crossplatform::DeviceContext &deviceContext)=0;
 			virtual void SetData(crossplatform::DeviceContext &deviceContext,void *data)=0;
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return NULL;}
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(){return NULL;}
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0){return NULL;}
 		};
 
 		/// Templated structured buffer, which uses platform-specific implementations of PlatformStructuredBuffer.
@@ -273,7 +273,7 @@ namespace simul
 			{
 				return platformStructuredBuffer->AsD3D11ShaderResourceView();
 			}
-			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
+			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0)
 			{
 				return platformStructuredBuffer->AsD3D11UnorderedAccessView();
 			}
@@ -389,7 +389,7 @@ namespace simul
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
-			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex)	=0;
+			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int mip=0)	=0;
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex)		=0;
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture &t)		=0;
 			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s)		=0;

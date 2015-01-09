@@ -53,9 +53,11 @@ namespace simul
 				}*/
 				return shaderResourceView;
 			}
-			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
+			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0)
 			{
-				return unorderedAccessView;
+				if(mip<0||mip>=mips)
+					return NULL;
+				return unorderedAccessViews[mip];
 			}
 			ID3D11DepthStencilView *AsD3D11DepthStencilView()
 			{
@@ -80,7 +82,6 @@ namespace simul
 			// Use this dx11::Texture as a wrapper for a texture and its corresponding SRV. Both pointers are needed.
 			void InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv);
 
-			ID3D11UnorderedAccessView	**unorderedAccessViewMips;
 			ID3D11Resource				*stagingBuffer;
 
 			D3D11_MAPPED_SUBRESOURCE	mapped;
@@ -120,7 +121,7 @@ namespace simul
 			ID3D11DepthStencilView*				m_pOldDepthSurface;
 			ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   shaderResourceView;
-			ID3D11UnorderedAccessView*  unorderedAccessView;
+			ID3D11UnorderedAccessView**  unorderedAccessViews;
 			ID3D11DepthStencilView*		depthStencilView;
 			ID3D11RenderTargetView**	renderTargetViews;
 			int num_rt;

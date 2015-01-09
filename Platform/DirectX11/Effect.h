@@ -85,7 +85,7 @@ namespace simul
 			{
 				return shaderResourceView;
 			}
-			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView()
+			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0)
 			{
 				return unorderedAccessView;
 			}
@@ -112,7 +112,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
-			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex);
+			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int mip=0);
 			void SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex);
 			void SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture &t);
 			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);

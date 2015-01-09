@@ -95,6 +95,23 @@ shader void CS_Noise3D_float(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThre
     IMAGESTORE(targetTexture32,pos,result);
 }
 
+
+[numthreads(4,4,4)]
+shader void CS_MakeMips3D_float(uint3 p	: SV_DispatchThreadID )
+{
+	int3 pos	=int3(p);
+	vec4 result	=random_texture_3d[pos*2];
+	result		+=random_texture_3d[pos*2+int3(0,1,0)];
+	result		+=random_texture_3d[pos*2+int3(1,0,0)];
+	result		+=random_texture_3d[pos*2+int3(1,1,0)];
+	result		+=random_texture_3d[pos*2+int3(0,0,1)];
+	result		+=random_texture_3d[pos*2+int3(0,1,1)];
+	result		+=random_texture_3d[pos*2+int3(1,0,1)];
+	result		+=random_texture_3d[pos*2+int3(1,1,1)];
+	result		/=8.0;
+    IMAGESTORE(targetTexture32,pos,result);
+}
+
 DepthStencilState DisableDepth
 {
 	DepthEnable = FALSE;
@@ -161,5 +178,13 @@ technique noise_3d_compute_float
     pass p0
 	{
 		SetComputeShader(CompileShader(cs_5_0,CS_Noise3D_float()));
+    }
+}
+
+technique make_mip_3d
+{
+    pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_MakeMips3D_float()));
     }
 }

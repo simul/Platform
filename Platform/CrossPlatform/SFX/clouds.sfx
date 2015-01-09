@@ -29,12 +29,20 @@ Texture2D rainMapTexture;
 TextureCube diffuseCubemap;
 RWTexture2D<float> targetTexture1;
 RWBuffer<float> occlusionBuffer;
+RWTexture3D<int4> output : register(u0);
 
 
 #ifndef DETAIL_NOISE
 	#define DETAIL_NOISE 1
 #endif
 
+[numthreads(8,8,8)]
+void CS_Mix( uint3 pos : SV_DispatchThreadID )
+{
+    vec4 res= vec4(1,0,1,1);//lerp(cloudDensity1[pos],cloudDensity2[pos],cloud_interp);
+	res.z=1.0;
+	output[pos].rgba=res;
+}
 posTexVertexOutput VS_FullScreen(idOnly IN)
 {
     posTexVertexOutput OUT;
@@ -600,6 +608,14 @@ technique godrays_accumulation
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_GodraysAccumulation()));
+    }
+}
+
+technique mix_clouds
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Mix()));
     }
 }
 technique occlusion

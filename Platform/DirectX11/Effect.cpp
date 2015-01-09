@@ -391,12 +391,12 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 	return tech;
 }
 
-void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *t)
+void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *t,int mip)
 {
 	if(t)
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
-		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,T->AsD3D11UnorderedAccessView());
+		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,T->AsD3D11UnorderedAccessView(mip));
 	}
 	else
 		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,NULL);
