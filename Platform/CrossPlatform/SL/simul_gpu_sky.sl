@@ -1,57 +1,3 @@
-#ifndef GPU_SKY_CONSTANTS_SL
-#define GPU_SKY_CONSTANTS_SL
-
-SIMUL_CONSTANT_BUFFER(GpuSkyConstants,8)
-	uniform vec2 texSize;
-	uniform vec2 tableSize;
-	
-	uniform uint3 threadOffset;
-	uniform float emissivity;
-
-	uniform vec3 directionToMoon;
-	uniform float distanceKm;
-
-	uniform float texelOffset;
-	uniform float prevDistanceKm;
-
-	uniform float maxOutputAltKm;
-	uniform float planetRadiusKm;
-
-	uniform float maxDensityAltKm;
-	uniform float hazeBaseHeightKm;
-	uniform float hazeScaleHeightKm;
-	uniform float seaLevelTemperatureK;
-
-	uniform vec3 rayleigh;
-	uniform float XovercastBaseKmX;
-	uniform vec3 hazeMie;
-	uniform float XovercastRangeKmX;
-	uniform vec3 ozone;
-	uniform float overcastX;
-
-	uniform vec3 sunIrradiance;
-	uniform float maxDistanceKm;
-
-	uniform vec3 lightDir;
-	uniform float hazeEccentricity;
-
-	uniform vec3 starlight;
-	uniform float previousZCoord;
-
-	uniform vec3 mieRayleighRatio;
-	uniform float ejsyr;
-
-	uniform vec4 yRange;
-
-	uniform float texCoordZ;
-	uniform float AHERaH,ASJET,AETJAETJ;
-
-	uniform int3 targetSize;
-	uniform float fuyofyu;
-SIMUL_CONSTANT_BUFFER_END
-
-#ifndef __cplusplus
-
 #define pi (3.1415926536)
 
 uint3 LinearThreadToPos2D(int linear_pos,uint3 dims)
@@ -493,13 +439,15 @@ void CSSkyl(RW_TEXTURE3D_FLOAT4 targetTexture,Texture3D loss_texture,Texture3D i
 		previous_skyl		=skyl;
 	}
 }
-
+// Light Table 3D Tex is "altitudes x 3 x 4".
+// The 4 z-values represent ambient, sunlight, moonlight and combined.
+//The 3 y-values represent the three tables for interpolation.
 void MakeLightTable(RW_TEXTURE3D_FLOAT4 targetTexture, Texture3D insc_texture,Texture2D optical_depth_texture, uint3 sub_pos,uint3 targetSize)
 {
 	// threadOffset.y determines the cycled index.
 	uint3 pos			=sub_pos+threadOffset;
-	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
-		return;
+//	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
+//		return;
 	float alt_texc			=float(pos.x)/float(targetSize.x);
 	float alt_km			=maxOutputAltKm*alt_texc;
 	vec4 sunlight			=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,alt_km,lightDir);
@@ -509,6 +457,7 @@ void MakeLightTable(RW_TEXTURE3D_FLOAT4 targetTexture, Texture3D insc_texture,Te
 	// equivalent to GetAnisotropicInscatterFactor(true,altitude_km,pi/2.f,0,1e5f,sun_irradiance,starlight,dir_to_sun,dir_to_moon,haze,overcast,false,0):
 	vec4 ambientLight		=vec4(getSkylight(alt_km, insc_texture),1.0);
 	uint3 pos_sun			=uint3(pos.xy,0);
+
 	IMAGESTORE(targetTexture,pos_sun, sunlight);
 	uint3 pos_moon			=uint3(pos.xy,1);
 	IMAGESTORE(targetTexture,pos_moon, moonlight);
@@ -519,6 +468,4 @@ void MakeLightTable(RW_TEXTURE3D_FLOAT4 targetTexture, Texture3D insc_texture,Te
 	uint3 pos_both		=uint3(pos.xy,3);
 	IMAGESTORE(targetTexture,pos_both, sunlight+moonlight);
 }
-#endif
 
-#endif

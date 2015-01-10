@@ -42,9 +42,11 @@ float GetHumidityMultiplier(float z,float baseLayer,float transition,float upper
 
 float GetHumidityMultiplier2(float z,float baseLayer,float transition,float upperDensity)
 {
-	float i		=saturate(pow((z-baseLayer)/transition,2.0));
+//	float i		=saturate((z-baseLayer)/transition);
+	float i		=pow(saturate((z-baseLayer)/transition),0.5);
 	float m		=(1.0-i)+upperDensity*i;
-	m			*=sqrt(1.0-pow(lerp(0.75,1.0,saturate((1.0-z)/transition)),2.0));
+	//m			*=lerp(0.75,1.0,saturate((1.0-z)/transition));
+	m			*=pow(saturate((1.0-z)/transition),0.5);
 	return m;
 }
 
@@ -213,7 +215,7 @@ void CS_CloudDensity(RWTexture3D<float4> targetTexture,Texture3D volumeNoiseText
 	float noise_texel			=1.0/noise_dims.z;
 	float height				=noiseScale.z;
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
-	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z,baseLayer,transition,upperDensity)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
+	float hm					=humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
 	float dens					=saturate((noise_val+2.0*hm-1.0)/diffusivity);
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
 	dens						=saturate(dens);
@@ -241,7 +243,7 @@ float CloudDensity(Texture3D volumeNoiseTexture,Texture2D maskTexture,vec2 texCo
 	dens						=saturate(dens/diffusivity);
 #else
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
-	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z,baseLayer,transition,upperDensity);//*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
+	float hm					=humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity);//*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
 	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
 #endif
 	//dens						=saturate((dens+hm)/diffusivity);

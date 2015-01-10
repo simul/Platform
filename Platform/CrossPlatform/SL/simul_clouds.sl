@@ -34,19 +34,23 @@ struct FarNearPixelOutput
 	float depth	SIMUL_DEPTH_OUTPUT;
 };
 
-float MakeRainMap(Texture3D cloudDensity1,Texture3D cloudDensity2,float cloud_interp,vec2 texCoords)
+float MakeRainMap(Texture3D cloudDensity1,Texture3D cloudDensity2,Texture3D cloudDensity,float cloud_interp,vec2 texCoords)
 {
 	vec3 texc		=vec3(texCoords.xy,0.25);
+#if 0
 	vec4 density1	=sampleLod(cloudDensity1,cloudSamplerState,texc,0);
 	vec4 density2	=sampleLod(cloudDensity2,cloudSamplerState,texc,0);
 	vec4 density	=lerp(density1,density2,cloud_interp);
+#else
+	vec4 density	=sampleLod(cloudDensity,cloudSamplerState,texc,0);
+#endif
 	float r			=density.z;
 	if(r<0.999)
 		r=0;
 	return r;
 }
 
-vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,mat4 shadowMatrix,vec3 cornerPos,vec3 inverseScales)
+vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 cornerPos,vec3 inverseScales)
 {
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
 	vec2 pos_xy						=2.0*texCoords.xy-1.0;
@@ -272,30 +276,33 @@ vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec
 		}
 	}
 	noiseval.w			=length(noiseval);//0.5;
-//	noiseval.xy*=2;
+	//noiseval.xy*=2;
 	return noiseval;
 }
 
-vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float cloud_interp)
+vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float cloud_interp)
 {
 	float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(texCoords.z));
 //	vec4 light1			=sampleLod(cloudDensity1,cloudSamplerState,texCoords,0);
 //	vec4 light2			=sampleLod(cloudDensity2,cloudSamplerState,texCoords,0);
-//	vec4 light			=lerp(light1,light2,cloud_interp);
+	vec4 light			=sampleLod(cloudDensity,cloudSamplerState,texCoords,0);
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
-	vec4 density1		=sampleLod(cloudDensity1,cloudSamplerState,pos,0);
-	vec4 density2		=sampleLod(cloudDensity2,cloudSamplerState,pos,0);
-	vec4 density		=lerp(density1,density2,cloud_interp);
-//	density.xyw			=light.xyw;
+//	vec4 density1		=sampleLod(cloudDensity1,cloudSamplerState,pos,0);
+//	vec4 density2		=sampleLod(cloudDensity2,cloudSamplerState,pos,0);
+//	vec4 density		=lerp(density1,density2,cloud_interp);
+	vec4 density		=sampleLod(cloudDensity,cloudSamplerState,pos,0);
+	density.xyw			=light.xyw;
+		//	density.xy*=.5*(1+density.z);
 	density.z			*=layerFade*(1.0-noiseval.w);
-	density.z			=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness);
+	density.z			=saturate(density.z*(1.0+alphaSharpness));//-alphaSharpness);
 	return density;
 }
 
 #ifndef GLSL
 RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,Texture3D cloudDensity2
+											,Texture3D cloudDensity
 											,Texture2D rainMapTexture
 											,Texture2D noiseTexture
 											,Texture3D noiseTexture3D
@@ -455,14 +462,13 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	
 	//	fade					*=1.0-exp(-10*e);
 		// We fade out the intermediate steps as we approach the boundary of a detail change.
-		//float verticalShift			=0;
-		// Now sample at the halfway point:
+		// Now sample at the end point:
 		world_pos					+=d*view;
 		vec3 cloudWorldOffset		=world_pos-cornerPos;
 		vec3 cloudTexCoords			=(cloudWorldOffset)*inverseScales;
 		c							+=c_step;
 		int3 intermediate			=abs(int3(c.x%2,c.y%2,c.z%2));
-		float is_inter				=(dot(N,vec3(intermediate)));
+		float is_inter				=dot(N,vec3(intermediate));
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
 		vec3 pw						=abs(p1-p0);//+start_c_offset
@@ -474,14 +480,15 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	//	fade*=1-idx;
 		int3 b						=abs(c-C0*2);//+start_c_offset
 	//	if(idx==0)
-		bool transition=(max(max(b.x,b.y),b.z)>=W);
+	//	fade*=(distanceMetres>10000.0&&distanceMetres<10500.0);
+		bool transition=(max(max(b.x,b.y),0)>=W);
 		if(fade>0&&(fadeDistance<=solid_dist||!do_depth_mix)&&world_pos.z<=max_z)
 		{
 			vec3 noise_texc			=cloudTexCoords.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
-			float lod				=4.0*fadeDistance;
+			float lod				=6.0*fadeDistance;
 			vec4 noiseval			=MakeNoise(noiseTexture3D,noise,noise_centre_factor,noise_texc,lod);
 		
-			density					=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,fade,noiseval,fractalScale,cloud_interp);
+			density					=calcDensity(cloudDensity1,cloudDensity2,cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,cloud_interp);
 		//	density.z				=fade*(cloudTexCoords.z>=0&&cloudTexCoords.z<1.0);
 			// The rain fall angle is used:
 			vec3 rain_texc			=cloudWorldOffset;
@@ -500,7 +507,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				moisture			+=0.01*dm*density.x;
 				density.z			=saturate(density.z+dm);
 			}
-			density.z=saturate(3.0*density.z);
+		//	density.z=saturate(3.0*density.z);
 			density.z*=pow(abs(dot(N,viewScaled)),2.0);
 			if(do_depth_mix)
 				density.z				*=saturate((solid_dist-fadeDistance)/0.01);
@@ -516,17 +523,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 													,fade_texc,nearFarTexc
 													,brightness_factor);
 #ifdef DEBUG_SAMPLING
-				if(texCoords.x>.9)
+				if(texCoords.x>.6)
 				{
-					clr.a=.5;
+					clr.a=.5*fade;
 					clr.rgb=colours[idx%5];
-					if(texCoords.x>.95)
+					if(texCoords.y>.75)
 						clr.rgb=fade_inter;//is_inter;
-					if(texCoords.x>.975)
+					if(texCoords.x>.85)
 						clr.rgb=is_inter;
 				}
 				//if(cloudTexCoords.z>12.2)
-					//clr.r=abs(c.z);
+				//	clr.r=abs(c.z);
 #endif
 				//if(transition)
 				//	clr.r=0;
@@ -541,26 +548,27 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				}
 			}
 		}
-	//	if(b.x>=halfClipSize)
-	/*	if(max(b.x,b.y)>=W)
+#if 0
+		if(max(b.x,b.y)>=W)
 		{
 			c0.xy		=	C0.xy;
-			c.xy			+=	start_c_offset.xy;
-			c.xy			-=	abs(c.xy%2);
-			c.xy			=	c.xy/2;
-			gridScale.xy	*=	2.0;
-			viewScaled		=view/gridScale;
-			viewScaled		=normalize(viewScaled);
-			viewScale		=length(viewScaled*gridScale);
+			c.xy		+=	start_c_offset.xy;
+			c.xy		-=	abs(c.xy%2);
+			c.xy		=	c.xy/2;
+			gridScale.xy*=	2.0;
+			viewScaled					=view/gridScale;
+			viewScale					=length(viewScaled*gridScale);
+			viewScaled						=normalize(viewScaled);
 			if(!idx)
 				W*=2;
 			p0.xy		=	P0.xy;
-			P0.xy		=	startOffsetFromOrigin.xy/gridScale.xy/2.0;
+			P0.xy		=	startOffsetFromOrigin.xy/gridScale/2.0;
 			C0.xy		+=	start_c_offset.xy;
 			C0.xy		-=	abs(C0.xy%2);
 			C0.xy		=	C0.xy/2;
 			idx			++;
-		}*/
+		}
+#else
 		if(transition)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
@@ -580,6 +588,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			C0			=	C0/2;
 			idx			++;
 		}
+#endif
 	}
 	meanFadeDistance	+=colour.a;
     res.colour			=vec4(exposure*colour.rgb,colour.a);

@@ -4,6 +4,7 @@
 #ifndef GLSL
 RaytracePixelOutput RaytraceNew(Texture3D cloudDensity1
 											,Texture3D cloudDensity2
+											,Texture3D cloudDensity
 											,Texture2D rainMapTexture
 											,Texture2D noiseTexture
 											,Texture3D noiseTexture3D
@@ -105,7 +106,7 @@ RaytracePixelOutput RaytraceNew(Texture3D cloudDensity1
 		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&cloudTexCoords.z<=max_texc_z)
 		{
 			vec4 noiseval				=MakeNoise(noiseTexture3D,noise,1.0,cloudTexCoords,0);
-			density						=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,1.0,noiseval,fractalScale,cloud_interp);
+			density						=calcDensity(cloudDensity1,cloudDensity2,cloudDensity,cloudTexCoords,1.0,noiseval,fractalScale,cloud_interp);
             if(do_depth_mix)
 				density.z				*=saturate((d-fadeDistance)/0.01);
 			if(density.z>0)

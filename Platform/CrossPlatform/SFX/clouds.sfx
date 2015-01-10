@@ -29,7 +29,7 @@ Texture2D rainMapTexture;
 TextureCube diffuseCubemap;
 RWTexture2D<float> targetTexture1;
 RWBuffer<float> occlusionBuffer;
-RWTexture3D<int4> output : register(u0);
+RWTexture3D<float4> output ;
 
 
 #ifndef DETAIL_NOISE
@@ -37,12 +37,13 @@ RWTexture3D<int4> output : register(u0);
 #endif
 
 [numthreads(8,8,8)]
-void CS_Mix( uint3 pos : SV_DispatchThreadID )
+shader void CS_Mix( uint3 pos	: SV_DispatchThreadID )
 {
-    vec4 res= vec4(1,0,1,1);//lerp(cloudDensity1[pos],cloudDensity2[pos],cloud_interp);
-	res.z=1.0;
+    vec4 res= lerp(cloudDensity1[pos],cloudDensity2[pos],cloud_interp);
+	//res.z=1.0;
 	output[pos].rgba=res;
 }
+
 posTexVertexOutput VS_FullScreen(idOnly IN)
 {
     posTexVertexOutput OUT;
@@ -69,12 +70,12 @@ posTexVertexOutput VS_FullScreen(idOnly IN)
 // Then trace down to find first intersection with clouds, if any.
 vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 {
-	return CloudShadow(cloudDensity1,cloudDensity2,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
+	return CloudShadow(cloudDensity1,cloudDensity2,cloudDensity,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
 }
 
 vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 {
-	float r=MakeRainMap(cloudDensity1,cloudDensity2,cloud_interp,IN.texCoords);
+	float r=MakeRainMap(cloudDensity1,cloudDensity2,cloudDensity,cloud_interp,IN.texCoords);
 	return vec4(r,r,r,r);
 }
 
@@ -89,7 +90,7 @@ vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
 	float m=MoistureAccumulation(cloudShadowTexture,shadowTextureSize,IN.texCoords);
 	return vec4(m,m,m,m);
 }
-float CloudsOcclusion(Texture3D cloudDensity1,Texture3D cloudDensity2,float cloud_interp,vec3 viewPos,vec3 directionToSun)
+float CloudsOcclusion(Texture3D cloudDensity1,Texture3D cloudDensity2,Texture3D cloudDensity,float cloud_interp,vec3 viewPos,vec3 directionToSun)
 {
 	return 0.f;
 }
@@ -97,7 +98,7 @@ float CloudsOcclusion(Texture3D cloudDensity1,Texture3D cloudDensity2,float clou
 [numthreads(1,1,1)]
 void CS_Occlusion(uint3 idx: SV_DispatchThreadID)
 {
-	occlusionBuffer[idx.x]=CloudsOcclusion(cloudDensity1,cloudDensity2,cloud_interp,viewPos,directionToSun);
+	occlusionBuffer[idx.x]=CloudsOcclusion(cloudDensity1,cloudDensity2,cloudDensity,cloud_interp,viewPos,directionToSun);
 }
 
 vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
@@ -112,7 +113,7 @@ vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
-									,cloudDensity2
+									,cloudDensity2,cloudDensity
 									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
@@ -144,7 +145,7 @@ RaytracePixelOutput PS_Raytrace3DNoise(posTexVertexOutput IN)
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
 	RaytracePixelOutput r	=RaytraceCloudsForward(
 									cloudDensity1
-									,cloudDensity2
+									,cloudDensity2,cloudDensity
 									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
@@ -174,7 +175,7 @@ RaytracePixelOutput PS_Raytrace3DNoiseNearPass(posTexVertexOutput IN)
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
 	RaytracePixelOutput r	=RaytraceCloudsForward(
 									cloudDensity1
-									,cloudDensity2
+									,cloudDensity2,cloudDensity
 									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
@@ -204,7 +205,7 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
 	RaytracePixelOutput f	=RaytraceCloudsForward(
 									cloudDensity1
-									,cloudDensity2
+									,cloudDensity2,cloudDensity
 									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
@@ -228,7 +229,7 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 	{
 		n	=RaytraceCloudsForward(
 									cloudDensity1
-									,cloudDensity2
+									,cloudDensity2,cloudDensity
 									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
@@ -272,7 +273,7 @@ RaytracePixelOutput PS_Raytrace3DNoiseBackground(posTexVertexOutput IN)
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
 	RaytracePixelOutput r	=RaytraceCloudsForward(
 									cloudDensity1
-									,cloudDensity2
+									,cloudDensity2,cloudDensity
 									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
@@ -301,7 +302,7 @@ RaytracePixelOutput NoRain3DNoiseNear(vec4 dlookup,vec2 texCoords)
 {
 	RaytracePixelOutput n	=RaytraceCloudsForward(
 									cloudDensity1
-									,cloudDensity2
+									,cloudDensity2,cloudDensity
 									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D
@@ -338,7 +339,7 @@ RaytracePixelOutput NoRain3DNoiseFar(vec4 dlookup,vec2 texCoords)
 	texCoords				=mixedResTransformXYWH.xy+texCoords.xy*mixedResTransformXYWH.zw;
 	RaytracePixelOutput f	=RaytraceCloudsForward(
 									cloudDensity1
-									,cloudDensity2
+									,cloudDensity2,cloudDensity
 									,rainMapTexture
 									,noiseTexture
 									,noiseTexture3D

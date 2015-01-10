@@ -16,6 +16,7 @@ SamplerState samplerState
 };
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/gpu_sky_constants.sl"
 #include "../../CrossPlatform/SL/simul_gpu_sky.sl"
 
 struct vertexInput

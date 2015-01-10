@@ -218,8 +218,8 @@ vec4 PS_Show3DLightTable(vertexOutput3Dto2D IN): SV_TARGET
 
 vec4 PS_Show2DLightTable(vertexOutput3Dto2D IN): SV_TARGET
 {
-	vec4 result=texture_nearest_lod(lightTable2DTexture,IN.texCoords.yx,0);
-
+	vec2 texc	=vec2(1.00-IN.texCoords.y,IN.texCoords.x);
+	vec4 result	=texture_nearest_lod(lightTable2DTexture,texc,0);
     return vec4(result.rgb,1);
 }
 

@@ -254,6 +254,7 @@
     <None Include="..\CrossPlatform\SL\earth_shadow_fade.sl" />
     <None Include="..\CrossPlatform\SL\earth_shadow_uniforms.sl" />
     <None Include="..\CrossPlatform\SL\godrays.sl" />
+    <None Include="..\CrossPlatform\SL\gpu_sky_constants.sl" />
     <None Include="..\CrossPlatform\SL\hdr_constants.sl" />
     <None Include="..\CrossPlatform\SL\illumination.sl" />
     <None Include="..\CrossPlatform\SL\lightning_constants.sl" />
