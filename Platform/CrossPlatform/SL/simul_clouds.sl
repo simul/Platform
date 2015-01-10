@@ -461,8 +461,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		vec3 cloudWorldOffset		=world_pos-cornerPos;
 		vec3 cloudTexCoords			=(cloudWorldOffset)*inverseScales;
 		c							+=c_step;
-		uint3 intermediate			=abs(uint3(c.x%2,c.y%2,c.z%2));
-		float is_inter				=dot(N,vec3(intermediate));
+		int3 intermediate			=abs(int3(c.x%2,c.y%2,c.z%2));
+		float is_inter				=(dot(N,vec3(intermediate)));
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
 		vec3 pw						=abs(p1-p0);//+start_c_offset
@@ -516,17 +516,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 													,fade_texc,nearFarTexc
 													,brightness_factor);
 #ifdef DEBUG_SAMPLING
-				if(texCoords.y>.9)
+				if(texCoords.x>.9)
 				{
 					clr.a=.5;
 					clr.rgb=colours[idx%5];
-					if(texCoords.y>.95)
+					if(texCoords.x>.95)
 						clr.rgb=fade_inter;//is_inter;
-					if(texCoords.y>.975)
+					if(texCoords.x>.975)
 						clr.rgb=is_inter;
 				}
 				//if(cloudTexCoords.z>12.2)
-					clr.r=abs(c.z);
+					//clr.r=abs(c.z);
 #endif
 				//if(transition)
 				//	clr.r=0;
