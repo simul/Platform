@@ -272,7 +272,7 @@ vec4 MakeNoise(Texture3D noiseTexture3D,bool noise,float noise_centre_factor,vec
 		}
 	}
 	noiseval.w			=length(noiseval);//0.5;
-	noiseval.xy*=2;
+//	noiseval.xy*=2;
 	return noiseval;
 }
 
@@ -515,7 +515,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 													,world_pos,cloudTexCoords
 													,fade_texc,nearFarTexc
 													,brightness_factor);
-#ifdef DEBUG_SAMPLING
+#if 1//def DEBUG_SAMPLING
 				if(texCoords.y>.9)
 				{
 					clr.a=.5;
