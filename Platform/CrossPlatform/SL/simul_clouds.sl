@@ -515,7 +515,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 													,world_pos,cloudTexCoords
 													,fade_texc,nearFarTexc
 													,brightness_factor);
-#if 1//def DEBUG_SAMPLING
+#ifdef DEBUG_SAMPLING
 				if(texCoords.y>.9)
 				{
 					clr.a=.5;
