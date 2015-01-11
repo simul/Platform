@@ -215,14 +215,13 @@ vec3 calcLightningColour(vec3 world_pos,vec3 lightningColour,vec3 lightningOrigi
 vec3 applyFades2(Texture2D lossTexture,Texture2D inscTexture,Texture2D skylTexture,Texture3D inscatterVolumeTexture,vec3 volumeTexCoords,vec3 c,vec2 fade_texc,float BetaRayleigh,float BetaMie,float earthshadowMultiplier)
 {
 	vec3 loss		=sampleLod(lossTexture		,cmcSamplerState,fade_texc,0).rgb;
-	vec3 skyl		=sampleLod(skylTexture		,cmcSamplerState,fade_texc,0).rgb;
 	c			*=loss;
 #ifdef INFRARED
 	//c			=skyl.rgb;
 #else
 	vec4 insc		=sampleLod(inscTexture		,cmcSamplerState,fade_texc,0);
 	vec3 inscatter	=earthshadowMultiplier*texture_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0);//PrecalculatedInscatterFunction(insc,BetaRayleigh,BetaMie,mieRayleighRatio);
-	c				+=skyl+inscatter;
+	c				+=inscatter;
 #endif
     return c;
 }
@@ -278,7 +277,7 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 //	density.xyw			=light.xyw;
 		//	density.xy*=.5*(1+density.z);
 	density.z			*=layerFade;//*(1.0-noiseval.w);
-	//density.z			=saturate(density.z*(1.0+alphaSharpness));//-alphaSharpness);
+	density.z			=saturate(density.z*(1.0+alphaSharpness));//-alphaSharpness);
 	return density;
 }
 

@@ -37,6 +37,7 @@ namespace simul
 			crossplatform::Effect			*m_pDebugEffect;
 			ID3D11InputLayout				*m_pCubemapVtxDecl;
 			ID3D11Buffer					*m_pVertexBuffer;
+			ID3D11InputLayout*				m_pVtxDecl;
 		public:
 			RenderPlatform();
 			virtual ~RenderPlatform();
@@ -143,7 +144,6 @@ namespace simul
 				ID3D11Buffer *m_pVertexBuffersStored11[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
 				UINT m_VertexStrides[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
 				UINT m_VertexOffsets[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
-
 				
 				 ID3D11VertexShader *pVertexShader;
 				 ID3D11PixelShader *pPixelShader;

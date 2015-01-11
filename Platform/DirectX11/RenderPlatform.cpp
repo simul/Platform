@@ -133,6 +133,7 @@ RenderPlatform::RenderPlatform()
 	,m_pDebugEffect(NULL)
 	,m_pCubemapVtxDecl(NULL)
 	,m_pVertexBuffer(NULL)
+	,m_pVtxDecl(NULL)
 {
 }
 
@@ -196,6 +197,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 #ifdef _XBOX_ONE
 	delete eSRAMManager;
 #endif
+	SAFE_RELEASE(m_pVtxDecl);
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	solidConstants.InvalidateDeviceObjects();
 	debugConstants.InvalidateDeviceObjects();
@@ -1339,9 +1341,8 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 		ID3DX11EffectPass *pass=tech->asD3DX11EffectTechnique()->GetPassByIndex(0);
 		hr=pass->GetDesc(&PassDesc);
 
-		ID3D11InputLayout*				m_pVtxDecl=NULL;
-		SAFE_RELEASE(m_pVtxDecl);
-		hr=AsD3D11Device()->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+		if(!m_pVtxDecl)
+			hr=AsD3D11Device()->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
 		ID3D11InputLayout* previousInputLayout;
 		pContext->IAGetInputLayout( &previousInputLayout );
@@ -1366,7 +1367,6 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 		pContext->IASetInputLayout( previousInputLayout );
 		SAFE_RELEASE(previousInputLayout);
 		SAFE_RELEASE(vertexBuffer);
-		SAFE_RELEASE(m_pVtxDecl);
 	}
 }
 
@@ -1489,15 +1489,11 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
 	
-	//simul::math::Matrix4x4 v(deviceContext.viewStruct.view);
-/*	v._41=0;
-	v._42=0;
-	v._43=0;*/
 	mat4 wvp;
 	if(centred)
 		crossplatform::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	else
-	crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+		crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	static bool tr=false;
 	if(tr)
 		wvp.transpose();

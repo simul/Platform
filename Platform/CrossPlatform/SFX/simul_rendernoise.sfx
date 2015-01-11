@@ -75,9 +75,8 @@ shader void CS_Random3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID 
 shader void CS_Noise3D_8(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	int3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
-	//targetTexture8.GetDimensions(dims.x,dims.y,dims.z);
-	//if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
-	//	return;
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;
 	vec3 texCoords		=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec4 result			=Noise3D(random_texture_3d,texCoords,octaves, persistence);
 	IMAGESTORE(targetTexture8,pos,result);
@@ -88,10 +87,10 @@ shader void CS_Noise3D_float(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThre
 {
 	int3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
 	//targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
-	//if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
-	//	return;
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;
 	vec3 texCoords			=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
-	vec4 result				=Noise3D(random_texture_3d,texCoords,octaves, persistence);
+	vec4 result				=Noise3D(random_texture_3d,texCoords,octaves, persistence);//texture_wrap_lod(random_texture_3d,texCoords,0);//
     IMAGESTORE(targetTexture32,pos,result);
 }
 

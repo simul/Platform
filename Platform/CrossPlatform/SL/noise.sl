@@ -74,7 +74,7 @@ vec4 Noise3D(Texture3D random_texture_3d,vec3 texCoords,int octaves,float persis
     }
 	// divide by total to get the range -1,1.
 	result			*=1.0/total;
-	result		=saturate(result);
+	result		=clamp(result,vec4(-1.0,-1.0,-1.0,-1.0),vec4(1.0,1.0,1.0,1.0));
 	return result;
 }
 #endif

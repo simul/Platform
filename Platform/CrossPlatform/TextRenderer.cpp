@@ -156,7 +156,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		clr=white;
 	if(!bck)
 		bck=transp;
-	renderPlatform->StoreRenderState(deviceContext);
+	//renderPlatform->StoreRenderState(deviceContext);
 	constantBuffer.colour		=vec4(clr);
 	constantBuffer.background	=vec4(bck);
 	// Calc width and draw background:
@@ -206,5 +206,5 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	}
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
-	renderPlatform->RestoreRenderState(deviceContext);
+//	renderPlatform->RestoreRenderState(deviceContext);
 }

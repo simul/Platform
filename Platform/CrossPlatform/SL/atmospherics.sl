@@ -341,7 +341,9 @@ void Inscatter_All(out vec4 colours[8]
 	
 	float BetaRayleigh		=CalcRayleighBeta(cos0);
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
-	float il=0.0;
+	float il				=0.0;
+	vec3 total_inscatter	=vec3(0,0,0);
+	vec4 prev_insc			=vec4(0,0,0,0);
 	for(int i=0;i<8;i++)
 	{
 		float dist			=pow(float(i)/7.0,1.0);
@@ -352,19 +354,24 @@ void Inscatter_All(out vec4 colours[8]
 			vec3 worldPos		=viewPosition+distanceMetres*view;
 			illum				+=GetCloudIlluminationAt( cloudTexture, worldToShadowMatrix,worldPos,lightDir)/15.0;
 		}
-		il=saturate(illum+dist);//1.0-(1.0-illum)/(1.0+dist);
+		il					=illum;//saturate(illum+dist);//1.0-(1.0-illum)/(1.0+dist);
 		fade_texc.x			=dist;
 		vec2 nearFarTexc	=illum_lookup.xy;
 		vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 		vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 		vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
 		vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
-		insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a))*il;
+
+		insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
+		vec4 di				=vec4(insc.rgb-prev_insc.rgb,0.5*(insc.a+prev_insc.a));
+
 		skyl                =texture_clamp_mirror(skylTexture,fade_texc).rgb;
 		
-		vec3 colour	    =PrecalculatedInscatterFunction(insc,BetaRayleigh,BetaMie,mieRayleighRatio);
-		colour			+=skyl;
-		colours[i]		=vec4(colour,il);
+		vec3 inscatter		=PrecalculatedInscatterFunction(di,BetaRayleigh,BetaMie,mieRayleighRatio);
+		total_inscatter		+=inscatter*il;
+		vec3 colour			=total_inscatter+skyl;
+		colours[i]			=vec4(colour,il);
+		prev_insc			=insc;
 	}
 }
 
