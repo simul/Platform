@@ -4,7 +4,6 @@
 #include "../../CrossPlatform/SL/simul_cloud_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
 #include "../../CrossPlatform/SL/simul_clouds.sl"
-#include "../../CrossPlatform/SL/raytrace_new.sl"
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/earth_shadow_fade.sl"
 
@@ -23,6 +22,7 @@ Texture2D illuminationTexture			: register(t10);
 Texture2D lightTableTexture				: register(t11);
 Texture2D rainbowLookupTexture			: register(t12);
 Texture2D coronaLookupTexture			: register(t13);
+Texture3D volumeInscatterTexture;
 Texture2D nearFarTexture;
 Texture2D cloudGodraysTexture;
 Texture2D rainMapTexture;
@@ -70,12 +70,12 @@ posTexVertexOutput VS_FullScreen(idOnly IN)
 // Then trace down to find first intersection with clouds, if any.
 vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 {
-	return CloudShadow(cloudDensity1,cloudDensity2,cloudDensity,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
+	return CloudShadow(cloudDensity,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
 }
 
 vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 {
-	float r=MakeRainMap(cloudDensity1,cloudDensity2,cloudDensity,cloud_interp,IN.texCoords);
+	float r=MakeRainMap(cloudDensity,cloud_interp,IN.texCoords);
 	return vec4(r,r,r,r);
 }
 
@@ -119,11 +119,11 @@ vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 									,noiseTexture3D
 									,lightTableTexture
 									,illuminationTexture
-			,rainbowLookupTexture
-			,coronaLookupTexture
+									,rainbowLookupTexture
+									,coronaLookupTexture
 									,lossTexture
 									,inscTexture
-									,skylTexture
+									,skylTexture,volumeInscatterTexture
 									,false
 									,dlookup
 									,texCoords
@@ -155,7 +155,7 @@ RaytracePixelOutput PS_Raytrace3DNoise(posTexVertexOutput IN)
 			,coronaLookupTexture
 									,lossTexture
 									,inscTexture
-									,skylTexture
+									,skylTexture,volumeInscatterTexture
 									,true
 									,dlookup
 									,texCoords
@@ -185,7 +185,7 @@ RaytracePixelOutput PS_Raytrace3DNoiseNearPass(posTexVertexOutput IN)
 									,coronaLookupTexture
 									,lossTexture
 									,inscTexture
-									,skylTexture
+									,skylTexture,volumeInscatterTexture
 									,true
 									,dlookup
 									,texCoords
@@ -215,7 +215,7 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 									,coronaLookupTexture
 									,lossTexture
 									,inscTexture
-									,skylTexture
+									,skylTexture,volumeInscatterTexture
 									,true
 									,dlookup
 									,texCoords
@@ -239,7 +239,7 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 									,coronaLookupTexture
 									,lossTexture
 									,inscTexture
-									,skylTexture
+									,skylTexture,volumeInscatterTexture
 									,true
 									,dlookup
 									,texCoords
@@ -283,7 +283,7 @@ RaytracePixelOutput PS_Raytrace3DNoiseBackground(posTexVertexOutput IN)
 			,coronaLookupTexture
 									,lossTexture
 									,inscTexture
-									,skylTexture
+									,skylTexture,volumeInscatterTexture
 									,true
 									,dlookup
 									,texCoords
@@ -312,7 +312,7 @@ RaytracePixelOutput NoRain3DNoiseNear(vec4 dlookup,vec2 texCoords)
 			,coronaLookupTexture
 									,lossTexture
 									,inscTexture
-									,skylTexture
+									,skylTexture,volumeInscatterTexture
 									,true
 									,dlookup
 									,texCoords
@@ -349,7 +349,7 @@ RaytracePixelOutput NoRain3DNoiseFar(vec4 dlookup,vec2 texCoords)
 			,coronaLookupTexture
 									,lossTexture
 									,inscTexture
-									,skylTexture
+									,skylTexture,volumeInscatterTexture
 									,true
 									,dlookup
 									,texCoords

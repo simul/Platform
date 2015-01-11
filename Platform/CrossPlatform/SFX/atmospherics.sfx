@@ -17,9 +17,11 @@ Texture2D overcTexture;
 Texture2D skylTexture;
 Texture2D illuminationTexture;
 Texture2D cloudShadowTexture;
+Texture2D cloudTexture;
 Texture2D cloudNearFarTexture;
 Texture2D cloudGodraysTexture;
 
+Texture3D cloudTexture;
 Texture2D moistureTexture;
 
 RWTexture3D<float4> targetVolume;
@@ -370,6 +372,10 @@ shader All8Output PS_Inscatter_Volume(atmosVertexOutput IN)
 					,inscTexture
 					,skylTexture
 					,illuminationTexture
+					,cloudShadowTexture
+					,cloudTexture
+					,viewPosition
+					,invShadowMatrix
 					,depth_lookup
 					,texCoords
 					,invViewProj
@@ -377,8 +383,7 @@ shader All8Output PS_Inscatter_Volume(atmosVertexOutput IN)
 					,hazeEccentricity
 					,mieRayleighRatio
 					,depthToLinFadeDistParams
-					,tanHalfFov);
-	
+					,maxFadeDistanceMetres);
 	
 	All8Output all8Output;
 	all8Output.colour1	=colours[0]*exposure;
@@ -492,7 +497,7 @@ shader void CS_ScatteringVolume(uint3 idx: SV_DispatchThreadID)
 									,inscTexture
 									,skylTexture
 									,illuminationTexture
-									,cloudShadowTexture,invShadowMatrix,viewPosition
+									,cloudShadowTexture,invShadowMatrix,cloudTexture,worldToCloudMatrix,viewPosition
 									,xAxis
 									,yAxis
 									,lightDir

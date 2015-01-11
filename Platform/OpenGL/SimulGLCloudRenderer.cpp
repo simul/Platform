@@ -43,6 +43,7 @@
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
+#include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
 #include "LoadGLProgram.h"
@@ -69,7 +70,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,sim
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap
-								  ,crossplatform::NearFarPass nearFarPass,crossplatform::Texture *depth_alpha_tex,bool write_alpha
+								  ,crossplatform::NearFarPass nearFarPass,crossplatform::Texture *depth_alpha_tex,sky::ScatteringVolume *sv,bool write_alpha
 								  ,const simul::sky::float4& viewportTextureRegionXYWH
 								  ,const simul::sky::float4& mixedResTransformXYWH)
 {
@@ -155,7 +156,7 @@ GL_ERROR_CHECK
 	helper->SetChurn(cloudProperties.GetChurn());
 	helper->Update(view_pos,cloudKeyframer->GetWindOffset(),eye_dir,up_dir,delta_t,cubemap);
 
-	SetCloudPerViewConstants(cloudPerViewConstants,deviceContext.viewStruct,exposure,viewportTextureRegionXYWH,mixedResTransformXYWH);
+	SetCloudPerViewConstants(cloudPerViewConstants,deviceContext.viewStruct,exposure,viewportTextureRegionXYWH,mixedResTransformXYWH,sv->worldToVolumeMatrix);
 	cloudPerViewConstants.exposure=exposure;
 
 	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);

@@ -312,6 +312,10 @@ void Inscatter_All(out vec4 colours[8]
 								,Texture2D inscTexture
 								,Texture2D skylTexture
 								,Texture2D illuminationTexture
+								,Texture2D cloudShadowTexture
+								,Texture3D cloudTexture
+								,vec3 viewPosition
+								,mat4 worldToShadowMatrix
 								,vec4 depth_lookup
 								,vec2 texCoords
 								,mat4 invViewProj
@@ -319,7 +323,7 @@ void Inscatter_All(out vec4 colours[8]
 								,float hazeEccentricity
 								,vec3 mieRayleighRatio
 								,vec4 depthToLinFadeDistParams
-								,vec2 tanHalfFov)
+								,float maxFadeDistanceMetres)
 {
 	vec2 clip_pos		=vec2(-1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;
@@ -339,7 +343,15 @@ void Inscatter_All(out vec4 colours[8]
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
 	for(int i=0;i<8;i++)
 	{
-		float dist			=float(i)/7.f;
+		float dist			=pow(float(i)/7.0,2.0);
+	float illum=0;
+		for(int j=0;j<155;j++)
+		{
+			float distanceMetres=maxFadeDistanceMetres*pow((float(i)*float(j)/16.0)/7.0,2.0);
+			vec3 worldPos		=viewPosition+distanceMetres*view;
+			illum				+=GetCloudIlluminationAt( cloudTexture, worldToShadowMatrix,worldPos)/155.0;
+		}
+
 		fade_texc.x			=dist;
 		vec2 nearFarTexc	=illum_lookup.xy;
 		vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
@@ -351,7 +363,7 @@ void Inscatter_All(out vec4 colours[8]
 		
 		vec3 colour	    =PrecalculatedInscatterFunction(insc,BetaRayleigh,BetaMie,mieRayleighRatio);
 		colour			+=skyl;
-		colours[i]		=vec4(colour,1.0);
+		colours[i]		=vec4(colour,illum);
 	}
 }
 
@@ -503,6 +515,8 @@ void ScatteringVolume(	RWTexture3D<float4> targetVolume,int3 idx
 						,Texture2D illuminationTexture
 						,Texture2D cloudShadowTexture
 						,mat4 worldspaceToShadowspaceMatrix
+						,Texture3D cloudTexture
+						,mat4 worldspaceToCloudspaceMatrix
 						,vec3 eyePos
 						,vec3 xAxis
 						,vec3 yAxis
@@ -528,7 +542,7 @@ void ScatteringVolume(	RWTexture3D<float4> targetVolume,int3 idx
 	vec4 last			=vec4(0,0,0,0);
 	for(int i=0;i<scatteringVolumeDims.z;i++)
 	{
-		float dist			=(float)i/(float)(scatteringVolumeDims.z-1);
+		float dist			=pow((float)i/(float)(scatteringVolumeDims.z-1),2.0);
 		vec4 insc;
 		vec3 skyl;
 		CalcInsc(	inscTexture
@@ -544,16 +558,15 @@ void ScatteringVolume(	RWTexture3D<float4> targetVolume,int3 idx
 		vec4 next		=vec4(skyl.rgb,1.0);
 		float shadow	=1.0;
 	#else
-		float shadow	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist*dir*maxFadeDistanceMetres).x;
+		float shadow	=GetCloudIlluminationAt(cloudTexture,worldspaceToCloudspaceMatrix,eyePos+dist*dir*maxFadeDistanceMetres).x;//worldspaceToShadowspaceMatrix
 		float cos0		=ce;
 		vec4 next	    =vec4(InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio),1.0);
 		next.rgb		+=skyl.rgb;
-#endif
+	#endif
 		colour			+=max(vec4(0,0,0,0),(next-last))*shadow;
 		targetVolume[int3(idx.xy,i)]=colour;
 		last			=next;
 	}
 }
-
 
 #endif

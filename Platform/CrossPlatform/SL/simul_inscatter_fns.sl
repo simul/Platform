@@ -9,6 +9,19 @@
 #define RAYLEIGH_BETA_FACTOR (0.0596831)
 #endif
 
+vec3 ScreenToVolumeTexcoords(mat4 clipToVolMatrix,vec2 texCoords,float dist)
+{
+	vec4 clip_pos				=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x					+=2.0*texCoords.x;
+	clip_pos.y					-=2.0*texCoords.y;
+	vec3 view_sc				=mul(clipToVolMatrix,clip_pos).xyz;
+	view_sc						/=length(view_sc);
+	float azimuth				=atan2(view_sc.x,view_sc.y);
+	float elevation				=acos(view_sc.z);
+	vec3 volume_texc			=vec3(azimuth/(pi*2.0),elevation/pi,dist);
+	return volume_texc;
+}
+
 float CalcRayleighBeta(float cos0)
 {
 	return (1.0+cos0*cos0); // Factor of (0.0596831) is applied in texture generation now.

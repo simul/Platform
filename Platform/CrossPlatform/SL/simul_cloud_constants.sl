@@ -38,7 +38,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform mat4 invViewProj;
 	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
 	uniform mat4 moistureToWorldSpaceMatrix;
-	uniform mat4 noiseMatrix;
+	uniform mat4 clipPosToScatteringVolumeMatrix;
 	uniform mat4 worldViewProj;
 	uniform vec4 depthToLinFadeDistParams;
 	uniform vec2 tanHalfFov;
@@ -120,7 +120,8 @@ namespace simul
 }
 struct CloudShadowStruct 
 {
-	simul::crossplatform::Texture *texture;					///< Cloud shadow texture.
+	simul::crossplatform::Texture *cloudTexture;			///< The cloud texture.
+	simul::crossplatform::Texture *cloudShadowTexture;		///< Cloud shadow texture.
 	simul::crossplatform::Texture *godraysTexture;			///< Texture represents accumulated illumination at a given angle and distance.
 	simul::crossplatform::Texture *moistureTexture;			///< Texture represents optical thickness of moisture at a given horizontal angle and distance.
 	simul::crossplatform::Texture *rainMapTexture;			///< Texture represents where in the horizontal plane of the cloud rain can fall.
