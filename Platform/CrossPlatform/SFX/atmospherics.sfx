@@ -17,7 +17,6 @@ Texture2D overcTexture;
 Texture2D skylTexture;
 Texture2D illuminationTexture;
 Texture2D cloudShadowTexture;
-Texture2D cloudTexture;
 Texture2D cloudNearFarTexture;
 Texture2D cloudGodraysTexture;
 

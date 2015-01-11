@@ -341,29 +341,30 @@ void Inscatter_All(out vec4 colours[8]
 	
 	float BetaRayleigh		=CalcRayleighBeta(cos0);
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
+	float il=0.0;
 	for(int i=0;i<8;i++)
 	{
-		float dist			=pow(float(i)/7.0,2.0);
-	float illum=0;
-		for(int j=0;j<155;j++)
+		float dist			=pow(float(i)/7.0,1.0);
+		float illum=0;
+		for(int j=0;j<15;j++)
 		{
-			float distanceMetres=maxFadeDistanceMetres*pow((float(i)*float(j)/16.0)/7.0,2.0);
+			float distanceMetres=maxFadeDistanceMetres*pow((float(i)+float(j)/15.0)/7.0,2.0);
 			vec3 worldPos		=viewPosition+distanceMetres*view;
-			illum				+=GetCloudIlluminationAt( cloudTexture, worldToShadowMatrix,worldPos)/155.0;
+			illum				+=GetCloudIlluminationAt( cloudTexture, worldToShadowMatrix,worldPos,lightDir)/15.0;
 		}
-
+		il=saturate(illum+dist);//1.0-(1.0-illum)/(1.0+dist);
 		fade_texc.x			=dist;
 		vec2 nearFarTexc	=illum_lookup.xy;
 		vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 		vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 		vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
 		vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
-		insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
+		insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a))*il;
 		skyl                =texture_clamp_mirror(skylTexture,fade_texc).rgb;
 		
 		vec3 colour	    =PrecalculatedInscatterFunction(insc,BetaRayleigh,BetaMie,mieRayleighRatio);
 		colour			+=skyl;
-		colours[i]		=vec4(colour,illum);
+		colours[i]		=vec4(colour,il);
 	}
 }
 
@@ -558,7 +559,7 @@ void ScatteringVolume(	RWTexture3D<float4> targetVolume,int3 idx
 		vec4 next		=vec4(skyl.rgb,1.0);
 		float shadow	=1.0;
 	#else
-		float shadow	=GetCloudIlluminationAt(cloudTexture,worldspaceToCloudspaceMatrix,eyePos+dist*dir*maxFadeDistanceMetres).x;//worldspaceToShadowspaceMatrix
+		float shadow	=GetCloudIlluminationAt(cloudTexture,worldspaceToCloudspaceMatrix,eyePos+dist*dir*maxFadeDistanceMetres,lightDir).x;//worldspaceToShadowspaceMatrix
 		float cos0		=ce;
 		vec4 next	    =vec4(InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio),1.0);
 		next.rgb		+=skyl.rgb;
