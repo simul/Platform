@@ -361,8 +361,7 @@ shader FarNearOutput PS_Inscatter_Both(atmosVertexOutput IN)
 	fn.nearColour.rgb	*=exposure;
 	return fn;
 }
-
-shader All8Output PS_Inscatter_Volume(atmosVertexOutput IN)
+All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 {
 	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
 	vec2 texCoords		=mixedResolutionTransformXYWH.xy+IN.texCoords.xy*mixedResolutionTransformXYWH.zw;
@@ -382,7 +381,8 @@ shader All8Output PS_Inscatter_Volume(atmosVertexOutput IN)
 					,hazeEccentricity
 					,mieRayleighRatio
 					,depthToLinFadeDistParams
-					,maxFadeDistanceMetres);
+					,maxFadeDistanceMetres
+					,godrays);
 	
 	All8Output all8Output;
 	all8Output.colour1	=colours[0]*exposure;
@@ -394,6 +394,16 @@ shader All8Output PS_Inscatter_Volume(atmosVertexOutput IN)
 	all8Output.colour7	=colours[6]*exposure;
 	all8Output.colour8	=colours[7]*exposure;
 	return all8Output;
+}
+
+shader All8Output PS_Inscatter_Volume_WithGodrays(atmosVertexOutput IN)
+{
+	return psInscatter_Volume(IN,godraysIntensity);
+}
+
+shader All8Output PS_Inscatter_Volume_WithoutGodrays(atmosVertexOutput IN)
+{
+	return psInscatter_Volume(IN,0.0);
 }
 
 shader vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
@@ -633,67 +643,24 @@ BlendState DontBlend8
 
 technique inscatter_volume
 {
-	pass all
+	pass with_godrays
 	{
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithGodrays()));
 	}
-}
-technique inscatter_far_near_2rts
-{
-	pass both
+	pass without_godrays
 	{
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
+		SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Both()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithoutGodrays()));
 	}
-    pass far
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Far_NFDepth()));
-    }
-    pass near1
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Near_NFDepth1()));
-    }
-}
-// An inscatter technique that expects a depth texture containing near, far and edge components.
-technique inscatter_nearfardepth
-{
-    pass far
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Far_NFDepth()));
-    }
-    pass near
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Near_NFDepth()));
-    }
 }
 
 fxgroup atmospherics_overlay
@@ -742,61 +709,6 @@ fxgroup atmospherics_overlay
 			SetPixelShader(CompileShader(ps_5_0,PS_InscatterMSAA()));
 		}
 	}
-}
-BlendState MoistureBlend
-{
-	BlendEnable[0] = TRUE;
-	SrcBlend = ONE;
-	DestBlend = SRC_ALPHA;
-    BlendOp = ADD;
-    SrcBlendAlpha = ZERO;
-    DestBlendAlpha = SRC_ALPHA;
-    BlendOpAlpha = ADD;
-    //RenderTargetWriteMask[0] = 0x0F;
-};
-
-technique fast_godrays
-{
-    pass far
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_4_0,PS_FastGodrays()));
-    }
-    pass near
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_4_0,PS_NearGodrays()));
-    }
-	pass both
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_4_0,PS_BothGodrays()));
-    }
-}
-
-technique near_depth_godrays
-{
-    pass godrays
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_4_0,PS_NearGodrays()));
-    }
 }
 
 technique scattering_volume

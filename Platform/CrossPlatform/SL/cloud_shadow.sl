@@ -18,7 +18,7 @@ float GetCloudIlluminationAt(Texture3D cloudTexture,mat4 invCloudMatrix,vec3 wpo
 	l					*=a/max(l.z,0.0001);
 	texc+=l;
 	vec4 texel			=texture_wwc_lod(cloudTexture,texc,0);
-	float above			=saturate(texc.z);
+	float above			=saturate(texc.z-1.0);
 	texel.y				+=above;
 	//texel.y=(frac(texc.x));
 	return saturate(texel.y);

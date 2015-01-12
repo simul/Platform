@@ -323,7 +323,8 @@ void Inscatter_All(out vec4 colours[8]
 								,float hazeEccentricity
 								,vec3 mieRayleighRatio
 								,vec4 depthToLinFadeDistParams
-								,float maxFadeDistanceMetres)
+								,float maxFadeDistanceMetres
+								,float godraysIntensity)
 {
 	vec2 clip_pos		=vec2(-1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;
@@ -354,7 +355,7 @@ void Inscatter_All(out vec4 colours[8]
 			vec3 worldPos		=viewPosition+distanceMetres*view;
 			illum				+=GetCloudIlluminationAt( cloudTexture, worldToShadowMatrix,worldPos,lightDir)/15.0;
 		}
-		il					=illum;//saturate(illum+dist);//1.0-(1.0-illum)/(1.0+dist);
+		il					=1.0-godraysIntensity*(1.0-illum);//saturate(illum+dist);//1.0-(1.0-illum)/(1.0+dist);
 		fade_texc.x			=dist;
 		vec2 nearFarTexc	=illum_lookup.xy;
 		vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);

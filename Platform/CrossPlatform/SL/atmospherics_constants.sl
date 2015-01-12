@@ -52,6 +52,9 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform float rainbowIntensity;
     uniform int3 scatteringVolumeDims;
 	uniform float startZMetres;
+
+	uniform float godraysIntensity;
+	uniform float wo934yhj,wgh984,kw40y9uj;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

@@ -466,7 +466,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	
 		if(fade>0)
 		{
-			vec3 noise_texc			=cloudTexCoords.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
+			vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 			vec4 noiseval			=vec4(0,0,0,0);
 			if(noise)

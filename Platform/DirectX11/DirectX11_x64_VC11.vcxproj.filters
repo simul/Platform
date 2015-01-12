@@ -12,10 +12,6 @@
     <Filter Include="HLSL">
       <UniqueIdentifier>{dd14abf0-b066-4a9b-a149-9830da7324cf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
-    </Filter>
     <Filter Include="CrossPlatform">
       <UniqueIdentifier>{3df996a6-ea1c-4cb6-bd22-6de6f794fa7a}</UniqueIdentifier>
     </Filter>

@@ -133,6 +133,7 @@ struct CloudShadowStruct
 	float startZMetres;
 	float shadowRange;
 	float rainbowIntensity;
+	float godrays_strength;
 };
 #else
 //SIMUL_CONSTANT_BUFFER(OnscreenRectangle,9)
