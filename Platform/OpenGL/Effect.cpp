@@ -248,7 +248,7 @@ void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,cons
 	filename=filename_utf8;
 	bool retry=true;
 	platform_effect = (void*)0xFFFFFFFF;
-	while (retry)
+	while(retry)
 	{
 		std::string fn_utf8(filename_utf8);
 		// PREFER to use the platform shader:

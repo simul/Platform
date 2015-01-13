@@ -81,8 +81,8 @@
 //#define RW_TEXTURE3D_FLOAT4 layout(rgba32f,binding = 0) uniform image3D
 //#define RW_TEXTURE3D_CHAR4 layout(rgba8,binding = 0) uniform image3D
 	// SOME GLSL compilers like it like this:
-	#define RW_TEXTURE3D_FLOAT4 layout(rgba32f) uniform image3D
-	#define RW_TEXTURE3D_CHAR4 layout(rgba8) uniform image3D
+	//#define RW_TEXTURE3D_FLOAT4 layout(rgba32f) uniform image3D
+	//#define RW_TEXTURE3D_CHAR4 layout(rgba8) uniform image3D
 #ifdef GLFX
 	shader void VS_ScreenQuad( out vec2 texCoords)
 	{

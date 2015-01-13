@@ -1,5 +1,6 @@
 #include "CppGlSl.hs"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/gpu_sky_constants.sl"
 #include "../../CrossPlatform/SL/simul_gpu_sky.sl"
 
 uniform sampler2D input_loss_texture;

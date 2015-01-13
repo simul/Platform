@@ -46,7 +46,7 @@ struct v2f
 	vec3 wPosition		: TEXCOORD1;
 };
 
-v2f VS_Main(a2v IN)
+shader v2f VS_Main(a2v IN)
 {
 	v2f OUT;
 	OUT.hPosition	=vec4(IN.position,IN.position.z);
@@ -118,7 +118,7 @@ vec4 msaaPS(v2f IN)
 	return ret;
 }
 
-vec4 PS_msaa_depthTexture(v2f IN) : SV_TARGET
+shader vec4 PS_msaa_depthTexture(v2f IN) : SV_TARGET
 {
 	uint2 depthDims;
 	uint depthSamples;
@@ -139,7 +139,7 @@ vec4 PS_msaa_depthTexture(v2f IN) : SV_TARGET
 	return msaaPS(IN);
 }
 
-vec4 PS_msaa(v2f IN) : SV_TARGET
+shader vec4 PS_msaa(v2f IN) : SV_TARGET
 {
 	return msaaPS(IN);
 }
@@ -184,12 +184,12 @@ struct FarNearPixelOutput
 	vec4 nearColour SIMUL_RENDERTARGET_OUTPUT(1);
 };
 
-vec4 PS_Main(v2f IN) SIMUL_RENDERTARGET_OUTPUT(0)
+shader vec4 PS_Main(v2f IN) SIMUL_RENDERTARGET_OUTPUT(0)
 {
 	return MainPS(IN);
 }
 
-vec4 PS_Main_depthTexture(v2f IN) : SV_TARGET
+shader vec4 PS_Main_depthTexture(v2f IN) : SV_TARGET
 {
 	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
 	viewportTexCoords.y		=1.0-viewportTexCoords.y;
@@ -213,7 +213,7 @@ struct v2f2
 	vec2 texCoords		: TEXCOORD0;
 };
 
-v2f2 FullScreenVS(idOnly IN)
+shader v2f2 FullScreenVS(idOnly IN)
 {
 	v2f2 OUT;
 	vec2 poss[4]=
@@ -229,7 +229,7 @@ v2f2 FullScreenVS(idOnly IN)
     return OUT;
 }
 
-v2f2 SimpleVS(idOnly IN)
+shader v2f2 SimpleVS(idOnly IN)
 {
 	v2f2 OUT;
 	vec2 poss[4]=
@@ -245,17 +245,17 @@ v2f2 SimpleVS(idOnly IN)
     return OUT;
 }
 
-vec4 SimplePS(v2f2 IN) : SV_TARGET
+shader vec4 SimplePS(v2f2 IN) : SV_TARGET
 {
 	return texture2D(imageTexture,.5+IN.texCoords);
 }
 
-vec4 CoveragePS(v2f2 IN) : SV_TARGET
+shader vec4 CoveragePS(v2f2 IN) : SV_TARGET
 {
 	return Coverage(IN.texCoords,humidity,diffusivity,coverageOctaves,coveragePersistence,time,noiseTexture,noiseTextureScale);
 }
 
-vec4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
+shader vec4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
 {
 	return ShowDetailTexture(imageTexture,IN.texCoords,sunlight,lightResponse);
 }
@@ -265,18 +265,18 @@ float rand(vec2 co)
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-vec4 RandomPS(v2f2 IN) : SV_TARGET
+shader vec4 RandomPS(v2f2 IN) : SV_TARGET
 {
     vec4 c	=vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords));
     return frac(c);
 }
 
-vec4 DetailPS(v2f2 IN) : SV_TARGET
+shader vec4 DetailPS(v2f2 IN) : SV_TARGET
 {
     return DetailDensity(IN.texCoords,imageTexture,amplitude);
 }
 
-vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
+shader vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
 {
     return DetailLighting(IN.texCoords,imageTexture);
 }
