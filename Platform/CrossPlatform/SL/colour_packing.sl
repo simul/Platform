@@ -28,7 +28,7 @@ inline uint2 colour3_to_uint2(vec3 colour)
 	colour = clamp(colour, 0, 1);
 	uint int_r = asuint(colour.r);
 	uint int_g = f32tof16(colour.g);
-	uint int_b =f32tof16(colour.b );
+	uint int_b = f32tof16(colour.b );
 	// Pack into UINT32
 	return uint2(int_r,(int_g << 16) | int_b);
 }

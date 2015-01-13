@@ -6,7 +6,7 @@
 
 #define shader
 #define technique technique11
-
+#define f32touint16 f32tof16
 #define texture_clamp_mirror(tex,texc) tex.Sample(samplerStateClampMirror,texc)
 #define texture_clamp(tex,texc) tex.Sample(clampSamplerState,texc)
 #define texture_wrap_clamp(tex,texc) tex.Sample(wrapClampSamplerState,texc)
@@ -78,8 +78,12 @@
 	
 	#define	IMAGESTORE(a,b,c) a[b]=c;
 
-	#define RW_TEXTURE3D_FLOAT4 RWTexture3D<float4>
+	#define GET_DIMENSIONS_MSAA(tex,x,y,s) tex.GetDimensions(x,y,s)
+	#define GET_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
 
+	#define RW_TEXTURE3D_FLOAT4 RWTexture3D<float4>
+	#define RW_TEXTURE2D_FLOAT4 RWTexture3D<float4>
+	#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
 	SamplerState samplerStateClampMirror 
 	{
 		Filter = MIN_MAG_MIP_LINEAR;

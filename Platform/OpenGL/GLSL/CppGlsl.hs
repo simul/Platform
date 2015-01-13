@@ -25,6 +25,11 @@
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) uniform_buffer name {
 	#define SIMUL_CONSTANT_BUFFER_END };
 #include "saturate.glsl"
+	#define asfloat uintBitsToFloat
+	#define asint floatBitsToInt
+	#define asuint floatBitsToUint
+	#define f32tof16 floatBitsToUint
+	#define f16tof32 uintBitsToFloat
 	#define lerp mix
 	#define atan2 atan
 	#define int2 ivec2
@@ -81,12 +86,18 @@
 	
 	#define IMAGESTORE(a,b,c) imageStore(a,ivec3(b),c)
 	#define IMAGE_LOAD(a,b) texelFetch(a,ivec3(b),0)
+
+#define GET_DIMENSIONS_MSAA(tex,X,Y,S) ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;//textureQueryLevels(tex);
+#define GET_DIMENSIONS(tex,X,Y) ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y;
 	// SOME GLSL compilers like this version:
 //#define RW_TEXTURE3D_FLOAT4 layout(rgba32f,binding = 0) uniform image3D
 //#define RW_TEXTURE3D_CHAR4 layout(rgba8,binding = 0) uniform image3D
 	// SOME GLSL compilers like it like this:
 	//#define RW_TEXTURE3D_FLOAT4 layout(rgba32f) uniform image3D
 	//#define RW_TEXTURE3D_CHAR4 layout(rgba8) uniform image3D
+	#define RW_TEXTURE3D_FLOAT4 image3D
+	#define RW_TEXTURE2D_FLOAT4 image2D
+	#define TEXTURE2DMS_FLOAT4 sampler2DMS
 #ifdef GLFX
 	shader void VS_ScreenQuad( out vec2 texCoords)
 	{

@@ -12,25 +12,6 @@
 #ifndef PI
 #define PI (3.1415926536)
 #endif
-
-void Resolve(Texture2DMS<vec4> sourceTextureMS,RWTexture2D<vec4> targetTexture,uint2 pos)
-{
-	uint2 source_dims;
-	uint numberOfSamples;
-	sourceTextureMS.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
-	uint2 dims;
-	targetTexture.GetDimensions(dims.x,dims.y);
-	if(pos.x>=dims.x||pos.y>=dims.y)
-		return;
-	vec4 d=vec4(0,0,0,0);
-	for(uint k=0;k<numberOfSamples;k++)
-	{
-		d+=sourceTextureMS.Load(int2(pos),k);
-	}
-	d/=float(numberOfSamples);
-	targetTexture[pos.xy]	=d;
-}
-
 // Find nearest and furthest depths in MSAA texture.
 // sourceDepthTexture, sourceMSDepthTexture, and targetTexture are ALL the SAME SIZE.
 vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> sourceMSDepthTexture,uint numberOfSamples,int2 pos,vec4 depthToLinFadeDistParams)
