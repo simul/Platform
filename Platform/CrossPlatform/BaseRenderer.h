@@ -29,6 +29,7 @@ namespace simul
 			FAR_PASS
 			,NEAR_PASS
 			,BOTH_PASSES
+			,EIGHT_PASSES
 		};
 		/// A structure to translate between buffers of different resolutions.
 		struct MixedResolutionStruct

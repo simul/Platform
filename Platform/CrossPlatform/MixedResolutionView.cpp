@@ -301,7 +301,6 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 	static bool use_rt=true;
 	{
 		view->GetHiResDepthTexture()	->ensureTexture2DSizeAndFormat(deviceContext.renderPlatform,W,H,view->GetDepthFormat(),/*computable=*/true,/*rendertarget=*/true);
-		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Make Hi-res Depth")
 		mixedResolutionConstants.scale						=uint2(downscale,downscale);
 		mixedResolutionConstants.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 		mixedResolutionConstants.nearZ						=0;
@@ -343,7 +342,6 @@ void MixedResolutionRenderer::DownscaleDepth(crossplatform::DeviceContext &devic
 		effect->UnbindTextures(deviceContext);
 		effect->Apply(deviceContext,effect->GetTechniqueByName("cs_downscale_depth_far_near"),pass_name.c_str());
 		effect->Unapply(deviceContext);
-		SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }

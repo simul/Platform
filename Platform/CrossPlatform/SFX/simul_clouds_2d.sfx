@@ -210,7 +210,7 @@ shader vec4 PS_Main_depthTexture(v2f IN) : SV_TARGET
 struct v2f2
 {
     vec4 hPosition	: SV_POSITION;
-	vec2 texCoords		: TEXCOORD0;
+	vec2 texCoords	: TEXCOORD0;
 };
 
 shader v2f2 FullScreenVS(idOnly IN)

@@ -13,7 +13,7 @@
 #define PI (3.1415926536)
 #endif
 
-void Resolve(Texture2DMS<float4> sourceTextureMS,RWTexture2D<float4> targetTexture,uint2 pos)
+void Resolve(Texture2DMS<vec4> sourceTextureMS,RWTexture2D<vec4> targetTexture,uint2 pos)
 {
 	uint2 source_dims;
 	uint numberOfSamples;
@@ -310,13 +310,17 @@ vec4 DownscaleDepthFarNear_MSAA(Texture2DMS<float4> sourceMSDepthTexture,int2 so
 vec4 DownscaleDepthFarNear(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,vec2 scale,vec4 depthToLinFadeDistParams)
 {
 	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
-	int2 pos2					=pos*scale;
-	pos2		-=cornerOffset;
-	int2 max_pos=source_dims-int2(scale.x+3,scale.y+3);
+	int2 pos0			=pos*scale;
+	int2 pos1			=pos0-cornerOffset;
+#ifdef DEBUG_COMPOSITING
+	if(pos.x<3)
+		return vec4(0,0,saturate((pos1.y%3)/2.0),0);
+#endif
+	int2 max_pos=source_dims-int2(scale.x+1,scale.y+1);
 	int2 min_pos=int2(1,1);
-	pos2		=int2	(max(min_pos.x,min(pos2.x,max_pos.x))
-						,max(min_pos.y,min(pos2.y,max_pos.y)));
-	pos2		+=source_offset;
+	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x))
+							,max(min_pos.y,min(pos1.y,max_pos.y)));
+	pos2+=source_offset;
 #if REVERSE_DEPTH==1
 	vec2 farthest_nearest		=vec2(1.0,0.0);
 #else
@@ -329,30 +333,30 @@ vec4 DownscaleDepthFarNear(Texture2D sourceDepthTexture,uint2 source_dims,uint2 
 			int2 hires_pos		=pos2+int2(i-1,j-1);
 			float d				=sourceDepthTexture[hires_pos].x;
 #if REVERSE_DEPTH==1
-			if(d>farthest_nearest.y)
-				farthest_nearest.y	=d;
-			if(d<farthest_nearest.x)
-				farthest_nearest.x	=d;
+			farthest_nearest.y=max(farthest_nearest.y,d);
+			farthest_nearest.x=min(farthest_nearest.x,d);
 #else
-			if(d<farthest_nearest.y)
-				farthest_nearest.y	=d;
-			if(d>farthest_nearest.x)
-				farthest_nearest.x	=d;
+			farthest_nearest.y=min(farthest_nearest.y,d);
+			farthest_nearest.x=max(farthest_nearest.x,d);
 #endif
 		}
 	}
 	float edge=0.0;
-#if REVERSE_DEPTH==1
-#else
-#endif
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
+#if REVERSE_DEPTH==1
+#else
+		// Force edge at far clip.
+		farthest_nearest.x=min(farthest_nearest.x,1.0);
+		farthest_nearest.y=min(farthest_nearest.y,1.0);
+#endif
 		vec2 fn = depthToLinearDistanceM(farthest_nearest.xy, depthToLinFadeDistParams,1.0);
 		edge	=abs(fn.x-fn.y);
 		edge	=step(EDGE_FACTOR,edge);
-		farthest_nearest.x=saturate(farthest_nearest.x);
+		farthest_nearest.xy=saturate(farthest_nearest.xy);
 	}
-	return		vec4(farthest_nearest,edge,0.0);
+	vec4 res=vec4(farthest_nearest,edge,0.0);
+	return res;
 }
 
 void SpreadEdge(Texture2D<vec4> sourceDepthTexture,RWTexture2D<vec4> target2DTexture,uint2 pos)

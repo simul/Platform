@@ -307,6 +307,19 @@ FarNearOutput Inscatter_Both(	Texture2D inscTexture
 }
 
 
+
+float GetCloudIllum(Texture3D cloudTexture,vec3 texc,vec3 lightDirCloudspace)
+{
+	vec3 l				=lightDirCloudspace;
+	float a				=saturate(-texc.z);
+	l					*=a/max(l.z,0.0001);
+	texc+=l;
+	vec4 texel			=texture_wwc_lod(cloudTexture,texc,0);
+	float above			=saturate(texc.z-1.0);
+	texel.y				+=above;
+	return saturate(texel.y);
+}
+#define INTER_STEPS 10
 // In depthTextureNF, x=far, y=near, z=edge
 void Inscatter_All(out vec4 colours[8]
 								,Texture2D inscTexture
@@ -315,7 +328,7 @@ void Inscatter_All(out vec4 colours[8]
 								,Texture2D cloudShadowTexture
 								,Texture3D cloudTexture
 								,vec3 viewPosition
-								,mat4 worldToShadowMatrix
+								,mat4 worldToCloudMatrix
 								,vec4 depth_lookup
 								,vec2 texCoords
 								,mat4 invViewProj
@@ -345,15 +358,21 @@ void Inscatter_All(out vec4 colours[8]
 	float il				=0.0;
 	vec3 total_inscatter	=vec3(0,0,0);
 	vec4 prev_insc			=vec4(0,0,0,0);
+	vec3 lightDirCloudspace	=mul(worldToCloudMatrix,vec4(lightDir,0.0)).xyz;
+	vec3 viewCloudspace		=mul(worldToCloudMatrix,vec4(view,0.0)).xyz;
+	vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(viewPosition,1.0)).xyz;
 	for(int i=0;i<8;i++)
 	{
-		float dist			=pow(float(i)/7.0,1.0);
+		float dist			=float(i)/7.0;
 		float illum=0;
-		for(int j=0;j<15;j++)
+		if(godraysIntensity>0.0)
 		{
-			float distanceMetres=maxFadeDistanceMetres*pow((float(i)+float(j)/15.0)/7.0,2.0);
-			vec3 worldPos		=viewPosition+distanceMetres*view;
-			illum				+=GetCloudIlluminationAt( cloudTexture, worldToShadowMatrix,worldPos,lightDir)/15.0;
+			for(int j=0;j<INTER_STEPS;j++)
+			{
+				float distanceMetres=maxFadeDistanceMetres*pow(dist+float(j)/float(INTER_STEPS)/7.0,2.0);
+				vec3 texc			=viewposCloudspace+distanceMetres*viewCloudspace;
+				illum				+=GetCloudIllum( cloudTexture, texc,lightDirCloudspace)/float(INTER_STEPS);
+			}
 		}
 		il					=1.0-godraysIntensity*(1.0-illum);//saturate(illum+dist);//1.0-(1.0-illum)/(1.0+dist);
 		fade_texc.x			=dist;

@@ -57,10 +57,14 @@
 	#define texelFetch3d(tex,p,lod) texelFetch(tex,p,lod)
 	#define texelFetch2d(tex,p,lod) texelFetch(tex,p,lod)
 
+	// GLSL Does not recognize "inline"
+	#define inline
+
 	#define texture3D texture
 	#define texture2D texture 
 	#define Texture3D sampler3D 
 	#define Texture2D sampler2D 
+	#define Texture2DMS sampler2D 
 	#define Texture1D sampler1D 
 	#define Y(texel) texel.y
 	#define STATIC

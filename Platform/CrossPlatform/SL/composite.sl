@@ -247,6 +247,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 				,Texture2D farInscatterTexture
 				,Texture2D nearInscatterTexture
 				,Texture3D screenSpaceInscVolumeTexture
+				,Texture3D cloudVolumeTexture
 				,Texture3D lightSpaceInscVolumeTexture
 				,Texture2D<uint4> lossTexture)
 {

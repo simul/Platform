@@ -140,7 +140,7 @@ namespace simul
 				return lowResNearFramebufferDx11;
 			}
 			crossplatform::Texture *GetLossTexture();
-			crossplatform::Texture *GetVolumeTexture();
+			crossplatform::Texture *GetVolumeTexture(int num);
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			virtual void InvalidateDeviceObjects();
 			virtual void SetDimensions(int w,int h,int downscale);
@@ -151,12 +151,12 @@ namespace simul
 			virtual void DeactivateLowRes(crossplatform::DeviceContext &);
 			/// Deactivate the depth buffer
 			virtual void DeactivateDepth(crossplatform::DeviceContext &);
-			virtual void ActivateVolume(crossplatform::DeviceContext &);
+			virtual void ActivateVolume(crossplatform::DeviceContext &,int num);
 			virtual void DeactivateVolume(crossplatform::DeviceContext &);
 		protected:
 			crossplatform::RenderPlatform *renderPlatform;
 			crossplatform::Texture *lossTexture;
-			crossplatform::Texture *volumeTexture;
+			crossplatform::Texture *volumeTextures[2];
 			int Width,Height,Downscale;
 			crossplatform::BaseFramebuffer	*lowResFarFramebufferDx11;
 			crossplatform::BaseFramebuffer	*lowResNearFramebufferDx11;

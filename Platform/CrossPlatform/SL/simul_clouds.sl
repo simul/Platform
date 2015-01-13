@@ -33,6 +33,18 @@ struct FarNearPixelOutput
 	vec4 nearColour SIMUL_RENDERTARGET_OUTPUT(1);
 	float depth	SIMUL_DEPTH_OUTPUT;
 };
+struct All8DepthOutput
+{
+	vec4 colour1 SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 colour2 SIMUL_RENDERTARGET_OUTPUT(1);
+	vec4 colour3 SIMUL_RENDERTARGET_OUTPUT(2);
+	vec4 colour4 SIMUL_RENDERTARGET_OUTPUT(3);
+	vec4 colour5 SIMUL_RENDERTARGET_OUTPUT(4);
+	vec4 colour6 SIMUL_RENDERTARGET_OUTPUT(5);
+	vec4 colour7 SIMUL_RENDERTARGET_OUTPUT(6);
+	vec4 colour8 SIMUL_RENDERTARGET_OUTPUT(7);
+	float depth	SIMUL_DEPTH_OUTPUT;
+};
 
 float MakeRainMap(Texture3D cloudDensity,float cloud_interp,vec2 texCoords)
 {
@@ -302,7 +314,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,bool noise
 											,bool noise_3d
 											,bool do_rain_effect
-											,vec3 cloudIrRadiance1,vec3 cloudIrRadiance2)
+											,vec3 cloudIrRadiance1,vec3 cloudIrRadiance2,out vec4 colours[8],bool fill8)
 {
 	RaytracePixelOutput res;
 	res.colour				=vec4(0,0,0,1.0);
@@ -395,7 +407,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float distanceMetres			=distance(world_pos,viewPos);
 	int3 c							=c0;
 
-	vec3 colours[]					={{1.0,0.1,0.5},{0.0,1.0,0.0},{1.0,0.0,0.7},{0.0,1.0,1.0},{0.5,0.5,0.0}};
+	//vec3 testcolours[]					={{1.0,0.1,0.5},{0.0,1.0,0.0},{1.0,0.0,0.7},{0.0,1.0,1.0},{0.5,0.5,0.0}};
 	int idx=0;
 	float W							=halfClipSize;
 	const float start				=0.866*0.866;//0.707 for 2D, 0.866 for 3D;
@@ -403,6 +415,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	const float range				=ends-start;
 	vec3 volume_texc				=ScreenToVolumeTexcoords(clipPosToScatteringVolumeMatrix,texCoords,0.0);
 
+	int colour_index				=0;
+	for(int i=0;i<8;i++)
+		colours[i]					=vec4(0,0,0,1.0);
+	float next_dist					=pow(1.0/8.0,4.0);
+	vec4 last_colour				=vec4(0,0,0,1.0);
+	float lastFadeDistance			=0.0;
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
 	for(int i=0;i<255;i++)
 	{
@@ -517,20 +535,29 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				}
 				//if(cloudTexCoords.z>12.2)
 				//	clr.r=abs(c.z);
-#endif
 				//if(transition)
 				//	clr.r=0;
 			//		clr.rgb=0.5*(vec3(1,1,1)+noiseval.rgb);
+#endif
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
 				meanFadeDistance		+=fadeDistance*clr.a*colour.a;
 				colour.a				*=(1.0-clr.a);
-				if(colour.a*brightness_factor<0.003)
+			/*	if(colour.a*brightness_factor<0.003)
 				{
 					colour.a			=0.0;
 					break;
-				}
+				}*/
 			}
 		}
+		if(fill8&&fadeDistance>next_dist)
+		{
+			colour_index++;
+			float interp			=((next_dist-lastFadeDistance)/(fadeDistance-lastFadeDistance));
+			colours[colour_index]	=lerp(last_colour,colour,interp);
+			next_dist				=pow(float(colour_index+1)/8.0,4.0);
+		}
+		last_colour=colour;
+		lastFadeDistance=fadeDistance;
 #if 0
 		if(max(max(b.x,b.y),b.z)>=W)
 #else
@@ -554,6 +581,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			C0			=	C0/2;
 			idx			++;
 		}
+	}
+	if(fill8)
+	{
+		for(int i=colour_index;i<8;i++)
+			colours[i]=colour;
 	}
 	meanFadeDistance	+=colour.a;
     res.colour			=vec4(exposure*colour.rgb,colour.a);
