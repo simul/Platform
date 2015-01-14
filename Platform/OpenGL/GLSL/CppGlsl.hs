@@ -88,8 +88,8 @@
 	#define IMAGE_LOAD(a,b) texelFetch(a,b,0)
 	#define IMAGE_LOAD_MSAA(a,b,c) texelFetch(a,b,int(c))
 
-#define GET_DIMENSIONS_MSAA(tex,X,Y,S) ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;//textureQueryLevels(tex);
-#define GET_DIMENSIONS(tex,X,Y) ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y;
+#define GET_DIMENSIONS_MSAA(tex,X,Y,S) ivec2 iv=textureSize(tex,0); X=iv.x;Y=iv.y; S=4;//textureQueryLevels(tex);
+#define GET_DIMENSIONS(tex,X,Y) ivec2 iv=textureSize(tex,0); X=iv.x;Y=iv.y;
 	// SOME GLSL compilers like this version:
 //#define RW_TEXTURE3D_FLOAT4 layout(rgba32f,binding = 0) uniform image3D
 //#define RW_TEXTURE3D_CHAR4 layout(rgba8,binding = 0) uniform image3D
@@ -99,8 +99,10 @@
 	#define RW_TEXTURE3D_FLOAT4 image3D
 	#define RW_TEXTURE2D_FLOAT4 image2D
 	#define TEXTURE2DMS_FLOAT4 sampler2DMS
-	#define TEXTURE2D_UINT sampler2D
-	#define TEXTURE2D_UINT4 sampler2D
+	#define TEXTURE2D_UINT usampler2D
+	//layout(r32ui) 
+	#define TEXTURE2D_UINT4 usampler2D
+	//layout(rgba8)
 #ifdef GLFX
 	shader void VS_ScreenQuad( out vec2 texCoords)
 	{

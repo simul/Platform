@@ -93,13 +93,13 @@ shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_Target
 
 vec4 convertInt(TEXTURE2D_UINT glowTexture,uint2 location)
 {
-	uint int_color = glowTexture[location];
+	uint int_color = IMAGE_LOAD(glowTexture,int2(location)).x;
 
 	// Convert R11G11B10 to float3
 	vec4 color;
-	color.r = (float)(int_color >> 21) / 2047.0f;
-	color.g = (float)((int_color >> 10) & 0x7ff) / 2047.0f;
-	color.b = (float)(int_color & 0x0003ff) / 1023.0f;
+	color.r =float(int_color >> 21) / 2047.0f;
+	color.g =float((int_color >> 10) & 0x7ff) / 2047.0f;
+	color.b =float(int_color & 0x0003ff) / 1023.0f;
 	color.a = 1;
 	color.rgb*=10.0;
 	return color;
@@ -108,7 +108,7 @@ vec4 convertInt(TEXTURE2D_UINT glowTexture,uint2 location)
 vec4 texture_int(TEXTURE2D_UINT glowTexture,vec2 texCoord)
 {
 	uint2 tex_dim;
-	glowTexture.GetDimensions(tex_dim.x, tex_dim.y);
+	GET_DIMENSIONS(glowTexture,tex_dim.x, tex_dim.y);
 
 	vec2 pos1=vec2(tex_dim.x*texCoord.x-0.5,tex_dim.y * texCoord.y-0.5);
 	vec2 pos2=vec2(tex_dim.x*texCoord.x+0.5,tex_dim.y * texCoord.y+0.5);
