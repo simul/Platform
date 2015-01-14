@@ -6,33 +6,33 @@
 #include "../SL/mixed_resolution.sl"
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/composite.sl"
-Texture2D imageTexture;
-Texture2DMS<float4> imageTextureMS;
-Texture2D nearImageTexture;
-Texture2D depthTexture;
-Texture2DMS<float4> depthTextureMS;
-Texture2D lowResDepthTexture;
-Texture2D hiResDepthTexture;
-Texture2D<uint> glowTexture;
+uniform Texture2D imageTexture;
+uniform TEXTURE2DMS_FLOAT4 imageTextureMS;
+uniform Texture2D nearImageTexture;
+uniform Texture2D depthTexture;
+uniform TEXTURE2DMS_FLOAT4 depthTextureMS;
+uniform Texture2D lowResDepthTexture;
+uniform Texture2D hiResDepthTexture;
+uniform TEXTURE2D_UINT glowTexture;
+ 
+uniform Texture2D inscatterTexture;			// Far, or default inscatter
+uniform Texture2D nearInscatterTexture;		// Near inscatter.
+uniform TEXTURE2D_UINT4 lossTexture;
 
-Texture2D inscatterTexture;			// Far, or default inscatter
-Texture2D nearInscatterTexture;		// Near inscatter.
-Texture2D<uint4> lossTexture;
-
-Texture3D screenSpaceInscatterVolumeTexture;
-Texture3D lightSpaceInscatterVolumeTexture;
-Texture3D cloudVolumeTexture;
+uniform Texture3D screenSpaceInscatterVolumeTexture;
+uniform Texture3D lightSpaceInscatterVolumeTexture;
+uniform Texture3D cloudVolumeTexture;
 struct a2v
 {
 	uint vertex_id	: SV_VERTEXID;
-    float4 position	: POSITION;
-    float2 texcoord	: TEXCOORD0;
+    vec4 position	: POSITION;
+    vec2 texcoord	: TEXCOORD0;
 };
 
 struct v2f
 {
-    float4 hPosition	: SV_POSITION;
-    float2 texCoords	: TEXCOORD0;
+    vec4 hPosition	: SV_POSITION;
+    vec2 texCoords	: TEXCOORD0;
 };
 
 shader v2f MainVS(idOnly IN)
@@ -91,7 +91,7 @@ shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_Target
     return vec4(1,dist,dist,1.0);
 }
 
-vec4 convertInt(Texture2D<uint> glowTexture,uint2 location)
+vec4 convertInt(TEXTURE2D_UINT glowTexture,uint2 location)
 {
 	uint int_color = glowTexture[location];
 
@@ -105,7 +105,7 @@ vec4 convertInt(Texture2D<uint> glowTexture,uint2 location)
 	return color;
 }
 
-vec4 texture_int(Texture2D<uint> glowTexture,vec2 texCoord)
+vec4 texture_int(TEXTURE2D_UINT glowTexture,vec2 texCoord)
 {
 	uint2 tex_dim;
 	glowTexture.GetDimensions(tex_dim.x, tex_dim.y);
@@ -217,13 +217,13 @@ shader vec4 PS_InfraRed_MSAA(v2f IN) : SV_Target
 	return vec4(c.rgb,1.0);
 }
 
-shader float4 PS_ShowCompressed(posTexVertexOutput IN) : SV_Target
+shader vec4 PS_ShowCompressed(posTexVertexOutput IN) : SV_Target
 {
 	vec4 glow		=texture_int(glowTexture,IN.texCoords);
     return vec4(glow.rgb,1.0);
 }
 
-shader float4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_Target
+shader vec4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_Target
 {
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
 	vec4 sc			=texture_clamp(lightSpaceInscatterVolumeTexture,vec3(IN.texCoords.xy,z));
@@ -465,7 +465,7 @@ technique exposure_gamma
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(mainvs_5_0);
 		SetPixelShader(CompileShader(ps_5_0,ExposureGammaPS_MSAA()));
@@ -478,7 +478,7 @@ technique warp_exposure_gamma
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,OffsetVS()));
 		SetPixelShader(CompileShader(ps_4_0,WarpExposureGammaPS()));
@@ -491,7 +491,7 @@ technique infra_red
 	{
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,PS_InfraRed()));
@@ -500,7 +500,7 @@ technique infra_red
 	{
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,PS_InfraRed_MSAA()));
@@ -513,7 +513,7 @@ technique warp_glow_exposure_gamma
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,OffsetVS()));
 		SetPixelShader(CompileShader(ps_4_0,WarpExposureGammaPS()));
@@ -526,7 +526,7 @@ technique glow_exposure_gamma
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(mainvs_4_0);
 		SetPixelShader(CompileShader(ps_4_0,GlowExposureGammaPS()));
@@ -535,7 +535,7 @@ technique glow_exposure_gamma
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(mainvs_5_0);
 		SetPixelShader(CompileShader(ps_5_0,GlowExposureGammaPS_MSAA()));
@@ -567,7 +567,7 @@ technique simple_cloud_blend
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(CloudBufferBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(CloudBufferBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(mainvs_5_0);
 		SetPixelShader(CompileShader(ps_5_0,DirectPS()));
@@ -576,7 +576,7 @@ technique simple_cloud_blend
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(CloudBufferBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(CloudBufferBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(mainvs_5_0);
 		SetPixelShader(CompileShader(ps_5_0,DirectPS()));
@@ -589,7 +589,7 @@ technique linearize_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(mainvs_4_0);
 		SetPixelShader(CompileShader(ps_4_0,LinearizeDepthPS()));
@@ -598,7 +598,7 @@ technique linearize_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(mainvs_5_0);
 		SetPixelShader(CompileShader(ps_5_0,LinearizeDepthPS_MSAA()));

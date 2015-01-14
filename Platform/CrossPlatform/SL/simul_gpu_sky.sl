@@ -318,7 +318,7 @@ void CSLoss(RW_TEXTURE3D_FLOAT4 targetTexture,Texture2D density_texture,uint3 po
 		loss.rgb			=exp(-extinction*stepLengthKm);
 		loss.a				=(loss.r+loss.g+loss.b)/3.0;
 		loss				*=previous_loss;
-		IMAGESTORE(targetTexture,idx,vec4(loss.rgb,1.0));
+		IMAGE_STORE(targetTexture,idx,vec4(loss.rgb,1.0));
 		prevDist_km			=dist_km;
 		previous_loss		=loss;
 	}
@@ -338,7 +338,7 @@ void CSInsc(RW_TEXTURE3D_FLOAT4 targetTexture,Texture2D density_texture,Texture2
 	
 	float prevDist_km		=0.0;
 	
-	IMAGESTORE(targetTexture,pos,previous_insc);
+	IMAGE_STORE(targetTexture,pos,previous_insc);
 	vec3 mie_factor			=vec3(1.0,1.0,1.0);
 	for(int i=1;i<targetSize.z;i++)
 	{
@@ -388,7 +388,7 @@ void CSInsc(RW_TEXTURE3D_FLOAT4 targetTexture,Texture2D density_texture,Texture2
 		insc.rgb			+=previous_insc.rgb;
 
 		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
-		IMAGESTORE(targetTexture,idx,vec4(insc.rgb,insc.a));
+		IMAGE_STORE(targetTexture,idx,vec4(insc.rgb,insc.a));
 		prevDist_km			=dist_km;
 		previous_insc		=insc;
 	}
@@ -434,7 +434,7 @@ void CSSkyl(RW_TEXTURE3D_FLOAT4 targetTexture,Texture3D loss_texture,Texture3D i
 									,sin_e
 									,cos_e);
 
-		IMAGESTORE(targetTexture,idx, skyl);
+		IMAGE_STORE(targetTexture,idx, skyl);
 		prevDist_km			=dist_km;
 		previous_skyl		=skyl;
 	}
@@ -458,14 +458,14 @@ void MakeLightTable(RW_TEXTURE3D_FLOAT4 targetTexture, Texture3D insc_texture,Te
 	vec4 ambientLight		=vec4(getSkylight(alt_km, insc_texture),1.0);
 	uint3 pos_sun			=uint3(pos.xy,0);
 
-	IMAGESTORE(targetTexture,pos_sun, sunlight);
+	IMAGE_STORE(targetTexture,pos_sun, sunlight);
 	uint3 pos_moon			=uint3(pos.xy,1);
-	IMAGESTORE(targetTexture,pos_moon, moonlight);
+	IMAGE_STORE(targetTexture,pos_moon, moonlight);
 	uint3 pos_amb			=uint3(pos.xy,2);
-	IMAGESTORE(targetTexture,pos_amb, ambientLight);
+	IMAGE_STORE(targetTexture,pos_amb, ambientLight);
 
 	// Combined sun and moonlight:
 	uint3 pos_both		=uint3(pos.xy,3);
-	IMAGESTORE(targetTexture,pos_both, sunlight+moonlight);
+	IMAGE_STORE(targetTexture,pos_both, sunlight+moonlight);
 }
 

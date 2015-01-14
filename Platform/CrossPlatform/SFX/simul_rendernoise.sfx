@@ -68,7 +68,7 @@ shader void CS_Random3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID 
 	// Range from -1 to 1.
 	vec4 c					=vec4(SphericalRandom(texCoords),rand3(513.1*texCoords));
    // vec4 c				=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
-    IMAGESTORE(targetTexture32,pos,c.xyzw);
+    IMAGE_STORE(targetTexture32,pos,c.xyzw);
 }
 
 [numthreads(8,8,8)]
@@ -79,7 +79,7 @@ shader void CS_Noise3D_8(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID
 		return;
 	vec3 texCoords		=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec4 result			=Noise3D(random_texture_3d,texCoords,octaves, persistence);
-	IMAGESTORE(targetTexture8,pos,result);
+	IMAGE_STORE(targetTexture8,pos,result);
 }
 
 [numthreads(8,8,8)]
@@ -91,7 +91,7 @@ shader void CS_Noise3D_float(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThre
 		return;
 	vec3 texCoords			=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec4 result				=Noise3D(random_texture_3d,texCoords,octaves, persistence);//texture_wrap_lod(random_texture_3d,texCoords,0);//
-    IMAGESTORE(targetTexture32,pos,result);
+    IMAGE_STORE(targetTexture32,pos,result);
 }
 
 
@@ -108,7 +108,7 @@ shader void CS_MakeMips3D_float(uint3 p	: SV_DispatchThreadID )
 	result		+=random_texture_3d[pos*2+int3(1,0,1)];
 	result		+=random_texture_3d[pos*2+int3(1,1,1)];
 	result		/=8.0;
-    IMAGESTORE(targetTexture32,pos,result);
+    IMAGE_STORE(targetTexture32,pos,result);
 }
 
 DepthStencilState DisableDepth

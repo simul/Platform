@@ -84,7 +84,7 @@
 	}
 	#define CS_LAYOUT(u,v,w) layout(local_size_x=u,local_size_y=v,local_size_z=w) in;
 	
-	#define IMAGESTORE(a,b,c) imageStore(a,b,c)
+	#define IMAGE_STORE(a,b,c) imageStore(a,b,c)
 	#define IMAGE_LOAD(a,b) texelFetch(a,b,0)
 	#define IMAGE_LOAD_MSAA(a,b,c) texelFetch(a,b,int(c))
 
@@ -99,6 +99,8 @@
 	#define RW_TEXTURE3D_FLOAT4 image3D
 	#define RW_TEXTURE2D_FLOAT4 image2D
 	#define TEXTURE2DMS_FLOAT4 sampler2DMS
+	#define TEXTURE2D_UINT sampler2D
+	#define TEXTURE2D_UINT4 sampler2D
 #ifdef GLFX
 	shader void VS_ScreenQuad( out vec2 texCoords)
 	{
