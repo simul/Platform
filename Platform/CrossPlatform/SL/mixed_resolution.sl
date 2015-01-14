@@ -14,7 +14,7 @@
 #endif
 // Find nearest and furthest depths in MSAA texture.
 // sourceDepthTexture, sourceMSDepthTexture, and targetTexture are ALL the SAME SIZE.
-vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> sourceMSDepthTexture,uint numberOfSamples,int2 pos,vec4 depthToLinFadeDistParams)
+vec4 MakeDepthFarNear(Texture2D sourceDepthTexture,TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,uint numberOfSamples,int2 pos,vec4 depthToLinFadeDistParams)
 {
 #if REVERSE_DEPTH==1
 	float nearest_depth			=0.0;
@@ -27,9 +27,9 @@ vec4 MakeDepthFarNear(Texture2D<float4> sourceDepthTexture,Texture2DMS<float4> s
 	{
 		float d;
 		if(numberOfSamples==1)
-			d				=sourceDepthTexture[pos].x;
+			d				=IMAGE_LOAD(sourceDepthTexture,pos).x;
 		else
-			d				=sourceMSDepthTexture.Load(pos,k).x;
+			d				=IMAGE_LOAD_MSAA(sourceMSDepthTexture,pos,k).x;
 #if REVERSE_DEPTH==1
 		if(d>nearest_depth)
 			nearest_depth	=d;
@@ -113,10 +113,10 @@ vec4 DownscaleDepthFarNear2(Texture2D sourceDepthTexture,uint2 source_dims,uint2
 	for(int i=0;i<4;i++)
 	{
 		int2 hires_pos		=pos2+int2(i-1,-1);
-		vec4 u				=vec4(	sourceDepthTexture[int2(hires_pos.x,hires_pos.y+0)].x
-									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+1)].x
-									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+2)].x
-									,sourceDepthTexture[int2(hires_pos.x,hires_pos.y+3)].x);
+		vec4 u				=vec4(	IMAGE_LOAD(sourceDepthTexture,int2(hires_pos.x,hires_pos.y+0)).x
+									,IMAGE_LOAD(sourceDepthTexture,int2(hires_pos.x,hires_pos.y+1)).x
+									,IMAGE_LOAD(sourceDepthTexture,int2(hires_pos.x,hires_pos.y+2)).x
+									,IMAGE_LOAD(sourceDepthTexture,int2(hires_pos.x,hires_pos.y+3)).x);
 		ExtendDepths(farthest_nearest,u.xyzw);
 	}
 	float edge=0.0;
@@ -137,11 +137,11 @@ vec4 DownscaleDepthFarNear4(Texture2D sourceDepthTexture,uint2 source_dims,uint2
 	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
 	int2 pos2					=pos*4;
 	pos2		-=cornerOffset;
-	int2 max_pos=source_dims-int2(7,7);
+	int2 max_pos=int2(source_dims)-int2(7,7);
 	int2 min_pos=int2(1,1);
 	pos2		=int2	(max(min_pos.x,min(pos2.x,max_pos.x))
 						,max(min_pos.y,min(pos2.y,max_pos.y)));
-	pos2		+=source_offset;
+	pos2		+=int2(source_offset);
 #if REVERSE_DEPTH==1
 	vec2 farthest_nearest		=vec2(1.0,0.0);
 #else
@@ -152,7 +152,7 @@ vec4 DownscaleDepthFarNear4(Texture2D sourceDepthTexture,uint2 source_dims,uint2
 		for(int j=0;j<6;j++)
 		{
 			int2 hires_pos		=pos2+int2(i-1,j-1);
-			float d				=sourceDepthTexture[hires_pos].x;
+			float d				=IMAGE_LOAD(sourceDepthTexture,hires_pos).x;
 #if REVERSE_DEPTH==1
 				farthest_nearest.y=max(farthest_nearest.y,d);
 				farthest_nearest.x=min(farthest_nearest.x,d);
@@ -173,13 +173,13 @@ vec4 DownscaleDepthFarNear4(Texture2D sourceDepthTexture,uint2 source_dims,uint2
 	return		vec4(farthest_nearest,edge,0.0);
 }
 
-vec4 DownscaleDepthFarNear_MSAA4(Texture2DMS<float4> sourceMSDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,vec2 scale,vec4 depthToLinFadeDistParams)
+vec4 DownscaleDepthFarNear_MSAA4(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,vec2 scale,vec4 depthToLinFadeDistParams)
 {
 	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
-	int2 pos2					=int2(pos*scale);
-	pos2-=cornerOffset;
-	pos2=max(int2(1,1),min(pos2,int2(source_dims)-int2(3,3)));
-	pos2+=source_offset;
+	int2 pos2		=int2(pos*scale);
+	pos2			-=cornerOffset;
+	pos2			=max(int2(1,1),min(pos2,int2(source_dims)-int2(3,3)));
+	pos2			+=int2(source_offset);
 #if REVERSE_DEPTH==1
 	vec2 farthest_nearest		=vec2(1.0,0.0);
 #else
@@ -192,10 +192,10 @@ vec4 DownscaleDepthFarNear_MSAA4(Texture2DMS<float4> sourceMSDepthTexture,uint2 
 			int2 hires_pos		=pos2+int2(i,j);
 			//if(hires_pos.x>=source_dims.x||hires_pos.y>=source_dims.y)
 			//	continue;
-			vec4 u				=vec4(sourceMSDepthTexture.Load(hires_pos,0).x
-									,sourceMSDepthTexture.Load(hires_pos,1).x
-									,sourceMSDepthTexture.Load(hires_pos,2).x
-									,sourceMSDepthTexture.Load(hires_pos,3).x);
+			vec4 u				=vec4(IMAGE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,0).x
+									,IMAGE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,1).x
+									,IMAGE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,2).x
+									,IMAGE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,3).x);
 #if REVERSE_DEPTH==1
 			vec2 v				=max(u.xy,u.zw);
 			farthest_nearest.y	=max(v.x,v.y);

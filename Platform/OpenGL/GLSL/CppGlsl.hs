@@ -84,8 +84,9 @@
 	}
 	#define CS_LAYOUT(u,v,w) layout(local_size_x=u,local_size_y=v,local_size_z=w) in;
 	
-	#define IMAGESTORE(a,b,c) imageStore(a,ivec3(b),c)
-	#define IMAGE_LOAD(a,b) texelFetch(a,ivec3(b),0)
+	#define IMAGESTORE(a,b,c) imageStore(a,b,c)
+	#define IMAGE_LOAD(a,b) texelFetch(a,b,0)
+	#define IMAGE_LOAD_MSAA(a,b,c) texelFetch(a,b,int(c))
 
 #define GET_DIMENSIONS_MSAA(tex,X,Y,S) ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;//textureQueryLevels(tex);
 #define GET_DIMENSIONS(tex,X,Y) ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y;
