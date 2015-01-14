@@ -4,8 +4,7 @@ uniform sampler2D imageTexture;
 uniform sampler2D noiseTexture;
 uniform sampler2D coverageTexture;
 uniform sampler2D lossTexture;
-uniform sampler2D inscTexture;
-uniform sampler2D skylTexture;
+uniform Texture3D volumeInscatterTexture;
 uniform sampler2D depthTexture;
 uniform Texture2DMS<vec4> depthTextureMS;
 uniform sampler2D illuminationTexture;
@@ -53,7 +52,7 @@ shader v2f VS_Main(a2v IN)
 	OUT.clip_pos	=OUT.hPosition/OUT.hPosition.w;
 	OUT.wPosition=vec3(0,0,0);
 	vec2 poss[4]=
-{
+	{
 		{ 1.0,-1.0},
 		{ 1.0, 1.0},
 		{-1.0,-1.0},
@@ -100,11 +99,11 @@ vec4 msaaPS(v2f IN)
 	vec3 moon_irr		=moonlight.rgb;
 	vec3 ambient_light	=ambientLight.rgb;
 #endif
+	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy));
 	vec4 ret			=Clouds2DPS_illum(imageTexture,coverageTexture
 										,illuminationTexture
 										,lossTexture
-										,inscTexture
-										,skylTexture
+										,volumeInscatterTexture,viewportTexCoords
 										,noiseTexture
 										,texc_global,texc_detail
 										,wEyeToPos
@@ -122,7 +121,7 @@ shader vec4 PS_msaa_depthTexture(v2f IN) : SV_TARGET
 {
 	uint2 depthDims;
 	uint depthSamples;
-	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
+	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy));
 	viewportTexCoords.y		=1.0-viewportTexCoords.y;
 	vec2 depthTexCoords	=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
 	depthTextureMS.GetDimensions(depthDims.x,depthDims.y,depthSamples);
@@ -144,7 +143,7 @@ shader vec4 PS_msaa(v2f IN) : SV_TARGET
 	return msaaPS(IN);
 }
 
-vec4 MainPS(v2f IN)
+vec4 MainPS(v2f IN,vec2 texCoords)
 {
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
     vec2 texc_global	=wOffset/globalScale;
@@ -164,8 +163,7 @@ vec4 MainPS(v2f IN)
 										,coverageTexture
 										,illuminationTexture
 										,lossTexture
-										,inscTexture
-										,skylTexture
+										,volumeInscatterTexture,texCoords
 										,noiseTexture
 										,texc_global,texc_detail
 										,wEyeToPos
@@ -186,7 +184,9 @@ struct FarNearPixelOutput
 
 shader vec4 PS_Main(v2f IN) SIMUL_RENDERTARGET_OUTPUT(0)
 {
-	return MainPS(IN);
+	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
+	viewportTexCoords.y		=1.0-viewportTexCoords.y;
+	return MainPS(IN,viewportTexCoords);
 }
 
 shader vec4 PS_Main_depthTexture(v2f IN) : SV_TARGET
@@ -204,7 +204,7 @@ shader vec4 PS_Main_depthTexture(v2f IN) : SV_TARGET
 	if(dlookup<0.999999)
 		discard;
 #endif
-	return MainPS(IN);
+	return MainPS(IN,viewportTexCoords);
 }
 
 struct v2f2

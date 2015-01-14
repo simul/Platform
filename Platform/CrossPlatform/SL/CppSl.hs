@@ -228,6 +228,18 @@
 			y*=v[1];
 			z*=v[2];
 		}
+		void operator+=(const float *v)
+		{
+			x+=v[0];
+			y+=v[1];
+			z+=v[2];
+		}
+		void operator-=(const float *v)
+		{
+			x-=v[0];
+			y-=v[1];
+			z-=v[2];
+		}
 	};
 	struct vec4
 	{

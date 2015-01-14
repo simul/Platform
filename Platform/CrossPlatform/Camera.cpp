@@ -1,3 +1,4 @@
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Math/Quaternion.h"
 #include "Simul/Math/Matrix4x4.h"
@@ -203,7 +204,9 @@ void simul::crossplatform::MakeCentredWorldViewProjMatrix(float *wvp,const float
 void simul::crossplatform::GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,float *up)
 {
 	simul::math::Matrix4x4 tmp1,view(v);
+	ERRNO_BREAK
 	view.Inverse(tmp1);
+	ERRNO_BREAK
 	dcam_pos[0]=tmp1._41;
 	dcam_pos[1]=tmp1._42;
 	dcam_pos[2]=tmp1._43;

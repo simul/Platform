@@ -144,7 +144,7 @@ vec3 FilmicTone(vec3 x)
 	//Note: E/F = Toe Angle
 	float LinearWhite	=1.2;	//Linear White Point Value
 	vec3 Fx				= ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F)) - E/F;
-	vec3 Fw				= ((LinearWhite*(A*LinearWhite+C*B)+D*E)/(LinearWhite*(A*LinearWhite+B)+D*F)) - E/F;
+	float Fw				= ((LinearWhite*(A*LinearWhite+C*B)+D*E)/(LinearWhite*(A*LinearWhite+B)+D*F)) - E/F;
 	vec3 c				= Fx/Fw;
 	return c;
 }
@@ -363,25 +363,6 @@ shader void CS_Composite(uint3 sub_pos	: SV_DispatchThreadID )
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN) 
 {
-#if 0
-	TwoColourCompositeOutput result	=CompositeAtmospherics2(IN.texCoords.xy
-												,imageTexture
-												,nearImageTexture
-												,hiResDepthTexture
-												,hiResDims
-												,lowResDims
-												,depthTexture
-												,fullResDims
-												,viewportToTexRegionScaleBias
-												,depthToLinFadeDistParams
-												,fullResToLowResTransformXYWH
-												,fullResToHighResTransformXYWH
-												,inscatterTexture
-												,nearInscatterTexture
-												,clipPosToScatteringVolumeMatrix
-												,screenSpaceInscatterVolumeTexture
-												,lossTexture);
-#else
 	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.texCoords.xy
 												,imageTexture
 												,nearImageTexture
@@ -400,8 +381,7 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN)
 												,cloudVolumeTexture
 												,lightSpaceInscatterVolumeTexture
 												,lossTexture);
-#endif
-	result.add.rgb	=pow(result.add.rgb,gamma);
+	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	return result;
 }

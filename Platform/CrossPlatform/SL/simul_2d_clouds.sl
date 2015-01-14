@@ -56,8 +56,7 @@ vec4 Coverage(vec2 texCoords,float humidity,float diffusivity,float octaves,floa
 
 vec3 ApplyEarthshadowFade(Texture2D illuminationTexture
 						,Texture2D lossTexture
-						,Texture2D inscTexture
-						,Texture2D skylTexture
+						,Texture3D volumeInscatterTexture,vec2 texCoords
 						,vec3 colour
 						,vec3 wEyeToPos
 						,vec3 lightDir
@@ -78,15 +77,11 @@ vec3 ApplyEarthshadowFade(Texture2D illuminationTexture
 	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 
 	vec3 loss			=texture_cmc_lod(lossTexture,fade_texc,0).rgb;
-	//vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
-	//vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
-	vec4 skyl_lookup	=texture_cmc_lod(skylTexture,fade_texc,0);
-	//vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,insc_far.a);//0.5*(insc_near.a+insc_far.a));
-	vec4 insc			=light*texture_cmc_lod(inscTexture,fade_texc,0);
-	//loss				*=light;
+	vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);
+	vec4 insc			=texture_clamp_lod(volumeInscatterTexture,volumeTexCoords,0);
+	//insc				*=light;
 	colour.rgb			*=loss;
-	colour.rgb			+=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-	colour.rgb			+=skyl_lookup.rgb;
+	colour.rgb			+=insc.rgb;
 	return colour;
 }
 
@@ -101,8 +96,7 @@ vec3 InscatterFunction2(vec4 inscatter_factor,float hazeEccentricity,float cos0,
 }
 
 vec3 ApplySimpleFade(Texture2D lossTexture
-						,Texture2D inscTexture
-						,Texture2D skylTexture
+						,Texture3D volumeInscatterTexture,vec2 texCoords
 						,vec3 colour,vec3 wEyeToPos,vec3 lightDir,vec3 mieRayleighRatio,float hazeEccentricity,float maxFadeDistMetres)
 {
 	vec3 view		=normalize(wEyeToPos);
@@ -110,11 +104,10 @@ vec3 ApplySimpleFade(Texture2D lossTexture
 	float cos0		=dot(normalize(lightDir),view);
 	vec2 fade_texc	=vec2(sqrt(length(wEyeToPos)/maxFadeDistMetres),0.5*(1.0-sine));
 	vec3 loss		=texture_clamp_mirror(lossTexture,fade_texc).rgb;
-	vec4 insc		=texture_clamp_mirror(inscTexture,fade_texc);
-	vec4 skyl		=texture_clamp_mirror(skylTexture,fade_texc);
+	vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);
+	vec4 insc		=texture_clamp_lod(volumeInscatterTexture,volumeTexCoords,0);
 	colour			*=loss;
-	colour			+=InscatterFunction2(insc,hazeEccentricity,cos0,mieRayleighRatio);
-	colour			+=skyl.rgb;
+	colour			+=insc.rgb;
 	return colour;
 }
 
@@ -137,8 +130,7 @@ vec4 Clouds2Dunfaded(Texture2D imageTexture
 
 vec4 Clouds2DPS(Texture2D imageTexture,Texture2D coverageTexture
 						,Texture2D lossTexture
-						,Texture2D inscTexture
-						,Texture2D skylTexture
+						,Texture3D volumeInscatterTexture,vec2 texCoords
 						,vec2 texc_global,vec2 texc_detail,vec3 wEyeToPos
 						,vec3 sunlight
 						,vec3 amb
@@ -148,8 +140,7 @@ vec4 Clouds2DPS(Texture2D imageTexture,Texture2D coverageTexture
 	float cos0	=dot(normalize(lightDir),view);
 	vec4 final	=Clouds2Dunfaded(imageTexture,coverageTexture,cos0,texc_global,texc_detail,sunlight,amb,lightResponse);
 	final.rgb	=ApplySimpleFade(lossTexture
-						,inscTexture
-						,skylTexture
+						,volumeInscatterTexture,texCoords
 						,final.rgb,wEyeToPos,lightDir,mieRayleighRatio,hazeEccentricity,maxFadeDistanceMetres);
 	return		final;
 }
@@ -158,8 +149,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 						,Texture2D coverageTexture
 						,Texture2D illuminationTexture
 						,Texture2D lossTexture
-						,Texture2D inscTexture
-						,Texture2D skylTexture
+						,Texture3D volumeInscatterTexture,vec2 texCoords
 						,Texture2D noiseTexture
 						,vec2 texc_global
 						,vec2 texc_detail
@@ -198,12 +188,11 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	//nearFarTexc.y=1.0;
 	vec2 near_texc			=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc			=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
-	vec4 insc_far			=texture_clamp_mirror(inscTexture,far_texc);
-	vec4 insc_near			=texture_clamp_mirror(inscTexture,near_texc);
-
-	vec4 insc				=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
 	
-	insc.rgb				*=visible_light;
+	vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);
+	vec4 insc				=texture_clamp_lod(volumeInscatterTexture,volumeTexCoords,0);
+	
+	//insc.rgb				*=visible_light;
 	vec3 light				=sun_irr*visible_light+moon_irr;
 	vec4 colour				=vec4(light*(lightResponse.y+lightResponse.x*hg)*scattered_light+amb,opacity);
 
@@ -211,9 +200,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	colour.rgb				=cloudIrRadiance.rgb;
 #endif
 	colour.rgb				*=loss;
-	colour.rgb				+=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-	vec4 skyl_lookup		=texture_cmc_lod(skylTexture,fade_texc,0);
-	colour.rgb				+=skyl_lookup.rgb;
+	colour.rgb				+=insc.rgb;
 
 	return colour;
 }
