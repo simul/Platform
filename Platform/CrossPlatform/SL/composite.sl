@@ -22,22 +22,22 @@ struct LookupQuad4
 	vec4 _22;
 };
 
-void ExtractCompactedLookupQuads(out LookupQuad4 farQ,out LookupQuad4 nearQ,Texture2D<uint4> image,vec2 texc,vec2 texDims)
+void ExtractCompactedLookupQuads(out LookupQuad4 farQ,out LookupQuad4 nearQ,TEXTURE2D_UINT4 image,vec2 texc,uint2 texDims)
 {
 	vec2 texc_unit	=texc*texDims-vec2(.5,.5);
-	uint2 idx		=floor(texc_unit);
-	int i1			=max(0,idx.x);
-	int i2			=min(idx.x+1,texDims.x-1);
-	int j1			=max(0,idx.y);
-	int j2			=min(idx.y+1,texDims.y-1);
-	uint2 i11		=uint2(i1,j1);
-	uint2 i21		=uint2(i2,j1);
-	uint2 i12		=uint2(i1,j2);
-	uint2 i22		=uint2(i2,j2);
-	uint4 v11		=image[i11];
-	uint4 v21		=image[i21];
-	uint4 v12		=image[i12];
-	uint4 v22		=image[i22];
+	uint2 idx		=uint2(floor(texc_unit));
+	uint i1			=max(0,idx.x);
+	uint i2			=min(idx.x+1,texDims.x-1);
+	uint j1			=max(0,idx.y);
+	uint j2			=min(idx.y+1,texDims.y-1);
+	int2 i11		=int2(i1,j1);
+	int2 i21		=int2(i2,j1);
+	int2 i12		=int2(i1,j2);
+	int2 i22		=int2(i2,j2);
+	uint4 v11		=IMAGE_LOAD(image,i11);
+	uint4 v21		=IMAGE_LOAD(image,i21);
+	uint4 v12		=IMAGE_LOAD(image,i12);
+	uint4 v22		=IMAGE_LOAD(image,i22);
 	farQ._11		=vec4(uint2_to_colour3(v11.xy),1.0);
 	farQ._21		=vec4(uint2_to_colour3(v21.xy),1.0);
 	farQ._12		=vec4(uint2_to_colour3(v12.xy),1.0);
@@ -48,10 +48,10 @@ void ExtractCompactedLookupQuads(out LookupQuad4 farQ,out LookupQuad4 nearQ,Text
 	nearQ._22		=vec4(uint2_to_colour3(v22.zw),1.0);
 }
 
-void GetNearFarLookupQuads(out LookupQuad4 farQ, out LookupQuad4 nearQ, Texture2D farImage,Texture2D nearImage, vec2 texc, vec2 texDims)
+void GetNearFarLookupQuads(out LookupQuad4 farQ, out LookupQuad4 nearQ, Texture2D farImage,Texture2D nearImage, vec2 texc, int2 texDims)
 {
 	vec2 texc_unit = texc*texDims - vec2(.5, .5);
-	int2 idx = floor(texc_unit);
+	int2 idx = int2(floor(texc_unit));
 	int i1 = max(0, idx.x);
 	int i2 = min(idx.x + 1, texDims.x - 2);
 	int j1 = max(0, idx.y);
@@ -61,15 +61,15 @@ void GetNearFarLookupQuads(out LookupQuad4 farQ, out LookupQuad4 nearQ, Texture2
 	int2 i12 = int2(i1, j2);
 	int2 i22 = int2(i2, j2);
 
-	farQ._11 = farImage[i11];
-	farQ._21 = farImage[i21];
-	farQ._12 = farImage[i12];
-	farQ._22 = farImage[i22];
-
-	nearQ._11 = nearImage[i11];
-	nearQ._21 = nearImage[i21];
-	nearQ._12 = nearImage[i12];
-	nearQ._22 = nearImage[i22];
+	farQ._11 =IMAGE_LOAD(farImage,i11);
+	farQ._21 =IMAGE_LOAD(farImage,i21);
+	farQ._12 =IMAGE_LOAD(farImage,i12);
+	farQ._22 =IMAGE_LOAD(farImage,i22);
+									 
+	nearQ._11 =IMAGE_LOAD(nearImage,i11);
+	nearQ._21 =IMAGE_LOAD(nearImage,i21);
+	nearQ._12 =IMAGE_LOAD(nearImage,i12);
+	nearQ._22 =IMAGE_LOAD(nearImage,i22);
 }
 
 LookupQuad4 GetLookupQuad(Texture2D image,vec2 texc,vec2 texDims)
@@ -247,7 +247,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 				,Texture3D screenSpaceInscVolumeTexture
 				,Texture3D cloudVolumeTexture
 				,Texture3D lightSpaceInscVolumeTexture
-				,Texture2D<uint4> lossTexture)
+				,TEXTURE2D_UINT4 lossTexture)
 {
 	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 
@@ -385,7 +385,7 @@ TwoColourCompositeOutput CompositeAtmospherics2(vec2 texCoords
 				,Texture2D nearInscatterTexture
 				,mat4 clipPosToScatteringVolumeMatrix
 				,Texture3D inscatterVolumeTexture
-				,Texture2D<uint4> lossTexture)
+				,TEXTURE2D_UINT4 lossTexture)
 {
 	// texCoords.y is positive DOWNwards
 	TwoColourCompositeOutput res;
@@ -441,7 +441,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 				,Texture2D nearInscatterTexture
 				,Texture3D screenSpaceInscVolumeTexture
 				,Texture3D lightSpaceInscVolumeTexture
-				,Texture2D<uint4> lossTexture)
+				,TEXTURE2D_UINT4 lossTexture)
 {
 	// texCoords.y is positive DOWNwards
 	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
