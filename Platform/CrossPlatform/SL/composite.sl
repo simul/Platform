@@ -376,7 +376,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 													,Texture2D hiResDepthTexture
 													,int2 hiResDims
 													,int2 lowResDims
-													,Texture2DMS depthTextureMS
+													,Texture2DMS<vec4> depthTextureMS
 													,int numSamples
 													,int2 fullResDims
 													,vec4 viewportToTexRegionScaleBias
