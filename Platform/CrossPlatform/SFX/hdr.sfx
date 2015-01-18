@@ -367,10 +367,10 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN)
 												,imageTexture
 												,nearImageTexture
 												,hiResDepthTexture
-												,hiResDims
-												,lowResDims
+												,int2(hiResDims)
+												,int2(lowResDims)
 												,depthTexture
-												,fullResDims
+												,int2(fullResDims)
 												,viewportToTexRegionScaleBias
 												,depthToLinFadeDistParams
 												,fullResToLowResTransformXYWH
@@ -389,24 +389,24 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN)
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(v2f IN) 
 {
 	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.texCoords.xy
-														,imageTexture
-							,nearImageTexture
-							,hiResDepthTexture
-							,hiResDims
-							,lowResDims
-							,depthTextureMS
-							,numSamples
-							,fullResDims
-							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
-							,fullResToLowResTransformXYWH
-							,fullResToHighResTransformXYWH
-							,inscatterTexture
-							,nearInscatterTexture
-														,screenSpaceInscatterVolumeTexture
-												,lightSpaceInscatterVolumeTexture
-							,lossTexture);
-	result.add.rgb	=pow(result.add.rgb,gamma);
+																,imageTexture
+																,nearImageTexture
+																,hiResDepthTexture
+																,int2(hiResDims)
+																,int2(lowResDims)
+																,depthTextureMS
+																,numSamples
+																,int2(fullResDims)
+																,viewportToTexRegionScaleBias
+																,depthToLinFadeDistParams
+																,fullResToLowResTransformXYWH
+																,fullResToHighResTransformXYWH
+																,inscatterTexture
+																,nearInscatterTexture
+																,screenSpaceInscatterVolumeTexture
+																,lightSpaceInscatterVolumeTexture
+																,lossTexture);
+	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	return result;
 }

@@ -72,10 +72,10 @@ void GetNearFarLookupQuads(out LookupQuad4 farQ, out LookupQuad4 nearQ, Texture2
 	nearQ._22 =IMAGE_LOAD(nearImage,i22);
 }
 
-LookupQuad4 GetLookupQuad(Texture2D image,vec2 texc,vec2 texDims)
+LookupQuad4 GetLookupQuad(Texture2D image,vec2 texc,int2 texDims)
 {
 	vec2 texc_unit	=texc*texDims-vec2(.5,.5);
-	int2 idx		=floor(texc_unit);
+	int2 idx		=int2(floor(texc_unit));
 	int i1			=max(0,idx.x);
 	int i2			=min(idx.x+1,texDims.x-2);
 	int j1			=max(0,idx.y);
@@ -86,14 +86,14 @@ LookupQuad4 GetLookupQuad(Texture2D image,vec2 texc,vec2 texDims)
 	int2 i22		=int2(i2,j2);
 
 	LookupQuad4 q;
-	q._11=image[i11];
-	q._21=image[i21];
-	q._12=image[i12];
-	q._22=image[i22];
+	q._11=IMAGE_LOAD(image,i11);
+	q._21=IMAGE_LOAD(image,i21);
+	q._12=IMAGE_LOAD(image,i12);
+	q._22=IMAGE_LOAD(image,i22);
 	return q;
 }
 
-LookupQuad4 GetDepthLookupQuad(Texture2D image,vec2 texc,vec2 texDims,vec4 depthToLinFadeDistParams)
+LookupQuad4 GetDepthLookupQuad(Texture2D image,vec2 texc,int2 texDims,vec4 depthToLinFadeDistParams)
 {
 	LookupQuad4 q	=GetLookupQuad(image,texc,texDims);
 	q._11.xy		=depthToLinearDistance(q._11.xy,depthToLinFadeDistParams);
@@ -162,7 +162,7 @@ vec4 depthFilteredTexture(	LookupQuad4 image
 vec4 depthDependentFilteredImage(Texture2D imageTexture
 								 ,Texture2D fallbackTexture
 								 ,Texture2D depthTexture
-								 ,vec2 texDims
+								 ,int2 texDims
 								 ,vec2 texc
 								 ,vec2 depthMask
 								 ,vec4 depthToLinFadeDistParams
@@ -236,7 +236,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 				,Texture2D hiResDepthTexture
 				,int2 hiResDims
 				,int2 lowResDims
-				,Texture2D<vec4> depthTexture
+				,Texture2D depthTexture
 				,int2 fullResDims
 				,vec4 viewportToTexRegionScaleBias
 				,vec4 depthToLinFadeDistParams
@@ -259,7 +259,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 	TwoColourCompositeOutput res;
 	res.add						=vec4(0,0,0,1.0);
 	vec4 insc					=vec4(0,0,0,0);
-	float depth					=depthTexture[fullres_depth_pos2].x;
+	float depth					=IMAGE_LOAD(depthTexture,fullres_depth_pos2).x;
 	float dist					=depthToLinearDistance(depth		,depthToLinFadeDistParams);
 #if 1
 	vec4 cloudFar				=texture_clamp_lod(lowResFarTexture,lowResTexCoords,0);
@@ -341,8 +341,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 	{	
 #ifdef VOLUME_INSCATTER
 #ifndef SCREENSPACE_VOL
-		volume_texc.z				=sqrt(dist);
-		insc						=texture_wmc_lod(lightSpaceInscVolumeTexture,volume_texc,0);
+		volume_texc.z			=sqrt(dist);
+		insc					=texture_wmc_lod(lightSpaceInscVolumeTexture,volume_texc,0);
 #else
 		vec3 volumeTexCoords	=vec3(hiResTexCoords,sqrt(dist));
 		insc					=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
@@ -358,7 +358,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 		insc+=cloudFar;// *saturate(step(1.0, hires_depths.x));
 #endif
 #endif
-		vec2 inscTexc_unit		= hiResTexCoords*hiResDims;// -vec2(.5, .5);
+		int2 inscTexc_unit		=int2(hiResTexCoords*hiResDims);// -vec2(.5, .5);
 		uint2 loss				=IMAGE_LOAD(lossTexture,inscTexc_unit).xy;
 #if 1
 		res.multiply = vec4(uint2_to_colour3(loss.xy), 1.0) *cloudFar.a;
@@ -370,78 +370,24 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
     return res;
 }
 
-TwoColourCompositeOutput CompositeAtmospherics2(vec2 texCoords
-				,Texture2D lowResFarTexture
-				,Texture2D hiResDepthTexture
-				,int2 hiResDims
-				,int2 lowResDims
-				,Texture2D<vec4> depthTexture
-				,int2 fullResDims
-				,vec4 viewportToTexRegionScaleBias
-				,vec4 depthToLinFadeDistParams
-				,vec4 fullResToLowResTransformXYWH
-				,vec4 fullResToHighResTransformXYWH
-				,Texture2D farInscatterTexture
-				,Texture2D nearInscatterTexture
-				,mat4 clipPosToScatteringVolumeMatrix
-				,Texture3D inscatterVolumeTexture
-				,TEXTURE2D_UINT4 lossTexture)
-{
-	// texCoords.y is positive DOWNwards
-	TwoColourCompositeOutput res;
-	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-
-	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
-	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
-	vec2 hiResTexCoords			=fullResToHighResTransformXYWH.xy+texCoords*fullResToHighResTransformXYWH.zw;
-	vec4 hires_depths			=texture_clamp_lod(hiResDepthTexture	,hiResTexCoords		,0);
-	float hires_edge			=hires_depths.z;
-	res.add						=vec4(0,0,0,1.0);
-	float depth					=depthTexture[fullres_depth_pos2].x;
-	float dist					=depthToLinearDistance(depth		,depthToLinFadeDistParams);
-	vec4 cloud					=texture_clamp_lod(lowResFarTexture	,lowResTexCoords,0);
-	
-	float far					=step(1.0,dist);
-	res.add						=lerp(res.add,cloud,far);
-	
-	// To obtain the inscatter value: transform the clip position into a position in the scattering volume's space.
-	vec4 clip_pos				=vec4(-1.0,1.0,1.0,1.0);
-	clip_pos.x					+=2.0*texCoords.x;
-	clip_pos.y					-=2.0*texCoords.y;
-	vec3 view_sc				=mul(clipPosToScatteringVolumeMatrix,clip_pos).xyz;
-	view_sc						/=length(view_sc);
-	float azimuth				=atan2(view_sc.x,view_sc.y);
-	float elevation				=acos(view_sc.z);
-	vec3 sc_texc				=vec3(azimuth/(PI*2.0),elevation/PI,dist);
-	vec4 insc					=texture_wmc_lod(inscatterVolumeTexture,sc_texc,0);
-
-	vec2 inscTexc_unit			=hiResTexCoords*hiResDims-vec2(.5,.5);
-	uint2 loss					=IMAGE_LOAD(lossTexture,inscTexc_unit).xy;
-	res.multiply				=vec4(uint2_to_colour3(loss.xy),1.0)*res.add.a;
-	
-	res.add.rgb					+=insc.rgb*res.add.a;
-    return res;
-}
-
-
 TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
-				,Texture2D cloudTexture
-				,Texture2D nearCloudTexture
-				,Texture2D hiResDepthTexture
-				,int2 hiResDims
-				,int2 lowResDims
-				,Texture2DMS<vec4> depthTextureMS
-				,int numSamples
-				,int2 fullResDims
-				,vec4 viewportToTexRegionScaleBias
-				,vec4 depthToLinFadeDistParams
-				,vec4 fullResToLowResTransformXYWH
-				,vec4 fullResToHighResTransformXYWH
-				,Texture2D farInscatterTexture
-				,Texture2D nearInscatterTexture
-				,Texture3D screenSpaceInscVolumeTexture
-				,Texture3D lightSpaceInscVolumeTexture
-				,TEXTURE2D_UINT4 lossTexture)
+													,Texture2D cloudTexture
+													,Texture2D nearCloudTexture
+													,Texture2D hiResDepthTexture
+													,int2 hiResDims
+													,int2 lowResDims
+													,Texture2DMS depthTextureMS
+													,int numSamples
+													,int2 fullResDims
+													,vec4 viewportToTexRegionScaleBias
+													,vec4 depthToLinFadeDistParams
+													,vec4 fullResToLowResTransformXYWH
+													,vec4 fullResToHighResTransformXYWH
+													,Texture2D farInscatterTexture
+													,Texture2D nearInscatterTexture
+													,Texture3D screenSpaceInscVolumeTexture
+													,Texture3D lightSpaceInscVolumeTexture
+													,TEXTURE2D_UINT4 lossTexture)
 {
 	// texCoords.y is positive DOWNwards
 	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
@@ -484,7 +430,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		float depths[8];
 		for(int k=0;k<numSamples;k++)
 		{
-			float d					=depthTextureMS.Load(fullres_depth_pos2,k).x;
+			float d					=IMAGE_LOAD_MSAA(depthTextureMS,fullres_depth_pos2,k).x;
 			depths[k]				=d;
 #if REVERSE_DEPTH==1
 			nearestDepth			=max(nearestDepth,d);
@@ -586,7 +532,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 	else
 	{
 #ifdef VOLUME_INSCATTER
-		float d					=depthTextureMS.Load(fullres_depth_pos2,0).x;
+		float d					=IMAGE_LOAD_MSAA(depthTextureMS,fullres_depth_pos2,0).x;
 		float dist				=depthToLinearDistance(d		,depthToLinFadeDistParams);
 #ifndef SCREENSPACE_VOL
 		insc					=texture_wmc_lod(lightSpaceInscVolumeTexture,vec3(volume_texc.xy,sqrt(dist)),0);
@@ -604,8 +550,8 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		insc					+=cloud;// *saturate(step(1.0, hires_depths.x));
 #endif
 		res.add = insc;
-		vec2 isncTexc_unit		=hiResTexCoords*hiResDims;// -vec2(.5, .5);
-		uint2 loss				=IMAGE_LOAD(lossTexture,isncTexc_unit).xy;
+		int2 inscTexc_unit		=int2(hiResTexCoords*hiResDims);// -vec2(.5, .5);
+		uint2 loss				=IMAGE_LOAD(lossTexture,inscTexc_unit).xy;
 		res.multiply			=vec4(uint2_to_colour3(loss.xy), 1.0) *( cloud.a);// *(1.0 - cloud.a);
 	}
 	res.add.a					= 1.0 - res.add.a;

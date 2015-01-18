@@ -53,6 +53,8 @@
 	#define texture_clamp_mirror_lod(tex,texc,lod) textureLod(tex,texc,lod)
 	#define texture_cmc_lod(tex,texc,lod) textureLod(tex,texc,lod) 
 	#define texture_cmc_nearest_lod(tex,texc,lod) textureLod(tex,texc,lod)
+	#define texture_wmc_lod(tex,texc,lod) textureLod(tex,texc,lod)
+	#define texture_wmc(tex,texc) textureLod(tex,texc)
 
 	#define texture_wwc(tex,texc) texture(tex,texc)
 	#define texture_nearest(tex,texc) texture(tex,texc)
@@ -69,7 +71,7 @@
 	#define texture2D texture 
 	#define Texture3D sampler3D 
 	#define Texture2D sampler2D 
-	#define Texture2DMS sampler2D 
+	#define Texture2DMS sampler2DMS
 	#define Texture1D sampler1D 
 	#define Y(texel) texel.y
 	#define STATIC
