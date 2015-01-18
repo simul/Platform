@@ -393,5 +393,8 @@
     <None Include="GLSL\simul_gpu_sky.glfx">
       <Filter>GLFX</Filter>
     </None>
+    <None Include="GLSL\shader_platform.sl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

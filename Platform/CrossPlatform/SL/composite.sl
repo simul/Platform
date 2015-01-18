@@ -14,8 +14,6 @@ struct TwoColourCompositeOutput
 	vec4 multiply	SIMUL_RENDERTARGET_OUTPUT(1);
 };
 
-#ifndef GLSL
-
 struct LookupQuad4
 {
 	vec4 _11;
@@ -615,5 +613,4 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 #endif
     return res;
 }
-#endif
 #endif

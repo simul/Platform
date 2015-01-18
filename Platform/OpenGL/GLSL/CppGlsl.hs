@@ -103,6 +103,10 @@
 	//layout(r32ui) 
 	#define TEXTURE2D_UINT4 usampler2D
 	//layout(rgba8)
+	struct idOnly
+	{
+		uint vertex_id: SV_VertexID;
+	};
 #ifdef GLFX
 	shader void VS_ScreenQuad( out vec2 texCoords)
 	{
