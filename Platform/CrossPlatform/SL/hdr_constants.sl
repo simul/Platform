@@ -9,7 +9,8 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform vec4 fullResToHighResTransformXYWH;
 
 	uniform vec2 offset;
-	uniform float nearZ,farZ;
+	uniform float nearZ;
+	uniform float farZ;
 	
 	uniform vec4 colour2;
 

@@ -370,10 +370,8 @@
     <None Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
       <Filter>SFX</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="DirectX11.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
+    <None Include="..\CrossPlatform\SL\common.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
 </Project>

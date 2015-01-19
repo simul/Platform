@@ -340,21 +340,6 @@ vec4 DownscaleDepthFarNear(Texture2D sourceDepthTexture,uint2 source_dims,uint2 
 	return res;
 }
 
-void SpreadEdge(Texture2D sourceDepthTexture,RW_TEXTURE2D_FLOAT4 target2DTexture,int2 pos)
-{
-	float e=0.0;
-	for(int i=-1;i<2;i++)
-	{
-		for(int j=-1;j<2;j++)
-		{
-			e=max(e,IMAGE_LOAD(sourceDepthTexture,int2(pos.xy)+int2(i,j)).z);
-		}
-	}
-	vec4 res=IMAGE_LOAD(sourceDepthTexture,pos.xy);
-	res.z=e;
-	IMAGE_STORE(target2DTexture,pos.xy,res);
-}
-
 vec4 DownscaleFarNearEdge(Texture2D sourceDepthTexture,int2 source_dims,int2 cornerOffset,int2 pos,int2 scale,vec4 depthToLinFadeDistParams)
 {
 	// pos is the texel position in the target.

@@ -1,4 +1,5 @@
 #include "shader_platform.sl"
+#ifndef GLFX
 #include "../../CrossPlatform/SL/render_states.sl"
 float particleZoneSize=15.0;	// = 625 m^3
 // Brittanica.com: http://www.britannica.com/EBchecked/topic/489827/rain#ref259264
@@ -42,8 +43,8 @@ struct PrecipitationVertexInput
 // Same as transformedParticle, but with semantics
 struct particleVertexOutput
 {
-    float4 position0	:SV_POSITION;
-    float4 position1	:TEXCOORD2;
+    vec4 position0	:SV_POSITION;
+    vec4 position1	:TEXCOORD2;
 	float pointSize		:PSIZE;
 	float brightness	:TEXCOORD0;
 	vec3 view			:TEXCOORD1;
@@ -78,14 +79,14 @@ SamplerState rainSampler
 
 struct vertexInputRenderRainTexture
 {
-    float4 position			: POSITION;
+    vec4 position			: POSITION;
     float2 texCoords		: TEXCOORD0;
 };
 
 struct vertexInput
 {
     float3 position		: POSITION;
-    float4 texCoords	: TEXCOORD0;
+    vec4 texCoords	: TEXCOORD0;
 };
 
 struct PosAndId
@@ -101,21 +102,21 @@ struct posOnly
 
 struct vertexOutput
 {
-    float4 hPosition	: SV_POSITION;
-    float4 texCoords	: TEXCOORD0;		/// z is intensity!
+    vec4 hPosition	: SV_POSITION;
+    vec4 texCoords	: TEXCOORD0;		/// z is intensity!
     float3 viewDir		: TEXCOORD1;
 };
 
 struct rainVertexOutput
 {
-    float4 position			: SV_POSITION;
+    vec4 position			: SV_POSITION;
     float2 clip_pos		: TEXCOORD1;
     float2 texCoords		: TEXCOORD0;
 };
 
 struct particleGeometryOutput
 {
-    float4 position			:SV_POSITION;
+    vec4 position			:SV_POSITION;
     float2 texCoords		:TEXCOORD0;
 	float brightness		:TEXCOORD1;
 	vec3 view				:TEXCOORD2;
@@ -136,12 +137,12 @@ vec3 Frac(vec3 pos,vec3 p1,float scale)
 	return pos;
 }
 
-posTexVertexOutput VS_ShowTexture(idOnly id)
+shader posTexVertexOutput VS_ShowTexture(idOnly id)
 {
     return VS_ScreenQuad(id,rect);
 }
 
-vec4 PS_ShowTexture(posTexVertexOutput In): SV_TARGET
+shader vec4 PS_ShowTexture(posTexVertexOutput In): SV_TARGET
 {
     return texture_wrap_lod(showTexture,In.texCoords,0);
 }
@@ -165,18 +166,18 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 	p.fade				=saturate(10000.0/dist);///length(clip_pos-viewPos);
 }
 
-[numthreads(8,8,8)]
-void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
+CS_LAYOUT(8,8,8)
+shader void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 {
-	int X,Y,N;
+	int X,Yy,N;
 	int n	=idx.z;
-	targetTextureArray.GetDimensions(X,Y,N);
+	targetTextureArray.GetDimensions(X,Yy,N);
 	float brightnessMult	=rand(n*1001.1);
 	vec4 result				=vec4(0.0,0,0,0.5);
 	// idx.x gives the index in the array.
 	float b				=rand(n+0.5);
 	
-	float y				=float(idx.y)/float(Y);
+	float y				=float(idx.y)/float(Yy);
 	
 	float V				=0.4/pi*(0.6+0.8*rand(n));
 	float U				=0.4/pi*(0.6+0.8*rand(n*4.41));
@@ -194,7 +195,7 @@ void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 	targetTextureArray[idx]	=saturate(result);
 }
 
-particleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)
+shader particleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)
 {
 	particleVertexOutput OUT;
 	TransformedParticle p0;
@@ -214,12 +215,12 @@ particleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)
 
 cbuffer cbImmutable
 {
-    float4 g_positions[4] : packoffset(c0) =
+    vec4 g_positions[4] : packoffset(c0) =
     {
-        float4(-0.5,-0.5,0,0),
-        float4( 0.5,-0.5,0,0),
-        float4(-0.5, 0.5,0,0),
-        float4( 0.5, 0.5,0,0),
+        vec4(-0.5,-0.5,0,0),
+        vec4( 0.5,-0.5,0,0),
+        vec4(-0.5, 0.5,0,0),
+        vec4( 0.5, 0.5,0,0),
     };
     float2 g_texcoords[4] : packoffset(c4) = 
     { 
@@ -231,7 +232,7 @@ cbuffer cbImmutable
 };
 
 [maxvertexcount(6)]
-void GS_SnowParticles(point particleVertexOutput input[1], inout TriangleStream<particleGeometryOutput> SpriteStream)
+shader void GS_SnowParticles(point particleVertexOutput input[1], inout TriangleStream<particleGeometryOutput> SpriteStream)
 {
     particleGeometryOutput output;
 	// Emit four new triangles.
@@ -297,7 +298,7 @@ void GS_SnowParticles(point particleVertexOutput input[1], inout TriangleStream<
     SpriteStream.RestartStrip();
 }
 
-vec4 PS_SnowParticles(particleGeometryOutput IN): SV_TARGET
+shader vec4 PS_SnowParticles(particleGeometryOutput IN): SV_TARGET
 {
 	vec4 result		=IN.brightness*cubeTexture.Sample(wrapSamplerState,-IN.view);
 	vec2 pos		=IN.texCoords*2.0-1.0;
@@ -310,7 +311,7 @@ vec4 PS_SnowParticles(particleGeometryOutput IN): SV_TARGET
 	return vec4(2.0*result.rgb,opacity);
 }
 
-vec4 PS_SnowParticles_NoCubemap(particleGeometryOutput IN): SV_TARGET
+shader vec4 PS_SnowParticles_NoCubemap(particleGeometryOutput IN): SV_TARGET
 {
 	vec4 result		=IN.brightness*vec4(lightColour.rgb,1.0);
 	vec2 pos		=IN.texCoords*2.0-1.0;
@@ -323,7 +324,7 @@ vec4 PS_SnowParticles_NoCubemap(particleGeometryOutput IN): SV_TARGET
 	return vec4(result.rgb,opacity);
 }
 
-rainVertexOutput VS_FullScreen(idOnly IN)
+shader rainVertexOutput VS_FullScreen(idOnly IN)
 {
 	rainVertexOutput OUT;
 	float2 poss[4]=
@@ -348,7 +349,7 @@ rainVertexOutput VS_FullScreen(idOnly IN)
 
 #define NUM (1)
 
-float4 PS_RenderRainTexture(rainVertexOutput IN): SV_TARGET
+shader vec4 PS_RenderRainTexture(rainVertexOutput IN): SV_TARGET
 {
 	float r=0;
 	vec2 t=IN.texCoords.xy;
@@ -358,11 +359,11 @@ float4 PS_RenderRainTexture(rainVertexOutput IN): SV_TARGET
 		t.y+=1.0/64.0;
 	}
 	r=saturate(r);
-	float4 result=vec4(r,r,r,r);
+	vec4 result=vec4(r,r,r,r);
     return result;
 }
 
-float4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
+shader vec4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
 {
 	float r=0;
     vec4 result=vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords));
@@ -370,7 +371,7 @@ float4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
     return result;
 }
 
-float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
+shader vec4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 {
 	vec3 view				=normalize(mul(invViewProj_2[1],vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
 	
@@ -401,7 +402,7 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 	return result;
 }
 
-float4 PS_Moisture(rainVertexOutput IN) : SV_TARGET
+shader vec4 PS_Moisture(rainVertexOutput IN) : SV_TARGET
 {
 	vec3 view				=normalize(mul(invViewProj_2[1],vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
 	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,depthViewport.zwxy);
@@ -416,7 +417,7 @@ float4 PS_Moisture(rainVertexOutput IN) : SV_TARGET
 
 struct PSSceneIn
 {
-    float4 pos				: SV_Position;
+    vec4 pos				: SV_Position;
     float3 wPos			: TEXCOORD3;
     float3 pointLightDir	: LIGHT2;
     float3 view				: EYE;
@@ -517,7 +518,7 @@ float g_Near=1.0;
 float g_Far=100.0;
 bool cullSprite( float3 position, float SpriteSize)
 {
-    float4 vpos = mul( worldView[1],float4(position,1));
+    vec4 vpos = mul( worldView[1],vec4(position,1));
     
     
     if( (vpos.z < (g_Near - SpriteSize )) || ( vpos.z > (g_Far + SpriteSize)) ) 
@@ -526,7 +527,7 @@ bool cullSprite( float3 position, float SpriteSize)
     }
     else 
     {
-        float4 ppos = mul( worldViewProj[1],float4(position,1));
+        vec4 ppos = mul( worldViewProj[1],vec4(position,1));
 			//mul(vpos, proj[1]);
         float wext = ppos.w + SpriteSize;
         if( (ppos.x < -wext) || (ppos.x > wext) ||
@@ -619,7 +620,7 @@ vec4 clip_pos				=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
         SpriteStream.RestartStrip();
     }   
 }
-void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, float3 lightColor, float3 eyeVector, bool fallOffFactor, inout float4 rainResponseVal)
+void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, float3 lightColor, float3 eyeVector, bool fallOffFactor, inout vec4 rainResponseVal)
 {
     float opacity = 0.0;
 
@@ -755,7 +756,7 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
         opacity = pow(opacity,0.7); // inverse gamma correction (expand dynamic range)
         opacity = 4*lightIntensity * opacity * fallOff;
     }
-	rainResponseVal = float4(lightColor,opacity);
+	rainResponseVal = vec4(lightColor,opacity);
 }
 
 vec4 PS_ShowArrayTexture(posTexVertexOutput IN): SV_TARGET
@@ -838,7 +839,7 @@ technique rain_particles
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles()));
         
-        SetBlendState( AddAlphaBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
+        SetBlendState( AddAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
         SetDepthStencilState( EnableDepth, 0 );
     }
     pass no_cubemap
@@ -848,7 +849,7 @@ technique rain_particles
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap()));
         
-        SetBlendState( AddAlphaBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
+        SetBlendState( AddAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
         SetDepthStencilState( EnableDepth, 0 );
     }
 }
@@ -862,7 +863,7 @@ technique splash
         SetGeometryShader(CompileShader(gs_5_0,GS_RainSplash()));
         SetPixelShader(CompileShader(ps_5_0,PS_RainSplash()));
         
-        SetBlendState( AddAlphaBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+        SetBlendState( AddAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetDepthStencilState( EnableDepth, 0 );
     }  
 }
@@ -877,7 +878,7 @@ technique snow
 		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
 		SetDepthStencilState(EnableDepth,0);
-		SetBlendState(AddAlphaBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(AddAlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
     pass no_cubemap 
     {
@@ -887,7 +888,7 @@ technique snow
 		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
 		SetDepthStencilState(EnableDepth,0);
-		SetBlendState(AddAlphaBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(AddAlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
 }
 
@@ -900,7 +901,7 @@ technique simul_rain
 		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Overlay()));
 		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AddAlphaBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(AddAlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
 }
 
@@ -921,7 +922,7 @@ technique create_rain_texture
 		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_RenderRainTexture()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
     }
 }
 
@@ -934,7 +935,7 @@ technique create_random_texture
 		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_RenderRandomTexture()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
     }
 }
 
@@ -948,7 +949,7 @@ technique show_texture
 		SetVertexShader(CompileShader(vs_5_0,VS_ShowTexture()));
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
     }
 }
 
@@ -961,7 +962,7 @@ technique show_array_texture
 		SetVertexShader(CompileShader(vs_5_0,VS_ShowTexture()));
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowArrayTexture()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
     }
 }
 
@@ -974,7 +975,7 @@ technique moisture
 		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Moisture()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
     }
 }
 

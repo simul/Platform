@@ -1,4 +1,6 @@
 #include "shader_platform.sl"
+#include "../../CrossPlatform/SL/common.sl"
+#include "../SL/common.sl"
 #include "../SL/render_states.sl"
 #include "../SL/depth.sl"
 #include "../SL/hdr_constants.sl"
@@ -34,6 +36,21 @@ struct v2f
     vec4 hPosition	: SV_POSITION;
     vec2 texCoords	: TEXCOORD0;
 };
+
+vec4 texture_resolve(TEXTURE2DMS_FLOAT4 textureMS,vec2 texCoords)
+{
+	uint2 dims;
+	uint numberOfSamples;
+	GET_DIMENSIONS_MSAA(textureMS,dims.x,dims.y,numberOfSamples);
+	int2 pos=int2(vec2(dims)*texCoords);
+	vec4 d=vec4(0,0,0,0);
+	for(uint k=0;k<numberOfSamples;k++)
+	{
+		d+=IMAGE_LOAD_MSAA(textureMS,pos,k);
+	}
+	d/=float(numberOfSamples);
+	return d;
+}
 
 shader v2f MainVS(idOnly IN)
 {
@@ -156,24 +173,6 @@ shader vec4 LinearizeDepthPS(v2f IN) : SV_Target
     return vec4(dist,dist,dist,1.0);
 }
 
-shader vec4 LinearizeDepthPS_MSAA(v2f IN,in uint coverageMask:SV_COVERAGE,out uint outputCoverage:SV_COVERAGE) : SV_Target
-{
-	int2 pos=vec2(fullResDims.xy)*IN.texCoords.xy;
-//	const uint FullMask = ( 1 << NumMSAASamples ) - 1; // 0xF
-//	float edgePixel = coverageMask != FullMask ? 1.0f : 0.0f;
-	outputCoverage=coverageMask;
-	for(int i=0;i<8;i++)
-	{
-		uint u=1<<i;
-		//if(coverageMask&u)
-		{
-			vec4 depth=depthTextureMS.Load(pos,i);
-			float dist=depthToLinearDistance(depth.x,depthToLinFadeDistParams);
-			return vec4(dist,dist,dist,1.0);
-		}
-	}
-    return vec4(0,0,0,1.0);
-}
 
 shader vec4 GlowExposureGammaPS(v2f IN) : SV_Target
 {
@@ -181,7 +180,7 @@ shader vec4 GlowExposureGammaPS(v2f IN) : SV_Target
 	vec4 glow	=texture_int(glowTexture,IN.texCoords);
 	c.rgb		+=glow.rgb;
 	c.rgb		*=exposure;
-	c.rgb		=pow(c.rgb,gamma);
+	c.rgb		=pow(c.rgb,vec3(gamma,gamma,gamma));
     return vec4(c.rgb,1.0);
 }
 
@@ -191,7 +190,7 @@ shader vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_Target
 	vec4 glow=texture_int(glowTexture,IN.texCoords);
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
-	c.rgb=pow(c.rgb,gamma);
+	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
     return vec4(c.rgb,1.0);
 }
 
@@ -202,7 +201,7 @@ shader vec4 PS_InfraRed(v2f IN) : SV_Target
     float final_radiance	=c.x+c.y+c.z;
 	c=vec4(final_radiance,final_radiance,final_radiance,c.a);
 	c.rgb*=exposure;
-	c.rgb=pow(c.rgb,gamma);
+	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
 	return vec4(c.rgb,1.0);
 }
 
@@ -213,7 +212,7 @@ shader vec4 PS_InfraRed_MSAA(v2f IN) : SV_Target
     float final_radiance	=c.x+c.y+c.z;
 	c=vec4(final_radiance,final_radiance,final_radiance,c.a);
 	c.rgb*=exposure;
-	c.rgb=pow(c.rgb,gamma);
+	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
 	return vec4(c.rgb,1.0);
 }
 
@@ -244,7 +243,7 @@ shader vec4 ExposureGammaPS(v2f IN) : SV_Target
 {
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
 	c.rgb*=exposure;
-	c.rgb=pow(c.rgb,gamma);
+	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
     return vec4(c.rgb,1.0);
 }
 
@@ -252,7 +251,7 @@ shader vec4 ExposureGammaPS_MSAA(v2f IN) : SV_Target
 {
 	vec4 c=texture_resolve(imageTextureMS,IN.texCoords);
 	c.rgb*=exposure;
-	c.rgb=pow(c.rgb,gamma);
+	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
     return vec4(c.rgb,1.0);
 }
 
@@ -274,7 +273,7 @@ shader vec4 WarpExposureGammaPS(v2f IN) : SV_Target
 	//	return vec4(0,0,0,0);
 	vec4 c=texture_clamp(imageTexture,tc);
 	c.rgb*=exposure;
-	c.rgb=pow(c.rgb,gamma);
+	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
     return vec4(c.rgb,1.0);
 }
 
@@ -306,7 +305,7 @@ shader vec4 DirectPS(v2f IN) : SV_Target
 	vec4 result	=texture_clamp(imageTexture,lowResTexCoords);
 	vec4 insc	=texture_clamp(inscatterTexture,IN.texCoords);
 	result		+=insc*result.a;
-	result.rgb	=exposure*pow(result.rgb,gamma);
+	result.rgb	=exposure*pow(result.rgb,vec3(gamma,gamma,gamma));
     return result;
 }
 
@@ -354,11 +353,6 @@ shader vec4 PS_ForegroundComposite_MSAA(v2f IN) : SV_Target
     return result;
 }
 
-
-CS_LAYOUT(8,8,1)
-shader void CS_Composite(uint3 sub_pos	: SV_DispatchThreadID )
-{
-}
 
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN) 
@@ -563,27 +557,6 @@ technique simple_cloud_blend
     }
 }
 
-technique linearize_depth
-{
-    pass main
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_4_0);
-		SetPixelShader(CompileShader(ps_4_0,LinearizeDepthPS()));
-    }
-    pass msaa
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,LinearizeDepthPS_MSAA()));
-    }
-}
 
 technique composite_atmospherics
 {
@@ -604,14 +577,6 @@ technique composite_atmospherics
         SetGeometryShader(NULL);
 		SetVertexShader(mainvs_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_MSAA()));
-    }
-}
-
-technique cs_composite
-{
-    pass main
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_Composite()));
     }
 }
 
@@ -663,19 +628,6 @@ technique textured
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,TexturedPS()));
-    }
-}
-
-technique show_compressed_texture
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowCompressed()));
     }
 }
 

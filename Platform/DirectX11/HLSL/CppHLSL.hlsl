@@ -39,7 +39,7 @@
 #define texelFetch3d(tex,p,lod) tex.Load(int4(p,lod))
 #define texelFetch2d(tex,p,lod) tex.Load(int3(p,lod))
 #define imageStore(uav, pos, c) uav[pos]=c
-#define IMAGE_LOAD(tex,uint2pos) tex[uint2pos]
+#define IMAGE_LOAD(tex,uint2pos) tex.Load(uint2pos,0)
 #define IMAGE_LOAD_MSAA(tex,uint2pos,sampl) tex.Load(uint2pos,sampl)
 #endif
 
@@ -87,7 +87,7 @@
 	#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
 	#define TEXTURE2D_UINT Texture2D<uint>
 	#define TEXTURE2D_UINT4 Texture2D<uint4>
-//	#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
+	#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
 
 	SamplerState samplerStateClampMirror 
 	{
@@ -106,61 +106,7 @@
 		vec3 position	: POSITION;
 		vec4 colour		: TEXCOORD0;		
 	};
-
-	struct posTexVertexOutput
-	{
-		vec4 hPosition	: SV_POSITION;
-		vec2 texCoords	: TEXCOORD0;		
-	};
-
-	posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
-	{
-		posTexVertexOutput OUT;
-		vec2 poss[4]=
-		{
-			{ 1.0,-1.0},
-			{ 1.0, 1.0},
-			{-1.0,-1.0},
-			{-1.0, 1.0},
-		};
-		vec2 pos		=poss[IN.vertex_id];
-		OUT.hPosition	=vec4(pos,0.0,1.0);
-		OUT.hPosition.z	=0.0; 
-		OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
-		return OUT;
-	}
-	posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
-	{
-		posTexVertexOutput OUT;
-		vec2 poss[4]=
-		{
-			{ 1.0, 0.0},
-			{ 1.0, 1.0},
-			{ 0.0, 0.0},
-			{ 0.0, 1.0},
-		};
-		vec2 pos		=poss[IN.vertex_id];
-		OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
-		OUT.hPosition.z	=0.0; 
-		OUT.texCoords	=pos;
-		OUT.texCoords.y	=1.0-OUT.texCoords.y;
-		return OUT;
-	}
 	
-	vec4 texture_resolve(Texture2DMS<vec4> textureMS,vec2 texCoords)
-	{
-		uint2 dims;
-		uint numberOfSamples;
-		textureMS.GetDimensions(dims.x,dims.y,numberOfSamples);
-		uint2 pos=uint2(vec2(dims)*texCoords);
-		vec4 d=vec4(0,0,0,0);
-		for(uint k=0;k<numberOfSamples;k++)
-		{
-			d+=textureMS.Load(pos,k);
-		}
-		d/=float(numberOfSamples);
-		return d;
-	}
 #endif
 
 #endif
