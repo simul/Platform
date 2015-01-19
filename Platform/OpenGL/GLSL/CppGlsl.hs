@@ -92,6 +92,7 @@
 
 #define GET_DIMENSIONS_MSAA(tex,X,Y,S) ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;//textureQueryLevels(tex);
 #define GET_DIMENSIONS(tex,X,Y) ivec2 iv=textureSize(tex,0); X=iv.x;Y=iv.y;
+#define GET_DIMENSIONS_3D(tex,X,Y,Z) ivec3 iv=textureSize(tex,0); X=iv.x;Y=iv.y;Z=iv.z;
 	// SOME GLSL compilers like this version:
 //#define RW_TEXTURE3D_FLOAT4 layout(rgba32f,binding = 0) uniform image3D
 //#define RW_TEXTURE3D_CHAR4 layout(rgba8,binding = 0) uniform image3D
