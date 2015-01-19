@@ -1,4 +1,5 @@
 #include "shader_platform.sl"
+#include "../../CrossPlatform/SL/common.sl"
 #ifndef GLFX
 #include "../../CrossPlatform/SL/render_states.sl"
 float particleZoneSize=15.0;	// = 625 m^3
@@ -1040,3 +1041,4 @@ technique move_particles
         SetDepthStencilState(DisableDepth,0);
 	}
 }
+#endif

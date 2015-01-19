@@ -39,7 +39,8 @@
 #define texelFetch3d(tex,p,lod) tex.Load(int4(p,lod))
 #define texelFetch2d(tex,p,lod) tex.Load(int3(p,lod))
 #define imageStore(uav, pos, c) uav[pos]=c
-#define IMAGE_LOAD(tex,uint2pos) tex.Load(uint2pos,0)
+#define IMAGE_LOAD(tex,uintpos) tex.Load(int3(uintpos,0))
+#define IMAGE_LOAD_3D(tex,uintpos) tex.Load(int4(uintpos,0))
 #define IMAGE_LOAD_MSAA(tex,uint2pos,sampl) tex.Load(uint2pos,sampl)
 #endif
 
@@ -81,8 +82,9 @@
 
 	#define GET_DIMENSIONS_MSAA(tex,x,y,s) tex.GetDimensions(x,y,s)
 	#define GET_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
-
-	#define RW_TEXTURE3D_FLOAT4 RWTexture3D<float4>
+	#define GET_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
+#define RW_TEXTURE3D_FLOAT4 RWTexture3D<float4>
+#define RW_TEXTURE3D_FLOAT RWTexture3D<float>
 	#define RW_TEXTURE2D_FLOAT4 RWTexture2D<float4>
 	#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
 	#define TEXTURE2D_UINT Texture2D<uint>

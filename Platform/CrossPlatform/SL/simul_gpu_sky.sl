@@ -345,7 +345,7 @@ void CSInsc(RW_TEXTURE3D_FLOAT4 targetTexture,Texture2D density_texture,Texture2
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow(float(i)/(float(targetSize.z)-1.0),2.0);
 		
-		vec3 previous_loss	=IMAGE_LOAD(loss_texture,idx).rgb;
+		vec3 previous_loss	=IMAGE_LOAD_3D(loss_texture,idx).rgb;
 
 		float dist_km		=zPosition*maxDistanceKm;
 		if(i==targetSize.z-1)
@@ -415,7 +415,7 @@ void CSSkyl(RW_TEXTURE3D_FLOAT4 targetTexture,Texture3D loss_texture,Texture3D i
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow(float(i)/(float(targetSize.z)-1.0),2.0);
 		
-		vec3 previous_loss	=IMAGE_LOAD(loss_texture,idx).rgb;
+		vec3 previous_loss	=IMAGE_LOAD_3D(loss_texture,idx).rgb;
 		float dist_km		=zPosition*maxDistanceKm;
 		if(i==targetSize.z-1)
 			dist_km=1000.0;
