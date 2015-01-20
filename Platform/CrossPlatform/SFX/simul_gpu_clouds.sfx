@@ -59,7 +59,7 @@ shader ColourDepthOutput PS_DensityMask(vertexOutput IN)
 }
 
 
-[numthreads(8,8,8)]
+CS_LAYOUT(8,8,8)
 shader void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 pos					=sub_pos+threadOffset;
@@ -75,7 +75,7 @@ shader void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThr
 
 float glow=0.1;
 
-[numthreads(8,8,1)]
+CS_LAYOUT(8,8,1)
 shader void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
 {
 	uint3 dims;
@@ -102,7 +102,7 @@ shader void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
 	}
 }
 
-[numthreads(8,8,1)]
+CS_LAYOUT(8,8,1)
 shader void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 {
 	uint3 dims;
@@ -143,7 +143,7 @@ shader void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 		targetTexture1[idx]			=indirect_light;
 	}
 }
-[numthreads(8,8,1)]
+CS_LAYOUT(8,8,1)
 shader void CS_GaussianFilter(uint3 sub_pos : SV_DispatchThreadID)
 {
 	uint3 dims;
@@ -174,8 +174,8 @@ float filterLight(Texture3D tex,vec3 texc)
 	return res/7.0;
 }
 
-[numthreads(8,8,8)]
-shader void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
+CS_LAYOUT(8,8,8)
+shader void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)
 {
 	uint3 dims;
 	uint3 pos=sub_pos+threadOffset;
@@ -192,9 +192,8 @@ shader void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)	//SV_DispatchThrea
 	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
 	float density				=saturate(densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x);
     vec4 res					=vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
-	targetTexture[pos]			=res;
+	IMAGE_STORE(targetTexture,pos,res);
 }
-
 
 technique density_mask
 {

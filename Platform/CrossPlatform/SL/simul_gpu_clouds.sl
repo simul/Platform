@@ -194,8 +194,7 @@ float GpuCloudMask(vec2 texCoords,vec2 maskCentre,float maskRadius,float maskFea
     return dens;
 }
 
-#ifndef GLSL
-void CS_CloudDensity(RWTexture3D<float4> targetTexture,Texture3D volumeNoiseTexture,Texture2D maskTexture,uint3 pos
+void CS_CloudDensity(RW_TEXTURE3D_FLOAT4 targetTexture,Texture3D volumeNoiseTexture,Texture2D maskTexture,uint3 pos
 					 ,float zPixel,vec3 noiseScale
 					 ,int octaves,float persistence
 					 ,float time,float humidity
@@ -204,9 +203,9 @@ void CS_CloudDensity(RWTexture3D<float4> targetTexture,Texture3D volumeNoiseText
 					 ,float upperDensity)
 {
 	uint3 dims;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	GET_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	uint3 noise_dims;
-	volumeNoiseTexture.GetDimensions(noise_dims.x,noise_dims.y,noise_dims.z);
+	GET_DIMENSIONS_3D(volumeNoiseTexture,noise_dims.x,noise_dims.y,noise_dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	vec3 densityspace_texcoord	=(pos+vec3(0.5,0.5,0.5))/vec3(dims);
@@ -219,9 +218,8 @@ void CS_CloudDensity(RWTexture3D<float4> targetTexture,Texture3D volumeNoiseText
 	float dens					=saturate((noise_val+2.0*hm-1.0)/diffusivity);
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
 	dens						=saturate(dens);
-	targetTexture[pos]			=dens;
+	IMAGE_STORE(targetTexture,pos,dens);
 }
-#endif
 
 float CloudDensity(Texture3D volumeNoiseTexture,Texture2D maskTexture,vec2 texCoords,float humidity,float diffusivity,int octaves,float persistence
 				   ,float time,float zPixel,float zSize,float noise_dims_z,vec3 noiseScale
@@ -250,4 +248,5 @@ float CloudDensity(Texture3D volumeNoiseTexture,Texture2D maskTexture,vec2 texCo
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
     return dens;
 }
+
 #endif
