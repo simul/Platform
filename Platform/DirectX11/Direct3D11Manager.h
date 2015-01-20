@@ -20,7 +20,7 @@ namespace simul
 			void Release();
 			void CreateRenderTarget(ID3D11Device* d3dDevice);
 			void CreateDepthBuffer(ID3D11Device* d3dDevice);
-			void SetRenderer(Direct3D11CallbackInterface *ci);
+			void SetRenderer(Direct3D11CallbackInterface *ci, int view_id);
 			HWND hwnd;
 			/// The id assigned by the renderer to correspond to this hwnd
 			int view_id;			
@@ -51,7 +51,7 @@ namespace simul
 			void Shutdown();
 			IDXGISwapChain *GetSwapChain(HWND hwnd);
 			void Render(HWND hwnd);
-			void SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci);
+			void SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci,int view_id);
 			void SetFullScreen(HWND hwnd,bool fullscreen,int which_output);
 			void ResizeSwapChain(HWND hwnd,int width,int height);
 			ID3D11Device* GetDevice();

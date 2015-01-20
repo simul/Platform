@@ -288,12 +288,13 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 	viewport.TopLeftY = 0.0f;
 }
 
-void Window::SetRenderer(Direct3D11CallbackInterface *ci)
+void Window::SetRenderer(Direct3D11CallbackInterface *ci,int vw_id)
 {
 	if(renderer==ci)
 		return;
 	if(renderer)
 		renderer->RemoveView(view_id);
+	view_id = vw_id;
 	renderer=ci;
 	if(!m_swapChain)
 		return;
@@ -660,14 +661,14 @@ void Direct3D11Manager::Render(HWND h)
 	w->m_swapChain->Present(SyncInterval,dwFlags);
 }
 
-void Direct3D11Manager::SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci)
+void Direct3D11Manager::SetRenderer(HWND hwnd, Direct3D11CallbackInterface *ci, int view_id)
 {
 	if(windows.find(hwnd)==windows.end())
 		return;
 	Window *w=windows[hwnd];
 	if(!w)
 		return;
-	w->SetRenderer(ci);
+	w->SetRenderer(ci,  view_id);
 }
 
 int Direct3D11Manager::GetViewId(HWND hwnd)
