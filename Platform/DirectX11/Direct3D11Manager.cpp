@@ -49,9 +49,9 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 
 	// Initialize the swap chain description.
 	ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
-
+	static int uu = 3;
 	// Set number of back buffers.
-	swapChainDesc.BufferCount = 3;
+	swapChainDesc.BufferCount =uu;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
 
 	// Set the width and height of the back buffer.
@@ -107,6 +107,7 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 
 	// Don't set the advanced flags.
 	swapChainDesc.Flags = 0;
+	//swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 	// Sometimes this call to create the device will fail if the primary video card is not compatible with DirectX 11.
 	// Some machines may have the primary card as a DirectX 10 video card and the secondary card as a DirectX 11 video card.
 	// Also some hybrid graphics cards work that way with the primary being the low power Intel card and the secondary being
@@ -129,9 +130,9 @@ SIMUL_ASSERT(result==S_OK);*/
   IDXGIAdapter * pDXGIAdapter;
   pDXGIDevice->GetParent(__uuidof(IDXGIAdapter), (void **)&pDXGIAdapter);
   IDXGIFactory * factory;
-  pDXGIAdapter->GetParent(__uuidof(IDXGIFactory), (void **)&factory);
-factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain);
-//	SetDebugObjectName(m_swapChain,"Window SwapChain");
+  V_CHECK(pDXGIAdapter->GetParent(__uuidof(IDXGIFactory), (void **)&factory));
+	V_CHECK(factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain));
+//	CreateSwapChainForHwnd 
   SAFE_RELEASE(factory);
   SAFE_RELEASE(pDXGIAdapter);
   SAFE_RELEASE(pDXGIDevice);
@@ -658,7 +659,7 @@ void Direct3D11Manager::Render(HWND h)
 	// 0 - don't wait for 60Hz refresh.
 	static UINT SyncInterval = 0;
     // Show the frame on the primary surface.
-	w->m_swapChain->Present(SyncInterval,dwFlags);
+	V_CHECK(w->m_swapChain->Present(SyncInterval,dwFlags));
 }
 
 void Direct3D11Manager::SetRenderer(HWND hwnd, Direct3D11CallbackInterface *ci, int view_id)
@@ -710,12 +711,12 @@ void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 	if(!w->m_swapChain)
 		return;
 	BOOL current_fullscreen;
-	w->m_swapChain->GetFullscreenState(&current_fullscreen,NULL);
+	V_CHECK(w->m_swapChain->GetFullscreenState(&current_fullscreen, NULL));
 	if((current_fullscreen==TRUE)==fullscreen)
 		return;
-	w->m_swapChain->SetFullscreenState(fullscreen,output);
+	V_CHECK(w->m_swapChain->SetFullscreenState(fullscreen, output));
 	DXGI_OUTPUT_DESC outputDesc;
-	output->GetDesc(&outputDesc);
+	V_CHECK(output->GetDesc(&outputDesc));
 	int W=0,H=0;
 	if(fullscreen)
 	{
@@ -753,7 +754,7 @@ void Direct3D11Manager::ResizeSwapChain(HWND hwnd,int width,int height)
 	SAFE_RELEASE(w->m_renderTargetView);
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	w->m_swapChain->GetDesc(&swapDesc);
-	HRESULT hr=w->m_swapChain->ResizeBuffers(1,width,height,DXGI_FORMAT_R8G8B8A8_UNORM,0);
+	HRESULT hr=w->m_swapChain->ResizeBuffers(1,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0);
 	w->CreateRenderTarget(d3dDevice);
 	w->CreateDepthBuffer(d3dDevice);
 	

@@ -211,7 +211,7 @@ void HdrRenderer::RenderInfraRed(crossplatform::DeviceContext &deviceContext,cro
 void HdrRenderer::RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture
 	,float offsetX,float Exposure,float Gamma)
 {
-	hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
+hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
 	hdr_effect->SetTexture(deviceContext,"imageTextureMS",texture);
 	hdrConstants.gamma				=Gamma;
 	hdrConstants.exposure			=Exposure;
