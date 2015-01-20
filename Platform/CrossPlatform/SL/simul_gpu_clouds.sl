@@ -194,38 +194,21 @@ float GpuCloudMask(vec2 texCoords,vec2 maskCentre,float maskRadius,float maskFea
     return dens;
 }
 
-void CS_CloudDensity(RW_TEXTURE3D_FLOAT4 targetTexture,Texture3D volumeNoiseTexture,Texture2D maskTexture,uint3 pos
-					 ,float zPixel,vec3 noiseScale
-					 ,int octaves,float persistence
-					 ,float time,float humidity
-					 ,float diffusivity,float baseLayer
-					 ,float transition
-					 ,float upperDensity)
-{
-	uint3 dims;
-	GET_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
-	uint3 noise_dims;
-	GET_DIMENSIONS_3D(volumeNoiseTexture,noise_dims.x,noise_dims.y,noise_dims.z);
-	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
-		return;
-	vec3 densityspace_texcoord	=(pos+vec3(0.5,0.5,0.5))/vec3(dims);
-	vec3 noisespace_texcoord	=(densityspace_texcoord+vec3(0,0,0.0*zPixel))*noiseScale+vec3(1.0,1.0,0);
-	// noise_texel is the size of a noise texel
-	float noise_texel			=1.0/noise_dims.z;
-	float height				=noiseScale.z;
-	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
-	float hm					=humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
-	float dens					=saturate((noise_val+2.0*hm-1.0)/diffusivity);
-	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
-	dens						=saturate(dens);
-	IMAGE_STORE(targetTexture,pos,dens);
-}
-
-float CloudDensity(Texture3D volumeNoiseTexture,Texture2D maskTexture,vec2 texCoords,float humidity,float diffusivity,int octaves,float persistence
-				   ,float time,float zPixel,float zSize,float noise_dims_z,vec3 noiseScale
-				   ,float baseLayer
-					 ,float transition
-					 ,float upperDensity)
+float CloudDensity(	Texture3D volumeNoiseTexture
+					,Texture2D maskTexture
+					,vec2 texCoords
+					,float humidity
+					,float diffusivity
+					,int octaves
+					,float persistence
+					,float time
+					,float zPixel
+					,float zSize
+					,float noise_dims_z
+					,vec3 noiseScale
+					,float baseLayer
+					,float transition
+					,float upperDensity)
 {
 	vec3 densityspace_texcoord	=assemble3dTexcoord(texCoords.xy,zPixel,zSize);
 	vec3 noisespace_texcoord	=(densityspace_texcoord+vec3(0,0,0.0*zPixel))*noiseScale+vec3(1.0,1.0,0);
