@@ -116,11 +116,17 @@
 #ifdef GLFX
 	shader void VS_ScreenQuad( out vec2 texCoords)
 	{
-		vec2 poss[4];
-		poss[0]		=vec2(1.0, 0.0);
-		poss[1]		=vec2(1.0, 1.0);
-		poss[2]		=vec2(0.0, 0.0);
-		poss[3]		=vec2(0.0, 1.0);
+		vec2 poss[4]=
+		{
+			{ 1.0, 0.0},
+			{ 1.0, 1.0},
+			{ 0.0, 0.0},
+			{ 0.0, 1.0},
+		};
+		//poss[0]		=vec2(1.0, 0.0);
+		//poss[1]		=vec2(1.0, 1.0);
+		//poss[2]		=vec2(0.0, 0.0);
+		//poss[3]		=vec2(0.0, 1.0);
 		vec2 pos	=poss[gl_VertexID];
 		gl_Position	=vec4(rect.xy+rect.zw*pos.xy,1.0,1.0);
 		texCoords	=pos.xy;

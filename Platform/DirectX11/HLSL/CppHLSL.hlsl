@@ -79,12 +79,14 @@
 	#define CS_LAYOUT(u,v,w) [numthreads(u,v,w)]
 	
 	#define	IMAGE_STORE(a,b,c) a[b]=c;
+	#define	IMAGE_STORE_3D(a,b,c) a[b]=c;
 
 	#define GET_DIMENSIONS_MSAA(tex,x,y,s) tex.GetDimensions(x,y,s)
 	#define GET_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
 	#define GET_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
-#define RW_TEXTURE3D_FLOAT4 RWTexture3D<float4>
-#define RW_TEXTURE3D_FLOAT RWTexture3D<float>
+	#define GET_IMAGE_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
+	#define RW_TEXTURE3D_FLOAT4 RWTexture3D<float4>
+	#define RW_TEXTURE3D_FLOAT RWTexture3D<float>
 	#define RW_TEXTURE2D_FLOAT4 RWTexture2D<float4>
 	#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
 	#define TEXTURE2D_UINT Texture2D<uint>
