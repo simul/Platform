@@ -3,6 +3,7 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include <iomanip>
 #ifndef _XBOX_ONE
 #include <dxgi.h>
 #endif
@@ -165,6 +166,43 @@ SIMUL_ASSERT(result==S_OK);*/
 	// Create the rasterizer state from the description we just filled out.
 	result = d3dDevice->CreateRasterizerState(&rasterDesc, &m_rasterState);
 	SIMUL_ASSERT(result==S_OK);
+}
+
+void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
+{
+	RECT rect;
+#if defined(WINVER) &&!defined(_XBOX_ONE)
+	if(!GetWindowRect(hwnd,&rect))
+		return;
+#endif
+	int W	=abs(rect.right-rect.left);
+	int H	=abs(rect.bottom-rect.top);
+	ID3D11RenderTargetView *t[]={NULL};
+	DXGI_SWAP_CHAIN_DESC swapDesc;
+	HRESULT hr=m_swapChain->GetDesc(&swapDesc);
+	if(hr!=S_OK)
+		return;
+	if(swapDesc.BufferDesc.Width==W&&swapDesc.BufferDesc.Height==H)
+		return;
+	SAFE_RELEASE(m_renderTargetView);
+	SAFE_RELEASE(m_depthStencilTexture);
+	SAFE_RELEASE(m_depthStencilView);
+	SAFE_RELEASE(m_depthStencilState);
+	SAFE_RELEASE(m_rasterState);
+			//		*m_depthStencilState;
+			//		*m_rasterState;
+	V_CHECK(m_swapChain->ResizeBuffers(1,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0));
+	CreateRenderTarget(d3dDevice);
+	CreateDepthBuffer(d3dDevice);
+	
+	DXGI_SURFACE_DESC surfaceDesc;
+	m_swapChain->GetDesc(&swapDesc);
+	surfaceDesc.Format		=swapDesc.BufferDesc.Format;
+	surfaceDesc.SampleDesc	=swapDesc.SampleDesc;
+	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
+	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
+	if(renderer)
+		renderer->ResizeView(view_id,&surfaceDesc);
 }
 
 void Window::CreateRenderTarget(ID3D11Device* d3dDevice)
@@ -642,7 +680,21 @@ void Direct3D11Manager::Render(HWND h)
 		return;
 	Window *w=windows[h];
 	if(!w)
+	{
+		SIMUL_CERR<<"No window exists for HWND "<<std::hex<<h<<std::endl;
 		return;
+	}
+	if(h!=w->hwnd)
+	{
+		SIMUL_CERR<<"Window for HWND "<<std::hex<<h<<" has hwnd "<<w->hwnd<<std::endl;
+		return;
+	}
+	ResizeSwapChain(w->hwnd);
+	if(!w->m_renderTargetView)
+	{
+		SIMUL_CERR<<"No renderTarget exists for HWND "<<std::hex<<h<<std::endl;
+		return;
+	}
 	// Set the depth stencil state.
 	d3dDeviceContext->OMSetDepthStencilState(w->m_depthStencilState, 1);
 	// Bind the render target view and depth stencil buffer to the output render pipeline.
@@ -733,40 +785,17 @@ void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 		W	=abs(rect.right-rect.left);
 		H=abs(rect.bottom-rect.top);
 	}
-	ResizeSwapChain(hwnd,W,H);
+	ResizeSwapChain(hwnd);
 }
 
-void Direct3D11Manager::ResizeSwapChain(HWND hwnd,int width,int height)
+void Direct3D11Manager::ResizeSwapChain(HWND hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return;
 	Window *w=windows[hwnd];
 	if(!w)
 		return;
-		RECT rect;
-#if defined(WINVER) &&!defined(_XBOX_ONE)
-		GetWindowRect(hwnd,&rect);
-#endif
-		int W	=abs(rect.right-rect.left);
-		int H	=abs(rect.bottom-rect.top);
-	ID3D11RenderTargetView *t[]={NULL};
-	//d3dDeviceContext->OMSetRenderTargets(1,t,NULL);
-	SAFE_RELEASE(w->m_renderTargetView);
-	DXGI_SWAP_CHAIN_DESC swapDesc;
-	w->m_swapChain->GetDesc(&swapDesc);
-	HRESULT hr=w->m_swapChain->ResizeBuffers(1,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0);
-	w->CreateRenderTarget(d3dDevice);
-	w->CreateDepthBuffer(d3dDevice);
-	
-	DXGI_SURFACE_DESC surfaceDesc;
-	w->m_swapChain->GetDesc(&swapDesc);
-	surfaceDesc.Format		=swapDesc.BufferDesc.Format;
-	surfaceDesc.SampleDesc	=swapDesc.SampleDesc;
-	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
-	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
-	if(w->renderer)
-		w->renderer->ResizeView(w->view_id,&surfaceDesc);
-	SIMUL_ASSERT(hr==S_OK);
+	w->ResizeSwapChain(d3dDevice);
 }
 
 ID3D11Device* Direct3D11Manager::GetDevice()
