@@ -21,6 +21,7 @@ Texture2D cloudNearFarTexture;
 Texture2D cloudGodraysTexture;
 
 Texture3D cloudTexture;
+SamplerState cloudSamplerState;
 Texture2D moistureTexture;
 
 RWTexture3D<float4> targetVolume;
@@ -372,6 +373,7 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 					,illuminationTexture
 					,cloudShadowTexture
 					,cloudTexture
+					, cloudSamplerState
 					,viewPosition
 					,invShadowMatrix
 					,depth_lookup

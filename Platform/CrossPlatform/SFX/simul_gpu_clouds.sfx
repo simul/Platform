@@ -18,6 +18,7 @@ uniform RW_TEXTURE3D_FLOAT targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
 #include "../../CrossPlatform/SL/simul_gpu_clouds.sl"
 
 SamplerState lightSamplerState SIMUL_SAMPLER_REGISTER(8);
+SamplerState densSamplerState SIMUL_SAMPLER_REGISTER(9);
 
 struct vertexOutput
 {
@@ -52,12 +53,11 @@ struct ColourDepthOutput
 shader ColourDepthOutput PS_DensityMask(vertexOutput IN)
 {
 	ColourDepthOutput result;
-	float dens					=GpuCloudMask(IN.texCoords, maskCentre, maskRadius,maskFeather, maskThickness);
+	float dens					=GpuCloudMask(IN.texCoords, maskCentre, maskRadius,maskFeather, maskThickness,transformMatrix);
 	result.colour				=vec4(dens,dens,dens,dens);
 	result.depth				=dens;
 	return result;
 }
-
 
 CS_LAYOUT(8,8,8)
 shader void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
@@ -82,6 +82,34 @@ shader void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThr
 	IMAGE_STORE_3D(targetTexture,int3(pos),vec4(dens,dens,dens,dens));
 }
 
+CS_LAYOUT(8, 8, 8)
+shader void CS_Density_DontWrap(uint3 sub_pos : SV_DispatchThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
+{
+	uint3 pos = sub_pos + threadOffset;
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(targetTexture, dims.x, dims.y, dims.z);
+	uint3 noise_dims;
+	GET_DIMENSIONS_3D(volumeNoiseTexture, noise_dims.x, noise_dims.y, noise_dims.z);
+	if (pos.x >= dims.x || pos.y >= dims.y || pos.z >= dims.z)
+		return;
+	vec3 densityspace_texcoord = (vec3(pos) + vec3(0.5, 0.5, 0.5)) / vec3(dims);
+	vec3 noisespace_texcoord = (densityspace_texcoord + vec3(0, 0, 0.0*zPixel))*vec3(noiseScale) + vec3(1.0, 1.0, 0);
+	// noise_texel is the size of a noise texel
+	float noise_texel = 1.0 / noise_dims.z;
+	float height = noiseScale.z;
+	float noise_val = NoiseFunction(volumeNoiseTexture, noisespace_texcoord, octaves, persistence, time, height, noise_texel);
+	float hm = humidity*GetHumidityMultiplier2(densityspace_texcoord.z, baseLayer, transition, upperDensity)*texture_clamp_lod(maskTexture, densityspace_texcoord.xy, 0).x;
+	float dens = saturate((noise_val + 2.0*hm - 1.0) / diffusivity);
+	dens *= saturate(densityspace_texcoord.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - densityspace_texcoord.z) / zPixel);
+	dens = saturate(dens);
+	if (pos.x == 0 || pos.y == 0 || pos.x == dims.x - 1 || pos.y == dims.y - 1)
+		dens = 0;
+	IMAGE_STORE_3D(targetTexture, int3(pos), vec4(dens, dens, dens, dens));
+}
+
+
+
+
 float glow=0.1;
 
 CS_LAYOUT(8,8,1)
@@ -103,7 +131,7 @@ shader void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
 		{
 			vec3 lightspace_texcoord	=vec3(pos.xy,float(i)+0.5+float(j)/float(C))/vec3(dims);
 			vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
-			float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
+			float density = densityTexture.SampleLevel(densSamplerState, densityspace_texcoord, 0).x;
 			direct_light				*=exp(-extinctions.x*density*stepLength/float(C));
 		}
 		//if(density==0)
@@ -143,7 +171,7 @@ shader void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 		vec3 lightspace_texcoord	=(vec3(idx)+0.5)/vec3(dims);
 
 		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
-		float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
+		float density = densityTexture.SampleLevel(densSamplerState, densityspace_texcoord, 0).x;
 		indirect_light				*=exp(-extinctions.y*density*stepLength);
 		
 		//NOTE: Causes artifact underneath clouds:
@@ -196,10 +224,12 @@ shader void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
 	vec2 light_lookup			=vec2(filterLight(lightTexture1,lightspace_texcoord)
 										,lightTexture2.SampleLevel(lightSamplerState,lightspace_texcoord,0).x);
+	//light_lookup = saturate(lightspace_texcoord.xy-1.0);
 	vec2 amb_texel				=vec2(ambientTexture1.SampleLevel(wwcSamplerState,ambient_texcoord,0).x
 										,ambientTexture2.SampleLevel(wwcSamplerState,ambient_texcoord,0).x);
 	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
 	float density				=saturate(densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x);
+
     vec4 res					=vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
 	IMAGE_STORE_3D(targetTexture,pos,res);
 }
@@ -219,9 +249,13 @@ technique density_mask
 
 technique gpu_density_compute
 {
-    pass p0 
+	pass wrap
+	{
+		SetComputeShader(CompileShader(cs_5_0, CS_Density()));
+	}
+    pass dont_wrap 
     {
-		SetComputeShader(CompileShader(cs_5_0,CS_Density()));
+		SetComputeShader(CompileShader(cs_5_0,CS_Density_DontWrap()));
     }
 }
 

@@ -116,6 +116,7 @@ namespace simul
 	namespace crossplatform
 	{
 		class Texture;
+		class SamplerState;
 	}
 }
 struct CloudShadowStruct 
@@ -134,6 +135,8 @@ struct CloudShadowStruct
 	float shadowRange;
 	float rainbowIntensity;
 	float godrays_strength;
+	bool wrap;
+	simul::crossplatform::SamplerState *samplerState;
 };
 #else
 //SIMUL_CONSTANT_BUFFER(OnscreenRectangle,9)

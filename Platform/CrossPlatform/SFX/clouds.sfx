@@ -544,11 +544,12 @@ vec4 PS_ShowShadow( posTexVertexOutput IN):SV_TARGET
 #define CROSS_SECTION_STEPS 32
 vec4 CrossSection(vec2 texCoords,float yz)
 {
-	vec3 texc=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
-	int i=0;
-	vec3 accum=vec3(0.0,0.5,1.0);
-	texc.y+=0.5*(1.0-yz)/(float)CROSS_SECTION_STEPS;
+	vec3 texc	=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
+	int i		=0;
+	vec3 accum	=vec3(0.0,0.5,1.0);
+	texc.y		+=0.5*(1.0-yz)/(float)CROSS_SECTION_STEPS;
 	//texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
+	vec2 uv = vec2(0,0);
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
 		vec4 density=texture_wwc(cloudDensity1,texc);
@@ -557,10 +558,13 @@ vec4 CrossSection(vec2 texCoords,float yz)
 		float opacity=density.z;
 		colour*=opacity;
 		accum*=1.0-opacity;
-		accum+=colour;
+		accum += colour; 
+		accum *= density.y;
+		uv += density.xy;
 		texc.y-=(1.0-yz)/(float)CROSS_SECTION_STEPS;
 		texc.z+=yz/(float)CROSS_SECTION_STEPS;
 	}
+//	accum.rg = uv / float(CROSS_SECTION_STEPS);
     return vec4(accum,1);
 }
 

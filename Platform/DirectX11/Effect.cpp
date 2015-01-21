@@ -426,6 +426,8 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,cr
 
 void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)
 {
+	if (!s)
+		return;
 	ID3DX11EffectSamplerVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsSampler();
 	var->SetSampler(0,s->asD3D11SamplerState());
 }
