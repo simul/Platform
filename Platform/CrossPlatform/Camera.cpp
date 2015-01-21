@@ -348,6 +348,35 @@ const float *Camera::MakeDepthReversedProjectionMatrix(float h,float v,float zNe
 	return m;
 }
 
+const float *Camera::MakeDepthReversedProjectionMatrix(const FovPort &fovPort, float zNear, float zFar)
+{
+	float xScale	= 2.0f / (fovPort.leftTan + fovPort.rightTan);
+	float xOffset	 = (fovPort.leftTan - fovPort.rightTan) * xScale * 0.5f;
+	float yScale	= 2.0f / (fovPort.upTan + fovPort.downTan);
+	float yOffset	= (fovPort.upTan - fovPort.downTan) * yScale * 0.5f;
+
+	static float handedness = 1.0f;// right-handed obviously.
+	math::Matrix4x4 m;
+	memset(&m, 0, 16 * sizeof(float));
+	m._11 = xScale;
+	m._22 = yScale;
+	m._31 = -handedness*xOffset;
+	m._32 = handedness *yOffset;
+	if (zFar>0)
+	{
+		m._33 = zNear / (zFar - zNear);	m._34 = -1.f;
+		m._43 = zFar*zNear / (zFar - zNear);
+	}
+	else // infinite far plane.
+	{
+		m._33 = 0.f;					m._34 = -1.f;
+		m._43 = zNear;
+	}
+	// testing:
+	GetFrustumFromProjectionMatrix(m);
+	return m;
+}
+
 const float *Camera::MakeDepthReversedProjectionMatrix(float aspect) const
 {
 	float h=HorizontalFieldOfViewInRadians;
@@ -370,18 +399,39 @@ const float *Camera::MakeDepthReversedProjectionMatrix(float aspect) const
 
 const float *Camera::MakeProjectionMatrix(float h,float v,float zNear,float zFar)
 {
-	float xScale= 1.f/tan(h/2.f);
-	float yScale = 1.f/tan(v/2.f);
+	float xScale = 1.f / tan(h / 2.f);
+	float yScale = 1.f / tan(v / 2.f);
 	math::Matrix4x4 m;
-	memset(&m,0,16*sizeof(float));
-	m._11=xScale;
-	m._22=yScale;
-	
-	m._33	= zFar/(zNear-zFar);		m._34	=-1.f;
-	m._43	= zNear*zFar/(zNear-zFar);
-	
+	memset(&m, 0, 16 * sizeof(float));
+	m._11 = xScale;
+	m._22 = yScale;
+
+	m._33 = zFar / (zNear - zFar);		m._34 = -1.f;
+	m._43 = zNear*zFar / (zNear - zFar);
+
 	return m;
 }
+const float *Camera::MakeProjectionMatrix(const FovPort &fovPort, float zNear, float zFar)
+{
+	float xScale = 2.0f / (fovPort.leftTan + fovPort.rightTan);
+	float xOffset = (fovPort.leftTan - fovPort.rightTan) * xScale * 0.5f;
+	float yScale = 2.0f / (fovPort.upTan + fovPort.downTan);
+	float yOffset = (fovPort.upTan - fovPort.downTan) * yScale * 0.5f;
+
+	static float handedness = 1.0f;// right-handed obviously.
+	math::Matrix4x4 m;
+	memset(&m, 0, 16 * sizeof(float));
+	m._11 = xScale;
+	m._22 = yScale;
+	m._12 = -handedness*xOffset;
+	m._23 = handedness *yOffset;
+
+	m._33 = zFar / (zNear - zFar);		m._34 = -1.f;
+	m._43 = zNear*zFar / (zNear - zFar);
+
+	return m;
+}
+
 
 const float *Camera::MakeProjectionMatrix(float aspect) const
 {

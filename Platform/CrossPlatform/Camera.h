@@ -36,6 +36,13 @@ namespace simul
 			float right_left_spd;
 			float up_down_spd;
 		};
+		struct FovPort
+		{
+			float upTan;
+			float downTan;
+			float leftTan;
+			float rightTan;
+		};
 
 		/// A useful class to provide input to a mouse-controlled camera.
 		/// Store persistently, as it needs to use the difference between current
@@ -176,8 +183,10 @@ namespace simul
 			void SetHorizontalFieldOfViewDegrees(float f);
 			float GetVerticalFieldOfViewDegrees() const;
 			void SetVerticalFieldOfViewDegrees(float f);
-			static const float *MakeDepthReversedProjectionMatrix(float h,float v,float zNear,float zFar);
-			static const float *MakeProjectionMatrix(float h,float v,float zNear,float zFar);
+			static const float *MakeDepthReversedProjectionMatrix(float h, float v, float zNear, float zFar);
+			static const float *MakeDepthReversedProjectionMatrix(const FovPort &fovPort, float zNear, float zFar);
+			static const float *MakeProjectionMatrix(float h, float v, float zNear, float zFar);
+			static const float *MakeProjectionMatrix(const FovPort &fovPort, float zNear, float zFar);
 		};
 	}
 }

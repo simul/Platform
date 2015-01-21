@@ -260,7 +260,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 	res.add						=vec4(0,0,0,1.0);
 	vec4 insc					=vec4(0,0,0,0);
 	float depth					=IMAGE_LOAD(depthTexture,fullres_depth_pos2).x;
-	float dist					=depthToLinearDistance(depth		,depthToLinFadeDistParams);
+	float dist					=depthToLinearDistance(depth	,depthToLinFadeDistParams);
 #if 1
 	vec4 cloudFar				=texture_clamp_lod(lowResFarTexture,lowResTexCoords,0);
 	vec4 cloudNear				=texture_clamp_lod(nearCloudTexture, lowResTexCoords, 0);

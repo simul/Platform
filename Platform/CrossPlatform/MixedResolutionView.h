@@ -81,25 +81,25 @@ namespace simul
 			/// Gets resolved header buffer.
 			///
 			/// \return	null if it fails, else the resolved header buffer.
-			crossplatform::Texture *GetResolvedHDRBuffer();
+			crossplatform::Texture						*GetResolvedHDRBuffer();
 
 			/// Gets the framebuffer.
 			///
 			/// \return	null if it fails, else the framebuffer.
-			crossplatform::BaseFramebuffer			*GetFramebuffer()
+			crossplatform::BaseFramebuffer				*GetFramebuffer()
 			{
 				return hdrFramebuffer;
 			}
 			/// Gets hi res depth texture.
 			///
 			/// \return	null if it fails, else the hi resource depth texture.
-			crossplatform::Texture					*GetHiResDepthTexture()
+			crossplatform::Texture						*GetHiResDepthTexture()
 			{
 				return hiResDepthTexture;
 			}
 			/// Type of the view.
 			ViewType									viewType;
-
+			bool										vrDistortion;
 			 private:
 			///      A framebuffer with depth.
 			simul::crossplatform::BaseFramebuffer		*hdrFramebuffer;

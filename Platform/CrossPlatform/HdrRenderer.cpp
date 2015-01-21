@@ -217,16 +217,16 @@ hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
 	hdrConstants.exposure			=Exposure;
 	
 	float direction=(offsetX-0.5f)*2.0f;
-//	float x=offsetX/2.0f;
-//	float y=0,w=0.5f,h=1.0f;
+
+
     float as = float(640) / float(800);
 	
 	vec4 distortionK(1.0f,0.22f,0.24f,0.0f);
     // We are using 1/4 of DistortionCenter offset value here, since it is
     // relative to [-1,1] range that gets mapped to [0, 0.5].
-
-	float Distortion_XCenterOffset	=-direction*0.15197642f;
-	float Distortion_Scale			=1.7146056f;
+	static float xco				= 0.15197642f;
+	float Distortion_XCenterOffset	= direction*xco;
+	static float Distortion_Scale	= 1.7146056f;
     float scaleFactor				=1.0f/Distortion_Scale;
 	hdrConstants.warpHmdWarpParam	=distortionK;
 	hdrConstants.warpLensCentre		=vec2(0.5f+Distortion_XCenterOffset*0.5f, 0.5f);

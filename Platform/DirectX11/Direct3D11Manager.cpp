@@ -108,7 +108,7 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 
 	// Don't set the advanced flags.
 	swapChainDesc.Flags = 0;
-	//swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 	// Sometimes this call to create the device will fail if the primary video card is not compatible with DirectX 11.
 	// Some machines may have the primary card as a DirectX 10 video card and the secondary card as a DirectX 11 video card.
 	// Also some hybrid graphics cards work that way with the primary being the low power Intel card and the secondary being
@@ -766,8 +766,8 @@ void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 	V_CHECK(w->m_swapChain->GetFullscreenState(&current_fullscreen, NULL));
 	if((current_fullscreen==TRUE)==fullscreen)
 		return;
-	V_CHECK(w->m_swapChain->SetFullscreenState(fullscreen, output));
-	DXGI_OUTPUT_DESC outputDesc;
+	V_CHECK(w->m_swapChain->SetFullscreenState(fullscreen, NULL));
+/*	DXGI_OUTPUT_DESC outputDesc;
 	V_CHECK(output->GetDesc(&outputDesc));
 	int W=0,H=0;
 	if(fullscreen)
@@ -784,7 +784,7 @@ void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 #endif
 		W	=abs(rect.right-rect.left);
 		H=abs(rect.bottom-rect.top);
-	}
+	}*/
 	ResizeSwapChain(hwnd);
 }
 

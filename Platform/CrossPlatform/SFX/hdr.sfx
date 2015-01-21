@@ -277,7 +277,7 @@ shader vec4 WarpExposureGammaPS(v2f IN) : SV_Target
 	vec4 c=texture_clamp(imageTexture,tc);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
-	c.r=offset.x;
+//	c.r=offset.x;
     return vec4(c.rgb,1.0);
 }
 
