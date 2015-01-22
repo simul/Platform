@@ -559,7 +559,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 		colour*=opacity;
 		accum*=1.0-opacity;
 		accum += colour; 
-		accum *= density.y;
+		accum *= lerp(.97,1.0,density.y);
 		uv += density.xy;
 		texc.y-=(1.0-yz)/(float)CROSS_SECTION_STEPS;
 		texc.z+=yz/(float)CROSS_SECTION_STEPS;
