@@ -14,6 +14,7 @@
 uniform Texture2D imageTexture;
 uniform TEXTURE2DMS_FLOAT4 imageTextureMS;
 uniform Texture2D nearImageTexture;
+uniform Texture2D nearFarTexture;
 uniform Texture2D depthTexture;
 uniform TEXTURE2DMS_FLOAT4 depthTextureMS;
 uniform Texture2D lowResDepthTexture;
@@ -364,6 +365,7 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN)
 	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.texCoords.xy
 												,imageTexture
 												,nearImageTexture
+												, nearFarTexture
 												,hiResDepthTexture
 												,int2(hiResDims)
 												,int2(lowResDims)
@@ -389,6 +391,7 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(v2f IN)
 	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.texCoords.xy
 																,imageTexture
 																,nearImageTexture
+																, nearFarTexture
 																,hiResDepthTexture
 																,int2(hiResDims)
 																,int2(lowResDims)

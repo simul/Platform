@@ -233,6 +233,7 @@ vec3 nearFarDepthFilter(LookupQuad4 depth_Q,LookupQuad4 dist_Q,vec2 texDims,vec2
 TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 				,Texture2D lowResFarTexture
 				,Texture2D nearCloudTexture
+				, Texture2D nearFarTexture
 				,Texture2D hiResDepthTexture
 				,int2 hiResDims
 				,int2 lowResDims
@@ -282,44 +283,18 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 		vec3 nearFarDistHiRes;
 		nearFarDistHiRes.xy			=depthToLinearDistance(hires_depths.yx	,depthToLinFadeDistParams);
 		nearFarDistHiRes.z			=abs(nearFarDistHiRes.y-nearFarDistHiRes.x);
-		float hiResInterp			=saturate((dist-nearFarDistHiRes.x)/nearFarDistHiRes.z);
-#ifdef VOLUME_INSCATTER
-#ifdef SCREENSPACE_VOL
+		vec4 nearFarCloud			= texture_clamp_lod(nearFarTexture, lowResTexCoords, 0);
+		nearFarCloud.z				= nearFarCloud.y - nearFarCloud.x;
+		float hiResInterp			= saturate((dist - nearFarCloud.x) / nearFarCloud.z);
+
 		vec3 volumeTexCoords		=vec3(hiResTexCoords,sqrt(dist));
 		insc						=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
-#else
-		volume_texc.z				=sqrt(dist);
-		insc						=texture_wmc_lod(lightSpaceInscVolumeTexture,volume_texc,0);
-#endif
-#else
-		LookupQuad4 inscNear_Q, inscFar_Q;
-		GetNearFarLookupQuads(inscFar_Q, inscNear_Q, farInscatterTexture, nearInscatterTexture, hiResTexCoords, hiResDims);
-		
-		vec4 insc_far				=depthFilteredTexture(	inscFar_Q
-															,distFar_Q
-															,xy
-															,dist);
-		vec4 insc_near				=depthFilteredTexture(	inscNear_Q
-															,distNear_Q
-															,xy
-															,dist);
-	/*	hires_depths.x				=depthFilteredTexture(	distFar_Q
-															,distFar_Q
-															,xy
-															,dist).x;
-		hires_depths.y				=depthFilteredTexture(	distNear_Q
-															,distNear_Q
-															,xy
-															,dist).y;*/
-		// Given that we have the near and far depths, 
-		// At an edge we will do the interpolation for each MSAA sample.
-		insc					= lerp(insc_near, insc_far, hiResInterp);
-#endif
-#if 1
+
+
 		vec4 cl					=lerp(cloudNear,cloudFar,hiResInterp);
-		insc.rgb				*= cl.a;
+		insc.rgb				*=cl.a;
 		insc					+=cl;
-#endif
+
 		//insc.r=hiResInterp;
 		vec4 loss_far			=depthFilteredTexture(	lossFar_Q
 														,distFar_Q
@@ -372,7 +347,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 
 TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 													,Texture2D cloudTexture
-													,Texture2D nearCloudTexture
+													, Texture2D nearCloudTexture
+													, Texture2D nearFarTexture
 													,Texture2D hiResDepthTexture
 													,int2 hiResDims
 													,int2 lowResDims

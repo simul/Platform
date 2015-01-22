@@ -43,7 +43,7 @@ vec4 Noise(Texture2D noise_texture,vec2 texCoords,float persistence,int octaves)
     return result;
 }
 
-vec4 Noise3D(Texture3D random_texture_3d,vec3 texCoords,int octaves,float persistence)	//SV_DispatchThreadID gives the combined id in each dimension.
+vec4 Noise3D(Texture3D random_texture_3d,vec3 texCoords,int octaves,float persistence)
 {
 	vec4 result		=vec4(0,0,0,0);
 	float mult		=0.5;

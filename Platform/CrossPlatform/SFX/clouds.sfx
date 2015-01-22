@@ -262,6 +262,7 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 	FarNearPixelOutput fn;
 	fn.farColour=f.colour;
 	fn.nearColour=n.colour;
+	fn.nearFarDepth = f.nearFarDepth;
 	fn.depth	=f.depth;
 	return fn;
 }
@@ -475,7 +476,8 @@ FarNearPixelOutput PS_Raytrace3DNoiseNoRainBothPasses(posTexVertexOutput IN)
 	   discard;
 	FarNearPixelOutput fn;
 	fn.farColour=f.colour;
-	fn.nearColour=n.colour;
+	fn.nearColour = n.colour;
+	fn.nearFarDepth = f.nearFarDepth;
 	fn.depth	=f.depth;
 	return fn;
 }
@@ -559,7 +561,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 		colour*=opacity;
 		accum*=1.0-opacity;
 		accum += colour; 
-		accum *= lerp(.97,1.0,density.y);
+		accum *= density.y;
 		uv += density.xy;
 		texc.y-=(1.0-yz)/(float)CROSS_SECTION_STEPS;
 		texc.z+=yz/(float)CROSS_SECTION_STEPS;

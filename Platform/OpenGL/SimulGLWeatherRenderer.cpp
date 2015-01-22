@@ -171,8 +171,8 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	}
 	if(doLowResBufferRender)
 	{
-		fb->GetLowResFarFramebuffer()->Activate(deviceContext);
-		fb->GetLowResFarFramebuffer()->Clear(deviceContext, 0.0f, 0.0f, 0.f, 1.f, ReverseDepth ? 0.f : 1.f);
+		fb->GetLowResFramebuffer(0)->Activate(deviceContext);
+		fb->GetLowResFramebuffer(0)->Clear(deviceContext, 0.0f, 0.0f, 0.f, 1.f, ReverseDepth ? 0.f : 1.f);
 	}
 	math::Vector3 cam_pos=simul::crossplatform::GetCameraPosVector(deviceContext.viewStruct.view);
 	if(baseSkyRenderer)
@@ -188,13 +188,13 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 		baseCloudRenderer->Render(deviceContext,doLowResBufferRender?1.f:exposure,is_cubemap,crossplatform::FAR_PASS,depthTexture,scatteringVolume,true,depthViewportXYWH,sky::float4(0.f,0.f,1.f,1.f));
 	if(doLowResBufferRender)
 	{
-		fb->GetLowResFarFramebuffer()->Deactivate(deviceContext);
+		fb->GetLowResFramebuffer(0)->Deactivate(deviceContext);
 	//	setTexture(Utilities::GetSingleton().simple_program,"image_texure",0,(GLuint)baseFramebuffer->GetColorTex());
 		glUseProgram(Utilities::GetSingleton().simple_program);
 		//setParameter(
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
-		//fb->GetLowResFarFramebuffer()->Render(context,true);
+		//fb->GetLowResFramebuffer(0)->Render(context,true);
 		if(doFinalCloudBufferToScreenComposite)
 		{
 		GL_ERROR_CHECK
@@ -206,7 +206,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 			Ortho();
   
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,fb->GetLowResFarFramebuffer()->GetTexture()->AsGLuint());
+			glBindTexture(GL_TEXTURE_2D,fb->GetLowResFramebuffer(0)->GetTexture()->AsGLuint());
 			glDisable(GL_ALPHA_TEST);
 			glDepthMask(GL_FALSE);
 		GL_ERROR_CHECK

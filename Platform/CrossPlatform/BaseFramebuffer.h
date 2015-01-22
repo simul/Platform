@@ -131,13 +131,9 @@ namespace simul
 		struct SIMUL_CROSSPLATFORM_EXPORT TwoResFramebuffer
 		{
 			TwoResFramebuffer();
-			crossplatform::BaseFramebuffer *GetLowResFarFramebuffer()
+			crossplatform::BaseFramebuffer *GetLowResFramebuffer(int index)
 			{
-				return lowResFarFramebufferDx11;
-			}
-			crossplatform::BaseFramebuffer *GetLowResNearFramebuffer()
-			{
-				return lowResNearFramebufferDx11;
+				return lowResFramebuffers[index];
 			}
 			crossplatform::Texture *GetLossTexture();
 			crossplatform::Texture *GetVolumeTexture(int num);
@@ -158,8 +154,7 @@ namespace simul
 			crossplatform::Texture *lossTexture;
 			crossplatform::Texture *volumeTextures[2];
 			int Width,Height,Downscale;
-			crossplatform::BaseFramebuffer	*lowResFarFramebufferDx11;
-			crossplatform::BaseFramebuffer	*lowResNearFramebufferDx11;
+			crossplatform::BaseFramebuffer	*lowResFramebuffers[3];
 		};
 	}
 }

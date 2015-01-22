@@ -23,7 +23,8 @@ SamplerState cloudSamplerState	: register( s0);
 
 struct RaytracePixelOutput
 {
-	vec4 colour SIMUL_TARGET_OUTPUT;
+	vec4 colour SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 nearFarDepth SIMUL_RENDERTARGET_OUTPUT(1);
 	float depth	SIMUL_DEPTH_OUTPUT;
 };
 
@@ -31,6 +32,7 @@ struct FarNearPixelOutput
 {
 	vec4 farColour SIMUL_RENDERTARGET_OUTPUT(0);
 	vec4 nearColour SIMUL_RENDERTARGET_OUTPUT(1);
+	vec4 nearFarDepth SIMUL_RENDERTARGET_OUTPUT(2);
 	float depth	SIMUL_DEPTH_OUTPUT;
 };
 struct All8DepthOutput
@@ -421,6 +423,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float next_dist					=pow(1.0/8.0,4.0);
 	vec4 last_colour				=vec4(0,0,0,1.0);
 	float lastFadeDistance			=0.0;
+	// x starts at 1, so gets initialized at the first cloud found.
+	// y starts at 0, so gets the furthest value.
+	vec4 nearFarDepth = vec4(1.0, 0.0, 0.0, 0.0);
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
 	for(int i=0;i<255;i++)
 	{
@@ -509,9 +514,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			}
 			if(density.z>0)
 			{
+				nearFarDepth.x = min(nearFarDepth.y, fadeDistance);
+				nearFarDepth.y = fadeDistance;
 				density.z*=pow(abs(dot(N,viewScaled)),2.0);
-				if(do_depth_mix)
-					density.z				*=saturate((solid_dist-fadeDistance)/0.01);
+				//if(do_depth_mix)
+				//	density.z				*=saturate((solid_dist-fadeDistance)/0.01);
 				density.z				*=saturate(distanceMetres/240.0);
 				float brightness_factor;
 				fade_texc.x				=sqrt(fadeDistance);
@@ -593,6 +600,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
+	res.nearFarDepth = nearFarDepth;
 	return res;
 }
 #endif

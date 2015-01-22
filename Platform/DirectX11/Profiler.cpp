@@ -309,13 +309,13 @@ float Profiler::GetTime(const std::string &name) const
 }
 
 static const string format_template("<div style=\"color:#%06x;margin-left:%d;\">%s</div>");
-static string formatLine(const char *name,int tab,float number,float parent,bool as_html)
+static string formatLine(const char *name,int tab,float number,float parent,base::TextStyle style)
 {
 	float proportion_of_parent=0.0f;
 	if(parent>0.0f)
 		proportion_of_parent=number/parent;
 	string str;
-	if(!as_html)
+	if (style!=base::HTML)
 	for(int j=0;j<tab;j++)
 	{
 		str+="  ";
@@ -324,8 +324,8 @@ static string formatLine(const char *name,int tab,float number,float parent,bool
 	content+=" ";
 	content+=base::stringFormat("%4.4f",number);
 	if(parent>0.0f)
-		content+=base::stringFormat(" (%3.3f%%)",100.f*proportion_of_parent);
-	if(as_html)
+		content += base::stringFormat(" (%3.3f%%)", 100.f*proportion_of_parent);
+	if (style == base::HTML)
 	{
 		unsigned colour=0xFF0000;
 		unsigned greenblue=255-(unsigned)(175.0f*proportion_of_parent);
@@ -333,12 +333,20 @@ static string formatLine(const char *name,int tab,float number,float parent,bool
 		int padding=12*tab;
 		content=base::stringFormat(format_template.c_str(),colour,padding,content.c_str());
 	}
+	else if (style == base::RICHTEXT)
+	{
+		unsigned colour = 0xFF0000;
+		unsigned greenblue = 255 - (unsigned)(175.0f*proportion_of_parent);
+		colour |= (greenblue << 8) | (greenblue);
+		int padding = 12 * tab;
+		content = base::stringFormat("<color=#%06x>%s</color>", colour,  content.c_str());
+	}
 	str+=content;
-	str+=as_html?"":"\n";
+	str += (style == base::HTML )? "" : "\n";
 	return str;
 }
 
-std::string Profiler::Walk(Profiler::ProfileData *p,int tab,float parent_time,bool as_html) const
+std::string Profiler::Walk(Profiler::ProfileData *p,int tab,float parent_time,base::TextStyle style) const
 {
 	if(tab>=max_level)
 		return "";
@@ -351,30 +359,30 @@ std::string Profiler::Walk(Profiler::ProfileData *p,int tab,float parent_time,bo
 			continue;
 		for(int j=0;j<tab;j++)
 			str+="  ";
-		str+=formatLine(i->second->unqualifiedName.c_str(),tab,i->second->time,parent_time,as_html);
-		str+=Walk(i->second,tab+1,i->second->time,as_html);
+		str += formatLine(i->second->unqualifiedName.c_str(), tab, i->second->time, parent_time, style);
+		str += Walk(i->second, tab + 1, i->second->time, style);
 	}
 	return str;
 }
 
-const char *Profiler::GetDebugText(bool as_html) const
+const char *Profiler::GetDebugText(base::TextStyle style) const
 {
 	static std::string str;
 	str="";
 	float total=0.f;
 	for(Profiler::ProfileMap::const_iterator i=rootMap.begin();i!=rootMap.end();i++)
 		total+=i->second->time;
-	str+=formatLine("TOTAL",0,total,0.0f,as_html);
+	str += formatLine("TOTAL", 0, total, 0.0f, style);
 	for(Profiler::ProfileMap::const_iterator i=rootMap.begin();i!=rootMap.end();i++)
 	{
 		if(!i->second->updatedThisFrame)
 			continue;
-		str+=formatLine(i->second->unqualifiedName.c_str(),1,i->second->time,total,as_html);
-		str+=Walk(i->second,2,i->second->time,as_html);
+		str+=formatLine(i->second->unqualifiedName.c_str(),1,i->second->time,total,style);
+		str += Walk(i->second, 2, i->second->time, style);
 	}
-	str+=as_html?"<br/>":"\n";
+	str += (style ==base::HTML)? "<br/>" : "\n";
     str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
-	str+=as_html?"<br/>":"\n";
+	str += (style == base::HTML) ? "<br/>" : "\n";
 	return str.c_str();
 }
 

@@ -55,9 +55,10 @@ vec4 PS_Loss(vertexOutput IN) : SV_TARGET
 }
 
 CS_LAYOUT(8,1,1)
-void CS_Loss(uint3 sub_pos	: SV_DispatchThreadID )
+void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 dims;
+	uint3 sub_pos = g * uint3(8, 1, 1) + t;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
 	uint linear_pos		=sub_pos.x+threadOffset.x;
 	uint3 pos			=LinearThreadToPos2D(linear_pos,dims);
@@ -66,13 +67,16 @@ void CS_Loss(uint3 sub_pos	: SV_DispatchThreadID )
 
 CS_LAYOUT(1,1,1)
 void CS_LightTable( uint3 sub_pos : SV_DispatchThreadID )
+//void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
+	//uint3 sub_pos = g  + t;
 	MakeLightTable(targetTexture,insc_texture,optical_depth_texture,sub_pos,targetSize);
 }
 
 CS_LAYOUT(8,1,1)
-void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
+void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
+	uint3 sub_pos = g * uint3(8, 1, 1) + t;
 	int3 dims;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
 	uint linear_pos			=sub_pos.x+threadOffset.x;
@@ -85,8 +89,9 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 }
 
 CS_LAYOUT(8,1,1)
-void CS_Skyl( uint3 sub_pos : SV_DispatchThreadID )
+void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
+	uint3 sub_pos = g *uint3(8,1,1) + t;
 	uint3 dims;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
 	uint linear_pos		=sub_pos.x+threadOffset.x;

@@ -321,24 +321,24 @@ float GetCloudIllum(Texture3D cloudTexture, SamplerState cloudSamplerState,vec3 
 }
 #define INTER_STEPS 10
 // In depthTextureNF, x=far, y=near, z=edge
-void Inscatter_All(out vec4 colours[8]
-								,Texture2D inscTexture
-								,Texture2D skylTexture
-								,Texture2D illuminationTexture
-								,Texture2D cloudShadowTexture
-								,Texture3D cloudTexture
-								, SamplerState cloudSamplerState
-								,vec3 viewPosition
-								,mat4 worldToCloudMatrix
-								,vec4 depth_lookup
-								,vec2 texCoords
-								,mat4 invViewProj
-								,vec3 lightDir
-								,float hazeEccentricity
-								,vec3 mieRayleighRatio
-								,vec4 depthToLinFadeDistParams
-								,float maxFadeDistanceMetres
-								,float godraysIntensity)
+void Inscatter_All(		out vec4 colours[8]
+						,Texture2D inscTexture
+						,Texture2D skylTexture
+						,Texture2D illuminationTexture
+						,Texture2D cloudShadowTexture
+						,Texture3D cloudTexture
+						, SamplerState cloudSamplerState
+						,vec3 viewPosition
+						,mat4 worldToCloudMatrix
+						,vec4 depth_lookup
+						,vec2 texCoords
+						,mat4 invViewProj
+						,vec3 lightDir
+						,float hazeEccentricity
+						,vec3 mieRayleighRatio
+						,vec4 depthToLinFadeDistParams
+						,float maxFadeDistanceMetres
+						,float godraysIntensity)
 {
 	vec2 clip_pos		=vec2(-1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;

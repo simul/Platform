@@ -94,7 +94,7 @@ namespace simul
 			ID3DUserDefinedAnnotation *pUserDefinedAnnotation;
 			float GetTime(const std::string &name) const;
 			//! Get all the active profilers as a text report.
-			const char *GetDebugText(bool as_html=false) const;
+			const char *GetDebugText(base::TextStyle style=base::PLAINTEXT) const;
 			std::string GetChildText(const char *name,std::string tab) const;
 			std::vector<std::string> last_name;
 			std::vector<ID3D11DeviceContext *> last_context;
@@ -168,7 +168,7 @@ namespace simul
 
 			simul::base::Timer timer;
 			float queryTime;
-std::string Walk(Profiler::ProfileData *p,int tab,float parent_time,bool as_html) const;
+			std::string Walk(Profiler::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
 		};
 
 		class ProfileBlock

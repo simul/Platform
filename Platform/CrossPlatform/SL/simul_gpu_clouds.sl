@@ -166,27 +166,22 @@ float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float pers
 	{
 		if(i>=octaves)
 			break;
-
-		vec3 pos2		=pos;
+		vec3 pos2	=pos;
 		// We will limit the z-value of pos2 in order to prevent unwanted blending to out-of-range texels.
-		float zmin		=0.5*texel;
-		float zmax		=height-0.5*texel;
-		pos2.z			=clamp(pos2.z,zmin,zmax);
-		pos2.z			*=saturate(i);
-		float lookup	=texture_wrap_lod(volumeNoiseTexture,pos2,0).x;
-		float val		=cos(2.0*3.1415926536*(lookup+t));
-		//if(i!=1)
-		{
-			dens			=dens+mult*val;
-			sum				=sum+mult;
-		}
-		mult			=mult*persistence;
-		pos				=pos*2.0;
-		t				=t*2.0;
-		height			*=2.0;
+		float zmin	=0.5*texel;
+		float zmax	=height-0.5*texel;
+		pos2.z		=clamp(pos2.z,zmin,zmax);
+		pos2.z		*=saturate(i);
+		float lookup=texture_wrap_lod(volumeNoiseTexture,pos2,0).x;
+		float val	=cos(2.0*3.1415926536*(lookup+t));
+		dens		=dens+mult*val;
+		sum			=sum+mult;
+		mult		=mult*persistence;
+		pos			=pos*2.0;
+		t			=t*2.0;
+		height		*=2.0;
 	}
 	dens=(dens/sum);
-	//dens=sign(dens)*pow(dens,.25);
 	return dens;
 }
 
