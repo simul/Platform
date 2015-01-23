@@ -347,6 +347,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		{
 			res.colour		=vec4(0,0,0,1.0);
 			res.depth		=0.0;
+		//	res.nearFarDepth= vec4(dlookup.xy,0,0);
 			return res;
 		}
 		depth				=dlookup.y;
@@ -355,6 +356,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	{
 		depth				=dlookup.x;
 	}
+	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	float solid_dist		=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec4 colour				=vec4(0.0,0.0,0.0,1.0);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
@@ -430,7 +432,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	for(int i=0;i<255;i++)
 	{
 		world_pos					+=view;
-		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceMetres>maxCloudDistanceMetres)
+		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceMetres>maxCloudDistanceMetres||solid_dist<lastFadeDistance)
 			break;
 		offsetFromOrigin			=world_pos-gridOriginPos;
 
@@ -517,8 +519,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				nearFarDepth.x = min(nearFarDepth.y, fadeDistance);
 				nearFarDepth.y = fadeDistance;
 				density.z*=pow(abs(dot(N,viewScaled)),2.0);
-				//if(do_depth_mix)
-				//	density.z				*=saturate((solid_dist-fadeDistance)/0.01);
+				if(do_depth_mix)
+					density.z			*=saturate((solid_dist-fadeDistance)/0.01);
 				density.z				*=saturate(distanceMetres/240.0);
 				float brightness_factor;
 				fade_texc.x				=sqrt(fadeDistance);
@@ -549,11 +551,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
 				meanFadeDistance		+=fadeDistance*clr.a*colour.a;
 				colour.a				*=(1.0-clr.a);
-			/*	if(colour.a*brightness_factor<0.003)
+				if(colour.a*brightness_factor<0.003)
 				{
 					colour.a			=0.0;
 					break;
-				}*/
+				}
 			}
 		}
 		if(fill8&&fadeDistance>next_dist)
@@ -600,7 +602,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-	res.nearFarDepth = nearFarDepth;
+//	dlookup.z			*=1.0-colour.a;
+	res.nearFarDepth	= vec4(dlookup.xyz,0);
 	return res;
 }
 #endif

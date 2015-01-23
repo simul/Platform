@@ -122,8 +122,8 @@ vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 	if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
 		||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
 		result *= 0.25;
-	//if (IN.texCoords.x<.1)
-//		result.rgb=IN.texCoords.y;
+//	if (IN.texCoords.x<.1)
+//		result=depth;
 	return result;
 }
 

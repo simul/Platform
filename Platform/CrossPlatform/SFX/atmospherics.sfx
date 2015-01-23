@@ -111,6 +111,23 @@ shader uint4 PS_LossCompositeShadowed(atmosVertexOutput IN) : SV_TARGET
     return uint4(faru,nearu);
 }
 
+
+shader vec4 PS_NearFarShadow(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	vec2 nf=NearFarShadow(depthTexture,cloudShadowTexture
+						,viewportToTexRegionScaleBias
+						,lossTexture
+						,invViewProj
+						,IN.texCoords
+						,IN.pos
+						,depthToLinFadeDistParams
+						,maxFadeDistanceMetres
+						,tanHalfFov
+						,invShadowMatrix,viewPosition,cloudShadowing,cloudShadowSharpness);
+
+    return vec4(nf,0,0);
+}
 shader vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
@@ -362,6 +379,7 @@ shader FarNearOutput PS_Inscatter_Both(atmosVertexOutput IN)
 	fn.nearColour.rgb	*=exposure;
 	return fn;
 }
+
 All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 {
 	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
@@ -406,6 +424,51 @@ shader All8Output PS_Inscatter_Volume_WithGodrays(atmosVertexOutput IN)
 shader All8Output PS_Inscatter_Volume_WithoutGodrays(atmosVertexOutput IN)
 {
 	return psInscatter_Volume(IN,0.0);
+}
+All8Output psLossVolume(atmosVertexOutput IN,bool shadowed)
+{
+	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
+	vec2 texCoords		=mixedResolutionTransformXYWH.xy+IN.texCoords.xy*mixedResolutionTransformXYWH.zw;
+	vec4 colours[8];
+	Loss_All( colours
+				,lossTexture
+				,depthTexture
+				,cloudTexture
+				,cloudSamplerState
+				,viewPosition
+				,invShadowMatrix
+				,depth_lookup
+				,texCoords
+				,invViewProj
+				,lightDir
+				,hazeEccentricity
+				,mieRayleighRatio
+				,depthToLinFadeDistParams,tanHalfFov
+				,viewportToTexRegionScaleBias
+				,maxFadeDistanceMetres
+				,shadowed,cloudShadowing,cloudShadowSharpness);
+	
+	All8Output all8Output;
+	all8Output.colour1	=colours[0];
+	all8Output.colour2	=colours[1];
+	all8Output.colour3	=colours[2];
+	all8Output.colour4	=colours[3];
+	all8Output.colour5	=colours[4];
+	all8Output.colour6	=colours[5];
+	all8Output.colour7	=colours[6];
+	all8Output.colour8	=colours[7];
+	return all8Output;
+}
+
+
+shader All8Output PS_LossVolumeShadowed(atmosVertexOutput IN)
+{
+	return psLossVolume(IN,true);
+}
+
+shader All8Output PS_LossVolumeUnshadowed(atmosVertexOutput IN)
+{
+	return psLossVolume(IN,false);
 }
 
 shader vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
@@ -542,6 +605,18 @@ technique loss_composite_shadowed
 		SetPixelShader(CompileShader(ps_5_0,PS_LossCompositeShadowed()));
     }
 }
+technique near_far_shadow
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_NearFarShadow()));
+    }
+}
 technique loss
 {
     pass far
@@ -663,6 +738,27 @@ technique inscatter_volume
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithoutGodrays()));
 	}
+}
+technique loss_volume
+{
+    pass unshadowed
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_LossVolumeUnshadowed()));
+    }
+    pass shadowed
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_LossVolumeShadowed()));
+    }
 }
 
 fxgroup atmospherics_overlay

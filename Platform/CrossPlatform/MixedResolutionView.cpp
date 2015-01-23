@@ -13,7 +13,7 @@ using namespace simul;
 using namespace crossplatform;
 
 MixedResolutionView::MixedResolutionView()
-	:depthFormat(RGBA_32_FLOAT)
+	:depthFormat(RGBA_16_FLOAT)
 	,pixelOffset(0.f,0.f)
 	,ScreenWidth(0)
 	,ScreenHeight(0)

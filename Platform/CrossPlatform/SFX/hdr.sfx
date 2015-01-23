@@ -23,8 +23,9 @@ uniform TEXTURE2D_UINT glowTexture;
  
 uniform Texture2D inscatterTexture;			// Far, or default inscatter
 uniform Texture2D nearInscatterTexture;		// Near inscatter.
-uniform TEXTURE2D_UINT4 lossTexture;
-
+uniform Texture2D shadowTexture;
+uniform Texture2D loss2dTexture;
+uniform Texture3D lossVolumeTexture;
 uniform Texture3D screenSpaceInscatterVolumeTexture;
 uniform Texture3D lightSpaceInscatterVolumeTexture;
 uniform Texture3D cloudVolumeTexture;
@@ -314,73 +315,28 @@ shader vec4 DirectPS(v2f IN) : SV_Target
     return result;
 }
 
-shader vec4 PS_ForegroundComposite(v2f IN) : SV_Target
-{
-	vec4 depthLookup			=texture_clamp(depthTexture,IN.texCoords);
-#if REVERSE_DEPTH==1
-	if(depthLookup.x==0)
-		discard;
-#else
-	if(depthLookup.x>=1.0)
-		discard;
-#endif
-	vec2 hiResTexCoords		=fullResToHighResTransformXYWH.xy+IN.texCoords*fullResToHighResTransformXYWH.zw;
-	vec4 result	;//=texture_clamp(imageTexture,lowResTexCoords);
-	vec4 insc	=texture_nearest_lod(inscatterTexture,hiResTexCoords,0);
-	result		=insc;//*result.a;
-    return result;
-}
-
-// With an MSAA depth texture.
-shader vec4 PS_ForegroundComposite_MSAA(v2f IN) : SV_Target
-{
-	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	int2 fullres_depth_pos2	=int2(depth_texc*vec2(fullResDims.xy));
-	float proportion		=0.0;
-	for(int k=0;k<numSamples;k++)
-	{
-		float d			=depthTextureMS.Load(fullres_depth_pos2,k).x;
-#if REVERSE_DEPTH==1
-		proportion		+=1.0-step(0,-d);
-#else
-		proportion		*=step(1.0,d);
-#endif
-	}
-	proportion/=float(numSamples);
-	//if(!proportion)
-	//	discard;
-	vec2 hiResTexCoords		=fullResToHighResTransformXYWH.xy+IN.texCoords*fullResToHighResTransformXYWH.zw;
-	vec4 result	;//=texture_clamp(imageTexture,lowResTexCoords);
-	vec4 insc	=texture_clamp(inscatterTexture,hiResTexCoords);
-	insc.rgb	*=proportion;
-	result		=insc;//*result.a;
-	//result.a=proportion;
-    return result;
-}
-
-
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN) 
 {
 	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.texCoords.xy
 												,imageTexture
 												,nearImageTexture
-												, nearFarTexture
-												,hiResDepthTexture
+												,nearFarTexture
+												,lossVolumeTexture
+												,loss2dTexture
 												,int2(hiResDims)
 												,int2(lowResDims)
 												,depthTexture
 												,int2(fullResDims)
+												, invViewProj
 												,viewportToTexRegionScaleBias
 												,depthToLinFadeDistParams
 												,fullResToLowResTransformXYWH
 												,fullResToHighResTransformXYWH
-												,inscatterTexture
-												,nearInscatterTexture
 												,screenSpaceInscatterVolumeTexture
 												,cloudVolumeTexture
 												,lightSpaceInscatterVolumeTexture
-												,lossTexture);
+												,shadowTexture);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	return result;
@@ -392,21 +348,21 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(v2f IN)
 																,imageTexture
 																,nearImageTexture
 																, nearFarTexture
-																,hiResDepthTexture
+																,lossVolumeTexture
+																,loss2dTexture
 																,int2(hiResDims)
 																,int2(lowResDims)
 																,depthTextureMS
 																,numSamples
 																,int2(fullResDims)
+																,invViewProj
 																,viewportToTexRegionScaleBias
 																,depthToLinFadeDistParams
 																,fullResToLowResTransformXYWH
 																,fullResToHighResTransformXYWH
-																,inscatterTexture
-																,nearInscatterTexture
 																,screenSpaceInscatterVolumeTexture
 																,lightSpaceInscatterVolumeTexture
-																,lossTexture);
+																,shadowTexture);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	return result;
