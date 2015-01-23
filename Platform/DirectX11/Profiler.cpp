@@ -1,13 +1,3 @@
-//=================================================================================================
-//
-//	Query Profiling Sample
-//  by MJP
-//  http://mynameismjp.wordpress.com/
-//
-//  All code and content licensed under Microsoft Public License (Ms-PL)
-//
-//=================================================================================================
-
 #include "Profiler.h"
 #include "DX11Exception.h"
 #include "Utilities.h"
@@ -21,6 +11,7 @@ using namespace simul;
 using namespace dx11;
 using std::string;
 using std::map;
+#pragma optimize("",off)
 bool enabled=false;
 // Throws a DXException on failing HRESULT
 inline void DXCall(HRESULT hr)
@@ -79,6 +70,7 @@ ID3D11Query *CreateQuery(ID3D11Device* device,D3D11_QUERY_DESC &desc,const char 
 	SetDebugObjectName( q, name );
 	return q;
 }
+
 void Profiler::StartFrame(void* ctx)
 {
 	level=0;

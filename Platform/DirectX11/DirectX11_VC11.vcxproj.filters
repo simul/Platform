@@ -151,51 +151,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="HLSL\simul_foliage.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_gaussian.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_gpu_clouds.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_gpu_lighting.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_gpu_sky.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_lightning.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_rendernoise.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_debug.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_clouds_2d.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\atmospherics.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\spherical_harmonics.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\ocean.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\mixed_resolution.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\rain.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\font.fx">
-      <Filter>FX</Filter>
-    </None>
     <None Include="..\CrossPlatform\SL\atmospherics.sl">
       <Filter>CrossPlatform</Filter>
     </None>
@@ -301,32 +256,11 @@
     <None Include="..\CrossPlatform\SL\states.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="HLSL\sky.fx">
-      <Filter>FX</Filter>
-    </None>
     <None Include="..\CrossPlatform\SL\raytrace_new.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\SL\image_constants.sl">
       <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="HLSL\gaussian.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\light_probes.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\lightning.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\optics.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_render_cubemap.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\solid.fx">
-      <Filter>FX</Filter>
     </None>
     <None Include="HLSL\CppHLSL.hlsl">
       <Filter>HLSL</Filter>
@@ -352,15 +286,6 @@
     <None Include="..\CrossPlatform\SL\rain.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="HLSL\hdr.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\clouds.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\terrain.fx">
-      <Filter>FX</Filter>
-    </None>
     <None Include="..\CrossPlatform\SL\debug_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
@@ -372,6 +297,69 @@
     </None>
     <None Include="..\CrossPlatform\SL\common.sl">
       <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\composite.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\terrain.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\solid.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\sky.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\simul_gaussian.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\simul_debug.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\rain.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\optics.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\ocean.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\lightning.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\light_probes.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\gaussian.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\font.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\clouds.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\atmospherics.sfx">
+      <Filter>SFX</Filter>
     </None>
   </ItemGroup>
 </Project>

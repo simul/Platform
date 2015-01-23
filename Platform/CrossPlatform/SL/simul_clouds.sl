@@ -264,9 +264,42 @@ vec4 calcColour(Texture2D lossTexture,Texture2D inscTexture,Texture2D skylTextur
 	c.rgb						=lerp(cloudIrRadiance1,cloudIrRadiance2,saturate(cloudTexCoords.z));//*c.a;
 #endif
 	c.rgb						=applyFades2( lossTexture, inscTexture, skylTexture,inscatterVolumeTexture,volumeTexCoords,c.rgb,fade_texc,BetaRayleigh,BetaMie,earthshadowMultiplier);
+
 	return c;
 }
 
+vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D skylTexture, Texture2D lightTableTexture
+, vec4 density, float Beta, float BetaRayleigh, float BetaMie, vec4 lightResponse, vec3 ambientColour
+, vec3 world_pos, vec3 cloudTexCoords
+, vec2 fade_texc, vec2 nearFarTexc
+, out float brightnessFactor)
+{
+#ifdef USE_LIGHT_TABLES1
+	float alt_texc = world_pos.z / maxAltitudeMetres;
+	vec3 combinedLightColour = texture_clamp_lod(lightTableTexture, vec2(alt_texc, 3.5 / 4.0), 0).rgb;
+	ambientColour = lightResponse.w*texture_clamp_lod(lightTableTexture, vec2(alt_texc, 2.5 / 4.0), 0).rgb;
+#else
+	vec3 combinedLightColour = lerp(sunlightColour1.rgb, sunlightColour2.rgb, saturate(cloudTexCoords.z));
+#endif
+	vec3 ambient = density.w*ambientColour.rgb;
+	float opacity = density.z;
+	vec4 c;
+	c.rgb = (density.y*Beta + lightResponse.y*density.x)*combinedLightColour + ambient.rgb;
+	c.a = opacity;
+	brightnessFactor = unshadowedBrightness(Beta, lightResponse, ambientColour);
+	c.rgb += (1.0 - density.x)*calcLightningColour(world_pos, lightningColour.rgb*lightningColour.w, lightningOrigin, lightningInvScales);
+	float earthshadowMultiplier = saturate((fade_texc.x - nearFarTexc.x) / 0.1);
+#ifdef INFRARED
+	c.rgb = lerp(cloudIrRadiance1, cloudIrRadiance2, saturate(cloudTexCoords.z));//*c.a;
+#endif
+	vec3 loss = sampleLod(lossTexture, cmcSamplerState, fade_texc, 0).rgb;
+	c.rgb *= loss;
+	vec4 insc = sampleLod(inscTexture, cmcSamplerState, fade_texc, 0);
+	vec4 skyl = sampleLod(skylTexture, cmcSamplerState, fade_texc, 0);
+	vec3 inscatter =  earthshadowMultiplier*PrecalculatedInscatterFunction(insc, BetaRayleigh, BetaMie, mieRayleighRatio);
+	c.rgb += inscatter + skyl;
+	return c;
+}
 vec4 MakeNoise(Texture3D noiseTexture3D,vec3 noise_texc,float lod)
 {
 	vec4 noiseval		=vec4(0,0,0,0);
@@ -525,7 +558,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				float brightness_factor;
 				fade_texc.x				=sqrt(fadeDistance);
 				vec3 volumeTexCoords	=vec3(texCoords,sqrt(fadeDistance));//volume_texc.xy,sqrt(fadeDistance));//
-				vec4 clr				=calcColour(lossTexture,inscTexture,skylTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
+				vec4 clr;
+				if (noise)
+					clr				=calcColour(lossTexture,inscTexture,skylTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
+													,density
+													,BetaClouds,BetaRayleigh,BetaMie
+													,lightResponse,ambientColour
+													,world_pos,cloudTexCoords
+													,fade_texc,nearFarTexc
+													,brightness_factor);
+				else
+					clr				=calcColourSimple(lossTexture,inscTexture,skylTexture,lightTableTexture
 													,density
 													,BetaClouds,BetaRayleigh,BetaMie
 													,lightResponse,ambientColour
@@ -604,6 +647,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 #endif
 //	dlookup.z			*=1.0-colour.a;
 	res.nearFarDepth	= vec4(dlookup.xyz,0);
+	res.nearFarDepth.xy = depthToLinearDistance(dlookup.xy, depthToLinFadeDistParams);
 	return res;
 }
 #endif

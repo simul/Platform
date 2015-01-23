@@ -222,10 +222,10 @@ void RenderPlatform::RecompileShaders()
 	SAFE_DELETE(solidEffect);
 	if(!device)
 		return;
-	std::map<std::string,std::string> defines;
+	std::map<std::string, std::string> defines;
+	if (reverseDepth)
+		defines["REVERSE_DEPTH"] = "1";
 	m_pDebugEffect=CreateEffect("simul_debug",defines);
-	if(reverseDepth)
-		defines["REVERSE_DEPTH"]="1";
 	solidEffect=CreateEffect("solid",defines);
 	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
 	debugConstants.LinkToEffect(m_pDebugEffect,"DebugConstants");

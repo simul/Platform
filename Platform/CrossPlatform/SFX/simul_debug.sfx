@@ -119,9 +119,9 @@ vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 	vec4 depth		=texture_nearest_lod(imageTexture,IN.texCoords,0);
 	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
     vec4 result		=vec4(pow(dist.xy,0.44),depth.z,1.0);
-	if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
-		||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
-		result *= 0.25;
+	//if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
+	///	||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
+	//	result *= 0.25;
 //	if (IN.texCoords.x<.1)
 //		result=depth;
 	return result;

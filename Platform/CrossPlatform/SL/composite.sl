@@ -290,7 +290,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 		vec2 xy						=frac(texc_unit);
 	//	nearFarDist.z				=abs(nearFarDist.y-nearFarDist.x);
 		vec3 nearFarCloud;
-		nearFarCloud.xy				=depthToLinearDistance(low_res_depths.yx	,depthToLinFadeDistParams);
+		nearFarCloud.xy = low_res_depths.yx;// depthToLinearDistance(low_res_depths.yx, depthToLinFadeDistParams);
 		//nearFarCloud.xy			=texture_clamp_lod(nearFarTexture, lowResTexCoords, 0);
 		nearFarCloud.z				= nearFarCloud.y - nearFarCloud.x;
 		float hiResInterp			= saturate((dist - nearFarCloud.x) / nearFarCloud.z);
@@ -301,14 +301,14 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 		shadow						=lerp(shadow_lookup.y,shadow_lookup.x,hiResInterp)*cl.a;
 		insc.rgb					*=cl.a;
 		insc						+=cl;
-
+		//insc.r = hiResInterp;
 	}
 	else
 	{	
 		insc					=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
 #if 1
 		//float cl=saturate(step(0.0, -low_res_depths.x));
-		cloudFar.a=1.0-(1.0-cloudFar.a);//*cl;
+		cloudFar.a				=1.0-(1.0-cloudFar.a);//*cl;
 		insc					*=  cloudFar.a;
 #if REVERSE_DEPTH==1
 		insc+=cloudFar ;//*cl;
@@ -423,7 +423,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 
 
 		vec3 nearFarDist;
-		nearFarDist.xy=depthToLinearDistance(low_res_depths.yx	,depthToLinFadeDistParams);
+		nearFarDist.xy = low_res_depths.yx;// depthToLinearDistance(low_res_depths.yx, depthToLinFadeDistParams);
 		nearFarDist.z	=(nearFarDist.y-nearFarDist.x);
 		// Given that we have the near and far depths, 
 		// At an edge we will do the interpolation for each MSAA sample.
@@ -490,6 +490,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		res.add = insc;
 		int2 inscTexc_unit		=int2(lowResTexCoords*hiResDims);// -vec2(.5, .5);
 		//uint2 loss			=IMAGE_LOAD(lossTexture,inscTexc_unit).xy;
+		loss_texc.x = sqrt(dist);
 		vec4 loss				=texture_clamp_lod(loss2dTexture,loss_texc,0);
 		float shadow				=shadow_lookup.x;
 		res.multiply			=loss *(cloud.a)*shadow;// *(1.0 - cloud.a);

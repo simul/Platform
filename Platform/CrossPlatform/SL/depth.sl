@@ -43,12 +43,13 @@ vec4 depthToLinearDistance(vec4 depth,vec4 depthToLinFadeDistParams)
 vec2 depthToLinearDistance(vec2 depth,vec4 depthToLinFadeDistParams)
 {
 	vec2 linearFadeDistanceZ =saturate(depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz)+depthToLinFadeDistParams.ww*depth);
+
 #ifdef REVERSE_DEPTH1
-	vec2 st=step(depth,vec2(0.0,0.0));
-	linearFadeDistanceZ*=(vec2(1.0,1.0)-st);
-	linearFadeDistanceZ+=st;
+	linearFadeDistanceZ.x = max(linearFadeDistanceZ.x, step(0.0, -depth.x));
+	linearFadeDistanceZ.y = max(linearFadeDistanceZ.y, step(0.0, -depth.y));
 #else
-	linearFadeDistanceZ=min(vec2(1.0,1.0),linearFadeDistanceZ);
+	linearFadeDistanceZ.x = max(linearFadeDistanceZ.x, step(1.0, depth.x));
+	linearFadeDistanceZ.y = max(linearFadeDistanceZ.y, step(1.0, depth.y));
 #endif
 	return linearFadeDistanceZ;
 }
@@ -102,16 +103,16 @@ float depthToFadeDistance(float depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2
 
 vec2 depthToFadeDistance(vec2 depth,vec2 xy,vec4 depthToLinFadeDistParams,vec2 tanHalf)
 {
-	vec2 linearFadeDistanceZ = saturate(depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz)+depthToLinFadeDistParams.ww*depth);
-	float Tx=xy.x*tanHalf.x;
-	float Ty=xy.y*tanHalf.y;
-	vec2 fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
+	vec2 linearFadeDistanceZ	=saturate(depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz)+depthToLinFadeDistParams.ww*depth);
+	float Tx					=xy.x*tanHalf.x;
+	float Ty					=xy.y*tanHalf.y;
+	vec2 fadeDist				=linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
 #ifdef REVERSE_DEPTH1
-	fadeDist.x=max(fadeDist.x,step(0.0,-depth.x));
-	fadeDist.y=max(fadeDist.y,step(0.0,-depth.y));
+	fadeDist.x					=max(fadeDist.x,step(0.0,-depth.x));
+	fadeDist.y					=max(fadeDist.y,step(0.0,-depth.y));
 #else
-	fadeDist.x=max(fadeDist.x,step(1.0,depth.x));
-	fadeDist.y=max(fadeDist.y,step(1.0,depth.y));
+	fadeDist.x					=max(fadeDist.x,step(1.0,depth.x));
+	fadeDist.y					=max(fadeDist.y,step(1.0,depth.y));
 #endif
 	return fadeDist;
 }

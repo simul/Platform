@@ -69,9 +69,9 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		return;
 	if(Width<=0||Height<=0||Downscale<=0)
 		return;
-	lossTexture		=renderPlatform->CreateTexture();
-	volumeTextures[0]		=renderPlatform->CreateTexture();
-	volumeTextures[1] = renderPlatform->CreateTexture();
+	lossTexture			=renderPlatform->CreateTexture();
+	volumeTextures[0]	=renderPlatform->CreateTexture();
+	volumeTextures[1]	= renderPlatform->CreateTexture();
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
 	int BufferWidth = (Width + Downscale - 1) / Downscale + 1;
 	int BufferHeight = (Height + Downscale - 1) / Downscale + 1;
@@ -84,7 +84,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		lowResFramebuffers[i]->SetWidthAndHeight(BufferWidth, BufferHeight);
 		lowResFramebuffers[i]->RestoreDeviceObjects(r);
 	}
-
+	lowResFramebuffers[2]->SetFormat(crossplatform::RGBA_32_FLOAT);
 	lowResFramebuffers[0]	->SetDepthFormat(crossplatform::D_16_UNORM);
 	// We're going to TRY to encode near and far loss into two UINT's, for faster results
 	lossTexture->ensureTexture2DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,crossplatform::RGBA_16_FLOAT,false,true);

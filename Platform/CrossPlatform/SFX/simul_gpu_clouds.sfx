@@ -131,7 +131,7 @@ shader void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
 		{
 			vec3 lightspace_texcoord	=vec3(pos.xy,float(i)+0.5+float(j)/float(C))/vec3(dims);
 			vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
-			float density = densityTexture.SampleLevel(densSamplerState, densityspace_texcoord, 0).x;
+			float density				= densityTexture.SampleLevel(densSamplerState, densityspace_texcoord, 0).x;
 			direct_light				*=exp(-extinctions.x*density*stepLength/float(C));
 		}
 		//if(density==0)

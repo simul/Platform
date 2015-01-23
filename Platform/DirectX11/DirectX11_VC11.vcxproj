@@ -218,13 +218,34 @@
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CrossPlatform\SFX\atmospherics.sfx" />
+    <None Include="..\CrossPlatform\SFX\clouds.sfx" />
+    <None Include="..\CrossPlatform\SFX\font.sfx" />
+    <None Include="..\CrossPlatform\SFX\gaussian.sfx" />
     <None Include="..\CrossPlatform\SFX\hdr.sfx" />
+    <None Include="..\CrossPlatform\SFX\lightning.sfx" />
+    <None Include="..\CrossPlatform\SFX\light_probes.sfx" />
     <None Include="..\CrossPlatform\SFX\mixed_resolution.sfx" />
+    <None Include="..\CrossPlatform\SFX\ocean.sfx" />
+    <None Include="..\CrossPlatform\SFX\optics.sfx" />
+    <None Include="..\CrossPlatform\SFX\rain.sfx" />
+    <None Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx" />
+    <None Include="..\CrossPlatform\SFX\simul_debug.sfx" />
+    <None Include="..\CrossPlatform\SFX\simul_gaussian.sfx" />
+    <None Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx" />
+    <None Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx" />
+    <None Include="..\CrossPlatform\SFX\simul_rendernoise.sfx" />
+    <None Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx" />
+    <None Include="..\CrossPlatform\SFX\sky.sfx" />
+    <None Include="..\CrossPlatform\SFX\solid.sfx" />
+    <None Include="..\CrossPlatform\SFX\spherical_harmonics.sfx" />
+    <None Include="..\CrossPlatform\SFX\terrain.sfx" />
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
     <None Include="..\CrossPlatform\SL\cloud_shadow.sl" />
     <None Include="..\CrossPlatform\SL\colour_packing.sl" />
     <None Include="..\CrossPlatform\SL\common.sl" />
+    <None Include="..\CrossPlatform\SL\composite.sl" />
     <None Include="..\CrossPlatform\SL\compositing_constants.sl" />
     <None Include="..\CrossPlatform\SL\CppSl.hs" />
     <None Include="..\CrossPlatform\SL\debug_constants.sl" />
@@ -261,47 +282,6 @@
     <None Include="..\CrossPlatform\SL\spherical_harmonics.sl" />
     <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\SL\states.sl" />
-    <None Include="HLSL\atmospherics.fx" />
-    <None Include="HLSL\font.fx" />
-    <None Include="HLSL\ocean.fx" />
-    <None Include="HLSL\mixed_resolution.fx" />
-    <None Include="HLSL\rain.fx" />
-    <None Include="HLSL\clouds.fx" />
-    <None Include="HLSL\simul_clouds_2d.fx" />
-    <None Include="HLSL\simul_debug.fx" />
-    <None Include="HLSL\simul_foliage.fx" />
-    <None Include="HLSL\simul_gaussian.fx" />
-    <None Include="HLSL\simul_gpu_clouds.fx" />
-    <None Include="HLSL\simul_gpu_lighting.fx" />
-    <None Include="HLSL\simul_gpu_sky.fx" />
-    <None Include="HLSL\hdr.fx" />
-    <None Include="HLSL\simul_lightning.fx" />
-    <None Include="HLSL\simul_rendernoise.fx" />
-    <None Include="HLSL\sky.fx" />
-    <None Include="HLSL\terrain.fx" />
-    <None Include="HLSL\spherical_harmonics.fx" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="HLSL\light_probes.fx">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="HLSL\gaussian.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\lightning.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\optics.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_render_cubemap.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\solid.fx">
-      <FileType>Document</FileType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="CSFFT\fft_512x512_c2c.hlsl" />

@@ -6,7 +6,7 @@
 #if REVERSE_DEPTH==1
 #define EDGE_FACTOR (0.0002)
 #else
-#define EDGE_FACTOR (0.001)
+#define EDGE_FACTOR (0.0001)
 #endif
 
 #ifndef PI
