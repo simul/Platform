@@ -42,6 +42,14 @@ struct v2f
     vec2 texCoords	: TEXCOORD0;
 };
 
+struct CompositeShaderInput
+{
+    vec4 hPosition			:SV_POSITION;
+    vec2 texCoords			:TEXCOORD0;
+    vec2 lowResTexCoords	:TEXCOORD1;
+	vec4 clip_pos			:TEXCOORD2;
+};
+
 vec4 texture_resolve(TEXTURE2DMS_FLOAT4 textureMS,vec2 texCoords)
 {
 	uint2 dims;
@@ -76,6 +84,33 @@ shader v2f MainVS(idOnly IN)
 	OUT.hPosition.z	=OUT.hPosition.w; 
 #endif
     OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
+    return OUT;
+}
+
+
+shader CompositeShaderInput VS_Composite(idOnly IN)
+{
+	CompositeShaderInput OUT;
+	vec2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(pos,0.0,1.0);
+	// Set to far plane so can use depth test as we want this geometry effectively at infinity
+#if REVERSE_DEPTH==1
+	OUT.hPosition.z	=0.0; 
+#else
+	OUT.hPosition.z	=OUT.hPosition.w; 
+#endif
+    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
+	OUT.lowResTexCoords		=fullResToLowResTransformXYWH.xy+OUT.texCoords*fullResToLowResTransformXYWH.zw;
+	OUT.clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	OUT.clip_pos.x			+=2.0*OUT.texCoords.x;
+	OUT.clip_pos.y			-=2.0*OUT.texCoords.y;
     return OUT;
 }
 
@@ -316,21 +351,20 @@ shader vec4 DirectPS(v2f IN) : SV_Target
 }
 
 
-shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN) 
+shader TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN) 
 {
 	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.texCoords.xy
+														,IN.clip_pos
 														,imageTexture
 														,nearImageTexture
 														,nearFarTexture
 														,loss2dTexture
-														,int2(hiResDims)
 														,depthTexture
 														//,int2(fullResDims)
 														,invViewProj
 														,depthToLinFadeDistParams
-														,fullResToLowResTransformXYWH
+														,IN.lowResTexCoords
 														,screenSpaceInscatterVolumeTexture
-														,cloudVolumeTexture
 														,shadowTexture);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
@@ -381,7 +415,7 @@ shader vec4 GlowPS(v2f IN) : SV_Target
 
 VertexShader mainvs_4_0=CompileShader(vs_4_0,MainVS());
 VertexShader mainvs_5_0=CompileShader(vs_5_0,MainVS());
-
+VertexShader compositevs_5_0=CompileShader(vs_5_0,VS_Composite());
 technique exposure_gamma
 {
     pass main
@@ -524,7 +558,7 @@ technique composite_atmospherics
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
+		SetVertexShader(compositevs_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics()));
     }
     pass msaa

@@ -646,7 +646,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-res.nearFarDepth.z=dlookup.z*(1.0-colour.a);
+res.nearFarDepth.z=dlookup.z;//*(1.0-colour.a);
 res.nearFarDepth.w=res.nearFarDepth.x-res.nearFarDepth.y;
 	return res;
 }
