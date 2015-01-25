@@ -319,24 +319,19 @@ shader vec4 DirectPS(v2f IN) : SV_Target
 shader TwoColourCompositeOutput PS_CompositeAtmospherics(v2f IN) 
 {
 	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.texCoords.xy
-												,imageTexture
-												,nearImageTexture
-												,nearFarTexture
-												,lossVolumeTexture
-												,loss2dTexture
-												,int2(hiResDims)
-												,int2(lowResDims)
-												,depthTexture
-												,int2(fullResDims)
-												, invViewProj
-												,viewportToTexRegionScaleBias
-												,depthToLinFadeDistParams
-												,fullResToLowResTransformXYWH
-												,fullResToHighResTransformXYWH
-												,screenSpaceInscatterVolumeTexture
-												,cloudVolumeTexture
-												,lightSpaceInscatterVolumeTexture
-												,shadowTexture);
+														,imageTexture
+														,nearImageTexture
+														,nearFarTexture
+														,loss2dTexture
+														,int2(hiResDims)
+														,depthTexture
+														//,int2(fullResDims)
+														,invViewProj
+														,depthToLinFadeDistParams
+														,fullResToLowResTransformXYWH
+														,screenSpaceInscatterVolumeTexture
+														,cloudVolumeTexture
+														,shadowTexture);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	return result;

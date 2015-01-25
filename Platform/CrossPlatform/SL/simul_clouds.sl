@@ -23,18 +23,19 @@ SamplerState cloudSamplerState	: register( s0);
 
 struct RaytracePixelOutput
 {
-	vec4 colour SIMUL_RENDERTARGET_OUTPUT(0);
-	vec4 nearFarDepth SIMUL_RENDERTARGET_OUTPUT(1);
-	float depth	SIMUL_DEPTH_OUTPUT;
+	vec4 colour			SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(1);
+	float depth			SIMUL_DEPTH_OUTPUT;
 };
 
 struct FarNearPixelOutput
 {
-	vec4 farColour SIMUL_RENDERTARGET_OUTPUT(0);
-	vec4 nearColour SIMUL_RENDERTARGET_OUTPUT(1);
-	vec4 nearFarDepth SIMUL_RENDERTARGET_OUTPUT(2);
-	float depth	SIMUL_DEPTH_OUTPUT;
+	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
+	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
+	float depth			SIMUL_DEPTH_OUTPUT;
 };
+
 struct All8DepthOutput
 {
 	vec4 colour1 SIMUL_RENDERTARGET_OUTPUT(0);
@@ -354,6 +355,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	RaytracePixelOutput res;
 	res.colour				=vec4(0,0,0,1.0);
 	res.depth				=0.0;
+	res.nearFarDepth		 =vec4(depthToLinearDistance(dlookup.xy, depthToLinFadeDistParams),0,0);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
@@ -380,7 +382,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		{
 			res.colour		=vec4(0,0,0,1.0);
 			res.depth		=0.0;
-		//	res.nearFarDepth= vec4(dlookup.xy,0,0);
 			return res;
 		}
 		depth				=dlookup.y;
@@ -645,9 +646,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-//	dlookup.z			*=1.0-colour.a;
-	res.nearFarDepth	= vec4(dlookup.xyz,0);
-	res.nearFarDepth.xy = depthToLinearDistance(dlookup.xy, depthToLinFadeDistParams);
+res.nearFarDepth.z=dlookup.z*(1.0-colour.a);
+res.nearFarDepth.w=res.nearFarDepth.x-res.nearFarDepth.y;
 	return res;
 }
 #endif

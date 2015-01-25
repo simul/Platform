@@ -93,18 +93,15 @@ namespace simul
 			/// Gets hi res depth texture.
 			///
 			/// \return	null if it fails, else the hi resource depth texture.
-			crossplatform::Texture						*GetHiResDepthTexture()
-			{
-				return hiResDepthTexture;
-			}
+			crossplatform::Texture						*GetHiResDepthTexture(int idx=-1);
 			/// Type of the view.
 			ViewType									viewType;
 			bool										vrDistortion;
 			 private:
 			///      A framebuffer with depth.
 			simul::crossplatform::BaseFramebuffer		*hdrFramebuffer;
-			/// The depth from the HDR framebuffer can be resolved into this texture:
-			simul::crossplatform::Texture				*hiResDepthTexture;
+			/// The depth from the HDR framebuffer can be resolved into this texture.
+			crossplatform::Texture						*nearFarTextures[4];
 			/// The resolved texture.
 			simul::crossplatform::Texture				*resolvedTexture;
 			/// The render platform.
@@ -127,6 +124,7 @@ namespace simul
 		public:
 			/// true to use external framebuffer.
 			bool										useExternalFramebuffer;
+			int											final_octave;
 		};
 		/// A class to render mixed-resolution depth buffers.
 		class SIMUL_CROSSPLATFORM_EXPORT MixedResolutionRenderer
