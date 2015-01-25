@@ -3,6 +3,9 @@ uniform sampler2D input_texture;
 uniform sampler2D density_texture;
 uniform sampler3D loss_texture;
 uniform sampler3D insc_texture;
+// The generated colour texture
+uniform sampler3D colourTexture;
+uniform sampler3D colourTexture2;
 uniform sampler2D optical_depth_texture;
 uniform sampler2D blackbody_texture;
 RWTexture3D<vec4> targetTexture;
@@ -54,6 +57,17 @@ vec4 PS_Loss(vertexOutput IN) : SV_TARGET
 	return PSLoss(input_texture,density_texture,IN.texCoords.xy);
 }
 
+CS_LAYOUT(4,4,4)
+void CS_BlendColour3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 dims;
+	uint3 sub_pos = g * 4 + t;
+	vec4 c1=IMAGE_LOAD_3D(colourTexture,sub_pos);
+	vec4 c2=IMAGE_LOAD_3D(colourTexture2,sub_pos);
+	vec4 c=lerp(c1,c2,interpColours);
+	IMAGE_STORE(targetTexture,sub_pos,c);
+}
+
 CS_LAYOUT(8,1,1)
 void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
@@ -84,7 +98,7 @@ void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	int3 pos				=LinearThreadToPos2D(linear_pos,dims);
 	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
-	CSInsc(targetTexture,density_texture,optical_depth_texture,loss_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm,targetSize);
+	CSInsc(targetTexture,density_texture,optical_depth_texture,loss_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm,targetSize,colourTexture);
 	
 }
 
@@ -228,5 +242,13 @@ technique gpu_skyl_compute
     pass p0 
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Skyl()));
+    }
+}
+
+technique blend_colour_3d
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_BlendColour3D()));
     }
 }

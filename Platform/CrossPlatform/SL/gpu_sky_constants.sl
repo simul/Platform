@@ -44,7 +44,7 @@ SIMUL_CONSTANT_BUFFER(GpuSkyConstants,8)
 	uniform vec4 yRange;
 
 	uniform float texCoordZ;
-	uniform float AHERaH,ASJET,AETJAETJ;
+	uniform float blendToColours,interpColours,AETJAETJ;
 
 	uniform int3 targetSize;
 	uniform float fuyofyu;

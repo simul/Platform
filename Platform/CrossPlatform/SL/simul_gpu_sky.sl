@@ -325,7 +325,7 @@ void CSLoss(RW_TEXTURE3D_FLOAT4 targetTexture,Texture2D density_texture,uint3 po
 }
 
 void CSInsc(RW_TEXTURE3D_FLOAT4 targetTexture,Texture2D density_texture,Texture2D optical_depth_texture,Texture3D loss_texture
-			,uint3 pos,float maxOutputAltKm,float maxDistanceKm,float maxDensityAltKm,uint3 targetSize)
+			,uint3 pos,float maxOutputAltKm,float maxDistanceKm,float maxDensityAltKm,uint3 targetSize,Texture3D colourTexture)
 {
 	vec2 texc				=(pos.xy+vec2(0.5,0.5))/vec2(targetSize.xy);
 
@@ -340,7 +340,7 @@ void CSInsc(RW_TEXTURE3D_FLOAT4 targetTexture,Texture2D density_texture,Texture2
 	
 	IMAGE_STORE(targetTexture,pos,previous_insc);
 	vec3 mie_factor			=vec3(1.0,1.0,1.0);
-	for(int i=1;i<targetSize.z;i++)
+	for(uint i=1;i<targetSize.z;i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow(float(i)/(float(targetSize.z)-1.0),2.0);
@@ -388,7 +388,11 @@ void CSInsc(RW_TEXTURE3D_FLOAT4 targetTexture,Texture2D density_texture,Texture2
 		insc.rgb			+=previous_insc.rgb;
 
 		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
-		IMAGE_STORE(targetTexture,idx,vec4(insc.rgb,insc.a));
+		vec3 texc			=vec3(idx)/vec3(targetSize.xyz);
+		vec4 insc_colour	=texture_clamp_lod(colourTexture,texc.zyx,0);
+		vec4 store_insc		=lerp(insc,insc_colour,blendToColours);
+
+		IMAGE_STORE(targetTexture,idx,store_insc);
 		prevDist_km			=dist_km;
 		previous_insc		=insc;
 	}
