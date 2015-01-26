@@ -169,6 +169,14 @@ vec4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 	vec4 result=lerp(colour1,colour2,skyInterp);
     return result;
 }
+vec4 PS_ShowFadeCrossSection(vertexOutput3Dto2D IN): SV_TARGET
+{
+	vec3 texc=vec3(altitudeTexCoord,IN.texCoords.y,IN.texCoords.x);
+	vec4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
+	vec4 colour2=fadeTexture2.Sample(cmcSamplerState,texc);
+	vec4 result=lerp(colour1,colour2,skyInterp);
+    return result;
+}
 
 vec4 PS_OvercastInscatter(vertexOutput3Dto2D IN): SV_TARGET
 {
@@ -528,7 +536,7 @@ technique show_cross_section
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeCrossSection()));
     }
 }
  

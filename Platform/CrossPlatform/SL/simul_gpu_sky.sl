@@ -388,7 +388,7 @@ void CSInsc(RW_TEXTURE3D_FLOAT4 targetTexture,Texture2D density_texture,Texture2
 		insc.rgb			+=previous_insc.rgb;
 
 		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
-		vec3 texc			=vec3(idx)/vec3(targetSize.xyz);
+		vec3 texc			=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(targetSize.xyz);
 		vec4 insc_colour	=texture_clamp_lod(colourTexture,texc.zyx,0);
 		vec4 store_insc		=lerp(insc,insc_colour,blendToColours);
 

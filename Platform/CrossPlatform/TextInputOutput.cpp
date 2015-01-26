@@ -68,6 +68,7 @@ static string StripOuterWhitespace(string str)
 	}
 	return ret;
 }
+
 static string StripOuterQuotes(const string &str)
 {
 	string ret=StripOuterWhitespace(str);
@@ -95,6 +96,7 @@ static string StripOuterQuotes(const string &str)
 	}
 	return ret;
 }
+
 static int findMatching(const std::string &text,int open_brace_pos,const char *open,const char *close)
 {
 	int brace=1;
@@ -120,10 +122,12 @@ static int findMatching(const std::string &text,int open_brace_pos,const char *o
 	}
 	return (int)pos;
 }
+
 static int findMatchingSq(const std::string &text,int open_brace_pos)
 {
 	return findMatching(text,open_brace_pos,"[","]");
 }
+
 static int findMatchingBrace(const std::string &text,int open_brace_pos)
 {
 	return findMatching(text,open_brace_pos,"{","}");
@@ -134,35 +138,44 @@ static void LoadArray(TextInput::Array &array,const string &text,simul::base::Me
 	size_t pos=0;
 	while(pos<text.length())
 	{
-		size_t brace_pos	=text.find("{",pos+1);
-		size_t end_brace_pos=(size_t)findMatchingBrace(text,(int)brace_pos);
-		if(brace_pos>=text.length())
-			return;
-		std::string sub=text.substr(brace_pos,end_brace_pos+1-brace_pos);
+		size_t start_pos	=pos;
+		size_t brace_pos	=text.find("{",pos);
+		size_t colon_pos	=text.find(":",pos);
+		size_t end_pos		=text.find("\n",colon_pos);
+		if(brace_pos<text.length())
+		{	
+			start_pos=brace_pos;
+			 end_pos=(size_t)findMatchingBrace(text,(int)brace_pos);
+		}
+		if(brace_pos>=text.length()&&colon_pos>=text.length())
+			break;
+		std::string sub=text.substr(start_pos,end_pos+1-start_pos);
 		TextFileInput *e=::new(m) TextFileInput;
 		array.push_back(e);
 		e->Load(sub);
-		pos=end_brace_pos;
+		pos=end_pos;
 	}
 }
 
 void TextFileInput::Load(const std::string &text)
 {
-	// we expect to see { and } at the start and end.
+	// if there are multiple elements we expect to see { and } at the start and end.
 	size_t open_pos=text.find("{");
 	std::string line;
+	//if(open_pos>=text.length())
+		open_pos=0;
 	size_t pos=open_pos;
 	while(pos<text.length())
 	{
-		int colon_pos=(int)text.find(":",pos+1);
-		if(colon_pos<0||colon_pos>=(int)text.length())
+		size_t colon_pos=text.find(":",pos+1);
+		if(colon_pos>=text.length())
 			break;
 		std::string name=text.substr(pos+1,colon_pos-1-pos);
 		name=StripOuterQuotes(name);
-		int next_colon	=(int)text.find(":",colon_pos+1);
-		int brace_pos	=(int)text.find("{",colon_pos+1);
-		int sq_pos		=(int)text.find("[",colon_pos+1);
-		int next_ret	=(int)text.find("\n",colon_pos+1);
+		size_t next_colon	=text.find(":",colon_pos+1);
+		size_t brace_pos	=text.find("{",colon_pos+1);
+		size_t sq_pos		=text.find("[",colon_pos+1);
+		size_t next_ret		=text.find("\n",colon_pos+1);
 		if(sq_pos>=0&&sq_pos<next_colon&&sq_pos<brace_pos)
 		{
 			size_t end_sq_pos=(size_t)findMatchingSq(text,brace_pos);
@@ -171,7 +184,7 @@ void TextFileInput::Load(const std::string &text)
 			LoadArray(array,sub,memoryInterface);
 			pos=end_sq_pos;
 		}
-		else if(brace_pos>=0&&brace_pos<next_colon)
+		else if(brace_pos>=colon_pos&&brace_pos<next_colon)
 		{
 			size_t end_brace_pos=(size_t)findMatchingBrace(text,brace_pos);
 			std::string sub=text.substr(brace_pos,end_brace_pos+1-brace_pos);
@@ -279,6 +292,24 @@ float TextFileInput::Get(const char *name,float dflt)
 	if(properties.find(name)==properties.end())
 		return dflt;
 	return (float)atof(properties[name].c_str());
+}
+
+int3 TextFileInput::Get(const char *name,int3 dflt)
+{
+	if(properties.find(name)==properties.end())
+		return dflt;
+	int val[3];
+	size_t pos=0;
+	std::string str=properties[name];
+	for(int i=0;i<3;i++)
+	{
+		size_t comma_pos=str.find(",",pos+1);
+		string s=str.substr(pos,comma_pos-pos);
+		val[i]=(float)atoi(s.c_str());
+		pos=comma_pos+1;
+	}
+	int3 ret=val;
+	return ret;
 }
 
 vec3 TextFileInput::Get(const char *name,vec3 dflt)
@@ -399,7 +430,8 @@ void TextFileOutput::Save(std::ostream &ofs,int tab)
 	tabstr1=tabstr0+"\t";
 	const char *t0=tabstr0.c_str();
 	const char *t1=tabstr1.c_str();
-	write(ofs,base::stringFormat("%s{\n",t0));
+	if(properties.size()>1||arrays.size()>0)
+		write(ofs,base::stringFormat("%s{\n",t0));
 	for(std::map<std::string,std::string>::iterator i=properties.begin();i!=properties.end();i++)
 	{
 		std::string &str=i->second;
@@ -421,7 +453,8 @@ void TextFileOutput::Save(std::ostream &ofs,int tab)
 		}
 		write(ofs,base::stringFormat("%s]\n",t1));
 	}
-	write(ofs,base::stringFormat("%s}\n",t0));
+	if(properties.size()>1||arrays.size()>0)
+		write(ofs,base::stringFormat("%s}\n",t0));
 }
 
 bool TextFileOutput::Good()
@@ -452,6 +485,11 @@ void TextFileOutput::Set(const char *name,double value)
 void TextFileOutput::Set(const char *name,float value)
 {
 	properties[name]=base::stringFormat("%16.16g",value);
+}
+
+void TextFileOutput::Set(const char *name,int3 value)
+{
+	properties[name]=base::stringFormat("%d,%d,%d",value.x,value.y,value.z);
 }
 
 void TextFileOutput::Set(const char *name,vec3 value)
