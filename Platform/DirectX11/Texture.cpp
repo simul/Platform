@@ -228,6 +228,20 @@ void dx11::Texture::setTexels(crossplatform::DeviceContext &deviceContext,const 
 		target+=texel_index*byteSize;
 		memcpy(target,source,num_texels*byteSize);
 	}
+	else if(depth>1)
+	{
+		for(int z=0;z<depth;z++)
+		{
+			unsigned char *t=target;
+			for(int r=0;r<length;r++)
+			{
+				memcpy(t,source,width*byteSize);
+				t		+=mapped.RowPitch;
+				source	+=width*byteSize;
+			}
+			target+=mapped.DepthPitch;
+		}
+	}
 	else
 	{
 		int block	=mapped.RowPitch/byteSize;

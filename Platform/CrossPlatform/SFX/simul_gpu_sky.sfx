@@ -62,6 +62,9 @@ void CS_BlendColour3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 dims;
 	uint3 sub_pos = g * 4 + t;
+	if(sub_pos.x>=targetSize.x||sub_pos.y>=targetSize.y||sub_pos.z>=targetSize.z)
+		return;
+//	sub_pos.z=4;
 	vec4 c1=IMAGE_LOAD_3D(colourTexture,sub_pos);
 	vec4 c2=IMAGE_LOAD_3D(colourTexture2,sub_pos);
 	vec4 c=lerp(c1,c2,interpColours);
