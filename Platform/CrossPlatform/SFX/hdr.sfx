@@ -48,6 +48,7 @@ struct CompositeShaderInput
     vec2 texCoords			:TEXCOORD0;
     vec2 lowResTexCoords	:TEXCOORD1;
 	vec4 clip_pos			:TEXCOORD2;
+	vec2 depth_texc			: TEXCOORD3;
 };
 
 vec4 texture_resolve(TEXTURE2DMS_FLOAT4 textureMS,vec2 texCoords)
@@ -110,7 +111,8 @@ shader CompositeShaderInput VS_Composite(idOnly IN)
 	OUT.lowResTexCoords		=fullResToLowResTransformXYWH.xy+OUT.texCoords*fullResToLowResTransformXYWH.zw;
 	OUT.clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	OUT.clip_pos.x			+=2.0*OUT.texCoords.x;
-	OUT.clip_pos.y			-=2.0*OUT.texCoords.y;
+	OUT.clip_pos.y -= 2.0*OUT.texCoords.y;
+	OUT.depth_texc = viewportCoordToTexRegionCoord(OUT.texCoords.xy, viewportToTexRegionScaleBias);
     return OUT;
 }
 
@@ -355,6 +357,7 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN
 {
 	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.texCoords.xy
 														,IN.clip_pos
+														,IN.depth_texc
 														,imageTexture
 														,nearImageTexture
 														,nearFarTexture

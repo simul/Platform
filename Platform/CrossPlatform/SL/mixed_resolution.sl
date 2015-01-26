@@ -388,8 +388,8 @@ vec4 Halfscale(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offse
 	int2 pos0			=int2(pos*2);
 	int2 pos1			=int2(pos0)-int2(cornerOffset);
 
-	int2 max_pos		=int2(source_dims)-int2(3,3);
-	int2 min_pos		=int2(1,1);
+	int2 max_pos		=int2(source_dims)-int2(5,5);
+	int2 min_pos		=int2(2,3);
 	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x))
 								,max(min_pos.y,min(pos1.y,max_pos.y)));
 	pos2				+=int2(source_offset);
@@ -402,15 +402,21 @@ vec4 Halfscale(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offse
 #endif
 	for(int i=0;i<4;i++)
 	{
-		int2 pos3			=pos2+int2(i-1,-1);
-		float d1			=IMAGE_LOAD(sourceDepthTexture,pos3+int2( 0, 0)).x;
-		float d2			=IMAGE_LOAD(sourceDepthTexture,pos3+int2( 0, 1)).x;
-		float d3			=IMAGE_LOAD(sourceDepthTexture,pos3+int2( 0, 2)).x;
-		float d4			=IMAGE_LOAD(sourceDepthTexture,pos3+int2( 0, 3)).x;
-		vec4 d				=vec4(d1,d2,d3,d4);
-		vec2 dmin2			=min(d.xy,d.zw);
+		int2 pos3			=pos2+int2(i*2-2,0);
+		vec2 d1				=IMAGE_LOAD(sourceDepthTexture,pos3+int2( 0, -3)).xy;
+		vec2 d2				=IMAGE_LOAD(sourceDepthTexture,pos3+int2( 0, 0)).xy;
+		vec2 d3				=IMAGE_LOAD(sourceDepthTexture,pos3+int2( 0, 1)).xy;
+		vec2 d4				=IMAGE_LOAD(sourceDepthTexture,pos3+int2( 0, 4)).xy;
+		vec4 f				=vec4(d1.x, d2.x, d3.x, d4.x);
+		vec4 n				=vec4(d1.y, d2.y, d3.y, d4.y);
+#if REVERSE_DEPTH==1
+		vec2 dmin2			=min(f.xy, f.zw);
+		vec2 dmax2			=max(n.xy, n.zw);
+#else
+		vec2 dmin2			=min(n.xy, n.zw);
+		vec2 dmax2			=max(f.xy, f.zw);
+#endif
 		float dmin			=min(dmin2.x,dmin2.y);
-		vec2 dmax2			=max(d.xy,d.zw);
 		float dmax			=max(dmax2.x,dmax2.y);
 #if REVERSE_DEPTH==1
 		farthest_nearest.y	=max(farthest_nearest.y,dmax);

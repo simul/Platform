@@ -140,6 +140,14 @@ vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 	return p.colour;
 }
 
+struct FarNearPixelOutput
+{
+	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
+	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
+	float depth			SIMUL_DEPTH_OUTPUT;
+};
+
 FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);

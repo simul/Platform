@@ -28,14 +28,6 @@ struct RaytracePixelOutput
 	float depth			SIMUL_DEPTH_OUTPUT;
 };
 
-struct FarNearPixelOutput
-{
-	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
-	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
-	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
-	float depth			SIMUL_DEPTH_OUTPUT;
-};
-
 struct All8DepthOutput
 {
 	vec4 colour1 SIMUL_RENDERTARGET_OUTPUT(0);

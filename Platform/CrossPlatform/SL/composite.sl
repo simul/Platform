@@ -231,7 +231,8 @@ vec3 nearFarDepthFilter(LookupQuad4 depth_Q,LookupQuad4 dist_Q,vec2 texDims,vec2
 #define VOLUME_INSCATTER
 #define SCREENSPACE_VOL
 TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
-				,vec4 clip_pos
+	, vec4 clip_pos
+	, vec2 depth_texc
 				,Texture2D farCloudTexture
 				,Texture2D nearCloudTexture
 				,Texture2D nearFarTexture
@@ -250,8 +251,6 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 	// we only care about view.z, i.e. the third element of the vector.
 	// so only dot-product the third row of invViewProj, with clip_pos.
 	float sine					=dot(invViewProj._31_32_33_34,clip_pos);
-	vec2 depth_texc				=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-	vec4 shadow_lookup			=texture_clamp_lod(shadowTexture	,lowResTexCoords,0);
 	vec4 nearFarCloud			=texture_clamp_lod(nearFarTexture	,lowResTexCoords		,0);
 
 	float depth					=texture_nearest_lod(depthTexture,depth_texc,0);
@@ -260,23 +259,25 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 	float dist_rt				=pow(dist,0.5);
 	vec4 cloud					=texture_clamp_lod(farCloudTexture,lowResTexCoords,0);
 	
-	vec3 volumeTexCoords		=vec3(lowResTexCoords,dist_rt);
+	vec3 volumeTexCoords		= vec3(lowResTexCoords, dist_rt);
+	vec4 shadow_lookup			= vec4(1.0, 1.0, 0, 0);
+	//if (depth>0.0)
+		shadow_lookup				=texture_clamp_lod(shadowTexture, lowResTexCoords, 0);
 	float shadow				=shadow_lookup.x;
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
 	vec4 insc					=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
 	float hiResInterp			=saturate((dist - nearFarCloud.y) / nearFarCloud.w);
 	if(nearFarCloud.z>0.0)
 	{
-		vec4 cloudNear				=texture_clamp_lod(nearCloudTexture, lowResTexCoords, 0);
-		cloud						=lerp(cloudNear,cloud,hiResInterp);
+		vec4 cloudNear			=texture_clamp_lod(nearCloudTexture, lowResTexCoords, 0);
+		cloud					=lerp(cloudNear, cloud, hiResInterp);
 	}
-	shadow						=lerp(shadow_lookup.y,shadow_lookup.x,hiResInterp);
+	shadow					=lerp(shadow_lookup.y,shadow_lookup.x,hiResInterp);
 	insc.rgb				*=cloud.a;
 	insc					+=cloud;
 	shadow					*=cloud.a;
-	res.multiply			= texture_clamp_lod(loss2dTexture,loss_texc,0)*shadow;
-	res.add					=insc;//*res.add.a;
-	//res.add.r=saturate(sine);
+	res.multiply			=texture_clamp_lod(loss2dTexture,loss_texc,0)*shadow;
+	res.add					=insc;
     return res;
 }
 
