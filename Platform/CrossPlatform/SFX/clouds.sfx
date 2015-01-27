@@ -28,8 +28,6 @@ Texture2D nearFarTexture;
 Texture2D cloudGodraysTexture;
 Texture2D rainMapTexture;
 TextureCube diffuseCubemap;
-RWTexture2D<float> targetTexture1;
-RWBuffer<float> occlusionBuffer;
 RWTexture3D<float4> output ;
 
 
@@ -45,7 +43,7 @@ shader void CS_Mix( uint3 pos	: SV_DispatchThreadID )
 	output[pos].rgba=res;
 }
 
-posTexVertexOutput VS_FullScreen(idOnly IN)
+shader posTexVertexOutput VS_FullScreen(idOnly IN)
 {
     posTexVertexOutput OUT;
 	vec2 poss[4]=
@@ -69,40 +67,29 @@ posTexVertexOutput VS_FullScreen(idOnly IN)
 // Given texture position from texCoords, convert to a worldpos with shadowMatrix.
 // Then, trace towards sun to find initial intersection with cloud volume
 // Then trace down to find first intersection with clouds, if any.
-vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 {
 	return CloudShadow(cloudDensity,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
 }
 
-vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 {
 	float r=MakeRainMap(cloudDensity,cloud_interp,IN.texCoords);
 	return vec4(r,r,r,r);
 }
 
-[numthreads(1,1,1)]
-void CS_GodraysAccumulation(uint3 idx: SV_DispatchThreadID)
-{
-	GodraysAccumulation(targetTexture1,cloudShadowTexture,idx.x);
-}
-
-vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
 {
 	float m=MoistureAccumulation(cloudShadowTexture,shadowTextureSize,IN.texCoords);
 	return vec4(m,m,m,m);
 }
+
 float CloudsOcclusion(Texture3D cloudDensity1,Texture3D cloudDensity2,Texture3D cloudDensity,float cloud_interp,vec3 viewPos,vec3 directionToSun)
 {
 	return 0.f;
 }
 
-[numthreads(1,1,1)]
-void CS_Occlusion(uint3 idx: SV_DispatchThreadID)
-{
-	occlusionBuffer[idx.x]=CloudsOcclusion(cloudDensity1,cloudDensity2,cloudDensity,cloud_interp,viewPos,directionToSun);
-}
-
-vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 dlookup 	=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords =  mixedResTransformXYWH.xy + IN.texCoords.xy*mixedResTransformXYWH.zw;
@@ -148,7 +135,7 @@ struct FarNearPixelOutput
 	float depth			SIMUL_DEPTH_OUTPUT;
 };
 
-FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
+shader FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
@@ -214,7 +201,7 @@ FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 }
 
 
-All8DepthOutput PS_Raytrace3DNoiseEight(posTexVertexOutput IN)
+shader All8DepthOutput PS_Raytrace3DNoiseEight(posTexVertexOutput IN)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
@@ -257,7 +244,7 @@ All8DepthOutput PS_Raytrace3DNoiseEight(posTexVertexOutput IN)
 }
 
 
-All8DepthOutput PS_Raytrace3DNoiseNoRainEight(posTexVertexOutput IN)
+shader All8DepthOutput PS_Raytrace3DNoiseNoRainEight(posTexVertexOutput IN)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
@@ -298,7 +285,6 @@ All8DepthOutput PS_Raytrace3DNoiseNoRainEight(posTexVertexOutput IN)
 	//   discard;
 	return all8Output;
 }
-
 
 RaytracePixelOutput NoRain3DNoiseNear(vec4 dlookup,vec2 texCoords)
 {
@@ -357,7 +343,7 @@ RaytracePixelOutput NoRain3DNoiseFar(vec4 dlookup,vec2 texCoords)
 }
 
 
-FarNearPixelOutput PS_Raytrace3DNoiseNoRainBothPasses(posTexVertexOutput IN)
+shader FarNearPixelOutput PS_Raytrace3DNoiseNoRainBothPasses(posTexVertexOutput IN)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	RaytracePixelOutput f	=NoRain3DNoiseFar(dlookup,IN.texCoords);
@@ -379,7 +365,7 @@ FarNearPixelOutput PS_Raytrace3DNoiseNoRainBothPasses(posTexVertexOutput IN)
 }
 
 
-posTexVertexOutput VS_CrossSection(idOnly IN)
+shader posTexVertexOutput VS_CrossSection(idOnly IN)
 {
     posTexVertexOutput OUT;
 	vec2 poss[4]=
@@ -402,18 +388,18 @@ posTexVertexOutput VS_CrossSection(idOnly IN)
     return OUT;
 }
 
-vec4 PS_Simple( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_Simple( posTexVertexOutput IN):SV_TARGET
 {
     return noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
 }
 
-vec4 PS_ShowNoise( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_ShowNoise( posTexVertexOutput IN):SV_TARGET
 {
     vec4 lookup=noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
 	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
-vec4 PS_Show3DNoise( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_Show3DNoise( posTexVertexOutput IN):SV_TARGET
 {
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
 	if(IN.texCoords.y<0.5)
@@ -422,7 +408,7 @@ vec4 PS_Show3DNoise( posTexVertexOutput IN):SV_TARGET
 	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
-vec4 PS_ShowShadow( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_ShowShadow( posTexVertexOutput IN):SV_TARGET
 {
 	return ShowCloudShadow(cloudShadowTexture,cloudGodraysTexture,IN.texCoords);
 }
@@ -454,7 +440,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
     return vec4(accum,1);
 }
 
-vec4 PS_CrossSection( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_CrossSection( posTexVertexOutput IN):SV_TARGET
 {
     return CrossSection(IN.texCoords,yz);
 }
@@ -572,26 +558,11 @@ technique rain_map
     }
 }
 
-technique godrays_accumulation
-{
-    pass p0
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_GodraysAccumulation()));
-    }
-}
-
 technique mix_clouds
 {
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Mix()));
-    }
-}
-technique occlusion
-{
-    pass p0
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_Occlusion()));
     }
 }
 

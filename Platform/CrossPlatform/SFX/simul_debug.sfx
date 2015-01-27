@@ -13,10 +13,9 @@ Texture2D<uint2> imageTextureUint2 SIMUL_TEXTURE_REGISTER(4);
 Texture2D<uint3> imageTextureUint3 SIMUL_TEXTURE_REGISTER(5);
 Texture2D<uint4> imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
 
-cbuffer cbPerObject : register(b11)
-{
+SIMUL_CONSTANT_BUFFER(cbPerObject,11)
 	float4 rect;
-};
+SIMUL_CONSTANT_BUFFER_END
 
 struct a2v
 {
@@ -30,12 +29,12 @@ struct v2f
     float4 colour		: TEXCOORD0;
 };
 
-posTexVertexOutput VS_Quad(idOnly id)
+shader posTexVertexOutput VS_Quad(idOnly id)
 {
     return VS_ScreenQuad(id,rect);
 }
 
-v2f DebugVS(positionColourVertexInput IN)
+shader v2f DebugVS(positionColourVertexInput IN)
 {
 	v2f OUT;
 	vec3 pos		=IN.position.xyz;
@@ -44,7 +43,7 @@ v2f DebugVS(positionColourVertexInput IN)
     return OUT;
 }
 
-v2f Debug2dVS(a2v IN)
+shader v2f Debug2dVS(a2v IN)
 {
 	v2f OUT;
     OUT.hPosition	=float4(rect.xy+rect.zw*IN.position.xy,0.0,1.0);
@@ -52,7 +51,7 @@ v2f Debug2dVS(a2v IN)
     return OUT;
 }
 
-v2f CircleVS(idOnly IN)
+shader v2f CircleVS(idOnly IN)
 {
 	v2f OUT;
 	float angle		=2.0*3.1415926536*float(IN.vertex_id)/31.0;
@@ -62,7 +61,7 @@ v2f CircleVS(idOnly IN)
     return OUT;
 }
 
-v2f FilledCircleVS(idOnly IN)
+shader v2f FilledCircleVS(idOnly IN)
 {
 	v2f OUT;
 	int i=int(IN.vertex_id/2);
@@ -74,19 +73,19 @@ v2f FilledCircleVS(idOnly IN)
     return OUT;
 }
 
-float4 DebugPS(v2f IN) : SV_TARGET
+shader vec4 DebugPS(v2f IN) : SV_TARGET
 {
     return IN.colour;
 }
 
-vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 res=multiplier*texture_nearest_lod(imageTexture,IN.texCoords.xy,0);
 	res.a=res.a;
 	return res;
 }
 
-vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	uint2 dims;
 	imageTextureUint4.GetDimensions(dims.x,dims.y);
@@ -104,7 +103,7 @@ vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 //	res.xy+=IN.texCoords.xy;
 	return vec4(res,1.0);
 }
-vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
 {
 	uint2 dims;
 	uint numSamples;
@@ -114,7 +113,7 @@ vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
 	return res;
 }
 
-vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
+shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 depth		=texture_nearest_lod(imageTexture,IN.texCoords,0);
 	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
@@ -127,7 +126,7 @@ vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 	return result;
 }
 
-vec4 ShowDepthMS_PS(posTexVertexOutput IN) : SV_TARGET
+shader vec4 ShowDepthMS_PS(posTexVertexOutput IN) : SV_TARGET
 {
 	uint2 dims;
 	uint numSamples;
@@ -146,7 +145,7 @@ struct vec3input
     float3 position	: POSITION;
 };
 
-v2f Vec3InputSignatureVS(vec3input IN)
+shader v2f Vec3InputSignatureVS(vec3input IN)
 {
 	v2f OUT;
     OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
@@ -161,7 +160,7 @@ struct v2f_cubemap
 };
 
 
-v2f_cubemap VS_DrawCubemap(vec3input IN) 
+shader v2f_cubemap VS_DrawCubemap(vec3input IN) 
 {
     v2f_cubemap OUT;
     OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
@@ -169,7 +168,7 @@ v2f_cubemap VS_DrawCubemap(vec3input IN)
     return OUT;
 }
 
-v2f_cubemap VS_DrawCubemapSphere(idOnly IN) 
+shader v2f_cubemap VS_DrawCubemapSphere(idOnly IN) 
 {
     v2f_cubemap OUT;
 	// we have (latitudes+1)*(longitudes+1)*2 id's
@@ -188,7 +187,7 @@ v2f_cubemap VS_DrawCubemapSphere(idOnly IN)
 }
 
 
-float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
+shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
 	float3 view		=-(IN.wDirection.xyz);
 	float4 result	=cubeTexture.Sample(cubeSamplerState,view);

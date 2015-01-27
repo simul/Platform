@@ -30,10 +30,9 @@ Texture3D sourceTexture;
 RWTexture2D<vec4> targetTexture;
 Texture2D lightTable2DTexture;
 
-cbuffer cbPerObject : register(b11)
-{
+SIMUL_CONSTANT_BUFFER(cbPerObject,11)
 	vec4 rect;
-};
+SIMUL_CONSTANT_BUFFER_END
 
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
@@ -70,7 +69,7 @@ struct vertexOutput3Dto2D
 //------------------------------------
 // Vertex Shader 
 //------------------------------------
-vertexOutput VS_Main(vertexInput IN) 
+shader vertexOutput VS_Main(vertexInput IN) 
 {
     vertexOutput OUT;
     OUT.hPosition	=mul(worldViewProj,vec4(IN.position.xyz,1.0));
@@ -78,7 +77,7 @@ vertexOutput VS_Main(vertexInput IN)
     return OUT;
 }
 
-vertexOutput VS_Cubemap(vertexInput IN) 
+shader vertexOutput VS_Cubemap(vertexInput IN) 
 {
     vertexOutput OUT;
 	// World matrix would be identity.
@@ -97,14 +96,14 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 	return result;
 }
 
-vec4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float alt_km		=eyePosition.z/1000.0;
 	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm
 			,maxFadeDistance,terminatorDistance,radiusOnCylinder,earthShadowNormal,sunDir);
 }
 
-vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN): SV_TARGET
+shader vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN): SV_TARGET
 {
 	float depth			=texture(depthTexture,IN.texCoords.xy).x;
 #if REVERSE_DEPTH==1
@@ -117,7 +116,7 @@ vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN): SV_TARGET
 	return BackgroundLatLongSphere(backgroundTexture,IN.texCoords.xy);
 }
 
-vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 
+shader vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 
 {
     vertexOutput3Dto2D OUT;
 	vec2 poss[4]=
@@ -139,7 +138,7 @@ vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN)
     return OUT;
 }
 
-vertexOutput3Dto2D VS_ShowFade(idOnly IN) 
+shader vertexOutput3Dto2D VS_ShowFade(idOnly IN) 
 {
     vertexOutput3Dto2D OUT;
 	vec2 poss[4]=
@@ -161,7 +160,7 @@ vertexOutput3Dto2D VS_ShowFade(idOnly IN)
     return OUT;
 }
 
-vec4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 {
 	vec3 texc=vec3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
 	vec4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
@@ -169,7 +168,7 @@ vec4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 	vec4 result=lerp(colour1,colour2,skyInterp);
     return result;
 }
-vec4 PS_ShowFadeCrossSection(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_ShowFadeCrossSection(vertexOutput3Dto2D IN): SV_TARGET
 {
 	vec3 texc=vec3(altitudeTexCoord,IN.texCoords.y,IN.texCoords.x);
 	vec4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
@@ -178,14 +177,14 @@ vec4 PS_ShowFadeCrossSection(vertexOutput3Dto2D IN): SV_TARGET
     return result;
 }
 
-vec4 PS_OvercastInscatter(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_OvercastInscatter(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float alt_km		=eyePosition.z/1000.0;
 	// Texcoords representing the full distance from the eye to the given point.
     return OvercastInscatter(inscTexture,illuminationTexture,IN.texCoords,alt_km,maxFadeDistanceKm,overcast,overcastBaseKm,overcastRangeKm,targetTextureSize);
 }
 
-vec4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
 {
 	vec3 texc=vec3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
 	vec4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
@@ -196,36 +195,36 @@ vec4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
     return result;
 }
 
-vec4 PS_ShowFadeTable(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_ShowFadeTable(vertexOutput3Dto2D IN): SV_TARGET
 {
 	vec4 result=inscTexture.Sample(cmcSamplerState,IN.texCoords.xy);
 	result.rb+=overlayAlpha*result.a;
     return vec4(result.rgb,1);
 }
 
-vec4 PS_Colour(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_Colour(vertexOutput3Dto2D IN): SV_TARGET
 {
     return colour;
 }
 
-vec4 PS_ShowIlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_ShowIlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
 	return ShowIlluminationBuffer(inscTexture,IN.texCoords);
 }
 
-vec4 PS_ShowFadeTexture(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_ShowFadeTexture(vertexOutput3Dto2D IN): SV_TARGET
 {
 	vec4 result=fadeTexture1.Sample(cmcSamplerState,vec3(altitudeTexCoord,IN.texCoords.yx));
     return vec4(result.rgb,1);
 }
 
-vec4 PS_Show3DLightTable(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_Show3DLightTable(vertexOutput3Dto2D IN): SV_TARGET
 {
 	vec4 result=fadeTexture1.Sample(samplerStateNearest,vec3(IN.texCoords.y,(float(cycled_index)+.5)/3.0,IN.texCoords.x));
     return vec4(result.rgb,1);
 }
 
-vec4 PS_Show2DLightTable(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_Show2DLightTable(vertexOutput3Dto2D IN): SV_TARGET
 {
 	vec2 texc	=vec2(1.00-IN.texCoords.y,IN.texCoords.x);
 	vec4 result	=texture_nearest_lod(lightTable2DTexture,texc,0);
@@ -233,7 +232,7 @@ vec4 PS_Show2DLightTable(vertexOutput3Dto2D IN): SV_TARGET
 }
 
 [numthreads(1,1,1)]
-void CS_InterpLightTable(uint3 pos : SV_DispatchThreadID)
+shader void CS_InterpLightTable(uint3 pos : SV_DispatchThreadID)
 //uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint2 dims;
@@ -247,10 +246,10 @@ void CS_InterpLightTable(uint3 pos : SV_DispatchThreadID)
 	vec3 texc_3b		=vec3(alt_texc_x,(float((cycled_index+1)%3)+0.5)/3.0,which_texc);
 	vec4 colour1		=texture_nearest_lod(sourceTexture,texc_3a,0);
 	vec4 colour2		=texture_nearest_lod(sourceTexture,texc_3b,0);
-	vec4 colour			=lerp(colour1,colour2,skyInterp);
+	vec4 clr			=lerp(colour1,colour2,skyInterp);
 	// Apply earth shadow to sunlight.
 	//colour				*=saturate(alt_texc_x-illumination_alt_texc);
-	targetTexture[pos.xy]	=colour;
+	targetTexture[pos.xy]	=clr;
 }
 
 struct indexVertexInput
@@ -272,7 +271,7 @@ struct starsVertexOutput
 	vec2 depthTexc		: TEXCOORD1;
 };
 
-svertexOutput VS_Sun(indexVertexInput IN) 
+shader svertexOutput VS_Sun(indexVertexInput IN) 
 {
     svertexOutput OUT;
 	vec2 poss[4]=
@@ -303,7 +302,7 @@ struct starsVertexInput
     float tex				: TEXCOORD0;
 };
 
-starsVertexOutput VS_Stars(starsVertexInput IN) 
+shader starsVertexOutput VS_Stars(starsVertexInput IN) 
 {
     starsVertexOutput OUT;
     OUT.hPosition	=mul(worldViewProj,vec4(IN.position.xyz,1.0));
@@ -321,13 +320,13 @@ starsVertexOutput VS_Stars(starsVertexInput IN)
     return OUT;
 }
 
-vec4 PS_Stars(starsVertexOutput IN) : SV_TARGET
+shader vec4 PS_Stars(starsVertexOutput IN) : SV_TARGET
 {
 	vec3 colour = vec3(1.0, 1.0, 1.0)*(starBrightness*IN.tex);
 	return vec4(colour, 1.0);
 }
 
-vec4 PS_StarsDepthTex(starsVertexOutput IN) : SV_TARGET
+shader vec4 PS_StarsDepthTex(starsVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc	= viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
 	float depth		= texture_clamp_lod(depthTexture, IN.depthTexc.xy, 0).x;
@@ -338,7 +337,7 @@ vec4 PS_StarsDepthTex(starsVertexOutput IN) : SV_TARGET
 
 // Sun could be overbright. So the colour is in the range [0,1], and a brightness factor is
 // stored in the alpha channel.
-vec4 PS_Sun( svertexOutput IN): SV_TARGET
+shader vec4 PS_Sun( svertexOutput IN): SV_TARGET
 {
 	float r=4.0*length(IN.tex);
 	if(r>4.0)
@@ -348,7 +347,8 @@ vec4 PS_Sun( svertexOutput IN): SV_TARGET
 	vec3 result=brightness*colour.rgb;
 	return vec4(result,1.f);
 }
-vec4 PS_SunDepthTexture(svertexOutput IN) : SV_TARGET
+
+shader vec4 PS_SunDepthTexture(svertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc = viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
 	float depth = texture_clamp_lod(depthTexture, IN.depthTexc.xy, 0).x;
@@ -363,7 +363,7 @@ vec4 PS_SunDepthTexture(svertexOutput IN) : SV_TARGET
 	return vec4(result, 1.f);
 }
 
-vec4 PS_SunGaussian( svertexOutput IN): SV_TARGET
+shader vec4 PS_SunGaussian( svertexOutput IN): SV_TARGET
 {
 	float r=4.0*length(IN.tex);
 	if(r>4.0)
@@ -376,7 +376,7 @@ vec4 PS_SunGaussian( svertexOutput IN): SV_TARGET
 	return vec4(result,1.f);
 }
 
-vec4 PS_SunQuery( svertexOutput IN): SV_TARGET
+shader vec4 PS_SunQuery( svertexOutput IN): SV_TARGET
 {
 	float r=2.0*length(IN.tex);
 	if(r>1.0)
@@ -384,7 +384,7 @@ vec4 PS_SunQuery( svertexOutput IN): SV_TARGET
 	return vec4(0.0,1.0,0.0,1.0);
 }
 
-vec4 PS_Flare( svertexOutput IN): SV_TARGET
+shader vec4 PS_Flare( svertexOutput IN): SV_TARGET
 {
 	vec3 output=colour.rgb*flareTexture.Sample(flareSamplerState,vec2(.5f,.5f)+0.5f*IN.tex).rgb;
 
@@ -409,13 +409,13 @@ vec4 Planet(vec4 result,vec2 tex)
 	return result;
 }
 
-vec4 PS_Planet(svertexOutput IN): SV_TARGET
+shader vec4 PS_Planet(svertexOutput IN): SV_TARGET
 {
 	vec4 result = flareTexture.Sample(flareSamplerState, vec2(.5f, .5f) - 0.5f*IN.tex);
 	return Planet(result,IN.tex);
 }
 
-vec4 PS_PlanetDepthTexture(svertexOutput IN) : SV_TARGET
+shader vec4 PS_PlanetDepthTexture(svertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc = viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
 	float depth = texture_clamp(depthTexture, depth_texc).x;
@@ -424,12 +424,12 @@ vec4 PS_PlanetDepthTexture(svertexOutput IN) : SV_TARGET
 	return Planet(result, IN.tex);
 }
 
-vec4 PS_PlanetUntextured(svertexOutput IN): SV_TARGET
+shader vec4 PS_PlanetUntextured(svertexOutput IN): SV_TARGET
 {
 	vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
 	return Planet(result,IN.tex);
 }
-vec4 PS_PlanetUntexturedDepthTexture(svertexOutput IN) : SV_TARGET
+shader vec4 PS_PlanetUntexturedDepthTexture(svertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc = viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
 	discardUnlessFar(texture_clamp(depthTexture, depth_texc).x);

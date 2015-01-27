@@ -34,7 +34,7 @@ struct vertexOutput
 	vec2 texCoords	: TEXCOORD0;		
 };
 
-vertexOutput VS_Main(idOnly IN)
+shader vertexOutput VS_Main(idOnly IN)
 {
     vertexOutput OUT;
 	vec2 poss[4]=
@@ -52,13 +52,13 @@ vertexOutput VS_Main(idOnly IN)
     return OUT;
 }
 
-vec4 PS_Loss(vertexOutput IN) : SV_TARGET
+shader vec4 PS_Loss(vertexOutput IN) : SV_TARGET
 {
 	return PSLoss(input_texture,density_texture,IN.texCoords.xy);
 }
 
 CS_LAYOUT(4,4,4)
-void CS_BlendColour3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+shader void CS_BlendColour3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 dims;
 	uint3 sub_pos = g * 4 + t;
@@ -72,7 +72,7 @@ void CS_BlendColour3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 }
 
 CS_LAYOUT(8,1,1)
-void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 dims;
 	uint3 sub_pos = g * uint3(8, 1, 1) + t;
@@ -83,7 +83,7 @@ void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 }
 
 CS_LAYOUT(1,1,1)
-void CS_LightTable( uint3 sub_pos : SV_DispatchThreadID )
+shader void CS_LightTable( uint3 sub_pos : SV_DispatchThreadID )
 //void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
 	//uint3 sub_pos = g  + t;
@@ -91,14 +91,14 @@ void CS_LightTable( uint3 sub_pos : SV_DispatchThreadID )
 }
 
 CS_LAYOUT(8,1,1)
-void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
+shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
-	uint3 sub_pos = g * uint3(8, 1, 1) + t;
+	int3 sub_pos = int3(g) * int3(8, 1, 1) + int3(t);
 	int3 dims;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
-	uint linear_pos			=sub_pos.x+threadOffset.x;
+	//targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	int linear_pos			=sub_pos.x+threadOffset.x;
 	
-	int3 pos				=LinearThreadToPos2D(linear_pos,dims);
+	int3 pos				=LinearThreadToPos2D(linear_pos,targetSize);
 	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
 	CSInsc(targetTexture,density_texture,optical_depth_texture,loss_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm,targetSize,colourTexture);
@@ -106,7 +106,7 @@ void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 }
 
 CS_LAYOUT(8,1,1)
-void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
+shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
 	uint3 sub_pos = g *uint3(8,1,1) + t;
 	uint3 dims;
@@ -117,12 +117,12 @@ void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	
 }
 
-vec4 PS_Insc(vertexOutput IN) : SV_TARGET
+shader vec4 PS_Insc(vertexOutput IN) : SV_TARGET
 {
 	return Insc(input_texture,loss_texture,density_texture,optical_depth_texture,IN.texCoords);
 }
 
-vec4 PS_Skyl(vertexOutput IN) : SV_TARGET
+shader vec4 PS_Skyl(vertexOutput IN) : SV_TARGET
 {
 	vec4 previous_skyl	=texture(input_texture,IN.texCoords.xy);
 	vec3 previous_loss	=texture(loss_texture,vec3(IN.texCoords.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;

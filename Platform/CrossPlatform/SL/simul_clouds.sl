@@ -4,7 +4,7 @@
 #ifndef GLSL
 SamplerState cloudSamplerState	: register( s0);
 #endif
-
+#define USE_LIGHT_TABLES 1
 #ifdef __PSSL__
 	#ifdef USE_LIGHT_TABLES
 		#define USE_LIGHT_TABLES1
@@ -399,7 +399,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	vec3 amb				=ambientColour.rgb;
 #endif
 	vec4 rainbowColour		=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
-												rainbowIntensity,view,lightDir,texCoords.xy);
+												rainbowIntensity,view,lightDir);
 	float moisture				=0.0;
 	float noise_centre_factor	=1.0;//exp(-length(clip_pos.xy));
 

@@ -1,7 +1,8 @@
+#include "shader_platform.sl"
 TextureCube cubeTexture;
 float4x4 worldViewProj	: WorldViewProjection;
 
-SamplerCUBE samplerState 
+SamplerState cubeSamplerState 
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
@@ -19,7 +20,7 @@ struct v2f
     float3 texcoord		: TEXCOORD0;
 };
 
-v2f CubemapVS(a2v IN)
+shader v2f CubemapVS(a2v IN)
 {
 	v2f OUT;
     OUT.hPosition = mul( worldViewProj, float4(IN.position.xyz , 1.0));
@@ -27,9 +28,9 @@ v2f CubemapVS(a2v IN)
     return OUT;
 }
 
-float4 CubemapPS(v2f IN) : SV_TARGET
+shader float4 CubemapPS(v2f IN) : SV_TARGET
 {
-	float4 c=cubeTexture.Sample(samplerState,IN.texcoord);
+	float4 c=cubeTexture.Sample(cubeSamplerState,IN.texcoord);
     return float4(c.rgb,1.f);
 }
 

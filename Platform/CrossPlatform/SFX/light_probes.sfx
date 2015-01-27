@@ -37,7 +37,7 @@ float WindowFunction(float x)
 	return saturate((0.0001+sin(pi*x))/(0.0001+pi*x));
 }
 
-vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 clip_pos	=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x		+=2.0*IN.texCoords.x;

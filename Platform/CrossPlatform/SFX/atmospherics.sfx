@@ -1,3 +1,5 @@
+
+
 #include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/depth.sl"
@@ -26,7 +28,7 @@ Texture2D moistureTexture;
 
 RWTexture3D<float4> targetVolume;
 
-	SamplerState samplerState: register(s1)
+SamplerState samplerState: register(s1)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;

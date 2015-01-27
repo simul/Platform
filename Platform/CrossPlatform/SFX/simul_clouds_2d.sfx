@@ -1,3 +1,4 @@
+#define USE_LIGHT_TABLES 1
 #include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 uniform sampler2D imageTexture;
@@ -247,7 +248,7 @@ shader v2f2 SimpleVS(idOnly IN)
 
 shader vec4 SimplePS(v2f2 IN) : SV_TARGET
 {
-	return texture2D(imageTexture,.5+IN.texCoords);
+	return texture_clamp(imageTexture,.5+IN.texCoords);
 }
 
 shader vec4 CoveragePS(v2f2 IN) : SV_TARGET

@@ -5,14 +5,14 @@
 #include "../../CrossPlatform/SL/text_constants.sl"
 Texture2D fontTexture;
 
-posTexVertexOutput FontVertexShader(idOnly IN)
+shader posTexVertexOutput FontVertexShader(idOnly IN)
 {
     posTexVertexOutput output=VS_ScreenQuad(IN,rect);
 	output.texCoords=vec4(texc.xy+texc.zw*output.texCoords,0.0,1.0);
     return output;
 }
 
-vec4 FontPixelShader(posTexVertexOutput input) : SV_TARGET
+shader vec4 FontPixelShader(posTexVertexOutput input) : SV_TARGET
 {
 	vec4 result	=background;
 	vec4 lookup	=texture_nearest_lod(fontTexture,input.texCoords,0);
@@ -21,7 +21,7 @@ vec4 FontPixelShader(posTexVertexOutput input) : SV_TARGET
     return lookup;
 }
 
-vec4 FontBackgroundShader(posTexVertexOutput input) : SV_TARGET
+shader vec4 FontBackgroundShader(posTexVertexOutput input) : SV_TARGET
 {
     return background;
 }
