@@ -147,7 +147,8 @@ shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_Target
 {
 	vec4 depth		=texture_clamp(depthTexture,IN.texCoords);
 	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
-    return vec4(1,dist,dist,1.0);
+    vec4 u= vec4(1,dist,dist,1.0);
+	return u;
 }
 
 vec4 convertInt(TEXTURE2D_UINT glowTexture,uint2 location)
@@ -212,7 +213,8 @@ shader vec4 LinearizeDepthPS(v2f IN) : SV_Target
 {
 	vec4 depth=texture_nearest_lod(depthTexture,IN.texCoords,0);
 	float dist=depthToLinearDistance(depth.x,depthToLinFadeDistParams);
-    return vec4(dist,dist,dist,1.0);
+	vec4 u= vec4(dist,dist,dist,1.0);
+	return u;
 }
 
 
@@ -223,7 +225,8 @@ shader vec4 GlowExposureGammaPS(v2f IN) : SV_Target
 	c.rgb		+=glow.rgb;
 	c.rgb		*=exposure;
 	c.rgb		=pow(c.rgb,vec3(gamma,gamma,gamma));
-    return vec4(c.rgb,1.0);
+	vec4 u= vec4(c.rgb,1.0);
+	return u;
 }
 
 shader vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_Target
@@ -233,7 +236,8 @@ shader vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_Target
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
-    return vec4(c.rgb,1.0);
+	vec4 u= vec4(c.rgb,1.0);
+	return u;
 }
 
 shader vec4 PS_InfraRed(v2f IN) : SV_Target
@@ -244,7 +248,8 @@ shader vec4 PS_InfraRed(v2f IN) : SV_Target
 	c=vec4(final_radiance,final_radiance,final_radiance,c.a);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
-	return vec4(c.rgb,1.0);
+	vec4 u= vec4(c.rgb,1.0);
+	return u;
 }
 
 shader vec4 PS_InfraRed_MSAA(v2f IN) : SV_Target
@@ -255,20 +260,23 @@ shader vec4 PS_InfraRed_MSAA(v2f IN) : SV_Target
 	c=vec4(final_radiance,final_radiance,final_radiance,c.a);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
-	return vec4(c.rgb,1.0);
+	vec4 u= vec4(c.rgb,1.0);
+	return u;
 }
 
 shader vec4 PS_ShowCompressed(posTexVertexOutput IN) : SV_Target
 {
 	vec4 glow		=texture_int(glowTexture,IN.texCoords);
-    return vec4(glow.rgb,1.0);
+    vec4 u= vec4(glow.rgb,1.0);
+	return u;
 }
 
 shader vec4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_Target
 {
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
 	vec4 sc			=texture_clamp(lightSpaceInscatterVolumeTexture,vec3(IN.texCoords.xy,z));
-    return vec4(sc.rgb,1.0);
+    vec4 u= vec4(sc.rgb,1.0);
+	return u;
 }
 
 shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
@@ -286,7 +294,9 @@ shader vec4 ExposureGammaPS(v2f IN) : SV_Target
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
-    return vec4(c.rgb,1.0);
+    vec4 u= vec4(c.rgb,1.0);
+	u.r=1;
+	return u;
 }
 
 shader vec4 ExposureGammaPS_MSAA(v2f IN) : SV_Target
@@ -294,7 +304,8 @@ shader vec4 ExposureGammaPS_MSAA(v2f IN) : SV_Target
 	vec4 c=texture_resolve(imageTextureMS,IN.texCoords);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
-    return vec4(c.rgb,1.0);
+    vec4 u= vec4(c.rgb,1.0);
+	return u;
 }
 
 // Scales input texture coordinates for distortion.
@@ -305,7 +316,8 @@ vec2 HmdWarp(vec2 texCoords)
 	vec2 rvector	= theta * (warpHmdWarpParam.x + warpHmdWarpParam.y * rSq +
 								warpHmdWarpParam.z * rSq * rSq +
 								warpHmdWarpParam.w * rSq * rSq * rSq);
-	return warpLensCentre+rvector*warpScale;
+	vec2 ret= warpLensCentre+rvector*warpScale;
+	return ret;
 }
 
 shader vec4 WarpExposureGammaPS(v2f IN) : SV_Target
@@ -317,7 +329,8 @@ shader vec4 WarpExposureGammaPS(v2f IN) : SV_Target
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
 //	c.r=offset.x;
-    return vec4(c.rgb,1.0);
+    vec4 u= vec4(c.rgb,1.0);
+	return u;
 }
 
 void UpdateNearestSample(	inout float MinDist,

@@ -250,10 +250,15 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 	//res.add=vec4(texCoords.xy,0,1);
 	// we only care about view.z, i.e. the third element of the vector.
 	// so only dot-product the third row of invViewProj, with clip_pos.
-	float sine					=dot(invViewProj._31_32_33_34,clip_pos);
+#ifdef GLSL
+	vec4 zrow					=vec4(invViewProj[2][0],invViewProj[3][1],invViewProj[3][2],invViewProj[3][3]);
+#else
+	vec4 zrow					=invViewProj._31_32_33_34;
+#endif
+	float sine					=dot(zrow,clip_pos);
 	vec4 nearFarCloud			=texture_clamp_lod(nearFarTexture	,lowResTexCoords		,0);
 
-	float depth					=texture_nearest_lod(depthTexture,depth_texc,0);
+	float depth					=texture_nearest_lod(depthTexture,depth_texc,0).x;
 	//IMAGE_LOAD(depthTexture,fullres_depth_pos2).x;
 	float dist					=depthToLinearDistance(depth	,depthToLinFadeDistParams);
 	float dist_rt				=pow(dist,0.5);
@@ -262,7 +267,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 	vec3 volumeTexCoords		= vec3(lowResTexCoords, dist_rt);
 	vec4 shadow_lookup			= vec4(1.0, 1.0, 0, 0);
 	//if (depth>0.0)
-		shadow_lookup				=texture_clamp_lod(shadowTexture, lowResTexCoords, 0);
+		shadow_lookup			=texture_clamp_lod(shadowTexture, lowResTexCoords, 0);
 	float shadow				=shadow_lookup.x;
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
 	vec4 insc					=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
@@ -283,10 +288,10 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 
 TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 													,Texture2D cloudTexture
-													, Texture2D nearCloudTexture
-													, Texture2D nearFarTexture
+													,Texture2D nearCloudTexture
+													,Texture2D nearFarTexture
 													,Texture3D lossVolumeTexture
-													, Texture2D loss2dTexture
+													,Texture2D loss2dTexture
 													,int2 hiResDims
 													,int2 lowResDims
 													,TEXTURE2DMS_FLOAT4 depthTextureMS
@@ -313,7 +318,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 	
 	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy	+texCoords*fullResToLowResTransformXYWH.zw;
 	
-	vec4 cloud					=texture_clamp_lod(cloudTexture			,lowResTexCoords	,0);
+	vec4 cloud					=texture_clamp_lod(cloudTexture		,lowResTexCoords	,0);
 	vec4 low_res_depths			=texture_clamp_lod(nearFarTexture	,lowResTexCoords		,0);
 	//cloud.a						=1.0-cloud.a;
 

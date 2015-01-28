@@ -2,8 +2,9 @@
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/solid_constants.sl"
 
-Texture2D diffuseTexture;
-TextureCube diffuseCubemap;
+uniform Texture2D diffuseTexture;
+uniform TextureCube diffuseCubemap;
+
 struct vertexInput
 {
     vec3 position		: POSITION;
@@ -18,24 +19,26 @@ struct vertexOutput
     vec3 normal			: TEXCOORD1;
 };
 
-vertexOutput VS_Solid(vertexInput IN)
+shader vertexOutput VS_Solid(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition	=mul(worldViewProj, float4(IN.position.xyz,1.f));
+    OUT.hPosition	=mul(worldViewProj, vec4(IN.position.xyz,1.f));
 	OUT.texCoords	=IN.texCoords;
-    OUT.normal.xyz	=mul((mat3)world,IN.normal);
+	mat3 w=mat3(world);
+    OUT.normal.xyz	=mul(w,IN.normal);
     return OUT;
 }
 
-float4 PS_Solid(vertexOutput IN) : SV_TARGET
+shader vec4 PS_Solid(vertexOutput IN) : SV_TARGET
 {
     vec3 normal	=normalize(IN.normal);
     vec4 c = texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
-	vec3 totalDiff=diffuseCubemap.Sample(cubeSamplerState,-normal.xyz).rgb;
+	vec3 totalDiff=texture_clamp(diffuseCubemap,-normal.xyz).rgb;
 	c.a=1.0;
 	totalDiff+=0.3*saturate(dot(lightDir,normal.xyz))*lightIrradiance;
 	c.rgb*=totalDiff;
-    return vec4(c.rgb,1.0);
+    vec4 u= vec4(c.rgb,1.0);
+	return u;
 }
 
 technique solid

@@ -21,20 +21,20 @@
 // Macros and constant values
 //-----------------------------------------------------------------------------
 
-static const uint SCAN_WARP_SIZE = 32;
-static const uint SCAN_LOG2_WARP_SIZE = 5;
+const uint SCAN_WARP_SIZE = 32;
+const uint SCAN_LOG2_WARP_SIZE = 5;
 
 // The following constants are defined via compiler command line
 //static const uint THREADS_PER_GROUP = 128;
 //static const uint SCAN_SMEM_SIZE = 1200;
-static const uint MAX_TEXELS_PER_THREAD = 64;
+const uint MAX_TEXELS_PER_THREAD = 64;
 //static const uint imageSize.y = 1200;
 //static const uint imageSize.x = 1600;
 
 //-----------------------------------------------------------------------------
 // Shared memory variables
 // Shared memory for prefix sum operation (scan).
-groupshared float3 gs_ScanData[SCAN_SMEM_SIZE];
+groupshared vec3 gs_ScanData[SCAN_SMEM_SIZE];
 
 //-----------------------------------------------------------------------------
 // Shader constant buffers
@@ -54,7 +54,7 @@ RWTexture2D<uint>		g_rwtOutput;
 // Subroutines for scan operation
 //-----------------------------------------------------------------------------
 
-inline float3 scan_warp_inclusive(uint thread_id, float3 value, uint size)
+inline vec3 scan_warp_inclusive(uint thread_id, vec3 value, uint size)
 {
 	// Naive inclusive scan: O(N * log2(N)) operations within a warp (32 threads)
 	// All threads within a warp always execute the same instruction, thus we don't
@@ -67,13 +67,13 @@ inline float3 scan_warp_inclusive(uint thread_id, float3 value, uint size)
 	location += size;
 	gs_ScanData[location] = value;
 
-#if USE_D3D_REF_MODE == 1
+#ifdef USE_D3D_REF_MODE
 	for (uint offset = 1; offset < size; offset <<= 1)
 	{
 		// Wait all write operations finished
 		GroupMemoryBarrierWithGroupSync();
 
-		float3 value = gs_ScanData[location - offset];
+		vec3 value = gs_ScanData[location - offset];
 
 		// Wait all read operations finished
 		GroupMemoryBarrierWithGroupSync();
@@ -88,16 +88,16 @@ inline float3 scan_warp_inclusive(uint thread_id, float3 value, uint size)
 	return gs_ScanData[location];
 }
 
-inline float3 scan_warp_exclusive(uint thread_id, float3 value, uint size)
+inline vec3 scan_warp_exclusive(uint thread_id, vec3 value, uint size)
 {
     return scan_warp_inclusive(thread_id, value, size) - value;
 }
 
-inline float3 scan_top_inclusive(uint thread_id, float3 value, uint size)
+inline vec3 scan_top_inclusive(uint thread_id, vec3 value, uint size)
 {
 	// Warp-level inclusive warp scan. Preserve scan result in each thread's
 	// register space (variable 'warp_result')
-	float3 warp_result = scan_warp_inclusive(thread_id, value, SCAN_WARP_SIZE);
+	vec3 warp_result = scan_warp_inclusive(thread_id, value, SCAN_WARP_SIZE);
 
 	// Sync to wait for warp scans to complete because gs_ScanData is going to
 	// be overwritten
@@ -111,7 +111,7 @@ inline float3 scan_top_inclusive(uint thread_id, float3 value, uint size)
 	GroupMemoryBarrierWithGroupSync();
 
 	// Grab top warp elements
-	float3 top_value = gs_ScanData[thread_id];
+	vec3 top_value = gs_ScanData[thread_id];
 
 	// Calculate exclusive scan and write back to shared memory
 	gs_ScanData[thread_id] = scan_warp_exclusive(thread_id, top_value, THREADS_PER_GROUP >> SCAN_LOG2_WARP_SIZE);
@@ -123,7 +123,7 @@ inline float3 scan_top_inclusive(uint thread_id, float3 value, uint size)
 	return warp_result + gs_ScanData[thread_id >> SCAN_LOG2_WARP_SIZE];
 }
 
-inline float3 scan_top_exclusive(uint thread_id, float3 value, uint size)
+inline vec3 scan_top_exclusive(uint thread_id, vec3 value, uint size)
 {
 	return scan_top_inclusive(thread_id, value, size) - value;
 }
@@ -166,19 +166,19 @@ inline void scan_inclusive_filtering(uint thread_id, uint size)
 	// Each thread deals the number of "texelsPerThread" texels
 	uint location = thread_id * texelsPerThread;
 	// The lowest level (level-0) are stored in register space
-	float3 local_data[MAX_TEXELS_PER_THREAD];
+	vec3 local_data[MAX_TEXELS_PER_THREAD];
 
 	// Calculating average values in the box window while performing level-0 scan
 	int L_pos = (int) ceil(location - 0.5 - g_HalfBoxFilterWidth) - 1;
 	int R_pos = (int)floor(location - 0.5 + g_HalfBoxFilterWidth);
 
-	float3 L_sum = gs_ScanData[clamp(L_pos, 0, (int)size - 1)] * g_FracHalfBoxFilterWidth;
-	float3 R_sum = gs_ScanData[clamp(R_pos, 0, (int)size - 1)] * g_InvFracHalfBoxFilterWidth;
+	vec3 L_sum = gs_ScanData[clamp(L_pos, 0, (int)size - 1)] * g_FracHalfBoxFilterWidth;
+	vec3 R_sum = gs_ScanData[clamp(R_pos, 0, (int)size - 1)] * g_InvFracHalfBoxFilterWidth;
 
 	for (i = 0; (uint)i < texelsPerThread; i ++)
 	{
-		float3 L_next = gs_ScanData[clamp(L_pos + 1 + i, 0, (int)size - 1)];
-		float3 R_next = gs_ScanData[clamp(R_pos + 1 + i, 0, (int)size - 1)];
+		vec3 L_next = gs_ScanData[clamp(L_pos + 1 + i, 0, (int)size - 1)];
+		vec3 R_next = gs_ScanData[clamp(R_pos + 1 + i, 0, (int)size - 1)];
 
 		local_data[i] = (R_sum + R_next * g_FracHalfBoxFilterWidth) - (L_sum + L_next * g_InvFracHalfBoxFilterWidth);
 		local_data[i] *= g_RcpBoxFilterWidth;
@@ -190,8 +190,8 @@ inline void scan_inclusive_filtering(uint thread_id, uint size)
 	GroupMemoryBarrierWithGroupSync();
 
 	// Level-1 exclusive scan
-	float3 top_value = local_data[texelsPerThread - 1];
-	float3 top_result = scan_top_exclusive(thread_id, top_value, THREADS_PER_GROUP);
+	vec3 top_value = local_data[texelsPerThread - 1];
+	vec3 top_result = scan_top_exclusive(thread_id, top_value, THREADS_PER_GROUP);
 
 	// Wait until top level scan finished
 	GroupMemoryBarrierWithGroupSync();
@@ -207,7 +207,7 @@ inline void scan_inclusive_filtering(uint thread_id, uint size)
 	GroupMemoryBarrierWithGroupSync();
 }
 
-inline float3 box_filtering(uint location, uint size)
+inline vec3 box_filtering(uint location, uint size)
 {
 	// Calculate the sampling locations (left and right side of the filter window).
 	// We treat the original data as a piecewise box function, thus the sum is a
@@ -219,13 +219,13 @@ inline float3 box_filtering(uint location, uint size)
 	int R_a = clamp((int)floor(center + g_HalfBoxFilterWidth), 0, (int)size - 1);
 	int R_b = clamp(R_a + 1, 0, (int)size - 1);
 	
-	float3 L_value = lerp(gs_ScanData[L_a], gs_ScanData[L_b], g_FracHalfBoxFilterWidth);
-	float3 R_value = lerp(gs_ScanData[R_a], gs_ScanData[R_b], g_FracHalfBoxFilterWidth);
+	vec3 L_value = lerp(gs_ScanData[L_a], gs_ScanData[L_b], g_FracHalfBoxFilterWidth);
+	vec3 R_value = lerp(gs_ScanData[R_a], gs_ScanData[R_b], g_FracHalfBoxFilterWidth);
 
 	return (R_value - L_value) * g_RcpBoxFilterWidth;
 }
 
-inline uint color3_to_uint(float3 color)
+inline uint color3_to_uint(vec3 color)
 {
 	// Convert to R11G11B10
 	color = clamp(color/10.0, 0, 1);
@@ -236,14 +236,14 @@ inline uint color3_to_uint(float3 color)
 	return (int_r << 21) | (int_g << 10) | int_b;
 }
 
-inline float3 uint_to_color3(uint int_color)
+inline vec3 uint_to_color3(uint int_color)
 {
 	// Unpack from UINT32
 	float r = (float)(int_color >> 21);
 	float g = (float)((int_color >> 10) & 0x7ff);
 	float b = (float)(int_color & 0x0003ff);
-	// Convert R11G11B10 to float3
-	return 10.0*float3(r/2047.0f, g/2047.0f, b/1023.0f);
+	// Convert R11G11B10 to vec3
+	return 10.0*vec3(r/2047.0f, g/2047.0f, b/1023.0f);
 }
 inline void input_row_color(uint group_id, uint thread_id)
 {
@@ -281,7 +281,7 @@ inline void output_col_color(uint group_id, uint thread_id)
 	// Output color values.
 	while (row < imageSize.y)
 	{
-		float3 color = box_filtering(row, imageSize.y);
+		vec3 color = box_filtering(row, imageSize.y);
 		g_rwtOutput[uint2(col, row)] = color3_to_uint(color);
 		row += THREADS_PER_GROUP;
 	}
@@ -294,7 +294,7 @@ inline void output_row_color(uint group_id, uint thread_id)
 	// Output color values.
 	while (col < imageSize.x)
 	{
-		float3 color = box_filtering(col, imageSize.x);
+		vec3 color = box_filtering(col, imageSize.x);
 		g_rwtOutput[uint2(col, row)] = color3_to_uint(color);
 		col += THREADS_PER_GROUP;
 	}
@@ -309,7 +309,7 @@ inline void output_row_color(uint group_id, uint thread_id)
 // Desc: Perform column or row Gaussian filtering
 //-----------------------------------------------------------------------------
 [numthreads(THREADS_PER_GROUP, 1, 1)]
-void GaussianCol_CS(uint3 GroupID			: SV_GroupID,
+shader void GaussianCol_CS(uint3 GroupID			: SV_GroupID,
 					  uint3 GroupThreadID	: SV_GroupThreadID)
 {
 	// Step 1: Fetch the entire column (or row) of texels into shared memory
@@ -327,7 +327,7 @@ void GaussianCol_CS(uint3 GroupID			: SV_GroupID,
 }
 
 [numthreads(THREADS_PER_GROUP, 1, 1)]
-void GaussianRow_CS(uint3 GroupID			: SV_GroupID,
+shader void GaussianRow_CS(uint3 GroupID			: SV_GroupID,
 					  uint3 GroupThreadID	: SV_GroupThreadID)
 {
 	// Step 1: Fetch the entire column (or row) of texels into shared memory

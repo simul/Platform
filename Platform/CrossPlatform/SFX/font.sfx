@@ -3,25 +3,25 @@
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/text_constants.sl"
-Texture2D fontTexture;
+uniform Texture2D fontTexture;
 
-posTexVertexOutput FontVertexShader(idOnly IN)
+shader posTexVertexOutput FontVertexShader(idOnly IN)
 {
-    posTexVertexOutput output=VS_ScreenQuad(IN,rect);
-	output.texCoords=vec4(texc.xy+texc.zw*output.texCoords,0.0,1.0);
-    return output;
+    posTexVertexOutput outp=VS_ScreenQuad(IN,rect);
+	outp.texCoords=vec4(texc.xy+texc.zw*outp.texCoords,0.0,1.0).xy;
+    return outp;
 }
 
-vec4 FontPixelShader(posTexVertexOutput input) : SV_TARGET
+shader vec4 FontPixelShader(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 result	=background;
-	vec4 lookup	=texture_nearest_lod(fontTexture,input.texCoords,0);
+	vec4 lookup	=texture_nearest_lod(fontTexture,IN.texCoords,0);
 	lookup.a	=lookup.r;
 	lookup		*=colour;
     return lookup;
 }
 
-vec4 FontBackgroundShader(posTexVertexOutput input) : SV_TARGET
+shader vec4 FontBackgroundShader(posTexVertexOutput IN) : SV_TARGET
 {
     return background;
 }

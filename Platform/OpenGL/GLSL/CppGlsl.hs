@@ -55,6 +55,7 @@
 	#define texture_cmc_nearest_lod(tex,texc,lod) textureLod(tex,texc,lod)
 	#define texture_wmc_lod(tex,texc,lod) textureLod(tex,texc,lod)
 	#define texture_wmc(tex,texc) textureLod(tex,texc)
+	#define texture_cube(tex,texc) texture(tex,texc);
 
 	#define texture_wwc(tex,texc) texture(tex,texc)
 	#define texture_nearest(tex,texc) texture(tex,texc)
@@ -72,11 +73,16 @@
 	#define Texture3D sampler3D 
 	#define Texture2D sampler2D 
 	#define Texture2DMS sampler2DMS
+	#define TextureCube samplerCube
 	#define Texture1D sampler1D 
 	#define Y(texel) texel.y
 	#define STATIC
 
 	vec4 mul(mat4 m,vec4 v)
+	{
+		return m*v;
+	}
+	vec3 mul(mat3 m,vec3 v)
 	{
 		return m*v;
 	}
@@ -111,7 +117,7 @@
 	//layout(rgba8)
 	struct idOnly
 	{
-		uint vertex_id: SV_VertexID;
+		uint vertex_id: gl_VertexID;
 	};
 #ifdef GLFX
 	shader void VS_ScreenQuad( out vec2 texCoords)

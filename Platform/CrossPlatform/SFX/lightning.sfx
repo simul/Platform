@@ -65,7 +65,7 @@ transformedThinVertex VS_Thin(LightningVertexInput IN)
     return OUT;
 }
 
-LightningVertexOutput VS_Thick(LightningVertexInput IN)
+shader LightningVertexOutput VS_Thick(LightningVertexInput IN)
 {
     LightningVertexOutput OUT;
     OUT.position	=mul(worldViewProj, vec4(IN.position.xyz , 1.0));
@@ -80,7 +80,7 @@ vec2 PixelPos(vec4 vertex)
 }
 
 [maxvertexcount(10)]
-void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStream<transformedVertex> SpriteStream)
+shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStream<transformedVertex> SpriteStream)
 {
 	transformedVertex output;
     //  a - - - - - - - - - - - - - - - - b

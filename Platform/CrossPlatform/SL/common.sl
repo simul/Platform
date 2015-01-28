@@ -6,6 +6,11 @@ struct posTexVertexOutput
 	vec4 hPosition	: SV_POSITION;
 	vec2 texCoords	: TEXCOORD0;		
 };
+struct positionColourVertexInput
+{
+	vec3 position	: POSITION;
+	vec4 colour		: TEXCOORD0;		
+};
 
 shader posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
 {

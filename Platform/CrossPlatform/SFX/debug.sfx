@@ -5,37 +5,34 @@
 #include "../../CrossPlatform/SL/colour_packing.sl"
 #include "../../CrossPlatform/SL/debug_constants.sl"
 
-sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
-Texture2DMS<float4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
-TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
-Texture2D<uint> imageTextureUint SIMUL_TEXTURE_REGISTER(3);
-Texture2D<uint2> imageTextureUint2 SIMUL_TEXTURE_REGISTER(4);
-Texture2D<uint3> imageTextureUint3 SIMUL_TEXTURE_REGISTER(5);
-Texture2D<uint4> imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
+uniform sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
+uniform TEXTURE2DMS_FLOAT4 imageTextureMS SIMUL_TEXTURE_REGISTER(1);
+uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
+uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
+uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
 
-cbuffer cbPerObject : register(b11)
-{
-	float4 rect;
-};
+SIMUL_CONSTANT_BUFFER(cbPerObject,11)
+	vec4 rect;
+SIMUL_CONSTANT_BUFFER_END
 
 struct a2v
 {
-    float3 position	: POSITION;
-    float4 colour	: TEXCOORD0;
+    vec3 position	: POSITION;
+    vec4 colour	: TEXCOORD0;
 };
 
 struct v2f
 {
-    float4 hPosition	: SV_POSITION;
-    float4 colour		: TEXCOORD0;
+    vec4 hPosition	: SV_POSITION;
+    vec4 colour		: TEXCOORD0;
 };
 
-posTexVertexOutput VS_Quad(idOnly id)
+shader posTexVertexOutput VS_Quad(idOnly id)
 {
     return VS_ScreenQuad(id,rect);
 }
 
-v2f DebugVS(positionColourVertexInput IN)
+shader v2f DebugVS(positionColourVertexInput IN)
 {
 	v2f OUT;
 	vec3 pos		=IN.position.xyz;
@@ -44,56 +41,57 @@ v2f DebugVS(positionColourVertexInput IN)
     return OUT;
 }
 
-v2f Debug2dVS(a2v IN)
+shader v2f Debug2dVS(a2v IN)
 {
 	v2f OUT;
-    OUT.hPosition	=float4(rect.xy+rect.zw*IN.position.xy,0.0,1.0);
+    OUT.hPosition	=vec4(rect.xy+rect.zw*IN.position.xy,0.0,1.0);
 	OUT.colour		=IN.colour;
     return OUT;
 }
 
-v2f CircleVS(idOnly IN)
+shader v2f CircleVS(idOnly IN)
 {
 	v2f OUT;
 	float angle		=2.0*3.1415926536*float(IN.vertex_id)/31.0;
 	vec4 pos		=vec4(100.0*vec3(radius*vec2(cos(angle),sin(angle)),1.0),1.0);
-    OUT.hPosition	=mul(worldViewProj,float4(pos.xyz,1.0));
+    OUT.hPosition	=mul(worldViewProj,vec4(pos.xyz,1.0));
 	OUT.colour		=colour;
     return OUT;
 }
 
-v2f FilledCircleVS(idOnly IN)
+shader v2f FilledCircleVS(idOnly IN)
 {
 	v2f OUT;
 	int i=int(IN.vertex_id/2);
 	int j=int(IN.vertex_id%2);
 	float angle		=2.0*3.1415926536*float(IN.vertex_id)/31.0;
 	vec4 pos		=vec4(100.0*vec3(radius*j*vec2(cos(angle),sin(angle)),1.0),1.0);
-    OUT.hPosition	=mul(worldViewProj,float4(pos.xyz,1.0));
+    OUT.hPosition	=mul(worldViewProj,vec4(pos.xyz,1.0));
 	OUT.colour		=colour;
     return OUT;
 }
 
-float4 DebugPS(v2f IN) : SV_TARGET
+shader vec4 DebugPS(v2f IN) : SV_TARGET
 {
-    return IN.colour;
+    vec4 c= IN.colour;
+	return c;
 }
 
-vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 res=multiplier*texture_nearest_lod(imageTexture,IN.texCoords.xy,0);
 	res.a=res.a;
 	return res;
 }
-
-vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
+#ifndef GLSL
+shader vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	uint2 dims;
-	imageTextureUint4.GetDimensions(dims.x,dims.y);
-	uint2 pos			=IN.texCoords*dims;
+	GET_DIMENSIONS(imageTextureUint4,dims.x,dims.y);
+	uint2 pos			=uint2(IN.texCoords*vec2(dims));
 	uint4 lookup		=IMAGE_LOAD(imageTextureUint4,pos);
-	vec3 clr1=uint2_to_colour3(lookup.xy);
-	vec3 clr2=uint2_to_colour3(lookup.zw);
+	vec3 clr1			=uint2_to_colour3(lookup.xy);
+	vec3 clr2			=uint2_to_colour3(lookup.zw);
 #if 0
 	vec3 clr=vec3(clr1.x,clr2.x,0.0);
 #else
@@ -104,21 +102,23 @@ vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 //	res.xy+=IN.texCoords.xy;
 	return vec4(res,1.0);
 }
-vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
+#endif
+
+shader vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
 {
 	uint2 dims;
 	uint numSamples;
-	imageTextureMS.GetDimensions(dims.x,dims.y,numSamples);
-	uint2 pos	=uint2(IN.texCoords.xy*vec2(dims.xy));
-	vec4 res	=multiplier*imageTextureMS.Load(pos,0);
+	GET_DIMENSIONS_MSAA(imageTextureMS,dims.x,dims.y,numSamples);
+	int2 pos	=int2(IN.texCoords.xy*vec2(dims.xy));
+	vec4 res	=multiplier*IMAGE_LOAD_MSAA(imageTextureMS,pos,0);
 	return res;
 }
 
-vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
+shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 depth		=texture_nearest_lod(imageTexture,IN.texCoords,0);
 	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
-    vec4 result		=vec4(pow(dist.xy,0.44),depth.z,1.0);
+    vec4 result		=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
 	//if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
 	///	||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
 	//	result *= 0.25;
@@ -127,15 +127,15 @@ vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 	return result;
 }
 
-vec4 ShowDepthMS_PS(posTexVertexOutput IN) : SV_TARGET
+shader vec4 ShowDepthMS_PS(posTexVertexOutput IN) : SV_TARGET
 {
 	uint2 dims;
 	uint numSamples;
-	imageTextureMS.GetDimensions(dims.x,dims.y,numSamples);
-	uint2 pos	=uint2(IN.texCoords.xy*vec2(dims.xy));
-	vec4 depth		=imageTextureMS.Load(pos,0);
+	GET_DIMENSIONS_MSAA(imageTextureMS,dims.x,dims.y,numSamples);
+	int2 pos		=int2(IN.texCoords.xy*vec2(dims.xy));
+	vec4 depth		=IMAGE_LOAD_MSAA(imageTextureMS,pos,0);
 	vec2 dist		=depthToFadeDistance(depth.xx,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
-	vec4 result=vec4(pow(dist.xy,0.44),depth.z,1.0);
+	vec4 result=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
 	if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
 		||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
 		result*=0.25;
@@ -143,33 +143,33 @@ vec4 ShowDepthMS_PS(posTexVertexOutput IN) : SV_TARGET
 }
 struct vec3input
 {
-    float3 position	: POSITION;
+    vec3 position	: POSITION;
 };
 
-v2f Vec3InputSignatureVS(vec3input IN)
+shader v2f Vec3InputSignatureVS(vec3input IN)
 {
 	v2f OUT;
-    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
-	OUT.colour = float4(1.0,1.0,1.0,1.0);
+    OUT.hPosition=mul(worldViewProj,vec4(IN.position.xyz,1.0));
+	OUT.colour = vec4(1.0,1.0,1.0,1.0);
     return OUT;
 }
 
 struct v2f_cubemap
 {
-    float4 hPosition	: SV_POSITION;
-    float3 wDirection	: TEXCOORD0;
+    vec4 hPosition	: SV_POSITION;
+    vec3 wDirection	: TEXCOORD0;
 };
 
 
-v2f_cubemap VS_DrawCubemap(vec3input IN) 
+shader v2f_cubemap VS_DrawCubemap(vec3input IN) 
 {
     v2f_cubemap OUT;
-    OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.hPosition	=mul(worldViewProj,vec4(IN.position.xyz,1.0));
     OUT.wDirection	=normalize(IN.position.xyz);
     return OUT;
 }
 
-v2f_cubemap VS_DrawCubemapSphere(idOnly IN) 
+shader v2f_cubemap VS_DrawCubemapSphere(idOnly IN) 
 {
     v2f_cubemap OUT;
 	// we have (latitudes+1)*(longitudes+1)*2 id's
@@ -182,19 +182,19 @@ v2f_cubemap VS_DrawCubemapSphere(idOnly IN)
 	float elevation		=.99*(float(latitude_strip+vertex_id)/float(latitudes+1)-0.5)*3.1415926536;
 	float cos_el		=cos(elevation);
 	vec3 pos			=radius*vec3(sin(azimuth)*cos_el,cos(azimuth)*cos_el,sin(elevation));
-    OUT.hPosition		=mul(worldViewProj,float4(pos.xyz,1.0));
+    OUT.hPosition		=mul(worldViewProj,vec4(pos.xyz,1.0));
     OUT.wDirection		=normalize(pos.xyz);
     return OUT;
 }
 
-
-float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
+shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
-	float3 view		=-(IN.wDirection.xyz);
-	float4 result	=cubeTexture.Sample(cubeSamplerState,view);
+	vec3 view		=-(IN.wDirection.xyz);
+	vec4 result		=texture_cube(cubeTexture,view);
 	result.rgb		*=exposure;
-	result.rgb		=pow(result.rgb,gamma);
-	return float4(result.rgb,1.0);
+	result.rgb		=pow(result.rgb,vec3(gamma,gamma,gamma));
+	vec4 u= vec4(result.rgb,1.0);
+	return u;
 }
 
 fxgroup lines_3d_depth
@@ -314,18 +314,6 @@ technique texturedMS
     }
 }
 
-technique compacted_texture
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
-		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));
-    }
-}
 
 technique vec3_input_signature
 {
@@ -389,3 +377,17 @@ technique show_depth_ms
 		SetPixelShader(CompileShader(ps_5_0,ShowDepthMS_PS()));
     }
 }
+#ifndef GLSL
+technique compacted_texture
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));
+    }
+}
+#endif

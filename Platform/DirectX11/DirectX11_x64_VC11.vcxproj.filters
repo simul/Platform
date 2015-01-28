@@ -365,5 +365,8 @@
     <None Include="..\CrossPlatform\SL\gpu_sky_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\debug_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
 </Project>
