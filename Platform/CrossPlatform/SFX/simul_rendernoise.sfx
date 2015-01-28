@@ -57,8 +57,9 @@ shader vec4 NoisePS(v2f IN) : SV_TARGET
 }
 
 [numthreads(8,8,8)]
-shader void CS_Random3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+shader void CS_Random3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
+	uint3 pos = g * 8 + t;
 	int3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
 	//targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
@@ -72,8 +73,9 @@ shader void CS_Random3D(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID 
 }
 
 [numthreads(8,8,8)]
-shader void CS_Noise3D_8(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+shader void CS_Noise3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
+	uint3 pos = g * 8 + t;
 	int3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
@@ -83,8 +85,9 @@ shader void CS_Noise3D_8(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID
 }
 
 [numthreads(8,8,8)]
-shader void CS_Noise3D_float(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+shader void CS_Noise3D_float(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
+	uint3 pos = g * 8 + t;
 	int3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
 	//targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
@@ -96,8 +99,9 @@ shader void CS_Noise3D_float(uint3 pos	: SV_DispatchThreadID )	//SV_DispatchThre
 
 
 [numthreads(4,4,4)]
-shader void CS_MakeMips3D_float(uint3 p	: SV_DispatchThreadID )
+shader void CS_MakeMips3D_float(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
+	uint3 p = g * 8 + t;
 	int3 pos	=int3(p);
 	vec4 result	=random_texture_3d[pos*2];
 	result		+=random_texture_3d[pos*2+int3(0,1,0)];

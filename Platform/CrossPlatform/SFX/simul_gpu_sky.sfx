@@ -83,10 +83,9 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 }
 
 CS_LAYOUT(1,1,1)
-shader void CS_LightTable( uint3 sub_pos : SV_DispatchThreadID )
-//void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
+void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
-	//uint3 sub_pos = g  + t;
+	uint3 sub_pos = g  + t;
 	MakeLightTable(targetTexture,insc_texture,optical_depth_texture,sub_pos,targetSize);
 }
 

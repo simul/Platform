@@ -15,20 +15,23 @@ StructuredBuffer<SphericalHarmonicsSample> samplesBuffer;
 #define BLOCK_SIZE (4)
 #endif
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
-shader void CS_Jitter(uint3 sub_pos: SV_DispatchThreadID )
+void CS_Jitter(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
+	uint3 sub_pos = g * 8 + t;
 	SH_setup_spherical_samples(samplesBufferRW,sub_pos.xy,sqrtJitterSamples,MAX_SH_BANDS);
 }
 
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
-shader void CS_Clear(uint3 sub_pos: SV_DispatchThreadID )
+void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
+	uint3 sub_pos = g * 8 + t;
 	targetBuffer[sub_pos.x]	=vec4(0,0,0,0);
 }
 
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
-shader void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
+void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
+	uint3 sub_pos = g * 8 + t;
 	// The sub_pos gives the co-ordinate in the table of sam
 	const float weight				=4.0*PI; 
 	// divide the result by weight and number of samples 

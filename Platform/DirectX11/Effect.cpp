@@ -128,7 +128,7 @@ void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceCo
 {
 	lastContext=deviceContext.asD3D11DeviceContext();
 	if(!mapped.pData)
-		lastContext->Map(buffer,0,D3D11_MAP_WRITE,0,&mapped);
+		lastContext->Map(buffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
 	void *ptr=(void *)mapped.pData;
 	return ptr;
 }

@@ -61,8 +61,9 @@ shader ColourDepthOutput PS_DensityMask(vertexOutput IN)
 }
 
 CS_LAYOUT(8,8,8)
-shader void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
+	uint3 sub_pos = g * 8 + t;
 	uint3 pos					=sub_pos+threadOffset;
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
@@ -84,8 +85,9 @@ shader void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThr
 }
 
 CS_LAYOUT(8, 8, 8)
-shader void CS_Density_DontWrap(uint3 sub_pos : SV_DispatchThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
+shader void CS_Density_DontWrap(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
+	uint3 sub_pos = g * 8 + t;
 	uint3 pos = sub_pos + threadOffset;
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture, dims.x, dims.y, dims.z);
@@ -119,8 +121,9 @@ shader void CS_Density_DontWrap(uint3 sub_pos : SV_DispatchThreadID)	//SV_Dispat
 float glow=0.1;
 
 CS_LAYOUT(8,8,1)
-shader void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
+shader void CS_Lighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 {
+	uint3 sub_pos = uint3(g.xy * 8 + t.xy,g.z+t.z);
 	uint3 dims;
 	uint3 pos						=sub_pos+threadOffset;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
@@ -148,8 +151,9 @@ shader void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
 }
 
 CS_LAYOUT(8,8,1)
-shader void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
+shader void CS_SecondaryLighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 {
+	uint3 sub_pos = uint3(g.xy * 8 + t.xy, g.z + t.z);
 	int3 dims;
 	int3 pos						=int3(sub_pos)+int3(threadOffset);
 	GET_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
@@ -189,8 +193,9 @@ shader void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 	}
 }
 CS_LAYOUT(8,8,1)
-shader void CS_GaussianFilter(uint3 sub_pos : SV_DispatchThreadID)
+shader void CS_GaussianFilter(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 {
+	uint3 sub_pos = uint3(g.xy * 8 + t.xy, g.z + t.z);
 	uint3 dims;
 	uint3 pos		=sub_pos+threadOffset;
 	GET_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
@@ -231,9 +236,10 @@ float filterLight(Texture3D tex,vec3 texc)
 }
 
 CS_LAYOUT(8,8,8)
-shader void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)
+shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 dims;
+	uint3 sub_pos = g * 8 + t;
 	uint3 pos=sub_pos+threadOffset;
 	GET_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
