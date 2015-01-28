@@ -1,5 +1,3 @@
-
-
 #include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/depth.sl"
@@ -471,72 +469,6 @@ shader All8Output PS_LossVolumeShadowed(atmosVertexOutput IN)
 shader All8Output PS_LossVolumeUnshadowed(atmosVertexOutput IN)
 {
 	return psLossVolume(IN,false);
-}
-
-shader vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
-{
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
-	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-#if REVERSE_DEPTH==1
-	float depth			=max(depth_lookup.x,cloud_depth);
-#else
-	float depth			=min(depth_lookup.x,cloud_depth);
-#endif
-	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
-	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
-
-	// NOTE: inefficient as we're calculating view in FastGodrays as well.
-	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	//res					+=saturate(res.a*2.0)*RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,rainbowIntensity,lightIrradiance,view,lightDir,IN.texCoords.xy);
-	return vec4(res.rgb,1.0);
-}
-
-shader vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
-{
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
-	if(depth_lookup.z==0)
-		discard;
-	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-#if REVERSE_DEPTH==1
-	float depth			=max(depth_lookup.y,cloud_depth);
-#else
-	float depth			=min(depth_lookup.y,cloud_depth);
-#endif
-	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
-	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
-	
-	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	//res					+=saturate(res.a*2.0)*RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,  rainbowIntensity,lightIrradiance,view,lightDir,IN.texCoords.xy);
-	return vec4(res.rgb,1.0);
-}
-
-shader FarNearOutput PS_BothGodrays(atmosVertexOutput IN) : SV_TARGET
-{
-	FarNearOutput fn;
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
-	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	depth_lookup.y		=lerp(depth_lookup.x,depth_lookup.y,depth_lookup.z);
-#if REVERSE_DEPTH==1
-	vec2 depth			=max(depth_lookup.xy,cloud_depth);
-#else
-	vec2 depth			=min(depth_lookup.xy,cloud_depth);
-#endif
-	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
-	vec2 solid_dist		=depthToFadeDistance(depth.xy,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	fn.farColour		=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist.x);
-	fn.nearColour		=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist.y);
-	
-	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	/*vec4 rc				=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
-										  rainbowIntensity,lightIrradiance,view,lightDir,IN.texCoords.xy);
-	fn.farColour		+=saturate(fn.farColour.a*2.0)*rc;
-	fn.nearColour		+=saturate(fn.nearColour.a*2.0)*rc;*/
-	return fn;
 }
 shader vec4 PS_RainShadowLoss(atmosVertexOutput IN) : SV_TARGET
 {

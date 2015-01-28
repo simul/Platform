@@ -43,6 +43,28 @@ SIMUL_CONSTANT_BUFFER_END
 #include "../../CrossPlatform/SL/sky.sl"
 #include "../../CrossPlatform/SL/depth.sl"
 
+RWStructuredBuffer<LightingQueryResult> lightingQueryResults;
+StructuredBuffer<vec3> lightingQueryInputs;
+
+[numthreads(1,1,1)]
+shader void CS_LightingQueries(uint3 sub_pos: SV_DispatchThreadID )
+{
+	uint num=0;
+	uint byteStride=0;
+	lightingQueryInputs.GetDimensions(num,byteStride);
+	if(sub_pos.x>=num)
+		return;
+	LightingQueryResult res;
+	res.pos=lightingQueryInputs[sub_pos.x];
+	float alt_texc			=res.pos.z/1000.0/maxFadeAltitudeKm;
+	vec3 combined			=texture_clamp_lod(lightTable2DTexture,vec2(alt_texc,3.5/4.0),0).rgb;
+	res.ambient			=texture_clamp_lod(lightTable2DTexture,vec2(alt_texc,2.5/4.0),0).rgb;
+	res.sunlight			=texture_clamp_lod(lightTable2DTexture,vec2(alt_texc,0.5/4.0),0).rgb;
+	res.moonlight			=texture_clamp_lod(lightTable2DTexture,vec2(alt_texc,0.5/4.0),0).rgb;
+	res.valid				=1;
+	lightingQueryResults[sub_pos.x]=res;
+}
+
 struct vertexInput
 {
     vec3 position			: POSITION;
@@ -713,6 +735,14 @@ technique interp_light_table
     }
 }
 
+
+technique lighting_queries
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_LightingQueries()));
+    }
+}
 
 technique background_latlongsphere
 {

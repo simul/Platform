@@ -151,8 +151,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(crossplatform::DeviceContext &de
 	RenderCloudsLate=false;
 	if(baseSkyRenderer)
 	{
-		baseSkyRenderer->EnsureTexturesAreUpToDate(context);
-		baseSkyRenderer->Render2DFades(deviceContext);
+		baseSkyRenderer->PreRenderUpdate(deviceContext);
 	}
 	doLowResBufferRender=(doLowResBufferRender&&fb&&!is_cubemap);
 	UpdateSkyAndCloudHookup();
