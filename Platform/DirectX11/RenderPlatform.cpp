@@ -13,6 +13,7 @@
 #include "Simul/Platform/DirectX11/Buffer.h"
 #include "Simul/Platform/DirectX11/Layout.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/SaveTextureDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
@@ -1307,7 +1308,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 			crossplatform::EffectTechnique *tech=g->GetTechniqueByIndex(0);
 		if(test_depth)
 			tech=g->GetTechniqueByName(f.reverseDepth?"depth_reverse":"depth_forward");
-		D3DXMATRIX wvp;
+		simul::math::Matrix4x4 wvp;
 		if(view_centred)
 			crossplatform::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 		else

@@ -228,6 +228,7 @@ namespace simul
 			virtual void ApplyAsUnorderedAccessView(DeviceContext &deviceContext,Effect *effect,const char *name)=0;
 			virtual void Unbind(DeviceContext &deviceContext)=0;
 			virtual void *GetBuffer(crossplatform::DeviceContext &deviceContext)=0;
+			virtual const void *ReadBuffer(crossplatform::DeviceContext &deviceContext)=0;
 			virtual void SetData(crossplatform::DeviceContext &deviceContext,void *data)=0;
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return NULL;}
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0){return NULL;}
@@ -264,6 +265,10 @@ namespace simul
 			T *GetBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				return (T*)platformStructuredBuffer->GetBuffer(deviceContext);
+			}
+			const T *ReadBuffer(crossplatform::DeviceContext &deviceContext)
+			{
+				return (const T*)platformStructuredBuffer->ReadBuffer(deviceContext);
 			}
 			void SetData(crossplatform::DeviceContext &deviceContext,T *data)
 			{

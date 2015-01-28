@@ -57,17 +57,21 @@ namespace simul
 		class PlatformStructuredBuffer:public crossplatform::PlatformStructuredBuffer
 		{
 			ID3D11Buffer						*buffer;
+			ID3D11Buffer						*stagingBuffer;
 			ID3D11ShaderResourceView			*shaderResourceView;
 			ID3D11UnorderedAccessView			*unorderedAccessView;
 			D3D11_MAPPED_SUBRESOURCE			mapped;
 			int num_elements;
 			int element_bytesize;
 			ID3D11DeviceContext					*lastContext;
+			unsigned char *read_data;
 		public:
 			PlatformStructuredBuffer()
 				:num_elements(0)
 				,element_bytesize(0)
 				,buffer(0)
+				,stagingBuffer(0)
+				,read_data(0)
 				,shaderResourceView(0)
 				,unorderedAccessView(0)
 				,lastContext(NULL)
@@ -80,6 +84,7 @@ namespace simul
 			}
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data);
 			void *GetBuffer(crossplatform::DeviceContext &deviceContext);
+			const void *ReadBuffer(crossplatform::DeviceContext &deviceContext);
 			void SetData(crossplatform::DeviceContext &deviceContext,void *data);
 			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
