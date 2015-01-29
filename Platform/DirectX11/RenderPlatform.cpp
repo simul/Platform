@@ -225,7 +225,7 @@ void RenderPlatform::RecompileShaders()
 	std::map<std::string, std::string> defines;
 	if (reverseDepth)
 		defines["REVERSE_DEPTH"] = "1";
-	m_pDebugEffect=CreateEffect("simul_debug",defines);
+	m_pDebugEffect=CreateEffect("debug",defines);
 	solidEffect=CreateEffect("solid",defines);
 	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
 	debugConstants.LinkToEffect(m_pDebugEffect,"DebugConstants");

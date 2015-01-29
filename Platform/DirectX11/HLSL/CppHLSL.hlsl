@@ -3,7 +3,8 @@
 #include "../../CrossPlatform/SL/CppSl.hs"
 
 #ifndef __cplusplus
-
+// Because HLSL doesn't moan about seeing compute types in non-compute shaders, we can just:
+#define IN_COMPUTE_SHADER
 #define shader
 #define technique technique11
 #define f32touint16 f32tof16
@@ -28,6 +29,7 @@
 #define texture_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,texc,lod)
 #define texture_wrap_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearestWrap,texc,lod)
 #define texture_clamp_mirror_lod(tex,texc,lod) tex.SampleLevel(samplerStateClampMirror,texc,lod)
+#define texture_cube(tex,texc) tex.Sample(cubeSamplerState,texc);
 
 #define texture_wwc(tex,texc) tex.Sample(wwcSamplerState,texc)
 #define texture_wwc_lod(tex,texc,lod) tex.SampleLevel(wwcSamplerState,texc,lod)
@@ -106,11 +108,6 @@
 		uint vertex_id			: SV_VertexID;
 	};
 
-	struct positionColourVertexInput
-	{
-		vec3 position	: POSITION;
-		vec4 colour		: TEXCOORD0;		
-	};
 	
 #endif
 

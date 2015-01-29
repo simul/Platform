@@ -61,10 +61,10 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	,simple_program(0)
 {
 	simulHDRRenderer		=new SimulGLHDRRenderer(1,1);
-	simulWeatherRenderer	=new SimulGLWeatherRenderer(env,NULL,1,1);
-	baseOpticsRenderer		=new simul::crossplatform::BaseOpticsRenderer(m);
-	baseTerrainRenderer		=new simul::terrain::BaseTerrainRenderer(NULL);
-	baseTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
+	//simulWeatherRenderer	=new SimulGLWeatherRenderer(env,NULL,1,1);
+	//baseOpticsRenderer		=new simul::crossplatform::BaseOpticsRenderer(m);
+	//baseTerrainRenderer		=new simul::terrain::BaseTerrainRenderer(NULL);
+	//baseTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	if(!renderPlatformOpenGL)
 		renderPlatformOpenGL		=new opengl::RenderPlatform;
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
@@ -191,8 +191,8 @@ void OpenGLRenderer::RenderGL(int view_id)
 
 	view->SetResolution(viewport.w,viewport.h);
 	EnsureCorrectBufferSizes(view_id);
-//	TrueSkyRenderer::Render(deviceContext);
-	//return;
+	TrueSkyRenderer::Render(deviceContext);
+	return;
 	if(ReverseDepth)
 		deviceContext.viewStruct.proj	=(cam->MakeDepthReversedProjectionMatrix((float)viewport.w/(float)viewport.h));
 	else

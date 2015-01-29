@@ -4,7 +4,8 @@
 SIMUL_CONSTANT_BUFFER(DebugConstants,8)
 	uniform mat4 worldViewProj;
 
-	uniform int latitudes,longitudes;
+	uniform int latitudes;
+	uniform int longitudes;
 	uniform float radius;
 	uniform float multiplier;
 

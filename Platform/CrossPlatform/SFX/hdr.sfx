@@ -314,7 +314,8 @@ vec2 HmdWarp(vec2 texCoords)
 	vec2 rvector	= theta * (warpHmdWarpParam.x + warpHmdWarpParam.y * rSq +
 								warpHmdWarpParam.z * rSq * rSq +
 								warpHmdWarpParam.w * rSq * rSq * rSq);
-	return warpLensCentre+rvector*warpScale;
+	vec2 ret= warpLensCentre+rvector*warpScale;
+	return ret;
 }
 
 shader vec4 WarpExposureGammaPS(v2f IN) : SV_Target

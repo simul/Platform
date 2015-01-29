@@ -55,6 +55,7 @@
 	#define texture_cmc_nearest_lod(tex,texc,lod) textureLod(tex,texc,lod)
 	#define texture_wmc_lod(tex,texc,lod) textureLod(tex,texc,lod)
 	#define texture_wmc(tex,texc) textureLod(tex,texc)
+	#define texture_cube(tex,texc) texture(tex,texc);
 
 	#define texture_wwc(tex,texc) texture(tex,texc)
 	#define texture_nearest(tex,texc) texture(tex,texc)
@@ -72,11 +73,16 @@
 	#define Texture3D sampler3D 
 	#define Texture2D sampler2D 
 	#define Texture2DMS sampler2DMS
+	#define TextureCube samplerCube
 	#define Texture1D sampler1D 
 	#define Y(texel) texel.y
 	#define STATIC
 
 	vec4 mul(mat4 m,vec4 v)
+	{
+		return m*v;
+	}
+	vec3 mul(mat3 m,vec3 v)
 	{
 		return m*v;
 	}
@@ -90,6 +96,7 @@
 	#define IMAGE_LOAD(a,b) texelFetch(a,b,0)
 	#define IMAGE_LOAD_MSAA(a,b,c) texelFetch(a,b,int(c))
 	#define IMAGE_STORE_3D(a,b,c) imageStore(a,int3(b),c)
+	#define IMAGE_LOAD_3D(a,b) texelFetch(a,int3(b),0)
 
 #define GET_DIMENSIONS_MSAA(tex,X,Y,S) {ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;}//textureQueryLevels(tex);
 #define GET_DIMENSIONS(tex,X,Y) {ivec2 iv=textureSize(tex,0); X=iv.x;Y=iv.y;}
