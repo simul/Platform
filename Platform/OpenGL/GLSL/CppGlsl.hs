@@ -96,6 +96,7 @@
 	#define IMAGE_LOAD(a,b) texelFetch(a,b,0)
 	#define IMAGE_LOAD_MSAA(a,b,c) texelFetch(a,b,int(c))
 	#define IMAGE_STORE_3D(a,b,c) imageStore(a,int3(b),c)
+	#define IMAGE_LOAD_3D(a,b) texelFetch(a,int3(b),0)
 
 #define GET_DIMENSIONS_MSAA(tex,X,Y,S) {ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;}//textureQueryLevels(tex);
 #define GET_DIMENSIONS(tex,X,Y) {ivec2 iv=textureSize(tex,0); X=iv.x;Y=iv.y;}

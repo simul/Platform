@@ -167,7 +167,7 @@ shader void CS_DownscaleDepthFarNear_MSAA16(uint3 pos : SV_DispatchThreadID )
 shader vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
 {
 	int2 hires_pos		=int2(vec2(source_dims)*IN.texCoords.xy);
-	vec4 u				= IMAGE_LOAD(sourceMSDepthTexture,hires_pos).xxxx;
+	vec4 u				= IMAGE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,0).xxxx;
 	return u;
 	//return IMAGE_LOAD(sourceMSDepthTexture,hires_pos).x;
 }

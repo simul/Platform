@@ -3,7 +3,8 @@
 #include "../../CrossPlatform/SL/CppSl.hs"
 
 #ifndef __cplusplus
-
+// Because HLSL doesn't moan about seeing compute types in non-compute shaders, we can just:
+#define IN_COMPUTE_SHADER
 #define shader
 #define technique technique11
 #define f32touint16 f32tof16

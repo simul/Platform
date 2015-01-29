@@ -24,7 +24,7 @@ shader vertexOutput VS_Solid(vertexInput IN)
     vertexOutput OUT;
     OUT.hPosition	=mul(worldViewProj, vec4(IN.position.xyz,1.f));
 	OUT.texCoords	=IN.texCoords;
-	mat3 w=mat3(world);
+	mat3 w=mat3((mat3)world);
     OUT.normal.xyz	=mul(w,IN.normal);
     return OUT;
 }
