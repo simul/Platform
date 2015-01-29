@@ -271,7 +271,7 @@ namespace simul
 			{
 				return (const T*)platformStructuredBuffer->OpenReadBuffer(deviceContext);
 			}
-			const T *CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
+			void CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				platformStructuredBuffer->CloseReadBuffer(deviceContext);
 			}
