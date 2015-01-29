@@ -15,7 +15,7 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform float extinction;
 	uniform vec3 eyePosition;
 	uniform float maxFadeDistanceMetres;
-	uniform vec3 sunlight;
+	uniform vec3 sunlightX;
 	uniform float cloudInterp;
 	uniform vec3 mieRayleighRatio;
 	uniform float hazeEccentricity;
@@ -34,7 +34,7 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform float time;
 	uniform float maxAltitudeMetres;
 	uniform float offsetScale,maxCloudDistanceMetres;
-	uniform vec3 moonlight;
+	uniform vec3 moonlightX;
 	uniform float agagehrs;
 	uniform vec3 infraredIntegrationFactors;
 	uniform float agagaegehrs;

@@ -10,12 +10,13 @@ namespace simul
 	{
 		class Mesh:public crossplatform::Mesh
 		{
+			mutable bool done_begin;
 		public:
 			Mesh();
 			~Mesh();
 			void InvalidateDeviceObjects();
 			// Implementing crossplatform::Mesh
-			bool Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices);
+			bool Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices);
 			void releaseBuffers();
 			// Implementing crossplatform::Mesh
 			void BeginDraw	(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const;

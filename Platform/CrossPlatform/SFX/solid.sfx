@@ -1,9 +1,19 @@
 #include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/solid_constants.sl"
+#include "../../CrossPlatform/SL/depth.sl"
 
 Texture2D diffuseTexture;
 TextureCube diffuseCubemap;
+
+//////////////////////////
+Texture2D farCloudTexture;
+Texture2D nearCloudTexture;
+Texture2D nearFarTexture;
+Texture2D loss2dTexture;
+Texture2D shadowTexture;
+Texture3D screenSpaceInscVolumeTexture;
+//////////////////////////
 struct vertexInput
 {
     vec3 position		: POSITION;
@@ -16,18 +26,24 @@ struct vertexOutput
     vec4 hPosition		: SV_POSITION;
     vec2 texCoords		: TEXCOORD0;
     vec3 normal			: TEXCOORD1;
+    vec3 view			: TEXCOORD3;
+    vec4 clip_pos		: TEXCOORD4;
 };
 
 shader vertexOutput VS_Solid(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition	=mul(worldViewProj, float4(IN.position.xyz,1.f));
+	vec4 opos=vec4(IN.position.xyz,1.f);
+    vec3 wpos=mul(world, opos).xyz;
+	OUT.view=normalize(wpos-viewPosition);
+    OUT.clip_pos	=mul(worldViewProj, opos);
 	OUT.texCoords	=IN.texCoords;
     OUT.normal.xyz	=mul((mat3)world,IN.normal);
+	OUT.hPosition	=OUT.clip_pos;
     return OUT;
 }
 
-shader float4 PS_Solid(vertexOutput IN) : SV_TARGET
+shader vec4 PS_Solid(vertexOutput IN) : SV_TARGET
 {
     vec3 normal	=normalize(IN.normal);
     vec4 c = texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
@@ -35,7 +51,79 @@ shader float4 PS_Solid(vertexOutput IN) : SV_TARGET
 	c.a=1.0;
 	totalDiff+=0.3*saturate(dot(lightDir,normal.xyz))*lightIrradiance;
 	c.rgb*=totalDiff;
-    return vec4(c.rgb,1.0);
+    vec4 u= vec4(c.rgb,1.0);
+	return u;
+}
+
+void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
+				,vec4 clip_pos
+				,vec3 view
+				,Texture2D farCloudTexture
+				,Texture2D nearCloudTexture
+				,Texture2D nearFarTexture
+				,Texture2D loss2dTexture
+				,Texture2D shadowTexture
+				,Texture3D screenSpaceInscVolumeTexture
+				,vec4 depthToLinFadeDistParams)
+{
+	clip_pos/=clip_pos.w;
+	// we only care about view.z, i.e. the third element of the vector.
+	// so only dot-product the third row of invViewProj, with clip_pos.
+	float sine					=normalize(view).z;
+	vec2 texCoords				=0.5*vec2(clip_pos.x+1.0,1.0-clip_pos.y);
+	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
+
+	vec4 nearFarCloud			=texture_clamp_lod(nearFarTexture	,lowResTexCoords		,0);
+
+	//IMAGE_LOAD(depthTexture,fullres_depth_pos2).x;
+	float dist					=depthToLinearDistance(clip_pos.z	,depthToLinFadeDistParams);
+	float dist_rt				=pow(dist,0.5);
+	vec4 cloud					=texture_clamp_lod(farCloudTexture,lowResTexCoords,0);
+	
+	vec3 volumeTexCoords		= vec3(lowResTexCoords, dist_rt);
+	vec4 shadow_lookup			= vec4(1.0, 1.0, 0, 0);
+	//if (depth>0.0)
+		shadow_lookup				=texture_clamp_lod(shadowTexture, lowResTexCoords, 0);
+	float shadow				=shadow_lookup.x;
+	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
+	vec4 insc					=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
+	float hiResInterp			=saturate((dist-nearFarCloud.y) / nearFarCloud.w);
+	if(nearFarCloud.z>0.0)
+	{
+		vec4 cloudNear			=texture_clamp_lod(nearCloudTexture, lowResTexCoords, 0);
+		cloud					=lerp(cloudNear, cloud, hiResInterp);
+	}
+	shadow					=lerp(shadow_lookup.y,shadow_lookup.x,hiResInterp);
+//	insc.rgb				*=cloud.a;
+//	insc					+=cloud;
+//	shadow					*=cloud.a;
+	loss					=vec4(texture_clamp_lod(loss2dTexture,loss_texc,0).rgb*shadow,cloud.a);
+	add						=insc.rgb;
+}
+
+shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
+{
+    vec3 normal	=normalize(IN.normal);
+    vec4 c = vec4(0.5,0.5,0.5,0.5);//texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
+	vec3 totalDiff=diffuseCubemap.Sample(cubeSamplerState,-normal.xyz).rgb;
+	//c.rgb*=totalDiff;
+	vec4 loss;
+	vec3 add;
+	AtmosphericsAndCloudOcclusion(loss,add
+				,IN.clip_pos
+				,IN.view
+				,farCloudTexture
+				,nearCloudTexture
+				,nearFarTexture
+				,loss2dTexture
+				,shadowTexture
+				,screenSpaceInscVolumeTexture
+				,depthToLinFadeDistParams
+				);
+	c*=loss;
+	c.rgb+=add;
+    vec4 u= vec4(c.rgb,0.5);
+	return u;
 }
 
 technique solid
@@ -48,5 +136,19 @@ technique solid
 		SetVertexShader(CompileShader(vs_4_0,VS_Solid()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Solid()));
+    }
+}
+
+
+technique transparent
+{
+    pass base 
+    {
+		SetRasterizerState(RenderBackfaceCull);
+		SetDepthStencilState(EnableDepth,0);
+		SetBlendState(AlphaBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Solid()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_Transparent()));
     }
 }

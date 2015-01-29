@@ -43,3 +43,70 @@ const crossplatform::Mesh::SubMesh *crossplatform::Mesh::GetSubMesh(int index) c
 {
 	return mSubMeshes[index];
 }
+
+static const float unity=1000.0f;
+struct Vec3
+{
+	float x,y,z;
+};
+static const Vec3 box_vertices[8] =
+{
+	{-unity,		-unity,	-unity},
+	{-unity,		-unity,	unity},
+	{-unity,		unity,	-unity},
+	{-unity,		unity,	unity},
+	{unity,			-unity,	-unity},
+	{unity,			-unity,	unity},
+	{unity,			unity,	-unity},
+	{unity,			unity,	unity},
+};
+static const unsigned int MMM=0,MMP=1,MPM=2,MPP=3,PMM=4,PMP=5,PPM=6,PPP=7;
+static const unsigned int box_indices[36] =
+{
+	MMP,
+	PPP,
+	PMP,
+	PPP,
+	MMP,
+	MPP,
+	
+	MMM,
+	PMM,
+	PPM,
+	PPM,
+	MPM,
+	MMM,
+	
+	MPM,
+	PPM,
+	PPP,
+	PPP,
+	MPP,
+	MPM,
+				
+	MMM,
+	PMP,
+	PMM,
+	PMP,
+	MMM,
+	MMP,
+	
+	PMM,
+	PPP,
+	PPM,
+	PPP,
+	PMM,
+	PMP,
+				
+	MMM,
+	MPM,
+	MPP,
+	MPP,
+	MMP,
+	MMM,
+};
+void Mesh::Initialize(crossplatform::RenderPlatform *renderPlatform,crossplatform::MeshType m)
+{
+	Initialize(renderPlatform,8,(const float*)box_vertices,(const float*)box_vertices,(const float*)box_vertices,12,(const unsigned *)box_indices);
+
+}

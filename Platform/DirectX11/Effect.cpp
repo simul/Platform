@@ -75,6 +75,21 @@ RenderState::~RenderState()
 	SAFE_RELEASE(m_depthStencilState)
 	SAFE_RELEASE(m_blendState)
 }
+static const int NUM_STAGING_BUFFERS=3;
+PlatformStructuredBuffer::PlatformStructuredBuffer()
+				:num_elements(0)
+				,element_bytesize(0)
+				,buffer(0)
+				,read_data(0)
+				,shaderResourceView(0)
+				,unorderedAccessView(0)
+				,lastContext(NULL)
+			{
+				stagingBuffers=new ID3D11Buffer*[NUM_STAGING_BUFFERS];
+				for(int i=0;i<NUM_STAGING_BUFFERS;i++)
+					stagingBuffers[i]=NULL;
+				memset(&mapped,0,sizeof(mapped));
+			}
 void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data)
 {
 	InvalidateDeviceObjects();
@@ -101,17 +116,18 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	D3D11_SUBRESOURCE_DATA sbInit = {init_data, 0, 0};
 
 	renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &buffer);
-
-	SAFE_RELEASE(stagingBuffer);
+	
+	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
+		SAFE_RELEASE(stagingBuffers[i]);
 	// May not be needed, but uses only a small amount of memory:
+	if(computable)
 	{
-		delete []read_data;
-		read_data=new unsigned char[sbDesc.ByteWidth];
 		sbDesc.BindFlags=0;
 		sbDesc.Usage				=D3D11_USAGE_STAGING;
 		sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_READ;
 		sbDesc.MiscFlags			=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED ;
-		renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &stagingBuffer);
+		for(int i=0;i<NUM_STAGING_BUFFERS;i++)
+			renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &stagingBuffers[i]);
 	}
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
@@ -145,18 +161,31 @@ void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceCo
 	return ptr;
 }
 
-const void *PlatformStructuredBuffer::ReadBuffer(crossplatform::DeviceContext &deviceContext)
+const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext &deviceContext)
 {
 	lastContext=deviceContext.asD3D11DeviceContext();
-	lastContext->CopyResource(stagingBuffer,buffer);
-	lastContext->Map(stagingBuffer,0,D3D11_MAP_READ,0,&mapped);
-	memcpy( read_data, mapped.pData,element_bytesize*num_elements );
-
-	lastContext->Unmap( stagingBuffer, 0 );
-	lastContext=NULL;
 	mapped.pData=NULL;
-	return read_data;
+	HRESULT hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,0,&mapped);//D3D11_MAP_FLAG_DO_NOT_WAIT
+	if(hr!=S_OK)
+		mapped.pData=NULL;
+	return mapped.pData;
 }
+
+void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
+{
+	lastContext->Unmap( stagingBuffers[NUM_STAGING_BUFFERS-1], 0 );
+	mapped.pData=NULL;
+	lastContext=NULL;
+}
+
+void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext &deviceContext)
+{
+	lastContext=deviceContext.asD3D11DeviceContext();
+	for(int i=0;i<NUM_STAGING_BUFFERS-1;i++)
+		std::swap(stagingBuffers[(NUM_STAGING_BUFFERS-1-i)],stagingBuffers[(NUM_STAGING_BUFFERS-2-i)]);
+	lastContext->CopyResource(stagingBuffers[0],buffer);
+}
+
 
 void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceContext,void *data)
 {
@@ -179,43 +208,50 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceConte
 	mapped.pData=NULL;
 }
 
-void PlatformStructuredBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)
-{
-	ID3DX11EffectShaderResourceVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsShaderResource();
-}
-
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
 {
 	if(lastContext&&mapped.pData)
 		lastContext->Unmap(buffer,0);
 	mapped.pData=NULL;
-//	memset(&mapped,0,sizeof(mapped));
 	ID3DX11EffectShaderResourceVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsShaderResource();
+		
+	if(!var->IsValid())
+	{
+		SIMUL_CERR<<"Constant Buffer not found: "<<name<<", in effect "<<effect->filename.c_str()<<std::endl;
+		if(effect->filenameInUseUtf8.length())
+			SIMUL_FILE_LINE_CERR(effect->filenameInUseUtf8.c_str(),0)<<"See effect file."<<std::endl;
+	}
 	var->SetResource(shaderResourceView);
 }
+
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
 {
 	if(lastContext&&mapped.pData)
 		lastContext->Unmap(buffer,0);
 	mapped.pData=NULL;
-	//memset(&mapped,0,sizeof(mapped));
 	ID3DX11EffectUnorderedAccessViewVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsUnorderedAccessView();
+	if(!var->IsValid())
+	{
+		SIMUL_CERR<<"Constant Buffer not found: "<<name<<", in effect "<<effect->filename.c_str()<<std::endl;
+		if(effect->filenameInUseUtf8.length())
+			SIMUL_FILE_LINE_CERR(effect->filenameInUseUtf8.c_str(),0)<<"See effect file."<<std::endl;
+	}
 	var->SetUnorderedAccessView(unorderedAccessView);
 }
+
 void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &deviceContext)
 {
 }
 void PlatformStructuredBuffer::InvalidateDeviceObjects()
 {
-	delete []read_data;
-	read_data=NULL;
 	if(lastContext&&mapped.pData)
 		lastContext->Unmap(buffer,0);
 	mapped.pData=NULL;
 	SAFE_RELEASE(unorderedAccessView);
 	SAFE_RELEASE(shaderResourceView);
 	SAFE_RELEASE(buffer);
-	SAFE_RELEASE(stagingBuffer);
+	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
+		SAFE_RELEASE(stagingBuffers[i]);
 	num_elements=0;
 }
 void dx11::PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t size,void *addr)

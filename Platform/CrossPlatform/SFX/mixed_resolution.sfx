@@ -118,53 +118,59 @@ shader void CS_DownscaleDepthFarNear2(uint3 pos : SV_DispatchThreadID )
 }
 
 CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear4(uint3 pos : SV_DispatchThreadID )
+shader void CS_DownscaleDepthFarNear4(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
-	vec4 res	=DownscaleDepthFarNear4(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),int2(pos.xy),depthToLinFadeDistParams);
+	uint3 pos = g * 8 + t;
+	vec4 res	=DownscaleDepthFarNear4(sourceDepthTexture,source_dims,source_offset,int2(cornerOffset),int2(pos.xy),depthToLinFadeDistParams);
 	IMAGE_STORE(target2DTexture,pos.xy,res);
 }
 	
 CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear(uint3 pos : SV_DispatchThreadID )
+shader void CS_DownscaleDepthFarNear(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
-	vec4 res	=DownscaleDepthFarNear(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),int2(pos.xy),vec2(scale),depthToLinFadeDistParams);
+	uint3 pos = g * 8 + t;
+	vec4 res	=DownscaleDepthFarNear(sourceDepthTexture,source_dims,source_offset,int2(cornerOffset),int2(pos.xy),vec2(scale),depthToLinFadeDistParams);
 	IMAGE_STORE(target2DTexture,int2(pos.xy),res);
 }
 CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear_MSAA1(uint3 pos : SV_DispatchThreadID )
+shader void CS_DownscaleDepthFarNear_MSAA1(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
+	uint3 pos = g * 8 + t;
 	IMAGE_STORE(target2DTexture,pos.xy,DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),1,int2(pos.xy),int2(scale),depthToLinFadeDistParams));
 }
 
 CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear_MSAA2(uint3 pos : SV_DispatchThreadID )
+shader void CS_DownscaleDepthFarNear_MSAA2(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
+	uint3 pos = g * 8 + t;
 	IMAGE_STORE(target2DTexture,pos.xy,DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),2,int2(pos.xy),int2(scale),depthToLinFadeDistParams));
 }
 
 CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear_MSAA4(uint3 pos : SV_DispatchThreadID )
+shader void CS_DownscaleDepthFarNear_MSAA4(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
+	uint3 pos = g * 8 + t;
 	IMAGE_STORE(target2DTexture,pos.xy,DownscaleDepthFarNear_MSAA4(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),int2(pos.xy),int2(scale),depthToLinFadeDistParams));
 }
 
 CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear_MSAA8(uint3 pos : SV_DispatchThreadID )
+shader void CS_DownscaleDepthFarNear_MSAA8(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
+	uint3 pos = g * 8 + t;
 	IMAGE_STORE(target2DTexture,pos.xy,DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),8,int2(pos.xy),int2(scale),depthToLinFadeDistParams));
 }
 
 CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear_MSAA16(uint3 pos : SV_DispatchThreadID )
+shader void CS_DownscaleDepthFarNear_MSAA16(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
+	uint3 pos = g * 8 + t;
 	IMAGE_STORE(target2DTexture,pos.xy,DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),16,int2(pos.xy),int2(scale),depthToLinFadeDistParams));
 }
 
 shader vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
 {
-	int2 hires_pos		=int2(vec2(source_dims)*IN.texCoords.xy);
-	vec4 res= IMAGE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,0).xxxx;
-	return res;
+	uint2 hires_pos		=uint2(vec2(source_dims)*IN.texCoords.xy);
+	return sourceMSDepthTexture.Load(hires_pos,0).x;
 	//return IMAGE_LOAD(sourceMSDepthTexture,hires_pos).x;
 }
 

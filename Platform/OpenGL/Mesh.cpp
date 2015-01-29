@@ -26,7 +26,7 @@ opengl::Mesh::~Mesh()
     glDeleteBuffers(VBO_COUNT, mVBONames);
 }
 
-bool opengl::Mesh::Initialize(crossplatform::RenderPlatform *,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices)
+bool opengl::Mesh::Initialize(crossplatform::RenderPlatform *,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices)
 {
     // Create VBOs
     glGenBuffers(VBO_COUNT, mVBONames);

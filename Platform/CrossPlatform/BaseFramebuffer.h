@@ -141,7 +141,7 @@ namespace simul
 			virtual void InvalidateDeviceObjects();
 			virtual void SetDimensions(int w,int h,int downscale);
 			virtual void GetDimensions(int &w,int &h,int &downscale);
-			/// Activate BOTH low-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivatelLowRes after rendering.
+			/// Activate all low-resolution framebuffers - far in target 0, near in target 1, depth in 2. Must be followed by DeactivatelLowRes after rendering.
 			virtual void ActivateLowRes(crossplatform::DeviceContext &);
 			/// Deactivate both low-res framebuffers.
 			virtual void DeactivateLowRes(crossplatform::DeviceContext &);

@@ -124,6 +124,7 @@ void Profiler::Begin(void *ctx,const char *name)
 #ifdef SIMUL_WIN8_SDK
 	if(!profileData->wUnqualifiedName.length())
 		profileData->wUnqualifiedName=base::StringToWString(name);
+	if(pUserDefinedAnnotation)
 	pUserDefinedAnnotation->BeginEvent(profileData->wUnqualifiedName.c_str());
 #endif
 #ifdef SIMUL_ENABLE_PIX
