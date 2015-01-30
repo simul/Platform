@@ -62,7 +62,7 @@ namespace simul
 											,float gamma
 											,bool doLowResBufferRender
 											,crossplatform::Texture *depthTexture
-											,const sky::float4& depthViewportXYWH
+											,const vec4& depthViewportXYWH
 											,bool doFinalCloudBufferToScreenComposite
 											,vec2 pixelOffset) override;
 			//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.

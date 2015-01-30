@@ -168,6 +168,23 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		vec4 ViewportToTexCoordsXYWH(const Viewport *v,const Texture *t)
+		{
+		
+			vec4 texcXYWH;
+			if(v&&t)
+			{
+				texcXYWH.x=(float)v->x/(float)t->width;
+				texcXYWH.y=(float)v->y/(float)t->length;
+				texcXYWH.z=(float)v->w/(float)t->width;
+				texcXYWH.w=(float)v->h/(float)t->length;
+			}
+			else
+			{
+				texcXYWH=vec4(0,0,1.f,1.f);
+			}
+			return texcXYWH;
+		}
 		void DrawGrid(crossplatform::DeviceContext &deviceContext,float square_size,float brightness,int numLines)
 		{
 			// 101 lines across, 101 along.

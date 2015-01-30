@@ -58,9 +58,8 @@ namespace simul
 			int w,h;
 			float znear,zfar;
 		};
-		/// Base class for API-specific rendering.
-		/// Be sure to make the following calls at the appropriate place: RestoreDeviceObjects(), InvalidateDeviceObjects(), RecompileShaders(), SetReverseDepth()
-
+		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
+		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const Viewport *vi,const Texture *t);
 		/// A base class for API-specific rendering.
 
 		/*! RenderPlatform is an interface that allows Simul's rendering functions to be developed

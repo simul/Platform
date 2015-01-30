@@ -41,8 +41,8 @@ namespace simul
 			//! Render the clouds.
 			bool Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap,crossplatform::NearFarPass nearFarPass
 				,crossplatform::Texture *depth_alpha_tex,sky::ScatteringVolume *sv,bool write_alpha
-				,const simul::sky::float4& viewportTextureRegionXYWH
-				,const simul::sky::float4& mixedResTransformXYWH);
+				,const vec4& viewportTextureRegionXYWH
+				,const vec4& mixedResTransformXYWH);
 			//! Show the cross sections on-screen.
 			void SetIlluminationTexture(crossplatform::Texture *i);
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
