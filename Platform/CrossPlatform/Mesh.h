@@ -4,6 +4,7 @@
 #include <vector>
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/ShaderMode.h"
+#include "Simul/Platform/CrossPlatform/Topology.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -22,7 +23,8 @@ namespace simul
 		public:
 			Mesh();
 			virtual ~Mesh();
-			virtual bool Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices)=0;
+			void Initialize(crossplatform::RenderPlatform *renderPlatform,crossplatform::MeshType m);
+			virtual bool Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices)=0;
 			virtual void UpdateVertexPositions(int lVertexCount, float *lVertices) const=0;
 			// Bind buffers, set vertex arrays, turn on lighting and texture.
 			virtual void BeginDraw(DeviceContext &deviceContext,ShadingMode pShadingMode) const=0;

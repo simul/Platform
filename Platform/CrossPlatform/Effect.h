@@ -223,11 +223,13 @@ namespace simul
 			virtual ~PlatformStructuredBuffer(){}
 			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,bool computable,void *init_data)=0;
 			virtual void InvalidateDeviceObjects()=0;
-			virtual void LinkToEffect(Effect *effect,const char *name,int bindingIndex)=0;
 			virtual void Apply(DeviceContext &deviceContext,Effect *effect,const char *name)=0;
 			virtual void ApplyAsUnorderedAccessView(DeviceContext &deviceContext,Effect *effect,const char *name)=0;
 			virtual void Unbind(DeviceContext &deviceContext)=0;
 			virtual void *GetBuffer(crossplatform::DeviceContext &deviceContext)=0;
+			virtual const void *OpenReadBuffer(crossplatform::DeviceContext &deviceContext)=0;
+			virtual void CloseReadBuffer(crossplatform::DeviceContext &deviceContext)=0;
+			virtual void CopyToReadBuffer(crossplatform::DeviceContext &deviceContext)=0;
 			virtual void SetData(crossplatform::DeviceContext &deviceContext,void *data)=0;
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return NULL;}
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0){return NULL;}
@@ -264,6 +266,18 @@ namespace simul
 			T *GetBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				return (T*)platformStructuredBuffer->GetBuffer(deviceContext);
+			}
+			const T *OpenReadBuffer(crossplatform::DeviceContext &deviceContext)
+			{
+				return (const T*)platformStructuredBuffer->OpenReadBuffer(deviceContext);
+			}
+			void CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
+			{
+				platformStructuredBuffer->CloseReadBuffer(deviceContext);
+			}
+			void CopyToReadBuffer(crossplatform::DeviceContext &deviceContext)
+			{
+				platformStructuredBuffer->CopyToReadBuffer(deviceContext);
 			}
 			void SetData(crossplatform::DeviceContext &deviceContext,T *data)
 			{
@@ -389,9 +403,13 @@ namespace simul
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
+			//! Set the texture for read-write access by compute shaders in this effect.
 			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int mip=0)	=0;
+			//! Set the texture for this effect.
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex)		=0;
+			//! Set the texture for this effect.
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture &t)		=0;
+			//! Set the texture for this effect.
 			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s)		=0;
 			virtual void SetParameter	(const char *name	,float value)		=0;
 			virtual void SetParameter	(const char *name	,vec2)				=0;

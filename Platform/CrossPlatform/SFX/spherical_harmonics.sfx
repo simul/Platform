@@ -15,20 +15,23 @@ StructuredBuffer<SphericalHarmonicsSample> samplesBuffer;
 #define BLOCK_SIZE (4)
 #endif
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
-void CS_Jitter(uint3 sub_pos: SV_DispatchThreadID )
+void CS_Jitter(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
+	uint3 sub_pos = g * 8 + t;
 	SH_setup_spherical_samples(samplesBufferRW,sub_pos.xy,sqrtJitterSamples,MAX_SH_BANDS);
 }
 
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
-void CS_Clear(uint3 sub_pos: SV_DispatchThreadID )
+void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
+	uint3 sub_pos = g * 8 + t;
 	targetBuffer[sub_pos.x]	=vec4(0,0,0,0);
 }
 
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
-void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
+void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
+	uint3 sub_pos = g * 8 + t;
 	// The sub_pos gives the co-ordinate in the table of sam
 	const float weight				=4.0*PI; 
 	// divide the result by weight and number of samples 
@@ -44,9 +47,9 @@ void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
 	//if(sub_pos.x<num_bands)
 	for(int n=0;n<numJitterSamples;n++)
 	{ 
-		SphericalHarmonicsSample sample	=samplesBuffer[n];
-		vec4 colour						=cubemapTexture.SampleLevel(wrapSamplerState,-sample.dir,0);
-		targetBuffer[sub_pos.x]			+=colour*factor*sample.coeff[sub_pos.x]; 
+		SphericalHarmonicsSample shs	=samplesBuffer[n];
+		vec4 colour						=texture_wrap_lod(cubemapTexture,-shs.dir,0);
+		targetBuffer[sub_pos.x]			+=colour*factor*shs.coeff[sub_pos.x]; 
 	}
 #endif
 }

@@ -32,7 +32,7 @@ struct transformedThinVertex
 	vec2 texc		:	TEXCOORD3;
 };
 
-posTexVertexOutput VS_FullScreen(idOnly IN)
+shader posTexVertexOutput VS_FullScreen(idOnly IN)
 {
     posTexVertexOutput OUT;
 	vec2 poss[4]=
@@ -54,7 +54,7 @@ posTexVertexOutput VS_FullScreen(idOnly IN)
 	return OUT;
 }
 
-transformedThinVertex VS_Thin(LightningVertexInput IN)
+shader transformedThinVertex VS_Thin(LightningVertexInput IN)
 {
     transformedThinVertex OUT;
     OUT.hPosition	=mul(worldViewProj, vec4(IN.position.xyz , 1.0));

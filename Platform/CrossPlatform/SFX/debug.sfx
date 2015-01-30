@@ -12,7 +12,7 @@ uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
 uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
 
 SIMUL_CONSTANT_BUFFER(cbPerObject,11)
-	vec4 rect;
+	float4 rect;
 SIMUL_CONSTANT_BUFFER_END
 
 struct a2v
@@ -186,6 +186,7 @@ shader v2f_cubemap VS_DrawCubemapSphere(idOnly IN)
     OUT.wDirection		=normalize(pos.xyz);
     return OUT;
 }
+
 
 shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {

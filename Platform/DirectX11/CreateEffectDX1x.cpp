@@ -70,7 +70,7 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 	#pragma comment(lib,"dxgi.lib")
 	#pragma comment(lib,"d3d11.lib")
 	#pragma comment(lib,"dxguid.lib")
-#if defined(SIMUL_WIN8_SDK) && defined(WIN64)
+#if 0//defined(SIMUL_WIN8_SDK) && defined(WIN64)
 	#pragma comment(lib,"d3dcompiler_xdk.lib")
 #else
 	#pragma comment(lib,"d3dcompiler.lib")

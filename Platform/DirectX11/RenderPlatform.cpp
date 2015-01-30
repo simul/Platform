@@ -13,6 +13,7 @@
 #include "Simul/Platform/DirectX11/Buffer.h"
 #include "Simul/Platform/DirectX11/Layout.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/SaveTextureDX1x.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
@@ -81,8 +82,7 @@ static Vertex3_t box_vertices[36] =
 };
 
 RenderPlatform::StoredState::StoredState()
-	:
-				m_StencilRefStored11(0)
+	:	m_StencilRefStored11(0)
 				,m_SampleMaskStored11(0)
 				,m_indexOffset(0)
 				, m_indexFormatStored11(DXGI_FORMAT_UNKNOWN)
@@ -177,14 +177,14 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	D3D11_BUFFER_DESC desc=
 	{
         36*sizeof(vec3),
-        D3D1x_USAGE_DEFAULT,
-        D3D1x_BIND_VERTEX_BUFFER,
+        D3D11_USAGE_DEFAULT,
+        D3D11_BIND_VERTEX_BUFFER,
         0,
         0
 	};
 	
     D3D11_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    ZeroMemory( &InitData, sizeof(D3D11_SUBRESOURCE_DATA) );
     InitData.pSysMem		=box_vertices;
     InitData.SysMemPitch	=sizeof(vec3);
 	V_CHECK(AsD3D11Device()->CreateBuffer(&desc,&InitData,&m_pVertexBuffer));
@@ -1307,7 +1307,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 			crossplatform::EffectTechnique *tech=g->GetTechniqueByIndex(0);
 		if(test_depth)
 			tech=g->GetTechniqueByName(f.reverseDepth?"depth_reverse":"depth_forward");
-		D3DXMATRIX wvp;
+		simul::math::Matrix4x4 wvp;
 		if(view_centred)
 			crossplatform::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 		else

@@ -1,21 +1,21 @@
 #define pi (3.1415926536)
 
-uint3 LinearThreadToPos2D(int linear_pos,uint3 dims)
+int3 LinearThreadToPos2D(int linear_pos,int3 dims)
 {
 	int yy				=int(float(linear_pos)/float(dims.x));
 	int xx				=int(linear_pos)-yy*int(dims.x);
 	//int3 pos			=int3(xx,yy,0);
 
-	return uint3(xx,yy,0);
+	return int3(xx,yy,0);
 }
-
+/*
 int3 LinearThreadToPos2D(uint linear_pos,uint3 dims)
 {
 	int yy				=int(float(linear_pos)/float(dims.x));
 	int xx				=int(linear_pos)-yy*int(dims.x);
 	int3 pos			=int3(xx,yy,0);
 	return pos;
-}
+}*/
 
 float getHazeFactorAtAltitude(float alt_km)
 {

@@ -34,5 +34,11 @@ namespace simul
 			,QUERY_TIMESTAMP		// like GL_TIMESTAMP
 			,QUERY_TIMESTAMP_DISJOINT
 		};
+		enum MeshType
+		{
+			NO_MESH_TYPE
+			,CUBE_MESH
+			,SPHERE_MESH
+		};
 	}
 }

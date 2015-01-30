@@ -45,10 +45,9 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform float nearZ;
 	uniform float farZ;
     uniform vec2 depthPixelScales;
-	uniform float shadowRange;
+	uniform float shadowRangeX;
 	uniform float dropletRadius;
 	
-    uniform vec3 lightIrradiance;
 	uniform float rainbowIntensity;
     uniform int3 scatteringVolumeDims;
 	uniform float startZMetres;

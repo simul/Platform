@@ -191,7 +191,7 @@ float GpuCloudMask(vec2 texCoords, vec2 maskCentre, float maskRadius, float mask
     float dr	=maskFeather;
 	vec2 pos	=wPos.xy - maskCentre;
     float r		=length(pos)/maskRadius;
-	float dens =  maskThickness*saturate((1.0 - r) / dr);
+    float dens	=maskThickness*saturate((1.0-r)/dr);
     return dens;
 }
 

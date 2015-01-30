@@ -51,7 +51,7 @@ vec3 InscatterFunction(vec4 inscatter_factor,float hazeEccentricity,float cos0,v
 
 
 vec4 RainbowAndCorona(Texture2D rainbowLookupTexture,Texture2D coronaLookupTexture,float dropletRadius,
-					  float rainbowIntensity,vec3 view,vec3 lightDir,vec2 texCoords)
+					  float rainbowIntensity,vec3 view,vec3 lightDir)
 {
 	//return texture_clamp(coronaLookupTexture,IN.texCoords.xy);
 	 //note: use a float for d here, since a half corrupts the corona

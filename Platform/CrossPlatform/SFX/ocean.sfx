@@ -51,7 +51,7 @@ SamplerState g_samplerPerlin		: register(s1)
 	MaxAnisotropy = 1;
 	//ComparisonFunc = NEVER;
 	MinLOD = 0;
-	MaxLOD = 1e23;
+	MaxLOD = 1000000;
 	MaxAnisotropy = 4;
 };
 

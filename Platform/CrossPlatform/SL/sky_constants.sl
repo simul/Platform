@@ -25,10 +25,18 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	uniform uint3 threadOffset;
 	uniform float maxFadeDistanceKm;
 
-	uniform float cloudShadowRange;		// As a distance texcoord
+	uniform float maxFadeAltitudeKm;		// As a distance texcoord
 	uniform float illumination_alt_texc;	// Due to earth shadow
 	uniform uint cycled_index;
 	uniform float overlayAlpha;
 SIMUL_CONSTANT_BUFFER_END
 
+struct LightingQueryResult
+{
+	vec3 pos;
+	int valid;
+	vec3 sunlight;
+	vec3 moonlight;
+	vec3 ambient;
+};
 #endif

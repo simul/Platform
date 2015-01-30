@@ -24,7 +24,7 @@ struct vertexOutput
     float4 wPosition		: TEXCOORD2;
 };
 
-vertexOutput VS_Main(vertexInput IN)
+shader vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
     OUT.hPosition	= mul(worldViewProj, float4(IN.position.xyz,1.0));
@@ -39,7 +39,7 @@ struct testOutput
     float4 hPosition		: SV_POSITION;
     float2 texCoords		: TEXCOORD0;
 };
-testOutput VS_TestAlphaToCoverage(idOnly IN)
+shader testOutput VS_TestAlphaToCoverage(idOnly IN)
 {
 	testOutput OUT;
 	vec2 poss[4]=
@@ -55,7 +55,7 @@ testOutput VS_TestAlphaToCoverage(idOnly IN)
 	return OUT;
 }
 
-vec4 PS_TestAlphaToCoverage(testOutput IN): SV_TARGET
+shader vec4 PS_TestAlphaToCoverage(testOutput IN): SV_TARGET
 {
 	vec4 texColor	=texture_wrap(grassTexture,IN.texCoords);
 
@@ -65,7 +65,7 @@ vec4 PS_TestAlphaToCoverage(testOutput IN): SV_TARGET
 	return texColor;
 }
 
-float4 PS_Main( vertexOutput IN) : SV_TARGET
+shader float4 PS_Main( vertexOutput IN) : SV_TARGET
 {
 	vec4 result;
 	vec4 layer1	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,0.0));

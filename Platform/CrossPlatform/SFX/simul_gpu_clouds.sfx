@@ -1,3 +1,4 @@
+
 #include "shader_platform.sl"
 #include "../../CrossPlatform/SL/common.sl"
 uniform sampler2D inputTexture;
@@ -10,8 +11,8 @@ uniform sampler3D ambientTexture;
 uniform sampler3D ambientTexture1 SIMUL_TEXTURE_REGISTER(4);
 uniform sampler3D ambientTexture2 SIMUL_TEXTURE_REGISTER(5);
 uniform sampler3D volumeNoiseTexture SIMUL_TEXTURE_REGISTER(6);
-uniform RW_TEXTURE3D_FLOAT4 targetTexture SIMUL_RWTEXTURE_REGISTER(0);
-uniform RW_TEXTURE3D_FLOAT targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
+uniform RWTexture3D<vec4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture3D<float> targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
 
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/gpu_cloud_constants.sl"
@@ -60,8 +61,9 @@ shader ColourDepthOutput PS_DensityMask(vertexOutput IN)
 }
 
 CS_LAYOUT(8,8,8)
-shader void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
+	uint3 sub_pos = g * 8 + t;
 	uint3 pos					=sub_pos+threadOffset;
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
@@ -72,7 +74,7 @@ shader void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThr
 	vec3 densityspace_texcoord	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec3 noisespace_texcoord	=(densityspace_texcoord+vec3(0,0,0.0*zPixel))*vec3(noiseScale)+vec3(1.0,1.0,0);
 	// noise_texel is the size of a noise texel
-	float noise_texel			=1.0/noise_dims.z;
+	float noise_texel			=1.0/float(noise_dims.z);
 	float height				=noiseScale.z;
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
 	float hm					=humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
@@ -83,8 +85,9 @@ shader void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThr
 }
 
 CS_LAYOUT(8, 8, 8)
-shader void CS_Density_DontWrap(uint3 sub_pos : SV_DispatchThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
+shader void CS_Density_DontWrap(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
+	uint3 sub_pos = g * 8 + t;
 	uint3 pos = sub_pos + threadOffset;
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture, dims.x, dims.y, dims.z);
@@ -92,10 +95,15 @@ shader void CS_Density_DontWrap(uint3 sub_pos : SV_DispatchThreadID)	//SV_Dispat
 	GET_DIMENSIONS_3D(volumeNoiseTexture, noise_dims.x, noise_dims.y, noise_dims.z);
 	if (pos.x >= dims.x || pos.y >= dims.y || pos.z >= dims.z)
 		return;
-	vec3 densityspace_texcoord = (vec3(pos) + vec3(0.5, 0.5, 0.5)) / vec3(dims);
+	vec3 densityspace_texcoord = (vec3(pos) + vec3(0.5, 0.5, 0.5));
+
+	densityspace_texcoord/=vec3(dims);
+
 	vec3 noisespace_texcoord = (densityspace_texcoord + vec3(0, 0, 0.0*zPixel))*vec3(noiseScale) + vec3(1.0, 1.0, 0);
-	// noise_texel is the size of a noise texel
-	float noise_texel = 1.0 / noise_dims.z;
+
+	float noise_texel = 1.0 / float(noise_dims.z);
+
+
 	float height = noiseScale.z;
 	float noise_val = NoiseFunction(volumeNoiseTexture, noisespace_texcoord, octaves, persistence, time, height, noise_texel);
 	float hm = humidity*GetHumidityMultiplier2(densityspace_texcoord.z, baseLayer, transition, upperDensity)*texture_clamp_lod(maskTexture, densityspace_texcoord.xy, 0).x;
@@ -113,25 +121,28 @@ shader void CS_Density_DontWrap(uint3 sub_pos : SV_DispatchThreadID)	//SV_Dispat
 float glow=0.1;
 
 CS_LAYOUT(8,8,1)
-shader void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
+shader void CS_Lighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 {
+	uint3 sub_pos = uint3(g.xy * 8 + t.xy,g.z+t.z);
 	uint3 dims;
 	uint3 pos						=sub_pos+threadOffset;
-	targetTexture1.GetDimensions(dims.x,dims.y,dims.z);
+	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	float direct_light				=1.0;
-	targetTexture1[int3(pos.xy,0)]	=1.0;
+	IMAGE_STORE_3D(targetTexture1,int3(pos.xy,0),vec4(1.0,1.0,1.0,1.0));
 	int C=1;
 	for(uint i=1;i<dims.z;i++)
 	{
 		uint3 idx					=uint3(pos.xy,i);
-		targetTexture1[idx]			=direct_light;
+		vec4 v=vec4(direct_light,0,0,0);
+		IMAGE_STORE_3D(targetTexture1,idx,v);
+
 		for(int j=0;j<C;j++)
 		{
 			vec3 lightspace_texcoord	=vec3(pos.xy,float(i)+0.5+float(j)/float(C))/vec3(dims);
 			vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
-			float density				= densityTexture.SampleLevel(densSamplerState, densityspace_texcoord, 0).x;
+			float density				=sampleLod(densityTexture,densSamplerState, densityspace_texcoord, 0).x;
 			direct_light				*=exp(-extinctions.x*density*stepLength/float(C));
 		}
 		//if(density==0)
@@ -140,11 +151,12 @@ shader void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
 }
 
 CS_LAYOUT(8,8,1)
-shader void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
+shader void CS_SecondaryLighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 {
-	uint3 dims;
-	uint3 pos						=sub_pos+threadOffset;
-	targetTexture1.GetDimensions(dims.x,dims.y,dims.z);
+	uint3 sub_pos = uint3(g.xy * 8 + t.xy, g.z + t.z);
+	int3 dims;
+	int3 pos						=int3(sub_pos)+int3(threadOffset);
+	GET_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	float indirect_light			=0.0;
@@ -161,7 +173,7 @@ shader void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 			//vec3 lightspace_texcoord	=(vec3(sample_pts[i])+0.5)/vec3(dims);
 			//vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
 			//float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
-			indirect_light	+=targetTexture1[sample_pts[i]];
+			indirect_light	+=IMAGE_LOAD_3D(targetTexture1,sample_pts[i]);
 		}
 		indirect_light	/=5.0;
 	}
@@ -171,29 +183,30 @@ shader void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 		vec3 lightspace_texcoord	=(vec3(idx)+0.5)/vec3(dims);
 
 		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
-		float density = densityTexture.SampleLevel(densSamplerState, densityspace_texcoord, 0).x;
+		float density = sampleLod(densityTexture,densSamplerState, densityspace_texcoord, 0).x;
 		indirect_light				*=exp(-extinctions.y*density*stepLength);
 		
 		//NOTE: Causes artifact underneath clouds:
 		if(density==0&&pos.z<dims.z-1)
 			indirect_light			=1.0;//-(1.0-indirect_light)*exp(-5.0*stepLength);
-		targetTexture1[idx]			=indirect_light;
+		IMAGE_STORE_3D(targetTexture1,idx,indirect_light);
 	}
 }
 CS_LAYOUT(8,8,1)
-shader void CS_GaussianFilter(uint3 sub_pos : SV_DispatchThreadID)
+shader void CS_GaussianFilter(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 {
+	uint3 sub_pos = uint3(g.xy * 8 + t.xy, g.z + t.z);
 	uint3 dims;
 	uint3 pos		=sub_pos+threadOffset;
-	targetTexture1.GetDimensions(dims.x,dims.y,dims.z);
+	GET_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
-	float light		=lightTexture1[pos].x;
+	float light		=IMAGE_LOAD_3D(lightTexture1,pos).x;
 	if(pos.z>0)
 	{
 		int Z		=pos.z-1;
-		light		+=lightTexture1[int3(pos+gaussianOffset)].x;
-		light		+=lightTexture1[int3(pos.xy,pos.z+1)].x;
+		light		+=IMAGE_LOAD_3D(lightTexture1,int3(pos+gaussianOffset)).x;
+		light		+=IMAGE_LOAD_3D(lightTexture1,int3(pos.xy,pos.z+1)).x;
 	}
 }
 
@@ -204,7 +217,18 @@ float filterLight(Texture3D tex,vec3 texc)
 	vec3 up			=vec3(0,0,1.0/float(dims.z));
 	vec3 forward	=vec3(0,1.0/float(dims.y),0);
 	vec3 right		=vec3(1.0/float(dims.x),0,0);
+#ifdef GLSL
+	vec3 offsets[7];
+	offsets[0]=vec3(0,0,0);
+	offsets[1]=up;
+	offsets[2]=-up;
+	offsets[3]=right;
+	offsets[4]=-right;
+	offsets[5]=forward;
+	offsets[6]=-forward;
+#else
 	vec3 offsets[]	={vec3(0,0,0),up,-up,right,-right,forward,-forward};
+#endif
 	float res=0.0;
 	for(int i=0;i<7;i++)
 		res+=sampleLod(tex,lightSamplerState,texc+offsets[i],0).x;
@@ -212,11 +236,12 @@ float filterLight(Texture3D tex,vec3 texc)
 }
 
 CS_LAYOUT(8,8,8)
-shader void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)
+shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 dims;
+	uint3 sub_pos = g * 8 + t;
 	uint3 pos=sub_pos+threadOffset;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	GET_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	vec3 densityspace_texcoord	=(pos.xyz+0.5)/vec3(dims);

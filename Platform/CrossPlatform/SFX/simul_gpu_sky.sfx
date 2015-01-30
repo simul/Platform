@@ -125,10 +125,9 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 //The 3 y-values represent the three tables for interpolation.
 
 CS_LAYOUT(1,1,1)
-shader void CS_LightTable( uint3 sub_pos : SV_DispatchThreadID )
-//void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
+void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
-	//uint3 sub_pos = g  + t;
+	uint3 sub_pos = g  + t;
 	// threadOffset.y determines the cycled index.
 	uint3 pos			=sub_pos+threadOffset;
 //	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
@@ -157,12 +156,12 @@ shader void CS_LightTable( uint3 sub_pos : SV_DispatchThreadID )
 CS_LAYOUT(8,1,1)
 shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
-	uint3 sub_pos = g * uint3(8, 1, 1) + t;
+	int3 sub_pos = int3(g) * int3(8, 1, 1) + int3(t);
 	int3 dims;
-	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
-	uint linear_pos			=sub_pos.x+threadOffset.x;
+	//targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	int linear_pos			=sub_pos.x+threadOffset.x;
 	
-	int3 pos				=LinearThreadToPos2D(linear_pos,dims);
+	int3 pos				=LinearThreadToPos2D(linear_pos,targetSize);
 	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
 	vec2 texc				=(pos.xy+vec2(0.5,0.5))/vec2(targetSize.xy);

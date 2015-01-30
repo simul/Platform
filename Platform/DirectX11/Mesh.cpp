@@ -14,7 +14,8 @@ using namespace simul;
 using namespace dx11;
 
 Mesh::Mesh()
-	:vertexBuffer(NULL)
+	:done_begin(false)
+	,vertexBuffer(NULL)
 	,indexBuffer(NULL)
 	,inputLayout(NULL)
 	,stride(0)
@@ -35,8 +36,7 @@ void Mesh::InvalidateDeviceObjects()
 	SAFE_RELEASE(inputLayout);
 	SAFE_RELEASE(inputLayout);
 }
-
-bool Mesh::Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,float *lVertices,float *lNormals,float *lUVs,int lPolygonCount,unsigned int *lIndices)
+bool Mesh::Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices)
 {
 	SAFE_RELEASE(vertexBuffer);
 	SAFE_RELEASE(indexBuffer);
@@ -103,11 +103,15 @@ void Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::
 	// Set the input layout
 	pContext->IASetInputLayout(inputLayout);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	done_begin=true;
 }
 
 // Draw all the faces with specific material with given shading mode.
 void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
 {
+	bool init=done_begin;
+	if(!init)
+		BeginDraw(deviceContext,crossplatform::SHADING_MODE_SHADED);
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	UINT offset = 0;
 	pContext->IASetVertexBuffers(	0,					// the first input slot for binding
@@ -117,7 +121,9 @@ void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,c
 									&offset );			// array of offset values, one for each buffer
 	pContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R32_UINT,0);					
 
-	pContext->Draw(numIndices,0);
+	pContext->DrawIndexed(numIndices,0,0);
+	if(!init)
+		EndDraw(deviceContext);
 }
 
 // Unbind buffers, reset vertex arrays, turn off lighting and texture.
@@ -127,6 +133,7 @@ void Mesh::EndDraw(crossplatform::DeviceContext &deviceContext) const
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout( previousInputLayout );
 	SAFE_RELEASE(previousInputLayout);
+	done_begin=false;
 }
 
 void Mesh::apply(ID3D11DeviceContext *pImmediateContext,unsigned instanceStride,ID3D11Buffer *instanceBuffer)

@@ -1,3 +1,4 @@
+#define USE_LIGHT_TABLES 1
 #include "shader_platform.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
 uniform sampler2D imageTexture;
@@ -89,16 +90,10 @@ vec4 msaaPS(v2f IN)
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
 	vec3 wEyeToPos		=IN.wPosition-eyePosition;
-#if USE_LIGHT_TABLES==1
 	float alt_texc		=IN.wPosition.z/maxAltitudeMetres;
 	vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
 	vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
 	vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
-#else
-	vec3 sun_irr		=sunlight.rgb;
-	vec3 moon_irr		=moonlight.rgb;
-	vec3 ambient_light	=ambientLight.rgb;
-#endif
 	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy));
 	vec4 ret			=Clouds2DPS_illum(imageTexture,coverageTexture
 										,illuminationTexture
@@ -149,16 +144,10 @@ vec4 MainPS(v2f IN,vec2 texCoords)
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
 	vec3 wEyeToPos		=IN.wPosition-eyePosition;
-#if USE_LIGHT_TABLES==1
 	float alt_texc		=IN.wPosition.z/maxAltitudeMetres;
 	vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
 	vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
 	vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
-#else
-	vec3 sun_irr		=sunlight.rgb;
-	vec3 moon_irr		=moonlight.rgb;
-	vec3 ambient_light	=ambientLight.rgb;
-#endif
 	vec4 ret			=Clouds2DPS_illum(imageTexture
 										,coverageTexture
 										,illuminationTexture
@@ -247,7 +236,7 @@ shader v2f2 SimpleVS(idOnly IN)
 
 shader vec4 SimplePS(v2f2 IN) : SV_TARGET
 {
-	return texture2D(imageTexture,.5+IN.texCoords);
+	return texture_clamp(imageTexture,.5+IN.texCoords);
 }
 
 shader vec4 CoveragePS(v2f2 IN) : SV_TARGET
@@ -257,7 +246,9 @@ shader vec4 CoveragePS(v2f2 IN) : SV_TARGET
 
 shader vec4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
 {
-	return ShowDetailTexture(imageTexture,IN.texCoords,sunlight,lightResponse);
+	float alt_texc		=10000.0/maxAltitudeMetres;
+	vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
+	return ShowDetailTexture(imageTexture,IN.texCoords,sun_irr,lightResponse);
 }
 
 float rand(vec2 co)

@@ -57,29 +57,25 @@ namespace simul
 		class PlatformStructuredBuffer:public crossplatform::PlatformStructuredBuffer
 		{
 			ID3D11Buffer						*buffer;
+			ID3D11Buffer						**stagingBuffers;
 			ID3D11ShaderResourceView			*shaderResourceView;
 			ID3D11UnorderedAccessView			*unorderedAccessView;
 			D3D11_MAPPED_SUBRESOURCE			mapped;
 			int num_elements;
 			int element_bytesize;
 			ID3D11DeviceContext					*lastContext;
+			unsigned char *read_data;
 		public:
-			PlatformStructuredBuffer()
-				:num_elements(0)
-				,element_bytesize(0)
-				,buffer(0)
-				,shaderResourceView(0)
-				,unorderedAccessView(0)
-				,lastContext(NULL)
-			{
-				memset(&mapped,0,sizeof(mapped));
-			}
+			PlatformStructuredBuffer();
 			virtual ~PlatformStructuredBuffer()
 			{
 				InvalidateDeviceObjects();
 			}
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data);
 			void *GetBuffer(crossplatform::DeviceContext &deviceContext);
+			const void *OpenReadBuffer(crossplatform::DeviceContext &deviceContext);
+			void CloseReadBuffer(crossplatform::DeviceContext &deviceContext);
+			void CopyToReadBuffer(crossplatform::DeviceContext &deviceContext);
 			void SetData(crossplatform::DeviceContext &deviceContext,void *data);
 			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
@@ -90,7 +86,6 @@ namespace simul
 				return unorderedAccessView;
 			}
 			void InvalidateDeviceObjects();
-			void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex);
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
 			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
 			void Unbind(crossplatform::DeviceContext &deviceContext);
