@@ -254,18 +254,6 @@ void OpenGLRenderer::RenderGL(int view_id)
 		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
 		simulWeatherRenderer->RenderCelestialBackground(deviceContext,depthTexture,simul::sky::float4(0, 0, 1.f, 1.f),exposure);
 		
-	/*	{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)depthTexture->AsGLuint());
-			glUseProgram(simple_program);
-			GLint image_texture		=glGetUniformLocation(simple_program,"image_texture");
-			glUniform1i(image_texture,0);
-			glDisable(GL_DEPTH_TEST);
-			glDepthMask(GL_FALSE);
-			glDisable(GL_BLEND);
-			depthFramebuffer.Render(deviceContext.platform_context, false);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
-		}*/
 		if(simulWeatherRenderer)
 		{
 			crossplatform::Viewport viewport={0,0,depthTexture->width,depthTexture->length,0.f,1.f};

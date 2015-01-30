@@ -292,7 +292,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 													,Texture2D nearFarTexture
 													,Texture3D lossVolumeTexture
 													,Texture2D loss2dTexture
-													,int2 hiResDims
 													,int2 lowResDims
 													,TEXTURE2DMS_FLOAT4 depthTextureMS
 													,int numSamples
@@ -301,7 +300,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 													,vec4 viewportToTexRegionScaleBias
 													,vec4 depthToLinFadeDistParams
 													,vec4 fullResToLowResTransformXYWH
-													,vec4 fullResToHighResTransformXYWH
 													,Texture3D screenSpaceInscVolumeTexture
 													,Texture3D lightSpaceInscVolumeTexture
 													,Texture2D shadowTexture)
@@ -371,8 +369,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		//ExtractCompactedLookupQuads(lossFar_Q,lossNear_Q,lossTexture,lowResTexCoords,hiResDims);
 		//LookupQuad4 inscDistFar_Q	=GetDepthLookupQuad(nearFarTexture	,lowResTexCoords,hiResDims,depthToLinFadeDistParams);
 		//LookupQuad4 inscDistNear_Q	=MaskDepth(inscDistFar_Q,vec2(0,1.0));
-		vec2 isncTexc_unit			=lowResTexCoords*hiResDims-vec2(.5,.5);
-		vec2 inscXy					=frac(isncTexc_unit);
 
 		vec3 volumeTexCoordsFar		=vec3(lowResTexCoords,sqrt(furthestDist));
 		insc_far					=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoordsFar,0);
@@ -449,8 +445,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		insc					+=cloud;// *saturate(step(1.0, low_res_depths.x));
 #endif
 		res.add = insc;
-		int2 inscTexc_unit		=int2(lowResTexCoords*hiResDims);// -vec2(.5, .5);
-		//uint2 loss			=IMAGE_LOAD(lossTexture,inscTexc_unit).xy;
 		loss_texc.x = sqrt(dist);
 		vec4 loss				=texture_clamp_lod(loss2dTexture,loss_texc,0);
 		float shadow				=shadow_lookup.x;

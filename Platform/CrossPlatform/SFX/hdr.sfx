@@ -395,7 +395,6 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(v2f IN)
 																, nearFarTexture
 																,lossVolumeTexture
 																,loss2dTexture
-																,int2(hiResDims)
 																,int2(lowResDims)
 																,depthTextureMS
 																,numSamples
@@ -404,7 +403,6 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(v2f IN)
 																,viewportToTexRegionScaleBias
 																,depthToLinFadeDistParams
 																,fullResToLowResTransformXYWH
-																,fullResToHighResTransformXYWH
 																,screenSpaceInscatterVolumeTexture
 																,lightSpaceInscatterVolumeTexture
 																,shadowTexture);

@@ -22,6 +22,7 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
+#include "Simul/Platform/CrossPlatform/TwoResFramebuffer.h"
 #include "Simul/Math/Decay.h"
 #include <stdint.h>  // for uintptr_t
 

@@ -128,34 +128,6 @@ namespace simul
 		{
 			virtual void SetCurrentFace(int i)=0;
 		};
-		struct SIMUL_CROSSPLATFORM_EXPORT TwoResFramebuffer
-		{
-			TwoResFramebuffer();
-			crossplatform::BaseFramebuffer *GetLowResFramebuffer(int index)
-			{
-				return lowResFramebuffers[index];
-			}
-			crossplatform::Texture *GetLossTexture();
-			crossplatform::Texture *GetVolumeTexture(int num);
-			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *);
-			virtual void InvalidateDeviceObjects();
-			virtual void SetDimensions(int w,int h,int downscale);
-			virtual void GetDimensions(int &w,int &h,int &downscale);
-			/// Activate BOTH low-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivatelLowRes after rendering.
-			virtual void ActivateLowRes(crossplatform::DeviceContext &);
-			/// Deactivate both low-res framebuffers.
-			virtual void DeactivateLowRes(crossplatform::DeviceContext &);
-			/// Deactivate the depth buffer
-			virtual void DeactivateDepth(crossplatform::DeviceContext &);
-			virtual void ActivateVolume(crossplatform::DeviceContext &,int num);
-			virtual void DeactivateVolume(crossplatform::DeviceContext &);
-		protected:
-			crossplatform::RenderPlatform *renderPlatform;
-			crossplatform::Texture *lossTexture;
-			crossplatform::Texture *volumeTextures[2];
-			int Width,Height,Downscale;
-			crossplatform::BaseFramebuffer	*lowResFramebuffers[3];
-		};
 	}
 }
 #ifdef _MSC_VER

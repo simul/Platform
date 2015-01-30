@@ -6,7 +6,6 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform mat4 invViewProj;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec4 fullResToLowResTransformXYWH;
-	uniform vec4 fullResToHighResTransformXYWH;
 
 	uniform vec2 offset;
 	uniform float nearZ;
@@ -30,7 +29,7 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform vec2 warpScaleIn;
 	uniform vec2 padHdrConstants1;
 
-	uniform uint2 hiResDims;
+	uniform uint2 hiResDimsX;
 	uniform uint2 lowResDims;
 
 	uniform uint2 fullResDims;

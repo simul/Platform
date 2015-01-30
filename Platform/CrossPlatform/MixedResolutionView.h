@@ -17,6 +17,7 @@ namespace simul
 	{
 		class Texture;
 		class BaseFramebuffer;
+		class TwoResFramebuffer;
 		class Effect;
 		struct Viewport;
 		///
@@ -53,7 +54,7 @@ namespace simul
 			/// \return	The screen height.
 			int GetScreenHeight() const;
 
-			/// Sets a resolution.
+			/// Sets the resolution.
 			///
 			/// \param	w	The width.
 			/// \param	h	The height.
@@ -63,21 +64,6 @@ namespace simul
 			///
 			/// \param	ext	Whether to use an external framebuffer.
 			void SetExternalFramebuffer(bool ext);
-
-			/// Resolve framebuffer.
-			///
-			/// \param [in,out]	deviceContext	Context for the device.
-			void ResolveFramebuffer(crossplatform::DeviceContext &deviceContext);
-
-			/// Debugging onscreen info:
-			///
-			/// \param [in,out]	deviceContext	Context for the device.
-			/// \param	x0					 	The x coordinate 0.
-			/// \param	y0					 	The y coordinate 0.
-			/// \param	dx					 	The dx.
-			/// \param	dy					 	The dy.
-			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy);
-
 			/// Gets resolved header buffer.
 			///
 			/// \return	null if it fails, else the resolved header buffer.
@@ -90,41 +76,24 @@ namespace simul
 			{
 				return hdrFramebuffer;
 			}
-			/// Gets hi res depth texture.
-			///
-			/// \return	null if it fails, else the hi resource depth texture.
-			crossplatform::Texture						*GetHiResDepthTexture(int idx=-1);
-			/// Type of the view.
+			/// Type of view.
 			ViewType									viewType;
 			bool										vrDistortion;
-			 private:
+		private:
 			///      A framebuffer with depth.
 			simul::crossplatform::BaseFramebuffer		*hdrFramebuffer;
-			/// The depth from the HDR framebuffer can be resolved into this texture.
-			crossplatform::Texture						*nearFarTextures[4];
 			/// The resolved texture.
 			simul::crossplatform::Texture				*resolvedTexture;
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;
 		public:
-			crossplatform::PixelFormat GetDepthFormat() const;
-			void SetDepthFormat(crossplatform::PixelFormat p);
-			void UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct,int scale);
-			/// Offset in pixels from top-left of the low-res view to top-left of the full-res.
-			vec2							pixelOffset;
-			static vec2 LoResToHiResOffset(vec2 pixelOffset,int hiResScale);
-			static vec2 WrapOffset(vec2 pixelOffset,int scale);
 			/// Width of the screen.
 			int								ScreenWidth;
 			/// Height of the screen.
 			int								ScreenHeight;
-		protected:
-			simul::geometry::SimulOrientation	view_o;
-			crossplatform::PixelFormat depthFormat;
 		public:
 			/// true to use external framebuffer.
-			bool										useExternalFramebuffer;
-			int											final_octave;
+			bool							useExternalFramebuffer;
 		};
 		/// A class to render mixed-resolution depth buffers.
 		class SIMUL_CROSSPLATFORM_EXPORT MixedResolutionRenderer
@@ -144,8 +113,11 @@ namespace simul
 			/// Recompile shaders.
 			void RecompileShaders();
 
-			void DownscaleDepth(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *simulViewport,MixedResolutionView *view
-											 ,int downscale,vec4 depthToLinFadeDistParams);
+			void DownscaleDepth(crossplatform::DeviceContext &deviceContext
+				,crossplatform::Texture *depthTexture
+				,const crossplatform::Viewport *simulViewport
+				,crossplatform::TwoResFramebuffer *fb
+				,int downscale,float max_dist_metres);
 		protected:
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;
@@ -173,12 +145,6 @@ namespace simul
 			void							RestoreDeviceObjects	(crossplatform::RenderPlatform *renderPlatform);
 			/// Invalidate device objects.
 			void							InvalidateDeviceObjects	();
-			/// Recompile the shaders.
-			void							RecompileShaders		();
-
-			void							DownscaleDepth			(crossplatform::DeviceContext &deviceContext
-																		,crossplatform::Texture *depthTexture,const crossplatform::Viewport *v
-																		,int downscale,float max_dist_metres);
 
 			/// Gets a view.
 			///
@@ -205,6 +171,8 @@ namespace simul
 			void							RemoveView				(int view_id);
 			/// Clears this object to its blank/initial state.
 			void							Clear					();
+			/// The mixed resolution renderer.
+			MixedResolutionRenderer			mixedResolutionRenderer;
 		protected:
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;
@@ -212,8 +180,6 @@ namespace simul
 			ViewMap							views;
 			/// Identifier for the last created view.
 			int								last_created_view_id;
-			/// The mixed resolution renderer.
-			MixedResolutionRenderer			mixedResolutionRenderer;
 		};
 	}
 }
