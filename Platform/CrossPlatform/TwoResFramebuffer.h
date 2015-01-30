@@ -42,12 +42,15 @@ namespace simul
 			/// Debugging onscreen info:
 			///
 			/// \param [in,out]	deviceContext	Context for the device.
-			/// \param	x0					 	The x coordinate 0.
-			/// \param	y0					 	The y coordinate 0.
-			/// \param	dx					 	The dx.
-			/// \param	dy					 	The dy.
+			/// \param	depthTexture			The main depth texture.
+			/// \param	viewport			 	The viewport in use for the depth texture.
+			/// \param	x0					 	The left edge of area to use for the debug display.
+			/// \param	y0					 	The top of this debug display.
+			/// \param	dx					 	The width of the display.
+			/// \param	dy					 	The height of the display.
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy);
 
+			/// Update the pixel offset for the specified view.
 			void UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct,int scale);
 			/// Offset in pixels from top-left of the low-res view to top-left of the full-res.
 			vec2								pixelOffset;

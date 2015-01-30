@@ -218,6 +218,8 @@ namespace simul
 		///
 		/// \param [in,out]	deviceContext	Context for the device.
 		/// \param [in]	square_size	Spacing between lines - in whatever units the renderer is working in.
+		/// \param [in]	brightness 	Brightness of the lines.
+		/// \param [in]	numLines	Number of gridlines to draw.
 		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext,float square_size,float brightness,int numLines);
 	}
 }
