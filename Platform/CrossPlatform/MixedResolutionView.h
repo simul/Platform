@@ -4,6 +4,7 @@
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Simul/Platform/CrossPlatform/Topology.h"
 #include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
 #include "Simul/Geometry/Orientation.h"
 #include <set>
@@ -20,13 +21,13 @@ namespace simul
 		class TwoResFramebuffer;
 		class Effect;
 		struct Viewport;
+		class RenderPlatform;
 		///
 		enum ViewType
 		{
 			MAIN_3D_VIEW
 			,OCULUS_VR
 		};
-		class RenderPlatform;
 		//! A class that encapsulates the generated mixed-resolution depth textures, and (optionally) a framebuffer with colour and depth.
 		//! One instance of MixedResolutionView will be created and maintained for each live 3D view.
 		class SIMUL_CROSSPLATFORM_EXPORT MixedResolutionView
@@ -77,7 +78,7 @@ namespace simul
 				return hdrFramebuffer;
 			}
 			/// Type of view.
-			ViewType									viewType;
+			crossplatform::ViewType						viewType;
 			bool										vrDistortion;
 		private:
 			///      A framebuffer with depth.
@@ -94,39 +95,6 @@ namespace simul
 		public:
 			/// true to use external framebuffer.
 			bool							useExternalFramebuffer;
-		};
-		/// A class to render mixed-resolution depth buffers.
-		class SIMUL_CROSSPLATFORM_EXPORT MixedResolutionRenderer
-		{
-		public:
-			/// Default constructor.
-			MixedResolutionRenderer();
-			/// Destructor.
-			~MixedResolutionRenderer();
-
-			/// Restore device objects.
-			///
-			/// \param [in,out]	renderPlatform	If non-null, the render platform.
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
-			/// Invalidate device objects.
-			void InvalidateDeviceObjects();
-			/// Recompile shaders.
-			void RecompileShaders();
-
-			void DownscaleDepth(crossplatform::DeviceContext &deviceContext
-				,crossplatform::Texture *depthTexture
-				,const crossplatform::Viewport *simulViewport
-				,crossplatform::TwoResFramebuffer *fb
-				,int downscale,float max_dist_metres);
-		protected:
-			/// The render platform.
-			crossplatform::RenderPlatform				*renderPlatform;
-			/// The depth forward effect.
-			crossplatform::Effect						*depthForwardEffect;
-			/// The depth reverse effect.
-			crossplatform::Effect						*depthReverseEffect;
-			/// The constant buffer for the shader effect.
-			crossplatform::ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
 		};
 
 		/// A class to store a set of MixedResolutionView objects, one per view id.
@@ -171,8 +139,6 @@ namespace simul
 			void							RemoveView				(int view_id);
 			/// Clears this object to its blank/initial state.
 			void							Clear					();
-			/// The mixed resolution renderer.
-			MixedResolutionRenderer			mixedResolutionRenderer;
 		protected:
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;

@@ -71,8 +71,8 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,sim
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(crossplatform::DeviceContext &deviceContext,float exposure,bool cubemap
 								  ,crossplatform::NearFarPass nearFarPass,crossplatform::Texture *depth_alpha_tex,sky::ScatteringVolume *sv,bool write_alpha
-								  ,const simul::sky::float4& viewportTextureRegionXYWH
-								  ,const simul::sky::float4& mixedResTransformXYWH)
+								  ,const vec4& viewportTextureRegionXYWH
+								  ,const vec4& mixedResTransformXYWH)
 {
 	const clouds::CloudProperties &cloudProperties=cloudKeyframer->GetCloudProperties();
 	using namespace simul::clouds;

@@ -252,7 +252,7 @@ void OpenGLRenderer::RenderGL(int view_id)
 		view->GetFramebuffer()->DeactivateDepth(deviceContext);
 		crossplatform::Texture *depthTexture=NULL;
 		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
-		simulWeatherRenderer->RenderCelestialBackground(deviceContext,depthTexture,simul::sky::float4(0, 0, 1.f, 1.f),exposure);
+		simulWeatherRenderer->RenderCelestialBackground(deviceContext,depthTexture,vec4(0, 0, 1.f, 1.f),exposure);
 		
 		if(simulWeatherRenderer)
 		{
@@ -267,7 +267,7 @@ void OpenGLRenderer::RenderGL(int view_id)
 		}
 		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,1.0f,UseSkyBuffer
 			,depthTexture
-			,simul::sky::float4(0,0,1.f,1.f),true,vec2(0,0));
+			,vec4(0,0,1.f,1.f),true,vec2(0,0));
 		simulWeatherRenderer->DoOcclusionTests(deviceContext);
 
 		if(baseOpticsRenderer&&ShowFlares)
