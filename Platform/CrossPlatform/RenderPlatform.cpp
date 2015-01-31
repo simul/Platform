@@ -20,6 +20,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,reverseDepth(false)
 {
 }
+
 ID3D11Device *RenderPlatform::AsD3D11Device()
 {
 	return NULL;

@@ -346,10 +346,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,vec3 cloudIrRadiance2)
 {
 	RaytracePixelOutput res;
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	res.colour				=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
 	res.depth				=0.0;
-	res.nearFarDepth		=vec4(depthToLinearDistance(dlookup.xy, depthToLinFadeDistParams),0,0);
+	res.nearFarDepth		=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,0);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
@@ -370,7 +371,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	else if(view.z<-0.1&&viewPos.z<cornerPos.z-fractalScale.z/inverseScales.z)
 		return res;
 	
-	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	//float solid_dist		=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	// Lookup in the illumination texture.
@@ -611,7 +612,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	meanFadeDistance	+=colour.a;
     res.colour			=vec4(exposure*colour.rgb,colour.a);
     res.nearColour		=vec4(exposure*nearColour.rgb,nearColour.a);
-	res.depth			=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	res.depth			=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif

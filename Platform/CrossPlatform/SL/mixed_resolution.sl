@@ -45,7 +45,8 @@ vec4 MakeDepthFarNear(Texture2D sourceDepthTexture,TEXTURE2DMS_FLOAT4 sourceMSDe
 	float edge		=0.0;
 	if(farthest_depth!=nearest_depth)
 	{
-		vec2 fn		=depthToLinearDistance(vec2(farthest_depth,nearest_depth),depthToLinFadeDistParams);
+		DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+		vec2 fn		=depthToLinearDistance(vec2(farthest_depth,nearest_depth),depthInterpretationStruct);
 		edge		=fn.x-fn.y;
 		edge		=step(EDGE_FACTOR,edge);
 	}
@@ -122,7 +123,8 @@ vec4 DownscaleDepthFarNear2(Texture2D sourceDepthTexture,uint2 source_dims,uint2
 	float edge=0.0;
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
-		vec2 fn	=depthToLinearDistance(farthest_nearest.xy,depthToLinFadeDistParams);
+		DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+		vec2 fn	=depthToLinearDistance(farthest_nearest.xy,depthInterpretationStruct);
 		edge	=abs(fn.x-fn.y);
 		edge	=step(EDGE_FACTOR,edge);
 	}
@@ -165,7 +167,8 @@ vec4 DownscaleDepthFarNear4(Texture2D sourceDepthTexture,uint2 source_dims,uint2
 	float edge=0.0;
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
-		vec2 fn	=depthToLinearDistance(farthest_nearest.xy,depthToLinFadeDistParams);
+		DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+		vec2 fn	=depthToLinearDistance(farthest_nearest.xy,depthInterpretationStruct);
 		edge	=abs(fn.x-fn.y);
 		//edge	=abs(farthest_nearest.x-farthest_nearest.y);
 		edge	=step(EDGE_FACTOR,edge);
@@ -572,7 +575,8 @@ vec4 DownscaleFarNearEdge(Texture2D sourceDepthTexture,int2 source_dims,int2 cor
 	float edge=0.0;
 	if(farthest_nearest.y!=farthest_nearest.x)
 	{
-		vec2 fn	=depthToLinearDistance(farthest_nearest.xy,depthToLinFadeDistParams);
+		DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+		vec2 fn	=depthToLinearDistance(farthest_nearest.xy,depthInterpretationStruct);
 		edge	=abs(fn.x-fn.y);
 		edge	=step(EDGE_FACTOR,edge);
 	}

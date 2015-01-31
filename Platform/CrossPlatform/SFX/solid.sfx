@@ -76,7 +76,8 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 	vec4 nearFarCloud			=texture_clamp_lod(nearFarTexture	,lowResTexCoords		,0);
 
 	//IMAGE_LOAD(depthTexture,fullres_depth_pos2).x;
-	float dist					=depthToLinearDistance(clip_pos.z	,depthToLinFadeDistParams);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	float dist					=depthToLinearDistance(clip_pos.z	,depthInterpretationStruct);
 	float dist_rt				=pow(dist,0.5);
 	vec4 cloud					=texture_clamp_lod(farCloudTexture,lowResTexCoords,0);
 	

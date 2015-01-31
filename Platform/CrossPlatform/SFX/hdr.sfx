@@ -143,7 +143,8 @@ shader posTexVertexOutput QuadVS(idOnly id)
 shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_Target
 {
 	vec4 depth		=texture_clamp(depthTexture,IN.texCoords);
-	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
     
     vec4 u=vec4(1,dist,dist,1.0);
 	return u;
@@ -210,7 +211,8 @@ vec3 FilmicTone(vec3 x)
 shader vec4 LinearizeDepthPS(v2f IN) : SV_Target
 {
 	vec4 depth=texture_nearest_lod(depthTexture,IN.texCoords,0);
-	float dist=depthToLinearDistance(depth.x,depthToLinFadeDistParams);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	float dist=depthToLinearDistance(depth.x,depthInterpretationStruct);
     vec4 u=vec4(dist,dist,dist,1.0);
 	return u;
 }

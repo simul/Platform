@@ -226,12 +226,14 @@ shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStrea
 }
 vec4 PS_Test(posTexVertexOutput IN): SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec4 dlookup 		=texture_wrap(depthTexture,IN.texCoords.xy);
-	vec2 dist			=depthToFadeDistance(dlookup.xy,vec2(0,0),depthToLinFadeDistParams,tanHalfFov);
+	vec2 dist			=depthToFadeDistance(dlookup.xy,vec2(0,0),depthInterpretationStruct,tanHalfFov);
 	return vec4(dist,dlookup.z,0.5);
 }
 float4 PS_Main(transformedVertex IN): SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec4 dlookup 		=texture_wrap(depthTexture,texc.xy);
 	vec4 clookup 		=texture_wrap(cloudDepthTexture,texc.xy);
@@ -242,7 +244,7 @@ float4 PS_Main(transformedVertex IN): SV_TARGET
 #else
 	float depth			=min(dlookup.x,clookup.x);
 #endif
-	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 	//return vec4(100*dist.xy,100*dlookup.z,1.0);//dlookup.rb,1);
 	
 	float b			=2.0*(IN.texCoords.x-0.5);
@@ -269,7 +271,8 @@ float4 PS_Thin(transformedThinVertex IN): SV_TARGET
 #else
 	float depth			=min(dlookup.x,clookup.x);
 #endif
-	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthToLinFadeDistParams,tanHalfFov);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 	//if(dist.x<dist.y)
 	//	discard;
 	

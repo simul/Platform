@@ -117,7 +117,8 @@ shader vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
 shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 depth		=texture_nearest_lod(imageTexture,IN.texCoords,0);
-	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
     vec4 result		=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
 	//if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
 	///	||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
@@ -134,7 +135,8 @@ shader vec4 ShowDepthMS_PS(posTexVertexOutput IN) : SV_TARGET
 	GET_DIMENSIONS_MSAA(imageTextureMS,dims.x,dims.y,numSamples);
 	int2 pos		=int2(IN.texCoords.xy*vec2(dims.xy));
 	vec4 depth		=IMAGE_LOAD_MSAA(imageTextureMS,pos,0);
-	vec2 dist		=depthToFadeDistance(depth.xx,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	vec2 dist		=depthToFadeDistance(depth.xx,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
 	vec4 result=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
 	if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
 		||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)

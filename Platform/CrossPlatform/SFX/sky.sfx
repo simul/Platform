@@ -70,7 +70,7 @@ struct vertexInput
     vec3 position			: POSITION;
 };
 
-struct vertexOutput
+struct posDirVertexOutput
 {
     vec4 hPosition		: SV_POSITION;
     vec3 wDirection		: TEXCOORD0;
@@ -78,30 +78,24 @@ struct vertexOutput
 
 struct vertexInput3Dto2D
 {
-    vec3 position			: POSITION;
-    vec2 texCoords		: TEXCOORD0;
-};
-
-struct vertexOutput3Dto2D
-{
-    vec4 hPosition		: SV_POSITION;
+    vec3 position		: POSITION;
     vec2 texCoords		: TEXCOORD0;
 };
 
 //------------------------------------
 // Vertex Shader 
 //------------------------------------
-shader vertexOutput VS_Main(vertexInput IN) 
+shader posDirVertexOutput VS_Main(vertexInput IN) 
 {
-    vertexOutput OUT;
+    posDirVertexOutput OUT;
     OUT.hPosition	=mul(worldViewProj,vec4(IN.position.xyz,1.0));
     OUT.wDirection	=normalize(IN.position.xyz);
     return OUT;
 }
 
-shader vertexOutput VS_Cubemap(vertexInput IN) 
+shader posDirVertexOutput VS_Cubemap(vertexInput IN) 
 {
-    vertexOutput OUT;
+    posDirVertexOutput OUT;
 	// World matrix would be identity.
     OUT.hPosition	=vec4(IN.position.xyz,1.0);
     OUT.wDirection	=normalize(IN.position.xyz);
@@ -118,7 +112,7 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 	return result;
 }
 
-shader vec4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_IlluminationBuffer(posTexVertexOutput IN): SV_TARGET
 {
 	float alt_km		=eyePosition.z/1000.0;
 	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm
@@ -138,9 +132,9 @@ shader vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN): SV_TARGET
 	return BackgroundLatLongSphere(backgroundTexture,IN.texCoords.xy);
 }
 
-shader vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 
+shader posTexVertexOutput VS_Fade3DTo2D(idOnly IN) 
 {
-    vertexOutput3Dto2D OUT;
+    posTexVertexOutput OUT;
 	vec2 poss[4]=
 	{
 		{ 1.0, 0.0},
@@ -151,38 +145,18 @@ shader vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN)
 	vec2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(vec2(-1.0,-1.0)+2.0*pos,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#if REVERSE_DEPTH==1
-	OUT.hPosition.z	=0.0; 
-#else
+
 	OUT.hPosition.z	=OUT.hPosition.w; 
-#endif
     OUT.texCoords	=pos;
     return OUT;
 }
 
-shader vertexOutput3Dto2D VS_ShowFade(idOnly IN) 
+shader posTexVertexOutput VS_ShowFade(idOnly IN) 
 {
-    vertexOutput3Dto2D OUT;
-	vec2 poss[4]=
-	{
-		{ 1.0, 0.0},
-		{ 1.0, 1.0},
-		{ 0.0, 0.0},
-		{ 0.0, 1.0},
-	};
-	vec2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
-	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#if REVERSE_DEPTH==1
-	OUT.hPosition.z	=0.0; 
-#else
-	OUT.hPosition.z	=OUT.hPosition.w; 
-#endif
-	OUT.texCoords	=vec2(pos.x,1.0-pos.y);
-    return OUT;
+	return VS_ScreenQuad(IN,rect);
 }
 
-shader vec4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_Fade3DTo2D(posTexVertexOutput IN): SV_TARGET
 {
 	vec3 texc=vec3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
 	vec4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
@@ -190,7 +164,7 @@ shader vec4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 	vec4 result=lerp(colour1,colour2,skyInterp);
     return result;
 }
-shader vec4 PS_ShowFadeCrossSection(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_ShowFadeCrossSection(posTexVertexOutput IN): SV_TARGET
 {
 	vec3 texc=vec3(altitudeTexCoord,IN.texCoords.y,IN.texCoords.x);
 	vec4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
@@ -199,54 +173,36 @@ shader vec4 PS_ShowFadeCrossSection(vertexOutput3Dto2D IN): SV_TARGET
     return result;
 }
 
-shader vec4 PS_OvercastInscatter(vertexOutput3Dto2D IN): SV_TARGET
-{
-	float alt_km		=eyePosition.z/1000.0;
-	// Texcoords representing the full distance from the eye to the given point.
-    return OvercastInscatter(inscTexture,illuminationTexture,IN.texCoords,alt_km,maxFadeDistanceKm,overcast,overcastBaseKm,overcastRangeKm,targetTextureSize);
-}
-
-shader vec4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
-{
-	vec3 texc=vec3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
-	vec4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
-	vec4 colour2=fadeTexture2.Sample(cmcSamplerState,texc);
-	vec4 result;
-	result.rgb=lerp(colour1.rgb,colour2.rgb,skyInterp);
-	result.a=1.0;
-    return result;
-}
-
-shader vec4 PS_ShowFadeTable(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_ShowFadeTable(posTexVertexOutput IN): SV_TARGET
 {
 	vec4 result=inscTexture.Sample(cmcSamplerState,IN.texCoords.xy);
 	result.rb+=overlayAlpha*result.a;
     return vec4(result.rgb,1);
 }
 
-shader vec4 PS_Colour(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_Colour(posTexVertexOutput IN): SV_TARGET
 {
     return colour;
 }
 
-shader vec4 PS_ShowIlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_ShowIlluminationBuffer(posTexVertexOutput IN): SV_TARGET
 {
 	return ShowIlluminationBuffer(inscTexture,IN.texCoords);
 }
 
-shader vec4 PS_ShowFadeTexture(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_ShowFadeTexture(posTexVertexOutput IN): SV_TARGET
 {
 	vec4 result=fadeTexture1.Sample(cmcSamplerState,vec3(altitudeTexCoord,IN.texCoords.yx));
     return vec4(result.rgb,1);
 }
 
-shader vec4 PS_Show3DLightTable(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_Show3DLightTable(posTexVertexOutput IN): SV_TARGET
 {
 	vec4 result=fadeTexture1.Sample(samplerStateNearest,vec3(IN.texCoords.y,(float(cycled_index)+.5)/3.0,IN.texCoords.x));
     return vec4(result.rgb,1);
 }
 
-shader vec4 PS_Show2DLightTable(vertexOutput3Dto2D IN): SV_TARGET
+shader vec4 PS_Show2DLightTable(posTexVertexOutput IN): SV_TARGET
 {
 	vec2 texc	=vec2(1.00-IN.texCoords.y,IN.texCoords.x);
 	vec4 result	=texture_nearest_lod(lightTable2DTexture,texc,0);
@@ -351,7 +307,7 @@ shader vec4 PS_StarsDepthTex(starsVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc	= viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
 	float depth		= texture_clamp_lod(depthTexture, IN.depthTexc.xy, 0).x;
-	discardUnlessFar(depth);
+	discardUnlessFar(depth,REVERSE_DEPTH);
 	vec3 colour=vec3(1.0,1.0,1.0)*(starBrightness*IN.tex);
 	return vec4(colour,1.0);
 }
@@ -373,7 +329,7 @@ shader vec4 PS_SunDepthTexture(svertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc = viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
 	float depth = texture_clamp_lod(depthTexture, IN.depthTexc.xy, 0).x;
-	discardUnlessFar(depth);
+	discardUnlessFar(depth,REVERSE_DEPTH);
 	float r = 4.0*length(IN.tex);
 	if (r>4.0)
 		discard;
@@ -440,7 +396,7 @@ shader vec4 PS_PlanetDepthTexture(svertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc = viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
 	float depth = texture_clamp(depthTexture, depth_texc).x;
-	discardUnlessFar(depth);
+	discardUnlessFar(depth,REVERSE_DEPTH);
 	vec4 result = flareTexture.Sample(flareSamplerState, vec2(.5f, .5f) - 0.5f*IN.tex);
 	return Planet(result, IN.tex);
 }
@@ -453,7 +409,7 @@ shader vec4 PS_PlanetUntextured(svertexOutput IN): SV_TARGET
 shader vec4 PS_PlanetUntexturedDepthTexture(svertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc = viewportCoordToTexRegionCoord(IN.depthTexc.xy, viewportToTexRegionScaleBias);
-	discardUnlessFar(texture_clamp(depthTexture, depth_texc).x);
+	discardUnlessFar(texture_clamp(depthTexture, depth_texc).x,REVERSE_DEPTH);
 	vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
 	return Planet(result, IN.tex);
 }
@@ -558,32 +514,6 @@ technique show_cross_section
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeCrossSection()));
-    }
-}
- 
-technique overcast_inscatter
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_OvercastInscatter()));
-    }
-}
- 
-technique skylight_and_overcast
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_SkylightAndOvercast3Dto2D()));
     }
 }
 

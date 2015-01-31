@@ -77,13 +77,14 @@ shader uint4 PS_LossComposite(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec3 farLoss,nearLoss;
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	LossComposite(farLoss,nearLoss,depthTexture
 					,viewportToTexRegionScaleBias
 					,lossTexture
 					,invViewProj
 					,IN.texCoords
 					,IN.pos
-					,depthToLinFadeDistParams
+					,depthInterpretationStruct
 					,tanHalfFov);
 
 	uint2 faru		=colour3_to_uint2(farLoss);
@@ -93,6 +94,7 @@ shader uint4 PS_LossComposite(atmosVertexOutput IN) : SV_TARGET
 
 shader uint4 PS_LossCompositeShadowed(atmosVertexOutput IN) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec3 farLoss,nearLoss;
 	LossCompositeShadowed(farLoss,nearLoss,depthTexture,cloudShadowTexture
@@ -101,7 +103,7 @@ shader uint4 PS_LossCompositeShadowed(atmosVertexOutput IN) : SV_TARGET
 						,invViewProj
 						,IN.texCoords
 						,IN.pos
-						,depthToLinFadeDistParams
+						,depthInterpretationStruct
 						,maxFadeDistanceMetres
 						,tanHalfFov
 						,invShadowMatrix,viewPosition,cloudShadowing,cloudShadowSharpness);
@@ -114,6 +116,7 @@ shader uint4 PS_LossCompositeShadowed(atmosVertexOutput IN) : SV_TARGET
 
 shader vec4 PS_NearFarShadow(atmosVertexOutput IN) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec2 nf=NearFarShadow(depthTexture,cloudShadowTexture
 						,viewportToTexRegionScaleBias
@@ -121,7 +124,7 @@ shader vec4 PS_NearFarShadow(atmosVertexOutput IN) : SV_TARGET
 						,invViewProj
 						,IN.texCoords
 						,IN.pos
-						,depthToLinFadeDistParams
+						,depthInterpretationStruct
 						,maxFadeDistanceMetres
 						,tanHalfFov
 						,invShadowMatrix,viewPosition,cloudShadowing,cloudShadowSharpness);
@@ -130,6 +133,7 @@ shader vec4 PS_NearFarShadow(atmosVertexOutput IN) : SV_TARGET
 }
 shader vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec3 loss		=AtmosphericsLoss(depthTexture
 									,viewportToTexRegionScaleBias
@@ -137,13 +141,14 @@ shader vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
 									,invViewProj
 									,IN.texCoords
 									,IN.pos
-									,depthToLinFadeDistParams
+									,depthInterpretationStruct
 									,tanHalfFov);
     return float4(loss.rgb,1.0);
 }
 
 shader vec4 PS_LossMSAA(atmosVertexOutput IN,uint sampleIndex:SV_SampleIndex) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	int2 pos2;
 	uint numSamples;
@@ -156,7 +161,7 @@ shader vec4 PS_LossMSAA(atmosVertexOutput IN,uint sampleIndex:SV_SampleIndex) : 
 											,IN.texCoords
 											,pos2
 											,IN.pos
-											,depthToLinFadeDistParams
+											,depthInterpretationStruct
 											,tanHalfFov);
     return vec4(loss.rgb,1.0);
 }
@@ -164,6 +169,7 @@ shader vec4 PS_LossMSAA(atmosVertexOutput IN,uint sampleIndex:SV_SampleIndex) : 
 
 shader vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	int numSamples	=1;
 	vec4 insc		=Inscatter(	 inscTexture
 								,skylTexture
@@ -176,7 +182,7 @@ shader vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 								,hazeEccentricity
 								,mieRayleighRatio
 								,viewportToTexRegionScaleBias
-								,depthToLinFadeDistParams
+								,depthInterpretationStruct
 								,tanHalfFov
 								,true
 								,false);
@@ -186,6 +192,7 @@ shader vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 
 shader vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	uint2 dims;
 	uint numSamples;
 	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
@@ -202,7 +209,7 @@ shader vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET
 							,hazeEccentricity
 							,mieRayleighRatio
 							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
+							,depthInterpretationStruct
 							,tanHalfFov
 							,false
 							,false);
@@ -213,6 +220,7 @@ shader vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET
 
 shader vec4 PS_Loss_Far(atmosVertexOutput IN) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	int2 pos2;
 	uint numSamples;
@@ -225,13 +233,14 @@ shader vec4 PS_Loss_Far(atmosVertexOutput IN) : SV_TARGET
 											,IN.texCoords
 											,pos2
 											,IN.pos
-											,depthToLinFadeDistParams
+											,depthInterpretationStruct
 											,tanHalfFov);
     return float4(loss.rgb,1.0);
 }
 
 shader vec4 PS_Loss_Near(atmosVertexOutput IN) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	int2 pos2;
 	uint numSamples;
@@ -244,13 +253,14 @@ shader vec4 PS_Loss_Near(atmosVertexOutput IN) : SV_TARGET
 											,IN.texCoords
 											,pos2
 											,IN.pos
-											,depthToLinFadeDistParams
+											,depthInterpretationStruct
 							,tanHalfFov);
     return float4(loss.rgb,1.0);
 }
 
 shader vec4 PS_Inscatter_Far_MSAA(atmosVertexOutput IN) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	uint2 dims;
 	uint numSamples;
 	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
@@ -267,7 +277,7 @@ shader vec4 PS_Inscatter_Far_MSAA(atmosVertexOutput IN) : SV_TARGET
 							,hazeEccentricity
 							,mieRayleighRatio
 							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
+							,depthInterpretationStruct
 							,tanHalfFov,true,false);
 	res.rgb	*=exposure;
 	return res;
@@ -275,6 +285,7 @@ shader vec4 PS_Inscatter_Far_MSAA(atmosVertexOutput IN) : SV_TARGET
 
 shader vec4 PS_Inscatter_Near_MSAA(atmosVertexOutput IN) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	uint2 dims;
 	uint numSamples;
 	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
@@ -291,13 +302,14 @@ shader vec4 PS_Inscatter_Near_MSAA(atmosVertexOutput IN) : SV_TARGET
 							,hazeEccentricity
 							,mieRayleighRatio
 							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
+							,depthInterpretationStruct
 							,tanHalfFov,true,true);
 	res.rgb	*=exposure;
 	return res;
 }
 shader vec4 PS_Inscatter_Far_NFDepth(atmosVertexOutput IN) : SV_TARGET0
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec4 res	=Inscatter_NFDepth(	inscTexture
 									,skylTexture
 									,illuminationTexture
@@ -308,7 +320,7 @@ shader vec4 PS_Inscatter_Far_NFDepth(atmosVertexOutput IN) : SV_TARGET0
 									,hazeEccentricity
 									,mieRayleighRatio
 									,viewportToTexRegionScaleBias
-									,depthToLinFadeDistParams
+									,depthInterpretationStruct
 									,tanHalfFov,true,false);
 	res.rgb	*=exposure;
 	return res;
@@ -317,6 +329,7 @@ shader vec4 PS_Inscatter_Far_NFDepth(atmosVertexOutput IN) : SV_TARGET0
 shader vec4 PS_Inscatter_Near_NFDepth(atmosVertexOutput IN) : SV_TARGET0
 {
 	return vec4(1,0,1,1);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec4 res=Inscatter_NFDepth(	inscTexture
 							,skylTexture
 							,illuminationTexture
@@ -327,7 +340,7 @@ shader vec4 PS_Inscatter_Near_NFDepth(atmosVertexOutput IN) : SV_TARGET0
 							,hazeEccentricity
 							,mieRayleighRatio
 							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
+							,depthInterpretationStruct
 							,tanHalfFov,true,true);
 	res.rgb	*=exposure;
 	return res;
@@ -336,6 +349,7 @@ shader vec4 PS_Inscatter_Near_NFDepth(atmosVertexOutput IN) : SV_TARGET0
 shader vec4 PS_Inscatter_Near_NFDepth1(atmosVertexOutput IN) : SV_TARGET1
 {
 	return vec4(0,1,0,1);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec4 res=Inscatter_NFDepth(	inscTexture
 							,skylTexture
 							,illuminationTexture
@@ -346,7 +360,7 @@ shader vec4 PS_Inscatter_Near_NFDepth1(atmosVertexOutput IN) : SV_TARGET1
 							,hazeEccentricity
 							,mieRayleighRatio
 							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
+							,depthInterpretationStruct
 							,tanHalfFov,false,true);
 	res.rgb	*=exposure;
 	return res;
@@ -362,6 +376,7 @@ shader FarNearOutput PS_Inscatter_Both(atmosVertexOutput IN)
 	fn.farColour=vec4(texCoords,0,1);
 	fn.nearColour=vec4(0,texCoords,1);
 #else
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	FarNearOutput fn	=Inscatter_Both(inscTexture
 										,skylTexture
 										,illuminationTexture
@@ -372,7 +387,7 @@ shader FarNearOutput PS_Inscatter_Both(atmosVertexOutput IN)
 										,hazeEccentricity
 										,mieRayleighRatio
 										,viewportToTexRegionScaleBias
-										,depthToLinFadeDistParams
+										,depthInterpretationStruct
 										,tanHalfFov);
 #endif
 	fn.farColour.rgb	*=exposure;
@@ -385,6 +400,7 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
 	vec2 texCoords		=mixedResolutionTransformXYWH.xy+IN.texCoords.xy*mixedResolutionTransformXYWH.zw;
 	vec4 colours[8];
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	Inscatter_All( colours
 					,inscTexture
 					,skylTexture
@@ -400,7 +416,7 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 					,lightDir
 					,hazeEccentricity
 					,mieRayleighRatio
-					,depthToLinFadeDistParams
+					,depthInterpretationStruct
 					,maxFadeDistanceMetres
 					,godrays);
 	
@@ -430,6 +446,7 @@ All8Output psLossVolume(atmosVertexOutput IN,bool shadowed)
 	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
 	vec2 texCoords		=mixedResolutionTransformXYWH.xy+IN.texCoords.xy*mixedResolutionTransformXYWH.zw;
 	vec4 colours[8];
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	Loss_All( colours
 				,lossTexture
 				,depthTexture
@@ -443,7 +460,7 @@ All8Output psLossVolume(atmosVertexOutput IN,bool shadowed)
 				,lightDir
 				,hazeEccentricity
 				,mieRayleighRatio
-				,depthToLinFadeDistParams,tanHalfFov
+				,depthInterpretationStruct,tanHalfFov
 				,viewportToTexRegionScaleBias
 				,maxFadeDistanceMetres
 				,shadowed,cloudShadowing,cloudShadowSharpness);

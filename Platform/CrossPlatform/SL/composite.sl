@@ -93,16 +93,6 @@ LookupQuad4 GetLookupQuad(Texture2D image,vec2 texc,int2 texDims)
 	return q;
 }
 
-LookupQuad4 GetDepthLookupQuad(Texture2D image,vec2 texc,int2 texDims,vec4 depthToLinFadeDistParams)
-{
-	LookupQuad4 q	=GetLookupQuad(image,texc,texDims);
-	q._11.xy		=depthToLinearDistance(q._11.xy,depthToLinFadeDistParams);
-	q._21.xy		=depthToLinearDistance(q._21.xy,depthToLinFadeDistParams);
-	q._12.xy		=depthToLinearDistance(q._12.xy,depthToLinFadeDistParams);
-	q._22.xy		=depthToLinearDistance(q._22.xy,depthToLinFadeDistParams);
-	return q;
-}
-
 LookupQuad4 MaskDepth(LookupQuad4 d1,vec2 depthMask)
 	{
 	LookupQuad4 d2=d1;
@@ -157,34 +147,6 @@ vec4 depthFilteredTexture(	LookupQuad4 image
 #endif
 	return f;
 }
-
-// Filter the texture, but bias towards the nearest depth values.
-vec4 depthDependentFilteredImage(Texture2D imageTexture
-								 ,Texture2D fallbackTexture
-								 ,Texture2D depthTexture
-								 ,int2 texDims
-								 ,vec2 texc
-								 ,vec2 depthMask
-								 ,vec4 depthToLinFadeDistParams
-								 ,float d
-								 ,bool do_fallback)
-{
-#if 0
-	return texture_clamp_lod(imageTexture,texc,0);
-#else
-	LookupQuad4 image		=GetLookupQuad(imageTexture		,texc,texDims);
-	LookupQuad4 fallback	=GetLookupQuad(fallbackTexture	,texc,texDims);
-	LookupQuad4 dist		=GetDepthLookupQuad(depthTexture,texc,texDims,depthToLinFadeDistParams);
-	dist					=MaskDepth(dist,depthMask.xy);
-	vec2 texc_unit			=texc*texDims-vec2(.5,.5);
-	vec2 xy					=frac(texc_unit);
-	return depthFilteredTexture(image
-								,dist
-								,xy
-								,d);
-#endif
-}
-
 vec3 nearFarDepthFilter(LookupQuad4 depth_Q,LookupQuad4 dist_Q,vec2 texDims,vec2 texc,vec2 dist)
 {
 	vec2 texc_unit	=texc*texDims-vec2(.5,.5);
@@ -245,6 +207,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 				,Texture3D screenSpaceInscVolumeTexture
 				,Texture2D shadowTexture)
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	TwoColourCompositeOutput res;
 	//res.multiply=vec4(1,1,0.5,1);
 	//res.add=vec4(texCoords.xy,0,1);
@@ -260,7 +223,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 
 	float depth					=texture_nearest_lod(depthTexture,depth_texc,0).x;
 	//IMAGE_LOAD(depthTexture,fullres_depth_pos2).x;
-	float dist					=depthToLinearDistance(depth	,depthToLinFadeDistParams);
+	float dist					=depthToLinearDistance(depth	,depthInterpretationStruct);
 	float dist_rt				=pow(dist,0.5);
 	vec4 cloud					=texture_clamp_lod(farCloudTexture,lowResTexCoords,0);
 	
@@ -304,6 +267,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 													,Texture3D lightSpaceInscVolumeTexture
 													,Texture2D shadowTexture)
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec4 shadow_lookup			=texture_clamp(shadowTexture,texCoords);
 	vec4 clip_pos				=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x					+=2.0*texCoords.x;
@@ -361,14 +325,10 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 			furthestDepth			=max(furthestDepth,d);
 #endif
 		}
-		float nearestDist			=depthToLinearDistance(nearestDepth		,depthToLinFadeDistParams);
-		float furthestDist			=depthToLinearDistance(furthestDepth	,depthToLinFadeDistParams);
+		float nearestDist			=depthToLinearDistance(nearestDepth		,depthInterpretationStruct);
+		float furthestDist			=depthToLinearDistance(furthestDepth	,depthInterpretationStruct);
 		float distRange				=(abs(furthestDist-nearestDist));
 		vec4 insc_far,insc_near,loss_far,loss_near;
-		//LookupQuad4 lossFar_Q,lossNear_Q;
-		//ExtractCompactedLookupQuads(lossFar_Q,lossNear_Q,lossTexture,lowResTexCoords,hiResDims);
-		//LookupQuad4 inscDistFar_Q	=GetDepthLookupQuad(nearFarTexture	,lowResTexCoords,hiResDims,depthToLinFadeDistParams);
-		//LookupQuad4 inscDistNear_Q	=MaskDepth(inscDistFar_Q,vec2(0,1.0));
 
 		vec3 volumeTexCoordsFar		=vec3(lowResTexCoords,sqrt(furthestDist));
 		insc_far					=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoordsFar,0);
@@ -395,7 +355,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 #else
 			float u				=saturate(step(1.0,hiresDepth));
 #endif
-			trueDist			=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
+			trueDist			=depthToLinearDistance(hiresDepth,depthInterpretationStruct);
 			float hiResInterp	=saturate((nearFarDist.y-trueDist)/nearFarDist.z);
 
 #ifdef VOLUME_INSCATTER
@@ -428,7 +388,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 	{
 #ifdef VOLUME_INSCATTER
 		float d					=IMAGE_LOAD_MSAA(depthTextureMS,fullres_depth_pos2,0).x;
-		float dist				=depthToLinearDistance(d		,depthToLinFadeDistParams);
+		float dist				=depthToLinearDistance(d		,depthInterpretationStruct);
 #ifndef SCREENSPACE_VOL
 		insc					=texture_wmc_lod(lightSpaceInscVolumeTexture,vec3(volume_texc.xy,sqrt(dist)),0);
 #else

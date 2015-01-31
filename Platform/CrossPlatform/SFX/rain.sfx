@@ -374,11 +374,12 @@ shader vec4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
 
 shader vec4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec3 view				=normalize(mul(invViewProj_2[1],vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
 	
 	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	float depth				=texture_clamp(depthTexture,depth_texc).x;
-	float dist				=depthToFadeDistance(depth,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	float dist				=depthToFadeDistance(depth,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 
 	vec3 light				=cubeTexture.Sample(wrapSamplerState,-view).rgb;
 	vec4 result				=vec4(light.rgb,0);
@@ -405,10 +406,11 @@ shader vec4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 
 shader vec4 PS_Moisture(rainVertexOutput IN) : SV_TARGET
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDist,REVERSE_DEPTH};
 	vec3 view				=normalize(mul(invViewProj_2[1],vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
 	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,depthViewport.zwxy);
 	vec4 depth				=texture_clamp(depthTexture,depth_texc);
-	float dist				=depthToFadeDistance(depth.x,IN.clip_pos.xy,depthToLinFadeDist,tanHalfFov);
+	float dist				=depthToFadeDistance(depth.x,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	return dist;
 }
 
@@ -773,6 +775,7 @@ vec4 PS_ShowArrayTexture(posTexVertexOutput IN): SV_TARGET
 
 vec4 PS_RainParticles(PSSceneIn IN) : SV_Target
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec3 light			=cubeTexture.Sample(wrapSamplerState,-IN.view).rgb;
 	vec4 texel			=rainTextureArray.Sample(samAniso,vec3(IN.texCoords.xy,IN.type));
 	texel.rgb			*=light;
@@ -781,7 +784,7 @@ vec4 PS_RainParticles(PSSceneIn IN) : SV_Target
 	vec2 depth;
 	depth.x				=texture_clamp(depthTexture,depth_texc.xy).x;
 	depth.y				=IN.clip_pos.z;
-	vec2 dist			=depthToFadeDistance(depth.xy,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec2 dist			=depthToFadeDistance(depth.xy,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 		
 	if(dist.y>dist.x-splashDelta)
 	{
@@ -802,6 +805,7 @@ vec4 PS_RainParticles(PSSceneIn IN) : SV_Target
 
 vec4 PS_RainParticles_NoCubemap(PSSceneIn IN) : SV_Target
 {
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec3 light			=lightColour.rgb;
 	vec4 texel			=.5*rainTextureArray.Sample(samAniso,vec3(IN.texCoords,IN.type));
 	//directional lighting---------------------------------------------------------------------------------
@@ -815,7 +819,7 @@ vec4 PS_RainParticles_NoCubemap(PSSceneIn IN) : SV_Target
 	vec2 depth;
 	depth.x				=texture_clamp(depthTexture,depth_texc.xy).x;
 	depth.y				=IN.clip_pos.z;
-	vec2 dist			=depthToFadeDistance(depth.xy,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec2 dist			=depthToFadeDistance(depth.xy,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 //	 dist.y			=depthToFadeDistance(1.0,vec2(0,0),vec4(0.0204173792,2000000.00,0.0408347584,0),vec2(1,1));
 		
 	if(dist.y>dist.x-splashDelta)
