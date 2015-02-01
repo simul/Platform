@@ -46,7 +46,7 @@ struct v2f
 	vec3 wPosition		: TEXCOORD1;
 };
 
-shader v2f VS_Main(a2v IN)
+v2f VSMain(a2v IN,bool reverseDepth)
 {
 	v2f OUT;
 	OUT.hPosition	=vec4(IN.position,IN.position.z);
@@ -72,16 +72,34 @@ shader v2f VS_Main(a2v IN)
 	pos.xy				+=eyePosition.xy;
 	OUT.clip_pos		=mul(worldViewProj,vec4(pos.xyz,1.0));
 	// Prevent clipping:
-#if REVERSE_DEPTH==1
-	if(OUT.clip_pos.z<0)
-		OUT.clip_pos.z=0;
-#else
-	if(OUT.clip_pos.z>OUT.clip_pos.w)
-		OUT.clip_pos.z=OUT.clip_pos.w;
-#endif
+	if(reverseDepth)
+	{
+		if(OUT.clip_pos.z<0)
+			OUT.clip_pos.z=0;
+	}
+	else
+	{
+		if(OUT.clip_pos.z>OUT.clip_pos.w)
+			OUT.clip_pos.z=OUT.clip_pos.w;
+	}
 	OUT.hPosition		=OUT.clip_pos;
     OUT.wPosition		=pos.xyz;
     return OUT;
+}
+
+shader v2f VS_Main(a2v IN)
+{
+	return VSMain(IN,false);
+}
+
+shader v2f VS_DepthForward(a2v IN)
+{
+	return VSMain(IN,false);
+}
+
+shader v2f VS_DepthReverse(a2v IN)
+{
+	return VSMain(IN,true);
 }
 
 vec4 msaaPS(v2f IN)
@@ -110,32 +128,6 @@ vec4 msaaPS(v2f IN)
 
 	ret.rgb				*=exposure;
 	return ret;
-}
-
-shader vec4 PS_msaa_depthTexture(v2f IN) : SV_TARGET
-{
-	uint2 depthDims;
-	uint depthSamples;
-	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy));
-	viewportTexCoords.y		=1.0-viewportTexCoords.y;
-	vec2 depthTexCoords	=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
-	depthTextureMS.GetDimensions(depthDims.x,depthDims.y,depthSamples);
-	uint2 depth_pos2	=uint2(depthTexCoords.xy*vec2(depthDims.xy));
-	float dlookup 		=depthTextureMS.Load(depth_pos2,0).r;
-#if REVERSE_DEPTH==1
-	if(dlookup!=0)
-		discard;
-#else
-	// RVK: dlookup < 1.0 seems to not have the required accuracy.
-	if(dlookup<0.9999999)
-		discard;
-#endif
-	return msaaPS(IN);
-}
-
-shader vec4 PS_msaa(v2f IN) : SV_TARGET
-{
-	return msaaPS(IN);
 }
 
 vec4 MainPS(v2f IN,vec2 texCoords)
@@ -178,7 +170,7 @@ shader vec4 PS_Main(v2f IN) SIMUL_RENDERTARGET_OUTPUT(0)
 	return MainPS(IN,viewportTexCoords);
 }
 
-shader vec4 PS_Main_depthTexture(v2f IN) : SV_TARGET
+vec4 PS_Main_depthTexture(v2f IN,bool reverseDepth)
 {
 	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
 	viewportTexCoords.y		=1.0-viewportTexCoords.y;
@@ -186,15 +178,28 @@ shader vec4 PS_Main_depthTexture(v2f IN) : SV_TARGET
 	uint depthSamples;
 	vec2 depthTexCoords	=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
 	float dlookup 		=texture_clamp_lod(depthTexture,depthTexCoords,0).x;
-#if REVERSE_DEPTH==1
-	if(dlookup!=0)
-		discard;
-#else
-	if(dlookup<0.999999)
-		discard;
-#endif
+	if(reverseDepth)
+	{
+		if(dlookup!=0)
+			discard;
+	}
+	else
+	{	
+		if(dlookup<0.999999)
+			discard;
+	}
+
 	return MainPS(IN,viewportTexCoords);
 }
+shader vec4 PS_Main_depthReverse(v2f IN) : SV_TARGET
+{
+	return PS_Main_depthTexture(IN,true);
+}
+shader vec4 PS_Main_depthForward(v2f IN) : SV_TARGET
+{
+	return PS_Main_depthTexture(IN,false);
+}
+
 
 struct v2f2
 {
@@ -363,28 +368,11 @@ BlendState AlphaBlendX
     RenderTargetWriteMask[0]	=15;
     RenderTargetWriteMask[1]	=15;
 };
-VertexShader main_vs=CompileShader(vs_5_0,VS_Main());
-technique simul_clouds_2d_msaa
-{
-    pass depth_texture
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(TestDepth,0);
-		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-        SetGeometryShader(NULL);
-		SetVertexShader(main_vs);
-		SetPixelShader(CompileShader(ps_5_0,PS_msaa_depthTexture()));
-    }
-    pass depth_check
-	{
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(TestDepth,0);
-		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-        SetGeometryShader(NULL);
-		SetVertexShader(main_vs);
-		SetPixelShader(CompileShader(ps_5_0,PS_msaa()));
-    }
-}
+
+VertexShader main_vs	=CompileShader(vs_5_0,VS_Main());
+VertexShader forward_vs	=CompileShader(vs_5_0,VS_DepthForward());
+VertexShader reverse_vs	=CompileShader(vs_5_0,VS_DepthReverse());
+
 technique simul_clouds_2d
 {
     pass no_depth
@@ -393,14 +381,23 @@ technique simul_clouds_2d
 		SetVertexShader(main_vs);
 		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
     }
-    pass depth_texture
-{
+    pass reverse_depth
+	{
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
         SetGeometryShader(NULL);
-		SetVertexShader(main_vs);
-		SetPixelShader(CompileShader(ps_5_0,PS_Main_depthTexture()));
+		SetVertexShader(reverse_vs);
+		SetPixelShader(CompileShader(ps_5_0,PS_Main_depthReverse()));
+    }
+    pass forward_depth
+	{
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+        SetGeometryShader(NULL);
+		SetVertexShader(forward_vs);
+		SetPixelShader(CompileShader(ps_5_0,PS_Main_depthForward()));
     }
     pass depth_check
     {

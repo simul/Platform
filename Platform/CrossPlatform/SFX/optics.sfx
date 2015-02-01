@@ -8,22 +8,15 @@ Texture2D flareTexture;
 Texture2D rainbowLookupTexture;
 Texture2D coronaLookupTexture;
 Texture2D moistureTexture;
-Texture2D depthTexture;
 
 struct indexVertexInput
 {
 	uint vertex_id			: SV_VertexID;
 };
 
-struct svertexOutput
+posTexVertexOutput VS_Flare(indexVertexInput IN) 
 {
-    vec4 hPosition		: SV_POSITION;
-    vec2 tex				: TEXCOORD0;
-};
-
-svertexOutput VS_Flare(indexVertexInput IN) 
-{
-    svertexOutput OUT;
+    posTexVertexOutput OUT;
 	vec2 poss[4]=
 	{
 		{ 1.0,-1.0},
@@ -33,19 +26,14 @@ svertexOutput VS_Flare(indexVertexInput IN)
 	};
 	vec3 pos=vec3(poss[IN.vertex_id],1.0/tan(radiusRadians));
     OUT.hPosition=mul(worldViewProj,vec4(pos,1.0));
-	// Set to far plane so can use depth test as want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
 	OUT.hPosition.z = 0.0f; 
-#else
-	OUT.hPosition.z = OUT.hPosition.w; 
-#endif
-    OUT.tex=pos.xy;
+    OUT.texCoords=pos.xy;
     return OUT;
 }
 
-vec4 PS_Flare( svertexOutput IN): SV_TARGET
+vec4 PS_Flare( posTexVertexOutput IN): SV_TARGET
 {
-	vec3 output=colour.rgb*texture_clamp(flareTexture,vec2(.5f,.5f)+0.5f*IN.tex).rgb;
+	vec3 output=colour.rgb*texture_clamp(flareTexture,vec2(.5f,.5f)+0.5f*IN.texCoords).rgb;
 
 	return vec4(output.rgb,1.f);
 }

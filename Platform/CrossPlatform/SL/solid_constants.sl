@@ -11,7 +11,7 @@ SIMUL_CONSTANT_BUFFER(SolidConstants,13)
 	uniform vec3 lightDir;
 	uniform float uaehajhheamejh;
 	uniform vec3 viewPosition;
-	uniform float uaehajrh;
+	uniform int reverseDepth;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

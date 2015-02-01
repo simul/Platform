@@ -76,12 +76,20 @@ shader posTexVertexOutput QuadVS(idOnly id)
 	return u;
 }
 
-shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_Target
+shader vec4 ShowDepthPS_ReverseDepth(posTexVertexOutput IN) : SV_Target
+{
+	vec4 depth = texture_clamp(depthTexture, IN.texCoords);
+	DepthIntepretationStruct depthInterpretationStruct = { depthToLinFadeDistParams, true };
+	float dist = 10.0*depthToFadeDistance(depth.x, 2.0*(IN.texCoords - 0.5), depthInterpretationStruct, tanHalfFov);
+	vec4 u = vec4(1, dist, dist, 1.0);
+	return u;
+}
+
+shader vec4 ShowDepthPS_ForwardDepth(posTexVertexOutput IN) : SV_Target
 {
 	vec4 depth		=texture_clamp(depthTexture,IN.texCoords);
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,false};
 	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
-    
     vec4 u=vec4(1,dist,dist,1.0);
 	return u;
 }
@@ -327,7 +335,7 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_ForwardDepth(CompositeS
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(posTexVertexOutput IN,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	DepthIntepretationStruct depthInterpretationStruct = { depthToLinFadeDistParams, reverseDepth };
 	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.texCoords.xy
 																,imageTexture
 																,nearImageTexture
@@ -355,7 +363,7 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ReverseDepth(posTe
 	return PS_CompositeAtmospherics_MSAA(IN,true);
 }
 
-shader TwoColourCompositeOutputPS_CompositeAtmospherics_MSAA_ForwardDepth(posTexVertexOutput IN) 
+shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ForwardDepth(posTexVertexOutput IN) 
 {
 	return PS_CompositeAtmospherics_MSAA(IN,false);
 }
@@ -551,15 +559,24 @@ technique simul_glow
 
 technique show_depth
 {
-    pass p0
+    pass reverse_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,QuadVS()));
-		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS()));
-    }
+		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS_ReverseDepth()));
+	}
+	pass forward_depth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0, QuadVS()));
+		SetPixelShader(CompileShader(ps_4_0, ShowDepthPS_ForwardDepth()));
+	}
 }
 
 shader posTexVertexOutput Debug2DVS(idOnly id)

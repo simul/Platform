@@ -191,116 +191,8 @@ void OpenGLRenderer::RenderGL(int view_id)
 
 	view->SetResolution(viewport.w,viewport.h);
 	EnsureCorrectBufferSizes(view_id);
-	TrueSkyRenderer::Render(deviceContext);
-	return;
-	if(ReverseDepth)
-		deviceContext.viewStruct.proj	=(cam->MakeDepthReversedProjectionMatrix((float)viewport.w/(float)viewport.h));
-	else
-		deviceContext.viewStruct.proj	=(cam->MakeProjectionMatrix((float)viewport.w/(float)viewport.h));
-	
-	// If called from some other OpenGL program, we should already have a modelview and projection matrix.
-	// Here we will generate the modelview matrix from the camera class:
-    glMatrixMode(GL_MODELVIEW);
-	glLoadMatrixf(deviceContext.viewStruct.view);
-
-	if(renderPlatform)
-		renderPlatform->SetReverseDepth(ReverseDepth);
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
-	if(baseTerrainRenderer)
-		baseTerrainRenderer->SetReverseDepth(ReverseDepth);
-	glClearColor(0,0,0,1);
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	glPushAttrib(GL_ENABLE_BIT);
-	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf(deviceContext.viewStruct.proj);
-	glViewport(0,0,viewport.w,viewport.h);
-	static float exposure=1.0f;
-	float real_time=0;
-	if(simulWeatherRenderer)
-	{
-		GL_ERROR_CHECK
-		simulWeatherRenderer->PreRenderUpdate(deviceContext,real_time);
-		glDisable(GL_FOG);
-		GL_ERROR_CHECK
-		if(simulHDRRenderer&&UseHdrPostprocessor)
-		{
-			//simulHDRRenderer->StartRender(deviceContext);
-			//simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
-		}
-		else
-		{
-			glClearColor(0,0,0,1.f);
-			glClearDepth(ReverseDepth?0.f:1.f);
-			glDepthMask(GL_TRUE);
-			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-		}
-		//depthFramebuffer.Activate(deviceContext);
-		view->GetFramebuffer()->Activate(deviceContext);
-		view->GetFramebuffer()->Clear(deviceContext, 0.0f, 0.f, 0.f, 0.f, 1.f, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-#if 1
-		if(baseTerrainRenderer&&ShowTerrain)
-			baseTerrainRenderer->Render(deviceContext,1.f);
-		if(sceneRenderer)
-		{
-			crossplatform::PhysicalLightRenderData physicalLightRenderData;
-			physicalLightRenderData.diffuseCubemap=NULL;
-			physicalLightRenderData.lightColour	=simulWeatherRenderer->GetSkyKeyframer()->GetLocalIrradiance(0.0f);
-			physicalLightRenderData.dirToLight	=simulWeatherRenderer->GetSkyKeyframer()->GetDirectionToLight(0.0f);
-			sceneRenderer->Render(deviceContext,physicalLightRenderData);
-		}
-		view->GetFramebuffer()->DeactivateDepth(deviceContext);
-		crossplatform::Texture *depthTexture=NULL;
-		depthTexture	=view->GetFramebuffer()->GetDepthTexture();
-		simulWeatherRenderer->RenderCelestialBackground(deviceContext,depthTexture,vec4(0, 0, 1.f, 1.f),exposure);
-		
-		if(simulWeatherRenderer)
-		{
-			crossplatform::Viewport viewport={0,0,depthTexture->width,depthTexture->length,0.f,1.f};
-	/*		viewManager.DownscaleDepth(deviceContext
-										,depthTexture
-										,NULL
-										,simulWeatherRenderer->GetAtmosphericDownscale()
-										,simulWeatherRenderer->GetDownscale()
-										,simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetMaxDistanceKm()*1000.0f
-										,trueSkyRenderMode==clouds::MIXED_RESOLUTION);*/
-		}
-		simulWeatherRenderer->RenderSkyAsOverlay(deviceContext,false,exposure,1.0f,UseSkyBuffer
-			,depthTexture
-			,vec4(0,0,1.f,1.f),true,vec2(0,0));
-		simulWeatherRenderer->DoOcclusionTests(deviceContext);
-
-		if(baseOpticsRenderer&&ShowFlares)
-		{
-			simul::sky::float4 dir,light,cam_pos;
-			dir=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
-			CalcCameraPosition(cam_pos);
-			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
-			float occ=simulWeatherRenderer->GetBaseSkyRenderer()->GetSunOcclusion();
-			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-			baseOpticsRenderer->RenderFlare(deviceContext,exp,depthTexture,dir,light);
-		}
-#endif
-		view->GetFramebuffer()->Deactivate(deviceContext);
-		if(simulHDRRenderer&&UseHdrPostprocessor)
-		//	simulHDRRenderer->FinishRender(deviceContext,cameraViewStruct.exposure,cameraViewStruct.gamma);
-			simulHDRRenderer->Render(deviceContext,view->GetResolvedHDRBuffer(),cameraViewStruct.exposure,cameraViewStruct.gamma);
-	
-//		bool vertical_screen=ScreenHeight>ScreenWidth;
-GL_ERROR_CHECK
-		if(simulWeatherRenderer->GetShowCompositing())
-		{
-			RenderDepthBuffers(deviceContext,viewport.w/2,0,viewport.w/2,viewport.h/2);
-			simulWeatherRenderer->RenderCompositingTextures(deviceContext,viewport.w/2,viewport.h/2,viewport.w/2,viewport.h/2);
-GL_ERROR_CHECK
-		}
-GL_ERROR_CHECK
-		RenderOverlays(deviceContext,cameraViewStruct);
-GL_ERROR_CHECK
-		if(ShowOSD&&simulWeatherRenderer->GetBaseCloudRenderer())
-			simulWeatherRenderer->GetBaseCloudRenderer()->RenderDebugInfo(deviceContext,viewport.w,viewport.h);
-	GL_ERROR_CHECK
-	}
+	TrueSkyRenderer::Render(deviceContext);
 	glPopAttrib();
 	simul::opengl::Profiler::GetGlobalProfiler().EndFrame();
 }
@@ -364,10 +256,4 @@ GL_ERROR_CHECK
 		//simulWeatherRenderer->RenderFramebufferDepth(deviceContext,x0+w	,y0	,w,l);
 		//simulWeatherRenderer->RenderCompositingTextures(deviceContext,x0,y0+2*l,dx,dy);
 	}
-}
-
-void OpenGLRenderer::ReverseDepthChanged()
-{
-	// We do not yet support ReverseDepth on OpenGL, because GL matrices do not take advantage of this.
-	ReverseDepth=false;
 }

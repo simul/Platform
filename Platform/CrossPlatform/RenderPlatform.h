@@ -69,7 +69,7 @@ namespace simul
 			and /link CreateBuffer buffers/endlink
 
 			Be sure to make the following calls at the appropriate places:
-			RestoreDeviceObjects(), InvalidateDeviceObjects(), RecompileShaders(), SetReverseDepth()
+			RestoreDeviceObjects(), InvalidateDeviceObjects(), RecompileShaders()
 			*/
 		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
@@ -93,7 +93,6 @@ namespace simul
 			virtual void PopTexturePath		();
 			virtual void StartRender		(DeviceContext &deviceContext)=0;
 			virtual void EndRender			(DeviceContext &deviceContext)=0;
-			virtual void SetReverseDepth	(bool)=0;
 			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			virtual void ApplyShaderPass	(DeviceContext &deviceContext,Effect *,EffectTechnique *,int)=0;
@@ -108,7 +107,7 @@ namespace simul
 			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false)=0;
 			virtual void DrawDepth			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL)=0;
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
-			virtual void DrawQuad			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)=0;
+			virtual void DrawQuad			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL)=0;
 			virtual void DrawQuad			(DeviceContext &deviceContext)=0;
 
 			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
@@ -187,7 +186,6 @@ namespace simul
 			bool mirrorY, mirrorY2, mirrorYText;
 			crossplatform::Effect *solidEffect;
 			std::set<crossplatform::Material*> materials;
-			bool reverseDepth;
 			std::vector<std::string> GetTexturePathsUtf8();
 			void SetShaderBinaryPathUtf8(const char *path_utf8)
 			{

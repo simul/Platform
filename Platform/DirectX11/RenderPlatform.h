@@ -56,7 +56,6 @@ namespace simul
 			void PopTexturePath();
 			void StartRender(crossplatform::DeviceContext &deviceContext);
 			void EndRender(crossplatform::DeviceContext &deviceContext);
-			void SetReverseDepth(bool r);
 			void IntializeLightingEnvironment(const float pAmbientLight[3]);
 
 			void DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
@@ -72,7 +71,7 @@ namespace simul
 			void DrawLineLoop	(crossplatform::DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4]);
 			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false);
 			void DrawDepth		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL);
-			void DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique);
+			void DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL);
 			void DrawQuad		(crossplatform::DeviceContext &deviceContext);
 
 			void DrawLines		(crossplatform::DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false);

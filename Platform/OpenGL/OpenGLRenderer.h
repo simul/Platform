@@ -64,7 +64,6 @@ namespace simul
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
-			void ReverseDepthChanged();
 			SimulGLHDRRenderer *simulHDRRenderer;
 		//	FramebufferGL depthFramebuffer;
 			GLuint simple_program;

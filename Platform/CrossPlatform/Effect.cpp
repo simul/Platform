@@ -30,7 +30,10 @@ Effect::~Effect()
 
 EffectTechnique *EffectTechniqueGroup::GetTechniqueByName(const char *name)
 {
-	return techniques[name];
+	TechniqueMap::iterator i=techniques.find(name);
+	if(i==techniques.end())
+		return NULL;
+	return i->second;
 }
 
 EffectTechnique *EffectTechniqueGroup::GetTechniqueByIndex(int index)

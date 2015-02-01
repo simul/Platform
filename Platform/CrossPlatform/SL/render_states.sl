@@ -56,11 +56,6 @@ DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;
 	DepthWriteMask = ALL;
-#if REVERSE_DEPTH==1
-	DepthFunc = GREATER_EQUAL;
-#else
-	DepthFunc = LESS_EQUAL;
-#endif
 };
 
 BlendState DoBlend

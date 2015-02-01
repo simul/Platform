@@ -228,7 +228,7 @@ vec3 applyFades2(Texture2D lossTexture,Texture2D inscTexture,Texture2D skylTextu
 	//c			=skyl.rgb;
 #else
 	vec4 insc		=sampleLod(inscTexture		,cmcSamplerState,fade_texc,0);
-	vec3 inscatter	=earthshadowMultiplier*texture_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0);//PrecalculatedInscatterFunction(insc,BetaRayleigh,BetaMie,mieRayleighRatio);
+	vec3 inscatter	=earthshadowMultiplier*texture_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0).rgb;//PrecalculatedInscatterFunction(insc,BetaRayleigh,BetaMie,mieRayleighRatio);
 	c				+=inscatter;
 #endif
     return c;
@@ -289,7 +289,7 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 	vec3 loss = sampleLod(lossTexture, cmcSamplerState, fade_texc, 0).rgb;
 	c.rgb *= loss;
 	vec4 insc = sampleLod(inscTexture, cmcSamplerState, fade_texc, 0);
-	vec4 skyl = sampleLod(skylTexture, cmcSamplerState, fade_texc, 0);
+	vec3 skyl = sampleLod(skylTexture, cmcSamplerState, fade_texc, 0).rgb;
 	vec3 inscatter =  earthshadowMultiplier*PrecalculatedInscatterFunction(insc, BetaRayleigh, BetaMie, mieRayleighRatio);
 	c.rgb += inscatter + skyl;
 	return c;

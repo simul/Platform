@@ -7,8 +7,45 @@
 
 Texture2D lightningTexture;
 Texture2D depthTexture;
-Texture2DMS<float4> depthTextureMS;
+Texture2DMS<vec4> depthTextureMS;
 Texture2D cloudDepthTexture;
+
+struct F_Vertex
+{
+    vec3 position	: POSITION;
+};
+struct F_Vertex_out
+{
+    vec4 hPosition	: SV_Position;
+};
+
+F_Vertex VS_Fractal(F_Vertex IN )
+{
+	F_Vertex OUT;
+	OUT.position	=IN.position;
+	return OUT;
+}
+[maxvertexcount(4)]
+void GS_Fractal(point F_Vertex input[2], inout TriangleStream<F_Vertex_out> vStream)
+{
+	F_Vertex_out output		= (F_Vertex_out)0;
+	output.hPosition		=mul(worldViewProj,vec4(IN.position,1.0));
+	vStream.Append(output);
+	vStream.RestartStrip();
+}
+
+technique fractal
+{
+    pass main
+    {
+        SetRasterizerState( RenderNoCull );
+        SetVertexShader(CompileShader(   vs_5_0,VS_Fractal()));
+        SetGeometryShader(CompileShader( gs_5_0,GS_Fractal()));
+        SetPixelShader(CompileShader(    ps_5_0,PS_Fractal()));
+        
+        SetBlendState( AddAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+    }
+}
 
 struct transformedVertex
 {
@@ -31,28 +68,6 @@ struct transformedThinVertex
 	vec2 screenPos:	TEXCOORD2;
 	vec2 texc		:	TEXCOORD3;
 };
-
-shader posTexVertexOutput VS_FullScreen(idOnly IN)
-{
-    posTexVertexOutput OUT;
-	vec2 poss[4]=
-	{
-		{ 1.0,-1.0},
-		{ 1.0, 1.0},
-		{-1.0,-1.0},
-		{-1.0, 1.0},
-	};
-	vec2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(pos,0.0,1.0);
-	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#if REVERSE_DEPTH==1
-	OUT.hPosition.z	=0.0; 
-#else
-	OUT.hPosition.z	=OUT.hPosition.w; 
-#endif
-    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
-	return OUT;
-}
 
 shader transformedThinVertex VS_Thin(LightningVertexInput IN)
 {
@@ -224,26 +239,21 @@ shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStrea
 	SpriteStream.Append(output);
     SpriteStream.RestartStrip();
 }
-vec4 PS_Test(posTexVertexOutput IN): SV_TARGET
+
+vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
-	vec4 dlookup 		=texture_wrap(depthTexture,IN.texCoords.xy);
-	vec2 dist			=depthToFadeDistance(dlookup.xy,vec2(0,0),depthInterpretationStruct,tanHalfFov);
-	return vec4(dist,dlookup.z,0.5);
-}
-float4 PS_Main(transformedVertex IN): SV_TARGET
-{
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
 	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec4 dlookup 		=texture_wrap(depthTexture,texc.xy);
 	vec4 clookup 		=texture_wrap(cloudDepthTexture,texc.xy);
 
 	vec4 clip_pos		=vec4(IN.screenPos,1.0,1.0);
-#if REVERSE_DEPTH==1
-	float depth			=max(dlookup.x,clookup.x);
-#else
-	float depth			=min(dlookup.x,clookup.x);
-#endif
+	float depth=0;
+	if(reverseDepth)
+		depth			=max(dlookup.x,clookup.x);
+	else
+		depth			=min(dlookup.x,clookup.x);
+
 	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 	//return vec4(100*dist.xy,100*dlookup.z,1.0);//dlookup.rb,1);
 	
@@ -252,46 +262,74 @@ float4 PS_Main(transformedVertex IN): SV_TARGET
 	vec2 centre		=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along));
 	vec2 diff		=IN.screenPos-centre;
 	float d			=length(diff)/IN.width;
-//	br				*=exp(-2.0*d);
+	br				*=exp(-20.0*d);
 	if(br<0)
 		br=0;
-	float4 colour	=br*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	vec4 colour		=br*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
 	
     return colour;
 }
 
-float4 PS_Thin(transformedThinVertex IN): SV_TARGET
+shader vec4 PS_Main_ReverseDepth(transformedVertex IN): SV_TARGET
+{
+	return PS_Main(IN,true);
+}
+
+shader vec4 PS_Main_ForwardDepth(transformedVertex IN): SV_TARGET
+{
+	return PS_Main(IN,false);
+}
+
+vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 {
 	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec4 dlookup 		=texture_clamp(depthTexture,texc.xy);
 	vec4 clookup 		=texture_clamp(cloudDepthTexture,texc.xy);
-#if REVERSE_DEPTH==1
-	float depth			=max(dlookup.x,clookup.x);
-#else
-	float depth			=min(dlookup.x,clookup.x);
-#endif
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	float depth=0;
+	if(reverseDepth)
+		depth			=max(dlookup.x,clookup.x);
+	else
+		depth			=min(dlookup.x,clookup.x);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
 	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 	//if(dist.x<dist.y)
 	//	discard;
 	
-	float4 colour=lightningColour*IN.texCoords.w;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	vec4 colour=lightningColour*IN.texCoords.w;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
     return colour;
 }
 
+shader vec4 PS_Thin_ReverseDepth(transformedThinVertex IN): SV_TARGET
+{
+	return PS_Thin(IN,true);
+}
+
+shader vec4 PS_Thin_ForwardDepth(transformedThinVertex IN): SV_TARGET
+{
+	return PS_Thin(IN,false);
+}
+
 technique lightning_thick
 {
-    pass p0 
+    pass reverse_depth 
     {
-		SetDepthStencilState(TestDepth,0);
         SetRasterizerState(RenderNoCull);
 		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
         SetGeometryShader( CompileShader(gs_5_0, GS_Thick()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Main_ReverseDepth()));
+    }
+    pass forward_depth 
+    {
+        SetRasterizerState(RenderNoCull);
+		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
+        SetGeometryShader( CompileShader(gs_5_0, GS_Thick()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Main_ForwardDepth()));
     }
 }
 RasterizerState lightningLineRasterizer
@@ -310,27 +348,20 @@ RasterizerState lightningLineRasterizer
 
 technique lightning_thin
 {
-    pass p0 
+    pass reverse_depth 
     {
-		SetDepthStencilState(TestDepth,0);
         SetRasterizerState(lightningLineRasterizer);
 		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Thin()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ReverseDepth()));
     }
-}
-
-
-technique test
-{
-    pass p0
+    pass forward_depth 
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+        SetRasterizerState(lightningLineRasterizer);
+		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Test()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ForwardDepth()));
     }
 }

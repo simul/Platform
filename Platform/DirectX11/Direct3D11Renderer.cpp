@@ -99,21 +99,6 @@ void TrueSkyRenderer::RecompileShaders()
 		simulHDRRenderer->RecompileShaders();
 }
 
-void TrueSkyRenderer::ReverseDepthChanged()
-{
-	if(renderPlatform)
-		renderPlatform->SetReverseDepth(ReverseDepth);
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
-	if(simulHDRRenderer)
-		simulHDRRenderer->SetReverseDepth(ReverseDepth);
-	if(baseTerrainRenderer)
-		baseTerrainRenderer->SetReverseDepth(ReverseDepth);
-	if(oceanRenderer)
-		oceanRenderer->SetReverseDepth(ReverseDepth);
-	RecompileShaders();
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m)
 	:trueSkyRenderer(env,s,m)

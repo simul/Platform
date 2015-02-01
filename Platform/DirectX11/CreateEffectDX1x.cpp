@@ -682,7 +682,7 @@ ERRNO_CHECK
 			simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
 		}
 	}
-	else if(errorMsgs)
+	if(errorMsgs)
 	{
 		char *errs=(char*)errorMsgs->GetBufferPointer();
 		std::string err(errs);

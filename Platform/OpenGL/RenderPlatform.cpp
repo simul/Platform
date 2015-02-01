@@ -53,7 +53,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 void RenderPlatform::RecompileShaders()
 {
 	std::map<std::string,std::string> defines;
-	defines["REVERSE_DEPTH"]="0";
 	SAFE_DELETE(solidEffect);
 	solidEffect	=CreateEffect("solid",defines);
 	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
@@ -322,7 +321,7 @@ glDisable(GL_CULL_FACE);
 	Viewport viewport;
 	glGetIntegerv(GL_VIEWPORT,(int*)(&viewport));
 	GL_ERROR_CHECK
-	effect->Apply(deviceContext,effect->GetTechniqueByName("show_depth"),0);
+	effect->Apply(deviceContext,effect->GetTechniqueByName("show_depth"),frustum.reverseDepth?"reverse_depth":"forward_depth");
 	GL_ERROR_CHECK
 	effect->SetParameter("tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
 	effect->SetParameter("depthToLinFadeDistParams",depthToLinFadeDistParams);
@@ -340,7 +339,8 @@ glDisable(GL_CULL_FACE);
 GL_ERROR_CHECK
 }
 
-void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)
+void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
+	,crossplatform::EffectTechnique *technique,const char *pass)
 {
 	struct Viewport
 	{
@@ -352,7 +352,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 	Viewport viewport;
 	glGetIntegerv(GL_VIEWPORT,(int*)(&viewport));
 	GL_ERROR_CHECK
-	effect->Apply(deviceContext,technique,0);
+	effect->Apply(deviceContext,technique,pass);
 	GL_ERROR_CHECK
 	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height

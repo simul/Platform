@@ -153,11 +153,7 @@ void BaseOpticsRenderer::SetOpticsConstants(OpticsConstants &c,const crossplatfo
 	c.invProj	=invProj;
 	c.view.transpose();
 	c.invProj.transpose();
-	bool ReverseDepth=true;
-	if(ReverseDepth)
-	{
-		simul::crossplatform::ConvertReversedToRegularProjectionMatrix(proj);
-	}
+	
 
 	simul::math::Matrix4x4 viewproj,ivp;
 	simul::math::Multiply4x4(viewproj,view,proj);

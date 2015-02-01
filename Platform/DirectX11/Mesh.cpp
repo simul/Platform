@@ -48,7 +48,6 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygon
 		D3DX11_PASS_DESC PassDesc;
 		crossplatform::Effect *effect=NULL;
 		std::map<std::string,std::string> defines;
-	//defines["REVERSE_DEPTH"]	=ReverseDepth?"1":"0";
 		effect=renderPlatform->CreateEffect("solid",defines);
 		crossplatform::EffectTechnique *tech	=effect->GetTechniqueByName("solid");
 		tech->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);

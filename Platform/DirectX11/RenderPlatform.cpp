@@ -223,8 +223,6 @@ void RenderPlatform::RecompileShaders()
 	if(!device)
 		return;
 	std::map<std::string, std::string> defines;
-	if (reverseDepth)
-		defines["REVERSE_DEPTH"] = "1";
 	m_pDebugEffect=CreateEffect("debug",defines);
 	solidEffect=CreateEffect("solid",defines);
 	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
@@ -263,10 +261,6 @@ void RenderPlatform::EndRender(crossplatform::DeviceContext &)
 	/*glUseProgram(0);
 	glPopAttrib();
 	glPopAttrib();*/
-}
-void RenderPlatform::SetReverseDepth(bool r)
-{
-	reverseDepth=r;
 }
 
 namespace
@@ -1259,11 +1253,12 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 			,2.f*(float)dx/(float)viewport.Width
 			,2.f*(float)dy/(float)viewport.Height
-			,m_pDebugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique());
+			,m_pDebugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique(),frustum.reverseDepth?"reverse_depth":"forward_depth");
 	}
 }
 
-void RenderPlatform::DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique)
+void RenderPlatform::DrawQuad		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
+	,crossplatform::EffectTechnique *technique,const char *pass)
 {
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
 	ID3DX11Effect			*eff		=effect->asD3DX11Effect();
@@ -1279,7 +1274,7 @@ void RenderPlatform::DrawQuad		(crossplatform::DeviceContext &deviceContext,int 
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 			,2.f*(float)dx/(float)viewport.Width
 			,2.f*(float)dy/(float)viewport.Height
-			,eff,tech);
+			,eff,tech,pass);
 	}
 }
 

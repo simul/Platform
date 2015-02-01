@@ -69,7 +69,6 @@ namespace simul
 				,float gamma);
 			// Different kinds of view for Render() to call:
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
-			void ReverseDepthChanged();
 
 			terrain::BaseSeaRenderer					*oceanRenderer;
 		};

@@ -114,10 +114,10 @@ shader vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
 	return res;
 }
 
-shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
+vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth) 
 {
 	vec4 depth		=texture_nearest_lod(imageTexture,IN.texCoords,0);
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
 	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
     vec4 result		=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
 	//if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
@@ -128,20 +128,41 @@ shader vec4 ShowDepthPS(posTexVertexOutput IN) : SV_TARGET
 	return result;
 }
 
-shader vec4 ShowDepthMS_PS(posTexVertexOutput IN) : SV_TARGET
+shader vec4 PS_ShowDepth_Forward(posTexVertexOutput IN) : SV_TARGET
+{
+	return ShowDepthPS(IN,false);
+}
+
+shader vec4 PS_ShowDepth_Reverse(posTexVertexOutput IN) : SV_TARGET
+{
+	return ShowDepthPS(IN,true);
+}
+
+
+vec4 ShowDepthMS_PS(posTexVertexOutput IN,bool reverseDepth) 
 {
 	uint2 dims;
 	uint numSamples;
 	GET_DIMENSIONS_MSAA(imageTextureMS,dims.x,dims.y,numSamples);
 	int2 pos		=int2(IN.texCoords.xy*vec2(dims.xy));
 	vec4 depth		=IMAGE_LOAD_MSAA(imageTextureMS,pos,0);
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
 	vec2 dist		=depthToFadeDistance(depth.xx,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
 	vec4 result=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
 	if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
 		||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
 		result*=0.25;
 	return result;
+}
+
+shader vec4 PS_ShowDepthMS_Forward(posTexVertexOutput IN) : SV_TARGET
+{
+	return ShowDepthMS_PS(IN,false);
+}
+
+shader vec4 PS_ShowDepthMS_Reverse(posTexVertexOutput IN) : SV_TARGET
+{
+	return ShowDepthMS_PS(IN,true);
 }
 struct vec3input
 {
@@ -358,26 +379,44 @@ technique draw_cubemap_sphere
 
 technique show_depth
 {
-    pass p0
+    pass reverse_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
-		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowDepth_Reverse()));
+    }
+    pass forward_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowDepth_Forward()));
     }
 }
 technique show_depth_ms
 {
-    pass p0
+    pass reverse_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
-		SetPixelShader(CompileShader(ps_5_0,ShowDepthMS_PS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthMS_Reverse()));
+    }
+    pass forward_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthMS_Forward()));
     }
 }
 #ifndef GLSL

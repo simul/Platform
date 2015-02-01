@@ -18,7 +18,7 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	uniform float starBrightness;
 
 	uniform float radiusRadians;
-	uniform float overcast;
+	uniform float isForwardDepth;
 	uniform float overcastBaseKm;
 	uniform float overcastRangeKm;
 	

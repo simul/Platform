@@ -17,7 +17,6 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,mirrorYText(false)
 	,textRenderer(NULL)
 	,solidEffect(NULL)
-	,reverseDepth(false)
 {
 }
 
