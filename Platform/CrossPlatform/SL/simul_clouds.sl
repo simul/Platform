@@ -337,6 +337,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,Texture2D inscTexture
 											,Texture2D skylTexture,Texture3D inscatterVolumeTexture
                                             ,bool do_depth_mix
+											,DepthIntepretationStruct depthInterpretationStruct
 											,vec4 dlookup
 											,vec2 texCoords
 											,bool noise
@@ -346,7 +347,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,vec3 cloudIrRadiance2)
 {
 	RaytracePixelOutput res;
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	res.colour				=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
 	res.depth				=0.0;

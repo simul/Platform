@@ -7,6 +7,7 @@
 #define IN_COMPUTE_SHADER
 #define shader
 #define technique technique11
+#define group fxgroup
 #define f32touint16 f32tof16
 #define texture_clamp_mirror(tex,texc) tex.Sample(samplerStateClampMirror,texc)
 #define texture_clamp(tex,texc) tex.Sample(clampSamplerState,texc)

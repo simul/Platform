@@ -376,7 +376,7 @@ technique simul_clouds_2d_msaa
 		SetPixelShader(CompileShader(ps_5_0,PS_msaa_depthTexture()));
     }
     pass depth_check
-{
+	{
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(TestDepth,0);
 		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);

@@ -90,7 +90,7 @@ technique terrain
     pass base 
     {
 		SetRasterizerState(RenderFrontfaceCull);
-		SetDepthStencilState(EnableDepth,0);
+		//SetDepthStencilState(EnableDepth,0);
 		SetBlendState(DontBlend,float4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
@@ -103,7 +103,7 @@ technique test_alpha_to_coverage
     pass base 
     {
 		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(EnableDepth,0);
+		//SetDepthStencilState(EnableDepth,0);
 		SetBlendState(AlphaToCoverageBlend,float4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_TestAlphaToCoverage()));
         SetGeometryShader(NULL);

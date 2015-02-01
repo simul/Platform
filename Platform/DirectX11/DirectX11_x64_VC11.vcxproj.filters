@@ -368,5 +368,8 @@
     <None Include="..\CrossPlatform\SL\debug_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\common.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
 </Project>

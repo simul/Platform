@@ -202,12 +202,11 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 				,Texture2D depthTexture
 				//,int2 fullResDims
 				,mat4 invViewProj
-				,vec4 depthToLinFadeDistParams
+				,DepthIntepretationStruct depthInterpretationStruct
 				,vec2 lowResTexCoords
 				,Texture3D screenSpaceInscVolumeTexture
 				,Texture2D shadowTexture)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	TwoColourCompositeOutput res;
 	//res.multiply=vec4(1,1,0.5,1);
 	//res.add=vec4(texCoords.xy,0,1);
@@ -261,13 +260,12 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 													,int2 fullResDims
 													,mat4 invViewProj
 													,vec4 viewportToTexRegionScaleBias
-													,vec4 depthToLinFadeDistParams
+													,DepthIntepretationStruct depthInterpretationStruct
 													,vec4 fullResToLowResTransformXYWH
 													,Texture3D screenSpaceInscVolumeTexture
 													,Texture3D lightSpaceInscVolumeTexture
 													,Texture2D shadowTexture)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,REVERSE_DEPTH};
 	vec4 shadow_lookup			=texture_clamp(shadowTexture,texCoords);
 	vec4 clip_pos				=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x					+=2.0*texCoords.x;
@@ -305,25 +303,33 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 	vec2 loss_texc				=vec2(0,0.5*(1.f-sine));
 	if(hires_edge>0.0)
 	{
-#if REVERSE_DEPTH==1
-		float nearestDepth=0.0;
-		float furthestDepth=1.0;
-#else
-		float nearestDepth=1.0;
-		float furthestDepth=0.0;
-#endif
+		float nearestDepth;
+		float furthestDepth;
+		if(depthInterpretationStruct.reverseDepth)
+		{
+			nearestDepth=0.0;
+			furthestDepth=1.0;
+		}
+		else
+		{
+			nearestDepth=1.0;
+			furthestDepth=0.0;
+		}
 		float depths[8];
 		for(int k=0;k<numSamples;k++)
 		{
 			float d					=IMAGE_LOAD_MSAA(depthTextureMS,fullres_depth_pos2,k).x;
 			depths[k]				=d;
-#if REVERSE_DEPTH==1
+if(depthInterpretationStruct.reverseDepth)
+{
 			nearestDepth			=max(nearestDepth,d);
 			furthestDepth			=min(furthestDepth,d);
-#else
+}
+else
+{
 			nearestDepth			=min(nearestDepth,d);
 			furthestDepth			=max(furthestDepth,d);
-#endif
+}
 		}
 		float nearestDist			=depthToLinearDistance(nearestDepth		,depthInterpretationStruct);
 		float furthestDist			=depthToLinearDistance(furthestDepth	,depthInterpretationStruct);
@@ -350,11 +356,12 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		for(int j=0;j<numSamples;j++)
 		{
 			float hiresDepth	=depths[j];
-#if REVERSE_DEPTH==1
+if(depthInterpretationStruct.reverseDepth)
+{
 			float u				=saturate(step(0.0,-hiresDepth));
-#else
+}else{
 			float u				=saturate(step(1.0,hiresDepth));
-#endif
+}
 			trueDist			=depthToLinearDistance(hiresDepth,depthInterpretationStruct);
 			float hiResInterp	=saturate((nearFarDist.y-trueDist)/nearFarDist.z);
 
@@ -399,11 +406,8 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		vec4 insc				= texture_clamp_lod(farInscatterTexture, lowResTexCoords, 0);
 #endif
 		insc					*=  cloud.a;
-#if REVERSE_DEPTH==1
-		insc					+=cloud;// *saturate(step(0.0, -low_res_depths.x));
-#else
-		insc					+=cloud;// *saturate(step(1.0, low_res_depths.x));
-#endif
+
+		insc					+=cloud;
 		res.add = insc;
 		loss_texc.x = sqrt(dist);
 		vec4 loss				=texture_clamp_lod(loss2dTexture,loss_texc,0);

@@ -132,7 +132,7 @@ technique solid
     pass base 
     {
 		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(EnableDepth,0);
+		//SetDepthStencilState(EnableDepth,0);
 		SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Solid()));
         SetGeometryShader(NULL);
@@ -146,7 +146,7 @@ technique transparent
     pass base 
     {
 		SetRasterizerState(RenderBackfaceCull);
-		SetDepthStencilState(EnableDepth,0);
+		//SetDepthStencilState(EnableDepth,0);
 		SetBlendState(AlphaBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Solid()));
         SetGeometryShader(NULL);

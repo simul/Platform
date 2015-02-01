@@ -44,27 +44,6 @@ shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	output[pos].rgba=res;
 }
 
-shader posTexVertexOutput VS_FullScreen(idOnly IN)
-{
-    posTexVertexOutput OUT;
-	vec2 poss[4]=
-	{
-		{ 1.0,-1.0},
-		{ 1.0, 1.0},
-		{-1.0,-1.0},
-		{-1.0, 1.0},
-	};
-	vec2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(pos,0.0,1.0);
-	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#if REVERSE_DEPTH==1
-	OUT.hPosition.z	=0.0; 
-#else
-	OUT.hPosition.z	=OUT.hPosition.w; 
-#endif
-    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
-	return OUT;
-}
 // Given texture position from texCoords, convert to a worldpos with shadowMatrix.
 // Then, trace towards sun to find initial intersection with cloud volume
 // Then trace down to find first intersection with clouds, if any.
@@ -90,7 +69,7 @@ float CloudsOcclusion(Texture3D cloudDensity1,Texture3D cloudDensity2,Texture3D 
 	return 0.f;
 }
 
-shader vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
+vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec4 dlookup 	=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords =  mixedResTransformXYWH.xy + IN.texCoords.xy*mixedResTransformXYWH.zw;
@@ -99,7 +78,7 @@ shader vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 	clip_pos.x += 2.0*texCoords.x;
 	clip_pos.y -= 2.0*texCoords.y;
 	vec3 view = normalize(mul(invViewProj, clip_pos).xyz);
-	
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2,cloudDensity
@@ -114,6 +93,7 @@ shader vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 									,inscTexture
 									,skylTexture,volumeInscatterTexture
 									,false
+									,depthInterpretationStruct
 									,dlookup
 									,texCoords
 									,false
@@ -121,12 +101,22 @@ shader vec4 PS_SimpleRaytrace(posTexVertexOutput IN) : SV_TARGET
 									,false
 									,cloudIrRadiance1,cloudIrRadiance2
 									);
-	//p.colour.rgb = view;
-	//p.colour.a = 0.0;
+
 	if(p.colour.a>=1.0)
 	   discard;
 	return p.colour;
 }
+
+shader vec4 PS_SimpleRaytrace_depthForward(posTexVertexOutput IN) : SV_TARGET
+{
+	return SimpleRaytrace(IN,false);
+}
+
+shader vec4 PS_SimpleRaytrace_depthReverse(posTexVertexOutput IN) : SV_TARGET
+{
+	return SimpleRaytrace(IN,true);
+}
+
 
 struct FarNearPixelOutput
 {
@@ -136,11 +126,11 @@ struct FarNearPixelOutput
 	float depth			SIMUL_DEPTH_OUTPUT;
 };
 
-shader FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
+FarNearPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
 	RaytracePixelOutput f	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2,cloudDensity
@@ -155,6 +145,7 @@ shader FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 									,inscTexture
 									,skylTexture,volumeInscatterTexture
 									,true
+									,depthInterpretationStruct
 									,dlookup
 									,texCoords
 									,true
@@ -170,12 +161,21 @@ shader FarNearPixelOutput PS_Raytrace3DNoiseBothPasses(posTexVertexOutput IN)
 	return fn;
 }
 
-shader FarNearPixelOutput PS_Raytrace3DNoiseNoRainBothPasses(posTexVertexOutput IN)
+shader FarNearPixelOutput PS_Raytrace_depthReverse(posTexVertexOutput IN)
+{
+	return PS_Raytrace(IN,true);
+}
+
+shader FarNearPixelOutput PS_Raytrace_depthForward(posTexVertexOutput IN)
+{
+	return PS_Raytrace(IN,false);
+}
+
+shader FarNearPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
-	
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
 	RaytracePixelOutput f	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2,cloudDensity
@@ -190,6 +190,7 @@ shader FarNearPixelOutput PS_Raytrace3DNoiseNoRainBothPasses(posTexVertexOutput 
 									,inscTexture
 									,skylTexture,volumeInscatterTexture
 									,true
+									,depthInterpretationStruct
 									,dlookup
 									,texCoords
 									,true
@@ -201,33 +202,25 @@ shader FarNearPixelOutput PS_Raytrace3DNoiseNoRainBothPasses(posTexVertexOutput 
 	FarNearPixelOutput fn;
 	fn.farColour=f.colour;
 	fn.nearColour = f.nearColour;
+	//fn.nearColour	=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,0);
 	fn.nearFarDepth = f.nearFarDepth;
 	fn.depth	=f.depth;
 	return fn;
 }
 
+shader FarNearPixelOutput PS_RaytraceNoRain_depthReverse(posTexVertexOutput IN)
+{
+	return PS_RaytraceNoRain(IN,true);
+}
+
+shader FarNearPixelOutput PS_RaytraceNoRain_depthForward(posTexVertexOutput IN)
+{
+	return PS_RaytraceNoRain(IN,false);
+}
 
 shader posTexVertexOutput VS_CrossSection(idOnly IN)
 {
-    posTexVertexOutput OUT;
-	vec2 poss[4]=
-	{
-		{ 1.0, 0.0},
-		{ 1.0, 1.0},
-		{ 0.0, 0.0},
-		{ 0.0, 1.0},
-	};
-	vec2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
-	//OUT.hPosition	=vec4(pos,0.0,1.0);
-	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#if REVERSE_DEPTH==1
-	OUT.hPosition.z	=0.0; 
-#else
-	OUT.hPosition.z	=OUT.hPosition.w; 
-#endif
-    OUT.texCoords	=pos;
-    return OUT;
+	return VS_ScreenQuad(IN,rect);
 }
 
 shader vec4 PS_Simple( posTexVertexOutput IN):SV_TARGET
@@ -301,40 +294,64 @@ BlendState Blend1
 };
 
 
-VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_FullScreen());
+VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_SimpleFullscreen());
 
 fxgroup raytrace
 {
 	technique simple
 	{
-		pass far 
+		pass depth_reverse
 		{
 			SetDepthStencilState(DisableDepth,0);
 			SetRasterizerState( RenderNoCull );
 			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace()));
+			SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace_depthReverse()));
+		}
+		pass depth_forward 
+		{
+			SetDepthStencilState(DisableDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(vs_fullscreen_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace_depthForward()));
 		}
 	}
+
 	technique full
 	{
-		pass both 
+		pass depth_reverse 
 		{
 			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
 			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseBothPasses()));
+			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace_depthReverse()));
+		}
+		pass depth_forward 
+		{
+			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetDepthStencilState(WriteDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(vs_fullscreen_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace_depthForward()));
 		}
 	}
 	technique no_rain
 	{
-		pass both 
+		pass depth_reverse 
 		{
 			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(WriteDepth,0);
 			SetRasterizerState( RenderNoCull );
 			SetVertexShader(vs_fullscreen_5_0);
-			SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoiseNoRainBothPasses()));
+			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNoRain_depthReverse()));
+		}
+		pass depth_forward 
+		{
+			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetDepthStencilState(WriteDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(vs_fullscreen_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNoRain_depthForward()));
 		}
 	}
 }

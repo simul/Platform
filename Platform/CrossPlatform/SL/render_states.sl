@@ -7,15 +7,14 @@ DepthStencilState DisableDepth
 	DepthWriteMask = ZERO;
 }; 
 
+// We DO NOT here specify what kind of depth test to do - it depends on the projection matrix.
+// So any shader that uses this MUST have code to set the depth state.
+// Remember that for REVERSE_DEPTH projection we use DepthFunc = GREATER_EQUAL
+// but for Forward Depth matrices we use DepthFunc = LESS_EQUAL
 DepthStencilState TestDepth
 {
 	DepthEnable = TRUE;
 	DepthWriteMask = ZERO;
-#if REVERSE_DEPTH==1
-	DepthFunc = GREATER_EQUAL;
-#else
-	DepthFunc = LESS_EQUAL;
-#endif
 };
 
 DepthStencilState TestReverseDepth

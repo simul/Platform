@@ -4,15 +4,6 @@
 // Enable the following to use a 3-parameter depth conversion, for possible slight speed improvement
 #define NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
 
-#ifdef __PSSL__
-#ifdef REVERSE_DEPTH
-#define REVERSE_DEPTH1
-#endif
-#else
-#if REVERSE_DEPTH==1
-#define REVERSE_DEPTH1
-#endif
-#endif
 
 struct DepthIntepretationStruct
 {

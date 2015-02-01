@@ -234,8 +234,6 @@ void RenderPlatform::SetStandardRenderState	(DeviceContext &deviceContext,Standa
 	SetRenderState(deviceContext,standardRenderStates[s]);
 }
 
-
-
 void RenderPlatform::PushTexturePath(const char *path_utf8)
 {
 	texturePathsUtf8.push_back(path_utf8);

@@ -506,7 +506,7 @@ technique ocean
     pass p0 
     {
 		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( EnableDepth, 0 );
+		//SetDepthStencilState( EnableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,OceanSurfVS()));
 		SetGeometryShader(NULL);

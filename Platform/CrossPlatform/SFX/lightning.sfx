@@ -285,7 +285,7 @@ technique lightning_thick
 {
     pass p0 
     {
-		SetDepthStencilState(TestDepth,0);//
+		SetDepthStencilState(TestDepth,0);
         SetRasterizerState(RenderNoCull);
 		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);

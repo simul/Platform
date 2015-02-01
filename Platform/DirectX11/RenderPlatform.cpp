@@ -495,8 +495,6 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	simul::math::Multiply4x4(viewproj,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	simul::math::Matrix4x4 model(m);
 	simul::math::Multiply4x4(modelviewproj,model,viewproj);
-	//math::Vector3 dirToLight;
-	//simul::math::Multiply3(dirToLight,(const float*)&physicalLightRenderData.dirToLight,model);
 	solidConstants.worldViewProj=modelviewproj;
 	solidConstants.world=model;
 	
@@ -504,7 +502,9 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	solidConstants.lightDir			=physicalLightRenderData.dirToLight;
 	solidConstants.Apply(deviceContext);
 	solidConstants.Apply(deviceContext);
-	
+	simul::crossplatform::Frustum frustum			=simul::crossplatform::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
+	SetStandardRenderState(deviceContext,frustum.reverseDepth?crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL:crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
+
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	solidEffect->asD3DX11Effect()->GetTechniqueByName("solid")->GetPassByIndex(0)->Apply(0,pContext);
 }

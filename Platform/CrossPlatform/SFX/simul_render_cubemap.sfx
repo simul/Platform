@@ -34,13 +34,6 @@ shader float4 CubemapPS(v2f IN) : SV_TARGET
     return float4(c.rgb,1.f);
 }
 
-DepthStencilState EnableDepth
-{
-	DepthEnable = TRUE;
-	DepthWriteMask = ALL;
-	DepthFunc = LESS_EQUAL;
-};
-
 DepthStencilState DisableDepth
 {
 	DepthEnable = FALSE;

@@ -10,160 +10,68 @@ uniform TEXTURE2DMS_FLOAT4 sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2D sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);
 layout(rgba32f) uniform RW_TEXTURE2D_FLOAT4 target2DTexture SIMUL_RWTEXTURE_REGISTER(1);
 
-shader vec4 PS_HalfscaleInitial(posTexVertexOutput IN):SV_Target
+shader vec4 PS_HalfscaleInitial_ReverseDepth(posTexVertexOutput IN):SV_Target
 {
 	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 res	=HalfscaleInitial(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthToLinFadeDistParams);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,true};
+	vec4 res	=HalfscaleInitial(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct,false);
 	return res;
 }
 
-shader vec4 PS_HalfscaleInitial_MSAA1(posTexVertexOutput IN):SV_Target
+shader vec4 PS_HalfscaleInitial_ForwardDepth(posTexVertexOutput IN):SV_Target
 {
 	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),1,pos,depthToLinFadeDistParams);
-	return u;
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,false};
+	vec4 res	=HalfscaleInitial(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct,false);
+	return res;
 }
-
-shader vec4 PS_HalfscaleInitial_MSAA2(posTexVertexOutput IN):SV_Target
+shader vec4 PS_HalfscaleOnly_ReverseDepth(posTexVertexOutput IN):SV_Target
 {
 	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),2,pos,depthToLinFadeDistParams);
-	return u;
-}
-
-shader vec4 PS_HalfscaleInitial_MSAA4(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 r		=HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),4,pos,depthToLinFadeDistParams);
-	return r;
-}
-
-shader vec4 PS_HalfscaleInitial_MSAA8(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),8,pos,depthToLinFadeDistParams);
-	return u;
-}
-
-shader vec4 PS_HalfscaleInitial_MSAA16(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),16,pos,depthToLinFadeDistParams);
-	return u;
-}
-
-shader vec4 PS_Halfscale(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 res	=Halfscale(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthToLinFadeDistParams);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,true};
+	vec4 res	=HalfscaleInitial(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct,true);
 	return res;
 }
 
-shader vec4 PS_DownscaleDepthFarNear(posTexVertexOutput IN):SV_Target
+shader vec4 PS_HalfscaleOnly_ForwardDepth(posTexVertexOutput IN):SV_Target
 {
 	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 res	=DownscaleDepthFarNear(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,scale,depthToLinFadeDistParams);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,false};
+	vec4 res	=HalfscaleInitial(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct,true);
 	return res;
 }
 
-shader vec4 PS_DownscaleDepthFarNear2(posTexVertexOutput IN):SV_Target
+
+shader vec4 PS_HalfscaleInitial_MSAA_ReverseDepth(posTexVertexOutput IN):SV_Target
 {
 	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 res	=DownscaleDepthFarNear2(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthToLinFadeDistParams);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,true};
+	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),1,pos,depthInterpretationStruct);
+	return u;
+}
+
+shader vec4 PS_HalfscaleInitial_MSAA_ForwardDepth(posTexVertexOutput IN):SV_Target
+{
+	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,false};
+	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),1,pos,depthInterpretationStruct);
+	return u;
+}
+
+shader vec4 PS_Halfscale_ReverseDepth(posTexVertexOutput IN):SV_Target
+{
+	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,true};
+	vec4 res	=Halfscale(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct);
 	return res;
 }
 
-shader vec4 PS_DownscaleDepthFarNear_MSAA1(posTexVertexOutput IN):SV_Target
+shader vec4 PS_Halfscale_ForwardDepth(posTexVertexOutput IN):SV_Target
 {
 	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 u		= DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),1,pos,int2(scale),depthToLinFadeDistParams);
-	return u;
-}
-
-shader vec4 PS_DownscaleDepthFarNear_MSAA2(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 u		= DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),2,pos,int2(scale),depthToLinFadeDistParams);
-	return u;
-}
-
-shader vec4 PS_DownscaleDepthFarNear_MSAA4(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 r		= DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(scale),4,pos,int2(scale),depthToLinFadeDistParams);
-	return r;
-}
-
-shader vec4 PS_DownscaleDepthFarNear_MSAA8(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 u		= DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(scale),8,pos,int2(scale),depthToLinFadeDistParams);
-	return u;
-}
-
-shader vec4 PS_DownscaleDepthFarNear_MSAA16(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	vec4 u		= DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(scale),16,pos,int2(scale),depthToLinFadeDistParams);
-	return u;
-}
-
-CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear2(uint3 pos : SV_DispatchThreadID )
-{
-	vec4 res	=DownscaleDepthFarNear2(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),int2(pos.xy),depthToLinFadeDistParams);
-
-	IMAGE_STORE(target2DTexture,int2(pos.xy),res);
-}
-
-CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear4(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
-{
-	uint3 pos = g * 8 + t;
-	vec4 res	=DownscaleDepthFarNear4(sourceDepthTexture,source_dims,source_offset,int2(cornerOffset),int2(pos.xy),depthToLinFadeDistParams);
-	IMAGE_STORE(target2DTexture,pos.xy,res);
-}
-	
-CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
-{
-	uint3 pos = g * 8 + t;
-	vec4 res	=DownscaleDepthFarNear(sourceDepthTexture,source_dims,source_offset,int2(cornerOffset),int2(pos.xy),vec2(scale),depthToLinFadeDistParams);
-	IMAGE_STORE(target2DTexture,int2(pos.xy),res);
-}
-CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear_MSAA1(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
-{
-	uint3 pos = g * 8 + t;
-	IMAGE_STORE(target2DTexture,pos.xy,DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),1,int2(pos.xy),int2(scale),depthToLinFadeDistParams));
-}
-
-CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear_MSAA2(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
-{
-	uint3 pos = g * 8 + t;
-	IMAGE_STORE(target2DTexture,pos.xy,DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),2,int2(pos.xy),int2(scale),depthToLinFadeDistParams));
-}
-
-CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear_MSAA4(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
-{
-	uint3 pos = g * 8 + t;
-	IMAGE_STORE(target2DTexture,pos.xy,DownscaleDepthFarNear_MSAA4(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),int2(pos.xy),int2(scale),depthToLinFadeDistParams));
-}
-
-CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear_MSAA8(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
-{
-	uint3 pos = g * 8 + t;
-	IMAGE_STORE(target2DTexture,pos.xy,DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),8,int2(pos.xy),int2(scale),depthToLinFadeDistParams));
-}
-
-CS_LAYOUT(8,8,1)
-shader void CS_DownscaleDepthFarNear_MSAA16(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
-{
-	uint3 pos = g * 8 + t;
-	IMAGE_STORE(target2DTexture,pos.xy,DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),16,int2(pos.xy),int2(scale),depthToLinFadeDistParams));
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,false};
+	vec4 res	=Halfscale(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct);
+	return res;
 }
 
 shader vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
@@ -177,163 +85,89 @@ shader vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
 VertexShader vs_simple_fullscreen=CompileShader(vs_5_0,VS_SimpleFullscreen());
 technique halfscale_initial
 {
-    pass main
+    pass reverse_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(vs_simple_fullscreen);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial()));
+		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_ReverseDepth()));
     }
-    pass msaa1
+    pass forward_depth
     {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(vs_simple_fullscreen);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_MSAA1()));
-    }
-    pass msaa2
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_MSAA2()));
-    }
-    pass msaa4
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_MSAA4()));
-    }
-    pass msaa8
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_MSAA8()));
-    }
-    pass msaa16
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_MSAA16()));
+		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_ForwardDepth()));
     }
 }
+
+technique halfscale_only
+{
+    pass reverse_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(vs_simple_fullscreen);
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleOnly_ReverseDepth()));
+    }
+    pass forward_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(vs_simple_fullscreen);
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleOnly_ForwardDepth()));
+    }
+}
+
+technique halfscale_initial_msaa
+{
+    pass reverse_depth
+    {
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetVertexShader(vs_simple_fullscreen);
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_MSAA_ReverseDepth()));
+    }
+    pass forward_depth
+    {
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetVertexShader(vs_simple_fullscreen);
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_MSAA_ForwardDepth()));
+    }
+}
+
 technique halfscale
 {
-    pass main
+    pass reverse_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(vs_simple_fullscreen);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_Halfscale()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Halfscale_ReverseDepth()));
     }
-}
-technique downscale_depth_far_near
-{
-    pass main
+    pass forward_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(vs_simple_fullscreen);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_DownscaleDepthFarNear()));
-    }
-    pass msaa1
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_DownscaleDepthFarNear_MSAA1()));
-    }
-    pass msaa2
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_DownscaleDepthFarNear_MSAA2()));
-    }
-    pass msaa4
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_DownscaleDepthFarNear_MSAA4()));
-    }
-    pass msaa8
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_DownscaleDepthFarNear_MSAA8()));
-    }
-    pass msaa16
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_DownscaleDepthFarNear_MSAA16()));
-    }
-}
-technique cs_downscale_depth_far_near
-{
-    pass main
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear()));
-    }
-    pass main2
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear2()));
-    }
-    pass main4
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear4()));
-    }
-    pass msaa1
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear_MSAA1()));
-    }
-    pass msaa2
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear_MSAA2()));
-    }
-    pass msaa4
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear_MSAA4()));
-    }
-    pass msaa8
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear_MSAA8()));
-    }
-    pass msaa16
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear_MSAA16()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Halfscale_ForwardDepth()));
     }
 }
 

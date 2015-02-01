@@ -1,7 +1,7 @@
 #ifndef SIMUL_2D_CLOUDS_SL
 #define SIMUL_2D_CLOUDS_SL
 
-void Clouds2DVS(in vec3 position,in vec4 mixedResTransformXYWH,out vec4 hPosition,out vec4 clip_pos,out vec3 wPosition)
+void Clouds2DVS(in vec3 position,in vec4 mixedResTransformXYWH,out vec4 hPosition,out vec4 clip_pos,out vec3 wPosition,bool reverseDepth)
 {
 	vec3 pos			=maxCloudDistanceMetres*position.xyz;
 	pos.z				+=origin.z;
@@ -13,13 +13,16 @@ void Clouds2DVS(in vec3 position,in vec4 mixedResTransformXYWH,out vec4 hPositio
 	clip_pos			=mul(worldViewProj,vec4(pos.xyz,1.0));
 //	clip_pos.xy			=-2*mixedResTransformXYWH.xy*clip_pos.w+clip_pos.xy*mixedResTransformXYWH.zw;
 	// Prevent clipping:
-#if REVERSE_DEPTH==1
-	if(clip_pos.z<0)
-		clip_pos.z=0;
-#else
-	if(clip_pos.z>clip_pos.w)
-		clip_pos.z=clip_pos.w;
-#endif
+	if(reverseDepth)
+	{
+		if(clip_pos.z<0)
+			clip_pos.z=0;
+	}
+	else
+	{
+		if(clip_pos.z>clip_pos.w)
+			clip_pos.z=clip_pos.w;
+	}
 	hPosition		=clip_pos;
     wPosition		=pos.xyz;
 }
