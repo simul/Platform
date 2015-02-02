@@ -3,10 +3,21 @@
 
 SIMUL_CONSTANT_BUFFER(LightningConstants,10)
 	uniform vec4 lightningColour;
+
 	uniform vec3 startPos;
-	uniform float pad12333;
+	uniform uint num_octaves;
+
 	uniform vec3 endPos;
-	uniform float pad1298;
+	uniform float strikeThicknessMetres;
+
+	uniform float roughness;
+	uniform float motion;
+	uniform uint numLevels;
+	uniform uint numBranches;
+
+	uniform float branchLengthMetres;
+	uniform uint branchInterval;
+	uniform float branchAngleRadians;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
@@ -16,6 +27,8 @@ SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
 	uniform vec2 viewportPixels;
 	uniform vec2 _line_width;
 	uniform vec2 tanHalfFov;
+	uniform float brightnessToUnity;
+	uniform float minPixelWidth;
 SIMUL_CONSTANT_BUFFER_END
 
 struct LightningVertex
@@ -33,8 +46,10 @@ struct LightningVertexInput
 struct LightningVertexOutput
 {
     vec4 position		: POSITION;
-    vec4 texCoords		: TEXCOORD0;
-	float depth			: TEXCOORD1;
+    float brightness	: TEXCOORD0;
+    float thicknessMetres	: TEXCOORD1;
+	float depth			: TEXCOORD2;
+	float endpoint			: TEXCOORD3;
 };
 #endif
 

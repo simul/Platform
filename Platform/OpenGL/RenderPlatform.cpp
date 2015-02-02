@@ -884,7 +884,7 @@ void *RenderPlatform::GetDevice()
 	return NULL;
 }
 
-void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &,int ,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout)
+void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &,int ,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout,const int *vertexStep)
 {
 	GL_ERROR_CHECK
 	glBindVertexArray(((opengl::Buffer*)buffers[0])->vao );
@@ -909,7 +909,7 @@ GL_ERROR_CHECK
 	}*/
 }
 
-void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplatform::Buffer *buffer)
+void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplatform::Buffer *buffer,int start_index)
 {
 }
 

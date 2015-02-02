@@ -912,7 +912,10 @@ void *RenderPlatform::GetDevice()
 	return device;
 }
 
-void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout)
+void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers
+	,crossplatform::Buffer **buffers
+	,const crossplatform::Layout *layout
+	,const int *vertexSteps)
 {
 	UINT offset = 0;
 	ID3D11Buffer *buf[10];
@@ -921,6 +924,8 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	for(int i=0;i<num_buffers;i++)
 	{
 		strides[i]=buffers[i]->stride;
+		if(vertexSteps&&vertexSteps[i]>=1)
+			strides[i]*=vertexSteps[i];
 		buf[i]=buffers[i]->AsD3D11Buffer();
 		offsets[i]=0;
 	}
@@ -931,12 +936,12 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 									offsets );						// array of offset values, one for each buffer
 };
 
-void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *vertexBuffer)
+void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *vertexBuffer,int start_index)
 {
 	ID3D11Buffer *b=NULL;
 	if(vertexBuffer)
 		b=vertexBuffer->AsD3D11Buffer();
-	UINT offset = 0;
+	UINT offset = vertexBuffer?(vertexBuffer->stride*start_index):0;
 	deviceContext.asD3D11DeviceContext()->SOSetTargets(1,&b,&offset );
 }
 

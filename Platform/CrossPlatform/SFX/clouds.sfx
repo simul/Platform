@@ -80,11 +80,10 @@ vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 	vec3 view = normalize(mul(invViewProj, clip_pos).xyz);
 	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
 	RaytracePixelOutput p	=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2,cloudDensity
+									cloudDensity
 									,rainMapTexture
-									,noiseTexture
 									,noiseTexture3D
+									,noiseTexture
 									,lightTableTexture
 									,illuminationTexture
 									,rainbowLookupTexture
@@ -118,7 +117,36 @@ shader vec4 PS_SimpleRaytrace_depthReverse(posTexVertexOutput IN) : SV_TARGET
 }
 
 
-struct FarNearPixelOutput
+FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
+{
+	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
+	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
+	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	FarNearPixelOutput f	=Lightpass(
+									cloudDensity
+									,rainMapTexture
+									,noiseTexture3D
+									,noiseTexture
+									,lossTexture
+									,depthInterpretationStruct
+									,dlookup
+									,texCoords
+									,vec3(0,0,2000.0)
+									,vec3(1000.0,100.0,100.0)
+									);
+	return f;
+}
+
+shader FarNearPixelOutput PS_Lightpass_DepthReverse(posTexVertexOutput IN) 
+{
+	return PS_Lightpass(IN,true);
+}
+shader FarNearPixelOutput PS_Lightpass_DepthForward(posTexVertexOutput IN) 
+{
+	return PS_Lightpass(IN,true);
+}
+
+struct FarNearDepthPixelOutput
 {
 	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
 	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
@@ -126,17 +154,16 @@ struct FarNearPixelOutput
 	float depth			SIMUL_DEPTH_OUTPUT;
 };
 
-FarNearPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth)
+FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
 	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
 	RaytracePixelOutput f	=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2,cloudDensity
+									cloudDensity
 									,rainMapTexture
-									,noiseTexture
 									,noiseTexture3D
+									,noiseTexture
 									,lightTableTexture
 									,illuminationTexture
 									,rainbowLookupTexture
@@ -153,7 +180,7 @@ FarNearPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth)
 									,true
 									,cloudIrRadiance1,cloudIrRadiance2
 									);
-	FarNearPixelOutput fn;
+	FarNearDepthPixelOutput fn;
 	fn.farColour=f.colour;
 	fn.nearColour=f.nearColour;
 	fn.nearFarDepth = f.nearFarDepth;
@@ -161,27 +188,26 @@ FarNearPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth)
 	return fn;
 }
 
-shader FarNearPixelOutput PS_Raytrace_depthReverse(posTexVertexOutput IN)
+shader FarNearDepthPixelOutput PS_Raytrace_depthReverse(posTexVertexOutput IN)
 {
 	return PS_Raytrace(IN,true);
 }
 
-shader FarNearPixelOutput PS_Raytrace_depthForward(posTexVertexOutput IN)
+shader FarNearDepthPixelOutput PS_Raytrace_depthForward(posTexVertexOutput IN)
 {
 	return PS_Raytrace(IN,false);
 }
 
-shader FarNearPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDepth)
+shader FarNearDepthPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
 	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
 	RaytracePixelOutput f	=RaytraceCloudsForward(
-									cloudDensity1
-									,cloudDensity2,cloudDensity
+									cloudDensity
 									,rainMapTexture
-									,noiseTexture
 									,noiseTexture3D
+									,noiseTexture
 									,lightTableTexture
 									,illuminationTexture
 									,rainbowLookupTexture
@@ -199,7 +225,7 @@ shader FarNearPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDe
 									,cloudIrRadiance1
 									,cloudIrRadiance2
 									);
-	FarNearPixelOutput fn;
+	FarNearDepthPixelOutput fn;
 	fn.farColour=f.colour;
 	fn.nearColour = f.nearColour;
 	//fn.nearColour	=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,0);
@@ -208,12 +234,12 @@ shader FarNearPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDe
 	return fn;
 }
 
-shader FarNearPixelOutput PS_RaytraceNoRain_depthReverse(posTexVertexOutput IN)
+shader FarNearDepthPixelOutput PS_RaytraceNoRain_depthReverse(posTexVertexOutput IN)
 {
 	return PS_RaytraceNoRain(IN,true);
 }
 
-shader FarNearPixelOutput PS_RaytraceNoRain_depthForward(posTexVertexOutput IN)
+shader FarNearDepthPixelOutput PS_RaytraceNoRain_depthForward(posTexVertexOutput IN)
 {
 	return PS_RaytraceNoRain(IN,false);
 }
@@ -293,6 +319,19 @@ BlendState Blend1
     //RenderTargetWriteMask[0] = 0x0F;
 };
 
+BlendState AddBlend1
+{
+	BlendEnable[0] = TRUE;
+	BlendEnable[1] = FALSE;
+	SrcBlend = ONE;
+	DestBlend = ONE;
+    BlendOp = ADD;
+    SrcBlendAlpha = ZERO;
+    DestBlendAlpha = ONE;
+    BlendOpAlpha = ADD;
+    //RenderTargetWriteMask[0] = 0x0F;
+};
+
 
 VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_SimpleFullscreen());
 
@@ -315,7 +354,25 @@ fxgroup raytrace
 			SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace_depthForward()));
 		}
 	}
-
+	technique lightpass
+	{
+		pass depth_reverse
+		{
+			SetBlendState(AddBlend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetDepthStencilState(DisableDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(vs_fullscreen_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_Lightpass_DepthReverse()));
+		}
+		pass depth_forward 
+		{
+			SetBlendState(AddBlend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetDepthStencilState(DisableDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(vs_fullscreen_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_Lightpass_DepthForward()));
+		}
+	}
 	technique full
 	{
 		pass depth_reverse 

@@ -28,6 +28,11 @@ struct RaytracePixelOutput
 	vec4 nearFarDepth	;
 	float depth			;
 };
+struct FarNearPixelOutput
+{
+	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
+};
 
 struct All8DepthOutput
 {
@@ -294,6 +299,7 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 	c.rgb += inscatter + skyl;
 	return c;
 }
+
 vec4 MakeNoise(Texture3D noiseTexture3D,vec3 noise_texc,float lod)
 {
 	vec4 noiseval		=vec4(0,0,0,0);
@@ -323,19 +329,229 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 }
 
 #ifndef GLSL
-RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
-											,Texture3D cloudDensity2
-											,Texture3D cloudDensity
+
+FarNearPixelOutput Lightpass(Texture3D cloudDensity
+								,Texture2D rainMapTexture
+								,Texture3D noiseTexture3D
+								,Texture2D noiseTexture
+								,Texture2D lossTexture
+								,DepthIntepretationStruct depthInterpretationStruct
+								,vec4 dlookup
+								,vec2 texCoords
+								,vec3 source_pos_w
+								,vec3 source_irradiance)
+{
+	FarNearPixelOutput res;
+	res.farColour			=vec4(0,0,0,1.0);
+	res.nearColour			=vec4(0,0,0,1.0);
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
+
+	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
+	vec3 lightDir			=lerp(directionToMoon,directionToSun,s);
+
+	float cos0				=dot(lightDir.xyz,view.xyz);
+	float sine				=view.z;
+	vec3 n					=vec3(clip_pos.xy*tanHalfFov,1.0);
+	n						=normalize(n);
+
+	float min_z				=cornerPos.z-(fractalScale.z*1.5)/inverseScales.z;
+	float max_z				=cornerPos.z+(1.0+fractalScale.z*1.5)/inverseScales.z;
+	//if(do_rain_effect)
+		min_z				=-1000.0;
+	//else if(view.z<-0.1&&viewPos.z<cornerPos.z-fractalScale.z/inverseScales.z)
+	//	return res;
+	
+	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+	//float solid_dist		=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
+	// Lookup in the illumination texture.
+	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
+
+	vec3 world_pos					=viewPos;
+
+	// This provides the range of texcoords that is lit.
+	int3 c_offset					=int3(sign(view.x),sign(view.y),sign(view.z));
+	int3 start_c_offset				=-c_offset;
+	start_c_offset					=int3(max(start_c_offset.x,0),max(start_c_offset.y,0),max(start_c_offset.z,0));
+	vec3 viewScaled					=view/scaleOfGridCoords;
+	viewScaled						=normalize(viewScaled);
+
+	vec3 offset_vec	=vec3(0,0,0);
+	if(world_pos.z<min_z)
+	{
+		float a		=1.0/(view.z+0.00001);
+		offset_vec	=(min_z-world_pos.z)*vec3(view.x*a,view.y*a,1.0);
+	}
+	if(view.z<0&&world_pos.z>max_z)
+	{
+		float a		=1.0/(-view.z+0.00001);
+		offset_vec	=(world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
+	}
+	world_pos						+=offset_vec;
+	vec3 gridOriginPos				=cornerPos+0.25/inverseScales.z;
+	float viewScale					=length(viewScaled*scaleOfGridCoords);
+	vec3 startOffsetFromOrigin		=viewPos-gridOriginPos;
+	vec3 offsetFromOrigin			=startOffsetFromOrigin;
+	vec3 p0							=offsetFromOrigin/scaleOfGridCoords;
+	int3 c0							=floor(p0) + start_c_offset;
+	vec3 gridScale					=scaleOfGridCoords;
+	vec3 P0							=offsetFromOrigin/scaleOfGridCoords/2.0;
+	int3 C0							=c0/2;
+	
+	float distanceMetres			=distance(world_pos,viewPos);
+	int3 c							=c0;
+
+	int idx=0;
+	float W							=halfClipSize;
+	const float start				=0.866*0.866;//0.707 for 2D, 0.866 for 3D;
+	const float ends				=1.0;
+	const float range				=ends-start;
+	vec3 volume_texc				=ScreenToVolumeTexcoords(clipPosToScatteringVolumeMatrix,texCoords,0.0);
+
+	vec4 colour						=vec4(0.0,0.0,0.0,1.0);
+	vec4 nearColour					=vec4(0.0,0.0,0.0,1.0);
+	float lastFadeDistance			=0.0;
+	// x starts at 1, so gets initialized at the first cloud found.
+	// y starts at 0, so gets the furthest value.
+	vec4 nearFarDepth = vec4(1.0, 0.0, 0.0, 0.0);
+	float max_irradiance=max(max(source_irradiance.r,source_irradiance.g),source_irradiance.b);
+	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
+	for(int i=0;i<255;i++)
+	{
+		world_pos					+=view;
+		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceMetres>maxCloudDistanceMetres||solidDist_nearFar.y<lastFadeDistance)
+			break;
+		offsetFromOrigin			=world_pos-gridOriginPos;
+		// Next pos.
+		int3 c1						=c+c_offset;
+		//find the correct d:
+		vec3 p						=offsetFromOrigin/gridScale;
+		vec3 p1						=c1;
+		vec3 dp						=p1-p;
+		vec3 D						=dp/viewScaled;
+		float e						=min(min(D.x,D.y),D.z);
+		// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
+		vec3 N						=step(D,e);
+
+		int3 c_step					=c_offset*int3(N);
+		float d						=e*viewScale;
+		distanceMetres				+=d;
+
+		// What offset was the original position from the centre of the cube?
+		p1							=p+e*viewScaled;
+		vec3 d0						=normalize(2.0*abs(frac(p1)-vec3(.5,.5,.5)));
+	
+		// We fade out the intermediate steps as we approach the boundary of a detail change.
+		// Now sample at the end point:
+		world_pos					+=d*view;
+		vec3 cloudWorldOffset		=world_pos-cornerPos;
+		vec3 cloudTexCoords			=(cloudWorldOffset)*inverseScales;
+		c							+=c_step;
+		int3 intermediate			=abs(int3(c.x%2,c.y%2,c.z%2));
+		float is_inter				=dot(N,vec3(intermediate));
+		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
+		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
+		vec3 pw						=abs(p1-p0);//+start_c_offset
+		float fade_inter			=saturate((length(pw.xy)/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
+	
+		float fade					=1.0-(fade_inter);
+		float fadeDistance			=saturate(distanceMetres/maxFadeDistanceMetres);
+
+		int3 b						=abs(c-C0*2);
+	
+		if(fade>0)
+		{
+			vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
+
+			vec4 noiseval			=MakeNoise(noiseTexture3D,noise_texc,3.0*fadeDistance);
+			vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
+			if(0)//do_rain_effect)
+			{
+				// The rain fall angle is used:
+				vec3 rain_texc			=cloudWorldOffset;
+				rain_texc.xy			+=rain_texc.z*rainTangent;
+				float rain_lookup		=texture_wrap_lod(rainMapTexture,rain_texc.xy*inverseScales.xy,0).x;
+				vec4 streak				=vec4(.5,.5,.5,.5);//texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
+				float dm=0.0;
+				dm					=fade*rainEffect*rain_lookup
+										*saturate((rainRadius-length(world_pos.xy-rainCentre.xy))*0.0003)
+										*saturate(1.0-10*cloudTexCoords.z)
+										*saturate(cloudTexCoords.z+1.0+4.0*streak.y)
+										*(0.4+0.6*streak.x)
+										;
+				density.z			=saturate(density.z+dm);
+			}
+			if(density.z>0)
+			{
+				nearFarDepth.x			=min(nearFarDepth.y, fadeDistance);
+				nearFarDepth.y			=fadeDistance;
+				density.z				*=pow(abs(dot(N,viewScaled)),2.0);
+				density.z				*=saturate(distanceMetres/240.0);
+				float brightness_factor;
+				fade_texc.x				=sqrt(fadeDistance);
+				vec3 volumeTexCoords	=vec3(texCoords,sqrt(fadeDistance));
+				vec4 clr				=vec4(source_irradiance.rgb,density.z);
+	brightness_factor			=max(1.0,max_irradiance);
+
+				//if(do_depth_mix)
+				{
+					vec4 clr_n=clr;
+					clr.a				*=saturate((solidDist_nearFar.y-fadeDistance)/0.01);
+					clr_n.a				*=saturate((solidDist_nearFar.x-fadeDistance)/0.01);
+					nearColour.rgb		+=clr_n.rgb*clr_n.a*(nearColour.a);
+					nearColour.a		*=(1.0-clr_n.a);
+				}
+				colour.rgb				+=clr.rgb*clr.a*(colour.a);
+				colour.a				*=(1.0-clr.a);
+				if(nearColour.a*brightness_factor<0.003)
+				{
+					colour.a			=0.0;
+					break;
+				}
+			}
+		}
+		lastFadeDistance=fadeDistance;
+		if(max(max(b.x,b.y),0)>=W)
+		{
+			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
+			// Just dividing by 2 gives 3/2 -> 1, and -3/2 -> -1.
+			c0			=	C0;
+			c			+=	start_c_offset;
+			c			-=	abs(c%2);
+			c			=	c/2;
+			gridScale	*=	2.0;
+			viewScale	*=	2.0;
+			if(!idx)
+				W*=2;
+			p0			=	P0;
+			P0			=	startOffsetFromOrigin/gridScale/2.0;
+			C0			+=	start_c_offset;
+			C0			-=	abs(C0%2);
+			C0			=	C0/2;
+			idx			++;
+		}
+	}
+    res.farColour		=vec4(exposure*colour.rgb,colour.a);
+    res.nearColour		=vec4(exposure*nearColour.rgb,nearColour.a);
+
+	return res;
+}
+
+RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,Texture2D rainMapTexture
-											,Texture2D noiseTexture
 											,Texture3D noiseTexture3D
+											,Texture2D noiseTexture
 											,Texture2D lightTableTexture
 											,Texture2D illuminationTexture
 											,Texture2D rainbowLookupTexture
 											,Texture2D coronaLookupTexture
 											,Texture2D lossTexture
 											,Texture2D inscTexture
-											,Texture2D skylTexture,Texture3D inscatterVolumeTexture
+											,Texture2D skylTexture
+											,Texture3D inscatterVolumeTexture
                                             ,bool do_depth_mix
 											,DepthIntepretationStruct depthInterpretationStruct
 											,vec4 dlookup

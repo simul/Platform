@@ -150,9 +150,9 @@ namespace simul
 			virtual Query					*CreateQuery					(QueryType q)=0;
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
-			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers,const crossplatform::Layout *layout)=0;
+			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL)=0;
 			/// Graphics hardware can write to vertex buffers using vertex and geometry shaders; use this function to set the target buffer.
-			virtual void					SetStreamOutTarget				(DeviceContext &deviceContext,Buffer *buffer)=0;
+			virtual void					SetStreamOutTarget				(DeviceContext &deviceContext,Buffer *buffer,int start_index=0)=0;
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
 			virtual void					SetViewports(DeviceContext &deviceContext,int num,Viewport *vps)=0;

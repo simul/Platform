@@ -470,7 +470,7 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	float sun_spot = pow(cos_spec, g_Shineness);
 	water_color += g_SunColor * sun_spot;*/
 	vec3 loss		=g_skyLossTexture.Sample(g_samplerAtmospherics,In.fade_texc).rgb;
-	float4 insc		=g_skyInscatterTexture.Sample(g_samplerAtmospherics,In.fade_texc);
+	vec4 insc		=g_skyInscatterTexture.Sample(g_samplerAtmospherics,In.fade_texc);
 	vec3 inscatter	=InscatterFunction(insc, hazeEccentricity, cos_angle, mieRayleighRatio);
 	//water_color*=loss;
 	return vec4(water_color, 1);

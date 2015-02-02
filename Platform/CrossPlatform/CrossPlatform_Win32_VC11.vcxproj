@@ -187,6 +187,7 @@
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Topology.h" />
+    <ClInclude Include="TwoResFramebuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SL\atmospherics.sl" />
@@ -245,6 +246,7 @@
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TwoResFramebuffer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

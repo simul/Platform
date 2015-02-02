@@ -288,7 +288,6 @@
     <None Include="HLSL\MixClouds_c.hlsl" />
     <None Include="HLSL\ocean_shading.hlsl" />
     <None Include="HLSL\ocean_simulator_cs.hlsl" />
-    <None Include="HLSL\ocean_simulator_vs_ps.hlsl" />
     <None Include="HLSL\shader_platform.sl" />
     <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\simul_gpu_sky.hlsl" />

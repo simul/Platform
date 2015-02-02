@@ -16,19 +16,16 @@ struct F_Vertex
     vec3 position	: POSITION;
     vec4 texcoord	: TEXCOORD0;
 };
-
+struct F_IdVertex
+{
+    vec3 position	: POSITION;
+    vec4 texcoord	: TEXCOORD0;
+	uint vertex_id	: TEXCOORD1;
+};
 struct F_Vertex_out
 {
     vec4 hPosition	: SV_Position;
 };
-
-F_Vertex VS_Fractal(F_Vertex IN )
-{
-	F_Vertex OUT;
-	OUT.position	=IN.position;
-	OUT.texcoord	=IN.texcoord;
-	return OUT;
-}
 
 F_Vertex VS_InitialFractal(idOnly IN )
 {
@@ -42,22 +39,25 @@ F_Vertex VS_InitialFractal(idOnly IN )
 void GS_Fractal(line F_Vertex input[2], inout PointStream<F_Vertex> vStream)
 {
 	F_Vertex output;
-	vec3 startP	=input[0].position;
-	vec3 endP	=input[1].position;
+	vec3 startP		=input[0].position;
+	vec3 endP		=input[1].position;
+	uint num_octaves=7;
+	uint num_steps	=1<<num_octaves;
+	uint num_pts		=num_steps+1;
 	vec3 outpos[129];
-	outpos[0]=startP;
-	outpos[128]=endP;
-	int del=128;
+	outpos[0]		=startP;
+	outpos[num_steps]=endP;
+	int del=num_steps;
 	float persistence=0.8;
-	float off=0.4;
-	for(int i=0;i<7;i++)
+	float off=0.4*roughness;
+	for(uint i=0;i<num_octaves;i++)
 	{
-		for(int j=del/2;j<128;j+=del)
+		for(uint j=del/2;j<num_steps;j+=del)
 		{
 			vec3 s=outpos[j-del/2];
 			vec3 e=outpos[j+del/2];
 			vec3 XX=cross(vec3(1.0,0.0,0.0),(s-e));
-			vec3 YY=cross(vec3(0.0,1.0,0.0),(e-e));
+			vec3 YY=cross(vec3(0.0,1.0,0.0),(s-e));
 			vec3 x=0.5*(s+e);
 			float angle=rand(0.01*x.xy+0.02*x.zx)*2.0*3.14159;
 			x+=off*(XX*cos(angle)+YY*sin(angle));
@@ -66,19 +66,91 @@ void GS_Fractal(line F_Vertex input[2], inout PointStream<F_Vertex> vStream)
 		del/=2;
 		off*=persistence;
 	}
-	for(int i=0;i<129;i++)
+	for(uint ii=0;ii<num_pts;ii++)
 	{
-		output.position		=outpos[i];
-		output.texcoord		=vec4(200.0,200.0,100.0,1000.0);
+		output.position		=outpos[ii];
+		output.texcoord		=vec4(strikeThicknessMetres,0,100.0,1000.0);
 		vStream.Append(output);
 	}
 	vStream.RestartStrip();
 }
 
 
+F_IdVertex VS_Branch(F_Vertex IN,uint vertex_id	: SV_VertexID)
+{
+	F_IdVertex OUT;
+	OUT.position	=IN.position;
+	OUT.texcoord	=IN.texcoord;
+	OUT.vertex_id	=vertex_id;
+	return OUT;
+}
+
+[maxvertexcount(65)]
+void GS_Branch(line F_IdVertex input[2], inout PointStream<F_Vertex> vStream)
+{
+	// do we branch from this point?
+	uint parent_point=input[0].vertex_id;
+	//if(parent_point %branchInterval)
+	//	return;
+
+	F_Vertex output;
+	vec3 startP		=input[0].position;
+	vec3 endP		=input[1].position;
+	vec3 dir		=normalize(endP-startP);
+	// dir is the direction of the main branch.
+	// We need to find a direction normal to dir.
+	// We will create a random vector, then subtract the part that is in the direction of dir.
+	vec3 rndvec		=SphericalRandom(vec3(1.1*branchInterval+parent_point,1.92*branchInterval+parent_point,3.7*branchInterval+parent_point));
+	float along		=dot(rndvec,dir);
+	rndvec			-=along;
+	rndvec			=normalize(rndvec);
+	dir				=dir*cos(branchAngleRadians)+rndvec*sin(branchAngleRadians);
+
+	endP			=startP+dir*branchLengthMetres;
+
+	int num_steps	=1<<num_octaves;
+	int num_pts		=num_steps+1;
+	vec3 outpos[65];
+	outpos[0]			=startP;
+	outpos[num_steps]	=endP;
+	int del				=num_steps;
+	float persistence	=0.8;
+	float off			=0.4*roughness;
+	for(int i=0;i<num_octaves;i++)
+	{
+		for(int j=del/2;j<num_steps;j+=del)
+		{
+			vec3 s=outpos[j-del/2];
+			vec3 e=outpos[j+del/2];
+			vec3 XX=cross(vec3(1.0,0.0,0.0),(s-e));
+			vec3 YY=cross(vec3(0.0,1.0,0.0),(s-e));
+			vec3 x=0.5*(s+e);
+			float angle=rand(0.01*x.xy+0.02*x.zx)*2.0*3.14159;
+			x+=off*(XX*cos(angle)+YY*sin(angle));
+			outpos[j]=x;
+		}
+		del/=2;
+		off*=persistence;
+	}
+	for(int ii=0;ii<num_pts;ii++)
+	{
+		output.position		=outpos[ii];
+		float brightness	=100.0*saturate(float(num_steps-ii)/5.0);
+		float thickness		=200.0;
+		float endpoint		=(i>(num_steps-2));
+		output.texcoord		=vec4(thickness,endpoint,100.0,brightness);
+		vStream.Append(output);
+	}
+	vStream.RestartStrip();
+}
+
 VertexShader vs_init		=CompileShader(vs_5_0,VS_InitialFractal());
 GeometryShader gs_fractal	=CompileShader(gs_5_0,GS_Fractal());
 GeometryShader so_fractal	=ConstructGSWithSO(gs_fractal, "POSITION.xyz;TEXCOORD0.xyzw");
+
+VertexShader vs_branch		=CompileShader(vs_5_0,VS_Branch());
+GeometryShader gs_branch	=CompileShader(gs_5_0,GS_Branch());
+GeometryShader so_branch	=ConstructGSWithSO(gs_branch, "POSITION.xyz;TEXCOORD0.xyzw");
 
 technique initial_fractal
 {
@@ -90,13 +162,13 @@ technique initial_fractal
 		SetPixelShader(NULL);
     }
 }
-technique fractal
+technique branch_fractal
 {
     pass main
     {
-        SetRasterizerState( RenderNoCull );
-        SetVertexShader(CompileShader(   vs_5_0,VS_Fractal()));
-        SetGeometryShader(CompileShader( gs_5_0,GS_Fractal()));
+        SetRasterizerState(RenderNoCull);
+        SetVertexShader(vs_branch);
+        SetGeometryShader(so_branch);
 		SetPixelShader(NULL);
     }
 }
@@ -104,20 +176,21 @@ technique fractal
 struct transformedVertex
 {
     vec4 hPosition	: SV_POSITION;
-	vec4 texCoords	: TEXCOORD0;
+	float brightness: TEXCOORD0;
     vec2 hPosCentre1: TEXCOORD1;
     vec2 hPosCentre2: TEXCOORD2;
-	vec2 screenPos:	TEXCOORD3;
+	vec2 screenPos	:	TEXCOORD3;
 	vec2 texc		:	TEXCOORD4;
-    float along: TEXCOORD5;
-	float width: TEXCOORD6;
-    float depth	: TEXCOORD7;
+    float along		: TEXCOORD5;
+	float clipWidth	: TEXCOORD6;
+    float depth		: TEXCOORD7;
+    float endpoint		: TEXCOORD8;
 };
 
 struct transformedThinVertex
 {
     vec4 hPosition	: SV_POSITION;
-	vec4 texCoords	: TEXCOORD0;
+	float brightness	: TEXCOORD0;
     float depth	: TEXCOORD1;
 	vec2 screenPos:	TEXCOORD2;
 	vec2 texc		:	TEXCOORD3;
@@ -127,7 +200,7 @@ shader transformedThinVertex VS_Thin(LightningVertexInput IN)
 {
     transformedThinVertex OUT;
     OUT.hPosition	=mul(worldViewProj, vec4(IN.position.xyz , 1.0));
-	OUT.texCoords	=IN.texCoords;
+	OUT.brightness	=IN.texCoords.w;
 	OUT.depth		=OUT.hPosition.z/OUT.hPosition.w;
 	OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
 	OUT.texc		=OUT.screenPos.xy*0.5+0.5;
@@ -138,7 +211,9 @@ shader LightningVertexOutput VS_Thick(LightningVertexInput IN)
 {
     LightningVertexOutput OUT;
     OUT.position	=mul(worldViewProj, vec4(IN.position.xyz , 1.0));
-	OUT.texCoords	=IN.texCoords;
+	OUT.thicknessMetres	=IN.texCoords.x;
+	OUT.endpoint	=IN.texCoords.y;
+	OUT.brightness	=IN.texCoords.w;
 	OUT.depth		=OUT.position.z/OUT.position.w;
     return OUT;
 }
@@ -185,14 +260,16 @@ shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStrea
 	vec2 miter_a		=normalize(n0 + n1);	// miter at start of current segment
 	vec2 miter_b		=normalize(n1 + n2);	// miter at end of current segment
 	// determine the length of the miter by projecting it onto normal and then inverse it
-	float width1		=input[1].texCoords.x;
-	float width2		=input[2].texCoords.x;
+
+	// ensure a minimum pixel size:
+	float width1		=max(input[1].thicknessMetres,24.0/viewportPixels*start.w);
+	float width2		=max(input[2].thicknessMetres,24.0/viewportPixels*start.w);
 	float lengthPixels_a		=width1/start.w	*viewportPixels.x/dot(miter_a, n1);
 	float lengthPixels_b		=width2/end.w	*viewportPixels.x/dot(miter_b, n1);
 	const float	MITER_LIMIT=1.0;
 	output.hPosCentre1	=vec2(p1.xy/viewportPixels);
 	output.hPosCentre2	=vec2(p2.xy/viewportPixels);
-	output.width		=width1/start.w;
+	output.clipWidth		=width1/start.w;
 	vec2 diff	=output.hPosCentre2-output.hPosCentre1;
 	float dist	=length(diff);
 	float d2	=dist*dist;
@@ -207,22 +284,25 @@ shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStrea
 			output.hPosition	=vec4( (p1 + width1 * n0) / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.texc			=output.screenPos.xy*0.5+0.5;
-			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
-			output.texCoords	=vec4(0,input[1].texCoords.yzw);
+			output.along		=0;
+			output.brightness	=input[1].brightness;
+	output.endpoint	=input[1].endpoint;
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( (p1 + width1 * n1) / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.texc			=output.screenPos.xy*0.5+0.5;
-			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
-			output.texCoords	=vec4(0,input[1].texCoords.yzw);
+			output.along		=0;
+			output.brightness	=input[1].brightness;
+			output.endpoint		=input[1].endpoint;
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.texc			=output.screenPos.xy*0.5+0.5;
-			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
-			output.texCoords	=vec4(0.5,input[1].texCoords.yzw);
+			output.along		=0;
+			output.brightness	=input[1].brightness;
+			output.endpoint		=input[1].endpoint;
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			SpriteStream.RestartStrip();
@@ -232,22 +312,25 @@ shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStrea
 			output.hPosition	=vec4( (p1 - width2 * n1) / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.texc			=output.screenPos.xy*0.5+0.5;
-			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
-			output.texCoords	=vec4(1.0,input[1].texCoords.yzw);
+			output.along		=0;
+			output.brightness	=input[1].brightness;
+			output.endpoint		=input[1].endpoint;
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( (p1 - width2 * n0) / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.texc			=output.screenPos.xy*0.5+0.5;
-			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
-			output.texCoords	=vec4(1.0,input[1].texCoords.yzw);
+			output.along		=0;
+			output.brightness	=input[1].brightness;
+			output.endpoint		=input[1].endpoint;
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
 			output.screenPos	=output.hPosition.xy/output.hPosition.w;
 			output.texc			=output.screenPos.xy*0.5+0.5;
-			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
-			output.texCoords	=vec4(0.5,input[1].texCoords.yzw);
+			output.along		=0;
+			output.brightness	=input[1].brightness;
+			output.endpoint		=input[1].endpoint;
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			SpriteStream.RestartStrip();
@@ -259,35 +342,37 @@ shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStrea
 		lengthPixels_b = width2;
 	}
   // generate the triangle strip
-	output.width		=width1/start.w;
+	output.clipWidth	=width1/start.w;
 	output.screenPos	=(p1 + lengthPixels_a * miter_a)/viewportPixels;
 	output.hPosition	=vec4(output.screenPos.xy*start.w,start.z,start.w);
 	output.texc			=output.screenPos.xy*0.5+0.5;
-	output.along		=dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2*1.1-0.05;
-	output.texCoords	=vec4(0.0,input[1].texCoords.yzw);
-
+	output.along		=0.0;//dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2*1.1-0.05;
+	output.brightness	=input[1].brightness;
+	output.endpoint		=input[1].endpoint;
 	output.depth		=input[1].depth;
 	SpriteStream.Append(output);
 	output.screenPos	=(p1 - lengthPixels_a * miter_a)/viewportPixels;
 	output.hPosition	=vec4(output.screenPos.xy*start.w,start.z,start.w);
 	output.texc			=output.screenPos.xy*0.5+0.5;
-	output.along		=dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2;
-	output.texCoords	=vec4(1.0,input[1].texCoords.yzw);
+	output.along		=0.0;//dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2;
+	output.brightness	=input[1].brightness;
 	output.depth		=input[1].depth;
 	SpriteStream.Append(output);
-	output.width		=width2/end.w;
+	output.clipWidth	=width2/end.w;
 	output.screenPos	=(p2 + lengthPixels_b * miter_b)/viewportPixels;
 	output.hPosition	=vec4(output.screenPos.xy*end.w,end.z,end.w);
 	output.texc			=output.screenPos.xy*0.5+0.5;
-	output.along		=dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2;
-	output.texCoords	=vec4(0.0,input[2].texCoords.yzw);
+	output.along		=1.0;//dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2;
+	output.brightness	=input[2].brightness;
+	output.endpoint		=input[2].endpoint;
 	output.depth		=input[2].depth;
 	SpriteStream.Append(output);
 	output.screenPos	=(p2 - lengthPixels_b * miter_b)/viewportPixels;
 	output.hPosition	=vec4(output.screenPos.xy*end.w,end.z,end.w);
 	output.texc			=output.screenPos.xy*0.5+0.5;
-	output.along		=dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2;
-	output.texCoords	=vec4(1.0,input[2].texCoords.yzw);
+	output.along		=1.0;//dot(output.screenPos.xy-output.hPosCentre1.xy,diff)/d2;
+	output.brightness	=input[2].brightness;
+	output.endpoint		=input[2].endpoint;
 	output.depth		=input[2].depth;
 	SpriteStream.Append(output);
     SpriteStream.RestartStrip();
@@ -310,16 +395,25 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 	//return vec4(100*dist.xy,100*dlookup.z,1.0);//dlookup.rb,1);
 	
-	float b			=2.0*(IN.texCoords.x-0.5);
-	float br		=IN.texCoords.w;//pow(1.0-b*b,4.0);// w is the local brightness factor
-	vec2 centre		=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along));
-	vec2 diff		=IN.screenPos-centre;
-	float d			=length(diff)/IN.width;
-	br				*=exp(-20.0*d);
+	float br		=IN.brightness;
+	vec2 dir		=normalize(IN.hPosCentre2-IN.hPosCentre1);
+	float along		=dot(IN.screenPos-IN.hPosCentre1,dir);
+	vec2 centre1	=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along*(1.0-IN.endpoint)));
+	vec2 centre2	=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(along*(1.0-IN.endpoint)));
+	vec2 diff1		=IN.screenPos-centre1;
+	vec2 diff2		=IN.screenPos-centre2;
+	float clipWidth2px=minPixelWidth/float(viewportPixels.x);
+	float d			=min(length(diff1),length(diff2));
+	float m			=d/clipWidth2px;
+	float s			=max(0.0,d-clipWidth2px)/IN.clipWidth;
+	//br				*=exp(-20.0*d);
+	//if(d>1.0)
+	br			=min(brightnessToUnity,br)*saturate(exp(-4.0*s)-0.05)/0.95;
+	br			+=IN.brightness*saturate(10.0*(1.0-m));
 	if(br<0)
 		br=0;
-	vec4 colour		=br;//*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
-	colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
+	vec4 colour		=br*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	//colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
 	
     return colour;
 }
@@ -336,7 +430,6 @@ shader vec4 PS_Main_ForwardDepth(transformedVertex IN): SV_TARGET
 
 vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 {
-    return vec4(1,0,1,1);
 	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec4 dlookup 		=texture_clamp(depthTexture,texc.xy);
 	vec4 clookup 		=texture_clamp(cloudDepthTexture,texc.xy);
@@ -350,7 +443,7 @@ vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 	//if(dist.x<dist.y)
 	//	discard;
 	
-	vec4 colour=lightningColour*IN.texCoords.w;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	vec4 colour		=lightningColour*IN.brightness;//;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
     return colour;
 }
@@ -364,6 +457,16 @@ shader vec4 PS_Thin_ForwardDepth(transformedThinVertex IN): SV_TARGET
 {
 	return PS_Thin(IN,false);
 }
+
+
+BlendState MaxBlend
+{
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=ONE;
+	BlendOp			=MAX;
+};
 
 technique lightning_thick
 {
@@ -405,7 +508,7 @@ technique lightning_thin
     pass reverse_depth 
     {
         SetRasterizerState(lightningLineRasterizer);
-		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ReverseDepth()));
@@ -413,7 +516,7 @@ technique lightning_thin
     pass forward_depth 
     {
         SetRasterizerState(lightningLineRasterizer);
-		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(MaxBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ForwardDepth()));

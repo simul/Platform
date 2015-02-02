@@ -69,7 +69,8 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 
 	// Atmospherics
 	uniform float		hazeEccentricity;
-	uniform vec4		mieRayleighRatio;
+	uniform vec3		mieRayleighRatio;
+	uniform float		qjk345rstj;
 	uniform vec3		lightDir;
 	uniform float		srjdtkfylu;
 SIMUL_CONSTANT_BUFFER_END

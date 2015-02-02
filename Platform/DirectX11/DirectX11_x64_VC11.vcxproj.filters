@@ -165,9 +165,6 @@
     <None Include="HLSL\ocean_simulator_cs.hlsl">
       <Filter>HLSL</Filter>
     </None>
-    <None Include="HLSL\ocean_simulator_vs_ps.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
     <None Include="HLSL\simul_earthshadow.hlsl">
       <Filter>HLSL</Filter>
     </None>
