@@ -2,7 +2,8 @@
 #define LIGHTNING_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(LightningConstants,10)
-	uniform vec4 lightningColour;
+	uniform vec3 lightningColour;
+	uniform float branchAngleRadians;
 
 	uniform vec3 startPos;
 	uniform uint num_octaves;
@@ -17,7 +18,6 @@ SIMUL_CONSTANT_BUFFER(LightningConstants,10)
 
 	uniform float branchLengthMetres;
 	uniform uint branchInterval;
-	uniform float branchAngleRadians;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)

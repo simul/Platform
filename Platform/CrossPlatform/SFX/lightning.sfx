@@ -85,7 +85,7 @@ F_IdVertex VS_Branch(F_Vertex IN,uint vertex_id	: SV_VertexID)
 	return OUT;
 }
 
-[maxvertexcount(65)]
+[maxvertexcount(33)]
 void GS_Branch(line F_IdVertex input[2], inout PointStream<F_Vertex> vStream)
 {
 	// do we branch from this point?
@@ -110,7 +110,7 @@ void GS_Branch(line F_IdVertex input[2], inout PointStream<F_Vertex> vStream)
 
 	int num_steps	=1<<num_octaves;
 	int num_pts		=num_steps+1;
-	vec3 outpos[65];
+	vec3 outpos[33];
 	outpos[0]			=startP;
 	outpos[num_steps]	=endP;
 	int del				=num_steps;
@@ -132,13 +132,19 @@ void GS_Branch(line F_IdVertex input[2], inout PointStream<F_Vertex> vStream)
 		del/=2;
 		off*=persistence;
 	}
+
+	output.position		=outpos[0];
+	output.position		-=dir;
+	float brightness	=100.0;
+	output.texcoord		=vec4(strikeThicknessMetres,0.0,100.0,brightness);
+	vStream.Append(output);
+
 	for(int ii=0;ii<num_pts;ii++)
 	{
 		output.position		=outpos[ii];
 		float brightness	=100.0*saturate(float(num_steps-ii)/5.0);
-		float thickness		=200.0;
 		float endpoint		=(i>(num_steps-2));
-		output.texcoord		=vec4(thickness,endpoint,100.0,brightness);
+		output.texcoord		=vec4(strikeThicknessMetres,endpoint,100.0,brightness);
 		vStream.Append(output);
 	}
 	vStream.RestartStrip();
@@ -262,8 +268,8 @@ shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStrea
 	// determine the length of the miter by projecting it onto normal and then inverse it
 
 	// ensure a minimum pixel size:
-	float width1		=max(input[1].thicknessMetres,24.0/viewportPixels*start.w);
-	float width2		=max(input[2].thicknessMetres,24.0/viewportPixels*start.w);
+	float width1		=max(input[1].thicknessMetres,4.0/viewportPixels*start.w);
+	float width2		=max(input[2].thicknessMetres,4.0/viewportPixels*start.w);
 	float lengthPixels_a		=width1/start.w	*viewportPixels.x/dot(miter_a, n1);
 	float lengthPixels_b		=width2/end.w	*viewportPixels.x/dot(miter_b, n1);
 	const float	MITER_LIMIT=1.0;
@@ -395,24 +401,24 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 	//return vec4(100*dist.xy,100*dlookup.z,1.0);//dlookup.rb,1);
 	
-	float br		=IN.brightness;
-	vec2 dir		=normalize(IN.hPosCentre2-IN.hPosCentre1);
-	float along		=dot(IN.screenPos-IN.hPosCentre1,dir);
-	vec2 centre1	=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along*(1.0-IN.endpoint)));
-	vec2 centre2	=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(along*(1.0-IN.endpoint)));
-	vec2 diff1		=IN.screenPos-centre1;
-	vec2 diff2		=IN.screenPos-centre2;
-	float clipWidth2px=minPixelWidth/float(viewportPixels.x);
-	float d			=min(length(diff1),length(diff2));
-	float m			=d/clipWidth2px;
-	float s			=max(0.0,d-clipWidth2px)/IN.clipWidth;
+	float br			=IN.brightness;
+	vec2 dir			=normalize(IN.hPosCentre2-IN.hPosCentre1);
+	float along			=dot(IN.screenPos-IN.hPosCentre1,dir);
+	vec2 centre1		=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along*(1.0-IN.endpoint)));
+	vec2 centre2		=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(along*(1.0-IN.endpoint)));
+	vec2 diff1			=IN.screenPos-centre1;
+	vec2 diff2			=IN.screenPos-centre2;
+	float clipWidth2px	=minPixelWidth/float(viewportPixels.x);
+	float d				=min(length(diff1),length(diff2));
+	float m				=d/clipWidth2px;
+	float s				=max(0.0,d-clipWidth2px)/IN.clipWidth;
 	//br				*=exp(-20.0*d);
 	//if(d>1.0)
-	br			=min(brightnessToUnity,br)*saturate(exp(-4.0*s)-0.05)/0.95;
-	br			+=IN.brightness*saturate(10.0*(1.0-m));
+	br					=min(brightnessToUnity,br)*saturate(exp(-4.0*s)-0.05)/0.95;
+	br					+=IN.brightness*saturate(10.0*(1.0-m));
 	if(br<0)
 		br=0;
-	vec4 colour		=br*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	vec4 colour			=vec4(lightningColour.rgb,1.0);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	//colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
 	
     return colour;
@@ -443,7 +449,7 @@ vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 	//if(dist.x<dist.y)
 	//	discard;
 	
-	vec4 colour		=lightningColour*IN.brightness;//;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	vec4 colour		=vec4(lightningColour,1.0)*IN.brightness;//;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
     return colour;
 }
