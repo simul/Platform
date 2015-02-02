@@ -1054,9 +1054,9 @@ PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint ve
 	// 
     return input;
 }
-VertexShader vsInit=CompileShader(vs_5_0,VS_InitParticles());
-VertexShader vsMove=CompileShader(vs_5_0,VS_MoveParticles());
-GeometryShader gsStreamOut = ConstructGSWithSO(vsInit,"POSITION.xyz;TYPE0.x;VELOCITY0.xyz" );
+VertexShader vsInit			=CompileShader(vs_5_0,VS_InitParticles());
+VertexShader vsMove			=CompileShader(vs_5_0,VS_MoveParticles());
+GeometryShader gsStreamOut	=ConstructGSWithSO(vsInit,"POSITION.xyz;TYPE0.x;VELOCITY0.xyz");
 
 technique init_particles
 {
@@ -1069,7 +1069,7 @@ technique init_particles
     }  
 }
 
-GeometryShader gsStreamOut2=ConstructGSWithSO(vsMove,"POSITION.xyz; TYPE0.x; VELOCITY0.xyz" );
+GeometryShader gsStreamOut2=ConstructGSWithSO(vsMove,"POSITION.xyz; TYPE0.x; VELOCITY0.xyz");
 
 technique move_particles
 {

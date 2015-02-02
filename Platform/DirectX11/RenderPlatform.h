@@ -107,7 +107,8 @@ namespace simul
 			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer);
 			
 			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
-
+			void									SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l) override;
+			
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									PushRenderTargets(crossplatform::DeviceContext &deviceContext);

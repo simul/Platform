@@ -4,6 +4,7 @@
 #include "../../CrossPlatform/SL/lightning_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
 #include "../../CrossPlatform/SL/render_states.sl"
+#include "../../CrossPlatform/SL/noise.sl"
 
 Texture2D lightningTexture;
 Texture2D depthTexture;
@@ -13,7 +14,9 @@ Texture2D cloudDepthTexture;
 struct F_Vertex
 {
     vec3 position	: POSITION;
+    vec4 texcoord	: TEXCOORD0;
 };
+
 struct F_Vertex_out
 {
     vec4 hPosition	: SV_Position;
@@ -23,17 +26,70 @@ F_Vertex VS_Fractal(F_Vertex IN )
 {
 	F_Vertex OUT;
 	OUT.position	=IN.position;
+	OUT.texcoord	=IN.texcoord;
 	return OUT;
 }
-[maxvertexcount(4)]
-void GS_Fractal(point F_Vertex input[2], inout TriangleStream<F_Vertex_out> vStream)
+
+F_Vertex VS_InitialFractal(idOnly IN )
 {
-	F_Vertex_out output		= (F_Vertex_out)0;
-	output.hPosition		=mul(worldViewProj,vec4(IN.position,1.0));
-	vStream.Append(output);
+	F_Vertex OUT;
+	OUT.texcoord	=vec4(200.0,200.0,1.0,1000.0);
+	OUT.position	=lerp(startPos,endPos,float(IN.vertex_id));
+	return OUT;
+}
+
+[maxvertexcount(129)]
+void GS_Fractal(line F_Vertex input[2], inout PointStream<F_Vertex> vStream)
+{
+	F_Vertex output;
+	vec3 startP	=input[0].position;
+	vec3 endP	=input[1].position;
+	vec3 outpos[129];
+	outpos[0]=startP;
+	outpos[128]=endP;
+	int del=128;
+	float persistence=0.8;
+	float off=0.4;
+	for(int i=0;i<7;i++)
+	{
+		for(int j=del/2;j<128;j+=del)
+		{
+			vec3 s=outpos[j-del/2];
+			vec3 e=outpos[j+del/2];
+			vec3 XX=cross(vec3(1.0,0.0,0.0),(s-e));
+			vec3 YY=cross(vec3(0.0,1.0,0.0),(e-e));
+			vec3 x=0.5*(s+e);
+			float angle=rand(0.01*x.xy+0.02*x.zx)*2.0*3.14159;
+			x+=off*(XX*cos(angle)+YY*sin(angle));
+			outpos[j]=x;
+		}
+		del/=2;
+		off*=persistence;
+	}
+	for(int i=0;i<129;i++)
+	{
+		output.position		=outpos[i];
+		output.texcoord		=vec4(200.0,200.0,100.0,1000.0);
+		vStream.Append(output);
+	}
 	vStream.RestartStrip();
 }
 
+
+VertexShader vs_init		=CompileShader(vs_5_0,VS_InitialFractal());
+GeometryShader gs_fractal	=CompileShader(gs_5_0,GS_Fractal());
+GeometryShader so_fractal	=ConstructGSWithSO(gs_fractal, "POSITION.xyz;TEXCOORD0.xyzw");
+
+technique initial_fractal
+{
+    pass main
+    {
+        SetRasterizerState( RenderNoCull );
+        SetVertexShader(vs_init);
+        SetGeometryShader(so_fractal);
+		SetPixelShader(NULL);
+    }
+}
 technique fractal
 {
     pass main
@@ -41,9 +97,7 @@ technique fractal
         SetRasterizerState( RenderNoCull );
         SetVertexShader(CompileShader(   vs_5_0,VS_Fractal()));
         SetGeometryShader(CompileShader( gs_5_0,GS_Fractal()));
-        SetPixelShader(CompileShader(    ps_5_0,PS_Fractal()));
-        
-        SetBlendState( AddAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetPixelShader(NULL);
     }
 }
 
@@ -117,7 +171,6 @@ shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStrea
 	if(p2.x<-area.x||p2.x>area.x) return;
 	if(p2.y<-area.y||p2.y>area.y) return;
 	if(input[0].position.z<0) return;
-	if(input[0].position.z>1.0) return;
     vec4 start			=input[1].position;
     vec4 end			=input[2].position;
 	// determine the direction of each of the 3 segments (previous, current, next
@@ -265,7 +318,7 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	br				*=exp(-20.0*d);
 	if(br<0)
 		br=0;
-	vec4 colour		=br*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	vec4 colour		=br;//*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
 	
     return colour;
@@ -283,6 +336,7 @@ shader vec4 PS_Main_ForwardDepth(transformedVertex IN): SV_TARGET
 
 vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 {
+    return vec4(1,0,1,1);
 	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec4 dlookup 		=texture_clamp(depthTexture,texc.xy);
 	vec4 clookup 		=texture_clamp(cloudDepthTexture,texc.xy);
@@ -319,7 +373,7 @@ technique lightning_thick
 		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
-        SetGeometryShader( CompileShader(gs_5_0, GS_Thick()));
+        SetGeometryShader( CompileShader(gs_5_0,GS_Thick()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Main_ReverseDepth()));
     }
     pass forward_depth 
@@ -328,7 +382,7 @@ technique lightning_thick
 		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
-        SetGeometryShader( CompileShader(gs_5_0, GS_Thick()));
+        SetGeometryShader( CompileShader(gs_5_0,GS_Thick()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Main_ForwardDepth()));
     }
 }

@@ -3,6 +3,10 @@
 
 SIMUL_CONSTANT_BUFFER(LightningConstants,10)
 	uniform vec4 lightningColour;
+	uniform vec3 startPos;
+	uniform float pad12333;
+	uniform vec3 endPos;
+	uniform float pad1298;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
@@ -23,7 +27,7 @@ struct LightningVertex
 #ifndef __cplusplus
 struct LightningVertexInput
 {
-    vec4 position		: POSITION;
+    vec3 position		: POSITION;
     vec4 texCoords		: TEXCOORD0;
 };
 struct LightningVertexOutput

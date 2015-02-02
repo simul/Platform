@@ -162,6 +162,8 @@ namespace simul
 			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer)=0;
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.
 			virtual void					SetTopology						(DeviceContext &deviceContext,Topology t)=0;
+			//! Set the layout for following draw calls - format of the vertex buffer.
+			virtual void					SetLayout						(DeviceContext &deviceContext,Layout *l);
 			/// This function is called to ensure that the named shader is compiled with all the possible combinations of \#define's given in \em options.
 			virtual void					EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<EffectDefineOptions> &options);
 			/// Called to store the render state - blending, depth check, etc. - for later retrieval with RestoreRenderState.

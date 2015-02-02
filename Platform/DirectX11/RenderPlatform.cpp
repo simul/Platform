@@ -1040,8 +1040,17 @@ static D3D11_PRIMITIVE_TOPOLOGY toD3dTopology(crossplatform::Topology t)
 void RenderPlatform::SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t)
 {
 	D3D11_PRIMITIVE_TOPOLOGY T=toD3dTopology(t);
-	//(D3D11_PRIMITIVE_TOPOLOGY)((int)t-(int)crossplatform::POINTLIST+(int)D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	deviceContext.asD3D11DeviceContext()->IASetPrimitiveTopology(T);
+}
+
+void RenderPlatform::SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l)
+{
+	if(l)
+		l->Apply(deviceContext);
+	else
+	{
+		deviceContext.asD3D11DeviceContext()->IASetInputLayout(NULL);
+	}
 }
 
 void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s)

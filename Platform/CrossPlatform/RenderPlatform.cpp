@@ -4,6 +4,7 @@
 #include "Simul/Platform/CrossPlatform/TextRenderer.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
+#include "Simul/Platform/CrossPlatform/Layout.h"
 #include "Effect.h"
 
 using namespace simul;
@@ -91,6 +92,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	standardRenderStates.clear();
 	SAFE_DELETE(textRenderer);
 }
+
 void RenderPlatform::RecompileShaders()
 {
 	textRenderer->RecompileShaders();
@@ -127,6 +129,12 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y	,const char 
 		pos++;
 		y+=16;
 	}
+}
+
+void RenderPlatform::SetLayout(DeviceContext &deviceContext,Layout *l)
+{
+	if(l)
+		l->Apply(deviceContext);
 }
 
 void RenderPlatform::EnsureEffectIsBuiltPartialSpec(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options,const std::map<std::string,std::string> &defines)
