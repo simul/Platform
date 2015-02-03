@@ -24,6 +24,13 @@
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="DemoOverlay.cpp" />
+    <ClCompile Include="BaseOpticsRenderer.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraInterface.cpp" />
+    <ClCompile Include="HdrRenderer.cpp" />
+    <ClCompile Include="LensFlare.cpp" />
+    <ClCompile Include="TwoResFramebuffer.cpp" />
+    <ClCompile Include="TextRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseFramebuffer.h" />
@@ -45,5 +52,13 @@
     <ClInclude Include="PixelFormat.h" />
     <ClInclude Include="TextInputOutput.h" />
     <ClInclude Include="DemoOverlay.h" />
+    <ClInclude Include="BaseOpticsRenderer.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraInterface.h" />
+    <ClInclude Include="HdrRenderer.h" />
+    <ClInclude Include="LensFlare.h" />
+    <ClInclude Include="TwoResFramebuffer.h" />
+    <ClInclude Include="Topology.h" />
+    <ClInclude Include="TextRenderer.h" />
   </ItemGroup>
 </Project>

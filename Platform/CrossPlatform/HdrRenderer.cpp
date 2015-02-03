@@ -131,10 +131,10 @@ void HdrRenderer::RecompileShaders()
 	int scan_smem_size			=1920;//max3(H,W,(int)threadsPerGroup*2);//1920;//
 	defs["SCAN_SMEM_SIZE"]		=string_format("%d",scan_smem_size);
 	defs["THREADS_PER_GROUP"]	=string_format("%d",threadsPerGroup);
-	/*
+
 	m_pGaussianEffect			=renderPlatform->CreateEffect("gaussian",defs);
 	hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
-	imageConstants.LinkToEffect(m_pGaussianEffect,"ImageConstants");*/
+	imageConstants.LinkToEffect(m_pGaussianEffect,"ImageConstants");
 }
 
 void HdrRenderer::InvalidateDeviceObjects()
@@ -263,7 +263,7 @@ static float CalculateBoxFilterWidth(float radius, int pass)
 
 void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture)
 {
-//	if(!m_pGaussianEffect)
+	if(!m_pGaussianEffect)
 		return;
 	glowTexture->ensureTexture2DSizeAndFormat(renderPlatform,Width/2,Height/2,crossplatform::R_32_UINT,true);
 		

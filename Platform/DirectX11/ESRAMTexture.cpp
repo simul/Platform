@@ -111,14 +111,14 @@ ID3D11ShaderResourceView *ESRAMTexture::AsD3D11ShaderResourceView()
 	}
 	return shaderResourceView;
 }
-ID3D11UnorderedAccessView *ESRAMTexture::AsD3D11UnorderedAccessView()
+ID3D11UnorderedAccessView *ESRAMTexture::AsD3D11UnorderedAccessView(int mip)
 {
 	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );   
 	if(in_esram)
 	{
 		return esramTextureData.m_pESRAMUAV;
 	}
-	return unorderedAccessView;
+	return unorderedAccessViews[mip];
 }
 ID3D11DepthStencilView *ESRAMTexture::AsD3D11DepthStencilView()
 {
@@ -136,19 +136,19 @@ ID3D11RenderTargetView *ESRAMTexture::AsD3D11RenderTargetView()
 	{
 		return esramTextureData.m_pESRAMRTV;
 	}
-	return renderTargetView;
+	return *renderTargetViews;
 }
 void ESRAMTexture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
 												 ,int w,int l
 												 ,crossplatform::PixelFormat pixelFormat
 												 ,bool computable,bool rendertarget,bool depthstencil
-												 ,int num_samples,int aa_quality)
+												 ,int num_samples,int aa_quality,bool wrap)
 {
 	dx11::Texture::ensureTexture2DSizeAndFormat(renderPlatform
 												 , w, l
 												 , pixelFormat
 												 , computable, rendertarget, depthstencil
-												 , num_samples, aa_quality);
+												 , num_samples, aa_quality,wrap);
 	if(in_esram)
 		MoveToFastRAM();
 }

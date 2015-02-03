@@ -418,7 +418,7 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	br					+=IN.brightness*saturate(10.0*(1.0-m));
 	if(br<0)
 		br=0;
-	vec4 colour			=vec4(lightningColour.rgb,1.0);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	vec4 colour			=vec4(1000*lightningColour.rgb,1.0);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	//colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
 	
     return colour;

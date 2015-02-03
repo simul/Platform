@@ -273,9 +273,9 @@ bool Framebuffer::IsValid() const
 
 void Framebuffer::MoveToFastRAM()
 {
-	if(useESRAM)
+	if(useESRAM&&buffer_texture)
 		buffer_texture->MoveToFastRAM();
-	if(useESRAMforDepth)
+	if(useESRAMforDepth&&buffer_depth_texture)
 		buffer_depth_texture->MoveToFastRAM();
 }
 

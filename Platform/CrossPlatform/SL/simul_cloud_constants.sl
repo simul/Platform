@@ -61,41 +61,53 @@ SIMUL_CONSTANT_BUFFER_END
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 inverseScales;
 	uniform float rainbowIntensity;
+
 	uniform vec3 ambientColour;
 	uniform float cloud_interp;
+
 	uniform vec3 fractalScale;
 	uniform float cloudEccentricity;
+
 	uniform vec4 lightResponse;
+
 	uniform vec3 directionToSun;
 	uniform float earthshadowMultiplier;
+
 	uniform vec3 cornerPos;
 	uniform float hazeEccentricity;
-	uniform vec4 lightningMultipliers;
-	uniform vec4 lightningColour;
-	uniform vec3 lightningSourcePos;
-	uniform float rain;
+
 	uniform vec3 sunlightColour1;
 	uniform float fractalRepeatLength;
+
 	uniform vec3 sunlightColour2;
 	uniform float maxAltitudeMetres;
+
 	uniform vec2 screenCoordOffset;
 	uniform vec2 rainTangent;
+
 	uniform vec3 mieRayleighRatio;
 	uniform float alphaSharpness;
-	uniform vec3 lightningOrigin;
+
+	uniform float rain;
 	uniform float maxFadeDistanceMetres;
-	uniform vec3 lightningInvScales;
 	uniform float noise3DPersistence;
+	uniform float pad1365124633463734;
+
 	uniform vec3 crossSectionOffset;
 	uniform int noise3DOctaves;
+
 	uniform vec3 noise3DTexcoordScale;
 	uniform float rainEffect;
+
 	uniform vec3 cloudIrRadiance1;
 	uniform float yz;
+
 	uniform vec3 cloudIrRadiance2;
 	uniform float noise3DOctaveScale;
+
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
+
 	uniform vec3 noise3DTexcoordOffset;
 	uniform float dropletRadius;
 	// RDE begin: added
@@ -103,10 +115,38 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	// local cloud support
 	uniform vec4 localCloudPivot;    
 	uniform vec4 localCloudInvScale; 
-	//uniform int3 cloudGrid;
-	//uniform float aq0o84hq4hl;
 SIMUL_CONSTANT_BUFFER_END
 	
+
+SIMUL_CONSTANT_BUFFER(CloudLightpassConstants,10)
+	uniform vec3 sourcePosMetres;
+	uniform float sourceRadiusMetres;
+	uniform vec3 irradiance;
+	uniform float maxCosine;
+	uniform float irradianceThreshold;
+	uniform float maxRadiusMetres;
+SIMUL_CONSTANT_BUFFER_END
+
+//! The result struct for a point or volume query.
+struct VolumeQueryResult
+{
+	vec3 pos_m;
+	int valid;
+	float density;
+	float direct_light;
+	float indirect_light;
+	float ambient_light;
+};
+//! The result struct for a line query.
+struct LineQueryResult
+{
+	vec3 pos1_m;
+	int valid;
+	vec3 pos2_m;
+	float density;
+	float optical_thickness_metres;
+	float first_contact_metres;
+};
 										  
 #ifdef __cplusplus
 //! A struct containing a pointer or id for the cloud shadow texture, along with 

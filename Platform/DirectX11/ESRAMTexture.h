@@ -74,11 +74,18 @@ namespace simul
 			// 
 			virtual ID3D11Texture2D *AsD3D11Texture2D();
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView();
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView();
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0);
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView();
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView();
-			virtual void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
-				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0) override;
+			virtual void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
+				,int w
+				,int l
+				,crossplatform::PixelFormat f
+				,bool computable=false
+				,bool rendertarget=false
+				,bool depthstencil=false
+				,int num_samples=1
+				,int aa_quality=0,bool wrap=false) override;
 			/// Asynchronously move this texture to ESRAM.
 			void MoveToFastRAM() override;
 			/// Asynchronously move this texture to DRAM.

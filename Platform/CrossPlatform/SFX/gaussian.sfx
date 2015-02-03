@@ -27,7 +27,7 @@ const uint SCAN_LOG2_WARP_SIZE = 5;
 // The following constants are defined via compiler command line
 //static const uint THREADS_PER_GROUP = 128;
 //static const uint SCAN_SMEM_SIZE = 1200;
-const uint MAX_TEXELS_PER_THREAD = 64;
+#define MAX_TEXELS_PER_THREAD (64)
 //static const uint imageSize.y = 1200;
 //static const uint imageSize.x = 1600;
 
