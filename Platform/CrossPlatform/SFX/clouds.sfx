@@ -132,7 +132,7 @@ FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 									,dlookup
 									,texCoords
 									,vec3(0,0,2000.0)
-									,vec3(1000.0,100.0,100.0)
+									,vec3(100.0,10.0,10.0)
 									);
 	return f;
 }
@@ -319,10 +319,10 @@ BlendState Blend1
     //RenderTargetWriteMask[0] = 0x0F;
 };
 
-BlendState AddBlend1
+BlendState AddBlend2
 {
 	BlendEnable[0] = TRUE;
-	BlendEnable[1] = FALSE;
+	BlendEnable[1] = TRUE;
 	SrcBlend = ONE;
 	DestBlend = ONE;
     BlendOp = ADD;
@@ -358,7 +358,7 @@ fxgroup raytrace
 	{
 		pass depth_reverse
 		{
-			SetBlendState(AddBlend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(AddBlend2,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(DisableDepth,0);
 			SetRasterizerState( RenderNoCull );
 			SetVertexShader(vs_fullscreen_5_0);
@@ -366,7 +366,7 @@ fxgroup raytrace
 		}
 		pass depth_forward 
 		{
-			SetBlendState(AddBlend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(AddBlend2,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(DisableDepth,0);
 			SetRasterizerState( RenderNoCull );
 			SetVertexShader(vs_fullscreen_5_0);
