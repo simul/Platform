@@ -524,7 +524,7 @@ crossplatform::Light *RenderPlatform::CreateLight()
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture * tex=NULL;
-#ifdef _XBOX_ONE
+#if 0//def _XBOX_ONE
 	if(fileNameUtf8&&strcmp(fileNameUtf8,"ESRAM")==0)
 		tex=new dx11::ESRAMTexture();
 	else
