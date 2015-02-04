@@ -511,8 +511,8 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 				vec3 volumeTexCoords	=vec3(texCoords,sqrt(fadeDistance));
 				vec3 dist				=world_pos-source_pos_w;
 				float radius			=max(source_radius,length(dist));
-				float radiance			=4*3.14159/(radius*radius);
-				vec4 clr				=vec4(source_irradiance.rgb,radiance*density.z);
+				float radiance			=1.0/(4.0*3.14159*radius*radius);
+				vec4 clr				=vec4(source_irradiance.rgb*radiance*density.z,density.z);
 				brightness_factor		=max(1.0,radiance*max_irradiance);
 
 				//if(do_depth_mix)

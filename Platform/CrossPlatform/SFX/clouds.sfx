@@ -96,12 +96,12 @@ float CloudsOcclusion(Texture3D cloudDensity1,Texture3D cloudDensity2,Texture3D 
 vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec4 dlookup 	=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec2 texCoords =  mixedResTransformXYWH.xy + IN.texCoords.xy*mixedResTransformXYWH.zw;
+	vec2 texCoords	=mixedResTransformXYWH.xy + IN.texCoords.xy*mixedResTransformXYWH.zw;
 
-	vec4 clip_pos = vec4(-1.0, 1.0, 1.0, 1.0);
-	clip_pos.x += 2.0*texCoords.x;
-	clip_pos.y -= 2.0*texCoords.y;
-	vec3 view = normalize(mul(invViewProj, clip_pos).xyz);
+	vec4 clip_pos	=vec4(-1.0, 1.0, 1.0, 1.0);
+	clip_pos.x		+=2.0*texCoords.x;
+	clip_pos.y		-=2.0*texCoords.y;
+	vec3 view		=normalize(mul(invViewProj, clip_pos).xyz);
 	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity
@@ -140,7 +140,6 @@ shader vec4 PS_SimpleRaytrace_depthReverse(posTexVertexOutput IN) : SV_TARGET
 	return SimpleRaytrace(IN,true);
 }
 
-
 FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
@@ -169,6 +168,7 @@ shader FarNearPixelOutput PS_Lightpass_DepthReverse(posTexVertexOutput IN)
 {
 	return PS_Lightpass(IN,true);
 }
+
 shader FarNearPixelOutput PS_Lightpass_DepthForward(posTexVertexOutput IN) 
 {
 	return PS_Lightpass(IN,true);
@@ -277,18 +277,18 @@ shader posTexVertexOutput VS_CrossSection(idOnly IN)
 	return VS_ScreenQuad(IN,rect);
 }
 
-shader vec4 PS_Simple( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_Simple(posTexVertexOutput IN):SV_TARGET
 {
     return noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
 }
 
-shader vec4 PS_ShowNoise( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_ShowNoise(posTexVertexOutput IN):SV_TARGET
 {
     vec4 lookup=noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
 	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
-shader vec4 PS_Show3DNoise( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_Show3DNoise(posTexVertexOutput IN):SV_TARGET
 {
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
 	if(IN.texCoords.y<0.5)
@@ -297,7 +297,7 @@ shader vec4 PS_Show3DNoise( posTexVertexOutput IN):SV_TARGET
 	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
-shader vec4 PS_ShowShadow( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_ShowShadow(posTexVertexOutput IN):SV_TARGET
 {
 	return ShowCloudShadow(cloudShadowTexture,cloudGodraysTexture,IN.texCoords);
 }
@@ -329,7 +329,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
     return vec4(accum,1);
 }
 
-shader vec4 PS_CrossSection( posTexVertexOutput IN):SV_TARGET
+shader vec4 PS_CrossSection(posTexVertexOutput IN):SV_TARGET
 {
     return CrossSection(IN.texCoords,yz);
 }
@@ -359,7 +359,6 @@ BlendState AddBlend2
     BlendOpAlpha = ADD;
     //RenderTargetWriteMask[0] = 0x0F;
 };
-
 
 VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_SimpleFullscreen());
 
