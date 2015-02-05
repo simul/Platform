@@ -125,7 +125,7 @@ namespace simul
 			/// \todo The stored states are implemented per-RenderPlatform for DX11, but need to be implemented per-DeviceContext.
 			struct StoredState
 			{
-				StoredState();
+				void Clear();
 				UINT m_StencilRefStored11;
 				UINT m_SampleMaskStored11;
 				UINT m_indexOffset;
@@ -145,13 +145,14 @@ namespace simul
 				UINT m_VertexStrides[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
 				UINT m_VertexOffsets[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
 				
-				 ID3D11VertexShader *pVertexShader;
-				 ID3D11PixelShader *pPixelShader;
-				 ID3D11ClassInstance *m_pPixelClassInstances[16];
-				 UINT numPixelClassInstances;
-				 ID3D11ClassInstance *m_pVertexClassInstances[16];
-				 UINT numVertexClassInstances;
+				ID3D11VertexShader *pVertexShader;
+				ID3D11PixelShader *pPixelShader;
+				ID3D11ClassInstance *m_pPixelClassInstances[16];
+				UINT numPixelClassInstances;
+				ID3D11ClassInstance *m_pVertexClassInstances[16];
+				UINT numVertexClassInstances;
 			};
+			int storedStateCursor;
 			std::vector<StoredState> storedStates;
 			std::vector<struct RTState*> storedRTStates;
 			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *tex,float mult,bool blend=false);
