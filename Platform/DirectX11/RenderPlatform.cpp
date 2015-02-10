@@ -81,20 +81,21 @@ static Vertex3_t box_vertices[36] =
 	{-size,		-size,	-size},
 };
 
-RenderPlatform::StoredState::StoredState()
-	:	m_StencilRefStored11(0)
-				,m_SampleMaskStored11(0)
-				,m_indexOffset(0)
-				, m_indexFormatStored11(DXGI_FORMAT_UNKNOWN)
-				, m_previousTopology(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED)
-				,m_pDepthStencilStateStored11(NULL)
-				,m_pRasterizerStateStored11(NULL)
-				,m_pBlendStateStored11(NULL)
-				,pIndexBufferStored11(NULL)
-				,m_previousInputLayout(NULL)
-				,pVertexShader(NULL)
-				,pPixelShader(NULL)
+void RenderPlatform::StoredState::Clear()
 {
+	m_StencilRefStored11			=0;
+	m_SampleMaskStored11			=0;
+	m_indexOffset					=0;
+	m_indexFormatStored11			=DXGI_FORMAT_UNKNOWN;
+	m_previousTopology				=D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+	m_pDepthStencilStateStored11	=NULL;
+	m_pRasterizerStateStored11		=NULL;
+	m_pBlendStateStored11			=NULL;
+	pIndexBufferStored11			=NULL;
+	m_previousInputLayout			=NULL;
+	pVertexShader					=NULL;
+	pPixelShader					=NULL;
+
 	for(int i=0;i<4;i++)
 		m_BlendFactorStored11[i];
 	for(int i=0;i<D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;i++)
@@ -134,7 +135,9 @@ RenderPlatform::RenderPlatform()
 	,m_pCubemapVtxDecl(NULL)
 	,m_pVertexBuffer(NULL)
 	,m_pVtxDecl(NULL)
+	,storedStateCursor(0)
 {
+	storedStates.resize(4);
 }
 
 RenderPlatform::~RenderPlatform()
@@ -524,7 +527,7 @@ crossplatform::Light *RenderPlatform::CreateLight()
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture * tex=NULL;
-#ifdef _XBOX_ONE
+#if 0//def _XBOX_ONE
 	if(fileNameUtf8&&strcmp(fileNameUtf8,"ESRAM")==0)
 		tex=new dx11::ESRAMTexture();
 	else
@@ -1096,11 +1099,14 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	storedStates.push_back(StoredState());
-	StoredState &s=storedStates.back();
-    pContext->OMGetDepthStencilState( &s.m_pDepthStencilStateStored11, &s.m_StencilRefStored11 );
+	if(storedStateCursor>=storedStates.size())
+	{
+		storedStates.resize(std::max(1,storedStateCursor*2));
+	}
+	StoredState &s=storedStates[storedStateCursor++];
+      pContext->OMGetDepthStencilState( &s.m_pDepthStencilStateStored11, &s.m_StencilRefStored11 );
     pContext->RSGetState(&s.m_pRasterizerStateStored11 );
-    pContext->OMGetBlendState(&s.m_pBlendStateStored11,s.m_BlendFactorStored11, &s.m_SampleMaskStored11 );
+  pContext->OMGetBlendState(&s.m_pBlendStateStored11,s.m_BlendFactorStored11, &s.m_SampleMaskStored11 );
     pContext->PSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, s.m_pSamplerStateStored11 );
     pContext->VSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT , s.m_pVertexSamplerStateStored11 );
 	
@@ -1126,10 +1132,12 @@ void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceConte
 
 void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
+	storedStateCursor--;
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	StoredState &s=storedStates.back();
+	StoredState &s=storedStates[storedStateCursor];
     pContext->OMSetDepthStencilState(s.m_pDepthStencilStateStored11,s.m_StencilRefStored11 );
-    pContext->RSSetState(s.m_pRasterizerStateStored11 );
+    SAFE_RELEASE(s.m_pDepthStencilStateStored11 );
+	pContext->RSSetState(s.m_pRasterizerStateStored11 );
     pContext->OMSetBlendState(s.m_pBlendStateStored11,s.m_BlendFactorStored11,s.m_SampleMaskStored11 );
     pContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pSamplerStateStored11 );
     pContext->VSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pVertexSamplerStateStored11 );
@@ -1150,7 +1158,6 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 		SAFE_RELEASE(s.m_pUnorderedAccessViews[i]);
 	}
 
-    SAFE_RELEASE(s.m_pDepthStencilStateStored11 );
     SAFE_RELEASE(s.m_pRasterizerStateStored11 );
     SAFE_RELEASE(s.m_pBlendStateStored11 );
 	for(int i=0;i<D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;i++)
@@ -1176,7 +1183,7 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 								s.m_indexFormatStored11,
 								s.m_indexOffset);
 	SAFE_RELEASE(s.pIndexBufferStored11);
-	storedStates.pop_back();
+	
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *srv,float mult,bool blend)

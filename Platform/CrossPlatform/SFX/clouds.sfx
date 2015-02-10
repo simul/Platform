@@ -32,18 +32,19 @@ RWTexture3D<float4> output ;
 
 
 RWStructuredBuffer<VolumeQueryResult> volumeQueryResults;
-StructuredBuffer<vec3> volumeQueryInputs;
+StructuredBuffer<vec3> queryInputs;
+RWStructuredBuffer<LineQueryResult> lineQueryResults;
 
 [numthreads(1,1,1)]
 shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
 	uint num=0;
 	uint byteStride=0;
-	volumeQueryInputs.GetDimensions(num,byteStride);
+	queryInputs.GetDimensions(num,byteStride);
 	if(sub_pos.x>=num)
 		return;
 	VolumeQueryResult res;
-	res.pos_m						=volumeQueryInputs[sub_pos.x];
+	res.pos_m						=queryInputs[sub_pos.x];
 	res.valid						=1;
 	vec3 cloudTexCoords				=(res.pos_m-cornerPos)*inverseScales;
 	vec4 lookup						=sampleLod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
@@ -54,6 +55,48 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	volumeQueryResults[sub_pos.x]	=res;
 }
 
+[numthreads(1,1,1)]
+shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
+{
+	uint num=0;
+	uint byteStride=0;
+	queryInputs.GetDimensions(num,byteStride);
+	if(sub_pos.x>=num/2)
+		return;
+	LineQueryResult res;
+	vec3 start_pos					=queryInputs[sub_pos.x*2];
+	vec3 end_pos					=queryInputs[sub_pos.x*2+1];
+	res.pos1_m						=start_pos;
+	res.pos2_m						=end_pos;
+	res.valid						=1;
+	res.density						=0.0;
+	res.visibility					=0.0;
+	res.optical_thickness_metres	=0.0;
+	res.first_contact_metres		=length(end_pos-start_pos);
+	vec3 dir						=normalize(res.pos2_m-res.pos1_m);
+	// How far under?
+	float under						=max(0.0,cornerPos.z-res.pos1_m.z);
+	res.pos1_m						+=dir/(max(0.0001,dir.z))*under;
+	// How far over?
+	float over						=max(0.0,res.pos2_m.z-cornerPos.z-1.0/inverseScales.z);
+	res.pos1_m						+=dir/(max(0.0001,-dir.z))*over;
+	if(dot(dir,res.pos2_m-res.pos1_m)>0.0)
+	{
+		float stepSize					=length(res.pos2_m-res.pos1_m)/32.0;
+		for(int i=0;i<33;i++)
+		{
+			vec3 pos						=lerp(res.pos1_m,res.pos2_m,float(i)/32.0);
+			vec3 cloudTexCoords				=(pos-cornerPos)*inverseScales;
+			vec4 lookup						=sampleLod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
+			res.density						+=lookup.z/32.0;
+			if(res.density>0.0)
+				res.first_contact_metres	=min(res.first_contact_metres,length(pos-start_pos));
+			res.visibility					*=1.0-lookup.z;
+			res.optical_thickness_metres	+=stepSize*lookup.z;
+		}
+	}
+	lineQueryResults[sub_pos.x]	=res;
+}
 
 #ifndef DETAIL_NOISE
 	#define DETAIL_NOISE 1
@@ -558,5 +601,12 @@ technique point_queries
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_PointQueries()));
+    }
+}
+technique line_queries
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_LineQueries()));
     }
 }

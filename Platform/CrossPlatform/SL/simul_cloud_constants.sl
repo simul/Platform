@@ -144,6 +144,7 @@ struct LineQueryResult
 	int valid;
 	vec3 pos2_m;
 	float density;
+	float visibility;
 	float optical_thickness_metres;
 	float first_contact_metres;
 };

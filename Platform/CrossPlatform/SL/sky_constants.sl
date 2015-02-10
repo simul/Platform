@@ -19,7 +19,7 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 
 	uniform float radiusRadians;
 	uniform float isForwardDepth;
-	uniform float glowRadiusMultiple;
+	uniform float overcastBaseKm;
 	uniform float overcastRangeKm;
 	
 	uniform uint3 threadOffset;
