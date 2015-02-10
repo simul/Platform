@@ -201,10 +201,10 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceConte
 			lastContext->Unmap(buffer,0);
 		}
 		else
-			SIMUL_BREAK_ONCE("Map failed");
+			SIMUL_BREAK("Map failed");
 	}
 	else
-		SIMUL_BREAK_ONCE("Uninitialized device context");
+		SIMUL_BREAK("Uninitialized device context");
 	mapped.pData=NULL;
 }
 
@@ -425,7 +425,7 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 	techniques[name]=tech;
 	if(!tech->platform_technique)
 	{
-		SIMUL_BREAK_ONCE("NULL technique");
+		SIMUL_BREAK("NULL technique");
 	}
 	return tech;
 }
@@ -558,7 +558,7 @@ void Effect::SetMatrix		(const char *name	,const float *m)
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {
 	if(apply_count!=0)
-		SIMUL_BREAK_ONCE("Effect::Apply without a corresponding Unapply!")
+		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
 	apply_count++;
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	currentTechnique				=effectTechnique;
@@ -571,7 +571,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)
 {
 	if(apply_count!=0)
-		SIMUL_BREAK_ONCE("Effect::Apply without a corresponding Unapply!")
+		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
 	apply_count++;
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	currentTechnique				=effectTechnique;
@@ -581,14 +581,14 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 		if (!tech->IsValid())
 		{
 			const char *techname="";//effectTechnique->getName();
-			SIMUL_BREAK_ONCE(base::QuickFormat("Invalid technique %s of shader %s\n",techname,this->filename.c_str()));
+			SIMUL_BREAK(base::QuickFormat("Invalid technique %s of shader %s\n",techname,this->filename.c_str()));
 			return;
 		}
 		currentPass = tech->GetPassByName(passname);
 		if (!currentPass->IsValid())
 		{
 			const char *techname="";//effectTechnique->getName();
-			SIMUL_BREAK_ONCE(base::QuickFormat("Invalid pass %s sent to Effect::Apply for technique %s of shader %s\n",passname,techname,this->filename.c_str()));
+			SIMUL_BREAK(base::QuickFormat("Invalid pass %s sent to Effect::Apply for technique %s of shader %s\n",passname,techname,this->filename.c_str()));
 			D3DX11_TECHNIQUE_DESC desc;
 			ID3DX11EffectTechnique *t=const_cast<ID3DX11EffectTechnique*>(tech);
 			t->GetDesc(&desc);
@@ -610,14 +610,14 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	}
 	else
 	{
-		SIMUL_BREAK_ONCE(base::QuickFormat("NULL technique sent to Effect::Apply for shader %s\n",this->filename.c_str()));
+		SIMUL_BREAK(base::QuickFormat("NULL technique sent to Effect::Apply for shader %s\n",this->filename.c_str()));
 	}
 }
 
 void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 {
 	if(apply_count!=1)
-		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n",this->filename.c_str()));
+		SIMUL_BREAK(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n",this->filename.c_str()));
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
 	HRESULT hr = currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
@@ -626,9 +626,9 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
 	if(apply_count<=0)
-		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Unapply without a corresponding Apply! Effect: %s\n",this->filename.c_str()))
+		SIMUL_BREAK(base::QuickFormat("Effect::Unapply without a corresponding Apply! Effect: %s\n",this->filename.c_str()))
 	else if(apply_count>1)
-		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Apply has been called too many times! Effect: %s\n",this->filename.c_str()))
+		SIMUL_BREAK(base::QuickFormat("Effect::Apply has been called too many times! Effect: %s\n",this->filename.c_str()))
 	apply_count--;
 	if(currentPass)
 		currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
@@ -639,7 +639,7 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 {
 	//if(apply_count!=1)
-	//	SIMUL_BREAK_ONCE(base::QuickFormat("UnbindTextures can only be called after Apply and before Unapply! Effect: %s\n",this->filename.c_str()))
+	//	SIMUL_BREAK(base::QuickFormat("UnbindTextures can only be called after Apply and before Unapply! Effect: %s\n",this->filename.c_str()))
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	dx11::unbindTextures(effect);
 	if(apply_count!=1)

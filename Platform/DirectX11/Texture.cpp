@@ -312,23 +312,23 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 			ppd->GetDesc(&textureDesc);
 			width=textureDesc.Width;
 			length=textureDesc.Height;
-			if(!srv)
-			{
-				if (IsTypeless(textureDesc.Format,true))
-				{
-					D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-					ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-					srv_desc.Format = TypelessToSrvFormat(textureDesc.Format);
-					srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-					srv_desc.Texture2D.MipLevels = textureDesc.MipLevels;
-					srv_desc.Texture2D.MostDetailedMip = 0;
-					V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&srv_desc, &shaderResourceView));
-				}
-				else
-					V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, NULL,&shaderResourceView));
-			}
 		}
 		SAFE_RELEASE(ppd);
+		if(!srv)
+		{
+			if (IsTypeless(textureDesc.Format,true))
+			{
+				D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+				ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+				srv_desc.Format = TypelessToSrvFormat(textureDesc.Format);
+				srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				srv_desc.Texture2D.MipLevels = textureDesc.MipLevels;
+				srv_desc.Texture2D.MostDetailedMip = 0;
+				V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&srv_desc, &shaderResourceView));
+			}
+			else
+				V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, NULL,&shaderResourceView));
+		}
 	}
 	depth=1;
 	dim=2;

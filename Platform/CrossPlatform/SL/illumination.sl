@@ -84,7 +84,7 @@ vec2 OvercastDistances(float alt_km,float sine,float overcastBaseKm,float overca
 }
 
 vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize
-	,float overcastBaseKm,float overcastRangeKm,float maxFadeDistanceKm
+	,float maxFadeDistanceKm
 	,float maxFadeDistance,float terminatorDistance,float radiusOnCylinder,vec3 earthShadowNormal,vec3 sunDir)
 {
 	float azimuth			=3.1415926536*2.0*texCoords.x;
@@ -94,8 +94,8 @@ vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize
 	vec3 view				=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
 	vec2 fade_texc			=vec2(1.0,texCoords.y);
 	vec2 full_bright_range	=EarthShadowDistances(fade_texc,view,earthShadowNormal,sunDir,maxFadeDistance,terminatorDistance,radiusOnCylinder);
-	vec2 overcast_range		=OvercastDistances(alt_km,sine,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm);
-    return vec4(full_bright_range,overcast_range);
+	//vec2 overcast_range		=OvercastDistances(alt_km,sine,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm);
+    return vec4(full_bright_range,full_bright_range);
 }
 #ifndef OVERCAST_STEPS
 #define OVERCAST_STEPS 6
