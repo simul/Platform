@@ -70,7 +70,7 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.pos2_m						=end_pos;
 	res.valid						=1;
 	res.density						=0.0;
-	res.visibility					=0.0;
+	res.visibility					=1.0;
 	res.optical_thickness_metres	=0.0;
 	res.first_contact_metres		=length(end_pos-start_pos);
 	vec3 dir						=normalize(res.pos2_m-res.pos1_m);

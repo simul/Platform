@@ -352,18 +352,6 @@ void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,cons
     glPopMatrix();*/
 }
 
-void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)
-{
-/*    glColor3f(colour[0],colour[1],colour[2]);
-    glLineWidth(width);
-
-    glBegin(GL_LINES);
-
-    glVertex3dv((const GLdouble *)pGlobalBasePosition);
-    glVertex3dv((const GLdouble *)pGlobalEndPosition);
-
-    glEnd();*/
-}
 
 void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition)
 {

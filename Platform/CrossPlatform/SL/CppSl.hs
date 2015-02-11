@@ -265,6 +265,20 @@
 			z=v[2];
 			w=v[3];
 		}
+		vec4 operator*(float m)
+		{
+			vec4 r(x*m,y*m,z*m,w*m);
+			return r;
+		}
+		vec4 operator+(vec4 v) const
+		{
+			vec4 r;
+			r.x=x+v.x;
+			r.y=y+v.y;
+			r.z=z+v.z;
+			r.w=w+v.w;
+			return r;
+		}
 		void operator*=(float m)
 		{
 			x*=m;

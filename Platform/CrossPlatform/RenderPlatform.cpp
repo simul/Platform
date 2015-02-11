@@ -98,6 +98,30 @@ void RenderPlatform::RecompileShaders()
 	textRenderer->RecompileShaders();
 }
 
+void RenderPlatform::PushTexturePath(const char *path_utf8)
+{
+	texturePathsUtf8.push_back(path_utf8);
+}
+void RenderPlatform::PopTexturePath()
+{ 
+	texturePathsUtf8.pop_back();
+}
+std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
+{
+	return texturePathsUtf8;
+}
+
+void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)
+{
+	Vertext line_vertices[2];
+	line_vertices[0].pos=startp;
+	line_vertices[0].colour=colour;
+	line_vertices[1].pos=endp;
+	line_vertices[1].colour=colour;
+	
+	DrawLines(deviceContext,line_vertices,2,false,false,false);
+}
+
 void RenderPlatform::DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float exposure,float gamma)
 {
 }
@@ -239,17 +263,4 @@ namespace simul
 void RenderPlatform::SetStandardRenderState	(DeviceContext &deviceContext,StandardRenderState s)
 {
 	SetRenderState(deviceContext,standardRenderStates[s]);
-}
-
-void RenderPlatform::PushTexturePath(const char *path_utf8)
-{
-	texturePathsUtf8.push_back(path_utf8);
-}
-void RenderPlatform::PopTexturePath()
-{ 
-	texturePathsUtf8.pop_back();
-}
-std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
-{
-	return texturePathsUtf8;
 }

@@ -115,7 +115,7 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 shader vec4 PS_IlluminationBuffer(posTexVertexOutput IN): SV_TARGET
 {
 	float alt_km		=eyePosition.z/1000.0;
-	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm
+	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,maxFadeDistanceKm
 			,maxFadeDistance,terminatorDistance,radiusOnCylinder,earthShadowNormal,sunDir);
 }
 
@@ -275,11 +275,11 @@ svertexOutput VS_Sun(indexVertexInput IN)
     OUT.hPosition=mul(worldViewProj,vec4(pos,1.0));
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
 	
-	OUT.hPosition.z = isForwardDepth*OUT.hPosition.w; 
-	OUT.tex = pos.xy;
-	OUT.depthTexc = OUT.hPosition.xy / OUT.hPosition.w;
-	OUT.depthTexc.y *= -1.0;
-	OUT.depthTexc = 0.5*(OUT.depthTexc + vec2(1.0, 1.0));
+	OUT.hPosition.z		= isForwardDepth*OUT.hPosition.w; 
+	OUT.tex				= glowRadiusMultiple*pos.xy;
+	OUT.depthTexc		= OUT.hPosition.xy / OUT.hPosition.w;
+	OUT.depthTexc.y		*= -1.0;
+	OUT.depthTexc		= 0.5*(OUT.depthTexc + vec2(1.0, 1.0));
     return OUT;
 }
 
@@ -333,7 +333,7 @@ shader vec4 PS_Stars_ForwardDepth(starsVertexOutput IN) : SV_TARGET
 // stored in the alpha channel.
 shader vec4 PS_Sun( svertexOutput IN): SV_TARGET
 {
-	float r=4.0*length(IN.tex);
+	float r=length(IN.tex);
 	if(r>4.0)
 		discard;
 	float brightness = step(r,1.0)*colour.a;
@@ -364,8 +364,6 @@ shader vec4 PS_Sun_ForwardDepth(svertexOutput IN) : SV_TARGET
 {
 	return PS_SunDepthTexture(IN,false);
 }
-
-
 
 shader vec4 PS_SunGaussian( svertexOutput IN): SV_TARGET
 {
