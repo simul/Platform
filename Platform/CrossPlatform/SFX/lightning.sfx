@@ -268,17 +268,17 @@ shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStrea
 	// determine the length of the miter by projecting it onto normal and then inverse it
 
 	// ensure a minimum pixel size:
-	float width1		=max(input[1].thicknessMetres,4.0/viewportPixels*start.w);
-	float width2		=max(input[2].thicknessMetres,4.0/viewportPixels*start.w);
+	float width1				=max(input[1].thicknessMetres,4.0/viewportPixels.x*start.w);
+	float width2				=max(input[2].thicknessMetres,4.0/viewportPixels.x*start.w);
 	float lengthPixels_a		=width1/start.w	*viewportPixels.x/dot(miter_a, n1);
 	float lengthPixels_b		=width2/end.w	*viewportPixels.x/dot(miter_b, n1);
 	const float	MITER_LIMIT=1.0;
-	output.hPosCentre1	=vec2(p1.xy/viewportPixels);
-	output.hPosCentre2	=vec2(p2.xy/viewportPixels);
+	output.hPosCentre1		=vec2(p1.xy/viewportPixels);
+	output.hPosCentre2		=vec2(p2.xy/viewportPixels);
 	output.clipWidth		=width1/start.w;
-	vec2 diff	=output.hPosCentre2-output.hPosCentre1;
-	float dist	=length(diff);
-	float d2	=dist*dist;
+	vec2 diff				=output.hPosCentre2-output.hPosCentre1;
+	float dist				=length(diff);
+	float d2				=dist*dist;
 	// prevent excessively long miters at sharp corners
 	if( dot(v0,v1) < -MITER_LIMIT )
 	{
