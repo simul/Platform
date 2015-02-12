@@ -19,7 +19,7 @@ struct All8Output
 void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
 	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,DepthIntepretationStruct depthInterpretationStruct,vec2 tanHalfFov)
 {
-	float3 view		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
+	vec3 view		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view			=normalize(view);
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 	vec3 depth		=texture_clamp(nearFarDepthTexture,depth_texc).xyz;
@@ -27,7 +27,7 @@ void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthText
 	vec2 dist		=depthToFadeDistance(depth.xy,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	float sine		=view.z;
 	float texy		=0.5*(1.f-sine);
-	vec2 texx		=pow(dist,0.5);
+	vec2 texx		=pow(dist,vec2(0.5,0.5));
 	farLoss			=texture_clamp_mirror(lossTexture,vec2(texx.x,texy)).rgb;
 	nearLoss		=texture_clamp_mirror(lossTexture,vec2(texx.y,texy)).rgb;
 	
@@ -43,14 +43,14 @@ vec2 NearFarShadow(Texture2D nearFarDepthTexture,Texture2D cloudShadowTexture,ve
 	vec3 depth		=texture_clamp(nearFarDepthTexture,depth_texc).xyz;
 
 	vec2 dist		=depthToFadeDistance(depth.xy,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-	vec4 shadow1	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.x*view*maxFadeDistanceMetres).x;
-	vec4 shadow2	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.y*view*maxFadeDistanceMetres).x;
+	float shadow1	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.x*view*maxFadeDistanceMetres).x;
+	float shadow2	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.y*view*maxFadeDistanceMetres).x;
 	float sine		=view.z;
 	float texy		=0.5*(1.f-sine);
-	vec2 texx		=pow(dist,0.5);
+	vec2 texx		=pow(dist,vec2(0.5,0.5));
 	// now shadow1 and shadow2 are from 0 (shadowed) to 1 (light).
 	vec2 sharp_mul	=vec2(1.0,1.0);//+500.0*cloudShadowSharpness*(vec2(1.0,1.0)-texx);
-	vec2 shadow		=saturate(vec2(0.5,0.5)+sharp_mul*vec2(0.5-shadow1.x,0.5-shadow2.x));
+	vec2 shadow		=saturate(vec2(0.5,0.5)+sharp_mul*vec2(0.5-shadow1,0.5-shadow2));
 	if(depthInterpretationStruct.reverseDepth)
 		shadow			*=cloudShadowing*(1.0-step(0.0,-depth.y));
 	else
@@ -69,11 +69,11 @@ void LossCompositeShadowed(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarD
 	vec3 depth		=texture_clamp(nearFarDepthTexture,depth_texc).xyz;
 
 	vec2 dist		=depthToFadeDistance(depth.xy,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-	vec4 shadow1	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.x*view*maxFadeDistanceMetres).x;
-	vec4 shadow2	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.y*view*maxFadeDistanceMetres).x;
+	float shadow1	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.x*view*maxFadeDistanceMetres).x;
+	float shadow2	=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.y*view*maxFadeDistanceMetres).x;
 	float sine		=view.z;
 	float texy		=0.5*(1.f-sine);
-	vec2 texx		=pow(dist,0.5);
+	vec2 texx		=pow(dist,vec2(0.5,0.5));
 	// now shadow1 and shadow2 are from 0 (shadowed) to 1 (light).
 	vec2 sharp_mul	=vec2(1.0,1.0);//+500.0*cloudShadowSharpness*(vec2(1.0,1.0)-texx);
 	vec2 shadow		=saturate(vec2(0.5,0.5)+sharp_mul*vec2(0.5-shadow1.x,0.5-shadow2.x));
@@ -90,7 +90,7 @@ void LossCompositeShadowed(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarD
 vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
 	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,DepthIntepretationStruct depthInterpretationStruct,vec2 tanHalfFov)
 {
-	float3 view		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
+	vec3 view		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view			=normalize(view);
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 	float depth		=texture_clamp(depthTexture,depth_texc).x;
@@ -107,8 +107,8 @@ float GetCloudIllum(Texture3D cloudTexture, SamplerState cloudSamplerState,vec3 
 	vec3 l				=lightDirCloudspace;
 	float a				=saturate(-texc.z);
 	l					*=a/max(l.z,0.0001);
-	texc+=l;
-	vec4 texel = cloudTexture.SampleLevel(cloudSamplerState, texc, 0);
+	texc				+=l;
+	vec4 texel			=sample_lod(cloudTexture,cloudSamplerState, texc, 0);
 	//float above			=saturate(texc.z-1.0);
 	//texel.y				+=above;
 	return saturate(texel.x);
@@ -140,7 +140,7 @@ void Loss_All(		out vec4 colours[8]
 	vec3 view				=normalize(mul(invViewProj,vec4(clip_pos,1.0,1.0)).xyz);
 	view					=normalize(view);
 	float sine				=view.z;
-	float2 fade_texc		=vec2(0,0.5f*(1.f-sine));
+	vec2 fade_texc			=vec2(0,0.5f*(1.f-sine));
 	vec2 nearFarDist		=depthToFadeDistance(depth.xy,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	float il				=0.0;
 	vec3 prev_loss			=vec3(1,1,1);
@@ -155,9 +155,9 @@ void Loss_All(		out vec4 colours[8]
 		float distanceMetres=maxFadeDistanceMetres*solid_dist;
 		vec3 wpos			=viewPosition+distanceMetres*view;
 		vec3 texc			=mul(worldToCloudMatrix,vec4(wpos,1.0)).xyz;//viewposCloudspace+distanceMetres*viewCloudspace;
-		vec4 shadow1		=GetCloudIllum(cloudTexture,cloudSamplerState,texc,lightDirCloudspace);
+		float shadow1		=GetCloudIllum(cloudTexture,cloudSamplerState,texc,lightDirCloudspace);
 		float sharp_mul		=1.0;//+500.0*cloudShadowSharpness*(vec2(1.0,1.0)-texx);
-		float shadow		=1.0-shadow1.x;//saturate(0.5+sharp_mul*(0.5-shadow1.x));
+		float shadow		=1.0-shadow1;//saturate(0.5+sharp_mul*(0.5-shadow1.x));
 
 		shadow				=saturate(1.0-shadow);//*step(solid_dist,dist)
 		vec3 loss			=shadow*texture_clamp_mirror(lossTexture,fade_texc).rgb;
@@ -166,13 +166,13 @@ void Loss_All(		out vec4 colours[8]
 	}
 }
 
-vec3 AtmosphericsLossMSAA(Texture2DMS<float4> depthTextureMS,uint i,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
+vec3 AtmosphericsLossMSAA(TEXTURE2DMS_FLOAT4 depthTextureMS,uint i,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
 	,mat4 invViewProj,vec2 texCoords,int2 depth_pos2,vec2 clip_pos,DepthIntepretationStruct depthInterpretationStruct,vec2 tanHalfFov)
 {
-	float3 view	=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
+	vec3 view	=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view		=normalize(view);
 	float sine	=view.z;
-	float depth	=depthTextureMS.Load(depth_pos2,i).x;
+	float depth	=IMAGE_LOAD_MSAA(depthTextureMS,depth_pos2,i).x;
 	float dist	=depthToFadeDistance(depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	vec2 texc2	=vec2(pow(dist,0.5),0.5*(1.f-sine));
 	vec3 loss	=texture_clamp_mirror(lossTexture,texc2).rgb;
@@ -190,7 +190,7 @@ void CalcInsc(	Texture2D inscTexture
                 ,out vec3 skyl)
 {
 	vec2 fade_texc		=vec2(pow(dist,0.5f),fade_texc_y);
-	vec4 illum_lookup	=texture_wrap_mirror_lod(illuminationTexture,illum_texc,0);
+	vec4 illum_lookup	=texture_wmc_lod(illuminationTexture,illum_texc,0);
 	vec2 nearFarTexc	=illum_lookup.xy;
 	vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
@@ -293,7 +293,7 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 							,vec2(-1.0,1.0),vec2(-1.0,0.0),vec2(-1.0,-1.0)
 							,vec2(0.0,1.0),vec2(0.0,-1.0),vec2(0.0,0.0)};
 	float sine			=view.z;
-	float2 fade_texc	=vec2(0,0.5f*(1.f-sine));
+	vec2 fade_texc	=vec2(0,0.5f*(1.f-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	
 	
@@ -314,7 +314,7 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;
 #endif
-	return float4(colour.rgb,1.0);
+	return vec4(colour.rgb,1.0);
 }
 	
 struct FarNearOutput
@@ -347,7 +347,7 @@ FarNearOutput Inscatter_Both(	Texture2D inscTexture
 							,vec2(-1.0,1.0),vec2(-1.0,0.0),vec2(-1.0,-1.0)
 							,vec2(0.0,1.0),vec2(0.0,-1.0),vec2(0.0,0.0)};
 	float sine			=view.z;
-	float2 fade_texc	=vec2(0,0.5f*(1.f-sine));
+	vec2 fade_texc	=vec2(0,0.5f*(1.f-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	
 	
@@ -369,8 +369,8 @@ FarNearOutput Inscatter_Both(	Texture2D inscTexture
 				,skylFar);
 #ifdef INFRARED
 	vec3 colour				=skylFar.rgb;
-	fn.farColour			=float4(colour,1.f);
-	fn.nearColour			=float4(colour,1.f);
+	fn.farColour			=vec4(colour,1.f);
+	fn.nearColour			=vec4(colour,1.f);
 	return fn;
 #else
 	vec3 farColour	    =InscatterFunction(inscFar,hazeEccentricity,cos0,mieRayleighRatio);
@@ -424,7 +424,7 @@ void Inscatter_All(		out vec4 colours[8]
 	vec3 view			=normalize(mul(invViewProj,vec4(clip_pos,1.0,1.0)).xyz);
 	view				=normalize(view);
 	float sine			=view.z;
-	float2 fade_texc	=vec2(0,0.5f*(1.f-sine));
+	vec2 fade_texc	=vec2(0,0.5f*(1.f-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
 	
@@ -477,7 +477,7 @@ void Inscatter_All(		out vec4 colours[8]
 vec4 InscatterMSAA(	Texture2D inscTexture
 				,Texture2D skylTexture
 				,Texture2D illuminationTexture
-				,Texture2DMS<float4> depthTextureMS
+				,TEXTURE2DMS_FLOAT4 depthTextureMS
 				,int numSamples
 				,vec2 texCoords
 				,int2 pos2
@@ -502,7 +502,7 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 							,vec2(-1.0,1.0),vec2(-1.0,0.0),vec2(-1.0,-1.0)
 							,vec2(0.0,1.0),vec2(0.0,-1.0),vec2(0.0,0.0)};
 	float sine			=view.z;
-	float2 fade_texc	=vec2(0,0.5f*(1.f-sine));
+	vec2 fade_texc	=vec2(0,0.5f*(1.f-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	float extreme_dist	=0.0;
 	if(USE_NEAR_FAR)
@@ -515,7 +515,7 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 	{
 		vec4 insc_i;
         vec3 skyl_i;
-		float depth			=depthTextureMS.Load(pos2,i).x;
+		float depth			=IMAGE_LOAD_MSAA(depthTextureMS,pos2,i).x;
 		float dist			=depthToFadeDistance(depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 		if(USE_NEAR_FAR)
 		{
@@ -566,7 +566,7 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;
 #endif
-	return float4(colour.rgb,1.0);
+	return vec4(colour.rgb,1.0);
 }
 
 vec4 Inscatter(	Texture2D inscTexture
@@ -591,7 +591,7 @@ vec4 Inscatter(	Texture2D inscTexture
 							,vec2(-1.0,1.0),vec2(-1.0,0.0),vec2(-1.0,-1.0)
 							,vec2(0.0,1.0),vec2(0.0,-1.0),vec2(0.0,0.0)};
 	float sine			=view.z;
-	float2 fade_texc	=vec2(0,0.5f*(1.f-sine));
+	vec2 fade_texc	=vec2(0,0.5f*(1.f-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	
 	vec4 insc;
@@ -608,72 +608,9 @@ vec4 Inscatter(	Texture2D inscTexture
 				,insc
 				,skyl);
 	float cos0			=dot(view,lightDir);
-	float3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
+	vec3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;
-    return float4(colour.rgb,1.f);
-}
-
-// With this function we will create a 3D volume texture that encompasses the scattering for a frame,
-// where the x-axis is azimuth around the light source, y-axis is angle from the light source (maximum = 180 deg)
-// and z-axis is distance from the viewer.
-void ScatteringVolume(	RWTexture3D<float4> targetVolume,int3 idx
-						,Texture2D inscTexture
-						,Texture2D skylTexture
-						,Texture2D illuminationTexture
-						,Texture2D cloudShadowTexture
-						,mat4 worldspaceToShadowspaceMatrix
-						,Texture3D cloudTexture
-						,mat4 worldspaceToCloudspaceMatrix
-						,vec3 eyePos
-						,vec3 xAxis
-						,vec3 yAxis
-						,vec3 lightDir
-						,int3 scatteringVolumeDims
-						,float hazeEccentricity
-						,vec3 mieRayleighRatio
-						,float maxFadeDistanceMetres)
-{
-	// We must convert the idx values into a direction and distance in real space.
-	float azimuth		=(float)idx.x/(float)scatteringVolumeDims.x*2.0*PI;
-	float elevation		=(float)idx.y/(float)(scatteringVolumeDims.y-1)*PI;
-	float se			=sin(elevation);
-	float ce			=cos(elevation);
-	float x				=sin(azimuth)*se;
-	float y				=cos(azimuth)*se;
-	vec3 dir			=x*xAxis+y*yAxis+lightDir*ce;
-
-	float sine			=dir.z;
-	float fade_texc_y	=0.5*(1.0-sine);
-	vec2 illum_texc		=vec2(atan2(dir.x,dir.y)/(PI*2.0),fade_texc_y);
-	vec4 colour			=vec4(0,0,0,0);
-	vec4 last			=vec4(0,0,0,0);
-	for(int i=0;i<scatteringVolumeDims.z;i++)
-	{
-		float dist			=pow((float)i/(float)(scatteringVolumeDims.z-1),2.0);
-		vec4 insc;
-		vec3 skyl;
-		CalcInsc(	inscTexture
-					,skylTexture
-					,illuminationTexture
-					,dist
-					,fade_texc_y
-					,illum_texc
-					,insc
-					,skyl);
-
-	#ifdef INFRARED
-		vec4 next		=vec4(skyl.rgb,1.0);
-		float shadow	=1.0;
-	#else
-		float shadow	=GetCloudIlluminationAt(cloudTexture,worldspaceToCloudspaceMatrix,eyePos+dist*dir*maxFadeDistanceMetres,lightDir).x;//worldspaceToShadowspaceMatrix
-		float cos0		=ce;
-		vec4 next	    =vec4(InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio),1.0);
-		next.rgb		+=skyl.rgb;
-	#endif
-		colour			+=max(vec4(0,0,0,0),(next-last))*shadow;
-		targetVolume[int3(idx.xy,i)]=colour;
-		last			=next;
-	}
+    return vec4(colour.rgb,1.f);
 }
 
 #endif

@@ -3,16 +3,16 @@
 #include "../../CrossPlatform/SL/solid_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
 
-Texture2D diffuseTexture;
-TextureCube diffuseCubemap;
+uniform Texture2D diffuseTexture;
+uniform TextureCube diffuseCubemap;
 
 //////////////////////////
-Texture2D farCloudTexture;
-Texture2D nearCloudTexture;
-Texture2D nearFarTexture;
-Texture2D loss2dTexture;
-Texture2D shadowTexture;
-Texture3D screenSpaceInscVolumeTexture;
+uniform Texture2D farCloudTexture;
+uniform Texture2D nearCloudTexture;
+uniform Texture2D nearFarTexture;
+uniform Texture2D loss2dTexture;
+uniform Texture2D shadowTexture;
+uniform Texture3D screenSpaceInscVolumeTexture;
 //////////////////////////
 struct vertexInput
 {
@@ -38,7 +38,7 @@ shader vertexOutput VS_Solid(vertexInput IN)
 	OUT.view=normalize(wpos-viewPosition);
     OUT.clip_pos	=mul(worldViewProj, opos);
 	OUT.texCoords	=IN.texCoords;
-    OUT.normal.xyz	=mul((mat3)world,IN.normal);
+    OUT.normal.xyz	=mul((mat3)(world),IN.normal);
 	OUT.hPosition	=OUT.clip_pos;
     return OUT;
 }
@@ -47,7 +47,7 @@ shader vec4 PS_Solid(vertexOutput IN) : SV_TARGET
 {
     vec3 normal	=normalize(IN.normal);
     vec4 c = texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
-	vec3 totalDiff=diffuseCubemap.Sample(cubeSamplerState,-normal.xyz).rgb;
+	vec3 totalDiff=sample(diffuseCubemap,cubeSamplerState,-normal.xyz).rgb;
 	c.a=1.0;
 	totalDiff+=0.3*saturate(dot(lightDir,normal.xyz))*lightIrradiance;
 	c.rgb*=totalDiff;
@@ -76,7 +76,9 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 	vec4 nearFarCloud			=texture_clamp_lod(nearFarTexture	,lowResTexCoords		,0);
 
 	//IMAGE_LOAD(depthTexture,fullres_depth_pos2).x;
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=(reverseDepth!=0);
 	float dist					=depthToLinearDistance(clip_pos.z	,depthInterpretationStruct);
 	float dist_rt				=pow(dist,0.5);
 	vec4 cloud					=texture_clamp_lod(farCloudTexture,lowResTexCoords,0);
@@ -106,7 +108,7 @@ shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 {
     vec3 normal	=normalize(IN.normal);
     vec4 c = vec4(0.5,0.5,0.5,0.5);//texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
-	vec3 totalDiff=diffuseCubemap.Sample(cubeSamplerState,-normal.xyz).rgb;
+	vec3 totalDiff=sample(diffuseCubemap,cubeSamplerState,-normal.xyz).rgb;
 	//c.rgb*=totalDiff;
 	vec4 loss;
 	vec3 add;

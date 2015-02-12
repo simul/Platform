@@ -3,12 +3,12 @@
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/text_constants.sl"
-Texture2D fontTexture;
+uniform Texture2D fontTexture;
 
 shader posTexVertexOutput FontVertexShader(idOnly IN)
 {
     posTexVertexOutput output=VS_ScreenQuad(IN,rect);
-	output.texCoords=vec4(texc.xy+texc.zw*output.texCoords,0.0,1.0);
+	output.texCoords=vec4(texc.xy+texc.zw*output.texCoords.xy,0.0,1.0).xy;
     return output;
 }
 

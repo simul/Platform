@@ -7,31 +7,24 @@
 #include "../../CrossPlatform/SL/atmospherics_constants.sl"
 #include "../../CrossPlatform/SL/colour_packing.sl"
 
-Texture2D depthTexture;
-Texture2DMS<float4> depthTextureMS;
-Texture2D cloudDepthTexture;
-Texture2D imageTexture;
-Texture2D lossTexture;
-Texture2D inscTexture;
-Texture2D overcTexture;
-Texture2D skylTexture;
-Texture2D illuminationTexture;
-Texture2D cloudShadowTexture;
-Texture2D cloudNearFarTexture;
-Texture2D cloudGodraysTexture;
+uniform Texture2D depthTexture;
+uniform TEXTURE2DMS_FLOAT4 depthTextureMS;
+uniform Texture2D cloudDepthTexture;
+uniform Texture2D imageTexture;
+uniform Texture2D lossTexture;
+uniform Texture2D inscTexture;
+uniform Texture2D overcTexture;
+uniform Texture2D skylTexture;
+uniform Texture2D illuminationTexture;
+uniform Texture2D cloudShadowTexture;
+uniform Texture2D cloudNearFarTexture;
+uniform Texture2D cloudGodraysTexture;
 
-Texture3D cloudTexture;
+uniform Texture3D cloudTexture;
 SamplerState cloudSamplerState;
-Texture2D moistureTexture;
+uniform Texture2D moistureTexture;
 
-RWTexture3D<float4> targetVolume;
-
-SamplerState samplerState: register(s1)
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Clamp;
-	AddressV = Clamp;
-};
+uniform RWTexture3D<vec4> targetVolume;
 
 #include "../../CrossPlatform/SL/cloud_shadow.sl"
 #include "../../CrossPlatform/SL/godrays.sl"
@@ -45,15 +38,15 @@ struct atmosVertexInput
 
 struct atmosVertexOutput
 {
-    float4 position			: SV_POSITION;
-    float2 texCoords		: TEXCOORD0;
-    float2 pos				: TEXCOORD1;
+    vec4 position			: SV_POSITION;
+    vec2 texCoords		: TEXCOORD0;
+    vec2 pos				: TEXCOORD1;
 };
 
 shader atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 {
 	atmosVertexOutput OUT;
-	float2 poss[4]=
+	vec2 poss[4]=
 	{
 		{ 1.0,-1.0},
 		{ 1.0, 1.0},
@@ -61,19 +54,21 @@ shader atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 		{-1.0, 1.0},
 	};
 	OUT.pos			=poss[IN.vertex_id];
-	OUT.position	=float4(OUT.pos,0.0,1.0);
+	OUT.position	=vec4(OUT.pos,0.0,1.0);
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
 
 	OUT.position.z	=0.0; 
 
-    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(OUT.pos.x,-OUT.pos.y));
+    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(OUT.pos.x,-OUT.pos.y));
 	OUT.texCoords	+=0.5*texelOffsets;
 	return OUT;
 }
 
 vec4 PS_NearFarShadow(atmosVertexOutput IN,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec2 nf=NearFarShadow(depthTexture,cloudShadowTexture
 						,viewportToTexRegionScaleBias
@@ -99,9 +94,11 @@ shader vec4 PS_NearFarShadow_ForwardDepth(atmosVertexOutput IN) : SV_TARGET
 	return PS_NearFarShadow(IN,false);
 }
 
-shader vec4 PS_Loss(atmosVertexOutput IN,bool reverseDepth)
+vec4 PS_Loss(atmosVertexOutput IN,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec3 loss		=AtmosphericsLoss(depthTexture
 									,viewportToTexRegionScaleBias
@@ -111,7 +108,7 @@ shader vec4 PS_Loss(atmosVertexOutput IN,bool reverseDepth)
 									,IN.pos
 									,depthInterpretationStruct
 									,tanHalfFov);
-    return float4(loss.rgb,1.0);
+    return vec4(loss.rgb,1.0);
 }
 
 shader vec4 PS_Loss_ReverseDepth(atmosVertexOutput IN) : SV_TARGET
@@ -124,9 +121,11 @@ shader vec4 PS_Loss_ForwardDepth(atmosVertexOutput IN) : SV_TARGET
 	return PS_Loss(IN,false);
 }
 
-vec4 PS_LossMSAA(atmosVertexOutput IN,uint sampleIndex:SV_SampleIndex,bool reverseDepth)
+shader vec4 PS_LossMSAA(atmosVertexOutput IN,uint sampleIndex : SV_SampleIndex,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	int2 pos2;
 	uint numSamples;
@@ -154,9 +153,11 @@ shader vec4 PS_LossMSAA_ForwardDepth(atmosVertexOutput IN,uint sampleIndex:SV_Sa
 	return PS_LossMSAA(IN,sampleIndex,false);
 }
 
-shader vec4 PS_Inscatter(atmosVertexOutput IN,bool reverseDepth) : SV_TARGET
+vec4 PS_Inscatter(atmosVertexOutput IN,bool reverseDepth) 
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	int numSamples	=1;
 	vec4 insc		=Inscatter(	 inscTexture
 								,skylTexture
@@ -179,26 +180,30 @@ shader vec4 PS_Inscatter(atmosVertexOutput IN,bool reverseDepth) : SV_TARGET
 
 shader vec4 PS_Inscatter_ReverseDepth(atmosVertexOutput IN) : SV_TARGET
 {
-	return PS_Inscatter(IN,true);
+	vec4 res= PS_Inscatter(IN,true);
+	return res;
 }
 
 shader vec4 PS_Inscatter_ForwardDepth(atmosVertexOutput IN) : SV_TARGET
 {
-	return PS_Inscatter(IN,false);
+	vec4 res= PS_Inscatter(IN,false);
+	return res;
 }
 
 vec4 PS_InscatterMSAA(atmosVertexOutput IN,uint sampleIndex,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	uint2 dims;
 	uint numSamples;
-	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
+	GET_DIMENSIONS_MSAA(depthTextureMS,dims.x,dims.y,numSamples);
 	int2 pos2=int2(IN.texCoords*vec2(dims.xy));
 	vec4 res=InscatterMSAA(	inscTexture
 							,skylTexture
 							,illuminationTexture
 							,depthTextureMS
-							,numSamples
+							,int(numSamples)
 							,IN.texCoords
 							,pos2
 							,invViewProj
@@ -229,14 +234,16 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays,bool reverseDep
 	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
 	vec2 texCoords		=mixedResolutionTransformXYWH.xy+IN.texCoords.xy*mixedResolutionTransformXYWH.zw;
 	vec4 colours[8];
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	Inscatter_All( colours
 					,inscTexture
 					,skylTexture
 					,illuminationTexture
 					,cloudShadowTexture
 					,cloudTexture
-					, cloudSamplerState
+					,cloudSamplerState
 					,viewPosition
 					,invShadowMatrix
 					,depth_lookup
@@ -286,7 +293,9 @@ All8Output psLossVolume(atmosVertexOutput IN,bool shadowed,bool reverseDepth)
 	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
 	vec2 texCoords		=mixedResolutionTransformXYWH.xy+IN.texCoords.xy*mixedResolutionTransformXYWH.zw;
 	vec4 colours[8];
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	Loss_All( colours
 				,lossTexture
 				,depthTexture
@@ -339,10 +348,14 @@ shader All8Output PS_LossVolumeUnshadowed_forwardDepth(atmosVertexOutput IN)
 	return psLossVolume(IN,false,false);
 }
 
-[numthreads(8,8,1)]
+// With this function we will create a 3D volume texture that encompasses the scattering for a frame,
+// where the x-axis is azimuth around the light source, y-axis is angle from the light source (maximum = 180 deg)
+// and z-axis is distance from the viewer.
+
+CS_LAYOUT(8,8,1)
 shader void CS_ScatteringVolume(uint3 idx: SV_DispatchThreadID)
 {
-	ScatteringVolume(targetVolume,	idx
+	/*ScatteringVolume(targetVolume,	int3(idx)
 									,inscTexture
 									,skylTexture
 									,illuminationTexture
@@ -353,7 +366,48 @@ shader void CS_ScatteringVolume(uint3 idx: SV_DispatchThreadID)
 									,scatteringVolumeDims
 									,hazeEccentricity
 									,mieRayleighRatio
-									,maxFadeDistanceMetres);
+									,maxFadeDistanceMetres);*/
+	// We must convert the idx values into a direction and distance in real space.
+	float azimuth		=float(idx.x)/float(scatteringVolumeDims.x*2.0)*PI;
+	float elevation		=float(idx.y)/float((scatteringVolumeDims.y-1))*PI;
+	float se			=sin(elevation);
+	float ce			=cos(elevation);
+	float x				=sin(azimuth)*se;
+	float y				=cos(azimuth)*se;
+	vec3 dir			=x*xAxis+y*yAxis+lightDir*ce;
+
+	float sine			=dir.z;
+	float fade_texc_y	=0.5*(1.0-sine);
+	vec2 illum_texc		=vec2(atan2(dir.x,dir.y)/(PI*2.0),fade_texc_y);
+	vec4 colour			=vec4(0,0,0,0);
+	vec4 last			=vec4(0,0,0,0);
+	for(int i=0;i<scatteringVolumeDims.z;i++)
+	{
+		float dist			=pow(float(i)/float(scatteringVolumeDims.z-1),2.0);
+		vec4 insc;
+		vec3 skyl;
+		CalcInsc(	inscTexture
+					,skylTexture
+					,illuminationTexture
+					,dist
+					,fade_texc_y
+					,illum_texc
+					,insc
+					,skyl);
+
+	#ifdef INFRARED
+		vec4 next		=vec4(skyl.rgb,1.0);
+		float shadow	=1.0;
+	#else
+		float shadow	=GetCloudIlluminationAt(cloudTexture,worldToCloudMatrix,viewPosition+dist*dir*maxFadeDistanceMetres,lightDir).x;//worldspaceToShadowspaceMatrix
+		float cos0		=ce;
+		vec4 next	    =vec4(InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio),1.0);
+		next.rgb		+=skyl.rgb;
+	#endif
+		colour			+=max(vec4(0,0,0,0),(next-last))*shadow;
+		IMAGE_STORE_3D(targetVolume,int3(idx.xy,i),colour);
+		last			=next;
+	}
 }
 VertexShader vs_atmos=CompileShader(vs_5_0,VS_Atmos());
 
@@ -399,7 +453,7 @@ group inscatter_volume
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
 			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithGodrays_reverseDepth()));
@@ -408,7 +462,7 @@ group inscatter_volume
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
 			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithGodrays_forwardDepth()));
@@ -420,7 +474,7 @@ group inscatter_volume
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
 			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithoutGodrays_reverseDepth()));
@@ -429,7 +483,7 @@ group inscatter_volume
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
 			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithoutGodrays_forwardDepth()));
@@ -445,7 +499,7 @@ group loss_volume
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
 			SetPixelShader(CompileShader(ps_5_0,PS_LossVolumeUnshadowed_reverseDepth()));
@@ -454,7 +508,7 @@ group loss_volume
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
 			SetPixelShader(CompileShader(ps_5_0,PS_LossVolumeUnshadowed_forwardDepth()));
@@ -466,7 +520,7 @@ group loss_volume
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
 			SetPixelShader(CompileShader(ps_5_0,PS_LossVolumeShadowed_reverseDepth()));
@@ -475,7 +529,7 @@ group loss_volume
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(DontBlend8, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
 			SetPixelShader(CompileShader(ps_5_0,PS_LossVolumeShadowed_forwardDepth()));
@@ -491,7 +545,7 @@ fxgroup atmospherics_overlay
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(MultiplyBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(vs_atmos);
 			SetPixelShader(CompileShader(ps_5_0,PS_Loss_ReverseDepth()));
@@ -500,7 +554,7 @@ fxgroup atmospherics_overlay
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(MultiplyBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(MultiplyBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(vs_atmos);
 			SetPixelShader(CompileShader(ps_5_0,PS_Loss_ForwardDepth()));
@@ -512,7 +566,7 @@ fxgroup atmospherics_overlay
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(AddBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(vs_atmos);
 			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_ReverseDepth()));
@@ -521,7 +575,7 @@ fxgroup atmospherics_overlay
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(AddBlend, float4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetBlendState(AddBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(vs_atmos);
 			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_ForwardDepth()));

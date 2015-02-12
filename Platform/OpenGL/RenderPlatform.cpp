@@ -543,7 +543,8 @@ crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuf
 
 crossplatform::PlatformStructuredBuffer *RenderPlatform::CreatePlatformStructuredBuffer()
 {
-	return NULL;
+	crossplatform::PlatformStructuredBuffer *b=new opengl::PlatformStructuredBuffer();
+	return b;
 }
 
 crossplatform::Buffer *RenderPlatform::CreateBuffer()

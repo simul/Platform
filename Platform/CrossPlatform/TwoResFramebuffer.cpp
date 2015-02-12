@@ -1,9 +1,11 @@
+#define NOMINMAX
 #include "Simul/Platform/CrossPlatform/TwoResFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Math/Vector3.h"
 
 using namespace simul;
@@ -44,6 +46,7 @@ void TwoResFramebuffer::SetDepthFormat(crossplatform::PixelFormat p)
 
 void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	ERRNO_CHECK
 	renderPlatform	=r;
 	SAFE_DELETE(lossTexture);
 	SAFE_DELETE(volumeTextures[0]);
@@ -61,6 +64,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	}
 	lowResFramebuffers[2]->SetFormat(crossplatform::RGBA_32_FLOAT);
 	lowResFramebuffers[0]	->SetDepthFormat(crossplatform::D_16_UNORM);
+	ERRNO_CHECK
 	for(int i=0;i<4;i++)
 	{
 		SAFE_DELETE(nearFarTextures[i]);
@@ -70,20 +74,24 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	lossTexture			=renderPlatform->CreateTexture();
 	volumeTextures[0]	=renderPlatform->CreateTexture();
 	volumeTextures[1]	= renderPlatform->CreateTexture();
+	ERRNO_CHECK
 	if(Width<=0||Height<=0||Downscale<=0)
 		return;
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
 	int BufferWidth = (Width + Downscale - 1) / Downscale + 1;
 	int BufferHeight = (Height + Downscale - 1) / Downscale + 1;
+	ERRNO_CHECK
 	for (int i = 0; i < 3; i++)
 	{
 		lowResFramebuffers[i]->SetWidthAndHeight(BufferWidth, BufferHeight);
 		lowResFramebuffers[i]->RestoreDeviceObjects(r);
 	}
+	ERRNO_CHECK
 	// We're going to TRY to encode near and far loss into two UINT's, for faster results
 	lossTexture->ensureTexture2DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,crossplatform::RGBA_16_FLOAT,false,true);
 	volumeTextures[0]->ensureTexture3DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,8,simul::crossplatform::RGBA_16_FLOAT,false,1,true);
 	volumeTextures[1]->ensureTexture3DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,8,simul::crossplatform::RGBA_16_FLOAT,false,1,true);
+	ERRNO_CHECK
 }
 
 void TwoResFramebuffer::InvalidateDeviceObjects()

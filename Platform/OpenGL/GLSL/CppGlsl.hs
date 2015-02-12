@@ -45,6 +45,7 @@
 	#define texture_wrap_clamp(tex,texc) texture(tex,texc)
 	#define texture_wrap_mirror(tex,texc) texture(tex,texc) 
 	#define sample(tex,smplr,texc) texture(tex,texc)
+	#define sample_lod(tex,smplr,texc,lod) textureLod(tex,texc,lod)
 	#define sampleLod(tex,smplr,texc,lod) textureLod(tex,texc,lod)
 	#define texture_wrap_lod(tex,texc,lod) textureLod(tex,texc,lod)
 	#define texture_cwc_lod(tex,texc,lod) textureLod(tex,texc,lod)
@@ -58,6 +59,7 @@
 	#define texture_cube(tex,texc) texture(tex,texc);
 
 	#define texture_wwc(tex,texc) texture(tex,texc)
+	#define texture_wwc_lod(tex,texc,lod) textureLod(tex,texc,lod)
 	#define texture_nearest(tex,texc) texture(tex,texc)
 	#define texture3Dpt(tex,texc) texture(tex,texc)
 	#define texture2Dpt(tex,texc) texture(tex,texc)
@@ -67,7 +69,6 @@
 
 	// GLSL Does not recognize "inline"
 	#define inline
-
 	#define texture3D texture
 	#define texture2D texture 
 	#define Texture3D sampler3D 
@@ -101,6 +102,7 @@
 #define GET_DIMENSIONS_MSAA(tex,X,Y,S) {ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;}//textureQueryLevels(tex);
 #define GET_DIMENSIONS(tex,X,Y) {ivec2 iv=textureSize(tex,0); X=iv.x;Y=iv.y;}
 #define GET_DIMENSIONS_3D(tex,X,Y,Z) {ivec3 iv=textureSize(tex,0); X=iv.x;Y=iv.y;Z=iv.z;}
+#define GET_IMAGE_DIMENSIONS(tex,X,Y) {ivec2 iv=imageSize(tex); X=iv.x;Y=iv.y;}
 #define GET_IMAGE_DIMENSIONS_3D(tex,X,Y,Z) {ivec3 iv=imageSize(tex); X=iv.x;Y=iv.y;Z=iv.z;}
 	// SOME GLSL compilers like this version:
 //#define RW_TEXTURE3D_FLOAT4 layout(rgba32f,binding = 0) uniform image3D

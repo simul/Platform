@@ -12,7 +12,7 @@ uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
 uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
 
 SIMUL_CONSTANT_BUFFER(cbPerObject,11)
-	float4 rect;
+	vec4 rect;
 SIMUL_CONSTANT_BUFFER_END
 
 struct a2v
@@ -117,7 +117,9 @@ shader vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
 vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth) 
 {
 	vec4 depth		=texture_nearest_lod(imageTexture,IN.texCoords,0);
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
     vec4 result		=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
 	//if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
@@ -130,12 +132,14 @@ vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth)
 
 shader vec4 PS_ShowDepth_Forward(posTexVertexOutput IN) : SV_TARGET
 {
-	return ShowDepthPS(IN,false);
+	vec4 res=ShowDepthPS(IN,false);
+	return res;
 }
 
 shader vec4 PS_ShowDepth_Reverse(posTexVertexOutput IN) : SV_TARGET
 {
-	return ShowDepthPS(IN,true);
+	vec4 res=ShowDepthPS(IN,true);
+	return res;
 }
 
 
@@ -146,7 +150,9 @@ vec4 ShowDepthMS_PS(posTexVertexOutput IN,bool reverseDepth)
 	GET_DIMENSIONS_MSAA(imageTextureMS,dims.x,dims.y,numSamples);
 	int2 pos		=int2(IN.texCoords.xy*vec2(dims.xy));
 	vec4 depth		=IMAGE_LOAD_MSAA(imageTextureMS,pos,0);
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 dist		=depthToFadeDistance(depth.xx,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
 	vec4 result=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
 	if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
@@ -157,12 +163,14 @@ vec4 ShowDepthMS_PS(posTexVertexOutput IN,bool reverseDepth)
 
 shader vec4 PS_ShowDepthMS_Forward(posTexVertexOutput IN) : SV_TARGET
 {
-	return ShowDepthMS_PS(IN,false);
+	vec4 res=ShowDepthMS_PS(IN,false);
+	return res;
 }
 
 shader vec4 PS_ShowDepthMS_Reverse(posTexVertexOutput IN) : SV_TARGET
 {
-	return ShowDepthMS_PS(IN,true);
+	vec4 res=ShowDepthMS_PS(IN,true);
+	return res;
 }
 struct vec3input
 {
@@ -221,15 +229,15 @@ shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 	return u;
 }
 
-fxgroup lines_3d_depth
+group lines_3d_depth
 {
 	technique depth_forward
     {
 		pass lines3d
 		{
-			SetRasterizerState( wireframeRasterizer );
-			SetDepthStencilState( TestForwardDepth, 0 );
-			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+			SetRasterizerState(wireframeRasterizer);
+			SetDepthStencilState(TestForwardDepth,0);
+			SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(CompileShader(vs_4_0,DebugVS()));
 			SetPixelShader(CompileShader(ps_4_0,DebugPS()));

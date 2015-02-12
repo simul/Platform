@@ -54,7 +54,8 @@ shader vertexOutput VS_Main(idOnly IN)
 
 shader vec4 PS_Loss(vertexOutput IN) : SV_TARGET
 {
-	return PSLoss(input_texture,density_texture,IN.texCoords.xy);
+	vec4 loss=PSLoss(input_texture,density_texture,IN.texCoords.xy);
+	return loss;
 }
 
 CS_LAYOUT(4,4,4)
@@ -78,7 +79,7 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	uint3 sub_pos = g * uint3(8, 1, 1) + t;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	uint linear_pos		=sub_pos.x+threadOffset.x;
-	uint3 pos			=LinearThreadToPos2D(linear_pos,dims);
+	uint3 pos			=uint3(LinearThreadToPos2D(int(linear_pos),int3(dims)));
 	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
 	vec2 texc			=(pos.xy+vec2(0.5,0.5))/vec2(targetSize.xy);
@@ -125,7 +126,7 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 //The 3 y-values represent the three tables for interpolation.
 
 CS_LAYOUT(1,1,1)
-void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
+shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
 	uint3 sub_pos = g  + t;
 	// threadOffset.y determines the cycled index.
@@ -158,8 +159,8 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
 	int3 sub_pos = int3(g) * int3(8, 1, 1) + int3(t);
 	int3 dims;
-	//targetTexture.GetDimensions(dims.x,dims.y,dims.z);
-	int linear_pos			=sub_pos.x+threadOffset.x;
+
+	int linear_pos			=int(sub_pos.x)+int(threadOffset.x);
 	
 	int3 pos				=LinearThreadToPos2D(linear_pos,targetSize);
 	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
@@ -239,11 +240,11 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 CS_LAYOUT(8,1,1)
 shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
-	uint3 sub_pos = g *uint3(8,1,1) + t;
-	uint3 dims;
+	int3 sub_pos = int3(g) *int3(8,1,1) + int3(t);
+	int3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
-	uint linear_pos		=sub_pos.x+threadOffset.x;
-	uint3 pos			=LinearThreadToPos2D(linear_pos,dims);
+	int linear_pos		=sub_pos.x+int(threadOffset.x);
+	int3 pos			=LinearThreadToPos2D(linear_pos,dims);
 	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
 	vec2 texc			=(pos.xy+vec2(0.5,0.5))/vec2(targetSize.xy);
@@ -290,7 +291,8 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 
 shader vec4 PS_Insc(vertexOutput IN) : SV_TARGET
 {
-	return Insc(input_texture,loss_texture,density_texture,optical_depth_texture,IN.texCoords);
+	vec4 ret=Insc(input_texture,loss_texture,density_texture,optical_depth_texture,IN.texCoords);
+	return ret;
 }
 
 shader vec4 PS_Skyl(vertexOutput IN) : SV_TARGET
@@ -313,7 +315,7 @@ shader vec4 PS_Skyl(vertexOutput IN) : SV_TARGET
 	float alt_km		=r-planetRadiusKm;
 	// lookups is: dens_factor,ozone_factor,haze_factor;
 	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-	vec4 lookups		=texture(density_texture,dens_texc);
+	vec4 lookups		=texture(density_texture,vec2(dens_texc,dens_texc));
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);

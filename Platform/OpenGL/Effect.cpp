@@ -78,6 +78,7 @@ GL_ERROR_CHECK
 
 void Query::Begin(crossplatform::DeviceContext &)
 {
+	currFrame = (currFrame + 1) % QueryLatency;  
 GL_ERROR_CHECK
 	glBeginQuery(toGlQueryType(type),glQuery[currFrame]);
 GL_ERROR_CHECK
@@ -86,9 +87,8 @@ GL_ERROR_CHECK
 void Query::End(crossplatform::DeviceContext &)
 {
 GL_ERROR_CHECK
-	glEndQuery(glQuery[currFrame]);
+	glEndQuery(toGlQueryType(type));
 GL_ERROR_CHECK
-	currFrame = (currFrame + 1) % QueryLatency;  
 }
 
 void Query::GetData(crossplatform::DeviceContext &,void *data,size_t sz)
@@ -123,10 +123,10 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 
 void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int )
 {
-		if(errno!=0)
-		{
-			DebugBreak();
-		}
+	if(errno!=0)
+	{
+		DebugBreak();
+	}
 GL_ERROR_CHECK
 	static int lastBindingIndex=21;
 	if(lastBindingIndex>=85)
@@ -137,7 +137,6 @@ GL_ERROR_CHECK
 	bool any=false;
 	for(crossplatform::TechniqueMap::iterator i=effect->techniques.begin();i!=effect->techniques.end();i++)
 	{
-//		const char *techname=i->first.c_str();
 		crossplatform::EffectTechnique *tech=i->second;
 		if(!tech)
 			break;
@@ -197,6 +196,130 @@ void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &)
 {
 }
 
+static const int NUM_STAGING_BUFFERS=3;
+PlatformStructuredBuffer::PlatformStructuredBuffer()
+				:num_elements(0)
+				,element_bytesize(0)
+				,ssbo(0)
+				,read_data(0)
+				,write_data(0)
+			{
+			}
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data)
+{
+	InvalidateDeviceObjects();
+	num_elements=ct;
+	element_bytesize=unit_size;
+	GL_ERROR_CHECK
+	glGenBuffers(1, &ssbo);
+	GL_ERROR_CHECK
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, element_bytesize*num_elements, init_data, GL_DYNAMIC_COPY);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	GL_ERROR_CHECK
+}
+
+void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceContext)
+{
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	GL_ERROR_CHECK
+	write_data =(unsigned char*) glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
+	GL_ERROR_CHECK
+	return write_data;
+}
+
+const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext &deviceContext)
+{
+	GL_ERROR_CHECK
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	GL_ERROR_CHECK
+	read_data =(unsigned char*) glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+	GL_ERROR_CHECK
+	return read_data;
+}
+
+void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
+{
+	if(read_data)
+	{
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+	GL_ERROR_CHECK
+	read_data=NULL;
+}
+
+void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext &deviceContext)
+{
+	/*	for(int i=0;i<NUM_STAGING_BUFFERS-1;i++)
+		std::swap(stagingBuffers[(NUM_STAGING_BUFFERS-1-i)],stagingBuffers[(NUM_STAGING_BUFFERS-2-i)]);
+	lastContext->CopyResource(stagingBuffers[0],buffer);*/
+}
+
+
+void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceContext,void *data)
+{
+	GL_ERROR_CHECK
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
+	GL_ERROR_CHECK
+	memcpy(p, data, element_bytesize*num_elements);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	GL_ERROR_CHECK
+}
+
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
+{
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	if(write_data)
+	{
+		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	}
+	GL_ERROR_CHECK
+	for(crossplatform::TechniqueMap::iterator i=effect->techniques.begin();i!=effect->techniques.end();i++)
+	{
+		crossplatform::EffectTechnique *tech=i->second;
+		if(!tech)
+			break;
+		for(int j=0;j<tech->NumPasses();j++)
+		{
+	GL_ERROR_CHECK
+			GLuint program=tech->passAsGLuint(j);
+			GLuint indexInShader;
+	GL_ERROR_CHECK
+			indexInShader=glGetProgramResourceIndex(program,GL_SHADER_STORAGE_BLOCK,name);
+			if(indexInShader>=0xFFFFFFFF)
+				continue;
+	GL_ERROR_CHECK
+			GLuint ssbo_binding_point_index = 2;
+			glShaderStorageBlockBinding(program, indexInShader, ssbo_binding_point_index);
+	GL_ERROR_CHECK
+		}
+	}
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
+{
+}
+
+void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &deviceContext)
+{
+}
+void PlatformStructuredBuffer::InvalidateDeviceObjects()
+{
+	if(write_data)
+	{
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+	write_data=NULL;
+	SAFE_DELETE_BUFFER(ssbo);
+	num_elements=0;
+}
 int EffectTechnique::NumPasses() const
 {
 	return (int)passes_by_index.size();
@@ -323,22 +446,8 @@ EffectTechnique *Effect::CreateTechnique()
 	return new opengl::EffectTechnique;
 }
 
-void Effect::AddPass(std::string techname, std::string passname, GLuint t)
+void Effect::AddPass(std::string groupname,std::string techname, std::string passname, GLuint t)
 {
-	// Now the name will determine what technique and pass it is.
-	std::string groupname;
-	int dotpos1 = (int)techname.find("::");
-	if (dotpos1 >= 0)
-	{
-		groupname = techname.substr(0, dotpos1);
-		techname = techname.substr(dotpos1 + 2, techname.length() - dotpos1 - 2);
-	}
-	int dotpos2 = (int)techname.find_last_of(".");
-	if (dotpos2 >= 0)
-	{
-		passname = techname.substr(dotpos2 + 1, techname.length() - dotpos2 - 1);
-		techname = techname.substr(0, dotpos2);
-	}
 	crossplatform::EffectTechnique *tech = EnsureTechniqueExists(groupname, techname, passname);
 	tech->passes_by_name[passname] = (void*)t;
 	int pass_idx = (int)tech->passes_by_index.size();
@@ -353,16 +462,19 @@ bool Effect::FillInTechniques()
 	if(e<0)
 		return false;
 	groups.clear();
-	int numt = (int)glfxGetTechniqueCount(e);
-	if (numt)
-	{ 
-		for (int i = 0; i < numt; i++)
+	int numg = (int)glfxGetTechniqueGroupCount(e);
+	for (int i = 0; i < numg; i++)
+	{
+		std::string group_name=glfxGetTechniqueGroupName(e,i);
+		glfxUseTechniqueGroup(e,i);
+		int numt = (int)glfxGetTechniqueCount(e);
+		for (int j = 0; j < numt; j++)
 		{
-			std::string tech_name = glfxGetTechniqueName(e, i);
+			std::string tech_name = glfxGetTechniqueName(e,j);
 			int num_passes = (int)glfxGetPassCount(e, tech_name.c_str());
-			for (int j = 0; j < num_passes; j++)
+			for (int k = 0; k < num_passes; k++)
 			{
-				std::string pass_name = glfxGetPassName(e, tech_name.c_str(), j);
+				std::string pass_name = glfxGetPassName(e, tech_name.c_str(), k);
 				GLuint t = glfxCompilePass(e, tech_name.c_str(), pass_name.c_str());
 				if (!t)
 				{
@@ -372,10 +484,11 @@ bool Effect::FillInTechniques()
 					opengl::printEffectLog(asGLint());
 					return false;
 				}
-				AddPass(tech_name, pass_name, t);
+				AddPass(group_name,tech_name, pass_name, t);
 			}
 		}
 	}
+	glfxUseTechniqueGroup(e,0);
 	int nump			=glfxGetProgramCount(e);
 	if (nump)
 	{
@@ -389,12 +502,10 @@ bool Effect::FillInTechniques()
 				opengl::printEffectLog(asGLint());
 				return false;
 			}
-			AddPass(name, "main", t);
+			AddPass("",name, "main", t);
 		}
 	}
 	// ZERO is a valid number of shaders to have in an effect:
-	if (numt==0&&nump==0)
-		return true;
 	return true;
 }
 

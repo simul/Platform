@@ -21,6 +21,7 @@
 #define texture_wrap_mirror_lod(tex,texc,lod) tex.SampleLevel(wrapMirrorSamplerState,texc,lod)
 #define sample(tex,sampler,texc) tex.Sample(sampler,texc)
 #define sampleLod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
+#define sample_lod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 #define texture(tex,texc) tex.Sample(samplerState,texc)
 #define texture2D(tex,texc) tex.Sample(samplerState,texc)
 #define texture_wrap(tex,texc) tex.Sample(wrapSamplerState,texc)
@@ -39,7 +40,7 @@
 
 #define texture_wwc(tex,texc) tex.Sample(wwcSamplerState,texc)
 #define texture_wwc_lod(tex,texc,lod) tex.SampleLevel(wwcSamplerState,texc,lod)
-#define texture_nearest(tex,texc) tex.SampleLevel(samplerStateNearest,texc)
+#define texture_nearest(tex,texc) tex.Sample(samplerStateNearest,texc)
 #define texture3Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
 #define texture2Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
 #define texture(tex,texc) tex.Sample(samplerState,texc)
@@ -93,6 +94,7 @@
 	#define GET_DIMENSIONS_MSAA(tex,x,y,s) tex.GetDimensions(x,y,s)
 	#define GET_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
 	#define GET_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
+	#define GET_IMAGE_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
 	#define GET_IMAGE_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
 	#define RW_TEXTURE3D_FLOAT4 RWTexture3D<float4>
 	#define RW_TEXTURE3D_FLOAT RWTexture3D<float>

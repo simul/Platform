@@ -54,6 +54,34 @@ namespace simul
 			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
 			void Unbind(simul::crossplatform::DeviceContext &deviceContext);
 		};
+		class PlatformStructuredBuffer:public crossplatform::PlatformStructuredBuffer
+		{
+			GLuint								ssbo;
+			int num_elements;
+			int element_bytesize;
+			unsigned char *read_data;
+			unsigned char *write_data;
+		public:
+			PlatformStructuredBuffer();
+			virtual ~PlatformStructuredBuffer()
+			{
+				InvalidateDeviceObjects();
+			}
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data);
+			void *GetBuffer(crossplatform::DeviceContext &deviceContext);
+			const void *OpenReadBuffer(crossplatform::DeviceContext &deviceContext);
+			void CloseReadBuffer(crossplatform::DeviceContext &deviceContext);
+			void CopyToReadBuffer(crossplatform::DeviceContext &deviceContext);
+			void SetData(crossplatform::DeviceContext &deviceContext,void *data);
+			GLuint AsGLuint() const
+			{
+				return ssbo;
+			}
+			void InvalidateDeviceObjects();
+			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
+			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
+			void Unbind(crossplatform::DeviceContext &deviceContext);
+		};
 		class SIMUL_OPENGL_EXPORT PassState
 		{
 		public:
@@ -80,7 +108,7 @@ namespace simul
 			bool FillInTechniques();
 			void SetTex(const char *name,crossplatform::Texture *tex,bool write,int mip);
 			EffectTechnique *CreateTechnique();
-			void AddPass(std::string techname, std::string passname, GLuint t);
+			void AddPass(std::string groupname,std::string techname, std::string passname, GLuint t);
 		public:
 			Effect();
 			~Effect();

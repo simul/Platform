@@ -53,7 +53,9 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform float startZMetres;
 
 	uniform float godraysIntensity;
-	uniform float wo934yhj,wgh984,kw40y9uj;
+	uniform float wo934yhj;
+	uniform float wgh984;
+	uniform float kw40y9uj;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

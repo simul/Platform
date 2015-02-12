@@ -56,11 +56,18 @@ vec4 texture_resolve(TEXTURE2DMS_FLOAT4 textureMS,vec2 texCoords)
 
 shader CompositeShaderInput VS_Composite(idOnly IN)
 {
-	posTexVertexOutput posTex=VS_SimpleFullscreen(IN);
 	CompositeShaderInput OUT;
-
-	OUT.hPosition=posTex.hPosition;
-	OUT.texCoords=posTex.texCoords;
+	vec2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(pos,0.0,1.0);
+	OUT.hPosition.z	=0.0; 
+	OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
 
 	OUT.lowResTexCoords	=fullResToLowResTransformXYWH.xy+OUT.texCoords*fullResToLowResTransformXYWH.zw;
 	OUT.clip_pos		=vec4(-1.0,1.0,1.0,1.0);
@@ -79,7 +86,9 @@ shader posTexVertexOutput QuadVS(idOnly id)
 shader vec4 ShowDepthPS_ReverseDepth(posTexVertexOutput IN) : SV_Target
 {
 	vec4 depth = texture_clamp(depthTexture, IN.texCoords);
-	DepthIntepretationStruct depthInterpretationStruct = { depthToLinFadeDistParams, true };
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=true;
 	float dist = 10.0*depthToFadeDistance(depth.x, 2.0*(IN.texCoords - 0.5), depthInterpretationStruct, tanHalfFov);
 	vec4 u = vec4(1, dist, dist, 1.0);
 	return u;
@@ -88,7 +97,9 @@ shader vec4 ShowDepthPS_ReverseDepth(posTexVertexOutput IN) : SV_Target
 shader vec4 ShowDepthPS_ForwardDepth(posTexVertexOutput IN) : SV_Target
 {
 	vec4 depth		=texture_clamp(depthTexture,IN.texCoords);
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,false};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=false;
 	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
     vec4 u=vec4(1,dist,dist,1.0);
 	return u;
@@ -230,6 +241,7 @@ shader vec4 ExposureGammaPS(posTexVertexOutput IN) : SV_Target
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
     vec4 u=vec4(c.rgb,1.0);
+	u.r=1;
 	return u;
 }
 
@@ -302,7 +314,9 @@ shader vec4 DirectPS(posTexVertexOutput IN) : SV_Target
 
 TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.texCoords.xy
 														,IN.clip_pos
 														,IN.depth_texc
@@ -333,9 +347,11 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_ForwardDepth(CompositeS
 }
 
 
-shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(posTexVertexOutput IN,bool reverseDepth)
+TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(posTexVertexOutput IN,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct = { depthToLinFadeDistParams, reverseDepth };
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.texCoords.xy
 																,imageTexture
 																,nearImageTexture

@@ -257,7 +257,6 @@ namespace simul
 			void RestoreDeviceObjects(RenderPlatform *p,int ct,bool computable=false,T *data=NULL)
 			{
 				count=ct;
-//				unit_size=sizeof(T);
 				delete platformStructuredBuffer;
 				platformStructuredBuffer=NULL;
 				platformStructuredBuffer=p->CreatePlatformStructuredBuffer();
