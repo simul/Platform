@@ -478,11 +478,11 @@ bool Effect::FillInTechniques()
 			{
 				std::string pass_name = glfxGetPassName(e, tech_name.c_str(), k);
 				GLuint t = glfxCompilePass(e, tech_name.c_str(), pass_name.c_str());
-				if (!t)
+				if(!t)
 				{
-					std::cerr << filenameInUseUtf8.c_str()
-						<< ": error C7555:  there are errors in pass "<<pass_name.c_str()<<" of technique "
-						<< tech_name.c_str() << std::endl;
+					std::cerr<<filenameInUseUtf8.c_str()
+								<<": error C7555:  there are errors in pass "<<pass_name.c_str()<<" of technique "
+								<<tech_name.c_str()<<std::endl;
 					opengl::printEffectLog(asGLint());
 					return false;
 				}
@@ -810,6 +810,8 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
 			glEffectTechnique->passStates[currentPass]->Apply();
+		GLuint prog=effectTechnique->passAsGLuint(pass);
+		glfxApplyPassState((GLuint)platform_effect,prog);
 		GL_ERROR_CHECK
 	}
 }
@@ -839,10 +841,10 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 				currentPass				=i->first;
 		}
 		glUseProgram(prog);
+		glfxApplyPassState((GLuint)platform_effect,prog);
 		GL_ERROR_CHECK
 		for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
 			glBindSampler(i->first,i->second);
-		//current_texture_number	=0;
 		current_prog	=prog;
 		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
@@ -856,6 +858,7 @@ void Effect::Reapply(crossplatform::DeviceContext &)
 		SIMUL_BREAK("Effect::Reapply can only be called after Apply and before Unapply!")
 	GLuint prog=current_prog;
 	glUseProgram(prog);
+	glfxApplyPassState((GLuint)platform_effect,prog);
 	GL_ERROR_CHECK
 }
 
