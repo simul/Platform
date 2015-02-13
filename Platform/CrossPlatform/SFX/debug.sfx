@@ -11,10 +11,6 @@ uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
 uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
 uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
 
-SIMUL_CONSTANT_BUFFER(cbPerObject,11)
-	vec4 rect;
-SIMUL_CONSTANT_BUFFER_END
-
 struct a2v
 {
     vec3 position	: POSITION;

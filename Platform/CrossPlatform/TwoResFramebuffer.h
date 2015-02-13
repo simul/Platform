@@ -15,6 +15,8 @@ namespace simul
 		class Texture;
 		struct DeviceContext;
 		class RenderPlatform;
+		struct Viewport;
+		struct ViewStruct;
 		//! A base class for API-dependent framebuffer classes.
 		class SIMUL_CROSSPLATFORM_EXPORT TwoResFramebuffer
 		{

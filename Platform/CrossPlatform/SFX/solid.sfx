@@ -38,7 +38,11 @@ shader vertexOutput VS_Solid(vertexInput IN)
 	OUT.view=normalize(wpos-viewPosition);
     OUT.clip_pos	=mul(worldViewProj, opos);
 	OUT.texCoords	=IN.texCoords;
+#ifdef GLSL
+    OUT.normal.xyz	=mul(mat3(world),IN.normal);
+#else
     OUT.normal.xyz	=mul((mat3)(world),IN.normal);
+#endif
 	OUT.hPosition	=OUT.clip_pos;
     return OUT;
 }

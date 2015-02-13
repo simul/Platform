@@ -3,6 +3,7 @@
 
 SIMUL_CONSTANT_BUFFER(DebugConstants,8)
 	uniform mat4 worldViewProj;
+	uniform vec4 rect;
 
 	uniform int latitudes;
 	uniform int longitudes;

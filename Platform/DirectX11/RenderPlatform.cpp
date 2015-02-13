@@ -131,7 +131,6 @@ void RenderPlatform::StoredState::Clear()
 
 RenderPlatform::RenderPlatform()
 	:device(NULL)
-	,m_pDebugEffect(NULL)
 	,m_pCubemapVtxDecl(NULL)
 	,m_pVertexBuffer(NULL)
 	,m_pVtxDecl(NULL)
@@ -161,14 +160,12 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	delete eSRAMManager;
 	eSRAMManager=new ESRAMManager(device);
 #endif
-	solidConstants.RestoreDeviceObjects(this);
-	debugConstants.RestoreDeviceObjects(this);
 	RecompileShaders();
 	SAFE_RELEASE(m_pVertexBuffer);
 	// Vertex declaration
 	{
 		D3DX11_PASS_DESC PassDesc;
-		crossplatform::EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
+		crossplatform::EffectTechnique *tech	=debugEffect->GetTechniqueByName("vec3_input_signature");
 		tech->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
 		D3D11_INPUT_ELEMENT_DESC decl[]=
 		{
@@ -202,8 +199,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 #endif
 	SAFE_RELEASE(m_pVtxDecl);
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
-	solidConstants.InvalidateDeviceObjects();
-	debugConstants.InvalidateDeviceObjects();
 	SAFE_DELETE(solidEffect);
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
@@ -213,7 +208,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	materials.clear();
 	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_DELETE(m_pDebugEffect);
+	SAFE_DELETE(debugEffect);
 	ID3D11DeviceContext* c=immediateContext.asD3D11DeviceContext();
 	SAFE_RELEASE(c);
 	immediateContext.platform_context=NULL;
@@ -221,21 +216,14 @@ void RenderPlatform::InvalidateDeviceObjects()
 
 void RenderPlatform::RecompileShaders()
 {
-	SAFE_DELETE(m_pDebugEffect);
-	SAFE_DELETE(solidEffect);
 	if(!device)
 		return;
-	std::map<std::string, std::string> defines;
-	m_pDebugEffect=CreateEffect("debug",defines);
-	solidEffect=CreateEffect("solid",defines);
-	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
-	debugConstants.LinkToEffect(m_pDebugEffect,"DebugConstants");
+	crossplatform::RenderPlatform::RecompileShaders();
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
 		mat->SetEffect(solidEffect);
 	}
-	crossplatform::RenderPlatform::RecompileShaders();
 }
 
 void RenderPlatform::PushTexturePath(const char *pathUtf8)
@@ -1177,10 +1165,10 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *srv,float mult,bool blend)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTexture",srv);
+	simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTexture",srv);
 	debugConstants.multiplier=mult;
 	debugConstants.Apply(deviceContext);
-	crossplatform::EffectTechnique *tech=m_pDebugEffect->GetTechniqueByName("textured");
+	crossplatform::EffectTechnique *tech=debugEffect->GetTechniqueByName("textured");
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	int pass=(blend==true)?1:0;
 	if(srv)
@@ -1189,16 +1177,16 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 		bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
 		if(msaa)
 		{
-			tech=m_pDebugEffect->GetTechniqueByName("textured");
-			simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureMS",srv);
+			tech=debugEffect->GetTechniqueByName("textured");
+			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureMS",srv);
 		}
 		else if(desc.Format==DXGI_FORMAT_R32_UINT||desc.Format==DXGI_FORMAT_R32G32_UINT||desc.Format==DXGI_FORMAT_R32G32B32_UINT||desc.Format==DXGI_FORMAT_R32G32B32A32_UINT)
 		{
-			tech=m_pDebugEffect->GetTechniqueByName("compacted_texture");
-			simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureUint",srv);
-			simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureUint2",srv);
-			simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureUint3",srv);
-			simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTextureUint4",srv);
+			tech=debugEffect->GetTechniqueByName("compacted_texture");
+			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint",srv);
+			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint2",srv);
+			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint3",srv);
+			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint4",srv);
 		}
 	}
 	unsigned int num_v=1;
@@ -1212,9 +1200,9 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 			,2.f*(float)dx/(float)viewport.Width
 			,2.f*(float)dy/(float)viewport.Height
-			,m_pDebugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique(),pass);
+			,debugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique(),pass);
 	}
-	simul::dx11::setTexture(m_pDebugEffect->asD3DX11Effect(),"imageTexture",NULL);
+	simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTexture",NULL);
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend)
@@ -1227,15 +1215,15 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v)
 {
-	crossplatform::EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("show_depth");
+	crossplatform::EffectTechnique *tech	=debugEffect->GetTechniqueByName("show_depth");
 	if(tex->GetSampleCount()>0)
 	{
-		tech=m_pDebugEffect->GetTechniqueByName("show_depth_ms");
-		m_pDebugEffect->SetTexture(deviceContext,"imageTextureMS",tex);
+		tech=debugEffect->GetTechniqueByName("show_depth_ms");
+		debugEffect->SetTexture(deviceContext,"imageTextureMS",tex);
 	}
 	else
 	{
-		m_pDebugEffect->SetTexture(deviceContext,"imageTexture",tex);
+		debugEffect->SetTexture(deviceContext,"imageTexture",tex);
 	}
 	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	debugConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
@@ -1262,7 +1250,7 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 			,2.f*(float)dx/(float)viewport.Width
 			,2.f*(float)dy/(float)viewport.Height
-			,m_pDebugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique(),frustum.reverseDepth?"reverse_depth":"forward_depth");
+			,debugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique(),frustum.reverseDepth?"reverse_depth":"forward_depth");
 	}
 }
 
@@ -1306,7 +1294,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 	{
 		HRESULT hr=S_OK;
 		D3DXMATRIX  tmp1, tmp2;
-		crossplatform::EffectTechniqueGroup *g=m_pDebugEffect->GetTechniqueGroupByName(test_depth?"lines_3d_depth":"lines_3d");
+		crossplatform::EffectTechniqueGroup *g=debugEffect->GetTechniqueGroupByName(test_depth?"lines_3d_depth":"lines_3d");
 		crossplatform::Frustum f=crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 			crossplatform::EffectTechnique *tech=g->GetTechniqueByIndex(0);
 		if(test_depth)
@@ -1383,12 +1371,12 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,Ver
 		HRESULT hr=S_OK;
 		D3DXMATRIX world, tmp1, tmp2;
 		D3DXMatrixIdentity(&world);
-		ID3DX11EffectTechnique *tech			=m_pDebugEffect->asD3DX11Effect()->GetTechniqueByName("lines_2d");
+		ID3DX11EffectTechnique *tech			=debugEffect->asD3DX11Effect()->GetTechniqueByName("lines_2d");
 		
 		unsigned int num_v=1;
 		D3D11_VIEWPORT								viewport;
 		pContext->RSGetViewports(&num_v,&viewport);
-		dx11::setParameter(m_pDebugEffect->asD3DX11Effect(),"rect",vec4(-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height));
+		dx11::setParameter(debugEffect->asD3DX11Effect(),"rect",vec4(-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height));
 
 		ID3D11Buffer *vertexBuffer=NULL;
 		// Create the vertex buffer:
@@ -1454,7 +1442,7 @@ void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,cons
 	pContext->IASetPrimitiveTopology(fill?D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
 	pContext->IASetInputLayout(NULL);
 	{
-		ID3DX11EffectGroup *g=m_pDebugEffect->asD3DX11Effect()->GetGroupByName("circle");
+		ID3DX11EffectGroup *g=debugEffect->asD3DX11Effect()->GetGroupByName("circle");
 		ID3DX11EffectTechnique *tech=fill?g->GetTechniqueByName("filled"):g->GetTechniqueByName("outline");
 		
 		simul::math::Vector3 d(dir);
@@ -1596,8 +1584,8 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.worldViewProj=wvp;
 	debugConstants.worldViewProj.transpose();
-	crossplatform::EffectTechnique*		tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");
-	m_pDebugEffect->SetTexture(deviceContext,"cubeTexture",cubemap);
+	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_cubemap_sphere");
+	debugEffect->SetTexture(deviceContext,"cubeTexture",cubemap);
 	static float rr=6.f;
 	debugConstants.latitudes		=16;
 	debugConstants.longitudes		=32;
@@ -1605,10 +1593,10 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	debugConstants.exposure			=exposure;
 	debugConstants.gamma			=gamma;
 	debugConstants.Apply(deviceContext);
-	m_pDebugEffect->Apply(deviceContext,tech,0);
+	debugEffect->Apply(deviceContext,tech,0);
 	UtilityRenderer::DrawSphere(deviceContext, 16, 32);
-	m_pDebugEffect->SetTexture(deviceContext, "cubeTexture", NULL);
-	m_pDebugEffect->Unapply(deviceContext);
+	debugEffect->SetTexture(deviceContext, "cubeTexture", NULL);
+	debugEffect->Unapply(deviceContext);
 	pContext->RSSetViewports(num_v,m_OldViewports);
 }
 namespace simul

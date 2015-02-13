@@ -25,7 +25,6 @@ namespace simul
 			virtual ~RenderPlatform();
 			void RestoreDeviceObjects(void*) override;
 			void InvalidateDeviceObjects() override;
-			void RecompileShaders() override;
 			
 			virtual ID3D11Device *AsD3D11Device()
 			{
@@ -102,8 +101,6 @@ namespace simul
 		protected:
 			std::vector<GLuint> fb_stack;
 			std::vector<crossplatform::Viewport> viewport_stack;
-			crossplatform::Effect *effect;
-			crossplatform::Effect *solidEffect;
 			crossplatform::Topology currentTopology;
 		};
 	}

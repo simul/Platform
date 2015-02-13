@@ -5,6 +5,7 @@
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Math/Vector3.h"
 

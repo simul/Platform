@@ -13,6 +13,7 @@
 #include "Simul/Platform/CrossPlatform/SL/gpu_cloud_constants.sl"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 
 using namespace simul;
 using namespace opengl;

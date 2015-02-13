@@ -34,7 +34,6 @@ namespace simul
 		class SIMUL_DIRECTX11_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
 			ID3D11Device*					device;
-			crossplatform::Effect			*m_pDebugEffect;
 			ID3D11InputLayout				*m_pCubemapVtxDecl;
 			ID3D11Buffer					*m_pVertexBuffer;
 			ID3D11InputLayout*				m_pVtxDecl;
@@ -44,10 +43,6 @@ namespace simul
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
-			crossplatform::Effect *GetDebugEffect()
-			{
-				return m_pDebugEffect;
-			}
 			ID3D11Device *AsD3D11Device()
 			{
 				return device;
@@ -119,8 +114,6 @@ namespace simul
 			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 		protected:
-			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
-			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
 			/// \todo The stored states are implemented per-RenderPlatform for DX11, but need to be implemented per-DeviceContext.
 			struct StoredState
 			{

@@ -335,6 +335,8 @@ GLuint EffectTechnique::passAsGLuint(int p)
 
 GLuint EffectTechnique::passAsGLuint(const char *name)
 {
+	if(!name)
+		return passAsGLuint((int)0);
 	std::string n(name);
 	PassMap::const_iterator i=passes_by_name.find(n);
 	if(i!=passes_by_name.end())

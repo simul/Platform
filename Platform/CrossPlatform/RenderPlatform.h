@@ -14,6 +14,7 @@
 #include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -201,6 +202,10 @@ namespace simul
 			{
 				return memoryInterface;
 			}
+			crossplatform::Effect *GetDebugEffect()
+			{
+				return debugEffect;
+			}
 		protected:
 			simul::base::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;
@@ -208,7 +213,9 @@ namespace simul
 			std::string shaderBinaryPathUtf8;
 		protected:
 			DeviceContext					immediateContext;
-		private:
+			crossplatform::Effect *debugEffect;
+			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
+			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
 			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);

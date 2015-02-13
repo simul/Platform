@@ -9,6 +9,7 @@
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/TwoResFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Base/RuntimeError.h"
 #ifdef _MSC_VER

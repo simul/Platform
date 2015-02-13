@@ -2,7 +2,6 @@
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/Topology.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include <string>
 #include <map>
 #include <vector>

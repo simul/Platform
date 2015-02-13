@@ -18,6 +18,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,mirrorYText(false)
 	,textRenderer(NULL)
 	,solidEffect(NULL)
+	,debugEffect(NULL)
 {
 }
 
@@ -81,6 +82,8 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	SAFE_DELETE(textRenderer);
 	textRenderer=new TextRenderer;
 	textRenderer->RestoreDeviceObjects(this);
+	solidConstants.RestoreDeviceObjects(this);
+	debugConstants.RestoreDeviceObjects(this);
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
@@ -91,11 +94,20 @@ void RenderPlatform::InvalidateDeviceObjects()
 		SAFE_DELETE(i->second);
 	standardRenderStates.clear();
 	SAFE_DELETE(textRenderer);
+	solidConstants.InvalidateDeviceObjects();
+	debugConstants.InvalidateDeviceObjects();
 }
 
 void RenderPlatform::RecompileShaders()
 {
+	SAFE_DELETE(debugEffect);
+	SAFE_DELETE(solidEffect);
 	textRenderer->RecompileShaders();
+	std::map<std::string, std::string> defines;
+	debugEffect=CreateEffect("debug",defines);
+	solidEffect=CreateEffect("solid",defines);
+	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
+	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
 }
 
 void RenderPlatform::PushTexturePath(const char *path_utf8)
@@ -126,7 +138,7 @@ void RenderPlatform::DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap
 {
 }
 
-void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y	,const char *text,const float* colr,const float* bkg)
+void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
 {
 	float clr[]={1.f,1.f,0.f,1.f};
 	float black[]={0.f,0.f,0.f,0.0f};

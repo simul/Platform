@@ -23,10 +23,9 @@ using namespace simul;
 using namespace opengl;
 RenderPlatform::RenderPlatform()
 	:reverseDepth(false)
-	,effect(NULL)
-	,solidEffect(NULL)
 	,currentTopology(crossplatform::TRIANGLELIST)
 {
+
 }
 
 RenderPlatform::~RenderPlatform()
@@ -44,20 +43,6 @@ void RenderPlatform::RestoreDeviceObjects(void *unused)
 void RenderPlatform::InvalidateDeviceObjects()
 {
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
-	solidConstants.InvalidateDeviceObjects();
-	SAFE_DELETE(solidEffect);
-	delete effect;
-	effect=NULL;
-}
-
-void RenderPlatform::RecompileShaders()
-{
-	std::map<std::string,std::string> defines;
-	SAFE_DELETE(solidEffect);
-	solidEffect	=CreateEffect("solid",defines);
-	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
-	effect=CreateEffect("debug",defines);
-	crossplatform::RenderPlatform::RecompileShaders();
 }
 
 void RenderPlatform::PushTexturePath(const char *pathUtf8)
@@ -124,10 +109,10 @@ void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &,int w,int l
 	GL_ERROR_CHECK
 }
 
-void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,crossplatform::EffectTechnique *tech,int pass)
+void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *debugEffect,crossplatform::EffectTechnique *tech,int pass)
 {
 	deviceContext;
-	effect;
+	debugEffect;
 	tech;
 	pass;
 }
@@ -290,14 +275,15 @@ void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *m
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend)
 {
 GL_ERROR_CHECK
-	effect->SetTexture(deviceContext,"image_texture",tex);
+	debugConstants.multiplier=mult;
+	debugEffect->SetTexture(deviceContext,"imageTexture",tex);
 	if(blend)
 		glEnable(GL_BLEND);
 	else
 		glDisable(GL_BLEND);
 GL_ERROR_CHECK
 glDisable(GL_CULL_FACE);
-	DrawQuad(deviceContext,x1,y1,dx,dy,effect,effect->GetTechniqueByName("show_texture"));
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,debugEffect->GetTechniqueByName("textured"));
 GL_ERROR_CHECK
 }
 
@@ -321,50 +307,52 @@ glDisable(GL_CULL_FACE);
 	Viewport viewport;
 	glGetIntegerv(GL_VIEWPORT,(int*)(&viewport));
 	GL_ERROR_CHECK
-	effect->Apply(deviceContext,effect->GetTechniqueByName("show_depth"),frustum.reverseDepth?"reverse_depth":"forward_depth");
+	debugEffect->Apply(deviceContext,debugEffect->GetTechniqueByName("show_depth"),frustum.reverseDepth?"reverse_depth":"forward_depth");
 	GL_ERROR_CHECK
-	effect->SetParameter("tanHalfFov",vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov));
-	effect->SetParameter("depthToLinFadeDistParams",depthToLinFadeDistParams);
-	effect->SetTexture(deviceContext,"image_texture",tex);
+	debugConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	debugConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	debugEffect->SetTexture(deviceContext,"image_texture",tex);
 	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 		,2.f*(float)dx/(float)viewport.Width
 		,2.f*(float)dy/(float)viewport.Height);
 	GL_ERROR_CHECK
-	effect->SetParameter("rect",r);
+	debugConstants.rect=r;
+	debugConstants.Apply(deviceContext);
 	GL_ERROR_CHECK
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	GL_ERROR_CHECK
-	effect->Unapply(deviceContext);
+	debugEffect->Unapply(deviceContext);
 GL_ERROR_CHECK
 }
 
-void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
+void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *debugEffect
 	,crossplatform::EffectTechnique *technique,const char *pass)
 {
 	struct Viewport
 	{
 		int X,Y,Width,Height;
 	};
-	if(!effect||!technique)
+	if(!debugEffect||!technique)
 		return;
 	GL_ERROR_CHECK
 	Viewport viewport;
 	glGetIntegerv(GL_VIEWPORT,(int*)(&viewport));
 	GL_ERROR_CHECK
-	effect->Apply(deviceContext,technique,pass);
+	debugEffect->Apply(deviceContext,technique,pass);
 	GL_ERROR_CHECK
 	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 		,2.f*(float)dx/(float)viewport.Width
 		,2.f*(float)dy/(float)viewport.Height);
 	GL_ERROR_CHECK
-	effect->SetParameter("rect",r);
+	debugConstants.rect=r;
+	debugConstants.Apply(deviceContext);
 	GL_ERROR_CHECK
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	GL_ERROR_CHECK
-	effect->UnbindTextures(deviceContext);
-	effect->Unapply(deviceContext);
+	debugEffect->UnbindTextures(deviceContext);
+	debugEffect->Unapply(deviceContext);
 	GL_ERROR_CHECK
 }
 
