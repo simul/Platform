@@ -437,6 +437,21 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	}
+	if(rendertargets)
+	{
+		SAFE_DELETE_FRAMEBUFFER(m_fb);
+		glGenFramebuffers(1, &m_fb);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pTextureObject, 0);
+		
+		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		if(status!=GL_FRAMEBUFFER_COMPLETE)
+		{
+			FramebufferGL::CheckFramebufferStatus();
+			throw base::RuntimeError("Framebuffer incomplete for rendertarget texture");
+		}
+	}
 	GL_ERROR_CHECK
 }
 
