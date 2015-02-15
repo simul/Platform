@@ -189,7 +189,7 @@ shader void CS_SecondaryLighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 		//NOTE: Causes artifact underneath clouds:
 		if(density==0&&pos.z<dims.z-1)
 			indirect_light			=1.0;//-(1.0-indirect_light)*exp(-5.0*stepLength);
-		IMAGE_STORE_3D(targetTexture1,idx,indirect_light);
+		IMAGE_STORE_3D(targetTexture1,idx,vec4(indirect_light,indirect_light,indirect_light,indirect_light));
 	}
 }
 CS_LAYOUT(8,8,1)
