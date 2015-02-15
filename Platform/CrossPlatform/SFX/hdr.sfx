@@ -77,12 +77,6 @@ shader CompositeShaderInput VS_Composite(idOnly IN)
     return OUT;
 }
 
-shader posTexVertexOutput QuadVS(idOnly id)
-{
-    posTexVertexOutput u=VS_ScreenQuad(id,rect);
-	return u;
-}
-
 shader vec4 ShowDepthPS_ReverseDepth(posTexVertexOutput IN) : SV_Target
 {
 	vec4 depth = texture_clamp(depthTexture, IN.texCoords);
@@ -207,6 +201,17 @@ shader vec4 PS_InfraRed_MSAA(posTexVertexOutput IN) : SV_Target
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
     vec4 u=vec4(c.rgb,1.0);
 	return u;
+}
+
+shader posTexVertexOutput Debug2DVS(idOnly id)
+{
+    return VS_ScreenQuad(id,rect);
+}
+
+shader vec4 TexturedPS(posTexVertexOutput IN) : SV_Target
+{
+	vec4 res=vec4(0,1,0,1);
+	return res;
 }
 
 shader vec4 PS_ShowCompressed(posTexVertexOutput IN) : SV_Target
@@ -580,7 +585,7 @@ technique show_depth
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,QuadVS()));
+		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS_ReverseDepth()));
 	}
 	pass forward_depth
@@ -589,22 +594,10 @@ technique show_depth
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(NoBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0, QuadVS()));
+		SetVertexShader(CompileShader(vs_4_0, Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0, ShowDepthPS_ForwardDepth()));
 	}
 }
-
-shader posTexVertexOutput Debug2DVS(idOnly id)
-{
-    return VS_ScreenQuad(id,rect);
-}
-
-shader vec4 TexturedPS(posTexVertexOutput IN) : SV_Target
-{
-	vec4 res=vec4(0,1,0,1);
-	return res;
-}
-
 
 technique textured
 {
@@ -631,6 +624,7 @@ technique show_scattering_volume
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowScatteringVolume()));
     }
 }
+
 technique show_volume
 {
     pass p0
@@ -639,7 +633,7 @@ technique show_volume
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,QuadVS()));
+		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowVolume()));
     }
 }

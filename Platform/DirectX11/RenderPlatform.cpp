@@ -926,6 +926,7 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceCont
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {
+	PushRenderTargets(deviceContext);
 	ID3D11RenderTargetView *rt[8];
 	SIMUL_ASSERT(num<=8);
 	for(int i=0;i<num;i++)
@@ -934,6 +935,11 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 	if(depth)
 		d=depth->AsD3D11DepthStencilView();
 	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(num,rt,d);
+}
+
+void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
+{
+	PopRenderTargets(deviceContext);
 }
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Viewport *vps)
@@ -1566,7 +1572,7 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	math::Matrix4x4 proj=crossplatform::Camera::MakeProjectionMatrix(1.f,(float)viewport.Height/(float)viewport.Width,1.f,100.f);
 	// Create the viewport.
 	math::Matrix4x4 wvp,world;
-	world.Identity();
+	world.ResetToUnitMatrix();
 	float tan_x=1.0f/proj(0, 0);
 	float tan_y=1.0f/proj(1, 1);
 	float size_req=tan_x*.5f;

@@ -10,9 +10,10 @@
 #define SIMUL_RWTEXTURE_REGISTER(rwtex_num)
 #define SIMUL_STATE_REGISTER(snum)
 
-#define SIMUL_TARGET_OUTPUT
-#define SIMUL_RENDERTARGET_OUTPUT(n)
-#define	SIMUL_DEPTH_OUTPUT
+// GLSL doesn't  have a concept of output semantics but we need them to make the sfx format work. We'll use HLSL's semantics.
+#define SIMUL_TARGET_OUTPUT : SV_TARGET
+#define SIMUL_RENDERTARGET_OUTPUT(n) : SV_TARGET##n
+#define SIMUL_DEPTH_OUTPUT : SV_DEPTH
 
 #define GLSL
 

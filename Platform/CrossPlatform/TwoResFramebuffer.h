@@ -71,6 +71,7 @@ namespace simul
 			crossplatform::Texture				*volumeTextures[2];
 			int Width,Height,Downscale;
 			crossplatform::BaseFramebuffer		*lowResFramebuffers[3];
+			int volume_num;
 		};
 	}
 }

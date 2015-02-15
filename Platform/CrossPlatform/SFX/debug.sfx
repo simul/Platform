@@ -11,6 +11,8 @@ uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
 uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
 uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
 
+uniform sampler3D volumeTexture;
+
 struct a2v
 {
     vec3 position	: POSITION;
@@ -79,6 +81,17 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 	res.a=res.a;
 	return res;
 }
+
+shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
+{
+	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
+	if(IN.texCoords.y<.5)
+		z=.5;
+	vec4 colour		=texture_nearest_lod(volumeTexture,vec3(IN.texCoords,z),0);
+	//colour.r = colour.a;
+	return colour;
+}
+
 #ifndef GLSL
 shader vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 {
@@ -326,6 +339,28 @@ technique textured
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
+    }
+}
+
+technique show_volume
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowVolume()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowVolume()));
     }
 }
 

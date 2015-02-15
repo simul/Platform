@@ -236,7 +236,7 @@ using namespace simul::math;
 Matrix4x4 simul::crossplatform::MatrixLookInDirection(const float *dir,const float *view_up)
 { 
 	Matrix4x4 M;
-	M.Unit();
+	M.ResetToUnitMatrix();
 	Vector3 zaxis = dir;
 	Vector3 up = view_up;
 	zaxis*=-1.f;

@@ -21,6 +21,7 @@ TwoResFramebuffer::TwoResFramebuffer()
 	,pixelOffset(0.f,0.f)
 	,depthFormat(RGBA_16_FLOAT)
 	,final_octave(0)
+	,volume_num(0)
 {
 	volumeTextures[0] = volumeTextures[1] = NULL;
 	for (int i = 0; i < 3; i++)
@@ -124,31 +125,27 @@ crossplatform::Texture *TwoResFramebuffer::GetVolumeTexture(int num)
 
 void TwoResFramebuffer::ActivateLowRes(crossplatform::DeviceContext &deviceContext)
 {
-	renderPlatform->PushRenderTargets(deviceContext);
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	if(!pContext)
-		return;
 	for (int i = 0; i < 3; i++)
 		if(!GetLowResFramebuffer(i)->IsValid())
 			GetLowResFramebuffer(i)->CreateBuffers();
 	crossplatform::Texture * targs[] = { GetLowResFramebuffer(0)->GetTexture(), GetLowResFramebuffer(1)->GetTexture(), GetLowResFramebuffer(2)->GetTexture() };
 	crossplatform::Texture * depth = GetLowResFramebuffer(0)->GetDepthTexture();
 	renderPlatform->ActivateRenderTargets(deviceContext,3,targs,depth);
-	int w=GetLowResFramebuffer(0)->Width
-		, h = GetLowResFramebuffer(0)->Height;
+	int w=GetLowResFramebuffer(0)->Width, h = GetLowResFramebuffer(0)->Height;
 	crossplatform::Viewport v[]={{0,0,w,h,0,1.f},{0,0,w,h,0,1.f}};
 	renderPlatform->SetViewports(deviceContext,2,v);
 }
 
 void TwoResFramebuffer::DeactivateLowRes(crossplatform::DeviceContext &deviceContext)
 {
-	renderPlatform->PopRenderTargets(deviceContext);
+	renderPlatform->DeactivateRenderTargets(deviceContext);
 }
 
 void TwoResFramebuffer::ActivateVolume(crossplatform::DeviceContext &deviceContext,int num)
 {
 	renderPlatform->PushRenderTargets(deviceContext);
 	// activate all of the rt's of this texture at once.
+	volume_num=num;
 	volumeTextures[num]->activateRenderTarget(deviceContext);
 	int w = GetLowResFramebuffer(0)->Width, h = GetLowResFramebuffer(0)->Height;
 	crossplatform::Viewport v[]={{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f}};
@@ -157,6 +154,7 @@ void TwoResFramebuffer::ActivateVolume(crossplatform::DeviceContext &deviceConte
 
 void TwoResFramebuffer::DeactivateVolume(crossplatform::DeviceContext &deviceContext)
 {
+	volumeTextures[volume_num]->deactivateRenderTarget();
 	renderPlatform->PopRenderTargets(deviceContext);
 }
 

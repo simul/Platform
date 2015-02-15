@@ -276,14 +276,23 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 {
 GL_ERROR_CHECK
 	debugConstants.multiplier=mult;
-	debugEffect->SetTexture(deviceContext,"imageTexture",tex);
 	if(blend)
 		glEnable(GL_BLEND);
 	else
 		glDisable(GL_BLEND);
 GL_ERROR_CHECK
 glDisable(GL_CULL_FACE);
-	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,debugEffect->GetTechniqueByName("textured"));
+	const char *techname="textured";
+	if(tex&&tex->GetDimension()==3)
+	{
+		techname="show_volume";
+		debugEffect->SetTexture(deviceContext,"volumeTexture",tex);
+	}
+	else
+	{
+		debugEffect->SetTexture(deviceContext,"imageTexture",tex);
+	}
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,debugEffect->GetTechniqueByName(techname),"noblend");
 GL_ERROR_CHECK
 }
 
@@ -292,7 +301,7 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 GL_ERROR_CHECK
 	
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
+	glBindTexture(GL_TEXTURE_2D,tex?tex->AsGLuint():0);
 GL_ERROR_CHECK
 glDisable(GL_BLEND);
 glDisable(GL_CULL_FACE);
@@ -311,7 +320,7 @@ glDisable(GL_CULL_FACE);
 	GL_ERROR_CHECK
 	debugConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	debugConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	debugEffect->SetTexture(deviceContext,"image_texture",tex);
+	debugEffect->SetTexture(deviceContext,"imageTexture",tex);
 	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 		,2.f*(float)dx/(float)viewport.Width
@@ -329,6 +338,25 @@ GL_ERROR_CHECK
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *debugEffect
 	,crossplatform::EffectTechnique *technique,const char *pass)
 {
+	debugConstants.multiplier=1.0f;
+	if(false)
+		glEnable(GL_BLEND);
+	else
+		glDisable(GL_BLEND);
+GL_ERROR_CHECK
+glDisable(GL_CULL_FACE);
+
+
+
+
+
+
+
+
+
+
+
+
 	struct Viewport
 	{
 		int X,Y,Width,Height;
@@ -901,11 +929,53 @@ GL_ERROR_CHECK
 void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplatform::Buffer *buffer,int start_index)
 {
 }
-
-void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
+static GLuint m_fb=0;
+void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {
+	PushRenderTargets(deviceContext);
+	// We don't know what textures we will be passed here, so we must CREATE a new framebuffer:
+	{
+		SAFE_DELETE_FRAMEBUFFER(m_fb);
+		glGenFramebuffers(1, &m_fb);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
+		for(int i=0;i<num;i++)
+			glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0+i, GL_TEXTURE_2D, targs[i]?targs[i]->AsGLuint():0, 0);
+		if(depth)
+			glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth?depth->AsGLuint():0, 0);
+		
+		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if(status!=GL_FRAMEBUFFER_COMPLETE)
+		{
+			FramebufferGL::CheckFramebufferStatus();
+			SIMUL_BREAK("Framebuffer incomplete for RenderPlatform::ActivateRenderTargets");
+		}
+	}
+	GL_ERROR_CHECK
+	FramebufferGL::CheckFramebufferStatus();
+	GL_ERROR_CHECK
+	if(targs&&targs[0])
+	{
+		int w=targs[0]->width;
+		int h=targs[1]->length;
+		glViewport(0,0,w,h);
+	}
+	GL_ERROR_CHECK
+	fb_stack.push_back(m_fb);
+	GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, buffers);
+	GL_ERROR_CHECK
 }
 
+void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
+{
+	GL_ERROR_CHECK
+	GLuint popped_fb=fb_stack.back();
+	fb_stack.pop_back();
+	SIMUL_ASSERT(m_fb==popped_fb);
+	PopRenderTargets(deviceContext);
+	SAFE_DELETE_FRAMEBUFFER(m_fb);
+	GL_ERROR_CHECK
+}
 crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &,int index)
 {
 	crossplatform::Viewport viewport;
@@ -970,6 +1040,7 @@ void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &)
 
 void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &)
 {
+	GL_ERROR_CHECK
 	GLint current_fb=0;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING,&current_fb);
 	crossplatform::Viewport viewport;
@@ -981,10 +1052,12 @@ void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &)
 	viewport.h=vp[3];
 	fb_stack.push_back(current_fb);
 	viewport_stack.push_back(viewport);
+	GL_ERROR_CHECK
 }
 
 void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &)
 {
+	GL_ERROR_CHECK
 	GLuint last_fb=fb_stack.back();
     glBindFramebuffer(GL_FRAMEBUFFER,last_fb);
 	crossplatform::Viewport viewport=viewport_stack.back();
@@ -992,6 +1065,7 @@ void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &)
 	glViewport(vp[0],vp[1],vp[2],vp[3]);
 	fb_stack.pop_back();
 	viewport_stack.pop_back();
+	GL_ERROR_CHECK
 }
 
 GLenum toGLTopology(crossplatform::Topology t)

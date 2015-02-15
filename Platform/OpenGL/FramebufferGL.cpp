@@ -272,6 +272,8 @@ void FramebufferGL::Deactivate(crossplatform::DeviceContext &)
 	GL_ERROR_CHECK
     glBindFramebuffer(GL_FRAMEBUFFER,last_fb);
 	GL_ERROR_CHECK
+	CheckFramebufferStatus();
+	GL_ERROR_CHECK
 	glViewport(0,0,main_viewport[2],main_viewport[3]);
 	GL_ERROR_CHECK
 }
@@ -345,7 +347,9 @@ void FramebufferGL::Clear(crossplatform::DeviceContext &deviceContext,float r,fl
 	if(mask&GL_DEPTH_BUFFER_BIT)
 		glDepthMask(GL_TRUE);
 	glClearDepth(depth);
-	glClear(mask);
+	glClear(mask);			
+//glClearBufferfv(GLenum buffer,buffnum,const GLFloat *);
+//glClearBufferfi(GLenum buffer,buffnum,depth,stencil);
 }
 
 void FramebufferGL::ClearColour(crossplatform::DeviceContext &,float r,float g,float b,float a)
@@ -362,15 +366,15 @@ void FramebufferGL::CheckFramebufferStatus()
         case GL_FRAMEBUFFER_COMPLETE:
             break;
         case GL_FRAMEBUFFER_UNSUPPORTED:
-			std::cerr<<("Unsupported framebuffer format\n");
+			SIMUL_BREAK("Unsupported framebuffer format\n");
 			BREAK_IF_DEBUGGING;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-            std::cerr<<("Framebuffer incomplete attachment\n");
+            SIMUL_BREAK("Framebuffer incomplete attachment\n");
 			BREAK_IF_DEBUGGING;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-            std::cerr<<("Framebuffer incomplete, missing attachment\n");
+            SIMUL_BREAK("Framebuffer incomplete, missing attachment\n");
 			BREAK_IF_DEBUGGING;
             break;
     /*    case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
@@ -380,15 +384,15 @@ void FramebufferGL::CheckFramebufferStatus()
             std::cerr<<("Framebuffer incomplete, attached images must have same format\n");
             break;*/
         case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
-            std::cerr<<("Framebuffer incomplete, missing draw buffer\n");
+            SIMUL_BREAK("Framebuffer incomplete, missing draw buffer\n");
 			BREAK_IF_DEBUGGING;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-            std::cerr<<("Framebuffer incomplete, missing read buffer\n");
+            SIMUL_BREAK("Framebuffer incomplete, missing read buffer\n");
 			BREAK_IF_DEBUGGING;
             break;
         default:
-			std::cerr<<"Unknown error "<<(int)status<<std::endl;
+			SIMUL_BREAK("Unknown Framebuffer error");
     }
 }
 

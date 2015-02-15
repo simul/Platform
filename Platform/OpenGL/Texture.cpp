@@ -161,7 +161,7 @@ GL_ERROR_CHECK
 		if(status!=GL_FRAMEBUFFER_COMPLETE)
 		{
 			FramebufferGL::CheckFramebufferStatus();
-			throw base::RuntimeError("Framebuffer incomplete for rendertarget texture");
+			SIMUL_BREAK("Framebuffer incomplete for rendertarget texture");
 		}
 	}
 	if(depthstencil)
@@ -176,7 +176,7 @@ GL_ERROR_CHECK
 		if(status!=GL_FRAMEBUFFER_COMPLETE)
 		{
 			FramebufferGL::CheckFramebufferStatus();
-			throw base::RuntimeError("Framebuffer incomplete for rendertarget texture");
+			SIMUL_BREAK("Framebuffer incomplete for rendertarget texture");
 		}
 	}
 	glBindTexture(GL_TEXTURE_2D,0);
@@ -335,6 +335,12 @@ void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &)
 	glViewport(0,0,width,length);
 	GL_ERROR_CHECK
 	FramebufferGL::fb_stack.push(m_fb);
+	if(depth>1)
+	{
+		const GLenum buffers[9] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7 };
+		glDrawBuffers(depth, buffers);
+	}
+	GL_ERROR_CHECK
 }
 
 void Texture::deactivateRenderTarget()
@@ -442,14 +448,16 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 		SAFE_DELETE_FRAMEBUFFER(m_fb);
 		glGenFramebuffers(1, &m_fb);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
-		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pTextureObject, 0);
-		
+		for (int i=0;i<8&&i<d;i++)
+		{
+			glFramebufferTextureLayer(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0+i, pTextureObject, 0,i);
+		}
 		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		if(status!=GL_FRAMEBUFFER_COMPLETE)
 		{
 			FramebufferGL::CheckFramebufferStatus();
-			throw base::RuntimeError("Framebuffer incomplete for rendertarget texture");
+			SIMUL_BREAK("Framebuffer incomplete for rendertarget texture");
 		}
 	}
 	GL_ERROR_CHECK
