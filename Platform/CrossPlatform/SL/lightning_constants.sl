@@ -18,6 +18,7 @@ SIMUL_CONSTANT_BUFFER(LightningConstants,10)
 
 	uniform float branchLengthMetres;
 	uniform uint branchInterval;
+	uniform float phaseTime;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)

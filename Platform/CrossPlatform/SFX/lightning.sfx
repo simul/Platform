@@ -10,18 +10,29 @@ Texture2D lightningTexture;
 Texture2D depthTexture;
 Texture2DMS<vec4> depthTextureMS;
 Texture2D cloudDepthTexture;
+Texture2D randomTexture;
+
+shader vec4 PS_Random(posTexVertexOutput IN) : SV_TARGET
+{
+	// Range from -1 to 1.
+	vec4 c=2.0*vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords))-1.0;
+	//vec4 c=vec4(SphericalRandom(IN.texCoords),2.0*rand(513.1*IN.texCoords)-1.0);
+    return c;
+}
 
 struct F_Vertex
 {
     vec3 position	: POSITION;
     vec4 texcoord	: TEXCOORD0;
 };
+
 struct F_IdVertex
 {
     vec3 position	: POSITION;
     vec4 texcoord	: TEXCOORD0;
 	uint vertex_id	: TEXCOORD1;
 };
+
 struct F_Vertex_out
 {
     vec4 hPosition	: SV_Position;
@@ -39,32 +50,37 @@ F_Vertex VS_InitialFractal(idOnly IN )
 void GS_Fractal(line F_Vertex input[2], inout PointStream<F_Vertex> vStream)
 {
 	F_Vertex output;
-	vec3 startP		=input[0].position;
-	vec3 endP		=input[1].position;
-	uint num_octaves=7;
-	uint num_steps	=1<<num_octaves;
+	vec3 startP			=input[0].position;
+	vec3 endP			=input[1].position;
+	uint num_octaves	=7;
+	uint num_steps		=1<<num_octaves;
 	uint num_pts		=num_steps+1;
 	vec3 outpos[129];
-	outpos[0]		=startP;
-	outpos[num_steps]=endP;
-	int del=num_steps;
-	float persistence=0.8;
-	float off=0.4*roughness;
+	outpos[0]			=startP;
+	outpos[num_steps]	=endP;
+	int del				=num_steps;
+	float persistence	=0.8;
+	float off			=0.4*roughness;
+	float time			=phaseTime;
 	for(uint i=0;i<num_octaves;i++)
 	{
 		for(uint j=del/2;j<num_steps;j+=del)
 		{
-			vec3 s=outpos[j-del/2];
-			vec3 e=outpos[j+del/2];
-			vec3 XX=cross(vec3(1.0,0.0,0.0),(s-e));
-			vec3 YY=cross(vec3(0.0,1.0,0.0),(s-e));
-			vec3 x=0.5*(s+e);
-			float angle=rand(0.01*x.xy+0.02*x.zx)*2.0*3.14159;
-			x+=off*(XX*cos(angle)+YY*sin(angle));
-			outpos[j]=x;
+			// j is the index into the list of outputs.
+			vec3 s				=outpos[j-del/2];
+			vec3 e				=outpos[j+del/2];
+			vec3 XX				=cross(vec3(1.0,0.0,0.0),(s-e));
+			vec3 YY				=cross(vec3(0.0,1.0,0.0),(s-e));
+			vec3 x				=0.5*(s+e);
+			vec2 noise_texc		=vec2(time,(i+j)/16.0);
+			vec4 noise_lookup	=texture_wrap_lod(randomTexture,noise_texc,0);
+			float angle			=noise_lookup.x*2.0*3.14159;
+			x					+=off*noise_lookup.y*(XX*cos(angle)+YY*sin(angle));
+			outpos[j]			=x;
 		}
-		del/=2;
-		off*=persistence;
+		del	/=2;
+		time*=0.5;
+		off	*=persistence;
 	}
 	for(uint ii=0;ii<num_pts;ii++)
 	{
@@ -74,7 +90,6 @@ void GS_Fractal(line F_Vertex input[2], inout PointStream<F_Vertex> vStream)
 	}
 	vStream.RestartStrip();
 }
-
 
 F_IdVertex VS_Branch(F_Vertex IN,uint vertex_id	: SV_VertexID)
 {
@@ -168,6 +183,7 @@ technique initial_fractal
 		SetPixelShader(NULL);
     }
 }
+
 technique branch_fractal
 {
     pass main
@@ -195,11 +211,11 @@ struct transformedVertex
 
 struct transformedThinVertex
 {
-    vec4 hPosition	: SV_POSITION;
+    vec4 hPosition		: SV_POSITION;
 	float brightness	: TEXCOORD0;
-    float depth	: TEXCOORD1;
-	vec2 screenPos:	TEXCOORD2;
-	vec2 texc		:	TEXCOORD3;
+    float depth			: TEXCOORD1;
+	vec2 screenPos		: TEXCOORD2;
+	vec2 texc			: TEXCOORD3;
 };
 
 shader transformedThinVertex VS_Thin(LightningVertexInput IN)
@@ -216,11 +232,11 @@ shader transformedThinVertex VS_Thin(LightningVertexInput IN)
 shader LightningVertexOutput VS_Thick(LightningVertexInput IN)
 {
     LightningVertexOutput OUT;
-    OUT.position	=mul(worldViewProj, vec4(IN.position.xyz , 1.0));
+    OUT.position		=mul(worldViewProj,vec4(IN.position.xyz,1.0));
 	OUT.thicknessMetres	=IN.texCoords.x;
-	OUT.endpoint	=IN.texCoords.y;
-	OUT.brightness	=IN.texCoords.w;
-	OUT.depth		=OUT.position.z/OUT.position.w;
+	OUT.endpoint		=IN.texCoords.y;
+	OUT.brightness		=IN.texCoords.w;
+	OUT.depth			=OUT.position.z/OUT.position.w;
     return OUT;
 }
 
@@ -268,11 +284,11 @@ shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStrea
 	// determine the length of the miter by projecting it onto normal and then inverse it
 
 	// ensure a minimum pixel size:
-	float width1				=max(input[1].thicknessMetres,4.0/viewportPixels.x*start.w);
-	float width2				=max(input[2].thicknessMetres,4.0/viewportPixels.x*start.w);
-	float lengthPixels_a		=width1/start.w	*viewportPixels.x/dot(miter_a, n1);
-	float lengthPixels_b		=width2/end.w	*viewportPixels.x/dot(miter_b, n1);
-	const float	MITER_LIMIT=1.0;
+	float width1			=max(input[1].thicknessMetres,minPixelWidth/viewportPixels.x*start.w);
+	float width2			=max(input[2].thicknessMetres,minPixelWidth/viewportPixels.x*start.w);
+	float lengthPixels_a	=width1/start.w	*viewportPixels.x/dot(miter_a, n1);
+	float lengthPixels_b	=width2/end.w	*viewportPixels.x/dot(miter_b, n1);
+	const float	MITER_LIMIT	=1.0;
 	output.hPosCentre1		=vec2(p1.xy/viewportPixels);
 	output.hPosCentre2		=vec2(p2.xy/viewportPixels);
 	output.clipWidth		=width1/start.w;
@@ -292,7 +308,7 @@ shader void GS_Thick(lineadj LightningVertexOutput input[4], inout TriangleStrea
 			output.texc			=output.screenPos.xy*0.5+0.5;
 			output.along		=0;
 			output.brightness	=input[1].brightness;
-	output.endpoint	=input[1].endpoint;
+			output.endpoint	=input[1].endpoint;
 			output.depth		=input[1].depth;
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( (p1 + width1 * n1) / viewportPixels, 0.0, 1.0 );
@@ -418,7 +434,7 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	br					+=IN.brightness*saturate(10.0*(1.0-m));
 	if(br<0)
 		br=0;
-	vec4 colour			=vec4(1000*lightningColour.rgb,1.0);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	vec4 colour			=vec4(br*lightningColour.rgb,1.0);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	//colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
 	
     return colour;
@@ -463,7 +479,6 @@ shader vec4 PS_Thin_ForwardDepth(transformedThinVertex IN): SV_TARGET
 {
 	return PS_Thin(IN,false);
 }
-
 
 BlendState MaxBlend
 {
@@ -526,5 +541,18 @@ technique lightning_thin
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Thin_ForwardDepth()));
+    }
+}
+
+technique random
+{
+    pass p0 
+    {
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(NoBlend,vec4(1.0,1.0,1.0,1.0),0xFFFFFFFF);
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Random()));
     }
 }

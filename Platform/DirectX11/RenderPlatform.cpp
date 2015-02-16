@@ -1173,7 +1173,6 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTexture",srv);
 	debugConstants.multiplier=mult;
-	debugConstants.Apply(deviceContext);
 	crossplatform::EffectTechnique *tech=debugEffect->GetTechniqueByName("textured");
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	int pass=(blend==true)?1:0;
@@ -1200,13 +1199,21 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	pContext->RSGetViewports(&num_v,&viewport);
 	if(mirrorY2)
 		y1=(int)viewport.Height-y1-dy;
-	{
-		UtilityRenderer::DrawQuad2(deviceContext
-			,2.f*(float)x1/(float)viewport.Width-1.f
+	debugConstants.rect=vec4(2.f*(float)x1/(float)viewport.Width-1.f
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 			,2.f*(float)dx/(float)viewport.Width
-			,2.f*(float)dy/(float)viewport.Height
-			,debugEffect->asD3DX11Effect(),tech->asD3DX11EffectTechnique(),pass);
+			,2.f*(float)dy/(float)viewport.Height);
+	debugConstants.Apply(deviceContext);
+	{
+		D3D11_PRIMITIVE_TOPOLOGY previousTopology;
+		ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+		pContext->IAGetPrimitiveTopology(&previousTopology);
+		pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		debugEffect->Apply(deviceContext,tech,"noblend");
+		pContext->Draw(4,0);
+		pContext->IASetPrimitiveTopology(previousTopology);
+		debugEffect->UnbindTextures(deviceContext);
+		debugEffect->Unapply(deviceContext);
 	}
 	simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTexture",NULL);
 }
