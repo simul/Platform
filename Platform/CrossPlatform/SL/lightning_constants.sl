@@ -19,6 +19,9 @@ SIMUL_CONSTANT_BUFFER(LightningConstants,10)
 	uniform float branchLengthMetres;
 	uniform uint branchInterval;
 	uniform float phaseTime;
+	uniform int randomSeed;
+
+	uniform float brightness;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
@@ -27,29 +30,32 @@ SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec2 viewportPixels;
 	uniform vec2 _line_width;
+
 	uniform vec2 tanHalfFov;
 	uniform float brightnessToUnity;
 	uniform float minPixelWidth;
+
+	uniform float maxFadeDistance;
 SIMUL_CONSTANT_BUFFER_END
 
 struct LightningVertex
 {
     vec4 position;
-	vec4 texCoords;				// x= width in pixels
+	vec2 texCoords;				// x= width in pixels
 };
 
 #ifndef __cplusplus
 struct LightningVertexInput
 {
     vec3 position		: POSITION;
-    vec4 texCoords		: TEXCOORD0;
+    vec2 texCoords		: TEXCOORD0;
 };
 struct LightningVertexOutput
 {
-    vec4 position		: POSITION;
-    float brightness	: TEXCOORD0;
+    vec4 position			: POSITION;
+    float brightness		: TEXCOORD0;
     float thicknessMetres	: TEXCOORD1;
-	float depth			: TEXCOORD2;
+	float depth				: TEXCOORD2;
 	float endpoint			: TEXCOORD3;
 };
 #endif

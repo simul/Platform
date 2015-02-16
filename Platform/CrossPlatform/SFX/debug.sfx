@@ -78,7 +78,7 @@ shader vec4 DebugPS(v2f IN) : SV_TARGET
 shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 res=multiplier*texture_nearest_lod(imageTexture,IN.texCoords.xy,0);
-	res.a=res.a;
+	//res.rgb+=res.a;
 	return res;
 }
 
@@ -131,11 +131,6 @@ vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth)
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
     vec4 result		=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
-	//if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
-	///	||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
-	//	result *= 0.25;
-//	if (IN.texCoords.x<.1)
-//		result=depth;
 	return result;
 }
 

@@ -110,9 +110,6 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 
 	uniform vec3 noise3DTexcoordOffset;
 	uniform float dropletRadius;
-	// RDE begin: added
-	uniform vec4 infraredIntegrationFactorsUNUSED;
-	// local cloud support
 	uniform vec4 localCloudPivot;    
 	uniform vec4 localCloudInvScale; 
 SIMUL_CONSTANT_BUFFER_END
@@ -121,7 +118,7 @@ SIMUL_CONSTANT_BUFFER_END
 SIMUL_CONSTANT_BUFFER(CloudLightpassConstants,10)
 	uniform vec3 sourcePosMetres;
 	uniform float sourceRadiusMetres;
-	uniform vec3 irradiance;
+	uniform vec3 spectralFluxOver1e6;			// Units of watts per nm
 	uniform float maxCosine;
 	uniform float irradianceThreshold;
 	uniform float maxRadiusMetres;

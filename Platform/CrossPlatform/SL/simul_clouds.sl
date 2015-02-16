@@ -2,7 +2,7 @@
 #define CLOUDS_SL
 
 #ifndef GLSL
-SamplerState cloudSamplerState	: register( s0);
+SamplerState cloudSamplerState: register( s0);
 #endif
 #define USE_LIGHT_TABLES 1
 #ifdef __PSSL__
@@ -333,7 +333,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 								,vec2 texCoords
 								,vec3 source_pos_w
 								,float source_radius
-								,vec3 source_irradiance
+								,vec3 spectralFluxOver1e6
 								,float maxCosine
 								,float maxIlluminatedRadius
 								,float threshold)
@@ -371,8 +371,6 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 
 	float cos0				=dot(lightDir.xyz,view.xyz);
 	float sine				=view.z;
-	vec3 n					=vec3(clip_pos.xy*tanHalfFov,1.0);
-	n						=normalize(n);
 
 	float min_z				=cornerPos.z-(fractalScale.z*1.5)/inverseScales.z;
 	float max_z				=cornerPos.z+(1.0+fractalScale.z*1.5)/inverseScales.z;
@@ -432,7 +430,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	// x starts at 1, so gets initialized at the first cloud found.
 	// y starts at 0, so gets the furthest value.
 	vec4 nearFarDepth = vec4(1.0, 0.0, 0.0, 0.0);
-	float max_irradiance=max(max(source_irradiance.r,source_irradiance.g),source_irradiance.b);
+	float max_spectral_flux=max(max(spectralFluxOver1e6.r,spectralFluxOver1e6.g),spectralFluxOver1e6.b);
 
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
 	for(int i=0;i<255;i++)
@@ -510,10 +508,10 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 				fade_texc.x				=sqrt(fadeDistance);
 				vec3 volumeTexCoords	=vec3(texCoords,sqrt(fadeDistance));
 				vec3 dist				=world_pos-source_pos_w;
-				float radius			=max(source_radius,length(dist));
-				float radiance			=1.0/(4.0*3.14159*radius*radius);
-				vec4 clr				=vec4(source_irradiance.rgb*radiance*density.z,density.z);
-				brightness_factor		=max(1.0,radiance*max_irradiance);
+				float radius_km			=0.001*max(source_radius,length(dist));
+				float radiance			=1.0/(4.0*3.14159*radius_km*radius_km);
+				vec4 clr				=vec4(spectralFluxOver1e6.rgb*radiance*density.z,density.z);
+				brightness_factor		=max(1.0,radiance*max_spectral_flux);
 
 				//if(do_depth_mix)
 				{
@@ -598,8 +596,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 
 	float cos0				=dot(lightDir.xyz,view.xyz);
 	float sine				=view.z;
-	vec3 n					=vec3(clip_pos.xy*tanHalfFov,1.0);
-	n						=normalize(n);
 
 	float min_z				=cornerPos.z-(fractalScale.z*1.5)/inverseScales.z;
 	float max_z				=cornerPos.z+(1.0+fractalScale.z*1.5)/inverseScales.z;
@@ -609,7 +605,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		return res;
 	
 	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-	//float solid_dist		=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	// Lookup in the illumination texture.
 	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
@@ -817,8 +812,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-res.nearFarDepth.z=dlookup.z;//*(1.0-colour.a);
-res.nearFarDepth.w=res.nearFarDepth.x-res.nearFarDepth.y;
+	res.nearFarDepth.z	=dlookup.z;//*(1.0-colour.a);
+	res.nearFarDepth.w	=meanFadeDistance;
 	return res;
 }
 #endif
