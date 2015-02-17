@@ -163,28 +163,6 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 	return vec4(shadow_range,light_range);
 }
 
-#ifndef GLSL
-void GodraysAccumulation(RWTexture2D<float> targetTexture1,Texture2D cloudShadowTexture,int posx)
-{
-	uint2 dims;
-	targetTexture1.GetDimensions(dims.x,dims.y);
-//for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
-	float theta						=float(posx)/float(dims.x)*2.0*3.1415926536;
-	//vec2 offset					=vec2(-sin(theta),cos(theta))*pixel/4.0;
-	float total_ill					=0.0;
-	// Find the total illumination
-	for(uint i=0;i<dims.y;i++)
-	{
-		float interp				=float(i)/float(dims.y-1);
-		float distance_off_centre	=interp;
-		vec2 shadow_texc			=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
-		vec4 illumination			=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
-	//	illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
-	//	illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
-		total_ill					+=illumination.x;
-		targetTexture1[uint2(posx,i)]=total_ill/float(dims.y);
-	}
-}
 
 float MoistureAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 texCoords)
 {
@@ -200,14 +178,13 @@ float MoistureAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,ve
 		float interp				=float(i)/float(shadowTextureSize-1);
 		float distance_off_centre	=interp;
 		vec2 shadow_texc			=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
-		vec4 illumination			=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
-		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
-		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
+		vec4 illumination			=sample_lod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
+		illumination				+=sample_lod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
+		illumination				+=sample_lod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
 		transparency				*=exp(-saturate(1.0-illumination.x));
 	}
 	return 1.0-transparency;
 }
-#endif
 
 
 float unshadowedBrightness(float Beta,vec4 lightResponse,vec3 ambientColour)

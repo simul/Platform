@@ -584,7 +584,10 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 			SIMUL_BREAK_ONCE(base::QuickFormat("Invalid technique %s of shader %s\n",techname,this->filename.c_str()));
 			return;
 		}
-		currentPass = tech->GetPassByName(passname);
+		if(!passname)
+			currentPass = tech->GetPassByIndex(0);
+		else
+			currentPass = tech->GetPassByName(passname);
 		if (!currentPass->IsValid())
 		{
 			const char *techname="";//effectTechnique->getName();

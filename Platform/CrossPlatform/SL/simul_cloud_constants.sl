@@ -163,7 +163,7 @@ struct CloudShadowStruct
 	simul::crossplatform::Texture *cloudTexture;			///< The cloud texture.
 	simul::crossplatform::Texture *cloudShadowTexture;		///< Cloud shadow texture.
 	simul::crossplatform::Texture *godraysTexture;			///< Texture represents accumulated illumination at a given angle and distance.
-	simul::crossplatform::Texture *moistureTexture;			///< Texture represents optical thickness of moisture at a given horizontal angle and distance.
+	//simul::crossplatform::Texture *moistureTexture;			///< Texture represents optical thickness of moisture at a given horizontal angle and distance.
 	simul::crossplatform::Texture *rainMapTexture;			///< Texture represents where in the horizontal plane of the cloud rain can fall.
 	mat4 shadowMatrix;					// Transform a position from shadow space to world space
 	mat4 worldToMoistureSpaceMatrix;	// Transform a position from world space to moisture space.

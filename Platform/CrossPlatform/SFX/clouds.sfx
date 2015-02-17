@@ -44,9 +44,9 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
 	uint num=0;
 	uint byteStride=0;
-	queryInputs.GetDimensions(num,byteStride);
-	if(sub_pos.x>=num)
-		return;
+	//queryInputs.GetDimensions(num,byteStride);
+	//if(sub_pos.x>=num)
+	//	return;
 	VolumeQueryResult res;
 	res.pos_m						=queryInputs[sub_pos.x];
 	res.valid						=1;
@@ -64,9 +64,9 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
 	uint num=0;
 	uint byteStride=0;
-	queryInputs.GetDimensions(num,byteStride);
-	if(sub_pos.x>=num/2)
-		return;
+	//queryInputs.GetDimensions(num,byteStride);
+	//if(sub_pos.x>=num/2)
+	//	return;
 	LineQueryResult res;
 	vec3 start_pos					=queryInputs[sub_pos.x*2];
 	vec3 end_pos					=queryInputs[sub_pos.x*2+1];
@@ -110,8 +110,13 @@ CS_LAYOUT(8,8,8)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	uint3 pos=g*8+t;
-    vec4 res= lerp(cloudDensity1[pos],cloudDensity2[pos],cloud_interp);
+	vec4 c1=TEXTURE_LOAD_3D(cloudDensity1,pos);
+	vec4 c2=TEXTURE_LOAD_3D(cloudDensity2,pos);
+   // vec4 res= lerp(cloudDensity1[pos],cloudDensity2[pos],cloud_interp);
 	//res.z=1.0;
+	//output[pos].rgba=res;
+    vec4 res= lerp(c1,c2,cloud_interp);
+	//IMAGE_STORE_3D(outputTexture3d,pos,res);
 	outputTexture3d[pos].rgba=res;
 }
 
@@ -273,7 +278,7 @@ shader FarNearDepthPixelOutput PS_Raytrace_depthForward(posTexVertexOutput IN)
 	return PS_Raytrace(IN,false);
 }
 
-shader FarNearDepthPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDepth)
+FarNearDepthPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
@@ -326,12 +331,12 @@ shader posTexVertexOutput VS_CrossSection(idOnly IN)
 
 shader vec4 PS_Simple(posTexVertexOutput IN):SV_TARGET
 {
-    return noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
+    return texture_wrap(noiseTexture,IN.texCoords.xy);
 }
 
 shader vec4 PS_ShowNoise(posTexVertexOutput IN):SV_TARGET
 {
-    vec4 lookup=noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
+    vec4 lookup=texture_wrap(noiseTexture,IN.texCoords.xy);
 	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
