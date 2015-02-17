@@ -8,34 +8,38 @@
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/earth_shadow_fade.sl"
 
-Texture3D cloudDensity1					: register(t0);
-Texture3D cloudDensity2					: register(t1);
-Texture2D noiseTexture					: register(t2);
-Texture2D cloudShadowTexture			: register(t2);
-Texture2D lossTexture					: register(t3);
-Texture2D inscTexture					: register(t4);
-Texture2D skylTexture					: register(t5);
-Texture2D depthTexture					: register(t6);
-Texture3D noiseTexture3D				: register(t7);
-Texture3D lightningIlluminationTexture	: register(t8);
-Texture3D cloudDensity					: register(t9);
-Texture2D illuminationTexture			: register(t10);
-Texture2D lightTableTexture				: register(t11);
-Texture2D rainbowLookupTexture			: register(t12);
-Texture2D coronaLookupTexture			: register(t13);
-Texture3D volumeInscatterTexture;
-Texture2D nearFarTexture;
-Texture2D cloudGodraysTexture;
-Texture2D rainMapTexture;
-TextureCube diffuseCubemap;
-RWTexture3D<float4> output ;
+uniform Texture3D cloudDensity1					SIMUL_TEXTURE_REGISTER(0);
+uniform Texture3D cloudDensity2					SIMUL_TEXTURE_REGISTER(1);
+uniform Texture2D noiseTexture					SIMUL_TEXTURE_REGISTER(2);
+uniform Texture2D cloudShadowTexture			SIMUL_TEXTURE_REGISTER(2);
+uniform Texture2D lossTexture					SIMUL_TEXTURE_REGISTER(3);
+uniform Texture2D inscTexture					SIMUL_TEXTURE_REGISTER(4);
+uniform Texture2D skylTexture					SIMUL_TEXTURE_REGISTER(5);
+uniform Texture2D depthTexture					SIMUL_TEXTURE_REGISTER(6);
+uniform Texture3D noiseTexture3D				SIMUL_TEXTURE_REGISTER(7);
+uniform Texture3D lightningIlluminationTexture	SIMUL_TEXTURE_REGISTER(8);
+uniform Texture3D cloudDensity					SIMUL_TEXTURE_REGISTER(9);
+uniform Texture2D illuminationTexture			SIMUL_TEXTURE_REGISTER(10);
+uniform Texture2D lightTableTexture				SIMUL_TEXTURE_REGISTER(11);
+uniform Texture2D rainbowLookupTexture			SIMUL_TEXTURE_REGISTER(12);
+uniform Texture2D coronaLookupTexture			SIMUL_TEXTURE_REGISTER(13);
+uniform Texture3D volumeInscatterTexture;
+uniform Texture2D nearFarTexture;
+uniform Texture2D cloudGodraysTexture;
+uniform Texture2D rainMapTexture;
+uniform TextureCube diffuseCubemap;
+uniform RWTexture3D<vec4> outputTexture3d;
+uniform RWStructuredBuffer<VolumeQueryResult> volumeQueryResults;
+
+uniform StructuredBuffer<vec3> queryInputs;
 
 
-RWStructuredBuffer<VolumeQueryResult> volumeQueryResults;
-StructuredBuffer<vec3> queryInputs;
-RWStructuredBuffer<LineQueryResult> lineQueryResults;
+uniform RWStructuredBuffer<LineQueryResult> lineQueryResults;
 
-[numthreads(1,1,1)]
+
+
+
+CS_LAYOUT(1,1,1)
 shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
 	uint num=0;
@@ -55,7 +59,7 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	volumeQueryResults[sub_pos.x]	=res;
 }
 
-[numthreads(1,1,1)]
+CS_LAYOUT(1,1,1)
 shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
 	uint num=0;
@@ -102,13 +106,13 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
-[numthreads(8,8,8)]
+CS_LAYOUT(8,8,8)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	uint3 pos=g*8+t;
     vec4 res= lerp(cloudDensity1[pos],cloudDensity2[pos],cloud_interp);
 	//res.z=1.0;
-	output[pos].rgba=res;
+	outputTexture3d[pos].rgba=res;
 }
 
 // Given texture position from texCoords, convert to a worldpos with shadowMatrix.
@@ -351,7 +355,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 	vec3 texc	=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
 	int i		=0;
 	vec3 accum	=vec3(0.0,0.5,1.0);
-	texc.y		+=0.5*(1.0-yz)/(float)CROSS_SECTION_STEPS;
+	texc.y		+=0.5*(1.0-yz)/float(CROSS_SECTION_STEPS);
 	//texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
 	vec2 uv = vec2(0,0);
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
@@ -365,8 +369,8 @@ vec4 CrossSection(vec2 texCoords,float yz)
 		accum += colour; 
 	//	accum *=1-0.1*(1.0-density.y);
 		uv += density.xy;
-		texc.y-=(1.0-yz)/(float)CROSS_SECTION_STEPS;
-		texc.z+=yz/(float)CROSS_SECTION_STEPS;
+		texc.y-=(1.0-yz)/float(CROSS_SECTION_STEPS);
+		texc.z+=yz/float(CROSS_SECTION_STEPS);
 	}
 //	accum.rg = uv / float(CROSS_SECTION_STEPS);
     return vec4(accum,1);
@@ -379,28 +383,26 @@ shader vec4 PS_CrossSection(posTexVertexOutput IN):SV_TARGET
 
 BlendState Blend1
 {
-	BlendEnable[0] = TRUE;
-	BlendEnable[1] = FALSE;
-	SrcBlend = ONE;
-	DestBlend = SRC_ALPHA;
-    BlendOp = ADD;
-    SrcBlendAlpha = ZERO;
-    DestBlendAlpha = SRC_ALPHA;
-    BlendOpAlpha = ADD;
-    //RenderTargetWriteMask[0] = 0x0F;
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=FALSE;
+	SrcBlend		=ONE;
+	DestBlend		=SRC_ALPHA;
+    BlendOp			=ADD;
+    SrcBlendAlpha	=ZERO;
+    DestBlendAlpha	=SRC_ALPHA;
+    BlendOpAlpha	=ADD;
 };
 
 BlendState AddBlend2
 {
-	BlendEnable[0] = TRUE;
-	BlendEnable[1] = TRUE;
-	SrcBlend = ONE;
-	DestBlend = ONE;
-    BlendOp = ADD;
-    SrcBlendAlpha = ZERO;
-    DestBlendAlpha = ONE;
-    BlendOpAlpha = ADD;
-    //RenderTargetWriteMask[0] = 0x0F;
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=ONE;
+    BlendOp			=ADD;
+    SrcBlendAlpha	=ZERO;
+    DestBlendAlpha	=ONE;
+    BlendOpAlpha	=ADD;
 };
 
 VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_SimpleFullscreen());

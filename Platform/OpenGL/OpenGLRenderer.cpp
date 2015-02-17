@@ -60,11 +60,6 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	,Exposure(1.0f)
 	,simple_program(0)
 {
-	simulHDRRenderer		=new SimulGLHDRRenderer(1,1);
-	//simulWeatherRenderer	=new SimulGLWeatherRenderer(env,NULL,1,1);
-	//baseOpticsRenderer		=new simul::crossplatform::BaseOpticsRenderer(m);
-	//baseTerrainRenderer		=new simul::terrain::BaseTerrainRenderer(NULL);
-	//baseTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	if(!renderPlatformOpenGL)
 		renderPlatformOpenGL		=new opengl::RenderPlatform;
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
@@ -213,11 +208,6 @@ void OpenGLRenderer::ResizeGL(int view_id,int w,int h)
 	renderPlatformOpenGL->SetViewports(deviceContext,1,&viewport);
 }
 
-void OpenGLRenderer::SetCamera(int view_id,const simul::crossplatform::CameraOutputInterface *c)
-{
-	cameras[view_id]=c;
-}
-
 void OpenGLRenderer::ReloadTextures()
 {
 	if(simulWeatherRenderer)
@@ -239,7 +229,7 @@ void OpenGLRenderer::RecompileShaders()
 
 void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)
 {
-	SaveGLImage(filename_utf8,(simulHDRRenderer->framebuffer.GetTexture()->AsGLuint()));
+	//SaveGLImage(filename_utf8,(simulHDRRenderer->get->AsGLuint()));
 }
 
 void OpenGLRenderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)

@@ -4,17 +4,17 @@
 #include "../../CrossPlatform/SL/optics_constants.sl"
 #include "../../CrossPlatform/SL/depth.sl"
 
-Texture2D flareTexture;
-Texture2D rainbowLookupTexture;
-Texture2D coronaLookupTexture;
-Texture2D moistureTexture;
+uniform Texture2D flareTexture;
+uniform Texture2D rainbowLookupTexture;
+uniform Texture2D coronaLookupTexture;
+uniform Texture2D moistureTexture;
 
 struct indexVertexInput
 {
 	uint vertex_id			: SV_VertexID;
 };
 
-posTexVertexOutput VS_Flare(indexVertexInput IN) 
+shader posTexVertexOutput VS_Flare(indexVertexInput IN) 
 {
     posTexVertexOutput OUT;
 	vec2 poss[4]=
@@ -31,10 +31,9 @@ posTexVertexOutput VS_Flare(indexVertexInput IN)
     return OUT;
 }
 
-vec4 PS_Flare( posTexVertexOutput IN): SV_TARGET
+shader vec4 PS_Flare( posTexVertexOutput IN): SV_TARGET
 {
-	vec3 output=colour.rgb*texture_clamp(flareTexture,vec2(.5f,.5f)+0.5f*IN.texCoords).rgb;
-
+	vec3 output=colour.rgb*texture_clamp(flareTexture,vec2(0.5,0.5)+0.5*IN.texCoords).rgb;
 	return vec4(output.rgb,1.f);
 }
 
@@ -46,7 +45,7 @@ struct rainbowVertexOutput
     vec3 view		: TEXCOORD1;	// eye vector
 };
 
-rainbowVertexOutput VS_rainbow(idOnly id)
+shader rainbowVertexOutput VS_rainbow(idOnly id)
 {
     posTexVertexOutput posTex=VS_SimpleFullscreen(id);
 	
@@ -86,7 +85,7 @@ vec4 CalculateRainbowColor(rainbowVertexOutput IN, float d, out vec4 moisture )
 	return scattered;
 }
 
-vec4 PS_rainbowOnly(rainbowVertexOutput IN) : SV_TARGET
+shader vec4 PS_rainbowOnly(rainbowVertexOutput IN) : SV_TARGET
 {
 	float d=  -dot( lightDir,normalize(IN.view ) 	);
 	// view must be normalized per pixel to prevent banding
@@ -96,7 +95,7 @@ vec4 PS_rainbowOnly(rainbowVertexOutput IN) : SV_TARGET
 	return scattered*rainbowIntensity*moisture.x;
 }
 
-vec4 PS_rainbowAndCorona(rainbowVertexOutput IN) : SV_TARGET
+shader vec4 PS_rainbowAndCorona(rainbowVertexOutput IN) : SV_TARGET
 {
 	//return texture_clamp(coronaLookupTexture,IN.texCoords.xy);
 	 //note: use a float for d here, since a half corrupts the corona

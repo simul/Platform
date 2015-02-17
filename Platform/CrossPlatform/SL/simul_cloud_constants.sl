@@ -1,6 +1,5 @@
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
-STATIC const int SIMUL_MAX_CLOUD_RAYTRACE_STEPS=255;
 
 struct LayerData
 {
@@ -24,9 +23,11 @@ SIMUL_CONSTANT_BUFFER(SingleLayerConstants,5)
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LayerConstants,8)
-	uniform LayerData layers[SIMUL_MAX_CLOUD_RAYTRACE_STEPS];
+	uniform LayerData layers[255];
 	uniform int layerCount;
-	uniform int thisLayerIndex,B,C;
+	uniform int thisLayerIndex;
+	uniform int B;
+	uniform int C;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)

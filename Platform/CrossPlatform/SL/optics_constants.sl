@@ -14,7 +14,9 @@ SIMUL_CONSTANT_BUFFER(OpticsConstants,10)
 	uniform vec4 depthToLinFadeDistParams;
 
 	uniform float rainbowIntensity;
-	uniform float dropletRadius,ahgage,aejhue;
+	uniform float dropletRadius;
+	uniform float ahgage;
+	uniform float aejhue;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

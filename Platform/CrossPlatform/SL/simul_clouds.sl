@@ -311,7 +311,6 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 	return density;
 }
 
-#ifndef GLSL
 /*
 
 vec3 calcLightningColour(vec3 world_pos,vec3 lightningColour,vec3 lightningOrigin,vec3 lightningInvScales)
@@ -409,7 +408,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	vec3 startOffsetFromOrigin		=viewPos-gridOriginPos;
 	vec3 offsetFromOrigin			=startOffsetFromOrigin;
 	vec3 p0							=offsetFromOrigin/scaleOfGridCoords;
-	int3 c0							=floor(p0) + start_c_offset;
+	int3 c0							=int3(floor(p0) + start_c_offset);
 	vec3 gridScale					=scaleOfGridCoords;
 	vec3 P0							=offsetFromOrigin/scaleOfGridCoords/2.0;
 	int3 C0							=c0>>1;
@@ -448,7 +447,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 		vec3 D						=dp/viewScaled;
 		float e						=min(min(D.x,D.y),D.z);
 		// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
-		vec3 N						=step(D,e);
+		vec3 N						=step(D,vec3(e,e,e));
 
 		int3 c_step					=c_offset*int3(N);
 		float d						=e*viewScale;
@@ -482,7 +481,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 
 			vec4 noiseval			=MakeNoise(noiseTexture3D,noise_texc,3.0*fadeDistance);
 			vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
-			if(0)//do_rain_effect)
+			if(false)		//do_rain_effect)
 			{
 				// The rain fall angle is used:
 				vec3 rain_texc			=cloudWorldOffset;
@@ -541,7 +540,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 			c			=	c>>1;
 			gridScale	*=	2.0;
 			viewScale	*=	2.0;
-			if(!idx)
+			if(idx==0)
 				W*=2;
 			p0			=	P0;
 			P0			=	startOffsetFromOrigin/gridScale/2.0;
@@ -648,7 +647,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec3 startOffsetFromOrigin		=viewPos-gridOriginPos;
 	vec3 offsetFromOrigin			=startOffsetFromOrigin;
 	vec3 p0							=offsetFromOrigin/scaleOfGridCoords;
-	int3 c0							=floor(p0) + start_c_offset;
+	int3 c0							=int3(floor(p0) + start_c_offset);
 	vec3 gridScale					=scaleOfGridCoords;
 	vec3 P0							=offsetFromOrigin/scaleOfGridCoords/2.0;
 	int3 C0							=c0>>1;
@@ -688,7 +687,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 
 		float e						=min(min(D.x,D.y),D.z);
 		// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
-		vec3 N						=step(D,e);
+		vec3 N						=step(D,vec3(e,e,e));
 
 		int3 c_step					=c_offset*int3(N);
 		float d						=e*viewScale;
@@ -795,7 +794,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			c			=	c>>1;
 			gridScale	*=	2.0;
 			viewScale	*=	2.0;
-			if(!idx)
+			if(idx==0)
 				W*=2;
 			p0			=	P0;
 			P0			=	startOffsetFromOrigin/gridScale/2.0;
@@ -816,5 +815,4 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	res.nearFarDepth.w	=meanFadeDistance;
 	return res;
 }
-#endif
 #endif

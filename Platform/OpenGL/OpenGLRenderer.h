@@ -56,16 +56,11 @@ namespace simul
 			void ShutdownGL() override;
 
 			simul::clouds::BaseWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer;}
-			SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer;}
-			class simul::terrain::BaseTerrainRenderer *GetTerrainRenderer(){return baseTerrainRenderer;}
-			void	SetCamera(int view_id,const simul::crossplatform::CameraOutputInterface *c);
 			void ReloadTextures();
 			void RecompileShaders();
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
-			SimulGLHDRRenderer *simulHDRRenderer;
-		//	FramebufferGL depthFramebuffer;
 			GLuint simple_program;
 		};
 	}

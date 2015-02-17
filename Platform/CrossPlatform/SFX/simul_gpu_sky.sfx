@@ -65,9 +65,8 @@ shader void CS_BlendColour3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	uint3 sub_pos = g * 4 + t;
 	if(sub_pos.x>=targetSize.x||sub_pos.y>=targetSize.y||sub_pos.z>=targetSize.z)
 		return;
-//	sub_pos.z=4;
-	vec4 c1=IMAGE_LOAD_3D(colourTexture,sub_pos);
-	vec4 c2=IMAGE_LOAD_3D(colourTexture2,sub_pos);
+	vec4 c1=TEXTURE_LOAD_3D(colourTexture,sub_pos);
+	vec4 c2=TEXTURE_LOAD_3D(colourTexture2,sub_pos);
 	vec4 c=lerp(c1,c2,interpColours);
 	IMAGE_STORE_3D(targetTexture,sub_pos,c);
 }
@@ -183,7 +182,7 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow(float(i)/(float(targetSize.z)-1.0),2.0);
 		
-		vec3 previous_loss	=IMAGE_LOAD_3D(loss_texture,idx).rgb;
+		vec3 previous_loss	=TEXTURE_LOAD_3D(loss_texture,idx).rgb;
 
 		float dist_km		=zPosition*maxDistanceKm;
 		if(i==targetSize.z-1)
@@ -263,21 +262,21 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow(float(i)/(float(targetSize.z)-1.0),2.0);
 		
-		vec3 previous_loss	=IMAGE_LOAD_3D(loss_texture,idx).rgb;
+		vec3 previous_loss	=TEXTURE_LOAD_3D(loss_texture,idx).rgb;
 		float dist_km		=zPosition*maxDistanceKm;
 		if(i==targetSize.z-1)
 			dist_km=1000.0;
-		vec4 skyl	=Skyl(insc_texture
-									,density_texture
-									,blackbody_texture
-									,previous_loss
-									,previous_skyl
-									,maxOutputAltKm
-									,maxDistanceKm
-									,maxDensityAltKm
-									,spaceDistKm
-									,viewAltKm
-									,dist_km
+		vec4 skyl	=Skyl(	insc_texture
+							,density_texture
+							,blackbody_texture
+							,previous_loss
+							,previous_skyl
+							,maxOutputAltKm
+							,maxDistanceKm
+							,maxDensityAltKm
+							,spaceDistKm
+							,viewAltKm
+							,dist_km
 									,prevDist_km
 									,sin_e
 									,cos_e);

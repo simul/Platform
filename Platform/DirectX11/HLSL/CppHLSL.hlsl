@@ -49,7 +49,7 @@
 #define texelFetch2d(tex,p,lod) tex.Load(int3(p,lod))
 #define imageStore(uav, pos, c) uav[pos]=c
 #define IMAGE_LOAD(tex,uintpos) tex.Load(int3(uintpos,0))
-//#define IMAGE_LOAD_3D(tex,uintpos) tex.Load(int4(uintpos,0))
+#define TEXTURE_LOAD_3D(tex,uintpos) tex.Load(int4(uintpos,0))
 #define IMAGE_LOAD_3D(tex,uintpos) tex[uintpos]
 #define IMAGE_LOAD_MSAA(tex,uint2pos,sampl) tex.Load(uint2pos,sampl)
 #endif
