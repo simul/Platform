@@ -42,4 +42,42 @@ inline vec3 uint2_to_colour3(uint2 int_colour)
 	// Convert R11G11B10 to float3
 	return vec3(r, g, b);
 }
+
+vec4 convertInt(TEXTURE2D_UINT glowTexture,uint2 location)
+{
+	uint int_color = IMAGE_LOAD(glowTexture,int2(location)).x;
+
+	// Convert R11G11B10 to float3
+	vec4 color;
+	color.r =float(int_color >> 21) / 2047.0f;
+	color.g =float((int_color >> 10) & 0x7ff) / 2047.0f;
+	color.b =float(int_color & 0x0003ff) / 1023.0f;
+	color.a = 1;
+	color.rgb*=10.0;
+	return color;
+}
+
+vec4 texture_int(TEXTURE2D_UINT glowTexture,vec2 texCoord)
+{
+	uint2 tex_dim;
+	GET_DIMENSIONS(glowTexture,tex_dim.x, tex_dim.y);
+
+	vec2 pos1=vec2(tex_dim.x*texCoord.x-0.5,tex_dim.y * texCoord.y-0.5);
+	vec2 pos2=vec2(tex_dim.x*texCoord.x+0.5,tex_dim.y * texCoord.y+0.5);
+
+	uint2 location1=uint2(pos1);
+	uint2 location2=uint2(pos2);
+
+	vec2 l=vec2(tex_dim.x*texCoord.x,tex_dim.y * texCoord.y)-vec2(location1);
+
+	vec4 tex00=convertInt(glowTexture,location1);
+	vec4 tex10=convertInt(glowTexture,uint2(location2.x,location1.y));
+	vec4 tex11=convertInt(glowTexture,location2);
+	vec4 tex01=convertInt(glowTexture,uint2(location1.x,location2.y));
+
+	vec4 tex0=lerp(tex00,tex10,l.x);
+	vec4 tex1=lerp(tex01,tex11,l.x);
+	vec4 tex=lerp(tex0,tex1,l.y);
+	return tex;
+}
 #endif

@@ -95,6 +95,7 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 #ifndef GLSL
 shader vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 {
+	return texture_int(imageTextureUint,IN.texCoords.xy);/*
 	uint2 dims;
 	GET_DIMENSIONS(imageTextureUint4,dims.x,dims.y);
 	uint2 pos			=uint2(IN.texCoords*vec2(dims));
@@ -109,7 +110,7 @@ shader vec4 PS_CompactedTexture(posTexVertexOutput IN) : SV_TARGET
 #endif
 	vec3 res=multiplier*clr;
 //	res.xy+=IN.texCoords.xy;
-	return vec4(res,1.0);
+	return vec4(res,1.0);*/
 }
 #endif
 
@@ -456,11 +457,20 @@ technique show_depth_ms
 #ifndef GLSL
 technique compacted_texture
 {
-    pass p0
+    pass noblend
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
 		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));

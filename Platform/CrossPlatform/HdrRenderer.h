@@ -41,10 +41,11 @@ namespace simul
 			void RecompileShaders();
 		protected:
 			crossplatform::RenderPlatform		*renderPlatform;
-			crossplatform::BaseFramebuffer		*glow_fb;
-			crossplatform::BaseFramebuffer		*alt_fb;
+			crossplatform::Texture				*brightpassTextures[4];
+			simul::crossplatform::Texture		*glowTextures[4];
 			int Width,Height;
-			
+			void DoGaussian(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *brightpassTexture,crossplatform::Texture *targetTexture);
+		
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			crossplatform::Effect*				hdr_effect;
 			crossplatform::EffectTechnique*		exposureGammaTechnique;
@@ -58,7 +59,6 @@ namespace simul
 			crossplatform::EffectTechnique*		gaussianRowTechnique;
 			crossplatform::EffectTechnique*		gaussianColTechnique;
 
-			simul::crossplatform::Texture		*glowTexture;
 			crossplatform::ConstantBuffer<HdrConstants>			hdrConstants;
 			crossplatform::ConstantBuffer<ImageConstants>		imageConstants;
 		};

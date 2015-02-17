@@ -1189,9 +1189,9 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 		{
 			tech=debugEffect->GetTechniqueByName("compacted_texture");
 			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint",srv);
-			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint2",srv);
-			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint3",srv);
-			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint4",srv);
+			//simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint2",srv);
+			//simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint3",srv);
+			//simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint4",srv);
 		}
 	}
 	unsigned int num_v=1;

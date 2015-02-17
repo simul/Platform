@@ -235,7 +235,6 @@
     <None Include="..\CrossPlatform\SFX\rain.sfx" />
     <None Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx" />
     <None Include="..\CrossPlatform\SFX\simul_debug.sfx" />
-    <None Include="..\CrossPlatform\SFX\simul_gaussian.sfx" />
     <None Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx" />
     <None Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx" />
     <None Include="..\CrossPlatform\SFX\simul_rendernoise.sfx" />
