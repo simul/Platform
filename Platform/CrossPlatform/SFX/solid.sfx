@@ -111,7 +111,8 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 {
     vec3 normal	=normalize(IN.normal);
-    vec4 c = vec4(0.5,0.5,0.5,0.5);//texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
+    vec4 c = vec4(0.5,0.5,0.5,0.5);
+	//texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
 	vec3 totalDiff=sample(diffuseCubemap,cubeSamplerState,-normal.xyz).rgb;
 	//c.rgb*=totalDiff;
 	vec4 loss;

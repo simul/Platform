@@ -17,7 +17,7 @@ namespace simul
 	namespace opengl
 	{
 		class Material;
-		/// A RenderPlatform for OpenGL.
+		/// A implementation of RenderPlatform for OpenGL.
 		class SIMUL_OPENGL_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
 		public:
