@@ -132,7 +132,7 @@ shader void GS_Branch(line F_IdVertex IN[2], inout PointStream<F_Vertex> vStream
 	outpos[num_steps]	=endP;
 	int del				=num_steps;
 	float persistence	=0.8;
-	float off			=0.4*roughness;
+	float off			=roughness;
 	float time			=phaseTime;
 	for(int i=0;i<num_octaves;i++)
 	{
@@ -150,7 +150,7 @@ shader void GS_Branch(line F_IdVertex IN[2], inout PointStream<F_Vertex> vStream
 			outpos[j]=x;
 		}
 		del/=2;
-		off*=persistence;
+		//off*=persistence;
 		time*=2.0;
 	}
 
@@ -240,7 +240,7 @@ shader LightningVertexOutput VS_Thick(LightningVertexInput IN)
     OUT.position		=mul(worldViewProj,vec4(IN.position.xyz,1.0));
 	OUT.thicknessMetres	=IN.texCoords.x;
 	OUT.endpoint		=saturate(1.0-IN.texCoords.y);
-	OUT.brightness		=IN.texCoords.y*10.0;
+	OUT.brightness		=IN.texCoords.y;
 	OUT.depth			=OUT.position.z/OUT.position.w;
     return OUT;
 }
@@ -288,12 +288,41 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 	vec2 miter_b		=normalize(n1 + n2);	// miter at end of current segment
 	// determine the length of the miter by projecting it onto normal and then inverse it
 
-	// ensure a minimum pixel size:
-	float pixelWidth		=minPixelWidth*pow(IN[1].brightness,0.5);
-	if(pixelWidth<minPixelWidth)
-		pixelWidth=minPixelWidth;
-	float width1			=max(IN[1].thicknessMetres,pixelWidth/viewportPixels.x*start.w);
-	float width2			=max(IN[2].thicknessMetres,pixelWidth/viewportPixels.x*start.w);
+	//We want to have an output brightness*pixelWidth as specified according to thicknessMetres and input brightness.
+	// so K=IN[1].brightness*(width1/start.w	*viewportPixels.x)
+	// But: first we have a minimum pixel width. So if (width1/start.w	*viewportPixels.x)<minPixelWidth, we want brightness=K/minPixelWidth
+	// And second we have a maximum output brightness, so if brightness>maxBrightness, we want pixelWidth=K/maxBrightness
+	float truePixelWidth1	=(IN[1].thicknessMetres/start.w*viewportPixels.x);
+	float truePixelWidth2	=(IN[2].thicknessMetres/start.w*viewportPixels.x);
+	float K1				=IN[1].brightness*truePixelWidth1;
+	float K2				=IN[2].brightness*truePixelWidth2;
+	float brightness1		=IN[1].brightness;
+	float brightness2		=IN[2].brightness;
+	float width1			=IN[1].thicknessMetres;
+	float width2			=IN[2].thicknessMetres;
+	float maxBrightness		=100.0;
+	// Overbright? Make pixel width larger:
+	if(brightness1>maxBrightness)
+	{
+		width1				*=brightness1/maxBrightness;
+		brightness1			=maxBrightness;
+	}
+	if(brightness2>maxBrightness)
+	{
+		width2				*=brightness2/maxBrightness;
+		brightness2			=maxBrightness;
+	}
+	//pixel size too small? make it up to the minimum, but scale down the brightness:
+	if(width1<minPixelWidth/viewportPixels.x*start.w)
+	{
+		brightness1			*=width1/(minPixelWidth/viewportPixels.x*start.w);
+		width1				=minPixelWidth/viewportPixels.x*start.w;
+	}
+	if(width2<minPixelWidth/viewportPixels.x*start.w)
+	{
+		brightness2			*=width2/(minPixelWidth/viewportPixels.x*start.w);
+		width2				=minPixelWidth/viewportPixels.x*start.w;
+	}
 	float lengthPixels_a	=width1/start.w	*viewportPixels.x/dot(miter_a, n1);
 	float lengthPixels_b	=width2/end.w	*viewportPixels.x/dot(miter_b, n1);
 	const float	MITER_LIMIT	=1.0;
@@ -313,26 +342,26 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 		{
 			OUT.hPosition	=vec4( (p1 + width1 * n0) / viewportPixels, 0.0, 1.0 );
 			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
-			OUT.texc			=OUT.screenPos.xy*0.5+0.5;
+			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
 			OUT.brightness	=IN[1].brightness;
-			OUT.endpoint		=IN[1].endpoint;
+			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
 			OUT.hPosition	=vec4( (p1 + width1 * n1) / viewportPixels, 0.0, 1.0 );
 			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
-			OUT.texc			=OUT.screenPos.xy*0.5+0.5;
+			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
 			OUT.brightness	=IN[1].brightness;
-			OUT.endpoint		=IN[1].endpoint;
+			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
 			OUT.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
 			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
-			OUT.texc			=OUT.screenPos.xy*0.5+0.5;
+			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
 			OUT.brightness	=IN[1].brightness;
-			OUT.endpoint		=IN[1].endpoint;
+			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
 			SpriteStream.RestartStrip();
@@ -341,26 +370,26 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 		{
 			OUT.hPosition	=vec4( (p1 - width2 * n1) / viewportPixels, 0.0, 1.0 );
 			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
-			OUT.texc			=OUT.screenPos.xy*0.5+0.5;
+			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
 			OUT.brightness	=IN[1].brightness;
-			OUT.endpoint		=IN[1].endpoint;
+			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
 			OUT.hPosition	=vec4( (p1 - width2 * n0) / viewportPixels, 0.0, 1.0 );
 			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
-			OUT.texc			=OUT.screenPos.xy*0.5+0.5;
+			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
 			OUT.brightness	=IN[1].brightness;
-			OUT.endpoint		=IN[1].endpoint;
+			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
 			OUT.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
 			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
-			OUT.texc			=OUT.screenPos.xy*0.5+0.5;
+			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
 			OUT.brightness	=IN[1].brightness;
-			OUT.endpoint		=IN[1].endpoint;
+			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
 			SpriteStream.RestartStrip();
@@ -372,38 +401,38 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 		lengthPixels_b = width2;
 	}
   // generate the triangle strip
-	OUT.clipWidth	=width1/start.w;
-	OUT.screenPos	=(p1 + lengthPixels_a * miter_a)/viewportPixels;
-	OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
+	OUT.clipWidth		=width1/start.w;
+	OUT.screenPos		=(p1 + lengthPixels_a * miter_a)/viewportPixels;
+	OUT.hPosition		=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
 	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
-	OUT.along		=0.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2*1.1-0.05;
-	OUT.brightness	=IN[1].brightness;
+	OUT.along			=0.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2*1.1-0.05;
+	OUT.brightness		=IN[1].brightness;
 	OUT.endpoint		=IN[1].endpoint;
-	OUT.clipPos		=OUT.hPosition;
+	OUT.clipPos			=OUT.hPosition;
 	SpriteStream.Append(OUT);
-	OUT.screenPos	=(p1 - lengthPixels_a * miter_a)/viewportPixels;
-	OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
+	OUT.screenPos		=(p1 - lengthPixels_a * miter_a)/viewportPixels;
+	OUT.hPosition		=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
 	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
-	OUT.along		=0.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
-	OUT.brightness	=IN[1].brightness;
-	OUT.clipPos		=OUT.hPosition;
+	OUT.along			=0.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
+	OUT.brightness		=IN[1].brightness;
+	OUT.clipPos			=OUT.hPosition;
 	SpriteStream.Append(OUT);
-	OUT.clipWidth	=width2/end.w;
-	OUT.screenPos	=(p2 + lengthPixels_b * miter_b)/viewportPixels;
-	OUT.hPosition	=vec4(OUT.screenPos.xy*end.w,end.z,end.w);
+	OUT.clipWidth		=width2/end.w;
+	OUT.screenPos		=(p2 + lengthPixels_b * miter_b)/viewportPixels;
+	OUT.hPosition		=vec4(OUT.screenPos.xy*end.w,end.z,end.w);
 	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
-	OUT.along		=1.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
-	OUT.brightness	=IN[2].brightness;
+	OUT.along			=1.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
+	OUT.brightness		=IN[2].brightness;
 	OUT.endpoint		=IN[2].endpoint;
-	OUT.clipPos		=OUT.hPosition;
+	OUT.clipPos			=OUT.hPosition;
 	SpriteStream.Append(OUT);
-	OUT.screenPos	=(p2 - lengthPixels_b * miter_b)/viewportPixels;
-	OUT.hPosition	=vec4(OUT.screenPos.xy*end.w,end.z,end.w);
+	OUT.screenPos		=(p2 - lengthPixels_b * miter_b)/viewportPixels;
+	OUT.hPosition		=vec4(OUT.screenPos.xy*end.w,end.z,end.w);
 	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
-	OUT.along		=1.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
-	OUT.brightness	=IN[2].brightness;
+	OUT.along			=1.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
+	OUT.brightness		=IN[2].brightness;
 	OUT.endpoint		=IN[2].endpoint;
-	OUT.clipPos		=OUT.hPosition;
+	OUT.clipPos			=OUT.hPosition;
 	SpriteStream.Append(OUT);
     SpriteStream.RestartStrip();
 }
@@ -432,11 +461,10 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	float d				=min(length(diff1),length(diff2));
 	float m				=d/clipWidth2px;
 	float s				=max(0.0,d-clipWidth2px)/IN.clipWidth;
-	//br				*=exp(-20.0*d);
-	//if(d>1.0)
-	br					=min(brightnessToUnity,br)*saturate(exp(-4.0*s)-0.05)/0.95;
+	
+	br					=min(brightnessToUnity,br);//*saturate(exp(-4.0*s)-0.05)/0.95;
 	br					+=IN.brightness*saturate(10.0*(1.0-m));
-//	br*=past;
+	br*=past;
 	if(br<0)
 		br=0;
 	vec4 colour			=vec4(br*lightningColour.rgb,1.0);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
