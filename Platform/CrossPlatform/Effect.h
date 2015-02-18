@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <set>
 #ifndef _MSC_VER
 #include <stdint.h>
 #endif
@@ -162,6 +163,7 @@ namespace simul
 		template<class T> class ConstantBuffer:public ConstantBufferBase,public T
 		{
 			PlatformConstantBuffer *platformConstantBuffer;
+			std::set<Effect*> linkedEffects;
 		public:
 			ConstantBuffer():platformConstantBuffer(NULL)
 			{
@@ -191,12 +193,28 @@ namespace simul
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(Effect *effect,const char *name)
 			{
+				if(IsLinkedToEffect(effect))
+					return;
 				if (effect&&platformConstantBuffer)
+				{
 					platformConstantBuffer->LinkToEffect(effect,name,T::bindingIndex);
+					linkedEffects.insert(effect);
+					effect->StoreConstantBufferLink(this);
+				}
+			}
+			bool IsLinkedToEffect(crossplatform::Effect *effect)
+			{
+				if(linkedEffects.find(effect)!=linkedEffects.end())
+				{
+					if(effect->IsLinkedToConstantBuffer(this))
+						return true;
+				}
+				return false;
 			}
 			//! Free the allocated buffer.
 			void InvalidateDeviceObjects()
 			{
+				linkedEffects.clear();
 				if(platformConstantBuffer)
 					platformConstantBuffer->InvalidateDeviceObjects();
 				delete platformConstantBuffer;
@@ -373,6 +391,7 @@ namespace simul
 			virtual EffectTechnique *CreateTechnique()=0;
 			EffectTechnique *EnsureTechniqueExists(const std::string &groupname,const std::string &techname,const std::string &passname);
 			const char *GetTechniqueName(const EffectTechnique *t) const;
+			std::set<ConstantBufferBase*> linkedConstantBuffers;
 		public:
 			GroupMap groups;
 			TechniqueMap techniques;
@@ -427,6 +446,9 @@ namespace simul
 			virtual void Unapply(DeviceContext &deviceContext)=0;
 			/// Zero-out the textures that are set for this shader. Call before apply.
 			virtual void UnbindTextures(crossplatform::DeviceContext &deviceContext)=0;
+
+			void StoreConstantBufferLink(crossplatform::ConstantBufferBase *);
+			bool IsLinkedToConstantBuffer(crossplatform::ConstantBufferBase*) const;
 		};
 	}
 }

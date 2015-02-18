@@ -2,7 +2,7 @@
 #define DEBUG_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(DebugConstants,8)
-	uniform mat4 worldViewProj;
+	uniform mat4 debugWorldViewProj;
 	uniform vec4 rect;
 
 	uniform int latitudes;
@@ -12,10 +12,10 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,8)
 
 	uniform vec4 viewport;
 	uniform vec4 colour;
-	uniform vec4 depthToLinFadeDistParams;
+	uniform vec4 debugDepthToLinFadeDistParams;
 
-	uniform vec2 tanHalfFov;
-	uniform float exposure;
-	uniform float gamma;
+	uniform vec2 debugTanHalfFov;
+	uniform float debugExposure;
+	uniform float debugGamma;
 SIMUL_CONSTANT_BUFFER_END
 #endif

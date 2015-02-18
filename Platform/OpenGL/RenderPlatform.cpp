@@ -318,8 +318,8 @@ glDisable(GL_CULL_FACE);
 	GL_ERROR_CHECK
 	debugEffect->Apply(deviceContext,debugEffect->GetTechniqueByName("show_depth"),frustum.reverseDepth?"reverse_depth":"forward_depth");
 	GL_ERROR_CHECK
-	debugConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	debugConstants.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	debugConstants.debugTanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	debugConstants.debugDepthToLinFadeDistParams=depthToLinFadeDistParams;
 	debugEffect->SetTexture(deviceContext,"imageTexture",tex);
 	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
@@ -335,7 +335,7 @@ glDisable(GL_CULL_FACE);
 GL_ERROR_CHECK
 }
 
-void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *debugEffect
+void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
 	,crossplatform::EffectTechnique *technique,const char *pass)
 {
 	debugConstants.multiplier=1.0f;
@@ -345,15 +345,6 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 		glDisable(GL_BLEND);
 GL_ERROR_CHECK
 glDisable(GL_CULL_FACE);
-
-
-
-
-
-
-
-
-
 
 
 
@@ -367,20 +358,21 @@ glDisable(GL_CULL_FACE);
 	Viewport viewport;
 	glGetIntegerv(GL_VIEWPORT,(int*)(&viewport));
 	GL_ERROR_CHECK
-	debugEffect->Apply(deviceContext,technique,pass);
+	effect->Apply(deviceContext,technique,pass);
 	GL_ERROR_CHECK
 	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 		,2.f*(float)dx/(float)viewport.Width
 		,2.f*(float)dy/(float)viewport.Height);
 	GL_ERROR_CHECK
+	debugConstants.LinkToEffect(effect,"DebugConstants");
 	debugConstants.rect=r;
 	debugConstants.Apply(deviceContext);
 	GL_ERROR_CHECK
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	GL_ERROR_CHECK
-	debugEffect->UnbindTextures(deviceContext);
-	debugEffect->Unapply(deviceContext);
+	effect->UnbindTextures(deviceContext);
+	effect->Unapply(deviceContext);
 	GL_ERROR_CHECK
 }
 
@@ -592,7 +584,7 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 	case INT_32_FLOAT:
 		return GL_INTENSITY32F_ARB;
 	case RGBA_8_UNORM:
-		return GL_RGBA;
+		return GL_RGBA8;
 	case RGBA_8_SNORM:
 		return GL_RGBA8_SNORM;
 	case R_8_UNORM:

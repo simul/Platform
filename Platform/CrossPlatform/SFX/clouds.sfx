@@ -7,6 +7,7 @@
 #include "../../CrossPlatform/SL/simul_clouds.sl"
 #include "../../CrossPlatform/SL/states.sl"
 #include "../../CrossPlatform/SL/earth_shadow_fade.sl"
+#include "../../CrossPlatform/SL/debug_constants.sl"
 
 uniform Texture3D cloudDensity1					SIMUL_TEXTURE_REGISTER(0);
 uniform Texture3D cloudDensity2					SIMUL_TEXTURE_REGISTER(1);
@@ -116,8 +117,8 @@ shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	//res.z=1.0;
 	//output[pos].rgba=res;
     vec4 res= lerp(c1,c2,cloud_interp);
-	//IMAGE_STORE_3D(outputTexture3d,pos,res);
-	outputTexture3d[pos].rgba=res;
+	IMAGE_STORE_3D(outputTexture3d,pos,res);
+	//outputTexture3d[pos].rgba=res;
 }
 
 // Given texture position from texCoords, convert to a worldpos with shadowMatrix.

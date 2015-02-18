@@ -593,13 +593,16 @@ GL_ERROR_CHECK
 	if(tex->GetDimension()==2)
 	{
 		if(write)
-			glBindImageTexture(0,
+		{
+texture_number=0;
+			glBindImageTexture(texture_number,
  				tex->AsGLuint(),
  				0,
  				GL_FALSE,
  				0,
  				GL_READ_WRITE,
 				opengl::RenderPlatform::ToGLFormat(tex->GetFormat()));
+	}
 		//glBindImageTexture(0, volume_tid, 0, /*layered=*/GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 		else
 		{
@@ -615,7 +618,9 @@ GL_ERROR_CHECK
 	{
 		if(write)
 		{
-			glBindImageTexture(0,
+GL_ERROR_CHECK
+texture_number=0;
+			glBindImageTexture(texture_number,
  				tex->AsGLuint(),
  				0,
  				GL_TRUE,
@@ -623,10 +628,20 @@ GL_ERROR_CHECK
  				GL_READ_WRITE,
 				opengl::RenderPlatform::ToGLFormat(tex->GetFormat()));
 		//GL_RGBA32F);
+/*
+GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
+
+GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
+
+GL_INVALID_VALUE is generated if level or layer is less than zero.
+*/
+GL_ERROR_CHECK
 		}
 		else
+		{
 			glBindTexture(GL_TEXTURE_3D,tex->AsGLuint());
 GL_ERROR_CHECK
+		}
 	}
 	else
 		throw simul::base::RuntimeError("Unknown texture dimension!");

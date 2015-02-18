@@ -42,6 +42,8 @@ void HdrRenderer::SetBufferSize(int w,int h)
 {
 	if(Width==w&&Height==h)
 		return;
+	if(!renderPlatform)
+		return;
 	Width=w;
 	Height=h;
 	if(Width>0&&Height>0)
@@ -128,9 +130,9 @@ void HdrRenderer::RecompileShaders()
 	defs["SCAN_SMEM_SIZE"]		=string_format("%d",scan_smem_size);
 	defs["THREADS_PER_GROUP"]	=string_format("%d",threadsPerGroup);
 	
-	m_pGaussianEffect			=renderPlatform->CreateEffect("gaussian",defs);
+	/*m_pGaussianEffect			=renderPlatform->CreateEffect("gaussian",defs);
 	hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
-	imageConstants.LinkToEffect(m_pGaussianEffect,"ImageConstants");
+	imageConstants.LinkToEffect(m_pGaussianEffect,"ImageConstants");*/
 }
 
 void HdrRenderer::InvalidateDeviceObjects()

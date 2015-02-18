@@ -178,8 +178,5 @@ struct CloudShadowStruct
 	simul::crossplatform::SamplerState *samplerState;
 };
 #else
-//SIMUL_CONSTANT_BUFFER(OnscreenRectangle,9)
-	uniform vec4 rect;
-//SIMUL_CONSTANT_BUFFER_END
 #endif
 #endif

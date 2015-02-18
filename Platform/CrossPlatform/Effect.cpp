@@ -121,3 +121,13 @@ const char *Effect::GetTechniqueName(const EffectTechnique *t) const
 	}
 	return "";
 }
+
+void Effect::StoreConstantBufferLink(crossplatform::ConstantBufferBase *b)
+{
+	linkedConstantBuffers.insert(b);
+}
+
+bool Effect::IsLinkedToConstantBuffer(crossplatform::ConstantBufferBase*b) const
+{
+	return (linkedConstantBuffers.find(b)!=linkedConstantBuffers.end());
+}
