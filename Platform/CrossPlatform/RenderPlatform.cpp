@@ -17,6 +17,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,mirrorY2(false)
 	,mirrorYText(false)
 	,textRenderer(NULL)
+	,shaderBuildMode(BUILD_IF_CHANGED)
 	,solidEffect(NULL)
 	,debugEffect(NULL)
 {
@@ -118,6 +119,17 @@ void RenderPlatform::PopTexturePath()
 { 
 	texturePathsUtf8.pop_back();
 }
+		//! When shader should be built, or loaded if available.
+void RenderPlatform::SetShaderBuildMode			(ShaderBuildMode s)
+{
+	shaderBuildMode=s;
+}
+
+ShaderBuildMode RenderPlatform::GetShaderBuildMode() const
+{
+	return shaderBuildMode;
+}
+
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;

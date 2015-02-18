@@ -368,7 +368,7 @@ void includeCallbackFunc(const char *incName, FILE *&fp, const char *&buf)
 	ERRNO_CHECK
 }
 
-void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	filename=filename_utf8;
 	bool retry=true;
@@ -424,7 +424,10 @@ void Effect::Load(crossplatform::RenderPlatform *,const char *filename_utf8,cons
 			DebugBreak();
 			delete paths;
 			delete defs;
-			continue;
+			if(renderPlatform->GetShaderBuildMode()&crossplatform::TRY_AGAIN_ON_FAIL)
+				continue;
+			else
+				break;
 		}
 		platform_effect		=(void*)effect;
 	// If any technique fails, we don't want to proceed until the problem is fixed.

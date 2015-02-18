@@ -84,7 +84,6 @@ static bool pipe_compiler_output=false;
 using namespace simul;
 using namespace dx11;
 using namespace base;
-ShaderBuildMode shaderBuildMode=BUILD_IF_CHANGED;
 
 
 namespace simul
@@ -94,44 +93,9 @@ namespace simul
 		std::vector<std::string> shaderPathsUtf8;
 		std::vector<std::string> texturePathsUtf8;
 		std::string shaderbinPathUtf8="shaderbin\\";
-		void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical)
-		{
-			D3DXMATRIX tmp1,view(v);
-			D3DXMatrixInverse(&tmp1,NULL,&view);
-			
-			dcam_pos[0]=tmp1._41;
-			dcam_pos[1]=tmp1._42;
-			dcam_pos[2]=tmp1._43;
-			if(view_dir)
-			{
-				if(y_vertical)
-				{
-					view_dir[0]=view._13;
-					view_dir[1]=view._23;
-					view_dir[2]=view._33;
-				}
-				else
-				{
-					view_dir[0]=-view._13;
-					view_dir[1]=-view._23;
-					view_dir[2]=-view._33;
-				}
-			}
-		}
-		const float *GetCameraPosVector(const float *v,bool y_vertical)
-		{
-			D3DXMATRIX view(v);
-			static float cam_pos[4],view_dir[4];
-			GetCameraPosVector(&view._11,(float*)cam_pos,(float*)view_dir,y_vertical);
-			return cam_pos;
-		}
 		void PipeCompilerOutput(bool p)
 		{
 			pipe_compiler_output=p;
-		}
-		void SetShaderBuildMode( ShaderBuildMode b)
-		{
-			shaderBuildMode=b;
 		}
 		void PushShaderPath(const char *path_utf8)
 		{
@@ -170,18 +134,6 @@ namespace simul
 		std::vector<std::string> GetTexturePathsUtf8()
 		{
 			return texturePathsUtf8;
-		}
-		D3DXMATRIX ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj)
-		{
-			D3DXMATRIX p=proj;
-			if(proj._43>0)
-			{
-				float zF=proj._43/proj._33;
-				float zN=proj._43*zF/(zF+proj._43);
-				p._33=-zF/(zF-zN);
-				p._43=-zN*zF/(zF-zN);
-			}
-			return p;
 		}
 	}
 }
@@ -593,7 +545,8 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,void *text
 	return newestFileTime;
 }
 
-HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect,
+crossplatform::ShaderBuildMode shaderBuildMode)
 {
 ERRNO_CHECK
 	HRESULT hr=S_OK;
@@ -619,14 +572,14 @@ ERRNO_CHECK
 	void *textData=NULL;
 	unsigned textSize=0;
 ERRNO_CHECK
-	if(shaderBuildMode!=NEVER_BUILD)
+	if(shaderBuildMode!=crossplatform::NEVER_BUILD)
 		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
 ERRNO_CHECK
 	// See if there's a binary that's newer than the file date.
-	bool changes_detected=(shaderBuildMode==ALWAYS_BUILD);
+	bool changes_detected=(shaderBuildMode==crossplatform::ALWAYS_BUILD);
 	double binary_date_jdn=0.0;
 	//std::cout<<"Checking DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
-	if(shaderBuildMode==BUILD_IF_CHANGED)
+	if(shaderBuildMode==crossplatform::BUILD_IF_CHANGED)
 	{
 		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
 		binary_date_jdn			=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
@@ -646,12 +599,12 @@ ERRNO_CHECK
 				changes_detected=true;
 		}
 	}
-	if(shaderBuildMode==NEVER_BUILD||!changes_detected&&binary_date_jdn>0)
+	if(shaderBuildMode==crossplatform::NEVER_BUILD||!changes_detected&&binary_date_jdn>0)
 	{
 		hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 			return S_OK;
-		if(shaderBuildMode==NEVER_BUILD)
+		if(shaderBuildMode==crossplatform::NEVER_BUILD)
 			return S_FALSE;
 	}
 	ID3DBlob *binaryBlob	=NULL;
@@ -672,7 +625,7 @@ ERRNO_CHECK
 						,&errorMsgs					//ID3DBlob **ppErrorMsgs
 						);
 ERRNO_CHECK
-	if(shaderBuildMode!=NEVER_BUILD)
+	if(shaderBuildMode!=crossplatform::NEVER_BUILD)
 		simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(textData);
 	if(hr==S_OK)
 	{
@@ -713,10 +666,10 @@ ERRNO_CHECK
 	return hr;
 }
 
-HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,crossplatform::ShaderBuildMode shaderBuildMode)
 {
 	std::map<std::string,std::string> defines;
-	return simul::dx11::CreateEffect(d3dDevice,effect,filename,defines);
+	return simul::dx11::CreateEffect(d3dDevice,effect,filename,defines,0,shaderBuildMode);
 }
 
 ID3D11ComputeShader *simul::dx11::LoadComputeShader(ID3D11Device *pd3dDevice,const char *filename_utf8)
@@ -764,7 +717,7 @@ ID3D11ComputeShader *simul::dx11::LoadComputeShader(ID3D11Device *pd3dDevice,con
 	}
 }
 
-HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,unsigned int shader_flags)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode)
 {
 	SIMUL_ASSERT_WARN(d3dDevice!=NULL,"Null device");
 	HRESULT hr=S_OK;
@@ -802,7 +755,7 @@ static const DWORD default_effect_flags=0;
 											shader_flags,
 											flags,
 											d3dDevice,
-											effect);
+											effect,shaderBuildMode);
 		if(hr==S_OK)
 			break;
 		std::string err="";
@@ -853,19 +806,6 @@ static const DWORD default_effect_flags=0;
 #endif
 	delete [] macros;
 	return hr;
-}
-
-ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8)
-{
-	std::map<std::string,std::string> defines;
-	return LoadEffect(d3dDevice,filename_utf8,defines);
-}
-
-ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines)
-{
-	ID3DX11Effect *effect=NULL;
-	simul::dx11::CreateEffect(d3dDevice,&effect,filename_utf8,defines);
-	return effect;
 }
 
 #define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)

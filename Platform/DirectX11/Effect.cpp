@@ -115,7 +115,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	
 	D3D11_SUBRESOURCE_DATA sbInit = {init_data, 0, 0};
 
-	renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &buffer);
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &buffer));
 	
 	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
 		SAFE_RELEASE(stagingBuffers[i]);
@@ -361,7 +361,7 @@ void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char
 			filename_fx+=".sfx";
 		filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(),dx11::GetShaderPathsUtf8());
 	}
-	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_fx.c_str(),defines,0);//D3DCOMPILE_OPTIMIZATION_LEVEL3);D3DCOMPILE_DEBUG
+	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_fx.c_str(),defines,0,renderPlatform->GetShaderBuildMode());//D3DCOMPILE_OPTIMIZATION_LEVEL3);D3DCOMPILE_DEBUG
 	platform_effect	=e;
 	groups.clear();
 	if(e)

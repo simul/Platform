@@ -42,6 +42,18 @@ namespace simul
 			SHADERTYPE_COMPUTE,
 			SHADERTYPE_COUNT
 		};
+		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
+		enum ShaderBuildMode
+		{
+			NEVER_BUILD=0
+			,ALWAYS_BUILD=1
+			,BUILD_IF_CHANGED=2
+			,TRY_AGAIN_ON_FAIL=4
+		};
+		inline ShaderBuildMode operator|(ShaderBuildMode a, ShaderBuildMode b)
+		{
+			return static_cast<ShaderBuildMode>(static_cast<int>(a) | static_cast<int>(b));
+		}
 		struct DeviceContext;
 		class RenderPlatform;
 		struct Query;

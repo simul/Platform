@@ -244,7 +244,7 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
-	vec3 densityspace_texcoord	=(pos.xyz+0.5)/vec3(dims);
+	vec3 densityspace_texcoord	=(pos.xyz+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
 	vec2 light_lookup			=vec2(filterLight(lightTexture1,lightspace_texcoord)

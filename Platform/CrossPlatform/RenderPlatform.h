@@ -92,11 +92,13 @@ namespace simul
 			DeviceContext &GetImmediateContext();
 			virtual void PushTexturePath	(const char *pathUtf8);
 			virtual void PopTexturePath		();
+		//! When shader should be built, or loaded if available.
+			void SetShaderBuildMode			(ShaderBuildMode s);
+			ShaderBuildMode GetShaderBuildMode() const;
 			virtual void StartRender		(DeviceContext &deviceContext)=0;
 			virtual void EndRender			(DeviceContext &deviceContext)=0;
 			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
-			virtual void ApplyShaderPass	(DeviceContext &deviceContext,Effect *,EffectTechnique *,int)=0;
 			virtual void Draw				(DeviceContext &deviceContext,int num_verts,int start_vert)=0;
 			virtual void DrawIndexed		(DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0)=0;
 			virtual void DrawMarker			(DeviceContext &deviceContext,const double *matrix)			=0;
@@ -213,8 +215,9 @@ namespace simul
 			std::vector<std::string> texturePathsUtf8;
 			std::string shaderBinaryPathUtf8;
 		protected:
+			ShaderBuildMode					shaderBuildMode;
 			DeviceContext					immediateContext;
-			crossplatform::Effect *debugEffect;
+			crossplatform::Effect			*debugEffect;
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 			TextRenderer					*textRenderer;

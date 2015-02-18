@@ -10,6 +10,7 @@
 #ifndef CREATEEFFECTDX1X_H
 #define CREATEEFFECTDX1X_H
 #include "SimulDirectXHeader.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
@@ -165,19 +166,12 @@ namespace simul
 	}
 	namespace dx11
 	{
-		/// Tells the renderer what to do with shader source to get binaries.
-		enum ShaderBuildMode
-		{
-			ALWAYS_BUILD=1,BUILD_IF_CHANGED,NEVER_BUILD
-		};
 		//! Find the camera position and view direction from the given view matrix.
 		extern SIMUL_DIRECTX11_EXPORT void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical=false);
 		//! Find the camera position from the given view matrix.
 		extern SIMUL_DIRECTX11_EXPORT const float *GetCameraPosVector(const float *v,bool y_vertical=false);
 		//! Call this to make the FX compiler put its warnings and errors to the standard output when used.
 		extern SIMUL_DIRECTX11_EXPORT void PipeCompilerOutput(bool p);
-		//! When shader should be built, or loaded if available.
-		extern SIMUL_DIRECTX11_EXPORT void SetShaderBuildMode(ShaderBuildMode s);
 		extern SIMUL_DIRECTX11_EXPORT void PushShaderPath(const char *path);
 		extern SIMUL_DIRECTX11_EXPORT std::vector<std::string> GetShaderPathsUtf8();
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderPathsUtf8(const std::vector<std::string> &pathsUtf8);
@@ -210,9 +204,6 @@ namespace simul
 											,ID3D11ShaderResourceView* &srv
 											,int w,int l,int d
 											,DXGI_FORMAT format);
-							
-		D3DXMATRIX SIMUL_DIRECTX11_EXPORT ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj);
-	
 		// These functions encapsulate getting an effect variable of the given name if it exists, and
 		// if so, setting its value. Due to inefficiency it is best to replace usage of this over time
 		// with Effect variable pointers, but this is a good way to write new render code quickly
@@ -234,20 +225,17 @@ namespace simul
 		void SIMUL_DIRECTX11_EXPORT unbindTextures			(ID3DX11Effect *effect);
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
-		//simul::crossplatform::Effect *CreateEffect(void *device,const char *filename,const std::map<std::string,std::string>&defines);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ComputeShader *LoadComputeShader(ID3D11Device *d3dDevice,const char *filename);
 		//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename.
-		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename);
+		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,crossplatform::ShaderBuildMode shaderBuildMode);
 		//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename and defines.
-		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines,unsigned int shader_flags=0);
+		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode);
 	}
 }
 
 #ifndef D3DCOMPILE_OPTIMIZATION_LEVEL3
 #define D3DCOMPILE_OPTIMIZATION_LEVEL3            (1 << 15)
 #endif
-extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8);
-extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines);
 
 extern SIMUL_DIRECTX11_EXPORT HRESULT Map2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp);
 extern SIMUL_DIRECTX11_EXPORT void Unmap2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex);
