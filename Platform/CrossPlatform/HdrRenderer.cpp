@@ -121,10 +121,6 @@ void HdrRenderer::RecompileShaders()
 	glowTechnique				=hdr_effect->GetTechniqueByName("simul_glow");
 	hdrConstants.LinkToEffect(hdr_effect,"HdrConstants");
 	
-	int W=Width;
-	int H=Height;
-	if(!H||!W)
-		return;
 	// Just set scan_mem_size to the largest value we can ever expect:
 	int scan_smem_size			=1920;//max3(H,W,(int)threadsPerGroup*2);//1920;//
 	defs["SCAN_SMEM_SIZE"]		=string_format("%d",scan_smem_size);
