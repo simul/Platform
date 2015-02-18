@@ -538,7 +538,8 @@ GL_ERROR_CHECK
 	e->SetName(filename_utf8);
 	if(e->platform_effect==(void*)0xFFFFFFFF)
 	{
-		SAFE_DELETE(e);
+		// We're still going to return a valid object - it just won't have any valid techniques.
+		return e;
 	}
 GL_ERROR_CHECK
 	return e;

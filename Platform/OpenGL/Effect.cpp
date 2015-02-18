@@ -434,6 +434,10 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 		if(!FillInTechniques()&&IsDebuggerPresent())
 		{
 			DebugBreak();
+			if(renderPlatform->GetShaderBuildMode()&crossplatform::ShaderBuildMode::TRY_AGAIN_ON_FAIL)
+				continue;
+			else
+				break;
 		}
 		else
 			break;
