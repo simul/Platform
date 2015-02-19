@@ -63,7 +63,7 @@ inline vec3 scan_warp_inclusive(uint thread_id, vec3 value, uint size)
 
 	// Initialize the first half of shared memory with zeros to avoid "if (pos >= offset)"
 	// condition evaluation
-	gs_ScanData[location] = 0;
+	gs_ScanData[location] = vec3(0,0,0);
 	location += size;
 	gs_ScanData[location] = value;
 
@@ -138,7 +138,7 @@ inline void scan_inclusive(uint thread_id, uint size)
 
 	// Read back data from shared memory to register space
 	for (i=0;i<texelsPerThread;i++)
-		local_data[i] = location + i < size ? gs_ScanData[location + i] : 0;
+		local_data[i] = location + i < size ? gs_ScanData[location + i] : vec3(0,0,0);
 	
 	// Perform level-0 sum
 	for (i=1;i<texelsPerThread;i++)
@@ -169,16 +169,16 @@ inline void scan_inclusive_filtering(uint thread_id, uint size)
 	vec3 local_data[MAX_TEXELS_PER_THREAD];
 
 	// Calculating average values in the box window while performing level-0 scan
-	int L_pos = (int) ceil(location - 0.5 - g_HalfBoxFilterWidth) - 1;
-	int R_pos = (int)floor(location - 0.5 + g_HalfBoxFilterWidth);
+	int L_pos = int( ceil(float(location) - 0.5 - g_HalfBoxFilterWidth)) - 1;
+	int R_pos = int(floor(float(location) - 0.5 + g_HalfBoxFilterWidth));
 
-	vec3 L_sum = gs_ScanData[clamp(L_pos, 0, (int)size - 1)] * g_FracHalfBoxFilterWidth;
-	vec3 R_sum = gs_ScanData[clamp(R_pos, 0, (int)size - 1)] * g_InvFracHalfBoxFilterWidth;
+	vec3 L_sum = gs_ScanData[clamp(L_pos, 0, int(size) - 1)] * g_FracHalfBoxFilterWidth;
+	vec3 R_sum = gs_ScanData[clamp(R_pos, 0, int(size) - 1)] * g_InvFracHalfBoxFilterWidth;
 
-	for (i = 0; (uint)i < texelsPerThread; i ++)
+	for (i = 0; uint(i) < texelsPerThread; i ++)
 	{
-		vec3 L_next = gs_ScanData[clamp(L_pos + 1 + i, 0, (int)size - 1)];
-		vec3 R_next = gs_ScanData[clamp(R_pos + 1 + i, 0, (int)size - 1)];
+		vec3 L_next = gs_ScanData[clamp(L_pos + 1 + i, 0, int(size) - 1)];
+		vec3 R_next = gs_ScanData[clamp(R_pos + 1 + i, 0, int(size) - 1)];
 
 		local_data[i] = (R_sum + R_next * g_FracHalfBoxFilterWidth) - (L_sum + L_next * g_InvFracHalfBoxFilterWidth);
 		local_data[i] *= g_RcpBoxFilterWidth;
@@ -197,7 +197,7 @@ inline void scan_inclusive_filtering(uint thread_id, uint size)
 	GroupMemoryBarrierWithGroupSync();
 
 	// Propagate level-1 scan result to level-0, and then write to shared memory
-	for (i = 0; (uint)i < texelsPerThread; i ++)
+	for (i = 0; uint(i) < texelsPerThread; i ++)
 	{
 		if (location + i < size)
 			gs_ScanData[location + i] = local_data[i] + top_result;
@@ -213,11 +213,13 @@ inline vec3 box_filtering(uint location, uint size)
 	// We treat the original data as a piecewise box function, thus the sum is a
 	// piecewise linear function. For arbitrary FP sampling location, we interpolate
 	// the value from adjacent data pairs.
-	float center = location - 0.5;
-	int L_a = clamp((int)ceil(center - g_HalfBoxFilterWidth), 0, (int)size - 1);
-	int L_b = clamp(L_a - 1, 0, (int)size - 1);
-	int R_a = clamp((int)floor(center + g_HalfBoxFilterWidth), 0, (int)size - 1);
-	int R_b = clamp(R_a + 1, 0, (int)size - 1);
+	float centre	=float(location)- 0.5;
+	float minus		=centre-g_HalfBoxFilterWidth;
+	float plus		=centre+g_HalfBoxFilterWidth;
+	int L_a = clamp(int(ceil(minus)), 0, int(size) - 1);
+	int L_b = clamp(L_a - 1, 0, int(size) - 1);
+	int R_a = clamp(int(floor(plus)), 0,int(size) - 1);
+	int R_b = clamp(R_a + 1, 0, int(size)- 1);
 	
 	vec3 L_value = lerp(gs_ScanData[L_a], gs_ScanData[L_b], g_FracHalfBoxFilterWidth);
 	vec3 R_value = lerp(gs_ScanData[R_a], gs_ScanData[R_b], g_FracHalfBoxFilterWidth);
@@ -229,9 +231,9 @@ inline uint color3_to_uint(vec3 color)
 {
 	// Convert to R11G11B10
 	color = clamp(color/10.0, 0, 1);
-	uint int_r = (uint)(color.r * 2047.0f + 0.5);
-	uint int_g = (uint)(color.g * 2047.0f + 0.5);
-	uint int_b = (uint)(color.b * 1023.0f + 0.5);
+	uint int_r =uint(color.r * 2047.0f + 0.5);
+	uint int_g =uint(color.g * 2047.0f + 0.5);
+	uint int_b =uint(color.b * 1023.0f + 0.5);
 	// Pack into UINT32
 	return (int_r << 21) | (int_g << 10) | int_b;
 }
@@ -239,9 +241,9 @@ inline uint color3_to_uint(vec3 color)
 inline vec3 uint_to_color3(uint int_color)
 {
 	// Unpack from UINT32
-	float r = (float)(int_color >> 21);
-	float g = (float)((int_color >> 10) & 0x7ff);
-	float b = (float)(int_color & 0x0003ff);
+	float r = float(int_color >> 21);
+	float g = float((int_color >> 10) & 0x7ff);
+	float b = float(int_color & 0x0003ff);
 	// Convert R11G11B10 to vec3
 	return 10.0*vec3(r/2047.0f, g/2047.0f, b/1023.0f);
 }
@@ -252,7 +254,7 @@ inline void input_row_color(uint group_id, uint thread_id)
 	// Fetch back the data output by vertical filtering pass.
 	while (col < imageSize.x)
 	{
-		uint int_color = g_rwtOutput[uint2(col, row)];
+		uint int_color = IMAGE_LOAD(g_rwtOutput,int2(col, row));
 		gs_ScanData[col] = uint_to_color3(int_color);
 		col += THREADS_PER_GROUP;
 	}
@@ -267,7 +269,7 @@ inline void input_col_color(uint group_id, uint thread_id)
 	// Fetch in color
 	while (row < imageSize.y)
 	{
-		gs_ScanData[row] = g_texInput[uint2(col, row)].rgb;
+		gs_ScanData[row] = TEXTURE_LOAD(g_texInput,int2(col, row)).rgb;
 		row += THREADS_PER_GROUP;
 	}
 	// Wait until all write operations finished
@@ -281,9 +283,10 @@ inline void output_col_color(uint group_id, uint thread_id)
 	// Output color values.
 	while (row < imageSize.y)
 	{
-		vec3 color = box_filtering(row, imageSize.y);
-		g_rwtOutput[uint2(col, row)] = color3_to_uint(color);
-		row += THREADS_PER_GROUP;
+		vec3 colour = box_filtering(row, imageSize.y);
+		uint u		=color3_to_uint(colour);
+		IMAGE_STORE(g_rwtOutput,uint2(col, row),uint4(u,u,u,u));
+		row			+= THREADS_PER_GROUP;
 	}
 }
 
@@ -294,9 +297,10 @@ inline void output_row_color(uint group_id, uint thread_id)
 	// Output color values.
 	while (col < imageSize.x)
 	{
-		vec3 color = box_filtering(col, imageSize.x);
-		g_rwtOutput[uint2(col, row)] = color3_to_uint(color);
-		col += THREADS_PER_GROUP;
+		vec3 colour	= box_filtering(col, imageSize.x);
+		uint u		=color3_to_uint(colour);
+		IMAGE_STORE(g_rwtOutput,uint2(col, row),uint4(u,u,u,u));
+		col			+= THREADS_PER_GROUP;
 	}
 }
 

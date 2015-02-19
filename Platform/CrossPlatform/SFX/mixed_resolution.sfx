@@ -95,7 +95,7 @@ shader vec4 PS_Halfscale_ForwardDepth(posTexVertexOutput IN):SV_Target
 shader vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
 {
 	int2 hires_pos		=int2(vec2(source_dims)*IN.texCoords.xy);
-	vec4 u				= IMAGE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,0).xxxx;
+	vec4 u				=TEXTURE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,0).xxxx;
 	return u;
 	//return IMAGE_LOAD(sourceMSDepthTexture,hires_pos).x;
 }

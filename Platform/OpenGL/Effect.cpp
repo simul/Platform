@@ -527,8 +527,8 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	}
 	if(asGLint()==-1)
 		return NULL;
-	GLint e									=asGLint();
-	GLuint t = glfxCompileProgram(e, NULL,name);
+	GLint e					=asGLint();
+	GLuint t				=glfxCompileProgram(e, NULL,name);
 	if(!t)
 	{
 		opengl::printEffectLog(e);
@@ -812,7 +812,7 @@ void Effect::SetMatrix		(const char *name	,const float *m)
 	GL_ERROR_CHECK
 }
 
-void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique *effectTechnique,int pass)
+void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass)
 {
 	if(apply_count!=0)
 		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
@@ -836,9 +836,10 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 		glfxApplyPassState((GLuint)platform_effect,prog);
 		GL_ERROR_CHECK
 	}
+	deviceContext.activeTechnique=effectTechnique;
 }
 
-void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique *effectTechnique,const char *pass)
+void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass)
 {
 	if(apply_count!=0)
 		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
@@ -854,6 +855,7 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 			SIMUL_FILE_CERR(this->filenameInUseUtf8.c_str())<<"Pass \""<<pass<<"\" not found in technique \""<<GetTechniqueName(effectTechnique)<<"\" of Effect "<<this->filename.c_str()<<std::endl;
 			currentPass=-1;
 			current_prog=0;
+			deviceContext.activeTechnique=NULL;
 			return;
 		}
 		for(EffectTechnique::PassIndexMap::iterator i=effectTechnique->passes_by_index.begin();
@@ -872,6 +874,7 @@ void Effect::Apply(crossplatform::DeviceContext &,crossplatform::EffectTechnique
 		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
 			glEffectTechnique->passStates[currentPass]->Apply();
 	}
+	deviceContext.activeTechnique=currentTechnique;
 }
 
 void Effect::Reapply(crossplatform::DeviceContext &)
@@ -884,7 +887,7 @@ void Effect::Reapply(crossplatform::DeviceContext &)
 	GL_ERROR_CHECK
 }
 
-void Effect::Unapply(crossplatform::DeviceContext &)
+void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
 	GL_ERROR_CHECK
 	glUseProgram(0);
@@ -893,6 +896,7 @@ void Effect::Unapply(crossplatform::DeviceContext &)
 	else if(apply_count>1)
 		SIMUL_BREAK("Effect::Apply has been called too many times!")
 	currentTechnique=NULL;
+	deviceContext.activeTechnique=currentTechnique;
 	apply_count--;
 	for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
 		glBindSampler(i->first,0);

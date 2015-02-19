@@ -93,12 +93,13 @@
 		return m*v;
 	}
 	#define CS_LAYOUT(u,v,w) layout(local_size_x=u,local_size_y=v,local_size_z=w) in;
-	
+	#define GroupMemoryBarrierWithGroupSync memoryBarrierShared 
 	#define IMAGE_STORE(a,b,c) imageStore(a,int2(b),c)
-	#define IMAGE_LOAD(a,b) texelFetch(a,b,0)
-	#define IMAGE_LOAD_MSAA(a,b,c) texelFetch(a,b,int(c))
-	#define TEXTURE_LOAD_3D(a,b) texelFetch(a,int3(b),0)
 	#define IMAGE_STORE_3D(a,b,c) imageStore(a,int3(b),c)
+	#define IMAGE_LOAD(a,b) imageLoad(a,b)
+	#define TEXTURE_LOAD_MSAA(a,b,c) texelFetch(a,b,int(c))
+	#define TEXTURE_LOAD(a,b) texelFetch(a,int2(b),0)
+	#define TEXTURE_LOAD_3D(a,b) texelFetch(a,int3(b),0)
 	#define IMAGE_LOAD_3D(a,b) imageLoad(a,int3(b))
 
 	#define GET_DIMENSIONS_MSAA(tex,X,Y,S) {ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;}//textureQueryLevels(tex);

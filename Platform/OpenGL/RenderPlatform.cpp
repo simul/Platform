@@ -102,8 +102,10 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lAmbientLight);
 }
 
-void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &,int w,int l,int d)
+void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
+	if(!deviceContext.activeTechnique)
+		return;
 	GL_ERROR_CHECK
 	glDispatchCompute(w,l,d);
 	GL_ERROR_CHECK
@@ -117,7 +119,7 @@ void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext
 	pass;
 }
 		
-void RenderPlatform::DrawMarker(crossplatform::DeviceContext &,const double *matrix)
+void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,const double *matrix)
 {
     glColor3f(0.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -376,8 +378,10 @@ glDisable(GL_CULL_FACE);
 	GL_ERROR_CHECK
 }
 
-void RenderPlatform::DrawQuad(crossplatform::DeviceContext &)
+void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
+	if(!deviceContext.activeTechnique)
+		return;
 	GL_ERROR_CHECK
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); 
 	GL_ERROR_CHECK
@@ -1088,13 +1092,17 @@ GLenum toGLTopology(crossplatform::Topology t)
 	};
 	return GL_LINE_LOOP;
 }
-void RenderPlatform::Draw(crossplatform::DeviceContext &,int num_verts,int start_vert)
+void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
 {
+	if(!deviceContext.activeTechnique)
+		return;
 	glDrawArrays(toGLTopology(currentTopology), start_vert, num_verts); 
 }
 
-void RenderPlatform::DrawIndexed		(crossplatform::DeviceContext &,int num_indices,int start_index,int base_vertex)
+void RenderPlatform::DrawIndexed		(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
 {
+	if(!deviceContext.activeTechnique)
+		return;
 	GL_ERROR_CHECK
 	glDrawElements(toGLTopology(currentTopology),num_indices,GL_UNSIGNED_SHORT,(void*)base_vertex);
 	GL_ERROR_CHECK

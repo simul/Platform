@@ -172,7 +172,7 @@ vec3 AtmosphericsLossMSAA(TEXTURE2DMS_FLOAT4 depthTextureMS,uint i,vec4 viewport
 	vec3 view	=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view		=normalize(view);
 	float sine	=view.z;
-	float depth	=IMAGE_LOAD_MSAA(depthTextureMS,depth_pos2,i).x;
+	float depth	=TEXTURE_LOAD_MSAA(depthTextureMS,depth_pos2,i).x;
 	float dist	=depthToFadeDistance(depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	vec2 texc2	=vec2(pow(dist,0.5),0.5*(1.f-sine));
 	vec3 loss	=texture_clamp_mirror(lossTexture,texc2).rgb;
@@ -515,7 +515,7 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 	{
 		vec4 insc_i;
         vec3 skyl_i;
-		float depth			=IMAGE_LOAD_MSAA(depthTextureMS,pos2,i).x;
+		float depth			=TEXTURE_LOAD_MSAA(depthTextureMS,pos2,i).x;
 		float dist			=depthToFadeDistance(depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 		if(USE_NEAR_FAR)
 		{

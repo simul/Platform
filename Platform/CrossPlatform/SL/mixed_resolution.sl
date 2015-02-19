@@ -105,7 +105,7 @@ vec4 HalfscaleInitial_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_d
 			//for(int k=0;k<numberOfSamples;k++)
 			int k=0;
 			{
-				float d				=IMAGE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,k).x;
+				float d				=TEXTURE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,k).x;
 				if(depthInterpretationStruct.reverseDepth)
 				{
 					farthest_nearest.y=max(farthest_nearest.y,d);
@@ -167,10 +167,10 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture,uint2 source_dims,uint2 sourc
 		farthest_nearest		=vec2(0.0,1.0);
 	}
 
-	float d1				=IMAGE_LOAD(sourceDepthTexture,pos2+int2(1,1)).x;
-	float d2				=IMAGE_LOAD(sourceDepthTexture,pos2+int2(0,1)).x;
-	float d3				=IMAGE_LOAD(sourceDepthTexture,pos2+int2(1,0)).x;
-	float d4				=IMAGE_LOAD(sourceDepthTexture,pos2+int2(0,0)).x;
+	float d1				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(1,1)).x;
+	float d2				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(0,1)).x;
+	float d3				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(1,0)).x;
+	float d4				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(0,0)).x;
 	vec4 d					=vec4(d1,d2,d3,d4);
 	vec2 dmin2				=min(d.xy,d.zw);
 	float dmin				=min(dmin2.x,dmin2.y);
@@ -233,10 +233,10 @@ vec4 Halfscale(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offse
 	for(int i=0;i<4;i++)
 	{
 		int2 pos3			=pos2+int2(i*2-2,0);
-		vec2 d1				=IMAGE_LOAD(sourceDepthTexture,pos3+int2(0,-3)).xy;
-		vec2 d2				=IMAGE_LOAD(sourceDepthTexture,pos3+int2(0,0)).xy;
-		vec2 d3				=IMAGE_LOAD(sourceDepthTexture,pos3+int2(0,1)).xy;
-		vec2 d4				=IMAGE_LOAD(sourceDepthTexture,pos3+int2(0,4)).xy;
+		vec2 d1				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,-3)).xy;
+		vec2 d2				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,0)).xy;
+		vec2 d3				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,1)).xy;
+		vec2 d4				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4)).xy;
 		vec4 f				=vec4(d1.x,d2.x,d3.x,d4.x);
 		vec4 n				=vec4(d1.y,d2.y,d3.y,d4.y);
 		vec2 dmin2,dmax2;
@@ -315,7 +315,7 @@ vec4 DownscaleDepthFarNear(Texture2D sourceDepthTexture,uint2 source_dims,uint2 
 		for(int j=0;j<scale.y+2;j++)
 		{
 			int2 hires_pos		=pos2+int2(i-1,j-1);
-			float d				=IMAGE_LOAD(sourceDepthTexture,hires_pos).x;
+			float d				=TEXTURE_LOAD(sourceDepthTexture,hires_pos).x;
 			if(depthInterpretationStruct.reverseDepth)
 			{
 				farthest_nearest.y=max(farthest_nearest.y,d);
@@ -417,7 +417,7 @@ vec4 DownscaleFarNearEdge(Texture2D sourceDepthTexture,int2 source_dims,int2 cor
 			// MUST do this in case we go slightly over the edge:
 			hires_pos.x			=max(minpos.x,min(hires_pos.x,maxpos.x));
 			hires_pos.y			=max(minpos.y,min(hires_pos.y,maxpos.y));
-			vec2 d				=IMAGE_LOAD(sourceDepthTexture,hires_pos).xy;
+			vec2 d				=TEXTURE_LOAD(sourceDepthTexture,hires_pos).xy;
 			if(depthInterpretationStruct.reverseDepth)
 			{
 				if(d.y>farthest_nearest.y)

@@ -34,10 +34,10 @@ void ExtractCompactedLookupQuads(out LookupQuad4 farQ,out LookupQuad4 nearQ,TEXT
 	int2 i21		=int2(i2,j1);
 	int2 i12		=int2(i1,j2);
 	int2 i22		=int2(i2,j2);
-	uint4 v11		=IMAGE_LOAD(image,i11);
-	uint4 v21		=IMAGE_LOAD(image,i21);
-	uint4 v12		=IMAGE_LOAD(image,i12);
-	uint4 v22		=IMAGE_LOAD(image,i22);
+	uint4 v11		=TEXTURE_LOAD(image,i11);
+	uint4 v21		=TEXTURE_LOAD(image,i21);
+	uint4 v12		=TEXTURE_LOAD(image,i12);
+	uint4 v22		=TEXTURE_LOAD(image,i22);
 	farQ._11		=vec4(uint2_to_colour3(v11.xy),1.0);
 	farQ._21		=vec4(uint2_to_colour3(v21.xy),1.0);
 	farQ._12		=vec4(uint2_to_colour3(v12.xy),1.0);
@@ -61,15 +61,15 @@ void GetNearFarLookupQuads(out LookupQuad4 farQ, out LookupQuad4 nearQ, Texture2
 	int2 i12 = int2(i1, j2);
 	int2 i22 = int2(i2, j2);
 
-	farQ._11 =IMAGE_LOAD(farImage,i11);
-	farQ._21 =IMAGE_LOAD(farImage,i21);
-	farQ._12 =IMAGE_LOAD(farImage,i12);
-	farQ._22 =IMAGE_LOAD(farImage,i22);
+	farQ._11 =TEXTURE_LOAD(farImage,i11);
+	farQ._21 =TEXTURE_LOAD(farImage,i21);
+	farQ._12 =TEXTURE_LOAD(farImage,i12);
+	farQ._22 =TEXTURE_LOAD(farImage,i22);
 									 
-	nearQ._11 =IMAGE_LOAD(nearImage,i11);
-	nearQ._21 =IMAGE_LOAD(nearImage,i21);
-	nearQ._12 =IMAGE_LOAD(nearImage,i12);
-	nearQ._22 =IMAGE_LOAD(nearImage,i22);
+	nearQ._11 =TEXTURE_LOAD(nearImage,i11);
+	nearQ._21 =TEXTURE_LOAD(nearImage,i21);
+	nearQ._12 =TEXTURE_LOAD(nearImage,i12);
+	nearQ._22 =TEXTURE_LOAD(nearImage,i22);
 }
 
 LookupQuad4 GetLookupQuad(Texture2D image,vec2 texc,int2 texDims)
@@ -86,10 +86,10 @@ LookupQuad4 GetLookupQuad(Texture2D image,vec2 texc,int2 texDims)
 	int2 i22		=int2(i2,j2);
 
 	LookupQuad4 q;
-	q._11=IMAGE_LOAD(image,i11);
-	q._21=IMAGE_LOAD(image,i21);
-	q._12=IMAGE_LOAD(image,i12);
-	q._22=IMAGE_LOAD(image,i22);
+	q._11=TEXTURE_LOAD(image,i11);
+	q._21=TEXTURE_LOAD(image,i21);
+	q._12=TEXTURE_LOAD(image,i12);
+	q._22=TEXTURE_LOAD(image,i22);
 	return q;
 }
 
@@ -318,7 +318,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		float depths[8];
 		for(int k=0;k<numSamples;k++)
 		{
-			float d					=IMAGE_LOAD_MSAA(depthTextureMS,fullres_depth_pos2,k).x;
+			float d					=TEXTURE_LOAD_MSAA(depthTextureMS,fullres_depth_pos2,k).x;
 			depths[k]				=d;
 if(depthInterpretationStruct.reverseDepth)
 {
@@ -394,7 +394,7 @@ if(depthInterpretationStruct.reverseDepth)
 	else
 	{
 #ifdef VOLUME_INSCATTER
-		float d					=IMAGE_LOAD_MSAA(depthTextureMS,fullres_depth_pos2,0).x;
+		float d					=TEXTURE_LOAD_MSAA(depthTextureMS,fullres_depth_pos2,0).x;
 		float dist				=depthToLinearDistance(d		,depthInterpretationStruct);
 #ifndef SCREENSPACE_VOL
 		insc					=texture_wmc_lod(lightSpaceInscVolumeTexture,vec3(volume_texc.xy,sqrt(dist)),0);

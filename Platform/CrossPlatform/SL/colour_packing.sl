@@ -45,7 +45,7 @@ inline vec3 uint2_to_colour3(uint2 int_colour)
 
 vec4 convertInt(TEXTURE2D_UINT glowTexture,uint2 location)
 {
-	uint int_color = IMAGE_LOAD(glowTexture,int2(location)).x;
+	uint int_color = TEXTURE_LOAD(glowTexture,int2(location)).x;
 
 	// Convert R11G11B10 to float3
 	vec4 color;

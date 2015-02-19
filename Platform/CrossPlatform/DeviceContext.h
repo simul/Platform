@@ -14,6 +14,7 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		class EffectTechnique;
 		class RenderPlatform;
 		//! The base class for Device contexts. The actual context pointer is only applicable in DirectX - in OpenGL, it will be null.
 		//! The DeviceContext also carries a pointer to the platform-specific RenderPlatform.
@@ -22,9 +23,11 @@ namespace simul
 		{
 			void *platform_context;
 			RenderPlatform *renderPlatform;
+			EffectTechnique *activeTechnique;
 			DeviceContext():
 				platform_context(0)
 				,renderPlatform(0)
+				,activeTechnique(0)
 			{
 				viewStruct.depthTextureStyle=crossplatform::PROJECTION;
 			}
