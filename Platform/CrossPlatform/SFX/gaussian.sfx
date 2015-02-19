@@ -45,9 +45,9 @@ groupshared vec3 gs_ScanData[SCAN_SMEM_SIZE];
 //-----------------------------------------------------------------------------
 
 // FP16x4 texture of rendered scene
-Texture2D				g_texInput;
+uniform Texture2D				g_texInput;
 // R11G11B10 texture for output
-RWTexture2D<uint>		g_rwtOutput;
+uniform RWTexture2D<uint>		g_rwtOutput;
 
 
 //-----------------------------------------------------------------------------

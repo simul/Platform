@@ -47,7 +47,7 @@ struct rainbowVertexOutput
 
 shader rainbowVertexOutput VS_rainbow(idOnly id)
 {
-    posTexVertexOutput posTex=VS_SimpleFullscreen(id);
+    posTexVertexOutput posTex=SimpleFullscreen(id);
 	
 	rainbowVertexOutput OUT;
 	OUT.hPosition = posTex.hPosition;

@@ -33,7 +33,8 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 
 	uniform float time;
 	uniform float maxAltitudeMetres;
-	uniform float offsetScale,maxCloudDistanceMetres;
+	uniform float offsetScale;
+	uniform float maxCloudDistanceMetres;
 	uniform vec3 moonlightX;
 	uniform float agagehrs;
 	uniform vec3 infraredIntegrationFactors;
@@ -58,7 +59,9 @@ SIMUL_CONSTANT_BUFFER(Detail2DConstants,12)
 	uniform float noiseTextureScale;			// Scale from existing random texture to noise scale of coverage.
 
 	uniform float phase;
-	uniform float detailTextureSize,bbbbbbbb,cccccc;
+	uniform float detailTextureSize;
+	uniform float bbbbbbb;
+	uniform float cccccc;
 SIMUL_CONSTANT_BUFFER_END
 
 #ifndef __cplusplus

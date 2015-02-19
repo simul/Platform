@@ -11,8 +11,7 @@ struct positionColourVertexInput
 	vec3 position	: POSITION;
 	vec4 colour		: TEXCOORD0;		
 };
-
-shader posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
+posTexVertexOutput SimpleFullscreen(idOnly IN)
 {
 	posTexVertexOutput OUT;
 	vec2 poss[4]=
@@ -27,6 +26,11 @@ shader posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
 	OUT.hPosition.z	=0.0; 
 	OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
 	return OUT;
+}
+
+shader posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
+{
+	return SimpleFullscreen(IN);
 }
 
 posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
