@@ -59,14 +59,13 @@ GL_ERROR_CHECK
 	{
 		const crossplatform::LayoutDesc &d=layout->GetDesc()[i];
 		glEnableVertexAttribArray( i );
-		glVertexAttribPointer( i						// Attribute bind location
+		glVertexAttribPointer( i										// Attribute bind location
 								,RenderPlatform::FormatCount(d.format)	// Data type count
-								,RenderPlatform::DataType(d.format)				// Data type
-								,GL_FALSE				// Normalise this data type?
-								,stride			// Stride to the next vertex
-								,(GLvoid*)d.alignedByteOffset );	// Vertex Buffer starting offset
+								,RenderPlatform::DataType(d.format)		// Data type
+								,GL_FALSE								// Normalise this data type?
+								,stride									// Stride to the next vertex
+								,(GLvoid*)d.alignedByteOffset );		// Vertex Buffer starting offset
 	};
-	
 	glBindVertexArray( 0 ); 
 GL_ERROR_CHECK
 }
