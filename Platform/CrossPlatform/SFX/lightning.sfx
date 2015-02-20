@@ -6,12 +6,12 @@
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/noise.sl"
 
-Texture2D lightningTexture;
-Texture2D depthTexture;
-Texture2DMS<vec4> depthTextureMS;
-Texture2D cloudDepthTexture;
-Texture2D randomTexture;
-
+uniform Texture2D lightningTexture;
+uniform Texture2D depthTexture;
+uniform Texture2DMS<vec4> depthTextureMS;
+uniform Texture2D cloudDepthTexture;
+uniform Texture2D randomTexture;
+ 
 shader vec4 PS_Random(posTexVertexOutput IN) : SV_TARGET
 {
 	// Range from -1 to 1.
@@ -58,7 +58,7 @@ shader void GS_Fractal(line F_Vertex IN[2],inout PointStream<F_Vertex> vStream)
 	vec3 outpos[129];
 	outpos[0]			=startP;
 	outpos[num_steps]	=endP;
-	int del				=num_steps;
+	int del				=int(num_steps);
 	float persistence	=0.8;
 	float off			=roughness;
 	float time			=phaseTime;
@@ -72,7 +72,7 @@ shader void GS_Fractal(line F_Vertex IN[2],inout PointStream<F_Vertex> vStream)
 			vec3 XX				=cross(vec3(1.0,0.0,0.0),(s-e));
 			vec3 YY				=cross(vec3(0.0,1.0,0.0),(s-e));
 			vec3 x				=0.5*(s+e);
-			vec2 noise_texc		=vec2(9.3*(j+randomSeed)+time,3.1*i+4.5*j);
+			vec2 noise_texc		=vec2(9.3*float(j+randomSeed)+time,3.1*float(i)+4.5*float(j));
 			vec4 noise_lookup	=texture_wrap_lod(randomTexture,noise_texc,0);
 			float angle			=noise_lookup.x*2.0*3.14159;
 			x					+=off*noise_lookup.y*(XX*cos(angle)+YY*sin(angle));
@@ -91,7 +91,7 @@ shader void GS_Fractal(line F_Vertex IN[2],inout PointStream<F_Vertex> vStream)
 	vStream.RestartStrip();
 }
 
-shader F_IdVertex VS_Branch(F_Vertex IN,uint vertex_id	: SV_VertexID)
+shader F_IdVertex VS_Branch(F_Vertex IN,uint vertex_id: SV_VertexID)
 {
 	F_IdVertex OUT;
 	OUT.position	=IN.position;
@@ -115,7 +115,8 @@ shader void GS_Branch(line F_IdVertex IN[2], inout PointStream<F_Vertex> vStream
 	// dir is the direction of the main branch.
 	// We need to find a direction normal to dir.
 	// We will create a random vector, then subtract the part that is in the direction of dir.
-	vec2 noise_texc	=vec2(0.3*branchInterval*randomSeed+0.77*parent_point,1.92*branchInterval+0.34*parent_point);
+	vec2 noise_texc	=vec2(0.3*float(branchInterval)*float(randomSeed)+0.77*float(parent_point)
+		,1.92*float(branchInterval)+0.34*float(parent_point));
 	vec3 rndvec		=texture_wrap_lod(randomTexture,noise_texc,0).xyz;
 
 	float along		=dot(rndvec,parentDir);
@@ -163,7 +164,7 @@ shader void GS_Branch(line F_IdVertex IN[2], inout PointStream<F_Vertex> vStream
 	{
 		OUT.position		=outpos[ii];
 		float br			=brightness*saturate(float(num_steps-ii)/5.0);
-		float endpoint		=(i>(num_steps-2));
+		float endpoint		=float(ii>(num_steps-2));
 		OUT.texcoord		=vec2(strikeThicknessMetres,br);
 		vStream.Append(OUT);
 	}
@@ -325,7 +326,7 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 	}
 	float lengthPixels_a	=width1/start.w	*viewportPixels.x/dot(miter_a, n1);
 	float lengthPixels_b	=width2/end.w	*viewportPixels.x/dot(miter_b, n1);
-	const float	MITER_LIMIT	=1.0;
+	float	MITER_LIMIT	=1.0;
 	OUT.hPosCentre1		=vec2(p1.xy/viewportPixels);
 	OUT.hPosCentre2		=vec2(p2.xy/viewportPixels);
 	OUT.clipWidth		=width1/start.w;
@@ -439,7 +440,9 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 
 vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 texc			=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec4 clookup 		=texture_wrap(cloudDepthTexture,texc.xy);
 
@@ -493,7 +496,9 @@ vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 		depth			=max(dlookup.x,clookup.x);
 	else
 		depth			=min(dlookup.x,clookup.x);
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 	//if(dist.x<dist.y)
 	//	discard;
