@@ -254,7 +254,7 @@ inline void input_row_color(uint group_id, uint thread_id)
 	// Fetch back the data output by vertical filtering pass.
 	while (col < imageSize.x)
 	{
-		uint int_color = IMAGE_LOAD(g_rwtOutput,int2(col, row));
+		uint int_color = IMAGE_LOAD(g_rwtOutput,int2(col, row)).x;
 		gs_ScanData[col] = uint_to_color3(int_color);
 		col += THREADS_PER_GROUP;
 	}

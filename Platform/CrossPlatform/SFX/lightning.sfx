@@ -325,7 +325,7 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 	}
 	float lengthPixels_a	=width1/start.w	*viewportPixels.x/dot(miter_a, n1);
 	float lengthPixels_b	=width2/end.w	*viewportPixels.x/dot(miter_b, n1);
-	const float	MITER_LIMIT	=1.0;
+	float	MITER_LIMIT	=1.0;
 	OUT.hPosCentre1		=vec2(p1.xy/viewportPixels);
 	OUT.hPosCentre2		=vec2(p2.xy/viewportPixels);
 	OUT.clipWidth		=width1/start.w;
