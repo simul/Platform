@@ -1193,6 +1193,11 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 			//simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint3",srv);
 			//simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTextureUint4",srv);
 		}
+		else if(desc.ViewDimension==D3D_SRV_DIMENSION_TEXTURE3D)
+		{
+			tech=debugEffect->GetTechniqueByName("show_volume");
+			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"volumeTexture",srv);
+		}
 	}
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;
