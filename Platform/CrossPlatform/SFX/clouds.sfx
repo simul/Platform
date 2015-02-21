@@ -121,6 +121,20 @@ shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	//outputTexture3d[pos].rgba=res;
 }
 
+
+CS_LAYOUT(8,8,8)
+shader void CS_Simulate( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 pos=g*8+t;
+	vec4 c1=TEXTURE_LOAD_3D(cloudDensity1,pos);
+	vec4 c2=TEXTURE_LOAD_3D(cloudDensity2,pos);
+   // vec4 res= lerp(cloudDensity1[pos],cloudDensity2[pos],cloud_interp);
+	//res.z=1.0;
+	//output[pos].rgba=res;
+    vec4 res= lerp(c1,c2,cloud_interp);
+	IMAGE_STORE_3D(outputTexture3d,pos,res);
+	//outputTexture3d[pos].rgba=res;
+}
 // Given texture position from texCoords, convert to a worldpos with shadowMatrix.
 // Then, trace towards sun to find initial intersection with cloud volume
 // Then trace down to find first intersection with clouds, if any.
@@ -531,6 +545,14 @@ technique mix_clouds
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Mix()));
+    }
+}
+
+technique simulate_clouds
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Simulate()));
     }
 }
 
