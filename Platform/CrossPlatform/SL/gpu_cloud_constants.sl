@@ -32,6 +32,9 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform vec2 maskCentre;
 	uniform float maskRadius;
 	uniform float maskFeather;
+	
+	uniform vec3 cloudScalesM;
+	uniform float time_step;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

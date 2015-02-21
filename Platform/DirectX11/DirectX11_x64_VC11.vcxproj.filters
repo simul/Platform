@@ -371,5 +371,8 @@
     <None Include="..\CrossPlatform\SL\render_states.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="..\CrossPlatform\SFX\cloud_simulation.sfx">
+      <Filter>SFX</Filter>
+    </None>
   </ItemGroup>
 </Project>

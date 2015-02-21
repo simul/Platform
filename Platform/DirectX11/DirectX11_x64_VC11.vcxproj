@@ -224,6 +224,7 @@
     <None Include="..\CrossPlatform\SFX\atmospherics.sfx" />
     <None Include="..\CrossPlatform\SFX\clouds.sfx" />
     <None Include="..\CrossPlatform\SFX\debug.sfx" />
+    <None Include="..\CrossPlatform\SFX\cloud_simulation.sfx" />
     <None Include="..\CrossPlatform\SFX\font.sfx" />
     <None Include="..\CrossPlatform\SFX\gaussian.sfx" />
     <None Include="..\CrossPlatform\SFX\hdr.sfx" />

@@ -13,6 +13,8 @@ uniform sampler3D ambientTexture2 SIMUL_TEXTURE_REGISTER(5);
 uniform sampler3D volumeNoiseTexture SIMUL_TEXTURE_REGISTER(6);
 uniform RWTexture3D<uchar4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture3D<float> targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
+uniform Texture3D inputVelocityDensity		SIMUL_TEXTURE_REGISTER(0);
+uniform RWTexture3D<vec4>					outputVelocityDensity;
 
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/gpu_cloud_constants.sl"
@@ -58,6 +60,59 @@ shader ColourDepthOutput PS_DensityMask(vertexOutput IN)
 	result.colour				=vec4(dens,dens,dens,dens);
 	result.depth				=dens;
 	return result;
+}
+
+vec4 advect(vec3 texc		// grid coordinates
+			,float timestep
+			,vec3 cloudScales				// 1 / grid scale
+			,vec3 velocity			// input velocity
+			,Texture3D inputField)    // qty to advect
+{
+  // follow the velocity field "back in time"
+   vec3 source_texc		= texc - timestep * velocity/cloudScales;
+  // interpolate and write to the output fragment
+	vec4 newval			= texture_wwc_lod(inputField,source_texc,0);
+	return newval;
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Simulate( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputVelocityDensity,dims.x,dims.y,dims.z);
+	uint3 pos=g*8+t;
+	vec3 texc	=vec3(pos)/vec3(dims);
+	vec4 c1		=TEXTURE_LOAD_3D(inputVelocityDensity,pos);
+	// transformMatrix is world-to-cloud transform
+	vec4 newval	=advect(texc,0.01,cloudScalesM,vec3(1.0,0,0),inputVelocityDensity);
+
+	float emission_diff=step(length(texc-vec3(.5,.5,.5)),0.1);
+
+	newval.w=saturate(newval.w+0.1*emission_diff);
+
+	/// ADD noise:
+	vec3 noisespace_texc	=texc*vec3(noiseScale)+vec3(time,0,0);
+	
+	newval.xyz=1.0*texture_wrap_lod(volumeNoiseTexture,5*noisespace_texc,0).xyz;
+	IMAGE_STORE_3D(outputVelocityDensity,pos,newval);
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
+	uint3 pos=g*8+t;
+	vec4 c1=TEXTURE_LOAD_3D(inputVelocityDensity,pos);
+   // vec4 res= lerp(cloudDensity1[pos],cloudDensity2[pos],cloud_interp);
+	//res.z=1.0;
+	//output[pos].rgba=res;
+	float h			=float(pos.z)/float(32);
+	float dens		=saturate(c1.w);
+	dens			*=saturate(h/zPixel-0.5)*saturate((1.0-h)/zPixel-1.5);
+	vec4 res		=vec4(h,h,dens,0);
+	IMAGE_STORE_3D(targetTexture,pos,res);
+	//outputTexture3d[pos].rgba=res;
 }
 
 CS_LAYOUT(8,8,8)
@@ -305,5 +360,22 @@ technique gpu_transform_compute
     pass p0 
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Transform()));
+    }
+}
+
+technique simulate_clouds
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Simulate()));
+    }
+}
+
+
+technique simulated_to_target
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_SimToTarget()));
     }
 }
