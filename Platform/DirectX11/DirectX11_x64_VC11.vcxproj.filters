@@ -374,5 +374,8 @@
     <None Include="..\CrossPlatform\SFX\cloud_simulation.sfx">
       <Filter>SFX</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\gpu_cloud_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
 </Project>

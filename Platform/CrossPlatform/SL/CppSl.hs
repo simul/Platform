@@ -106,7 +106,7 @@
 			:x(X),y(Y)
 		{
 		}
-		operator const float *()
+		operator const float *() const
 		{
 			return &x;
 		}
@@ -162,7 +162,7 @@
 		{
 			operator=(v);
 		}
-		operator const float *()
+		operator const float *() const
 		{
 			return &x;
 		}

@@ -1,20 +1,20 @@
 
 #include "shader_platform.sl"
 #include "../../CrossPlatform/SL/common.sl"
-uniform sampler2D inputTexture;
-uniform sampler3D densityTexture SIMUL_TEXTURE_REGISTER(0);
-uniform sampler3D lightTexture;
-uniform sampler3D lightTexture1 SIMUL_TEXTURE_REGISTER(1);
-uniform sampler3D lightTexture2 SIMUL_TEXTURE_REGISTER(2);
-uniform sampler2D maskTexture SIMUL_TEXTURE_REGISTER(3);
-uniform sampler3D ambientTexture;
-uniform sampler3D ambientTexture1 SIMUL_TEXTURE_REGISTER(4);
-uniform sampler3D ambientTexture2 SIMUL_TEXTURE_REGISTER(5);
-uniform sampler3D volumeNoiseTexture SIMUL_TEXTURE_REGISTER(6);
+uniform sampler3D			densityTexture SIMUL_TEXTURE_REGISTER(0);
+uniform sampler3D			lightTexture;
+uniform sampler3D			lightTexture1 SIMUL_TEXTURE_REGISTER(1);
+uniform sampler3D			lightTexture2 SIMUL_TEXTURE_REGISTER(2);
+uniform sampler2D			maskTexture SIMUL_TEXTURE_REGISTER(3);
+uniform sampler3D			ambientTexture;
+uniform sampler3D			ambientTexture1 SIMUL_TEXTURE_REGISTER(4);
+uniform sampler3D			ambientTexture2 SIMUL_TEXTURE_REGISTER(5);
+uniform sampler3D			volumeNoiseTexture SIMUL_TEXTURE_REGISTER(6);
 uniform RWTexture3D<uchar4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
-uniform RWTexture3D<float> targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
-uniform Texture3D inputVelocityDensity		SIMUL_TEXTURE_REGISTER(0);
-uniform RWTexture3D<vec4>					outputVelocityDensity;
+uniform RWTexture3D<float>	targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
+uniform Texture3D			inputTexture3D;
+uniform Texture3D			inputTexture3DB;
+uniform RWTexture3D<vec4>	outputTexture;
 
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/gpu_cloud_constants.sl"
@@ -74,28 +74,130 @@ vec4 advect(vec3 texc		// grid coordinates
 	vec4 newval			= texture_wwc_lod(inputField,source_texc,0);
 	return newval;
 }
+vec4 viscousDiffusion(vec3 texc   // grid coordinates
+				,float alpha
+				,float rBeta			// reciprocal beta
+				,Texture3D inputField	// x vector (Ax = b)
+				)						// b vector (Ax = b)
+{
+	// left, right, bottom, and top x samples
+	const float P=1.0;
+	vec4 xL = texture_wwc_lod(inputField, texc - vec3(P,0,0),0);
+	vec4 xR = texture_wwc_lod(inputField, texc + vec3(P,0,0),0);
+	vec4 xB = texture_wwc_lod(inputField, texc - vec3(0,P,0),0);
+	vec4 xF = texture_wwc_lod(inputField, texc + vec3(0,P,0),0);
+	vec4 xU = texture_wwc_lod(inputField, texc - vec3(0,0,P),0);
+	vec4 xT = texture_wwc_lod(inputField, texc + vec3(0,0,P),0);
+
+	// b sample, from center
+  
+   vec4 bC = texture_wwc_lod(inputField, texc,0);
+
+  // evaluate Jacobi iteration
+  vec4 xNew = (xL + xR + xB + xF + xU + xT + alpha * bC) * rBeta;
+  return xNew;
+}
+
 
 CS_LAYOUT(8,8,8)
-shader void CS_Simulate( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+shader void CS_Advection( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	uint3 dims;
-	GET_IMAGE_DIMENSIONS_3D(outputVelocityDensity,dims.x,dims.y,dims.z);
-	uint3 pos=g*8+t;
-	vec3 texc	=vec3(pos)/vec3(dims);
-	vec4 c1		=TEXTURE_LOAD_3D(inputVelocityDensity,pos);
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos				=g*8+t;
+	vec3 texc				=vec3(pos)/vec3(dims);
+	vec4 c1					=TEXTURE_LOAD_3D(inputTexture3D,texc);
 	// transformMatrix is world-to-cloud transform
-	vec4 newval	=advect(texc,0.01,cloudScalesM,vec3(1.0,0,0),inputVelocityDensity);
+	vec4 newval				=advect(texc,0.01,cloudScalesM,c1.xyz,inputTexture3D);
 
-	float emission_diff=step(length(texc-vec3(.5,.5,.5)),0.1);
+	float emission_diff		=step(length(texc-vec3(.5,.5,.5)),0.2);
 
-	newval.w=saturate(newval.w+0.1*emission_diff);
+	newval.w				=max(c1.w,saturate(newval.w+0.1*emission_diff));
 
 	/// ADD noise:
 	vec3 noisespace_texc	=texc*vec3(noiseScale)+vec3(time,0,0);
 	
-	newval.xyz=1.0*texture_wrap_lod(volumeNoiseTexture,5*noisespace_texc,0).xyz;
-	IMAGE_STORE_3D(outputVelocityDensity,pos,newval);
+	if(texc.x>0.5&&texc.x<0.7)
+		newval.xyz=-100000.0*vec3(1,0,0);
+	if(texc.x<0.2)
+		newval.xyz=100000.0*vec3(0,1,0);	//texture_wrap_lod(volumeNoiseTexture,5*noisespace_texc,0).xyz;
+	IMAGE_STORE_3D(outputTexture,pos,newval);
 }
+
+CS_LAYOUT(8,8,8)
+shader void CS_Divergence( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos				=g*8+t;
+	vec3 texc				=vec3(pos)/vec3(dims);
+	vec4 wL = texture_wwc_lod(inputTexture3D,texc-vec3(1,0,0),0);
+	vec4 wR = texture_wwc_lod(inputTexture3D,texc+vec3(1,0,0),0);
+	vec4 wB = texture_wwc_lod(inputTexture3D,texc-vec3(0,1,0),0);
+	vec4 wF = texture_wwc_lod(inputTexture3D,texc+vec3(0,1,0),0);
+	vec4 wD = texture_wwc_lod(inputTexture3D,texc-vec3(0,0,1),0);
+	vec4 wU = texture_wwc_lod(inputTexture3D,texc+vec3(0,0,1),0);
+	vec3 gridScale	=cloudScalesM/vec3(dims);
+	//vec3 halfrdx	=0.5/gridScale;
+	float div = 0.5 * ((wR.x - wL.x)/gridScale.x + (wF.y - wB.y)/gridScale.y+ (wU.z - wD.z)/gridScale.z);
+	IMAGE_STORE_3D(outputTexture,pos,vec4(div,div,div,div));
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Clear3D( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 pos				=g*8+t;
+	IMAGE_STORE_3D(outputTexture,pos,vec4(0,0,0,0));
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Jacobi( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos				=g*8+t;
+	vec3 texc				=vec3(pos)/vec3(dims);
+	
+	// left, right, bottom, and top x samples
+	const float P=1;
+	vec4 xL = texture_wwc_lod(inputTexture3D, texc - vec3(P,0,0),0);
+	vec4 xR = texture_wwc_lod(inputTexture3D, texc + vec3(P,0,0),0);
+	vec4 xB = texture_wwc_lod(inputTexture3D, texc - vec3(0,P,0),0);
+	vec4 xF = texture_wwc_lod(inputTexture3D, texc + vec3(0,P,0),0);
+	vec4 xU = texture_wwc_lod(inputTexture3D, texc - vec3(0,0,P),0);
+	vec4 xT = texture_wwc_lod(inputTexture3D, texc + vec3(0,0,P),0);
+
+	// b sample, from center
+  
+	vec4 bC = texture_wwc_lod(inputTexture3DB, texc,0);
+
+	// evaluate Jacobi iteration
+	vec4 j = (xL + xR + xB + xF + xU + xT + alpha * bC) *invBeta;
+
+	IMAGE_STORE_3D(outputTexture,pos,j);
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_SubtractGradient( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos				=g*8+t;
+	vec3 texc				=vec3(pos)/vec3(dims);
+
+	float pL		=texture_wwc_lod(inputTexture3DB,texc-vec3(1,0,0),0).x;
+	float pR		=texture_wwc_lod(inputTexture3DB,texc+vec3(1,0,0),0).x;
+	float pB		=texture_wwc_lod(inputTexture3DB,texc-vec3(0,1,0),0).x;
+	float pF		=texture_wwc_lod(inputTexture3DB,texc+vec3(0,1,0),0).x;
+	float pD		=texture_wwc_lod(inputTexture3DB,texc-vec3(0,1,1),0).x;
+	float pU		=texture_wwc_lod(inputTexture3DB,texc+vec3(0,1,1),0).x;
+	
+	vec3 gridScale	=cloudScalesM/vec3(dims);
+	vec4 uNew		=texture_wwc_lod(inputTexture3D, texc,0);
+	uNew.xyz		-= 0.5 * vec3(pR-pL, pF-pB,pU-pD)/gridScale;
+	IMAGE_STORE_3D(outputTexture,pos,uNew);
+}
+
 
 CS_LAYOUT(8,8,8)
 shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
@@ -103,11 +205,11 @@ shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	uint3 pos=g*8+t;
-	vec4 c1=TEXTURE_LOAD_3D(inputVelocityDensity,pos);
+	vec4 c1=TEXTURE_LOAD_3D(inputTexture3D,pos);
    // vec4 res= lerp(cloudDensity1[pos],cloudDensity2[pos],cloud_interp);
 	//res.z=1.0;
 	//output[pos].rgba=res;
-	float h			=float(pos.z)/float(32);
+	float h			=float(pos.z)/float(dims.z);
 	float dens		=saturate(c1.w);
 	dens			*=saturate(h/zPixel-0.5)*saturate((1.0-h)/zPixel-1.5);
 	vec4 res		=vec4(h,h,dens,0);
@@ -363,11 +465,39 @@ technique gpu_transform_compute
     }
 }
 
-technique simulate_clouds
+technique advection
 {
     pass p0
     {
-		SetComputeShader(CompileShader(cs_5_0,CS_Simulate()));
+		SetComputeShader(CompileShader(cs_5_0,CS_Advection()));
+    }
+}
+
+technique divergence
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Divergence()));
+    }
+}
+
+technique jacobi
+{
+    pass clear
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Clear3D()));
+    }
+    pass iterate
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Jacobi()));
+    }
+}
+
+technique subtract_gradient
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_SubtractGradient()));
     }
 }
 
