@@ -36,7 +36,9 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform vec3 cloudScalesKm;
 	uniform float time_step;
 
+	uniform vec3 lightDir;
 	uniform float alpha;		// simulation constant;
+
 	uniform float invBeta;
 SIMUL_CONSTANT_BUFFER_END
 

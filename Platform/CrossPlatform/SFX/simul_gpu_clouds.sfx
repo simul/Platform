@@ -106,11 +106,7 @@ shader void CS_Advection( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	// transformMatrix is world-to-cloud transform
 	vec4 newval				=advect(texc,time_step,cloudScalesKm,c1.xyz,inputTexture3D);
 	float emission_diff		=step(length(texc-vec3(.5,.5,.5)),0.1);
-//	newval.w				=saturate(newval.w+0.1*emission_diff);
-	/// ADD noise:
 	vec3 noisespace_texc	=texc*vec3(noiseScale)+vec3(time,0,0);
-//	if(texc.x<0.2)
-//		newval.xyz			=10000.0*vec3(0,1,0)*saturate((texc.x-0.0)/.2);	//texture_wrap_lod(volumeNoiseTexture,5*noisespace_texc,0).xyz;
 	IMAGE_STORE_3D(outputTexture,pos,newval);
 }
 
@@ -124,9 +120,10 @@ shader void CS_Force( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec4 vd					=TEXTURE_LOAD_3D(inputTexture3D,pos);
 	vec3 F					=vec3(1,0,0);
 	vec3 diff				=(texc-vec3(.5,.5,1))*cloudScalesKm;
+	float d2				=dot(diff,diff);//pow(diff.z,2.0);//
 	float radius			=6.0;
 	float r2				=radius*radius;
-	vec3 delta				=150*F*time_step*exp(-dot(diff,diff)/r2);
+	vec3 delta				=15*F*time_step*exp(-d2/r2);
 	vd.xyz					+=delta;
 	IMAGE_STORE_3D(outputTexture,pos,vd);
 }
@@ -244,9 +241,19 @@ shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 texc			=convertPosToTexc(pos,dims);
 	vec4 c1				=TEXTURE_LOAD_3D(inputTexture3D,pos);
 	float h				=saturate(0.5+float(pos.z)/float(dims.z));
-	float dens			=saturate(c1.w);
+	float dens			=saturate(2.0*(c1.w-0.25));
 	//dens				*=saturate(h/zPixel-0.5)*saturate((1.0-h)/zPixel-1.5);
-	vec4 res			=vec4(h,h,dens,0);
+	vec2 illum			=vec2(1.0,1.0);
+	vec3 wpos			=texc*cloudScalesKm;
+	for(int i=0;i<12;i++)
+	{
+		wpos			+=lightDir*stepLength;// we expect stepLength in km for this shader
+		texc			=wpos/cloudScalesKm;
+		vec4 lookup		=texture_wwc_lod(inputTexture3D,texc,0);
+		illum			*=exp(-extinctions.xy*lookup.w*stepLength);
+	}
+	float ambient		=1.0;
+	vec4 res			=vec4(illum.xy,dens,ambient);
 	IMAGE_STORE_3D(targetTexture,pos,res);
 	//outputTexture3d[pos].rgba=res;
 }

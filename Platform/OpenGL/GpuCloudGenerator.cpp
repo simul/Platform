@@ -312,7 +312,7 @@ GL_ERROR_CHECK
 	float y_end=(float)(start_texel+texels)/(float)total_texels;
 	gpuCloudConstants.transformMatrix	=params.Matrix4x4LightToDensityTexcoords;
 	SetGpuCloudConstants(gpuCloudConstants,params,y_start,y_end-y_start);
-	gpuCloudConstants.extinctions		=params.lightspace_extinctions;
+	gpuCloudConstants.extinctions		=vec2(params.lightspace_extinctions.x,params.lightspace_extinctions.y);
 	gpuCloudConstants.Apply(deviceContext);
 	// initialize the first input texture.
 	FramebufferGL *F[2];
