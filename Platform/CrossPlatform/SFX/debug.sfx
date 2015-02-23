@@ -96,9 +96,16 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 #endif
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
 	if(IN.texCoords.y<.5)
+	{
 		z=.5;
+	}
 	vec4 colour		=texture_nearest_lod(volumeTexture,vec3(texc,z),0);
-	//colour.r = colour.a;
+	//if(IN.texCoords.x<.5)
+		colour.r+=colour.a;
+	//colour.rgb =abs( colour.rgb);
+//	colour+=(isinf(colour))*vec4(.5,1,1,1);
+//	colour+=isnan(colour)*vec4(1,.5,1,1);
+	//	colour.b+=z;
 	return colour;
 }
 
@@ -366,8 +373,8 @@ technique show_volume
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowVolume()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowVolume()));
     }
     pass blend
     {
@@ -375,8 +382,8 @@ technique show_volume
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowVolume()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowVolume()));
     }
 }
 
