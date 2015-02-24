@@ -18,7 +18,7 @@
     <Filter Include="SFX">
       <UniqueIdentifier>{44db79cc-70d8-43ac-8367-1778f33a7ce0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="SFX\HLSL">
+    <Filter Include="HLSL">
       <UniqueIdentifier>{dd14abf0-b066-4a9b-a149-9830da7324cf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -151,31 +151,31 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\CppHLSL.hlsl">
-      <Filter>SFX\HLSL</Filter>
+      <Filter>HLSL</Filter>
     </None>
     <None Include="HLSL\fft_512x512_c2c.hlsl">
-      <Filter>SFX\HLSL</Filter>
+      <Filter>HLSL</Filter>
     </None>
     <None Include="HLSL\MixClouds_c.hlsl">
-      <Filter>SFX\HLSL</Filter>
+      <Filter>HLSL</Filter>
     </None>
     <None Include="HLSL\ocean_shading.hlsl">
-      <Filter>SFX\HLSL</Filter>
+      <Filter>HLSL</Filter>
     </None>
     <None Include="HLSL\ocean_simulator_cs.hlsl">
-      <Filter>SFX\HLSL</Filter>
+      <Filter>HLSL</Filter>
     </None>
     <None Include="HLSL\simul_earthshadow.hlsl">
-      <Filter>SFX\HLSL</Filter>
+      <Filter>HLSL</Filter>
     </None>
     <None Include="HLSL\simul_gpu_sky.hlsl">
-      <Filter>SFX\HLSL</Filter>
+      <Filter>HLSL</Filter>
     </None>
     <None Include="HLSL\simul_inscatter_fns.hlsl">
-      <Filter>SFX\HLSL</Filter>
+      <Filter>HLSL</Filter>
     </None>
     <None Include="HLSL\states.hlsl">
-      <Filter>SFX\HLSL</Filter>
+      <Filter>HLSL</Filter>
     </None>
     <None Include="..\CrossPlatform\SL\atmospherics.sl">
       <Filter>CrossPlatform</Filter>
