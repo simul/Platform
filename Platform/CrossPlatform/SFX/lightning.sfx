@@ -269,10 +269,8 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 	vec2 p2		=PixelPos(IN[2].position);
 	vec2 p3		=PixelPos(IN[3].position);
 	vec2 area	=viewportPixels * 1.2;
-	if(p1.x<-area.x||p1.x>area.x) return;
-	if(p1.y<-area.y||p1.y>area.y) return;
-	if(p2.x<-area.x||p2.x>area.x) return;
-	if(p2.y<-area.y||p2.y>area.y) return;
+	if((p1.x<-area.x&&p2.x<-area.x)||(p1.x>area.x&&p2.x>area.x)) return;
+	if((p1.y<-area.y&&p2.y<-area.y)||(p1.y>area.y&&p2.y>area.y)) return;
 	if(IN[0].position.z<0) return;
     vec4 start			=IN[1].position;
     vec4 end			=IN[2].position;
@@ -284,10 +282,10 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 	vec2 n0				=vec2(-v0.y,v0.x);
 	vec2 n1				=vec2(-v1.y,v1.x);
 	vec2 n2				=vec2(-v2.y,v2.x);
-	// determine miter lines by averaging the normals of the 2 segments
-	vec2 miter_a		=normalize(n0 + n1);	// miter at start of current segment
-	vec2 miter_b		=normalize(n1 + n2);	// miter at end of current segment
-	// determine the length of the miter by projecting it onto normal and then inverse it
+	// determine mitre lines by averaging the normals of the 2 segments
+	vec2 mitre1			=normalize(n0 + n1);	// mitre at start of current segment
+	vec2 mitre2			=normalize(n1 + n2);	// mitre at end of current segment
+	// determine the length of the mitre by projecting it onto normal and then inverse it
 
 	//We want to have an output brightness*pixelWidth as specified according to thicknessMetres and input brightness.
 	// so K=IN[1].brightness*(width1/start.w	*viewportPixels.x)
@@ -324,44 +322,59 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 		brightness2			*=width2/(minPixelWidth/viewportPixels.x*start.w);
 		width2				=minPixelWidth/viewportPixels.x*start.w;
 	}
-	float lengthPixels_a	=width1/start.w	*viewportPixels.x/dot(miter_a, n1);
-	float lengthPixels_b	=width2/end.w	*viewportPixels.x/dot(miter_b, n1);
-	float	MITER_LIMIT	=1.0;
+	float lengthPixels_a	=width1/start.w	*viewportPixels.x/dot(mitre1, n1);
+	float lengthPixels_b	=width2/end.w	*viewportPixels.x/dot(mitre2, n1);
+	float	mitre_LIMIT	=0.0;
 	OUT.hPosCentre1		=vec2(p1.xy/viewportPixels);
 	OUT.hPosCentre2		=vec2(p2.xy/viewportPixels);
 	OUT.clipWidth		=width1/start.w;
 	vec2 diff				=OUT.hPosCentre2-OUT.hPosCentre1;
 	float dist				=length(diff);
 	float d2				=dist*dist;
-	// prevent excessively long miters at sharp corners
-	if( dot(v0,v1) < -MITER_LIMIT )
+	// prevent excessively long mitres at sharp corners
+	vec2 mitre1_a=mitre1;
+	vec2 mitre1_b=mitre1;
+	if( dot(v0,v1) < -mitre_LIMIT )
 	{
-		miter_a = n1;
+		if(dot(v0,n1)>0)
+		{
+			mitre1_a = n1;
+		}
+		else
+		{
+			mitre1_b = n1;
+		}
 		lengthPixels_a = width1;
+	}
+	if(dot(v0,v1)<-mitre_LIMIT)
+	{
+	//	width1=0;
+		//mitre1 = n1;
+		//lengthPixels_a = width1;
 		// close the gap
 		if(dot(v0,n1)>0)
 		{
-			OUT.hPosition	=vec4( (p1 + width1 * n0) / viewportPixels, 0.0, 1.0 );
-			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
+			OUT.screenPos	=(p1 + width1 * n0)/viewportPixels;
+			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
 			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
-			OUT.brightness	=IN[1].brightness;
+			OUT.brightness	=brightness1;
 			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
-			OUT.hPosition	=vec4( (p1 + width1 * n1) / viewportPixels, 0.0, 1.0 );
-			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
+			OUT.screenPos	=(p1 + width1 * n1)/viewportPixels;
+			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
 			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
-			OUT.brightness	=IN[1].brightness;
+			OUT.brightness	=brightness1;
 			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
-			OUT.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
-			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
+			OUT.screenPos	=(p1- lengthPixels_a * mitre1_b)/viewportPixels;
+			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
 			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
-			OUT.brightness	=IN[1].brightness;
+			OUT.brightness	=brightness1;
 			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
@@ -369,69 +382,78 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 		}
 		else
 		{
-			OUT.hPosition	=vec4( (p1 - width2 * n1) / viewportPixels, 0.0, 1.0 );
-			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
+			OUT.screenPos	=(p1 - width2 * n1)/viewportPixels;
+			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
 			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
-			OUT.brightness	=IN[1].brightness;
+			OUT.brightness	=brightness1;
 			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
-			OUT.hPosition	=vec4( (p1 - width2 * n0) / viewportPixels, 0.0, 1.0 );
-			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
+			OUT.screenPos	=(p1 - width2 * n0)/viewportPixels;
+			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
 			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
-			OUT.brightness	=IN[1].brightness;
+			OUT.brightness	=brightness1;
 			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
-			OUT.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
-			OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
+			OUT.screenPos	=(p1+ lengthPixels_a * mitre1_a)/viewportPixels;
+			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
 			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
-			OUT.brightness	=IN[1].brightness;
+			OUT.brightness	=brightness1;
 			OUT.endpoint	=IN[1].endpoint;
 			OUT.clipPos		=OUT.hPosition;
 			SpriteStream.Append(OUT);
 			SpriteStream.RestartStrip();
 		}
 	}
-	if( dot(v1,v2) < -MITER_LIMIT )
+	vec2 mitre2_a=mitre2;
+	vec2 mitre2_b=mitre2;
+	if( dot(v1,v2) < -mitre_LIMIT )
 	{
-		miter_b = n1;
+		if(dot(v1,n2)>0)
+		{
+			mitre2_a = n1;
+		}
+		else
+		{
+			mitre2_b = n1;
+		}
 		lengthPixels_b = width2;
 	}
   // generate the triangle strip
 	OUT.clipWidth		=width1/start.w;
-	OUT.screenPos		=(p1 + lengthPixels_a * miter_a)/viewportPixels;
+	OUT.screenPos		=(p1 + lengthPixels_a * mitre1_a)/viewportPixels;
 	OUT.hPosition		=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
 	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
 	OUT.along			=0.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2*1.1-0.05;
-	OUT.brightness		=IN[1].brightness;
+	OUT.brightness		=brightness1;
 	OUT.endpoint		=IN[1].endpoint;
 	OUT.clipPos			=OUT.hPosition;
 	SpriteStream.Append(OUT);
-	OUT.screenPos		=(p1 - lengthPixels_a * miter_a)/viewportPixels;
+	OUT.screenPos		=(p1 - lengthPixels_a * mitre1_b)/viewportPixels;
 	OUT.hPosition		=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
 	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
 	OUT.along			=0.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
-	OUT.brightness		=IN[1].brightness;
+	OUT.brightness		=brightness1;
 	OUT.clipPos			=OUT.hPosition;
 	SpriteStream.Append(OUT);
 	OUT.clipWidth		=width2/end.w;
-	OUT.screenPos		=(p2 + lengthPixels_b * miter_b)/viewportPixels;
+	OUT.screenPos		=(p2 + lengthPixels_b * mitre2_a)/viewportPixels;
 	OUT.hPosition		=vec4(OUT.screenPos.xy*end.w,end.z,end.w);
 	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
 	OUT.along			=1.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
-	OUT.brightness		=IN[2].brightness;
+	OUT.brightness		=brightness2;
 	OUT.endpoint		=IN[2].endpoint;
 	OUT.clipPos			=OUT.hPosition;
 	SpriteStream.Append(OUT);
-	OUT.screenPos		=(p2 - lengthPixels_b * miter_b)/viewportPixels;
+	OUT.screenPos		=(p2 - lengthPixels_b * mitre2_b)/viewportPixels;
 	OUT.hPosition		=vec4(OUT.screenPos.xy*end.w,end.z,end.w);
 	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
 	OUT.along			=1.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
-	OUT.brightness		=IN[2].brightness;
+	OUT.brightness		=brightness2;
 	OUT.endpoint		=IN[2].endpoint;
 	OUT.clipPos			=OUT.hPosition;
 	SpriteStream.Append(OUT);
@@ -453,7 +475,6 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 
 	float past			=saturate(1.0-saturate((dist.y-dist.x)/0.00001)-0.01);
 	
-	float br			=IN.brightness;
 	vec2 dir			=normalize(IN.hPosCentre2-IN.hPosCentre1);
 	float along			=dot(IN.screenPos-IN.hPosCentre1,dir);
 	vec2 centre1		=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along));//*(1.0-IN.endpoint)));
@@ -465,8 +486,10 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	float m				=d/clipWidth2px;
 	float s				=max(0.0,d-clipWidth2px)/IN.clipWidth;
 	
-	br					=min(brightnessToUnity,br);//*saturate(exp(-4.0*s)-0.05)/0.95;
-	br					+=IN.brightness*saturate(10.0*(1.0-m));
+	float br			=IN.brightness;//*saturate(10.0*(1.0-m));
+	br					=max(brightnessToUnity,br);//*saturate(exp(-4.0*s)-0.05)/0.95;
+	//br					+=IN.brightness*saturate(10.0*(1.0-m));
+	br					*=saturate(exp(-4.0*s)-0.05)/0.95;
 	br*=past;
 	if(br<0)
 		br=0;

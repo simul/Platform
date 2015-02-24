@@ -484,15 +484,35 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	vec3 densityspace_texcoord	=(pos.xyz+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
-	vec2 light_lookup			=vec2(filterLight(lightTexture1,lightspace_texcoord)
+	/*vec2 light_lookup			=vec2(filterLight(lightTexture1,lightspace_texcoord)
 										,sample_lod(lightTexture2,lightSamplerState,lightspace_texcoord,0).x);
 	
 	vec2 amb_texel				=vec2(	sample_lod(ambientTexture1,wwcSamplerState,ambient_texcoord,0).x
 										,sample_lod(ambientTexture2,wwcSamplerState,ambient_texcoord,0).x);
-	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
+	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));*/
+
+	
+	vec2 illum			=vec2(1.0,1.0);
+	vec3 wpos			=densityspace_texcoord*cloudScalesKm;
+	for(int i=0;i<12;i++)
+	{
+		wpos			+=lightDir*stepLength;// we expect stepLength in km for this shader
+		vec3 texc		=wpos/cloudScalesKm;
+		vec4 lookup		=texture_wwc_lod(densityTexture,texc,0);
+		illum			*=exp(-extinctions.xy*lookup.x*stepLength);
+	}
+	vec2 ambient		=vec2(1.0,1.0);
+	for(int i=0;i<12;i++)
+	{
+		wpos			+=vec3(0,0,1.0)*stepLength;// we expect stepLength in km for this shader
+		vec3 texc		=wpos/cloudScalesKm;
+		vec4 lookup		=texture_wwc_lod(densityTexture,texc,0);
+		ambient			*=exp(-extinctions.xy*lookup.x*stepLength);
+	}
+
 	float density				=saturate(sample_lod(densityTexture,wwcSamplerState,densityspace_texcoord,0).x);
 
-    vec4 res					=vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
+    vec4 res					=vec4(illum.yx,density,ambient.x+ambient.y);
 	IMAGE_STORE_3D(targetTexture,pos,res);
 }
 
