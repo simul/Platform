@@ -306,7 +306,7 @@ void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crosspl
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"H")
 	static int g_NumApproxPasses	=3;
 	static int	g_MaxApproxPasses	=8;
-	static float g_FilterRadius		=30;
+	static float g_FilterRadius		=6;
 	float box_width					= CalculateBoxFilterWidth(g_FilterRadius, g_NumApproxPasses);
 	float half_box_width			= box_width * 0.5f;
 	float frac_half_box_width		= (half_box_width + 0.5f) - (int)(half_box_width + 0.5f);

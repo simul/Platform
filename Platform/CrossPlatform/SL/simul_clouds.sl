@@ -277,11 +277,11 @@ vec4 MakeNoise(Texture3D noiseTexture3D,vec3 noise_texc,float lod)
 vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale)
 {
 	float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(texCoords.z));
-//	vec4 light			=sampleLod(cloudDensity,cloudSamplerState,texCoords,0);
+	vec4 light			=sampleLod(cloudDensity,cloudSamplerState,texCoords,0);
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
 	vec4 density		=sampleLod(cloudDensity,cloudSamplerState,pos,0);
-//	density.xyw			=light.xyw;
+	density.xyw			=light.xyw;
 		//	density.xy*=.5*(1+density.z);
 	density.z			*=layerFade;//*(1.0-noiseval.w);
 	density.z			=saturate(density.z*(1.0+alphaSharpness));//-alphaSharpness);
@@ -699,6 +699,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			if(noise)
 				noiseval			=MakeNoise(noiseTexture3D,noise_texc,3.0*fadeDistance);
 			vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
+			float cloud_density		=density.z;
 			if(do_rain_effect)
 			{
 				// The rain fall angle is used:
@@ -751,7 +752,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					nearColour.a		*=(1.0-clr_n.a);
 				}
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
-				meanFadeDistance		+=fadeDistance*clr.a*colour.a;
+				meanFadeDistance		+=fadeDistance*clr.a*cloud_density;
 				colour.a				*=(1.0-clr.a);
 				if(nearColour.a*brightness_factor<0.003)
 				{

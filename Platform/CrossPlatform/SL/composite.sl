@@ -219,7 +219,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 #endif
 	float sine					=dot(zrow,clip_pos);
 	vec4 nearFarCloud			=texture_clamp_lod(nearFarTexture	,lowResTexCoords		,0);
-
+	// Should NOT be necessary:
+	nearFarCloud.w	=(nearFarCloud.x-nearFarCloud.y);
 	float depth					=texture_nearest_lod(depthTexture,depth_texc,0).x;
 	//IMAGE_LOAD(depthTexture,fullres_depth_pos2).x;
 	float dist					=depthToLinearDistance(depth	,depthInterpretationStruct);
@@ -245,6 +246,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 	shadow					*=cloud.a;
 	res.multiply			=texture_clamp_lod(loss2dTexture,loss_texc,0)*shadow;
 	res.add					=insc;
+//		res.add.r=hiResInterp;
     return res;
 }
 

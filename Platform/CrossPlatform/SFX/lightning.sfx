@@ -509,21 +509,21 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	float m				=d/clipWidth2px;
 	float s				=max(0.0,d-clipWidth2px)/IN.clipWidth;
 	
-	float br			=step(m,.5);//*saturate(10.0*(1.0-m));
+	float br			=saturate(2.0*(1.0-m));
 	//br					=max(brightnessToUnity,br);
 	br					+=brightnessToUnity;//*saturate(exp(-4.0*s)-0.05)/0.95;
 	//br					+=IN.brightness*saturate(10.0*(1.0-m));
 	if(progress>0.0)
 	{
-		float p				=length(vec2(progress,s)-vec2(IN.progress,0));
+		float p				=length(vec2(IN.progress,s)-vec2(progress,0));
 		s*=4;
-		br					=step(m,.25);
+		br					=.1*saturate(2.0*(1.0-m))*saturate(10.0*(progress-IN.progress));
 		br					*=saturate((exp(-4.0*s)-0.05)/0.95);
 		br					+=IN.brightness*saturate((0.05-p)/0.05);
 	}
 	else
 	{
-		br					*=saturate((exp(-4.0*s)-0.05)/0.95);
+		br					*=IN.brightness*saturate((exp(-4.0*s)-0.05)/0.95);
 	}
 	br*=past;
 	if(br<0)

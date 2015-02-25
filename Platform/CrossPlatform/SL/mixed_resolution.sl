@@ -145,6 +145,80 @@ vec4 HalfscaleInitial_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_d
 	return res;
 }
 
+
+vec4 HalfscaleOnly_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_dims,int2 source_offset,int2 cornerOffset,int numberOfSamples,int2 pos,DepthIntepretationStruct depthInterpretationStruct)
+{
+	int2 pos0			=pos*2;
+	int2 pos1			=pos0-cornerOffset;
+#ifdef DEBUG_COMPOSITING
+	if(pos.x<3)
+		return vec4(0,0,saturate((pos1.y%3)/2.0),0);
+#endif
+	int2 max_pos=source_dims-int2(3,3);
+	int2 min_pos=int2(1,1);
+	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x))
+							,max(min_pos.y,min(pos1.y,max_pos.y)));
+	pos2+=source_offset;
+	vec2 farthest_nearest;
+	if(depthInterpretationStruct.reverseDepth)
+	{
+		farthest_nearest		=vec2(1.0,0.0);
+	}
+	else
+	{
+		farthest_nearest		=vec2(0.0,1.0);
+	}
+
+	for(int i=-2;i<4;i+=2)
+	{
+		for(int j=-2;j<4;j+=2)
+		{
+			int2 hires_pos		=pos2+int2(i,j);
+			//if(hires_pos.x>=source_dims.x||hires_pos.y>=source_dims.y)
+			//	continue;
+			//for(int k=0;k<numberOfSamples;k++)
+			int k=0;
+			{
+				float d				=TEXTURE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,k).x;
+				if(depthInterpretationStruct.reverseDepth)
+				{
+					farthest_nearest.y=max(farthest_nearest.y,d);
+					farthest_nearest.x=min(farthest_nearest.x,d);
+				}
+				else
+				{
+					farthest_nearest.y=min(farthest_nearest.y,d);
+					farthest_nearest.x=max(farthest_nearest.x,d);
+				}
+
+			}
+		}
+	}
+	float edge=0.0;
+	if(farthest_nearest.x!=farthest_nearest.y)
+	{
+		if(depthInterpretationStruct.reverseDepth)
+		{
+		}
+		else
+		{
+			// Force edge at far clip.
+			if(farthest_nearest.x >= 1.0)
+				farthest_nearest.x = 1.0;
+			if(farthest_nearest.y >= 1.0)
+				farthest_nearest.y = 1.0;
+		}
+
+		vec2 fn = depthToLinearDistanceM(farthest_nearest.xy,depthInterpretationStruct,1.0);
+		edge	=abs(fn.x-fn.y);
+		//edge	=abs(farthest_nearest.x-farthest_nearest.y);
+		edge	=step(EDGE_FACTOR,edge);
+		farthest_nearest.xy=saturate(farthest_nearest.xy);
+	}
+	vec4 res=vec4(farthest_nearest,edge,0.0);
+	return res;
+}
+
 vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct,bool find_edges)
 {
 	int2 pos0			=int2(pos*2);
@@ -168,10 +242,10 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_o
 	for(int i=0;i<4;i++)
 	{
 		int2 pos3			=pos2+int2(i*2-2,0);
-		float d1				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,-3)).x;
-		float d2				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,0)).x;
-		float d3				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,1)).x;
-		float d4				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4)).x;
+		float d1			=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,-3)).x;
+		float d2			=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(5,0)).x;
+		float d3			=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(-3,1)).x;
+		float d4			=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4)).x;
 		vec4 f				=vec4(d1.x,d2.x,d3.x,d4.x);
 		vec4 n				=f;
 		vec2 dmin2,dmax2;
