@@ -22,6 +22,7 @@ SIMUL_CONSTANT_BUFFER(LightningConstants,10)
 	uniform int randomSeed;
 
 	uniform float brightness;
+	uniform float progress;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
@@ -42,6 +43,7 @@ struct LightningVertex
 {
     vec4 position;
 	vec2 texCoords;				// x= width in pixels
+	float progress;
 };
 
 #ifndef __cplusplus
@@ -49,6 +51,7 @@ struct LightningVertexInput
 {
     vec3 position		: POSITION;
     vec2 texCoords		: TEXCOORD0;
+	float progress		: TEXCOORD1;
 };
 struct LightningVertexOutput
 {
@@ -57,6 +60,7 @@ struct LightningVertexOutput
     float thicknessMetres	: TEXCOORD1;
 	float depth				: TEXCOORD2;
 	float endpoint			: TEXCOORD3;
+	float progress			: TEXCOORD4;
 };
 #endif
 
