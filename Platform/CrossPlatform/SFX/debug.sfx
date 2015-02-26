@@ -102,7 +102,7 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 	vec4 colour		=texture_nearest_lod(volumeTexture,vec3(texc,z),0);
 	//if(IN.texCoords.x<.5)
 		colour.r+=colour.a;
-	//colour.rgb =abs( colour.rgb);
+	colour.rgb =abs( colour.rgb);
 //	colour+=(isinf(colour))*vec4(.5,1,1,1);
 //	colour+=isnan(colour)*vec4(1,.5,1,1);
 	//	colour.b+=z;
