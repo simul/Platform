@@ -201,7 +201,7 @@ vec3 applyFades2(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 vol
 #ifdef INFRARED
 	//c			=skyl.rgb;
 #else
-	vec3 inscatter	=earthshadowMultiplier*texture_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0).rgb;
+	vec3 inscatter	=texture_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0).rgb;
 	c				+=inscatter;
 #endif
     return c;
