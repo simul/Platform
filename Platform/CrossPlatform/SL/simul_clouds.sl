@@ -405,8 +405,8 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	float lastFadeDistance			=0.0;
 	// x starts at 1, so gets initialized at the first cloud found.
 	// y starts at 0, so gets the furthest value.
-	vec4 nearFarDepth = vec4(1.0, 0.0, 0.0, 0.0);
-	float max_spectral_flux=max(max(spectralFluxOver1e6.r,spectralFluxOver1e6.g),spectralFluxOver1e6.b);
+	vec4 nearFarDepth				= vec4(1.0, 0.0, 0.0, 0.0);
+	float max_spectral_flux			=max(max(spectralFluxOver1e6.r,spectralFluxOver1e6.g),spectralFluxOver1e6.b);
 
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
 	for(int i=0;i<255;i++)

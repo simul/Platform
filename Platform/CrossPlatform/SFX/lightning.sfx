@@ -87,8 +87,9 @@ shader void GS_Fractal(line F_Vertex IN[2],inout PointStream<F_Vertex> vStream)
 	}
 	for(uint ii=0;ii<num_pts;ii++)
 	{
+		float c=saturate(float(ii)/9.0);
 		OUT.position		=outpos[ii];
-		OUT.texcoord		=vec2(strikeThicknessMetres,brightness);
+		OUT.texcoord		=c*vec2(strikeThicknessMetres,brightness);
 		OUT.progress		=ii/float(num_pts);
 		vStream.Append(OUT);
 	}
@@ -168,10 +169,11 @@ shader void GS_Branch(line F_IdVertex IN[2], inout PointStream<F_Vertex> vStream
 
 	for(int ii=0;ii<num_pts;ii++)
 	{
+		float c				=saturate(float(num_pts-ii)/5.0);
 		OUT.position		=outpos[ii];
 		float br			=brightness*saturate(float(num_steps-ii)/5.0);
 		float endpoint		=float(ii>(num_steps-2));
-		OUT.texcoord		=vec2(strikeThicknessMetres,br);
+		OUT.texcoord		=c*vec2(strikeThicknessMetres,br);
 		OUT.progress		=IN[0].progress+float(ii)/float(num_pts);
 		vStream.Append(OUT);
 	}
@@ -589,6 +591,7 @@ technique lightning_thick
 {
     pass reverse_depth 
     {
+		//SetDepthStencilState(TestReverseDepth,0);
         SetRasterizerState(RenderNoCull);
 		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
@@ -598,6 +601,7 @@ technique lightning_thick
     }
     pass forward_depth 
     {
+		//SetDepthStencilState(TestForwardDepth,0);
         SetRasterizerState(RenderNoCull);
 		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
