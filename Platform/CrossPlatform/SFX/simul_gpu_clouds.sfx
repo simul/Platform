@@ -136,7 +136,7 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 buoyant			=g*(props.z*(1.0+0.61*props.y)/300.0-props.x-1.0)*vec3(0,0,1.0);
 	vec3 delta				=buoyant*time_step;//15*F*time_step*exp(-d2/r2);
 	if(pos.z==0)
-		delta				+=0.1*saturate(texture_wwc_lod(volumeNoiseTexture,5*texc,0).x)*vec3(0,0,1.0)*time_step;
+		delta				+=step(.2,d2)*saturate(texture_wwc_lod(volumeNoiseTexture,5*texc,0).x)*vec3(0,0,1.0)*time_step;
 	vd.xyz					+=delta;
 	IMAGE_STORE_3D(outputTexture,pos,vd);
 }
