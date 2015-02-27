@@ -619,7 +619,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		offset_vec	=(world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
 	}
 	world_pos						+=offset_vec;
-	vec3 gridOriginPos				=cornerPos+0.25/inverseScales.z;
 	float viewScale					=length(viewScaled*scaleOfGridCoords);
 	vec3 startOffsetFromOrigin		=viewPos-gridOriginPos;
 	vec3 offsetFromOrigin			=startOffsetFromOrigin;

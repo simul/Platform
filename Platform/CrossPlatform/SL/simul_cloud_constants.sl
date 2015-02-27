@@ -34,6 +34,8 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 scaleOfGridCoords;
 	uniform int halfClipSize;			// Actually half the full clip size.
+	uniform vec3 gridOriginPos;
+	uniform float pad151663;
 	uniform vec3 viewPos;
 	uniform uint layerIndex;
 	uniform mat4 invViewProj;
