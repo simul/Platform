@@ -92,12 +92,13 @@ shader void CS_InitSimulation( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID 
 	vec4 lookup				=TEXTURE_LOAD_3D(inputTexture3D,pos);
 	vec2 from_ctr			=texc.xy-vec2(0.5,0.5);
 	float u					=step(length(from_ctr),0.1);
-	float T					=290;//+150.0*u;
+	float T					=230;//+150.0*u;
 	//vec4 newval				=vec4(lookup.z,0,T,0);
 	//float T					=295;//+150.0*u;
+	// .61v = c
 	float q					=0.05;
 	float qc				=q*lookup.z;
-	float qv				=0.002;//04-qc;
+	float qv				=qc/0.61;//04-qc;
 	vec4 newval				=vec4(qc,qv,T,0);
 	IMAGE_STORE_3D(outputTexture,pos,newval);
 }
@@ -112,8 +113,30 @@ shader void CS_Advection( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec4 c1					=TEXTURE_LOAD_3D(inputTexture3DB,pos);
 	// transformMatrix is world-to-cloud transform
 	vec4 newval				=advect(texc,time_step,cloudScalesKm,c1.xyz,inputTexture3D);
-	//float emission_diff		=step(length(texc-vec3(0.5,0.5,0.5)),0.1);
-	vec3 noisespace_texc	=texc*vec3(noiseScale)+vec3(time,0,0);
+	//float emission_diff	=step(length(texc-vec3(0.5,0.5,0.5)),0.1);
+	//vec3 noisespace_texc	=texc*vec3(noiseScale)+vec3(time,0,0);
+	IMAGE_STORE_3D(outputTexture,pos,newval);
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Vorticity( uint3 gr: SV_GroupID, uint3 t: SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos		=gr*8+t;
+	vec3 texc		=convertPosToTexc(pos,dims);
+	vec3 gridScale	=cloudScalesKm/vec3(dims);
+	vec3 d			=vec3(0.5,0.5,0.5)/vec3(dims);
+	vec4 wL			=texture_wwc_lod(inputTexture3D,texc-vec3(d.x,0,0),0);
+	vec4 wR			=texture_wwc_lod(inputTexture3D,texc+vec3(d.x,0,0),0);
+	vec4 wB			=texture_wwc_lod(inputTexture3D,texc-vec3(0,d.y,0),0);
+	vec4 wF			=texture_wwc_lod(inputTexture3D,texc+vec3(0,d.y,0),0);
+	vec4 wD			=texture_wwc_lod(inputTexture3D,texc-vec3(0,0,d.z),0);
+	vec4 wU			=texture_wwc_lod(inputTexture3D,texc+vec3(0,0,d.z),0);
+	vec3 w			=vec3(	(wF.z - wB.z)/gridScale.y-(wU.y - wD.y)/gridScale.z
+							,(wU.x - wD.x)/gridScale.z-(wR.z - wL.z)/gridScale.x
+							,(wR.y - wL.y)/gridScale.x-(wF.x - wB.x)/gridScale.y);
+	vec4 newval		=vec4(w,length(w));
 	IMAGE_STORE_3D(outputTexture,pos,newval);
 }
 
@@ -136,10 +159,17 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 buoyant			=g*(props.z*(1.0+0.61*props.y)/300.0-props.x-1.0)*vec3(0,0,1.0);
 	vec3 delta				=buoyant*time_step;//15*F*time_step*exp(-d2/r2);
 	if(pos.z==0)
-		delta				+=step(.2,d2)*saturate(texture_wwc_lod(volumeNoiseTexture,5*texc,0).x)*vec3(0,0,1.0)*time_step;
+		delta				+=step(0.2,d2)*saturate(texture_wwc_lod(volumeNoiseTexture,5*texc,0).x)*vec3(0,0,1.0)*time_step;
 	vd.xyz					+=delta;
 	IMAGE_STORE_3D(outputTexture,pos,vd);
 }
+
+// buoyant force is zero when g*(theta*(1.0+0.61*v)/300.0-props.x-1.0)=0
+// where c is cloud mr and v is vapour mr.
+// i.e. theta*(1.0+0.61*v)/300.0=c+1.0
+//             (1+.61v) (theta/300) = 1+c
+// For stable cloud layer, we want the force to decrease with altitude.
+// i.e.			v decreases, c increases, or theta decreases.
 
 CS_LAYOUT(8,8,8)
 shader void CS_CloudUpdate( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
@@ -156,21 +186,32 @@ shader void CS_CloudUpdate( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	float GAMMA		=10.0;		// K/km
 	float z			=(cloudScalesKm*texc).z+3.0;	//  say 3km base
 	float T0		=25.0;		// at sea level
-	float TC		=T0-z*GAMMA;
+	float TC		=T0-z*GAMMA;	// At the lowest texel, we know that T=T0-z GAMMA = T0-(cloudbase*GAMMA) = Tbase
 	float Rd		=287.0;		// J/kg.K
 	float p_ratio	=pow(1.0-z*GAMMA/T0,g/(GAMMA*Rd));
 	float PI		=pow(p_ratio,k);
 	float pPa		=p_ratio*100.0*1000.0;	//Pa pressure
 	// saturation mixing ratio:
-	float qvs		=380.16/pPa*exp(17.67*TC/(TC+243.5));
+	float qvs		=380.16/pPa*exp(17.67*TC/(TC+243.5));			// so at the cloudbase, we have qvs=380.16/pBase*exp(16.67*Tbase/(Tbase+2435))
 	// Properties are: x=cloud, y=water vapour, z=potential temperature, w unused.
 	float dc		=-min(qvs-lookup.y,lookup.x);
 	float Cp		=1006.0;		// J/KG/K
 	lookup.z		+=dc*L*PI/Cp;
 	lookup.x		+=dc;
 	lookup.y		-=dc;
-	//if(pos.z==0)
-	//	lookup.y	+=.0000001;
+	if(pos.z==0)
+	{
+		uint3 noise_dims;
+		GET_DIMENSIONS_3D(volumeNoiseTexture,noise_dims.x,noise_dims.y,noise_dims.z);
+		vec3 noisespace_texcoord	=vec3(texc.xy,0)*vec3(noiseScale)+vec3(1.0,1.0,0);
+		//float n						=texture_wrap_lod(volumeNoiseTexture,noisespace_texcoord,0).x;
+	//	float noise_val					=cos(2.0*3.1415926536*(n+t));
+		float noise_texel			=1.0/float(noise_dims.z);
+		float noise_val				=NoiseFunction2(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,noise_texel);
+		lookup.y					=0.03*saturate(noise_val);
+	//	lookup.y	=0.02*(1.0+cos(time))*step(length(texc.xy),0.01);
+	}
+		//step(length(texc.xy),0.01);
 	IMAGE_STORE_3D(outputTexture,pos,lookup);
 }
 
@@ -295,6 +336,8 @@ shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	//float q=1.0;
 	float q				=0.05;
 	float dens			=saturate(c1.x/q);//2.0*(c1.x-0.25));
+	if(pos.z==0)
+		dens=0;
 	//dens				*=saturate(h/zPixel-0.5)*saturate((1.0-h)/zPixel-1.5);
 	vec2 illum			=vec2(1.0,1.0);
 	vec3 wpos			=texc*cloudScalesKm;
@@ -303,7 +346,7 @@ shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 		wpos			+=lightDir*stepLength;// we expect stepLength in km for this shader
 		texc			=wpos/cloudScalesKm;
 		vec4 lookup		=texture_wwc_lod(inputTexture3D,texc,0);
-		illum			*=exp(-extinctions.xy*lookup.x/q*stepLength);
+		illum			*=exp(-extinctions.xy*saturate(lookup.x/q)*stepLength);
 	}
 	float ambient		=1.0;
 	vec4 res			=vec4(illum.yx,dens,ambient);
@@ -600,6 +643,13 @@ technique cloud_update
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_CloudUpdate()));
+    }
+}
+technique vorticity
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Vorticity()));
     }
 }
 

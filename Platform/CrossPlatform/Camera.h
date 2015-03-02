@@ -165,6 +165,8 @@ namespace simul
 			virtual const float *MakeStereoProjectionMatrix(WhichEye whichEye,float aspect,bool ReverseDepth) const;
 			virtual const float *MakeStereoViewMatrix(WhichEye whichEye) const;
 
+			vec3 ScreenPositionToDirection(float x,float y,float aspect);
+
 			virtual void SetOrientationAsMatrix(const float *);
 			virtual void SetOrientationAsQuaternion(const float *);
 			virtual void SetPosition(const float *);

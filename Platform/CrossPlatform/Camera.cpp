@@ -480,6 +480,26 @@ const float *Camera::MakeStereoViewMatrix(WhichEye ) const
 	return MakeViewMatrix();
 }
 
+		float length(const vec3 &u)
+		{
+			float size=u.x*u.x+u.y*u.y+u.z*u.z;
+			return sqrt(size);
+		}
+
+vec3 Camera::ScreenPositionToDirection(float x,float y,float aspect)
+{
+	Matrix4x4 proj			=MakeDepthReversedProjectionMatrix(aspect);
+	Matrix4x4 view			=MakeViewMatrix();
+	Matrix4x4 ivp;
+	simul::crossplatform::MakeInvViewProjMatrix((float*)&ivp,view,proj);
+	Vector3 clip(x*2.0f-1.0f,1.0f-y*2.0f,1.0f);
+	vec3 res;
+	ivp.Transpose();
+	Multiply4(*((Vector3*)&res),ivp,clip);
+	res=res/length(res);
+	return res;
+}
+
 void Camera::SetCameraViewStruct(const CameraViewStruct &c)
 {
 	cameraViewStruct=c;

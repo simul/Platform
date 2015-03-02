@@ -206,6 +206,7 @@ vec3 applyFades2(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 vol
 #endif
     return c;
 }
+
 vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volumeTexCoords,Texture2D lightTableTexture
 				,vec4 density,float Beta,vec4 lightResponse,vec3 ambientColour
 				,vec3 world_pos,vec3 cloudTexCoords
@@ -596,7 +597,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 #endif
 	vec4 rainbowColour		=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
 												rainbowIntensity,view,lightDir);
-	float moisture				=0.0;
+	float moisture			=0.0;
 
 	vec3 world_pos					=viewPos;
 

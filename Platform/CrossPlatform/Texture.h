@@ -5,6 +5,7 @@
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include <vector>
 #include <string>
+
 namespace sce
 {
 	namespace Gnm
@@ -12,6 +13,7 @@ namespace sce
 		class Texture;
 	}
 }
+
 struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 struct ID3D11DepthStencilView;
@@ -19,6 +21,7 @@ struct ID3D11RenderTargetView;
 struct ID3D11Texture2D;
 struct ID3D11SamplerState;
 typedef unsigned GLuint;
+
 namespace simul
 {
 	namespace crossplatform

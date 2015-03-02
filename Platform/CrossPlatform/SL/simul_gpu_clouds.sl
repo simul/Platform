@@ -185,6 +185,30 @@ float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float pers
 	return dens;
 }
 
+// height is the height of the total cloud volume as a proportion of the initial noise volume
+float NoiseFunction2(Texture3D volumeNoiseTexture,vec2 pos,int octaves,float persistence,float t,float texel)
+{
+	float dens	=0.0;
+	float mult	=0.5;
+	float sum	=0.0;
+	for(int i=0;i<5;i++)
+	{
+		if(i>=octaves)
+			break;
+		vec2 pos2		=pos;
+		float lookup	=texture_wrap_lod(volumeNoiseTexture,vec3(pos2,0.5*texel),0).x;
+		float val		=cos(2.0*3.1415926536*(lookup+t));
+		dens			=dens+mult*val;
+		sum				=sum+mult;
+		mult			=mult*persistence;
+		pos				=pos*2.0;
+		t				=t*2.0;
+	}
+	dens=(dens/sum);
+	return dens;
+}
+
+
 float GpuCloudMask(vec2 texCoords, vec2 maskCentre, float maskRadius, float maskFeather, float maskThickness, mat4 cloudspaceToWorldspaceMatrix)
 {
 	vec3 wPos	= (mul(cloudspaceToWorldspaceMatrix, vec4(texCoords.xy,0, 1))).xyz;
