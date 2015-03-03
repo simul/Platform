@@ -155,7 +155,7 @@ vec4 HalfscaleOnly_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_dims
 		return vec4(0,0,saturate((pos1.y%3)/2.0),0);
 #endif
 	int2 max_pos=source_dims-int2(3,3);
-	int2 min_pos=int2(1,1);
+	int2 min_pos=int2(2,2);
 	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x))
 							,max(min_pos.y,min(pos1.y,max_pos.y)));
 	pos2+=source_offset;
@@ -224,8 +224,8 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_o
 	int2 pos0			=int2(pos*2);
 	int2 pos1			=int2(pos0)-int2(cornerOffset);
 
-	int2 max_pos		=int2(source_dims)-int2(5,5);
-	int2 min_pos		=int2(2,3);
+	int2 max_pos		=int2(source_dims)-int2(11,5);
+	int2 min_pos		=int2(6,3);
 	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x))
 								,max(min_pos.y,min(pos1.y,max_pos.y)));
 	pos2				+=int2(source_offset);
