@@ -8,7 +8,7 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform float noiseDimsZ;
 	uniform vec2 extinctions;
 	uniform float stepLength;
-	uniform float ttt;		
+	uniform float cloudBaseKm;		
 	uniform uint3 gaussianOffset;
 	uniform int octaves;
 	uniform uint3 threadOffset;
@@ -40,6 +40,7 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform float alpha;		// simulation constant;
 
 	uniform float invBeta;
+	uniform int wrap;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

@@ -273,8 +273,7 @@ void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *m
     glPopMatrix();
 }
 
-
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend)
+void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend)
 {
 GL_ERROR_CHECK
 	debugConstants.multiplier=mult;
@@ -1108,7 +1107,7 @@ void RenderPlatform::DrawIndexed		(crossplatform::DeviceContext &deviceContext,i
 	GL_ERROR_CHECK
 }
 
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &,Vertext *lines,int vertex_count,bool strip,bool test_depth,bool view_centred)
+void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *lines,int vertex_count,bool strip,bool test_depth,bool view_centred)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glUseProgram(Utilities::GetSingleton().linedraw_program);
@@ -1121,7 +1120,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &,Vertext *lines,int
 	glBegin(strip?GL_LINE_STRIP:GL_LINES);
 	for(int i=0;i<vertex_count;i++)
 	{
-		const Vertext &V=lines[i];
+		const crossplatform::PosColourVertex &V=lines[i];
 		glColor4f(V.colour.x,V.colour.y,V.colour.z,V.colour.w);
 		glVertex3f(V.pos.x,V.pos.y,V.pos.z);
 	}
@@ -1130,7 +1129,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &,Vertext *lines,int
 	glPopAttrib();
 }
 
-void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,Vertext *lines,int vertex_count,bool strip)
+void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,crossplatform::PosColourVertex *lines,int vertex_count,bool strip)
 {
 	//::Draw2DLines((VertexXyzRgba*)lines,vertex_count,strip);
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -1147,7 +1146,7 @@ void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,Vertext *lines,
 	glBegin(strip?GL_LINE_STRIP:GL_LINES);
 	for(int i=0;i<vertex_count;i++)
 	{
-		Vertext &V=lines[i];
+		crossplatform::PosColourVertex &V=lines[i];
 		glColor4fv(V.colour);
 		glVertex3fv(V.pos);
 	}

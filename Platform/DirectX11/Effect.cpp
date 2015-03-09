@@ -75,7 +75,7 @@ RenderState::~RenderState()
 	SAFE_RELEASE(m_depthStencilState)
 	SAFE_RELEASE(m_blendState)
 }
-static const int NUM_STAGING_BUFFERS=3;
+static const int NUM_STAGING_BUFFERS=4;
 PlatformStructuredBuffer::PlatformStructuredBuffer()
 				:num_elements(0)
 				,element_bytesize(0)
@@ -173,7 +173,7 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 
 void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
 {
-	lastContext->Unmap( stagingBuffers[NUM_STAGING_BUFFERS-1], 0 );
+	lastContext->Unmap(stagingBuffers[NUM_STAGING_BUFFERS-1], 0 );
 	mapped.pData=NULL;
 	lastContext=NULL;
 }

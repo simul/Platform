@@ -562,7 +562,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	res.colour				=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
 	res.depth				=0.0;
-	res.nearFarDepth		=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,0);
+	res.nearFarDepth		=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,1.0);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
@@ -587,7 +587,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	vec4 illum_lookup		=texture_wrap_mirror(illuminationTexture,illum_texc);
 	vec2 nearFarTexc		=illum_lookup.xy;
-	float meanFadeDistance	=0.0;
+	float meanFadeDistance	=1.0;
 	// Precalculate hg effects
 	float BetaClouds		=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	float BetaRayleigh		=CalcRayleighBeta(cos0);
@@ -699,7 +699,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			if(noise)
 				noiseval			=MakeNoise(noiseTexture3D,noise_texc,3.0*fadeDistance);
 			vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
-			float cloud_density		=density.z;
 			if(do_rain_effect)
 			{
 				// The rain fall angle is used:
@@ -721,7 +720,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			{
 				nearFarDepth.x			=min(nearFarDepth.y, fadeDistance);
 				nearFarDepth.y			=fadeDistance;
-				density.z				*=pow(abs(dot(N,viewScaled)),2.0);
+				float cosine			=abs(dot(N,viewScaled));
+				float cloud_density		=density.z;
+				density.z				*=cosine;
+				density.z				*=cosine;
 				density.z				*=saturate(distanceMetres/240.0);
 				float brightness_factor;
 				fade_texc.x				=sqrt(fadeDistance);
@@ -752,7 +754,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					nearColour.a		*=(1.0-clr_n.a);
 				}
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
-				meanFadeDistance		+=fadeDistance*clr.a*cloud_density;
+				meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a*cloud_density);
 				colour.a				*=(1.0-clr.a);
 				if(nearColour.a*brightness_factor<0.003)
 				{
@@ -782,7 +784,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			idx			++;
 		}
 	}
-	meanFadeDistance	+=colour.a;
+//	meanFadeDistance	+=colour.a;
     res.colour			=vec4(exposure*colour.rgb,colour.a);
     res.nearColour		=vec4(exposure*nearColour.rgb,nearColour.a);
 	res.depth			=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthInterpretationStruct,tanHalfFov);

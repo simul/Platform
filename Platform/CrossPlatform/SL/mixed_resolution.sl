@@ -3,7 +3,9 @@
 
 //#define DEBUG_COMPOSITING
 
-#define EDGE_FACTOR (0.0002)
+#define EDGE_FACTOR (0.002)
+
+// A smooth transition from near to far over full height of a 1920x1080 screen would be 1/1080 per pixel = 0.001
 
 #ifndef PI
 #define PI (3.1415926536)

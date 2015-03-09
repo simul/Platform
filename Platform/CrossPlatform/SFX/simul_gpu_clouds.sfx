@@ -80,6 +80,33 @@ vec4 advect(vec3 texc		// grid coordinates
 	return newval;
 }
 
+struct AtmosphericProperties
+{
+	float T_K;
+	float qvs;
+	float PI;
+};
+
+AtmosphericProperties SaturationRatio(float zkm)
+{
+	AtmosphericProperties a;
+	float g			=0.00981;	//km/s2
+	float T0		=273.0+25.0;		// at sea level
+	float p0		=100.0*1000.0;
+	float k			=0.286;
+	float GAMMA		=10.0;		// K/km
+	a.T_K			=T0-zkm*GAMMA;
+	//float TC		=a.T_K-273.0;	// At the lowest texel, we know that T=T0-z GAMMA = T0-(cloudbase*GAMMA) = Tbase
+	// and we want it to be at the dew point at that altitude.
+	float Rd		=287.0;		// J/kg.K
+	float p_ratio	=pow(1.0-zkm*GAMMA/T0,g/(GAMMA*Rd));
+	a.PI			=pow(p_ratio,k);
+	// saturation mixing ratio:
+	//float qvs		=380.16/pPa*exp(17.67*TC/(TC+243.5));
+	a.qvs			=380.16/(p_ratio*p0)*exp(17.67)*exp(-4302.645/(a.T_K-29.5));
+	return a;
+}
+
 // Initially we have a cloud texture where 0 is clear and 1 is cloud.
 // But in the simulation, we use mixing ratios, which can be up to about 50 g/kg (50/1000=0.05)
 CS_LAYOUT(8,8,8)
@@ -87,19 +114,22 @@ shader void CS_InitSimulation( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID 
 {
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
-	uint3 pos				=g*8+t;
-	vec3 texc				=convertPosToTexc(pos,dims);
-	vec4 lookup				=TEXTURE_LOAD_3D(inputTexture3D,pos);
-	vec2 from_ctr			=texc.xy-vec2(0.5,0.5);
-	float u					=step(length(from_ctr),0.1);
-	float T					=230;//+150.0*u;
+	uint3 pos					=g*8+t;
+	vec3 texc					=convertPosToTexc(pos,dims);
+	vec4 lookup					=TEXTURE_LOAD_3D(inputTexture3D,pos);
+	vec2 from_ctr				=texc.xy-vec2(0.5,0.5);
+	float u						=step(length(from_ctr),0.1);
+	float T						=210;//+150.0*u;
 	//vec4 newval				=vec4(lookup.z,0,T,0);
 	//float T					=295;//+150.0*u;
 	// .61v = c
-	float q					=0.05;
-	float qc				=q*lookup.z;
-	float qv				=qc/0.61;//04-qc;
-	vec4 newval				=vec4(qc,qv,T,0);
+	AtmosphericProperties a_base	=SaturationRatio(cloudBaseKm+0.1*cloudScalesKm.z);
+	AtmosphericProperties a_local	=SaturationRatio(cloudBaseKm+cloudScalesKm.z*texc.z);
+
+	float q						=0.05;
+	float qc					=q*lookup.z;
+	float qv					=a_base.qvs*lookup.z;//qc/0.61;//04-qc;
+	vec4 newval					=vec4(qc,qv,lerp(a_local.T_K,a_base.T_K,lookup.z),0);
 	IMAGE_STORE_3D(outputTexture,pos,newval);
 }
 
@@ -159,7 +189,10 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 buoyant			=g*(props.z*(1.0+0.61*props.y)/300.0-props.x-1.0)*vec3(0,0,1.0);
 	vec3 delta				=buoyant*time_step;//15*F*time_step*exp(-d2/r2);
 	if(pos.z==0)
-		delta				+=step(0.2,d2)*saturate(texture_wwc_lod(volumeNoiseTexture,5*texc,0).x)*vec3(0,0,1.0)*time_step;
+		delta.z				+=.5*saturate(saturate(props.y/0.00001)-0.1);//2*step(d2,0.5)*saturate(cos((texture_wwc_lod(volumeNoiseTexture,5*texc,0).x+time*144000)*2.0*3.14159));
+	if(pos.z==dims.z-1)
+		vd.z				=0;
+	delta					+=.001/d2*cross(vec3(0,0,1.0),(vec3(diff.xy,0)));
 	vd.xyz					+=delta;
 	IMAGE_STORE_3D(outputTexture,pos,vd);
 }
@@ -181,34 +214,41 @@ shader void CS_CloudUpdate( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec4 lookup		=TEXTURE_LOAD_3D(inputTexture3D,pos);
 	float p			=TEXTURE_LOAD_3D(inputTexture3DB,pos).x;
 	float L			=2.501;	// Latent heat of vaporization J/kg
-	float k			=0.286;
-	float g			=0.00981;	//km/s2
 	float GAMMA		=10.0;		// K/km
-	float z			=(cloudScalesKm*texc).z+3.0;	//  say 3km base
-	float T0		=25.0;		// at sea level
-	float TC		=T0-z*GAMMA;	// At the lowest texel, we know that T=T0-z GAMMA = T0-(cloudbase*GAMMA) = Tbase
+	float zkm		=(cloudScalesKm*texc).z+cloudBaseKm;	
+	float T0		=273.0+25.0;		// at sea level
+	float p0		=100.0*1000.0;
+	// and we want it to be at the dew point at that altitude.
 	float Rd		=287.0;		// J/kg.K
-	float p_ratio	=pow(1.0-z*GAMMA/T0,g/(GAMMA*Rd));
+	float g			=0.00981;	//km/s2
+	float p_ratio	=pow(1.0-zkm*GAMMA/T0,g/(GAMMA*Rd));
+	float k			=0.286;
 	float PI		=pow(p_ratio,k);
-	float pPa		=p_ratio*100.0*1000.0;	//Pa pressure
 	// saturation mixing ratio:
-	float qvs		=380.16/pPa*exp(17.67*TC/(TC+243.5));			// so at the cloudbase, we have qvs=380.16/pBase*exp(16.67*Tbase/(Tbase+2435))
+	AtmosphericProperties a	=SaturationRatio(zkm);
+
+	// Dobashi's expression for qvs is:
+	//qvs				= 217.0*exp(19.482-4303.4/(T-29.5))/T);			// T is possibly in kelvins here.
+
 	// Properties are: x=cloud, y=water vapour, z=potential temperature, w unused.
-	float dc		=-min(qvs-lookup.y,lookup.x);
+	float dc		=-min(a.qvs-lookup.y,lookup.x);
 	float Cp		=1006.0;		// J/KG/K
 	lookup.z		+=dc*L*PI/Cp;
 	lookup.x		+=dc;
 	lookup.y		-=dc;
 	if(pos.z==0)
 	{
+		AtmosphericProperties a_base	=SaturationRatio(cloudBaseKm+0.1*cloudScalesKm.z);
 		uint3 noise_dims;
 		GET_DIMENSIONS_3D(volumeNoiseTexture,noise_dims.x,noise_dims.y,noise_dims.z);
-		vec3 noisespace_texcoord	=vec3(texc.xy,0)*vec3(noiseScale)+vec3(1.0,1.0,0);
+		vec3 noisespace_texcoord		=vec3(texc.xy,0)*vec3(noiseScale)+vec3(1.0,1.0,0);
 		//float n						=texture_wrap_lod(volumeNoiseTexture,noisespace_texcoord,0).x;
 	//	float noise_val					=cos(2.0*3.1415926536*(n+t));
-		float noise_texel			=1.0/float(noise_dims.z);
-		float noise_val				=NoiseFunction2(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,noise_texel);
-		lookup.y					=0.03*saturate(noise_val);
+		float noise_texel				=1.0/float(noise_dims.z);
+		float noise_val					=NoiseFunction2(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,noise_texel);
+		lookup.y						=a_base.qvs*saturate((noise_val + 2.0*humidity - 1.0) / 0.002);
+		lookup.x						=0;
+		lookup.z						=a_base.T_K;
 	//	lookup.y	=0.02*(1.0+cos(time))*step(length(texc.xy),0.01);
 	}
 		//step(length(texc.xy),0.01);
@@ -334,10 +374,14 @@ shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	float h				=saturate(0.5+float(pos.z)/float(dims.z));
 	//float dens			=saturate(c1.x);//2.0*(c1.x-0.25));
 	//float q=1.0;
-	float q				=0.05;
+	float q				=0.001;
 	float dens			=saturate(c1.x/q);//2.0*(c1.x-0.25));
 	if(pos.z==0)
 		dens=0;
+	if(wrap==0&&pos.x*pos.y*(dims.x-1-pos.x)*(dims.y-1-pos.y)==0)
+	{
+		dens=0;
+	}
 	//dens				*=saturate(h/zPixel-0.5)*saturate((1.0-h)/zPixel-1.5);
 	vec2 illum			=vec2(1.0,1.0);
 	vec3 wpos			=texc*cloudScalesKm;
@@ -396,7 +440,6 @@ shader void CS_Density_DontWrap(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//S
 	vec3 noisespace_texcoord = (densityspace_texcoord + vec3(0, 0, 0.0*zPixel))*vec3(noiseScale) + vec3(1.0, 1.0, 0);
 
 	float noise_texel = 1.0 / float(noise_dims.z);
-
 
 	float height = noiseScale.z;
 	float noise_val = NoiseFunction(volumeNoiseTexture, noisespace_texcoord, octaves, persistence, time, height, noise_texel);
@@ -541,16 +584,12 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	vec3 densityspace_texcoord	=(pos.xyz+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
-	/*vec2 light_lookup			=vec2(filterLight(lightTexture1,lightspace_texcoord)
-										,sample_lod(lightTexture2,lightSamplerState,lightspace_texcoord,0).x);
 	
-	vec2 amb_texel				=vec2(	sample_lod(ambientTexture1,wwcSamplerState,ambient_texcoord,0).x
-										,sample_lod(ambientTexture2,wwcSamplerState,ambient_texcoord,0).x);
-	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));*/
-
-	
+	float density				=saturate(sample_lod(densityTexture,wwcSamplerState,densityspace_texcoord,0).x);
 	vec2 illum			=vec2(1.0,1.0);
 	vec3 wpos			=densityspace_texcoord*cloudScalesKm;
+	if(pos.z==0)
+		wpos.z			+=cloudScalesKm.z*zPixel;
 	for(int i=0;i<12;i++)
 	{
 		wpos			+=lightDir*stepLength;// we expect stepLength in km for this shader
@@ -567,7 +606,6 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		ambient			*=exp(-extinctions.xy*lookup.x*stepLength);
 	}
 
-	float density				=saturate(sample_lod(densityTexture,wwcSamplerState,densityspace_texcoord,0).x);
 
     vec4 res					=vec4(illum.yx,density,ambient.x+ambient.y);
 	IMAGE_STORE_3D(targetTexture,pos,res);

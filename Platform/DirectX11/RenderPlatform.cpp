@@ -1168,7 +1168,7 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 	
 }
 
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *srv,float mult,bool blend)
+void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *srv,vec4 mult,bool blend)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTexture",srv);
@@ -1208,6 +1208,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 			,2.f*(float)dx/(float)viewport.Width
 			,2.f*(float)dy/(float)viewport.Height);
+	debugConstants.sideview=0.0;
 	debugConstants.Apply(deviceContext);
 	{
 		D3D11_PRIMITIVE_TOPOLOGY previousTopology;
@@ -1223,7 +1224,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"imageTexture",NULL);
 }
 
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend)
+void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend)
 {
 	if(!tex)
 		DrawTexture(deviceContext,x1,y1,dx,dy,(ID3D11ShaderResourceView*)NULL,mult,blend);
@@ -1305,7 +1306,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
-void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Vertext *line_vertices,int vertex_count,bool strip,bool test_depth,bool view_centred)
+void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *line_vertices,int vertex_count,bool strip,bool test_depth,bool view_centred)
 {
 	if(!vertex_count)
 		return;
@@ -1331,7 +1332,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 		// Create the vertex buffer:
 		D3D11_BUFFER_DESC desc=
 		{
-			vertex_count*sizeof(Vertext),
+			vertex_count*sizeof(crossplatform::PosColourVertex),
 			D3D11_USAGE_DYNAMIC,
 			D3D11_BIND_VERTEX_BUFFER,
 			D3D11_CPU_ACCESS_WRITE,
@@ -1340,7 +1341,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 		D3D11_SUBRESOURCE_DATA InitData;
 		ZeroMemory( &InitData, sizeof(D3D11_SUBRESOURCE_DATA) );
 		InitData.pSysMem = line_vertices;
-		InitData.SysMemPitch = sizeof(Vertext);
+		InitData.SysMemPitch = sizeof(crossplatform::PosColourVertex);
 		hr=AsD3D11Device()->CreateBuffer(&desc,&InitData,&vertexBuffer);
 
 		const D3D11_INPUT_ELEMENT_DESC decl[] =
@@ -1361,7 +1362,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 		D3D_PRIMITIVE_TOPOLOGY previousTopology;
 		pContext->IAGetPrimitiveTopology(&previousTopology);
 		pContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-		UINT stride = sizeof(Vertext);
+		UINT stride = sizeof(crossplatform::PosColourVertex);
 		UINT offset = 0;
 		UINT Strides[1];
 		UINT Offsets[1];
@@ -1381,7 +1382,7 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,Verte
 	}
 }
 
-void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)
+void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip)
 {
 	if(!vertex_count)
 		return;

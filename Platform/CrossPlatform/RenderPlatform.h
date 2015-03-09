@@ -59,6 +59,12 @@ namespace simul
 			int w,h;
 			float znear,zfar;
 		};
+		/// A vertex format for debugging.
+		struct PosColourVertex
+		{
+			vec3 pos;
+			vec4 colour;
+		};
 		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const Viewport *vi,const Texture *t);
 		/// A base class for API-specific rendering.
@@ -76,11 +82,6 @@ namespace simul
 		{
 		public:
 			RenderPlatform(simul::base::MemoryInterface*m=NULL);
-			struct Vertext
-			{
-				vec3 pos;
-				vec4 colour;
-			};
 			virtual ID3D11Device *AsD3D11Device();
 			//! Call this once, when the 3D graphics device has been initialized, and pass the API-specific device pointer/identifier.
 			virtual void RestoreDeviceObjects(void*);
@@ -107,15 +108,16 @@ namespace simul
 			virtual void DrawCamera			(DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)=0;
 			virtual void DrawLineLoop		(DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4])=0;
 
-			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false)=0;
+			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false)=0;
+			void DrawTexture				(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false);
 			virtual void DrawDepth			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL)=0;
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
 			virtual void DrawQuad			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL)=0;
 			virtual void DrawQuad			(DeviceContext &deviceContext)=0;
 
 			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
-			virtual void DrawLines			(DeviceContext &deviceContext,Vertext *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false)		=0;
-			virtual void Draw2dLines		(DeviceContext &deviceContext,Vertext *lines,int vertex_count,bool strip)		=0;
+			virtual void DrawLines			(DeviceContext &deviceContext,PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false)		=0;
+			virtual void Draw2dLines		(DeviceContext &deviceContext,PosColourVertex *lines,int vertex_count,bool strip)		=0;
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false)		=0;
 			virtual void DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float exposure,float gamma);
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0,bool centred=false)		=0;
@@ -231,7 +233,7 @@ namespace simul
 		/// \param [in]	square_size	Spacing between lines - in whatever units the renderer is working in.
 		/// \param [in]	brightness 	Brightness of the lines.
 		/// \param [in]	numLines	Number of gridlines to draw.
-		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext,float square_size,float brightness,int numLines);
+		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext,vec3 centrePos,float square_size,float brightness,int numLines);
 	}
 }
 

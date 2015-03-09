@@ -137,7 +137,7 @@ std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 
 void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)
 {
-	Vertext line_vertices[2];
+	PosColourVertex line_vertices[2];
 	line_vertices[0].pos=startp;
 	line_vertices[0].colour=colour;
 	line_vertices[1].pos=endp;
@@ -148,6 +148,11 @@ void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const 
 
 void RenderPlatform::DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float exposure,float gamma)
 {
+}
+
+void RenderPlatform::DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend)
+{
+	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend);
 }
 
 void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
@@ -241,15 +246,15 @@ namespace simul
 			}
 			return texcXYWH;
 		}
-		void DrawGrid(crossplatform::DeviceContext &deviceContext,float square_size,float brightness,int numLines)
+		void DrawGrid(crossplatform::DeviceContext &deviceContext,vec3 centrePos,float square_size,float brightness,int numLines)
 		{
 			// 101 lines across, 101 along.
 			numLines++;
-			crossplatform::RenderPlatform::Vertext *lines=new crossplatform::RenderPlatform::Vertext[2*numLines*2];
+			crossplatform::PosColourVertex *lines=new crossplatform::PosColourVertex[2*numLines*2];
 			// one metre apart
-			vec3 cam_pos=crossplatform::GetCameraPosVector(deviceContext.viewStruct.view);
-			vec3 centrePos(square_size*(int)(cam_pos.x/square_size),square_size*(int)(cam_pos.y/square_size),0);
-			crossplatform::RenderPlatform::Vertext *vertex=lines;
+		//	vec3 cam_pos=crossplatform::GetCameraPosVector(deviceContext.viewStruct.view);
+		//	vec3 centrePos(square_size*(int)(cam_pos.x/square_size),square_size*(int)(cam_pos.y/square_size),0);
+			crossplatform::PosColourVertex *vertex=lines;
 			int halfOffset=numLines/2;
 			float l10=brightness;
 			float l5=brightness*0.5f;

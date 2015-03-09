@@ -4,11 +4,12 @@
 SIMUL_CONSTANT_BUFFER(DebugConstants,8)
 	uniform mat4 debugWorldViewProj;
 	uniform vec4 rect;
+	uniform vec4 multiplier;
 
 	uniform int latitudes;
 	uniform int longitudes;
 	uniform float radius;
-	uniform float multiplier;
+	uniform float sideview;
 
 	uniform vec4 viewport;
 	uniform vec4 colour;

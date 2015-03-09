@@ -309,7 +309,7 @@ shader vec4 PS_SnowParticles(particleGeometryOutput IN): SV_TARGET
 	float opacity	=IN.fade*saturate(1.0-radius);//-spoke*spoke);
 	
 	//return vec4(1,0,1,opacity);
-	return vec4(2.0*result.rgb,opacity);
+	return vec4(12.0*result.rgb,opacity);
 }
 
 shader vec4 PS_SnowParticles_NoCubemap(particleGeometryOutput IN): SV_TARGET

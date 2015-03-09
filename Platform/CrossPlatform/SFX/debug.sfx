@@ -83,13 +83,13 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 	texc.y		=1.0-texc.y;
 #endif
 	vec4 res=multiplier*texture_nearest_lod(imageTexture,texc.xy,0);
-	//res.rgb+=IN.texCoords.xyy;
+	res.rgb+=res.a;
 	return res;
 }
 
 shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 {
-	vec2 texc=IN.texCoords.xy;
+	vec2 texc	=IN.texCoords.xy;
 #ifndef GLSL
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y		=1.0-texc.y;
@@ -99,13 +99,11 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 	{
 		z=.5;
 	}
-	vec4 colour		=texture_nearest_lod(volumeTexture,vec3(texc,z),0);
+	vec4 colour		=multiplier*texture_nearest_lod(volumeTexture,vec3(texc.x,lerp(texc.y,z,sideview),lerp(z,texc.y,sideview)),0);
 	//if(IN.texCoords.x<.5)
-		colour.r+=colour.a;
-	colour.rgb =abs( colour.rgb);
-//	colour+=(isinf(colour))*vec4(.5,1,1,1);
-//	colour+=isnan(colour)*vec4(1,.5,1,1);
-	//	colour.b+=z;
+	//	colour.r+=colour.a;
+	colour.rgb =abs(colour.rgb);
+	colour.rgb+=colour.a;
 	return colour;
 }
 
