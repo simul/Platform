@@ -180,9 +180,8 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT void PopShaderPath();
 		extern SIMUL_DIRECTX11_EXPORT void PushTexturePath(const char *pathUtf8);
 		extern SIMUL_DIRECTX11_EXPORT void PopTexturePath();
-		extern SIMUL_DIRECTX11_EXPORT std::vector<std::string> GetTexturePathsUtf8();
-		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename);
-		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename);
+		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename,const std::vector<std::string> &texturePathsUtf8);
+		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename,const std::vector<std::string> &texturePathsUtf8);
 		ID3D11Texture1D* make1DTexture(
 										ID3D11Device			*m_pd3dDevice
 										,int w
@@ -225,11 +224,10 @@ namespace simul
 		void SIMUL_DIRECTX11_EXPORT unbindTextures			(ID3DX11Effect *effect);
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
-		extern SIMUL_DIRECTX11_EXPORT ID3D11ComputeShader *LoadComputeShader(ID3D11Device *d3dDevice,const char *filename);
 		//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename.
-		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,crossplatform::ShaderBuildMode shaderBuildMode);
+		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::vector<std::string> &shaderPathsUtf8,crossplatform::ShaderBuildMode shaderBuildMode);
 		//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename and defines.
-		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode);
+		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines,const std::vector<std::string> &shaderPathsUtf8,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode);
 	}
 }
 

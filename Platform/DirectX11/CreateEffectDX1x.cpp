@@ -91,7 +91,6 @@ namespace simul
 	namespace dx11
 	{
 		std::vector<std::string> shaderPathsUtf8;
-		std::vector<std::string> texturePathsUtf8;
 		std::string shaderbinPathUtf8="shaderbin\\";
 		void PipeCompilerOutput(bool p)
 		{
@@ -123,18 +122,6 @@ namespace simul
 		{
 			return shaderbinPathUtf8.c_str();
 		}
-		void PushTexturePath(const char *path_utf8)
-		{
-			texturePathsUtf8.push_back(path_utf8);
-		}
-		void PopTexturePath()
-		{ 
-			texturePathsUtf8.pop_back();
-		}
-		std::vector<std::string> GetTexturePathsUtf8()
-		{
-			return texturePathsUtf8;
-		}
 	}
 }
 
@@ -152,12 +139,12 @@ HRESULT D3DX11CreateTextureFromFileW(ID3D11Device* pd3dDevice,const wchar_t *fil
 }
 #endif
 
-ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename)
+ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
 {
 	ID3D11ShaderResourceView* tex=NULL;
 	
-	if(!texturePathsUtf8.size())
-		texturePathsUtf8.push_back("media/textures");
+	//if(!texturePathsUtf8.size())
+	//	texturePathsUtf8.push_back("media/textures");
 	std::string str		=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename,texturePathsUtf8);
 	std::wstring wstr	=simul::base::Utf8ToWString(str);
 #if WINVER<0x602
@@ -187,7 +174,7 @@ ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 }
 
 
-ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const char *filename)
+ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
 {
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
 
@@ -210,8 +197,8 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
     loadInfo.Filter         = D3DX11_FILTER_NONE;
 
 	ID3D11Texture2D *tex=NULL;
-	if(!texturePathsUtf8.size())
-		texturePathsUtf8.push_back("media/textures");
+	//if(!texturePathsUtf8.size())
+	//	texturePathsUtf8.push_back("media/textures");
 	for(int i=0;i<(int)texturePathsUtf8.size();i++)
 	{
 		std::wstring wstr	=simul::base::Utf8ToWString((texturePathsUtf8[i]+"/")+filename);
@@ -666,58 +653,13 @@ ERRNO_CHECK
 	return hr;
 }
 
-HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,crossplatform::ShaderBuildMode shaderBuildMode)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::vector<std::string> &shaderPathsUtf8,crossplatform::ShaderBuildMode shaderBuildMode)
 {
 	std::map<std::string,std::string> defines;
-	return simul::dx11::CreateEffect(d3dDevice,effect,filename,defines,0,shaderBuildMode);
+	return simul::dx11::CreateEffect(d3dDevice,effect,filename,defines,shaderPathsUtf8,0,shaderBuildMode);
 }
 
-ID3D11ComputeShader *simul::dx11::LoadComputeShader(ID3D11Device *pd3dDevice,const char *filename_utf8)
-{
-	if(!shaderPathsUtf8.size())
-		shaderPathsUtf8.push_back(std::string("media/hlsl/dx11"));
-	std::string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,shaderPathsUtf8);
-	if(!simul::base::FileLoader::GetFileLoader()->FileExists(fn.c_str()))
-		return NULL;
-	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-#if defined( _DEBUG )
-	dwShaderFlags |= D3DCOMPILE_DEBUG;
-#endif
-
-	LPCSTR pProfile = (pd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ) ? "cs_5_0" : "cs_4_0";
-
-	ID3DBlob* pErrorBlob = NULL;
-	ID3DBlob* pBlob = NULL;
-#if WINVER<0x602
-	HRESULT hr = D3DX11CompileFromFileW(simul::base::Utf8ToWString(fn.c_str()).c_str(), NULL, NULL, "main", pProfile, dwShaderFlags, NULL, NULL, &pBlob, &pErrorBlob, NULL );
-#else
-	HRESULT hr=D3DCompileFromFile(simul::base::Utf8ToWString(fn.c_str()).c_str(), NULL, NULL,"main", pProfile, dwShaderFlags, NULL, &pBlob,&pErrorBlob);
-#endif
-	if ( FAILED(hr) )
-	{
-		if ( pErrorBlob )
-			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
-		if(pErrorBlob)
-			pErrorBlob->Release();
-		if(pBlob)
-			pBlob->Release();
-
-		return NULL;
-	}
-	else
-	{
-		ID3D11ComputeShader *computeShader;
-		hr = pd3dDevice->CreateComputeShader( pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL,&computeShader );
-		if(pErrorBlob)
-			pErrorBlob->Release();
-		if(pBlob)
-			pBlob->Release();
-
-		return computeShader;
-	}
-}
-
-HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,const std::vector<std::string> &shaderPathsUtf8,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode)
 {
 	SIMUL_ASSERT_WARN(d3dDevice!=NULL,"Null device");
 	HRESULT hr=S_OK;

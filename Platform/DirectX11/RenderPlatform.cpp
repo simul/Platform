@@ -226,16 +226,6 @@ void RenderPlatform::RecompileShaders()
 	}
 }
 
-void RenderPlatform::PushTexturePath(const char *pathUtf8)
-{
-	simul::dx11::PushTexturePath(pathUtf8);
-}
-
-void RenderPlatform::PopTexturePath()
-{
-	simul::dx11::PopTexturePath();
-}
-
 void RenderPlatform::StartRender(crossplatform::DeviceContext &)
 {
 	/*glPushAttrib(GL_ENABLE_BIT);
@@ -511,7 +501,7 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	{
 		tex=new dx11::Texture();
 		if(fileNameUtf8)
-			tex->LoadFromFile(this,fileNameUtf8);
+			tex->LoadFromFile(this,fileNameUtf8,texturePathsUtf8);
 	}
 	return tex;
 }
@@ -561,7 +551,8 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	std::string fn(filename_utf8);
-	crossplatform::Effect *e= new dx11::Effect(this,filename_utf8,defines);
+	crossplatform::Effect *e= new dx11::Effect();
+	e->Load(this,filename_utf8,defines,dx11::GetShaderPathsUtf8());
 	e->SetName(filename_utf8);
 	return e;
 }

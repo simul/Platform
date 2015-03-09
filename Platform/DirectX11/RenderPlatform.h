@@ -47,8 +47,6 @@ namespace simul
 			{
 				return device;
 			}
-			void PushTexturePath(const char *pathUtf8);
-			void PopTexturePath();
 			void StartRender(crossplatform::DeviceContext &deviceContext);
 			void EndRender(crossplatform::DeviceContext &deviceContext);
 			void IntializeLightingEnvironment(const float pAmbientLight[3]);

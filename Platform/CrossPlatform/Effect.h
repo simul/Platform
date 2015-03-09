@@ -428,7 +428,7 @@ namespace simul
 			{
 				return filename.c_str();
 			}
-			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
+			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines,const std::vector<std::string> &shaderPathsUtf8)=0;
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;

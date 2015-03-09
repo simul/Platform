@@ -53,7 +53,7 @@ void Texture::InvalidateDeviceObjects()
 	GL_ERROR_CHECK
 }
 // Load a texture file
-void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *,const char *pFilePathUtf8)
+void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *,const char *pFilePathUtf8,const std::vector<std::string> &pathsUtf8)
 {
 	dim=2;
 	std::string filename(pFilePathUtf8);
@@ -62,11 +62,11 @@ void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *,const char *p
 	pTextureObject		=0;
 	if(dot_pos>=0&&dot_pos<(int)filename.length())
 		extension		=filename.substr(dot_pos+1,filename.length()-dot_pos-1);
-	pTextureObject		=LoadGLImage(pFilePathUtf8,GL_REPEAT,&width,&length);
+	pTextureObject		=LoadGLImage(pFilePathUtf8,pathsUtf8,GL_REPEAT,&width,&length);
 	return ;
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,const std::vector<std::string> &texturePathsUtf8)
 {
 ERRNO_CHECK
 	glGenTextures(1, &pTextureObject);
@@ -86,7 +86,7 @@ ERRNO_CHECK
 	//glTexParameterfv(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_BORDER_COLOR, borderColor);
 	unsigned bpp;
 	GL_ERROR_CHECK
-	unsigned char *data=LoadGLBitmap(texture_files[0].c_str(),bpp,width,length);
+	unsigned char *data=LoadGLBitmap(texture_files[0].c_str(),texturePathsUtf8,bpp,width,length);
 	GL_ERROR_CHECK
 ERRNO_CHECK
 	if(!data)
@@ -106,7 +106,7 @@ ERRNO_CHECK
 		{
 			for(int j=0;j<depth;j++)
 			{
-				unsigned char *data=LoadGLBitmap(texture_files[j].c_str(),bpp,width,length);
+				unsigned char *data=LoadGLBitmap(texture_files[j].c_str(),texturePathsUtf8,bpp,width,length);
 				glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,j,width/m,length/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,data);
 			}
 		}

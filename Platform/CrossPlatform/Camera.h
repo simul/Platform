@@ -22,7 +22,7 @@ namespace simul
 			float nearZ,farZ,tanHalfHorizontalFov,tanHalfVerticalFov;
 			bool reverseDepth;
 		};
-		/// A useful class to represent the state of a mouse-controlled camera.
+		/// A struct to represent the state of a mouse-controlled camera.
 		struct SIMUL_CROSSPLATFORM_EXPORT MouseCameraState
 		{
 			MouseCameraState()
@@ -44,7 +44,7 @@ namespace simul
 			float rightTan;
 		};
 
-		/// A useful class to provide input to a mouse-controlled camera.
+		/// A struct to provide input to a mouse-controlled camera.
 		/// Store persistently, as it needs to use the difference between current
 		/// and previous mouse positions.
 		struct SIMUL_CROSSPLATFORM_EXPORT MouseCameraInput

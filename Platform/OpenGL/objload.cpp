@@ -871,7 +871,7 @@ if(			gr.m_AssignedMaterials.size())
 	}
 }
 
-bool File::Load(const char filename[])
+bool File::Load(const char filename[],const std::vector<std::string> &texturePathsUtf8)
 {
 	MF_FUNC(File__Load);
 	Filename = filename;
@@ -1002,9 +1002,9 @@ bool File::Load(const char filename[])
 					mtl_file = ptr;
 				}
 
-				if (!LoadMtl(mtl_file.c_str()))
+				if (!LoadMtl(mtl_file.c_str(),texturePathsUtf8))
 				{
-					if (!LoadMtl(ptr))
+					if (!LoadMtl(ptr,texturePathsUtf8))
 					{
 						std::cerr << "[WARNING] Unable to load material file\n";
 					}
@@ -1184,7 +1184,7 @@ bool File::Save(const char filename[]) const
 }
 
 // loads the specified material file
-bool File::LoadMtl(const char filename[])
+bool File::LoadMtl(const char filename[],const std::vector<std::string> &texturePathsUtf8)
 {
 	MF_FUNC(File__LoadMtl);
 	std::ifstream ifs(filename);
@@ -1224,7 +1224,7 @@ bool File::LoadMtl(const char filename[])
 				while (*ptr == ' ' || *ptr == '\t')
 					++ptr;
 				pmat->map_Ka = ptr;
-				pmat->gltex_Ka = OnLoadTexture(pmat->map_Ka.c_str());
+				pmat->gltex_Ka = OnLoadTexture(pmat->map_Ka.c_str(),texturePathsUtf8);
 			}
 			else if (s == "map_Kd")
 			{
@@ -1234,7 +1234,7 @@ bool File::LoadMtl(const char filename[])
 				while (*ptr == ' ' || *ptr == '\t')
 					++ptr;
 				pmat->map_Kd = ptr;
-				pmat->gltex_Kd = OnLoadTexture(pmat->map_Kd.c_str());
+				pmat->gltex_Kd = OnLoadTexture(pmat->map_Kd.c_str(),texturePathsUtf8);
 			}
 			else if (s == "map_Ks")
 			{
@@ -1244,7 +1244,7 @@ bool File::LoadMtl(const char filename[])
 				while (*ptr == ' ' || *ptr == '\t')
 					++ptr;
 				pmat->map_Ks = ptr;
-				pmat->gltex_Ks = OnLoadTexture(pmat->map_Ks.c_str());
+				pmat->gltex_Ks = OnLoadTexture(pmat->map_Ks.c_str(),texturePathsUtf8);
 			}
 			else if (s == "bump")
 			{
@@ -1267,7 +1267,7 @@ bool File::LoadMtl(const char filename[])
 				pmat->map_Bump = ptr;
 				flag += 3;
 				sscanf(flag, "%d", &pmat->Bm);
-				pmat->gltex_Bump = OnLoadTexture(pmat->map_Bump.c_str());
+				pmat->gltex_Bump = OnLoadTexture(pmat->map_Bump.c_str(),texturePathsUtf8);
 			}
 		}
 		ifs.close();
@@ -1632,7 +1632,7 @@ void File::GroupsToVertexArrays()
 	}
 }
 
-unsigned int File::OnLoadTexture(const char filename[])
+unsigned int File::OnLoadTexture(const char filename[],const std::vector<std::string> &texturePathsUtf8)
 {
 	int last_slash = (int)Filename.find_last_of('/');
 	int last_backslash = (int)Filename.find_last_of('\\');
@@ -1641,5 +1641,5 @@ unsigned int File::OnLoadTexture(const char filename[])
 	std::string fn = Filename.substr(0, last_slash);
 	fn += "/";
 	fn += filename;
-	return LoadGLImage(fn.c_str(), GL_REPEAT);
+	return LoadGLImage(fn.c_str(),texturePathsUtf8, GL_REPEAT);
 }

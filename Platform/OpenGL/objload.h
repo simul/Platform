@@ -636,9 +636,9 @@ namespace Obj
 		/// releases all object data
 		void Release();
 		/// loads the specified obj file
-		bool Load(const char filename[]);
+		bool Load(const char filename[],const std::vector<std::string> &pathsUtf8);
 		/// loads the specified material file
-		bool LoadMtl(const char filename[]);
+		bool LoadMtl(const char filename[],const std::vector<std::string> &pathsUtf8);
 		/// saves the obj file & related material file
 		bool Save(const char filename[]) const;
 		/// saves the mtl file
@@ -659,7 +659,7 @@ namespace Obj
 		std::vector < Surface > surfaces;
 		std::vector<VertexBuffer> vertex_buffers;
 		/// overide to handle loading of texture data
-		virtual unsigned int OnLoadTexture(const char filename[]);
+		virtual unsigned int OnLoadTexture(const char filename[],const std::vector<std::string> &pathsUtf8);
 		/// overload this to change the way the material is specified
 		/// (ie, custom shaders rather than glMaterialfv() )
 		virtual void OnBindMaterial(const Material& mat) const

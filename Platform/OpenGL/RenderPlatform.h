@@ -30,8 +30,6 @@ namespace simul
 			{
 				return NULL;
 			}
-			void PushTexturePath(const char *pathUtf8);
-			void PopTexturePath();
 			void StartRender(crossplatform::DeviceContext &deviceContext);
 			void EndRender(crossplatform::DeviceContext &deviceContext);
 			void SetReverseDepth(bool);

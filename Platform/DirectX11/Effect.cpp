@@ -333,17 +333,12 @@ dx11::Effect::Effect() :currentPass(NULL)
 {
 }
 
-dx11::Effect::Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
-{
-	Load(renderPlatform,filename_utf8,defines);
-}
-
 EffectTechnique *Effect::CreateTechnique()
 {
 	return new dx11::EffectTechnique;
 }
 #define D3DCOMPILE_DEBUG 1
-void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines,const std::vector<std::string> &shaderPathsUtf8)
 {
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
 	SAFE_RELEASE(e);
@@ -353,15 +348,15 @@ void dx11::Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char
 	std::string filename_fx(filename_utf8);
 	if(filename_fx.find(".")>=filename_fx.length())
 		filename_fx+=".fx";
-	filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(),dx11::GetShaderPathsUtf8());
+	filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(),shaderPathsUtf8);
 	if(filenameInUseUtf8.length()==0)
 	{
 		filename_fx=(filename_utf8);
 		if(filename_fx.find(".")>=filename_fx.length())
 			filename_fx+=".sfx";
-		filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(),dx11::GetShaderPathsUtf8());
+		filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(),shaderPathsUtf8);
 	}
-	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_fx.c_str(),defines,0,renderPlatform->GetShaderBuildMode());//D3DCOMPILE_OPTIMIZATION_LEVEL3);D3DCOMPILE_DEBUG
+	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_fx.c_str(),defines,shaderPathsUtf8,0,renderPlatform->GetShaderBuildMode());//D3DCOMPILE_OPTIMIZATION_LEVEL3);D3DCOMPILE_DEBUG
 	platform_effect	=e;
 	groups.clear();
 	if(e)

@@ -45,16 +45,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 }
 
-void RenderPlatform::PushTexturePath(const char *pathUtf8)
-{
-	simul::opengl::PushTexturePath(pathUtf8);
-}
-
-void RenderPlatform::PopTexturePath()
-{
-	simul::opengl::PopTexturePath();
-}
-
 void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 {
 	glPushAttrib(GL_ENABLE_BIT);
@@ -482,7 +472,7 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture * tex=new opengl::Texture;
 	if(fileNameUtf8)
-		tex->LoadFromFile(this,fileNameUtf8);
+		tex->LoadFromFile(this,fileNameUtf8,texturePathsUtf8);
 	return tex;
 }
 
@@ -537,7 +527,7 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 {
 GL_ERROR_CHECK
 	opengl::Effect *e=new opengl::Effect();
-	e->Load(this,filename_utf8,defines);
+	e->Load(this,filename_utf8,defines,opengl::GetShaderPathsUtf8());
 	e->SetName(filename_utf8);
 	if(e->platform_effect==(void*)0xFFFFFFFF)
 	{

@@ -116,7 +116,7 @@ namespace simul
 			{
 				return (GLint)(uintptr_t)platform_effect;
 			}
-			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
+			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines,const std::vector<std::string> &shaderPathsUtf8);
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
 			void SetUnorderedAccessView(crossplatform::DeviceContext&,const char *name,crossplatform::Texture *tex,int mip=0);

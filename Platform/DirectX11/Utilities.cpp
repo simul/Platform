@@ -134,13 +134,13 @@ create the associated Texture2D resource as a Texture2D array resource, and then
 5. Call CreateTexture2D with the desired array size, and pass the array of D3D10_SUBRESOURCE_DATA's
 6. Create a shader resource view for the texture 
 */
-void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string> &texture_files)
+void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string> &texture_files,const std::vector<std::string> &pathsUtf8)
 {
 	release();
 	std::vector<ID3D11Texture2D *> textures;
 	for(unsigned i=0;i<texture_files.size();i++)
 	{
-		textures.push_back(simul::dx11::LoadStagingTexture(pd3dDevice,texture_files[i].c_str()));
+		textures.push_back(simul::dx11::LoadStagingTexture(pd3dDevice,texture_files[i].c_str(),pathsUtf8));
 	}
 	D3D11_TEXTURE2D_DESC desc;
 //	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[textures.size()];

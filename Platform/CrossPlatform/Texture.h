@@ -67,8 +67,8 @@ namespace simul
 				,mips(1)
 				,pixelFormat(crossplatform::UNKNOWN){}
 			virtual ~Texture();
-			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
-			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files)=0;
+			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8,const std::vector<std::string> &pathsUtf8)=0;
+			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,const std::vector<std::string> &pathsUtf8)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual sce::Gnm::Texture *AsGnmTexture(){return 0;}

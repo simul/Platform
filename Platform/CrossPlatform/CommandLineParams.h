@@ -8,6 +8,7 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		/// A simple structure to store the command-line parameters for an executable.
 		struct CommandLineParams
 		{
 			int quitafterframe;
@@ -18,6 +19,7 @@ namespace simul
 			bool screenshot;
 			std::string screenshotFilenameUtf8;
 		};
+		/// Convert the inputs to an executable into a CommandLineParams struct.
 		inline void GetCommandLineParams(crossplatform::CommandLineParams &commandLineParams,int argCount,const char **szArgList)
 		{
 			commandLineParams.pos_x=16;
@@ -71,6 +73,7 @@ namespace simul
 			}
 		}
 		
+		/// Convert the inputs to an executable into a CommandLineParams struct.
 		inline void GetCommandLineParams(crossplatform::CommandLineParams &commandLineParams,int argCount,const wchar_t **szArgList)
 		{
 			char **args=new char *[argCount];

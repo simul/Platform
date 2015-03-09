@@ -23,7 +23,6 @@ namespace simul
 			virtual ~HdrRenderer();
 			META_BeginProperties
 				META_ValueProperty(bool,Glow,"Whether to apply a glow effect")
-				META_ValuePropertyWithSetCall(bool,ReverseDepth,RecompileShaders,"")
 			META_EndProperties
 			void SetBufferSize(int w,int h);
 			//! Call when we've got a fresh device - on startup or when the device has been restored.

@@ -13,24 +13,10 @@
 #endif
 using namespace std;
 
-static vector<string> texturePathsUtf8;
-
 namespace simul
 {
 	namespace opengl
 	{
-		void PushTexturePath(const char *path_utf8)
-		{
-			string str=string(path_utf8);
-			if(str.find_last_of("/")!=str.length()-1
-				&&str.find_last_of('\\')!=str.length()-1)
-				str+="/";
-			texturePathsUtf8.push_back(str);
-		}
-		void PopTexturePath()
-		{ 
-			texturePathsUtf8.pop_back();
-		}
 	}
 }
 static bool FileExists(const string& filename_utf8)
@@ -101,7 +87,7 @@ ERRNO_CHECK
 }
 
 #include "Simul/Base/FileLoader.h"
-GLuint LoadGLImage(const char *filename_utf8,unsigned wrap,int *w,int *h)
+GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &texturePathsUtf8,unsigned wrap,int *w,int *h)
 {
 	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
 	if(!FileExists(fn.c_str()))
@@ -201,10 +187,10 @@ GL_ERROR_CHECK
 	delete [] pixels;
 }
 #include "Simul/Base/FileLoader.h"
-unsigned char *LoadGLBitmap(const char *filename_utf8,unsigned &bpp,int &width,int &height)
+unsigned char *LoadGLBitmap(const char *filename_utf8,const std::vector<std::string> &pathsUtf8,unsigned &bpp,int &width,int &height)
 {
 ERRNO_CHECK
-	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
+	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,pathsUtf8);
 ERRNO_CHECK
 	return LoadBitmap(fn.c_str(),bpp,width,height);
 }

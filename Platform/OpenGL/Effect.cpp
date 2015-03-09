@@ -368,7 +368,7 @@ void includeCallbackFunc(const char *incName, FILE *&fp, const char *&buf)
 	ERRNO_CHECK
 }
 
-void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines,const std::vector<std::string> &shaderPathsUtf8)
 {
 	filename=filename_utf8;
 	bool retry=true;
@@ -380,13 +380,13 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 		std::string filename_fx(filename_utf8);
 		if(filename_fx.find(".")>=filename_fx.length())
 			filename_fx+=".glfx";
-		filenameInUseUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(), opengl::GetShaderPathsUtf8());
+		filenameInUseUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(), shaderPathsUtf8);
 		if(filenameInUseUtf8.length()==0)
 		{
 			std::string filename_sfx(filename_utf8);
 			if(filename_sfx.find(".")>=filename_fx.length())
 				filename_sfx+=".sfx";
-			filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_sfx.c_str(),opengl::GetShaderPathsUtf8());
+			filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_sfx.c_str(),shaderPathsUtf8);
 			fn_utf8+=".sfx";
 		}
 		else
@@ -397,7 +397,7 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 			return;
 		}
 		GLint effect = glfxGenEffect();
-		vector<string> p = opengl::GetShaderPathsUtf8();
+		vector<string> p = shaderPathsUtf8;
 
 		const char **paths = new const char *[p.size() + 1];
 		for (int i = 0; i < p.size(); i++)

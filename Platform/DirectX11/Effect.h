@@ -100,10 +100,9 @@ namespace simul
 			EffectTechnique *CreateTechnique();
 			ID3DX11EffectPass *currentPass;
 		public:
-			Effect(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			Effect();
 			virtual ~Effect();
-			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
+			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines,const std::vector<std::string> &shaderPathsUtf8);
 			void InvalidateDeviceObjects();
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
