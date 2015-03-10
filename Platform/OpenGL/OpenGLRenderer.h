@@ -35,6 +35,7 @@ namespace simul
 	}
 	namespace opengl
 	{
+		class RenderPlatform;
 		SIMUL_OPENGL_EXPORT_CLASS OpenGLRenderer
 			:public OpenGLCallbackInterface
 			,public simul::clouds::TrueSkyRenderer
@@ -59,6 +60,7 @@ namespace simul
 			void ReloadTextures();
 			void RecompileShaders();
 			void SaveScreenshot(const char *filename_utf8);
+			simul::opengl::RenderPlatform *renderPlatformOpenGL;
 		protected:
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
 			GLuint simple_program;

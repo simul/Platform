@@ -472,7 +472,7 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture * tex=new opengl::Texture;
 	if(fileNameUtf8)
-		tex->LoadFromFile(this,fileNameUtf8,texturePathsUtf8);
+		tex->LoadFromFile(this,fileNameUtf8);
 	return tex;
 }
 

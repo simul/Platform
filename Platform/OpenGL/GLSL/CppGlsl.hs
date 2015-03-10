@@ -170,7 +170,7 @@
 	typedef int sampler3D;
 
 	// C++ sees a layout as a struct, and doesn't care about uniforms
-	#define layout(std140) struct
+	//#define layout(std140) struct
 	#define uniform
 
 #endif

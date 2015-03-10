@@ -598,6 +598,7 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		illum			*=exp(-extinctions.xy*lookup.x*stepLength);
 	}
 	vec2 ambient		=vec2(1.0,1.0);
+	wpos				=densityspace_texcoord*cloudScalesKm;
 	for(int i=0;i<12;i++)
 	{
 		wpos			+=vec3(0,0,1.0)*stepLength;// we expect stepLength in km for this shader
@@ -607,7 +608,7 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	}
 
 
-    vec4 res					=vec4(illum.yx,density,ambient.x+ambient.y);
+    vec4 res					=vec4(illum.yx,density,0.5*(ambient.x+ambient.y));
 	IMAGE_STORE_3D(targetTexture,pos,res);
 }
 

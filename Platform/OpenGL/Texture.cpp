@@ -53,8 +53,9 @@ void Texture::InvalidateDeviceObjects()
 	GL_ERROR_CHECK
 }
 // Load a texture file
-void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *,const char *pFilePathUtf8,const std::vector<std::string> &pathsUtf8)
+void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
 {
+	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
 	dim=2;
 	std::string filename(pFilePathUtf8);
 	int dot_pos			=(int)filename.find_last_of(".");
@@ -66,9 +67,10 @@ void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *,const char *p
 	return ;
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,const std::vector<std::string> &texturePathsUtf8)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform *renderPlatform,const std::vector<std::string> &texture_files)
 {
 ERRNO_CHECK
+	const std::vector<std::string> &texturePathsUtf8=renderPlatform->GetTexturePathsUtf8();
 	glGenTextures(1, &pTextureObject);
 	if(!IsExtensionSupported("GL_EXT_texture_array"))
 	{

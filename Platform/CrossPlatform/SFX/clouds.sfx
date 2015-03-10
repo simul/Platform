@@ -250,7 +250,6 @@ struct FarNearDepthPixelOutput
 	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
 	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
 	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
-	float depth			SIMUL_DEPTH_OUTPUT;
 };
 
 FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth)
@@ -285,7 +284,6 @@ FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth)
 	fn.farColour=f.colour;
 	fn.nearColour=f.nearColour;
 	fn.nearFarDepth = f.nearFarDepth;
-	fn.depth	=f.depth;
 	return fn;
 }
 
@@ -333,7 +331,6 @@ FarNearDepthPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDept
 	fn.nearColour = f.nearColour;
 	//fn.nearColour	=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,0);
 	fn.nearFarDepth = f.nearFarDepth;
-	fn.depth	=f.depth;
 	return fn;
 }
 

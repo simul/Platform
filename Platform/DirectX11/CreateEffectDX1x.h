@@ -178,8 +178,6 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderBinaryPath(const char *path_utf8);
 		extern SIMUL_DIRECTX11_EXPORT const char *GetShaderBinaryPathUtf8();
 		extern SIMUL_DIRECTX11_EXPORT void PopShaderPath();
-		extern SIMUL_DIRECTX11_EXPORT void PushTexturePath(const char *pathUtf8);
-		extern SIMUL_DIRECTX11_EXPORT void PopTexturePath();
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename,const std::vector<std::string> &texturePathsUtf8);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename,const std::vector<std::string> &texturePathsUtf8);
 		ID3D11Texture1D* make1DTexture(

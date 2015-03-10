@@ -26,7 +26,6 @@ struct RaytracePixelOutput
 	vec4 colour			;
 	vec4 nearColour		;
 	vec4 nearFarDepth	;
-	float depth			;
 };
 
 struct FarNearPixelOutput
@@ -217,10 +216,9 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	vec3 combinedLightColour	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,3.5/4.0),0).rgb;
 	ambientColour				=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
 	vec3 ambient				=density.w*ambientColour.rgb;
-	float opacity				=density.z;
 	vec4 c;
 	c.rgb						=(density.y*Beta+lightResponse.y*density.x)*combinedLightColour+ambient.rgb;
-	c.a							=opacity;
+	c.a							=density.z;
 	brightnessFactor			=unshadowedBrightness(Beta,lightResponse,ambientColour);
 	float earthshadowMultiplier	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 #ifdef INFRARED
@@ -561,7 +559,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	RaytracePixelOutput res;
 	res.colour				=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
-	res.depth				=0.0;
 	res.nearFarDepth		=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,1.0);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
@@ -718,17 +715,21 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			}
 			if(density.z>0)
 			{
+				vec4 clr;
+				float brightness_factor;
+				float cloud_density		=density.z;
+#if 0
+				clr=vec4(1,1,0,1);
+				brightness_factor=1.0;
+#else
 				nearFarDepth.x			=min(nearFarDepth.y, fadeDistance);
 				nearFarDepth.y			=fadeDistance;
 				float cosine			=abs(dot(N,viewScaled));
-				float cloud_density		=density.z;
 				density.z				*=cosine;
 				density.z				*=cosine;
 				density.z				*=saturate(distanceMetres/240.0);
-				float brightness_factor;
 				fade_texc.x				=sqrt(fadeDistance);
 				vec3 volumeTexCoords	=vec3(texCoords,sqrt(fadeDistance));
-				vec4 clr;
 				if (noise)
 					clr				=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
 													,density
@@ -753,6 +754,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					nearColour.rgb		+=clr_n.rgb*clr_n.a*(nearColour.a);
 					nearColour.a		*=(1.0-clr_n.a);
 				}
+#endif
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
 				meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a*cloud_density);
 				colour.a				*=(1.0-clr.a);
@@ -787,7 +789,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 //	meanFadeDistance	+=colour.a;
     res.colour			=vec4(exposure*colour.rgb,colour.a);
     res.nearColour		=vec4(exposure*nearColour.rgb,nearColour.a);
-	res.depth			=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif

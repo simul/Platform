@@ -501,7 +501,7 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	{
 		tex=new dx11::Texture();
 		if(fileNameUtf8)
-			tex->LoadFromFile(this,fileNameUtf8,texturePathsUtf8);
+			tex->LoadFromFile(this,fileNameUtf8);
 	}
 	return tex;
 }

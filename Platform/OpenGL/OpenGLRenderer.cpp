@@ -53,12 +53,12 @@ using namespace opengl;
 using namespace simul;
 using namespace opengl;
 static bool glut_initialized=false;
-simul::opengl::RenderPlatform *renderPlatformOpenGL=NULL;
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut)
 		:clouds::TrueSkyRenderer(env,sc,m)
 	,ShowWater(true)
 	,Exposure(1.0f)
+	,renderPlatformOpenGL(NULL)
 	,simple_program(0)
 {
 	if(!renderPlatformOpenGL)

@@ -79,16 +79,18 @@ void dx11::Texture::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
 // Load a texture file
-void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8,const std::vector<std::string> &pathsUtf8)
+void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
 {
+	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
 	SAFE_RELEASE(shaderResourceView);
 	shaderResourceView	=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8,pathsUtf8);
 	SetDebugObjectName(texture,pFilePathUtf8);
 }
 
-void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files,const std::vector<std::string> &pathsUtf8)
+void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files)
 {
+	const std::vector<std::string> &pathsUtf8=r->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
 	std::vector<ID3D11Texture2D *> textures;
 	for(unsigned i=0;i<texture_files.size();i++)

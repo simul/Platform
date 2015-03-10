@@ -322,16 +322,16 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		{
 			float d					=TEXTURE_LOAD_MSAA(depthTextureMS,fullres_depth_pos2,k).x;
 			depths[k]				=d;
-if(depthInterpretationStruct.reverseDepth)
-{
-			nearestDepth			=max(nearestDepth,d);
-			furthestDepth			=min(furthestDepth,d);
-}
-else
-{
-			nearestDepth			=min(nearestDepth,d);
-			furthestDepth			=max(furthestDepth,d);
-}
+			if(depthInterpretationStruct.reverseDepth)
+			{
+				nearestDepth			=max(nearestDepth,d);
+				furthestDepth			=min(furthestDepth,d);
+			}
+			else
+			{
+				nearestDepth			=min(nearestDepth,d);
+				furthestDepth			=max(furthestDepth,d);
+			}
 		}
 		float nearestDist			=depthToLinearDistance(nearestDepth		,depthInterpretationStruct);
 		float furthestDist			=depthToLinearDistance(furthestDepth	,depthInterpretationStruct);

@@ -5,14 +5,6 @@
 #include <string>
 #include "Simul/Platform/OpenGL/Export.h"
 
-namespace simul
-{
-	namespace opengl
-	{
-		extern SIMUL_OPENGL_EXPORT void PushTexturePath(const char *path_utf8);
-		extern SIMUL_OPENGL_EXPORT void PopTexturePath();
-	}
-}
 #ifndef GL_CLAMP_TO_EDGE
 #define GL_CLAMP_TO_EDGE 0x812F
 #endif
