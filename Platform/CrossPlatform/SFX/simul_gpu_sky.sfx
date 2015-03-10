@@ -124,10 +124,10 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 // The 4 z-values represent ambient, sunlight, moonlight and combined.
 //The 3 y-values represent the three tables for interpolation.
 
-CS_LAYOUT(1,1,1)
+CS_LAYOUT(2,1,1)
 shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
-	uint3 sub_pos = g  + t;
+	uint3 sub_pos = g*2 + t;
 	// threadOffset.y determines the cycled index.
 	uint3 pos			=sub_pos+threadOffset;
 //	if(pos.x>=targetSize.x||pos.y>=targetSize.y)

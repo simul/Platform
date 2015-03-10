@@ -224,7 +224,7 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 #ifdef INFRARED
 	c.rgb						=lerp(cloudIrRadiance1,cloudIrRadiance2,saturate(cloudTexCoords.z));//*c.a;
 #endif
-	c.rgb						=applyFades2( lossTexture, inscatterVolumeTexture,volumeTexCoords,c.rgb,fade_texc,earthshadowMultiplier);
+	//c.rgb						=applyFades2( lossTexture, inscatterVolumeTexture,volumeTexCoords,c.rgb,fade_texc,earthshadowMultiplier);
 
 	return c;
 }

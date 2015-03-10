@@ -29,10 +29,6 @@ uniform Texture3D sourceTexture;
 uniform RWTexture2D<vec4> targetTexture;
 uniform Texture2D lightTable2DTexture;
 
-SIMUL_CONSTANT_BUFFER(cbPerObject,11)
-	vec4 rect;
-SIMUL_CONSTANT_BUFFER_END
-
 #include "../../CrossPlatform/SL/render_states.sl"
 #include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
@@ -41,6 +37,7 @@ SIMUL_CONSTANT_BUFFER_END
 #include "../../CrossPlatform/SL/illumination.sl"
 #include "../../CrossPlatform/SL/sky.sl"
 #include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/debug_constants.sl"
 
 uniform RWStructuredBuffer<LightingQueryResult> lightingQueryResults;
 uniform StructuredBuffer<vec3> lightingQueryInputs;

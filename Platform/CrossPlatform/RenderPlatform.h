@@ -211,6 +211,7 @@ namespace simul
 			{
 				return debugEffect;
 			}
+			ConstantBuffer<DebugConstants> &GetDebugConstantBuffer();
 		protected:
 			simul::base::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;

@@ -1477,7 +1477,7 @@ void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,cons
 		debugConstants.debugWorldViewProj=tmp2;
 		debugConstants.debugWorldViewProj.transpose();
 		debugConstants.radius	=rads;
-		debugConstants.colour	=colr;
+		debugConstants.debugColour	=colr;
 		debugConstants.Apply(deviceContext);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
 	}

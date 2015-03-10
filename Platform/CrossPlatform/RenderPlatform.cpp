@@ -134,6 +134,10 @@ std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;
 }
+ConstantBuffer<DebugConstants> &RenderPlatform::GetDebugConstantBuffer()
+{
+	return debugConstants;
+}
 
 void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)
 {
