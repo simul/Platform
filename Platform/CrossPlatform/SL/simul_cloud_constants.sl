@@ -83,7 +83,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float fractalRepeatLength;
 
 	uniform vec3 sunlightColour2;
-	uniform float maxAltitudeMetres;
+	uniform float fadeAltitudeRangeMetres;
 
 	uniform vec2 screenCoordOffset;
 	uniform vec2 rainTangent;
@@ -94,7 +94,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float rain;
 	uniform float maxFadeDistanceMetres;
 	uniform float noise3DPersistence;
-	uniform float pad1365124633463734;
+	uniform float minSunlightAltitudeMetres;
 
 	uniform vec3 crossSectionOffset;
 	uniform int noise3DOctaves;

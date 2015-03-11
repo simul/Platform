@@ -212,8 +212,9 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 				,vec2 fade_texc,vec2 nearFarTexc
 				,out float brightnessFactor)
 {
-	float alt_texc				=world_pos.z/maxAltitudeMetres;
-	vec3 combinedLightColour	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,3.5/4.0),0).rgb;
+	float sun_alt_texc			=(world_pos.z-minSunlightAltitudeMetres/fadeAltitudeRangeMetres);
+	vec3 combinedLightColour	=texture_clamp_lod(lightTableTexture,vec2(sun_alt_texc,3.5/4.0),0).rgb;
+	float alt_texc				=(world_pos.z/fadeAltitudeRangeMetres);
 	ambientColour				=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
 	vec3 ambient				=density.w*ambientColour.rgb;
 	vec4 c;
@@ -235,7 +236,7 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 , vec2 fade_texc, vec2 nearFarTexc
 , out float brightnessFactor)
 {
-	float alt_texc = world_pos.z / maxAltitudeMetres;
+	float alt_texc = world_pos.z / fadeAltitudeRangeMetres;
 	vec3 combinedLightColour = texture_clamp_lod(lightTableTexture, vec2(alt_texc, 3.5 / 4.0), 0).rgb;
 	ambientColour = lightResponse.w*texture_clamp_lod(lightTableTexture, vec2(alt_texc, 2.5 / 4.0), 0).rgb;
 
