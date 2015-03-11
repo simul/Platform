@@ -23,7 +23,7 @@ SIMUL_CONSTANT_BUFFER(GpuSkyConstants,8)
 	uniform float seaLevelTemperatureK;
 
 	uniform vec3 rayleigh;
-	uniform float XovercastBaseKmX;
+	uniform float atmosphereThicknessKm;
 	uniform vec3 hazeMie;
 	uniform float XovercastRangeKmX;
 	uniform vec3 ozone;
@@ -46,7 +46,7 @@ SIMUL_CONSTANT_BUFFER(GpuSkyConstants,8)
 	uniform float texCoordZ;
 	uniform float blendToColours;
 	uniform float interpColours;
-	uniform float AETJAETJ;
+	uniform float sun_start_alt_km;
 
 	uniform int3 targetSize;
 	uniform float fuyofyu;

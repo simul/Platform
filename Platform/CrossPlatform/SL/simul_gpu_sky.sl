@@ -82,7 +82,38 @@ vec4 getSunlightFactor(Texture2D optical_depth_texture,float alt_km,vec3 Directi
 	return factor;
 }
 
-vec4 getSunlightFactor2(Texture2D optical_depth_texture,float alt_km,vec3 DirectionToLight)
+float GetOpticalDepth(Texture2D density_texture,float max_altitude_km,float alt_km,vec3 dir)
+{
+	float total=0;
+	// how far to the edge of the atmosphere?
+	// RH^2 = d^2 +Rh^2 - 2 d Rh cos(90+e)
+	// d=1/2 (-b + _/b^2-4ac )
+	float RH=planetRadiusKm+atmosphereThicknessKm;
+	float Rh=planetRadiusKm+alt_km;
+	float cosine=dir.z;
+	float b=-2*Rh*cosine;
+	float c=Rh*Rh-RH*RH;
+	float dist=0.5*(-b+sqrt(b*b-4.0*c));
+	float distance_to_edge=-1.0;
+	// this is the distance to the atmosphere.
+	if(dist<distance_to_edge||distance_to_edge<0)
+		distance_to_edge=dist;
+	int Steps=16;
+	float step=distance_to_edge/float(Steps);
+	float d=step/2.0;
+
+	for(int i=0;i<Steps;i++)
+	{
+		float Ra			=sqrt(Rh*Rh+d*d-2*Rh*d*cosine);
+		float new_alt_km	=Ra-planetRadiusKm;
+		float dens_here		=texture_clamp_lod(density_texture,new_alt_km/max_altitude_km,0);
+		total				+=dens_here*step;
+		d+=step;
+	}
+	return max(0.0,total);
+}
+
+vec4 getSunlightFactor2(Texture2D optical_depth_texture,Texture2D density_texture,float max_altitude_km,float alt_km,vec3 DirectionToLight)
 {
 	float sine				=clamp(DirectionToLight.z,-1.0,1.0);
 	vec2 table_texc			=vec2(0.5+0.5*sine,alt_km/maxDensityAltKm);
@@ -90,7 +121,7 @@ vec4 getSunlightFactor2(Texture2D optical_depth_texture,float alt_km,vec3 Direct
 	table_texc				+=vec2(texelOffset/tableSize.x,texelOffset/tableSize.y);
 	
 	vec4 lookup				=texture_clamp_lod(optical_depth_texture,table_texc,0);
-	float illuminated_length=lookup.x;
+	float illuminated_length=GetOpticalDepth(density_texture,max_altitude_km,alt_km,DirectionToLight);
 	float vis				=lookup.y;
 	float ozone_length		=lookup.w;
 	float haze_opt_len		=getHazeOpticalLength(sine,alt_km);
