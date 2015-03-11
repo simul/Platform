@@ -84,23 +84,24 @@ vec4 getSunlightFactor(Texture2D optical_depth_texture,float alt_km,vec3 Directi
 
 float GetOpticalDepth(Texture2D density_texture,float max_altitude_km,float alt_km,vec3 dir)
 {
-	float total=0;
+	float total				=0;
 	// how far to the edge of the atmosphere?
 	// RH^2 = d^2 +Rh^2 - 2 d Rh cos(90+e)
 	// d=1/2 (-b + _/b^2-4ac )
-	float RH=planetRadiusKm+atmosphereThicknessKm;
-	float Rh=planetRadiusKm+alt_km;
-	float cosine=dir.z;
-	float b=-2*Rh*cosine;
-	float c=Rh*Rh-RH*RH;
-	float dist=0.5*(-b+sqrt(b*b-4.0*c));
-	float distance_to_edge=-1.0;
+	float RH				=planetRadiusKm+atmosphereThicknessKm;
+	float Rh				=planetRadiusKm+alt_km;
+	float cosine			=-dir.z;
+	float b					=-2*Rh*cosine;
+	float c					=Rh*Rh-RH*RH;
+	float U					=max(0.0,b*b-4.0*c);
+	float dist				=0.5*(-b+sqrt(U));
+	float distance_to_edge	=-1.0;
 	// this is the distance to the atmosphere.
 	if(dist<distance_to_edge||distance_to_edge<0)
-		distance_to_edge=dist;
-	int Steps=16;
-	float step=distance_to_edge/float(Steps);
-	float d=step/2.0;
+		distance_to_edge	=dist;
+	int Steps				=16;
+	float step				=distance_to_edge/float(Steps);
+	float d					=step/2.0;
 
 	for(int i=0;i<Steps;i++)
 	{
@@ -121,12 +122,12 @@ vec4 getSunlightFactor2(Texture2D optical_depth_texture,Texture2D density_textur
 	table_texc				+=vec2(texelOffset/tableSize.x,texelOffset/tableSize.y);
 	
 	vec4 lookup				=texture_clamp_lod(optical_depth_texture,table_texc,0);
-	float illuminated_length=GetOpticalDepth(density_texture,max_altitude_km,alt_km,DirectionToLight);
+	float opt_depth_km		=GetOpticalDepth(density_texture,max_altitude_km,alt_km,DirectionToLight);
 	float vis				=lookup.y;
 	float ozone_length		=lookup.w;
 	float haze_opt_len		=getHazeOpticalLength(sine,alt_km);
 	vec4 factor				=vec4(vis,vis,vis,vis);
-	factor.rgb				*=exp(-rayleigh*illuminated_length-hazeMie*haze_opt_len-ozone*ozone_length);
+	factor.rgb				*=exp(-rayleigh*opt_depth_km-hazeMie*haze_opt_len-ozone*ozone_length);
 
 	return factor;
 }

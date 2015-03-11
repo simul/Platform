@@ -124,17 +124,17 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 // The 4 z-values represent ambient, sunlight, moonlight and combined.
 //The 3 y-values represent the three tables for interpolation.
 
-CS_LAYOUT(2,1,1)
+CS_LAYOUT(8,1,1)
 shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
-	uint3 sub_pos = g*2 + t;
+	uint3 sub_pos = g*8 + t;
 	// threadOffset.y determines the cycled index.
 	uint3 pos			=sub_pos+threadOffset;
 //	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 //		return;
 	float alt_texc			=float(pos.x)/float(targetSize.x);
 	float alt_km			=maxOutputAltKm*alt_texc;
-	float sun_alt_km		=(maxOutputAltKm-sun_start_alt_km)*pow(alt_texc,8.0)+sun_start_alt_km;
+	float sun_alt_km		=(maxOutputAltKm-sun_start_alt_km)*(alt_texc)+sun_start_alt_km;
 	vec4 sunlight			=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,sun_alt_km,lightDir);
 	float moon_angular_radius=pi/180.0/2.0;
 	float moon_angular_area_ratio=pi*moon_angular_radius*moon_angular_radius/(4.0*pi);
