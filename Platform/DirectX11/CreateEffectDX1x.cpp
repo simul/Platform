@@ -708,7 +708,7 @@ static const DWORD default_effect_flags=0;
 		if(!IsDebuggerPresent())
 			break;
  	}
-	assert((*effect)->IsValid());
+	SIMUL_ASSERT((*effect)->IsValid()==TRUE);
 
 	// Name stuff:
 #ifdef _DEBUG
