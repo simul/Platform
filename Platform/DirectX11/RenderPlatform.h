@@ -74,7 +74,6 @@ namespace simul
 			void PrintAt3dPos	(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0,bool centred=false);
 
 			void ApplyDefaultMaterial();
-			void SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
 			crossplatform::Material					*CreateMaterial();
 			crossplatform::Mesh						*CreateMesh();
 			crossplatform::Light					*CreateLight();

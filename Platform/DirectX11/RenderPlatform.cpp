@@ -199,7 +199,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 #endif
 	SAFE_RELEASE(m_pVtxDecl);
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
-	SAFE_DELETE(solidEffect);
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
 		dx11::Material *mat=(dx11::Material*)(*i);
@@ -226,7 +225,7 @@ void RenderPlatform::RecompileShaders()
 	}
 }
 
-void RenderPlatform::StartRender(crossplatform::DeviceContext &)
+void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 {
 	/*glPushAttrib(GL_ENABLE_BIT);
 	glPushAttrib(GL_LIGHTING_BIT);
@@ -235,6 +234,8 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &)
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_CULL_FACE);
 	glUseProgram(solid_program);*/
+	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
 }
 
 void RenderPlatform::EndRender(crossplatform::DeviceContext &)
@@ -448,28 +449,6 @@ void MakeWorldViewProjMatrix(float *wvp,const double *w,const float *v,const flo
 	simul::math::Matrix4x4 tmp1,view(v),proj(p),model(w);
 	simul::math::Multiply4x4(tmp1,model,view);
 	simul::math::Multiply4x4(*(simul::math::Matrix4x4*)wvp,tmp1,proj);
-}
-
-void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,const double *m,const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
-{
-	simul::math::Matrix4x4 wvp;
-	simul::math::Matrix4x4 viewproj;
-	simul::math::Matrix4x4 modelviewproj;
-	simul::math::Multiply4x4(viewproj,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-	simul::math::Matrix4x4 model(m);
-	simul::math::Multiply4x4(modelviewproj,model,viewproj);
-	solidConstants.worldViewProj=modelviewproj;
-	solidConstants.world=model;
-	
-	solidConstants.lightIrradiance	=physicalLightRenderData.lightColour;
-	solidConstants.lightDir			=physicalLightRenderData.dirToLight;
-	solidConstants.Apply(deviceContext);
-	solidConstants.Apply(deviceContext);
-	simul::crossplatform::Frustum frustum			=simul::crossplatform::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
-	SetStandardRenderState(deviceContext,frustum.reverseDepth?crossplatform::STANDARD_TEST_DEPTH_GREATER_EQUAL:crossplatform::STANDARD_TEST_DEPTH_LESS_EQUAL);
-
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
-	solidEffect->asD3DX11Effect()->GetTechniqueByName("solid")->GetPassByIndex(0)->Apply(0,pContext);
 }
 
 crossplatform::Material *RenderPlatform::CreateMaterial()

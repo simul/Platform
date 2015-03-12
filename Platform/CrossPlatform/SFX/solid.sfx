@@ -119,6 +119,8 @@ shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 	return u;
 }
 
+VertexShader vs_solid = CompileShader(vs_4_0, VS_Solid());
+PixelShader ps_solid = CompileShader(ps_4_0, PS_Solid());
 technique solid
 {
     pass base 
@@ -126,9 +128,9 @@ technique solid
 		SetRasterizerState(RenderNoCull);
 		//SetDepthStencilState(EnableDepth,0);
 		SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Solid()));
+		SetVertexShader(vs_solid);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Solid()));
+		SetPixelShader(ps_solid);
     }
 }
 

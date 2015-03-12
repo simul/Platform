@@ -5,6 +5,7 @@
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Layout.h"
+#include "Simul/Platform/CrossPlatform/Material.h"
 #include "Effect.h"
 
 using namespace simul;
@@ -150,6 +151,25 @@ void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const 
 	DrawLines(deviceContext,line_vertices,2,false,false,false);
 }
 
+void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
+{
+	simul::math::Matrix4x4 wvp;
+	simul::math::Matrix4x4 viewproj;
+	simul::math::Matrix4x4 modelviewproj;
+	simul::math::Multiply4x4(viewproj, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
+	simul::math::Matrix4x4 model(m);
+	simul::math::Multiply4x4(modelviewproj, model, viewproj);
+	solidConstants.worldViewProj = modelviewproj;
+	solidConstants.world = model;
+
+	solidConstants.lightIrradiance = physicalLightRenderData.lightColour;
+	solidConstants.lightDir = physicalLightRenderData.dirToLight;
+	solidConstants.Apply(deviceContext);
+
+	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
+	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
+
+}
 void RenderPlatform::DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float exposure,float gamma)
 {
 }
