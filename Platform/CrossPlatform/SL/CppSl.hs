@@ -499,6 +499,23 @@
 						m[j*4+i]=temp;
 					}
 		}
+		mat4d operator*(const mat4d &b)
+		{
+			mat4d r;
+			for(int i=0;i<4;i++)
+			{
+				for(int j=0;j<4;j++)
+				{
+					double t=0.0f;
+					for(int k=0;k<4;k++)
+					{
+						t+=M[i][k]*b.M[j][k];
+					}
+					r.M[i][j]=t;
+				}
+			}
+			return r;
+		}
 	};
 #ifdef _MSC_VER
 #pragma warning(pop)
