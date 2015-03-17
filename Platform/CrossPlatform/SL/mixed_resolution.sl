@@ -248,7 +248,7 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_o
 		float d2			=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(5,0)).x;
 		float d3			=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(-3,1)).x;
 		float d4			=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4)).x;
-		vec4 f				=vec4(d1.x,d2.x,d3.x,d4.x);
+		vec4 f				=vec4(d1,d2,d3,d4);
 		vec4 n				=f;
 		vec2 dmin2,dmax2;
 		if(depthInterpretationStruct.reverseDepth)

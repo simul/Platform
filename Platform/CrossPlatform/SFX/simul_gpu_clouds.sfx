@@ -245,7 +245,7 @@ shader void CS_CloudUpdate( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 		//float n						=texture_wrap_lod(volumeNoiseTexture,noisespace_texcoord,0).x;
 	//	float noise_val					=cos(2.0*3.1415926536*(n+t));
 		float noise_texel				=1.0/float(noise_dims.z);
-		float noise_val					=NoiseFunction2(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,noise_texel);
+		float noise_val					=NoiseFunction2(volumeNoiseTexture,noisespace_texcoord.xy,octaves,persistence,time,noise_texel);
 		lookup.y						=a_base.qvs*saturate((noise_val + 2.0*humidity - 1.0) / 0.002);
 		lookup.x						=0;
 		lookup.z						=a_base.T_K;
@@ -333,7 +333,7 @@ shader void CS_Jacobi( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	float err	=abs((x.x-j.x)/(abs(j.x)+0.0000001));
 	
 	j.b			=err;	// blue= error.
-	j.ga		=j.r;
+	j.ga		=j.rr;
 	IMAGE_STORE_3D(outputTexture,pos,j);
 }
 

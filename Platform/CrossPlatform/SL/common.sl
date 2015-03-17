@@ -28,7 +28,8 @@ posTexVertexOutput SimpleFullscreen(idOnly IN)
 
 shader posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
 {
-	return SimpleFullscreen(IN);
+	posTexVertexOutput pt=SimpleFullscreen(IN);
+	return pt;
 }
 
 posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
