@@ -1,5 +1,3 @@
-
-
 #include "shader_platform.sl"
 
 #include "../SL/common.sl"
@@ -20,7 +18,7 @@ uniform TEXTURE2DMS_FLOAT4 depthTextureMS;
 uniform Texture2D lowResDepthTexture;
 uniform Texture2D hiResDepthTexture;
 uniform TEXTURE2D_UINT glowTexture;
- 
+
 uniform Texture2D inscatterTexture;			// Far, or default inscatter
 uniform Texture2D nearInscatterTexture;		// Near inscatter.
 uniform Texture2D shadowTexture;
@@ -375,6 +373,7 @@ shader vec4 GlowPS(posTexVertexOutput IN) : SV_Target
 VertexShader mainvs_4_0=CompileShader(vs_4_0,VS_SimpleFullscreen());
 VertexShader mainvs_5_0=CompileShader(vs_5_0,VS_SimpleFullscreen());
 VertexShader compositevs_5_0=CompileShader(vs_5_0,VS_Composite());
+
 technique exposure_gamma
 {
     pass main
@@ -396,6 +395,7 @@ technique exposure_gamma
 		SetPixelShader(CompileShader(ps_5_0,ExposureGammaPS_MSAA()));
     }
 }
+
 technique downscale2
 {
     pass main

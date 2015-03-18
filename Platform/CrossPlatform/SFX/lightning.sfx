@@ -164,7 +164,7 @@ shader void GS_Branch(line F_IdVertex IN[2], inout PointStream<F_Vertex> vStream
 	OUT.position		=outpos[0];
 	OUT.position		-=dir;
 	OUT.texcoord		=vec2(strikeThicknessMetres,1.0);
-		OUT.progress		=IN[0].progress;
+	OUT.progress		=IN[0].progress;
 	vStream.Append(OUT);
 
 	for(int ii=0;ii<num_pts;ii++)
