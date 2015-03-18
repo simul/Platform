@@ -23,6 +23,20 @@ namespace simul
 			vec3 dirToLight;
 			vec3 lightColour;
 		};
+		struct ColorChannelInitStruct
+		{
+			vec3 colour;
+			const char *textureName;
+		};
+		struct MaterialInitStruct
+		{
+			ColorChannelInitStruct mEmissive;
+			ColorChannelInitStruct mAmbient;
+			ColorChannelInitStruct mDiffuse;
+			ColorChannelInitStruct mSpecular;
+			float mShininess;
+			const char *effectName;
+		};
 		// Cache for material
 		class SIMUL_CROSSPLATFORM_EXPORT Material
 		{
