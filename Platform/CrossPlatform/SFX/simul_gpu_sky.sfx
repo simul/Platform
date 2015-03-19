@@ -112,9 +112,10 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		float haze_factor	=getHazeFactorAtAltitude(alt_km);
 		vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie+ozone*ozone_factor;
 		vec4 loss;
-		loss.rgb			=exp(-extinction*stepLengthKm);
+		loss.rgb			=vec3(0.95,0.99,0.99);
 		loss.a				=(loss.r+loss.g+loss.b)/3.0;
 		loss				*=previous_loss;
+		
 		IMAGE_STORE_3D(targetTexture,idx,vec4(loss.rgb,1.0));
 		prevDist_km			=dist_km;
 		previous_loss		=loss;

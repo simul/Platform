@@ -33,8 +33,8 @@ shader posTexVertexOutput VS_Flare(indexVertexInput IN)
 
 shader vec4 PS_Flare( posTexVertexOutput IN): SV_TARGET
 {
-	vec3 output=colour.rgb*texture_clamp(flareTexture,vec2(0.5,0.5)+0.5*IN.texCoords).rgb;
-	return vec4(output.rgb,1.f);
+	vec3 res=colour.rgb*texture_clamp(flareTexture,vec2(0.5,0.5)+0.5*IN.texCoords).rgb;
+	return vec4(res.rgb,1.f);
 }
 
 

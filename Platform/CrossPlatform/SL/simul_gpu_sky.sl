@@ -107,7 +107,7 @@ float GetOpticalDepth(Texture2D density_texture,float max_altitude_km,float alt_
 	{
 		float Ra			=sqrt(Rh*Rh+d*d-2*Rh*d*cosine);
 		float new_alt_km	=Ra-planetRadiusKm;
-		float dens_here		=texture_clamp_lod(density_texture,new_alt_km/max_altitude_km,0);
+		float dens_here		=texture_clamp_lod(density_texture,vec2(new_alt_km/max_altitude_km,new_alt_km/max_altitude_km),0).x;
 		total				+=dens_here*step;
 		d+=step;
 	}
