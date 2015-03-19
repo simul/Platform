@@ -129,7 +129,6 @@ void TwoResFramebuffer::ActivateLowRes(crossplatform::DeviceContext &deviceConte
 		if(!GetLowResFramebuffer(i)->IsValid())
 			GetLowResFramebuffer(i)->CreateBuffers();
 	crossplatform::Texture * targs[] = { GetLowResFramebuffer(0)->GetTexture(), GetLowResFramebuffer(1)->GetTexture(), GetLowResFramebuffer(2)->GetTexture() };
-///	crossplatform::Texture * depth = GetLowResFramebuffer(0)->GetDepthTexture();
 	renderPlatform->ActivateRenderTargets(deviceContext,3,targs,NULL);
 	int w=GetLowResFramebuffer(0)->Width, h = GetLowResFramebuffer(0)->Height;
 	crossplatform::Viewport v[]={{0,0,w,h,0,1.f},{0,0,w,h,0,1.f}};

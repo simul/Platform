@@ -329,7 +329,6 @@ GL_ERROR_CHECK
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
 	,crossplatform::EffectTechnique *technique,const char *pass)
 {
-	debugConstants.multiplier=1.0f;
 	if(false)
 		glEnable(GL_BLEND);
 	else

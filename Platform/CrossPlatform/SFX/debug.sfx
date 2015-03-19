@@ -83,7 +83,7 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 	texc.y		=1.0-texc.y;
 #endif
 	vec4 res=multiplier*texture_nearest_lod(imageTexture,texc.xy,0);
-	res.rgb+=res.a;
+	res.rgb+=res.aaa;
 	return res;
 }
 
@@ -142,10 +142,10 @@ shader vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
 vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth) 
 {
 	vec2 texc=IN.texCoords.xy;
-#ifndef GLSL
+//#ifndef GLSL
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y		=1.0-texc.y;
-#endif
+//#endif
 	vec4 depth		=texture_nearest_lod(imageTexture,texc,0);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=debugDepthToLinFadeDistParams;
