@@ -23,6 +23,9 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,debugEffect(NULL)
 {
 }
+RenderPlatform::~RenderPlatform()
+{
+}
 
 ID3D11Device *RenderPlatform::AsD3D11Device()
 {
@@ -98,6 +101,8 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(textRenderer);
 	solidConstants.InvalidateDeviceObjects();
 	debugConstants.InvalidateDeviceObjects();
+	SAFE_DELETE(debugEffect);
+	SAFE_DELETE(solidEffect);
 }
 
 void RenderPlatform::RecompileShaders()

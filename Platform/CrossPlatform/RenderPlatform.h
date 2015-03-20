@@ -82,6 +82,7 @@ namespace simul
 		{
 		public:
 			RenderPlatform(simul::base::MemoryInterface*m=NULL);
+			~RenderPlatform();
 			virtual ID3D11Device *AsD3D11Device();
 			//! Call this once, when the 3D graphics device has been initialized, and pass the API-specific device pointer/identifier.
 			virtual void RestoreDeviceObjects(void*);

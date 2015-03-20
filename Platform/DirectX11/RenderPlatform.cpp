@@ -163,6 +163,7 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	RecompileShaders();
 	SAFE_RELEASE(m_pVertexBuffer);
 	// Vertex declaration
+	if(debugEffect)
 	{
 		D3DX11_PASS_DESC PassDesc;
 		crossplatform::EffectTechnique *tech	=debugEffect->GetTechniqueByName("vec3_input_signature");
