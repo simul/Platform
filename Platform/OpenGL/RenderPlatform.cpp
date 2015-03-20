@@ -271,8 +271,8 @@ GL_ERROR_CHECK
 		glEnable(GL_BLEND);
 	else
 		glDisable(GL_BLEND);
-GL_ERROR_CHECK
-glDisable(GL_CULL_FACE);
+	GL_ERROR_CHECK
+	glDisable(GL_CULL_FACE);
 	const char *techname="textured";
 	if(tex&&tex->GetDimension()==3)
 	{

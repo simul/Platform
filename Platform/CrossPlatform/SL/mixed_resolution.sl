@@ -300,9 +300,6 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_o
 vec4 HalfscaleInitial(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct,bool find_edges)
 {
 	int2 pos0			=int2(pos*2);
-#ifdef GLSL
-	pos0.y				=int(source_dims.y)-pos0.y-1;
-#endif
 	int2 pos1			=int2(pos0)-int2(cornerOffset);
 
 	int2 max_pos		=int2(source_dims)-int2(3,3);
@@ -319,6 +316,7 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture,uint2 source_dims,uint2 sourc
 	{
 		farthest_nearest		=vec2(0.0,1.0);
 	}
+
 	float d1				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(1,1)).x;
 	float d2				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(0,1)).x;
 	float d3				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(1,0)).x;
@@ -366,9 +364,6 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture,uint2 source_dims,uint2 sourc
 vec4 Halfscale(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct)
 {
 	int2 pos0			=int2(pos*2);
-#ifdef GLSL
-	pos0.y				=int(source_dims.y)-pos0.y-1;
-#endif
 	int2 pos1			=int2(pos0)-int2(cornerOffset);
 
 	int2 max_pos		=int2(source_dims)-int2(5,5);

@@ -77,31 +77,29 @@ shader CompositeShaderInput VS_Composite(idOnly IN)
 
 shader vec4 ShowDepthPS_ReverseDepth(posTexVertexOutput IN) : SV_Target
 {
-	vec2 texc		=IN.texCoords.xy;
-	vec4 depth = texture_clamp(depthTexture, texc);
+	vec4 depth = texture_clamp(depthTexture, IN.texCoords);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=true;
-	float dist = 10.0*depthToFadeDistance(depth.x, 2.0*(texc - 0.5), depthInterpretationStruct, tanHalfFov);
+	float dist = 10.0*depthToFadeDistance(depth.x, 2.0*(IN.texCoords - 0.5), depthInterpretationStruct, tanHalfFov);
 	vec4 u = vec4(1, dist, dist, 1.0);
 	return u;
 }
 
 shader vec4 ShowDepthPS_ForwardDepth(posTexVertexOutput IN) : SV_Target
 {
-	vec2 texc		=IN.texCoords.xy;
-	vec4 depth		=texture_clamp(depthTexture,texc);
+	vec4 depth		=texture_clamp(depthTexture,IN.texCoords);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=false;
-	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(texc-0.5),depthInterpretationStruct,tanHalfFov);
+	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
     vec4 u=vec4(1,dist,dist,1.0);
 	return u;
 }
 
 /*
-	The Filmic tone mapper is from: http://filmicgames.com/Downloads/GDC_2010/Uncharted2-Hdr-Lighting.pptx
-	These numbers DO NOT have the pow(x,1/2.2) baked in
+ The Filmic tone mapper is from: http://filmicgames.com/Downloads/GDC_2010/Uncharted2-Hdr-Lighting.pptx
+These numbers DO NOT have the pow(x,1/2.2) baked in
 */
 vec3 FilmicTone(vec3 x)
 {

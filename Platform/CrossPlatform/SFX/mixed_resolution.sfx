@@ -27,7 +27,7 @@ shader vec4 PS_HalfscaleInitial_ForwardDepth(posTexVertexOutput IN):SV_Target
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=false;
-	vec4 res	=HalfscaleInitial(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct,false);
+	vec4 res	=HalfscaleOnly(sourceDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct,false);
 
 	return res;
 }

@@ -348,6 +348,7 @@ void FramebufferGL::Clear(crossplatform::DeviceContext &deviceContext,float r,fl
 		glDepthMask(GL_TRUE);
 	glClearDepth(depth);
 	glClear(mask);			
+//glClearBufferfv(GLenum buffer,buffnum,const GLFloat *);
 //glClearBufferfi(GLenum buffer,buffnum,depth,stencil);
 }
 
