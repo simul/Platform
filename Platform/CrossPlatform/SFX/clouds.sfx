@@ -34,10 +34,7 @@ uniform RWStructuredBuffer<VolumeQueryResult> volumeQueryResults;
 
 uniform StructuredBuffer<vec3> queryInputs;
 
-
 uniform RWStructuredBuffer<LineQueryResult> lineQueryResults;
-
-
 
 
 CS_LAYOUT(1,1,1)

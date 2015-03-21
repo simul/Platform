@@ -4,20 +4,6 @@
 #ifndef GLSL
 SamplerState cloudSamplerState: register( s0);
 #endif
-#define USE_LIGHT_TABLES 1
-#ifdef __PSSL__
-	#ifdef USE_LIGHT_TABLES
-		#define USE_LIGHT_TABLES1
-	#else
-		#define USE_LIGHT_TABLES0
-	#endif
-#else
-	#if USE_LIGHT_TABLES==1
-		#define USE_LIGHT_TABLES1
-	#else
-		#define USE_LIGHT_TABLES0
-	#endif
-#endif
 
 #define MIN_SUN_ELEV (0.2)
 
@@ -590,9 +576,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float BetaClouds		=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	float BetaRayleigh		=CalcRayleighBeta(cos0);
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
-#ifdef USE_LIGHT_TABLES0	
-	vec3 amb				=ambientColour.rgb;
-#endif
+
 	vec4 rainbowColour		=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
 												rainbowIntensity,view,lightDir);
 	float moisture			=0.0;
