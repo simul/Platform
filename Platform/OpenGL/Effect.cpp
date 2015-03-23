@@ -219,7 +219,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	GL_ERROR_CHECK
 }
 
-void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceContext)
+void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &)
 {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
 	GL_ERROR_CHECK
@@ -228,7 +228,7 @@ void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceCo
 	return write_data;
 }
 
-const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext &deviceContext)
+const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext &)
 {
 	GL_ERROR_CHECK
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
@@ -238,7 +238,7 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 	return read_data;
 }
 
-void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
+void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &)
 {
 	if(read_data)
 	{
@@ -270,7 +270,7 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceConte
 	GL_ERROR_CHECK
 }
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &,crossplatform::Effect *effect,const char *name)
 {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
 	if(write_data)
