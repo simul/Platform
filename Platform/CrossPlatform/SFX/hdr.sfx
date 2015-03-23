@@ -208,10 +208,10 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 shader vec4 ExposureGammaPS(posTexVertexOutput IN) : SV_Target
 {
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
+//c.rg=IN.texCoords.xy;
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
     vec4 u=vec4(c.rgb,1.0);
-//u.rg=IN.texCoords.xy;
 	return u;
 }
 
