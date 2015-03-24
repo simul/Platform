@@ -113,7 +113,7 @@ float CircularLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float sz,float 
 
 float PowerLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float t)
 {
-	float val	=texture_wrap_lod(volumeNoiseTexture,texCoords,0).x;
+	float val	=texture_3d_wrap_lod(volumeNoiseTexture,texCoords,0).x;
 	return pow(val,0.25);
 }
 
@@ -129,7 +129,7 @@ float ModifierNoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,fl
 	{
 		if(i>=octaves)
 			break;
-		float lookup	=2.0*texture_wrap_lod(volumeNoiseTexture,pos,0).x-1.0;
+		float lookup	=2.0*texture_3d_wrap_lod(volumeNoiseTexture,pos,0).x-1.0;
 		//(CircularLookup(volumeNoiseTexture,pos,1.0,t,noiseDimension,noiseHeight);
 		dens			+=mult*lookup;
 		sum				+=mult;
@@ -151,7 +151,7 @@ float DensityFunction(Texture3D volumeNoiseTexture,vec3 noisespace_texcoord,floa
 	int noiseHeight=8;
 	// We want to distort the lookup by up to half a noise texel at the specified dimension.
 	vec3 u					=vec3(noisespace_texcoord.xy,0);
-	noisespace_texcoord.xy	+=2.0/float(noiseDimension)*(texture_wrap_lod(volumeNoiseTexture,u,0).xy-0.5);
+	noisespace_texcoord.xy	+=2.0/float(noiseDimension)*(texture_3d_wrap_lod(volumeNoiseTexture,u,0).xy-0.5);
 	float lookup			=CircularLookup(volumeNoiseTexture,vec3(noisespace_texcoord.xy,0),1.0,t,noiseDimension,noiseHeight);
 	return lookup;
 }
@@ -172,7 +172,7 @@ float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float pers
 		float zmax	=height-0.5*texel;
 		pos2.z		=clamp(pos2.z,zmin,zmax);
 		pos2.z		*=saturate(i);
-		float lookup=texture_wrap_lod(volumeNoiseTexture,pos2,0).x;
+		float lookup=texture_3d_wrap_lod(volumeNoiseTexture,pos2,0).x;
 		float val	=cos(2.0*3.1415926536*(lookup+t));
 		dens		=dens+mult*val;
 		sum			=sum+mult;
@@ -196,7 +196,7 @@ float NoiseFunction2(Texture3D volumeNoiseTexture,vec2 pos,int octaves,float per
 		if(i>=octaves)
 			break;
 		vec2 pos2		=pos;
-		float lookup	=texture_wrap_lod(volumeNoiseTexture,vec3(pos2,0.5*texel),0).x;
+		float lookup	=texture_3d_wrap_lod(volumeNoiseTexture,vec3(pos2,0.5*texel),0).x;
 		float val		=cos(2.0*3.1415926536*(lookup+t));
 		dens			=dens+mult*val;
 		sum				=sum+mult;

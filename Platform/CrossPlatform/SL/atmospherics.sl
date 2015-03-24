@@ -108,7 +108,7 @@ float GetCloudIllum(Texture3D cloudTexture, SamplerState cloudSamplerState,vec3 
 	float a				=saturate(-texc.z);
 	l					*=a/max(l.z,0.0001);
 	texc				+=l;
-	vec4 texel			=sample_lod(cloudTexture,cloudSamplerState, texc, 0);
+	vec4 texel			=sample_3d_lod(cloudTexture,cloudSamplerState, texc, 0);
 	//float above			=saturate(texc.z-1.0);
 	//texel.y				+=above;
 	return saturate(texel.x);
@@ -190,7 +190,7 @@ void CalcInsc(	Texture2D inscTexture
                 ,out vec3 skyl)
 {
 	vec2 fade_texc		=vec2(pow(dist,0.5f),fade_texc_y);
-	vec4 illum_lookup	=texture_wmc_lod(illuminationTexture,illum_texc,0);
+	vec4 illum_lookup	=texture_wrap_mirror_lod(illuminationTexture,illum_texc,0);
 	vec2 nearFarTexc	=illum_lookup.xy;
 	vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);

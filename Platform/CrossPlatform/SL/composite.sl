@@ -233,7 +233,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
 		shadow_lookup			=texture_clamp_lod(shadowTexture, lowResTexCoords, 0);
 	float shadow				=shadow_lookup.x;
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
-	vec4 insc					=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
+	vec4 insc					=texture_3d_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
 	float hiResInterp			=saturate((dist - nearFarCloud.y) / nearFarCloud.w);
 	if(nearFarCloud.z>0.0)
 	{
@@ -339,9 +339,9 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		vec4 insc_far,insc_near,loss_far,loss_near;
 
 		vec3 volumeTexCoordsFar		=vec3(lowResTexCoords,sqrt(furthestDist));
-		insc_far					=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoordsFar,0);
+		insc_far					=texture_3d_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoordsFar,0);
 		vec3 volumeTexCoordsNear	=vec3(lowResTexCoords,sqrt(nearestDist));
-		insc_near					=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoordsNear,0);
+		insc_near					=texture_3d_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoordsNear,0);
 		
 		loss_far					=texture_clamp_lod(loss2dTexture,vec2(volumeTexCoordsFar.z,loss_texc.y),0)*shadow_lookup.x*cloud.a;
 		loss_near					=texture_clamp_lod(loss2dTexture,vec2(volumeTexCoordsNear.z,loss_texc.y),0)*shadow_lookup.y*cloudNear.a;
@@ -402,7 +402,7 @@ if(depthInterpretationStruct.reverseDepth)
 		insc					=texture_wmc_lod(lightSpaceInscVolumeTexture,vec3(volume_texc.xy,sqrt(dist)),0);
 #else
 		vec3 volumeTexCoords	=vec3(lowResTexCoords,sqrt(dist));
-		insc					=texture_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
+		insc					=texture_3d_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
 #endif
 #else
 		vec4 insc				= texture_clamp_lod(farInscatterTexture, lowResTexCoords, 0);

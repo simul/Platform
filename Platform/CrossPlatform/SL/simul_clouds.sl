@@ -36,7 +36,7 @@ struct All8DepthOutput
 float MakeRainMap(Texture3D cloudDensity,float cloud_interp,vec2 texCoords)
 {
 	vec3 texc		=vec3(texCoords.xy,0.25);
-	vec4 density	=sampleLod(cloudDensity,cloudSamplerState,texc,0);
+	vec4 density	=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
 	float r			=density.z;
 	if(r<0.999)
 		r=0;
@@ -65,7 +65,7 @@ vec4 CloudShadow(Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 co
 		//vec3 wpos					=mul(shadowMatrix,vec4(cartesian,1.0)).xyz;
 		vec3 texc					=lerp(texc_1,texc_2,u);//(wpos-cornerPos)*inverseScales;
 	
-		vec4 density				=sampleLod(cloudDensity,cloudSamplerState,texc,0);
+		vec4 density				=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
 		if(density.z>0)
 		{
 			illumination			=lerp(illumination,vec2(0,0),density.z);//density.xy
@@ -73,7 +73,7 @@ vec4 CloudShadow(Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 co
 		}
 	}
 	vec3 simple_texc				=vec3(texCoords,0);
-	vec2 shadow						=sampleLod(cloudDensity,wwcSamplerState,simple_texc,0).xy;
+	vec2 shadow						=sample_3d_lod(cloudDensity,wwcSamplerState,simple_texc,0).xy;
 	return vec4(illumination,U,0.5*(shadow.x+shadow.y));//*edge
 }
 
@@ -131,9 +131,9 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 		float interp					=float(j)/float(N-1);
 		float distance_off_centre		=interp;
 		vec2 shadow_texc				=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
-		vec4 illumination				=texture_cwc_lod(cloudShadowTexture,shadow_texc,0);
-		illumination					+=texture_cwc_lod(cloudShadowTexture,shadow_texc-offset,0);
-		illumination					+=texture_cwc_lod(cloudShadowTexture,shadow_texc+offset,0);
+		vec4 illumination				=texture_wrap_lod(cloudShadowTexture,shadow_texc,0);
+		illumination					+=texture_wrap_lod(cloudShadowTexture,shadow_texc-offset,0);
+		illumination					+=texture_wrap_lod(cloudShadowTexture,shadow_texc+offset,0);
 	//	if(interp>=shadow_range.x&&interp<=shadow_range.y)
 		{
 			if(illumination.y>L*3.0)
@@ -186,7 +186,7 @@ vec3 applyFades2(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 vol
 #ifdef INFRARED
 	//c			=skyl.rgb;
 #else
-	vec3 inscatter	=texture_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0).rgb;
+	vec3 inscatter	=texture_3d_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0).rgb;
 	c				+=inscatter;
 #endif
     return c;
@@ -251,7 +251,7 @@ vec4 MakeNoise(Texture3D noiseTexture3D,vec3 noise_texc,float lod)
 	vec4 noiseval		=vec4(0,0,0,0);
 	//float mult			=1.0;///(1.0+noise3DPersistence);
 
-	noiseval			+=texture_wrap_lod(noiseTexture3D,noise_texc,0);
+	noiseval			+=texture_3d_wrap_lod(noiseTexture3D,noise_texc,0);
 	//noise_texc			*=noise3DOctaveScale;
 	//mult				*=noise3DPersistence;
 	
@@ -266,7 +266,7 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 	//vec4 light			=sampleLod(cloudDensity,cloudSamplerState,texCoords,0);
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
-	vec4 density		=sampleLod(cloudDensity,cloudSamplerState,pos,0);
+	vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,pos,0);
 	//density.xyw			=light.xyw;
 		//	density.xy*=.5*(1+density.z);
 	density.z			*=layerFade;//*(1.0-noiseval.w);

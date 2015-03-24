@@ -198,7 +198,8 @@ bool FramebufferGL::IsValid() const
 	return (m_fb!=0);
 }
 
-void FramebufferGL::Activate(crossplatform::DeviceContext &)
+	static bool fliptarget=false;
+void FramebufferGL::Activate(crossplatform::DeviceContext &deviceContext)
 {
 	if(!m_fb)
 		CreateBuffers();
@@ -213,6 +214,11 @@ void FramebufferGL::Activate(crossplatform::DeviceContext &)
 	fb_stack.push(m_fb);
 	SIMUL_ASSERT(activate_count==0);
 	activate_count++;
+	//(!fliptarget)
+	{
+	///	fliptarget=true;
+		//deviceContext.viewStruct.proj.m11*=-1.f;
+	}
 }
 
 void FramebufferGL::ActivateDepth(crossplatform::DeviceContext &)
@@ -257,9 +263,13 @@ void FramebufferGL::ActivateViewport(crossplatform::DeviceContext &,float viewpo
 	activate_count++;
 }
 
-void FramebufferGL::Deactivate(crossplatform::DeviceContext &)
+void FramebufferGL::Deactivate(crossplatform::DeviceContext &deviceContext)
 {
-	//glFlush(); 
+//	if(fliptarget)
+	{
+		//fliptarget=false;
+		//deviceContext.viewStruct.proj.m22*=-1.f;
+	}
 	GL_ERROR_CHECK
 	CheckFramebufferStatus();
 	GL_ERROR_CHECK

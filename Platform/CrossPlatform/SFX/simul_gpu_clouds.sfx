@@ -479,7 +479,7 @@ shader void CS_Lighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 		{
 			vec3 lightspace_texcoord	=vec3(pos.xy,float(i)+0.5+float(j)/float(C))/vec3(dims);
 			vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
-			float density				=sampleLod(densityTexture,densSamplerState, densityspace_texcoord, 0).x;
+			float density				=sample_3d_lod(densityTexture,densSamplerState, densityspace_texcoord, 0).x;
 			direct_light				*=exp(-extinctions.x*density*stepLength/float(C));
 		}
 		//if(density==0)
@@ -520,7 +520,7 @@ shader void CS_SecondaryLighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 		vec3 lightspace_texcoord	=(vec3(idx)+0.5)/vec3(dims);
 
 		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
-		float density				= sampleLod(densityTexture,densSamplerState, densityspace_texcoord, 0).x;
+		float density				= sample_3d_lod(densityTexture,densSamplerState, densityspace_texcoord, 0).x;
 		indirect_light				*=exp(-extinctions.y*density*stepLength);
 		
 		//NOTE: Causes artifact underneath clouds:
@@ -568,7 +568,9 @@ float filterLight(Texture3D tex,vec3 texc)
 #endif
 	float res=0.0;
 	for(int i=0;i<7;i++)
-		res+=sampleLod(tex,lightSamplerState,texc+offsets[i],0).x;
+	{
+		res+=sample_3d_lod(tex,lightSamplerState,texc+offsets[i],0).x;
+	}
 	return res/7.0;
 }
 
@@ -585,7 +587,7 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
 	
-	float density				=saturate(sample_lod(densityTexture,wwcSamplerState,densityspace_texcoord,0).x);
+	float density				=saturate(sample_3d_lod(densityTexture,wwcSamplerState,densityspace_texcoord,0).x);
 	vec2 illum			=vec2(1.0,1.0);
 	vec3 wpos			=densityspace_texcoord*cloudScalesKm;
 	if(pos.z==0)
@@ -594,7 +596,7 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	{
 		wpos			+=lightDir*stepLength;// we expect stepLength in km for this shader
 		vec3 texc		=wpos/cloudScalesKm;
-		vec4 lookup		=texture_wwc_lod(densityTexture,texc,0);
+		vec4 lookup		=texture_3d_wwc_lod(densityTexture,texc,0);
 		illum			*=exp(-extinctions.xy*lookup.x*stepLength);
 	}
 	vec2 ambient		=vec2(1.0,1.0);

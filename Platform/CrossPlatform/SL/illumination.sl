@@ -105,7 +105,7 @@ vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 
 	vec2 fade_texc			=vec2(texCoords.x,1.0-texCoords.y);
     
 	// Texcoords representing the full distance from the eye to the given point.
-	vec4 insc				=texture_cmc_lod(inscTexture,fade_texc,0);
+	vec4 insc				=texture_clamp_mirror_lod(inscTexture,fade_texc,0);
 	
 	// Only need the y-coordinate of the illumination texture to get the overcast range.
 	vec2 illum_texc			=vec2(0.5,fade_texc.y);
@@ -124,8 +124,8 @@ vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 
 		float ov			=saturate(((overcastRangeKm+overcastBaseKm)-this_alt_km)/overcastRangeKm);
 		vec2 fade_texc_1	=vec2(fade_texc.x*u1,fade_texc.y);
 		vec2 fade_texc_2	=vec2(fade_texc.x*u2,fade_texc.y);
-		vec4 overc_1		=texture_cmc_lod(inscTexture,fade_texc_1,0);
-		vec4 overc_2		=texture_cmc_lod(inscTexture,fade_texc_2,0);
+		vec4 overc_1		=texture_clamp_mirror_lod(inscTexture,fade_texc_1,0);
+		vec4 overc_2		=texture_clamp_mirror_lod(inscTexture,fade_texc_2,0);
 		insc_diff.rgb		+=ov*max(vec3(0,0,0),overc_2.rgb-overc_1.rgb);
 		insc_diff.w			+=ov*0.5*(overc_1.a+overc_2.a);
 		ov_total			+=ov;
@@ -142,14 +142,14 @@ vec4 ShowIlluminationBuffer(Texture2D illTexture,vec2 texCoords)
 	if(texCoords.x<0.5)
 	{
 		texCoords.x		*=2.0;
-		vec4 nf			=texture_cmc_nearest_lod(illTexture,texCoords,0);
+		vec4 nf			=texture_clamp_mirror_nearest_lod(illTexture,texCoords,0);
 		return saturate(vec4(nf.zw,0.0,1.0));
 	}
 	else
 	{
 		texCoords.x		=2.0*(texCoords.x-0.5);
 		vec2 texc		=vec2(0.5,texCoords.y);
-		vec4 nf			=texture_cmc_nearest_lod(illTexture,texc,0);
+		vec4 nf			=texture_clamp_mirror_nearest_lod(illTexture,texc,0);
 		// Near Far for EarthShadow illumination is xy
 		// Near Far for clouds overcast is zw.
 		vec4 result		=vec4(0,1.0,0,0);

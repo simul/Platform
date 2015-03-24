@@ -188,10 +188,10 @@ shader vec4 PS_ShowCompressed(posTexVertexOutput IN) : SV_Target
 
 shader vec4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_Target
 {
-	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
-	vec4 sc			=texture_clamp(lightSpaceInscatterVolumeTexture,vec3(IN.texCoords.xy,z));
+	float z	=floor(8.0f*IN.texCoords.x)/8.0f;
+	vec4 sc	=texture_3d_clamp(lightSpaceInscatterVolumeTexture,vec3(IN.texCoords.xy,z));
   
-    vec4 u=vec4(sc.rgb,1.0);
+    vec4 u	=vec4(sc.rgb,1.0);
 	return u;
 }
 
@@ -199,8 +199,8 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 {
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
 	if(IN.texCoords.y<.5)
-		z=.5;
-	vec4 colour		=texture_nearest_lod(screenSpaceInscatterVolumeTexture,vec3(IN.texCoords,z),0);
+		z			=.5;
+	vec4 colour		=texture_3d_nearest_lod(screenSpaceInscatterVolumeTexture,vec3(IN.texCoords,z),0);
 	//colour.r = colour.a;
 	return colour;
 }
@@ -212,6 +212,7 @@ shader vec4 ExposureGammaPS(posTexVertexOutput IN) : SV_Target
 	c.rgb	=pow(c.rgb,vec3(gamma,gamma,gamma));
 //c.rgb=vec3(1.0,0.0,1.0);
     vec4 u	=vec4(c.rgb,1.0);
+//	u.rb=IN.texCoords.xy;
 	return u;
 }
 

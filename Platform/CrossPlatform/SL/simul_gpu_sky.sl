@@ -191,7 +191,7 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_textu
 {
 	vec4 previous_insc	=texture_nearest_lod(input_texture,texCoords.xy,0);
 	vec3 u				=vec3(texCoords.xy,pow(distanceKm/maxDistanceKm,0.5));
-	vec3 previous_loss	=texture_nearest_lod(loss_texture,u,0).rgb;// should adjust texCoords - we want the PREVIOUS loss!
+	vec3 previous_loss	=texture_3d_nearest_lod(loss_texture,u,0).rgb;// should adjust texCoords - we want the PREVIOUS loss!
 	float sin_e			=clamp(1.0-2.0*(texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texCoords.x*texSize.x-texelOffset)/(texSize.x-1.0);
@@ -241,7 +241,7 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_textu
 vec3 getSkylight(float alt_km, Texture3D insc_texture)
 {
 // The inscatter factor, at this altitude looking straight up, is given by:
-	vec4 insc		=texture_clamp_lod(insc_texture,vec3(sqrt(alt_km/maxOutputAltKm),0.0,1.0),0);
+	vec4 insc		=texture_3d_nearest_lod(insc_texture,vec3(sqrt(alt_km/maxOutputAltKm),0.0,1.0),0);
 	vec3 skylight	=InscatterFunction(insc,hazeEccentricity,0.0,mieRayleighRatio);
 	return skylight;
 }
@@ -279,7 +279,7 @@ vec4 Skyl(Texture3D insc_texture
 	float alt_km		=r-planetRadiusKm;
 	// lookups is: dens_factor,ozone_factor,haze_factor;
 	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-	vec4 lookups		=texture_clamp_lod(density_texture,vec2(dens_texc,0.5),0);
+	vec4 lookups		=texture_3d_nearest_lod(density_texture,vec2(dens_texc,0.5),0);
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);

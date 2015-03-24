@@ -79,9 +79,9 @@ vec3 ApplyEarthshadowFade(Texture2D illuminationTexture
 	vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 
-	vec3 loss			=texture_cmc_lod(lossTexture,fade_texc,0).rgb;
+	vec3 loss			=texture_3d_cmc_lod(lossTexture,fade_texc,0).rgb;
 	vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);
-	vec4 insc			=texture_clamp_lod(volumeInscatterTexture,volumeTexCoords,0);
+	vec4 insc			=texture_3d_clamp_lod(volumeInscatterTexture,volumeTexCoords,0);
 	//insc				*=light;
 	colour.rgb			*=loss;
 	colour.rgb			+=insc.rgb;
@@ -108,7 +108,7 @@ vec3 ApplySimpleFade(Texture2D lossTexture
 	vec2 fade_texc	=vec2(sqrt(length(wEyeToPos)/maxFadeDistMetres),0.5*(1.0-sine));
 	vec3 loss		=texture_clamp_mirror(lossTexture,fade_texc).rgb;
 	vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);
-	vec4 insc		=texture_clamp_lod(volumeInscatterTexture,volumeTexCoords,0);
+	vec4 insc		=texture_3d_clamp_lod(volumeInscatterTexture,volumeTexCoords,0);
 	colour			*=loss;
 	colour			+=insc.rgb;
 	return colour;
@@ -181,7 +181,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 
 	vec2 fade_texc			=vec2(sqrt(dist_tc),0.5*(1.0-sine));
 
-	vec3 loss				=texture_cmc_lod(lossTexture,fade_texc,0).rgb;
+	vec3 loss				=texture_3d_cmc_lod(lossTexture,fade_texc,0).rgb;
 
 	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	vec4 illum_lookup		=texture_wrap_mirror(illuminationTexture,illum_texc);
@@ -193,7 +193,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	vec2 far_texc			=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 	
 	vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);
-	vec4 insc				=texture_clamp_lod(volumeInscatterTexture,volumeTexCoords,0);
+	vec4 insc				=texture_3d_clamp_lod(volumeInscatterTexture,volumeTexCoords,0);
 	
 	//insc.rgb				*=visible_light;
 	vec3 light				=sun_irr*visible_light+moon_irr;
