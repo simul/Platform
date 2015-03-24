@@ -175,15 +175,20 @@ void OpenGLRenderer::ShutdownGL()
 void OpenGLRenderer::RenderGL(int view_id)
 {
 	crossplatform::MixedResolutionView *view	=viewManager.GetView(view_id);
+	if(!view)
+	{
+		view_id	=viewManager.AddView(false);
+		view	=viewManager.GetView(view_id);
+	}
 	const crossplatform::CameraOutputInterface *cam=cameras[view_id];
 	if (!cam)
 		return;
 	const crossplatform::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	crossplatform::DeviceContext deviceContext;
-	deviceContext.renderPlatform	=renderPlatform;
-	deviceContext.viewStruct.view_id=view_id;
-	deviceContext.viewStruct.view	=cam->MakeViewMatrix();
-	crossplatform::Viewport 		viewport=renderPlatform->GetViewport(deviceContext,view_id);
+	deviceContext.renderPlatform		=renderPlatform;
+	deviceContext.viewStruct.view_id	=view_id;
+	deviceContext.viewStruct.view		=cam->MakeViewMatrix();
+	crossplatform::Viewport viewport	=renderPlatform->GetViewport(deviceContext,view_id);
 
 	view->SetResolution(viewport.w,viewport.h);
 	EnsureCorrectBufferSizes(view_id);

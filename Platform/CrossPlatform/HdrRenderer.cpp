@@ -162,7 +162,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 		tech=glowExposureGammaTechnique;
 		hdr_effect->SetTexture(deviceContext,"glowTexture",glowTextures[0]);
 	}
-	bool msaa=(texture->GetSampleCount()>1);
+	bool msaa=texture?(texture->GetSampleCount()>1):false;
 	if(msaa)
 		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
 	else

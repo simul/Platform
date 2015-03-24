@@ -23,9 +23,6 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,debugEffect(NULL)
 {
 }
-RenderPlatform::~RenderPlatform()
-{
-}
 
 ID3D11Device *RenderPlatform::AsD3D11Device()
 {
