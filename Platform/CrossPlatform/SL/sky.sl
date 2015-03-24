@@ -29,11 +29,17 @@ vec4 BackgroundLatLongSphere(Texture2D backgroundTexture,vec2 texCoords)
 	clip_pos.y			-=2.0*texCoords.y;
 	vec3 view			=normalize(mul(invViewProj,vec4(clip_pos,1.0,1.0)).xyz);
 	// Plate-carree projection:
-	float ang			=atan2(view.y,-view.x)+pi;
+	float ang			=atan2(view.y,-view.x);
 	
-	vec2 lat_long_texc	=vec2(frac(ang/(pi*2.0)-0.5),0.5-asin(view.z)/pi);
-	vec4 result			=starBrightness*texture_wrap(backgroundTexture,lat_long_texc);
-	return result;
+	vec2 lat_long_texc	=vec2((ang/(pi*2.0)),0.5-asin(view.z)/pi);
+	float interp		=saturate(abs(lat_long_texc.x)*100.0);
+	vec4 result1		=texture_wrap(backgroundTexture,lat_long_texc);
+	
+	lat_long_texc.x		=frac(lat_long_texc.x);
+	vec4 result2		=texture_wrap(backgroundTexture,lat_long_texc);
+//	result.r=saturate(float(lat_long_texc.x>=0.4995));
+//	result.g=saturate(float(-lat_long_texc.x>=0.4995));
+	return starBrightness*lerp(result1,result2,interp);
 }
 
 #endif
