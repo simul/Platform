@@ -59,7 +59,6 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	,ShowWater(true)
 	,Exposure(1.0f)
 	,renderPlatformOpenGL(NULL)
-	,simple_program(0)
 {
 	if(!renderPlatformOpenGL)
 		renderPlatformOpenGL		=new opengl::RenderPlatform;
@@ -83,8 +82,6 @@ void OpenGLRenderer::InvalidateDeviceObjects()
 	std::cout<<"Errno "<<err<<std::endl;
 	errno=0;
 ERRNO_CHECK
-GL_ERROR_CHECK
-	SAFE_DELETE_PROGRAM(simple_program);
 GL_ERROR_CHECK
 	if(baseTerrainRenderer)
 		baseTerrainRenderer->InvalidateDeviceObjects();
@@ -218,19 +215,6 @@ void OpenGLRenderer::ReloadTextures()
 {
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->ReloadTextures();
-}
-
-void OpenGLRenderer::RecompileShaders()
-{
-	renderPlatform->RecompileShaders();
-	if(simulHDRRenderer)
-		simulHDRRenderer->RecompileShaders();
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->RecompileShaders();
-	if(baseTerrainRenderer)
-		baseTerrainRenderer->RecompileShaders();
-	SAFE_DELETE_PROGRAM(simple_program);
-	simple_program=MakeProgram("simple.vert",NULL,"simple.frag");
 }
 
 void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)

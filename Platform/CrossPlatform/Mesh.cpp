@@ -36,6 +36,8 @@ int crossplatform::Mesh::GetSubMeshCount() const
 			
 crossplatform::Mesh::SubMesh *crossplatform::Mesh::GetSubMesh(int index)
 {
+	if(index<0||index>=mSubMeshes.size())
+		return NULL;
 	return mSubMeshes[index];
 }
 			

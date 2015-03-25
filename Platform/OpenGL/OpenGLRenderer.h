@@ -58,12 +58,10 @@ namespace simul
 
 			simul::clouds::BaseWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer;}
 			void ReloadTextures();
-			void RecompileShaders();
 			void SaveScreenshot(const char *filename_utf8);
 			simul::opengl::RenderPlatform *renderPlatformOpenGL;
 		protected:
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
-			GLuint simple_program;
 		};
 	}
 }

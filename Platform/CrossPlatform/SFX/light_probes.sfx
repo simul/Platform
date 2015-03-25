@@ -10,6 +10,7 @@
 #define pi (3.1415926536)
 #endif
 // A texture (l+1)^2 of basis coefficients.
+#ifndef GLSL
 StructuredBuffer<float4> basisBuffer;
 
 // Coefficients for 
@@ -76,3 +77,4 @@ technique irradiance_map
 		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
+#endif

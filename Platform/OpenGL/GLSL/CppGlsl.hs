@@ -1,4 +1,3 @@
-
 #ifndef GLSL_H
 #define GLSL_H
 

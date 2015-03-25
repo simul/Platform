@@ -1,7 +1,7 @@
 #ifndef SPHERICAL_HARMONICS_SL
 #define SPHERICAL_HARMONICS_SL
 
-static const float PI=3.1415926536;
+STATIC const float PI=3.1415926536;
 /*float rand(vec2 co)
 {
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -63,15 +63,15 @@ float SH(int l, int m, float theta, float phi)
  // m in the range [-l..l] 
  // theta in the range [0..Pi] 
  // phi in the range [0..2*Pi] 
- const float sqrt2 = sqrt(2.0); 
- if(m==0)
-	 return K(l,0)*(float)P(l,m,cos(theta)); 
- else if(m>0)
-	 return sqrt2*K(l,m)*cos(m*phi)*P(l,m,cos(theta)); 
- else
-	 return sqrt2*K(l,-m)*sin(-m*phi)*P(l,-m,cos(theta)); 
+	 const float sqrt2 = sqrt(2.0); 
+	 if(m==0)
+		 return K(l,0)*float(P(l,m,cos(theta))); 
+	 else if(m>0)
+		 return sqrt2*K(l,m)*cos(m*phi)*P(l,m,cos(theta)); 
+	 else
+		 return sqrt2*K(l,-m)*sin(-m*phi)*P(l,-m,cos(theta)); 
 }
-
+#ifndef GLSL
 void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> samplesBufferRW,int2 pos
 	,int sqrt_n_samples
 	,int n_bands) 
@@ -100,5 +100,6 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 		}
 	}
 }
+#endif
 
 #endif

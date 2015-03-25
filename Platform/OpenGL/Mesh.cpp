@@ -34,25 +34,25 @@ bool opengl::Mesh::Initialize(crossplatform::RenderPlatform *,int lPolygonVertex
     // Save vertex attributes into GPU
     glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
     glBufferData(GL_ARRAY_BUFFER, lPolygonVertexCount * VERTEX_STRIDE * sizeof(float), lVertices, GL_STATIC_DRAW);
-    delete [] lVertices;
+  //  delete [] lVertices;
 
     if (mHasNormal)
     {
         glBindBuffer(GL_ARRAY_BUFFER, mVBONames[NORMAL_VBO]);
         glBufferData(GL_ARRAY_BUFFER, lPolygonVertexCount * NORMAL_STRIDE * sizeof(float), lNormals, GL_STATIC_DRAW);
-        delete [] lNormals;
+     //   delete [] lNormals;
     }
     
     if (mHasUV)
     {
         glBindBuffer(GL_ARRAY_BUFFER, mVBONames[UV_VBO]);
         glBufferData(GL_ARRAY_BUFFER, lPolygonVertexCount * UV_STRIDE * sizeof(float), lUVs, GL_STATIC_DRAW);
-        delete [] lUVs;
+   //     delete [] lUVs;
     }
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, lPolygonCount * TRIANGLE_VERTEX_COUNT * sizeof(unsigned int), lIndices, GL_STATIC_DRAW);
-    delete [] lIndices;
+  //  delete [] lIndices;
 
     return true;
 }
@@ -167,6 +167,8 @@ void opengl::Mesh::Draw(crossplatform::DeviceContext &,int pMaterialIndex,crossp
 {
     // Where to start.
 	const SubMesh *subMesh=GetSubMesh(pMaterialIndex);
+	if(!subMesh)
+		return;
     GLsizei lOffset = subMesh->IndexOffset * sizeof(unsigned int);
     if ( pShadingMode == crossplatform::SHADING_MODE_SHADED)
     {
