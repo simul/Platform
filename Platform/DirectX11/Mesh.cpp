@@ -82,6 +82,11 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygon
 			v.normal	=&(lNormals[i*3]);
 	}
 	init(renderPlatform,numVertices,numIndices,vertices,lIndices);
+	mSubMeshes.resize(1);
+	mSubMeshes[0]=new SubMesh;
+	mSubMeshes[0]->IndexOffset=0;
+	mSubMeshes[0]->TriangleCount=numIndices;
+	mSubMeshes[0]->drawAs=SubMesh::AS_TRISTRIP;
 	delete [] vertices;
 	return true;
 }
