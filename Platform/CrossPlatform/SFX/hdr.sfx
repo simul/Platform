@@ -212,7 +212,7 @@ shader vec4 ExposureGammaPS(posTexVertexOutput IN) : SV_Target
 	c.rgb	=pow(c.rgb,vec3(gamma,gamma,gamma));
 //c.rgb=vec3(1.0,0.0,1.0);
     vec4 u	=vec4(c.rgb,1.0);
-	u.rb+=IN.texCoords.xy;
+//	u.rb+=IN.texCoords.xy;
 	return u;
 }
 

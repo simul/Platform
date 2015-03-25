@@ -20,7 +20,11 @@ template <class T> inline void VectorDelete(std::vector<T>& vec)
 	vec.clear();
 }
 
-crossplatform::Mesh::Mesh() : mHasNormal(false), mHasUV(false), mAllByControlPoint(true)
+crossplatform::Mesh::Mesh() 
+	:done_begin(false)
+	,mHasNormal(false)
+	,mHasUV(false)
+	,mAllByControlPoint(true)
 {
 }
 
@@ -43,8 +47,6 @@ crossplatform::Mesh::SubMesh *crossplatform::Mesh::GetSubMesh(int index)
 			
 const crossplatform::Mesh::SubMesh *crossplatform::Mesh::GetSubMesh(int index) const
 {
-	if(index<0||index>=mSubMeshes.size())
-		return NULL;
 	return mSubMeshes[index];
 }
 
@@ -112,5 +114,4 @@ static const unsigned int box_indices[36] =
 void Mesh::Initialize(crossplatform::RenderPlatform *renderPlatform,crossplatform::MeshType m)
 {
 	Initialize(renderPlatform,8,(const float*)box_vertices,(const float*)box_vertices,(const float*)box_vertices,12,(const unsigned *)box_indices);
-
 }

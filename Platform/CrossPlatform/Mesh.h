@@ -20,6 +20,8 @@ namespace simul
 		// Save mesh vertices, normals, UVs and indices in GPU with OpenGL Vertex Buffer Objects
 		class SIMUL_CROSSPLATFORM_EXPORT Mesh
 		{
+		protected:
+			mutable bool done_begin;
 		public:
 			Mesh();
 			virtual ~Mesh();

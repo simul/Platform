@@ -1,5 +1,6 @@
 #include <GL/glew.h>
 #include "Mesh.h"
+#include "SimulGLUtilities.h"
 
 using namespace simul;
 
@@ -53,7 +54,14 @@ bool opengl::Mesh::Initialize(crossplatform::RenderPlatform *,int lPolygonVertex
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, lPolygonCount * TRIANGLE_VERTEX_COUNT * sizeof(unsigned int), lIndices, GL_STATIC_DRAW);
   //  delete [] lIndices;
+	
+	mSubMeshes.resize(1);
+	mSubMeshes[0]=new SubMesh;
+	mSubMeshes[0]->IndexOffset=0;
+	mSubMeshes[0]->TriangleCount=lPolygonCount;
+	mSubMeshes[0]->drawAs=SubMesh::AS_TRIANGLES;
 
+	GL_ERROR_CHECK
     return true;
 }
 
@@ -78,6 +86,7 @@ bool opengl::Mesh::Initialize(const std::vector<vec3> &vertices,const std::vecto
 	mSubMeshes[0]->IndexOffset=0;
 	mSubMeshes[0]->TriangleCount=(int)indices.size();
 	mSubMeshes[0]->drawAs=SubMesh::AS_TRISTRIP;
+	GL_ERROR_CHECK
 	return true;
 }
 
@@ -105,12 +114,14 @@ void opengl::Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::Shadi
     glPushAttrib(GL_CURRENT_BIT);
     glPushAttrib(GL_LIGHTING_BIT);
     glPushAttrib(GL_TEXTURE_BIT);
-
+	
+	GL_ERROR_CHECK
     // Set vertex position array.
 	glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
 	glVertexAttribPointer(0,VERTEX_STRIDE,GL_FLOAT,false,0,0);
-
+	
+	GL_ERROR_CHECK
     // Set normal array.
     if (mHasNormal && pShadingMode == crossplatform::SHADING_MODE_SHADED)
     {
@@ -160,26 +171,26 @@ void opengl::Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::Shadi
     {
         glColor4fv(WIREFRAME_COLOR);
     }
+	GL_ERROR_CHECK
 	//glUseProgram(0);
 }
 
-void opengl::Mesh::Draw(crossplatform::DeviceContext &,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
+void opengl::Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
 {
     // Where to start.
 	const SubMesh *subMesh=GetSubMesh(pMaterialIndex);
 	if(!subMesh)
 		return;
+	bool was_done=done_begin;
+	if(!done_begin)
+		BeginDraw(deviceContext,pShadingMode);
+	GL_ERROR_CHECK
     GLsizei lOffset = subMesh->IndexOffset * sizeof(unsigned int);
     if ( pShadingMode == crossplatform::SHADING_MODE_SHADED)
     {
 		if(subMesh->drawAs==SubMesh::AS_TRIANGLES)
 		{
-			const GLsizei lElementCount = subMesh->TriangleCount*3;
-
-		//	glDisable(GL_DEPTH_TEST);
-		//	glDisable(GL_BLEND);
-		//	glDepthMask(GL_TRUE);
-
+			const GLsizei lElementCount=subMesh->TriangleCount;
 			glDrawElements(GL_TRIANGLES,lElementCount,GL_UNSIGNED_INT,reinterpret_cast<const GLvoid *>(lOffset));
 		}
 		else
@@ -191,7 +202,7 @@ void opengl::Mesh::Draw(crossplatform::DeviceContext &,int pMaterialIndex,crossp
     {
 		if(subMesh->drawAs==SubMesh::AS_TRIANGLES)
 		{
-		   for (int lIndex = 0; lIndex < GetSubMesh(pMaterialIndex)->TriangleCount; ++lIndex)
+		   for (int lIndex = 0; lIndex<GetSubMesh(pMaterialIndex)->TriangleCount;++lIndex)
 			{
 				// Draw line loop for every triangle.
 				glDrawElements(GL_LINE_LOOP,TRIANGLE_VERTEX_COUNT,GL_UNSIGNED_INT,reinterpret_cast<const GLvoid *>(lOffset));
@@ -203,6 +214,9 @@ void opengl::Mesh::Draw(crossplatform::DeviceContext &,int pMaterialIndex,crossp
 			glDrawElements(GL_LINE_STRIP,subMesh->TriangleCount,GL_UNSIGNED_INT,reinterpret_cast<const GLvoid *>(lOffset));
 		}
     }
+	GL_ERROR_CHECK
+	if(!was_done)
+		EndDraw(deviceContext);
 }
 
 void opengl::Mesh::EndDraw(crossplatform::DeviceContext &) const

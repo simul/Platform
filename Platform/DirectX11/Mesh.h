@@ -10,7 +10,6 @@ namespace simul
 	{
 		class Mesh:public crossplatform::Mesh
 		{
-			mutable bool done_begin;
 		public:
 			Mesh();
 			~Mesh();

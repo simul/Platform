@@ -14,8 +14,7 @@ using namespace simul;
 using namespace dx11;
 
 Mesh::Mesh()
-	:done_begin(false)
-	,vertexBuffer(NULL)
+	:vertexBuffer(NULL)
 	,indexBuffer(NULL)
 	,inputLayout(NULL)
 	,stride(0)
@@ -82,11 +81,6 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygon
 			v.normal	=&(lNormals[i*3]);
 	}
 	init(renderPlatform,numVertices,numIndices,vertices,lIndices);
-	mSubMeshes.resize(1);
-	mSubMeshes[0]=new SubMesh;
-	mSubMeshes[0]->IndexOffset=0;
-	mSubMeshes[0]->TriangleCount=numIndices;
-	mSubMeshes[0]->drawAs=SubMesh::AS_TRISTRIP;
 	delete [] vertices;
 	return true;
 }
