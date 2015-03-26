@@ -291,10 +291,10 @@ namespace simul
 				vec3 pos1		=centrePos+vec3(square_size*j	,-square_size*halfOffset	,0);
 				vec3 pos2		=centrePos+vec3(square_size*j	, square_size*halfOffset	,0);
 				vertex->pos		=pos1;
-				vertex->colour	=vec4(l5,l5,0.f,1.0f);
+				vertex->colour	=vec4(l5,0.5f*l5,0.f,0.2f);
 				vertex++;
 				vertex->pos		=pos2;
-				vertex->colour	=vec4(l5,0.1f*l5,0.f,1.0f);
+				vertex->colour	=vec4(l5,0.1f*l5,0.f,0.2f);
 				vertex++;
 			}
 			for(int i=0;i<numLines;i++)
@@ -303,10 +303,10 @@ namespace simul
 				vec3 pos1		=centrePos+vec3(-square_size*halfOffset	,square_size*j	,0);
 				vec3 pos2		=centrePos+vec3( square_size*halfOffset	,square_size*j	,0);
 				vertex->pos		=pos1;
-				vertex->colour	=vec4(0.f,l10,l5,1.0f);
+				vertex->colour	=vec4(0.f,l10,0.1f*l5,0.2f);
 				vertex++;
 				vertex->pos		=pos2;
-				vertex->colour	=vec4(0.f,l25,l5,1.0f);
+				vertex->colour	=vec4(0.f,l25,0.1f*l5,0.2f);
 				vertex++;
 			}
 			deviceContext.renderPlatform->DrawLines(deviceContext,lines,2*numLines*2,false,true);
