@@ -7,7 +7,7 @@ struct LayerData
 	float pad11;
 	float pad12;
 	float layerFade;
-	float layerDistanceMetres;
+	float layerDistanceKm;
 	float verticalShift;
 	float pad13;
 };
@@ -34,9 +34,9 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 scaleOfGridCoords;
 	uniform int halfClipSize;			// Actually half the full clip size.
-	uniform vec3 gridOriginPos;
+	uniform vec3 gridOriginPosKm;
 	uniform float pad151663;
-	uniform vec3 viewPos;
+	uniform vec3 viewPosKm;
 	uniform uint layerIndex;
 	uniform mat4 invViewProj;
 	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
@@ -46,23 +46,23 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec4 depthToLinFadeDistParams;
 	uniform vec2 tanHalfFov;
 	uniform float exposure;
-	uniform float maxCloudDistanceMetres;
+	uniform float maxCloudDistanceKm;
 	uniform float nearZ;
 	uniform float farZ;
-	uniform float extentZMetres;
-	uniform float startZMetres;
+	uniform float extentZKm;
+	uniform float startZKm;
 	uniform float shadowRange;
 	uniform int shadowTextureSize;
 	uniform float depthMix;
 	uniform float CloudPerViewConstantsPad3;
 	uniform vec4 mixedResTransformXYWH;		// xy=offset, zw=multiple.
-	uniform vec2 rainCentre;
-	uniform float rainRadius;
+	uniform vec2 rainCentreKm;
+	uniform float rainRadiusKm;
 	uniform float ageaeghj5;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
-	uniform vec3 inverseScales;
+	uniform vec3 inverseScalesKm;
 	uniform float rainbowIntensity;
 
 	uniform vec3 ambientColour;
@@ -76,14 +76,14 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 directionToSun;
 	uniform float earthshadowMultiplier;
 
-	uniform vec3 cornerPos;
+	uniform vec3 cornerPosKm;
 	uniform float hazeEccentricity;
 
 	uniform vec3 sunlightColour1;
 	uniform float fractalRepeatLength;
 
 	uniform vec3 sunlightColour2;
-	uniform float fadeAltitudeRangeMetres;
+	uniform float fadeAltitudeRangeKm;
 
 	uniform vec2 screenCoordOffset;
 	uniform vec2 rainTangent;
@@ -92,9 +92,9 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float alphaSharpness;
 
 	uniform float rain;
-	uniform float maxFadeDistanceMetres;
+	uniform float maxFadeDistanceKm;
 	uniform float noise3DPersistence;
-	uniform float minSunlightAltitudeMetres;
+	uniform float minSunlightAltitudeKm;
 
 	uniform vec3 crossSectionOffset;
 	uniform int noise3DOctaves;
@@ -113,24 +113,24 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 
 	uniform vec3 noise3DTexcoordOffset;
 	uniform float dropletRadius;
-	uniform vec4 localCloudPivot;    
-	uniform vec4 localCloudInvScale; 
+	uniform vec4 localCloudPivotKm;    
+	uniform vec4 localCloudInvScaleKm; 
 SIMUL_CONSTANT_BUFFER_END
 	
 
 SIMUL_CONSTANT_BUFFER(CloudLightpassConstants,10)
-	uniform vec3 sourcePosMetres;
-	uniform float sourceRadiusMetres;
+	uniform vec3 sourcePosKm;
+	uniform float sourceRadiusKm;
 	uniform vec3 spectralFluxOver1e6;			// Units of watts per nm
 	uniform float maxCosine;
 	uniform float irradianceThreshold;
-	uniform float maxRadiusMetres;
+	uniform float maxRadiusKm;
 SIMUL_CONSTANT_BUFFER_END
 
 //! The result struct for a point or volume query.
 struct VolumeQueryResult
 {
-	vec3 pos_m;
+	vec3 pos_km;
 	int valid;
 	float density;
 	float direct_light;
@@ -140,13 +140,13 @@ struct VolumeQueryResult
 //! The result struct for a line query.
 struct LineQueryResult
 {
-	vec3 pos1_m;
+	vec3 pos1_km;
 	int valid;
-	vec3 pos2_m;
+	vec3 pos2_km;
 	float density;
 	float visibility;
-	float optical_thickness_metres;
-	float first_contact_metres;
+	float optical_thickness_km;
+	float first_contact_km;
 };
 										  
 #ifdef __cplusplus
@@ -171,8 +171,8 @@ struct CloudShadowStruct
 	mat4 worldToMoistureSpaceMatrix;	// Transform a position from world space to moisture space.
 	mat4 simpleOffsetMatrix;
 	mat4 worldspaceToCloudspaceMatrix;
-	float extentZMetres;
-	float startZMetres;
+	float extentZKm;
+	float startZKm;
 	float shadowRange;
 	float rainbowIntensity;
 	float godrays_strength;

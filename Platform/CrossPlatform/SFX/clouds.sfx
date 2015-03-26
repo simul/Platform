@@ -46,9 +46,9 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	//if(sub_pos.x>=num)
 	//	return;
 	VolumeQueryResult res;
-	res.pos_m						=queryInputs[sub_pos.x];
+	res.pos_km						=queryInputs[sub_pos.x];
 	res.valid						=1;
-	vec3 cloudTexCoords				=(res.pos_m-cornerPos)*inverseScales;
+	vec3 cloudTexCoords				=(res.pos_km-cornerPosKm)*inverseScalesKm;
 	vec4 lookup						=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
 	res.density						=lookup.z;
 	res.direct_light				=lookup.y;
@@ -68,33 +68,33 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	LineQueryResult res;
 	vec3 start_pos					=queryInputs[sub_pos.x*2];
 	vec3 end_pos					=queryInputs[sub_pos.x*2+1];
-	res.pos1_m						=start_pos;
-	res.pos2_m						=end_pos;
+	res.pos1_km						=start_pos;
+	res.pos2_km						=end_pos;
 	res.valid						=1;
 	res.density						=0.0;
 	res.visibility					=1.0;
-	res.optical_thickness_metres	=0.0;
-	res.first_contact_metres		=length(end_pos-start_pos);
-	vec3 dir						=normalize(res.pos2_m-res.pos1_m);
+	res.optical_thickness_km	=0.0;
+	res.first_contact_km		=length(end_pos-start_pos);
+	vec3 dir						=normalize(res.pos2_km-res.pos1_km);
 	// How far under?
-	float under						=max(0.0,cornerPos.z-res.pos1_m.z);
-	res.pos1_m						+=dir/(max(0.0001,dir.z))*under;
+	float under						=max(0.0,cornerPosKm.z-res.pos1_km.z);
+	res.pos1_km						+=dir/(max(0.0001,dir.z))*under;
 	// How far over?
-	float over						=max(0.0,res.pos2_m.z-cornerPos.z-1.0/inverseScales.z);
-	res.pos1_m						+=dir/(max(0.0001,-dir.z))*over;
-	if(dot(dir,res.pos2_m-res.pos1_m)>0.0)
+	float over						=max(0.0,res.pos2_km.z-cornerPosKm.z-1.0/inverseScalesKm.z);
+	res.pos1_km						+=dir/(max(0.0001,-dir.z))*over;
+	if(dot(dir,res.pos2_km-res.pos1_km)>0.0)
 	{
-		float stepSize					=length(res.pos2_m-res.pos1_m)/32.0;
+		float stepSize					=length(res.pos2_km-res.pos1_km)/32.0;
 		for(int i=0;i<33;i++)
 		{
-			vec3 pos						=lerp(res.pos1_m,res.pos2_m,float(i)/32.0);
-			vec3 cloudTexCoords				=(pos-cornerPos)*inverseScales;
+			vec3 pos						=lerp(res.pos1_km,res.pos2_km,float(i)/32.0);
+			vec3 cloudTexCoords				=(pos-cornerPosKm)*inverseScalesKm;
 			vec4 lookup						=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
 			res.density						+=lookup.z/32.0;
 			if(res.density>0.0)
-				res.first_contact_metres	=min(res.first_contact_metres,length(pos-start_pos));
+				res.first_contact_km	=min(res.first_contact_km,length(pos-start_pos));
 			res.visibility					*=1.0-lookup.z;
-			res.optical_thickness_metres	+=stepSize*lookup.z;
+			res.optical_thickness_km	+=stepSize*lookup.z;
 		}
 	}
 	lineQueryResults[sub_pos.x]	=res;
@@ -137,7 +137,7 @@ shader void CS_Simulate( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 // Then trace down to find first intersection with clouds, if any.
 shader vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 {
-	return CloudShadow(cloudDensity,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
+	return CloudShadow(cloudDensity,IN.texCoords,shadowMatrix,cornerPosKm,inverseScalesKm);
 }
 
 shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
@@ -222,11 +222,11 @@ FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 									,depthInterpretationStruct
 									,dlookup
 									,texCoords
-									,sourcePosMetres
-									,sourceRadiusMetres
+									,sourcePosKm
+									,sourceRadiusKm
 									,spectralFluxOver1e6
 									,maxCosine
-									,maxRadiusMetres
+									,maxRadiusKm
 									,irradianceThreshold
 									);
 	return f;

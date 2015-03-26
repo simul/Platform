@@ -19,8 +19,8 @@ SIMUL_CONSTANT_BUFFER(TerrainConstants,10)
 
 	// cloud shadow
 	uniform mat4 invShadowMatrix;
-	uniform float extentZMetres;
-	uniform float startZMetres;
+	uniform float extentZKm;
+	uniform float startZKm;
 	uniform float shadowRange;
 	uniform float pad4;
 
