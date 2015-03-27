@@ -294,6 +294,24 @@
 			w*=v[3];
 		}
 	};
+	inline vec4 operator*(float m,const vec4 &v)
+	{
+		vec4 r;
+		r.x=m*v.x;
+		r.y=m*v.y;
+		r.z=m*v.z;
+		r.w=m*v.w;
+		return r;
+	}
+	inline vec4 operator*(const vec4 &v,float m)
+	{
+		vec4 r;
+		r.x=m*v.x;
+		r.y=m*v.y;
+		r.z=m*v.z;
+		r.w=m*v.w;
+		return r;
+	}
 	inline vec4 operator*(const mat4 &m,vec4 &v)
 	{
 		vec4 r;

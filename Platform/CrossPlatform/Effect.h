@@ -321,11 +321,13 @@ namespace simul
 			}
 			void Apply(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
 			{
-				platformStructuredBuffer->Apply(pContext,effect,name);
+				if(platformStructuredBuffer)
+					platformStructuredBuffer->Apply(pContext,effect,name);
 			}
 			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
 			{
-				platformStructuredBuffer->ApplyAsUnorderedAccessView(pContext,effect,name);
+				if(platformStructuredBuffer)
+					platformStructuredBuffer->ApplyAsUnorderedAccessView(pContext,effect,name);
 			}
 			void InvalidateDeviceObjects()
 			{
