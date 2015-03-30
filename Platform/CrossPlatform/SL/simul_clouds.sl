@@ -655,7 +655,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	}
 	for(int i=0;i<255;i++)
 	{
-		world_pos					+=view;
+		world_pos					+=0.001*view;
 		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm)//||solidDist_nearFar.y<lastFadeDistance)
 			break;
 		offsetFromOrigin			=world_pos-gridOriginPosKm;
@@ -675,7 +675,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 
 		int3 c_step					=c_offset*int3(N);
 		float d						=e*viewScale;
-		distanceKm					+=abs(d);
+		distanceKm					+=(d);
 
 		// What offset was the original position from the centre of the cube?
 		p1							=p+e*viewScaled;
@@ -758,12 +758,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 													,brightness_factor);
 				//clr.rgb=saturate(distanceKm/100.0);
 				///clr.rg=solidDist_nearFar.xy;
-				clr.rgb=saturate(-D);
+			//	clr.rgb=saturate(-D);
 				if(do_depth_mix)
 				{
 					vec4 clr_n=clr;
-				//	clr.a				*=saturate((solidDist_nearFar.y-fadeDistance)/0.01);
-				//	clr_n.a				*=saturate((solidDist_nearFar.x-fadeDistance)/0.01);
+					clr.a				*=saturate((solidDist_nearFar.y-fadeDistance)/0.01);
+					clr_n.a				*=saturate((solidDist_nearFar.x-fadeDistance)/0.01);
 					nearColour.rgb		+=clr_n.rgb*clr_n.a*(nearColour.a);
 					nearColour.a		*=(1.0-clr_n.a);
 				}

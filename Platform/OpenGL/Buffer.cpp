@@ -41,6 +41,9 @@ GLuint Buffer::AsGLuint()
 void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access,bool streamout_target)
 {
 	SAFE_DELETE_BUFFER(buf)
+	SAFE_DELETE_VAO(vao);
+	glGenVertexArrays(1,&vao );
+	glBindVertexArray(vao);
     glGenBuffers(1, &buf);
     // Save vertex attributes into GPU
     glBindBuffer(GL_ARRAY_BUFFER, buf);
@@ -51,9 +54,6 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *,int num_vertices
 	stride=layout->GetStructSize();
 
 GL_ERROR_CHECK
-	SAFE_DELETE_VAO(vao);
-	glGenVertexArrays(1,&vao );
-	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER,buf);
 	for(int i=0;i<(int)layout->GetDesc().size();i++)
 	{

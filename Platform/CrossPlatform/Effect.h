@@ -309,23 +309,30 @@ namespace simul
 			}
 			void SetData(crossplatform::DeviceContext &deviceContext,T *data)
 			{
-				platformStructuredBuffer->SetData(deviceContext,(void*)data);
+				if(platformStructuredBuffer)
+					platformStructuredBuffer->SetData(deviceContext,(void*)data);
 			}
 			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
+				if(!platformStructuredBuffer)
+					return NULL;
 				return platformStructuredBuffer->AsD3D11ShaderResourceView();
 			}
 			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0)
 			{
+				if(!platformStructuredBuffer)
+					return NULL;
 				return platformStructuredBuffer->AsD3D11UnorderedAccessView();
 			}
 			void Apply(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
 			{
-				platformStructuredBuffer->Apply(pContext,effect,name);
+				if(platformStructuredBuffer)
+					platformStructuredBuffer->Apply(pContext,effect,name);
 			}
 			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
 			{
-				platformStructuredBuffer->ApplyAsUnorderedAccessView(pContext,effect,name);
+				if(platformStructuredBuffer)
+					platformStructuredBuffer->ApplyAsUnorderedAccessView(pContext,effect,name);
 			}
 			void InvalidateDeviceObjects()
 			{
