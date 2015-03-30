@@ -188,14 +188,14 @@ void opengl::Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMateria
     GLsizei lOffset = subMesh->IndexOffset * sizeof(unsigned int);
     if ( pShadingMode == crossplatform::SHADING_MODE_SHADED)
     {
+		const GLsizei lElementCount=subMesh->TriangleCount;
 		if(subMesh->drawAs==SubMesh::AS_TRIANGLES)
 		{
-			const GLsizei lElementCount=subMesh->TriangleCount;
 			glDrawElements(GL_TRIANGLES,lElementCount,GL_UNSIGNED_INT,reinterpret_cast<const GLvoid *>(lOffset));
 		}
 		else
 		{
-			glDrawElements(GL_TRIANGLE_STRIP,subMesh->TriangleCount,GL_UNSIGNED_INT,reinterpret_cast<const GLvoid *>(lOffset));
+			glDrawElements(GL_TRIANGLE_STRIP,lElementCount,GL_UNSIGNED_INT,reinterpret_cast<const GLvoid *>(lOffset));
 		}
     }
     else
