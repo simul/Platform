@@ -667,8 +667,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		vec3 p						=offsetFromOrigin/gridScale;
 		vec3 p1						=c1;
 		vec3 dp						=p1-p;
-		vec3 D						=dp/viewScaled;
-
+		vec3 D						=(dp/viewScaled);
+		//D+=100.0*step(D,vec3(0,0,0));
 		float e						=min(min(D.x,D.y),D.z);
 		// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
 		vec3 N						=step(D,vec3(e,e,e));
@@ -718,7 +718,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 										*saturate((rainRadiusKm-length(world_pos.xy-rainCentreKm.xy))*0.0003)
 										*saturate(1.0-10*cloudTexCoords.z)
 										*saturate(cloudTexCoords.z+1.0+4.0*streak.y)
-										*(0.4+0.6*streak.x);
+										*(0.4+0.6*streak.x)
+										;
 				moisture			+=0.01*dm*density.x;
 				density.z			=saturate(density.z+dm);
 			}
@@ -755,16 +756,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 													,world_pos,cloudTexCoords
 													,fade_texc,nearFarTexc
 													,brightness_factor);
-				//clr.rgb=saturate(fadeDistance.0);
+				//clr.rgb=saturate(distanceKm/100.0);
+				///clr.rg=solidDist_nearFar.xy;
+				clr.rgb=saturate(-D);
 				if(do_depth_mix)
 				{
 					vec4 clr_n=clr;
-			//		clr.a				*=saturate((solidDist_nearFar.y-fadeDistance)/0.01);
-			//		clr_n.a				*=saturate((solidDist_nearFar.x-fadeDistance)/0.01);
+				//	clr.a				*=saturate((solidDist_nearFar.y-fadeDistance)/0.01);
+				//	clr_n.a				*=saturate((solidDist_nearFar.x-fadeDistance)/0.01);
 					nearColour.rgb		+=clr_n.rgb*clr_n.a*(nearColour.a);
 					nearColour.a		*=(1.0-clr_n.a);
 				}
-				clr.r=saturate(fadeDistance);
 #endif
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
 				meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a*cloud_density);
