@@ -78,10 +78,8 @@ shader vec4 DebugPS(v2f IN) : SV_TARGET
 shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	vec2 texc	=IN.texCoords.xy;
-//#ifndef GLSL
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y		=1.0-texc.y;
-//#endif
 	vec4 res	=multiplier*texture_nearest_lod(imageTexture,texc.xy,0);
 	res.rgb		+=res.aaa;
 	return res;
@@ -90,10 +88,8 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 {
 	vec2 texc		=IN.texCoords.xy;
-//#ifndef GLSL
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y			=1.0-texc.y;
-//#endif
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
 	if(IN.texCoords.y<.5)
 	{
@@ -156,10 +152,8 @@ shader vec4 PS_ShowDepth_Reverse(posTexVertexOutput IN) : SV_TARGET
 vec4 ShowDepthMS_PS(posTexVertexOutput IN,bool reverseDepth) 
 {
 	vec2 texc=IN.texCoords.xy;
-//#ifndef GLSL
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y		=1.0-texc.y;
-//#endif
 	uint2 dims;
 	uint numSamples;
 	GET_DIMENSIONS_MSAA(imageTextureMS,dims.x,dims.y,numSamples);

@@ -224,6 +224,9 @@ vec4 HalfscaleOnly_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_dims
 vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct,bool find_edges)
 {
 	int2 pos0			=int2(pos*2);
+#ifdef GLSL
+	pos0.y				=int(source_dims.y)-pos0.y;
+#endif
 	int2 pos1			=int2(pos0)-int2(cornerOffset);
 
 	int2 max_pos		=int2(source_dims)-int2(11,5);

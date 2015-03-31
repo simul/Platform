@@ -300,6 +300,7 @@ void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,
 
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
+
 void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *brightpassTexture,crossplatform::Texture *targetTexture)
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"H")
