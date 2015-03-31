@@ -75,7 +75,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	}
 	lossTexture			=renderPlatform->CreateTexture();
 	volumeTextures[0]	=renderPlatform->CreateTexture();
-	volumeTextures[1]	= renderPlatform->CreateTexture();
+	volumeTextures[1]	=renderPlatform->CreateTexture();
 	ERRNO_CHECK
 	if(Width<=0||Height<=0||Downscale<=0)
 		return;

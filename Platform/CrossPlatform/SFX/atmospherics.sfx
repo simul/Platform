@@ -265,6 +265,9 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays,bool reverseDep
 	all8Output.colour6	=colours[5]*exposure;
 	all8Output.colour7	=colours[6]*exposure;
 	all8Output.colour8	=colours[7]*exposure;
+	all8Output.colour8.r=1;
+	all8Output.colour7.r=.8;
+	all8Output.colour6.r=.6;
 	return all8Output;
 }
 
@@ -355,18 +358,6 @@ shader All8Output PS_LossVolumeUnshadowed_forwardDepth(atmosVertexOutput IN)
 CS_LAYOUT(8,8,1)
 shader void CS_ScatteringVolume(uint3 idx: SV_DispatchThreadID)
 {
-	/*ScatteringVolume(targetVolume,	int3(idx)
-									,inscTexture
-									,skylTexture
-									,illuminationTexture
-									,cloudShadowTexture,invShadowMatrix,cloudTexture,worldToCloudMatrix,viewPosition
-									,xAxis
-									,yAxis
-									,lightDir
-									,scatteringVolumeDims
-									,hazeEccentricity
-									,mieRayleighRatio
-									,maxFadeDistanceMetres);*/
 	// We must convert the idx values into a direction and distance in real space.
 	float azimuth		=float(idx.x)/float(scatteringVolumeDims.x*2.0)*PI;
 	float elevation		=float(idx.y)/float((scatteringVolumeDims.y-1))*PI;
@@ -405,6 +396,7 @@ shader void CS_ScatteringVolume(uint3 idx: SV_DispatchThreadID)
 		next.rgb		+=skyl.rgb;
 	#endif
 		colour			+=max(vec4(0,0,0,0),(next-last))*shadow;
+		
 		IMAGE_STORE_3D(targetVolume,int3(idx.xy,i),colour);
 		last			=next;
 	}

@@ -820,7 +820,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	apply_count++;
 	currentTechnique		=effectTechnique;
 	currentPass				=pass;
-	//CHECK_TECH_EXISTS
+	CHECK_TECH_EXISTS
 	if(effectTechnique)
 	{
 		current_prog	=effectTechnique->passAsGLuint(pass);

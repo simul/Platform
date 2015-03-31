@@ -866,6 +866,7 @@ vec4 dx11::Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 te
 		return vec4(0,0,0,0);
 	return vec4((const float*)pixel);
 }
+
 void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext)
 {
 	if(!deviceContext.asD3D11DeviceContext())

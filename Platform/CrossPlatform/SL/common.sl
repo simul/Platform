@@ -44,6 +44,9 @@ posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
 	OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
 	OUT.hPosition.z	=0.0; 
 	OUT.texCoords	=pos;
+#ifndef GLSL
+	//OUT.texCoords.y	=1.0-OUT.texCoords.y;
+#endif
 	return OUT;
 }
 #endif

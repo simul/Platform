@@ -1092,7 +1092,7 @@ void RenderPlatform::DrawIndexed		(crossplatform::DeviceContext &deviceContext,i
 	if(!deviceContext.activeTechnique)
 		return;
 	GL_ERROR_CHECK
-	//glDrawElements(toGLTopology(currentTopology),num_indices,GL_UNSIGNED_SHORT,(void*)base_vertex);
+	glDrawElements(toGLTopology(currentTopology),num_indices,GL_UNSIGNED_SHORT,(void*)base_vertex);
 	GL_ERROR_CHECK
 }
 

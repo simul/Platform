@@ -70,7 +70,7 @@
 	#define texture_3d_cmc(tex,texc) texture(tex,texc)
 	#define texture_3d_nearest(tex,texc) texture(tex,texc) 
 	#define sample_3d(tex,sampler,texc) texture(tex,texc) 
-	#define texture_3d_nearest_lod(tex,texc,lod) textureLod(tex,texc,lod) 
+	#define texture_3d_nearest_lod(tex,texc,lod) textureLod(tex,vec3(texc.x,1.0-(texc.y),texc.z),lod) 
 	#define texture_3d_clamp_lod(tex,texc,lod) textureLod(tex,texc,lod)  
 	#define texture_3d_wrap_lod(tex,texc,lod) textureLod(tex,texc,lod) 
 	#define texture_3d_clamp(tex,texc) texture(tex,texc) 

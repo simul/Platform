@@ -279,7 +279,7 @@ vec4 Skyl(Texture3D insc_texture
 	float alt_km		=r-planetRadiusKm;
 	// lookups is: dens_factor,ozone_factor,haze_factor;
 	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-	vec4 lookups		=texture_3d_nearest_lod(density_texture,vec2(dens_texc,0.5),0);
+	vec4 lookups		=texture_nearest_lod(density_texture,vec2(dens_texc,0.5),0);
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
