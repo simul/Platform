@@ -564,7 +564,8 @@ float filterLight(Texture3D tex,vec3 texc)
 	float res=0.0;
 	for(int i=0;i<7;i++)
 	{
-		res+=sample_3d_lod(tex,lightSamplerState,texc+offsets[i],0).x;
+		vec3 t=texc+offsets[i];
+		res+=sample_3d_lod(tex,lightSamplerState,t,0).x;
 	}
 	return res/7.0;
 }

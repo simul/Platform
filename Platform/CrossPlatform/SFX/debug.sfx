@@ -173,6 +173,7 @@ vec4 ShowDepthMS_PS(posTexVertexOutput IN,bool reverseDepth)
 	if(IN.texCoords.x<viewport.x||IN.texCoords.x>viewport.x+viewport.z
 		||IN.texCoords.y<viewport.y||IN.texCoords.y>viewport.y+viewport.w)
 		result*=0.25;
+	result.b+=1;
 	return result;
 }
 
