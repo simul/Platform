@@ -286,7 +286,7 @@ GL_ERROR_CHECK
 	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,debugEffect->GetTechniqueByName(techname),"noblend");
 GL_ERROR_CHECK
 }
-
+/*
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v)
 {
 GL_ERROR_CHECK
@@ -324,7 +324,7 @@ glDisable(GL_CULL_FACE);
 	GL_ERROR_CHECK
 	debugEffect->Unapply(deviceContext);
 GL_ERROR_CHECK
-}
+}*/
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
 	,crossplatform::EffectTechnique *technique,const char *pass)

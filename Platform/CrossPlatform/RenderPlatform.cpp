@@ -181,6 +181,46 @@ void RenderPlatform::DrawTexture		(DeviceContext &deviceContext,int x1,int y1,in
 	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend);
 }
 
+void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v)
+{
+	crossplatform::EffectTechnique *tech	=debugEffect->GetTechniqueByName("show_depth");
+	if(tex->GetSampleCount()>0)
+	{
+		tech=debugEffect->GetTechniqueByName("show_depth_ms");
+		debugEffect->SetTexture(deviceContext,"imageTextureMS",tex);
+	}
+	else
+	{
+		debugEffect->SetTexture(deviceContext,"imageTexture",tex);
+	}
+	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	debugConstants.debugTanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	static float cc=300000.f;
+	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,cc);//(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
+	debugConstants.debugDepthToLinFadeDistParams=depthToLinFadeDistParams;
+	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
+	if(mirrorY2)
+	{
+		y1=(int)viewport.h-y1-dy;
+		//dy*=-1;
+	}
+	{
+		if(v)
+			debugConstants.viewport=vec4((float)v->x/(float)tex->width,(float)v->y/(float)tex->length,(float)v->w/(float)tex->width,(float)v->h/(float)tex->length);
+		else
+			debugConstants.viewport=vec4(0.f,0.f,1.f,1.f);
+		debugConstants.rect=vec4(2.f*(float)x1/(float)viewport.w-1.f
+								,1.f-2.f*(float)(y1+dy)/(float)viewport.h
+								,2.f*(float)dx/(float)viewport.w
+								,2.f*(float)dy/(float)viewport.h);
+		debugConstants.Apply(deviceContext);
+		debugEffect->Apply(deviceContext,tech,frustum.reverseDepth?"reverse_depth":"forward_depth");
+		DrawQuad(deviceContext);
+		debugEffect->UnbindTextures(deviceContext);
+		debugEffect->Unapply(deviceContext);
+	}
+}
+
 void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
 {
 	float clr[]={1.f,1.f,0.f,1.f};

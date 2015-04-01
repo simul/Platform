@@ -1203,49 +1203,6 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 		DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsD3D11ShaderResourceView(),mult,blend);
 }
 
-void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v)
-{
-	crossplatform::EffectTechnique *tech	=debugEffect->GetTechniqueByName("show_depth");
-	if(tex->GetSampleCount()>0)
-	{
-		tech=debugEffect->GetTechniqueByName("show_depth_ms");
-		debugEffect->SetTexture(deviceContext,"imageTextureMS",tex);
-	}
-	else
-	{
-		debugEffect->SetTexture(deviceContext,"imageTexture",tex);
-	}
-	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
-	debugConstants.debugTanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	static float cc=300000.f;
-	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,cc);//(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
-	debugConstants.debugDepthToLinFadeDistParams=depthToLinFadeDistParams;
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	unsigned int num_v=1;
-	D3D11_VIEWPORT viewport;
-	pContext->RSGetViewports(&num_v,&viewport);
-	if(mirrorY2)
-	{
-		y1=(int)viewport.Height-y1-dy;
-		//dy*=-1;
-	}
-	{
-		if(v)
-			debugConstants.viewport=vec4((float)v->x/(float)tex->width,(float)v->y/(float)tex->length,(float)v->w/(float)tex->width,(float)v->h/(float)tex->length);
-		else
-			debugConstants.viewport=vec4(0.f,0.f,1.f,1.f);
-		debugConstants.rect=vec4(2.f*(float)x1/(float)viewport.Width-1.f
-								,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
-								,2.f*(float)dx/(float)viewport.Width
-								,2.f*(float)dy/(float)viewport.Height);
-		debugConstants.Apply(deviceContext);
-		debugEffect->Apply(deviceContext,tech,frustum.reverseDepth?"reverse_depth":"forward_depth");
-		DrawQuad(deviceContext);
-		debugEffect->UnbindTextures(deviceContext);
-		debugEffect->Unapply(deviceContext);
-	}
-}
-
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
 	,crossplatform::EffectTechnique *technique,const char *pass)
 {
