@@ -11,10 +11,10 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	uniform vec4 lightDir;
 	uniform vec4 mieRayleighRatio;
 	uniform vec4 colour;
-
+	
+	uniform float altitudeTexCoord;
 	uniform float hazeEccentricity;
 	uniform float skyInterp;
-	uniform float altitudeTexCoord;
 	uniform float starBrightness;
 
 	uniform float radiusRadians;

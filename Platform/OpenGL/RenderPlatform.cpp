@@ -342,7 +342,7 @@ glDisable(GL_CULL_FACE);
 	{
 		int X,Y,Width,Height;
 	};
-	if(!debugEffect||!technique)
+	if(!effect||!technique)
 		return;
 	GL_ERROR_CHECK
 	Viewport viewport;

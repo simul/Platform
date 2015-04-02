@@ -115,6 +115,7 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		loss.rgb			=exp(-extinction*stepLengthKm);
 		loss.a				=(loss.r+loss.g+loss.b)/3.0;
 		loss				*=previous_loss;
+
 		IMAGE_STORE_3D(targetTexture,idx,vec4(loss.rgb,1.0));
 		prevDist_km			=dist_km;
 		previous_loss		=loss;
