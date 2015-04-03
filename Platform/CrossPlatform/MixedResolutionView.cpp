@@ -127,9 +127,12 @@ int	MixedResolutionViewManager::AddView(bool external_framebuffer)
 }
 
 void MixedResolutionViewManager::RemoveView(int view_id)
-{
-	delete views[view_id];
-	views.erase(view_id);
+{ 
+	if(views.find(view_id)!=views.end())
+	{
+		delete views[view_id];
+		views.erase(view_id);
+	}
 }
 
 MixedResolutionView *MixedResolutionViewManager::GetView(int view_id)

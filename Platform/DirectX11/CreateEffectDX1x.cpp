@@ -85,6 +85,7 @@ using namespace simul;
 using namespace dx11;
 using namespace base;
 
+#pragma optimize("",off)
 
 namespace simul
 {
@@ -563,10 +564,11 @@ ERRNO_CHECK
 		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
 ERRNO_CHECK
 	// See if there's a binary that's newer than the file date.
-	bool changes_detected=(shaderBuildMode==crossplatform::ALWAYS_BUILD);
+	bool changes_detected=(shaderBuildMode&crossplatform::ALWAYS_BUILD)!=0;
 	double binary_date_jdn=0.0;
+	double newest_included_file=0.0;
 	//std::cout<<"Checking DX11 shader "<<text_filename_utf8.c_str()<<std::endl;
-	if(shaderBuildMode==crossplatform::BUILD_IF_CHANGED)
+	if((shaderBuildMode&crossplatform::BUILD_IF_CHANGED)!=0)
 	{
 		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
 		binary_date_jdn			=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
@@ -581,17 +583,18 @@ ERRNO_CHECK
 				//	C:\Program Files (x86)\Microsoft Durango XDK\xdk\FXC\amd64\Fxc cs.hlsl –T cs_5_0 –D__XBOX_CONTROL_NONIEEE=0
 				//	*/
 			}
-			double newest_included_file=GetNewestIncludeFileDate(text_filename_utf8,textData,textSize,macros,binary_date_jdn);
+			newest_included_file=GetNewestIncludeFileDate(text_filename_utf8,textData,textSize,macros,binary_date_jdn);
 			if(hr!=S_OK||newest_included_file>binary_date_jdn)
 				changes_detected=true;
 		}
 	}
-	if(shaderBuildMode==crossplatform::NEVER_BUILD||!changes_detected&&binary_date_jdn>0)
+	crossplatform::ShaderBuildMode anyBuild=crossplatform::ALWAYS_BUILD|crossplatform::BUILD_IF_CHANGED;
+	if((shaderBuildMode&anyBuild==0)||!changes_detected&&binary_date_jdn>0)
 	{
 		hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 			return S_OK;
-		if(shaderBuildMode==crossplatform::NEVER_BUILD)
+		if(shaderBuildMode&anyBuild==0)
 			return S_FALSE;
 	}
 	ID3DBlob *binaryBlob	=NULL;
@@ -620,6 +623,11 @@ ERRNO_CHECK
 		if(hr==S_OK)
 		{
 			simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
+			double new_binary_date_jdn			=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
+			if(new_binary_date_jdn<newest_included_file)
+			{
+				SIMUL_CERR<<"Newly created file "<<binary_filename_utf8.c_str()<<" is older than newest include file."<<std::endl;
+			}
 		}
 	}
 	if(errorMsgs)

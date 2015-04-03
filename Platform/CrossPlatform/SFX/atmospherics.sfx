@@ -265,9 +265,9 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays,bool reverseDep
 	all8Output.colour6	=colours[5]*exposure;
 	all8Output.colour7	=colours[6]*exposure;
 	all8Output.colour8	=colours[7]*exposure;
-	all8Output.colour8.r=1;
-	all8Output.colour7.r=.8;
-	all8Output.colour6.r=.6;
+	///all8Output.colour8.r=1;
+	//all8Output.colour7.r=.8;
+	//all8Output.colour6.r=.6;
 	return all8Output;
 }
 

@@ -136,6 +136,7 @@ struct VolumeQueryResult
 	float direct_light;
 	float indirect_light;
 	float ambient_light;
+	float precipitation;
 };
 //! The result struct for a line query.
 struct LineQueryResult

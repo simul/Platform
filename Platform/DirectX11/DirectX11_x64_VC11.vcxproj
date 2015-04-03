@@ -166,6 +166,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <PreprocessorDefinitions>WIN64;SIMUL_DIRECTX11_DLL;_MBCS;FREEGLUT_STATIC;GLFX_STATIC;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Lib>
       <TargetMachine>MachineX64</TargetMachine>

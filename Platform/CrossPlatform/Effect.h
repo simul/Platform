@@ -54,6 +54,10 @@ namespace simul
 		{
 			return static_cast<ShaderBuildMode>(static_cast<int>(a) | static_cast<int>(b));
 		}
+		inline ShaderBuildMode operator&(ShaderBuildMode a, ShaderBuildMode b)
+		{
+			return static_cast<ShaderBuildMode>(static_cast<int>(a) & static_cast<int>(b));
+		}
 		struct DeviceContext;
 		class RenderPlatform;
 		struct Query;
