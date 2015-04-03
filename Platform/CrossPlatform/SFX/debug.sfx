@@ -5,6 +5,7 @@
 #include "../../CrossPlatform/SL/colour_packing.sl"
 #include "../../CrossPlatform/SL/debug_constants.sl"
 
+
 uniform sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 uniform TEXTURE2DMS_FLOAT4 imageTextureMS SIMUL_TEXTURE_REGISTER(1);
 uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);

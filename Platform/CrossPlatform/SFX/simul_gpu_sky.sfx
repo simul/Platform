@@ -125,7 +125,7 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 //The 3 y-values represent the three tables for interpolation.
 
 CS_LAYOUT(1,1,1)
-void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
+shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
 	uint3 sub_pos = g  + t;
 	// threadOffset.y determines the cycled index.

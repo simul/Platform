@@ -166,8 +166,7 @@ vec4 depthDependentFilteredImage(Texture2D imageTexture
 								 ,vec2 texc
 								 ,vec2 depthMask
 								 ,vec4 depthToLinFadeDistParams
-								 ,float d
-								 ,bool do_fallback)
+								 ,float d)
 {
 #if 0
 	return texture_clamp_lod(imageTexture,texc,0);

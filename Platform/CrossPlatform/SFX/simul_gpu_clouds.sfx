@@ -155,7 +155,7 @@ shader void CS_SecondaryLighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 {
 	uint3 sub_pos = uint3(g.xy * 8 + t.xy, g.z + t.z);
 	int3 dims;
-	int3 pos						=int3(sub_pos)+int3(threadOffset);
+	int3 pos	  = int3(sub_pos)+int3(threadOffset);
 	GET_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
