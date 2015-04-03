@@ -10,6 +10,49 @@ using namespace simul;
 using namespace crossplatform;
 using namespace std;
 
+// Clang works differently to VC++:
+#ifndef _MSC_VER
+template<class T> void ConstantBuffer<T>::RestoreDeviceObjects(RenderPlatform *p)
+{
+	InvalidateDeviceObjects();
+	if (p)
+	{
+		platformConstantBuffer = p->CreatePlatformConstantBuffer();
+		platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
+	}
+}
+
+template<class T> void ConstantBuffer<T>::LinkToEffect(Effect *effect, const char *name)
+{
+	if (IsLinkedToEffect(effect))
+		return;
+	if (effect&&platformConstantBuffer)
+	{
+		platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);
+		linkedEffects.insert(effect);
+		effect->StoreConstantBufferLink(this);
+	}
+}
+
+template<class T> bool ConstantBuffer<T>::IsLinkedToEffect(crossplatform::Effect *effect)
+{
+	if (linkedEffects.find(effect) != linkedEffects.end())
+	{
+		if (effect->IsLinkedToConstantBuffer(this))
+			return true;
+	}
+	return false;
+}
+template<class T> void StructuredBuffer<T>::RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable , T *data )
+{
+	count = ct;
+	delete platformStructuredBuffer;
+	platformStructuredBuffer = NULL;
+	platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
+	platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, data);
+}
+#endif
+
 Effect::Effect()
 	:apply_count(0)
 	,currentPass(0)

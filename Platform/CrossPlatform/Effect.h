@@ -197,36 +197,42 @@ namespace simul
 				*(T*)pData = *this;
 			}
 			//! Create the buffer object.
+#ifdef _MSC_VER
 			void RestoreDeviceObjects(RenderPlatform *p)
 			{
 				InvalidateDeviceObjects();
-				if(p)
+				if (p)
 				{
-					platformConstantBuffer=p->CreatePlatformConstantBuffer();
-					platformConstantBuffer->RestoreDeviceObjects(p,sizeof(T),(T*)this);
+					platformConstantBuffer = p->CreatePlatformConstantBuffer();
+					platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
 				}
 			}
-			//! Find the constant buffer in the given effect, and link to it.
-			void LinkToEffect(Effect *effect,const char *name)
+			void LinkToEffect(Effect *effect, const char *name)
 			{
-				if(IsLinkedToEffect(effect))
+				if (IsLinkedToEffect(effect))
 					return;
 				if (effect&&platformConstantBuffer)
 				{
-					platformConstantBuffer->LinkToEffect(effect,name,T::bindingIndex);
+					platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);
 					linkedEffects.insert(effect);
 					effect->StoreConstantBufferLink(this);
 				}
 			}
 			bool IsLinkedToEffect(crossplatform::Effect *effect)
 			{
-				if(linkedEffects.find(effect)!=linkedEffects.end())
+				if (linkedEffects.find(effect) != linkedEffects.end())
 				{
-					if(effect->IsLinkedToConstantBuffer(this))
+					if (effect->IsLinkedToConstantBuffer(this))
 						return true;
 				}
 				return false;
 			}
+#else
+			void RestoreDeviceObjects(RenderPlatform *p);
+			//! Find the constant buffer in the given effect, and link to it.
+			void LinkToEffect(Effect *effect, const char *name);
+			bool IsLinkedToEffect(crossplatform::Effect *effect);
+#endif
 			//! Free the allocated buffer.
 			void InvalidateDeviceObjects()
 			{
@@ -287,14 +293,18 @@ namespace simul
 			{
 				InvalidateDeviceObjects();
 			}
-			void RestoreDeviceObjects(RenderPlatform *p,int ct,bool computable=false,T *data=NULL)
+#ifdef _MSC_VER
+			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable = false, T *data = NULL)
 			{
-				count=ct;
+				count = ct;
 				delete platformStructuredBuffer;
-				platformStructuredBuffer=NULL;
-				platformStructuredBuffer=p->CreatePlatformStructuredBuffer();
-				platformStructuredBuffer->RestoreDeviceObjects(p,count,sizeof(T),computable,data);
+				platformStructuredBuffer = NULL;
+				platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
+				platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, data);
 			}
+#else
+			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable = false, T *data = NULL);
+#endif
 			T *GetBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				return (T*)platformStructuredBuffer->GetBuffer(deviceContext);

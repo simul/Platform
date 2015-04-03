@@ -589,12 +589,12 @@ ERRNO_CHECK
 		}
 	}
 	crossplatform::ShaderBuildMode anyBuild=crossplatform::ALWAYS_BUILD|crossplatform::BUILD_IF_CHANGED;
-	if((shaderBuildMode&anyBuild==0)||!changes_detected&&binary_date_jdn>0)
+	if((shaderBuildMode&anyBuild)==0||(!changes_detected&&binary_date_jdn>0))
 	{
 		hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 			return S_OK;
-		if(shaderBuildMode&anyBuild==0)
+		if((shaderBuildMode&anyBuild)==0)
 			return S_FALSE;
 	}
 	ID3DBlob *binaryBlob	=NULL;
