@@ -54,7 +54,7 @@ shader void CS_LightingQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.pos=lightingQueryInputs[sub_pos.x];
 	float alt_texc			=res.pos.z/1000.0/maxFadeAltitudeKm;
 	vec3 combined			=texture_clamp_lod(lightTable2DTexture,vec2(alt_texc,3.5/4.0),0).rgb;
-	res.ambient			=texture_clamp_lod(lightTable2DTexture,vec2(alt_texc,2.5/4.0),0).rgb;
+	res.ambient				=texture_clamp_lod(lightTable2DTexture,vec2(alt_texc,2.5/4.0),0).rgb;
 	res.sunlight			=texture_clamp_lod(lightTable2DTexture,vec2(alt_texc,0.5/4.0),0).rgb;
 	res.moonlight			=texture_clamp_lod(lightTable2DTexture,vec2(alt_texc,1.5/4.0),0).rgb;
 	res.valid				=1;

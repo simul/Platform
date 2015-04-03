@@ -73,9 +73,9 @@ namespace simul
 				hr=renderPlatform->AsD3D11Device()->CreateBuffer(&indexBufferDesc,&InitData,&indexBuffer);
 			}
 			void apply(ID3D11DeviceContext *pImmediateContext,unsigned instanceStride,ID3D11Buffer *instanceBuffer);
-			ID3D11Buffer *vertexBuffer;
-			ID3D11Buffer *indexBuffer;
-			ID3D11InputLayout* inputLayout;
+			ID3D11Buffer		*vertexBuffer;
+			ID3D11Buffer		*indexBuffer;
+			ID3D11InputLayout	*inputLayout;
 			unsigned stride;
 			unsigned numVertices;
 			unsigned numIndices;

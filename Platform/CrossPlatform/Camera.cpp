@@ -2,6 +2,7 @@
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Math/Quaternion.h"
 #include "Simul/Math/Matrix4x4.h"
+#include "Simul/Math/MatrixVector3.h"
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
 #include "Simul/Math/Pi.h"
 #include <memory.h>
