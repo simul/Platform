@@ -534,6 +534,15 @@
 			}
 			return r;
 		}
+		static inline mat4d Identity()
+		{
+			mat4d m;
+			for(int i=0;i<4;i++)
+				for(int j=0;j<4;j++)
+					m.M[i][j]=0.0f;
+			m._11=m._22=m._33=m._44=1.0f;
+			return m;
+		}
 	};
 #ifdef _MSC_VER
 #pragma warning(pop)

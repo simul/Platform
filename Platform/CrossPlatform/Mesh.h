@@ -22,11 +22,13 @@ namespace simul
 		{
 		protected:
 			mutable bool done_begin;
+			crossplatform::RenderPlatform *renderPlatform;
 		public:
 			Mesh();
 			virtual ~Mesh();
 			void Initialize(crossplatform::RenderPlatform *renderPlatform,crossplatform::MeshType m);
 			virtual bool Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices)=0;
+			virtual void GetVertices(void *target)=0;
 			virtual void UpdateVertexPositions(int lVertexCount, float *lVertices) const=0;
 			// Bind buffers, set vertex arrays, turn on lighting and texture.
 			virtual void BeginDraw(DeviceContext &deviceContext,ShadingMode pShadingMode) const=0;

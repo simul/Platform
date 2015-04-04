@@ -35,8 +35,44 @@ void Mesh::InvalidateDeviceObjects()
 	SAFE_RELEASE(inputLayout);
 	SAFE_RELEASE(inputLayout);
 }
-bool Mesh::Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices)
+
+void Mesh::GetVertices(void *target)
 {
+	ID3D11Buffer *stagingVertexBuffer = NULL;
+	ID3D11Buffer *stagingIndexBuffer = NULL;
+
+	D3D11_BUFFER_DESC vertexBufferDesc =
+	{
+		numVertices*sizeof(T),
+		D3D11_USAGE_DYNAMIC,
+		D3D11_BIND_VERTEX_BUFFER,
+		D3D11_CPU_ACCESS_WRITE,
+		0
+	};
+	D3D11_SUBRESOURCE_DATA InitData;
+	ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
+	InitData.pSysMem = NULL;
+	InitData.SysMemPitch = sizeof(T);
+	HRESULT hr = renderPlatform->AsD3D11Device()->CreateBuffer(&vertexBufferDesc, &InitData, &vertexBuffer);
+
+	// index buffer
+	D3D11_BUFFER_DESC indexBufferDesc =
+	{
+		num_indices*sizeof(U),
+		D3D11_USAGE_DYNAMIC,
+		D3D11_BIND_INDEX_BUFFER,
+		D3D11_CPU_ACCESS_WRITE,
+		0
+	};
+	ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
+	InitData.pSysMem = indices;
+	InitData.SysMemPitch = sizeof(U);
+	hr = renderPlatform->AsD3D11Device()->CreateBuffer(&indexBufferDesc, &InitData, &indexBuffer);
+}
+
+bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices)
+{
+	renderPlatform = r;
 	SAFE_RELEASE(vertexBuffer);
 	SAFE_RELEASE(indexBuffer);
 	stride=0;

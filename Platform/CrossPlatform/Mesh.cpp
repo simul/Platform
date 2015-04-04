@@ -111,7 +111,8 @@ static const unsigned int box_indices[36] =
 	MMP,
 	MMM,
 };
-void Mesh::Initialize(crossplatform::RenderPlatform *renderPlatform,crossplatform::MeshType m)
+void Mesh::Initialize(crossplatform::RenderPlatform *r,crossplatform::MeshType m)
 {
+	renderPlatform = r;
 	Initialize(renderPlatform,8,(const float*)box_vertices,(const float*)box_vertices,(const float*)box_vertices,12,(const unsigned *)box_indices);
 }
