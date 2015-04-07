@@ -27,8 +27,10 @@ namespace simul
 			// Template function to initialize vertices from an arbitrary vertex structure.
 			template<class T,typename U> void init(crossplatform::RenderPlatform *renderPlatform,const std::vector<T> &vertices,std::vector<U> indices)
 			{
-				int num_vertices	=(int)vertices.size();
-				int num_indices		=(int)indices.size();
+				stride = sizeof(T);
+				indexSize = sizeof(U);
+				numVertices = (int)vertices.size();
+				numIndices = (int)indices.size();
 				T *v				=new T[num_vertices];
 				U *ind				=new U[num_indices];
 				for(int i=0;i<num_vertices;i++)
@@ -43,6 +45,7 @@ namespace simul
 			{
 				releaseBuffers();
 				stride=sizeof(T);
+				indexSize = sizeof(U);
 				numVertices=num_vertices;
 				numIndices=num_indices;
 				D3D11_BUFFER_DESC vertexBufferDesc=
@@ -62,7 +65,7 @@ namespace simul
 				// index buffer
 				D3D11_BUFFER_DESC indexBufferDesc=
 				{
-					num_indices*sizeof(U),
+					num_indices*indexSize,
 					D3D11_USAGE_DYNAMIC,
 					D3D11_BIND_INDEX_BUFFER,
 					D3D11_CPU_ACCESS_WRITE,
@@ -77,7 +80,8 @@ namespace simul
 			ID3D11Buffer		*vertexBuffer;
 			ID3D11Buffer		*indexBuffer;
 			ID3D11InputLayout	*inputLayout;
-			unsigned stride;
+			unsigned stride;		// number of bytes per vertex.
+			unsigned indexSize;
 			unsigned numVertices;
 			unsigned numIndices;
 		protected:
