@@ -3,6 +3,7 @@
 #include "SimulGLUtilities.h"
 
 using namespace simul;
+using namespace opengl;
 
 namespace
 {
@@ -12,7 +13,7 @@ namespace
     const GLfloat WIREFRAME_COLOR[] = {0.5f, 0.5f, 0.5f, 1.0f};
 }
 
-opengl::Mesh::Mesh() :crossplatform::Mesh()
+Mesh::Mesh() :crossplatform::Mesh()
 {
     // Reset every VBO to zero, which means no buffer.
     for (int lVBOIndex = 0; lVBOIndex < VBO_COUNT; ++lVBOIndex)
@@ -21,13 +22,13 @@ opengl::Mesh::Mesh() :crossplatform::Mesh()
     }
 }
 
-opengl::Mesh::~Mesh()
+Mesh::~Mesh()
 {
     // Delete VBO objects, zeros are ignored automatically.
     glDeleteBuffers(VBO_COUNT, mVBONames);
 }
 
-bool opengl::Mesh::Initialize(crossplatform::RenderPlatform *,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices)
+bool Mesh::Initialize(crossplatform::RenderPlatform *,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices)
 {
     // Create VBOs
     glGenBuffers(VBO_COUNT, mVBONames);
@@ -65,7 +66,7 @@ bool opengl::Mesh::Initialize(crossplatform::RenderPlatform *,int lPolygonVertex
     return true;
 }
 
-bool opengl::Mesh::Initialize(const std::vector<vec3> &vertices,const std::vector<unsigned int> &indices)
+bool Mesh::Initialize(const std::vector<vec3> &vertices,const std::vector<unsigned int> &indices)
 {
     glGenBuffers(1, &(mVBONames[VERTEX_VBO]));
     glGenBuffers(1, &(mVBONames[INDEX_VBO]));
@@ -90,7 +91,7 @@ bool opengl::Mesh::Initialize(const std::vector<vec3> &vertices,const std::vecto
 	return true;
 }
 
-void opengl::Mesh::UpdateVertexPositions(int lVertexCount, float *lVertices) const
+void Mesh::UpdateVertexPositions(int lVertexCount, float *lVertices) const
 {
     // Transfer into GPU.
     if (lVertices)
@@ -100,7 +101,7 @@ void opengl::Mesh::UpdateVertexPositions(int lVertexCount, float *lVertices) con
     }
 }
 
-void opengl::Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::ShadingMode pShadingMode) const
+void Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::ShadingMode pShadingMode) const
 {
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -175,7 +176,7 @@ void opengl::Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::Shadi
 	//glUseProgram(0);
 }
 
-void opengl::Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
+void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
 {
     // Where to start.
 	const SubMesh *subMesh=GetSubMesh(pMaterialIndex);
@@ -219,7 +220,7 @@ void opengl::Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMateria
 		EndDraw(deviceContext);
 }
 
-void opengl::Mesh::EndDraw(crossplatform::DeviceContext &) const
+void Mesh::EndDraw(crossplatform::DeviceContext &) const
 {
     // Reset VBO binding.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -235,4 +236,7 @@ void opengl::Mesh::EndDraw(crossplatform::DeviceContext &) const
 	
 	glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
+}
+void Mesh::GetVertices(void *target,void *)
+{
 }

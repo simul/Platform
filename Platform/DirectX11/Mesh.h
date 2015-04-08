@@ -16,7 +16,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			// Implementing crossplatform::Mesh
 			bool Initialize(crossplatform::RenderPlatform *renderPlatform, int lPolygonVertexCount, const float *lVertices, const float *lNormals, const float *lUVs, int lPolygonCount, const unsigned int *lIndices);
-			void GetVertices(void *target);
+			void GetVertices(void *target,void *indices);
 			void releaseBuffers();
 			// Implementing crossplatform::Mesh
 			void BeginDraw	(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const;
@@ -80,10 +80,6 @@ namespace simul
 			ID3D11Buffer		*vertexBuffer;
 			ID3D11Buffer		*indexBuffer;
 			ID3D11InputLayout	*inputLayout;
-			unsigned stride;		// number of bytes per vertex.
-			unsigned indexSize;
-			unsigned numVertices;
-			unsigned numIndices;
 		protected:
 			void UpdateVertexPositions(int lVertexCount, float *lVertices) const;
 			mutable ID3D11InputLayout* previousInputLayout;

@@ -24,7 +24,11 @@ crossplatform::Mesh::Mesh()
 	:done_begin(false)
 	,mHasNormal(false)
 	,mHasUV(false)
-	,mAllByControlPoint(true)
+	, mAllByControlPoint(true)
+	, stride(0)
+	, indexSize(0)
+	, numVertices(0)
+	, numIndices(0)
 {
 }
 

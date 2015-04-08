@@ -17,9 +17,6 @@ Mesh::Mesh()
 	:vertexBuffer(NULL)
 	,indexBuffer(NULL)
 	,inputLayout(NULL)
-	,stride(0)
-	,numVertices(0)
-	,numIndices(0)
 	,previousInputLayout(NULL)
 	,previousTopology(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED)
 {
@@ -36,7 +33,7 @@ void Mesh::InvalidateDeviceObjects()
 	SAFE_RELEASE(inputLayout);
 }
 
-void Mesh::GetVertices(void *target)
+void Mesh::GetVertices(void *target,void *indices)
 {
 	ID3D11Buffer *stagingVertexBuffer = NULL;
 	ID3D11Buffer *stagingIndexBuffer = NULL;
@@ -44,16 +41,13 @@ void Mesh::GetVertices(void *target)
 	D3D11_BUFFER_DESC vertexBufferDesc =
 	{
 		numVertices*stride,
-		D3D11_USAGE_DYNAMIC,
-		D3D11_BIND_VERTEX_BUFFER,
-		D3D11_CPU_ACCESS_WRITE,
-		0
+		D3D11_USAGE_STAGING,
+		0,
+		D3D11_CPU_ACCESS_READ,
+		0,
+		stride
 	};
-	D3D11_SUBRESOURCE_DATA InitData;
-	ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
-	InitData.pSysMem = NULL;
-	InitData.SysMemPitch = stride;
-	HRESULT hr = renderPlatform->AsD3D11Device()->CreateBuffer(&vertexBufferDesc, &InitData, &stagingVertexBuffer);
+	HRESULT hr = renderPlatform->AsD3D11Device()->CreateBuffer(&vertexBufferDesc, NULL, &stagingVertexBuffer);
 	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->CopyResource(stagingVertexBuffer,vertexBuffer);
 	D3D11_MAPPED_SUBRESOURCE mapped;
 
@@ -61,20 +55,27 @@ void Mesh::GetVertices(void *target)
 
 	memcpy(target, mapped.pData,stride*numVertices);
 	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Unmap(stagingVertexBuffer, 0);
-	/*
+	
 	// index buffer
 	D3D11_BUFFER_DESC indexBufferDesc =
 	{
 		numIndices*indexSize,
-		D3D11_USAGE_DYNAMIC,
-		D3D11_BIND_INDEX_BUFFER,
-		D3D11_CPU_ACCESS_WRITE,
-		0
+		D3D11_USAGE_STAGING,
+		0,
+		D3D11_CPU_ACCESS_READ,
+		0,
+		indexSize
 	};
-	ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
-	InitData.pSysMem = NULL;
-	InitData.SysMemPitch = indexSize;
-	hr = renderPlatform->AsD3D11Device()->CreateBuffer(&indexBufferDesc, &InitData, &indexBuffer);*/
+	hr = renderPlatform->AsD3D11Device()->CreateBuffer(&indexBufferDesc, NULL, &stagingIndexBuffer);
+	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->CopyResource(stagingIndexBuffer, indexBuffer);
+
+	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Map(stagingIndexBuffer, 0, D3D11_MAP_READ, 0, &mapped);
+
+	memcpy(indices, mapped.pData, indexSize*numIndices);
+	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Unmap(stagingIndexBuffer, 0);
+
+	SAFE_RELEASE(stagingIndexBuffer);
+	SAFE_RELEASE(stagingVertexBuffer);
 }
 
 bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices)
