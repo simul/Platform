@@ -118,7 +118,10 @@ namespace simul
 			virtual void Print				(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			virtual void DrawLines			(DeviceContext &deviceContext,PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false)		=0;
 			virtual void Draw2dLines		(DeviceContext &deviceContext,PosColourVertex *lines,int vertex_count,bool strip)		=0;
+			/// Draw a circle facing the viewer at the specified direction and angular size.
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false)		=0;
+			/// Draw a circle in 3D space at pos
+			virtual void DrawCircle			(DeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill=false);
 			virtual void DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float exposure,float gamma);
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0,bool centred=false)		=0;
 			virtual void SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);

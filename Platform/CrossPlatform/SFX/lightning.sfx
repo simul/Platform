@@ -491,14 +491,13 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 texc			=vec2(IN.texc.x,1.0-IN.texc.y);
-	vec4 clookup 		=texture_wrap(cloudDepthTexture,texc.xy);
+	vec4 nearFarCloud 	=texture_wrap(cloudDepthTexture,texc.xy);
 
 	vec4 clip_pos		=vec4(IN.screenPos,1.0,1.0);
-	float depth			=clookup.x;
 	float l_depth		=IN.clipPos.z/IN.clipPos.w;
-	vec2 dist			=depthToFadeDistance(vec2(depth,l_depth),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
+	float dist			=depthToFadeDistance(l_depth,IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 
-	float past			=saturate(1.0-saturate((dist.y-dist.x)/0.00001)-0.01);
+	float past			=saturate((nearFarCloud.w-dist)/0.01-0.9);
 	
 	vec2 dir			=normalize(IN.hPosCentre2-IN.hPosCentre1);
 	float along			=dot(IN.screenPos-IN.hPosCentre1,dir);
@@ -532,7 +531,7 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 		br=0;
 	vec4 colour			=vec4(br*lightningColour.rgb,1.0);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	//colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
-	
+	//colour.rgb=past;
     return colour;
 }
 

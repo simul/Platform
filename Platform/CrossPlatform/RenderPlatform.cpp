@@ -153,6 +153,30 @@ void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const 
 	DrawLines(deviceContext,line_vertices,2,false,false,false);
 }
 
+void RenderPlatform::DrawCircle(DeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill)
+{
+	PosColourVertex line_vertices[36];
+	math::Vector3 direction(dir);
+	direction.Unit();
+	math::Vector3 z(0,0,1.f);
+	math::Vector3 y(0,1.f,0);
+	math::Vector3 x=z^direction;
+	if(x.Magnitude()>.1f)
+		x.Unit();
+	else
+		x=direction^y;
+	x*=radius;
+	y=(direction^x);
+	int l=0;
+	for(int j=0;j<36;j++)
+	{
+		float angle					=(float(j)/35.0f)*2.0f*3.1415926536f;
+		line_vertices[l].pos		=(x*cos(angle)+y*sin(angle));
+		line_vertices[l++].colour	=colr;
+	}
+	DrawLines(deviceContext,line_vertices,35,true,false,false);
+}
+
 void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
 {
 	simul::math::Matrix4x4 wvp;
