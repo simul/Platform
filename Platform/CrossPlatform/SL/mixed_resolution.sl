@@ -365,6 +365,7 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture,uint2 source_dims,uint2 sourc
 
 vec4 Halfscale(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct)
 {
+//	return vec4(1,0,0,1);
 	int2 pos0			=int2(pos*2);
 	int2 pos1			=int2(pos0)-int2(cornerOffset);
 

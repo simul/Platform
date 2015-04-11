@@ -772,7 +772,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				}
 #endif
 				colour.rgb				+=clr.rgb*clr.a*(colour.a);
-				meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a*cloud_density);
+				meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a*cosine*cosine);
 				colour.a				*=(1.0-clr.a);
 				if(nearColour.a*brightness_factor<0.003)
 				{
