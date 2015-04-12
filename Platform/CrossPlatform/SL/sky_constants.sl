@@ -26,11 +26,9 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	uniform float maxFadeDistanceKm;
 
 	uniform float maxFadeAltitudeKm;		// As a distance texcoord
-	uniform float illumination_alt_texc;	// Due to earth shadow
+	uniform float exposure;	
 	uniform uint cycled_index;
 	uniform float overlayAlpha;
-	
-	uniform float exposure;
 SIMUL_CONSTANT_BUFFER_END
 
 struct LightingQueryResult

@@ -342,7 +342,10 @@ shader vec4 PS_Stars_ForwardDepth(starsVertexOutput IN) : SV_TARGET
 	return result;
 }
 
-vec4 Sun(svertexOutput IN)
+
+// Sun could be overbright. So the colour is in the range [0,1], and a brightness factor is
+// stored in the alpha channel.
+shader vec4 PS_Sun( svertexOutput IN): SV_TARGET
 {
 	float r=length(IN.tex);
 	if(r>glowRadiusMultiple)
@@ -351,18 +354,11 @@ vec4 Sun(svertexOutput IN)
 	// What is the greatest loss?
 	vec4 loss_lookup	=texture_clamp_lod(lossTexture,vec2(1.0,0.5),0);
 	float most_loss		=min(min(loss_lookup.r,loss_lookup.g),loss_lookup.b);
-	float to_unity		=min(brightness,1.0/exposure/(most_loss+0.00001));
+	float to_unity		=exposure;//=4.0/(most_loss+0.00001);
 	float to_zero		=saturate((glowRadiusMultiple-r)/(glowRadiusMultiple-1.0));
-	brightness			=to_zero*min(colour.a,max(brightness,to_unity/pow(r,2.0)));//();//colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
+	brightness			=to_zero*min(colour.a,max(brightness,to_unity/pow(r,2.0)));
 	vec4 result			=vec4(brightness*colour.rgb,1.0);
 	return result;
-}
-
-// Sun could be overbright. So the colour is in the range [0,1], and a brightness factor is
-// stored in the alpha channel.
-shader vec4 PS_Sun( svertexOutput IN): SV_TARGET
-{
-	return Sun(IN);
 }
 
 vec4 PS_SunDepthTexture(svertexOutput IN,bool reverseDepth)
@@ -372,7 +368,21 @@ vec4 PS_SunDepthTexture(svertexOutput IN,bool reverseDepth)
 	vec2 depth_texc = viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
 	float depth = texture_clamp_lod(depthTexture, depth_texc.xy, 0).x;
 	discardUnlessFar(depth,reverseDepth);
-	return Sun(IN);
+	float r=length(IN.tex);
+	if(r>glowRadiusMultiple)
+		discard;
+//	if(r>1.0)
+//		discard;
+//	return vec4(1,0,0,1);
+	float brightness	=step(r,1.0)*colour.a;
+	// What is the greatest loss?
+	vec4 loss_lookup	=texture_clamp_lod(lossTexture,vec2(1.0,0.5),0);
+	float most_loss		=min(min(loss_lookup.r,loss_lookup.g),loss_lookup.b);
+	float to_unity		=exposure;//*4.0/(most_loss+0.00001);
+	float to_zero		=saturate((glowRadiusMultiple-r)/(glowRadiusMultiple-1.0));
+	brightness			=to_zero*min(colour.a,max(brightness,to_unity/pow(r,2.0)));
+	vec4 result			=vec4(brightness*colour.rgb,1.0);
+	return result;
 }
 
 shader vec4 PS_Sun_ReverseDepth(svertexOutput IN) : SV_TARGET
@@ -395,7 +405,7 @@ shader vec4 PS_SunGaussian( svertexOutput IN): SV_TARGET
 	float brightness=1.0;
 	if(r>1.0)
 		discard;
-		//brightness=1.0/pow(r,4.0);//();//colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
+	//brightness=1.0/pow(r,4.0);//();//colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
 	vec4 result=vec4(brightness*colour.rgb*colour.a,1.0);
 	return result;
 }
@@ -412,7 +422,6 @@ shader vec4 PS_SunQuery( svertexOutput IN): SV_TARGET
 shader vec4 PS_Flare( svertexOutput IN): SV_TARGET
 {
 	vec3 res=colour.rgb*sample(flareTexture,flareSamplerState,vec2(.5,.5)+0.5*IN.tex).rgb;
-
 	vec4 result= vec4(res,1.f);
 	return result;
 }
@@ -421,9 +430,9 @@ vec4 Planet(vec4 result,vec2 tex)
 {
 	// IN.tex is +- 1.
 	vec3 normal;
-	normal.x=tex.x;
-	normal.y=tex.y;
-	float l=length(tex);
+	normal.x	=tex.x;
+	normal.y	=tex.y;
+	float l		=length(tex);
 	if(l>1.0)
 		return vec4(0,0.0,0,0.0);
 	//	discard;
@@ -432,14 +441,13 @@ vec4 Planet(vec4 result,vec2 tex)
 	result.rgb	*=colour.rgb;
 	result.rgb	*=light;
 	result.a	*=saturate((0.97-l)/0.03);
-	//result.r=5.0;
-	return result;
+	return (result);
 }
 
 shader vec4 PS_Planet(svertexOutput IN): SV_TARGET
 {
-	vec4 result = texture_clamp(flareTexture, vec2(0.5,0.5) - 0.5*IN.tex);
-	result=Planet(result,IN.tex);
+	vec4 result =texture_clamp(flareTexture, vec2(0.5,0.5) - 0.5*IN.tex);
+	result		=Planet(result,IN.tex);
 	return result;
 }
 
@@ -722,7 +730,7 @@ technique planet
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
-		SetPixelShader(CompileShader(ps_4_0, PS_Planet()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
 		//SetDepthStencilState(TestDepth,0);
 		SetBlendState(AlphaBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
 	}
@@ -730,8 +738,8 @@ technique planet
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0, VS_Sun()));
-		SetPixelShader(CompileShader(ps_4_0, PS_Planet_ReverseDepth()));
+		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Planet_ReverseDepth()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AlphaBlend, vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
