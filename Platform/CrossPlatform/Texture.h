@@ -74,7 +74,7 @@ namespace simul
 			virtual sce::Gnm::Texture *AsGnmTexture(){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return 0;}
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0){return 0;}
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int =0){return 0;}
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(){return 0;}
 			/// Asynchronously move this texture to fast RAM.
