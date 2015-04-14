@@ -193,9 +193,9 @@ vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 									,false
 									,cloudIrRadiance1,cloudIrRadiance2
 									);
-
 	if(p.colour.a>=1.0)
 	   discard;
+	p.colour.rgb*=exposure;
 	return p.colour;
 }
 

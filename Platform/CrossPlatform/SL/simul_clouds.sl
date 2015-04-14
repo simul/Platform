@@ -802,9 +802,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			idx			++;
 		}
 	}
-//	meanFadeDistance	+=colour.a;
-    res.colour			=vec4(exposure*colour.rgb,colour.a);
-    res.nearColour		=vec4(exposure*nearColour.rgb,nearColour.a);
+    res.colour			=vec4(colour.rgb,colour.a);
+    res.nearColour		=vec4(nearColour.rgb,nearColour.a);
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
