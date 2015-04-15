@@ -29,6 +29,9 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	uniform float exposure;	
 	uniform uint cycled_index;
 	uniform float overlayAlpha;
+	
+	uniform float sunBrightness;
+	uniform float glowBrightness;
 SIMUL_CONSTANT_BUFFER_END
 
 struct LightingQueryResult
