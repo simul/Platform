@@ -240,16 +240,11 @@ vec4 Inscatter(	Texture2D inscTexture
 				,illum_texc
 				,insc
 				,skyl);
-#ifdef INFRARED
-	vec3 colour			=skyl.rgb;
-#else
 	float cos0			=dot(view,lightDir);
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl.rgb;
-#endif
 	return vec4(colour,1.0);
 }
-
 
 // In depthTextureNF, x=far, y=near, z=edge
 vec4 Inscatter_NFDepth(	Texture2D inscTexture
@@ -308,12 +303,8 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
                 ,insc
 				,skyl);
 	float cos0			=dot(view,lightDir);
-#ifdef INFRARED
-	vec3 colour			=skyl.rgb;
-#else
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;
-#endif
 	return vec4(colour.rgb,1.0);
 }
 	
@@ -367,16 +358,9 @@ FarNearOutput Inscatter_Both(	Texture2D inscTexture
 				,illum_texc
                 ,inscFar
 				,skylFar);
-#ifdef INFRARED
-	vec3 colour				=skylFar.rgb;
-	fn.farColour			=vec4(colour,1.f);
-	fn.nearColour			=vec4(colour,1.f);
-	return fn;
-#else
 	vec3 farColour	    =InscatterFunction(inscFar,hazeEccentricity,cos0,mieRayleighRatio);
 	farColour			+=skylFar;
 	fn.farColour		= vec4(farColour.rgb,1.0);
-#endif
 	if(depth_lookup.z!=0)
 	{
 		CalcInsc(	inscTexture
@@ -560,12 +544,8 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 		skyl/=float(numSamples);
 	}
 	float cos0			=dot(view,lightDir);
-#ifdef INFRARED
-	vec3 colour			=skyl.rgb;
-#else
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;
-#endif
 	return vec4(colour.rgb,1.0);
 }
 
