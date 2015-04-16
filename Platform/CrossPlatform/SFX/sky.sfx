@@ -344,12 +344,14 @@ shader vec4 PS_Stars_ForwardDepth(starsVertexOutput IN) : SV_TARGET
 
 vec4 Sun(svertexOutput IN)
 {
-	float r=length(IN.tex);
+	float r				=length(IN.tex);
 	if(r>glowRadiusMultiple)
 		discard;
 	float brightness	=step(r,1.0)*sunBrightness;
+	brightness			*=saturate((0.97-r)/0.03);
+	float sine			=0.0;
 	// What is the greatest loss?
-	vec4 loss_lookup	=texture_clamp_lod(lossTexture,vec2(1.0,0.4),0);
+	vec4 loss_lookup	=texture_clamp_lod(lossTexture,vec2(1.0,min(0.4,0.5*(1.0-sine))),0);
 	float most_loss		=min(min(loss_lookup.r,loss_lookup.g),loss_lookup.b);
 	float to_zero		=1.0/most_loss*saturate((glowRadiusMultiple-r)/(glowRadiusMultiple-1.0));
 	brightness			=to_zero*max(brightness,glowBrightness/pow(max(1.0,r),2.0));
