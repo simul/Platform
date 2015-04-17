@@ -354,7 +354,7 @@ vec4 Sun(svertexOutput IN)
 	vec4 loss_lookup	=texture_clamp_lod(lossTexture,vec2(1.0,min(0.4,0.5*(1.0-sine))),0);
 	float most_loss		=min(min(loss_lookup.r,loss_lookup.g),loss_lookup.b);
 	float to_zero		=1.0/most_loss*saturate((glowRadiusMultiple-r)/(glowRadiusMultiple-1.0));
-	brightness			=to_zero*max(brightness,glowBrightness/pow(max(1.0,r),2.0));
+	brightness			=to_zero*max(brightness,glowBrightness/pow(max(1.0,r),4.0));
 	vec4 result			=vec4(brightness*colour.rgb,1.0);
 	return result;
 }
