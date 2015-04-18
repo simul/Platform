@@ -214,7 +214,9 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	glGenBuffers(1, &ssbo);
 	GL_ERROR_CHECK
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	GL_ERROR_CHECK
 	glBufferData(GL_SHADER_STORAGE_BUFFER, element_bytesize*num_elements, init_data, GL_DYNAMIC_COPY);
+	GL_ERROR_CHECK
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	GL_ERROR_CHECK
 }

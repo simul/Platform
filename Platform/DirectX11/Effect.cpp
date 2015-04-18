@@ -152,6 +152,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(buffer, &uav_desc,&unorderedAccessView));
 	}
 }
+
 void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceContext)
 {
 	lastContext=deviceContext.asD3D11DeviceContext();
