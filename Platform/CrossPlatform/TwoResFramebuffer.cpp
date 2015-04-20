@@ -59,7 +59,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		return;
 	for (int i = 0; i < 3; i++)
 	{
-		lowResFramebuffers[i] = renderPlatform->CreateFramebuffer();
+		lowResFramebuffers[i]=renderPlatform->CreateFramebuffer();
 		lowResFramebuffers[i]->SetFormat(crossplatform::RGBA_16_FLOAT);
 		lowResFramebuffers[i]->SetDepthFormat(crossplatform::UNKNOWN);
 		lowResFramebuffers[i]->SetUseFastRAM(true, true);
