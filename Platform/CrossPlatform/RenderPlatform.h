@@ -237,7 +237,49 @@ namespace simul
 		/// \param [in]	square_size	Spacing between lines - in whatever units the renderer is working in.
 		/// \param [in]	brightness 	Brightness of the lines.
 		/// \param [in]	numLines	Number of gridlines to draw.
-		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext,vec3 centrePos,float square_size,float brightness,int numLines);
+		extern SIMUL_CROSSPLATFORM_EXPORT void DrawGrid(crossplatform::DeviceContext &deviceContext, vec3 centrePos, float square_size, float brightness, int numLines);
+		// Clang works differently to VC++:
+#ifndef _MSC_VER
+		template<class T> void ConstantBuffer<T>::RestoreDeviceObjects(RenderPlatform *p)
+		{
+			InvalidateDeviceObjects();
+			if (p)
+			{
+				platformConstantBuffer = p->CreatePlatformConstantBuffer();
+				platformConstantBuffer->RestoreDeviceObjects(p, sizeof(T), (T*)this);
+			}
+		}
+
+		template<class T> void ConstantBuffer<T>::LinkToEffect(Effect *effect, const char *name)
+		{
+			if (IsLinkedToEffect(effect))
+				return;
+			if (effect&&platformConstantBuffer)
+			{
+				platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);
+				linkedEffects.insert(effect);
+				effect->StoreConstantBufferLink(this);
+			}
+		}
+
+		template<class T> bool ConstantBuffer<T>::IsLinkedToEffect(crossplatform::Effect *effect)
+		{
+			if (linkedEffects.find(effect) != linkedEffects.end())
+			{
+				if (effect->IsLinkedToConstantBuffer(this))
+					return true;
+			}
+			return false;
+		}
+		template<class T> void StructuredBuffer<T>::RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable, T *data)
+		{
+			count = ct;
+			delete platformStructuredBuffer;
+			platformStructuredBuffer = NULL;
+			platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
+			platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, data);
+		}
+#endif
 	}
 }
 

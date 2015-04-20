@@ -69,10 +69,9 @@ vec4 PS_NearFarShadow(atmosVertexOutput IN,bool reverseDepth)
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
-	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	//vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec2 nf=NearFarShadow(depthTexture,cloudShadowTexture
 						,viewportToTexRegionScaleBias
-						,lossTexture
 						,invViewProj
 						,IN.texCoords
 						,IN.pos
@@ -99,7 +98,7 @@ vec4 PS_Loss(atmosVertexOutput IN,bool reverseDepth)
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
-	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	//vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec3 loss		=AtmosphericsLoss(depthTexture
 									,viewportToTexRegionScaleBias
 									,lossTexture
@@ -121,48 +120,15 @@ shader vec4 PS_Loss_ForwardDepth(atmosVertexOutput IN) : SV_TARGET
 	return PS_Loss(IN,false);
 }
 
-shader vec4 PS_LossMSAA(atmosVertexOutput IN,uint sampleIndex : SV_SampleIndex,bool reverseDepth)
-{
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=reverseDepth;
-	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	int2 pos2;
-	uint numSamples;
-	GetMSAACoordinates(depthTextureMS,depth_texc,pos2,numSamples);
-	vec3 loss		=AtmosphericsLossMSAA(depthTextureMS
-											,sampleIndex
-											,viewportToTexRegionScaleBias
-											,lossTexture
-											,invViewProj
-											,IN.texCoords
-											,pos2
-											,IN.pos
-											,depthInterpretationStruct
-											,tanHalfFov);
-    return vec4(loss.rgb,1.0);
-}
-
-shader vec4 PS_LossMSAA_ReverseDepth(atmosVertexOutput IN,uint sampleIndex:SV_SampleIndex) : SV_TARGET
-{
-	return PS_LossMSAA(IN,sampleIndex,true);
-}
-
-shader vec4 PS_LossMSAA_ForwardDepth(atmosVertexOutput IN,uint sampleIndex:SV_SampleIndex) : SV_TARGET
-{
-	return PS_LossMSAA(IN,sampleIndex,false);
-}
 
 vec4 PS_Inscatter(atmosVertexOutput IN,bool reverseDepth) 
 {
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
-	int numSamples	=1;
 	vec4 insc		=Inscatter(	 inscTexture
 								,skylTexture
 								,depthTexture
-								,numSamples
 								,illuminationTexture
 								,invViewProj
 								,IN.texCoords
@@ -171,9 +137,7 @@ vec4 PS_Inscatter(atmosVertexOutput IN,bool reverseDepth)
 								,mieRayleighRatio
 								,viewportToTexRegionScaleBias
 								,depthInterpretationStruct
-								,tanHalfFov
-								,true
-								,false);
+								,tanHalfFov);
     vec4 res=vec4(insc.rgb*exposure,1.0);
 	return res;
 }
@@ -210,7 +174,6 @@ vec4 PS_InscatterMSAA(atmosVertexOutput IN,uint sampleIndex,bool reverseDepth)
 							,lightDir
 							,hazeEccentricity
 							,mieRayleighRatio
-							,viewportToTexRegionScaleBias
 							,depthInterpretationStruct
 							,tanHalfFov
 							,false
@@ -229,30 +192,24 @@ shader vec4 PS_InscatterMSAA_ForwardDepth(atmosVertexOutput IN,uint sampleIndex:
 	return PS_InscatterMSAA(IN,sampleIndex,false);
 }
 
-All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays,bool reverseDepth)
+All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 {
-	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
+//	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
 	vec2 texCoords		=mixedResolutionTransformXYWH.xy+IN.texCoords.xy*mixedResolutionTransformXYWH.zw;
 	vec4 colours[8];
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=reverseDepth;
 	Inscatter_All( colours
 					,inscTexture
 					,skylTexture
 					,illuminationTexture
-					,cloudShadowTexture
 					,cloudTexture
 					,cloudSamplerState
 					,viewPosition
 					,invShadowMatrix
-					,depth_lookup
 					,texCoords
 					,invViewProj
 					,lightDir
 					,hazeEccentricity
 					,mieRayleighRatio
-					,depthInterpretationStruct
 					,maxFadeDistanceMetres
 					,godrays);
 	
@@ -271,51 +228,30 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays,bool reverseDep
 	return all8Output;
 }
 
-shader All8Output PS_Inscatter_Volume_WithGodrays_reverseDepth(atmosVertexOutput IN)
+shader All8Output PS_Inscatter_Volume_WithGodrays(atmosVertexOutput IN)
 {
-	return psInscatter_Volume(IN,godraysIntensity,true);
+	return psInscatter_Volume(IN,godraysIntensity);
 }
 
-shader All8Output PS_Inscatter_Volume_WithoutGodrays_reverseDepth(atmosVertexOutput IN)
+shader All8Output PS_Inscatter_Volume_WithoutGodrays(atmosVertexOutput IN)
 {
-	return psInscatter_Volume(IN,0.0,true);
+	return psInscatter_Volume(IN,0.0);
 }
 
-shader All8Output PS_Inscatter_Volume_WithGodrays_forwardDepth(atmosVertexOutput IN)
+All8Output psLossVolume(atmosVertexOutput IN)
 {
-	return psInscatter_Volume(IN,godraysIntensity,false);
-}
-
-shader All8Output PS_Inscatter_Volume_WithoutGodrays_forwardDepth(atmosVertexOutput IN)
-{
-	return psInscatter_Volume(IN,0.0,false);
-}
-
-All8Output psLossVolume(atmosVertexOutput IN,bool shadowed,bool reverseDepth)
-{
-	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
 	vec2 texCoords		=mixedResolutionTransformXYWH.xy+IN.texCoords.xy*mixedResolutionTransformXYWH.zw;
 	vec4 colours[8];
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=reverseDepth;
 	Loss_All( colours
 				,lossTexture
-				,depthTexture
 				,cloudTexture
 				,cloudSamplerState
 				,viewPosition
 				,invShadowMatrix
-				,depth_lookup
 				,texCoords
 				,invViewProj
 				,lightDir
-				,hazeEccentricity
-				,mieRayleighRatio
-				,depthInterpretationStruct,tanHalfFov
-				,viewportToTexRegionScaleBias
-				,maxFadeDistanceMetres
-				,shadowed,cloudShadowing,cloudShadowSharpness);
+				,maxFadeDistanceMetres);
 	
 	All8Output all8Output;
 	all8Output.colour1	=colours[0];
@@ -330,26 +266,11 @@ All8Output psLossVolume(atmosVertexOutput IN,bool shadowed,bool reverseDepth)
 }
 
 
-shader All8Output PS_LossVolumeShadowed_reverseDepth(atmosVertexOutput IN)
+shader All8Output PS_LossVolume(atmosVertexOutput IN)
 {
-	return psLossVolume(IN,true,true);
+	return psLossVolume(IN);
 }
 
-shader All8Output PS_LossVolumeUnshadowed_reverseDepth(atmosVertexOutput IN)
-{
-	return psLossVolume(IN,false,true);
-}
-
-
-shader All8Output PS_LossVolumeShadowed_forwardDepth(atmosVertexOutput IN)
-{
-	return psLossVolume(IN,true,false);
-}
-
-shader All8Output PS_LossVolumeUnshadowed_forwardDepth(atmosVertexOutput IN)
-{
-	return psLossVolume(IN,false,false);
-}
 
 // With this function we will create a 3D volume texture that encompasses the scattering for a frame,
 // where the x-axis is azimuth around the light source, y-axis is angle from the light source (maximum = 180 deg)
@@ -448,7 +369,7 @@ group inscatter_volume
 			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
-			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithGodrays_reverseDepth()));
+			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithGodrays()));
 		}
 		pass forward_depth
 		{
@@ -457,7 +378,7 @@ group inscatter_volume
 			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
-			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithGodrays_forwardDepth()));
+			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithGodrays()));
 		}
 	}
 	technique without_godrays
@@ -469,7 +390,7 @@ group inscatter_volume
 			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
-			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithoutGodrays_reverseDepth()));
+			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithoutGodrays()));
 		}
 		pass forward_depth
 		{
@@ -478,7 +399,7 @@ group inscatter_volume
 			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
-			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithoutGodrays_forwardDepth()));
+			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithoutGodrays()));
 		}
 	}
 }
@@ -494,7 +415,7 @@ group loss_volume
 			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
-			SetPixelShader(CompileShader(ps_5_0,PS_LossVolumeUnshadowed_reverseDepth()));
+			SetPixelShader(CompileShader(ps_5_0,PS_LossVolume()));
 		}
 		pass forward_depth
 		{
@@ -503,7 +424,7 @@ group loss_volume
 			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
-			SetPixelShader(CompileShader(ps_5_0,PS_LossVolumeUnshadowed_forwardDepth()));
+			SetPixelShader(CompileShader(ps_5_0, PS_LossVolume()));
 		}
     }
 	technique shadowed
@@ -515,7 +436,7 @@ group loss_volume
 			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
-			SetPixelShader(CompileShader(ps_5_0,PS_LossVolumeShadowed_reverseDepth()));
+			SetPixelShader(CompileShader(ps_5_0, PS_LossVolume()));
 		}
 		pass forward_depth
 		{
@@ -524,7 +445,7 @@ group loss_volume
 			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetVertexShader(vs_atmos);
 			SetGeometryShader(NULL);
-			SetPixelShader(CompileShader(ps_5_0,PS_LossVolumeShadowed_forwardDepth()));
+			SetPixelShader(CompileShader(ps_5_0, PS_LossVolume()));
 		}
     }
 }

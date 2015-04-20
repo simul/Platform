@@ -180,9 +180,12 @@ void OpenGLRenderer::RenderGL(int view_id)
 	const crossplatform::CameraOutputInterface *cam=cameras[view_id];
 	if (!cam)
 		return;
-	static float dd=-1.0f;
-	static float DD=1.0f;
-	glDepthRangef(dd,DD);
+	static double dd=-1.0;
+	static double  DD = 1.0;
+	// Note: glDepthRange and glDepthRangef both CLAMP dd and DD to [0,1], rendering these functions near-useless.
+	glDepthRange(dd, DD);
+	// So we use the NV extension. AMD have promised to support this also:
+	glDepthRangedNV(dd, DD);
 	const crossplatform::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.renderPlatform		=renderPlatform;

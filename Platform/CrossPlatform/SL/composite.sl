@@ -26,8 +26,7 @@ struct LookupQuad4
 
 #define VOLUME_INSCATTER
 #define SCREENSPACE_VOL
-TwoColourCompositeOutput CompositeAtmospherics(vec2 texCoords
-	, vec4 clip_pos
+TwoColourCompositeOutput CompositeAtmospherics( vec4 clip_pos
 	, vec2 depth_texc
 				,Texture2D farCloudTexture
 				,Texture2D nearCloudTexture
@@ -88,9 +87,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 													,Texture2D cloudTexture
 													,Texture2D nearCloudTexture
 													,Texture2D nearFarTexture
-													,Texture3D lossVolumeTexture
 													,Texture2D loss2dTexture
-													,int2 lowResDims
 													,TEXTURE2DMS_FLOAT4 depthTextureMS
 													,int numSamples
 													,int2 fullResDims
@@ -99,7 +96,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 													,DepthIntepretationStruct depthInterpretationStruct
 													,vec4 fullResToLowResTransformXYWH
 													,Texture3D screenSpaceInscVolumeTexture
-													,Texture3D lightSpaceInscVolumeTexture
 													,Texture2D shadowTexture)
 {
 	vec4 shadow_lookup			=texture_clamp(shadowTexture,texCoords);
@@ -192,11 +188,11 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		for(int j=0;j<numSamples;j++)
 		{
 			float hiresDepth	=depths[j];
-if(depthInterpretationStruct.reverseDepth)
+//if(depthInterpretationStruct.reverseDepth)
 {
-			float u				=saturate(step(0.0,-hiresDepth));
-}else{
-			float u				=saturate(step(1.0,hiresDepth));
+		//	float u				=saturate(step(0.0,-hiresDepth));
+//}else{
+		//	float u				=saturate(step(1.0,hiresDepth));
 }
 			trueDist			=depthToLinearDistance(hiresDepth,depthInterpretationStruct);
 			float hiResInterp	=saturate((nearFarDist.y-trueDist)/nearFarDist.z);

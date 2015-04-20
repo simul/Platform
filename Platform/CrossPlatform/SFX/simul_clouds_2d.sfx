@@ -112,7 +112,6 @@ vec4 msaaPS(v2f IN)
 	vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
 	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy));
 	vec4 ret			=Clouds2DPS_illum(imageTexture,coverageTexture
-										,illuminationTexture
 										,lossTexture
 										,volumeInscatterTexture,viewportTexCoords
 										,noiseTexture
@@ -140,7 +139,6 @@ vec4 MainPS(v2f IN,vec2 texCoords)
 	vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
 	vec4 ret			=Clouds2DPS_illum(imageTexture
 										,coverageTexture
-										,illuminationTexture
 										,lossTexture
 										,volumeInscatterTexture,texCoords
 										,noiseTexture
@@ -172,8 +170,8 @@ vec4 PS_Main_depthTexture(v2f IN,bool reverseDepth)
 {
 	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
 	viewportTexCoords.y		=1.0-viewportTexCoords.y;
-	uint2 depthDims;
-	uint depthSamples;
+	//uint2 depthDims;
+	//uint depthSamples;
 	vec2 depthTexCoords	=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
 	float dlookup 		=texture_clamp_lod(depthTexture,depthTexCoords,0).x;
 	if(reverseDepth)
@@ -244,7 +242,7 @@ shader vec4 SimplePS(v2f2 IN) : SV_TARGET
 
 shader vec4 CoveragePS(v2f2 IN) : SV_TARGET
 {
-	return Coverage(IN.texCoords,humidity,diffusivity,coverageOctaves,coveragePersistence,time,noiseTexture,noiseTextureScale);
+	return Coverage(IN.texCoords,humidity,diffusivity,coverageOctaves,coveragePersistence,time,noiseTexture);
 }
 
 shader vec4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET

@@ -118,8 +118,8 @@ shader void CS_InitSimulation( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID 
 	vec3 texc					=convertPosToTexc(pos,dims);
 	vec4 lookup					=TEXTURE_LOAD_3D(inputTexture3D,pos);
 	vec2 from_ctr				=texc.xy-vec2(0.5,0.5);
-	float u						=step(length(from_ctr),0.1);
-	float T						=210;//+150.0*u;
+	//float u						=step(length(from_ctr),0.1);
+//	float T						=210;//+150.0*u;
 	// .61v = c
 	AtmosphericProperties a_base	=SaturationRatio(cloudBaseKm+0.1*cloudScalesKm.z);
 	AtmosphericProperties a_local	=SaturationRatio(cloudBaseKm+cloudScalesKm.z*texc.z);
@@ -175,11 +175,11 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec4 props				=TEXTURE_LOAD_3D(inputTexture3DB,pos);
 	// Properties are: x=cloud, y=water vapour, z=potential temperature, w unused.
 	vec4 vd					=TEXTURE_LOAD_3D(inputTexture3D,pos);
-	vec3 F					=vec3(1,0,0);
+	//vec3 F					=vec3(1,0,0);
 	vec3 diff				=(texc-vec3(.5,.5,.5))*cloudScalesKm;
-	float d2				=dot(diff.xy,diff.xy);//pow(diff.z,2.0);//
+	//float d2				=dot(diff.xy,diff.xy);//pow(diff.z,2.0);//
 	float radius			=1.0;
-	float r2				=radius*radius;
+	//float r2				=radius*radius;
 	float g					=0.00981;	//km/s2
 	vec3 buoyant			=g*(props.z*(1.0+0.61*props.y)/300.0-props.x-1.0)*vec3(0,0,1.0);
 	vec3 delta				=buoyant*time_step;//15*F*time_step*exp(-d2/r2);
@@ -207,12 +207,12 @@ shader void CS_CloudUpdate( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	uint3 pos		=gr*8+t;
 	vec3 texc		=convertPosToTexc(pos,dims);
 	vec4 lookup		=TEXTURE_LOAD_3D(inputTexture3D,pos);
-	float p			=TEXTURE_LOAD_3D(inputTexture3DB,pos).x;
+	//float p			=TEXTURE_LOAD_3D(inputTexture3DB,pos).x;
 	float L			=2.501;	// Latent heat of vaporization J/kg
 	float GAMMA		=10.0;		// K/km
 	float zkm		=(cloudScalesKm*texc).z+cloudBaseKm;	
 	float T0		=273.0+25.0;		// at sea level
-	float p0		=100.0*1000.0;
+	//float p0		=100.0*1000.0;
 	// and we want it to be at the dew point at that altitude.
 	float Rd		=287.0;		// J/kg.K
 	float g			=0.00981;	//km/s2
@@ -278,12 +278,12 @@ shader void CS_Clear3D( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
 	uint3 pos			=g*8+t;
-	vec3 texc			=convertPosToTexc(pos,dims);
-	vec4 bC				=alpha* texture_wwc_lod(inputTexture3DB, texc,0);
+	//vec3 texc			=convertPosToTexc(pos,dims);
+	//vec4 bC				=alpha* texture_wwc_lod(inputTexture3DB, texc,0);
 	vec3 i_g			=vec3(dims)/cloudScalesKm;		// inverse of one grid step
-	vec3 i_g2			=i_g*i_g;
+	//vec3 i_g2			=i_g*i_g;
 	// evaluate Jacobi iteration
-	float beta=i_g2.x+i_g2.y+i_g2.z;
+	//float beta=i_g2.x+i_g2.y+i_g2.z;
 	vec4 j = vec4(0,0,0,0);//(-bC)*invBeta/beta;
 	//float err=abs((j.x)/(abs(j.x)+0.0000001));
 	
@@ -580,8 +580,8 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	vec3 densityspace_texcoord	=(pos.xyz+vec3(0.5,0.5,0.5))/vec3(dims);
-	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
-	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
+	//vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
+	//vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
 	
 	float density				=saturate(sample_3d_lod(densityTexture,wwcSamplerState,densityspace_texcoord,0).x);
 	vec2 illum			=vec2(1.0,1.0);

@@ -63,8 +63,8 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 CS_LAYOUT(1,1,1)
 shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
-	uint num=0;
-	uint byteStride=0;
+	//uint num=0;
+	//uint byteStride=0;
 	//queryInputs.GetDimensions(num,byteStride);
 	//if(sub_pos.x>=num/2)
 	//	return;
@@ -145,7 +145,7 @@ shader vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 
 shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 {
-	float r=MakeRainMap(cloudDensity,cloud_interp,IN.texCoords);
+	float r=MakeRainMap(cloudDensity,IN.texCoords);
 	return vec4(r,r,r,r);
 }
 
@@ -155,20 +155,15 @@ shader vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
 	return vec4(m,m,m,m);
 }
 
-float CloudsOcclusion(Texture3D cloudDensity1,Texture3D cloudDensity2,Texture3D cloudDensity,float cloud_interp,vec3 viewPos,vec3 directionToSun)
-{
-	return 0.f;
-}
-
 vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec4 dlookup 	=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords	=mixedResTransformXYWH.xy + IN.texCoords.xy*mixedResTransformXYWH.zw;
 
-	vec4 clip_pos	=vec4(-1.0, 1.0, 1.0, 1.0);
-	clip_pos.x		+=2.0*texCoords.x;
-	clip_pos.y		-=2.0*texCoords.y;
-	vec3 view		=normalize(mul(invViewProj, clip_pos).xyz);
+	//vec4 clip_pos	=vec4(-1.0, 1.0, 1.0, 1.0);
+	//clip_pos.x		+=2.0*texCoords.x;
+	//clip_pos.y		-=2.0*texCoords.y;
+	//vec3 view		=normalize(mul(invViewProj, clip_pos).xyz);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
@@ -176,7 +171,6 @@ vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 									cloudDensity
 									,rainMapTexture
 									,noiseTexture3D
-									,noiseTexture
 									,lightTableTexture
 									,illuminationTexture
 									,rainbowLookupTexture
@@ -188,7 +182,6 @@ vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 									,depthInterpretationStruct
 									,dlookup
 									,texCoords
-									,false
 									,false
 									,false
 									,cloudIrRadiance1,cloudIrRadiance2
@@ -218,10 +211,7 @@ FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 	depthInterpretationStruct.reverseDepth				=reverseDepth;
 	FarNearPixelOutput f	=Lightpass(
 									cloudDensity
-									,rainMapTexture
 									,noiseTexture3D
-									,noiseTexture
-									,lossTexture
 									,depthInterpretationStruct
 									,dlookup
 									,texCoords
@@ -263,7 +253,6 @@ FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth)
 									cloudDensity
 									,rainMapTexture
 									,noiseTexture3D
-									,noiseTexture
 									,lightTableTexture
 									,illuminationTexture
 									,rainbowLookupTexture
@@ -275,7 +264,6 @@ FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth)
 									,depthInterpretationStruct
 									,dlookup
 									,texCoords
-									,true
 									,true
 									,true
 									,cloudIrRadiance1,cloudIrRadiance2
@@ -308,7 +296,6 @@ FarNearDepthPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDept
 									cloudDensity
 									,rainMapTexture
 									,noiseTexture3D
-									,noiseTexture
 									,lightTableTexture
 									,illuminationTexture
 									,rainbowLookupTexture
@@ -320,7 +307,6 @@ FarNearDepthPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDept
 									,depthInterpretationStruct
 									,dlookup
 									,texCoords
-									,true
 									,true
 									,false
 									,cloudIrRadiance1
@@ -371,7 +357,7 @@ shader vec4 PS_Show3DNoise(posTexVertexOutput IN):SV_TARGET
 
 shader vec4 PS_ShowShadow(posTexVertexOutput IN):SV_TARGET
 {
-	return ShowCloudShadow(cloudShadowTexture,cloudGodraysTexture,IN.texCoords);
+	return ShowCloudShadow(cloudShadowTexture,IN.texCoords);
 }
 
 #define CROSS_SECTION_STEPS 32

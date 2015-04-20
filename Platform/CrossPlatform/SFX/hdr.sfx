@@ -288,8 +288,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
-	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.texCoords.xy
-															,IN.clip_pos
+	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.clip_pos
 															,IN.depth_texc
 															,imageTexture
 															,nearImageTexture
@@ -326,9 +325,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(posTexVertexOutput IN,boo
 																,imageTexture
 																,nearImageTexture
 																, nearFarTexture
-																,lossVolumeTexture
 																,loss2dTexture
-																,int2(lowResDims)
 																,depthTextureMS
 																,numSamples
 																,int2(fullResDims)
@@ -337,7 +334,6 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(posTexVertexOutput IN,boo
 																,depthInterpretationStruct
 																,fullResToLowResTransformXYWH
 																,screenSpaceInscatterVolumeTexture
-																,lightSpaceInscatterVolumeTexture
 																,shadowTexture);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;

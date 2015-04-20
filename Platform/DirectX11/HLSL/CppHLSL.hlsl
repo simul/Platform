@@ -14,7 +14,7 @@
 #define technique technique11
 #define group fxgroup
 #define f32touint16 f32tof16
-#define texture_clamp_mirror(tex,texc) tex.Sample(samplerStateClampMirror,texc)
+#define texture_clamp_mirror(tex,texc) tex.Sample(cmcSamplerState,texc)
 #define texture_clamp(tex,texc) tex.Sample(clampSamplerState,texc)
 #define texture_wrap_clamp(tex,texc) tex.Sample(wrapClampSamplerState,texc)
 #define texture_wrap_mirror(tex,texc) tex.Sample(wrapMirrorSamplerState,texc)
@@ -30,7 +30,7 @@
 #define texture_wrap_clamp_lod(tex,texc,lod) tex.SampleLevel(wrapClampSamplerState,texc,lod)
 #define texture_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,texc,lod)
 #define texture_wrap_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearestWrap,texc,lod)
-#define texture_clamp_mirror_lod(tex,texc,lod) tex.SampleLevel(samplerStateClampMirror,texc,lod)
+#define texture_clamp_mirror_lod(tex,texc,lod) tex.SampleLevel(cmcSamplerState,texc,lod)
 #define texture_cube(tex,texc) tex.Sample(cubeSamplerState,texc);
 
 #define texture_wwc(tex,texc) tex.Sample(wwcSamplerState,texc)
@@ -117,13 +117,6 @@
 	#define TEXTURE2D_UINT Texture2D<uint>
 	#define TEXTURE2D_UINT4 Texture2D<uint4>
 	#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
-
-	SamplerState samplerStateClampMirror 
-	{
-		Filter = MIN_MAG_MIP_LINEAR;
-		AddressU = Clamp;
-		AddressV = Mirror;
-	};
 
 	struct idOnly
 	{

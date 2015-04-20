@@ -52,7 +52,7 @@ float GetHumidityMultiplier2(float z,float baseLayer,float transition,float uppe
 
 /// scale should represent the desired noise size - either the size of the noise texture, or of the subset we're using.
 /// top means the maximum z, above which we consider the texture to be blank. If top>=scale, it has no effect.
-float CircularLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float sz,float t,int scale,int top)
+float CircularLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float t,int scale,int top)
 {
 	vec3 s			=fract(texCoords)*scale;
 	//..s.xyz		+=texture_wrap_lod(volumeNoiseTexture,texCoords,0).xyz-0.5;
@@ -97,7 +97,7 @@ float CircularLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float sz,float 
 				continue;
 			float val	=texelFetch3d(volumeNoiseTexture, p, 0).x;
 			//	volumeNoiseTexture.Load(int4(p,0));
-			float h		=sin(3.1415926536/2.0*mult);
+		//	float h		=sin(3.1415926536/2.0*mult);
 			// The magnitude of the "peak" at the texel centre is m^2.
 			float m		=cos(1.0*3.1415926536*(val+t));
 			// It is always positive, and its average is 0.5:
@@ -111,14 +111,8 @@ float CircularLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float sz,float 
 	return 2.0*saturate(lookup)-1.0;//texture_wrap_lod(volumeNoiseTexture,texCoords,0)-1.0;//
 }
 
-float PowerLookup(Texture3D volumeNoiseTexture,vec3 texCoords,float t)
-{
-	float val	=texture_3d_wrap_lod(volumeNoiseTexture,texCoords,0).x;
-	return pow(val,0.25);
-}
-
 // height is the height of the total cloud volume as a proportion of the initial noise volume
-float ModifierNoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float t,float height,float texel)
+float ModifierNoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float t,float height)
 {
 	float dens=0.0;
 	float mult=persistence;
@@ -152,7 +146,7 @@ float DensityFunction(Texture3D volumeNoiseTexture,vec3 noisespace_texcoord,floa
 	// We want to distort the lookup by up to half a noise texel at the specified dimension.
 	vec3 u					=vec3(noisespace_texcoord.xy,0);
 	noisespace_texcoord.xy	+=2.0/float(noiseDimension)*(texture_3d_wrap_lod(volumeNoiseTexture,u,0).xy-0.5);
-	float lookup			=CircularLookup(volumeNoiseTexture,vec3(noisespace_texcoord.xy,0),1.0,t,noiseDimension,noiseHeight);
+	float lookup			=CircularLookup(volumeNoiseTexture,vec3(noisespace_texcoord.xy,0),t,noiseDimension,noiseHeight);
 	return lookup;
 }
 
