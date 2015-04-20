@@ -361,5 +361,8 @@
     <None Include="..\CrossPlatform\SFX\atmospherics.sfx">
       <Filter>SFX</Filter>
     </None>
+    <None Include="..\CrossPlatform\SFX\debug.sfx">
+      <Filter>SFX</Filter>
+    </None>
   </ItemGroup>
 </Project>

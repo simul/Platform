@@ -180,6 +180,9 @@ void OpenGLRenderer::RenderGL(int view_id)
 	const crossplatform::CameraOutputInterface *cam=cameras[view_id];
 	if (!cam)
 		return;
+	static float dr[5];
+	 glGetFloatv(GL_DEPTH_RANGE,dr);
+
 	static float dd=-1.0f;
 	static float DD=1.0f;
 	glDepthRangef(dd,DD);

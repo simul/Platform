@@ -134,12 +134,20 @@ vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth)
 	texc.y		=1.0-texc.y;
 //#endif
 	vec4 depth		=texture_nearest_lod(imageTexture,texc,0);
+#ifdef GLSL
+	depth.x*=2.0;
+	depth.x-=1.0;
+#endif
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=debugDepthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthInterpretationStruct,debugTanHalfFov);
-    vec4 result		=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
-  //  vec4 result		=vec4(pow(dist.xxx,vec3(0.44,0.44,0.44)),1.0);
+  //  vec4 result		=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
+ //   vec4 result		=vec4(step(vec3(0.2,0.2,0.2),dist.xxx),1.0);
+	float u			=pow(dist.x,0.44);
+	//if(depth.x<.9995)
+	//	u=0;
+	vec4 result		=vec4(u,u,u,1.0);
 	return result;
 }
 
