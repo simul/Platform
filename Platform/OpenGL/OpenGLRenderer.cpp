@@ -185,7 +185,14 @@ void OpenGLRenderer::RenderGL(int view_id)
 	// Note: glDepthRange and glDepthRangef both CLAMP dd and DD to [0,1], rendering these functions near-useless.
 	glDepthRange(dd, DD);
 	// So we use the NV extension. AMD have promised to support this also:
-	glDepthRangedNV(dd, DD);
+	if (glewIsSupported("GL_NV_depth_buffer_float"))
+	{
+		glDepthRangedNV(dd, DD);
+	}
+	else
+	{
+		SIMUL_CERR<<"glDepthRangedNV is not supported."<<std::endl;
+	}
 	const crossplatform::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.renderPlatform		=renderPlatform;

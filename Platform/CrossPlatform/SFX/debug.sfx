@@ -141,14 +141,9 @@ vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth)
 	depthInterpretationStruct.depthToLinFadeDistParams=debugDepthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 dist		=depthToFadeDistance(depth.xy,2.0*(IN.texCoords-0.5),depthInterpretationStruct,debugTanHalfFov);
-  //  vec4 result		=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
- //   vec4 result		=vec4(step(vec3(0.2,0.2,0.2),dist.xxx),1.0);
-	float u			=pow(dist.x,0.44);
-	//if(depth.x<.9995)
-	//	u=0;
-	vec4 result		=vec4(u,u,u,1.0);
-	if (dist.x < .1)
-		result.xyz = vec3(0,0,0);
+    vec4 result		=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
+	//if (dist.x < .1)
+	//	result.xyz = vec3(0,0,0);
 	return result;
 }
 
