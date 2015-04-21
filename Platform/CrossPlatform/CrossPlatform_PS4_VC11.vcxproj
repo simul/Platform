@@ -46,7 +46,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ORBIS'">
     <ClCompile>
       <PreprocessorDefinitions>SIMUL_CROSSPLATFORM_DLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <OptimizationLevel>Level3</OptimizationLevel>
+      <OptimizationLevel>Level0</OptimizationLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>

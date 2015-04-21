@@ -137,6 +137,17 @@ std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;
 }
+
+void RenderPlatform::SetShaderBinaryPathUtf8(const char *path_utf8)
+{
+	shaderBinaryPathUtf8 = path_utf8;
+}
+
+const char *RenderPlatform::GetShaderBinaryPathUtf8()
+{
+	return shaderBinaryPathUtf8.c_str();
+}
+
 ConstantBuffer<DebugConstants> &RenderPlatform::GetDebugConstantBuffer()
 {
 	return debugConstants;

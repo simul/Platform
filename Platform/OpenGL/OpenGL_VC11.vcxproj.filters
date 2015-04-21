@@ -351,48 +351,6 @@
     <None Include="GLSL\simul_gpu_clouds.glfx">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="GLSL\debug.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\clouds.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\atmospherics.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\mixed_resolution.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\font.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\hdr.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\optics.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\rain.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\simul_rendernoise.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\sky.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\solid.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\terrain.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\simul_clouds_2d.glfx">
-      <Filter>GLFX</Filter>
-    </None>
-    <None Include="GLSL\simul_gpu_sky.glfx">
-      <Filter>GLFX</Filter>
-    </None>
     <None Include="GLSL\shader_platform.sl">
       <Filter>Shaders</Filter>
     </None>

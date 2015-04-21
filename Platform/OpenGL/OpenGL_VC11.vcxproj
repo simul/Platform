@@ -225,16 +225,8 @@
     <None Include="..\CrossPlatform\SL\depth.sl" />
     <None Include="..\CrossPlatform\SL\gpu_cloud_constants.sl" />
     <None Include="..\CrossPlatform\SL\sky.sl" />
-    <None Include="GLSL\atmospherics.glfx" />
     <None Include="GLSL\atmospherics.nvfx" />
-    <None Include="GLSL\clouds.glfx" />
     <None Include="GLSL\CppGlsl.hs" />
-    <None Include="GLSL\debug.glfx" />
-    <None Include="GLSL\font.glfx" />
-    <None Include="GLSL\hdr.glfx" />
-    <None Include="GLSL\mixed_resolution.glfx" />
-    <None Include="GLSL\optics.glfx" />
-    <None Include="GLSL\rain.glfx" />
     <None Include="GLSL\saturate.glsl" />
     <None Include="GLSL\shader_platform.sl" />
     <None Include="GLSL\simple.frag" />
@@ -244,7 +236,6 @@
     <None Include="GLSL\simul_2d_noise.frag" />
     <None Include="GLSL\simul_atmospherics.vert" />
     <None Include="GLSL\simul_atmospherics_godrays.frag" />
-    <None Include="GLSL\simul_clouds_2d.glfx" />
     <None Include="GLSL\simul_cloud_cross_section.frag" />
     <None Include="GLSL\simul_cloud_cross_section.vert" />
     <None Include="GLSL\simul_cloud_overlay.frag" />
@@ -270,7 +261,6 @@
     <None Include="GLSL\simul_gpu_clouds.vert" />
     <None Include="GLSL\simul_gpu_insc.frag" />
     <None Include="GLSL\simul_gpu_loss.frag" />
-    <None Include="GLSL\simul_gpu_sky.glfx" />
     <None Include="GLSL\simul_gpu_sky.glsl" />
     <None Include="GLSL\simul_gpu_skyl.frag" />
     <None Include="GLSL\simul_gpu_sky_copy.frag" />
@@ -286,7 +276,6 @@
     <None Include="GLSL\simul_rain.frag" />
     <None Include="GLSL\simul_rain.vert" />
     <None Include="GLSL\simul_raytrace_clouds.frag" />
-    <None Include="GLSL\simul_rendernoise.glfx" />
     <None Include="GLSL\simul_simple_lightning.frag" />
     <None Include="GLSL\simul_simple_lightning.vert" />
     <None Include="GLSL\simul_sky.frag" />
@@ -298,12 +287,9 @@
     <None Include="GLSL\simul_terrain.frag" />
     <None Include="GLSL\simul_terrain.geom" />
     <None Include="GLSL\simul_terrain.vert" />
-    <None Include="GLSL\sky.glfx" />
     <None Include="GLSL\sky.nvfx" />
     <None Include="GLSL\solid.frag" />
-    <None Include="GLSL\solid.glfx" />
     <None Include="GLSL\solid.vert" />
-    <None Include="GLSL\terrain.glfx" />
     <None Include="GLSL\tonemap.frag" />
     <None Include="GLSL\tonemap.vert" />
   </ItemGroup>

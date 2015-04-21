@@ -198,14 +198,8 @@ namespace simul
 			crossplatform::Effect *solidEffect;
 			std::set<crossplatform::Material*> materials;
 			std::vector<std::string> GetTexturePathsUtf8();
-			void SetShaderBinaryPathUtf8(const char *path_utf8)
-			{
-				shaderBinaryPathUtf8=path_utf8;
-			}
-			const char *GetShaderBinaryPathUtf8()
-			{
-				return shaderBinaryPathUtf8.c_str();
-			}
+			void SetShaderBinaryPathUtf8(const char *path_utf8);
+			const char *GetShaderBinaryPathUtf8();
 			simul::base::MemoryInterface *GetMemoryInterface()
 			{
 				return memoryInterface;
