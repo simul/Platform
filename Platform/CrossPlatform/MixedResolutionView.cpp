@@ -26,6 +26,7 @@ MixedResolutionView::MixedResolutionView()
 	,useExternalFramebuffer(false)
 	,hdrFramebuffer(NULL)
 	,resolvedTexture(NULL)
+	, last_framenumber(-1)
  {
  }
 
