@@ -184,32 +184,18 @@ void dx11::Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,voi
 	}
 	else
 	{
-		//num_texels=start_texel+num_texels;
-		//start_texel=0;
-		dest+=start_texel*byteSize;
-
-		int row		=start_texel/width;
-		int last_row=(start_texel+num_texels)/width;
-		int col		=start_texel-row*width;
-		source		+=row*mappedResource.RowPitch;
-		if(col>0)
+		for(int z=0;z<depth;z++)
 		{
-			source		+=col*byteSize;
-			int columns	=std::min(num_texels,width-col);
-			memcpy(dest,source,columns*byteSize);
-			source		+=mappedResource.RowPitch;
-			dest		+=columns*byteSize;
-			row++;
+			unsigned char *s=source;
+			for(int y=0;y<length;y++)
+			{
+				memcpy(dest,source,width*byteSize);
+				source		+=mappedResource.RowPitch;
+				dest		+=width*byteSize;
+			}
+			source=s;
+			source		+=mappedResource.DepthPitch;
 		}
-		for(int r=row;r<last_row;r++)
-		{
-			memcpy(dest,source,width*byteSize);
-			source		+=mappedResource.RowPitch;
-			dest		+=width*byteSize;
-		}
-		int end_columns=start_texel+num_texels-last_row*width;
-		if(end_columns>0)
-			memcpy(dest,source,end_columns*byteSize);
 	}
 	deviceContext.asD3D11DeviceContext()->Unmap( stagingBuffer, 0);
 }
