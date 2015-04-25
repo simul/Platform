@@ -122,7 +122,7 @@ SIMUL_CONSTANT_BUFFER(CloudLightpassConstants,10)
 	uniform vec3 sourcePosKm;
 	uniform float sourceRadiusKm;
 	uniform vec3 spectralFluxOver1e6;			// Units of watts per nm
-	uniform float maxCosine;
+	uniform float minCosine;
 	uniform float irradianceThreshold;
 	uniform float maxRadiusKm;
 SIMUL_CONSTANT_BUFFER_END

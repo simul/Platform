@@ -282,10 +282,10 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 								,DepthIntepretationStruct depthInterpretationStruct
 								,vec4 dlookup
 								,vec2 texCoords
-								,vec3 source_pos_w
+								,vec3 sourcePosKm_w
 								,float source_radius
 								,vec3 spectralFluxOver1e6
-								,float maxCosine
+								,float minCosine
 								,float maxIlluminatedRadius
 								,float threshold)
 {
@@ -298,11 +298,9 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	clip_pos.y				-=2.0*texCoords.y;
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 
-	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
-	vec3 lightDir			=lerp(directionToMoon,directionToSun,s);
-
-	float cos0				=dot(lightDir.xyz,view.xyz);
-	if (cos0 > maxCosine)
+	vec3 dir_to_source		=normalize(sourcePosKm_w-viewPosKm);
+	float cos0				=dot(dir_to_source.xyz,view.xyz);
+	if (cos0 < minCosine)
 		discard;
 	float sine				=view.z;
 
@@ -313,13 +311,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	
 	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
-	// Lookup in the illumination texture.
-	//vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	float meanFadeDistance	=1.0;
-	// Precalculate hg effects
-//	float BetaClouds		=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-//	float BetaRayleigh		=CalcRayleighBeta(cos0);
-//	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
 
 	vec3 world_pos					=viewPosKm;
 
@@ -458,7 +450,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 				density.z				*=saturate(distanceKm/0.24);
 				fade_texc.x				=sqrt(fadeDistance);
 			//	vec3 volumeTexCoords	=vec3(texCoords,sqrt(fadeDistance));
-				vec3 dist				=world_pos-source_pos_w;
+				vec3 dist				=world_pos-sourcePosKm_w;
 				float radius_km			=max(source_radius,length(dist));
 				float radiance			=1.0/(4.0*3.14159*radius_km*radius_km);
 				vec4 clr				=vec4(spectralFluxOver1e6.rgb*radiance*density.z,density.z);

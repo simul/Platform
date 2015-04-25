@@ -218,7 +218,7 @@ FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 									,sourcePosKm
 									,sourceRadiusKm
 									,spectralFluxOver1e6
-									,maxCosine
+									,minCosine
 									,maxRadiusKm
 									,irradianceThreshold
 									);

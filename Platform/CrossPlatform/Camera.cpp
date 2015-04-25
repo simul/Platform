@@ -227,6 +227,7 @@ void simul::crossplatform::GetCameraPosVector(const float *v,float *dcam_pos,flo
 
 const float *simul::crossplatform::GetCameraPosVector(const float *v)
 {
+	ERRNO_BREAK
 	simul::math::Matrix4x4 view(v);
 	static float cam_pos[4],view_dir[4];
 	GetCameraPosVector(view,(float*)cam_pos,(float*)view_dir);
