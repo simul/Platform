@@ -175,8 +175,9 @@ void dx11::Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,voi
 	unsigned char *source = (unsigned char *)(mappedResource.pData);
 	
 	int expected_pitch=byteSize*width;
+	int expected_depth_pitch=expected_pitch*length;
 	char *dest=(char*)target;
-	if(mappedResource.RowPitch==expected_pitch)
+	if(mappedResource.RowPitch==expected_pitch&&mappedResource.DepthPitch==expected_depth_pitch)
 	{
 		source+=start_texel*byteSize;
 		dest+=start_texel*byteSize;
