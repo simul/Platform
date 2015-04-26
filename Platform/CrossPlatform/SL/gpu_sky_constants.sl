@@ -39,7 +39,7 @@ SIMUL_CONSTANT_BUFFER(GpuSkyConstants,8)
 	uniform float previousZCoord;
 
 	uniform vec3 mieRayleighRatio;
-	uniform float ejsyr;
+	uniform float minOutputAltKm;
 
 	uniform vec4 yRange;
 

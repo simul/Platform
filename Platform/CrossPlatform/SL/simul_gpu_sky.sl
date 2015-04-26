@@ -8,14 +8,11 @@ int3 LinearThreadToPos2D(int linear_pos,int3 dims)
 
 	return int3(xx,yy,0);
 }
-/*
-int3 LinearThreadToPos2D(uint linear_pos,uint3 dims)
+
+float texcToAltKm(float texc,float minOutputAltKm,float maxOutputAltKm)
 {
-	int yy				=int(float(linear_pos)/float(dims.x));
-	int xx				=int(linear_pos)-yy*int(dims.x);
-	int3 pos			=int3(xx,yy,0);
-	return pos;
-}*/
+	return minOutputAltKm+texc*texc*(maxOutputAltKm-minOutputAltKm);
+}
 
 float getHazeFactorAtAltitude(float alt_km)
 {
@@ -156,14 +153,13 @@ float getDistanceToSpace(float sine_elevation,float h_km)
 	return getShortestDistanceToAltitude(sine_elevation,h_km,maxDensityAltKm);
 }
 
-
 vec4 PSLoss(Texture2D input_loss_texture,Texture2D density_texture,vec2 texCoords)
 {
 	vec4 previous_loss	=texture(input_loss_texture,texCoords);
 	float sin_e			=clamp(1.0-2.0*(texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texCoords.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
-	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
+	float viewAltKm		=texcToAltKm(altTexc,minOutputAltKm,maxOutputAltKm);
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float maxd			=min(spaceDistKm,distanceKm);
 	float mind			=min(spaceDistKm,prevDistanceKm);
@@ -195,7 +191,7 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_textu
 	float sin_e			=clamp(1.0-2.0*(texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texCoords.x*texSize.x-texelOffset)/(texSize.x-1.0);
-	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
+	float viewAltKm		=texcToAltKm(altTexc,minOutputAltKm,maxOutputAltKm);
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float maxd			=min(spaceDistKm,distanceKm);
 	float mind			=min(spaceDistKm,prevDistanceKm);

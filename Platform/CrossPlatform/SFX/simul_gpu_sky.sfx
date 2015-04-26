@@ -75,7 +75,7 @@ CS_LAYOUT(8,1,1)
 shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 dims;
-	uint3 sub_pos = g * uint3(8, 1, 1) + t;
+	uint3 sub_pos		=g * uint3(8, 1, 1) + t;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	uint linear_pos		=sub_pos.x+threadOffset.x;
 	uint3 pos			=uint3(LinearThreadToPos2D(int(linear_pos),int3(dims)));
@@ -86,7 +86,7 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	float sin_e			=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
-	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
+	float viewAltKm		=texcToAltKm(altTexc,minOutputAltKm,maxOutputAltKm);
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float prevDist_km	=0.0;
 	for(uint i=0;i<targetSize.z;i++)
@@ -171,7 +171,7 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	float sin_e				=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
 	float cos_e				=sqrt(1.0-sin_e*sin_e);
 	float altTexc			=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
-	float viewAltKm			=altTexc*altTexc*maxOutputAltKm;
+	float viewAltKm			=texcToAltKm(altTexc,minOutputAltKm,maxOutputAltKm);
 	float spaceDistKm		=getDistanceToSpace(sin_e,viewAltKm);
 	
 	float prevDist_km		=0.0;
@@ -197,14 +197,6 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 		float r				=sqrt(x*x+y*y);
 		float alt_km		=r-planetRadiusKm;
 	
-		float x1			=mind*cos_e;
-		float r1			=sqrt(x1*x1+y*y);
-		float alt_1_km		=r1-planetRadiusKm;
-	
-		float x2			=maxd*cos_e;
-		float r2			=sqrt(x2*x2+y*y);
-		float alt_2_km		=r2-planetRadiusKm;
-	
 		// lookups is: dens_factor,ozone_factor,haze_factor;
 		float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
 		vec4 lookups		=texture_clamp_lod(density_texture,vec2(dens_texc,0.5),0);
@@ -227,14 +219,13 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 
 		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
 		vec3 texc			=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(targetSize.xyz);
-		vec4 insc_colour	=texture_3d_nearest_lod(colourTexture,texc.zyx,0);
+		vec4 insc_colour	=texture_3d_clamp_lod(colourTexture,texc.zyx,0);
 		vec4 store_insc		=lerp(insc,insc_colour,blendToColours);
-
+	
 		IMAGE_STORE_3D(targetTexture,idx,store_insc);
 		prevDist_km			=dist_km;
 		previous_insc		=insc;
 	}
-	
 }
 
 CS_LAYOUT(8,1,1)
@@ -253,7 +244,7 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	float sin_e			=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
-	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
+	float viewAltKm		=texcToAltKm(altTexc,minOutputAltKm,maxOutputAltKm);
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 
 	float prevDist_km	=0.0;
@@ -278,9 +269,9 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 							,spaceDistKm
 							,viewAltKm
 							,dist_km
-									,prevDist_km
-									,sin_e
-									,cos_e);
+							,prevDist_km
+							,sin_e
+							,cos_e);
 
 		IMAGE_STORE_3D(targetTexture,idx, skyl);
 		prevDist_km			=dist_km;
@@ -303,7 +294,7 @@ shader vec4 PS_Skyl(vertexOutput IN) : SV_TARGET
 	float sin_e			=clamp(1.0-2.0*(IN.texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(IN.texCoords.x*texSize.x-texelOffset)/(texSize.x-1.0);
-	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
+	float viewAltKm		=texcToAltKm(altTexc,minOutputAltKm,maxOutputAltKm);
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float maxd			=min(spaceDistKm,distanceKm);
 	float mind			=min(spaceDistKm,prevDistanceKm);
