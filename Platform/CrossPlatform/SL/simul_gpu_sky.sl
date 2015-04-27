@@ -237,7 +237,7 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_textu
 vec3 getSkylight(float alt_km, Texture3D insc_texture)
 {
 // The inscatter factor, at this altitude looking straight up, is given by:
-	vec4 insc		=texture_3d_nearest_lod(insc_texture,vec3(sqrt(alt_km/maxOutputAltKm),0.0,1.0),0);
+	vec4 insc		=texture_3d_clamp_lod(insc_texture,vec3(sqrt(alt_km/maxOutputAltKm),0.0,1.0),0);
 	vec3 skylight	=InscatterFunction(insc,hazeEccentricity,0.0,mieRayleighRatio);
 	return skylight;
 }

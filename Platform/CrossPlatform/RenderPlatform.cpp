@@ -182,7 +182,7 @@ void RenderPlatform::DrawCircle(DeviceContext &deviceContext,const float *pos,co
 	for(int j=0;j<36;j++)
 	{
 		float angle					=(float(j)/35.0f)*2.0f*3.1415926536f;
-		line_vertices[l].pos		=(x*cos(angle)+y*sin(angle));
+		line_vertices[l].pos		=pos+(x*cos(angle)+y*sin(angle));
 		line_vertices[l++].colour	=colr;
 	}
 	DrawLines(deviceContext,line_vertices,35,true,false,false);
