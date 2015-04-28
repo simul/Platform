@@ -221,7 +221,7 @@ vec4 HalfscaleOnly_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_dims
 	return res;
 }
 
-vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct)
+vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct,bool split_view)
 {
 	int2 pos0			=int2(pos*2);
 #ifdef GLSL
@@ -252,21 +252,25 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_o
 		float d3			=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(-3,1)).x;
 		float d4			=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4)).x;
 		vec4 f				=vec4(d1,d2,d3,d4);
-		vec4 n				=f;
 		vec2 dmin2,dmax2;
-		if(depthInterpretationStruct.reverseDepth)
-		{
-			dmin2			=min(f.xy,f.zw);
-			dmax2			=max(n.xy,n.zw);
-		}
-		else
-		{
-			dmin2			=min(n.xy,n.zw);
-			dmax2			=max(f.xy,f.zw);
-		}
+		dmin2			=min(f.xy,f.zw);
+		dmax2			=max(f.xy,f.zw);
 
 		float dmin			=min(dmin2.x,dmin2.y);
 		float dmax			=max(dmax2.x,dmax2.y);
+		if(split_view)
+		{
+			pos3.x			+=source_dims.x;
+			float d1		=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,-3)).x;
+			float d2		=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(5,0)).x;
+			float d3		=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(-3,1)).x;
+			float d4		=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4)).x;
+			vec4 f			=vec4(d1,d2,d3,d4);
+			dmin2			=min(f.xy,f.zw);
+			dmax2			=max(f.xy,f.zw);
+			dmin			=min(dmin,min(dmin2.x,dmin2.y));
+			dmax			=max(dmax,max(dmax2.x,dmax2.y));
+		}
 		if(depthInterpretationStruct.reverseDepth)
 		{
 			farthest_nearest.y	=max(farthest_nearest.y,dmax);
