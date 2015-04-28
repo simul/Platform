@@ -722,26 +722,23 @@ vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
 	vec4 texel			=rainTextureArray.Sample(samAniso,vec3(IN.texCoords.xy,IN.type));
 	texel.rgb			*=light;
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
-				
 	vec2 depth;
 	depth.x				=texture_clamp(depthTexture,depth_texc.xy).x;
 	depth.y				=IN.clip_pos.z;
 	vec2 dist			=depthToFadeDistance(depth.xy,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-		
 	if(dist.y>dist.x-splashDelta)
 	{
 		texel.rgb		=vec3(1,1,1);
 	}
 	vec3 map_texc=mul(rainMapMatrix,vec4(offset[1].xyz,1.0)).xyz;
-	float mapped_rain=IN.strength;//texture_wrap(rainMapTexture,map_texc.xy).x;
-	
+	float mapped_rain=IN.strength;
 	texel.a*=saturate(light.r+light.g+light.b);
 	texel.a=saturate(texel.a*mapped_rain);
 	if(mapped_rain<=0||dist.y>dist.x)
 	{
 		discard;
 	}
-	return vec4(texel.rgb,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
+	return vec4(texel.rgb,texel.a);
 }
 
 
