@@ -26,7 +26,6 @@ uniform Texture2D loss2dTexture;
 uniform Texture3D lossVolumeTexture;
 uniform Texture3D screenSpaceInscatterVolumeTexture;
 uniform Texture3D lightSpaceInscatterVolumeTexture;
-uniform Texture3D cloudVolumeTexture;
 
 struct CompositeShaderInput
 {

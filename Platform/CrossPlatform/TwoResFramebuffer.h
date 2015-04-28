@@ -62,16 +62,15 @@ namespace simul
 			void SetDepthFormat(crossplatform::PixelFormat p);
 			int									final_octave;
 		protected:
-			/// The depth from the HDR framebuffer can be resolved into this texture.
-			crossplatform::Texture						*nearFarTextures[4];
+			int									Width,Height,Downscale;
+			int									volume_num;
 			crossplatform::PixelFormat			depthFormat;
 			simul::geometry::SimulOrientation	view_o;
 			crossplatform::RenderPlatform		*renderPlatform;
+			crossplatform::Texture				*nearFarTextures[4];
 			crossplatform::Texture				*lossTexture;
 			crossplatform::Texture				*volumeTextures[2];
-			int Width,Height,Downscale;
 			crossplatform::BaseFramebuffer		*lowResFramebuffers[3];
-			int volume_num;
 		};
 	}
 }
