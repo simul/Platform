@@ -261,11 +261,11 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_o
 		if(split_view)
 		{
 			pos3.x			+=source_dims.x;
-			float d1		=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,-3)).x;
-			float d2		=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(5,0)).x;
-			float d3		=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(-3,1)).x;
-			float d4		=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4)).x;
-			vec4 f			=vec4(d1,d2,d3,d4);
+			d1				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,-3)).x;
+			d2				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(5,0)).x;
+			d3				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(-3,1)).x;
+			d4				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4)).x;
+			f				=vec4(d1,d2,d3,d4);
 			dmin2			=min(f.xy,f.zw);
 			dmax2			=max(f.xy,f.zw);
 			dmin			=min(dmin,min(dmin2.x,dmin2.y));

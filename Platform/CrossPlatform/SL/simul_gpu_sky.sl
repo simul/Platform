@@ -97,16 +97,16 @@ float GetOpticalDepth(Texture2D density_texture,float max_altitude_km,float alt_
 	if(dist<distance_to_edge||distance_to_edge<0)
 		distance_to_edge	=dist;
 	int Steps				=16;
-	float step				=distance_to_edge/float(Steps);
-	float d					=step/2.0;
+	float step_				=distance_to_edge/float(Steps);
+	float d					=step_/2.0;
 
 	for(int i=0;i<Steps;i++)
 	{
 		float Ra			=sqrt(Rh*Rh+d*d-2*Rh*d*cosine);
 		float new_alt_km	=Ra-planetRadiusKm;
 		float dens_here		=texture_clamp_lod(density_texture,vec2(new_alt_km/max_altitude_km,new_alt_km/max_altitude_km),0).x;
-		total				+=dens_here*step;
-		d+=step;
+		total				+=dens_here*step_;
+		d+=step_;
 	}
 	return max(0.0,total);
 }
@@ -155,7 +155,7 @@ float getDistanceToSpace(float sine_elevation,float h_km)
 
 vec4 PSLoss(Texture2D input_loss_texture,Texture2D density_texture,vec2 texCoords)
 {
-	vec4 previous_loss	=texture(input_loss_texture,texCoords);
+	vec4 previous_loss	=texture_clamp(input_loss_texture,texCoords);
 	float sin_e			=clamp(1.0-2.0*(texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texCoords.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
@@ -171,7 +171,7 @@ vec4 PSLoss(Texture2D input_loss_texture,Texture2D density_texture,vec2 texCoord
 	float alt_km		=r-planetRadiusKm;
 	// lookups is: dens_factor,ozone_factor,haze_factor;
 	float dens_texc		=clamp((alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x,0.0,1.0);
-	vec4 lookups		=texture(density_texture,vec2(dens_texc,dens_texc));
+	vec4 lookups		=texture_clamp(density_texture,vec2(dens_texc,dens_texc));
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
@@ -255,8 +255,6 @@ vec4 Skyl(Texture3D insc_texture
 		,Texture2D blackbody_texture
 		,vec3 previous_loss
 		,vec4 previous_skyl
-		,float maxOutputAltKm
-		,float maxDistanceKm
 		,float maxDensityAltKm
 		,float spaceDistKm
 		,float viewAltKm

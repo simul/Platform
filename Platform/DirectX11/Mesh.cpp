@@ -47,14 +47,16 @@ void Mesh::GetVertices(void *target,void *indices)
 		0,
 		stride
 	};
-	HRESULT hr = renderPlatform->AsD3D11Device()->CreateBuffer(&vertexBufferDesc, NULL, &stagingVertexBuffer);
+	V_CHECK_RETURN(renderPlatform->AsD3D11Device()->CreateBuffer(&vertexBufferDesc, NULL, &stagingVertexBuffer));
+
 	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->CopyResource(stagingVertexBuffer,vertexBuffer);
 	D3D11_MAPPED_SUBRESOURCE mapped;
 
-	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Map(stagingVertexBuffer, 0, D3D11_MAP_READ, 0,&mapped);
-
-	memcpy(target, mapped.pData,stride*numVertices);
+	V_CHECK_RETURN(renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Map(stagingVertexBuffer, 0, D3D11_MAP_READ, 0,&mapped));
+	if(mapped.pData&&target&&(stride*numVertices))
+		memcpy(target, mapped.pData,stride*numVertices);
 	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Unmap(stagingVertexBuffer, 0);
+	SAFE_RELEASE(stagingVertexBuffer);
 	
 	// index buffer
 	D3D11_BUFFER_DESC indexBufferDesc =
@@ -66,16 +68,15 @@ void Mesh::GetVertices(void *target,void *indices)
 		0,
 		indexSize
 	};
-	hr = renderPlatform->AsD3D11Device()->CreateBuffer(&indexBufferDesc, NULL, &stagingIndexBuffer);
+	V_CHECK_RETURN(renderPlatform->AsD3D11Device()->CreateBuffer(&indexBufferDesc, NULL, &stagingIndexBuffer));
 	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->CopyResource(stagingIndexBuffer, indexBuffer);
 
-	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Map(stagingIndexBuffer, 0, D3D11_MAP_READ, 0, &mapped);
-
-	memcpy(indices, mapped.pData, indexSize*numIndices);
+	V_CHECK_RETURN(renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Map(stagingIndexBuffer, 0, D3D11_MAP_READ, 0, &mapped));
+	if(mapped.pData&&indices&&(indexSize*numIndices))
+		memcpy(indices, mapped.pData, indexSize*numIndices);
 	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Unmap(stagingIndexBuffer, 0);
 
 	SAFE_RELEASE(stagingIndexBuffer);
-	SAFE_RELEASE(stagingVertexBuffer);
 }
 
 bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices)

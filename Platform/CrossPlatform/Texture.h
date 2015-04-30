@@ -11,6 +11,7 @@ namespace sce
 	namespace Gnm
 	{
 		class Texture;
+		class Sampler;
 	}
 }
 
@@ -51,6 +52,7 @@ namespace simul
 			{
 				return NULL;
 			}
+			virtual sce::Gnm::Sampler *AsGnmSampler(){return 0;}
 			virtual GLuint asGLuint()
 			{
 				return 0;
