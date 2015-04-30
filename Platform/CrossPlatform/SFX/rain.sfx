@@ -106,7 +106,7 @@ shader posTexVertexOutput VS_ShowTexture(idOnly id)
 
 void transf(out TransformedParticle p,in vec3 position,int i)
 {
-	vec3 particlePos	=position.xyz;//+offset[i].xyz;
+	vec3 particlePos	=position.xyz;
 	particlePos			+=i*viewPositionOffset.xyz;
 	float sc			=1.0+0.7*rand3(position.xyz);
 	float ph			=flurryRate*phase;
@@ -987,7 +987,6 @@ PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint ve
 {
 	vec3 pos					=input.position;
 	pos							+=(meanFallVelocity+meanFallVelocity.z*input.velocity*0.5*flurry)*timeStepSeconds;
-	//pos						+=meanFallVelocity*timeStepSeconds;
 	pos							-=viewPositionOffset;
 	pos							=WrapParticleZone(pos);
 	input.position				=pos;
