@@ -75,6 +75,8 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	uint3 pos			=uint3(LinearThreadToPos2D(int(linear_pos),int3(dims)));
 	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
+	IMAGE_STORE_3D(targetTexture,pos,vec4(1.0,0.0,0.0,1.0));
+	
 	vec2 texc			=(pos.xy+vec2(0.5,0.5))/vec2(targetSize.xy);
 	vec4 previous_loss	=vec4(1.0,1.0,1.0,1.0);//texture_clamp(input_loss_texture,texc.xy);
 	float sin_e			=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
