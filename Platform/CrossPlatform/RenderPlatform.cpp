@@ -22,6 +22,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,solidEffect(NULL)
 	,debugEffect(NULL)
 {
+	immediateContext.renderPlatform=this;
 }
 
 ID3D11Device *RenderPlatform::AsD3D11Device()
@@ -310,6 +311,22 @@ void RenderPlatform::EnsureEffectIsBuiltPartialSpec(const char *filename_utf8,co
 		crossplatform::Effect *e=CreateEffect(filename_utf8,defines);
 		delete e;
 	}
+}
+
+SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc)
+{
+	SamplerState *ss=NULL;
+	std::string str(name_utf8);
+	if(sharedSamplerStates.find(str)!=sharedSamplerStates.end())
+	{
+		ss=sharedSamplerStates[str];
+	}
+	else
+	{
+		ss=CreateSamplerState(desc);;
+		sharedSamplerStates[str]=ss;
+	}
+	return ss;
 }
 
 Effect *RenderPlatform::CreateEffect(const char *filename_utf8)

@@ -509,22 +509,7 @@ D3D11_FILTER toD3d11Filter(crossplatform::SamplerStateDesc::Filtering f)
 }
 crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::SamplerStateDesc *d)
 {
-	dx11::SamplerState *s=new dx11::SamplerState();
-	
-	D3D11_SAMPLER_DESC samplerDesc;
-	
-    ZeroMemory( &samplerDesc, sizeof( D3D11_SAMPLER_DESC ) );
-    samplerDesc.Filter = toD3d11Filter (d->filtering) ;
-    samplerDesc.AddressU = toD3d11TextureAddressMode(d->x);
-    samplerDesc.AddressV = toD3d11TextureAddressMode(d->y);
-    samplerDesc.AddressW = toD3d11TextureAddressMode(d->z);
-    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    samplerDesc.MaxAnisotropy = 16;
-    samplerDesc.MinLOD = 0;
-    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	
-	SAFE_RELEASE(s->m_pd3D11SamplerState);
-	AsD3D11Device()->CreateSamplerState(&samplerDesc,&s->m_pd3D11SamplerState);
+	dx11::SamplerState *s=new dx11::SamplerState(d);
 	return s;
 }
 

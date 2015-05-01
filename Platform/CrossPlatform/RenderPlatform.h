@@ -138,6 +138,10 @@ namespace simul
 			virtual BaseFramebuffer			*CreateFramebuffer				()	=0;
 			/// Create a platform-specific sampler state instance.
 			virtual SamplerState			*CreateSamplerState				(SamplerStateDesc *)	=0;
+			/// Look for a sampler state of the stated name, and create one if it does not exist. The resulting state will be owned by the RenderPlatform, so do not destroy it.
+			/// This is for states that will be shared by multiple shaders. There will be a warning if a description is passed that conflicts with the current definition,
+			/// as the Effects system assumes that SamplerState names are unique.
+			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,simul::crossplatform::SamplerStateDesc *desc=0);
 			/// Create a platform-specific effect instance.
 			Effect							*CreateEffect					(const char *filename_utf8);
 			/// Create a platform-specific effect instance.
@@ -214,6 +218,7 @@ namespace simul
 			std::vector<std::string> shaderPathsUtf8;
 			std::vector<std::string> texturePathsUtf8;
 			std::string shaderBinaryPathUtf8;
+			std::map<std::string,SamplerState*> sharedSamplerStates;
 		protected:
 			ShaderBuildMode					shaderBuildMode;
 			DeviceContext					immediateContext;
