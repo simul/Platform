@@ -10,7 +10,7 @@
 using namespace simul;
 using namespace dx11;
 
-SamplerState::SamplerState()
+SamplerState::SamplerState(crossplatform::SamplerStateDesc *d)
 	:m_pd3D11SamplerState(NULL)
 {
 }

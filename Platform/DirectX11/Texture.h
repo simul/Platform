@@ -17,7 +17,7 @@ namespace simul
 		{
 		public:
 			ID3D11SamplerState *m_pd3D11SamplerState;
-			SamplerState();
+			SamplerState(crossplatform::SamplerStateDesc *d);
 			virtual ~SamplerState() override;
 			void InvalidateDeviceObjects();
 			ID3D11SamplerState *asD3D11SamplerState()
