@@ -77,7 +77,6 @@ TwoColourCompositeOutput CompositeAtmospherics( vec4 clip_pos
 	shadow					*=cloud.a;
 	res.multiply			=texture_clamp_lod(loss2dTexture,loss_texc,0)*shadow;
 	res.add					=insc;
-	//	res.add.rg=nearFarCloud.yy;
     return res;
 }
 
@@ -186,12 +185,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		for(int j=0;j<numSamples;j++)
 		{
 			float hiresDepth	=depths[j];
-//if(depthInterpretationStruct.reverseDepth)
-{
-		//	float u				=saturate(step(0.0,-hiresDepth));
-//}else{
-		//	float u				=saturate(step(1.0,hiresDepth));
-}
 			trueDist			=depthToLinearDistance(hiresDepth,depthInterpretationStruct);
 			float hiResInterp	=saturate((nearFarDist.y-trueDist)/nearFarDist.z);
 
@@ -217,9 +210,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		res.multiply			/=float(numSamples);
 		inscm					/=float(numSamples);
 		res.add.rgb			+= inscm.rgb;
-
-#ifdef DEBUG_COMPOSITING
-#endif
 	}
 	else
 	{
@@ -245,8 +235,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 		res.multiply			=loss *(cloud.a)*shadow;// *(1.0 - cloud.a);
 	}
 	res.add.a					= 1.0 - res.add.a;
-#ifdef DEBUG_COMPOSITING
-#endif
     return res;
 }
 #endif

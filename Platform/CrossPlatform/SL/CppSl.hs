@@ -106,14 +106,19 @@
 			:x(X),y(Y)
 		{
 		}
+		vec2(const float *v)
+			:x(v[0]),y(v[1])
+		{
+		}
 		operator const float *() const
 		{
 			return &x;
 		}
-		void operator=(const float *v)
+		const vec2& operator=(const float *v)
 		{
 			x=v[0];
 			y=v[1];
+			return *this;
 		}
 		void operator+=(vec2 v)
 		{

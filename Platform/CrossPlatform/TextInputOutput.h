@@ -36,6 +36,8 @@ namespace simul
 			//! Integer value of the specified element.
 			virtual int3 Get(const char *name,int3 default_)=0;
 			//! Floating-point value of the specified element.
+			virtual vec2 Get(const char *name,vec2 default_)=0;
+			//! Floating-point value of the specified element.
 			virtual vec3 Get(const char *name,vec3 default_)=0;
 			//! Floating-point value of the specified element.
 			virtual vec4 Get(const char *name,vec4 default_)=0;
@@ -63,6 +65,8 @@ namespace simul
 			virtual void Set(const char *name,float value)=0;
 			// Integer value of the specified element.
 			virtual void Set(const char *name,int3 value)=0;
+			// Floating-point value of the specified element.
+			virtual void Set(const char *name,vec2 value)=0;
 			// Floating-point value of the specified element.
 			virtual void Set(const char *name,vec3 value)=0;
 			// Floating-point value of the specified element.
@@ -94,6 +98,8 @@ namespace simul
 			// Floating-point value of the specified element.
 			float Get(const char *name,float default_);
 			int3 Get(const char *name,int3 default_);
+			// Floating-point value of the specified element.
+			vec2 Get(const char *name,vec2 default_);
 			// Floating-point value of the specified element.
 			vec3 Get(const char *name,vec3 default_);
 			// Floating-point value of the specified element.
@@ -127,6 +133,8 @@ namespace simul
 			void Set(const char *name,double value);
 			void Set(const char *name,float value);
 			void Set(const char *name,int3 value);
+			// Floating-point value of the specified element.
+			void Set(const char *name,vec2 value);
 			// Floating-point value of the specified element.
 			void Set(const char *name,vec3 value);
 			// Floating-point value of the specified element.
