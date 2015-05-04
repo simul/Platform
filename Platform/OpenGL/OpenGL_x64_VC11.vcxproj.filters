@@ -26,9 +26,6 @@
     <ClCompile Include="LoadGLImage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LoadGLProgram.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="objload.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -80,6 +77,9 @@
     <ClCompile Include="Buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PrintEffectLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h">
@@ -92,9 +92,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LoadGLImage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LoadGLProgram.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="objload.h">
@@ -152,6 +149,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PrintEffectLog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

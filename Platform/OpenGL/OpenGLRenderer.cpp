@@ -6,7 +6,6 @@
 #endif
 #include "OpenGLRenderer.h"
 // For font definition define:
-#include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"

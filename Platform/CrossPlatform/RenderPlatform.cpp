@@ -123,7 +123,30 @@ void RenderPlatform::PopTexturePath()
 { 
 	texturePathsUtf8.pop_back();
 }
-		//! When shader should be built, or loaded if available.
+
+void RenderPlatform::PushShaderPath(const char *path_utf8)
+{
+	shaderPathsUtf8.push_back(std::string(path_utf8)+"/");
+}
+std::vector<std::string> RenderPlatform::GetShaderPathsUtf8()
+{
+	return shaderPathsUtf8;
+}
+void RenderPlatform::SetShaderPathsUtf8(const std::vector<std::string> &pathsUtf8)
+{
+	shaderPathsUtf8.clear();
+	shaderPathsUtf8=pathsUtf8;
+}
+void RenderPlatform::PopShaderPath()
+{
+	shaderPathsUtf8.pop_back();
+}
+
+const char *RenderPlatform::GetShaderBinaryPathUtf8()
+{
+	return shaderBinaryPathUtf8.c_str();
+}
+
 void RenderPlatform::SetShaderBuildMode			(ShaderBuildMode s)
 {
 	shaderBuildMode=s;
@@ -142,11 +165,12 @@ std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 void RenderPlatform::SetShaderBinaryPathUtf8(const char *path_utf8)
 {
 	shaderBinaryPathUtf8 = path_utf8;
-}
-
-const char *RenderPlatform::GetShaderBinaryPathUtf8()
-{
-	return shaderBinaryPathUtf8.c_str();
+	if(shaderBinaryPathUtf8.size())
+	{
+		char c=shaderBinaryPathUtf8.back();
+		if(c!='\\'&&c!='/')
+			shaderBinaryPathUtf8+='/';
+	}
 }
 
 ConstantBuffer<DebugConstants> &RenderPlatform::GetDebugConstantBuffer()

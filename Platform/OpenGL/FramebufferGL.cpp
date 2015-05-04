@@ -2,7 +2,6 @@
 #include "FramebufferGL.h"
 #include <iostream>
 #include <string>
-#include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"

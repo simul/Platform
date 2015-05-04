@@ -46,7 +46,6 @@
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
-#include "LoadGLProgram.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 
 #include <algorithm>

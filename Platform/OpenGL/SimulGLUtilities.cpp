@@ -3,7 +3,6 @@
 #pragma warning(disable:4505)	// Fix GLUT warnings
 #include <GL/glut.h>
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
-#include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Sky/Float4.h"
 #include <stdlib.h>
@@ -58,9 +57,6 @@ void Utilities::Kill()
 }
 
 Utilities::Utilities()
-	:linedraw_program(0)
-	,linedraw_2d_program(0)
-	,simple_program(0)
 {
 	instance_count++;
 	if(instance_count==1)
@@ -69,39 +65,6 @@ Utilities::Utilities()
 
 void Utilities::RestoreDeviceObjects(void *)
 {
-	const char *vert="varying vec4 colr;"
-						"void main(void)"
-						"{"
-						"    gl_Position		= ftransform();"
-						"    colr=gl_Color;"
-						"}";
-	const char *frag="varying vec4 colr;"
-						"void main(void)"
-						"{"
-						"	gl_FragColor=colr;"
-						"}";
-	linedraw_program=SetShaders(vert,frag);
-	const char *vert2="varying vec4 colr;"
-						"void main(void)"
-						"{"
-						"    gl_Position		= gl_Vertex;"
-						"    colr=gl_Color;"
-						"}";
-	linedraw_2d_program=SetShaders(vert2,frag);
-	const char *simple_vert="varying vec2 texCoords;"
-						"void main(void)"
-						"{"
-						"    gl_Position		= ftransform();"
-						"    texCoords=gl_MultiTexCoord0.xy;"
-						"}";
-	const char *simple_frag="uniform sampler2D image_texture;"
-						"varying vec2 texCoords;"
-						"void main(void)"
-						"{"
-						"	vec4 c = texture2D(image_texture,texCoords);"
-						"	gl_FragColor=c;"
-						"}";
-	simple_program=SetShaders(simple_vert,simple_frag);
 }
 
 void Utilities::SetScreenSize(int w,int h)
@@ -112,9 +75,6 @@ void Utilities::SetScreenSize(int w,int h)
 
 void Utilities::InvalidateDeviceObjects()
 {
-	SAFE_DELETE_PROGRAM(linedraw_2d_program);
-	SAFE_DELETE_PROGRAM(linedraw_program);
-	SAFE_DELETE_PROGRAM(simple_program);
 }
 
 Utilities::~Utilities()
@@ -128,8 +88,6 @@ void simul::opengl::RenderTexture(int x,int y,int w,int h)
 	GL_ERROR_CHECK		
 	int prog=0;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
-	if(prog==0)
-		glUseProgram(Utilities::GetSingleton().simple_program);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 

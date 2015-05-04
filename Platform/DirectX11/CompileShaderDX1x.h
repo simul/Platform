@@ -17,7 +17,7 @@
 class ShaderIncludeHandler : public ID3DInclude
 {
 public:
-	ShaderIncludeHandler(const char* shaderDirUtf8, const char* systemDirUtf8);
+	ShaderIncludeHandler(const char* shaderDirUtf8, const char* systemDirUtf8,const std::vector<std::string> &shaderPathsUtf8);
 	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType,LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
 	HRESULT __stdcall Close(LPCVOID pData);
 private:
@@ -30,7 +30,7 @@ private:
 class DetectChangesIncludeHandler : public ID3DInclude
 {
 public:
-	DetectChangesIncludeHandler(const char* shaderDirUtf8, double binaryTime = 0.0);
+	DetectChangesIncludeHandler(const char* shaderDirUtf8,const std::vector<std::string> &shaderPathsUtf8, double binaryTime = 0.0);
 	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType,LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
 	HRESULT __stdcall Close(LPCVOID pData);
 	double GetNewestIncludeDateJDN() const
@@ -45,5 +45,4 @@ private:
 	double newest;
 };
 
-HRESULT CompileShaderFromFile( const char* szFileNameUtf8, const char*  szEntryPoint, const char*  szShaderModel, ID3DBlob** ppBlobOut );
 #endif

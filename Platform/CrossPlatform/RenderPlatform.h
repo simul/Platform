@@ -91,16 +91,34 @@ namespace simul
 			virtual void RecompileShaders	();
 			//! Gets an object containing immediate-context API-specific values.
 			DeviceContext &GetImmediateContext();
+			//! Push the given file path onto the texture path stack.
 			virtual void PushTexturePath	(const char *pathUtf8);
+			//! Remove a path from the top of the texture path stack.
 			virtual void PopTexturePath		();
-		//! When shader should be built, or loaded if available.
+			//! Returns the stack of shader source paths.
+			std::vector<std::string> GetShaderPathsUtf8();
+			//! Replace the entire stack of shader source paths.
+			void SetShaderPathsUtf8(const std::vector<std::string> &pathsUtf8);
+			//! Push the given file path onto the shader path stack.
+			void PushShaderPath(const char *path_utf8);
+			//! Remove a path from the top of the shader source path stack.
+			void PopShaderPath();
+			//! Set the path where generated shader binaries should be saved, and where stored shader binaries should be loaded from.
+			void SetShaderBinaryPathUtf8(const char *path_utf8);
+			//! Returns the path where generated shader binaries should be saved, and where stored shader binaries should be loaded from.
+			const char *GetShaderBinaryPathUtf8();
+			//! When shaders should be built, or loaded if available.
 			void SetShaderBuildMode			(ShaderBuildMode s);
+			//! When shaders should be built, or loaded if available.
 			ShaderBuildMode GetShaderBuildMode() const;
 			virtual void StartRender		(DeviceContext &deviceContext)=0;
 			virtual void EndRender			(DeviceContext &deviceContext)=0;
 			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;
+			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
+			//! Draw the specified number of vertices.
 			virtual void Draw				(DeviceContext &deviceContext,int num_verts,int start_vert)=0;
+			//! Draw the specified number of vertices using the bound index arrays.
 			virtual void DrawIndexed		(DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0)=0;
 			virtual void DrawMarker			(DeviceContext &deviceContext,const double *matrix)			=0;
 			virtual void DrawLine			(crossplatform::DeviceContext &deviceContext,const float *pGlobalBasePosition, const float *pGlobalEndPosition,const float *colour,float width);
@@ -202,8 +220,6 @@ namespace simul
 			crossplatform::Effect *solidEffect;
 			std::set<crossplatform::Material*> materials;
 			std::vector<std::string> GetTexturePathsUtf8();
-			void SetShaderBinaryPathUtf8(const char *path_utf8);
-			const char *GetShaderBinaryPathUtf8();
 			simul::base::MemoryInterface *GetMemoryInterface()
 			{
 				return memoryInterface;

@@ -91,37 +91,9 @@ namespace simul
 {
 	namespace dx11
 	{
-		std::vector<std::string> shaderPathsUtf8;
-		std::string shaderbinPathUtf8="shaderbin\\";
 		void PipeCompilerOutput(bool p)
 		{
 			pipe_compiler_output=p;
-		}
-		void PushShaderPath(const char *path_utf8)
-		{
-			shaderPathsUtf8.push_back(std::string(path_utf8)+"/");
-		}
-		std::vector<std::string> GetShaderPathsUtf8()
-		{
-			return shaderPathsUtf8;
-		}
-		void SetShaderPathsUtf8(const std::vector<std::string> &pathsUtf8)
-		{
-			shaderPathsUtf8.clear();
-			shaderPathsUtf8=pathsUtf8;
-		}
-		void PopShaderPath()
-		{
-			shaderPathsUtf8.pop_back();
-		}
-		void SetShaderBinaryPath(const char *path_utf8)
-		{
-			shaderbinPathUtf8=path_utf8;
-			shaderbinPathUtf8+='\\';
-		}
-		const char *GetShaderBinaryPathUtf8()
-		{
-			return shaderbinPathUtf8.c_str();
 		}
 	}
 }
@@ -506,7 +478,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *binary_filename_
 	return hr;
 }
 
-static double GetNewestIncludeFileDate(std::string text_filename_utf8,void *textData,size_t textSize,D3D_SHADER_MACRO *macros,double binary_date_jdn=0.0)
+static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std::vector<std::string> &shaderPathsUtf8,void *textData,size_t textSize,D3D_SHADER_MACRO *macros,double binary_date_jdn=0.0)
 {
 	ID3DBlob *binaryBlob=NULL;
 	ID3DBlob *errorMsgs=NULL;
@@ -515,7 +487,7 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,void *text
 	if(pos<0||bpos>pos)
 		pos=bpos;
 	std::string path_utf8=text_filename_utf8.substr(0,pos);
-	DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),binary_date_jdn);
+	DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),shaderPathsUtf8,binary_date_jdn);
 	HRESULT hr=D3DPreprocess(	textData	
 						,textSize
 						,text_filename_utf8.c_str()		//in   LPCSTR pSourceName,
@@ -534,7 +506,7 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,void *text
 }
 
 HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect,
-crossplatform::ShaderBuildMode shaderBuildMode)
+crossplatform::ShaderBuildMode shaderBuildMode,std::string shaderbinPathUtf8,const std::vector<std::string> &shaderPathsUtf8)
 {
 ERRNO_CHECK
 	HRESULT hr=S_OK;
@@ -583,7 +555,7 @@ ERRNO_CHECK
 				//	C:\Program Files (x86)\Microsoft Durango XDK\xdk\FXC\amd64\Fxc cs.hlsl –T cs_5_0 –D__XBOX_CONTROL_NONIEEE=0
 				//	*/
 			}
-			newest_included_file=GetNewestIncludeFileDate(text_filename_utf8,textData,textSize,macros,binary_date_jdn);
+			newest_included_file=GetNewestIncludeFileDate(text_filename_utf8,shaderPathsUtf8,textData,textSize,macros,binary_date_jdn);
 			if(hr!=S_OK||newest_included_file>binary_date_jdn)
 				changes_detected=true;
 		}
@@ -600,7 +572,7 @@ ERRNO_CHECK
 	ID3DBlob *binaryBlob	=NULL;
 	ID3DBlob *errorMsgs		=NULL;
 ERRNO_CHECK
-	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
+	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"",shaderPathsUtf8);
 	std::cout<<"Rebuilding DX11 shader "<<text_filename_utf8.c_str()<<" to target "<<binary_filename_utf8.c_str()<<std::endl;
 	hr=D3DCompile(		textData
 						,textSize
@@ -661,13 +633,14 @@ ERRNO_CHECK
 	return hr;
 }
 
-HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::vector<std::string> &shaderPathsUtf8,crossplatform::ShaderBuildMode shaderBuildMode)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,crossplatform::ShaderBuildMode shaderBuildMode,const std::vector<std::string> &shaderPathsUtf8,const std::string &shaderBinPathUtf8)
 {
 	std::map<std::string,std::string> defines;
-	return simul::dx11::CreateEffect(d3dDevice,effect,filename,defines,shaderPathsUtf8,0,shaderBuildMode);
+	return simul::dx11::CreateEffect(d3dDevice,effect,filename,defines,0,shaderBuildMode,shaderPathsUtf8,shaderBinPathUtf8);
 }
 
-HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,const std::vector<std::string> &shaderPathsUtf8,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode)
+HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines
+	,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode,const std::vector<std::string> &shaderPathsUtf8,const std::string &shaderBinPathUtf8)
 {
 	SIMUL_ASSERT_WARN(d3dDevice!=NULL,"Null device");
 	HRESULT hr=S_OK;
@@ -705,7 +678,7 @@ static const DWORD default_effect_flags=0;
 											shader_flags,
 											flags,
 											d3dDevice,
-											effect,shaderBuildMode);
+											effect,shaderBuildMode,shaderBinPathUtf8,shaderPathsUtf8);
 		if(hr==S_OK)
 			break;
 		std::string err="";

@@ -172,12 +172,6 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT const float *GetCameraPosVector(const float *v,bool y_vertical=false);
 		//! Call this to make the FX compiler put its warnings and errors to the standard output when used.
 		extern SIMUL_DIRECTX11_EXPORT void PipeCompilerOutput(bool p);
-		extern SIMUL_DIRECTX11_EXPORT void PushShaderPath(const char *path);
-		extern SIMUL_DIRECTX11_EXPORT std::vector<std::string> GetShaderPathsUtf8();
-		extern SIMUL_DIRECTX11_EXPORT void SetShaderPathsUtf8(const std::vector<std::string> &pathsUtf8);
-		extern SIMUL_DIRECTX11_EXPORT void SetShaderBinaryPath(const char *path_utf8);
-		extern SIMUL_DIRECTX11_EXPORT const char *GetShaderBinaryPathUtf8();
-		extern SIMUL_DIRECTX11_EXPORT void PopShaderPath();
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename,const std::vector<std::string> &texturePathsUtf8);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename,const std::vector<std::string> &texturePathsUtf8);
 		ID3D11Texture1D* make1DTexture(
@@ -223,9 +217,9 @@ namespace simul
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
 		//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename.
-		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::vector<std::string> &shaderPathsUtf8,crossplatform::ShaderBuildMode shaderBuildMode);
+		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,crossplatform::ShaderBuildMode shaderBuildMode,const std::vector<std::string> &shaderPathsUtf8,const std::string &shaderBinPathUtf8);
 		//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename and defines.
-		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines,const std::vector<std::string> &shaderPathsUtf8,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode);
+		extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines,unsigned int shader_flags,crossplatform::ShaderBuildMode shaderBuildMode,const std::vector<std::string> &shaderPathsUtf8,const std::string &shaderBinPathUtf8);
 	}
 }
 

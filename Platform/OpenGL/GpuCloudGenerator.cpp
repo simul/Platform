@@ -4,7 +4,6 @@
 #include <Windows.h>
 #endif
 #include "Simul/Platform/OpenGL/GpuCloudGenerator.h"
-#include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix.h"

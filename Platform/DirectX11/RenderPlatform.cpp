@@ -517,7 +517,7 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 {
 	std::string fn(filename_utf8);
 	crossplatform::Effect *e= new dx11::Effect();
-	e->Load(this,filename_utf8,defines,dx11::GetShaderPathsUtf8());
+	e->Load(this,filename_utf8,defines);
 	e->SetName(filename_utf8);
 	return e;
 }

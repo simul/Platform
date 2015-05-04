@@ -5,7 +5,6 @@
 #include "Simul/Platform/OpenGL/Texture.h"
 #include "Simul/Platform/OpenGL/Effect.h"
 #include "Simul/Platform/OpenGL/Light.h"
-#include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
 #include "Simul/Platform/OpenGL/Buffer.h"
 #include "Simul/Platform/OpenGL/FrameBufferGL.h"
@@ -13,7 +12,6 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Base/DefaultFileLoader.h"
-#include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 
 #pragma warning(disable:4505)	// Fix GLUT warnings
@@ -526,7 +524,7 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 {
 GL_ERROR_CHECK
 	opengl::Effect *e=new opengl::Effect();
-	e->Load(this,filename_utf8,defines,opengl::GetShaderPathsUtf8());
+	e->Load(this,filename_utf8,defines);
 	e->SetName(filename_utf8);
 	if(e->platform_effect==(void*)0xFFFFFFFF)
 	{
@@ -1099,7 +1097,6 @@ void RenderPlatform::DrawIndexed		(crossplatform::DeviceContext &deviceContext,i
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *lines,int vertex_count,bool strip,bool test_depth,bool view_centred)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glUseProgram(Utilities::GetSingleton().linedraw_program);
 	glDisable(GL_ALPHA_TEST);
     test_depth?glEnable(GL_DEPTH_TEST):glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
@@ -1120,14 +1117,10 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::Pos
 
 void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,crossplatform::PosColourVertex *lines,int vertex_count,bool strip)
 {
-	//::Draw2DLines((VertexXyzRgba*)lines,vertex_count,strip);
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glUseProgram(Utilities::GetSingleton().linedraw_2d_program);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-    
-    
     
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_CULL_FACE);

@@ -5,7 +5,6 @@
 #endif
 
 #include "FramebufferGL.h"
-#include "LoadGLProgram.h"
 #include "SimulGLWeatherRenderer.h"
 #include "SimulGLCloudRenderer.h"
 #include "Simul/Clouds/BaseLightningRenderer.h"
