@@ -92,6 +92,12 @@ ERRNO_CHECK
 		default:
 			return E_FAIL;
 		}
+		if(finalPathUtf8.length()==0)
+		{
+			newest==0.0;
+			SIMUL_CERR<<"Can't find include file "<<pFileNameUtf8<<std::endl;
+			return E_FAIL;
+		}
 		void *buf=NULL;
 		unsigned fileSize=0;
 		double dateTimeJdn=simul::base::FileLoader::GetFileLoader()->GetFileDate(finalPathUtf8.c_str());

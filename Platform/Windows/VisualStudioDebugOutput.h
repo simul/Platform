@@ -74,7 +74,7 @@ public:
     virtual void writeString(const std::string &str)
     {
 		if(to_logfile)
-			logFile<<str.c_str()<<std::endl;
+			logFile<<str.c_str();
 		if(callback)
 		{
 			callback(str.c_str());

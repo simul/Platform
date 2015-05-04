@@ -10,7 +10,7 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/OpenGL/Effect.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
-#include "Simul/Platform/OpenGL/LoadGLProgram.h"
+#include "Simul/Platform/OpenGL/PrintEffectLog.h"
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 

@@ -478,7 +478,8 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *binary_filename_
 	return hr;
 }
 
-static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std::vector<std::string> &shaderPathsUtf8,void *textData,size_t textSize,D3D_SHADER_MACRO *macros,double binary_date_jdn=0.0)
+static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std::vector<std::string> &shaderPathsUtf8
+	,void *textData,size_t textSize,D3D_SHADER_MACRO *macros,double binary_date_jdn,bool &missing)
 {
 	ID3DBlob *binaryBlob=NULL;
 	ID3DBlob *errorMsgs=NULL;
@@ -502,6 +503,7 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std:
 		binaryBlob->Release();
 	if(errorMsgs)
 		errorMsgs->Release();
+	missing=(newestFileTime==0.0&&hr!=S_OK);
 	return newestFileTime;
 }
 
@@ -555,8 +557,14 @@ ERRNO_CHECK
 				//	C:\Program Files (x86)\Microsoft Durango XDK\xdk\FXC\amd64\Fxc cs.hlsl –T cs_5_0 –D__XBOX_CONTROL_NONIEEE=0
 				//	*/
 			}
-			newest_included_file=GetNewestIncludeFileDate(text_filename_utf8,shaderPathsUtf8,textData,textSize,macros,binary_date_jdn);
-			if(hr!=S_OK||newest_included_file>binary_date_jdn)
+			bool missing=false;
+			newest_included_file=GetNewestIncludeFileDate(text_filename_utf8,shaderPathsUtf8,textData,textSize,macros,binary_date_jdn,missing);
+			if(missing)
+			{
+				changes_detected=false;
+				SIMUL_CERR<<"Can't tell if source is out of date for "<<text_filename_utf8<<" as not all includes are present."<<std::endl;
+			}
+			else if(hr!=S_OK||newest_included_file>binary_date_jdn)
 				changes_detected=true;
 		}
 	}
