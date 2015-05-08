@@ -142,7 +142,7 @@ void RenderPlatform::PopShaderPath()
 	shaderPathsUtf8.pop_back();
 }
 
-const char *RenderPlatform::GetShaderBinaryPathUtf8()
+const char *RenderPlatform::GetShaderBinaryPath()
 {
 	return shaderBinaryPathUtf8.c_str();
 }
@@ -162,7 +162,7 @@ std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 	return texturePathsUtf8;
 }
 
-void RenderPlatform::SetShaderBinaryPathUtf8(const char *path_utf8)
+void RenderPlatform::SetShaderBinaryPath(const char *path_utf8)
 {
 	shaderBinaryPathUtf8 = path_utf8;
 	if(shaderBinaryPathUtf8.size())

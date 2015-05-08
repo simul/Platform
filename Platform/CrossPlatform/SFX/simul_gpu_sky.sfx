@@ -59,8 +59,8 @@ shader void CS_BlendColour3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	if(sub_pos.x>=targetSize.x||sub_pos.y>=targetSize.y||sub_pos.z>=targetSize.z)
 		return;
 	vec3 texc=vec3(sub_pos.zyx)/vec3(targetSize.zyx);
-	vec4 c1=texture_clamp_lod(colourTexture,texc,0);
-	vec4 c2=texture_clamp_lod(colourTexture2,texc,0);
+	vec4 c1=texture_3d_clamp_lod(colourTexture,texc,0);
+	vec4 c2=texture_3d_clamp_lod(colourTexture2,texc,0);
 	vec4 c=lerp(c1,c2,interpColours);
 	IMAGE_STORE_3D(targetTexture,sub_pos,c);
 }
@@ -78,7 +78,7 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	IMAGE_STORE_3D(targetTexture,pos,vec4(1.0,0.0,0.0,1.0));
 	
 	vec2 texc			=(pos.xy+vec2(0.5,0.5))/vec2(targetSize.xy);
-	vec4 previous_loss	=vec4(1.0,1.0,1.0,1.0);//texture_clamp(input_loss_texture,texc.xy);
+	vec4 previous_loss	=vec4(1.0,1.0,1.0,1.0);
 	float sin_e			=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
@@ -101,7 +101,7 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		float r				=sqrt(x*x+y*y);
 		float alt_km		=r-planetRadiusKm;
 		// lookups is: dens_factor,ozone_factor,haze_factor;
-		float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
+		float dens_texc		=saturate((alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x);
 		vec4 lookups		=texture_clamp_lod(density_texture,vec2(dens_texc,.5),0);
 		float dens_factor	=lookups.x;
 		float ozone_factor	=lookups.y;
@@ -111,6 +111,10 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		loss.rgb			=exp(-extinction*stepLengthKm);
 		loss.a				=(loss.r+loss.g+loss.b)/3.0;
 		loss				*=previous_loss;
+		loss.rgb=vec3(altTexc,altTexc,altTexc);
+#ifdef GLSL
+		idx.y=dims.y-1-idx.y;
+#endif
 		IMAGE_STORE_3D(targetTexture,idx,vec4(loss.rgb,1.0));
 		prevDist_km			=dist_km;
 		previous_loss		=loss;
@@ -217,6 +221,9 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 		vec3 ctexc			=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(targetSize.xyz);
 		vec4 insc_colour	=texture_3d_clamp_lod(colourTexture,ctexc.xyz,0);
 		vec4 store_insc		=lerp(insc,insc_colour,blendToColours);
+#ifdef GLSL
+		idx.y=targetSize.y-1-idx.y;
+#endif
 		IMAGE_STORE_3D(targetTexture,idx,store_insc);
 		prevDist_km			=dist_km;
 		previous_insc		=insc;
@@ -282,7 +289,7 @@ shader vec4 PS_Insc(vertexOutput IN) : SV_TARGET
 shader vec4 PS_Skyl(vertexOutput IN) : SV_TARGET
 {
 	vec4 previous_skyl	=texture_clamp(input_texture,IN.texCoords.xy);
-	vec3 previous_loss	=texture_clamp(loss_texture,vec3(IN.texCoords.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;
+	vec3 previous_loss	=texture_3d_clamp(loss_texture,vec3(IN.texCoords.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;
 	// should adjust texCoords - we want the PREVIOUS loss!
 	float sin_e			=clamp(1.0-2.0*(IN.texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);

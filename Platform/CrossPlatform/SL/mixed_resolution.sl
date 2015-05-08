@@ -221,7 +221,7 @@ vec4 HalfscaleOnly_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_dims
 	return res;
 }
 
-vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct,bool split_view)
+vec4 HalfscaleOnly(Texture2D sourceDepthTexture,int2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct,bool split_view)
 {
 	int2 pos0			=int2(pos*2);
 #ifdef GLSL
@@ -304,7 +304,7 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_o
 	return res;
 }
 
-vec4 HalfscaleInitial(Texture2D sourceDepthTexture,uint2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct,bool split_view)
+vec4 HalfscaleInitial(Texture2D sourceDepthTexture,int2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct,bool split_view)
 {
 	int2 pos0 = int2(pos * 2);
 #ifdef GLSL
