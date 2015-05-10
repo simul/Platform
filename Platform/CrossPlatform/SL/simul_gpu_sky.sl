@@ -3,9 +3,7 @@
 int3 LinearThreadToPos2D(int linear_pos,int3 dims)
 {
 	int yy				=int(float(linear_pos)/float(dims.x));
-	int xx				=int(linear_pos)-yy*int(dims.x);
-	//int3 pos			=int3(xx,yy,0);
-
+	int xx				=linear_pos-yy*int(dims.x);
 	return int3(xx,yy,0);
 }
 
@@ -299,7 +297,7 @@ vec4 Skyl(Texture3D insc_texture
 	//skyl.w			=(loss.w)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 	skyl.rgb			*=previous_loss.rgb;
 	skyl.rgb			+=previous_skyl.rgb;
-		
+		//skyl.rgb*=10.0;
 	float lossw			=1.0;
 	skyl.w				=(lossw)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 	return skyl;

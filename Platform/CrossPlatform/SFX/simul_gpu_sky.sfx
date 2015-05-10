@@ -69,10 +69,10 @@ CS_LAYOUT(8,1,1)
 shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 dims;
-	uint3 sub_pos		=g * uint3(8, 1, 1) + t;
+	uint3 sub_pos		=uint3(8*g.x, g.y, g.z) + t;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
-	uint linear_pos		=sub_pos.x+threadOffset.x;
-	uint3 pos			=uint3(LinearThreadToPos2D(int(linear_pos),int3(dims)));
+	uint linear_pos		=(sub_pos.x+threadOffset.x);
+	int3 pos			=LinearThreadToPos2D(int(linear_pos),int3(dims));
 	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
 	IMAGE_STORE_3D(targetTexture,pos,vec4(1.0,0.0,0.0,1.0));
@@ -111,7 +111,7 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		loss.rgb			=exp(-extinction*stepLengthKm);
 		loss.a				=(loss.r+loss.g+loss.b)/3.0;
 		loss				*=previous_loss;
-		loss.rgb=vec3(altTexc,altTexc,altTexc);
+		//loss.rgb=vec3(idx.x/4.0,1,0);
 #ifdef GLSL
 		idx.y=dims.y-1-idx.y;
 #endif
@@ -255,7 +255,9 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	{
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow(float(i)/(float(targetSize.z)-1.0),2.0);
-		
+#ifdef GLSL
+		idx.y=targetSize.y-1-idx.y;
+#endif
 		vec3 previous_loss	=TEXTURE_LOAD_3D(loss_texture,idx).rgb;
 		float dist_km		=zPosition*maxDistanceKm;
 		if(i==targetSize.z-1)
@@ -272,7 +274,6 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 							,prevDist_km
 							,sin_e
 							,cos_e);
-
 		IMAGE_STORE_3D(targetTexture,idx, skyl);
 		prevDist_km			=dist_km;
 		previous_skyl		=skyl;

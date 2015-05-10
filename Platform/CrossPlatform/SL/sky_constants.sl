@@ -4,18 +4,18 @@
 SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	uniform mat4 worldViewProj;
 	uniform mat4 proj;
-	uniform mat4 cubemapViews[6];
+	
+	uniform float altitudeTexCoord;
+	uniform float hazeEccentricity;
+	uniform float skyInterp;
+	uniform float starBrightness;
+
 	uniform mat4 invViewProj;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec4 eyePosition;
 	uniform vec4 lightDir;
 	uniform vec4 mieRayleighRatio;
 	uniform vec4 colour;
-	
-	uniform float altitudeTexCoord;
-	uniform float hazeEccentricity;
-	uniform float skyInterp;
-	uniform float starBrightness;
 
 	uniform float radiusRadians;
 	uniform float isForwardDepth;
@@ -32,6 +32,10 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	
 	uniform float sunBrightness;
 	uniform float glowBrightness;
+	uniform float SkyConstantspad1;
+	uniform float SkyConstantspad2;
+
+	//uniform mat4 cubemapViews[6]; messes up alignment if not at the end
 SIMUL_CONSTANT_BUFFER_END
 
 struct LightingQueryResult

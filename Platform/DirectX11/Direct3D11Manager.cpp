@@ -333,8 +333,8 @@ void Window::SetRenderer(Direct3D11CallbackInterface *ci,int vw_id)
 		return;
 	if(renderer)
 		renderer->RemoveView(view_id);
-	view_id = vw_id;
-	renderer=ci;
+	view_id		=vw_id;
+	renderer	=ci;
 	if(!m_swapChain)
 		return;
 	DXGI_SWAP_CHAIN_DESC swapDesc;
@@ -345,7 +345,7 @@ void Window::SetRenderer(Direct3D11CallbackInterface *ci,int vw_id)
 	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
 	if(view_id<0)
-		view_id=renderer->AddView(false);
+		view_id				=renderer->AddView(false);
 	renderer->ResizeView(view_id,&surfaceDesc);
 }
 
