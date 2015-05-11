@@ -26,14 +26,13 @@ struct LookupQuad4
 
 #define VOLUME_INSCATTER
 #define SCREENSPACE_VOL
-TwoColourCompositeOutput CompositeAtmospherics( vec4 clip_pos
-	, vec2 depth_texc
+TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
+				,vec2 depth_texc
 				,Texture2D farCloudTexture
 				,Texture2D nearCloudTexture
 				,Texture2D nearFarTexture
 				,Texture2D loss2dTexture
 				,Texture2D depthTexture
-				//,int2 fullResDims
 				,mat4 invViewProj
 				,DepthIntepretationStruct depthInterpretationStruct
 				,vec2 lowResTexCoords
