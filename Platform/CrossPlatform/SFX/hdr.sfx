@@ -1,3 +1,7 @@
+float testfn(float x)
+{
+	return clamp(x,0.0,1.0);
+}
 #include "shader_platform.sl"
 
 #include "../SL/common.sl"
