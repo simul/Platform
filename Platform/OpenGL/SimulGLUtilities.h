@@ -104,17 +104,17 @@ namespace simul
 
 		#define MAKE_GL_CONSTANT_BUFFER(ubo,Struct,bindingIndex)	\
 			glGenBuffers(1, &ubo);	\
-			glBindBuffer(GL_UNIFORM_BUFFER, ubo);	\
-			glBufferData(GL_UNIFORM_BUFFER, sizeof(Struct), NULL, GL_DYNAMIC_DRAW);	\
-			glBindBuffer(GL_UNIFORM_BUFFER, 0);		\
-			glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0, sizeof(Struct));
+			glBindBuffer(GL_constant_buffer, ubo);	\
+			glBufferData(GL_constant_buffer, sizeof(Struct), NULL, GL_DYNAMIC_DRAW);	\
+			glBindBuffer(GL_constant_buffer, 0);		\
+			glBindBufferRange(GL_constant_buffer,bindingIndex,ubo,0, sizeof(Struct));
 
 
 		#define UPDATE_GL_CONSTANT_BUFFER(ubo,constants,bindingIndex)	\
-			glBindBuffer(GL_UNIFORM_BUFFER, ubo);	\
-			glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(constants), &constants);	\
-			glBindBuffer(GL_UNIFORM_BUFFER, 0);		\
-			glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
+			glBindBuffer(GL_constant_buffer, ubo);	\
+			glBufferSubData(GL_constant_buffer,0, sizeof(constants), &constants);	\
+			glBindBuffer(GL_constant_buffer, 0);		\
+			glBindBufferBase(GL_constant_buffer,bindingIndex,ubo);
 
 		//! Useful Wrapper class to encapsulate constant buffer behaviour
 		template<class T> class ConstantBuffer:public T
@@ -138,9 +138,9 @@ namespace simul
 			{
 				Release();
 				glGenBuffers(1, &ubo);
-				glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-				glBufferData(GL_UNIFORM_BUFFER, sizeof(T), NULL, GL_DYNAMIC_DRAW );
-				glBindBuffer(GL_UNIFORM_BUFFER, 0);
+				glBindBuffer(GL_constant_buffer, ubo);
+				glBufferData(GL_constant_buffer, sizeof(T), NULL, GL_DYNAMIC_DRAW );
+				glBindBuffer(GL_constant_buffer, 0);
 			}
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToProgram(GLuint program,const char *name,GLint bindingIndex)
@@ -162,8 +162,8 @@ namespace simul
 						std::cerr<<"blockSize<sizeof(T) - shader/C++ mismatch in GLSL."<<std::endl;
 						return;
 					}
-					glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
-					glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,sizeof(T));	
+					glBindBufferBase(GL_constant_buffer,bindingIndex,ubo);
+					glBindBufferRange(GL_constant_buffer,bindingIndex,ubo,0,sizeof(T));	
 				}
 				else
 					std::cerr<<"ConstantBuffer<> LinkToProgram did not find the buffer named "<<name<<" in the program."<<std::endl;
@@ -176,9 +176,9 @@ namespace simul
 			//! Apply the stored data using the given context, in preparation for rendering.
 			void Apply()
 			{
-				glBindBuffer(GL_UNIFORM_BUFFER,ubo);
-				glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(T),static_cast<T*>(this));
-				glBindBuffer(GL_UNIFORM_BUFFER,0);
+				glBindBuffer(GL_constant_buffer,ubo);
+				glBufferSubData(GL_constant_buffer,0,sizeof(T),static_cast<T*>(this));
+				glBindBuffer(GL_constant_buffer,0);
 			}
 		};
 	}

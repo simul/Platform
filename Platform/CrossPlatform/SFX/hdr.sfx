@@ -1,7 +1,3 @@
-float testfn(float x)
-{
-	return clamp(x,0.0,1.0);
-}
 #include "shader_platform.sl"
 
 #include "../SL/common.sl"
@@ -37,7 +33,7 @@ struct CompositeShaderInput
     vec2 texCoords			:TEXCOORD0;
     vec2 lowResTexCoords	:TEXCOORD1;
 	vec4 clip_pos			:TEXCOORD2;
-	vec2 depth_texc			: TEXCOORD3;
+	vec2 depth_texc			:TEXCOORD3;
 };
 
 vec4 texture_resolve(TEXTURE2DMS_FLOAT4 textureMS,vec2 texCoords)

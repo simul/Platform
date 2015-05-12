@@ -697,39 +697,42 @@ static const DWORD default_effect_flags=0;
 		if(!IsDebuggerPresent())
 			break;
  	}
-	SIMUL_ASSERT((*effect)->IsValid()==TRUE);
+	SIMUL_ASSERT(effect&&*effect&&(*effect)->IsValid()==TRUE);
 
 	// Name stuff:
 #ifdef _DEBUG
-	ID3DX11Effect *e=*effect;
-	if(e)
+	if(effect)
 	{
-		D3DX11_EFFECT_DESC effect_desc;
-		e->GetDesc(&effect_desc);
-		for(int i=0;i<(int)effect_desc.Techniques;i++)
+		ID3DX11Effect *e=*effect;
+		if(e)
 		{
-			ID3DX11EffectTechnique * pTech = e->GetTechniqueByIndex(i);
-			D3DX11_TECHNIQUE_DESC techDesc;
-			pTech->GetDesc(&techDesc);
-			for(int j=0;j<(int)techDesc.Passes;j++)
+			D3DX11_EFFECT_DESC effect_desc;
+			e->GetDesc(&effect_desc);
+			for(int i=0;i<(int)effect_desc.Techniques;i++)
 			{
-				ID3DX11EffectPass * pPass = pTech->GetPassByIndex(j);
-				D3DX11_PASS_DESC passDesc;
-				pPass->GetDesc(&passDesc);
-
-				D3DX11_PASS_SHADER_DESC vsPassDesc;
-
-				pPass->GetVertexShaderDesc(&vsPassDesc);
-				ID3DX11EffectShaderVariable * pVs;
-				pVs = vsPassDesc.pShaderVariable->AsShader();
-				D3DX11_EFFECT_SHADER_DESC vsDesc;
-				pVs->GetShaderDesc(vsPassDesc.ShaderIndex, &vsDesc);
-				ID3D11VertexShader *vertexShader=NULL;
-				pVs->GetVertexShader(vsPassDesc.ShaderIndex,&vertexShader);
-				if(vertexShader)
+				ID3DX11EffectTechnique * pTech = e->GetTechniqueByIndex(i);
+				D3DX11_TECHNIQUE_DESC techDesc;
+				pTech->GetDesc(&techDesc);
+				for(int j=0;j<(int)techDesc.Passes;j++)
 				{
-					simul::dx11::SetDebugObjectName(vertexShader,filename_utf8.c_str());
-					vertexShader->Release();
+					ID3DX11EffectPass * pPass = pTech->GetPassByIndex(j);
+					D3DX11_PASS_DESC passDesc;
+					pPass->GetDesc(&passDesc);
+
+					D3DX11_PASS_SHADER_DESC vsPassDesc;
+
+					pPass->GetVertexShaderDesc(&vsPassDesc);
+					ID3DX11EffectShaderVariable * pVs;
+					pVs = vsPassDesc.pShaderVariable->AsShader();
+					D3DX11_EFFECT_SHADER_DESC vsDesc;
+					pVs->GetShaderDesc(vsPassDesc.ShaderIndex, &vsDesc);
+					ID3D11VertexShader *vertexShader=NULL;
+					pVs->GetVertexShader(vsPassDesc.ShaderIndex,&vertexShader);
+					if(vertexShader)
+					{
+						simul::dx11::SetDebugObjectName(vertexShader,filename_utf8.c_str());
+						vertexShader->Release();
+					}
 				}
 			}
 		}

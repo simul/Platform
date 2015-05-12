@@ -1,4 +1,4 @@
-
+#define NOMINMAX
 #include "Simul/Platform/CrossPlatform/TextInputOutput.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringFunctions.h"
@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 using namespace simul;
 using namespace crossplatform;
 using std::string;
@@ -178,7 +179,7 @@ void TextFileInput::Load(const std::string &text)
 		size_t next_ret		=text.find("\n",colon_pos+1);
 		if(sq_pos>=0&&sq_pos<next_colon&&sq_pos<brace_pos)
 		{
-			size_t end_sq_pos=(size_t)findMatchingSq(text,brace_pos);
+			size_t end_sq_pos=(size_t)findMatchingSq(text,std::min(sq_pos,brace_pos));
 			std::string sub=text.substr(sq_pos,end_sq_pos+1-sq_pos);
 			Array &array=arrays[name];
 			LoadArray(array,sub,memoryInterface);

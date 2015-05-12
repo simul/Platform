@@ -21,8 +21,8 @@
 	#if !defined(GL_FRAGMENT_SHADER)
 		#define discard
 	#endif
-	#define uniform_buffer layout(std140) uniform
-	#define SIMUL_CONSTANT_BUFFER(name,buff_num) uniform_buffer name {
+	#define constant_buffer layout(std140) uniform
+	#define SIMUL_CONSTANT_BUFFER(name,buff_num) constant_buffer name {
 	#define SIMUL_CONSTANT_BUFFER_END };
 #include "saturate.glsl"
 	#define asfloat uintBitsToFloat

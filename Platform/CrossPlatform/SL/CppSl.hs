@@ -25,7 +25,7 @@
 	#define SIMUL_RWTEXTURE_REGISTER(u)
 	#define SIMUL_STATE_REGISTER(s)
 
-	#define uniform_buffer ALIGN_16 cbuffer
+	#define constant_buffer ALIGN_16 cbuffer
 
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) struct name {static const int bindingIndex=buff_num;
 	#define SIMUL_CONSTANT_BUFFER_END };
