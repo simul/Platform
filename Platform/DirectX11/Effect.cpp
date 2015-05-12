@@ -457,6 +457,11 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 
 void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *t,int mip)
 {
+	if(!asD3DX11Effect())
+	{
+		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		return;
+	}
 	if(t)
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
@@ -468,17 +473,32 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const c
 
 void dx11::Effect::SetTexture(const char *name,ID3D11ShaderResourceView *tex)
 {
+	if(!asD3DX11Effect())
+	{
+		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		return;
+	}
 	simul::dx11::setTexture(asD3DX11Effect(),name,tex);
 }
 
 void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture &t)
 {
+	if(!asD3DX11Effect())
+	{
+		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		return;
+	}
 	dx11::Texture *T=(dx11::Texture*)&t;
 	simul::dx11::setTexture(asD3DX11Effect(),name,T->AsD3D11ShaderResourceView());
 }
 
 void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *t)
 {
+	if(!asD3DX11Effect())
+	{
+		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		return;
+	}
 	if(t)
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
@@ -490,6 +510,11 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,cr
 
 void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)
 {
+	if(!asD3DX11Effect())
+	{
+		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		return;
+	}
 	if (!s)
 		return;
 	ID3DX11EffectSamplerVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsSampler();
@@ -498,6 +523,11 @@ void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,cro
 
 void Effect::SetParameter(const char *name	,float value)
 {
+	if(!asD3DX11Effect())
+	{
+		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		return;
+	}
 	ID3DX11EffectScalarVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsScalar();
 	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetFloat(value);
@@ -557,6 +587,8 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	if(apply_count!=0)
 		SIMUL_BREAK_ONCE("Effect::Apply without a corresponding Unapply!")
 	apply_count++;
+	if(!effectTechnique)
+		return;
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	currentTechnique				=effectTechnique;
 	ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
@@ -620,7 +652,8 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n",this->filename.c_str()));
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
-	HRESULT hr = currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
+	if(currentPass)
+		HRESULT hr = currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
@@ -642,7 +675,7 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 	//	SIMUL_BREAK_ONCE(base::QuickFormat("UnbindTextures can only be called after Apply and before Unapply! Effect: %s\n",this->filename.c_str()))
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	dx11::unbindTextures(effect);
-	if(apply_count!=1)
+	if(apply_count!=1&&effect)
 	{
 		V_CHECK(effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext()));
 	}

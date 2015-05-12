@@ -340,6 +340,11 @@ void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,
 
 void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,const char *passname)
 {
+	if(!effect)
+	{
+		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		return ;
+	}
 	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName(name);
 	if(!tech)
 		SIMUL_THROW("Technique not found");
@@ -431,6 +436,8 @@ void simul::dx11::setConstantBuffer(ID3DX11Effect *effect	,const char *name	,ID3
 void simul::dx11::unbindTextures(ID3DX11Effect *effect)
 {
 	D3DX11_EFFECT_DESC edesc;
+	if(!effect)
+		return;
 	effect->GetDesc(&edesc);
 	for(unsigned i=0;i<edesc.GlobalVariables;i++)
 	{
@@ -694,7 +701,7 @@ static const DWORD default_effect_flags=0;
         hr=DXTRACE_ERR( L"CreateEffect", hr );
 #endif
 		BREAK_IF_DEBUGGING;
-		if(!IsDebuggerPresent())
+		if(!IsDebuggerPresent()||(shaderBuildMode&crossplatform::TRY_AGAIN_ON_FAIL)!=crossplatform::TRY_AGAIN_ON_FAIL)
 			break;
  	}
 	SIMUL_ASSERT(effect&&*effect&&(*effect)->IsValid()==TRUE);
