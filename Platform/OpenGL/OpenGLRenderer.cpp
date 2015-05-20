@@ -116,6 +116,7 @@ void OpenGLRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 GL_ERROR_CHECK
 ERRNO_CHECK
+glewExperimental= GL_TRUE;
     GLenum glewError = glewInit();
     if( glewError != GLEW_OK )
     {

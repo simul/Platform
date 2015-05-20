@@ -32,6 +32,8 @@ shader posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
 	return pt;
 }
 
+#pragma warning(disable:1)
+
 posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
 {
 	posTexVertexOutput OUT;

@@ -21,8 +21,8 @@
 // Macros and constant values
 //-----------------------------------------------------------------------------
 
-const uint SCAN_WARP_SIZE = 32;
-const uint SCAN_LOG2_WARP_SIZE = 5;
+#define SCAN_WARP_SIZE (32)
+#define SCAN_LOG2_WARP_SIZE (5)
 
 // The following constants are defined via compiler command line
 //static const uint THREADS_PER_GROUP = 128;

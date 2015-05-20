@@ -448,10 +448,6 @@ shader void CS_Density_DontWrap(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//S
 }
 
 
-
-
-float glow=0.1;
-
 CS_LAYOUT(8,8,1)
 shader void CS_Lighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 {

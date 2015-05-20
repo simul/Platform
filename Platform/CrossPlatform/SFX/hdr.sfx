@@ -1,5 +1,4 @@
 #include "shader_platform.sl"
-
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
 #include "../SL/depth.sl"

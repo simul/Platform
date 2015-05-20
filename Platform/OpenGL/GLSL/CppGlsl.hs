@@ -21,6 +21,7 @@
 	#if !defined(GL_FRAGMENT_SHADER)
 		#define discard
 	#endif
+	#define const
 	#define constant_buffer layout(std140) uniform
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) constant_buffer name {
 	#define SIMUL_CONSTANT_BUFFER_END };

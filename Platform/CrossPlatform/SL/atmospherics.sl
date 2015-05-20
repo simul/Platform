@@ -15,6 +15,7 @@ struct All8Output
 	vec4 colour7 SIMUL_RENDERTARGET_OUTPUT(6);
 	vec4 colour8 SIMUL_RENDERTARGET_OUTPUT(7);
 };
+
 // Given a full-res, non-MS depth texture, and a half-res near far depth, 
 void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
 	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,DepthIntepretationStruct depthInterpretationStruct,vec2 tanHalfFov)
@@ -30,7 +31,6 @@ void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthText
 	vec2 texx		=pow(dist,vec2(0.5,0.5));
 	farLoss			=texture_clamp_mirror(lossTexture,vec2(texx.x,texy)).rgb;
 	nearLoss		=texture_clamp_mirror(lossTexture,vec2(texx.y,texy)).rgb;
-	
 }
 
 vec2 NearFarShadow(Texture2D nearFarDepthTexture,Texture2D cloudShadowTexture,vec4 viewportToTexRegionScaleBias
