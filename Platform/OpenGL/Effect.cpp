@@ -567,6 +567,7 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write,int 
 {
 	GL_ERROR_CHECK
 	int texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
+	glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint());
 	GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE0+texture_number);
 	// Fall out silently if this texture is not set.
