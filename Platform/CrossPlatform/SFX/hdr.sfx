@@ -75,7 +75,7 @@ shader CompositeShaderInput VS_Composite(idOnly IN)
 
 shader vec4 ShowDepthPS_ReverseDepth(posTexVertexOutput IN) : SV_Target
 {
-	vec4 depth = texture_clamp(depthTexture, IN.texCoords);
+	vec4 depth = depthTexture.Sample(clampSamplerState,IN.texCoords);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=true;
@@ -320,7 +320,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(posTexVertexOutput IN,boo
 	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.texCoords.xy
 																,imageTexture
 																,nearImageTexture
-																, nearFarTexture
+																,nearFarTexture
 																,loss2dTexture
 																,depthTextureMS
 																,numSamples

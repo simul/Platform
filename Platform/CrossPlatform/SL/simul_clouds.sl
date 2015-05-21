@@ -43,6 +43,8 @@ float MakeRainMap(Texture3D cloudDensity,vec2 texCoords)
 	return r;
 }
 
+#define NUM_STEPS 8
+
 vec4 CloudShadow(Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 cornerPosKm,vec3 inverseScalesKm)
 {
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
@@ -50,7 +52,6 @@ vec4 CloudShadow(Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 co
 	//float distance_off_centre		=length(pos_xy);
 	vec2 illumination				=vec2(1.0,1.0);
 	float U							=-1.0;
-	#define NUM_STEPS 8
 	vec3 cartesian_1				=vec3(pos_xy.xy,1.0);
 	vec3 wpos_1						=mul(shadowMatrix,vec4(cartesian_1,1.0)).xyz;
 	vec3 cartesian_2				=vec3(pos_xy.xy,0.0);

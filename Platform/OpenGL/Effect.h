@@ -100,10 +100,8 @@ namespace simul
 		class SIMUL_OPENGL_EXPORT Effect:public crossplatform::Effect
 		{
 			GLuint current_prog;
-			int current_texture_number;
 			/// We keep a map of texture names to the arbitrary GL_TEXTUREn indices that
 			/// we've assigned them to.
-			std::map<std::string,int> textureNumberMap;
 			std::map<GLuint,GLuint> prepared_sampler_states;
 			bool FillInTechniques();
 			void SetTex(const char *name,crossplatform::Texture *tex,bool write,int mip);

@@ -348,7 +348,6 @@ GLuint EffectTechnique::passAsGLuint(const char *name)
 
 Effect::Effect()
 	:current_prog(0)
-	,current_texture_number(0)
 {
 }
 //------------------------------------------------------------------------------
@@ -567,21 +566,11 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *n
 void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write,int mip)
 {
 	GL_ERROR_CHECK
-	int texture_number=current_texture_number;
-	std::string n(name);
-	if(textureNumberMap.find(n)!=textureNumberMap.end())
-	{
-		texture_number=textureNumberMap[n];
-	}
-	else
-	{
-		textureNumberMap[n]=current_texture_number;
-		current_texture_number++;
-	}
+	int texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
 	GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE0+texture_number);
 	// Fall out silently if this texture is not set.
-GL_ERROR_CHECK
+	GL_ERROR_CHECK
 	if(!tex)
 		return;
 	if(!tex->AsGLuint())
@@ -590,7 +579,7 @@ GL_ERROR_CHECK
 	{
 		if(write)
 		{
-texture_number=0;
+			texture_number=0;
 			glBindImageTexture(texture_number,
  				tex->AsGLuint(),
  				0,
@@ -598,7 +587,7 @@ texture_number=0;
  				0,
  				GL_READ_WRITE,
 				opengl::RenderPlatform::ToGLFormat(tex->GetFormat()));
-	}
+		}
 		//glBindImageTexture(0, volume_tid, 0, /*layered=*/GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 		else
 		{
@@ -608,14 +597,12 @@ texture_number=0;
 			else
 				glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
 		}
-GL_ERROR_CHECK
 	}
 	else if(tex->GetDimension()==3)
 	{
 		if(write)
 		{
-GL_ERROR_CHECK
-texture_number=0;
+			texture_number=0;
 			glBindImageTexture(texture_number,
  				tex->AsGLuint(),
  				0,
@@ -626,23 +613,16 @@ texture_number=0;
 		//GL_RGBA32F);
 /*
 GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
-
 GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
-
 GL_INVALID_VALUE is generated if level or layer is less than zero.
 */
-GL_ERROR_CHECK
 		}
 		else
-		{
 			glBindTexture(GL_TEXTURE_3D,tex->AsGLuint());
-GL_ERROR_CHECK
-		}
 	}
 	else
 		throw simul::base::RuntimeError("Unknown texture dimension!");
     glActiveTexture(GL_TEXTURE0+texture_number);
-GL_ERROR_CHECK
 	if(currentTechnique)
 	{
 		GLuint program	=currentTechnique->passAsGLuint(currentPass);
@@ -650,33 +630,24 @@ GL_ERROR_CHECK
 		if(program==0)
 			return;
 		GLint loc		=glGetUniformLocation(program,name);
-GL_ERROR_CHECK
 		if(loc<0)
-		{
 			CHECK_PARAM_EXISTS
-		}
 		glUniform1i(loc,texture_number);
-GL_ERROR_CHECK
 	}
 	else
 	{
-GL_ERROR_CHECK
 		for(crossplatform::TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
 		{
-GL_ERROR_CHECK
 			for(int j=0;j<i->second->NumPasses();j++)
 			{
 				GLuint program	=i->second->passAsGLuint(j);
-	GL_ERROR_CHECK
 				GLint loc		=glGetUniformLocation(program,name);
-	GL_ERROR_CHECK
 				if(loc>=0)
 				{
 					glUseProgram(program);
 					glUniform1i(loc,texture_number);
 					glUseProgram(0);
 				}
-GL_ERROR_CHECK
 			}
 		}
 	}
@@ -698,17 +669,7 @@ void Effect::SetSamplerState(crossplatform::DeviceContext &,const char *name,cro
 	if(s)
 		sampler_state=s->asGLuint();
 	GL_ERROR_CHECK
-	int texture_number=current_texture_number;
-	std::string n(name);
-	if(textureNumberMap.find(n)!=textureNumberMap.end())
-	{
-		texture_number=textureNumberMap[n];
-	}
-	else
-	{
-		textureNumberMap[n]=current_texture_number;
-		current_texture_number++;
-	}
+	int texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
 	// There are two possibilities - we are either within an "apply" state, or not.
 	if(apply_count)
 		glBindSampler(texture_number, sampler_state);
@@ -817,7 +778,6 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 		GL_ERROR_CHECK
 		for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
 			glBindSampler(i->first,i->second);
-		//current_texture_number	=0;
 		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
 			glEffectTechnique->passStates[currentPass]->Apply();

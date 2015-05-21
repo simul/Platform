@@ -1,7 +1,7 @@
 #ifndef SPHERICAL_HARMONICS_SL
 #define SPHERICAL_HARMONICS_SL
 
-STATIC const float PI=3.1415926536;
+#define PI (3.1415926536)
 /*float rand(vec2 co)
 {
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);

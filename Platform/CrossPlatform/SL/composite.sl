@@ -86,7 +86,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec2 texCoords
 													,Texture2D loss2dTexture
 													,TEXTURE2DMS_FLOAT4 depthTextureMS
 													,int numSamples
-													,int2 fullResDims
+													,uint2 fullResDims
 													,mat4 invViewProj
 													,vec4 viewportToTexRegionScaleBias
 													,DepthIntepretationStruct depthInterpretationStruct
