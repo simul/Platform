@@ -567,92 +567,9 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write,int 
 {
 	GL_ERROR_CHECK
 	int texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
-	glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint());
+	if(tex)
+		glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write);
 	GL_ERROR_CHECK
-    glActiveTexture(GL_TEXTURE0+texture_number);
-	// Fall out silently if this texture is not set.
-	GL_ERROR_CHECK
-	if(!tex)
-		return;
-	if(!tex->AsGLuint())
-		return;
-	if(tex->GetDimension()==2)
-	{
-		if(write)
-		{
-			texture_number=0;
-			glBindImageTexture(texture_number,
- 				tex->AsGLuint(),
- 				0,
- 				GL_FALSE,
- 				0,
- 				GL_READ_WRITE,
-				opengl::RenderPlatform::ToGLFormat(tex->GetFormat()));
-		}
-		//glBindImageTexture(0, volume_tid, 0, /*layered=*/GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
-		else
-		{
-			// 2D but depth>1? That's an ARRAY texture.
-			if(tex->GetDepth()>1)
-				glBindTexture(GL_TEXTURE_2D_ARRAY, tex->AsGLuint());
-			else
-				glBindTexture(GL_TEXTURE_2D,tex->AsGLuint());
-		}
-	}
-	else if(tex->GetDimension()==3)
-	{
-		if(write)
-		{
-			texture_number=0;
-			glBindImageTexture(texture_number,
- 				tex->AsGLuint(),
- 				0,
- 				GL_TRUE,
- 				0,
- 				GL_READ_WRITE,
-				opengl::RenderPlatform::ToGLFormat(tex->GetFormat()));
-		//GL_RGBA32F);
-/*
-GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
-GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
-GL_INVALID_VALUE is generated if level or layer is less than zero.
-*/
-		}
-		else
-			glBindTexture(GL_TEXTURE_3D,tex->AsGLuint());
-	}
-	else
-		throw simul::base::RuntimeError("Unknown texture dimension!");
-    glActiveTexture(GL_TEXTURE0+texture_number);
-	if(currentTechnique)
-	{
-		GLuint program	=currentTechnique->passAsGLuint(currentPass);
-		// If we didn't find this pass already, we've already reported the error. Fail silently this time, therefore.
-		if(program==0)
-			return;
-		GLint loc		=glGetUniformLocation(program,name);
-		if(loc<0)
-			CHECK_PARAM_EXISTS
-		glUniform1i(loc,texture_number);
-	}
-	else
-	{
-		for(crossplatform::TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
-		{
-			for(int j=0;j<i->second->NumPasses();j++)
-			{
-				GLuint program	=i->second->passAsGLuint(j);
-				GLint loc		=glGetUniformLocation(program,name);
-				if(loc>=0)
-				{
-					glUseProgram(program);
-					glUniform1i(loc,texture_number);
-					glUseProgram(0);
-				}
-			}
-		}
-	}
-GL_ERROR_CHECK
 }
 void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex)
 {
@@ -775,7 +692,8 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	if(effectTechnique)
 	{
 		current_prog	=effectTechnique->passAsGLuint(pass);
-		glUseProgram(current_prog);
+		GL_ERROR_CHECK
+		glfxApply((GLuint)platform_effect,current_prog);
 		GL_ERROR_CHECK
 		for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
 			glBindSampler(i->first,i->second);
@@ -814,7 +732,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 			if(i->second==(void*)prog)
 				currentPass				=i->first;
 		}
-		glUseProgram(prog);
+		glfxApply((GLuint)platform_effect,prog);
 		glfxApplyPassState((GLuint)platform_effect,prog);
 		GL_ERROR_CHECK
 		for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
@@ -832,7 +750,7 @@ void Effect::Reapply(crossplatform::DeviceContext &)
 	if(apply_count!=1)
 		SIMUL_BREAK("Effect::Reapply can only be called after Apply and before Unapply!")
 	GLuint prog=current_prog;
-	glUseProgram(prog);
+	glfxReapply((GLuint)platform_effect,prog);
 	glfxApplyPassState((GLuint)platform_effect,prog);
 	GL_ERROR_CHECK
 }
@@ -840,7 +758,7 @@ void Effect::Reapply(crossplatform::DeviceContext &)
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
 	GL_ERROR_CHECK
-	glUseProgram(0);
+	glfxUnapply((GLuint)platform_effect);
 	if(apply_count<=0)
 		SIMUL_BREAK("Effect::Unapply without a corresponding Apply!")
 	else if(apply_count>1)
