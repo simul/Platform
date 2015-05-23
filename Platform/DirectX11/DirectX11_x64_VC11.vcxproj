@@ -295,7 +295,6 @@
     <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\simul_gpu_sky.hlsl" />
     <None Include="HLSL\simul_inscatter_fns.hlsl" />
-    <None Include="HLSL\states.hlsl" />
     <None Include="SimulUseDXSDK.props" />
     <None Include="SimulUseWin8SDK.props" />
   </ItemGroup>

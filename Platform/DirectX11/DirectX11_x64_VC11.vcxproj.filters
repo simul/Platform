@@ -174,9 +174,6 @@
     <None Include="HLSL\simul_inscatter_fns.hlsl">
       <Filter>HLSL</Filter>
     </None>
-    <None Include="HLSL\states.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
     <None Include="..\CrossPlatform\SL\atmospherics.sl">
       <Filter>CrossPlatform</Filter>
     </None>
