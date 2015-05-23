@@ -94,7 +94,7 @@ ERRNO_CHECK
 		}
 		if(finalPathUtf8.length()==0)
 		{
-			newest==0.0;
+			newest=0.0;
 			SIMUL_CERR<<"Can't find include file "<<pFileNameUtf8<<std::endl;
 			return E_FAIL;
 		}

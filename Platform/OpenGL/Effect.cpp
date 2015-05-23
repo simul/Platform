@@ -567,7 +567,7 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write,int 
 {
 	GL_ERROR_CHECK
 	int texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
-	glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()));
+	glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write);
 	// The effect knows the needed info: the format
 	GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE0+texture_number);
