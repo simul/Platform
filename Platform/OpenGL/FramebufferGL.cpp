@@ -132,31 +132,17 @@ GL_ERROR_CHECK
 	SAFE_DELETE(buffer_texture);
 	SAFE_DELETE(buffer_depth_texture);
 	buffer_texture=renderPlatform->CreateTexture();
+	buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width, Height,target_format,false,false,false,1,0,false);
 	buffer_depth_texture=renderPlatform->CreateTexture();
-	buffer_texture->dim=2;
-	buffer_depth_texture->dim=2;
 	//buffer_texture.ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,GL_RGBA,false,true,1,0);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
 	if(target_format!=crossplatform::UNKNOWN)
 	{
-		GLuint obj=0;
-		glGenTextures(1, &obj);//m_tex_col[0]);
-		((opengl::Texture*)buffer_texture)->pTextureObject=obj;
-		glBindTexture(GL_TEXTURE_2D, buffer_texture->AsGLuint());//m_tex_col[0]);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap_clamp);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap_clamp);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		GLenum f=opengl::RenderPlatform::ToGLFormat(target_format);
-		glTexImage2D(GL_TEXTURE_2D,0, f, Width, Height,0,GL_RGBA, GL_UNSIGNED_INT, NULL);
+		glBindTexture(GL_TEXTURE_2D, buffer_texture->AsGLuint());
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffer_texture->AsGLuint(), 0);
-		
 		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(status!=GL_FRAMEBUFFER_COMPLETE)
 			return false;
-		buffer_texture->width=Width;
-		buffer_texture->length=Height;
 	}
 	if(depth_format!=crossplatform::UNKNOWN)
 	{
