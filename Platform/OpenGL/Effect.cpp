@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <GL/glfx.h>
+#include <string>
 
 #ifdef _MSC_VER
 #include <windows.h>
@@ -291,7 +292,16 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &,crossplatfor
 			GLuint program=tech->passAsGLuint(j);
 			GLuint indexInShader;
 	GL_ERROR_CHECK
-			indexInShader=glGetProgramResourceIndex(program,GL_SHADER_STORAGE_BLOCK,name);
+		// Because GLSL Shader Storage Blocks are not implicitly arrays like Structured Buffers in HLSL,
+		// We modify the GLSL to look like this:
+		//layout(std430) buffer lightingQueryInputs_
+		//{
+		//	vec3 lightingQueryInputs[];
+		//};
+		// So to get the resource index, we need to append an underscore "_" to the actual name.
+			string modified_name(name);
+			modified_name+="_";
+			indexInShader=glGetProgramResourceIndex(program,GL_SHADER_STORAGE_BLOCK,modified_name.c_str());
 			if(indexInShader>=0xFFFFFFFF)
 				continue;
 	GL_ERROR_CHECK
@@ -305,11 +315,14 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &,crossplatfor
 
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
 {
+	// GLSL makes no distinction between settting StructuredBuffers for read and for write.
+	Apply(deviceContext,effect,name);
 }
 
 void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &deviceContext)
 {
 }
+
 void PlatformStructuredBuffer::InvalidateDeviceObjects()
 {
 	if(write_data)
