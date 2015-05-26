@@ -525,6 +525,7 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 GL_ERROR_CHECK
 	opengl::Effect *e=new opengl::Effect();
 	e->Load(this,filename_utf8,defines);
+GL_ERROR_CHECK
 	e->SetName(filename_utf8);
 	if(e->platform_effect==(void*)0xFFFFFFFF)
 	{
