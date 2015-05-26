@@ -284,7 +284,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
-	TwoColourCompositeOutput result	=CompositeAtmospherics(IN.clip_pos
+	TwoColourCompositeOutput result	=	CompositeAtmospherics(IN.clip_pos
 															,IN.depth_texc
 															,imageTexture
 															,nearImageTexture

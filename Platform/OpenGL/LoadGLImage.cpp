@@ -69,7 +69,11 @@ ERRNO_CHECK
 	width  = FreeImage_GetWidth(dib),
 	height = FreeImage_GetHeight(dib);
 	GL_ERROR_CHECK
-
+	// We flip the image because we want texcoords to be zero at the top, to match HLSL,DirectX
+	if(!FreeImage_FlipVertical(dib))
+	{
+		SIMUL_CERR<<"Failed to flip bitmap "<<filename_utf8<<std::endl;
+	}
 	bpp=FreeImage_GetBPP(dib);
 	//if(bpp!=24)
 	//	return 0;

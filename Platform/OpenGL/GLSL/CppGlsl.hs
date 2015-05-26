@@ -40,8 +40,10 @@
 	#define uint3 uvec3
 	#define uint4 uvec4
 	#define frac fract
-	#define __Y(texc) vec2((texc).x,1.0-(texc).y)
-	#define __Y3(texc) vec3((texc).x,1.0-((texc).y),(texc).z)
+	#define __Y(texc) texc
+	//vec2((texc).x,1.0-(texc).y)
+	#define __Y3(texc) texc
+	//vec3((texc).x,1.0-((texc).y),(texc).z)
 	#define texture_clamp(tex,texc) texture(tex,__Y(texc))
 	#define texture_wrap(tex,texc) texture(tex,__Y(texc))
 	#define texture_clamp_mirror(tex,texc) texture(tex,__Y(texc))
@@ -54,6 +56,7 @@
 	#define texture_wrap_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
 	#define texture_cwc_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
 	#define texture_clamp_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod) 
+//	#define texture_clamp_lod(tex,texc,lod) tex.SampleLevel(clampSamplerState,__Y(texc),lod)
 	#define texture_nearest_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod) 
 	#define texture_clamp_mirror_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
 	#define texture_cmc_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod) 

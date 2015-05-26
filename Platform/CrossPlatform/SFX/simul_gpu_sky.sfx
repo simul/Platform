@@ -113,7 +113,7 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		loss				*=previous_loss;
 		//loss.rgb=vec3(idx.x/4.0,1,0);
 #ifdef GLSL
-		idx.y=dims.y-1-idx.y;
+		//idx.y=dims.y-1-idx.y;
 #endif
 		IMAGE_STORE_3D(targetTexture,idx,vec4(loss.rgb,1.0));
 		prevDist_km			=dist_km;
@@ -135,12 +135,15 @@ shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	float alt_texc					=float(pos.x)/float(targetSize.x);
 	float alt_km					=maxOutputAltKm*alt_texc;
 	float sun_alt_km				=(maxOutputAltKm-sun_start_alt_km)*(alt_texc)+sun_start_alt_km;
-	vec4 sunlight					=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,sun_alt_km,lightDir);
+	vec4 sunlight					=vec4(1,0,0,0);//sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,sun_alt_km,lightDir);
 	float moon_angular_radius		=pi/180.0/2.0;
 	float moon_angular_area_ratio	=pi*moon_angular_radius*moon_angular_radius/(4.0*pi);
-	vec4 moonlight					=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,directionToMoon)*0.136*moon_angular_area_ratio;
+	vec4 moonlight					=vec4(0,1,0,0);//sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,directionToMoon)*0.136*moon_angular_area_ratio;
 	// equivalent to GetAnisotropicInscatterFactor(true,altitude_km,pi/2.f,0,1e5f,sun_irradiance,starlight,dir_to_sun,dir_to_moon,haze,overcast,false,0):
-	vec4 ambientLight				=vec4(getSkylight(alt_km, insc_texture),1.0);
+	vec4 ambientLight				=vec4(0,0,1,0);//getSkylight(alt_km, insc_texture),1.0);
+#ifdef GLSL
+	//pos.y							=targetSize.y-1-pos.y;
+#endif
 	uint3 pos_sun					=uint3(pos.xy,0);
 	if(pos.x==0&&sun_start_alt_km>0.0)
 		sunlight					=vec4(0,0,0,0);
@@ -222,7 +225,7 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 		vec4 insc_colour	=texture_3d_clamp_lod(colourTexture,ctexc.xyz,0);
 		vec4 store_insc		=lerp(insc,insc_colour,blendToColours);
 #ifdef GLSL
-		idx.y=targetSize.y-1-idx.y;
+		//idx.y=targetSize.y-1-idx.y;
 #endif
 		IMAGE_STORE_3D(targetTexture,idx,store_insc);
 		prevDist_km			=dist_km;
@@ -256,7 +259,7 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow(float(i)/(float(targetSize.z)-1.0),2.0);
 #ifdef GLSL
-		idx.y=targetSize.y-1-idx.y;
+		//idx.y=targetSize.y-1-idx.y;
 #endif
 		vec3 previous_loss	=TEXTURE_LOAD_3D(loss_texture,idx).rgb;
 		float dist_km		=zPosition*maxDistanceKm;
