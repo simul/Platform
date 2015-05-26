@@ -47,9 +47,7 @@ shader void CS_LightingQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
 	uint num=0;
 	uint byteStride=0;
-	//lightingQueryInputs.GetDimensions(num,byteStride);
-	//if(sub_pos.x>=num)
-	//	return;
+	
 	LightingQueryResult res;
 	res.pos=lightingQueryInputs[sub_pos.x];
 	float alt_texc			=res.pos.z/1000.0/maxFadeAltitudeKm;
@@ -251,7 +249,7 @@ shader void CS_InterpLightTable(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 
 struct indexVertexInput
 {
-	uint vertex_id			: SV_VertexID;
+	uint vertex_id		: SV_VertexID;
 };
 
 struct svertexOutput

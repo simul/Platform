@@ -306,7 +306,8 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &,crossplatfor
 				continue;
 	GL_ERROR_CHECK
 		// the binding points must be different for the different ssb's used in the program. Handle in glfx!
-			GLuint ssbo_binding_poi nt_index = 2;
+			GLuint ssbo_binding_point_index = indexInShader;
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER,ssbo_binding_point_index,ssbo);
 			glShaderStorageBlockBinding(program, indexInShader, ssbo_binding_point_index);
 	GL_ERROR_CHECK
 		}

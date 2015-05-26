@@ -145,9 +145,6 @@ namespace simul
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToProgram(GLuint program,const char *name,GLint bindingIndex)
 			{
-				//if(bindingIndex<=0)
-				//	exit(1);
-				//this->bindingIndex=bindingIndex;
 				GLint indexInShader=glGetUniformBlockIndex(program,name);
 				if(indexInShader>=0)
 				{
