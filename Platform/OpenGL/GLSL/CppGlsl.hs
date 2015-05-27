@@ -57,7 +57,7 @@
 	#define texture_cwc_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
 	#define texture_clamp_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod) 
 //	#define texture_clamp_lod(tex,texc,lod) tex.SampleLevel(clampSamplerState,__Y(texc),lod)
-	#define texture_nearest_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod) 
+//	#define texture_nearest_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod) 
 	#define texture_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,__Y(texc),lod)
 	#define texture_clamp_mirror_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
 	#define texture_cmc_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod) 
@@ -185,7 +185,7 @@
 		gl_Position		=vert_pos;
 		texCoords		=pos.xy;
 	}
-
+	
 #endif
 #else
 	#define STATIC static
@@ -199,4 +199,7 @@
 	#define uniform
 
 #endif
+SIMUL_CONSTANT_BUFFER(RescaleVertexShaderConstants,0)
+	uniform float rescaleVertexShaderY;
+SIMUL_CONSTANT_BUFFER_END
 #endif

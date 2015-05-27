@@ -13,6 +13,7 @@
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/PrintEffectLog.h"
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
+#include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 
 using namespace simul;
@@ -279,6 +280,7 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &,crossplatfor
 	if(write_data)
 	{
 		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+		write_data=NULL;
 	}
 	GL_ERROR_CHECK
 	for(crossplatform::TechniqueMap::iterator i=effect->techniques.begin();i!=effect->techniques.end();i++)
@@ -327,15 +329,20 @@ void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &deviceContex
 
 void PlatformStructuredBuffer::InvalidateDeviceObjects()
 {
+GL_ERROR_CHECK
 	if(write_data)
 	{
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+GL_ERROR_CHECK
 		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+GL_ERROR_CHECK
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+GL_ERROR_CHECK
 	}
 	write_data=NULL;
 	SAFE_DELETE_BUFFER(ssbo);
 	num_elements=0;
+GL_ERROR_CHECK
 }
 int EffectTechnique::NumPasses() const
 {
@@ -760,7 +767,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	deviceContext.activeTechnique=currentTechnique;
 }
 
-void Effect::Reapply(crossplatform::DeviceContext &)
+void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 {
 	if(apply_count!=1)
 		SIMUL_BREAK("Effect::Reapply can only be called after Apply and before Unapply!")

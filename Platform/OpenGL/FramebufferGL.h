@@ -43,6 +43,10 @@ namespace simul
 			bool InitColor_Tex(int index, crossplatform::PixelFormat p);
 			/// Use the existing depth buffer
 			void NoDepth();
+			static bool IsTargetTexture()
+			{
+				return(fb_stack.size()>1);
+			}
 			/// Activate / deactivate the FBO as a render target
 			/// The FBO needs to be deactivated when using the associated textures.
 			void Activate(crossplatform::DeviceContext &);

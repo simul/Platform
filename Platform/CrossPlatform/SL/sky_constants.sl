@@ -42,8 +42,8 @@ struct LightingQueryResult
 {
 	vec3 pos;
 	int valid;
-	vec3 sunlight;
-	vec3 moonlight;
-	vec3 ambient;
+	vec4 sunlight;		// we use vec4's here to avoid padding.
+	vec4 moonlight;
+	vec4 ambient;
 };
 #endif

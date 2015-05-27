@@ -33,7 +33,7 @@ RenderPlatform::~RenderPlatform()
 
 void RenderPlatform::RestoreDeviceObjects(void *unused)
 {
-	solidConstants.RestoreDeviceObjects(this);
+	rescaleVertexShaderConstants.RestoreDeviceObjects(this);
 	crossplatform::RenderPlatform::RestoreDeviceObjects(unused);
 	RecompileShaders();
 }
@@ -41,6 +41,7 @@ void RenderPlatform::RestoreDeviceObjects(void *unused)
 void RenderPlatform::InvalidateDeviceObjects()
 {
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
+	rescaleVertexShaderConstants.InvalidateDeviceObjects();
 }
 
 void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
@@ -284,45 +285,6 @@ GL_ERROR_CHECK
 	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,debugEffect->GetTechniqueByName(techname),"noblend");
 GL_ERROR_CHECK
 }
-/*
-void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v)
-{
-GL_ERROR_CHECK
-	
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,tex?tex->AsGLuint():0);
-GL_ERROR_CHECK
-glDisable(GL_BLEND);
-glDisable(GL_CULL_FACE);
-	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
-	static float cc=300000.f;
-	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,cc);//(deviceContext.viewStruct.proj[3*4+2],cc,deviceContext.viewStruct.proj[2*4+2]*cc);
-	struct Viewport
-	{
-		int X,Y,Width,Height;
-	};
-	GL_ERROR_CHECK
-	Viewport viewport;
-	glGetIntegerv(GL_VIEWPORT,(int*)(&viewport));
-	GL_ERROR_CHECK
-	debugEffect->Apply(deviceContext,debugEffect->GetTechniqueByName("show_depth"),frustum.reverseDepth?"reverse_depth":"forward_depth");
-	GL_ERROR_CHECK
-	debugConstants.debugTanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	debugConstants.debugDepthToLinFadeDistParams=depthToLinFadeDistParams;
-	debugEffect->SetTexture(deviceContext,"imageTexture",tex);
-	vec4 r(2.f*(float)x1/(float)viewport.Width-1.f
-		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
-		,2.f*(float)dx/(float)viewport.Width
-		,2.f*(float)dy/(float)viewport.Height);
-	GL_ERROR_CHECK
-	debugConstants.rect=r;
-	debugConstants.Apply(deviceContext);
-	GL_ERROR_CHECK
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	GL_ERROR_CHECK
-	debugEffect->Unapply(deviceContext);
-GL_ERROR_CHECK
-}*/
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
 	,crossplatform::EffectTechnique *technique,const char *pass)
@@ -333,8 +295,6 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 		glDisable(GL_BLEND);
 GL_ERROR_CHECK
 glDisable(GL_CULL_FACE);
-
-
 
 	struct Viewport
 	{
@@ -356,6 +316,8 @@ glDisable(GL_CULL_FACE);
 	debugConstants.LinkToEffect(effect,"DebugConstants");
 	debugConstants.rect=r;
 	debugConstants.Apply(deviceContext);
+	rescaleVertexShaderConstants.rescaleVertexShaderY=opengl::FramebufferGL::IsTargetTexture()?-1.0f:1.0f;
+	rescaleVertexShaderConstants.Apply(deviceContext);
 	GL_ERROR_CHECK
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	GL_ERROR_CHECK
@@ -369,47 +331,11 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 	if(!deviceContext.activeTechnique)
 		return;
 	GL_ERROR_CHECK
+	rescaleVertexShaderConstants.rescaleVertexShaderY=opengl::FramebufferGL::IsTargetTexture()?-1.0f:1.0f;
+	rescaleVertexShaderConstants.Apply(deviceContext);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); 
 	GL_ERROR_CHECK
 }
-/*
-
-#ifndef GLUT_BITMAP_HELVETICA_12
-#define GLUT_BITMAP_HELVETICA_12	((void*)7)
-#endif
-
-void RenderPlatform::Print(crossplatform::DeviceContext &,int x,int y,const char *string,const float* colr,const float* bkg)
-{
-	if(!string)
-		return;
-	void *font=GLUT_BITMAP_HELVETICA_12;
-	if(colr)
-		glColor4fv(colr);
-	else
-		glColor4f(1.f,1.f,1.f,1.f);
-	int viewport[4];
-	glGetIntegerv(GL_VIEWPORT,viewport);
-	int win_h=viewport[3];
-	glRasterPos2f((float)x,(float)(win_h-y));
-	glDisable(GL_LIGHTING);
-	glBindTexture(GL_TEXTURE_2D,0);
-	const char *s=string;
-	while(*s)
-	{
-		if(*s=='\n')
-		{
-			y+=12;
-			glRasterPos2f((float)x,(float)(win_h-y));
-		}
-#ifndef WIN64
-		else
-			glutBitmapCharacter(font,*s);
-#else
-		font;
-#endif
-		s++;
-	}
-}*/
 
 void RenderPlatform::ApplyDefaultMaterial()
 {
@@ -532,6 +458,7 @@ GL_ERROR_CHECK
 		// We're still going to return a valid object - it just won't have any valid techniques.
 		return e;
 	}
+	rescaleVertexShaderConstants.LinkToEffect(e,"RescaleVertexShaderConstants");
 GL_ERROR_CHECK
 	return e;
 }
@@ -1083,6 +1010,8 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_ve
 {
 	if(!deviceContext.activeTechnique)
 		return;
+	rescaleVertexShaderConstants.rescaleVertexShaderY=opengl::FramebufferGL::IsTargetTexture()?-1.0f:1.0f;
+	rescaleVertexShaderConstants.Apply(deviceContext);
 	glDrawArrays(toGLTopology(currentTopology), start_vert, num_verts); 
 }
 
@@ -1091,6 +1020,8 @@ void RenderPlatform::DrawIndexed		(crossplatform::DeviceContext &deviceContext,i
 	if(!deviceContext.activeTechnique)
 		return;
 	GL_ERROR_CHECK
+	rescaleVertexShaderConstants.rescaleVertexShaderY=opengl::FramebufferGL::IsTargetTexture()?-1.0f:1.0f;
+	rescaleVertexShaderConstants.Apply(deviceContext);
 	//glDrawElements(toGLTopology(currentTopology),num_indices,GL_UNSIGNED_SHORT,(void*)base_vertex);
 	GL_ERROR_CHECK
 }

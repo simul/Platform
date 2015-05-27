@@ -87,8 +87,11 @@ namespace simul
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s);
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source);
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8);
-
-			simul::crossplatform::ConstantBuffer<SolidConstants> solidConstants;
+			
+			crossplatform::ConstantBuffer<RescaleVertexShaderConstants> &GetRescaleVertexShaderConstants()
+			{
+				return rescaleVertexShaderConstants;
+			}
 			std::set<opengl::Material*> materials;
 			bool reverseDepth;
 			// OpenGL-specific stuff:
@@ -97,6 +100,7 @@ namespace simul
 			static GLenum DataType(crossplatform::PixelFormat p);
 			static int FormatCount(crossplatform::PixelFormat p);
 		protected:
+			crossplatform::ConstantBuffer<RescaleVertexShaderConstants> rescaleVertexShaderConstants;
 			std::vector<GLuint> fb_stack;
 			std::vector<crossplatform::Viewport> viewport_stack;
 			crossplatform::Topology currentTopology;
