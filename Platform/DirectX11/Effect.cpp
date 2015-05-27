@@ -214,6 +214,12 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext
 	if(lastContext&&mapped.pData)
 		lastContext->Unmap(buffer,0);
 	mapped.pData=NULL;
+	if(!effect)
+		return;
+	if(!effect->asD3DX11Effect())
+		return;
+	if(!effect->asD3DX11Effect()->GetVariableByName(name))
+		return;
 	ID3DX11EffectShaderResourceVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsShaderResource();
 		
 	if(!var->IsValid())

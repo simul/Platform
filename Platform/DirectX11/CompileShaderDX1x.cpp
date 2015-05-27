@@ -46,8 +46,8 @@ ERRNO_CHECK
 		if(!*ppData)
 			return E_FAIL;
 		std::string pathOnly = finalPathUtf8;
-		int last_slash = pathOnly.find_last_of("/");
-		int last_bslash = pathOnly.find_last_of("\\");
+		int last_slash = (int)pathOnly.find_last_of("/");
+		int last_bslash = (int)pathOnly.find_last_of("\\");
 		if (last_bslash>last_slash)
 			last_slash = last_bslash;
 		if (last_slash>0)

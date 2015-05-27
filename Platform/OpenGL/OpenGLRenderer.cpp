@@ -191,9 +191,8 @@ void OpenGLRenderer::RenderGL(int view_id)
 	}
 	else
 	{
-		SIMUL_CERR<<"glDepthRangedNV is not supported."<<std::endl;
+		SIMUL_ASSERT_WARN_ONCE(glewIsSupported("GL_NV_depth_buffer_float"),"glDepthRangedNV is not supported.");
 	}
-//	const crossplatform::CameraViewStruct &cameraViewStruct=cam->GetCameraViewStruct();
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.renderPlatform		=renderPlatform;
 	deviceContext.viewStruct.view_id	=view_id;
