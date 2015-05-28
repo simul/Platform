@@ -80,7 +80,7 @@ shader vec4 PS_Main( vertexOutput IN) : SV_TARGET
 //	light		*=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,IN.wPosition.xyz).x;
 	result.rgb	=texel.rgb*light.rgb;
 	result.a	=1.0;
-	result.rgb	=ambientColour.rgb;
+	//result.rgb	=ambientColour.rgb;
 //	result+=vec4(IN.wPosition.zzz/1000.0,1);
 //result.rgb=frac(mul(invShadowMatrix,vec4(IN.wPosition.xyz,1.0)).xyy);
     return result;

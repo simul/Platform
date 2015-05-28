@@ -133,12 +133,12 @@ shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	float alt_texc					=float(pos.x)/float(targetSize.x);
 	float alt_km					=maxOutputAltKm*alt_texc;
 	float sun_alt_km				=(maxOutputAltKm-sun_start_alt_km)*(alt_texc)+sun_start_alt_km;
-	vec4 sunlight					=vec4(1,0,0,0);//vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,sun_alt_km,lightDir);
+	vec4 sunlight					=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,sun_alt_km,lightDir);
 	float moon_angular_radius		=pi/180.0/2.0;
 	float moon_angular_area_ratio	=pi*moon_angular_radius*moon_angular_radius/(4.0*pi);
-	vec4 moonlight					=vec4(0,1,0,0);//vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,directionToMoon)*0.136*moon_angular_area_ratio;
+	vec4 moonlight					=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,directionToMoon)*0.136*moon_angular_area_ratio;
 	// equivalent to GetAnisotropicInscatterFactor(true,altitude_km,pi/2.f,0,1e5f,sun_irradiance,starlight,dir_to_sun,dir_to_moon,haze,overcast,false,0):
-	vec4 ambientLight				=vec4(0,0,1,0);//vec4(getSkylight(alt_km, insc_texture),1.0);
+	vec4 ambientLight				=vec4(getSkylight(alt_km, insc_texture),1.0);
 
 	uint3 pos_sun					=uint3(pos.xy,0);
 	if(pos.x==0&&sun_start_alt_km>0.0)

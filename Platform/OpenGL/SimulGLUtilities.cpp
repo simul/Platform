@@ -113,7 +113,7 @@ bool simul::opengl::IsExtensionSupported(const char *name)
 		const char* extension=(const char*)glGetStringi(GL_EXTENSIONS, i);
 		if (!strcmp(name,extension))
 		{
-			std::cout<<"GL Extension supported: "<<extension<<std::endl;
+			//std::cout<<"GL Extension supported: "<<extension<<std::endl;
 			return true;
 		}
 	}

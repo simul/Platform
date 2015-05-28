@@ -391,12 +391,14 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 		if(filename_fx.find(".")>=filename_fx.length())
 			filename_fx+=".glfx";
 		filenameInUseUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(), renderPlatform->GetShaderPathsUtf8());
+GL_ERROR_CHECK
 		if(filenameInUseUtf8.length()==0)
 		{
 			std::string filename_sfx(filename_utf8);
 			if(filename_sfx.find(".")>=filename_fx.length())
 				filename_sfx+=".sfx";
 			filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_sfx.c_str(),renderPlatform->GetShaderPathsUtf8());
+GL_ERROR_CHECK
 			fn_utf8+=".sfx";
 		}
 		else
@@ -451,7 +453,9 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 		}
 		else
 			break;
+		GL_ERROR_CHECK
 	}
+	GL_ERROR_CHECK
 }
 
 Effect::~Effect()

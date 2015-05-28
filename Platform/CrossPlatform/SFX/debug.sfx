@@ -248,6 +248,11 @@ shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 	return u;
 }
 
+VertexShader vs_quad_4_0=CompileShader(vs_4_0,VS_Quad());
+VertexShader vs_quad_5_0=CompileShader(vs_5_0,VS_Quad());
+VertexShader debugvs_4_0=CompileShader(vs_4_0,DebugVS());
+PixelShader debugps_4_0=CompileShader(ps_4_0,DebugPS());
+
 group lines_3d_depth
 {
 	technique depth_forward
@@ -258,8 +263,8 @@ group lines_3d_depth
 			SetDepthStencilState(TestForwardDepth,0);
 			SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF );
 			SetGeometryShader(NULL);
-			SetVertexShader(CompileShader(vs_4_0,DebugVS()));
-			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+			SetVertexShader(debugvs_4_0);
+			SetPixelShader(debugps_4_0);
 		}
     }
     technique depth_reverse
@@ -270,8 +275,8 @@ group lines_3d_depth
 			SetDepthStencilState( TestReverseDepth, 0 );
 			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
-			SetVertexShader(CompileShader(vs_4_0,DebugVS()));
-			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+			SetVertexShader(debugvs_4_0);
+			SetPixelShader(debugps_4_0);
 		}
     }
 }
@@ -285,8 +290,8 @@ fxgroup lines_3d
 			SetDepthStencilState( DisableDepth, 0 );
 			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
-			SetVertexShader(CompileShader(vs_4_0,DebugVS()));
-			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+			SetVertexShader(debugvs_4_0);
+			SetPixelShader(debugps_4_0);
 		}
 	}
 }
@@ -299,7 +304,7 @@ technique lines_2d
 		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Debug2dVS()));
-		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+		SetPixelShader(debugps_4_0);
     }
 }
 fxgroup circle
@@ -313,7 +318,7 @@ fxgroup circle
 			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(CompileShader(vs_4_0,CircleVS()));
-			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+			SetPixelShader(debugps_4_0);
 		}
 	}
 	technique filled
@@ -325,7 +330,7 @@ fxgroup circle
 			SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(CompileShader(vs_4_0,FilledCircleVS()));
-			SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+			SetPixelShader(debugps_4_0);
 		}
 	}
 }
@@ -338,7 +343,7 @@ technique textured
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
+		SetVertexShader(vs_quad_4_0);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
     }
     pass blend
@@ -347,7 +352,7 @@ technique textured
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
+		SetVertexShader(vs_quad_4_0);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
     }
 }
@@ -360,7 +365,7 @@ technique show_volume
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowVolume()));
     }
     pass blend
@@ -369,7 +374,7 @@ technique show_volume
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowVolume()));
     }
 }
@@ -382,7 +387,7 @@ technique texturedMS
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureMS()));
     }
 }
@@ -397,7 +402,7 @@ technique vec3_input_signature
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Vec3InputSignatureVS()));
-		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+		SetPixelShader(debugps_4_0);
     }
 }
 
@@ -434,7 +439,7 @@ technique show_depth
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
+		SetVertexShader(vs_quad_4_0);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowDepth_Reverse()));
     }
     pass forward_depth
@@ -443,7 +448,7 @@ technique show_depth
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
+		SetVertexShader(vs_quad_4_0);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowDepth_Forward()));
     }
 }
@@ -455,7 +460,7 @@ technique show_depth_ms
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthMS_Reverse()));
     }
     pass forward_depth
@@ -464,7 +469,7 @@ technique show_depth_ms
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthMS_Forward()));
     }
 }
@@ -477,7 +482,7 @@ technique compacted_texture
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));
     }
     pass blend
@@ -486,7 +491,7 @@ technique compacted_texture
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));
     }
 }
