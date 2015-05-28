@@ -316,6 +316,27 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 				else
 					V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, NULL,&shaderResourceView));
 			}
+			
+			if((textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET))
+			{
+				if(renderTargetViews)
+				{
+					for(int i=0;i<num_rt;i++)
+						SAFE_RELEASE(renderTargetViews[i]);
+					delete [] renderTargetViews;
+					renderTargetViews=NULL;
+				}
+				num_rt=1;
+				renderTargetViews=new ID3D11RenderTargetView*[num_rt];
+				// Setup the description of the render target view.
+				D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+				renderTargetViewDesc.Format				=textureDesc.Format;
+				renderTargetViewDesc.ViewDimension		=(textureDesc.SampleDesc.Count)>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
+				renderTargetViewDesc.Texture2D.MipSlice	=0;
+				// Create the render target in DX11:
+				V_CHECK(renderPlatform->AsD3D11Device()->CreateRenderTargetView(texture,&renderTargetViewDesc,renderTargetViews));
+				SetDebugObjectName(*renderTargetViews,"dx11::Texture::InitFromExternalD3D11Texture2D renderTargetView");
+			}
 		}
 		SAFE_RELEASE(ppd);
 	}

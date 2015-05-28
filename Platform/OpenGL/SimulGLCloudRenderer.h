@@ -48,7 +48,7 @@ namespace simul
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 	
 		protected:
-			simul::opengl::GpuCloudGenerator gpuCloudGenerator;
+			simul::clouds::BaseGpuCloudGenerator gpuCloudGenerator;
 			void SwitchShaders(GLuint program);
 			bool init;
 			// Make up to date with respect to keyframer:

@@ -128,10 +128,8 @@ shader vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
 vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth) 
 {
 	vec2 texc=IN.texCoords.xy;
-//#ifndef GLSL
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y		=1.0-texc.y;
-//#endif
 	vec4 depth		=texture_nearest_lod(imageTexture,texc,0);
 
 	DepthIntepretationStruct depthInterpretationStruct;
@@ -252,6 +250,7 @@ VertexShader vs_quad_4_0=CompileShader(vs_4_0,VS_Quad());
 VertexShader vs_quad_5_0=CompileShader(vs_5_0,VS_Quad());
 VertexShader debugvs_4_0=CompileShader(vs_4_0,DebugVS());
 PixelShader debugps_4_0=CompileShader(ps_4_0,DebugPS());
+VertexShader vs_simplefullscreen_4_0=CompileShader(vs_4_0,VS_SimpleFullscreen());
 
 group lines_3d_depth
 {
@@ -333,6 +332,27 @@ fxgroup circle
 			SetPixelShader(debugps_4_0);
 		}
 	}
+}
+
+
+shader vec4 PS_Copy2D(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 texc	=IN.texCoords.xy;
+	vec4 res	=texture_clamp_lod(imageTexture,texc.xy,0);
+	return res;
+}
+
+technique copy_2d
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_4_0);
+		SetPixelShader(CompileShader(ps_4_0,PS_Copy2D()));
+    }
 }
 
 technique textured
