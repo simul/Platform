@@ -128,10 +128,15 @@
 	#define TEXTURE_LOAD(a,b) texelFetch(a,int2(b),0)
 	#define TEXTURE_LOAD_3D(a,b) texelFetch(a,int3(b),0)
 	#define IMAGE_LOAD_3D(a,b) imageLoad(a,int3(b))
-
-	#define GET_DIMENSIONS_MSAA(tex,X,Y,S) {ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;}//textureQueryLevels(tex);
+	
+	#define GET_DIMENSIONS_MSAA(tex,x,y,s) tex.GetDimensions(x,y,s)
+	#define GET_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
+	#define GET_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
+	/*#define GET_IMAGE_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
+	#define GET_IMAGE_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)*/
+	/*#define GET_DIMENSIONS_MSAA(tex,X,Y,S) {ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;}//textureQueryLevels(tex);
 	#define GET_DIMENSIONS(tex,X,Y) {ivec2 iv=textureSize(tex,0); X=iv.x;Y=iv.y;}
-	#define GET_DIMENSIONS_3D(tex,X,Y,Z) {ivec3 iv=textureSize(tex,0); X=iv.x;Y=iv.y;Z=iv.z;}
+	#define GET_DIMENSIONS_3D(tex,X,Y,Z) {ivec3 iv=textureSize(tex,0); X=iv.x;Y=iv.y;Z=iv.z;}*/
 	#define GET_IMAGE_DIMENSIONS(tex,X,Y) {ivec2 iv=imageSize(tex); X=iv.x;Y=iv.y;}
 	#define GET_IMAGE_DIMENSIONS_3D(tex,X,Y,Z) {ivec3 iv=imageSize(tex); X=iv.x;Y=iv.y;Z=iv.z;}
 	// SOME GLSL compilers like this version:
