@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef OPTICS_CONSTANTS_SL
 #define OPTICS_CONSTANTS_SL
 

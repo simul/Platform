@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef SIMUL_GPU_CLOUDS_SL
 #define SIMUL_GPU_CLOUDS_SL
 

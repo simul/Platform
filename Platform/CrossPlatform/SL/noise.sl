@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef PLATFORM_CROSSPLATFORM_NOISE_SL
 #define PLATFORM_CROSSPLATFORM_NOISE_SL
 

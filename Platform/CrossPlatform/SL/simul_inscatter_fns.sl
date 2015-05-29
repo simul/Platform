@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef SIMUL_INSCATTER_FNS_HLSL
 #define SIMUL_INSCATTER_FNS_HLSL
 

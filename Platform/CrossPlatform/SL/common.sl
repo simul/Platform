@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef COMMON_SL
 #define COMMON_SL
 

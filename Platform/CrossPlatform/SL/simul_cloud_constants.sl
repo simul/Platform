@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
 

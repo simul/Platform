@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef ATMOSPHERICS_SL
 #define ATMOSPHERICS_SL
 #ifndef PI

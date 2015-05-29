@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef HDR_CONSTANTS_SL
 #define HDR_CONSTANTS_SL
 

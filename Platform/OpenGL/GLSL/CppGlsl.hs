@@ -134,6 +134,7 @@
 	#define GET_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
 	/*#define GET_IMAGE_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
 	#define GET_IMAGE_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)*/
+uniform Texture2D imageTexture1;
 	/*#define GET_DIMENSIONS_MSAA(tex,X,Y,S) {ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;}//textureQueryLevels(tex);
 	#define GET_DIMENSIONS(tex,X,Y) {ivec2 iv=textureSize(tex,0); X=iv.x;Y=iv.y;}
 	#define GET_DIMENSIONS_3D(tex,X,Y,Z) {ivec3 iv=textureSize(tex,0); X=iv.x;Y=iv.y;Z=iv.z;}*/

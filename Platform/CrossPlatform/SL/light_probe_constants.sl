@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef LIGHT_PROBE_CONSTANTS_SL
 #define LIGHT_PROBE_CONSTANTS_SL
 

@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef DEBUG_CONSTANTS_SL
 #define DEBUG_CONSTANTS_SL
 

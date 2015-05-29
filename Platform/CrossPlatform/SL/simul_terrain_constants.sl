@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef TERRAIN_CONSTANTS_SL
 #define TERRAIN_CONSTANTS_SL
 

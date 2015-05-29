@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef SIMUL_2D_CLOUDS_HS
 #define SIMUL_2D_CLOUDS_HS
 

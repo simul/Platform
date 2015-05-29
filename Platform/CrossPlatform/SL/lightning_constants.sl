@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef LIGHTNING_CONSTANTS_SL
 #define LIGHTNING_CONSTANTS_SL
 

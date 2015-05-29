@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef DEPTH_SL
 #define DEPTH_SL
 #define UNITY_DIST 1.0;

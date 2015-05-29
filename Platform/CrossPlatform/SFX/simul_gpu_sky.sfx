@@ -1,3 +1,4 @@
+// Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
 uniform sampler2D input_texture SIMUL_TEXTURE_REGISTER(0);
 uniform sampler2D density_texture SIMUL_TEXTURE_REGISTER(1);

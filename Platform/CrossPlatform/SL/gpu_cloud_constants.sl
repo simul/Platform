@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef SIMUL_CROSSPLATFORM_GPU_CLOUD_CONSTANTS_SL
 #define SIMUL_CROSSPLATFORM_GPU_CLOUD_CONSTANTS_SL
 

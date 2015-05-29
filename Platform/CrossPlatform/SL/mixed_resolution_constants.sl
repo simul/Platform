@@ -1,3 +1,4 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef MIXED_RESOLUTIONS_CONSTANTS_SL
 #define MIXED_RESOLUTIONS_CONSTANTS_SL
 
