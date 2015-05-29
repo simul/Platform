@@ -221,7 +221,6 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 		vec3 ctexc			=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(targetSize.xyz);
 		vec4 insc_colour	=texture_3d_clamp_lod(colourTexture,ctexc.xyz,0);
 		vec4 store_insc		=lerp(insc,insc_colour,blendToColours);
-
 		IMAGE_STORE_3D(targetTexture,idx,store_insc);
 		prevDist_km			=dist_km;
 		previous_insc		=insc;
@@ -270,6 +269,7 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 							,prevDist_km
 							,sin_e
 							,cos_e);
+//skyl=vec4(1.0,0,0,0);
 		IMAGE_STORE_3D(targetTexture,idx, skyl);
 		prevDist_km			=dist_km;
 		previous_skyl		=skyl;

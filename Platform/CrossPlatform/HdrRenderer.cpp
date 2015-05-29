@@ -57,7 +57,7 @@ void HdrRenderer::SetBufferSize(int w,int h)
 			glowTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::R_32_UINT,true,false);
 		}
 	}
-	RecompileShaders();
+	//RecompileShaders();
 }
 
 void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)

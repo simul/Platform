@@ -383,8 +383,10 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 	filename=filename_utf8;
 	bool retry=true;
 	platform_effect = (void*)0xFFFFFFFF;
+	GL_ERROR_CHECK
 	while(retry)
 	{
+	GL_ERROR_CHECK
 		std::string fn_utf8(filename_utf8);
 		// PREFER to use the platform shader:
 		std::string filename_fx(filename_utf8);
@@ -415,8 +417,8 @@ GL_ERROR_CHECK
 		for (int i = 0; i < p.size(); i++)
 			paths[i] = p[i].c_str();
 		paths[p.size()] = NULL;
-
-
+		
+	GL_ERROR_CHECK
 		const char **macros = new const char *[defines.size() + 1];
 		const char **defs = new const char *[defines.size() + 1];
 		const char **m = macros, **d = defs;
@@ -428,7 +430,7 @@ GL_ERROR_CHECK
 			d++;
 		}
 		*m=*d = NULL;
-
+	GL_ERROR_CHECK
 		if (!glfxParseEffectFromFile(effect,fn_utf8.c_str(),paths,macros,defs))
 		{
 			std::string log=glfxGetEffectLog(effect);
@@ -442,10 +444,12 @@ GL_ERROR_CHECK
 				break;
 		}
 		platform_effect		=(void*)effect;
+	GL_ERROR_CHECK
 	// If any technique fails, we don't want to proceed until the problem is fixed.
 		if(!FillInTechniques()&&IsDebuggerPresent())
 		{
 			DebugBreak();
+	GL_ERROR_CHECK
 			if(renderPlatform->GetShaderBuildMode()&crossplatform::ShaderBuildMode::TRY_AGAIN_ON_FAIL)
 				continue;
 			else
