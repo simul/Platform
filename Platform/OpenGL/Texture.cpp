@@ -63,7 +63,9 @@ void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform
 	pTextureObject		=0;
 	if(dot_pos>=0&&dot_pos<(int)filename.length())
 		extension		=filename.substr(dot_pos+1,filename.length()-dot_pos-1);
+	GL_ERROR_CHECK
 	pTextureObject		=LoadGLImage(pFilePathUtf8,pathsUtf8,GL_REPEAT,&width,&length);
+	GL_ERROR_CHECK
 	return ;
 }
 

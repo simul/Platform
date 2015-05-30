@@ -93,7 +93,9 @@ ERRNO_CHECK
 #include "Simul/Base/FileLoader.h"
 GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &texturePathsUtf8,unsigned wrap,int *w,int *h)
 {
+	GL_ERROR_CHECK
 	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
+	GL_ERROR_CHECK
 	if(!FileExists(fn.c_str()))
 		return 0;
 #ifdef _MSC_VER
@@ -102,6 +104,7 @@ GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &tex
 	BYTE *pixels=(BYTE*)LoadBitmap(fn.c_str(),bpp,width,height);
 	if(!pixels)
 		return 0;
+	GL_ERROR_CHECK
 	GLuint image_tex=0;
     glGenTextures(1,&image_tex);
     glBindTexture(GL_TEXTURE_2D,image_tex);
@@ -110,6 +113,7 @@ GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &tex
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,wrap);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap);
+	GL_ERROR_CHECK
 	if(bpp==1||bpp==8)
 		glTexImage2D(GL_TEXTURE_2D,0, GL_RGB8,width,height,0,GL_LUMINANCE,GL_UNSIGNED_BYTE,pixels);
 	else if(bpp==24)
@@ -122,6 +126,7 @@ GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &tex
 		*w=width;
 	if(h)
 		*h=height;
+	GL_ERROR_CHECK
 	return image_tex;
 #else
 	return 0;

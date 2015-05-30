@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #pragma warning(disable:4505)	// Fix GLUT warnings
 #include <GL/glut.h>
+#include <GL/freeglut_ext.h>
 #endif
 #include "OpenGLRenderer.h"
 // For font definition define:
@@ -51,8 +52,67 @@ using namespace opengl;
 
 using namespace simul;
 using namespace opengl;
+using namespace std;
 static bool glut_initialized=false;
+//typedef void (GLAPIENTRY *GLDEBUGPROC)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+/*typedef void (APIENTRY *DEBUGPROC)(GLenum source,
+            GLenum type,
+            GLuint id,
+            GLenum severity,
+            GLsizei length,
+            const GLchar *message,
+            void *userParam);*/
 
+// http://blog.nobel-joergensen.com/2013/02/17/debugging-opengl-part-2-using-gldebugmessagecallback/
+void GLAPIENTRY openglCallbackFunction(GLenum source,
+                                           GLenum type,
+                                           GLuint id,
+                                           GLenum severity,
+                                           GLsizei length,
+                                           const GLchar* message,
+                                          const void* userParam){
+ 
+    cout << "---------------------opengl-callback-start------------" << endl;
+    cout << "message: "<< message << endl;
+    cout << "type: ";
+    switch (type) {
+    case GL_DEBUG_TYPE_ERROR:
+        cout << "ERROR";
+        break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        cout << "DEPRECATED_BEHAVIOR";
+        break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        cout << "UNDEFINED_BEHAVIOR";
+        break;
+    case GL_DEBUG_TYPE_PORTABILITY:
+        cout << "PORTABILITY";
+        break;
+    case GL_DEBUG_TYPE_PERFORMANCE:
+        cout << "PERFORMANCE";
+        break;
+    case GL_DEBUG_TYPE_OTHER:
+        cout << "OTHER";
+        break;
+    }
+    cout << endl;
+ 
+    cout << "id: " << id << endl;
+    cout << "severity: ";
+    switch (severity){
+    case GL_DEBUG_SEVERITY_LOW:
+        cout << "LOW";
+        break;
+    case GL_DEBUG_SEVERITY_MEDIUM:
+        cout << "MEDIUM";
+        break;
+    case GL_DEBUG_SEVERITY_HIGH:
+        cout << "HIGH";
+        break;
+    }
+    cout << endl;
+    cout << "---------------------opengl-callback-end--------------" << endl;
+}
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut)
 		:clouds::TrueSkyRenderer(env,sc,m)
 	,ShowWater(true)
@@ -70,8 +130,34 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 		char *a=argv;
 		int argc=1;
 	    glutInit(&argc,&a);
+		/*glutInitContextVersion(4, 3);
+		glutInitContextProfile(GLUT_CORE_PROFILE);
+		glutInitContextFlags(GLUT_DEBUG|GLUT_FORWARD_COMPATIBLE);*/
 		glut_initialized=true;
+	//	GLint n;
+	//	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+//		for (int i = 0; i < n; i++)
+		{
+		//	const unsigned char *s=glGetStringi(GL_EXTENSIONS,i);
+		//	std::cout<<s<<std::endl;
+		}
+
 	}
+	if(glewIsSupported("GL_ARB_debug_output"))
+	{
+        cout << "Register OpenGL debug callback " << endl;
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(openglCallbackFunction, nullptr);
+        GLuint unusedIds = 0;
+        glDebugMessageControl(GL_DONT_CARE,
+            GL_DONT_CARE,
+            GL_DONT_CARE,
+            0,
+            &unusedIds,
+            true);
+    }
+    else
+        cout << "glDebugMessageCallback not available" << endl;
 }
 
 void OpenGLRenderer::InvalidateDeviceObjects()

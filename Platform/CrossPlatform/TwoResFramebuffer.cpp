@@ -69,8 +69,11 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	ERRNO_CHECK
 	for(int i=0;i<4;i++)
 	{
+	ERRNO_CHECK
 		SAFE_DELETE(nearFarTextures[i]);
+	ERRNO_CHECK
 		nearFarTextures[i]=renderPlatform->CreateTexture("ESRAM");
+	ERRNO_CHECK
 		nearFarTextures[i]->MoveToFastRAM();
 	ERRNO_CHECK
 	}

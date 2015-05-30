@@ -111,9 +111,9 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform 
 	GL_ERROR_CHECK
 	glGenBuffers(1, &ubo);
 	GL_ERROR_CHECK
-	glBindBuffer(GL_constant_buffer, ubo);
-	glBufferData(GL_constant_buffer, sz, addr, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_constant_buffer, 0);
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+	glBufferData(GL_UNIFORM_BUFFER, sz, addr, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	GL_ERROR_CHECK
 	size=sz;
 }
@@ -166,9 +166,9 @@ GL_ERROR_CHECK
 					// No good reason why this might happen, but it sometimes does - driver-dependent.
 					continue;
 				}
-				glBindBufferBase(GL_constant_buffer,bindingIndex,ubo);
+				glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 	GL_ERROR_CHECK
-				glBindBufferRange(GL_constant_buffer,bindingIndex,ubo,0,size);	
+				glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,size);	
 	GL_ERROR_CHECK
 			}
 			///else
@@ -184,11 +184,11 @@ GL_ERROR_CHECK
 void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &,size_t size,void *addr)
 {
 GL_ERROR_CHECK
-	glBindBuffer(GL_constant_buffer,ubo);
+	glBindBuffer(GL_UNIFORM_BUFFER,ubo);
 GL_ERROR_CHECK
-	glBufferSubData(GL_constant_buffer,0,size,addr);
+	glBufferSubData(GL_UNIFORM_BUFFER,0,size,addr);
 GL_ERROR_CHECK
-	glBindBuffer(GL_constant_buffer,0);
+	glBindBuffer(GL_UNIFORM_BUFFER,0);
 GL_ERROR_CHECK
 //	glBindBufferBase(GL_constant_buffer,bindingIndex,ubo);
 //GL_ERROR_CHECK
