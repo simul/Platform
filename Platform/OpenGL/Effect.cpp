@@ -596,7 +596,11 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *n
 void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write,int mip)
 {
 	GL_ERROR_CHECK
-	int texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
+	int texture_number=0;
+	if(write)
+		texture_number=glfxGetEffectImageNumber((GLuint)platform_effect,name);
+	else
+		texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
 	if(tex)
 		glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write);
 	GL_ERROR_CHECK
