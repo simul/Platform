@@ -129,10 +129,10 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 		char argv[]="no program";
 		char *a=argv;
 		int argc=1;
+	//	glutInitContextVersion(4, 3);
+		//glutInitContextProfile(GLUT_CORE_PROFILE);
+		glutInitContextFlags(GLUT_DEBUG|GLUT_FORWARD_COMPATIBLE);
 	    glutInit(&argc,&a);
-		/*glutInitContextVersion(4, 3);
-		glutInitContextProfile(GLUT_CORE_PROFILE);
-		glutInitContextFlags(GLUT_DEBUG|GLUT_FORWARD_COMPATIBLE);*/
 		glut_initialized=true;
 	//	GLint n;
 	//	glGetIntegerv(GL_NUM_EXTENSIONS, &n);

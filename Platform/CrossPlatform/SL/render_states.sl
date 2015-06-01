@@ -79,7 +79,7 @@ BlendState AlphaToCoverageBlend
 BlendState CloudBlend
 {
 	BlendEnable[0]		= TRUE;
-	BlendEnable[1]		=TRUE;
+	BlendEnable[1]		= TRUE;
 	SrcBlend			= SRC_ALPHA;
 	DestBlend			= INV_SRC_ALPHA;
     BlendOp				= ADD;
