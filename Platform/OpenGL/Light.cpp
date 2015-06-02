@@ -27,12 +27,12 @@ opengl::Light::~Light()
 
 void opengl::Light::UpdateLight(const double *lLightGlobalPosition,float lConeAngle,const float lLightColor[4]) const
 {
-	glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glMultMatrixd((const double*)lLightGlobalPosition);
+	//
+   // 
+   // glMultMatrixd((const double*)lLightGlobalPosition);
     glColor3fv(lLightColor);
-    glPushAttrib(GL_ENABLE_BIT);
-    glPushAttrib(GL_POLYGON_BIT);
+    
+    
     // Visible for double side.
     glDisable(GL_CULL_FACE);
   //  glEnable(GL_LIGHTING);
@@ -42,7 +42,7 @@ const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
     if (mType == FbxLight::eSpot)
     {
         // Draw a cone for spot light.
-        glPushMatrix();
+        
         glScalef(1.0f, 1.0f, -1.0f);
         const double lRadians = ANGLE_TO_RADIAN * lConeAngle;
         const double lHeight = 15.0;
@@ -50,7 +50,7 @@ const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
         GLUquadricObj * lQuadObj = gluNewQuadric();
         gluCylinder(lQuadObj, 0.0, lBase, lHeight, 18, 1);
         gluDeleteQuadric(lQuadObj);
-        glPopMatrix();
+        
     }
     else
     {
@@ -62,8 +62,8 @@ const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
 #endif
         gluDeleteQuadric(lQuadObj);
     }
-    glPopAttrib();
-    glPopAttrib();
+    
+    
 #if 1
     // The transform have been set, so set in local coordinate.
     if (mType == FbxLight::eDirectional)
@@ -91,6 +91,6 @@ const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
     }
     glEnable(mLightIndex);
 #endif
-	glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
+	//
+  //  
 }

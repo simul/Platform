@@ -228,8 +228,8 @@ void RenderPlatform::RecompileShaders()
 
 void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 {
-	/*glPushAttrib(GL_ENABLE_BIT);
-	glPushAttrib(GL_LIGHTING_BIT);
+	/*
+	
 	glEnable(GL_DEPTH_TEST);
 	// Draw the front face only, except for the texts and lights.
 	glEnable(GL_CULL_FACE);
@@ -242,8 +242,8 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 void RenderPlatform::EndRender(crossplatform::DeviceContext &)
 {
 	/*glUseProgram(0);
-	glPopAttrib();
-	glPopAttrib();*/
+	
+	*/
 }
 
 namespace
@@ -294,8 +294,8 @@ void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,cons
  /*   glColor3f(0.0, 1.0, 1.0);
     glLineWidth(1.0);
 	
-	glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+	
+    
     glMultMatrixd((const double*) matrix);
 
     glBegin(GL_LINE_LOOP);
@@ -329,7 +329,7 @@ void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,cons
         glVertex3f(+1.0f, +1.0f, -1.0f);
         glVertex3f(+1.0f, -1.0f, -1.0f);
     glEnd();
-    glPopMatrix();*/
+    */
 }
 
 
@@ -338,8 +338,8 @@ void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &deviceContext,c
 /*    glColor3f(1.0, 1.0, 1.0);
     glLineWidth(1.0);
 	
-	glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+	
+    
     glMultMatrixd((double*) pGlobalPosition);
 
     double lCrossHair[6][3] = { { -3, 0, 0 }, { 3, 0, 0 },
@@ -367,8 +367,8 @@ void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &deviceContext,c
 
     glEnd();
 	
-	glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();*/
+	
+    */
 }
 
 void RenderPlatform::DrawCamera(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)
@@ -376,8 +376,8 @@ void RenderPlatform::DrawCamera(crossplatform::DeviceContext &deviceContext,cons
  /*   glColor3d(1.0, 1.0, 1.0);
     glLineWidth(1.0);
 	
-	glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+	
+    
     glMultMatrixd((const double*) pGlobalPosition);
     glRotated(pRoll, 1.0, 0.0, 0.0);
 
@@ -414,12 +414,12 @@ void RenderPlatform::DrawCamera(crossplatform::DeviceContext &deviceContext,cons
         }
         glEnd();
     }
-    glPopMatrix();*/
+    */
 }
 
 void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &deviceContext,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {
-/*    glPushMatrix();
+/*    
     glMultMatrixd((const double*)mat);
 	glColor3f(colr[0],colr[1],colr[2]);
 	glBegin(GL_LINE_LOOP);
@@ -428,7 +428,7 @@ void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &deviceContext,co
 		glVertex3dv((GLdouble *)&vertexArray[lVerticeIndex*3]);
 	}
 	glEnd();
-    glPopMatrix();*/
+    */
 }
 
 void RenderPlatform::ApplyDefaultMaterial()

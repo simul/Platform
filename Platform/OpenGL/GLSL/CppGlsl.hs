@@ -40,57 +40,54 @@
 	#define uint3 uvec3
 	#define uint4 uvec4
 	#define frac fract
-	#define __Y(texc) texc
+	#define _Y(texc) texc
 	//vec2((texc).x,1.0-(texc).y)
-	#define __Y3(texc) texc
+	#define _Y3(texc) texc
 	//vec3((texc).x,1.0-((texc).y),(texc).z)
-	#define texture_clamp(tex,texc) texture(tex,__Y(texc))
-	#define texture_wrap(tex,texc) texture(tex,__Y(texc))
-	#define texture_clamp_mirror(tex,texc) texture(tex,__Y(texc))
-	#define texture_wrap_clamp(tex,texc) texture(tex,__Y(texc))
-	#define texture_wrap_mirror(tex,texc) texture(tex,__Y(texc)) 
-	#define texture_wrap_mirror_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
-	#define sample(tex,smplr,texc) texture(tex,__Y(texc))
-	#define sample_lod(tex,smplr,texc,lod) textureLod(tex,__Y(texc),lod)
-	#define sampleLod(tex,smplr,texc,lod) textureLod(tex,__Y(texc),lod)
-	#define texture_wrap_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
-	#define texture_cwc_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
-	#define texture_clamp_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod) 
-//	#define texture_clamp_lod(tex,texc,lod) tex.SampleLevel(clampSamplerState,__Y(texc),lod)
-//	#define texture_nearest_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod) 
-	#define texture_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,__Y(texc),lod)
-	#define texture_clamp_mirror_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
-	#define texture_cmc_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod) 
-	#define texture_cmc_nearest_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
-	#define texture_wmc_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
-	#define texture_wmc(tex,texc) textureLod(tex,__Y(texc))
+	#define texture_clamp(tex,texc) texture(tex,_Y(texc))
+	#define texture_wrap(tex,texc) texture(tex,_Y(texc))
+	#define texture_clamp_mirror(tex,texc) texture(tex,_Y(texc))
+	#define texture_wrap_clamp(tex,texc) texture(tex,_Y(texc))
+	#define texture_wrap_mirror(tex,texc) texture(tex,_Y(texc)) 
+	#define texture_wrap_mirror_lod(tex,texc,lod) textureLod(tex,_Y(texc),lod)
+	#define sample(tex,smplr,texc) texture(tex,_Y(texc))
+	#define sample_lod(tex,smplr,texc,lod) textureLod(tex,_Y(texc),lod)
+	#define sampleLod(tex,smplr,texc,lod) textureLod(tex,_Y(texc),lod)
+	#define texture_wrap_lod(tex,texc,lod) textureLod(tex,_Y(texc),lod)
+	#define texture_cwc_lod(tex,texc,lod) textureLod(tex,_Y(texc),lod)
+	#define texture_clamp_lod(tex,texc,lod) textureLod(tex,_Y(texc),lod) 
+//	#define texture_clamp_lod(tex,texc,lod) tex.SampleLevel(clampSamplerState,_Y(texc),lod)
+//	#define texture_nearest_lod(tex,texc,lod) textureLod(tex,_Y(texc),lod) 
+	#define texture_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,_Y(texc),lod)
+	#define texture_clamp_mirror_lod(tex,texc,lod) textureLod(tex,_Y(texc),lod)
+	#define texture_cmc_lod(tex,texc,lod) textureLod(tex,_Y(texc),lod) 
+	#define texture_cmc_nearest_lod(tex,texc,lod) textureLod(tex,_Y(texc),lod)
+	#define texture_wmc_lod(tex,texc,lod) textureLod(tex,_Y(texc),lod)
+	#define texture_wmc(tex,texc) textureLod(tex,_Y(texc))
 	#define texture_cube(tex,texc) texture(tex,texc);
 
-	#define texture_wwc(tex,texc) texture(tex,__Y3(texc))
-	#define texture_wwc_lod(tex,texc,lod) textureLod(tex,__Y3(texc),lod)
-	#define texture_nearest(tex,texc) texture(tex,__Y(texc))
-	#define texture3Dpt(tex,texc) texture(tex,__Y3(texc))
+	#define texture_wwc(tex,texc) texture(tex,_Y3(texc))
+	#define texture_wwc_lod(tex,texc,lod) textureLod(tex,_Y3(texc),lod)
+	#define texture_nearest(tex,texc) texture(tex,_Y(texc))
+	#define texture3Dpt(tex,texc) texture(tex,_Y3(texc))
 	#define texture2Dpt(tex,texc) texture(tex,texc)
 
-	#define texture_clamp_mirror_nearest_lod(tex,texc,lod) textureLod(tex,__Y(texc),lod)
+	#define texture_clamp_mirror_nearest_lod(tex,texc,lod) textureLod(tex,_Y(texc),lod)
 
-	#define texture_3d_cmc(tex,texc) texture(tex,__Y3(texc))
-	#define texture_3d_nearest(tex,texc) texture(tex,__Y3(texc)) 
-	#define sample_3d(tex,sampler,texc) texture(tex,__Y3(texc)) 
-	//#define texture_3d_nearest_lod(tex,texc,lod) textureLod(tex,__Y3(texc),lod) 
-	#define texture_3d_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,__Y3(texc),lod)
-	#define texture_3d_clamp_lod(tex,texc,lod) textureLod(tex,__Y3(texc),lod)  
-//	#define texture_3d_wrap_lod(tex,texc,lod) textureLod(tex,__Y3(texc),lod) 
-	#define texture_3d_wrap_lod(tex,texc,lod) tex.SampleLevel(wrapSamplerState,__Y3(texc),lod)
-	#define texture_3d_clamp(tex,texc) texture(tex,__Y3(texc)) 
-	#define texture_3d_wwc_lod(tex,texc,lod) textureLod(tex,__Y3(texc),lod)
-	#define texture_3d_cwc_lod(tex,texc,lod) textureLod(tex,__Y3(texc),lod) 
-	#define texture_3d_cmc_lod(tex,texc,lod) textureLod(tex,__Y3(texc),lod)
-	#define texture_3d_cmc_nearest_lod(tex,texc,lod) textureLod(tex,__Y3(texc),lod)
-	#define texture_3d_wmc_lod(tex,texc,lod) textureLod(tex,__Y3(texc),lod)
-	#define texture_3d_wmc(tex,texc) textureLod(tex,__Y3(texc),lod)
-	//#define sample_3d_lod(tex,sampler,texc,lod) textureLod(tex,__Y3(texc),lod) 
-	#define sample_3d_lod(tex,sampler,texc,lod) tex.SampleLevel(sampler,__Y3(texc),lod)
+	#define texture_3d_cmc(tex,texc) texture(tex,_Y3(texc))
+	#define texture_3d_nearest(tex,texc) texture(tex,_Y3(texc)) 
+	#define sample_3d(tex,sampler,texc) texture(tex,_Y3(texc)) 
+	#define texture_3d_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,_Y3(texc),lod)
+	#define texture_3d_clamp_lod(tex,texc,lod) textureLod(tex,_Y3(texc),lod)  
+	#define texture_3d_wrap_lod(tex,texc,lod) tex.SampleLevel(wrapSamplerState,_Y3(texc),lod)
+	#define texture_3d_clamp(tex,texc) texture(tex,_Y3(texc)) 
+	#define texture_3d_wwc_lod(tex,texc,lod) textureLod(tex,_Y3(texc),lod)
+	#define texture_3d_cwc_lod(tex,texc,lod) textureLod(tex,_Y3(texc),lod) 
+	#define texture_3d_cmc_lod(tex,texc,lod) textureLod(tex,_Y3(texc),lod)
+	#define texture_3d_cmc_nearest_lod(tex,texc,lod) textureLod(tex,_Y3(texc),lod)
+	#define texture_3d_wmc_lod(tex,texc,lod) textureLod(tex,_Y3(texc),lod)
+	#define texture_3d_wmc(tex,texc) textureLod(tex,_Y3(texc),lod)
+	#define sample_3d_lod(tex,sampler,texc,lod) tex.SampleLevel(sampler,_Y3(texc),lod)
 
 	#define texelFetch3d(tex,p,lod) texelFetch(tex,p,lod)
 	#define texelFetch2d(tex,p,lod) texelFetch(tex,p,lod)
@@ -103,6 +100,7 @@
 	#define Texture2D sampler2D 
 	#define Texture2DMS sampler2DMS
 	#define TextureCube samplerCube
+	#define TextureCUBE samplerCube
 	#define Texture1D sampler1D 
 	#define Y(texel) texel.y
 	#define STATIC

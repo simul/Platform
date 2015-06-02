@@ -22,6 +22,7 @@ using namespace opengl;
 RenderPlatform::RenderPlatform()
 	:reverseDepth(false)
 	,currentTopology(crossplatform::TRIANGLELIST)
+	,empty_vao(0)
 {
 
 }
@@ -35,19 +36,24 @@ void RenderPlatform::RestoreDeviceObjects(void *unused)
 {
 	rescaleVertexShaderConstants.RestoreDeviceObjects(this);
 	crossplatform::RenderPlatform::RestoreDeviceObjects(unused);
+	// GL Insists on having a bound vertex array object, even if we're not using it in the vertex shader.
+	glGenVertexArrays(1,&empty_vao);
 	RecompileShaders();
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
+	// GL Insists on having a bound vertex array object, even if we're not using it in the vertex shader.
+	glDeleteVertexArrays(1, &empty_vao);
+	empty_vao=0;
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	rescaleVertexShaderConstants.InvalidateDeviceObjects();
 }
 
 void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 {
-	glPushAttrib(GL_ENABLE_BIT);
-	glPushAttrib(GL_LIGHTING_BIT);
+	
+	
 	glEnable(GL_DEPTH_TEST);
 	// Draw the front face only, except for the texts and lights.
 	glEnable(GL_CULL_FACE);
@@ -61,8 +67,8 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 void RenderPlatform::EndRender(crossplatform::DeviceContext &deviceContext)
 {
 	solidEffect->Unapply(deviceContext);
-	glPopAttrib();
-	glPopAttrib();
+	
+	
 }
 
 void RenderPlatform::SetReverseDepth(bool r)
@@ -113,8 +119,8 @@ void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,cons
     glColor3f(0.0, 1.0, 1.0);
     glLineWidth(1.0);
 	
-	glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+	
+    
     glMultMatrixd((const double*) matrix);
 
     glBegin(GL_LINE_LOOP);
@@ -148,7 +154,7 @@ void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,cons
         glVertex3f(+1.0f, +1.0f, -1.0f);
         glVertex3f(+1.0f, -1.0f, -1.0f);
     glEnd();
-    glPopMatrix();
+    
 }
 
 void RenderPlatform::DrawLine(crossplatform::DeviceContext &,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)
@@ -169,9 +175,9 @@ void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &,const double *
     glColor3f(1.0, 1.0, 1.0);
     glLineWidth(1.0);
 	
-	glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glMultMatrixd((double*) pGlobalPosition);
+	
+    
+   // glMultMatrixd((double*) pGlobalPosition);
 
     double lCrossHair[6][3] = { { -3, 0, 0 }, { 3, 0, 0 },
     { 0, -3, 0 }, { 0, 3, 0 },
@@ -198,8 +204,8 @@ void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &,const double *
 
     glEnd();
 	
-	glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
+	
+    
 }
 
 void RenderPlatform::DrawCamera(crossplatform::DeviceContext &,const double *pGlobalPosition, double pRoll)
@@ -207,8 +213,8 @@ void RenderPlatform::DrawCamera(crossplatform::DeviceContext &,const double *pGl
     glColor3d(1.0, 1.0, 1.0);
     glLineWidth(1.0);
 	
-	glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+	
+    
     glMultMatrixd((const double*) pGlobalPosition);
     glRotated(pRoll, 1.0, 0.0, 0.0);
 
@@ -245,12 +251,12 @@ void RenderPlatform::DrawCamera(crossplatform::DeviceContext &,const double *pGl
         }
         glEnd();
     }
-    glPopMatrix();
+    
 }
 
 void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {
-    glPushMatrix();
+    
     glMultMatrixd((const double*)mat);
 	glColor3f(colr[0],colr[1],colr[2]);
 	glBegin(GL_LINE_LOOP);
@@ -259,7 +265,7 @@ void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &,const double *m
 		glVertex3dv((GLdouble *)&vertexArray[lVerticeIndex*3]);
 	}
 	glEnd();
-    glPopMatrix();
+    
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend)
@@ -319,6 +325,8 @@ glDisable(GL_CULL_FACE);
 	rescaleVertexShaderConstants.rescaleVertexShaderY=opengl::FramebufferGL::IsTargetTexture()?-1.0f:1.0f;
 	rescaleVertexShaderConstants.Apply(deviceContext);
 	GL_ERROR_CHECK
+	// GL Insists on having a bound vertex array object, even if we're not using it in the vertex shader.
+	glBindVertexArray(empty_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	GL_ERROR_CHECK
 	effect->UnbindTextures(deviceContext);
@@ -333,6 +341,8 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 	GL_ERROR_CHECK
 	rescaleVertexShaderConstants.rescaleVertexShaderY=opengl::FramebufferGL::IsTargetTexture()?-1.0f:1.0f;
 	rescaleVertexShaderConstants.Apply(deviceContext);
+	// GL Insists on having a bound vertex array object, even if we're not using it in the vertex shader.
+	glBindVertexArray(empty_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); 
 	GL_ERROR_CHECK
 }
@@ -926,26 +936,26 @@ void RenderPlatform::EnsureEffectIsBuilt				(const char *filename_utf8,const std
 void RenderPlatform::StoreRenderState(crossplatform::DeviceContext &)
 {
 	GL_ERROR_CHECK
-//	glPushAttrib(GL_ALL_ATTRIB_BITS);
+//	
 	GL_ERROR_CHECK
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+    
+    
 	GL_ERROR_CHECK
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
+    
+    
 	GL_ERROR_CHECK
 }
 
 void RenderPlatform::RestoreRenderState(crossplatform::DeviceContext &)
 {
 	GL_ERROR_CHECK
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
+    
+    
 	GL_ERROR_CHECK
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
+    
+    
 	GL_ERROR_CHECK
-//	glPopAttrib();
+//	
 	GL_ERROR_CHECK
 }
 
@@ -1028,7 +1038,7 @@ void RenderPlatform::DrawIndexed		(crossplatform::DeviceContext &deviceContext,i
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::PosColourVertex *lines,int vertex_count,bool strip,bool test_depth,bool view_centred)
 {
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	
 	glDisable(GL_ALPHA_TEST);
     test_depth?glEnable(GL_DEPTH_TEST):glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
@@ -1044,12 +1054,12 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::Pos
 	}
 	glEnd();
 	glUseProgram(0);
-	glPopAttrib();
+	
 }
 
 void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,crossplatform::PosColourVertex *lines,int vertex_count,bool strip)
 {
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
@@ -1066,7 +1076,7 @@ void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,crossplatform::
 	}
 	glEnd();
 	glUseProgram(0);
-	glPopAttrib();
+	
 }
 
 void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &,const float *p,const char *text,const float* colr,int offsetx,int offsety,bool centred)

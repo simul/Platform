@@ -331,7 +331,8 @@ const float *Camera::MakeDepthReversedProjectionMatrix(float h,float v,float zNe
 {
 	float xScale= 1.f/tan(h/2.f);
 	float yScale = 1.f/tan(v/2.f);
-	math::Matrix4x4 m;
+	/// TODO: Not thread-safe
+	static math::Matrix4x4 m;
 	memset(&m,0,16*sizeof(float));
 	m._11	=xScale;
 	m._22	=yScale;
@@ -358,7 +359,8 @@ const float *Camera::MakeDepthReversedProjectionMatrix(const FovPort &fovPort, f
 	float yOffset	= (fovPort.upTan - fovPort.downTan) * yScale * 0.5f;
 
 	static float handedness = 1.0f;// right-handed obviously.
-	math::Matrix4x4 m;
+	/// TODO: Not thread-safe
+	static math::Matrix4x4 m;
 	memset(&m, 0, 16 * sizeof(float));
 	m._11 = xScale;
 	m._22 = yScale;
@@ -403,7 +405,7 @@ const float *Camera::MakeProjectionMatrix(float h,float v,float zNear,float zFar
 {
 	float xScale = 1.f / tan(h / 2.f);
 	float yScale = 1.f / tan(v / 2.f);
-	math::Matrix4x4 m;
+	static math::Matrix4x4 m;
 	memset(&m, 0, 16 * sizeof(float));
 	m._11 = xScale;
 	m._22 = yScale;
@@ -421,7 +423,7 @@ const float *Camera::MakeProjectionMatrix(const FovPort &fovPort, float zNear, f
 	float yOffset = (fovPort.upTan - fovPort.downTan) * yScale * 0.5f;
 
 	static float handedness = 1.0f;// right-handed obviously.
-	math::Matrix4x4 m;
+	static math::Matrix4x4 m;
 	memset(&m, 0, 16 * sizeof(float));
 	m._11 = xScale;
 	m._22 = yScale;

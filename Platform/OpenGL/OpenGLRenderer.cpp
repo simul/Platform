@@ -70,8 +70,8 @@ void GLAPIENTRY openglCallbackFunction(GLenum source,
                                            GLenum severity,
                                            GLsizei length,
                                            const GLchar* message,
-                                          const void* userParam){
- 
+                                          const void* userParam)
+{
     cout << "---------------------opengl-callback-start------------" << endl;
     cout << "message: "<< message << endl;
     cout << "type: ";
@@ -129,10 +129,11 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 		char argv[]="no program";
 		char *a=argv;
 		int argc=1;
-	//	glutInitContextVersion(4, 3);
-		//glutInitContextProfile(GLUT_CORE_PROFILE);
-		glutInitContextFlags(GLUT_DEBUG|GLUT_FORWARD_COMPATIBLE);
+		//glutInitContextFlags(GLUT_DEBUG|GLUT_FORWARD_COMPATIBLE);
 	    glutInit(&argc,&a);
+		glutInitContextVersion(4, 2);
+		glutInitContextProfile(GLUT_CORE_PROFILE);
+		glutInitContextFlags(GLUT_DEBUG|GLUT_FORWARD_COMPATIBLE);
 		glut_initialized=true;
 	//	GLint n;
 	//	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
@@ -143,21 +144,6 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 		}
 
 	}
-	if(glewIsSupported("GL_ARB_debug_output"))
-	{
-        cout << "Register OpenGL debug callback " << endl;
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-        glDebugMessageCallback(openglCallbackFunction, nullptr);
-        GLuint unusedIds = 0;
-        glDebugMessageControl(GL_DONT_CARE,
-            GL_DONT_CARE,
-            GL_DONT_CARE,
-            0,
-            &unusedIds,
-            true);
-    }
-    else
-        cout << "glDebugMessageCallback not available" << endl;
 }
 
 void OpenGLRenderer::InvalidateDeviceObjects()
@@ -200,15 +186,18 @@ void OpenGLRenderer::InitializeGL()
 
 void OpenGLRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-GL_ERROR_CHECK
-ERRNO_CHECK
-glewExperimental= GL_TRUE;
-    GLenum glewError = glewInit();
-    if( glewError != GLEW_OK )
-    {
-        std::cerr<<"Error initializing GLEW! "<<glewGetErrorString( glewError )<<"\n";
-        return;
-    }
+	GL_ERROR_CHECK
+	ERRNO_CHECK
+	glewExperimental= GL_TRUE;
+	if (!glewIsSupported("GL_ARB_debug_output"))
+	{
+		GLenum glewError = glewInit();
+		if (glewError != GLEW_OK)
+		{
+			std::cerr << "Error initializing GLEW! " << glewGetErrorString(glewError) << "\n";
+			return;
+		}
+	}
 ERRNO_CHECK
     //Make sure OpenGL 2.1 is supported
     if( !GLEW_VERSION_2_1 )
@@ -221,14 +210,36 @@ GL_ERROR_CHECK
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
 	}
+/*	if(glewIsSupported("GL_ARB_debug_output"))
+	{
+        cout << "Register OpenGL debug callback " << endl;
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(openglCallbackFunction, nullptr);
+        GLuint unusedIds = 0;
+        glDebugMessageControl(GL_DONT_CARE,
+            GL_DONT_CARE,
+            GL_DONT_CARE,
+            0,
+            &unusedIds,
+            GL_TRUE);
+		GL_ERROR_CHECK
+		glDebugMessageInsert(	GL_DEBUG_SOURCE_APPLICATION ,
+ 								GL_DEBUG_TYPE_ERROR,
+ 								1,
+ 								GL_DEBUG_SEVERITY_HIGH ,
+ 								-1,
+ 								"Testing gl callback output");
+    }
+    else
+        cout << "glDebugMessageCallback not available" << endl;*/
 ERRNO_CHECK
 	CheckExtension("GL_VERSION_2_0");
 GL_ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
 	GL_ERROR_CHECK
+	r->RestoreDeviceObjects(NULL);
 	clouds::TrueSkyRenderer::RestoreDeviceObjects(r);
-	renderPlatform->RestoreDeviceObjects(NULL);
 	//depthFramebuffer.RestoreDeviceObjects(renderPlatform);
 	//depthFramebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
 	//depthFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
@@ -287,9 +298,9 @@ void OpenGLRenderer::RenderGL(int view_id)
 
 	view->SetResolution(viewport.w,viewport.h);
 	EnsureCorrectBufferSizes(view_id);
-	glPushAttrib(GL_ENABLE_BIT);
+	
 	TrueSkyRenderer::Render(deviceContext);
-	glPopAttrib();
+	
 	simul::opengl::Profiler::GetGlobalProfiler().EndFrame();
 }
 

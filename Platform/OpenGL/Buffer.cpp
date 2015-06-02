@@ -42,7 +42,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *,int num_vertices
 {
 	SAFE_DELETE_BUFFER(buf)
 	SAFE_DELETE_VAO(vao);
-	glGenVertexArrays(1,&vao );
+	glGenVertexArrays(1,&vao);
 	glBindVertexArray(vao);
     glGenBuffers(1, &buf);
     // Save vertex attributes into GPU

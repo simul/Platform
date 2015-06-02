@@ -205,15 +205,10 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("gpu_density");
 	if(!tech)
 		return;
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
 	effect->Apply(deviceContext,tech,0);
 	setParameter(tech->passAsGLuint(0),"volumeNoiseTexture"	,0);
 //	setParameter(density_program,"maskTexture"			,1);
 	//MakeVertexMatrix(params.density_grid,start_texel,texels);
-	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(0,1.0,0.0,1.0,-1.0,1.0);
 	float y_start=(float)start_texel/(float)total_texels;
@@ -228,7 +223,6 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	glBindTexture(GL_TEXTURE_3D,volume_noise_tex);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,maskTexture.AsGLuint());
-	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	{
 GL_ERROR_CHECK
@@ -264,12 +258,6 @@ GL_ERROR_CHECK
 	effect->Unapply(deviceContext);
 //	glUseProgram(0);
 GL_ERROR_CHECK
-GL_ERROR_CHECK
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-GL_ERROR_CHECK
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
 }
 
 // The target is a grid of size given by light_gridsizes, arranged as d w-by-l textures.
@@ -299,10 +287,6 @@ GL_ERROR_CHECK
 	crossplatform::EffectTechnique *tech=effect->GetTechniqueByName("gpu_lighting");
 	if(!tech)
 		return;
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
 	effect->Apply(deviceContext,tech,0);
 	setParameter(tech->passAsGLuint(0),"input_light_texture",0);
 	setParameter(tech->passAsGLuint(0),"density_texture",1);
@@ -358,11 +342,6 @@ GL_ERROR_CHECK
 		F[1]->Activate(deviceContext);
 float u=(float)i/(float)z1;
 F[1]->Clear(deviceContext, u, u, u, u, 1.f);
-			glMatrixMode(GL_PROJECTION);
-			glLoadIdentity();
-			glOrtho(0,1.0,0,1.0,-1.0,1.0);
-			glMatrixMode(GL_MODELVIEW);
-			glLoadIdentity();
 			// input light values:
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetTexture()->AsGLuint());
@@ -384,12 +363,6 @@ F[1]->Clear(deviceContext, u, u, u, u, 1.f);
 			target+=params.light_grid[0]*params.light_grid[1]*4;
 	}
 	effect->Unapply(deviceContext);
-	
-	
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
 }
 
 // Transform light data into a world-oriented cloud texture.
@@ -403,10 +376,6 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	if(texels<=0)
 		return;
 	crossplatform::DeviceContext deviceContext;
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
 	int total_texels=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]*params.density_grid[2]);
@@ -436,11 +405,6 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	{
 		world_fb.Activate(deviceContext);
-			glMatrixMode(GL_PROJECTION);
-			glLoadIdentity();
-			glOrtho(0,1.0,0,1.0,-1.0,1.0);
-			glMatrixMode(GL_MODELVIEW);
-			glLoadIdentity();
 			// input light values:
 			DrawQuad(0.f,y_start,1.f,y_end-y_start);
 			GL_ERROR_CHECK
@@ -464,10 +428,4 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 		//target+=density_grid[0]*density_grid[1]*4;
 	}
 	effect->Unapply(deviceContext);
-	
-	
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
 }

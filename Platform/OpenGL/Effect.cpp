@@ -129,10 +129,10 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const ch
 	{
 		DebugBreak();
 	}
-GL_ERROR_CHECK
-	static int lastBindingIndex=21;
-	if(lastBindingIndex>=85)
-		lastBindingIndex=21;
+	GL_ERROR_CHECK
+		static int lastBindingIndex = 1;// 21;
+	if (lastBindingIndex >= 52)//85)
+		lastBindingIndex = 1;// 21;
 	bindingIndex=lastBindingIndex;
 	lastBindingIndex++;
 GL_ERROR_CHECK
@@ -159,7 +159,7 @@ GL_ERROR_CHECK
 			{
 				any=true;
 	GL_ERROR_CHECK
-				glUniformBlockBinding(program,indexInShader,bindingIndex);
+				glUniformBlockBinding(program, indexInShader, bindingIndex); 
 				int err=glGetError();
 				if(err)
 				{

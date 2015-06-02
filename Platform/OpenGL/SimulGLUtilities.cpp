@@ -88,7 +88,7 @@ void simul::opengl::RenderTexture(int x,int y,int w,int h)
 	GL_ERROR_CHECK		
 	int prog=0;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
-	glMatrixMode(GL_MODELVIEW);
+	
 	glLoadIdentity();
 
 	glBegin(GL_QUADS);
@@ -134,59 +134,6 @@ GL_ERROR_CHECK
 }
 
 static int win_h=0;
-void simul::opengl::SetOrthoProjection(int w,int h)
-{
-	GL_ERROR_CHECK
-	win_h=h;
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	GL_ERROR_CHECK
-	glOrtho(0,w,0,h,-1.0,1.0);
-	GL_ERROR_CHECK
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	GL_ERROR_CHECK
-	glViewport(0,0,w,h);
-	GL_ERROR_CHECK
-}
-
-void simul::opengl::Ortho()
-{
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0,1.0,0,1.0,-1.0,1.0);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-}
-
-void simul::opengl::SetTopDownOrthoProjection(int w,int h)
-{
-	GL_ERROR_CHECK
-	win_h=h;
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-	GL_ERROR_CHECK
-		glOrtho(0,w,h,0,-1.0,1.0);
-	GL_ERROR_CHECK
-		//glMatrixMode(GL_TEXTURE);
-	//	glLoadIdentity();
-	//GL_ERROR_CHECK
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-	GL_ERROR_CHECK
-		glViewport(0,0,w,h);
-	GL_ERROR_CHECK
-}
-
-void simul::opengl::SetPerspectiveProjection(int w,int h,float field_of_view)
-{
-	win_h=h;
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		gluPerspective(field_of_view,(float)w/(float)h,1.0,325000.0);
-	glViewport(0,0,w,h);
-}
-
 
 void simul::opengl::SetVSync(int vsync)
 {
@@ -298,9 +245,6 @@ bool simul::opengl::RenderAngledQuad(const float *dir,float half_angle_radians)
 	CalcCameraPosition(cam_pos,cam_dir);
 	float Yaw=atan2(dir[0],dir[1]);
 	float Pitch=asin(dir[2]);
-    glMatrixMode(GL_MODELVIEW);
-		GL_ERROR_CHECK
-    glPushMatrix();
 
 
 	simul::math::Matrix4x4 modelview;
@@ -344,15 +288,12 @@ bool simul::opengl::RenderAngledQuad(const float *dir,float half_angle_radians)
 	}
 	glEnd();
 #endif
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-		GL_ERROR_CHECK
 	return true;
 }
 
 void simul::opengl::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety,bool centred)
 {
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
@@ -375,42 +316,8 @@ void simul::opengl::PrintAt3dPos(const float *p,const char *text,const float* co
 #endif
 		s++;
 	}
-	glPopAttrib();
-}
-
-static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
-{
-	glGetFloatv(src,m);
-}
-
-void simul::opengl::FixGlProjectionMatrix(float required_distance)
-{
-	simul::math::Matrix4x4 proj;
-	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
-
-	float F=proj(3,2)/(1.f+proj(2,2));
-	float N=proj(3,2)/(proj(2,2)-1.f);
-	F=required_distance;
-	proj(2,2)=-(F+N)/(F-N);
-	proj(3,2)=-2.f*(N*F)/(F-N);
 	
-	// Make it a DirectX-style matrix with depth reversed.
-	proj(2,2)	=N/(F-N);
-	proj(3,2)	=F*N/(F-N);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf(proj.RowPointer(0));
 }
-
-void simul::opengl::OrthoMatrices()
-{
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0,1.0,0,1.0,-1.0,1.0);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-}
-
 
 void simul::opengl::setParameter(GLuint program,const char *name,float value)
 {
@@ -626,16 +533,26 @@ void simul::opengl::CheckGLError(const char *filename,int line_number,int err)
 {
 	if(err)
 	{
-		std::cerr<<filename<<" ("<<line_number<<"): ";
-		const char *c=(const char*)gluErrorString(err);
-		if(c)
-			std::cerr<<std::endl<<c<<std::endl;
-		const char *d=(const char*)glewGetErrorString(err);
-		if(d)
-			std::cerr<<std::endl<<d<<std::endl;
-		if(!c&&!d)
-			std::cerr<<std::endl<<"unknown error: "<<err<<std::endl;
+		std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"gl error ";
+		while(err!=GL_NO_ERROR)
+		{
+			const char *error=NULL;
+			switch(err)
+			{
+				case GL_INVALID_OPERATION:      error="INVALID_OPERATION";      break;
+				case GL_INVALID_ENUM:           error="INVALID_ENUM";           break;
+				case GL_INVALID_VALUE:          error="INVALID_VALUE";          break;
+				case GL_OUT_OF_MEMORY:          error="OUT_OF_MEMORY";          break;
+				case GL_INVALID_FRAMEBUFFER_OPERATION:  error="INVALID_FRAMEBUFFER_OPERATION";  break;
+				default:
+				error="UNKNOWN";
+				break;
+			}
+			if(error)
+				std::cerr <<" "<<err<<" GL_" << error;
+			err=glGetError();
+        }
+		std::cerr<<std::endl;
 		BREAK_IF_DEBUGGING;
-		
 	}
 }

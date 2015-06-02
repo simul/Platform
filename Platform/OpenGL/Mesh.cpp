@@ -103,18 +103,18 @@ void Mesh::UpdateVertexPositions(int lVertexCount, float *lVertices) const
 
 void Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::ShadingMode pShadingMode) const
 {
-	glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+	
+    
 	//if(mat)
 //		glMultMatrixd((const double*)mat);
 	// set this matrix in UBO 0:
 
     // Push OpenGL attributes.
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
-    glPushAttrib(GL_ENABLE_BIT);
-    glPushAttrib(GL_CURRENT_BIT);
-    glPushAttrib(GL_LIGHTING_BIT);
-    glPushAttrib(GL_TEXTURE_BIT);
+    
+    
+    
+    
 	
 	GL_ERROR_CHECK
     // Set vertex position array.
@@ -228,14 +228,14 @@ void Mesh::EndDraw(crossplatform::DeviceContext &) const
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // Pop OpenGL attributes.
-    glPopAttrib();
-    glPopAttrib();
-    glPopAttrib();
-    glPopAttrib();
+    
+    
+    
+    
     glPopClientAttrib();
 	
-	glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
+	
+    
 }
 void Mesh::GetVertices(void *target,void *)
 {

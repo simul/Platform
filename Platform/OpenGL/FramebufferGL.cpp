@@ -299,12 +299,7 @@ void FramebufferGL::DeactivateDepth(crossplatform::DeviceContext &)
 void FramebufferGL::Render(void *,bool blend)
 {
 GL_ERROR_CHECK
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	Ortho();
+	
   
     glActiveTexture(GL_TEXTURE0);
     Bind();
@@ -321,11 +316,7 @@ GL_ERROR_CHECK
 	glDepthMask(GL_FALSE);
 GL_ERROR_CHECK
 	::DrawQuad(0,0,1,1);
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glPopAttrib();
+	
 GL_ERROR_CHECK
 	Release();
 }

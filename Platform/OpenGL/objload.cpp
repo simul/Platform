@@ -353,8 +353,8 @@ void VertexBuffer::gl() const
 {
 	if(m_pTransform)
 	{
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
+		
+		
 		glMultMatrixf(m_pTransform);
 	}
 	// enable vertices
@@ -397,8 +397,8 @@ void VertexBuffer::gl() const
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	if(m_pTransform)
 	{
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
+		
+		
 	}
 }
 

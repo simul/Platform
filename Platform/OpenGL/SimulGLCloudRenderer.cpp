@@ -158,7 +158,7 @@ GL_ERROR_CHECK
 	SetCloudPerViewConstants(cloudPerViewConstants,deviceContext.viewStruct,exposure,viewportTextureRegionXYWH,mixedResTransformXYWH,sv->worldToVolumeMatrix);
 	cloudPerViewConstants.exposure=exposure;
 
-	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
+	//FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
 
 	float left	=deviceContext.viewStruct.proj(0,0)+deviceContext.viewStruct.proj(0,3);
 	float right	=deviceContext.viewStruct.proj(0,0)-deviceContext.viewStruct.proj(0,3);
@@ -214,7 +214,7 @@ GL_ERROR_CHECK
 	effect->Unapply(deviceContext);
 	
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
-	//glPopAttrib();
+	//
 GL_ERROR_CHECK
 	return true;
 }
