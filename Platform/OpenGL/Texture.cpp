@@ -237,7 +237,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 	{
 		glBindTexture(GL_TEXTURE_3D,pTextureObject);
 		GL_ERROR_CHECK
-		if(texel_index==0&&num_texels==width*length)
+		if(texel_index==0&&num_texels==width*length*depth)
 			glTexImage3D(GL_TEXTURE_3D,0,frmt,width,length,depth,0,ext_frmt,dt,src);
 		GL_ERROR_CHECK
 		glBindTexture(GL_TEXTURE_3D,0);

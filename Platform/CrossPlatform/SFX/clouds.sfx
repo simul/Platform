@@ -314,10 +314,10 @@ FarNearDepthPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDept
 									,cloudIrRadiance2
 									);
 	FarNearDepthPixelOutput fn;
-	fn.farColour=f.colour;
-	fn.nearColour = f.nearColour;
+	fn.farColour	=f.colour;
+	fn.nearColour	=f.nearColour;
 	//fn.nearColour	=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,0);
-	fn.nearFarDepth = f.nearFarDepth;
+	fn.nearFarDepth	=f.nearFarDepth;
 	return fn;
 }
 

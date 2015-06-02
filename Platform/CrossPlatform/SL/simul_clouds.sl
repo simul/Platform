@@ -2,9 +2,7 @@
 #ifndef CLOUDS_SL
 #define CLOUDS_SL
 
-#ifndef GLSL
 SamplerState cloudSamplerState: register( s0);
-#endif
 
 #define MIN_SUN_ELEV (0.2)
 
@@ -260,7 +258,7 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 	//vec4 light			=sampleLod(cloudDensity,cloudSamplerState,texCoords,0);
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
-	vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,pos,0);
+	vec4 density		=cloudDensity.SampleLevel(cloudSamplerState,pos,0);
 	//density.xyw			=light.xyw;
 		//	density.xy*=.5*(1+density.z);
 	density.z			*=layerFade;//*(1.0-noiseval.w);
@@ -614,7 +612,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	// y starts at 0, so gets the furthest value.
 	vec4 nearFarDepth				= vec4(1.0, 0.0, 0.0, 0.0);
 	int3 b							=abs(c-C0*2);
-	for(int i=0;i<8;i++)
+	for(int j=0;j<8;j++)
 	{
 		if(max(max(b.x,b.y),0)>=W)
 		{
