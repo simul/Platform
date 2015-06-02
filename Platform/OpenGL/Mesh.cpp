@@ -110,7 +110,7 @@ void Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::ShadingMode p
 	// set this matrix in UBO 0:
 
     // Push OpenGL attributes.
-    glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
+    
     
     
     
@@ -152,21 +152,21 @@ void Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::ShadingMode p
 
     if (pShadingMode == crossplatform::SHADING_MODE_SHADED)
     {
-        glEnable(GL_LIGHTING);
+       // glEnable(GL_LIGHTING);
         
-        glDisable(GL_NORMALIZE);
-		glEnable(GL_LIGHT0);
+      //  glDisable(GL_NORMALIZE);
+		/*glEnable(GL_LIGHT0);
 		glDisable(GL_LIGHT1);
 		glDisable(GL_LIGHT2);
 		glDisable(GL_LIGHT3);
 		glDisable(GL_LIGHT4);
 		glDisable(GL_LIGHT5);
 		glDisable(GL_LIGHT6);
-		glDisable(GL_LIGHT7);
+		glDisable(GL_LIGHT7);*/
 		float unity4[]={1.0f,1.0f,1.0f,1.0f};
-		glLightfv(GL_LIGHT0,GL_AMBIENT	,unity4);
-		glLightfv(GL_LIGHT0,GL_DIFFUSE	,unity4);
-		glLightfv(GL_LIGHT0,GL_SPECULAR	,unity4);
+		//glLightfv(GL_LIGHT0,GL_AMBIENT	,unity4);
+		//glLightfv(GL_LIGHT0,GL_DIFFUSE	,unity4);
+		//glLightfv(GL_LIGHT0,GL_SPECULAR	,unity4);
     }
     else
     {
@@ -232,7 +232,7 @@ void Mesh::EndDraw(crossplatform::DeviceContext &) const
     
     
     
-    glPopClientAttrib();
+    
 	
 	
     
