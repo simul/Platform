@@ -169,8 +169,8 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 		SIMUL_ASSERT(status!=GL_FRAMEBUFFER_COMPLETE,"Bad framebuffer status ");
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
-GL_ERROR_CHECK
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+GL_ERROR_CHECK*/
 	return true;
 }
 
@@ -199,15 +199,28 @@ void FramebufferGL::Activate(crossplatform::DeviceContext &deviceContext)
 	fb_stack.push(m_fb);
 	SIMUL_ASSERT(activate_count==0);
 	activate_count++;
-	//(!fliptarget)
+	if(m_fb!=0&&depth_format!=crossplatform::UNKNOWN)
 	{
-	///	fliptarget=true;
-		//deviceContext.viewStruct.proj.m11*=-1.f;
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,buffer_depth_texture->AsGLuint(),0);
+GL_ERROR_CHECK
+		CheckFramebufferStatus();
+GL_ERROR_CHECK
 	}
 }
 
 void FramebufferGL::ActivateDepth(crossplatform::DeviceContext &)
 {
+	if(m_fb!=0&&depth_format!=crossplatform::UNKNOWN)
+	{
+	   glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
+GL_ERROR_CHECK
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,buffer_depth_texture->AsGLuint(),0);
+GL_ERROR_CHECK
+		CheckFramebufferStatus();
+GL_ERROR_CHECK
+		glBindFramebuffer(GL_FRAMEBUFFER, 0); 
+GL_ERROR_CHECK
+	}
 }
 
 void FramebufferGL::ActivateColour(crossplatform::DeviceContext &,const float /*viewportXYWH*/[4])
@@ -293,7 +306,17 @@ void FramebufferGL::DeactivateAndRender(crossplatform::DeviceContext &d,bool ble
 
 void FramebufferGL::DeactivateDepth(crossplatform::DeviceContext &)
 {
-  //  glBindFramebuffer(GL_FRAMEBUFFER,m_noDepthFb);
+	if(m_fb!=0&&depth_format!=crossplatform::UNKNOWN)
+	{
+	   glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
+GL_ERROR_CHECK
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
+GL_ERROR_CHECK
+		CheckFramebufferStatus();
+GL_ERROR_CHECK
+		glBindFramebuffer(GL_FRAMEBUFFER, 0); 
+GL_ERROR_CHECK
+	}
 }
 
 void FramebufferGL::Render(void *,bool blend)

@@ -897,6 +897,8 @@ void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceCon
 	last_context->OMSetRenderTargets(num_rt,renderTargetViews,NULL);
 	{
 		ID3D11Texture2D* ppd(NULL);
+		if(!texture)
+			return;
 		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)
 			return;
 		D3D11_TEXTURE2D_DESC textureDesc;
