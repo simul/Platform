@@ -882,8 +882,8 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 	}
 	GL_ERROR_CHECK
 	fb_stack.push_back(m_fb);
-	GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	glDrawBuffers(2, buffers);
+	GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(num, buffers);
 	GL_ERROR_CHECK
 }
 

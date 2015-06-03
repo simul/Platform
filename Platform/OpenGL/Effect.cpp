@@ -621,7 +621,8 @@ void Effect::SetSamplerState(crossplatform::DeviceContext &,const char *name,cro
 	if(s)
 		sampler_state=s->asGLuint();
 	GL_ERROR_CHECK
-	int texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
+		glfxSetEffectSamplerState((GLuint)platform_effect, name, s->asGLuint());
+	/*int texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
 	// There are two possibilities - we are either within an "apply" state, or not.
 	if(apply_count)
 		glBindSampler(texture_number, sampler_state);
@@ -632,7 +633,7 @@ void Effect::SetSamplerState(crossplatform::DeviceContext &,const char *name,cro
 		map<GLuint,GLuint>::iterator i=prepared_sampler_states.find(texture_number);
 		if(i!=prepared_sampler_states.end())
 			prepared_sampler_states.erase(i);
-	}
+	}*/
 	// If we're in an "apply" state, we can remember to unbind the sampler at the corresponding "unapply"
 	// But if we're not, can we be SURE that we'll hit the unapply? We might then have a stray sampler state left behind.
 	// So instead of binding the sampler now, we store the information and wait for "apply".
@@ -729,8 +730,8 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 		GL_ERROR_CHECK
 		glfxApply((GLuint)platform_effect,current_prog);
 		GL_ERROR_CHECK
-		for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
-			glBindSampler(i->first,i->second);
+		//for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
+		//	glBindSampler(i->first,i->second);
 		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
 			glEffectTechnique->passStates[currentPass]->Apply();
@@ -769,8 +770,8 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 		glfxApply((GLuint)platform_effect,prog);
 		glfxApplyPassState((GLuint)platform_effect,prog);
 		GL_ERROR_CHECK
-		for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
-			glBindSampler(i->first,i->second);
+		//for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
+		//	glBindSampler(i->first,i->second);
 		current_prog	=prog;
 		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
@@ -800,8 +801,8 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 	currentTechnique=NULL;
 	deviceContext.activeTechnique=currentTechnique;
 	apply_count--;
-	for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
-		glBindSampler(i->first,0);
+	//for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
+	//	glBindSampler(i->first,0);
 GL_ERROR_CHECK
 }
 

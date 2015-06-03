@@ -22,7 +22,7 @@
 #define sample(tex,sampler,texc) tex.Sample(sampler,texc)
 #define sampleLod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 #define sample_lod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
-#define texture(tex,texc) tex.Sample(samplerState,texc)
+#define texture(tex,texc) tex.Sample(wrapSamplerState,texc)
 #define texture2D(tex,texc) tex.Sample(samplerState,texc)
 #define texture_wrap(tex,texc) tex.Sample(wrapSamplerState,texc)
 #define texture_wrap_lod(tex,texc,lod) tex.SampleLevel(wrapSamplerState,texc,lod)
@@ -38,7 +38,6 @@
 #define texture_nearest(tex,texc) tex.Sample(samplerStateNearest,texc)
 #define texture3Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
 #define texture2Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
-#define texture(tex,texc) tex.Sample(samplerState,texc)
 
 #define texture_clamp_mirror_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,texc,lod)
 

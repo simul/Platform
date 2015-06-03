@@ -128,12 +128,11 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	{
 		char argv[]="no program";
 		char *a=argv;
-		int argc=1;
-		//glutInitContextFlags(GLUT_DEBUG|GLUT_FORWARD_COMPATIBLE);
-	    glutInit(&argc,&a);
+		int argc = 1;
 		glutInitContextVersion(4, 2);
 		glutInitContextProfile(GLUT_CORE_PROFILE);
-		glutInitContextFlags(GLUT_DEBUG|GLUT_FORWARD_COMPATIBLE);
+		glutInitContextFlags(GLUT_DEBUG | GLUT_FORWARD_COMPATIBLE);
+	    glutInit(&argc,&a);
 		glut_initialized=true;
 	//	GLint n;
 	//	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
@@ -197,6 +196,27 @@ void OpenGLRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 			std::cerr << "Error initializing GLEW! " << glewGetErrorString(glewError) << "\n";
 			return;
 		}
+		if(glewIsSupported("GL_ARB_debug_output"))
+		{
+			cout << "Register OpenGL debug callback " << endl;
+			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+			glDebugMessageCallback(openglCallbackFunction, nullptr);
+				GLuint unusedIds = 0;
+				glDebugMessageControl(GL_DONT_CARE,
+				GL_DONT_CARE,
+				GL_DONT_CARE,
+				0,
+				&unusedIds,
+				GL_TRUE);
+			glDebugMessageInsert(	GL_DEBUG_SOURCE_APPLICATION ,
+				GL_DEBUG_TYPE_ERROR,
+				1,
+				GL_DEBUG_SEVERITY_HIGH ,
+				-1,
+				"Testing gl callback output");
+		}
+		else
+			cout << "glDebugMessageCallback not available" << endl;
 	}
 ERRNO_CHECK
     //Make sure OpenGL 2.1 is supported
@@ -210,28 +230,6 @@ GL_ERROR_CHECK
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
 	}
-/*	if(glewIsSupported("GL_ARB_debug_output"))
-	{
-        cout << "Register OpenGL debug callback " << endl;
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-        glDebugMessageCallback(openglCallbackFunction, nullptr);
-        GLuint unusedIds = 0;
-        glDebugMessageControl(GL_DONT_CARE,
-            GL_DONT_CARE,
-            GL_DONT_CARE,
-            0,
-            &unusedIds,
-            GL_TRUE);
-		GL_ERROR_CHECK
-		glDebugMessageInsert(	GL_DEBUG_SOURCE_APPLICATION ,
- 								GL_DEBUG_TYPE_ERROR,
- 								1,
- 								GL_DEBUG_SEVERITY_HIGH ,
- 								-1,
- 								"Testing gl callback output");
-    }
-    else
-        cout << "glDebugMessageCallback not available" << endl;*/
 ERRNO_CHECK
 	CheckExtension("GL_VERSION_2_0");
 GL_ERROR_CHECK

@@ -92,7 +92,8 @@ void SimulGLWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 void SimulGLWeatherRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	BaseWeatherRenderer::RestoreDeviceObjects(r);
-ERRNO_CHECK
+	ERRNO_CHECK
+		glewExperimental = GL_TRUE;
 	glewInit();
 ERRNO_CHECK
 	if(!CheckExtension("GL_VERSION_2_0"))

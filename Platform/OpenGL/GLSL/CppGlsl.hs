@@ -74,11 +74,11 @@
 
 	#define texture_clamp_mirror_nearest_lod(tex,texc,lod) textureLod(tex,_Y(texc),lod)
 
-	#define texture_3d_cmc(tex,texc) texture(tex,_Y3(texc))
+	#define texture_3d_cmc(tex,texc) tex.Sample(cmcSamplerState,texc)
 	#define texture_3d_nearest(tex,texc) texture(tex,_Y3(texc)) 
 	#define sample_3d(tex,sampler,texc) texture(tex,_Y3(texc)) 
 	#define texture_3d_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,_Y3(texc),lod)
-	#define texture_3d_clamp_lod(tex,texc,lod) textureLod(tex,_Y3(texc),lod)  
+	#define texture_3d_clamp_lod(tex,texc,lod) tex.SampleLevel(clampSamplerState,_Y3(texc),lod) 
 	#define texture_3d_wrap_lod(tex,texc,lod) tex.SampleLevel(wrapSamplerState,_Y3(texc),lod)
 	#define texture_3d_clamp(tex,texc) texture(tex,_Y3(texc)) 
 	#define texture_3d_wwc_lod(tex,texc,lod) textureLod(tex,_Y3(texc),lod)
