@@ -64,9 +64,11 @@ void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform
 	if(dot_pos>=0&&dot_pos<(int)filename.length())
 		extension		=filename.substr(dot_pos+1,filename.length()-dot_pos-1);
 	GL_ERROR_CHECK
-	pTextureObject		=LoadGLImage(pFilePathUtf8,pathsUtf8,GL_REPEAT,&width,&length);
+		GLint internal_format=GL_RGBA;
+	pTextureObject		=LoadGLImage(pFilePathUtf8,pathsUtf8,GL_REPEAT,&width,&length,&internal_format);
+	pixelFormat			=opengl::RenderPlatform::FromGLFormat(internal_format);
 	GL_ERROR_CHECK
-	return ;
+
 }
 
 void Texture::LoadTextureArray(crossplatform::RenderPlatform *renderPlatform,const std::vector<std::string> &texture_files)
@@ -102,16 +104,23 @@ ERRNO_CHECK
 	depth=texture_files.size();
 	int num_mips=8;
 	int m=1;
-	for(int i=0;i<num_mips;i++)
-	{
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, i,GL_RGBA	,width/m,length/m,depth,0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexStorage3D(	GL_TEXTURE_2D_ARRAY
+ 					,num_mips
+ 					,GL_RGBA8
+ 					,width
+ 					,length
+					,depth);
 	GL_ERROR_CHECK
-		if(i==0)
+	//for(int i=0;i<num_mips;i++)
+	{
+		//glTexSubImage3D(GL_TEXTURE_2D_ARRAY, i,0,0,0,width/m,length/m,depth,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	GL_ERROR_CHECK
+	//	if(i==0)
 		{
 			for(int j=0;j<depth;j++)
 			{
 				unsigned char *data=LoadGLBitmap(texture_files[j].c_str(),texturePathsUtf8,bpp,width,length);
-				glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,j,width/m,length/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,data);
+				glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,0,0,0,j,width/m,length/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,data);
 			}
 		}
 	GL_ERROR_CHECK
@@ -146,7 +155,15 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,pTextureObject);
 GL_ERROR_CHECK
-	glTexImage2D(GL_TEXTURE_2D,0,internal_format,w,l,0,RenderPlatform::ToGLExternalFormat(pixelFormat),RenderPlatform::DataType(pixelFormat),NULL);
+	glTexStorage2D(	GL_TEXTURE_2D,
+ 					1,
+ 					internal_format,
+ 					w,
+ 					l);
+GL_ERROR_CHECK
+	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w,l, internal_format, RenderPlatform::ToGLExternalFormat(pixelFormat), NULL);
+	//glTexImage2D(GL_TEXTURE_2D,0,internal_format,w,l,0,RenderPlatform::ToGLExternalFormat(pixelFormat),RenderPlatform::DataType(pixelFormat),NULL);
+glGenerateMipmap(GL_TEXTURE_2D); 
 GL_ERROR_CHECK
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
@@ -200,10 +217,18 @@ void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *ren
 	length=l;
 	dim=2;
 	glGenTextures(1,&pTextureObject);
-	glBindTexture(GL_TEXTURE_2D,pTextureObject);
+	glBindTexture(GL_TEXTURE_2D_ARRAY,pTextureObject);
 	int m=1;
 	
-	for(int i=0;i<1;i++)//num_mips
+	glTexStorage3D(	GL_TEXTURE_2D_ARRAY,
+ 					1,
+ 					internal_format,
+ 					w,
+ 					l
+					,num_layers);
+	glGenerateMipmap(GL_TEXTURE_2D_ARRAY); 
+	glBindTexture(GL_TEXTURE_2D_ARRAY,0);
+/*	for(int i=0;i<1;i++)//num_mips
 	{
 		glTexImage3D(GL_TEXTURE_2D_ARRAY, i,internal_format	,width/m,length/m,num_layers,0,layout, datatype, NULL);
 	GL_ERROR_CHECK
@@ -215,7 +240,7 @@ void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *ren
 		}
 	GL_ERROR_CHECK
 		m*=2;
-	}
+	}*/
 }
 
 void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)
@@ -229,7 +254,9 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		glBindTexture(GL_TEXTURE_2D,pTextureObject);
 		GL_ERROR_CHECK
 		if(texel_index==0&&num_texels==width*length)
-			glTexImage2D(GL_TEXTURE_2D,0,frmt,width,length,0,ext_frmt,dt,src);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width,length, ext_frmt, dt, src);
+//	glTexImage2D(GL_TEXTURE_2D,0,frmt,width,length,0,ext_frmt,dt,src);
+	glGenerateMipmap(GL_TEXTURE_2D); 
 		GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,0);
 	}
@@ -238,7 +265,8 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		glBindTexture(GL_TEXTURE_3D,pTextureObject);
 		GL_ERROR_CHECK
 		if(texel_index==0&&num_texels==width*length*depth)
-			glTexImage3D(GL_TEXTURE_3D,0,frmt,width,length,depth,0,ext_frmt,dt,src);
+			glTexSubImage3D(GL_TEXTURE_3D,0,0,0,0,width,length,depth,ext_frmt,dt,src);
+	glGenerateMipmap(GL_TEXTURE_3D); 
 		GL_ERROR_CHECK
 		glBindTexture(GL_TEXTURE_3D,0);
 	}
@@ -395,7 +423,7 @@ void simul::opengl::Texture::setTexels(void *,const void *src,int x,int y,int z,
 						src);
 }
 
-void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pf,bool /*computable*/,int mips,bool rendertargets)
+void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pf,bool /*computable*/,int m,bool rendertargets)
 {
 	GL_ERROR_CHECK
 	pixelFormat=pf;
@@ -441,7 +469,13 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 		default:
 			break;
 		};
-		glTexImage3D(GL_TEXTURE_3D,0,(GLint)frmt,w,l,d,0,number_format,number_type,0);
+	glTexStorage3D(	GL_TEXTURE_3D
+ 					,m
+ 					,frmt
+ 					,w
+ 					,l
+					,d);
+		//glTexImage3D(GL_TEXTURE_3D,0,(GLint)frmt,w,l,d,0,number_format,number_type,0);
 	GL_ERROR_CHECK
 	//	glTexImage3D(GL_TEXTURE_3D,0,GL_LUMINANCE32F_ARB:GL_RGBA32F_ARB,w,l,d,0,GL_LUMINANCE:GL_RGBA,GL_FLOAT,src);
 		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -464,6 +498,7 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 			SIMUL_BREAK("Framebuffer incomplete for rendertarget texture");
 		}
 	}
+	mips=m;
 	GL_ERROR_CHECK
 }
 

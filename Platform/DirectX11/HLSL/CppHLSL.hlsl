@@ -23,7 +23,7 @@
 #define sampleLod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 #define sample_lod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 #define texture(tex,texc) tex.Sample(wrapSamplerState,texc)
-#define texture2D(tex,texc) tex.Sample(samplerState,texc)
+#define texture2D(tex,texc) tex.Sample(wrapSamplerState,texc)
 #define texture_wrap(tex,texc) tex.Sample(wrapSamplerState,texc)
 #define texture_wrap_lod(tex,texc,lod) tex.SampleLevel(wrapSamplerState,texc,lod)
 #define texture_clamp_lod(tex,texc,lod) tex.SampleLevel(clampSamplerState,texc,lod)

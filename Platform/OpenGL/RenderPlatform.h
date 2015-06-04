@@ -96,6 +96,7 @@ namespace simul
 			bool reverseDepth;
 			// OpenGL-specific stuff:
 			static GLuint ToGLFormat(crossplatform::PixelFormat p);
+			static crossplatform::PixelFormat RenderPlatform::FromGLFormat(GLuint p);
 			static GLuint ToGLExternalFormat(crossplatform::PixelFormat p);
 			static GLenum DataType(crossplatform::PixelFormat p);
 			static int FormatCount(crossplatform::PixelFormat p);

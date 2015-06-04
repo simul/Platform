@@ -91,7 +91,7 @@ ERRNO_CHECK
 }
 
 #include "Simul/Base/FileLoader.h"
-GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &texturePathsUtf8,unsigned wrap,int *w,int *h)
+GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &texturePathsUtf8,unsigned wrap,int *w,int *h,GLint *internal_format)
 {
 	GL_ERROR_CHECK
 	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
@@ -114,14 +114,26 @@ GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &tex
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap);
 	GL_ERROR_CHECK
+	*internal_format=GL_RGBA;
+	GLint external_format=GL_RGBA;
 	if(bpp==1||bpp==8)
-		glTexImage2D(GL_TEXTURE_2D,0, GL_RGB8,width,height,0,GL_LUMINANCE,GL_UNSIGNED_BYTE,pixels);
+	{
+		*internal_format=GL_RGB8;
+		external_format=GL_LUMINANCE;
+	}
 	else if(bpp==24)
-		glTexImage2D(GL_TEXTURE_2D,0, GL_RGB8,width,height,0,GL_BGR,GL_UNSIGNED_BYTE,pixels);
+	{
+		*internal_format=GL_RGB8;
+		external_format=GL_BGR;
+	}
 	else if(bpp==32)
-		glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
+	{
+		*internal_format=GL_RGBA8;
+		external_format=GL_RGBA;
+	}
 	else
 		SIMUL_CERR<<"Unkown bits-per-pixel value: "<<bpp<<std::endl;
+	glTexImage2D(GL_TEXTURE_2D,0,*internal_format,width,height,0,external_format,GL_UNSIGNED_BYTE,pixels);
 	if(w)
 		*w=width;
 	if(h)
