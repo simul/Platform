@@ -2,7 +2,7 @@
 #ifndef CLOUDS_SL
 #define CLOUDS_SL
 
-SamplerState cloudSamplerState: register( s0);
+SamplerState cloudSamplerState: register(s0);
 
 #define MIN_SUN_ELEV (0.2)
 

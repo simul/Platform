@@ -341,7 +341,7 @@ void Inscatter_All(		out vec4 colours[8]
 		
 		vec3 inscatter		=PrecalculatedInscatterFunction(di,BetaRayleigh,BetaMie,mieRayleighRatio);
 		total_inscatter		+=inscatter*il;
-		vec3 colour			=total_inscatter+skyl;
+		vec3 colour =  total_inscatter + skyl;
 		colours[i]			=vec4(colour,il);
 		prev_insc			=insc;
 	}

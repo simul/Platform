@@ -23,6 +23,10 @@ namespace simul
 		public:
 			RenderPlatform();
 			virtual ~RenderPlatform();
+			const char *GetName() const
+			{
+				return "OpenGL";
+			}
 			void RestoreDeviceObjects(void*) override;
 			void InvalidateDeviceObjects() override;
 			

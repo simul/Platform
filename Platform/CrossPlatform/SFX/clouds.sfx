@@ -317,7 +317,7 @@ FarNearDepthPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDept
 	fn.farColour	=f.colour;
 	fn.nearColour	=f.nearColour;
 	//fn.nearColour	=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,0);
-	fn.nearFarDepth	=f.nearFarDepth;
+	fn.nearFarDepth =  f.nearFarDepth;
 	return fn;
 }
 
@@ -396,7 +396,8 @@ shader vec4 PS_CrossSection(posTexVertexOutput IN):SV_TARGET
 BlendState Blend1
 {
 	BlendEnable[0]	=TRUE;
-	BlendEnable[1]	=FALSE;
+	BlendEnable[1] = FALSE;
+	BlendEnable[2] = FALSE;
 	SrcBlend		=ONE;
 	DestBlend		=SRC_ALPHA;
     BlendOp			=ADD;
@@ -408,7 +409,8 @@ BlendState Blend1
 BlendState AddBlend2
 {
 	BlendEnable[0]	=TRUE;
-	BlendEnable[1]	=TRUE;
+	BlendEnable[1] = TRUE;
+	BlendEnable[2] = FALSE;
 	SrcBlend		=ONE;
 	DestBlend		=ONE;
     BlendOp			=ADD;
