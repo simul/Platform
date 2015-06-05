@@ -893,28 +893,21 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &,int ,int nu
 	GL_ERROR_CHECK
 	glBindVertexArray(((opengl::Buffer*)buffers[0])->vao );
 	GL_ERROR_CHECK
-	/*
-	for(int i=0;i<num_buffers;i++)
-	{
-		crossplatform::Buffer *buffer=buffers[i];
-GL_ERROR_CHECK
-		GLuint buf=buffer->AsGLuint();
-		//GLint prog;
-		//glGetIntegerv(GL_CURRENT_PROGRAM,&prog);
-		glBindBuffer(GL_ARRAY_BUFFER,buf);
-	GL_ERROR_CHECK
-		glEnableVertexAttribArray(i);
-	GL_ERROR_CHECK
-		// We pass:
-		// 	GLuint index, 	GLint size, 	GLenum type, 	GLboolean normalized, 	GLsizei stride, 	const GLvoid * pointer
-		// size 
-		glVertexAttribPointer(i,buffer->stride,GL_FLOAT,false,0,0);
-	GL_ERROR_CHECK
-	}*/
 }
 
 void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplatform::Buffer *buffer,int start_index)
 {
+	if (buffer)
+	{
+		glEnable(GL_RASTERIZER_DISCARD);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, ((opengl::Buffer*)buffer)->vao);
+		glBeginTransformFeedback(GL_TRIANGLES);
+	}
+	else
+	{
+		glEndTransformFeedback();
+		glDisable(GL_RASTERIZER_DISCARD);
+	}
 }
 static GLuint m_fb=0;
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
