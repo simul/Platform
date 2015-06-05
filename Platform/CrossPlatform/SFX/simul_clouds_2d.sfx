@@ -1,7 +1,7 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #define USE_LIGHT_TABLES 1
 #include "shader_platform.sl"
-#include "../../CrossPlatform/SL/render_states.sl"
+#include "../SL/render_states.sl"
 uniform sampler2D imageTexture;
 uniform sampler2D noiseTexture;
 uniform sampler2D coverageTexture;
@@ -19,16 +19,16 @@ SamplerState samplerState
 	AddressV = Wrap;
 };
 
-#include "../../CrossPlatform/SL/simul_2d_clouds.hs"
+#include "../SL/simul_2d_clouds.hs"
 
-#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
-#include "../../CrossPlatform/SL/earth_shadow.sl"
-#include "../../CrossPlatform/SL/earth_shadow_fade.sl"
+#include "../SL/simul_inscatter_fns.sl"
+#include "../SL/earth_shadow_uniforms.sl"
+#include "../SL/earth_shadow.sl"
+#include "../SL/earth_shadow_fade.sl"
 
-#include "../../CrossPlatform/SL/simul_2d_clouds.sl"
-#include "../../CrossPlatform/SL/simul_2d_cloud_detail.sl"
-#include "../../CrossPlatform/SL/depth.sl"
+#include "../SL/simul_2d_clouds.sl"
+#include "../SL/simul_2d_cloud_detail.sl"
+#include "../SL/depth.sl"
 
 SIMUL_CONSTANT_BUFFER(CloudCrossSection2DConstants,13)
 uniform vec4 rect;

@@ -1,8 +1,8 @@
 // Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-#include "../../CrossPlatform/SL/render_states.sl"
-#include "../../CrossPlatform/SL/solid_constants.sl"
-#include "../../CrossPlatform/SL/depth.sl"
+#include "../SL/render_states.sl"
+#include "../SL/solid_constants.sl"
+#include "../SL/depth.sl"
 
 uniform Texture2D diffuseTexture;
 uniform TextureCube diffuseCubemap;

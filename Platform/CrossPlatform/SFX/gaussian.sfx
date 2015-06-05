@@ -5,7 +5,7 @@
 #pragma warning(disable:3557)
 #pragma warning(disable:3574)
 #include "shader_platform.sl"
-#include "../../CrossPlatform/SL/image_constants.sl"
+#include "../SL/image_constants.sl"
 
 //-----------------------------------------------------------------------------
 // Macros and constant values

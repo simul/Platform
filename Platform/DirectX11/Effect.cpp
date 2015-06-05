@@ -236,6 +236,10 @@ void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceC
 	if(lastContext&&mapped.pData)
 		lastContext->Unmap(buffer,0);
 	mapped.pData=NULL;
+	if (!effect->asD3DX11Effect())
+		return;
+	if (!effect->asD3DX11Effect()->GetVariableByName(name))
+		return;
 	ID3DX11EffectUnorderedAccessViewVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsUnorderedAccessView();
 	if(!var->IsValid())
 	{

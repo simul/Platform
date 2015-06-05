@@ -1,14 +1,14 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-#include "../../CrossPlatform/SL/common.sl"
-#include "../../CrossPlatform/SL/render_states.sl"
-#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/SL/simul_cloud_constants.sl"
-#include "../../CrossPlatform/SL/depth.sl"
-#include "../../CrossPlatform/SL/simul_clouds.sl"
-#include "../../CrossPlatform/SL/states.sl"
-#include "../../CrossPlatform/SL/earth_shadow_fade.sl"
-#include "../../CrossPlatform/SL/debug_constants.sl"
+#include "../SL/common.sl"
+#include "../SL/render_states.sl"
+#include "../SL/simul_inscatter_fns.sl"
+#include "../SL/simul_cloud_constants.sl"
+#include "../SL/depth.sl"
+#include "../SL/simul_clouds.sl"
+#include "../SL/states.sl"
+#include "../SL/earth_shadow_fade.sl"
+#include "../SL/debug_constants.sl"
 
 uniform Texture3D cloudDensity1					SIMUL_TEXTURE_REGISTER(0);
 uniform Texture3D cloudDensity2					SIMUL_TEXTURE_REGISTER(1);

@@ -1,12 +1,12 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-#include "../../CrossPlatform/SL/render_states.sl"
-#include "../../CrossPlatform/SL/depth.sl"
-#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/SL/cloud_shadow.sl"
-#include "../../CrossPlatform/SL/atmospherics.sl"
-#include "../../CrossPlatform/SL/atmospherics_constants.sl"
-#include "../../CrossPlatform/SL/colour_packing.sl"
+#include "../SL/render_states.sl"
+#include "../SL/depth.sl"
+#include "../SL/simul_inscatter_fns.sl"
+#include "../SL/cloud_shadow.sl"
+#include "../SL/atmospherics.sl"
+#include "../SL/atmospherics_constants.sl"
+#include "../SL/colour_packing.sl"
 
 uniform Texture2D depthTexture;
 uniform TEXTURE2DMS_FLOAT4 depthTextureMS;
@@ -27,8 +27,8 @@ uniform Texture2D moistureTexture;
 
 uniform RWTexture3D<vec4> targetVolume;
 
-#include "../../CrossPlatform/SL/cloud_shadow.sl"
-#include "../../CrossPlatform/SL/godrays.sl"
+#include "../SL/cloud_shadow.sl"
+#include "../SL/godrays.sl"
 
 #define pi (3.1415926536)
 

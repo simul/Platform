@@ -700,7 +700,8 @@ static const DWORD default_effect_flags=0;
 #ifdef DXTRACE_ERR
         hr=DXTRACE_ERR( L"CreateEffect", hr );
 #endif
-		BREAK_IF_DEBUGGING;
+		if((shaderBuildMode&crossplatform::BREAK_ON_FAIL) == crossplatform::BREAK_ON_FAIL)
+			BREAK_IF_DEBUGGING;
 		if(!IsDebuggerPresent()||(shaderBuildMode&crossplatform::TRY_AGAIN_ON_FAIL)!=crossplatform::TRY_AGAIN_ON_FAIL)
 			break;
  	}

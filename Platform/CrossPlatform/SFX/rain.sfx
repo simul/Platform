@@ -1,18 +1,18 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-#include "../../CrossPlatform/SL/common.sl"
+#include "../SL/common.sl"
 #ifndef GLFX
-#include "../../CrossPlatform/SL/render_states.sl"
+#include "../SL/render_states.sl"
 float particleZoneSize=15.0;	// = 625 m^3
 // Brittanica.com: http://www.britannica.com/EBchecked/topic/489827/rain#ref259264
 // Concentrations of raindrops typically range from 100 to 1,000 per cubic m (3 to 30 per cubic foot);
 // drizzle droplets usually are more numerous. 
 
-#include "../../CrossPlatform/SL/rain_constants.sl"
-#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/SL/depth.sl"
-#include "../../CrossPlatform/SL/noise.sl"
-#include "../../CrossPlatform/SL/rain.sl"
+#include "../SL/rain_constants.sl"
+#include "../SL/simul_inscatter_fns.sl"
+#include "../SL/depth.sl"
+#include "../SL/noise.sl"
+#include "../SL/rain.sl"
 
 texture3D randomTexture3D;
 texture2D rainMapTexture;

@@ -1,10 +1,10 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-#include "../../CrossPlatform/SL/common.sl"
-#include "../../CrossPlatform/SL/render_states.sl"
-#include "../../CrossPlatform/SL/states.sl"
-#include "../../CrossPlatform/SL/ocean_constants.sl"
-#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../SL/common.sl"
+#include "../SL/render_states.sl"
+#include "../SL/states.sl"
+#include "../SL/ocean_constants.sl"
+#include "../SL/simul_inscatter_fns.sl"
 
 #define PATCH_BLEND_BEGIN		80
 #define PATCH_BLEND_END			2000

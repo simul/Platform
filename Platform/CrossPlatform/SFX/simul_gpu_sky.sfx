@@ -11,10 +11,10 @@ uniform sampler2D optical_depth_texture SIMUL_TEXTURE_REGISTER(6);
 uniform sampler2D blackbody_texture SIMUL_TEXTURE_REGISTER(7);
 uniform RWTexture3D<vec4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
 
-#include "../../CrossPlatform/SL/states.sl"
-#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/SL/gpu_sky_constants.sl"
-#include "../../CrossPlatform/SL/simul_gpu_sky.sl"
+#include "../SL/states.sl"
+#include "../SL/simul_inscatter_fns.sl"
+#include "../SL/gpu_sky_constants.sl"
+#include "../SL/simul_gpu_sky.sl"
 
 struct vertexInput
 {

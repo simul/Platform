@@ -1,11 +1,11 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-#include "../../CrossPlatform/SL/common.sl"
-#include "../../CrossPlatform/SL/render_states.sl"
-#include "../../CrossPlatform/SL/spherical_harmonics_constants.sl"
-#include "../../CrossPlatform/SL/noise.sl"
-#include "../../CrossPlatform/SL/spherical_harmonics.sl"
-#include "../../CrossPlatform/SL/light_probe_constants.sl"
+#include "../SL/common.sl"
+#include "../SL/render_states.sl"
+#include "../SL/spherical_harmonics_constants.sl"
+#include "../SL/noise.sl"
+#include "../SL/spherical_harmonics.sl"
+#include "../SL/light_probe_constants.sl"
 
 #ifndef pi
 #define pi (3.1415926536)

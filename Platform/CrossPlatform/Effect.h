@@ -48,7 +48,8 @@ namespace simul
 			NEVER_BUILD=0
 			,ALWAYS_BUILD=1
 			,BUILD_IF_CHANGED=2
-			,TRY_AGAIN_ON_FAIL=4
+			, TRY_AGAIN_ON_FAIL = 4
+			, BREAK_ON_FAIL = 8
 		};
 		inline ShaderBuildMode operator|(ShaderBuildMode a, ShaderBuildMode b)
 		{
@@ -57,6 +58,10 @@ namespace simul
 		inline ShaderBuildMode operator&(ShaderBuildMode a, ShaderBuildMode b)
 		{
 			return static_cast<ShaderBuildMode>(static_cast<int>(a) & static_cast<int>(b));
+		}
+		inline ShaderBuildMode operator~(ShaderBuildMode a)
+		{
+			return static_cast<ShaderBuildMode>(~static_cast<int>(a));
 		}
 		struct DeviceContext;
 		class RenderPlatform;

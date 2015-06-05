@@ -1,10 +1,10 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-#include "../../CrossPlatform/SL/common.sl"
-#include "../../CrossPlatform/SL/render_states.sl"
-#include "../../CrossPlatform/SL/depth.sl"
-#include "../../CrossPlatform/SL/colour_packing.sl"
-#include "../../CrossPlatform/SL/debug_constants.sl"
+#include "../SL/common.sl"
+#include "../SL/render_states.sl"
+#include "../SL/depth.sl"
+#include "../SL/colour_packing.sl"
+#include "../SL/debug_constants.sl"
 
 
 uniform sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);

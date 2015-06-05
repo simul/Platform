@@ -1,6 +1,6 @@
 // Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-#include "../../CrossPlatform/SL/common.sl"
+#include "../SL/common.sl"
 #define pi (3.1415926536f)
 
 uniform Texture2D backgroundTexture;
@@ -30,15 +30,15 @@ uniform Texture3D sourceTexture;
 uniform RWTexture2D<vec4> targetTexture;
 uniform Texture2D lightTable2DTexture;
 
-#include "../../CrossPlatform/SL/render_states.sl"
-#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
-#include "../../CrossPlatform/SL/earth_shadow.sl"
-#include "../../CrossPlatform/SL/sky_constants.sl"
-#include "../../CrossPlatform/SL/illumination.sl"
-#include "../../CrossPlatform/SL/sky.sl"
-#include "../../CrossPlatform/SL/depth.sl"
-#include "../../CrossPlatform/SL/debug_constants.sl"
+#include "../SL/render_states.sl"
+#include "../SL/simul_inscatter_fns.sl"
+#include "../SL/earth_shadow_uniforms.sl"
+#include "../SL/earth_shadow.sl"
+#include "../SL/sky_constants.sl"
+#include "../SL/illumination.sl"
+#include "../SL/sky.sl"
+#include "../SL/depth.sl"
+#include "../SL/debug_constants.sl"
 
 uniform RWStructuredBuffer<LightingQueryResult> lightingQueryResults;
 uniform StructuredBuffer<vec3> lightingQueryInputs;
