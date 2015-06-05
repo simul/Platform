@@ -36,7 +36,8 @@ namespace simul
 			void RenderWithOculusCorrection(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
 			void RenderGlowTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture);
-			void RenderDebug(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);
+			void RenderDebug(crossplatform::DeviceContext &deviceContext, int x0, int y0, int w, int h);
+			static void EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r);
 			void RecompileShaders();
 		protected:
 			crossplatform::RenderPlatform		*renderPlatform;

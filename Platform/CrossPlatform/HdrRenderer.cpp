@@ -105,6 +105,17 @@ template<typename t> t max3(t a,t b,t c)
 }
 	static int	threadsPerGroup = 128;
 
+
+void HdrRenderer::EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r)
+{
+	if (!r)
+		return;
+	std::vector<crossplatform::EffectDefineOptions> opts;
+	r->EnsureEffectIsBuilt("hdr", opts);
+	opts.push_back(crossplatform::CreateDefineOptions("SCAN_SMEM_SIZE", "1920"));
+	opts.push_back(crossplatform::CreateDefineOptions("THREADS_PER_GROUP", "128"));
+	r->EnsureEffectIsBuilt("gaussian", opts); 
+}
 void HdrRenderer::RecompileShaders()
 {
 	SAFE_DELETE(hdr_effect);

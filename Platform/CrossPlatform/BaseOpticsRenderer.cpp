@@ -62,6 +62,14 @@ void BaseOpticsRenderer::InvalidateDeviceObjects()
 	halo_textures.clear();
 }
 
+void BaseOpticsRenderer::EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r)
+{
+	if (!r)
+		return;
+	std::vector<crossplatform::EffectDefineOptions> opts;
+	r->EnsureEffectIsBuilt("optics", opts);
+}
+
 void BaseOpticsRenderer::RecompileShaders()
 {
 	if(!renderPlatform)

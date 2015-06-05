@@ -30,6 +30,7 @@ namespace simul
 			virtual ~BaseOpticsRenderer();
 			//! To be called when a rendering device has been initialized.
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
+			static void EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r);
 			virtual void RecompileShaders();
 			//! To be called when the rendering device is no longer valid.
 			virtual void InvalidateDeviceObjects();
