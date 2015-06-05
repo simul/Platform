@@ -44,8 +44,7 @@ void RenderPlatform::RestoreDeviceObjects(void *unused)
 void RenderPlatform::InvalidateDeviceObjects()
 {
 	// GL Insists on having a bound vertex array object, even if we're not using it in the vertex shader.
-	if (empty_vao)
-		glDeleteVertexArrays(1, &empty_vao);
+	glDeleteVertexArrays(1, &empty_vao);
 	empty_vao=0;
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	rescaleVertexShaderConstants.InvalidateDeviceObjects();

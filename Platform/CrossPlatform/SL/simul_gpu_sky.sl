@@ -90,11 +90,7 @@ float GetOpticalDepth(Texture2D density_texture,float max_altitude_km,float alt_
 	float b					=-2*Rh*cosine;
 	float c					=Rh*Rh-RH*RH;
 	float U					=max(0.0,b*b-4.0*c);
-	float dist				=0.5*(-b+sqrt(U));
-	float distance_to_edge	=-1.0;
-	// this is the distance to the atmosphere.
-	if(dist<distance_to_edge||distance_to_edge<0)
-		distance_to_edge	=dist;
+	float distance_to_edge	=0.5*(-b+sqrt(U));
 	int Steps				=16;
 	float step_				=distance_to_edge/float(Steps);
 	float d					=step_/2.0;
