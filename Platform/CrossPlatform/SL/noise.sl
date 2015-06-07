@@ -41,6 +41,7 @@ vec4 Noise(Texture2D noise_texture,vec2 texCoords,float persistence,int octaves)
     }
 	// divide by total to get the range -1,1.
 	result*=1.0/total;
+	//result.xyz=texCoords.xyy;
     return result;
 }
 

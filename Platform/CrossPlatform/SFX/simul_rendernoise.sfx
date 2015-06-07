@@ -3,6 +3,7 @@
 #include "../SL/states.sl"
 #include "../SL/noise.sl"
 #include "../SL/noise_constants.sl"
+#include "../SL/common.sl"
 
 uniform Texture2D noise_texture SIMUL_TEXTURE_REGISTER(0);
 uniform Texture3D random_texture_3d SIMUL_TEXTURE_REGISTER(1);
@@ -22,29 +23,7 @@ struct a2v
     vec2 texCoords  : TEXCOORD0;
 };
 
-struct v2f
-{
-    vec4 hPosition  : SV_POSITION;
-    vec2 texCoords  : TEXCOORD0;
-};
-
-shader v2f MainVS(idOnly IN)
-{
-    v2f OUT;
-	vec2 poss[4]=
-	{
-		{ 1.0,-1.0},
-		{ 1.0, 1.0},
-		{-1.0,-1.0},
-		{-1.0, 1.0},
-	};
-	vec2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(pos,0.0,1.0);
-    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,pos.y));
-	return OUT;
-}
-
-shader vec4 RandomPS(v2f IN) : SV_TARGET
+shader vec4 RandomPS(posTexVertexOutput IN) : SV_TARGET
 {
 	// Range from -1 to 1.
 	vec4 c=2.0*vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords))-1.0;
@@ -52,7 +31,7 @@ shader vec4 RandomPS(v2f IN) : SV_TARGET
     return c;
 }
 
-shader vec4 NoisePS(v2f IN) : SV_TARGET
+shader vec4 NoisePS(posTexVertexOutput IN) : SV_TARGET
 {
     return Noise(noise_texture,IN.texCoords,persistence,octaves);
 }
@@ -95,6 +74,7 @@ shader void CS_Noise3D_float(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	/
 		return;
 	vec3 texCoords	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec4 result		=Noise3D(random_texture_3d,texCoords,octaves, persistence);//texture_wrap_lod(random_texture_3d,texCoords,0);//
+	//result=vec4(1.0,0,0,0);
     IMAGE_STORE_3D(targetTexture32,pos,result);
 }
 
@@ -112,6 +92,7 @@ shader void CS_MakeMips3D_float(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 	result		+=TEXTURE_LOAD_3D(random_texture_3d,pos*2+int3(1,0,1));
 	result		+=TEXTURE_LOAD_3D(random_texture_3d,pos*2+int3(1,1,1));
 	result		/=8.0;
+	//result=vec4(1.0,0,0,0);
     IMAGE_STORE_3D(targetTexture32,pos,result);
 }
 
@@ -140,7 +121,7 @@ technique simul_random
 		SetBlendState(NoBlend, vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		//SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
 		SetPixelShader(CompileShader(ps_4_0,RandomPS()));
     }
 }
@@ -154,7 +135,7 @@ technique simul_noise_2d
 		SetBlendState(NoBlend, vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		//SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
 		SetPixelShader(CompileShader(ps_4_0,NoisePS()));
     }
 }

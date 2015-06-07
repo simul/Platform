@@ -259,7 +259,7 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
 	vec4 density		=cloudDensity.SampleLevel(cloudSamplerState,pos,0);
-	//density.xyw			=light.xyw;
+
 		//	density.xy*=.5*(1+density.z);
 	density.z			*=layerFade;//*(1.0-noiseval.w);
 	density.z			=saturate(density.z*(1.0+alphaSharpness));//-alphaSharpness);
