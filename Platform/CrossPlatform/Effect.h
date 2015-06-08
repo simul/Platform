@@ -214,6 +214,8 @@ namespace simul
 			}
 			void LinkToEffect(Effect *effect, const char *name)
 			{
+				if (!effect)
+					return;
 				if (IsLinkedToEffect(effect))
 					return;
 				if (effect&&platformConstantBuffer)
@@ -225,6 +227,8 @@ namespace simul
 			}
 			bool IsLinkedToEffect(crossplatform::Effect *effect)
 			{
+				if (!effect)
+					return false;
 				if (linkedEffects.find(effect) != linkedEffects.end())
 				{
 					if (effect->IsLinkedToConstantBuffer(this))

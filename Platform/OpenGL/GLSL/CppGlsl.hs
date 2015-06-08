@@ -44,53 +44,11 @@
 	//vec2((texc).x,1.0-(texc).y)
 	#define _Y3(texc) texc
 	//vec3((texc).x,1.0-((texc).y),(texc).z)
-#define texture_clamp_mirror(tex,texc) tex.Sample(cmcSamplerState,texc)
-#define texture_clamp(tex,texc) tex.Sample(clampSamplerState,texc)
-#define texture_wrap_clamp(tex,texc) tex.Sample(wrapClampSamplerState,texc)
-#define texture_wrap_mirror(tex,texc) tex.Sample(wrapMirrorSamplerState,texc)
-#define texture_wrap_mirror_lod(tex,texc,lod) tex.SampleLevel(wrapMirrorSamplerState,texc,lod)
-#define sample(tex,sampler,texc) tex.Sample(sampler,texc)
-#define sampleLod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
-#define sample_lod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
-#define texture_wrap(tex,texc) tex.Sample(wrapSamplerState,texc)
-#define texture_wrap_lod(tex,texc,lod) tex.SampleLevel(wrapSamplerState,texc,lod)
-#define texture_clamp_lod(tex,texc,lod) tex.SampleLevel(clampSamplerState,texc,lod)
-#define texture_wrap_clamp_lod(tex,texc,lod) tex.SampleLevel(wrapClampSamplerState,texc,lod)
-#define texture_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,texc,lod)
-#define texture_wrap_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearestWrap,texc,lod)
-#define texture_clamp_mirror_lod(tex,texc,lod) tex.SampleLevel(cmcSamplerState,texc,lod)
-#define texture_cube(tex,texc) tex.Sample(cubeSamplerState,texc);
-
-#define texture_wwc(tex,texc) tex.Sample(wwcSamplerState,texc)
-#define texture_wwc_lod(tex,texc,lod) tex.SampleLevel(wwcSamplerState,texc,lod)
-#define texture_nearest(tex,texc) tex.Sample(samplerStateNearest,texc)
-#define texture3Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
-#define texture2Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
-
-#define texture_clamp_mirror_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,texc,lod)
-
-#define texture_3d_cmc(tex,texc) tex.Sample(cmcSamplerState,texc)
-#define texture_3d_nearest(tex,texc) tex.Sample(samplerStateNearest,texc) 
-#define sample_3d(tex,sampler,texc) tex.Sample(sampler,texc) 
-#define texture_3d_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,texc,lod) 
-#define texture_3d_clamp_lod(tex,texc,lod) tex.SampleLevel(clampSamplerState,texc,lod) 
-#define texture_3d_wrap_lod(tex,texc,lod) tex.SampleLevel(wrapSamplerState,texc,lod)
-#define texture_3d_clamp(tex,texc) tex.Sample(clampSamplerState,texc) 
-#define texture_3d_wwc_lod(tex,texc,lod) tex.SampleLevel(wwcSamplerState,texc,lod) 
-#define texture_3d_cwc_lod(tex,texc,lod) tex.SampleLevel(cwcSamplerState,texc,lod)
-#define texture_3d_cmc_lod(tex,texc,lod) tex.SampleLevel(cmcSamplerState,texc,lod)
-#define texture_3d_cmc_nearest_lod(tex,texc,lod) tex.SampleLevel(cmcNearestSamplerState,texc,lod)
-#define texture_3d_wmc_lod(tex,texc,lod) tex.SampleLevel(wmcSamplerState,texc,lod)
-#define texture_3d_wmc(tex,texc) tex.Sample(wmcSamplerState,texc)
-#define sample_3d_lod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
-
 	#define texelFetch3d(tex,p,lod) texelFetch(tex,p,lod)
 	#define texelFetch2d(tex,p,lod) texelFetch(tex,p,lod)
 
 	// GLSL Does not recognize "inline"
 	#define inline
-	#define texture3D texture
-	#define texture2D texture 
 	#define Texture3D sampler3D 
 	#define Texture2D sampler2D 
 	#define Texture2DMS sampler2DMS
@@ -122,23 +80,8 @@
 	#define TEXTURE_LOAD_3D(a,b) texelFetch(a,int3(b),0)
 	#define IMAGE_LOAD_3D(a,b) imageLoad(a,int3(b))
 	
-	#define GET_DIMENSIONS_MSAA(tex,x,y,s) tex.GetDimensions(x,y,s)
-	#define GET_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
-	#define GET_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
-	/*#define GET_IMAGE_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
-	#define GET_IMAGE_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)*/
-uniform Texture2D imageTexture1;
-	/*#define GET_DIMENSIONS_MSAA(tex,X,Y,S) {ivec2 iv=textureSize(tex); X=iv.x;Y=iv.y; S=4;}//textureQueryLevels(tex);
-	#define GET_DIMENSIONS(tex,X,Y) {ivec2 iv=textureSize(tex,0); X=iv.x;Y=iv.y;}
-	#define GET_DIMENSIONS_3D(tex,X,Y,Z) {ivec3 iv=textureSize(tex,0); X=iv.x;Y=iv.y;Z=iv.z;}*/
 	#define GET_IMAGE_DIMENSIONS(tex,X,Y) {ivec2 iv=imageSize(tex); X=iv.x;Y=iv.y;}
 	#define GET_IMAGE_DIMENSIONS_3D(tex,X,Y,Z) {ivec3 iv=imageSize(tex); X=iv.x;Y=iv.y;Z=iv.z;}
-	// SOME GLSL compilers like this version:
-//#define RW_TEXTURE3D_FLOAT4 layout(rgba32f,binding = 0) uniform image3D
-//#define RW_TEXTURE3D_CHAR4 layout(rgba8,binding = 0) uniform image3D
-	// SOME GLSL compilers like it like this:
-	//#define RW_TEXTURE3D_FLOAT4 layout(rgba32f) uniform image3D
-	//#define RW_TEXTURE3D_CHAR4 layout(rgba8) uniform image3D
 	#define RW_TEXTURE3D_FLOAT4 image3D
 	#define RW_TEXTURE3D_FLOAT image3D
 	#define RW_TEXTURE2D_FLOAT4 image2D
@@ -146,48 +89,12 @@ uniform Texture2D imageTexture1;
 	#define TEXTURE2D_UINT usampler2D
 	//layout(r32ui) 
 	#define TEXTURE2D_UINT4 usampler2D
-
 	#define groupshared shared
 	//layout(rgba8)
 	struct idOnly
 	{
 		uint vertex_id: gl_VertexID;
 	};
-#ifdef GLFX
-	shader void VS_ScreenQuad( out vec2 texCoords)
-	{
-		vec2 poss[4]=
-		{
-			{ 1.0, 0.0},
-			{ 1.0, 1.0},
-			{ 0.0, 0.0},
-			{ 0.0, 1.0},
-		};
-		//poss[0]		=vec2(1.0, 0.0);
-		//poss[1]		=vec2(1.0, 1.0);
-		//poss[2]		=vec2(0.0, 0.0);
-		//poss[3]		=vec2(0.0, 1.0);
-		vec2 pos	=poss[gl_VertexID];
-		gl_Position	=vec4(rect.xy+rect.zw*pos.xy,1.0,1.0);
-		texCoords	=pos.xy;
-		texCoords.y	=1.0-texCoords.y;
-	}
-
-	shader void VS_FullScreen(out vec2 texCoords)
-	{
-		vec2 poss[4];
-		poss[0]			=vec2(1.0,0.0);
-		poss[1]			=vec2(1.0,1.0);
-		poss[2]			=vec2(0.0,0.0);
-		poss[3]			=vec2(0.0,1.0);
-		vec2 pos		=poss[gl_VertexID];
-	//	pos.y			=yRange.x+pos.y*yRange.y;
-		vec4 vert_pos	=vec4(vec2(-1.0,-1.0)+2.0*vec2(pos.x,pos.y),1.0,1.0);
-		gl_Position		=vert_pos;
-		texCoords		=pos.xy;
-	}
-	
-#endif
 #else
 	#define STATIC static
 	// To C++, samplers are just GLints.

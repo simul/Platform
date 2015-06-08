@@ -309,16 +309,6 @@ void UtilityRenderer::RenderAngledQuad(crossplatform::DeviceContext &deviceConte
 										,D3DXMATRIX proj
 										,D3DXVECTOR3 sun_dir)
 {
-	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
-	// But D3DXMatrixRotationYawPitchRoll uses only left-handed, hence the change of sign below.
-	if(effect)
-	{
-//		setMatrix(effect,"worldViewProj",tmp1);
-		//setParameter(effect,"lightDir",sun2);
-	//	setParameter(effect,"radiusRadians",half_angle_radians);
-	}
-	// coverage is 2*atan(1/5)=11 degrees.
-	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
 	D3D_PRIMITIVE_TOPOLOGY previousTopology;
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->IAGetPrimitiveTopology(&previousTopology);
