@@ -213,6 +213,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="GLSL\CppGlsl.hs" />
+    <None Include="GLSL\saturate.glsl" />
     <None Include="GLSL\shader_platform.sl" />
   </ItemGroup>
   <ItemGroup>

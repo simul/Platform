@@ -21,25 +21,9 @@
 	#if !defined(GL_FRAGMENT_SHADER)
 		#define discard
 	#endif
-	#define const
 	#define constant_buffer layout(std140) uniform
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) constant_buffer name {
 	#define SIMUL_CONSTANT_BUFFER_END };
-#include "saturate.glsl"
-	#define asfloat uintBitsToFloat
-	#define asint floatBitsToInt
-	#define asuint floatBitsToUint
-	#define f32tof16 floatBitsToUint
-	#define f16tof32 uintBitsToFloat
-	#define lerp mix
-	#define atan2 atan
-	#define int2 ivec2
-	#define int3 ivec3
-	#define int4 ivec4
-	#define uint2 uvec2
-	#define uint3 uvec3
-	#define uint4 uvec4
-	#define frac fract
 	#define _Y(texc) texc
 	//vec2((texc).x,1.0-(texc).y)
 	#define _Y3(texc) texc
@@ -47,31 +31,8 @@
 	#define texelFetch3d(tex,p,lod) texelFetch(tex,p,lod)
 	#define texelFetch2d(tex,p,lod) texelFetch(tex,p,lod)
 
-	// GLSL Does not recognize "inline"
-	#define inline
-	#define Texture3D sampler3D 
-	#define Texture2D sampler2D 
-	#define Texture2DMS sampler2DMS
-	#define TextureCube samplerCube
-	#define TextureCUBE samplerCube
-	#define Texture1D sampler1D 
 	#define Y(texel) texel.y
-	#define STATIC
-
-	vec4 mul(mat4 m,vec4 v)
-	{
-		return m*v;
-	}
-	vec3 mul(mat3 m,vec3 v)
-	{
-		return m*v;
-	}
-	vec2 mul(mat2 m,vec2 v)
-	{
-		return m*v;
-	}
 	#define CS_LAYOUT(u,v,w) layout(local_size_x=u,local_size_y=v,local_size_z=w) in;
-	#define GroupMemoryBarrierWithGroupSync memoryBarrierShared 
 	#define IMAGE_STORE(a,b,c) imageStore(a,int2(b),c)
 	#define IMAGE_STORE_3D(a,b,c) imageStore(a,int3(b),c)
 	#define IMAGE_LOAD(a,b) imageLoad(a,b)
@@ -82,8 +43,6 @@
 	
 	#define GET_IMAGE_DIMENSIONS(tex,X,Y) {ivec2 iv=imageSize(tex); X=iv.x;Y=iv.y;}
 	#define GET_IMAGE_DIMENSIONS_3D(tex,X,Y,Z) {ivec3 iv=imageSize(tex); X=iv.x;Y=iv.y;Z=iv.z;}
-	#define RW_TEXTURE3D_FLOAT4 image3D
-	#define RW_TEXTURE3D_FLOAT image3D
 	#define RW_TEXTURE2D_FLOAT4 image2D
 	#define TEXTURE2DMS_FLOAT4 sampler2DMS
 	#define TEXTURE2D_UINT usampler2D
