@@ -50,10 +50,6 @@
 	#define TEXTURE2D_UINT4 usampler2D
 	#define groupshared shared
 	//layout(rgba8)
-	struct idOnly
-	{
-		uint vertex_id: gl_VertexID;
-	};
 #else
 	#define STATIC static
 	// To C++, samplers are just GLints.

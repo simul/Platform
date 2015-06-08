@@ -46,16 +46,23 @@
 #define GET_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
 #define GET_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
 
+struct idOnly
+{
+	uint vertex_id			: SV_VertexID;
+};
+
 struct posTexVertexOutput
 {
 	vec4 hPosition	: SV_POSITION;
 	vec2 texCoords	: TEXCOORD0;		
 };
+
 struct positionColourVertexInput
 {
 	vec3 position	: POSITION;
 	vec4 colour		: TEXCOORD0;		
 };
+
 posTexVertexOutput SimpleFullscreen(idOnly IN)
 {
 	posTexVertexOutput OUT;
