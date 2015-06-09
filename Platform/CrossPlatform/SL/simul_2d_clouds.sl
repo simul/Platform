@@ -66,7 +66,7 @@ vec4 Clouds2Dunfaded(Texture2D imageTexture
     vec4 coverage			=texture_wrap(coverageTexture,texc_global);
     vec4 detail				=texture_wrap(imageTexture,texc_detail);
 	//float opacity			=saturate(detail.a*2.0*Y(coverage)+2.0*Y(coverage)-1.0);
-	float opacity			=saturate(detail.a*Y(coverage));
+	float opacity			=saturate(detail.a*(coverage.z));
 	if(opacity<=0)
 		discard;
 	float light				=exp(-detail.r*extinction);

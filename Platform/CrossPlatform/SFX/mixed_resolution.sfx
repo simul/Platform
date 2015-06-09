@@ -9,7 +9,7 @@
 uniform TEXTURE2DMS_FLOAT4 sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
 uniform TEXTURE2DMS_FLOAT4 sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2D sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);
-layout(rgba32f) uniform RW_TEXTURE2D_FLOAT4 target2DTexture SIMUL_RWTEXTURE_REGISTER(1);
+uniform RW_TEXTURE2D_FLOAT4 target2DTexture SIMUL_RWTEXTURE_REGISTER(1);
 
 shader vec4 PS_HalfscaleInitial_ReverseDepth(posTexVertexOutput IN):SV_Target
 {

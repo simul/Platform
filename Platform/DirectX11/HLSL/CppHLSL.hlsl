@@ -17,8 +17,6 @@
 #define texture(tex,texc) tex.Sample(wrapSamplerState,texc)
 #define texture2D(tex,texc) tex.Sample(wrapSamplerState,texc)
 
-#define texelFetch3d(tex,p,lod) tex.Load(int4(p,lod))
-#define texelFetch2d(tex,p,lod) tex.Load(int3(p,lod))
 #define imageStore(uav, pos, c) uav[pos]=c
 #define TEXTURE_LOAD(tex,uintpos) tex.Load(int3(uintpos,0))
 #define TEXTURE_LOAD_3D(tex,uintpos) tex.Load(int4(uintpos,0))
@@ -38,18 +36,6 @@
 #define STATIC static
 
 #ifndef __cplusplus
-	#define SIMUL_TEXTURE_REGISTER(tex_num) : register(t##tex_num)
-	#define SIMUL_SAMPLER_REGISTER(samp_num) : register(s##samp_num)
-	#define SIMUL_BUFFER_REGISTER(buff_num) : register(b##buff_num)
-	#define SIMUL_RWTEXTURE_REGISTER(rwtex_num) : register(u##rwtex_num)
-	#define SIMUL_STATE_REGISTER(snum) : register(s##snum)
-
-	#define SIMUL_CONSTANT_BUFFER(name,buff_num) constant_buffer name SIMUL_BUFFER_REGISTER(buff_num) {
-	#define SIMUL_CONSTANT_BUFFER_END };
-
-	#define SIMUL_TARGET_OUTPUT : SV_TARGET
-	#define SIMUL_RENDERTARGET_OUTPUT(n) : SV_TARGET##n
-	#define SIMUL_DEPTH_OUTPUT : SV_DEPTH
 
 	#define vec2 float2
 	#define vec3 float3
@@ -61,19 +47,7 @@
 	#define mix lerp
 	#define fract frac
 
-	#define Y(texel) texel.z
 	#define layout(a)
-	#define CS_LAYOUT(u,v,w) [numthreads(u,v,w)]
-
-	#define GET_IMAGE_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
-	#define GET_IMAGE_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
-	#define RW_TEXTURE3D_FLOAT4 RWTexture3D<float4>
-	#define RW_TEXTURE3D_FLOAT RWTexture3D<float>
-	#define RW_TEXTURE2D_FLOAT4 RWTexture2D<float4>
-	#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
-	#define TEXTURE2D_UINT Texture2D<uint>
-	#define TEXTURE2D_UINT4 Texture2D<uint4>
-	#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
 	
 #endif
 

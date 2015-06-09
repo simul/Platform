@@ -183,7 +183,7 @@ void GetMSAACoordinates(Texture2DMS<vec4> textureMS,vec2 texc,out int2 pos2,out 
 	uint2 dims;
 	uint nums;
 	textureMS.GetDimensions(dims.x,dims.y,nums);
-	numSamples=nums;
+	numSamples	=int(nums);
 	pos2		=int2(texc*vec2(dims.xy));
 }
 
