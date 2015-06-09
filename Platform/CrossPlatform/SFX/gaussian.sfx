@@ -5,6 +5,7 @@
 #pragma warning(disable:3557)
 #pragma warning(disable:3574)
 #include "shader_platform.sl"
+#include "../SL/common.sl"
 #include "../SL/image_constants.sl"
 
 //-----------------------------------------------------------------------------

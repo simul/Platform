@@ -2,6 +2,20 @@
 #ifndef COMMON_SL
 #define COMMON_SL
 
+// GLSL doesn't  have a concept of output semantics but we need them to make the sfx format work. We'll use HLSL's semantics.
+#define SIMUL_TARGET_OUTPUT : SV_TARGET
+#define SIMUL_RENDERTARGET_OUTPUT(n) : SV_TARGET##n
+#define SIMUL_DEPTH_OUTPUT : SV_DEPTH
+
+#define SIMUL_TEXTURE_REGISTER(tex_num) : register(t##tex_num)
+#define SIMUL_SAMPLER_REGISTER(samp_num) : register(s##samp_num)
+#define SIMUL_BUFFER_REGISTER(buff_num) : register(b##buff_num)
+#define SIMUL_RWTEXTURE_REGISTER(rwtex_num) : register(u##rwtex_num)
+#define SIMUL_STATE_REGISTER(snum) : register(s##snum)
+
+#define SIMUL_CONSTANT_BUFFER(name,buff_num) constant_buffer name SIMUL_BUFFER_REGISTER(buff_num) {
+#define SIMUL_CONSTANT_BUFFER_END };
+
 #define texture_clamp_mirror(tex,texc) tex.Sample(cmcSamplerState,texc)
 #define texture_clamp(tex,texc) tex.Sample(clampSamplerState,texc)
 #define texture_wrap_clamp(tex,texc) tex.Sample(wrapClampSamplerState,texc)
@@ -45,6 +59,28 @@
 #define GET_DIMENSIONS_MSAA(tex,x,y,s) tex.GetDimensions(x,y,s)
 #define GET_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
 #define GET_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
+
+#define GET_IMAGE_DIMENSIONS(tex,x,y) tex.GetDimensions(x,y)
+#define GET_IMAGE_DIMENSIONS_3D(tex,x,y,z) tex.GetDimensions(x,y,z)
+
+#define RW_TEXTURE3D_FLOAT4 RWTexture3D<float4>
+#define RW_TEXTURE3D_FLOAT RWTexture3D<float>
+#define RW_TEXTURE2D_FLOAT4 RWTexture2D<float4>
+#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
+	
+#define TEXTURE2D_UINT4 Texture2D<uint4>
+//layout(r32ui) 
+#define TEXTURE2D_UINT Texture2D<uint>
+//layout(rgba8)
+
+//define CS_LAYOUT(u,v,w) layout(local_size_x=u,local_size_y=v,local_size_z=w) in;
+#define CS_LAYOUT(u,v,w) [numthreads(u,v,w)]
+
+
+struct idOnly
+{
+	uint vertex_id			: SV_VertexID;
+};
 
 struct posTexVertexOutput
 {
@@ -93,4 +129,8 @@ posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
 	OUT.texCoords	=pos;
 	return OUT;
 }
+#ifdef __cplusplus
+#define STATIC static
+#define uniform
+#endif
 #endif
