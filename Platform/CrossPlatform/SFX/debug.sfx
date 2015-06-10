@@ -122,7 +122,7 @@ shader vec4 PS_ShowTextureMS(posTexVertexOutput IN) : SV_TARGET
 	uint numSamples;
 	GET_DIMENSIONS_MSAA(imageTextureMS,dims.x,dims.y,numSamples);
 	int2 pos	=int2(IN.texCoords.xy*vec2(dims.xy));
-	vec4 res	=multiplier*TEXTURE_LOAD_MSAA(imageTextureMS,pos,0);
+	vec4 res	=multiplier*imageTextureMS.Load(pos,0);
 	return res;
 }
 

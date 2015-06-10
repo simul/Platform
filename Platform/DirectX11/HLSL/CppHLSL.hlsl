@@ -17,15 +17,12 @@
 #define texture(tex,texc) tex.Sample(wrapSamplerState,texc)
 #define texture2D(tex,texc) tex.Sample(wrapSamplerState,texc)
 
-#define imageStore(uav, pos, c) uav[pos]=c
 #define TEXTURE_LOAD(tex,uintpos) tex.Load(int3(uintpos,0))
 #define TEXTURE_LOAD_3D(tex,uintpos) tex.Load(int4(uintpos,0))
 #define TEXTURE_LOAD_MSAA(tex,uint2pos,sampl) tex.Load(uint2pos,sampl)
 
 #define IMAGE_LOAD(tex,uintpos) tex[uintpos]
 #define IMAGE_LOAD_3D(tex,uintpos) tex[uintpos]
-#define	IMAGE_STORE(a,b,c) a[b]=c;
-#define	IMAGE_STORE_3D(a,b,c) a[b]=c;
 #endif
 
 #define uniform
