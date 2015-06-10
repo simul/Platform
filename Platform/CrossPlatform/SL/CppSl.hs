@@ -4,9 +4,6 @@
 #undef RADIAL_CLOUD_SHADOW
 // Definitions shared across C++, HLSL, and GLSL!
 
-#ifndef __cplusplus
-	#define ALIGN_16
-#endif
 
 #ifdef __cplusplus
 #ifdef _MSC_VER
