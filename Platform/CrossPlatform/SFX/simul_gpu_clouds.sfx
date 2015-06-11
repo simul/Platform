@@ -485,18 +485,18 @@ shader void CS_SecondaryLighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 {
 	uint3 sub_pos = uint3(g.xy * 8 + t.xy, g.z + t.z);
 	uint3 dims;
-	int3 pos	  = int3(sub_pos)+int3(threadOffset);
+	uint3 pos	  = uint3(sub_pos)+uint3(threadOffset);
 	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	float indirect_light			=0.0;
 	if(pos.z>0)
 	{
-		int Z			=pos.z-1;
-		int x1			=(pos.x+2)%dims.x;
-		int xn			=(pos.x+dims.x-2)%dims.x;
-		int y1			=(pos.y+2)%dims.y;
-		int yn			=(pos.y+dims.y-2)%dims.y;
+		uint Z			=pos.z-1;
+		uint x1			=(pos.x+2)%dims.x;
+		uint xn			=(pos.x+dims.x-2)%dims.x;
+		uint y1			=(pos.y+2)%dims.y;
+		uint yn			=(pos.y+dims.y-2)%dims.y;
 		int3 sample_pts[5]	={int3(pos.xy,Z),int3(xn,pos.y,Z),int3(x1,pos.y,Z),int3(pos.x,yn,Z),int3(pos.x,y1,Z)};
 		for(int i=0;i<5;i++)
 		{
@@ -507,7 +507,7 @@ shader void CS_SecondaryLighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 		}
 		indirect_light	/=5.0;
 	}
-	int i=pos.z;
+	uint i=pos.z;
 	{
 		uint3 idx					=uint3(pos.xy,i);
 		vec3 lightspace_texcoord	=(vec3(idx)+0.5)/vec3(dims);

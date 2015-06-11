@@ -6,6 +6,7 @@
 #include "../SL/depth.sl"
 #include "../SL/colour_packing.sl"
 #include "../SL/mixed_resolution.sl"
+#include "../SL/debug_constants.sl"
 uniform TEXTURE2DMS_FLOAT4 sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
 uniform TEXTURE2DMS_FLOAT4 sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2D sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);
@@ -331,5 +332,37 @@ technique resolve_depth
 		SetVertexShader(vs_simple_fullscreen);
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_ResolveDepth()));
+    }
+}
+
+
+shader posTexVertexOutput VS_Quad(idOnly id)
+{
+	vec4 rect=vec4(.5,.5,.25,.25);
+    return VS_ScreenQuad(id,rect);
+}
+
+shader vec4 PS_ShowDepth(posTexVertexOutput IN) : SV_Target
+{
+	vec2 texc=IN.texCoords.xy;
+	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
+	texc.y			=1.0-texc.y;
+	vec4 result		=texture_nearest_lod(sourceDepthTexture,texc,0);
+	result.b=1.0;
+	result.a=0.0;
+	return result;
+}
+
+
+technique showdepth
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepth()));
     }
 }

@@ -235,7 +235,7 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	int linear_pos		=sub_pos.x+int(threadOffset.x);
-	int3 pos			=LinearThreadToPos2D(linear_pos,dims);
+	int3 pos			=LinearThreadToPos2D(linear_pos,int3(dims));
 	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 		return;
 	vec2 texc			=(pos.xy+vec2(0.5,0.5))/vec2(targetSize.xy);

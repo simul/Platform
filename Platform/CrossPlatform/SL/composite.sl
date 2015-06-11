@@ -23,8 +23,6 @@ struct LookupQuad4
 	vec4 _22;
 };
 
-
-
 #define VOLUME_INSCATTER
 #define SCREENSPACE_VOL
 TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
