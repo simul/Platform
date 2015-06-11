@@ -232,7 +232,7 @@ CS_LAYOUT(8,1,1)
 shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 {
 	int3 sub_pos = int3(g) *int3(8,1,1) + int3(t);
-	int3 dims;
+	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	int linear_pos		=sub_pos.x+int(threadOffset.x);
 	int3 pos			=LinearThreadToPos2D(linear_pos,dims);

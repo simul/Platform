@@ -1,6 +1,7 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef COLOUR_PACKING_SL
 #define COLOUR_PACKING_SL
+#include "common.sl"
 
 inline uint colour3_to_uint(vec3 colour)
 {

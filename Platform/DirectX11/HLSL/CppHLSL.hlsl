@@ -14,15 +14,7 @@
 #define technique technique11
 #define group fxgroup
 #define f32touint16 f32tof16
-#define texture(tex,texc) tex.Sample(wrapSamplerState,texc)
-#define texture2D(tex,texc) tex.Sample(wrapSamplerState,texc)
 
-#define TEXTURE_LOAD(tex,uintpos) tex.Load(int3(uintpos,0))
-#define TEXTURE_LOAD_3D(tex,uintpos) tex.Load(int4(uintpos,0))
-#define TEXTURE_LOAD_MSAA(tex,uint2pos,sampl) tex.Load(uint2pos,sampl)
-
-#define IMAGE_LOAD(tex,uintpos) tex[uintpos]
-#define IMAGE_LOAD_3D(tex,uintpos) tex[uintpos]
 #endif
 
 #define constant_buffer ALIGN_16 cbuffer

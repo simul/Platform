@@ -661,6 +661,8 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 	if(apply_count!=1)
 		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n",this->filename.c_str()));
 	ID3DX11Effect *effect			=asD3DX11Effect();
+	if(!effect)
+		return;
 	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
 	if(currentPass)
 		HRESULT hr = currentPass->Apply(0, deviceContext.asD3D11DeviceContext());

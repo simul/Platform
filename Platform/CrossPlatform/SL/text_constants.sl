@@ -3,7 +3,7 @@
 #define TEXT_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(TextConstants,8)
-	vec4	rect;
+	vec4	text_rect;
 	vec4	texc;
 	vec4	colour;
 	vec4	background;

@@ -1,9 +1,7 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef CPPSL_HS
 #define CPPSL_HS
-#undef RADIAL_CLOUD_SHADOW
 // Definitions shared across C++, HLSL, and GLSL!
-
 
 #ifdef __cplusplus
 #ifdef _MSC_VER

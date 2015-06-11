@@ -174,11 +174,11 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
 	effect->SetTexture(deviceContext,"fontTexture"	,font_texture);
 	effect->Apply(deviceContext,effect->GetTechniqueByName("backg"),0);
-	constantBuffer.rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+16.f)/screen_height,2.0f*(float)w/screen_width,2.0f*16.f/screen_height);
+	constantBuffer.text_rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+16.f)/screen_height,2.0f*(float)w/screen_width,2.0f*16.f/screen_height);
 	if(mirrorY)
 	{
-		constantBuffer.rect.y=-constantBuffer.rect.y;
-		constantBuffer.rect.w*=-1.0f;
+		constantBuffer.text_rect.y=-constantBuffer.text_rect.y;
+		constantBuffer.text_rect.w*=-1.0f;
 	}
 	constantBuffer.Apply(deviceContext);
 	renderPlatform->DrawQuad(deviceContext);
@@ -195,8 +195,8 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		const FontIndex &f=fontIndices[idx];
 		if(idx>0)
 		{
-			constantBuffer.rect.x	=2.0f*x/screen_width-1.f;
-			constantBuffer.rect.z	=2.0f*(float)f.pixel_width/screen_width;
+			constantBuffer.text_rect.x	=2.0f*x/screen_width-1.f;
+			constantBuffer.text_rect.z	=2.0f*(float)f.pixel_width/screen_width;
 			static float u			=1024.f/598.f;
 			constantBuffer.texc		=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
 			constantBuffer.Apply(deviceContext);
