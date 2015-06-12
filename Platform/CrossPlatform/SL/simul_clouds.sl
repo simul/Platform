@@ -258,8 +258,8 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 	//vec4 light			=sampleLod(cloudDensity,cloudSamplerState,texCoords,0);
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
-	vec4 density		=cloudDensity.SampleLevel(cloudSamplerState,pos,0);
-
+	vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,pos,0);
+	//density.xyw			=light.xyw;
 		//	density.xy*=.5*(1+density.z);
 	density.z			*=layerFade;//*(1.0-noiseval.w);
 	density.z			=saturate(density.z*(1.0+alphaSharpness));//-alphaSharpness);
@@ -545,7 +545,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float max_z				=cornerPosKm.z+(1.0+fractalScale.z*1.5)/inverseScalesKm.z;
 	if(do_rain_effect)
 		min_z				=-1.0;
-	else if(view.z<-0.1&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
+	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
 	
 	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
@@ -612,7 +612,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	// y starts at 0, so gets the furthest value.
 	vec4 nearFarDepth				= vec4(1.0, 0.0, 0.0, 0.0);
 	int3 b							=abs(c-C0*2);
-	for(int j=0;j<8;j++)
+	for(int i=0;i<8;i++)
 	{
 		if(max(max(b.x,b.y),0)>=W)
 		{
@@ -746,7 +746,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				colour.a				*=(1.0-clr.a);
 				if(nearColour.a*brightness_factor<0.003)
 				{
-					colour.a			=0.0;
+					colour.a = 0.0;
 					break;
 				}
 			}

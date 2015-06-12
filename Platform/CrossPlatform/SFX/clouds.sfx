@@ -30,7 +30,7 @@ uniform Texture2D nearFarTexture;
 uniform Texture2D cloudGodraysTexture;
 uniform Texture2D rainMapTexture;
 uniform TextureCube diffuseCubemap;
-uniform RWTexture3D<uchar4> outputTexture3d;
+uniform RWTexture3D<vec4> outputTexture3d;
 uniform RWStructuredBuffer<VolumeQueryResult> volumeQueryResults;
 
 uniform StructuredBuffer<vec3> queryInputs;
@@ -96,9 +96,9 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 			vec4 lookup						=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
 			res.density						+=lookup.z/32.0;
 			if(res.density>0.0)
-				res.first_contact_km	=min(res.first_contact_km,length(pos-start_pos));
+				res.first_contact_km		=min(res.first_contact_km,length(pos-start_pos));
 			res.visibility					*=1.0-lookup.z;
-			res.optical_thickness_km	+=stepSize*lookup.z;
+			res.optical_thickness_km		+=stepSize*lookup.z;
 		}
 	}
 	lineQueryResults[sub_pos.x]	=res;
@@ -108,10 +108,10 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
-CS_LAYOUT(8,8,8)
+CS_LAYOUT(4,4,4)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	uint3 pos=g*8+t;
+	uint3 pos=g*4+t;
 	vec4 c1=TEXTURE_LOAD_3D(cloudDensity1,pos);
 	vec4 c2=TEXTURE_LOAD_3D(cloudDensity2,pos);
    // vec4 res= lerp(cloudDensity1[pos],cloudDensity2[pos],cloud_interp);
@@ -396,7 +396,8 @@ shader vec4 PS_CrossSection(posTexVertexOutput IN):SV_TARGET
 BlendState Blend1
 {
 	BlendEnable[0]	=TRUE;
-	BlendEnable[1]	=FALSE;
+	BlendEnable[1] = FALSE;
+	BlendEnable[2] = FALSE;
 	SrcBlend		=ONE;
 	DestBlend		=SRC_ALPHA;
     BlendOp			=ADD;
@@ -408,7 +409,8 @@ BlendState Blend1
 BlendState AddBlend2
 {
 	BlendEnable[0]	=TRUE;
-	BlendEnable[1]	=TRUE;
+	BlendEnable[1] = TRUE;
+	BlendEnable[2] = FALSE;
 	SrcBlend		=ONE;
 	DestBlend		=ONE;
     BlendOp			=ADD;

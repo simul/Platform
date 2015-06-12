@@ -344,8 +344,9 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 	dim=2;
 }
 
-void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pixelFormat,bool computable,int m,bool rendertargets)
+void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {
+	pixelFormat = pf;
 	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	dim=3;
 	D3D11_TEXTURE3D_DESC textureDesc;

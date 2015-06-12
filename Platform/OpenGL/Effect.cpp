@@ -516,22 +516,6 @@ bool Effect::FillInTechniques()
 		}
 	}
 	glfxUseTechniqueGroup(e,0);
-	int nump			=glfxGetProgramCount(e);
-	if (nump)
-	{
-		for (int i = 0; i < nump; i++)
-		{
-			std::string name = glfxGetProgramName(e, i);
-			GLuint t = glfxCompileProgram(e,NULL,name.c_str());
-			if (!t)
-			{
-				std::cerr << filenameInUseUtf8.c_str() << ": error C7555:  there are errors in the technique " << name.c_str() << std::endl;
-				opengl::printEffectLog(asGLint());
-				return false;
-			}
-			AddPass("",name, "main", t);
-		}
-	}
 	// ZERO is a valid number of shaders to have in an effect:
 	return true;
 }
@@ -557,7 +541,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	tech->platform_technique				=(void*)t;
 	techniques[name]						=tech;
 	// Now it needs to be in the techniques_by_index list.
-	size_t index							=glfxGetProgramIndex(e,name);
+	size_t index							=glfxGetTechniqueIndex(e,name);
 	techniques_by_index[(int)index]			=tech;
 	GL_ERROR_CHECK
 	return tech;
@@ -574,8 +558,8 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 	GLint e				=asGLint();
 	if(index>=(int)techniques.size())
 		return NULL;
-	const char *name	=glfxGetProgramName(e,index);
-	GLuint t			=glfxCompileProgram(e,NULL,name);
+	const char *name	=glfxGetTechniqueName(e,index);
+	GLuint t = glfxCompileProgram(e, name, NULL);
 	if(!t)
 	{
 		opengl::printEffectLog(e);

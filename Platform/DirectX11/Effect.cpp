@@ -367,8 +367,8 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 			filename_fx+=".sfx";
 		filenameInUseUtf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(),renderPlatform->GetShaderPathsUtf8());
 	}
-	HRESULT hr		=CreateEffect(renderPlatform->AsD3D11Device(),&e,filename_fx.c_str(),defines,0,renderPlatform->GetShaderBuildMode()
-		,renderPlatform->GetShaderPathsUtf8(),renderPlatform->GetShaderBinaryPath());//D3DCOMPILE_OPTIMIZATION_LEVEL3);D3DCOMPILE_DEBUG
+	HRESULT hr = CreateEffect(renderPlatform->AsD3D11Device(), &e, filename_fx.c_str(), defines, D3DCOMPILE_OPTIMIZATION_LEVEL3, renderPlatform->GetShaderBuildMode()
+		,renderPlatform->GetShaderPathsUtf8(),renderPlatform->GetShaderBinaryPath());//);D3DCOMPILE_DEBUG
 	platform_effect	=e;
 	groups.clear();
 	if(e)

@@ -111,7 +111,7 @@ FontIndex fontIndices[]={
 };
 
 TextRenderer::TextRenderer()
-	:renderPlatform(NULL),effect(NULL),font_texture(NULL)
+	:renderPlatform(NULL), effect(NULL), font_texture(NULL), recompile(false)
 {
 }
 
@@ -140,8 +140,14 @@ void TextRenderer::InvalidateDeviceObjects()
 
 void TextRenderer::RecompileShaders()
 {
-	if(!renderPlatform)
+	if (!renderPlatform)
 		return;
+	recompile = true;
+}
+
+void TextRenderer::Recompile()
+{
+	recompile = false;
 	std::map<std::string,std::string> defines;
 	SAFE_DELETE(effect);
 	effect=renderPlatform->CreateEffect("font",defines);
@@ -151,6 +157,8 @@ void TextRenderer::RecompileShaders()
 
 void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
+	if (recompile)
+		Recompile();
 	float transp[]={0.f,0.f,0.f,0.f};
 	float white[]={1.f,1.f,1.f,1.f};
 	if(!clr)

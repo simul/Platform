@@ -27,12 +27,13 @@ namespace simul
 
 		private:
 
-		private:
+			void Recompile();
 			crossplatform::Effect						*effect;
 	
 			crossplatform::ConstantBuffer<TextConstants>	constantBuffer;
 			crossplatform::Texture*			font_texture;
 			crossplatform::RenderPlatform *renderPlatform;
+			bool recompile;
 		};
 	}
 }
