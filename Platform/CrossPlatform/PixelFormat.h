@@ -16,6 +16,7 @@ namespace simul
 			,LUM_32_FLOAT
 			,INT_32_FLOAT
 			,RGBA_8_UNORM
+			,RGBA_8_UNORM_COMPRESSED
 			,RGBA_8_SNORM
 			,RGB_8_UNORM
 			,RGB_8_SNORM

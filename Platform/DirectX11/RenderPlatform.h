@@ -54,6 +54,7 @@ namespace simul
 			void StartRender(crossplatform::DeviceContext &deviceContext);
 			void EndRender(crossplatform::DeviceContext &deviceContext);
 			void IntializeLightingEnvironment(const float pAmbientLight[3]);
+			void CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s);
 
 			void DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d);
 			

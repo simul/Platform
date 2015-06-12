@@ -267,6 +267,11 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lAmbientLight);*/
 }
 
+void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s)
+{
+	deviceContext.asD3D11DeviceContext()->CopyResource(t->AsD3D11Texture2D(),s->AsD3D11Texture2D());
+}
+
 void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	deviceContext.asD3D11DeviceContext()->Dispatch(w,l,d);
@@ -577,6 +582,8 @@ DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 		return DXGI_FORMAT_R32_FLOAT;
 	case RGBA_8_UNORM:
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case RGBA_8_UNORM_COMPRESSED:
+		return DXGI_FORMAT_BC7_UNORM;
 	case RGBA_8_SNORM:
 		return DXGI_FORMAT_R8G8B8A8_SNORM;
 	case R_8_UNORM:

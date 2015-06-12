@@ -246,7 +246,7 @@ shader vec4 PS_Show3DLightTable(posTexVertexOutput IN): SV_TARGET
 
 shader vec4 PS_Show2DLightTable(posTexVertexOutput IN): SV_TARGET
 {
-	vec2 texc	=vec2(1.00-IN.texCoords.y,IN.texCoords.x);
+	vec2 texc	=vec2(IN.texCoords.y,IN.texCoords.x);
 	vec4 result	=texture_nearest_lod(lightTable2DTexture,texc,0);
     result= vec4(result.rgb,1);
 	return result;
