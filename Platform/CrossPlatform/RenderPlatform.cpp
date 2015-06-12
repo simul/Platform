@@ -293,7 +293,7 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
 	int h=(int)viewport.h;
 	int pos=0;
-	
+
 	while(*text!=0)
 	{
 		textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)h,text,colr,bkg,mirrorYText);

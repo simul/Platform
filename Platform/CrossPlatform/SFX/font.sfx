@@ -72,4 +72,3 @@ technique text
 		SetPixelShader(CompileShader(ps_4_0,FontPixelShader()));
     }
 }
-

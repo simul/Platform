@@ -323,13 +323,7 @@ glDisable(GL_CULL_FACE);
 	debugConstants.LinkToEffect(effect,"DebugConstants");
 	debugConstants.rect=r;
 	debugConstants.Apply(deviceContext);
-	rescaleVertexShaderConstants.rescaleVertexShaderY=opengl::FramebufferGL::IsTargetTexture()?-1.0f:1.0f;
-	rescaleVertexShaderConstants.Apply(deviceContext);
-	GL_ERROR_CHECK
-	// GL Insists on having a bound vertex array object, even if we're not using it in the vertex shader.
-	glBindVertexArray(empty_vao);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	GL_ERROR_CHECK
+	DrawQuad(deviceContext);
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
 	GL_ERROR_CHECK

@@ -604,7 +604,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
 	currentPass						=tech->GetPassByIndex(pass_num);
 	HRESULT hr						=currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
-	V_CHECK(hr);
+	V_CHECK_ONCE(hr);
 }
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)

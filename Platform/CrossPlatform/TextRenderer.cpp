@@ -146,6 +146,7 @@ void TextRenderer::RecompileShaders()
 	SAFE_DELETE(effect);
 	effect=renderPlatform->CreateEffect("font",defines);
 	constantBuffer.LinkToEffect(effect,"TextConstants");
+//	renderPlatform->GetDebugConstantBuffer().LinkToEffect(effect,"DebugConstants");
 }
 
 void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
@@ -156,6 +157,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		clr=white;
 	if(!bck)
 		bck=transp;
+//renderPlatform->DrawQuad(deviceContext,20,20,50,50,effect,effect->GetTechniqueByName("textured"),"noblend");
 	//renderPlatform->StoreRenderState(deviceContext);
 	constantBuffer.colour		=vec4(clr);
 	constantBuffer.background	=vec4(bck);
@@ -173,7 +175,6 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	}
 	renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
 	effect->SetTexture(deviceContext,"fontTexture"	,font_texture);
-	effect->Apply(deviceContext,effect->GetTechniqueByName("backg"),0);
 	constantBuffer.text_rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+16.f)/screen_height,2.0f*(float)w/screen_width,2.0f*16.f/screen_height);
 	if(mirrorY)
 	{
@@ -181,8 +182,10 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		constantBuffer.text_rect.w*=-1.0f;
 	}
 	constantBuffer.Apply(deviceContext);
+	effect->Apply(deviceContext,effect->GetTechniqueByName("backg"),0);
 	renderPlatform->DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);
+//	renderPlatform->DrawQuad(deviceContext,0,0,50,50,renderPlatform->GetDebugEffect(),renderPlatform->GetDebugEffect()->GetTechniqueByName("textured"),0);
 	effect->Apply(deviceContext,effect->GetTechniqueByName("text"),0);
 
 	for(int i=0;i<70;i++)
