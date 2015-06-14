@@ -673,10 +673,11 @@ technique sun
 		SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
 		SetPixelShader(CompileShader(ps_4_0, PS_Sun_ForwardDepth()));
-		SetDepthStencilState(DisableDepth, 0);
+		SetDepthStencilState(DisableDepth,0);
 		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
 	}
 }
+
 technique sun_gaussian
 {
     pass depth_test

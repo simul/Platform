@@ -137,7 +137,6 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const ch
 	{
 		DebugBreak();
 	}
-	GL_ERROR_CHECK
 GL_ERROR_CHECK
 	bool any=false;
 	for(crossplatform::TechniqueMap::iterator i=effect->techniques.begin();i!=effect->techniques.end();i++)
@@ -491,21 +490,30 @@ bool Effect::FillInTechniques()
 	GLint e				=asGLint();
 	if(e<0)
 		return false;
+	GL_ERROR_CHECK
 	groups.clear();
 	int numg = (int)glfxGetTechniqueGroupCount(e);
 	for (int i = 0; i < numg; i++)
 	{
 		std::string group_name=glfxGetTechniqueGroupName(e,i);
 		glfxUseTechniqueGroup(e,i);
+	GL_ERROR_CHECK
 		int numt = (int)glfxGetTechniqueCount(e);
+	GL_ERROR_CHECK
 		for (int j = 0; j < numt; j++)
 		{
+	GL_ERROR_CHECK
 			std::string tech_name = glfxGetTechniqueName(e,j);
+	GL_ERROR_CHECK
 			int num_passes = (int)glfxGetPassCount(e, tech_name.c_str());
+	GL_ERROR_CHECK
 			for (int k = 0; k < num_passes; k++)
 			{
+	GL_ERROR_CHECK
 				std::string pass_name = glfxGetPassName(e, tech_name.c_str(), k);
+	GL_ERROR_CHECK
 				GLuint t = glfxCompilePass(e, tech_name.c_str(), pass_name.c_str());
+	GL_ERROR_CHECK
 				if(!t)
 				{
 					std::cerr<<filenameInUseUtf8.c_str()
@@ -514,6 +522,7 @@ bool Effect::FillInTechniques()
 					opengl::printEffectLog(asGLint());
 					return false;
 				}
+	GL_ERROR_CHECK
 				AddPass(group_name,tech_name, pass_name, t);
 			}
 		}
@@ -742,7 +751,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 		GLuint prog=effectTechnique->passAsGLuint(pass);
 		if(prog==0)
 		{
-			SIMUL_FILE_CERR(this->filenameInUseUtf8.c_str())<<"Pass \""<<pass<<"\" not found in technique \""<<GetTechniqueName(effectTechnique)<<"\" of Effect "<<this->filename.c_str()<<std::endl;
+			SIMUL_FILE_CERR(filenameInUseUtf8.c_str())<<"Pass \""<<pass<<"\" not found in technique \""<<GetTechniqueName(effectTechnique)<<"\" of Effect "<<this->filename.c_str()<<std::endl;
 			currentPass=-1;
 			current_prog=0;
 			deviceContext.activeTechnique=NULL;
