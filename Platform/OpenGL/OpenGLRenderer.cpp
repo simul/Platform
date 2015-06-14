@@ -110,8 +110,14 @@ void GLAPIENTRY openglCallbackFunction(GLenum source,
         cout << "HIGH";
         break;
     }
-    cout << endl;
-    cout << "---------------------opengl-callback-end--------------" << endl;
+	cout << endl;
+	switch (type)
+	{
+	case GL_DEBUG_TYPE_ERROR:
+		BREAK_IF_DEBUGGING
+	default:
+		break;
+	};
 }
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut)
 		:clouds::TrueSkyRenderer(env,sc,m)

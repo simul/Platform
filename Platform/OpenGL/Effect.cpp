@@ -116,6 +116,10 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform 
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	GL_ERROR_CHECK
 	size=sz;
+	lastBindingIndex++;
+	if (lastBindingIndex >= 52)//85)
+		lastBindingIndex = 1;// 21;
+	bindingIndex = lastBindingIndex;
 }
 
 int PlatformConstantBuffer::lastBindingIndex=1;
@@ -134,10 +138,6 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const ch
 		DebugBreak();
 	}
 	GL_ERROR_CHECK
-	lastBindingIndex++;
-	if (lastBindingIndex >= 52)//85)
-		lastBindingIndex = 1;// 21;
-	bindingIndex=lastBindingIndex;
 GL_ERROR_CHECK
 	bool any=false;
 	for(crossplatform::TechniqueMap::iterator i=effect->techniques.begin();i!=effect->techniques.end();i++)
@@ -169,10 +169,6 @@ GL_ERROR_CHECK
 					// No good reason why this might happen, but it sometimes does - driver-dependent.
 					continue;
 				}
-				glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
-	GL_ERROR_CHECK
-				glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,size);	
-	GL_ERROR_CHECK
 			}
 			///else
 			//	std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in pass "<<j<<" of "<<techname<<std::endl;
@@ -186,6 +182,10 @@ GL_ERROR_CHECK
 
 void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &,size_t size,void *addr)
 {
+GL_ERROR_CHECK
+	glBindBufferBase(GL_UNIFORM_BUFFER, bindingIndex, ubo);
+GL_ERROR_CHECK
+	glBindBufferRange(GL_UNIFORM_BUFFER, bindingIndex, ubo, 0, size);
 GL_ERROR_CHECK
 	glBindBuffer(GL_UNIFORM_BUFFER,ubo);
 GL_ERROR_CHECK

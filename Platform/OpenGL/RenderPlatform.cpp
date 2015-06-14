@@ -893,14 +893,11 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplat
 {
 	if (buffer)
 	{
-		glEnable(GL_RASTERIZER_DISCARD);
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, ((opengl::Buffer*)buffer)->vao);
-		glBeginTransformFeedback(GL_TRIANGLES);
 	}
 	else
 	{
-		glEndTransformFeedback();
-		glDisable(GL_RASTERIZER_DISCARD);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);
 	}
 }
 static GLuint m_fb=0;

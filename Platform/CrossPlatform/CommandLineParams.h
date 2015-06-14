@@ -11,6 +11,15 @@ namespace simul
 		/// A simple structure to store the command-line parameters for an executable.
 		struct CommandLineParams
 		{
+			CommandLineParams()
+				:pos_x(16)
+				,pos_y(16)
+				,quitafterframe(0)
+				,win_h(480)
+				,win_w(640)
+				,screenshot(false)
+			{
+			}
 			int quitafterframe;
 			int win_w,win_h;
 			int pos_x,pos_y;
@@ -22,12 +31,6 @@ namespace simul
 		/// Convert the inputs to an executable into a CommandLineParams struct.
 		inline void GetCommandLineParams(crossplatform::CommandLineParams &commandLineParams,int argCount,const char **szArgList)
 		{
-			commandLineParams.pos_x=16;
-			commandLineParams.pos_y=16;
-			commandLineParams.quitafterframe=0;
-			commandLineParams.win_h=480;
-			commandLineParams.win_w=640;
-	
 			if (szArgList)
 			{
 				bool sc=false;
