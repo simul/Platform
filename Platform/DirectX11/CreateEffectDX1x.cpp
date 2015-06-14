@@ -823,7 +823,7 @@ HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass
 void BreakIfDebugging()
 {
 	BREAK_IF_DEBUGGING;
-}
+ }
 
 int simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
 {

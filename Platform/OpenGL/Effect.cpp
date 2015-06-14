@@ -118,23 +118,26 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform 
 	size=sz;
 }
 
+int PlatformConstantBuffer::lastBindingIndex=1;
+
 void PlatformConstantBuffer::InvalidateDeviceObjects()
 {
+	if(bindingIndex==lastBindingIndex)
+		lastBindingIndex--;
 	SAFE_DELETE_BUFFER(ubo);
 }
 
-void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int )
+void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int idx)
 {
 	if(errno!=0)
 	{
 		DebugBreak();
 	}
 	GL_ERROR_CHECK
-		static int lastBindingIndex = 1;// 21;
+	lastBindingIndex++;
 	if (lastBindingIndex >= 52)//85)
 		lastBindingIndex = 1;// 21;
 	bindingIndex=lastBindingIndex;
-	lastBindingIndex++;
 GL_ERROR_CHECK
 	bool any=false;
 	for(crossplatform::TechniqueMap::iterator i=effect->techniques.begin();i!=effect->techniques.end();i++)

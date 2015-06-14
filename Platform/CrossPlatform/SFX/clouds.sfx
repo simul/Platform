@@ -30,7 +30,7 @@ uniform Texture2D nearFarTexture;
 uniform Texture2D cloudGodraysTexture;
 uniform Texture2D rainMapTexture;
 uniform TextureCube diffuseCubemap;
-uniform RWTexture3D<vec4> outputTexture3d;
+uniform RWTexture3D<uchar4> outputTexture3d;
 uniform RWStructuredBuffer<VolumeQueryResult> volumeQueryResults;
 
 uniform StructuredBuffer<vec3> queryInputs;

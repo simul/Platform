@@ -44,6 +44,7 @@ namespace simul
 			GLuint	ubo;
 			size_t size;
 			int bindingIndex;
+			static int lastBindingIndex;
 		public:
 			PlatformConstantBuffer():ubo(0)
 			{
