@@ -114,7 +114,7 @@ void GLAPIENTRY openglCallbackFunction(GLenum source,
 	switch (type)
 	{
 	case GL_DEBUG_TYPE_ERROR:
-		BREAK_IF_DEBUGGING
+		BREAK_ONCE_IF_DEBUGGING;
 	default:
 		break;
 	};

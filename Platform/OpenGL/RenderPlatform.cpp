@@ -1066,6 +1066,7 @@ GLenum toGLTopology(crossplatform::Topology t)
 	};
 	return GL_LINE_LOOP;
 }
+
 void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
 {
 	if(!deviceContext.activeTechnique)

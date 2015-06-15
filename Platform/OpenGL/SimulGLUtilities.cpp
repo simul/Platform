@@ -553,6 +553,6 @@ void simul::opengl::CheckGLError(const char *filename,int line_number,int err)
 			err=glGetError();
         }
 		std::cerr<<std::endl;
-		BREAK_IF_DEBUGGING;
+		BREAK_ONCE_IF_DEBUGGING;
 	}
 }
