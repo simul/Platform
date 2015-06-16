@@ -72,8 +72,8 @@ void GLAPIENTRY openglCallbackFunction(GLenum source,
                                            const GLchar* message,
                                           const void* userParam)
 {
-    cout << "---------------------opengl-callback-start------------" << endl;
-    cout << "message: "<< message << endl;
+    
+    cout << "message: "<< message << " ";
     cout << "type: ";
     switch (type) {
     case GL_DEBUG_TYPE_ERROR:
@@ -95,9 +95,9 @@ void GLAPIENTRY openglCallbackFunction(GLenum source,
         cout << "OTHER";
         break;
     }
-    cout << endl;
+    
  
-    cout << "id: " << id << endl;
+    cout << " id: " << id << " ";
     cout << "severity: ";
     switch (severity){
     case GL_DEBUG_SEVERITY_LOW:

@@ -1073,6 +1073,12 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_ve
 		return;
 	rescaleVertexShaderConstants.rescaleVertexShaderY=opengl::FramebufferGL::IsTargetTexture()?-1.0f:1.0f;
 	rescaleVertexShaderConstants.Apply(deviceContext);
+	
+	GLint current_vao;
+	glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&current_vao);
+	// GL Insists on having a bound vertex array object, even if we're not using it in the vertex shader.
+	if(current_vao==0)
+		glBindVertexArray(empty_vao);
 	glDrawArrays(toGLTopology(currentTopology), start_vert, num_verts); 
 }
 
