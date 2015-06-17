@@ -175,7 +175,6 @@ GL_ERROR_CHECK
 	SetCloudConstants(cloudConstants,real_time);
 	cloudConstants.Apply(deviceContext);
 
-	//UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
 	cloudPerViewConstants.layerIndex=18;
 	cloudPerViewConstants.Apply(deviceContext);
 	// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,

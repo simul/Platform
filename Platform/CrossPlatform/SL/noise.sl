@@ -2,6 +2,11 @@
 #ifndef PLATFORM_CROSSPLATFORM_NOISE_SL
 #define PLATFORM_CROSSPLATFORM_NOISE_SL
 
+float rand(float c)
+{
+    return fract(sin(dot(vec2(c,11.1*c) ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
 float rand(vec2 co)
 {
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);

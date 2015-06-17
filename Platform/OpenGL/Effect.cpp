@@ -192,8 +192,6 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	glBindBuffer(GL_UNIFORM_BUFFER,0);
 GL_ERROR_CHECK
-//	glBindBufferBase(GL_constant_buffer,bindingIndex,ubo);
-//GL_ERROR_CHECK
 }
 
 void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &)

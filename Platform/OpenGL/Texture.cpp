@@ -215,6 +215,7 @@ void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *ren
 	GLenum datatype=opengl::RenderPlatform::DataType(pixelFormat);
 	width=w;
 	length=l;
+	depth=num_layers;
 	dim=2;
 	glGenTextures(1,&pTextureObject);
 	glBindTexture(GL_TEXTURE_2D_ARRAY,pTextureObject);

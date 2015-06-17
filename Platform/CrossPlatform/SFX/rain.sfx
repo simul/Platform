@@ -1,9 +1,10 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
 #include "../SL/common.sl"
-#ifndef GLFX
+
 #include "../SL/render_states.sl"
-float particleZoneSize=15.0;	// = 625 m^3
+#define particleZoneSize (15.0)
+// = 625 m^3
 // Brittanica.com: http://www.britannica.com/EBchecked/topic/489827/rain#ref259264
 // Concentrations of raindrops typically range from 100 to 1,000 per cubic m (3 to 30 per cubic foot);
 // drizzle droplets usually are more numerous. 
@@ -12,17 +13,16 @@ float particleZoneSize=15.0;	// = 625 m^3
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/depth.sl"
 #include "../SL/noise.sl"
-#include "../SL/rain.sl"
 
-texture3D randomTexture3D;
-texture2D rainMapTexture;
-TextureCube cubeTexture;
-texture2D rainTexture;
+uniform Texture3D randomTexture3D;
+uniform Texture2D rainMapTexture;
+uniform TextureCube cubeTexture;
+uniform Texture2D rainTexture;
 // The RESOLVED depth texture at full resolution
-texture2D depthTexture;
-Texture2DArray rainTextureArray;
-RWTexture2DArray<vec4> targetTextureArray;
-RWStructuredBuffer<PrecipitationVertex> targetVertexBuffer;
+uniform Texture2D depthTexture;
+uniform Texture2DArray rainTextureArray;
+uniform RWTexture2DArray<vec4> targetTextureArray;
+uniform RWStructuredBuffer<PrecipitationVertex> targetVertexBuffer;
 
 
 SamplerState samAniso
@@ -128,27 +128,28 @@ CS_LAYOUT(8,8,8)
 shader void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 {
 	int X,Yy,N;
-	int n	=idx.z;
+	int n					=int(idx.z);
+	float fn=float(n);
+	float fn9=fn+0.9;
 	targetTextureArray.GetDimensions(X,Yy,N);
-	float brightnessMult	=rand(n*1001.1);
+	float brightnessMult	=rand(float(n)*1001.1);
 	vec4 result				=vec4(0.0,0,0,0.5);
 	// idx.x gives the index in the array.
-	float b				=rand(n+0.5);
+	float b					=rand(float(n)+0.5);
+	float y					=float(idx.y)/float(Yy);
+	float yb=y+b;
+	float V					=0.4/pi*(0.6+0.8*rand(n));
+	float U					=0.4/pi*(0.6+0.8*rand(n*4.41));
+	float c					=0.5*sin(y/V);
+	float brightness		=brightnessMult*abs(sin((yb)/U));
+	float h					=rand(fn9);
+	float yh=y+h;
+	float highlight			=30.0*saturate(sin((yh)/V)-0.95);
 	
-	float y				=float(idx.y)/float(Yy);
-	
-	float V				=0.4/pi*(0.6+0.8*rand(n));
-	float U				=0.4/pi*(0.6+0.8*rand(n*4.41));
-	float c				=0.5*sin(y/V);
-	float brightness	=brightnessMult*abs(sin((y+b)/U));
-	
-	float h				=rand(n+0.9);
-	float highlight		=30.0*saturate(sin((y+h)/V)-0.95);
-	
-	float x				=2.0*(idx.x+0.5)/float(X)-1.0;		// goes between -1 and 1
-	float dx			=(x-c)*2.0;
-	float s				=exp(-dx*dx);
-	result.rgba			+=(brightness+highlight)*s;
+	float x					=2.0*(float(idx.x)+0.5)/float(X)-1.0;		// goes between -1 and 1
+	float dx				=(x-c)*2.0;
+	float s					=exp(-dx*dx);
+	result.rgba				+=(brightness+highlight)*s;
 	
 	targetTextureArray[idx]	=saturate(result);
 }
@@ -171,28 +172,11 @@ shader particleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)
 	return OUT;
 }
 
-cbuffer cbImmutable
-{
-    vec4 g_positions[4] : packoffset(c0) =
-    {
-        vec4(-0.5,-0.5,0,0),
-        vec4( 0.5,-0.5,0,0),
-        vec4(-0.5, 0.5,0,0),
-        vec4( 0.5, 0.5,0,0),
-    };
-    vec2 g_texcoords[4] : packoffset(c4) = 
-    { 
-        vec2(0,0),
-        vec2(1,0), 
-        vec2(0,1),
-        vec2(1,1),
-    };
-};
 
 [maxvertexcount(6)]
 shader void GS_SnowParticles(point particleVertexOutput input[1], inout TriangleStream<particleGeometryOutput> SpriteStream)
 {
-    particleGeometryOutput output;
+    particleGeometryOutput outp;
 	// Emit four new triangles.
 
 	// The two centres of the streak positions.
@@ -206,52 +190,66 @@ shader void GS_SnowParticles(point particleVertexOutput input[1], inout Triangle
 		pos1=pos_temp;
 	}
 	vec2 sz=input[0].pointSize*vec2(0.5,1.0);
-	output.brightness	=input[0].brightness;  
-	output.fade			=input[0].fade*sz.x/(sz.x+length(pos2-pos1));  
-	output.view			=input[0].view;     
+	outp.brightness	=input[0].brightness;  
+	outp.fade			=input[0].fade*sz.x/(sz.x+length(pos2-pos1));  
+	outp.view			=input[0].view;    
+    vec2 g_positions[4] =
+    {
+        vec2(-0.5,-0.5),
+        vec2( 0.5,-0.5),
+        vec2(-0.5, 0.5),
+        vec2( 0.5, 0.5),
+    };
+    vec2 g_texcoords[4]=
+    { 
+        vec2(0,0),
+        vec2(1,0), 
+        vec2(0,1),
+        vec2(1,1),
+    }; 
 	if(pos1.x/pos1.w<=pos2.x/pos2.w)
 	{
 		// bottom-left quadrant:
-		output.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[0];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[1];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[2];
-		SpriteStream.Append(output);
-		output.position		=pos2+vec4(g_positions[1].xy*sz,0,0);  
-		output.texCoords	=g_texcoords[1];
-		SpriteStream.Append(output);
-		output.position		=pos2+vec4(g_positions[2].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[2];
-		SpriteStream.Append(output);
-		output.position		=pos2+vec4(g_positions[3].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[3];
-		SpriteStream.Append(output);
+		outp.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[0];
+		SpriteStream.Append(outp);
+		outp.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[1];
+		SpriteStream.Append(outp);
+		outp.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[2];
+		SpriteStream.Append(outp);
+		outp.position		=pos2+vec4(g_positions[1].xy*sz,0,0);  
+		outp.texCoords	=g_texcoords[1];
+		SpriteStream.Append(outp);
+		outp.position		=pos2+vec4(g_positions[2].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[2];
+		SpriteStream.Append(outp);
+		outp.position		=pos2+vec4(g_positions[3].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[3];
+		SpriteStream.Append(outp);
 	}
 	else
 	{
 		// bottom-left quadrant:
-		output.position		=pos2+vec4(g_positions[2].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[2];
-		SpriteStream.Append(output);
-		output.position		=pos2+vec4(g_positions[3].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[3];
-		SpriteStream.Append(output);
-		output.position		=pos2+vec4(g_positions[0].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[0];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[3].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[3];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[0];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[1];
-		SpriteStream.Append(output);
+		outp.position		=pos2+vec4(g_positions[2].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[2];
+		SpriteStream.Append(outp);
+		outp.position		=pos2+vec4(g_positions[3].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[3];
+		SpriteStream.Append(outp);
+		outp.position		=pos2+vec4(g_positions[0].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[0];
+		SpriteStream.Append(outp);
+		outp.position		=pos1+vec4(g_positions[3].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[3];
+		SpriteStream.Append(outp);
+		outp.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[0];
+		SpriteStream.Append(outp);
+		outp.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[1];
+		SpriteStream.Append(outp);
     }
     SpriteStream.RestartStrip();
 }
@@ -326,8 +324,15 @@ shader vec4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
 
 vec4 PS_Overlay(rainVertexOutput IN,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
-	vec3 view				=normalize(mul(invViewProj_2[1],vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
+#ifdef GLSL
+	mat4 d					=invViewProj_2[1];
+#else
+	mat4 d					=invViewProj_2[1];
+#endif
+	vec3 view				=normalize(mul(d,vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
 	
 	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	float depth				=texture_clamp(depthTexture,depth_texc).x;
@@ -357,12 +362,12 @@ vec4 PS_Overlay(rainVertexOutput IN,bool reverseDepth)
 }
 
 
-vec4 PS_Overlay_ReverseDepth(rainVertexOutput IN) : SV_Target
+shader vec4 PS_Overlay_ReverseDepth(rainVertexOutput IN) : SV_Target
 {
 	return PS_Overlay(IN,true);
 }
 
-vec4 PS_Overlay_ForwardDepth(rainVertexOutput IN) : SV_Target
+shader vec4 PS_Overlay_ForwardDepth(rainVertexOutput IN) : SV_Target
 {
 	return PS_Overlay(IN,false);
 }
@@ -392,7 +397,7 @@ struct RainSplashGeometryOutput
 };
 
 
-RainSplashVertexOutput VS_RainSplash(PrecipitationVertexInput input )
+shader RainSplashVertexOutput VS_RainSplash(PrecipitationVertexInput input )
 {
 	RainSplashVertexOutput p;
 	p.position	=input.position;
@@ -402,50 +407,63 @@ RainSplashVertexOutput VS_RainSplash(PrecipitationVertexInput input )
 }
 
 [maxvertexcount(6)]
-void GS_RainSplash(point RainSplashVertexOutput input[1], inout TriangleStream<RainSplashGeometryOutput> SpriteStream)
+shader void GS_RainSplash(point RainSplashVertexOutput input[1], inout TriangleStream<RainSplashGeometryOutput> SpriteStream)
 {
-    RainSplashGeometryOutput output;
+    RainSplashGeometryOutput outp;
 	// Emit two new triangles.
 	// The two centres of the streak positions.
 	float sz=.1;
 	vec4 pos1			=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
-	output.strength		=input[0].strength; 
+	outp.strength		=input[0].strength; 
 	{
+		vec2 g_positions[4] =
+		{
+			vec2(-0.5,-0.5),
+			vec2( 0.5,-0.5),
+			vec2(-0.5, 0.5),
+			vec2( 0.5, 0.5),
+		};
+		vec2 g_texcoords[4]=
+		{ 
+			vec2(0,0),
+			vec2(1,0), 
+			vec2(0,1),
+			vec2(1,1),
+		}; 
 		// bottom-left quadrant:
-		output.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[0];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[1];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[2];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[1].xy*sz,0,0);  
-		output.texCoords	=g_texcoords[1];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[2];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[3].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[3];
-		SpriteStream.Append(output);
+		outp.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[0];
+		SpriteStream.Append(outp);
+		outp.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[1];
+		SpriteStream.Append(outp);
+		outp.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[2];
+		SpriteStream.Append(outp);
+		outp.position		=pos1+vec4(g_positions[1].xy*sz,0,0);  
+		outp.texCoords	=g_texcoords[1];
+		SpriteStream.Append(outp);
+		outp.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[2];
+		SpriteStream.Append(outp);
+		outp.position		=pos1+vec4(g_positions[3].xy*sz,0,0); 
+		outp.texCoords	=g_texcoords[3];
+		SpriteStream.Append(outp);
 		SpriteStream.RestartStrip();
 	}
 }
 
-vec4 PS_RainSplash(RainSplashGeometryOutput IN) : SV_Target
+shader vec4 PS_RainSplash(RainSplashGeometryOutput IN) : SV_Target
 {
 	return vec4(IN.texCoords.xyy,1.0);
 }
 
-float g_Near=1.0;
-float g_Far=100.0;
 bool cullSprite( vec3 position, float SpriteSize)
 {
     vec4 vpos = mul( worldView[1],vec4(position,1));
     
-    
+	float g_Near=1.0;
+	float g_Far=100.0;
     if( (vpos.z < (g_Near - SpriteSize )) || ( vpos.z > (g_Far + SpriteSize)) ) 
     {
         return true;
@@ -488,7 +506,7 @@ struct RainParticleVertexOutput
     float strength	: TEXCOORD2;	// from 0 to 1
 };
 
-RainParticleVertexOutput VS_RainParticles(PrecipitationVertexInput input )
+shader RainParticleVertexOutput VS_RainParticles(PrecipitationVertexInput input )
 {
 	RainParticleVertexOutput p;
 	p.position	=input.position;
@@ -502,9 +520,9 @@ RainParticleVertexOutput VS_RainParticles(PrecipitationVertexInput input )
     return p;
 }
 
-float g_SpriteSize=0.01;
 void GenRainSpriteVertices(vec3 worldPos, vec3 velVec, vec3 eyePos, out vec3 outPos[4])
 {
+	float g_SpriteSize=0.01;
     float height			=length(velVec);	// g_SpriteSize/2.0;
     float width				=g_SpriteSize;
 
@@ -522,58 +540,68 @@ void GenRainSpriteVertices(vec3 worldPos, vec3 velVec, vec3 eyePos, out vec3 out
     
 // GS for rendering rain as point sprites.  Takes a point and turns it into 2 tris.
 [maxvertexcount(4)]
-void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStream<RainParticleGeometryOutput> SpriteStream)
+shader void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStream<RainParticleGeometryOutput> SpriteStream)
 {
 	vec4 clip_pos				=mul(worldViewProj[1],vec4(input[0].position.xyz,1.0));
 	if(input[0].type>0)
 	if(clip_pos.z>0)
     {    
-        RainParticleGeometryOutput output	= (RainParticleGeometryOutput)0;
-        output.type			= input[0].type;
-		output.strength		=input[0].strength;
+		vec2 g_texcoords[4]=
+		{ 
+			vec2(0,0),
+			vec2(1,0), 
+			vec2(0,1),
+			vec2(1,1),
+		}; 
+        RainParticleGeometryOutput outp	;//= (RainParticleGeometryOutput)0;
+        outp.type			= input[0].type;
+		outp.strength		=input[0].strength;
         vec3 pos[4];
 		float g_FrameRate=20.0;
         GenRainSpriteVertices(input[0].position.xyz,-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*0.5*input[0].velocity)/g_FrameRate, viewPos[1].xyz, pos);
         
-		output.wPos				=pos[0];
+		outp.wPos				=pos[0];
         vec3 closestPointLight	=vec3(0,0,500);
         float closestDistance	=length(closestPointLight-pos[0]);
         
-        output.pos				=mul(worldViewProj[1],vec4(pos[0],1.0));
-		output.clip_pos			=output.pos.xyzw/output.pos.w;
-		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
-		output.depthTexc.y		=1.0-output.depthTexc.y;
-        output.view				=normalize(pos[0]);
-        output.texCoords		=g_texcoords[0];
-        SpriteStream.Append(output);
+        outp.pos				=mul(worldViewProj[1],vec4(pos[0],1.0));
+		outp.clip_pos			=outp.pos.xyzw/outp.pos.w;
+		outp.depthTexc		=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
+		outp.depthTexc.y		=1.0-outp.depthTexc.y;
+        outp.view				=normalize(pos[0]);
+        outp.texCoords		=g_texcoords[0];
+        SpriteStream.Append(outp);
                 
-        output.pos				=mul(worldViewProj[1],vec4(pos[1],1.0));
-		output.clip_pos			=output.pos.xyzw/output.pos.w;
-		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
-		output.depthTexc.y		=1.0-output.depthTexc.y;
-        output.view				=normalize(pos[1]);
-        output.texCoords		=g_texcoords[1];
-        SpriteStream.Append(output);
+        outp.pos				=mul(worldViewProj[1],vec4(pos[1],1.0));
+		outp.clip_pos			=outp.pos.xyzw/outp.pos.w;
+		outp.depthTexc		=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
+		outp.depthTexc.y		=1.0-outp.depthTexc.y;
+        outp.view				=normalize(pos[1]);
+        outp.texCoords		=g_texcoords[1];
+        SpriteStream.Append(outp);
         
-        output.pos				=mul(worldViewProj[1],vec4(pos[2],1.0));
-		output.clip_pos			=output.pos.xyzw/output.pos.w;
-		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
-		output.depthTexc.y		=1.0-output.depthTexc.y;
-        output.view				=normalize(pos[2]);
-        output.texCoords		=g_texcoords[2];
-        SpriteStream.Append(output);
+        outp.pos				=mul(worldViewProj[1],vec4(pos[2],1.0));
+		outp.clip_pos			=outp.pos.xyzw/outp.pos.w;
+		outp.depthTexc		=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
+		outp.depthTexc.y		=1.0-outp.depthTexc.y;
+        outp.view				=normalize(pos[2]);
+        outp.texCoords		=g_texcoords[2];
+        SpriteStream.Append(outp);
                 
-        output.pos				=mul(worldViewProj[1],vec4(pos[3],1.0));
-		output.clip_pos			=output.pos.xyzw/output.pos.w;
-		output.depthTexc		=0.5*(output.clip_pos.xy+vec2(1.0,1.0));
-		output.depthTexc.y		=1.0-output.depthTexc.y;
-        output.view				=normalize(pos[3]);
-        output.texCoords		=g_texcoords[3];
-        SpriteStream.Append(output);
+        outp.pos				=mul(worldViewProj[1],vec4(pos[3],1.0));
+		outp.clip_pos			=outp.pos.xyzw/outp.pos.w;
+		outp.depthTexc		=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
+		outp.depthTexc.y		=1.0-outp.depthTexc.y;
+        outp.view				=normalize(pos[3]);
+        outp.texCoords		=g_texcoords[3];
+        SpriteStream.Append(outp);
         
         SpriteStream.RestartStrip();
     }   
 }
+
+#define MAX_VIDX 4
+#define MAX_HIDX 8
 
 void rainResponse(RainParticleGeometryOutput input, vec3 lightVector, float lightIntensity, vec3 lightColor, vec3 eyeVector, bool fallOffFactor, inout vec4 rainResponseVal)
 {
@@ -595,8 +623,6 @@ void rainResponse(RainParticleGeometryOutput input, vec3 lightVector, float ligh
     {
         vec3 dropDir = meanFallVelocity;
 
-        #define MAX_VIDX 4
-        #define MAX_HIDX 8
         // Inputs: lightVector, eyeVector, dropDir
         vec3 L = normalize(lightVector);
         vec3 E = normalize(eyeVector);
@@ -616,7 +642,7 @@ void rainResponse(RainParticleGeometryOutput input, vec3 lightVector, float ligh
         
         if(vangle>=88.0)
         {
-            hangle = 0;
+            hangle = 0.0;
             is_EpLp_angle_ccw = true;
         }
                 
@@ -625,7 +651,7 @@ void rainResponse(RainParticleGeometryOutput input, vec3 lightVector, float ligh
         // Outputs:
         // verticalLightIndex[1|2] - two indices in the vertical direction
         // t - fraction at which the vangle is between these two indices (for lerp)
-        int verticalLightIndex1 = floor(vangle); // 0 to 5
+        int verticalLightIndex1 = int(floor(vangle)); // 0 to 5
         int verticalLightIndex2 = min(MAX_VIDX, (verticalLightIndex1 + 1) );
         verticalLightIndex1 = max(0, verticalLightIndex1);
         float t = frac(vangle);
@@ -641,7 +667,7 @@ void rainResponse(RainParticleGeometryOutput input, vec3 lightVector, float ligh
         float s = 0;
         
         s = frac(hangle);
-        horizontalLightIndex1 = floor(hangle); // 0 to 8
+        horizontalLightIndex1 = int(floor(hangle)); // 0 to 8
         horizontalLightIndex2 = horizontalLightIndex1+1;
         if( horizontalLightIndex1 < 0 )
         {
@@ -714,13 +740,13 @@ void rainResponse(RainParticleGeometryOutput input, vec3 lightVector, float ligh
 	rainResponseVal = vec4(lightColor,opacity);
 }
 
-
-
 vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec3 light			=cubeTexture.Sample(wrapSamplerState,-IN.view).rgb;
-	vec4 texel			=rainTextureArray.Sample(samAniso,vec3(IN.texCoords.xy,IN.type));
+	vec4 texel			=rainTextureArray.Sample(samAniso,vec3(IN.texCoords.xy,float(IN.type)));
 	texel.rgb			*=light;
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
 	vec2 depth;
@@ -743,19 +769,21 @@ vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
 }
 
 
-vec4 PS_RainParticles_ReverseDepth(RainParticleGeometryOutput IN) : SV_Target
+shader vec4 PS_RainParticles_ReverseDepth(RainParticleGeometryOutput IN) : SV_Target
 {
 	return PS_RainParticles(IN,true);
 }
 
-vec4 PS_RainParticles_ForwardDepth(RainParticleGeometryOutput IN) : SV_Target
+shader vec4 PS_RainParticles_ForwardDepth(RainParticleGeometryOutput IN) : SV_Target
 {
 	return PS_RainParticles(IN,false);
 }
 
-vec4 PS_RainParticles_NoCubemap(RainParticleGeometryOutput IN,bool reverseDepth) : SV_Target
+vec4 PS_RainParticles_NoCubemap(RainParticleGeometryOutput IN,bool reverseDepth) 
 {
-	DepthIntepretationStruct depthInterpretationStruct={depthToLinFadeDistParams,reverseDepth};
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec3 light			=lightColour.rgb;
 	vec4 texel			=.5*rainTextureArray.Sample(samAniso,vec3(IN.texCoords,IN.type));
 	//directional lighting---------------------------------------------------------------------------------
@@ -786,17 +814,17 @@ vec4 PS_RainParticles_NoCubemap(RainParticleGeometryOutput IN,bool reverseDepth)
 	return texel;//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
 
-vec4 PS_RainParticles_NoCubemap_ReverseDepth(RainParticleGeometryOutput IN) : SV_Target
+shader vec4 PS_RainParticles_NoCubemap_ReverseDepth(RainParticleGeometryOutput IN) : SV_Target
 {
 	return PS_RainParticles_NoCubemap(IN,true);
 }
 
-vec4 PS_RainParticles_NoCubemap_ForwardDepth(RainParticleGeometryOutput IN) : SV_Target
+shader vec4 PS_RainParticles_NoCubemap_ForwardDepth(RainParticleGeometryOutput IN) : SV_Target
 {
 	return PS_RainParticles_NoCubemap(IN,false);
 }
 
-vec4 PS_ShowArrayTexture(posTexVertexOutput IN): SV_TARGET
+shader vec4 PS_ShowArrayTexture(posTexVertexOutput IN): SV_TARGET
 {
 	// 16x512, 32 slices.
 	vec2 pos	=IN.texCoords.xy*vec2(16.0*32.0,512.0);
@@ -965,16 +993,16 @@ technique show_array_texture
 // advance rain
 //--------------------------------------------------------------------------------------------
 
-PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput input,uint vertex_id	: SV_VertexID)
+shader PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput input,uint vertex_id	: SV_VertexID)
 {
-	vec3 pos				=vec3(rand(vertex_id*0.52),rand(7.01*vertex_id),rand(vertex_id));
-	vec3 pos2				=vec3(rand(vertex_id*4.55),rand(1.35*vertex_id),rand(27.2*vertex_id));
+	vec3 pos				=vec3(rand(float(vertex_id)*0.52),rand(7.01*float(vertex_id)),rand(float(vertex_id)));
+	vec3 pos2				=vec3(rand(float(vertex_id)*4.55),rand(1.35*float(vertex_id)),rand(27.2*float(vertex_id)));
 	pos						+=pos2;
 	pos						-=vec3(1.0,1.0,1.0);
 	PrecipitationVertexInput v;
 	v.position				=particleZoneSize*pos;
 	// velocity is normalized in order to scale with fall speed
-	vec3 velocity			=vec3(rand(1.7*vertex_id),rand(17.01*vertex_id),rand(2.087*vertex_id));
+	vec3 velocity			=vec3(rand(1.7*float(vertex_id)),rand(17.01*float(vertex_id)),rand(2.087*float(vertex_id)));
 	velocity				=2.0*velocity-vec3(1.0,1.0,1.0);
 	v.velocity				=velocity;
 	v.type					=vertex_id%32;
@@ -984,7 +1012,7 @@ PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput input,uint ve
 }
 
 // Rainsplashes: use vertex texture to see whether a splash should be generated.
-PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint vertex_id	: SV_VertexID)
+shader PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint vertex_id	: SV_VertexID)
 {
 	vec3 pos					=input.position;
 	pos							+=(meanFallVelocity+meanFallVelocity.z*input.velocity*0.5*flurry)*timeStepSeconds;
@@ -1021,4 +1049,3 @@ technique move_particles
         SetDepthStencilState(DisableDepth,0);
 	}
 }
-#endif

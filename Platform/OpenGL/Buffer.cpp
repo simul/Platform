@@ -11,7 +11,7 @@ using namespace simul;
 using namespace opengl;
 
 Buffer::Buffer()
-	:buf(0),vao(0),mapped(NULL)
+	:buf(0),tf_buffer(0),vao(0),mapped(NULL)
 {
 }
 
@@ -23,8 +23,9 @@ Buffer::~Buffer()
 
 void Buffer::InvalidateDeviceObjects()
 {
-	SAFE_DELETE_BUFFER(buf)
-	SAFE_DELETE_VAO(vao)
+	SAFE_DELETE_BUFFER(buf);
+	SAFE_DELETE_VAO(vao);
+	SAFE_DELETE_TF(tf_buffer);
 }
 
 
@@ -36,6 +37,11 @@ ID3D11Buffer *Buffer::AsD3D11Buffer()
 GLuint Buffer::AsGLuint()
 {
 	return buf;
+}
+
+GLuint Buffer::TransformFeedbackAsGLuint()
+{
+	return tf_buffer;
 }
 
 void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access,bool streamout_target)
@@ -66,7 +72,16 @@ GL_ERROR_CHECK
 								,stride									// Stride to the next vertex
 								,(GLvoid*)d.alignedByteOffset );		// Vertex Buffer starting offset
 	};
-	glBindVertexArray( 0 ); 
+	glBindVertexArray( 0 );
+
+	if(streamout_target)
+	{
+		// Generate a buffer object
+		glGenTransformFeedbacks(1, &tf_buffer);
+		glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, tf_buffer);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vao); 
+		glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, 0);
+	}
 GL_ERROR_CHECK
 }
 

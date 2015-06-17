@@ -893,13 +893,15 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplat
 {
 	if (buffer)
 	{
-		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, ((opengl::Buffer*)buffer)->vao);
+		opengl::Buffer *glbuffer=static_cast<opengl::Buffer *>(buffer);
+		glBindTransformFeedback(GL_TRANSFORM_FEEDBACK,  glbuffer->TransformFeedbackAsGLuint());
 	}
 	else
 	{
-		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);
+		glBindTransformFeedback(GL_TRANSFORM_FEEDBACK,0);
 	}
 }
+
 static GLuint m_fb=0;
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {

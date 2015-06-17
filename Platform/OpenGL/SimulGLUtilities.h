@@ -63,6 +63,7 @@ namespace simul
 		#define SAFE_DELETE_TEXTURE(tex)		{if(tex) glDeleteTextures(1,&tex);tex=0;}
 		#define SAFE_DELETE_BUFFER(buff)		{if(buff) glDeleteBuffers(1,&buff);buff=0;}
 		#define SAFE_DELETE_VAO(vao)			{if(vao) glDeleteVertexArrays(1,&vao);vao=0;}
+		#define SAFE_DELETE_TF(tf)				{if(tf) glDeleteTransformFeedbacks(1,&tf);tf=0;}
 		#define SAFE_DELETE_FRAMEBUFFER(fb)		{if(fb) glDeleteFramebuffers(1,&fb);fb=0;}
 		#define SAFE_DELETE_RENDERBUFFER(rb)	{if(rb) glDeleteRenderbuffers(1,&rb);rb=0;}
 		extern SIMUL_OPENGL_EXPORT bool RenderAngledQuad(const float *dir,float half_angle_radians);
@@ -93,82 +94,6 @@ namespace simul
 		// make a 2D texture.
 		extern GLuint make2DTexture(int w,int l,const float *src=NULL);
 
-		#define MAKE_GL_CONSTANT_BUFFER(ubo,Struct,bindingIndex)	\
-			glGenBuffers(1, &ubo);	\
-			glBindBuffer(GL_constant_buffer, ubo);	\
-			glBufferData(GL_constant_buffer, sizeof(Struct), NULL, GL_DYNAMIC_DRAW);	\
-			glBindBuffer(GL_constant_buffer, 0);		\
-			glBindBufferRange(GL_constant_buffer,bindingIndex,ubo,0, sizeof(Struct));
-
-
-		#define UPDATE_GL_CONSTANT_BUFFER(ubo,constants,bindingIndex)	\
-			glBindBuffer(GL_constant_buffer, ubo);	\
-			glBufferSubData(GL_constant_buffer,0, sizeof(constants), &constants);	\
-			glBindBuffer(GL_constant_buffer, 0);		\
-			glBindBufferBase(GL_constant_buffer,bindingIndex,ubo);
-
-		//! Useful Wrapper class to encapsulate constant buffer behaviour
-		template<class T> class ConstantBuffer:public T
-		{
-		public:
-			ConstantBuffer()
-				:ubo(0)
-			{
-				// Clear out the part of memory that corresponds to the base class.
-				// We should ONLY inherit from simple structs.
-				memset(static_cast<T*>(this),0,sizeof(T));
-			}
-			~ConstantBuffer()
-			{
-				Release();
-			}
-			GLuint	ubo;
-			//GLint bindingIndex;
-			//! Create the buffer object.
-			void RestoreDeviceObjects()
-			{
-				Release();
-				glGenBuffers(1, &ubo);
-				glBindBuffer(GL_constant_buffer, ubo);
-				glBufferData(GL_constant_buffer, sizeof(T), NULL, GL_DYNAMIC_DRAW );
-				glBindBuffer(GL_constant_buffer, 0);
-			}
-			//! Find the constant buffer in the given effect, and link to it.
-			void LinkToProgram(GLuint program,const char *name,GLint bindingIndex)
-			{
-				GLint indexInShader=glGetUniformBlockIndex(program,name);
-				if(indexInShader>=0)
-				{
-					glUniformBlockBinding(program,indexInShader,bindingIndex);
-					GLint blockSize;
-					glGetActiveUniformBlockiv(program, indexInShader,
-                      GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
-					// blocksize can be greater than sizeof(T), because GLSL might expect whole chunks of 16 bytes, while C++ only allocates what it needs. But
-					// blocksize can't be less than sizeof(T), because it won't have the space to take the data we're sending it!
-					if(blockSize<sizeof(T))
-					{
-						std::cerr<<"blockSize<sizeof(T) - shader/C++ mismatch in GLSL."<<std::endl;
-						return;
-					}
-					glBindBufferBase(GL_constant_buffer,bindingIndex,ubo);
-					glBindBufferRange(GL_constant_buffer,bindingIndex,ubo,0,sizeof(T));	
-				}
-				else
-					std::cerr<<"ConstantBuffer<> LinkToProgram did not find the buffer named "<<name<<" in the program."<<std::endl;
-			}
-			//! Free the allocated buffer.
-			void Release()
-			{
-				SAFE_DELETE_BUFFER(ubo);
-			}
-			//! Apply the stored data using the given context, in preparation for rendering.
-			void Apply()
-			{
-				glBindBuffer(GL_constant_buffer,ubo);
-				glBufferSubData(GL_constant_buffer,0,sizeof(T),static_cast<T*>(this));
-				glBindBuffer(GL_constant_buffer,0);
-			}
-		};
 	}
 }
 #endif

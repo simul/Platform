@@ -25,6 +25,7 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
+#include <iomanip>
 
 #pragma comment(lib,"opengl32")
 #pragma comment(lib,"glfx")
@@ -72,45 +73,46 @@ void GLAPIENTRY openglCallbackFunction(GLenum source,
                                            const GLchar* message,
                                           const void* userParam)
 {
-    
-    cout << "message: "<< message << " ";
-    cout << "type: ";
-    switch (type) {
+	cerr<<__FILE__<<"("<<__LINE__<<"): ";
+    switch (type)
+	{
     case GL_DEBUG_TYPE_ERROR:
-        cout << "ERROR";
+        
+		cerr<<"error";
         break;
     case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        cout << "DEPRECATED_BEHAVIOR";
+        cerr << "DEPRECATED_BEHAVIOR";
         break;
     case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        cout << "UNDEFINED_BEHAVIOR";
+        cerr << "UNDEFINED_BEHAVIOR";
         break;
     case GL_DEBUG_TYPE_PORTABILITY:
-        cout << "PORTABILITY";
+        cerr << "PORTABILITY";
         break;
     case GL_DEBUG_TYPE_PERFORMANCE:
-        cout << "PERFORMANCE";
+        cerr << "PERFORMANCE";
         break;
     case GL_DEBUG_TYPE_OTHER:
-        cout << "OTHER";
+        cerr << "OTHER";
         break;
     }
     
+    cerr << " G" <<setfill('0') << setw(4)<< id << ": "<<resetiosflags(std::ios_base::_Fmtmask);
+    cerr << message << " ";
  
-    cout << " id: " << id << " ";
-    cout << "severity: ";
+    cerr << "severity: ";
     switch (severity){
     case GL_DEBUG_SEVERITY_LOW:
-        cout << "LOW";
+        cerr << "LOW";
         break;
     case GL_DEBUG_SEVERITY_MEDIUM:
-        cout << "MEDIUM";
+        cerr << "MEDIUM";
         break;
     case GL_DEBUG_SEVERITY_HIGH:
-        cout << "HIGH";
+        cerr << "HIGH";
         break;
     }
-	cout << endl;
+	cerr << endl;
 	switch (type)
 	{
 	case GL_DEBUG_TYPE_ERROR:

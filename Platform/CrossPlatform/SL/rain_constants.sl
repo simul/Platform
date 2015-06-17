@@ -23,20 +23,20 @@ SIMUL_CONSTANT_BUFFER(MoisturePerViewConstants,9)
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
-	uniform mat4 worldViewProj[2];
-	uniform mat4 worldView[2];
-	uniform mat4 invViewProj_2[2];
-	uniform vec4 viewPos[2];
-	uniform vec4 offset[2];
-	uniform vec4 depthToLinFadeDistParams;
-	uniform vec4 viewportToTexRegionScaleBias;
-	uniform vec2 tanHalfFov;
-	uniform float nearRainDistance;// as a proportion of max fade distance
-	uniform float ateaethkltdujr;
-	uniform float nearZ;
-	uniform float farZ;
-	uniform float splashDelta;	
-	uniform float srhshrhrs;
+	mat4 worldViewProj[2];
+	mat4 worldView[2];
+	mat4 invViewProj_2[2];
+	vec4 viewPos[2];
+	vec4 offset[2];
+	vec4 depthToLinFadeDistParams;
+	vec4 viewportToTexRegionScaleBias;
+	vec2 tanHalfFov;
+	float nearRainDistance;// as a proportion of max fade distance
+	float ateaethkltdujr;
+	float nearZ;
+	float farZ;
+	float splashDelta;	
+	float srhshrhrs;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(RainOsdConstants,9)
