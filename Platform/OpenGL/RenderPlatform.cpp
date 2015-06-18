@@ -53,8 +53,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 
 void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 {
-	
-	
 	glEnable(GL_DEPTH_TEST);
 	// Draw the front face only, except for the texts and lights.
 	glEnable(GL_CULL_FACE);
@@ -68,8 +66,6 @@ void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)
 void RenderPlatform::EndRender(crossplatform::DeviceContext &deviceContext)
 {
 	solidEffect->Unapply(deviceContext);
-	
-	
 }
 
 void RenderPlatform::SetReverseDepth(bool r)

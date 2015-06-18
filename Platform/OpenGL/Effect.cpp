@@ -410,6 +410,7 @@ GL_ERROR_CHECK
 			SIMUL_CERR << "Effect::Load - file not found: " << filename.c_str() << std::endl;
 			return;
 		}
+		glfxSetBinaryDirectory(renderPlatform->GetShaderBinaryPath());
 		GLint effect = glfxGenEffect();
 		vector<string> p = renderPlatform->GetShaderPathsUtf8();
 
