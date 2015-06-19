@@ -41,8 +41,4 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform float padHdrConstants3;
 SIMUL_CONSTANT_BUFFER_END
 	
-SIMUL_CONSTANT_BUFFER(rectConstants,11)
-	uniform vec4 rect;
-SIMUL_CONSTANT_BUFFER_END
-	
 #endif

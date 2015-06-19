@@ -202,7 +202,7 @@ namespace simul
 				if(m_pD3DX11EffectConstantBuffer)
 					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 				else
-					std::cerr<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the effect."<<std::endl;
+					SIMUL_CERR<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the effect."<<std::endl;
 			}
 			//! Free the allocated buffer.
 			void InvalidateDeviceObjects()

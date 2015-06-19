@@ -103,19 +103,6 @@ void Mesh::UpdateVertexPositions(int lVertexCount, float *lVertices) const
 
 void Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::ShadingMode pShadingMode) const
 {
-	
-    
-	//if(mat)
-//		glMultMatrixd((const double*)mat);
-	// set this matrix in UBO 0:
-
-    // Push OpenGL attributes.
-    
-    
-    
-    
-    
-	
 	GL_ERROR_CHECK
     // Set vertex position array.
 	glEnableVertexAttribArray(0);

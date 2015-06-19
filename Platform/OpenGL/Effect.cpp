@@ -169,14 +169,12 @@ GL_ERROR_CHECK
 					continue;
 				}
 			}
-			///else
-			//	std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in pass "<<j<<" of "<<techname<<std::endl;
 		}
 	GL_ERROR_CHECK
 	}
 	GL_ERROR_CHECK
 	if(!any)
-		std::cerr<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in the effect "<<effect->GetName()<<"."<<std::endl;
+		SIMUL_CERR<<"PlatformConstantBuffer::LinkToEffect did not find the buffer named "<<name<<" in the effect "<<effect->GetName()<<"."<<std::endl;
 }
 
 void PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &,size_t size,void *addr)
@@ -725,8 +723,6 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 		GL_ERROR_CHECK
 		glfxApply((GLuint)platform_effect,current_prog);
 		GL_ERROR_CHECK
-
-		
 		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())
 			glEffectTechnique->passStates[currentPass]->Apply();

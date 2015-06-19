@@ -16,9 +16,81 @@
 
 #pragma warning(disable:4505)	// Fix GLUT warnings
 #include <GL/glut.h>
+#include <ios>					// For std::cout and cerr .
+#include <iomanip>				// For std::cerr formatting.
 #include "Simul/Platform/CrossPlatform/Camera.h"
 using namespace simul;
 using namespace opengl;
+
+
+//typedef void (GLAPIENTRY *GLDEBUGPROC)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+/*typedef void (APIENTRY *DEBUGPROC)(GLenum source,
+            GLenum type,
+            GLuint id,
+            GLenum severity,
+            GLsizei length,
+            const GLchar *message,
+            void *userParam);*/
+
+// http://blog.nobel-joergensen.com/2013/02/17/debugging-opengl-part-2-using-gldebugmessagecallback/
+void GLAPIENTRY openglDebugCallbackFunction(GLenum source,
+                                           GLenum type,
+                                           GLuint id,
+                                           GLenum severity,
+                                           GLsizei /*length*/,
+                                           const GLchar* message,
+                                          const void* /*userParam*/)
+{
+	using namespace std;
+	cerr<<__FILE__<<"("<<__LINE__<<"): ";
+    switch (type)
+	{
+    case GL_DEBUG_TYPE_ERROR:
+        
+		cerr<<"error";
+        break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        cerr << "DEPRECATED_BEHAVIOR";
+        break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        cerr << "UNDEFINED_BEHAVIOR";
+        break;
+    case GL_DEBUG_TYPE_PORTABILITY:
+        cerr << "PORTABILITY";
+        break;
+    case GL_DEBUG_TYPE_PERFORMANCE:
+        cerr << "PERFORMANCE";
+        break;
+    case GL_DEBUG_TYPE_OTHER:
+        cerr << "OTHER";
+        break;
+    }
+    
+    cerr << " G" <<setfill('0') << setw(4)<< id << ": "<<resetiosflags(std::ios_base::_Fmtmask);
+    cerr << message << " ";
+ 
+    cerr << "severity: ";
+    switch (severity){
+    case GL_DEBUG_SEVERITY_LOW:
+        cerr << "LOW";
+        break;
+    case GL_DEBUG_SEVERITY_MEDIUM:
+        cerr << "MEDIUM";
+        break;
+    case GL_DEBUG_SEVERITY_HIGH:
+        cerr << "HIGH";
+        break;
+    }
+	cerr << endl;
+	switch (type)
+	{
+	case GL_DEBUG_TYPE_ERROR:
+		BREAK_ONCE_IF_DEBUGGING;
+	default:
+		break;
+	};
+}
+
 RenderPlatform::RenderPlatform()
 	:reverseDepth(false)
 	,currentTopology(crossplatform::TRIANGLELIST)
@@ -34,6 +106,43 @@ RenderPlatform::~RenderPlatform()
 
 void RenderPlatform::RestoreDeviceObjects(void *unused)
 {
+	GL_ERROR_CHECK
+	ERRNO_CHECK
+	glewExperimental= GL_TRUE;
+	if (!glewIsSupported("GL_ARB_debug_output"))
+	{
+		GLenum glewError = glewInit();
+		if (glewError!=GLEW_OK)
+		{
+			std::cerr << "Error initializing GLEW! " << glewGetErrorString(glewError) << "\n";
+			return;
+		}
+		if(glewIsSupported("GL_ARB_debug_output"))
+		{
+			std::cout << "Register OpenGL debug callback " << std::endl;
+			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+			glDebugMessageCallback(openglDebugCallbackFunction, nullptr);
+				GLuint unusedIds = 0;
+				glDebugMessageControl(GL_DONT_CARE,
+				GL_DONT_CARE,
+				GL_DONT_CARE,
+				0,
+				&unusedIds,
+				GL_TRUE);
+		/*	glDebugMessageInsert(	GL_DEBUG_SOURCE_APPLICATION ,
+				GL_DEBUG_TYPE_ERROR,
+				1,
+				GL_DEBUG_SEVERITY_HIGH ,
+				-1,
+				"Testing gl callback output");*/
+		}
+		else
+			std::cout << "glDebugMessageCallback not available" <<std::endl;
+	}
+	const GLubyte* pVersion = glGetString(GL_VERSION); 
+	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
+	GL_ERROR_CHECK
+
 	rescaleVertexShaderConstants.RestoreDeviceObjects(this);
 	crossplatform::RenderPlatform::RestoreDeviceObjects(unused);
 	// GL Insists on having a bound vertex array object, even if we're not using it in the vertex shader.
