@@ -46,7 +46,6 @@ void GLAPIENTRY openglDebugCallbackFunction(GLenum source,
     switch (type)
 	{
     case GL_DEBUG_TYPE_ERROR:
-        
 		cerr<<"error";
         break;
     case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
@@ -122,14 +121,19 @@ void RenderPlatform::RestoreDeviceObjects(void *unused)
 			std::cout << "Register OpenGL debug callback " << std::endl;
 			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 			glDebugMessageCallback(openglDebugCallbackFunction, nullptr);
-				GLuint unusedIds = 0;
-				glDebugMessageControl(GL_DONT_CARE,
-				GL_DONT_CARE,
+			glDebugMessageControl( GL_DONT_CARE ,
+				GL_DEBUG_TYPE_OTHER ,
+				GL_DONT_CARE ,
+				0, NULL , GL_FALSE );
+			GLuint unusedIds = 0;
+// Enabling only two par
+		/*	glDebugMessageControl(GL_DONT_CARE,
+				GL_DEBUG_TYPE_ERROR,
 				GL_DONT_CARE,
 				0,
 				&unusedIds,
 				GL_TRUE);
-		/*	glDebugMessageInsert(	GL_DEBUG_SOURCE_APPLICATION ,
+			glDebugMessageInsert(	GL_DEBUG_SOURCE_APPLICATION ,
 				GL_DEBUG_TYPE_ERROR,
 				1,
 				GL_DEBUG_SEVERITY_HIGH ,

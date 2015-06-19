@@ -172,8 +172,7 @@ namespace simul
 		void printEffectLog(GLint effect)
 		{
    			std::string log		=glfxGetEffectLog(effect);
-			std::cerr<<log.c_str();
-//			printShaderInfoLog(log,effectSourceFilesUtf8);
+			std::cerr<<log.c_str()<<std::endl;
 		}
 		
 	}
