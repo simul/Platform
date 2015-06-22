@@ -492,7 +492,7 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 	return				rain_lookup
 							*saturate((rainRadiusKm-length(world_pos_km.xy-rainCentreKm.xy))*3.0)
 							*saturate(1.0-cloudWorldOffsetKm.z/5.0)
-							*saturate(cloudWorldOffsetKm.z+1.0)//+4.0*streak.y)
+							*saturate(cloudWorldOffsetKm.z/4.0+1.0)//+4.0*streak.y)
 							//*(0.4+0.6*streak.x)
 							;
 }

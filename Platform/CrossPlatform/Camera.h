@@ -4,6 +4,7 @@
 #include "Simul/Geometry/OrientationInterface.h"
 #include "Simul/Geometry/Orientation.h"
 #include "Simul/Platform/CrossPlatform/CameraInterface.h"
+#include "Simul/Platform/CrossPlatform/BaseRenderer.h"
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 
@@ -15,6 +16,7 @@ namespace simul
 	}
 	namespace crossplatform
 	{
+		vec4 SIMUL_CROSSPLATFORM_EXPORT GetDepthToDistanceParameters(crossplatform::DepthTextureStyle depthTextureStyle, const math::Matrix4x4 &proj, float max_dist_metres);
 		vec4 SIMUL_CROSSPLATFORM_EXPORT GetDepthToDistanceParameters(const crossplatform::ViewStruct &viewStruct,float max_dist_metres);
 		/// A useful class to represent a view frustum.
 		struct SIMUL_CROSSPLATFORM_EXPORT Frustum

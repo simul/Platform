@@ -66,17 +66,22 @@ static float U(float x)
 	return atan(x/2.f);
 }
 
+vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const math::Matrix4x4 &proj, float max_dist_metres)
+{
+	//	vec4 c(proj[3*4+2],max_dist_metres,proj[2*4+2]*max_dist_metres,0);
+	if (depthTextureStyle == crossplatform::PROJECTION)
+		return vec4(proj.m[3][2], max_dist_metres, proj.m[2][2] * max_dist_metres, 0.0f);
+	if (depthTextureStyle == crossplatform::DISTANCE_FROM_NEAR_PLANE)
+	{
+		Frustum f = simul::crossplatform::GetFrustumFromProjectionMatrix(proj);
+		return vec4(f.nearZ / max_dist_metres, 0.0f, 1.f, (f.farZ - f.nearZ) / max_dist_metres);
+	}
+	return vec4(0, 0, 0, 0);
+}
+
 vec4 simul::crossplatform::GetDepthToDistanceParameters(const crossplatform::ViewStruct &viewStruct,float max_dist_metres)
 {
-//	vec4 c(proj[3*4+2],max_dist_metres,proj[2*4+2]*max_dist_metres,0);
-	if(viewStruct.depthTextureStyle==crossplatform::PROJECTION)
-		return vec4(viewStruct.proj.m[3][2], max_dist_metres,viewStruct.proj.m[2][2]*max_dist_metres,0.0f);
-	if(viewStruct.depthTextureStyle==crossplatform::DISTANCE_FROM_NEAR_PLANE)
-	{
-		Frustum f=simul::crossplatform::GetFrustumFromProjectionMatrix(viewStruct.proj);
-		return vec4(f.nearZ/max_dist_metres, 0.0f,1.f,(f.farZ-f.nearZ)/max_dist_metres);
-	}
-	return vec4(0,0,0,0);
+	return GetDepthToDistanceParameters(viewStruct.depthTextureStyle, viewStruct.proj, max_dist_metres);
 }
 
 Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)

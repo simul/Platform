@@ -742,6 +742,7 @@ void rainResponse(RainParticleGeometryOutput inp, vec3 lightVector, float lightI
 
 vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
 {
+	return vec4(100,0,100,.5);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
@@ -781,6 +782,7 @@ shader vec4 PS_RainParticles_ForwardDepth(RainParticleGeometryOutput IN) : SV_Ta
 
 vec4 PS_RainParticles_NoCubemap(RainParticleGeometryOutput IN,bool reverseDepth) 
 {
+	return vec4(100, 0, 100, .5);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
