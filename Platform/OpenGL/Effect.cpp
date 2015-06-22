@@ -542,8 +542,6 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
 	GLuint t				=glfxCompileProgram(e, name,NULL);
 	if(!t)
 	{
-		opengl::printEffectLog(e);
-		//BREAK_IF_DEBUGGING
 		return NULL;
 	}
 	crossplatform::EffectTechnique *tech	=new opengl::EffectTechnique;

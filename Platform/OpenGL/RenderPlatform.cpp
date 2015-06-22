@@ -89,6 +89,18 @@ void GLAPIENTRY openglDebugCallbackFunction(GLenum source,
 		break;
 	};
 }
+#include "GL/glfx.h"
+void RenderPlatform::T1()
+{
+	
+	glDisable(GL_BLEND);
+	//glColorMaski(0,true,true,true,true);
+	//glDisable(GL_DEPTH_TEST);
+	glBlendEquationSeparatei(0, GL_FUNC_ADD,GL_FUNC_ADD);
+	glBlendFuncSeparatei(0,  GL_ONE, GL_ZERO,   GL_ONE, GL_ZERO);
+	
+
+}
 
 RenderPlatform::RenderPlatform()
 	:reverseDepth(false)
@@ -411,6 +423,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 		glDisable(GL_BLEND);
 GL_ERROR_CHECK
 glDisable(GL_CULL_FACE);
+glDisable(GL_DEPTH_TEST);
 
 	struct Viewport
 	{

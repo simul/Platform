@@ -196,7 +196,6 @@ shader vec4 PS_Fade3DTo2D(posTexVertexOutput IN): SV_TARGET
 	vec4 colour1=texture_3d_cmc(fadeTexture1,texc);
 	vec4 colour2=texture_3d_cmc(fadeTexture2,texc);
 	vec4 result=lerp(colour1,colour2,skyInterp);
-//	result.rgb=IN.texCoords.xyy;
     return result;
 }
 

@@ -103,7 +103,7 @@ namespace simul
 			GLuint current_prog;
 			/// We keep a map of texture names to the arbitrary GL_TEXTUREn indices that
 			/// we've assigned them to.
-			//std::map<GLuint,GLuint> prepared_sampler_states;
+			
 			bool FillInTechniques();
 			void SetTex(const char *name,crossplatform::Texture *tex,bool write,int mip);
 			EffectTechnique *CreateTechnique();

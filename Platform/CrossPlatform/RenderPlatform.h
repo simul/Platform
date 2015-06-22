@@ -81,6 +81,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT RenderPlatform
 		{
 		public:
+			virtual void T1(){}
 			RenderPlatform(simul::base::MemoryInterface*m=NULL);
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
@@ -245,7 +246,7 @@ namespace simul
 			crossplatform::Effect			*debugEffect;
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
-			TextRenderer					*textRenderer;
+public:			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
 			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};

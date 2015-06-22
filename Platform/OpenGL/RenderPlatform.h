@@ -21,6 +21,7 @@ namespace simul
 		class SIMUL_OPENGL_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
 		public:
+			void T1();
 			RenderPlatform();
 			virtual ~RenderPlatform();
 			const char *GetName() const
