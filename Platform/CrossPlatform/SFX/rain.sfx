@@ -114,7 +114,7 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 	p.brightness		=1.0;
 	float dist			=length(particlePos.xyz-viewPos[1].xyz);
 	
-	p.fade				=saturate(10000.0/dist);///length(clip_pos-viewPos);
+	p.fade				=1.0;//saturate(10000.0/dist);///length(clip_pos-viewPos);
 }
 
 CS_LAYOUT(8,8,8)
@@ -137,14 +137,14 @@ shader void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 	float brightness		=brightnessMult*(0.5+0.5*abs(sin((yb)/U)));
 	float h					=rand(fn9);
 	float yh				=y+h;
-	float highlight			=30.0*saturate(sin((yh)/V)-0.95);
+	float highlight			=120.0*saturate(sin((yh)/V)-0.95);
 	
 	float x					=2.0*(float(idx.x)+0.5)/float(X)-1.0;		// goes between -1 and 1
 	float dx				=(x-c)*2.0;
 	float s					=exp(-dx*dx);
 	result.rgba				+=(brightness+highlight)*s;
 	
-	targetTextureArray[idx]	=saturate(result);
+	targetTextureArray[idx]	=(result);
 }
 
 shader particleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)
@@ -157,7 +157,7 @@ shader particleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)
 	transf(p1,IN.position+offset,1);
 	
     OUT.position0	=p0.position;
-    OUT.position1	=p1.position;//+meanFallVelocity.z*IN.velocity*0.5*flurry,0.0);
+    OUT.position1	=p1.position;
 	OUT.pointSize	=p1.pointSize;
 	OUT.brightness	=p1.brightness;
 	OUT.fade		=p1.fade;
@@ -313,56 +313,6 @@ shader vec4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
     vec4 result=vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords));
 	result=result*2.0-vec4(1.0,1.0,1.0,1.0);
     return result;
-}
-
-vec4 PS_Overlay(rainVertexOutput IN,bool reverseDepth)
-{
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=reverseDepth;
-#ifdef GLSL
-	mat4 d					=invViewProj_2[1];
-#else
-	mat4 d					=invViewProj_2[1];
-#endif
-	vec3 view				=normalize(mul(d,vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
-	
-	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	float depth				=texture_clamp(depthTexture,depth_texc).x;
-	float dist				=depthToFadeDistance(depth,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-
-	vec3 light				=cubeTexture.Sample(wrapSamplerState,-view).rgb;
-	vec4 result				=vec4(light.rgb,0);
-	vec2 texc				=vec2(atan2(view.x,view.y)/(2.0*pi)*5.0,tan(view.z*pi/2.0));
-	float layer_distance	=nearRainDistance;
-	float mult				=2.0;
-	float step_range		=layer_distance;
-	float br				=1.0-abs(view.z*view.z);
-	for(int i=0;i<4;i++)
-	{
-		vec2 layer_texc		=vec2(texc.x,texc.y-.5*offset[1].z);
-		vec4 r				=rainTexture.Sample(wrapSamplerState,layer_texc.xy);
-		float a				=(br*(saturate(r.x+intensity-1.0)));
-		//a					*=saturate(10000.0*(dist-layer_distance)/step_range);
-		texc				*=mult;
-		layer_distance		*=mult;
-		step_range			*=mult;
-		br					*=0.5;
-		result.a			+=a;
-	}
-	result.a=saturate(result.a);
-	return result;
-}
-
-
-shader vec4 PS_Overlay_ReverseDepth(rainVertexOutput IN) : SV_Target
-{
-	return PS_Overlay(IN,true);
-}
-
-shader vec4 PS_Overlay_ForwardDepth(rainVertexOutput IN) : SV_Target
-{
-	return PS_Overlay(IN,false);
 }
 
 //--------------------------------------------------------------------------------------------
@@ -602,20 +552,21 @@ SamplerState samAniso
     AddressV = Wrap;
 };
 
-vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
+vec4 RainParticlesPS(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 {
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=reverseDepth;
-	vec3 light			=cubeTexture.Sample(wrapSamplerState,-IN.view).rgb;
 	vec4 texel			=rainTextureArray.Sample(samAniso,vec3(IN.texCoords.xy,float(IN.type)));
 	texel.rgb			*=.1*light;
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
-	vec2 depth;
-	depth.x				=texture_clamp(depthTexture,depth_texc.xy).x;
-	depth.y				=IN.clip_pos.z;
-	vec2 dist			=depthToFadeDistance(depth.xy,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-	if(dist.y>dist.x-splashDelta)
+	float solid_depth	=texture_clamp(depthTexture,depth_texc.xy).x;
+	float render_depth	=IN.clip_pos.z;
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistTexture;
+	float solid_dist	=depthToFadeDistance(solid_depth,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistRain;
+	float rain_dist	=depthToFadeDistance(render_depth,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+	//texel.rgb=vec3(0,0,solid_dist);
+	if(rain_dist>solid_dist-splashDelta)
 	{
 		texel.rgb		*=10.0;//vec3(1,1,1);
 	}
@@ -623,11 +574,22 @@ vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
 	float mapped_rain=IN.strength;
 	texel.a*=saturate(light.r+light.g+light.b);
 	texel.a=saturate(texel.a*mapped_rain);
-	if(mapped_rain<=0||dist.y>dist.x)
+	if(mapped_rain<=0||rain_dist>solid_dist)
 	{
+	//return vec4(10000,1,1,1);
 		discard;
 	}
+	//return vec4(0,0,1,1);
+	//return vec4(rain_dist,0,solid_dist,1);
 	return vec4(texel.rgb,texel.a);
+}
+
+
+
+vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
+{
+	vec3 light			=cubeTexture.Sample(wrapSamplerState,-IN.view).rgb;
+	return RainParticlesPS(IN,reverseDepth,light);
 }
 
 
@@ -643,36 +605,8 @@ shader vec4 PS_RainParticles_ForwardDepth(RainParticleGeometryOutput IN) : SV_Ta
 
 vec4 PS_RainParticles_NoCubemap(RainParticleGeometryOutput IN,bool reverseDepth) 
 {
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec3 light				=lightColour.rgb;
-	vec4 texel				=.5*rainTextureArray.Sample(samAniso,vec3(IN.texCoords,IN.type));
-	//directional lighting---------------------------------------------------------------------------------
-	vec4 directionalLight	=vec4(1,1,1,1);
-
-	//point lighting---------------------------------------------------------------------------------------
-	vec4 pointLight			=vec4(0,0,0,0);
-	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
-				
-	vec2 depth;
-	depth.x				=texture_clamp(depthTexture,depth_texc.xy).x;
-	depth.y				=IN.clip_pos.z;
-	vec2 dist			=depthToFadeDistance(depth.xy,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-//	 dist.y			=depthToFadeDistance(1.0,vec2(0,0),vec4(0.0204173792,2000000.00,0.0408347584,0),vec2(1,1));
-		
-	if(dist.y>dist.x-splashDelta)
-	{
-		texel.rgb		=vec3(1,1,1);
-	}
-	vec3 map_texc=mul(rainMapMatrix,vec4(offset[1].xyz,1.0)).xyz;
-	float mapped_rain=texture_wrap(rainMapTexture,map_texc.xy).x;
-	texel.a*=mapped_rain;
-	if(mapped_rain<=0||dist.y>dist.x)
-	{
-		discard;
-	}
-	return texel;//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
+	return RainParticlesPS(IN,reverseDepth,light);
 }
 
 shader vec4 PS_RainParticles_NoCubemap_ReverseDepth(RainParticleGeometryOutput IN) : SV_Target
@@ -778,28 +712,6 @@ technique snow_particles
 		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
 		//SetDepthStencilState(EnableDepth,0);
-		SetBlendState(AddAlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-    }
-}
-
-technique rain_overlay
-{
-    pass reverse_depth
-	{
-		SetRasterizerState(RenderNoCull);
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_RainFullScreen()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Overlay_ReverseDepth()));
-		//SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AddAlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-    }
-    pass forward_depth
-	{
-		SetRasterizerState(RenderNoCull);
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_RainFullScreen()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Overlay_ForwardDepth()));
-		//SetDepthStencilState(DisableDepth,0);
 		SetBlendState(AddAlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
 }

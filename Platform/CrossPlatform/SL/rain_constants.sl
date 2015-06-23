@@ -29,7 +29,8 @@ SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	mat4 invViewProj_2[2];
 	vec4 viewPos[2];
 	vec4 offset[2];
-	vec4 depthToLinFadeDistParams;
+	vec4 depthToLinFadeDistRain;
+	vec4 depthToLinFadeDistTexture;
 	vec4 viewportToTexRegionScaleBias;
 	vec2 tanHalfFov;
 	float nearRainDistance;// as a proportion of max fade distance
