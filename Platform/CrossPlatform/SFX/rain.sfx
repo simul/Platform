@@ -522,7 +522,7 @@ shader RainParticleVertexOutput VS_RainParticles(PrecipitationVertexInput inp )
 
 void GenRainSpriteVertices(vec3 worldPos, vec3 velVec, vec3 eyePos, out vec3 outPos[4])
 {
-	float g_SpriteSize=0.01;
+	float g_SpriteSize=0.02;
     float height			=length(velVec);	// g_SpriteSize/2.0;
     float width				=g_SpriteSize;
 
@@ -530,7 +530,7 @@ void GenRainSpriteVertices(vec3 worldPos, vec3 velVec, vec3 eyePos, out vec3 out
     vec3 eyeVec				=-worldPos;
     vec3 eyeOnVelVecPlane	=-((dot(eyeVec, velVec)) * velVec);
     vec3 projectedEyeVec	=eyeOnVelVecPlane - worldPos;
-    vec3 sideVec			=vec3(1,0,0);//normalize(cross(projectedEyeVec, velVec));
+    vec3 sideVec			=normalize(cross(projectedEyeVec, velVec));
 
     outPos[0]				=worldPos - (sideVec * 0.5*width);
     outPos[1]				=outPos[0] + (sideVec * width);
@@ -554,10 +554,10 @@ shader void GS_RainParticles(point RainParticleVertexOutput inp[1], inout Triang
 			vec2(1,1),
 		}; 
         RainParticleGeometryOutput outp	;//= (RainParticleGeometryOutput)0;
-        outp.type			= inp[0].type;
-		outp.strength		=inp[0].strength;
+        outp.type				=inp[0].type;
+		outp.strength			=inp[0].strength;
         vec3 pos[4];
-		float g_FrameRate=20.0;
+		float g_FrameRate		=20.0;
         GenRainSpriteVertices(inp[0].position.xyz,-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*0.5*inp[0].velocity)/g_FrameRate, viewPos[1].xyz, pos);
         
 		outp.wPos				=pos[0];
@@ -566,34 +566,34 @@ shader void GS_RainParticles(point RainParticleVertexOutput inp[1], inout Triang
         
         outp.pos				=mul(worldViewProj[1],vec4(pos[0],1.0));
 		outp.clip_pos			=outp.pos.xyzw/outp.pos.w;
-		outp.depthTexc		=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
+		outp.depthTexc			=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
 		outp.depthTexc.y		=1.0-outp.depthTexc.y;
         outp.view				=normalize(pos[0]);
-        outp.texCoords		=g_texcoords[0];
+        outp.texCoords			=g_texcoords[0];
         SpriteStream.Append(outp);
                 
         outp.pos				=mul(worldViewProj[1],vec4(pos[1],1.0));
 		outp.clip_pos			=outp.pos.xyzw/outp.pos.w;
-		outp.depthTexc		=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
+		outp.depthTexc			=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
 		outp.depthTexc.y		=1.0-outp.depthTexc.y;
         outp.view				=normalize(pos[1]);
-        outp.texCoords		=g_texcoords[1];
+        outp.texCoords			=g_texcoords[1];
         SpriteStream.Append(outp);
         
         outp.pos				=mul(worldViewProj[1],vec4(pos[2],1.0));
 		outp.clip_pos			=outp.pos.xyzw/outp.pos.w;
-		outp.depthTexc		=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
+		outp.depthTexc			=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
 		outp.depthTexc.y		=1.0-outp.depthTexc.y;
         outp.view				=normalize(pos[2]);
-        outp.texCoords		=g_texcoords[2];
+        outp.texCoords			=g_texcoords[2];
         SpriteStream.Append(outp);
                 
         outp.pos				=mul(worldViewProj[1],vec4(pos[3],1.0));
 		outp.clip_pos			=outp.pos.xyzw/outp.pos.w;
-		outp.depthTexc		=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
+		outp.depthTexc			=0.5*(outp.clip_pos.xy+vec2(1.0,1.0));
 		outp.depthTexc.y		=1.0-outp.depthTexc.y;
         outp.view				=normalize(pos[3]);
-        outp.texCoords		=g_texcoords[3];
+        outp.texCoords			=g_texcoords[3];
         SpriteStream.Append(outp);
         
         SpriteStream.RestartStrip();
@@ -603,142 +603,6 @@ shader void GS_RainParticles(point RainParticleVertexOutput inp[1], inout Triang
 #define MAX_VIDX 4
 #define MAX_HIDX 8
 
-void rainResponse(RainParticleGeometryOutput inp, vec3 lightVector, float lightIntensity, vec3 lightColor, vec3 eyeVector, bool fallOffFactor, inout vec4 rainResponseVal)
-{
-    float opacity = 0.0;
-
-    float fallOff;
-    if(fallOffFactor)
-    {  
-        float distToLight = length(lightVector);
-        fallOff = 1.0/( distToLight * distToLight);
-        fallOff = saturate(fallOff);   
-    }
-    else
-    {
-		fallOff = 1;
-    }
-
-    if(fallOff > 0.01 && lightIntensity > 0.01 )
-    {
-        vec3 dropDir = meanFallVelocity;
-
-        // Inputs: lightVector, eyeVector, dropDir
-        vec3 L = normalize(lightVector);
-        vec3 E = normalize(eyeVector);
-        vec3 N = normalize(dropDir);
-        
-        bool is_EpLp_angle_ccw = true;
-        float hangle = 0;
-        float vangle = abs( (acos(dot(L,N)) * 180/pi) - 90 ); // 0 to 90
-        
-        {
-            vec3 Lp = normalize( L - dot(L,N)*N );
-            vec3 Ep = normalize( E - dot(E,N)*N );
-            hangle = acos( dot(Ep,Lp) ) * 180/pi;  // 0 to 180
-            hangle = (hangle-10)/20.0;           // -0.5 to 8.5
-            is_EpLp_angle_ccw = dot( N, cross(Ep,Lp)) > 0;
-        }
-        
-        if(vangle>=88.0)
-        {
-            hangle = 0.0;
-            is_EpLp_angle_ccw = true;
-        }
-                
-        vangle = (vangle-10.0)/20.0; // -0.5 to 4.5
-        
-        // Outputs:
-        // verticalLightIndex[1|2] - two indices in the vertical direction
-        // t - fraction at which the vangle is between these two indices (for lerp)
-        int verticalLightIndex1 = int(floor(vangle)); // 0 to 5
-        int verticalLightIndex2 = min(MAX_VIDX, (verticalLightIndex1 + 1) );
-        verticalLightIndex1 = max(0, verticalLightIndex1);
-        float t = frac(vangle);
-
-        // textureCoordsH[1|2] used in case we need to flip the texture horizontally
-        float textureCoordsH1 = inp.texCoords.x;
-        float textureCoordsH2 = inp.texCoords.x;
-        
-        // horizontalLightIndex[1|2] - two indices in the horizontal direction
-        // s - fraction at which the hangle is between these two indices (for lerp)
-        int horizontalLightIndex1 = 0;
-        int horizontalLightIndex2 = 0;
-        float s = 0;
-        
-        s = frac(hangle);
-        horizontalLightIndex1 = int(floor(hangle)); // 0 to 8
-        horizontalLightIndex2 = horizontalLightIndex1+1;
-        if( horizontalLightIndex1 < 0 )
-        {
-            horizontalLightIndex1 = 0;
-            horizontalLightIndex2 = 0;
-        }
-                   
-        if( is_EpLp_angle_ccw )
-        {
-            if( horizontalLightIndex2 > MAX_HIDX ) 
-            {
-                horizontalLightIndex2 = MAX_HIDX;
-                textureCoordsH2 = 1.0 - textureCoordsH2;
-            }
-        }
-        else
-        {
-            textureCoordsH1 = 1.0 - textureCoordsH1;
-            if( horizontalLightIndex2 > MAX_HIDX ) 
-            {
-                horizontalLightIndex2 = MAX_HIDX;
-            }
-			else 
-            {
-                textureCoordsH2 = 1.0 - textureCoordsH2;
-            }
-        }
-                
-        if(verticalLightIndex1 >= MAX_VIDX)
-        {
-            textureCoordsH2 = inp.texCoords.x;
-            horizontalLightIndex1 = 0;
-            horizontalLightIndex2 = 0;
-            s = 0;
-        }
-        
-        // Generate the final texture coordinates for each sample
-        uint type = inp.type;
-        uint2 texIndicesV1 = uint2(verticalLightIndex1*90 + horizontalLightIndex1*10 + type,
-                                     verticalLightIndex1*90 + horizontalLightIndex2*10 + type);
-        vec3 tex1 = vec3(textureCoordsH1, inp.texCoords.y, texIndicesV1.x);
-        vec3 tex2 = vec3(textureCoordsH2, inp.texCoords.y, texIndicesV1.y);
-        if( (verticalLightIndex1<4) && (verticalLightIndex2>=4) ) 
-        {
-            s = 0;
-            horizontalLightIndex1 = 0;
-            horizontalLightIndex2 = 0;
-            textureCoordsH1 = inp.texCoords.x;
-            textureCoordsH2 = inp.texCoords.x;
-        }
-        
-        uint2 texIndicesV2 = uint2(verticalLightIndex2*90 + horizontalLightIndex1*10 + type,
-                                     verticalLightIndex2*90 + horizontalLightIndex2*10 + type);
-        vec3 tex3 = vec3(textureCoordsH1, inp.texCoords.y, texIndicesV2.x);        
-        vec3 tex4 = vec3(textureCoordsH2, inp.texCoords.y, texIndicesV2.y);
-
-        // Sample opacity from the textures
-        float col1 = rainTextureArray.Sample( samAniso, tex1).x;//* g_rainfactors[texIndicesV1.x];
-        float col2 = rainTextureArray.Sample( samAniso, tex2).x;//* g_rainfactors[texIndicesV1.y];
-        float col3 = rainTextureArray.Sample( samAniso, tex3).x;//* g_rainfactors[texIndicesV2.x];
-        float col4 = rainTextureArray.Sample( samAniso, tex4).x;//* g_rainfactors[texIndicesV2.y];
-
-        // Compute interpolated opacity using the s and t factors
-        float hOpacity1=lerp(col1,col2,s);
-        float hOpacity2=lerp(col3,col4,s);
-        opacity = lerp(hOpacity1,hOpacity2,t);
-        opacity = pow(opacity,0.7); // inverse gamma correction (expand dynamic range)
-        opacity = 4*lightIntensity * opacity * fallOff;
-    }
-	rainResponseVal = vec4(lightColor,opacity);
-}
 
 vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
 {
@@ -782,19 +646,17 @@ shader vec4 PS_RainParticles_ForwardDepth(RainParticleGeometryOutput IN) : SV_Ta
 
 vec4 PS_RainParticles_NoCubemap(RainParticleGeometryOutput IN,bool reverseDepth) 
 {
-	return vec4(100, 0, 100, .5);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
-	vec3 light			=lightColour.rgb;
-	vec4 texel			=.5*rainTextureArray.Sample(samAniso,vec3(IN.texCoords,IN.type));
+	vec3 light				=lightColour.rgb;
+	vec4 texel				=.5*rainTextureArray.Sample(samAniso,vec3(IN.texCoords,IN.type));
 	//directional lighting---------------------------------------------------------------------------------
 	vec4 directionalLight	=vec4(1,1,1,1);
-	//rainResponse(IN, IN.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*IN.random, vec3(1.0,1.0,1.0), inp.eyeVec, false, directionalLight);
 
 	//point lighting---------------------------------------------------------------------------------------
-	vec4 pointLight		=vec4(0,0,0,0);
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
+	vec4 pointLight			=vec4(0,0,0,0);
+	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
 				
 	vec2 depth;
 	depth.x				=texture_clamp(depthTexture,depth_texc.xy).x;
