@@ -6,7 +6,7 @@ SIMUL_CONSTANT_BUFFER(RainConstants,10)
 	uniform mat4 rainMapMatrix;
 	uniform vec4 lightColour;
 	uniform vec3 lightDir;
-	uniform float snowSize;
+	uniform float particleWidth;
 	uniform vec3 meanFallVelocity;
 	uniform float intensity;
 	uniform vec3 viewPositionOffset;
@@ -14,6 +14,7 @@ SIMUL_CONSTANT_BUFFER(RainConstants,10)
 	uniform float flurryRate;
 	uniform float phase;
 	uniform float timeStepSeconds;
+	uniform float particleZoneSize;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(MoisturePerViewConstants,9)
@@ -37,10 +38,6 @@ SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	float farZ;
 	float splashDelta;	
 	float srhshrhrs;
-SIMUL_CONSTANT_BUFFER_END
-
-SIMUL_CONSTANT_BUFFER(RainOsdConstants,9)
-	uniform vec4 rect;
 SIMUL_CONSTANT_BUFFER_END
 
 struct PrecipitationVertex
