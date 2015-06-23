@@ -25,13 +25,6 @@ uniform RWTexture2DArray<vec4> targetTextureArray;
 uniform RWStructuredBuffer<PrecipitationVertex> targetVertexBuffer;
 
 
-SamplerState samAniso
-{
-    Filter = ANISOTROPIC;
-    AddressU = Wrap;
-    AddressV = Wrap;
-};
-
 
 struct PrecipitationVertexInput
 {
@@ -132,18 +125,18 @@ shader void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 	float fn=float(n);
 	float fn9=fn+0.9;
 	targetTextureArray.GetDimensions(X,Yy,N);
-	float brightnessMult	=rand(float(n)*1001.1);
+	float brightnessMult	=0.5+rand(float(n)*1001.1);
 	vec4 result				=vec4(0.0,0,0,0.5);
 	// idx.x gives the index in the array.
 	float b					=rand(float(n)+0.5);
 	float y					=float(idx.y)/float(Yy);
-	float yb=y+b;
+	float yb				=y+b;
 	float V					=0.4/pi*(0.6+0.8*rand(n));
 	float U					=0.4/pi*(0.6+0.8*rand(n*4.41));
-	float c					=0.5*sin(y/V);
-	float brightness		=brightnessMult*abs(sin((yb)/U));
+	float c					=0.25*sin(y/V);
+	float brightness		=brightnessMult*(0.5+0.5*abs(sin((yb)/U)));
 	float h					=rand(fn9);
-	float yh=y+h;
+	float yh				=y+h;
 	float highlight			=30.0*saturate(sin((yh)/V)-0.95);
 	
 	float x					=2.0*(float(idx.x)+0.5)/float(X)-1.0;		// goes between -1 and 1
@@ -602,6 +595,12 @@ shader void GS_RainParticles(point RainParticleVertexOutput inp[1], inout Triang
 #define MAX_VIDX 4
 #define MAX_HIDX 8
 
+SamplerState samAniso
+{
+    Filter = ANISOTROPIC;
+    AddressU = Clamp;
+    AddressV = Wrap;
+};
 
 vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
 {
@@ -691,9 +690,10 @@ shader vec4 PS_ShowArrayTexture(posTexVertexOutput IN): SV_TARGET
 	// 16x512, 32 slices.
 	vec2 pos	=IN.texCoords.xy*vec2(16.0*32.0,512.0);
 	int slice	=int(IN.texCoords.x*32.0);
-	pos.x		-=slice*32.0;
+	pos.x		-=slice*16.0;
 	vec2 texc	=pos/vec2(16.0,512.0);
 	vec4 r		=rainTextureArray.Sample(samAniso,vec3(texc,slice));
+	r.b=float(slice%2);
     return r;
 }
 
