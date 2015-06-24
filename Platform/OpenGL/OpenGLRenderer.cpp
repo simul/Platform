@@ -64,7 +64,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 {
 	if(!renderPlatformOpenGL)
 		renderPlatformOpenGL		=new opengl::RenderPlatform;
-	renderPlatformOpenGL->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED|crossplatform::TRY_AGAIN_ON_FAIL);
+	renderPlatformOpenGL->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED|crossplatform::TRY_AGAIN_ON_FAIL|crossplatform::BREAK_ON_FAIL);
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 	//sceneCache=new scene::BaseObjectRenderer(gScene,&renderPlatform);
 	if(init_glut&&!glut_initialized)

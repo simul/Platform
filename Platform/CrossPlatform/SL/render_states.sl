@@ -89,12 +89,12 @@ BlendState CloudBlend
     //RenderTargetWriteMask[0] = 0x0F;
 };
 
-BlendState CloudBufferBlend
+BlendState AddDestInvAlphaBlend
 {
 	BlendEnable[0]	=TRUE;
 	BlendEnable[1]	=TRUE;
 	SrcBlend		=ONE;
-	DestBlend		=SRC_ALPHA;
+	DestBlend		=INV_SRC_ALPHA;
     BlendOp			=ADD;
 };
 
