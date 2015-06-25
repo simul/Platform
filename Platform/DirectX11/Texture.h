@@ -80,7 +80,7 @@ namespace simul
 				return renderTargetViews[index];
 			}
 			// Use this dx11::Texture as a wrapper for a texture and its corresponding SRV. Both pointers are needed.
-			void InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv);
+			void InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt=true);
 
 			ID3D11Resource				*stagingBuffer;
 

@@ -184,7 +184,7 @@ vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 									,dlookup
 									,texCoords
 									,false
-									,false
+									,true
 									,cloudIrRadiance1,cloudIrRadiance2
 									);
 	if(p.colour.a>=1.0)

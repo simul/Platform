@@ -39,10 +39,13 @@ namespace simul
 			void RenderDebug(crossplatform::DeviceContext &deviceContext, int x0, int y0, int w, int h);
 			static void EnsureEffectsAreBuilt(crossplatform::RenderPlatform *r);
 			void RecompileShaders();
+			crossplatform::Texture *GetBlurTexture();
 		protected:
 			crossplatform::RenderPlatform		*renderPlatform;
 			crossplatform::Texture				*brightpassTextures[4];
 			simul::crossplatform::Texture		*glowTextures[4];
+			simul::crossplatform::Texture		*blurTexture;
+			crossplatform::Texture				*downscaleTextures[4];
 			int Width,Height;
 			void DoGaussian(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *brightpassTexture,crossplatform::Texture *targetTexture);
 		
@@ -54,7 +57,7 @@ namespace simul
 			crossplatform::EffectTechnique*		warpGlowExposureGamma;
 			
 			crossplatform::EffectTechnique*		glowTechnique;
-
+			
 			crossplatform::Effect*				m_pGaussianEffect;
 			crossplatform::EffectTechnique*		gaussianRowTechnique;
 			crossplatform::EffectTechnique*		gaussianColTechnique;

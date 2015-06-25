@@ -283,7 +283,7 @@ void dx11::Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 	SAFE_RELEASE(stagingBuffer);
 }
 
-void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv)
+void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt)
 {
 	if(shaderResourceView)
 		SAFE_RELEASE(shaderResourceView);
@@ -308,7 +308,7 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 					D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 					ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 					srv_desc.Format = TypelessToSrvFormat(textureDesc.Format);
-					srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+					srv_desc.ViewDimension = (textureDesc.ArraySize==6)?D3D_SRV_DIMENSION_TEXTURECUBE:D3D11_SRV_DIMENSION_TEXTURE2D;
 					srv_desc.Texture2D.MipLevels = textureDesc.MipLevels;
 					srv_desc.Texture2D.MostDetailedMip = 0;
 					V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&srv_desc, &shaderResourceView));
@@ -317,7 +317,7 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 					V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, NULL,&shaderResourceView));
 			}
 			
-			if((textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET))
+			if(make_rt&&(textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET))
 			{
 				if(renderTargetViews)
 				{

@@ -351,7 +351,7 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ForwardDepth(posTe
  
 shader vec4 GlowPS(posTexVertexOutput IN) : SV_Target
 {
-    // original image has double the resulution, so we sample 2x2
+    // original image has double the resolution, so we sample 2x2
     vec4 c=vec4(0,0,0,0);
 	c+=texture_clamp(imageTexture,IN.texCoords+offset/2.0);
 	c+=texture_clamp(imageTexture,IN.texCoords-offset/2.0);
@@ -363,6 +363,21 @@ shader vec4 GlowPS(posTexVertexOutput IN) : SV_Target
 	c-=1.0*vec4(1.0,1.0,1.0,1.0);
 	c=clamp(c,vec4(0.0,0.0,0.0,0.0),vec4(10.0,10.0,10.0,10.0));
     return c;
+}
+
+shader vec4 PS_HalfscaleBlur(posTexVertexOutput IN) : SV_Target
+{
+    // original image has double the resolution, so we sample 2x2
+	// We use the sampler to perform the interpolation.
+	//  The value of "offset" can be used in a platform-specific way to ensure we sample halfway between the source texels.
+    vec4 c=texture_clamp(imageTexture,IN.texCoords+offset);
+    return c;
+}
+shader vec4 PS_Blur(posTexVertexOutput IN) : SV_Target
+{
+    vec4 c=texture_clamp(imageTexture,IN.texCoords+offset);
+    c+=texture_clamp(imageTexture,IN.texCoords-offset);
+    return 0.5*c;
 }
 
 VertexShader mainvs_4_0=CompileShader(vs_4_0,VS_SimpleFullscreen());
@@ -491,6 +506,31 @@ BlendState SpecialBlend
 	SrcBlend		=ONE;
 	DestBlend		=INV_SRC_ALPHA;
 };
+
+technique halfscale
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(mainvs_5_0);
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleBlur()));
+    }
+}
+technique blur
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(mainvs_5_0);
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_Blur()));
+    }
+}
 
 
 fxgroup composite_atmospherics
