@@ -31,7 +31,7 @@ HdrRenderer::HdrRenderer()
 		brightpassTextures[i]=NULL;
 		glowTextures[i]=NULL;
 	}
-	for(int i=0;i<4;i++)
+	for(int i=0;i<6;i++)
 		downscaleTextures[i]=NULL;
 }
 
@@ -58,7 +58,14 @@ void HdrRenderer::SetBufferSize(int w,int h)
 			H/=2;
 			brightpassTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
 			glowTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::R_32_UINT,true,false);
-			downscaleTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
+		}
+		H = Height;
+		W = Width;
+		for (int i = 0; i<6; i++)
+		{
+			W /= 2;
+			H /= 2;
+			downscaleTextures[i]->ensureTexture2DSizeAndFormat(renderPlatform, W, H, crossplatform::RGBA_16_FLOAT, false, true);
 		}
 		blurTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
 	}
@@ -75,7 +82,7 @@ void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		SAFE_DELETE(glowTextures[i]);
 		glowTextures[i]=renderPlatform->CreateTexture();
 	}
-	for(int i=0;i<4;i++)
+	for(int i=0;i<6;i++)
 	{
 		SAFE_DELETE(downscaleTextures[i]);
 		downscaleTextures[i]=renderPlatform->CreateTexture();
@@ -155,7 +162,7 @@ void HdrRenderer::RecompileShaders()
 
 crossplatform::Texture *HdrRenderer::GetBlurTexture()
 {
-	return downscaleTextures[3];
+	return downscaleTextures[5];
 }
 
 void HdrRenderer::InvalidateDeviceObjects()
@@ -167,7 +174,7 @@ void HdrRenderer::InvalidateDeviceObjects()
 		SAFE_DELETE(brightpassTextures[i]);
 		SAFE_DELETE(glowTextures[i]);
 	}
-	for(int i=0;i<4;i++)
+	for(int i=0;i<6;i++)
 	{
 		SAFE_DELETE(downscaleTextures[i]);
 	}
@@ -198,7 +205,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 	{	
 		crossplatform::Texture *src=texture;
 		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"downscale")
-		for(int i=0;i<4;i++)
+		for(int i=0;i<6;i++)
 		{
 			hdr_effect->SetTexture(deviceContext,"imageTexture",src);
 			downscaleTextures[i]->activateRenderTarget(deviceContext);
@@ -211,7 +218,8 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 		crossplatform::Texture *dst=blurTexture;
 		float htexel=0.5f/blurTexture->width;
 		float vtexel=0.5f/blurTexture->length;
-		for(int i=0;i<4;i++)
+		static int num_steps =2;
+		for (int i = 0; i<num_steps*2; i++)
 		{
 			hdrConstants.offset				=vec2((i%2)?0.0f:htexel,(i%2)?vtexel:0.0f);
 			hdrConstants.Apply(deviceContext);
@@ -241,6 +249,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 	hdr_effect->Unapply(deviceContext);
 	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
 }
+
 void HdrRenderer::RenderInfraRed(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,vec3 infrared_integration_factors,float Exposure,float Gamma)
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderInfraRed")
@@ -417,19 +426,26 @@ void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crosspl
 
 void HdrRenderer::RenderDebug(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
-	int w=width/3-8;
+	int w=width/6-8;
 	int h=(int)(w*((float)brightpassTextures[0]->length/(float)brightpassTextures[0]->width));
 	int x=x0;
 	int y=y0;
 	int y1=y+h+8;
-	int y2=y+2*(h+8);
+	int y2 = y + 2 * (h + 8);
+	for (int i = 0; i<6; i++)
+	{
+		renderPlatform->DrawTexture(deviceContext, x, y, w, h, downscaleTextures[i]);
+		x += w;
+		//w/=2;
+		//h/=2;
+	}
+	x = x0;
 	for(int i=0;i<4;i++)
 	{
-		renderPlatform->DrawTexture(deviceContext,x,y,w,h,brightpassTextures[i]);
+		renderPlatform->DrawTexture(deviceContext,x,y2,w,h,brightpassTextures[i]);
 		renderPlatform->DrawTexture(deviceContext,x,y1,w,h,glowTextures[i]);
-		renderPlatform->DrawTexture(deviceContext,x,y2,w,h,downscaleTextures[i]);
 		x+=w;
-		w/=2;
-		h/=2;
+		//w/=2;
+		//h/=2;
 	}
 }

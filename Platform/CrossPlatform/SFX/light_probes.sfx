@@ -56,7 +56,9 @@ static float A[10]={	3.1415926
 					,0};
 	int n=0;
 	for(int l=0;l<MAX_SH_BANDS;l++)
-	{ 
+	{
+		if (l >= numSHBands)
+			break;
 		float w=WindowFunction(float(l)/float(numSHBands));
 		for(int m=-l;m<=l;m++)
 			result+=SH(l,m,theta,phi)*w*basisBuffer[n++];

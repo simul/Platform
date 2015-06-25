@@ -479,7 +479,7 @@ void GenRainSpriteVertices(vec3 worldPos, vec3 velVec, vec3 eyePos, out vec3 out
     outPos[1]				=outPos[0] + (sideVec * width);
     outPos[2]				=outPos[0] + (velVec * height);
     outPos[3]				=outPos[2] + (sideVec * width );
-	fade=saturate(1000*width/height);
+	fade=saturate(width/height);
 }
     
 // GS for rendering rain as point sprites.  Takes a point and turns it into 2 tris.
@@ -505,7 +505,7 @@ shader void GS_RainParticles(point RainParticleVertexOutput inp[1], inout Triang
 		vec3 vel				=-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*0.5*inp[0].velocity)/g_FrameRate;
 		float fade=1.0;
         GenRainSpriteVertices(inp[0].position.xyz,vel,viewPos[1].xyz,pos,fade);
-        
+		outp.strength *= fade;
 		outp.wPos				=pos[0];
         vec3 closestPointLight	=vec3(0,0,500);
         float closestDistance	=length(closestPointLight-pos[0]);
@@ -560,7 +560,7 @@ vec4 RainParticlesPS(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 {
 	vec4 texel			=rainTextureArray.Sample(samAniso,vec3(IN.texCoords.xy,float(IN.type)));
 	float r				=saturate(2.0*length(IN.texCoords.xy-vec2(0.5,0.5)));
-	float vis			=0.5*texel.r*(1.0-pow(r,4.0));//
+	float vis			=(1.0 - pow(r, 4.0));// *texel.r;//
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
 	float solid_depth	=texture_clamp(depthTexture,depth_texc.xy).x;
 	float render_depth	=IN.clip_pos.z;
@@ -569,16 +569,15 @@ vec4 RainParticlesPS(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistTexture;
 	float solid_dist	=depthToFadeDistance(solid_depth,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistRain;
-	float rain_dist	=depthToFadeDistance(render_depth,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+	float rain_dist		=depthToFadeDistance(render_depth,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	
-	float mapped_rain=IN.strength;
-	vis=saturate(vis*mapped_rain);
-	vec4 result			=vec4(light*vis,vis);
+	float mapped_rain	=IN.strength;
+	vis					=saturate(vis*mapped_rain);
+	vec4 result			=vec4(light*vis, vis);
 	if(rain_dist>solid_dist-splashDelta)
 	{
-		result.rgb		*=10.0;//vec3(1,1,1);
+	//	result.rgb		*=10.0;//vec3(1,1,1);
 	}
-	vec3 map_texc=mul(rainMapMatrix,vec4(offset[1].xyz,1.0)).xyz;
 	if(mapped_rain<=0||rain_dist>solid_dist)
 	{
 	//return vec4(10000,1,1,1);
@@ -600,7 +599,7 @@ vec4 PS_RainParticles_Blur(RainParticleGeometryOutput IN,bool reverseDepth)
 	vec3 clight			=cubeTexture.Sample(wrapSamplerState,-IN.view).rgb;
 	vec2 texc			=vec2(IN.clip_pos.x,-IN.clip_pos.y)*0.5+vec2(0.5,0.5);
 	vec3 blight			=blurTexture.Sample(clampSamplerState,texc).rgb;
-	vec3 light=0.2*clight+0.8*blight;
+	vec3 light			=0.1*clight+0.9*blight;
 	return RainParticlesPS(IN,reverseDepth,light);
 }
 
@@ -660,7 +659,7 @@ technique rain_particles_blur
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_Blur_ReverseDepth()));
         
-        SetBlendState( AddDestInvAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
+		SetBlendState(AddDestInvAlphaBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
        // SetDepthStencilState( EnableDepth, 0 );
     }
     pass forward_depth
@@ -670,8 +669,8 @@ technique rain_particles_blur
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_Blur_ForwardDepth()));
         
-        SetBlendState( AddDestInvAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
-       // SetDepthStencilState( EnableDepth, 0 );DontBlend
+		SetBlendState(AddDestInvAlphaBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
+       // SetDepthStencilState( EnableDepth, 0 );
     }
 }
 
@@ -684,7 +683,7 @@ technique rain_particles
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ReverseDepth()));
         
-        SetBlendState( AddDestInvAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
+        SetBlendState( AddDestInvAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//DontBlend
        // SetDepthStencilState( EnableDepth, 0 );
     }
     pass forward_depth

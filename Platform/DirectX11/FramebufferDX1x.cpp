@@ -488,7 +488,7 @@ void Framebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceCon
 	if(!sphericalHarmonicsEffect)
 		RecompileShaders();
 	int num_coefficients=bands*bands;
-	static int BLOCK_SIZE=4;
+	static int BLOCK_SIZE=1;
 	static int sqrt_jitter_samples					=4;
 	if(!sphericalHarmonics.count)
 	{
@@ -500,7 +500,7 @@ void Framebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceCon
 	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;
 	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
 	sphericalHarmonicsConstants.Apply(deviceContext);
-	simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect->asD3DX11Effect(),"targetBuffer"	,sphericalHarmonics.AsD3D11UnorderedAccessView());
+	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	crossplatform::EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");
 	sphericalHarmonicsEffect->Apply(deviceContext,clear,0);
 	pContext->Dispatch((num_coefficients+BLOCK_SIZE-1)/BLOCK_SIZE,1,1);
@@ -509,23 +509,30 @@ void Framebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceCon
 		// The table of 3D directional sample positions. sqrt_jitter_samples x sqrt_jitter_samples
 		// We just fill this buffer_texture with random 3d directions.
 		crossplatform::EffectTechnique *jitter=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
-		simul::dx11::setUnorderedAccessView(sphericalHarmonicsEffect->asD3DX11Effect(),"samplesBufferRW",sphericalSamples.AsD3D11UnorderedAccessView());
+		sphericalSamples.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "samplesBufferRW");
 		sphericalHarmonicsEffect->Apply(deviceContext,jitter,0);
-		pContext->Dispatch((sqrt_jitter_samples+BLOCK_SIZE-1)/BLOCK_SIZE,(sqrt_jitter_samples+BLOCK_SIZE-1)/BLOCK_SIZE,1);
+		int u = (sqrt_jitter_samples + BLOCK_SIZE - 1) / BLOCK_SIZE;
+		renderPlatform->DispatchCompute(deviceContext, u, u, 1);
+		sphericalHarmonicsEffect->UnbindTextures(deviceContext);
 		simul::dx11::setUnorderedAccessView(sphericalHarmonicsEffect->asD3DX11Effect(),"samplesBufferRW",NULL);
 		sphericalHarmonicsEffect->Unapply(deviceContext);
 	}
 
 	crossplatform::EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
 	simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"cubemapTexture"	,buffer_texture->AsD3D11ShaderResourceView());
-	simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"samplesBuffer"		,sphericalSamples.AsD3D11ShaderResourceView());
+	simul::dx11::setTexture(sphericalHarmonicsEffect->asD3DX11Effect(), "samplesBuffer", sphericalSamples.AsD3D11ShaderResourceView());
+	sphericalSamples.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "samplesBufferRW");
+	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	
 	static bool sh_by_samples=false;
 	sphericalHarmonicsEffect->Apply(deviceContext,tech,0);
-	pContext->Dispatch(((sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients)+BLOCK_SIZE-1)/BLOCK_SIZE,1,1);
-	simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"cubemapTexture"	,NULL);
-	simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect->asD3DX11Effect(),"targetBuffer"	,NULL);
-	simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"samplesBuffer"	,NULL);
+	int n = sh_by_samples ? sphericalHarmonicsConstants.numJitterSamples : num_coefficients;
+	int U = ((n) + BLOCK_SIZE - 1) / BLOCK_SIZE;
+	renderPlatform->DispatchCompute(deviceContext, U, 1, 1);
+	sphericalHarmonicsEffect->UnbindTextures(deviceContext);
+//	simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"cubemapTexture"	,NULL);
+	//simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect->asD3DX11Effect(),"targetBuffer"	,NULL);
+	//simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"samplesBuffer"	,NULL);
 	sphericalHarmonicsConstants.Unbind(deviceContext);
 	sphericalHarmonicsEffect->Unapply(deviceContext);
 }
