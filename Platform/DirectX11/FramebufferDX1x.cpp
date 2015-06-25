@@ -521,7 +521,7 @@ void Framebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceCon
 	crossplatform::EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
 	simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"cubemapTexture"	,buffer_texture->AsD3D11ShaderResourceView());
 	simul::dx11::setTexture(sphericalHarmonicsEffect->asD3DX11Effect(), "samplesBuffer", sphericalSamples.AsD3D11ShaderResourceView());
-	sphericalSamples.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "samplesBufferRW");
+	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, "samplesBuffer");
 	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	
 	static bool sh_by_samples=false;

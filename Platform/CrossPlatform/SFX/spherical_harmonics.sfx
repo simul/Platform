@@ -33,9 +33,9 @@ void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
 void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	uint3 sub_pos					= g * BLOCK_SIZE + t;
+	uint3 sub_pos						= g * BLOCK_SIZE + t;
 	// The sub_pos gives the co-ordinate in the table of sam
-	const float weight				=4.0*PI; 
+	const float weight					=4.0*PI; 
 	// divide the result by weight and number of samples 
 	float factor						=weight*invNumJitterSamples; 
 #if 0
@@ -51,7 +51,7 @@ void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	{ 
 		SphericalHarmonicsSample shs	=samplesBuffer[n];
 		vec4 colour						=texture_wrap_lod(cubemapTexture,-shs.dir,0);
-		targetBuffer[sub_pos.x]			+=colour*factor*shs.coeff[sub_pos.x]; 
+		targetBuffer[sub_pos.x] += colour*factor *shs.coeff[sub_pos.x];
 	}
 #endif
 }

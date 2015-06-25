@@ -10,7 +10,16 @@
 
 float factorial(int j)
 {
-	float vals[]={1.0,1.0,2.0,6.0,24.0,120.0,720.0,5040.0,40320.0,362880.0
+	float vals[]={1.0
+				,1.0
+				,2.0
+				,6.0
+				,24.0
+				,120.0
+				,720.0
+				,5040.0
+				,40320.0
+				,362880.0
 				,3628800.0
 				,39916800.0
 				,479001600.0
@@ -25,6 +34,9 @@ float K(int l, int m)
 { 
 	// renormalisation constant for SH function 
 	float temp = ((2.0*l+1.0)*factorial(l-m)) / (4.0*PI*factorial(l+m)); 
+	//
+	//	((2.0*4 + 1.0)*factorial(4 - 4)) / (4.0*PI*factorial(4 + 4));
+	//clamp(, -1.0, 1.0)
 	return sqrt(temp); 
 }
 
@@ -68,9 +80,9 @@ float SH(int l, int m, float theta, float phi)
 	 if(m==0)
 		 return K(l,0)*float(P(l,m,cos(theta))); 
 	 else if(m>0)
-		 return sqrt2*K(l,m)*cos(m*phi)*P(l,m,cos(theta)); 
+		 return sqrt2*K(l, abs(m))*cos(m*phi)*P(l, m, cos(theta));
 	 else
-		 return sqrt2*K(l,-m)*sin(-m*phi)*P(l,-m,cos(theta)); 
+		 return sqrt2*K(l, abs(m))*sin(-m*phi)*P(l, abs(m), cos(theta));
 }
 #ifndef GLSL
 void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> samplesBufferRW,int2 pos
@@ -92,12 +104,15 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 	vec3 vec		=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
 	samplesBufferRW[i].dir	= vec; 
 	// precompute all SH coefficients for this sample 
-	for(int l=0; l<n_bands; l++)
-	{ 
+	int n = 0;
+	for (int l = 0; l<MAX_SH_BANDS; l++)
+	{
+		if (l >= n_bands)
+			break;
 		for(int m=-l; m<=l; m++)
 		{ 
-			int index = l*(l+1)+m; 
-			samplesBufferRW[i].coeff[index] = SH(l,m,theta,phi);
+		//	int index = l*(l+1)+m; 
+			samplesBufferRW[i].coeff[n++] = SH(l, m, theta, phi);
 		}
 	}
 }
