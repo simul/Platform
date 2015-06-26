@@ -37,8 +37,8 @@ struct PrecipitationVertexInput
 // Same as transformedParticle, but with semantics
 struct particleVertexOutput
 {
-    vec4 position0	:SV_POSITION;
-    vec4 position1	:TEXCOORD2;
+    vec4 position0		:SV_POSITION;
+    vec4 position1		:TEXCOORD2;
 	float pointSize		:PSIZE;
 	float brightness	:TEXCOORD0;
 	vec3 view			:TEXCOORD1;
@@ -107,8 +107,8 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 	float ph			=flurryRate*phase;
 	vec3 rand1			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/100.0,0).xyz;
 	vec3 rand2			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/100.0*5.0,0).xyz;
-	particlePos			+=2.5*flurry*rand1;
-	particlePos			+=.7*flurry*rand2;
+	particlePos			+=5.0*flurry*rand1;
+	particlePos			+=1.4*flurry*rand2;
 	p.position			=mul(worldViewProj[i],vec4(particlePos.xyz,1.0));
 	p.view				=normalize(particlePos.xyz);
 	p.pointSize			=particleWidth*(1.0+0.4*rand2.y);
@@ -154,7 +154,7 @@ shader particleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)
 	TransformedParticle p0;
 	transf(p0,IN.position,0);
 	TransformedParticle p1;
-	vec3 offset=0.02*vec3(meanFallVelocity+meanFallVelocity.z*IN.velocity*0.5*flurry);
+	vec3 offset=0.02*vec3(meanFallVelocity+meanFallVelocity.z*IN.velocity*flurry);
 	transf(p1,IN.position+offset,1);
 	
     OUT.position0	=p0.position;
@@ -460,15 +460,24 @@ shader RainParticleVertexOutput VS_RainParticles(PrecipitationVertexInput inp )
 	float mapped_rain	=texture_wrap_lod(rainMapTexture,map_texc.xy,0).x;
 	int maxtype			=int(16.0*mapped_rain);
 	//p.type				=p.type%maxtype;
-	p.strength			=mapped_rain;
+	p.strength =  mapped_rain;
     return p;
 }
 
-void GenRainSpriteVertices(vec3 worldPos, vec3 velVec, vec3 eyePos, out vec3 outPos[4],out float fade)
+void GenRainSpriteVertices(mat4 proj,vec3 worldPos, vec3 velVec, vec3 eyePos, out vec3 outPos[4],out float fade)
 {
     float height			=length(velVec);	// g_SpriteSize/2.0;
     float width				=particleWidth;
-
+	float dist				= length(worldPos);
+	fade					= saturate(10.0 * width / height);
+	vec4 clipped			= mul(vec4(width, dist, dist, 1.0), proj);
+	float pixelSize			=width*500.0/dist;
+	if(pixelSize < 1.0)
+	{
+		width *= 1.0 / pixelSize;
+		fade *= pixelSize / 1.0;
+	}
+	//fade = pixelSize;
     velVec					=normalize(velVec);
     vec3 eyeVec				=-worldPos;
     vec3 eyeOnVelVecPlane	=-((dot(eyeVec, velVec)) * velVec);
@@ -479,7 +488,6 @@ void GenRainSpriteVertices(vec3 worldPos, vec3 velVec, vec3 eyePos, out vec3 out
     outPos[1]				=outPos[0] + (sideVec * width);
     outPos[2]				=outPos[0] + (velVec * height);
     outPos[3]				=outPos[2] + (sideVec * width );
-	fade=saturate(width/height);
 }
     
 // GS for rendering rain as point sprites.  Takes a point and turns it into 2 tris.
@@ -502,10 +510,10 @@ shader void GS_RainParticles(point RainParticleVertexOutput inp[1], inout Triang
 		outp.strength			=inp[0].strength;
         vec3 pos[4];
 		float g_FrameRate		=20.0;
-		vec3 vel				=-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*0.5*inp[0].velocity)/g_FrameRate;
+		vec3 vel				=-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*inp[0].velocity)/g_FrameRate;
 		float fade=1.0;
-        GenRainSpriteVertices(inp[0].position.xyz,vel,viewPos[1].xyz,pos,fade);
-		outp.strength *= fade;
+        GenRainSpriteVertices(proj,inp[0].position.xyz,vel,viewPos[1].xyz,pos,fade);
+		outp.strength = fade;
 		outp.wPos				=pos[0];
         vec3 closestPointLight	=vec3(0,0,500);
         float closestDistance	=length(closestPointLight-pos[0]);
@@ -558,6 +566,7 @@ SamplerState samAniso
 
 vec4 RainParticlesPS(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 {
+	//return vec4(IN.strength, 0, 1, 1.0);
 	vec4 texel			=rainTextureArray.Sample(samAniso,vec3(IN.texCoords.xy,float(IN.type)));
 	float r				=saturate(2.0*length(IN.texCoords.xy-vec2(0.5,0.5)));
 	float vis			=(1.0 - pow(r, 4.0));// *texel.r;//
@@ -571,7 +580,7 @@ vec4 RainParticlesPS(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistRain;
 	float rain_dist		=depthToFadeDistance(render_depth,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	
-	float mapped_rain	=IN.strength;
+	float mapped_rain =  IN.strength;
 	vis					=saturate(vis*mapped_rain);
 	vec4 result			=vec4(light*vis, vis);
 	if(rain_dist>solid_dist-splashDelta)
@@ -599,7 +608,7 @@ vec4 PS_RainParticles_Blur(RainParticleGeometryOutput IN,bool reverseDepth)
 	vec3 clight			=cubeTexture.Sample(wrapSamplerState,-IN.view).rgb;
 	vec2 texc			=vec2(IN.clip_pos.x,-IN.clip_pos.y)*0.5+vec2(0.5,0.5);
 	vec3 blight			=blurTexture.Sample(clampSamplerState,texc).rgb;
-	vec3 light			=0.1*clight+0.9*blight;
+	vec3 light			=0.1*clight+blight;
 	return RainParticlesPS(IN,reverseDepth,light);
 }
 
@@ -816,6 +825,11 @@ shader PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput inp,ui
 	vec3 pos2				=vec3(rand(float(vertex_id)*4.55),rand(1.35*float(vertex_id)),rand(27.2*float(vertex_id)));
 	pos						+=pos2;
 	pos						-=vec3(1.0,1.0,1.0);
+
+	uint X = vertex_id / 400;
+	uint Y = (vertex_id / 20) - X * 20;
+	uint Z = vertex_id - Y * 20 - X * 400;
+//	pos = vec3(float(X) / 20.0, float(Y) / 20.0, float(Z) / 20.0);
 	PrecipitationVertexInput v;
 	v.position				=particleZoneSize*pos;
 	// velocity is normalized in order to scale with fall speed
@@ -832,10 +846,11 @@ shader PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput inp,ui
 shader PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput inp,uint vertex_id	: SV_VertexID)
 {
 	vec3 pos					=inp.position;
-	pos							+=(meanFallVelocity+meanFallVelocity.z*inp.velocity*0.5*flurry)*timeStepSeconds;
+	vec3 vel = (meanFallVelocity + meanFallVelocity.z*inp.velocity*flurry);
+	pos							+=vel*timeStepSeconds;
 	pos							-=viewPositionOffset;
 	pos							=WrapParticleZone(pos);
-	inp.position				=pos;
+	inp.position = pos;
 	// 
     return inp;
 }

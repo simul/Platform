@@ -20,6 +20,7 @@ StructuredBuffer<SphericalHarmonicsSample> samplesBuffer;
 void CS_Jitter(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 sub_pos = g * BLOCK_SIZE + t;
+	sub_pos += uint3(randomSeed, randomSeed, 0);
 	SH_setup_spherical_samples(samplesBufferRW,sub_pos.xy,sqrtJitterSamples,num_bands);
 }
 

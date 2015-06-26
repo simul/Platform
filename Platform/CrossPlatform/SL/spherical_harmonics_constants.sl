@@ -3,14 +3,15 @@
 #define SPHERICAL_HARMONICS_CONSTANTS_SL
 
 #ifndef MAX_SH_BANDS
-#define MAX_SH_BANDS (8)
+#define MAX_SH_BANDS (12)
 #endif
 
 SIMUL_CONSTANT_BUFFER(SphericalHarmonicsConstants,10)
 	uniform int num_bands;		// The range of the parameter m is from 0 to num_bands-1
 	uniform int sqrtJitterSamples;
 	uniform int numJitterSamples;
-	uniform float invNumJitterSamples;
+	uniform float invNumJitterSamples; 
+	uniform int randomSeed;
 SIMUL_CONSTANT_BUFFER_END
 
 struct SphericalHarmonicsSample

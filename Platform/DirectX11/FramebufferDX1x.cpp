@@ -499,6 +499,9 @@ void Framebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceCon
 	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
 	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;
 	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
+	static int seed = 0;
+	sphericalHarmonicsConstants.randomSeed			= seed++;
+	seed = seed % 10000;
 	sphericalHarmonicsConstants.Apply(deviceContext);
 	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	crossplatform::EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");

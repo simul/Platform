@@ -30,47 +30,91 @@ float factorial(int j)
 	return vals[j];
 }
 
-float K(uint l,uint m) 
+float K(int l,int m) 
 { 
 	static const float kval[]={0.282094792
-					,0.488602512
-					,0.345494149
-					,0.630783131
-					,0.257516135
-					,0.128758067
-					,0.746352665
-					,0.215453456
-					,0.068132365
-					,0.027814922
-					,0.846284375
-					,0.189234939
-					,0.044603103
-					,0.011920681
-					,0.004214597
-					,0.93560258
-					,0.170816879
-					,0.032281356
-					,0.006589404
-					,0.001553137
-					,0.000491145
-					,1.017107236
-					,0.156943054
-					,0.024814876
-					,0.004135813
-					,0.000755093
-					,0.000160986
-					,4.64727E-05
-					};
+							,0.488602512
+							,0.345494149
+							,0.630783131
+							,0.257516135
+							,0.128758067
+							,0.746352665
+							,0.215453456
+							,0.068132365
+							,0.027814922
+							,0.846284375
+							,0.189234939
+							,0.044603103
+							,0.011920681
+							,0.004214597
+							,0.93560258
+							,0.170816879
+							,0.032281356
+							,0.006589404
+							,0.001553137
+							,0.000491145
+							,1.017107236
+							,0.156943054
+							,0.024814876
+							,0.004135813
+							,0.000755093
+							,0.000160986
+							,4.64727E-05
+							,1.092548431
+							,0.145997925
+							,0.019867801
+							,0.002809731
+							,0.000423583
+							,7.05972E-05
+							,1.38452E-05
+							,3.7003E-06
+							,1.163106623
+							,0.13707343
+							,0.016383409
+							,0.002016658
+							,0.000260349
+							,3.6104E-05
+							,5.57096E-06
+							,1.01711E-06
+							,2.54279E-07
+							,1.22962269
+							,0.129613612
+							,0.013816857
+							,0.001507543
+							,0.000170696
+							,2.0402E-05
+							,2.63389E-06
+							,3.80169E-07
+							,6.51985E-08
+							,1.53674E-08
+							,1.292720736
+							,0.123256086
+							,0.011860322
+							,0.001163
+							,0.000117481
+							,1.23836E-05
+							,1.38452E-06
+							,1.67898E-07
+							,2.28481E-08
+							,3.70644E-09
+							,8.28786E-10
+							,1.352879095
+							,0.117753011
+							,0.010327622
+							,0.000920058
+							,8.39894E-05
+							,7.93625E-06
+							,7.85806E-07
+							,8.28312E-08
+							,9.50139E-09
+							,1.22662E-09
+							,1.89272E-10
+							,4.0353E-11
+	};
 	// renormalisation constant for SH function 
-	float temp = ((2.0*l+1.0)*factorial(l-m)) / (4.0*PI*factorial(l+m)); 
-	//
-	//	((2.0*4 + 1.0)*factorial(4 - 4)) / (4.0*PI*factorial(4 + 4));
-	//clamp(, -1.0, 1.0)
+	//float temp = ((2.0*l+1.0)*factorial(l-m)) / (4.0*PI*factorial(l+m)); 
 	//return sqrt(temp);
-	int idx=l*(l-1)/2+m;
-	//if(idx<8)
-		return sqrt(temp); 
-
+	int idx=l*(l+1)/2+abs(m);
 	return kval[idx];
 }
 
@@ -131,7 +175,7 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 	int i					=a*sqrt_n_samples+b; // array index 
 	// generate unbiased distribution of spherical coords 
 	float x					=(a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
-	float y					=(b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 
+	float y					=(b + rand(vec2(2.45*a,11.1*b))) * oneoverN; // each sample must be random 
 	float theta				=2.0 * acos(sqrt(1.0 - x)); 
 	float phi				=2.0 * PI * y; 
 	// convert spherical coords to unit vector 
@@ -145,8 +189,8 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 			break;
 		for(int m=-l; m<=l; m++)
 		{ 
-			int index = l*(l+1)/2+m; 
-			samplesBufferRW[i].coeff[index] = SH(l, m, theta, phi);
+//			int index = l*(l+1)/2+m; 
+			samplesBufferRW[i].coeff[n++] = SH(l, m, theta, phi);
 		}
 	}
 }

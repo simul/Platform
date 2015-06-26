@@ -285,6 +285,12 @@ void dx11::Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 
 void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt)
 {
+	// If it's the same as before, return.
+	if ((texture == t && srv==shaderResourceView) && shaderResourceView != NULL && (!make_rt || renderTargetViews == NULL))
+		return;
+	// If it's the same texture, and we created our own srv, that's fine, return.
+	if (texture!=NULL&&texture == t&&shaderResourceView != NULL&&srv == NULL)
+		return;
 	if(shaderResourceView)
 		SAFE_RELEASE(shaderResourceView);
 	texture=t;

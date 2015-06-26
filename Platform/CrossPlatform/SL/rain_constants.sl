@@ -27,16 +27,16 @@ SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	mat4 worldViewProj[2];
 	mat4 worldView[2];
 	mat4 invViewProj_2[2];
+	mat4 proj;
 	vec4 viewPos[2];
 	vec4 offset[2];
 	vec4 depthToLinFadeDistRain;
 	vec4 depthToLinFadeDistTexture;
 	vec4 viewportToTexRegionScaleBias;
 	vec2 tanHalfFov;
+	vec2 screenSize;
 	float nearRainDistance;// as a proportion of max fade distance
 	float ateaethkltdujr;
-	float nearZ;
-	float farZ;
 	float splashDelta;	
 	float srhshrhrs;
 SIMUL_CONSTANT_BUFFER_END
