@@ -343,6 +343,11 @@ shader vec4 PS_Copy2D(posTexVertexOutput IN) : SV_TARGET
 	return res;
 }
 
+shader vec4 PS_Clear(posTexVertexOutput IN) : SV_TARGET
+{
+	return vec4(0,0,0,0);
+}
+
 technique copy_2d
 {
     pass p0
@@ -355,6 +360,19 @@ technique copy_2d
 		SetPixelShader(CompileShader(ps_4_0,PS_Copy2D()));
     }
 }
+technique clear
+	{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_4_0);
+		SetPixelShader(CompileShader(ps_4_0,PS_Clear()));
+    }
+}
+
 
 technique textured
 {

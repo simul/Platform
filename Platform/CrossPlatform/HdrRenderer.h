@@ -45,7 +45,6 @@ namespace simul
 			crossplatform::Texture				*brightpassTextures[4];
 			simul::crossplatform::Texture		*glowTextures[4];
 			simul::crossplatform::Texture		*blurTexture;
-			crossplatform::Texture				*downscaleTextures[6];
 			int Width,Height;
 			void DoGaussian(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *brightpassTexture,crossplatform::Texture *targetTexture);
 		

@@ -513,7 +513,7 @@ shader void GS_RainParticles(point RainParticleVertexOutput inp[1], inout Triang
 		vec3 vel				=-viewPositionOffset.xyz+( meanFallVelocity+meanFallVelocity.z*flurry*inp[0].velocity)/g_FrameRate;
 		float fade=1.0;
         GenRainSpriteVertices(proj,inp[0].position.xyz,vel,viewPos[1].xyz,pos,fade);
-		outp.strength = fade;
+		outp.strength *= fade;
 		outp.wPos				=pos[0];
         vec3 closestPointLight	=vec3(0,0,500);
         float closestDistance	=length(closestPointLight-pos[0]);

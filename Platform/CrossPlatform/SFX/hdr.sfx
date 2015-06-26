@@ -9,6 +9,7 @@
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/composite.sl"
 #include "../SL/debug_constants.sl"
+#include "../SL/noise.sl"
 
 uniform Texture2D imageTexture;
 uniform TEXTURE2DMS_FLOAT4 imageTextureMS;
@@ -365,19 +366,22 @@ shader vec4 GlowPS(posTexVertexOutput IN) : SV_Target
     return c;
 }
 
-shader vec4 PS_HalfscaleBlur(posTexVertexOutput IN) : SV_Target
+float safelog(float x)
 {
-    // original image has double the resolution, so we sample 2x2
-	// We use the sampler to perform the interpolation.
-	//  The value of "offset" can be used in a platform-specific way to ensure we sample halfway between the source texels.
-    vec4 c=texture_clamp(imageTexture,IN.texCoords+offset);
-    return c;
+	if(x<0.001)
+		x=0.001;
+	return log(x);
 }
+
 shader vec4 PS_Blur(posTexVertexOutput IN) : SV_Target
 {
-    vec4 c=texture_clamp(imageTexture,IN.texCoords+offset);
-    c+=texture_clamp(imageTexture,IN.texCoords-offset);
-    return 0.5*c;
+	float r1=rand(IN.texCoords.xy+vec2(11.19*randomSeed,2.3*randomSeed));
+	float r2=rand(vec2(1.0,0.5)+13.09*IN.texCoords.xy-vec2(5.1*randomSeed,3.9*randomSeed));
+	float radius	=sqrt(-2.0*safelog(r1));
+	float angle		=2.0*pi*r2;
+	vec2 sampleOffset=offset*radius*vec2(cos(angle),sin( angle ));
+    vec4 c=texture_clamp(imageTexture,IN.texCoords+sampleOffset);
+    return vec4(c.rgb,alpha);
 }
 
 VertexShader mainvs_4_0=CompileShader(vs_4_0,VS_SimpleFullscreen());
@@ -507,25 +511,13 @@ BlendState SpecialBlend
 	DestBlend		=INV_SRC_ALPHA;
 };
 
-technique halfscale
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(mainvs_5_0);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleBlur()));
-    }
-}
 technique blur
 {
     pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetBlendState(AlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(mainvs_5_0);
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_Blur()));

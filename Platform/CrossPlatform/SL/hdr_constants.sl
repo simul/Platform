@@ -9,7 +9,7 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform vec4 fullResToLowResTransformXYWH;
 
 	uniform vec2 offset;
-	uniform float nearZ;
+	uniform float alpha;
 	uniform float farZ;
 	
 	uniform vec4 colour2;
@@ -38,7 +38,7 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform float padHdrConstants2;
 
 	uniform vec3 infraredIntegrationFactors;
-	uniform float padHdrConstants3;
+	uniform int randomSeed;
 SIMUL_CONSTANT_BUFFER_END
 	
 #endif
