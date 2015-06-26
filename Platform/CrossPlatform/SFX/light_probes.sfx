@@ -44,13 +44,13 @@ shader vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 //A_5 = 0 
 //A_6 = 0.049087 
 
-static float A[10]={	0//3.1415926
-						,0//2.094395
-						,0//0.785398
+static float A[10]={	3.1415926
+						,2.094395
+						,0.785398
 						,0		
 						,-0.130900
 						,0 
-						,0//0.049087
+						,0.049087
 						,0
 						,0
 						,0};
@@ -60,12 +60,12 @@ static float A[10]={	0//3.1415926
 		if (l >= numSHBands)
 			break;
 		float w=WindowFunction(float(l)/float(numSHBands));
-		for (int m = -l; m <= l; m++)
-			result += SH(l, m, theta, phi)*w*basisBuffer[n++] * A[l] / 3.1415926;
+		for (int m=-l;m<=l;m++)
+			result += basisBuffer[n++]*SH(l, m, theta, phi)*w * A[l]/ 3.1415926;
 	}
-//	result.r = 0;
-//	result.g= SH(4, 3, theta, phi);
-//	result.b = -result.g;
+	//result.r = 0;
+	//result.g= SH(4, -4, theta, phi);
+	//result.b = -result.g;
 	result.a=alpha;
 	return max(result,vec4(0,0,0,0));
 }

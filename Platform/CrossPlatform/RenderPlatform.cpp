@@ -11,7 +11,6 @@
 using namespace simul;
 using namespace crossplatform;
 
-
 RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	:memoryInterface(m)
 	,mirrorY(false)

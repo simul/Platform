@@ -30,14 +30,48 @@ float factorial(int j)
 	return vals[j];
 }
 
-float K(int l, int m) 
+float K(uint l,uint m) 
 { 
+	static const float kval[]={0.282094792
+					,0.488602512
+					,0.345494149
+					,0.630783131
+					,0.257516135
+					,0.128758067
+					,0.746352665
+					,0.215453456
+					,0.068132365
+					,0.027814922
+					,0.846284375
+					,0.189234939
+					,0.044603103
+					,0.011920681
+					,0.004214597
+					,0.93560258
+					,0.170816879
+					,0.032281356
+					,0.006589404
+					,0.001553137
+					,0.000491145
+					,1.017107236
+					,0.156943054
+					,0.024814876
+					,0.004135813
+					,0.000755093
+					,0.000160986
+					,4.64727E-05
+					};
 	// renormalisation constant for SH function 
 	float temp = ((2.0*l+1.0)*factorial(l-m)) / (4.0*PI*factorial(l+m)); 
 	//
 	//	((2.0*4 + 1.0)*factorial(4 - 4)) / (4.0*PI*factorial(4 + 4));
 	//clamp(, -1.0, 1.0)
-	return sqrt(temp); 
+	//return sqrt(temp);
+	int idx=l*(l-1)/2+m;
+	//if(idx<8)
+		return sqrt(temp); 
+
+	return kval[idx];
 }
 
 // evaluate an Associated Legendre Polynomial P(l,m,x) at x 
@@ -80,9 +114,9 @@ float SH(int l, int m, float theta, float phi)
 	 if(m==0)
 		 return K(l,0)*float(P(l,m,cos(theta))); 
 	 else if(m>0)
-		 return sqrt2*K(l, abs(m))*cos(m*phi)*P(l, m, cos(theta));
+		 return sqrt2*K(l, m)*cos(m*phi)*P(l, m, cos(theta));
 	 else
-		 return sqrt2*K(l, abs(m))*sin(-m*phi)*P(l, abs(m), cos(theta));
+		 return sqrt2*K(l,-m)*sin(-m*phi)*P(l, -m, cos(theta));
 }
 #ifndef GLSL
 void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> samplesBufferRW,int2 pos
@@ -91,17 +125,17 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 { 
 	// fill an N*N*2 array with uniformly distributed 
 	// samples across the sphere using jittered stratification 
-	float oneoverN	= 1.0/sqrt_n_samples; 
+	float oneoverN			= 1.0/sqrt_n_samples; 
 	int a=pos.x;
 	int b=pos.y;
-	int i			=a*sqrt_n_samples+b; // array index 
+	int i					=a*sqrt_n_samples+b; // array index 
 	// generate unbiased distribution of spherical coords 
-	float x		=(a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
-	float y		=(b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 
-	float theta	=2.0 * acos(sqrt(1.0 - x)); 
-	float phi	=2.0 * PI * y; 
+	float x					=(a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
+	float y					=(b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 
+	float theta				=2.0 * acos(sqrt(1.0 - x)); 
+	float phi				=2.0 * PI * y; 
 	// convert spherical coords to unit vector 
-	vec3 vec		=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
+	vec3 vec				=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
 	samplesBufferRW[i].dir	= vec; 
 	// precompute all SH coefficients for this sample 
 	int n = 0;
@@ -111,8 +145,8 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 			break;
 		for(int m=-l; m<=l; m++)
 		{ 
-		//	int index = l*(l+1)+m; 
-			samplesBufferRW[i].coeff[n++] = SH(l, m, theta, phi);
+			int index = l*(l+1)/2+m; 
+			samplesBufferRW[i].coeff[index] = SH(l, m, theta, phi);
 		}
 	}
 }

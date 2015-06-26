@@ -51,7 +51,7 @@ void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	{ 
 		SphericalHarmonicsSample shs	=samplesBuffer[n];
 		vec4 colour						=texture_wrap_lod(cubemapTexture,-shs.dir,0);
-		targetBuffer[sub_pos.x] += colour*factor *shs.coeff[sub_pos.x];
+		targetBuffer[sub_pos.x]			+=colour*factor*shs.coeff[sub_pos.x];
 	}
 #endif
 }
