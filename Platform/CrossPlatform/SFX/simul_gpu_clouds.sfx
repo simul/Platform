@@ -36,7 +36,7 @@ shader vertexOutput VS_Main(idOnly IN)
 	vec2 poss[4]=
 	{
 		{ 1.0, 0.0},
-		{ 1.0, 1.0},
+		{ 1.0, 1.0},  
 		{ 0.0, 0.0},
 		{ 0.0, 1.0},
 	};

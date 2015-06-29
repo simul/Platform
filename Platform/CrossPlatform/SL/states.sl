@@ -25,6 +25,7 @@ SamplerState cmcSamplerState SIMUL_STATE_REGISTER(5)
 	AddressV = Mirror;
 	AddressW = Clamp;
 };
+
 SamplerState wrapSamplerState SIMUL_STATE_REGISTER(6)
 {
 	Filter = MIN_MAG_MIP_LINEAR;

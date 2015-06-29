@@ -10,7 +10,7 @@
 #include "../SL/colour_packing.sl"
 
 uniform Texture2D depthTexture;
-uniform TEXTURE2DMS_FLOAT4 depthTextureMS;
+uniform Texture2DMS<vec4> depthTextureMS;
 uniform Texture2D cloudDepthTexture;
 uniform Texture2D imageTexture;
 uniform Texture2D lossTexture;
