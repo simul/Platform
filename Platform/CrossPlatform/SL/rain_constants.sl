@@ -4,6 +4,7 @@
 
 SIMUL_CONSTANT_BUFFER(RainConstants,10)
 	uniform mat4 rainMapMatrix;
+	uniform mat4 cubemapTransform;
 	uniform vec4 lightColour;
 	uniform vec3 lightDir;
 	uniform float particleWidth;

@@ -31,7 +31,7 @@ uniform Texture2D cloudGodraysTexture;
 uniform Texture2D rainMapTexture;
 uniform TextureCube diffuseCubemap;
 uniform RWTexture3D<uchar4> outputTexture3d;
-uniform RWStructuredBuffer<VolumeQueryResult> volumeQueryResults;
+uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries;
 
 uniform StructuredBuffer<vec3> queryInputs;
 
@@ -58,7 +58,7 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.ambient_light				=lookup.w;
 	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km, rainCentreKm, rainRadiusKm);
 
-	volumeQueryResults[sub_pos.x]	=res;
+	volumeQueries[sub_pos.x]		=res;
 }
 
 CS_LAYOUT(1,1,1)
