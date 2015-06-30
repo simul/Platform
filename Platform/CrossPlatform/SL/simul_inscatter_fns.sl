@@ -3,7 +3,7 @@
 #define SIMUL_INSCATTER_FNS_HLSL
 
 #ifndef pi
-#refine pi (3.1415926536)
+#define pi (3.1415926536)
 #endif
 
 #ifndef RAYLEIGH_BETA_FACTOR

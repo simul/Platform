@@ -115,20 +115,20 @@ shader void CS_InitSimulation( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID 
 {
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
-	uint3 pos					=g*8+t;
-	vec3 texc					=convertPosToTexc(pos,dims);
-	vec4 lookup					=TEXTURE_LOAD_3D(inputTexture3D,pos);
-	vec2 from_ctr				=texc.xy-vec2(0.5,0.5);
-	//float u						=step(length(from_ctr),0.1);
-//	float T						=210;//+150.0*u;
+	uint3 pos						=g*8+t;
+	vec3 texc						=convertPosToTexc(pos,dims);
+	vec4 lookup						=TEXTURE_LOAD_3D(inputTexture3D,pos);
+	vec2 from_ctr					=texc.xy-vec2(0.5,0.5);
+	//float u							=step(length(from_ctr),0.1);
+//	float T							=210;//+150.0*u;
 	// .61v = c
 	AtmosphericProperties a_base	=SaturationRatio(cloudBaseKm+0.1*cloudScalesKm.z);
 	AtmosphericProperties a_local	=SaturationRatio(cloudBaseKm+cloudScalesKm.z*texc.z);
 
-	float q						=0.05;
-	float qc					=q*lookup.z;
-	float qv					=a_base.qvs*lookup.z;//qc/0.61;//04-qc;
-	vec4 newval					=vec4(qc,qv,lerp(a_local.T_K,a_base.T_K,lookup.z),0);
+	float q							=0.05;
+	float qc						=q*lookup.z;
+	float qv						=a_base.qvs*lookup.z;//qc/0.61;//04-qc;
+	vec4 newval						=vec4(qc,qv,lerp(a_local.T_K,a_base.T_K,lookup.z),0);
 	IMAGE_STORE_3D(outputTexture,pos,newval);
 }
 
@@ -141,6 +141,37 @@ shader void CS_Advection( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 texc				=convertPosToTexc(pos,dims);
 	vec4 c1					=TEXTURE_LOAD_3D(inputTexture3DB,pos);
 	vec4 newval				=advect(texc,time_step,cloudScalesKm,c1.xyz,inputTexture3D);
+	IMAGE_STORE_3D(outputTexture,pos,newval);
+}
+
+vec4 Laplacian(Texture3D tex3D,vec3 texc)
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	vec3 gridScale	=cloudScalesKm/vec3(dims);
+	vec3 d			=vec3(0.5,0.5,0.5)/vec3(dims);
+	vec4 p			=texture_wwc_lod(tex3D,texc,0);
+	vec4 pL			=texture_wwc_lod(tex3D,texc-vec3(d.x,0,0),0);
+	vec4 pR			=texture_wwc_lod(tex3D,texc+vec3(d.x,0,0),0);
+	vec4 pB			=texture_wwc_lod(tex3D,texc-vec3(0,d.y,0),0);
+	vec4 pF			=texture_wwc_lod(tex3D,texc+vec3(0,d.y,0),0);
+	vec4 pD			=texture_wwc_lod(tex3D,texc-vec3(0,0,d.z),0);
+	vec4 pU			=texture_wwc_lod(tex3D,texc+vec3(0,0,d.z),0);
+
+	vec3 dx2		=gridScale*gridScale;
+	vec4 laplacian	=(pR -2.0*p + pL)/dx2.x + (pF -2.0*p+pB)/dx2.y+ (pU -2.0*p+ pD)/dx2.z;
+	return laplacian;
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Diffusion( uint3 g: SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos				=g*8+t;
+	vec3 texc				=convertPosToTexc(pos,dims);
+	vec4 oldval				=texture_wwc_lod(inputTexture3D,texc,0);
+	vec4 newval				=oldval+viscousCoefficient*Laplacian(inputTexture3D,texc);
 	IMAGE_STORE_3D(outputTexture,pos,newval);
 }
 
@@ -184,8 +215,8 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	float g					=0.00981;	//km/s2
 	vec3 buoyant			=g*(props.z*(1.0+0.61*props.y)/300.0-props.x-1.0)*vec3(0,0,1.0);
 	vec3 delta				=buoyant*time_step;//15*F*time_step*exp(-d2/r2);
-	if(pos.z==0)
-		delta.z				+=.5*saturate(saturate(props.y/0.00001)-0.1);//2*step(d2,0.5)*saturate(cos((texture_wwc_lod(volumeNoiseTexture,5*texc,0).x+time*144000)*2.0*3.14159));
+	//if(pos.z==0)
+//		delta.z				+=.5*saturate(saturate(props.y/0.00001)-0.1);//2*step(d2,0.5)*saturate(cos((texture_wwc_lod(volumeNoiseTexture,5*texc,0).x+time*144000)*2.0*3.14159));
 	if(pos.z==dims.z-1)
 		vd.z				=0;
 //	delta					+=.001/d2*cross(vec3(0,0,1.0),(vec3(diff.xy,0)));
@@ -232,22 +263,18 @@ shader void CS_CloudUpdate( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	lookup.z		+=dc*L*PI/Cp;
 	lookup.x		+=dc;
 	lookup.y		-=dc;
-	if(pos.z==0)
+	/*if(pos.z==0)
 	{
 		AtmosphericProperties a_base	=SaturationRatio(cloudBaseKm+0.1*cloudScalesKm.z);
 		uint3 noise_dims;
 		GET_DIMENSIONS_3D(volumeNoiseTexture,noise_dims.x,noise_dims.y,noise_dims.z);
 		vec3 noisespace_texcoord		=vec3(texc.xy,0)*vec3(noiseScale)+vec3(1.0,1.0,0);
-		//float n						=texture_wrap_lod(volumeNoiseTexture,noisespace_texcoord,0).x;
-	//	float noise_val					=cos(2.0*3.1415926536*(n+t));
 		float noise_texel				=1.0/float(noise_dims.z);
 		float noise_val					=NoiseFunction2(volumeNoiseTexture,noisespace_texcoord.xy,octaves,persistence,time,noise_texel);
 		lookup.y						=a_base.qvs*saturate((noise_val + 2.0*humidity - 1.0) / 0.002);
 		lookup.x						=0;
 		lookup.z						=a_base.T_K;
-	//	lookup.y	=0.02*(1.0+cos(time))*step(length(texc.xy),0.01);
-	}
-		//step(length(texc.xy),0.01);
+	}*/
 	IMAGE_STORE_3D(outputTexture,pos,lookup);
 }
 
@@ -668,6 +695,14 @@ technique advection
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Advection()));
+    }
+}
+
+technique diffusion
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Diffusion()));
     }
 }
 

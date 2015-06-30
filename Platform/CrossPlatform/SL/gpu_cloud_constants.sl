@@ -42,6 +42,7 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 
 	uniform float invBeta;
 	uniform int wrap;
+	uniform float viscousCoefficient;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif
