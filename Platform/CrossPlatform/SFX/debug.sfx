@@ -345,7 +345,14 @@ shader vec4 PS_Copy2D(posTexVertexOutput IN) : SV_TARGET
 
 shader vec4 PS_Clear(posTexVertexOutput IN) : SV_TARGET
 {
-	return vec4(0,0,0,0);
+	return debugColour;
+}
+RW_Texture2D<vec4> FastClearTarget;
+
+[NUM_THREADS(8,8,1)]
+shader void CS_Clear(uint2 position : S_DISPATCH_THREAD_ID)
+{
+	FastClearTarget[position] = debugColour;
 }
 
 technique copy_2d
@@ -361,7 +368,7 @@ technique copy_2d
     }
 }
 technique clear
-	{
+{
     pass p0
     {
 		SetRasterizerState( RenderNoCull );
@@ -372,7 +379,6 @@ technique clear
 		SetPixelShader(CompileShader(ps_4_0,PS_Clear()));
     }
 }
-
 
 technique textured
 {

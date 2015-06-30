@@ -3,7 +3,7 @@
 
 using namespace simul;
 using namespace crossplatform;
-SamplerState::SamplerState()
+SamplerState::SamplerState():default_slot(-1)
 {
 }
 

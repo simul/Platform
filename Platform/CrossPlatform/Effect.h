@@ -430,6 +430,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{
 		protected:
+			crossplatform::RenderPlatform *renderPlatform;
 			virtual EffectTechnique *CreateTechnique()=0;
 			EffectTechnique *EnsureTechniqueExists(const std::string &groupname,const std::string &techname,const std::string &passname);
 			const char *GetTechniqueName(const EffectTechnique *t) const;

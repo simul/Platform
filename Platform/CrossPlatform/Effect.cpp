@@ -12,7 +12,8 @@ using namespace std;
 
 
 Effect::Effect()
-	:apply_count(0)
+	:renderPlatform(NULL)
+	,apply_count(0)
 	,currentPass(0)
 	,currentTechnique(NULL)
 	,platform_effect(NULL)
