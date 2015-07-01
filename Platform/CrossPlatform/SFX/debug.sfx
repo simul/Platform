@@ -12,6 +12,7 @@ uniform TEXTURE2DMS_FLOAT4 imageTextureMS SIMUL_TEXTURE_REGISTER(1);
 uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
 uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
 uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
+uniform RWTexture2D<vec4> FastClearTarget;
 
 uniform sampler3D volumeTexture;
 
@@ -347,7 +348,6 @@ shader vec4 PS_Clear(posTexVertexOutput IN) : SV_TARGET
 {
 	return debugColour;
 }
-RW_Texture2D<vec4> FastClearTarget;
 
 [NUM_THREADS(8,8,1)]
 shader void CS_Clear(uint2 position : S_DISPATCH_THREAD_ID)
