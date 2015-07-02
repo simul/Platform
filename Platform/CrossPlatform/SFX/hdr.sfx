@@ -212,7 +212,7 @@ shader vec4 ExposureGammaPS(posTexVertexOutput IN) : SV_Target
 	c.rgb	*=exposure;
 	c.rgb	=pow(c.rgb,vec3(gamma,gamma,gamma));
     vec4 u	=vec4(c.rgb,1.0);
-//	u.rgba=IN.texCoords.xyyy;
+
 	return u;
 }
 
@@ -377,9 +377,9 @@ shader vec4 PS_Blur(posTexVertexOutput IN) : SV_Target
 {
 	float r1=rand(IN.texCoords.xy+vec2(11.19*randomSeed,2.3*randomSeed));
 	float r2=rand(vec2(1.0,0.5)+13.09*IN.texCoords.xy-vec2(5.1*randomSeed,3.9*randomSeed));
-	float radius	=sqrt(-2.0*safelog(r1));
+	float rad		=sqrt(-2.0*safelog(r1));
 	float angle		=2.0*pi*r2;
-	vec2 sampleOffset=offset*radius*vec2(cos(angle),sin( angle ));
+	vec2 sampleOffset=offset*rad*vec2(cos(angle),sin( angle ));
     vec4 c=texture_clamp(imageTexture,IN.texCoords+sampleOffset);
     return vec4(c.rgb,alpha);
 }

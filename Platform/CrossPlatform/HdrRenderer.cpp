@@ -62,6 +62,7 @@ void HdrRenderer::SetBufferSize(int w,int h)
 		blurTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
 		crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
 		blurTexture->activateRenderTarget(immediateContext);
+		renderPlatform->GetDebugConstantBuffer().Apply(immediateContext);
 		renderPlatform->GetDebugEffect()->Apply(immediateContext,renderPlatform->GetDebugEffect()->GetTechniqueByName("clear"),0);
 			renderPlatform->DrawQuad(immediateContext);
 		renderPlatform->GetDebugEffect()->Unapply(immediateContext);
@@ -191,6 +192,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 		tech=glowExposureGammaTechnique;
 		hdr_effect->SetTexture(deviceContext,"glowTexture",glowTextures[0]);
 	}
+	if(blurTexture->IsValid())
 	{	
 		crossplatform::Texture *src=texture;
 		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"blur")

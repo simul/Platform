@@ -13,6 +13,7 @@ uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
 uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
 uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
 uniform RWTexture2D<vec4> FastClearTarget;
+uniform RWTexture3D<vec4> FastClearTarget3D;
 
 uniform sampler3D volumeTexture;
 
@@ -355,6 +356,12 @@ shader void CS_Clear(uint2 position : S_DISPATCH_THREAD_ID)
 	FastClearTarget[position] = debugColour;
 }
 
+[NUM_THREADS(8,8,1)]
+shader void CS_Clear3D(uint3 position : S_DISPATCH_THREAD_ID)
+{
+	FastClearTarget3D[position] = debugColour;
+}
+
 technique copy_2d
 {
     pass p0
@@ -367,6 +374,24 @@ technique copy_2d
 		SetPixelShader(CompileShader(ps_4_0,PS_Copy2D()));
     }
 }
+
+technique compute_clear
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_4_0,CS_Clear()));
+    }
+}
+
+technique compute_clear_3d
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_4_0,CS_Clear3D()));
+    }
+}
+
+
 technique clear
 {
     pass p0
