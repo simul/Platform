@@ -55,6 +55,7 @@ void Texture::InvalidateDeviceObjects()
 // Load a texture file
 void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
 {
+	ERRNO_BREAK
 	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
 	dim=2;
 	std::string filename(pFilePathUtf8);
@@ -65,10 +66,12 @@ void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform
 		extension		=filename.substr(dot_pos+1,filename.length()-dot_pos-1);
 	GL_ERROR_CHECK
 		GLint internal_format=GL_RGBA;
+	ERRNO_BREAK
 	pTextureObject		=LoadGLImage(pFilePathUtf8,pathsUtf8,GL_REPEAT,&width,&length,&internal_format);
+	ERRNO_BREAK
 	pixelFormat			=opengl::RenderPlatform::FromGLFormat(internal_format);
 	GL_ERROR_CHECK
-
+	ERRNO_BREAK
 }
 
 void Texture::LoadTextureArray(crossplatform::RenderPlatform *renderPlatform,const std::vector<std::string> &texture_files)

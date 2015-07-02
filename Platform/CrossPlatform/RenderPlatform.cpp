@@ -1,5 +1,6 @@
 #include "RenderPlatform.h"
 #include "Simul/Base/EnvironmentVariables.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/TextRenderer.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
@@ -36,6 +37,7 @@ DeviceContext &RenderPlatform::GetImmediateContext()
 
 void RenderPlatform::RestoreDeviceObjects(void*)
 {
+	ERRNO_BREAK
 	crossplatform::RenderStateDesc desc;
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::BLEND;
@@ -57,6 +59,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	RenderState *alpha=CreateRenderState(desc);
 	standardRenderStates[STANDARD_ALPHA_BLENDING]=alpha;
 	
+	ERRNO_BREAK
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::DEPTH;
 	desc.depth.comparison	=crossplatform::DepthComparison::DEPTH_GREATER_EQUAL;
@@ -72,7 +75,8 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	desc.depth.write			=false;
 	RenderState *depth_tle=CreateRenderState(desc);
 	standardRenderStates[STANDARD_TEST_DEPTH_LESS_EQUAL]=depth_tle;
-
+	
+	ERRNO_BREAK
 	desc.depth.comparison	=crossplatform::DepthComparison::DEPTH_GREATER_EQUAL;
 	RenderState *depth_tge=CreateRenderState(desc);
 	standardRenderStates[STANDARD_TEST_DEPTH_GREATER_EQUAL]=depth_tge;
@@ -82,10 +86,15 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	standardRenderStates[STANDARD_DEPTH_DISABLE]=depth_no;
 
 	SAFE_DELETE(textRenderer);
+	ERRNO_BREAK
 	textRenderer=new TextRenderer;
+	ERRNO_BREAK
 	textRenderer->RestoreDeviceObjects(this);
+	ERRNO_BREAK
 	solidConstants.RestoreDeviceObjects(this);
+	ERRNO_BREAK
 	debugConstants.RestoreDeviceObjects(this);
+	ERRNO_BREAK
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
@@ -106,7 +115,9 @@ void RenderPlatform::RecompileShaders()
 {
 	SAFE_DELETE(debugEffect);
 	SAFE_DELETE(solidEffect);
+	ERRNO_BREAK
 	textRenderer->RecompileShaders();
+	ERRNO_BREAK
 	std::map<std::string, std::string> defines;
 	debugEffect=CreateEffect("debug",defines);
 	solidEffect=CreateEffect("solid",defines);

@@ -152,12 +152,17 @@ void RenderPlatform::RestoreDeviceObjects(void *unused)
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
 	GL_ERROR_CHECK
+	ERRNO_BREAK
 
 	rescaleVertexShaderConstants.RestoreDeviceObjects(this);
+	ERRNO_BREAK
 	crossplatform::RenderPlatform::RestoreDeviceObjects(unused);
+	ERRNO_BREAK
 	// GL Insists on having a bound vertex array object, even if we're not using it in the vertex shader.
 	glGenVertexArrays(1,&empty_vao);
+	ERRNO_BREAK
 	RecompileShaders();
+	ERRNO_BREAK
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
@@ -570,6 +575,7 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 GL_ERROR_CHECK
+	ERRNO_BREAK
 	opengl::Effect *e=new opengl::Effect();
 	e->Load(this,filename_utf8,defines);
 GL_ERROR_CHECK

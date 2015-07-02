@@ -1,4 +1,5 @@
 #include "TextRenderer.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 
@@ -127,7 +128,9 @@ void TextRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	constantBuffer.RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 	SAFE_DELETE(font_texture);
-	font_texture=r->CreateTexture("Font16.png");
+	ERRNO_BREAK
+	font_texture=renderPlatform->CreateTexture("Font16.png");
+	ERRNO_BREAK
 }
 
 void TextRenderer::InvalidateDeviceObjects()
