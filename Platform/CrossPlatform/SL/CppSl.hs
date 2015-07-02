@@ -238,6 +238,14 @@
 			z-=v[2];
 		}
 	};
+	inline vec3 operator*(float m,vec3 v)
+	{
+		vec3 r;
+		r.x=m*v.x;
+		r.y=m*v.y;
+		r.z=m*v.z;
+		return r;
+	}
 	struct vec4
 	{
 		float x,y,z,w;

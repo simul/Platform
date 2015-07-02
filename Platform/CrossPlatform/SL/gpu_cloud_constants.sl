@@ -43,6 +43,13 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform float invBeta;
 	uniform int wrap;
 	uniform float viscousCoefficient;
+	uniform float seaLevelTemperatureK;
+	
+	uniform vec3 cloudOriginKm;
+	uniform float ajtjaeej;
+
+	uniform vec3 sourcePosKm;
+	uniform float sourceSizeKm;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif
