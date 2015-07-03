@@ -151,11 +151,12 @@ shader void CS_Advection( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec4 newval				=advect(texc,time_step,cloudScalesKm,c1.xyz,inputTexture3D);
 	IMAGE_STORE_3D(outputTexture,pos,newval);
 }
-
 vec4 Laplacian(Texture3D tex3D,vec3 texc)
 {
 	uint3 dims;
+#ifdef IN_COMPUTE_SHADER
 	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+#endif
 	vec3 gridScale	=cloudScalesKm/vec3(dims);
 	vec3 d			=vec3(0.5,0.5,0.5)/vec3(dims);
 	vec4 p			=texture_wwc_lod(tex3D,texc,0);
@@ -170,7 +171,6 @@ vec4 Laplacian(Texture3D tex3D,vec3 texc)
 	vec4 laplacian	=(pR -2.0*p + pL)/dx2.x + (pF -2.0*p+pB)/dx2.y+ (pU -2.0*p+ pD)/dx2.z;
 	return laplacian;
 }
-
 CS_LAYOUT(8,8,8)
 shader void CS_Diffusion( uint3 g: SV_GroupID, uint3 t : SV_GroupThreadID )
 {

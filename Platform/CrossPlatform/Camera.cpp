@@ -313,7 +313,7 @@ void simul::crossplatform::MakeCubeMatrices(simul::math::Matrix4x4 mat[],const f
 	}
 }
 
-math::Matrix4x4 MakeOrthoProjectionMatrix(float left,
+math::Matrix4x4 simul::crossplatform::MakeOrthoProjectionMatrix(float left,
  	float right,
  	float bottom,
  	float top,

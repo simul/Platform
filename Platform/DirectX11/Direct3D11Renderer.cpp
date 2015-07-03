@@ -142,6 +142,7 @@ void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBu
 {
 	return trueSkyRenderer.ResizeView(view_id,pBackBufferSurfaceDesc->Width,pBackBufferSurfaceDesc->Height);
 }
+
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)
 {
 	simul::base::SetGpuProfilingInterface(pContext,&simul::dx11::Profiler::GetGlobalProfiler());
