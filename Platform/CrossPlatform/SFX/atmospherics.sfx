@@ -40,9 +40,9 @@ struct atmosVertexInput
 
 struct atmosVertexOutput
 {
-    vec4 position			: SV_POSITION;
+    vec4 position		: SV_POSITION;
     vec2 texCoords		: TEXCOORD0;
-    vec2 pos				: TEXCOORD1;
+    vec2 pos			: TEXCOORD1;
 };
 
 shader atmosVertexOutput VS_Atmos(atmosVertexInput IN)
@@ -230,6 +230,49 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 	return all8Output;
 }
 
+void CS_Insc(uint3 pos,float godrays)
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(targetVolume,dims.x,dims.y,dims.z);
+    vec2 texCoords	=vec2(pos.xy)/vec2(dims.xy);
+	texCoords		=mixedResolutionTransformXYWH.xy+texCoords.xy*mixedResolutionTransformXYWH.zw;
+	vec4 colours[8];
+	Inscatter_All( colours
+					,inscTexture
+					,skylTexture
+					,illuminationTexture
+					,cloudTexture
+					,cloudSamplerState
+					,viewPosition
+					,invShadowMatrix
+					,texCoords
+					,invViewProj
+					,lightDir
+					,hazeEccentricity
+					,mieRayleighRatio
+					,maxFadeDistanceMetres
+					,godrays);
+	for(int i=0;i<8;i++)
+	{
+		uint3 idx=uint3(pos.xy,i);
+		targetVolume[idx]=colours[i];
+	}
+}
+
+CS_LAYOUT(8,8,1)
+shader void CS_Inscatter_Volume_WithGodrays( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 pos=g*8+t;
+	CS_Insc( pos,1.0);
+}
+
+CS_LAYOUT(8,8,1)
+shader void CS_Inscatter_Volume_WithoutGodrays( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 pos=g*8+t;
+	CS_Insc( pos,0.0);
+}
+
 shader All8Output PS_Inscatter_Volume_WithGodrays(atmosVertexOutput IN)
 {
 	return psInscatter_Volume(IN,godraysIntensity);
@@ -364,16 +407,7 @@ group inscatter_volume
 {
 	technique with_godrays
 	{
-		pass reverse_depth
-		{
-			SetRasterizerState( RenderNoCull );
-			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-			SetVertexShader(vs_atmos);
-			SetGeometryShader(NULL);
-			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithGodrays()));
-		}
-		pass forward_depth
+		pass p0
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
@@ -385,7 +419,7 @@ group inscatter_volume
 	}
 	technique without_godrays
 	{
-		pass reverse_depth
+		pass p0
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
@@ -394,14 +428,24 @@ group inscatter_volume
 			SetGeometryShader(NULL);
 			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithoutGodrays()));
 		}
-		pass forward_depth
+	}
+}
+
+
+group inscatter_volume_compute
+{
+	technique with_godrays
+	{
+		pass p0
 		{
-			SetRasterizerState( RenderNoCull );
-			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(DontBlend8, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-			SetVertexShader(vs_atmos);
-			SetGeometryShader(NULL);
-			SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Volume_WithoutGodrays()));
+			SetComputeShader(CompileShader(cs_5_0,CS_Inscatter_Volume_WithGodrays()));
+		}
+	}
+	technique without_godrays
+	{
+		pass p0
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_Inscatter_Volume_WithoutGodrays()));
 		}
 	}
 }

@@ -350,16 +350,18 @@ shader vec4 PS_Clear(posTexVertexOutput IN) : SV_TARGET
 	return debugColour;
 }
 
-[NUM_THREADS(8,8,1)]
-shader void CS_Clear(uint2 position : S_DISPATCH_THREAD_ID)
+[numthreads(8,8,1)]
+shader void CS_Clear(uint2 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	FastClearTarget[position] = debugColour;
+	uint2 sub_pos = g * 8 + t;
+	FastClearTarget[sub_pos] = debugColour;
 }
 
-[NUM_THREADS(8,8,1)]
-shader void CS_Clear3D(uint3 position : S_DISPATCH_THREAD_ID)
+[numthreads(8,8,1)]
+shader void CS_Clear3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	FastClearTarget3D[position] = debugColour;
+	uint3 sub_pos = g * 8 + t;
+	FastClearTarget3D[sub_pos] = debugColour;
 }
 
 technique copy_2d
@@ -379,7 +381,7 @@ technique compute_clear
 {
     pass p0
     {
-		SetComputeShader(CompileShader(cs_4_0,CS_Clear()));
+		SetComputeShader(CompileShader(cs_5_0,CS_Clear()));
     }
 }
 
@@ -387,7 +389,7 @@ technique compute_clear_3d
 {
     pass p0
     {
-		SetComputeShader(CompileShader(cs_4_0,CS_Clear3D()));
+		SetComputeShader(CompileShader(cs_5_0,CS_Clear3D()));
     }
 }
 

@@ -70,6 +70,7 @@ namespace simul
 				,dim(0)
 				,mips(1)
 				,pixelFormat(crossplatform::UNKNOWN)
+				,num_rt(0)
 			,renderPlatform(NULL){}
 			virtual ~Texture();
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
@@ -82,6 +83,7 @@ namespace simul
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int =0){return 0;}
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(){return 0;}
+			virtual bool HasRenderTargets() const{return (num_rt>0);}
 			/// Asynchronously move this texture to fast RAM.
 			/// Some hardware has "fast RAM" that we can prefetch textures into.
 			virtual void MoveToFastRAM() {}
@@ -136,6 +138,7 @@ namespace simul
 			int width,length,depth,dim,mips;
 			PixelFormat pixelFormat;
 			RenderPlatform *renderPlatform;
+			int num_rt;
 		};
 	}
 }

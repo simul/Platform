@@ -299,7 +299,7 @@ void Inscatter_All(		out vec4 colours[8]
 	float sine			=view.z;
 	vec2 fade_texc	=vec2(0,0.5f*(1.f-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
+	vec4 illum_lookup	=texture_wrap_mirror_lod(illuminationTexture,illum_texc,0);
 	
 	float cos0			=dot(view,lightDir);
 	vec4 insc			=vec4(0,0,0,0);
@@ -331,13 +331,13 @@ void Inscatter_All(		out vec4 colours[8]
 		vec2 nearFarTexc	=illum_lookup.xy;
 		vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 		vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
-		vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
-		vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
+		vec4 insc_near		=texture_clamp_mirror_lod(inscTexture,near_texc,0);
+		vec4 insc_far		=texture_clamp_mirror_lod(inscTexture,far_texc,0);
 
 		insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
 		vec4 di				=vec4(insc.rgb-prev_insc.rgb,0.5*(insc.a+prev_insc.a));
 
-		skyl                =texture_clamp_mirror(skylTexture,fade_texc).rgb;
+		skyl                =texture_clamp_mirror_lod(skylTexture,fade_texc,0).rgb;
 		
 		vec3 inscatter		=PrecalculatedInscatterFunction(di,BetaRayleigh,BetaMie,mieRayleighRatio);
 		total_inscatter		+=inscatter*il;

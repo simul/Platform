@@ -124,7 +124,6 @@ namespace simul
 			ID3D11UnorderedAccessView**  unorderedAccessViews;
 			ID3D11DepthStencilView*		depthStencilView;
 			ID3D11RenderTargetView**	renderTargetViews;
-			int num_rt;
 			D3D11_VIEWPORT						m_OldViewports[16];
 			unsigned							num_OldViewports;
 			friend class CubemapFramebuffer;

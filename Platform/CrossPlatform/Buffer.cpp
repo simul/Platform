@@ -2,7 +2,7 @@
 using namespace simul;
 using namespace crossplatform;
 
-Buffer::Buffer():stride(0)
+Buffer::Buffer():stride(0),count(0)
 {
 }
 

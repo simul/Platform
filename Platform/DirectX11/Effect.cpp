@@ -90,6 +90,7 @@ PlatformStructuredBuffer::PlatformStructuredBuffer()
 					stagingBuffers[i]=NULL;
 				memset(&mapped,0,sizeof(mapped));
 			}
+
 void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data)
 {
 	InvalidateDeviceObjects();

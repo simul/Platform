@@ -33,6 +33,7 @@ namespace simul
 			//! Return the modified data to the device object.
 			virtual void Unmap(crossplatform::DeviceContext &deviceContext) =0;
 			int stride;
+			int count;
 		};
 	}
 }
