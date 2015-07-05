@@ -131,6 +131,17 @@ void BaseFramebuffer::SetExternalTextures(crossplatform::Texture *colour,crosspl
 
 	external_texture=true;
 	external_depth_texture=true;
+	if(colour)
+	{
+		Width=colour->width;
+		Height=colour->length;
+		is_cubemap=(colour->depth==6);
+	}
+	else if(depth)
+	{
+		Width=depth->width;
+		Height=depth->length;
+	}
 }
 
 bool BaseFramebuffer::CreateBuffers()
