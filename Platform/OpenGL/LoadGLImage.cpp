@@ -1,47 +1,28 @@
 
 #include <GL/glew.h>
+#include "Simul/Base/RuntimeError.h"
 #include <string>
 #include <vector>
 #include "LoadGLImage.h"
 #include "FreeImage.h"
 #include "SimulGLUtilities.h"
-#include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Base/FileLoader.h"
 
 #ifdef _MSC_VER
 #pragma comment(lib,"freeImage.lib")
 #endif
-using namespace std;
 
-namespace simul
-{
-	namespace opengl
-	{
-	}
-}
-static bool FileExists(const string& filename_utf8)
-{
-	FILE* pFile = NULL;
-#ifdef _MSC_VER
-	wstring wstr=simul::base::Utf8ToWString(filename_utf8.c_str());
-	_wfopen_s(&pFile,wstr.c_str(),L"r");
-#else
-	pFile=fopen(filename_utf8.c_str(),"r");
-#endif
-	bool bExists = (pFile != NULL);
-	if (pFile)
-		fclose(pFile);
-	return bExists;
-}
+using namespace std;
 
 unsigned char *LoadBitmap(const char *filename_utf8,unsigned &bpp,int &width,int &height)
 {
 ERRNO_CHECK
 #ifdef _MSC_VER
-	string fn			=filename_utf8;
+	string fn				=filename_utf8;
 	FREE_IMAGE_FORMAT fif	=FIF_UNKNOWN;
 	GL_ERROR_CHECK
-	wstring wstr		=simul::base::Utf8ToWString(fn);
+	wstring wstr			=simul::base::Utf8ToWString(fn);
 	fif						=FreeImage_GetFileTypeU(wstr.c_str(), 0);
 	if(fif == FIF_UNKNOWN)
 	{
@@ -90,14 +71,17 @@ ERRNO_CHECK
 #endif
 }
 
-#include "Simul/Base/FileLoader.h"
 GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &texturePathsUtf8,unsigned wrap,int *w,int *h,GLint *internal_format)
 {
 	GL_ERROR_CHECK
 	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
 	GL_ERROR_CHECK
-	if(!FileExists(fn.c_str()))
+		ERRNO_BREAK
+	if(!simul::base::FileLoader::GetFileLoader()->FileExists(fn.c_str()))
+	{
+		SIMUL_CERR<<"Texture file note found: "<<filename_utf8<<std::endl;
 		return 0;
+	}
 #ifdef _MSC_VER
 	unsigned bpp=0;
 	int width,height;

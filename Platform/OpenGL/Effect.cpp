@@ -382,18 +382,22 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 	bool retry=true;
 	platform_effect = (void*)0xFFFFFFFF;
 	GL_ERROR_CHECK
+	ERRNO_BREAK
 	while(retry)
 	{
 	GL_ERROR_CHECK
+	ERRNO_BREAK
 		std::string fn_utf8(filename_utf8);
 		// PREFER to use the platform shader:
 		std::string filename_fx(filename_utf8);
+	ERRNO_BREAK
 		if(filename_fx.find(".")>=filename_fx.length())
 			filename_fx+=".glfx";
 		filenameInUseUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_fx.c_str(), renderPlatform->GetShaderPathsUtf8());
 GL_ERROR_CHECK
 		if(filenameInUseUtf8.length()==0)
 		{
+	ERRNO_BREAK
 			std::string filename_sfx(filename_utf8);
 			if(filename_sfx.find(".")>=filename_fx.length())
 				filename_sfx+=".sfx";
@@ -405,7 +409,7 @@ GL_ERROR_CHECK
 			fn_utf8+=".glfx";
 		if (!filenameInUseUtf8.length())
 		{
-			SIMUL_CERR << "Effect::Load - file not found: " << filename.c_str() << std::endl;
+			SIMUL_CERR << "Effect::Load - file not found: " << filename.c_str() <<"; did you set the paths for this RenderPlatform?"<< std::endl;
 			return;
 		}
 		glfxSetBinaryDirectory(renderPlatform->GetShaderBinaryPath());

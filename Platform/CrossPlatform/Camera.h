@@ -133,7 +133,12 @@ namespace simul
 		
 		math::Matrix4x4 SIMUL_CROSSPLATFORM_EXPORT MatrixLookInDirection(const float *dir,const float *view_up);
 		void SIMUL_CROSSPLATFORM_EXPORT MakeCubeMatrices(math::Matrix4x4 mat[],const float *cam_pos,bool ReverseDepth);
-
+		extern SIMUL_CROSSPLATFORM_EXPORT math::Matrix4x4 MakeOrthoProjectionMatrix(float left,
+ 																					float right,
+ 																					float bottom,
+ 																					float top,
+ 																					float nearVal,
+ 																					float farVal);
 		//! A camera class. The orientation has the z-axis facing backwards, the x-axis right and the y-axis up.
 		SIMUL_CROSSPLATFORM_EXPORT_CLASS Camera :
 			public simul::graph::meta::Node,

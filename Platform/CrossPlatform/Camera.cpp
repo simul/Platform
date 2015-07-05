@@ -312,6 +312,29 @@ void simul::crossplatform::MakeCubeMatrices(simul::math::Matrix4x4 mat[],const f
 		mat[i]._44=1.f;
 	}
 }
+
+math::Matrix4x4 simul::crossplatform::MakeOrthoProjectionMatrix(float left,
+ 	float right,
+ 	float bottom,
+ 	float top,
+ 	float nearVal,
+ 	float farVal)
+{
+	math::Matrix4x4 m;
+	m.ResetToUnitMatrix();
+	float rl=right-left;
+	float tb=top-bottom;
+	float fn=farVal-nearVal;
+	m.m00=2.0f/(rl);
+	m.m11=2.0f/(tb);
+	m.m22=-2.0f/(fn);
+	m.m03=(right+left)/(rl);
+	m.m13=(top+bottom)/(tb);
+	m.m23=(farVal+nearVal)/(fn);
+	m.m33=1.f;
+	return m;
+}
+
 Camera::Camera():Orientation()
 {
 	InitializePropertiesDefinition();

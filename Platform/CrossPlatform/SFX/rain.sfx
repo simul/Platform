@@ -250,13 +250,12 @@ shader void GS_SnowParticles(point particleVertexOutput inp[1], inout TriangleSt
 
 shader vec4 PS_SnowParticles(particleGeometryOutput IN): SV_TARGET
 {
-	vec4 result		=IN.brightness*cubeTexture.Sample(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0)));
+	vec4 result		=IN.brightness*cubeTexture.Sample(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0)).xyz);
 	vec2 pos		=IN.texCoords*2.0-1.0;
 	float radius	=length(pos.xy);
 	float angle		=atan2(pos.x,pos.y);
 	//float spoke	=fract(angle/pi*3.0)-0.5;
 	float opacity	=IN.fade*saturate(1.0-radius);//-spoke*spoke);
-	
 	//return vec4(1,0,1,opacity);
 	return vec4(1.0*result.rgb,opacity);
 }
@@ -599,13 +598,13 @@ vec4 RainParticlesPS(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 
 vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
 {
-	vec3 light			=cubeTexture.Sample(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0))).rgb;
+	vec3 light			=cubeTexture.Sample(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0)).xyz).rgb;
 	return RainParticlesPS(IN,reverseDepth,light);
 }
 
 vec4 PS_RainParticles_Blur(RainParticleGeometryOutput IN,bool reverseDepth)
 {
-	vec3 clight			=cubeTexture.Sample(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0))).rgb;
+	vec3 clight			=cubeTexture.Sample(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0)).xyz).rgb;
 	vec2 texc			=vec2(IN.clip_pos.x,-IN.clip_pos.y)*0.5+vec2(0.5,0.5);
 	vec3 blight			=blurTexture.Sample(clampSamplerState,texc).rgb;
 	vec3 light			=0.1*clight+blight;

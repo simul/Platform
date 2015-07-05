@@ -1,5 +1,4 @@
 #pragma once
-#include "Simul/Base/BufferedStringStreamBuf.h"
 #include "Simul/Base/RuntimeError.h"
 #include <windows.h>
 #include <fstream>
@@ -11,13 +10,65 @@
 
 typedef void (__stdcall *DebugOutputCallback)(const char *);
 
-class VisualStudioDebugOutput : public simul::base::BufferedStringStreamBuf
+class vsBufferedStringStreamBuf : public std::streambuf
+{
+public:
+	vsBufferedStringStreamBuf(int bufferSize) 
+	{
+		if (bufferSize)
+		{
+			char *ptr = new char[bufferSize];
+			setp(ptr, ptr + bufferSize);
+		}
+		else
+			setp(0, 0);
+	}
+	virtual ~vsBufferedStringStreamBuf() 
+	{
+		//sync();
+		delete[] pbase();
+	}
+	virtual void writeString(const std::string &str) = 0;
+private:
+	int	overflow(int c)
+	{
+		sync();
+
+		if (c != EOF)
+		{
+			if (pbase() == epptr())
+			{
+				std::string temp;
+				temp += char(c);
+				writeString(temp);
+			}
+			else
+				sputc((char)c);
+		}
+
+		return 0;
+	}
+
+	int	sync()
+	{
+		if (pbase() != pptr())
+		{
+			int len = int(pptr() - pbase());
+			std::string temp(pbase(), len);
+			writeString(temp);
+			setp(pbase(), epptr());
+		}
+		return 0;
+	}
+};
+
+class VisualStudioDebugOutput : public vsBufferedStringStreamBuf
 {
 public:
     VisualStudioDebugOutput(bool send_to_output_window=true,
 							const char *logfilename=NULL,size_t bufsize=(size_t)16
 							,DebugOutputCallback c=NULL)
-		:simul::base::BufferedStringStreamBuf((int)bufsize)
+		:vsBufferedStringStreamBuf((int)bufsize)
 		,old_cout_buffer(NULL)
 		,old_cerr_buffer(NULL)
 		,to_logfile(false)
