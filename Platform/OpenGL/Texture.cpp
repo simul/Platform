@@ -37,6 +37,7 @@ void SamplerState::InvalidateDeviceObjects()
 opengl::Texture::Texture()
 	:pTextureObject(0)
 	,m_fb(0)
+	,externalTextureObject(false)
 {
 }
 
@@ -48,7 +49,9 @@ opengl::Texture::~Texture()
 void Texture::InvalidateDeviceObjects()
 {
 	GL_ERROR_CHECK
-	SAFE_DELETE_TEXTURE(pTextureObject);
+	if(!externalTextureObject)
+		SAFE_DELETE_TEXTURE(pTextureObject);
+	externalTextureObject=false;
 	SAFE_DELETE_FRAMEBUFFER(m_fb);
 	GL_ERROR_CHECK
 }
@@ -71,7 +74,7 @@ void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform
 	ERRNO_BREAK
 	pixelFormat			=opengl::RenderPlatform::FromGLFormat(internal_format);
 	GL_ERROR_CHECK
-	ERRNO_BREAK
+	externalTextureObject=false;
 }
 
 void Texture::LoadTextureArray(crossplatform::RenderPlatform *renderPlatform,const std::vector<std::string> &texture_files)
@@ -135,12 +138,54 @@ ERRNO_CHECK
 
 	glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 	GL_ERROR_CHECK
-ERRNO_CHECK
+	externalTextureObject=false;
 }
 
 bool opengl::Texture::IsValid() const
 {
 	return (pTextureObject>0);
+}
+
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt)
+{
+	if(!externalTextureObject)
+		SAFE_DELETE_TEXTURE(pTextureObject);
+	externalTextureObject=true;
+	pTextureObject=(GLuint)t;
+	if(pTextureObject)
+	{
+		glBindTexture(GL_TEXTURE_2D,pTextureObject);
+		GLint internal_format;
+		glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH,&width);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D,0, GL_TEXTURE_HEIGHT,&length);
+		dim=2;
+//		glGetTexLevelParameteriv(GL_TEXTURE_2D,0, GL_TEXTURE_DEPTH,&depth);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_INTERNAL_FORMAT,&internal_format);
+		glGetTexParameteriv(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,&mips);
+		pixelFormat=opengl::RenderPlatform::FromGLFormat(internal_format);
+
+		//m_fb;
+		main_viewport[0]=0;
+		main_viewport[1]=0;
+		main_viewport[2]=width;
+		main_viewport[3]=length;
+		if(make_rt)
+		{
+			SAFE_DELETE_FRAMEBUFFER(m_fb);
+			glGenFramebuffers(1, &m_fb);
+			glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
+			glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pTextureObject, 0);
+		
+			GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			if(status!=GL_FRAMEBUFFER_COMPLETE)
+			{
+				FramebufferGL::CheckFramebufferStatus();
+				SIMUL_BREAK("Framebuffer incomplete for rendertarget texture");
+			}
+		}
+		glBindTexture(GL_TEXTURE_2D,0);
+	}
 }
 
 void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l

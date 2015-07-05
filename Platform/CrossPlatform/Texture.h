@@ -91,6 +91,8 @@ namespace simul
 			{
 				return pixelFormat;
 			}
+			//! Initialize this object as a wrapper around a native, platform-specific texture. The interpretations of t and srv are platform-dependent.
+			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=true)=0;
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified.
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false)=0;
