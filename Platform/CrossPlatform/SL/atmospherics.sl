@@ -437,7 +437,7 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 #endif
 	return vec4(colour.rgb,1.0);
 }
-
+/*
 vec4 Inscatter(	Texture2D inscTexture
 				,Texture2D skylTexture
 				,Texture2D illuminationTexture
@@ -478,5 +478,5 @@ vec4 Inscatter(	Texture2D inscTexture
 	colour				+=skyl;
     return vec4(colour.rgb,1.f);
 }
-
+*/
 #endif

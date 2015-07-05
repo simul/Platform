@@ -8,7 +8,11 @@
 #include "Simul/Platform/CrossPlatform/Layout.h"
 #include "Simul/Platform/CrossPlatform/Material.h"
 #include "Effect.h"
-
+#ifdef _MSC_VER
+#define isinf !_finite
+#else
+#include <cmath>		// for isinf()
+#endif
 using namespace simul;
 using namespace crossplatform;
 
@@ -254,7 +258,7 @@ void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int 
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v)
 {
 	crossplatform::EffectTechnique *tech	=debugEffect->GetTechniqueByName("show_depth");
-	if(tex->GetSampleCount()>0)
+	if(tex&&tex->GetSampleCount()>0)
 	{
 		tech=debugEffect->GetTechniqueByName("show_depth_ms");
 		debugEffect->SetTexture(deviceContext,"imageTextureMS",tex);
@@ -266,7 +270,7 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 	debugConstants.debugTanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 
-	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,frustum.farZ);
+	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,isinf(frustum.farZ)?100000.0f:frustum.farZ);
 	debugConstants.debugDepthToLinFadeDistParams=depthToLinFadeDistParams;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
 	if(mirrorY2)
@@ -275,7 +279,7 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 		//dy*=-1;
 	}
 	{
-		if(v)
+		if(tex&&v)
 			debugConstants.viewport=vec4((float)v->x/(float)tex->width,(float)v->y/(float)tex->length,(float)v->w/(float)tex->width,(float)v->h/(float)tex->length);
 		else
 			debugConstants.viewport=vec4(0.f,0.f,1.f,1.f);

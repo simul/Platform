@@ -24,13 +24,14 @@ namespace simul
 			BaseFramebuffer(int w=0,int h=0);
 			virtual ~BaseFramebuffer(){};
 			//! Call this when the API-dependent device has been created.
-			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r)=0;
+			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			//! Call this when the API-dependent device has been lost or is shutting down.
-			virtual void InvalidateDeviceObjects()=0;
+			virtual void InvalidateDeviceObjects();
 			/// Return true if the API-dependent objects have been updated to match the properties.
-			virtual bool IsValid() const=0;
+			virtual bool IsValid() const;
+			virtual void SetExternalTextures(crossplatform::Texture *colour,crossplatform::Texture *depth);
 			//! Call this if needed (not usually) to ensure that the buffers are created.
-			virtual bool CreateBuffers()=0;
+			virtual bool CreateBuffers();
 			//! Activate the framebuffer and set the viewport- must be followed after rendering by a call to \ref Deactivate().
 			virtual void ActivateViewport(crossplatform::DeviceContext &,float viewportX, float viewportY, float viewportW, float viewportH)=0;
 			//! Activate the framebuffer - must be followed after rendering by a call to \ref Deactivate().
@@ -47,26 +48,26 @@ namespace simul
 			//! Deactivate only the depth buffer, so it can be used as a texture for rendering to the colour buffer.
 			virtual void DeactivateDepth(DeviceContext &){}
 			//! Set the API-dependent colour buffer format for this framebuffer. Across all API's, setting 0 means no rendering to colour.
-			virtual void SetFormat(PixelFormat)=0;
+			virtual void SetFormat(PixelFormat);
 			//! Set the API-dependent colour depth format for this framebuffer. Across all API's, setting 0 means no rendering to depth.
-			virtual void SetDepthFormat(PixelFormat)=0;
+			virtual void SetDepthFormat(PixelFormat);
+			virtual void SetGenerateMips(bool);
 			//! Clear the colour and depth buffers if present.
 			virtual void Clear(crossplatform::DeviceContext &context,float R,float G,float B,float A,float depth,int mask=0)=0;
 			//! Set the size of the framebuffer in pixel height and width.
 			virtual void ClearColour(crossplatform::DeviceContext &context,float,float,float,float)=0;
+			//! Set the size of the framebuffer.
+			virtual void SetWidthAndHeight(int w,int h);
 			//! Set this to be a cubemap framebuffer, so that its texture object will be a cubemap. Equivalent to SetWidthAndHeight.
-			virtual void SetAsCubemap(int face_size)=0;
-			//! Set the face to be used for rendering, if this is a cubemap framebuffer.
-			virtual void SetCubeFace(int f)=0;
-			//! Set the width and height of the framebuffer.
-			virtual void SetWidthAndHeight(int w,int h)=0;
+			virtual void SetAsCubemap(int face_size);
+			virtual void SetCubeFace(int f);
 			//! Some hardware has fast RAM that's good for framebuffers.
 			virtual void SetUseFastRAM(bool /*colour*/,bool /*depth*/){};
 			virtual void SetAntialiasing(int s)=0;
 			//! Calculate the spherical harmonics of this cubemap and store the result internally.
 			//! Changing the number of bands will resize the internal storeage.
-			virtual void CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)=0;
-			virtual void RecompileShaders(){}
+			virtual void CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext);
+			virtual void RecompileShaders();
 			//! Get the texture for the colour buffer target.
 			inline Texture *GetTexture()
 			{
@@ -123,6 +124,8 @@ namespace simul
 			crossplatform::StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
 			crossplatform::StructuredBuffer<vec4>						sphericalHarmonics;
 			crossplatform::Effect										*sphericalHarmonicsEffect;
+			bool external_texture;
+			bool external_depth_texture;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT CubemapFramebuffer:public BaseFramebuffer
 		{

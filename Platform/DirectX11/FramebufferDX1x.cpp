@@ -44,48 +44,9 @@ Framebuffer::Framebuffer(int w,int h) :
 {
 }
 
-void Framebuffer::SetWidthAndHeight(int w,int h)
+Framebuffer::~Framebuffer()
 {
-	if(Width!=w||Height!=h)
-	{
-		Width=w;
-		Height=h;
-		if(renderPlatform)
-			InvalidateDeviceObjects();
-	}
-	is_cubemap=false;
-}
-
-void Framebuffer::SetAsCubemap(int w)
-{
-	SetWidthAndHeight(w,w);
-	is_cubemap=true;
-}
-
-void Framebuffer::SetCubeFace(int f)
-{
-	current_face=f;
-}
-
-void Framebuffer::SetFormat(crossplatform::PixelFormat f)
-{
-	if(f==target_format)
-		return;
-	target_format=f;
 	InvalidateDeviceObjects();
-}
-
-void Framebuffer::SetDepthFormat(crossplatform::PixelFormat f)
-{
-	if(f==depth_format)
-		return;
-	depth_format=f;
-	InvalidateDeviceObjects();
-}
-
-void Framebuffer::SetGenerateMips(bool m)
-{
-	GenerateMips=m;
 }
 
 void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -100,134 +61,12 @@ void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	}
 	CreateBuffers();
 }
-
 void Framebuffer::InvalidateDeviceObjects()
 {
-	if(buffer_depth_texture)
-		buffer_depth_texture->InvalidateDeviceObjects();
-	if(buffer_texture)
-		buffer_texture->InvalidateDeviceObjects();
-
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
-	sphericalHarmonicsConstants.InvalidateDeviceObjects();
-	SAFE_DELETE(buffer_texture);
-	SAFE_DELETE(buffer_depth_texture);
-	sphericalHarmonics.InvalidateDeviceObjects();
-	SAFE_DELETE(sphericalHarmonicsEffect);
-	sphericalSamples.InvalidateDeviceObjects();
+	BaseFramebuffer::InvalidateDeviceObjects();
 }
-
-bool Framebuffer::Destroy()
-{
-	InvalidateDeviceObjects();
-	return true;
-}
-
-Framebuffer::~Framebuffer()
-{
-	InvalidateDeviceObjects();
-	SAFE_DELETE(buffer_depth_texture);
-	SAFE_DELETE(buffer_texture);
-}
-
-
-bool Framebuffer::IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat)
-{
-	DepthFormat;
-	AdapterFormat;
-	BackBufferFormat;
-	HRESULT hr=S_OK;
-	/*LPDIRECT3D9 d3d;
-	m_pd3dDevice->GetDirect3D(&d3d);
-    // Verify that the depth format exists
-    HRESULT hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat,
-                                                       D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, DepthFormat);
-    if(FAILED(hr))
-		return (hr==S_OK);
-
-    // Verify that the backbuffer format is valid
-    hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, D3DUSAGE_RENDERTARGET,
-                                               D3DRTYPE_SURFACE, BackBufferFormat);
-    if(FAILED(hr))
-		return (hr==S_OK);
-
-    // Verify that the depth format is compatible
-    hr = d3d->CheckDepthStencilMatch(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, BackBufferFormat,
-                                                    DepthFormat);
-*/
-    return (hr==S_OK);
-}
-struct Vertext
-{
-	D3DXVECTOR4 pos;
-	D3DXVECTOR2 tex;
-};
-
-bool Framebuffer::CreateBuffers()
-{
-	if(!Width||!Height)
-		return false;
-	if(!renderPlatform)
-	{
-		SIMUL_BREAK("renderPlatform should not be NULL here");
-	}
-	if(!renderPlatform)
-		return false;
-	if((buffer_texture&&buffer_texture->AsD3D11Texture2D()))
-		return true;
-	if(buffer_depth_texture&&buffer_depth_texture->AsD3D11Texture2D())
-		return true;
-	if(buffer_texture)
-		buffer_texture->InvalidateDeviceObjects();
-	if(buffer_depth_texture)
-		buffer_depth_texture->InvalidateDeviceObjects();
-	if(!buffer_texture)
-		buffer_texture=renderPlatform->CreateTexture();
-	if(!buffer_depth_texture)
-		buffer_depth_texture=renderPlatform->CreateTexture();
-	static int quality=0;
-	if(target_format!=crossplatform::UNKNOWN)
-	{
-		if(!is_cubemap)
-			buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,target_format,false,true,false,numAntialiasingSamples,quality);
-		else
-			buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform,Width,Height,6,target_format,false,true,true);
-	}
-	if(depth_format!=crossplatform::UNKNOWN)
-	{
-		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,depth_format,false,false,true,numAntialiasingSamples,quality);
-	}
-	// The table of coefficients.
-	int s=(bands+1);
-	if(s<4)
-		s=4;
-	sphericalHarmonics.InvalidateDeviceObjects();
-	sphericalSamples.InvalidateDeviceObjects();
-	sphericalHarmonicsConstants.RestoreDeviceObjects(renderPlatform);
-	return true;
-}
-
-ID3D11Texture2D* makeStagingTexture(ID3D11Device *m_pd3dDevice
-							,int w,int h,DXGI_FORMAT target_format)
-{
-	ID3D11Texture2D*	tex;
-	D3D11_TEXTURE2D_DESC textureDesc=
-	{
-		w,h,
-		1,
-		1,
-		target_format,
-		{1,0}
-		,D3D11_USAGE_STAGING,
-		0,
-		D3D11_CPU_ACCESS_READ| D3D11_CPU_ACCESS_WRITE,
-		0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
-	};
-	m_pd3dDevice->CreateTexture2D(&textureDesc,NULL,&tex);
-	return tex;
-}
-
 void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4])
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
@@ -265,12 +104,6 @@ void Framebuffer::SaveOldRTs(crossplatform::DeviceContext &deviceContext)
 																);
 }
 
-bool Framebuffer::IsValid() const
-{
-	bool ok=(buffer_texture!=NULL)||(buffer_depth_texture!=NULL);
-	return ok;
-}
-
 void Framebuffer::MoveToFastRAM()
 {
 	if(useESRAM&&buffer_texture)
@@ -302,7 +135,7 @@ void Framebuffer::ActivateViewport(crossplatform::DeviceContext &deviceContext, 
 void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 {
 	SaveOldRTs(deviceContext);
-	if((!buffer_texture||!buffer_texture->AsD3D11Texture2D())&&(!buffer_depth_texture||!buffer_depth_texture->AsD3D11Texture2D()))
+	if((!buffer_texture||!buffer_texture->IsValid())&&(!buffer_depth_texture||!buffer_depth_texture->IsValid()))
 		CreateBuffers();
 	SIMUL_ASSERT(IsValid());
 	ID3D11RenderTargetView *renderTargetView=NULL;
@@ -314,13 +147,13 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	if(renderTargetView)
 	{
 		colour_active=true;
-		depth_active=(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
-		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&renderTargetView,buffer_depth_texture->AsD3D11DepthStencilView());
+		depth_active=buffer_depth_texture&&(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
+		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&renderTargetView,buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL);
 	}
 	else 
 	{
-		depth_active=(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
-		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&m_pOldRenderTarget,buffer_depth_texture->AsD3D11DepthStencilView());
+		depth_active=buffer_depth_texture&&(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
+		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&m_pOldRenderTarget,buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL);
 	}
 	SetViewport(deviceContext,0,0,1.f,1.f,0,1.f);
 }
@@ -356,13 +189,13 @@ void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
 										&m_pOldRenderTarget,
 										&m_pOldDepthSurface
 										);
-		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,buffer_depth_texture->AsD3D11DepthStencilView());
+		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL);
 	}
 	else
 	{
-		pContext->OMSetRenderTargets(1,&renderTargetView,buffer_depth_texture->AsD3D11DepthStencilView());
+		pContext->OMSetRenderTargets(1,&renderTargetView,buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL);
 	}
-	depth_active=(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
+	depth_active=buffer_depth_texture&&(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
 	D3D11_VIEWPORT viewport;
 		// Setup the viewport for rendering.
 	viewport.Width = (float)Width;
@@ -470,72 +303,4 @@ void Framebuffer::ClearColour(crossplatform::DeviceContext &deviceContext,float 
 	}
 	else if(buffer_texture->AsD3D11RenderTargetView())
 		deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(buffer_texture->AsD3D11RenderTargetView(),clearColor);
-}
-
-void Framebuffer::RecompileShaders()
-{
-	BaseFramebuffer::RecompileShaders();
-	SAFE_DELETE(sphericalHarmonicsEffect);
-	if(!renderPlatform)
-		return;
-	sphericalHarmonicsEffect=renderPlatform->CreateEffect("spherical_harmonics");
-	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect,"SphericalHarmonicsConstants");
-}
-
-void Framebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	if(!sphericalHarmonicsEffect)
-		RecompileShaders();
-	int num_coefficients=bands*bands;
-	static int BLOCK_SIZE=1;
-	static int sqrt_jitter_samples					=4;
-	if(!sphericalHarmonics.count)
-	{
-		sphericalHarmonics.RestoreDeviceObjects(renderPlatform,num_coefficients,true);
-		sphericalSamples.RestoreDeviceObjects(renderPlatform,sqrt_jitter_samples*sqrt_jitter_samples,true);
-	}
-	sphericalHarmonicsConstants.num_bands			=bands;
-	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
-	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;
-	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
-	static int seed = 0;
-	sphericalHarmonicsConstants.randomSeed			= seed++;
-	seed = seed % 10000;
-	sphericalHarmonicsConstants.Apply(deviceContext);
-	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
-	crossplatform::EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");
-	sphericalHarmonicsEffect->Apply(deviceContext,clear,0);
-	pContext->Dispatch((num_coefficients+BLOCK_SIZE-1)/BLOCK_SIZE,1,1);
-	sphericalHarmonicsEffect->Unapply(deviceContext);
-	{
-		// The table of 3D directional sample positions. sqrt_jitter_samples x sqrt_jitter_samples
-		// We just fill this buffer_texture with random 3d directions.
-		crossplatform::EffectTechnique *jitter=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
-		sphericalSamples.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "samplesBufferRW");
-		sphericalHarmonicsEffect->Apply(deviceContext,jitter,0);
-		int u = (sqrt_jitter_samples + BLOCK_SIZE - 1) / BLOCK_SIZE;
-		renderPlatform->DispatchCompute(deviceContext, u, u, 1);
-		sphericalHarmonicsEffect->UnbindTextures(deviceContext);
-		simul::dx11::setUnorderedAccessView(sphericalHarmonicsEffect->asD3DX11Effect(),"samplesBufferRW",NULL);
-		sphericalHarmonicsEffect->Unapply(deviceContext);
-	}
-
-	crossplatform::EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
-	simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"cubemapTexture"	,buffer_texture->AsD3D11ShaderResourceView());
-	simul::dx11::setTexture(sphericalHarmonicsEffect->asD3DX11Effect(), "samplesBuffer", sphericalSamples.AsD3D11ShaderResourceView());
-	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, "samplesBuffer");
-	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
-	
-	static bool sh_by_samples=false;
-	sphericalHarmonicsEffect->Apply(deviceContext,tech,0);
-	int n = sh_by_samples ? sphericalHarmonicsConstants.numJitterSamples : num_coefficients;
-	int U = ((n) + BLOCK_SIZE - 1) / BLOCK_SIZE;
-	renderPlatform->DispatchCompute(deviceContext, U, 1, 1);
-	sphericalHarmonicsEffect->UnbindTextures(deviceContext);
-//	simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"cubemapTexture"	,NULL);
-	//simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect->asD3DX11Effect(),"targetBuffer"	,NULL);
-	//simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"samplesBuffer"	,NULL);
-	sphericalHarmonicsConstants.Unbind(deviceContext);
-	sphericalHarmonicsEffect->Unapply(deviceContext);
 }

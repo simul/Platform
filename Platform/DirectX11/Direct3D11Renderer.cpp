@@ -52,10 +52,10 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	renderPlatform=r;
 	if(!renderPlatform)
 		return;
-	if(!oceanRenderer&&simulWeatherRenderer&&(simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
+	if(!oceanRenderer&&weatherRenderer&&(simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
 	{
-		oceanRenderer			=new(memoryInterface) terrain::BaseSeaRenderer(simulWeatherRenderer->GetEnvironment()->seaKeyframer);
-		oceanRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetEnvironment()->skyKeyframer);
+		oceanRenderer			=new(memoryInterface) terrain::BaseSeaRenderer(weatherRenderer->GetEnvironment()->seaKeyframer);
+		oceanRenderer->SetBaseSkyInterface(weatherRenderer->GetEnvironment()->skyKeyframer);
 	}
 	if(oceanRenderer)
 		oceanRenderer->RestoreDeviceObjects(renderPlatform);

@@ -12,9 +12,9 @@ struct DepthIntepretationStruct
 	bool reverseDepth;
 };
 
-float depthToLinearDistance(float depth,DepthIntepretationStruct depthIntepretationStruct)
+float depthToLinearDistance(float depth,DepthIntepretationStruct dis)
 {
-	if(depthIntepretationStruct.reverseDepth)
+	if(dis.reverseDepth)
 	{
 		if(depth<=0)
 			return UNITY_DIST;//max_fade_distance_metres;
@@ -24,15 +24,15 @@ float depthToLinearDistance(float depth,DepthIntepretationStruct depthIntepretat
 		if(depth>=1.0)
 			return UNITY_DIST;//max_fade_distance_metres;
 	}
-	float linearFadeDistanceZ = saturate(depthIntepretationStruct.depthToLinFadeDistParams.x/(depth*depthIntepretationStruct.depthToLinFadeDistParams.y + depthIntepretationStruct.depthToLinFadeDistParams.z)+depthIntepretationStruct.depthToLinFadeDistParams.w*depth);
+	float linearFadeDistanceZ = saturate(dis.depthToLinFadeDistParams.x/(depth*dis.depthToLinFadeDistParams.y + dis.depthToLinFadeDistParams.z)+dis.depthToLinFadeDistParams.w*depth);
 	return linearFadeDistanceZ;
 }
 
-vec4 depthToLinearDistance(vec4 depth,DepthIntepretationStruct depthIntepretationStruct)
+vec4 depthToLinearDistance(vec4 depth,DepthIntepretationStruct dis)
 {
-	vec4 linearFadeDistanceZ = saturate(depthIntepretationStruct.depthToLinFadeDistParams.xxxx / (depth*depthIntepretationStruct.depthToLinFadeDistParams.yyyy + depthIntepretationStruct.depthToLinFadeDistParams.zzzz)+depthIntepretationStruct.depthToLinFadeDistParams.wwww*depth);
+	vec4 linearFadeDistanceZ = saturate(dis.depthToLinFadeDistParams.xxxx / (depth*dis.depthToLinFadeDistParams.yyyy + dis.depthToLinFadeDistParams.zzzz)+dis.depthToLinFadeDistParams.wwww*depth);
 
-	if(depthIntepretationStruct.reverseDepth)
+	if(dis.reverseDepth)
 	{
 		vec4 st=step(depth,vec4(0.0,0.0,0.0,0.0));
 		linearFadeDistanceZ*=(vec4(1.0,1.0,1.0,1.0)-st);
@@ -45,11 +45,11 @@ vec4 depthToLinearDistance(vec4 depth,DepthIntepretationStruct depthIntepretatio
 	return linearFadeDistanceZ;
 }
 
-vec2 depthToLinearDistance(vec2 depth,DepthIntepretationStruct depthIntepretationStruct)
+vec2 depthToLinearDistance(vec2 depth,DepthIntepretationStruct dis)
 {
-	vec2 linearFadeDistanceZ =saturate(depthIntepretationStruct.depthToLinFadeDistParams.xx / (depth*depthIntepretationStruct.depthToLinFadeDistParams.yy + depthIntepretationStruct.depthToLinFadeDistParams.zz)+depthIntepretationStruct.depthToLinFadeDistParams.ww*depth);
+	vec2 linearFadeDistanceZ =saturate(dis.depthToLinFadeDistParams.xx / (depth*dis.depthToLinFadeDistParams.yy + dis.depthToLinFadeDistParams.zz)+dis.depthToLinFadeDistParams.ww*depth);
 	
-	if(depthIntepretationStruct.reverseDepth)
+	if(dis.reverseDepth)
 	{
 		linearFadeDistanceZ.x = max(linearFadeDistanceZ.x, step(0.0, -depth.x));
 		linearFadeDistanceZ.y = max(linearFadeDistanceZ.y, step(0.0, -depth.y));
@@ -94,14 +94,14 @@ void discardUnlessFar(float depth,bool reverseDepth)
 // This converts a z-buffer depth into a distance in the units of nearZ and farZ,
 //	-	where usually nearZ and farZ will be factors of the maximum fade distance.
 //	-	
-// if depthIntepretationStruct.depthToLinFadeDistParams.z=0
+// if dis.depthToLinFadeDistParams.z=0
 // (0.07,300000.0, 0, 0):
 //									0->0.07/(300000*0).
 //									i.e. infinite.
 //									1->0.07/(300000) -> v small value.
-float depthToFadeDistance(float depth,vec2 xy,DepthIntepretationStruct depthIntepretationStruct,vec2 tanHalf)
+float depthToFadeDistance(float depth,vec2 xy,DepthIntepretationStruct dis,vec2 tanHalf)
 {
-	if(depthIntepretationStruct.reverseDepth)
+	if(dis.reverseDepth)
 	{
 		if(depth<=0)
 			return UNITY_DIST;
@@ -111,20 +111,20 @@ float depthToFadeDistance(float depth,vec2 xy,DepthIntepretationStruct depthInte
 		if(depth>=1.0)
 			return UNITY_DIST;
 	}
-	float linearFadeDistanceZ = depthIntepretationStruct.depthToLinFadeDistParams.x / (depth*depthIntepretationStruct.depthToLinFadeDistParams.y + depthIntepretationStruct.depthToLinFadeDistParams.z)+depthIntepretationStruct.depthToLinFadeDistParams.w*depth;
+	float linearFadeDistanceZ = dis.depthToLinFadeDistParams.x / (depth*dis.depthToLinFadeDistParams.y + dis.depthToLinFadeDistParams.z)+dis.depthToLinFadeDistParams.w*depth;
 	float Tx=xy.x*tanHalf.x;
 	float Ty=xy.y*tanHalf.y;
 	float fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
 	return fadeDist;
 }
 
-vec2 depthToFadeDistance(vec2 depth,vec2 xy,DepthIntepretationStruct depthIntepretationStruct,vec2 tanHalf)
+vec2 depthToFadeDistance(vec2 depth,vec2 xy,DepthIntepretationStruct dis,vec2 tanHalf)
 {
-	vec2 linearFadeDistanceZ	=saturate(depthIntepretationStruct.depthToLinFadeDistParams.xx / (depth*depthIntepretationStruct.depthToLinFadeDistParams.yy + depthIntepretationStruct.depthToLinFadeDistParams.zz)+depthIntepretationStruct.depthToLinFadeDistParams.ww*depth);
+	vec2 linearFadeDistanceZ	=saturate(dis.depthToLinFadeDistParams.xx / (depth*dis.depthToLinFadeDistParams.yy + dis.depthToLinFadeDistParams.zz)+dis.depthToLinFadeDistParams.ww*depth);
 	float Tx					=xy.x*tanHalf.x;
 	float Ty					=xy.y*tanHalf.y;
 	vec2 fadeDist				=linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
-	if(depthIntepretationStruct.reverseDepth)
+	if(dis.reverseDepth)
 	{
 		fadeDist.x					=max(fadeDist.x,step(0.0,-depth.x));
 		fadeDist.y					=max(fadeDist.y,step(0.0,-depth.y));
@@ -137,19 +137,19 @@ vec2 depthToFadeDistance(vec2 depth,vec2 xy,DepthIntepretationStruct depthIntepr
 	return fadeDist;
 }
 
-float fadeDistanceToDepth(float dist,vec2 xy,DepthIntepretationStruct depthIntepretationStruct,vec2 tanHalf)
+float fadeDistanceToDepth(float dist,vec2 xy,DepthIntepretationStruct dis,vec2 tanHalf)
 {
 	float Tx				=xy.x*tanHalf.x;
 	float Ty				=xy.y*tanHalf.y;
 	float linearDistanceZ	=dist/sqrt(1.0+Tx*Tx+Ty*Ty);
 	float depth =0;
 
-	if(depthIntepretationStruct.depthToLinFadeDistParams.y>0)
-		depth=((depthIntepretationStruct.depthToLinFadeDistParams.x / linearDistanceZ) - depthIntepretationStruct.depthToLinFadeDistParams.z) / depthIntepretationStruct.depthToLinFadeDistParams.y;
+	if(dis.depthToLinFadeDistParams.y>0)
+		depth=((dis.depthToLinFadeDistParams.x / linearDistanceZ) - dis.depthToLinFadeDistParams.z) / dis.depthToLinFadeDistParams.y;
 	else // LINEAR DEPTH case:
-		depth=(linearDistanceZ - depthIntepretationStruct.depthToLinFadeDistParams.x) / depthIntepretationStruct.depthToLinFadeDistParams.w;
+		depth=(linearDistanceZ - dis.depthToLinFadeDistParams.x) / dis.depthToLinFadeDistParams.w;
 	
-	if(depthIntepretationStruct.reverseDepth)
+	if(dis.reverseDepth)
 	{
 		depth=min(depth,1.0-step(1.0,dist));
 		//if(dist>=1.0)

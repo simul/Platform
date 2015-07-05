@@ -231,6 +231,7 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 
 	pixelOffset=WrapOffset(pixelOffset,scale);
 }
+
 void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy)
 {
 	vec4 white(1.0f,1.0f,1.0f,1.0f);

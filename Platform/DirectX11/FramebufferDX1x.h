@@ -19,12 +19,8 @@ namespace simul
 		public:
 			Framebuffer(int w=0,int h=0);
 			virtual ~Framebuffer();
-			virtual void SetWidthAndHeight(int w,int h);
-			virtual void SetAsCubemap(int w);
-			virtual void SetCubeFace(int f);
-			virtual void SetFormat(crossplatform::PixelFormat f);
-			virtual void SetDepthFormat(crossplatform::PixelFormat f);
-			bool IsValid() const;
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
+			void InvalidateDeviceObjects();
 			virtual void SetUseFastRAM(bool colour,bool depth)
 			{
 				useESRAM=colour;
@@ -38,13 +34,7 @@ namespace simul
 					InvalidateDeviceObjects();
 				}
 			}
-			virtual void SetGenerateMips(bool);
-			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform	*renderPlatform);
-			bool CreateBuffers();
-			void RecompileShaders();
 			//! Call this when the device has been lost.
-			virtual void InvalidateDeviceObjects();
 			virtual void MoveToFastRAM();
 			virtual void MoveToSlowRAM();
 			virtual void MoveDepthToSlowRAM();
@@ -59,17 +49,14 @@ namespace simul
 			virtual void Clear(crossplatform::DeviceContext &context,float,float,float,float,float,int mask=0);
 			virtual void ClearDepth(crossplatform::DeviceContext &context,float);
 			virtual void ClearColour(crossplatform::DeviceContext &context, float, float, float, float );
-			void CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext);
+
 		protected:
-			bool Destroy();
-		protected:
+			bool useESRAM,useESRAMforDepth;
 			ID3D11RenderTargetView*				m_pOldRenderTarget;
 			ID3D11DepthStencilView*				m_pOldDepthSurface;
 			D3D11_VIEWPORT						m_OldViewports[16];
 			unsigned							num_OldViewports;
 		protected:
-			bool useESRAM,useESRAMforDepth;
-			bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
 			void SaveOldRTs(crossplatform::DeviceContext &deviceContext);
 			void SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float Z=0.0f,float D=1.0f);
 		};

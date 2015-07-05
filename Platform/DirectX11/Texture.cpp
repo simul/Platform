@@ -336,16 +336,31 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 					delete [] renderTargetViews;
 					renderTargetViews=NULL;
 				}
-				num_rt=1;
+				num_rt=textureDesc.ArraySize;
 				renderTargetViews=new ID3D11RenderTargetView*[num_rt];
 				// Setup the description of the render target view.
 				D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 				renderTargetViewDesc.Format				=textureDesc.Format;
-				renderTargetViewDesc.ViewDimension		=(textureDesc.SampleDesc.Count)>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
-				renderTargetViewDesc.Texture2D.MipSlice	=0;
-				// Create the render target in DX11:
-				V_CHECK(renderPlatform->AsD3D11Device()->CreateRenderTargetView(texture,&renderTargetViewDesc,renderTargetViews));
-				SetDebugObjectName(*renderTargetViews,"dx11::Texture::InitFromExternalD3D11Texture2D renderTargetView");
+				if(num_rt==1)
+				{
+					renderTargetViewDesc.ViewDimension		=(textureDesc.SampleDesc.Count)>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
+					renderTargetViewDesc.Texture2D.MipSlice			=0;
+					V_CHECK(renderPlatform->AsD3D11Device()->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[0])));
+				}
+				else
+				{
+					renderTargetViewDesc.ViewDimension		=(textureDesc.SampleDesc.Count)>1?D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY:D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+				
+					renderTargetViewDesc.Texture2DArray.FirstArraySlice		=0;
+					renderTargetViewDesc.Texture2DArray.ArraySize			=num_rt;
+					renderTargetViewDesc.Texture2DArray.MipSlice			=0;
+					for(int i=0;i<num_rt;i++)
+					{
+						renderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
+						renderTargetViewDesc.Texture2DArray.ArraySize = 1;
+						V_CHECK(renderPlatform->AsD3D11Device()->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[i])));
+					}
+				}
 			}
 		}
 		SAFE_RELEASE(ppd);
