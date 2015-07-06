@@ -311,7 +311,7 @@ void Inscatter_All(		out vec4 colours[8]
 	vec3 total_inscatter	=vec3(0,0,0);
 	vec4 prev_insc			=vec4(0,0,0,0);
 	vec3 lightDirCloudspace	=normalize(mul(worldToCloudMatrix,vec4(lightDir,0.0)).xyz);
-	vec3 viewCloudspace		=(mul(worldToCloudMatrix,vec4(view,0.0)).xyz);
+	vec3 viewCloudspace		=mul(worldToCloudMatrix,vec4(view,0.0)).xyz;
 	vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(viewPosition,1.0)).xyz;
 	for(int i=0;i<8;i++)
 	{

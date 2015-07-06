@@ -224,17 +224,43 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 	all8Output.colour6	=colours[5]*exposure;
 	all8Output.colour7	=colours[6]*exposure;
 	all8Output.colour8	=colours[7]*exposure;
-	///all8Output.colour8.r=1;
-	//all8Output.colour7.r=.8;
-	//all8Output.colour6.r=.6;
 	return all8Output;
 }
-
+/*
 void CS_Insc(uint3 pos,float godrays)
 {
-	uint3 dims;
-	GET_IMAGE_DIMENSIONS_3D(targetVolume,dims.x,dims.y,dims.z);
-    vec2 texCoords	=vec2(pos.xy)/vec2(dims.xy);
+    vec2 texCoords	=vec2(pos.xy)/vec2(scatteringVolumeDims.xy);
+	texCoords		=mixedResolutionTransformXYWH.xy+texCoords.xy*mixedResolutionTransformXYWH.zw;
+	vec4 colours[8];
+	Inscatter_All( colours
+					,inscTexture
+					,skylTexture
+					,illuminationTexture
+					,cloudTexture
+					,cloudSamplerState
+					,viewPosition
+					,invShadowMatrix
+					,texCoords
+					,invViewProj
+					,lightDir
+					,hazeEccentricity
+					,mieRayleighRatio
+					,maxFadeDistanceMetres
+					,godrays);
+	for(int i=0;i<8;i++)
+	{
+		uint3 idx=uint3(pos.xy,i);
+		targetVolume[idx]=colours[i];
+	}
+}*/
+
+CS_LAYOUT(8,8,1)
+shader void CS_Inscatter_Volume_WithGodrays( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 pos=g*8+t;
+	//CS_Insc( pos,1.0);
+	float godrays=1.0;
+    vec2 texCoords	=vec2(pos.xy)/vec2(scatteringVolumeDims.xy);
 	texCoords		=mixedResolutionTransformXYWH.xy+texCoords.xy*mixedResolutionTransformXYWH.zw;
 	vec4 colours[8];
 	Inscatter_All( colours
@@ -260,17 +286,34 @@ void CS_Insc(uint3 pos,float godrays)
 }
 
 CS_LAYOUT(8,8,1)
-shader void CS_Inscatter_Volume_WithGodrays( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
-{
-	uint3 pos=g*8+t;
-	CS_Insc( pos,1.0);
-}
-
-CS_LAYOUT(8,8,1)
 shader void CS_Inscatter_Volume_WithoutGodrays( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	uint3 pos=g*8+t;
-	CS_Insc( pos,0.0);
+	//CS_Insc( pos,0.0);
+	float godrays=0.0;
+    vec2 texCoords	=vec2(pos.xy)/vec2(scatteringVolumeDims.xy);
+	texCoords		=mixedResolutionTransformXYWH.xy+texCoords.xy*mixedResolutionTransformXYWH.zw;
+	vec4 colours[8];
+	Inscatter_All( colours
+					,inscTexture
+					,skylTexture
+					,illuminationTexture
+					,cloudTexture
+					,cloudSamplerState
+					,viewPosition
+					,invShadowMatrix
+					,texCoords
+					,invViewProj
+					,lightDir
+					,hazeEccentricity
+					,mieRayleighRatio
+					,maxFadeDistanceMetres
+					,godrays);
+	for(int i=0;i<8;i++)
+	{
+		uint3 idx=uint3(pos.xy,i);
+		targetVolume[idx]=colours[i];
+	}
 }
 
 shader All8Output PS_Inscatter_Volume_WithGodrays(atmosVertexOutput IN)

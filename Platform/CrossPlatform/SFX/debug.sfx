@@ -351,9 +351,9 @@ shader vec4 PS_Clear(posTexVertexOutput IN) : SV_TARGET
 }
 
 [numthreads(8,8,1)]
-shader void CS_Clear(uint2 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	uint2 sub_pos = g * 8 + t;
+	uint2 sub_pos = g.xy * 8 + t.xy;
 	FastClearTarget[sub_pos] = debugColour;
 }
 

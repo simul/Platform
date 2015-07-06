@@ -238,9 +238,6 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 	int U = ((n) + BLOCK_SIZE - 1) / BLOCK_SIZE;
 	renderPlatform->DispatchCompute(deviceContext, U, 1, 1);
 	sphericalHarmonicsEffect->UnbindTextures(deviceContext);
-//	simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"cubemapTexture"	,NULL);
-	//simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect->asD3DX11Effect(),"targetBuffer"	,NULL);
-	//simul::dx11::setTexture				(sphericalHarmonicsEffect->asD3DX11Effect(),"samplesBuffer"	,NULL);
 	sphericalHarmonicsConstants.Unbind(deviceContext);
 	sphericalHarmonicsEffect->Unapply(deviceContext);
 }

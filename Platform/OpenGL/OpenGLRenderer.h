@@ -56,7 +56,7 @@ namespace simul
 			void InitializeGL() override;
 			void ShutdownGL() override;
 
-			simul::clouds::BaseWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer;}
+			simul::clouds::BaseWeatherRenderer *GetSimulWeatherRenderer(){return weatherRenderer;}
 			void ReloadTextures();
 			void SaveScreenshot(const char *filename_utf8);
 			simul::opengl::RenderPlatform *renderPlatformOpenGL;

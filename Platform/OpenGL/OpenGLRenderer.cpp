@@ -99,8 +99,8 @@ GL_ERROR_CHECK
 	if(baseTerrainRenderer)
 		baseTerrainRenderer->InvalidateDeviceObjects();
 GL_ERROR_CHECK
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->InvalidateDeviceObjects();
+	if(weatherRenderer)
+		weatherRenderer->InvalidateDeviceObjects();
 GL_ERROR_CHECK
 	if(simulHDRRenderer)
 		simulHDRRenderer->InvalidateDeviceObjects();
@@ -134,8 +134,8 @@ void OpenGLRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	//depthFramebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
 	//depthFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
 ERRNO_CHECK
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->RestoreDeviceObjects(renderPlatform);
+	if(weatherRenderer)
+		weatherRenderer->RestoreDeviceObjects(renderPlatform);
 ERRNO_CHECK
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects(renderPlatform);
@@ -212,8 +212,8 @@ void OpenGLRenderer::ResizeGL(int view_id,int w,int h)
 
 void OpenGLRenderer::ReloadTextures()
 {
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->ReloadTextures();
+	if(weatherRenderer)
+		weatherRenderer->ReloadTextures();
 }
 
 void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)
@@ -230,9 +230,9 @@ void OpenGLRenderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceCont
 GL_ERROR_CHECK
 	//MixedResolutionView *view	=viewManager.GetView(view_id);
 	//view->RenderDepthBuffers(deviceContext,x0,y0,dx,dy);
-	if(simulWeatherRenderer)
+	if(weatherRenderer)
 	{
-		//simulWeatherRenderer->RenderFramebufferDepth(deviceContext,x0+w	,y0	,w,l);
-		//simulWeatherRenderer->RenderCompositingTextures(deviceContext,x0,y0+2*l,dx,dy);
+		//weatherRenderer->RenderFramebufferDepth(deviceContext,x0+w	,y0	,w,l);
+		//weatherRenderer->RenderCompositingTextures(deviceContext,x0,y0+2*l,dx,dy);
 	}
 }

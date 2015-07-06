@@ -162,7 +162,7 @@ float SH(int l, int m, float theta, float phi)
 	 else
 		 return sqrt2*K(l,-m)*sin(-m*phi)*P(l, -m, cos(theta));
 }
-#ifndef GLSL
+
 void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> samplesBufferRW,int2 pos
 	,int sqrt_n_samples
 	,int n_bands) 
@@ -194,6 +194,5 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 		}
 	}
 }
-#endif
 
 #endif

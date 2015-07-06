@@ -487,7 +487,7 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 {
 	vec3 rain_texc		=cloudWorldOffsetKm;
 	rain_texc.xy		+=rain_texc.z*rainTangent;
-	float rain_lookup	=texture_wrap_lod(rainMapTexture,rain_texc.xy*inverseScalesKm.xy,0).x;
+	float rain_lookup	=sample_3d_lod(rainMapTexture,cloudSamplerState,rain_texc.xy*inverseScalesKm.xy,0).x;
 	//vec4 streak			=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
 	return				rain_lookup
 							*saturate((rainRadiusKm-length(world_pos_km.xy-rainCentreKm.xy))*3.0)
