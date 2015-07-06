@@ -101,6 +101,10 @@ void BaseFramebuffer::SetAsCubemap(int w)
 
 void BaseFramebuffer::SetCubeFace(int f)
 {
+	if(!is_cubemap)
+	{
+		SIMUL_BREAK_ONCE("Setting cube face on non-cubemap framebuffer");
+	}
 	current_face=f;
 }
 

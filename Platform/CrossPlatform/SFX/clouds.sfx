@@ -179,7 +179,7 @@ vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 									,lossTexture
 									,inscTexture
 									,skylTexture,volumeInscatterTexture
-									,false
+									,true
 									,depthInterpretationStruct
 									,dlookup
 									,texCoords
@@ -190,6 +190,7 @@ vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 	if(p.colour.a>=1.0)
 	   discard;
 	p.colour.rgb*=exposure;
+//p.colour.rgb=vec3(1.0,0,0);
 	return p.colour;
 }
 
@@ -427,6 +428,7 @@ fxgroup raytrace
 	{
 		pass depth_reverse
 		{
+			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(DisableDepth,0);
 			SetRasterizerState( RenderNoCull );
 			SetVertexShader(vs_fullscreen_5_0);
@@ -434,6 +436,7 @@ fxgroup raytrace
 		}
 		pass depth_forward 
 		{
+			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 			SetDepthStencilState(DisableDepth,0);
 			SetRasterizerState( RenderNoCull );
 			SetVertexShader(vs_fullscreen_5_0);

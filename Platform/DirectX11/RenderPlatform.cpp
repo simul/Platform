@@ -1507,9 +1507,10 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	if(num_v<=4)
 		pContext->RSGetViewports(&num_v,m_OldViewports);
 	D3D11_VIEWPORT viewport;
+	static float ss=0.3f;
 		// Setup the viewport for rendering.
-	viewport.Width		=m_OldViewports[0].Width*0.3f;
-	viewport.Height		=m_OldViewports[0].Height*0.3f;
+	viewport.Width		=m_OldViewports[0].Width*ss;
+	viewport.Height		=m_OldViewports[0].Height*ss;
 	viewport.MinDepth	=0.0f;
 	viewport.MaxDepth	=1.0f;
 	viewport.TopLeftX	=0.5f*(1.f+offsetx)*m_OldViewports[0].Width-viewport.Width/2;
@@ -1517,7 +1518,7 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	pContext->RSSetViewports(1,&viewport);
 	
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
-	math::Matrix4x4 proj=crossplatform::Camera::MakeProjectionMatrix(1.f,(float)viewport.Height/(float)viewport.Width,1.f,100.f);
+	math::Matrix4x4 proj=crossplatform::Camera::MakeDepthReversedProjectionMatrix(1.f,(float)viewport.Height/(float)viewport.Width,0.1f,100.f);
 	// Create the viewport.
 	math::Matrix4x4 wvp,world;
 	world.ResetToUnitMatrix();

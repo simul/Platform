@@ -297,6 +297,7 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 		return;
 	if(shaderResourceView)
 		SAFE_RELEASE(shaderResourceView);
+	SAFE_RELEASE(texture);
 	texture=t;
 	shaderResourceView=srv;
 	if(shaderResourceView)
@@ -313,9 +314,9 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 			length=textureDesc.Height;
 			if(!srv)
 			{
+				D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 				if (IsTypeless(textureDesc.Format,true))
 				{
-					D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 					ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 					srv_desc.Format = TypelessToSrvFormat(textureDesc.Format);
 					srv_desc.ViewDimension = (textureDesc.ArraySize==6)?D3D_SRV_DIMENSION_TEXTURECUBE:D3D11_SRV_DIMENSION_TEXTURE2D;
@@ -324,9 +325,16 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 					V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&srv_desc, &shaderResourceView));
 				}
 				else
+				{
 					V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, NULL,&shaderResourceView));
+					if(shaderResourceView)
+					{
+						shaderResourceView->GetDesc(&srv_desc);
+						std::cout<<srv_desc.ViewDimension<<std::endl;
+					}
+				}
 			}
-			
+			depth=textureDesc.ArraySize;
 			if(make_rt&&(textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET))
 			{
 				if(renderTargetViews)
@@ -365,7 +373,6 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 		}
 		SAFE_RELEASE(ppd);
 	}
-	depth=1;
 	dim=2;
 }
 
