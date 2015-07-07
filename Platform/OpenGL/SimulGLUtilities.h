@@ -58,7 +58,7 @@ namespace simul
 		extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_number);
 		//! Check the given error code, and halt the program if it is non-zero.
 		extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_number,int err);
-		#define GL_ERROR_CHECK ERRNO_CHECK //simul::opengl::CheckGLError(__FILE__,__LINE__);ERRNO_CHECK
+		#define GL_ERROR_CHECK ERRNO_CHECK simul::opengl::CheckGLError(__FILE__,__LINE__);ERRNO_CHECK
 		#define SAFE_DELETE_PROGRAM(prog)		{if(prog){GLuint shaders[2];GLsizei count;glGetAttachedShaders(prog,2,&count,shaders);for(int i=0;i<count;i++) glDeleteShader(shaders[i]); glDeleteProgram(prog);prog=0;}}
 		#define SAFE_DELETE_TEXTURE(tex)		{if(tex) glDeleteTextures(1,&tex);tex=0;}
 		#define SAFE_DELETE_BUFFER(buff)		{if(buff) glDeleteBuffers(1,&buff);buff=0;}

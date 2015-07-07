@@ -20,9 +20,35 @@ uniform StructuredBuffer<SphericalHarmonicsSample> samplesBuffer;
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
 shader void CS_Jitter(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	uint3 sub_pos = g * BLOCK_SIZE + t;
-	sub_pos += uint3(randomSeed, randomSeed, 0);
-	SH_setup_spherical_samples(samplesBufferRW,sub_pos.xy,sqrtJitterSamples,num_bands);
+	uint3 pos = g * BLOCK_SIZE + t;
+	pos += uint3(randomSeed, randomSeed, 0);
+
+	// fill an N*N*2 array with uniformly distributed 
+	// samples across the sphere using jittered stratification 
+	float oneoverN			= 1.0/sqrtJitterSamples; 
+	int a=int(pos.x);
+	int b=int(pos.y);
+	int i					=a*sqrtJitterSamples+b; // array index 
+	// generate unbiased distribution of spherical coords 
+	float x					=(a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
+	float y					=(b + rand(vec2(2.45*a,11.1*b))) * oneoverN; // each sample must be random 
+	float theta				=2.0 * acos(sqrt(1.0 - x)); 
+	float phi				=2.0 * PI * y; 
+	// convert spherical coords to unit vector 
+	vec3 vec				=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
+	samplesBufferRW[i].dir	= vec; 
+	// precompute all SH coefficients for this sample 
+	int n = 0;
+	for (int l = 0; l<MAX_SH_BANDS; l++)
+	{
+		if (l >= num_bands)
+			break;
+		for(int m=-l; m<=l; m++)
+		{ 
+//			int index = l*(l+1)/2+m; 
+			samplesBufferRW[i].coeff[n++] = SH(l, m, theta, phi);
+		}
+	}
 }
 
 [numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]

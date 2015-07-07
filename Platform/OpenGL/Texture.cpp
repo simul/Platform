@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "GL/glew.h"
 #include "Texture.h"
 #include "LoadGLImage.h"
@@ -518,7 +519,7 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 		default:
 			break;
 		};
-	glTexStorage3D(	GL_TEXTURE_3D
+		glTexStorage3D(	GL_TEXTURE_3D
  					,m
  					,frmt
  					,w
@@ -538,7 +539,8 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 		SAFE_DELETE_FRAMEBUFFER(m_fb);
 		glGenFramebuffers(1, &m_fb);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
-		for (int i=0;i<8&&i<d;i++)
+		num_rt=std::min(8,d);
+		for (int i=0;i<8&&i<num_rt;i++)
 		{
 			glFramebufferTextureLayer(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0+i, pTextureObject, 0,i);
 		}
@@ -550,6 +552,8 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 			SIMUL_BREAK("Framebuffer incomplete for rendertarget texture");
 		}
 	}
+	else
+		num_rt=0;
 	mips=m;
 	GL_ERROR_CHECK
 }

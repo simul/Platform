@@ -467,7 +467,7 @@ shader void CS_Density_DontWrap(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//S
 	float dens = saturate((noise_val + 2.0*hm - 1.0) / diffusivity);
 	dens *= saturate(densityspace_texcoord.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - densityspace_texcoord.z) / zPixel);
 	dens = saturate(dens);
-	if (pos.x == 0 || pos.y == 0 || pos.x == dims.x - 1 || pos.y == dims.y - 1)
+	if (pos.x <= 0 || pos.y<= 0 || pos.x>= dims.x - 1 || pos.y >= dims.y - 1)
 		dens = 0;
 	IMAGE_STORE_3D(targetTexture1, int3(pos), vec4(dens, dens, dens, dens));
 }
@@ -625,6 +625,8 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		vec4 lookup		=texture_wwc_lod(densityTexture,texc,0);
 		ambient			*=exp(-extinctions.xy*lookup.x*stepLength);
 	}
+	if (pos.x <= 12|| pos.y<= 12 || pos.x>= dims.x - 12 || pos.y >= dims.y - 12)
+		density = 0;
     vec4 res					=vec4(illum.yx,density,0.5*(ambient.x+ambient.y));
 	IMAGE_STORE_3D(targetTexture,pos,res);
 }

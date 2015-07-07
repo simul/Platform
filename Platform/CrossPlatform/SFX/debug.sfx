@@ -142,7 +142,7 @@ vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth)
     vec4 result		=vec4(pow(dist.xy,vec2(0.44,0.44)),depth.z,1.0);
 	//if (dist.x < .1)
 	//	result.xyz = vec3(0,0,0);
-	result.r=depth.x;
+	//result.r=depth.x;
 	return result;
 }
 

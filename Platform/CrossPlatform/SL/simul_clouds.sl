@@ -253,6 +253,7 @@ vec4 MakeNoise(Texture3D noiseTexture3D,vec3 noise_texc,float lod)
 
 vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale)
 {
+	//texCoords=saturate(texCoords);
 	float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(texCoords.z));
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
