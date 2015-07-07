@@ -257,12 +257,12 @@ shader vec4 PS_SnowParticles(particleGeometryOutput IN): SV_TARGET
 	//float spoke	=fract(angle/pi*3.0)-0.5;
 	float opacity	=IN.fade*saturate(1.0-radius);//-spoke*spoke);
 	//return vec4(1,0,1,opacity);
-	return vec4(1.0*result.rgb,opacity);
+	return vec4(result.rgb,opacity);
 }
 
 shader vec4 PS_SnowParticles_NoCubemap(particleGeometryOutput IN): SV_TARGET
 {
-	vec4 result		=IN.brightness*vec4(lightColour.rgb,1.0);
+	vec4 result		=IN.brightness*.1*vec4(lightColour.rgb,1.0);
 	vec2 pos		=IN.texCoords*2.0-1.0;
 	float radius	=length(pos.xy);
 	float angle		=atan2(pos.x,pos.y);
@@ -668,7 +668,7 @@ technique rain_particles_blur
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_Blur_ReverseDepth()));
         
 		SetBlendState(AddDestInvAlphaBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
-       // SetDepthStencilState( EnableDepth, 0 );
+        SetDepthStencilState( DisableDepth, 0 );
     }
     pass forward_depth
     {
@@ -678,7 +678,7 @@ technique rain_particles_blur
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_Blur_ForwardDepth()));
         
 		SetBlendState(AddDestInvAlphaBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);//
-       // SetDepthStencilState( EnableDepth, 0 );
+        SetDepthStencilState( DisableDepth, 0 );
     }
 }
 
@@ -692,7 +692,7 @@ technique rain_particles
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ReverseDepth()));
         
         SetBlendState( AddDestInvAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//DontBlend
-       // SetDepthStencilState( EnableDepth, 0 );
+        SetDepthStencilState( DisableDepth, 0 );
     }
     pass forward_depth
     {
@@ -702,7 +702,7 @@ technique rain_particles
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ForwardDepth()));
         
         SetBlendState( AddDestInvAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
-       // SetDepthStencilState( EnableDepth, 0 );
+        SetDepthStencilState( DisableDepth, 0 );
     }
 }
 technique rain_particles_no_cubemap
@@ -715,7 +715,7 @@ technique rain_particles_no_cubemap
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ReverseDepth()));
         
         SetBlendState( AddAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
-       // SetDepthStencilState( EnableDepth, 0 );
+        SetDepthStencilState( DisableDepth, 0 );
     }
 	pass forward_depth
     {
@@ -725,7 +725,7 @@ technique rain_particles_no_cubemap
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ForwardDepth()));
         
         SetBlendState( AddAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
-       // SetDepthStencilState( EnableDepth, 0 );
+        SetDepthStencilState( DisableDepth, 0 );
     }
 }
 
@@ -752,7 +752,31 @@ technique snow_particles
         SetGeometryShader(CompileShader(gs_5_0,GS_SnowParticles()));
 		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
-		//SetDepthStencilState(EnableDepth,0);
+        SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddAlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+    }
+    pass forward_depth 
+    {
+		SetRasterizerState(RenderNoCull);
+		//SetRasterizerState( wireframeRasterizer );
+        SetGeometryShader(CompileShader(gs_5_0,GS_SnowParticles()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
+        SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddAlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+    }
+}
+
+technique snow_particles_no_cubemap
+{
+    pass reverse_depth 
+    {
+		SetRasterizerState(RenderNoCull);
+		//SetRasterizerState( wireframeRasterizer );
+        SetGeometryShader(CompileShader(gs_5_0,GS_SnowParticles()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
+        SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AddAlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
     pass forward_depth 
@@ -762,7 +786,7 @@ technique snow_particles
         SetGeometryShader(CompileShader(gs_5_0,GS_SnowParticles()));
 		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles_NoCubemap()));
-		//SetDepthStencilState(EnableDepth,0);
+        SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AddAlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
 }

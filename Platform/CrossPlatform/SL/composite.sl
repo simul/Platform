@@ -42,7 +42,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	// we only care about view.z, i.e. the third element of the vector.
 	// so only dot-product the third row of invViewProj, with clip_pos.
 #ifdef GLSL
-	vec4 zrow					=vec4(invViewProj[2][0],invViewProj[2][1],invViewProj[2][2],invViewProj[2][3]);
+	vec4 zrow					=vec4(invViewProj[0][2],invViewProj[1][2],invViewProj[2][2],invViewProj[3][2]);
 #else
 	vec4 zrow					=invViewProj._31_32_33_34;
 #endif
@@ -75,6 +75,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	shadow					*=cloud.a;
 	res.multiply			=texture_clamp_lod(loss2dTexture,loss_texc,0)*shadow;
 	res.add					=insc;
+
     return res;
 }
 

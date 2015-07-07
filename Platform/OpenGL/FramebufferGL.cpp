@@ -314,8 +314,6 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 		CheckFramebufferStatus();
 GL_ERROR_CHECK
-		glBindFramebuffer(GL_FRAMEBUFFER, 0); 
-GL_ERROR_CHECK
 	}
 }
 

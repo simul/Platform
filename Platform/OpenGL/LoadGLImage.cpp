@@ -97,6 +97,8 @@ GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &tex
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,wrap);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap);
+	// TODO: Load mipmaps from file or generate them...
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 	GL_ERROR_CHECK
 	*internal_format=GL_RGBA;
 	GLint external_format=GL_RGBA;
