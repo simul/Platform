@@ -6,6 +6,7 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
+#include "Simul/Base/RuntimeError.h"
 using namespace simul;
 using namespace crossplatform;
 

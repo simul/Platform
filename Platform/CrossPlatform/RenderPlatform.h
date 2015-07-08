@@ -118,7 +118,7 @@ namespace simul
 			virtual void EndRender			(DeviceContext &deviceContext)=0;
 			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;
 
-			virtual void CopyTexture		(DeviceContext &deviceContext,crossplatform::Texture *,crossplatform::Texture *){};
+			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
 			//! Draw the specified number of vertices.
