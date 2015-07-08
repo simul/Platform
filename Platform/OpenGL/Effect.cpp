@@ -763,8 +763,8 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 		glfxApply((GLuint)platform_effect,prog);
 		glfxApplyPassState((GLuint)platform_effect,prog);
 		GL_ERROR_CHECK
-
-
+		//for(map<GLuint,GLuint>::iterator i=prepared_sampler_states.begin();i!=prepared_sampler_states.end();i++)
+		//	glBindSampler(i->first,i->second);
 		current_prog	=prog;
 		EffectTechnique *glEffectTechnique=(EffectTechnique*)effectTechnique;
 		if(glEffectTechnique->passStates.find(currentPass)!=glEffectTechnique->passStates.end())

@@ -22,7 +22,6 @@ SamplerState flareSamplerState
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
 	AddressV = Clamp;
-	AddressW = Clamp;
 };
 
 uniform Texture3D fadeTexture1;
@@ -215,7 +214,7 @@ shader vec4 PS_ShowFadeTable(posTexVertexOutput IN): SV_TARGET
 {
 	vec4 result=texture_clamp(inscTexture,IN.texCoords.xy);
 	result.rb+=overlayAlpha*result.a;
-    result= vec4(result.rgb,1);
+     result= vec4(result.rgb,1);
     return result;
 }
 
@@ -249,17 +248,6 @@ shader vec4 PS_Show2DLightTable(posTexVertexOutput IN): SV_TARGET
 	vec2 texc	=vec2(IN.texCoords.y,IN.texCoords.x);
 	vec4 result	=texture_nearest_lod(lightTable2DTexture,texc,0);
     result= vec4(result.rgb,1);
-	return result;
-}
-
-shader posTexVertexOutput VS_Quad(idOnly id)
-{
-    return VS_ScreenQuad(id,rect);
-}
-
-shader vec4 PS_ShowTex(posTexVertexOutput IN): SV_TARGET
-{
-	vec4 result	=flareTexture.Sample(flareSamplerState,IN.texCoords,0);
 	return result;
 }
 
@@ -425,7 +413,7 @@ shader vec4 PS_SunQuery( svertexOutput IN): SV_TARGET
 
 shader vec4 PS_Flare( svertexOutput IN): SV_TARGET
 {
-	vec3 res=colour.rgb*texture_clamp(flareTexture,vec2(.5,.5)+0.5*IN.tex).rgb;
+	vec3 res=colour.rgb*sample(flareTexture,flareSamplerState,vec2(.5,.5)+0.5*IN.tex).rgb;
 	vec4 result= vec4(res,1.f);
 	return result;
 }
@@ -462,18 +450,15 @@ vec4 PS_Planet_DepthTexture(svertexOutput IN,bool reverseDepth)
 	vec2 depth_texc = viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
 	float depth = texture_clamp(depthTexture, depth_texc).x;
 	discardUnlessFar(depth,reverseDepth);
-	vec2 texc=vec2(0.5,0.5) - 0.5*IN.tex;
-	vec4 result = texture_clamp(flareTexture, texc);
+	vec4 result = sample(flareTexture,flareSamplerState, vec2(0.5,0.5) - 0.5*IN.tex);
 	result=Planet(result, IN.tex);
 	return result;
 }
-
 shader vec4 PS_Planet_ReverseDepth(svertexOutput IN) : SV_TARGET
 {
 	vec4 result = PS_Planet_DepthTexture(IN,true);
 	return result;
 }
-
 shader vec4 PS_Planet_ForwardDepth(svertexOutput IN) : SV_TARGET
 {
 	vec4 result = PS_Planet_DepthTexture(IN,false);
@@ -523,17 +508,6 @@ technique show_fade_table
 		SetVertexShader(vs_showfade);
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTable()));
-    }
-}
-technique textured_quad
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Quad()));
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowTex()));
     }
 }
 
@@ -826,7 +800,7 @@ technique background_latlongsphere
     pass reverse_depth
     {
 		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
+		//SetDepthStencilState( TestDepth, 0 );
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
@@ -835,7 +809,7 @@ technique background_latlongsphere
     pass forward_depth
     {
 		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
+		//SetDepthStencilState( TestDepth, 0 );
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);

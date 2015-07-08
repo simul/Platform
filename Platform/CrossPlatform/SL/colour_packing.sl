@@ -17,9 +17,9 @@ inline uint colour3_to_uint(vec3 colour)
 inline vec3 uint_to_colour3(uint int_colour)
 {
 	// Unpack from UINT32
-	float r = float(int_colour >> 21);
-	float g = float((int_colour >> 10) & 0x7ff);
-	float b = float(int_colour & 0x0003ff);
+	float r = float(int_colour >> uint(21));
+	float g = float((int_colour >> uint(10)) & uint(0x7ff));
+	float b = float(int_colour & uint(0x0003ff));
 	// Convert R11G11B10 to float3
 	return vec3(r/2047.0, g/2047.0, b/1023.0);
 }
@@ -51,9 +51,9 @@ vec4 convertInt(TEXTURE2D_UINT glowTexture,uint2 location)
 
 	// Convert R11G11B10 to float3
 	vec4 color;
-	color.r =float(int_color >> 21) / 2047.0f;
-	color.g =float((int_color >> 10) & 0x7ff) / 2047.0f;
-	color.b =float(int_color & 0x0003ff) / 1023.0f;
+	color.r =float(int_color >> uint(21)) / 2047.0f;
+	color.g =float((int_color >> uint(10)) & uint(0x7ff)) / 2047.0f;
+	color.b =float(int_color & uint(0x0003ff)) / 1023.0f;
 	color.a = 1;
 	color.rgb*=10.0;
 	return color;

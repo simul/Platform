@@ -65,7 +65,7 @@ shader v2f FilledCircleVS(idOnly IN)
 {
 	v2f OUT;
 //	int i=int(IN.vertex_id/2);
-	int j=int(IN.vertex_id%2);
+	int j=int(IN.vertex_id%uint(2));
 	float angle		=2.0*3.1415926536*float(IN.vertex_id)/31.0;
 	vec4 pos		=vec4(100.0*vec3(radius*j*vec2(cos(angle),sin(angle)),1.0),1.0);
     OUT.hPosition	=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
