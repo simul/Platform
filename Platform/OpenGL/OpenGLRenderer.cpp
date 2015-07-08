@@ -28,7 +28,6 @@
 #include <iomanip>
 
 #pragma comment(lib,"opengl32")
-#pragma comment(lib,"glfx")
 
 #ifdef SIMUL_DYNAMIC_LINK
 #ifdef _DEBUG

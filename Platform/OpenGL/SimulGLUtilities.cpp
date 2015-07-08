@@ -534,8 +534,10 @@ void simul::opengl::CheckGLError(const char *filename,int line_number,int err)
 	if(err)
 	{
 		std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"gl error ";
-		while(err!=GL_NO_ERROR)
+		int count=0;
+		while(err!=GL_NO_ERROR&&count<12)
 		{
+			count++;
 			const char *error=NULL;
 			switch(err)
 			{
@@ -549,10 +551,11 @@ void simul::opengl::CheckGLError(const char *filename,int line_number,int err)
 				break;
 			}
 			if(error)
-				std::cerr <<" "<<err<<" GL_" << error;
+				std::cerr <<" "<<err<<" GL_" << error<<std::endl;
 			err=glGetError();
         }
-		std::cerr<<std::endl;
+		if(count>=12)
+			std::cerr <<"Further GL errors suppressed."<<std::endl;
 		BREAK_ONCE_IF_DEBUGGING;
 	}
 }
