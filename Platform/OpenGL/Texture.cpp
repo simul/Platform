@@ -170,7 +170,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPla
 		main_viewport[1]=0;
 		main_viewport[2]=width;
 		main_viewport[3]=length;
-		if(make_rt)
+		if(make_rt&&pixelFormat)
 		{
 			SAFE_DELETE_FRAMEBUFFER(m_fb);
 			glGenFramebuffers(1, &m_fb);
