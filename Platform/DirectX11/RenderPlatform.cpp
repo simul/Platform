@@ -149,6 +149,8 @@ ESRAMManager *eSRAMManager=NULL;
 #endif
 void RenderPlatform::RestoreDeviceObjects(void *d)
 {
+	if(device==d)
+		return;
 	device=(ID3D11Device*)d;
 	crossplatform::RenderPlatform::RestoreDeviceObjects(d);
 	
