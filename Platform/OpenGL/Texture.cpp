@@ -178,12 +178,12 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPla
 			glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pTextureObject, 0);
 		
 			GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			if(status!=GL_FRAMEBUFFER_COMPLETE)
 			{
 				FramebufferGL::CheckFramebufferStatus();
 				SIMUL_BREAK("Framebuffer incomplete for rendertarget texture");
 			}
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 		glBindTexture(GL_TEXTURE_2D,0);
 	}
