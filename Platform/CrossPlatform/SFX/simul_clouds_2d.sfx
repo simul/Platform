@@ -59,7 +59,7 @@ v2f VSMain(a2v IN,bool reverseDepth)
 	poss[1]=vec2( 1.0, 1.0);
 	poss[2]=vec2(-1.0,-1.0);
 	poss[3]=vec2(-1.0, 1.0);
-	vec2 p2			=poss[IN.vertex_id%4];
+	vec2 p2			=poss[IN.vertex_id%uint(4)];
 	OUT.hPosition	=vec4(.5*p2,0.0,1.0);
 	OUT.hPosition.z	=0.0; 
 

@@ -17,7 +17,7 @@ namespace simul
 		class RenderPlatform;
 		struct Viewport;
 		struct ViewStruct;
-		//! A base class for API-dependent framebuffer classes.
+		//! A framebuffer class for mixed-resolution rendering.
 		class SIMUL_CROSSPLATFORM_EXPORT TwoResFramebuffer
 		{
 		public:

@@ -718,8 +718,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				if(do_depth_mix)
 				{
 					vec4 clr_n			=clr;
-					clr.a				*=saturate((solidDist_nearFar.y-fadeDistance)/0.01);
-					clr_n.a				*=saturate((solidDist_nearFar.x-fadeDistance)/0.01);
+					vec2 m				=saturate((solidDist_nearFar.xy-vec2(fadeDistance,fadeDistance))*100.0);
+					clr.a				*=m.y;
+					clr_n.a				*=m.x;
 					nearColour.rgb		+=clr_n.rgb*clr_n.a*(nearColour.a);
 					nearColour.a		*=(1.0-clr_n.a);
 				}

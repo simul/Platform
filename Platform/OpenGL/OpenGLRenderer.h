@@ -1,7 +1,5 @@
 #pragma once
 #include "Simul/Platform/OpenGL/OpenGLCallbackInterface.h"
-#include "Simul/Platform/OpenGL/SimulGLWeatherRenderer.h"
-#include "Simul/Platform/OpenGL/SimulGLHDRRenderer.h"
 #include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"

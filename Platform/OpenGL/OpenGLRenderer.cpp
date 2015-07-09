@@ -10,7 +10,6 @@
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
-#include "Simul/Platform/OpenGL/SimulGLCloudRenderer.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Scene/Scene.h"

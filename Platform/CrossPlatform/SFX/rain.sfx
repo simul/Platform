@@ -835,7 +835,7 @@ shader PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput inp,ui
 	vec3 velocity			=vec3(rand(1.7*float(vertex_id)),rand(17.01*float(vertex_id)),rand(2.087*float(vertex_id)));
 	velocity				=2.0*velocity-vec3(1.0,1.0,1.0);
 	v.velocity				=velocity;
-	v.type					=vertex_id%32;
+	v.type					=vertex_id%uint(32);
 	//v.dummy				=0.0;
 
     return v;

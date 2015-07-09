@@ -192,10 +192,7 @@
     <ClCompile Include="PrintEffectLog.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
-    <ClCompile Include="SimulGLCloudRenderer.cpp" />
-    <ClCompile Include="SimulGLHDRRenderer.cpp" />
     <ClCompile Include="SimulGLUtilities.cpp" />
-    <ClCompile Include="SimulGLWeatherRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -215,10 +212,7 @@
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="SimulGLCloudRenderer.h" />
-    <ClInclude Include="SimulGLHDRRenderer.h" />
     <ClInclude Include="SimulGLUtilities.h" />
-    <ClInclude Include="SimulGLWeatherRenderer.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>

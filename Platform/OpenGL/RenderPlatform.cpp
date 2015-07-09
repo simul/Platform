@@ -114,16 +114,19 @@ void RenderPlatform::RestoreDeviceObjects(void *unused)
 	GL_ERROR_CHECK
 	ERRNO_CHECK
 	glewExperimental= GL_TRUE;
+	GLenum glewError = glewInit();
+	// Glew creates an error on init, due to using deprecated interfaces.
+	glGetError();
+	if (glewError!=GLEW_OK)
+	{
+		std::cerr << "Error initializing GLEW! " << glewGetErrorString(glewError) << "\n";
+		return;
+	}
 	if (!glewIsSupported("GL_ARB_debug_output"))
 	{
-		GLenum glewError = glewInit();
-		if (glewError!=GLEW_OK)
-		{
-			std::cerr << "Error initializing GLEW! " << glewGetErrorString(glewError) << "\n";
-			return;
-		}
 		if(glewIsSupported("GL_ARB_debug_output"))
 		{
+	GL_ERROR_CHECK
 			std::cout << "Register OpenGL debug callback " << std::endl;
 			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 			glDebugMessageCallback(openglDebugCallbackFunction, nullptr);
@@ -149,6 +152,7 @@ void RenderPlatform::RestoreDeviceObjects(void *unused)
 		else
 			std::cout << "glDebugMessageCallback not available" <<std::endl;
 	}
+	GL_ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
 	GL_ERROR_CHECK
