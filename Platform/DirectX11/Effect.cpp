@@ -316,7 +316,7 @@ void dx11::PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &de
 		SIMUL_CERR<<"Attempting to apply an uninitialized Constant Buffer"<<std::endl;
 		return;
 	}
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	
 	D3D11_MAPPED_SUBRESOURCE mapped_res;
 	if(pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res)!=S_OK)
