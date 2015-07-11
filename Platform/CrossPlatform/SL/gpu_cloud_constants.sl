@@ -51,8 +51,10 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform vec3 sourcePosKm;
 	uniform float sourceSizeKm;
 
-	uniform vec3 sourceVelKms;
-	uniform float pad1642426;
+	uniform vec3 sourceVelKmd;
+	uniform float noisePeriod;
+
+	uniform float sourceNoiseScaleKm;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

@@ -86,7 +86,10 @@ float GetSourceValue(vec3 posKm)
 	vec3 offsetKm	=posKm-sourcePosKm;
 	float inSource	=length(offsetKm)/sourceSizeKm;
 	float add		=saturate(1.0-inSource);
-		
+	vec3 noise_texc=offsetKm/sourceNoiseScaleKm;
+	float n			=texture_wrap_lod(volumeNoiseTexture,noise_texc,0).x;
+	float noise_mult=.5+.5*cos(2.0*3.14159*(n+time/noisePeriod));
+	add*=noise_mult;
 	return add;
 }
 struct AtmosphericProperties
@@ -223,8 +226,11 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	
 	vec3 texc				=convertPosToTexc(pos,dims);
 	vec3 posKm				=(cloudScalesKm*texc)+cloudOriginKm;
-	float add				=GetSourceValue(posKm);
-	vd.z=max(vd.z,10*add);
+	if(pos.z==0)
+	{
+		float add			=GetSourceValue(posKm);
+		vd.xyz				=lerp(vd.xyz,sourceVelKmd,add);
+	}
 
 	IMAGE_STORE_3D(outputTexture,pos,vd);
 }
@@ -267,11 +273,13 @@ shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
 	float dc		=-0.01*min(a.qvs-props.y,props.x);
 	float Cp		=1006.0;		// J/KG/K
 	props.z			+=dc*L*PI/Cp;
+	if(pos.z==0)
+	{
+		float add		=GetSourceValue(posKm);
+		dc				=max(dc,add);
+	}
 	props.x			+=dc;
 	props.y			-=dc;
-
-	float add		=GetSourceValue(posKm);
-	props.x			=max(props.x,add);
 	/*if(pos.z==0)
 	{
 		AtmosphericProperties a_base	=SaturationRatio(cloudBaseKm+0.1*cloudScalesKm.z);
