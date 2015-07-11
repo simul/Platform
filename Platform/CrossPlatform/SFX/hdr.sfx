@@ -380,7 +380,7 @@ shader vec4 PS_Blur(posTexVertexOutput IN) : SV_Target
 	float rad		=sqrt(-2.0*safelog(r1));
 	float angle		=2.0*pi*r2;
 	vec2 sampleOffset=offset*rad*vec2(cos(angle),sin( angle ));
-    vec4 c=texture_clamp(imageTexture,IN.texCoords+sampleOffset);
+    vec4 c=texture_clamp_lod(imageTexture,IN.texCoords+sampleOffset,0);
     return vec4(c.rgb,alpha);
 }
 
