@@ -14,10 +14,6 @@
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx9.h>
 #include <d3dx11.h>
-inline D3DXMATRIX D3DXMatrixMultiply(const D3DXMATRIX &a,const D3DXMATRIX &b)
-{
-	return a*b;
-}
 #else
 #include <DirectXMath.h>
 #define D3DXMATRIX DirectX::XMFLOAT4X4
@@ -84,25 +80,6 @@ inline void D3DXMatrixTranspose(D3DXMATRIX *dest,const D3DXMATRIX *src)
 	DirectX::XMStoreFloat4x4(dest,d);
 }
 
-inline D3DXMATRIX *D3DXMatrixMultiply(D3DXMATRIX *c,const D3DXMATRIX *a,const D3DXMATRIX *b)
-{
-	DirectX::XMMATRIX A=DirectX::XMLoadFloat4x4(a);
-	DirectX::XMMATRIX B=DirectX::XMLoadFloat4x4(b);
-	DirectX::XMMATRIX C=DirectX::XMMatrixMultiply(A,B);
-	
-	DirectX::XMStoreFloat4x4(c,C);
-	return c;
-}
-
-inline D3DXMATRIX D3DXMatrixMultiply(const D3DXMATRIX &a,const D3DXMATRIX &b)
-{
-	DirectX::XMMATRIX A=DirectX::XMLoadFloat4x4(&a);
-	DirectX::XMMATRIX B=DirectX::XMLoadFloat4x4(&b);
-	DirectX::XMMATRIX C=DirectX::XMMatrixMultiply(A,B);
-	D3DXMATRIX c;
-	DirectX::XMStoreFloat4x4(&c,C);
-	return c;
-}
 
 inline void D3DXMatrixInverse(D3DXMATRIX *dest,D3DXVECTOR3 *det,const D3DXMATRIX *src)
 {
