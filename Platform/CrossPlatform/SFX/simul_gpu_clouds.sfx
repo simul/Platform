@@ -23,7 +23,6 @@ uniform RWTexture3D<vec4>	outputTexture;
 
 SamplerState lightSamplerState SIMUL_SAMPLER_REGISTER(8);
 SamplerState densSamplerState SIMUL_SAMPLER_REGISTER(9);
-uniform StructuredBuffer<CloudAffector> cloudAffectors;
 
 struct vertexOutput
 {
@@ -82,11 +81,13 @@ vec4 advect(vec3 texc		// grid coordinates
 	return newval;
 }
 
-float GetSourceValue(int i,vec3 posKm,vec3 iposKm,float sz,float n)
+float GetSourceValue(vec3 posKm)
 {
-	vec3 offsetKm	=posKm-iposKm;
-	float inSource	=length(offsetKm)/sz;
+	vec3 offsetKm	=posKm-sourcePosKm;
+	float inSource	=length(offsetKm)/sourceSizeKm;
 	float add		=saturate(1.0-inSource);
+	vec3 noise_texc=offsetKm/sourceNoiseScaleKm;
+	float n			=texture_wrap_lod(volumeNoiseTexture,noise_texc,0).x;
 	float noise_mult=.5+.5*cos(2.0*3.14159*(n+time/noisePeriod));
 	add*=noise_mult;
 	return add;
@@ -225,31 +226,10 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	
 	vec3 texc				=convertPosToTexc(pos,dims);
 	vec3 posKm				=(cloudScalesKm*texc)+cloudOriginKm;
+	if(pos.z==0)
 	{
-		vec3 noise_texc=cloudScalesKm*texc/sourceNoiseScaleKm;
-		float n			=texture_wrap_lod(volumeNoiseTexture,noise_texc,0).x;
-		for(int i=0;i<numAffectors;i++)
-		{
-			CloudAffector aff	=cloudAffectors[i];
-			if(aff.type>0)
-			{
-				float add			=GetSourceValue(i,posKm,aff.pos,aff.size,n);
-				if(aff.type==1)
-				{
-					if(pos.z==0)
-						vd.xyz				=lerp(vd.xyz,aff.vel,add);
-				}
-				else if(aff.type==2)
-				{
-					vec2 offs		=posKm-aff.pos;
-					float sc		=saturate(1.0/length(offs));
-					sc*=sc;
-					vec2 vel		=normalize(vec2(offs.y,-offs.x))*length(aff.vel)*sc;
-					vd.xyz			=lerp(vd.xyz,vec3(vel,0),aff.strength);
-				//	vd.z			=-40.0*sc;
-				}
-			}
-		}
+		float add			=GetSourceValue(posKm);
+		vd.xyz				=lerp(vd.xyz,sourceVelKmd,add);
 	}
 
 	IMAGE_STORE_3D(outputTexture,pos,vd);
@@ -294,26 +274,9 @@ shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
 	float Cp		=1006.0;		// J/KG/K
 	props.z			+=dc*L*PI/Cp;
 	if(pos.z==0)
-		props.x=0;
 	{
-		vec3 noise_texc=cloudScalesKm*texc/sourceNoiseScaleKm;
-		float n			=texture_wrap_lod(volumeNoiseTexture,noise_texc,0).x;
-		for(int i=0;i<numAffectors;i++)
-		{
-			CloudAffector aff=cloudAffectors[i];
-			if(aff.type==1)
-			{
-				float add		=GetSourceValue(i,posKm,aff.pos,aff.size,n);
-				dc				=max(dc,add);
-			}
-			else if(aff.type==2&&pos.x*pos.y==0)
-			{
-			//	if(pos.z>=15)
-			//		dc=0.001*n;
-			//	else
-			//		props.x=0;
-			}
-		}
+		float add		=GetSourceValue(posKm);
+		dc				=max(dc,add);
 	}
 	props.x			+=dc;
 	props.y			-=dc;
@@ -438,8 +401,8 @@ shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	float h				=saturate(0.5+float(pos.z)/float(dims.z));
 	//float dens			=saturate(c1.x);//2.0*(c1.x-0.25));
 	//float q=1.0;
-	float q				=10000.0;
-	float dens			=saturate(c1.x*q);//2.0*(c1.x-0.25));
+	float q				=0.001;
+	float dens			=saturate(c1.x/q);//2.0*(c1.x-0.25));
 	if(pos.z==0)
 		dens=0;
 	if(wrap==0&&pos.x*pos.y*(dims.x-1-pos.x)*(dims.y-1-pos.y)==0)
@@ -454,7 +417,7 @@ shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 		wpos			+=lightDir*stepLength;// we expect stepLength in km for this shader
 		texc			=wpos/cloudScalesKm;
 		vec4 lookup		=texture_wwc_lod(inputTexture3D,texc,0);
-		illum			*=exp(-extinctions.xy*saturate(lookup.x*q)*stepLength);
+		illum			*=exp(-extinctions.xy*saturate(lookup.x/q)*stepLength);
 	}
 	float ambient		=1.0;
 	vec4 res			=vec4(illum.yx,dens,ambient);
