@@ -163,9 +163,23 @@
 		{
 			operator=(v);
 		}
+		vec3(const int *v)
+		{
+			operator=(v);
+		}
+		operator float *()
+		{
+			return &x;
+		}
 		operator const float *() const
 		{
 			return &x;
+		}
+		void operator=(const int *v)
+		{
+			x=float(v[0]);
+			y=float(v[1]);
+			z=float(v[2]);
 		}
 		void operator=(const float *v)
 		{
@@ -440,6 +454,10 @@
 		{
 			operator=(v);
 		}
+		int3(const float *v)
+		{
+			operator=(v);
+		}
 		operator const int *()
 		{
 			return &x;
@@ -449,6 +467,12 @@
 			x=v[0];
 			y=v[1];
 			z=v[2];
+		}
+		void operator=(const float *v)
+		{
+			x=int(v[0]);
+			y=int(v[1]);
+			z=int(v[2]);
 		}
 	};
 	//! Very simple 3 vector of doubles.
