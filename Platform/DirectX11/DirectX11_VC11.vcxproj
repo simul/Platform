@@ -292,6 +292,11 @@
     <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\states.hlsl" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CrossPlatform\CrossPlatform_Win32_VC11.vcxproj">
+      <Project>{7f8bc215-2b2a-4703-af7c-f7f7351fb99d}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
