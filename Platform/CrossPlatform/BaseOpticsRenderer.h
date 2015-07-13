@@ -1,7 +1,6 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/LensFlare.h"
 #include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Graph/Meta/Group.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/optics_constants.sl"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"

@@ -8,7 +8,6 @@
 
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
 #include "Simul/Base/PropertyMacros.h"
-#include "Simul/Graph/Meta/Group.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Sky/BaseGpuSkyGenerator.h"

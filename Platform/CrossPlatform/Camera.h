@@ -1,6 +1,5 @@
 #ifndef SIMUL_GRAPH_CAMERA_CAMERA_H
 #define SIMUL_GRAPH_CAMERA_CAMERA_H
-#include "Simul/Graph/Meta/Node.h"
 #include "Simul/Geometry/OrientationInterface.h"
 #include "Simul/Geometry/Orientation.h"
 #include "Simul/Platform/CrossPlatform/CameraInterface.h"
@@ -141,7 +140,6 @@ namespace simul
  																					float farVal);
 		//! A camera class. The orientation has the z-axis facing backwards, the x-axis right and the y-axis up.
 		SIMUL_CROSSPLATFORM_EXPORT_CLASS Camera :
-			public simul::graph::meta::Node,
 			public simul::geometry::OrientationInterface,
 			public simul::crossplatform::CameraInterface
 		{
@@ -156,8 +154,7 @@ namespace simul
 				META_ValueRangeProperty(float,VerticalFieldOfViewInRadians	,0				,0,3.1416f*179.f,"Vertical Field Of View In Radians")
 				META_ReferenceProperty(simul::geometry::SimulOrientation	,Orientation	,"Orientation")
 			META_EndProperties
-			Macro_EnableRecursiveStreaming(simul::graph::meta::Node)
-			Macro_Node(Camera)
+	
 			void SetCameraViewStruct(const CameraViewStruct &c);
 			const CameraViewStruct &GetCameraViewStruct() const;
 			// virtual from OrientationInterface

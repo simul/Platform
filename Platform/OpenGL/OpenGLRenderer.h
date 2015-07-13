@@ -4,7 +4,6 @@
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Base/PropertyMacros.h"
-#include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/TrueSkyRenderer.h"
 
 #ifdef _MSC_VER
