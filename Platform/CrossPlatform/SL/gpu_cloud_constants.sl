@@ -46,7 +46,7 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform float seaLevelTemperatureK;
 	
 	uniform vec3 cloudOriginKm;
-	uniform float ajtjaeej;
+	uniform float vorticityConfinement;
 
 	uniform vec3 sourcePosKmXXXX;
 	uniform int numAffectors;

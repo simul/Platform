@@ -84,13 +84,19 @@ vec4 advect(vec3 texc		// grid coordinates
 	return newval;
 }
 
-float GetSourceValue(int i,vec3 posKm,vec3 iposKm,float sz,float n)
+float Get2DNormalizedRadius(vec3 posKm,CloudAffector aff)
 {
-	vec3 offsetKm	=posKm-iposKm;
-	float inSource	=length(offsetKm)/sz;
+	vec2 offsetKm	=posKm.xy-aff.pos.xy;
+	float inSource	=length(offsetKm)/(aff.size+0.001);
+	return inSource;
+}
+
+float GetSourceValue(vec3 posKm,CloudAffector aff,float n)
+{
+	float inSource	=Get2DNormalizedRadius(posKm,aff);
 	float add		=saturate(1.0-inSource);
 	float noise_mult=.5+.5*cos(2.0*3.14159*(n+time/noisePeriod));
-	add*=noise_mult;
+	add				*=noise_mult*aff.strength;
 	return add;
 }
 struct AtmosphericProperties
@@ -137,7 +143,7 @@ shader void CS_InitSimulation( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID 
 	AtmosphericProperties a_base	=SaturationRatio(cloudBaseKm+0.1*cloudScalesKm.z);
 	AtmosphericProperties a_local	=SaturationRatio(cloudBaseKm+cloudScalesKm.z*texc.z);
 
-	float q							=0.05;
+	float q							=1.0;//0.05;
 	float qc						=q*lookup.z;
 	float qv						=a_base.qvs*lookup.z;//qc/0.61;//04-qc;
 	vec4 newval						=vec4(qc,qv,lerp(a_local.T_K,a_base.T_K,lookup.z),0);
@@ -252,7 +258,7 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec4 props				=TEXTURE_LOAD_3D(inputTexture3DB,pos);
 	vec3 vorticity			=TEXTURE_LOAD_3D(inputTexture3DC,pos).xyz;
 	vec3 vorticity_field	=TEXTURE_LOAD_3D(inputTexture3DD,pos).xyz;
-	vec3 vort_conf			=10*cloudScalesKm/vec3(dims.xyz)*(cross(vorticity_field.xyz,vorticity.xyz));
+	vec3 vort_conf			=100.0*vorticityConfinement*cloudScalesKm.z/float(dims.z)*(cross(vorticity_field.xyz,vorticity.xyz));
 	// Properties are: x=cloud, y=water vapour, z=potential temperature, w unused.
 	vec4 vd					=TEXTURE_LOAD_3D(inputTexture3D,pos);
 	float g					=0.00981;	//km/s2
@@ -265,25 +271,35 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 texc				=convertPosToTexc(pos,dims);
 	vec3 posKm				=(cloudScalesKm*texc)+cloudOriginKm;
 	{
-		vec3 noise_texc=cloudScalesKm*texc/sourceNoiseScaleKm;
-		float n			=texture_wrap_lod(volumeNoiseTexture,noise_texc,0).x;
+		vec3 noise_texc		=cloudScalesKm*texc/sourceNoiseScaleKm;
+		float n				=texture_wrap_lod(volumeNoiseTexture,noise_texc,0).x;
+		// boundary conditions at top/bottom
+		if(pos.z==0||pos.z==dims.z-1)
+		{
+			vd.xyz			=vec3(0,0,0);
+		}
 		for(int i=0;i<numAffectors;i++)
 		{
 			CloudAffector aff	=cloudAffectors[i];
 			if(aff.type>0)
 			{
-				float add			=GetSourceValue(i,posKm,aff.pos,aff.size,n);
+				float add			=GetSourceValue(posKm,aff,n);
 				if(aff.type==1)
 				{
 					if(pos.z==0)
-						vd.xyz				=lerp(vd.xyz,aff.vel,add);
+					{
+						vd.xyz		=lerp(vd.xyz,aff.vel,add);
+					}
 				}
 				else if(aff.type==2)
 				{
+					float rad		=Get2DNormalizedRadius(posKm,aff);// from 0 to 1.
+					float sc		=saturate(1.0/rad);
+					float speed		=length(aff.vel);
+					speed			*=saturate(rad);
+					speed			*=saturate(sc*sc);
 					vec2 offs		=posKm-aff.pos;
-					float sc		=saturate(1.0/length(offs));
-					sc*=sc;
-					vec2 vel		=normalize(vec2(offs.y,-offs.x))*length(aff.vel)*sc;
+					vec2 vel		=normalize(vec2(offs.y,-offs.x))*speed;
 					vd.xyz			=lerp(vd.xyz,vec3(vel,0),aff.strength);
 				//	vd.z			=-40.0*sc;
 				}
@@ -314,7 +330,7 @@ shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
 	float L			=2.501;	// Latent heat of vaporization J/kg
 	float GAMMA		=10.0;		// K/km
 	float zkm		=posKm.z;	
-	float T0		=273.0+25.0;		// at sea level
+	float T0		=seaLevelTemperatureK;		// at sea level
 	//float p0		=100.0*1000.0;
 	// and we want it to be at the dew point at that altitude.
 	float Rd		=287.0;		// J/kg.K
@@ -325,13 +341,6 @@ shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
 	// saturation mixing ratio:
 	AtmosphericProperties a	=SaturationRatio(zkm);
 
-	// Dobashi's expression for qvs is:
-	//qvs				= 217.0*exp(19.482-4303.4/(T-29.5))/T);			// T is possibly in kelvins here.
-
-	// Properties are: x=cloud, y=water vapour, z=potential temperature, w unused.
-	float dc		=-0.01*min(a.qvs-props.y,props.x);
-	float Cp		=1006.0;		// J/KG/K
-	props.z			+=dc*L*PI/Cp;
 	if(pos.z==0)
 		props.x=0;
 	{
@@ -340,20 +349,27 @@ shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
 		for(int i=0;i<numAffectors;i++)
 		{
 			CloudAffector aff=cloudAffectors[i];
-			if(aff.type==1)
+			if(aff.type==1&&pos.z==0)
 			{
-				float add		=GetSourceValue(i,posKm,aff.pos,aff.size,n);
-				dc				=max(dc,add);
+				float add		=GetSourceValue(posKm,aff,n);
+				a.qvs			=min(a.qvs,1.0-add);
 			}
-			else if(aff.type==2&&pos.x*pos.y==0)
+			/*else if(aff.type==2&&pos.x*pos.y==0) maybe not
 			{
-			//	if(pos.z>=15)
-			//		dc=0.001*n;
-			//	else
-			//		props.x=0;
-			}
+				if(pos.z>=dims.z-1)
+					dc=0.001*n;
+				else
+					props.x=0;
+			}*/
 		}
 	}
+	// Dobashi's expression for qvs is:
+	//qvs				= 217.0*exp(19.482-4303.4/(T-29.5))/T);			// T is possibly in kelvins here.
+
+	// Properties are: x=cloud, y=water vapour, z=potential temperature, w unused.
+	float dc		=-0.1*min(a.qvs-props.y,props.x);
+	float Cp		=1006.0;		// J/KG/K
+	props.z			+=dc*L*PI/Cp;
 	props.x			+=dc;
 	props.y			-=dc;
 	/*if(pos.z==0)
@@ -477,8 +493,8 @@ shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	float h				=saturate(0.5+float(pos.z)/float(dims.z));
 	//float dens			=saturate(c1.x);//2.0*(c1.x-0.25));
 	//float q=1.0;
-	float q				=10000.0;
-	float dens			=saturate(c1.x*q);//2.0*(c1.x-0.25));
+	float q				=1.0;
+	float dens			=c1.x*q;//saturate(q*c1.x-0.0001);//2.0*(c1.x-0.25));
 	if(pos.z==0)
 		dens=0;
 	if(wrap==0&&pos.x*pos.y*(dims.x-1-pos.x)*(dims.y-1-pos.y)==0)

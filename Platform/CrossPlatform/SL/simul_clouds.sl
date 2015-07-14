@@ -525,6 +525,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
+	float sineFactor		=1.0/length(clip_pos.xyz);
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
@@ -693,7 +694,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				density.z				*=cosine;
 				density.z				*=saturate(distanceKm/0.24);
 				fade_texc.x				=sqrt(fadeDistance);
-				vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);
+				vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);//*sineFactor);
 				if (noise)
 					clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
 													,density
