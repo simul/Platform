@@ -106,7 +106,7 @@ struct AtmosphericProperties
 	float PI;
 };
 
-AtmosphericProperties SaturationRatio(float zkm)
+AtmosphericProperties SaturationRatio(vec3 posKm)
 {
 	AtmosphericProperties a;
 	float g			=0.00981;	//km/s2
@@ -114,11 +114,22 @@ AtmosphericProperties SaturationRatio(float zkm)
 	float p0		=100.0*1000.0;
 	float k			=0.286;
 	float GAMMA		=10.0;		// K/km
-	a.T_K			=T0-zkm*GAMMA;
+	a.T_K			=T0-posKm.z*GAMMA;
+
+	// Apply noise variation to temperature:
+	{
+		vec3 densityspace_texcoord	=(posKm-cloudOriginKm)/cloudScalesKm;
+		vec3 noisespace_texcoord	=(densityspace_texcoord+vec3(0,0,0.0*zPixel))*vec3(noiseScale)+vec3(1.0,1.0,0);
+		// noise_texel is the size of a noise texel
+		float noise_texel			=1.0;
+		float height				=noiseScale.z;
+		float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
+		a.T_K						+=50.0*(noise_val-0.5);
+	}
 	//float TC		=a.T_K-273.0;	// At the lowest texel, we know that T=T0-z GAMMA = T0-(cloudbase*GAMMA) = Tbase
 	// and we want it to be at the dew point at that altitude.
 	float Rd		=287.0;		// J/kg.K
-	float p_ratio	=pow(1.0-zkm*GAMMA/T0,g/(GAMMA*Rd));
+	float p_ratio	=pow(1.0-posKm.z*GAMMA/T0,g/(GAMMA*Rd));
 	a.PI			=pow(p_ratio,k);
 	// saturation mixing ratio:
 	//float qvs		=380.16/pPa*exp(17.67*TC/(TC+243.5));
@@ -339,7 +350,7 @@ shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
 	float k			=0.286;
 	float PI		=pow(p_ratio,k);
 	// saturation mixing ratio:
-	AtmosphericProperties a	=SaturationRatio(zkm);
+	AtmosphericProperties a	=SaturationRatio(posKm);
 
 	if(pos.z==0)
 		props.x=0;
@@ -352,7 +363,7 @@ shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
 			if(aff.type==1&&pos.z==0)
 			{
 				float add		=GetSourceValue(posKm,aff,n);
-				a.qvs			=min(a.qvs,1.0-add);
+				props.y			=max(props.y,add);
 			}
 			/*else if(aff.type==2&&pos.x*pos.y==0) maybe not
 			{
