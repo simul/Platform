@@ -48,13 +48,36 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform vec3 cloudOriginKm;
 	uniform float ajtjaeej;
 
-	uniform vec3 sourcePosKm;
-	uniform float sourceSizeKm;
+	uniform vec3 sourcePosKmXXXX;
+	uniform int numAffectors;
 
-	uniform vec3 sourceVelKmd;
+	uniform vec3 sourceVelKmdXXXX;
 	uniform float noisePeriod;
 
 	uniform float sourceNoiseScaleKm;
 SIMUL_CONSTANT_BUFFER_END
 
+#ifdef __cplusplus
+enum CloudToolType
+{
+	NoTool=0
+	,AddCloudTool=1
+	,VortexTool=2
+};
+#else
+#define CloudToolType int
+#define NoTool (0)
+#define AddCloudTool (1)
+#define VortexTool (2)
+#endif
+
+struct CloudAffector
+{
+	vec3 pos;
+	CloudToolType type;
+	vec3 vel;
+	float strength;
+	vec3 uuuuu;
+	float size;
+};
 #endif
