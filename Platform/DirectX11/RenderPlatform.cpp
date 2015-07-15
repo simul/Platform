@@ -214,6 +214,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	ID3D11DeviceContext* c=immediateContext.asD3D11DeviceContext();
 	SAFE_RELEASE(c);
 	immediateContext.platform_context=NULL;
+	device=NULL;
 }
 
 void RenderPlatform::RecompileShaders()

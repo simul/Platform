@@ -74,6 +74,8 @@ void HdrRenderer::SetBufferSize(int w,int h)
 void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
+	if(!renderPlatform)
+		return;
 	for(int i=0;i<4;i++)
 	{
 		SAFE_DELETE(brightpassTextures[i]);
