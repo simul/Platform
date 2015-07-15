@@ -27,6 +27,8 @@ SamplerState lightSamplerState SIMUL_SAMPLER_REGISTER(8);
 SamplerState densSamplerState SIMUL_SAMPLER_REGISTER(9);
 uniform StructuredBuffer<CloudAffector> cloudAffectors;
 
+float q							=100.0;//0.05;
+
 struct vertexOutput
 {
     vec4 hPosition	: SV_POSITION;
@@ -86,7 +88,7 @@ vec4 advect(vec3 texc		// grid coordinates
 
 float Get2DNormalizedRadius(vec3 posKm,CloudAffector aff)
 {
-	vec2 offsetKm	=posKm.xy-aff.pos.xy;
+	vec2 offsetKm	=cloudScalesKm.xy*(frac((posKm.xy-aff.pos.xy)/cloudScalesKm.xy+vec2(0.5,0.5))-vec2(0.5,0.5));
 	float inSource	=length(offsetKm)/(aff.size+0.001);
 	return inSource;
 }
@@ -154,8 +156,7 @@ shader void CS_InitSimulation( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID 
 	AtmosphericProperties a_base	=SaturationRatio(cloudBaseKm+0.1*cloudScalesKm.z);
 	AtmosphericProperties a_local	=SaturationRatio(cloudBaseKm+cloudScalesKm.z*texc.z);
 
-	float q							=1.0;//0.05;
-	float qc						=q*lookup.z;
+	float qc						=lookup.z/q;
 	float qv						=a_base.qvs*lookup.z;//qc/0.61;//04-qc;
 	vec4 newval						=vec4(qc,qv,lerp(a_local.T_K,a_base.T_K,lookup.z),0);
 	IMAGE_STORE_3D(outputTexture,pos,newval);
@@ -201,7 +202,7 @@ vec3 DelW(Texture3D tex3D,vec3 texc)
 #endif
 	vec3 gridScale	=cloudScalesKm/vec3(dims);
 	vec3 d			=vec3(0.5,0.5,0.5)/vec3(dims);
-	vec4 p			=texture_wwc_lod(tex3D,texc,0);
+
 	vec4 pL			=texture_wwc_lod(tex3D,texc-vec3(d.x,0,0),0);
 	vec4 pR			=texture_wwc_lod(tex3D,texc+vec3(d.x,0,0),0);
 	vec4 pB			=texture_wwc_lod(tex3D,texc-vec3(0,d.y,0),0);
@@ -209,7 +210,7 @@ vec3 DelW(Texture3D tex3D,vec3 texc)
 	vec4 pD			=texture_wwc_lod(tex3D,texc-vec3(0,0,d.z),0);
 	vec4 pU			=texture_wwc_lod(tex3D,texc+vec3(0,0,d.z),0);
 
-	vec3 del		=vec3((pR-pL).w/gridScale.x,(pF -pB).w/gridScale.y,(pU - pD).w/gridScale.z);
+	vec3 del		=vec3((pR-pL).w/gridScale.x,(pF-pB).w/gridScale.y,(pU-pD).w/gridScale.z);
 	return del;
 }
 CS_LAYOUT(8,8,8)
@@ -256,7 +257,7 @@ shader void CS_VorticityField( uint3 gr: SV_GroupID, uint3 t: SV_GroupThreadID )
 	vec3 texc		=convertPosToTexc(pos,dims);
 	vec3 eta		=DelW(inputTexture3D,texc);
 	float mag		=0.000001+length(eta);
-	vec4 N			=vec4((eta)/mag,1.0);
+	vec4 N			=vec4(eta/mag,1.0);
 	IMAGE_STORE_3D(outputTexture,pos,N);
 }
 
@@ -297,22 +298,25 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 				float add			=GetSourceValue(posKm,aff,n);
 				if(aff.type==1)
 				{
-					if(pos.z==0)
+					if(pos.z<=1)
 					{
 						vd.xyz		=lerp(vd.xyz,aff.vel,add);
 					}
 				}
 				else if(aff.type==2)
 				{
-					float rad		=Get2DNormalizedRadius(posKm,aff);// from 0 to 1.
-					float sc		=saturate(1.0/rad);
-					float speed		=length(aff.vel);
-					speed			*=saturate(rad);
-					speed			*=saturate(sc*sc);
-					vec2 offs		=posKm-aff.pos;
-					vec2 vel		=normalize(vec2(offs.y,-offs.x))*speed;
-					vd.xyz			=lerp(vd.xyz,vec3(vel,0),aff.strength);
-				//	vd.z			=-40.0*sc;
+					if(pos.z<=1)
+					{
+						vec2 offsetKm	=cloudScalesKm.xy*(frac((posKm.xy-aff.pos.xy)/cloudScalesKm.xy+vec2(0.5,0.5))-vec2(0.5,0.5));
+						float rad		=length(offsetKm)/(aff.size+0.001);
+						float sc		=saturate(1.0/rad);
+						float speed		=50.0+0.01*length(aff.vel);
+						speed			*=saturate(rad);
+						speed			*=saturate(sc*sc);
+						vec2 vel		=normalize(vec2(offsetKm.y,-offsetKm.x))*speed;
+						vd.xyz			=lerp(vd.xyz,vec3(vel,0),aff.strength);
+						vd.z			=-0.01*speed;
+					}
 				}
 			}
 		}
@@ -360,7 +364,7 @@ shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
 		for(int i=0;i<numAffectors;i++)
 		{
 			CloudAffector aff=cloudAffectors[i];
-			if(aff.type==1&&pos.z==0)
+			if(aff.type==1&&pos.z<=1)
 			{
 				float add		=GetSourceValue(posKm,aff,n);
 				props.y			=max(props.y,add);
@@ -504,7 +508,6 @@ shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	float h				=saturate(0.5+float(pos.z)/float(dims.z));
 	//float dens			=saturate(c1.x);//2.0*(c1.x-0.25));
 	//float q=1.0;
-	float q				=1.0;
 	float dens			=c1.x*q;//saturate(q*c1.x-0.0001);//2.0*(c1.x-0.25));
 	if(pos.z==0)
 		dens=0;
