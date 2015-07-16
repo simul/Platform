@@ -27,7 +27,7 @@ SamplerState lightSamplerState SIMUL_SAMPLER_REGISTER(8);
 SamplerState densSamplerState SIMUL_SAMPLER_REGISTER(9);
 uniform StructuredBuffer<CloudAffector> cloudAffectors;
 
-#define q							(100.0)
+#define q							(10000.0)
 
 struct vertexOutput
 {
@@ -101,11 +101,12 @@ float GetSourceValue(vec3 posKm,CloudAffector aff,float n)
 	add				*=noise_mult*aff.strength;
 	return add;
 }
+
 struct AtmosphericProperties
 {
-	float T_K;
-	float qvs;
-	float PI;
+	float T_K;		// Temperature
+	float qvs;		// Saturation point
+	float PI;		// Exner function
 };
 
 AtmosphericProperties SaturationRatio(vec3 posKm)
@@ -113,7 +114,7 @@ AtmosphericProperties SaturationRatio(vec3 posKm)
 	AtmosphericProperties a;
 	float g			=0.00981;	//km/s2
 	float T0		=seaLevelTemperatureK;		// at sea level
-	float p0		=100.0*1000.0;
+	float p0		=100.0;
 	float k			=0.286;
 	float GAMMA		=10.0;		// K/km
 	a.T_K			=T0-posKm.z*GAMMA;
@@ -130,12 +131,18 @@ AtmosphericProperties SaturationRatio(vec3 posKm)
 	}
 	//float TC		=a.T_K-273.0;	// At the lowest texel, we know that T=T0-z GAMMA = T0-(cloudbase*GAMMA) = Tbase
 	// and we want it to be at the dew point at that altitude.
-	float Rd		=287.0;		// J/kg.K
+	float Rd		=0.000287;		// MJ/(kg.K) = kg.km2/s2/(kg.K) =km2/(s2.K) 
 	float p_ratio	=pow(1.0-posKm.z*GAMMA/T0,g/(GAMMA*Rd));
+						//pwr is km/s2/(K/km)/km2*s2.K
+						//      km*km/km2
+	float p			=p_ratio*p0;
 	a.PI			=pow(p_ratio,k);
 	// saturation mixing ratio:
-	//float qvs		=380.16/pPa*exp(17.67*TC/(TC+243.5));
-	a.qvs			=380.16/(p_ratio*p0)*exp(17.67)*exp(-4302.645/(a.T_K-29.5));
+//	a.qvs			=380.16/p*exp(17.67*(a.T_K-273.0)/(a.T_K-29.5));
+	//				=380.16/p*exp(17.67*(a.T_K-29.5+29.5-273.0)/(a.T_K-29.5))
+	//				=380.16/p*exp(17.67*(1.0+(29.5-273.0)/(a.T_K-29.5))
+	//				=380.16/p*exp(17.67)*exp(-17.67*243.5/(a.T_K-29.5))
+	a.qvs			=0.38016/p*exp(17.67-4302.645/(a.T_K-29.5));
 	return a;
 }
 
@@ -213,6 +220,7 @@ vec3 DelW(Texture3D tex3D,vec3 texc)
 	vec3 del		=vec3((pR-pL).w/gridScale.x,(pF-pB).w/gridScale.y,(pU-pD).w/gridScale.z);
 	return del;
 }
+
 CS_LAYOUT(8,8,8)
 shader void CS_Diffusion( uint3 g: SV_GroupID, uint3 t : SV_GroupThreadID )
 {
@@ -310,7 +318,7 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 						vec2 offsetKm	=cloudScalesKm.xy*(frac((posKm.xy-aff.pos.xy)/cloudScalesKm.xy+vec2(0.5,0.5))-vec2(0.5,0.5));
 						float rad		=length(offsetKm)/(aff.size+0.001);
 						float sc		=saturate(1.0/rad);
-						float speed		=50.0+0.01*length(aff.vel);
+						float speed		=10.0+0.002*length(aff.vel);
 						speed			*=saturate(rad);
 						speed			*=saturate(sc*sc);
 						vec2 vel		=normalize(vec2(offsetKm.y,-offsetKm.x))*speed;
@@ -366,16 +374,9 @@ shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
 			CloudAffector aff=cloudAffectors[i];
 			if(aff.type==1&&pos.z<=1)
 			{
-				float add		=GetSourceValue(posKm,aff,n);
+				float add		=0.01*GetSourceValue(posKm,aff,n);
 				props.y			=max(props.y,add);
 			}
-			/*else if(aff.type==2&&pos.x*pos.y==0) maybe not
-			{
-				if(pos.z>=dims.z-1)
-					dc=0.001*n;
-				else
-					props.x=0;
-			}*/
 		}
 	}
 	// Dobashi's expression for qvs is:
@@ -387,6 +388,12 @@ shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
 	props.z			+=dc*L*PI/Cp;
 	props.x			+=dc;
 	props.y			-=dc;
+
+	if(pos.z==0)
+	{
+		props.x=0;
+		props.y=baseMixingRatio;
+	}
 	/*if(pos.z==0)
 	{
 		AtmosphericProperties a_base	=SaturationRatio(cloudBaseKm+0.1*cloudScalesKm.z);

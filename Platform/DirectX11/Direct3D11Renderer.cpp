@@ -33,7 +33,7 @@ using namespace simul;
 using namespace dx11;
 
 TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m)
-		:clouds::TrueSkyRenderer(env,sc,m)
+		:clouds::TrueSkyRenderer(env,sc,m,true)
 		,oceanRenderer(NULL)
 {
 	sc;
