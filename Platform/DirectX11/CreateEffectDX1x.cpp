@@ -600,6 +600,7 @@ ERRNO_CHECK
 		hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 			return S_OK;
+		std::cout<<"Shader binary path is "<<shaderbinPathUtf8<<std::endl;
 		if((shaderBuildMode&anyBuild)==0)
 			return S_FALSE;
 	}

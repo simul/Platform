@@ -26,6 +26,7 @@
 #else
 #include <D3Dcompiler.h>
 #endif
+#include "Simul/Platform/DirectX11/Utilities.h"
 
 using namespace simul;
 using namespace dx11;
@@ -164,18 +165,21 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 #endif
 	RecompileShaders();
 	SAFE_RELEASE(m_pVertexBuffer);
+	SAFE_RELEASE(m_pCubemapVtxDecl);
 	// Vertex declaration
 	if(debugEffect)
 	{
 		D3DX11_PASS_DESC PassDesc;
 		crossplatform::EffectTechnique *tech	=debugEffect->GetTechniqueByName("vec3_input_signature");
-		tech->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
-		D3D11_INPUT_ELEMENT_DESC decl[]=
+		if(tech&&tech->asD3DX11EffectTechnique())
 		{
-			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
-		};
-		SAFE_RELEASE(m_pCubemapVtxDecl);
-		V_CHECK(AsD3D11Device()->CreateInputLayout(decl,1,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl));
+			tech->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
+			D3D11_INPUT_ELEMENT_DESC decl[]=
+			{
+				{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 }
+			};
+			V_CHECK(AsD3D11Device()->CreateInputLayout(decl,1,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl));
+		}
 	}
 	D3D11_BUFFER_DESC desc=
 	{
@@ -1470,6 +1474,8 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 
 void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 {
+	if(!m_pCubemapVtxDecl)
+		return;
 	UINT stride = sizeof(vec3);
 	UINT offset = 0;
     UINT Strides[1];

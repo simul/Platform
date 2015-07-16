@@ -5,13 +5,8 @@
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
-#include "Simul/Platform/DirectX11/Utilities.h"
 
 #include "SimulDirectXHeader.h"
-#ifndef SIMUL_WIN8_SDK
-#include <d3dx9.h>
-#include <d3dx11.h>
-#endif
 #include <vector>
 
 #ifdef _MSC_VER

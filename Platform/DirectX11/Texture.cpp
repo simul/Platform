@@ -330,7 +330,7 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 					if(shaderResourceView)
 					{
 						shaderResourceView->GetDesc(&srv_desc);
-						std::cout<<srv_desc.ViewDimension<<std::endl;
+						//std::cout<<srv_desc.ViewDimension<<std::endl;
 					}
 				}
 			}
