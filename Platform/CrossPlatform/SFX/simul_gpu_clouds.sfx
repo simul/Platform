@@ -96,9 +96,7 @@ float Get2DNormalizedRadius(vec3 posKm,CloudAffector aff)
 float GetSourceValue(vec3 posKm,CloudAffector aff,float n)
 {
 	float inSource	=Get2DNormalizedRadius(posKm,aff);
-	float add		=saturate(1.0-inSource);
-	float noise_mult=.5+.5*cos(2.0*3.14159*(n+time/noisePeriod));
-	add				*=noise_mult*aff.strength;
+	float add		=saturate(1.0-inSource*inSource)*aff.strength;
 	return add;
 }
 
@@ -160,7 +158,7 @@ shader void CS_InitSimulation( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID 
 	//float u							=step(length(from_ctr),0.1);
 //	float T							=210;//+150.0*u;
 	// .61v = c
-	AtmosphericProperties a_base	=SaturationRatio(vec3(0,0,cloudBaseKm+0.1*cloudScalesKm.z));
+	AtmosphericProperties a_base	=SaturationRatio(vec3(0,0,cloudBaseKm+0.5*cloudScalesKm.z));
 	AtmosphericProperties a_local	=SaturationRatio(cloudOriginKm+texc*cloudScalesKm);
 
 	float qc						=lookup.z/q;
@@ -306,6 +304,8 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 				float add			=GetSourceValue(posKm,aff,n);
 				if(aff.type==1)
 				{
+					float noise_mult=.5+.5*cos(2.0*3.14159*(n+time/noisePeriod));
+					add				*=noise_mult;
 					if(pos.z<=1)
 					{
 						vd.xyz		=lerp(vd.xyz,aff.vel,add);
@@ -323,7 +323,7 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 						speed			*=saturate(sc*sc);
 						vec2 vel		=normalize(vec2(offsetKm.y,-offsetKm.x))*speed;
 						vd.xyz			=lerp(vd.xyz,vec3(vel,0),aff.strength);
-						vd.z			=-0.1*speed;
+						vd.xyz			+=vec3(vel,-0.1*speed)*aff.strength;
 					}
 				}
 			}
