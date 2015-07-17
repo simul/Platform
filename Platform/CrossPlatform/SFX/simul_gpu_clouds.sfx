@@ -317,13 +317,13 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 					{
 						vec2 offsetKm	=cloudScalesKm.xy*(frac((posKm.xy-aff.pos.xy)/cloudScalesKm.xy+vec2(0.5,0.5))-vec2(0.5,0.5));
 						float rad		=length(offsetKm)/(aff.size+0.001);
-						float sc		=saturate(1.0/rad);
+						float sc		=saturate(1.0/(rad+0.001));
 						float speed		=10.0+0.002*length(aff.vel);
 						speed			*=saturate(rad);
 						speed			*=saturate(sc*sc);
 						vec2 vel		=normalize(vec2(offsetKm.y,-offsetKm.x))*speed;
 						vd.xyz			=lerp(vd.xyz,vec3(vel,0),aff.strength);
-						vd.xyz			+=vec3(vel,-0.1*speed)*aff.strength;
+						vd.xyz			+=vec3(vel,-10.1*speed*saturate(1.0-rad))*aff.strength;
 					}
 				}
 			}
