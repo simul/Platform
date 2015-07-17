@@ -323,7 +323,7 @@ shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
 						speed			*=saturate(sc*sc);
 						vec2 vel		=normalize(vec2(offsetKm.y,-offsetKm.x))*speed;
 						vd.xyz			=lerp(vd.xyz,vec3(vel,0),aff.strength);
-						vd.z			=-0.01*speed;
+						vd.z			=-0.1*speed;
 					}
 				}
 			}
