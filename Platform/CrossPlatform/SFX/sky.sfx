@@ -8,7 +8,7 @@ uniform TextureCube backgroundCubemap;
 uniform Texture2D inscTexture;
 uniform Texture2D lossTexture;
 uniform Texture2D depthTexture;
-uniform Texture2D illuminationTexture;
+
 SamplerState samplerState
 {
 	Filter = MIN_MAG_MIP_LINEAR;

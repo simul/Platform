@@ -284,6 +284,8 @@ public:			TextRenderer					*textRenderer;
 
 		template<class T> bool ConstantBuffer<T>::IsLinkedToEffect(crossplatform::Effect *effect)
 		{
+			if(!effect)
+				return false;
 			if (linkedEffects.find(effect) != linkedEffects.end())
 			{
 				if (effect->IsLinkedToConstantBuffer(this))

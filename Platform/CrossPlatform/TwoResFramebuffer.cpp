@@ -98,7 +98,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	ERRNO_CHECK
 	// We're going to TRY to encode near and far loss into two UINT's, for faster results
 	lossTexture->ensureTexture2DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,crossplatform::RGBA_16_FLOAT,false,true);
-#ifdef __ORBIS__
+#if 1//def __ORBIS__
 	static bool fill_volumes_with_compute=true;
 #else
 	static bool fill_volumes_with_compute=false;
