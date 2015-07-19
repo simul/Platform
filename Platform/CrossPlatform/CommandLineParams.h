@@ -47,13 +47,8 @@ namespace simul
 						sc=false;
 						continue;
 					}
-					if(arg.find("SCREENSHOT")<arg.length()||arg.find("screenshot")<arg.length())
-					{
-						commandLineParams.screenshot=true;
-						sc=true;
-					}
 					unsigned pos=(unsigned)arg.find(":");
-					if(pos<arg.length())
+					if(pos>=2&&pos<arg.length())
 					{
 						std::string left=arg.substr(0,pos);
 						std::string right=arg.substr(pos+1,arg.length()-pos-1);
@@ -70,8 +65,17 @@ namespace simul
 							commandLineParams.win_h=val;
 						if(left.compare("-quitafterframe")==0)
 							commandLineParams.quitafterframe=val;
+						if(left.compare("-screenshot")==0)
+						{
+							commandLineParams.screenshot=true;
+							commandLineParams.screenshotFilenameUtf8=right;
+						}
 					}
-					//-startx:960, -starty:20 -width:640 -height:360
+					else if(arg.find("SCREENSHOT")<arg.length()||arg.find("screenshot")<arg.length())
+					{
+						commandLineParams.screenshot=true;
+						sc=true;
+					}
 				}
 			}
 		}
