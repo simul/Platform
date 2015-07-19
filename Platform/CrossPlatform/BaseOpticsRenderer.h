@@ -34,7 +34,7 @@ namespace simul
 			//! To be called when the rendering device is no longer valid.
 			virtual void InvalidateDeviceObjects();
 			//! Render the lens flares based on the given direction to the light, and its colour.
-			virtual void RenderFlare(crossplatform::DeviceContext &devicContext,float exposure,crossplatform::Texture * depthTexture,const float *dir,const float *light);
+			virtual void RenderFlare(crossplatform::DeviceContext &devicContext,float exposure,const float *dir,const float *light);
 		protected:
 			float flare_magnitude,flare_angular_size;
 			simul::crossplatform::LensFlare lensFlare;

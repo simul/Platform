@@ -82,7 +82,7 @@ void BaseOpticsRenderer::RecompileShaders()
 	opticsConstants.LinkToEffect(effect,"OpticsConstants");
 }
 
-void BaseOpticsRenderer::RenderFlare(crossplatform::DeviceContext &deviceContext,float exposure,crossplatform::Texture *moistureTexture,const float *dir,const float *light)
+void BaseOpticsRenderer::RenderFlare(crossplatform::DeviceContext &deviceContext,float exposure,const float *dir,const float *light)
 {
 	if(!effect)
 		return;
