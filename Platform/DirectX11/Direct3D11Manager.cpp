@@ -405,6 +405,11 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument)
 		outputs[i]=output;
 		SIMUL_ASSERT(result==S_OK);
 		i++;
+		if(i>100)
+		{
+			std::cerr<<"Tried 100 outputs: no adaptor was found."<<std::endl;
+			return;
+		}
 	}
 	std::cout<<"2"<<std::endl;
 	//We now have the numerator and denominator for the refresh rate.
