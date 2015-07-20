@@ -55,7 +55,7 @@ using namespace std;
 static bool glut_initialized=false;
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut)
-		:clouds::TrueSkyRenderer(env,sc,m)
+		:clouds::TrueSkyRenderer(env,sc,m,true)
 	,ShowWater(true)
 	,Exposure(1.0f)
 	,renderPlatformOpenGL(NULL)
