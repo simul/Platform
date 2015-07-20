@@ -251,6 +251,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Geometry\Geometry_VC11.vcxproj">
       <Project>{a7281b81-3b5d-4923-8aa2-108b419a1e32}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
