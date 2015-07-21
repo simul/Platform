@@ -447,10 +447,11 @@ vec4 PS_Planet_DepthTexture(svertexOutput IN,bool reverseDepth)
 {
 	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
 	viewportTexCoords.y		=1.0-viewportTexCoords.y;
-	vec2 depth_texc = viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
-	float depth = texture_clamp(depthTexture, depth_texc).x;
+	vec2 depth_texc			= viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
+	float depth				= texture_clamp(depthTexture, depth_texc).x;
 	discardUnlessFar(depth,reverseDepth);
-	vec4 result = sample(flareTexture,flareSamplerState, vec2(0.5,0.5) - 0.5*IN.tex);
+	vec4 result				= texture_clamp(flareTexture, vec2(0.5,0.5) - 0.5*IN.tex);
+
 	result=Planet(result, IN.tex);
 	return result;
 }

@@ -129,12 +129,12 @@ GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &tex
 #endif
 }
 
-void SaveGLImage(const char *filename_utf8,GLuint tex)
+void SaveGLImage(const char *filename_utf8,GLuint tex,bool flip_vertical)
 {
 	FREE_IMAGE_FORMAT fif	=FIF_UNKNOWN;
 GL_ERROR_CHECK
 	wstring wstr		=simul::base::Utf8ToWString(filename_utf8);
-	fif						=FreeImage_GetFIFFromFilenameU(wstr.c_str());
+	fif					=FreeImage_GetFIFFromFilenameU(wstr.c_str());
 	BYTE* pixels = NULL;
 	int bytes_per_pixel=0;
 	GLint width,height;
@@ -186,12 +186,13 @@ GL_ERROR_CHECK
 		}
 	}
 	FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, width, height, 3 * width, bytes_per_pixel, 0x00FF00, 0xFF0000,0x0000FF , false);
-
+	if(flip_vertical)
+		FreeImage_FlipVertical(image);
 	FreeImage_SaveU(fif,image, wstr.c_str());
 	FreeImage_Unload(image);
 	delete [] pixels;
 }
-#include "Simul/Base/FileLoader.h"
+
 unsigned char *LoadGLBitmap(const char *filename_utf8,const std::vector<std::string> &pathsUtf8,unsigned &bpp,int &width,int &height)
 {
 ERRNO_CHECK

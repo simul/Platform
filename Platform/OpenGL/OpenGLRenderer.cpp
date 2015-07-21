@@ -214,11 +214,6 @@ void OpenGLRenderer::ReloadTextures()
 		weatherRenderer->ReloadTextures();
 }
 
-void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)
-{
-	//SaveGLImage(filename_utf8,(simulHDRRenderer->get->AsGLuint()));
-}
-
 void OpenGLRenderer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int dx,int dy)
 {
 	crossplatform::Texture *depthTexture=NULL;

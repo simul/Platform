@@ -194,43 +194,6 @@
     <ClInclude Include="TwoResFramebuffer.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="SL\atmospherics.sl" />
-    <None Include="SL\atmospherics_constants.sl" />
-    <None Include="SL\cloud_shadow.sl" />
-    <None Include="SL\compositing_constants.sl" />
-    <None Include="SL\CppSl.hs" />
-    <None Include="SL\depth.sl" />
-    <None Include="SL\earth_shadow.sl" />
-    <None Include="SL\earth_shadow_fade.sl" />
-    <None Include="SL\earth_shadow_uniforms.sl" />
-    <None Include="SL\godrays.sl" />
-    <None Include="SL\hdr_constants.sl" />
-    <None Include="SL\illumination.sl" />
-    <None Include="SL\lightning_constants.sl" />
-    <None Include="SL\light_probe_constants.sl" />
-    <None Include="SL\mixed_resolution.sl" />
-    <None Include="SL\mixed_resolution_constants.sl" />
-    <None Include="SL\noise.sl" />
-    <None Include="SL\noise_constants.sl" />
-    <None Include="SL\ocean_constants.sl" />
-    <None Include="SL\optics_constants.sl" />
-    <None Include="SL\rain_constants.sl" />
-    <None Include="SL\simul_2d_clouds.hs" />
-    <None Include="SL\simul_2d_clouds.sl" />
-    <None Include="SL\simul_2d_cloud_detail.sl" />
-    <None Include="SL\simul_clouds.sl" />
-    <None Include="SL\simul_cloud_constants.sl" />
-    <None Include="SL\simul_gpu_clouds.sl" />
-    <None Include="SL\simul_gpu_sky.sl" />
-    <None Include="SL\simul_inscatter_fns.sl" />
-    <None Include="SL\simul_terrain_constants.sl" />
-    <None Include="SL\sky_constants.sl" />
-    <None Include="SL\solid_constants.sl" />
-    <None Include="SL\spherical_harmonics.sl" />
-    <None Include="SL\spherical_harmonics_constants.sl" />
-    <None Include="SL\states.sl" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="BaseFramebuffer.cpp" />
     <ClCompile Include="BaseOpticsRenderer.cpp" />
     <ClCompile Include="Buffer.cpp" />

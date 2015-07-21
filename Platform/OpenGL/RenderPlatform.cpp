@@ -1000,7 +1000,7 @@ void RenderPlatform::Resolve(crossplatform::DeviceContext &deviceContext,crosspl
 
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
-	SaveGLImage(lFileNameUtf8,texture->AsGLuint());
+	SaveGLImage(lFileNameUtf8,texture->AsGLuint(),true);
 }
 
 void *RenderPlatform::GetDevice()

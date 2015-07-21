@@ -54,7 +54,6 @@ namespace simul
 			void ShutdownGL() override;
 
 			void ReloadTextures();
-			void SaveScreenshot(const char *filename_utf8);
 			simul::opengl::RenderPlatform *renderPlatformOpenGL;
 		protected:
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,int x0,int y0,int w,int h);

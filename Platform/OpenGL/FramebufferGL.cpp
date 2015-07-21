@@ -158,19 +158,6 @@ GL_ERROR_CHECK
 	}
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-/*	if(!m_noDepthFb)
-		glGenFramebuffers(1, &m_noDepthFb);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_noDepthFb);
-	if(buffer_texture&&buffer_depth_texture)
-	{GL_ERROR_CHECK
-		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffer_texture->AsGLuint(), 0);
-GL_ERROR_CHECK
-		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
-GL_ERROR_CHECK
-		SIMUL_ASSERT(status!=GL_FRAMEBUFFER_COMPLETE,"Bad framebuffer status ");
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-GL_ERROR_CHECK*/
 	return true;
 }
 
@@ -214,11 +201,12 @@ void FramebufferGL::ActivateDepth(crossplatform::DeviceContext &)
 	{
 	   glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
 GL_ERROR_CHECK
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,buffer_texture?buffer_texture->AsGLuint():0, 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,buffer_depth_texture->AsGLuint(),0);
 GL_ERROR_CHECK
 		CheckFramebufferStatus();
 GL_ERROR_CHECK
-		glBindFramebuffer(GL_FRAMEBUFFER, 0); 
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0); 
 GL_ERROR_CHECK
 	}
 }
@@ -310,13 +298,14 @@ void FramebufferGL::DeactivateDepth(crossplatform::DeviceContext &)
 	{
 	   glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
 GL_ERROR_CHECK
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffer_texture?buffer_texture->AsGLuint():0, 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,0,0);
 GL_ERROR_CHECK
 		CheckFramebufferStatus();
 GL_ERROR_CHECK
-		glBindFramebuffer(GL_FRAMEBUFFER, 0); 
-GL_ERROR_CHECK
 	}
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(0);
 }
 
 void FramebufferGL::Render(void *,bool blend)
