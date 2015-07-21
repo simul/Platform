@@ -538,8 +538,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float max_z				=cornerPosKm.z+(1.0+fractalScale.z*1.5)/inverseScalesKm.z;
 	if(do_rain_effect)
 		min_z				=-1.0;
+#ifndef PSFX
 	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
+#endif
 	
 	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
