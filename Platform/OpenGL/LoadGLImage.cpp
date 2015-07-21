@@ -162,19 +162,22 @@ GL_ERROR_CHECK
 			type=GL_UNSIGNED_BYTE;
 			bytes_per_pixel=24;
 		break;
+		case GL_RGBA16F:
 		case GL_RGBA32F:
 			numBytes = width * height * 4*sizeof(float);
 			type=GL_FLOAT;
 			bytes_per_pixel=4*4*sizeof(float);
 			bytes_per_pixel=24;
 		break;
+		case GL_RGB16F:
 		case GL_RGB32F:
 			numBytes = width * height * 3*sizeof(float);
 			type=GL_FLOAT;
 			bytes_per_pixel=4*3*sizeof(float);
 			bytes_per_pixel=24;
 			break;
-		default: // unsupported type
+		default: // unsupported type#
+		SIMUL_CERR<<"Unsupported texture type for saving: "<<internalFormat<<std::endl;
 		break;
 		}
 		if(numBytes)
