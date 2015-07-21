@@ -29,13 +29,14 @@ void Profiler::Uninitialize()
 
 void Profiler::Initialize(void*)
 {
-    //enabled=true;
+    enabled=false;
 }
 
-void Profiler::StartProfile(const std::string& name)
+void Profiler::Begin(void*,const char *name)
 {
     if(!enabled)
         return;
+	last_name=name;
     ProfileData& profileData = profiles[name];
     _ASSERT(profileData.QueryStarted == false);
     if(profileData.QueryFinished!= false)
@@ -49,16 +50,23 @@ void Profiler::StartProfile(const std::string& name)
 		}
     }
 GL_ERROR_CHECK
+	if(query_stack.size())
+	{
+		glEndQuery(GL_TIME_ELAPSED);
+	}
+// GL can't nest queries. So to start this query we must end the parent.
 	glBeginQuery(GL_TIME_ELAPSED,profileData.TimestampQuery[currFrame]);
+	query_stack.push_back(profileData.TimestampQuery[currFrame]);
     profileData.QueryStarted = true;
 GL_ERROR_CHECK
 }
 
-void Profiler::EndProfile(const std::string& name)
+void Profiler::End()
 {
     if(!enabled)
         return;
-    ProfileData& profileData = profiles[name];
+    ProfileData& profileData = profiles[last_name];
+	last_name="";
 	glEndQuery(GL_TIME_ELAPSED);//,profileData.TimestampQuery[currFrame]);
 	//glQueryCounter(profileData.TimestampEndQuery[currFrame], GL_TIMESTAMP);
     if(profileData.QueryStarted != true)
@@ -76,7 +84,11 @@ template<typename T> inline std::string ToString(const T& val)
     return stream.str();
 }
 
-void Profiler::EndFrame()
+void Profiler::StartFrame(void *)
+{
+}
+
+void Profiler::EndFrame(void *)
 {
     if(!enabled)
         return;
@@ -126,24 +138,27 @@ float Profiler::GetTime(const std::string &name) const
 	return profiles.find(name)->second.time;
 }
 
+const char *Profiler::GetDebugText(base::TextStyle style) const
+{
+	return output.c_str();
+}
 
 // == ProfileBlock ================================================================================
 
-ProfileBlock::ProfileBlock(const std::string& name) : name(name)
+ProfileBlock::ProfileBlock(void *ctx,const char *name) : name(name)
 {
-    Profiler::GetGlobalProfiler().StartProfile(name);
+    Profiler::GetGlobalProfiler().Begin(ctx,name);
 }
 
 ProfileBlock::~ProfileBlock()
 {
-    Profiler::GetGlobalProfiler().EndProfile(name);
+    Profiler::GetGlobalProfiler().End();
 }
 
 float ProfileBlock::GetTime() const
 {
 	return Profiler::GetGlobalProfiler().GetTime(name);
 }
-
 
 Profiler::ProfileData::~ProfileData()
 {

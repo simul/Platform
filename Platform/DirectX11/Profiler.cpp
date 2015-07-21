@@ -30,7 +30,7 @@ Profiler &Profiler::GetGlobalProfiler()
 {
 	return GlobalProfiler;
 }
-Profiler::Profiler():pUserDefinedAnnotation(NULL),max_level(12)
+Profiler::Profiler():pUserDefinedAnnotation(NULL)
 {
 
 }

@@ -149,18 +149,9 @@ namespace simul
 				int last_child_updated;
 				int child_index;
 			};
-			void SetMaxLevel(int m)
-			{
-				max_level=m;
-			}
-			int GetMaxLevel() const
-			{
-				return max_level;
-			}
 		protected:
 			ProfileMap profileMap;
 			ProfileMap rootMap;
-			int max_level;				// Maximum level of nesting.
 			int level;
 			UINT64 currFrame;
 
