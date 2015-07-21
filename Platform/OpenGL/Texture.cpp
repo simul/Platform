@@ -427,19 +427,26 @@ void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &)
 
 void Texture::deactivateRenderTarget()
 {
-	//glFlush(); 
+	if(!m_fb)
+		return;
 	GL_ERROR_CHECK
 	FramebufferGL::CheckFramebufferStatus();
 	GL_ERROR_CHECK
 	// remove m_fb from the stack and...
 	FramebufferGL::fb_stack.pop();
 	// ..restore the n one down.
-	GLuint last_fb=FramebufferGL::fb_stack.top();
+	GLuint last_fb=FramebufferGL::fb_stack.size()?FramebufferGL::fb_stack.top():0;
 	GL_ERROR_CHECK
     glBindFramebuffer(GL_FRAMEBUFFER,last_fb);
 	GL_ERROR_CHECK
 	glViewport(0,0,main_viewport[2],main_viewport[3]);
 	GL_ERROR_CHECK
+	if(last_fb)
+	{
+		const GLenum buffers[9] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7 };
+		glDrawBuffers(1, buffers);
+		GL_ERROR_CHECK
+	}
 }
 
 int Texture::GetLength() const

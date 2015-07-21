@@ -126,27 +126,28 @@ void OpenGLRenderer::InitializeGL()
 
 void OpenGLRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
+	GL_ERROR_CHECK
 	r->RestoreDeviceObjects(NULL);
 	clouds::TrueSkyRenderer::RestoreDeviceObjects(r);
 	//depthFramebuffer.RestoreDeviceObjects(renderPlatform);
 	//depthFramebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
 	//depthFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
-ERRNO_CHECK
+	GL_ERROR_CHECK
 	if(weatherRenderer)
 		weatherRenderer->RestoreDeviceObjects(renderPlatform);
-ERRNO_CHECK
+	GL_ERROR_CHECK
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects(renderPlatform);
-ERRNO_CHECK
+	GL_ERROR_CHECK
 	if(baseOpticsRenderer)
 		baseOpticsRenderer->RestoreDeviceObjects(renderPlatform);
-ERRNO_CHECK
+	GL_ERROR_CHECK
 	if(baseTerrainRenderer)
 		baseTerrainRenderer->RestoreDeviceObjects(renderPlatform);
 	if(sceneRenderer)
 		sceneRenderer->RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
-ERRNO_CHECK
+	GL_ERROR_CHECK
 }
 
 void OpenGLRenderer::ShutdownGL()
@@ -165,6 +166,7 @@ void OpenGLRenderer::RenderGL(int view_id)
 	const crossplatform::CameraOutputInterface *cam=cameras[view_id];
 	if (!cam)
 		return;
+	GL_ERROR_CHECK
 	static double dd=-1.0;
 	static double  DD = 1.0;
 	// Note: glDepthRange and glDepthRangef both CLAMP dd and DD to [0,1], rendering these functions near-useless.
@@ -182,6 +184,7 @@ void OpenGLRenderer::RenderGL(int view_id)
 	deviceContext.renderPlatform		=renderPlatform;
 	deviceContext.viewStruct.view_id	=view_id;
 	deviceContext.viewStruct.view		=cam->MakeViewMatrix();
+	GL_ERROR_CHECK
 	crossplatform::Viewport viewport	=renderPlatform->GetViewport(deviceContext,view_id);
 
 	view->SetResolution(viewport.w,viewport.h);
@@ -194,9 +197,12 @@ void OpenGLRenderer::RenderGL(int view_id)
 
 void OpenGLRenderer::ResizeGL(int view_id,int w,int h)
 {
+	GL_ERROR_CHECK
 	TrueSkyRenderer::ResizeView(view_id,w,h);
+	GL_ERROR_CHECK
 	if(simulHDRRenderer)
 		simulHDRRenderer->SetBufferSize(w,h);
+	GL_ERROR_CHECK
 	crossplatform::DeviceContext deviceContext;
 	deviceContext.renderPlatform	=renderPlatform;
 	deviceContext.viewStruct.view_id=view_id;
@@ -205,7 +211,9 @@ void OpenGLRenderer::ResizeGL(int view_id,int w,int h)
 	memset(&viewport,0,sizeof(viewport));
 	viewport.w=w;
 	viewport.h=h;
+	GL_ERROR_CHECK
 	renderPlatformOpenGL->SetViewports(deviceContext,1,&viewport);
+	GL_ERROR_CHECK
 }
 
 void OpenGLRenderer::ReloadTextures()

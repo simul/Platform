@@ -129,6 +129,7 @@ GL_ERROR_CHECK
 	{
 		glGenFramebuffers(1, &m_fb);
 	}
+GL_ERROR_CHECK
 	SAFE_DELETE(buffer_texture);
 	SAFE_DELETE(buffer_depth_texture);
 	buffer_texture=renderPlatform->CreateTexture();
@@ -136,6 +137,7 @@ GL_ERROR_CHECK
 	buffer_depth_texture=renderPlatform->CreateTexture();
 	//buffer_texture.ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,GL_RGBA,false,true,1,0);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
+GL_ERROR_CHECK
 	if(target_format!=crossplatform::UNKNOWN)
 	{
 		glBindTexture(GL_TEXTURE_2D, buffer_texture->AsGLuint());
@@ -144,6 +146,7 @@ GL_ERROR_CHECK
 		if(status!=GL_FRAMEBUFFER_COMPLETE)
 			return false;
 	}
+GL_ERROR_CHECK
 	if(depth_format!=crossplatform::UNKNOWN)
 	{
 		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,depth_format,false,false,false);
@@ -156,8 +159,9 @@ GL_ERROR_CHECK
 		buffer_depth_texture->width=Width;
 		buffer_depth_texture->length=Height;
 	}
-	
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+GL_ERROR_CHECK
+	glBindFramebuffer(GL_FRAMEBUFFER,fb_stack.size()?fb_stack.top():0);
+GL_ERROR_CHECK
 	return true;
 }
 
@@ -167,6 +171,7 @@ void FramebufferGL::NoDepth()
 
 bool FramebufferGL::IsValid() const
 {
+GL_ERROR_CHECK
 	return (m_fb!=0);
 }
 

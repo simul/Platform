@@ -919,6 +919,10 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 	if(depth)
 		d=depth->AsD3D11DepthStencilView();
 	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(num,rt,d);
+
+	int w=targs[0]->width, h = targs[0]->length;
+	crossplatform::Viewport v[] = { { 0, 0, w, h, 0, 1.f }, { 0, 0, w, h, 0, 1.f }, { 0, 0, w, h, 0, 1.f } };
+	SetViewports(deviceContext,num,v);
 }
 
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
@@ -1330,14 +1334,13 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	{
 		HRESULT hr=S_OK;
-		D3DXMATRIX world, tmp1, tmp2;
-		D3DXMatrixIdentity(&world);
 		ID3DX11EffectTechnique *tech			=debugEffect->asD3DX11Effect()->GetTechniqueByName("lines_2d");
 		
 		unsigned int num_v=1;
 		D3D11_VIEWPORT								viewport;
 		pContext->RSGetViewports(&num_v,&viewport);
-		dx11::setParameter(debugEffect->asD3DX11Effect(),"rect",vec4(-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height));
+		debugConstants.rect=vec4(-1.f,-1.f,2.f,2.f);//-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height);
+		debugConstants.Apply(deviceContext);
 
 		ID3D11Buffer *vertexBuffer=NULL;
 		// Create the vertex buffer:

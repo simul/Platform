@@ -122,36 +122,34 @@ void RenderPlatform::RestoreDeviceObjects(void *unused)
 		std::cerr << "Error initializing GLEW! " << glewGetErrorString(glewError) << "\n";
 		return;
 	}
-	if (!glewIsSupported("GL_ARB_debug_output"))
+	if(glewIsSupported("GL_ARB_debug_output"))
 	{
-		if(glewIsSupported("GL_ARB_debug_output"))
-		{
 	GL_ERROR_CHECK
-			std::cout << "Register OpenGL debug callback " << std::endl;
-			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-			glDebugMessageCallback(openglDebugCallbackFunction, nullptr);
-			glDebugMessageControl( GL_DONT_CARE ,
-				GL_DEBUG_TYPE_OTHER ,
-				GL_DONT_CARE ,
-				0, NULL , GL_FALSE );
-			GLuint unusedIds = 0;
+		std::cout << "Register OpenGL debug callback " << std::endl;
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(openglDebugCallbackFunction, nullptr);
+		glDebugMessageControl( GL_DONT_CARE ,
+			GL_DEBUG_TYPE_OTHER ,
+			GL_DONT_CARE ,
+			0, NULL , GL_FALSE );
+		GLuint unusedIds = 0;
 // Enabling only two par
-		/*	glDebugMessageControl(GL_DONT_CARE,
-				GL_DEBUG_TYPE_ERROR,
-				GL_DONT_CARE,
-				0,
-				&unusedIds,
-				GL_TRUE);
-			glDebugMessageInsert(	GL_DEBUG_SOURCE_APPLICATION ,
-				GL_DEBUG_TYPE_ERROR,
-				1,
-				GL_DEBUG_SEVERITY_HIGH ,
-				-1,
-				"Testing gl callback output");*/
-		}
-		else
-			std::cout << "glDebugMessageCallback not available" <<std::endl;
+	/*	glDebugMessageControl(GL_DONT_CARE,
+			GL_DEBUG_TYPE_ERROR,
+			GL_DONT_CARE,
+			0,
+			&unusedIds,
+			GL_TRUE);
+		glDebugMessageInsert(	GL_DEBUG_SOURCE_APPLICATION ,
+			GL_DEBUG_TYPE_ERROR,
+			1,
+			GL_DEBUG_SEVERITY_HIGH ,
+			-1,
+			"Testing gl callback output");*/
 	}
+	else
+		std::cout << "glDebugMessageCallback not available" <<std::endl;
+	
 	GL_ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
@@ -1059,7 +1057,7 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 		glViewport(0,0,w,h);
 	}
 	GL_ERROR_CHECK
-	fb_stack.push_back(m_fb);
+	FramebufferGL::fb_stack.push(m_fb);
 	GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 	glDrawBuffers(num, buffers);
 	GL_ERROR_CHECK
@@ -1068,8 +1066,8 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext)
 {
 	GL_ERROR_CHECK
-	GLuint popped_fb=fb_stack.back();
-	fb_stack.pop_back();
+	GLuint popped_fb=FramebufferGL::fb_stack.top();
+	FramebufferGL::fb_stack.pop();
 	SIMUL_ASSERT(m_fb==popped_fb);
 	PopRenderTargets(deviceContext);
 	SAFE_DELETE_FRAMEBUFFER(m_fb);
@@ -1086,7 +1084,9 @@ crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext &,int num,crossplatform::Viewport *vps)
 {
+	GL_ERROR_CHECK
 	glViewport(vps->x,vps->y,vps->w,vps->h);
+	GL_ERROR_CHECK
 }
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &,crossplatform::Buffer *buffer)
@@ -1149,7 +1149,7 @@ void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &)
 	viewport.y=vp[1];
 	viewport.w=vp[2];
 	viewport.h=vp[3];
-	fb_stack.push_back(current_fb);
+	FramebufferGL::fb_stack.push(current_fb);
 	viewport_stack.push_back(viewport);
 	GL_ERROR_CHECK
 }
@@ -1157,14 +1157,24 @@ void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &)
 void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &)
 {
 	GL_ERROR_CHECK
-	GLuint last_fb=fb_stack.back();
+	GLuint last_fb=FramebufferGL::fb_stack.top();
     glBindFramebuffer(GL_FRAMEBUFFER,last_fb);
 	crossplatform::Viewport viewport=viewport_stack.back();
 	GLint vp[]={viewport.x,viewport.y,viewport.w,viewport.h};
 	glViewport(vp[0],vp[1],vp[2],vp[3]);
-	fb_stack.pop_back();
+	FramebufferGL::fb_stack.pop();
 	viewport_stack.pop_back();
 	GL_ERROR_CHECK
+	//TODO: Better implementation of glDrawBuffers
+	//GLuint fb=FramebufferGL::fb_stack.size()?FramebufferGL::fb_stack.top():0;
+	//glBindFramebuffer(0,fb);
+	GL_ERROR_CHECK
+	if(last_fb)
+	{
+		const GLenum buffers[9] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7 };
+		glDrawBuffers(1, buffers);
+	GL_ERROR_CHECK
+	}
 }
 
 GLenum toGLTopology(crossplatform::Topology t)
@@ -1242,25 +1252,21 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &,crossplatform::Pos
 	
 }
 
-void RenderPlatform::Draw2dLines	(crossplatform::DeviceContext &,crossplatform::PosColourVertex *lines,int vertex_count,bool strip)
+void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip)
 {
-	
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
-    
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_CULL_FACE);
-	glDepthMask(GL_FALSE);
+	debugConstants.rect=vec4(0,0,1.f,1.f);//-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height);
+	debugConstants.Apply(deviceContext);
+	debugEffect->Apply(deviceContext,debugEffect->GetTechniqueByName("lines_2d"),0);
 	glBegin(strip?GL_LINE_STRIP:GL_LINES);
 	for(int i=0;i<vertex_count;i++)
 	{
 		crossplatform::PosColourVertex &V=lines[i];
 		glColor4fv(V.colour);
+		glTexCoord4fv(V.colour);
 		glVertex3fv(V.pos);
 	}
 	glEnd();
-	glUseProgram(0);
+	debugEffect->Unapply(deviceContext);
 	
 }
 

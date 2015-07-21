@@ -107,7 +107,6 @@ namespace simul
 			static int FormatCount(crossplatform::PixelFormat p);
 		protected:
 			crossplatform::ConstantBuffer<RescaleVertexShaderConstants> rescaleVertexShaderConstants;
-			std::vector<GLuint> fb_stack;
 			std::vector<crossplatform::Viewport> viewport_stack;
 			crossplatform::Topology currentTopology;
 			GLuint empty_vao;
