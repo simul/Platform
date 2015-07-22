@@ -1,11 +1,19 @@
 #pragma once
 #include "Simul/Base/RuntimeError.h"
+#ifdef _MSC_VER
 #include <windows.h>
+#include <direct.h>
+#else
+#define OutputDebugString
+#define _getcwd
+#endif
+#ifndef _MAX_PATH
+#define _MAX_PATH 500
+#endif
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <time.h>
-#include <direct.h>
 #include <cerrno>
 
 typedef void (__stdcall *DebugOutputCallback)(const char *);
