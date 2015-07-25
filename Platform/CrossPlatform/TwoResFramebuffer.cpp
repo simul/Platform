@@ -19,7 +19,7 @@ TwoResFramebuffer::TwoResFramebuffer()
 	,Height(0)
 	,Downscale(0)
 	,pixelOffset(0.f,0.f)
-	,depthFormat(RGBA_16_FLOAT)
+	,depthFormat(RGBA_32_FLOAT)
 	,final_octave(0)
 	,volume_num(0)
 {

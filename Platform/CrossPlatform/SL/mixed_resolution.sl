@@ -352,11 +352,11 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture,int2 source_dims,uint2 source
 	}
 	else
 	{
-		farthest_nearest.y=min(farthest_nearest.y,dmin);
-		farthest_nearest.x=max(farthest_nearest.x,dmax);
+		farthest_nearest.y=min(farthest_nearest.y,d1);
+		farthest_nearest.x=max(farthest_nearest.x,d1);
 	}
 	float edge=0.0;
-	if(farthest_nearest.x!=farthest_nearest.y)
+/*	if(farthest_nearest.x!=farthest_nearest.y)
 	{
 		if(depthInterpretationStruct.reverseDepth)
 		{
@@ -374,7 +374,7 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture,int2 source_dims,uint2 source
 		edge	=abs(fn.x-fn.y);
 		edge	=step(EDGE_FACTOR,edge);
 		farthest_nearest.xy=saturate(farthest_nearest.xy);
-	}
+	}*/
 
 	vec4 res=vec4(farthest_nearest,edge,0.0);
 	return res;
