@@ -225,14 +225,9 @@ namespace simul
 			crossplatform::Effect *solidEffect;
 			std::set<crossplatform::Material*> materials;
 			std::vector<std::string> GetTexturePathsUtf8();
-			simul::base::MemoryInterface *GetMemoryInterface()
-			{
-				return memoryInterface;
-			}
-			crossplatform::Effect *GetDebugEffect()
-			{
-				return debugEffect;
-			}
+			simul::base::MemoryInterface *GetMemoryInterface();
+			void SetMemoryInterface(simul::base::MemoryInterface *m);
+			crossplatform::Effect *GetDebugEffect();
 			ConstantBuffer<DebugConstants> &GetDebugConstantBuffer();
 		protected:
 			simul::base::MemoryInterface *memoryInterface;

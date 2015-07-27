@@ -176,6 +176,22 @@ std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 	return texturePathsUtf8;
 }
 
+simul::base::MemoryInterface *RenderPlatform::GetMemoryInterface()
+{
+	return memoryInterface;
+}
+
+void RenderPlatform::SetMemoryInterface(simul::base::MemoryInterface *m)
+{
+	// TODO: shutdown old memory, test for leaks at RenderPlatform shutdown.
+	memoryInterface=m;
+}
+
+crossplatform::Effect *RenderPlatform::GetDebugEffect()
+{
+	return debugEffect;
+}
+
 void RenderPlatform::SetShaderBinaryPath(const char *path_utf8)
 {
 	shaderBinaryPathUtf8 = path_utf8;
