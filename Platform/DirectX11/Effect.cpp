@@ -636,7 +636,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 			ID3DX11EffectTechnique *t=const_cast<ID3DX11EffectTechnique*>(tech);
 			t->GetDesc(&desc);
 			std::cerr<<"Passes are: ";
-			for(int i=0;i<desc.Passes;i++)
+			for(int i=0;i<(int)desc.Passes;i++)
 			{
 				ID3DX11EffectPass *p=tech->GetPassByIndex(i);
 				D3DX11_PASS_DESC pdesc;
