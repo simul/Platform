@@ -7,7 +7,7 @@ namespace sce
 {
 	namespace Gnmx
 	{
-		class GfxContext;
+		class LightweightGfxContext;
 	}
 }
 namespace simul
@@ -39,9 +39,9 @@ namespace simul
 			{
 				return (IDirect3DDevice9*)platform_context;
 			}
-			inline sce::Gnmx::GfxContext *asGfxContext()
+			inline sce::Gnmx::LightweightGfxContext *asGfxContext()
 			{
-				return (sce::Gnmx::GfxContext*)platform_context;
+				return (sce::Gnmx::LightweightGfxContext*)platform_context;
 			}
 			ViewStruct viewStruct;
 		};
