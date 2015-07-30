@@ -12,7 +12,7 @@
 
 uniform Texture3D cloudDensity					SIMUL_TEXTURE_REGISTER(0);
 uniform Texture3D cloudDensity2					SIMUL_TEXTURE_REGISTER(1);
-//uniform Texture2D noiseTexture					SIMUL_TEXTURE_REGISTER(2);
+
 uniform Texture2D cloudShadowTexture			SIMUL_TEXTURE_REGISTER(2);
 uniform Texture2D lossTexture					SIMUL_TEXTURE_REGISTER(3);
 uniform Texture2D inscTexture					SIMUL_TEXTURE_REGISTER(4);
@@ -313,8 +313,10 @@ FarNearDepthPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDept
 	FarNearDepthPixelOutput fn;
 	fn.farColour	=f.colour;
 	fn.nearColour	=f.nearColour;
-	//fn.nearColour	=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,0);
+
 	fn.nearFarDepth	=f.nearFarDepth;
+fn.farColour.g=1.0;
+fn.nearColour.r=1.0;
 	return fn;
 }
 

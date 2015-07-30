@@ -494,6 +494,7 @@ technique glow_exposure_gamma
 }
 
 // special blend for 3-colour blending!
+//TODO: implement different blend for each RT on all platforms.
 BlendState CompositeBlend
 {
 	BlendEnable[0]	=TRUE;
