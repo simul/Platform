@@ -150,7 +150,7 @@ void Mesh::BeginDraw(crossplatform::DeviceContext &,crossplatform::ShadingMode p
 		glDisable(GL_LIGHT5);
 		glDisable(GL_LIGHT6);
 		glDisable(GL_LIGHT7);*/
-		float unity4[]={1.0f,1.0f,1.0f,1.0f};
+//		float unity4[]={1.0f,1.0f,1.0f,1.0f};
 		//glLightfv(GL_LIGHT0,GL_AMBIENT	,unity4);
 		//glLightfv(GL_LIGHT0,GL_DIFFUSE	,unity4);
 		//glLightfv(GL_LIGHT0,GL_SPECULAR	,unity4);
@@ -224,6 +224,6 @@ void Mesh::EndDraw(crossplatform::DeviceContext &) const
 	
     
 }
-void Mesh::GetVertices(void *target,void *)
+void Mesh::GetVertices(void *,void *)
 {
 }

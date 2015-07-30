@@ -176,7 +176,7 @@ GL_ERROR_CHECK
 }
 
 	static bool fliptarget=false;
-void FramebufferGL::Activate(crossplatform::DeviceContext &deviceContext)
+void FramebufferGL::Activate(crossplatform::DeviceContext &)
 {
 	if(!m_fb)
 		CreateBuffers();
@@ -254,7 +254,7 @@ void FramebufferGL::ActivateViewport(crossplatform::DeviceContext &,float viewpo
 	activate_count++;
 }
 
-void FramebufferGL::Deactivate(crossplatform::DeviceContext &deviceContext)
+void FramebufferGL::Deactivate(crossplatform::DeviceContext &)
 {
 //	if(fliptarget)
 	{
@@ -399,6 +399,6 @@ void FramebufferGL::CheckFramebufferStatus()
     }
 }
 
-void FramebufferGL::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)
+void FramebufferGL::CalcSphericalHarmonics(crossplatform::DeviceContext &)
 {
 }

@@ -33,14 +33,6 @@ namespace simul
 			void LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files);
 			bool IsValid() const;
 			void InvalidateDeviceObjects();
-			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
-			{
-				return NULL;
-			}
-			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0)
-			{
-				return NULL;
-			}
 			GLuint AsGLuint()
 			{
 				return pTextureObject;

@@ -95,7 +95,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-void Query::GetData(crossplatform::DeviceContext &,void *data,size_t sz)
+void Query::GetData(crossplatform::DeviceContext &,void *data,size_t )
 {
 GL_ERROR_CHECK
 	GLuint ok=0;
@@ -133,7 +133,7 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	SAFE_DELETE_BUFFER(ubo);
 }
 
-void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int idx)
+void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int )
 {
 	if(errno!=0)
 	{
@@ -207,7 +207,7 @@ PlatformStructuredBuffer::PlatformStructuredBuffer()
 				,write_data(0)
 			{
 			}
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *,int ct,int unit_size,bool ,void *init_data)
 {
 	InvalidateDeviceObjects();
 	num_elements=ct;
@@ -254,7 +254,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &)
 	read_data=NULL;
 }
 
-void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext &deviceContext)
+void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext &)
 {
 	/*	for(int i=0;i<NUM_STAGING_BUFFERS-1;i++)
 		std::swap(stagingBuffers[(NUM_STAGING_BUFFERS-1-i)],stagingBuffers[(NUM_STAGING_BUFFERS-2-i)]);
@@ -262,7 +262,7 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext &de
 }
 
 
-void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceContext,void *data)
+void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &,void *data)
 {
 	GL_ERROR_CHECK
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
@@ -323,7 +323,7 @@ void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceC
 	Apply(deviceContext,effect,name);
 }
 
-void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &deviceContext)
+void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &)
 {
 }
 
@@ -599,9 +599,10 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write,int 
 	else
 		texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
 	if(tex)
-		glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write);
+		glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write,mip);
 	GL_ERROR_CHECK
 }
+
 void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex)
 {
 	SetTex(name,tex,false,0);
@@ -775,7 +776,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	deviceContext.activeTechnique=currentTechnique;
 }
 
-void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
+void Effect::Reapply(crossplatform::DeviceContext &)
 {
 	if(apply_count!=1)
 		SIMUL_BREAK("Effect::Reapply can only be called after Apply and before Unapply!")
