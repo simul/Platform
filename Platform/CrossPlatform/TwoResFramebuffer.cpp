@@ -64,8 +64,8 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		lowResFramebuffers[i]->SetDepthFormat(crossplatform::UNKNOWN);
 		lowResFramebuffers[i]->SetUseFastRAM(true, true);
 	}
-	lowResFramebuffers[2]->SetFormat(crossplatform::RGBA_16_FLOAT);
-	lowResFramebuffers[0]	->SetDepthFormat(crossplatform::D_16_UNORM);
+	//lowResFramebuffers[2]->SetFormat(crossplatform::RGBA_16_FLOAT);
+//	lowResFramebuffers[0]	->SetDepthFormat(crossplatform::D_16_UNORM);
 	ERRNO_CHECK
 	for(int i=0;i<4;i++)
 	{
