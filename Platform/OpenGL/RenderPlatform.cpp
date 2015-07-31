@@ -33,7 +33,7 @@ using namespace opengl;
             void *userParam);*/
 
 // http://blog.nobel-joergensen.com/2013/02/17/debugging-opengl-part-2-using-gldebugmessagecallback/
-void GLAPIENTRY openglDebugCallbackFunction(GLenum source,
+void GLAPIENTRY openglDebugCallbackFunction(GLenum /*source*/,
                                            GLenum type,
                                            GLuint id,
                                            GLenum severity,
@@ -132,7 +132,7 @@ void RenderPlatform::RestoreDeviceObjects(void *unused)
 			GL_DEBUG_TYPE_OTHER ,
 			GL_DONT_CARE ,
 			0, NULL , GL_FALSE );
-		GLuint unusedIds = 0;
+//		GLuint unusedIds = 0;
 // Enabling only two par
 	/*	glDebugMessageControl(GL_DONT_CARE,
 			GL_DEBUG_TYPE_ERROR,
@@ -237,7 +237,7 @@ void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext
 	pass;
 }
 		
-void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,const double *matrix)
+void RenderPlatform::DrawMarker(crossplatform::DeviceContext &,const double *matrix)
 {
     glColor3f(0.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -293,7 +293,7 @@ void RenderPlatform::DrawLine(crossplatform::DeviceContext &,const double *pGlob
     glEnd();
 }
 
-void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &,const double *pGlobalPosition)
+void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &,const double *)
 {
     glColor3f(1.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -418,10 +418,7 @@ GL_ERROR_CHECK
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
 	,crossplatform::EffectTechnique *technique,const char *pass)
 {
-	if(false)
-		glEnable(GL_BLEND);
-	else
-		glDisable(GL_BLEND);
+	glDisable(GL_BLEND);
 GL_ERROR_CHECK
 glDisable(GL_CULL_FACE);
 glDisable(GL_DEPTH_TEST);
@@ -979,7 +976,7 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext &,const crosspl
 		glDepthFunc(toGlComparison(S->desc.depth.comparison));
 	}
 }
-void RenderPlatform::Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source)
+void RenderPlatform::Resolve(crossplatform::DeviceContext &,crossplatform::Texture *destination,crossplatform::Texture *source)
 {
 	GL_ERROR_CHECK
 	//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -1006,14 +1003,14 @@ void *RenderPlatform::GetDevice()
 	return NULL;
 }
 
-void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &,int ,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout,const int *vertexStep)
+void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &,int ,int /*num_buffers*/,crossplatform::Buffer **buffers,const crossplatform::Layout *,const int *)
 {
 	GL_ERROR_CHECK
 	glBindVertexArray(((opengl::Buffer*)buffers[0])->vao );
 	GL_ERROR_CHECK
 }
 
-void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplatform::Buffer *buffer,int start_index)
+void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &,crossplatform::Buffer *buffer,int/* start_index*/)
 {
 	if (buffer)
 	{
