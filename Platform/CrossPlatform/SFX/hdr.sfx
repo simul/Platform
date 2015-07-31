@@ -302,6 +302,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,shadowTexture);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
+	result.multiply=vec4(1.0,1.0,1.0,1.0);
 	return result;
 }
 
@@ -504,13 +505,6 @@ BlendState CompositeBlend
     BlendOp			=ADD;
 };
 
-BlendState SpecialBlend
-{
-	BlendEnable[0]	=TRUE;
-	BlendEnable[1]	=FALSE;
-	SrcBlend		=ONE;
-	DestBlend		=INV_SRC_ALPHA;
-};
 
 technique blur
 {
@@ -524,7 +518,6 @@ technique blur
 		SetPixelShader(CompileShader(ps_5_0,PS_Blur()));
     }
 }
-
 
 fxgroup composite_atmospherics
 {

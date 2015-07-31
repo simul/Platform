@@ -315,8 +315,7 @@ FarNearDepthPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDept
 	fn.nearColour	=f.nearColour;
 
 	fn.nearFarDepth	=f.nearFarDepth;
-fn.farColour.g=1.0;
-fn.nearColour.r=1.0;
+
 	return fn;
 }
 
