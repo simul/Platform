@@ -291,34 +291,6 @@ bool simul::opengl::RenderAngledQuad(const float *dir,float half_angle_radians)
 	return true;
 }
 
-void simul::opengl::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety,bool centred)
-{
-	
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
-    glDisable(GL_CULL_FACE);
-	glDepthMask(GL_FALSE);
-	glColor4f(colr[0],colr[1],colr[2],colr[3]);
-
-	static float ff=1000.f;
-	//float sz=sqrt(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]);
-	float x=p[0]+(float)offsetx/ff;
-	float y=p[1]-(float)offsety/ff;
-	float z=p[2]-(float)offsety/ff;
-
-	glRasterPos3f(x,y,z);
-	const char *s=text;
-	while(*s)
-	{
-#ifndef WIN64
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,*s);
-#endif
-		s++;
-	}
-	
-}
-
 void simul::opengl::setParameter(GLuint program,const char *name,float value)
 {
 	GLint loc=glGetUniformLocation(program,name);

@@ -266,6 +266,42 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 {
 }
 
+void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx,int offsety,bool centred)
+{
+	unsigned int num_v=1;
+	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
+	
+	mat4 wvp;
+	if(centred)
+		crossplatform::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+	else
+		crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+	static bool tr=false;
+	if(tr)
+		wvp.transpose();
+	vec4 clip_pos;
+	clip_pos=wvp*vec4(p[0],p[1],p[2],1.0f);
+	if(clip_pos.w<0)
+		return;
+	clip_pos.x/=clip_pos.w;
+	clip_pos.y/=clip_pos.w;
+	static bool ml=true;
+	vec2 pos;
+	pos.x=(1.0f+clip_pos.x)/2.0f;
+	if(mirrorY)
+		pos.y=(1.0f+clip_pos.y)/2.0f;
+	else
+		pos.y=(1.0f-clip_pos.y)/2.0f;
+	if(ml)
+	{
+		pos.x*=viewport.w;
+		pos.y*=viewport.h;
+	}
+
+	Print(deviceContext,(int)pos.x+offsetx,(int)pos.y+offsety,text,colr,NULL);
+}
+
+
 void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend)
 {
 	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend);

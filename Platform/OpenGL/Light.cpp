@@ -25,7 +25,7 @@ opengl::Light::~Light()
     glDisable(mLightIndex);
 }
 
-void opengl::Light::UpdateLight(const double *lLightGlobalPosition,float lConeAngle,const float lLightColor[4]) const
+void opengl::Light::UpdateLight(const double * /*lLightGlobalPosition*/,float lConeAngle,const float lLightColor[4]) const
 {
 	//
    // 

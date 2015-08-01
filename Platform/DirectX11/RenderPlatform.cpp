@@ -1438,43 +1438,6 @@ void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,cons
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
-void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx,int offsety,bool centred)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	unsigned int num_v=1;
-	D3D11_VIEWPORT viewport;
-	pContext->RSGetViewports(&num_v,&viewport);
-	
-	mat4 wvp;
-	if(centred)
-		crossplatform::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-	else
-		crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-	static bool tr=false;
-	if(tr)
-		wvp.transpose();
-	vec4 clip_pos;
-	clip_pos=wvp*vec4(p[0],p[1],p[2],1.0f);
-	if(clip_pos.w<0)
-		return;
-	clip_pos.x/=clip_pos.w;
-	clip_pos.y/=clip_pos.w;
-	static bool ml=true;
-	vec2 pos;
-	pos.x=(1.0f+clip_pos.x)/2.0f;
-	if(mirrorY)
-		pos.y=(1.0f+clip_pos.y)/2.0f;
-	else
-		pos.y=(1.0f-clip_pos.y)/2.0f;
-	if(ml)
-	{
-		pos.x*=viewport.Width;
-		pos.y*=viewport.Height;
-	}
-
-	Print(deviceContext,(int)pos.x+offsetx,(int)pos.y+offsety,text,colr,NULL);
-}
-
 void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 {
 	if(!m_pCubemapVtxDecl)

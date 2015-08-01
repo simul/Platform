@@ -1070,7 +1070,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &devic
 	SAFE_DELETE_FRAMEBUFFER(m_fb);
 	GL_ERROR_CHECK
 }
-crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &,int index)
+crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &,int )
 {
 	crossplatform::Viewport viewport;
 	GL_ERROR_CHECK
@@ -1079,7 +1079,7 @@ crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext
 	return viewport;
 }
 
-void RenderPlatform::SetViewports(crossplatform::DeviceContext &,int num,crossplatform::Viewport *vps)
+void RenderPlatform::SetViewports(crossplatform::DeviceContext &,int ,crossplatform::Viewport *vps)
 {
 	GL_ERROR_CHECK
 	glViewport(vps->x,vps->y,vps->w,vps->h);
@@ -1094,13 +1094,13 @@ void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &,crossplatform
 	GL_ERROR_CHECK
 }
 
-void RenderPlatform::SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t)
+void RenderPlatform::SetTopology(crossplatform::DeviceContext &,crossplatform::Topology t)
 {
 	currentTopology=t;
 	GL_ERROR_CHECK
 }
 
-void RenderPlatform::EnsureEffectIsBuilt				(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options)
+void RenderPlatform::EnsureEffectIsBuilt				(const char *,const std::vector<crossplatform::EffectDefineOptions> &)
 {
 	/// We will not do this for GL, because there's NO BINARY SHADER FORMAT!
 #if 0
@@ -1265,11 +1265,6 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 	glEnd();
 	debugEffect->Unapply(deviceContext);
 	
-}
-
-void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &,const float *p,const char *text,const float* colr,int offsetx,int offsety,bool centred)
-{
-	::PrintAt3dPos(p,text,colr,offsetx,offsety);
 }
 
 void RenderPlatform::DrawCircle		(crossplatform::DeviceContext &,const float *,float ,const float *,bool)

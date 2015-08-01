@@ -108,7 +108,7 @@ ERRNO_CHECK
 	delete [] data;
 	GL_ERROR_CHECK
 	dim=2;
-	depth=texture_files.size();
+	depth=(int)texture_files.size();
 	int num_mips=8;
 	int m=1;
 	glTexStorage3D(	GL_TEXTURE_2D_ARRAY
@@ -147,7 +147,7 @@ bool opengl::Texture::IsValid() const
 	return (pTextureObject>0);
 }
 
-void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt)
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *,void *t,void *,bool make_rt)
 {
 	if(!externalTextureObject)
 		SAFE_DELETE_TEXTURE(pTextureObject);
@@ -190,7 +190,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPla
 }
 
 void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
-	,crossplatform::PixelFormat p,bool computable,bool rendertarget,bool depthstencil,int num_samples,int aa_quality,bool wrap)
+	,crossplatform::PixelFormat p,bool /*computable*/,bool rendertarget,bool depthstencil,int /*num_samples*/,int /*aa_quality*/,bool wrap)
 {
 	if(w==width&&l==length&&pixelFormat==p)
 		return;
@@ -253,22 +253,22 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num_layers,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
+void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int num_layers,crossplatform::PixelFormat f,bool /*computable*/,bool /*rendertarget*/,bool /*cubemap*/)
 {
 	pixelFormat=f;
 	if(w==width&&l==length)
 		return;
 	pixelFormat=f;
 	GLuint internal_format=opengl::RenderPlatform::ToGLFormat(pixelFormat);
-	GLuint layout=opengl::RenderPlatform::ToGLExternalFormat(pixelFormat);
-	GLenum datatype=opengl::RenderPlatform::DataType(pixelFormat);
+//	GLuint layout=opengl::RenderPlatform::ToGLExternalFormat(pixelFormat);
+//	GLenum datatype=opengl::RenderPlatform::DataType(pixelFormat);
 	width=w;
 	length=l;
 	depth=num_layers;
 	dim=2;
 	glGenTextures(1,&pTextureObject);
 	glBindTexture(GL_TEXTURE_2D_ARRAY,pTextureObject);
-	int m=1;
+//	int m=1;
 	
 	glTexStorage3D(	GL_TEXTURE_2D_ARRAY,
  					1,
@@ -293,10 +293,10 @@ void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *ren
 	}*/
 }
 
-void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)
+void Texture::setTexels(crossplatform::DeviceContext &,const void *src,int texel_index,int num_texels)
 {
 	GL_ERROR_CHECK
-	GLuint frmt		=opengl::RenderPlatform::ToGLFormat(pixelFormat);
+//	GLuint frmt		=opengl::RenderPlatform::ToGLFormat(pixelFormat);
 	GLenum ext_frmt	=opengl::RenderPlatform::ToGLExternalFormat(pixelFormat);
 	GLenum dt		=opengl::RenderPlatform::DataType(pixelFormat);
 	if(dim==2)
@@ -565,7 +565,7 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 	GL_ERROR_CHECK
 }
 
-void Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
+void Texture::GenerateMips(crossplatform::DeviceContext &)
 {
 }
 

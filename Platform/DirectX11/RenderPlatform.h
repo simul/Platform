@@ -71,7 +71,6 @@ namespace simul
 			void DrawCircle		(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false);
 			void DrawCube		(crossplatform::DeviceContext &deviceContext);
 			void DrawCubemap	(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *cubemap,float offsetx,float offsety,float exposure,float gamma);
-			void PrintAt3dPos	(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0,bool centred=false);
 
 			void ApplyDefaultMaterial();
 			crossplatform::Material					*CreateMaterial();

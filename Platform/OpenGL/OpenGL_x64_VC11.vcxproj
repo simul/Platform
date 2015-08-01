@@ -166,7 +166,6 @@
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="FramebufferGL.cpp" />
-    <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="LoadGLImage.cpp" />
@@ -174,7 +173,6 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="objload.cpp" />
     <ClCompile Include="OpenGLRenderer.cpp" />
-    <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="PrintEffectLog.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
@@ -186,7 +184,6 @@
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="FramebufferGL.h" />
-    <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="LoadGLImage.h" />
@@ -195,7 +192,6 @@
     <ClInclude Include="objload.h" />
     <ClInclude Include="OpenGLCallbackInterface.h" />
     <ClInclude Include="OpenGLRenderer.h" />
-    <ClInclude Include="Overlay.h" />
     <ClInclude Include="PrintEffectLog.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="RenderPlatform.h" />

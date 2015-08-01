@@ -138,7 +138,7 @@ float Profiler::GetTime(const std::string &name) const
 	return profiles.find(name)->second.time;
 }
 
-const char *Profiler::GetDebugText(base::TextStyle style) const
+const char *Profiler::GetDebugText(base::TextStyle ) const
 {
 	return output.c_str();
 }
