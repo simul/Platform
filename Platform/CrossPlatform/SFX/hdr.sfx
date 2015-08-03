@@ -302,7 +302,6 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,shadowTexture);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
-	result.multiply=vec4(1.0,1.0,1.0,1.0);
 	return result;
 }
 

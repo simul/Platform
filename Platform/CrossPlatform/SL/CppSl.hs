@@ -335,7 +335,7 @@
 		r.w=m*v.w;
 		return r;
 	}
-	inline vec4 operator*(const mat4 &m,vec4 &v)
+	inline vec4 operator*(const mat4 &m,const vec4 &v)
 	{
 		vec4 r;
 		r.x=m._11*v.x+m._12*v.y+m._13*v.z+m._14*v.w;
