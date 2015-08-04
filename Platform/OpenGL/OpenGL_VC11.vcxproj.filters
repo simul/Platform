@@ -23,9 +23,6 @@
     <ClCompile Include="FramebufferGL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GpuCloudGenerator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="LoadGLImage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -74,9 +71,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FramebufferGL.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GpuCloudGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LoadGLImage.h">
