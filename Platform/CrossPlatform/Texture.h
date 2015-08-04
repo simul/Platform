@@ -70,8 +70,8 @@ namespace simul
 				,dim(0)
 				,mips(1)
 				,pixelFormat(crossplatform::UNKNOWN)
-				,num_rt(0)
-			,renderPlatform(NULL){}
+				,renderPlatform(NULL)
+				,num_rt(0){}
 			virtual ~Texture();
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files)=0;
