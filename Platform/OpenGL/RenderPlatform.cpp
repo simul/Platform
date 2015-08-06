@@ -19,6 +19,7 @@
 #include <ios>					// For std::cout and cerr .
 #include <iomanip>				// For std::cerr formatting.
 #include "Simul/Platform/CrossPlatform/Camera.h"
+#include "GL/glfx.h"
 using namespace simul;
 using namespace opengl;
 
@@ -89,7 +90,7 @@ void GLAPIENTRY openglDebugCallbackFunction(GLenum /*source*/,
 		break;
 	};
 }
-#include "GL/glfx.h"
+
 void RenderPlatform::T1()
 {
 	glBlendEquationSeparatei(0, GL_FUNC_ADD,GL_FUNC_ADD);
@@ -100,6 +101,7 @@ RenderPlatform::RenderPlatform()
 	:reverseDepth(false)
 	,currentTopology(crossplatform::TRIANGLELIST)
 	,empty_vao(0)
+	,glslang_validation(true)
 {
 
 }
@@ -603,6 +605,16 @@ crossplatform::PlatformStructuredBuffer *RenderPlatform::CreatePlatformStructure
 crossplatform::Buffer *RenderPlatform::CreateBuffer()
 {
 	return new opengl::Buffer();
+}
+
+bool RenderPlatform::GetGlslangValidation() const
+{
+	return glslang_validation;
+}
+
+void RenderPlatform::SetGlslangValidation(bool v)
+{
+	glslang_validation=v;
 }
 
 GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)

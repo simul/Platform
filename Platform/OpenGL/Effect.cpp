@@ -414,7 +414,8 @@ GL_ERROR_CHECK
 			SIMUL_CERR << "Effect::Load - file not found: " << filename.c_str() <<"; did you set the paths for this RenderPlatform?"<< std::endl;
 			return;
 		}
-		glfxSetBinaryDirectory(renderPlatform->GetShaderBinaryPath());
+		glfxSetGlslangValidationEnabled(((opengl::RenderPlatform*)renderPlatform)->GetGlslangValidation());
+		glfxSetCacheDirectory(renderPlatform->GetShaderBinaryPath());
 		GLint effect = glfxGenEffect();
 		vector<string> p = renderPlatform->GetShaderPathsUtf8();
 
@@ -436,6 +437,7 @@ GL_ERROR_CHECK
 		}
 		*m=*d = NULL;
 	GL_ERROR_CHECK
+		glfxSetCacheDirectory(renderPlatform->GetShaderBinaryPath());
 		if (!glfxParseEffectFromFile(effect,fn_utf8.c_str(),paths,macros,defs))
 		{
 			std::string log=glfxGetEffectLog(effect);

@@ -49,10 +49,8 @@ namespace simul
 			void DrawCamera			(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll);
 			void DrawLineLoop		(crossplatform::DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4]);
 			void DrawTexture		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false);
-			//void DrawDepth			(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL);
 			void DrawQuad			(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL);
 			void DrawQuad			(crossplatform::DeviceContext &deviceContext);
-		//	void Print				(crossplatform::DeviceContext &deviceContext,int x	,int y	,const char *text,const float* colr=NULL,const float* bkg=NULL);
 			void DrawLines			(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false);
 			void Draw2dLines		(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int count,bool strip);
 			void DrawCircle			(crossplatform::DeviceContext &context,const float *dir,float rads,const float *colr,bool fill=false);
@@ -99,6 +97,10 @@ namespace simul
 			std::set<opengl::Material*> materials;
 			bool reverseDepth;
 			// OpenGL-specific stuff:
+			/// When compiling from sfx to glsl should we call glslang validation?
+			bool GetGlslangValidation() const;
+			/// When compiling from sfx to glsl should we call glslang validation?
+			void SetGlslangValidation(bool);
 			static GLuint ToGLFormat(crossplatform::PixelFormat p);
 			static crossplatform::PixelFormat RenderPlatform::FromGLFormat(GLuint p);
 			static GLuint ToGLExternalFormat(crossplatform::PixelFormat p);
@@ -109,6 +111,7 @@ namespace simul
 			std::vector<crossplatform::Viewport> viewport_stack;
 			crossplatform::Topology currentTopology;
 			GLuint empty_vao;
+			bool glslang_validation;
 		};
 	}
 }
