@@ -205,8 +205,23 @@
     <None Include="GLSL\shader_platform.sl" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Clouds\Clouds_x64_VC11.vcxproj">
+      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\External\freeglut\VisualStudio\2012\freeglut.vcxproj">
+      <Project>{1ae4e979-0d35-4747-bf8e-dd60358f49db}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\External\glew\build\vc11\glew_shared.vcxproj">
+      <Project>{55ae3d72-7de6-f19f-aef2-9ae8ca26cf3d}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\External\glew\build\vc11\glew_static.vcxproj">
+      <Project>{664e6f0d-6784-4760-9565-d54f8eb1edf4}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\External\glfx\glfx_x64_VC11.vcxproj">
       <Project>{3c16e3f9-ba50-45a0-a7ff-c985c7721beb}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\CrossPlatform\CrossPlatform_x64_VC11.vcxproj">
+      <Project>{7f8bc215-2b2a-4703-af7c-f7f7351fb99d}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
