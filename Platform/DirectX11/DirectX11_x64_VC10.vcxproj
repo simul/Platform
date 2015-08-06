@@ -98,8 +98,7 @@
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
-      <ShowProgress>LinkVerboseLib</ShowProgress>
-    </Link>
+          </Link>
     <PostBuildEvent>
       <Command>
       </Command>
