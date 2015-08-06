@@ -298,6 +298,17 @@
     <None Include="SimulUseDXSDK.props" />
     <None Include="SimulUseWin8SDK.props" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\External\DirectX\DirectXTex\DirectXTex\DirectXTex_Desktop_2012.vcxproj">
+      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\External\DirectX\Effects11_DXSDK\Effects11_DXSDK_2012.vcxproj">
+      <Project>{df460eab-570d-4b50-9089-2e2fc801bf38}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\External\DirectX\Effects11_Win8SDK\Effects11_2012.vcxproj">
+      <Project>{a680f4ee-3ee2-47ef-a572-981c0d44d7e3}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
