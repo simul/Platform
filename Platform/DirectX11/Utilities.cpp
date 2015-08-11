@@ -226,8 +226,8 @@ UtilityRenderer::~UtilityRenderer()
 
 struct Vertext
 {
-	D3DXVECTOR4 pos;
-	D3DXVECTOR2 tex;
+	vec4 pos;
+	vec2 tex;
 };
 
 void UtilityRenderer::DrawQuad(crossplatform::DeviceContext &deviceContext)
@@ -300,23 +300,6 @@ void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext, flo
 	ApplyPass(pContext, passname?tech->GetPassByName(passname):tech->GetPassByIndex(0));
 }
 
-void UtilityRenderer::RenderAngledQuad(crossplatform::DeviceContext &deviceContext
-									   ,const float *dr
-									   ,float half_angle_radians
-										,ID3DX11Effect* effect
-										,ID3DX11EffectTechnique* tech
-										,D3DXMATRIX view
-										,D3DXMATRIX proj
-										,D3DXVECTOR3 sun_dir)
-{
-	D3D_PRIMITIVE_TOPOLOGY previousTopology;
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	pContext->IAGetPrimitiveTopology(&previousTopology);
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(pContext,tech->GetPassByIndex(0));
-	pContext->Draw(4,0);
-	pContext->IASetPrimitiveTopology(previousTopology);
-}
 
 void UtilityRenderer::DrawSphere(crossplatform::DeviceContext &deviceContext,int latitudes,int longitudes)
 {

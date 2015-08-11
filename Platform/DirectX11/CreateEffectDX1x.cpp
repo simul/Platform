@@ -50,10 +50,6 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 #endif
 
 #ifndef SIMUL_WIN8_SDK
-	#pragma comment(lib,"d3dx9.lib")
-	#pragma comment(lib,"d3d9.lib")
-	#pragma comment(lib,"d3dx11.lib")
-	#pragma comment(lib,"dxerr.lib")
 	#pragma comment(lib,"Effects11_DXSDK.lib")
 #else
 	#ifndef _XBOX_ONE
@@ -69,12 +65,11 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 #else
 	#pragma comment(lib,"dxgi.lib")
 	#pragma comment(lib,"d3d11.lib")
-	#pragma comment(lib,"dxguid.lib")
-#if 0//defined(SIMUL_WIN8_SDK) && defined(WIN64)
-	#pragma comment(lib,"d3dcompiler_xdk.lib")
-#else
-	#pragma comment(lib,"d3dcompiler.lib")
-#endif
+	#if 0//defined(SIMUL_WIN8_SDK) && defined(WIN64)
+		#pragma comment(lib,"d3dcompiler_xdk.lib")
+	#else
+		#pragma comment(lib,"d3dcompiler.lib")
+	#endif
 #endif
 
 // winmm.lib comctl32.lib

@@ -2,7 +2,6 @@
 
 #include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
-#include <d3dx9.h>
 #include <d3dx11.h>
 #else
 //! Forward declaration for this, means we needn't include the dx11 headers yet.
