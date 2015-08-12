@@ -1258,7 +1258,6 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,cross
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	{
 		HRESULT hr=S_OK;
-		mat4  tmp1, tmp2;
 		crossplatform::EffectTechniqueGroup *g=debugEffect->GetTechniqueGroupByName(test_depth?"lines_3d_depth":"lines_3d");
 		crossplatform::Frustum f=crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
 			crossplatform::EffectTechnique *tech=g->GetTechniqueByIndex(0);
