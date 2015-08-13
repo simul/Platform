@@ -53,7 +53,7 @@ namespace simul
 						std::string left=arg.substr(0,pos);
 						std::string right=arg.substr(pos+1,arg.length()-pos-1);
 						int val=atoi(right.c_str());
-						if(left.compare("-log")==0)
+						if(left.compare("-log")==0||left.compare("-logfile")==0)
 							commandLineParams.logfile_utf8=right;
 						if(left.compare("-startx")==0)
 							commandLineParams.pos_x=val;

@@ -93,7 +93,11 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 		crossplatform::Effect *effect=NULL;
 		std::map<std::string,std::string> defines;
 		effect=renderPlatform->CreateEffect("solid",defines);
+		if(!effect)
+			return;
 		crossplatform::EffectTechnique *tech	=effect->GetTechniqueByName("solid");
+		if(!tech)
+			return;
 		tech->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
 		D3D11_INPUT_ELEMENT_DESC decl[]=
 		{
