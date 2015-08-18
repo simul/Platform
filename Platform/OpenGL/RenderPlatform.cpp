@@ -1201,13 +1201,13 @@ GLenum toGLTopology(crossplatform::Topology t)
 	case crossplatform::TRIANGLESTRIP	:
 		return GL_TRIANGLE_STRIP;	
 	case crossplatform::LINELIST_ADJ	:
-		return GL_LINES;	
+		return GL_LINES_ADJACENCY;	
 	case crossplatform::LINESTRIP_ADJ	:
-		return GL_LINE_STRIP;	
+		return GL_LINE_STRIP_ADJACENCY;	
 	case crossplatform::TRIANGLELIST_ADJ:
-		return GL_TRIANGLES;	
+		return GL_TRIANGLES_ADJACENCY;	
 	case crossplatform::TRIANGLESTRIP_ADJ:
-		return GL_TRIANGLE_STRIP;
+		return GL_TRIANGLE_STRIP_ADJACENCY;
 	default:
 		break;
 	};
