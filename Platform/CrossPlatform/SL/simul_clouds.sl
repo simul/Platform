@@ -34,7 +34,7 @@ struct All8DepthOutput
 
 float MakeRainMap(Texture3D cloudDensity,vec2 texCoords)
 {
-	vec3 texc		=vec3(texCoords.xy,0.25);
+	vec3 texc		=vec3(texCoords.xy,precipitationThreshold);
 	vec4 density	=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
 	float r			=density.z;
 	if(r<0.999)

@@ -114,8 +114,11 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 
 	uniform vec3 noise3DTexcoordOffset;
 	uniform float dropletRadius;
-	uniform vec4 localCloudPivotKm;    
-	uniform vec4 localCloudInvScaleKm; 
+
+	uniform float precipitationThreshold;
+	uniform float oq8uihtq3;
+	uniform float w4ki67w;
+	uniform float w46iw6iw;
 SIMUL_CONSTANT_BUFFER_END
 	
 

@@ -378,7 +378,6 @@ Direct3D11Manager::~Direct3D11Manager()
 
 void Direct3D11Manager::Initialize(bool use_debug,bool instrument)
 {
-	std::cout<<"1"<<std::endl;
 	HRESULT result;
 //	IDXGIFactory* factory;
 //	int  i;//, numerator, denominator;
@@ -411,7 +410,6 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument)
 			return;
 		}
 	}
-	std::cout<<"2"<<std::endl;
 	//We now have the numerator and denominator for the refresh rate.
 	//The last thing we will retrieve using the adapter is the name of the video card and the amount of memory on the video card.
 
@@ -535,7 +533,7 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument)
 	}
 	//d3dDevice->AddRef();
 	//UINT refcount2=d3dDevice->Release();
-	std::cout<<"result "<<result<<std::endl;
+	//std::cout<<"result "<<result<<std::endl;
 	SIMUL_ASSERT(result==S_OK);
 }
 
@@ -683,6 +681,7 @@ void Direct3D11Manager::Render(HWND h)
 {
 	if(windows.find(h)==windows.end())
 		return;
+ERRNO_BREAK
 	Window *w=windows[h];
 	if(!w)
 	{
@@ -700,6 +699,7 @@ void Direct3D11Manager::Render(HWND h)
 		SIMUL_CERR<<"No renderTarget exists for HWND "<<std::hex<<h<<std::endl;
 		return;
 	}
+ERRNO_BREAK
 	// Set the depth stencil state.
 	d3dDeviceContext->OMSetDepthStencilState(w->m_depthStencilState, 1);
 	// Bind the render target view and depth stencil buffer to the output render pipeline.
@@ -717,6 +717,7 @@ void Direct3D11Manager::Render(HWND h)
 	static UINT SyncInterval = 0;
     // Show the frame on the primary surface.
 	V_CHECK(w->m_swapChain->Present(SyncInterval,dwFlags));
+ERRNO_BREAK
 }
 
 void Direct3D11Manager::SetRenderer(HWND hwnd, Direct3D11CallbackInterface *ci, int view_id)

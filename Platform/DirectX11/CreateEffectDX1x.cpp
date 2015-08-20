@@ -649,7 +649,7 @@ ERRNO_CHECK
 			{
 				std::string path=path_utf8;
 				char full[_MAX_PATH];
-				if( _fullpath( full, path_utf8.c_str(), _MAX_PATH ) != NULL )
+				if( _fullpath( full, path_utf8.c_str(), _MAX_PATH )!=NULL)
 					path=full;
 				path+="/";
 				line=path+line;
