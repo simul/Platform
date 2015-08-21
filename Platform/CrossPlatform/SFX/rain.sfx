@@ -582,6 +582,7 @@ vec4 RainParticlesPS(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 	float mapped_rain =  IN.strength;
 	vis					=saturate(vis*mapped_rain);
 	vec4 result			=vec4(light*vis, vis);
+	return vec4(light,1);
 	if(rain_dist>solid_dist-splashDelta)
 	{
 	//	result.rgb		*=10.0;//vec3(1,1,1);
