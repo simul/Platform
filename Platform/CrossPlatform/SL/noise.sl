@@ -16,6 +16,16 @@ float rand3(vec3 co)
 {
     return fract(sin(dot(co.xyz,vec3(12.9898,78.233,42.1897))) * 43758.5453);
 }
+/*
+float randhash(unsigned seed,float b)
+{
+	float InverseMaxInt=1.0/4294967295.0;
+	unsigned i=(seed^unsigned(12345391))*unsigned(2654435769);
+	i^=(i<<unsigned(6))^(i>>unsigned(26));
+	i*=unsigned(2654435769);
+	i+=(i<<unsigned(5))^(i>>unsigned(12));
+	return float(b*i)*InverseMaxInt;
+}*/
 
 vec3 SphericalRandom(vec3 co)
 {
