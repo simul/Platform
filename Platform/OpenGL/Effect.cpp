@@ -496,6 +496,8 @@ bool Effect::FillInTechniques()
 	if(e<0)
 		return false;
 	GL_ERROR_CHECK
+	base::Timer t;
+	t.StartTime();
 	groups.clear();
 	int numg = (int)glfxGetTechniqueGroupCount(e);
 	for (int i = 0; i < numg; i++)
@@ -532,6 +534,7 @@ bool Effect::FillInTechniques()
 			}
 		}
 	}
+	SIMUL_CERR<<"Compile "<<t.UpdateTime()<<std::endl;
 	glfxUseTechniqueGroup(e,0);
 	// ZERO is a valid number of shaders to have in an effect:
 	return true;
