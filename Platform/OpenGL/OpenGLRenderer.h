@@ -35,17 +35,21 @@ namespace simul
 		class RenderPlatform;
 		SIMUL_OPENGL_EXPORT_CLASS OpenGLRenderer
 			:public OpenGLCallbackInterface
-			,public simul::clouds::TrueSkyRenderer
 		{
 		public:
 			OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut=true);
 			virtual ~OpenGLRenderer();
+			clouds::TrueSkyRenderer *GetTrueSkyRenderer()
+			{
+				return &trueSkyRenderer;
+			}
+			clouds::TrueSkyRenderer trueSkyRenderer;
 			META_BeginProperties
 				META_ValueProperty(bool,ShowWater,"Show water surfaces.")
 				META_ValueProperty(float,Exposure,"A linear multiplier for rendered brightness.")
 			META_EndProperties
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
-			void InvalidateDeviceObjects() override;
+			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
+			void InvalidateDeviceObjects();
 
 			int AddGLView() override;
 			void RenderGL(int) override;

@@ -55,7 +55,7 @@ using namespace std;
 static bool glut_initialized=false;
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut)
-		:clouds::TrueSkyRenderer(env,sc,m,true)
+		:trueSkyRenderer(env,sc,m,true)
 	,ShowWater(true)
 	,Exposure(1.0f)
 	,renderPlatformOpenGL(NULL)
@@ -88,20 +88,11 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 
 void OpenGLRenderer::InvalidateDeviceObjects()
 {
-	clouds::TrueSkyRenderer::InvalidateDeviceObjects();
+	trueSkyRenderer.InvalidateDeviceObjects();
 	int err=errno;
 	std::cout<<"Errno "<<err<<std::endl;
 	errno=0;
 ERRNO_CHECK
-GL_ERROR_CHECK
-	if(baseTerrainRenderer)
-		baseTerrainRenderer->InvalidateDeviceObjects();
-GL_ERROR_CHECK
-	if(weatherRenderer)
-		weatherRenderer->InvalidateDeviceObjects();
-GL_ERROR_CHECK
-	if(simulHDRRenderer)
-		simulHDRRenderer->InvalidateDeviceObjects();
 	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
 //	depthFramebuffer.InvalidateDeviceObjects();
 GL_ERROR_CHECK
@@ -117,7 +108,7 @@ GL_ERROR_CHECK
 
 int OpenGLRenderer::AddGLView() 
 {
-	return TrueSkyRenderer::AddView(false);
+	return trueSkyRenderer.AddView(false);
 }
 void OpenGLRenderer::InitializeGL()
 {
@@ -128,25 +119,7 @@ void OpenGLRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	GL_ERROR_CHECK
 	r->RestoreDeviceObjects(NULL);
-	clouds::TrueSkyRenderer::RestoreDeviceObjects(r);
-	//depthFramebuffer.RestoreDeviceObjects(renderPlatform);
-	//depthFramebuffer.InitColor_Tex(0,crossplatform::RGBA_32_FLOAT);
-	//depthFramebuffer.SetDepthFormat(crossplatform::D_32_FLOAT);
-	GL_ERROR_CHECK
-	if(weatherRenderer)
-		weatherRenderer->RestoreDeviceObjects(renderPlatform);
-	GL_ERROR_CHECK
-	if(simulHDRRenderer)
-		simulHDRRenderer->RestoreDeviceObjects(renderPlatform);
-	GL_ERROR_CHECK
-	if(baseOpticsRenderer)
-		baseOpticsRenderer->RestoreDeviceObjects(renderPlatform);
-	GL_ERROR_CHECK
-	if(baseTerrainRenderer)
-		baseTerrainRenderer->RestoreDeviceObjects(renderPlatform);
-	if(sceneRenderer)
-		sceneRenderer->RestoreDeviceObjects(renderPlatform);
-	RecompileShaders();
+	trueSkyRenderer.RestoreDeviceObjects(r);
 	GL_ERROR_CHECK
 }
 
@@ -188,11 +161,11 @@ void OpenGLRenderer::RenderGL(int view_id)
 	crossplatform::Viewport viewport	=renderPlatform->GetViewport(deviceContext,view_id);
 
 	view->SetResolution(viewport.w,viewport.h);
-	EnsureCorrectBufferSizes(view_id);
+	trueSkyRenderer.EnsureCorrectBufferSizes(view_id);
 	simul::base::SetGpuProfilingInterface(NULL,&simul::opengl::Profiler::GetGlobalProfiler());
 	
 	simul::opengl::Profiler::GetGlobalProfiler().StartFrame(NULL);
-	TrueSkyRenderer::Render(deviceContext);
+	trueSkyRenderer.Render(deviceContext);
 	
 	simul::opengl::Profiler::GetGlobalProfiler().EndFrame(NULL);
 }
