@@ -46,21 +46,21 @@ struct particleVertexOutput
 };
 
 
-vec3 WrapParticleZone(vec3 pos)
+vec3 WrapParticleZone(vec3 pos,float zoneSize)
 {
-	if(pos.z<-particleZoneSize)
-		pos.z+=2.0*particleZoneSize;
-	if(pos.x<-particleZoneSize)
-		pos.x+=2.0*particleZoneSize;
-	else if(pos.x>particleZoneSize)
-		pos.x-=2.0*particleZoneSize;
-	if(pos.y<-particleZoneSize)
-		pos.y+=2.0*particleZoneSize;
-	else if(pos.y>particleZoneSize)
-		pos.y-=2.0*particleZoneSize;
+	if(pos.z<-zoneSize)
+		pos.z+=2.0*zoneSize;
+	if(pos.x<-zoneSize)
+		pos.x+=2.0*zoneSize;
+	else if(pos.x>zoneSize)
+		pos.x-=2.0*zoneSize;
+	if(pos.y<-zoneSize)
+		pos.y+=2.0*zoneSize;
+	else if(pos.y>zoneSize)
+		pos.y-=2.0*zoneSize;
 	static const vec3 c=vec3(0.5,0.5,0.5);
-	vec3 box	=pos/(2.0*particleZoneSize)+c;
-	pos			=(frac(box)-c)*2.0*particleZoneSize;
+	vec3 box	=pos/(2.0*zoneSize)+c;
+	pos			=(frac(box)-c)*2.0*zoneSize;
 	return pos;
 }
 
@@ -142,9 +142,18 @@ shader void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 	
 	float x					=2.0*(float(idx.x)+0.5)/float(X)-1.0;		// goes between -1 and 1
 	float dx				=(x-c)*2.0;
+	float dy				=(y-0.5)*2.0;
 	float s					=exp(-dx*dx);
-	result.rgba				+=(brightness+highlight)*s;
-	
+	// a is the brightness/highlight.
+	// rgb is the normal map
+	result.a				+=(brightness+highlight)*s;
+	// given dx and dy on the circle, we assume the raindrop is at infinity from the viewer,
+	// so x and y are the position of entry to the sphere.
+	vec2 init				=vec2(dx,dy);	// initial sines of incidence angle
+	vec2 internal			=init/1.33;		// refracted sines
+	vec2 outgoing			=2.0*sin(internal-init);
+	result.rg				=asin(outgoing);
+	result.b				=sqrt(1.0-length(result.rg));
 	targetTextureArray[idx]	=(result);
 }
 
@@ -152,10 +161,10 @@ shader particleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)
 {
 	particleVertexOutput OUT;
 	TransformedParticle p0;
-	transf(p0,IN.position,0);
+	transf(p0,IN.position*particleZoneSize,0);
 	TransformedParticle p1;
 	vec3 offset=0.02*vec3(meanFallVelocity+meanFallVelocity.z*IN.velocity*flurry);
-	transf(p1,IN.position+offset,1);
+	transf(p1,IN.position*particleZoneSize+offset,1);
 	
     OUT.position0	=p0.position;
     OUT.position1	=p1.position;
@@ -452,7 +461,7 @@ struct RainParticleVertexOutput
 shader RainParticleVertexOutput VS_RainParticles(PrecipitationVertexInput inp )
 {
 	RainParticleVertexOutput p;
-	p.position			=inp.position;
+	p.position			=inp.position*particleZoneSize;
 	p.type				=inp.type;
 	p.velocity			=inp.velocity;
 	vec3 map_texc		=mul(rainMapMatrix,vec4(offset[1].xyz,1.0)).xyz;
@@ -563,12 +572,12 @@ SamplerState samAniso
     AddressV = Wrap;
 };
 
-vec4 RainParticlesPS(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
+vec4 PSRainParticles(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 {
 	//return vec4(IN.strength, 0, 1, 1.0);
 	vec4 texel			=rainTextureArray.Sample(samAniso,vec3(IN.texCoords.xy,float(IN.type)));
 	float r				=saturate(2.0*length(IN.texCoords.xy-vec2(0.5,0.5)));
-	float vis			=(1.0 - pow(r, 4.0));// *texel.r;//
+	float vis			=1;//saturate(100.0*(1.0-r)) *texel.a;//
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.depthTexc.xy,viewportToTexRegionScaleBias);
 	float solid_depth	=texture_clamp(depthTexture,depth_texc.xy).x;
 	float render_depth	=IN.clip_pos.z;
@@ -579,10 +588,9 @@ vec4 RainParticlesPS(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistRain;
 	float rain_dist		=depthToFadeDistance(render_depth,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	
-	float mapped_rain =  IN.strength;
+	float mapped_rain	=IN.strength;
 	vis					=saturate(vis*mapped_rain);
-	vec4 result			=vec4(light*vis, vis);
-	return vec4(light,1);
+	vec4 result			=vec4(light,vis);
 	if(rain_dist>solid_dist-splashDelta)
 	{
 	//	result.rgb		*=10.0;//vec3(1,1,1);
@@ -594,13 +602,13 @@ vec4 RainParticlesPS(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 	}
 	//return vec4(0,0,1,1);
 	//return vec4(rain_dist,0,solid_dist,1);
-	return vec4(result.rgb,result.a);
+	return result;
 }
 
 vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
 {
 	vec3 light			=cubeTexture.Sample(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0)).xyz).rgb;
-	return RainParticlesPS(IN,reverseDepth,light);
+	return PSRainParticles(IN,reverseDepth,light);
 }
 
 vec4 PS_RainParticles_Blur(RainParticleGeometryOutput IN,bool reverseDepth)
@@ -609,7 +617,7 @@ vec4 PS_RainParticles_Blur(RainParticleGeometryOutput IN,bool reverseDepth)
 	vec2 texc			=vec2(IN.clip_pos.x,-IN.clip_pos.y)*0.5+vec2(0.5,0.5);
 	vec3 blight			=blurTexture.Sample(clampSamplerState,texc).rgb;
 	vec3 light			=0.1*clight+blight;
-	return RainParticlesPS(IN,reverseDepth,light);
+	return PSRainParticles(IN,reverseDepth,light);
 }
 
 shader vec4 PS_RainParticles_ReverseDepth(RainParticleGeometryOutput IN) : SV_Target
@@ -625,7 +633,7 @@ shader vec4 PS_RainParticles_ForwardDepth(RainParticleGeometryOutput IN) : SV_Ta
 vec4 PS_RainParticles_NoCubemap(RainParticleGeometryOutput IN,bool reverseDepth) 
 {
 	vec3 light				=lightColour.rgb;
-	return RainParticlesPS(IN,reverseDepth,light);
+	return PSRainParticles(IN,reverseDepth,light);
 }
 
 shader vec4 PS_RainParticles_NoCubemap_ReverseDepth(RainParticleGeometryOutput IN) : SV_Target
@@ -692,7 +700,7 @@ technique rain_particles
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ReverseDepth()));
         
-        SetBlendState( AddDestInvAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//DontBlend
+        SetBlendState( AlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//DontBlend
        // SetDepthStencilState( EnableDepth, 0 );
     }
     pass forward_depth
@@ -702,7 +710,7 @@ technique rain_particles
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ForwardDepth()));
         
-        SetBlendState( AddDestInvAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
+        SetBlendState( AlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
        // SetDepthStencilState( EnableDepth, 0 );
     }
 }
@@ -715,7 +723,7 @@ technique rain_particles_no_cubemap
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ReverseDepth()));
         
-        SetBlendState( AddAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
+        SetBlendState( AlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
        // SetDepthStencilState( EnableDepth, 0 );
     }
 	pass forward_depth
@@ -725,7 +733,7 @@ technique rain_particles_no_cubemap
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ForwardDepth()));
         
-        SetBlendState( AddAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
+        SetBlendState( AlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
        // SetDepthStencilState( EnableDepth, 0 );
     }
 }
@@ -831,7 +839,7 @@ shader PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput inp,ui
 	uint Z = vertex_id - Y * 20 - X * 400;
 //	pos = vec3(float(X) / 20.0, float(Y) / 20.0, float(Z) / 20.0);
 	PrecipitationVertexInput v;
-	v.position				=particleZoneSize*pos;
+	v.position				=pos;
 	// velocity is normalized in order to scale with fall speed
 	vec3 velocity			=vec3(rand(1.7*float(vertex_id)),rand(17.01*float(vertex_id)),rand(2.087*float(vertex_id)));
 	velocity				=2.0*velocity-vec3(1.0,1.0,1.0);
@@ -846,10 +854,10 @@ shader PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput inp,ui
 shader PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput inp,uint vertex_id	: SV_VertexID)
 {
 	vec3 pos					=inp.position;
-	vec3 vel = (meanFallVelocity + meanFallVelocity.z*inp.velocity*flurry);
+	vec3 vel = (meanFallVelocity + meanFallVelocity.z*inp.velocity*flurry)/particleZoneSize;
 	pos							+=vel*timeStepSeconds;
-	pos							-=viewPositionOffset;
-	pos							=WrapParticleZone(pos);
+	pos							-=viewPositionOffset/particleZoneSize;
+	pos							=WrapParticleZone(pos,1.0);
 	inp.position = pos;
 	// 
     return inp;
