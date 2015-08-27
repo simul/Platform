@@ -94,4 +94,38 @@ vec4 Noise3D(Texture3D random_texture_3d,vec3 texCoords,int octaves,float persis
 	result		=clamp(result,vec4(-1.0,-1.0,-1.0,-1.0),vec4(1.0,1.0,1.0,1.0));
 	return result;
 }
+
+vec4 permute(vec4 x)
+{
+	return fmod((34.0*x+1.0)*x,289);
+}
+
+float cellular3x3(vec3 P)
+{
+	const float K		=1.0/7.0;
+	const float K2		=0.5/7.0;
+	const float jitter	=0.8;
+	vec3 Pi		=fmod(floor(P),289.0);
+	vec3 Pf		=fract(P);
+	vec4 Pfx	=Pf.x+vec4(-0.5,-1.5,-0.5,-1.5);
+	vec4 Pfy	=Pf.y+vec4(-0.5,-0.5,-1.5,-1.5);
+	vec4 Pfz	=Pf.z+vec4(-0.5,-0.5,-0.5,-1.5);
+
+	vec4 p 		=permute(Pi.x+vec4(0.0,1.0,0.0,1.0));
+	p 			=permute(p+Pi.y+vec4(0.0,0.0,1.0,1.0));
+	p 			=permute(p+Pi.z+vec4(0.0,0.0,1.0,1.0));
+
+	vec4 ox		=fmod(p,7.0)*K+K2;
+	vec4 oy		=fmod(floor(p*K),7.0)*K+K2;
+	vec4 oz		=fmod(floor(p*K),7.0)*K+K2;
+
+	vec4 dx		=Pfx+jitter*ox;
+	vec4 dy		=Pfy+jitter*oy;
+	vec4 dz		=Pfz+jitter*oz;
+
+	vec4 d=dx*dx+dy*dy+dz*dz;		// dist sq
+
+	d.x			=min(min(min(d.x,d.y),d.z),d.w);
+	return 1.0-1.5*d.x;
+}
 #endif

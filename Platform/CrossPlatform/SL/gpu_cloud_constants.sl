@@ -52,7 +52,7 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform int numAffectors;
 
 	uniform float baseMixingRatio;
-	uniform float paduuuu;
+	uniform int numVolumes;
 	uniform float padvvvvvv;
 	uniform float noisePeriod;
 
@@ -81,5 +81,11 @@ struct CloudAffector
 	float strength;
 	vec3 uuuuu;
 	float size;
+};
+
+struct CloudVolume_densityspace
+{
+	mat4 transformMatrix;	// transform density space to volume space.
+	vec3 extents;
 };
 #endif

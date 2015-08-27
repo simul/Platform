@@ -26,6 +26,7 @@ uniform RWTexture3D<vec4>	outputTexture;
 SamplerState lightSamplerState SIMUL_SAMPLER_REGISTER(8);
 SamplerState densSamplerState SIMUL_SAMPLER_REGISTER(9);
 uniform StructuredBuffer<CloudAffector> cloudAffectors;
+uniform StructuredBuffer<CloudVolume_densityspace> cloudVolumes;
 
 #define q							(10000.0)
 
@@ -557,6 +558,17 @@ shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_Di
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
 	float hm					=humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
 	float dens					=saturate((noise_val+2.0*hm-1.0)/diffusivity);
+	
+	vec3 wPos	= (mul(transformMatrix, vec4(densityspace_texcoord.xy,0, 1))).xyz;
+	for(int i=0;i<numVolumes;i++)
+	{
+		vec3 vol_pos=mul(cloudVolumes[i].transformMatrix,vec4(wPos,1.0));
+		vec3 offs	=vol_pos/cloudVolumes[i].extents;
+		float l		=length(offs.xy);
+		if(l<1.0)
+			dens=1.0;
+	}
+
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
 	dens						=saturate(dens);
 	
