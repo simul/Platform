@@ -95,6 +95,50 @@ shader void CS_Noise3D_float(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	/
     IMAGE_STORE_3D(targetTexture32,pos,result);
 }
 
+CS_LAYOUT(8,8,8)
+shader void CS_Worley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
+{
+	uint3 idx = g * 8 + t;
+	int3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
+	if(idx.x>=dims.x||idx.y>=dims.y||idx.z>=dims.z)
+		return;
+	vec3 texCoords		=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(dims);
+	int grid=4;
+	vec3 pos			=float(grid)*texCoords;
+	vec3 fractional,intpart;
+	fractional			=modf(pos,intpart);
+	vec3 loc			=fractional-vec3(0.5,0.5,0.5);
+/*	vec3 ctr[7]			=	{{0,0,0}
+							,{1.0,0,0}
+							,{-1.0,0,0}
+							,{0,1.0,0}
+							,{0,-1.0,0}
+							,{0,0,1.0}
+							,{0,0,-1.0}};*/
+	float p			=0;
+    for (int i = -1; i < 2; ++i)
+	{
+        for (int j = -1; j < 2; ++j)
+		{
+            for (int k = -1; k < 2; ++k)
+			{
+				vec3 c			=vec3(i,j,k);
+				vec4 random		=texture_wrap_lod(random_texture_3d,(intpart+c)/float(grid),0);
+				c				+=2.0*random.xyz;
+				float r			=1.4*saturate(0.5*random.a+0.5);
+				float k1		=length(loc-c);
+				float d			=saturate(r-k1*k1)/r;
+				p				=max(d,p);
+			}
+		}
+	}
+
+
+	vec4 result			=vec4(p,p,p,1);
+	IMAGE_STORE_3D(targetTexture8,idx,result);
+}
+
+
 CS_LAYOUT(4,4,4)
 shader void CS_MakeMips3D_float(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
@@ -190,6 +234,13 @@ technique noise_3d_compute_float
     }
 }
 
+technique voronoi_3d_compute_8bit
+{
+    pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Worley3D_8()));
+    }
+}
 technique make_mip_3d
 {
     pass p0

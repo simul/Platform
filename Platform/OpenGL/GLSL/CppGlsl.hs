@@ -8,6 +8,7 @@ constant_buffer RescaleVertexShaderConstants : register(b0)
 {
 	uniform float rescaleVertexShaderY;
 };
+#define fmod mod
 #else
 struct RescaleVertexShaderConstants
 {

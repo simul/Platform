@@ -1,5 +1,3 @@
-
-
 #ifndef SPGLSL_SL
 #define SPGLSL_SL
 #include "CppGlsl.hs"
