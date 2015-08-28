@@ -53,7 +53,7 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 
 	uniform float baseMixingRatio;
 	uniform int numVolumes;
-	uniform float padvvvvvv;
+	uniform float numWorleyOctaves;	// float for interpolation
 	uniform float noisePeriod;
 
 	uniform float sourceNoiseScaleKm;

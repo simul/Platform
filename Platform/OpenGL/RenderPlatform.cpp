@@ -1229,7 +1229,7 @@ void RenderPlatform::Draw(crossplatform::DeviceContext &deviceContext,int num_ve
 	glDrawArrays(toGLTopology(currentTopology), start_vert, num_verts); 
 }
 
-void RenderPlatform::DrawIndexed		(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
+void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
 {
 	if(!deviceContext.activeTechnique)
 		return;

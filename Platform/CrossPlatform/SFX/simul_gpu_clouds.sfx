@@ -557,12 +557,15 @@ shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_Di
 	vec3 tc						=4*noisespace_texcoord;
 	float u						=1;
 	float a						=.75;
-	for(int i=0;i<3;i++)
+	for(int i=0;i<4;i++)
 	{
-		worley					+=u*(texture_wrap_lod(worleyTexture3D,tc,0)-vec4(a,a,a,a));
-		tc*=2.0;
-		tc+=.3;
-		u*=.5;
+		if(float(i)<numWorleyOctaves)
+		{
+			worley					+=u*(texture_wrap_lod(worleyTexture3D,tc,0)-vec4(a,a,a,a));
+			tc*=2.0;
+			tc+=.3;
+			u*=.5;
+		}
 	}
 	// noise_texel is the size of a noise texel
 	float noise_texel			=1.0/float(noise_dims.z);
