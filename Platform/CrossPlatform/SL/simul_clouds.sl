@@ -61,8 +61,6 @@ vec4 CloudShadow(Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 co
 	{
 		//float u					=1.0-float(i)/float(NUM_STEPS);
 		float u						=float(i)/float(NUM_STEPS);
-		//vec3 cartesian			=vec3(pos_xy.xy,u);
-		//vec3 wpos					=mul(shadowMatrix,vec4(cartesian,1.0)).xyz;
 		vec3 texc					=lerp(texc_1,texc_2,u);//(wpos-cornerPosKm)*inverseScalesKm;
 	
 		vec4 density				=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
@@ -79,15 +77,7 @@ vec4 CloudShadow(Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 co
 
 vec4 ShowCloudShadow(Texture2D cloudShadowTexture,vec2 texCoords)
 {
-//	vec2 tex_pos		=2.0*texCoords.xy-vec2(1.0,1.0);
-//	float dist			=length(tex_pos.xy);
-//	vec2 radial_texc	=vec2(sqrt(length(tex_pos.xy)),atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536));
     vec4 lookup			=texture_clamp_lod(cloudShadowTexture,texCoords.xy,0);
-/*
-	if(radial_texc.y<0)
-		radial_texc.y	+=1.0;
-	vec4 godrays_illum	=texture_wrap_clamp(cloudGodraysTexture,vec2(radial_texc.y,dist));
-	*/
 	return vec4(lookup.rgb*lookup.a,1.0);
 }
 
@@ -203,7 +193,8 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	ambientColour				=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
 	vec3 ambient				=density.w*ambientColour.rgb;
 	vec4 c;
-	c.rgb						=(density.y*Beta+lightResponse.y*density.x)*combinedLightColour+ambient.rgb;
+	float s						=1.0;//-0.3*saturate(1.0-density.z);
+	c.rgb						=(density.y*Beta+lightResponse.y*density.x*s)*combinedLightColour+ambient.rgb;
 	c.a							=density.z;
 	brightnessFactor			=unshadowedBrightness(Beta,lightResponse,ambientColour);
 	

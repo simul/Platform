@@ -124,7 +124,7 @@ shader void CS_Worley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV
 			{
 				vec3 c			=vec3(i,j,k);
 				vec4 random		=texture_wrap_lod(random_texture_3d,(intpart+c)/float(grid),0);
-				c				+=2.0*random.xyz;
+				c				+=4.0*random.xyz;
 				float r			=1.4*saturate(0.5*random.a+0.5);
 				float k1		=length(loc-c);
 				float d			=saturate(r-k1*k1)/r;

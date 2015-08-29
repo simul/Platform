@@ -554,17 +554,16 @@ shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_Di
 	vec3 densityspace_texcoord	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec3 noisespace_texcoord	=(densityspace_texcoord+vec3(0,0,0.0*zPixel))*vec3(noiseScale)+vec3(1.0,1.0,0);
 	vec4 worley					=vec4(0,0,0,0);
-	vec3 tc						=4*noisespace_texcoord;
-	float u						=1;
+	vec3 tc						=2*noisespace_texcoord;
+	float u						=1.5;
 	float a						=.75;
 	for(int i=0;i<4;i++)
 	{
 		if(float(i)<numWorleyOctaves)
 		{
-			worley					+=u*(texture_wrap_lod(worleyTexture3D,tc,0)-vec4(a,a,a,a));
+			worley				+=u*(texture_wrap_lod(worleyTexture3D,tc,0)-vec4(a,a,a,a));
 			tc*=2.0;
 			tc+=.3;
-			u*=.5;
 		}
 	}
 	// noise_texel is the size of a noise texel
@@ -631,20 +630,18 @@ shader void CS_Lighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 		return;
 	float direct_light				=1.0;
 	IMAGE_STORE_3D(targetTexture1,int3(pos.xy,0),vec4(1.0,1.0,1.0,1.0));
-	int C=1;
+	float distance					=0.0;
 	for(uint i=1;i<dims.z;i++)
 	{
 		uint3 idx					=uint3(pos.xy,i);
-		vec4 v=vec4(direct_light,0,0,0);
+		vec4 v=vec4(distance,0,0,0);
 		IMAGE_STORE_3D(targetTexture1,idx,v);
 
-		for(int j=0;j<C;j++)
-		{
-			vec3 lightspace_texcoord	=vec3(pos.xy,float(i)+0.5+float(j)/float(C))/vec3(dims);
-			vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
-			float density				=sample_3d_lod(densityTexture,densSamplerState, densityspace_texcoord, 0).x;
-			direct_light				*=exp(-extinctions.x*density*stepLength/float(C));
-		}
+		vec3 lightspace_texcoord	=vec3(pos.xy,float(i)+0.5)/vec3(dims);
+		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
+		float density				=sample_3d_lod(densityTexture,densSamplerState, densityspace_texcoord, 0).x;
+		distance					+=density*stepLength;
+//		direct_light				*=exp(-extinctions.x*density*stepLength);
 		//if(density==0)
 		//	direct_light=1.0;
 	}
@@ -751,18 +748,21 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	//vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	//vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
 	
-	float density				=saturate(sample_3d_lod(densityTexture,wwcSamplerState,densityspace_texcoord,0).x);
+	float density		=saturate(sample_3d_lod(densityTexture,wwcSamplerState,densityspace_texcoord,0).x);
 	vec2 illum			=vec2(1.0,1.0);
 	vec3 wpos			=densityspace_texcoord*cloudScalesKm;
 	if(pos.z==0)
 		wpos.z			+=cloudScalesKm.z*zPixel;
+	float thickness		=0.0;
 	for(int i=0;i<12;i++)
 	{
 		wpos			+=lightDir*stepLength;// we expect stepLength in km for this shader
 		vec3 texc		=wpos/cloudScalesKm;
 		vec4 lookup		=texture_3d_wwc_lod(densityTexture,texc,0);
-		illum			*=exp(-extinctions.xy*lookup.x*stepLength);
+		thickness		+=lookup.x*stepLength;
 	}
+	illum.x				=exp(-extinctions.x*thickness);
+	illum.y				=exp(-extinctions.y*thickness)*(0.5+0.5*saturate(10000*thickness*thickness));
 	vec2 ambient		=vec2(1.0,1.0);
 	wpos				=densityspace_texcoord*cloudScalesKm;
 	for(int i=0;i<12;i++)
