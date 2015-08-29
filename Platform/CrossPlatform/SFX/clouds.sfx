@@ -5,6 +5,7 @@
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/simul_cloud_constants.sl"
 #include "../SL/depth.sl"
+uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(13);
 #include "../SL/simul_clouds.sl"
 #include "../SL/states.sl"
 #include "../SL/earth_shadow_fade.sl"

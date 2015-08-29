@@ -547,8 +547,8 @@ shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_Di
 	uint3 pos					=sub_pos+threadOffset;
 	uint3 dims;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
-	uint3 noise_dims;
-	GET_DIMENSIONS_3D(volumeNoiseTexture,noise_dims.x,noise_dims.y,noise_dims.z);
+	uint3 noise_dims			=uint3(128,128,128);
+	//GET_DIMENSIONS_3D(volumeNoiseTexture,noise_dims.x,noise_dims.y,noise_dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	vec3 densityspace_texcoord	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
@@ -569,7 +569,7 @@ shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_Di
 	// noise_texel is the size of a noise texel
 	float noise_texel			=1.0/float(noise_dims.z);
 	float height				=noiseScale.z;
-	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
+	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);//*texture_wrap_lod(worleyTexture3D,noisespace_texcoord,0).y;////
 	float hm					=humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
 	float dens					=saturate((noise_val+2.0*hm-1.0+2.0*worley.r)/diffusivity);
 	vec3 wPos	= (mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
@@ -762,7 +762,7 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		thickness		+=lookup.x*stepLength;
 	}
 	illum.x				=exp(-extinctions.x*thickness);
-	illum.y				=exp(-extinctions.y*thickness)*(0.5+0.5*saturate(10000*thickness*thickness));
+	illum.y				=exp(-extinctions.y*thickness)*(0.5+0.5*saturate(1000*thickness*thickness));
 	vec2 ambient		=vec2(1.0,1.0);
 	wpos				=densityspace_texcoord*cloudScalesKm;
 	for(int i=0;i<12;i++)
