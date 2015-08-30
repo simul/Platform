@@ -118,7 +118,10 @@ namespace simul
 			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
+			
+			crossplatform::ShaderResource GetShaderResource(const char *name) override;
 			void SetUnorderedAccessView(crossplatform::DeviceContext&,const char *name,crossplatform::Texture *tex,int mip=0);
+			void SetTexture		(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t) override;
 			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture *tex);
 			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture &t);
 			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);

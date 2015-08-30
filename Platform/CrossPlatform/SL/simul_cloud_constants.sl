@@ -13,24 +13,6 @@ struct LayerData
 	float pad13;
 };
 
-SIMUL_CONSTANT_BUFFER(SingleLayerConstants,5)
-	vec2 noiseOffset_;
-	float layerFade_;
-	float layerDistance_;
-	float verticalShift_;
-	float pad121;
-	float pad122;
-	float pad123;
-SIMUL_CONSTANT_BUFFER_END
-
-SIMUL_CONSTANT_BUFFER(LayerConstants,8)
-	uniform LayerData layers[255];
-	uniform int layerCount;
-	uniform int thisLayerIndex;
-	uniform int B;
-	uniform int C;
-SIMUL_CONSTANT_BUFFER_END
-
 SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 scaleOfGridCoords;

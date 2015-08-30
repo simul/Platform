@@ -519,6 +519,38 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,cr
 		simul::dx11::setTexture(asD3DX11Effect(),name,NULL);
 }
 
+crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
+{
+	crossplatform::ShaderResource res;
+	res.platform_shader_resource=0;
+	ID3DX11Effect *effect=asD3DX11Effect();
+	if(!effect)
+	{
+		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		return res;
+	}
+	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	if(!var->IsValid())
+	{
+		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader texture ")+name).c_str());
+		return res;
+	}
+	res.platform_shader_resource=(void*)var;
+	return res;
+}
+
+void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t)
+{
+	ID3DX11EffectShaderResourceVariable *var=(ID3DX11EffectShaderResourceVariable*)(shaderResource.platform_shader_resource);
+	if(var)
+	{
+		if(t)
+			var->SetResource(t->AsD3D11ShaderResourceView());
+		else
+			var->SetResource(NULL);
+	}
+}
+
 void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)
 {
 	if(!asD3DX11Effect())

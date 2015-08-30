@@ -5,7 +5,7 @@
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/simul_cloud_constants.sl"
 #include "../SL/depth.sl"
-uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(13);
+uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 #include "../SL/simul_clouds.sl"
 #include "../SL/states.sl"
 #include "../SL/earth_shadow_fade.sl"
@@ -16,17 +16,17 @@ uniform Texture3D cloudDensity2					SIMUL_TEXTURE_REGISTER(1);
 
 uniform Texture2D cloudShadowTexture			SIMUL_TEXTURE_REGISTER(2);
 uniform Texture2D lossTexture					SIMUL_TEXTURE_REGISTER(3);
-uniform Texture2D inscTexture					SIMUL_TEXTURE_REGISTER(4);
-uniform Texture2D skylTexture					SIMUL_TEXTURE_REGISTER(5);
-uniform Texture2D depthTexture					SIMUL_TEXTURE_REGISTER(6);
-uniform Texture3D noiseTexture3D				SIMUL_TEXTURE_REGISTER(7);
-uniform Texture3D lightningIlluminationTexture	SIMUL_TEXTURE_REGISTER(8);
-uniform Texture2D illuminationTexture			SIMUL_TEXTURE_REGISTER(9);
-uniform Texture2D lightTableTexture				SIMUL_TEXTURE_REGISTER(10);
-uniform Texture2D rainbowLookupTexture			SIMUL_TEXTURE_REGISTER(11);
-uniform Texture2D coronaLookupTexture			SIMUL_TEXTURE_REGISTER(12);
-uniform Texture3D volumeInscatterTexture;
-uniform Texture2D rainMapTexture;
+uniform Texture2D inscTexture					SIMUL_TEXTURE_REGISTER(1);
+uniform Texture2D skylTexture					SIMUL_TEXTURE_REGISTER(4);
+uniform Texture2D depthTexture					SIMUL_TEXTURE_REGISTER(5);
+uniform Texture3D noiseTexture3D				SIMUL_TEXTURE_REGISTER(6);
+uniform Texture3D lightningIlluminationTexture	SIMUL_TEXTURE_REGISTER(7);
+uniform Texture2D illuminationTexture			SIMUL_TEXTURE_REGISTER(8);
+uniform Texture2D lightTableTexture				SIMUL_TEXTURE_REGISTER(9);
+uniform Texture2D rainbowLookupTexture			SIMUL_TEXTURE_REGISTER(10);
+uniform Texture2D coronaLookupTexture			SIMUL_TEXTURE_REGISTER(11);
+uniform Texture3D volumeInscatterTexture		SIMUL_TEXTURE_REGISTER(1);
+uniform Texture2D rainMapTexture				SIMUL_TEXTURE_REGISTER(2);
 uniform RWTexture3D<uchar4> outputTexture3d;
 uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries;
 
@@ -126,7 +126,6 @@ shader void CS_Simulate( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	uint3 pos=g*8+t;
 	vec4 c1=TEXTURE_LOAD_3D(cloudDensity,pos);
 	vec4 c2=TEXTURE_LOAD_3D(cloudDensity2,pos);
-   // vec4 res= lerp(cloudDensity[pos],cloudDensity2[pos],cloud_interp);
 	//res.z=1.0;
 	//output[pos].rgba=res;
     vec4 res= lerp(c1,c2,cloud_interp);

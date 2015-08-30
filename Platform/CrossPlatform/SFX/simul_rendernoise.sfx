@@ -190,10 +190,10 @@ shader void CS_PerlinWorley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 		return;
 	vec3 texCoords	=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec4 result;
-	result.xyzw		=Noise3D(noise_texture_frequency,texCoords,5, persistence).x;//saturate(+Worley(texCoords,16,1)-0.7);
-	//result.y		=Worley(texCoords,16,2);
-	//result.z		=Worley(texCoords,32,1);
-	//result.w		=Worley(texCoords,64,1);
+	result.xyzw		=saturate(Noise3D(noise_texture_frequency,texCoords,5, persistence).x+Worley(texCoords,16,1)-0.5);
+	result.y		=Worley(texCoords,16,2);
+	result.z		=Worley(texCoords,32,1);
+	result.w		=Worley(texCoords,64,1);
 	IMAGE_STORE_3D(targetTexture8,idx,result);
 }
 

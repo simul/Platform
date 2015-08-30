@@ -608,6 +608,32 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write,int 
 	GL_ERROR_CHECK
 }
 
+crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
+{
+	crossplatform::ShaderResource res;
+	res.platform_shader_resource=0;
+	int var=glfxGetEffectImageNumber((GLuint)platform_effect,name);
+	if(!var)
+		var=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
+	else
+		var+=10000;
+	res.platform_shader_resource=(void*)var;
+	return res;
+}
+
+void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex)
+{
+	int texture_number=(int)shaderResource.platform_shader_resource;
+	bool write=false;
+	if(texture_number>=10000)
+	{
+		texture_number	-=10000;
+		write			=true;
+	}
+	if(tex)
+		glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth()
+			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write,0);
+}
 void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex)
 {
 	SetTex(name,tex,false,0);

@@ -716,6 +716,7 @@ ERRNO_BREAK
 	// 0 - don't wait for 60Hz refresh.
 	static UINT SyncInterval = 0;
     // Show the frame on the primary surface.
+	// TODO: what if the device is lost?
 	V_CHECK(w->m_swapChain->Present(SyncInterval,dwFlags));
 ERRNO_BREAK
 }

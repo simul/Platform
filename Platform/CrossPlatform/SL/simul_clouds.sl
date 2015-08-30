@@ -667,7 +667,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			if(!found)
 			{
 				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
-				found				=found|(density.z>0);
+				found				=found||(density.z>0);
 			}
 			if(found)
 			{
