@@ -568,7 +568,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		float a		=1.0/(-view.z+0.00001);
 		offset_vec	=(world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
 	}
-	world_pos						+=offset_vec;
+//	world_pos						+=offset_vec;
 	float viewScale					=length(viewScaled*scaleOfGridCoords);
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
 	vec3 startOffsetFromOrigin		=viewPosKm-gridOriginPosKm;
@@ -581,7 +581,14 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	
 	float distanceKm				=length(offset_vec);
 	int3 c							=c0;
-
+	
+	vec4 clrs[]						={
+										{1.0,0,0,1.0}
+										,{0,1.0,0,1.0}
+										,{0,0.25,1.0,1.0}
+										,{1.0,0.5,0,1.0}
+										,{0.5,0.0,1.0,1.0}
+										};
 	int idx=0;
 	float W							=halfClipSize;
 	const float start				=0.866*0.866;//0.707 for 2D, 0.866 for 3D;
@@ -694,8 +701,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					fade_texc.x				=sqrt(fadeDistance);
 					vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);//*sineFactor);
 					vec4 clr;
-	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,noise_texc/2.0,0);
-	density.z		=saturate(density.z+0.5*(worley.x-1.0)+0.25*(worley.y-1.0)+0.25*(worley.z-1.0)+0.25*(worley.w-1.0));
+	//vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,noise_texc/2.0,0);
+	//density.z		=saturate(density.z+0.5*(worley.x-1.0)+0.25*(worley.y-1.0)+0.25*(worley.z-1.0)+0.25*(worley.w-1.0));
 					if (noise)
 						clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
 														,density
@@ -717,6 +724,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 														,fade_texc
 														,nearFarTexc
 														,brightness_factor);
+if(idx>1)
+	idx=1;
+					clr.rgb=clrs[idx].rgb;
 					if(do_depth_mix)
 					{
 						vec4 clr_n			=clr;
