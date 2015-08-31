@@ -193,8 +193,7 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	ambientColour				=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
 	vec3 ambient				=density.w*ambientColour.rgb;
 	vec4 c;
-	float s						=1.0;//-0.3*saturate(1.0-density.z);
-	c.rgb						=(density.y*Beta+lightResponse.y*density.x*s)*combinedLightColour+ambient.rgb;
+	c.rgb						=(density.y*Beta+lightResponse.y*density.x)*combinedLightColour+ambient.rgb;
 	c.a							=density.z;
 	brightnessFactor			=unshadowedBrightness(Beta,lightResponse,ambientColour);
 	
@@ -568,26 +567,35 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		float a		=1.0/(-view.z+0.00001);
 		offset_vec	=(world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
 	}
-//	world_pos						+=offset_vec;
+	vec3 halfway					=0.5*(lightDir-view);
+	world_pos						+=offset_vec;
 	float viewScale					=length(viewScaled*scaleOfGridCoords);
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
 	vec3 startOffsetFromOrigin		=viewPosKm-gridOriginPosKm;
 	vec3 offsetFromOrigin			=world_pos-gridOriginPosKm;
-	vec3 p0							=offsetFromOrigin/scaleOfGridCoords;
+	vec3 p0							=startOffsetFromOrigin/scaleOfGridCoords;
 	int3 c0							=int3(floor(p0) + start_c_offset);
 	vec3 gridScale					=scaleOfGridCoords;
-	vec3 P0							=offsetFromOrigin/scaleOfGridCoords/2.0;
+	vec3 P0							=startOffsetFromOrigin/scaleOfGridCoords/2.0;
 	int3 C0							=c0>>1;
 	
 	float distanceKm				=length(offset_vec);
-	int3 c							=c0;
+	vec3 p							=offsetFromOrigin/scaleOfGridCoords;
+	int3 c							=int3(floor(p) + start_c_offset);
 	
 	vec4 clrs[]						={
-										{1.0,0,0,1.0}
-										,{0,1.0,0,1.0}
+										{0.0,0.0,0.0,1.0}
+										,{0.4,0.0,0.0,1.0}
+										,{0.8,0.0,0.0,1.0}
+										,{1.0,0.0,0.0,1.0}
+										,{0.0,0.2,0.0,1.0}
+										,{0.0,0.5,0.0,1.0}
+										,{0.0,0.7,0.0,1.0}
+										,{0.0,1.0,0.0,1.0}
+										,{0,0.0,1.0,1.0}
 										,{0,0.25,1.0,1.0}
-										,{1.0,0.5,0,1.0}
-										,{0.5,0.0,1.0,1.0}
+										,{0,0.5,1.0,1.0}
+										,{0,1.0,1.0,1.0}
 										};
 	int idx=0;
 	float W							=halfClipSize;
@@ -596,10 +604,14 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	const float range				=ends-start;
 	//vec3 volume_texc				=ScreenToVolumeTexcoords(clipPosToScatteringVolumeMatrix,texCoords,0.0);
 
+
 	vec4 colour						=vec4(0.0,0.0,0.0,1.0);
 	vec4 nearColour					=vec4(0.0,0.0,0.0,1.0);
 	float lastFadeDistance			=0.0;
 	int3 b							=abs(c-C0*2);
+
+
+
 	for(int j=0;j<8;j++)
 	{
 		if(max(max(b.x,b.y),0)>=W)
@@ -620,10 +632,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			C0			-=	abs(C0&int3(1,1,1));
 			C0			=	C0>>1;
 			idx			++;
-			b						=abs(c-C0*2);
+			b			=	abs(c-C0*2);
 		}
 		else break;
 	}
+	float blinn_phong=0.0;
 	bool found=false;
 	for(int i=0;i<255;i++)
 	{
@@ -693,21 +706,27 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				}
 				if(density.z>0)
 				{
+	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,noise_texc/2.0,0);
+	density.z		=saturate(1.5*density.z-0.5+0.5*(0.5*(worley.x-1.0)+0.25*(worley.y-1.0)+0.25*(worley.z-1.0)+0.25*(worley.w-1.0)));
+
 					float brightness_factor;
 					float cosine			=dot(N,viewScaled);
 					density.z				*=abs(cosine);
-				//	density.z				*=cosine;
 					density.z				*=saturate(distanceKm/0.24);
 					fade_texc.x				=sqrt(fadeDistance);
 					vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);//*sineFactor);
 					vec4 clr;
-	//vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,noise_texc/2.0,0);
-	//density.z		=saturate(density.z+0.5*(worley.x-1.0)+0.25*(worley.y-1.0)+0.25*(worley.z-1.0)+0.25*(worley.w-1.0));
+					// The "normal" that the ray has hit is equal to N, but with the negative signs of the components of viewScaled or view.
+					vec3 normal				=-N*sign(viewScaled);
+				//	blinn_phong				*=0.5;
+					blinn_phong				=0.04*pow(dot(normal,halfway),4.0)*density.z;
+
+
 					if (noise)
 						clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
 														,density
 														,BetaClouds
-														,lightResponse
+														,vec4(lightResponse.x,lightResponse.y+blinn_phong,lightResponse.zw)
 														,ambientColour
 														,world_pos
 														,cloudTexCoords
@@ -724,9 +743,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 														,fade_texc
 														,nearFarTexc
 														,brightness_factor);
-if(idx>1)
-	idx=1;
-					clr.rgb=clrs[idx].rgb;
+				//	clr.rgb=abs(normal);
+//if(idx>1)
+//	idx=1;
+					//clr.rgb=lerp(clr.rgb,clrs[idx%12].rgb,.5);
+					//clr.g=fade_inter;
 					if(do_depth_mix)
 					{
 						vec4 clr_n			=clr;

@@ -7,6 +7,7 @@
 #include "../SL/depth.sl"
 uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 #include "../SL/simul_clouds.sl"
+#include "../SL/clouds_simple.sl"
 #include "../SL/states.sl"
 #include "../SL/earth_shadow_fade.sl"
 #include "../SL/debug_constants.sl"
@@ -315,6 +316,42 @@ FarNearDepthPixelOutput PS_RaytraceNoRain(posTexVertexOutput IN,bool reverseDept
 	return fn;
 }
 
+
+FarNearDepthPixelOutput PS_RaytraceStatic(posTexVertexOutput IN,bool reverseDepth)
+{
+	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
+	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth				=reverseDepth;
+	RaytracePixelOutput f	=RaytraceCloudsStatic(
+									cloudDensity
+									,rainMapTexture
+									,noiseTexture3D
+									,lightTableTexture
+									,illuminationTexture
+									,rainbowLookupTexture
+									,coronaLookupTexture
+									,lossTexture
+									,inscTexture
+									,skylTexture,volumeInscatterTexture
+									,true
+									,depthInterpretationStruct
+									,dlookup
+									,texCoords
+									,true
+									,false
+									,cloudIrRadiance1
+									,cloudIrRadiance2
+									);
+	FarNearDepthPixelOutput fn;
+	fn.farColour	=f.colour;
+	fn.nearColour	=f.nearColour;
+
+	fn.nearFarDepth	=f.nearFarDepth;
+
+	return fn;
+}
 shader FarNearDepthPixelOutput PS_RaytraceNoRain_depthReverse(posTexVertexOutput IN)
 {
 	return PS_RaytraceNoRain(IN,true);
@@ -323,6 +360,16 @@ shader FarNearDepthPixelOutput PS_RaytraceNoRain_depthReverse(posTexVertexOutput
 shader FarNearDepthPixelOutput PS_RaytraceNoRain_depthForward(posTexVertexOutput IN)
 {
 	return PS_RaytraceNoRain(IN,false);
+}
+
+shader FarNearDepthPixelOutput PS_RaytraceStatic_depthReverse(posTexVertexOutput IN)
+{
+	return PS_RaytraceStatic(IN,true);
+}
+
+shader FarNearDepthPixelOutput PS_RaytraceStatic_depthForward(posTexVertexOutput IN)
+{
+	return PS_RaytraceStatic(IN,false);
 }
 
 shader posTexVertexOutput VS_CrossSection(idOnly IN)
@@ -492,6 +539,25 @@ fxgroup raytrace
 			SetRasterizerState( RenderNoCull );
 			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNoRain_depthForward()));
+		}
+	}
+	technique stat
+	{
+		pass depth_reverse 
+		{
+			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetDepthStencilState(WriteDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(vs_fullscreen_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceStatic_depthReverse()));
+		}
+		pass depth_forward 
+		{
+			SetBlendState(Blend1,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+			SetDepthStencilState(WriteDepth,0);
+			SetRasterizerState( RenderNoCull );
+			SetVertexShader(vs_fullscreen_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_RaytraceStatic_depthForward()));
 		}
 	}
 }
