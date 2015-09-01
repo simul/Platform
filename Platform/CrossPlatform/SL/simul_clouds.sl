@@ -700,8 +700,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				}
 				if(density.z>0)
 				{
-	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,noise_texc/2.0,0);
-	density.z		=saturate(1.5*density.z-0.5+0.5*(0.5*(worley.x-1.0)+0.25*(worley.y-1.0)+0.25*(worley.z-1.0)+0.25*(worley.w-1.0)));
+					
+	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,noise_texc,0);
+					//density.z		=saturate(4.0*density.z-0.2);
+	density.z		=saturate(density.z	+0.2*fractalScale.z*40.0*(0.5*(worley.x-1)+0.5*(worley.y-1)+0.5*(worley.z-1)+0.5*(worley.w-1)));
 
 					float brightness_factor;
 					float cosine			=dot(N,viewScaled);
@@ -711,15 +713,14 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);//*sineFactor);
 					vec4 clr;
 					// The "normal" that the ray has hit is equal to N, but with the negative signs of the components of viewScaled or view.
-					vec3 normal				=-N*sign(viewScaled);
+					vec3 normal				=0.5*(-N*sign(viewScaled)-view);
 				//	blinn_phong				*=0.5;
-					blinn_phong				=0.04*pow(dot(normal,halfway),4.0)*density.z;
-
+					blinn_phong				=0.1*pow(dot(normal,halfway),4.0)*density.z;
 
 					if (noise)
 						clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
 														,density
-														,BetaClouds
+														,BetaClouds+blinn_phong
 														,vec4(lightResponse.x,lightResponse.y+blinn_phong,lightResponse.zw)
 														,ambientColour
 														,world_pos
