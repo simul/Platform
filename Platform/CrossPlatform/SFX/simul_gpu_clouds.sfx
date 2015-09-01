@@ -566,10 +566,10 @@ float CSDensity(uint3 pos)
 	// noise_texel is the size of a noise texel
 	float noise_texel			=1.0/float(noise_dims.z);
 	float height				=noiseScale.z;
-	vec4 w						=texture_wrap_lod(worleyTexture3D,4*noisespace_texcoord,0);
+	vec4 w						=texture_wrap_lod(worleyTexture3D,3*noisespace_texcoord,0);
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);//
 	
-	noise_val					+=.5*(w.x-0.6+0.5*(w.y-0.6)+0.25*(w.z-0.6));
+	noise_val					+=0.75*(w.x-0.6+0.5*(w.y-0.6)+0.55*(w.z-0.6));
 	float hm					=humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
 	float dens					=saturate((noise_val+2.0*hm-1.0+2.0*worley.r)/diffusivity);
 	vec3 wPos					=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;

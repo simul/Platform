@@ -207,10 +207,9 @@ float NoiseFunction2(Texture3D volumeNoiseTexture,vec2 pos,int octaves,float per
 float GpuCloudMask(vec2 texCoords, vec2 maskCentre, float maskRadius, float maskFeather, float maskThickness, mat4 cloudspaceToWorldspaceMatrix)
 {
 	vec3 wPos	= (mul(cloudspaceToWorldspaceMatrix, vec4(texCoords.xy,0, 1))).xyz;
-    float dr	=maskFeather;
 	vec2 pos	=wPos.xy - maskCentre;
-    float r		=length(pos)/maskRadius;
-    float dens	=maskThickness*saturate((1.0-r)/dr);
+    float r		=length(pos);
+    float dens	=maskThickness*saturate((maskRadius-r)/maskFeather);
     return dens;
 }
 
