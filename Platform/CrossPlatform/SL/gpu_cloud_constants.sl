@@ -49,7 +49,7 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform float vorticityConfinement;
 
 	uniform float worleyNoiseStrength;
-	uniform float padGpuCC1;
+	uniform float worleyNoiseScale;
 	uniform float padGpuCC2;
 	uniform int numAffectors;
 
