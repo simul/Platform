@@ -75,12 +75,6 @@ vec4 CloudShadow(Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 co
 	return vec4(illumination,U,0.5*(shadow.x+shadow.y));//*edge
 }
 
-vec4 ShowCloudShadow(Texture2D cloudShadowTexture,vec2 texCoords)
-{
-    vec4 lookup			=texture_clamp_lod(cloudShadowTexture,texCoords.xy,0);
-	return vec4(lookup.rgb*lookup.a,1.0);
-}
-
 // from the viewer, trace outwards to find the outer and inner ranges of cloud shadow.
 // Then the outer and inner shadow distances are put in the xy.
 // Within that, the outer and inner lit distances are put in the zw.

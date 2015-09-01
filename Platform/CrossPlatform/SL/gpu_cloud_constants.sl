@@ -48,7 +48,9 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform vec3 cloudOriginKm;
 	uniform float vorticityConfinement;
 
-	uniform vec3 sourcePosKmXXXX;
+	uniform float worleyNoiseStrength;
+	uniform float padGpuCC1;
+	uniform float padGpuCC2;
 	uniform int numAffectors;
 
 	uniform float baseMixingRatio;

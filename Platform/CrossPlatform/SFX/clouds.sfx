@@ -400,7 +400,8 @@ shader vec4 PS_Show3DNoise(posTexVertexOutput IN):SV_TARGET
 
 shader vec4 PS_ShowShadow(posTexVertexOutput IN):SV_TARGET
 {
-	return ShowCloudShadow(cloudShadowTexture,IN.texCoords);
+    vec4 lookup			=texture_clamp_lod(cloudShadowTexture,IN.texCoords.xy,0);
+	return vec4(lookup.rgb*lookup.a,1.0);
 }
 
 #define CROSS_SECTION_STEPS 32
