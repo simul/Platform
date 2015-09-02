@@ -391,11 +391,11 @@ shader vec4 PS_ShowNoise(posTexVertexOutput IN):SV_TARGET
 shader vec4 PS_Show3DNoise(posTexVertexOutput IN):SV_TARGET
 {
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
-	if(IN.texCoords.y<0.5)
+	//if(IN.texCoords.y<0.5)
 		z=0.5;
 	vec4 lookup		=texture_3d_nearest_lod(noiseTexture3D,vec3(IN.texCoords,z),0);
 	//lookup=abs(lookup);
-	return vec4(0.5*(lookup.aaa+1.0),1.0);
+	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
 shader vec4 PS_ShowShadow(posTexVertexOutput IN):SV_TARGET

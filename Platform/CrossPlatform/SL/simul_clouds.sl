@@ -229,12 +229,6 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 	return c;
 }
 
-vec4 MakeNoise(Texture3D noiseTexture3D,vec3 noise_texc,float lod)
-{
-	vec4 noiseval		=texture_3d_wrap_lod(noiseTexture3D,noise_texc,lod);
-	return noiseval;
-}
-
 vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale)
 {
 	//texCoords=saturate(texCoords);
@@ -402,7 +396,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 			vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 			vec4 noiseval			=vec4(0,0,0,0);
-			noiseval				=MakeNoise(noiseTexture3D,noise_texc,3.0*fadeDistance);
+			noiseval				=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
 			vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
 			
 			if(density.z>0)
@@ -689,7 +683,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise)
-					noiseval			=MakeNoise(noiseTexture3D,noise_texc,3.0*fadeDistance);
+					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
 				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
 				if(do_rain_effect)
 				{
@@ -703,7 +697,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					
 	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
-	density.z		=saturate((1.0+worleyNoise)*density.z	+worleyNoise*(0.5*(worley.x-1)+0.5*(worley.y-1)+0.5*(worley.z-1)+0.5*(worley.w-1)));
+	density.z		=saturate((1.0+1.4*worleyNoise)*density.z	+worleyNoise*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1)));
 
 					float brightness_factor;
 					float cosine			=dot(N,viewScaled);

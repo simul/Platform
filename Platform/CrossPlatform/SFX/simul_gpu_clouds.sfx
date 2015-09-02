@@ -29,7 +29,7 @@ SamplerState densSamplerState SIMUL_SAMPLER_REGISTER(9);
 uniform StructuredBuffer<CloudAffector> cloudAffectors;
 uniform StructuredBuffer<CloudVolume_densityspace> cloudVolumes;
 
-#define q							(10000.0)
+#define q	(10000.0)
 
 struct vertexOutput
 {
@@ -554,7 +554,7 @@ float CSDensity(uint3 pos)
 	vec3 tc						=2*noisespace_texcoord;
 	float u						=1.5;
 	float a						=.75;
-	for(int i=0;i<4;i++)
+	/*f.or(int i=0;i<4;i++)
 	{
 		if(float(i)<numWorleyOctaves)
 		{
@@ -562,16 +562,23 @@ float CSDensity(uint3 pos)
 			tc*=2.0;
 			tc+=.3;
 		}
-	}
+	}*/
 	// noise_texel is the size of a noise texel
 	float noise_texel			=1.0/float(noise_dims.z);
 	float height				=noiseScale.z;
-	vec4 w						=texture_wrap_lod(worleyTexture3D,worleyNoiseScale*noisespace_texcoord,0);
+	float fl						=0.0;
+	float ff						=modf(worleyNoiseScale,fl);
+	vec3 worley_texcoord		=noisespace_texcoord;
+//	worley_texcoord.z			-=1.0*time;
+	vec4 w1						=texture_wrap_lod(worleyTexture3D,fl*worley_texcoord,0);
+	vec4 w2						=texture_wrap_lod(worleyTexture3D,(fl+1.0)*worley_texcoord,0);
+	worley						=lerp(w1,w2,ff);
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);//
 	
-	noise_val					+=worleyNoiseStrength*(w.x-0.6+0.5*(w.y-0.6)+0.55*(w.z-0.6));
+	float w						=(worley.x-1.0+0.5*(worley.y-1.0)+0.55*(worley.z-1.0));
 	float hm					=humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
-	float dens					=saturate((noise_val+2.0*hm-1.0+2.0*worley.r)/diffusivity);
+	float dens					=noise_val+2.0*hm-1.0;
+	dens						=saturate(((1.0+1.4*worleyNoiseStrength)*dens+worleyNoiseStrength*w)/diffusivity);
 	vec3 wPos					=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
 	for(int i=0;i<numVolumes;i++)
 	{

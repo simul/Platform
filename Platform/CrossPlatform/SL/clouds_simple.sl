@@ -38,7 +38,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float cos0				=dot(lightDir.xyz,view.xyz);
 	float sine				=view.z;
 
-	float min_z				=cornerPosKm.z-(fractalScale.z*1.5)/inverseScalesKm.z;
+	float min_z				=cornerPosKm.z;//-(fractalScale.z*1.5)/inverseScalesKm.z;
 	float max_z				=cornerPosKm.z+(1.0+fractalScale.z*1.5)/inverseScalesKm.z;
 	if(do_rain_effect)
 		min_z				=-1.0;
@@ -143,7 +143,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise)
-					noiseval			=MakeNoise(noiseTexture3D,noise_texc,3.0*fadeDistance);
+					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
 				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
 				if(do_rain_effect)
 				{
@@ -156,7 +156,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				{
 	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
-	density.z		=saturate((1.0+worleyNoise)*density.z	+worleyNoise*(0.5*(worley.x-1)+0.5*(worley.y-1)+0.5*(worley.z-1)+0.5*(worley.w-1)));
+	density.z		=saturate((1.0+1.4*worleyNoise)*density.z	+worleyNoise*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1)));
 					float brightness_factor;
 					density.z				*=saturate(distanceKm/0.24);
 					fade_texc.x				=sqrt(fadeDistance);
