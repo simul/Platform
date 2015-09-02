@@ -97,20 +97,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	vec3 p							=offsetFromOrigin/scaleOfGridCoords;
 	int3 c							=int3(floor(p) + start_c_offset);
 	
-	vec4 clrs[]						={
-										{0.0,0.0,0.0,1.0}
-										,{0.4,0.0,0.0,1.0}
-										,{0.8,0.0,0.0,1.0}
-										,{1.0,0.0,0.0,1.0}
-										,{0.0,0.2,0.0,1.0}
-										,{0.0,0.5,0.0,1.0}
-										,{0.0,0.7,0.0,1.0}
-										,{0.0,1.0,0.0,1.0}
-										,{0,0.0,1.0,1.0}
-										,{0,0.25,1.0,1.0}
-										,{0,0.5,1.0,1.0}
-										,{0,1.0,1.0,1.0}
-										};
 	int idx=0;
 	float W							=halfClipSize;
 	const float start				=0.866*0.866;//0.707 for 2D, 0.866 for 3D;
@@ -156,8 +142,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 				vec4 noiseval			=vec4(0,0,0,0);
-			//	if(noise)
-			//		noiseval			=MakeNoise(noiseTexture3D,noise_texc,3.0*fadeDistance);
+				if(noise)
+					noiseval			=MakeNoise(noiseTexture3D,noise_texc,3.0*fadeDistance);
 				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
 				if(do_rain_effect)
 				{
@@ -168,9 +154,9 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				}
 				if(density.z>0)
 				{
-	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,noise_texc,0);
-					density.z		=saturate(4.0*density.z-0.2);
-	density.z		=saturate(density.z	+0.2*fractalScale.z*40.0*(0.5*(worley.x-1)+0.5*(worley.y-1)+0.5*(worley.z-1)+0.5*(worley.w-1)));
+	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
+					//density.z		=saturate(4.0*density.z-0.2);
+	density.z		=saturate((1.0+worleyNoise)*density.z	+worleyNoise*(0.5*(worley.x-1)+0.5*(worley.y-1)+0.5*(worley.z-1)+0.5*(worley.w-1)));
 					float brightness_factor;
 					density.z				*=saturate(distanceKm/0.24);
 					fade_texc.x				=sqrt(fadeDistance);
@@ -200,11 +186,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 														,fade_texc
 														,nearFarTexc
 														,brightness_factor);
-				//	clr.rgb=abs(normal);
-//if(idx>1)
-//	idx=1;
-					//clr.rgb=lerp(clr.rgb,clrs[idx%12].rgb,.5);
-					//clr.g=fade_inter;
 					if(do_depth_mix)
 					{
 						vec4 clr_n			=clr;

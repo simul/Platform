@@ -98,8 +98,8 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float dropletRadius;
 
 	uniform float precipitationThreshold;
-	uniform float oq8uihtq3;
-	uniform float w4ki67w;
+	uniform float worleyScale;
+	uniform float worleyNoise;
 	uniform float w46iw6iw;
 SIMUL_CONSTANT_BUFFER_END
 	

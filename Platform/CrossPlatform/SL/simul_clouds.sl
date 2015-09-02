@@ -701,9 +701,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				if(density.z>0)
 				{
 					
-	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,noise_texc,0);
+	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
-	density.z		=saturate(density.z	+0.2*fractalScale.z*40.0*(0.5*(worley.x-1)+0.5*(worley.y-1)+0.5*(worley.z-1)+0.5*(worley.w-1)));
+	density.z		=saturate((1.0+worleyNoise)*density.z	+worleyNoise*(0.5*(worley.x-1)+0.5*(worley.y-1)+0.5*(worley.z-1)+0.5*(worley.w-1)));
 
 					float brightness_factor;
 					float cosine			=dot(N,viewScaled);
@@ -720,8 +720,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					if (noise)
 						clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
 														,density
-														,BetaClouds+blinn_phong
-														,vec4(lightResponse.x,lightResponse.y+blinn_phong,lightResponse.zw)
+														,BetaClouds//+blinn_phong
+														,lightResponse
 														,ambientColour
 														,world_pos
 														,cloudTexCoords
