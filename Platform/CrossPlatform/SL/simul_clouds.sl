@@ -37,7 +37,7 @@ float MakeRainMap(Texture3D cloudDensity,vec2 texCoords)
 	vec3 texc		=vec3(texCoords.xy,precipitationThreshold);
 	vec4 density	=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
 	float r			=density.z;
-	if(r<0.999)
+	if(r<precipitationThreshold)
 		r=0;
 	return r;
 }
@@ -195,7 +195,6 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	c.rgb						=lerp(cloudIrRadiance1,cloudIrRadiance2,saturate(cloudTexCoords.z));//*c.a;
 #endif
 	c.rgb						=applyFades(lossTexture, inscatterVolumeTexture,volumeTexCoords,c.rgb,fade_texc);
-
 	return c;
 }
 
@@ -697,7 +696,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					
 	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
-	density.z		=saturate((1.0+1.4*worleyNoise)*density.z	+worleyNoise*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1)));
+	density.z		=saturate(density.z	+worleyNoise*.25*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1)));
 
 					float brightness_factor;
 					float cosine			=dot(N,viewScaled);

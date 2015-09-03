@@ -154,9 +154,10 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				}
 				if(density.z>0)
 				{
+					density.z*=0.85;
 	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
-	density.z		=saturate((1.0+1.4*worleyNoise)*density.z	+worleyNoise*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1)));
+	density.z		=saturate((1.0)*density.z	+worleyNoise*0.25*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1)));
 					float brightness_factor;
 					density.z				*=saturate(distanceKm/0.24);
 					fade_texc.x				=sqrt(fadeDistance);
@@ -169,7 +170,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 						clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
 														,density
 														,BetaClouds
-														,vec4(lightResponse.x,lightResponse.y,lightResponse.zw)
+														,lightResponse
 														,ambientColour
 														,world_pos
 														,cloudTexCoords

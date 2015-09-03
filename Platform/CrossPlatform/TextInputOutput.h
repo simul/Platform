@@ -47,6 +47,7 @@ namespace simul
 			virtual TextInput *GetSubElement(const char *name)=0;
 			typedef std::vector<TextInput*> Array;
 			virtual Array &GetArray(const char *name)=0;
+			virtual const Array &GetArray(const char *name) const=0;
 			virtual bool HasArray(const char *name) const=0;
 		};
 		class TextOutput
@@ -108,6 +109,7 @@ namespace simul
 			// Sub-element with the given name. If null, the Value() should be non-null.
 			TextInput *GetSubElement(const char *name);
 			Array &GetArray(const char *name);
+			const Array &GetArray(const char *name) const;
 			bool HasArray(const char *name) const;
 			//std::string text;
 			std::map<std::string,std::string> properties;

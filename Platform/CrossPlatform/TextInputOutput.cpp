@@ -390,6 +390,12 @@ TextInput::Array &TextFileInput::GetArray(const char *name)
 	return arrays[name];
 }
 
+const TextInput::Array &TextFileInput::GetArray(const char *name) const
+{
+	auto j=arrays.find(name);
+	return (j)->second;
+}
+
 bool TextFileInput::HasArray(const char *name) const
 {
 	return (arrays.find(name)!=arrays.end());
