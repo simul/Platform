@@ -10,6 +10,7 @@ uniform Texture2D noise_texture SIMUL_TEXTURE_REGISTER(0);
 uniform Texture3D random_texture_3d SIMUL_TEXTURE_REGISTER(1);
 uniform RWTexture3D<vec4> targetTexture32 SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture3D<char4> targetTexture8 SIMUL_RWTEXTURE_REGISTER(1);
+uniform RWTexture3D<uchar4> targetTextureU8 SIMUL_RWTEXTURE_REGISTER(1);
 
 SamplerState samplerState 
 {
@@ -194,7 +195,7 @@ shader void CS_PerlinWorley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 	result.y		=Worley(texCoords,16,2);
 	result.z		=Worley(texCoords,32,1);
 	result.w		=Worley(texCoords,64,1);
-	IMAGE_STORE_3D(targetTexture8,idx,result);
+	IMAGE_STORE_3D(targetTextureU8,idx,result);
 }
 
 CS_LAYOUT(8,8,8)
@@ -211,7 +212,7 @@ shader void CS_Worley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV
 	result.y		=Worley(texCoords,9,2);
 	result.z		=Worley(texCoords,16,3);
 	result.w		=Worley(texCoords,24,4);
-	IMAGE_STORE_3D(targetTexture8,idx,result);
+	IMAGE_STORE_3D(targetTextureU8,idx,result);
 }
 
 CS_LAYOUT(4,4,4)

@@ -575,10 +575,10 @@ float CSDensity(uint3 pos)
 	worley						=lerp(w1,w2,ff);
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);//
 	
-	float w						=(worley.x-1.0+0.5*(worley.y-1.0)+0.55*(worley.z-1.0));
+	float w						=(worley.x-1.0+(worley.y-1.0)+(worley.z-1.0)+(worley.w-1.0));
 	float hm					=humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
 	float dens					=noise_val+2.0*hm-1.0;
-	dens						=saturate(((1.0+1.4*worleyNoiseStrength)*dens+worleyNoiseStrength*w)/diffusivity);
+	dens						=saturate(((1.0+1.2*worleyNoiseStrength)*dens+worleyNoiseStrength*w)/diffusivity);
 	vec3 wPos					=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
 	for(int i=0;i<numVolumes;i++)
 	{
