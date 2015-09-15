@@ -671,12 +671,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		b							=abs(c-C0*2);
 		if(fade>0)
 		{
-			if(!found)
+			/*if(!found)
 			{
 				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
 				found				=found||(density.z>0);
 			}
-			if(found)
+			if(found)*/
 			{
 				vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 

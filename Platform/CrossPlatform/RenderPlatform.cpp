@@ -250,6 +250,7 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	simul::math::Matrix4x4 modelviewproj;
 	simul::math::Multiply4x4(viewproj, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
 	simul::math::Matrix4x4 model(m);
+	model.Transpose();
 	simul::math::Multiply4x4(modelviewproj, model, viewproj);
 	solidConstants.worldViewProj = modelviewproj;
 	solidConstants.world = model;

@@ -548,6 +548,11 @@
 			for(int i=0;i<16;i++)
 				m[i]=v[i];
 		}
+		void operator=(const float *v)
+		{
+			for(int i=0;i<16;i++)
+				m[i]=(double)v[i];
+		}
 		void transpose()
 		{
 			for(int i=0;i<4;i++)
