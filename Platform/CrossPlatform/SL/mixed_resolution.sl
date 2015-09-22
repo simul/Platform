@@ -302,7 +302,7 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture,int2 source_dims,uint2 source_of
 	vec4 res=vec4(farthest_nearest,edge,0.0);
 	return res;
 }
-#define NEAREST_REVERSE_DEPTH (0.0002)
+#define NEAREST_REVERSE_DEPTH (10.0002)
 
 vec4 HalfscaleInitial(Texture2D sourceDepthTexture,int2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct,bool split_view)
 {
