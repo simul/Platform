@@ -700,7 +700,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 
 					float brightness_factor;
 					float cosine			=dot(N,viewScaled);
-					density.z				*=abs(cosine);
+					density.z				*=cosine;
+					density.z				*=cosine;
 					density.z				*=saturate(distanceKm/0.24);
 					fade_texc.x				=sqrt(fadeDistance);
 					vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);//*sineFactor);
