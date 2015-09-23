@@ -63,10 +63,10 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	float shadow				=shadow_lookup.x;
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
 	vec4 insc					=texture_3d_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
-	float hiResInterp			=saturate((dist - nearFarCloud.y) / nearFarCloud.w);
+	float hiResInterp			=saturate((dist - nearFarCloud.y) / max(nearFarCloud.w,0.000001));
 	// we're going to do TWO interpolations. One from zero to the near distance,
 	// and one from the near to the far distance.
-	float nearInterp			=saturate(dist / nearFarCloud.y);
+	float nearInterp			=saturate(dist / max(nearFarCloud.y,0.000001));
 	
 	vec4 cloudNear			=texture_clamp_lod(nearCloudTexture, lowResTexCoords, 0);
 	cloud					=lerp(cloudNear, cloud, hiResInterp);

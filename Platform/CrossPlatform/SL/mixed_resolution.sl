@@ -358,7 +358,6 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture,int2 source_dims,uint2 source
 		farthest_nearest.x=max(farthest_nearest.x,d1);
 	}
 	float edge=0.0;
-
 	vec4 res=vec4(farthest_nearest,edge,0.0);
 	return res;
 }

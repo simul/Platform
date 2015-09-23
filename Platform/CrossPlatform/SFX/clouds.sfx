@@ -45,7 +45,7 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	//if(sub_pos.x>=num)
 	//	return;
 	VolumeQueryResult res;
-	res.pos_km						=queryInputs[sub_pos.x];
+	res.pos_km						=queryInputs[sub_pos.x+firstInput];
 	res.valid						=1;
 	vec3 cloudWorldOffsetKm			=res.pos_km-cornerPosKm;
 	vec3 cloudTexCoords				=cloudWorldOffsetKm*inverseScalesKm;
@@ -62,14 +62,9 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 CS_LAYOUT(1,1,1)
 shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
-	//uint num=0;
-	//uint byteStride=0;
-	//queryInputs.GetDimensions(num,byteStride);
-	//if(sub_pos.x>=num/2)
-	//	return;
 	LineQueryResult res;
-	vec3 start_pos					=queryInputs[sub_pos.x*2];
-	vec3 end_pos					=queryInputs[sub_pos.x*2+1];
+	vec3 start_pos					=queryInputs[sub_pos.x*2+firstInput];
+	vec3 end_pos					=queryInputs[sub_pos.x*2+1+firstInput];
 	res.pos1_km						=start_pos;
 	res.pos2_km						=end_pos;
 	res.valid						=1;
@@ -84,9 +79,12 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	// How far over?
 	float over						=max(0.0,res.pos2_km.z-cornerPosKm.z-1.0/inverseScalesKm.z);
 	res.pos1_km						+=dir/(max(0.0001,-dir.z))*over;
+
+
 	if(dot(dir,res.pos2_km-res.pos1_km)>0.0)
 	{
 		float stepSize					=length(res.pos2_km-res.pos1_km)/32.0;
+		int i=0;
 		for(int i=0;i<33;i++)
 		{
 			vec3 pos						=lerp(res.pos1_km,res.pos2_km,float(i)/32.0);

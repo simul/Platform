@@ -581,6 +581,7 @@ float CSDensity(uint3 pos)
 	dens						=(1.0+worleyNoiseStrength)*saturate((dens)/diffusivity);
 	dens						=saturate(dens+worleyNoiseStrength*w);
 	vec3 wPos					=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
+	
 	for(int i=0;i<numVolumes;i++)
 	{
 		vec3 vol_pos		=mul(cloudVolumes[i].transformMatrix,vec4(wPos,1.0)).xyz;
@@ -601,7 +602,6 @@ float CSDensity(uint3 pos)
 	}
 
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
-	dens						=saturate(dens);
 	return dens;
 }
 
