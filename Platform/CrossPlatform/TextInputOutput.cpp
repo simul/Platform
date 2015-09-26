@@ -256,6 +256,13 @@ bool TextFileInput::Good()
 	return good;
 }
 
+bool TextFileInput::Has(const char *name) const
+{
+	if(properties.find(name)==properties.end())
+		return false;
+	return true;
+}
+
 const char *TextFileInput::Get(const char *name,const char *dflt)
 {
 	if(properties.find(name)==properties.end())
