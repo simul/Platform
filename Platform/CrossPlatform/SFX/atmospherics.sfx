@@ -23,7 +23,8 @@ uniform Texture2D cloudNearFarTexture;
 uniform Texture2D cloudGodraysTexture;
 
 uniform Texture3D cloudTexture;
-SamplerState cloudSamplerState;
+SamplerState cloudSamplerState: register( s0);
+
 uniform Texture2D moistureTexture;
 
 uniform RWTexture3D<vec4> targetVolume;
