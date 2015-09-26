@@ -55,7 +55,7 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.indirect_light				=lookup.x;
 	res.ambient_light				=lookup.w;
 	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km, rainCentreKm, rainRadiusKm);
-
+	
 	volumeQueries[sub_pos.x]		=res;
 }
 
@@ -77,9 +77,15 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	float under						=max(0.0,cornerPosKm.z-res.pos1_km.z);
 	res.pos1_km						+=dir/(max(0.0001,dir.z))*under;
 	// How far over?
-	float over						=max(0.0,res.pos2_km.z-cornerPosKm.z-1.0/inverseScalesKm.z);
+	float over						=max(0.0,res.pos1_km.z-cornerPosKm.z-1.0/inverseScalesKm.z);
 	res.pos1_km						+=dir/(max(0.0001,-dir.z))*over;
-
+	
+	// How far under?
+	 under						=max(0.0,cornerPosKm.z-res.pos2_km.z);
+	res.pos2_km						+=dir/(max(0.0001,dir.z))*under;
+	// How far over?
+	 over						=max(0.0,res.pos2_km.z-cornerPosKm.z-1.0/inverseScalesKm.z);
+	res.pos2_km						+=dir/(max(0.0001,-dir.z))*over;
 
 	if(dot(dir,res.pos2_km-res.pos1_km)>0.0)
 	{
