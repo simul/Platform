@@ -62,6 +62,10 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 CS_LAYOUT(1,1,1)
 shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
+	vec3 diff						=end_pos-start_pos;
+	float total_dist				=length(diff);
+	if(total_dist<=0.0000001)
+		return;
 	LineQueryResult res;
 	vec3 start_pos					=queryInputs[sub_pos.x*2+firstInput];
 	vec3 end_pos					=queryInputs[sub_pos.x*2+1+firstInput];
@@ -70,26 +74,32 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.valid						=1;
 	res.density						=0.0;
 	res.visibility					=1.0;
-	res.optical_thickness_km	=0.0;
-	res.first_contact_km		=length(end_pos-start_pos);
-	vec3 dir						=normalize(res.pos2_km-res.pos1_km);
+	res.optical_thickness_km		=0.0;
+	res.first_contact_km			=total_dist;
+	vec3 dir						=diff/total_dist;
 	// How far under?
-	float under						=max(0.0,cornerPosKm.z-res.pos1_km.z);
-	res.pos1_km						+=dir/(max(0.0001,dir.z))*under;
+	vec3 offsetKm1					=start_pos-cornerPosKm;
+	float under						=max(0.0,-offsetKm1.z);
+	float over						=max(0.0,offsetKm1.z-1.0/inverseScalesKm.z);
+	float start_dist				=max((1.0/(max(0.0001,-dir.z))*over,(1.0/(max(0.0001,dir.z))*under);
+	start_dist						=min(start_dist,total_dist);
+	res.pos1_km						+=dir*start_dist;
 	// How far over?
-	float over						=max(0.0,res.pos1_km.z-cornerPosKm.z-1.0/inverseScalesKm.z);
-	res.pos1_km						+=dir/(max(0.0001,-dir.z))*over;
+	//res.pos1_km						+=dir/(max(0.0001,-dir.z))*over;
 	
+	vec3 offsetKm2					=end_pos-cornerPosKm;
 	// How far under?
-	 under						=max(0.0,cornerPosKm.z-res.pos2_km.z);
-	res.pos2_km						+=dir/(max(0.0001,dir.z))*under;
-	// How far over?
-	 over						=max(0.0,res.pos2_km.z-cornerPosKm.z-1.0/inverseScalesKm.z);
-	res.pos2_km						+=dir/(max(0.0001,-dir.z))*over;
-
-	if(dot(dir,res.pos2_km-res.pos1_km)>0.0)
+	float under2					=max(0.0,-offsetKm2.z);
+	float over2						=max(0.0,offsetKm2.z-1.0/inverseScalesKm.z);
+	float end_dist					=max((1.0/(max(0.0001,-dir.z))*over2,(1.0/(max(0.0001,dir.z))*under2);
+	end_dist						=min(end_dist,total_dist);
+	end_dist						=max(start_dist,end_dist);
+	res.pos2_km						=start_pos+dir*end_dist;
+	diff							=res.pos2_km-res.pos1_km;
+	total_dist						=length(diff);
+	if(total_dist>0&&dot(dir,res.pos2_km-res.pos1_km)>0.0)
 	{
-		float stepSize					=length(res.pos2_km-res.pos1_km)/32.0;
+		float stepSize						=total_dist/32.0;
 		int i=0;
 		for(int i=0;i<33;i++)
 		{

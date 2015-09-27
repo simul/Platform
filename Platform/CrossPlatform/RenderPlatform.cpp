@@ -413,7 +413,7 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 	}
 	else
 	{
-		ss=CreateSamplerState(desc);;
+		ss=CreateSamplerState(desc);
 		sharedSamplerStates[str]=ss;
 	}
 	return ss;
