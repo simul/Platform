@@ -62,13 +62,13 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 CS_LAYOUT(1,1,1)
 shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
+	vec3 start_pos					=queryInputs[sub_pos.x*2+firstInput];
+	vec3 end_pos					=queryInputs[sub_pos.x*2+1+firstInput];
 	vec3 diff						=end_pos-start_pos;
 	float total_dist				=length(diff);
 	if(total_dist<=0.0000001)
 		return;
 	LineQueryResult res;
-	vec3 start_pos					=queryInputs[sub_pos.x*2+firstInput];
-	vec3 end_pos					=queryInputs[sub_pos.x*2+1+firstInput];
 	res.pos1_km						=start_pos;
 	res.pos2_km						=end_pos;
 	res.valid						=1;
@@ -81,7 +81,9 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	vec3 offsetKm1					=start_pos-cornerPosKm;
 	float under						=max(0.0,-offsetKm1.z);
 	float over						=max(0.0,offsetKm1.z-1.0/inverseScalesKm.z);
-	float start_dist				=max((1.0/(max(0.0001,-dir.z))*over,(1.0/(max(0.0001,dir.z))*under);
+	float zdown						=max(0.0001,-dir.z);
+	float zup						=max(0.0001,dir.z);
+	float start_dist				=max(over/zdown,under/zup);
 	start_dist						=min(start_dist,total_dist);
 	res.pos1_km						+=dir*start_dist;
 	// How far over?
@@ -91,7 +93,7 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	// How far under?
 	float under2					=max(0.0,-offsetKm2.z);
 	float over2						=max(0.0,offsetKm2.z-1.0/inverseScalesKm.z);
-	float end_dist					=max((1.0/(max(0.0001,-dir.z))*over2,(1.0/(max(0.0001,dir.z))*under2);
+	float end_dist					=max(over2/zdown,under2/zup);
 	end_dist						=min(end_dist,total_dist);
 	end_dist						=max(start_dist,end_dist);
 	res.pos2_km						=start_pos+dir*end_dist;
