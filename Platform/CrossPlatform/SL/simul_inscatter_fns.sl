@@ -37,7 +37,7 @@ float HenyeyGreenstein(float g,float cos0)
 
 vec3 PrecalculatedInscatterFunction(vec4 inscatter_factor,float BetaRayleigh,float BetaMie,vec3 mieRayleighRatio)
 {
-	vec3 mr=mieRayleighRatio.xyz;//*inscatter_factor.a
+	vec3 mr			=mieRayleighRatio.xyz;//*inscatter_factor.a
 	vec3 BetaTotal	=(BetaRayleigh+BetaMie*mr)/(vec3(1.0,1.0,1.0)+mr);
 	vec3 colour		=BetaTotal*inscatter_factor.rgb;
 	return colour;

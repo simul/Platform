@@ -46,7 +46,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform float nearZ;
 	uniform float farZ;
 	uniform float godraysIntensity;
-	uniform float wo934yhj;
+	uniform float earthShadowEffectStrength;
 	uniform float shadowRangeX;
 	uniform float dropletRadius;
 	

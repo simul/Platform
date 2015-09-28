@@ -242,7 +242,8 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 					,hazeEccentricity
 					,mieRayleighRatio
 					,maxFadeDistanceMetres
-					,godrays);
+					,godrays
+					,earthShadowEffectStrength);
 	
 	All8Output all8Output;
 	all8Output.colour1	=colours[0]*exposure;
@@ -275,7 +276,8 @@ void CS_Insc(uint3 pos,float godrays)
 					,hazeEccentricity
 					,mieRayleighRatio
 					,maxFadeDistanceMetres
-					,godrays);
+					,godrays
+					,earthShadowEffectStrength);
 	for(int i=0;i<8;i++)
 	{
 		uint3 idx=uint3(pos.xy,i);
@@ -306,7 +308,8 @@ shader void CS_Inscatter_Volume_WithGodrays( uint3 g : SV_GroupID, uint3 t : SV_
 					,hazeEccentricity
 					,mieRayleighRatio
 					,maxFadeDistanceMetres
-					,godrays);
+					,godrays
+					,earthShadowEffectStrength);
 	for(int i=0;i<8;i++)
 	{
 		uint3 idx=uint3(pos.xy,i);
@@ -337,7 +340,8 @@ shader void CS_Inscatter_Volume_WithoutGodrays( uint3 g : SV_GroupID, uint3 t : 
 					,hazeEccentricity
 					,mieRayleighRatio
 					,maxFadeDistanceMetres
-					,godrays);
+					,godrays
+					,earthShadowEffectStrength);
 	for(int i=0;i<8;i++)
 	{
 		uint3 idx=uint3(pos.xy,i);
