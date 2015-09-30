@@ -262,8 +262,7 @@ void Inscatter_All(		out vec4 colours[8]
 						,float hazeEccentricity
 						,vec3 mieRayleighRatio
 						,float maxFadeDistanceMetres
-						,float godraysIntensity
-						,float earthShadowEffectStrength)
+						,float godraysIntensity)
 {
 	vec2 clip_pos		=vec2(-1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;
@@ -271,9 +270,9 @@ void Inscatter_All(		out vec4 colours[8]
 	vec3 view			=normalize(mul(invViewProj,vec4(clip_pos,1.0,1.0)).xyz);
 	view				=normalize(view);
 	float sine			=view.z;
-	vec2 fade_texc		=vec2(0,0.5f*(1.f-sine));
+	vec2 fade_texc	=vec2(0,0.5f*(1.f-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	vec4 illum_lookup	=lerp(texture_wrap_mirror_lod(illuminationTexture,illum_texc,0),vec4(0.0,1.0,0.0,0.0),earthShadowEffectStrength);
+	vec4 illum_lookup	=texture_wrap_mirror_lod(illuminationTexture,illum_texc,0);
 	
 	float cos0			=dot(view,lightDir);
 	vec4 insc			=vec4(0,0,0,0);
@@ -310,11 +309,11 @@ void Inscatter_All(		out vec4 colours[8]
 
 		insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
 		vec4 di				=vec4(insc.rgb-prev_insc.rgb,0.5*(insc.a+prev_insc.a));
-		di					=lerp(insc_far,di,earthShadowEffectStrength);
+
 		skyl                =texture_clamp_mirror_lod(skylTexture,fade_texc,0).rgb;
 		
 		vec3 inscatter		=PrecalculatedInscatterFunction(di,BetaRayleigh,BetaMie,mieRayleighRatio);
-		total_inscatter		+=inscatter;
+		total_inscatter		+=inscatter*il;
 		vec3 colour			=total_inscatter+skyl;
 		colours[i]			=vec4(colour,il);
 		prev_insc			=insc;

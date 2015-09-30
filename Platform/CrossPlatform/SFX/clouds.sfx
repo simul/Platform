@@ -81,9 +81,7 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	vec3 offsetKm1					=start_pos-cornerPosKm;
 	float under						=max(0.0,-offsetKm1.z);
 	float over						=max(0.0,offsetKm1.z-1.0/inverseScalesKm.z);
-	float zdown						=max(0.0001,-dir.z);
-	float zup						=max(0.0001,dir.z);
-	float start_dist				=max(over/zdown,under/zup);
+	float start_dist				=max(over/max(0.0001,-dir.z),under/max(0.0001,dir.z));
 	start_dist						=min(start_dist,total_dist);
 	res.pos1_km						+=dir*start_dist;
 	// How far over?
@@ -93,7 +91,7 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	// How far under?
 	float under2					=max(0.0,-offsetKm2.z);
 	float over2						=max(0.0,offsetKm2.z-1.0/inverseScalesKm.z);
-	float end_dist					=max(over2/zdown,under2/zup);
+	float end_dist					=max(over2/max(0.0001,-dir.z),under2/max(0.0001,dir.z));
 	end_dist						=min(end_dist,total_dist);
 	end_dist						=max(start_dist,end_dist);
 	res.pos2_km						=start_pos+dir*end_dist;
