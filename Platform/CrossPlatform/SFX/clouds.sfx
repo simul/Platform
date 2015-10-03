@@ -103,7 +103,7 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	{
 		float stepSize						=total_dist/32.0;
 		int i=0;
-		for(int i=0;i<33;i++)
+		for( i=0;i<33;i++)
 		{
 			vec3 pos						=lerp(res.pos1_km,res.pos2_km,float(i)/32.0);
 			vec3 cloudTexCoords				=(pos-cornerPosKm)*inverseScalesKm;
@@ -393,6 +393,47 @@ shader posTexVertexOutput VS_CrossSection(idOnly IN)
 	return VS_ScreenQuad(IN,rect);
 }
 
+shader posTexVertexOutput VS_PlacementVolume(idOnly IN)
+{
+	posTexVertexOutput OUT;
+	vec2 poss[4];
+	poss[0]			=vec2(0.0, 0.0);
+	poss[1]			=vec2(1.0, 0.0);
+	poss[2]			=vec2(1.0, 1.0);
+	poss[3]			=vec2(0.0, 1.0);
+	vec3 pos	=vec3(0,0,0);
+	int odd=(IN.vertex_id%2);
+	if(IN.vertex_id<8)
+	{
+		pos.z=0.0;
+		int j=((IN.vertex_id)/2+odd);
+		pos.xy=poss[j%4];
+	}
+	else if(IN.vertex_id<16)
+	{
+		pos.z=1.0;
+		int i=IN.vertex_id-8;
+		int j=((i)/2+odd);
+		pos.xy=poss[j%4];
+	}
+	else
+	{
+		int i=IN.vertex_id-16;
+		int j=i/2;
+		pos.z=float(i%2);
+		pos.xy=poss[j%4];
+	}
+
+	OUT.hPosition	=mul(invViewProj,vec4(pos,1.0));
+	OUT.texCoords	=vec2(pos.z,0);
+	return OUT;
+}
+
+shader vec4 PS_PlacementVolume(posTexVertexOutput IN):SV_TARGET
+{
+	return vec4(1.0,1.0,IN.texCoords.x,1.0);
+}
+
 shader vec4 PS_Simple(posTexVertexOutput IN):SV_TARGET
 {
     return texture_wrap(cloudShadowTexture,IN.texCoords.xy);
@@ -632,6 +673,19 @@ technique moisture_accumulation
 		SetVertexShader(vs_fullscreen_5_0);
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_MoistureAccumulation()));
+    }
+}
+
+technique cloud_placement_volume
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( wireframeRasterizer );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_PlacementVolume()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_PlacementVolume()));
     }
 }
 

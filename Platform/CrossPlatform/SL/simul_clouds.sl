@@ -693,7 +693,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				}
 				if(density.z>0)
 				{
-					
 	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
 	density.z		=saturate(density.z	+worleyNoise*.25*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1)));
