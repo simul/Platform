@@ -24,8 +24,8 @@ void ExtendDepths(inout vec2 farthest_nearest,float d,bool reverseDepth)
 		farthest_nearest.y	=min(farthest_nearest.y,d);
 		farthest_nearest.x	=max(farthest_nearest.x,d);
 	}
-
 }
+
 void ExtendDepths(inout vec2 farthest_nearest,vec2 d,bool reverseDepth)
 {
 	if(reverseDepth)
@@ -38,8 +38,8 @@ void ExtendDepths(inout vec2 farthest_nearest,vec2 d,bool reverseDepth)
 		farthest_nearest.y	=min(farthest_nearest.y,min(d.x,d.y));
 		farthest_nearest.x	=max(farthest_nearest.x,max(d.x,d.y));
 	}
-
 }
+
 void ExtendDepths(inout vec2 farthest_nearest,vec4 d,bool reverseDepth)
 {
 	vec2 mx=vec2(max(d.x,d.z),max(d.y,d.w));
@@ -54,7 +54,6 @@ void ExtendDepths(inout vec2 farthest_nearest,vec4 d,bool reverseDepth)
 		farthest_nearest.y	=min(farthest_nearest.y,min(mn.x,mn.y));
 		farthest_nearest.x	=max(farthest_nearest.x,max(mx.x,mx.y));
 	}
-
 }
 
 vec2 depthToLinearDistanceM(vec2 depth,DepthIntepretationStruct depthInterpretationStruct,float max_dist)
@@ -71,7 +70,6 @@ vec2 depthToLinearDistanceM(vec2 depth,DepthIntepretationStruct depthInterpretat
 		linearFadeDistanceZ.x = min(max_dist,linearFadeDistanceZ.x);
 		linearFadeDistanceZ.y = min(max_dist,linearFadeDistanceZ.y);
 	}
-
 	return linearFadeDistanceZ;
 }
 
@@ -79,12 +77,13 @@ vec4 HalfscaleInitial_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_d
 {
 	int2 pos0			=pos*2;
 	int2 pos1			=pos0-cornerOffset;
+	pos1				=pos1%source_dims;
 #ifdef DEBUG_COMPOSITING
 	if(pos.x<3)
 		return vec4(0,0,saturate((pos1.y%3)/2.0),0);
 #endif
-	int2 max_pos=source_dims-int2(3,3);
-	int2 min_pos=int2(1,1);
+	int2 max_pos		=source_dims-int2(3,3);
+	int2 min_pos		=int2(1,1);
 	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x))
 							,max(min_pos.y,min(pos1.y,max_pos.y)));
 	pos2+=source_offset;
@@ -153,6 +152,7 @@ vec4 HalfscaleOnly_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_dims
 {
 	int2 pos0			=pos*2;
 	int2 pos1			=pos0-cornerOffset;
+	pos1				=pos1%source_dims;
 #ifdef DEBUG_COMPOSITING
 	if(pos.x<3)
 		return vec4(0,0,saturate((pos1.y%3)/2.0),0);
@@ -227,6 +227,7 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture,int2 source_dims,uint2 source_of
 	int2 pos0			=int2(pos*2);
 
 	int2 pos1			=int2(pos0)-int2(cornerOffset);
+	pos1				=pos1%source_dims;
 
 	int2 max_pos		=int2(source_dims)-int2(11,5);
 	int2 min_pos		=int2(6,3);
@@ -302,14 +303,14 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture,int2 source_dims,uint2 source_of
 	vec4 res=vec4(farthest_nearest,edge,0.0);
 	return res;
 }
-#define NEAREST_REVERSE_DEPTH (0.0002)
+#define NEAREST_REVERSE_DEPTH (10.0002)
 
 vec4 HalfscaleInitial(Texture2D sourceDepthTexture,int2 source_dims,uint2 source_offset,int2 cornerOffset,int2 pos,DepthIntepretationStruct depthInterpretationStruct,bool split_view)
 {
-	int2 pos0 = int2(pos * 2);
+	int2 pos0			=int2(pos * 2);
 
-	int2 pos1			=int2(pos0)-int2(cornerOffset);
-
+	int2 pos1			=(int2(pos0)-int2(cornerOffset)+source_dims);
+	pos1				=pos1%source_dims;
 	int2 max_pos		=int2(source_dims)-int2(3,3);
 	int2 min_pos		=int2(1,1);
 	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x)),max(min_pos.y,min(pos1.y,max_pos.y)));

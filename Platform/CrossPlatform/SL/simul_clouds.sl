@@ -169,7 +169,7 @@ vec3 applyFades(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 #ifdef INFRARED
 	//c			=skyl.rgb;
 #else
-	vec3 inscatter	=texture_3d_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0).rgb;
+	vec3 inscatter	=texture_3d_wwc_lod(inscatterVolumeTexture,volumeTexCoords,0).rgb;
 	c				+=inscatter;
 #endif
     return c;
@@ -490,6 +490,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,DepthIntepretationStruct depthInterpretationStruct
 											,vec4 dlookup
 											,vec2 texCoords
+											,vec2 unmodifiedTexCoords
 											,bool noise
 											,bool do_rain_effect
 											,vec3 cloudIrRadiance1
@@ -703,7 +704,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					density.z				*=abs(cosine);
 					density.z				*=saturate(distanceKm/0.24);
 					fade_texc.x				=sqrt(fadeDistance);
-					vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);//*sineFactor);
+					vec3 volumeTexCoords	=vec3(unmodifiedTexCoords,fade_texc.x);
 					vec4 clr;
 					// The "normal" that the ray has hit is equal to N, but with the negative signs of the components of viewScaled or view.
 					vec3 normal				=0.5*(-N*sign(viewScaled)-view);

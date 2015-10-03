@@ -59,10 +59,10 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		return;
 	for (int i = 0; i < 3; i++)
 	{
-		lowResFramebuffers[i]=renderPlatform->CreateFramebuffer();
-		lowResFramebuffers[i]->SetFormat(crossplatform::RGBA_16_FLOAT);
-		lowResFramebuffers[i]->SetDepthFormat(crossplatform::UNKNOWN);
-		lowResFramebuffers[i]->SetUseFastRAM(true, true);
+		lowResFramebuffers[i]=renderPlatform->CreateTexture();
+		//lowResFramebuffers[i]->SetFormat(crossplatform::RGBA_16_FLOAT);
+		//lowResFramebuffers[i]->SetDepthFormat(crossplatform::UNKNOWN);
+		//lowResFramebuffers[i]->SetUseFastRAM(true, true);
 	}
 	ERRNO_CHECK
 	for(int i=0;i<4;i++)
@@ -90,8 +90,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	ERRNO_CHECK
 	for (int i = 0; i < 3; i++)
 	{
-		lowResFramebuffers[i]->SetWidthAndHeight(BufferWidth, BufferHeight);
-		lowResFramebuffers[i]->RestoreDeviceObjects(r);
+		lowResFramebuffers[i]->ensureTexture2DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,crossplatform::RGBA_16_FLOAT,true,true);
 	}
 	ERRNO_CHECK
 	// We're going to TRY to encode near and far loss into two UINT's, for faster results
@@ -119,7 +118,7 @@ void TwoResFramebuffer::InvalidateDeviceObjects()
 
 void TwoResFramebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 {
-	crossplatform::Texture * targs[] = { GetLowResFramebuffer(0)->GetTexture(), GetLowResFramebuffer(1)->GetTexture(), GetLowResFramebuffer(2)->GetTexture() };
+	crossplatform::Texture * targs[] = { GetLowResFramebuffer(0), GetLowResFramebuffer(1), GetLowResFramebuffer(2) };
 	renderPlatform->ActivateRenderTargets(deviceContext,2,targs,NULL);
 }
 
@@ -135,12 +134,12 @@ crossplatform::Texture *TwoResFramebuffer::GetVolumeTexture(int num)
 
 void TwoResFramebuffer::ActivateLowRes(crossplatform::DeviceContext &deviceContext)
 {
-	for (int i = 0; i < 3; i++)
-		if(!lowResFramebuffers[i]->IsValid())
-			lowResFramebuffers[i]->CreateBuffers();
+	//for (int i = 0; i < 3; i++)
+	//	if(!lowResFramebuffers[i]->IsValid())
+	//		lowResFramebuffers[i]->CreateBuffers();
 	//if(stricmp(renderPlatform->GetName(),"OpenGL")==0)
 //		return;
-	crossplatform::Texture * targs[] = { GetLowResFramebuffer(0)->GetTexture(), GetLowResFramebuffer(1)->GetTexture(), GetLowResFramebuffer(2)->GetTexture() };
+	crossplatform::Texture * targs[] = { GetLowResFramebuffer(0), GetLowResFramebuffer(1), GetLowResFramebuffer(2) };
 ///	crossplatform::Texture * depth = GetLowResFramebuffer(0)->GetDepthTexture();
 	static int u = 3;
 	renderPlatform->ActivateRenderTargets(deviceContext,u,targs,NULL);
@@ -157,7 +156,7 @@ void TwoResFramebuffer::ActivateVolume(crossplatform::DeviceContext &deviceConte
 	// activate all of the rt's of this texture at once.
 	volume_num=num;
 	volumeTextures[num]->activateRenderTarget(deviceContext);
-	int w = GetLowResFramebuffer(0)->Width, h = GetLowResFramebuffer(0)->Height;
+	int w = GetLowResFramebuffer(0)->width, h = GetLowResFramebuffer(0)->length;
 	crossplatform::Viewport v[]={{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f},{0,0,w,h,0,1.f}};
 	renderPlatform->SetViewports(deviceContext,volumeTextures[num]->depth,v);
 }

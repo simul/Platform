@@ -921,7 +921,7 @@ void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceCon
 			last_context->RSGetViewports(&num_OldViewports,m_OldViewports);
 		SAFE_RELEASE(m_pOldRenderTarget);
 		SAFE_RELEASE(m_pOldDepthSurface);
-		last_context->OMGetRenderTargets(	1,
+		last_context->OMGetRenderTargets(	num_OldViewports,
 											&m_pOldRenderTarget,
 											&m_pOldDepthSurface
 											);

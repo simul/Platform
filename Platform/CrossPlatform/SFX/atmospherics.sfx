@@ -60,28 +60,30 @@ shader atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
 
 	OUT.position.z	=0.0; 
-
     OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(OUT.pos.x,-OUT.pos.y));
-	OUT.texCoords	+=0.5*texelOffsets;
 	return OUT;
 }
 
 vec4 PS_NearFarShadow(atmosVertexOutput IN,bool reverseDepth)
 {
 	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=reverseDepth;
-	//vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	vec2 nf=NearFarShadow(depthTexture,cloudShadowTexture
+	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth				=reverseDepth;
+	vec2 texCoords	=mixedResolutionTransformXYWH.xy/mixedResolutionTransformXYWH.zw+IN.texCoords.xy;
+	texCoords		=frac(texCoords);
+	texCoords		*=mixedResolutionTransformXYWH.zw;
+	vec2 clip_pos	=2.0*texCoords-vec2(1.0,1.0);
+	clip_pos.y		*=-1.0;
+	//IN.pos is the clip pos. But 
+	vec2 nf			=NearFarShadow(depthTexture,cloudShadowTexture
 						,viewportToTexRegionScaleBias
 						,invViewProj
 						,IN.texCoords
-						,IN.pos
+						,clip_pos
 						,depthInterpretationStruct
 						,maxFadeDistanceMetres
 						,tanHalfFov
 						,invShadowMatrix,viewPosition,cloudShadowing,cloudShadowSharpness);
-
     return vec4(nf,0,0);
 }
 
@@ -196,8 +198,9 @@ shader vec4 PS_InscatterMSAA_ForwardDepth(atmosVertexOutput IN,uint sampleIndex:
 
 All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 {
-//	vec4 depth_lookup	=vec4(0.0,1.0,1.0,0.0);
-	vec2 texCoords		=mixedResolutionTransformXYWH.xy+IN.texCoords.xy*mixedResolutionTransformXYWH.zw;
+	vec2 texCoords		=mixedResolutionTransformXYWH.xy/mixedResolutionTransformXYWH.zw+IN.texCoords.xy;
+	texCoords=frac(texCoords);
+	texCoords*=mixedResolutionTransformXYWH.zw;
 	vec4 colours[8];
 	Inscatter_All( colours
 					,inscTexture
@@ -261,7 +264,9 @@ shader void CS_Inscatter_Volume_WithGodrays( uint3 g : SV_GroupID, uint3 t : SV_
 	//CS_Insc( pos,1.0);
 	float godrays=1.0;
     vec2 texCoords	=vec2(pos.xy)/vec2(scatteringVolumeDims.xy);
-	texCoords		=mixedResolutionTransformXYWH.xy+texCoords.xy*mixedResolutionTransformXYWH.zw;
+	texCoords		=mixedResolutionTransformXYWH.xy/mixedResolutionTransformXYWH.zw+texCoords.xy;
+	texCoords=frac(texCoords);
+	texCoords*=mixedResolutionTransformXYWH.zw;
 	vec4 colours[8];
 	Inscatter_All( colours
 					,inscTexture
@@ -292,7 +297,9 @@ shader void CS_Inscatter_Volume_WithoutGodrays( uint3 g : SV_GroupID, uint3 t : 
 	//CS_Insc( pos,0.0);
 	float godrays=0.0;
     vec2 texCoords	=vec2(pos.xy)/vec2(scatteringVolumeDims.xy);
-	texCoords		=mixedResolutionTransformXYWH.xy+texCoords.xy*mixedResolutionTransformXYWH.zw;
+	texCoords		=mixedResolutionTransformXYWH.xy/mixedResolutionTransformXYWH.zw+texCoords.xy;
+	texCoords=frac(texCoords);
+	texCoords*=mixedResolutionTransformXYWH.zw;
 	vec4 colours[8];
 	Inscatter_All( colours
 					,inscTexture

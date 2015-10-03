@@ -22,7 +22,7 @@ namespace simul
 		{
 		public:
 			TwoResFramebuffer();
-			crossplatform::BaseFramebuffer *GetLowResFramebuffer(int index)
+			crossplatform::Texture *GetLowResFramebuffer(int index)
 			{
 				return lowResFramebuffers[index];
 			}
@@ -70,7 +70,7 @@ namespace simul
 			crossplatform::Texture				*nearFarTextures[4];
 			crossplatform::Texture				*lossTexture;
 			crossplatform::Texture				*volumeTextures[2];
-			crossplatform::BaseFramebuffer		*lowResFramebuffers[3];
+			crossplatform::Texture				*lowResFramebuffers[3];
 		};
 	}
 }
