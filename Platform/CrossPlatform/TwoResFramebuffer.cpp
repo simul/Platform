@@ -225,7 +225,7 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	pixelOffset.x-=cc*dx;
 	pixelOffset.y-=cc*dy;
 
-	pixelOffset=WrapOffset(pixelOffset,scale);
+//	pixelOffset=WrapOffset(pixelOffset,scale);
 }
 
 void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy)
