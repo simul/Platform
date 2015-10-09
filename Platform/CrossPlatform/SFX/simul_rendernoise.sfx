@@ -25,64 +25,6 @@ struct a2v
     vec2 texCoords  : TEXCOORD0;
 };
 
-vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed)
-{
-	vec4 result		=vec4(0,0,0,0);
-	vec3 pos		=texCoords*gridsize;
-	vec3 intpart,floatpart;
-	floatpart		=modf(pos,intpart);
-	int3 seedpos	=int3(1*seed,2*seed,3*seed);
-	int3 firstCorner=int3(intpart);
-    for (int i = 0; i < 2; i++)
-	{
-        for (int j  = 0; j < 2; j++)
-		{
-            for (int k  = 0; k < 2; k++)
-			{
-				int3 corner_pos		=firstCorner+int3(1-i,1-j,1-k);
-				// NOTE: operator % does NOT seem to work properly here.
-				if(corner_pos.x==gridsize)
-					corner_pos.x=0;
-				if(corner_pos.y==gridsize)
-					corner_pos.y=0;
-				if(corner_pos.z==gridsize)
-					corner_pos.z=0;
-				vec3 lookup_pos		=seedpos+vec3(corner_pos);
-				vec4 rnd_lookup		=vec4(SphericalRandom(lookup_pos),rand3(lookup_pos));
-				float proportion	=abs(i-floatpart.x)*abs(j-floatpart.y)*abs(k-floatpart.z);
-				result				+=rnd_lookup*proportion;
-			}
-		}
-	}
-	return result;
-}
-
-
-vec4 Noise3D(int freq,vec3 texCoords,int octaves,float persistence)
-{
-	vec4 result		=vec4(0,0,0,0);
-	float mult		=0.5;
-	float total		=0.0;
-	float prevx		=1.0;
-	vec3 last;
-	int grid		=freq;
-    for(int i=0;i<octaves;i++)
-    {
-		vec4 c		=VirtualNoiseLookup(texCoords,grid,i);
-		texCoords	*=2.0;
-		total		+=mult;
-		result		+=mult*c;
-		mult		*=persistence;
-		prevx		=c.a;
-		last		=c.rgb;
-		grid		*=2;
-    }
-	// divide by total to get the range -1,1.
-	result			/=total;
-	result			=clamp(result,vec4(-1.0,-1.0,-1.0,-1.0),vec4(1.0,1.0,1.0,1.0));
-	return result;
-}
-
 shader vec4 RandomPS(posTexVertexOutput IN) : SV_TARGET
 {
 	// Range from -1 to 1.
@@ -128,28 +70,28 @@ shader void CS_Random3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV
     IMAGE_STORE_3D(targetTexture8,pos,c.xyzw);
 }
 
-CS_LAYOUT(4,4,4)
+CS_LAYOUT(8,8,8)
 shader void CS_Noise3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
-	uint3 pos = g * 4 + t;
+	uint3 pos = g * 8 + t;
 	int3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	vec3 texCoords		=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
-	vec4 result			=Noise3D(noise_texture_frequency,texCoords,octaves, persistence);
+	vec4 result			=Noise3D(random_texture_3d,noise_texture_frequency,texCoords,octaves, persistence);
 	IMAGE_STORE_3D(targetTexture8,pos,result);
 }
 
-CS_LAYOUT(4,4,4)
+CS_LAYOUT(8,8,8)
 shader void CS_Noise3D_float(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
-	uint3 pos		=g*4+t;
+	uint3 pos		=g*8+t;
 	int3 dims		=int3(noise_texture_size,noise_texture_size,noise_texture_size);
 	//targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	vec3 texCoords	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
-	vec4 result		=Noise3D(noise_texture_frequency,texCoords,octaves, persistence);//texture_wrap_lod(random_texture_3d,texCoords,0);//
+	vec4 result		=Noise3D(random_texture_3d,noise_texture_frequency,texCoords,octaves, persistence);//texture_wrap_lod(random_texture_3d,texCoords,0);//
 	//result=vec4(1.0,0,0,0);
     IMAGE_STORE_3D(targetTexture32,pos,result);
 }

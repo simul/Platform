@@ -60,6 +60,73 @@ vec4 Noise(Texture2D noise_texture,vec2 texCoords,float persistence,int octaves)
     return result;
 }
 
+vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed)
+{
+	vec4 result		=vec4(0,0,0,0);
+	vec3 pos		=texCoords*gridsize;
+	vec3 intpart,floatpart;
+	floatpart		=modf(pos,intpart);
+	int3 seedpos	=int3(1*seed,2*seed,3*seed);
+	int3 firstCorner=int3(intpart);
+    for (int i = 0; i < 2; i++)
+	{
+        for (int j  = 0; j < 2; j++)
+		{
+            for (int k  = 0; k < 2; k++)
+			{
+				int3 corner_pos		=firstCorner+int3(1-i,1-j,1-k);
+				// NOTE: operator % does NOT seem to work properly here.
+				if(corner_pos.x==gridsize)
+					corner_pos.x=0;
+				if(corner_pos.y==gridsize)
+					corner_pos.y=0;
+				if(corner_pos.z==gridsize)
+					corner_pos.z=0;
+				vec3 lookup_pos		=seedpos+vec3(corner_pos);
+				vec4 rnd_lookup		=vec4(SphericalRandom(lookup_pos),rand3(lookup_pos));
+				float proportion	=abs(i-floatpart.x)*abs(j-floatpart.y)*abs(k-floatpart.z);
+				result				+=rnd_lookup*proportion;
+			}
+		}
+	}
+	return result;
+}
+
+
+vec4 Noise3D(Texture3D random_texture_3d,int freq,vec3 texCoords,int octaves,float persistence)
+{
+	vec4 result		=vec4(0,0,0,0);
+	float mult		=0.5;
+	float total		=0.0;
+	float prevx		=1.0;
+	vec3 last;
+	{
+		vec4 c		=texture_3d_wrap_lod(random_texture_3d,texCoords,0);
+		texCoords	*=2.0;
+		total		+=mult;
+		result		+=mult*cos(2.0*3.1415926536*prevx)*c*1.414;
+		mult		*=persistence;
+		prevx		=c.a;
+		last		=c.rgb;
+	}
+    for(int i=1;i<octaves;i++)
+    {
+		vec4 c		=texture_3d_wrap_lod(random_texture_3d,texCoords,0);
+		vec3 u		=cross(last.rgb,c.rgb);
+		u			=normalize(u)*length(c.rgb);
+		c.rgb		=u;
+		texCoords	*=2.0;
+		total		+=mult;
+		result		+=mult*cos(2.0*3.1415926536*prevx)*c*1.414;
+		mult		*=persistence;
+		prevx		=c.a;
+		last		=c.rgb;
+    }
+	// divide by total to get the range -1,1.
+	result			*=1.0/total;
+	result		=clamp(result,vec4(-1.0,-1.0,-1.0,-1.0),vec4(1.0,1.0,1.0,1.0));
+	return result;
+}
 
 vec4 permute(vec4 x)
 {

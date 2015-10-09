@@ -107,6 +107,19 @@ Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 	return frustum;
 }
 
+float simul::crossplatform::GetDepthAtDistance(float thresholdMetres, const float *proj)
+{
+	// let pos=(0,0,t)
+	// then the vector after multiplying is (0 , 0 ,  (M33 t + M43), (M34 t + M44))
+	// and the Z value is (M33 t + M43)/ (M34 t + M44).
+	// e.g. suppose t is the far z, for a reverse proj.
+	// then 0 = M33 t + M43, and t = -M43/M33, which is what we have above.
+	// or if t is the near, we have M33 t + M43 = M34 t + M44
+	// which gives t(M33-M34)=M44-M43, again, as above.
+	Matrix4x4 M(proj);
+	float z =-(M._33*thresholdMetres + M._43) / (M._34*thresholdMetres + M._44);
+	return z;
+}
 
 void simul::crossplatform::ModifyProjectionMatrix(float *mat,float new_near_plane,float new_far_plane)
 {

@@ -218,9 +218,6 @@
     <None Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
       <Filter>SFX</Filter>
     </None>
-    <None Include="..\CrossPlatform\SFX\simul_debug.sfx">
-      <Filter>SFX</Filter>
-    </None>
     <None Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
       <Filter>SFX</Filter>
     </None>
