@@ -75,7 +75,7 @@ vec4 NearFarShadow(Texture2D nearFarDepthTexture,Texture2D cloudShadowTexture,ve
 	vec3 wOffset		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	vec3 view			=normalize(wOffset);
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-	vec3 depth			=texture_clamp(nearFarDepthTexture,depth_texc).xyz;
+	vec4 depth			=texture_clamp(nearFarDepthTexture,depth_texc);
 
 	vec2 dist			=depthToFadeDistance(depth.xy,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	float shadow1		=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.x*view*maxFadeDistanceMetres).x;
