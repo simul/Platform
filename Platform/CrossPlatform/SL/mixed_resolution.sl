@@ -309,7 +309,7 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture,int2 source_dims,uint2 source
 {
 	int2 pos0			=int2(pos * 2);
 
-	int2 pos1			=(int2(pos0)-int2(cornerOffset)+source_dims);
+	int2 pos1			=int2(pos0)-int2(cornerOffset)+source_dims;
 	pos1				=pos1%source_dims;
 	int2 max_pos		=int2(source_dims)-int2(3,3);
 	int2 min_pos		=int2(1,1);

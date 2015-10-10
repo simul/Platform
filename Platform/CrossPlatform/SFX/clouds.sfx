@@ -244,7 +244,8 @@ struct FarNearDepthPixelOutput
 shader void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
 {
 	uint2 pos				=(g.xy*8+t.xy)*amortization+amortizationOffset;
-	vec2 INtexCoords		=vec2(pos.xy)/vec2(targetTextureSize);
+	// offset by one texel to allow -1 in x and y:
+	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(INtexCoords.xy,viewportToTexRegionScaleBias),0);
 	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
 	//  to the texCoords of our "window". These wrap around 
@@ -252,6 +253,7 @@ shader void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool re
 	texCoords				/=mixedResTransformXYWH.zw;
 	texCoords				=frac(texCoords);
 	texCoords				*=mixedResTransformXYWH.zw;
+	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize)*mixedResTransformXYWH.zw;
 
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
