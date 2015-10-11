@@ -109,18 +109,14 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
-CS_LAYOUT(4,4,4)
+CS_LAYOUT(8,8,8)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	uint3 pos=g*4+t;
+	uint3 pos=g*8+t;
 	vec4 c1=TEXTURE_LOAD_3D(cloudDensity,pos);
 	vec4 c2=TEXTURE_LOAD_3D(cloudDensity2,pos);
-   // vec4 res= lerp(cloudDensity[pos],cloudDensity2[pos],cloud_interp);
-	//res.z=1.0;
-	//output[pos].rgba=res;
     vec4 res= lerp(c1,c2,cloud_interp);
 	IMAGE_STORE_3D(outputTexture3d,pos,res);
-	//outputTexture3d[pos].rgba=res;
 }
 
 

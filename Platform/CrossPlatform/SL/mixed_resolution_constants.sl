@@ -11,6 +11,7 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform uint2 scale;
 	uniform float nearZ;
 	uniform float farZ;
+	uniform float nearThresholdDepth;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

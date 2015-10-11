@@ -23,6 +23,8 @@ namespace simul
 
 			virtual ~TextInput(){}
 			virtual bool Good()=0;
+			//! Is the specified element in the list?
+			virtual bool Has(const char *name) const=0;
 			//! Text value of the specified element.
 			virtual const char *Get(const char *name,const char *default_)=0;
 			//! Boolean value of the specified element.
@@ -88,6 +90,8 @@ namespace simul
 			void Load(const char *filename);
 			void Load(const std::string &text);
 			bool Good();
+			//! Is the specified element in the list?
+			virtual bool Has(const char *name) const;
 			// Text value of the specified element.
 			const char *Get(const char *name,const char *default_);
 			// Boolean value of the specified element.

@@ -395,6 +395,13 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 				G->techniques[tdesc.Name]	=T;
 				T->platform_technique		=t;
 				G->techniques_by_index[j]	=T;
+				for(int k=0;k<(int)tdesc.Passes;k++)
+				{
+					ID3DX11EffectPass *p=t->GetPassByIndex(k);
+					D3DX11_PASS_DESC passDesc;
+					D3DX11_PASS_SHADER_DESC shaderDesc;
+					p->GetComputeShaderDesc(&shaderDesc);
+				}
 			}
 		}
 	}

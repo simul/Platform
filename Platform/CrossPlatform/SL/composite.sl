@@ -73,6 +73,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	
 	cloud					=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
 	shadow					=lerp(shadow_lookup.y,shadow_lookup.x,hiResInterp);
+	shadow					=lerp(1.0,shadow,nearInterp);
 	insc.rgb				*=cloud.a;
 	insc					+=cloud;
 	shadow					*=cloud.a;

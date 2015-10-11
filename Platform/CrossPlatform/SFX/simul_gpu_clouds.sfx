@@ -70,6 +70,15 @@ shader ColourDepthOutput PS_DensityMask(vertexOutput IN)
 	return result;
 }
 
+shader vec4 PS_CloudPlacementTexture(vertexOutput IN) SIMUL_TARGET_OUTPUT
+{
+	vec2 wPosKm		=0.001*(mul(transformMatrix, vec4(IN.texCoords.xy,0, 1.0))).xy;
+	vec2 offs_km	=wPosKm.xy - maskCentre;
+	vec2 texCoords	=vec2(0.5,0.5)+offs_km/cloudScalesKm.xy;
+	vec4 lookup		=texture_clamp_lod(maskTexture,texCoords,0);
+	return lookup;
+}
+
 vec3 convertPosToTexc(uint3 pos,uint3 dims)
 {
 	return (vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
@@ -566,8 +575,8 @@ float CSDensity(uint3 pos)
 	// noise_texel is the size of a noise texel
 	float noise_texel			=1.0/float(noise_dims.z);
 	float height				=noiseScale.z;
-	float fl						=0.0;
-	float ff						=modf(worleyNoiseScale,fl);
+	float fl					=0.0;
+	float ff					=modf(worleyNoiseScale,fl);
 	vec3 worley_texcoord		=noisespace_texcoord;
 //	worley_texcoord.z			-=1.0*time;
 	vec4 w1						=texture_wrap_lod(worleyTexture3D,fl*worley_texcoord,0);
@@ -576,28 +585,47 @@ float CSDensity(uint3 pos)
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);//
 	
 	float w						=(worley.x-1.0)+(worley.y-1.0)+(worley.z-1.0)+(worley.w-1.0);
-	float hm					=humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
+	vec4 mask					=texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0);
+	float hm					=humidity*mask.a;
+	hm							=saturate(hm+mask.r-mask.g);
+	hm							*=GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity);
 	float dens					=noise_val+2.0*hm-1.0;
 	dens						=(1.0+worleyNoiseStrength)*saturate((dens)/diffusivity);
 	dens						=saturate(dens+worleyNoiseStrength*w);
 	vec3 wPos					=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
+	
 	for(int i=0;i<numVolumes;i++)
 	{
 		vec3 vol_pos		=mul(cloudVolumes[i].transformMatrix,vec4(wPos,1.0)).xyz;
+		if(wrap)
+		{
+			vec3 f5			=vec3(0.5,0.5,0.5);
+			vec3 unit		=frac(vol_pos*0.001/cloudScalesKm+f5)-f5;
+			vol_pos			=unit*cloudScalesKm*1000.0;
+		}
 		vec3 offs			=vol_pos/cloudVolumes[i].extents;
-		offs.x				-=0.3*offs.z;
-		float r				=length(offs.xy);
-		float incus_radius	=0.5*(offs.z+1.0);
-		// incus:
-		float incus_density	=saturate(1.0-pow(r/incus_radius,4.0));
+		if(cloudVolumes[i].type==1)
+		{
+			offs.xy				-=cloudVolumes[i].rake*offs.z;
+			float r				=length(offs.xy);
+			float incus_radius	=0.5*(offs.z+1.0);
+			// incus:
+			float incus_density	=saturate(1.0-pow(r/incus_radius,4.0));
 
-		float rb			=length((offs-vec3(0,0,-1.0))/vec3(0.6,0.6,1.0));// say 0.6 is the base rad
-		float base_density	=((1.0-rb)*10);
-		vec4 cu_worley		=texture_wrap_lod(worleyTexture3D,9*noisespace_texcoord,0);
-		base_density		=saturate(base_density+4.0*((cu_worley.x-0.6)+(cu_worley.y-0.6)+(cu_worley.z-0.6)));
-
-		if(r<1.0&&offs.z>-1.0&&offs.z<1.0)
-			dens=saturate(dens+base_density+incus_density);//cloudVolumes[i].transformMatrix._11;//saturate(vol_pos.x/1.0);
+			float rb			=length((offs-vec3(0,0,-1.0))/vec3(0.6,0.6,1.0));// say 0.6 is the base rad
+			float base_density	=((1.0-rb)*10);
+			vec4 cu_worley		=texture_wrap_lod(worleyTexture3D,9*noisespace_texcoord,0);
+			base_density		=saturate(base_density+4.0*((cu_worley.x-0.6)+(cu_worley.y-0.6)+(cu_worley.z-0.6)));
+		
+			if(r<1.0&&offs.z>-1.0&&offs.z<1.0)
+				dens=saturate(dens+base_density+incus_density);//cloudVolumes[i].transformMatrix._11;//saturate(vol_pos.x/1.0);
+		}
+		if(cloudVolumes[i].type==2)
+		{
+			float r				=length(offs.xyz);
+			if(r<1.0)
+				dens=saturate(dens+1.0);//cloudVolumes[i].transformMatrix._11;//saturate(vol_pos.x/1.0);
+		}
 	}
 
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
@@ -773,7 +801,8 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	if(pos.z==0)
 		wpos.z			+=cloudScalesKm.z*zPixel;
 	float thickness		=0.0;
-	for(int i=0;i<12;i++)
+	int i=0;
+	for( i=0;i<12;i++)
 	{
 		wpos			+=lightDir*stepLength;// we expect stepLength in km for this shader
 		vec3 texc		=wpos/cloudScalesKm;
@@ -784,7 +813,7 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	illum.y				=exp(-extinctions.y*thickness);//*(.5+.5*saturate(100*thickness*thickness));
 	vec2 ambient		=vec2(1.0,1.0);
 	wpos				=densityspace_texcoord*cloudScalesKm;
-	for(int i=0;i<12;i++)
+	for( i=0;i<12;i++)
 	{
 		wpos			+=vec3(0,0,1.0)*stepLength;// we expect stepLength in km for this shader
 		vec3 texc		=wpos/cloudScalesKm;
@@ -807,6 +836,19 @@ technique density_mask
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_DensityMask()));
+    }
+}
+
+technique cloud_placement_texture
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState(DisableDepth, 0 );
+		SetBlendState(AddBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_CloudPlacementTexture()));
     }
 }
 

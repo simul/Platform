@@ -34,25 +34,28 @@ SIMUL_CONSTANT_BUFFER_END
 SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform mat4 invViewProj;
 	uniform mat4 invShadowMatrix;
-	//uniform mat4 shadowMatrix;
+	
 	uniform mat4 worldToCloudMatrix;
 	uniform mat4 worldToMoistureSpaceMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec4 mixedResolutionTransformXYWH;
 	uniform vec4 depthToLinFadeDistParams;
+
 	uniform vec3 viewPosition;
 	uniform float exposure;
+
 	uniform vec2 tanHalfFov;
 	uniform float nearZ;
 	uniform float farZ;
-	uniform float godraysIntensity;
-	uniform float wo934yhj;
-	uniform float shadowRangeX;
-	uniform float dropletRadius;
 	
-	uniform float rainbowIntensity;
     uniform int3 scatteringVolumeDims;
-	uniform float startZMetres;
+	uniform float godraysIntensity;
+	
+	uniform int3 amortizationOffset;
+	uniform float startZMetresZZZ;
+
+	uniform int3 amortization;
+
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

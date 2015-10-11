@@ -89,5 +89,7 @@ struct CloudVolume_densityspace
 {
 	mat4 transformMatrix;	// transform density space to volume space.
 	vec3 extents;
+	int type;
+	vec2 rake;
 };
 #endif

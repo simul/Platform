@@ -137,6 +137,29 @@ vec2 depthToFadeDistance(vec2 depth,vec2 xy,DepthIntepretationStruct dis,vec2 ta
 	return fadeDist;
 }
 
+vec4 depthToFadeDistance(vec4 depth,vec2 xy,DepthIntepretationStruct dis,vec2 tanHalf)
+{
+	vec4 linearFadeDistanceZ	=saturate(dis.depthToLinFadeDistParams.xxxx / (depth*dis.depthToLinFadeDistParams.yyyy + dis.depthToLinFadeDistParams.zzzz)+dis.depthToLinFadeDistParams.wwww*depth);
+	float Tx					=xy.x*tanHalf.x;
+	float Ty					=xy.y*tanHalf.y;
+	vec4 fadeDist				=linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
+	if(dis.reverseDepth)
+	{
+		fadeDist.x					=max(fadeDist.x,step(0.0,-depth.x));
+		fadeDist.y					=max(fadeDist.y,step(0.0,-depth.y));
+		fadeDist.z					=max(fadeDist.z,step(0.0,-depth.z));
+		fadeDist.w					=max(fadeDist.w,step(0.0,-depth.w));
+	}
+	else
+	{
+		fadeDist.x					=max(fadeDist.x,step(1.0,depth.x));
+		fadeDist.y					=max(fadeDist.y,step(1.0,depth.y));
+		fadeDist.z					=max(fadeDist.z,step(1.0,depth.z));
+		fadeDist.w					=max(fadeDist.w,step(1.0,depth.w));
+	}
+	return fadeDist;
+}
+
 float fadeDistanceToDepth(float dist,vec2 xy,DepthIntepretationStruct dis,vec2 tanHalf)
 {
 	float Tx				=xy.x*tanHalf.x;

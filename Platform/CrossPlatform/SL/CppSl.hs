@@ -115,6 +115,14 @@
 			:x(v[0]),y(v[1])
 		{
 		}
+		bool operator==(const vec2 &v) const
+		{
+			return (x==v.x&&y==v.y);
+		}
+		bool operator!=(const vec2 &v) const
+		{
+			return (x!=v.x||y!=v.y);
+		}
 		operator const float *() const
 		{
 			return &x;

@@ -103,6 +103,7 @@ namespace simul
 		};
 
 		SIMUL_CROSSPLATFORM_EXPORT Frustum GetFrustumFromProjectionMatrix(const float *mat);
+		SIMUL_CROSSPLATFORM_EXPORT float GetDepthAtDistance(float thresholdMetres, const float *matproj);
 		SIMUL_CROSSPLATFORM_EXPORT void ModifyProjectionMatrix(float *mat,float new_near_plane,float new_far_plane);
 		SIMUL_CROSSPLATFORM_EXPORT void ConvertReversedToRegularProjectionMatrix(float *proj);
 		

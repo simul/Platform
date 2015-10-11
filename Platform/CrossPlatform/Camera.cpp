@@ -107,6 +107,29 @@ Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 	return frustum;
 }
 
+float simul::crossplatform::GetDepthAtDistance(float thresholdMetres, const float *proj)
+{
+	// let pos=(0,0,t)
+	// then the vector after multiplying is (0 , 0 ,  (M33 t + M43), (M34 t + M44))
+	// and the Z value is (M33 t + M43)/ (M34 t + M44).
+	// e.g. suppose t is the far z, for a reverse proj.
+	// then 0 = M33 t + M43, and t = -M43/M33, which is what we have above.
+	// or if t is the near, we have M33 t + M43 = M34 t + M44
+	// which gives t(M33-M34)=M44-M43, again, as above.
+	Matrix4x4 M(proj);
+	// But remember our right-handed projection matrices need the viewspace Z to be negative.
+	// Obviously we can't assume we'll be given a RH matrix, so look at M34.
+	if(M._34<0)
+		thresholdMetres=-thresholdMetres;
+	float z =fabs((M._33*(thresholdMetres)+ M._43) / (M._34*(thresholdMetres) + M._44));
+	// in the case of forward projection we have
+	//m._33 = zFar / (zNear - zFar);		m._34 = -1.f;
+	//m._43 = zNear*zFar / (zNear - zFar);
+	// this gives Z=(far*t+near*far)/(near-far)/(-t + 0)
+	//           Z=(F+N*F/t)/(N-F)
+	//            =(1+N/t)/(N/F-1)
+	return z;
+}
 
 void simul::crossplatform::ModifyProjectionMatrix(float *mat,float new_near_plane,float new_far_plane)
 {
@@ -373,6 +396,10 @@ const float *Camera::MakeDepthReversedProjectionMatrix(float h,float v,float zNe
 	{
 		m._33	=0.f;					m._34	=-1.f;
 		m._43	=zNear;
+		// z = (33 Z + 43) / (34 Z +44)
+		// z = -n/Z
+		// But if z = (33 Z + 34) / (43 Z +44)
+		// z = -1/nZ
 	}
 	// testing:
 	GetFrustumFromProjectionMatrix(m);
@@ -396,8 +423,16 @@ const float *Camera::MakeDepthReversedProjectionMatrix(const FovPort &fovPort, f
 	m._32 = handedness *yOffset;
 	if (zFar>0)
 	{
-		m._33 = zNear / (zFar - zNear);	m._34 = -1.f;
+		m._33 = zNear / (zFar - zNear);			m._34 = -1.f;
 		m._43 = zFar*zNear / (zFar - zNear);
+		// z = (33 Z + 43) / (34 Z +44)
+		//  z = (N/(F-N)*Z+F*N/(F-N))/(-Z)
+		// if Z=N then z = (N/(F-N)*N+F*N/(F-N))/(-N)
+		//               = (N*N+F*N)/(-N(F-N))
+		//				= (F+N)/(N-F)
+		// What if z = (33 Z + 34) /  (43 Z + 44)
+		//  then   z= (n/(f-n)*Z-1)/(n*f/(f-n) Z)	= (1/f-(1/n-1/f)/Z)		=  1/f-(1/n-1/f)/Z
+		// so if Z=n,	z = 1/f - (1/n - 1/f)/n
 	}
 	else // infinite far plane.
 	{
@@ -440,9 +475,13 @@ const float *Camera::MakeProjectionMatrix(float h,float v,float zNear,float zFar
 
 	m._33 = zFar / (zNear - zFar);		m._34 = -1.f;
 	m._43 = zNear*zFar / (zNear - zFar);
-
+	//	Zp		=m33 Zv + m43
+	// Wp		=-Zv.
+	// so     z = (33 Z + 43)/-Z = (F/(N-F)Z+FN/(N-F))/-Z     =     (FZ+FN)/(-Z(N-F))
+	//
 	return m;
 }
+
 const float *Camera::MakeProjectionMatrix(const FovPort &fovPort, float zNear, float zFar)
 {
 	float xScale = 2.0f / (fovPort.leftTan + fovPort.rightTan);
