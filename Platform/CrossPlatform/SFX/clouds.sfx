@@ -275,9 +275,9 @@ shader void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool re
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
 									);
-	outputTexture1[pos]=f.colour;
-	outputTexture2[pos]=f.nearColour;
-	outputTexture3[pos]=f.nearFarDepth;
+	outputTexture1[pos]		=f.colour;
+	outputTexture2[pos]		=f.nearColour;
+	outputTexture3[pos]		=f.nearFarDepth;
 }
 
 FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool rain)
