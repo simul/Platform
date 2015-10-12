@@ -3,6 +3,7 @@
 #define ATMOSPHERICS_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(AtmosphericsUniforms,11)
+	uniform mat4 lightspaceToWorldMatrix;
 	uniform vec3 lightDir;
 	uniform float pad1;
 	uniform vec3 mieRayleighRatio;
@@ -25,9 +26,9 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsUniforms,11)
 	uniform float fogScaleHeight;
     uniform vec3 infraredIntegrationFactorsUNUSED;
 	uniform float fogDensity;
-    uniform vec3 yAxis;
+    uniform vec3 yAxisXXX;
 	uniform float pad9;
-    uniform vec3 xAxis;
+    uniform vec3 xAxisXXX;
 	uniform float pad10;
 SIMUL_CONSTANT_BUFFER_END
 

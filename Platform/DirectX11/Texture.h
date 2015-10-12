@@ -117,7 +117,7 @@ namespace simul
 			int GetSampleCount() const;
 		protected:
 			ID3D11DeviceContext *last_context;
-			ID3D11RenderTargetView*		m_pOldRenderTarget;
+			ID3D11RenderTargetView*		m_pOldRenderTargets[16];
 			ID3D11DepthStencilView*		m_pOldDepthSurface;
 			ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   shaderResourceView;

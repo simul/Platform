@@ -150,7 +150,6 @@ namespace simul
 			};
 		protected:
 			ProfileMap profileMap;
-			ProfileData rootProfileData;
 			int level;
 			UINT64 currFrame;
 

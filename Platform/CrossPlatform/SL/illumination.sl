@@ -84,19 +84,6 @@ vec2 OvercastDistances(float alt_km,float sine,float overcastBaseKm,float overca
 	return sqrt(range_km/maxFadeDistanceKm);
 }
 
-vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize
-	,float maxFadeDistanceKm
-	,float maxFadeDistance,float terminatorDistance,float radiusOnCylinder,vec3 earthShadowNormal,vec3 sunDir)
-{
-	float azimuth			=3.1415926536*2.0*texCoords.x;
-	float sine				=-1.0+2.0*(texCoords.y*targetTextureSize.y/(targetTextureSize.y-1.0));
-	sine					=clamp(sine,-1.0,1.0);
-	float cosine			=sqrt(1.0-sine*sine);
-	vec3 view				=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
-	vec2 fade_texc			=vec2(1.0,texCoords.y);
-	vec2 full_bright_range	=EarthShadowDistances(fade_texc,view,earthShadowNormal,sunDir,maxFadeDistance,terminatorDistance,radiusOnCylinder);
-    return vec4(full_bright_range,full_bright_range);
-}
 #ifndef OVERCAST_STEPS
 #define OVERCAST_STEPS 6
 #endif
@@ -138,27 +125,4 @@ vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 
     return insc;
 }
 
-vec4 ShowIlluminationBuffer(Texture2D illTexture,vec2 texCoords)
-{
-	if(texCoords.x<0.5)
-	{
-		texCoords.x		*=2.0;
-		vec4 nf			=texture_clamp_mirror_nearest_lod(illTexture,texCoords,0);
-		return saturate(vec4(nf.zw,0.0,1.0));
-	}
-	else
-	{
-		texCoords.x		=2.0*(texCoords.x-0.5);
-		vec2 texc		=vec2(0.5,texCoords.y);
-		vec4 nf			=texture_clamp_mirror_nearest_lod(illTexture,texc,0);
-		// Near Far for EarthShadow illumination is xy
-		// Near Far for clouds overcast is zw.
-		vec4 result		=vec4(0,1.0,0,0);
-		if(texCoords.x>=nf.x&&texCoords.x<=nf.y)
-			result.r	=1.0;
-		if(texCoords.x>=nf.z&&texCoords.x<=nf.w)
-			result.g	=0.0;
-		return vec4(result.rgb,1);
-	}
-}
 #endif

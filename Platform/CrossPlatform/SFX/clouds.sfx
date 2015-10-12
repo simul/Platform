@@ -28,6 +28,7 @@ uniform Texture2D rainbowLookupTexture			SIMUL_TEXTURE_REGISTER(10);
 uniform Texture2D coronaLookupTexture			SIMUL_TEXTURE_REGISTER(11);
 uniform Texture3D volumeInscatterTexture		SIMUL_TEXTURE_REGISTER(1);
 uniform Texture2D rainMapTexture				SIMUL_TEXTURE_REGISTER(2);
+uniform RWTexture3D<uchar4> inputTexture3d;
 uniform RWTexture3D<uchar4> outputTexture3d;
 uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries;
 
@@ -113,9 +114,27 @@ CS_LAYOUT(8,8,8)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	uint3 pos=g*8+t;
-	vec4 c1=TEXTURE_LOAD_3D(cloudDensity,pos);
-	vec4 c2=TEXTURE_LOAD_3D(cloudDensity2,pos);
+	vec4 c1=cloudDensity.mips[frameNumber][pos];
+	vec4 c2=cloudDensity2.mips[frameNumber][pos];
     vec4 res= lerp(c1,c2,cloud_interp);
+	IMAGE_STORE_3D(outputTexture3d,pos,res);
+}
+
+
+CS_LAYOUT(4,4,4)
+shader void CS_Mip( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 pos=g*8+t;
+	int3 pos2=pos*2;
+	vec4 c1= cloudDensity.mips[0][pos2+int3(0,0,0)];
+	vec4 c2= cloudDensity.mips[0][pos2+int3(1,0,0)];
+	vec4 c3= cloudDensity.mips[0][pos2+int3(0,1,0)];
+	vec4 c4= cloudDensity.mips[0][pos2+int3(1,1,0)];
+	vec4 c5= cloudDensity.mips[0][pos2+int3(0,0,1)];
+	vec4 c6= cloudDensity.mips[0][pos2+int3(1,0,1)];
+	vec4 c7= cloudDensity.mips[0][pos2+int3(0,1,1)];
+	vec4 c8= cloudDensity.mips[0][pos2+int3(1,1,1)];
+	vec4 res=0.125*(c1+c2+c3+c4+c5+c6+c7+c8);
 	IMAGE_STORE_3D(outputTexture3d,pos,res);
 }
 
@@ -179,6 +198,7 @@ vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 									,false
 									,true
 									,cloudIrRadiance1,cloudIrRadiance2
+									,clipPosToScatteringVolumeMatrix
 									);
 	if(p.colour.a>=1.0)
 	   discard;
@@ -274,6 +294,7 @@ shader void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool re
 									,true
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
+									,clipPosToScatteringVolumeMatrix
 									);
 	outputTexture1[pos]		=f.colour;
 	outputTexture2[pos]		=f.nearColour;
@@ -316,6 +337,7 @@ FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool
 									,true
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
+									,clipPosToScatteringVolumeMatrix
 									);
 	FarNearDepthPixelOutput fn;
 	fn.farColour=f.colour;
@@ -457,7 +479,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 	vec2 uv = vec2(0,0);
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		vec4 density=texture_wwc(cloudDensity,texc);
+		vec4 density=texture_wwc_lod(cloudDensity,texc,1);
 		vec3 colour=vec3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=vec2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;
@@ -659,6 +681,14 @@ technique mix_clouds
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Mix()));
+    }
+}
+
+technique cloud_mip
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Mip()));
     }
 }
 

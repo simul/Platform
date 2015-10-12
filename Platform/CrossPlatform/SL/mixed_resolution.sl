@@ -153,7 +153,7 @@ vec4 HalfscaleInitial_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_d
 vec4 HalfscaleOnly_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture, int2 source_dims, int2 source_offset, int2 cornerOffset, int2 pos, DepthIntepretationStruct depthInterpretationStruct, float nearThresholdDepth)
 {
 	int2 pos0			=pos*2;
-	int2 pos1			=pos0-cornerOffset;
+	int2 pos1			=int2(pos0)-int2(cornerOffset)+source_dims;
 	pos1				=pos1%source_dims;
 #ifdef DEBUG_COMPOSITING
 	if(pos.x<3)
@@ -232,8 +232,8 @@ vec4 HalfscaleOnly_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture, int2 source_dim
 vec4 HalfscaleOnly(Texture2D sourceDepthTexture, int2 source_dims, uint2 source_offset, int2 cornerOffset, int2 pos, DepthIntepretationStruct depthInterpretationStruct, bool split_view, float nearThresholdDepth)
 {
 	int2 pos0			=int2(pos*2);
-
-	int2 pos1			=int2(pos0)-int2(cornerOffset);
+	
+	int2 pos1			=int2(pos0)-int2(cornerOffset)+source_dims;
 	pos1				=pos1%source_dims;
 
 	int2 max_pos		=int2(source_dims)-int2(11,5);
@@ -369,16 +369,13 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture, int2 source_dims, uint2 sour
 	{
 		farthest_nearest.y=max(farthest_nearest.y,dmax);
 		farthest_nearest.x=min(farthest_nearest.x,dmin);
-	//	farthest_nearest.xy=min(farthest_nearest.xy,nearThresholdDepth);
 	}
 	else
 	{
 		farthest_nearest.y=min(farthest_nearest.y,d1);
 		farthest_nearest.x=max(farthest_nearest.x,d1);
-	//	farthest_nearest.xy = max(farthest_nearest.xy, nearThresholdDepth);
 	}
-	float edge=0.0;
-	vec4 res=vec4(farthest_nearest,edge,0.0);
+	vec4 res=vec4(farthest_nearest,0,0.0);
 	return res;
 }
 

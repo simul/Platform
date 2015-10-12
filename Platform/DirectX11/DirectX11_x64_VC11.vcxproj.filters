@@ -9,9 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="FX">
-      <UniqueIdentifier>{6114eb70-d5bb-4f18-b940-6c5a0d50e188}</UniqueIdentifier>
-    </Filter>
     <Filter Include="SFX">
       <UniqueIdentifier>{44db79cc-70d8-43ac-8367-1778f33a7ce0}</UniqueIdentifier>
     </Filter>

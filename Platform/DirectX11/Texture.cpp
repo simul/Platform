@@ -34,11 +34,12 @@ dx11::Texture::Texture()
 	,renderTargetViews(NULL)
 	,stagingBuffer(NULL)
 	,last_context(NULL)
-	,m_pOldRenderTarget(NULL)
 	,m_pOldDepthSurface(NULL)
 	,num_OldViewports(0)
 {
 	memset(&mapped,0,sizeof(mapped));
+	for(int i=0;i<16;i++)
+		m_pOldRenderTargets[i]=NULL;
 }
 
 
@@ -74,7 +75,10 @@ void dx11::Texture::InvalidateDeviceObjects()
 	SAFE_RELEASE(shaderResourceView);
 	SAFE_RELEASE(depthStencilView);
 	SAFE_RELEASE(stagingBuffer);
-	SAFE_RELEASE(m_pOldRenderTarget);
+	for(int i=0;i<16;i++)
+	{
+		SAFE_RELEASE(m_pOldRenderTargets[i]);
+	}
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
 // Load a texture file
@@ -919,10 +923,8 @@ void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceCon
 		SIMUL_ASSERT(num_OldViewports>=0&&num_OldViewports<=16)
 		if(num_OldViewports>0)
 			last_context->RSGetViewports(&num_OldViewports,m_OldViewports);
-		SAFE_RELEASE(m_pOldRenderTarget);
-		SAFE_RELEASE(m_pOldDepthSurface);
 		last_context->OMGetRenderTargets(	num_OldViewports,
-											&m_pOldRenderTarget,
+											m_pOldRenderTargets,
 											&m_pOldDepthSurface
 											);
 	}
@@ -953,11 +955,14 @@ void dx11::Texture::deactivateRenderTarget()
 	if(!last_context)
 		return;
 	last_context->OMSetRenderTargets(	num_OldViewports,
-										&m_pOldRenderTarget,
+										m_pOldRenderTargets,
 										m_pOldDepthSurface
 										);
 	last_context->RSSetViewports(num_OldViewports,m_OldViewports);
-	SAFE_RELEASE(m_pOldRenderTarget);
+	for(int i=0;i<num_OldViewports;i++)
+	{
+		SAFE_RELEASE(m_pOldRenderTargets[i]);
+	}
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
 
