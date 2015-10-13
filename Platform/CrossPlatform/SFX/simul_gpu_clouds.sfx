@@ -826,6 +826,34 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	IMAGE_STORE_3D(targetTexture,pos,res);
 }
 
+
+CS_LAYOUT(4,4,4)
+shader void CS_GenMip( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 pos=g*4+t;
+	int3 pos2=pos*2;
+	int x=1;
+	int y=1;
+	vec4 c1= densityTexture[pos2+int3(0,0,0)];
+	vec4 c2= densityTexture[pos2+int3(x,0,0)];
+	vec4 c3= densityTexture[pos2+int3(0,y,0)];
+	vec4 c4= densityTexture[pos2+int3(x,y,0)];
+	vec4 c5= densityTexture[pos2+int3(0,0,1)];
+	vec4 c6= densityTexture[pos2+int3(x,0,1)];
+	vec4 c7= densityTexture[pos2+int3(0,y,1)];
+	vec4 c8= densityTexture[pos2+int3(x,y,1)];
+	vec4 res	=0.125*(c1+c2+c3+c4+c5+c6+c7+c8);
+	vec4 mx		=max(max(max(c1,c2),max(c3,c4)),max(max(c5,c6),max(c7,c8)));
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
+	if(pos.z==0||pos.z==dims.z-1)
+	{
+		res=vec4(mx.xy,res.z,mx.w);
+		//res.z			=0;
+	}
+	IMAGE_STORE_3D(targetTexture,pos,res);
+}
+
 technique density_mask
 {
     pass p0 
@@ -977,5 +1005,12 @@ technique simulated_to_target
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_SimToTarget()));
+    }
+}
+technique mipmap
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_GenMip()));
     }
 }

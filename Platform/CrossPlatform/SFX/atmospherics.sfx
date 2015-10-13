@@ -364,6 +364,7 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 	#ifdef INFRARED
 		vec4 next		=vec4(skyl.rgb,1.0);
 		float shadow	=1.0;
+		colour			+=max(vec4(0,0,0,0),(next-last));
 	#else
 		float illum=0;
 		if(godraysIntensity>0.0)
@@ -379,11 +380,10 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 		//float shadow	=1.0-0.2*(1.0-GetCloudIlluminationAt(cloudTexture,worldToCloudMatrix,viewPosition+dist*dir*maxFadeDistanceMetres,lightDir).x);//worldspaceToShadowspaceMatrix
 		float cos0		=ce;
 		vec4 next	    =vec4(InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio),1.0);
-		next.rgb		+=skyl.rgb;
-	#endif
 		colour			+=max(vec4(0,0,0,0),(next-last))*il;
+	#endif
 		//colour.rgb=abs(illum_texc.xyy);
-		IMAGE_STORE_3D(targetVolume,int3(idx.xy,i),colour);
+		IMAGE_STORE_3D(targetVolume,int3(idx.xy,i),colour+vec4(skyl,0));
 		last			=next;
 	}
 }

@@ -491,6 +491,18 @@
 			y=int(v[1]);
 			z=int(v[2]);
 		}
+		void operator*=(int u)
+		{
+			x*=u;
+			y*=u;
+			z*=u;
+		}
+		void operator/=(int u)
+		{
+			x/=u;
+			y/=u;
+			z/=u;
+		}
 	};
 	//! Very simple 3 vector of doubles.
 	struct vec3d

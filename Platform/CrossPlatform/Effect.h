@@ -48,8 +48,8 @@ namespace simul
 			NEVER_BUILD=0
 			,ALWAYS_BUILD=1
 			,BUILD_IF_CHANGED=2
-			, TRY_AGAIN_ON_FAIL = 4
-			, BREAK_ON_FAIL = 8
+			, BREAK_ON_FAIL = 8			// 0x1000
+			, TRY_AGAIN_ON_FAIL = 12	// 0x11000 - includes break.
 		};
 		inline ShaderBuildMode operator|(ShaderBuildMode a, ShaderBuildMode b)
 		{
@@ -470,11 +470,9 @@ namespace simul
 			//! Set the texture for read-write access by compute shaders in this effect.
 			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int mip=0)	=0;
 			virtual ShaderResource GetShaderResource(const char *name)=0;
-			virtual void SetTexture		(DeviceContext &deviceContext,ShaderResource &name	,Texture *tex)		=0;
-			//! Set the texture for this effect.
-			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex)		=0;
-			//! Set the texture for this effect.
-			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture &t)		=0;
+			virtual void SetTexture		(DeviceContext &deviceContext,ShaderResource &name	,Texture *tex,int mip=-1)		=0;
+			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
+			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex,int mip=-1)=0;
 			//! Set the texture for this effect.
 			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s)		=0;
 			virtual void SetParameter	(const char *name	,float value)		=0;

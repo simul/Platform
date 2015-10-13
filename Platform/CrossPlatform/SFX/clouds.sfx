@@ -114,8 +114,8 @@ CS_LAYOUT(8,8,8)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	uint3 pos=g*8+t;
-	vec4 c1=cloudDensity.mips[frameNumber][pos];
-	vec4 c2=cloudDensity2.mips[frameNumber][pos];
+	vec4 c1=cloudDensity[pos];
+	vec4 c2=cloudDensity2[pos];
     vec4 res= lerp(c1,c2,cloud_interp);
 	IMAGE_STORE_3D(outputTexture3d,pos,res);
 }

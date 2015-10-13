@@ -499,18 +499,7 @@ void dx11::Effect::SetTexture(const char *name,ID3D11ShaderResourceView *tex)
 	simul::dx11::setTexture(asD3DX11Effect(),name,tex);
 }
 
-void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture &t)
-{
-	if(!asD3DX11Effect())
-	{
-		SIMUL_CERR<<"Invalid effect "<<std::endl;
-		return;
-	}
-	dx11::Texture *T=(dx11::Texture*)&t;
-	simul::dx11::setTexture(asD3DX11Effect(),name,T->AsD3D11ShaderResourceView());
-}
-
-void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *t)
+void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *t,int mip)
 {
 	if(!asD3DX11Effect())
 	{
@@ -520,7 +509,7 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,cr
 	if(t)
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
-		simul::dx11::setTexture(asD3DX11Effect(),name,T->AsD3D11ShaderResourceView());
+		simul::dx11::setTexture(asD3DX11Effect(),name,T->AsD3D11ShaderResourceView(mip));
 	}
 	else
 		simul::dx11::setTexture(asD3DX11Effect(),name,NULL);
@@ -546,13 +535,13 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	return res;
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t)
+void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip)
 {
 	ID3DX11EffectShaderResourceVariable *var=(ID3DX11EffectShaderResourceVariable*)(shaderResource.platform_shader_resource);
 	if(var)
 	{
 		if(t)
-			var->SetResource(t->AsD3D11ShaderResourceView());
+			var->SetResource(t->AsD3D11ShaderResourceView(mip));
 		else
 			var->SetResource(NULL);
 	}

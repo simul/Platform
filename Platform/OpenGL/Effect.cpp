@@ -621,7 +621,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	return res;
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex)
+void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int mip)
 {
 	int texture_number=(int)shaderResource.platform_shader_resource;
 	bool write=false;
@@ -632,16 +632,12 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 	}
 	if(tex)
 		glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth()
-			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write,0);
-}
-void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex)
-{
-	SetTex(name,tex,false,0);
+			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write,mip);
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture &t)
+void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex,int mip)
 {
-	SetTexture(deviceContext,name,&t);
+	SetTex(name,tex,false,mip);
 }
 
 void Effect::SetSamplerState(crossplatform::DeviceContext &,const char *name,crossplatform::SamplerState *s)

@@ -134,17 +134,18 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		{
 			if(!found)
 			{
-				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
+				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,1);
 				found				=found||(density.z>0);
 			}
 			if(found)
 			{
+				float lod				=0.0;
 				vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise)
 					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
-				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
+				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,lod);
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:

@@ -228,13 +228,14 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 	return c;
 }
 
-vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale)
+vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float lod)
 {
 	//texCoords=saturate(texCoords);
 	float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(texCoords.z));
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
 	vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,pos,0);
+	density.xyw			=sample_3d_lod(cloudDensity,cloudSamplerState,pos,lod).xyw;
 	density.z			*=layerFade;
 	density.z			=saturate(density.z*(1.0+alphaSharpness));
 	return density;
@@ -321,6 +322,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	vec4 nearColour					=vec4(0.0,0.0,0.0,1.0);
 	float lastFadeDistance			=0.0;
 	int3 b							=abs(c-C0*2);
+	float LOD=0.0;
 	for(int j=0;j<8;j++)
 	{
 		if(max(max(b.x,b.y),0)>=W)
@@ -342,6 +344,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 			C0			=	C0>>1;
 			idx			++;
 			b						=abs(c-C0*2);
+			LOD			=LOD+1.0;
 		}
 		else break;
 	}
@@ -383,20 +386,22 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 		float is_inter				=dot(N,vec3(intermediate));
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
-		vec3 pw						=abs(p1-p0);//+start_c_offset
-		float fade_inter			=saturate((length(pw.xy)/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
+		vec3 pw						=abs(p1-p0);
+		float lpw					=length(pw.xy);
+		float fade_inter			=saturate((lpw/(float(W)*(2.0-is_inter)-1.0)-start)/range);
 	
 		float fade					=1.0-(fade_inter);
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
-		 b							=abs(c-C0*2);
+		b							=abs(c-C0*2);
 		if(fade>0)
 		{
+			float lod				=LOD+saturate((lpw/(float(W)-1.0)-start)/range);
 			vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 			vec4 noiseval			=vec4(0,0,0,0);
 			noiseval				=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
-			vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
+			vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,lod);
 			
 			if(density.z>0)
 			{
@@ -560,7 +565,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	}
 	vec3 halfway					=0.5*(lightDir-view);
 	world_pos						+=offset_vec;
-	float viewScale					=length(viewScaled*scaleOfGridCoords);
+	float viewScale0				=length(viewScaled*scaleOfGridCoords);
+	float viewScale					=viewScale0;
 	vec3 half_texel					=0.5*view*viewScale;
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
 	vec3 startOffsetFromOrigin		=viewPosKm-gridOriginPosKm;
@@ -601,7 +607,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec4 nearColour					=vec4(0.0,0.0,0.0,1.0);
 	float lastFadeDistance			=0.0;
 	int3 b							=abs(c-C0*2);
-
+	
+	float LOD=0;
 	for(int j=0;j<8;j++)
 	{
 		if(max(max(b.x,b.y),0)>=W)
@@ -623,6 +630,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			C0			=	C0>>1;
 			idx			++;
 			b			=	abs(c-C0*2);
+			LOD			=LOD+1;
 		}
 		else break;
 	}
@@ -666,7 +674,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
 		vec3 pw						=abs(p1-p0);//+start_c_offset
-		float fade_inter			=saturate((length(pw.xy)/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
+		float lpw					=length(pw.xy);
+		float fade_inter			=saturate((lpw/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
 	
 		float fade					=1.0-(fade_inter);
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
@@ -682,11 +691,13 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			}
 			if(found)*/
 			{
+				float lod				=0*(LOD+saturate((lpw/(float(W)-1.0)-start)/range));
+				//(viewScale/viewScale0)-1.0;//
 				vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise)
 					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
-				density					=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
+				density					=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,lod);
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
@@ -694,6 +705,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					moisture			+=0.01*dm*density.x;
 					density.z			=saturate(density.z+dm);
 				}
+			//	density.z=step(.5,density.z);
 				if(density.z>0)
 				{
 					
@@ -735,7 +747,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 														,fade_texc
 														,nearFarTexc
 														,brightness_factor);
-
+					
+					//clr.rgb=clrs[idx]*clr.a;
 					if(do_depth_mix)
 					{
 						vec4 clr_n			=clr;
@@ -775,6 +788,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			C0			-=	abs(C0&int3(1,1,1));
 			C0			=	C0>>1;
 			idx			++;
+			LOD			=LOD+1;
 		}
 	}
     res.colour			=vec4(colour.rgb,colour.a);
