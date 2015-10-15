@@ -93,7 +93,7 @@ vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed)
 }
 
 
-vec4 Noise3D(Texture3D random_texture_3d,int freq,vec3 texCoords,int octaves,float persistence)
+vec4 Noise3D(Texture3D random_texture_3d,int freq,vec3 texCoords,int octaves,float persistence,float strength)
 {
 	vec4 result		=vec4(0,0,0,0);
 	float mult		=0.5;
@@ -123,7 +123,7 @@ vec4 Noise3D(Texture3D random_texture_3d,int freq,vec3 texCoords,int octaves,flo
 		last		=c.rgb;
     }
 	// divide by total to get the range -1,1.
-	result			*=1.0/total;
+	result		*=strength/total;
 	result		=clamp(result,vec4(-1.0,-1.0,-1.0,-1.0),vec4(1.0,1.0,1.0,1.0));
 	return result;
 }

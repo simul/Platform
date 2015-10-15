@@ -58,7 +58,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 #if 1
 	//vec3 view=normalize((mul(invViewProj,vec4(clip_pos.xy,1.0,1.0))).xyz);
 	//vec3 lightspaceView			=normalize((mul(clipPosToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
-	vec3 view=vec4(clip_pos.xy,1.0,1.0);
+	vec3 view					=vec3(clip_pos.xy,1.0);
 	vec3 lightspaceView			=normalize((mul(clipPosToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
 	vec3 volumeTexCoords		=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*asin(lightspaceView.z)/pi),dist_rt);
 #else
