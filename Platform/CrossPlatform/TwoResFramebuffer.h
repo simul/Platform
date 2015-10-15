@@ -12,6 +12,12 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		/// A small structure for per-frame amortization of buffers.
+		struct AmortizationStruct
+		{
+			int framenumber;
+			int amortization;
+		};
 		class Texture;
 		struct DeviceContext;
 		class RenderPlatform;
