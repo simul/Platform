@@ -189,15 +189,16 @@ vec4 PS_Main_depthTexture(v2f IN,bool reverseDepth)
 
 	return MainPS(IN,viewportTexCoords);
 }
+
 shader vec4 PS_Main_depthReverse(v2f IN) : SV_TARGET
 {
 	return PS_Main_depthTexture(IN,true);
 }
+
 shader vec4 PS_Main_depthForward(v2f IN) : SV_TARGET
 {
 	return PS_Main_depthTexture(IN,false);
 }
-
 
 struct v2f2
 {

@@ -24,8 +24,8 @@ void ExtendDepths(inout vec2 farthest_nearest,float d,bool reverseDepth)
 		farthest_nearest.y	=min(farthest_nearest.y,d);
 		farthest_nearest.x	=max(farthest_nearest.x,d);
 	}
-
 }
+
 void ExtendDepths(inout vec2 farthest_nearest,vec2 d,bool reverseDepth)
 {
 	if(reverseDepth)
@@ -38,8 +38,8 @@ void ExtendDepths(inout vec2 farthest_nearest,vec2 d,bool reverseDepth)
 		farthest_nearest.y	=min(farthest_nearest.y,min(d.x,d.y));
 		farthest_nearest.x	=max(farthest_nearest.x,max(d.x,d.y));
 	}
-
 }
+
 void ExtendDepths(inout vec2 farthest_nearest,vec4 d,bool reverseDepth)
 {
 	vec2 mx=vec2(max(d.x,d.z),max(d.y,d.w));
@@ -54,7 +54,6 @@ void ExtendDepths(inout vec2 farthest_nearest,vec4 d,bool reverseDepth)
 		farthest_nearest.y	=min(farthest_nearest.y,min(mn.x,mn.y));
 		farthest_nearest.x	=max(farthest_nearest.x,max(mx.x,mx.y));
 	}
-
 }
 
 vec2 depthToLinearDistanceM(vec2 depth,DepthIntepretationStruct depthInterpretationStruct,float max_dist)
@@ -71,7 +70,6 @@ vec2 depthToLinearDistanceM(vec2 depth,DepthIntepretationStruct depthInterpretat
 		linearFadeDistanceZ.x = min(max_dist,linearFadeDistanceZ.x);
 		linearFadeDistanceZ.y = min(max_dist,linearFadeDistanceZ.y);
 	}
-
 	return linearFadeDistanceZ;
 }
 
@@ -123,7 +121,6 @@ vec4 HalfscaleInitial_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_d
 			}
 		}
 	}
-	float edge=0.0;
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
 		if(depthInterpretationStruct.reverseDepth)
@@ -139,15 +136,11 @@ vec4 HalfscaleInitial_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_d
 		}
 
 		vec2 fn = depthToLinearDistanceM(farthest_nearest.xy,depthInterpretationStruct,1.0);
-		edge	=abs(fn.x-fn.y);
-		//edge	=abs(farthest_nearest.x-farthest_nearest.y);
-		edge	=step(EDGE_FACTOR,edge);
 		farthest_nearest.xy=saturate(farthest_nearest.xy);
 	}
-	vec4 res=vec4(farthest_nearest,edge,0.0);
+	vec4 res=vec4(farthest_nearest,0,0.0);
 	return res;
 }
-
 
 vec4 HalfscaleOnly_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture, int2 source_dims, int2 source_offset, int2 cornerOffset, int2 pos, DepthIntepretationStruct depthInterpretationStruct, float nearThresholdDepth)
 {
@@ -201,7 +194,6 @@ vec4 HalfscaleOnly_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture, int2 source_dim
 			}
 		}
 	}
-	float edge=0.0;
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
 		if(depthInterpretationStruct.reverseDepth)
@@ -216,14 +208,16 @@ vec4 HalfscaleOnly_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture, int2 source_dim
 			if(farthest_nearest.y >= 1.0)
 				farthest_nearest.y = 1.0;
 		}
-
-		vec2 fn = depthToLinearDistanceM(farthest_nearest.xy,depthInterpretationStruct,1.0);
-		edge	=abs(fn.x-fn.y);
-		//edge	=abs(farthest_nearest.x-farthest_nearest.y);
-		edge	=step(EDGE_FACTOR,edge);
 		farthest_nearest.xy=saturate(farthest_nearest.xy);
 	}
-	vec4 res=vec4(farthest_nearest,edge,0.0);
+	else
+	{
+		if(depthInterpretationStruct.reverseDepth)
+			farthest_nearest.y = 1.0;
+		else
+			farthest_nearest.y = 0.0;
+	}
+	vec4 res=vec4(farthest_nearest,0,0.0);
 	return res;
 }
 
@@ -291,7 +285,6 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture, int2 source_dims, uint2 source_
 			farthest_nearest.x	=max(farthest_nearest.x,dmax);
 		}
 	}
-	float edge=0.0;
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
 		if(depthInterpretationStruct.reverseDepth)
@@ -307,11 +300,16 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture, int2 source_dims, uint2 source_
 		}
 
 		vec2 fn = depthToLinearDistanceM(farthest_nearest.xy,depthInterpretationStruct,1.0);
-		edge	=abs(fn.x-fn.y);
-		edge	=step(EDGE_FACTOR,edge);
 		farthest_nearest.xy=saturate(farthest_nearest.xy);
 	}
-	vec4 res=vec4(farthest_nearest,edge,0.0);
+	else
+	{
+		if(depthInterpretationStruct.reverseDepth)
+			farthest_nearest.y = 1.0;
+		else
+			farthest_nearest.y = 0.0;
+	}
+	vec4 res=vec4(farthest_nearest,0,0.0);
 	return res;
 }
 
@@ -374,8 +372,7 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture, int2 source_dims, uint2 sour
 		farthest_nearest.x=max(farthest_nearest.x,d1);
 	//	farthest_nearest.xy = max(farthest_nearest.xy, nearThresholdDepth);
 	}
-	float edge=0.0;
-	vec4 res=vec4(farthest_nearest,edge,0.0);
+	vec4 res=vec4(farthest_nearest,0,0.0);
 	return res;
 }
 
@@ -438,7 +435,6 @@ vec4 Halfscale(Texture2D sourceDepthTexture, uint2 source_dims, uint2 source_off
 	{
 		farthest_nearest.xy=min(farthest_nearest.xy,0.1);
 	}
-	float edge=0.0;
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
 		if(depthInterpretationStruct.reverseDepth)
@@ -452,13 +448,16 @@ vec4 Halfscale(Texture2D sourceDepthTexture, uint2 source_dims, uint2 source_off
 			farthest_nearest.y=min(farthest_nearest.y,1.0);
 			//farthest_nearest.xy = max(farthest_nearest.xy, nearThresholdDepth);
 		}
-
-		vec2 fn = depthToLinearDistanceM(farthest_nearest.xy,depthInterpretationStruct,1.0);
-		edge	=abs(fn.x-fn.y);
-		edge	=step(EDGE_FACTOR,edge);
 		farthest_nearest.xy=saturate(farthest_nearest.xy);
 	}
-	vec4 res=vec4(farthest_nearest,edge,0.0);
+	else
+	{
+		if(depthInterpretationStruct.reverseDepth)
+			farthest_nearest.y = 1.0;
+		else
+			farthest_nearest.y = 0.0;
+	}
+	vec4 res=vec4(farthest_nearest,0,0.0);
 	return res;
 }
 #endif
