@@ -38,6 +38,7 @@ MixedResolutionView::MixedResolutionView()
 void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
+	amortizationStruct.reset();
 	SAFE_DELETE(hdrFramebuffer);
 	SAFE_DELETE(resolvedTexture);
 	if(renderPlatform)
@@ -76,6 +77,9 @@ int MixedResolutionView::GetScreenHeight() const
 
 void MixedResolutionView::SetResolution(int w,int h)
 {
+	if(ScreenWidth==w&&ScreenHeight==h)
+		return;
+	amortizationStruct.reset();
 	ScreenWidth	=w;
 	ScreenHeight=h;
 }
@@ -139,6 +143,14 @@ void MixedResolutionViewManager::RemoveView(int view_id)
 MixedResolutionView *MixedResolutionViewManager::GetView(int view_id)
 {
 	ViewMap::iterator i=views.find(view_id);
+	if(i==views.end())
+		return NULL;
+	return i->second;
+}
+
+const MixedResolutionView *MixedResolutionViewManager::GetView(int view_id) const
+{
+	ViewMap::const_iterator i=views.find(view_id);
 	if(i==views.end())
 		return NULL;
 	return i->second;

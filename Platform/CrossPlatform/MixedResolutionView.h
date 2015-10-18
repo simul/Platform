@@ -5,6 +5,7 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/Topology.h"
+#include "Simul/Platform/CrossPlatform/TwoResFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
 #include "Simul/Geometry/Orientation.h"
 #include <set>
@@ -17,8 +18,6 @@ namespace simul
 	namespace crossplatform
 	{
 		class Texture;
-		class BaseFramebuffer;
-		class TwoResFramebuffer;
 		class Effect;
 		struct Viewport;
 		class RenderPlatform;
@@ -80,6 +79,7 @@ namespace simul
 			/// Type of view.
 			crossplatform::ViewType						viewType;
 			bool										vrDistortion;
+			crossplatform::AmortizationStruct			amortizationStruct;
 		private:
 			///      A framebuffer with depth.
 			simul::crossplatform::BaseFramebuffer		*hdrFramebuffer;
@@ -121,11 +121,15 @@ namespace simul
 			///
 			/// \return	null if it fails, else the view.
 			MixedResolutionView				*GetView				(int view_id);
+			
+			const MixedResolutionView		*GetView		(int view_id) const;
 
 			/// Gets the views.
 			///
 			/// \return	null if it fails, else the views.
 			std::set<MixedResolutionView*>	GetViews				();
+			
+			const std::set<MixedResolutionView*>	GetViews		() const;
 
 			/// Adds a view.
 			///

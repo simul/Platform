@@ -17,6 +17,57 @@ namespace simul
 		{
 			int framenumber;
 			int amortization;
+			int4 validRegion;
+			int2 pixelOffset;
+			AmortizationStruct()
+				:framenumber(0)
+				,amortization(1)
+				,validRegion(0,0,0,0)
+			{
+			}
+			/// Reset frame data, but not properties.
+			void reset()
+			{
+				framenumber=0;
+			}
+			int2 offset() const
+			{
+				int a			=amortization;
+				int sub_frame	=framenumber%(a*a);
+				int offsx		=sub_frame/a;
+				int offsy		=sub_frame-offsx*a;
+				return int2(offsx,offsy);
+			}
+			void updateRegion(vec2 newPixelOffset)
+			{
+				int2 pos=int2((int)newPixelOffset.x,(int)newPixelOffset.y);
+				int2 del=pixelOffset-pos;
+				validRegion.x+=del.x;
+				validRegion.y+=del.y;
+				if(validRegion.x<0)
+				{
+					validRegion.z+=validRegion.x;
+					validRegion.x=0;
+				}
+				else if(validRegion.x>0)
+				{
+					validRegion.z-=validRegion.x;
+				}
+				if(validRegion.y<0)
+				{
+					validRegion.w+=validRegion.y;
+					validRegion.y=0;
+				}
+				else if(validRegion.y>0)
+				{
+					validRegion.w-=validRegion.y;
+				}
+				pixelOffset=pos;
+			}
+			void validate(int4 region)
+			{
+				validRegion=region;
+			}
 		};
 		class Texture;
 		struct DeviceContext;

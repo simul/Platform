@@ -256,7 +256,13 @@ struct FarNearDepthPixelOutput
 	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
 	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
 };
-
+shader void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
+{
+	uint2 pos				=((g.xy*8+t.xy)+amortizationOffset)%targetTextureSize;
+	outputTexture1[pos]		=vec4(1,0,1,1);
+	outputTexture2[pos]		=vec4(1,0,0,1);
+	outputTexture3[pos]		=vec4(1,1,1,1);
+}
 shader void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
 {
 	uint2 pos				=(g.xy*8+t.xy)*amortization+amortizationOffset;
@@ -310,9 +316,6 @@ FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool
 	texCoords				/=mixedResTransformXYWH.zw;
 	texCoords				=frac(texCoords);
 	texCoords				*=mixedResTransformXYWH.zw;
-	int z			=frameNumber+(IN.texCoords.x*500.0+IN.texCoords.y*300.0);
-	if((z%amortization)!=0)
-		discard;
 
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
@@ -412,6 +415,17 @@ CS_LAYOUT(8,8,1)
 shader void CS_Raytrace_depthForward(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	CS_Raytrace(g,t,false,true);
+}
+CS_LAYOUT(8,8,1)
+shader void CS_Fill_depthReverse(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_Fill(g,t,true,true);
+}
+
+CS_LAYOUT(8,8,1)
+shader void CS_Fill_depthForward(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_Fill(g,t,false,true);
 }
 
 CS_LAYOUT(8,8,1)
@@ -566,6 +580,17 @@ fxgroup raytrace
 			SetRasterizerState( RenderNoCull );
 			SetVertexShader(vs_fullscreen_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_Lightpass_DepthForward()));
+		}
+	}
+	technique fill
+	{
+		pass depth_reverse 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_Fill_depthReverse()));
+		}
+		pass depth_forward 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_Fill_depthForward()));
 		}
 	}
 	technique full_compute
