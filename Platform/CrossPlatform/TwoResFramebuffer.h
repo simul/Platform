@@ -62,6 +62,10 @@ namespace simul
 				{
 					validRegion.w-=validRegion.y;
 				}
+				if(validRegion.z<0)
+					validRegion.z=0;
+				if(validRegion.w<0)
+					validRegion.w=0;
 				pixelOffset=pos;
 			}
 			void validate(int4 region)

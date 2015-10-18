@@ -451,7 +451,6 @@ group inscatter_volume
 	}
 }
 
-
 group inscatter_volume_compute
 {
 	technique with_godrays
