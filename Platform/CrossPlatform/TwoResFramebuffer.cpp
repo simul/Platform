@@ -50,6 +50,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	ERRNO_CHECK
 	renderPlatform	=r;
+	amortizationStruct.reset();
 	SAFE_DELETE(lossTexture);
 	SAFE_DELETE(volumeTextures[0]);
 	SAFE_DELETE(volumeTextures[1]);
@@ -219,12 +220,17 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	view_o.GlobalToLocalDirection(new_view_dir_local,new_view_dir);
 	float dx			= new_view_dir*view_o.Tx();
 	float dy			= new_view_dir*view_o.Ty();
-	dx*=Width*viewStruct.proj._11;
-	dy*=Height*viewStruct.proj._22;
+	dx					*=Width*viewStruct.proj._11;
+	dy					*=Height*viewStruct.proj._22;
 	view_o.DefineFromYZ(new_up_dir,new_view_dir);
-	static float cc=0.5f;
-	pixelOffset.x-=cc*dx;
-	pixelOffset.y-=cc*dy;
+	static float cc		=0.5f;
+	vec2 dp				(-cc*dx,-cc*dy);
+	vec2 oldPixelOffset	=pixelOffset;
+	pixelOffset			+=dp;
+
+	amortizationStruct.updateRegion(oldPixelOffset/float(Downscale),pixelOffset/float(Downscale));
+//	pixelOffset.x-=cc*dx;
+//	pixelOffset.y-=cc*dy;
 
 	pixelOffset=WrapOffset(pixelOffset,int2(Width,Height));
 }

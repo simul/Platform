@@ -38,7 +38,6 @@ MixedResolutionView::MixedResolutionView()
 void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
-	amortizationStruct.reset();
 	SAFE_DELETE(hdrFramebuffer);
 	SAFE_DELETE(resolvedTexture);
 	if(renderPlatform)
@@ -79,7 +78,6 @@ void MixedResolutionView::SetResolution(int w,int h)
 {
 	if(ScreenWidth==w&&ScreenHeight==h)
 		return;
-	amortizationStruct.reset();
 	ScreenWidth	=w;
 	ScreenHeight=h;
 }
@@ -104,20 +102,20 @@ crossplatform::Texture *MixedResolutionView::GetResolvedHDRBuffer()
 void MixedResolutionViewManager::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
-	std::set<MixedResolutionView*> views=GetViews();
-	for(std::set<MixedResolutionView*>::iterator i=views.begin();i!=views.end();i++)
+	auto views=GetViews();
+	for(auto i=views.begin();i!=views.end();i++)
 	{
-		(*i)->RestoreDeviceObjects(renderPlatform);
+		(i->second)->RestoreDeviceObjects(renderPlatform);
 	}
 }
 
 void MixedResolutionViewManager::InvalidateDeviceObjects()
 {
 	renderPlatform=NULL;
-	std::set<MixedResolutionView*> views=GetViews();
-	for(std::set<MixedResolutionView*>::iterator i=views.begin();i!=views.end();i++)
+	auto views=GetViews();
+	for(auto i=views.begin();i!=views.end();i++)
 	{
-		(*i)->InvalidateDeviceObjects();
+		(i->second)->InvalidateDeviceObjects();
 	}
 }
 
@@ -156,12 +154,9 @@ const MixedResolutionView *MixedResolutionViewManager::GetView(int view_id) cons
 	return i->second;
 }
 
-std::set<MixedResolutionView*> MixedResolutionViewManager::GetViews()
+const MixedResolutionViewManager::ViewMap &MixedResolutionViewManager::GetViews() const
 {
-	std::set<MixedResolutionView*> v;
-	for(ViewMap::iterator i=views.begin();i!=views.end();i++)
-		v.insert(i->second);
-	return v;
+	return views;
 }
 
 void MixedResolutionViewManager::Clear()

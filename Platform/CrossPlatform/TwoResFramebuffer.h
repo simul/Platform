@@ -38,10 +38,11 @@ namespace simul
 				int offsy		=sub_frame-offsx*a;
 				return int2(offsx,offsy);
 			}
-			void updateRegion(vec2 newPixelOffset)
+			void updateRegion(vec2 oldPixelOffset,vec2 newPixelOffset)
 			{
-				int2 pos=int2((int)newPixelOffset.x,(int)newPixelOffset.y);
-				int2 del=pixelOffset-pos;
+				int2 new_pos=int2((int)newPixelOffset.x,(int)newPixelOffset.y);
+				int2 old_pos=int2((int)oldPixelOffset.x,(int)oldPixelOffset.y);
+				int2 del=old_pos-new_pos;
 				validRegion.x+=del.x;
 				validRegion.y+=del.y;
 				if(validRegion.x<0)
@@ -66,7 +67,7 @@ namespace simul
 					validRegion.z=0;
 				if(validRegion.w<0)
 					validRegion.w=0;
-				pixelOffset=pos;
+				pixelOffset=new_pos;
 			}
 			void validate(int4 region)
 			{
@@ -119,11 +120,24 @@ namespace simul
 			vec2								pixelOffset;
 			/// Returns	the low-res depth texture.
 			crossplatform::Texture				*GetLowResDepthTexture(int idx=-1);
-			crossplatform::PixelFormat GetDepthFormat() const;
-			void SetDepthFormat(crossplatform::PixelFormat p);
+			crossplatform::PixelFormat			GetDepthFormat() const;
+			void								SetDepthFormat(crossplatform::PixelFormat p);
 			int									final_octave;
+			void								SetAmortization(int a)
+			{
+				amortizationStruct.amortization=a;
+			}
+			int									GetAmortization() const
+			{
+				return amortizationStruct.amortization;
+			}
+			const AmortizationStruct			&GetAmortizationStruct() const
+			{
+				return amortizationStruct;
+			}
 		protected:
 			int									Width,Height,Downscale;
+			AmortizationStruct					amortizationStruct;
 			int									volume_num;
 			crossplatform::PixelFormat			depthFormat;
 			simul::geometry::SimulOrientation	view_o;

@@ -76,10 +76,13 @@ namespace simul
 			{
 				return hdrFramebuffer;
 			}
+			const crossplatform::BaseFramebuffer		*GetFramebuffer() const
+			{
+				return hdrFramebuffer;
+			}
 			/// Type of view.
 			crossplatform::ViewType						viewType;
 			bool										vrDistortion;
-			crossplatform::AmortizationStruct			amortizationStruct;
 		private:
 			///      A framebuffer with depth.
 			simul::crossplatform::BaseFramebuffer		*hdrFramebuffer;
@@ -107,6 +110,8 @@ namespace simul
 				last_created_view_id(-1)
 				,renderPlatform(NULL)
 			{}
+			
+			typedef std::map<int,MixedResolutionView*>	ViewMap;
 
 			/// Restore the device objects.
 			///
@@ -126,10 +131,8 @@ namespace simul
 
 			/// Gets the views.
 			///
-			/// \return	null if it fails, else the views.
-			std::set<MixedResolutionView*>	GetViews				();
-			
-			const std::set<MixedResolutionView*>	GetViews		() const;
+			/// \return	the views.
+			const ViewMap &MixedResolutionViewManager::GetViews() const;
 
 			/// Adds a view.
 			///
@@ -147,7 +150,6 @@ namespace simul
 		protected:
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;
-			typedef std::map<int,MixedResolutionView*>	ViewMap;
 			ViewMap							views;
 			/// Identifier for the last created view.
 			int								last_created_view_id;
