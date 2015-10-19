@@ -95,6 +95,7 @@ namespace simul
 			int								ScreenWidth;
 			/// Height of the screen.
 			int								ScreenHeight;
+			int								Downscale;
 			int								last_framenumber;
 		public:
 			/// true to use external framebuffer.

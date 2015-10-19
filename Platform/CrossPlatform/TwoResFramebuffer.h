@@ -92,8 +92,16 @@ namespace simul
 			crossplatform::Texture *GetVolumeTexture(int num);
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			virtual void InvalidateDeviceObjects();
-			virtual void SetDimensions(int w,int h,int downscale);
-			virtual void GetDimensions(int &w,int &h,int &downscale);
+			virtual void SetDimensions(int w,int h);
+			virtual void GetDimensions(int &w,int &h);
+			int GetDownscale() const
+			{
+				return Downscale;
+			}
+			void SetDownscale(int d)
+			{
+				Downscale=d;
+			}
 			/// Activate BOTH low-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivatelLowRes after rendering.
 			virtual void ActivateLowRes(crossplatform::DeviceContext &);
 			/// Deactivate both low-res framebuffers.
@@ -102,7 +110,8 @@ namespace simul
 			virtual void DeactivateDepth(crossplatform::DeviceContext &);
 			virtual void ActivateVolume(crossplatform::DeviceContext &,int num);
 			virtual void DeactivateVolume(crossplatform::DeviceContext &);
-
+			/// This must be called to ensure that the amortization struct is up to date.
+			void CompleteFrame();
 			/// Debugging onscreen info:
 			///
 			/// \param [in,out]	deviceContext	Context for the device.

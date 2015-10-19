@@ -151,6 +151,13 @@ void TwoResFramebuffer::DeactivateLowRes(crossplatform::DeviceContext &deviceCon
 	renderPlatform->DeactivateRenderTargets(deviceContext);
 }
 
+void TwoResFramebuffer::CompleteFrame()
+{
+	amortizationStruct.framenumber++;
+	int D=Downscale;
+	amortizationStruct.validate(int4(0,0,int(Width+D-1)/D,int(Height+D-1)/D));
+}
+
 void TwoResFramebuffer::ActivateVolume(crossplatform::DeviceContext &deviceContext,int num)
 {
 	renderPlatform->PushRenderTargets(deviceContext);
@@ -168,24 +175,20 @@ void TwoResFramebuffer::DeactivateVolume(crossplatform::DeviceContext &deviceCon
 	renderPlatform->PopRenderTargets(deviceContext);
 }
 
-void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
+void TwoResFramebuffer::SetDimensions(int w,int h)
 {
-	if(downscale<1)
-		downscale=1;
-	if(Width!=w||Height!=h||Downscale!=downscale)
+	if(Width!=w||Height!=h)
 	{
 		Width=w;
 		Height=h;
-		Downscale=downscale;
 		RestoreDeviceObjects(renderPlatform);
 	}
 }
 
-void TwoResFramebuffer::GetDimensions(int &w,int &h,int &downscale)
+void TwoResFramebuffer::GetDimensions(int &w,int &h)
 {
 	w=Width;
 	h=Height;
-	downscale=Downscale;
 }
 
 

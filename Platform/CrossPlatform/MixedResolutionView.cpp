@@ -22,6 +22,7 @@ using namespace crossplatform;
 MixedResolutionView::MixedResolutionView()
 	:ScreenWidth(0)
 	,ScreenHeight(0)
+	,Downscale(4)
 	,viewType(MAIN_3D_VIEW)
 	,useExternalFramebuffer(false)
 	,hdrFramebuffer(NULL)
