@@ -376,6 +376,11 @@
 			this->x=x;
 			this->y=y;
 		}
+		int2(const int2& c)
+		{
+			this->x=c.x;
+			this->y=c.y;
+		}
 		int2(const int *v)
 		{
 			operator=(v);
@@ -388,15 +393,23 @@
 		{
 			return &x;
 		}
-		void operator=(const int *v)
+		const int2& operator=(const int2 &v)
 		{
-			x=v[0];
-			y=v[1];
+			x=v.x;
+			y=v.y;
+			return *this;
 		}
-		void operator=(const unsigned *v)
+		const int2& operator=(const int *v)
 		{
 			x=v[0];
 			y=v[1];
+			return *this;
+		}
+		const int2& operator=(const unsigned *v)
+		{
+			x=v[0];
+			y=v[1];
+			return *this;
 		}
 		int2 operator+(int2 v)
 		{
