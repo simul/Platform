@@ -21,6 +21,7 @@ void AmortizationStruct::setAmortization(int a)
 	delete [] pattern;
 	pattern=NULL;
 	simul::math::RandomNumberGenerator rand;
+	amortization=a;
 	if(a<=1)
 		return;
 	std::vector<int2> src;
@@ -45,7 +46,6 @@ void AmortizationStruct::setAmortization(int a)
 		pattern[i]=v;
 		src.erase(u);
 	}
-	amortization=a;
 }
 
 TwoResFramebuffer::TwoResFramebuffer()

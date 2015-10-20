@@ -28,6 +28,7 @@ namespace simul
 			,RGBA_32_UINT
 			// depth formats:
 			,D_32_FLOAT// DXGI_FORMAT_D32_FLOAT or GL_DEPTH_COMPONENT32F
+			,D_24_UNORM_S_8_UINT
 			,D_16_UNORM
 		};
 		inline int GetElementSize(PixelFormat p)
@@ -51,6 +52,8 @@ namespace simul
 			case RGBA_16_FLOAT:
 			case D_16_UNORM:
 				return sizeof(short);
+			case D_24_UNORM_S_8_UINT:
+				return sizeof(unsigned int);
 			case RGBA_8_UNORM:
 			case RGBA_8_SNORM:
 			case R_8_UNORM:
@@ -83,6 +86,7 @@ namespace simul
 			case R_32_UINT:
 			case R_16_FLOAT:
 			case D_16_UNORM:
+			case D_24_UNORM_S_8_UINT:
 			case R_8_UNORM:
 			case R_8_SNORM:
 				return 1;

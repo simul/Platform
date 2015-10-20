@@ -46,7 +46,7 @@ namespace simul
 			}
 			int2 offset() const
 			{
-				if(amortization<=1)
+				if(!pattern||amortization<=1)
 					return int2(0,0);
 				int a			=amortization;
 				int sub_frame	=framenumber%(a*a);

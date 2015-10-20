@@ -534,6 +534,11 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		texture2dFormat	=DXGI_FORMAT_R16_TYPELESS;
 		srvFormat		=DXGI_FORMAT_R16_UNORM;
 	}
+	if(texture2dFormat==DXGI_FORMAT_D24_UNORM_S8_UINT)
+	{
+		texture2dFormat	=DXGI_FORMAT_R24G8_TYPELESS ;
+		srvFormat		=DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	}
 	dim=2;
 	ID3D11Device *pd3dDevice=renderPlatform->AsD3D11Device();
 	D3D11_TEXTURE2D_DESC textureDesc;
@@ -590,7 +595,6 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 
-		
 		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));

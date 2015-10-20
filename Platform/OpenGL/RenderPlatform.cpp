@@ -658,6 +658,8 @@ GLuint RenderPlatform::ToGLFormat(crossplatform::PixelFormat p)
 		return GL_RGB32UI;
 	case D_32_FLOAT:
 		return GL_DEPTH_COMPONENT32F;
+	case D_24_UNORM_S_8_UINT:
+		return GL_DEPTH_COMPONENT24;
 	case D_16_UNORM:
 		return GL_DEPTH_COMPONENT16;
 	default:
@@ -706,6 +708,8 @@ crossplatform::PixelFormat RenderPlatform::FromGLFormat(GLuint p)
 			return RGB_32_UINT;
 		case GL_DEPTH_COMPONENT32F:
 			return D_32_FLOAT;
+		case GL_DEPTH_COMPONENT24:
+			return D_24_UNORM_S_8_UINT;
 		case GL_DEPTH_COMPONENT16:
 			return D_16_UNORM;
 	default:
@@ -755,6 +759,8 @@ GLuint RenderPlatform::ToGLExternalFormat(crossplatform::PixelFormat p)
 		return GL_RED;// not GL_R...!
 	case D_32_FLOAT:
 		return GL_DEPTH_COMPONENT;
+	case D_24_UNORM_S_8_UINT:
+		return GL_DEPTH_COMPONENT24;
 	case D_16_UNORM:
 		return GL_DEPTH_COMPONENT;
 	default:
@@ -806,6 +812,8 @@ int RenderPlatform::FormatCount(crossplatform::PixelFormat p)
 		return 1;
 	case D_16_UNORM:
 		return 1;
+	case D_24_UNORM_S_8_UINT:
+		return 3;
 	default:
 		return 0;
 	};
@@ -855,6 +863,8 @@ GLenum RenderPlatform::DataType(crossplatform::PixelFormat p)
 		return GL_FLOAT;
 	case D_16_UNORM:
 		return GL_UNSIGNED_SHORT;
+	case D_24_UNORM_S_8_UINT:
+		return GL_UNSIGNED_INT_24_8;
 	default:
 		return 0;
 	};
