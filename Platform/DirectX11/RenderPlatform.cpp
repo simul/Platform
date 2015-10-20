@@ -1055,15 +1055,7 @@ void RenderPlatform::Resolve(crossplatform::DeviceContext &deviceContext,crosspl
 
 void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
-	std::string fn_utf8=lFileNameUtf8;
-	bool as_dds=false;
-	if(fn_utf8.find(".dds")<fn_utf8.length())
-		as_dds=true;
-	std::wstring wfilename=simul::base::Utf8ToWString(fn_utf8);
-	ID3D11DeviceContext*			m_pImmediateContext;
-	AsD3D11Device()->GetImmediateContext(&m_pImmediateContext);
-	D3DX11SaveTextureToFileW(m_pImmediateContext,texture->AsD3D11Texture2D(),as_dds?D3DX11_IFF_DDS:D3DX11_IFF_PNG,wfilename.c_str());
-	SAFE_RELEASE(m_pImmediateContext);
+	dx11::SaveTexture(device,texture->AsD3D11Texture2D(),lFileNameUtf8);
 }
 
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )

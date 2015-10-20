@@ -74,6 +74,8 @@ ID3D11Query *CreateQuery(ID3D11Device* device,D3D11_QUERY_DESC &desc,const char 
 void Profiler::StartFrame(void* ctx)
 {
 	level=0;
+	if(profileMap.find("root")==profileMap.end())
+		profileMap["root"]=new ProfileData();
 #ifdef SIMUL_WIN8_SDK
 	if(enabled)
 	{
@@ -134,6 +136,8 @@ void Profiler::Begin(void *ctx,const char *name)
     ProfileData *parentData=NULL;
 	if(parent.length())
 		parentData=profileMap[parent];
+	else
+		parentData=profileMap["root"];
 	if(parentData)
 	{
 		new_child_index=++parentData->last_child_updated;
@@ -149,8 +153,6 @@ void Profiler::Begin(void *ctx,const char *name)
 		profileData->child_index=new_child_index;
 	}
 	profileData->parent=parentData;
-	if(!parentData)
-		rootMap[qualified_name]=profileData;
     _ASSERT(profileData->QueryStarted == FALSE);
     if(profileData->QueryFinished!= FALSE)
         return;
@@ -292,6 +294,12 @@ void Profiler::EndFrame(void* c)
 
         profile.time+=mix*time;
     }
+	ProfileData *rootProfileData=profileMap["root"];
+	rootProfileData->time=0.0f;
+	for(auto i=rootProfileData->children.begin();i!=rootProfileData->children.end();i++)
+	{
+		rootProfileData->time+=i->second->time;
+	}
 }
 
 float Profiler::GetTime(const std::string &name) const
@@ -362,11 +370,15 @@ const char *Profiler::GetDebugText(base::TextStyle style) const
 {
 	static std::string str;
 	str="";
-	float total=0.f;
-	for(Profiler::ProfileMap::const_iterator i=rootMap.begin();i!=rootMap.end();i++)
-		total+=i->second->time;
+	auto u=profileMap.find("root");
+	if(u==profileMap.end())
+		return "";
+	ProfileData *rootProfileData=u->second;
+	if(!rootProfileData)
+		return "";
+	float total=rootProfileData->time;
 	str += formatLine("TOTAL", 0, total, 0.0f, style);
-	for(Profiler::ProfileMap::const_iterator i=rootMap.begin();i!=rootMap.end();i++)
+	for(auto i=rootProfileData->children.begin();i!=rootProfileData->children.end();i++)
 	{
 		if(!i->second->updatedThisFrame)
 			continue;
@@ -377,6 +389,30 @@ const char *Profiler::GetDebugText(base::TextStyle style) const
     str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
 	str += (style == base::HTML) ? "<br/>" : "\n";
 	return str.c_str();
+}
+
+const base::ProfileData *Profiler::GetEvent(const base::ProfileData *parent,int i) const
+{
+	if(parent==NULL)
+	{
+		auto u=profileMap.find("root");
+		if(u==profileMap.end())
+			return NULL;
+		return u->second;
+	}
+	Profiler::ProfileData *p=(Profiler::ProfileData*)parent;
+	int j=0;
+	for(Profiler::ChildMap::const_iterator it=p->children.begin();it!=p->children.end();it++,j++)
+	{
+		if(j==i)
+		{
+			base::ProfileData *d=it->second;
+			d->name=it->second->unqualifiedName;
+			d->time=it->second->time;
+			return it->second;
+		}
+	}
+	return NULL;
 }
 
 // == ProfileBlock ================================================================================
