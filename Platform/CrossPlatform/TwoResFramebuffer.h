@@ -15,15 +15,29 @@ namespace simul
 		/// A small structure for per-frame amortization of buffers.
 		struct AmortizationStruct
 		{
-			int framenumber;
+		private:
 			int amortization;
+		public:
+			int framenumber;
 			int4 validRegion;
 			int2 pixelOffset;
+			int2 *pattern;
 			AmortizationStruct()
 				:framenumber(0)
 				,amortization(1)
 				,validRegion(0,0,0,0)
+				,pixelOffset(0,0)
+				,pattern(NULL)
 			{
+			}
+			~AmortizationStruct()
+			{
+				delete [] pattern;
+			}
+			void setAmortization(int a);
+			int getAmortization() const
+			{
+				return amortization;
 			}
 			/// Reset frame data, but not properties.
 			void reset()
@@ -32,11 +46,13 @@ namespace simul
 			}
 			int2 offset() const
 			{
+				if(amortization<=1)
+					return int2(0,0);
 				int a			=amortization;
 				int sub_frame	=framenumber%(a*a);
 				int offsx		=sub_frame/a;
 				int offsy		=sub_frame-offsx*a;
-				return int2(offsx,offsy);
+				return pattern[sub_frame];//(int2(offsx,offsy);//
 			}
 			void updateRegion(vec2 oldPixelOffset,vec2 newPixelOffset)
 			{
@@ -134,11 +150,11 @@ namespace simul
 			int									final_octave;
 			void								SetAmortization(int a)
 			{
-				amortizationStruct.amortization=a;
-			}
+				amortizationStruct.setAmortization(a);
+ 			}
 			int									GetAmortization() const
 			{
-				return amortizationStruct.amortization;
+				return amortizationStruct.getAmortization();
 			}
 			const AmortizationStruct			&GetAmortizationStruct() const
 			{

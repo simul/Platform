@@ -7,10 +7,46 @@
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Math/RandomNumberGenerator.h"
 #include "Simul/Math/Vector3.h"
 
 using namespace simul;
 using namespace crossplatform;
+#pragma optimize("",off)
+
+void AmortizationStruct::setAmortization(int a)
+{
+	if(amortization==a)
+		return;
+	delete [] pattern;
+	pattern=NULL;
+	simul::math::RandomNumberGenerator rand;
+	if(a<=1)
+		return;
+	std::vector<int2> src;
+	src.reserve(a*a);
+	int n=0;
+	for(int i=0;i<a;i++)
+	{
+		for(int j=0;j<a;j++)
+		{
+			int2 v(i,j);
+			src.push_back(v);
+			n++;
+		}
+	}
+	pattern=new int2[n];
+	for(int i=0;i<n;i++)
+	{
+	//	pattern[i]=src[i];
+		int idx=rand.IRand(src.size());
+		auto u=src.begin()+idx;
+		int2 v=*u;
+		pattern[i]=v;
+		src.erase(u);
+	}
+	amortization=a;
+}
 
 TwoResFramebuffer::TwoResFramebuffer()
 	:renderPlatform(0)
@@ -61,9 +97,6 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	for (int i = 0; i < 3; i++)
 	{
 		lowResFramebuffers[i]=renderPlatform->CreateTexture();
-		//lowResFramebuffers[i]->SetFormat(crossplatform::RGBA_16_FLOAT);
-		//lowResFramebuffers[i]->SetDepthFormat(crossplatform::UNKNOWN);
-		//lowResFramebuffers[i]->SetUseFastRAM(true, true);
 	}
 	ERRNO_CHECK
 	for(int i=0;i<4;i++)
@@ -155,7 +188,7 @@ void TwoResFramebuffer::CompleteFrame()
 {
 	amortizationStruct.framenumber++;
 	int D=Downscale;
-	amortizationStruct.validate(int4(0,0,int(Width+D-1)/D,int(Height+D-1)/D));
+	amortizationStruct.validate(int4(0,0,(Width+D-1)/D+1,(Height+D-1)/D+1));
 }
 
 void TwoResFramebuffer::ActivateVolume(crossplatform::DeviceContext &deviceContext,int num)
@@ -195,7 +228,7 @@ void TwoResFramebuffer::GetDimensions(int &w,int &h)
 vec2 WrapOffset(vec2 pixelOffset,int2 scale)
 {
 	if(scale.x<1)
-		scale.x-1;
+		scale.x=1;
 	if(scale.y<1)
 		scale.y=1;
 	pixelOffset.x/=(float)scale.x;
