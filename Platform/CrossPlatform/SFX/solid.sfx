@@ -75,7 +75,7 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 	vec2 texCoords				=0.5*vec2(clip_pos.x+1.0,1.0-clip_pos.y);
 	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
 
-	vec4 nearFarCloud			=texture_clamp_lod(nearFarTexture	,lowResTexCoords		,0);
+	vec4 nearFarCloud			=texture_wrap_lod(nearFarTexture	,lowResTexCoords		,0);
 
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
@@ -84,23 +84,23 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 	float dist_rt				=pow(dist,0.5);
 	
 	vec3 volumeTexCoords		=vec3(lowResTexCoords,dist_rt);
-	vec4 shadow_lookup			=vec4(1.0, 1.0, 0, 0);
+	vec4 shadow_lookup			=vec4(1.0,1.0,0,0);
 	//if (depth>0.0)
-		shadow_lookup			=texture_clamp_lod(shadowTexture, lowResTexCoords, 0);
+		shadow_lookup			=texture_wrap_lod(shadowTexture, lowResTexCoords, 0);
 	float shadow				=shadow_lookup.x;
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
-	vec4 insc					=texture_3d_clamp_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
-	float visibility			=saturate((nearFarCloud.w-dist) / 0.1);
+	vec4 insc					=texture_3d_wwc_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
+	float visibility			=saturate((nearFarCloud.w-dist) / 0.01);
 
 	insc.rgb					*=visibility;
-	loss						=vec4(texture_clamp_lod(loss2dTexture,loss_texc,0).rgb*shadow,visibility);
+	loss						=vec4(texture_wrap_lod(loss2dTexture,loss_texc,0).rgb*shadow,visibility);
 	add							=insc.rgb;
 }
 
 shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 {
     vec3 normal	=normalize(IN.normal);
-    vec4 c = vec4(0.5,0.5,0.5,0.5);
+    vec4 c = vec4(0.1,0.1,0.1,0.8);
 	//texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
 	vec3 totalDiff=sample_3d(diffuseCubemap,cubeSamplerState,-normal.xyz).rgb;
 	//c.rgb*=totalDiff;
