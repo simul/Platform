@@ -93,14 +93,14 @@ Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 	if(z0>z1)
 	{
 		frustum.reverseDepth=false;
-		frustum.nearZ=-z0;
-		frustum.farZ=-z1;
+		frustum.nearZ		=-z0;
+		frustum.farZ		=-z1;
 	}
 	else
 	{
 		frustum.reverseDepth=true;
-		frustum.nearZ=-z1;
-		frustum.farZ=-z0;
+		frustum.nearZ		=-z1;
+		frustum.farZ		=-z0;
 	}
 	frustum.tanHalfHorizontalFov=1.f/M._11;
 	frustum.tanHalfVerticalFov=1.f/M._22;
