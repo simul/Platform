@@ -17,7 +17,6 @@ typedef enum D3DX11_IMAGE_FILE_FORMAT
     D3DX11_IFF_FORCE_DWORD = 0x7fffffff
 
 } D3DX11_IMAGE_FILE_FORMAT;
-extern HRESULT D3DX11SaveTextureToFileW(ID3D11DeviceContext       *pContext,ID3D11Resource            *pSrcTexture,D3DX11_IMAGE_FILE_FORMAT    DestFormat,LPCWSTR                   pDestFile);
 #endif
 #include "Simul/Platform/DirectX11/Export.h"
 

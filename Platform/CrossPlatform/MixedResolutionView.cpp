@@ -50,7 +50,7 @@ void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 			hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
 			hdrFramebuffer->SetUseFastRAM(true,true);
 			hdrFramebuffer->SetFormat(RGBA_16_FLOAT);
-			hdrFramebuffer->SetDepthFormat(D_24_UNORM_S_8_UINT);//D_32_FLOAT);
+			hdrFramebuffer->SetDepthFormat(D_32_FLOAT);
 		}
 	}
 }

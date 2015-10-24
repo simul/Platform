@@ -4,6 +4,7 @@
 #include "MacrosDX1x.h"
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Base/FileLoader.h"
+#include "Simul/Base/RuntimeError.h"
 #include <string>
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
@@ -13,11 +14,37 @@ using namespace simul;
 using namespace dx11;
 #ifdef SIMUL_WIN8_SDK
 
-HRESULT D3DX11SaveTextureToFileW(ID3D11DeviceContext       *pContext,ID3D11Resource            *pSrcTexture,D3DX11_IMAGE_FILE_FORMAT    DestFormat,LPCWSTR                   pDestFile)
+#include <DirectXTex.h>
+#include <wincodec.h>
+namespace simul
 {
-	return S_FALSE;
+	namespace dx11
+	{
+		void SaveTexture(ID3D11Device *pd3dDevice,ID3D11Texture2D *texture,const char *filename_utf8)
+{
+			std::string fn_utf8=filename_utf8;
+			bool as_dds=false;
+			if(fn_utf8.find(".dds")<fn_utf8.length())
+				as_dds=true;
+			std::wstring wfilename=simul::base::Utf8ToWString(fn_utf8);
+			ID3D11DeviceContext*			m_pImmediateContext;
+			pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+			int flags=0;
+//			DirectX::TexMetadata metadata;
+			DirectX::ScratchImage scratchImage;
+			HRESULT hr=DirectX::CaptureTexture( pd3dDevice, m_pImmediateContext, texture, scratchImage );
+			if(hr!=S_OK)
+{
+				SIMUL_CERR<<"Failed to save texture "<<filename_utf8<<std::endl;
+				return;
 }
-#endif
+			const DirectX::Image *image=scratchImage.GetImage(0,0,0);
+			DirectX::SaveToWICFile(*image,DirectX::WIC_FLAGS_NONE,GUID_ContainerFormatPng,wfilename.c_str(),&GUID_WICPixelFormat24bppBGR);
+			SAFE_RELEASE(m_pImmediateContext);
+		}
+	}
+}
+#else
 
 namespace simul
 {
@@ -37,6 +64,8 @@ namespace simul
 		}
 	}
 }
+#endif
+
 /*
 extern void SaveScreenshot(ID3D11Device* pd3dDevice,const char *txt);
 {

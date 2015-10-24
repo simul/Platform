@@ -780,6 +780,19 @@ technique moisture_accumulation
     }
 }
 
+technique cloud_placement_volume
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( wireframeRasterizer );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_PlacementVolume()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_PlacementVolume()));
+    }
+}
+
 technique cross_section
 {
     pass p0 

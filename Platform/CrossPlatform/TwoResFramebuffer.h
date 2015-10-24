@@ -148,6 +148,10 @@ namespace simul
 			crossplatform::PixelFormat			GetDepthFormat() const;
 			void								SetDepthFormat(crossplatform::PixelFormat p);
 			int									final_octave;
+			vec2								GetPixelOffset() const
+			{
+				return pixelOffset;
+			}
 			void								SetAmortization(int a)
 			{
 				amortizationStruct.setAmortization(a);

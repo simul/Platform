@@ -129,6 +129,8 @@ namespace simul
 		};
 		enum DepthComparison
 		{
+			DEPTH_ALWAYS,
+			DEPTH_NEVER,
 			DEPTH_LESS,
 			DEPTH_EQUAL,
 			DEPTH_LESS_EQUAL,
