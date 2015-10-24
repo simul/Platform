@@ -30,15 +30,17 @@ dx11::Texture::Texture()
 	:texture(NULL)
 	,shaderResourceView(NULL)
 	,unorderedAccessViews(NULL)
+	,mipShaderResourceViews(NULL)
 	,depthStencilView(NULL)
 	,renderTargetViews(NULL)
 	,stagingBuffer(NULL)
 	,last_context(NULL)
-	,m_pOldRenderTarget(NULL)
 	,m_pOldDepthSurface(NULL)
 	,num_OldViewports(0)
 {
 	memset(&mapped,0,sizeof(mapped));
+	for(int i=0;i<16;i++)
+		m_pOldRenderTargets[i]=NULL;
 }
 
 
@@ -61,10 +63,17 @@ void dx11::Texture::InvalidateDeviceObjects()
 	{
 		for(int i=0;i<mips;i++)
 			SAFE_RELEASE(unorderedAccessViews[i]);
-		mips=0;
 		delete [] unorderedAccessViews;
 		unorderedAccessViews=NULL;
 	}
+	if(mipShaderResourceViews)
+	{
+		for(int i=0;i<mips;i++)
+			SAFE_RELEASE(mipShaderResourceViews[i]);
+		delete [] mipShaderResourceViews;
+		mipShaderResourceViews=NULL;
+	}
+	mips=0;
 	if(last_context&&mapped.pData)
 	{
 		last_context->Unmap(texture,0);
@@ -74,7 +83,10 @@ void dx11::Texture::InvalidateDeviceObjects()
 	SAFE_RELEASE(shaderResourceView);
 	SAFE_RELEASE(depthStencilView);
 	SAFE_RELEASE(stagingBuffer);
-	SAFE_RELEASE(m_pOldRenderTarget);
+	for(int i=0;i<16;i++)
+	{
+		SAFE_RELEASE(m_pOldRenderTargets[i]);
+	}
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
 // Load a texture file
@@ -436,6 +448,13 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 		uav_desc.Texture3D.WSize	= d;
 		uav_desc.Texture3D.FirstWSlice=0;
 		
+		D3D11_SHADER_RESOURCE_VIEW_DESC mip_srv_desc;
+		ZeroMemory(&mip_srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+		mip_srv_desc.Format						= f;
+		mip_srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
+		mip_srv_desc.Texture3D.MipLevels		= 1;
+		mip_srv_desc.Texture3D.MostDetailedMip	= 0;
+
 		if(unorderedAccessViews)
 		{
 			for(int i=0;i<mips;i++)
@@ -443,14 +462,27 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 			delete [] unorderedAccessViews;
 			unorderedAccessViews=NULL;
 		}
-		if(m>0)
+		if(mipShaderResourceViews)
 		{
+			for(int i=0;i<mips;i++)
+				SAFE_RELEASE(mipShaderResourceViews[i]);
+			delete [] mipShaderResourceViews;
+			mipShaderResourceViews=NULL;
+		}
 			unorderedAccessViews=new ID3D11UnorderedAccessView*[m];
 			for(int i=0;i<m;i++)
 			{
 				uav_desc.Texture3D.MipSlice=i;
 				V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessViews[i]));
 				uav_desc.Texture3D.WSize/=2;
+			}
+		if(m>1)
+		{
+			mipShaderResourceViews=new ID3D11ShaderResourceView*[m];
+			for(int i=0;i<m;i++)
+			{
+				mip_srv_desc.Texture3D.MostDetailedMip=i;
+				V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(texture, &mip_srv_desc, &mipShaderResourceViews[i]));
 			}
 		}
 	}
@@ -501,6 +533,11 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	{
 		texture2dFormat	=DXGI_FORMAT_R16_TYPELESS;
 		srvFormat		=DXGI_FORMAT_R16_UNORM;
+	}
+	if(texture2dFormat==DXGI_FORMAT_D24_UNORM_S8_UINT)
+	{
+		texture2dFormat	=DXGI_FORMAT_R24G8_TYPELESS ;
+		srvFormat		=DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
 	dim=2;
 	ID3D11Device *pd3dDevice=renderPlatform->AsD3D11Device();
@@ -558,7 +595,6 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 
-		
 		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
@@ -585,8 +621,9 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 			delete [] unorderedAccessViews;
 			unorderedAccessViews=NULL;
 		}
-		if(m>0)
-		{
+		if(m<1)
+			m=1;
+		
 			unorderedAccessViews=new ID3D11UnorderedAccessView*[m];
 			for(int i=0;i<m;i++)
 			{
@@ -594,7 +631,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 				V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessViews[i]));
 				SetDebugObjectName(unorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 			}
-		}
+		
 	}
 	if(rendertarget&&(!renderTargetViews||!ok))
 	{
@@ -919,10 +956,8 @@ void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceCon
 		SIMUL_ASSERT(num_OldViewports>=0&&num_OldViewports<=16)
 		if(num_OldViewports>0)
 			last_context->RSGetViewports(&num_OldViewports,m_OldViewports);
-		SAFE_RELEASE(m_pOldRenderTarget);
-		SAFE_RELEASE(m_pOldDepthSurface);
-		last_context->OMGetRenderTargets(	1,
-											&m_pOldRenderTarget,
+		last_context->OMGetRenderTargets(	num_OldViewports,
+											m_pOldRenderTargets,
 											&m_pOldDepthSurface
 											);
 	}
@@ -953,11 +988,14 @@ void dx11::Texture::deactivateRenderTarget()
 	if(!last_context)
 		return;
 	last_context->OMSetRenderTargets(	num_OldViewports,
-										&m_pOldRenderTarget,
+										m_pOldRenderTargets,
 										m_pOldDepthSurface
 										);
 	last_context->RSSetViewports(num_OldViewports,m_OldViewports);
-	SAFE_RELEASE(m_pOldRenderTarget);
+	for(int i=0;i<num_OldViewports;i++)
+	{
+		SAFE_RELEASE(m_pOldRenderTargets[i]);
+	}
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
 

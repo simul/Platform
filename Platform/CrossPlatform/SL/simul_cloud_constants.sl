@@ -41,7 +41,9 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec4 mixedResTransformXYWH;		// xy=offset, zw=multiple.
 	uniform vec2 rainCentreKm;
 	uniform float rainRadiusKm;
-	uniform float ageaeghj5;
+	uniform int amortization;
+	uniform int2 targetTextureSize;
+	uniform int2 amortizationOffset;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)

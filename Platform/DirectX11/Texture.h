@@ -38,24 +38,19 @@ namespace simul
 			{
 				return (ID3D11Texture2D*)texture;
 			}
-			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
+			ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int mip=-1)
 			{
-				/*if (shaderResourceView)
-				{
-					int r = shaderResourceView->AddRef();
-					static int cc = 50;
-					if (r >= cc)
-					{
-						DebugBreak();
-						cc *= 2;
-					}
-					shaderResourceView->Release();
-				}*/
+				if(mip<0||mips<=1)
 				return shaderResourceView;
+				if(mip<mips)
+					return mipShaderResourceViews[mip];
+				return NULL;
 			}
 			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0)
 			{
 				if(mip<0||mip>=mips)
+					return NULL;
+				if(!unorderedAccessViews)
 					return NULL;
 				return unorderedAccessViews[mip];
 			}
@@ -117,11 +112,12 @@ namespace simul
 			int GetSampleCount() const;
 		protected:
 			ID3D11DeviceContext *last_context;
-			ID3D11RenderTargetView*		m_pOldRenderTarget;
+			ID3D11RenderTargetView*		m_pOldRenderTargets[16];
 			ID3D11DepthStencilView*		m_pOldDepthSurface;
 			ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   shaderResourceView;
 			ID3D11UnorderedAccessView**  unorderedAccessViews;
+			ID3D11ShaderResourceView**  mipShaderResourceViews;
 			ID3D11DepthStencilView*		depthStencilView;
 			ID3D11RenderTargetView**	renderTargetViews;
 			D3D11_VIEWPORT						m_OldViewports[16];

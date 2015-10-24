@@ -79,7 +79,7 @@ namespace simul
 			virtual void InvalidateDeviceObjects()=0;
 			virtual sce::Gnm::Texture *AsGnmTexture(){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
-			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return 0;}
+			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int =-1){return 0;}
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int =0){return 0;}
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(){return 0;}

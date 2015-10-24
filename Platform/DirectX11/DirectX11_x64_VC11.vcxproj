@@ -291,14 +291,7 @@
     <None Include="..\CrossPlatform\SL\states.sl" />
     <None Include="..\CrossPlatform\SL\text_constants.sl" />
     <None Include="HLSL\CppHLSL.hlsl" />
-    <None Include="HLSL\fft_512x512_c2c.hlsl" />
-    <None Include="HLSL\MixClouds_c.hlsl" />
-    <None Include="HLSL\ocean_shading.hlsl" />
-    <None Include="HLSL\ocean_simulator_cs.hlsl" />
     <None Include="HLSL\shader_platform.sl" />
-    <None Include="HLSL\simul_earthshadow.hlsl" />
-    <None Include="HLSL\simul_gpu_sky.hlsl" />
-    <None Include="HLSL\simul_inscatter_fns.hlsl" />
     <None Include="SimulUseDXSDK.props" />
     <None Include="SimulUseWin8SDK.props" />
   </ItemGroup>

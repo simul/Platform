@@ -109,9 +109,8 @@ namespace simul
 			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int mip=0);
 			
 			crossplatform::ShaderResource GetShaderResource(const char *name) override;
-			void SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t) override;
-			void SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex);
-			void SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture &t);
+			void SetTexture		(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip=-1) override;
+			void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int mip=-1);
 			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);
 			void SetTexture(const char *name,ID3D11ShaderResourceView *tex);
 			void SetParameter	(const char *name	,float value)		;

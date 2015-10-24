@@ -58,13 +58,13 @@ vec4 RainbowAndCorona(Texture2D rainbowLookupTexture,Texture2D coronaLookupTextu
 	 //note: use a float for d here, since a half corrupts the corona
 	float d=  -dot( lightDir,normalize(view ) 	);
 	vec2 r=vec2( dropletRadius, d);
-	vec4 scattered	=texture_clamp(rainbowLookupTexture,r);
+	vec4 scattered	=texture_clamp_lod(rainbowLookupTexture,r,0);
 
 	//(1 + d) will be clamped between 0 and 1 by the texture sampler
 	// this gives up the dot product result in the range of [-1 to 0]
 	// that is to say, an angle of 90 to 180 degrees
 	vec2 r1=vec2( dropletRadius, 1.0 + d);
-	vec4 coronaDiffracted = texture_clamp(coronaLookupTexture, r1);
+	vec4 coronaDiffracted = texture_clamp_lod(coronaLookupTexture, r1,0);
 	return (coronaDiffracted + scattered)*rainbowIntensity;
 }
 #endif

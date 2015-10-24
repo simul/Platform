@@ -22,6 +22,7 @@ using namespace crossplatform;
 MixedResolutionView::MixedResolutionView()
 	:ScreenWidth(0)
 	,ScreenHeight(0)
+	,Downscale(4)
 	,viewType(MAIN_3D_VIEW)
 	,useExternalFramebuffer(false)
 	,hdrFramebuffer(NULL)
@@ -76,6 +77,8 @@ int MixedResolutionView::GetScreenHeight() const
 
 void MixedResolutionView::SetResolution(int w,int h)
 {
+	if(ScreenWidth==w&&ScreenHeight==h)
+		return;
 	ScreenWidth	=w;
 	ScreenHeight=h;
 }
@@ -100,20 +103,20 @@ crossplatform::Texture *MixedResolutionView::GetResolvedHDRBuffer()
 void MixedResolutionViewManager::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
-	std::set<MixedResolutionView*> views=GetViews();
-	for(std::set<MixedResolutionView*>::iterator i=views.begin();i!=views.end();i++)
+	auto views=GetViews();
+	for(auto i=views.begin();i!=views.end();i++)
 	{
-		(*i)->RestoreDeviceObjects(renderPlatform);
+		(i->second)->RestoreDeviceObjects(renderPlatform);
 	}
 }
 
 void MixedResolutionViewManager::InvalidateDeviceObjects()
 {
 	renderPlatform=NULL;
-	std::set<MixedResolutionView*> views=GetViews();
-	for(std::set<MixedResolutionView*>::iterator i=views.begin();i!=views.end();i++)
+	auto views=GetViews();
+	for(auto i=views.begin();i!=views.end();i++)
 	{
-		(*i)->InvalidateDeviceObjects();
+		(i->second)->InvalidateDeviceObjects();
 	}
 }
 
@@ -144,12 +147,17 @@ MixedResolutionView *MixedResolutionViewManager::GetView(int view_id)
 	return i->second;
 }
 
-std::set<MixedResolutionView*> MixedResolutionViewManager::GetViews()
+const MixedResolutionView *MixedResolutionViewManager::GetView(int view_id) const
 {
-	std::set<MixedResolutionView*> v;
-	for(ViewMap::iterator i=views.begin();i!=views.end();i++)
-		v.insert(i->second);
-	return v;
+	ViewMap::const_iterator i=views.find(view_id);
+	if(i==views.end())
+		return NULL;
+	return i->second;
+}
+
+const MixedResolutionViewManager::ViewMap &MixedResolutionViewManager::GetViews() const
+{
+	return views;
 }
 
 void MixedResolutionViewManager::Clear()

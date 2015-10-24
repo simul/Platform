@@ -159,6 +159,13 @@
 			r.y=y*m;
 			return r;
 		}
+		vec2 operator/(float m) const
+		{
+			vec2 r;
+			r.x=x/m;
+			r.y=y/m;
+			return r;
+		}
 		friend vec2 operator*(float m,vec2 v)
 		{
 			vec2 r;
@@ -369,6 +376,11 @@
 			this->x=x;
 			this->y=y;
 		}
+		int2(const int2& c)
+		{
+			this->x=c.x;
+			this->y=c.y;
+		}
 		int2(const int *v)
 		{
 			operator=(v);
@@ -381,15 +393,31 @@
 		{
 			return &x;
 		}
-		void operator=(const int *v)
+		const int2& operator=(const int2 &v)
 		{
-			x=v[0];
-			y=v[1];
+			x=v.x;
+			y=v.y;
+			return *this;
 		}
-		void operator=(const unsigned *v)
+		const int2& operator=(const int *v)
 		{
 			x=v[0];
 			y=v[1];
+			return *this;
+		}
+		const int2& operator=(const unsigned *v)
+		{
+			x=v[0];
+			y=v[1];
+			return *this;
+		}
+		int2 operator+(int2 v)
+		{
+			return int2(x+v.x,y+v.y);
+		}
+		int2 operator-(int2 v)
+		{
+			return int2(x-v.x,y-v.y);
 		}
 	};
 	typedef unsigned int uint;
@@ -490,6 +518,70 @@
 			x=int(v[0]);
 			y=int(v[1]);
 			z=int(v[2]);
+		}
+		void operator*=(int u)
+		{
+			x*=u;
+			y*=u;
+			z*=u;
+		}
+		void operator/=(int u)
+		{
+			x/=u;
+			y/=u;
+			z/=u;
+		}
+	};
+	
+	struct int4
+	{
+		int x,y,z,w;
+		int4(int x=0,int y=0,int z=0,int w=0)
+		{
+			this->x=x;
+			this->y=y;
+			this->z=z;
+			this->w=w;
+		}
+		int4(const int *v)
+		{
+			operator=(v);
+		}
+		int4(const float *v)
+		{
+			operator=(v);
+		}
+		operator const int *()
+		{
+			return &x;
+		}
+		void operator=(const int *v)
+		{
+			x=v[0];
+			y=v[1];
+			z=v[2];
+			w=v[3];
+		}
+		void operator=(const float *v)
+		{
+			x=int(v[0]);
+			y=int(v[1]);
+			z=int(v[2]);
+			w=int(v[3]);
+		}
+		void operator*=(int u)
+		{
+			x*=u;
+			y*=u;
+			z*=u;
+			w*=u;
+		}
+		void operator/=(int u)
+		{
+			x/=u;
+			y/=u;
+			z/=u;
+			w/=u;
 		}
 	};
 	//! Very simple 3 vector of doubles.

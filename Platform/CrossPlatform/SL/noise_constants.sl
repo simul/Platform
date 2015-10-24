@@ -8,6 +8,7 @@ SIMUL_CONSTANT_BUFFER(RendernoiseConstants,10)
 	uniform int noise_texture_size;
 	uniform int mip;
 	uniform int noise_texture_frequency;
+	uniform float strength;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

@@ -12,6 +12,84 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		/// A small structure for per-frame amortization of buffers.
+		struct AmortizationStruct
+		{
+		private:
+			int amortization;
+		public:
+			int framenumber;
+			int4 validRegion;
+			int2 pixelOffset;
+			int2 *pattern;
+			AmortizationStruct()
+				:framenumber(0)
+				,amortization(1)
+				,validRegion(0,0,0,0)
+				,pixelOffset(0,0)
+				,pattern(NULL)
+			{
+			}
+			~AmortizationStruct()
+			{
+				delete [] pattern;
+			}
+			void setAmortization(int a);
+			int getAmortization() const
+			{
+				return amortization;
+			}
+			/// Reset frame data, but not properties.
+			void reset()
+			{
+				framenumber=0;
+			}
+			int2 offset() const
+			{
+				if(!pattern||amortization<=1)
+					return int2(0,0);
+				int a			=amortization;
+				int sub_frame	=framenumber%(a*a);
+				int offsx		=sub_frame/a;
+				int offsy		=sub_frame-offsx*a;
+				return pattern[sub_frame];//(int2(offsx,offsy);//
+			}
+			void updateRegion(vec2 oldPixelOffset,vec2 newPixelOffset)
+			{
+				int2 new_pos=int2((int)newPixelOffset.x,(int)newPixelOffset.y);
+				int2 old_pos=int2((int)oldPixelOffset.x,(int)oldPixelOffset.y);
+				int2 del=old_pos-new_pos;
+				validRegion.x+=del.x;
+				validRegion.y+=del.y;
+				if(validRegion.x<0)
+				{
+					validRegion.z+=validRegion.x;
+					validRegion.x=0;
+				}
+				else if(validRegion.x>0)
+				{
+					validRegion.z-=validRegion.x;
+				}
+				if(validRegion.y<0)
+				{
+					validRegion.w+=validRegion.y;
+					validRegion.y=0;
+				}
+				else if(validRegion.y>0)
+				{
+					validRegion.w-=validRegion.y;
+				}
+				if(validRegion.z<0)
+					validRegion.z=0;
+				if(validRegion.w<0)
+					validRegion.w=0;
+				pixelOffset=new_pos;
+			}
+			void validate(int4 region)
+			{
+				validRegion=region;
+			}
+		};
 		class Texture;
 		struct DeviceContext;
 		class RenderPlatform;
@@ -22,7 +100,7 @@ namespace simul
 		{
 		public:
 			TwoResFramebuffer();
-			crossplatform::BaseFramebuffer *GetLowResFramebuffer(int index)
+			crossplatform::Texture *GetLowResFramebuffer(int index)
 			{
 				return lowResFramebuffers[index];
 			}
@@ -30,8 +108,16 @@ namespace simul
 			crossplatform::Texture *GetVolumeTexture(int num);
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *);
 			virtual void InvalidateDeviceObjects();
-			virtual void SetDimensions(int w,int h,int downscale);
-			virtual void GetDimensions(int &w,int &h,int &downscale);
+			virtual void SetDimensions(int w,int h);
+			virtual void GetDimensions(int &w,int &h);
+			int GetDownscale() const
+			{
+				return Downscale;
+			}
+			void SetDownscale(int d)
+			{
+				Downscale=d;
+			}
 			/// Activate BOTH low-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivatelLowRes after rendering.
 			virtual void ActivateLowRes(crossplatform::DeviceContext &);
 			/// Deactivate both low-res framebuffers.
@@ -40,7 +126,8 @@ namespace simul
 			virtual void DeactivateDepth(crossplatform::DeviceContext &);
 			virtual void ActivateVolume(crossplatform::DeviceContext &,int num);
 			virtual void DeactivateVolume(crossplatform::DeviceContext &);
-
+			/// This must be called to ensure that the amortization struct is up to date.
+			void CompleteFrame();
 			/// Debugging onscreen info:
 			///
 			/// \param [in,out]	deviceContext	Context for the device.
@@ -54,6 +141,8 @@ namespace simul
 
 			/// Update the pixel offset for the specified view.
 			void UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct,int scale);
+			/// Offset in pixels from top-left of the low-res view to top-left of the full-res.
+			vec2								pixelOffset;
 			/// Returns	the low-res depth texture.
 			crossplatform::Texture				*GetLowResDepthTexture(int idx=-1);
 			crossplatform::PixelFormat GetDepthFormat() const;
@@ -63,8 +152,21 @@ namespace simul
 			{
 				return pixelOffset;
 			}
+			void								SetAmortization(int a)
+			{
+				amortizationStruct.setAmortization(a);
+ 			}
+			int									GetAmortization() const
+			{
+				return amortizationStruct.getAmortization();
+			}
+			const AmortizationStruct			&GetAmortizationStruct() const
+			{
+				return amortizationStruct;
+			}
 		protected:
 			int									Width,Height,Downscale;
+			AmortizationStruct					amortizationStruct;
 			int									volume_num;
 			crossplatform::PixelFormat			depthFormat;
 			simul::geometry::SimulOrientation	view_o;
@@ -72,9 +174,7 @@ namespace simul
 			crossplatform::Texture				*nearFarTextures[4];
 			crossplatform::Texture				*lossTexture;
 			crossplatform::Texture				*volumeTextures[2];
-			crossplatform::BaseFramebuffer		*lowResFramebuffers[3];
-			/// Offset in pixels from top-left of the low-res view to top-left of the full-res.
-			vec2								pixelOffset;
+			crossplatform::Texture				*lowResFramebuffers[3];
 		};
 	}
 }

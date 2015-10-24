@@ -5,6 +5,7 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/Topology.h"
+#include "Simul/Platform/CrossPlatform/TwoResFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
 #include "Simul/Geometry/Orientation.h"
 #include <set>
@@ -17,8 +18,6 @@ namespace simul
 	namespace crossplatform
 	{
 		class Texture;
-		class BaseFramebuffer;
-		class TwoResFramebuffer;
 		class Effect;
 		struct Viewport;
 		class RenderPlatform;
@@ -77,6 +76,10 @@ namespace simul
 			{
 				return hdrFramebuffer;
 			}
+			const crossplatform::BaseFramebuffer		*GetFramebuffer() const
+			{
+				return hdrFramebuffer;
+			}
 			/// Type of view.
 			crossplatform::ViewType						viewType;
 			bool										vrDistortion;
@@ -92,6 +95,7 @@ namespace simul
 			int								ScreenWidth;
 			/// Height of the screen.
 			int								ScreenHeight;
+			int								Downscale;
 			int								last_framenumber;
 		public:
 			/// true to use external framebuffer.
@@ -108,6 +112,8 @@ namespace simul
 				,renderPlatform(NULL)
 			{}
 
+			typedef std::map<int,MixedResolutionView*>	ViewMap;
+
 			/// Restore the device objects.
 			///
 			/// \param [in,out]	renderPlatform	If non-null, the render platform.
@@ -122,10 +128,12 @@ namespace simul
 			/// \return	null if it fails, else the view.
 			MixedResolutionView				*GetView				(int view_id);
 
+			const MixedResolutionView		*GetView		(int view_id) const;
+
 			/// Gets the views.
 			///
-			/// \return	null if it fails, else the views.
-			std::set<MixedResolutionView*>	GetViews				();
+			/// \return	the views.
+			const ViewMap &MixedResolutionViewManager::GetViews() const;
 
 			/// Adds a view.
 			///
@@ -143,7 +151,6 @@ namespace simul
 		protected:
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;
-			typedef std::map<int,MixedResolutionView*>	ViewMap;
 			ViewMap							views;
 			/// Identifier for the last created view.
 			int								last_created_view_id;
