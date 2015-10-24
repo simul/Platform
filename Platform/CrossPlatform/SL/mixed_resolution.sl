@@ -228,17 +228,16 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture, int2 source_dims, uint2 source_
 
 	int2 max_pos		=int2(source_dims)-int2(11,5);
 	int2 min_pos		=int2(6,3);
-	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x))
-								,max(min_pos.y,min(pos1.y,max_pos.y)));
+	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x)),max(min_pos.y,min(pos1.y,max_pos.y)));
 	pos2				+=int2(source_offset);
-	vec2 farthest_nearest;
+	vec4 farthest_nearest;
 	if(depthInterpretationStruct.reverseDepth)
 	{
-		farthest_nearest		=vec2(1.0,0.0);
+		farthest_nearest		=vec4(1.0,0.0,1.0,0.0);
 	}
 	else
 	{
-		farthest_nearest		=vec2(0.0,1.0);
+		farthest_nearest		=vec4(0.0,1.0,0.0,1.0);
 	}
 
 	vec4 thr				=vec4(nearThresholdDepth, nearThresholdDepth, nearThresholdDepth, nearThresholdDepth);
@@ -250,16 +249,17 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture, int2 source_dims, uint2 source_
 		float d3			=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(-3,1)).x;
 		float d4			=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4)).x;
 		vec4 f				=vec4(d1,d2,d3,d4);
+		vec4 f0				=f;
 		if(depthInterpretationStruct.reverseDepth)
 			f					= step(f, thr)*f;
 		else
 			f					= step(thr,f)+f;
-		vec2 dmin2,dmax2;
-		dmin2			=min(f.xy,f.zw);
-		dmax2			=max(f.xy,f.zw);
+		vec4 dmin4,dmax4;
+		dmin4			=min(vec4(f.xy,f0.xy),vec4(f.zw,f0.zw));
+		dmax4			=max(vec4(f.xy,f0.xy),vec4(f.zw,f0.zw));
 
-		float dmin			=min(dmin2.x,dmin2.y);
-		float dmax			=max(dmax2.x,dmax2.y);
+		vec2 dmin			=min(dmin4.xz,dmin4.yw);
+		vec2 dmax			=max(dmax4.xz,dmax4.yw);
 		if(split_view)
 		{
 			pos3.x			+=source_dims.x;
@@ -268,20 +268,21 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture, int2 source_dims, uint2 source_
 			d3				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(-3,1)).x;
 			d4				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4)).x;
 			f				=vec4(d1,d2,d3,d4);
-			dmin2			=min(f.xy,f.zw);
-			dmax2			=max(f.xy,f.zw);
-			dmin			=min(dmin,min(dmin2.x,dmin2.y));
-			dmax			=max(dmax,max(dmax2.x,dmax2.y));
+			f0				=f;
+			dmin4			=min(vec4(f.xy,f0.xy),vec4(f.zw,f0.zw));
+			dmax4			=max(vec4(f.xy,f0.xy),vec4(f.zw,f0.zw));
+			dmin			=min(dmin,min(dmin4.xz,dmin4.yw));
+			dmax			=max(dmax,max(dmax4.xz,dmax4.yw));
 		}
 		if(depthInterpretationStruct.reverseDepth)
 		{
-			farthest_nearest.y	=max(farthest_nearest.y,dmax);
-			farthest_nearest.x	=min(farthest_nearest.x,dmin);
+			farthest_nearest.yw	=max(farthest_nearest.yw,dmax);
+			farthest_nearest.xz	=min(farthest_nearest.xz,dmin);
 		}
 		else
 		{
-			farthest_nearest.y	=min(farthest_nearest.y,dmin);
-			farthest_nearest.x	=max(farthest_nearest.x,dmax);
+			farthest_nearest.yw	=min(farthest_nearest.yw,dmin);
+			farthest_nearest.xz	=max(farthest_nearest.xz,dmax);
 		}
 	}
 	if(farthest_nearest.x!=farthest_nearest.y)
@@ -292,22 +293,19 @@ vec4 HalfscaleOnly(Texture2D sourceDepthTexture, int2 source_dims, uint2 source_
 		else
 		{
 			// Force edge at far clip.
-			farthest_nearest.x=min(farthest_nearest.x,1.0);
-			farthest_nearest.y=min(farthest_nearest.y,1.0);
+			farthest_nearest.xz=min(farthest_nearest.xz,vec2(1.0,1.0));
+			farthest_nearest.yw=min(farthest_nearest.yw,vec2(1.0,1.0));
 		}
-
-		vec2 fn = depthToLinearDistanceM(farthest_nearest.xy,depthInterpretationStruct,1.0);
 		farthest_nearest.xy=saturate(farthest_nearest.xy);
 	}
 	else
 	{
 		if(depthInterpretationStruct.reverseDepth)
-			farthest_nearest.y = 1.0;
+			farthest_nearest.yw =vec2(1.0,1.0);
 		else
-			farthest_nearest.y = 0.0;
+			farthest_nearest.yw =vec2(0.0,0.0);
 	}
-	vec4 res=vec4(farthest_nearest,0,0.0);
-	return res;
+	return farthest_nearest;
 }
 
 vec4 HalfscaleInitial(Texture2D sourceDepthTexture, int2 source_dims, uint2 source_offset, int2 cornerOffset, int2 pos, DepthIntepretationStruct depthInterpretationStruct, bool split_view, float nearThresholdDepth)
@@ -321,29 +319,36 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture, int2 source_dims, uint2 sour
 	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x)),max(min_pos.y,min(pos1.y,max_pos.y)));
 	pos2				+=int2(source_offset);
 	
-	vec2 farthest_nearest;
+	vec2 farthest_nearest,fn0;
 	if(depthInterpretationStruct.reverseDepth)
 	{
 		farthest_nearest		=vec2(1.0,0.0);
+		fn0						=vec2(1.0,0.0);
 	}
 	else
 	{
 		farthest_nearest		=vec2(0.0,1.0);
+		fn0						=vec2(0.0,1.0);
 	}
 	float d1				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(1,1)).x;
 	float d2				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(0,1)).x;
 	float d3				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(1,0)).x;
 	float d4				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(0,0)).x;
 	vec4 d					=vec4(d1,d2,d3,d4);
+	vec4 d0					=d;
 	vec4 thr				=vec4(nearThresholdDepth, nearThresholdDepth, nearThresholdDepth, nearThresholdDepth);
 	if(depthInterpretationStruct.reverseDepth)
-		d					= step(d, thr)*d;
+		d					= step(d,thr)*d;
 	else
-		d					= step(thr,d)+d;
+		d					= step(d,thr)+d;
 	vec2 dmin2				=min(d.xy,d.zw);
 	float dmin				=min(dmin2.x,dmin2.y);
 	vec2 dmax2				=max(d.xy,d.zw);
 	float dmax				=max(dmax2.x,dmax2.y);
+	vec2 dmin20				=min(d0.xy,d0.zw);
+	float dmin0				=min(dmin20.x,dmin20.y);
+	vec2 dmax20				=max(d0.xy,d0.zw);
+	float dmax0				=max(dmax20.x,dmax20.y);
 	if(split_view)
 	{
 		pos2.x			+=source_dims.x;
@@ -352,22 +357,35 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture, int2 source_dims, uint2 sour
 		d3				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(1,0)).x;
 		d4				=TEXTURE_LOAD(sourceDepthTexture,pos2+int2(0,0)).x;
 		d				=vec4(d1,d2,d3,d4);
+		d0				=d;
+		if(depthInterpretationStruct.reverseDepth)
+			d			= step(d, thr)*d;
+		else
+			d			= step(thr,d)+d;
 		dmin2			=min(d.xy,d.zw);
 		dmin			=min(dmin,min(dmin2.x,dmin2.y));
 		dmax2			=max(d.xy,d.zw);
 		dmax			=max(dmax,max(dmax2.x,dmax2.y));
+		dmin20			=min(d0.xy,d0.zw);
+		dmin0			=min(dmin20.x,dmin20.y);
+		dmax20			=max(d0.xy,d0.zw);
+		dmax0			=max(dmax20.x,dmax20.y);
 	}
 	if(depthInterpretationStruct.reverseDepth)
 	{
 		farthest_nearest.y=max(farthest_nearest.y,dmax);
 		farthest_nearest.x=min(farthest_nearest.x,dmin);
+		fn0.y=max(fn0.y,dmax0);
+		fn0.x=min(fn0.x,dmin0);
 	}
 	else
 	{
 		farthest_nearest.y=min(farthest_nearest.y,dmin);
 		farthest_nearest.x=max(farthest_nearest.x,dmax);
+		fn0.y=min(fn0.y,dmin0);
+		fn0.x=max(fn0.x,dmax0);
 	}
-	vec4 res=vec4(farthest_nearest,0,0.0);
+	vec4 res=vec4(farthest_nearest,fn0);
 	return res;
 }
 
@@ -382,53 +400,54 @@ vec4 Halfscale(Texture2D sourceDepthTexture, uint2 source_dims, uint2 source_off
 	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x))
 								,max(min_pos.y,min(pos1.y,max_pos.y)));
 	pos2				+=int2(source_offset);
-	vec2 farthest_nearest;
+	vec4 farthest_nearest;
 	if(depthInterpretationStruct.reverseDepth)
 	{
-		farthest_nearest		=vec2(1.0,0.0);
+		farthest_nearest		=vec4(1.0,0.0,1.0,0.0);
 	}
 	else
 	{
-		farthest_nearest		=vec2(0.0,1.0);
+		farthest_nearest		=vec4(0.0,1.0,0.0,1.0);
 	}
 
 	for(int i=0;i<4;i++)
 	{
 		int2 pos3			=pos2+int2(i*2-2,0);
-		vec2 d1				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,-3)).xy;
-		vec2 d2				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,0)).xy;
-		vec2 d3				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,1)).xy;
-		vec2 d4				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4)).xy;
+		vec4 d1				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,-3));
+		vec4 d2				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,0));
+		vec4 d3				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,1));
+		vec4 d4				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4));
 		vec4 f				=vec4(d1.x,d2.x,d3.x,d4.x);
 		vec4 n				=vec4(d1.y,d2.y,d3.y,d4.y);
-		vec2 dmin2,dmax2;
+		vec4 f0				=vec4(d1.z,d2.z,d3.z,d4.z);
+		vec4 n0				=vec4(d1.w,d2.w,d3.w,d4.w);
+		vec4 dmin2,dmax2;
 		if(depthInterpretationStruct.reverseDepth)
 		{
-			dmin2			=min(f.xy,f.zw);
-			dmax2			=max(n.xy,n.zw);
+			dmin2			=min(vec4(f.xy,f0.xy),vec4(f.zw,f0.zw));
+			dmax2			=max(vec4(n.xy,n0.xy),vec4(n.zw,n0.zw));
 		}
 		else
 		{
-			dmin2			=min(n.xy,n.zw);
-			dmax2			=max(f.xy,f.zw);
+			dmin2			=min(vec4(n.xy,n0.xy),vec4(n.zw,n0.zw));
+			dmax2			=max(vec4(f.xy,f0.xy),vec4(f.zw,f0.zw));
 		}
 
-		float dmin			=min(dmin2.x,dmin2.y);
-		float dmax			=max(dmax2.x,dmax2.y);
+		vec2 dmin			=min(dmin2.xz,dmin2.yw);
+		vec2 dmax			=max(dmax2.xz,dmax2.yw);
 		if(depthInterpretationStruct.reverseDepth)
 		{
-			farthest_nearest.y	=max(farthest_nearest.y,dmax);
-			farthest_nearest.x	=min(farthest_nearest.x,dmin);
+			farthest_nearest.yw	=max(farthest_nearest.yw,dmax);
+			farthest_nearest.xz	=min(farthest_nearest.xz,dmin);
 		}
 		else
 		{
-			farthest_nearest.y	=min(farthest_nearest.y,dmin);
-			farthest_nearest.x	=max(farthest_nearest.x,dmax);
+			farthest_nearest.yw	=min(farthest_nearest.yw,dmin);
+			farthest_nearest.xz	=max(farthest_nearest.xz,dmax);
 		}
 	}
 	if(depthInterpretationStruct.reverseDepth)
 	{
-		farthest_nearest.xy=min(farthest_nearest.xy,0.1);
 	}
 	if(farthest_nearest.x!=farthest_nearest.y)
 	{
@@ -439,19 +458,18 @@ vec4 Halfscale(Texture2D sourceDepthTexture, uint2 source_dims, uint2 source_off
 		else
 		{
 			// Force edge at far clip.
-			farthest_nearest.x=min(farthest_nearest.x,1.0);
-			farthest_nearest.y=min(farthest_nearest.y,1.0);
+			farthest_nearest.xz	=min(farthest_nearest.xz,vec2(1.0,1.0));
+			farthest_nearest.yw	=min(farthest_nearest.yw,vec2(1.0,1.0));
 		}
-		farthest_nearest.xy=saturate(farthest_nearest.xy);
+		farthest_nearest=saturate(farthest_nearest);
 	}
 	else
 	{
-		if(depthInterpretationStruct.reverseDepth)
-			farthest_nearest.y = 1.0;
-		else
-			farthest_nearest.y = 0.0;
+		//if(depthInterpretationStruct.reverseDepth)
+		//	farthest_nearest.y = 1.0;
+		//else
+		//	farthest_nearest.y = 0.0;
 	}
-	vec4 res=vec4(farthest_nearest,0,0.0);
-	return res;
+	return farthest_nearest;
 }
 #endif

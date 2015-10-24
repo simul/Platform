@@ -77,7 +77,7 @@ vec4 NearFarShadow(Texture2D nearFarDepthTexture,Texture2D cloudShadowTexture,ve
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 	vec4 depth			=texture_clamp(nearFarDepthTexture,depth_texc);
 
-	vec2 dist			=depthToFadeDistance(depth.xy,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+	vec2 dist			=depthToFadeDistance(depth.zw,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	float shadow1		=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.x*view*maxFadeDistanceMetres).x;
 	float shadow2		=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.y*view*maxFadeDistanceMetres).x;
 	//float sine			=view.z;
@@ -87,9 +87,9 @@ vec4 NearFarShadow(Texture2D nearFarDepthTexture,Texture2D cloudShadowTexture,ve
 	vec2 sharp_mul		=vec2(1.0,1.0);//+500.0*cloudShadowSharpness*(vec2(1.0,1.0)-texx);
 	vec2 shadow			=saturate(vec2(0.5,0.5)+sharp_mul*vec2(0.5-shadow1,0.5-shadow2));
 	if(depthInterpretationStruct.reverseDepth)
-		shadow			*=cloudShadowing*(1.0-step(0.0,-depth.y));
+		shadow			*=cloudShadowing*(1.0-step(0.0,-depth.w));
 	else
-		shadow			*=cloudShadowing*(1.0-step(1.0,depth.y));
+		shadow			*=cloudShadowing*(1.0-step(1.0,depth.w));
 
 	shadow				=saturate(vec2(1.0,1.0)-shadow);
 	return vec4(shadow.xy,0,1.0);
