@@ -383,7 +383,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 		float is_inter				=dot(N,vec3(intermediate));
 		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
 		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
-		vec3 pw						=abs(p1-p0);//+start_c_offset
+		vec3 pw						=abs(p1-p0);
 		float fade_inter			=saturate((length(pw.xy)/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
 	
 		float fade					=1.0-(fade_inter);
@@ -490,6 +490,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,DepthIntepretationStruct depthInterpretationStruct
 											,vec4 dlookup
 											,vec2 texCoords
+											,vec2 unmodifiedTexCoords
 											,bool noise
 											,bool do_rain_effect
 											,vec3 cloudIrRadiance1
@@ -703,7 +704,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					density.z				*=cosine;
 					density.z				*=saturate(distanceKm/0.24);
 					fade_texc.x				=sqrt(fadeDistance);
-					vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);//*sineFactor);
+					vec3 volumeTexCoords	=vec3(unmodifiedTexCoords,fade_texc.x);//*sineFactor);
 					vec4 clr;
 					// The "normal" that the ray has hit is equal to N, but with the negative signs of the components of viewScaled or view.
 					vec3 normal				=0.5*(-N*sign(viewScaled)-view);

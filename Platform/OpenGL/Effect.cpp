@@ -464,7 +464,6 @@ GL_ERROR_CHECK
 		}
 		else
 			break;
-		GL_ERROR_CHECK
 	}
 	GL_ERROR_CHECK
 }

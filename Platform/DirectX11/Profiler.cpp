@@ -294,6 +294,8 @@ void Profiler::EndFrame(void* c)
 
         profile.time+=mix*time;
     }
+	if(profileMap.find("root")==profileMap.end())
+		profileMap["root"]=new ProfileData();
 	ProfileData *rootProfileData=profileMap["root"];
 	rootProfileData->time=0.0f;
 	for(auto i=rootProfileData->children.begin();i!=rootProfileData->children.end();i++)

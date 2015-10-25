@@ -132,7 +132,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 #ifdef __ORBIS__
 	static bool fill_volumes_with_compute=true;
 #else
-	static bool fill_volumes_with_compute=false;
+	static bool fill_volumes_with_compute=true;
 #endif
 	volumeTextures[0]->ensureTexture3DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,8,simul::crossplatform::RGBA_16_FLOAT,fill_volumes_with_compute,1,!fill_volumes_with_compute);
 	volumeTextures[1]->ensureTexture3DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,8,simul::crossplatform::RGBA_16_FLOAT,fill_volumes_with_compute,1,!fill_volumes_with_compute);
@@ -218,6 +218,15 @@ void TwoResFramebuffer::SetDimensions(int w,int h)
 	}
 }
 
+void TwoResFramebuffer::SetDownscale(int d)
+{
+	if(Downscale!=d)
+	{
+		Downscale=d;
+		RestoreDeviceObjects(renderPlatform);
+	}
+}
+
 void TwoResFramebuffer::GetDimensions(int &w,int &h)
 {
 	w=Width;
@@ -225,12 +234,14 @@ void TwoResFramebuffer::GetDimensions(int &w,int &h)
 }
 
 
-vec2 WrapOffset(vec2 pixelOffset,int scale)
+vec2 WrapOffset(vec2 pixelOffset,int2 scale)
 {
-	if(scale<1)
-		scale=1;
-	pixelOffset.x/=(float)scale;
-	pixelOffset.y/=(float)scale;
+	if(scale.x<1)
+		scale.x=1;
+	if(scale.y<1)
+		scale.y=1;
+	pixelOffset.x/=(float)scale.x;
+	pixelOffset.y/=(float)scale.y;
 	vec2 intOffset;
 	pixelOffset.x = modf (pixelOffset.x , &intOffset.x);
 	if(pixelOffset.x<0.0f)
@@ -239,8 +250,8 @@ vec2 WrapOffset(vec2 pixelOffset,int scale)
 	if(pixelOffset.y<0.0f)
 		pixelOffset.y +=1.0f;
 	
-	pixelOffset.x*=(float)scale;
-	pixelOffset.y*=(float)scale;
+	pixelOffset.x*=(float)scale.x;
+	pixelOffset.y*=(float)scale.y;
 	return pixelOffset;
 }
 
@@ -258,10 +269,15 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	dy*=Height*viewStruct.proj._22;
 	view_o.DefineFromYZ(new_up_dir,new_view_dir);
 	static float cc=0.5f;
-	pixelOffset.x-=cc*dx;
-	pixelOffset.y-=cc*dy;
+	vec2 dp				(-cc*dx,-cc*dy);
+	vec2 oldPixelOffset	=pixelOffset;
+	pixelOffset			+=dp;
 
-	pixelOffset=WrapOffset(pixelOffset,scale);
+	amortizationStruct.updateRegion(oldPixelOffset/float(Downscale),pixelOffset/float(Downscale));
+//	pixelOffset.x-=cc*dx;
+//	pixelOffset.y-=cc*dy;
+
+	pixelOffset=WrapOffset(pixelOffset,int2(Width,Height));
 }
 
 void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy)

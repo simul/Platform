@@ -62,19 +62,30 @@ namespace simul
 			//float xratio,yratio;GetTransformLowResToHiRes();
 			inline vec4 GetTransformLowResToHiRes() const
 			{
-				float a=(float)(w*downscale)/(float)W;
-				float b=(float)(h*downscale)/(float)H;
-				float x=(float)(-pixelOffset.x)/(float)W;
-				float y=(float)(-pixelOffset.y)/(float)H;
-				return vec4(x,y,a,b);
+				float A=(float)(w*downscale)/(float)W;
+				float B=(float)(h*downscale)/(float)H;
+				static float uu=0.5f;
+				float X=(float)(-pixelOffset.x)/(float)W-uu*(1.f/w)*A;
+				float Y=(float)(-pixelOffset.y)/(float)H-uu*(1.f/h)*B;
+				return vec4(X,Y,A,B);
 			}
+			// X = -px/W - uu/w*a
+			// U = X + A u
+			// =>
+			//		u= (U-X)/A
+			//			=- X/A+(1/A)U
+			//			= (-X/A) + (1/A) U
+			//			= x + a U
+
+			// where x=-X/A and a=1/A
 			inline vec4 GetTransformHiResToLowRes() const
 			{
-				float a=(float)(w*downscale)/(float)W;
-				float b=(float)(h*downscale)/(float)H;
-				float x=(float)(pixelOffset.x)/(float)(a*W);
-				float y=(float)(pixelOffset.y)/(float)(b*H);
-				return vec4(x,y,1.0f/a,1.0f/b);//1.0f-1.0f/b
+				float a=(float)W/(float)(w*downscale);
+				float b=(float)H/(float)(h*downscale);
+				static float uu=0.5f;
+				float x=(float)(pixelOffset.x)*a/(float)(W)+uu*(1.f/w);
+				float y=(float)(pixelOffset.y)*b/(float)(H)+uu*(1.f/h);
+				return vec4(x,y,a,b);//1.0f-1.0f/b
 			}
 		};
 		//! The base class for renderers. Placeholder for now.

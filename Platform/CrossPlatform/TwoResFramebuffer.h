@@ -114,10 +114,7 @@ namespace simul
 			{
 				return Downscale;
 			}
-			void SetDownscale(int d)
-			{
-				Downscale=d;
-			}
+			void SetDownscale(int d);
 			/// Activate BOTH low-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivatelLowRes after rendering.
 			virtual void ActivateLowRes(crossplatform::DeviceContext &);
 			/// Deactivate both low-res framebuffers.
