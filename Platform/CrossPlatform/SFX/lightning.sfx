@@ -492,13 +492,15 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 texc			=vec2(IN.texc.x,1.0-IN.texc.y);
+	vec4 dlookup 		=texture_clamp(depthTexture,texc.xy);
 	vec4 nearFarCloud 	=texture_wrap(cloudDepthTexture,texc.xy);
 
 	vec4 clip_pos		=vec4(IN.screenPos,1.0,1.0);
 	float l_depth		=IN.clipPos.z/IN.clipPos.w;
-	float dist			=depthToFadeDistance(l_depth,IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
+	vec2 dist			=depthToFadeDistance(vec2(l_depth,dlookup.x),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 
-	float past			=saturate((nearFarCloud.w-dist)/0.01-0.9);
+	float past			=saturate((nearFarCloud.w-dist.x)/0.01-0.9);
+	 past				*=saturate((dist.y-dist.x)/0.01-0.9);
 	
 	vec2 dir			=normalize(IN.hPosCentre2-IN.hPosCentre1);
 	float along			=dot(IN.screenPos-IN.hPosCentre1,dir);

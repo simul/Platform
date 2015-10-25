@@ -123,7 +123,7 @@ shader vec4 PS_HalfscaleInitial_MSAA_ReverseDepth(posTexVertexOutput IN):SV_Targ
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=true;
-	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct);
+	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct, nearThresholdDepth);
 	return u;
 }
 
@@ -133,7 +133,7 @@ shader vec4 PS_HalfscaleInitial_MSAA_ForwardDepth(posTexVertexOutput IN):SV_Targ
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=false;
-	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct);
+	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct, nearThresholdDepth);
 	return u;
 }
 

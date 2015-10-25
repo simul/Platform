@@ -49,7 +49,7 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	//if(sub_pos.x>=num)
 	//	return;
 	VolumeQueryResult res;
-	res.pos_km						=queryInputs[sub_pos.x];
+	res.pos_km						=queryInputs[sub_pos.x+firstInput];
 	res.valid						=1;
 	vec3 cloudWorldOffsetKm			=res.pos_km-cornerPosKm;
 	vec3 cloudTexCoords				=cloudWorldOffsetKm*inverseScalesKm;
@@ -66,32 +66,46 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 CS_LAYOUT(1,1,1)
 shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 {
-	//uint num=0;
-	//uint byteStride=0;
-	//queryInputs.GetDimensions(num,byteStride);
-	//if(sub_pos.x>=num/2)
-	//	return;
+	vec3 start_pos					=queryInputs[sub_pos.x*2+firstInput];
+	vec3 end_pos					=queryInputs[sub_pos.x*2+1+firstInput];
+	vec3 diff						=end_pos-start_pos;
+	float total_dist				=length(diff);
+	if(total_dist<=0.0000001)
+		return;
 	LineQueryResult res;
-	vec3 start_pos					=queryInputs[sub_pos.x*2];
-	vec3 end_pos					=queryInputs[sub_pos.x*2+1];
 	res.pos1_km						=start_pos;
 	res.pos2_km						=end_pos;
 	res.valid						=1;
 	res.density						=0.0;
 	res.visibility					=1.0;
 	res.optical_thickness_km	=0.0;
-	res.first_contact_km		=length(end_pos-start_pos);
-	vec3 dir						=normalize(res.pos2_km-res.pos1_km);
+	res.first_contact_km			=total_dist;
+	vec3 dir						=diff/total_dist;
 	// How far under?
-	float under						=max(0.0,cornerPosKm.z-res.pos1_km.z);
-	res.pos1_km						+=dir/(max(0.0001,dir.z))*under;
+	vec3 offsetKm1					=start_pos-cornerPosKm;
+	float under						=max(0.0,-offsetKm1.z);
+	float over						=max(0.0,offsetKm1.z-1.0/inverseScalesKm.z);
+	float start_dist				=max(over/max(0.0001,-dir.z),under/max(0.0001,dir.z));
+	start_dist						=min(start_dist,total_dist);
+	res.pos1_km						+=dir*start_dist;
 	// How far over?
-	float over						=max(0.0,res.pos2_km.z-cornerPosKm.z-1.0/inverseScalesKm.z);
-	res.pos1_km						+=dir/(max(0.0001,-dir.z))*over;
-	if(dot(dir,res.pos2_km-res.pos1_km)>0.0)
+	//res.pos1_km						+=dir/(max(0.0001,-dir.z))*over;
+	
+	vec3 offsetKm2					=end_pos-cornerPosKm;
+	// How far under?
+	float under2					=max(0.0,-offsetKm2.z);
+	float over2						=max(0.0,offsetKm2.z-1.0/inverseScalesKm.z);
+	float end_dist					=max(over2/max(0.0001,-dir.z),under2/max(0.0001,dir.z));
+	end_dist						=min(end_dist,total_dist);
+	end_dist						=max(start_dist,end_dist);
+	res.pos2_km						=start_pos+dir*end_dist;
+	diff							=res.pos2_km-res.pos1_km;
+	total_dist						=length(diff);
+	if(total_dist>0&&dot(dir,res.pos2_km-res.pos1_km)>0.0)
 	{
-		float stepSize					=length(res.pos2_km-res.pos1_km)/32.0;
-		for(int i=0;i<33;i++)
+		float stepSize						=total_dist/32.0;
+		int i=0;
+		for( i=0;i<33;i++)
 		{
 			vec3 pos						=lerp(res.pos1_km,res.pos2_km,float(i)/32.0);
 			vec3 cloudTexCoords				=(pos-cornerPosKm)*inverseScalesKm;
@@ -497,6 +511,47 @@ shader posTexVertexOutput VS_CrossSection(idOnly IN)
 	return VS_ScreenQuad(IN,rect);
 }
 
+shader posTexVertexOutput VS_PlacementVolume(idOnly IN)
+{
+	posTexVertexOutput OUT;
+	vec2 poss[4];
+	poss[0]			=vec2(0.0, 0.0);
+	poss[1]			=vec2(1.0, 0.0);
+	poss[2]			=vec2(1.0, 1.0);
+	poss[3]			=vec2(0.0, 1.0);
+	vec3 pos	=vec3(0,0,0);
+	int odd=(IN.vertex_id%2);
+	if(IN.vertex_id<8)
+	{
+		pos.z=0.0;
+		int j=((IN.vertex_id)/2+odd);
+		pos.xy=poss[j%4];
+	}
+	else if(IN.vertex_id<16)
+	{
+		pos.z=1.0;
+		int i=IN.vertex_id-8;
+		int j=((i)/2+odd);
+		pos.xy=poss[j%4];
+	}
+	else
+	{
+		int i=IN.vertex_id-16;
+		int j=i/2;
+		pos.z=float(i%2);
+		pos.xy=poss[j%4];
+	}
+
+	OUT.hPosition	=mul(invViewProj,vec4(pos,1.0));
+	OUT.texCoords	=vec2(pos.z,0);
+	return OUT;
+}
+
+shader vec4 PS_PlacementVolume(posTexVertexOutput IN):SV_TARGET
+{
+	return vec4(1.0,1.0,IN.texCoords.x,1.0);
+}
+
 shader vec4 PS_Simple(posTexVertexOutput IN):SV_TARGET
 {
     return texture_wrap(cloudShadowTexture,IN.texCoords.xy);
@@ -535,7 +590,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 	vec2 uv = vec2(0,0);
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		vec4 density=texture_wwc_lod(cloudDensity,texc,1);
+		vec4 density=texture_wwc_lod(cloudDensity,texc,0);
 		vec3 colour=vec3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=vec2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;

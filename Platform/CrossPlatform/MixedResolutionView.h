@@ -133,7 +133,7 @@ namespace simul
 			/// Gets the views.
 			///
 			/// \return	the views.
-			const ViewMap &MixedResolutionViewManager::GetViews() const;
+			const ViewMap &GetViews() const;
 
 			/// Adds a view.
 			///

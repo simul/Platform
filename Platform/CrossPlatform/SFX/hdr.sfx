@@ -324,13 +324,13 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_ForwardDepth(CompositeS
 	return PS_CompositeAtmospherics(IN,false);
 }
 
-
-TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(posTexVertexOutput IN,bool reverseDepth)
+TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,bool reverseDepth)
 {
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
-	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.texCoords.xy
+	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.clip_pos
+																,IN.depth_texc
 																,imageTexture
 																,nearImageTexture
 																,nearFarTexture
@@ -341,6 +341,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(posTexVertexOutput IN,boo
 																,invViewProj
 																,viewportToTexRegionScaleBias
 																,depthInterpretationStruct
+																,IN.lowResTexCoords
 																,fullResToLowResTransformXYWH
 																,inscatterVolumeTexture
 																,shadowTexture);
@@ -349,12 +350,12 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(posTexVertexOutput IN,boo
 	return result;
 }
 
-shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ReverseDepth(posTexVertexOutput IN) 
+shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ReverseDepth(CompositeShaderInput IN) 
 {
 	return PS_CompositeAtmospherics_MSAA(IN,true);
 }
 
-shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ForwardDepth(posTexVertexOutput IN) 
+shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ForwardDepth(CompositeShaderInput IN) 
 {
 	return PS_CompositeAtmospherics_MSAA(IN,false);
 }
@@ -558,7 +559,7 @@ fxgroup composite_atmospherics
 			SetDepthStencilState( DisableDepth, 0 );
 			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
-			SetVertexShader(mainvs_5_0);
+			SetVertexShader(compositevs_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_MSAA_ReverseDepth()));
 		}
 		pass forward_depth
@@ -567,7 +568,7 @@ fxgroup composite_atmospherics
 			SetDepthStencilState( DisableDepth, 0 );
 			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
-			SetVertexShader(mainvs_5_0);
+			SetVertexShader(compositevs_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_MSAA_ForwardDepth()));
 		}
 	}
