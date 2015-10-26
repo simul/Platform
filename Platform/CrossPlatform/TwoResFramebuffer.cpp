@@ -39,7 +39,6 @@ void AmortizationStruct::setAmortization(int a)
 	pattern=new int2[n];
 	for(int i=0;i<n;i++)
 	{
-	//	pattern[i]=src[i];
 		int idx=rand.IRand(src.size());
 		auto u=src.begin()+idx;
 		int2 v=*u;

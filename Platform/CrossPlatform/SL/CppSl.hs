@@ -389,7 +389,7 @@
 		{
 			operator=(v);
 		}
-		operator const int *()
+		operator const int *() const
 		{
 			return &x;
 		}

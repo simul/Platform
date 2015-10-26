@@ -127,7 +127,7 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 CS_LAYOUT(8,8,8)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	uint3 pos=g*8+t;
+	uint3 pos=(g*8+t)*amortization+uint3(amortizationOffset);
 	vec4 c1=cloudDensity[pos];
 	vec4 c2=cloudDensity2[pos];
     vec4 res= lerp(c1,c2,cloud_interp);
@@ -275,7 +275,7 @@ struct FarNearDepthPixelOutput
 
 shader void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
 {
-	uint2 pos				=(g.xy*8+t.xy)*amortization+amortizationOffset;
+	uint2 pos				=(g.xy*8+t.xy)*amortization+amortizationOffset.xy;
 	// offset by one texel to allow -1 in x and y:
 	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(INtexCoords.xy,viewportToTexRegionScaleBias),0);
@@ -318,7 +318,7 @@ shader void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool re
 
 void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
 {
-	uint2 pos				=((g.xy*8+t.xy)+amortizationOffset)%targetTextureSize;
+	uint2 pos				=((g.xy*8+t.xy)+amortizationOffset.xy)%targetTextureSize;
 	//vec4 res				=mixedResTransformXYWH;
 	//outputTexture1[pos]		=res;
 	//outputTexture2[pos]		=res;

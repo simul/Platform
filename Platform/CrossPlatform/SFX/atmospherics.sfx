@@ -262,7 +262,7 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 void CSInscatterVolume( uint3 p,bool include_godrays)
 {
 	//CS_Insc( pos,0.0);
-	int3 pos=p*amortization+amortizationOffset;
+	int3 pos=int3(p)*amortization+amortizationOffset;
 	float godrays=float(include_godrays);
 	vec2 texCoords		=vec2(pos.xy+uint2(1,1))/vec2(scatteringVolumeDims.xy);
 	texCoords		=mixedResolutionTransformXYWH.xy/mixedResolutionTransformXYWH.zw+texCoords.xy;

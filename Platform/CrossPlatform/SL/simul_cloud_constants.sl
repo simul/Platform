@@ -30,20 +30,27 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec2 tanHalfFov;
 	uniform float exposure;
 	uniform float maxCloudDistanceKm;
+
 	uniform float nearZ;
 	uniform float farZ;
 	uniform float extentZKm;
 	uniform float startZKm;
+
 	uniform float shadowRange;
 	uniform int shadowTextureSize;
 	uniform float depthMix;
 	uniform float CloudPerViewConstantsPad3;
+
 	uniform vec4 mixedResTransformXYWH;		// xy=offset, zw=multiple.
+
 	uniform vec2 rainCentreKm;
 	uniform float rainRadiusKm;
 	uniform int amortization;
+
+	uniform int3 amortizationOffset;
+	uniform int padddddddddddddd;
+
 	uniform int2 targetTextureSize;
-	uniform int2 amortizationOffset;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
