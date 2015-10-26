@@ -141,7 +141,7 @@ shader void CS_Mip( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	uint3 pos=g*8+t;
 	int3 pos2=pos*2;
 
-#ifndef __ORBIS__
+#ifndef __PSSL__
 	vec4 c1= cloudDensity.mips[0][pos2+int3(0,0,0)];
 	vec4 c2= cloudDensity.mips[0][pos2+int3(1,0,0)];
 	vec4 c3= cloudDensity.mips[0][pos2+int3(0,1,0)];
@@ -273,7 +273,7 @@ struct FarNearDepthPixelOutput
 	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
 };
 
-shader void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
+void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
 {
 	uint2 pos				=(g.xy*8+t.xy)*amortization+amortizationOffset.xy;
 	// offset by one texel to allow -1 in x and y:

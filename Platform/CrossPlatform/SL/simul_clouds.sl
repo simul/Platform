@@ -499,7 +499,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	RaytracePixelOutput res;
 	res.colour				=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
-	res.nearFarDepth		=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,1.0);
+	res.nearFarDepth		=depthToLinearDistance(dlookup, depthInterpretationStruct);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
@@ -783,8 +783,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-	res.nearFarDepth.z	=dlookup.z;//*(1.0-colour.a);
-	res.nearFarDepth.w	=meanFadeDistance;
+	res.nearFarDepth.xz=min(res.nearFarDepth.xz,vec2(meanFadeDistance+0.25,meanFadeDistance+0.25));
+	res.nearFarDepth.wy=min(res.nearFarDepth.wy,vec2(meanFadeDistance,meanFadeDistance));
+	//res.nearFarDepth.yw	=meanFadeDistance;//*(1.0-colour.a);
+	//res.nearFarDepth.w	=meanFadeDistance;
 	return res;
 }
 #endif

@@ -79,7 +79,7 @@ vec4 HalfscaleInitial_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_d
 	,float nearThresholdDepth)
 {
 	int2 pos0			=pos*2;
-	int2 pos1			=pos0-cornerOffset;
+	int2 pos1			=pos0-cornerOffset+source_dims;
 	pos1				=pos1%source_dims;
 #ifdef DEBUG_COMPOSITING
 	if(pos.x<3)
@@ -109,7 +109,7 @@ vec4 HalfscaleInitial_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_d
 			{
 				vec2 d			=TEXTURE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,k).xx;
 				if(depthInterpretationStruct.reverseDepth)
-					d.x					= step(d.x,nearThresholdDepth)*d.x;
+					d.x					= lerp(d.x,0.0,saturate(0.01*(d.x-nearThresholdDepth)/nearThresholdDepth));
 				else
 					d.x					= step(d.x,nearThresholdDepth)+d.x;
 				if(depthInterpretationStruct.reverseDepth)
