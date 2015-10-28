@@ -571,7 +571,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec3 p							=offsetFromOrigin/scaleOfGridCoords;
 	int3 c							=int3(floor(p) + start_c_offset);
 	
-	vec4 clrs[]						={
+	/*vec4 clrs[]						={
 										{0.0,0.0,0.0,1.0}
 										,{0.4,0.0,0.0,1.0}
 										,{0.8,0.0,0.0,1.0}
@@ -584,7 +584,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 										,{0,0.25,1.0,1.0}
 										,{0,0.5,1.0,1.0}
 										,{0,1.0,1.0,1.0}
-										};
+										};*/
 	int idx=0;
 	float W							=halfClipSize;
 	const float start				=0.866*0.866;//0.707 for 2D, 0.866 for 3D;

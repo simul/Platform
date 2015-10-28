@@ -5,6 +5,7 @@
 SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform mat4 worldViewProj;
+	uniform mat4 invViewProj;
 	uniform vec4 mixedResTransformXYWH;
 	uniform vec3 origin;
 	uniform float globalScale;
@@ -42,6 +43,9 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform float agagaegehrs;
 	uniform vec3 cloudIrRadiance;
 	uniform float exposure;
+
+	uniform int2 amortization;
+	uniform int2 amortizationOffset;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(Detail2DConstants,12)

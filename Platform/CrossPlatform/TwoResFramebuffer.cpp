@@ -233,27 +233,6 @@ void TwoResFramebuffer::GetDimensions(int &w,int &h)
 }
 
 
-vec2 WrapOffset(vec2 pixelOffset,int2 scale)
-{
-	if(scale.x<1)
-		scale.x=1;
-	if(scale.y<1)
-		scale.y=1;
-	pixelOffset.x/=(float)scale.x;
-	pixelOffset.y/=(float)scale.y;
-	vec2 intOffset;
-	pixelOffset.x = modf (pixelOffset.x , &intOffset.x);
-	if(pixelOffset.x<0.0f)
-		pixelOffset.x +=1.0f;
-	pixelOffset.y = modf (pixelOffset.y , &intOffset.y);
-	if(pixelOffset.y<0.0f)
-		pixelOffset.y +=1.0f;
-	
-	pixelOffset.x*=(float)scale.x;
-	pixelOffset.y*=(float)scale.y;
-	return pixelOffset;
-}
-
 void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct,int scale)
 {
 	using namespace math;
@@ -272,11 +251,43 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	vec2 oldPixelOffset	=pixelOffset;
 	pixelOffset			+=dp;
 
-	amortizationStruct.updateRegion(oldPixelOffset/float(Downscale),pixelOffset/float(Downscale));
-//	pixelOffset.x-=cc*dx;
-//	pixelOffset.y-=cc*dy;
+	int2 sc(Downscale,Downscale);
+	{
+		if(sc.x<1)
+			sc.x=1;
+		if(sc.y<1)
+			sc.y=1;
+		pixelOffset.x/=(float)sc.x;
+		pixelOffset.y/=(float)sc.y;
+		vec2 intOffset;
+		pixelOffset.x = modf (pixelOffset.x , &intOffset.x);
+		if(pixelOffset.x<0.0f)
+		{
+			pixelOffset.x +=1.0f;
+			intOffset.x	-=1.0f;
+		}
+		pixelOffset.y = modf (pixelOffset.y , &intOffset.y);
+		if(pixelOffset.y<0.0f)
+		{
+			pixelOffset.y +=1.0f;
+			intOffset.y	-=1.0f;
+		}
+	
+		pixelOffset.x*=(float)sc.x;
+		pixelOffset.y*=(float)sc.y;
+		int2 io=int2((int)intOffset.x,(int)intOffset.y);
+		
+		amortizationStruct.updateRegion(io,pixelOffset/float(Downscale));
+		amortizationStruct.lowResOffset+=io;
 
-	pixelOffset=WrapOffset(pixelOffset,int2(Width,Height));
+		int2 texsize(lowResFramebuffers[0]->width,lowResFramebuffers[0]->length);
+		while(amortizationStruct.lowResOffset.x<0)
+			amortizationStruct.lowResOffset.x+=texsize.x;
+		while(amortizationStruct.lowResOffset.y<0)
+			amortizationStruct.lowResOffset.y+=texsize.y;
+		amortizationStruct.lowResOffset.x=amortizationStruct.lowResOffset.x%texsize.x;
+		amortizationStruct.lowResOffset.y=amortizationStruct.lowResOffset.y%texsize.y;
+	}
 }
 
 void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy)

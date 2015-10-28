@@ -51,6 +51,9 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int padddddddddddddd;
 
 	uniform int2 targetTextureSize;
+	uniform int2 offsetToCorner;
+
+	uniform int2 edge;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)

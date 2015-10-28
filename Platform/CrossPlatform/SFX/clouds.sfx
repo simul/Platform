@@ -275,18 +275,25 @@ struct FarNearDepthPixelOutput
 
 void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
 {
-	uint2 pos				=(g.xy*8+t.xy)*amortization+amortizationOffset.xy;
+	int2 pos				=int2(g.xy*8+t.xy);
+	pos						=pos*amortization+amortizationOffset.xy;
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
 	// offset by one texel to allow -1 in x and y:
 	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(INtexCoords.xy,viewportToTexRegionScaleBias),0);
 	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
 	//  to the texCoords of our "window". These wrap around 
 	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
-	texCoords				/=mixedResTransformXYWH.zw;
-	texCoords				=frac(texCoords);
-	texCoords				*=mixedResTransformXYWH.zw;
+	//texCoords				/=mixedResTransformXYWH.zw;
+	//texCoords				=frac(texCoords);
+	//texCoords				*=mixedResTransformXYWH.zw;
 	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize)*mixedResTransformXYWH.zw;
+	
+	pos+=offsetToCorner;
+	pos=pos%targetTextureSize;
 
+	vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth				=reverseDepth;
@@ -306,7 +313,7 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 									,depthInterpretationStruct
 									,dlookup
 									,texCoords
-									,INtexCoords.xy
+									,unmodifiedTexCoords
 									,true
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
@@ -318,22 +325,25 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 
 void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
 {
-	uint2 pos				=((g.xy*8+t.xy)+amortizationOffset.xy)%targetTextureSize;
-	//vec4 res				=mixedResTransformXYWH;
-	//outputTexture1[pos]		=res;
-	//outputTexture2[pos]		=res;
-	//outputTexture3[pos]		=res;
+	int2 pos				=int2(g.xy*8+t.xy);
+	pos						=pos*amortization+amortizationOffset.xy;
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
 	// offset by one texel to allow -1 in x and y:
 	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(INtexCoords.xy,viewportToTexRegionScaleBias),0);
 	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
 	//  to the texCoords of our "window". These wrap around 
 	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
-	texCoords				/=mixedResTransformXYWH.zw;
-	texCoords				=frac(texCoords);
-	texCoords				*=mixedResTransformXYWH.zw;
+	//texCoords				/=mixedResTransformXYWH.zw;
+	//texCoords				=frac(texCoords);
+	//texCoords				*=mixedResTransformXYWH.zw;
 	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize)*mixedResTransformXYWH.zw;
+	
+	pos+=offsetToCorner;
+	pos=pos%targetTextureSize;
 
+	vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth				=reverseDepth;
@@ -353,7 +363,7 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 									,depthInterpretationStruct
 									,dlookup
 									,texCoords
-									,INtexCoords.xy
+									,unmodifiedTexCoords
 									,true
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
@@ -369,9 +379,9 @@ FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool
 	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
 	//  to the texCoords of our "window". These wrap around 
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
-	texCoords				/=mixedResTransformXYWH.zw;
-	texCoords				=frac(texCoords);
-	texCoords				*=mixedResTransformXYWH.zw;
+	//texCoords				/=mixedResTransformXYWH.zw;
+	//texCoords				=frac(texCoords);
+	//texCoords				*=mixedResTransformXYWH.zw;
 
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;

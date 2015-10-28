@@ -393,6 +393,10 @@
 		{
 			return &x;
 		}
+		operator vec2() const
+		{
+			return vec2(x,y);
+		}
 		const int2& operator=(const int2 &v)
 		{
 			x=v.x;
@@ -418,6 +422,29 @@
 		int2 operator-(int2 v)
 		{
 			return int2(x-v.x,y-v.y);
+		}
+		int2 operator*(float v)
+		{
+			return int2(x*v,y*v);
+		}
+		friend int2 operator*(int m,int2 v)
+		{
+			int2 r;
+			r.x=v.x*m;
+			r.y=v.y*m;
+			return r;
+		}
+		const int2& operator+=(int2 v)
+		{
+			x+=v.x;
+			y+=v.y;
+			return *this;
+		}
+		const int2& operator-=(int2 v)
+		{
+			x-=v.x;
+			y-=v.y;
+			return *this;
 		}
 	};
 	typedef unsigned int uint;

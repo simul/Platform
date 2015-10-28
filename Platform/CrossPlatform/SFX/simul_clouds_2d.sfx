@@ -13,6 +13,9 @@ uniform Texture2DMS<vec4> depthTextureMS;
 uniform sampler2D illuminationTexture;
 uniform sampler2D lightTableTexture;
 
+uniform RWTexture2D<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture2D<vec4> outputTexture2		SIMUL_RWTEXTURE_REGISTER(1);
+
 SamplerState samplerState 
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -276,6 +279,42 @@ shader vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
     return DetailLighting(IN.texCoords,imageTexture);
 }
 
+void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth)
+{
+	uint2 pos				=(g.xy*8+t.xy)*amortization+amortizationOffset.xy;
+	// offset by one texel to allow -1 in x and y:
+	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
+	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(INtexCoords.xy,viewportToTexRegionScaleBias),0);
+	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
+	//  to the texCoords of our "window". These wrap around 
+	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
+	texCoords				/=mixedResTransformXYWH.zw;
+	texCoords				=frac(texCoords);
+	texCoords				*=mixedResTransformXYWH.zw;
+	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize)*mixedResTransformXYWH.zw;
+
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth				=reverseDepth;
+
+	vec4 colour				=vec4(1,0,1,0);
+	outputTexture1[pos]		=colour;
+	outputTexture2[pos]		=colour;
+}
+CS_LAYOUT(8,8,1)
+shader void CS_Clouds2D_depthReverse(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_Clouds2D(g,t,true);
+}
+
+
+CS_LAYOUT(8,8,1)
+shader void CS_Clouds2D_depthForward(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_Clouds2D(g,t,false);
+}
+
+
 technique coverage
 {
     pass p0
@@ -407,4 +446,17 @@ technique simul_clouds_2d
 		SetVertexShader(main_vs);
 		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
     }
+}
+
+VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_SimpleFullscreen());
+technique clouds_2d_quad
+{
+	pass reverse_depth 
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D_depthReverse()));
+	}
+	pass forward_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D_depthForward()));
+	}
 }

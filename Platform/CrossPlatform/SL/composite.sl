@@ -49,7 +49,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	float sine					=dot(zrow,clip_pos);
 	vec4 nearFarCloud			=texture_wrap_lod(nearFarTexture	,lowResTexCoords		,0);
 	// Should NOT be necessary:
-	float dd					=(nearFarCloud.x-nearFarCloud.y);
+	vec2 dd						=(nearFarCloud.xz-nearFarCloud.yw);
 	float depth					=texture_wrap_nearest_lod(depthTexture,depth_texc,0).x;
 
 	float dist					=depthToLinearDistance(depth	,depthInterpretationStruct);
@@ -67,7 +67,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 shadow_lookup			=texture_wrap_lod(shadowTexture, lowResTexCoords, 0);
 	float shadow				=shadow_lookup.x;
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
-	float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd,0.000001));
+	float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd.x,0.000001));
 	// we're going to do TWO interpolations. One from zero to the near distance,
 	// and one from the near to the far distance.
 	float nearInterp			=saturate(dist / max(nearFarCloud.y,0.000001));
@@ -76,7 +76,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	cloud						=lerp(cloudNear, cloud, hiResInterp);
 	
 	cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
-	float shadowInterp			=saturate((dist - nearFarCloud.w) / max(nearFarCloud.z-nearFarCloud.w,0.000001));
+	float shadowInterp			=saturate((dist - nearFarCloud.w) / max(dd.y,0.000001));
 	//float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd,0.000001));
 	shadow						=lerp(shadow_lookup.y,shadow_lookup.x,shadowInterp);
 

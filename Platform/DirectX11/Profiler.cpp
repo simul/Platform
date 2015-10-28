@@ -95,6 +95,7 @@ void Profiler::StartFrame(void* ctx)
 		profile.updatedThisFrame=false;
 	}
 }
+
 void Profiler::Begin(void *ctx,const char *name)
 {
 	level++;

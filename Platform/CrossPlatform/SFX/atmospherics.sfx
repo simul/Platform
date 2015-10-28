@@ -103,15 +103,16 @@ vec4 PS_NearFarShadow(atmosVertexOutput IN,bool reverseDepth)
 	texCoords		*=mixedResolutionTransformXYWH.zw;
 	vec2 clip_pos	=2.0*texCoords-vec2(1.0,1.0);
 	clip_pos.y		*=-1.0;
-	vec4 nf=NearFarShadow(depthTexture,cloudShadowTexture
-						,viewportToTexRegionScaleBias
-						,invViewProj
-						,IN.texCoords
-						,clip_pos
-						,depthInterpretationStruct
-						,maxFadeDistanceMetres
-						,tanHalfFov
-						,invShadowMatrix,viewPosition,cloudShadowing,cloudShadowSharpness);
+	vec4 nf			=NearFarShadow(depthTexture
+									,cloudShadowTexture
+									,viewportToTexRegionScaleBias
+									,invViewProj
+									,texCoords
+									,clip_pos
+									,depthInterpretationStruct
+									,maxFadeDistanceMetres
+									,tanHalfFov
+									,invShadowMatrix,viewPosition,cloudShadowing,cloudShadowSharpness);
 
     return nf;
 }
@@ -259,15 +260,16 @@ All8Output psInscatter_Volume(atmosVertexOutput IN,float godrays)
 	return all8Output;
 }
 
-void CSInscatterVolume( uint3 p,bool include_godrays)
+void CSInscatterVolume(uint3 p,bool include_godrays)
 {
-	//CS_Insc( pos,0.0);
-	int3 pos=int3(p)*amortization+amortizationOffset;
-	float godrays=float(include_godrays);
-	vec2 texCoords		=vec2(pos.xy+uint2(1,1))/vec2(scatteringVolumeDims.xy);
-	texCoords		=mixedResolutionTransformXYWH.xy/mixedResolutionTransformXYWH.zw+texCoords.xy;
-	texCoords=frac(texCoords);
-	texCoords*=mixedResolutionTransformXYWH.zw;
+	int3 pos		=int3(p)*amortization+amortizationOffset;
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	float godrays	=float(include_godrays);
+	vec2 texCoords	=vec2(pos.xy+int2(1,1))/vec2(scatteringVolumeDims.xy);
+	texCoords		=mixedResolutionTransformXYWH.xy+texCoords.xy*mixedResolutionTransformXYWH.zw;
+	//texCoords=frac(texCoords);
+	//texCoords*=mixedResolutionTransformXYWH.zw;
 	vec4 colours[8];
 	Inscatter_All( colours
 					,inscTexture
@@ -284,10 +286,12 @@ void CSInscatterVolume( uint3 p,bool include_godrays)
 					,mieRayleighRatio
 					,maxFadeDistanceMetres
 					,godrays);
+	pos.xy+=offsetToCorner.xy;
+	pos.xy=pos.xy%scatteringVolumeDims.xy;
 	for(int i=0;i<8;i++)
 	{
 		uint3 idx=uint3(pos.xy,i);
-		targetVolume[idx]=colours[i];
+		targetVolume[idx]=colours[i];//+test*vec4(texCoords.xy,0,0);
 	}
 }
 
@@ -356,6 +360,8 @@ shader All8Output PS_LossVolume(atmosVertexOutput IN)
 CS_LAYOUT(8,8,1)
 shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 {
+	if(p.x>=edge.x||p.y>=edge.y)
+		return;
 	uint3 idx			=p*amortization+amortizationOffset;
 	// We must convert the idx values into a direction and distance in real space.
 	vec2 texc			=vec2(float(idx.x)/float(scatteringVolumeDims.x),float(idx.y)/float((scatteringVolumeDims.y-1)));
@@ -376,6 +382,8 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 	vec3 lightDirCloudspace	=normalize(mul(worldToCloudMatrix,vec4(lightDir,0.0)).xyz);
 	vec3 viewCloudspace		=mul(worldToCloudMatrix,vec4(view,0.0)).xyz;
 	vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(viewPosition,1.0)).xyz;
+	idx.xy+=offsetToCorner.xy;
+	idx.xy=idx.xy%scatteringVolumeDims.xy;
 	for(int i=0;i<scatteringVolumeDims.z;i++)
 	{
 		float dist			=pow(float(i)/float(scatteringVolumeDims.z-1),2.0);
