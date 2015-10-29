@@ -107,18 +107,19 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 						,vec3 lightDir
 						,vec4 lightResponse)
 {
+//	return vec4(0,0,1,.5);
 	vec3 view				=normalize(wEyeToPos);
 	float sine				=view.z;
     vec2 texc_offset		=texc_detail/7.11;//offsetScale;
-    vec4 noise				=texture_wrap(noiseTexture,texc_offset);
-    vec4 coverage			=texture_wrap(coverageTexture,texc_global);
+    vec4 noise				=texture_wrap_lod(noiseTexture,texc_offset,0);
+    vec4 coverage			=texture_wrap_lod(coverageTexture,texc_global,0);
 	
-    vec4 detail				=texture_wrap(imageTexture,texc_detail+.2*noise.xy);
+    vec4 detail				=texture_wrap_lod(imageTexture,texc_detail+.2*noise.xy,0);
 	float dist_tc			=(length(wEyeToPos)/maxFadeDistanceMetres);
 	detail					=lerp(vec4(0.5,0.5,0.5,0.5),detail,saturate((abs(sine)+0.0001)));
 	float opacity			=saturate(detail.a*(coverage.x));//+2.0*Y(coverage)-1.0);
-	if(opacity<=0)
-		discard;
+	//if(opacity<=0)
+	//	return vec4(0,0,0,0);
 	float cos0	=dot(normalize(lightDir),view);
 	float scattered_light	=exp(-detail.r*extinction);
 	float hg				=HenyeyGreenstein(cloudEccentricity,cos0);
@@ -142,13 +143,14 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	//insc.rgb				*=visible_light;
 	vec3 light				=sun_irr*visible_light+moon_irr;
 	vec4 colour				=vec4(light*(lightResponse.y+lightResponse.x*hg)*scattered_light+amb,opacity);
+ colour				=coverage;
 
 #ifdef INFRARED
 	colour.rgb				=cloudIrRadiance.rgb;
 #endif
 	colour.rgb				*=loss;
 	colour.rgb				+=insc.rgb;
-
+//	colour.rgb=view;
 	return colour;
 }
 

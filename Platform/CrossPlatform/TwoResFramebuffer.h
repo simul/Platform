@@ -210,7 +210,7 @@ namespace simul
 			crossplatform::Texture				*nearFarTextures[4];
 			crossplatform::Texture				*lossTexture;
 			crossplatform::Texture				*volumeTextures[2];
-			crossplatform::Texture				*lowResFramebuffers[3];
+			crossplatform::Texture				*lowResFramebuffers[4];
 		};
 	}
 }

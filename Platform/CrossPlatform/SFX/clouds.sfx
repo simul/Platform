@@ -21,7 +21,7 @@ uniform Texture2D inscTexture					SIMUL_TEXTURE_REGISTER(1);
 uniform Texture2D skylTexture					SIMUL_TEXTURE_REGISTER(4);
 uniform Texture2D depthTexture					SIMUL_TEXTURE_REGISTER(5);
 uniform Texture3D noiseTexture3D				SIMUL_TEXTURE_REGISTER(6);
-uniform Texture3D lightningIlluminationTexture	SIMUL_TEXTURE_REGISTER(7);
+uniform Texture2D clouds2DTexture				SIMUL_TEXTURE_REGISTER(7);
 uniform Texture2D illuminationTexture			SIMUL_TEXTURE_REGISTER(8);
 uniform Texture2D lightTableTexture				SIMUL_TEXTURE_REGISTER(9);
 uniform Texture2D rainbowLookupTexture			SIMUL_TEXTURE_REGISTER(10);
@@ -318,8 +318,9 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
 									);
-	outputTexture1[pos]		=f.colour;
-	outputTexture2[pos]		=f.nearColour;
+	vec4 t2d				=clouds2DTexture[pos];
+	outputTexture1[pos]		=t2d*f.colour.a+f.colour;
+	outputTexture2[pos]		=t2d*f.nearColour.a+f.nearColour;
 	outputTexture3[pos]		=f.nearFarDepth;
 }
 

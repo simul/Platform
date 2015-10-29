@@ -37,10 +37,10 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform float maxAltitudeMetres;
 	uniform float offsetScale;
 	uniform float maxCloudDistanceMetres;
-	uniform vec3 moonlightX;
-	uniform float agagehrs;
+	uniform int2 offsetToCorner;
+	uniform int2 targetTextureSize1;
 	uniform vec3 infraredIntegrationFactors;
-	uniform float agagaegehrs;
+	uniform float cloudAltitudeMetres;
 	uniform vec3 cloudIrRadiance;
 	uniform float exposure;
 

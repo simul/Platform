@@ -13,8 +13,7 @@ uniform Texture2DMS<vec4> depthTextureMS;
 uniform sampler2D illuminationTexture;
 uniform sampler2D lightTableTexture;
 
-uniform RWTexture2D<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
-uniform RWTexture2D<vec4> outputTexture2		SIMUL_RWTEXTURE_REGISTER(1);
+uniform RWTexture2D<vec4> outputTexture		SIMUL_RWTEXTURE_REGISTER(0);
 
 SamplerState samplerState 
 {
@@ -283,24 +282,52 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 {
 	uint2 pos				=(g.xy*8+t.xy)*amortization+amortizationOffset.xy;
 	// offset by one texel to allow -1 in x and y:
-	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
+	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize1);
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(INtexCoords.xy,viewportToTexRegionScaleBias),0);
 	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
 	//  to the texCoords of our "window". These wrap around 
 	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
-	texCoords				/=mixedResTransformXYWH.zw;
-	texCoords				=frac(texCoords);
-	texCoords				*=mixedResTransformXYWH.zw;
-	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize)*mixedResTransformXYWH.zw;
+	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize1)*mixedResTransformXYWH.zw;
+	
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 
+	float dz				=cloudAltitudeMetres-eyePosition.z;
+	float dist				=dz/view.z;
+	
+	vec3 wEyeToPos		=view*dist;
+	vec3 wPosition			=eyePosition+wEyeToPos;
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth				=reverseDepth;
-
-	vec4 colour				=vec4(1,0,1,0);
-	outputTexture1[pos]		=colour;
-	outputTexture2[pos]		=colour;
+	
+	vec2 wOffset		=wPosition.xy-origin.xy;
+    vec2 texc_global	=wOffset/globalScale;
+    vec2 texc_detail	=wOffset/detailScale;
+	float alt_texc		=wPosition.z/maxAltitudeMetres;
+	vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
+	vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
+	vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
+	vec4 ret			=Clouds2DPS_illum(imageTexture
+										,coverageTexture
+										,lossTexture
+										,volumeInscatterTexture,texCoords
+										,noiseTexture
+										,texc_global,texc_detail
+										,wEyeToPos
+										,sun_irr
+										,moon_irr
+										,ambient_light.rgb
+										,lightDir.xyz
+										,lightResponse);
+	ret.rgb				*=exposure;
+	pos					+=offsetToCorner;
+	pos					=pos%targetTextureSize1;
+	outputTexture[pos]	=ret;
 }
+
 CS_LAYOUT(8,8,1)
 shader void CS_Clouds2D_depthReverse(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {

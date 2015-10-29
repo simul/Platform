@@ -59,7 +59,7 @@ TwoResFramebuffer::TwoResFramebuffer()
 	,volume_num(0)
 {
 	volumeTextures[0] = volumeTextures[1] = NULL;
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i <4; i++)
 		lowResFramebuffers[i] = NULL;
 	for(int i=0;i<4;i++)
 		nearFarTextures[i]=NULL;
@@ -89,11 +89,11 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	SAFE_DELETE(lossTexture);
 	SAFE_DELETE(volumeTextures[0]);
 	SAFE_DELETE(volumeTextures[1]);
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 		SAFE_DELETE(lowResFramebuffers[i]);
 	if(!renderPlatform)
 		return;
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		lowResFramebuffers[i]=renderPlatform->CreateTexture();
 	}
@@ -121,7 +121,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	int BufferWidth = (Width + Downscale - 1) / Downscale + 1;
 	int BufferHeight = (Height + Downscale - 1) / Downscale + 1;
 	ERRNO_CHECK
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		lowResFramebuffers[i]->ensureTexture2DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,crossplatform::RGBA_16_FLOAT,true,true);
 	}
@@ -140,7 +140,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 
 void TwoResFramebuffer::InvalidateDeviceObjects()
 {
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 		SAFE_DELETE(lowResFramebuffers[i]);
 	for(int i=0;i<4;i++)
 		SAFE_DELETE(nearFarTextures[i]);
@@ -167,11 +167,6 @@ crossplatform::Texture *TwoResFramebuffer::GetVolumeTexture(int num)
 
 void TwoResFramebuffer::ActivateLowRes(crossplatform::DeviceContext &deviceContext)
 {
-	//for (int i = 0; i < 3; i++)
-	//	if(!lowResFramebuffers[i]->IsValid())
-	//		lowResFramebuffers[i]->CreateBuffers();
-	//if(stricmp(renderPlatform->GetName(),"OpenGL")==0)
-//		return;
 	crossplatform::Texture * targs[] = { GetLowResFramebuffer(0), GetLowResFramebuffer(1), GetLowResFramebuffer(2) };
 ///	crossplatform::Texture * depth = GetLowResFramebuffer(0)->GetDepthTexture();
 	static int u = 3;
