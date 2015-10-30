@@ -138,7 +138,8 @@ shader vec4 PS_IlluminationBuffer(posTexVertexOutput IN): SV_TARGET
 
 vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN,bool reverseDepth)
 {
-	float depth			=texture_clamp(depthTexture,IN.texCoords.xy).x;
+	vec2 depth_texc	= viewportCoordToTexRegionCoord(IN.texCoords.xy, viewportToTexRegionScaleBias);
+	float depth			=texture_clamp(depthTexture,depth_texc).x;
 	if(reverseDepth)
 	{
 		if(depth!=0.0)
@@ -149,7 +150,7 @@ vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN,bool reverseDepth)
 		if(depth<1.0)
 			discard;
 	}
-	vec4 ret= BackgroundLatLongSphere(backgroundTexture,IN.texCoords.xy);
+	vec4 ret= BackgroundLatLongSphere(backgroundTexture,IN.texCoords.xy.xy);
 	return ret;
 }
 

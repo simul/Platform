@@ -65,34 +65,6 @@ shader atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 	return OUT;
 }
 
-vec4 NearFarShadow(Texture2D nearFarDepthTexture,Texture2D cloudShadowTexture,vec4 viewportToTexRegionScaleBias
-	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,DepthIntepretationStruct depthInterpretationStruct
-	,float maxFadeDistanceMetres,vec2 tanHalfFov,mat4 worldspaceToShadowspaceMatrix,vec3 eyePos,float cloudShadowing
-	,float cloudShadowSharpness)
-{
-	vec3 wOffset		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
-	vec3 view			=normalize(wOffset);
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-	vec4 depth			=texture_clamp(nearFarDepthTexture,depth_texc);
-
-	vec2 dist			=depthToFadeDistance(depth.zw,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-	float shadow1		=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.x*view*maxFadeDistanceMetres).x;
-	float shadow2		=GetSimpleIlluminationAt(cloudShadowTexture,worldspaceToShadowspaceMatrix,eyePos+dist.y*view*maxFadeDistanceMetres).x;
-	//float sine			=view.z;
-	//float texy			=0.5*(1.f-sine);
-	//vec2 texx			=pow(dist,vec2(0.5,0.5));
-	// now shadow1 and shadow2 are from 0 (shadowed) to 1 (light).
-	vec2 sharp_mul		=vec2(1.0,1.0);//+500.0*cloudShadowSharpness*(vec2(1.0,1.0)-texx);
-	vec2 shadow			=saturate(vec2(0.5,0.5)+sharp_mul*vec2(0.5-shadow1,0.5-shadow2));
-	if(depthInterpretationStruct.reverseDepth)
-		shadow			*=cloudShadowing*(1.0-step(0.0,-depth.w));
-	else
-		shadow			*=cloudShadowing*(1.0-step(1.0,depth.w));
-
-	shadow				=saturate(vec2(1.0,1.0)-shadow);
-	return vec4(shadow.xy,0,1.0);
-}
-
 vec4 PS_NearFarShadow(atmosVertexOutput IN,bool reverseDepth)
 {
 	DepthIntepretationStruct depthInterpretationStruct;
@@ -101,20 +73,30 @@ vec4 PS_NearFarShadow(atmosVertexOutput IN,bool reverseDepth)
 	vec2 texCoords	=mixedResolutionTransformXYWH.xy/mixedResolutionTransformXYWH.zw+IN.texCoords.xy;
 	texCoords		=frac(texCoords);
 	texCoords		*=mixedResolutionTransformXYWH.zw;
-	vec2 clip_pos	=2.0*texCoords-vec2(1.0,1.0);
-	clip_pos.y		*=-1.0;
-	vec4 nf			=NearFarShadow(depthTexture
-									,cloudShadowTexture
-									,viewportToTexRegionScaleBias
-									,invViewProj
-									,texCoords
-									,clip_pos
-									,depthInterpretationStruct
-									,maxFadeDistanceMetres
-									,tanHalfFov
-									,invShadowMatrix,viewPosition,cloudShadowing,cloudShadowSharpness);
+	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x			+=2.0*texCoords.x;
+	clip_pos.y			-=2.0*texCoords.y;
+	vec3 wOffset		=mul(invViewProj,clip_pos).xyz;
+	vec3 view			=normalize(wOffset);
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+	vec4 depth			=texture_clamp(depthTexture,texCoords);
 
-    return nf;
+	vec2 dist			=depthToFadeDistance(depth.xy,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+	float shadow1		=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,viewPosition+dist.x*view*maxFadeDistanceMetres).x;
+	float shadow2		=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,viewPosition+dist.y*view*maxFadeDistanceMetres).x;
+	//float sine		=view.z;
+	//float texy		=0.5*(1.f-sine);
+	//vec2 texx			=pow(dist,vec2(0.5,0.5));
+	//now shadow1 and shadow2 are from 0 (shadowed) to 1 (light).
+	vec2 sharp_mul		=vec2(1.0,1.0);//+500.0*cloudShadowSharpness*(vec2(1.0,1.0)-texx);
+	vec2 shadow			=saturate(vec2(0.5,0.5)+sharp_mul*vec2(0.5-shadow1,0.5-shadow2));
+	if(depthInterpretationStruct.reverseDepth)
+		shadow			*=cloudShadowing*(1.0-step(0.0,-depth.w));
+	else
+		shadow			*=cloudShadowing*(1.0-step(1.0, depth.w));
+
+	shadow				=saturate(vec2(1.0,1.0)-shadow);
+	return vec4(shadow,0,1.0);
 }
 
 shader vec4 PS_NearFarShadow_ReverseDepth(atmosVertexOutput IN) : SV_TARGET

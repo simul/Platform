@@ -280,7 +280,10 @@ shader vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
 
 void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth)
 {
-	uint2 pos				=(g.xy*8+t.xy)*amortization+amortizationOffset.xy;
+	int2 pos				=int2(g.xy*8+t.xy);
+	pos						=pos*amortization+amortizationOffset.xy;
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
 	// offset by one texel to allow -1 in x and y:
 	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize1);
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(INtexCoords.xy,viewportToTexRegionScaleBias),0);
@@ -311,7 +314,7 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 		DepthIntepretationStruct depthInterpretationStruct;
 		depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 		depthInterpretationStruct.reverseDepth				=reverseDepth;
-		vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
+		vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize1);
 
 		vec2 wOffset		=wPosition.xy-origin.xy;
 		vec2 texc_global	=wOffset/globalScale;

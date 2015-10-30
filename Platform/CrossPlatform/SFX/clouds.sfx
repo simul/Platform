@@ -380,8 +380,9 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
 									);
-	outputTexture1[pos]		=f.colour;
-	outputTexture2[pos]		=f.nearColour;
+	vec4 v=vec4(0*texCoords.xy,0,0);
+	outputTexture1[pos]		=f.colour+v;
+	outputTexture2[pos]		=f.nearColour+v;
 	outputTexture3[pos]		=f.nearFarDepth;
 }
 

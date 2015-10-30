@@ -236,7 +236,7 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
 	vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,pos,0);
 	density.z			*=layerFade;
-	density.z			=saturate(density.z*(1.0+alphaSharpness));
+	density.z			=saturate(density.z*(1.0+10.0*alphaSharpness));
 	return density;
 }
 
@@ -571,7 +571,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec3 p							=offsetFromOrigin/scaleOfGridCoords;
 	int3 c							=int3(floor(p) + start_c_offset);
 	
-	/*vec4 clrs[]						={
+	vec4 clrs[]						={
 										{0.0,0.0,0.0,1.0}
 										,{0.4,0.0,0.0,1.0}
 										,{0.8,0.0,0.0,1.0}
@@ -584,7 +584,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 										,{0,0.25,1.0,1.0}
 										,{0,0.5,1.0,1.0}
 										,{0,1.0,1.0,1.0}
-										};*/
+										};
 	int idx=0;
 	float W							=halfClipSize;
 	const float start				=0.866*0.866;//0.707 for 2D, 0.866 for 3D;
@@ -696,8 +696,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				{
 	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
-	density.z		=saturate(density.z	+worleyNoise*.25*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1)));
-
+	float wo=worleyNoise*.25*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1));
+	density.z		=saturate(density.z	+wo);
+	density.xy		*=1.0+wo;
 					float brightness_factor;
 					float cosine			=dot(N,viewScaled);
 					density.z				*=cosine;
@@ -735,8 +736,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				//	clr.rgb=abs(normal);
 //if(idx>1)
 //	idx=1;
-					//clr.rgb=lerp(clr.rgb,clrs[idx%12].rgb,.5);
+				//	clr.rgb=lerp(clr.rgb,clrs[idx%12].rgb,.5);
 					//clr.g=fade_inter;
+					//clr.r=fade_inter;
 					if(do_depth_mix)
 					{
 						vec4 clr_n			=clr;
@@ -747,10 +749,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 						nearColour.a		*=(1.0-clr_n.a);
 					}
 					colour.rgb				+=clr.rgb*clr.a*(colour.a);
-					meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,saturate(4.0*density.z)*colour.a);
+					meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a*abs(cosine));//saturate(4.0*density.z)*colour.a);
 					colour.a				*=(1.0-clr.a);
 					if(nearColour.a*brightness_factor<0.003)
 					{
+						meanFadeDistance		=fadeDistance;
 						colour.a = 0.0;
 						break;
 					}
@@ -783,8 +786,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-	res.nearFarDepth.xz=min(res.nearFarDepth.xz,vec2(meanFadeDistance+0.25,meanFadeDistance+0.25));
-	res.nearFarDepth.wy=min(res.nearFarDepth.wy,vec2(meanFadeDistance,meanFadeDistance));
+	res.nearFarDepth.xz	=min(res.nearFarDepth.xz,vec2(meanFadeDistance+0.25,meanFadeDistance+0.25));
+	res.nearFarDepth.wy	=min(res.nearFarDepth.wy,vec2(meanFadeDistance,meanFadeDistance));
 	//res.nearFarDepth.yw	=meanFadeDistance;//*(1.0-colour.a);
 	//res.nearFarDepth.w	=meanFadeDistance;
 	return res;

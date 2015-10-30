@@ -68,6 +68,12 @@ static float U(float x)
 
 vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const math::Matrix4x4 &proj, float max_dist_metres)
 {
+	// 	Z = x/(depth*y + z)+w*depth;
+	// e.g. for depth-rev, infinite far plane:
+	//	m._33	=0.f;					m._34	=-1.f;
+	//	m._43	=zNear;
+	// so x=m43=nearplane, y=1.0, z= 0, w=0.
+	// and Z = near/depth
 	//	vec4 c(proj[3*4+2],max_dist_metres,proj[2*4+2]*max_dist_metres,0);
 	if (depthTextureStyle == crossplatform::PROJECTION)
 		return vec4(proj.m[3][2], max_dist_metres, proj.m[2][2] * max_dist_metres, 0.0f);
