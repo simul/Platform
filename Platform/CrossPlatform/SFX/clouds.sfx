@@ -319,8 +319,19 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 									,cloudIrRadiance1,cloudIrRadiance2
 									);
 	vec4 t2d				=clouds2DTexture[pos];
-	outputTexture1[pos]		=t2d*f.colour.a+f.colour;
-	outputTexture2[pos]		=t2d*f.nearColour.a+f.nearColour;
+	// blend:
+	vec4 c					=t2d;
+	c.rgb					*=f.colour.a;
+	c.rgb					+=f.colour.rgb;
+	c.a						=t2d.a*f.colour.a;
+	outputTexture1[pos]		=c;
+	float n					=float(dlookup.y==0);
+	vec4 cn					=t2d;
+	cn.rgb					*=f.nearColour.a*n;
+	cn.a					=1.0-n*(1.0-t2d.a);
+	cn.rgb					+=f.nearColour.rgb;
+	cn.a					*=f.nearColour.a;
+	outputTexture2[pos]		=cn;
 	outputTexture3[pos]		=f.nearFarDepth;
 }
 

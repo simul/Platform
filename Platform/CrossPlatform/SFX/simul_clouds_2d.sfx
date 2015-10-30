@@ -295,36 +295,46 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 
 	float dz				=cloudAltitudeMetres-eyePosition.z;
-	float dist				=dz/view.z;
+	vec4 ret				=vec4(0,0,0,1.0);
+	pos						+=offsetToCorner;
+	pos						=pos%targetTextureSize1;
+
+	float farDepth			=step(1.0,dlookup.x);
+	if(reverseDepth)
+		farDepth			=step(dlookup.x,0);
+	if(dz*view.z*farDepth>0)
+	{
+		float dist				=dz/view.z;
 	
-	vec3 wEyeToPos		=view*dist;
-	vec3 wPosition			=eyePosition+wEyeToPos;
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth				=reverseDepth;
-	
-	vec2 wOffset		=wPosition.xy-origin.xy;
-    vec2 texc_global	=wOffset/globalScale;
-    vec2 texc_detail	=wOffset/detailScale;
-	float alt_texc		=wPosition.z/maxAltitudeMetres;
-	vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
-	vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
-	vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
-	vec4 ret			=Clouds2DPS_illum(imageTexture
-										,coverageTexture
-										,lossTexture
-										,volumeInscatterTexture,texCoords
-										,noiseTexture
-										,texc_global,texc_detail
-										,wEyeToPos
-										,sun_irr
-										,moon_irr
-										,ambient_light.rgb
-										,lightDir.xyz
-										,lightResponse);
-	ret.rgb				*=exposure;
-	pos					+=offsetToCorner;
-	pos					=pos%targetTextureSize1;
+		vec3 wEyeToPos			=view*dist;
+		vec3 wPosition			=eyePosition+wEyeToPos;
+		DepthIntepretationStruct depthInterpretationStruct;
+		depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+		depthInterpretationStruct.reverseDepth				=reverseDepth;
+		vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
+
+		vec2 wOffset		=wPosition.xy-origin.xy;
+		vec2 texc_global	=wOffset/globalScale;
+		vec2 texc_detail	=wOffset/detailScale;
+		float alt_texc		=wPosition.z/maxAltitudeMetres;
+		vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
+		vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
+		vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
+		ret			=Clouds2DPS_illum(imageTexture
+											,coverageTexture
+											,lossTexture
+											,volumeInscatterTexture,unmodifiedTexCoords
+											,noiseTexture
+											,texc_global,texc_detail
+											,wEyeToPos
+											,sun_irr
+											,moon_irr
+											,ambient_light.rgb
+											,lightDir.xyz
+											,lightResponse);
+		ret.rgb				*=exposure*ret.a;
+		ret.a=1.0-ret.a;
+	}
 	outputTexture[pos]	=ret;
 }
 

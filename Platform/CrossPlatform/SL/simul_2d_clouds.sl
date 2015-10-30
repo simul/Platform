@@ -120,7 +120,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	float opacity			=saturate(detail.a*(coverage.x));//+2.0*Y(coverage)-1.0);
 	//if(opacity<=0)
 	//	return vec4(0,0,0,0);
-	float cos0	=dot(normalize(lightDir),view);
+	float cos0				=dot(normalize(lightDir),view);
 	float scattered_light	=exp(-detail.r*extinction);
 	float hg				=HenyeyGreenstein(cloudEccentricity,cos0);
 
@@ -143,7 +143,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	//insc.rgb				*=visible_light;
 	vec3 light				=sun_irr*visible_light+moon_irr;
 	vec4 colour				=vec4(light*(lightResponse.y+lightResponse.x*hg)*scattered_light+amb,opacity);
- colour				=coverage;
+ 
 
 #ifdef INFRARED
 	colour.rgb				=cloudIrRadiance.rgb;
