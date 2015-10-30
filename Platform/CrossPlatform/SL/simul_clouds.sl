@@ -781,15 +781,14 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 			idx			++;
 		}
 	}
-    res.colour			=vec4(colour.rgb,colour.a);
-    res.nearColour		=vec4(nearColour.rgb,nearColour.a);
+    res.colour			=colour;
+    res.nearColour		=nearColour;
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
 	res.nearFarDepth.xz	=min(res.nearFarDepth.xz,vec2(meanFadeDistance+0.25,meanFadeDistance+0.25));
 	res.nearFarDepth.wy	=min(res.nearFarDepth.wy,vec2(meanFadeDistance,meanFadeDistance));
-	//res.nearFarDepth.yw	=meanFadeDistance;//*(1.0-colour.a);
-	//res.nearFarDepth.w	=meanFadeDistance;
+
 	return res;
 }
 #endif
