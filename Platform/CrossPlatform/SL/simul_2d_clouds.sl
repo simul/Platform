@@ -105,7 +105,8 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 						,vec3 moon_irr
 						,vec3 amb
 						,vec3 lightDir
-						,vec4 lightResponse)
+						,vec4 lightResponse
+						,float maxFadeDistanceMetres)
 {
 //	return vec4(0,0,1,.5);
 	vec3 view				=normalize(wEyeToPos);

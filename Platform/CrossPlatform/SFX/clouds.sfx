@@ -216,8 +216,8 @@ vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 									,true
 									,cloudIrRadiance1,cloudIrRadiance2
 									);
-	if(p.colour.a>=1.0)
-	   discard;
+	//if(p.colour.a>=1.0)
+	//   discard;
 	p.colour.rgb*=exposure;
 //p.colour.rgb=vec3(1.0,0,0);
 	return p.colour;

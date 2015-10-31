@@ -176,7 +176,7 @@ namespace simul
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy);
 
 			/// Update the pixel offset for the specified view.
-			void UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct,int scale);
+			void UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct);
 			/// Offset in pixels from top-left of the low-res view to top-left of the full-res.
 			vec2								pixelOffset;
 			/// Returns	the low-res depth texture.

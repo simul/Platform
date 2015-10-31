@@ -62,6 +62,8 @@ namespace simul
 			//float xratio,yratio;GetTransformLowResToHiRes();
 			inline vec4 GetTransformLowResToHiRes() const
 			{
+				if(downscale<=1)
+					return vec4(0,0,1.0f,1.0f);
 				float A=(float)(w*downscale)/(float)W;
 				float B=(float)(h*downscale)/(float)H;
 				static float uu=0.5f;
@@ -80,6 +82,8 @@ namespace simul
 			// where x=-X/A and a=1/A
 			inline vec4 GetTransformHiResToLowRes() const
 			{
+				if(downscale<=1)
+					return vec4(0,0,1.0f,1.0f);
 				float a=(float)W/(float)(w*downscale);
 				float b=(float)H/(float)(h*downscale);
 				static float uu=0.5f;

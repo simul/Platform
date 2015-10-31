@@ -228,8 +228,10 @@ void TwoResFramebuffer::GetDimensions(int &w,int &h)
 }
 
 
-void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct,int scale)
+void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct)
 {
+	if(Downscale<=1)
+		return;
 	using namespace math;
 	// Update the orientation due to changing view_dir:
 	Vector3 cam_pos,new_view_dir,new_view_dir_local,new_up_dir;

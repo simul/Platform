@@ -120,7 +120,7 @@ float Worley(vec3 texc,int grid,int seed)
 			}
 		}
 	}
-	float p			=saturate(1.0-pow(1.5*n,2.0))/1.0;
+	float p			=saturate(1.0-pow(1.5*n,4.0))/1.0;
 	return p;
 }
 
