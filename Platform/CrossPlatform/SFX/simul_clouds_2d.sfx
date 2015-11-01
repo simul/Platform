@@ -322,11 +322,11 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,
 		if(U>=0)
 		{
 			float d				=1000.0*(-b + sqrt(U));
-			if(view.z<0)
-				d				=min(d,1000.0*(-b - sqrt(U)));
+			if(d<0)
+				d				=max(d,1000.0*(-b - sqrt(U)));
 		//	float d				=abs(dz)/view.z;
 	
-			if(d>0&&dist.x>=1.0||dz<0)
+			if(d>0)//&&dist.x>=1.0||dz<0)
 			{
 				vec3 wEyeToPos			=view*d;
 				vec3 wPosition			=eyePosition+wEyeToPos;
