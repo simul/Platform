@@ -133,7 +133,7 @@ shader void CS_PerlinWorley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 		return;
 	vec3 texCoords	=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec4 result;
-	result.xyzw		=Worley(texCoords,8,1);//saturate(Noise3D(noise_texture_frequency,texCoords,5, persistence).x+Worley(texCoords,16,1)-0.5);
+	result.x		=Worley(texCoords,8,1);//saturate(Noise3D(noise_texture_frequency,texCoords,5, persistence).x+Worley(texCoords,16,1)-0.5);
 	result.y		=Worley(texCoords,8,2);
 	result.z		=Worley(texCoords,16,1);
 	result.w		=Worley(texCoords,32,1);

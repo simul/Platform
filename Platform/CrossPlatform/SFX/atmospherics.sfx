@@ -365,7 +365,7 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 	vec3 viewCloudspace		=mul(worldToCloudMatrix,vec4(view,0.0)).xyz;
 	vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(viewPosition,1.0)).xyz;
 	idx.xy+=offsetToCorner.xy;
-	idx.xy=idx.xy%scatteringVolumeDims.xy;
+	idx.xy=idx.xy%uint2(scatteringVolumeDims.xy);
 	for(int i=0;i<scatteringVolumeDims.z;i++)
 	{
 		float dist			=pow(float(i)/float(scatteringVolumeDims.z-1),2.0);

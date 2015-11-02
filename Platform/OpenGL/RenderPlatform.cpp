@@ -101,7 +101,7 @@ RenderPlatform::RenderPlatform()
 	:reverseDepth(false)
 	,currentTopology(crossplatform::TRIANGLELIST)
 	,empty_vao(0)
-	,glslang_validation(true)
+	,glslang_validation(false)
 {
 
 }

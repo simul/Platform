@@ -829,7 +829,7 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 CS_LAYOUT(4,4,4)
 shader void CS_GenMip( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	uint3 pos=g*4+t;
+	int3 pos=int3(g*4+t);
 	int3 pos2=pos*2;
 	int x=1;
 	int y=1;
