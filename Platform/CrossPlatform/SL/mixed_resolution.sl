@@ -224,7 +224,7 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture, int2 source_dims, uint2 sour
 	int2 max_pos		=int2(source_dims)-int2(3,3);
 	int2 min_pos		=int2(1,1);
 	int2 pos2			=int2(max(min_pos.x,min(pos1.x,max_pos.x)),max(min_pos.y,min(pos1.y,max_pos.y)));
-	pos1				+=int2(source_offset);
+	pos2				+=int2(source_offset);
 	
 	vec2 farthest_nearest,fn0;
 	if(depthInterpretationStruct.reverseDepth)

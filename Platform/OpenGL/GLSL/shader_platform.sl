@@ -1,7 +1,6 @@
 #ifndef SPGLSL_SL
 #define SPGLSL_SL
 #include "CppGlsl.hs"
-
 profile vs_4_0(410);
 profile gs_4_0(410);
 profile ps_4_0(410);
