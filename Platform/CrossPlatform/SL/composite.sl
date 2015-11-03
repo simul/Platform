@@ -49,13 +49,13 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	float sine					=dot(zrow,clip_pos);
 	vec4 nearFarCloud			=texture_wrap_lod(nearFarTexture	,lowResTexCoords		,0);
 	// Should NOT be necessary:
-	float dd					=(nearFarCloud.x-nearFarCloud.y);
+	vec2 dd						=(nearFarCloud.xz-nearFarCloud.yw);
 	float depth					=texture_wrap_nearest_lod(depthTexture,depth_texc,0).x;
 
 	float dist					=depthToLinearDistance(depth	,depthInterpretationStruct);
 	float dist_rt				=pow(dist,0.5);
 	vec4 cloud					=texture_wrap_lod(farCloudTexture,lowResTexCoords,0);
-#if 1
+#if 0
 	vec3 view					=vec3(clip_pos.xy,1.0);
 	vec3 lightspaceView			=normalize((mul(clipPosToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
 	vec3 volumeTexCoords		=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*asin(lightspaceView.z)/pi),dist_rt);
@@ -67,24 +67,25 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 shadow_lookup			=texture_wrap_lod(shadowTexture, lowResTexCoords, 0);
 	float shadow				=shadow_lookup.x;
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
-	float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd,0.000001));
+	float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd.x,0.000001));
 	// we're going to do TWO interpolations. One from zero to the near distance,
 	// and one from the near to the far distance.
 	float nearInterp			=saturate(dist / max(nearFarCloud.y,0.000001));
 	
-		vec4 cloudNear				=texture_wrap_lod(nearCloudTexture, lowResTexCoords, 0);
-		cloud						=lerp(cloudNear, cloud, hiResInterp);
+	vec4 cloudNear				=texture_wrap_lod(nearCloudTexture, lowResTexCoords, 0);
+	cloud						=lerp(cloudNear, cloud, hiResInterp);
 	
-		cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
-	float shadowInterp			=saturate((dist - nearFarCloud.w) / max(nearFarCloud.z-nearFarCloud.w,0.000001));
+	cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
+	float shadowInterp			=saturate((dist - nearFarCloud.w) / max(dd.y,0.000001));
 	//float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd,0.000001));
 	shadow						=lerp(shadow_lookup.y,shadow_lookup.x,shadowInterp);
 
-		insc.rgb					*=cloud.a;
-		insc						+=cloud;
-		shadow						*=cloud.a;
+	insc.rgb					*=cloud.a;
+	insc						+=cloud;
+	shadow						*=cloud.a;
 	res.multiply				=texture_clamp_mirror_lod(loss2dTexture,loss_texc,0)*shadow;
 	res.add						=insc;
+	//res.add.r=dist;//.r=hiResInterp;
     return res;
 }
 
@@ -124,19 +125,19 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 	float hires_edge			=dd;
 	res.add						=vec4(0,0,0,1.0);
 	res.multiply				=vec4(0,0,0,0);
-		for(int k=0;k<numSamples;k++)
-		{
+	for(int k=0;k<numSamples;k++)
+	{
 		float depth					=TEXTURE_LOAD_MSAA(depthTextureMS,fullres_depth_pos2,k).x;
 
 		float dist					=depthToLinearDistance(depth	,depthInterpretationStruct);
 		float dist_rt				=pow(dist,0.5);
-		
+	
 		vec3 volumeTexCoords		= vec3(lowResTexCoords, dist_rt);
 		vec4 shadow_lookup			= vec4(1.0, 1.0, 0, 0);
 		shadow_lookup				=texture_wrap_lod(shadowTexture, lowResTexCoords, 0);
 		float shadow				=shadow_lookup.x;
 		vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
-#if 1
+#if 0
 		volumeTexCoords				=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*asin(lightspaceView.z)/pi),dist_rt);
 		vec4 insc					=texture_3d_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0);
 #else
@@ -147,16 +148,16 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 		// and one from the near to the far distance.
 		float nearInterp			=saturate(dist / max(nearFarCloud.y,0.000001));
 		cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
-
+	
 		cloud						=lerp(cloudNear, cloud, hiResInterp);
-
+	
 		cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
 		float shadowInterp			=saturate((dist - nearFarCloud.w) / max(nearFarCloud.z-nearFarCloud.w,0.000001));
 		//float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd,0.000001));
 		shadow						=lerp(shadow_lookup.y,shadow_lookup.x,shadowInterp);
 
 		insc.rgb					*=cloud.a;
-		insc					+=cloud;
+		insc						+=cloud;
 		shadow						*=cloud.a;
 		res.multiply				+=texture_wrap_lod(loss2dTexture,loss_texc,0)*shadow;
 		res.add						+=insc;

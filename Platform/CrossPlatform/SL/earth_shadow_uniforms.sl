@@ -9,7 +9,7 @@ SIMUL_CONSTANT_BUFFER(EarthShadowUniforms,9)
 	uniform float maxFadeDistance;
 	uniform vec2 targetTextureSize;
 	uniform float terminatorDistance;
-	uniform float temp6;
+	uniform float earthShadowEffectStrength;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

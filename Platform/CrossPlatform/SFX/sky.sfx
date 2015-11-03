@@ -129,54 +129,6 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 	return result;
 }
 
-vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize
-	,float maxFadeDistanceKm
-	,float maxFadeDistance,float terminatorDistance,float radiusOnCylinder,vec3 earthShadowNormal,vec3 sunDir)
-{
-	float azimuth		=pi*2.0*texCoords.x;
-	float elevation		=(1.0-texCoords.y)*pi;
-	float sine			=sin(elevation);
-	sine				=clamp(sine,-1.0,1.0);
-	float cosine		=sqrt(1.0-sine*sine);
-	float x				=sin(azimuth)*sine;
-	float y				=cos(azimuth)*sine;
-	vec3 view			=mul(worldViewProj,vec4(x,y,cosine,1.0)).xyz;//worldViewProj is actually lightspaceToWorldMatrix in this context.
-
-	vec2 fade_texc			=vec2(1.0,texCoords.y);
-	vec2 full_bright_range	=vec2(0,0);
-	for(int i=0;i<44;i++)
-	{
-		vec2 full_bright_range2	=EarthShadowDistances(fade_texc,view,earthShadowNormal,sunDir,maxFadeDistance,terminatorDistance,radiusOnCylinder);
-		full_bright_range		+=full_bright_range2;
-		view.z					-=0.001;
-		view					=normalize(view);
-	}
-	full_bright_range		=saturate(full_bright_range/44.0);
-    return vec4(full_bright_range,0,0);
-}
-
-vec4 ShowIlluminationBuffer(Texture2D illTexture,vec2 texCoords)
-{
-	if(texCoords.x<0.5)
-	{
-		texCoords.x		*=2.0;
-		vec2 nf			=texture_clamp_mirror_nearest_lod(illTexture,texCoords,0);
-		return saturate(vec4(nf,0.0,1.0));
-	}
-	else
-	{
-		texCoords.x		=2.0*(texCoords.x-0.5);
-		vec2 texc		=vec2(0.5,texCoords.y);
-		vec2 nf			=texture_clamp_mirror_nearest_lod(illTexture,texc,0).xy;
-		// Near Far for EarthShadow illumination is xy
-		// Near Far for clouds overcast is zw.
-		vec4 result		=vec4(0,1.0,0,0);
-		if(texCoords.x>=nf.x&&texCoords.x<=nf.y)
-			result.rg	=vec2(1.0,0.0);
-		return vec4(result.rgb,1);
-	}
-}
-
 shader vec4 PS_IlluminationBuffer(posTexVertexOutput IN): SV_TARGET
 {
 	float alt_km		=eyePosition.z/1000.0;
@@ -184,16 +136,10 @@ shader vec4 PS_IlluminationBuffer(posTexVertexOutput IN): SV_TARGET
 	return ret;
 }
 
-shader vec4 PS_ShowIlluminationBuffer(posTexVertexOutput IN): SV_TARGET
-{
-	vec4 result= ShowIlluminationBuffer(inscTexture,IN.texCoords);
-    return result;
-}
-
-
 vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN,bool reverseDepth)
 {
-	float depth			=texture_clamp(depthTexture,IN.texCoords.xy).x;
+	vec2 depth_texc	= viewportCoordToTexRegionCoord(IN.texCoords.xy, viewportToTexRegionScaleBias);
+	float depth			=texture_clamp(depthTexture,depth_texc).x;
 	if(reverseDepth)
 	{
 		if(depth!=0.0)
@@ -204,7 +150,7 @@ vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN,bool reverseDepth)
 		if(depth<1.0)
 			discard;
 	}
-	vec4 ret= BackgroundLatLongSphere(backgroundTexture,IN.texCoords.xy);
+	vec4 ret= BackgroundLatLongSphere(backgroundTexture,IN.texCoords.xy.xy);
 	return ret;
 }
 
@@ -276,6 +222,12 @@ shader vec4 PS_ShowFadeTable(posTexVertexOutput IN): SV_TARGET
 shader vec4 PS_Colour(posTexVertexOutput IN): SV_TARGET
 {
     return colour;
+}
+
+shader vec4 PS_ShowIlluminationBuffer(posTexVertexOutput IN): SV_TARGET
+{
+	vec4 result= ShowIlluminationBuffer(inscTexture,IN.texCoords);
+    return result;
 }
 
 shader vec4 PS_ShowFadeTexture(posTexVertexOutput IN): SV_TARGET

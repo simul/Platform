@@ -13,6 +13,8 @@ uniform Texture2DMS<vec4> depthTextureMS;
 uniform sampler2D illuminationTexture;
 uniform sampler2D lightTableTexture;
 
+uniform RWTexture2D<vec4> outputTexture		SIMUL_RWTEXTURE_REGISTER(0);
+
 SamplerState samplerState 
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -123,7 +125,8 @@ vec4 msaaPS(v2f IN)
 										,moon_irr
 										,ambient_light.rgb
 										,lightDir.xyz
-										,lightResponse);
+										,lightResponse
+													,maxFadeDistanceMetres);
 
 	ret.rgb				*=exposure;
 	return ret;
@@ -150,7 +153,8 @@ vec4 MainPS(v2f IN,vec2 texCoords)
 										,moon_irr
 										,ambient_light.rgb
 										,lightDir.xyz
-										,lightResponse);
+										,lightResponse
+													,maxFadeDistanceMetres);
 	ret.rgb				*=exposure;
 	return ret;
 }
@@ -189,15 +193,16 @@ vec4 PS_Main_depthTexture(v2f IN,bool reverseDepth)
 
 	return MainPS(IN,viewportTexCoords);
 }
+
 shader vec4 PS_Main_depthReverse(v2f IN) : SV_TARGET
 {
 	return PS_Main_depthTexture(IN,true);
 }
+
 shader vec4 PS_Main_depthForward(v2f IN) : SV_TARGET
 {
 	return PS_Main_depthTexture(IN,false);
 }
-
 
 struct v2f2
 {
@@ -274,6 +279,106 @@ shader vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
 {
     return DetailLighting(IN.texCoords,imageTexture);
 }
+
+void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,bool reverseDepth)
+{
+	int2 pos				=int2(g.xy*8+t.xy);
+	pos						=pos*amortization+amortizationOffset.xy;
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth				=reverseDepth;
+	// offset by one texel to allow -1 in x and y:
+	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize1);
+	vec4 dlookup 			=vec4(0,0,0,0);
+	if(useDepth)
+		dlookup				=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(INtexCoords.xy,viewportToTexRegionScaleBias),0);
+	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
+	//  to the texCoords of our window. These wrap around 
+	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
+	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize1)*mixedResTransformXYWH.zw;
+	
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
+	// TODO: should be depthToFadeDistance,not linear
+	vec4 dist				=vec4(1.0,1.0,1.0,1.0);
+	if(useDepth)
+		dist				=depthToLinearDistance(dlookup, depthInterpretationStruct);
+	float dz				=cloudAltitudeMetres-eyePosition.z;
+	vec4 ret				=vec4(0,0,0,1.0);
+	pos						+=offsetToCorner;
+	pos						=pos%targetTextureSize1;
+
+	if(dz>0||view.z<0)
+	{
+		float Rh				=6378.0+cloudAltitudeMetres*0.001;
+		float Rz				=6378+eyePosition.z*0.001;
+		float b					=2.0*Rz*view.z;
+		float c					=Rz*Rz-Rh*Rh;
+		float U					=b*b-4*c;
+		if(U>=0)
+		{
+			float d				=1000.0*(-b + sqrt(U));
+			if(dz<0)
+				d				=max(d,1000.0*(-b - sqrt(U)));
+		//	float d				=abs(dz)/view.z;
+	
+			if(d>0&&(dist.x>=1.0||dist.x>d/maxFadeDistanceMetres))
+			{
+				vec3 wEyeToPos			=view*d;
+				vec3 wPosition			=eyePosition+wEyeToPos;
+				vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize1);
+
+				vec2 wOffset		=wPosition.xy-origin.xy;
+				vec2 texc_global	=wOffset/globalScale;
+				vec2 texc_detail	=wOffset/detailScale;
+				float alt_texc		=wPosition.z/maxAltitudeMetres;
+				vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
+				vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
+				vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
+				ret			=Clouds2DPS_illum(imageTexture
+													,coverageTexture
+													,lossTexture
+													,volumeInscatterTexture,unmodifiedTexCoords
+													,noiseTexture
+													,texc_global,texc_detail
+													,wEyeToPos
+													,sun_irr
+													,moon_irr
+													,ambient_light.rgb
+													,lightDir.xyz
+													,lightResponse
+													,maxFadeDistanceMetres);
+				ret.rgb				*=exposure*ret.a;
+				ret.a=1.0-ret.a;
+			}
+		}
+	}
+	outputTexture[pos]	=ret;
+}
+
+CS_LAYOUT(8,8,1)
+shader void CS_Clouds2D_depthReverse(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_Clouds2D(g,t,true,true);
+}
+
+
+CS_LAYOUT(8,8,1)
+shader void CS_Clouds2D_depthForward(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_Clouds2D(g,t,true,false);
+}
+
+CS_LAYOUT(8,8,1)
+shader void CS_Clouds2D_noDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_Clouds2D(g,t,false,false);
+}
+
 
 technique coverage
 {
@@ -406,4 +511,21 @@ technique simul_clouds_2d
 		SetVertexShader(main_vs);
 		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
     }
+}
+
+VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_SimpleFullscreen());
+technique clouds_2d_quad
+{
+	pass reverse_depth 
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D_depthReverse()));
+	}
+	pass forward_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D_depthForward()));
+	}
+	pass no_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D_noDepth()));
+	}
 }

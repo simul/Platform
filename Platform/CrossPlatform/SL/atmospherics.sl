@@ -53,7 +53,7 @@ float GetCloudIllum(Texture3D cloudTexture, SamplerState cloudSamplerState,vec3 
 {
 	vec3 l				=lightDirCloudspace;
 	float a				=saturate(-texc.z);
-	l					*=min(2.0,a/max(l.z,0.0001));
+	l					*=a/max(l.z,0.0001);
 	texc				+=l;
 	vec4 texel			=sample_3d_lod(cloudTexture,cloudSamplerState, texc, 0);
 	//float above			=saturate(texc.z-1.0);

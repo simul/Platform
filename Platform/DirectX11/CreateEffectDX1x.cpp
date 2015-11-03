@@ -51,6 +51,8 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 
 #ifndef SIMUL_WIN8_SDK
 	#pragma comment(lib,"Effects11_DXSDK.lib")
+	#pragma comment(lib,"dxerr.lib")
+	#pragma comment(lib,"d3dx11.lib")
 #else
 	#ifndef _XBOX_ONE
 		#pragma comment(lib,"Effects11_Win8SDK.lib")
@@ -63,8 +65,6 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 	#pragma comment(lib,"d3d11_x.lib")
 	#pragma comment(lib,"d3dcompiler.lib")
 #else
-	#pragma comment(lib,"dxerr.lib")
-	#pragma comment(lib,"d3dx11.lib")
 	#pragma comment(lib,"dxguid.lib")
 	#pragma comment(lib,"dxgi.lib")
 	#pragma comment(lib,"d3d11.lib")
@@ -185,119 +185,7 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 	}
 	return tex;
 }
-
-ID3D1xTexture1D* simul::dx11::make1DTexture(
-							ID3D11Device			*m_pd3dDevice
-							,int w
-							,DXGI_FORMAT format
-							,const float *src)
-{
-	ID3D1xTexture1D*	tex;
-	D3D11_TEXTURE1D_DESC textureDesc=
-	{
-		w,
-		1,
-		1,
-		format,
-		D3D11_USAGE_DYNAMIC,
-		D3D11_BIND_SHADER_RESOURCE,
-		D3D11_CPU_ACCESS_WRITE,
-		0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
-	};
-	D3D11_SUBRESOURCE_DATA init=
-	{
-		src,
-		(UINT)(w*ByteSizeOfFormatElement(format)),
-		(UINT)(w*ByteSizeOfFormatElement(format))
-	};
-
-	m_pd3dDevice->CreateTexture1D(&textureDesc,&init,&tex);
-	return tex;
-}
-
-ID3D11Texture2D* simul::dx11::make2DTexture(
-							ID3D11Device			*m_pd3dDevice
-							,int w,int h
-							,DXGI_FORMAT format
-							,const float *src)
-{
-	ID3D1xTexture2D*	tex;
-	D3D11_TEXTURE2D_DESC textureDesc=
-	{
-		w,h,
-		1,
-		1,
-		format,
-		{1,0}
-		,D3D11_USAGE_DYNAMIC,
-		D3D11_BIND_SHADER_RESOURCE,
-		D3D11_CPU_ACCESS_WRITE,
-		0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
-	};
-	D3D11_SUBRESOURCE_DATA init=
-	{
-		src,
-		(UINT)w*ByteSizeOfFormatElement(format),
-		(UINT)w*h*ByteSizeOfFormatElement(format)
-	};
-	m_pd3dDevice->CreateTexture2D(&textureDesc,&init,&tex);
-	return tex;
-}
-
-
-ID3D1xTexture3D* simul::dx11::make3DTexture(
-							ID3D11Device			*m_pd3dDevice
-							,int w,int l,int d
-							,DXGI_FORMAT format
-							,const void *src)
-{
-	ID3D1xTexture3D*	tex;
-	D3D11_TEXTURE3D_DESC textureDesc=
-	{
-		w,l,d
-		,1
-		,format
-		,D3D11_USAGE_DYNAMIC
-		,D3D11_BIND_SHADER_RESOURCE
-		,D3D11_CPU_ACCESS_WRITE
-		,0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
-	};
-	D3D11_SUBRESOURCE_DATA init=
-	{
-		src,
-		w*ByteSizeOfFormatElement(format),
-		w*l*ByteSizeOfFormatElement(format)
-	};
-	m_pd3dDevice->CreateTexture3D(&textureDesc,src?&init:NULL,&tex);
-	return tex;
-}
-							
-void simul::dx11::Ensure3DTextureSizeAndFormat(
-							ID3D11Device			*m_pd3dDevice
-							,ID3D1xTexture3D* &tex
-							,ID3D11ShaderResourceView* &srv
-							,int w,int l,int d
-							,DXGI_FORMAT format)
-{
-	if(tex)
-	{
-		D3D11_TEXTURE3D_DESC desc;
-		tex->GetDesc(&desc);
-		if((int)desc.Width!=w||(int)desc.Height!=l||(int)desc.Depth!=d||desc.Format!=format)
-		{
-			SAFE_RELEASE(tex);
-			SAFE_RELEASE(srv);
-		}
-	}
-
-	if(!tex)
-	{
-		tex=make3DTexture(	m_pd3dDevice,w,l,d,format,NULL);
-		m_pd3dDevice->CreateShaderResourceView(tex,NULL,&srv);
-		return;
-	}
-}
-
+		
 void simul::dx11::setDepthState(ID3DX11Effect *effect,const char *name		,ID3D11DepthStencilState * value)
 {
 	ID3DX11EffectDepthStencilVariable*	var	=effect->GetVariableByName(name)->AsDepthStencil();

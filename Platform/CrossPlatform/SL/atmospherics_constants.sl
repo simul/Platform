@@ -41,10 +41,8 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec4 mixedResolutionTransformXYWH;
 	uniform vec4 depthToLinFadeDistParams;
-
 	uniform vec3 viewPosition;
 	uniform float exposure;
-
 	uniform vec2 tanHalfFov;
 	uniform float nearZ;
 	uniform float farZ;
@@ -56,6 +54,10 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform float startZMetresZZZ;
 
 	uniform int3 amortization;
+	uniform float test;
+
+	uniform int2 offsetToCorner;
+	uniform int2 edge;
 
 SIMUL_CONSTANT_BUFFER_END
 

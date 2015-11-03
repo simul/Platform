@@ -59,6 +59,8 @@ void HdrRenderer::SetBufferSize(int w,int h)
 		}
 		H=Height/35;
 		W=Width/35;
+		if(blurTexture)
+		{
 		blurTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
 		crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
 		blurTexture->activateRenderTarget(immediateContext);
@@ -67,6 +69,7 @@ void HdrRenderer::SetBufferSize(int w,int h)
 			renderPlatform->DrawQuad(immediateContext);
 		renderPlatform->GetDebugEffect()->Unapply(immediateContext);
 		blurTexture->deactivateRenderTarget();
+	}
 	}
 	//RecompileShaders();
 }

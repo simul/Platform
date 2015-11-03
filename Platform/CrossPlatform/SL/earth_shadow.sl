@@ -58,6 +58,11 @@ vec2 fn(float r,float cos2,float sine_phi,float sine_gamma,float maxFadeDistance
 
 vec2 EarthShadowDistances(vec2 fade_texc,vec3 view,vec3 earthShadowNormal,vec3 sunDir,float maxFadeDistance,float terminatorDistance,float radiusOnCylinder)
 {
+		//return vec2(0.0,1.0);
+	/*if(radiusOnCylinder>=1.0&&view.z>0)
+		return vec2(0.0,1.0);
+	if(radiusOnCylinder<=1.0&&view.z<0)
+		return vec2(1.0,1.0);*/
 	float dist				=fade_texc.x*fade_texc.x;
 	// The Earth's shadow: 
 	// First get the part of view that is along the light direction

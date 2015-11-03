@@ -464,7 +464,6 @@ GL_ERROR_CHECK
 		}
 		else
 			break;
-		GL_ERROR_CHECK
 	}
 	GL_ERROR_CHECK
 }
@@ -534,7 +533,7 @@ bool Effect::FillInTechniques()
 			}
 		}
 	}
-	SIMUL_CERR<<"Compile "<<t.UpdateTime()<<std::endl;
+	SIMUL_CERR<<"Compile "<<t.UpdateTime()/1000.0f<<" s"<<std::endl;
 	glfxUseTechniqueGroup(e,0);
 	// ZERO is a valid number of shaders to have in an effect:
 	return true;
