@@ -111,7 +111,7 @@ namespace simul
 				last_created_view_id(-1)
 				,renderPlatform(NULL)
 			{}
-			
+
 			typedef std::map<int,MixedResolutionView*>	ViewMap;
 
 			/// Restore the device objects.
@@ -127,7 +127,7 @@ namespace simul
 			///
 			/// \return	null if it fails, else the view.
 			MixedResolutionView				*GetView				(int view_id);
-			
+
 			const MixedResolutionView		*GetView		(int view_id) const;
 
 			/// Gets the views.

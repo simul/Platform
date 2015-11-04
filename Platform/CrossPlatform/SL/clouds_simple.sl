@@ -29,7 +29,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
-	float sineFactor		=1.0/length(clip_pos.xyz);
+	//float sineFactor		=1.0/length(clip_pos.xyz);
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
@@ -81,27 +81,27 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		float a		=1.0/(-view.z+0.00001);
 		offset_vec	=(world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
 	}
-	vec3 halfway					=0.5*(lightDir-view);
+	//vec3 halfway					=0.5*(lightDir-view);
 	world_pos						+=offset_vec;
-	float viewScale					=length(viewScaled*scaleOfGridCoords);
+	//float viewScale					=length(viewScaled*scaleOfGridCoords);
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
 	vec3 startOffsetFromOrigin		=viewPosKm-gridOriginPosKm;
 	vec3 offsetFromOrigin			=world_pos-gridOriginPosKm;
 	vec3 p0							=startOffsetFromOrigin/scaleOfGridCoords;
 	int3 c0							=int3(floor(p0) + start_c_offset);
-	vec3 gridScale					=scaleOfGridCoords;
-	vec3 P0							=startOffsetFromOrigin/scaleOfGridCoords/2.0;
-	int3 C0							=c0>>1;
+	//vec3 gridScale					=scaleOfGridCoords;
+	//vec3 P0							=startOffsetFromOrigin/scaleOfGridCoords/2.0;
+	//int3 C0							=c0>>1;
 	
 	float distanceKm				=length(offset_vec);
 	vec3 p							=offsetFromOrigin/scaleOfGridCoords;
-	int3 c							=int3(floor(p) + start_c_offset);
+	//int3 c							=int3(floor(p) + start_c_offset);
 	
-	int idx=0;
-	float W							=halfClipSize;
+	//int idx=0;
+	//float W							=halfClipSize;
 	const float start				=0.866*0.866;//0.707 for 2D, 0.866 for 3D;
 	const float ends				=1.0;
-	const float range				=ends-start;
+	//const float range				=ends-start;
 	//vec3 volume_texc				=ScreenToVolumeTexcoords(clipPosToScatteringVolumeMatrix,texCoords,0.0);
 
 
@@ -110,7 +110,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float lastFadeDistance			=0.0;
 	//
 	float stepLengthKm	=1.0/inverseScalesKm.z/30.0;
-	float blinn_phong=0.0;
+	//float blinn_phong=0.0;
 	bool found=false;
 	for(int i=0;i<255;i++)
 	{
@@ -134,18 +134,17 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		{
 			if(!found)
 			{
-				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,1);
+				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
 				found				=found||(density.z>0);
 			}
 			if(found)
 			{
-				float lod				=0.0;
 				vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise)
 					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
-				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,lod);
+				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:

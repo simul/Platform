@@ -68,6 +68,12 @@ static float U(float x)
 
 vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const math::Matrix4x4 &proj, float max_dist_metres)
 {
+	// 	Z = x/(depth*y + z)+w*depth;
+	// e.g. for depth-rev, infinite far plane:
+	//	m._33	=0.f;					m._34	=-1.f;
+	//	m._43	=zNear;
+	// so x=m43=nearplane, y=1.0, z= 0, w=0.
+	// and Z = near/depth
 	//	vec4 c(proj[3*4+2],max_dist_metres,proj[2*4+2]*max_dist_metres,0);
 	if (depthTextureStyle == crossplatform::PROJECTION)
 		return vec4(proj.m[3][2], max_dist_metres, proj.m[2][2] * max_dist_metres, 0.0f);
@@ -93,14 +99,14 @@ Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 	if(z0>z1)
 	{
 		frustum.reverseDepth=false;
-		frustum.nearZ=-z0;
-		frustum.farZ=-z1;
+		frustum.nearZ		=-z0;
+		frustum.farZ		=-z1;
 	}
 	else
 	{
 		frustum.reverseDepth=true;
-		frustum.nearZ=-z1;
-		frustum.farZ=-z0;
+		frustum.nearZ		=-z1;
+		frustum.farZ		=-z0;
 	}
 	frustum.tanHalfHorizontalFov=1.f/M._11;
 	frustum.tanHalfVerticalFov=1.f/M._22;
@@ -423,7 +429,7 @@ const float *Camera::MakeDepthReversedProjectionMatrix(const FovPort &fovPort, f
 	m._32 = handedness *yOffset;
 	if (zFar>0)
 	{
-		m._33 = zNear / (zFar - zNear);			m._34 = -1.f;
+		m._33 = zNear / (zFar - zNear);	m._34 = -1.f;
 		m._43 = zFar*zNear / (zFar - zNear);
 		// z = (33 Z + 43) / (34 Z +44)
 		//  z = (N/(F-N)*Z+F*N/(F-N))/(-Z)
@@ -481,7 +487,6 @@ const float *Camera::MakeProjectionMatrix(float h,float v,float zNear,float zFar
 	//
 	return m;
 }
-
 const float *Camera::MakeProjectionMatrix(const FovPort &fovPort, float zNear, float zFar)
 {
 	float xScale = 2.0f / (fovPort.leftTan + fovPort.rightTan);

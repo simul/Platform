@@ -53,11 +53,11 @@ float GetCloudIllum(Texture3D cloudTexture, SamplerState cloudSamplerState,vec3 
 {
 	vec3 l				=lightDirCloudspace;
 	float a				=saturate(-texc.z);
-	l					*=min(2.0,a/max(l.z,0.0001));
+	l					*=a/max(l.z,0.0001);
 	texc				+=l;
 	vec4 texel			=sample_3d_lod(cloudTexture,cloudSamplerState, texc, 0);
-	//float above			=saturate(texc.z-1.0);
-	//texel.y				+=above;
+	float above			=saturate(texc.z-1.0);
+	texel.x				+=above;
 	return saturate(texel.x);
 }
 
@@ -294,18 +294,18 @@ void Inscatter_All(		out vec4 colours[8]
 		{
 			for(int j=0;j<INTER_STEPS;j++)
 			{
-				float distanceMetres=maxFadeDistanceMetres*pow(dist+float(j)/float(INTER_STEPS)/7.0,2.0);
-				vec3 texc			=viewposCloudspace+distanceMetres*viewCloudspace;
-				illum += GetCloudIllum(cloudTexture, cloudSamplerState, texc, lightDirCloudspace) / float(INTER_STEPS);
+				float distanceMetres	=maxFadeDistanceMetres*pow(dist+float(j)/float(INTER_STEPS)/7.0,2.0);
+				vec3 texc				=viewposCloudspace+distanceMetres*viewCloudspace;
+				illum					+=GetCloudIllum(cloudTexture, cloudSamplerState, texc, lightDirCloudspace) / float(INTER_STEPS);
 			}
 		}
 		il					=1.0-godraysIntensity*(1.0-illum);//saturate(illum+dist);//1.0-(1.0-illum)/(1.0+dist);
 		fade_texc.x			=dist;
 		vec2 nearFarTexc	=illum_lookup.xy;
-		vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
-		vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
-		vec4 insc_near		=texture_clamp_mirror_lod(inscTexture,near_texc,0);
-		vec4 insc_far		=texture_clamp_mirror_lod(inscTexture,far_texc,0);
+		vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x)	,fade_texc.y);
+		vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x)	,fade_texc.y);
+		vec4 insc_near		=texture_clamp_mirror_lod(inscTexture	,near_texc,0);
+		vec4 insc_far		=texture_clamp_mirror_lod(inscTexture	,far_texc,0);
 
 		insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
 		vec4 di				=vec4(insc.rgb-prev_insc.rgb,0.5*(insc.a+prev_insc.a));

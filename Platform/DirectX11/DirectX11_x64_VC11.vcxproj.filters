@@ -9,6 +9,9 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="FX">
+      <UniqueIdentifier>{6114eb70-d5bb-4f18-b940-6c5a0d50e188}</UniqueIdentifier>
+    </Filter>
     <Filter Include="SFX">
       <UniqueIdentifier>{44db79cc-70d8-43ac-8367-1778f33a7ce0}</UniqueIdentifier>
     </Filter>
@@ -150,10 +153,34 @@
     <None Include="HLSL\CppHLSL.hlsl">
       <Filter>HLSL</Filter>
     </None>
+    <None Include="HLSL\fft_512x512_c2c.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\MixClouds_c.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean_shading.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean_simulator_cs.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\simul_earthshadow.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\simul_gpu_sky.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\simul_inscatter_fns.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
     <None Include="SimulUseDXSDK.props" />
     <None Include="SimulUseWin8SDK.props" />
     <None Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
       <Filter>SFX</Filter>
+    </None>
+    <None Include="HLSL\shader_platform.sl">
+      <Filter>FX</Filter>
     </None>
     <None Include="..\CrossPlatform\SFX\atmospherics.sfx">
       <Filter>SFX</Filter>
@@ -189,9 +216,6 @@
       <Filter>SFX</Filter>
     </None>
     <None Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
-      <Filter>SFX</Filter>
-    </None>
-    <None Include="..\CrossPlatform\SFX\simul_debug.sfx">
       <Filter>SFX</Filter>
     </None>
     <None Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
@@ -361,9 +385,6 @@
     </None>
     <None Include="..\CrossPlatform\SL\clouds_simple.sl">
       <Filter>SL</Filter>
-    </None>
-    <None Include="HLSL\shader_platform.sl">
-      <Filter>HLSL</Filter>
     </None>
   </ItemGroup>
 </Project>

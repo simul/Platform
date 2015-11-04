@@ -34,10 +34,10 @@ namespace simul
 			DirectX::ScratchImage scratchImage;
 			HRESULT hr=DirectX::CaptureTexture( pd3dDevice, m_pImmediateContext, texture, scratchImage );
 			if(hr!=S_OK)
-{
+			{
 				SIMUL_CERR<<"Failed to save texture "<<filename_utf8<<std::endl;
 				return;
-}
+			}
 			const DirectX::Image *image=scratchImage.GetImage(0,0,0);
 			DirectX::SaveToWICFile(*image,DirectX::WIC_FLAGS_NONE,GUID_ContainerFormatPng,wfilename.c_str(),&GUID_WICPixelFormat24bppBGR);
 			SAFE_RELEASE(m_pImmediateContext);

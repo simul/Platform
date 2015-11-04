@@ -35,6 +35,7 @@ struct CompositeShaderInput
     vec2 lowResTexCoords	:TEXCOORD1;
 	vec4 clip_pos			:TEXCOORD2;
 	vec2 depth_texc			:TEXCOORD3;
+    vec2 lowResDepthTexCoords	:TEXCOORD4;
 };
 
 vec4 texture_resolve(TEXTURE2DMS_FLOAT4 textureMS,vec2 texCoords)
@@ -67,7 +68,8 @@ shader CompositeShaderInput VS_Composite(idOnly IN)
 	OUT.hPosition.z	=0.0; 
 	OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
 
-	OUT.lowResTexCoords	=fullResToLowResTransformXYWH.xy+OUT.texCoords*fullResToLowResTransformXYWH.zw;
+	OUT.lowResTexCoords			=fullResToLowResTransformXYWH.xy+OUT.texCoords*fullResToLowResTransformXYWH.zw;
+	OUT.lowResDepthTexCoords	=fullResToLowResTransform2.xy+OUT.texCoords*fullResToLowResTransform2.zw;
 	OUT.clip_pos		=vec4(-1.0,1.0,1.0,1.0);
 	OUT.clip_pos.x		+=2.0*OUT.texCoords.x;
 	OUT.clip_pos.y		-= 2.0*OUT.texCoords.y;
@@ -200,7 +202,7 @@ shader vec4 PS_ShowScatteringVolume(posTexVertexOutput IN) : SV_Target
 	}
 	texc.x+=0.5;
 	vec4 sc	=texture_3d_wwc_lod(inscatterVolumeTexture,texc,0);
-
+  
     vec4 u	=vec4(sc.rgb,1.0);
 	return u;
 }
@@ -221,7 +223,6 @@ shader vec4 ExposureGammaPS(posTexVertexOutput IN) : SV_Target
 	c.rgb	*=exposure;
 	c.rgb	=pow(c.rgb,vec3(gamma,gamma,gamma));
     vec4 u	=vec4(c.rgb,1.0);
-
 	return u;
 }
 
@@ -295,18 +296,20 @@ shader vec4 DirectPS(posTexVertexOutput IN) : SV_Target
 TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool reverseDepth)
 {
 	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth				=reverseDepth;
-	TwoColourCompositeOutput result						=CompositeAtmospherics(IN.clip_pos
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
+	TwoColourCompositeOutput result	=	CompositeAtmospherics(IN.clip_pos
 															,IN.depth_texc
 															,imageTexture
 															,nearImageTexture
 															,nearFarTexture
+															,lowResDepthTexture
 															,loss2dTexture
 															,depthTexture
 															,invViewProj
 															,depthInterpretationStruct
 															,IN.lowResTexCoords
+															,IN.lowResDepthTexCoords
 															,inscatterVolumeTexture
 															,shadowTexture);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
@@ -324,16 +327,18 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_ForwardDepth(CompositeS
 	return PS_CompositeAtmospherics(IN,false);
 }
 
+
 TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,bool reverseDepth)
 {
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.clip_pos
-																,IN.depth_texc
+															,IN.depth_texc
 																,imageTexture
 																,nearImageTexture
 																,nearFarTexture
+															,lowResDepthTexture
 																,loss2dTexture
 																,depthTextureMS
 																,numSamples
@@ -341,7 +346,8 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 																,invViewProj
 																,viewportToTexRegionScaleBias
 																,depthInterpretationStruct
-																,IN.lowResTexCoords
+															,IN.lowResTexCoords 
+															,IN.lowResDepthTexCoords 
 																,fullResToLowResTransformXYWH
 																,inscatterVolumeTexture
 																,shadowTexture);

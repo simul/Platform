@@ -39,7 +39,6 @@ void AmortizationStruct::setAmortization(int a)
 	pattern=new int2[n];
 	for(int i=0;i<n;i++)
 	{
-	//	pattern[i]=src[i];
 		int idx=rand.IRand(src.size());
 		auto u=src.begin()+idx;
 		int2 v=*u;
@@ -60,12 +59,11 @@ TwoResFramebuffer::TwoResFramebuffer()
 	,volume_num(0)
 {
 	volumeTextures[0] = volumeTextures[1] = NULL;
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i <4; i++)
 		lowResFramebuffers[i] = NULL;
 	for(int i=0;i<4;i++)
 		nearFarTextures[i]=NULL;
 }
-
  
 crossplatform::Texture *TwoResFramebuffer::GetLowResDepthTexture(int idx)
 {
@@ -90,11 +88,11 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	SAFE_DELETE(lossTexture);
 	SAFE_DELETE(volumeTextures[0]);
 	SAFE_DELETE(volumeTextures[1]);
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 		SAFE_DELETE(lowResFramebuffers[i]);
 	if(!renderPlatform)
 		return;
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		lowResFramebuffers[i]=renderPlatform->CreateTexture();
 	}
@@ -122,7 +120,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	int BufferWidth = (Width + Downscale - 1) / Downscale + 1;
 	int BufferHeight = (Height + Downscale - 1) / Downscale + 1;
 	ERRNO_CHECK
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		lowResFramebuffers[i]->ensureTexture2DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,crossplatform::RGBA_16_FLOAT,true,true);
 	}
@@ -141,7 +139,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 
 void TwoResFramebuffer::InvalidateDeviceObjects()
 {
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 		SAFE_DELETE(lowResFramebuffers[i]);
 	for(int i=0;i<4;i++)
 		SAFE_DELETE(nearFarTextures[i]);
@@ -168,11 +166,6 @@ crossplatform::Texture *TwoResFramebuffer::GetVolumeTexture(int num)
 
 void TwoResFramebuffer::ActivateLowRes(crossplatform::DeviceContext &deviceContext)
 {
-	//for (int i = 0; i < 3; i++)
-	//	if(!lowResFramebuffers[i]->IsValid())
-	//		lowResFramebuffers[i]->CreateBuffers();
-	//if(stricmp(renderPlatform->GetName(),"OpenGL")==0)
-//		return;
 	crossplatform::Texture * targs[] = { GetLowResFramebuffer(0), GetLowResFramebuffer(1), GetLowResFramebuffer(2) };
 ///	crossplatform::Texture * depth = GetLowResFramebuffer(0)->GetDepthTexture();
 	static int u = 3;
@@ -218,6 +211,15 @@ void TwoResFramebuffer::SetDimensions(int w,int h)
 	}
 }
 
+void TwoResFramebuffer::SetDownscale(int d)
+{
+	if(Downscale!=d)
+	{
+		Downscale=d;
+		RestoreDeviceObjects(renderPlatform);
+	}
+}
+
 void TwoResFramebuffer::GetDimensions(int &w,int &h)
 {
 	w=Width;
@@ -225,29 +227,10 @@ void TwoResFramebuffer::GetDimensions(int &w,int &h)
 }
 
 
-vec2 WrapOffset(vec2 pixelOffset,int2 scale)
+void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct)
 {
-	if(scale.x<1)
-		scale.x=1;
-	if(scale.y<1)
-		scale.y=1;
-	pixelOffset.x/=(float)scale.x;
-	pixelOffset.y/=(float)scale.y;
-	vec2 intOffset;
-	pixelOffset.x = modf (pixelOffset.x , &intOffset.x);
-	if(pixelOffset.x<0.0f)
-		pixelOffset.x +=1.0f;
-	pixelOffset.y = modf (pixelOffset.y , &intOffset.y);
-	if(pixelOffset.y<0.0f)
-		pixelOffset.y +=1.0f;
-	
-	pixelOffset.x*=(float)scale.x;
-	pixelOffset.y*=(float)scale.y;
-	return pixelOffset;
-}
-
-void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct,int scale)
-{
+	if(Downscale<=1)
+		return;
 	using namespace math;
 	// Update the orientation due to changing view_dir:
 	Vector3 cam_pos,new_view_dir,new_view_dir_local,new_up_dir;
@@ -256,54 +239,91 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	view_o.GlobalToLocalDirection(new_view_dir_local,new_view_dir);
 	float dx			= new_view_dir*view_o.Tx();
 	float dy			= new_view_dir*view_o.Ty();
-	dx					*=Width*viewStruct.proj._11;
-	dy					*=Height*viewStruct.proj._22;
+	dx*=Width*viewStruct.proj._11;
+	dy*=Height*viewStruct.proj._22;
 	view_o.DefineFromYZ(new_up_dir,new_view_dir);
-	static float cc		=0.5f;
+	static float cc=0.5f;
 	vec2 dp				(-cc*dx,-cc*dy);
 	vec2 oldPixelOffset	=pixelOffset;
 	pixelOffset			+=dp;
 
-	amortizationStruct.updateRegion(oldPixelOffset/float(Downscale),pixelOffset/float(Downscale));
-//	pixelOffset.x-=cc*dx;
-//	pixelOffset.y-=cc*dy;
+	int2 sc(Downscale,Downscale);
+	{
+		if(sc.x<1)
+			sc.x=1;
+		if(sc.y<1)
+			sc.y=1;
+		pixelOffset.x/=(float)sc.x;
+		pixelOffset.y/=(float)sc.y;
+		vec2 intOffset;
+		pixelOffset.x = modf (pixelOffset.x , &intOffset.x);
+		if(pixelOffset.x<0.0f)
+		{
+			pixelOffset.x +=1.0f;
+			intOffset.x	-=1.0f;
+		}
+		pixelOffset.y = modf (pixelOffset.y , &intOffset.y);
+		if(pixelOffset.y<0.0f)
+		{
+			pixelOffset.y +=1.0f;
+			intOffset.y	-=1.0f;
+		}
+	
+		pixelOffset.x*=(float)sc.x;
+		pixelOffset.y*=(float)sc.y;
+		int2 io=int2((int)intOffset.x,(int)intOffset.y);
+		
+		amortizationStruct.updateRegion(io,pixelOffset/float(Downscale));
+		amortizationStruct.lowResOffset+=io;
 
-	pixelOffset=WrapOffset(pixelOffset,int2(Width,Height));
+		int2 texsize(lowResFramebuffers[0]->width,lowResFramebuffers[0]->length);
+		while(amortizationStruct.lowResOffset.x<0)
+			amortizationStruct.lowResOffset.x+=texsize.x;
+		while(amortizationStruct.lowResOffset.y<0)
+			amortizationStruct.lowResOffset.y+=texsize.y;
+		amortizationStruct.lowResOffset.x=amortizationStruct.lowResOffset.x%texsize.x;
+		amortizationStruct.lowResOffset.y=amortizationStruct.lowResOffset.y%texsize.y;
+	}
 }
 
 void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy)
 {
 	vec4 white(1.0f,1.0f,1.0f,1.0f);
 	vec4 black_transparent(0.0f,0.0f,0.0f,0.5f);
-	int w		=dx/2;
-	int l		=0;
+	static int uu=1;
+	int W		=dx/uu;///2;
+	int L		=0;
 	if(GetLowResDepthTexture()->width>0)
-		l		=(GetLowResDepthTexture()->length*w)/GetLowResDepthTexture()->width;
-	if(l==0&&depthTexture&&depthTexture->width)
+		L		=(GetLowResDepthTexture()->length*W)/GetLowResDepthTexture()->width;
+	if(L==0&&depthTexture&&depthTexture->width)
 	{
-		l		=(depthTexture->length*w)/depthTexture->width;
+		L		=(depthTexture->length*W)/depthTexture->width;
 	}
-	if(l>dy/20)
+	if(L>dy/20)
 	{
-		l			=dy/2;
+		L			=dy/uu;
 		if(GetLowResDepthTexture()->length>0)
-			w		=(GetLowResDepthTexture()->width*l)/GetLowResDepthTexture()->length;
+			W		=(GetLowResDepthTexture()->width*L)/GetLowResDepthTexture()->length;
 		else if(depthTexture&&depthTexture->length)
-			w		=(depthTexture->width*l)/depthTexture->length;
+			W		=(depthTexture->width*L)/depthTexture->length;
 	}
-	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0		,w,l,depthTexture,viewport);
-	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0		,"Main Depth",white,black_transparent);
 	int x=x0;
-	int y=y0+l;
-	for(int i=0;i<4;i++)
+	int y=y0;
+	int w=W,l=L;
+	for(int i=0;i<final_octave;i++)
 	{
 		crossplatform::Texture *t=GetLowResDepthTexture(i);
 		if(!t)
 			continue;
-		deviceContext.renderPlatform->DrawDepth(deviceContext	,x	,y	,w,l,	t);
-		deviceContext.renderPlatform->Print(deviceContext		,x	,y	,"Depth",white,black_transparent);
-		x+=w;
+		if(i==final_octave-1)
+			deviceContext.renderPlatform->DrawTexture(deviceContext	,x	,y	,w,l,	t);
+		else
+			deviceContext.renderPlatform->DrawDepth(deviceContext	,x	,y	,w,l,	t);
 		w/=2;
+		x+=w;
 		l/=2;
 	}
+		//deviceContext.renderPlatform->Print(deviceContext		,x	,y	,"Depth",white,black_transparent);
+	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0		,W/4,L/4,depthTexture,viewport);
+	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0		,"Depth",white,black_transparent);
 }

@@ -142,35 +142,10 @@ namespace simul
 	}
 	namespace dx11
 	{
-		//! Find the camera position and view direction from the given view matrix.
-		extern SIMUL_DIRECTX11_EXPORT void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir);
-		//! Find the camera position from the given view matrix.
-		extern SIMUL_DIRECTX11_EXPORT const float *GetCameraPosVector(const float *v);
 		//! Call this to make the FX compiler put its warnings and errors to the standard output when used.
 		extern SIMUL_DIRECTX11_EXPORT void PipeCompilerOutput(bool p);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename,const std::vector<std::string> &texturePathsUtf8);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename,const std::vector<std::string> &texturePathsUtf8);
-		ID3D11Texture1D* make1DTexture(
-										ID3D11Device			*m_pd3dDevice
-										,int w
-										,DXGI_FORMAT format
-										,const float *src);
-		ID3D11Texture2D* make2DTexture(
-										ID3D11Device			*m_pd3dDevice
-										,int w,int h
-										,DXGI_FORMAT format
-										,const float *src);
-		ID3D11Texture3D* make3DTexture(
-										ID3D11Device			*m_pd3dDevice
-										,int w,int l,int d
-										,DXGI_FORMAT format
-										,const void *src);
-		void Ensure3DTextureSizeAndFormat(
-											ID3D11Device			*m_pd3dDevice
-											,ID3D1xTexture3D		* &tex
-											,ID3D11ShaderResourceView* &srv
-											,int w,int l,int d
-											,DXGI_FORMAT format);
 		// These functions encapsulate getting an effect variable of the given name if it exists, and
 		// if so, setting its value. Due to inefficiency it is best to replace usage of this over time
 		// with Effect variable pointers, but this is a good way to write new render code quickly

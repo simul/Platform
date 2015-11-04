@@ -41,7 +41,7 @@ namespace simul
 			ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int mip=-1)
 			{
 				if(mip<0||mips<=1)
-					return shaderResourceView;
+				return shaderResourceView;
 				if(mip<mips)
 					return mipShaderResourceViews[mip];
 				return NULL;

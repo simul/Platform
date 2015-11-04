@@ -20,13 +20,15 @@ namespace simul
 		public:
 			int framenumber;
 			int4 validRegion;
-			int2 pixelOffset;
+			//int2 pixelOffset;
+			int2 lowResOffset;
 			int2 *pattern;
 			AmortizationStruct()
 				:framenumber(0)
 				,amortization(1)
 				,validRegion(0,0,0,0)
-				,pixelOffset(0,0)
+				//,pixelOffset(0,0)
+				,lowResOffset(0,0)
 				,pattern(NULL)
 			{
 			}
@@ -54,36 +56,73 @@ namespace simul
 				int offsy		=sub_frame-offsx*a;
 				return pattern[sub_frame];//(int2(offsx,offsy);//
 			}
-			void updateRegion(vec2 oldPixelOffset,vec2 newPixelOffset)
+			int4 xy(int2 texsize) const
+			{
+				int4 xy;
+				int X=validRegion.x;
+				int X0=0;
+				if(X<=0)
+				{
+					X=texsize.x-validRegion.z;
+					X0=validRegion.z;
+				}
+				int Y=validRegion.y;
+				int Y0=0;
+				if(Y<=0)
+				{
+					Y=texsize.y-validRegion.w;
+					Y0=validRegion.w;
+				}
+				xy.x=X;
+				xy.y=Y;
+				xy.z=X0;
+				xy.w=Y0;
+				return xy;
+			}
+			int2 sideOffset(int2 texsize) const
+			{
+				int4 XYX0Y0=xy(texsize);
+				int2 offset;//	=(const int*)pixelOffset;
+				offset.x	=XYX0Y0.z;//+texsize.x;
+				offset.y	=0;
+				return offset;
+			}
+			int2 verticalEdgeOffset(int2 texsize) const
+			{
+				int4 XYX0Y0=xy(texsize);
+				int2 offset(0,XYX0Y0.w);
+				return offset;
+			}
+			void updateRegion(int2 deltaOffset,vec2 newPixelOffset)
 			{
 				int2 new_pos=int2((int)newPixelOffset.x,(int)newPixelOffset.y);
-				int2 old_pos=int2((int)oldPixelOffset.x,(int)oldPixelOffset.y);
-				int2 del=old_pos-new_pos;
-				validRegion.x+=del.x;
-				validRegion.y+=del.y;
+				validRegion.x-=deltaOffset.x;
+				validRegion.y-=deltaOffset.y;
+				validRegion.z-=abs(deltaOffset.x);
+				validRegion.w-=abs(deltaOffset.y);
 				if(validRegion.x<0)
 				{
-					validRegion.z+=validRegion.x;
+					//validRegion.z+=validRegion.x;
 					validRegion.x=0;
 				}
 				else if(validRegion.x>0)
 				{
-					validRegion.z-=validRegion.x;
+					//validRegion.z-=validRegion.x;
 				}
 				if(validRegion.y<0)
 				{
-					validRegion.w+=validRegion.y;
+				//	validRegion.w+=validRegion.y;
 					validRegion.y=0;
 				}
 				else if(validRegion.y>0)
 				{
-					validRegion.w-=validRegion.y;
+				//	validRegion.w-=validRegion.y;
 				}
 				if(validRegion.z<0)
 					validRegion.z=0;
 				if(validRegion.w<0)
 					validRegion.w=0;
-				pixelOffset=new_pos;
+				//pixelOffset=new_pos;
 			}
 			void validate(int4 region)
 			{
@@ -114,10 +153,7 @@ namespace simul
 			{
 				return Downscale;
 			}
-			void SetDownscale(int d)
-			{
-				Downscale=d;
-			}
+			void SetDownscale(int d);
 			/// Activate BOTH low-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivatelLowRes after rendering.
 			virtual void ActivateLowRes(crossplatform::DeviceContext &);
 			/// Deactivate both low-res framebuffers.
@@ -140,13 +176,13 @@ namespace simul
 			void RenderDepthBuffers(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *depthTexture,const crossplatform::Viewport *viewport,int x0,int y0,int dx,int dy);
 
 			/// Update the pixel offset for the specified view.
-			void UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct,int scale);
+			void UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct);
 			/// Offset in pixels from top-left of the low-res view to top-left of the full-res.
 			vec2								pixelOffset;
 			/// Returns	the low-res depth texture.
 			crossplatform::Texture				*GetLowResDepthTexture(int idx=-1);
-			crossplatform::PixelFormat			GetDepthFormat() const;
-			void								SetDepthFormat(crossplatform::PixelFormat p);
+			crossplatform::PixelFormat GetDepthFormat() const;
+			void SetDepthFormat(crossplatform::PixelFormat p);
 			int									final_octave;
 			vec2								GetPixelOffset() const
 			{
@@ -174,7 +210,7 @@ namespace simul
 			crossplatform::Texture				*nearFarTextures[4];
 			crossplatform::Texture				*lossTexture;
 			crossplatform::Texture				*volumeTextures[2];
-			crossplatform::Texture				*lowResFramebuffers[3];
+			crossplatform::Texture				*lowResFramebuffers[4];
 		};
 	}
 }

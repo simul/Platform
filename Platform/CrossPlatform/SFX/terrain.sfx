@@ -73,7 +73,7 @@ shader vec4 PS_Main( vertexOutput IN) : SV_TARGET
 	vec4 layer1	=texture_wwc(textureArray,vec3(IN.texcoord,0.0));
 	vec4 layer2	=texture_wwc(textureArray,vec3(IN.texcoord,1.0));
 	vec4 texel	=mix(layer1,layer2,clamp(1.0-IN.wPosition.z/100.0,0.0,1.0));
-	float dotp	=saturate(lightDir.z);
+	float dotp	=lightDir.z;
 	
 	float from_lightning_centre_km	=0.001*length(IN.wPosition.xy-lightningCentre.xy);
 	vec3 lightning					=20*lightningColour.rgb*saturate(1.0/pow(from_lightning_centre_km+.0001,2.0));
@@ -83,8 +83,8 @@ shader vec4 PS_Main( vertexOutput IN) : SV_TARGET
 	result.rgb	=texel.rgb*light.rgb;
 	result.a	=1.0;
 	//result.rgb	=ambientColour.rgb;
-//	result+=vec4(IN.wPosition.zzz/1000.0,1);
-//result.rgb=frac(mul(invShadowMatrix,vec4(IN.wPosition.xyz,1.0)).xyy);
+	//result+=vec4(IN.wPosition.zzz/1000.0,1);
+	//result.rgb=frac(mul(invShadowMatrix,vec4(IN.wPosition.xyz,1.0)).xyy);
     return result;
 }
 

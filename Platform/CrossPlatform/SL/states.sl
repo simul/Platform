@@ -97,6 +97,13 @@ SamplerState samplerStateNearestWrap SIMUL_STATE_REGISTER(14)
 	AddressV = Wrap;
 	AddressW = Wrap;
 };
+SamplerState samplerStateNearestClamp SIMUL_STATE_REGISTER(15)
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Clamp;
+	AddressV = Clamp;
+	AddressW = Clamp;
+};
 SamplerState cubeSamplerState
 {
 	Filter = MIN_MAG_MIP_LINEAR;

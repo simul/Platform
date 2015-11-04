@@ -59,14 +59,17 @@ void HdrRenderer::SetBufferSize(int w,int h)
 		}
 		H=Height/35;
 		W=Width/35;
-		blurTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
-		crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
-		blurTexture->activateRenderTarget(immediateContext);
-		renderPlatform->GetDebugConstantBuffer().Apply(immediateContext);
-		renderPlatform->GetDebugEffect()->Apply(immediateContext,renderPlatform->GetDebugEffect()->GetTechniqueByName("clear"),0);
-			renderPlatform->DrawQuad(immediateContext);
-		renderPlatform->GetDebugEffect()->Unapply(immediateContext);
-		blurTexture->deactivateRenderTarget();
+		if(blurTexture)
+		{
+			blurTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
+			crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
+			blurTexture->activateRenderTarget(immediateContext);
+			renderPlatform->GetDebugConstantBuffer().Apply(immediateContext);
+			renderPlatform->GetDebugEffect()->Apply(immediateContext,renderPlatform->GetDebugEffect()->GetTechniqueByName("clear"),0);
+				renderPlatform->DrawQuad(immediateContext);
+			renderPlatform->GetDebugEffect()->Unapply(immediateContext);
+			blurTexture->deactivateRenderTarget();
+		}
 	}
 	//RecompileShaders();
 }
@@ -84,7 +87,7 @@ void HdrRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		glowTextures[i]=renderPlatform->CreateTexture();
 	}
 	SAFE_DELETE(blurTexture);
-	blurTexture=renderPlatform->CreateTexture();
+	blurTexture		=renderPlatform->CreateTexture();
 	hdrConstants.RestoreDeviceObjects(renderPlatform);
 	imageConstants.RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
