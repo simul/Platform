@@ -149,6 +149,8 @@ namespace simul
 			virtual void InvalidateDeviceObjects();
 			virtual void SetDimensions(int w,int h);
 			virtual void GetDimensions(int &w,int &h);
+			// Assign the current frame's projection matrix for this buffer. Just for debugging.
+			void SetProjection(const float *p);
 			int GetDownscale() const
 			{
 				return Downscale;
@@ -201,6 +203,7 @@ namespace simul
 				return amortizationStruct;
 			}
 		protected:
+			mat4								proj;
 			int									Width,Height,Downscale;
 			AmortizationStruct					amortizationStruct;
 			int									volume_num;

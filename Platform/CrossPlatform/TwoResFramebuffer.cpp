@@ -120,6 +120,11 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
 	int BufferWidth = (Width + Downscale - 1) / Downscale + 1;
 	int BufferHeight = (Height + Downscale - 1) / Downscale + 1;
+	if(Downscale==1)
+	{
+		BufferWidth=Width;
+		BufferHeight=Height;
+	}
 	ERRNO_CHECK
 	for (int i = 0; i < 4; i++)
 	{
@@ -227,6 +232,10 @@ void TwoResFramebuffer::GetDimensions(int &w,int &h)
 	h=Height;
 }
 
+void TwoResFramebuffer::SetProjection(const float *p)
+{
+	proj=p;
+}
 
 void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct)
 {
@@ -307,7 +316,7 @@ void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceC
 		else if(depthTexture&&depthTexture->length)
 			w		=(depthTexture->width*l)/depthTexture->length;
 	}
-	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0		,w,l,depthTexture,viewport);
+	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0		,y0		,w,l,depthTexture,viewport,proj);
 	deviceContext.renderPlatform->Print(deviceContext			,x0		,y0		,"Main Depth",white,black_transparent);
 	int x=x0;
 	int y=y0+l;
@@ -316,7 +325,7 @@ void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceC
 		crossplatform::Texture *t=GetLowResDepthTexture(i);
 		if(!t)
 			continue;
-		deviceContext.renderPlatform->DrawDepth(deviceContext	,x	,y	,w,l,	t);
+		deviceContext.renderPlatform->DrawDepth(deviceContext	,x	,y	,w,l,	t,NULL,proj);
 		deviceContext.renderPlatform->Print(deviceContext		,x	,y	,"Depth",white,black_transparent);
 		x+=w;
 		w/=2;
