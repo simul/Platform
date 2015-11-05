@@ -188,8 +188,16 @@ shader vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
 	return vec4(m,m,m,m);
 }
 
-vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
+struct FarNearDepthPixelOutput
 {
+	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
+	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
+};
+
+FarNearDepthPixelOutput SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
+{
+	FarNearDepthPixelOutput fn;
 	vec4 dlookup 	=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords	=mixedResTransformXYWH.xy + IN.texCoords.xy*mixedResTransformXYWH.zw;
 
@@ -219,18 +227,22 @@ vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 	//if(p.colour.a>=1.0)
 	//   discard;
 	p.colour.rgb*=exposure;
-//p.colour.rgb=vec3(1.0,0,0);
-	return p.colour;
+	fn.farColour=p.colour;
+	fn.nearColour=p.nearColour;
+	fn.nearFarDepth = p.nearFarDepth;
+	return fn;
 }
 
-shader vec4 PS_SimpleRaytrace_depthForward(posTexVertexOutput IN) : SV_TARGET
+shader FarNearDepthPixelOutput PS_SimpleRaytrace_depthForward(posTexVertexOutput IN) 
 {
-	return SimpleRaytrace(IN,false);
+	FarNearDepthPixelOutput f= SimpleRaytrace(IN,false);
+	return f;
 }
 
-shader vec4 PS_SimpleRaytrace_depthReverse(posTexVertexOutput IN) : SV_TARGET
+shader FarNearDepthPixelOutput  PS_SimpleRaytrace_depthReverse(posTexVertexOutput IN) 
 {
-	return SimpleRaytrace(IN,true);
+	FarNearDepthPixelOutput f= SimpleRaytrace(IN,true);
+	return f;
 }
 
 FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
@@ -265,13 +277,6 @@ shader FarNearPixelOutput PS_Lightpass_DepthForward(posTexVertexOutput IN)
 {
 	return PS_Lightpass(IN,true);
 }
-
-struct FarNearDepthPixelOutput
-{
-	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
-	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
-	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
-};
 
 void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
 {

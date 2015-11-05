@@ -151,7 +151,7 @@ vec4 Samescale_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture
 	,DepthIntepretationStruct depthInterpretationStruct
 	,float nearThresholdDepth)
 {
-	int2 pos2		=pos*2;
+	int2 pos2		=pos;
 	int2 max_pos	=source_dims-int2(1,1);
 	int2 hires_pos	=int2(min(pos2.x,max_pos.x),min(pos2.y,max_pos.y));
 	hires_pos		+=source_offset;
@@ -193,17 +193,16 @@ vec4 Samescale(Texture2D sourceDepthTexture
 	,bool split_view
 	,float nearThresholdDepth)
 {
-	int2 pos2		=pos*2;
 	int2 max_pos	=source_dims-int2(1,1);
-	int2 hires_pos	=int2(min(pos2.x,max_pos.x),min(pos2.y,max_pos.y));
-	hires_pos		+=source_offset;
+	int2 pos1		=int2(min(pos.x,max_pos.x),min(pos.y,max_pos.y));
+	pos1			+=source_offset;
 	vec4 farthest_nearest;
 	if(depthInterpretationStruct.reverseDepth)
 		farthest_nearest		=vec4(1.0,0.0,1.0,0.0);
 	else
 		farthest_nearest		=vec4(0.0,1.0,0.0,1.0);
 	
-	vec2 d			=TEXTURE_LOAD(sourceDepthTexture,hires_pos).xx;
+	vec2 d			=TEXTURE_LOAD(sourceDepthTexture,pos1).xx;
 	if(depthInterpretationStruct.reverseDepth)
 		d.x					= lerp(d.x,0.0,saturate(0.01*(d.x-nearThresholdDepth)/nearThresholdDepth));
 	else
