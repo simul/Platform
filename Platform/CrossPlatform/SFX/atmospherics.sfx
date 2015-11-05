@@ -78,8 +78,8 @@ vec4 PS_NearFarShadow(atmosVertexOutput IN,bool reverseDepth)
 	clip_pos.y			-=2.0*texCoords.y;
 	vec3 wOffset		=mul(invViewProj,clip_pos).xyz;
 	vec3 view			=normalize(wOffset);
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-	vec4 depth			=texture_clamp(depthTexture,texCoords);
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	vec4 depth			=texture_wrap_lod(depthTexture,depth_texc,0);
 
 	vec2 dist			=depthToFadeDistance(depth.zw,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	float shadow1		=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,viewPosition+dist.x*view*maxFadeDistanceMetres).x;
@@ -281,7 +281,7 @@ CS_LAYOUT(8,8,1)
 shader void CS_Inscatter_Volume_WithGodrays( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	uint3 pos=g*8+t;
-	CSInscatterVolume(pos,false);
+	CSInscatterVolume(pos,true);
 }
 
 CS_LAYOUT(8,8,1)

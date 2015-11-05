@@ -48,7 +48,7 @@ namespace simul
 				{
 					w = W;
 					h = H;
-					pixelOffset = vec2(0,0);
+					pixelOffset = offs;
 				}
 				downscale=s;
 			}
@@ -62,11 +62,9 @@ namespace simul
 			//float xratio,yratio;GetTransformLowResToHiRes();
 			inline vec4 GetTransformLowResToHiRes() const
 			{
-				if(downscale<=1)
-					return vec4(0,0,1.0f,1.0f);
+				float uu=(downscale>1)?0.5f:0.0f;
 				float A=(float)(w*downscale)/(float)W;
 				float B=(float)(h*downscale)/(float)H;
-				static float uu=0.5f;
 				float X=(float)(-pixelOffset.x)/(float)W-uu*(1.f/w)*A;
 				float Y=(float)(-pixelOffset.y)/(float)H-uu*(1.f/h)*B;
 				return vec4(X,Y,A,B);
