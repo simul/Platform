@@ -140,6 +140,7 @@ namespace simul
 	{
 		class Effect;
 	}
+	/// The Simul namespace for DirectX 11 implementations of rendering functions.
 	namespace dx11
 	{
 		//! Call this to make the FX compiler put its warnings and errors to the standard output when used.

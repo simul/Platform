@@ -358,8 +358,8 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 	//texCoords				*=mixedResTransformXYWH.zw;
 	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize)*mixedResTransformXYWH.zw;
 	
-	pos+=offsetToCorner;
-	pos=pos%targetTextureSize;
+	pos						+=offsetToCorner;
+	pos						=pos%targetTextureSize;
 
 	vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	DepthIntepretationStruct depthInterpretationStruct;
