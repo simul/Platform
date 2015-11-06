@@ -29,7 +29,13 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 		switch(IncludeType)
 		{
 		case D3D_INCLUDE_LOCAL:
-			finalPathUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(pFileNameUtf8, m_pathsUtf8); //m_ShaderDirUtf8 + "\\" + pFileNameUtf8;
+		{
+			int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(pFileNameUtf8, m_pathsUtf8); //m_ShaderDirUtf8 + "\\" + pFileNameUtf8;
+			if(index<0)
+				finalPathUtf8=pFileNameUtf8;
+			else if(index<m_pathsUtf8.size())
+				finalPathUtf8=(m_pathsUtf8[index]+"/")+pFileNameUtf8;
+		}
 			break;
 		case D3D_INCLUDE_SYSTEM:
 			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;
@@ -84,7 +90,13 @@ ERRNO_CHECK
 		switch(IncludeType)
 		{
 		case D3D_INCLUDE_LOCAL:
-			finalPathUtf8 = simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(pFileNameUtf8, m_pathsUtf8); //m_ShaderDirUtf8 + "\\" + pFileNameUtf8;
+		{
+			int index = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(pFileNameUtf8, m_pathsUtf8); //m_ShaderDirUtf8 + "\\" + pFileNameUtf8;
+			if(index<0)
+				finalPathUtf8=pFileNameUtf8;
+			else if(index<m_pathsUtf8.size())
+				finalPathUtf8=(m_pathsUtf8[index]+"/")+pFileNameUtf8;
+		}
 			break;
 		case D3D_INCLUDE_SYSTEM:
 			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;

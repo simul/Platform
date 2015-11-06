@@ -425,7 +425,7 @@
 		}
 		int2 operator*(float v)
 		{
-			return int2(x*v,y*v);
+			return int2(int(x*v),int(y*v));
 		}
 		friend int2 operator*(int m,int2 v)
 		{
