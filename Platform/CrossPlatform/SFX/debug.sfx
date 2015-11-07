@@ -397,7 +397,7 @@ technique copy_2d
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_simplefullscreen_4_0);
 		SetPixelShader(CompileShader(ps_4_0,PS_Copy2DOffset()));

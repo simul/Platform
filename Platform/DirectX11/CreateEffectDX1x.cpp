@@ -578,8 +578,17 @@ HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect
 	std::string filename_utf8;
 	if(index<0)
 		filename_utf8=filenameUtf8;
-	else if(index<shaderBinPathUtf8.size())
+	else if(index>=0&&index<shaderPathsUtf8.size())
 		filename_utf8=(shaderPathsUtf8[index]+"/")+filenameUtf8;
+	else
+	{
+		/*SIMUL_CERR<<"File not found in paths: "<<filenameUtf8<<std::endl<<"Paths are:"<<std::endl;
+		for(int i=0;i<shaderPathsUtf8.size();i++)
+		{
+			SIMUL_CERR<<"\t"<<shaderPathsUtf8[i]<<std::endl;
+		}*/
+		filename_utf8=filenameUtf8;
+	}
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filename_utf8.c_str()))
 	{
 		filename_utf8=filenameUtf8;
