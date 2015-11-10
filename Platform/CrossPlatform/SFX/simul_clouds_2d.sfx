@@ -3,6 +3,7 @@
 #include "shader_platform.sl"
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
+
 uniform sampler2D imageTexture;
 uniform sampler2D noiseTexture;
 uniform sampler2D coverageTexture;
@@ -513,7 +514,6 @@ technique simul_clouds_2d
     }
 }
 
-VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_SimpleFullscreen());
 technique clouds_2d_quad
 {
 	pass reverse_depth 
