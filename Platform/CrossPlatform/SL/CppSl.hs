@@ -395,7 +395,7 @@
 		}
 		operator vec2() const
 		{
-			return vec2(x,y);
+			return vec2(float(x),float(y));
 		}
 		const int2& operator=(const int2 &v)
 		{
