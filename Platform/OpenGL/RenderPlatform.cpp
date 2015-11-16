@@ -1101,7 +1101,7 @@ crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext
 	return viewport;
 }
 
-void RenderPlatform::SetViewports(crossplatform::DeviceContext &,int ,crossplatform::Viewport *vps)
+void RenderPlatform::SetViewports(crossplatform::DeviceContext &,int ,const crossplatform::Viewport *vps)
 {
 	GL_ERROR_CHECK
 	glViewport(vps->x,vps->y,vps->w,vps->h);
