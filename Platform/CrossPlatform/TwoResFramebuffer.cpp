@@ -247,10 +247,10 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	simul::crossplatform::GetCameraPosVector(viewStruct.view,cam_pos,new_view_dir,new_up_dir);
 	new_view_dir.Normalize();
 	view_o.GlobalToLocalDirection(new_view_dir_local,new_view_dir);
-	float dx			= new_view_dir*view_o.Tx();
-	float dy			= new_view_dir*view_o.Ty();
-	dx*=Width*viewStruct.proj._11;
-	dy*=Height*viewStruct.proj._22;
+	float dx			=new_view_dir*view_o.Tx();
+	float dy			=new_view_dir*view_o.Ty();
+	dx					*=Width*viewStruct.proj._11;
+	dy					*=Height*viewStruct.proj._22;
 	view_o.DefineFromYZ(new_up_dir,new_view_dir);
 	static float cc=0.5f;
 	vec2 dp				(-cc*dx,-cc*dy);

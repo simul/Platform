@@ -94,7 +94,7 @@ namespace simul
 			void									DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext) override;
 		
 			crossplatform::Viewport					GetViewport(crossplatform::DeviceContext &deviceContext,int index);
-			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Viewport *vps);
+			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps);
 			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer);
 			
 			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;

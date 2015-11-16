@@ -191,7 +191,7 @@ namespace simul
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
 			virtual void					DeactivateRenderTargets			(DeviceContext &deviceContext) =0;
-			virtual void					SetViewports(DeviceContext &deviceContext,int num,Viewport *vps)=0;
+			virtual void					SetViewports(DeviceContext &deviceContext,int num,const Viewport *vps)=0;
 			/// Get the viewport at the given index.
 			virtual Viewport				GetViewport(DeviceContext &deviceContext,int index)=0;
 			/// Activate the specified index buffer in preparation for rendering.

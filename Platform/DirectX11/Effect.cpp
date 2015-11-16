@@ -369,7 +369,7 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 			filename_fx+=".sfx";
 		index=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),renderPlatform->GetShaderPathsUtf8());
 	}
-	if(index<0)
+	if(index<0||index>=renderPlatform->GetShaderPathsUtf8().size())
 		filenameInUseUtf8=filename_fx;
 	else if(index<renderPlatform->GetShaderPathsUtf8().size())
 		filenameInUseUtf8=(renderPlatform->GetShaderPathsUtf8()[index]+"/")+filename_fx;
