@@ -412,7 +412,18 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 	std::string str(name_utf8);
 	if(sharedSamplerStates.find(str)!=sharedSamplerStates.end())
 	{
-		ss=sharedSamplerStates[str];
+		SamplerState *s=sharedSamplerStates[str];
+		if(!desc||s->default_slot==desc->slot||s->default_slot==-1||desc->slot==-1)
+		{
+			if(desc&&desc->slot!=-1)
+				s->default_slot=desc->slot;
+			ss=s;
+		}
+		else
+		{
+			SIMUL_CERR<<"Simul fx error: the sampler state "<<name_utf8<<" was declared with slots "<<s->default_slot<<" and "<<desc->slot<<std::endl;
+			SIMUL_BREAK("Sampler state slot conflict")
+		}
 	}
 	else
 	{

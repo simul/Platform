@@ -317,10 +317,10 @@ vec4 Halfscale(Texture2D sourceDepthTexture, uint2 source_dims, uint2 source_off
 	for(int i=0;i<4;i++)
 	{
 		int2 pos3			=pos2+int2(i*2-2,0);
-		vec4 d1				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,-3));
+		vec4 d1				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,-1));
 		vec4 d2				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,0));
 		vec4 d3				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,1));
-		vec4 d4				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,4));
+		vec4 d4				=TEXTURE_LOAD(sourceDepthTexture,pos3+int2(0,2));
 		vec4 f				=vec4(d1.x,d2.x,d3.x,d4.x);
 		vec4 n				=vec4(d1.y,d2.y,d3.y,d4.y);
 		vec4 f0				=vec4(d1.z,d2.z,d3.z,d4.z);

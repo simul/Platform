@@ -318,18 +318,26 @@ namespace simul
 #endif
 			T *GetBuffer(crossplatform::DeviceContext &deviceContext)
 			{
+				if(!platformStructuredBuffer)
+					return NULL;
 				return (T*)platformStructuredBuffer->GetBuffer(deviceContext);
 			}
 			const T *OpenReadBuffer(crossplatform::DeviceContext &deviceContext)
 			{
+				if(!platformStructuredBuffer)
+					return NULL;
 				return (const T*)platformStructuredBuffer->OpenReadBuffer(deviceContext);
 			}
 			void CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
 			{
+				if(!platformStructuredBuffer)
+					return ;
 				platformStructuredBuffer->CloseReadBuffer(deviceContext);
 			}
 			void CopyToReadBuffer(crossplatform::DeviceContext &deviceContext)
 			{
+				if(!platformStructuredBuffer)
+					return ;
 				platformStructuredBuffer->CopyToReadBuffer(deviceContext);
 			}
 			void SetData(crossplatform::DeviceContext &deviceContext,T *data)

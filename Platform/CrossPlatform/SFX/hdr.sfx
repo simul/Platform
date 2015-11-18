@@ -294,9 +294,9 @@ shader vec4 DirectPS(posTexVertexOutput IN) : SV_Target
 TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool reverseDepth)
 {
 	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=reverseDepth;
-	TwoColourCompositeOutput result/*	=	CompositeAtmospherics(IN.clip_pos
+	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth	=reverseDepth;
+	TwoColourCompositeOutput result			=CompositeAtmospherics(IN.clip_pos
 															,IN.depth_texc
 															,imageTexture
 															,nearImageTexture
@@ -307,11 +307,11 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,depthInterpretationStruct
 															,IN.lowResTexCoords
 															,inscatterVolumeTexture
-															,shadowTexture)*/;
-	result.add=vec4(IN.lowResTexCoords,0,0);
-	result.multiply=vec4(0.5,0.5,1.0,1.0);
-	//result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
-	//result.add.rgb	*=exposure;
+															,shadowTexture);
+	//result.add=vec4(IN.lowResTexCoords,0,0);
+	//result.multiply=vec4(0.5,0.5,1.0,1.0);
+	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
+	result.add.rgb	*=exposure;
 	return result;
 }
 
