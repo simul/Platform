@@ -204,6 +204,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 	effect->Apply(deviceContext,effect->GetTechniqueByName("backg"),0);
 	renderPlatform->DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);
+return;
 //	renderPlatform->DrawQuad(deviceContext,0,0,50,50,renderPlatform->GetDebugEffect(),renderPlatform->GetDebugEffect()->GetTechniqueByName("textured"),0);
 	effect->Apply(deviceContext,effect->GetTechniqueByName("text"),0);
 
