@@ -76,7 +76,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	cloud						=lerp(cloudNear, cloud, hiResInterp);
 	
 	cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
-	float shadowInterp			=saturate(10*(dist - shadow_lookup.w) / max(shadow_lookup.z-shadow_lookup.w,0.000001));
+	float shadowInterp			=saturate(1*(dist - shadow_lookup.w) / max(shadow_lookup.z-shadow_lookup.w,0.000001));
 	//float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd,0.000001));
 	shadow						=lerp(shadow_lookup.y,shadow_lookup.x,shadowInterp);
 
