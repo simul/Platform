@@ -503,8 +503,15 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
+	// we want to distribute uniformly with respect to angle from the centre.
+	// so angle.x = clip_pos.x*max_angle.
+	// and		x = sin(angle.x), z = cos(angle.x)
+	// so modified clip is clip.xyz=sin(angle.xy),cos(angle.x)cos(angle.y);
+	vec2 maxAngle			=vec2(atan(tanHalfFov.x),atan(tanHalfFov.y));
+	vec2 angle				=clip_pos.xy*maxAngle;
+	vec3 viewspace_dir		=normalize(vec3(tan(angle.xy),-1.0));//cos(angle.x)*cos(angle.y));
 	float sineFactor		=1.0/length(clip_pos.xyz);
-	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
+	vec3 view				=normalize(mul(viewspace_dir,invView).xyz);
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
 	vec3 lightDir			=lerp(directionToMoon,directionToSun,s);

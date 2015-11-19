@@ -249,10 +249,13 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	view_o.GlobalToLocalDirection(new_view_dir_local,new_view_dir);
 	float dx			=new_view_dir*view_o.Tx();
 	float dy			=new_view_dir*view_o.Ty();
-	dx					*=Width*viewStruct.proj._11;
-	dy					*=Height*viewStruct.proj._22;
+	float x_angle		=asin(dx);
+	float y_angle		=asin(dy);
+	static float yy		=1.0f;
+	dx					=Width*x_angle/yy/atan(1.0f/viewStruct.proj._11);
+	dy					=Height*y_angle/yy/atan(1.0f/viewStruct.proj._22);
 	view_o.DefineFromYZ(new_up_dir,new_view_dir);
-	static float cc=0.5f;
+	static float cc		=0.5f;
 	vec2 dp				(-cc*dx,-cc*dy);
 	vec2 oldPixelOffset	=pixelOffset;
 	pixelOffset			+=dp;
