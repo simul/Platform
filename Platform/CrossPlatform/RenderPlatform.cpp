@@ -307,7 +307,8 @@ void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int 
 	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend);
 }
 
-void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v)
+void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v
+	,const float *proj)
 {
 	crossplatform::EffectTechnique *tech	=debugEffect->GetTechniqueByName("show_depth");
 	if(tex&&tex->GetSampleCount()>0)
@@ -319,7 +320,9 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	{
 		debugEffect->SetTexture(deviceContext,"imageTexture",tex);
 	}
-	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(deviceContext.viewStruct.proj);
+	if(!proj)
+		proj=deviceContext.viewStruct.proj;
+	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(proj);
 	debugConstants.debugTanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 
 	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,isinf(frustum.farZ)?300000.0f:frustum.farZ);
@@ -409,7 +412,18 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 	std::string str(name_utf8);
 	if(sharedSamplerStates.find(str)!=sharedSamplerStates.end())
 	{
-		ss=sharedSamplerStates[str];
+		SamplerState *s=sharedSamplerStates[str];
+		if(!desc||s->default_slot==desc->slot||s->default_slot==-1||desc->slot==-1)
+		{
+			if(desc&&desc->slot!=-1)
+				s->default_slot=desc->slot;
+			ss=s;
+		}
+		else
+		{
+			SIMUL_CERR<<"Simul fx error: the sampler state "<<name_utf8<<" was declared with slots "<<s->default_slot<<" and "<<desc->slot<<std::endl;
+			SIMUL_BREAK("Sampler state slot conflict")
+		}
 	}
 	else
 	{

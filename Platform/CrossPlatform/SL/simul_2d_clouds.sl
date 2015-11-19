@@ -145,7 +145,6 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	vec3 light				=sun_irr*visible_light+moon_irr;
 	vec4 colour				=vec4(light*(lightResponse.y+lightResponse.x*hg)*scattered_light+amb,opacity);
  
-
 #ifdef INFRARED
 	colour.rgb				=cloudIrRadiance.rgb;
 #endif

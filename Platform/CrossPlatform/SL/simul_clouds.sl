@@ -499,7 +499,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	RaytracePixelOutput res;
 	res.colour				=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
-	res.nearFarDepth		=dlookup;//depthToLinearDistance(dlookup, depthInterpretationStruct);
+	res.nearFarDepth		=depthToLinearDistance(dlookup, depthInterpretationStruct);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
@@ -519,10 +519,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
 	
-	vec2 solidDist_nearFar	=dlookup.yx;//linearToFadeDistance(dlookup.yx,clip_pos.xy,tanHalfFov);
-	//res.colour.rgb=dlookup.xyz;
-	//res.colour.a=.5;
-	//return res;
+	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	// Lookup in the illumination texture.
 	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
@@ -752,18 +749,21 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 						nearColour.a		*=(1.0-clr_n.a);
 					}
 					colour.rgb				+=clr.rgb*clr.a*(colour.a);
-					meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a*abs(cosine));//saturate(4.0*density.z)*colour.a);
+					meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a);
+				//if(meanFadeDistance>=1.0)
+				//	meanFadeDistance		=fadeDistance;
 					colour.a				*=(1.0-clr.a);
 					if(nearColour.a*brightness_factor<0.003)
 					{
-						meanFadeDistance		=fadeDistance;
+					//lastFadeDistance		=fadeDistance;
+					//meanFadeDistance=min(meanFadeDistance,fadeDistance);
 						colour.a = 0.0;
 						break;
 					}
 				}
 			}
 		}
-		lastFadeDistance=fadeDistance;
+		lastFadeDistance		=lerp(lastFadeDistance,fadeDistance,colour.a);
 		if(max(max(b.x,b.y),0)>=W)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
@@ -789,6 +789,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 #ifndef INFRARED
 	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
+	res.nearFarDepth.xz	=min(res.nearFarDepth.xz,vec2(meanFadeDistance+0.25,meanFadeDistance+0.25));
+	res.nearFarDepth.wy	=min(res.nearFarDepth.wy,vec2(meanFadeDistance,meanFadeDistance));
 	res.nearFarDepth.z	=max(0.001,saturate(lastFadeDistance-meanFadeDistance));//*(1.0-colour.a);
 	res.nearFarDepth.w	=meanFadeDistance;
 

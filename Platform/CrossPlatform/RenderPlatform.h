@@ -133,7 +133,7 @@ namespace simul
 
 			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false)=0;
 			void DrawTexture				(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false);
-			void DrawDepth					(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL);
+			void DrawDepth					(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL,const float *proj=NULL);
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
 			virtual void DrawQuad			(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL)=0;
 			virtual void DrawQuad			(DeviceContext &deviceContext)=0;
@@ -191,7 +191,7 @@ namespace simul
 			/// Make the specified rendertargets and optional depth target active.
 			virtual void					ActivateRenderTargets			(DeviceContext &deviceContext,int num,Texture **targs,Texture *depth)=0;
 			virtual void					DeactivateRenderTargets			(DeviceContext &deviceContext) =0;
-			virtual void					SetViewports(DeviceContext &deviceContext,int num,Viewport *vps)=0;
+			virtual void					SetViewports(DeviceContext &deviceContext,int num,const Viewport *vps)=0;
 			/// Get the viewport at the given index.
 			virtual Viewport				GetViewport(DeviceContext &deviceContext,int index)=0;
 			/// Activate the specified index buffer in preparation for rendering.

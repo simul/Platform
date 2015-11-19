@@ -91,13 +91,6 @@ void discardUnlessFar(float depth,bool reverseDepth)
 }
 #endif
 
-float linearToFadeDistance(float z,vec2 xy,vec2 tanHalf)
-{
-	float Tx=xy.x*tanHalf.x;
-	float Ty=xy.y*tanHalf.y;
-	float fadeDist = z * sqrt(1.0+Tx*Tx+Ty*Ty);
-	return fadeDist;
-}
 // This converts a z-buffer depth into a distance in the units of nearZ and farZ,
 //	-	where usually nearZ and farZ will be factors of the maximum fade distance.
 //	-	

@@ -3,6 +3,7 @@
 #include "shader_platform.sl"
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
+
 uniform sampler2D imageTexture;
 uniform sampler2D noiseTexture;
 uniform sampler2D coverageTexture;
@@ -179,7 +180,7 @@ vec4 PS_Main_depthTexture(v2f IN,bool reverseDepth)
 	//uint2 depthDims;
 	//uint depthSamples;
 	vec2 depthTexCoords	=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
-	float dlookup 		=texture_clamp_lod(depthTexture,viewportTexCoords,0).x;
+	float dlookup 		=texture_clamp_lod(depthTexture,depthTexCoords,0).x;
 	if(reverseDepth)
 	{
 		if(dlookup!=0)
@@ -286,9 +287,14 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,
 	pos						=pos*amortization+amortizationOffset.xy;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth				=reverseDepth;
 	// offset by one texel to allow -1 in x and y:
 	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize1);
 	vec4 dlookup 			=vec4(0,0,0,0);
+	if(useDepth)
+		dlookup				=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(INtexCoords.xy,viewportToTexRegionScaleBias),0);
 	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
 	//  to the texCoords of our window. These wrap around 
 	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
@@ -298,15 +304,12 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
-
+	// TODO: should be depthToFadeDistance,not linear
 	vec4 dist				=vec4(1.0,1.0,1.0,1.0);
+	if(useDepth)
+		dist				=depthToLinearDistance(dlookup, depthInterpretationStruct);
 	float dz				=cloudAltitudeMetres-eyePosition.z;
 	vec4 ret				=vec4(0,0,0,1.0);
-	if(useDepth)
-	{
-		dlookup				=TEXTURE_LOAD(depthTexture,pos);
-		dist				=dlookup;
-	}
 	pos						+=offsetToCorner;
 	pos						=pos%targetTextureSize1;
 
@@ -324,7 +327,7 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,
 				d				=max(d,1000.0*(-b - sqrt(U)));
 		//	float d				=abs(dz)/view.z;
 	
-			if(d>0&&d<1000000.0&&(dist.x>=1.0||dist.x>d/maxFadeDistanceMetres))
+			if(d>0&&(dist.x>=1.0||dist.x>d/maxFadeDistanceMetres))
 			{
 				vec3 wEyeToPos			=view*d;
 				vec3 wPosition			=eyePosition+wEyeToPos;
@@ -511,7 +514,6 @@ technique simul_clouds_2d
     }
 }
 
-VertexShader vs_fullscreen_5_0 = CompileShader(vs_5_0, VS_SimpleFullscreen());
 technique clouds_2d_quad
 {
 	pass reverse_depth 

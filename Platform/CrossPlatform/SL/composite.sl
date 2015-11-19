@@ -30,13 +30,11 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,Texture2D farCloudTexture
 				,Texture2D nearCloudTexture
 				,Texture2D nearFarTexture
-				,Texture2D lowResDepthTexture
 				,Texture2D loss2dTexture
 				,Texture2D depthTexture
 				,mat4 invViewProj
 				,DepthIntepretationStruct depthInterpretationStruct
 				,vec2 lowResTexCoords
-				,vec2 lowResDepthTexCoords
 				,Texture3D inscatterVolumeTexture
 				,Texture2D shadowTexture)
 {
@@ -49,7 +47,6 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 zrow					=invViewProj._31_32_33_34;
 #endif
 	float sine					=dot(zrow,clip_pos);
-	vec4 nearFar				=texture_clamp_lod(lowResDepthTexture,lowResDepthTexCoords		,0);
 	vec4 nearFarCloud			=texture_wrap_lod(nearFarTexture	,lowResTexCoords		,0);
 	// Should NOT be necessary:
 	vec2 dd						=(nearFarCloud.xz-nearFarCloud.yw);
@@ -67,7 +64,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec3 volumeTexCoords		= vec3(lowResTexCoords, dist_rt);
 	vec4 insc					=texture_3d_wwc_lod(inscatterVolumeTexture,volumeTexCoords,0);
 #endif
-	vec4 shadow_lookup			=texture_wrap_lod(shadowTexture,lowResTexCoords, 0);
+	vec4 shadow_lookup			=texture_wrap_lod(shadowTexture, lowResTexCoords, 0);
 	float shadow				=shadow_lookup.x;
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
 	float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd.x,0.000001));
@@ -78,8 +75,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 cloudNear				=texture_wrap_lod(nearCloudTexture, lowResTexCoords, 0);
 	cloud						=lerp(cloudNear, cloud, hiResInterp);
 	
-//	cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
-	float shadowInterp			=saturate((dist - nearFar.w) / max(nearFar.z-nearFar.w,0.000001));
+	cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
+	float shadowInterp			=saturate(1*(dist - shadow_lookup.w) / max(shadow_lookup.z-shadow_lookup.w,0.000001));
 	//float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd,0.000001));
 	shadow						=lerp(shadow_lookup.y,shadow_lookup.x,shadowInterp);
 
@@ -87,12 +84,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	insc						+=cloud;
 	shadow						*=cloud.a;
 	res.multiply				=texture_clamp_mirror_lod(loss2dTexture,loss_texc,0)*shadow;
-	res.add						=insc;//nearFar;
-//res.add.r=hiResInterp;
-	//res.add=0;
-	//res.add.rg=nearFarCloud;
-	//if(depth_texc.x<.25)
-	//	res.add.rg=nearFarCloud.rg;//shadow_lookup.xy;
+	res.add						=insc;
     return res;
 }
 
@@ -101,7 +93,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 													,Texture2D farCloudTexture
 													,Texture2D nearCloudTexture
 													,Texture2D nearFarTexture
-													,Texture2D lowResDepthTexture
 													,Texture2D loss2dTexture
 													,TEXTURE2DMS_FLOAT4 depthTextureMS
 													,int numSamples
@@ -109,8 +100,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 													,mat4 invViewProj
 													,vec4 viewportToTexRegionScaleBias
 													,DepthIntepretationStruct depthInterpretationStruct
-													,vec2 lowResTexCoords 
-													,vec2 lowResDepthTexCoords 
+													,vec2 lowResTexCoords
 													,vec4 fullResToLowResTransformXYWH
 													,Texture3D inscatterVolumeTexture
 													,Texture2D shadowTexture)
@@ -125,7 +115,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 	int2 fullres_depth_pos2		=int2(depth_texc*vec2(fullResDims.xy));
 	
 	float sine					=dot(zrow,clip_pos);
-	vec4 nearFar				=texture_clamp_lod(lowResDepthTexture,lowResDepthTexCoords		,0);
 	vec4 nearFarCloud			=texture_wrap_lod(nearFarTexture	,lowResTexCoords		,0);
 	
 	float dd					=abs(nearFarCloud.x-nearFarCloud.y);
@@ -162,7 +151,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 		cloud						=lerp(cloudNear, cloud, hiResInterp);
 	
 		cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
-		float shadowInterp			=saturate((dist - nearFar.w) / max(nearFar.z-nearFar.w,0.000001));
+		float shadowInterp			=saturate((dist - nearFarCloud.w) / max(nearFarCloud.z-nearFarCloud.w,0.000001));
 		//float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd,0.000001));
 		shadow						=lerp(shadow_lookup.y,shadow_lookup.x,shadowInterp);
 

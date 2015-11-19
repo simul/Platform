@@ -485,10 +485,12 @@ crossplatform::Light *RenderPlatform::CreateLight()
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture * tex=NULL;
-#if 0//def _XBOX_ONE
-	if(fileNameUtf8&&strcmp(fileNameUtf8,"ESRAM")==0)
+#ifdef _XBOX_ONE
+	//if(fileNameUtf8&&strcmp(fileNameUtf8,"ESRAM")==0)
 		tex=new dx11::ESRAMTexture();
-	else
+	//else
+#else
+		tex=new dx11::Texture();
 #endif
 	{
 		tex=new dx11::Texture();
@@ -934,7 +936,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &devic
 	PopRenderTargets(deviceContext);
 }
 
-void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Viewport *vps)
+void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
 {
 	D3D11_VIEWPORT viewports[8];
 	SIMUL_ASSERT(num<=8);

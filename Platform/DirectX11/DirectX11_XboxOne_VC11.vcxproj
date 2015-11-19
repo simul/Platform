@@ -245,6 +245,14 @@
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\External\DirectX\DirectXTex\DirectXTex\DirectXTex_XboxOneXDK.vcxproj">
+      <Project>{8424aed1-3dbf-44fa-9cf9-7fbdf1c18596}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\XboxOne\External\DirectX\Effects11\Effects11.vcxproj">
+      <Project>{80aa401f-ea6b-4f6e-b50d-e9685cd02cd8}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

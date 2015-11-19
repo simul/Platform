@@ -188,11 +188,18 @@ shader vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
 	return vec4(m,m,m,m);
 }
 
-vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
+struct FarNearDepthPixelOutput
 {
-	vec2 depth_texc=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
+	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
+};
+
+FarNearDepthPixelOutput SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
+{
+	FarNearDepthPixelOutput fn;
+	vec4 dlookup 	=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords	=mixedResTransformXYWH.xy + IN.texCoords.xy*mixedResTransformXYWH.zw;
-	vec4 dlookup 	=texture_nearest_lod(depthTexture,depth_texc.xy,0);
 
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
@@ -220,25 +227,28 @@ vec4 SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 	//if(p.colour.a>=1.0)
 	//   discard;
 	p.colour.rgb*=exposure;
-//p.colour.rgb=vec3(1.0,0,0);
-	return p.colour;
+	fn.farColour=p.colour;
+	fn.nearColour=p.nearColour;
+	fn.nearFarDepth = p.nearFarDepth;
+	return fn;
 }
 
-shader vec4 PS_SimpleRaytrace_depthForward(posTexVertexOutput IN) : SV_TARGET
+shader FarNearDepthPixelOutput PS_SimpleRaytrace_depthForward(posTexVertexOutput IN) 
 {
-	return SimpleRaytrace(IN,false);
+	FarNearDepthPixelOutput f= SimpleRaytrace(IN,false);
+	return f;
 }
 
-shader vec4 PS_SimpleRaytrace_depthReverse(posTexVertexOutput IN) : SV_TARGET
+shader FarNearDepthPixelOutput  PS_SimpleRaytrace_depthReverse(posTexVertexOutput IN) 
 {
-	return SimpleRaytrace(IN,true);
+	FarNearDepthPixelOutput f= SimpleRaytrace(IN,true);
+	return f;
 }
 
 FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 {
-	vec4 dlookup 	=texture_nearest_lod(depthTexture,IN.texCoords.xy,0);
-	//depth_texc=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
+	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth				=reverseDepth;
@@ -268,13 +278,6 @@ shader FarNearPixelOutput PS_Lightpass_DepthForward(posTexVertexOutput IN)
 	return PS_Lightpass(IN,true);
 }
 
-struct FarNearDepthPixelOutput
-{
-	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
-	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
-	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
-};
-
 void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
 {
 	int2 idx				=int2(g.xy*8+t.xy);
@@ -285,17 +288,17 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 	vec2 INtexCoords		=vec2(pos.xy)/vec2(targetTextureSize);
 	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
 	//  to the texCoords of our "window". These wrap around 
-	INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
+	INtexCoords				=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
 	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
 	//texCoords				/=mixedResTransformXYWH.zw;
 	//texCoords				=frac(texCoords);
 	//texCoords				*=mixedResTransformXYWH.zw;
 	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize)*mixedResTransformXYWH.zw;
 	
-	vec4 dlookup 			=TEXTURE_LOAD(depthTexture,pos);
 	pos+=offsetToCorner;
 	pos=pos%targetTextureSize;
-
+	
+	vec4 dlookup 			=TEXTURE_LOAD(depthTexture,pos);
 	vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
@@ -328,7 +331,7 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 	c.rgb					+=f.colour.rgb;
 	c.a						=t2d.a*f.colour.a;
 	outputTexture1[pos]		=c;
-	float n					=step(1.0,dlookup.y);
+	float n					=float(dlookup.y==0);
 	vec4 cn					=t2d;
 	cn.rgb					*=f.nearColour.a*n;
 	cn.a					=1.0-n*(1.0-t2d.a);
@@ -346,8 +349,7 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 		return;
 	// offset by one texel to allow -1 in x and y:
 	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
-	vec4 dlookup 			=TEXTURE_LOAD(depthTexture,pos);
-	//depth_texc=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
+	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(INtexCoords.xy,viewportToTexRegionScaleBias),0);
 	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
 	//  to the texCoords of our "window". These wrap around 
 	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
@@ -356,8 +358,8 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 	//texCoords				*=mixedResTransformXYWH.zw;
 	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize)*mixedResTransformXYWH.zw;
 	
-	pos+=offsetToCorner;
-	pos=pos%targetTextureSize;
+	pos						+=offsetToCorner;
+	pos						=pos%targetTextureSize;
 
 	vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	DepthIntepretationStruct depthInterpretationStruct;
@@ -391,7 +393,7 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 	c.rgb					+=f.colour.rgb;
 	c.a						=t2d.a*f.colour.a;
 	outputTexture1[pos]		=c;
-	float n					=step(1.0,dlookup.y);
+	float n					=float(dlookup.y==0);
 	vec4 cn					=t2d;
 	cn.rgb					*=f.nearColour.a*n;
 	cn.a					=1.0-n*(1.0-t2d.a);
@@ -403,8 +405,7 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 
 FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool rain)
 {
-	vec4 dlookup 	=texture_nearest_lod(depthTexture,IN.texCoords.xy,0);
-	//depth_texc=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
+	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
 	//  to the texCoords of our "window". These wrap around 
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
@@ -444,8 +445,7 @@ FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool
 
 FarNearDepthPixelOutput PS_RaytraceStatic(posTexVertexOutput IN,bool reverseDepth)
 {
-	vec4 dlookup 	=texture_nearest_lod(depthTexture,IN.texCoords.xy,0);
-	//depth_texc=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
+	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;

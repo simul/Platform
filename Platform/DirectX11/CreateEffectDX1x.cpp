@@ -51,6 +51,8 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 
 #ifndef SIMUL_WIN8_SDK
 	#pragma comment(lib,"Effects11_DXSDK.lib")
+	#pragma comment(lib,"dxerr.lib")
+	#pragma comment(lib,"d3dx11.lib")
 #else
 	#ifndef _XBOX_ONE
 		#pragma comment(lib,"Effects11_Win8SDK.lib")
@@ -63,8 +65,6 @@ enum {D3DX11_FILTER_NONE=(1 << 0)};
 	#pragma comment(lib,"d3d11_x.lib")
 	#pragma comment(lib,"d3dcompiler.lib")
 #else
-	#pragma comment(lib,"dxerr.lib")
-	#pragma comment(lib,"d3dx11.lib")
 	#pragma comment(lib,"dxguid.lib")
 	#pragma comment(lib,"dxgi.lib")
 	#pragma comment(lib,"d3d11.lib")
@@ -113,34 +113,41 @@ HRESULT D3DX11CreateTextureFromFileW(ID3D11Device* pd3dDevice,const wchar_t *fil
 ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
 {
 	ID3D11ShaderResourceView* tex=NULL;
-	
-	//if(!texturePathsUtf8.size())
-	//	texturePathsUtf8.push_back("media/textures");
-	std::string str		=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename,texturePathsUtf8);
-	std::wstring wstr	=simul::base::Utf8ToWString(str);
+		std::string str;
+		int idx=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filename,texturePathsUtf8);
+		if(idx>=texturePathsUtf8.size())
+			return NULL;
+	str=filename;
+	if(idx>=0)
+		str=(texturePathsUtf8[idx]+"/")+str;
+	void *ptr=NULL;
+	unsigned bytes=0;
+	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr,bytes,str.c_str(),false);
 #if WINVER<0x602
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
 	ZeroMemory(&loadInfo,sizeof(D3DX11_IMAGE_LOAD_INFO));
 	loadInfo.BindFlags	=D3D11_BIND_SHADER_RESOURCE;
 	loadInfo.Format		=DXGI_FORMAT_FROM_FILE;
 	loadInfo.MipLevels=0;
-	HRESULT hr			=D3DX11CreateShaderResourceViewFromFileW(
-									pd3dDevice,
-									wstr.c_str(),
-									&loadInfo,
-									NULL,
-									&tex,
-									&hr);
+	HRESULT hr			=D3DX11CreateShaderResourceViewFromMemory(
+									pd3dDevice
+									,ptr
+									,bytes
+									,&loadInfo
+									,NULL
+									,&tex
+									,&hr);
 #else
 	int flags=0;
 	DirectX::TexMetadata metadata;
 	DirectX::ScratchImage scratchImage;
-	DirectX::LoadFromWICFile(wstr.c_str(),flags,&metadata,scratchImage);
+	DirectX::LoadFromWICMemory( ptr, bytes, flags,&metadata,scratchImage );
 	const DirectX::Image *image=scratchImage.GetImage(0,0,0);
 	if(!image)
 		return NULL;
     HRESULT hr=CreateShaderResourceView(  pd3dDevice,image, 1, metadata,&tex );
 #endif
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
 	return tex;
 }
 
@@ -516,7 +523,8 @@ ERRNO_CHECK
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 		{
-			simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
+			if(!simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false))
+				return S_FALSE;
 			double new_binary_date_jdn			=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
 			if(new_binary_date_jdn<newest_included_file)
 			{
@@ -566,7 +574,21 @@ HRESULT simul::dx11::CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect
 {
 	SIMUL_ASSERT_WARN(d3dDevice!=NULL,"Null device");
 	HRESULT hr=S_OK;
-	std::string filename_utf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filenameUtf8,shaderPathsUtf8);
+	int index=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filenameUtf8,shaderPathsUtf8);
+	std::string filename_utf8;
+	if(index<0)
+		filename_utf8=filenameUtf8;
+	else if(index>=0&&index<shaderPathsUtf8.size())
+		filename_utf8=(shaderPathsUtf8[index]+"/")+filenameUtf8;
+	else
+	{
+		/*SIMUL_CERR<<"File not found in paths: "<<filenameUtf8<<std::endl<<"Paths are:"<<std::endl;
+		for(int i=0;i<shaderPathsUtf8.size();i++)
+		{
+			SIMUL_CERR<<"\t"<<shaderPathsUtf8[i]<<std::endl;
+		}*/
+		filename_utf8=filenameUtf8;
+	}
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filename_utf8.c_str()))
 	{
 		filename_utf8=filenameUtf8;

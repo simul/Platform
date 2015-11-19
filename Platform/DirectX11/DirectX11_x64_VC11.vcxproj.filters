@@ -153,27 +153,6 @@
     <None Include="HLSL\CppHLSL.hlsl">
       <Filter>HLSL</Filter>
     </None>
-    <None Include="HLSL\fft_512x512_c2c.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\MixClouds_c.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\ocean_shading.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\ocean_simulator_cs.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\simul_earthshadow.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\simul_gpu_sky.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\simul_inscatter_fns.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
     <None Include="SimulUseDXSDK.props" />
     <None Include="SimulUseWin8SDK.props" />
     <None Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
