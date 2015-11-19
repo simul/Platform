@@ -84,7 +84,7 @@ namespace simul
 					return vec4(0,0,1.0f,1.0f);
 				float a=(float)W/(float)(w*downscale);
 				float b=(float)H/(float)(h*downscale);
-				static float uu=0.5f;
+				static float uu=0.25f;
 				float x=(float)(pixelOffset.x)*a/(float)(W)+uu*(1.f/w);
 				float y=(float)(pixelOffset.y)*b/(float)(H)+uu*(1.f/h);
 				return vec4(x,y,a,b);//1.0f-1.0f/b

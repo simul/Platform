@@ -749,18 +749,21 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 						nearColour.a		*=(1.0-clr_n.a);
 					}
 					colour.rgb				+=clr.rgb*clr.a*(colour.a);
-					meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a*abs(cosine));//saturate(4.0*density.z)*colour.a);
+					meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a);
+				//if(meanFadeDistance>=1.0)
+				//	meanFadeDistance		=fadeDistance;
 					colour.a				*=(1.0-clr.a);
 					if(nearColour.a*brightness_factor<0.003)
 					{
-						meanFadeDistance		=fadeDistance;
+					//lastFadeDistance		=fadeDistance;
+					//meanFadeDistance=min(meanFadeDistance,fadeDistance);
 						colour.a = 0.0;
 						break;
 					}
 				}
 			}
 		}
-		lastFadeDistance=fadeDistance;
+		lastFadeDistance		=lerp(lastFadeDistance,fadeDistance,colour.a);
 		if(max(max(b.x,b.y),0)>=W)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
@@ -788,6 +791,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 #endif
 	res.nearFarDepth.xz	=min(res.nearFarDepth.xz,vec2(meanFadeDistance+0.25,meanFadeDistance+0.25));
 	res.nearFarDepth.wy	=min(res.nearFarDepth.wy,vec2(meanFadeDistance,meanFadeDistance));
+	res.nearFarDepth.z	=max(0.001,saturate(lastFadeDistance-meanFadeDistance));//*(1.0-colour.a);
+	res.nearFarDepth.w	=meanFadeDistance;
 
 	return res;
 }
