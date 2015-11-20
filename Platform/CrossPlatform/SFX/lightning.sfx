@@ -491,31 +491,32 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
-	vec2 texc			=vec2(IN.texc.x,1.0-IN.texc.y);
-	vec4 dlookup 		=texture_clamp(depthTexture,texc.xy);
-	vec4 nearFarCloud 	=texture_wrap(cloudDepthTexture,texc.xy);
+	vec2 texc				=vec2(IN.texc.x,1.0-IN.texc.y);
+	vec4 dlookup 			=texture_clamp(depthTexture,texc.xy);
+	vec2 lowResTexCoords	=fullResToLowResTransformXYWH.xy+texc*fullResToLowResTransformXYWH.zw;
+	vec4 nearFarCloud 		=texture_wrap(cloudDepthTexture,lowResTexCoords.xy);
 
-	vec4 clip_pos		=vec4(IN.screenPos,1.0,1.0);
-	float l_depth		=IN.clipPos.z/IN.clipPos.w;
-	vec2 dist			=depthToFadeDistance(vec2(l_depth,dlookup.x),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
+	vec4 clip_pos			=vec4(IN.screenPos,1.0,1.0);
+	float l_depth			=IN.clipPos.z/IN.clipPos.w;
+	vec2 dist				=depthToFadeDistance(vec2(l_depth,dlookup.x),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 
-	float past			=saturate((nearFarCloud.w-dist.x)/0.01-0.9);
-	 past				*=saturate((dist.y-dist.x)/0.01-0.9);
+	float past				=saturate((nearFarCloud.w-dist.x)/0.01-0.9);
+	 past					*=saturate((dist.y-dist.x)/0.01-0.9);
 	
-	vec2 dir			=normalize(IN.hPosCentre2-IN.hPosCentre1);
-	float along			=dot(IN.screenPos-IN.hPosCentre1,dir);
-	vec2 centre1		=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along));//*(1.0-IN.endpoint)));
-	vec2 centre2		=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(along));//*(1.0-IN.endpoint)));
-	vec2 diff1			=IN.screenPos-centre1;
-	vec2 diff2			=IN.screenPos-centre2;
-	float clipWidth2px	=minPixelWidth/float(viewportPixels.x);
-	float d				=min(length(diff1),length(diff2));
-	float m				=d/clipWidth2px;
-	float s				=max(0.0,d-clipWidth2px)/IN.clipWidth;
+	vec2 dir				=normalize(IN.hPosCentre2-IN.hPosCentre1);
+	float along				=dot(IN.screenPos-IN.hPosCentre1,dir);
+	vec2 centre1			=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along));//*(1.0-IN.endpoint)));
+	vec2 centre2			=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(along));//*(1.0-IN.endpoint)));
+	vec2 diff1				=IN.screenPos-centre1;
+	vec2 diff2				=IN.screenPos-centre2;
+	float clipWidth2px		=minPixelWidth/float(viewportPixels.x);
+	float d					=min(length(diff1),length(diff2));
+	float m					=d/clipWidth2px;
+	float s					=max(0.0,d-clipWidth2px)/IN.clipWidth;
 	
-	float br			=saturate(2.0*(1.0-m));
+	float br				=saturate(2.0*(1.0-m));
 	//br					=max(brightnessToUnity,br);
-	br					+=brightnessToUnity;//*saturate(exp(-4.0*s)-0.05)/0.95;
+	br						+=brightnessToUnity;//*saturate(exp(-4.0*s)-0.05)/0.95;
 	//br					+=IN.brightness*saturate(10.0*(1.0-m));
 	if(progress>0.0)
 	{

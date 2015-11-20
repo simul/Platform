@@ -13,6 +13,27 @@ uniform TEXTURE2DMS_FLOAT4 sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2D sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);
 uniform RW_TEXTURE2D_FLOAT4 target2DTexture SIMUL_RWTEXTURE_REGISTER(1);
 
+uniform Texture2D previousTexture;
+
+shader vec4 PS_DownscaleStochastic_ReverseDepth(posTexVertexOutput IN) : SV_Target
+{
+	vec2 sourceTexCoords	=frac(lowResToHighResTransformXYWH.xy+lowResToHighResTransformXYWH.zw*IN.texCoords.xy);
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=true;
+	vec4 res	=DownscaleStochastic(previousTexture,sourceDepthTexture, IN.texCoords.xy,sourceTexCoords,texelRange,depthInterpretationStruct,  nearThresholdDepth,stochasticOffset);
+	return res;
+}
+
+shader vec4 PS_DownscaleStochastic_ForwardDepth(posTexVertexOutput IN) : SV_Target
+{
+	vec2 sourceTexCoords	=frac(lowResToHighResTransformXYWH.xy+lowResToHighResTransformXYWH.zw*IN.texCoords.xy);
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=false;
+	vec4 res	=DownscaleStochastic(previousTexture,sourceDepthTexture,IN.texCoords.xy,sourceTexCoords,texelRange, depthInterpretationStruct,  nearThresholdDepth,stochasticOffset);
+	return res;
+}
 shader vec4 PS_HalfscaleInitial_ReverseDepth(posTexVertexOutput IN):SV_Target
 {
 	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
@@ -166,6 +187,29 @@ shader vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
 
 VertexShader vs_simple_fullscreen=CompileShader(vs_5_0,VS_SimpleFullscreen());
 
+/// 
+technique downscale_stochastic
+{
+    pass reverse_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.5, 0.5, 0.5, 0.5 ), 0xFFFFFFFF );
+		SetVertexShader(vs_simple_fullscreen);
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_DownscaleStochastic_ReverseDepth()));
+    }
+    pass forward_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.5, 0.5, 0.5, 0.5 ), 0xFFFFFFFF );
+		SetVertexShader(vs_simple_fullscreen);
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_DownscaleStochastic_ForwardDepth()));
+    }
+}
+
 technique halfscale_initial
 {
     pass reverse_depth
@@ -209,7 +253,6 @@ technique halfscale_initial_split
 		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_Split_ForwardDepth()));
     }
 }
-
 
 technique same_scale
 {

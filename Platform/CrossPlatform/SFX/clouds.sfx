@@ -248,6 +248,7 @@ shader FarNearDepthPixelOutput  PS_SimpleRaytrace_depthReverse(posTexVertexOutpu
 FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
+	texCoords				=frac(texCoords);
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;

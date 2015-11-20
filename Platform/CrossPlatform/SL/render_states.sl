@@ -59,6 +59,13 @@ DepthStencilState EnableDepth
 	DepthWriteMask = ALL;
 };
 
+BlendState MixBlend
+{
+	BlendEnable[0]	=TRUE;
+	SrcBlend		=BLEND_FACTOR;
+	DestBlend		=INV_BLEND_FACTOR;
+};
+
 BlendState DoBlend
 {
 	BlendEnable[0]	=TRUE;
