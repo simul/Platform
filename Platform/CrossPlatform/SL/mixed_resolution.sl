@@ -73,14 +73,14 @@ vec2 depthToLinearDistanceM(vec2 depth,DepthIntepretationStruct depthInterpretat
 	return linearFadeDistanceZ;
 }
 
-vec4 HalfscaleInitial_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_dims
+vec4 HalfscaleInitial_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_dims,int2 max_dims
 	,int2 source_offset,int2 cornerOffset,int2 pos
 	,DepthIntepretationStruct depthInterpretationStruct
 	,float nearThresholdDepth)
 {
 	int2 pos0			=pos*2;
-	int2 pos1			=pos0-cornerOffset+source_dims;
-	pos1				=pos1%source_dims;
+	int2 pos1			=pos0-cornerOffset+max_dims;
+	pos1				=pos1%max_dims;
 #ifdef DEBUG_COMPOSITING
 	if(pos.x<3)
 		return vec4(0,0,saturate((pos1.y%3)/2.0),0);
@@ -214,7 +214,8 @@ vec4 Samescale(Texture2D sourceDepthTexture
 	return farthest_nearest;
 }
 
-vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 texCoords, vec2 sourceTexCoords, vec2 texelRange, DepthIntepretationStruct depthInterpretationStruct, float nearThresholdDepth,vec2 stochasticOffset[11])
+vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 texCoords, vec2 sourceTexCoords, vec2 texelRange
+	, DepthIntepretationStruct depthInterpretationStruct, float nearThresholdDepth,vec2 stochasticOffset,uint2 scale)
 {
 	vec4 previous_fn			=texture_clamp_nearest_lod(previousTexture,texCoords,0);
 	
@@ -222,41 +223,51 @@ vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,
 		previous_fn				=lerp(previous_fn,vec4(1.0,0.0,1.0,0.0),0.01);
 	//else														
 	//	previous_fn				=lerp(previous_fn,vec4(0.0,1.0,0.0,1.0),0.0001);
-	vec4 fn=previous_fn;
+	vec4 fn=vec4(1.0,0.0,1.0,0.0);
 	vec4 thr					=vec4(nearThresholdDepth, nearThresholdDepth, nearThresholdDepth, nearThresholdDepth);
-	for(int i=0;i<11;i++)
+	for(int i=0;i<scale.x;i+=1)
 	{
-		vec2 offs=stochasticOffset[i]*3*texelRange;
-		vec2 texc=sourceTexCoords+offs;
-		vec2 d=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
-		if(depthInterpretationStruct.reverseDepth)
-			d.x					= step(d.x,thr)*d.x;
-		else
-			d.x					= step(d.x,thr)+d.x;
-		if(depthInterpretationStruct.reverseDepth)
+		float x=(0.5+float(i-scale.x/2.0))/float(scale.x);
+		for(int j=0;j<scale.y;j+=1)
 		{
-			fn.yw=max(fn.yw,d);
-			fn.xz=min(fn.xz,d);
-		}
-		else
-		{
-			fn.yw=min(fn.yw,d);
-			fn.xz=max(fn.xz,d);
+			float y=(0.5+float(j-scale.y/2.0))/float(scale.y);
+
+			vec2 offs=texelRange*vec2(x,y);
+			vec2 texc=sourceTexCoords+2.0*offs;
+			vec2 d=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
+			if(depthInterpretationStruct.reverseDepth)
+				d.x					= step(d.x,thr)*d.x;
+			else
+				d.x					= step(d.x,thr)+d.x;
+			if(depthInterpretationStruct.reverseDepth)
+			{
+				fn.yw=max(fn.yw,d);
+				fn.xz=min(fn.xz,d);
+			}
+			else
+			{
+				fn.yw=min(fn.yw,d);
+				fn.xz=max(fn.xz,d);
+			}
 		}
 	}
 	return fn;
 }
 
-vec4 HalfscaleInitial(Texture2D sourceDepthTexture, int2 source_dims, uint2 source_offset, int2 cornerOffset, int2 pos, DepthIntepretationStruct depthInterpretationStruct, bool split_view, float nearThresholdDepth)
+vec4 HalfscaleInitial(Texture2D sourceDepthTexture,int2 source_dims,int2 max_dims
+	, uint2 source_offset, int2 cornerOffset, int2 pos
+	, DepthIntepretationStruct depthInterpretationStruct
+	, bool split_view
+	, float nearThresholdDepth)
 {
 	int2 pos0			=int2(pos * 2);
 
 	int2 pos1			=int2(pos0)-int2(cornerOffset);
-//	pos1				=pos1%source_dims;
+//	pos1				=pos1max_dims;
 	int2 max_pos		=int2(source_dims)-int2(3,3);
 	int2 min_pos		=int2(1,1);
 	int2 pos2			=pos1+int2(source_offset);
-	pos2				=(pos2+source_dims)%source_dims;
+	pos2				=(pos2+max_dims)%max_dims;
 	pos2				=int2(max(min_pos.x,min(pos2.x,max_pos.x)),max(min_pos.y,min(pos2.y,max_pos.y)));
 	
 	vec2 farthest_nearest,fn0;
