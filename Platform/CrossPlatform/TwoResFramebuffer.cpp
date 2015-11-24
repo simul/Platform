@@ -67,7 +67,7 @@ TwoResFramebuffer::TwoResFramebuffer()
 
 void TwoResFramebuffer::Swap()
 {
-	for(int i=1;i<4;i++)
+	for(int i=1;i<3;i++)
 	{
 		std::swap(nearFarTextures[i],nearFarTextures[1+(i+1)%3]);
 	}
@@ -154,7 +154,7 @@ void TwoResFramebuffer::InvalidateDeviceObjects()
 {
 	for (int i = 0; i < 4; i++)
 		SAFE_DELETE(lowResFramebuffers[i]);
-	for(int i=0;i<5;i++)
+	for(int i=0;i<4;i++)
 		SAFE_DELETE(nearFarTextures[i]);
 	SAFE_DELETE(lossTexture);
 	SAFE_DELETE(volumeTextures[0]);
@@ -329,12 +329,13 @@ void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceC
 	int x=x0;
 	int y=y0;
 	int W=w,L=l;
-	for(int i=0;i<final_octave&&i<4;i++)
+	for(int i=0;i<4;i++)
 	{
 		crossplatform::Texture *t=GetLowResDepthTexture(i);
 		if(!t)
 			continue;
 		deviceContext.renderPlatform->DrawDepth(deviceContext	,x	,y	,w,l,	t,NULL,proj);
+		deviceContext.renderPlatform->DrawTexture(deviceContext	,x+w	,y	,w,l,	t);
 		deviceContext.renderPlatform->Print(deviceContext		,x	,y	,"Depth",white,black_transparent);
 		w/=2;
 		l/=2;
