@@ -223,6 +223,8 @@ FarNearDepthPixelOutput SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 									,false
 									,true
 									,cloudIrRadiance1,cloudIrRadiance2
+									,maxHalfAngle
+									,tanHalfFov
 									);
 	//if(p.colour.a>=1.0)
 	//   discard;
@@ -264,6 +266,8 @@ FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 									,minCosine
 									,maxRadiusKm
 									,irradianceThreshold
+									,maxHalfAngle
+									,tanHalfFov
 									);
 	return f;
 }
@@ -323,6 +327,8 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 									,true
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
+									,maxHalfAngle
+									,tanHalfFov
 									);
 	vec4 t2d				=clouds2DTexture[pos];
 	// blend:
@@ -386,6 +392,8 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 									,true
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
+									,maxHalfAngle
+									,tanHalfFov
 									);
 	vec4 t2d				=clouds2DTexture[pos];
 	// blend:
@@ -436,6 +444,8 @@ FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool
 									,true
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
+									,maxHalfAngle
+									,tanHalfFov
 									);
 	FarNearDepthPixelOutput fn;
 	fn.farColour=f.colour;
@@ -470,6 +480,8 @@ FarNearDepthPixelOutput PS_RaytraceStatic(posTexVertexOutput IN,bool reverseDept
 									,false
 									,cloudIrRadiance1
 									,cloudIrRadiance2
+									,maxHalfAngle
+									,tanHalfFov
 									);
 	FarNearDepthPixelOutput fn;
 	fn.farColour	=f.colour;

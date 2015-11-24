@@ -181,6 +181,8 @@ namespace simul
 			void UpdatePixelOffset(const crossplatform::ViewStruct &viewStruct);
 			/// Offset in pixels from top-left of the low-res view to top-left of the full-res.
 			vec2								pixelOffset;
+			/// Swap stochastic texture buffers.
+			void Swap();
 			/// Returns	the low-res depth texture.
 			crossplatform::Texture				*GetLowResDepthTexture(int idx=-1);
 			crossplatform::PixelFormat GetDepthFormat() const;
@@ -210,7 +212,7 @@ namespace simul
 			crossplatform::PixelFormat			depthFormat;
 			simul::geometry::SimulOrientation	view_o;
 			crossplatform::RenderPlatform		*renderPlatform;
-			crossplatform::Texture				*nearFarTextures[4];
+			crossplatform::Texture				*nearFarTextures[5];
 			crossplatform::Texture				*lossTexture;
 			crossplatform::Texture				*volumeTextures[2];
 			crossplatform::Texture				*lowResFramebuffers[4];

@@ -13,7 +13,7 @@
 #define BLOCK_SIZE_X 16
 #define BLOCK_SIZE_Y 16
 
-Texture2D g_samplerDisplacementMap		: register(t0);
+Texture2D	g_samplerDisplacementMap	: register(t0);
 
 Texture2D	showTexture					: register(t0);		// FFT wave displacement map in VS
 Texture2D	g_texDisplacement			: register(t0);		// FFT wave displacement map in VS

@@ -55,6 +55,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int2 offsetToCorner;
 
 	uniform int2 edge;
+	uniform vec2 maxHalfAngle;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)

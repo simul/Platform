@@ -90,6 +90,12 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{b2e4fd49-a8ec-4930-9e0e-a4c9fbf623bc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SL">
+      <UniqueIdentifier>{0ceafe3c-30d9-4dad-808d-04cdd4a19ff0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SFX">
+      <UniqueIdentifier>{849cad77-681d-468a-b265-3ae655a8ec52}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Mesh.cpp">
@@ -149,5 +155,217 @@
     <ClCompile Include="TwoResFramebuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SFX\atmospherics.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\clouds.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\debug.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\font.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\gaussian.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\hdr.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\light_probes.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\lightning.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\mixed_resolution.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\ocean.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\optics.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\rain.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\simul_clouds_2d.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\simul_gaussian.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\simul_gpu_clouds.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\simul_gpu_sky.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\simul_render_cubemap.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\simul_rendernoise.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\sky.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\solid.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\spherical_harmonics.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\terrain.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SL\atmospherics.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\atmospherics_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\cloud_shadow.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\clouds_simple.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\colour_packing.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\common.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\composite.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\compositing_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\CppSl.hs">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\debug_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\depth.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\earth_shadow.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\earth_shadow_fade.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\earth_shadow_uniforms.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\godrays.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\gpu_cloud_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\gpu_sky_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\hdr_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\illumination.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\image_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\light_probe_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\lightning_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\mixed_resolution.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\mixed_resolution_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\noise.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\noise_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\ocean_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\optics_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\rain.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\rain_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\raytrace_new.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\render_states.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_2d_cloud_detail.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_2d_clouds.hs">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_2d_clouds.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_cloud_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_clouds.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_gpu_clouds.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_gpu_sky.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_inscatter_fns.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_terrain_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\sky.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\sky_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\solid_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\spherical_harmonics.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\spherical_harmonics_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\states.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\text_constants.sl">
+      <Filter>SL</Filter>
+    </None>
   </ItemGroup>
 </Project>

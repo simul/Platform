@@ -20,7 +20,9 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,bool noise
 											,bool do_rain_effect
 											,vec3 cloudIrRadiance1
-											,vec3 cloudIrRadiance2)
+											,vec3 cloudIrRadiance2
+									,vec2 maxHalfAngle
+									,vec2 tanHalfFov)
 {
 	RaytracePixelOutput res;
 	res.colour				=vec4(0,0,0,1.0);

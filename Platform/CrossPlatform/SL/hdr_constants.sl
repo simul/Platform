@@ -12,7 +12,8 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform float alpha;
 	uniform float farZ;
 	
-	uniform vec4 colour2;
+	uniform vec2 maxHalfAngle;
+	uniform vec2 pads1235;
 
 	uniform vec2 tanHalfFov;
 	uniform float exposure;
