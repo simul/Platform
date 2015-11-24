@@ -260,8 +260,8 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	int H				=(Height+Downscale-1)/Downscale+1;
 	int OutsideWidth	=W*Downscale;
 	int OutsideHeight	=H*Downscale;
-	dx					*=Width*viewStruct.proj._11;
-	dy					*=Height*viewStruct.proj._22;
+	dx					*=OutsideWidth*viewStruct.proj._11;
+	dy					*=OutsideHeight*viewStruct.proj._22;
 	view_o.DefineFromYZ(new_up_dir,new_view_dir);
 	static float cc=0.5f;
 	vec2 dp				(-cc*dx,-cc*dy);
