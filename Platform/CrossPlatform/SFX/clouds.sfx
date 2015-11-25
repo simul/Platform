@@ -223,8 +223,6 @@ FarNearDepthPixelOutput SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 									,false
 									,true
 									,cloudIrRadiance1,cloudIrRadiance2
-									,maxHalfAngle
-									,tanHalfFov
 									);
 	//if(p.colour.a>=1.0)
 	//   discard;
@@ -250,6 +248,7 @@ shader FarNearDepthPixelOutput  PS_SimpleRaytrace_depthReverse(posTexVertexOutpu
 FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
+	texCoords				=frac(texCoords);
 	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
@@ -266,8 +265,6 @@ FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 									,minCosine
 									,maxRadiusKm
 									,irradianceThreshold
-									,maxHalfAngle
-									,tanHalfFov
 									);
 	return f;
 }
@@ -289,9 +286,21 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	// offset by one texel to allow -1 in x and y:
-	vec2 texCoords			=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
+	vec2 INtexCoords		=vec2(pos.xy)/vec2(targetTextureSize);
+	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
+	//  to the texCoords of our "window". These wrap around 
+	INtexCoords				=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
+	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
+	//texCoords				/=mixedResTransformXYWH.zw;
+	//texCoords				=frac(texCoords);
+	//texCoords				*=mixedResTransformXYWH.zw;
+	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize)*mixedResTransformXYWH.zw;
 	
-	vec4 dlookup 				=vec4(0,0,0,0);//TEXTURE_LOAD(depthTexture,pos);
+	pos+=offsetToCorner;
+	pos=pos%targetTextureSize;
+	
+	vec4 dlookup 				=TEXTURE_LOAD(depthTexture,pos);
+	vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth				=reverseDepth;
@@ -311,12 +320,10 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 									,depthInterpretationStruct
 									,dlookup
 									,texCoords
-									,texCoords
+									,unmodifiedTexCoords
 									,true
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
-									,maxHalfAngle
-									,tanHalfFov
 									);
 	vec4 t2d				=clouds2DTexture[pos];
 	// blend:
@@ -380,8 +387,6 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 									,true
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
-									,maxHalfAngle
-									,tanHalfFov
 									);
 	vec4 t2d				=clouds2DTexture[pos];
 	// blend:
@@ -432,8 +437,6 @@ FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool
 									,true
 									,rain
 									,cloudIrRadiance1,cloudIrRadiance2
-									,maxHalfAngle
-									,tanHalfFov
 									);
 	FarNearDepthPixelOutput fn;
 	fn.farColour=f.colour;
@@ -468,8 +471,6 @@ FarNearDepthPixelOutput PS_RaytraceStatic(posTexVertexOutput IN,bool reverseDept
 									,false
 									,cloudIrRadiance1
 									,cloudIrRadiance2
-									,maxHalfAngle
-									,tanHalfFov
 									);
 	FarNearDepthPixelOutput fn;
 	fn.farColour	=f.colour;

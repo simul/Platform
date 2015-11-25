@@ -250,9 +250,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 								,vec3 spectralFluxOver1e6
 								,float minCosine
 								,float maxIlluminatedRadius
-								,float threshold
-								,vec2 maxHalfAngle
-								,vec2 tanHalfFov)
+								,float threshold)
 {
 	float max_spectral_flux			=max(max(spectralFluxOver1e6.r,spectralFluxOver1e6.g),spectralFluxOver1e6.b);
 	FarNearPixelOutput res;
@@ -496,9 +494,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,bool noise
 											,bool do_rain_effect
 											,vec3 cloudIrRadiance1
-											,vec3 cloudIrRadiance2
-											,vec2 maxHalfAngle
-											,vec2 tanHalfFov)
+											,vec3 cloudIrRadiance2)
 {
 	RaytracePixelOutput res;
 	res.colour				=vec4(0,0,0,1.0);
@@ -507,10 +503,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
-	// we want to distribute uniformly with respect to angle from the centre.
-	// so angle.x = clip_pos.x*max_angle.
-	// and		x = sin(angle.x), z = cos(angle.x)
-	// so modified clip is clip.xyz=sin(angle.xy),cos(angle.x)cos(angle.y);
 	float sineFactor		=1.0/length(clip_pos.xyz);
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 

@@ -216,24 +216,5 @@ void GetMSAACoordinates(Texture2DMS<vec4> textureMS,vec2 texc,out int2 pos2,out 
 	textureMS.GetDimensions(dims.x,dims.y,numSamples);
 	pos2		=int2(texc*vec2(dims.xy));
 }
-
-vec3 ClipPosToViewspaceDir(vec2 clip_pos,vec2 maxAngle)
-{
-	vec2 angle				=clip_pos.xy*maxAngle;
-	vec3 viewspace_dir		=normalize(vec3(sin(angle.x)*cos(angle.y),sin(angle.y),-cos(angle.x)*cos(angle.y)));
-	return viewspace_dir;
-}
-
-vec2 ProjectedToAngularTexCoords(vec2 texcoords,vec2 maxHalfAngle,vec2 tanHalfFov)
-{
-	vec3 flat_clip	=normalize(vec3(tanHalfFov*(texcoords*2.0-vec2(1.0,1.0)),1.0));
-	vec2 angle;
-	angle.y			=asin(flat_clip.y);
-	angle.x			=asin(flat_clip.x/cos(angle.y));
-	vec2 clip_pos	=angle/maxHalfAngle;
-	vec2 texc		=0.5*(clip_pos.xy+vec2(1.0,1.0));
-	return texc;
-}
-
 #endif
 #endif

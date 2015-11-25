@@ -296,8 +296,6 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth	=reverseDepth;
-	vec2 angularTexCoords	=ProjectedToAngularTexCoords(IN.texCoords,maxHalfAngle,tanHalfFov);
-	vec2 angularTexCoords2	=fullResToLowResTransformXYWH.xy+angularTexCoords*fullResToLowResTransformXYWH.zw;
 	TwoColourCompositeOutput result			=CompositeAtmospherics(IN.clip_pos
 															,IN.depth_texc
 															,imageTexture
@@ -307,12 +305,13 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,depthTexture
 															,invViewProj
 															,depthInterpretationStruct
-															,angularTexCoords2
+															,IN.lowResTexCoords
 															,inscatterVolumeTexture
 															,shadowTexture);
+	//result.add=vec4(IN.lowResTexCoords,0,0);
+	//result.multiply=vec4(0.5,0.5,1.0,1.0);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
-	//result.add.rg=frac(IN.texCoords);
 	return result;
 }
 

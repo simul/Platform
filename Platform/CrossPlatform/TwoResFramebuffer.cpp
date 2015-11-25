@@ -135,6 +135,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	ERRNO_CHECK
 	for (int i = 0; i < 4; i++)
 	{
+	//	lowResFramebuffers[i]->ensureTexture2DSizeAndFormat(renderPlatform,BufferWidth,BufferWidth,crossplatform::RGBA_16_FLOAT,true,true);
 		lowResFramebuffers[i]->ensureTextureArraySizeAndFormat(renderPlatform,BufferWidth,BufferWidth,6,crossplatform::RGBA_16_FLOAT,true,false,true);
 	}
 	ERRNO_CHECK
@@ -260,8 +261,8 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	int H				=(Height+Downscale-1)/Downscale+1;
 	int OutsideWidth	=W*Downscale;
 	int OutsideHeight	=H*Downscale;
-	dx					*=OutsideWidth*viewStruct.proj._11;
-	dy					*=OutsideHeight*viewStruct.proj._22;
+	dx					*=Width*viewStruct.proj._11;
+	dy					*=Height*viewStruct.proj._22;
 	view_o.DefineFromYZ(new_up_dir,new_view_dir);
 	static float cc=0.5f;
 	vec2 dp				(-cc*dx,-cc*dy);
