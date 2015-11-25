@@ -21,6 +21,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform float pad151663;
 	uniform vec3 viewPosKm;
 	uniform uint layerIndex;
+	uniform mat4 invView;
 	uniform mat4 invViewProj;
 	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
 	uniform mat4 moistureToWorldSpaceMatrix;
@@ -54,6 +55,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int2 offsetToCorner;
 
 	uniform int2 edge;
+	uniform vec2 maxHalfAngle;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)

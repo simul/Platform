@@ -276,16 +276,16 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	float meanFadeDistance	=1.0;
 
-	vec3 world_pos					=viewPosKm;
+	vec3 world_pos			=viewPosKm;
 
 	// This provides the range of texcoords that is lit.
-	int3 c_offset					=int3(sign(view.x),sign(view.y),sign(view.z));
-	int3 start_c_offset				=-c_offset;
-	start_c_offset					=int3(max(start_c_offset.x,0),max(start_c_offset.y,0),max(start_c_offset.z,0));
-	vec3 viewScaled					=view/scaleOfGridCoords;
-	viewScaled						=normalize(viewScaled);
+	int3 c_offset			=int3(sign(view.x),sign(view.y),sign(view.z));
+	int3 start_c_offset		=-c_offset;
+	start_c_offset			=int3(max(start_c_offset.x,0),max(start_c_offset.y,0),max(start_c_offset.z,0));
+	vec3 viewScaled			=view/scaleOfGridCoords;
+	viewScaled				=normalize(viewScaled);
 
-	vec3 offset_vec	=vec3(0,0,0);
+	vec3 offset_vec			=vec3(0,0,0);
 	if(world_pos.z<min_z)
 	{
 		float a		=1.0/(view.z+0.00001);
@@ -301,15 +301,15 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
 	vec3 startOffsetFromOrigin		=viewPosKm-gridOriginPosKm;
 	vec3 offsetFromOrigin			=world_pos-gridOriginPosKm;
-	vec3 p0							=offsetFromOrigin/scaleOfGridCoords;
+	vec3 p0							=startOffsetFromOrigin/scaleOfGridCoords;
 	int3 c0							=int3(floor(p0) + start_c_offset);
 	vec3 gridScale					=scaleOfGridCoords;
-	vec3 P0							=offsetFromOrigin/scaleOfGridCoords/2.0;
+	vec3 P0							=startOffsetFromOrigin/scaleOfGridCoords/2.0;
 	int3 C0							=c0>>1;
 	
 	float distanceKm				=length(offset_vec);
-	int3 c							=c0;
-
+	vec3 p							=offsetFromOrigin/scaleOfGridCoords;
+	int3 c							=int3(floor(p) + start_c_offset);
 	int idx=0;
 	float W							=halfClipSize;
 	const float start				=0.866*0.866;//0.707 for 2D, 0.866 for 3D;
@@ -341,14 +341,14 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 			C0			-=	abs(C0&int3(1,1,1));
 			C0			=	C0>>1;
 			idx			++;
-			b						=abs(c-C0*2);
+			b			=	abs(c-C0*2);
 		}
 		else break;
 	}
 	for(int i=0;i<255;i++)
 	{
 		world_pos					+=0.001*view;
-		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm)//||solidDist_nearFar.y<lastFadeDistance)
+		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm||solidDist_nearFar.y<lastFadeDistance)
 			break;
 		offsetFromOrigin			=world_pos-gridOriginPosKm;
 
@@ -360,7 +360,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 		vec3 p1						=c1;
 		vec3 dp						=p1-p;
 		vec3 D						=(dp/viewScaled);
-		//D+=100.0*step(D,vec3(0,0,0));
+
 		float e						=min(min(D.x,D.y),D.z);
 		// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
 		vec3 N						=step(D,vec3(e,e,e));
@@ -371,7 +371,6 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 
 		// What offset was the original position from the centre of the cube?
 		p1							=p+e*viewScaled;
-		//vec3 d0						=normalize(2.0*abs(frac(p1)-vec3(.5,.5,.5)));
 	
 		// We fade out the intermediate steps as we approach the boundary of a detail change.
 		// Now sample at the end point:
@@ -389,7 +388,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 		float fade					=1.0-(fade_inter);
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
-		 b							=abs(c-C0*2);
+		b							=abs(c-C0*2);
 		if(fade>0)
 		{
 			vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
@@ -432,7 +431,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 				}
 			}
 		}
-		lastFadeDistance=fadeDistance;
+		lastFadeDistance		=lerp(lastFadeDistance,fadeDistance,colour.a);
 		if(max(max(b.x,b.y),0)>=W)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
@@ -460,6 +459,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 
 	return res;
 }
+
 
 float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 inverseScalesKm,vec3 world_pos_km,vec2 rainCentreKm,float rainRadiusKm)
 {

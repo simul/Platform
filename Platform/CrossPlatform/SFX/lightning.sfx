@@ -516,7 +516,7 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	
 	float br				=saturate(2.0*(1.0-m));
 	//br					=max(brightnessToUnity,br);
-	br						+=brightnessToUnity;//*saturate(exp(-4.0*s)-0.05)/0.95;
+	br						+=brightnessToUnity*saturate(exp(-4.0*s)-0.05)/0.95;
 	//br					+=IN.brightness*saturate(10.0*(1.0-m));
 	if(progress>0.0)
 	{
