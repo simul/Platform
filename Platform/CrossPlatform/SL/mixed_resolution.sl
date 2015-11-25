@@ -214,7 +214,7 @@ vec4 Samescale(Texture2D sourceDepthTexture
 	return farthest_nearest;
 }
 
-vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 texCoords1, vec2 sourceTexCoords, vec2 texelRange
+vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 sourceTexCoords, vec2 texelRange
 	, DepthIntepretationStruct depthInterpretationStruct, float nearThresholdDepth,vec2 stochasticOffset,uint2 scale)
 {
 	// Stochastic offset goes from -1 to +1

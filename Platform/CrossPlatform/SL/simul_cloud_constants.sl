@@ -25,7 +25,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
 	uniform mat4 moistureToWorldSpaceMatrix;
 	uniform mat4 clipPosToScatteringVolumeMatrix;
-	uniform mat4 worldViewProj;
+	uniform mat4 viewProj;
 	uniform vec4 depthToLinFadeDistParams;
 	uniform vec2 tanHalfFov;
 	uniform float exposure;

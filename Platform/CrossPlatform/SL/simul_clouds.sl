@@ -244,7 +244,8 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 								,Texture3D noiseTexture3D
 								,DepthIntepretationStruct depthInterpretationStruct
 								,vec4 dlookup
-								,vec2 texCoords
+								,vec3 view
+								,vec4 clip_pos
 								,vec3 sourcePosKm_w
 								,float source_radius
 								,vec3 spectralFluxOver1e6
@@ -256,10 +257,6 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	FarNearPixelOutput res;
 	res.farColour			=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
-	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
-	clip_pos.x				+=2.0*texCoords.x;
-	clip_pos.y				-=2.0*texCoords.y;
-	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 
 	vec3 dir_to_source		=normalize(sourcePosKm_w-viewPosKm);
 	float cos0				=dot(dir_to_source.xyz,view.xyz);
@@ -315,7 +312,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	const float start				=0.866*0.866;//0.707 for 2D, 0.866 for 3D;
 	const float ends				=1.0;
 	const float range				=ends-start;
-	//vec3 volume_texc				=ScreenToVolumeTexcoords(clipPosToScatteringVolumeMatrix,texCoords,0.0);
+
 
 	vec4 colour						=vec4(0.0,0.0,0.0,1.0);
 	vec4 nearColour					=vec4(0.0,0.0,0.0,1.0);
@@ -489,7 +486,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
                                             ,bool do_depth_mix
 											,DepthIntepretationStruct depthInterpretationStruct
 											,vec4 dlookup
-											,vec2 texCoords
+											,vec3 view
+											,vec4 clip_pos
 											,vec2 unmodifiedTexCoords
 											,bool noise
 											,bool do_rain_effect
@@ -500,12 +498,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	res.colour				=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
 	res.nearFarDepth		=depthToLinearDistance(dlookup, depthInterpretationStruct);
-	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
-	clip_pos.x				+=2.0*texCoords.x;
-	clip_pos.y				-=2.0*texCoords.y;
-	float sineFactor		=1.0/length(clip_pos.xyz);
-	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
-
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
 	vec3 lightDir			=lerp(directionToMoon,directionToSun,s);
@@ -794,7 +786,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	res.nearFarDepth.wy	=min(res.nearFarDepth.wy,vec2(meanFadeDistance,meanFadeDistance));
 	res.nearFarDepth.z	=max(0.001,saturate(lastFadeDistance-meanFadeDistance));//*(1.0-colour.a);
 	res.nearFarDepth.w	=meanFadeDistance;
-
 	return res;
 }
 #endif

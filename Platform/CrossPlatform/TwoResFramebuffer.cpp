@@ -52,6 +52,8 @@ TwoResFramebuffer::TwoResFramebuffer()
 	,lossTexture(NULL)
 	,Width(0)
 	,Height(0)
+	,BufferWidth(0)
+	,BufferHeight(0)
 	,Downscale(0)
 	,pixelOffset(0.f,0.f)
 	,depthFormat(RGBA_32_FLOAT)
@@ -125,8 +127,8 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	if(Width<=0||Height<=0||Downscale<=0)
 		return;
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
-	int BufferWidth = (Width + Downscale - 1) / Downscale + 1;
-	int BufferHeight = (Height + Downscale - 1) / Downscale + 1;
+	BufferWidth = (Width + Downscale - 1) / Downscale + 1;
+	BufferHeight = (Height + Downscale - 1) / Downscale + 1;
 	if(Downscale==1)
 	{
 		BufferWidth=Width;
@@ -160,6 +162,10 @@ void TwoResFramebuffer::InvalidateDeviceObjects()
 	SAFE_DELETE(lossTexture);
 	SAFE_DELETE(volumeTextures[0]);
 	SAFE_DELETE(volumeTextures[1]);
+	Width=0;
+	Height=0;
+	BufferWidth=0;
+	BufferHeight=0;
 }
 
 void TwoResFramebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
@@ -298,7 +304,7 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 		amortizationStruct.updateRegion(io,pixelOffset/float(Downscale));
 		amortizationStruct.lowResOffset+=io;
 
-		int2 texsize(lowResFramebuffers[0]->width,lowResFramebuffers[0]->length);
+		int2 texsize(BufferWidth,BufferHeight);
 		while(amortizationStruct.lowResOffset.x<0)
 			amortizationStruct.lowResOffset.x+=texsize.x;
 		while(amortizationStruct.lowResOffset.y<0)

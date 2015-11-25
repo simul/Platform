@@ -310,9 +310,7 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,
 		dist				=depthToLinearDistance(dlookup, depthInterpretationStruct);
 	float dz				=cloudAltitudeMetres-eyePosition.z;
 	vec4 ret				=vec4(0,0,0,1.0);
-	pos						+=offsetToCorner;
-	pos						=pos%targetTextureSize1;
-
+/*
 	if(dz>0||view.z<0)
 	{
 		float Rh				=6378.0+cloudAltitudeMetres*0.001;
@@ -357,7 +355,7 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,
 				ret.a=1.0-ret.a;
 			}
 		}
-	}
+	}*/
 	outputTexture[pos]	=ret;
 }
 

@@ -341,6 +341,36 @@ void simul::crossplatform::MakeCubeMatrices(simul::math::Matrix4x4 mat[],const f
 		mat[i]._44=1.f;
 	}
 }
+		void SIMUL_CROSSPLATFORM_EXPORT GetCubeMatrix(float *mat4x4,const float *cam_pos,bool ReverseDepth);
+void simul::crossplatform::GetCubeMatrix(float *mat4x4,int i,const float *cam_pos,bool ReverseDepth)
+{
+	vec3 zero_pos(0,0,0);
+	if(ReverseDepth)
+	{
+		static math::Matrix4x4 view_matrices[6];
+		static bool init=false;
+		if(!init)
+		{
+			MakeCubeMatrices(view_matrices,(const float*)&zero_pos,true);
+		}
+		memcpy(mat4x4,view_matrices[i],sizeof(float)*16);
+	}
+	else
+	{
+		static math::Matrix4x4 view_matrices[6];
+		static bool init=false;
+		if(!init)
+		{
+			MakeCubeMatrices(view_matrices,(const float*)&zero_pos,false);
+		}
+		memcpy(mat4x4,view_matrices[i],sizeof(float)*16);
+	}
+	Vector3 loc_cam_pos;
+	simul::math::Multiply3(loc_cam_pos,*((const math::Matrix4x4*)mat4x4),cam_pos);
+	loc_cam_pos*=-1.f;
+	((math::Matrix4x4*)mat4x4)->InsertRow(3,loc_cam_pos);
+	((math::Matrix4x4*)mat4x4)->_44=1.f;
+}
 
 math::Matrix4x4 simul::crossplatform::MakeOrthoProjectionMatrix(float left,
  	float right,

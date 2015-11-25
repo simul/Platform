@@ -64,6 +64,7 @@ void dx11::Texture::InvalidateDeviceObjects()
 	{
 		for(int i=0;i<numUav;i++)
 			SAFE_RELEASE(unorderedAccessViews[i]);
+		numUav=0;
 		delete [] unorderedAccessViews;
 		unorderedAccessViews=NULL;
 	}
@@ -470,6 +471,7 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 			delete [] mipShaderResourceViews;
 			mipShaderResourceViews=NULL;
 		}
+		numUav=m;
 			unorderedAccessViews=new ID3D11UnorderedAccessView*[m];
 			for(int i=0;i<m;i++)
 			{
@@ -624,7 +626,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 		}
 		if(m<1)
 			m=1;
-		
+		numUav=m;
 			unorderedAccessViews=new ID3D11UnorderedAccessView*[m];
 			for(int i=0;i<m;i++)
 			{
@@ -671,6 +673,31 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 
 void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
 {
+	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	D3D11_TEXTURE2D_DESC textureDesc;
+	bool ok=true;
+	if(texture)
+	{
+		ID3D11Texture2D* ppd(NULL);
+		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)
+			ok=false;
+		else
+		{
+			ppd->GetDesc(&textureDesc);
+			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=format)
+				ok=false;
+			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
+				ok=false;
+			if(rendertarget!=((textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET)==D3D11_BIND_RENDER_TARGET))
+				ok=false;
+		}
+		SAFE_RELEASE(ppd);
+	}
+	else
+		ok=false; 
+	if(ok)
+		return;
+
 	pixelFormat=f;
 	InvalidateDeviceObjects();
 	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);

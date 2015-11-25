@@ -19,6 +19,7 @@
 #define texture_clamp_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearestClamp,texc,lod)
 #define texture_clamp_mirror_lod(tex,texc,lod) tex.SampleLevel(cmcSamplerState,texc,lod)
 #define texture_cube(tex,texc) tex.Sample(cubeSamplerState,texc);
+#define texture_cube_lod(tex,texc,lod) tex.SampleLevel(cubeSamplerState,texc,lod);
 
 #define texture_wwc(tex,texc) tex.Sample(wwcSamplerState,texc)
 #define texture_wwc_lod(tex,texc,lod) tex.SampleLevel(wwcSamplerState,texc,lod)

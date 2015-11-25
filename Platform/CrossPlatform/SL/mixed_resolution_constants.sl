@@ -3,6 +3,8 @@
 #define MIXED_RESOLUTIONS_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
+	uniform mat4 invViewProj;		// Transform from render clip to true view direction
+	uniform mat4 viewProj;			// Transform from view direction to current frustum
 	uniform vec4 depthToLinFadeDistParams;
 	uniform uint2 source_dims;
 	uniform uint2 max_dims;

@@ -87,7 +87,7 @@ shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
 	float az		=texc.x*3.1415926536*2.0;
 	float cs		=cos(az);
 	float ss		=sin(az);
-	vec3 view		=normalize(vec3(ce*cs,ce*ss,se));
+	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
 	vec4 res		=texture_cube(cubeTexture,view);
 
 	return res;

@@ -149,6 +149,10 @@ namespace simul
 			virtual void InvalidateDeviceObjects();
 			virtual void SetDimensions(int w,int h);
 			virtual void GetDimensions(int &w,int &h);
+			virtual int2 GetLowResDimensions() const
+			{
+				return int2(BufferWidth,BufferHeight);
+			}
 			// Assign the current frame's projection matrix for this buffer. Just for debugging.
 			void SetProjection(const float *p);
 			int GetDownscale() const
@@ -206,7 +210,7 @@ namespace simul
 			}
 		protected:
 			mat4								proj;
-			int									Width,Height,Downscale;
+			int									Width,Height,BufferWidth,BufferHeight,Downscale;
 			AmortizationStruct					amortizationStruct;
 			int									volume_num;
 			crossplatform::PixelFormat			depthFormat;
