@@ -79,6 +79,20 @@ shader vec4 DebugPS(v2f IN) : SV_TARGET
 	return c;
 }
 
+shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 texc		=IN.texCoords.xy;
+	float se		=texc.y*2.0-1.0;
+	float ce		=cos(asin(se));
+	float az		=texc.x*3.1415926536*2.0;
+	float cs		=cos(az);
+	float ss		=sin(az);
+	vec3 view		=normalize(vec3(ce*cs,ce*ss,se));
+	vec4 res		=texture_cube(cubeTexture,view);
+
+	return res;
+}
+
 shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 {
 	vec2 texc	=IN.texCoords.xy;
@@ -434,6 +448,28 @@ technique clear
     }
 }
 
+technique show_cubemap
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_4_0);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowCubemap()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_4_0);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowCubemap()));
+    }
+}
+
 technique textured
 {
     pass noblend
@@ -507,7 +543,16 @@ technique vec3_input_signature
 
 technique draw_cubemap
 {
-    pass p0 
+    pass noblend 
+    {		
+		SetRasterizerState( RenderFrontfaceCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_DrawCubemap()));
+		SetPixelShader(CompileShader(ps_4_0,PS_DrawCubemap()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+    pass blend  
     {		
 		SetRasterizerState( RenderFrontfaceCull );
         SetGeometryShader(NULL);

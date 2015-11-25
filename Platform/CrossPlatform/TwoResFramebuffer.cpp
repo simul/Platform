@@ -135,7 +135,7 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	ERRNO_CHECK
 	for (int i = 0; i < 4; i++)
 	{
-		lowResFramebuffers[i]->ensureTexture2DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,crossplatform::RGBA_16_FLOAT,true,true);
+		lowResFramebuffers[i]->ensureTextureArraySizeAndFormat(renderPlatform,BufferWidth,BufferWidth,6,crossplatform::RGBA_16_FLOAT,true,false,true);
 	}
 	ERRNO_CHECK
 	// We're going to TRY to encode near and far loss into two UINT's, for faster results

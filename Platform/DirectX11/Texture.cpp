@@ -37,6 +37,7 @@ dx11::Texture::Texture()
 	,last_context(NULL)
 	,m_pOldDepthSurface(NULL)
 	,num_OldViewports(0)
+	,numUav(0)
 {
 	memset(&mapped,0,sizeof(mapped));
 	for(int i=0;i<16;i++)
@@ -61,7 +62,7 @@ void dx11::Texture::InvalidateDeviceObjects()
 	}
 	if(unorderedAccessViews)
 	{
-		for(int i=0;i<mips;i++)
+		for(int i=0;i<numUav;i++)
 			SAFE_RELEASE(unorderedAccessViews[i]);
 		delete [] unorderedAccessViews;
 		unorderedAccessViews=NULL;
@@ -681,6 +682,9 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 		m--;
 		s=2<<m;
 	}
+	width					=w;
+	length					=l;
+
 	desc.Width				=w;
 	desc.Height				=l;
 	desc.Format				=format;
@@ -720,7 +724,20 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 			delete [] unorderedAccessViews;
 			unorderedAccessViews=NULL;
 		}
-		if(m>0)
+			numUav=m;
+		if(cubemap)
+		{
+			unorderedAccessViews=new ID3D11UnorderedAccessView*[6];
+			for(int i=0;i<6;i++)
+			{
+				uav_desc.Texture2DArray.ArraySize	=1;
+				uav_desc.Texture2DArray.FirstArraySlice=i;
+
+				V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessViews[i]));
+			}
+			numUav=6;
+		}
+		else if(m>0)
 		{
 			unorderedAccessViews=new ID3D11UnorderedAccessView*[m];
 			for(int i=0;i<m;i++)

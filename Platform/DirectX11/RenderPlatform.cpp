@@ -1184,6 +1184,11 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 			tech=debugEffect->GetTechniqueByName("show_volume");
 			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"volumeTexture",srv);
 		}
+		else if(desc.ViewDimension==D3D_SRV_DIMENSION_TEXTURECUBE)
+		{
+			tech=debugEffect->GetTechniqueByName("show_cubemap");
+			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"cubeTexture",srv);
+		}
 	}
 	unsigned int num_v=1;
 	D3D11_VIEWPORT viewport;

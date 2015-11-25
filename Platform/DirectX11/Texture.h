@@ -48,7 +48,7 @@ namespace simul
 			}
 			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0)
 			{
-				if(mip<0||mip>=mips)
+				if(mip<0||mip>=numUav)
 					return NULL;
 				if(!unorderedAccessViews)
 					return NULL;
@@ -123,6 +123,7 @@ namespace simul
 			D3D11_VIEWPORT						m_OldViewports[16];
 			unsigned							num_OldViewports;
 			friend class CubemapFramebuffer;
+			int numUav;
 		};
 	}
 }
