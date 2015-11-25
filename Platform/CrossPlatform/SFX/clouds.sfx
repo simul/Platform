@@ -289,17 +289,14 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	// offset by one texel to allow -1 in x and y:
-	vec2 texCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
-	
-	pos+=offsetToCorner;
-	pos=pos%targetTextureSize;
+	vec2 texCoords			=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
 	
 	vec4 dlookup 				=vec4(0,0,0,0);//TEXTURE_LOAD(depthTexture,pos);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth				=reverseDepth;
 
-	RaytracePixelOutput f	=RaytraceCloudsForward(
+	RaytracePixelOutput f		=RaytraceCloudsForward(
 									cloudDensity
 									,rainMapTexture
 									,noiseTexture3D

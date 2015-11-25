@@ -501,7 +501,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,vec2 tanHalfFov)
 {
 	RaytracePixelOutput res;
-	res.colour				=vec4(0,1,0,1.0);
+	res.colour				=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
 	res.nearFarDepth		=depthToLinearDistance(dlookup, depthInterpretationStruct);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
@@ -512,7 +512,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	// and		x = sin(angle.x), z = cos(angle.x)
 	// so modified clip is clip.xyz=sin(angle.xy),cos(angle.x)cos(angle.y);
 	float sineFactor		=1.0/length(clip_pos.xyz);
-	vec3 view				=normalize(mul(clip_pos,invViewProj).xyz);
+	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
@@ -803,7 +803,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	res.nearFarDepth.z	=max(0.001,saturate(lastFadeDistance-meanFadeDistance));//*(1.0-colour.a);
 	res.nearFarDepth.w	=meanFadeDistance;
 
-res.colour.rgb=frac(view.yyy*10.0);
 	return res;
 }
 #endif
