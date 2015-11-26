@@ -65,6 +65,8 @@ TwoResFramebuffer::TwoResFramebuffer()
 		lowResFramebuffers[i] = NULL;
 	for(int i=0;i<4;i++)
 		nearFarTextures[i]=NULL;
+	for(int i=0;i<2;i++)
+		updateTextures[i]=NULL;
 }
 
 void TwoResFramebuffer::Swap()
@@ -74,10 +76,20 @@ void TwoResFramebuffer::Swap()
 		std::swap(nearFarTextures[i],nearFarTextures[1+(i+1)%3]);
 	}
 }
+
+void TwoResFramebuffer::SwapUpdateTextures()
+{
+	std::swap(updateTextures[0],updateTextures[1]);
+}
  
 crossplatform::Texture *TwoResFramebuffer::GetLowResDepthTexture(int idx)
 {
 	return nearFarTextures[idx>=0?idx:0];
+}
+
+crossplatform::Texture *TwoResFramebuffer::GetUpdateTexture(int idx)
+{
+	return updateTextures[idx];
 }
 
 crossplatform::PixelFormat TwoResFramebuffer::GetDepthFormat() const
@@ -115,6 +127,16 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		nearFarTextures[i]=renderPlatform->CreateTexture("ESRAM");
 	ERRNO_CHECK
 		nearFarTextures[i]->MoveToFastRAM();
+	ERRNO_CHECK
+	}
+	for(int i=0;i<2;i++)
+	{
+	ERRNO_CHECK
+		SAFE_DELETE(updateTextures[i]);
+	ERRNO_CHECK
+		updateTextures[i]=renderPlatform->CreateTexture("ESRAM");
+	ERRNO_CHECK
+		updateTextures[i]->MoveToFastRAM();
 	ERRNO_CHECK
 	}
 	ERRNO_CHECK
@@ -159,6 +181,8 @@ void TwoResFramebuffer::InvalidateDeviceObjects()
 		SAFE_DELETE(lowResFramebuffers[i]);
 	for(int i=0;i<4;i++)
 		SAFE_DELETE(nearFarTextures[i]);
+	for(int i=0;i<2;i++)
+		SAFE_DELETE(updateTextures[i]);
 	SAFE_DELETE(lossTexture);
 	SAFE_DELETE(volumeTextures[0]);
 	SAFE_DELETE(volumeTextures[1]);
@@ -229,6 +253,16 @@ void TwoResFramebuffer::SetDimensions(int w,int h)
 		Height=h;
 		RestoreDeviceObjects(renderPlatform);
 	}
+}
+
+void TwoResFramebuffer::SetCubeFrustumRange(int i,vec4 r)
+{
+	cubeFrustumRange[i]=r;
+}
+
+vec4 TwoResFramebuffer::GetCubeFrustumRange(int i) const
+{
+	return cubeFrustumRange[i];
 }
 
 void TwoResFramebuffer::SetDownscale(int d)
@@ -336,7 +370,7 @@ void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceC
 	}
 	int x=x0;
 	int y=y0;
-	int W=w,L=l/2;
+	int W=dx/3,L=l/2;
 	for(int i=0;i<4;i++)
 	{
 		crossplatform::Texture *t=GetLowResDepthTexture(i);
@@ -352,6 +386,8 @@ void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceC
 			y+=L;
 		}
 	}
+	deviceContext.renderPlatform->DrawTexture(deviceContext,x0,y0,W,L,updateTextures[0]);
+	deviceContext.renderPlatform->DrawTexture(deviceContext,x0,y0+L,W,L,updateTextures[1]);
 	//deviceContext.renderPlatform->DrawDepth(deviceContext		,x0+W/2	,y0+L/2	,W/2,L/2,depthTexture,viewport,proj);
 	//deviceContext.renderPlatform->Print(deviceContext			,x0+W/2	,y0+L/2	,"Main Depth",white,black_transparent);
 }

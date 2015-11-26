@@ -12,22 +12,24 @@ uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 #include "../SL/earth_shadow_fade.sl"
 #include "../SL/debug_constants.sl"
 
-uniform Texture3D cloudDensity					SIMUL_TEXTURE_REGISTER(0);
-uniform Texture3D cloudDensity2					SIMUL_TEXTURE_REGISTER(1);
+uniform Texture3D cloudDensity				;
+uniform Texture3D cloudDensity2				;
 
-uniform Texture2D cloudShadowTexture			SIMUL_TEXTURE_REGISTER(2);
-uniform Texture2D lossTexture					SIMUL_TEXTURE_REGISTER(3);
-uniform Texture2D inscTexture					SIMUL_TEXTURE_REGISTER(1);
-uniform Texture2D skylTexture					SIMUL_TEXTURE_REGISTER(4);
-uniform TextureCube depthTexture				SIMUL_TEXTURE_REGISTER(5);
-uniform Texture3D noiseTexture3D				SIMUL_TEXTURE_REGISTER(6);
-uniform TextureCube clouds2DTexture				SIMUL_TEXTURE_REGISTER(7);
-uniform Texture2D illuminationTexture			SIMUL_TEXTURE_REGISTER(8);
-uniform Texture2D lightTableTexture				SIMUL_TEXTURE_REGISTER(9);
-uniform Texture2D rainbowLookupTexture			SIMUL_TEXTURE_REGISTER(10);
-uniform Texture2D coronaLookupTexture			SIMUL_TEXTURE_REGISTER(11);
-uniform Texture3D volumeInscatterTexture		SIMUL_TEXTURE_REGISTER(1);
-uniform Texture2D rainMapTexture				SIMUL_TEXTURE_REGISTER(2);
+uniform Texture2D cloudShadowTexture		;
+uniform Texture2D lossTexture				;
+uniform Texture2D inscTexture				;
+uniform Texture2D skylTexture				;
+uniform TextureCube depthTexture			;
+uniform Texture3D noiseTexture3D			;
+uniform TextureCube clouds2DTexture			;
+uniform Texture2D illuminationTexture		;
+uniform Texture2D lightTableTexture			;
+uniform Texture2D rainbowLookupTexture		;
+uniform Texture2D coronaLookupTexture		;
+uniform Texture3D volumeInscatterTexture	;
+uniform Texture2D rainMapTexture			;
+/// The previous texture area:
+uniform Texture2D updateTexture				;
 uniform RWTexture3D<uchar4> inputTexture3d;
 uniform RWTexture3D<uchar4> outputTexture3d;
 uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries;
@@ -289,12 +291,9 @@ shader FarNearPixelOutput PS_Lightpass_DepthForward(posTexVertexOutput IN)
 {
 	return PS_Lightpass(IN,true);
 }
-
-void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
+void Raytrace(int2 pos,bool reverseDepth,bool rain)
 {
-	int2 idx				=int2(g.xy*8+t.xy);
-	int2 pos				=idx*amortization+amortizationOffset.xy;
-	if(pos.x>=edge.x||pos.y>=edge.y)
+	if(updateTexture[pos].r==0.0)
 		return;
 	vec2 texCoords			=vec2(pos.xy)/vec2(targetTextureSize);
 	DepthIntepretationStruct depthInterpretationStruct;
@@ -309,8 +308,8 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 	// Transform view into the proper frustum
 	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
 	frustum_clip_pos		/=frustum_clip_pos.w;
-	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
-		return;
+//	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
+//		return;
 	vec2 atmosTexCoords		=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	atmosTexCoords.y		=1.0-atmosTexCoords.y;
 	atmosTexCoords			=frac((-mixedResTransformXYWH.xy+atmosTexCoords)*mixedResTransformXYWH.zw);
@@ -357,78 +356,30 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 	outputTexture3[pos]		=f.nearFarDepth;
 }
 
-void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
+void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
 {
 	int2 idx				=int2(g.xy*8+t.xy);
-	int2 pos				=idx*amortization+amortizationOffset.xy;
+	int2 pos				=targetRange.xy+idx*amortization+amortizationOffset.xy;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
-	// offset by one texel to allow -1 in x and y:
-	vec2 INtexCoords		=vec2(pos.xy)/vec2(targetTextureSize);
-	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
-	//  to the texCoords of our "window". These wrap around 
-	INtexCoords				=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize);
-	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
-	//texCoords				/=mixedResTransformXYWH.zw;
-	//texCoords				=frac(texCoords);
-	//texCoords				*=mixedResTransformXYWH.zw;
-	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize)*mixedResTransformXYWH.zw;
-	
-	pos+=offsetToCorner;
-	pos=pos%targetTextureSize;
-	
-	vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth				=reverseDepth;
-	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
-	clip_pos.x				+=2.0*texCoords.x;
-	clip_pos.y				-=2.0*texCoords.y;
-	float sineFactor		=1.0/length(clip_pos.xyz);
-	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
-	vec4 dlookup 			=texture_cube_lod(depthTexture,view,0);
-	// Transform view into the proper frustum
-	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
-	frustum_clip_pos		/=frustum_clip_pos.w;
-	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
+	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
 		return;
+	Raytrace(pos, reverseDepth, rain);
+}
 
-	RaytracePixelOutput f	=RaytraceCloudsForward(
-									cloudDensity
-									,rainMapTexture
-									,noiseTexture3D
-									,lightTableTexture
-									,illuminationTexture
-									,rainbowLookupTexture
-									,coronaLookupTexture
-									,lossTexture
-									,inscTexture
-									,skylTexture,volumeInscatterTexture
-									,true
-									,depthInterpretationStruct
-									,dlookup
-									,view
-									,clip_pos
-									,unmodifiedTexCoords
-									,true
-									,rain
-									,cloudIrRadiance1,cloudIrRadiance2
-									);
-	vec4 t2d				=texture_cube_lod(clouds2DTexture,view,0);
-	// blend:
-	vec4 c					=t2d;
-	c.rgb					*=f.colour.a;
-	c.rgb					+=f.colour.rgb;
-	c.a						=t2d.a*f.colour.a;
-	outputTexture1[pos]		=c;
-	float n					=float(dlookup.y==0);
-	vec4 cn					=t2d;
-	cn.rgb					*=f.nearColour.a*n;
-	cn.a					=1.0-n*(1.0-t2d.a);
-	cn.rgb					+=f.nearColour.rgb;
-	cn.a					*=f.nearColour.a;
-	outputTexture2[pos]		=cn;
-	outputTexture3[pos]		=f.nearFarDepth;
+void CS_Edge(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,bool rain)
+{
+	int2 idx				=int2(g.xy*8+t.xy);
+	int2 pos				=targetRange.xy+idx;
+	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
+		return;
+	vec4 u=updateTexture[pos];
+	// current value is b, old value is r
+	if(u.r<1.0&&u.b>0.0)
+	{
+	//	Raytrace(pos, reverseDepth, rain);
+		outputTexture1[pos]		=vec4(1,0,0,0);
+	}
 }
 
 FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool rain)
@@ -546,15 +497,15 @@ shader void CS_Raytrace_depthForward(uint3 g : SV_GroupID, uint3 t : SV_GroupThr
 	CS_Raytrace(g,t,false,true);
 }
 CS_LAYOUT(8,8,1)
-shader void CS_Fill_depthReverse(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+shader void CS_Edge_depthReverse(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	CS_Fill(g,t,true,true);
+	CS_Edge(g,t,true,true);
 }
 
 CS_LAYOUT(8,8,1)
-shader void CS_Fill_depthForward(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+shader void CS_Edge_depthForward(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	CS_Fill(g,t,false,true);
+	CS_Edge(g,t,false,true);
 }
 
 CS_LAYOUT(8,8,1)
@@ -752,15 +703,15 @@ fxgroup raytrace
 			SetPixelShader(CompileShader(ps_5_0,PS_Lightpass_DepthForward()));
 		}
 	}
-	technique fill
+	technique edge
 	{
 		pass depth_reverse 
 		{
-			SetComputeShader(CompileShader(cs_5_0,CS_Fill_depthReverse()));
+			SetComputeShader(CompileShader(cs_5_0,CS_Edge_depthReverse()));
 		}
 		pass depth_forward 
 		{
-			SetComputeShader(CompileShader(cs_5_0,CS_Fill_depthForward()));
+			SetComputeShader(CompileShader(cs_5_0,CS_Edge_depthForward()));
 		}
 	}
 	technique full_compute

@@ -326,12 +326,26 @@
 			r.w=w+v.w;
 			return r;
 		}
+		void operator+=(vec4 v)
+		{
+			x+=v.x;
+			y+=v.y;
+			z+=v.z;
+			w+=v.w;
+		}
 		void operator*=(float m)
 		{
 			x*=m;
 			y*=m;
 			z*=m;
 			w*=m;
+		}
+		void operator/=(float m)
+		{
+			x/=m;
+			y/=m;
+			z/=m;
+			w/=m;
 		}
 		void operator*=(const float *v)
 		{
@@ -459,6 +473,11 @@
 		uint2(const int *v)
 		{
 			operator=(v);
+		}
+		uint2(const float *v)
+		{
+			x=uint(v[0]);
+			y=uint(v[1]);
 		}
 		uint2(const unsigned *v)
 		{
