@@ -38,6 +38,7 @@ dx11::Texture::Texture()
 	,m_pOldDepthSurface(NULL)
 	,num_OldViewports(0)
 	,numUav(0)
+	,numSrv(0)
 {
 	memset(&mapped,0,sizeof(mapped));
 	for(int i=0;i<16;i++)
@@ -70,8 +71,9 @@ void dx11::Texture::InvalidateDeviceObjects()
 	}
 	if(mipShaderResourceViews)
 	{
-		for(int i=0;i<mips;i++)
+		for(int i=0;i<numSrv;i++)
 			SAFE_RELEASE(mipShaderResourceViews[i]);
+		numSrv=0;
 		delete [] mipShaderResourceViews;
 		mipShaderResourceViews=NULL;
 	}
@@ -91,6 +93,7 @@ void dx11::Texture::InvalidateDeviceObjects()
 	}
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
+
 // Load a texture file
 void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
 {
@@ -466,8 +469,9 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 		}
 		if(mipShaderResourceViews)
 		{
-			for(int i=0;i<mips;i++)
+			for(int i=0;i<numSrv;i++)
 				SAFE_RELEASE(mipShaderResourceViews[i]);
+			numSrv=0;
 			delete [] mipShaderResourceViews;
 			mipShaderResourceViews=NULL;
 		}
@@ -481,6 +485,7 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 			}
 		if(m>1)
 		{
+			numSrv=m;
 			mipShaderResourceViews=new ID3D11ShaderResourceView*[m];
 			for(int i=0;i<m;i++)
 			{
@@ -697,7 +702,7 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 		ok=false; 
 	if(ok)
 		return;
-
+	this->cubemap=cubemap;
 	pixelFormat=f;
 	InvalidateDeviceObjects();
 	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
@@ -772,6 +777,34 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 				uav_desc.Texture2DArray.MipSlice=i;
 				V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessViews[i]));
 			}
+		}
+	}
+	if(mipShaderResourceViews)
+	{
+		for(int i=0;i<numSrv;i++)
+			SAFE_RELEASE(mipShaderResourceViews[i]);
+		numSrv=0;
+		delete [] mipShaderResourceViews;
+		mipShaderResourceViews=NULL;
+	}
+	numSrv=mips;
+	if(cubemap)
+	{
+		numSrv=6;
+		mipShaderResourceViews=new ID3D11ShaderResourceView*[numSrv];
+		D3D11_SHADER_RESOURCE_VIEW_DESC mip_srv_desc;
+		ZeroMemory(&mip_srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+		mip_srv_desc.Format						= format;
+		mip_srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		mip_srv_desc.Texture3D.MipLevels		= 1;
+		mip_srv_desc.Texture3D.MostDetailedMip	= 0;
+		for(int i=0;i<numSrv;i++)
+		{
+			mip_srv_desc.Texture2DArray.ArraySize=1;
+			mip_srv_desc.Texture2DArray.FirstArraySlice=i;
+			mip_srv_desc.Texture2DArray.MipLevels=1;
+			mip_srv_desc.Texture2DArray.MostDetailedMip=0;
+			V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &mip_srv_desc, &mipShaderResourceViews[i]));
 		}
 	}
 	if(rendertarget)

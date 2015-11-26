@@ -40,9 +40,9 @@ namespace simul
 			}
 			ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int mip=-1)
 			{
-				if(mip<0||mips<=1)
-				return shaderResourceView;
-				if(mip<mips)
+				if(mip<0||numSrv<=1)
+					return shaderResourceView;
+				if(mip<numSrv)
 					return mipShaderResourceViews[mip];
 				return NULL;
 			}
@@ -120,10 +120,11 @@ namespace simul
 			ID3D11ShaderResourceView**  mipShaderResourceViews;
 			ID3D11DepthStencilView*		depthStencilView;
 			ID3D11RenderTargetView**	renderTargetViews;
-			D3D11_VIEWPORT						m_OldViewports[16];
-			unsigned							num_OldViewports;
+			D3D11_VIEWPORT				m_OldViewports[16];
+			unsigned					num_OldViewports;
 			friend class CubemapFramebuffer;
 			int numUav;
+			int numSrv;
 		};
 	}
 }

@@ -19,7 +19,7 @@ uniform Texture2D cloudShadowTexture			SIMUL_TEXTURE_REGISTER(2);
 uniform Texture2D lossTexture					SIMUL_TEXTURE_REGISTER(3);
 uniform Texture2D inscTexture					SIMUL_TEXTURE_REGISTER(1);
 uniform Texture2D skylTexture					SIMUL_TEXTURE_REGISTER(4);
-uniform Texture2D depthTexture					SIMUL_TEXTURE_REGISTER(5);
+uniform TextureCube depthTexture				SIMUL_TEXTURE_REGISTER(5);
 uniform Texture3D noiseTexture3D				SIMUL_TEXTURE_REGISTER(6);
 uniform TextureCube clouds2DTexture				SIMUL_TEXTURE_REGISTER(7);
 uniform Texture2D illuminationTexture			SIMUL_TEXTURE_REGISTER(8);
@@ -198,7 +198,6 @@ struct FarNearDepthPixelOutput
 FarNearDepthPixelOutput SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 {
 	FarNearDepthPixelOutput fn;
-	vec4 dlookup 	=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords	=mixedResTransformXYWH.xy + IN.texCoords.xy*mixedResTransformXYWH.zw;
 
 	DepthIntepretationStruct depthInterpretationStruct;
@@ -209,6 +208,7 @@ FarNearDepthPixelOutput SimpleRaytrace(posTexVertexOutput IN,bool reverseDepth)
 	clip_pos.y				-=2.0*texCoords.y;
 	float sineFactor		=1.0/length(clip_pos.xyz);
 	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
+	vec4 dlookup			=texture_cube_lod(depthTexture,view,0);
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity
 									,rainMapTexture
@@ -255,7 +255,6 @@ FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
 	texCoords				=frac(texCoords);
-	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth				=reverseDepth;
@@ -263,6 +262,7 @@ FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN,bool reverseDepth)
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
 	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
+	vec4 dlookup			=texture_cube_lod(depthTexture,view,0);
 	FarNearPixelOutput f	=Lightpass(
 									cloudDensity
 									,noiseTexture3D
@@ -296,9 +296,7 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 	int2 pos				=idx*amortization+amortizationOffset.xy;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
-	// offset by one texel to allow -1 in x and y:
 	vec2 texCoords			=vec2(pos.xy)/vec2(targetTextureSize);
-	vec4 dlookup 			=vec4(0,0,0,0);//TEXTURE_LOAD(depthTexture,pos);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth				=reverseDepth;
@@ -307,6 +305,7 @@ void CS_Raytrace(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDe
 	clip_pos.y				-=2.0*texCoords.y;
 	float sineFactor		=1.0/length(clip_pos.xyz);
 	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
+	vec4 dlookup			=texture_cube_lod(depthTexture,view,0);
 	// Transform view into the proper frustum
 	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
 	frustum_clip_pos		/=frustum_clip_pos.w;
@@ -378,7 +377,6 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 	pos+=offsetToCorner;
 	pos=pos%targetTextureSize;
 	
-	vec4 dlookup 				=TEXTURE_LOAD(depthTexture,pos);
 	vec2 unmodifiedTexCoords	=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
@@ -388,6 +386,7 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 	clip_pos.y				-=2.0*texCoords.y;
 	float sineFactor		=1.0/length(clip_pos.xyz);
 	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
+	vec4 dlookup 			=texture_cube_lod(depthTexture,view,0);
 	// Transform view into the proper frustum
 	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
 	frustum_clip_pos		/=frustum_clip_pos.w;
@@ -434,7 +433,6 @@ void CS_Fill(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool reverseDepth,
 
 FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool rain)
 {
-	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
 	//  to the texCoords of our "window". These wrap around 
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
@@ -443,6 +441,7 @@ FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool
 	clip_pos.y				-=2.0*texCoords.y;
 	float sineFactor		=1.0/length(clip_pos.xyz);
 	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
+	vec4 dlookup 			=texture_cube_lod(depthTexture,view,0);
 
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
@@ -477,11 +476,16 @@ FarNearDepthPixelOutput PS_Raytrace(posTexVertexOutput IN,bool reverseDepth,bool
 
 FarNearDepthPixelOutput PS_RaytraceStatic(posTexVertexOutput IN,bool reverseDepth)
 {
-	vec4 dlookup 			=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec2 texCoords			=mixedResTransformXYWH.xy+IN.texCoords.xy*mixedResTransformXYWH.zw;
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth				=reverseDepth;
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	float sineFactor		=1.0/length(clip_pos.xyz);
+	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
+	vec4 dlookup 			=texture_cube_lod(depthTexture,view,0);
 	RaytracePixelOutput f	=RaytraceCloudsStatic(
 									cloudDensity
 									,rainMapTexture

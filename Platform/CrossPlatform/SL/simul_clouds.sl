@@ -509,10 +509,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float max_z				=cornerPosKm.z+(1.0+fractalScale.z*1.5)/inverseScalesKm.z;
 	if(do_rain_effect)
 		min_z				=-1.0;
+	//res.colour.rg=res.nearFarDepth;
+	//res.colour.a=.5;
 	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
 	
-	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+	vec2 solidDist_nearFar	=depthToLinearDistance(dlookup.yx,depthInterpretationStruct);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	// Lookup in the illumination texture.
 	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);

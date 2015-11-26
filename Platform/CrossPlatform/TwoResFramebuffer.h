@@ -189,6 +189,8 @@ namespace simul
 			void Swap();
 			/// Returns	the low-res depth texture.
 			crossplatform::Texture				*GetLowResDepthTexture(int idx=-1);
+			/// A texture that shows what texels are up to date. Where the value is zero, we should fill all the values.
+			crossplatform::Texture				*GetUpdateTexture(int idx);
 			crossplatform::PixelFormat GetDepthFormat() const;
 			void SetDepthFormat(crossplatform::PixelFormat p);
 			int									final_octave;

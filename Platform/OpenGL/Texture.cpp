@@ -258,6 +258,7 @@ void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,in
 	pixelFormat=f;
 	if(w==width&&l==length)
 		return;
+	this->cubemap=cubemap;
 	pixelFormat=f;
 	GLuint internal_format=opengl::RenderPlatform::ToGLFormat(pixelFormat);
 //	GLuint layout=opengl::RenderPlatform::ToGLExternalFormat(pixelFormat);

@@ -79,6 +79,30 @@ shader vec4 DebugPS(v2f IN) : SV_TARGET
 	return c;
 }
 
+vec4 ShowDepthCube(posTexVertexOutput IN,bool reverseDepth) 
+{
+	vec2 texc		=IN.texCoords.xy;
+	float se		=texc.y*2.0-1.0;
+	float ce		=cos(asin(se));
+	float az		=texc.x*3.1415926536*2.0;
+	float cs		=cos(az);
+	float ss		=sin(az);
+	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
+	vec4 depth		=texture_cube(cubeTexture,view);
+
+	DepthIntepretationStruct depthInterpretationStruct;
+	depthInterpretationStruct.depthToLinFadeDistParams=debugDepthToLinFadeDistParams;
+	depthInterpretationStruct.reverseDepth=reverseDepth;
+	vec4 dist		=depthToLinearDistance(depth,depthInterpretationStruct);
+	if(texc.x+texc.y>1.0)
+		dist.xy		=dist.zw;
+	dist.z			=0;
+    vec4 result		=vec4(pow(dist.xyz,vec3(0.44,0.44,0.44)),1.0);
+
+	return result;
+}
+
+
 shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
 {
 	vec2 texc		=IN.texCoords.xy;
@@ -89,6 +113,7 @@ shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
 	float ss		=sin(az);
 	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
 	vec4 res		=texture_cube(cubeTexture,view);
+	res				=vec4(pow(res.xyz,vec3(0.44,0.44,0.44)),1.0);
 
 	return res;
 }
@@ -171,6 +196,18 @@ shader vec4 PS_ShowDepth_Forward(posTexVertexOutput IN) : SV_TARGET
 shader vec4 PS_ShowDepth_Reverse(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 res=ShowDepthPS(IN,true);
+	return res;
+}
+
+shader vec4 PS_ShowDepthCube_Forward(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res=ShowDepthCube(IN,false);
+	return res;
+}
+
+shader vec4 PS_ShowDepthCube_Reverse(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 res=ShowDepthCube(IN,true);
 	return res;
 }
 
@@ -596,6 +633,28 @@ technique show_depth
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowDepth_Forward()));
     }
 }
+technique show_depth_cube
+{
+    pass reverse_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_4_0);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowDepthCube_Reverse()));
+    }
+    pass forward_depth
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_4_0);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowDepthCube_Forward()));
+    }
+}
+
 technique show_depth_ms
 {
     pass reverse_depth

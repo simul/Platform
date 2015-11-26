@@ -19,11 +19,51 @@ uniform Texture2D sourceTexture2;
 uniform Texture2D sourceTexture3;
 uniform RWTexture2D<vec4> targetTexture		SIMUL_RWTEXTURE_REGISTER(0);
 
-#define BLOCKSIZE 16
+#define BLOCKSIZE 8
 
-void DownscaleStochastic(int2 idx,bool reverseDepth) 
+vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 sourceTexCoords, vec2 texelRange
+	, DepthIntepretationStruct depthInterpretationStruct, float nearThresholdDepth,vec2 stochasticOffset,uint2 scale)
 {
-	vec2 texCoords			=vec2(idx)/vec2(target_dims);
+	// Stochastic offset goes from -1 to +1
+	vec2 texCoords		=sourceTexCoords+texelRange*stochasticOffset/vec2(scale);
+	vec4 fn;
+	
+	if(depthInterpretationStruct.reverseDepth)
+		fn				=vec4(1.0,0.0,1.0,0.0);
+	else														
+		fn				=vec4(0.0,1.0,0.0,1.0);
+	vec4 thr			=vec4(nearThresholdDepth, nearThresholdDepth, nearThresholdDepth, nearThresholdDepth);
+	for(int i=1;i<scale.x;i+=2)
+	{
+		float x=(0.5+float(i)-scale.x/2.0)/float(scale.x);
+		for(int j=1;j<scale.y;j+=2)
+		{
+			float y		=(0.5+float(j)-scale.y/2.0)/float(scale.y);
+			vec2 offs	=texelRange*vec2(x,y);
+			vec2 texc	=texCoords+2.0*offs;
+			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
+			if(depthInterpretationStruct.reverseDepth)
+				d.x					= step(d.x,thr)*d.x;
+			else
+				d.x					= step(d.x,thr)+d.x;
+			if(depthInterpretationStruct.reverseDepth)
+			{
+				fn.yw=max(fn.yw,d);
+				fn.xz=min(fn.xz,d);
+			}
+			else
+			{
+				fn.yw=min(fn.yw,d);
+				fn.xz=max(fn.xz,d);
+			}
+		}
+	}
+	return fn;
+}
+
+vec4 GetFrustumClipPos(int2 idx)
+{
+	vec2 texCoords			=(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
@@ -31,18 +71,20 @@ void DownscaleStochastic(int2 idx,bool reverseDepth)
 	// Transform view into the proper frustum
 	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
 	frustum_clip_pos		/=frustum_clip_pos.w;
+	return frustum_clip_pos;
+}
+
+void DownscaleStochastic(int2 idx,bool reverseDepth) 
+{
+	vec4 frustum_clip_pos	=GetFrustumClipPos(idx);
 	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	sourceTexCoords.y		=1.0-sourceTexCoords.y;
-//	sourceTexCoords			=frac((-mixedResTransformXYWH.xy+sourceTexCoords)*mixedResTransformXYWH.zw);
-
 	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
 		return;
-	
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
-	vec4 res=vec4(1.0,1.0,0,0.5);
-	res	=DownscaleStochastic(previousTexture,sourceDepthTexture,sourceTexCoords,texelRange,depthInterpretationStruct,  nearThresholdDepth,stochasticOffset,scale);
+	vec4 res		=DownscaleStochastic(previousTexture,sourceDepthTexture,sourceTexCoords,texelRange,depthInterpretationStruct,  nearThresholdDepth,stochasticOffset,scale);
 //	res=vec4(sourceTexCoords,.5,.5);
 	targetTexture[idx]=res;
 	
@@ -62,42 +104,19 @@ shader void CS_DownscaleStochastic_ForwardDepth(uint3 g : SV_GroupID, uint3 t : 
 	DownscaleStochastic(idx,false);
 }
 
-shader vec4 PS_DownscaleStochastic_ReverseDepth(posTexVertexOutput IN) : SV_Target
+void MinMax(int2 idx,bool reverseDepth)
 {
-	vec2 sourceTexCoords	=lowResToHighResTransformXYWH.zw*frac(lowResToHighResTransformXYWH.xy+IN.texCoords.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=true;
-	vec4 res	=DownscaleStochastic(previousTexture,sourceDepthTexture, sourceTexCoords,texelRange,depthInterpretationStruct,  nearThresholdDepth,stochasticOffset,scale);
-	return res;
-}
-
-shader vec4 PS_DownscaleStochastic_ForwardDepth(posTexVertexOutput IN) : SV_Target
-{
-	vec2 sourceTexCoords	=lowResToHighResTransformXYWH.zw*frac(lowResToHighResTransformXYWH.xy+IN.texCoords.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=false;
-	vec4 res	=DownscaleStochastic(previousTexture,sourceDepthTexture,sourceTexCoords,texelRange, depthInterpretationStruct,  nearThresholdDepth,stochasticOffset,scale);
-	return res;
-}
-shader vec4 PS_HalfscaleInitial_ReverseDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=true;
-	vec4 res = HalfscaleInitial(sourceDepthTexture, int2(source_dims), int2(max_dims), int2(source_offset), int2(cornerOffset), pos, depthInterpretationStruct, false, nearThresholdDepth);
-	return res;
-}
-
-vec4 MinMax(vec2 texCoords,bool reverseDepth)
-{
+	vec2 texCoords	=vec2(idx)/vec2(target_dims);
+	vec4 frustum_clip_pos	=GetFrustumClipPos(idx);
+	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
+	sourceTexCoords.y		=1.0-sourceTexCoords.y;
+	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
+		return;
 	vec4 fn1	=texture_nearest_lod(sourceTexture1,texCoords,0);
 	vec4 fn2	=texture_nearest_lod(sourceTexture2,texCoords,0);
 	vec4 fn3	=texture_nearest_lod(sourceTexture3,texCoords,0);
 	vec4 fn		=fn1;
-	/*.if(reverseDepth)
+	if(reverseDepth)
 	{
 		fn.yw=max(fn.yw,fn2.yw);
 		fn.xz=min(fn.xz,fn2.xz);
@@ -110,192 +129,22 @@ vec4 MinMax(vec2 texCoords,bool reverseDepth)
 		fn.xz=max(fn.xz,fn2.xz);
 		fn.yw=min(fn.yw,fn3.yw);
 		fn.xz=max(fn.xz,fn3.xz);
-	}*/
-	return fn;
+	}
+	targetTexture[idx]=fn;
 }
 
 CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
 shader void CS_MinMax_ForwardDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
 {
 	int2 idx		=int2(g.xy*BLOCKSIZE+t.xy);
-	vec2 texCoords	=vec2(idx)/vec2(target_dims);
-	vec4 res		=MinMax(texCoords.xy,false);
-	targetTexture[idx]=res;
+	MinMax(idx,false);
 }
 
 CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
 shader void CS_MinMax_ReverseDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	int2 idx		=int2(g.xy*BLOCKSIZE+t.xy);
-	vec2 texCoords	=vec2(idx)/vec2(target_dims);
-	vec4 res		=MinMax(texCoords.xy,true);
-	targetTexture[idx]=res;
-}
-
-shader vec4 PS_HalfscaleInitial_ForwardDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=false;
-	vec4 res = HalfscaleInitial(sourceDepthTexture, int2(source_dims), int2(max_dims), int2(source_offset), int2(cornerOffset), pos, depthInterpretationStruct, false, nearThresholdDepth);
-	return res;
-}
-
-shader vec4 PS_HalfscaleInitial_Split_ReverseDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=true;
-	vec4 res = HalfscaleInitial(sourceDepthTexture, int2(source_dims), int2(max_dims), int2(source_offset), int2(cornerOffset), pos, depthInterpretationStruct, true, nearThresholdDepth);
-
-	return res;
-}
-
-shader vec4 PS_HalfscaleInitial_Split_ForwardDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=false;
-	vec4 res = HalfscaleInitial(sourceDepthTexture, int2(source_dims), int2(max_dims), int2(source_offset), int2(cornerOffset), pos, depthInterpretationStruct, true, nearThresholdDepth);
-
-	return res;
-}
-
-
-shader vec4 PS_Samescale_ReverseDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=true;
-	vec4 res = Samescale(sourceDepthTexture, int2(source_dims), int2(source_offset),pos, depthInterpretationStruct, false, nearThresholdDepth);
-	return res;
-}
-
-shader vec4 PS_Samescale_ForwardDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=false;
-	vec4 res = Samescale(sourceDepthTexture, int2(source_dims), int2(source_offset), pos, depthInterpretationStruct, false, nearThresholdDepth);
-	return res;
-}
-
-shader vec4 PS_Samescale_Split_ReverseDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=true;
-	vec4 res = Samescale(sourceDepthTexture, int2(source_dims), int2(source_offset), pos, depthInterpretationStruct, true, nearThresholdDepth);
-	return res;
-}
-
-shader vec4 PS_Samescale_Split_ForwardDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=false;
-	vec4 res = Samescale(sourceDepthTexture, int2(source_dims), int2(source_offset),  pos, depthInterpretationStruct, true, nearThresholdDepth);
-	return res;
-}
-
-shader vec4 PS_Samescale_MSAA_ReverseDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=true;
-	vec4 u= Samescale_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),pos,depthInterpretationStruct, nearThresholdDepth);
-	return u;
-}
-
-shader vec4 PS_Samescale_MSAA_ForwardDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=false;
-	vec4 u= Samescale_MSAA(sourceMSDepthTexture,int2(source_dims),int2(source_offset),pos,depthInterpretationStruct, nearThresholdDepth);
-	return u;
-}
-
-shader vec4 PS_HalfscaleInitial_MSAA_ReverseDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=true;
-	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims), int2(max_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct, nearThresholdDepth);
-	return u;
-}
-
-shader vec4 PS_HalfscaleInitial_MSAA_ForwardDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=false;
-	vec4 u= HalfscaleInitial_MSAA(sourceMSDepthTexture,int2(source_dims), int2(max_dims),int2(source_offset),int2(cornerOffset),pos,depthInterpretationStruct, nearThresholdDepth);
-	return u;
-}
-
-shader vec4 PS_Halfscale_ReverseDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=true;
-	vec4 res = Halfscale(sourceDepthTexture, int2(source_dims), int2(source_offset), int2(cornerOffset), pos, depthInterpretationStruct, nearThresholdDepth);
-	return res;
-}
-
-shader vec4 PS_Halfscale_ForwardDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 pos	=int2(IN.texCoords.xy*target_dims.xy);
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=false;
-	vec4 res = Halfscale(sourceDepthTexture, int2(source_dims), int2(source_offset), int2(cornerOffset), pos, depthInterpretationStruct, nearThresholdDepth);
-	return res;
-}
-
-shader vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
-{
-	int2 hires_pos		=int2(vec2(source_dims)*IN.texCoords.xy);
-	vec4 u				=TEXTURE_LOAD_MSAA(sourceMSDepthTexture,hires_pos,0).xxxx;
-	return u;
-	//return IMAGE_LOAD(sourceMSDepthTexture,hires_pos).x;
-}
-
-VertexShader vs_simple_fullscreen=CompileShader(vs_5_0,VS_SimpleFullscreen());
-
-/// 
-technique downscale_stochastic
-{
-    pass reverse_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.5, 0.5, 0.5, 0.5 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_DownscaleStochastic_ReverseDepth()));
-    }
-    pass forward_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.5, 0.5, 0.5, 0.5 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_DownscaleStochastic_ForwardDepth()));
-    }
+	MinMax(idx,true);
 }
 
 technique downscale_stochastic_compute
@@ -318,202 +167,5 @@ technique minmax
     pass forward_depth
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_MinMax_ForwardDepth()));
-    }
-}
-technique halfscale_initial
-{
-    pass reverse_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_ReverseDepth()));
-    }
-    pass forward_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_ForwardDepth()));
-    }
-}
-
-technique halfscale_initial_split
-{
-    pass reverse_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_Split_ReverseDepth()));
-    }
-    pass forward_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_Split_ForwardDepth()));
-    }
-}
-
-
-technique same_scale
-{
-    pass reverse_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_Samescale_ReverseDepth()));
-    }
-    pass forward_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_Samescale_ForwardDepth()));
-    }
-}
-
-technique same_scale_split
-{
-    pass reverse_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_Samescale_Split_ReverseDepth()));
-    }
-    pass forward_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_Samescale_Split_ForwardDepth()));
-    }
-}
-technique same_scale_msaa
-{
-    pass reverse_depth
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_Samescale_MSAA_ReverseDepth()));
-    }
-    pass forward_depth
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_Samescale_MSAA_ForwardDepth()));
-    }
-}
-
-technique halfscale_initial_msaa
-{
-    pass reverse_depth
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_MSAA_ReverseDepth()));
-    }
-    pass forward_depth
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_HalfscaleInitial_MSAA_ForwardDepth()));
-    }
-}
-
-technique halfscale
-{
-    pass reverse_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_Halfscale_ReverseDepth()));
-    }
-    pass forward_depth
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_Halfscale_ForwardDepth()));
-    }
-}
-
-technique resolve_depth
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_simple_fullscreen);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_ResolveDepth()));
-    }
-}
-
-shader posTexVertexOutput VS_Quad(idOnly id)
-{
-	vec4 rect=vec4(.5,.5,.25,.25);
-    return VS_ScreenQuad(id,rect);
-}
-
-shader vec4 PS_ShowDepth(posTexVertexOutput IN) : SV_Target
-{
-	vec2 texc=IN.texCoords.xy;
-	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
-	texc.y			=1.0-texc.y;
-	vec4 result		=texture_nearest_lod(sourceDepthTexture,texc,0);
-	result.b=1.0;
-	result.a=0.0;
-	return result;
-}
-
-
-technique showdepth
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_Quad()));
-		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepth()));
     }
 }
