@@ -242,7 +242,6 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 
 FarNearPixelOutput Lightpass(Texture3D cloudDensity
 								,Texture3D noiseTexture3D
-								,DepthIntepretationStruct depthInterpretationStruct
 								,vec4 dlookup
 								,vec3 view
 								,vec4 clip_pos
@@ -269,7 +268,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	if(view.z<-0.1&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
 	
-	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+	vec2 solidDist_nearFar	=(dlookup.yx);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	float meanFadeDistance	=1.0;
 
@@ -484,7 +483,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,Texture2D skylTexture
 											,Texture3D inscatterVolumeTexture
                                             ,bool do_depth_mix
-											,DepthIntepretationStruct depthInterpretationStruct
 											,vec4 dlookup
 											,vec3 view
 											,vec4 clip_pos
@@ -497,7 +495,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	RaytracePixelOutput res;
 	res.colour				=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
-	res.nearFarDepth		=depthToLinearDistance(dlookup, depthInterpretationStruct);
+	res.nearFarDepth		=dlookup;
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
 	vec3 lightDir			=lerp(directionToMoon,directionToSun,s);
@@ -514,7 +512,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
 	
-	vec2 solidDist_nearFar	=depthToLinearDistance(dlookup.yx,depthInterpretationStruct);
+	vec2 solidDist_nearFar	=(dlookup.yx);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	// Lookup in the illumination texture.
 	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);

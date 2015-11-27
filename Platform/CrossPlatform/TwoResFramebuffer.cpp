@@ -7,6 +7,7 @@
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/StringFunctions.h"
 #include "Simul/Math/RandomNumberGenerator.h"
 #include "Simul/Math/Vector3.h"
 
@@ -368,21 +369,24 @@ void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceC
 		else if(depthTexture&&depthTexture->length)
 			w		=(depthTexture->width*l)/depthTexture->length;
 	}
-	int x=x0;
 	int y=y0;
 	int W=dx/3,L=l/2;
+	int x=x0+W+4;
 	for(int i=0;i<4;i++)
 	{
 		crossplatform::Texture *t=GetLowResDepthTexture(i);
 		if(!t)
 			continue;
+		if(!i)
+			deviceContext.renderPlatform->DrawTexture(deviceContext	,x		,y	,W,L,	t);
+		else
 		deviceContext.renderPlatform->DrawDepth(deviceContext	,x		,y	,W,L,	t,NULL,proj);
 		//deviceContext.renderPlatform->DrawTexture(deviceContext	,x+W+4	,y	,W,L,	t);
-		deviceContext.renderPlatform->Print(deviceContext		,x		,y	,"Depth",white,black_transparent);
+		deviceContext.renderPlatform->Print(deviceContext		,x		,y	,base::QuickFormat("Depth %d",i),white,black_transparent);
 		x+=W+4;
 		if(i==1)
 		{
-			x=x0;
+			x=x0+W+4;
 			y+=L;
 		}
 	}

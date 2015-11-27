@@ -5,7 +5,6 @@
 #include "../SL/depth.sl"
 #include "../SL/hdr_constants.sl"
 #include "../SL/colour_packing.sl"
-#include "../SL/mixed_resolution.sl"
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/composite.sl"
 #include "../SL/debug_constants.sl"
