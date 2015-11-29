@@ -494,7 +494,11 @@ namespace simul
 			virtual void SetVector		(const char *name	,const float *vec)	=0;
 			virtual void SetMatrix		(const char *name	,const float *m)	=0;
 			/// Activate the shader. Unapply must be called after rendering is done.
-			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass)=0;
+			virtual void Apply(DeviceContext &deviceContext,const char *tech_name,const char *pass);
+			/// Activate the shader. Unapply must be called after rendering is done.
+			virtual void Apply(DeviceContext &deviceContext,const char *tech_name,int pass=0);
+			/// Activate the shader. Unapply must be called after rendering is done.
+			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass=0)=0;
 			/// Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,const char *pass)=0;
 			/// Call Reapply between Apply and Unapply to apply the effect of modified constant buffers etc.

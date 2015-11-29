@@ -124,6 +124,16 @@ const char *Effect::GetTechniqueName(const EffectTechnique *t) const
 	return "";
 }
 
+void Effect::Apply(DeviceContext &deviceContext,const char *tech_name,const char *pass)
+{
+	Apply(deviceContext,GetTechniqueByName(tech_name),pass);
+}
+
+void Effect::Apply(DeviceContext &deviceContext,const char *tech_name,int pass)
+{
+	Apply(deviceContext,GetTechniqueByName(tech_name),pass);
+}
+
 void Effect::StoreConstantBufferLink(crossplatform::ConstantBufferBase *b)
 {
 	linkedConstantBuffers.insert(b);

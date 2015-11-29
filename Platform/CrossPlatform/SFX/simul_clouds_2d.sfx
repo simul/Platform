@@ -367,7 +367,6 @@ shader void CS_Clouds2D_depthReverse(uint3 g : SV_GroupID, uint3 t : SV_GroupThr
 	CS_Clouds2D(g,t,true,true);
 }
 
-
 CS_LAYOUT(8,8,1)
 shader void CS_Clouds2D_depthForward(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
