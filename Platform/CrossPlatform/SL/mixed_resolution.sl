@@ -234,11 +234,11 @@ vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,
 			float y		=(0.5+float(j-scale.y/2.0))/float(scale.y);
 			vec2 offs	=texelRange*vec2(x,y);
 			vec2 texc	=texCoords+2.0*offs;
-			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
+			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0.0).xx;
 			if(depthInterpretationStruct.reverseDepth)
-				d.x					= step(d.x,thr)*d.x;
+				d.x					= step(d.x,nearThresholdDepth)*d.x;
 			else
-				d.x					= step(d.x,thr)+d.x;
+				d.x					= step(d.x,nearThresholdDepth)+d.x;
 			if(depthInterpretationStruct.reverseDepth)
 			{
 				fn.yw=max(fn.yw,d);
