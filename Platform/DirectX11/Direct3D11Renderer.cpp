@@ -34,7 +34,6 @@ using namespace dx11;
 
 TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m)
 		:clouds::TrueSkyRenderer(env,sc,m,true)
-		,oceanRenderer(NULL)
 {
 	sc;
 	ReverseDepthChanged();
@@ -43,7 +42,6 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 TrueSkyRenderer::~TrueSkyRenderer()
 {
 	InvalidateDeviceObjects();
-	del(oceanRenderer,memoryInterface);
 }
 
 void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -52,13 +50,6 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	renderPlatform=r;
 	if(!renderPlatform)
 		return;
-	if(!oceanRenderer&&weatherRenderer&&(simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
-	{
-		oceanRenderer			=new(memoryInterface) terrain::BaseSeaRenderer(weatherRenderer->GetEnvironment()->seaKeyframer);
-		oceanRenderer->SetBaseSkyInterface(weatherRenderer->GetEnvironment()->skyKeyframer);
-	}
-	if(oceanRenderer)
-		oceanRenderer->RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 }
 // The elements in the main colour/depth buffer, with depth test and optional MSAA
@@ -69,13 +60,6 @@ void TrueSkyRenderer::RenderDepthElements(crossplatform::DeviceContext &deviceCo
 	clouds::TrueSkyRenderer::RenderDepthElements(deviceContext
 									 ,exposure
 									 ,gamma);
-	if(oceanRenderer&&ShowWater&&(simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
-	{
-		oceanRenderer->SetMatrices(deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-		oceanRenderer->Render(deviceContext,1.f);
-		if(oceanRenderer->GetShowWireframes())
-			oceanRenderer->RenderWireframe(deviceContext);
-	}
 }
 
 
@@ -84,8 +68,6 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 	if(!renderPlatform)
 		return;
 	Profiler::GetGlobalProfiler().Uninitialize();
-	if(oceanRenderer)
-		oceanRenderer->InvalidateDeviceObjects();
 	clouds::TrueSkyRenderer::InvalidateDeviceObjects();
 	renderPlatform=NULL;
 }
@@ -93,10 +75,6 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 void TrueSkyRenderer::RecompileShaders()
 {
 	clouds::TrueSkyRenderer::RecompileShaders();
-	if(oceanRenderer)
-		oceanRenderer->RecompileShaders();
-	if(simulHDRRenderer)
-		simulHDRRenderer->RecompileShaders();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////

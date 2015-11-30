@@ -3,6 +3,7 @@
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
 #include "../SL/states.sl"
+#include "../SL/debug_constants.sl"
 #include "../SL/ocean_constants.sl"
 #include "../SL/simul_inscatter_fns.sl"
 
@@ -194,7 +195,7 @@ void Radix008A_CS(uint3 thread_id : SV_DispatchThreadID)
         return;
 	uint threadx=thread_id.x;
 	// Fetch 8 complex numbers
-	float2 D[8];
+	vec2 D[8];
 
 	uint i;
 	uint imod = threadx & (istride - 1);
@@ -211,14 +212,14 @@ void Radix008A_CS(uint3 thread_id : SV_DispatchThreadID)
 	// Store the result
 	uint omod = threadx & (ostride - 1);
 	uint oaddr = ((threadx - omod) << 3) + omod;
-    g_DstData[oaddr + 0 * ostride] = D[0];
-    g_DstData[oaddr + 1 * ostride] = D[4];
-    g_DstData[oaddr + 2 * ostride] = D[2];
-    g_DstData[oaddr + 3 * ostride] = D[6];
-    g_DstData[oaddr + 4 * ostride] = D[1];
-    g_DstData[oaddr + 5 * ostride] = D[5];
-    g_DstData[oaddr + 6 * ostride] = D[3];
-    g_DstData[oaddr + 7 * ostride] = D[7];
+    g_DstData[oaddr + 0 * ostride] =D[0];
+    g_DstData[oaddr + 1 * ostride] =D[4];
+    g_DstData[oaddr + 2 * ostride] =D[2];
+    g_DstData[oaddr + 3 * ostride] =D[6];
+    g_DstData[oaddr + 4 * ostride] =D[1];
+    g_DstData[oaddr + 5 * ostride] =D[5];
+    g_DstData[oaddr + 6 * ostride] =D[3];
+    g_DstData[oaddr + 7 * ostride] =D[7];
 }
 
 
@@ -230,7 +231,7 @@ void Radix008A_CS2(uint3 thread_id : SV_DispatchThreadID)
 	uint threadx=thread_id.x;
 	// Fetch 8 complex numbers
 	uint i;
-	float2 D[8];
+	vec2 D[8];
 	uint iaddr = threadx << 3;
 	for (i = 0; i < 8; i++)
 		D[i] = g_SrcData[iaddr + i];
@@ -507,7 +508,7 @@ technique ocean
     pass p0 
     {
 		SetRasterizerState( RenderNoCull );
-		//SetDepthStencilState( EnableDepth, 0 );
+		SetDepthStencilState( ReverseDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,OceanSurfVS()));
 		SetGeometryShader(NULL);
