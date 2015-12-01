@@ -503,32 +503,21 @@ bool Effect::FillInTechniques()
 	{
 		std::string group_name=glfxGetTechniqueGroupName(e,i);
 		glfxUseTechniqueGroup(e,i);
-	GL_ERROR_CHECK
 		int numt = (int)glfxGetTechniqueCount(e);
-	GL_ERROR_CHECK
-		for (int j = 0; j < numt; j++)
+		for (int j = 0; j<numt; j++)
 		{
-	GL_ERROR_CHECK
 			std::string tech_name = glfxGetTechniqueName(e,j);
-	GL_ERROR_CHECK
 			int num_passes = (int)glfxGetPassCount(e, tech_name.c_str());
-	GL_ERROR_CHECK
 			for (int k = 0; k < num_passes; k++)
 			{
-	GL_ERROR_CHECK
 				std::string pass_name = glfxGetPassName(e, tech_name.c_str(), k);
-	GL_ERROR_CHECK
 				GLuint t = glfxCompilePass(e, tech_name.c_str(), pass_name.c_str());
-	GL_ERROR_CHECK
 				if(!t)
 				{
-					std::cerr<<filenameInUseUtf8.c_str()
-								<<": error C7555:  there are errors in pass "<<pass_name.c_str()<<" of technique "
-								<<tech_name.c_str()<<std::endl;
+					std::cerr<<filenameInUseUtf8.c_str()<<": error C7555:  there are errors in pass "<<pass_name.c_str()<<" of technique "<<tech_name.c_str()<<std::endl;
 					opengl::printEffectLog(asGLint());
 					return false;
 				}
-	GL_ERROR_CHECK
 				AddPass(group_name,tech_name, pass_name, t);
 			}
 		}
