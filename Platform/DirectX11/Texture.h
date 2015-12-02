@@ -120,8 +120,8 @@ namespace simul
 			ID3D11ShaderResourceView**  mipShaderResourceViews;
 			ID3D11DepthStencilView*		depthStencilView;
 			ID3D11RenderTargetView**	renderTargetViews;
-			D3D11_VIEWPORT						m_OldViewports[16];
-			unsigned							num_OldViewports;
+			D3D11_VIEWPORT				m_OldViewports[16];
+			unsigned					num_OldViewports;
 			friend class CubemapFramebuffer;
 		};
 	}

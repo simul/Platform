@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Math/Quaternion.h"
@@ -6,6 +7,7 @@
 #include "Simul/Platform/CrossPlatform/BaseRenderer.h"
 #include "Simul/Math/Pi.h"
 #include <memory.h>
+#include <algorithm>
 using namespace simul;
 using namespace math;
 using namespace crossplatform;
@@ -293,6 +295,53 @@ Matrix4x4 simul::crossplatform::MatrixLookInDirection(const float *dir,const flo
  //dot(xaxis, eye)   dot(yaxis, eye)   dot(zaxis, eye)  1
 	return M;
 }
+
+vec4 simul::crossplatform::GetFrustumRangeOnCubeFace(int face,const float *invViewProj)
+{
+	vec4 range(1.0,1.0,-1.0,-1.0);
+	mat4 faceMatrix;
+	GetCubeMatrix((float*)&faceMatrix,face,true);
+	//faceMatrix=mat4::identity();
+	//faceMatrix.transpose();
+	mat4 &ivp=*((mat4*)invViewProj);
+	static vec4 clips[]={vec4(-1.0f,-1.0f,1.0f,1.0f)
+							,vec4( 1.0f,-1.0f,1.0f,1.0f)
+							,vec4( 1.0f, 1.0f,1.0f,1.0f)
+							,vec4(-1.0f, 1.0f,1.0f,1.0f)};
+	for(int i=0;i<4;i++)
+	{
+		static int A=3;
+		for(int j=0;j<A;j++)
+		{
+			float v		=float(j)/float(A);
+			float u		=1.0f-v;
+			vec4 c		=clips[i]*u+clips[(i+1)%4]*v;
+			vec4 w		=ivp*c;
+			w.w=1.0f;
+			vec4 tra	=faceMatrix*w;
+			tra			/=sqrt(tra.x*tra.x+tra.y*tra.y+tra.z*tra.z);
+			if(tra.z<0)
+				continue;
+			tra			/=tra.z;
+			range.x		=std::min(range.x,tra.x);
+			range.y		=std::min(range.y,tra.y);
+			range.z		=std::max(range.z,tra.x);
+			range.w		=std::max(range.w,tra.y);
+		}
+	}
+	range.x*=-1.0f;
+	range.z*=-1.0f;
+	std::swap(range.x,range.z);
+	//std::swap(range.y,range.w);
+	range+=vec4(1.0f,1.0f,1.0f,1.0f);
+	range*=0.5f;
+	range.x=std::min(std::max(range.x,0.0f),1.0f);
+	range.y=std::min(std::max(range.y,0.0f),1.0f);
+	range.z=std::min(std::max(range.z,0.0f),1.0f);
+	range.w=std::min(std::max(range.w,0.0f),1.0f);
+	return range;
+}
+
 void simul::crossplatform::MakeCubeMatrices(simul::math::Matrix4x4 mat[],const float *cam_pos,bool ReverseDepth)
 {
 #ifdef SIMUL_WIN8_SDK
@@ -340,6 +389,41 @@ void simul::crossplatform::MakeCubeMatrices(simul::math::Matrix4x4 mat[],const f
 		mat[i].InsertRow(3,loc_cam_pos);
 		mat[i]._44=1.f;
 	}
+}
+
+void simul::crossplatform::GetCubeMatrix(float *mat4x4,int face,bool ReverseDepth)
+{
+	vec3 zero_pos(0,0,0);
+	if(ReverseDepth)
+	{
+		static math::Matrix4x4 view_matrices[6];
+		static bool init=false;
+		if(!init)
+		{
+			MakeCubeMatrices(view_matrices,(const float*)&zero_pos,true);
+		}
+		memcpy(mat4x4,view_matrices[face],sizeof(float)*16);
+	}
+	else
+	{
+		static math::Matrix4x4 view_matrices[6];
+		static bool init=false;
+		if(!init)
+		{
+			MakeCubeMatrices(view_matrices,(const float*)&zero_pos,false);
+		}
+		memcpy(mat4x4,view_matrices[face],sizeof(float)*16);
+	}
+}
+
+void simul::crossplatform::GetCubeMatrix(float *mat4x4,int face,const float *cam_pos,bool ReverseDepth)
+{
+	GetCubeMatrix(mat4x4,face,ReverseDepth);
+	Vector3 loc_cam_pos;
+	simul::math::Multiply3(loc_cam_pos,*((const math::Matrix4x4*)mat4x4),cam_pos);
+	loc_cam_pos*=-1.f;
+	((math::Matrix4x4*)mat4x4)->InsertRow(3,loc_cam_pos);
+	((math::Matrix4x4*)mat4x4)->_44=1.f;
 }
 
 math::Matrix4x4 simul::crossplatform::MakeOrthoProjectionMatrix(float left,

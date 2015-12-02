@@ -316,6 +316,11 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 		tech=debugEffect->GetTechniqueByName("show_depth_ms");
 		debugEffect->SetTexture(deviceContext,"imageTextureMS",tex);
 	}
+	else if(tex&&tex->IsCubemap())
+	{
+		tech=debugEffect->GetTechniqueByName("show_depth_cube");
+		debugEffect->SetTexture(deviceContext,"cubeTexture",tex);
+	}
 	else
 	{
 		debugEffect->SetTexture(deviceContext,"imageTexture",tex);

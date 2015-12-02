@@ -670,6 +670,8 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 
 void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
 {
+
+	this->cubemap=cubemap;
 	pixelFormat=f;
 	InvalidateDeviceObjects();
 	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
@@ -681,6 +683,9 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 		m--;
 		s=2<<m;
 	}
+	width					=w;
+	length					=l;
+
 	desc.Width				=w;
 	desc.Height				=l;
 	desc.Format				=format;

@@ -149,12 +149,19 @@ namespace simul
 			virtual void InvalidateDeviceObjects();
 			virtual void SetDimensions(int w,int h);
 			virtual void GetDimensions(int &w,int &h);
+			virtual int2 GetLowResDimensions() const
+			{
+				return int2(BufferWidth,BufferHeight);
+			}
 			// Assign the current frame's projection matrix for this buffer. Just for debugging.
 			void SetProjection(const float *p);
 			int GetDownscale() const
 			{
 				return Downscale;
 			}
+			// set the range of the cubemap that's in the current frustum.
+			void SetCubeFrustumRange(int i,vec4 r);
+			vec4 GetCubeFrustumRange(int i) const;
 			void SetDownscale(int d);
 			/// Activate BOTH low-resolution framebuffers - far in target 0, near in target 1. Must be followed by DeactivatelLowRes after rendering.
 			virtual void ActivateLowRes(crossplatform::DeviceContext &);
@@ -183,8 +190,11 @@ namespace simul
 			vec2								pixelOffset;
 			/// Swap stochastic texture buffers.
 			void Swap();
+			void SwapUpdateTextures();
 			/// Returns	the low-res depth texture.
 			crossplatform::Texture				*GetLowResDepthTexture(int idx=-1);
+			/// A texture that shows what texels are up to date. Where the value is zero, we should fill all the values.
+			crossplatform::Texture				*GetUpdateTexture(int idx);
 			crossplatform::PixelFormat GetDepthFormat() const;
 			void SetDepthFormat(crossplatform::PixelFormat p);
 			int									final_octave;
@@ -205,14 +215,16 @@ namespace simul
 				return amortizationStruct;
 			}
 		protected:
+			vec4								cubeFrustumRange[6];
 			mat4								proj;
-			int									Width,Height,Downscale;
+			int									Width,Height,BufferWidth,BufferHeight,Downscale;
 			AmortizationStruct					amortizationStruct;
 			int									volume_num;
 			crossplatform::PixelFormat			depthFormat;
 			simul::geometry::SimulOrientation	view_o;
 			crossplatform::RenderPlatform		*renderPlatform;
 			crossplatform::Texture				*nearFarTextures[5];
+			crossplatform::Texture				*updateTextures[2];
 			crossplatform::Texture				*lossTexture;
 			crossplatform::Texture				*volumeTextures[2];
 			crossplatform::Texture				*lowResFramebuffers[4];

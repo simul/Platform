@@ -7,6 +7,7 @@
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/StringFunctions.h"
 #include "Simul/Math/RandomNumberGenerator.h"
 #include "Simul/Math/Vector3.h"
 
@@ -52,6 +53,8 @@ TwoResFramebuffer::TwoResFramebuffer()
 	,lossTexture(NULL)
 	,Width(0)
 	,Height(0)
+	,BufferWidth(0)
+	,BufferHeight(0)
 	,Downscale(0)
 	,pixelOffset(0.f,0.f)
 	,depthFormat(RGBA_32_FLOAT)
@@ -63,6 +66,8 @@ TwoResFramebuffer::TwoResFramebuffer()
 		lowResFramebuffers[i] = NULL;
 	for(int i=0;i<4;i++)
 		nearFarTextures[i]=NULL;
+	for(int i=0;i<2;i++)
+		updateTextures[i]=NULL;
 }
 
 void TwoResFramebuffer::Swap()
@@ -72,10 +77,20 @@ void TwoResFramebuffer::Swap()
 		std::swap(nearFarTextures[i],nearFarTextures[1+(i+1)%3]);
 	}
 }
+
+void TwoResFramebuffer::SwapUpdateTextures()
+{
+	std::swap(updateTextures[0],updateTextures[1]);
+}
  
 crossplatform::Texture *TwoResFramebuffer::GetLowResDepthTexture(int idx)
 {
 	return nearFarTextures[idx>=0?idx:0];
+}
+
+crossplatform::Texture *TwoResFramebuffer::GetUpdateTexture(int idx)
+{
+	return updateTextures[idx];
 }
 
 crossplatform::PixelFormat TwoResFramebuffer::GetDepthFormat() const
@@ -90,7 +105,7 @@ void TwoResFramebuffer::SetDepthFormat(crossplatform::PixelFormat p)
 
 void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	ERRNO_CHECK
+	ERRNO_BREAK
 	renderPlatform	=r;
 	amortizationStruct.reset();
 	SAFE_DELETE(lossTexture);
@@ -115,6 +130,16 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		nearFarTextures[i]->MoveToFastRAM();
 	ERRNO_CHECK
 	}
+	for(int i=0;i<2;i++)
+	{
+	ERRNO_CHECK
+		SAFE_DELETE(updateTextures[i]);
+	ERRNO_CHECK
+		updateTextures[i]=renderPlatform->CreateTexture("ESRAM");
+	ERRNO_CHECK
+		updateTextures[i]->MoveToFastRAM();
+	ERRNO_CHECK
+	}
 	ERRNO_CHECK
 	lossTexture			=renderPlatform->CreateTexture();
 	ERRNO_CHECK
@@ -125,8 +150,8 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	if(Width<=0||Height<=0||Downscale<=0)
 		return;
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
-	int BufferWidth = (Width + Downscale - 1) / Downscale + 1;
-	int BufferHeight = (Height + Downscale - 1) / Downscale + 1;
+	BufferWidth = (Width + Downscale - 1) / Downscale + 1;
+	BufferHeight = (Height + Downscale - 1) / Downscale + 1;
 	if(Downscale==1)
 	{
 		BufferWidth=Width;
@@ -156,9 +181,15 @@ void TwoResFramebuffer::InvalidateDeviceObjects()
 		SAFE_DELETE(lowResFramebuffers[i]);
 	for(int i=0;i<4;i++)
 		SAFE_DELETE(nearFarTextures[i]);
+	for(int i=0;i<2;i++)
+		SAFE_DELETE(updateTextures[i]);
 	SAFE_DELETE(lossTexture);
 	SAFE_DELETE(volumeTextures[0]);
 	SAFE_DELETE(volumeTextures[1]);
+	Width=0;
+	Height=0;
+	BufferWidth=0;
+	BufferHeight=0;
 }
 
 void TwoResFramebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
@@ -224,6 +255,16 @@ void TwoResFramebuffer::SetDimensions(int w,int h)
 	}
 }
 
+void TwoResFramebuffer::SetCubeFrustumRange(int i,vec4 r)
+{
+	cubeFrustumRange[i]=r;
+}
+
+vec4 TwoResFramebuffer::GetCubeFrustumRange(int i) const
+{
+	return cubeFrustumRange[i];
+}
+
 void TwoResFramebuffer::SetDownscale(int d)
 {
 	if(Downscale!=d)
@@ -256,10 +297,10 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	view_o.GlobalToLocalDirection(new_view_dir_local,new_view_dir);
 	float dx			=new_view_dir*view_o.Tx();
 	float dy			=new_view_dir*view_o.Ty();
-	int W				=(Width+Downscale-1)/Downscale+1;
-	int H				=(Height+Downscale-1)/Downscale+1;
-	int OutsideWidth	=W*Downscale;
-	int OutsideHeight	=H*Downscale;
+//	int W				=(Width+Downscale-1)/Downscale+1;
+//	int H				=(Height+Downscale-1)/Downscale+1;
+//	int OutsideWidth	=W*Downscale;
+//	int OutsideHeight	=H*Downscale;
 	dx					*=Width*viewStruct.proj._11;
 	dy					*=Height*viewStruct.proj._22;
 	view_o.DefineFromYZ(new_up_dir,new_view_dir);

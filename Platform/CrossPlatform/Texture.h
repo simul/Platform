@@ -62,16 +62,10 @@ namespace simul
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT Texture
 		{
+		protected:
+			bool cubemap;
 		public:
-			Texture()
-				:width(0)
-				,length(0)
-				,depth(0)
-				,dim(0)
-				,mips(1)
-				,pixelFormat(crossplatform::UNKNOWN)
-				,renderPlatform(NULL)
-				,num_rt(0){}
+			Texture();
 			virtual ~Texture();
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files)=0;
@@ -136,6 +130,7 @@ namespace simul
 			//! If the texture is multisampled, this returns the samples per texel. Zero means it is not an MS texture,
 			//! while 1 means it is MS, even though the sample count is unity.
 			virtual int GetSampleCount() const=0;
+			virtual bool IsCubemap() const;
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
 			int width,length,depth,dim,mips;
 			PixelFormat pixelFormat;
