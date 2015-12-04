@@ -70,7 +70,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	float hiResInterp			=saturate((dist - nearFarCloud.y) / max(dd.x,0.000001));
 	// we're going to do TWO interpolations. One from zero to the near distance,
 	// and one from the near to the far distance.
-	float nearInterp			=saturate(dist / max(nearFarCloud.y,0.000001));
+	float nearInterp			=saturate(2.0*dist / max(nearFarCloud.y,0.000001)-1.0);
 	
 	vec4 cloudNear				=texture_wrap_lod(nearCloudTexture, lowResTexCoords, 0);
 	cloud						=lerp(cloudNear, cloud, hiResInterp);
