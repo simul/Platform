@@ -14,25 +14,25 @@
 #define BLOCK_SIZE_X 16
 #define BLOCK_SIZE_Y 16
 
-Texture2D	g_samplerDisplacementMap	: register(t0);
+uniform Texture2D	g_samplerDisplacementMap	SIMUL_TEXTURE_REGISTER(0);
 
-Texture2D	showTexture					: register(t0);		// FFT wave displacement map in VS
-Texture2D	g_texDisplacement			: register(t0);		// FFT wave displacement map in VS
-Texture2D	g_texPerlin					: register(t1);		// FFT wave gradient map in PS
-Texture2D	g_texGradient				: register(t2);		// Perlin wave displacement & gradient map in both VS & PS
-Texture2D	g_texFresnel				: register(t3);		// Fresnel factor lookup table. Actually 1D, but some platforms don't support that.
-TextureCube	g_texReflectCube			: register(t4);		// A small skybox cube texture for reflection
-Texture2D	g_skyLossTexture			: register(t5);
-Texture2D	g_skyInscatterTexture		: register(t6);
+uniform Texture2D	showTexture					SIMUL_TEXTURE_REGISTER(0);	// FFT wave displacement map in VS
+uniform Texture2D	g_texDisplacement			SIMUL_TEXTURE_REGISTER(0);	// FFT wave displacement map in VS
+uniform Texture2D	g_texPerlin					SIMUL_TEXTURE_REGISTER(1);		// FFT wave gradient map in PS
+uniform Texture2D	g_texGradient				SIMUL_TEXTURE_REGISTER(2);		// Perlin wave displacement & gradient map in both VS & PS
+uniform Texture2D	g_texFresnel				SIMUL_TEXTURE_REGISTER(3);		// Fresnel factor lookup table. Actually 1D, but some platforms don't support that.
+uniform TextureCube	g_texReflectCube			: register(t4);		// A small skybox cube texture for reflection
+uniform Texture2D	g_skyLossTexture			: register(t5);
+uniform Texture2D	g_skyInscatterTexture		: register(t6);
 // The following three should contains only real numbers. But we have only C2C FFT now.
-StructuredBuffer<vec2> g_InputDxyz		: register(t7);
-StructuredBuffer<vec2>	g_InputH0		: register(t8);
-RWStructuredBuffer<vec2> g_OutputHt		: register(u0);
-StructuredBuffer<float>	g_InputOmega	: register(t9);
+uniform StructuredBuffer<vec2> g_InputDxyz		;
+uniform StructuredBuffer<vec2>	g_InputH0		;
+uniform RWStructuredBuffer<vec2> g_OutputHt		;
+uniform StructuredBuffer<float>	g_InputOmega	;
 
 
 // FFT wave displacement map in VS, XY for choppy field, Z for height field
-SamplerState g_samplerDisplacement	: register(s0)
+SamplerState g_samplerDisplacement	
 {
 	Filter			= MIN_MAG_MIP_POINT;
 	AddressU		= Wrap;
@@ -43,7 +43,7 @@ SamplerState g_samplerDisplacement	: register(s0)
 };
 
 // Perlin noise for composing distant waves, W for height field, XY for gradient
-SamplerState g_samplerPerlin		: register(s1)
+SamplerState g_samplerPerlin
 {
 	Filter =ANISOTROPIC;
 	AddressU =WRAP;
@@ -58,7 +58,7 @@ SamplerState g_samplerPerlin		: register(s1)
 };
 
 // FFT wave gradient map, converted to normal value in PS
-SamplerState g_samplerGradient		: register(s2)
+SamplerState g_samplerGradient		
 {
 	Filter =ANISOTROPIC;
 	AddressU =WRAP;
@@ -68,7 +68,7 @@ SamplerState g_samplerGradient		: register(s2)
 	MaxAnisotropy = 8;
 };
 // Fresnel factor lookup table
-SamplerState g_samplerFresnel		: register(s3)
+SamplerState g_samplerFresnel
 {
 	Filter =MIN_MAG_MIP_LINEAR;
 	AddressU =CLAMP;
@@ -79,7 +79,7 @@ SamplerState g_samplerFresnel		: register(s3)
 };
 
 // A small sky cubemap for reflection
-SamplerState g_samplerCube			: register(s4)
+SamplerState g_samplerCube			
 {
 	Filter			= MIN_MAG_MIP_LINEAR;
 	AddressU		= Wrap;
@@ -89,7 +89,7 @@ SamplerState g_samplerCube			: register(s4)
 	MaxAnisotropy	= 1;
 };
 
-SamplerState g_samplerAtmospherics	: register(s5)
+SamplerState g_samplerAtmospherics	
 {
 	Filter			= MIN_MAG_MIP_LINEAR;
 	AddressU		= Clamp;
@@ -185,8 +185,8 @@ void TWIDDLE_8(inout float2 D[8], float phase)
 	TWIDDLE(D[7], 7 * phase);
 }
 
-StructuredBuffer<float2>	g_SrcData : register(t0);
-RWStructuredBuffer<float2>	g_DstData : register(u0);
+uniform StructuredBuffer<float2>	g_SrcData ;
+uniform RWStructuredBuffer<float2>	g_DstData ;
 
 [numthreads(COHERENCY_GRANULARITY, 1, 1)]
 void Radix008A_CS(uint3 thread_id : SV_DispatchThreadID)
@@ -206,7 +206,7 @@ void Radix008A_CS(uint3 thread_id : SV_DispatchThreadID)
 	// Math
 	FFT_forward_8(D);
 	uint p = threadx & (istride - pstride);
-	float phase = phase_base * (float)p;
+	float phase = phase_base * float(p);
 	TWIDDLE_8(D, phase);
 
 	// Store the result
@@ -285,7 +285,7 @@ void UpdateSpectrumCS(uint3 sub_pos : SV_DispatchThreadID)
 	float ky = sub_pos.y - g_ActualDim * 0.5;
 	float sqr_k = kx * kx + ky * ky;
 	float rsqr_k = 0;
-	if (sqr_k > 1e-12f)
+	if (sqr_k > 1.e-12f)
 		rsqr_k = 1 / sqrt(sqr_k);
 	//float rsqr_k = 1 / sqrtf(kx * kx + ky * ky);
 	kx *= rsqr_k;
@@ -302,14 +302,14 @@ void UpdateSpectrumCS(uint3 sub_pos : SV_DispatchThreadID)
 }
 
 // Post-FFT data wrap up: Dx, Dy, Dz -> Displacement
-float4 UpdateDisplacementPS(posTexVertexOutput In) : SV_Target
+shader vec4 UpdateDisplacementPS(posTexVertexOutput In) : SV_Target
 {
-	uint index_x = (uint)(In.texCoords.x * (float)g_OutWidth);
-	uint index_y = (uint)(In.texCoords.y * (float)g_OutHeight);
+	uint index_x = uint(In.texCoords.x * float(g_OutWidth));
+	uint index_y = uint(In.texCoords.y * float(g_OutHeight));
 	uint addr = g_OutWidth * index_y + index_x;
 
 	// cos(pi * (m1 + m2))
-	int sign_correction = ((index_x + index_y) & 1) ? -1 : 1;
+	int sign_correction = ((index_x + index_y) & 1 != 0) ? -1 : 1;
 
 	float dx=g_InputDxyz[addr + g_DxAddressOffset].x * sign_correction * g_ChoppyScale;
 	float dy=g_InputDxyz[addr + g_DyAddressOffset].x * sign_correction * g_ChoppyScale;
@@ -319,10 +319,10 @@ float4 UpdateDisplacementPS(posTexVertexOutput In) : SV_Target
 }
 
 // Displacement -> Normal, Folding
-float4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
+shader float4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
 {
 	// Sample neighbour texels
-	vec2 one_texel = vec2(1.0 / (float)g_OutWidth, 1.0 / (float)g_OutHeight);
+	vec2 one_texel = vec2(1.0 / float(g_OutWidth), 1.0 / float(g_OutHeight));
 
 	vec2 tc_left  = vec2(In.texCoords.x - one_texel.x, In.texCoords.y);
 	vec2 tc_right = vec2(In.texCoords.x + one_texel.x, In.texCoords.y);
