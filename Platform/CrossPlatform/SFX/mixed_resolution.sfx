@@ -34,19 +34,19 @@ vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,
 	else														
 		fn				=vec4(0.0,1.0,0.0,1.0);
 	vec4 thr			=vec4(nearThresholdDepth, nearThresholdDepth, nearThresholdDepth, nearThresholdDepth);
-	for(int i=1;i<scale.x;i+=2)
+	for(int i=0;i<scale.x;i++)
 	{
 		float x=(0.5+float(i)-scale.x/2.0)/float(scale.x);
-		for(int j=1;j<scale.y;j+=2)
+		for(int j=0;j<scale.y;j++)
 		{
 			float y		=(0.5+float(j)-scale.y/2.0)/float(scale.y);
 			vec2 offs	=texelRange*vec2(x,y);
 			vec2 texc	=texCoords+2.0*offs;
 			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
 			if(depthInterpretationStruct.reverseDepth)
-				d.x					= step(d.x,thr)*d.x;
+				d.x					= step(d.x,nearThresholdDepth)*d.x;
 			else
-				d.x					= step(d.x,thr)+d.x;
+				d.x					= step(d.x,nearThresholdDepth)+d.x;
 			if(depthInterpretationStruct.reverseDepth)
 			{
 				fn.yw=max(fn.yw,d);
@@ -94,21 +94,30 @@ void DownscaleStochastic(int2 idx,bool reverseDepth)
 	vec4 frustum_clip_pos	=GetFrustumClipPos(idx);
 	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	sourceTexCoords.y		=1.0-sourceTexCoords.y;
-	vec4 clipRange=frustumClipRange;//vec4(-1.0,-1.0,1.0,1.0);
+	vec4 clipRange			=frustumClipRange;//vec4(-1.0,-1.0,1.0,1.0);
 	//if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
 	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
 	{
 		nextUpdateTexture[idx]=vec4(u.b,1,0,0);
 		return;
 	}
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=reverseDepth;
-	vec4 res		=DownscaleStochastic(previousTexture,sourceDepthTexture,sourceTexCoords,texelRange,depthInterpretationStruct,  nearThresholdDepth,stochasticOffset,scale);
+	DepthIntepretationStruct ds;
+	ds.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+	ds.reverseDepth				=reverseDepth;
+	vec4 res					=DownscaleStochastic(
+									previousTexture
+									,sourceDepthTexture
+									,sourceTexCoords
+									,texelRange
+									,ds
+									,nearThresholdDepth
+									,stochasticOffset
+									,scale);
 //	res=vec4(sourceTexCoords,.5,.5);
-	targetTexture[idx]=res;
-	nextUpdateTexture[idx]=vec4(u.b,0,1,0);
-	
+	targetTexture[idx]		=res;
+	nextUpdateTexture[idx]	=vec4(u.b,0,1,0);
+}
+
 void Direct(int2 idx,bool reverseDepth) 
 {
 	vec4 frustum_clip_pos			=GetFrustumClipPos(idx);
@@ -153,17 +162,18 @@ shader void CS_DownscaleStochastic_ForwardDepth(uint3 g : SV_GroupID, uint3 t : 
 
 void MinMax(int2 idx,bool reverseDepth)
 {
-	vec2 texCoords	=vec2(idx)/vec2(target_dims);
+	vec2 texCoords			=vec2(idx)/vec2(target_dims);
 	vec4 frustum_clip_pos	=GetFrustumClipPos(idx);
+
 	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	sourceTexCoords.y		=1.0-sourceTexCoords.y;
-	vec4 clipRange=frustumClipRange;//vec4(-1.0,-1.0,1.0,1.0);
+	vec4 clipRange			=frustumClipRange;//vec4(-1.0,-1.0,1.0,1.0);
 	//if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
 	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
 		return;
-	vec4 fn1	=texture_nearest_lod(sourceTexture1,texCoords,0);
-	vec4 fn2	=texture_nearest_lod(sourceTexture2,texCoords,0);
-	vec4 fn3	=texture_nearest_lod(sourceTexture3,texCoords,0);
+	vec4 fn1	=sourceTexture1[idx];
+	vec4 fn2	=sourceTexture2[idx];
+	vec4 fn3	=sourceTexture3[idx];
 	vec4 fn		=fn1;
 	if(reverseDepth)
 	{
