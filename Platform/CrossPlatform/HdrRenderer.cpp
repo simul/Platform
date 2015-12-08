@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include "Simul/Base/Timer.h"
-#include "Simul/Base/ProfilingInterface.h"
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Math/RandomNumberGenerator.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"

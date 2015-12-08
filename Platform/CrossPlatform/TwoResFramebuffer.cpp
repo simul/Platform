@@ -105,7 +105,7 @@ void TwoResFramebuffer::SetDepthFormat(crossplatform::PixelFormat p)
 
 void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	ERRNO_CHECK
+	ERRNO_BREAK
 	renderPlatform	=r;
 	amortizationStruct.reset();
 	SAFE_DELETE(lossTexture);

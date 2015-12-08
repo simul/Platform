@@ -1,7 +1,7 @@
 #pragma once
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Base/Timer.h"
-#include "Simul/Base/ProfilingInterface.h"
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include <string>
 #include <map>
 #pragma warning(disable:4251)
@@ -9,7 +9,7 @@ namespace simul
 {
 	namespace opengl
 	{
-		SIMUL_OPENGL_EXPORT_CLASS Profiler:public simul::base::GpuProfilingInterface
+		SIMUL_OPENGL_EXPORT_CLASS Profiler:public simul::crossplatform::GpuProfilingInterface
 		{
 		public:
 			static Profiler &GetGlobalProfiler();

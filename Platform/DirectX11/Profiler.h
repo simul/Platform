@@ -38,11 +38,13 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Base/ProfilingInterface.h"
 #include "MacrosDX1x.h"
-
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Platform/DirectX11/Export.h"
+
 #ifndef _XBOX_ONE
 	struct ID3DUserDefinedAnnotation;
 #endif
+
 namespace simul
 {
 	namespace dx11
@@ -76,7 +78,7 @@ namespace simul
 
 				const char *text=simul::dx11::Profiler::GetGlobalProfiler().GetDebugText(as_html);
 		*/
-		SIMUL_DIRECTX11_EXPORT_CLASS Profiler:public simul::base::GpuProfilingInterface
+		SIMUL_DIRECTX11_EXPORT_CLASS Profiler:public simul::crossplatform::GpuProfiler
 		{
 		public:
 			static Profiler &GetGlobalProfiler();
@@ -107,26 +109,13 @@ namespace simul
 			struct ProfileData;
 			typedef std::map<std::string,ProfileData*> ProfileMap;
 			typedef std::map<int,ProfileData*> ChildMap;
-			struct ProfileData:public base::ProfileData
+			struct ProfileData:public crossplatform::ProfileData
 			{
-				ProfileData *parent;
 				ID3D11Query *DisjointQuery[QueryLatency];
 				ID3D11Query *TimestampStartQuery[QueryLatency];
 				ID3D11Query *TimestampEndQuery[QueryLatency];
 				bool gotResults[QueryLatency];
-				BOOL QueryStarted;
-				BOOL QueryFinished;
-				bool updatedThisFrame;
-				std::string full_name;
-				std::string unqualifiedName;
-				std::wstring wUnqualifiedName;
 				ProfileData()
-					:QueryStarted(false)
-					,QueryFinished(false)
-					,updatedThisFrame(false)
-					,parent(NULL)
-					,last_child_updated(0)
-					,child_index(0)
 				{
 					for(int i=0;i<QueryLatency;i++)
 					{
@@ -145,8 +134,6 @@ namespace simul
 					}
 				}
 				ChildMap children;
-				int last_child_updated;
-				int child_index;
 			};
 		protected:
 			ProfileMap profileMap;
