@@ -319,10 +319,12 @@ vec4 simul::crossplatform::GetFrustumRangeOnCubeFace(int face,const float *invVi
 			vec4 w		=ivp*c;
 			w.w=1.0f;
 			vec4 tra	=faceMatrix*w;
-			tra			/=sqrt(tra.x*tra.x+tra.y*tra.y+tra.z*tra.z);
+		//	tra			/=sqrt(tra.x*tra.x+tra.y*tra.y+tra.z*tra.z);
 			if(tra.z<0)
 				continue;
 			tra			/=tra.z;
+		//	if(tra.x<-1.0f||tra.x>1.0f||tra.y<-1.0f||tra.y>1.0f)
+		//		continue;
 			range.x		=std::min(range.x,tra.x);
 			range.y		=std::min(range.y,tra.y);
 			range.z		=std::max(range.z,tra.x);

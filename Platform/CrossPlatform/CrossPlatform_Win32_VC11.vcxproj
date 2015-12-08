@@ -172,6 +172,7 @@
     <ClInclude Include="DeviceContext.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
+    <ClInclude Include="GpuProfiler.h" />
     <ClInclude Include="HdrRenderer.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="LensFlare.h" />
@@ -190,6 +191,7 @@
     <ClInclude Include="TwoResFramebuffer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="GpuProfiler.cpp" />
     <None Include="SL\atmospherics.sl" />
     <None Include="SL\atmospherics_constants.sl" />
     <None Include="SL\cloud_shadow.sl" />

@@ -67,9 +67,10 @@ namespace simul
 		class RenderPlatform;
 		struct Query;
 		class Effect;
+		/// Crossplatform GPU query class.
 		struct SIMUL_CROSSPLATFORM_EXPORT Query
 		{
-			static const int QueryLatency = 5;
+			static const int QueryLatency = 6;
 			bool QueryStarted;
 			bool QueryFinished;
 			int currFrame;
@@ -88,7 +89,9 @@ namespace simul
 			virtual void InvalidateDeviceObjects()=0;
 			virtual void Begin(DeviceContext &deviceContext) =0;
 			virtual void End(DeviceContext &deviceContext) =0;
-			virtual void GetData(DeviceContext &deviceContext,void *data,size_t sz) =0;
+			/// Get query data. Returns true if successful, or false otherwise.
+			/// Blocking queries will return false until they succeed.
+			virtual bool GetData(DeviceContext &deviceContext,void *data,size_t sz) =0;
 		};
 		
 		enum BlendOption

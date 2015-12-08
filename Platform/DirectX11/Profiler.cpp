@@ -4,6 +4,7 @@
 #include "Simul/Base/StringFunctions.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #ifdef SIMUL_ENABLE_PIX
 #include "pix.h"
 #endif
@@ -30,6 +31,7 @@ Profiler &Profiler::GetGlobalProfiler()
 {
 	return GlobalProfiler;
 }
+
 Profiler::Profiler():pUserDefinedAnnotation(NULL)
 {
 
@@ -71,7 +73,7 @@ ID3D11Query *CreateQuery(ID3D11Device* device,D3D11_QUERY_DESC &desc,const char 
 	return q;
 }
 
-void Profiler::StartFrame(void* ctx)
+void Profiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
 	level=0;
 	if(profileMap.find("root")==profileMap.end())
@@ -96,13 +98,13 @@ void Profiler::StartFrame(void* ctx)
 	}
 }
 
-void Profiler::Begin(void *ctx,const char *name)
+void Profiler::Begin(crossplatform::DeviceContext &deviceContext,const char *name)
 {
 	level++;
 	if(level>max_level)
 		return;
-	IUnknown *unknown=(IUnknown *)ctx;
-	ID3D11DeviceContext *context=(ID3D11DeviceContext*)ctx;
+	IUnknown *unknown=(IUnknown *)deviceContext.platform_context;
+	ID3D11DeviceContext *context=(ID3D11DeviceContext*)unknown;
 	std::string parent;
 	if(last_name.size())
 		parent=(last_name.back());
@@ -110,7 +112,7 @@ void Profiler::Begin(void *ctx,const char *name)
 	if(last_name.size())
 		qualified_name=(parent+".")+name;
 	last_name.push_back(qualified_name);
-	last_context.push_back(context);
+	last_context.push_back(&deviceContext);
 	if(!context||!enabled||!device)
         return;
     ProfileData *profileData = NULL;
@@ -157,7 +159,7 @@ void Profiler::Begin(void *ctx,const char *name)
     _ASSERT(profileData->QueryStarted == FALSE);
     if(profileData->QueryFinished!= FALSE)
         return;
-    
+# if 0
     if(profileData->DisjointQuery[currFrame] == NULL)
     {
         // Create the queries
@@ -189,6 +191,44 @@ void Profiler::Begin(void *ctx,const char *name)
 
 	    profileData->QueryStarted = TRUE;
 	}
+#else
+    if(profileData->DisjointQuery == NULL)
+    {
+        // Create the queries
+        D3D11_QUERY_DESC desc;
+        desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+        desc.MiscFlags = 0;
+		std::string disjointName=qualified_name+"disjoint";
+		std::string startName	=qualified_name+"start";
+		std::string endName		=qualified_name+"end";
+		profileData->DisjointQuery			=new dx11::Query(crossplatform::QUERY_TIMESTAMP_DISJOINT);
+		profileData->DisjointQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
+		//	CreateQuery(device,desc,disjointName.c_str());
+		profileData->DisjointQuery->SetName(disjointName.c_str());
+        desc.Query = D3D11_QUERY_TIMESTAMP;
+        profileData->TimestampStartQuery	=new dx11::Query(crossplatform::QUERY_TIMESTAMP);
+		profileData->TimestampStartQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
+		profileData->TimestampStartQuery->SetName(startName.c_str());
+        profileData->TimestampEndQuery		=new dx11::Query(crossplatform::QUERY_TIMESTAMP);
+		profileData->TimestampEndQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
+		profileData->TimestampEndQuery->SetName(endName.c_str());
+		profileData->gotResults[currFrame]=true;
+    }
+	if(profileData->DisjointQuery)
+	{
+		if(!profileData->gotResults[currFrame])
+		{
+			return;//SIMUL_BREAK("not got query results!")
+		}
+    // Start a disjoint query first
+		profileData->DisjointQuery->Begin(deviceContext);
+
+    // Insert the start timestamp   
+		profileData->TimestampStartQuery->End(deviceContext);
+
+	    profileData->QueryStarted = TRUE;
+	}
+#endif
 }
 void Profiler::End()
 {
@@ -197,7 +237,8 @@ void Profiler::End()
 		return;
 	std::string name		=last_name.back();
 	last_name.pop_back();
-	ID3D11DeviceContext *context=last_context.back();
+	crossplatform::DeviceContext *deviceContext=last_context.back();
+	ID3D11DeviceContext *context=deviceContext->asD3D11DeviceContext();
 	last_context.pop_back();
     if(!enabled||!device||!context)
         return;
@@ -215,10 +256,11 @@ void Profiler::End()
 		SIMUL_BREAK("not got query results!")
 	}
     // Insert the end timestamp    
-    context->End(profileData->TimestampEndQuery[currFrame]);
-
+    //context->End(profileData->TimestampEndQuery[currFrame]);
+	profileData->TimestampEndQuery->End(*deviceContext);
     // End the disjoint query
-    context->End(profileData->DisjointQuery[currFrame]);
+  //  context->End(profileData->DisjointQuery[currFrame]);
+	profileData->DisjointQuery->End(*deviceContext);
 	profileData->gotResults[currFrame]=false;
 
     profileData->QueryStarted = FALSE;
@@ -240,13 +282,13 @@ template<typename T> inline std::string ToString(const T& val)
     return stream.str();
 }
 
-void Profiler::EndFrame(void* c)
+void Profiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 {
 	SIMUL_ASSERT(level==0)
 #ifdef SIMUL_WIN8_SDK
 	SAFE_RELEASE(pUserDefinedAnnotation);
 #endif
-	ID3D11DeviceContext *context=(ID3D11DeviceContext*)c;
+	ID3D11DeviceContext *context=(ID3D11DeviceContext*)deviceContext.platform_context;
     if(!enabled||!device)
         return;
 
@@ -267,20 +309,23 @@ void Profiler::EndFrame(void* c)
 
         profile.QueryFinished = FALSE;
 
-        if(profile.DisjointQuery[currFrame] == NULL)
+        if(profile.DisjointQuery == NULL)
             continue;
 
         timer.UpdateTime();
 
         // Get the query data
         UINT64 startTime = 0;
-        while(context->GetData(profile.TimestampStartQuery[currFrame], &startTime, sizeof(startTime), 0) != S_OK);
+        while(!profile.TimestampStartQuery->GetData(deviceContext,&startTime, sizeof(startTime)));
+//       while(context->GetData(profile.TimestampStartQuery[currFrame], &startTime, sizeof(startTime), 0) != S_OK);
 
         UINT64 endTime = 0;
-        while(context->GetData(profile.TimestampEndQuery[currFrame], &endTime, sizeof(endTime), 0) != S_OK);
+        while(!profile.TimestampEndQuery->GetData(deviceContext,&endTime, sizeof(endTime)));
+       // while(context->GetData(profile.TimestampEndQuery[currFrame], &endTime, sizeof(endTime), 0) != S_OK);
 
         D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData;
-        while(context->GetData(profile.DisjointQuery[currFrame], &disjointData, sizeof(disjointData), 0) != S_OK);
+        while(!profile.DisjointQuery->GetData(deviceContext,&disjointData, sizeof(disjointData)));
+        //while(context->GetData(profile.DisjointQuery[currFrame], &disjointData, sizeof(disjointData), 0) != S_OK);
 		profile.gotResults[currFrame]=true;
         timer.UpdateTime();
         queryTime += timer.Time;
@@ -420,11 +465,11 @@ const base::ProfileData *Profiler::GetEvent(const base::ProfileData *parent,int 
 
 // == ProfileBlock ================================================================================
 
-ProfileBlock::ProfileBlock(ID3D11DeviceContext* c,const std::string& name)
+ProfileBlock::ProfileBlock(crossplatform::DeviceContext &deviceContext,const std::string& name)
 	:name(name)
-	,context(c)
+	,context(&deviceContext)
 {
-	Profiler::GetGlobalProfiler().Begin(context,name.c_str());
+	Profiler::GetGlobalProfiler().Begin(deviceContext,name.c_str());
 }
 
 ProfileBlock::~ProfileBlock()

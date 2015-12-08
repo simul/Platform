@@ -36,10 +36,12 @@
 
 #include <string>
 #include "Simul/Base/Timer.h"
-#include "Simul/Base/ProfilingInterface.h"
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
+#include "Simul/Platform/CrossPlatform/Effect.h"
 #include "MacrosDX1x.h"
 
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/Effect.h"
 #ifndef _XBOX_ONE
 	struct ID3DUserDefinedAnnotation;
 #endif
@@ -65,18 +67,18 @@ namespace simul
 
 		*  Wrap these around anything you want to measure:
 
-				SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"Element name")
-				SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+				SIMUL_COMBINED_PROFILE_START(deviceContext,"Element name")
+				SIMUL_COMBINED_PROFILE_END(deviceContext)
 
 		* At frame-end:
 
-				SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+				SIMUL_COMBINED_PROFILE_END(deviceContext)
 
 		* To obtain the profiling results - pass true if you want HTML output:
 
 				const char *text=simul::dx11::Profiler::GetGlobalProfiler().GetDebugText(as_html);
 		*/
-		SIMUL_DIRECTX11_EXPORT_CLASS Profiler:public simul::base::GpuProfilingInterface
+		SIMUL_DIRECTX11_EXPORT_CLASS Profiler:public simul::crossplatform::GpuProfiler
 		{
 		public:
 			static Profiler &GetGlobalProfiler();
@@ -86,11 +88,11 @@ namespace simul
 			void Initialize(ID3D11Device* device);
 			/// Call this when the profiler is to be shut-down, or the device pointer has been lost or changed.
 			void Uninitialize();
-			void Begin(void *context,const char *name);
+			void Begin(crossplatform::DeviceContext &deviceContext,const char *name);
 			void End();
 			
-			void StartFrame(void* context);
-			void EndFrame(void* context);
+			void StartFrame(crossplatform::DeviceContext &deviceContext);
+			void EndFrame(crossplatform::DeviceContext &deviceContext);
 			ID3DUserDefinedAnnotation *pUserDefinedAnnotation;
 			float GetTime(const std::string &name) const;
 			//! Get all the active profilers as a text report.
@@ -98,7 +100,7 @@ namespace simul
 			const base::ProfileData *GetEvent(const base::ProfileData *parent,int i) const;
 			std::string GetChildText(const char *name,std::string tab) const;
 			std::vector<std::string> last_name;
-			std::vector<ID3D11DeviceContext *> last_context;
+			std::vector<crossplatform::DeviceContext *> last_context;
 			static Profiler GlobalProfiler;
 
 			// Constants
@@ -109,44 +111,23 @@ namespace simul
 			typedef std::map<int,ProfileData*> ChildMap;
 			struct ProfileData:public base::ProfileData
 			{
-				ProfileData *parent;
-				ID3D11Query *DisjointQuery[QueryLatency];
-				ID3D11Query *TimestampStartQuery[QueryLatency];
-				ID3D11Query *TimestampEndQuery[QueryLatency];
+				simul::dx11::Query *DisjointQuery;
+				simul::dx11::Query *TimestampStartQuery;
+				simul::dx11::Query *TimestampEndQuery;
 				bool gotResults[QueryLatency];
-				BOOL QueryStarted;
-				BOOL QueryFinished;
-				bool updatedThisFrame;
-				std::string full_name;
-				std::string unqualifiedName;
-				std::wstring wUnqualifiedName;
 				ProfileData()
-					:QueryStarted(false)
-					,QueryFinished(false)
-					,updatedThisFrame(false)
-					,parent(NULL)
-					,last_child_updated(0)
-					,child_index(0)
+				:DisjointQuery(NULL)
+				,TimestampStartQuery(NULL)
+				,TimestampEndQuery(NULL)
 				{
-					for(int i=0;i<QueryLatency;i++)
-					{
-						DisjointQuery[i]		=0;
-						TimestampStartQuery[i]	=0;
-						TimestampEndQuery[i]	=0;
-					}
 				}
 				~ProfileData()
 				{
-					for(int i=0;i<QueryLatency;i++)
-					{
-						SAFE_RELEASE(DisjointQuery[i]);
-						SAFE_RELEASE(TimestampStartQuery[i]);
-						SAFE_RELEASE(TimestampEndQuery[i]);
-					}
+					delete DisjointQuery;
+					delete TimestampStartQuery;
+					delete TimestampEndQuery;
 				}
 				ChildMap children;
-				int last_child_updated;
-				int child_index;
 			};
 		protected:
 			ProfileMap profileMap;
@@ -164,13 +145,13 @@ namespace simul
 		{
 		public:
 
-			ProfileBlock(ID3D11DeviceContext* c,const std::string& name);
+			ProfileBlock(crossplatform::DeviceContext &c,const std::string& name);
 			~ProfileBlock();
 
 			/// Get the previous frame's timing value.
 			float GetTime() const;
 		protected:
-			ID3D11DeviceContext* context;
+			crossplatform::DeviceContext* context;
 			std::string name;
 		};
 	}

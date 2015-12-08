@@ -1,7 +1,7 @@
 #pragma once
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Base/Timer.h"
-#include "Simul/Base/ProfilingInterface.h"
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include <string>
 #include <map>
 #pragma warning(disable:4251)
@@ -9,17 +9,17 @@ namespace simul
 {
 	namespace opengl
 	{
-		SIMUL_OPENGL_EXPORT_CLASS Profiler:public simul::base::GpuProfilingInterface
+		SIMUL_OPENGL_EXPORT_CLASS Profiler:public simul::crossplatform::GpuProfiler
 		{
 		public:
 			static Profiler &GetGlobalProfiler();
 			void Initialize(void*);
 			void Uninitialize();
-			void Begin(void *,const char *name);
+			void Begin(crossplatform::DeviceContext &deviceContext,const char *name);
 			void End();
 			
-			void StartFrame(void *);
-			void EndFrame(void *);
+			void StartFrame(crossplatform::DeviceContext &deviceContext);
+			void EndFrame(crossplatform::DeviceContext &deviceContext);
 			
 			float GetTime(const std::string &name) const;
 			const char *GetDebugText(base::TextStyle style=base::PLAINTEXT) const;
@@ -59,7 +59,7 @@ namespace simul
 		{
 		public:
 
-			ProfileBlock(void *ctx,const char *name);
+			ProfileBlock(crossplatform::DeviceContext &deviceContext,const char *name);
 			~ProfileBlock();
 			/// Get the previous frame's timing value.
 			float GetTime() const;

@@ -32,7 +32,7 @@ void Profiler::Initialize(void*)
     enabled=false;
 }
 
-void Profiler::Begin(void*,const char *name)
+void Profiler::Begin(crossplatform::DeviceContext &de,const char *name)
 {
     if(!enabled)
         return;
@@ -84,11 +84,11 @@ template<typename T> inline std::string ToString(const T& val)
     return stream.str();
 }
 
-void Profiler::StartFrame(void *)
+void Profiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
 }
 
-void Profiler::EndFrame(void *)
+void Profiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 {
     if(!enabled)
         return;
@@ -145,9 +145,9 @@ const char *Profiler::GetDebugText(base::TextStyle ) const
 
 // == ProfileBlock ================================================================================
 
-ProfileBlock::ProfileBlock(void *ctx,const char *name) : name(name)
+ProfileBlock::ProfileBlock(crossplatform::DeviceContext &de,const char *name) : name(name)
 {
-    Profiler::GetGlobalProfiler().Begin(ctx,name);
+    Profiler::GetGlobalProfiler().Begin(de,name);
 }
 
 ProfileBlock::~ProfileBlock()

@@ -95,7 +95,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-void Query::GetData(crossplatform::DeviceContext &,void *data,size_t )
+bool Query::GetData(crossplatform::DeviceContext &,void *data,size_t )
 {
 GL_ERROR_CHECK
 	GLuint ok=0;
@@ -103,6 +103,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	if(ok==GL_TRUE)
 		glGetQueryObjectuiv(glQuery[currFrame],GL_QUERY_RESULT,(GLuint*)data);
+	return (ok==GL_TRUE);
 GL_ERROR_CHECK
 }
 

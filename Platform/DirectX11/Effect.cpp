@@ -29,6 +29,12 @@ D3D11_QUERY toD3dQueryType(crossplatform::QueryType t)
 	};
 }
 
+void Query::SetName(const char *name)
+{
+	for(int i=0;i<QueryLatency;i++)
+		SetDebugObjectName( d3d11Query[i], name );
+}
+
 void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	InvalidateDeviceObjects();
@@ -56,13 +62,15 @@ void Query::End(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->End(d3d11Query[currFrame]);
-	currFrame = (currFrame + 1) % QueryLatency;  
 }
 
-void Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)
+bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	while (pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0) == S_FALSE);
+	HRESULT hr=pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0);
+	if(hr== S_OK)
+		currFrame = (currFrame + 1) % QueryLatency;  
+	return hr== S_OK;
 }
 
 RenderState::RenderState()

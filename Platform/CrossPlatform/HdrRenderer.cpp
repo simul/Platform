@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include "Simul/Base/Timer.h"
-#include "Simul/Base/ProfilingInterface.h"
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Math/RandomNumberGenerator.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
@@ -185,7 +185,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 
 void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,float offsetX,float Exposure,float Gamma)
 {
-	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"HDR")
+	SIMUL_COMBINED_PROFILE_START(deviceContext,"HDR")
 	hdrConstants.gamma		=Gamma;
 	hdrConstants.exposure	=Exposure;
 	hdrConstants.offset		=vec2(offsetX,0.0f);
@@ -200,7 +200,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 	if(blurTexture->IsValid())
 	{	
 		crossplatform::Texture *src=texture;
-		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"blur")
+		SIMUL_COMBINED_PROFILE_START(deviceContext,"blur")
 		crossplatform::Texture *dst=blurTexture;
 		float htexel=1.0f/blurTexture->width;
 		float vtexel=1.0f/blurTexture->length;
@@ -222,7 +222,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 			dst->deactivateRenderTarget();
 			std::swap(src,dst);
 		}
-		SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+		SIMUL_COMBINED_PROFILE_END(deviceContext)
 	}
 	bool msaa=texture?(texture->GetSampleCount()>1):false;
 	if(msaa)
@@ -238,12 +238,12 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 	imageConstants.Unbind(deviceContext);
 	
 	hdr_effect->Unapply(deviceContext);
-	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 
 void HdrRenderer::RenderInfraRed(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,vec3 infrared_integration_factors,float Exposure,float Gamma)
 {
-	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderInfraRed")
+	SIMUL_COMBINED_PROFILE_START(deviceContext,"RenderInfraRed")
 	bool msaa=(texture->GetSampleCount()>1);
 	if(msaa)
 		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
@@ -263,7 +263,7 @@ void HdrRenderer::RenderInfraRed(crossplatform::DeviceContext &deviceContext,cro
 	hdrConstants.Unbind(deviceContext);
 	imageConstants.Unbind(deviceContext);
 	hdr_effect->Unapply(deviceContext);
-	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 
 
@@ -324,8 +324,8 @@ void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,
 {
 	if(!m_pGaussianEffect)
 		return;
-	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"RenderGlowTexture")
-	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"downscale")
+	SIMUL_COMBINED_PROFILE_START(deviceContext,"RenderGlowTexture")
+	SIMUL_COMBINED_PROFILE_START(deviceContext,"downscale")
 		
 	// Render to the low-res glow.
 	if(glowTechnique)
@@ -350,21 +350,21 @@ void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,
 			brightpassTextures[i]->deactivateRenderTarget();
 		}
 	}
-	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
 	for(int i=0;i<4;i++)
 	{
 		char c[]={'0',0};
 		c[0]='0'+i;
-		SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,c)
+		SIMUL_COMBINED_PROFILE_START(deviceContext,c)
 		DoGaussian(deviceContext,brightpassTextures[i],glowTextures[i]);
-		SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+		SIMUL_COMBINED_PROFILE_END(deviceContext)
 	}
 
-	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *brightpassTexture,crossplatform::Texture *targetTexture)
 {
-	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"H")
+	SIMUL_COMBINED_PROFILE_START(deviceContext,"H")
 	static int g_NumApproxPasses	=3;
 	static int	g_MaxApproxPasses	=8;
 	static float g_FilterRadius		=6;
@@ -395,9 +395,9 @@ void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crosspl
 	m_pGaussianEffect->UnbindTextures(deviceContext);
 	
 	m_pGaussianEffect->Unapply(deviceContext);
-	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
 
-	SIMUL_COMBINED_PROFILE_START(deviceContext.platform_context,"W")
+	SIMUL_COMBINED_PROFILE_START(deviceContext,"W")
 	// Step 2. Horizontal passes: Each thread group handles a row in the image
 	// Input texture
 	m_pGaussianEffect->SetTexture(deviceContext,"g_texInput",brightpassTextures[0]);
@@ -412,7 +412,7 @@ void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crosspl
 	m_pGaussianEffect->UnbindTextures(deviceContext);
 	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",NULL);
 	m_pGaussianEffect->Unapply(deviceContext);
-	SIMUL_COMBINED_PROFILE_END(deviceContext.platform_context)
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 
 void HdrRenderer::RenderDebug(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)

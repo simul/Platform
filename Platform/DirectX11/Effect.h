@@ -30,7 +30,9 @@ namespace simul
 			void InvalidateDeviceObjects() override;
 			void Begin(crossplatform::DeviceContext &deviceContext) override;
 			void End(crossplatform::DeviceContext &deviceContext) override;
-			void GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
+			bool GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
+			
+			void SetName(const char *n);
 		};
 		struct SIMUL_DIRECTX11_EXPORT RenderState:public crossplatform::RenderState
 		{

@@ -176,6 +176,7 @@
     <ClInclude Include="DeviceContext.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
+    <ClInclude Include="GpuProfiler.h" />
     <ClInclude Include="HdrRenderer.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="LensFlare.h" />
@@ -201,6 +202,7 @@
     <ClCompile Include="CameraInterface.cpp" />
     <ClCompile Include="DemoOverlay.cpp" />
     <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="GpuProfiler.cpp" />
     <ClCompile Include="HdrRenderer.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="LensFlare.cpp" />
