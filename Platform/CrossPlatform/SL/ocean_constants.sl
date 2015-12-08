@@ -8,7 +8,9 @@ SIMUL_CONSTANT_BUFFER(FftConstants,0)
 	uint istride;
 	uint pstride;
 	float phase_base;
-	float ahehsj,tdjtdjt,jttztjz;
+	float ahehsj;
+	float tdjtdjt;
+	float jttztjz;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(cbImmutable,1)
