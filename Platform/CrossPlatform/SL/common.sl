@@ -69,7 +69,6 @@
 	#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
 	#define TEXTURE2D_UINT Texture2D<uint>
 	#define TEXTURE2D_UINT4 Texture2D<uint4>
-	#define TEXTURE2DMS_FLOAT4 Texture2DMS<float4>
 
 
 	//#define IMAGE_LOAD(a,b) imageLoad(a,b)
