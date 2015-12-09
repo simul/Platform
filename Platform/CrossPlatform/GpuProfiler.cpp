@@ -6,10 +6,15 @@
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include <sstream>
+#include <iostream>
+#include <map>
+
 using namespace simul;
 using namespace crossplatform;
 using namespace std;
 static std::map<void*,simul::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
+typedef uint64_t UINT64;
+typedef int                 BOOL;
 
 ProfileData::ProfileData()
 				:DisjointQuery(NULL)
@@ -43,6 +48,7 @@ namespace simul
 GpuProfiler::GpuProfiler()
 	:renderPlatform(NULL)
 	,enabled(false)
+	,level(0)
 {
 }
 
@@ -122,7 +128,7 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 		profileData->child_index=new_child_index;
 	}
 	profileData->parent=parentData;
-    _ASSERT(profileData->QueryStarted == false);
+    SIMUL_ASSERT(profileData->QueryStarted == false);
     if(profileData->QueryFinished!= false)
         return;
 
@@ -157,6 +163,7 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 
 	    profileData->QueryStarted = true;
 	}
+	renderPlatform->BeginEvent(deviceContext,name);
 }
 
 void GpuProfiler::End()
@@ -171,7 +178,8 @@ void GpuProfiler::End()
 	last_context.pop_back();
     if(!enabled||!renderPlatform||!context)
         return;
-
+	
+	renderPlatform->EndEvent(*deviceContext);
     crossplatform::ProfileData *profileData = profileMap[name];
 	if(!profileData->DisjointQuery->GotResults())
         return;
@@ -179,7 +187,7 @@ void GpuProfiler::End()
     if(profileData->QueryStarted != true)
 		return;
 	profileData->updatedThisFrame=true;
-    _ASSERT(profileData->QueryFinished == FALSE);
+    SIMUL_ASSERT(profileData->QueryFinished == false);
 	if(!profileData->DisjointQuery->GotResults())
 	{
 		SIMUL_BREAK("not got query results!")
@@ -191,8 +199,8 @@ void GpuProfiler::End()
   //  context->End(profileData->DisjointQuery[currFrame]);
 	profileData->DisjointQuery->End(*deviceContext);
 
-    profileData->QueryStarted = FALSE;
-    profileData->QueryFinished = TRUE;
+    profileData->QueryStarted = false;
+    profileData->QueryFinished = true;
 }
 
 void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
@@ -226,10 +234,10 @@ crossplatform::ProfileMap::iterator iter;
 		static float mix=0.07f;
 		iter->second->time*=(1.f-mix);
 
-        if(profile.QueryFinished == FALSE)
+        if(profile.QueryFinished == false)
             continue;
 
-        profile.QueryFinished = FALSE;
+        profile.QueryFinished = false;
 
         if(profile.DisjointQuery == NULL)
             continue;
@@ -245,20 +253,13 @@ crossplatform::ProfileMap::iterator iter;
         while(!profile.TimestampEndQuery->GetData(deviceContext,&endTime, sizeof(endTime)));
        // while(context->GetData(profile.TimestampEndQuery[currFrame], &endTime, sizeof(endTime), 0) != S_OK);
 		
-
- struct D3D11_QUERY_DATA_TIMESTAMP_DISJOINT
-    {
-    UINT64 Frequency;
-    BOOL Disjoint;
-    } 	;
-
-        D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData;
+        crossplatform::DisjointQueryStruct disjointData;
         while(!profile.DisjointQuery->GetData(deviceContext,&disjointData, sizeof(disjointData)));
         timer.UpdateTime();
         queryTime += timer.Time;
 
         float time = 0.0f;
-        if(disjointData.Disjoint == FALSE)
+        if(disjointData.Disjoint == false)
         {
             UINT64 delta = endTime - startTime;
             float frequency = static_cast<float>(disjointData.Frequency);
@@ -307,7 +308,7 @@ static string formatLine(const char *name,int tab,float number,float parent,base
 		unsigned colour = 0xFF0000;
 		unsigned greenblue = 255 - (unsigned)(175.0f*proportion_of_parent);
 		colour |= (greenblue << 8) | (greenblue);
-		int padding = 12 * tab;
+	//	int padding = 12 * tab;
 		content = base::stringFormat("<color=#%06x>%s</color>", colour,  content.c_str());
 	}
 	str+=content;
@@ -338,7 +339,7 @@ template<typename T> inline std::string ToString(const T& val)
 {
     std::ostringstream stream;
     if (!(stream << val))
-        throw std::runtime_error("Error converting value to string");
+        SIMUL_BREAK("Error converting value to string");
     return stream.str();
 }
 
@@ -389,4 +390,34 @@ const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,i
 		}
 	}
 	return NULL;
+}
+
+float GpuProfiler::GetTime(const std::string &name) const
+{
+	if(!enabled)
+		return 0.f;
+	return profileMap.find(name)->second->time;
+}
+
+// == ProfileBlock ================================================================================
+
+ProfileBlock::ProfileBlock(crossplatform::DeviceContext &deviceContext,
+	GpuProfiler *prof,const std::string& name)
+	:profiler(prof)
+	,context(&deviceContext)
+	,name(name)
+{
+	if(profiler)
+		profiler->Begin(deviceContext,name.c_str());
+}
+
+ProfileBlock::~ProfileBlock()
+{
+	if(profiler)
+		profiler->End();
+}
+
+float ProfileBlock::GetTime() const
+{
+	return profiler->GetTime(name);
 }

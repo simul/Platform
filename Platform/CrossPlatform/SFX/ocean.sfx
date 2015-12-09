@@ -78,17 +78,6 @@ SamplerState g_samplerFresnel
 	MaxAnisotropy = 4;
 };
 
-// A small sky cubemap for reflection
-SamplerState g_samplerCube			
-{
-	Filter			= MIN_MAG_MIP_LINEAR;
-	AddressU		= Wrap;
-	AddressV		= Wrap;
-	AddressW		= Wrap;
-	MipLODBias		= 0;
-	MaxAnisotropy	= 1;
-};
-
 SamplerState g_samplerAtmospherics	
 {
 	Filter			= MIN_MAG_MIP_LINEAR;
@@ -462,7 +451,7 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 //		ramp = lerp(ramp, g_BendParam.z, (g_BendParam.x - reflect_vec.z)/(g_BendParam.x - g_BendParam.y));
 	reflect_vec.z		=max(0, reflect_vec.z);
 
-	vec3 reflected_color=g_texReflectCube.Sample(g_samplerCube,-reflect_vec.xyz).xyz;
+	vec3 reflected_color=g_texReflectCube.Sample(wrapSamplerState,-reflect_vec.xyz).xyz;
 
 	// Combine waterbody color and reflected color
 	vec3 water_color	=lerp(g_WaterbodyColor, reflected_color, ramp.x);
@@ -510,9 +499,9 @@ technique ocean
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( ReverseDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,OceanSurfVS()));
+		SetVertexShader(CompileShader(vs_5_0,OceanSurfVS()));
 		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,OceanSurfPS()));
+		SetPixelShader(CompileShader(ps_5_0,OceanSurfPS()));
 	}
 }
 
@@ -523,9 +512,9 @@ technique show_texture
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_ShowTexture()));
+		SetVertexShader(CompileShader(vs_5_0,VS_ShowTexture()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
     }
 }
 technique show_structured_buffer
@@ -535,9 +524,9 @@ technique show_structured_buffer
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_ShowTexture()));
+		SetVertexShader(CompileShader(vs_5_0,VS_ShowTexture()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowStructuredBuffer()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowStructuredBuffer()));
     }
 }
 
@@ -548,9 +537,9 @@ technique wireframe
 		SetRasterizerState( wireframeRasterizer );
 		SetDepthStencilState(TestDepth, 0 );
 		SetBlendState(AddBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,OceanSurfVS()));
+		SetVertexShader(CompileShader(vs_5_0,OceanSurfVS()));
 		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,WireframePS()));
+		SetPixelShader(CompileShader(ps_5_0,WireframePS()));
 	}
 }
 
@@ -587,9 +576,9 @@ technique update_displacement
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,UpdateDisplacementPS()));
+		SetPixelShader(CompileShader(ps_5_0,UpdateDisplacementPS()));
     }
 }
 
@@ -600,9 +589,9 @@ technique gradient_folding
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,GenGradientFoldingPS()));
+		SetPixelShader(CompileShader(ps_5_0,GenGradientFoldingPS()));
     }
 }
 

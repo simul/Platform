@@ -67,7 +67,7 @@ void Query::End(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->End(d3d11Query[currFrame]);
-		gotResults[currFrame]=false;
+	gotResults[currFrame]=false;
 }
 
 bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)

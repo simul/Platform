@@ -17,13 +17,13 @@ using namespace crossplatform;
 HdrRenderer::HdrRenderer()
 	:renderPlatform(NULL)
 	,hdr_effect(NULL)
-	,m_pGaussianEffect(NULL)
 	,Width(0)
 	,Height(0)
+	,m_pGaussianEffect(NULL)
 	,exposureGammaTechnique(NULL)
 	,glowExposureGammaTechnique(NULL)
-	,glowTechnique(NULL)
 	,Glow(false)
+	,glowTechnique(NULL)
 	,blurTexture(NULL)
 {
 	for(int i=0;i<4;i++)
@@ -204,7 +204,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 		crossplatform::Texture *dst=blurTexture;
 		float htexel=1.0f/blurTexture->width;
 		float vtexel=1.0f/blurTexture->length;
-		static int num_steps =2;
+		//static int num_steps =2;
 		static int randomSeed=0;
 		{
 			static float kernelSize=3.0f;
@@ -366,7 +366,7 @@ void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crosspl
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"H")
 	static int g_NumApproxPasses	=3;
-	static int	g_MaxApproxPasses	=8;
+	//static int	g_MaxApproxPasses	=8;
 	static float g_FilterRadius		=6;
 	float box_width					= CalculateBoxFilterWidth(g_FilterRadius, g_NumApproxPasses);
 	float half_box_width			= box_width * 0.5f;

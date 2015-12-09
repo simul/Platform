@@ -131,18 +131,6 @@ void Profiler::EndFrame(crossplatform::DeviceContext &deviceContext)
     output+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
 }
 
-float Profiler::GetTime(const std::string &name) const
-{
-	if(!enabled)
-		return 0.f;
-	return profiles.find(name)->second.time;
-}
-
-const char *Profiler::GetDebugText(base::TextStyle ) const
-{
-	return output.c_str();
-}
-
 // == ProfileBlock ================================================================================
 
 ProfileBlock::ProfileBlock(crossplatform::DeviceContext &de,const char *name) : name(name)

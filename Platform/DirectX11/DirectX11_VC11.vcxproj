@@ -186,7 +186,6 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
     <ClCompile Include="Texture.cpp" />
@@ -209,7 +208,6 @@
     <ClInclude Include="MacrosDx1x.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="Profiler.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
@@ -306,7 +304,7 @@
     </ProjectReference>
     <ProjectReference Include="..\..\External\DirectX\Effects11_DXSDK\Effects11_DXSDK_2012.vcxproj">
       <Project>{df460eab-570d-4b50-9089-2e2fc801bf38}</Project>
-		<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>

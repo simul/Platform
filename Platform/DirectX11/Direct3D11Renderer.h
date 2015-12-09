@@ -12,6 +12,7 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Sky/BaseGpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
 #include "Simul/Clouds/TrueSkyRenderer.h"

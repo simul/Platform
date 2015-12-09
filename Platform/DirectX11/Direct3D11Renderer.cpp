@@ -15,7 +15,7 @@
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
-#include "Simul/Platform/DirectX11/Profiler.h"
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/SaveTextureDx1x.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
@@ -67,7 +67,6 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 {
 	if(!renderPlatform)
 		return;
-	Profiler::GetGlobalProfiler().InvalidateDeviceObjects();
 	clouds::TrueSkyRenderer::InvalidateDeviceObjects();
 	renderPlatform=NULL;
 }
@@ -91,7 +90,6 @@ Direct3D11Renderer::~Direct3D11Renderer()
 void Direct3D11Renderer::OnD3D11CreateDevice	(ID3D11Device* pd3dDevice)
 {
 	renderPlatformDx11.RestoreDeviceObjects(pd3dDevice);
-	Profiler::GetGlobalProfiler().RestoreDeviceObjects(&renderPlatformDx11);
 	trueSkyRenderer.RestoreDeviceObjects(&renderPlatformDx11);
 }
 
@@ -124,7 +122,7 @@ void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBu
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)
 {
 	crossplatform::DeviceContext deviceContext;
-	simul::crossplatform::SetGpuProfilingInterface(deviceContext,&simul::dx11::Profiler::GetGlobalProfiler());
+	simul::crossplatform::SetGpuProfilingInterface(deviceContext,renderPlatformDx11.GetGpuProfiler());
 	deviceContext.platform_context	=pContext;
 	deviceContext.renderPlatform	=&renderPlatformDx11;
 	deviceContext.viewStruct.view_id=view_id;

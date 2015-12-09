@@ -21,8 +21,6 @@ namespace simul
 			void StartFrame(crossplatform::DeviceContext &deviceContext);
 			void EndFrame(crossplatform::DeviceContext &deviceContext);
 			
-			float GetTime(const std::string &name) const;
-			const char *GetDebugText(base::TextStyle style=base::PLAINTEXT) const;
 		protected:
 			std::vector<unsigned> query_stack;
 			static Profiler GlobalProfiler;

@@ -61,6 +61,7 @@
     <ClInclude Include="CameraInterface.h" />
     <ClInclude Include="LensFlare.h" />
     <ClInclude Include="HdrRenderer.h" />
+    <ClInclude Include="GpuProfiler.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SL">
@@ -115,5 +116,6 @@
     <ClCompile Include="CameraInterface.cpp" />
     <ClCompile Include="LensFlare.cpp" />
     <ClCompile Include="HdrRenderer.cpp" />
+    <ClCompile Include="GpuProfiler.cpp" />
   </ItemGroup>
 </Project>

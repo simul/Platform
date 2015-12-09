@@ -54,6 +54,35 @@ namespace simul
 				~ProfileData();
 			ChildMap children;
 		};
+		/*!
+		The Simul GPU profiler. Usage is as follows:
+
+		* On initialization, when you have a device pointer:
+		
+				simul::crossplatform::GpuProfiler::GetGlobalProfiler().Initialize(pd3dDevice);
+
+		* On shutdown, or whenever the device is changed or lost:
+
+				simul::crossplatform::GpuProfiler::GetGlobalProfiler().Uninitialize();
+
+		* Per-frame, at the start of the frame:
+
+				simul::base::SetGpuProfilingInterface(deviceContext.platform_context,&simul::crossplatform::GpuProfiler::GetGlobalProfiler());
+				SIMUL_COMBINED_PROFILE_STARTFRAME(deviceContext.platform_context)
+
+		*  Wrap these around anything you want to measure:
+
+				SIMUL_COMBINED_PROFILE_START(deviceContext,"Element name")
+				SIMUL_COMBINED_PROFILE_END(deviceContext)
+
+		* At frame-end:
+
+				SIMUL_COMBINED_PROFILE_END(deviceContext)
+
+		* To obtain the profiling results - pass true if you want HTML output:
+
+				const char *text=simul::dx11::Profiler::GetGlobalProfiler().GetDebugText(as_html);
+		*/
 		SIMUL_CROSSPLATFORM_EXPORT_CLASS GpuProfiler:public GpuProfilingInterface
 		{
 		public:
@@ -66,12 +95,18 @@ namespace simul
 			virtual void InvalidateDeviceObjects();
 			virtual void Begin(crossplatform::DeviceContext &deviceContext,const char *) override;
 			virtual void End() override;
+			/// Call this before any timeable events in a frame.
 			virtual void StartFrame(crossplatform::DeviceContext &deviceContext) override;
+			/// Call this after all timeable events in a frame have completed. It is acceptable
+			/// to call EndFrame() without having first called StartFrame() - this has no effect.
 			virtual void EndFrame(crossplatform::DeviceContext &deviceContext) override;
 			virtual const char *GetDebugText(simul::base::TextStyle st = simul::base::PLAINTEXT) const override;
 		
 			const base::ProfileData *GetEvent(const base::ProfileData *parent,int i) const;
 			std::string GetChildText(const char *name,std::string tab) const;
+
+			float GetTime(const std::string &name) const;
+
 		protected:
 			std::string Walk(crossplatform::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
 			int level;
@@ -83,6 +118,20 @@ namespace simul
 bool enabled;
 			std::vector<std::string> last_name;
 			std::vector<crossplatform::DeviceContext *> last_context;
+		};
+		class ProfileBlock
+		{
+		public:
+
+			ProfileBlock(crossplatform::DeviceContext &c,GpuProfiler *prof,const std::string& name);
+			~ProfileBlock();
+
+			/// Get the previous frame's timing value.
+			float GetTime() const;
+		protected:
+			GpuProfiler *profiler;
+			crossplatform::DeviceContext* context;
+			std::string name;
 		};
 	}
 }

@@ -31,6 +31,7 @@ namespace simul
 	/// The namespace and library for cross-platform base classes, which abstract rendering functionality.
 	namespace crossplatform
 	{
+		class GpuProfiler;
 		class Material;
 		class Effect;
 		class EffectTechnique;
@@ -83,6 +84,7 @@ namespace simul
 		public:
 			virtual void T1(){}
 			RenderPlatform(simul::base::MemoryInterface*m=NULL);
+			virtual ~RenderPlatform();
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
 			virtual ID3D11Device *AsD3D11Device();
@@ -114,6 +116,10 @@ namespace simul
 			void SetShaderBuildMode			(ShaderBuildMode s);
 			//! When shaders should be built, or loaded if available.
 			ShaderBuildMode GetShaderBuildMode() const;
+			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
+			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name){}
+			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
+			virtual void EndEvent			(DeviceContext &deviceContext){}
 			virtual void StartRender		(DeviceContext &deviceContext)=0;
 			virtual void EndRender			(DeviceContext &deviceContext)=0;
 			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;
@@ -241,7 +247,10 @@ namespace simul
 			crossplatform::Effect			*debugEffect;
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
-public:			TextRenderer					*textRenderer;
+			crossplatform::GpuProfiler		*gpuProfiler;
+		public:		
+			crossplatform::GpuProfiler		*GetGpuProfiler();
+			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
 			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};

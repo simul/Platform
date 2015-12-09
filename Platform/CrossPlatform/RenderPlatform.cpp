@@ -7,6 +7,7 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Layout.h"
 #include "Simul/Platform/CrossPlatform/Material.h"
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Effect.h"
 #ifdef _MSC_VER
 #define isinf !_finite
@@ -27,6 +28,12 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,debugEffect(NULL)
 {
 	immediateContext.renderPlatform=this;
+	gpuProfiler=new GpuProfiler;
+}
+
+RenderPlatform::~RenderPlatform()
+{
+	delete gpuProfiler;
 }
 
 ID3D11Device *RenderPlatform::AsD3D11Device()
@@ -99,10 +106,12 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	ERRNO_BREAK
 	debugConstants.RestoreDeviceObjects(this);
 	ERRNO_BREAK
+	gpuProfiler->RestoreDeviceObjects(this);
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
+	gpuProfiler->InvalidateDeviceObjects();
 	if(textRenderer)
 		textRenderer->InvalidateDeviceObjects();
 	for(std::map<StandardRenderState,RenderState*>::iterator i=standardRenderStates.begin();i!=standardRenderStates.end();i++)
@@ -261,8 +270,8 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
-
 }
+
 void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float exposure,float gamma)
 {
 }
@@ -390,6 +399,10 @@ void RenderPlatform::SetLayout(DeviceContext &deviceContext,Layout *l)
 		l->Apply(deviceContext);
 }
 
+crossplatform::GpuProfiler		*RenderPlatform::GetGpuProfiler()
+{
+	return gpuProfiler;
+}
 void RenderPlatform::EnsureEffectIsBuiltPartialSpec(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &options,const std::map<std::string,std::string> &defines)
 {
 	if(options.size())
