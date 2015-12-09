@@ -75,15 +75,22 @@ namespace simul
 			bool QueryFinished;
 			int currFrame;
 			QueryType type;
+			bool gotResults[QueryLatency];
 			Query(QueryType t)
 				:QueryStarted(false)
 				,QueryFinished(false)
 				,currFrame(0)
 				,type(t)
 			{
+				for(int i=0;i<QueryLatency;i++)
+					gotResults[i]=true;
 			}
 			virtual ~Query()
 			{
+			}
+			bool GotResults() const
+			{
+				return gotResults[currFrame];
 			}
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r)=0;
 			virtual void InvalidateDeviceObjects()=0;
@@ -92,6 +99,7 @@ namespace simul
 			/// Get query data. Returns true if successful, or false otherwise.
 			/// Blocking queries will return false until they succeed.
 			virtual bool GetData(DeviceContext &deviceContext,void *data,size_t sz) =0;
+			virtual void SetName(const char *)=0;
 		};
 		
 		enum BlendOption

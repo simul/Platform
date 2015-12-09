@@ -84,10 +84,6 @@ namespace simul
 			static Profiler &GetGlobalProfiler();
 			Profiler();
 			~Profiler();
-			/// Call this when the profiler is to be initialized with a device pointer - must be done before use.
-			void Initialize(ID3D11Device* device);
-			/// Call this when the profiler is to be shut-down, or the device pointer has been lost or changed.
-			void Uninitialize();
 			void Begin(crossplatform::DeviceContext &deviceContext,const char *name);
 			void End();
 			
@@ -96,49 +92,8 @@ namespace simul
 			ID3DUserDefinedAnnotation *pUserDefinedAnnotation;
 			float GetTime(const std::string &name) const;
 			//! Get all the active profilers as a text report.
-			const char *GetDebugText(base::TextStyle style=base::PLAINTEXT) const;
-			const base::ProfileData *GetEvent(const base::ProfileData *parent,int i) const;
-			std::string GetChildText(const char *name,std::string tab) const;
-			std::vector<std::string> last_name;
-			std::vector<crossplatform::DeviceContext *> last_context;
 			static Profiler GlobalProfiler;
-
-			// Constants
-			static const UINT64 QueryLatency = 6;
-
-			struct ProfileData;
-			typedef std::map<std::string,ProfileData*> ProfileMap;
-			typedef std::map<int,ProfileData*> ChildMap;
-			struct ProfileData:public base::ProfileData
-			{
-				simul::dx11::Query *DisjointQuery;
-				simul::dx11::Query *TimestampStartQuery;
-				simul::dx11::Query *TimestampEndQuery;
-				bool gotResults[QueryLatency];
-				ProfileData()
-				:DisjointQuery(NULL)
-				,TimestampStartQuery(NULL)
-				,TimestampEndQuery(NULL)
-				{
-				}
-				~ProfileData()
-				{
-					delete DisjointQuery;
-					delete TimestampStartQuery;
-					delete TimestampEndQuery;
-				}
-				ChildMap children;
-			};
 		protected:
-			ProfileMap profileMap;
-			int level;
-			UINT64 currFrame;
-
-			ID3D11Device* device;
-
-			simul::base::Timer timer;
-			float queryTime;
-			std::string Walk(Profiler::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
 		};
 
 		class ProfileBlock

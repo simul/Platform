@@ -67,7 +67,7 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 {
 	if(!renderPlatform)
 		return;
-	Profiler::GetGlobalProfiler().Uninitialize();
+	Profiler::GetGlobalProfiler().InvalidateDeviceObjects();
 	clouds::TrueSkyRenderer::InvalidateDeviceObjects();
 	renderPlatform=NULL;
 }
@@ -90,8 +90,8 @@ Direct3D11Renderer::~Direct3D11Renderer()
 
 void Direct3D11Renderer::OnD3D11CreateDevice	(ID3D11Device* pd3dDevice)
 {
-	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
 	renderPlatformDx11.RestoreDeviceObjects(pd3dDevice);
+	Profiler::GetGlobalProfiler().RestoreDeviceObjects(&renderPlatformDx11);
 	trueSkyRenderer.RestoreDeviceObjects(&renderPlatformDx11);
 }
 

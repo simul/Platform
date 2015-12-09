@@ -27,6 +27,7 @@ namespace simul
 			void Begin(crossplatform::DeviceContext &deviceContext) override;
 			void End(crossplatform::DeviceContext &deviceContext) override;
 			bool GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
+			void SetName(const char*){}
 		};
 		struct SIMUL_OPENGL_EXPORT RenderState:public crossplatform::RenderState
 		{

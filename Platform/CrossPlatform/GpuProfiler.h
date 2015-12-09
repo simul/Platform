@@ -7,6 +7,8 @@ namespace simul
 {
 	namespace crossplatform
 	{
+		class RenderPlatform;
+		struct Query;
 		struct DeviceContext;
 		//! A virtual interface base class for GPU performance measurement.
 		class SIMUL_CROSSPLATFORM_EXPORT GpuProfilingInterface:public base::BaseProfilingInterface
@@ -39,9 +41,18 @@ namespace simul
 		extern SIMUL_CROSSPLATFORM_EXPORT void SetGpuProfilingInterface(crossplatform::DeviceContext &context,GpuProfilingInterface *p);
 		/// Returns a pointer to the current GPU profiler.
 		extern SIMUL_CROSSPLATFORM_EXPORT GpuProfilingInterface *GetGpuProfilingInterface(crossplatform::DeviceContext &context);
-
-		struct ProfileData:public base::ProfileData
+		
+		struct ProfileData;
+		typedef std::map<std::string,crossplatform::ProfileData*> ProfileMap;
+		typedef std::map<int,crossplatform::ProfileData*> ChildMap;
+		struct SIMUL_CROSSPLATFORM_EXPORT ProfileData:public base::ProfileData
 		{
+				simul::crossplatform::Query *DisjointQuery;
+				simul::crossplatform::Query *TimestampStartQuery;
+				simul::crossplatform::Query *TimestampEndQuery;
+				ProfileData();
+				~ProfileData();
+			ChildMap children;
 		};
 		SIMUL_CROSSPLATFORM_EXPORT_CLASS GpuProfiler:public GpuProfilingInterface
 		{
@@ -49,11 +60,29 @@ namespace simul
 			GpuProfiler();
 			virtual ~GpuProfiler();
 		public:
+			/// Call this when the profiler is to be initialized with a device pointer - must be done before use.
+			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
+			/// Call this when the profiler is to be shut-down, or the device pointer has been lost or changed.
+			virtual void InvalidateDeviceObjects();
 			virtual void Begin(crossplatform::DeviceContext &deviceContext,const char *) override;
 			virtual void End() override;
 			virtual void StartFrame(crossplatform::DeviceContext &deviceContext) override;
 			virtual void EndFrame(crossplatform::DeviceContext &deviceContext) override;
 			virtual const char *GetDebugText(simul::base::TextStyle st = simul::base::PLAINTEXT) const override;
+		
+			const base::ProfileData *GetEvent(const base::ProfileData *parent,int i) const;
+			std::string GetChildText(const char *name,std::string tab) const;
+		protected:
+			std::string Walk(crossplatform::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
+			int level;
+			__int64 currFrame;
+			simul::base::Timer timer;
+			float queryTime;
+			crossplatform::RenderPlatform *renderPlatform;
+			ProfileMap profileMap;
+bool enabled;
+			std::vector<std::string> last_name;
+			std::vector<crossplatform::DeviceContext *> last_context;
 		};
 	}
 }

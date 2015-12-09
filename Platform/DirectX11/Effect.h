@@ -22,7 +22,7 @@ namespace simul
 				for(int i=0;i<QueryLatency;i++)
 					d3d11Query[i]		=0;
 			}
-			~Query() override
+			virtual ~Query() override
 			{
 				InvalidateDeviceObjects();
 			}
@@ -31,8 +31,7 @@ namespace simul
 			void Begin(crossplatform::DeviceContext &deviceContext) override;
 			void End(crossplatform::DeviceContext &deviceContext) override;
 			bool GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
-			
-			void SetName(const char *n);
+			void SetName(const char *n) override;
 		};
 		struct SIMUL_DIRECTX11_EXPORT RenderState:public crossplatform::RenderState
 		{
