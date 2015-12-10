@@ -117,9 +117,9 @@ namespace simul
 			//! When shaders should be built, or loaded if available.
 			ShaderBuildMode GetShaderBuildMode() const;
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
-			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name){}
+			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
-			virtual void EndEvent			(DeviceContext &deviceContext){}
+			virtual void EndEvent			(DeviceContext &deviceContext);
 			virtual void StartRender		(DeviceContext &deviceContext)=0;
 			virtual void EndRender			(DeviceContext &deviceContext)=0;
 			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;

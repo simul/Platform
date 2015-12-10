@@ -179,7 +179,8 @@ ShaderBuildMode RenderPlatform::GetShaderBuildMode() const
 {
 	return shaderBuildMode;
 }
-
+void RenderPlatform::BeginEvent			(DeviceContext &deviceContext,const char *name){}
+void RenderPlatform::EndEvent			(DeviceContext &deviceContext){}
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;
