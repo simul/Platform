@@ -24,18 +24,6 @@ namespace simul
 			virtual void EndFrame(crossplatform::DeviceContext &deviceContext)=0;
 			//! Get the timing text per-frame.
 			virtual const char *GetDebugText(base::TextStyle st = base::PLAINTEXT) const=0;
-			//! Call this to set the maximum level of the profiling tree.
-			virtual void SetMaxLevel(int m)
-			{
-				max_level=m;
-			}
-			//! Call this to get the maximum level of the profiling tree.
-			virtual int GetMaxLevel() const
-			{
-				return max_level;
-			}
-		protected:
-			int max_level;				// Maximum level of nesting.
 		};
 		/// Set the GPU profilerFuture use of SIMUL_GPU_PROFILE_START or SIMUL_COMBINED_PROFILE_START will use that profiler.
 		extern SIMUL_CROSSPLATFORM_EXPORT void SetGpuProfilingInterface(crossplatform::DeviceContext &context,GpuProfilingInterface *p);
@@ -43,8 +31,8 @@ namespace simul
 		extern SIMUL_CROSSPLATFORM_EXPORT GpuProfilingInterface *GetGpuProfilingInterface(crossplatform::DeviceContext &context);
 		
 		struct ProfileData;
-		typedef std::map<std::string,crossplatform::ProfileData*> ProfileMap;
-		typedef std::map<int,crossplatform::ProfileData*> ChildMap;
+		typedef std::map<std::string,base::ProfileData*> ProfileMap;
+		typedef std::map<int,base::ProfileData*> ChildMap;
 		struct SIMUL_CROSSPLATFORM_EXPORT ProfileData:public base::ProfileData
 		{
 				simul::crossplatform::Query *DisjointQuery;
@@ -89,6 +77,10 @@ namespace simul
 			GpuProfiler();
 			virtual ~GpuProfiler();
 		public:
+			virtual ProfileData *CreateProfileData() const
+			{
+				return new ProfileData;
+			}
 			/// Call this when the profiler is to be initialized with a device pointer - must be done before use.
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			/// Call this when the profiler is to be shut-down, or the device pointer has been lost or changed.
@@ -108,7 +100,7 @@ namespace simul
 			float GetTime(const std::string &name) const;
 
 		protected:
-			std::string Walk(crossplatform::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
+			std::string Walk(base::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
 			int level;
 			__int64 currFrame;
 			simul::base::Timer timer;
@@ -160,8 +152,8 @@ bool enabled;
 			SIMUL_GPU_PROFILE_START(ctx,name) \
 			SIMUL_PROFILE_START(name)
 		#define SIMUL_COMBINED_PROFILE_END(ctx) \
-			SIMUL_GPU_PROFILE_END(ctx) \
-			SIMUL_PROFILE_END
+			SIMUL_PROFILE_END \
+			SIMUL_GPU_PROFILE_END(ctx)
 		
 		#define SIMUL_COMBINED_PROFILE_STARTFRAME(ctx) \
 			SIMUL_GPU_PROFILE_STARTFRAME(ctx) \

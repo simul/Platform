@@ -6,9 +6,7 @@
 #include <map>
 #include <vector>
 #include <set>
-#ifndef _MSC_VER
 #include <stdint.h>
-#endif
 struct ID3DX11Effect;
 struct ID3DX11EffectTechnique;
 struct ID3D11ShaderResourceView;
