@@ -71,7 +71,7 @@ void GpuProfiler::InvalidateDeviceObjects()
 #ifdef SIMUL_WIN8_SDK
 	SAFE_RELEASE(pUserDefinedAnnotation);
 #endif
-    for(ProfileMap::iterator iter = profileMap.begin(); iter != profileMap.end(); iter++)
+    for(auto iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         base::ProfileData *profile = (*iter).second;
 		delete profile;
@@ -208,8 +208,7 @@ void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 	level=0;
 	if(profileMap.find("root")==profileMap.end())
 		profileMap["root"]=new crossplatform::ProfileData();
-	crossplatform::ProfileMap::iterator iter;
-    for(iter = profileMap.begin(); iter != profileMap.end(); iter++)
+    for(auto iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         base::ProfileData *profile = ((*iter).second);
 		profile->updatedThisFrame=false;
@@ -226,7 +225,7 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 
     queryTime = 0.0f;
     // Iterate over all of the profileMap
-crossplatform::ProfileMap::iterator iter;
+	base::ProfileMap::iterator iter;
     for(iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         crossplatform::ProfileData *profile =(crossplatform::ProfileData*)((*iter).second);
@@ -278,64 +277,6 @@ crossplatform::ProfileMap::iterator iter;
 	}
 }
 
-static const string format_template("<div style=\"color:#%06x;margin-left:%d;\">%s</div>");
-static string formatLine(const char *name,int tab,float number,float parent,base::TextStyle style)
-{
-	float proportion_of_parent=0.0f;
-	if(parent>0.0f)
-		proportion_of_parent=number/parent;
-	string str;
-	if (style!=base::HTML)
-	for(int j=0;j<tab;j++)
-	{
-		str+="  ";
-	}
-	string content=name;
-	content+=" ";
-	content+=base::stringFormat("%4.4f",number);
-	if(parent>0.0f)
-		content += base::stringFormat(" (%3.3f%%)", 100.f*proportion_of_parent);
-	if (style == base::HTML)
-	{
-		unsigned colour=0xFF0000;
-		unsigned greenblue=255-(unsigned)(175.0f*proportion_of_parent);
-		colour|=(greenblue<<8)|(greenblue);
-		int padding=12*tab;
-		content=base::stringFormat(format_template.c_str(),colour,padding,content.c_str());
-	}
-	else if (style == base::RICHTEXT)
-	{
-		unsigned colour = 0xFF0000;
-		unsigned greenblue = 255 - (unsigned)(175.0f*proportion_of_parent);
-		colour |= (greenblue << 8) | (greenblue);
-	//	int padding = 12 * tab;
-		content = base::stringFormat("<color=#%06x>%s</color>", colour,  content.c_str());
-	}
-	str+=content;
-	str += (style == base::HTML )? "" : "\n";
-	return str;
-}
-
-std::string GpuProfiler::Walk(base::ProfileData *profileData,int tab,float parent_time,base::TextStyle style) const
-{
-	if(tab>=max_level)
-		return "";
-	crossplatform::ProfileData *p=(crossplatform::ProfileData*)profileData;
-	if(p->children.size()==0)
-		return "";
-	std::string str;
-	for(crossplatform::ChildMap::const_iterator i=p->children.begin();i!=p->children.end();i++)
-	{
-		if(!i->second->updatedThisFrame)
-			continue;
-		for(int j=0;j<tab;j++)
-			str+="  ";
-		str += formatLine(i->second->unqualifiedName.c_str(), tab, i->second->time, parent_time, style);
-		str += Walk((crossplatform::ProfileData*)i->second, tab + 1, i->second->time, style);
-	}
-	return str;
-}
-
 template<typename T> inline std::string ToString(const T& val)
 {
     std::ostringstream stream;
@@ -347,23 +288,8 @@ template<typename T> inline std::string ToString(const T& val)
 const char *GpuProfiler::GetDebugText(base::TextStyle style) const
 {
 	static std::string str;
-	str="";
-	auto u=profileMap.find("root");
-	if(u==profileMap.end())
-		return "";
-	crossplatform::ProfileData *rootProfileData=(crossplatform::ProfileData*)u->second;
-	if(!rootProfileData)
-		return "";
-	float total=rootProfileData->time;
-	str += formatLine("TOTAL", 0, total, 0.0f, style);
-	for(auto i=rootProfileData->children.begin();i!=rootProfileData->children.end();i++)
-	{
-		if(!i->second->updatedThisFrame)
-			continue;
-		str+=formatLine(i->second->unqualifiedName.c_str(),1,i->second->time,total,style);
-		str += Walk(i->second, 2, i->second->time, style);
-	}
-	str += (style ==base::HTML)? "<br/>" : "\n";
+	str=BaseProfilingInterface::GetDebugText();
+	
     str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
 	str += (style == base::HTML) ? "<br/>" : "\n";
 	return str.c_str();
@@ -380,7 +306,7 @@ const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,i
 	}
 	crossplatform::ProfileData *p=(crossplatform::ProfileData*)parent;
 	int j=0;
-	for(crossplatform::ChildMap::const_iterator it=p->children.begin();it!=p->children.end();it++,j++)
+	for(auto it=p->children.begin();it!=p->children.end();it++,j++)
 	{
 		if(j==i)
 		{

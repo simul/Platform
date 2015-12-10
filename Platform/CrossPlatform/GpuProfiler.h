@@ -31,16 +31,13 @@ namespace simul
 		extern SIMUL_CROSSPLATFORM_EXPORT GpuProfilingInterface *GetGpuProfilingInterface(crossplatform::DeviceContext &context);
 		
 		struct ProfileData;
-		typedef std::map<std::string,base::ProfileData*> ProfileMap;
-		typedef std::map<int,base::ProfileData*> ChildMap;
 		struct SIMUL_CROSSPLATFORM_EXPORT ProfileData:public base::ProfileData
 		{
-				simul::crossplatform::Query *DisjointQuery;
-				simul::crossplatform::Query *TimestampStartQuery;
-				simul::crossplatform::Query *TimestampEndQuery;
-				ProfileData();
-				~ProfileData();
-			ChildMap children;
+			simul::crossplatform::Query *DisjointQuery;
+			simul::crossplatform::Query *TimestampStartQuery;
+			simul::crossplatform::Query *TimestampEndQuery;
+			ProfileData();
+			~ProfileData();
 		};
 		/*!
 		The Simul GPU profiler. Usage is as follows:
@@ -106,7 +103,6 @@ namespace simul
 			simul::base::Timer timer;
 			float queryTime;
 			crossplatform::RenderPlatform *renderPlatform;
-			ProfileMap profileMap;
 bool enabled;
 			std::vector<std::string> last_name;
 			std::vector<crossplatform::DeviceContext *> last_context;
