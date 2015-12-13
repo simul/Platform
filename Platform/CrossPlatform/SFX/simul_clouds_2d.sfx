@@ -23,7 +23,7 @@ SamplerState samplerState
 	AddressV = Wrap;
 };
 
-#include "../SL/simul_2d_clouds.hs"
+#include "../SL/simul_2d_cloud_constants.sl"
 
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/earth_shadow_uniforms.sl"
