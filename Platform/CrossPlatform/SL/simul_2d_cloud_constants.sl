@@ -70,6 +70,4 @@ SIMUL_CONSTANT_BUFFER(Detail2DConstants,12)
 	uniform float cccccc;
 SIMUL_CONSTANT_BUFFER_END
 
-#ifndef __cplusplus
-#endif
 #endif

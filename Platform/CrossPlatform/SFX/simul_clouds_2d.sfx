@@ -107,16 +107,16 @@ shader v2f VS_DepthReverse(a2v IN)
 
 vec4 msaaPS(v2f IN)
 {
-	vec2 wOffset		=IN.wPosition.xy-origin.xy;
-    vec2 texc_global	=wOffset/globalScale;
-    vec2 texc_detail	=wOffset/detailScale;
-	vec3 wEyeToPos		=IN.wPosition-eyePosition;
-	float alt_texc		=IN.wPosition.z/maxAltitudeMetres;
-	vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
-	vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
-	vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
+	vec2 wOffset			=IN.wPosition.xy-origin.xy;
+    vec2 texc_global		=wOffset/globalScale;
+    vec2 texc_detail		=wOffset/detailScale;
+	vec3 wEyeToPos			=IN.wPosition-eyePosition;
+	float alt_texc			=IN.wPosition.z/maxAltitudeMetres;
+	vec3 sun_irr			=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
+	vec3 moon_irr			=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
+	vec3 ambient_light		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
 	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy));
-	vec4 ret			=Clouds2DPS_illum(imageTexture,coverageTexture
+	vec4 ret				=Clouds2DPS_illum(imageTexture,coverageTexture
 										,lossTexture
 										,volumeInscatterTexture,viewportTexCoords
 										,noiseTexture
@@ -127,9 +127,9 @@ vec4 msaaPS(v2f IN)
 										,ambient_light.rgb
 										,lightDir.xyz
 										,lightResponse
-													,maxFadeDistanceMetres);
+										,maxFadeDistanceMetres);
 
-	ret.rgb				*=exposure;
+	ret.rgb					*=exposure;
 	return ret;
 }
 
@@ -293,26 +293,26 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,
 	// offset by one texel to allow -1 in x and y:
 	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize1);
 	vec4 dlookup 			=vec4(0,0,0,0);
-	if(useDepth)
-		dlookup				=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(INtexCoords.xy,viewportToTexRegionScaleBias),0);
 	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
 	//  to the texCoords of our window. These wrap around 
 	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
 	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize1)*mixedResTransformXYWH.zw;
 	
+	//if(useDepth)
+	//	dlookup				=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
-	// TODO: should be depthToFadeDistance,not linear
-	vec4 dist				=vec4(1.0,1.0,1.0,1.0);
-	if(useDepth)
-		dist				=depthToLinearDistance(dlookup, depthInterpretationStruct);
 	float dz				=cloudAltitudeMetres-eyePosition.z;
 	vec4 ret				=vec4(0,0,0,1.0);
 	pos						+=offsetToCorner;
 	pos						=pos%targetTextureSize1;
-
+	dlookup=depthTexture[pos];
+	// TODO: should be depthToFadeDistance,not linear
+	vec4 dist				=vec4(1.0,1.0,1.0,1.0);
+	if(useDepth)
+		dist				=depthToLinearDistance(dlookup, depthInterpretationStruct);
 	if(dz>0||view.z<0)
 	{
 		float Rh				=6378.0+cloudAltitudeMetres*0.001;
@@ -341,18 +341,18 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,
 				vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
 				vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
 				ret			=Clouds2DPS_illum(imageTexture
-													,coverageTexture
-													,lossTexture
-													,volumeInscatterTexture,unmodifiedTexCoords
-													,noiseTexture
-													,texc_global,texc_detail
-													,wEyeToPos
-													,sun_irr
-													,moon_irr
-													,ambient_light.rgb
-													,lightDir.xyz
-													,lightResponse
-													,maxFadeDistanceMetres);
+												,coverageTexture
+												,lossTexture
+												,volumeInscatterTexture,unmodifiedTexCoords
+												,noiseTexture
+												,texc_global,texc_detail
+												,wEyeToPos
+												,sun_irr
+												,moon_irr
+												,ambient_light.rgb
+												,lightDir.xyz
+												,lightResponse
+												,maxFadeDistanceMetres);
 				ret.rgb				*=exposure*ret.a;
 				ret.a=1.0-ret.a;
 			}

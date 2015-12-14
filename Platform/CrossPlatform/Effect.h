@@ -95,10 +95,6 @@ namespace simul
 			virtual ~Query()
 			{
 			}
-			bool GotResults() const
-			{
-				return gotResults[currFrame];
-			}
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r)=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual void Begin(DeviceContext &deviceContext) =0;
@@ -498,19 +494,14 @@ namespace simul
 			//! Set the texture for read-write access by compute shaders in this effect.
 			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int mip=0)	=0;
 			virtual ShaderResource GetShaderResource(const char *name)=0;
+			//! Set the texture for read-write access by compute shaders in this effect.
+			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,ShaderResource &name,Texture *tex,int mip=0)	=0;
+			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
 			virtual void SetTexture		(DeviceContext &deviceContext,ShaderResource &name	,Texture *tex,int mip=-1)		=0;
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex,int mip=-1)=0;
 			//! Set the texture for this effect.
 			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s)		=0;
-			virtual void SetParameter	(const char *name	,float value)		=0;
-			virtual void SetParameter	(const char *name	,vec2)				=0;
-			virtual void SetParameter	(const char *name	,vec3)				=0;
-			virtual void SetParameter	(const char *name	,vec4)				=0;
-			virtual void SetParameter	(const char *name	,int value)			=0;
-			virtual void SetParameter	(const char *name	,int2 value)		=0;
-			virtual void SetVector		(const char *name	,const float *vec)	=0;
-			virtual void SetMatrix		(const char *name	,const float *m)	=0;
 			/// Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,const char *tech_name,const char *pass);
 			/// Activate the shader. Unapply must be called after rendering is done.

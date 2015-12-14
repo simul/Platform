@@ -9,12 +9,14 @@
 #include <iostream>
 #include <map>
 
+
 using namespace simul;
 using namespace crossplatform;
 using namespace std;
 static std::map<void*,simul::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
 typedef uint64_t UINT64;
 typedef int                 BOOL;
+static string rootstring("root");
 
 ProfileData::ProfileData()
 				:DisjointQuery(NULL)
@@ -89,87 +91,87 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 	std::string parent;
 	if(last_name.size())
 		parent=(last_name.back());
-	std::string qualified_name(name);
-	if(last_name.size())
-		qualified_name=(parent+".")+name;
-	last_name.push_back(qualified_name);
-	last_context.push_back(&deviceContext);
-	if(!enabled||!renderPlatform)
-        return;
-    crossplatform::ProfileData *profileData = NULL;
-	if(profileMap.find(qualified_name)==profileMap.end())
 	{
-		profileMap[qualified_name]=profileData=new crossplatform::ProfileData;
-		profileData->unqualifiedName=name;
-	}
-	else
-	{
-		profileData=(crossplatform::ProfileData*)profileMap[qualified_name];
-	}
-	profileData->last_child_updated=0;
-	int new_child_index=0;
-    crossplatform::ProfileData *parentData=NULL;
-	if(parent.length())
-		parentData=(crossplatform::ProfileData*)profileMap[parent];
-	else
-		parentData=(crossplatform::ProfileData*)profileMap["root"];
-	if(parentData)
-	{
-		new_child_index=++parentData->last_child_updated;
-		while(parentData->children.find(new_child_index)!=parentData->children.end()&&parentData->children[new_child_index]!=profileData)
+		std::string qualified_name(name);
+		if(last_name.size())
+			qualified_name=(parent+".")+name;
+		last_name.push_back(qualified_name);
+		last_context.push_back(&deviceContext);
+		if(!enabled||!renderPlatform)
+			return;
+		crossplatform::ProfileData *profileData = NULL;
+		if(profileMap.find(qualified_name)==profileMap.end())
 		{
-			new_child_index++;
+			profileMap[qualified_name]=profileData=new crossplatform::ProfileData;
+			profileData->unqualifiedName=name;
 		}
-		parentData->children[new_child_index]=profileData;
-		if(profileData->child_index!=0&&new_child_index!=profileData->child_index&&parentData->children.find(profileData->child_index)!=parentData->children.end())
+		else
 		{
-			parentData->children.erase(profileData->child_index);
+			profileData=(crossplatform::ProfileData*)profileMap[qualified_name];
 		}
-		profileData->child_index=new_child_index;
-	}
-	profileData->parent=parentData;
-    SIMUL_ASSERT(profileData->QueryStarted == false);
-    if(profileData->QueryFinished!= false)
-        return;
-
-    if(profileData->DisjointQuery == NULL)
-    {
-        // Create the queries
-		std::string disjointName=qualified_name+"disjoint";
-		std::string startName	=qualified_name+"start";
-		std::string endName		=qualified_name+"end";
-		profileData->DisjointQuery			=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP_DISJOINT);
-		profileData->DisjointQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
-		//	CreateQuery(device,desc,disjointName.c_str());
-		profileData->DisjointQuery->SetName(disjointName.c_str());
-        profileData->TimestampStartQuery	=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP);
-		profileData->TimestampStartQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
-		profileData->TimestampStartQuery->SetName(startName.c_str());
-        profileData->TimestampEndQuery		=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP);
-		profileData->TimestampEndQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
-		profileData->TimestampEndQuery->SetName(endName.c_str());
-    }
-	if(profileData->DisjointQuery)
-	{
-		if(!profileData->DisjointQuery->GotResults())
+		profileData->last_child_updated=0;
+		int new_child_index=0;
+		crossplatform::ProfileData *parentData=NULL;
+		if(parent.length())
+			parentData=(crossplatform::ProfileData*)profileMap[parent];
+		else
+			parentData=(crossplatform::ProfileData*)profileMap["root"];
+		if(parentData)
 		{
-			return;//SIMUL_BREAK("not got query results!")
+			new_child_index=++parentData->last_child_updated;
+			while(parentData->children.find(new_child_index)!=parentData->children.end()&&parentData->children[new_child_index]!=profileData)
+			{
+				new_child_index++;
+			}
+			parentData->children[new_child_index]=profileData;
+			if(profileData->child_index!=0&&new_child_index!=profileData->child_index&&parentData->children.find(profileData->child_index)!=parentData->children.end())
+			{
+				parentData->children.erase(profileData->child_index);
+			}
+			profileData->child_index=new_child_index;
 		}
-    // Start a disjoint query first
-		profileData->DisjointQuery->Begin(deviceContext);
+		profileData->parent=parentData;
+		SIMUL_ASSERT(profileData->QueryStarted == false);
+		if(profileData->QueryFinished!= false)
+			return;
 
-    // Insert the start timestamp   
-		profileData->TimestampStartQuery->End(deviceContext);
+		if(profileData->DisjointQuery == NULL)
+		{
+			// Create the queries
+			std::string disjointName=qualified_name+"disjoint";
+			std::string startName	=qualified_name+"start";
+			std::string endName		=qualified_name+"end";
+			profileData->DisjointQuery			=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP_DISJOINT);
+			profileData->DisjointQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
+			//	CreateQuery(device,desc,disjointName.c_str());
+			profileData->DisjointQuery->SetName(disjointName.c_str());
+			profileData->TimestampStartQuery	=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP);
+			profileData->TimestampStartQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
+			profileData->TimestampStartQuery->SetName(startName.c_str());
+			profileData->TimestampEndQuery		=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP);
+			profileData->TimestampEndQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
+			profileData->TimestampEndQuery->SetName(endName.c_str());
+		}
+		if(profileData->DisjointQuery)
+		{
+		// Start a disjoint query first
+			profileData->DisjointQuery->Begin(deviceContext);
 
-	    profileData->QueryStarted = true;
+		// Insert the start timestamp   
+			profileData->TimestampStartQuery->End(deviceContext);
+
+			profileData->QueryStarted = true;
+		}
+		renderPlatform->BeginEvent(deviceContext,name);
 	}
-	renderPlatform->BeginEvent(deviceContext,name);
 }
 
 void GpuProfiler::End()
 {
 	level--;
 	if(level>=max_level)
+		return;
+	if(!last_name.size())
 		return;
 	std::string name		=last_name.back();
 	last_name.pop_back();
@@ -180,18 +182,12 @@ void GpuProfiler::End()
         return;
 	
 	renderPlatform->EndEvent(*deviceContext);
-    crossplatform::ProfileData *profileData =(crossplatform::ProfileData*) profileMap[name];
-	if(!profileData->DisjointQuery->GotResults())
-        return;
+    crossplatform::ProfileData *profileData=(crossplatform::ProfileData*) profileMap[name];
 	
     if(profileData->QueryStarted != true)
 		return;
 	profileData->updatedThisFrame=true;
     SIMUL_ASSERT(profileData->QueryFinished == false);
-	if(!profileData->DisjointQuery->GotResults())
-	{
-		SIMUL_BREAK("not got query results!")
-	}
     // Insert the end timestamp    
     //context->End(profileData->TimestampEndQuery[currFrame]);
 	profileData->TimestampEndQuery->End(*deviceContext);
@@ -206,8 +202,8 @@ void GpuProfiler::End()
 void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
 	level=0;
-	if(profileMap.find("root")==profileMap.end())
-		profileMap["root"]=new crossplatform::ProfileData();
+	if(profileMap.find(rootstring)==profileMap.end())
+		profileMap[rootstring]=new crossplatform::ProfileData();
     for(auto iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         base::ProfileData *profile = ((*iter).second);
@@ -245,15 +241,18 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 
         // Get the query data
         UINT64 startTime = 0;
-        while(!profile->TimestampStartQuery->GetData(deviceContext,&startTime, sizeof(startTime)));
+        if(!profile->TimestampStartQuery->GetData(deviceContext,&startTime, sizeof(startTime)))
+            continue;
 //       while(context->GetData(profile.TimestampStartQuery[currFrame], &startTime, sizeof(startTime), 0) != S_OK);
 
         UINT64 endTime = 0;
-        while(!profile->TimestampEndQuery->GetData(deviceContext,&endTime, sizeof(endTime)));
+        if(!profile->TimestampEndQuery->GetData(deviceContext,&endTime, sizeof(endTime)))
+            continue;
        // while(context->GetData(profile.TimestampEndQuery[currFrame], &endTime, sizeof(endTime), 0) != S_OK);
 		
         crossplatform::DisjointQueryStruct disjointData;
-        while(!profile->DisjointQuery->GetData(deviceContext,&disjointData, sizeof(disjointData)));
+        if(!profile->DisjointQuery->GetData(deviceContext,&disjointData, sizeof(disjointData)))
+            continue;
         timer.UpdateTime();
         queryTime += timer.Time;
 

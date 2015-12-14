@@ -271,7 +271,7 @@
     <None Include="SL\rain_constants.sl" />
     <None Include="SL\raytrace_new.sl" />
     <None Include="SL\render_states.sl" />
-    <None Include="SL\simul_2d_clouds.hs" />
+    <None Include="SL\simul_2d_cloud_constants.sl" />
     <None Include="SL\simul_2d_clouds.sl" />
     <None Include="SL\simul_2d_cloud_detail.sl" />
     <None Include="SL\simul_clouds.sl" />
