@@ -158,6 +158,42 @@ namespace simul
 			bool write;
 			DepthComparison comparison;
 		};
+		typedef enum ViewportScissor
+		{
+			VIEWPORT_SCISSOR_DISABLE      = 0, ///< Disable the scissor rectangle for a viewport.
+			VIEWPORT_SCISSOR_ENABLE       = 1, ///< Enable the scissor rectangle for a viewport.
+		};
+		enum CullFaceMode
+		{
+			CULL_FACE_NONE              = 0, ///< Disable face culling.
+			CULL_FACE_FRONT             = 1, ///< Cull front-facing primitives only.
+			CULL_FACE_BACK              = 2, ///< Cull back-facing primitives only.
+			CULL_FACE_FRONTANDBACK      = 3, ///< Cull front and back faces.
+		};
+		enum FrontFace
+		{
+			FRONTFACE_CLOCKWISE                     = 1, ///< Clockwise is front-facing.
+			FRONTFACE_COUNTERCLOCKWISE              = 0, ///< Counter-clockwise is front-facing.
+		};
+		enum PolygonMode
+		{
+			POLYGON_MODE_POINT              = 0, ///< Render polygons as points.
+			POLYGON_MODE_LINE               = 1, ///< Render polygons in wireframe.
+			POLYGON_MODE_FILL               = 2, ///< Render polygons as solid/filled.
+		};
+		enum PolygonOffsetMode
+		{
+			POLYGON_OFFSET_ENABLE           = 1, ///< Enable polygon offset.
+			POLYGON_OFFSET_DISABLE          = 0, ///< Disable polygon offset.
+		} ;
+		struct RasterizerDesc
+		{
+			ViewportScissor		viewportScissor;
+			CullFaceMode		cullFaceMode;
+			FrontFace			frontFace;
+			PolygonMode			polygonMode;
+			PolygonOffsetMode	polygonOffsetMode;
+		};
 		enum RenderStateType
 		{
 			NONE
@@ -175,6 +211,7 @@ namespace simul
 			{
 				DepthStencilDesc depth;
 				BlendDesc blend;
+				RasterizerDesc rasterizer;
 			};
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT RenderState
