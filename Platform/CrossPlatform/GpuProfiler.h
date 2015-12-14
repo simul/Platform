@@ -168,12 +168,6 @@ bool enabled;
 			#define SIMUL_GPU_PROFILE_START(ctx,name) \
 			#define SIMUL_GPU_PROFILE_END
 #else
-		#define SIMUL_PROFILE_STARTFRAME
-		#define SIMUL_PROFILE_ENDFRAME
-		/// Call this at the start of a block to be profiled.
-		#define SIMUL_PROFILE_START(name)
-		/// Call this at the end of a block to be profiled - must match uses of SIMUL_PROFILE_START.
-		#define SIMUL_PROFILE_END
 		#define SIMUL_GPU_PROFILE_STARTFRAME(ctx)
 		#define SIMUL_GPU_PROFILE_ENDFRAME(ctx)
 		/// Call this at the start of a block to be profiled.

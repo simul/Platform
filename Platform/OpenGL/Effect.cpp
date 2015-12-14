@@ -584,6 +584,20 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *n
 	SetTex(name,tex,true, mip);
 }
 
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int mip)
+{
+	GL_ERROR_CHECK
+	int texture_number=(int)shaderResource.platform_shader_resource;
+	if(texture_number>=0)
+	{
+		if(tex)
+			glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),true,mip);
+		else
+			glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN),true,mip);
+	}
+	GL_ERROR_CHECK
+}
+
 void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write,int mip)
 {
 	GL_ERROR_CHECK

@@ -73,11 +73,12 @@ void Query::End(crossplatform::DeviceContext &deviceContext)
 bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
+	currFrame = (currFrame + 1) % QueryLatency;
+	// Get the data from the "next" query - which is the oldest!
 	HRESULT hr=pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0);
 	if(hr== S_OK)
 	{
 		gotResults[currFrame]=true;
-		currFrame = (currFrame + 1) % QueryLatency;
 	}
 	return hr== S_OK;
 }
@@ -511,6 +512,22 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const c
 		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,NULL);
 }
 
+void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip)
+{
+	ID3DX11EffectUnorderedAccessViewVariable *var=(ID3DX11EffectUnorderedAccessViewVariable*)(shaderResource.platform_shader_resource);
+	if(!asD3DX11Effect())
+	{
+		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		return;
+	}
+	if(t)
+	{
+		var->SetUnorderedAccessView(t->AsD3D11UnorderedAccessView());
+	}
+	else
+		var->SetUnorderedAccessView(NULL);
+}
+
 void dx11::Effect::SetTexture(const char *name,ID3D11ShaderResourceView *tex)
 {
 	if(!asD3DX11Effect())
@@ -547,13 +564,28 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		SIMUL_CERR<<"Invalid effect "<<std::endl;
 		return res;
 	}
-	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	ID3DX11EffectVariable *var=effect->GetVariableByName(name);
 	if(!var->IsValid())
 	{
-		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader texture ")+name).c_str());
+		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 		return res;
 	}
-	res.platform_shader_resource=(void*)var;
+	ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
+	if(srv->IsValid())
+		res.platform_shader_resource=(void*)srv;
+	else
+	{
+		ID3DX11EffectUnorderedAccessViewVariable *uav=var->AsUnorderedAccessView();
+		if(uav->IsValid())
+		{
+			res.platform_shader_resource=(void*)uav;
+		}
+		else
+		{
+			SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Unknown resource type ")+name).c_str());
+			return res;
+		}
+	}
 	return res;
 }
 

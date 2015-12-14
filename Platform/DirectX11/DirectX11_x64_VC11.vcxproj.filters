@@ -9,9 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="FX">
-      <UniqueIdentifier>{6114eb70-d5bb-4f18-b940-6c5a0d50e188}</UniqueIdentifier>
-    </Filter>
     <Filter Include="HLSL">
       <UniqueIdentifier>{dd14abf0-b066-4a9b-a149-9830da7324cf}</UniqueIdentifier>
     </Filter>
@@ -144,7 +141,7 @@
     <None Include="SimulUseDXSDK.props" />
     <None Include="SimulUseWin8SDK.props" />
     <None Include="HLSL\shader_platform.sl">
-      <Filter>FX</Filter>
+      <Filter>HLSL</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -109,6 +109,8 @@ namespace simul
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
 			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int mip=0);
 			
+			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int mip=0);
+			
 			crossplatform::ShaderResource GetShaderResource(const char *name) override;
 			void SetTexture		(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip=-1) override;
 			void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int mip=-1);

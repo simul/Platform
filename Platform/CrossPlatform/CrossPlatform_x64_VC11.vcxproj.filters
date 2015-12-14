@@ -82,6 +82,7 @@
     <ClInclude Include="TwoResFramebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GpuProfiler.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -155,6 +156,7 @@
     <ClCompile Include="TwoResFramebuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GpuProfiler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SFX\atmospherics.sfx">
@@ -322,9 +324,6 @@
     <None Include="SL\simul_2d_cloud_detail.sl">
       <Filter>SL</Filter>
     </None>
-    <None Include="SL\simul_2d_clouds.hs">
-      <Filter>SL</Filter>
-    </None>
     <None Include="SL\simul_2d_clouds.sl">
       <Filter>SL</Filter>
     </None>
@@ -365,6 +364,9 @@
       <Filter>SL</Filter>
     </None>
     <None Include="SL\text_constants.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="SL\simul_2d_cloud_constants.sl">
       <Filter>SL</Filter>
     </None>
   </ItemGroup>

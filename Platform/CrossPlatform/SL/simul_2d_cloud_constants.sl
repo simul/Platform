@@ -1,6 +1,6 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
-#ifndef SIMUL_2D_CLOUDS_HS
-#define SIMUL_2D_CLOUDS_HS
+#ifndef SIMUL_2D_CLOUD_CONSTANTS_SL
+#define SIMUL_2D_CLOUD_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform vec4 viewportToTexRegionScaleBias;
@@ -70,6 +70,4 @@ SIMUL_CONSTANT_BUFFER(Detail2DConstants,12)
 	uniform float cccccc;
 SIMUL_CONSTANT_BUFFER_END
 
-#ifndef __cplusplus
-#endif
 #endif
