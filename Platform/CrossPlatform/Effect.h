@@ -151,14 +151,14 @@ namespace simul
 			DEPTH_GREATER,
 			DEPTH_NOT_EQUAL,
 			DEPTH_GREATER_EQUAL
-		} ;
+		};
 		struct DepthStencilDesc
 		{
 			bool test;
 			bool write;
 			DepthComparison comparison;
 		};
-		typedef enum ViewportScissor
+		enum ViewportScissor
 		{
 			VIEWPORT_SCISSOR_DISABLE      = 0, ///< Disable the scissor rectangle for a viewport.
 			VIEWPORT_SCISSOR_ENABLE       = 1, ///< Enable the scissor rectangle for a viewport.
@@ -445,6 +445,9 @@ namespace simul
 			IndexMap pass_indices;
 			EffectTechnique()
 				:platform_technique(NULL)
+			{
+			}
+			virtual ~EffectTechnique()
 			{
 			}
 			virtual int NumPasses() const=0;
