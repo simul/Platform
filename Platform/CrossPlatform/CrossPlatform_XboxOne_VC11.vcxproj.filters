@@ -31,6 +31,7 @@
     <ClCompile Include="LensFlare.cpp" />
     <ClCompile Include="TwoResFramebuffer.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
+    <ClCompile Include="GpuProfiler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseFramebuffer.h" />
@@ -60,5 +61,6 @@
     <ClInclude Include="TwoResFramebuffer.h" />
     <ClInclude Include="Topology.h" />
     <ClInclude Include="TextRenderer.h" />
+    <ClInclude Include="GpuProfiler.h" />
   </ItemGroup>
 </Project>

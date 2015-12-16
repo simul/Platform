@@ -17,6 +17,7 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "D3dx11effect.h"
@@ -204,10 +205,10 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	RecompileShaders();
 	
 #ifdef SIMUL_WIN8_SDK
-	if(enabled)
+	
 	{
 		SAFE_RELEASE(pUserDefinedAnnotation);
-		IUnknown *unknown=(IUnknown *)ctx;
+		IUnknown *unknown=(IUnknown *)pImmediateContext;
 #ifdef _XBOX_ONE
 		V_CHECK(unknown->QueryInterface( __uuidof(pUserDefinedAnnotation), reinterpret_cast<void**>(&pUserDefinedAnnotation) ));
 #else
@@ -257,22 +258,12 @@ void RenderPlatform::RecompileShaders()
 void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name)
 {
 #ifdef SIMUL_WIN8_SDK
-    crossplatform::ProfileData *profileData = NULL;
-	auto u=profileMap.find(qualified_name);
-	if(u!=profileMap.end())
-		profileData=u->second;
-	if(u!=profileMap.end())
-	{
-		profileData=u->second;
-		if(!profileData->wUnqualifiedName.length())
-			profileData->wUnqualifiedName=base::StringToWString(name);
 		if(pUserDefinedAnnotation)
-			pUserDefinedAnnotation->BeginEvent(profileData->wUnqualifiedName.c_str());
-	}
+			pUserDefinedAnnotation->BeginEvent(base::StringToWString(name).c_str());
 #endif
 #ifdef SIMUL_ENABLE_PIX
 	if(last_name==string(name))
-		PIXBeginEvent( 0, profileData->wUnqualifiedName.c_str(), name );
+		PIXBeginEvent( 0, name, name );
 #endif
 }
 
