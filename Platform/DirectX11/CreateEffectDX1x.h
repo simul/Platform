@@ -165,7 +165,6 @@ namespace simul
 		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,const float *vec);
 		void SIMUL_DIRECTX11_EXPORT setMatrix				(ID3DX11Effect *effect	,const char *name	,const float *value);
 		void SIMUL_DIRECTX11_EXPORT setConstantBuffer		(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b);
-		void SIMUL_DIRECTX11_EXPORT unbindTextures			(ID3DX11Effect *effect);
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
 		//! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename.

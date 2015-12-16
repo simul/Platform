@@ -143,10 +143,6 @@ namespace simul
 			UtilityRenderer();
 			~UtilityRenderer();
 			static void DrawQuad(			crossplatform::DeviceContext &deviceContext,float x1,float y1,float dx,float dy,ID3DX11EffectTechnique* tech);	
-			static void DrawQuad2(			crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech,int pass=0);
-			static void DrawQuad2(			crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech,const char *pass=NULL);
-			static void DrawQuad2(			crossplatform::DeviceContext &deviceContext, float x1, float y1, float dx, float dy, ID3DX11Effect *eff, ID3DX11EffectTechnique* tech, int pass );
-			static void DrawQuad2(			crossplatform::DeviceContext &deviceContext, float x1, float y1, float dx, float dy, ID3DX11Effect *eff, ID3DX11EffectTechnique* tech, const char *pass );
 			static void DrawQuad(			crossplatform::DeviceContext &deviceContext);
 			static void DrawSphere(			crossplatform::DeviceContext &deviceContext,int latitudes,int longitudes);
 		};
