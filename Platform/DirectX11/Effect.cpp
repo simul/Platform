@@ -545,18 +545,34 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,cr
 		SIMUL_CERR<<"Invalid effect "<<std::endl;
 		return;
 	}
+	ID3DX11Effect *e=asD3DX11Effect();
+	if(!e)
+		return;
+	crossplatform::ShaderResource res			=GetShaderResource(name);
+	ID3DX11EffectShaderResourceVariable *var	=(ID3DX11EffectShaderResourceVariable*)res.platform_shader_resource;
+	if(!var||!var->IsValid())
+	{
+		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader texture ")+name).c_str());
+	}
 	if(t)
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
-		simul::dx11::setTexture(asD3DX11Effect(),name,T->AsD3D11ShaderResourceView(mip));
+		auto srv=T->AsD3D11ShaderResourceView(mip);
+		var->SetResource(srv);
 	}
 	else
-		simul::dx11::setTexture(asD3DX11Effect(),name,NULL);
+	{
+		var->SetResource(NULL);
+	}
 }
 
 crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 {
-	crossplatform::ShaderResource res;
+	// First do a simple search by pointer.
+	auto i=shaderResources.find(name);
+	if(i!=shaderResources.end())
+		return i->second;
+	crossplatform::ShaderResource &res=shaderResources[name];
 	res.platform_shader_resource=0;
 	ID3DX11Effect *effect=asD3DX11Effect();
 	if(!effect)
@@ -769,7 +785,30 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 	//if(apply_count!=1)
 	//	SIMUL_BREAK_ONCE(base::QuickFormat("UnbindTextures can only be called after Apply and before Unapply! Effect: %s\n",this->filename.c_str()))
 	ID3DX11Effect *effect			=asD3DX11Effect();
-	dx11::unbindTextures(effect);
+
+	D3DX11_EFFECT_DESC edesc;
+	if(!effect)
+		return;
+	effect->GetDesc(&edesc);
+	for(unsigned i=0;i<edesc.GlobalVariables;i++)
+	{
+		ID3DX11EffectVariable *var	=effect->GetVariableByIndex(i);
+		D3DX11_EFFECT_VARIABLE_DESC desc;
+		var->GetDesc(&desc);
+		ID3DX11EffectType *s=var->GetType();
+		//if(var->IsShaderResource())
+		{
+			ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
+			if(srv->IsValid())
+				srv->SetResource(NULL);
+		}
+		//if(var->IsUnorderedAccessView())
+		{
+			ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
+			if(uav->IsValid())
+				uav->SetUnorderedAccessView(NULL);
+		}
+	}
 	if(apply_count!=1&&effect)
 	{
 		V_CHECK(effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext()));

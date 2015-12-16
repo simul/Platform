@@ -346,33 +346,6 @@ void simul::dx11::setConstantBuffer(ID3DX11Effect *effect	,const char *name	,ID3
 	pD3DX11EffectConstantBuffer->SetConstantBuffer(b);
 }
 
-void simul::dx11::unbindTextures(ID3DX11Effect *effect)
-{
-	D3DX11_EFFECT_DESC edesc;
-	if(!effect)
-		return;
-	effect->GetDesc(&edesc);
-	for(unsigned i=0;i<edesc.GlobalVariables;i++)
-	{
-		ID3DX11EffectVariable *var	=effect->GetVariableByIndex(i);
-		D3DX11_EFFECT_VARIABLE_DESC desc;
-		var->GetDesc(&desc);
-		ID3DX11EffectType *s=var->GetType();
-		//if(var->IsShaderResource())
-		{
-			ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
-			if(srv->IsValid())
-				srv->SetResource(NULL);
-		}
-		//if(var->IsUnorderedAccessView())
-		{
-			ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
-			if(uav->IsValid())
-				uav->SetUnorderedAccessView(NULL);
-		}
-	}
-//	effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->Apply(0,
-}
 
 struct d3dMacro
 {

@@ -241,65 +241,6 @@ void UtilityRenderer::DrawQuad(crossplatform::DeviceContext &deviceContext)
 	pContext->IASetPrimitiveTopology(previousTopology);
 }			
 
-void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech,int pass)
-{
-	unsigned int num_v=1;
-	D3D11_VIEWPORT viewport;
-	deviceContext.asD3D11DeviceContext()->RSGetViewports(&num_v,&viewport);
-	DrawQuad2(deviceContext
-		,2.f*(float)x1/(float)viewport.Width-1.f
-		,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
-		,2.f*(float)dx/(float)viewport.Width
-		,2.f*(float)dy/(float)viewport.Height
-		,eff,tech,pass);
-}
-
-void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext,float x1,float y1,float dx,float dy,ID3DX11Effect* eff
-								,ID3DX11EffectTechnique* tech
-								,int pass)
-{
-	HRESULT hr=S_OK;
-	setParameter(eff,"rect",x1,y1,dx,dy);
-	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	pContext->IAGetPrimitiveTopology(&previousTopology);
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(pContext,tech->GetPassByIndex(pass));
-	pContext->Draw(4,0);
-	pContext->IASetPrimitiveTopology(previousTopology);
-	unbindTextures(eff);
-	ApplyPass(pContext,tech->GetPassByIndex(pass));
-}
-void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, ID3DX11Effect* eff, ID3DX11EffectTechnique* tech, const char *passname)
-{
-	unsigned int num_v = 1;
-	D3D11_VIEWPORT viewport;
-	deviceContext.asD3D11DeviceContext()->RSGetViewports(&num_v, &viewport);
-	DrawQuad2(deviceContext
-		, 2.f*(float)x1 / (float)viewport.Width - 1.f
-		, 1.f - 2.f*(float)(y1 + dy) / (float)viewport.Height
-		, 2.f*(float)dx / (float)viewport.Width
-		, 2.f*(float)dy / (float)viewport.Height
-		, eff, tech, passname);
-}
-
-void UtilityRenderer::DrawQuad2(crossplatform::DeviceContext &deviceContext, float x1, float y1, float dx, float dy, ID3DX11Effect* eff
-	, ID3DX11EffectTechnique* tech
-	, const char *passname)
-{
-	HRESULT hr = S_OK;
-	setParameter(eff, "rect", x1, y1, dx, dy);
-	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
-	ID3D11DeviceContext *pContext = deviceContext.asD3D11DeviceContext();
-	pContext->IAGetPrimitiveTopology(&previousTopology);
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(pContext, passname?tech->GetPassByName(passname):tech->GetPassByIndex(0));
-	pContext->Draw(4, 0);
-	pContext->IASetPrimitiveTopology(previousTopology);
-	unbindTextures(eff);
-	ApplyPass(pContext, passname?tech->GetPassByName(passname):tech->GetPassByIndex(0));
-}
-
 
 void UtilityRenderer::DrawSphere(crossplatform::DeviceContext &deviceContext,int latitudes,int longitudes)
 {

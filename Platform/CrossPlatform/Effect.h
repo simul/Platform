@@ -500,6 +500,7 @@ namespace simul
 			EffectTechnique *EnsureTechniqueExists(const std::string &groupname,const std::string &techname,const std::string &passname);
 			const char *GetTechniqueName(const EffectTechnique *t) const;
 			std::set<ConstantBufferBase*> linkedConstantBuffers;
+			std::map<const char *,crossplatform::ShaderResource> shaderResources;
 		public:
 			GroupMap groups;
 			TechniqueMap techniques;
@@ -524,6 +525,7 @@ namespace simul
 			{
 				return filename.c_str();
 			}
+			void InvalidateDeviceObjects();
 			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
