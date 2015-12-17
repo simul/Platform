@@ -158,12 +158,12 @@ void OpenGLRenderer::RenderGL(int view_id)
 
 	view->SetResolution(viewport.w,viewport.h);
 //	trueSkyRenderer.EnsureCorrectBufferSizes(view_id);
-	simul::crossplatform::SetGpuProfilingInterface(NULL,&simul::opengl::Profiler::GetGlobalProfiler());
+	simul::crossplatform::SetGpuProfilingInterface(deviceContext,&simul::opengl::Profiler::GetGlobalProfiler());
 	
-	simul::opengl::Profiler::GetGlobalProfiler().StartFrame(NULL);
+	simul::opengl::Profiler::GetGlobalProfiler().StartFrame(deviceContext);
 	trueSkyRenderer.Render(deviceContext);
 	
-	simul::opengl::Profiler::GetGlobalProfiler().EndFrame(NULL);
+	simul::opengl::Profiler::GetGlobalProfiler().EndFrame(deviceContext);
 }
 
 void OpenGLRenderer::ResizeGL(int view_id,int w,int h)

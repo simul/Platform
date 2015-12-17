@@ -15,7 +15,7 @@
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Platform/CrossPlatform/BaseOpticsRenderer.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
-#include "Simul/Platform/DirectX11/Profiler.h"
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/SaveTextureDx1x.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
@@ -34,7 +34,6 @@ using namespace dx11;
 
 TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m)
 		:clouds::TrueSkyRenderer(env,sc,m,true)
-		,oceanRenderer(NULL)
 {
 	sc;
 	ReverseDepthChanged();
@@ -43,7 +42,6 @@ TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::S
 TrueSkyRenderer::~TrueSkyRenderer()
 {
 	InvalidateDeviceObjects();
-	del(oceanRenderer,memoryInterface);
 }
 
 void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -52,13 +50,6 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	renderPlatform=r;
 	if(!renderPlatform)
 		return;
-	if(!oceanRenderer&&weatherRenderer&&(simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
-	{
-		oceanRenderer			=new(memoryInterface) terrain::BaseSeaRenderer(weatherRenderer->GetEnvironment()->seaKeyframer);
-		oceanRenderer->SetBaseSkyInterface(weatherRenderer->GetEnvironment()->skyKeyframer);
-	}
-	if(oceanRenderer)
-		oceanRenderer->RestoreDeviceObjects(renderPlatform);
 	RecompileShaders();
 }
 // The elements in the main colour/depth buffer, with depth test and optional MSAA
@@ -69,13 +60,6 @@ void TrueSkyRenderer::RenderDepthElements(crossplatform::DeviceContext &deviceCo
 	clouds::TrueSkyRenderer::RenderDepthElements(deviceContext
 									 ,exposure
 									 ,gamma);
-	if(oceanRenderer&&ShowWater&&(simul::base::GetFeatureLevel()&simul::base::EXPERIMENTAL)!=0)
-	{
-		oceanRenderer->SetMatrices(deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-		oceanRenderer->Render(deviceContext,1.f);
-		if(oceanRenderer->GetShowWireframes())
-			oceanRenderer->RenderWireframe(deviceContext);
-	}
 }
 
 
@@ -83,9 +67,6 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 {
 	if(!renderPlatform)
 		return;
-	Profiler::GetGlobalProfiler().Uninitialize();
-	if(oceanRenderer)
-		oceanRenderer->InvalidateDeviceObjects();
 	clouds::TrueSkyRenderer::InvalidateDeviceObjects();
 	renderPlatform=NULL;
 }
@@ -93,10 +74,6 @@ void TrueSkyRenderer::InvalidateDeviceObjects()
 void TrueSkyRenderer::RecompileShaders()
 {
 	clouds::TrueSkyRenderer::RecompileShaders();
-	if(oceanRenderer)
-		oceanRenderer->RecompileShaders();
-	if(simulHDRRenderer)
-		simulHDRRenderer->RecompileShaders();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -112,7 +89,6 @@ Direct3D11Renderer::~Direct3D11Renderer()
 
 void Direct3D11Renderer::OnD3D11CreateDevice	(ID3D11Device* pd3dDevice)
 {
-	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
 	renderPlatformDx11.RestoreDeviceObjects(pd3dDevice);
 	trueSkyRenderer.RestoreDeviceObjects(&renderPlatformDx11);
 }
@@ -145,8 +121,8 @@ void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBu
 
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)
 {
-	simul::crossplatform::SetGpuProfilingInterface(pContext,&simul::dx11::Profiler::GetGlobalProfiler());
 	crossplatform::DeviceContext deviceContext;
+	simul::crossplatform::SetGpuProfilingInterface(deviceContext,renderPlatformDx11.GetGpuProfiler());
 	deviceContext.platform_context	=pContext;
 	deviceContext.renderPlatform	=&renderPlatformDx11;
 	deviceContext.viewStruct.view_id=view_id;

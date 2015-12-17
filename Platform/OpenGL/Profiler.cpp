@@ -32,7 +32,7 @@ void Profiler::Initialize(void*)
     enabled=false;
 }
 
-void Profiler::Begin(void*,const char *name)
+void Profiler::Begin(crossplatform::DeviceContext &de,const char *name)
 {
     if(!enabled)
         return;
@@ -84,11 +84,11 @@ template<typename T> inline std::string ToString(const T& val)
     return stream.str();
 }
 
-void Profiler::StartFrame(void *)
+void Profiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
 }
 
-void Profiler::EndFrame(void *)
+void Profiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 {
     if(!enabled)
         return;
@@ -131,23 +131,11 @@ void Profiler::EndFrame(void *)
     output+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
 }
 
-float Profiler::GetTime(const std::string &name) const
-{
-	if(!enabled)
-		return 0.f;
-	return profiles.find(name)->second.time;
-}
-
-const char *Profiler::GetDebugText(base::TextStyle ) const
-{
-	return output.c_str();
-}
-
 // == ProfileBlock ================================================================================
 
-ProfileBlock::ProfileBlock(void *ctx,const char *name) : name(name)
+ProfileBlock::ProfileBlock(crossplatform::DeviceContext &de,const char *name) : name(name)
 {
-    Profiler::GetGlobalProfiler().Begin(ctx,name);
+    Profiler::GetGlobalProfiler().Begin(de,name);
 }
 
 ProfileBlock::~ProfileBlock()

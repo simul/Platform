@@ -26,7 +26,7 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
-
+#pragma optimize("",off)
 using namespace simul;
 using namespace dx11;
 

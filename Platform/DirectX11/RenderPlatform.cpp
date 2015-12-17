@@ -26,6 +26,10 @@
 #else
 #include <D3Dcompiler.h>
 #endif
+#ifdef SIMUL_ENABLE_PIX
+#include "pix.h"
+#endif
+
 #include "Simul/Platform/DirectX11/Utilities.h"
 
 using namespace simul;
@@ -136,6 +140,7 @@ RenderPlatform::RenderPlatform()
 	,m_pVertexBuffer(NULL)
 	,m_pVtxDecl(NULL)
 	,storedStateCursor(0)
+	,pUserDefinedAnnotation(NULL)
 {
 	storedStates.resize(4);
 }
@@ -197,12 +202,28 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	V_CHECK(AsD3D11Device()->CreateBuffer(&desc,&InitData,&m_pVertexBuffer));
 
 	RecompileShaders();
+	
+#ifdef SIMUL_WIN8_SDK
+	if(enabled)
+	{
+		SAFE_RELEASE(pUserDefinedAnnotation);
+		IUnknown *unknown=(IUnknown *)ctx;
+#ifdef _XBOX_ONE
+		V_CHECK(unknown->QueryInterface( __uuidof(pUserDefinedAnnotation), reinterpret_cast<void**>(&pUserDefinedAnnotation) ));
+#else
+		V_CHECK(unknown->QueryInterface(IID_PPV_ARGS(&pUserDefinedAnnotation)));
+#endif
+}
+#endif
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
 {
 #ifdef _XBOX_ONE
 	delete eSRAMManager;
+#endif
+#ifdef SIMUL_WIN8_SDK
+	SAFE_RELEASE(pUserDefinedAnnotation);
 #endif
 	SAFE_RELEASE(m_pVtxDecl);
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
@@ -231,6 +252,39 @@ void RenderPlatform::RecompileShaders()
 		dx11::Material *mat=(dx11::Material*)(*i);
 		mat->SetEffect(solidEffect);
 	}
+}
+
+void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name)
+{
+#ifdef SIMUL_WIN8_SDK
+    crossplatform::ProfileData *profileData = NULL;
+	auto u=profileMap.find(qualified_name);
+	if(u!=profileMap.end())
+		profileData=u->second;
+	if(u!=profileMap.end())
+	{
+		profileData=u->second;
+		if(!profileData->wUnqualifiedName.length())
+			profileData->wUnqualifiedName=base::StringToWString(name);
+		if(pUserDefinedAnnotation)
+			pUserDefinedAnnotation->BeginEvent(profileData->wUnqualifiedName.c_str());
+	}
+#endif
+#ifdef SIMUL_ENABLE_PIX
+	if(last_name==string(name))
+		PIXBeginEvent( 0, profileData->wUnqualifiedName.c_str(), name );
+#endif
+}
+
+void RenderPlatform::EndEvent			(crossplatform::DeviceContext &deviceContext)
+{
+#ifdef SIMUL_WIN8_SDK
+	if(pUserDefinedAnnotation)
+		pUserDefinedAnnotation->EndEvent();
+#endif
+#ifdef SIMUL_ENABLE_PIX
+	PIXEndEvent();
+#endif
 }
 
 void RenderPlatform::StartRender(crossplatform::DeviceContext &deviceContext)

@@ -22,7 +22,7 @@ namespace simul
 				for(int i=0;i<QueryLatency;i++)
 					d3d11Query[i]		=0;
 			}
-			~Query() override
+			virtual ~Query() override
 			{
 				InvalidateDeviceObjects();
 			}
@@ -30,7 +30,8 @@ namespace simul
 			void InvalidateDeviceObjects() override;
 			void Begin(crossplatform::DeviceContext &deviceContext) override;
 			void End(crossplatform::DeviceContext &deviceContext) override;
-			void GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
+			bool GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
+			void SetName(const char *n) override;
 		};
 		struct SIMUL_DIRECTX11_EXPORT RenderState:public crossplatform::RenderState
 		{
@@ -107,6 +108,8 @@ namespace simul
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
 			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int mip=0);
+			
+			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int mip=0);
 			
 			crossplatform::ShaderResource GetShaderResource(const char *name) override;
 			void SetTexture		(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip=-1) override;

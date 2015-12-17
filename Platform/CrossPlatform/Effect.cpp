@@ -22,12 +22,18 @@ Effect::Effect()
 
 Effect::~Effect()
 {
+	InvalidateDeviceObjects();
+	SIMUL_ASSERT(apply_count==0);
+}
+
+void Effect::InvalidateDeviceObjects()
+{
+	shaderResources.clear();
 	for(crossplatform::TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
 	{
 		delete i->second;
 	}
 	techniques.clear();
-	SIMUL_ASSERT(apply_count==0);
 }
 
 EffectTechnique *EffectTechniqueGroup::GetTechniqueByName(const char *name)

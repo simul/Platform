@@ -95,7 +95,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-void Query::GetData(crossplatform::DeviceContext &,void *data,size_t )
+bool Query::GetData(crossplatform::DeviceContext &,void *data,size_t )
 {
 GL_ERROR_CHECK
 	GLuint ok=0;
@@ -103,6 +103,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	if(ok==GL_TRUE)
 		glGetQueryObjectuiv(glQuery[currFrame],GL_QUERY_RESULT,(GLuint*)data);
+	return (ok==GL_TRUE);
 GL_ERROR_CHECK
 }
 
@@ -503,32 +504,21 @@ bool Effect::FillInTechniques()
 	{
 		std::string group_name=glfxGetTechniqueGroupName(e,i);
 		glfxUseTechniqueGroup(e,i);
-	GL_ERROR_CHECK
 		int numt = (int)glfxGetTechniqueCount(e);
-	GL_ERROR_CHECK
-		for (int j = 0; j < numt; j++)
+		for (int j = 0; j<numt; j++)
 		{
-	GL_ERROR_CHECK
 			std::string tech_name = glfxGetTechniqueName(e,j);
-	GL_ERROR_CHECK
 			int num_passes = (int)glfxGetPassCount(e, tech_name.c_str());
-	GL_ERROR_CHECK
 			for (int k = 0; k < num_passes; k++)
 			{
-	GL_ERROR_CHECK
 				std::string pass_name = glfxGetPassName(e, tech_name.c_str(), k);
-	GL_ERROR_CHECK
 				GLuint t = glfxCompilePass(e, tech_name.c_str(), pass_name.c_str());
-	GL_ERROR_CHECK
 				if(!t)
 				{
-					std::cerr<<filenameInUseUtf8.c_str()
-								<<": error C7555:  there are errors in pass "<<pass_name.c_str()<<" of technique "
-								<<tech_name.c_str()<<std::endl;
+					std::cerr<<filenameInUseUtf8.c_str()<<": error C7555:  there are errors in pass "<<pass_name.c_str()<<" of technique "<<tech_name.c_str()<<std::endl;
 					opengl::printEffectLog(asGLint());
 					return false;
 				}
-	GL_ERROR_CHECK
 				AddPass(group_name,tech_name, pass_name, t);
 			}
 		}
@@ -594,16 +584,35 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *n
 	SetTex(name,tex,true, mip);
 }
 
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int mip)
+{
+	GL_ERROR_CHECK
+	int texture_number=(int)shaderResource.platform_shader_resource;
+	if(texture_number>=0)
+	{
+		if(tex)
+			glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),true,mip);
+		else
+			glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN),true,mip);
+	}
+	GL_ERROR_CHECK
+}
+
 void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write,int mip)
 {
 	GL_ERROR_CHECK
-	int texture_number=0;
+	int texture_number=-1;
 	if(write)
 		texture_number=glfxGetEffectImageNumber((GLuint)platform_effect,name);
 	else
 		texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
-	if(tex)
-		glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write,mip);
+	if(texture_number>=0)
+	{
+		if(tex)
+			glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write,mip);
+		else
+			glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN),write,mip);
+	}
 	GL_ERROR_CHECK
 }
 

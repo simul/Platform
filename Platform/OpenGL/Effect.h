@@ -26,7 +26,8 @@ namespace simul
 			void InvalidateDeviceObjects() override;
 			void Begin(crossplatform::DeviceContext &deviceContext) override;
 			void End(crossplatform::DeviceContext &deviceContext) override;
-			void GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
+			bool GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
+			void SetName(const char*){}
 		};
 		struct SIMUL_OPENGL_EXPORT RenderState:public crossplatform::RenderState
 		{
@@ -121,6 +122,7 @@ namespace simul
 			
 			crossplatform::ShaderResource GetShaderResource(const char *name) override;
 			void SetUnorderedAccessView(crossplatform::DeviceContext&,const char *name,crossplatform::Texture *tex,int mip=0);
+			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int mip=0);
 			void SetTexture		(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip=-1) override;
 			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture *tex,int mip=-1) override;
 			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);

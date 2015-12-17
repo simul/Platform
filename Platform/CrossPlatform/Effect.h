@@ -6,9 +6,7 @@
 #include <map>
 #include <vector>
 #include <set>
-#ifndef _MSC_VER
 #include <stdint.h>
-#endif
 struct ID3DX11Effect;
 struct ID3DX11EffectTechnique;
 struct ID3D11ShaderResourceView;
@@ -67,19 +65,32 @@ namespace simul
 		class RenderPlatform;
 		struct Query;
 		class Effect;
+		/// A disjoint query structure, like those in DirectX 11.
+		/// Its main use is actually to get the clock frequency that will
+		/// be used for timestamp queries, but the Disjoint value is
+		/// used on some platforms to indicate whether the timestamp values are invalid.
+		struct DisjointQueryStruct
+		{
+			uint64_t Frequency;
+			int		Disjoint;
+		};
+		/// Crossplatform GPU query class.
 		struct SIMUL_CROSSPLATFORM_EXPORT Query
 		{
-			static const int QueryLatency = 5;
+			static const int QueryLatency = 6;
 			bool QueryStarted;
 			bool QueryFinished;
 			int currFrame;
 			QueryType type;
+			bool gotResults[QueryLatency];
 			Query(QueryType t)
 				:QueryStarted(false)
 				,QueryFinished(false)
 				,currFrame(0)
 				,type(t)
 			{
+				for(int i=0;i<QueryLatency;i++)
+					gotResults[i]=true;
 			}
 			virtual ~Query()
 			{
@@ -88,7 +99,10 @@ namespace simul
 			virtual void InvalidateDeviceObjects()=0;
 			virtual void Begin(DeviceContext &deviceContext) =0;
 			virtual void End(DeviceContext &deviceContext) =0;
-			virtual void GetData(DeviceContext &deviceContext,void *data,size_t sz) =0;
+			/// Get query data. Returns true if successful, or false otherwise.
+			/// Blocking queries will return false until they succeed.
+			virtual bool GetData(DeviceContext &deviceContext,void *data,size_t sz) =0;
+			virtual void SetName(const char *){}
 		};
 		
 		enum BlendOption
@@ -144,6 +158,42 @@ namespace simul
 			bool write;
 			DepthComparison comparison;
 		};
+		typedef enum ViewportScissor
+		{
+			VIEWPORT_SCISSOR_DISABLE      = 0, ///< Disable the scissor rectangle for a viewport.
+			VIEWPORT_SCISSOR_ENABLE       = 1, ///< Enable the scissor rectangle for a viewport.
+		};
+		enum CullFaceMode
+		{
+			CULL_FACE_NONE              = 0, ///< Disable face culling.
+			CULL_FACE_FRONT             = 1, ///< Cull front-facing primitives only.
+			CULL_FACE_BACK              = 2, ///< Cull back-facing primitives only.
+			CULL_FACE_FRONTANDBACK      = 3, ///< Cull front and back faces.
+		};
+		enum FrontFace
+		{
+			FRONTFACE_CLOCKWISE                     = 1, ///< Clockwise is front-facing.
+			FRONTFACE_COUNTERCLOCKWISE              = 0, ///< Counter-clockwise is front-facing.
+		};
+		enum PolygonMode
+		{
+			POLYGON_MODE_POINT              = 0, ///< Render polygons as points.
+			POLYGON_MODE_LINE               = 1, ///< Render polygons in wireframe.
+			POLYGON_MODE_FILL               = 2, ///< Render polygons as solid/filled.
+		};
+		enum PolygonOffsetMode
+		{
+			POLYGON_OFFSET_ENABLE           = 1, ///< Enable polygon offset.
+			POLYGON_OFFSET_DISABLE          = 0, ///< Disable polygon offset.
+		} ;
+		struct RasterizerDesc
+		{
+			ViewportScissor		viewportScissor;
+			CullFaceMode		cullFaceMode;
+			FrontFace			frontFace;
+			PolygonMode			polygonMode;
+			PolygonOffsetMode	polygonOffsetMode;
+		};
 		enum RenderStateType
 		{
 			NONE
@@ -161,6 +211,7 @@ namespace simul
 			{
 				DepthStencilDesc depth;
 				BlendDesc blend;
+				RasterizerDesc rasterizer;
 			};
 		};
 		struct SIMUL_CROSSPLATFORM_EXPORT RenderState
@@ -449,6 +500,7 @@ namespace simul
 			EffectTechnique *EnsureTechniqueExists(const std::string &groupname,const std::string &techname,const std::string &passname);
 			const char *GetTechniqueName(const EffectTechnique *t) const;
 			std::set<ConstantBufferBase*> linkedConstantBuffers;
+			std::map<const char *,crossplatform::ShaderResource> shaderResources;
 		public:
 			GroupMap groups;
 			TechniqueMap techniques;
@@ -473,6 +525,7 @@ namespace simul
 			{
 				return filename.c_str();
 			}
+			void InvalidateDeviceObjects();
 			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
@@ -480,19 +533,14 @@ namespace simul
 			//! Set the texture for read-write access by compute shaders in this effect.
 			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int mip=0)	=0;
 			virtual ShaderResource GetShaderResource(const char *name)=0;
+			//! Set the texture for read-write access by compute shaders in this effect.
+			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,ShaderResource &name,Texture *tex,int mip=0)	=0;
+			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
 			virtual void SetTexture		(DeviceContext &deviceContext,ShaderResource &name	,Texture *tex,int mip=-1)		=0;
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex,int mip=-1)=0;
 			//! Set the texture for this effect.
 			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s)		=0;
-			virtual void SetParameter	(const char *name	,float value)		=0;
-			virtual void SetParameter	(const char *name	,vec2)				=0;
-			virtual void SetParameter	(const char *name	,vec3)				=0;
-			virtual void SetParameter	(const char *name	,vec4)				=0;
-			virtual void SetParameter	(const char *name	,int value)			=0;
-			virtual void SetParameter	(const char *name	,int2 value)		=0;
-			virtual void SetVector		(const char *name	,const float *vec)	=0;
-			virtual void SetMatrix		(const char *name	,const float *m)	=0;
 			/// Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,const char *tech_name,const char *pass);
 			/// Activate the shader. Unapply must be called after rendering is done.

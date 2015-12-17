@@ -13,6 +13,9 @@
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
+#ifndef _XBOX_ONE
+	struct ID3DUserDefinedAnnotation;
+#endif
 
 namespace simul
 {
@@ -46,6 +49,8 @@ namespace simul
 			{
 				return device;
 			}
+			virtual void BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name);
+			virtual void EndEvent			(crossplatform::DeviceContext &deviceContext);
 			void StartRender(crossplatform::DeviceContext &deviceContext);
 			void EndRender(crossplatform::DeviceContext &deviceContext);
 			void IntializeLightingEnvironment(const float pAmbientLight[3]);
@@ -111,6 +116,7 @@ namespace simul
 			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 		protected:
+			ID3DUserDefinedAnnotation *pUserDefinedAnnotation;
 			/// \todo The stored states are implemented per-RenderPlatform for DX11, but need to be implemented per-DeviceContext.
 			struct StoredState
 			{

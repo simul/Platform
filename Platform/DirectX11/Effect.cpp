@@ -29,6 +29,12 @@ D3D11_QUERY toD3dQueryType(crossplatform::QueryType t)
 	};
 }
 
+void Query::SetName(const char *name)
+{
+	for(int i=0;i<QueryLatency;i++)
+		SetDebugObjectName( d3d11Query[i], name );
+}
+
 void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	InvalidateDeviceObjects();
@@ -38,12 +44,17 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		toD3dQueryType(type),0
 	};
 	for(int i=0;i<QueryLatency;i++)
+	{
+		gotResults[i]=true;
 		m_pd3dDevice->CreateQuery(&qdesc,&d3d11Query[i]);
+	}
 }
 void Query::InvalidateDeviceObjects() 
 {
 	for(int i=0;i<QueryLatency;i++)
 		SAFE_RELEASE(d3d11Query[i]);
+	for(int i=0;i<QueryLatency;i++)
+		gotResults[i]=true;
 }
 
 void Query::Begin(crossplatform::DeviceContext &deviceContext)
@@ -56,13 +67,20 @@ void Query::End(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->End(d3d11Query[currFrame]);
-	currFrame = (currFrame + 1) % QueryLatency;  
+	gotResults[currFrame]=false;
 }
 
-void Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)
+bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	while (pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0) == S_FALSE);
+	currFrame = (currFrame + 1) % QueryLatency;
+	// Get the data from the "next" query - which is the oldest!
+	HRESULT hr=pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0);
+	if(hr== S_OK)
+	{
+		gotResults[currFrame]=true;
+	}
+	return hr== S_OK;
 }
 
 RenderState::RenderState()
@@ -494,6 +512,22 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const c
 		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,NULL);
 }
 
+void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip)
+{
+	ID3DX11EffectUnorderedAccessViewVariable *var=(ID3DX11EffectUnorderedAccessViewVariable*)(shaderResource.platform_shader_resource);
+	if(!asD3DX11Effect())
+	{
+		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		return;
+	}
+	if(t)
+	{
+		var->SetUnorderedAccessView(t->AsD3D11UnorderedAccessView());
+	}
+	else
+		var->SetUnorderedAccessView(NULL);
+}
+
 void dx11::Effect::SetTexture(const char *name,ID3D11ShaderResourceView *tex)
 {
 	if(!asD3DX11Effect())
@@ -511,18 +545,34 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,cr
 		SIMUL_CERR<<"Invalid effect "<<std::endl;
 		return;
 	}
+	ID3DX11Effect *e=asD3DX11Effect();
+	if(!e)
+		return;
+	crossplatform::ShaderResource res			=GetShaderResource(name);
+	ID3DX11EffectShaderResourceVariable *var	=(ID3DX11EffectShaderResourceVariable*)res.platform_shader_resource;
+	if(!var||!var->IsValid())
+	{
+		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader texture ")+name).c_str());
+	}
 	if(t)
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
-		simul::dx11::setTexture(asD3DX11Effect(),name,T->AsD3D11ShaderResourceView(mip));
+		auto srv=T->AsD3D11ShaderResourceView(mip);
+		var->SetResource(srv);
 	}
 	else
-		simul::dx11::setTexture(asD3DX11Effect(),name,NULL);
+	{
+		var->SetResource(NULL);
+	}
 }
 
 crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 {
-	crossplatform::ShaderResource res;
+	// First do a simple search by pointer.
+	auto i=shaderResources.find(name);
+	if(i!=shaderResources.end())
+		return i->second;
+	crossplatform::ShaderResource &res=shaderResources[name];
 	res.platform_shader_resource=0;
 	ID3DX11Effect *effect=asD3DX11Effect();
 	if(!effect)
@@ -530,13 +580,28 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		SIMUL_CERR<<"Invalid effect "<<std::endl;
 		return res;
 	}
-	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	ID3DX11EffectVariable *var=effect->GetVariableByName(name);
 	if(!var->IsValid())
 	{
-		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader texture ")+name).c_str());
+		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 		return res;
 	}
-	res.platform_shader_resource=(void*)var;
+	ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
+	if(srv->IsValid())
+		res.platform_shader_resource=(void*)srv;
+	else
+	{
+		ID3DX11EffectUnorderedAccessViewVariable *uav=var->AsUnorderedAccessView();
+		if(uav->IsValid())
+		{
+			res.platform_shader_resource=(void*)uav;
+		}
+		else
+		{
+			SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Unknown resource type ")+name).c_str());
+			return res;
+		}
+	}
 	return res;
 }
 
@@ -720,7 +785,30 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 	//if(apply_count!=1)
 	//	SIMUL_BREAK_ONCE(base::QuickFormat("UnbindTextures can only be called after Apply and before Unapply! Effect: %s\n",this->filename.c_str()))
 	ID3DX11Effect *effect			=asD3DX11Effect();
-	dx11::unbindTextures(effect);
+
+	D3DX11_EFFECT_DESC edesc;
+	if(!effect)
+		return;
+	effect->GetDesc(&edesc);
+	for(unsigned i=0;i<edesc.GlobalVariables;i++)
+	{
+		ID3DX11EffectVariable *var	=effect->GetVariableByIndex(i);
+		D3DX11_EFFECT_VARIABLE_DESC desc;
+		var->GetDesc(&desc);
+		ID3DX11EffectType *s=var->GetType();
+		//if(var->IsShaderResource())
+		{
+			ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
+			if(srv->IsValid())
+				srv->SetResource(NULL);
+		}
+		//if(var->IsUnorderedAccessView())
+		{
+			ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
+			if(uav->IsValid())
+				uav->SetUnorderedAccessView(NULL);
+		}
+	}
 	if(apply_count!=1&&effect)
 	{
 		V_CHECK(effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext()));
