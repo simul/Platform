@@ -214,46 +214,6 @@ vec4 Samescale(Texture2D sourceDepthTexture
 	return farthest_nearest;
 }
 
-vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 texCoords1, vec2 sourceTexCoords, vec2 texelRange
-	, DepthIntepretationStruct depthInterpretationStruct, float nearThresholdDepth,vec2 stochasticOffset,uint2 scale)
-{
-	// Stochastic offset goes from -1 to +1
-	vec2 texCoords				=sourceTexCoords+texelRange*stochasticOffset/vec2(scale);
-	vec4 fn;
-	
-	if(depthInterpretationStruct.reverseDepth)
-		fn				=vec4(1.0,0.0,1.0,0.0);
-	else														
-		fn				=vec4(0.0,1.0,0.0,1.0);
-	vec4 thr			=vec4(nearThresholdDepth, nearThresholdDepth, nearThresholdDepth, nearThresholdDepth);
-	for(int i=1;i<scale.x;i+=2)
-	{
-		float x=(0.5+float(i-scale.x/2.0))/float(scale.x);
-		for(int j=1;j<scale.y;j+=2)
-		{
-			float y		=(0.5+float(j-scale.y/2.0))/float(scale.y);
-			vec2 offs	=texelRange*vec2(x,y);
-			vec2 texc	=texCoords+2.0*offs;
-			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0.0).xx;
-			if(depthInterpretationStruct.reverseDepth)
-				d.x					= step(d.x,nearThresholdDepth)*d.x;
-			else
-				d.x					= step(d.x,nearThresholdDepth)+d.x;
-			if(depthInterpretationStruct.reverseDepth)
-			{
-				fn.yw=max(fn.yw,d);
-				fn.xz=min(fn.xz,d);
-			}
-			else
-			{
-				fn.yw=min(fn.yw,d);
-				fn.xz=max(fn.xz,d);
-			}
-		}
-	}
-	return fn;
-}
-
 vec4 HalfscaleInitial(Texture2D sourceDepthTexture,int2 source_dims,int2 max_dims
 	, uint2 source_offset, int2 cornerOffset, int2 pos
 	, DepthIntepretationStruct depthInterpretationStruct

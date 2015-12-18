@@ -5,7 +5,6 @@
 #include "../SL/depth.sl"
 #include "../SL/hdr_constants.sl"
 #include "../SL/colour_packing.sl"
-#include "../SL/mixed_resolution.sl"
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/composite.sl"
 #include "../SL/debug_constants.sl"
@@ -13,8 +12,9 @@
 
 uniform Texture2D imageTexture;
 uniform TEXTURE2DMS_FLOAT4 imageTextureMS;
-uniform Texture2D nearImageTexture;
-uniform Texture2D nearFarTexture;
+uniform TextureCube nearImageTexture;
+uniform TextureCube farImageTexture;
+uniform TextureCube nearFarTexture;
 uniform Texture2D depthTexture;
 uniform TEXTURE2DMS_FLOAT4 depthTextureMS;
 uniform Texture2D lowResDepthTexture;
@@ -117,11 +117,6 @@ vec3 FilmicTone(vec3 x)
 	return c;
 }
 
-shader vec4 PS_Downscale2(posTexVertexOutput IN) : SV_Target
-{
-	vec4 c		=texture_nearest_lod(imageTexture,IN.texCoords,0);
-	return c;
-}
 shader vec4 GlowExposureGammaPS(posTexVertexOutput IN) : SV_Target
 {
 	vec4 c		=texture_nearest_lod(imageTexture,IN.texCoords,0);
@@ -298,7 +293,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 	depthInterpretationStruct.reverseDepth	=reverseDepth;
 	TwoColourCompositeOutput result			=CompositeAtmospherics(IN.clip_pos
 															,IN.depth_texc
-															,imageTexture
+															,farImageTexture
 															,nearImageTexture
 															,nearFarTexture
 															,loss2dTexture
@@ -322,8 +317,8 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	TwoColourCompositeOutput result	=	CompositeAtmospherics(IN.clip_pos
 															,IN.depth_texc
-															,imageTexture
-															,imageTexture
+															,farImageTexture
+															,farImageTexture
 															,nearFarTexture
 															,loss2dTexture
 															,depthTexture
@@ -355,7 +350,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.clip_pos
 															,IN.depth_texc
-																,imageTexture
+																,farImageTexture
 																,nearImageTexture
 																,nearFarTexture
 																,loss2dTexture
@@ -451,19 +446,6 @@ technique exposure_gamma
         SetGeometryShader(NULL);
 		SetVertexShader(mainvs_5_0);
 		SetPixelShader(CompileShader(ps_5_0,ExposureGammaPS_MSAA()));
-    }
-}
-
-technique downscale2
-{
-    pass main
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_4_0);
-		SetPixelShader(CompileShader(ps_4_0,PS_Downscale2()));
     }
 }
 

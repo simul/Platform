@@ -39,6 +39,7 @@ namespace simul
 	namespace terrain
 	{
 		class BaseTerrainRenderer;
+		class BaseSeaRenderer;
 	}
 	namespace dx11
 	{
@@ -56,6 +57,10 @@ namespace simul
 			{
 				return simulHDRRenderer;
 			}
+			terrain::BaseSeaRenderer *GetOceanRenderer()
+			{
+				return oceanRenderer;
+			}
 			void						RecompileShaders();
 		protected:
 			/// Parts of the scene that go into the main buffer with depth active.
@@ -64,6 +69,8 @@ namespace simul
 				,float gamma);
 			// Different kinds of view for Render() to call:
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
+
+			terrain::BaseSeaRenderer					*oceanRenderer;
 		};
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface

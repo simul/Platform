@@ -160,7 +160,8 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	ERRNO_CHECK
 	for (int i = 0; i < 4; i++)
 	{
-		lowResFramebuffers[i]->ensureTexture2DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,crossplatform::RGBA_16_FLOAT,true,true);
+	//	lowResFramebuffers[i]->ensureTexture2DSizeAndFormat(renderPlatform,BufferWidth,BufferWidth,crossplatform::RGBA_16_FLOAT,true,true);
+		lowResFramebuffers[i]->ensureTextureArraySizeAndFormat(renderPlatform,BufferWidth,BufferWidth,6,crossplatform::RGBA_16_FLOAT,true,false,true);
 	}
 	ERRNO_CHECK
 	// We're going to TRY to encode near and far loss into two UINT's, for faster results
@@ -308,6 +309,7 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	vec2 dp				(-cc*dx,-cc*dy);
 	vec2 oldPixelOffset	=pixelOffset;
 	pixelOffset			+=dp;
+
 	int2 sc(Downscale,Downscale);
 	{
 		if(sc.x<1)
@@ -337,7 +339,7 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 		amortizationStruct.updateRegion(io,pixelOffset/float(Downscale));
 		amortizationStruct.lowResOffset+=io;
 
-		int2 texsize(lowResFramebuffers[0]->width,lowResFramebuffers[0]->length);
+		int2 texsize(BufferWidth,BufferHeight);
 		while(amortizationStruct.lowResOffset.x<0)
 			amortizationStruct.lowResOffset.x+=texsize.x;
 		while(amortizationStruct.lowResOffset.y<0)
@@ -367,21 +369,29 @@ void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceC
 		else if(depthTexture&&depthTexture->length)
 			w		=(depthTexture->width*l)/depthTexture->length;
 	}
-	int x=x0;
 	int y=y0;
-	int W=w,L=l;
+	int W=dx/3,L=l/2;
+	int x=x0+W+4;
 	for(int i=0;i<4;i++)
 	{
 		crossplatform::Texture *t=GetLowResDepthTexture(i);
 		if(!t)
 			continue;
-		deviceContext.renderPlatform->DrawDepth(deviceContext	,x	,y	,w,l,	t,NULL,proj);
-		deviceContext.renderPlatform->DrawTexture(deviceContext	,x+w	,y	,w,l,	t);
-		deviceContext.renderPlatform->Print(deviceContext		,x	,y	,"Depth",white,black_transparent);
-		w/=2;
-		l/=2;
-		y+=l;
+		if(!i)
+			deviceContext.renderPlatform->DrawTexture(deviceContext	,x		,y	,W,L,	t);
+		else
+		deviceContext.renderPlatform->DrawDepth(deviceContext	,x		,y	,W,L,	t,NULL,proj);
+		//deviceContext.renderPlatform->DrawTexture(deviceContext	,x+W+4	,y	,W,L,	t);
+		deviceContext.renderPlatform->Print(deviceContext		,x		,y	,base::QuickFormat("Depth %d",i),white,black_transparent);
+		x+=W+4;
+		if(i==1)
+		{
+			x=x0+W+4;
+			y+=L;
+		}
 	}
+	deviceContext.renderPlatform->DrawTexture(deviceContext,x0,y0,W,L,updateTextures[0]);
+	deviceContext.renderPlatform->DrawTexture(deviceContext,x0,y0+L,W,L,updateTextures[1]);
 	//deviceContext.renderPlatform->DrawDepth(deviceContext		,x0+W/2	,y0+L/2	,W/2,L/2,depthTexture,viewport,proj);
 	//deviceContext.renderPlatform->Print(deviceContext			,x0+W/2	,y0+L/2	,"Main Depth",white,black_transparent);
 }

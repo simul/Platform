@@ -93,6 +93,7 @@ void dx11::Texture::InvalidateDeviceObjects()
 	}
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
+
 // Load a texture file
 void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
 {

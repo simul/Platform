@@ -281,15 +281,13 @@ shader vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
     return DetailLighting(IN.texCoords,imageTexture);
 }
 
-void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,bool reverseDepth)
+CS_LAYOUT(8,8,1)
+shader void CS_Clouds2D(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID)
 {
 	int2 pos				=int2(g.xy*8+t.xy);
 	pos						=pos*amortization+amortizationOffset.xy;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
-	DepthIntepretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth				=reverseDepth;
 	// offset by one texel to allow -1 in x and y:
 	vec2 INtexCoords		=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize1);
 	vec4 dlookup 			=vec4(0,0,0,0);
@@ -297,22 +295,23 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,
 	//  to the texCoords of our window. These wrap around 
 	vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
 	texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize1)*mixedResTransformXYWH.zw;
-	
 	//if(useDepth)
 	//	dlookup				=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
+
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
+
 	float dz				=cloudAltitudeMetres-eyePosition.z;
 	vec4 ret				=vec4(0,0,0,1.0);
-	pos						+=offsetToCorner;
+	pos						+=offsetToCorner.xy;
 	pos						=pos%targetTextureSize1;
 	dlookup=depthTexture[pos];
 	// TODO: should be depthToFadeDistance,not linear
-	vec4 dist				=vec4(1.0,1.0,1.0,1.0);
-	if(useDepth)
-		dist				=depthToLinearDistance(dlookup, depthInterpretationStruct);
+	vec4 dist				=texture_cube_lod(depthTexture,view,0);
+
 	if(dz>0||view.z<0)
 	{
 		float Rh				=6378.0+cloudAltitudeMetres*0.001;
@@ -359,24 +358,6 @@ void CS_Clouds2D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID,bool useDepth,
 		}
 	}
 	outputTexture[pos]	=ret;
-}
-
-CS_LAYOUT(8,8,1)
-shader void CS_Clouds2D_depthReverse(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
-{
-	CS_Clouds2D(g,t,true,true);
-}
-
-CS_LAYOUT(8,8,1)
-shader void CS_Clouds2D_depthForward(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
-{
-	CS_Clouds2D(g,t,true,false);
-}
-
-CS_LAYOUT(8,8,1)
-shader void CS_Clouds2D_noDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
-{
-	CS_Clouds2D(g,t,false,false);
 }
 
 
@@ -476,55 +457,10 @@ VertexShader main_vs	=CompileShader(vs_5_0,VS_Main());
 VertexShader forward_vs	=CompileShader(vs_5_0,VS_DepthForward());
 VertexShader reverse_vs	=CompileShader(vs_5_0,VS_DepthReverse());
 
-technique simul_clouds_2d
-{
-    pass no_depth
-    {
-        SetGeometryShader(NULL);
-		SetVertexShader(main_vs);
-		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
-    }
-    pass reverse_depth
-	{
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-        SetGeometryShader(NULL);
-		SetVertexShader(reverse_vs);
-		SetPixelShader(CompileShader(ps_5_0,PS_Main_depthReverse()));
-    }
-    pass forward_depth
-	{
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-        SetGeometryShader(NULL);
-		SetVertexShader(forward_vs);
-		SetPixelShader(CompileShader(ps_5_0,PS_Main_depthForward()));
-    }
-    pass depth_check
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(TestDepth,0);
-		SetBlendState(AlphaBlendX,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
-        SetGeometryShader(NULL);
-		SetVertexShader(main_vs);
-		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
-    }
-}
-
 technique clouds_2d_quad
 {
-	pass reverse_depth 
+	pass p0 
 	{
-		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D_depthReverse()));
-	}
-	pass forward_depth
-	{
-		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D_depthForward()));
-	}
-	pass no_depth
-	{
-		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D_noDepth()));
+		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D()));
 	}
 }

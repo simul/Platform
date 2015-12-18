@@ -14,7 +14,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,Texture2D skylTexture
 											,Texture3D inscatterVolumeTexture
                                             ,bool do_depth_mix
-											,DepthIntepretationStruct depthInterpretationStruct
 											,vec4 dlookup
 											,vec2 texCoords
 											,bool noise
@@ -25,7 +24,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	RaytracePixelOutput res;
 	res.colour				=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
-	res.nearFarDepth		=vec4(depthToLinearDistance(dlookup.xy, depthInterpretationStruct),0,1.0);
+	res.nearFarDepth		=vec4(dlookup.xy,0,1.0);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
@@ -45,7 +44,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
 	
-	vec2 solidDist_nearFar	=depthToFadeDistance(dlookup.yx,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+	vec2 solidDist_nearFar	=dlookup.yx;
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	// Lookup in the illumination texture.
 	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
