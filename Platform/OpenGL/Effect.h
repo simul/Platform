@@ -106,7 +106,7 @@ namespace simul
 			/// we've assigned them to.
 			
 			bool FillInTechniques();
-			void SetTex(const char *name,crossplatform::Texture *tex,bool write,int mip);
+			void SetTex(const char *name,crossplatform::Texture *tex,int mip);
 			EffectTechnique *CreateTechnique();
 			void AddPass(std::string groupname,std::string techname, std::string passname, GLuint t);
 		public:

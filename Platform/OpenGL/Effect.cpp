@@ -581,7 +581,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex,int mip)
 {
-	SetTex(name,tex,true, mip);
+	SetTex(name,tex, mip);
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int mip)
@@ -598,20 +598,29 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform
 	GL_ERROR_CHECK
 }
 
-void Effect::SetTex(const char *name,crossplatform::Texture *tex,bool write,int mip)
+void Effect::SetTex(const char *name,crossplatform::Texture *tex,int mip)
 {
 	GL_ERROR_CHECK
 	int texture_number=-1;
-	if(write)
-		texture_number=glfxGetEffectImageNumber((GLuint)platform_effect,name);
-	else
-		texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
+	texture_number=glfxGetEffectImageNumber((GLuint)platform_effect,name);
 	if(texture_number>=0)
 	{
 		if(tex)
-			glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write,mip);
+			glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),true,mip);
 		else
-			glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN),write,mip);
+			glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN),true,mip);
+	}
+	else
+	{
+		if(texture_number<0)
+			texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
+		if(texture_number>=0)
+		{
+			if(tex)
+				glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),false,mip);
+			else
+				glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN),false,mip);
+		}
 	}
 	GL_ERROR_CHECK
 }
@@ -645,7 +654,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 
 void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex,int mip)
 {
-	SetTex(name,tex,false,mip);
+	SetTex(name,tex,mip);
 }
 
 void Effect::SetSamplerState(crossplatform::DeviceContext &,const char *name,crossplatform::SamplerState *s)

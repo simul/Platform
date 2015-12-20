@@ -9,7 +9,7 @@ uniform sampler2D noiseTexture;
 uniform sampler2D coverageTexture;
 uniform sampler2D lossTexture;
 uniform Texture3D volumeInscatterTexture;
-uniform sampler2D depthTexture;
+uniform TextureCube depthTexture;
 uniform Texture2DMS<vec4> depthTextureMS;
 uniform sampler2D illuminationTexture;
 uniform sampler2D lightTableTexture;
@@ -308,7 +308,6 @@ shader void CS_Clouds2D(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID)
 	vec4 ret				=vec4(0,0,0,1.0);
 	pos						+=offsetToCorner.xy;
 	pos						=pos%targetTextureSize1;
-	dlookup=depthTexture[pos];
 	// TODO: should be depthToFadeDistance,not linear
 	vec4 dist				=texture_cube_lod(depthTexture,view,0);
 
