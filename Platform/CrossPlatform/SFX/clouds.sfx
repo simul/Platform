@@ -15,16 +15,16 @@ uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 uniform Texture3D cloudDensity				;
 uniform Texture3D cloudDensity2				;
 
-uniform Texture2D cloudShadowTexture		;
-uniform Texture2D lossTexture				;
-uniform Texture2D inscTexture				;
-uniform Texture2D skylTexture				;
-uniform TextureCube depthTexture			;
-uniform Texture3D noiseTexture3D			;
-uniform TextureCube clouds2DTexture			;
-uniform Texture2D illuminationTexture		;
-uniform Texture2D lightTableTexture			;
-uniform Texture2D rainbowLookupTexture		;
+uniform Texture2D cloudShadowTexture;
+uniform Texture2D lossTexture		;
+uniform Texture2D inscTexture		;
+uniform Texture2D skylTexture		;
+uniform TextureCube depthTexture	;
+uniform Texture3D noiseTexture3D	;
+uniform TextureCube clouds2DTexture	;
+uniform Texture2D illuminationTexture;
+uniform Texture2D lightTableTexture	;
+uniform Texture2D rainbowLookupTexture	;
 uniform Texture2D coronaLookupTexture		;
 uniform Texture3D volumeInscatterTexture	;
 uniform Texture2D rainMapTexture			;
@@ -274,7 +274,7 @@ void Raytrace(int2 pos,bool rain)
 {
 	if(updateTexture[pos].r==0.0)
 		return;
-	vec2 texCoords			=vec2(pos.xy)/vec2(targetTextureSize);
+	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
