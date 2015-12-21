@@ -16,11 +16,11 @@ uniform Texture3D cloudDensity				;
 uniform Texture3D cloudDensity2				;
 
 uniform Texture2D cloudShadowTexture;
-uniform Texture2D lossTexture		;
-uniform Texture2D inscTexture		;
-uniform Texture2D skylTexture		;
-uniform TextureCube depthTexture	;
-uniform Texture3D noiseTexture3D	;
+uniform Texture2D lossTexture;
+uniform Texture2D inscTexture;
+uniform Texture2D skylTexture;
+uniform TextureCube depthTexture;
+uniform Texture3D noiseTexture3D;
 uniform TextureCube clouds2DTexture	;
 uniform Texture2D illuminationTexture;
 uniform Texture2D lightTableTexture	;
@@ -272,7 +272,7 @@ shader FarNearPixelOutput PS_Lightpass(posTexVertexOutput IN)
 
 void Raytrace(int2 pos,bool rain)
 {
-	if(updateTexture[pos].r==0.0)
+	if(updateTexture[pos].b==0.0)
 		return;
 	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
@@ -286,9 +286,10 @@ void Raytrace(int2 pos,bool rain)
 	frustum_clip_pos		/=frustum_clip_pos.w;
 //	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
 //		return;
-	vec2 atmosTexCoords		=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
-	atmosTexCoords.y		=1.0-atmosTexCoords.y;
-	atmosTexCoords			=frac((-mixedResTransformXYWH.xy+atmosTexCoords)*mixedResTransformXYWH.zw);
+	vec3 lightspaceView		=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
+
+
+	vec2 atmosTexCoords		=vec2(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*asin(lightspaceView.z)/pi));
 
 	RaytracePixelOutput f	=RaytraceCloudsForward(
 									cloudDensity
@@ -312,16 +313,18 @@ void Raytrace(int2 pos,bool rain)
 									);
 	vec4 t2d				=texture_cube_lod(clouds2DTexture,view,0);
 	// blend:
+
 	vec4 c					=t2d;
 	c.rgb					*=f.colour.a;
 	c.rgb					+=f.colour.rgb;
+//	c.rgb=lightspaceView;
 	c.a						=t2d.a*f.colour.a;
 	if(frustum_clip_pos.x>=-1.0&&frustum_clip_pos.x<=1.0&&frustum_clip_pos.y>=-1.0&&frustum_clip_pos.y<=1.0)
 	{
-//		c.rg=frac(atmosTexCoords.xy);
+		c.rg=frac(atmosTexCoords.xy);
 	}
 	outputTexture1[pos]		=c;
-	float n					=float(dlookup.y==0);
+	float n					=float(dlookup.y>=1.0);
 	vec4 cn					=t2d;
 	cn.rgb					*=f.nearColour.a*n;
 	cn.a					=1.0-n*(1.0-t2d.a);

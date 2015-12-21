@@ -50,6 +50,10 @@ namespace simul
 			PlatformConstantBuffer():ubo(0)
 			{
 			}
+			int GetBindingIndex()
+			{
+				return bindingIndex;
+			}
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *dev,size_t sz,void *addr);
 			void InvalidateDeviceObjects();
 			void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex);
@@ -106,7 +110,7 @@ namespace simul
 			/// we've assigned them to.
 			
 			bool FillInTechniques();
-			void SetTex(const char *name,crossplatform::Texture *tex,bool write,int mip);
+			void SetTex(const char *name,crossplatform::Texture *tex,int mip);
 			EffectTechnique *CreateTechnique();
 			void AddPass(std::string groupname,std::string techname, std::string passname, GLuint t);
 		public:
@@ -126,14 +130,7 @@ namespace simul
 			void SetTexture		(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip=-1) override;
 			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture *tex,int mip=-1) override;
 			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);
-			void SetParameter	(const char *name	,float value)		;
-			void SetParameter	(const char *name	,vec2)				;
-			void SetParameter	(const char *name	,vec3)				;
-			void SetParameter	(const char *name	,vec4)				;
-			void SetParameter	(const char *name	,int value)			;
-			void SetParameter	(const char *name	,int2)				;
-			void SetVector		(const char *name	,const float *vec)	;
-			void SetMatrix		(const char *name	,const float *m)	;
+			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s)		override;
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass);
 			void Reapply(crossplatform::DeviceContext &deviceContext);

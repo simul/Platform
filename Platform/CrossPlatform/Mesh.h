@@ -38,16 +38,16 @@ namespace simul
 			virtual void EndDraw(crossplatform::DeviceContext &deviceContext) const=0;
 			// Get the count of material groups
 			int GetSubMeshCount() const;
-			static int VERTEX_STRIDE ;
-			static int NORMAL_STRIDE ;
-			static int UV_STRIDE ;
+			static int VERTEX_STRIDE;
+			static int NORMAL_STRIDE;
+			static int UV_STRIDE;
 			static int TRIANGLE_VERTEX_COUNT;
 			struct SubMesh
 			{
 				SubMesh() : IndexOffset(0), TriangleCount(0),drawAs(AS_TRIANGLES) {}
 				int IndexOffset;
 				int TriangleCount;
-///
+
 				enum DrawAs {AS_TRIANGLES,AS_TRISTRIP};
 				DrawAs drawAs;
 			};

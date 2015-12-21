@@ -529,6 +529,7 @@ crossplatform::Light *RenderPlatform::CreateLight()
 
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
+	ERRNO_BREAK
 	crossplatform::Texture * tex=NULL;
 #ifdef _XBOX_ONE
 	//if(fileNameUtf8&&strcmp(fileNameUtf8,"ESRAM")==0)
@@ -537,11 +538,12 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 #else
 		tex=new dx11::Texture();
 #endif
-	{
+	
 		tex=new dx11::Texture();
-		if(fileNameUtf8)
+		if(fileNameUtf8&&strlen(fileNameUtf8)>0)
 			tex->LoadFromFile(this,fileNameUtf8);
-	}
+	
+	ERRNO_BREAK
 	return tex;
 }
 
@@ -586,12 +588,9 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 	return s;
 }
 
-crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
+crossplatform::Effect *RenderPlatform::CreateEffect()
 {
-	std::string fn(filename_utf8);
 	crossplatform::Effect *e= new dx11::Effect();
-	e->Load(this,filename_utf8,defines);
-	e->SetName(filename_utf8);
 	return e;
 }
 
@@ -1560,7 +1559,6 @@ void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,cro
 	world._43=offs.z;
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.debugWorldViewProj=wvp;
-	debugConstants.debugWorldViewProj.transpose();
 	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_cubemap_sphere");
 	debugEffect->SetTexture(deviceContext,"cubeTexture",cubemap);
 	static float rr=6.f;

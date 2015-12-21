@@ -97,6 +97,7 @@ void dx11::Texture::InvalidateDeviceObjects()
 // Load a texture file
 void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
 {
+	ERRNO_BREAK
 	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
 	SAFE_RELEASE(shaderResourceView);

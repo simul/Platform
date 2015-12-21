@@ -14,6 +14,7 @@ uniform Texture2D loss2dTexture;
 uniform Texture2D shadowTexture;
 uniform Texture3D screenSpaceInscVolumeTexture;
 //////////////////////////
+
 struct vertexInput
 {
     vec3 position		: POSITION;
@@ -33,8 +34,8 @@ struct vertexOutput
 shader vertexOutput VS_Solid(vertexInput IN)
 {
     vertexOutput OUT;
-	vec4 opos=vec4(IN.position.xyz,1.f);
-    vec3 wpos=mul(world, opos).xyz;
+	vec4 opos		=vec4(IN.position.xyz,1.0);
+    vec3 wpos		=mul(world, opos).xyz;
 	OUT.view		=normalize(wpos-viewPosition);
     OUT.clip_pos	=mul(worldViewProj, opos);
 	OUT.texCoords	=IN.texCoords;
@@ -49,13 +50,14 @@ shader vertexOutput VS_Solid(vertexInput IN)
 
 shader vec4 PS_Solid(vertexOutput IN) : SV_TARGET
 {
-    vec3 normal	=normalize(IN.normal);
-    vec4 c = texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
-	vec3 totalDiff=sample_3d(diffuseCubemap,cubeSamplerState,-normal.xyz).rgb;
-	c.a=1.0;
-	totalDiff+=0.3*saturate(dot(lightDir,normal.xyz))*lightIrradiance;
-	c.rgb*=totalDiff;
-    vec4 u= vec4(c.rgb,1.0);
+    vec3 normal		=normalize(IN.normal);
+    vec4 c			=texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
+	vec3 totalDiff	=sample_3d(diffuseCubemap,cubeSamplerState,-normal.xyz).rgb;
+	c.a				=1.0;
+	totalDiff		+=0.3*saturate(dot(lightDir,normal.xyz))*lightIrradiance;
+	c.rgb			*=totalDiff;
+    vec4 u			=vec4(c.rgb,1.0);
+	u.rgb			=vec3(0,1,0);
 	return u;
 }
 
@@ -129,7 +131,7 @@ technique solid
     pass base 
     {
 		SetRasterizerState(RenderNoCull);
-		//SetDepthStencilState(EnableDepth,0);
+//SetDepthStencilState(EnableDepth,0);
 		SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetVertexShader(vs_solid);
         SetGeometryShader(NULL);

@@ -6,19 +6,26 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform mat4 worldViewProj;
 	uniform mat4 invViewProj;
+	uniform mat4 viewProj;
+	uniform mat4 worldToScatteringVolumeMatrix;
 	uniform vec4 mixedResTransformXYWH;
+
 	uniform vec3 origin;
 	uniform float globalScale;
 
 	uniform vec4 lightResponse;
 	uniform vec3 lightDir;
 	uniform float cloudEccentricity;
+
 	uniform vec3 ambientLight;
 	uniform float extinction;
+
 	uniform vec3 eyePosition;
 	uniform float maxFadeDistanceMetres;
+
 	uniform vec3 sunlightX;
 	uniform float cloudInterp;
+
 	uniform vec3 mieRayleighRatio;
 	uniform float hazeEccentricity;
 
@@ -40,13 +47,15 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform int2 offsetToCorner;
 	uniform int2 targetTextureSize1;
 	uniform vec3 infraredIntegrationFactors;
-	uniform float cloudAltitudeMetres;
+	uniform float cloudAltitudeKm;
 	uniform vec3 cloudIrRadiance;
 	uniform float exposure;
-
-	uniform int2 amortization;
-	uniform int2 amortizationOffset;
+	
+	uniform int4 targetRange;
 	uniform int2 edge;
+	uniform int2 amortization;
+
+	uniform int2 amortizationOffset;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(Detail2DConstants,12)

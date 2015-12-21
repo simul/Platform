@@ -181,6 +181,18 @@ ShaderBuildMode RenderPlatform::GetShaderBuildMode() const
 }
 void RenderPlatform::BeginEvent			(DeviceContext &deviceContext,const char *name){}
 void RenderPlatform::EndEvent			(DeviceContext &deviceContext){}
+
+
+void RenderPlatform::Clear				(DeviceContext &deviceContext,vec4 colour_rgba)
+{
+	crossplatform::EffectTechnique *clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear");
+	debugConstants.debugColour=colour_rgba;
+	debugConstants.Apply(deviceContext);
+	debugEffect->Apply(deviceContext,clearTechnique,0);
+	DrawQuad(deviceContext);
+	debugEffect->Unapply(deviceContext);
+}
+
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
 {
 	return texturePathsUtf8;
@@ -216,6 +228,11 @@ void RenderPlatform::SetShaderBinaryPath(const char *path_utf8)
 ConstantBuffer<DebugConstants> &RenderPlatform::GetDebugConstantBuffer()
 {
 	return debugConstants;
+}
+
+ConstantBuffer<SolidConstants> &RenderPlatform::GetSolidConstantBuffer()
+{
+	return solidConstants;
 }
 
 void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)
@@ -263,6 +280,7 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	model.Transpose();
 	simul::math::Multiply4x4(modelviewproj, model, viewproj);
 	solidConstants.worldViewProj = modelviewproj;
+	crossplatform::MakeWorldViewProjMatrix((float*)&solidConstants.worldViewProj,model,deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
 	solidConstants.world = model;
 
 	solidConstants.lightIrradiance = physicalLightRenderData.lightColour;
@@ -455,7 +473,18 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 {
 	std::map<std::string,std::string> defines;
-	return CreateEffect(filename_utf8,defines);
+	Effect *e=CreateEffect(filename_utf8,defines);
+	return e;
+}
+
+crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
+{
+	std::string fn(filename_utf8);
+	crossplatform::Effect *e=CreateEffect();
+	e->Load(this,filename_utf8,defines);
+	e->SetName(filename_utf8);
+//	solidConstants.LinkToEffect(e,"SolidConstants");
+	return e;
 }
 
 void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &opts)

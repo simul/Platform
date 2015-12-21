@@ -220,10 +220,6 @@ namespace simul
 			RenderState():type(NONE){}
 			virtual ~RenderState(){}
 		};
-		class ConstantBufferBase
-		{
-		public:
-		};
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{
 		public:
@@ -234,12 +230,28 @@ namespace simul
 			virtual void Apply(DeviceContext &deviceContext,size_t size,void *addr)=0;
 			virtual void Unbind(DeviceContext &deviceContext)=0;
 		};
+		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase
+		{
+		protected:
+			PlatformConstantBuffer *platformConstantBuffer;
+		public:
+			ConstantBufferBase():platformConstantBuffer(NULL)
+			{
+			}
+			~ConstantBufferBase()
+			{
+				delete platformConstantBuffer;
+			}
+			PlatformConstantBuffer *GetPlatformConstantBuffer()
+			{
+				return platformConstantBuffer;
+			}
+		};
 		template<class T> class ConstantBuffer:public ConstantBufferBase,public T
 		{
-			PlatformConstantBuffer *platformConstantBuffer;
 			std::set<Effect*> linkedEffects;
 		public:
-			ConstantBuffer():platformConstantBuffer(NULL)
+			ConstantBuffer()
 			{
 				// Clear out the part of memory that corresponds to the base class.
 				// We should ONLY inherit from simple structs.
@@ -248,7 +260,6 @@ namespace simul
 			~ConstantBuffer()
 			{
 				InvalidateDeviceObjects();
-				delete platformConstantBuffer;
 			}
 			void copyTo(void *pData)
 			{
@@ -544,6 +555,8 @@ namespace simul
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex,int mip=-1)=0;
 			//! Set the texture for this effect.
 			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s)		=0;
+			//! Set a constant buffer for this effect.
+			virtual void SetConstantBuffer(DeviceContext &deviceContext,const char *name	,ConstantBufferBase *s)		=0;
 			/// Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,const char *tech_name,const char *pass);
 			/// Activate the shader. Unapply must be called after rendering is done.
