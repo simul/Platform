@@ -284,6 +284,7 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 		SAFE_RELEASE(stagingBuffers[i]);
 	num_elements=0;
 }
+
 void dx11::PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t size,void *addr)
 {
 	InvalidateDeviceObjects();
@@ -566,6 +567,20 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,cr
 	}
 }
 
+void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s)	
+{
+	if(!asD3DX11Effect())
+		return;
+	ID3DX11EffectConstantBuffer *pD3DX11EffectConstantBuffer=asD3DX11Effect()->GetConstantBufferByName(name);
+	if(pD3DX11EffectConstantBuffer)
+	{
+		crossplatform::PlatformConstantBuffer *pcb=s->GetPlatformConstantBuffer();
+		dx11::PlatformConstantBuffer *pcb11=(dx11::PlatformConstantBuffer *)pcb;
+		pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer());
+	}
+}
+
+
 crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 {
 	// First do a simple search by pointer.
@@ -628,67 +643,6 @@ void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,cro
 		return;
 	ID3DX11EffectSamplerVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsSampler();
 	var->SetSampler(0,s->asD3D11SamplerState());
-}
-
-void Effect::SetParameter(const char *name	,float value)
-{
-	if(!asD3DX11Effect())
-	{
-		SIMUL_CERR<<"Invalid effect "<<std::endl;
-		return;
-	}
-	ID3DX11EffectScalarVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsScalar();
-	SIMUL_ASSERT(var->IsValid()!=0);
-	var->SetFloat(value);
-}
-
-void Effect::SetParameter	(const char *name	,vec2 value)	
-{
-	ID3DX11EffectVectorVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsVector();
-	SIMUL_ASSERT(var->IsValid()!=0);
-	var->SetFloatVector(value);
-}
-
-void Effect::SetParameter	(const char *name	,vec3 value)	
-{
-	ID3DX11EffectVectorVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsVector();
-	SIMUL_ASSERT(var->IsValid()!=0);
-	var->SetFloatVector(value);
-}
-
-void Effect::SetParameter	(const char *name	,vec4 value)	
-{
-	ID3DX11EffectVectorVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsVector();
-	SIMUL_ASSERT(var->IsValid()!=0);
-	var->SetFloatVector(value);
-}
-
-void Effect::SetParameter	(const char *name	,int value)	
-{
-	ID3DX11EffectScalarVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsScalar();
-	SIMUL_ASSERT(var->IsValid()!=0);
-	var->SetInt(value);
-}
-
-void Effect::SetParameter	(const char *name	,int2 value)	
-{
-	ID3DX11EffectVectorVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsVector();
-	SIMUL_ASSERT(var->IsValid()!=0);
-	var->SetIntVector((const int *)&value);
-}
-
-void Effect::SetVector		(const char *name	,const float *value)	
-{
-	ID3DX11EffectVectorVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsVector();
-	SIMUL_ASSERT(var->IsValid()!=0);
-	var->SetFloatVector(value);
-}
-
-void Effect::SetMatrix		(const char *name	,const float *m)	
-{
-	ID3DX11EffectMatrixVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsMatrix();
-	SIMUL_ASSERT(var->IsValid()!=0);
-	var->SetMatrix(m);
 }
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)

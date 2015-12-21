@@ -43,10 +43,12 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform float cloudAltitudeMetres;
 	uniform vec3 cloudIrRadiance;
 	uniform float exposure;
-
-	uniform int2 amortization;
-	uniform int2 amortizationOffset;
+	
+	uniform int4 targetRange;
 	uniform int2 edge;
+	uniform int2 amortization;
+
+	uniform int2 amortizationOffset;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(Detail2DConstants,12)

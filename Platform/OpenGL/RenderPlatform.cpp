@@ -521,7 +521,7 @@ crossplatform::Light *RenderPlatform::CreateLight()
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture * tex=new opengl::Texture;
-	if(fileNameUtf8&&strcmp(fileNameUtf8,"ESRAM")!=0)
+	if(fileNameUtf8&&strlen(fileNameUtf8)>0&&strcmp(fileNameUtf8,"ESRAM")!=0)
 		tex->LoadFromFile(this,fileNameUtf8);
 	return tex;
 }
@@ -573,14 +573,20 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 	return s;
 }
 
-crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
+crossplatform::Effect *RenderPlatform::CreateEffect()
 {
 GL_ERROR_CHECK
 	ERRNO_BREAK
 	opengl::Effect *e=new opengl::Effect();
-	e->Load(this,filename_utf8,defines);
+	return e;
+}
+
+
+crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,const std::map<std::string,std::string> &defines)
+{
 GL_ERROR_CHECK
-	e->SetName(filename_utf8);
+	ERRNO_BREAK
+	crossplatform::Effect *e=crossplatform::RenderPlatform::CreateEffect(filename_utf8,defines);
 	if(e->platform_effect==(void*)0xFFFFFFFF)
 	{
 		// We're still going to return a valid object - it just won't have any valid techniques.

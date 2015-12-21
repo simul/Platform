@@ -122,8 +122,8 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 	Vertex *vertices=new Vertex[lPolygonVertexCount];
 	for(int i=0;i<lPolygonVertexCount;i++)
 	{
-		Vertex &v	=vertices[i];
-		v.pos		=&(lVertices[i*3]);
+		Vertex &v		=vertices[i];
+		v.pos			=&(lVertices[i*3]);
 		if(lUVs)
 			v.texc		=&(lUVs[i*2]);
 		if(lNormals)

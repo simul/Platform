@@ -127,6 +127,8 @@ namespace simul
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
+			//! Clear the current render target (i.e. the screen). In most API's this is simply a case of drawing a full-screen quad in the specified rgba colour.
+			virtual void Clear				(DeviceContext &deviceContext,vec4 colour_rgba);
 			//! Draw the specified number of vertices.
 			virtual void Draw				(DeviceContext &deviceContext,int num_verts,int start_vert)=0;
 			//! Draw the specified number of vertices using the bound index arrays.
@@ -174,7 +176,9 @@ namespace simul
 			/// Create a platform-specific effect instance.
 			Effect							*CreateEffect					(const char *filename_utf8);
 			/// Create a platform-specific effect instance.
-			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
+			virtual Effect					*CreateEffect					()=0;
+			/// Create a platform-specific effect instance.
+			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
 			/// simul::crossplatform::ConstantBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
@@ -235,6 +239,7 @@ namespace simul
 			void SetMemoryInterface(simul::base::MemoryInterface *m);
 			crossplatform::Effect *GetDebugEffect();
 			ConstantBuffer<DebugConstants> &GetDebugConstantBuffer();
+			ConstantBuffer<SolidConstants> &GetSolidConstantBuffer();
 		protected:
 			simul::base::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;

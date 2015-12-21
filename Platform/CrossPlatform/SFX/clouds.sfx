@@ -12,21 +12,21 @@ uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 #include "../SL/earth_shadow_fade.sl"
 #include "../SL/debug_constants.sl"
 
-uniform Texture3D cloudDensity				;
-uniform Texture3D cloudDensity2				;
+uniform Texture3D cloudDensity	;
+uniform Texture3D cloudDensity2	;
 
-uniform Texture2D cloudShadowTexture		;
-uniform Texture2D lossTexture				;
-uniform Texture2D inscTexture				;
-uniform Texture2D skylTexture				;
-uniform TextureCube depthTexture			;
-uniform Texture3D noiseTexture3D			;
-uniform TextureCube clouds2DTexture			;
-uniform Texture2D illuminationTexture		;
-uniform Texture2D lightTableTexture			;
-uniform Texture2D rainbowLookupTexture		;
-uniform Texture2D coronaLookupTexture		;
-uniform Texture3D volumeInscatterTexture	;
+uniform Texture2D cloudShadowTexture;
+uniform Texture2D lossTexture;
+uniform Texture2D inscTexture;
+uniform Texture2D skylTexture;
+uniform TextureCube depthTexture;
+uniform Texture3D noiseTexture3D;
+uniform TextureCube clouds2DTexture	;
+uniform Texture2D illuminationTexture;
+uniform Texture2D lightTableTexture	;
+uniform Texture2D rainbowLookupTexture	;
+uniform Texture2D coronaLookupTexture	;
+uniform Texture3D volumeInscatterTexture;
 uniform Texture2D rainMapTexture			;
 /// The previous texture area:
 uniform Texture2D updateTexture				;

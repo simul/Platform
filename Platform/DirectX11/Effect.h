@@ -49,6 +49,10 @@ namespace simul
 			PlatformConstantBuffer():m_pD3D11Buffer(NULL),m_pD3DX11EffectConstantBuffer(NULL)
 			{
 			}
+			inline ID3D11Buffer *asD3D11Buffer()
+			{
+				return m_pD3D11Buffer;
+			}
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t sz,void *addr);
 			void InvalidateDeviceObjects();
 			void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex);
@@ -116,14 +120,7 @@ namespace simul
 			void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int mip=-1);
 			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);
 			void SetTexture(const char *name,ID3D11ShaderResourceView *tex);
-			void SetParameter	(const char *name	,float value)		;
-			void SetParameter	(const char *name	,vec2 value)		;
-			void SetParameter	(const char *name	,vec3 value)		;
-			void SetParameter	(const char *name	,vec4 value)		;
-			void SetParameter	(const char *name	,int value)			;
-			void SetParameter	(const char *name	,int2 value)		;
-			void SetVector		(const char *name	,const float *vec)	;
-			void SetMatrix		(const char *name	,const float *m)	;
+			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s);
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass);
 			void Reapply(crossplatform::DeviceContext &deviceContext);

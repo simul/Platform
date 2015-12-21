@@ -33,7 +33,8 @@ ERRNO_CHECK
 	// check that the plugin has reading capabilities ...
 	if((fif == FIF_UNKNOWN) ||!FreeImage_FIFSupportsReading(fif))
 	{
-		throw simul::base::RuntimeError(string("Can't determine bitmap type from filename: ")+string(filename_utf8));
+		SIMUL_CERR<<"Can't determine bitmap type from filename: "<<filename_utf8<<std::endl;
+		return 0;
 	}
 	GL_ERROR_CHECK
 ERRNO_CHECK
@@ -73,13 +74,18 @@ ERRNO_CHECK
 
 GLuint LoadGLImage(const char *filename_utf8,const std::vector<std::string> &texturePathsUtf8,unsigned wrap,int *w,int *h,GLint *internal_format)
 {
+	if(!filename_utf8||strlen(filename_utf8)<=0)
+	{
+		SIMUL_CERR<<"Texture filename is empty."<<std::endl;
+		return 0;
+	}
 	GL_ERROR_CHECK
 	string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
 	GL_ERROR_CHECK
 		ERRNO_BREAK
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(fn.c_str()))
 	{
-		SIMUL_CERR<<"Texture file note found: "<<filename_utf8<<std::endl;
+		SIMUL_CERR<<"Texture file not found: "<<filename_utf8<<std::endl;
 		return 0;
 	}
 #ifdef _MSC_VER

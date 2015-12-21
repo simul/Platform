@@ -112,6 +112,7 @@ HRESULT D3DX11CreateTextureFromFileW(ID3D11Device* pd3dDevice,const wchar_t *fil
 
 ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
 {
+	ERRNO_BREAK
 	ID3D11ShaderResourceView* tex=NULL;
 		std::string str;
 		int idx=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filename,texturePathsUtf8);

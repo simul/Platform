@@ -588,6 +588,15 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform
 {
 	GL_ERROR_CHECK
 	int texture_number=(int)shaderResource.platform_shader_resource;
+	if(texture_number>=1000)
+	{
+		texture_number	-=1000;
+	}
+	else
+	{
+		SIMUL_CERR<<"Texture was not declared as writeable in the shader."<<std::endl;
+		return;
+	}
 	if(texture_number>=0)
 	{
 		if(tex)
@@ -630,10 +639,10 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	crossplatform::ShaderResource res;
 	res.platform_shader_resource=0;
 	int var=glfxGetEffectImageNumber((GLuint)platform_effect,name);
-	if(!var)
+	if(var<0)
 		var=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
 	else
-		var+=10000;
+		var+=1000;
 	res.platform_shader_resource=(void*)var;
 	return res;
 }
@@ -642,9 +651,9 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 {
 	int texture_number=(int)shaderResource.platform_shader_resource;
 	bool write=false;
-	if(texture_number>=10000)
+	if(texture_number>=1000)
 	{
-		texture_number	-=10000;
+		texture_number	-=1000;
 		write			=true;
 	}
 	if(tex)
@@ -664,98 +673,52 @@ void Effect::SetSamplerState(crossplatform::DeviceContext &,const char *name,cro
 		sampler_state=s->asGLuint();
 	GL_ERROR_CHECK
 		glfxSetEffectSamplerState((GLuint)platform_effect, name, s->asGLuint());
-	/*int texture_number=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
-	// There are two possibilities - we are either within an "apply" state, or not.
-	if(apply_count)
-		glBindSampler(texture_number, sampler_state);
-	if(s)
-		prepared_sampler_states[texture_number]=sampler_state;
-	else
+}
+
+void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::ConstantBufferBase *s)	
+{
+	if(!s)
+		return;
+	crossplatform::PlatformConstantBuffer *pcb=s->GetPlatformConstantBuffer();
+	if(!pcb)
+		return;
+	opengl::PlatformConstantBuffer *pcbgl=(opengl::PlatformConstantBuffer *)pcb;
+	bool any=false;
+	for(crossplatform::TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
 	{
-		map<GLuint,GLuint>::iterator i=prepared_sampler_states.find(texture_number);
-		if(i!=prepared_sampler_states.end())
-			prepared_sampler_states.erase(i);
-	}*/
-	// If we're in an "apply" state, we can remember to unbind the sampler at the corresponding "unapply"
-	// But if we're not, can we be SURE that we'll hit the unapply? We might then have a stray sampler state left behind.
-	// So instead of binding the sampler now, we store the information and wait for "apply".
-}
-
-void Effect::SetParameter	(const char *name	,float value)
-{
-	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
-	CHECK_PARAM_EXISTS
-	glUniform1f(loc,value);
+		crossplatform::EffectTechnique *tech=i->second;
+		if(!tech)
+			break;
+		for(int j=0;j<tech->NumPasses();j++)
+		{
 	GL_ERROR_CHECK
-}
-
-void Effect::SetParameter	(const char *name	,vec2 value)
-{
-	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
-	CHECK_PARAM_EXISTS
-	glUniform2fv(loc,1,value);
+			GLuint program=tech->passAsGLuint(j);
+			GLint indexInShader;
 	GL_ERROR_CHECK
-}
-
-void Effect::SetParameter	(const char *name	,vec3 value)	
-{
-	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
-	CHECK_PARAM_EXISTS
-	glUniform3fv(loc,1,value);
+			indexInShader=glGetUniformBlockIndex(program,name);
+			if(indexInShader==GL_INVALID_INDEX)
+			{
+				ResetGLError();
+				continue;
+			}
 	GL_ERROR_CHECK
-}
-
-void Effect::SetParameter	(const char *name	,vec4 value)	
-{
-	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
-	if(loc<0)
-	{
-		CHECK_PARAM_EXISTS
+			if(indexInShader>=0)
+			{
+				any=true;
+	GL_ERROR_CHECK
+				glUniformBlockBinding(program, indexInShader, pcbgl->GetBindingIndex()); 
+				int err=glGetError();
+				if(err)
+				{
+					// No good reason why this might happen, but it sometimes does - driver-dependent.
+					continue;
+				}
+			}
+		}
+	GL_ERROR_CHECK
 	}
-	glUniform4fv(loc,1,value);
-	GL_ERROR_CHECK
 }
 
-void Effect::SetParameter	(const char *name	,int value)	
-{
-	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
-	CHECK_PARAM_EXISTS
-	glUniform1i(loc,value);
-	GL_ERROR_CHECK
-}
-
-void Effect::SetParameter	(const char *name	,int2 value)	
-{
-	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
-	CHECK_PARAM_EXISTS
-	glUniform2i(loc,value.x,value.y);
-	GL_ERROR_CHECK
-}
-
-void Effect::SetVector		(const char *name	,const float *value)	
-{
-	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
-	CHECK_PARAM_EXISTS
-	glUniform4fv(loc,1,value);
-	GL_ERROR_CHECK
-}
-
-void Effect::SetMatrix		(const char *name	,const float *m)	
-{
-	CHECK_TECH_EXISTS
-	GLint loc=glGetUniformLocation(currentTechnique->passAsGLuint(currentPass),name);
-	CHECK_PARAM_EXISTS
-	SIMUL_ASSERT_WARN(loc>=0,(std::string("Parameter not found in GL Effect: ")+name).c_str());
-	glUniformMatrix4fv(loc,1,false,m);
-	GL_ERROR_CHECK
-}
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass)
 {
