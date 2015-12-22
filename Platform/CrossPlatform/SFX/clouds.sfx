@@ -321,7 +321,7 @@ void Raytrace(int2 pos,bool rain)
 	c.a						=t2d.a*f.colour.a;
 	if(frustum_clip_pos.x>=-1.0&&frustum_clip_pos.x<=1.0&&frustum_clip_pos.y>=-1.0&&frustum_clip_pos.y<=1.0)
 	{
-		c.rg=frac(atmosTexCoords.xy);
+		//c.rgb=frac(vec3(atmosTexCoords,1.0));
 	}
 	outputTexture1[pos]		=c;
 	float n					=float(dlookup.y>=1.0);

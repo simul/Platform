@@ -645,7 +645,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 
 		// What offset was the original position from the centre of the cube?
 		p1							=p+e*viewScaled;
-	
 		// We fade out the intermediate steps as we approach the boundary of a detail change.
 		// Now sample at the end point:
 		world_pos					+=d*view;
@@ -726,12 +725,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 														,fade_texc
 														,nearFarTexc
 														,brightness_factor);
-				//	clr.rgb=abs(normal);
-//if(idx>1)
-//	idx=1;
-				//	clr.rgb=lerp(clr.rgb,clrs[idx%12].rgb,.5);
-					//clr.g=fade_inter;
-					//clr.r=fade_inter;
+				//	clr.rgb=volumeTexCoords.zzz;//
 					if(do_depth_mix)
 					{
 						vec4 clr_n			=clr;

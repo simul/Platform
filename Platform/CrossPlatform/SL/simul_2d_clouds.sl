@@ -96,7 +96,7 @@ vec4 Clouds2DPS(Texture2D imageTexture,Texture2D coverageTexture
 vec4 Clouds2DPS_illum(Texture2D imageTexture
 						,Texture2D coverageTexture
 						,Texture2D lossTexture
-						,Texture3D volumeInscatterTexture,vec2 texCoords
+						,Texture3D volumeInscatterTexture,vec2 atmosTexCoords
 						,Texture2D noiseTexture
 						,vec2 texc_global
 						,vec2 texc_detail
@@ -138,8 +138,8 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	//vec2 near_texc			=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	//vec2 far_texc			=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 	
-	vec3 volumeTexCoords	=vec3(texCoords,fade_texc.x);
-	vec4 insc				=texture_3d_clamp_lod(volumeInscatterTexture,volumeTexCoords,0);
+	vec3 volumeTexCoords	=vec3(atmosTexCoords,fade_texc.x);
+	vec4 insc				=texture_3d_wwc_lod(volumeInscatterTexture,volumeTexCoords,0);
 	
 	//insc.rgb				*=visible_light;
 	vec3 light				=sun_irr*visible_light+moon_irr;
@@ -150,7 +150,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 #endif
 	colour.rgb				*=loss;
 	colour.rgb				+=insc.rgb;
-//	colour.rgb=view;
+//	colour.rgb=(volumeTexCoords.zzz);
 	return colour;
 }
 

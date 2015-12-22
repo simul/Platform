@@ -57,11 +57,11 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	float dist_rt				=pow(dist,0.5);
 	vec4 cloud					=texture_cube_lod(farCloudTexture,view,0);
 #if 1
-	vec3 lightspaceView			=normalize((mul(clipPosToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
+	vec3 lightspaceView			=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
 	vec3 volumeTexCoords		=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*asin(lightspaceView.z)/pi),dist_rt);
 	vec4 insc					=texture_3d_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0);
 #else
-	vec3 volumeTexCoords		= vec3(lowResTexCoords, dist_rt);
+	vec3 volumeTexCoords		= vec3(lowResTexCoords,dist_rt);
 	vec4 insc					=texture_3d_wwc_lod(inscatterVolumeTexture,volumeTexCoords,0);
 #endif
 	vec4 shadow_lookup			=texture_wrap_lod(shadowTexture, lowResTexCoords, 0);
@@ -108,7 +108,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 {
 	TwoColourCompositeOutput res;
 	vec3 view					=mul(invViewProj,clip_pos).xyz;
-	vec3 lightspaceView			=normalize((mul(clipPosToScatteringVolumeMatrix,vec4(clip_pos.xy,1.0,1.0))).xyz);
+	vec3 lightspaceView			=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
 #ifdef GLSL
 	vec4 zrow					=vec4(invViewProj[0][2],invViewProj[1][2],invViewProj[2][2],invViewProj[3][2]);
 #else

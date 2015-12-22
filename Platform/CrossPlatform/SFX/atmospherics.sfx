@@ -396,18 +396,21 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 		{
 			for(int j=0;j<INTER_STEPS;j++)
 			{
-				float distanceMetres=maxFadeDistanceMetres*pow(dist+float(j+0.5)/float(INTER_STEPS)/7.0,2.0);
-				vec3 texc			=viewposCloudspace+distanceMetres*viewCloudspace;
-				illum				+=GetCloudIllum(cloudTexture, cloudSamplerState, texc, lightDirCloudspace) / float(INTER_STEPS);
+				float distanceMetres	=maxFadeDistanceMetres*pow(dist+float(j+0.5)/float(INTER_STEPS)/7.0,2.0);
+				vec3 texc				=viewposCloudspace+distanceMetres*viewCloudspace;
+				illum					+=GetCloudIllum(cloudTexture, cloudSamplerState, texc, lightDirCloudspace) / float(INTER_STEPS);
 			}
 		}
-		float il		=1.0-godraysIntensity*(1.0-illum);
-		//float shadow	=1.0-0.2*(1.0-GetCloudIlluminationAt(cloudTexture,worldToCloudMatrix,viewPosition+dist*dir*maxFadeDistanceMetres,lightDir).x);//worldspaceToShadowspaceMatrix
-		float cos0		=ce;
-		vec4 next	    =vec4(InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio),1.0);
-		colour			+=max(vec4(0,0,0,0),(next-last))*il;
+		float il			=1.0-godraysIntensity*(1.0-illum);
+		//float shadow		=1.0-0.2*(1.0-GetCloudIlluminationAt(cloudTexture,worldToCloudMatrix,viewPosition+dist*dir*maxFadeDistanceMetres,lightDir).x);//worldspaceToShadowspaceMatrix
+		float cos0			=ce;
+		vec4 next			=vec4(InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio),1.0);
+		colour				+=max(vec4(0,0,0,0),(next-last))*il;
 	#endif
-		IMAGE_STORE_3D(targetVolume,int3(idx.xy,i),colour+vec4(skyl,0));
+		vec4 res			=colour+vec4(skyl,0);
+		int3 pos			=int3(idx.xy,i);
+		//res.rgb			=frac(vec3(pos)/7.0);
+		IMAGE_STORE_3D(targetVolume,pos,res);
 		last			=next;
 	}
 }

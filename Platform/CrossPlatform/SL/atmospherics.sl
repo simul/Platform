@@ -107,7 +107,6 @@ void Loss_All(		out vec4 colours[8]
 	}
 }
 
-
 void CalcInsc(	Texture2D inscTexture
 				,Texture2D skylTexture
 				,Texture2D illuminationTexture
@@ -124,7 +123,7 @@ void CalcInsc(	Texture2D inscTexture
 	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 	vec4 insc_near		=texture_clamp_mirror_lod(inscTexture,near_texc,0);
 	vec4 insc_far		=texture_clamp_mirror_lod(inscTexture,far_texc,0);
-	insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
+	insc                =illum_lookup;//vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
     skyl                =texture_clamp_mirror_lod(skylTexture,fade_texc,0).rgb;
 }
 
