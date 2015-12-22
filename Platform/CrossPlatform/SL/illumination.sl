@@ -2,6 +2,8 @@
 #ifndef ILLUMINATION_SL
 #define ILLUMINATION_SL
 
+#include "earth_shadow.sl"
+
 vec2 LimitWithin(vec2 original,vec2 maximum)
 {
 	original=max(original,maximum.xx);

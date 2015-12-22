@@ -2,7 +2,7 @@
 #ifndef EARTH_SHADOW_UNIFORMS_SL
 #define EARTH_SHADOW_UNIFORMS_SL
 
-SIMUL_CONSTANT_BUFFER(EarthShadowUniforms,9)
+SIMUL_CONSTANT_BUFFER(EarthShadowConstants,9)
 	uniform vec3 sunDir;
 	uniform float radiusOnCylinder;
 	uniform vec3 earthShadowNormal;
@@ -10,6 +10,7 @@ SIMUL_CONSTANT_BUFFER(EarthShadowUniforms,9)
 	uniform vec2 targetTextureSize;
 	uniform float terminatorDistance;
 	uniform float earthShadowEffectStrength;
+	uniform float planetRadiusKm;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

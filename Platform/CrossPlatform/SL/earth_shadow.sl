@@ -43,6 +43,24 @@ vec2 fn(float r,float cos2,float sine_phi,float sine_gamma,float maxFadeDistance
 	return range;
 }
 
+/// Given a position in km, a direction to the sun, and the planet's radius, this
+/// function gives the amount of illumination between zero and one, 
+/// given the planet's shadow.
+vec3 IlluminationAtPosition(vec3 pos_km,vec3 dirToSun,float planetRadiusKm,vec3 range_km)
+{
+	// get the position relative to the planet's centre:
+	pos_km.z					+=planetRadiusKm;
+	// Resolve it on the terminator plane:
+	float along					=dot(dirToSun,pos_km);
+	if(along>0.0)
+		return vec3(1,1,1);
+	pos_km						-=along*dirToSun;
+	float radius_on_cylinder_km	=length(pos_km);
+	float d=(radius_on_cylinder_km-planetRadiusKm+range_km);
+	vec3 illum					=saturate(vec3(d,d,d)/range_km);
+	return illum;
+}
+
 // The intention of the Earth shadow function is to find the value of the inscatter coefficient
 // from the air between the viewer and a given point in space.
 

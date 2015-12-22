@@ -1,6 +1,7 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef ATMOSPHERICS_SL
 #define ATMOSPHERICS_SL
+#include "earth_shadow.sl"
 #ifndef PI
 #define PI (3.1415926536)
 #endif
@@ -117,13 +118,13 @@ void CalcInsc(	Texture2D inscTexture
                 ,out vec3 skyl)
 {
 	vec2 fade_texc		=vec2(pow(dist,0.5f),fade_texc_y);
-	vec4 illum_lookup	=texture_wrap_mirror_lod(illuminationTexture,illum_texc,0);
-	vec2 nearFarTexc	=illum_lookup.xy;
+	//vec4 illum_lookup	=vectexture_wrap_mirror_lod(illuminationTexture,illum_texc,0);
+	vec2 nearFarTexc	=vec2(0.0,1.0);//illum_lookup.xy;
 	vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 	vec4 insc_near		=texture_clamp_mirror_lod(inscTexture,near_texc,0);
 	vec4 insc_far		=texture_clamp_mirror_lod(inscTexture,far_texc,0);
-	insc                =illum_lookup;//vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
+	insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
     skyl                =texture_clamp_mirror_lod(skylTexture,fade_texc,0).rgb;
 }
 
@@ -252,7 +253,7 @@ void Inscatter_All(		out vec4 colours[8]
 						,Texture2D skylTexture
 						,Texture2D illuminationTexture
 						,Texture3D cloudTexture
-						, SamplerState cloudSamplerState
+						,SamplerState cloudSamplerState
 						,vec3 viewPosition
 						,mat4 worldToCloudMatrix
 						,vec2 texCoords
@@ -261,7 +262,8 @@ void Inscatter_All(		out vec4 colours[8]
 						,float hazeEccentricity
 						,vec3 mieRayleighRatio
 						,float maxFadeDistanceMetres
-						,float godraysIntensity)
+						,float godraysIntensity
+						,float planetRadiusKm)
 {
 	vec2 clip_pos		=vec2(-1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;
@@ -285,29 +287,35 @@ void Inscatter_All(		out vec4 colours[8]
 	vec3 lightDirCloudspace	=normalize(mul(worldToCloudMatrix,vec4(lightDir,0.0)).xyz);
 	vec3 viewCloudspace		=mul(worldToCloudMatrix,vec4(view,0.0)).xyz;
 	vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(viewPosition,1.0)).xyz;
+	vec3 pos_km				=viewPosition/1000.0;
 	for(int i=0;i<8;i++)
 	{
 		float dist			=float(i)/7.0;
-		float illum=0;
+		float illum			=0;
+		float earth_shadow_illum=0.0;
 		if(godraysIntensity>0.0)
 		{
 			for(int j=0;j<INTER_STEPS;j++)
 			{
-				float distanceMetres=maxFadeDistanceMetres*pow(dist+float(j)/float(INTER_STEPS)/7.0,2.0);
+				float interp		=float(j)/float(INTER_STEPS)/7.0;
+				float distanceMetres=maxFadeDistanceMetres*pow(dist+interp,2.0);
+				pos_km				=(viewPosition+distanceMetres)/1000.0;
 				vec3 texc			=viewposCloudspace+distanceMetres*viewCloudspace;
 				illum += GetCloudIllum(cloudTexture, cloudSamplerState, texc, lightDirCloudspace) / float(INTER_STEPS);
+				earth_shadow_illum	+=1.0;//IlluminationAtPosition(pos_km,lightDir,planetRadiusKm,0.0001);
 			}
 		}
+		earth_shadow_illum	/= float(INTER_STEPS);
 		il					=1.0-godraysIntensity*(1.0-illum);//saturate(illum+dist);//1.0-(1.0-illum)/(1.0+dist);
 		fade_texc.x			=dist;
 		vec2 nearFarTexc	=illum_lookup.xy;
-		vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
-		vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
+		vec2 near_texc		=vec2(min(0.0,fade_texc.x),fade_texc.y);
+		vec2 far_texc		=vec2(min(1.0,fade_texc.x),fade_texc.y);
 		vec4 insc_near		=texture_clamp_mirror_lod(inscTexture,near_texc,0);
 		vec4 insc_far		=texture_clamp_mirror_lod(inscTexture,far_texc,0);
 
 		insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
-		vec4 di				=vec4(insc.rgb-prev_insc.rgb,0.5*(insc.a+prev_insc.a));
+		vec4 di				=earth_shadow_illum*vec4(insc.rgb-prev_insc.rgb,0.5*(insc.a+prev_insc.a));
 
 		skyl                =texture_clamp_mirror_lod(skylTexture,fade_texc,0).rgb;
 		
