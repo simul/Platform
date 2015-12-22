@@ -3,7 +3,6 @@
 #define ATMOSPHERICS_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(AtmosphericsUniforms,11)
-	uniform mat4 lightspaceToWorldMatrix;
 	uniform vec3 lightDir;
 	uniform float pad1;
 	uniform vec3 mieRayleighRatio;
@@ -33,6 +32,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsUniforms,11)
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
+	uniform mat4 lightspaceToWorldMatrix;
 	uniform mat4 invViewProj;
 	uniform mat4 invShadowMatrix;
 	

@@ -269,9 +269,9 @@ shader All8Output PS_LossVolume(atmosVertexOutput IN)
 CS_LAYOUT(8,8,1)
 shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 {
+	uint3 idx			=p*amortization+amortizationOffset;
 	if(p.x>=edge.x||p.y>=edge.y)
 		return;
-	uint3 idx			=p*amortization+amortizationOffset;
 	// We must convert the idx values into a direction and distance in real space.
 	vec2 texc			=vec2(float(idx.x)/float(scatteringVolumeDims.x),float(idx.y)/float((scatteringVolumeDims.y-1)));
 	float azimuth		=texc.x*2.0*PI;
@@ -293,9 +293,9 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 	vec3 lightDirCloudspace	=normalize(mul(worldToCloudMatrix,vec4(lightDir,0.0)).xyz);
 	vec3 viewCloudspace		=mul(worldToCloudMatrix,vec4(view,0.0)).xyz;
 	vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(viewPosition,1.0)).xyz;
-	//idx.xy+=offsetToCorner.xy;
+
 	vec3 viewPosKm			=vec3(0.0,0.0,viewPosition.z/1000.0);
-	idx.xy=idx.xy%uint2(scatteringVolumeDims.xy);
+	//idx.xy=idx.xy%uint2(scatteringVolumeDims.xy);
 	for(int i=0;i<scatteringVolumeDims.z;i++)
 	{
 		float dist			=pow(float(i)/float(scatteringVolumeDims.z-1),2.0);
@@ -338,7 +338,6 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 		colour				+=dc;
 #endif
 		vec4 res			=colour+vec4(skyl,0);
-	//	colour.rgb=earth_shadow_illum;
 		int3 pos			=int3(idx.xy,i);
 		//res.rgb			=frac(vec3(pos)/256.0);
 		IMAGE_STORE_3D(targetVolume,pos,res);

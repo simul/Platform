@@ -407,6 +407,7 @@ void simul::crossplatform::GetCubeMatrix(float *mat4x4,int face,bool ReverseDept
 		if(!init)
 		{
 			MakeCubeMatrices(view_matrices,(const float*)&zero_pos,true);
+			init=true;
 		}
 		memcpy(mat4x4,view_matrices[face],sizeof(float)*16);
 	}
@@ -417,6 +418,7 @@ void simul::crossplatform::GetCubeMatrix(float *mat4x4,int face,bool ReverseDept
 		if(!init)
 		{
 			MakeCubeMatrices(view_matrices,(const float*)&zero_pos,false);
+			init=true;
 		}
 		memcpy(mat4x4,view_matrices[face],sizeof(float)*16);
 	}

@@ -251,17 +251,14 @@ shader vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
     return DetailLighting(IN.texCoords,imageTexture);
 }
 
-CS_LAYOUT(8,8,1)
-shader void CS_Clouds2D(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID)
+void CSClouds2D(int2 pos)
 {
-	int2 idx				=int2(g.xy*8+t.xy);
-	int2 pos				=targetRange.xy+idx*amortization+amortizationOffset.xy;
-	//if(pos.x>=edge.x||pos.y>=edge.y)
-	//	return;
-	//if(pos.x>=targetRange.z||pos.y>=targetRange.w)
-	//	return;
-	//if(updateTexture[pos].b==0.0)
-	//	return;
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
+		return;
+	if(updateTexture[pos].b==0.0)
+		return;
 	// offset by one texel to allow -1 in x and y:
 	vec2 texCoords			=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize1);
 
@@ -345,6 +342,23 @@ shader void CS_Clouds2D(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID)
 	outputTexture[pos]	=ret;//vec4(0,0.0,0.5,0.5);
 }
 
+CS_LAYOUT(8,8,1)
+shader void CS_Clouds2D_Fill(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
+{
+	int2 idx				=int2(g.xy*8+t.xy);
+	int2 pos				=targetRange.xy+idx;
+	if(updateTexture[pos].r>=1.0)
+		return;
+	CSClouds2D(pos);
+}
+
+CS_LAYOUT(8,8,1)
+shader void CS_Clouds2D(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
+{
+	int2 idx				=int2(g.xy*8+t.xy);
+	int2 pos				=targetRange.xy+idx*amortization+amortizationOffset.xy;
+	CSClouds2D(pos);
+}
 
 technique coverage
 {
@@ -438,14 +452,17 @@ BlendState AlphaBlendX
     RenderTargetWriteMask[1]	=15;
 };
 
-VertexShader main_vs	=CompileShader(vs_5_0,VS_Main());
-VertexShader forward_vs	=CompileShader(vs_5_0,VS_DepthForward());
-VertexShader reverse_vs	=CompileShader(vs_5_0,VS_DepthReverse());
-
 technique clouds_2d_quad
 {
 	pass p0 
 	{
 		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D()));
+	}
+}
+technique clouds_2d_fill
+{
+	pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D_Fill()));
 	}
 }

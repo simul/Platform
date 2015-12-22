@@ -56,8 +56,9 @@ vec3 IlluminationAtPosition(vec3 pos_km,vec3 dirToSun,float planetRadiusKm,vec3 
 		return vec3(1,1,1);
 	pos_km						-=along*dirToSun;
 	float radius_on_cylinder_km	=length(pos_km);
-	float d=(radius_on_cylinder_km-planetRadiusKm+range_km);
-	vec3 illum					=saturate(vec3(d,d,d)/range_km);
+	float dif					=radius_on_cylinder_km-planetRadiusKm;
+	vec3 d						=vec3(dif,dif,dif)+range_km;
+	vec3 illum					=saturate(d/range_km);
 	return illum;
 }
 

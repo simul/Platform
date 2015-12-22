@@ -246,6 +246,7 @@ namespace simul
 			{
 				return platformConstantBuffer;
 			}
+			virtual void Apply(DeviceContext &deviceContext)=0;
 		};
 		template<class T> class ConstantBuffer:public ConstantBufferBase,public T
 		{
@@ -316,7 +317,7 @@ namespace simul
 				platformConstantBuffer=NULL;
 			}
 			//! Apply the stored data using the given context, in preparation for rendering.
-			void Apply(DeviceContext &deviceContext)
+			void Apply(DeviceContext &deviceContext) override
 			{
 				if(platformConstantBuffer)
 					platformConstantBuffer->Apply(deviceContext,sizeof(T),(T*)this);
