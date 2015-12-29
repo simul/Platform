@@ -600,9 +600,19 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform
 	if(texture_number>=0)
 	{
 		if(tex)
-			glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),true,mip);
+		{
+			bool layered=tex->IsCubemap()||tex->GetDimension()==3;
+			glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension()
+			,tex->GetDepth()
+			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
+			,true
+			,layered?0:mip
+			,layered
+			,layered?mip:0
+			,tex->IsCubemap());
+		}
 		else
-			glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN),true,mip);
+			glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN),true,mip,false,0,false);
 	}
 	GL_ERROR_CHECK
 }
@@ -615,9 +625,30 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,int mip)
 	if(texture_number>=0)
 	{
 		if(tex)
-			glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),true,mip);
+		{
+			bool layered=tex->IsCubemap()||tex->GetDimension()==3;
+			glfxSetEffectTexture((int)platform_effect,texture_number
+			,tex->AsGLuint(mip)
+			,tex->GetDimension()
+			,tex->GetDepth()
+			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
+			,true
+			,0//layered?0:mip
+			,false//layered
+			,0//layered?mip:0
+			,false);
+		}
 		else
-			glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN),true,mip);
+			glfxSetEffectTexture((int)platform_effect,texture_number
+			,0
+			,0
+			,0
+			,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN)
+			,true
+			,mip
+			,false
+			,0
+			,false);
 	}
 	else
 	{
@@ -626,9 +657,24 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,int mip)
 		if(texture_number>=0)
 		{
 			if(tex)
-				glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth(),opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),false,mip);
+			{
+				bool layered=tex->IsCubemap()||tex->GetDimension()==3;
+				glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth()
+				,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
+				,false
+				,layered?0:mip
+				,layered
+				,layered?mip:0
+				,tex->IsCubemap());
+			}
 			else
-				glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN),false,mip);
+				glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0
+					,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN)
+					,false
+					,mip
+					,false
+					,0
+					,false);
 		}
 	}
 	GL_ERROR_CHECK
@@ -658,7 +704,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 	}
 	if(tex)
 		glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth()
-			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write,mip);
+			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write,mip,false,0,tex->IsCubemap());
 }
 
 void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex,int mip)

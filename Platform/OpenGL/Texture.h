@@ -33,10 +33,7 @@ namespace simul
 			void LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files);
 			bool IsValid() const;
 			void InvalidateDeviceObjects();
-			GLuint AsGLuint()
-			{
-				return pTextureObject;
-			}
+			GLuint AsGLuint(int view);
 			GLuint FramebufferAsGLuint()
 			{
 				return m_fb;
@@ -57,7 +54,8 @@ namespace simul
 			int GetSampleCount() const;
 			void copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels);
 			GLuint pTextureObject;
-
+			GLuint *pViewObjects;
+			int numViews;
 			// Former Texture functions
 			void setTexels(void *,const void *src,int x,int y,int z,int w,int l,int d);
 		};

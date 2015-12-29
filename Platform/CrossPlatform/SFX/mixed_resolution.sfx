@@ -86,7 +86,7 @@ void DownscaleStochastic(int2 idx,bool reverseDepth)
 			tc.y					=float((cubeIndex*3)%5)/5.0;
 			tc.z					=float((cubeIndex*2)%5)/5.0;
 		}
-		nextUpdateTexture[idx]	=vec4(0,0,0,0);
+		nextUpdateTexture[idx]	=vec4(0,1,1,0);
 		return;
 	}
 	// old update

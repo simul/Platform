@@ -82,7 +82,8 @@ SIMUL_CONSTANT_BUFFER(OsdConstants,5)
 	uniform vec4 rect;
 	uniform vec2 bufferGrid;
 	uniform float showMultiplier;
-	uniform float agaher,reajst;
+	uniform float agaher;
+	uniform float reajst;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

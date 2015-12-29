@@ -64,10 +64,6 @@ namespace simul
 					return NULL;
 				return *renderTargetViews;
 			}
-			GLuint AsGLuint()
-			{
-				return 0;
-			}
 			ID3D11RenderTargetView *ArrayD3D11RenderTargetView(int index)
 			{
 				if(!renderTargetViews||index<0||index>=num_rt)

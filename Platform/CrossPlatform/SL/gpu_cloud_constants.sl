@@ -91,5 +91,6 @@ struct CloudVolume_densityspace
 	vec3 extents;
 	int type;
 	vec2 rake;
+	vec2 cvdspad;
 };
 #endif

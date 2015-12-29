@@ -185,7 +185,15 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 {
 	lastContext=deviceContext.asD3D11DeviceContext();
 	mapped.pData=NULL;
-	HRESULT hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,0,&mapped);//D3D11_MAP_FLAG_DO_NOT_WAIT
+	HRESULT hr=DXGI_ERROR_WAS_STILL_DRAWING;
+	int wait=0;
+	while(hr==DXGI_ERROR_WAS_STILL_DRAWING)
+	{
+		hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,D3D11_MAP_FLAG_DO_NOT_WAIT,&mapped);//
+		wait++;
+	}
+	if(wait>1)
+		SIMUL_CERR<<"PlatformStructuredBuffer::OpenReadBuffer waited "<<wait<<" times."<<std::endl;
 	if(hr!=S_OK)
 		mapped.pData=NULL;
 	return mapped.pData;
@@ -497,20 +505,10 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 	return tech;
 }
 
-void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *t,int mip)
+void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int mip)
 {
-	if(!asD3DX11Effect())
-	{
-		SIMUL_CERR<<"Invalid effect "<<std::endl;
-		return;
-	}
-	if(t)
-	{
-		dx11::Texture *T=(dx11::Texture*)t;
-		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,T->AsD3D11UnorderedAccessView(mip));
-	}
-	else
-		simul::dx11::setUnorderedAccessView(asD3DX11Effect(),name,NULL);
+	crossplatform::ShaderResource shaderResource			=GetShaderResource(name);
+	SetUnorderedAccessView(deviceContext,shaderResource,t,mip);
 }
 
 void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip)
@@ -521,6 +519,11 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crosspl
 		SIMUL_CERR<<"Invalid effect "<<std::endl;
 		return;
 	}
+	if(!var)
+	{
+		SIMUL_CERR<<"Invalid Resource "<<std::endl;
+		return;
+	}
 	if(t)
 	{
 		var->SetUnorderedAccessView(t->AsD3D11UnorderedAccessView());
@@ -529,17 +532,8 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crosspl
 		var->SetUnorderedAccessView(NULL);
 }
 
-void dx11::Effect::SetTexture(const char *name,ID3D11ShaderResourceView *tex)
-{
-	if(!asD3DX11Effect())
-	{
-		SIMUL_CERR<<"Invalid effect "<<std::endl;
-		return;
-	}
-	simul::dx11::setTexture(asD3DX11Effect(),name,tex);
-}
 
-void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *t,int mip)
+void dx11::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int mip)
 {
 	if(!asD3DX11Effect())
 	{
@@ -550,10 +544,16 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &,const char *name,cr
 	if(!e)
 		return;
 	crossplatform::ShaderResource res			=GetShaderResource(name);
-	ID3DX11EffectShaderResourceVariable *var	=(ID3DX11EffectShaderResourceVariable*)res.platform_shader_resource;
+	SetTexture(deviceContext, res, t, mip);
+}
+
+
+void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip)
+{
+	ID3DX11EffectShaderResourceVariable *var=(ID3DX11EffectShaderResourceVariable*)(shaderResource.platform_shader_resource);
 	if(!var||!var->IsValid())
 	{
-		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader texture ")+name).c_str());
+		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader texture ")).c_str());
 	}
 	if(t)
 	{
@@ -618,18 +618,6 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		}
 	}
 	return res;
-}
-
-void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip)
-{
-	ID3DX11EffectShaderResourceVariable *var=(ID3DX11EffectShaderResourceVariable*)(shaderResource.platform_shader_resource);
-	if(var)
-	{
-		if(t)
-			var->SetResource(t->AsD3D11ShaderResourceView(mip));
-		else
-			var->SetResource(NULL);
-	}
 }
 
 void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)

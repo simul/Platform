@@ -409,6 +409,11 @@ GL_ERROR_CHECK
 		techname="show_volume";
 		debugEffect->SetTexture(deviceContext,"volumeTexture",tex);
 	}
+	else if(tex&&tex->IsCubemap())
+	{
+		techname="show_cubemap";
+		debugEffect->SetTexture(deviceContext,"cubeTexture",tex);
+	}
 	else
 	{
 		debugEffect->SetTexture(deviceContext,"imageTexture",tex);

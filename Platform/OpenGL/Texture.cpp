@@ -34,9 +34,10 @@ void SamplerState::InvalidateDeviceObjects()
 	sampler_state=0;
 }
 
-
 opengl::Texture::Texture()
 	:pTextureObject(0)
+	,pViewObjects(NULL)
+	,numViews(0)
 	,m_fb(0)
 	,externalTextureObject(false)
 {
@@ -49,6 +50,13 @@ opengl::Texture::~Texture()
 
 void Texture::InvalidateDeviceObjects()
 {
+	for(int i=0;i<numViews;i++)
+	{
+		SAFE_DELETE_TEXTURE(pViewObjects[i]);
+	}
+	delete [] pViewObjects;
+	pViewObjects=NULL;
+	numViews=0;
 	GL_ERROR_CHECK
 	if(!externalTextureObject)
 		SAFE_DELETE_TEXTURE(pTextureObject);
@@ -56,6 +64,18 @@ void Texture::InvalidateDeviceObjects()
 	SAFE_DELETE_FRAMEBUFFER(m_fb);
 	GL_ERROR_CHECK
 }
+
+GLuint Texture::AsGLuint(int view)
+{
+	if(view<0)
+		return pTextureObject;
+	if(view<0||view>=numViews)
+		return NULL;
+	if(!pViewObjects)
+		return NULL;
+	return pViewObjects[view];
+}
+
 // Load a texture file
 void opengl::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
 {
@@ -253,32 +273,73 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int num_layers,crossplatform::PixelFormat f,bool /*computable*/,bool /*rendertarget*/,bool /*cubemap*/)
+void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int num_layers,crossplatform::PixelFormat f,bool computable,bool /*rendertarget*/,bool cubemap)
 {
 	pixelFormat=f;
 	if(w==width&&l==length)
 		return;
+	InvalidateDeviceObjects();
 	this->cubemap=cubemap;
 	pixelFormat=f;
+	GL_ERROR_CHECK
 	GLuint internal_format=opengl::RenderPlatform::ToGLFormat(pixelFormat);
 //	GLuint layout=opengl::RenderPlatform::ToGLExternalFormat(pixelFormat);
 //	GLenum datatype=opengl::RenderPlatform::DataType(pixelFormat);
 	width=w;
 	length=l;
+	if(cubemap)
+	{
+		SIMUL_ASSERT(num_layers==6&&w==l,"Need 6 layers and w=l for cubemap");
+	}
 	depth=num_layers;
 	dim=2;
 	glGenTextures(1,&pTextureObject);
-	glBindTexture(GL_TEXTURE_2D_ARRAY,pTextureObject);
-//	int m=1;
+	GL_ERROR_CHECK
 	
-	glTexStorage3D(	GL_TEXTURE_2D_ARRAY,
- 					1,
- 					internal_format,
- 					w,
- 					l
-					,num_layers);
-	glGenerateMipmap(GL_TEXTURE_2D_ARRAY); 
-	glBindTexture(GL_TEXTURE_2D_ARRAY,0);
+	if(cubemap)
+	{
+		glBindTexture(GL_TEXTURE_CUBE_MAP,pTextureObject);
+		glTexStorage2D(	GL_TEXTURE_CUBE_MAP
+ 						,1		// Num levels i.e. MIPS
+ 						,internal_format
+ 						,w
+ 						,l);
+		glBindTexture(GL_TEXTURE_CUBE_MAP,0);
+		GL_ERROR_CHECK
+	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_2D_ARRAY,pTextureObject);
+		glTexStorage3D(	GL_TEXTURE_2D_ARRAY
+ 						,1		// Num levels i.e. MIPS
+ 						,internal_format
+ 						,w
+ 						,l
+						,depth);
+		GL_ERROR_CHECK
+		glGenerateMipmap(GL_TEXTURE_2D_ARRAY); 
+		GL_ERROR_CHECK
+		glBindTexture(GL_TEXTURE_2D_ARRAY,0);
+	GL_ERROR_CHECK
+	}
+	if(computable&&num_layers>0)
+	{
+		numViews=num_layers;
+		pViewObjects=new GLuint[numViews];
+		glGenTextures(numViews,pViewObjects);
+		for(int i=0;i<numViews;i++)
+		{
+			glTextureView(	pViewObjects[i],
+ 							GL_TEXTURE_2D,
+ 							pTextureObject,
+ 							internal_format,
+ 							0,
+ 							1,
+ 							i,
+ 							1);
+		}
+		GL_ERROR_CHECK
+	}
 /*	for(int i=0;i<1;i++)//num_mips
 	{
 		glTexImage3D(GL_TEXTURE_2D_ARRAY, i,internal_format	,width/m,length/m,num_layers,0,layout, datatype, NULL);

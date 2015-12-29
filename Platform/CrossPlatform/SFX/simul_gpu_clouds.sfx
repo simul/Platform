@@ -860,9 +860,9 @@ technique density_mask
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState(ReverseDepth, 0 );
 		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_DensityMask()));
+		SetPixelShader(CompileShader(ps_5_0,PS_DensityMask()));
     }
 }
 
@@ -873,9 +873,9 @@ technique cloud_placement_texture
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState(DisableDepth, 0 );
 		SetBlendState(AddBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_CloudPlacementTexture()));
+		SetPixelShader(CompileShader(ps_5_0,PS_CloudPlacementTexture()));
     }
 }
 
