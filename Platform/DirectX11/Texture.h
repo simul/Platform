@@ -46,9 +46,11 @@ namespace simul
 					return mipShaderResourceViews[mip];
 				return NULL;
 			}
-			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0)
+			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=-1)
 			{
-				if(mip<0||mip>=numUav)
+				if(mip<0)
+					mip=0;
+				if(mip>=numUav)
 					return NULL;
 				if(!unorderedAccessViews)
 					return NULL;

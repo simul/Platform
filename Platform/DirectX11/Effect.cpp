@@ -526,7 +526,12 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crosspl
 	}
 	if(t)
 	{
-		var->SetUnorderedAccessView(t->AsD3D11UnorderedAccessView(mip));
+		ID3D11UnorderedAccessView *uav=t->AsD3D11UnorderedAccessView(mip);
+		if(!uav)
+		{
+			SIMUL_CERR<<"Unordered access view not found."<<std::endl;
+		}
+		var->SetUnorderedAccessView(uav);
 	}
 	else
 		var->SetUnorderedAccessView(NULL);

@@ -331,6 +331,7 @@ void CSClouds2D(int2 pos)
 													,maxFadeDistanceMetres);
 
 				ret.rgb					*=exposure*ret.a;
+			
 			//	ret.rg					=frac(atmosTexCoords.xy);
 //				ret.rgb=texture_clamp_lod(volumeInscatterTexture,vec3(atmosTexCoords,1.0),0).rgb;
 				ret.a					=1.0-ret.a;

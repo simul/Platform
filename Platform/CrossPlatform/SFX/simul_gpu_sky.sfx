@@ -114,7 +114,7 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		loss.a				=(loss.r+loss.g+loss.b)/3.0;
 
 		loss				*=previous_loss;
-		//loss.rgb=vec3(idx.x/4.0,1,0);
+
 		
 	
 		IMAGE_STORE_3D(targetTexture,idx,vec4(loss.rgb,1.0));
