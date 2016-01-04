@@ -526,7 +526,7 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crosspl
 	}
 	if(t)
 	{
-		var->SetUnorderedAccessView(t->AsD3D11UnorderedAccessView());
+		var->SetUnorderedAccessView(t->AsD3D11UnorderedAccessView(mip));
 	}
 	else
 		var->SetUnorderedAccessView(NULL);

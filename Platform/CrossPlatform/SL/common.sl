@@ -71,7 +71,6 @@
 	#define TEXTURE2D_UINT Texture2D<uint>
 	#define TEXTURE2D_UINT4 Texture2D<uint4>
 
-
 	//#define IMAGE_LOAD(a,b) imageLoad(a,b)
 	#define IMAGE_LOAD(a,b) a[b]
 	//#define TEXTURE_LOAD_MSAA(a,b,c) texelFetch(a,b,int(c))

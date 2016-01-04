@@ -329,14 +329,15 @@ void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,in
 		glGenTextures(numViews,pViewObjects);
 		for(int i=0;i<numViews;i++)
 		{
-			glTextureView(	pViewObjects[i],
- 							GL_TEXTURE_2D,
- 							pTextureObject,
- 							internal_format,
- 							0,
- 							1,
- 							i,
- 							1);
+			glTextureView(	pViewObjects[i]
+ 							,GL_TEXTURE_2D
+ 							,pTextureObject
+ 							,internal_format
+ 							,0
+ 							,1
+ 							,i
+ 							,1);
+		GL_ERROR_CHECK
 		}
 		GL_ERROR_CHECK
 	}

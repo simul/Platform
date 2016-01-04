@@ -10,15 +10,15 @@
 uniform TEXTURE2DMS_FLOAT4 sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
 uniform TEXTURE2DMS_FLOAT4 sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2D sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);
-uniform RW_TEXTURE2D_FLOAT4 target2DTexture SIMUL_RWTEXTURE_REGISTER(1);
+uniform RW_TEXTURE2D_FLOAT4 target2DTexture;
 
 uniform Texture2D previousTexture;
 uniform Texture2D sourceTexture1;
 uniform Texture2D sourceTexture2;
 uniform Texture2D sourceTexture3;
 uniform Texture2D updateTexture;
-uniform RWTexture2D<vec4> targetTexture			SIMUL_RWTEXTURE_REGISTER(0);
-uniform RWTexture2D<vec4> nextUpdateTexture		SIMUL_RWTEXTURE_REGISTER(1);
+uniform RWTexture2D<vec4> targetTexture			;
+uniform RWTexture2D<vec4> nextUpdateTexture		;
 
 #define BLOCKSIZE 8
 
@@ -86,7 +86,8 @@ void DownscaleStochastic(int2 idx,bool reverseDepth)
 			tc.y					=float((cubeIndex*3)%5)/5.0;
 			tc.z					=float((cubeIndex*2)%5)/5.0;
 		}
-		nextUpdateTexture[idx]	=vec4(0,1,1,0);
+	//vec2 texCoords			=(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims);
+	//	nextUpdateTexture[idx]	=vec4(1,0,0,0);
 		return;
 	}
 	// old update

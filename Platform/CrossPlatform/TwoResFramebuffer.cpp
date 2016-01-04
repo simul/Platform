@@ -390,8 +390,10 @@ void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceC
 			y+=L;
 		}
 	}
-	deviceContext.renderPlatform->DrawTexture(deviceContext,x0,y0,W,L,updateTextures[0]);
-	deviceContext.renderPlatform->DrawTexture(deviceContext,x0,y0+L,W,L,updateTextures[1]);
+	deviceContext.renderPlatform->DrawTexture(deviceContext	,x0	,y0		,W,L,updateTextures[0]);
+	deviceContext.renderPlatform->Print(deviceContext		,x0	,y0		,"Update 0");
+	deviceContext.renderPlatform->DrawTexture(deviceContext	,x0	,y0+L	,W,L,updateTextures[1]);
+	deviceContext.renderPlatform->Print(deviceContext		,x0	,y0+L	,"Update 1");
 	//deviceContext.renderPlatform->DrawDepth(deviceContext		,x0+W/2	,y0+L/2	,W/2,L/2,depthTexture,viewport,proj);
 	//deviceContext.renderPlatform->Print(deviceContext			,x0+W/2	,y0+L/2	,"Main Depth",white,black_transparent);
 }

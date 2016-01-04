@@ -602,13 +602,13 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform
 		if(tex)
 		{
 			bool layered=tex->IsCubemap()||tex->GetDimension()==3;
-			glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension()
+			glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(mip),tex->GetDimension()
 			,tex->GetDepth()
 			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
 			,true
-			,layered?0:mip
-			,layered
-			,layered?mip:0
+			,0
+			,false
+			,0
 			,tex->IsCubemap());
 		}
 		else
@@ -645,7 +645,7 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,int mip)
 			,0
 			,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN)
 			,true
-			,mip
+			,0
 			,false
 			,0
 			,false);
@@ -658,20 +658,23 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,int mip)
 		{
 			if(tex)
 			{
-				bool layered=tex->IsCubemap()||tex->GetDimension()==3;
-				glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(),tex->GetDimension(),tex->GetDepth()
+				bool layered=false;//tex->IsCubemap()||tex->GetDimension()==3;
+				glfxSetEffectTexture((int)platform_effect,texture_number
+					,tex->AsGLuint()
+					,tex->GetDimension()
+					,tex->GetDepth()
 				,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
 				,false
-				,layered?0:mip
-				,layered
-				,layered?mip:0
+				,mip>0?mip:0
+				,false
+				,0
 				,tex->IsCubemap());
 			}
 			else
 				glfxSetEffectTexture((int)platform_effect,texture_number,0,0,0
 					,opengl::RenderPlatform::ToGLFormat(crossplatform::UNKNOWN)
 					,false
-					,mip
+					,0
 					,false
 					,0
 					,false);
