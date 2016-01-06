@@ -342,6 +342,15 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_ForwardDepth(CompositeS
 	return PS_CompositeAtmospherics(IN,false);
 }
 
+shader vec4 PS_CubemapToScreenspace(posTexVertexOutput IN): SV_Target
+{
+	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x			+=2.0*IN.texCoords.x;
+	clip_pos.y			-=2.0*IN.texCoords.y;
+	vec3 view			=mul(invViewProj,clip_pos).xyz;
+	vec4 res			=texture_cube_lod(nearFarTexture,view,0);
+	return res;
+}
 
 TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,bool reverseDepth)
 {
@@ -349,7 +358,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	TwoColourCompositeOutput result	=CompositeAtmospherics_MSAA(IN.clip_pos
-															,IN.depth_texc
+																,IN.depth_texc
 																,farImageTexture
 																,nearImageTexture
 																,nearFarTexture
@@ -360,7 +369,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 																,invViewProj
 																,viewportToTexRegionScaleBias
 																,depthInterpretationStruct
-															,IN.lowResTexCoords
+																,IN.lowResTexCoords
 																,fullResToLowResTransformXYWH
 																,inscatterVolumeTexture
 																,shadowTexture);
@@ -683,4 +692,17 @@ technique show_volume
 		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowVolume()));
     }
+}
+
+technique cubemap_to_screenspace
+{
+	pass p0
+	{
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(DontBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+		SetPixelShader(CompileShader(ps_5_0,PS_CubemapToScreenspace()));
+	}
 }
