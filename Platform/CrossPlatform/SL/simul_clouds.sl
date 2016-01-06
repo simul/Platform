@@ -260,7 +260,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	vec3 dir_to_source		=normalize(sourcePosKm_w-viewPosKm);
 	float cos0				=dot(dir_to_source.xyz,view.xyz);
 	if (cos0 < minCosine)
-		discard;
+		return res;
 	float sine				=view.z;
 
 	float min_z				=cornerPosKm.z-(fractalScale.z*1.5)/inverseScalesKm.z;

@@ -251,23 +251,10 @@ shader vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
     return DetailLighting(IN.texCoords,imageTexture);
 }
 
-void CSClouds2D(int2 pos)
+void CSClouds2D(int2 pos,bool depth)
 {
-	if(pos.x>=edge.x||pos.y>=edge.y)
-		return;
-	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
-		return;
-	if(updateTexture[pos].b==0.0)
-		return;
 	// offset by one texel to allow -1 in x and y:
 	vec2 texCoords			=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize1);
-
-	// We transform from the target texCoords (0-1,0-1) passed from the vertex shader,
-	//  to the texCoords of our window. These wrap around 
-	//vec2 texCoords			=mixedResTransformXYWH.xy+INtexCoords.xy*mixedResTransformXYWH.zw;
-	//texCoords				-=vec2(1.0,1.0)/vec2(targetTextureSize1)*mixedResTransformXYWH.zw;
-	//if(useDepth)
-	//	dlookup				=texture_nearest_lod(depthTexture,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 
 	clip_pos.x				+=2.0*texCoords.x;
@@ -279,7 +266,9 @@ void CSClouds2D(int2 pos)
 	frustum_clip_pos		/=frustum_clip_pos.w;
 	float dz				=cloudAltitudeKm-0.001*eyePosition.z;
 
-	vec4 dist				=texture_cube_lod(depthTexture,view,0);
+	vec4 dist				=vec4(1.0,1.0,1.0,1.0);
+	if(depth)
+		dist				=texture_cube_lod(depthTexture,view,0);
 
 	vec4 ret				=vec4(0,0,0,1.0);
 #if 1
@@ -339,7 +328,8 @@ void CSClouds2D(int2 pos)
 		}
 	}
 #endif
-	//ret.rgb=saturate(view);
+	//if(!depth)
+	//	ret.ga=.5;
 	outputTexture[pos]	=ret;//vec4(0,0.0,0.5,0.5);
 }
 
@@ -350,7 +340,22 @@ shader void CS_Clouds2D_Fill(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 	int2 pos				=targetRange.xy+idx;
 	if(updateTexture[pos].r>=1.0)
 		return;
-	CSClouds2D(pos);
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
+		return;
+	if(updateTexture[pos].b==0.0)
+		return;
+	CSClouds2D(pos,true);
+}
+
+CS_LAYOUT(8,8,1)
+shader void CS_Clouds2D_Cubemap(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
+{
+	int2 idx				=int2(g.xy*8+t.xy);
+	int2 pos				=targetRange.xy+idx;
+//	outputTexture[idx]	=vec4(0,0.0,0.5,0.5);
+	CSClouds2D(pos,false);
 }
 
 CS_LAYOUT(8,8,1)
@@ -358,7 +363,13 @@ shader void CS_Clouds2D(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 {
 	int2 idx				=int2(g.xy*8+t.xy);
 	int2 pos				=targetRange.xy+idx*amortization+amortizationOffset.xy;
-	CSClouds2D(pos);
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
+		return;
+	if(updateTexture[pos].b==0.0)
+		return;
+	CSClouds2D(pos,true);
 }
 
 technique coverage
@@ -465,5 +476,12 @@ technique clouds_2d_fill
 	pass p0
 	{
 		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D_Fill()));
+	}
+}
+technique clouds_2d_cubemap
+{
+	pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Clouds2D_Cubemap()));
 	}
 }
