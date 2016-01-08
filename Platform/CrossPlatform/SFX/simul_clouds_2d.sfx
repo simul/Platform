@@ -254,7 +254,7 @@ shader vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
 void CSClouds2D(int2 pos,bool depth)
 {
 	// offset by one texel to allow -1 in x and y:
-	vec2 texCoords			=vec2(pos.xy+uint2(1,1))/vec2(targetTextureSize1);
+	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize1);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 
 	clip_pos.x				+=2.0*texCoords.x;
