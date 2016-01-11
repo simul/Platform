@@ -36,7 +36,7 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	
 	uniform vec2 tanHalfFov;
 	uniform float nearZ;
-	uniform float farZ;
+	uniform float detailDensity;
 
 	uniform vec4 depthToLinFadeDistParams;
 
@@ -70,13 +70,13 @@ SIMUL_CONSTANT_BUFFER(Detail2DConstants,12)
 
 	uniform float coveragePersistence;
 	uniform float humidity;
-	uniform float diffusivity;
+	uniform float coverageDiffusivity;
 	uniform float noiseTextureScale;			// Scale from existing random texture to noise scale of coverage.
 
 	uniform float phase;
 	uniform float detailTextureSize;
-	uniform float bbbbbbb;
-	uniform float cccccc;
+	uniform float detailDiffusivity;
+	uniform float detailOctaves;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

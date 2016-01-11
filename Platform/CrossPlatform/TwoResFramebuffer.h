@@ -52,8 +52,8 @@ namespace simul
 					return int2(0,0);
 				int a			=amortization;
 				int sub_frame	=framenumber%(a*a);
-				int offsx		=sub_frame/a;
-				int offsy		=sub_frame-offsx*a;
+//				int offsx		=sub_frame/a;
+//				int offsy		=sub_frame-offsx*a;
 				return pattern[sub_frame];//(int2(offsx,offsy);//
 			}
 			int4 xy(int2 texsize) const

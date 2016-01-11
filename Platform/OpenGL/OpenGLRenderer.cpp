@@ -148,7 +148,7 @@ void OpenGLRenderer::RenderGL(int view_id)
 	}
 	else
 	{
-		SIMUL_ASSERT_WARN_ONCE(glewIsSupported("GL_NV_depth_buffer_float"),"glDepthRangedNV is not supported. This means that depth-reverse will not work for OpenGL with the current drivers.");
+		SIMUL_ASSERT_WARN_ONCE(GL_TRUE==glewIsSupported("GL_NV_depth_buffer_float"),"glDepthRangedNV is not supported. This means that depth-reverse will not work for OpenGL with the current drivers.");
 	}
 
 	crossplatform::DeviceContext deviceContext;
