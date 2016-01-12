@@ -38,6 +38,7 @@ SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
 	uniform float brightnessToUnity;
 	uniform float minPixelWidth;
 
+	uniform vec3 viewPosition;
 	uniform float maxFadeDistance;
 SIMUL_CONSTANT_BUFFER_END
 
@@ -63,6 +64,7 @@ struct LightningVertexOutput
 	float depth				: TEXCOORD2;
 	float endpoint			: TEXCOORD3;
 	float progress			: TEXCOORD4;
+	vec3 view				: TEXCOORD5;
 };
 #endif
 

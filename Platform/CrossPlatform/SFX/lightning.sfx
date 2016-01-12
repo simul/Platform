@@ -10,7 +10,7 @@
 uniform Texture2D lightningTexture;
 uniform Texture2D depthTexture;
 uniform Texture2DMS<vec4> depthTextureMS;
-uniform Texture2D cloudDepthTexture;
+uniform TextureCube cloudDepthTexture;
 uniform Texture2D randomTexture;
  
 shader vec4 PS_Random(posTexVertexOutput IN) : SV_TARGET
@@ -224,6 +224,7 @@ struct transformedVertex
     vec4 clipPos		: TEXCOORD7;
     float endpoint		: TEXCOORD8;
     float progress		: TEXCOORD9;
+	vec3 view			: TEXCOORD10;
 };
 
 struct transformedThinVertex
@@ -234,12 +235,14 @@ struct transformedThinVertex
 	vec2 screenPos		: TEXCOORD2;
 	vec2 texc			: TEXCOORD3;
 	float progress		: TEXCOORD4;
+	vec3 view			: TEXCOORD5;
 };
 
 shader transformedThinVertex VS_Thin(LightningVertexInput IN)
 {
     transformedThinVertex OUT;
     OUT.hPosition	=mul(worldViewProj, vec4(IN.position.xyz , 1.0));
+	OUT.view		=vec3(0,1,0);//normalize(IN.position.xyz-viewPosition);
 	OUT.brightness	=IN.texCoords.y*10.0;
 	OUT.depth		=OUT.hPosition.z/OUT.hPosition.w;
 	OUT.screenPos	=OUT.hPosition.xy/OUT.hPosition.w;
@@ -252,6 +255,7 @@ shader LightningVertexOutput VS_Thick(LightningVertexInput IN)
 {
     LightningVertexOutput OUT;
     OUT.position		=mul(worldViewProj,vec4(IN.position.xyz,1.0));
+	OUT.view			=normalize(IN.position.xyz-viewPosition);
 	OUT.thicknessMetres	=IN.texCoords.x;
 	OUT.endpoint		=saturate(1.0-IN.texCoords.y);
 	OUT.brightness		=IN.texCoords.y;
@@ -361,6 +365,8 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 		}
 		lengthPixels_a = width1;
 	}
+	//OUT.view=vec3(1,0,0);
+	OUT.view		=(IN[1].view);
 	if(dot(v0,v1)<-mitre_LIMIT)
 	{
 	//	width1=0;
@@ -371,6 +377,7 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 		{
 			OUT.screenPos	=(p1 + width1 * n0)/viewportPixels;
 			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
+		//	OUT.view		=(IN[0].view);
 			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
 			OUT.brightness	=brightness1;
@@ -402,6 +409,7 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 		{
 			OUT.screenPos	=(p1 - width2 * n1)/viewportPixels;
 			OUT.hPosition	=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
+		//	OUT.view		=(IN[1].view);
 			OUT.texc		=OUT.screenPos.xy*0.5+0.5;
 			OUT.along		=0;
 			OUT.brightness	=brightness1;
@@ -448,6 +456,7 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 	OUT.clipWidth		=width1/start.w;
 	OUT.screenPos		=(p1 + lengthPixels_a * mitre1_a)/viewportPixels;
 	OUT.hPosition		=vec4(OUT.screenPos.xy*start.w,start.z,start.w);
+//	OUT.view			=(IN[1].view);
 	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
 	OUT.along			=0.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2*1.1-0.05;
 	OUT.brightness		=brightness1;
@@ -467,6 +476,7 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 	OUT.clipWidth		=width2/end.w;
 	OUT.screenPos		=(p2 + lengthPixels_b * mitre2_a)/viewportPixels;
 	OUT.hPosition		=vec4(OUT.screenPos.xy*end.w,end.z,end.w);
+//	OUT.view			=(IN[2].view);
 	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
 	OUT.along			=1.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
 	OUT.brightness		=brightness2;
@@ -476,6 +486,7 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 	SpriteStream.Append(OUT);
 	OUT.screenPos		=(p2 - lengthPixels_b * mitre2_b)/viewportPixels;
 	OUT.hPosition		=vec4(OUT.screenPos.xy*end.w,end.z,end.w);
+//	OUT.view			=(IN[2].view);
 	OUT.texc			=OUT.screenPos.xy*0.5+0.5;
 	OUT.along			=1.0;//dot(OUT.screenPos.xy-OUT.hPosCentre1.xy,diff)/d2;
 	OUT.brightness		=brightness2;
@@ -494,14 +505,15 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	vec2 texc				=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec4 dlookup 			=texture_clamp(depthTexture,texc.xy);
 	vec2 lowResTexCoords	=fullResToLowResTransformXYWH.xy+texc*fullResToLowResTransformXYWH.zw;
-	vec4 nearFarCloud 		=texture_wrap(cloudDepthTexture,lowResTexCoords.xy);
+	vec3 view				=normalize(IN.view);
+	vec4 nearFarCloud 		=texture_cube_lod(cloudDepthTexture,view,0);
 
 	vec4 clip_pos			=vec4(IN.screenPos,1.0,1.0);
 	float l_depth			=IN.clipPos.z/IN.clipPos.w;
 	vec2 dist				=depthToFadeDistance(vec2(l_depth,dlookup.x),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 
 	float past				=saturate((nearFarCloud.w-dist.x)/0.01-0.9);
-	 past					*=saturate((dist.y-dist.x)/0.01-0.9);
+	past					*=saturate((dist.y-dist.x)/0.01-0.9);
 	
 	vec2 dir				=normalize(IN.hPosCentre2-IN.hPosCentre1);
 	float along				=dot(IN.screenPos-IN.hPosCentre1,dir);
@@ -553,7 +565,8 @@ vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 {
 	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec4 dlookup 		=texture_clamp(depthTexture,texc.xy);
-	vec4 clookup 		=texture_clamp(cloudDepthTexture,texc.xy);
+	vec3 view				=normalize(IN.view);
+	vec4 clookup 		=texture_cube_lod(cloudDepthTexture,view,0);
 	float depth=0;
 	if(reverseDepth)
 		depth			=max(dlookup.x,clookup.x);
