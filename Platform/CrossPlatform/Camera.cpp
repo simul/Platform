@@ -98,7 +98,7 @@ Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 	Matrix4x4 M(mat);
 	float z0=0.0f;
 	// We do NOT want to divide by zero, although an infinite far plane is valid. So we use z0=0 to stand in for infinity.
-	if(M._33>0.0f)
+	if(M._33!=0.0f)
 		z0=-M._43/M._33;
 	float z1=(M._43-M._44)/(M._34-M._33);
 	if(z0>z1&&z0!=0.0f)
