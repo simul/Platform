@@ -74,7 +74,7 @@ namespace simul
 			GpuProfiler();
 			virtual ~GpuProfiler();
 		public:
-			virtual ProfileData *CreateProfileData() const
+			virtual ProfileData *CreateProfileData() const override
 			{
 				return new ProfileData;
 			}

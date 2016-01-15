@@ -15,8 +15,8 @@ struct RaytracePixelOutput
 
 struct FarNearPixelOutput
 {
-	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
-	vec4 nearColour		SIMUL_RENDERTARGET_OUTPUT(1);
+	vec4 farColour		;
+	vec4 nearColour		;
 };
 
 struct All8DepthOutput
