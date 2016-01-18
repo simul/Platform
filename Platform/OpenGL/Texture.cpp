@@ -6,6 +6,7 @@
 #include "FramebufferGL.h"
 #include "RenderPlatform.h"
 #include <string>
+#include <algorithm>
 
 using namespace simul;
 using namespace opengl;

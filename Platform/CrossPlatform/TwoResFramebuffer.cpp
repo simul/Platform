@@ -10,6 +10,7 @@
 #include "Simul/Base/StringFunctions.h"
 #include "Simul/Math/RandomNumberGenerator.h"
 #include "Simul/Math/Vector3.h"
+#include <algorithm>
 
 using namespace simul;
 using namespace crossplatform;

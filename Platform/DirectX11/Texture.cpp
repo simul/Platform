@@ -7,6 +7,8 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 
 #include <string>
+#include <algorithm>
+
 using namespace simul;
 using namespace dx11;
 
