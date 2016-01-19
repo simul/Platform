@@ -1238,7 +1238,10 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
 	if(mirrorY2)
-		y1=(int)viewport.Height-y1-dy;
+	{
+		y1=(int)viewport.Height-y1;
+		dy*=-1;
+	}
 	debugConstants.rect=vec4(2.f*(float)x1/(float)viewport.Width-1.f
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 			,2.f*(float)dx/(float)viewport.Width
@@ -1312,12 +1315,17 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,cross
 			tech=g->GetTechniqueByName(f.reverseDepth?"depth_reverse":"depth_forward");
 		simul::math::Matrix4x4 wvp;
 		if(view_centred)
+		{
 			crossplatform::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+			debugConstants.debugWorldViewProj=wvp;
+			debugConstants.debugWorldViewProj.transpose();
+		}
 		else
+		{
 			crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-			
-		debugConstants.debugWorldViewProj=wvp;
-		debugConstants.debugWorldViewProj.transpose();
+			debugConstants.debugWorldViewProj=wvp;
+			debugConstants.debugWorldViewProj.transpose();
+		}
 		debugConstants.Apply(deviceContext);
 		ID3D11Buffer *					vertexBuffer=NULL;
 		// Create the vertex buffer:

@@ -7,7 +7,7 @@ vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture,float amplitude,float d
 	float dens				=0.0;
 	float mult				=0.5;
 	float current_phase		=phase;
-	int octaves				=int(foctaves)+1.0;
+	int octaves				=int(foctaves)+1;
     for(int i=0;i<octaves;i++)//
     {
 		vec4 c				=saturate(1.5*texture_wrap(imageTexture,texcoords)-0.5);

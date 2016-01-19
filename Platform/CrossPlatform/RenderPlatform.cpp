@@ -299,7 +299,6 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 {
 	unsigned int num_v=1;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
-	
 	mat4 wvp;
 	if(centred)
 		crossplatform::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);

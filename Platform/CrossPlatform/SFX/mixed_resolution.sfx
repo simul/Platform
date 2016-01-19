@@ -72,6 +72,7 @@ vec4 GetFrustumClipPos(int2 idx)
 	// Transform view into the proper frustum
 	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
 	frustum_clip_pos		/=frustum_clip_pos.w;
+
 	return frustum_clip_pos;
 }
 
@@ -92,10 +93,32 @@ void DownscaleStochastic(int2 idx,bool reverseDepth)
 	}
 	// old update
 	vec4 u					=updateTexture[idx];
+#if 0
 	vec4 frustum_clip_pos	=GetFrustumClipPos(idx);
+#else
+	
+
+	vec2 texCoords			=(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims);
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
+	// Transform view into the proper frustum
+	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
+	//	nextUpdateTexture[idx]=vec4(saturate(.5*frustum_clip_pos.zzz),0);
+	frustum_clip_pos		/=frustum_clip_pos.w;
+	
+//		return;
+
+#endif
 	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	sourceTexCoords.y		=1.0-sourceTexCoords.y;
 	vec4 clipRange			=frustumClipRange;//vec4(-1.0,-1.0,1.0,1.0);
+	if(frustum_clip_pos.z<0.0)
+	{
+		nextUpdateTexture[idx]=vec4(0,0.3,0.6,0);
+		return;
+	}
 	//if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
 	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
 	{

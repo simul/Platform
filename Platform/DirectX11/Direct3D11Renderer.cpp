@@ -52,30 +52,6 @@ void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		return;
 	RecompileShaders();
 }
-// The elements in the main colour/depth buffer, with depth test and optional MSAA
-void TrueSkyRenderer::RenderDepthElements(crossplatform::DeviceContext &deviceContext
-									 ,float exposure
-									 ,float gamma)
-{
-	clouds::TrueSkyRenderer::RenderDepthElements(deviceContext
-									 ,exposure
-									 ,gamma);
-}
-
-
-void TrueSkyRenderer::InvalidateDeviceObjects()
-{
-	if(!renderPlatform)
-		return;
-	clouds::TrueSkyRenderer::InvalidateDeviceObjects();
-	renderPlatform=NULL;
-}
-
-void TrueSkyRenderer::RecompileShaders()
-{
-	clouds::TrueSkyRenderer::RecompileShaders();
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m)
 	:trueSkyRenderer(env,s,m)

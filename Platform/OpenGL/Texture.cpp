@@ -289,7 +289,7 @@ void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,in
 	length=l;
 	if(cubemap)
 	{
-		SIMUL_ASSERT(num_layers==6&&w==l,"Need 6 layers and w=l for cubemap");
+		SIMUL_ASSERT(num_layers==6&&w==l);
 	}
 	depth=num_layers;
 	dim=2;

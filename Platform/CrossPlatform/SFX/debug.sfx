@@ -113,8 +113,8 @@ shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
 	float ss		=sin(az);
 	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
 	vec4 res		=texture_cube(cubeTexture,view);
+	//res.xyz=IN.texCoords.xyy;
 	res				=vec4(pow(res.xyz,vec3(0.44,0.44,0.44)),1.0);
-	
 	return res;
 }
 

@@ -104,7 +104,7 @@ vec4 PS_NearFarShadow(atmosVertexOutput IN,bool reverseDepth)
 		at_inf			=step(1.0,depth.w);
 	shadow				*=cloudShadowing*(1.0-at_inf);
 	shadow				=saturate(vec2(1.0,1.0)-shadow);
-	return vec4(shadow,dist.xy);
+	return vec4(shadow1,shadow1,shadow1,1);
 }
 
 shader vec4 PS_NearFarShadow_ReverseDepth(atmosVertexOutput IN) : SV_TARGET

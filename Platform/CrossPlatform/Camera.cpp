@@ -248,9 +248,12 @@ void simul::crossplatform::GetCameraPosVector(const float *v,float *dcam_pos,flo
 	ERRNO_BREAK
 	view.Inverse(tmp1);
 	ERRNO_BREAK
-	dcam_pos[0]=tmp1._41;
-	dcam_pos[1]=tmp1._42;
-	dcam_pos[2]=tmp1._43;
+	if(dcam_pos)
+	{
+		dcam_pos[0]=tmp1._41;
+		dcam_pos[1]=tmp1._42;
+		dcam_pos[2]=tmp1._43;
+	}
 	if(view_dir)
 	{
 		view_dir[0]=-view._13;

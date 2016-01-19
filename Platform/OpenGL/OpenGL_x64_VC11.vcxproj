@@ -237,14 +237,6 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="..\..\External\glfx\glfx_x64_VC11.vcxproj">
-      <Project>{3c16e3f9-ba50-45a0-a7ff-c985c7721beb}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
     <ProjectReference Include="..\CrossPlatform\CrossPlatform_x64_VC11.vcxproj">
       <Project>{7f8bc215-2b2a-4703-af7c-f7f7351fb99d}</Project>
       <Private>false</Private>

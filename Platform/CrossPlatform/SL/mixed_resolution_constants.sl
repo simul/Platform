@@ -4,7 +4,8 @@
 
 SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform mat4 invViewProj;		// Transform from render clip to true view direction
-	uniform mat4 viewProj;			// Transform from view direction to current frustum
+	uniform mat4 viewProj;			// Transform from worldspace view direction to current frustum
+	uniform mat4 proj;				// Transform from viewspace view direction to current frustum
 	uniform vec4 frustumClipRange;
 	uniform vec4 depthToLinFadeDistParams;
 	uniform uint2 source_dims;

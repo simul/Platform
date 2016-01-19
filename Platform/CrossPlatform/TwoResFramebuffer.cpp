@@ -166,11 +166,8 @@ void TwoResFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	ERRNO_CHECK
 	// We're going to TRY to encode near and far loss into two UINT's, for faster results
 	lossTexture->ensureTexture2DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,crossplatform::RGBA_16_FLOAT,false,true);
-#ifdef __ORBIS__
+
 	static bool fill_volumes_with_compute=true;
-#else
-	static bool fill_volumes_with_compute=true;
-#endif
 	volumeTextures[0]->ensureTexture3DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,8,simul::crossplatform::RGBA_16_FLOAT,fill_volumes_with_compute,1,!fill_volumes_with_compute);
 	volumeTextures[1]->ensureTexture3DSizeAndFormat(renderPlatform,BufferWidth,BufferHeight,8,simul::crossplatform::RGBA_16_FLOAT,fill_volumes_with_compute,1,!fill_volumes_with_compute);
 	ERRNO_CHECK
@@ -298,10 +295,6 @@ void TwoResFramebuffer::UpdatePixelOffset(const crossplatform::ViewStruct &viewS
 	view_o.GlobalToLocalDirection(new_view_dir_local,new_view_dir);
 	float dx			=new_view_dir*view_o.Tx();
 	float dy			=new_view_dir*view_o.Ty();
-//	int W				=(Width+Downscale-1)/Downscale+1;
-//	int H				=(Height+Downscale-1)/Downscale+1;
-//	int OutsideWidth	=W*Downscale;
-//	int OutsideHeight	=H*Downscale;
 	dx					*=Width*viewStruct.proj._11;
 	dy					*=Height*viewStruct.proj._22;
 	view_o.DefineFromYZ(new_up_dir,new_view_dir);
@@ -394,6 +387,6 @@ void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceC
 	deviceContext.renderPlatform->Print(deviceContext		,x0	,y0		,"Update 0");
 	deviceContext.renderPlatform->DrawTexture(deviceContext	,x0	,y0+L	,W,L,updateTextures[1]);
 	deviceContext.renderPlatform->Print(deviceContext		,x0	,y0+L	,"Update 1");
-	//deviceContext.renderPlatform->DrawDepth(deviceContext		,x0+W/2	,y0+L/2	,W/2,L/2,depthTexture,viewport,proj);
-	//deviceContext.renderPlatform->Print(deviceContext			,x0+W/2	,y0+L/2	,"Main Depth",white,black_transparent);
+	deviceContext.renderPlatform->DrawDepth(deviceContext		,x0+W/2	,y0+L/2	,W/2,L/2,depthTexture,viewport,proj);
+	deviceContext.renderPlatform->Print(deviceContext			,x0+W/2	,y0+L/2	,"Main Depth",white,black_transparent);
 }
