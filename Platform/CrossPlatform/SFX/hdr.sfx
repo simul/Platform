@@ -5,6 +5,7 @@
 #include "../SL/depth.sl"
 #include "../SL/hdr_constants.sl"
 #include "../SL/colour_packing.sl"
+#include "../SL/cloud_shadow.sl"
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/composite.sl"
 #include "../SL/debug_constants.sl"
@@ -299,10 +300,12 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,loss2dTexture
 															,depthTexture
 															,invViewProj
+															,invShadowMatrix
 															,depthInterpretationStruct
 															,IN.lowResTexCoords
 															,inscatterVolumeTexture
-															,shadowTexture);
+															,shadowTexture
+															,maxFadeDistanceKm);
 	//result.add=vec4(IN.lowResTexCoords,0,0);
 	//result.multiply=vec4(0.5,0.5,1.0,1.0);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
@@ -323,10 +326,12 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,loss2dTexture
 															,depthTexture
 															,invViewProj
+															,invShadowMatrix
 															,depthInterpretationStruct
 															,IN.lowResTexCoords
 															,inscatterVolumeTexture
-															,shadowTexture);
+															,shadowTexture
+															,maxFadeDistanceKm);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	return result;

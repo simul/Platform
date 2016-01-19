@@ -702,7 +702,67 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	};
 }
 
-crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
+crossplatform::ShaderResourceType RenderPlatform::FromD3DShaderVariableType(D3D10_SHADER_VARIABLE_TYPE t)
+{
+	using namespace crossplatform;
+	switch(t)
+	{
+	case D3D10_SVT_TEXTURE1D:
+		return ShaderResourceType::TEXTURE_1D;
+	case D3D10_SVT_TEXTURE2D:
+		return ShaderResourceType::TEXTURE_2D;
+	case D3D10_SVT_TEXTURE3D:
+		return ShaderResourceType::TEXTURE_3D;
+	case D3D10_SVT_TEXTURECUBE:
+		return ShaderResourceType::TEXTURE_CUBE;
+	case D3D10_SVT_SAMPLER:
+		return ShaderResourceType::SAMPLER;
+	case D3D10_SVT_BUFFER:
+		return ShaderResourceType::BUFFER;
+	case D3D10_SVT_CBUFFER:
+		return ShaderResourceType::CBUFFER;
+	case D3D10_SVT_TBUFFER:
+		return ShaderResourceType::TBUFFER;
+	case D3D10_SVT_TEXTURE1DARRAY:
+		return ShaderResourceType::TEXTURE_1D_ARRAY;
+	case D3D10_SVT_TEXTURE2DARRAY:
+		return ShaderResourceType::TEXTURE_2D_ARRAY;
+	case D3D10_SVT_TEXTURE2DMS:
+		return ShaderResourceType::TEXTURE_2DMS;
+	case D3D10_SVT_TEXTURE2DMSARRAY:
+		return ShaderResourceType::TEXTURE_2DMS_ARRAY;
+	case D3D10_SVT_TEXTURECUBEARRAY:
+		return ShaderResourceType::TEXTURE_CUBE_ARRAY;
+	case D3D11_SVT_RWTEXTURE1D:
+		return ShaderResourceType::RW_TEXTURE_1D;
+	case D3D11_SVT_RWTEXTURE1DARRAY:
+		return ShaderResourceType::RW_TEXTURE_1D_ARRAY;
+	case D3D11_SVT_RWTEXTURE2D:
+		return ShaderResourceType::RW_TEXTURE_2D;
+	case D3D11_SVT_RWTEXTURE2DARRAY:
+		return ShaderResourceType::RW_TEXTURE_2D_ARRAY;
+	case D3D11_SVT_RWTEXTURE3D:
+		return ShaderResourceType::RW_TEXTURE_3D;
+	case D3D11_SVT_RWBUFFER:
+		return ShaderResourceType::RW_BUFFER;
+	case D3D11_SVT_BYTEADDRESS_BUFFER:
+		return ShaderResourceType::BYTE_ADDRESS_BUFFER;
+	case D3D11_SVT_RWBYTEADDRESS_BUFFER:
+		return ShaderResourceType::RW_BYTE_ADDRESS_BUFFER;
+	case D3D11_SVT_STRUCTURED_BUFFER:
+		return ShaderResourceType::STRUCTURED_BUFFER;
+	case D3D11_SVT_RWSTRUCTURED_BUFFER:
+		return ShaderResourceType::RW_STRUCTURED_BUFFER;
+	case D3D11_SVT_APPEND_STRUCTURED_BUFFER:
+		return ShaderResourceType::APPEND_STRUCTURED_BUFFER;
+	case D3D11_SVT_CONSUME_STRUCTURED_BUFFER:
+		return ShaderResourceType::CONSUME_STRUCTURED_BUFFER;
+	default:
+		return ShaderResourceType::COUNT;
+	}
+}
+
+crossplatform::Layout*RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
 {
 	D3D11_INPUT_ELEMENT_DESC *decl=new D3D11_INPUT_ELEMENT_DESC[num_elements];
 	for(int i=0;i<num_elements;i++)

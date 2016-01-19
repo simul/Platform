@@ -7,6 +7,7 @@
 #include "Simul/Base/StringFunctions.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "D3dx11effect.h"
 
 #include <string>
@@ -555,6 +556,7 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const 
 
 void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip)
 {
+	// TODO: disallow SetTexture when the texture doesn't match the ShaderResource's type.
 	ID3DX11EffectShaderResourceVariable *var=(ID3DX11EffectShaderResourceVariable*)(shaderResource.platform_shader_resource);
 	if(!var||!var->IsValid())
 	{
@@ -606,9 +608,15 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 		return res;
 	}
+	D3DX11_EFFECT_TYPE_DESC  desc;
+	var->GetType()->GetDesc(&desc);
+	desc.Class;
+	res.shaderResourceType=((simul::dx11::RenderPlatform*)renderPlatform)->FromD3DShaderVariableType(desc.Type);
 	ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
 	if(srv->IsValid())
+	{
 		res.platform_shader_resource=(void*)srv;
+	}
 	else
 	{
 		ID3DX11EffectUnorderedAccessViewVariable *uav=var->AsUnorderedAccessView();
