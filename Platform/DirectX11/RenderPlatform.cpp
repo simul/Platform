@@ -27,6 +27,7 @@
 #else
 #include <D3Dcompiler.h>
 #endif
+#include <algorithm>
 #ifdef SIMUL_ENABLE_PIX
 #include "pix.h"
 #endif
