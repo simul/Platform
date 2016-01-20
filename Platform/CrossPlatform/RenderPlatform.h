@@ -230,6 +230,8 @@ namespace simul
 			virtual void					Resolve(DeviceContext &deviceContext,Texture *destination,Texture *source)=0;
 			//! Save a texture to disk.
 			virtual void					SaveTexture(Texture *texture,const char *lFileNameUtf8)=0;
+			/// Clear the contents of the given texture to the specified colour
+			virtual void					ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY, mirrorY2, mirrorYText;
 			crossplatform::Effect *solidEffect;

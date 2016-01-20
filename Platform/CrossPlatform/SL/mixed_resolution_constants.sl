@@ -18,7 +18,7 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform uint2 scale;
 	uniform vec2 texelRange;
 
-	uniform vec4 lowResToHighResTransformXYWH;
+	uniform vec4 depthWindow;		// xy and wh of the window of the depth texture that represents the current view.
 	
 	uniform vec2 stochasticOffset;
 	uniform vec2 tanHalfFov;
