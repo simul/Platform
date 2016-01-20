@@ -78,6 +78,7 @@ namespace simul
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(){return 0;}
 			virtual bool HasRenderTargets() const{return (num_rt>0);}
+			virtual bool IsComputable() const =0;
 			/// Asynchronously move this texture to fast RAM.
 			/// Some hardware has "fast RAM" that we can prefetch textures into.
 			virtual void MoveToFastRAM() {}
@@ -96,7 +97,7 @@ namespace simul
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false)=0;
 			//! Initialize as an array texture.
-			virtual void ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
+			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
 			//! Initialize as a volume texture.
 			virtual void ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;
 			//! Generate the mipmaps automatically.
@@ -127,12 +128,16 @@ namespace simul
 			{
 				return mips;
 			}
+			int GetArraySize() const
+			{
+				return arraySize;
+			}
 			//! If the texture is multisampled, this returns the samples per texel. Zero means it is not an MS texture,
 			//! while 1 means it is MS, even though the sample count is unity.
 			virtual int GetSampleCount() const=0;
 			virtual bool IsCubemap() const;
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
-			int width,length,depth,dim,mips;
+			int width,length,depth,arraySize,dim,mips;
 			PixelFormat pixelFormat;
 			RenderPlatform *renderPlatform;
 			int num_rt;

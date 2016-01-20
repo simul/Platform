@@ -204,26 +204,32 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	}
 	else if(texture->IsComputable())
 	{
-		const char *techname="compute_clear";
-		int W=(texture->width+8-1)/8;
-		int L=(texture->length+8-1)/8;
-		int D=(texture->depth+8-1)/8;
-		if(texture->dim==2)
+		int a=texture->GetArraySize();
+		if(a==0)
+			a=1;
+		for(int i=0;i<a;i++)
 		{
-			debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",texture);
-			D=1;
+			const char *techname="compute_clear";
+			int W=(texture->width+8-1)/8;
+			int L=(texture->length+8-1)/8;
+			int D=(texture->depth+8-1)/8;
+			if(texture->dim==2)
+			{
+				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",texture,i);
+				D=1;
+			}
+			else if(texture->dim==3)
+			{
+				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",texture,i);
+				techname="compute_clear_3d";
+			}
+			debugConstants.debugColour=colour;
+			debugConstants.textureSize=uint4(texture->width,texture->length,texture->depth,1);
+			debugConstants.Apply(deviceContext);
+			debugEffect->Apply(deviceContext,techname,0);
+			DispatchCompute(deviceContext,W,L,D);
+			debugEffect->Unapply(deviceContext);
 		}
-		else if(texture->dim==3)
-		{
-			debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",texture);
-			techname="compute_clear_3d";
-		}
-		debugConstants.debugColour=colour;
-		debugConstants.textureSize=uint4(texture->width,texture->length,texture->depth,1);
-		debugConstants.Apply(deviceContext);
-		debugEffect->Apply(deviceContext,techname,0);
-		DispatchCompute(deviceContext,W,L,D);
-		debugEffect->Unapply(deviceContext);
 	}
 	// Otherwise, is it computable? We can set the colour value with a compute shader.
 	// Finally, is it mappable? We can set the colour from CPU memory.

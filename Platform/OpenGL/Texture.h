@@ -26,6 +26,7 @@ namespace simul
 			GLuint m_fb;
 			int main_viewport[4];
 			bool externalTextureObject;
+			bool computable;
 		public:
 			Texture();
 			~Texture();
@@ -42,7 +43,7 @@ namespace simul
 			void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false) override;
 			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
 				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false);
-			void ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false) override;
+			bool ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false) override;
 			void ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false);
 			void GenerateMips(crossplatform::DeviceContext &deviceContext);
 			void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
@@ -52,6 +53,7 @@ namespace simul
 			int GetWidth() const;
 			int GetDimension() const;
 			int GetSampleCount() const;
+			bool IsComputable() const;
 			void copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels);
 			GLuint pTextureObject;
 			GLuint *pViewObjects;
