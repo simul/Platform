@@ -302,6 +302,11 @@ void Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format)
 	SAFE_RELEASE(stagingBuffer);
 }
 
+bool Texture::IsComputable() const
+{
+	return numUav>0;
+}
+
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt)
 {
 	InitFromExternalD3D11Texture2D(renderPlatform,(ID3D11Texture2D*)t,(ID3D11ShaderResourceView*)srv,make_rt);
@@ -606,7 +611,7 @@ void Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 		
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 
-		SetDebugObjectName(texture,"Texture::ensureTexture2DSizeAndFormat");
+		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 		srv_desc.Format						=srvFormat;
@@ -614,7 +619,7 @@ void Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 		srv_desc.Texture2D.MipLevels		=m;
 		srv_desc.Texture2D.MostDetailedMip	=0;
 		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
-		SetDebugObjectName(shaderResourceView,"Texture::ensureTexture2DSizeAndFormat shaderResourceView");
+		SetDebugObjectName(shaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat shaderResourceView");
 
 	}
 	if(computable&&(!unorderedAccessViews||!ok))
@@ -640,7 +645,7 @@ void Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 			{
 				uav_desc.Texture2D.MipSlice=i;
 				V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessViews[i]));
-				SetDebugObjectName(unorderedAccessViews[i],"Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+				SetDebugObjectName(unorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 			}
 		
 	}
@@ -662,7 +667,7 @@ void Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 		// Create the render target in DX11:
 		V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,renderTargetViews));
-		SetDebugObjectName(*renderTargetViews,"Texture::ensureTexture2DSizeAndFormat renderTargetView");
+		SetDebugObjectName(*renderTargetViews,"dx11::Texture::ensureTexture2DSizeAndFormat renderTargetView");
 	}
 	if(depthstencil&&(!depthStencilView||!ok))
 	{

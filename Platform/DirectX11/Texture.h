@@ -72,6 +72,7 @@ namespace simul
 					return NULL;
 				return renderTargetViews[index];
 			}
+			bool IsComputable() const override;
 			// Use this dx11::Texture as a wrapper for a texture and its corresponding SRV. If a srv is not provided, one will be created internally. If \a make_rt is true and it is a rendertarget texture, a rendertarget will be created.
 			void InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt=false);
 			void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false) override;
@@ -90,10 +91,6 @@ namespace simul
 			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void GenerateMips(crossplatform::DeviceContext &deviceContext) override;
 			void map(ID3D11DeviceContext *context);
-			bool IsComputable() const override
-			{
-				return (numUav>0);
-			}
 			bool isMapped() const;
 			void unmap();
 			vec4 GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap);

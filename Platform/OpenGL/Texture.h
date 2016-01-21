@@ -53,7 +53,7 @@ namespace simul
 			int GetWidth() const;
 			int GetDimension() const;
 			int GetSampleCount() const;
-			bool IsComputable() const;
+			bool IsComputable() const override;
 			void copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels);
 			GLuint pTextureObject;
 			GLuint *pViewObjects;

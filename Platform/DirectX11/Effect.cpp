@@ -560,7 +560,8 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 	ID3DX11EffectShaderResourceVariable *var=(ID3DX11EffectShaderResourceVariable*)(shaderResource.platform_shader_resource);
 	if(!var||!var->IsValid())
 	{
-		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader texture ")).c_str());
+		SIMUL_BREAK_ONCE("Invalid shader texture ");
+		return;
 	}
 	if(t)
 	{

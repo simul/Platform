@@ -60,6 +60,13 @@ namespace simul
 			}
 			int default_slot;
 		};
+		enum class ShaderResourceType;
+		/// Base class for a view of a texture (i.e. for shaders to use). TextureView instances should not be created, except inside derived classes of crossplatform::Texture.
+		class SIMUL_CROSSPLATFORM_EXPORT TextureView
+		{
+			ShaderResourceType type;
+		};
+		/// A Texture base class.
 		class SIMUL_CROSSPLATFORM_EXPORT Texture
 		{
 		protected:
@@ -96,7 +103,7 @@ namespace simul
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified.
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false)=0;
-			//! Initialize as an array texture.
+			//! Initialize as an array texture if necessary. Returns true if the texture was initialized, or false if it was already in the required format.
 			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
 			//! Initialize as a volume texture.
 			virtual void ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;
