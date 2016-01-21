@@ -83,7 +83,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	
 	vec3 viewPos				=invViewProj._41_42_43;
 	vec3 worldPos				=viewPos+view*dist*1000.0*maxFadeDistanceKm;
-	float shadow				=GetSimpleIlluminationAt(shadowTexture,invShadowMatrix,worldPos).x;
+	float shadow				=1;//GetSimpleIlluminationAt(shadowTexture,invShadowMatrix,worldPos).x;
 
 #endif
 	insc.rgb					*=cloud.a;
