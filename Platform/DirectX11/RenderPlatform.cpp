@@ -703,7 +703,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	};
 }
 
-crossplatform::ShaderResourceType RenderPlatform::FromD3DShaderVariableType(D3D10_SHADER_VARIABLE_TYPE t)
+crossplatform::ShaderResourceType RenderPlatform::FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t)
 {
 	using namespace crossplatform;
 	switch(t)
