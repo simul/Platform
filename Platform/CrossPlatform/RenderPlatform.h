@@ -139,7 +139,7 @@ namespace simul
 			virtual void DrawCamera			(DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)=0;
 			virtual void DrawLineLoop		(DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4])=0;
 
-			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false)=0;
+			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false);
 			void DrawTexture				(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false);
 			void DrawDepth					(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL,const float *proj=NULL);
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
@@ -251,7 +251,15 @@ namespace simul
 		protected:
 			ShaderBuildMode					shaderBuildMode;
 			DeviceContext					immediateContext;
+
+			// All for debug Effect
 			crossplatform::Effect			*debugEffect;
+			crossplatform::EffectTechnique	*textured;
+			crossplatform::EffectTechnique	*showVolume;
+			crossplatform::ShaderResource	volumeTexture;
+			crossplatform::ShaderResource	imageTexture;
+			//
+
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 			crossplatform::GpuProfiler		*gpuProfiler;

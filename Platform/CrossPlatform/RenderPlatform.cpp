@@ -26,6 +26,8 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,shaderBuildMode(BUILD_IF_CHANGED)
 	,solidEffect(NULL)
 	,debugEffect(NULL)
+	,textured(NULL)
+	,showVolume(NULL)
 {
 	immediateContext.renderPlatform=this;
 	gpuProfiler=new GpuProfiler;
@@ -122,6 +124,8 @@ void RenderPlatform::InvalidateDeviceObjects()
 	debugConstants.InvalidateDeviceObjects();
 	SAFE_DELETE(debugEffect);
 	SAFE_DELETE(solidEffect);
+	textured=NULL;
+	showVolume=NULL;
 }
 
 void RenderPlatform::RecompileShaders()
@@ -133,6 +137,13 @@ void RenderPlatform::RecompileShaders()
 	ERRNO_BREAK
 	std::map<std::string, std::string> defines;
 	debugEffect=CreateEffect("debug",defines);
+	if(debugEffect)
+	{
+		textured=debugEffect->GetTechniqueByName("textured");
+		showVolume=debugEffect->GetTechniqueByName("show_volume");
+		volumeTexture=debugEffect->GetShaderResource("volumeTexture");
+		imageTexture=debugEffect->GetShaderResource("imageTexture");
+	}		
 	solidEffect=CreateEffect("solid",defines);
 	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
 	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
@@ -195,13 +206,21 @@ void RenderPlatform::Clear				(DeviceContext &deviceContext,vec4 colour_rgba)
 
 void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour)
 {
+	debugConstants.debugColour=colour;
+	debugConstants.textureSize=uint4(texture->width,texture->length,texture->depth,1);
+	debugConstants.Apply(deviceContext);
 	// Clear the texture: how we do this depends on what kind of texture it is.
 	// Does it have rendertargets? We can clear each of these in turn.
 	if(texture->HasRenderTargets())
 	{
 		texture->activateRenderTarget(deviceContext);
+		debugEffect->Apply(deviceContext,"clear",0);
+			DrawQuad(deviceContext);
+		debugEffect->Unapply(deviceContext);
 		texture->deactivateRenderTarget();
 	}
+	// Otherwise, is it computable? We can set the colour value with a compute shader.
+	// Finally, is it mappable? We can set the colour from CPU memory.
 	else if(texture->IsComputable())
 	{
 		int a=texture->GetArraySize();
@@ -223,16 +242,16 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",texture,i);
 				techname="compute_clear_3d";
 			}
-			debugConstants.debugColour=colour;
-			debugConstants.textureSize=uint4(texture->width,texture->length,texture->depth,1);
-			debugConstants.Apply(deviceContext);
 			debugEffect->Apply(deviceContext,techname,0);
 			DispatchCompute(deviceContext,W,L,D);
 			debugEffect->Unapply(deviceContext);
 		}
 	}
-	// Otherwise, is it computable? We can set the colour value with a compute shader.
-	// Finally, is it mappable? We can set the colour from CPU memory.
+	else
+	{
+		SIMUL_BREAK_ONCE("No method was found to clear this texture.");
+	}
+
 }
 
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
@@ -369,6 +388,27 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 	}
 
 	Print(deviceContext,(int)pos.x+offsetx,(int)pos.y+offsety,text,colr,NULL);
+}
+
+void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend)
+{
+	debugConstants.multiplier=mult;
+	crossplatform::EffectTechnique *tech=textured;
+	if(tex&&tex->GetDimension()==3)
+	{
+		tech=showVolume;
+		debugEffect->SetTexture(deviceContext,volumeTexture,tex);
+	}
+	else if(tex&&tex->IsCubemap())
+	{
+		tech=debugEffect->GetTechniqueByName("show_cubemap");
+		debugEffect->SetTexture(deviceContext,"cubeTexture",tex);
+	}
+	else
+	{
+		debugEffect->SetTexture(deviceContext,imageTexture,tex);
+	}
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
 }
 
 void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend)

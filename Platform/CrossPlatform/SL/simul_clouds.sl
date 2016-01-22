@@ -561,8 +561,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	int3 C0							=c0>>1;
 	
 	float distanceKm				=length(offset_vec);
-	vec3 p							=offsetFromOrigin/scaleOfGridCoords;
-	int3 c							=int3(floor(p) + start_c_offset);
+	vec3 p_							=offsetFromOrigin/scaleOfGridCoords;
+	int3 c							=int3(floor(p_) + start_c_offset);
 	
 	vec4 clrs[]						={
 										{0.0,0.0,0.0,1.0}
