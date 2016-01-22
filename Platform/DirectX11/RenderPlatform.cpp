@@ -708,55 +708,55 @@ crossplatform::ShaderResourceType RenderPlatform::FromD3DShaderVariableType(D3D_
 	using namespace crossplatform;
 	switch(t)
 	{
-	case D3D10_SVT_TEXTURE1D:
+	case D3D_SVT_TEXTURE1D:
 		return ShaderResourceType::TEXTURE_1D;
-	case D3D10_SVT_TEXTURE2D:
+	case D3D_SVT_TEXTURE2D:
 		return ShaderResourceType::TEXTURE_2D;
-	case D3D10_SVT_TEXTURE3D:
+	case D3D_SVT_TEXTURE3D:
 		return ShaderResourceType::TEXTURE_3D;
-	case D3D10_SVT_TEXTURECUBE:
+	case D3D_SVT_TEXTURECUBE:
 		return ShaderResourceType::TEXTURE_CUBE;
-	case D3D10_SVT_SAMPLER:
+	case D3D_SVT_SAMPLER:
 		return ShaderResourceType::SAMPLER;
-	case D3D10_SVT_BUFFER:
+	case D3D_SVT_BUFFER:
 		return ShaderResourceType::BUFFER;
-	case D3D10_SVT_CBUFFER:
+	case D3D_SVT_CBUFFER:
 		return ShaderResourceType::CBUFFER;
-	case D3D10_SVT_TBUFFER:
+	case D3D_SVT_TBUFFER:
 		return ShaderResourceType::TBUFFER;
-	case D3D10_SVT_TEXTURE1DARRAY:
+	case D3D_SVT_TEXTURE1DARRAY:
 		return ShaderResourceType::TEXTURE_1D_ARRAY;
-	case D3D10_SVT_TEXTURE2DARRAY:
+	case D3D_SVT_TEXTURE2DARRAY:
 		return ShaderResourceType::TEXTURE_2D_ARRAY;
-	case D3D10_SVT_TEXTURE2DMS:
+	case D3D_SVT_TEXTURE2DMS:
 		return ShaderResourceType::TEXTURE_2DMS;
-	case D3D10_SVT_TEXTURE2DMSARRAY:
+	case D3D_SVT_TEXTURE2DMSARRAY:
 		return ShaderResourceType::TEXTURE_2DMS_ARRAY;
-	case D3D10_SVT_TEXTURECUBEARRAY:
+	case D3D_SVT_TEXTURECUBEARRAY:
 		return ShaderResourceType::TEXTURE_CUBE_ARRAY;
-	case D3D11_SVT_RWTEXTURE1D:
+	case D3D_SVT_RWTEXTURE1D:
 		return ShaderResourceType::RW_TEXTURE_1D;
-	case D3D11_SVT_RWTEXTURE1DARRAY:
+	case D3D_SVT_RWTEXTURE1DARRAY:
 		return ShaderResourceType::RW_TEXTURE_1D_ARRAY;
-	case D3D11_SVT_RWTEXTURE2D:
+	case D3D_SVT_RWTEXTURE2D:
 		return ShaderResourceType::RW_TEXTURE_2D;
-	case D3D11_SVT_RWTEXTURE2DARRAY:
+	case D3D_SVT_RWTEXTURE2DARRAY:
 		return ShaderResourceType::RW_TEXTURE_2D_ARRAY;
-	case D3D11_SVT_RWTEXTURE3D:
+	case D3D_SVT_RWTEXTURE3D:
 		return ShaderResourceType::RW_TEXTURE_3D;
-	case D3D11_SVT_RWBUFFER:
+	case D3D_SVT_RWBUFFER:
 		return ShaderResourceType::RW_BUFFER;
-	case D3D11_SVT_BYTEADDRESS_BUFFER:
+	case D3D_SVT_BYTEADDRESS_BUFFER:
 		return ShaderResourceType::BYTE_ADDRESS_BUFFER;
-	case D3D11_SVT_RWBYTEADDRESS_BUFFER:
+	case D3D_SVT_RWBYTEADDRESS_BUFFER:
 		return ShaderResourceType::RW_BYTE_ADDRESS_BUFFER;
-	case D3D11_SVT_STRUCTURED_BUFFER:
+	case D3D_SVT_STRUCTURED_BUFFER:
 		return ShaderResourceType::STRUCTURED_BUFFER;
-	case D3D11_SVT_RWSTRUCTURED_BUFFER:
+	case D3D_SVT_RWSTRUCTURED_BUFFER:
 		return ShaderResourceType::RW_STRUCTURED_BUFFER;
-	case D3D11_SVT_APPEND_STRUCTURED_BUFFER:
+	case D3D_SVT_APPEND_STRUCTURED_BUFFER:
 		return ShaderResourceType::APPEND_STRUCTURED_BUFFER;
-	case D3D11_SVT_CONSUME_STRUCTURED_BUFFER:
+	case D3D_SVT_CONSUME_STRUCTURED_BUFFER:
 		return ShaderResourceType::CONSUME_STRUCTURED_BUFFER;
 	default:
 		return ShaderResourceType::COUNT;
