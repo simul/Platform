@@ -12,9 +12,6 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{c51d314d-d24a-45d0-b450-9c10e4d7ef2b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="CrossPlatform">
-      <UniqueIdentifier>{24e025b9-5372-4d13-a288-03ce7db701fa}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FramebufferGL.cpp">

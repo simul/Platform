@@ -373,7 +373,7 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *rend
 				renderTargetViews=new ID3D11RenderTargetView*[num_rt];
 				// Setup the description of the render target view.
 				D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-				renderTargetViewDesc.Format				=textureDesc.Format;
+				renderTargetViewDesc.Format = TypelessToSrvFormat(textureDesc.Format);
 				if(num_rt==1)
 				{
 					renderTargetViewDesc.ViewDimension		=(textureDesc.SampleDesc.Count)>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;

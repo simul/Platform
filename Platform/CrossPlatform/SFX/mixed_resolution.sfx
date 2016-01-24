@@ -93,10 +93,6 @@ void DownscaleStochastic(int2 idx,bool reverseDepth)
 	}
 	// old update
 	vec4 u					=updateTexture[idx];
-#if 0
-	vec4 frustum_clip_pos	=GetFrustumClipPos(idx);
-#else
-	
 
 	vec2 texCoords			=(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
@@ -107,10 +103,7 @@ void DownscaleStochastic(int2 idx,bool reverseDepth)
 	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
 	//	nextUpdateTexture[idx]=vec4(saturate(.5*frustum_clip_pos.zzz),0);
 	frustum_clip_pos		/=frustum_clip_pos.w;
-	
-//		return;
 
-#endif
 	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	sourceTexCoords.y		=1.0-sourceTexCoords.y;
 	sourceTexCoords			*=depthWindow.zw;
