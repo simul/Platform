@@ -76,8 +76,9 @@ vec4 GetFrustumClipPos(int2 idx)
 	return frustum_clip_pos;
 }
 
-void DownscaleStochastic(int2 idx,bool reverseDepth) 
+void DownscaleStochastic(int2 idx1,bool reverseDepth) 
 {
+	int2 idx=targetRange.xy+idx1;
 	if(idx.x<targetRange.x||idx.x>targetRange.z||idx.y<targetRange.y||idx.y>targetRange.w)
 	{
 		vec3 tc					=vec3(0.3*(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims),0);
