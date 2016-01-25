@@ -373,7 +373,7 @@ void TwoResFramebuffer::RenderDepthBuffers(crossplatform::DeviceContext &deviceC
 		if(!i)
 			deviceContext.renderPlatform->DrawTexture(deviceContext	,x		,y	,W,L,	t);
 		else
-		deviceContext.renderPlatform->DrawDepth(deviceContext	,x		,y	,W,L,	t,NULL,proj);
+		deviceContext.renderPlatform->DrawTexture(deviceContext	,x		,y	,W,L,	t);
 		//deviceContext.renderPlatform->DrawTexture(deviceContext	,x+W+4	,y	,W,L,	t);
 		deviceContext.renderPlatform->Print(deviceContext		,x		,y	,base::QuickFormat("Depth %d",i),white,black_transparent);
 		x+=W+4;
