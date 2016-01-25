@@ -130,6 +130,9 @@ namespace simul
 
 			const MixedResolutionView		*GetView		(int view_id) const;
 
+			/// Delete old views
+			void CleanUp(int current_framenumber,int max_age);
+
 			/// Gets the views.
 			///
 			/// \return	the views.

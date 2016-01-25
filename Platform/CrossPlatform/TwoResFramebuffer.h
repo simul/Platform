@@ -155,6 +155,14 @@ namespace simul
 			}
 			// Assign the current frame's projection matrix for this buffer. Just for debugging.
 			void SetProjection(const float *p);
+			int GetLastUpdateFramenumber() const
+			{
+				return amortizationStruct.framenumber;
+			}
+			void SetLastUpdateFramenumber(int f)
+			{
+				amortizationStruct.framenumber=f;
+			}
 			int GetDownscale() const
 			{
 				return Downscale;

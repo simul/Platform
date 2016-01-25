@@ -222,7 +222,6 @@ void TwoResFramebuffer::DeactivateLowRes(crossplatform::DeviceContext &deviceCon
 
 void TwoResFramebuffer::CompleteFrame()
 {
-	amortizationStruct.framenumber++;
 	int D=Downscale;
 	amortizationStruct.validate(int4(0,0,(Width+D-1)/D+1,(Height+D-1)/D+1));
 }
