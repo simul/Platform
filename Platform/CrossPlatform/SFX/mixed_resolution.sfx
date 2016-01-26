@@ -31,25 +31,24 @@ vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,
 	vec2 texCoords		=sourceTexCoords+texelRange*stochasticOffset/vec2(scale);
 	vec4 fn				=vec4(0.0,1.0,0.0,1.0);
 	vec4 thr			=vec4(nearThresholdDepth, nearThresholdDepth, nearThresholdDepth, nearThresholdDepth);
-	for(int i=0;i<scale.x;i++)
+	//for(int i=0;i<scale.x;i++)
 	{
-		float x=(0.5+float(i)-scale.x/2.0)/float(scale.x);
-		for(int j=0;j<scale.y;j++)
+		//float x=(0.5+float(i)-scale.x/2.0)/float(scale.x);
+		//for(int j=0;j<scale.y;j++)
 		{
-			float y		=(0.5+float(j)-scale.y/2.0)/float(scale.y);
-			vec2 offs	=texelRange*vec2(x,y);
-			vec2 texc	=texCoords+2.0*offs;
+			//float y		=(0.5+float(j)-scale.y/2.0)/float(scale.y);
+			//vec2 offs	=texelRange*vec2(x,y);
+			vec2 texc	=texCoords;//+2.0*offs;
 			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
 			if(depthInterpretationStruct.reverseDepth)
 				d.x					= step(d.x,nearThresholdDepth)*d.x;
 			else
 				d.x					= step(d.x,nearThresholdDepth)+d.x;
-			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+			vec2 dist				=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 			
-			{
-				fn.yw=min(fn.yw,dist);
-				fn.xz=max(fn.xz,dist);
-			}
+			fn.yw=min(fn.yw,dist);
+			fn.xz=max(fn.xz,dist);
+			
 		}
 	}
 	return fn;

@@ -40,6 +40,8 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 
 	uniform vec3 infraredIntegrationFactors;
 	uniform int randomSeed;
+
+	uniform vec3 viewPos;
 SIMUL_CONSTANT_BUFFER_END
 	
 #endif

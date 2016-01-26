@@ -191,7 +191,7 @@ shader void CS_Advection( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 }
 vec4 Laplacian(Texture3D tex3D,vec3 texc)
 {
-	uint3 dims;
+	uint3 dims=uint3(0,0,0);
 #ifdef IN_COMPUTE_SHADER
 	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
 #endif

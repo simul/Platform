@@ -291,8 +291,8 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 {
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth	=reverseDepth;
-	TwoColourCompositeOutput result			=CompositeAtmospherics(IN.clip_pos
+	depthInterpretationStruct.reverseDepth				=reverseDepth;
+	TwoColourCompositeOutput result						=CompositeAtmospherics(IN.clip_pos
 															,IN.depth_texc
 															,farImageTexture
 															,nearImageTexture
@@ -300,6 +300,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,loss2dTexture
 															,depthTexture
 															,invViewProj
+															,viewPos
 															,invShadowMatrix
 															,depthInterpretationStruct
 															,IN.lowResTexCoords
@@ -324,6 +325,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,loss2dTexture
 															,depthTexture
 															,invViewProj
+															,viewPos
 															,invShadowMatrix
 															,depthInterpretationStruct
 															,IN.lowResTexCoords

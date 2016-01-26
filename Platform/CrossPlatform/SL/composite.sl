@@ -33,6 +33,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,Texture2D loss2dTexture
 				,Texture2D depthTexture
 				,mat4 invViewProj
+				,vec3 viewPos
 				,mat4 invShadowMatrix
 				,DepthIntepretationStruct depthInterpretationStruct
 				,vec2 lowResTexCoords
@@ -55,7 +56,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec2 dd						=(nearFarCloud.xz-nearFarCloud.yw);
 	float depth					=texture_wrap_nearest_lod(depthTexture,depth_texc,0).x;
 
-	float dist					=depthToLinearDistance(depth	,depthInterpretationStruct);
+	float dist					=depthToFadeDistance(depth	,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	float dist_rt				=pow(dist,0.5);
 	vec4 cloud					=texture_cube_lod(farCloudTexture,view,0);
 
@@ -81,16 +82,15 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	shadow						=lerp(shadow_lookup.y,shadow_lookup.x,shadowInterp);
 #else
 	
-	vec3 viewPos				=invViewProj._41_42_43;
 	vec3 worldPos				=viewPos+view*dist*1000.0*maxFadeDistanceKm;
-	float shadow				=1;//GetSimpleIlluminationAt(shadowTexture,invShadowMatrix,worldPos).x;
+	float shadow				=GetSimpleIlluminationAt(shadowTexture,invShadowMatrix,worldPos).x;
 
 #endif
 	insc.rgb					*=cloud.a;
 	insc						+=cloud;
-	res.multiply				=texture_clamp_mirror_lod(loss2dTexture,loss_texc,0)*cloud.a*shadow;
+	res.multiply.rgb			=texture_clamp_mirror_lod(loss2dTexture,loss_texc,0)*cloud.a*shadow;
 	res.add						=insc;
-//res.add.r=shadowInterp;
+
     return res;
 }
 

@@ -236,7 +236,7 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
 	vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,pos,0);
 	density.z			*=layerFade;
-	density.z			=saturate(density.z*(1.0+10.0*alphaSharpness));
+	density.z			=saturate(density.z*(1.0+alphaSharpness));
 	return density;
 }
 

@@ -260,11 +260,17 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
         if(disjointData.Disjoint == false)
         {
             UINT64 delta = endTime - startTime;
+			if(endTime>startTime)
+			{
             float frequency = static_cast<float>(disjointData.Frequency);
             time = (delta / frequency) * 1000.0f;
         }        
-
+        }        
         profile->time+=mix*time;
+		if(profile->time>10.0f)
+		{
+			profile->time=10.0f;
+		}
     }
 	if(profileMap.find("root")==profileMap.end())
 		profileMap["root"]=new crossplatform::ProfileData();
