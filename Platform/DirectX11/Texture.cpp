@@ -301,6 +301,7 @@ void Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format)
 	pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView);
 	SAFE_RELEASE(stagingBuffer);
 }
+#pragma optimize("",off)
 
 bool Texture::IsComputable() const
 {
