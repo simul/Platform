@@ -267,9 +267,9 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
         }        
         }        
         profile->time+=mix*time;
-		if(profile->time>10.0f)
+		if(profile->time>100.0f)
 		{
-			profile->time=10.0f;
+			profile->time=100.0f;
 		}
     }
 	if(profileMap.find("root")==profileMap.end())

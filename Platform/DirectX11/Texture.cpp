@@ -397,6 +397,10 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *rend
 				}
 			}
 		}
+		else
+		{
+			SIMUL_BREAK_ONCE("Not a valid D3D Texture");
+		}
 		SAFE_RELEASE(ppd);
 	}
 	dim=2;
