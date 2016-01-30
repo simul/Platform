@@ -188,7 +188,6 @@
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Topology.h" />
-    <ClInclude Include="TwoResFramebuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GpuProfiler.cpp" />
@@ -248,7 +247,6 @@
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="TwoResFramebuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Geometry\Geometry_VC11.vcxproj">

@@ -554,8 +554,10 @@ void simul::opengl::Texture::setTexels(void *,const void *src,int x,int y,int z,
 						src);
 }
 
-void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
+bool simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {
+	if(w==width&&l==length&&d==depth&&cubemap==this->cubemap&&computable==this->IsComputable()&&pf==pixelFormat&&mips==m)
+		return false;
 	GL_ERROR_CHECK
 	pixelFormat=pf;
 	GLuint frmt=opengl::RenderPlatform::ToGLFormat(pixelFormat);
@@ -636,6 +638,7 @@ void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 	else
 		num_rt=0;
 	mips=m;
+	return true;
 	GL_ERROR_CHECK
 }
 

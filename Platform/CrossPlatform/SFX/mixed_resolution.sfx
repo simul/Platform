@@ -22,7 +22,7 @@ uniform RWTexture2D<vec4> nextUpdateTexture		;
 
 #define BLOCKSIZE 8
 
-vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 sourceTexCoords,vec2 frustum_clip_pos, vec2 texelRange
+vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 sourceTexCoords,vec2 frustum_clip_pos, vec2 texelRange
 	, DepthIntepretationStruct depthInterpretationStruct,vec2 tanHalfFov, float nearThresholdDepth
 	,vec2 stochasticOffset
 	,uint2 scale)
@@ -31,14 +31,19 @@ vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,
 	vec2 texCoords		=sourceTexCoords+texelRange*stochasticOffset/vec2(scale);
 	vec4 fn				=vec4(0.0,1.0,0.0,1.0);
 	vec4 thr			=vec4(nearThresholdDepth, nearThresholdDepth, nearThresholdDepth, nearThresholdDepth);
-	//for(int i=0;i<scale.x;i++)
+	vec2 offsets[4];
+	offsets[0]=vec2(-0.3,0.4);
+	offsets[1]=vec2(0.4,0.3);
+	offsets[2]=vec2(0.3,-0.4);
+	offsets[3]=vec2(-0.4,-0.3);
+	for(int i=0;i<4;i++)
 	{
 		//float x=(0.5+float(i)-scale.x/2.0)/float(scale.x);
 		//for(int j=0;j<scale.y;j++)
 		{
 			//float y		=(0.5+float(j)-scale.y/2.0)/float(scale.y);
-			//vec2 offs	=texelRange*vec2(x,y);
-			vec2 texc	=texCoords;//+2.0*offs;
+			vec2 offs	=texelRange*offsets[i];//texelRange*vec2(x,y);
+			vec2 texc	=texCoords+2.0*offs;
 			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
 			if(depthInterpretationStruct.reverseDepth)
 				d.x					= step(d.x,nearThresholdDepth)*d.x;
@@ -73,20 +78,11 @@ void DownscaleStochastic(int2 idx1,bool reverseDepth)
 	int2 idx=targetRange.xy+idx1;
 	if(idx.x<targetRange.x||idx.x>targetRange.z||idx.y<targetRange.y||idx.y>targetRange.w)
 	{
-		vec3 tc					=vec3(0.3*(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims),0);
-		if(idx.x+idx.y<144)
-		{
-			tc.x					=float(cubeIndex)/5.0;
-			tc.y					=float((cubeIndex*3)%5)/5.0;
-			tc.z					=float((cubeIndex*2)%5)/5.0;
-		}
-	//vec2 texCoords			=(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims);
-	//	nextUpdateTexture[idx]	=vec4(1,0,0,0);
+		nextUpdateTexture[idx]	=vec4(0,0,0,0);
 		return;
 	}
 	// old update
 	vec4 u					=updateTexture[idx];
-
 	vec2 texCoords			=(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
@@ -94,9 +90,7 @@ void DownscaleStochastic(int2 idx1,bool reverseDepth)
 	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
 	// Transform view into the proper frustum
 	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
-	//	nextUpdateTexture[idx]=vec4(saturate(.5*frustum_clip_pos.zzz),0);
 	frustum_clip_pos		/=frustum_clip_pos.w;
-
 	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	sourceTexCoords.y		=1.0-sourceTexCoords.y;
 	sourceTexCoords			*=depthWindow.zw;
@@ -104,7 +98,7 @@ void DownscaleStochastic(int2 idx1,bool reverseDepth)
 	vec4 clipRange			=frustumClipRange;//vec4(-1.0,-1.0,1.0,1.0);
 	if(frustum_clip_pos.z<0.0)
 	{
-		//nextUpdateTexture[idx]=vec4(0,0.3,0.6,0);
+		nextUpdateTexture[idx]=vec4(0,0,0,0);
 		return;
 	}
 	//if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
@@ -116,7 +110,7 @@ void DownscaleStochastic(int2 idx1,bool reverseDepth)
 	DepthIntepretationStruct ds;
 	ds.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	ds.reverseDepth				=reverseDepth;
-	vec4 res					=DownscaleStochastic(
+	vec4 res					=GetStochasticSamples(
 									previousTexture
 									,sourceDepthTexture
 									,sourceTexCoords
@@ -140,7 +134,7 @@ void Direct(int2 idx,bool reverseDepth)
 	DepthIntepretationStruct dis;
 	dis.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	dis.reverseDepth				=reverseDepth;
-	vec4 res						=DownscaleStochastic(previousTexture,sourceDepthTexture,sourceTexCoords,frustum_clip_pos,texelRange,dis
+	vec4 res						=GetStochasticSamples(previousTexture,sourceDepthTexture,sourceTexCoords,frustum_clip_pos,texelRange,dis
 										,tanHalfFov,  nearThresholdDepth,stochasticOffset,scale);
 	vec4 lin						=depthToFadeDistance(res,frustum_clip_pos.xy,dis,tanHalfFov);
 	targetTexture[idx]				=vec4(1,1,0,1);//lin;
@@ -190,7 +184,7 @@ void MinMax(int2 idx,bool reverseDepth)
 	vec4 fn2	=sourceTexture2[idx];
 	vec4 fn3	=sourceTexture3[idx];
 	vec4 fn		=fn1;
-
+	if(updateTexture[idx].r>=1.0)
 	{
 		fn.yw=min(fn.yw,fn2.yw);
 		fn.xz=max(fn.xz,fn2.xz);

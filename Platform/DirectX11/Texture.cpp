@@ -406,7 +406,7 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *rend
 	dim=2;
 }
 
-void Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
+bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {
 	pixelFormat = pf;
 	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
@@ -432,6 +432,7 @@ void Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	}
 	else
 		ok=false;
+	bool changed=!ok;
 	if(!ok)
 	{
 		InvalidateDeviceObjects();
@@ -458,6 +459,7 @@ void Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	}
 	if(computable&&(!unorderedAccessViews||!ok))
 	{
+		changed=true;
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
 		uav_desc.Format				= f;
@@ -509,6 +511,7 @@ void Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	}
 	if(d<=8&&rendertargets&&(!renderTargetViews||!renderTargetViews[0]||!ok))
 	{
+		changed=true;
 		if(renderTargetViews)
 		{
 			for(int i=0;i<num_rt;i++)
@@ -532,6 +535,7 @@ void Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		}
 	}
 	mips=m;
+	return changed;
 }
 
 void Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
@@ -1085,7 +1089,7 @@ void Texture::deactivateRenderTarget()
 										m_pOldDepthSurface
 										);
 	last_context->RSSetViewports(num_OldViewports,m_OldViewports);
-	for(int i=0;i<num_OldViewports;i++)
+	for(int i=0;i<(int)num_OldViewports;i++)
 	{
 		SAFE_RELEASE(m_pOldRenderTargets[i]);
 	}

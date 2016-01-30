@@ -604,6 +604,8 @@ static const DWORD default_effect_flags=0;
 											effect,shaderBuildMode,shaderBinPathUtf8,shaderPathsUtf8);
 		if(hr==S_OK)
 			break;
+		// Turn off optimization in case of D3D optimization bugs, e.g. for groupshared "race condition"
+		shader_flags=D3DCOMPILE_SKIP_OPTIMIZATION;
 		std::string err="";
 #ifdef DXTRACE_ERR
         hr=DXTRACE_ERR( L"CreateEffect", hr );

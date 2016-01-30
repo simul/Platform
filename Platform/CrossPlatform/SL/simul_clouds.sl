@@ -486,7 +486,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,vec4 dlookup
 											,vec3 view
 											,vec4 clip_pos
-											,vec2 volumeTexCoordsXy
+											,vec3 volumeTexCoordsXyC
 											,bool noise
 											,bool do_rain_effect
 											,vec3 cloudIrRadiance1
@@ -697,7 +697,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					density.z				*=cosine;
 					density.z				*=saturate(distanceKm/0.24);
 					fade_texc.x				=sqrt(fadeDistance);
-					vec3 volumeTexCoords	=vec3(volumeTexCoordsXy,fade_texc.x);//*sineFactor);
+					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,sqrt(fadeDistance*volumeTexCoordsXyC.z));//*sineFactor);
 					vec4 clr;
 					// The "normal" that the ray has hit is equal to N, but with the negative signs of the components of viewScaled or view.
 					vec3 normal				=0.5*(-N*sign(viewScaled)-view);

@@ -53,9 +53,9 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	
 	uniform int4 targetRange;
 	uniform int2 edge;
-	uniform int2 amortization;
+	uniform uint2 amortizationScale;
 
-	uniform int2 amortizationOffset;
+	uniform uint2 amortizationOffset;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(Detail2DConstants,12)

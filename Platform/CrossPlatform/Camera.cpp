@@ -317,7 +317,7 @@ vec4 simul::crossplatform::GetFrustumRangeOnCubeFace(int face,const float *invVi
 							,vec4(-1.0f, 1.0f,1.0f,1.0f)};
 	for(int i=0;i<4;i++)
 	{
-		static int A=3;
+		static int A=7;
 		for(int j=0;j<A;j++)
 		{
 			float v		=float(j)/float(A);
@@ -437,6 +437,42 @@ void simul::crossplatform::GetCubeMatrix(float *mat4x4,int face,const float *cam
 	((math::Matrix4x4*)mat4x4)->_44=1.f;
 }
 
+void MakeCubeInvViewProjMatrices(simul::math::Matrix4x4 mat[],bool ReverseDepth)
+{
+	static math::Matrix4x4 view,proj;
+	proj			=crossplatform::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,1.0f,0.0f);
+	for(int i=0;i<6;i++)
+	{
+		GetCubeMatrix((float*)&view,i,ReverseDepth);
+		MakeInvViewProjMatrix((float*)&mat[i],view,proj);
+	}
+}
+
+void simul::crossplatform::GetCubeInvViewProjMatrix(float *mat4x4,int face,bool ReverseDepth)
+{
+	if(ReverseDepth)
+	{
+		static math::Matrix4x4 ivp_matrices[6];
+		static bool init=false;
+		if(!init)
+		{
+			MakeCubeInvViewProjMatrices(ivp_matrices,ReverseDepth);
+			init=true;
+		}
+		memcpy(mat4x4,ivp_matrices[face],sizeof(float)*16);
+	}
+	else
+	{
+		static math::Matrix4x4 ivp_matrices[6];
+		static bool init=false;
+		if(!init)
+		{
+			MakeCubeInvViewProjMatrices(ivp_matrices,ReverseDepth);
+			init=true;
+		}
+		memcpy(mat4x4,ivp_matrices[face],sizeof(float)*16);
+	}
+}
 math::Matrix4x4 simul::crossplatform::MakeOrthoProjectionMatrix(float left,
  	float right,
  	float bottom,

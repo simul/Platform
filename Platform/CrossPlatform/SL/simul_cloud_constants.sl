@@ -45,15 +45,18 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 
 	uniform vec2 rainCentreKm;
 	uniform float rainRadiusKm;
-	uniform int amortization;
+	uniform int padddddddd;
 
-	uniform int3 amortizationOffset;
+	uniform uint3 amortizationOffset;
 	uniform int padddddddddddddd;
 	
-	uniform int4 targetRange;
+	uniform uint4 targetRange;
 
 	uniform int2 targetTextureSize;
 	uniform int2 edge;
+
+	uniform uint3 amortizationScale;
+	uniform int pada1;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)

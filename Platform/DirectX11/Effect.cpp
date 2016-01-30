@@ -401,7 +401,11 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 		filenameInUseUtf8=filename_fx;
 	else if(index<renderPlatform->GetShaderPathsUtf8().size())
 		filenameInUseUtf8=(renderPlatform->GetShaderPathsUtf8()[index]+"/")+filename_fx;
-	HRESULT hr = CreateEffect(renderPlatform->AsD3D11Device(), &e, filename_fx.c_str(), defines, D3DCOMPILE_OPTIMIZATION_LEVEL3, renderPlatform->GetShaderBuildMode()
+	unsigned flags=D3DCOMPILE_OPTIMIZATION_LEVEL3;
+	if(filename_fx.find("atmospherics")==0)
+		flags=D3DCOMPILE_SKIP_OPTIMIZATION;
+
+	HRESULT hr = CreateEffect(renderPlatform->AsD3D11Device(), &e, filename_fx.c_str(), defines,flags, renderPlatform->GetShaderBuildMode()
 		,renderPlatform->GetShaderPathsUtf8(),renderPlatform->GetShaderBinaryPath());//);D3DCOMPILE_DEBUG
 	platform_effect	=e;
 	groups.clear();

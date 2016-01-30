@@ -5,7 +5,7 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/Topology.h"
-#include "Simul/Platform/CrossPlatform/TwoResFramebuffer.h"
+#include "Simul/Clouds/TwoResFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
 #include "Simul/Geometry/Orientation.h"
 #include <set>

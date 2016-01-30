@@ -137,6 +137,9 @@ namespace simul
 		void SIMUL_CROSSPLATFORM_EXPORT MakeCubeMatrices(math::Matrix4x4 mat[],const float *cam_pos,bool ReverseDepth);
 		void SIMUL_CROSSPLATFORM_EXPORT GetCubeMatrix(float *mat4x4,int i,bool ReverseDepth);
 		void SIMUL_CROSSPLATFORM_EXPORT GetCubeMatrix(float *mat4x4,int i,const float *cam_pos,bool ReverseDepth);
+		
+		void SIMUL_CROSSPLATFORM_EXPORT GetCubeInvViewProjMatrix(float *mat4x4,int i,bool ReverseDepth);
+
 		extern SIMUL_CROSSPLATFORM_EXPORT math::Matrix4x4 MakeOrthoProjectionMatrix(float left,
  																					float right,
  																					float bottom,

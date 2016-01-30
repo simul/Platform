@@ -61,7 +61,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 cloud					=texture_cube_lod(farCloudTexture,view,0);
 
 	vec3 lightspaceView			=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
-	vec3 volumeTexCoords		=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*asin(lightspaceView.z)/pi),dist_rt);
+	float ls_elev				=asin(lightspaceView.z);
+	vec3 volumeTexCoords		=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*ls_elev/pi),sqrt(dist*max(0.3,cos(ls_elev))));
 	vec4 insc					=texture_3d_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0);
 
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
