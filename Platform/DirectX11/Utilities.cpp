@@ -72,12 +72,6 @@ DXGI_FORMAT simul::dx11::TypelessToSrvFormat(DXGI_FORMAT fmt)
 	if (!IsTypeless(fmt, true))
 		return fmt;
 	int u=fmt+ 1;
-	switch(fmt)
-	{
-	case DXGI_FORMAT_R24G8_TYPELESS:
-		return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-	default:break;
-	};
 	return(DXGI_FORMAT)u;
 }
 ComputableTexture::ComputableTexture()

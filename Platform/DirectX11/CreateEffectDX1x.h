@@ -174,9 +174,6 @@ namespace simul
 	}
 }
 
-#ifndef D3DCOMPILE_SKIP_OPTIMIZATION
-#define D3DCOMPILE_SKIP_OPTIMIZATION            (1 << 2)
-#endif
 #ifndef D3DCOMPILE_OPTIMIZATION_LEVEL3
 #define D3DCOMPILE_OPTIMIZATION_LEVEL3            (1 << 15)
 #endif

@@ -19,7 +19,5 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,8)
 	uniform vec2 debugTanHalfFov;
 	uniform float debugExposure;
 	uniform float debugGamma;
-
-	uniform uint4 textureSize;	// xy, z if needed, w=array size
 SIMUL_CONSTANT_BUFFER_END
 #endif

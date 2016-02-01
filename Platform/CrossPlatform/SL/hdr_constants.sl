@@ -5,7 +5,6 @@
 SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform mat4 worldToScatteringVolumeMatrix;
 	uniform mat4 invViewProj;
-	uniform mat4 invShadowMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec4 fullResToLowResTransformXYWH;
 
@@ -36,12 +35,10 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 
 	uniform uint2 fullResDims;
 	uniform int numSamples;
-	uniform float maxFadeDistanceKm;
+	uniform float padHdrConstants2;
 
 	uniform vec3 infraredIntegrationFactors;
 	uniform int randomSeed;
-
-	uniform vec3 viewPos;
 SIMUL_CONSTANT_BUFFER_END
 	
 #endif

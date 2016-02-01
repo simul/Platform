@@ -75,6 +75,86 @@ vec4 CloudShadow(Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 co
 	return vec4(illumination,U,0.5*(shadow.x+shadow.y));//*edge
 }
 
+// from the viewer, trace outwards to find the outer and inner ranges of cloud shadow.
+// Then the outer and inner shadow distances are put in the xy.
+// Within that, the outer and inner lit distances are put in the zw.
+vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 texCoords)
+{
+	vec2 shadow_range				=vec2(1.0,0.0);
+	vec2 light_range				=vec2(1.0,0.0);
+	const float U					=1.0;
+	const float L					=0.0;
+	int N							=1*shadowTextureSize;
+	float pixel						=1.0/float(shadowTextureSize);
+//for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
+	float theta						=texCoords.x*2.0*3.1415926536;
+	vec2 offset						=vec2(-sin(theta),cos(theta))*pixel/4.0;
+	// First find the range where there is ANY shadow:
+	for(int i=0;i<N;i++)
+	{
+		float interp					=float(i)/float(N-1);
+		float distance_off_centre		=interp;
+		vec2 shadow_texc				=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
+		vec4 illumination				=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
+		illumination					+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
+		illumination					+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
+		
+		if(illumination.y<3.0*U)
+		{
+			if(interp<shadow_range.x)
+				shadow_range.x=interp-pixel;
+			shadow_range.y=interp+pixel;
+		}
+	}
+	shadow_range=saturate(shadow_range);
+	//int in_light=0;
+	// Second, within this range, find where there is ANY light.
+	//if(shadow_range.x<=0&&shadow_range.y>=1.0)
+	for(int j=0;j<N;j++)
+	{
+		float interp					=float(j)/float(N-1);
+		float distance_off_centre		=interp;
+		vec2 shadow_texc				=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
+		vec4 illumination				=texture_wrap_lod(cloudShadowTexture,shadow_texc,0);
+		illumination					+=texture_wrap_lod(cloudShadowTexture,shadow_texc-offset,0);
+		illumination					+=texture_wrap_lod(cloudShadowTexture,shadow_texc+offset,0);
+	//	if(interp>=shadow_range.x&&interp<=shadow_range.y)
+		{
+			if(illumination.y>L*3.0)
+			{
+				if(interp<light_range.x)
+					light_range.x=interp-pixel;
+				light_range.y=interp+pixel;
+			}
+		}
+	}
+	light_range=saturate(light_range);
+	return vec4(shadow_range,light_range);
+}
+
+
+float MoistureAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 texCoords)
+{
+	int N							=int(texCoords.y*float(shadowTextureSize));
+	float pixel						=1.0/float(shadowTextureSize);
+//for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
+	float theta						=texCoords.x*2.0*3.1415926536;
+	vec2 offset						=vec2(-sin(theta),cos(theta))*pixel/4.0;
+	float transparency				=1.0;
+	// Find the total illumination
+	for(int i=0;i<N;i++)
+	{
+		float interp				=float(i)/float(shadowTextureSize-1);
+		float distance_off_centre	=interp;
+		vec2 shadow_texc			=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
+		vec4 illumination			=sample_lod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
+		illumination				+=sample_lod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
+		illumination				+=sample_lod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
+		transparency				*=exp(-saturate(1.0-illumination.x));
+	}
+	return 1.0-transparency;
+}
+
 
 float unshadowedBrightness(float Beta,vec4 lightResponse,vec3 ambientColour)
 {
@@ -156,7 +236,7 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
 	vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,pos,0);
 	density.z			*=layerFade;
-	density.z			=saturate(density.z*(1.0+alphaSharpness));
+	density.z			=saturate(density.z*(1.0+10.0*alphaSharpness));
 	return density;
 }
 
@@ -406,7 +486,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,vec4 dlookup
 											,vec3 view
 											,vec4 clip_pos
-											,vec3 volumeTexCoordsXyC
+											,vec2 volumeTexCoordsXy
 											,bool noise
 											,bool do_rain_effect
 											,vec3 cloudIrRadiance1
@@ -427,7 +507,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float max_z				=cornerPosKm.z+(1.0+fractalScale.z*1.5)/inverseScalesKm.z;
 	if(do_rain_effect)
 		min_z				=-1.0;
-
+	//res.colour.rg=res.nearFarDepth;
+	//res.colour.a=.5;
 	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
 	
@@ -480,11 +561,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	int3 C0							=c0>>1;
 	
 	float distanceKm				=length(offset_vec);
-	vec3 p_							=offsetFromOrigin/scaleOfGridCoords;
-	int3 c							=int3(floor(p_) + start_c_offset);
+	vec3 p							=offsetFromOrigin/scaleOfGridCoords;
+	int3 c							=int3(floor(p) + start_c_offset);
 	
-	vec4 clrs[]						={
-										{0.0,0.0,0.0,1.0}
+	vec4 clrs[]						={	{0.0,0.0,0.0,1.0}
 										,{0.4,0.0,0.0,1.0}
 										,{0.8,0.0,0.0,1.0}
 										,{1.0,0.0,0.0,1.0}
@@ -538,7 +618,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	}
 	float blinn_phong=0.0;
 	bool found=false;
-	//solidDist_nearFar.xy=0.01;
 	for(int i=0;i<1255;i++)
 	{
 		world_pos					+=0.001*view;
@@ -578,7 +657,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		vec3 pw						=abs(p1-p0);//+start_c_offset
 		float fade_inter			=saturate((length(pw.xy)/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
 	
-		float fade					=1.0-(fade_inter);
+		float fade					=(1.0-fade_inter);
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
 		b							=abs(c-C0*2);
@@ -617,7 +696,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					density.z				*=cosine;
 					density.z				*=saturate(distanceKm/0.24);
 					fade_texc.x				=sqrt(fadeDistance);
-					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,sqrt(fadeDistance*volumeTexCoordsXyC.z));//*sineFactor);
+					vec3 volumeTexCoords	=vec3(volumeTexCoordsXy,fade_texc.x);//*sineFactor);
 					vec4 clr;
 					// The "normal" that the ray has hit is equal to N, but with the negative signs of the components of viewScaled or view.
 					vec3 normal				=0.5*(-N*sign(viewScaled)-view);
@@ -645,7 +724,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 														,fade_texc
 														,nearFarTexc
 														,brightness_factor);
-				//	clr.rgb=volumeTexCoords.zzz;//
+				//clr.r*=saturate((distanceKm-0.092)/0.092);
 					if(do_depth_mix)
 					{
 						vec4 clr_n			=clr;

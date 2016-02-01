@@ -186,7 +186,7 @@ vec4 Coverage(vec2 texCoords,float humidity,float diffusivity,float octaves,floa
 vec4 Clouds2DPS_illum(Texture2D detailTexture
 					,Texture2D coverageTexture
 					,Texture2D lossTexture
-					,Texture3D volumeInscatterTexture,vec3 atmosTexCoordsXYC
+					,Texture3D volumeInscatterTexture,vec2 atmosTexCoords
 					,Texture2D noiseTexture
 					,vec2 texc_global
 					,vec2 texc_detail
@@ -220,7 +220,7 @@ vec4 Clouds2DPS_illum(Texture2D detailTexture
 
 	float visible_light		=1;
 
-	vec3 volumeTexCoords	=vec3(atmosTexCoordsXYC.xy,sqrt(dist_tc*atmosTexCoordsXYC.z));
+	vec3 volumeTexCoords	=vec3(atmosTexCoords,fade_texc.x);
 	vec4 insc				=texture_3d_wwc_lod(volumeInscatterTexture,volumeTexCoords,0);
 
 	vec3 light				=sun_irr*visible_light+moon_irr;
@@ -250,9 +250,7 @@ shader vec4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
 	float opacity			=saturate(detail.a);
 	vec3 colour				=vec3(0.5,0.5,1.0);
 	if(opacity<=0)
-	{
 		return vec4(colour,opacity);
-	}
 	float light				=exp(-detail.r*extinction);
 	float scattered_light	=light;//detail.a*exp(-light*Y(coverage)*32.0);
 	colour					=combinedLightColour*(lightResponse.y+lightResponse.x)*scattered_light;
@@ -278,10 +276,10 @@ shader vec4 DetailPS(v2f2 IN) : SV_TARGET
 
 shader vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
 {
-    return DetailLighting(imageTexture,IN.texCoords,vec2(detailTextureSize,detailTextureSize));
+    return DetailLighting(imageTexture,IN.texCoords,detailTextureSize);
 }
 
-void CSClouds2D(uint2 pos,bool depth)
+void CSClouds2D(int2 pos,bool depth)
 {
 	// offset by one texel to allow -1 in x and y:
 	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize1);
@@ -292,6 +290,8 @@ void CSClouds2D(uint2 pos,bool depth)
 
 	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
 
+	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
+	frustum_clip_pos		/=frustum_clip_pos.w;
 	float dz				=cloudAltitudeKm-0.001*eyePosition.z;
 
 	vec4 dist				=vec4(1.0,1.0,1.0,1.0);
@@ -314,14 +314,13 @@ void CSClouds2D(uint2 pos,bool depth)
 			if(dz<0)
 				d				=max(d,(-b - sqrt(U)));
 			//ret.rgb				=vec3(0,.001*d,0);
-			if(d>0&&d<1000.0&&(dist.x>=1.0||dist.x>1000.0*d/maxFadeDistanceMetres))
+			if(d>0&&(dist.x>=1.0||dist.x>1000.0*d/maxFadeDistanceMetres))
 			{
 				//ret.rgb				=vec3(.001*d,0,0);
 				vec3 wEyeToPos			=1000.0*view*d;
 				vec3 wPosition			=eyePosition+wEyeToPos;
 				vec3 lightspaceView		=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
-				float ls_elev			=asin(lightspaceView.z);
-				vec3 atmosTexCoordsXYC		=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*ls_elev/pi),max(0.3,cos(ls_elev)));
+				vec2 atmosTexCoords		=vec2(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*asin(lightspaceView.z)/pi));
 
 				vec2 wOffset			=wPosition.xy-origin.xy;
 				vec2 texc_global		=wOffset/globalScale;
@@ -336,7 +335,7 @@ void CSClouds2D(uint2 pos,bool depth)
 													,coverageTexture
 													,lossTexture
 													,volumeInscatterTexture
-													,atmosTexCoordsXYC
+													,atmosTexCoords
 													,noiseTexture
 													,texc_global
 													,texc_detail
@@ -390,9 +389,8 @@ shader void CS_Clouds2D_Cubemap(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 CS_LAYOUT(8,8,1)
 shader void CS_Clouds2D(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 {
-	uint2 idx		=uint2(g.xy*8+t.xy);
-	uint2 offset		=(amortizationOffset.xy+idx)%amortizationScale.xy;
-	uint2 pos		=targetRange.xy+idx*amortizationScale.xy+offset;
+	int2 idx				=int2(g.xy*8+t.xy);
+	int2 pos				=targetRange.xy+idx*amortization+amortizationOffset.xy;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	if(pos.x>=targetRange.z||pos.y>=targetRange.w)

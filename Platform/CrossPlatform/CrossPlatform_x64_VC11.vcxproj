@@ -192,6 +192,7 @@
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Topology.h" />
+    <ClInclude Include="TwoResFramebuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BaseFramebuffer.cpp" />
@@ -213,6 +214,7 @@
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TwoResFramebuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SFX\atmospherics.sfx" />
@@ -228,6 +230,7 @@
     <None Include="SFX\optics.sfx" />
     <None Include="SFX\rain.sfx" />
     <None Include="SFX\simul_clouds_2d.sfx" />
+    <None Include="SFX\simul_gaussian.sfx" />
     <None Include="SFX\simul_gpu_clouds.sfx" />
     <None Include="SFX\simul_gpu_sky.sfx" />
     <None Include="SFX\simul_rendernoise.sfx" />

@@ -103,8 +103,8 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	if(ok==GL_TRUE)
 		glGetQueryObjectuiv(glQuery[currFrame],GL_QUERY_RESULT,(GLuint*)data);
-GL_ERROR_CHECK
 	return (ok==GL_TRUE);
+GL_ERROR_CHECK
 }
 
 

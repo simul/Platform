@@ -104,8 +104,7 @@
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
-      <DelayLoadDLLs>
-      </DelayLoadDLLs>
+      <DelayLoadDLLs>SimulScene_MDd.dll</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -135,6 +134,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <DelayLoadDLLs>SimulScene_MD.dll</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
       <Command>

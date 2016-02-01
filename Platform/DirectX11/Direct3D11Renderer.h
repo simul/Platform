@@ -51,9 +51,26 @@ namespace simul
 			TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);
 			virtual ~TrueSkyRenderer();
 			void RestoreDeviceObjects	(crossplatform::RenderPlatform *r);
+			void InvalidateDeviceObjects();
+			///////////////////////////
+			crossplatform::HdrRenderer *GetSimulHDRRenderer()
+			{
+				return simulHDRRenderer;
+			}
+			terrain::BaseSeaRenderer *GetOceanRenderer()
+			{
+				return oceanRenderer;
+			}
+			void						RecompileShaders();
 		protected:
+			/// Parts of the scene that go into the main buffer with depth active.
+			void RenderDepthElements(crossplatform::DeviceContext &deviceContext
+				,float exposure
+				,float gamma);
 			// Different kinds of view for Render() to call:
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
+
+			terrain::BaseSeaRenderer					*oceanRenderer;
 		};
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface

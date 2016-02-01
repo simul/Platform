@@ -7,7 +7,6 @@
 #include "Simul/Base/StringFunctions.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "D3dx11effect.h"
 
 #include <string>
@@ -401,11 +400,7 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 		filenameInUseUtf8=filename_fx;
 	else if(index<renderPlatform->GetShaderPathsUtf8().size())
 		filenameInUseUtf8=(renderPlatform->GetShaderPathsUtf8()[index]+"/")+filename_fx;
-	unsigned flags=D3DCOMPILE_OPTIMIZATION_LEVEL3;
-	if(filename_fx.find("atmospherics")==0)
-		flags=D3DCOMPILE_SKIP_OPTIMIZATION;
-
-	HRESULT hr = CreateEffect(renderPlatform->AsD3D11Device(), &e, filename_fx.c_str(), defines,flags, renderPlatform->GetShaderBuildMode()
+	HRESULT hr = CreateEffect(renderPlatform->AsD3D11Device(), &e, filename_fx.c_str(), defines, D3DCOMPILE_OPTIMIZATION_LEVEL3, renderPlatform->GetShaderBuildMode()
 		,renderPlatform->GetShaderPathsUtf8(),renderPlatform->GetShaderBinaryPath());//);D3DCOMPILE_DEBUG
 	platform_effect	=e;
 	groups.clear();
@@ -560,12 +555,10 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const 
 
 void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip)
 {
-	// TODO: disallow SetTexture when the texture doesn't match the ShaderResource's type.
 	ID3DX11EffectShaderResourceVariable *var=(ID3DX11EffectShaderResourceVariable*)(shaderResource.platform_shader_resource);
 	if(!var||!var->IsValid())
 	{
-		SIMUL_BREAK_ONCE("Invalid shader texture ");
-		return;
+		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader texture ")).c_str());
 	}
 	if(t)
 	{
@@ -613,15 +606,9 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
 		return res;
 	}
-	D3DX11_EFFECT_TYPE_DESC  desc;
-	var->GetType()->GetDesc(&desc);
-	desc.Class;
-	res.shaderResourceType=((simul::dx11::RenderPlatform*)renderPlatform)->FromD3DShaderVariableType(desc.Type);
 	ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
 	if(srv->IsValid())
-	{
 		res.platform_shader_resource=(void*)srv;
-	}
 	else
 	{
 		ID3DX11EffectUnorderedAccessViewVariable *uav=var->AsUnorderedAccessView();

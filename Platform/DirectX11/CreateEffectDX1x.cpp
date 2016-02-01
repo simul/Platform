@@ -497,17 +497,12 @@ ERRNO_CHECK
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 		{
-			if(simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false))
+			if(!simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false))
+				return S_FALSE;
+			double new_binary_date_jdn			=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
+			if(new_binary_date_jdn<newest_included_file)
 			{
-				double new_binary_date_jdn			=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
-				if(new_binary_date_jdn<newest_included_file)
-				{
-					SIMUL_CERR<<"Newly created file "<<binary_filename_utf8.c_str()<<" is older than newest include file."<<std::endl;
-				}
-			}
-			else
-			{
-				SIMUL_CERR<<"Performance warning: failed to save "<<binary_filename_utf8.c_str()<<" to disk. Check file permissions?"<<std::endl;
+				SIMUL_CERR<<"Newly created file "<<binary_filename_utf8.c_str()<<" is older than newest include file."<<std::endl;
 			}
 		}
 	}
@@ -604,8 +599,6 @@ static const DWORD default_effect_flags=0;
 											effect,shaderBuildMode,shaderBinPathUtf8,shaderPathsUtf8);
 		if(hr==S_OK)
 			break;
-		// Turn off optimization in case of D3D optimization bugs, e.g. for groupshared "race condition"
-		shader_flags=D3DCOMPILE_SKIP_OPTIMIZATION;
 		std::string err="";
 #ifdef DXTRACE_ERR
         hr=DXTRACE_ERR( L"CreateEffect", hr );

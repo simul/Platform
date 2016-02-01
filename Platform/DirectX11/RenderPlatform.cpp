@@ -27,7 +27,6 @@
 #else
 #include <D3Dcompiler.h>
 #endif
-#include <algorithm>
 #ifdef SIMUL_ENABLE_PIX
 #include "pix.h"
 #endif
@@ -703,67 +702,7 @@ crossplatform::PixelFormat RenderPlatform::FromDxgiFormat(DXGI_FORMAT f)
 	};
 }
 
-crossplatform::ShaderResourceType RenderPlatform::FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t)
-{
-	using namespace crossplatform;
-	switch(t)
-	{
-	case D3D_SVT_TEXTURE1D:
-		return ShaderResourceType::TEXTURE_1D;
-	case D3D_SVT_TEXTURE2D:
-		return ShaderResourceType::TEXTURE_2D;
-	case D3D_SVT_TEXTURE3D:
-		return ShaderResourceType::TEXTURE_3D;
-	case D3D_SVT_TEXTURECUBE:
-		return ShaderResourceType::TEXTURE_CUBE;
-	case D3D_SVT_SAMPLER:
-		return ShaderResourceType::SAMPLER;
-	case D3D_SVT_BUFFER:
-		return ShaderResourceType::BUFFER;
-	case D3D_SVT_CBUFFER:
-		return ShaderResourceType::CBUFFER;
-	case D3D_SVT_TBUFFER:
-		return ShaderResourceType::TBUFFER;
-	case D3D_SVT_TEXTURE1DARRAY:
-		return ShaderResourceType::TEXTURE_1D_ARRAY;
-	case D3D_SVT_TEXTURE2DARRAY:
-		return ShaderResourceType::TEXTURE_2D_ARRAY;
-	case D3D_SVT_TEXTURE2DMS:
-		return ShaderResourceType::TEXTURE_2DMS;
-	case D3D_SVT_TEXTURE2DMSARRAY:
-		return ShaderResourceType::TEXTURE_2DMS_ARRAY;
-	case D3D_SVT_TEXTURECUBEARRAY:
-		return ShaderResourceType::TEXTURE_CUBE_ARRAY;
-	case D3D_SVT_RWTEXTURE1D:
-		return ShaderResourceType::RW_TEXTURE_1D;
-	case D3D_SVT_RWTEXTURE1DARRAY:
-		return ShaderResourceType::RW_TEXTURE_1D_ARRAY;
-	case D3D_SVT_RWTEXTURE2D:
-		return ShaderResourceType::RW_TEXTURE_2D;
-	case D3D_SVT_RWTEXTURE2DARRAY:
-		return ShaderResourceType::RW_TEXTURE_2D_ARRAY;
-	case D3D_SVT_RWTEXTURE3D:
-		return ShaderResourceType::RW_TEXTURE_3D;
-	case D3D_SVT_RWBUFFER:
-		return ShaderResourceType::RW_BUFFER;
-	case D3D_SVT_BYTEADDRESS_BUFFER:
-		return ShaderResourceType::BYTE_ADDRESS_BUFFER;
-	case D3D_SVT_RWBYTEADDRESS_BUFFER:
-		return ShaderResourceType::RW_BYTE_ADDRESS_BUFFER;
-	case D3D_SVT_STRUCTURED_BUFFER:
-		return ShaderResourceType::STRUCTURED_BUFFER;
-	case D3D_SVT_RWSTRUCTURED_BUFFER:
-		return ShaderResourceType::RW_STRUCTURED_BUFFER;
-	case D3D_SVT_APPEND_STRUCTURED_BUFFER:
-		return ShaderResourceType::APPEND_STRUCTURED_BUFFER;
-	case D3D_SVT_CONSUME_STRUCTURED_BUFFER:
-		return ShaderResourceType::CONSUME_STRUCTURED_BUFFER;
-	default:
-		return ShaderResourceType::COUNT;
-	}
-}
-
-crossplatform::Layout*RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
 {
 	D3D11_INPUT_ELEMENT_DESC *decl=new D3D11_INPUT_ELEMENT_DESC[num_elements];
 	for(int i=0;i<num_elements;i++)
@@ -1299,10 +1238,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	D3D11_VIEWPORT viewport;
 	pContext->RSGetViewports(&num_v,&viewport);
 	if(mirrorY2)
-	{
-		y1=(int)viewport.Height-y1;
-		dy*=-1;
-	}
+		y1=(int)viewport.Height-y1-dy;
 	debugConstants.rect=vec4(2.f*(float)x1/(float)viewport.Width-1.f
 			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
 			,2.f*(float)dx/(float)viewport.Width
@@ -1376,17 +1312,12 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,cross
 			tech=g->GetTechniqueByName(f.reverseDepth?"depth_reverse":"depth_forward");
 		simul::math::Matrix4x4 wvp;
 		if(view_centred)
-		{
 			crossplatform::MakeCentredViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-			debugConstants.debugWorldViewProj=wvp;
-			debugConstants.debugWorldViewProj.transpose();
-		}
 		else
-		{
 			crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
-			debugConstants.debugWorldViewProj=wvp;
-			debugConstants.debugWorldViewProj.transpose();
-		}
+			
+		debugConstants.debugWorldViewProj=wvp;
+		debugConstants.debugWorldViewProj.transpose();
 		debugConstants.Apply(deviceContext);
 		ID3D11Buffer *					vertexBuffer=NULL;
 		// Create the vertex buffer:

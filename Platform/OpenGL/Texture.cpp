@@ -6,7 +6,6 @@
 #include "FramebufferGL.h"
 #include "RenderPlatform.h"
 #include <string>
-#include <algorithm>
 
 using namespace simul;
 using namespace opengl;
@@ -41,7 +40,6 @@ opengl::Texture::Texture()
 	,numViews(0)
 	,m_fb(0)
 	,externalTextureObject(false)
-	,computable(false)
 {
 }
 
@@ -130,16 +128,15 @@ ERRNO_CHECK
 	delete [] data;
 	GL_ERROR_CHECK
 	dim=2;
-	arraySize=(int)texture_files.size();
+	depth=(int)texture_files.size();
 	int num_mips=8;
 	int m=1;
-	depth=arraySize;
 	glTexStorage3D(	GL_TEXTURE_2D_ARRAY
  					,num_mips
  					,GL_RGBA8
  					,width
  					,length
-					,arraySize);
+					,depth);
 	GL_ERROR_CHECK
 	//for(int i=0;i<num_mips;i++)
 	{
@@ -147,7 +144,7 @@ ERRNO_CHECK
 	GL_ERROR_CHECK
 	//	if(i==0)
 		{
-			for(int j=0;j<arraySize;j++)
+			for(int j=0;j<depth;j++)
 			{
 				unsigned char *data=LoadGLBitmap(texture_files[j].c_str(),texturePathsUtf8,bpp,width,length);
 				glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,0,0,0,j,width/m,length/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,data);
@@ -213,11 +210,10 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *,void *t,
 }
 
 void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
-	,crossplatform::PixelFormat p,bool computable,bool rendertarget,bool depthstencil,int /*num_samples*/,int /*aa_quality*/,bool wrap)
+	,crossplatform::PixelFormat p,bool /*computable*/,bool rendertarget,bool depthstencil,int /*num_samples*/,int /*aa_quality*/,bool wrap)
 {
-	if(w==width&&l==length&&pixelFormat==p&&this->computable==computable)
+	if(w==width&&l==length&&pixelFormat==p)
 		return;
-	this->computable=computable;
 GL_ERROR_CHECK
 	pixelFormat=p;
 	GLuint internal_format=opengl::RenderPlatform::ToGLFormat(pixelFormat);
@@ -277,12 +273,11 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int num_layers,crossplatform::PixelFormat f,bool computable,bool /*rendertarget*/,bool cubemap)
+void Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int num_layers,crossplatform::PixelFormat f,bool computable,bool /*rendertarget*/,bool cubemap)
 {
 	pixelFormat=f;
-	if(w==width&&l==length&&cubemap==this->cubemap&&computable==this->IsComputable())
-		return false;
-	this->computable=computable;
+	if(w==width&&l==length)
+		return;
 	InvalidateDeviceObjects();
 	this->cubemap=cubemap;
 	pixelFormat=f;
@@ -294,9 +289,9 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,in
 	length=l;
 	if(cubemap)
 	{
-		SIMUL_ASSERT(num_layers==6&&w==l);
+		SIMUL_ASSERT(num_layers==6&&w==l,"Need 6 layers and w=l for cubemap");
 	}
-	arraySize=depth=num_layers;
+	depth=num_layers;
 	dim=2;
 	glGenTextures(1,&pTextureObject);
 	GL_ERROR_CHECK
@@ -359,7 +354,6 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,in
 	GL_ERROR_CHECK
 		m*=2;
 	}*/
-	return true;
 }
 
 void Texture::setTexels(crossplatform::DeviceContext &,const void *src,int texel_index,int num_texels)
@@ -533,11 +527,6 @@ int Texture::GetSampleCount() const
 	return 0;
 }
 
-bool Texture::IsComputable() const
-{
-	return (computable);
-}
-
 int Texture::GetDimension() const
 {
 	return dim;
@@ -554,10 +543,8 @@ void simul::opengl::Texture::setTexels(void *,const void *src,int x,int y,int z,
 						src);
 }
 
-bool simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
+void simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int d,crossplatform::PixelFormat pf,bool /*computable*/,int m,bool rendertargets)
 {
-	if(w==width&&l==length&&d==depth&&cubemap==this->cubemap&&computable==this->IsComputable()&&pf==pixelFormat&&mips==m)
-		return false;
 	GL_ERROR_CHECK
 	pixelFormat=pf;
 	GLuint frmt=opengl::RenderPlatform::ToGLFormat(pixelFormat);
@@ -638,7 +625,6 @@ bool simul::opengl::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderP
 	else
 		num_rt=0;
 	mips=m;
-	return true;
 	GL_ERROR_CHECK
 }
 

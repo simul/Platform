@@ -319,8 +319,8 @@ shader starsVertexOutput VS_Stars(starsVertexInput IN)
 
 shader vec4 PS_Stars(starsVertexOutput IN) : SV_TARGET
 {
-	vec3 ocolour = vec3(1.0, 1.0, 1.0)*(starBrightness*IN.tex);
-	vec4 result=vec4(ocolour, 1.0);
+	vec3 colour = vec3(1.0, 1.0, 1.0)*(starBrightness*IN.tex);
+	vec4 result=vec4(colour, 1.0);
 	return result;
 }
 
@@ -331,8 +331,8 @@ vec4 PS_StarsDepthTex(starsVertexOutput IN,bool reverseDepth)
 	vec2 depth_texc	= viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
 	float depth		= texture_clamp_lod(depthTexture, depth_texc.xy, 0).x;
 	discardUnlessFar(depth,reverseDepth);
-	vec3 ocolour=vec3(1.0,1.0,1.0)*(starBrightness*IN.tex);
-	vec4 result=vec4(ocolour,1.0);
+	vec3 colour=vec3(1.0,1.0,1.0)*(starBrightness*IN.tex);
+	vec4 result=vec4(colour,1.0);
 	return result;
 }
 shader vec4 PS_Stars_ReverseDepth(starsVertexOutput IN) : SV_TARGET

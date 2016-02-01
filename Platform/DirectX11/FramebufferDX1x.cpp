@@ -84,7 +84,7 @@ void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext,con
 			renderTargetView=t->ArrayD3D11RenderTargetView(current_face);
 		pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
 	}
-	else
+	else 
 	{
 		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,NULL);
 	}

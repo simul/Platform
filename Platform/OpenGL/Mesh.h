@@ -15,6 +15,7 @@ namespace simul
 		public:
 			Mesh();
 			~Mesh();
+			//bool Initialize(const fbxsdk_2014_2_1::FbxMesh * pMesh);
 			bool Initialize(const std::vector<vec3> &vertices,const std::vector<unsigned int> &indices);
 			bool Initialize(crossplatform::RenderPlatform *renderPlatform,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices);
 			void BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const;

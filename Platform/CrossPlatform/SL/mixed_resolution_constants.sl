@@ -4,8 +4,7 @@
 
 SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform mat4 invViewProj;		// Transform from render clip to true view direction
-	uniform mat4 viewProj;			// Transform from worldspace view direction to current frustum
-	uniform mat4 proj;				// Transform from viewspace view direction to current frustum
+	uniform mat4 viewProj;			// Transform from view direction to current frustum
 	uniform vec4 frustumClipRange;
 	uniform vec4 depthToLinFadeDistParams;
 	uniform uint2 source_dims;
@@ -18,7 +17,7 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform uint2 scale;
 	uniform vec2 texelRange;
 
-	uniform vec4 depthWindow;		// xy and wh of the window of the depth texture that represents the current view.
+	uniform vec4 lowResToHighResTransformXYWH;
 	
 	uniform vec2 stochasticOffset;
 	uniform vec2 tanHalfFov;

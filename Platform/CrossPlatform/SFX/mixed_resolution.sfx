@@ -22,38 +22,41 @@ uniform RWTexture2D<vec4> nextUpdateTexture		;
 
 #define BLOCKSIZE 8
 
-vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 sourceTexCoords,vec2 frustum_clip_pos, vec2 texelRange
-	, DepthIntepretationStruct depthInterpretationStruct,vec2 tanHalfFov, float nearThresholdDepth
-	,vec2 stochasticOffset
-	,uint2 scale)
+vec4 DownscaleStochastic(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 sourceTexCoords, vec2 texelRange
+	, DepthIntepretationStruct depthInterpretationStruct, float nearThresholdDepth,vec2 stochasticOffset,uint2 scale)
 {
 	// Stochastic offset goes from -1 to +1
 	vec2 texCoords		=sourceTexCoords+texelRange*stochasticOffset/vec2(scale);
-	vec4 fn				=vec4(0.0,1.0,0.0,1.0);
+	vec4 fn;
+	
+	if(depthInterpretationStruct.reverseDepth)
+		fn				=vec4(1.0,0.0,1.0,0.0);
+	else														
+		fn				=vec4(0.0,1.0,0.0,1.0);
 	vec4 thr			=vec4(nearThresholdDepth, nearThresholdDepth, nearThresholdDepth, nearThresholdDepth);
-	vec2 offsets[4];
-	offsets[0]=vec2(-0.3,0.4);
-	offsets[1]=vec2(0.4,0.3);
-	offsets[2]=vec2(0.3,-0.4);
-	offsets[3]=vec2(-0.4,-0.3);
-	for(int i=0;i<4;i++)
+	for(int i=0;i<scale.x;i++)
 	{
-		//float x=(0.5+float(i)-scale.x/2.0)/float(scale.x);
-		//for(int j=0;j<scale.y;j++)
+		float x=(0.5+float(i)-scale.x/2.0)/float(scale.x);
+		for(int j=0;j<scale.y;j++)
 		{
-			//float y		=(0.5+float(j)-scale.y/2.0)/float(scale.y);
-			vec2 offs	=texelRange*offsets[i];//texelRange*vec2(x,y);
+			float y		=(0.5+float(j)-scale.y/2.0)/float(scale.y);
+			vec2 offs	=texelRange*vec2(x,y);
 			vec2 texc	=texCoords+2.0*offs;
 			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
 			if(depthInterpretationStruct.reverseDepth)
 				d.x					= step(d.x,nearThresholdDepth)*d.x;
 			else
 				d.x					= step(d.x,nearThresholdDepth)+d.x;
-			vec2 dist				=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-			
-			fn.yw=min(fn.yw,dist);
-			fn.xz=max(fn.xz,dist);
-			
+			if(depthInterpretationStruct.reverseDepth)
+			{
+				fn.yw=max(fn.yw,d);
+				fn.xz=min(fn.xz,d);
+			}
+			else
+			{
+				fn.yw=min(fn.yw,d);
+				fn.xz=max(fn.xz,d);
+			}
 		}
 	}
 	return fn;
@@ -69,55 +72,45 @@ vec4 GetFrustumClipPos(int2 idx)
 	// Transform view into the proper frustum
 	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
 	frustum_clip_pos		/=frustum_clip_pos.w;
-
 	return frustum_clip_pos;
 }
 
-void DownscaleStochastic(int2 idx1,bool reverseDepth) 
+void DownscaleStochastic(int2 idx,bool reverseDepth) 
 {
-	int2 idx=targetRange.xy+idx1;
 	if(idx.x<targetRange.x||idx.x>targetRange.z||idx.y<targetRange.y||idx.y>targetRange.w)
 	{
-		nextUpdateTexture[idx]	=vec4(0,0,0,0);
+		vec3 tc					=vec3(0.3*(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims),0);
+		if(idx.x+idx.y<144)
+		{
+			tc.x					=float(cubeIndex)/5.0;
+			tc.y					=float((cubeIndex*3)%5)/5.0;
+			tc.z					=float((cubeIndex*2)%5)/5.0;
+		}
+	//vec2 texCoords			=(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims);
+	//	nextUpdateTexture[idx]	=vec4(1,0,0,0);
 		return;
 	}
 	// old update
 	vec4 u					=updateTexture[idx];
-	vec2 texCoords			=(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims);
-	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
-	clip_pos.x				+=2.0*texCoords.x;
-	clip_pos.y				-=2.0*texCoords.y;
-	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
-	// Transform view into the proper frustum
-	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
-	frustum_clip_pos		/=frustum_clip_pos.w;
+	vec4 frustum_clip_pos	=GetFrustumClipPos(idx);
 	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	sourceTexCoords.y		=1.0-sourceTexCoords.y;
-	sourceTexCoords			*=depthWindow.zw;
-	sourceTexCoords			+=depthWindow.xy;
 	vec4 clipRange			=frustumClipRange;//vec4(-1.0,-1.0,1.0,1.0);
-	if(frustum_clip_pos.z<0.0)
-	{
-		nextUpdateTexture[idx]=vec4(0,0,0,0);
-		return;
-	}
 	//if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
 	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
 	{
-		nextUpdateTexture[idx]=vec4(0,0,0,0);
+		nextUpdateTexture[idx]=vec4(u.b,1,0,0);
 		return;
 	}
 	DepthIntepretationStruct ds;
 	ds.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	ds.reverseDepth				=reverseDepth;
-	vec4 res					=GetStochasticSamples(
+	vec4 res					=DownscaleStochastic(
 									previousTexture
 									,sourceDepthTexture
 									,sourceTexCoords
-									,frustum_clip_pos.xy
 									,texelRange
 									,ds
-									,tanHalfFov
 									,nearThresholdDepth
 									,stochasticOffset
 									,scale);
@@ -134,8 +127,7 @@ void Direct(int2 idx,bool reverseDepth)
 	DepthIntepretationStruct dis;
 	dis.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	dis.reverseDepth				=reverseDepth;
-	vec4 res						=GetStochasticSamples(previousTexture,sourceDepthTexture,sourceTexCoords,frustum_clip_pos,texelRange,dis
-										,tanHalfFov,  nearThresholdDepth,stochasticOffset,scale);
+	vec4 res						=DownscaleStochastic(previousTexture,sourceDepthTexture,sourceTexCoords,texelRange,dis,  nearThresholdDepth,stochasticOffset,scale);
 	vec4 lin						=depthToFadeDistance(res,frustum_clip_pos.xy,dis,tanHalfFov);
 	targetTexture[idx]				=vec4(1,1,0,1);//lin;
 	nextUpdateTexture[idx]			=vec4(1.0,0,1,0);
@@ -184,15 +176,26 @@ void MinMax(int2 idx,bool reverseDepth)
 	vec4 fn2	=sourceTexture2[idx];
 	vec4 fn3	=sourceTexture3[idx];
 	vec4 fn		=fn1;
-	if(updateTexture[idx].r>=1.0)
+	if(reverseDepth)
+	{
+		fn.yw=max(fn.yw,fn2.yw);
+		fn.xz=min(fn.xz,fn2.xz);
+		fn.yw=max(fn.yw,fn3.yw);
+		fn.xz=min(fn.xz,fn3.xz);
+	}
+	else
 	{
 		fn.yw=min(fn.yw,fn2.yw);
 		fn.xz=max(fn.xz,fn2.xz);
 		fn.yw=min(fn.yw,fn3.yw);
 		fn.xz=max(fn.xz,fn3.xz);
 	}
+	DepthIntepretationStruct dis;
+	dis.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+	dis.reverseDepth				=reverseDepth;
+	vec4 lin						=depthToFadeDistance(fn,frustum_clip_pos.xy,dis,tanHalfFov);
 
-	targetTexture[idx]				=fn;
+	targetTexture[idx]				=lin;
 }
 
 CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)

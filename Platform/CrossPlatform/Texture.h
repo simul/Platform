@@ -60,13 +60,6 @@ namespace simul
 			}
 			int default_slot;
 		};
-		enum class ShaderResourceType;
-		/// Base class for a view of a texture (i.e. for shaders to use). TextureView instances should not be created, except inside derived classes of crossplatform::Texture.
-		class SIMUL_CROSSPLATFORM_EXPORT TextureView
-		{
-			ShaderResourceType type;
-		};
-		/// A Texture base class.
 		class SIMUL_CROSSPLATFORM_EXPORT Texture
 		{
 		protected:
@@ -85,7 +78,6 @@ namespace simul
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(){return 0;}
 			virtual bool HasRenderTargets() const{return (num_rt>0);}
-			virtual bool IsComputable() const =0;
 			/// Asynchronously move this texture to fast RAM.
 			/// Some hardware has "fast RAM" that we can prefetch textures into.
 			virtual void MoveToFastRAM() {}
@@ -103,10 +95,10 @@ namespace simul
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified.
 			virtual void ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false)=0;
-			//! Initialize as an array texture if necessary. Returns true if the texture was initialized, or false if it was already in the required format.
-			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
+			//! Initialize as an array texture.
+			virtual void ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
 			//! Initialize as a volume texture.
-			virtual bool ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;
+			virtual void ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;
 			//! Generate the mipmaps automatically.
 			virtual void GenerateMips(DeviceContext &deviceContext)=0;
 			//! Set the texture data from CPU memory.
@@ -135,16 +127,12 @@ namespace simul
 			{
 				return mips;
 			}
-			int GetArraySize() const
-			{
-				return arraySize;
-			}
 			//! If the texture is multisampled, this returns the samples per texel. Zero means it is not an MS texture,
 			//! while 1 means it is MS, even though the sample count is unity.
 			virtual int GetSampleCount() const=0;
 			virtual bool IsCubemap() const;
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
-			int width,length,depth,arraySize,dim,mips;
+			int width,length,depth,dim,mips;
 			PixelFormat pixelFormat;
 			RenderPlatform *renderPlatform;
 			int num_rt;

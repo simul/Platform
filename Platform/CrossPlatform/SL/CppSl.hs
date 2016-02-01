@@ -532,58 +532,6 @@
 			z=v[2];
 		}
 	};
-	
-	struct uint4
-	{
-		uint x,y,z,w;
-		uint4(uint x=0,uint y=0,uint z=0,uint w=0)
-		{
-			this->x=x;
-			this->y=y;
-			this->z=z;
-			this->w=w;
-		}
-		uint4(const uint *v)
-		{
-			operator=(v);
-		}
-		uint4(const float *v)
-		{
-			operator=(v);
-		}
-		operator const uint *()
-		{
-			return &x;
-		}
-		void operator=(const uint *v)
-		{
-			x=v[0];
-			y=v[1];
-			z=v[2];
-			w=v[3];
-		}
-		void operator=(const float *v)
-		{
-			x=uint(v[0]);
-			y=uint(v[1]);
-			z=uint(v[2]);
-			w=uint(v[3]);
-		}
-		void operator*=(uint u)
-		{
-			x*=u;
-			y*=u;
-			z*=u;
-			w*=u;
-		}
-		void operator/=(uint u)
-		{
-			x/=u;
-			y/=u;
-			z/=u;
-			w/=u;
-		}
-	};
 	struct int3
 	{
 		int x,y,z;
