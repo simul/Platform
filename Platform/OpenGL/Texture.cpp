@@ -282,7 +282,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,in
 	pixelFormat=f;
 	if(w==width&&l==length&&cubemap==this->cubemap&&computable==this->IsComputable())
 		return false;
-	this->computable==computable;
+	this->computable=computable;
 	InvalidateDeviceObjects();
 	this->cubemap=cubemap;
 	pixelFormat=f;

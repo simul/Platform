@@ -187,12 +187,6 @@ shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 	return vec4(r,r,r,r);
 }
 
-shader vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
-{
-	float m=MoistureAccumulation(cloudShadowTexture,shadowTextureSize,IN.texCoords);
-	return vec4(m,m,m,m);
-}
-
 struct FarNearDepthPixelOutput
 {
 	vec4 farColour		SIMUL_RENDERTARGET_OUTPUT(0);
@@ -387,14 +381,15 @@ shader void CS_Edge(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	//	outputTexture1[pos]		=vec4(1,0,0,0);
 	}
 }
+
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceSimple(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
 {
-	int2 idx				=int2(g.xy*8+t.xy);
+	int2 idx				=int2(g.xy*BLOCK_SIZE+t.xy);
 	int2 pos				=targetRange.xy+idx*amortizationScale.xy+amortizationOffset.xy;
 
 	Raytrace(pos,false,false);
-		
+//outputTexture1[pos]		=vec4(1,0,0,0);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -642,19 +637,6 @@ technique simulate_clouds
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Simulate()));
-    }
-}
-
-technique moisture_accumulation
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(vs_fullscreen_5_0);
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,PS_MoistureAccumulation()));
     }
 }
 

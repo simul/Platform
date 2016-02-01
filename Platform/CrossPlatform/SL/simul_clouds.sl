@@ -75,86 +75,6 @@ vec4 CloudShadow(Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 co
 	return vec4(illumination,U,0.5*(shadow.x+shadow.y));//*edge
 }
 
-// from the viewer, trace outwards to find the outer and inner ranges of cloud shadow.
-// Then the outer and inner shadow distances are put in the xy.
-// Within that, the outer and inner lit distances are put in the zw.
-vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 texCoords)
-{
-	vec2 shadow_range				=vec2(1.0,0.0);
-	vec2 light_range				=vec2(1.0,0.0);
-	const float U					=1.0;
-	const float L					=0.0;
-	int N							=1*shadowTextureSize;
-	float pixel						=1.0/float(shadowTextureSize);
-//for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
-	float theta						=texCoords.x*2.0*3.1415926536;
-	vec2 offset						=vec2(-sin(theta),cos(theta))*pixel/4.0;
-	// First find the range where there is ANY shadow:
-	for(int i=0;i<N;i++)
-	{
-		float interp					=float(i)/float(N-1);
-		float distance_off_centre		=interp;
-		vec2 shadow_texc				=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
-		vec4 illumination				=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
-		illumination					+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
-		illumination					+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
-		
-		if(illumination.y<3.0*U)
-		{
-			if(interp<shadow_range.x)
-				shadow_range.x=interp-pixel;
-			shadow_range.y=interp+pixel;
-		}
-	}
-	shadow_range=saturate(shadow_range);
-	//int in_light=0;
-	// Second, within this range, find where there is ANY light.
-	//if(shadow_range.x<=0&&shadow_range.y>=1.0)
-	for(int j=0;j<N;j++)
-	{
-		float interp					=float(j)/float(N-1);
-		float distance_off_centre		=interp;
-		vec2 shadow_texc				=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
-		vec4 illumination				=texture_wrap_lod(cloudShadowTexture,shadow_texc,0);
-		illumination					+=texture_wrap_lod(cloudShadowTexture,shadow_texc-offset,0);
-		illumination					+=texture_wrap_lod(cloudShadowTexture,shadow_texc+offset,0);
-	//	if(interp>=shadow_range.x&&interp<=shadow_range.y)
-		{
-			if(illumination.y>L*3.0)
-			{
-				if(interp<light_range.x)
-					light_range.x=interp-pixel;
-				light_range.y=interp+pixel;
-			}
-		}
-	}
-	light_range=saturate(light_range);
-	return vec4(shadow_range,light_range);
-}
-
-
-float MoistureAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 texCoords)
-{
-	int N							=int(texCoords.y*float(shadowTextureSize));
-	float pixel						=1.0/float(shadowTextureSize);
-//for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
-	float theta						=texCoords.x*2.0*3.1415926536;
-	vec2 offset						=vec2(-sin(theta),cos(theta))*pixel/4.0;
-	float transparency				=1.0;
-	// Find the total illumination
-	for(int i=0;i<N;i++)
-	{
-		float interp				=float(i)/float(shadowTextureSize-1);
-		float distance_off_centre	=interp;
-		vec2 shadow_texc			=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
-		vec4 illumination			=sample_lod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
-		illumination				+=sample_lod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
-		illumination				+=sample_lod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
-		transparency				*=exp(-saturate(1.0-illumination.x));
-	}
-	return 1.0-transparency;
-}
-
 
 float unshadowedBrightness(float Beta,vec4 lightResponse,vec3 ambientColour)
 {
@@ -507,8 +427,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float max_z				=cornerPosKm.z+(1.0+fractalScale.z*1.5)/inverseScalesKm.z;
 	if(do_rain_effect)
 		min_z				=-1.0;
-	//res.colour.rg=res.nearFarDepth;
-	//res.colour.a=.5;
+
 	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
 	
@@ -619,6 +538,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	}
 	float blinn_phong=0.0;
 	bool found=false;
+	//solidDist_nearFar.xy=0.01;
 	for(int i=0;i<1255;i++)
 	{
 		world_pos					+=0.001*view;

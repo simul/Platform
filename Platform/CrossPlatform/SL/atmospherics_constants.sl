@@ -37,7 +37,6 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform mat4 invShadowMatrix;
 	
 	uniform mat4 worldToCloudMatrix;
-	uniform mat4 worldToMoistureSpaceMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec4 mixedResolutionTransformXYWH;
 	uniform vec4 depthToLinFadeDistParams;
