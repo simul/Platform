@@ -6,7 +6,7 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform mat4 worldViewProj;
 	uniform mat4 invViewProj;
-	uniform mat4 viewProj;
+	//uniform mat4 frustumViewProj; as opposed to cubemap - not used.
 	uniform mat4 worldToScatteringVolumeMatrix;
 	uniform vec4 mixedResTransformXYWH;
 
@@ -17,7 +17,7 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform vec3 lightDir;
 	uniform float cloudEccentricity;
 
-	uniform vec3 ambientLight;
+	uniform vec3 ambientLightX;
 	uniform float extinction;
 
 	uniform vec3 eyePosition;

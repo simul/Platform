@@ -73,15 +73,13 @@ float GetCloudIllum(Texture3D cloudTexture, SamplerState cloudSamplerState,vec3 
 
 void CalcInsc(	Texture2D inscTexture
 				,Texture2D skylTexture
-				,Texture2D illuminationTexture
 				,float dist
 				,float fade_texc_y
-				,vec2 illum_texc
                 ,out vec4 insc
                 ,out vec3 skyl)
 {
 	vec2 fade_texc		=vec2(pow(dist,0.5f),fade_texc_y);
-	insc			=texture_clamp_mirror_lod(inscTexture,fade_texc,0);
+	insc				=texture_clamp_mirror_lod(inscTexture,fade_texc,0);
     skyl                =texture_clamp_mirror_lod(skylTexture,fade_texc,0).rgb;
 }
 
@@ -116,10 +114,8 @@ vec4 Inscatter(	Texture2D inscTexture
 	vec3 skyl;
 	CalcInsc(	inscTexture
 				,skylTexture
-				,illuminationTexture
 				,dist
 				,fade_texc.y
-				,illum_texc
 				,insc
 				,skyl);
 #ifdef INFRARED
@@ -180,10 +176,8 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 	
     CalcInsc(	inscTexture
 				,skylTexture
-				,illuminationTexture
 				,dist
 				,fade_texc.y
-				,illum_texc
                 ,insc
 				,skyl);
 	float cos0			=dot(view,lightDir);

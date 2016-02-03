@@ -17,8 +17,8 @@ uniform Texture2D sourceTexture1;
 uniform Texture2D sourceTexture2;
 uniform Texture2D sourceTexture3;
 uniform Texture2D updateTexture;
-uniform RWTexture2D<vec4> targetTexture			;
-uniform RWTexture2D<vec4> nextUpdateTexture		;
+uniform RWTexture2D<vec4> targetTexture;
+uniform RWTexture2D<vec4> nextUpdateTexture;
 
 #define BLOCKSIZE 8
 
@@ -134,7 +134,7 @@ void Direct(int2 idx,bool reverseDepth)
 	DepthIntepretationStruct dis;
 	dis.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	dis.reverseDepth				=reverseDepth;
-	vec4 res						=GetStochasticSamples(previousTexture,sourceDepthTexture,sourceTexCoords,frustum_clip_pos,texelRange,dis
+	vec4 res						=GetStochasticSamples(previousTexture,sourceDepthTexture,sourceTexCoords,frustum_clip_pos.xy,texelRange,dis
 										,tanHalfFov,  nearThresholdDepth,stochasticOffset,scale);
 	vec4 lin						=depthToFadeDistance(res,frustum_clip_pos.xy,dis,tanHalfFov);
 	targetTexture[idx]				=vec4(1,1,0,1);//lin;

@@ -538,7 +538,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	}
 	float blinn_phong=0.0;
 	bool found=false;
-	//solidDist_nearFar.xy=0.01;
 	for(int i=0;i<1255;i++)
 	{
 		world_pos					+=0.001*view;
