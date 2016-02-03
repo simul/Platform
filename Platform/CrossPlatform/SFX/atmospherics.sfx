@@ -47,28 +47,6 @@ struct atmosVertexOutput
     vec2 pos			: TEXCOORD1;
 };
 
-shader atmosVertexOutput VS_Atmos(atmosVertexInput IN)
-{
-	atmosVertexOutput OUT;
-	vec2 poss[4]=
-	{
-		{ 1.0,-1.0},
-		{ 1.0, 1.0},
-		{-1.0,-1.0},
-		{-1.0, 1.0},
-	};
-	OUT.pos			=poss[IN.vertex_id];
-	OUT.position	=vec4(OUT.pos,0.0,1.0);
-	// Set to far plane so can use depth test as want this geometry effectively at infinity
-
-	OUT.position.z	=0.0; 
-
-    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(OUT.pos.x,-OUT.pos.y));
-	return OUT;
-}
-
-
-
 int clampClouds=0;
 // With this function we will create a 3D volume texture that encompasses the scattering for a frame,
 // where the x-axis is azimuth around the light source, y-axis is angle from the light source (maximum = 180 deg)
@@ -150,9 +128,6 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 		last				=next;
 	}
 }
-VertexShader vs_atmos=CompileShader(vs_5_0,VS_Atmos());
-
-
 
 technique scattering_volume
 {
