@@ -109,27 +109,48 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 		{
 			profileData=(crossplatform::ProfileData*)profileMap[qualified_name];
 		}
+		profileData->name=name;
 		profileData->last_child_updated=0;
-		int new_child_index=0;
 		crossplatform::ProfileData *parentData=NULL;
 		if(parent.length())
 			parentData=(crossplatform::ProfileData*)profileMap[parent];
 		else
 			parentData=(crossplatform::ProfileData*)profileMap["root"];
+		parentData->updatedThisFrame=true;
 		if(parentData)
 		{
-			new_child_index=++parentData->last_child_updated;
-			while(parentData->children.find(new_child_index)!=parentData->children.end()&&parentData->children[new_child_index]!=profileData)
+			base::ChildMap::iterator in_parent=parentData->children.end();
+			if(profileData->child_index!=0)
 			{
-				new_child_index++;
+				in_parent=parentData->children.find(profileData->child_index);
+				if(in_parent->second!=profileData)
+					in_parent=parentData->children.end();
 			}
-			parentData->children[new_child_index]=profileData;
-			if(profileData->child_index!=0&&new_child_index!=profileData->child_index&&parentData->children.find(profileData->child_index)!=parentData->children.end())
+			else
+				profileData->child_index=parentData->last_child_updated+1;
+			while(in_parent==parentData->children.end())
 			{
-				parentData->children.erase(profileData->child_index);
+				in_parent=parentData->children.find(profileData->child_index);
+				// No such child? Add it.
+				if(in_parent==parentData->children.end())
+				{
+					parentData->children[profileData->child_index]=profileData;
+					break;
+				}
+				// This child exists, but it's not the current profile? Keep looking
+				if(in_parent->second!=profileData)
+				{
+					in_parent=parentData->children.end();
+					profileData->child_index++;
 			}
-			profileData->child_index=new_child_index;
+				else
+				{
+					// Found our spot
+					break;
 		}
+			}
+		}
+		parentData->last_child_updated=profileData->child_index;
 		profileData->parent=parentData;
 		SIMUL_ASSERT(profileData->QueryStarted == false);
 		if(profileData->QueryFinished!= false)
@@ -204,6 +225,8 @@ void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 	level=0;
 	if(profileMap.find(rootstring)==profileMap.end())
 		profileMap[rootstring]=new crossplatform::ProfileData();
+	
+	profileMap[rootstring]->last_child_updated=0;
     for(auto iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         base::ProfileData *profile = ((*iter).second);
@@ -220,6 +243,7 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
     currFrame = (currFrame + 1) % crossplatform::Query::QueryLatency;    
 
     queryTime = 0.0f;
+    timer.StartTime();
     // Iterate over all of the profileMap
 	base::ProfileMap::iterator iter;
     for(iter = profileMap.begin(); iter != profileMap.end(); iter++)
@@ -260,11 +284,17 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
         if(disjointData.Disjoint == false)
         {
             UINT64 delta = endTime - startTime;
+			if(endTime>startTime)
+			{
             float frequency = static_cast<float>(disjointData.Frequency);
             time = (delta / frequency) * 1000.0f;
         }        
-
+        }        
         profile->time+=mix*time;
+		if(profile->time>10.0f)
+		{
+			profile->time=10.0f;
+		}
     }
 	if(profileMap.find("root")==profileMap.end())
 		profileMap["root"]=new crossplatform::ProfileData();

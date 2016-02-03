@@ -7,6 +7,8 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 
 #include <string>
+#include <algorithm>
+
 using namespace simul;
 using namespace dx11;
 
@@ -26,7 +28,7 @@ void SamplerState::InvalidateDeviceObjects()
 }
 
 
-dx11::Texture::Texture()
+Texture::Texture()
 	:texture(NULL)
 	,shaderResourceView(NULL)
 	,unorderedAccessViews(NULL)
@@ -46,12 +48,12 @@ dx11::Texture::Texture()
 }
 
 
-dx11::Texture::~Texture()
+Texture::~Texture()
 {
 	InvalidateDeviceObjects();
 }
 
-void dx11::Texture::InvalidateDeviceObjects()
+void Texture::InvalidateDeviceObjects()
 {
 	if(renderTargetViews)
 	{
@@ -95,7 +97,7 @@ void dx11::Texture::InvalidateDeviceObjects()
 }
 
 // Load a texture file
-void dx11::Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
+void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
 {
 	ERRNO_BREAK
 	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
@@ -161,12 +163,12 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	mips=m;
 }
 
-bool dx11::Texture::IsValid() const
+bool Texture::IsValid() const
 {
 	return (shaderResourceView!=NULL);
 }
 
-void dx11::Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels)
+void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels)
 {
 	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);
 	if(!stagingBuffer)
@@ -218,7 +220,7 @@ void dx11::Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,voi
 	deviceContext.asD3D11DeviceContext()->Unmap( stagingBuffer, 0);
 }
 
-void dx11::Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)
+void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)
 {
 	last_context=deviceContext.asD3D11DeviceContext();
 	if(!mapped.pData)
@@ -277,7 +279,7 @@ void dx11::Texture::setTexels(crossplatform::DeviceContext &deviceContext,const 
 	}
 }
 
-void dx11::Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format)
+void Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format)
 {
 	D3D11_TEXTURE2D_DESC textureDesc=
 	{
@@ -299,13 +301,19 @@ void dx11::Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 	pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView);
 	SAFE_RELEASE(stagingBuffer);
 }
+#pragma optimize("",off)
 
-void dx11::Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt)
+bool Texture::IsComputable() const
+{
+	return numUav>0;
+}
+
+void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt)
 {
 	InitFromExternalD3D11Texture2D(renderPlatform,(ID3D11Texture2D*)t,(ID3D11ShaderResourceView*)srv,make_rt);
 }
 
-void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt)
+void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt)
 {
 	// If it's the same as before, return.
 	if ((texture == t && srv==shaderResourceView) && shaderResourceView != NULL && (!make_rt || renderTargetViews == NULL))
@@ -366,7 +374,7 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 				renderTargetViews=new ID3D11RenderTargetView*[num_rt];
 				// Setup the description of the render target view.
 				D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-				renderTargetViewDesc.Format				=textureDesc.Format;
+				renderTargetViewDesc.Format = TypelessToSrvFormat(textureDesc.Format);
 				if(num_rt==1)
 				{
 					renderTargetViewDesc.ViewDimension		=(textureDesc.SampleDesc.Count)>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
@@ -389,12 +397,16 @@ void dx11::Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform
 				}
 			}
 		}
+		else
+		{
+			SIMUL_BREAK_ONCE("Not a valid D3D Texture");
+		}
 		SAFE_RELEASE(ppd);
 	}
 	dim=2;
 }
 
-void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
+bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {
 	pixelFormat = pf;
 	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
@@ -420,6 +432,7 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 	}
 	else
 		ok=false;
+	bool changed=!ok;
 	if(!ok)
 	{
 		InvalidateDeviceObjects();
@@ -446,6 +459,7 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 	}
 	if(computable&&(!unorderedAccessViews||!ok))
 	{
+		changed=true;
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
 		uav_desc.Format				= f;
@@ -497,6 +511,7 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 	}
 	if(d<=8&&rendertargets&&(!renderTargetViews||!renderTargetViews[0]||!ok))
 	{
+		changed=true;
 		if(renderTargetViews)
 		{
 			for(int i=0;i<num_rt;i++)
@@ -520,9 +535,10 @@ void dx11::Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *
 		}
 	}
 	mips=m;
+	return changed;
 }
 
-void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
+void Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
 												 ,int w,int l
 												 ,crossplatform::PixelFormat f
 												 ,bool computable,bool rendertarget,bool depthstencil
@@ -677,7 +693,7 @@ void dx11::Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *
 	mips=m;
 }
 
-void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
 {
 	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	D3D11_TEXTURE2D_DESC textureDesc;
@@ -702,7 +718,7 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 	else
 		ok=false; 
 	if(ok)
-		return;
+		return false;
 	this->cubemap=cubemap;
 	pixelFormat=f;
 	InvalidateDeviceObjects();
@@ -717,7 +733,9 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 	}
 	width					=w;
 	length					=l;
-
+	depth					=1;
+	dim						=2;
+	arraySize				=num;
 	desc.Width				=w;
 	desc.Height				=l;
 	desc.Format				=format;
@@ -835,9 +853,10 @@ void dx11::Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatfor
 	}
 	SetDebugObjectName(texture,"ensureTextureArraySizeAndFormat");
 	mips=m;
+	return true;
 }
 
-void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat pf,bool computable)
+void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat pf,bool computable)
 {
 	pixelFormat=pf;
 	DXGI_FORMAT f=dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
@@ -913,7 +932,7 @@ void dx11::Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 	mips=m;
 }
 
-void dx11::Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
+void Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
 {
 	// We can't detect if this has worked or not.
 	if(renderTargetViews&&*renderTargetViews)
@@ -922,7 +941,7 @@ void dx11::Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
 		SIMUL_CERR<<"Can't use GenerateMips on texture "<<this<<" not created as rendertarget.\n";
 }
 
-void dx11::Texture::map(ID3D11DeviceContext *context)
+void Texture::map(ID3D11DeviceContext *context)
 {
 	if(mapped.pData!=NULL)
 		return;
@@ -930,12 +949,12 @@ void dx11::Texture::map(ID3D11DeviceContext *context)
 	last_context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
 }
 
-bool dx11::Texture::isMapped() const
+bool Texture::isMapped() const
 {
 	return (mapped.pData!=NULL);
 }
 
-void dx11::Texture::unmap()
+void Texture::unmap()
 {
 	if(mapped.pData)
 		last_context->Unmap(texture,0);
@@ -943,7 +962,7 @@ void dx11::Texture::unmap()
 	last_context=NULL;
 }
 
-vec4 dx11::Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap)
+vec4 Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap)
 {
 	if(!stagingBuffer)
 	{
@@ -1023,7 +1042,7 @@ vec4 dx11::Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 te
 	return vec4((const float*)pixel);
 }
 
-void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext)
+void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext)
 {
 	if(!deviceContext.asD3D11DeviceContext())
 		return;
@@ -1061,7 +1080,7 @@ void dx11::Texture::activateRenderTarget(crossplatform::DeviceContext &deviceCon
 	}
 }
 
-void dx11::Texture::deactivateRenderTarget()
+void Texture::deactivateRenderTarget()
 {
 	if(!last_context)
 		return;
@@ -1070,14 +1089,14 @@ void dx11::Texture::deactivateRenderTarget()
 										m_pOldDepthSurface
 										);
 	last_context->RSSetViewports(num_OldViewports,m_OldViewports);
-	for(int i=0;i<num_OldViewports;i++)
+	for(int i=0;i<(int)num_OldViewports;i++)
 	{
 		SAFE_RELEASE(m_pOldRenderTargets[i]);
 	}
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
 
-int dx11::Texture::GetSampleCount() const
+int Texture::GetSampleCount() const
 {
 	if(!shaderResourceView)
 		return 0;

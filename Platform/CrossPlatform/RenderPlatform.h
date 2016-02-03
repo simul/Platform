@@ -139,7 +139,7 @@ namespace simul
 			virtual void DrawCamera			(DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)=0;
 			virtual void DrawLineLoop		(DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4])=0;
 
-			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false)=0;
+			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false);
 			void DrawTexture				(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false);
 			void DrawDepth					(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL,const float *proj=NULL);
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
@@ -230,6 +230,8 @@ namespace simul
 			virtual void					Resolve(DeviceContext &deviceContext,Texture *destination,Texture *source)=0;
 			//! Save a texture to disk.
 			virtual void					SaveTexture(Texture *texture,const char *lFileNameUtf8)=0;
+			/// Clear the contents of the given texture to the specified colour
+			virtual void					ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY, mirrorY2, mirrorYText;
 			crossplatform::Effect *solidEffect;
@@ -249,7 +251,15 @@ namespace simul
 		protected:
 			ShaderBuildMode					shaderBuildMode;
 			DeviceContext					immediateContext;
+
+			// All for debug Effect
 			crossplatform::Effect			*debugEffect;
+			crossplatform::EffectTechnique	*textured;
+			crossplatform::EffectTechnique	*showVolume;
+			crossplatform::ShaderResource	volumeTexture;
+			crossplatform::ShaderResource	imageTexture;
+			//
+
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 			crossplatform::GpuProfiler		*gpuProfiler;

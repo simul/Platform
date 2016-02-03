@@ -40,6 +40,36 @@ namespace simul
 			SHADERTYPE_COMPUTE,
 			SHADERTYPE_COUNT
 		};
+		//! This 
+		enum class ShaderResourceType
+		{
+			TEXTURE_1D
+			,TEXTURE_2D        
+			,TEXTURE_3D        
+			,TEXTURE_CUBE      
+			,SAMPLER          
+			,BUFFER           
+			,CBUFFER          
+			,TBUFFER          
+			,TEXTURE_1D_ARRAY   
+			,TEXTURE_2D_ARRAY   
+			,TEXTURE_2DMS      
+			,TEXTURE_2DMS_ARRAY 
+			,TEXTURE_CUBE_ARRAY 
+			,RW_TEXTURE_1D
+			,RW_TEXTURE_1D_ARRAY
+			,RW_TEXTURE_2D
+			,RW_TEXTURE_2D_ARRAY
+			,RW_TEXTURE_3D
+			,RW_BUFFER
+			,BYTE_ADDRESS_BUFFER
+			,RW_BYTE_ADDRESS_BUFFER
+			,STRUCTURED_BUFFER
+			,RW_STRUCTURED_BUFFER
+			,APPEND_STRUCTURED_BUFFER
+			,CONSUME_STRUCTURED_BUFFER
+			,COUNT  
+		};
 		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
 		enum ShaderBuildMode
 		{
@@ -444,6 +474,7 @@ namespace simul
 		class SamplerState;
 		struct ShaderResource
 		{
+			ShaderResourceType shaderResourceType;
 			void *platform_shader_resource;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique

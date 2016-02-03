@@ -191,7 +191,7 @@ shader void CS_Advection( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 }
 vec4 Laplacian(Texture3D tex3D,vec3 texc)
 {
-	uint3 dims;
+	uint3 dims=uint3(0,0,0);
 #ifdef IN_COMPUTE_SHADER
 	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
 #endif
@@ -659,8 +659,6 @@ shader void CS_Density_DontWrap(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//S
 	if (pos.x >= dims.x || pos.y >= dims.y || pos.z >= dims.z)
 		return;
 	float dens						=CSDensity(pos);
-	if (pos.x <= 0 || pos.y<= 0 || pos.x>= dims.x - 1 || pos.y >= dims.y - 1)
-		dens = 0;
 	IMAGE_STORE_3D(targetTexture1, int3(pos), vec4(dens, dens, dens, dens));
 }
 
@@ -794,7 +792,7 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	//vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	//vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
 	
-	float density		=saturate(sample_3d_lod(densityTexture,wwcSamplerState,densityspace_texcoord,0).x);
+	float density		=densityTexture[pos].x;
 	vec2 illum			=vec2(1.0,1.0);
 	vec3 wpos			=densityspace_texcoord*cloudScalesKm;
 	if(pos.z==0)
@@ -819,6 +817,8 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		vec4 lookup		=texture_wwc_lod(densityTexture,texc,0);
 		ambient			*=exp(-extinctions.xy*lookup.x*stepLength);
 	}
+	if (wrap==0&&(pos.x <= 0 || pos.y<= 0 || pos.x>= dims.x - 1 || pos.y >= dims.y - 1))
+		density = 0;
 	//if (pos.x <= 12|| pos.y<= 12 || pos.x>= dims.x - 12 || pos.y >= dims.y - 12)
 	//	density = 0;
     vec4 res					=vec4(illum.yx,density,0.5*(ambient.x+ambient.y));

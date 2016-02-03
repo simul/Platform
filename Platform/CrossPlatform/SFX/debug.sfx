@@ -113,8 +113,8 @@ shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
 	float ss		=sin(az);
 	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
 	vec4 res		=texture_cube(cubeTexture,view);
+	//res.xyz=IN.texCoords.xyy;
 	res				=vec4(pow(res.xyz,vec3(0.44,0.44,0.44)),1.0);
-	
 	return res;
 }
 
@@ -414,6 +414,7 @@ shader vec4 PS_Clear(posTexVertexOutput IN) : SV_TARGET
 shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint2 sub_pos = g.xy * 8 + t.xy;
+	if(sub_pos.x<texSize.x&&sub_pos.y<texSize.y)
 	FastClearTarget[sub_pos] = debugColour;
 }
 
@@ -421,6 +422,7 @@ shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 shader void CS_Clear3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 sub_pos = g * 8 + t;
+	if(sub_pos.x<texSize.x&&sub_pos.y<texSize.y&&sub_pos.z<texSize.z)
 	FastClearTarget3D[sub_pos] = debugColour;
 }
 

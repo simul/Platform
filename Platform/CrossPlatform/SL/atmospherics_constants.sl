@@ -37,7 +37,6 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform mat4 invShadowMatrix;
 	
 	uniform mat4 worldToCloudMatrix;
-	uniform mat4 worldToMoistureSpaceMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec4 mixedResolutionTransformXYWH;
 	uniform vec4 depthToLinFadeDistParams;
@@ -47,13 +46,13 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform float nearZ;
 	uniform float farZ;
 	
-    uniform int3 scatteringVolumeDims;
+    uniform uint3 scatteringVolumeDims;
 	uniform float godraysIntensity;
 	
-	uniform int3 amortizationOffset;
+	uniform uint3 amortizationOffset;
 	uniform float startZMetresZZZ;
 
-	uniform int3 amortization;
+	uniform uint3 amortization;
 	uniform float test;
 
 	uniform int2 offsetToCorner;

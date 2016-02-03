@@ -5,7 +5,7 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/Topology.h"
-#include "Simul/Platform/CrossPlatform/TwoResFramebuffer.h"
+
 #include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
 #include "Simul/Geometry/Orientation.h"
 #include <set>
@@ -19,6 +19,7 @@ namespace simul
 	{
 		class Texture;
 		class Effect;
+		class BaseFramebuffer;
 		struct Viewport;
 		class RenderPlatform;
 		///
@@ -129,6 +130,9 @@ namespace simul
 			MixedResolutionView				*GetView				(int view_id);
 
 			const MixedResolutionView		*GetView		(int view_id) const;
+
+			/// Delete old views
+			void CleanUp(int current_framenumber,int max_age);
 
 			/// Gets the views.
 			///
