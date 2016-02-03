@@ -14,6 +14,7 @@
     <ClCompile Include="CameraInterface.cpp" />
     <ClCompile Include="DemoOverlay.cpp" />
     <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="GpuProfiler.cpp" />
     <ClCompile Include="HdrRenderer.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="LensFlare.cpp" />
@@ -25,7 +26,6 @@
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="TwoResFramebuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseFramebuffer.h" />
@@ -39,6 +39,7 @@
     <ClInclude Include="DeviceContext.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
+    <ClInclude Include="GpuProfiler.h" />
     <ClInclude Include="HdrRenderer.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="LensFlare.h" />
@@ -54,7 +55,6 @@
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Topology.h" />
-    <ClInclude Include="TwoResFramebuffer.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <RootNamespace>Base</RootNamespace>
