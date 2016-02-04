@@ -14,16 +14,15 @@ struct LayerData
 };
 
 SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
-	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 scaleOfGridCoords;
 	uniform int halfClipSize;			// Actually half the full clip size.
 	uniform vec3 gridOriginPosKm;
 	uniform float pad151663;
 	uniform vec3 viewPosKm;
-	uniform uint layerIndex;
+	uniform float nearZ;
 	uniform mat4 invViewProj;
 	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
-	uniform mat4 moistureToWorldSpaceMatrix;
+
 	uniform mat4 worldToScatteringVolumeMatrix;
 	uniform mat4 viewProj;
 	uniform vec4 depthToLinFadeDistParams;
@@ -31,24 +30,18 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform float exposure;
 	uniform float maxCloudDistanceKm;
 
-	uniform float nearZ;
-	uniform float farZ;
-	uniform float extentZKm;
-	uniform float startZKm;
-
 	uniform float shadowRange;
 	uniform int shadowTextureSize;
 	uniform float depthMix;
 	uniform float CloudPerViewConstantsPad3;
 
-	uniform vec4 mixedResTransformXYWH;		// xy=offset, zw=multiple.
 
 	uniform vec2 rainCentreKm;
 	uniform float rainRadiusKm;
-	uniform int padddddddd;
+	uniform float startZKm;
 
 	uniform uint3 amortizationOffset;
-	uniform int padddddddddddddd;
+	uniform float farZ;
 	
 	uniform uint4 targetRange;
 
@@ -56,7 +49,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int2 edge;
 
 	uniform uint3 amortizationScale;
-	uniform int pada1;
+	uniform float extentZKm;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)

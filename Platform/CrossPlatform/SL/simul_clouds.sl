@@ -390,7 +390,9 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 							//*(0.4+0.6*streak.x)
 							;
 }
-
+// groupshared has 32k available.
+// each vec4 is 16 bytes. So 1024 vec4's will be 16k
+//groupshared vec4 distance[4][4][1024];
 RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,Texture2D rainMapTexture
 											,Texture3D noiseTexture3D
@@ -409,6 +411,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,vec3 volumeTexCoordsXyC
 											,bool noise
 											,bool do_rain_effect
+											,bool do_rainbow
 											,vec3 cloudIrRadiance1
 											,vec3 cloudIrRadiance2)
 {
@@ -443,7 +446,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float BetaRayleigh		=CalcRayleighBeta(cos0);
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
 
-	vec4 rainbowColour		=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
+	vec4 rainbowColour;
+	if(do_rainbow)
+		rainbowColour=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
 												rainbowIntensity,view,lightDir);
 	float moisture			=0.0;
 
@@ -536,9 +541,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		}
 		else break;
 	}
-	float blinn_phong=0.0;
-	bool found=false;
-	for(int i=0;i<1255;i++)
+	//float blinn_phong=0.0;
+	//bool found=false;
+	for(int i=0;i<768;i++)
 	{
 		world_pos					+=0.001*view;
 		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm||solidDist_nearFar.y<lastFadeDistance)
@@ -620,8 +625,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					vec4 clr;
 					// The "normal" that the ray has hit is equal to N, but with the negative signs of the components of viewScaled or view.
 					vec3 normal				=0.5*(-N*sign(viewScaled)-view);
-				//	blinn_phong				*=0.5;
-					blinn_phong				=0.1*pow(dot(normal,halfway),4.0)*density.z;
+				
+				//	blinn_phong				=0.1*pow(dot(normal,halfway),4.0)*density.z;
 
 					if (noise)
 						clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
@@ -693,7 +698,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
     res.colour			=colour;
     res.nearColour		=nearColour;
 #ifndef INFRARED
-	res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
+	if(do_rainbow)
+		res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
 	res.nearFarDepth.xz	=min(res.nearFarDepth.xz,vec2(meanFadeDistance+0.25,meanFadeDistance+0.25));
 	res.nearFarDepth.wy	=min(res.nearFarDepth.wy,vec2(meanFadeDistance,meanFadeDistance));

@@ -199,7 +199,7 @@ struct FarNearDepthPixelOutput
 FarNearDepthPixelOutput SimpleRaytrace(posTexVertexOutput IN)
 {
 	FarNearDepthPixelOutput fn;
-	vec2 texCoords	=mixedResTransformXYWH.xy + IN.texCoords.xy*mixedResTransformXYWH.zw;
+	vec2 texCoords	= IN.texCoords.xy;
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
@@ -225,6 +225,7 @@ FarNearDepthPixelOutput SimpleRaytrace(posTexVertexOutput IN)
 									,volumeTexCoordsXyC
 									,false
 									,true
+									,false
 									,cloudIrRadiance1,cloudIrRadiance2
 									);
 	//if(p.colour.a>=1.0)
@@ -247,9 +248,6 @@ void Raytrace(uint2 pos,bool include_rain,bool depth)
 	vec4 dlookup			=vec4(1.0,1.0,1.0,1.0);
 	if(depth)
 		dlookup				=texture_cube_lod(depthTexture,view,0);
-	// Transform view into the proper frustum
-	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
-	frustum_clip_pos		/=frustum_clip_pos.w;
 	vec3 lightspaceView		=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
 
 	float ls_angle			=asin(lightspaceView.z);
@@ -273,6 +271,7 @@ void Raytrace(uint2 pos,bool include_rain,bool depth)
 									,volumeTexCoordsXyC
 									,true
 									,include_rain
+									,false
 									,cloudIrRadiance1,cloudIrRadiance2
 									);
 	vec4 t2d				=texture_cube_lod(clouds2DTexture,view,0);
@@ -283,10 +282,6 @@ void Raytrace(uint2 pos,bool include_rain,bool depth)
 	c.rgb					+=f.colour.rgb;
 //	c.rgb=lightspaceView;
 	c.a						=t2d.a*f.colour.a;
-	if(frustum_clip_pos.x>=-1.0&&frustum_clip_pos.x<=1.0&&frustum_clip_pos.y>=-1.0&&frustum_clip_pos.y<=1.0)
-	{
-		//c.rgb=frac(vec3(atmosTexCoords,1.0));
-	}
 	outputTexture1[pos]		=c;//vec4(1,0,1,0);
 	float n					=float(dlookup.y>=1.0);
 	vec4 cn					=t2d;
@@ -311,9 +306,6 @@ void Lightpass(uint2 pos)
 	vec4 dlookup			=vec4(1.0,1.0,1.0,1.0);
 	//if(depth)
 		dlookup			=texture_cube_lod(depthTexture,view,0);
-	// Transform view into the proper frustum
-	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
-	frustum_clip_pos		/=frustum_clip_pos.w;
 	vec3 lightspaceView		=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
 
 
@@ -338,15 +330,15 @@ void Lightpass(uint2 pos)
 void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
-	uint2 offset	=(amortizationOffset.xy+uint2(idx.x+idx.y,idx.x+idx.y))%amortizationScale.xy;
-	uint2 pos		=targetRange.xy+idx*amortizationScale.xy+offset;
-	//outputTexture2[pos]		=vec4(0,1,1,1);
+	uint2 pos		=targetRange.xy+idx*amortizationScale.xy;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
 		return;
 	if(updateTexture[pos].b==0.0)
 		return;
+	uint2 offset	=(amortizationOffset.xy+(idx.xy+idx.yx))%amortizationScale.xy;
+	pos				+=offset;
 	Raytrace(pos,include_rain,depth);
 }
 
@@ -354,14 +346,15 @@ CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_Lightpass(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
-	uint2 offset	=(amortizationOffset.xy+idx)%amortizationScale.xy;
-	uint2 pos		=targetRange.xy+idx*amortizationScale.xy+offset;
+	uint2 pos		=targetRange.xy+idx*amortizationScale.xy;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
 		return;
 	if(updateTexture[pos].b==0.0)
 		return;
+	uint2 offset	=(amortizationOffset.xy+idx)%amortizationScale.xy;
+	pos				+=offset;
 	Lightpass(pos);
 }
 
@@ -379,7 +372,8 @@ shader void CS_Edge(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	if(u.r<1.0&&u.b>0.0)
 	{
 		Raytrace(pos,  include_rain,true);
-	//	outputTexture1[pos]		=vec4(1,0,0,0);
+//	outputTexture1[pos]		=vec4(1,0,0,.5);
+//	outputTexture2[pos]		=vec4(1,1,0,.5);
 	}
 }
 
@@ -390,7 +384,7 @@ shader void CS_RaytraceSimple(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
 	uint2 pos				=targetRange.xy+idx*amortizationScale.xy+amortizationOffset.xy;
 
 	Raytrace(pos,false,false);
-//outputTexture1[pos]		=vec4(1,0,0,0);
+		
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -467,11 +461,12 @@ shader vec4 PS_ShowNoise(posTexVertexOutput IN):SV_TARGET
 shader vec4 PS_Show3DNoise(posTexVertexOutput IN):SV_TARGET
 {
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
-	//if(IN.texCoords.y<0.5)
+	if(IN.texCoords.y<0.5)
 		z=0.5;
 	vec4 lookup		=texture_3d_nearest_lod(noiseTexture3D,vec3(IN.texCoords,z),0);
 	//lookup=abs(lookup);
-	return vec4(0.5*(lookup.rgb+1.0),1.0);
+	return vec4(saturate(lookup.rgb),1.0);
+	//return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
 shader vec4 PS_ShowShadow(posTexVertexOutput IN):SV_TARGET
