@@ -12,8 +12,8 @@ uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 #include "../SL/earth_shadow_fade.sl"
 #include "../SL/debug_constants.sl"
 
-uniform Texture3D cloudDensity				;
-uniform Texture3D cloudDensity2				;
+uniform Texture3D cloudDensity;
+uniform Texture3D cloudDensity2;
 
 uniform Texture2D cloudShadowTexture;
 uniform Texture2D lossTexture;
@@ -23,11 +23,11 @@ uniform TextureCube depthTexture;
 uniform Texture3D noiseTexture3D;
 uniform TextureCube clouds2DTexture	;
 uniform Texture2D illuminationTexture;
-uniform Texture2D lightTableTexture	;
-uniform Texture2D rainbowLookupTexture	;
-uniform Texture2D coronaLookupTexture		;
-uniform Texture3D volumeInscatterTexture	;
-uniform Texture2D rainMapTexture			;
+uniform Texture2D lightTableTexture;
+uniform Texture2D rainbowLookupTexture;
+uniform Texture2D coronaLookupTexture;
+uniform Texture3D volumeInscatterTexture;
+uniform Texture2D rainMapTexture;
 /// The previous texture area:
 uniform Texture2D updateTexture				;
 uniform RWTexture3D<uchar4> inputTexture3d;
@@ -83,12 +83,14 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.optical_thickness_km		=0.0;
 	res.first_contact_km			=max_dist;
 	vec3 dir						=diff/total_dist;
+	float dz_plus					=max(0.0001, dir.z);
+	float dz_minus					=max(0.0001,-dir.z);
 	float start_dist=0;
 	// How far under?
 	vec3 offsetKm1					=start_pos-cornerPosKm;
 	float under						=max(0.0,-offsetKm1.z);
 	float over						=max(0.0,offsetKm1.z-1.0/inverseScalesKm.z);
-	start_dist						=max(over/max(0.0001,-dir.z),under/max(0.0001,dir.z));
+	start_dist						=max(over/dz_minus,under/dz_plus);
 	start_dist						=min(start_dist,total_dist);
 	start_pos						+=dir*start_dist;
 	
@@ -96,7 +98,7 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	// How far under?
 	float under2					=max(0.0,-offsetKm2.z);
 	float over2						=max(0.0,offsetKm2.z-1.0/inverseScalesKm.z);
-	float end_dist					=max(over2/max(0.0001,-dir.z),under2/max(0.0001,dir.z));
+	float end_dist					=total_dist+max(over2/dz_minus,under2/dz_plus);
 	end_dist						=min(end_dist,total_dist);
 	end_dist						=max(start_dist,end_dist);
 	end_pos							=start_pos+dir*end_dist;
@@ -234,7 +236,7 @@ FarNearDepthPixelOutput SimpleRaytrace(posTexVertexOutput IN)
 	return fn;
 }
 
-void Raytrace(int2 pos,bool include_rain,bool depth)
+void Raytrace(uint2 pos,bool include_rain,bool depth)
 {
 	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
@@ -244,7 +246,7 @@ void Raytrace(int2 pos,bool include_rain,bool depth)
 	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
 	vec4 dlookup			=vec4(1.0,1.0,1.0,1.0);
 	if(depth)
-		dlookup			=texture_cube_lod(depthTexture,view,0);
+		dlookup				=texture_cube_lod(depthTexture,view,0);
 	// Transform view into the proper frustum
 	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
 	frustum_clip_pos		/=frustum_clip_pos.w;
@@ -296,7 +298,7 @@ void Raytrace(int2 pos,bool include_rain,bool depth)
 	outputTexture3[pos]		=f.nearFarDepth;
 }
 
-void Lightpass(int2 pos)
+void Lightpass(uint2 pos)
 {
 	if(updateTexture[pos].b==0.0)
 		return;
@@ -318,17 +320,17 @@ void Lightpass(int2 pos)
 	vec2 atmosTexCoords		=vec2(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*asin(lightspaceView.z)/pi));
 
 	FarNearPixelOutput f	=Lightpass(cloudDensity
-		,noiseTexture3D
-		,dlookup
-		,view
-		,clip_pos
-		,sourcePosKm
-		,sourceRadiusKm
-		,spectralFluxOver1e6
-		,minCosine
-		,maxRadiusKm
-		,irradianceThreshold
-		);
+										,noiseTexture3D
+										,dlookup
+										,view
+										,clip_pos
+										,sourcePosKm
+										,sourceRadiusKm
+										,spectralFluxOver1e6
+										,minCosine
+										,maxRadiusKm
+										,irradianceThreshold
+										);
 	outputTexture1[pos]		=f.farColour;
 	outputTexture2[pos]		=f.nearColour;
 }
@@ -338,6 +340,7 @@ void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rai
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint2 offset	=(amortizationOffset.xy+uint2(idx.x+idx.y,idx.x+idx.y))%amortizationScale.xy;
 	uint2 pos		=targetRange.xy+idx*amortizationScale.xy+offset;
+	//outputTexture2[pos]		=vec4(0,1,1,1);
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
@@ -348,7 +351,7 @@ void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rai
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
-shader void CS_Lightpass(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
+shader void CS_Lightpass(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint2 offset	=(amortizationOffset.xy+idx)%amortizationScale.xy;
@@ -375,8 +378,6 @@ shader void CS_Edge(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	// current value is b, old value is r
 	if(u.r<1.0&&u.b>0.0)
 	{
-		if(updateTexture[pos].b==0.0)
-			return;
 		Raytrace(pos,  include_rain,true);
 	//	outputTexture1[pos]		=vec4(1,0,0,0);
 	}
@@ -385,8 +386,8 @@ shader void CS_Edge(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceSimple(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
 {
-	int2 idx				=int2(g.xy*BLOCK_SIZE+t.xy);
-	int2 pos				=targetRange.xy+idx*amortizationScale.xy+amortizationOffset.xy;
+	uint2 idx				=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint2 pos				=targetRange.xy+idx*amortizationScale.xy+amortizationOffset.xy;
 
 	Raytrace(pos,false,false);
 //outputTexture1[pos]		=vec4(1,0,0,0);

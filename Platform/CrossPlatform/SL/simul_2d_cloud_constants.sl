@@ -51,8 +51,8 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform vec3 cloudIrRadiance;
 	uniform float exposure;
 	
-	uniform int4 targetRange;
-	uniform int2 edge;
+	uniform uint4 targetRange;
+	uniform uint2 edge;
 	uniform uint2 amortizationScale;
 
 	uniform uint2 amortizationOffset;
