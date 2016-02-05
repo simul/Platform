@@ -276,7 +276,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 		vec3 p1						=c1;
 		vec3 dp						=p1-p;
 		vec3 D						=(dp/viewScaled);
-		//D+=100.0*step(D,vec3(0,0,0));
+		
 		float e						=min(min(D.x,D.y),D.z);
 		// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
 		vec3 N						=step(D,vec3(e,e,e));
@@ -453,9 +453,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float moisture			=0.0;
 
 	vec3 world_pos			=viewPosKm;
-
+	
 	// This provides the range of texcoords that is lit.
-	int3 c_offset			=int3(sign(view.x),sign(view.y),sign(view.z));
+	// In c_offset, we want 1's or -1's. NEVER zeroes!
+	int3 c_offset			=int3(2.0*step(vec3(0,0,0),view.xyz)-vec3(1,1,1));
 	int3 start_c_offset		=-c_offset;
 	start_c_offset			=int3(max(start_c_offset.x,0),max(start_c_offset.y,0),max(start_c_offset.z,0));
 	vec3 viewScaled			=view/scaleOfGridCoords;
@@ -543,6 +544,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	}
 	//float blinn_phong=0.0;
 	//bool found=false;
+
 	for(int i=0;i<768;i++)
 	{
 		world_pos					+=0.001*view;

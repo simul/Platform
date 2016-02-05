@@ -83,6 +83,11 @@
 			for(int i=0;i<16;i++)
 				m[i]=v[i];
 		}
+		void operator*=(float c)
+		{
+			for(int i=0;i<16;i++)
+				m[i]*=c;
+		}
 		void transpose()
 		{
 			for(int i=0;i<4;i++)

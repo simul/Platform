@@ -1,7 +1,6 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef COMPOSITE_SL
 #define COMPOSITE_SL
-
 #define DEBUG_COMPOSITING
 
 
