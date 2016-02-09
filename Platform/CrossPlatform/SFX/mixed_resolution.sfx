@@ -46,10 +46,10 @@ vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture
 			vec2 texc	=texCoords+2.0*offs;
 			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
 			if(depthInterpretationStruct.reverseDepth)
-				d.x					= step(d.x,nearThresholdDepth)*d.x;
+				d.x		= step(d.x,nearThresholdDepth)*d.x;
 			else
-				d.x					= step(d.x,nearThresholdDepth)+d.x;
-			vec2 dist				=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+				d.x		=step(d.x,nearThresholdDepth)+d.x;
+			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 			
 			fn.yw=min(fn.yw,dist);
 			fn.xz=max(fn.xz,dist);
@@ -191,8 +191,9 @@ void MinMax(int2 idx,bool reverseDepth)
 		fn.yw=min(fn.yw,fn3.yw);
 		fn.xz=max(fn.xz,fn3.xz);
 	}
-
-	targetTexture[idx]				=fn;
+	//fn.xz+=0.000005;
+//	fn.yw-=0.000005;
+	targetTexture[idx]				=saturate(fn);
 }
 
 CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)

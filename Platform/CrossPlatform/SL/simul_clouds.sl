@@ -418,6 +418,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	RaytracePixelOutput res;
 	res.colour				=vec4(0,0,0,1.0);
 	res.nearColour			=vec4(0,0,0,1.0);
+//dlookup.x=min(1.0,dlookup.x+0.025);
 	res.nearFarDepth		=dlookup;
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
@@ -453,7 +454,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float moisture			=0.0;
 
 	vec3 world_pos			=viewPosKm;
-	
+	view.xyz+=vec3(0.00001,0.00001,0.00001);
 	// This provides the range of texcoords that is lit.
 	// In c_offset, we want 1's or -1's. NEVER zeroes!
 	int3 c_offset			=int3(2.0*step(vec3(0,0,0),view.xyz)-vec3(1,1,1));
@@ -626,7 +627,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,sqrt(fadeDistance*volumeTexCoordsXyC.z));//*sineFactor);
 					vec4 clr;
 					// The "normal" that the ray has hit is equal to N, but with the negative signs of the components of viewScaled or view.
-					vec3 normal				=0.5*(-N*sign(viewScaled)-view);
+					//vec3 normal				=0.5*(-N*sign(viewScaled)-view);
 				
 				//	blinn_phong				=0.1*pow(dot(normal,halfway),4.0)*density.z;
 
@@ -703,10 +704,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	if(do_rainbow)
 		res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-	res.nearFarDepth.xz	=min(res.nearFarDepth.xz,vec2(meanFadeDistance+0.25,meanFadeDistance+0.25));
-	res.nearFarDepth.wy	=min(res.nearFarDepth.wy,vec2(meanFadeDistance,meanFadeDistance));
-	res.nearFarDepth.z	=max(0.001,saturate(lastFadeDistance-meanFadeDistance));//*(1.0-colour.a);
-	res.nearFarDepth.w	=meanFadeDistance;
+//	res.nearFarDepth.x		=min(res.nearFarDepth.x,meanFadeDistance+0.000025);
+//	res.nearFarDepth.y		=min(res.nearFarDepth.y,meanFadeDistance);
+	res.nearFarDepth.z		=max(0.0000001,saturate(res.nearFarDepth.x-res.nearFarDepth.y));//*(1.0-colour.a);
+	res.nearFarDepth.w		=meanFadeDistance;
 	return res;
 }
 #endif
