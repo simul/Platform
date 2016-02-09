@@ -442,6 +442,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec4 illum_lookup		=texture_wrap_mirror(illuminationTexture,illum_texc);
 	vec2 nearFarTexc		=illum_lookup.xy;
 	float meanFadeDistance	=1.0;
+	float minDistance		=1.0;
+	float maxDistance		=0.0;
 	// Precalculate hg effects
 	float BetaClouds		=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	float BetaRayleigh		=CalcRayleighBeta(cos0);
@@ -588,6 +590,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		float fade					=1.0-(fade_inter);
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
+		// maxDistance is the furthest we can *see*.
+		maxDistance				=max(fadeDistance,maxDistance);
 		b							=abs(c-C0*2);
 		if(fade>0)
 		{
@@ -656,7 +660,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					if(do_depth_mix)
 					{
 						vec4 clr_n			=clr;
-						vec2 m				=saturate((solidDist_nearFar.xy-vec2(fadeDistance,fadeDistance))*100.0);
+						vec2 m				=saturate((solidDist_nearFar.xy-vec2(fadeDistance,fadeDistance))*10.0);
 						clr.a				*=m.y;
 						clr_n.a				*=m.x;
 						nearColour.rgb		+=clr_n.rgb*clr_n.a*(nearColour.a);
@@ -666,6 +670,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a);
 				//if(meanFadeDistance>=1.0)
 				//	meanFadeDistance		=fadeDistance;
+					// minDistance is the closest cloud.
+					minDistance				=min(fadeDistance,minDistance);
 					colour.a				*=(1.0-clr.a);
 					if(nearColour.a*brightness_factor<0.003)
 					{
@@ -704,10 +710,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	if(do_rainbow)
 		res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-//	res.nearFarDepth.x		=min(res.nearFarDepth.x,meanFadeDistance+0.000025);
-//	res.nearFarDepth.y		=min(res.nearFarDepth.y,meanFadeDistance);
-	res.nearFarDepth.z		=max(0.0000001,saturate(res.nearFarDepth.x-res.nearFarDepth.y));//*(1.0-colour.a);
-	res.nearFarDepth.w		=meanFadeDistance;
+	res.nearFarDepth.x		=min(res.nearFarDepth.x,meanFadeDistance+0.000025);
+	res.nearFarDepth.y		=min(res.nearFarDepth.y,meanFadeDistance);
+	res.nearFarDepth.x		=max(0.0000001,saturate(res.nearFarDepth.x-res.nearFarDepth.y));//*(1.0-colour.a);
+	res.nearFarDepth.w		=min(0.1,minDistance);
+	res.nearFarDepth.z		=max(0.0000001,res.nearFarDepth.y-minDistance);
 	return res;
 }
 #endif

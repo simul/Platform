@@ -43,12 +43,10 @@ vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture
 		{
 			//float y		=(0.5+float(j)-scale.y/2.0)/float(scale.y);
 			vec2 offs	=texelRange*offsets[i];//texelRange*vec2(x,y);
-			vec2 texc	=texCoords+2.0*offs;
+			vec2 texc	=saturate(1.01*(texCoords+1.0*offs))/1.01;
+			texc			*=depthWindow.zw;
+			texc			+=depthWindow.xy;
 			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
-			if(depthInterpretationStruct.reverseDepth)
-				d.x		= step(d.x,nearThresholdDepth)*d.x;
-			else
-				d.x		=step(d.x,nearThresholdDepth)+d.x;
 			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 			
 			fn.yw=min(fn.yw,dist);
@@ -93,8 +91,6 @@ void DownscaleStochastic(int2 idx1,bool reverseDepth)
 	frustum_clip_pos		/=frustum_clip_pos.w;
 	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	sourceTexCoords.y		=1.0-sourceTexCoords.y;
-	sourceTexCoords			*=depthWindow.zw;
-	sourceTexCoords			+=depthWindow.xy;
 	vec4 clipRange			=frustumClipRange;//vec4(-1.0,-1.0,1.0,1.0);
 	if(frustum_clip_pos.z<0.0)
 	{
@@ -191,6 +187,7 @@ void MinMax(int2 idx,bool reverseDepth)
 		fn.yw=min(fn.yw,fn3.yw);
 		fn.xz=max(fn.xz,fn3.xz);
 	}
+//	fn.x		=step(fn.x,nearThresholdDist)+fn.x;
 	//fn.xz+=0.000005;
 //	fn.yw-=0.000005;
 	targetTexture[idx]				=saturate(fn);

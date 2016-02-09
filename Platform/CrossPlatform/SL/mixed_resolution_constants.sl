@@ -23,7 +23,7 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform vec2 stochasticOffset;
 	uniform vec2 tanHalfFov;
 	uniform float nearThresholdDepth;
-	uniform float wq084h23g23gt;
+	uniform float nearThresholdDist;
 
 	uniform int cubeIndex;
 	uniform float farZ;
