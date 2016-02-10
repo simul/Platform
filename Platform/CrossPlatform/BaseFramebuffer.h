@@ -101,7 +101,7 @@ namespace simul
 				int2 offset(0,XYX0Y0.w);
 				return offset;
 			}
-			void updateRegion(int2 deltaOffset,vec2 newPixelOffset)
+			void updateRegion(int2 deltaOffset)
 			{
 				//int2 new_pos=int2((int)newPixelOffset.x,(int)newPixelOffset.y);
 				validRegion.x-=deltaOffset.x;

@@ -1334,7 +1334,7 @@ static vec4 Lookup(crossplatform::DeviceContext &deviceContext,crossplatform::Te
 	vec4 data[4];
 	tex->activateRenderTarget(deviceContext);
 	glReadPixels(x,y,2,2,GL_RGBA,GL_FLOAT,(GLvoid*)data);
-	tex->deactivateRenderTarget();
+	tex->deactivateRenderTarget(deviceContext);
 	vec4 bottom		=lerp(x_interp,data[0],data[1]);
 	vec4 top		=lerp(x_interp,data[2],data[3]);
 	vec4 ret		=lerp(y_interp,bottom,top);

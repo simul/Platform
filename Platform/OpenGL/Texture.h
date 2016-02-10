@@ -47,8 +47,8 @@ namespace simul
 			bool ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false);
 			void GenerateMips(crossplatform::DeviceContext &deviceContext);
 			void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
-			void activateRenderTarget(crossplatform::DeviceContext &deviceContext);
-			void deactivateRenderTarget();
+			void activateRenderTarget(crossplatform::DeviceContext &deviceContext,int array_index=-1);
+			void deactivateRenderTarget(crossplatform::DeviceContext &deviceContext);
 			int GetLength() const;
 			int GetWidth() const;
 			int GetDimension() const;

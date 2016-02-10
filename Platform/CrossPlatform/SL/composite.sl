@@ -29,6 +29,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,TextureCube farCloudTexture
 				,TextureCube nearCloudTexture
 				,TextureCube nearFarTexture
+				,TextureCube lightpassTexture
 				,Texture2D loss2dTexture
 				,Texture2D depthTexture
 				,mat4 invViewProj
@@ -75,6 +76,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 cloudNear				=texture_cube_lod(nearCloudTexture, view, 0);
 	cloud						=lerp(cloudNear, cloud,hiResInterp);
 	
+	vec4 lp						=texture_cube_lod(lightpassTexture,view,0);
+	cloud.rgb						+=lp.rgb;
 //	if(lowResTexCoords.x+lowResTexCoords.y>1.0)
 //		cloud=cloudNear;
 	cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
@@ -86,6 +89,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	insc						+=cloud;
 	res.multiply				=texture_clamp_mirror_lod(loss2dTexture,loss_texc,0)*cloud.a*shadow;
 	res.add						=insc;
+//	res.add.r=hiResInterp;
 	//res.add.rgb=nearInterp;
 	//res.multiply*=0;
 //res.add.rgb=dist-nearFarCloud.y;

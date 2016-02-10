@@ -56,7 +56,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform float test;
 
 	uniform int2 offsetToCorner;
-	uniform int2 edge;
+	uniform uint2 edge;
 
 SIMUL_CONSTANT_BUFFER_END
 

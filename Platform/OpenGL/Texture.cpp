@@ -474,7 +474,7 @@ void Texture::setTexels(crossplatform::DeviceContext &,const void *src,int texel
 #endif
 }
 
-void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &)
+void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &,int array_index)
 {
 	if(!m_fb)
 		return;
@@ -494,7 +494,7 @@ void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &)
 	GL_ERROR_CHECK
 }
 
-void Texture::deactivateRenderTarget()
+void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext)
 {
 	if(!m_fb)
 		return;

@@ -94,8 +94,8 @@ namespace simul
 			bool isMapped() const;
 			void unmap();
 			vec4 GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap);
-			void activateRenderTarget(crossplatform::DeviceContext &deviceContext);
-			void deactivateRenderTarget();
+			void activateRenderTarget(crossplatform::DeviceContext &deviceContext,int array_index=-1);
+			void deactivateRenderTarget(crossplatform::DeviceContext &deviceContext);
 			virtual int GetLength() const
 			{
 				return length;

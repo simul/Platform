@@ -295,23 +295,22 @@ void Raytrace(uint2 pos,bool include_rain,bool depth)
 	outputTexture3[pos]		=f.nearFarDepth;
 }
 
-void Lightpass(uint2 pos)
+void Lightpass(uint2 pos,bool depth)
 {
-	if(updateTexture[pos].b==0.0)
-		return;
 	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
 	float sineFactor		=1.0/length(clip_pos.xyz);
-	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
+	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 	vec4 dlookup			=vec4(1.0,1.0,1.0,1.0);
-	//if(depth)
-		dlookup			=texture_cube_lod(depthTexture,view,0);
+	if(depth)
+		dlookup				=texture_cube_lod(depthTexture,view,0);
+
 	vec3 lightspaceView		=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
 
-
-	vec2 atmosTexCoords		=vec2(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*asin(lightspaceView.z)/pi));
+	float ls_angle			=asin(lightspaceView.z);
+	vec3 volumeTexCoordsXyC	=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*ls_angle/pi),max(0.3,cos(ls_angle)));
 
 	FarNearPixelOutput f	=Lightpass(cloudDensity
 										,noiseTexture3D
@@ -328,7 +327,7 @@ void Lightpass(uint2 pos)
 	outputTexture1[pos]		=f.farColour;
 	outputTexture2[pos]		=f.nearColour;
 }
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE 8
 void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
@@ -341,6 +340,8 @@ void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rai
 		return;
 	uint2 offset	=(amortizationOffset.xy+(idx.xy+idx.yx))%amortizationScale.xy;
 	pos				+=offset;
+	//outputTexture1[idx]		=vec4(0,1,0,1);
+	//outputTexture2[pos]		=vec4(1,1,0,1);
 	Raytrace(pos,include_rain,depth);
 }
 
@@ -348,18 +349,38 @@ CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_Lightpass(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
-	uint2 pos		=targetRange.xy+idx*amortizationScale.xy;
+	uint2 pos		=targetRange.xy+idx;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
 		return;
 	if(updateTexture[pos].b==0.0)
 		return;
-	uint2 offset	=(amortizationOffset.xy+idx)%amortizationScale.xy;
-	pos				+=offset;
-	Lightpass(pos);
+	Lightpass(pos,true);
 }
+shader vec4 PS_Lightpass(posTexVertexOutput IN):SV_TARGET
+{
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*IN.texCoords.x;
+	clip_pos.y				-=2.0*IN.texCoords.y;
+	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
+	vec4 dlookup			=vec4(1.0,1.0,1.0,1.0);
+//	dlookup					=texture_cube_lod(depthTexture,view,0);
 
+	FarNearPixelOutput f	=Lightpass(cloudDensity
+										,noiseTexture3D
+										,dlookup
+										,view
+										,clip_pos
+										,sourcePosKm
+										,sourceRadiusKm
+										,spectralFluxOver1e6
+										,minCosine
+										,maxRadiusKm
+										,irradianceThreshold
+										);
+	return vec4(f.farColour.rgb,1);
+}
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_Edge(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
@@ -565,6 +586,18 @@ fxgroup raytrace
 		pass p0
 		{
 			SetComputeShader(CompileShader(cs_5_0,CS_Lightpass()));
+		}
+	}
+	technique lightpass_draw
+	{
+		pass p0
+		{
+			SetDepthStencilState(DisableDepth,0);
+			SetRasterizerState(RenderNoCull);
+			SetBlendState(NoBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+			SetVertexShader(vs_fullscreen_5_0);
+			SetGeometryShader(NULL);
+			SetPixelShader(CompileShader(ps_5_0,PS_Lightpass()));
 		}
 	}
 	technique edge

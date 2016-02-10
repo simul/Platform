@@ -724,7 +724,7 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 		return;
 	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
 	if(currentPass)
-		HRESULT hr = currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
+		V_CHECK(currentPass->Apply(0, deviceContext.asD3D11DeviceContext()));
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)

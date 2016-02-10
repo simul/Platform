@@ -1042,7 +1042,7 @@ vec4 Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoord
 	return vec4((const float*)pixel);
 }
 
-void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext)
+void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,int array_index)
 {
 	if(!deviceContext.asD3D11DeviceContext())
 		return;
@@ -1059,7 +1059,12 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext)
 											);
 	}
 	SIMUL_ASSERT(renderTargetViews!=NULL);
-	last_context->OMSetRenderTargets(num_rt,renderTargetViews,NULL);
+	int n=num_rt;
+	if(array_index>=0)
+		n=1;
+	else
+		array_index=0;
+	last_context->OMSetRenderTargets(n,&(renderTargetViews[array_index]),NULL);
 	{
 		ID3D11Texture2D* ppd(NULL);
 		if(!texture)
@@ -1080,15 +1085,13 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext)
 	}
 }
 
-void Texture::deactivateRenderTarget()
+void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext)
 {
-	if(!last_context)
-		return;
-	last_context->OMSetRenderTargets(	num_OldViewports,
+	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(	num_OldViewports,
 										m_pOldRenderTargets,
 										m_pOldDepthSurface
 										);
-	last_context->RSSetViewports(num_OldViewports,m_OldViewports);
+	deviceContext.asD3D11DeviceContext()->RSSetViewports(num_OldViewports,m_OldViewports);
 	for(int i=0;i<(int)num_OldViewports;i++)
 	{
 		SAFE_RELEASE(m_pOldRenderTargets[i]);

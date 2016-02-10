@@ -112,9 +112,9 @@ namespace simul
 			//! Set the texture data from CPU memory.
 			virtual void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)=0;
 			//! Activate as a rendertarget - must call deactivateRenderTarget afterwards.
-			virtual void activateRenderTarget(DeviceContext &deviceContext)=0;
+			virtual void activateRenderTarget(DeviceContext &deviceContext,int array_index=-1)=0;
 			//! Deactivate as a rendertarget.
-			virtual void deactivateRenderTarget()=0;
+			virtual void deactivateRenderTarget(DeviceContext &deviceContext)=0;
 			virtual int GetLength() const
 			{
 				return length;

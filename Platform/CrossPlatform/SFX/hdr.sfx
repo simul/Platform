@@ -16,6 +16,7 @@ uniform TEXTURE2DMS_FLOAT4 imageTextureMS;
 uniform TextureCube nearImageTexture;
 uniform TextureCube farImageTexture;
 uniform TextureCube nearFarTexture;
+uniform TextureCube lightpassTexture;
 uniform Texture2D depthTexture;
 uniform TEXTURE2DMS_FLOAT4 depthTextureMS;
 uniform Texture2D lowResDepthTexture;
@@ -297,6 +298,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,farImageTexture
 															,nearImageTexture
 															,nearFarTexture
+															,lightpassTexture
 															,loss2dTexture
 															,depthTexture
 															,invViewProj
@@ -322,6 +324,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,farImageTexture
 															,farImageTexture
 															,nearFarTexture
+															,lightpassTexture
 															,loss2dTexture
 															,depthTexture
 															,invViewProj

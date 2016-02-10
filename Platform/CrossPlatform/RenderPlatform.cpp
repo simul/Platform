@@ -213,11 +213,14 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	// Does it have rendertargets? We can clear each of these in turn.
 	if(texture->HasRenderTargets())
 	{
-		texture->activateRenderTarget(deviceContext);
-		debugEffect->Apply(deviceContext,"clear",0);
-			DrawQuad(deviceContext);
-		debugEffect->Unapply(deviceContext);
-		texture->deactivateRenderTarget();
+		for(int i=0;i<texture->arraySize;i++)
+		{
+			texture->activateRenderTarget(deviceContext,i);
+			debugEffect->Apply(deviceContext,"clear",0);
+				DrawQuad(deviceContext);
+			debugEffect->Unapply(deviceContext);
+			texture->deactivateRenderTarget(deviceContext);
+		}
 	}
 	// Otherwise, is it computable? We can set the colour value with a compute shader.
 	// Finally, is it mappable? We can set the colour from CPU memory.

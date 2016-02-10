@@ -68,7 +68,7 @@ void HdrRenderer::SetBufferSize(int w,int h)
 			renderPlatform->GetDebugEffect()->Apply(immediateContext,renderPlatform->GetDebugEffect()->GetTechniqueByName("clear"),0);
 				renderPlatform->DrawQuad(immediateContext);
 			renderPlatform->GetDebugEffect()->Unapply(immediateContext);
-			blurTexture->deactivateRenderTarget();
+			blurTexture->deactivateRenderTarget(immediateContext);
 		}
 	}
 	//RecompileShaders();
@@ -219,7 +219,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 			hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName("blur"),0);
 			renderPlatform->DrawQuad(deviceContext);
 			hdr_effect->Unapply(deviceContext);
-			dst->deactivateRenderTarget();
+			dst->deactivateRenderTarget(deviceContext);
 			std::swap(src,dst);
 		}
 		SIMUL_COMBINED_PROFILE_END(deviceContext)
@@ -337,7 +337,7 @@ void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,
 		hdr_effect->Apply(deviceContext,glowTechnique,(0));
 		brightpassTextures[0]->activateRenderTarget(deviceContext);
 		renderPlatform->DrawQuad(deviceContext);
-		brightpassTextures[0]->deactivateRenderTarget();
+		brightpassTextures[0]->deactivateRenderTarget(deviceContext);
 		hdr_effect->Unapply(deviceContext);
 		
 		for(int i=1;i<4;i++)
@@ -347,7 +347,7 @@ void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,
 			hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName("downscale2"),0);
 			renderPlatform->DrawQuad(deviceContext);
 			hdr_effect->Unapply(deviceContext);
-			brightpassTextures[i]->deactivateRenderTarget();
+			brightpassTextures[i]->deactivateRenderTarget(deviceContext);
 		}
 	}
 	SIMUL_COMBINED_PROFILE_END(deviceContext)

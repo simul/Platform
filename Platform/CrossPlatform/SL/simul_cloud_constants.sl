@@ -41,12 +41,12 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform float startZKm;
 
 	uniform uint3 amortizationOffset;
-	uniform float farZ;
+	uniform float farZXXXXXXX;
 	
 	uniform uint4 targetRange;
 
-	uniform int2 targetTextureSize;
-	uniform int2 edge;
+	uniform uint2 targetTextureSize;
+	uniform uint2 edge;
 
 	uniform uint3 amortizationScale;
 	uniform float extentZKm;
