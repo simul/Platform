@@ -4,6 +4,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
   <ItemDefinitionGroup>
+    <CustomBuild>
+      <Command>>$(DXSDK_DIR)\Utilities\bin\x64\fxc.exe "%(FullPath)"</Command>
+      <Message>fxc</Message>
+    </CustomBuild>
+    <Psfx>
+      <OutputPath>$(SIMUL)\Platform\DirectX11\shaderbin</OutputPath>
+      <IncludePaths>$(SIMUL)\Platform\CrossPlatform\SL;$(SIMUL)\Platform\DirectX11\HLSL</IncludePaths>
+    </Psfx>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SIMUL)/External/DirectX/Effects11_DXSDK/Inc/;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
