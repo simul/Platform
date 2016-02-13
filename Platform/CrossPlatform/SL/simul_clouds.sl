@@ -712,9 +712,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 #endif
 	res.nearFarDepth.x		=min(res.nearFarDepth.x,meanFadeDistance+0.000025);
 	res.nearFarDepth.y		=min(res.nearFarDepth.y,meanFadeDistance);
-	res.nearFarDepth.x		=max(0.0000001,saturate(res.nearFarDepth.x-res.nearFarDepth.y));//*(1.0-colour.a);
+	res.nearFarDepth.z		=max(0.0000001,saturate(res.nearFarDepth.x-res.nearFarDepth.y));//*(1.0-colour.a);
 	res.nearFarDepth.w		=min(0.1,minDistance);
-	res.nearFarDepth.z		=max(0.0000001,res.nearFarDepth.y-minDistance);
+	//res.nearFarDepth.z		=max(0.0000001,res.nearFarDepth.y-minDistance);
 	return res;
 }
 #endif

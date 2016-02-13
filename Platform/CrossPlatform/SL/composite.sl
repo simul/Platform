@@ -52,8 +52,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 #endif
 	float sine					=dot(zrow,clip_pos);
 	vec4 nearFarCloud			=texture_cube_lod(nearFarTexture	,view		,0);
-	// Should NOT be necessary:
-	//float dd					=nearFarCloud.z;//(nearFarCloud.x-nearFarCloud.y);
+
 	float depth					=texture_wrap_nearest_lod(depthTexture,depth_texc,0).x;
 
 	float dist					=depthToFadeDistance(depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
@@ -69,7 +68,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	float hiResInterp			=saturate((dist - nearFarCloud.y) / nearFarCloud.x);
 	// we're going to do TWO interpolations. One from zero to the near distance,
 	// and one from the near to the far distance.
-	float nearInterp			=saturate((dist - nearFarCloud.z) / nearFarCloud.w);
+	float nearInterp			=saturate((dist ) / (nearFarCloud.w));
 	//saturate((dist-nearFarCloud.x)/nearFarCloud.y);
 		//
 	
