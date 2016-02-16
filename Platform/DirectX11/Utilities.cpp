@@ -78,7 +78,7 @@ DXGI_FORMAT simul::dx11::TypelessToSrvFormat(DXGI_FORMAT fmt)
 		return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	default:break;
 	};
-	return(DXGI_FORMAT)u;
+	return (DXGI_FORMAT)u;
 }
 ComputableTexture::ComputableTexture()
 	:g_pTex_Output(NULL)

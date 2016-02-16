@@ -188,7 +188,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 	if(view.z<-0.1&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
 	
-	vec2 solidDist_nearFar	=vec2(1,1);//(dlookup.yx);
+	vec2 solidDist_nearFar	=(dlookup.yx);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	float meanFadeDistance	=1.0;
 
@@ -305,7 +305,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 		float fade					=1.0-(fade_inter);
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
-		 b							=abs(c-C0*2);
+		b							=abs(c-C0*2);
 		if(fade>0)
 		{
 			vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
@@ -314,7 +314,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 			noiseval				=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
 			vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
 			
-		//	if(density.z>0)
+			if(density.z>0)
 			{
 				float brightness_factor;
 				float cloud_density		=density.z;
@@ -344,7 +344,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 				if(nearColour.a*brightness_factor<0.003)
 				{
 					colour.a			=0.0;
-					//break;
+					break;
 				}
 			}
 		}

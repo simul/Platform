@@ -17,8 +17,8 @@ using namespace simul;
 using namespace opengl;
 std::stack<GLuint> FramebufferGL::fb_stack;
 
-FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageSamples)
-	:crossplatform::BaseFramebuffer(w,h)
+FramebufferGL::FramebufferGL(const char *n,GLenum target,int samples,int coverageSamples)
+	:crossplatform::BaseFramebuffer(n)
 	,m_target(target)
 	,m_samples(samples)
 	,m_coverageSamples(coverageSamples)

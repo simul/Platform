@@ -11,7 +11,7 @@ SamplerState::~SamplerState()
 {
 }
 
-Texture::Texture():cubemap(false)
+Texture::Texture(const char *n):cubemap(false)
 				,width(0)
 				,length(0)
 				,depth(0)
@@ -22,6 +22,8 @@ Texture::Texture():cubemap(false)
 				,renderPlatform(NULL)
 				,num_rt(0)
 {
+	if(n)
+		name=n;
 }
 
 Texture::~Texture()
@@ -32,4 +34,9 @@ Texture::~Texture()
 bool Texture::IsCubemap() const
 {
 	return cubemap;
+}
+
+void Texture::SetName(const char *n)
+{
+	name=n;
 }

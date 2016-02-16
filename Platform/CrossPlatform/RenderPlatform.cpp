@@ -252,7 +252,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	}
 	else
 	{
-		SIMUL_BREAK_ONCE("No method was found to clear this texture.");
+		SIMUL_CERR<<("No method was found to clear this texture.\n");
 	}
 
 }

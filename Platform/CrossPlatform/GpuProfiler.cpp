@@ -115,7 +115,7 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 		if(parent.length())
 			parentData=(crossplatform::ProfileData*)profileMap[parent];
 		else
-			parentData=(crossplatform::ProfileData*)profileMap["root"];
+			parentData=(crossplatform::ProfileData*)root;
 		parentData->updatedThisFrame=true;
 		if(parentData)
 		{
@@ -142,12 +142,12 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 				{
 					in_parent=parentData->children.end();
 					profileData->child_index++;
-			}
+				}
 				else
 				{
 					// Found our spot
 					break;
-		}
+				}
 			}
 		}
 		parentData->last_child_updated=profileData->child_index;
@@ -222,11 +222,14 @@ void GpuProfiler::End()
 
 void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
+	if(!root)
+	{
+		root=CreateProfileData();
+		profileMap["root"]=root;
+	}
 	level=0;
-	if(profileMap.find(rootstring)==profileMap.end())
-		profileMap[rootstring]=new crossplatform::ProfileData();
 	
-	profileMap[rootstring]->last_child_updated=0;
+	root->last_child_updated=0;
     for(auto iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         base::ProfileData *profile = ((*iter).second);
@@ -237,7 +240,7 @@ void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 {
 	SIMUL_ASSERT(level==0)
-    if(!enabled||!renderPlatform)
+    if(!root||!enabled||!renderPlatform)
         return;
 
     currFrame = (currFrame + 1) % crossplatform::Query::QueryLatency;    
@@ -286,9 +289,9 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
             UINT64 delta = endTime - startTime;
 			if(endTime>startTime)
 			{
-            float frequency = static_cast<float>(disjointData.Frequency);
-            time = (delta / frequency) * 1000.0f;
-        }        
+				float frequency = static_cast<float>(disjointData.Frequency);
+				time = (delta / frequency) * 1000.0f;
+			}
         }        
         profile->time+=mix*time;
 		if(profile->time>10.0f)
@@ -296,13 +299,11 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 			profile->time=10.0f;
 		}
     }
-	if(profileMap.find("root")==profileMap.end())
-		profileMap["root"]=new crossplatform::ProfileData();
-	crossplatform::ProfileData *rootProfileData=(crossplatform::ProfileData*)profileMap["root"];
-	rootProfileData->time=0.0f;
-	for(auto i=rootProfileData->children.begin();i!=rootProfileData->children.end();i++)
+
+	root->time=0.0f;
+	for(auto i=root->children.begin();i!=root->children.end();i++)
 	{
-		rootProfileData->time+=i->second->time;
+		root->time+=i->second->time;
 	}
 }
 

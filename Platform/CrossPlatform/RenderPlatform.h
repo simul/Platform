@@ -165,8 +165,8 @@ namespace simul
 			virtual Light					*CreateLight					()	=0;
 			/// Create a platform-specific texture instance.
 			virtual Texture					*CreateTexture					(const char *lFileNameUtf8=NULL)	=0;
-			/// Create a platform-specific framebuffer instance - i.e. an optional colour and an optional depth rendertarget.
-			virtual BaseFramebuffer			*CreateFramebuffer				()	=0;
+			/// Create a platform-specific framebuffer instance - i.e. an optional colour and an optional depth rendertarget. Optionally takes a name string.
+			virtual BaseFramebuffer			*CreateFramebuffer				(const char *)	=0;
 			/// Create a platform-specific sampler state instance.
 			virtual SamplerState			*CreateSamplerState				(SamplerStateDesc *)	=0;
 			/// Look for a sampler state of the stated name, and create one if it does not exist. The resulting state will be owned by the RenderPlatform, so do not destroy it.

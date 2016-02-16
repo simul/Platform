@@ -22,7 +22,7 @@ namespace simul
 		SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public simul::crossplatform::BaseFramebuffer
 		{
 		public:
-			FramebufferGL(int w=0, int h=0, GLenum target = GL_TEXTURE_2D,
+			FramebufferGL(const char *n=nullptr, GLenum target = GL_TEXTURE_2D,
 					int samples = 0, int coverageSamples = 0);
 
 			~FramebufferGL();

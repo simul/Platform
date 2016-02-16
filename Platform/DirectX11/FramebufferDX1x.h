@@ -16,7 +16,7 @@ namespace simul
 		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer : public crossplatform::BaseFramebuffer
 		{
 		public:
-			Framebuffer(int w=0,int h=0);
+			Framebuffer(const char *name);
 			virtual ~Framebuffer();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			void InvalidateDeviceObjects();

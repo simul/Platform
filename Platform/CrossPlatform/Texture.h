@@ -71,9 +71,11 @@ namespace simul
 		{
 		protected:
 			bool cubemap;
+			std::string name;
 		public:
-			Texture();
+			Texture(const char *name=NULL);
 			virtual ~Texture();
+			void SetName(const char *n);
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files)=0;
 			virtual bool IsValid() const=0;
@@ -85,7 +87,7 @@ namespace simul
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(){return 0;}
 			virtual bool HasRenderTargets() const{return (num_rt>0);}
-			virtual bool IsComputable() const =0;
+			virtual bool IsComputable() const=0;
 			/// Asynchronously move this texture to fast RAM.
 			/// Some hardware has "fast RAM" that we can prefetch textures into.
 			virtual void MoveToFastRAM() {}

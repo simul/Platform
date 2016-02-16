@@ -47,9 +47,9 @@ void AmortizationStruct::setAmortization(int a)
 	}
 }
 
-BaseFramebuffer::BaseFramebuffer(int w,int h)
-	:Width(w)
-	,Height(h)
+BaseFramebuffer::BaseFramebuffer(const char *n)
+	:Width(0)
+	,Height(0)
 	,numAntialiasingSamples(1)	// no AA by default
 	,depth_active(false)
 	,colour_active(false)
@@ -67,6 +67,8 @@ BaseFramebuffer::BaseFramebuffer(int w,int h)
 	,external_texture(false)
 	,external_depth_texture(false)
 {
+	if(n)
+		name=n;
 }
 
 void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -79,9 +81,9 @@ void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	if(renderPlatform)
 	{
 		if(!external_texture)
-			buffer_texture=renderPlatform->CreateTexture();
+			buffer_texture=renderPlatform->CreateTexture("BaseFramebuffer");
 		if(!external_depth_texture)
-			buffer_depth_texture=renderPlatform->CreateTexture();
+			buffer_depth_texture=renderPlatform->CreateTexture("BaseFramebuffer");
 	}
 	CreateBuffers();
 }
@@ -207,9 +209,9 @@ bool BaseFramebuffer::CreateBuffers()
 	if(buffer_depth_texture)
 		buffer_depth_texture->InvalidateDeviceObjects();
 	if(!buffer_texture)
-		buffer_texture=renderPlatform->CreateTexture();
+		buffer_texture=renderPlatform->CreateTexture("BaseFramebuffer");
 	if(!buffer_depth_texture)
-		buffer_depth_texture=renderPlatform->CreateTexture();
+		buffer_depth_texture=renderPlatform->CreateTexture("BaseFramebuffer");
 	static int quality=0;
 	if(!external_texture&&target_format!=crossplatform::UNKNOWN)
 	{

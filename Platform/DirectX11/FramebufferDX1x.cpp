@@ -34,8 +34,8 @@ using namespace dx11;
 UINT64 iCurrentESRAMOffset = 0; // We allow this to grow beyond ESRAM_SIZE
 const UINT64 ESRAM_SIZE = 32 * 1024 * 1024;
 
-Framebuffer::Framebuffer(int w,int h) :
-	BaseFramebuffer(w,h)
+Framebuffer::Framebuffer(const char *n) :
+	BaseFramebuffer(n)
 	,m_pOldRenderTarget(NULL)
 	,m_pOldDepthSurface(NULL)
 	,num_OldViewports(0) //The usual case is for the user to supply depth look-up textures, which is all we need for the majority of cases... So let's avoid needless construction of depth buffers unless otherwise indicated with a SetDepthFormat(...)

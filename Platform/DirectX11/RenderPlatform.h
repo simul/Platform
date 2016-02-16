@@ -82,7 +82,7 @@ namespace simul
 			crossplatform::Mesh						*CreateMesh();
 			crossplatform::Light					*CreateLight();
 			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8=NULL);
-			crossplatform::BaseFramebuffer			*CreateFramebuffer() override;
+			crossplatform::BaseFramebuffer			*CreateFramebuffer(const char *name) override;
 			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d);
 			crossplatform::Effect					*CreateEffect();
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer();

@@ -141,7 +141,7 @@ namespace simul
 		SIMUL_CROSSPLATFORM_EXPORT_CLASS BaseFramebuffer
 		{
 		public:
-			BaseFramebuffer(int w=0,int h=0);
+			BaseFramebuffer(const char *n);
 			virtual ~BaseFramebuffer(){};
 			//! Call this when the API-dependent device has been created.
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
@@ -246,6 +246,7 @@ namespace simul
 			crossplatform::Effect										*sphericalHarmonicsEffect;
 			bool external_texture;
 			bool external_depth_texture;
+			std::string name;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT CubemapFramebuffer:public BaseFramebuffer
 		{

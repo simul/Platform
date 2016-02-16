@@ -548,9 +548,9 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	return tex;
 }
 
-crossplatform::BaseFramebuffer *RenderPlatform::CreateFramebuffer()
+crossplatform::BaseFramebuffer *RenderPlatform::CreateFramebuffer(const char *name)
 {
-	return new dx11::Framebuffer();
+	return new dx11::Framebuffer(name);
 }
 
 static D3D11_TEXTURE_ADDRESS_MODE toD3d11TextureAddressMode(crossplatform::SamplerStateDesc::Wrapping f)
