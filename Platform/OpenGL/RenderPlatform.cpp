@@ -531,9 +531,9 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	return tex;
 }
 
-crossplatform::BaseFramebuffer	*RenderPlatform::CreateFramebuffer()
+crossplatform::BaseFramebuffer	*RenderPlatform::CreateFramebuffer(const char *n)
 {
-	opengl::FramebufferGL * b=new opengl::FramebufferGL;
+	opengl::FramebufferGL * b=new opengl::FramebufferGL(n);
 	return b;
 }
 static GLenum toGLWrapping(crossplatform::SamplerStateDesc::Wrapping w)

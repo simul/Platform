@@ -1,7 +1,6 @@
 #include "GL/glew.h"
 #include "Material.h"
 #include "Texture.h"
-#include <fbxsdk.h>
 
 using namespace simul;
 using namespace opengl;
