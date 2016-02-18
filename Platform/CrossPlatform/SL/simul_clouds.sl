@@ -666,8 +666,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 						nearColour.rgb		+=clr_n.rgb*clr_n.a*(nearColour.a);
 						nearColour.a		*=(1.0-clr_n.a);
 					}
-					colour.rgb				+=clr.rgb*clr.a*(colour.a);
-					meanFadeDistance		=lerp(meanFadeDistance,fadeDistance,colour.a);
+					colour.rgb				+=clr.rgb*clr.a*colour.a;
+					meanFadeDistance = lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-density.z)*colour.a);
 				//if(meanFadeDistance>=1.0)
 				//	meanFadeDistance		=fadeDistance;
 					// minDistance is the closest cloud.
@@ -710,8 +710,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	if(do_rainbow)
 		res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-	res.nearFarDepth.x		=min(res.nearFarDepth.x,meanFadeDistance+0.000025);
-	res.nearFarDepth.y		=min(res.nearFarDepth.y,meanFadeDistance);
+//	res.nearFarDepth.x		=min(res.nearFarDepth.x,meanFadeDistance+0.000025);
+//	res.nearFarDepth.y		=min(res.nearFarDepth.y,meanFadeDistance);
 	res.nearFarDepth.z		=max(0.0000001,saturate(res.nearFarDepth.x-res.nearFarDepth.y));//*(1.0-colour.a);
 	res.nearFarDepth.w		=min(0.1,minDistance);
 	//res.nearFarDepth.z		=max(0.0000001,res.nearFarDepth.y-minDistance);

@@ -20,6 +20,7 @@ uniform Texture2D lossTexture;
 uniform Texture2D inscTexture;
 uniform Texture2D skylTexture;
 uniform TextureCube depthTexture;
+uniform Texture2D depthTextureFace;
 uniform Texture3D noiseTexture3D;
 uniform TextureCube clouds2DTexture	;
 uniform Texture2D illuminationTexture;
@@ -247,7 +248,7 @@ void Raytrace(uint2 pos,bool include_rain,bool depth)
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 	vec4 dlookup			=vec4(1.0,1.0,1.0,1.0);
 	if(depth)
-		dlookup				=texture_cube_lod(depthTexture,view,0);
+		dlookup				= depthTextureFace[pos];
 
 	vec3 lightspaceView		=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
 

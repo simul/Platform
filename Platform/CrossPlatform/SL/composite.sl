@@ -73,13 +73,13 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		//
 	
 	vec4 cloudNear				=texture_cube_lod(nearCloudTexture, view, 0);
-	cloud						=lerp(cloudNear, cloud,hiResInterp);
+	//cloud						=lerp(cloudNear, cloud,hiResInterp);
 	
 	vec4 lp						=texture_cube_lod(lightpassTexture,view,0);
-	cloud.rgb						+=lp.rgb;
+	cloud.rgb					+=lp.rgb;
 //	if(lowResTexCoords.x+lowResTexCoords.y>1.0)
 //		cloud=cloudNear;
-	cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
+	//cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
 
 	vec3 worldPos				=viewPos+view*dist*1000.0*maxFadeDistanceKm;
 	float shadow				=GetSimpleIlluminationAt(shadowTexture,invShadowMatrix,worldPos).x;
@@ -88,12 +88,15 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	insc						+=cloud;
 	res.multiply				=texture_clamp_mirror_lod(loss2dTexture,loss_texc,0)*cloud.a*shadow;
 	res.add						=insc;
+	if (lowResTexCoords.x + lowResTexCoords.y>1.0)
+		res.add = hiResInterp;
+	if (lowResTexCoords.x + lowResTexCoords.y>1.1)
+		res.add = cloudNear;
+	//res.add.rgb=hiResInterp;
 	//res.add.rgb=nearInterp;
 	//res.multiply*=0;
 //res.add.rgb=dist-nearFarCloud.y;
 /*res.add.r=50*nearFarCloud.y;
-if(lowResTexCoords.x+lowResTexCoords.y>1.0)
-res.add.r=frac(hiResInterp);
 if(lowResTexCoords.x+lowResTexCoords.y>1.1)
 res.add.r=50*nearFarCloud.x;*/
 //res.add.rgb=nearFarCloud.xyz;

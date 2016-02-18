@@ -28,24 +28,24 @@ vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture
 	,uint2 scale)
 {
 	// Stochastic offset goes from -1 to +1
-	vec2 texCoords		=sourceTexCoords+texelRange*stochasticOffset/vec2(scale);
+	vec2 texCoords = sourceTexCoords + texelRange*stochasticOffset;// / vec2(scale);
 	vec4 fn				=vec4(0.0,1.0,0.0,1.0);
 	vec4 thr			=vec4(nearThresholdDepth, nearThresholdDepth, nearThresholdDepth, nearThresholdDepth);
 	vec2 offsets[4];
-	offsets[0]=vec2(-0.3,0.4);
-	offsets[1]=vec2(0.4,0.3);
-	offsets[2]=vec2(0.3,-0.4);
-	offsets[3]=vec2(-0.4,-0.3);
+	offsets[0]	=vec2(-0.3,0.4);
+	offsets[1]	=vec2(0.4,0.3);
+	offsets[2]	=vec2(0.3,-0.4);
+	offsets[3]	=vec2(-0.4,-0.3);
 	for(int i=0;i<4;i++)
 	{
 		//float x=(0.5+float(i)-scale.x/2.0)/float(scale.x);
 		//for(int j=0;j<scale.y;j++)
 		{
-			//float y		=(0.5+float(j)-scale.y/2.0)/float(scale.y);
+			//float y	=(0.5+float(j)-scale.y/2.0)/float(scale.y);
 			vec2 offs	=texelRange*offsets[i];//texelRange*vec2(x,y);
 			vec2 texc	=saturate(1.01*(texCoords+1.0*offs))/1.01;
-			texc			*=depthWindow.zw;
-			texc			+=depthWindow.xy;
+			texc		*=depthWindow.zw;
+			texc		+=depthWindow.xy;
 			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
 			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 			
@@ -172,8 +172,7 @@ void MinMax(int2 idx,bool reverseDepth)
 
 	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	sourceTexCoords.y		=1.0-sourceTexCoords.y;
-	vec4 clipRange			=frustumClipRange;//vec4(-1.0,-1.0,1.0,1.0);
-	//if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
+	vec4 clipRange			=frustumClipRange;
 	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
 		return;
 	vec4 fn1	=sourceTexture1[idx];
@@ -188,8 +187,8 @@ void MinMax(int2 idx,bool reverseDepth)
 		fn.xz=max(fn.xz,fn3.xz);
 	}
 //	fn.x		=step(fn.x,nearThresholdDist)+fn.x;
-	//fn.xz+=0.000005;
-//	fn.yw-=0.000005;
+//	fn.xz=1.0;
+	//fn.yw=0.01;
 	targetTexture[idx]				=saturate(fn);
 }
 
