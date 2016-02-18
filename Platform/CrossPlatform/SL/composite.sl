@@ -65,7 +65,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 insc					=texture_3d_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0);
 
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
-	float hiResInterp			=saturate((dist - nearFarCloud.y) / nearFarCloud.x);
+	float hiResInterp			=saturate((dist - nearFarCloud.y) / max(0.00001,nearFarCloud.x-nearFarCloud.y));
 	// we're going to do TWO interpolations. One from zero to the near distance,
 	// and one from the near to the far distance.
 	float nearInterp			=saturate((dist ) / (nearFarCloud.w));
@@ -73,7 +73,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		//
 	
 	vec4 cloudNear				=texture_cube_lod(nearCloudTexture, view, 0);
-	//cloud						=lerp(cloudNear, cloud,hiResInterp);
+	cloud						=lerp(cloudNear, cloud,hiResInterp);
 	
 	vec4 lp						=texture_cube_lod(lightpassTexture,view,0);
 	cloud.rgb					+=lp.rgb;
@@ -88,18 +88,12 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	insc						+=cloud;
 	res.multiply				=texture_clamp_mirror_lod(loss2dTexture,loss_texc,0)*cloud.a*shadow;
 	res.add						=insc;
-	if (lowResTexCoords.x + lowResTexCoords.y>1.0)
+/*	if (lowResTexCoords.x + lowResTexCoords.y>1.0)
 		res.add = hiResInterp;
 	if (lowResTexCoords.x + lowResTexCoords.y>1.1)
-		res.add = cloudNear;
+		res.add = cloudNear;*/
 	//res.add.rgb=hiResInterp;
 	//res.add.rgb=nearInterp;
-	//res.multiply*=0;
-//res.add.rgb=dist-nearFarCloud.y;
-/*res.add.r=50*nearFarCloud.y;
-if(lowResTexCoords.x+lowResTexCoords.y>1.1)
-res.add.r=50*nearFarCloud.x;*/
-//res.add.rgb=nearFarCloud.xyz;
     return res;
 }
 

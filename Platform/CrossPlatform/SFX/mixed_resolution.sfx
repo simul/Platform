@@ -188,7 +188,7 @@ void MinMax(int2 idx,bool reverseDepth)
 	}
 //	fn.x		=step(fn.x,nearThresholdDist)+fn.x;
 //	fn.xz=1.0;
-	//fn.yw=0.01;
+//	fn.yw=0.05;
 	targetTexture[idx]				=saturate(fn);
 }
 
