@@ -390,7 +390,7 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 		filename_fx+=".fx";
 	int index=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filename_fx.c_str(),renderPlatform->GetShaderPathsUtf8());
 
-	if(index>=renderPlatform->GetShaderPathsUtf8().size())
+	if(index<-1||index>=renderPlatform->GetShaderPathsUtf8().size())
 	{
 		filename_fx=(filename_utf8);
 		if(filename_fx.find(".")>=filename_fx.length())
@@ -721,6 +721,8 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n",this->filename.c_str()));
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	if(!effect)
+		return;
+	if (!currentTechnique)
 		return;
 	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
 	if(currentPass)

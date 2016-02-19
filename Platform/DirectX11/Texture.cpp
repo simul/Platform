@@ -434,6 +434,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	bool changed=!ok;
 	if(!ok)
 	{
+		SIMUL_ASSERT(w > 0 && l > 0 && w <= 65536 && l <= 65536);
 		InvalidateDeviceObjects();
 		memset(&textureDesc,0,sizeof(textureDesc));
 		textureDesc.Width			=width=w;

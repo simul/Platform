@@ -65,7 +65,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 insc					=texture_3d_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0);
 
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
-	float hiResInterp			=saturate((dist - nearFarCloud.y) / max(0.00001,nearFarCloud.x-nearFarCloud.y));
+	float hiResInterp			=1.0-pow(saturate(( nearFarCloud.x- dist) / max(0.00001,nearFarCloud.x-nearFarCloud.y)),4.0);
 	// we're going to do TWO interpolations. One from zero to the near distance,
 	// and one from the near to the far distance.
 	float nearInterp			=saturate((dist ) / (nearFarCloud.w));
@@ -73,25 +73,24 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		//
 	
 	vec4 cloudNear				=texture_cube_lod(nearCloudTexture, view, 0);
-	cloud						=lerp(cloudNear, cloud,hiResInterp);
+	cloudNear					=lerp(vec4(0,0,0,1.0), cloudNear,nearInterp);
+	//if(lowResTexCoords.x + lowResTexCoords.y<1.0)
+		cloud						=lerp(cloudNear, cloud,hiResInterp);
 	
 	vec4 lp						=texture_cube_lod(lightpassTexture,view,0);
 	cloud.rgb					+=lp.rgb;
+	//if(lowResTexCoords.x + lowResTexCoords.y>1.1)
+	//	cloud = cloudNear;
 //	if(lowResTexCoords.x+lowResTexCoords.y>1.0)
 //		cloud=cloudNear;
-	//cloud						=lerp(vec4(0,0,0,1.0),cloud,nearInterp);
 
 	vec3 worldPos				=viewPos+view*dist*1000.0*maxFadeDistanceKm;
 	float shadow				=GetSimpleIlluminationAt(shadowTexture,invShadowMatrix,worldPos).x;
 
 	insc.rgb					*=cloud.a;
 	insc						+=cloud;
-	res.multiply				=texture_clamp_mirror_lod(loss2dTexture,loss_texc,0)*cloud.a*shadow;
-	res.add						=insc;
-/*	if (lowResTexCoords.x + lowResTexCoords.y>1.0)
-		res.add = hiResInterp;
-	if (lowResTexCoords.x + lowResTexCoords.y>1.1)
-		res.add = cloudNear;*/
+	res.multiply =  texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a*shadow;
+	res.add = insc;// *0 + .5*nearFarCloud;
 	//res.add.rgb=hiResInterp;
 	//res.add.rgb=nearInterp;
     return res;
