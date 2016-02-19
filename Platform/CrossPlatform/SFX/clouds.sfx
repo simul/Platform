@@ -396,8 +396,6 @@ shader void CS_Edge(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	if(u.r<1.0&&u.b>0.0)
 	{
 		Raytrace(pos,  include_rain,true);
-//	outputTexture1[pos]		=vec4(1,0,0,.5);
-//	outputTexture2[pos]		=vec4(1,1,0,.5);
 	}
 }
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)

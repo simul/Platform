@@ -712,10 +712,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 #endif
 	// y is the near depth. x is the distance at which we will interpolate to the far depth value.
 	// Instead of using the far depth, we will use the cloud distance.
-	
-	//res.nearFarDepth.y = max(res.nearFarDepth.y, meanFadeDistance);
-	//res.nearFarDepth.x = min(res.nearFarDepth.x,res.nearFarDepth.y + 0.05);
-//	res.nearFarDepth.x = max(res.nearFarDepth.x, meanFadeDistance);
+	res.nearFarDepth.x = min(res.nearFarDepth.x, lastFadeDistance+0.05);
+	res.nearFarDepth.y = min(res.nearFarDepth.y, meanFadeDistance);
 
 //	res.nearFarDepth.z		=max(0.0000001,saturate(res.nearFarDepth.x-res.nearFarDepth.y));
 	res.nearFarDepth.w		=min(0.1,minDistance);
