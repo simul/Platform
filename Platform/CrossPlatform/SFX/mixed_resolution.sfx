@@ -71,9 +71,9 @@ vec4 GetFrustumClipPos(int2 idx)
 	return frustum_clip_pos;
 }
 
-void DownscaleStochastic(int2 idx1,bool reverseDepth) 
+void DownscaleStochastic(uint2 idx1,bool reverseDepth) 
 {
-	int2 idx=targetRange.xy+idx1;
+	uint2 idx=targetRange.xy+idx1;
 	if(idx.x<targetRange.x||idx.x>targetRange.z||idx.y<targetRange.y||idx.y>targetRange.w)
 	{
 		nextUpdateTexture[idx]	=vec4(0,0,0,0);
