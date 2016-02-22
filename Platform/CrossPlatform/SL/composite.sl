@@ -91,7 +91,10 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	insc						+=cloud;
 	res.multiply =  texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a*shadow;
 	res.add = insc;// *0 + .5*nearFarCloud;
-	//res.add.rgb=hiResInterp;
+/*	if(lowResTexCoords.x + lowResTexCoords.y>1.1)
+		res.add.rgb= nearFarCloud.x;
+	if (lowResTexCoords.x + lowResTexCoords.y>1.2)
+		res.add.rgb = dist;*/
 	//res.add.rgb=nearInterp;
     return res;
 }

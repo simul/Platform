@@ -30,7 +30,7 @@ vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture
 	// Stochastic offset goes from -1 to +1
 	vec2 texCoords = sourceTexCoords + texelRange*stochasticOffset;// / vec2(scale);
 	vec4 fn				=vec4(0.0,1.0,0.0,1.0);
-	vec2 thr = vec2(nearThresholdDist, nearThresholdDist);
+	vec2 thr = vec2(0, 0);
 	vec2 offsets[4];
 	offsets[0]	=vec2(-0.3,0.4);
 	offsets[1]	=vec2(0.4,0.3);
