@@ -247,8 +247,17 @@ void Raytrace(uint2 pos,bool include_rain,bool depth)
 	float sineFactor		=1.0/length(clip_pos.xyz);
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 	vec4 dlookup			=vec4(1.0,1.0,1.0,1.0);
-	if(depth)
-		dlookup				= depthTextureFace[pos];
+	if (depth)
+	{
+		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
+		vec4 xlookup = vec4(0,0,0,0);
+		xlookup	+=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0, 1.0, 1.0)),0);
+		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0,-1.0, 1.0)),0);
+		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3(-1.0, 1.0, 1.0)),0);
+		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0 ,1.0,-1.0)),0);
+		dlookup.xz = max(dlookup.xz, xlookup.xz);
+		dlookup.yw = min(dlookup.yw, xlookup.yw);
+	}
 
 	vec3 lightspaceView		=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
 
