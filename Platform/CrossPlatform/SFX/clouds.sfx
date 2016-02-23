@@ -341,9 +341,9 @@ void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rai
 		return;
 	uint2 offset	=(amortizationOffset.xy+(idx.xy+idx.yx))%amortizationScale.xy;
 	pos				+=offset;
-	//outputTexture1[idx]		=vec4(0,1,0,1);
-	//outputTexture2[pos]		=vec4(1,1,0,1);
-	Raytrace(pos,include_rain,depth);
+	outputTexture1[idx]		=vec4(0,1,0,1);
+	outputTexture2[pos]		=vec4(1,1,0,1);
+	//Raytrace(pos,include_rain,depth);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
