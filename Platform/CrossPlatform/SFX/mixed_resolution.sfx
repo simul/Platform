@@ -28,29 +28,28 @@ vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture
 	,uint2 scale)
 {
 	// Stochastic offset goes from -1 to +1
-	vec2 texCoords = sourceTexCoords + texelRange*stochasticOffset;// / vec2(scale);
+	vec2 texCoords = sourceTexCoords + .6*texelRange*stochasticOffset;// / vec2(scale);
 	vec4 fn				=vec4(0.0,1.0,0.0,1.0);
 	vec2 thr = vec2(nearThresholdDist, nearThresholdDist);
 	vec2 offsets[4];
-	offsets[0]	=vec2(-0.3,0.4);
+	offsets[0]	=vec2(-0.4,0.3);
 	offsets[1]	=vec2(0.4,0.3);
-	offsets[2]	=vec2(0.3,-0.4);
-	offsets[3]	=vec2(-0.4,-0.3);
-	for(int i=0;i<4;i++)
+	offsets[2]	=vec2(0.0,-0.5);
+	for(int i=0;i<3;i++)
 	{
 		//float x=(0.5+float(i)-scale.x/2.0)/float(scale.x);
 		//for(int j=0;j<scale.y;j++)
 		{
 			//float y	=(0.5+float(j)-scale.y/2.0)/float(scale.y);
 			vec2 offs	=texelRange*offsets[i];//texelRange*vec2(x,y);
-			vec2 texc	=saturate(1.01*(texCoords+1.0*offs))/1.01;
+			vec2 texc	=saturate(1.01*(texCoords+.6*offs))/1.01;
 			texc		*=depthWindow.zw;
 			texc		+=depthWindow.xy;
 			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
 			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-			
-			fn.yw=min(fn.yw, step(dist, thr) + dist);
-			fn.xz=max(fn.xz, step(thr, dist)*dist);
+			float s		=step(thr, dist);
+			fn.yw		=min(fn.yw,(1.0-s)+dist);
+			fn.xz		=max(fn.xz, s*dist);
 			
 		}
 	}
@@ -71,9 +70,9 @@ vec4 GetFrustumClipPos(int2 idx)
 	return frustum_clip_pos;
 }
 
-void DownscaleStochastic(int2 idx1,bool reverseDepth) 
+void DownscaleStochastic(uint2 idx1,bool reverseDepth) 
 {
-	int2 idx=targetRange.xy+idx1;
+	uint2 idx=targetRange.xy+idx1;
 	if(idx.x<targetRange.x||idx.x>targetRange.z||idx.y<targetRange.y||idx.y>targetRange.w)
 	{
 		nextUpdateTexture[idx]	=vec4(0,0,0,0);
@@ -165,18 +164,24 @@ shader void CS_DownscaleStochastic_ForwardDepth(uint3 g : SV_GroupID, uint3 t : 
 	DownscaleStochastic(idx,false);
 }
 
-void MinMax(int2 idx,bool reverseDepth)
+void MinMax(uint2 idx1,bool reverseDepth)
 {
+	uint2 idx = targetRange.xy + idx1;
+	if (idx.x<targetRange.x || idx.x>targetRange.z || idx.y<targetRange.y || idx.y>targetRange.w)
+	{
+		targetTexture[idx] = vec4(0, 0, 0, 0);
+		return;
+	}
 	vec2 texCoords			=vec2(idx)/vec2(target_dims);
 	vec4 frustum_clip_pos	=GetFrustumClipPos(idx);
 
 	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	sourceTexCoords.y		=1.0-sourceTexCoords.y;
 	vec4 clipRange			=frustumClipRange;
-	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
-		return;
-	if (updateTexture[idx].b == 0.0)
-		return;
+//	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
+//		return;
+//	if (updateTexture[idx].b == 0.0)
+//		return;
 	vec2 thr	=vec2(nearThresholdDist, nearThresholdDist);
 	vec4 fn1	=sourceTexture1[idx];
 	vec4 fn2	=sourceTexture2[idx];
@@ -186,27 +191,28 @@ void MinMax(int2 idx,bool reverseDepth)
 	fn.xz = max(fn.xz,/*step(thr, fn1.xz)**/fn1.xz);
 	if(updateTexture[idx].r>=1.0)
 	{
-		fn.yw	=min(fn.yw,/*step(fn2.yw, thr)+*/fn2.yw);
-		fn.xz	=max(fn.xz,/*step(thr, fn2.xz)**/fn2.xz);
-		fn.yw	=min(fn.yw,/*step(fn3.yw, thr)+*/fn3.yw);
-		fn.xz	=max(fn.xz,/*step(thr, fn3.xz)**/fn3.xz);
+		fn.yw	=min(fn.yw,fn2.yw);
+		fn.xz	=max(fn.xz,fn2.xz);
+		fn.yw	=min(fn.yw,fn3.yw);
+		fn.xz	=max(fn.xz,fn3.xz);
 	}
-	//fn = fn.xxxx;
+	fn.yw = saturate(pow(saturate((thr - fn.yw) / thr), 2.0) + fn.yw);
+	fn.xz = saturate(saturate((thr - fn.xz) / thr) + fn.xz);
 	targetTexture[idx]				=saturate(fn);
 }
 
 CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
 shader void CS_MinMax_ForwardDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
 {
-	int2 idx		=int2(g.xy*BLOCKSIZE+t.xy);
-	MinMax(idx,false);
+	uint2 idx1		=uint2(g.xy*BLOCKSIZE+t.xy);
+	MinMax(idx1,false);
 }
 
 CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
 shader void CS_MinMax_ReverseDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	int2 idx		=int2(g.xy*BLOCKSIZE+t.xy);
-	MinMax(idx,true);
+	uint2 idx1 = uint2(g.xy*BLOCKSIZE + t.xy);
+	MinMax(idx1,true);
 }
 technique direct
 {

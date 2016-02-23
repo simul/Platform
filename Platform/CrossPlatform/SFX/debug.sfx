@@ -6,7 +6,6 @@
 #include "../SL/colour_packing.sl"
 #include "../SL/debug_constants.sl"
 
-
 uniform sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 uniform TEXTURE2DMS_FLOAT4 imageTextureMS SIMUL_TEXTURE_REGISTER(1);
 uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
@@ -20,7 +19,7 @@ uniform sampler3D volumeTexture;
 struct a2v
 {
     vec3 position	: POSITION;
-    vec4 colour	: TEXCOORD0;
+    vec4 colour		: TEXCOORD0;
 };
 
 struct v2f
