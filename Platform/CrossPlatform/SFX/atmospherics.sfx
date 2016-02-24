@@ -20,7 +20,6 @@ uniform Texture2D inscTexture;
 uniform Texture2D overcTexture;
 uniform Texture2D skylTexture;
 uniform Texture2D illuminationTexture;
-uniform Texture2D cloudShadowTexture;
 uniform Texture2D cloudNearFarTexture;
 uniform Texture2D cloudGodraysTexture;
 
@@ -52,7 +51,7 @@ int clampClouds=0;
 // where the x-axis is azimuth around the light source, y-axis is angle from the light source (maximum = 180 deg)
 // and z-axis is distance from the viewer.
 
-CS_LAYOUT(8,8,1)
+CS_LAYOUT(4,4,1)
 shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 {
 	uint3 idx			=p*amortization+amortizationOffset;

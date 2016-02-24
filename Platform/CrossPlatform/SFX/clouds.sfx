@@ -294,7 +294,7 @@ void Raytrace(uint2 pos,bool include_rain,bool depth)
 
 	c.a						=t2d.a*f.colour.a;
 
-	outputTexture1[pos]		=c;//vec4(1,0,1,0);
+	outputTexture1[pos]		=c;
 	float n					=float(dlookup.y>=1.0);
 	vec4 cn					=t2d;
 	cn.rgb					*=f.nearColour.a*n;
@@ -342,14 +342,14 @@ void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rai
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint2 pos		=targetRange.xy+idx*amortizationScale.xy;
+	uint2 offset = (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
+	pos += offset;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
 		return;
 	if(updateTexture[pos].b==0.0)
 		return;
-	uint2 offset	=(amortizationOffset.xy+(idx.xy+idx.yx))%amortizationScale.xy;
-	pos				+=offset;
 	//outputTexture1[idx]		=vec4(0,1,0,1);
 	//outputTexture2[pos]		=vec4(1,1,0,1);
 	Raytrace(pos,include_rain,depth);
@@ -402,9 +402,9 @@ shader void CS_Edge(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		return;
 	vec4 u=updateTexture[pos];
 	// current value is b, old value is r
-	if(u.r<1.0&&u.b>0.0)
+	if (u.r<1.0&&u.b>0.0)
 	{
-		Raytrace(pos,  include_rain,true);
+		Raytrace(pos, include_rain, true);
 	}
 }
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)

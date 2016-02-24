@@ -211,7 +211,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	debugConstants.Apply(deviceContext);
 	// Clear the texture: how we do this depends on what kind of texture it is.
 	// Does it have rendertargets? We can clear each of these in turn.
-	if(texture->HasRenderTargets())
+	if(texture->HasRenderTargets()&&texture->arraySize)
 	{
 		for(int i=0;i<texture->arraySize;i++)
 		{

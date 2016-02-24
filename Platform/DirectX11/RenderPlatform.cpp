@@ -763,7 +763,7 @@ crossplatform::ShaderResourceType RenderPlatform::FromD3DShaderVariableType(D3D_
 	}
 }
 
-crossplatform::Layout*RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
+crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc)
 {
 	D3D11_INPUT_ELEMENT_DESC *decl=new D3D11_INPUT_ELEMENT_DESC[num_elements];
 	for(int i=0;i<num_elements;i++)

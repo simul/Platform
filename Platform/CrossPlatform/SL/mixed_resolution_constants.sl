@@ -14,6 +14,7 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform uint2 target_dims;
 	uniform uint2 source_offset;	// The offset into the area of the texture that's of interest
 	uniform uint4 targetRange;
+	uniform uint4 drawRange;
 
 	uniform uint2 scale;
 	uniform vec2 texelRange;

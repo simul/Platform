@@ -3,13 +3,8 @@
 #include "shader_platform.sl"
 #include "../SL/common.sl"
 uniform sampler3D			densityTexture SIMUL_TEXTURE_REGISTER(0);
-uniform sampler3D			lightTexture;
-uniform sampler3D			lightTexture1 SIMUL_TEXTURE_REGISTER(1);
-uniform sampler3D			lightTexture2 SIMUL_TEXTURE_REGISTER(2);
 uniform sampler2D			maskTexture SIMUL_TEXTURE_REGISTER(3);
 uniform sampler3D			ambientTexture;
-uniform sampler3D			ambientTexture1 SIMUL_TEXTURE_REGISTER(4);
-uniform sampler3D			ambientTexture2 SIMUL_TEXTURE_REGISTER(5);
 uniform sampler3D			volumeNoiseTexture SIMUL_TEXTURE_REGISTER(6);
 uniform sampler3D			worleyTexture3D SIMUL_TEXTURE_REGISTER(7);
 uniform RWTexture3D<uchar4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
@@ -731,23 +726,6 @@ shader void CS_SecondaryLighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
 		if(density==0&&pos.z<dims.z-1)
 			indirect_light			=1.0;//-(1.0-indirect_light)*exp(-5.0*stepLength);
 		IMAGE_STORE_3D(targetTexture1,idx,vec4(indirect_light,indirect_light,indirect_light,indirect_light));
-	}
-}
-CS_LAYOUT(8,8,1)
-shader void CS_GaussianFilter(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
-{
-	uint3 sub_pos = uint3(g.xy * 8 + t.xy, g.z + t.z);
-	uint3 dims;
-	uint3 pos		=sub_pos+threadOffset;
-	GET_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
-	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
-		return;
-	float light		=IMAGE_LOAD_3D(lightTexture1,pos).x;
-	if(pos.z>0)
-	{
-		int Z		=pos.z-1;
-		light		+=IMAGE_LOAD_3D(lightTexture1,int3(pos+gaussianOffset)).x;
-		light		+=IMAGE_LOAD_3D(lightTexture1,int3(pos.xy,pos.z+1)).x;
 	}
 }
 

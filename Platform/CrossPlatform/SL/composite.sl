@@ -65,7 +65,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 insc					=texture_3d_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0);
 
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
-	float hiResInterp			=1.0-pow(saturate(( nearFarCloud.x- dist) / max(0.00001,nearFarCloud.x-nearFarCloud.y)),4.0);
+	float hiResInterp			=1.0-pow(saturate(( nearFarCloud.x- dist) / max(0.00001,nearFarCloud.x-nearFarCloud.y)),1.0);
 	// we're going to do TWO interpolations. One from zero to the near distance,
 	// and one from the near to the far distance.
 	float nearInterp = pow(saturate((dist ) / 0.0033),1.0);
@@ -89,12 +89,12 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 
 	insc.rgb					*=cloud.a;
 	insc						+=cloud;
-	res.multiply =  texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a*shadow;
-	res.add = insc;// *0 + .5*nearFarCloud;
+	res.multiply				=texture_clamp_mirror_lod(loss2dTexture,loss_texc,0)*cloud.a*shadow;
+	res.add = insc;
 	/*if(lowResTexCoords.x + lowResTexCoords.y>1.1)
 		res.add.rg= hiResInterp;*/
 	//if (lowResTexCoords.x + lowResTexCoords.y>1.2)
-		//	res.add.rgb = nearInterp;
+	//		res.add.rgb = hiResInterp;
     return res;
 }
 

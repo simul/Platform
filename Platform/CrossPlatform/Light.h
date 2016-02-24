@@ -35,7 +35,7 @@ namespace simul
 			virtual ~Light();
 			// Set ambient light. Turn on light0 and set its attributes to default (white directional light in Z axis).
 			// If the scene contains at least one light, the attributes of light0 will be overridden.
-			//static void IntializeEnvironment(const fbxsdk_2014_2_1::FbxColor & pAmbientLight);
+			//static void IntializeEnvironment(const fbxsdk_201x_x_x::FbxColor & pAmbientLight);
 
 			// Draw a geometry (sphere for point and directional light, cone for spot light).
 			// And set light attributes.

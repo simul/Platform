@@ -16,7 +16,6 @@ using namespace std;
 static std::map<void*,simul::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
 typedef uint64_t UINT64;
 typedef int                 BOOL;
-static string rootstring("root");
 
 ProfileData::ProfileData()
 				:DisjointQuery(NULL)

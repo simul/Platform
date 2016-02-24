@@ -14,18 +14,19 @@ struct LayerData
 };
 
 SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
+
+	uniform mat4 invViewProj;
+	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
+
+	uniform mat4 worldToScatteringVolumeMatrix;
+	uniform vec4 depthToLinFadeDistParams;
 	uniform vec3 scaleOfGridCoords;
 	uniform int halfClipSize;			// Actually half the full clip size.
 	uniform vec3 gridOriginPosKm;
 	uniform float pad151663;
 	uniform vec3 viewPosKm;
 	uniform float nearZ;
-	uniform mat4 invViewProj;
-	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
 
-	uniform mat4 worldToScatteringVolumeMatrix;
-	//uniform mat4 viewProj;
-	uniform vec4 depthToLinFadeDistParams;
 	uniform vec2 tanHalfFov;
 	uniform float exposure;
 	uniform float maxCloudDistanceKm;

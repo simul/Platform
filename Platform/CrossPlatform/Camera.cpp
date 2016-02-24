@@ -192,8 +192,8 @@ void simul::crossplatform::MakeInvViewProjMatrix(float *ivp,const float *v,const
 	simul::math::Matrix4x4 viewproj;
 	view(3,0)=view(3,1)=view(3,2)=0;
 	simul::math::Multiply4x4(viewproj,view,proj);
-	viewproj.Transpose(vpt);
-	simul::math::Matrix4x4 invp;
+//	viewproj.Transpose(vpt);
+	//simul::math::Matrix4x4 invp;
 	viewproj.Inverse(*((simul::math::Matrix4x4*)ivp));
 }
 
@@ -311,7 +311,8 @@ vec4 simul::crossplatform::GetFrustumRangeOnCubeFace(int face,const float *invVi
 	//faceMatrix=mat4::identity();
 	//faceMatrix.transpose();
 	mat4 &ivp=*((mat4*)invViewProj);
-	static vec4 clips[]={vec4(-1.0f,-1.0f,1.0f,1.0f)
+	static float sc = 1.0f;
+	 vec4 clips[]=			{vec4(-1.0f,-1.0f,1.0f,1.0f)
 							,vec4( 1.0f,-1.0f,1.0f,1.0f)
 							,vec4( 1.0f, 1.0f,1.0f,1.0f)
 							,vec4(-1.0f, 1.0f,1.0f,1.0f)};
@@ -322,7 +323,9 @@ vec4 simul::crossplatform::GetFrustumRangeOnCubeFace(int face,const float *invVi
 		{
 			float v		=float(j)/float(A);
 			float u		=1.0f-v;
-			vec4 c		=clips[i]*u+clips[(i+1)%4]*v;
+			vec4 c		=(clips[i]*u+clips[(i+1)%4]*v);
+			c.x *= sc;
+			c.y *= sc;
 			vec4 w		=ivp*c;
 			w.w=1.0f;
 			vec4 tra	=faceMatrix*w;

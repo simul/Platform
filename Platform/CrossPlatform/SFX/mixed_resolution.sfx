@@ -72,8 +72,8 @@ vec4 GetFrustumClipPos(int2 idx)
 
 void DownscaleStochastic(uint2 idx1,bool reverseDepth) 
 {
-	uint2 idx=targetRange.xy+idx1;
-	if(idx.x<targetRange.x||idx.x>targetRange.z||idx.y<targetRange.y||idx.y>targetRange.w)
+	uint2 idx=drawRange.xy+idx1;
+	if(idx.x<targetRange.x||idx.x>=targetRange.z||idx.y<targetRange.y||idx.y>=targetRange.w)
 	{
 		nextUpdateTexture[idx]	=vec4(0,0,0,0);
 		return;
@@ -118,7 +118,7 @@ void DownscaleStochastic(uint2 idx1,bool reverseDepth)
 									,scale);
 //	res=vec4(sourceTexCoords,.5,.5);
 	targetTexture[idx]		=res;
-	nextUpdateTexture[idx]	=vec4(u.b,0,1,0);
+	nextUpdateTexture[idx]	=vec4(u.b,0,1.0,0);
 }
 
 void Direct(int2 idx,bool reverseDepth) 
@@ -167,7 +167,7 @@ shader void CS_DownscaleStochastic_ForwardDepth(uint3 g : SV_GroupID, uint3 t : 
 void MinMax(uint2 idx1,bool reverseDepth)
 {
 	uint2 idx = targetRange.xy + idx1;
-	if (idx.x<targetRange.x || idx.x>targetRange.z || idx.y<targetRange.y || idx.y>targetRange.w)
+	if (idx.x<targetRange.x || idx.x>=targetRange.z || idx.y<targetRange.y || idx.y>=targetRange.w)
 	{
 		targetTexture[idx] = vec4(0, 0, 0, 0);
 		return;

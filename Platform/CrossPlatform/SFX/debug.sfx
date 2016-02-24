@@ -101,7 +101,6 @@ vec4 ShowDepthCube(posTexVertexOutput IN,bool reverseDepth)
 	return result;
 }
 
-
 shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
 {
 	vec2 texc		=IN.texCoords.xy;
@@ -113,7 +112,12 @@ shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
 	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
 	vec4 res		=texture_cube(cubeTexture,view);
 	//res.xyz=IN.texCoords.xyy;
-	res				=vec4(pow(res.xyz,vec3(0.44,0.44,0.44)),1.0);
+	vec3 v = abs(view);
+	float e = max(max(v.x, v.y), v.z);
+	// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
+	vec3 N = 0.001*step( vec3(e, e, e), v);
+
+	res				=vec4(pow(res.xyz+N,vec3(0.44,0.44,0.44)),1.0);
 	return res;
 }
 
