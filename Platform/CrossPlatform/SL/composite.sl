@@ -42,7 +42,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,float maxFadeDistanceKm)
 {
 	TwoColourCompositeOutput res;
-	vec3 view					=mul(invViewProj,clip_pos).xyz;
+	vec3 view					=normalize(mul(invViewProj,clip_pos).xyz);
 	// we only care about view.z, i.e. the third element of the vector.
 	// so only dot-product the third row of invViewProj, with clip_pos.
 #ifdef GLSL
