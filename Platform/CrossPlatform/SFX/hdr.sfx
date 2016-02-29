@@ -335,6 +335,9 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,inscatterVolumeTexture
 															,shadowTexture
 															,maxFadeDistanceKm);
+	vec3 view = normalize(mul(invViewProj, IN.clip_pos).xyz);
+	if (view.z < 0)
+		result.add.rgb *= 0;
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	return result;

@@ -82,4 +82,30 @@ vec4 texture_int(TEXTURE2D_UINT glowTexture,vec2 texCoord)
 	vec4 tex=lerp(tex0,tex1,l.y);
 	return tex;
 }
+
+// enc=.5* norm(n.xy)*sqrt(.5-.5 n.z)+.5
+
+// nn.xy=(2 enc-1)=norm(n.xy)*sqrt(.5 - .5 n.z)
+// so .5-.5 n.z = pow(len(2 enc-1),2)
+// let nn.z=1.0-|nn.xy|^2
+// norm(n.xy) = (2 enc - 1)/sqrt(.5-.5 n.z)
+// n is normalized, so |n.xy|=sqrt(1.0-n.z*n.z)
+// 
+vec2 encodeNormalToVec2(vec3 n)
+{
+	float p = sqrt(n.z * 8.0 + 8.0);
+	vec2 enc = (n.xy / p + 0.5);
+	return enc;
+}
+
+vec3 decodeNormalFromVec2(vec2 enc)
+{
+	vec2 fenc = enc * 4.0 - 2.0;
+	float f = dot(fenc, fenc);
+	float g = sqrt(1 - f / 4.0);
+	vec3 n;
+	n.xy = fenc*g;
+	n.z = 1.0 - f / 2.0;
+	return n;
+}
 #endif
