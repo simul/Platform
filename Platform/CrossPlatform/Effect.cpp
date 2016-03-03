@@ -10,6 +10,14 @@ using namespace simul;
 using namespace crossplatform;
 using namespace std;
 
+EffectTechniqueGroup::~EffectTechniqueGroup()
+{
+	for (crossplatform::TechniqueMap::iterator i = techniques.begin(); i != techniques.end(); i++)
+	{
+		delete i->second;
+	}
+	techniques.clear();
+}
 
 Effect::Effect()
 	:renderPlatform(NULL)
@@ -34,6 +42,20 @@ void Effect::InvalidateDeviceObjects()
 		delete i->second;
 	}
 	techniques.clear();
+	for (auto i = groups.begin(); i != groups.end(); i++)
+	{
+		delete i->second;
+	}
+	groups.clear();
+}
+
+EffectTechnique::EffectTechnique()
+	:platform_technique(NULL)
+{
+}
+
+EffectTechnique::~EffectTechnique()
+{
 }
 
 EffectTechnique *EffectTechniqueGroup::GetTechniqueByName(const char *name)

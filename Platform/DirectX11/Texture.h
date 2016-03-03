@@ -29,7 +29,7 @@ namespace simul
 		{
 		public:
 			Texture();
-			~Texture();
+			virtual ~Texture() override;
 			void InvalidateDeviceObjects();
 			void LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
 			void LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files);

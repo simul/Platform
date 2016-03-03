@@ -110,6 +110,11 @@ PlatformStructuredBuffer::PlatformStructuredBuffer()
 				memset(&mapped,0,sizeof(mapped));
 			}
 
+PlatformStructuredBuffer::~PlatformStructuredBuffer()
+{
+	InvalidateDeviceObjects();
+	delete[] stagingBuffers;
+}
 void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data)
 {
 	InvalidateDeviceObjects();

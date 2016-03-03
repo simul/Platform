@@ -39,7 +39,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,vec2 lowResTexCoords
 				,Texture3D inscatterVolumeTexture
 				,Texture2D shadowTexture
-				,float maxFadeDistanceKm)
+				,float maxFadeDistanceKm
+				,float cloud_shadow)
 {
 	TwoColourCompositeOutput res;
 	vec3 view					=normalize(mul(invViewProj,clip_pos).xyz);
@@ -85,7 +86,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 //		cloud=cloudNear;
 
 	vec3 worldPos				=viewPos+view*dist*1000.0*maxFadeDistanceKm;
-	float shadow				=GetSimpleIlluminationAt(shadowTexture,invShadowMatrix,worldPos).x;
+	float shadow				=lerp(1.0,GetSimpleIlluminationAt(shadowTexture,invShadowMatrix,worldPos).x,cloud_shadow);
 
 	insc.rgb					*=cloud.a;
 	insc						+=cloud;

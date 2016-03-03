@@ -11,7 +11,7 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 
 	uniform vec2 offset;
 	uniform float alpha;
-	uniform float farZ;
+	uniform float cloudShadowStrength;
 	
 	uniform vec4 colour2;
 

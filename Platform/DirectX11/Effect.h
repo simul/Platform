@@ -72,10 +72,7 @@ namespace simul
 			unsigned char *read_data;
 		public:
 			PlatformStructuredBuffer();
-			virtual ~PlatformStructuredBuffer()
-			{
-				InvalidateDeviceObjects();
-			}
+			virtual ~PlatformStructuredBuffer();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,void *init_data);
 			void *GetBuffer(crossplatform::DeviceContext &deviceContext);
 			const void *OpenReadBuffer(crossplatform::DeviceContext &deviceContext);

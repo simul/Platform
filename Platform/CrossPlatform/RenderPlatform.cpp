@@ -35,6 +35,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 
 RenderPlatform::~RenderPlatform()
 {
+	InvalidateDeviceObjects();
 	delete gpuProfiler;
 }
 

@@ -486,13 +486,8 @@ namespace simul
 			PassMap passes_by_name;
 			PassIndexMap passes_by_index;
 			IndexMap pass_indices;
-			EffectTechnique()
-				:platform_technique(NULL)
-			{
-			}
-			virtual ~EffectTechnique()
-			{
-			}
+			EffectTechnique();
+			virtual ~EffectTechnique();
 			virtual int NumPasses() const=0;
 			void *platform_technique;
 			inline ID3DX11EffectTechnique *asD3DX11EffectTechnique()
@@ -521,6 +516,7 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechniqueGroup
 		{
 		public:
+			~EffectTechniqueGroup();
 			TechniqueMap techniques;
 			IndexMap techniques_by_index;
 			EffectTechnique *GetTechniqueByName(const char *name);

@@ -35,7 +35,7 @@ TextFileInput::~TextFileInput()
 		Array &array=i->second;
 		for(int j=0;j<(int)array.size();j++)
 		{
-			::operator delete(array[j],memoryInterface);
+			del(array[j],memoryInterface);
 		}
 	}
 }
@@ -420,7 +420,7 @@ TextFileOutput::~TextFileOutput()
 		Array &array=i->second;
 		for(size_t j=0;j<array.size();j++)
 		{
-			::operator delete(array[j],memoryInterface);
+			del(array[j],memoryInterface);
 		}
 	}
 }
@@ -557,7 +557,7 @@ TextOutput::Array &TextFileOutput::CreateArray(const char *name,int size)
 	int old_size=(int)a.size();
 	if(size<old_size)
 		for(int i=size;i<old_size;i++)
-			::operator delete(memoryInterface,a[i]);
+			del(a[i], memoryInterface);
 	a.resize(size);
 	for(int i=old_size;i<size;i++)
 		a[i]=::new(memoryInterface) TextFileOutput;
