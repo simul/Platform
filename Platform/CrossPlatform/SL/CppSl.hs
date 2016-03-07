@@ -331,12 +331,28 @@
 			r.w=w+v.w;
 			return r;
 		}
+		vec4 operator-(vec4 v) const
+		{
+			vec4 r;
+			r.x=x-v.x;
+			r.y=y-v.y;
+			r.z=z-v.z;
+			r.w=w-v.w;
+			return r;
+		}
 		void operator+=(vec4 v)
 		{
 			x+=v.x;
 			y+=v.y;
 			z+=v.z;
 			w+=v.w;
+		}
+		void operator-=(vec4 v)
+		{
+			x-=v.x;
+			y-=v.y;
+			z-=v.z;
+			w-=v.w;
 		}
 		void operator*=(float m)
 		{

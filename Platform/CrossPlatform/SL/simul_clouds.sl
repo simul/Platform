@@ -398,7 +398,7 @@ void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDist
 	,vec3 cloudTexCoords,vec2 fade_texc,vec2 nearFarTexc
 	,float cosine,vec3 volumeTexCoords
 	,float BetaClouds,float BetaRayleigh,float BetaMie
-	,vec2 solidDist_nearFar,bool noise,bool do_depth_mix)
+	,vec2 solidDist_nearFar,bool noise,bool do_depth_mix,float distScale)
 {
 	density.z				*=cosine;
 	density.z				*=cosine;
@@ -430,11 +430,10 @@ void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDist
 														,fade_texc
 														,nearFarTexc
 														,brightness_factor);
-				//	clr.rgb=volumeTexCoords.zzz;//
 					if(do_depth_mix)
 					{
 						vec4 clr_n			=clr;
-						vec2 m				=saturate((solidDist_nearFar.xy-vec2(fadeDistance,fadeDistance))*500.0);
+						vec2 m				=saturate((solidDist_nearFar.xy-vec2(fadeDistance,fadeDistance))/distScale);
 						clr.a				*=m.y;
 						clr_n.a				*=m.x;
 						nearColour.rgb		+=clr_n.rgb*clr_n.a*(nearColour.a);
@@ -587,11 +586,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	}
 	//float blinn_phong=0.0;
 	//bool found=false;
+	float distScale =  0.6 / maxFadeDistanceKm;
 
 	for(int i=0;i<768;i++)
 	{
 		world_pos					+=0.001*view;
-		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm||solidDist_nearFar.y<lastFadeDistance)
+		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm)//||solidDist_nearFar.y<lastFadeDistance)
 			break;
 		offsetFromOrigin			=world_pos-gridOriginPosKm;
 
@@ -657,6 +657,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				}
 				if(density.z>0)
 				{
+					minDistance = min(max(0,fadeDistance-density.z*d/maxFadeDistanceKm), minDistance);
+					// no point in having the near buffer empty.
+				//	solidDist_nearFar.x =  min(solidDist_nearFar.y - distScale, max(solidDist_nearFar.x + distScale, lastFadeDistance) - distScale);
 	vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
 	float wo=worleyNoise*.25*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1));
@@ -674,17 +677,16 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 								,cloudTexCoords, fade_texc, nearFarTexc
 								,cosine, volumeTexCoords
 								,BetaClouds, BetaRayleigh, BetaMie
-								,solidDist_nearFar, noise, do_depth_mix);
-					minDistance = min(fadeDistance, minDistance);
+								,solidDist_nearFar, noise, do_depth_mix,distScale);
 					if(nearColour.a*brightness_factor<0.003)
 					{
 						nearColour.a=colour.a = 0.0;
 						break;
 					}
 				}
+				lastFadeDistance = lerp(lastFadeDistance, fadeDistance - density.z*d / maxFadeDistanceKm, colour.a);
 			}
 		}
-		lastFadeDistance		=lerp(lastFadeDistance,fadeDistance,colour.a);
 		if(max(max(b.x,b.y),0)>=W)
 		{
 			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
@@ -711,11 +713,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	if(do_rainbow)
 		res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
+	//res.nearFarDepth.y = solidDist_nearFar.x;
 	// y is the near depth. x is the distance at which we will interpolate to the far depth value.
 	// Instead of using the far depth, we will use the cloud distance.
 //	res.nearFarDepth.y = max(res.nearFarDepth.y,minDistance);
-	res.nearFarDepth.x = min(res.nearFarDepth.x,max(lastFadeDistance, res.nearFarDepth.y + 0.01));
-	res.nearFarDepth.w = minDistance;// min(0.1, minDistance);
+//	res.nearFarDepth.x = min(res.nearFarDepth.x,max(lastFadeDistance, res.nearFarDepth.y + distScale ));
+	res.nearFarDepth.w = res.nearFarDepth.z;// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	return res;
 }
 #endif

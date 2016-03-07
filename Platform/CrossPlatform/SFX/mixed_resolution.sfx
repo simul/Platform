@@ -45,12 +45,14 @@ vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture
 			vec2 texc	=saturate(1.01*(texCoords+.6*offs))/1.01;
 			texc		*=depthWindow.zw;
 			texc		+=depthWindow.xy;
-			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
+			// VERY important to use NEAREST, and not filter the source depth texture!
+			vec2 d		=texture_nearest_lod(sourceDepthTexture,texc,0).xx;
 			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-			float s		=step(thr, dist);
-			fn.yw		=min(fn.yw,(1.0-s)+dist);
-			fn.xz		=max(fn.xz, s*dist);
-			
+			float s		=saturate((dist)/thr);
+			fn.yw		=min(fn.yw,vec2((1.0-s),0.0)+dist);
+			fn.xz		=max(fn.xz,dist);
+			//	fn.xz		=max(fn.xz,dist);
+		//	fn.yw = min(fn.yw, dist);
 		}
 	}
 	return fn;
@@ -196,8 +198,10 @@ void MinMax(uint2 idx1,bool reverseDepth)
 		fn.yw	=min(fn.yw,fn3.yw);
 		fn.xz	=max(fn.xz,fn3.xz);
 	}
-	fn.yw = saturate(pow(saturate((thr - fn.yw) / thr), 2.0) + fn.yw);
-	fn.xz = saturate(saturate((thr - fn.xz) / thr) + fn.xz);
+//	fn.yw = saturate(pow(saturate((thr - fn.yw) / thr), 2.0) + fn.yw);
+//	fn.xz = saturate(saturate((thr - fn.xz) / thr) + fn.xz);
+	//fn.yw = saturate(min(fn.yw, fn.xz));
+	fn.z = nearThresholdDist;
 	targetTexture[idx]				=saturate(fn);
 }
 
