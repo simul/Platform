@@ -102,6 +102,10 @@ void RenderPlatform::StoredState::Clear()
 	m_previousInputLayout			=NULL;
 	pVertexShader					=NULL;
 	pPixelShader					=NULL;
+	pHullShader						=NULL;
+	pDomainShader					=NULL;
+	pGeometryShader					=NULL;
+	pComputeShader					=NULL;
 
 	for(int i=0;i<4;i++)
 		m_BlendFactorStored11[i];
@@ -109,10 +113,22 @@ void RenderPlatform::StoredState::Clear()
 	{
 		m_pSamplerStateStored11[i]=NULL;
 		m_pVertexSamplerStateStored11[i]=NULL;
+		m_pComputeSamplerStateStored11[i]=NULL;
+		m_pGeometrySamplerStateStored11[i]=NULL;
+	}
+	for(int i=0;i<D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;i++)
+	{
+		m_pCSConstantBuffers[i]=NULL;
+		m_pGSConstantBuffers[i]=NULL;
+		m_pPSConstantBuffers[i]=NULL;
+		m_pVSConstantBuffers[i]=NULL;
+		m_pHSConstantBuffers[i]=NULL;
+		m_pDSConstantBuffers[i]=NULL;
 	}
 	for (int i = 0; i<D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
 	{
 		m_pShaderResourceViews[i]=NULL;
+		m_pCSShaderResourceViews[i]=NULL;
 	}
 	for (int i = 0; i<D3D11_PS_CS_UAV_REGISTER_COUNT; i++)
 	{
@@ -1166,7 +1182,7 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 {
 	dx11::SaveTexture(device,texture->AsD3D11Texture2D(),lFileNameUtf8);
 }
-
+#pragma optimize("",off);
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
@@ -1181,10 +1197,25 @@ void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceConte
     pContext->PSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, s.m_pSamplerStateStored11 );
     pContext->VSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT , s.m_pVertexSamplerStateStored11 );
 	
+    pContext->GSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT , s.m_pGeometrySamplerStateStored11 );
+    pContext->CSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT , s.m_pComputeSamplerStateStored11 );
+
 	pContext->VSGetShader(&s.pVertexShader,s.m_pVertexClassInstances,&s.numVertexClassInstances);
 	pContext->PSGetShader(&s.pPixelShader,s.m_pPixelClassInstances,&s.numPixelClassInstances);
-
+	pContext->HSGetShader(&s.pHullShader,s.m_pHullClassInstances,&s.numHullClassInstances);
+	pContext->DSGetShader(&s.pDomainShader,s.m_pDomainClassInstances,&s.numDomainClassInstances);
+	pContext->GSGetShader(&s.pGeometryShader,s.m_pGeometryClassInstances,&s.numGeometryClassInstances);
+	pContext->CSGetShader(&s.pComputeShader,s.m_pPixelClassInstances,&s.numPixelClassInstances);
+	
+	pContext->CSGetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pCSConstantBuffers);
+	pContext->GSGetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pGSConstantBuffers);
+	pContext->PSGetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pPSConstantBuffers);
+	pContext->VSGetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pVSConstantBuffers);
+	pContext->HSGetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pHSConstantBuffers);
+	pContext->DSGetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pDSConstantBuffers);
+	
 	pContext->PSGetShaderResources(0,D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,s.m_pShaderResourceViews);
+	pContext->CSGetShaderResources(0,D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,s.m_pCSShaderResourceViews);
 	pContext->CSGetUnorderedAccessViews(0,D3D11_PS_CS_UAV_REGISTER_COUNT,s.m_pUnorderedAccessViews);
 		 
 	pContext->IAGetInputLayout( &s.m_previousInputLayout );
@@ -1212,15 +1243,47 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
     pContext->OMSetBlendState(s.m_pBlendStateStored11,s.m_BlendFactorStored11,s.m_SampleMaskStored11 );
     pContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pSamplerStateStored11 );
     pContext->VSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pVertexSamplerStateStored11 );
+    pContext->CSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pComputeSamplerStateStored11 );
+    pContext->GSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,s.m_pGeometrySamplerStateStored11 );
 	pContext->VSSetShader(s.pVertexShader,s.m_pVertexClassInstances,s.numVertexClassInstances);
 	pContext->PSSetShader(s.pPixelShader,s.m_pPixelClassInstances,s.numPixelClassInstances);
+	pContext->HSSetShader(s.pHullShader,s.m_pHullClassInstances,s.numHullClassInstances);
+	pContext->DSSetShader(s.pDomainShader,s.m_pDomainClassInstances,s.numDomainClassInstances);
+	pContext->GSSetShader(s.pGeometryShader,s.m_pGeometryClassInstances,s.numGeometryClassInstances);
+	pContext->CSSetShader(s.pComputeShader,s.m_pPixelClassInstances,s.numPixelClassInstances);
+	
     SAFE_RELEASE(s.pVertexShader );
     SAFE_RELEASE(s.pPixelShader );
+	SAFE_RELEASE(s.pVertexShader);
+	SAFE_RELEASE(s.pPixelShader);
+	SAFE_RELEASE(s.pHullShader);
+	SAFE_RELEASE(s.pDomainShader);
+	SAFE_RELEASE(s.pGeometryShader);
+	SAFE_RELEASE(s.pComputeShader);
+	
+	pContext->CSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pCSConstantBuffers);
+	pContext->GSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pGSConstantBuffers);
+	pContext->PSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pPSConstantBuffers);
+	pContext->VSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pVSConstantBuffers);
+	pContext->HSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pHSConstantBuffers);
+	pContext->DSSetConstantBuffers(0,D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,s.m_pDSConstantBuffers);
+	
+	for (int i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
+	{
+		SAFE_RELEASE(s.m_pCSConstantBuffers[i]);
+		SAFE_RELEASE(s.m_pGSConstantBuffers[i]);
+		SAFE_RELEASE(s.m_pPSConstantBuffers[i]);
+		SAFE_RELEASE(s.m_pVSConstantBuffers[i]);
+		SAFE_RELEASE(s.m_pHSConstantBuffers[i]);
+		SAFE_RELEASE(s.m_pDSConstantBuffers[i]);
+	}
 
 	pContext->PSSetShaderResources(0,D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,s.m_pShaderResourceViews);
+	pContext->CSSetShaderResources(0,D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,s.m_pCSShaderResourceViews);
 	for (int i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
 	{
 		SAFE_RELEASE(s.m_pShaderResourceViews[i]);
+		SAFE_RELEASE(s.m_pCSShaderResourceViews[i]);
 	}
 	// TODO: handle produce-consume buffers below
 	pContext->CSSetUnorderedAccessViews(0, D3D11_PS_CS_UAV_REGISTER_COUNT, s.m_pUnorderedAccessViews, NULL);
@@ -1235,6 +1298,8 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 	{
 	    SAFE_RELEASE(s.m_pSamplerStateStored11[i]);
 	    SAFE_RELEASE(s.m_pVertexSamplerStateStored11[i]);
+	    SAFE_RELEASE(s.m_pComputeSamplerStateStored11[i]);
+	    SAFE_RELEASE(s.m_pGeometrySamplerStateStored11[i]);
 	}
 	pContext->IASetPrimitiveTopology(s.m_previousTopology);
 	pContext->IASetInputLayout(s.m_previousInputLayout );
