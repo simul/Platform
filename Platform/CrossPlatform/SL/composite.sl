@@ -35,28 +35,27 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,mat4 invViewProj
 				,vec3 viewPos
 				,mat4 invShadowMatrix
-				,DepthIntepretationStruct depthInterpretationStruct
+				,DepthIntepretationStruct dis
 				,vec2 lowResTexCoords
 				,Texture3D inscatterVolumeTexture
-				,Texture2D shadowTexture
+				,Texture2D cloudShadowTexture
 				,float maxFadeDistanceKm
 				,float cloud_shadow)
 {
 	TwoColourCompositeOutput res;
 	vec3 view					=normalize(mul(invViewProj,clip_pos).xyz);
-	// we only care about view.z, i.e. the third element of the vector.
-	// so only dot-product the third row of invViewProj, with clip_pos.
-#ifdef GLSL
-	vec4 zrow					=vec4(invViewProj[0][2],invViewProj[1][2],invViewProj[2][2],invViewProj[3][2]);
-#else
-	vec4 zrow					=invViewProj._31_32_33_34;
-#endif
-	float sine					=dot(zrow,clip_pos);
+	float sine					=view.z;
 	vec4 nearFarCloud			=texture_cube_lod(nearFarTexture	,view		,0);
 
 	float depth					=texture_wrap_nearest_lod(depthTexture,depth_texc,0).x;
 
-	float dist					=depthToFadeDistance(depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+	float dist					=0;//depthToFadeDistance(depth,clip_pos.xy,dis,tanHalfFov);
+	
+		float linearFadeDistanceZ = dis.depthToLinFadeDistParams.x / (depth*dis.depthToLinFadeDistParams.y + dis.depthToLinFadeDistParams.z)+dis.depthToLinFadeDistParams.w*depth;
+		float Tx=clip_pos.x*tanHalfFov.x;
+		float Ty=clip_pos.y*tanHalfFov.y;
+		dist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
+	
 	float dist_rt				=pow(dist,0.5);
 	vec4 cloud					=texture_cube_lod(farCloudTexture,view,0);
 
@@ -86,7 +85,15 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 //		cloud=cloudNear;
 
 	vec3 worldPos				=viewPos+view*dist*1000.0*maxFadeDistanceKm;
-	float shadow				=lerp(1.0,GetSimpleIlluminationAt(shadowTexture,invShadowMatrix,worldPos).x,cloud_shadow);
+	float illum=1.0;
+	
+	vec3 texc			=mul(invShadowMatrix,vec4(worldPos,1.0)).xyz;
+	vec4 texel			=texture_wrap_lod(cloudShadowTexture,texc.xy,0);
+	float above			=saturate((texc.z-0.5)/0.5);
+	texel.a				+=above;
+	illum=saturate(texel.a);
+	
+	float shadow				=lerp(1.0,illum,cloud_shadow);
 
 	insc.rgb					*=cloud.a;
 	insc						+=cloud;
@@ -96,7 +103,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		res.add.rg= hiResInterp;*/
 	//if (lowResTexCoords.x + lowResTexCoords.y>1.2)
 		//	res.add.rgb = nearFarCloud.rgb;
-		//	res.add.rgb = nearInterp;
+		//	res.add.rgb = frac(10000*dist);
     return res;
 }
 
