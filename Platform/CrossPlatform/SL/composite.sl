@@ -49,12 +49,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 
 	float depth					=texture_wrap_nearest_lod(depthTexture,depth_texc,0).x;
 
-	float dist					=0;//depthToFadeDistance(depth,clip_pos.xy,dis,tanHalfFov);
+	float dist					=depthToFadeDistance(depth,clip_pos.xy,dis,tanHalfFov);
 	
-		float linearFadeDistanceZ = dis.depthToLinFadeDistParams.x / (depth*dis.depthToLinFadeDistParams.y + dis.depthToLinFadeDistParams.z)+dis.depthToLinFadeDistParams.w*depth;
-		float Tx=clip_pos.x*tanHalfFov.x;
-		float Ty=clip_pos.y*tanHalfFov.y;
-		dist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
 	
 	float dist_rt				=pow(dist,0.5);
 	vec4 cloud					=texture_cube_lod(farCloudTexture,view,0);
