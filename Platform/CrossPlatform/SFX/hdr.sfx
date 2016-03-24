@@ -309,7 +309,8 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,inscatterVolumeTexture
 															,shadowTexture
 															,maxFadeDistanceKm
-															,cloudShadowStrength);
+															,cloudShadowStrength
+															,nearDist);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	return result;
@@ -336,7 +337,8 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,inscatterVolumeTexture
 															,shadowTexture
 															,maxFadeDistanceKm
-		, cloudShadowStrength);
+		, cloudShadowStrength
+															,nearDist);
 	vec3 view = normalize(mul(invViewProj, IN.clip_pos).xyz);
 	//if (view.z < 0)
 	//	result.add.rgb *= 0;
@@ -363,6 +365,17 @@ shader vec4 PS_CubemapToScreenspace(posTexVertexOutput IN): SV_Target
 	vec3 view			=mul(invViewProj,clip_pos).xyz;
 	vec4 res			=texture_cube_lod(nearFarTexture,view,0);
 	return res;
+}
+
+
+shader vec4 PS_CubemapToScreenspaceVisibility(posTexVertexOutput IN): SV_Target
+{
+	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x			+=2.0*IN.texCoords.x;
+	clip_pos.y			-=2.0*IN.texCoords.y;
+	vec3 view			=mul(invViewProj,clip_pos).xyz;
+	vec4 lookup			=texture_cube_lod(nearFarTexture,view,0);
+	return lookup;
 }
 
 TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,bool reverseDepth)
@@ -552,6 +565,16 @@ BlendState CompositeBlend
     BlendOp			=ADD;
 };
 
+BlendState CubemapCompositeBlend
+{
+	BlendEnable[0]	=TRUE;
+	//BlendEnable[1]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=SRC1_COLOR;
+    BlendOp			=ADD;
+	RenderTargetWriteMask[0]=7;
+	RenderTargetWriteMask[1]=7;
+};
 
 technique blur
 {
@@ -616,7 +639,7 @@ fxgroup composite_atmospherics
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetBlendState(CubemapCompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(compositevs_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_Cubemap_ReverseDepth()));
@@ -625,7 +648,7 @@ fxgroup composite_atmospherics
 		{
 			SetRasterizerState( RenderNoCull );
 			SetDepthStencilState( DisableDepth, 0 );
-			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetBlendState(CubemapCompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
 			SetGeometryShader(NULL);
 			SetVertexShader(compositevs_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_Cubemap_ForwardDepth()));
@@ -717,5 +740,18 @@ technique cubemap_to_screenspace
 		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_CubemapToScreenspace()));
+	}
+}
+
+technique cubemap_to_screenspace_visibility
+{
+	pass p0
+	{
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(DontBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+		SetPixelShader(CompileShader(ps_5_0,PS_CubemapToScreenspaceVisibility()));
 	}
 }

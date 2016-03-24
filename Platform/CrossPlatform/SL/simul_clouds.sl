@@ -718,7 +718,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	// Instead of using the far depth, we will use the cloud distance.
 //	res.nearFarDepth.y = max(res.nearFarDepth.y,minDistance);
 //	res.nearFarDepth.x = min(res.nearFarDepth.x,max(lastFadeDistance, res.nearFarDepth.y + distScale ));
-	res.nearFarDepth.w = res.nearFarDepth.z;// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
+	res.nearFarDepth.w	=	meanFadeDistance;
+	res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	return res;
 }
 #endif
