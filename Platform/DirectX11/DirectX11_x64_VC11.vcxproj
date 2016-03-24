@@ -629,6 +629,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">$(SIMUL)\Media\shaderbin\%(Filename).fxo</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)\Media\shaderbin\%(Filename).fxo</ObjectFileOutput>
     </FxCompile>
+    <None Include="..\CrossPlatform\SFX\foliage.sfx" />
     <None Include="HLSL\CppHLSL.hlsl" />
     <None Include="HLSL\shader_platform.sl" />
     <None Include="SimulUseDXSDK.props" />

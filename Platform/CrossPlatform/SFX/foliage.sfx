@@ -1,0 +1,41 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+#include "shader_platform.sl"
+#include "../SL/common.sl"
+#include "../SL/render_states.sl"
+#include "../SL/states.sl"
+#include "../SL/foliage_constants.sl"
+uniform RWTexture3D<uchar4> SparseTextureUAV;
+uniform Texture3D SparseTexture;
+
+shader vec4 PS_Foliage(posTexVertexOutput IN) : SV_TARGET
+{
+    return vec4(0,0.25,0,0.5);
+}
+
+CS_LAYOUT(1,1,1)
+shader void CS_FillInFoliage(uint3 sub_pos: SV_DispatchThreadID )
+{
+	SparseTextureUAV[sub_pos]=vec4(0,0.5,0,0.5);
+}
+
+VertexShader vs = CompileShader(vs_4_0, VS_SimpleFullscreen());
+technique render_foliage
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs);
+		SetPixelShader(CompileShader(ps_4_0,PS_Foliage()));
+    }
+}
+
+technique build_sparse_texture
+{
+    pass c0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_FillInFoliage()));
+    }
+}
