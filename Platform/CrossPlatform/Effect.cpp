@@ -37,11 +37,6 @@ Effect::~Effect()
 void Effect::InvalidateDeviceObjects()
 {
 	shaderResources.clear();
-	for(crossplatform::TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
-	{
-		delete i->second;
-	}
-	techniques.clear();
 	for (auto i = groups.begin(); i != groups.end(); i++)
 	{
 		delete i->second;
@@ -106,7 +101,6 @@ EffectTechnique *Effect::EnsureTechniqueExists(const string &groupname,const str
 {
 	EffectTechnique *tech=NULL;
 	string techname=techname_;
-	if(groupname.size()>0)
 	{
 		if(groups.find(groupname)==groups.end())
 		{
@@ -121,30 +115,19 @@ EffectTechnique *Effect::EnsureTechniqueExists(const string &groupname,const str
 			int index							=(int)group->techniques.size();
 			group->techniques[techname]			=tech;
 			group->techniques_by_index[index]	=tech;
+			if(groupname.size())
+				techname=(groupname+"::")+techname;
+			techniques[techname]			=tech;
+			techniques_by_index[index]		=tech;
 		}
-		techname=(groupname+"::")+techname;
-	}
-	if(techniques.find(techname)!=techniques.end())
-	{
-		if(!tech)
-			tech=techniques[techname];
-		else
-			techniques[techname]=tech;
-	}
-	else
-	{
-		if(!tech)
-			tech					=CreateTechnique(); 
-		techniques[techname]		=tech;
-		int index					=(int)techniques_by_index.size();
-		techniques_by_index[index]	=tech;
 	}
 	return tech;
 }
 
 const char *Effect::GetTechniqueName(const EffectTechnique *t) const
 {
-	for(crossplatform::TechniqueMap::const_iterator i=techniques.begin();i!=techniques.end();i++)
+	for(auto g=groups.begin();g!=groups.end();g++)
+	for(crossplatform::TechniqueMap::const_iterator i=g->second->techniques.begin();i!=g->second->techniques.end();i++)
 	{
 		if(i->second==t)
 			return i->first.c_str();

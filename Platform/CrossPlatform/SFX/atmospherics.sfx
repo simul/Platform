@@ -11,21 +11,11 @@
 #include "../SL/colour_packing.sl"
 #include "../SL/illumination.sl"
 
-uniform Texture2D depthTexture;
-uniform Texture2DMS<vec4> depthTextureMS;
-uniform Texture2D cloudDepthTexture;
-uniform Texture2D imageTexture;
-uniform Texture2D lossTexture;
 uniform Texture2D inscTexture;
-uniform Texture2D overcTexture;
 uniform Texture2D skylTexture;
-uniform Texture2D illuminationTexture;
-uniform Texture2D cloudNearFarTexture;
-uniform Texture2D cloudGodraysTexture;
 
 uniform Texture3D cloudTexture;
 SamplerState cloudSamplerState;
-uniform Texture2D moistureTexture;
 
 uniform RWTexture3D<vec4> targetVolume;
 
@@ -46,7 +36,7 @@ struct atmosVertexOutput
     vec2 pos			: TEXCOORD1;
 };
 
-int clampClouds=0;
+#define clampClouds (0)
 // With this function we will create a 3D volume texture that encompasses the scattering for a frame,
 // where the x-axis is azimuth around the light source, y-axis is angle from the light source (maximum = 180 deg)
 // and z-axis is distance from the viewer.

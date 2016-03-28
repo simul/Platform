@@ -692,6 +692,10 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		var=glfxGetEffectTextureNumber((GLuint)platform_effect,name);
 	else
 		var+=1000;
+	if(var>=0)
+		res.valid=true;
+	else
+		res.valid=false;
 	res.platform_shader_resource=(void*)var;
 	return res;
 }
