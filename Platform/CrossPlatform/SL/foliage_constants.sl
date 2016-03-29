@@ -3,8 +3,9 @@
 #define FOLIAGE_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(FoliageConstants,11)
-	uniform mat4 worldToVolumeMatrix;
-	uniform mat4 volumeToWorldMatrix;
+	uniform mat4	transformMatrix;
+	uniform uint3	texture_size;
+	uniform uint	grid_size;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif
