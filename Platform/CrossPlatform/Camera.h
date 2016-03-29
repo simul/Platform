@@ -131,14 +131,14 @@ namespace simul
 															,MouseCameraInput &input
 															,float max_height);
 		
-		math::Matrix4x4 SIMUL_CROSSPLATFORM_EXPORT MatrixLookInDirection(const float *dir,const float *view_up);
+		math::Matrix4x4 SIMUL_CROSSPLATFORM_EXPORT MatrixLookInDirection(const float *dir,const float *view_up,bool lefthanded);
 		// The x-y min and max (in z and w) of the bounds of the projection on the given face of a cubemap.
 		vec4 SIMUL_CROSSPLATFORM_EXPORT GetFrustumRangeOnCubeFace(int face,const float *invViewProj);
-		void SIMUL_CROSSPLATFORM_EXPORT MakeCubeMatrices(math::Matrix4x4 mat[],const float *cam_pos,bool ReverseDepth);
-		void SIMUL_CROSSPLATFORM_EXPORT GetCubeMatrix(float *mat4x4,int i,bool ReverseDepth);
-		void SIMUL_CROSSPLATFORM_EXPORT GetCubeMatrix(float *mat4x4,int i,const float *cam_pos,bool ReverseDepth);
+		void SIMUL_CROSSPLATFORM_EXPORT MakeCubeMatrices(math::Matrix4x4 mat[],const float *cam_pos,bool ReverseDepth,bool ReverseDirection);
+		void SIMUL_CROSSPLATFORM_EXPORT GetCubeMatrix(float *mat4x4,int i,bool ReverseDepth,bool ReverseDirection);
+		void SIMUL_CROSSPLATFORM_EXPORT GetCubeMatrixAtPosition(float *mat4x4,int i,vec3 cam_pos,bool ReverseDepth,bool ReverseDirection);
 		
-		void SIMUL_CROSSPLATFORM_EXPORT GetCubeInvViewProjMatrix(float *mat4x4,int i,bool ReverseDepth);
+		void SIMUL_CROSSPLATFORM_EXPORT GetCubeInvViewProjMatrix(float *mat4x4,int i,bool ReverseDepth,bool ReverseDirection);
 
 		extern SIMUL_CROSSPLATFORM_EXPORT math::Matrix4x4 MakeOrthoProjectionMatrix(float left,
  																					float right,

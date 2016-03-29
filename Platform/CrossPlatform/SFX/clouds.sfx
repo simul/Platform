@@ -133,10 +133,10 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
-CS_LAYOUT(8,8,8)
+CS_LAYOUT(4,4,4)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	uint3 pos=(g*8+t)*uint3(amortizationScale)+uint3(amortizationOffset.xyz);
+	uint3 pos=(g*4+t)*uint3(amortizationScale)+uint3(amortizationOffset.xyz);
 	vec4 c1=cloudDensity[pos];
 	vec4 c2=cloudDensity2[pos];
     vec4 res= lerp(c1,c2,cloud_interp);
@@ -187,7 +187,7 @@ shader vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 {
 	float r=MakeRainMap(cloudDensity,IN.texCoords);
-	return vec4(r,r,r,r);
+	return precipitation*vec4(r,r,r,r);
 }
 
 struct FarNearDepthPixelOutput
@@ -246,7 +246,7 @@ void Raytrace(uint2 pos,bool include_rain,bool depth)
 	clip_pos.y				-=2.0*texCoords.y;
 	float sineFactor		=1.0/length(clip_pos.xyz);
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
-	vec4 dlookup			=vec4(1.0,1.0,1.0,1.0);
+	vec4 dlookup			=vec4(1.0,1.0,0.000001,1.0);
 	if (depth)
 	{
 		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
@@ -262,7 +262,8 @@ void Raytrace(uint2 pos,bool include_rain,bool depth)
 	vec3 lightspaceView		=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
 
 	float ls_angle			=asin(lightspaceView.z);
-	vec3 volumeTexCoordsXyC	=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*ls_angle/pi),max(0.3,cos(ls_angle)));
+	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(view.z)/pi),0);
+//	vec3 lightspaceVolumeTexCoordsXyC	=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*ls_angle/pi),max(0.3,cos(ls_angle)));
 
 	RaytracePixelOutput f	=RaytraceCloudsForward(
 									cloudDensity
@@ -279,7 +280,7 @@ void Raytrace(uint2 pos,bool include_rain,bool depth)
 									,dlookup
 									,view
 									,clip_pos
-									,volumeTexCoordsXyC
+									,worldspaceVolumeTexCoordsXyC
 									,true
 									,include_rain
 									,false
@@ -429,7 +430,7 @@ shader void CS_RaytraceSimple(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
 	uint2 pos				=targetRange.xy+idx*amortizationScale.xy+amortizationOffset.xy;
 
 	Raytrace(pos,false,false);
-		
+	//outputTexture1[pos]=vec4(1,0,1,.5);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -491,12 +492,6 @@ shader vec4 PS_PlacementVolume(posTexVertexOutput IN):SV_TARGET
 {
 	return vec4(1.0,1.0,IN.texCoords.x,1.0);
 }
-
-shader vec4 PS_Simple(posTexVertexOutput IN):SV_TARGET
-{
-    return texture_wrap(cloudShadowTexture,IN.texCoords.xy);
-}
-
 shader vec4 PS_ShowNoise(posTexVertexOutput IN):SV_TARGET
 {
     vec4 lookup=texture_wrap(cloudShadowTexture,IN.texCoords.xy);
@@ -726,18 +721,6 @@ technique cross_section
     }
 }
 
-technique simple
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Simple()));
-    }
-}
 
 technique show_noise
 {

@@ -480,6 +480,7 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 	}
 	tech->platform_technique=t;
 	techniques[name]=tech;
+	groups[""]->techniques[name]=tech;
 	if(!tech->platform_technique)
 	{
 		SIMUL_BREAK_ONCE("NULL technique");
@@ -512,6 +513,8 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 	tech->platform_technique=t;
 	techniques[desc.Name]=tech;
 	techniques_by_index[index]=tech;
+	groups[""]->techniques[desc.Name]=tech;
+	groups[""]->techniques_by_index[index]=tech;
 	return tech;
 }
 
@@ -565,6 +568,9 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const 
 
 void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip)
 {
+	// If invalid, we already had the error when we assigned this ShaderResource. So fail silently to avoid spamming output.
+	if(!shaderResource.valid)
+		return;
 	// TODO: disallow SetTexture when the texture doesn't match the ShaderResource's type.
 	ID3DX11EffectShaderResourceVariable *var=(ID3DX11EffectShaderResourceVariable*)(shaderResource.platform_shader_resource);
 	if(!var||!var->IsValid())
@@ -606,6 +612,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		return i->second;
 	crossplatform::ShaderResource &res=shaderResources[name];
 	res.platform_shader_resource=0;
+	res.valid=false;
 	ID3DX11Effect *effect=asD3DX11Effect();
 	if(!effect)
 	{
@@ -640,6 +647,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 			return res;
 		}
 	}
+	res.valid=true;
 	return res;
 }
 

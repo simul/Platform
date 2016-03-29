@@ -278,17 +278,22 @@ const float *simul::crossplatform::GetCameraPosVector(const float *v)
 }
 
 using namespace simul::math;
-Matrix4x4 simul::crossplatform::MatrixLookInDirection(const float *dir,const float *view_up)
+Matrix4x4 simul::crossplatform::MatrixLookInDirection(const float *dir,const float *view_up,bool lefthanded)
 { 
 	Matrix4x4 M;
 	M.ResetToUnitMatrix();
 	Vector3 zaxis = dir;
 	Vector3 up = view_up;
+	if(!lefthanded)
 	zaxis*=-1.f;
 	zaxis.Normalize();
 	Vector3 xaxis = up^zaxis;
+	if(lefthanded)
+		xaxis*=-1.0f;
 	xaxis.Normalize();
 	Vector3 yaxis = zaxis^xaxis;
+	if(lefthanded)
+		yaxis*=-1.0f;
 	yaxis.Normalize();
 	M.InsertColumn(0,xaxis);
 	M.InsertColumn(1,yaxis);
@@ -307,7 +312,7 @@ vec4 simul::crossplatform::GetFrustumRangeOnCubeFace(int face,const float *invVi
 {
 	vec4 range(1.0,1.0,-1.0,-1.0);
 	mat4 faceMatrix;
-	GetCubeMatrix((float*)&faceMatrix,face,true);
+	GetCubeMatrix((float*)&faceMatrix,face,true,false);
 	//faceMatrix=mat4::identity();
 	//faceMatrix.transpose();
 	mat4 &ivp=*((mat4*)invViewProj);
@@ -354,17 +359,11 @@ vec4 simul::crossplatform::GetFrustumRangeOnCubeFace(int face,const float *invVi
 	return range;
 }
 
-void simul::crossplatform::MakeCubeMatrices(simul::math::Matrix4x4 mat[],const float *cam_pos,bool ReverseDepth)
+void simul::crossplatform::MakeCubeMatrices(simul::math::Matrix4x4 mat[],const float *cam_pos,bool ReverseDepth,bool ReverseDirection)
 {
-#ifdef SIMUL_WIN8_SDK
-	vec3 vEyePt ={cam_pos[0],cam_pos[1],cam_pos[2]};
-    vec3 vLookAt;
-    vec3 vUpDir;
-#else
 	vec3 vEyePt (cam_pos[0],cam_pos[1],cam_pos[2]);
-    vec3 vLookAt;
+    vec3 vLookDir;
     vec3 vUpDir;
-#endif
     memset(mat,0,6*sizeof(math::Matrix4x4));
     /*D3DCUBEMAP_FACE_POSITIVE_X     = 0,
     D3DCUBEMAP_FACE_NEGATIVE_X     = 1,
@@ -391,10 +390,13 @@ void simul::crossplatform::MakeCubeMatrices(simul::math::Matrix4x4 mat[],const f
 		{
 			vUpDir		*=-1.0f;
 		}
-		vLookAt		=vEyePt+lookf[i];
+		vLookDir	=lookf[i];
 		vUpDir		=upf[i];
-		//D3DXMatrixLookAtRH((D3DXMATRIX*)&mat[i], &vEyePt, &vLookAt, &vUpDir );
-		mat[i]		=MatrixLookInDirection((const float*)&lookf[i],vUpDir);
+		mat[i]		=MatrixLookInDirection((const float*)&vLookDir,vUpDir,false);
+		if(ReverseDirection)
+		{
+			mat[i]*=-1.0f;
+		}
 		Vector3 loc_cam_pos;
 		simul::math::Multiply3(loc_cam_pos,mat[i],cam_pos);
 		loc_cam_pos*=-1.f;
@@ -403,78 +405,53 @@ void simul::crossplatform::MakeCubeMatrices(simul::math::Matrix4x4 mat[],const f
 	}
 }
 
-void simul::crossplatform::GetCubeMatrix(float *mat4x4,int face,bool ReverseDepth)
+void simul::crossplatform::GetCubeMatrix(float *mat4x4,int face,bool ReverseDepth,bool ReverseDirection)
 {
 	vec3 zero_pos(0,0,0);
-	if(ReverseDepth)
-	{
-		static math::Matrix4x4 view_matrices[6];
-		static bool init=false;
-		if(!init)
+	
+	static math::Matrix4x4 view_matrices[4][6];
+	static bool init[]={false,false,false,false};
+	int combo=(ReverseDepth?2:0)+(ReverseDirection?1:0);
+	if(!init[combo])
 		{
-			MakeCubeMatrices(view_matrices,(const float*)&zero_pos,true);
-			init=true;
+		MakeCubeMatrices(view_matrices[combo],(const float*)&zero_pos,ReverseDepth,ReverseDirection);
+		init[combo]=true;
 		}
-		memcpy(mat4x4,view_matrices[face],sizeof(float)*16);
-	}
-	else
-	{
-		static math::Matrix4x4 view_matrices[6];
-		static bool init=false;
-		if(!init)
-		{
-			MakeCubeMatrices(view_matrices,(const float*)&zero_pos,false);
-			init=true;
-		}
-		memcpy(mat4x4,view_matrices[face],sizeof(float)*16);
-	}
+	memcpy(mat4x4,view_matrices[combo][face],sizeof(float)*16);
 }
 
-void simul::crossplatform::GetCubeMatrix(float *mat4x4,int face,const float *cam_pos,bool ReverseDepth)
+void simul::crossplatform::GetCubeMatrixAtPosition(float *mat4x4,int face,vec3 cam_pos,bool ReverseDepth,bool ReverseDirection)
 {
-	GetCubeMatrix(mat4x4,face,ReverseDepth);
+	GetCubeMatrix(mat4x4,face,ReverseDepth,ReverseDirection);
 	Vector3 loc_cam_pos;
-	simul::math::Multiply3(loc_cam_pos,*((const math::Matrix4x4*)mat4x4),cam_pos);
+	simul::math::Multiply3(loc_cam_pos,*((const math::Matrix4x4*)mat4x4),*((const math::Vector3*)&cam_pos));
 	loc_cam_pos*=-1.f;
 	((math::Matrix4x4*)mat4x4)->InsertRow(3,loc_cam_pos);
 	((math::Matrix4x4*)mat4x4)->_44=1.f;
 }
 
-void MakeCubeInvViewProjMatrices(simul::math::Matrix4x4 mat[],bool ReverseDepth)
+void MakeCubeInvViewProjMatrices(simul::math::Matrix4x4 mat[],bool ReverseDepth,bool ReverseDirection)
 {
 	static math::Matrix4x4 view,proj;
 	proj			=crossplatform::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,1.0f,0.0f);
 	for(int i=0;i<6;i++)
 	{
-		GetCubeMatrix((float*)&view,i,ReverseDepth);
+		GetCubeMatrix((float*)&view,i,ReverseDepth,ReverseDirection);
 		MakeInvViewProjMatrix((float*)&mat[i],view,proj);
 	}
 }
 
-void simul::crossplatform::GetCubeInvViewProjMatrix(float *mat4x4,int face,bool ReverseDepth)
+void simul::crossplatform::GetCubeInvViewProjMatrix(float *mat4x4,int face,bool ReverseDepth,bool ReverseDirection)
 {
-	if(ReverseDepth)
-	{
-		static math::Matrix4x4 ivp_matrices[6];
-		static bool init=false;
-		if(!init)
+	static bool init[]={false,false,false,false};
+	int combo=(ReverseDepth?2:0)+(ReverseDirection?1:0);
+	static math::Matrix4x4 ivp_matrices[4][6];
+	if(!init[combo])
 		{
-			MakeCubeInvViewProjMatrices(ivp_matrices,ReverseDepth);
-			init=true;
+		MakeCubeInvViewProjMatrices(ivp_matrices[combo],ReverseDepth,ReverseDirection);
+		init[combo]=true;
 		}
-		memcpy(mat4x4,ivp_matrices[face],sizeof(float)*16);
-	}
-	else
-	{
-		static math::Matrix4x4 ivp_matrices[6];
-		static bool init=false;
-		if(!init)
-		{
-			MakeCubeInvViewProjMatrices(ivp_matrices,ReverseDepth);
-			init=true;
-		}
-		memcpy(mat4x4,ivp_matrices[face],sizeof(float)*16);
-	}
+	memcpy(mat4x4,ivp_matrices[combo][face],sizeof(float)*16);
 }
 math::Matrix4x4 simul::crossplatform::MakeOrthoProjectionMatrix(float left,
  	float right,

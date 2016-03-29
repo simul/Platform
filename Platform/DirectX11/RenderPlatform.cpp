@@ -1182,7 +1182,7 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 {
 	dx11::SaveTexture(device,texture->AsD3D11Texture2D(),lFileNameUtf8);
 }
-#pragma optimize("",off);
+#pragma optimize("",off)
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();

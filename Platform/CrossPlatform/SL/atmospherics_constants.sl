@@ -33,6 +33,7 @@ SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform mat4 lightspaceToWorldMatrix;
+	uniform mat4 worldToLightspaceMatrix;
 	uniform mat4 invViewProj;
 	uniform mat4 invShadowMatrix;
 	

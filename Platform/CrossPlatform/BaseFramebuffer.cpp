@@ -111,7 +111,6 @@ void BaseFramebuffer::SetWidthAndHeight(int w,int h)
 		if(renderPlatform)
 			InvalidateDeviceObjects();
 	}
-	is_cubemap=false;
 }
 
 void BaseFramebuffer::SetFormat(crossplatform::PixelFormat f)
@@ -168,7 +167,7 @@ bool BaseFramebuffer::IsValid() const
 
 void BaseFramebuffer::SetExternalTextures(crossplatform::Texture *colour,crossplatform::Texture *depth)
 {
-	if(buffer_texture==colour&&buffer_depth_texture==depth)
+	if(buffer_texture==colour&&buffer_depth_texture==depth&&(!colour||(colour->width==Width&&colour->length==Height)))
 		return;
 	SAFE_DELETE(buffer_texture);
 	SAFE_DELETE(buffer_depth_texture);

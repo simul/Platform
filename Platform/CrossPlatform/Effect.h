@@ -477,8 +477,10 @@ namespace simul
 		class SamplerState;
 		struct ShaderResource
 		{
+			ShaderResource():valid(false){}
 			ShaderResourceType shaderResourceType;
 			void *platform_shader_resource;
+			bool valid;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique
 		{

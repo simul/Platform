@@ -134,7 +134,7 @@ void Direct(int2 idx,bool reverseDepth)
 	vec4 res						=GetStochasticSamples(previousTexture,sourceDepthTexture,sourceTexCoords,frustum_clip_pos.xy,texelRange,dis
 										,tanHalfFov,  nearThresholdDepth,stochasticOffset,scale);
 	vec4 lin						=depthToFadeDistance(res,frustum_clip_pos.xy,dis,tanHalfFov);
-	targetTexture[idx]				=vec4(1,1,0,1);//lin;
+	targetTexture[idx]				=vec4(1.0,0.0000001,0.0000001,0.0000001);//lin;
 	nextUpdateTexture[idx]			=vec4(1.0,0,1,0);
 }
 

@@ -89,8 +89,8 @@ vec3 applyFades(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 #ifdef INFRARED
 	//c			=skyl.rgb;
 #else
-	vec3 inscatter	=texture_3d_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0).rgb;
-	c				+=inscatter;
+	vec4 inscatter	=texture_3d_wmc_lod(inscatterVolumeTexture,volumeTexCoords,0);
+	c				+=inscatter.rgb*inscatter.a;
 #endif
     return c;
 }
@@ -403,50 +403,50 @@ void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDist
 	density.z				*=cosine;
 	density.z				*=cosine;
 	density.z				*=saturate(distanceKm/0.24);
-					vec4 clr;
-					// The "normal" that the ray has hit is equal to N, but with the negative signs of the components of viewScaled or view.
-					//vec3 normal				=0.5*(-N*sign(viewScaled)-view);
-				
-				//	blinn_phong				=0.1*pow(dot(normal,halfway),4.0)*density.z;
+		vec4 clr;
+		// The "normal" that the ray has hit is equal to N, but with the negative signs of the components of viewScaled or view.
+		//vec3 normal				=0.5*(-N*sign(viewScaled)-view);
+	
+	//	blinn_phong				=0.1*pow(dot(normal,halfway),4.0)*density.z;
 
-					if (noise)
-						clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
-														,density
-														,BetaClouds//+blinn_phong
-														,lightResponse
-														,ambientColour
-														,world_pos
-														,cloudTexCoords
-														,fade_texc
-														,brightness_factor);
-					else
-						clr					=calcColourSimple(lossTexture,inscTexture,skylTexture,lightTableTexture
-														,density
-														,BetaClouds,BetaRayleigh,BetaMie
-														,lightResponse
-														,ambientColour
-														,world_pos
-														,cloudTexCoords
-														,fade_texc
-														,nearFarTexc
-														,brightness_factor);
-					if(do_depth_mix)
-					{
-						vec4 clr_n			=clr;
-						vec2 m				=saturate((solidDist_nearFar.xy-vec2(fadeDistance,fadeDistance))/distScale);
-						clr.a				*=m.y;
-						clr_n.a				*=m.x;
-						nearColour.rgb		+=clr_n.rgb*clr_n.a*(nearColour.a);
-						nearColour.a		*=(1.0-clr_n.a);
-					}
-					colour.rgb				+=clr.rgb*clr.a*colour.a;
-					meanFadeDistance = lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-density.z)*colour.a);
-				//if(meanFadeDistance>=1.0)
-				//	meanFadeDistance		=fadeDistance;
-					// minDistance is the closest cloud.
-					colour.a				*=(1.0-clr.a);
-
+		if (noise)
+			clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
+											,density
+											,BetaClouds//+blinn_phong
+											,lightResponse
+											,ambientColour
+											,world_pos
+											,cloudTexCoords
+											,fade_texc
+											,brightness_factor);
+		else
+			clr					=calcColourSimple(lossTexture,inscTexture,skylTexture,lightTableTexture
+											,density
+											,BetaClouds,BetaRayleigh,BetaMie
+											,lightResponse
+											,ambientColour
+											,world_pos
+											,cloudTexCoords
+											,fade_texc
+											,nearFarTexc
+											,brightness_factor);
+		if(do_depth_mix)
+		{
+			vec4 clr_n		=clr;
+			vec2 m			=saturate((solidDist_nearFar.xy-vec2(fadeDistance,fadeDistance))/distScale);
+			clr.a			*=m.y;
+			clr_n.a			*=m.x;
+			nearColour.rgb	+=clr_n.rgb*clr_n.a*(nearColour.a);
+			nearColour.a	*=(1.0-clr_n.a);
+		}
+		colour.rgb			+=clr.rgb*clr.a*colour.a;
+		meanFadeDistance	=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-density.z)*colour.a);
+	//if(meanFadeDistance>=1.0)
+	//	meanFadeDistance		=fadeDistance;
+		// minDistance is the closest cloud.
+		colour.a				*=(1.0-clr.a);
 }
+
 // groupshared has 32k available.
 // each vec4 is 16 bytes. So 1024 vec4's will be 16k
 //groupshared vec4 distance[4][4][1024];
@@ -668,7 +668,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					float brightness_factor;
 					float cosine			=dot(N,viewScaled);
 					fade_texc.x				=sqrt(fadeDistance);
-					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,sqrt(fadeDistance*volumeTexCoordsXyC.z));//*sineFactor);
+					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);//*sineFactor);
 
 					ColourStep( colour, nearColour, meanFadeDistance, brightness_factor
 								, lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
@@ -718,7 +718,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	// Instead of using the far depth, we will use the cloud distance.
 //	res.nearFarDepth.y = max(res.nearFarDepth.y,minDistance);
 //	res.nearFarDepth.x = min(res.nearFarDepth.x,max(lastFadeDistance, res.nearFarDepth.y + distScale ));
-	res.nearFarDepth.w = res.nearFarDepth.z;// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
+	res.nearFarDepth.w	=	meanFadeDistance;
+	res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	return res;
 }
 #endif

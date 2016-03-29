@@ -503,8 +503,9 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 texc				=vec2(IN.texc.x,1.0-IN.texc.y);
-	vec4 dlookup 			=texture_clamp(depthTexture,texc.xy);
-	vec2 lowResTexCoords	=fullResToLowResTransformXYWH.xy+texc*fullResToLowResTransformXYWH.zw;
+	vec2 screen_texc		=vec2(0.5*(IN.clipPos.x/IN.clipPos.w+1.0),0.5*(1.0-IN.clipPos.y/IN.clipPos.w));
+	vec2 depth_texc			=viewportCoordToTexRegionCoord(screen_texc,viewportToTexRegionScaleBias);
+	vec4 dlookup 			=texture_clamp(depthTexture,depth_texc.xy);
 	vec3 view				=normalize(IN.view);
 	vec4 nearFarCloud 		=texture_cube_lod(cloudDepthTexture,view,0);
 
@@ -512,7 +513,8 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	float l_depth			=IN.clipPos.z/IN.clipPos.w;
 	vec2 dist				=depthToFadeDistance(vec2(l_depth,dlookup.x),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
 
-	float past				=saturate((nearFarCloud.w-dist.x)/0.01-0.9);
+
+	float past				=1;//saturate((nearFarCloud.z-dist.x)/0.01-0.9);
 	past					*=saturate((dist.y-dist.x)/0.01-0.9);
 	
 	vec2 dir				=normalize(IN.hPosCentre2-IN.hPosCentre1);
@@ -534,9 +536,9 @@ vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 	{
 		float p				=length(vec2(IN.progress,s)-vec2(progress,0));
 		s*=4;
-		br					=.1*saturate(2.0*(1.0-m))*saturate(10.0*(progress-IN.progress));
+		br					=.001*saturate(2.0*(1.0-m))*saturate(10.0*(progress-IN.progress));
 		br					*=saturate((exp(-4.0*s)-0.05)/0.95);
-		br					+=IN.brightness*saturate((0.05-p)/0.05);
+		br					+=0.001*IN.brightness*saturate((0.05-p)/0.05);
 	}
 	else
 	{

@@ -42,6 +42,7 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform int randomSeed;
 
 	uniform vec3 viewPos;
+	uniform float nearDist;					// near threshold for discarding depths.
 SIMUL_CONSTANT_BUFFER_END
 	
 #endif
