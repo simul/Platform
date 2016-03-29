@@ -32,7 +32,7 @@ void Profiler::Initialize(void*)
     enabled=false;
 }
 
-void Profiler::Begin(crossplatform::DeviceContext &de,const char *name)
+void Profiler::Begin(crossplatform::DeviceContext &,const char *name)
 {
     if(!enabled)
         return;
@@ -84,11 +84,11 @@ template<typename T> inline std::string ToString(const T& val)
     return stream.str();
 }
 
-void Profiler::StartFrame(crossplatform::DeviceContext &deviceContext)
+void Profiler::StartFrame(crossplatform::DeviceContext &)
 {
 }
 
-void Profiler::EndFrame(crossplatform::DeviceContext &deviceContext)
+void Profiler::EndFrame(crossplatform::DeviceContext &)
 {
     if(!enabled)
         return;

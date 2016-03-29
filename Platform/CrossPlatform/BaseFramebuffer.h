@@ -60,7 +60,7 @@ namespace simul
 			{
 				if(!pattern||amortization<=1)
 					return uint3(0,0,0);
-				int a			=amortization;
+//				int a			=amortization;
 				int sub_frame	=framenumber%(numOffsets);
 				return pattern[sub_frame];
 			}

@@ -29,6 +29,7 @@ uniform Texture2D shadowTexture;
 uniform Texture2D loss2dTexture;
 uniform Texture3D lossVolumeTexture;
 uniform Texture3D inscatterVolumeTexture;
+uniform Texture3D godraysVolumeTexture;
 
 struct CompositeShaderInput
 {
@@ -307,6 +308,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,depthInterpretationStruct
 															,IN.lowResTexCoords
 															,inscatterVolumeTexture
+															,godraysVolumeTexture
 															,shadowTexture
 															,maxFadeDistanceKm
 															,cloudShadowStrength
@@ -335,6 +337,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,depthInterpretationStruct
 															,IN.lowResTexCoords
 															,inscatterVolumeTexture
+		,godraysVolumeTexture
 															,shadowTexture
 															,maxFadeDistanceKm
 		, cloudShadowStrength
