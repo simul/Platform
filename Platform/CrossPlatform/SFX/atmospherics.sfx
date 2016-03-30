@@ -46,60 +46,41 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 	if(p.x>=edge.x||p.y>=edge.y)
 		return;
 	// We must convert the idx values into a direction and distance in real space.
-	vec2 texc			=vec2(float(idx.x)/float(scatteringVolumeDims.x),float(idx.y)/float((scatteringVolumeDims.y-1)));
-	float azimuth		=texc.x*2.0*PI;
-	float elevation		=(1.0-texc.y)*PI;
-	float se			=sin(elevation);
-	float ce			=cos(elevation);
-	float cos_scaler	=1.0/max(0.3,se);
-	float x				=sin(azimuth)*se;
-	float y				=cos(azimuth)*se;
-	vec3 view			=mul(lightspaceToWorldMatrix,vec4(x,y,ce,1.0)).xyz;//x*xAxis+y*yAxis+lightDir*ce;
+	// x is azimuth and y is distance.
+	float az_texc		=float(idx.x)/float(scatteringVolumeDims.x);
+	float distance_texc	=float(idx.y)/float(scatteringVolumeDims.y-1);
+	float azimuth		=az_texc*2.0*PI;
+	float x				=distance_texc*sin(azimuth);
+	float y				=distance_texc*cos(azimuth);
+	//vec3 view			=mul(lightspaceToWorldMatrix,vec4(x,y,ce,1.0)).xyz;
 
-	float sine			=view.z;
-
-	float fade_texc_y	=0.5*(1.0-sine);
-	// Illumination texture is worldspace:
-	float world_azimuth	=atan2(view.x,view.y);
-	vec2 illum_texc		=vec2(world_azimuth/(2.0*PI),(1.0+sine)*0.5);
-	vec4 colour			=vec4(0,0,0,0);
-	vec4 last			=vec4(0,0,0,0);
 	float godraysIntensity	=1.0;
 	vec3 lightDirCloudspace	=normalize(mul(worldToCloudMatrix,vec4(lightDir,0.0)).xyz);
-	vec3 viewCloudspace		=mul(worldToCloudMatrix,vec4(view,0.0)).xyz*1000.0;
-	vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(viewPosition,1.0)).xyz;
+	//vec3 viewCloudspace		=mul(worldToCloudMatrix,vec4(view,0.0)).xyz*1000.0;
+	//vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(viewPosition,1.0)).xyz;
 
-	vec3 viewPosKm			=vec3(0.0,0.0,viewPosition.z/1000.0);
+	vec3 viewPosKm			=viewPosition/1000.0;
 	float maxFadeDistanceKm	=maxFadeDistanceMetres*0.001;
 	float total=0.0;
-	float total_illum=0.0;
+	float total_illum=1.0;
 	for(int i=0;i<scatteringVolumeDims.z;i++)
 	{
-		float dist_texc	=float(i)/float(scatteringVolumeDims.z-1);
-		float dist		=pow(dist_texc,2.0)*cos_scaler;
+		float z_texc	=float(i)/float(scatteringVolumeDims.z-1);
+		float z			=lerp(1.0,-1.0,z_texc);
 
-		float illum=0;
-		vec3 earth_shadow_illum=vec3(0,0,0);
+		//vec3 earth_shadow_illum=vec3(0,0,0);
+		vec3 pos_l		=vec3(x,y,z);
+		vec3 pos_w		=mul(lightspaceToWorldMatrix,vec4(pos_l,1.0)).xyz;
 
-#define INTER_STEPS 3
-		if(godraysIntensity>0.0)
-		{
-			for(int j=0;j<INTER_STEPS;j++)
-			{
-				float inter				=float(j+0.5)/float(INTER_STEPS)/float(scatteringVolumeDims.z-1);
-				float distanceKm		=maxFadeDistanceKm*pow((dist_texc+inter),2.0)*cos_scaler;
-				vec3 pos_km				=viewPosKm+view*distanceKm;
-				vec3 texc				=viewposCloudspace+distanceKm*viewCloudspace;
-				illum					+=GetCloudIllum(cloudTexture, cloudSamplerState, texc, lightDirCloudspace,clampClouds) / float(INTER_STEPS);
-			}
-		}
+		vec3 pos_m				=viewPosition+pos_w;
+		//vec3 texc				=viewposCloudspace+distanceKm*viewCloudspace;
+		vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(pos_m,1.0)).xyz;
+		float illum				=GetCloudIllum(cloudTexture, cloudSamplerState, viewposCloudspace, lightDirCloudspace,clampClouds);
 		//earth_shadow_illum	=IlluminationAtPosition(viewPosKm+view*dist*maxFadeDistanceKm,sunDir,planetRadiusKm,vec3(45.0,35.0,25.0));
-		float il			=saturate(1.0-1.0*godraysIntensity*(1.0-illum));
-		total_illum			+=il;
-		total				+=1.0;
-		float p				=total_illum/total;
-		vec4 res			=vec4(p,p,p,p);
-		int3 pos			=int3(idx.xy,i);
+		//illum					=saturate(1.0-15.0*godraysIntensity*(1.0-illum));
+		total_illum				*=illum;
+		vec4 res				=vec4(total_illum,illum,illum,illum);//total_illum,total_illum,total_illum,total_illum);
+		int3 pos				=int3(idx.xy,i);
 		IMAGE_STORE_3D(targetVolume,pos,res);
 	}
 }
@@ -126,7 +107,7 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 	
 	vec3 lightspaceView		=mul(lightspaceToWorldMatrix,vec4(x,y,ce,1.0)).xyz;
 	float ls_angle			=asin(lightspaceView.z);
-	float cos_factor		=max(0.3,cos(ls_angle));
+	float cos_factor		=max(0.03,cos(ls_angle));
 	vec3 lightspaceVolumeTexCoordsXyC	=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*ls_angle/pi),cos_factor);
 	float sine				=view.z;
 
