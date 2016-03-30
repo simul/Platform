@@ -4,6 +4,7 @@
 
 SIMUL_CONSTANT_BUFFER(FoliageConstants,11)
 	uniform mat4	transformMatrix;
+	uniform mat4	invViewProj;
 	uniform uint3	texture_size;
 	uniform uint	grid_size;
 SIMUL_CONSTANT_BUFFER_END
