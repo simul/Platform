@@ -56,13 +56,12 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	
 	float dist_rt					=pow(dist,0.5);
 	vec4 cloud						=texture_cube_lod(farCloudTexture,view,0);
-
-	vec3 lightspaceView				=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
-	float ls_elev					=asin(lightspaceView.z);
+	vec3 offsetMetres				=view*dist*1000.0*maxFadeDistanceKm;
+	vec3 lightspaceOffset			=(mul(worldToScatteringVolumeMatrix,vec4(offsetMetres,1.0)).xyz);
 	vec3 worldspaceVolumeTexCoords	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(sine)/pi),sqrt(dist));
-	vec3 lightspaceVolumeTexCoords	=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*ls_elev/pi),sqrt(dist*max(0.03,cos(ls_elev))));
+	vec3 lightspaceVolumeTexCoords	=vec3(atan2(lightspaceOffset.x,lightspaceOffset.y)/(2.0*pi),length(lightspaceOffset.xy),0.5*lightspaceOffset.z+0.5);
 	vec4 insc						=texture_3d_wmc_lod(inscatterVolumeTexture,worldspaceVolumeTexCoords,0);
-	vec4 godrays					=texture_3d_wmc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
+	vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
 	insc*=godrays;
 	vec2 loss_texc					=vec2(dist_rt,0.5*(1.f-sine));
 	float hiResInterp				=1.0-pow(saturate(( nearFarCloud.x- dist) / max(0.00001,nearFarCloud.x-nearFarCloud.y)),1.0);
@@ -84,7 +83,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 //	if(lowResTexCoords.x+lowResTexCoords.y>1.0)
 //		cloud=cloudNear;
 
-	vec3 worldPos				=viewPos+view*dist*1000.0*maxFadeDistanceKm;
+	vec3 worldPos				=viewPos+offsetMetres;
 	float illum=1.0;
 	
 	vec3 texc			=mul(invShadowMatrix,vec4(worldPos,1.0)).xyz;
@@ -95,7 +94,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	
 	float shadow				=lerp(1.0,illum,cloud_shadow);
 
-	insc.rgb		*=cloud.a;//	=frac(10.0*lightspaceVolumeTexCoords);//		
+	insc.rgb		*=cloud.a;
+	insc.rgb=godrays.rgb;//frac(lightspaceVolumeTexCoords);
 	insc						+=cloud;
 	res.multiply				=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a*shadow;
 	res.add = insc;

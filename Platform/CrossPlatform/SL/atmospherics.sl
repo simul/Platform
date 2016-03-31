@@ -53,8 +53,8 @@ vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,T
 float GetCloudIllum(Texture3D cloudTexture, SamplerState cloudSamplerState,vec3 texc, vec3 lightDirCloudspace,int clamp)
 {
 	vec3 l			=lightDirCloudspace;
-	float zproject	=max(0.0,-texc.z)/max(l.z,0.0001)-max(0,texc.z-1.0)/min(l.z,-0.0001);
-	texc			+=l*zproject*step(0.0001,abs(l.z));
+	//float zproject	=max(0.0,-texc.z)/max(l.z,0.0001)-max(0,texc.z-1.0)/min(l.z,-0.0001);
+//	texc			+=l*zproject*step(0.0001,abs(l.z));
 	if(clamp)
 	{
 		//
@@ -67,7 +67,7 @@ float GetCloudIllum(Texture3D cloudTexture, SamplerState cloudSamplerState,vec3 
 	vec4 texel			=sample_3d_lod(cloudTexture,cloudSamplerState, texc, 0);
 	//float above			=saturate(texc.z-1.0);
 	//texel.y				+=above;
-	return saturate(texel.x);
+	return saturate(1.0-texel.z);
 }
 
 

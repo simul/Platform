@@ -138,8 +138,10 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 	vec2 offset		=2.0*(IN.texCoords.xy-vec2(0.5,0.5));
 	float r			=length(offset);
 	float az		=atan2(offset.y,offset.x);
-	vec3 texc		=vec3(frac(az/(2.0*3.1415926)),r,0.5);
+	float z			=.5;//floor(8.0f*IN.texCoords.x)/8.0f;
+	vec3 texc		=vec3(frac(az/(2.0*3.1415926)),r,z);
 	vec4 colour		=multiplier*texture_3d_nearest_lod(volumeTexture,texc,0);
+	colour			+=colour.a;
 	if(r>1.0)
 		colour*=0;
 #else
