@@ -41,6 +41,7 @@
 #define texture_3d_cmc_lod(tex,texc,lod) tex.SampleLevel(cmcSamplerState,texc,lod)
 #define texture_3d_cmc_nearest_lod(tex,texc,lod) tex.SampleLevel(cmcNearestSamplerState,texc,lod)
 #define texture_3d_wmc_lod(tex,texc,lod) tex.SampleLevel(wmcSamplerState,texc,lod)
+#define texture_3d_wcc_lod(tex,texc,lod) tex.SampleLevel(wccSamplerState,texc,lod)
 #define texture_3d_wmc(tex,texc) tex.Sample(wmcSamplerState,texc)
 #define sample_3d_lod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 
