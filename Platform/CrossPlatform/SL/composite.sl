@@ -59,7 +59,19 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec3 offsetMetres				=view*dist*1000.0*maxFadeDistanceKm;
 	vec3 lightspaceOffset			=(mul(worldToScatteringVolumeMatrix,vec4(offsetMetres,1.0)).xyz);
 	vec3 worldspaceVolumeTexCoords	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(sine)/pi),sqrt(dist));
-	vec3 lightspaceVolumeTexCoords	=vec3(atan2(lightspaceOffset.x,lightspaceOffset.y)/(2.0*pi),length(lightspaceOffset.xy),0.5*lightspaceOffset.z+0.5);
+
+	// cut-off at the edges.
+	if(lightspaceOffset.z>1.0)
+	{
+		lightspaceOffset				*=1.0/lightspaceOffset.z;
+	}
+	float r							=length(lightspaceOffset.xy);
+	if(r>1.0)
+	{
+		lightspaceOffset				*=1.0/r;
+		r=1.0;
+	}
+	vec3 lightspaceVolumeTexCoords	=vec3(atan2(lightspaceOffset.x,lightspaceOffset.y)/(2.0*pi),r,0.5*lightspaceOffset.z+0.5);
 	vec4 insc						=texture_3d_wmc_lod(inscatterVolumeTexture,worldspaceVolumeTexCoords,0);
 	vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
 	insc*=godrays;
@@ -95,7 +107,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	float shadow				=lerp(1.0,illum,cloud_shadow);
 
 	insc.rgb		*=cloud.a;
-	insc.rgb=godrays.rgb;//frac(lightspaceVolumeTexCoords);
+//	insc.rgb=godrays.rgb;//frac(lightspaceVolumeTexCoords);
 	insc						+=cloud;
 	res.multiply				=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a*shadow;
 	res.add = insc;
