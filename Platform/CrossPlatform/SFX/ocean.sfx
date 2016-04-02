@@ -32,18 +32,10 @@ uniform RWStructuredBuffer<vec2> g_OutputHt		;
 uniform StructuredBuffer<float>	g_InputOmega	;
 
 // FFT wave displacement map in VS, XY for choppy field, Z for height field
-SamplerState g_samplerDisplacement	
-{
-	Filter			= MIN_MAG_MIP_POINT;
-	AddressU		= Wrap;
-	AddressV		= Wrap;
-	AddressW		= Wrap;
-	MipLODBias		= 0;
-	MaxAnisotropy	= 1;
-};
+//SamplerState g_samplerDisplacement	now use nearestWrap
 
 // Perlin noise for composing distant waves, W for height field, XY for gradient
-SamplerState g_samplerPerlin
+SamplerState g_samplerPerlin SIMUL_STATE_REGISTER(3)
 {
 	Filter =ANISOTROPIC;
 	AddressU =WRAP;
@@ -58,7 +50,7 @@ SamplerState g_samplerPerlin
 };
 
 // FFT wave gradient map, converted to normal value in PS
-SamplerState g_samplerGradient		
+SamplerState g_samplerGradient SIMUL_STATE_REGISTER(4)
 {
 	Filter =ANISOTROPIC;
 	AddressU =WRAP;
@@ -68,7 +60,7 @@ SamplerState g_samplerGradient
 	MaxAnisotropy = 8;
 };
 // Fresnel factor lookup table
-SamplerState g_samplerFresnel
+SamplerState g_samplerFresnel SIMUL_STATE_REGISTER(5)
 {
 	Filter =MIN_MAG_MIP_LINEAR;
 	AddressU =CLAMP;
@@ -78,16 +70,7 @@ SamplerState g_samplerFresnel
 	MaxAnisotropy = 4;
 };
 
-SamplerState g_samplerAtmospherics	
-{
-	Filter			= MIN_MAG_MIP_LINEAR;
-	AddressU		= Clamp;
-	AddressV		= Mirror;
-	AddressW		= Clamp;
-	MipLODBias		= 0;
-	MaxAnisotropy	= 1;
-};
-
+//SamplerState g_samplerAtmospherics	// use cmcSamplerState
 #define COS_PI_4_16 0.70710678118654752440084436210485f
 #define TWIDDLE_1_8 COS_PI_4_16, -COS_PI_4_16
 #define TWIDDLE_3_8 -COS_PI_4_16, -COS_PI_4_16
@@ -384,7 +367,7 @@ shader VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
 	// Displacement map
 	vec3 displacement = vec3(0,0,0);
 	if (blend_factor > 0)
-		displacement = g_texDisplacement.SampleLevel(g_samplerDisplacement, uv_local, 0).xyz;
+		displacement = g_texDisplacement.SampleLevel(samplerStateNearestWrap, uv_local, 0).xyz;
 	displacement = lerp(vec3(0, 0, perlin), displacement, blend_factor);
 	pos_local.xyz += displacement;
 //pos_local.z+=500.0*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
@@ -461,8 +444,8 @@ shader float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 /*	float cos_spec = clamp(dot(reflect_vec, g_SunDir), 0, 1);
 	float sun_spot = pow(cos_spec, g_Shineness);
 	water_color += g_SunColor * sun_spot;*/
-	vec3 loss		=g_skyLossTexture.Sample(g_samplerAtmospherics,In.fade_texc).rgb;
-	vec4 insc		=g_skyInscatterTexture.Sample(g_samplerAtmospherics,In.fade_texc);
+	vec3 loss		=g_skyLossTexture.Sample(cmcSamplerState,In.fade_texc).rgb;
+	vec4 insc		=g_skyInscatterTexture.Sample(cmcSamplerState,In.fade_texc);
 	vec3 inscatter	=InscatterFunction(insc, hazeEccentricity, cos_angle, mieRayleighRatio);
 	//water_color*=loss;
 	return vec4(water_color, 1);

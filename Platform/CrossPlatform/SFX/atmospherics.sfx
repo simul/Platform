@@ -54,7 +54,7 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 	float y				=distance_texc*cos(azimuth);
 	//vec3 view			=mul(lightspaceToWorldMatrix,vec4(x,y,ce,1.0)).xyz;
 
-	float godraysIntensity	=1.0;
+//	float godraysIntensity	=1.0;
 	vec3 lightDirCloudspace	=normalize(mul(worldToCloudMatrix,vec4(lightDir,0.0)).xyz);
 	//vec3 viewCloudspace		=mul(worldToCloudMatrix,vec4(view,0.0)).xyz*1000.0;
 	//vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(viewPosition,1.0)).xyz;
@@ -65,27 +65,29 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 	float total_illum=1.0;
 	for(int i=0;i<scatteringVolumeDims.z;i++)
 	{
-		float z_texc	=float(i)/float(scatteringVolumeDims.z-1);
-		float z			=lerp(1.0,-1.0,z_texc);
+		float z_texc			=float(i)/float(scatteringVolumeDims.z-1);
+		float z					=lerp(1.0,-1.0,z_texc);//distance_texc*
 
 		//vec3 earth_shadow_illum=vec3(0,0,0);
-		vec3 pos_l		=vec3(x,y,z);
-		vec3 pos_w		=mul(lightspaceToWorldMatrix,vec4(pos_l,1.0)).xyz;
+		vec3 pos_l				=vec3(x,y,z);
+		vec3 pos_w				=mul(lightspaceToWorldMatrix,vec4(pos_l,1.0)).xyz;
 
 		vec3 pos_m				=viewPosition+pos_w;
 		//vec3 texc				=viewposCloudspace+distanceKm*viewCloudspace;
 		vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(pos_m,1.0)).xyz;
-		float illum				=GetCloudIllum(cloudTexture, cloudSamplerState, viewposCloudspace, lightDirCloudspace,clampClouds);
+		float illum				=1.0-godraysIntensity*(1.0-GetCloudIllum(cloudTexture, cloudSamplerState, viewposCloudspace, lightDirCloudspace,clampClouds));
 		//earth_shadow_illum	=IlluminationAtPosition(viewPosKm+view*dist*maxFadeDistanceKm,sunDir,planetRadiusKm,vec3(45.0,35.0,25.0));
 		//illum					=saturate(1.0-15.0*godraysIntensity*(1.0-illum));
 		total_illum				*=illum;
 		vec4 res				=vec4(total_illum,total_illum,total_illum,1.0);//total_illum,total_illum,total_illum,total_illum);
-		int3 pos				=int3(idx.xy,i);
+		int3 pos				=int3(idx.xy,scatteringVolumeDims.z-1-i);
 		IMAGE_STORE_3D(targetVolume,pos,res);
 	}
 }
 
-// In the second pass, we travel radially outward.
+// In the second pass, we travel radially outward from the viewer. In this context, lightspace is (azimuth around lightDir, elevation towards/away from lightDir, and distance).
+// so to translate from the position in this space to the texcoord in the previous cloud-shadow space, we keep the x.
+
 CS_LAYOUT(4,4,1)
 shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 {
@@ -93,7 +95,7 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 //	if(p.x>=edge.x||p.y>=edge.z)
 //		return;
 	vec4 unity			=vec4(1.0,1.0,1.0,1.0);
-	if(p.y<=0||p.y>=scatteringVolumeDims.z)
+/*	if(p.y>=scatteringVolumeDims.z-1)
 	{
 		for(int i=0;i<scatteringVolumeDims.y;i++)
 		{
@@ -101,18 +103,13 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 			IMAGE_STORE_3D(targetVolume,pos,unity);
 		}
 		return;
-	}
+	}*/
 	vec4 total			=unity;
-	{
-		int3 pos		=int3(idx.x,0,idx.y);
-		vec4 lookup		=godraysTexture[pos];
-		total			*=lookup;
-	}
-	IMAGE_STORE_3D(targetVolume,int3(idx.x,0,idx.y),unity);
-	for(int i=1;i<scatteringVolumeDims.y;i++)
+	//IMAGE_STORE_3D(targetVolume,int3(idx.x,0,idx.y),unity);
+	for(int i=0;i<scatteringVolumeDims.z;i++)
 	{
 		int3 pos		=int3(idx.x,i,idx.y);
-		vec4 lookup		=godraysTexture[pos];
+		vec4 lookup		=godraysTexture.SampleLevel(wccSamplerState,pos,0);
 		total			*=lookup;
 		IMAGE_STORE_3D(targetVolume,pos,total);
 	}
