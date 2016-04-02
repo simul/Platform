@@ -85,7 +85,9 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 	}
 }
 
-// In the second pass, we travel radially outward 
+// In the second pass, we travel radially outward from the viewer. In this context, lightspace is (azimuth around lightDir, elevation towards/away from lightDir, and distance).
+// so to translate from the position in this space to the texcoord in the previous cloud-shadow space, we keep the x.
+
 CS_LAYOUT(4,4,1)
 shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 {
@@ -103,16 +105,11 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 		return;
 	}*/
 	vec4 total			=unity;
-	{
-		int3 pos		=int3(idx.x,0,idx.y);
-		vec4 lookup		=godraysTexture[pos];
-		total			*=lookup;
-	}
 	//IMAGE_STORE_3D(targetVolume,int3(idx.x,0,idx.y),unity);
-	for(int i=0;i<scatteringVolumeDims.y;i++)
+	for(int i=0;i<scatteringVolumeDims.z;i++)
 	{
 		int3 pos		=int3(idx.x,i,idx.y);
-		vec4 lookup		=godraysTexture[pos];
+		vec4 lookup		=godraysTexture.SampleLevel(wccSamplerState,pos,0);
 		total			*=lookup;
 		IMAGE_STORE_3D(targetVolume,pos,total);
 	}

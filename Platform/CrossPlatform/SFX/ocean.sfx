@@ -35,7 +35,7 @@ uniform StructuredBuffer<float>	g_InputOmega	;
 //SamplerState g_samplerDisplacement	now use nearestWrap
 
 // Perlin noise for composing distant waves, W for height field, XY for gradient
-SamplerState g_samplerPerlin
+SamplerState g_samplerPerlin SIMUL_STATE_REGISTER(3)
 {
 	Filter =ANISOTROPIC;
 	AddressU =WRAP;
@@ -50,7 +50,7 @@ SamplerState g_samplerPerlin
 };
 
 // FFT wave gradient map, converted to normal value in PS
-SamplerState g_samplerGradient		
+SamplerState g_samplerGradient SIMUL_STATE_REGISTER(4)
 {
 	Filter =ANISOTROPIC;
 	AddressU =WRAP;
@@ -60,7 +60,7 @@ SamplerState g_samplerGradient
 	MaxAnisotropy = 8;
 };
 // Fresnel factor lookup table
-SamplerState g_samplerFresnel
+SamplerState g_samplerFresnel SIMUL_STATE_REGISTER(5)
 {
 	Filter =MIN_MAG_MIP_LINEAR;
 	AddressU =CLAMP;
