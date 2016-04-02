@@ -106,12 +106,18 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 	}*/
 	vec4 total			=unity;
 	//IMAGE_STORE_3D(targetVolume,int3(idx.x,0,idx.y),unity);
+	vec3 texc			=vec3(idx)/vec3(scatteringVolumeDims.xyz);
+	float elevation		=asin(texc.y*2.0-1.0);
+	
 	for(int i=0;i<scatteringVolumeDims.z;i++)
 	{
-		int3 pos		=int3(idx.x,i,idx.y);
-		vec4 lookup		=godraysTexture.SampleLevel(wccSamplerState,pos,0);
+		int3 pos		=int3(idx.x,idx.y,i);
+		texc.z			=float(i)/float(scatteringVolumeDims.z);
+		float dist		=(zOrigin+1.0)*texc.z;
+		vec3 texc_gr	=vec3(texc.x,dist*sin(elevation),dist*cos(elevation)-zOrigin);
+		vec4 lookup		=godraysTexture.SampleLevel(wccSamplerState,texc_gr,0);
 		total			*=lookup;
-		IMAGE_STORE_3D(targetVolume,pos,total);
+		IMAGE_STORE_3D(targetVolume,pos,lookup);
 	}
 }
 

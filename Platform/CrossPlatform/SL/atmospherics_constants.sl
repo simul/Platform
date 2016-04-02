@@ -44,7 +44,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform vec3 viewPosition;
 	uniform float exposure;
 	uniform vec2 tanHalfFov;
-	uniform float nearZXXX;
+	uniform float zOrigin;
 	uniform float farZXXX;
 	
     uniform uint3 scatteringVolumeDims;
