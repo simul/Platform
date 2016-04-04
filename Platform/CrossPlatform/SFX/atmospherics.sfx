@@ -107,20 +107,19 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 	vec4 total			=unity;
 	//IMAGE_STORE_3D(targetVolume,int3(idx.x,0,idx.y),unity);
 	vec3 texc			=vec3(idx)/vec3(scatteringVolumeDims.xyz);
-	float elevation		=asin(texc.y*2.0-1.0);
+	float elevation		=pi*(.5-texc.y);
 	
 	for(int i=0;i<scatteringVolumeDims.z;i++)
 	{
 		int3 pos		=int3(idx.x,idx.y,i);
 		texc.z			=float(i)/float(scatteringVolumeDims.z);
-		float dist		=(zOrigin+1.0)*texc.z;
+		float dist		=texc.z;
 		vec3 texc_gr	=vec3(texc.x,dist*sin(elevation),dist*cos(elevation)-zOrigin);
 		vec4 lookup		=godraysTexture.SampleLevel(wccSamplerState,texc_gr,0);
 		total			*=lookup;
-		IMAGE_STORE_3D(targetVolume,pos,lookup);
+		IMAGE_STORE_3D(targetVolume,pos,vec4(vec3(texc_gr),1.0));
 	}
 }
-
 
 // With this function we will create a 3D volume texture that encompasses the scattering for a frame,
 // where the x-axis is azimuth around the light source, y-axis is angle from the light source (maximum = 180 deg)

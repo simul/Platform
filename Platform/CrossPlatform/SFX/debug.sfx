@@ -134,7 +134,7 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 
 shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 {
-#if 1
+#if 0
 	vec2 offset		=2.0*(IN.texCoords.xy-vec2(0.5,0.5));
 	float r			=length(offset);
 	float az		=atan2(-offset.y,-offset.x);
@@ -149,8 +149,13 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y			=1.0-texc.y;
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
-	if(IN.texCoords.y<.5)
-		z			=.5;
+	if(texc.y>.5)
+	{
+		z			=1.0;
+		texc.y		=2.0*(texc.y-.5);
+	}
+	else
+		texc.y		*=2.0;
 	vec3 tc			=vec3(texc.x,lerp(texc.y,z,sideview),lerp(z,texc.y,sideview));
 	vec4 colour		=multiplier*texture_3d_nearest_lod(volumeTexture,tc,0);
 	colour.rgb		=abs(colour.rgb);
