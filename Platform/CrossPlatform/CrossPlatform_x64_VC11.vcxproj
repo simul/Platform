@@ -218,7 +218,6 @@
     <None Include="SFX\atmospherics.sfx" />
     <None Include="SFX\clouds.sfx" />
     <None Include="SFX\debug.sfx" />
-    <None Include="SFX\foliage.sfx" />
     <None Include="SFX\font.sfx" />
     <None Include="SFX\gaussian.sfx" />
     <None Include="SFX\hdr.sfx" />
@@ -251,7 +250,6 @@
     <None Include="SL\earth_shadow.sl" />
     <None Include="SL\earth_shadow_fade.sl" />
     <None Include="SL\earth_shadow_uniforms.sl" />
-    <None Include="SL\foliage_constants.sl" />
     <None Include="SL\godrays.sl" />
     <None Include="SL\gpu_cloud_constants.sl" />
     <None Include="SL\gpu_sky_constants.sl" />

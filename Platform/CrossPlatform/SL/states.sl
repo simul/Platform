@@ -2,14 +2,6 @@
 #ifndef STATES_SL
 #define STATES_SL
 
-SamplerState wccSamplerState SIMUL_STATE_REGISTER(1)
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Clamp;
-	AddressW = Clamp;
-};
-
 SamplerState wmcSamplerState SIMUL_STATE_REGISTER(2)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -17,6 +9,7 @@ SamplerState wmcSamplerState SIMUL_STATE_REGISTER(2)
 	AddressV = Mirror;
 	AddressW = Clamp;
 };
+
 SamplerState wrapMirrorSamplerState SIMUL_STATE_REGISTER(3)
 {
 	Filter = MIN_MAG_MIP_LINEAR;

@@ -1606,8 +1606,7 @@ void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,cons
 		simul::math::Multiply4x4(tmp2,tmp1,deviceContext.viewStruct.proj);
 		crossplatform::MakeWorldViewProjMatrix(tmp2,world,view,deviceContext.viewStruct.proj);
 		debugConstants.debugWorldViewProj=tmp2;
-		debugConstants.debugWorldViewProj.transpose();
-		debugConstants.radius	=rads;
+		debugConstants.radius		=rads;
 		debugConstants.debugColour	=colr;
 		debugConstants.Apply(deviceContext);
 		ApplyPass(pContext,tech->GetPassByIndex(0));

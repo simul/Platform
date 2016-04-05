@@ -2,7 +2,6 @@
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/Topology.h"
-#include "Simul/Base/RuntimeError.h"
 #include <string>
 #include <map>
 #include <vector>
@@ -314,8 +313,6 @@ namespace simul
 					return;
 				if (IsLinkedToEffect(effect))
 					return;
-				SIMUL_ASSERT(platformConstantBuffer!=nullptr);
-				SIMUL_ASSERT(effect!=nullptr);
 				if (effect&&platformConstantBuffer)
 				{
 					platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);

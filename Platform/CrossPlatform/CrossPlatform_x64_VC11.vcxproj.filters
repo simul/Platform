@@ -79,6 +79,9 @@
     <ClInclude Include="HdrRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TwoResFramebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="GpuProfiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -152,6 +155,9 @@
     <ClCompile Include="HdrRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TwoResFramebuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="GpuProfiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -194,6 +200,9 @@
       <Filter>SFX</Filter>
     </None>
     <None Include="SFX\simul_clouds_2d.sfx">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="SFX\simul_gaussian.sfx">
       <Filter>SFX</Filter>
     </None>
     <None Include="SFX\simul_gpu_clouds.sfx">
@@ -363,12 +372,6 @@
     </None>
     <None Include="SL\simul_2d_cloud_constants.sl">
       <Filter>SL</Filter>
-    </None>
-    <None Include="SL\foliage_constants.sl">
-      <Filter>SL</Filter>
-    </None>
-    <None Include="SFX\foliage.sfx">
-      <Filter>SFX</Filter>
     </None>
   </ItemGroup>
 </Project>

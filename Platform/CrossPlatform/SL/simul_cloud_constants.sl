@@ -39,7 +39,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 
 	uniform vec2 rainCentreKm;
 	uniform float rainRadiusKm;
-	uniform float startZKmXXX;
+	uniform float startZKm;
 
 	uniform uint3 amortizationOffset;
 	uniform float farZXXXXXXX;
@@ -50,7 +50,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform uint2 edge;
 
 	uniform uint3 amortizationScale;
-	uniform float extentZKmXXX;
+	uniform float extentZKm;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
@@ -164,10 +164,11 @@ struct CloudShadowStruct
 	simul::crossplatform::Texture *cloudShadowTexture;		///< Cloud shadow texture.
 	simul::crossplatform::Texture *rainMapTexture;			///< Texture represents where in the horizontal plane of the cloud rain can fall.
 	mat4 shadowMatrix;					// Transform a position from shadow space to world space
+	//mat4 worldToMoistureSpaceMatrix;	// Transform a position from world space to moisture space.
 	mat4 simpleOffsetMatrix;
 	mat4 worldspaceToCloudspaceMatrix;
-	float minAltKm;
-	float maxAltKm;
+	float extentZKm;
+	float startZKm;
 	float shadowRange;
 	float rainbowIntensity;
 	float godrays_strength;
