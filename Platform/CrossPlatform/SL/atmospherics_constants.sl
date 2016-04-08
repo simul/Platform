@@ -33,7 +33,7 @@ SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform mat4 lightspaceToWorldMatrix;
-	uniform mat4 worldToLightspaceMatrix;
+	//uniform mat4 worldToLightspaceMatrix;
 	uniform mat4 invViewProj;
 	uniform mat4 invShadowMatrix;
 	
@@ -44,8 +44,8 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform vec3 viewPosition;
 	uniform float exposure;
 	uniform vec2 tanHalfFov;
-	uniform float nearZ;
-	uniform float farZ;
+	uniform float zOrigin;
+	uniform float farZXXX;
 	
     uniform uint3 scatteringVolumeDims;
 	uniform float godraysIntensity;

@@ -135,23 +135,38 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 
 shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 {
+#if 0
+	vec2 offset		=2.0*(IN.texCoords.xy-vec2(0.5,0.5));
+	float r			=length(offset);
+	float az		=atan2(-offset.y,-offset.x);
+	float z			=.5;//floor(8.0f*IN.texCoords.x)/8.0f;
+	vec3 texc		=vec3(frac(az/(2.0*3.1415926)),r,z);
+	vec4 colour		=multiplier*texture_3d_nearest_lod(volumeTexture,texc,0);
+	colour			+=colour.a;
+	if(r>1.0)
+		colour*=0;
+#else
 	vec2 texc		=IN.texCoords.xy;
-
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y			=1.0-texc.y;
-
 	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
-	if(IN.texCoords.y<.5)
+	if(texc.y>.5)
 	{
-		z			=.5;
+		z			=1.0;
+		texc.y		=2.0*(texc.y-.5);
+	}
+	else
+	{
+		texc.y		*=2.0;
+		texc.x		=frac(8.0f*IN.texCoords.x);
 	}
 	vec3 tc			=vec3(texc.x,lerp(texc.y,z,sideview),lerp(z,texc.y,sideview));
-	vec4 colour		=multiplier*texture_3d_nearest_lod(volumeTexture,tc,0);
-	//if(IN.texCoords.x<.5)
-	//	colour.r+=colour.a;
+	vec4 colour		=texture_3d_nearest_lod(volumeTexture,tc,0);
+	colour.rgb*=multiplier.rgb;
 	colour.rgb		=abs(colour.rgb);
-	colour.rgb		+=colour.a;
-//colour.rgb=tc;
+	colour.rgb		*=colour.a;
+	colour.rgb		=lerp(colour.rgb,tc,0.2);
+#endif
 	return colour;
 }
 
