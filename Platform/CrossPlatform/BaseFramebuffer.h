@@ -22,9 +22,9 @@ namespace simul
 		{
 		private:
 			int amortization;
+			int4 validRegion;
 		public:
 			int framenumber;
-			int4 validRegion;
 			uint3 *pattern;
 			int numOffsets;
 			AmortizationStruct()
