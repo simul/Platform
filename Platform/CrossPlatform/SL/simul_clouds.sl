@@ -369,8 +369,9 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 			idx			++;
 		}
 	}
-	colour.rgb			=max(vec3(0,0,0),(colour.rgb-vec3(threshold,threshold,threshold))/(1.0+threshold));
-	nearColour.rgb		=max(vec3(0,0,0),(nearColour.rgb-vec3(threshold,threshold,threshold))/(1.0+threshold));
+	float rad_mult		=saturate((cos0-minCosine)/(1.0-minCosine));
+	colour.rgb			=max(vec3(0,0,0),(rad_mult*colour.rgb-vec3(threshold,threshold,threshold))/(1.0+threshold));
+	nearColour.rgb		=max(vec3(0,0,0),(rad_mult*nearColour.rgb-vec3(threshold,threshold,threshold))/(1.0+threshold));
     res.farColour		=vec4(exposure*colour.rgb,colour.a);
     res.nearColour		=vec4(exposure*nearColour.rgb,nearColour.a);
 
