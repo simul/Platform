@@ -377,8 +377,10 @@ shader vec4 PS_CubemapToScreenspaceVisibility(posTexVertexOutput IN): SV_Target
 	clip_pos.x			+=2.0*IN.texCoords.x;
 	clip_pos.y			-=2.0*IN.texCoords.y;
 	vec3 view			=mul(invViewProj,clip_pos).xyz;
-	vec4 lookup			=texture_cube_lod(nearFarTexture,view,0);
-	return lookup;
+	vec4 nearfar		=texture_cube_lod(nearFarTexture,view,0);
+	vec4 img			=texture_cube_lod(farImageTexture,view,0);
+	vec4 result			=vec4(img.a,0,nearfar.zw);
+	return result;
 }
 
 TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,bool reverseDepth)
