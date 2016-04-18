@@ -212,11 +212,11 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *,void *t,
 	}
 }
 
-void Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
+bool Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
 	,crossplatform::PixelFormat p,bool computable,bool rendertarget,bool depthstencil,int /*num_samples*/,int /*aa_quality*/,bool wrap)
 {
 	if(w==width&&l==length&&pixelFormat==p&&this->computable==computable)
-		return;
+		return false;
 	this->computable=computable;
 GL_ERROR_CHECK
 	pixelFormat=p;
@@ -275,6 +275,7 @@ GL_ERROR_CHECK
 	}
 	glBindTexture(GL_TEXTURE_2D,0);
 GL_ERROR_CHECK
+	return true;
 }
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int num_layers,crossplatform::PixelFormat f,bool computable,bool /*rendertarget*/,bool cubemap)

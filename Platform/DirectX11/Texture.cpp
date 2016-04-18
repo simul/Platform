@@ -12,6 +12,8 @@
 using namespace simul;
 using namespace dx11;
 
+#pragma optimize("",off)
+
 SamplerState::SamplerState(crossplatform::SamplerStateDesc *d)
 	:m_pd3D11SamplerState(NULL)
 {
@@ -538,7 +540,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	return changed;
 }
 
-void Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
+bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
 												 ,int w,int l
 												 ,crossplatform::PixelFormat f
 												 ,bool computable,bool rendertarget,bool depthstencil
@@ -629,7 +631,6 @@ void Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 		srv_desc.Texture2D.MostDetailedMip	=0;
 		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
 		SetDebugObjectName(shaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat shaderResourceView");
-
 	}
 	if(computable&&(!unorderedAccessViews||!ok))
 	{
@@ -656,7 +657,6 @@ void Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 				V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessViews[i]));
 				SetDebugObjectName(unorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 			}
-		
 	}
 	if(rendertarget&&(!renderTargetViews||!ok))
 	{
@@ -691,6 +691,7 @@ void Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 	}
 	SetDebugObjectName(texture,"ensureTexture2DSizeAndFormat");
 	mips=m;
+	return !ok;
 }
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)

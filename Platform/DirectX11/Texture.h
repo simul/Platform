@@ -84,7 +84,7 @@ namespace simul
 			void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
 			bool ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int d,crossplatform::PixelFormat f,bool computable,int mips=1,bool rendertargets=false);
-			void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
+			bool ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
 				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false
 				,int num_samples=1,int aa_quality=0,bool wrap=false);
 			bool ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false) override;

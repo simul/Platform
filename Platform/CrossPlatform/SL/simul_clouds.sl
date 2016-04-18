@@ -669,7 +669,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					float brightness_factor;
 					float cosine			=dot(N,viewScaled);
 					fade_texc.x				=sqrt(fadeDistance);
-					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);//*sineFactor);
+					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);
 
 					ColourStep( colour, nearColour, meanFadeDistance, brightness_factor
 								, lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture

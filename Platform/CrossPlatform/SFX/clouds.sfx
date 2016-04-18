@@ -258,12 +258,7 @@ void Raytrace(uint2 pos,bool include_rain,bool depth)
 		dlookup.xz = max(dlookup.xz, xlookup.xz);
 		dlookup.yw = min(dlookup.yw, xlookup.yw);
 	}
-
-	//vec3 lightspaceView		=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
-
-	//float ls_angle			=asin(lightspaceView.z);
 	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(view.z)/pi),0);
-//	vec3 lightspaceVolumeTexCoordsXyC	=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*ls_angle/pi),max(0.3,cos(ls_angle)));
 
 	RaytracePixelOutput f	=RaytraceCloudsForward(
 									cloudDensity

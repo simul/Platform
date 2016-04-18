@@ -186,7 +186,7 @@ vec4 Coverage(vec2 texCoords,float humidity,float diffusivity,float octaves,floa
 vec4 Clouds2DPS_illum(Texture2D detailTexture
 					,Texture2D coverageTexture
 					,Texture2D lossTexture
-					,Texture3D volumeInscatterTexture,vec3 atmosTexCoordsXYC
+					,Texture3D volumeInscatterTexture,vec3 volumeTexCoordsXyC
 					,Texture2D noiseTexture
 					,vec2 texc_global
 					,vec2 texc_detail
@@ -220,7 +220,7 @@ vec4 Clouds2DPS_illum(Texture2D detailTexture
 
 	float visible_light		=1;
 
-	vec3 volumeTexCoords	=vec3(atmosTexCoordsXYC.xy,sqrt(dist_tc*atmosTexCoordsXYC.z));
+	vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);
 	vec4 insc				=texture_3d_wwc_lod(volumeInscatterTexture,volumeTexCoords,0);
 
 	vec3 light				=sun_irr*visible_light+moon_irr;
@@ -230,15 +230,15 @@ vec4 Clouds2DPS_illum(Texture2D detailTexture
 	colour.rgb				=cloudIrRadiance.rgb;
 #endif
 	colour.rgb				*=loss;
-	colour.rgb				+=insc.rgb;
+	colour.rgb				+=insc.rgb*insc.a;
 
 	return colour;
 }
+
 shader vec4 CoveragePS(v2f2 IN) : SV_TARGET
 {
 	return Coverage(IN.texCoords,humidity,coverageDiffusivity,coverageOctaves,coveragePersistence,time,noiseTexture);
 }
-
 
 shader vec4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
 {
@@ -319,9 +319,8 @@ void CSClouds2D(uint2 pos,bool depth)
 				//ret.rgb				=vec3(.001*d,0,0);
 				vec3 wEyeToPos			=1000.0*view*d;
 				vec3 wPosition			=eyePosition+wEyeToPos;
-				vec3 lightspaceView		=normalize((mul(worldToScatteringVolumeMatrix,vec4(view,1.0))).xyz);
-				float ls_elev			=asin(lightspaceView.z);
-				vec3 atmosTexCoordsXYC		=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*ls_elev/pi),max(0.3,cos(ls_elev)));
+				
+	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(view.z)/pi),0);
 
 				vec2 wOffset			=wPosition.xy-origin.xy;
 				vec2 texc_global		=wOffset/globalScale;
@@ -336,7 +335,7 @@ void CSClouds2D(uint2 pos,bool depth)
 													,coverageTexture
 													,lossTexture
 													,volumeInscatterTexture
-													,atmosTexCoordsXYC
+													,worldspaceVolumeTexCoordsXyC
 													,noiseTexture
 													,texc_global
 													,texc_detail
@@ -350,7 +349,7 @@ void CSClouds2D(uint2 pos,bool depth)
 													,detailDensity);
 
 				ret.rgb					*=exposure*ret.a;
-			//	ret.rg					=frac(atmosTexCoords.xy);
+			//	ret.rg					+=.2*frac(100*texc_global.xy);
 //				ret.rgb=texture_clamp_lod(volumeInscatterTexture,vec3(atmosTexCoords,1.0),0).rgb;
 				ret.a					=1.0-ret.a;
 			}
