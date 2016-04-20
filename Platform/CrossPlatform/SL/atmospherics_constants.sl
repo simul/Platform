@@ -16,7 +16,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsUniforms,11)
 	uniform vec3 cloudScale;
 	uniform float pad8;
 
-	uniform float overcast;
+	uniform float overcast_deprecated;
 	uniform float maxFadeDistanceMetres;
 	uniform float aejarjt;
 	uniform float fogBaseAlt;
