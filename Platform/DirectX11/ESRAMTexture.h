@@ -77,7 +77,7 @@ namespace simul
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0);
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView();
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView();
-			virtual void ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
+			virtual bool ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
 				,int w
 				,int l
 				,crossplatform::PixelFormat f

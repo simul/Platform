@@ -138,19 +138,20 @@ ID3D11RenderTargetView *ESRAMTexture::AsD3D11RenderTargetView()
 	}
 	return *renderTargetViews;
 }
-void ESRAMTexture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
+bool ESRAMTexture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
 												 ,int w,int l
 												 ,crossplatform::PixelFormat pixelFormat
 												 ,bool computable,bool rendertarget,bool depthstencil
 												 ,int num_samples,int aa_quality,bool wrap)
 {
-	dx11::Texture::ensureTexture2DSizeAndFormat(renderPlatform
+	bool res=dx11::Texture::ensureTexture2DSizeAndFormat(renderPlatform
 												 , w, l
 												 , pixelFormat
 												 , computable, rendertarget, depthstencil
 												 , num_samples, aa_quality,wrap);
 	if(in_esram)
 		MoveToFastRAM();
+	return res;
 }
 
 void ESRAMTexture::MoveToFastRAM()
