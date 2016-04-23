@@ -3,6 +3,11 @@
 #include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Platform/CrossPlatform/Export.h"
 
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
+
 namespace simul
 {
 	namespace crossplatform
@@ -104,7 +109,7 @@ namespace simul
 			float queryTime;
 			crossplatform::RenderPlatform *renderPlatform;
 bool enabled;
-			std::vector<std::string> last_name;
+ 			std::vector<std::string> last_name;
 			std::vector<crossplatform::DeviceContext *> last_context;
 		};
 		class ProfileBlock
@@ -183,5 +188,8 @@ bool enabled;
 		/// Call this at the end of the frame when using Simul profiling.
 		#define SIMUL_COMBINED_PROFILE_ENDFRAME(ctx)
 		#define SIMUL_DISABLE_PROFILING
+#endif
+#ifdef _MSC_VER
+	#pragma warning(pop)
 #endif
 #endif

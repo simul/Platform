@@ -36,7 +36,6 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,vec3 viewPos
 				,mat4 invShadowMatrix
 				,DepthIntepretationStruct dis
-				,vec2 lowResTexCoords
 				,Texture3D inscatterVolumeTexture
 				,Texture3D godraysVolumeTexture
 				,Texture2D cloudShadowTexture
@@ -79,14 +78,10 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	cloud.rgb						+=lp.rgb;
 	
 	vec4 cloudNear					=texture_cube_lod(nearCloudTexture, view, 0);
-	//if(lowResTexCoords.x + lowResTexCoords.y<1.0)
+	
 	cloud							=lerp(cloudNear, cloud,hiResInterp);
 	cloud							=lerp(vec4(0, 0, 0, 1.0), cloud, nearInterp);
 	
-	//if(lowResTexCoords.x + lowResTexCoords.y>1.1)
-	//	cloud = cloudNear;
-//	if(lowResTexCoords.x+lowResTexCoords.y>1.0)
-//		cloud=cloudNear;
 
 	vec3 worldPos				=viewPos+offsetMetres;
 	float illum=1.0;
@@ -121,7 +116,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 													,vec4 viewportToTexRegionScaleBias
 													,DepthIntepretationStruct depthInterpretationStruct
 													,vec2 lowResTexCoords
-													,vec4 fullResToLowResTransformXYWH
 													,Texture3D inscatterVolumeTexture
 													,Texture2D shadowTexture)
 {
