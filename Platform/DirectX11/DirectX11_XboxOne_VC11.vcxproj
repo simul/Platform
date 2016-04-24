@@ -66,6 +66,10 @@
       <CompileAsWinRT>false</CompileAsWinRT>
       <AdditionalIncludeDirectories>$(SIMUL)/Platform/XboxOne/External/DirectX/Effects11/inc;$(SIMUL)/External/DirectX/DirectXTex/DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <FxCompile />
+    <FxCompile>
+      <ObjectFileOutput>$(OutDir)%(Filename).fxo</ObjectFileOutput>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Buffer.h" />
@@ -115,6 +119,136 @@
     <ClCompile Include="ESRAMTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="..\CrossPlatform\SFX\atmospherics.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</DisableOptimizations>
+      <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</EnableDebuggingInformation>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\clouds.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+      <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</DisableOptimizations>
+      <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</EnableDebuggingInformation>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\debug.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\foliage.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\font.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\hdr.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\lightning.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\light_probes.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\ocean.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\optics.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\rain.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\sky.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\solid.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\terrain.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+    </FxCompile>
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
     <None Include="..\CrossPlatform\SL\cloud_shadow.sl" />
@@ -154,93 +288,6 @@
     <None Include="..\CrossPlatform\SL\spherical_harmonics.sl" />
     <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\SL\states.sl" />
-    <None Include="HLSL\atmospherics.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\CppHLSL.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\fft_512x512_c2c.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\font.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\gaussian.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\lightning.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\light_probes.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\MixClouds_c.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\mixed_resolution.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\ocean.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\ocean_simulator_cs.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\ocean_simulator_vs_ps.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\optics.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\rain.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_clouds.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_clouds_2d.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_debug.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_gaussian.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_gpu_clouds.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_gpu_sky.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_gpu_sky.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_hdr.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_rendernoise.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_render_cubemap.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\simul_terrain.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\sky.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\solid.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\spherical_harmonics.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSL\states.hlsl">
-      <FileType>Document</FileType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\External\DirectX\DirectXTex\DirectXTex\DirectXTex_XboxOneXDK.vcxproj">

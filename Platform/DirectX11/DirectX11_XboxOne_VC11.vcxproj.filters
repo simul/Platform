@@ -9,10 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{0e03262d-66b3-4dc9-ade9-fd957a93a98d}</UniqueIdentifier>
     </Filter>
@@ -154,93 +150,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="HLSL\atmospherics.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\CppHLSL.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\fft_512x512_c2c.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\font.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\gaussian.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\light_probes.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\lightning.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\MixClouds_c.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\mixed_resolution.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\ocean.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\ocean_simulator_cs.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\ocean_simulator_vs_ps.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\optics.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\rain.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\simul_clouds.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\simul_clouds_2d.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\simul_debug.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\simul_gaussian.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\simul_gpu_clouds.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\simul_gpu_sky.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\simul_gpu_sky.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\simul_hdr.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\simul_render_cubemap.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\simul_rendernoise.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\simul_terrain.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\sky.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\solid.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\spherical_harmonics.fx">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="HLSL\states.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="..\CrossPlatform\SL\CppSl.hs">
       <Filter>SL</Filter>
     </None>
@@ -358,5 +267,70 @@
     <None Include="..\CrossPlatform\SL\states.sl">
       <Filter>SL</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\CrossPlatform\SFX\atmospherics.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\clouds.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\debug.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\foliage.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\font.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\hdr.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\light_probes.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\lightning.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\ocean.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\optics.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\rain.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\sky.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\solid.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\CrossPlatform\SFX\terrain.sfx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
