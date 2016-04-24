@@ -550,13 +550,13 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	crossplatform::Texture * tex=NULL;
 #ifdef _XBOX_ONE
 	//if(fileNameUtf8&&strcmp(fileNameUtf8,"ESRAM")==0)
+	if(eSRAMManager&&eSRAMManager->IsEnabled())
 		tex=new dx11::ESRAMTexture();
-	//else
-#else
-		tex=new dx11::Texture();
+	else
 #endif
-		if(fileNameUtf8&&strlen(fileNameUtf8)>0)
-			tex->LoadFromFile(this,fileNameUtf8);
+	tex=new dx11::Texture();
+	if(fileNameUtf8&&strlen(fileNameUtf8)>0)
+		tex->LoadFromFile(this,fileNameUtf8);
 	
 	ERRNO_BREAK
 	return tex;

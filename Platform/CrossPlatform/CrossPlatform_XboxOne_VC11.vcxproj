@@ -66,13 +66,13 @@
     <MinimumVisualStudioVersion>11.0</MinimumVisualStudioVersion>
     <TargetRuntime>Native</TargetRuntime>
     <ProjectName>SimulCrossPlatform</ProjectName>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v140</PlatformToolset>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <EmbedManifest>false</EmbedManifest>
     <GenerateManifest>false</GenerateManifest>
@@ -107,7 +107,6 @@
       <PreprocessorDefinitions>SIMUL_CROSSPLATFORM_DLL;SIMUL_DLL;NDEBUG;__WRL_NO_DEFAULT_LIB__;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
       <CompileAsWinRT>false</CompileAsWinRT>
       <AdditionalIncludeDirectories>$(SIMUL)/..</AdditionalIncludeDirectories>
     </ClCompile>

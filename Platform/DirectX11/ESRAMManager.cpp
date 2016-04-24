@@ -25,6 +25,9 @@ namespace
 
 _Use_decl_annotations_
 ESRAMManager::ESRAMManager( ID3D11Device* const dev )
+	:	pDevice(nullptr)
+		,m_spImmediateContext(nullptr)
+		,m_spDmaContext(nullptr)
 {
 	pDevice=(ID3D11DeviceX*)dev;
 	ID3D11DeviceContext *imm=NULL;
@@ -35,10 +38,21 @@ ESRAMManager::ESRAMManager( ID3D11Device* const dev )
     ZeroMemory( &desc, sizeof(desc) );
     desc.CreateFlags = D3D11_DMA_ENGINE_CONTEXT_CREATE_SDMA_1;
     desc.RingBufferSizeBytes = 64 * 1024;   // NOTE: Currently if you overflow the ring buffer you'll hang the GPU
-    V_CHECK( pDevice->CreateDmaEngineContext( &desc,&m_spDmaContext ) );
+    HRESULT hr=( pDevice->CreateDmaEngineContext( &desc,&m_spDmaContext ) );
 
     // Start with one free space containing the whole of ESRAM
     m_freeSpaces.emplace_back( static_cast<USHORT>(0), static_cast<USHORT>((32 * 1024 * 1024) / BLOCK_SIZE ));
+
+	if(hr!=S_OK)
+	{
+		SIMUL_CERR<<"Failed to created Dma Engine Context - ESRAM will not be used by Simul."<<std::endl;
+	}
+	
+}
+
+bool ESRAMManager::IsEnabled() const
+{
+	return (m_spDmaContext!=nullptr);
 }
 
 

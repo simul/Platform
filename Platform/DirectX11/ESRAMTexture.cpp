@@ -113,6 +113,12 @@ ID3D11ShaderResourceView *ESRAMTexture::AsD3D11ShaderResourceView()
 }
 ID3D11UnorderedAccessView *ESRAMTexture::AsD3D11UnorderedAccessView(int mip)
 {
+	if(mip<0)
+		mip=0;
+	if(mip>=numUav)
+		return NULL;
+	if(!unorderedAccessViews)
+		return NULL;
 	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );   
 	if(in_esram)
 	{

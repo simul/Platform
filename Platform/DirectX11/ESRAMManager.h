@@ -25,6 +25,7 @@ namespace simul
 		public:
 			ESRAMManager(ID3D11Device* const pDevice );
 
+			bool IsEnabled() const;
 			// Create a resource in ESRAM without any initial contents
 			void Create(D3D11_BUFFER_DESC desc,  ESRAMBuffer& esramDest );
 			void Create(D3D11_TEXTURE2D_DESC desc,  ESRAMTextureData& esramDest );
@@ -78,6 +79,7 @@ namespace simul
 			static const USHORT INVALID_BLOCK = (USHORT)-1; 
 			static const UINT INVALID_PTR = (UINT)-1; 
 			static const UINT64 INVALID_FENCE = 0;
+
 		};
 	}
 }
