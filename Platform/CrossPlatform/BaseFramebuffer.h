@@ -248,10 +248,6 @@ namespace simul
 			bool external_depth_texture;
 			std::string name;
 		};
-		class SIMUL_CROSSPLATFORM_EXPORT CubemapFramebuffer:public BaseFramebuffer
-		{
-			virtual void SetCurrentFace(int i)=0;
-		};
 	}
 }
 #ifdef _MSC_VER

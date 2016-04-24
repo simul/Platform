@@ -601,7 +601,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform
 	{
 		if(tex)
 		{
-			bool layered=tex->IsCubemap()||tex->GetDimension()==3;
+			//bool layered=tex->IsCubemap()||tex->GetDimension()==3;
 			glfxSetEffectTexture((int)platform_effect,texture_number,tex->AsGLuint(mip),tex->GetDimension()
 			,tex->GetDepth()
 			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
@@ -626,7 +626,7 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,int mip)
 	{
 		if(tex)
 		{
-			bool layered=tex->IsCubemap()||tex->GetDimension()==3;
+		//	bool layered=tex->IsCubemap()||tex->GetDimension()==3;
 			glfxSetEffectTexture((int)platform_effect,texture_number
 			,tex->AsGLuint(mip)
 			,tex->GetDimension()
@@ -658,7 +658,7 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,int mip)
 		{
 			if(tex)
 			{
-				bool layered=false;//tex->IsCubemap()||tex->GetDimension()==3;
+		//		bool layered=false;//tex->IsCubemap()||tex->GetDimension()==3;
 				glfxSetEffectTexture((int)platform_effect,texture_number
 					,tex->AsGLuint()
 					,tex->GetDimension()
@@ -728,7 +728,7 @@ void Effect::SetSamplerState(crossplatform::DeviceContext &,const char *name,cro
 		glfxSetEffectSamplerState((GLuint)platform_effect, name, s->asGLuint());
 }
 
-void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::ConstantBufferBase *s)	
+void Effect::SetConstantBuffer(crossplatform::DeviceContext &,const char *name,crossplatform::ConstantBufferBase *s)	
 {
 	if(!s)
 		return;

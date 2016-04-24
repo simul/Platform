@@ -121,7 +121,6 @@ namespace simul
 			ID3D11RenderTargetView**	renderTargetViews;
 			D3D11_VIEWPORT				m_OldViewports[16];
 			unsigned					num_OldViewports;
-			friend class CubemapFramebuffer;
 			int numUav;
 			int numSrv;
 		};
