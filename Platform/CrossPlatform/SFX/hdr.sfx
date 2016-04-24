@@ -70,7 +70,7 @@ shader CompositeShaderInput VS_Composite(idOnly IN)
 	OUT.hPosition.z	=0.0; 
 	OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
 
-	OUT.lowResTexCoords	=fullResToLowResTransformXYWH.xy+OUT.texCoords*fullResToLowResTransformXYWH.zw;
+	OUT.lowResTexCoords	=OUT.texCoords.xy;
 	OUT.clip_pos		=vec4(-1.0,1.0,1.0,1.0);
 	OUT.clip_pos.x		+=2.0*OUT.texCoords.x;
 	OUT.clip_pos.y		-= 2.0*OUT.texCoords.y;
@@ -280,8 +280,7 @@ bool IsSampleNearer(inout float MinDist,float Z,float ZFull)
 
 shader vec4 DirectPS(posTexVertexOutput IN) : SV_Target
 {
-	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+IN.texCoords*fullResToLowResTransformXYWH.zw;
-	vec4 result	=texture_clamp(imageTexture,lowResTexCoords);
+	vec4 result	=texture_clamp(imageTexture,IN.texCoords.xy);
 	vec4 insc	=texture_clamp(inscatterTexture,IN.texCoords);
 	result		+=insc*result.a;
 	result.rgb	=exposure*pow(result.rgb,vec3(gamma,gamma,gamma));
@@ -306,7 +305,6 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,viewPos
 															,invShadowMatrix
 															,depthInterpretationStruct
-															,IN.lowResTexCoords
 															,inscatterVolumeTexture
 															,godraysVolumeTexture
 															,shadowTexture
@@ -335,12 +333,11 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,viewPos
 															,invShadowMatrix
 															,depthInterpretationStruct
-															,IN.lowResTexCoords
 															,inscatterVolumeTexture
-		,godraysVolumeTexture
+															,godraysVolumeTexture
 															,shadowTexture
 															,maxFadeDistanceKm
-		, cloudShadowStrength
+															,cloudShadowStrength
 															,nearDist);
 	vec3 view = normalize(mul(invViewProj, IN.clip_pos).xyz);
 	//if (view.z < 0)
@@ -401,7 +398,6 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 																,viewportToTexRegionScaleBias
 																,depthInterpretationStruct
 																,IN.lowResTexCoords
-																,fullResToLowResTransformXYWH
 																,inscatterVolumeTexture
 																,shadowTexture);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));

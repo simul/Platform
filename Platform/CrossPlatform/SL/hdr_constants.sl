@@ -7,7 +7,6 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform mat4 invViewProj;
 	uniform mat4 invShadowMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
-	uniform vec4 fullResToLowResTransformXYWH;
 
 	uniform vec2 offset;
 	uniform float alpha;

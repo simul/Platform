@@ -8,7 +8,6 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform mat4 invViewProj;
 	//uniform mat4 frustumViewProj; as opposed to cubemap - not used.
 	uniform mat4 worldToScatteringVolumeMatrix;
-	uniform vec4 mixedResTransformXYWH;
 
 	uniform vec3 origin;
 	uniform float globalScale;
