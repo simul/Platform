@@ -425,7 +425,6 @@ shader void CS_RaytraceSimple(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
 	uint2 pos				=targetRange.xy+idx*amortizationScale.xy+amortizationOffset.xy;
 
 	Raytrace(pos,false,false);
-	//outputTexture1[pos]=vec4(1,0,1,.5);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)

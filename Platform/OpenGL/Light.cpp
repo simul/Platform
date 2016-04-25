@@ -1,6 +1,5 @@
 #include <GL/glew.h>
 #include "Light.h"
-#include <fbxsdk.h>
 
 using namespace simul;
 
@@ -25,6 +24,14 @@ opengl::Light::~Light()
     glDisable(mLightIndex);
 }
 
+		enum EType
+		{
+			ePoint, 
+			eDirectional, 
+			eSpot,
+			eArea,
+			eVolume
+		};
 void opengl::Light::UpdateLight(const double * /*lLightGlobalPosition*/,float lConeAngle,const float lLightColor[4]) const
 {
 	//
@@ -39,7 +46,7 @@ void opengl::Light::UpdateLight(const double * /*lLightGlobalPosition*/,float lC
     // Draw wire-frame geometry.
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
-    if (mType == FbxLight::eSpot)
+    if (mType == eSpot)
     {
         // Draw a cone for spot light.
         
@@ -66,7 +73,7 @@ const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
     
 #if 1
     // The transform have been set, so set in local coordinate.
-    if (mType == FbxLight::eDirectional)
+    if (mType == eDirectional)
     {
         glLightfv(mLightIndex, GL_POSITION, DEFAULT_DIRECTION_LIGHT_POSITION);
     }
@@ -78,7 +85,7 @@ const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
     glLightfv(mLightIndex, GL_DIFFUSE, lLightColor);
     glLightfv(mLightIndex, GL_SPECULAR, lLightColor);
     
-    if (mType == FbxLight::eSpot && lConeAngle != 0.0)
+    if (mType == eSpot && lConeAngle != 0.0)
     {
         glLightfv(mLightIndex, GL_SPOT_DIRECTION, DEFAULT_SPOT_LIGHT_DIRECTION);
 
