@@ -85,6 +85,13 @@ void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		if(!external_depth_texture)
 			buffer_depth_texture=renderPlatform->CreateTexture("BaseFramebuffer");
 	}
+	// The table of coefficients.
+	int s=(bands+1);
+	if(s<4)
+		s=4;
+	sphericalHarmonics.InvalidateDeviceObjects();
+	sphericalSamples.InvalidateDeviceObjects();
+	sphericalHarmonicsConstants.RestoreDeviceObjects(renderPlatform);
 	CreateBuffers();
 }
 
@@ -223,13 +230,6 @@ bool BaseFramebuffer::CreateBuffers()
 	{
 		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,depth_format,false,false,true,numAntialiasingSamples,quality);
 	}
-	// The table of coefficients.
-	int s=(bands+1);
-	if(s<4)
-		s=4;
-	sphericalHarmonics.InvalidateDeviceObjects();
-	sphericalSamples.InvalidateDeviceObjects();
-	sphericalHarmonicsConstants.RestoreDeviceObjects(renderPlatform);
 	return true;
 }
 

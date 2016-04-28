@@ -403,6 +403,8 @@ namespace simul
 #ifdef _MSC_VER
 			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable = false, T *data = NULL)
 			{
+				if(!p)
+					return;
 				count = ct;
 				delete platformStructuredBuffer;
 				platformStructuredBuffer = NULL;

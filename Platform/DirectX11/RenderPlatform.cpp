@@ -1650,60 +1650,10 @@ void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 	SAFE_RELEASE(previousInputLayout);
 }
 
-void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *cubemap,float offsetx,float offsety,float exposure,float gamma)
+void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma)
 {
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	unsigned int num_v=0;
-	D3D11_VIEWPORT								m_OldViewports[4];
-	pContext->RSGetViewports(&num_v,NULL);
-	if(num_v<=4)
-		pContext->RSGetViewports(&num_v,m_OldViewports);
-	D3D11_VIEWPORT viewport;
-	static float ss=0.3f;
-		// Setup the viewport for rendering.
-	viewport.Width		=m_OldViewports[0].Width*ss;
-	viewport.Height		=m_OldViewports[0].Height*ss;
-	viewport.MinDepth	=0.0f;
-	viewport.MaxDepth	=1.0f;
-	viewport.TopLeftX	=0.5f*(1.f+offsetx)*m_OldViewports[0].Width-viewport.Width/2;
-	viewport.TopLeftY	=0.5f*(1.f-offsety)*m_OldViewports[0].Height-viewport.Height/2;
-	pContext->RSSetViewports(1,&viewport);
-	
-	math::Matrix4x4 view=deviceContext.viewStruct.view;
-	math::Matrix4x4 proj=crossplatform::Camera::MakeDepthReversedProjectionMatrix(1.f,(float)viewport.Height/(float)viewport.Width,0.1f,100.f);
-	// Create the viewport.
-	math::Matrix4x4 wvp,world;
-	world.ResetToUnitMatrix();
-	float tan_x=1.0f/proj(0, 0);
-	float tan_y=1.0f/proj(1, 1);
-	float size_req=tan_x*.5f;
-	static float size=3.f;
-	float d=2.0f*size/size_req;
-	simul::math::Vector3 offs0(0,0,-d);
-	view._41=0;
-	view._42=0;
-	view._43=0;
-	simul::math::Vector3 offs;
-	Multiply3(offs,view,offs0);
-	world._41=offs.x;
-	world._42=offs.y;
-	world._43=offs.z;
-	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
-	debugConstants.debugWorldViewProj=wvp;
-	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_cubemap_sphere");
-	debugEffect->SetTexture(deviceContext,"cubeTexture",cubemap);
-	static float rr=6.f;
-	debugConstants.latitudes		=16;
-	debugConstants.longitudes		=32;
-	debugConstants.radius			=rr;
-	debugConstants.debugExposure			=exposure;
-	debugConstants.debugGamma			=gamma;
-	debugConstants.Apply(deviceContext);
-	debugEffect->Apply(deviceContext,tech,0);
-	UtilityRenderer::DrawSphere(deviceContext, 16, 32);
-	debugEffect->SetTexture(deviceContext, "cubeTexture", NULL);
-	debugEffect->Unapply(deviceContext);
-	pContext->RSSetViewports(num_v,m_OldViewports);
+	crossplatform::RenderPlatform::DrawCubemap(deviceContext,cubemap,offsetx,offsety,size,exposure,gamma);
+
 }
 namespace simul
 {

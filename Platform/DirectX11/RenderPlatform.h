@@ -75,7 +75,7 @@ namespace simul
 			void Draw2dLines	(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip);
 			void DrawCircle		(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false);
 			void DrawCube		(crossplatform::DeviceContext &deviceContext);
-			void DrawCubemap	(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *cubemap,float offsetx,float offsety,float exposure,float gamma);
+			void DrawCubemap	(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma) override;
 
 			void ApplyDefaultMaterial();
 			crossplatform::Material					*CreateMaterial();

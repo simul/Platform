@@ -94,6 +94,10 @@ namespace simul
 			virtual void InvalidateDeviceObjects();
 			//! Optional - call this to recompile the standard shaders.
 			virtual void RecompileShaders	();
+			//! Implementations of RenderPlatform will cache the API state in order to reduce driver overhead.
+			//! But we can't always be sure that external render code hasn't modified the API state. So by calling SynchronizeCacheAndState()
+			//! the API state is forced to the cached state. This can be called at the start of Renderplatform's rendering per-frame.
+			virtual void SynchronizeCacheAndState(crossplatform::DeviceContext &) {}
 			//! Gets an object containing immediate-context API-specific values.
 			DeviceContext &GetImmediateContext();
 			//! Push the given file path onto the texture path stack.
@@ -153,7 +157,8 @@ namespace simul
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false)		=0;
 			/// Draw a circle in 3D space at pos
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill=false);
-			virtual void DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float exposure,float gamma);
+			/// Draw a cubemap as a sphere at the specified screen position and size.
+			virtual void DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma);
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0,bool centred=false);
 			virtual void SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
 			virtual void					ApplyDefaultMaterial			()	=0;
@@ -248,7 +253,7 @@ namespace simul
 			std::vector<std::string> texturePathsUtf8;
 			std::string shaderBinaryPathUtf8;
 			std::map<std::string,SamplerState*> sharedSamplerStates;
-		protected:
+
 			ShaderBuildMode					shaderBuildMode;
 			DeviceContext					immediateContext;
 

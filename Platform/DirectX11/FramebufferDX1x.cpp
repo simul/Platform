@@ -51,22 +51,16 @@ Framebuffer::~Framebuffer()
 
 void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	renderPlatform=r;
-	SAFE_DELETE(buffer_depth_texture);
-	SAFE_DELETE(buffer_texture);
-	if(renderPlatform)
-	{
-		buffer_texture=renderPlatform->CreateTexture(useESRAM?"ESRAM":NULL);
-		buffer_depth_texture=renderPlatform->CreateTexture(useESRAMforDepth?"ESRAM":NULL);
-	}
-	CreateBuffers();
+	BaseFramebuffer::RestoreDeviceObjects(r);
 }
+
 void Framebuffer::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 	BaseFramebuffer::InvalidateDeviceObjects();
 }
+
 void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext,const float viewportXYWH[4])
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
@@ -101,7 +95,7 @@ void Framebuffer::SaveOldRTs(crossplatform::DeviceContext &deviceContext)
 	deviceContext.asD3D11DeviceContext()->OMGetRenderTargets(	1,
 																&m_pOldRenderTarget,
 																&m_pOldDepthSurface
-																);
+															);
 }
 
 void Framebuffer::MoveToFastRAM()
