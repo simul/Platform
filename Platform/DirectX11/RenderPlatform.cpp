@@ -556,7 +556,10 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 #endif
 	tex=new dx11::Texture();
 	if(fileNameUtf8&&strlen(fileNameUtf8)>0)
-		tex->LoadFromFile(this,fileNameUtf8);
+	{
+		if(strstr( fileNameUtf8,".")!=nullptr)
+			tex->LoadFromFile(this,fileNameUtf8);
+	}
 	
 	ERRNO_BREAK
 	return tex;
@@ -1650,11 +1653,6 @@ void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 	SAFE_RELEASE(previousInputLayout);
 }
 
-void RenderPlatform::DrawCubemap(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma)
-{
-	crossplatform::RenderPlatform::DrawCubemap(deviceContext,cubemap,offsetx,offsety,size,exposure,gamma);
-
-}
 namespace simul
 {
 	namespace dx11

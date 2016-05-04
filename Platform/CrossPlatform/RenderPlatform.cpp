@@ -356,7 +356,7 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
 }
 
-void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma)
+void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	unsigned int num_v=0;
@@ -394,6 +394,7 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	world._43=offs.z;
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.debugWorldViewProj=wvp;
+	debugConstants.displayLod=displayLod;
 	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_cubemap_sphere");
 	debugEffect->SetTexture(deviceContext,"cubeTexture",cubemap);
 	static float rr=6.f;
@@ -523,8 +524,8 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 
 void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
 {
-	float clr[]={1.f,1.f,0.f,1.f};
-	float black[]={0.f,0.f,0.f,0.0f};
+	static float clr[]={1.f,1.f,0.f,1.f};
+	static float black[]={0.f,0.f,0.f,0.0f};
 	if(!colr)
 		colr=clr;
 	if(!bkg)

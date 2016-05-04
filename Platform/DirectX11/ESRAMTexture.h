@@ -73,10 +73,10 @@ namespace simul
 			virtual ~ESRAMTexture();
 			// 
 			virtual ID3D11Texture2D *AsD3D11Texture2D();
-			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView();
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0);
+			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int index=-1,int mip=-1);
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=-1);
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView();
-			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView();
+			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(int index=-1,int mip=-1);
 			virtual bool ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
 				,int w
 				,int l

@@ -364,8 +364,8 @@ void CSClouds2D(uint2 pos,bool depth)
 CS_LAYOUT(8,8,1)
 shader void CS_Clouds2D_Fill(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 {
-	int2 idx				=int2(g.xy*8+t.xy);
-	int2 pos				=targetRange.xy+idx;
+	uint2 idx				=uint2(g.xy*8+t.xy);
+	uint2 pos				=targetRange.xy+idx;
 	if(updateTexture[pos].r>=1.0)
 		return;
 	if(pos.x>=edge.x||pos.y>=edge.y)

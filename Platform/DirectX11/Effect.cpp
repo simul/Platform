@@ -195,7 +195,7 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 	int wait=0;
 	while(hr==DXGI_ERROR_WAS_STILL_DRAWING)
 	{
-		hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,D3D11_MAP_FLAG_DO_NOT_WAIT,&mapped);//
+		hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,D3D11_MAP_FLAG_DO_NOT_WAIT,&mapped);
 		wait++;
 	}
 	if(wait>1)
@@ -551,7 +551,7 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crosspl
 }
 
 
-void dx11::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int mip)
+void dx11::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int index,int mip)
 {
 	if(!asD3DX11Effect())
 	{
@@ -562,11 +562,11 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const 
 	if(!e)
 		return;
 	crossplatform::ShaderResource res			=GetShaderResource(name);
-	SetTexture(deviceContext, res, t, mip);
+	SetTexture(deviceContext, res, t, index,mip);
 }
 
 
-void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip)
+void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
 {
 	// If invalid, we already had the error when we assigned this ShaderResource. So fail silently to avoid spamming output.
 	if(!shaderResource.valid)
@@ -581,7 +581,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 	if(t)
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
-		auto srv=T->AsD3D11ShaderResourceView(mip);
+		auto srv=T->AsD3D11ShaderResourceView(index,mip);
 		var->SetResource(srv);
 	}
 	else

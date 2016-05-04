@@ -20,7 +20,6 @@ Texture::Texture(const char *n):cubemap(false)
 				,mips(1)
 				,pixelFormat(crossplatform::UNKNOWN)
 				,renderPlatform(NULL)
-				,num_rt(0)
 {
 	if(n)
 		name=n;

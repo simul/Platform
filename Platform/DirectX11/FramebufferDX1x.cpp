@@ -75,7 +75,7 @@ void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext,con
 		ID3D11RenderTargetView *renderTargetView=buffer_texture->AsD3D11RenderTargetView();
 		dx11::Texture *t=(dx11::Texture *)buffer_texture;
 		if(is_cubemap)
-			renderTargetView=t->ArrayD3D11RenderTargetView(current_face);
+			renderTargetView=t->AsD3D11RenderTargetView(current_face,0);
 		pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
 	}
 	else
@@ -135,7 +135,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	ID3D11RenderTargetView *renderTargetView=NULL;
 	dx11::Texture *t=(dx11::Texture *)buffer_texture;
 	if(is_cubemap)
-		renderTargetView=t->ArrayD3D11RenderTargetView(current_face);
+		renderTargetView=t->AsD3D11RenderTargetView(current_face);
 	else
 		renderTargetView=buffer_texture->AsD3D11RenderTargetView();
 	if(renderTargetView)
@@ -144,10 +144,14 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 		depth_active=buffer_depth_texture&&(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
 		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&renderTargetView,buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL);
 	}
-	else 
+	else if(buffer_depth_texture)
 	{
 		depth_active=buffer_depth_texture&&(buffer_depth_texture->AsD3D11DepthStencilView()!=NULL);
 		deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(1,&m_pOldRenderTarget,buffer_depth_texture?buffer_depth_texture->AsD3D11DepthStencilView():NULL);
+	}
+	else
+	{
+		SIMUL_BREAK_ONCE("No valid textures in framebuffer.");
 	}
 	SetViewport(deviceContext,0,0,1.f,1.f,0,1.f);
 }
@@ -241,31 +245,33 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 	ID3D11RenderTargetView *renderTargetView=buffer_texture->AsD3D11RenderTargetView();
 		dx11::Texture *t=(dx11::Texture *)buffer_texture;
 	if(is_cubemap)
-		renderTargetView=t->ArrayD3D11RenderTargetView(current_face);
+		renderTargetView=t->AsD3D11RenderTargetView(current_face);
 	pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
 	depth_active=false;
 }
 
 void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,float g,float b,float a,float depth,int mask)
 {
+	if((!buffer_texture||!buffer_texture->IsValid())&&(!buffer_depth_texture||!buffer_depth_texture->IsValid()))
+		CreateBuffers();
 	ID3D11DeviceContext *pContext = deviceContext.asD3D11DeviceContext();
 	// Clear the screen to black:
     float clearColor[4]={r,g,b,a};
     if(!mask)
 		mask=D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL;
-	if(is_cubemap)
+	if(is_cubemap&&buffer_texture)
 	{
 		dx11::Texture *t=(dx11::Texture *)buffer_texture;
 		if(current_face>=0)
 		{
-			pContext->ClearRenderTargetView(t->ArrayD3D11RenderTargetView(current_face),clearColor);
+			pContext->ClearRenderTargetView(t->AsD3D11RenderTargetView(current_face),clearColor);
 		}
 		else
 		{
 			for(int i=0;i<6;i++)
 			{
-				if(t->ArrayD3D11RenderTargetView(i))
-					pContext->ClearRenderTargetView(t->ArrayD3D11RenderTargetView(i),clearColor);
+				if(t->AsD3D11RenderTargetView(i))
+					pContext->ClearRenderTargetView(t->AsD3D11RenderTargetView(i),clearColor);
 			}
 		}
 	}
@@ -292,7 +298,7 @@ void Framebuffer::ClearColour(crossplatform::DeviceContext &deviceContext,float 
 		dx11::Texture *t=(dx11::Texture *)buffer_texture;
 		for(int i=0;i<6;i++)
 		{
-			deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(t->ArrayD3D11RenderTargetView(i), clearColor);
+			deviceContext.asD3D11DeviceContext()->ClearRenderTargetView(t->AsD3D11RenderTargetView(i), clearColor);
 		}
 	}
 	else if(buffer_texture->AsD3D11RenderTargetView())

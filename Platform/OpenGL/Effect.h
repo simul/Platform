@@ -110,7 +110,7 @@ namespace simul
 			/// we've assigned them to.
 			
 			bool FillInTechniques();
-			void SetTex(const char *name,crossplatform::Texture *tex,int mip);
+			void SetTex(const char *name,crossplatform::Texture *tex,int index,int mip);
 			EffectTechnique *CreateTechnique();
 			void AddPass(std::string groupname,std::string techname, std::string passname, GLuint t);
 		public:
@@ -127,8 +127,8 @@ namespace simul
 			crossplatform::ShaderResource GetShaderResource(const char *name) override;
 			void SetUnorderedAccessView(crossplatform::DeviceContext&,const char *name,crossplatform::Texture *tex,int mip=0);
 			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int mip=0);
-			void SetTexture		(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip=-1) override;
-			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture *tex,int mip=-1) override;
+			void SetTexture		(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index=-1,int mip=-1) override;
+			void SetTexture		(crossplatform::DeviceContext&,const char *name	,crossplatform::Texture *tex,int index=-1,int mip=-1) override;
 			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);
 			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s)		override;
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);

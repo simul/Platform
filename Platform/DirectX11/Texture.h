@@ -38,20 +38,43 @@ namespace simul
 			{
 				return (ID3D11Texture2D*)texture;
 			}
-			ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int mip=-1)
+			ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int index=-1,int mip=-1)
 			{
-				if(mip<0||numSrv<=1)
-					return shaderResourceView;
-				if(mip<numSrv)
-					return mipShaderResourceViews[mip];
-				return NULL;
+#ifdef _DEBUG
+				if(index>=arraySize||mip>=mips)
+				{
+					SIMUL_BREAK_ONCE("AsD3D11UnorderedAccessView: mip or index out of range");
+					return NULL;
+				}
+#endif
+				if(mips<=1&&arraySize<=1)
+				{
+					return mainShaderResourceView;
+				}
+				if(layerShaderResourceViews&&(mip<0||mips<=1))
+				{
+					if(index<0||arraySize<=1)
+						return mainShaderResourceView;
+					return layerShaderResourceViews[index];
+				}
+				if(mainMipShaderResourceViews&&index<0)
+					return mainMipShaderResourceViews[mip];
+				if(layerMipShaderResourceViews)
+					return layerMipShaderResourceViews[index][mip];
+				
+				return nullptr;
 			}
 			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=-1)
 			{
 				if(mip<0)
 					mip=0;
-				if(mip>=numUav)
+#ifdef _DEBUG
+				if(mip>=mips)
+				{
+					SIMUL_BREAK_ONCE("AsD3D11UnorderedAccessView: mip or index out of range");
 					return NULL;
+				}
+#endif
 				if(!unorderedAccessViews)
 					return NULL;
 				return unorderedAccessViews[mip];
@@ -60,17 +83,27 @@ namespace simul
 			{
 				return depthStencilView;
 			}
-			ID3D11RenderTargetView *AsD3D11RenderTargetView()
+			ID3D11RenderTargetView *AsD3D11RenderTargetView(int index=-1,int mip=-1)
 			{
 				if(!renderTargetViews)
 					return NULL;
-				return *renderTargetViews;
-			}
-			ID3D11RenderTargetView *ArrayD3D11RenderTargetView(int index)
-			{
-				if(!renderTargetViews||index<0||index>=num_rt)
+				if(index<0)
+					index=0;
+				if(mip<0)
+					mip=0;
+#ifdef _DEBUG
+				if(mip>=mips)
+				{
+					SIMUL_BREAK_ONCE("AsD3D11RenderTargetView: mip out of range");
 					return NULL;
-				return renderTargetViews[index];
+				}
+				if(index>=arraySize)
+				{
+					SIMUL_BREAK_ONCE("AsD3D11RenderTargetView: layer index out of range");
+					return NULL;
+				}
+#endif
+				return renderTargetViews[index][mip];
 			}
 			bool IsComputable() const override;
 			// Use this dx11::Texture as a wrapper for a texture and its corresponding SRV. If a srv is not provided, one will be created internally. If \a make_rt is true and it is a rendertarget texture, a rendertarget will be created.
@@ -87,14 +120,14 @@ namespace simul
 			bool ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l
 				,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false
 				,int num_samples=1,int aa_quality=0,bool wrap=false);
-			bool ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false) override;
+			bool ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false) override;
 			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void GenerateMips(crossplatform::DeviceContext &deviceContext) override;
 			void map(ID3D11DeviceContext *context);
 			bool isMapped() const;
 			void unmap();
 			vec4 GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap);
-			void activateRenderTarget(crossplatform::DeviceContext &deviceContext,int array_index=-1);
+			void activateRenderTarget(crossplatform::DeviceContext &deviceContext,int array_index=-1,int mip_index=0);
 			void deactivateRenderTarget(crossplatform::DeviceContext &deviceContext);
 			virtual int GetLength() const
 			{
@@ -114,23 +147,21 @@ namespace simul
 			ID3D11RenderTargetView*		m_pOldRenderTargets[16];
 			ID3D11DepthStencilView*		m_pOldDepthSurface;
 			ID3D11Resource*				texture;
-			ID3D11ShaderResourceView*   shaderResourceView;
+			ID3D11ShaderResourceView*   mainShaderResourceView;		// SRV for the whole texture including all layers and mips.	
+			ID3D11ShaderResourceView**	layerShaderResourceViews;	// SRV's for each layer, including all mips
+			ID3D11ShaderResourceView**  mainMipShaderResourceViews;	// SRV's for the whole texture at different mips.
+			ID3D11ShaderResourceView***	layerMipShaderResourceViews;// SRV's for each layer at different mips.
 			ID3D11UnorderedAccessView**  unorderedAccessViews;
-			ID3D11ShaderResourceView**  mipShaderResourceViews;
 			ID3D11DepthStencilView*		depthStencilView;
-			ID3D11RenderTargetView**	renderTargetViews;
+			ID3D11RenderTargetView***	renderTargetViews;			// 2D table: layers and mips.
 			D3D11_VIEWPORT				m_OldViewports[16];
 			unsigned					num_OldViewports;
-			int numUav;
-			int numSrv;
+			void InitSRVTables(int l,int m);
+			void FreeSRVTables();
+			void FreeRTVTables();
+			void InitRTVTables(int l,int m);
+			int GetNumUav() const;
+			void CreateSRVTables(int num,int m,bool cubemap);
 		};
-	}
-}
-
-namespace std
-{
-	template<> inline void swap(simul::dx11::Texture& _Left, simul::dx11::Texture& _Right)
-	{
-		SIMUL_BREAK("No more swapping of dx11::Texture's");
 	}
 }

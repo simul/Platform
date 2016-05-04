@@ -14,6 +14,7 @@
 // A texture (l+1)^2 of basis coefficients.
 uniform StructuredBuffer<float4> basisBuffer;
 
+uniform sampler2D sourceTexture;
 
 float WindowFunction(float x)
 {
@@ -77,6 +78,15 @@ static float A[]={		3.1415926
 	return max(result,vec4(0,0,0,0));
 }
 
+shader vec4 PS_BlendMip(posTexVertexOutput IN) : SV_TARGET
+{
+	// sourceTexture is the source mip. So we sample "mip level 0", actually just the only mip we have.
+	// TODO: blend from surrounding texels.
+	vec4 src_lookup=sourceTexture.SampleLevel(clampSamplerState,IN.texCoords.xy,0);
+	src_lookup.a=alpha;
+	return src_lookup;
+}
+
 technique irradiance_map
 {
     pass p0 
@@ -85,6 +95,19 @@ technique irradiance_map
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_IrradianceMap()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+    }
+}
+
+technique blend_mip
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+		SetPixelShader(CompileShader(ps_5_0,PS_BlendMip()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }

@@ -102,20 +102,21 @@ ID3D11Texture2D *ESRAMTexture::AsD3D11Texture2D()
 	else
 		return (ID3D11Texture2D*)texture;
 }
-ID3D11ShaderResourceView *ESRAMTexture::AsD3D11ShaderResourceView()
+ID3D11ShaderResourceView *ESRAMTexture::AsD3D11ShaderResourceView(int index,int mip)
 {
 	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );   
 	if(in_esram)
 	{
 		return esramTextureData.m_pESRAMSRV;
 	}
-	return shaderResourceView;
+	return dx11::Texture::AsD3D11ShaderResourceView(index,mip);
 }
+
 ID3D11UnorderedAccessView *ESRAMTexture::AsD3D11UnorderedAccessView(int mip)
 {
 	if(mip<0)
 		mip=0;
-	if(mip>=numUav)
+	if(mip>=mips)
 		return NULL;
 	if(!unorderedAccessViews)
 		return NULL;
@@ -124,8 +125,9 @@ ID3D11UnorderedAccessView *ESRAMTexture::AsD3D11UnorderedAccessView(int mip)
 	{
 		return esramTextureData.m_pESRAMUAV;
 	}
-	return unorderedAccessViews[mip];
+	return dx11::Texture::AsD3D11UnorderedAccessView(mip);
 }
+
 ID3D11DepthStencilView *ESRAMTexture::AsD3D11DepthStencilView()
 {
 	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );   
@@ -135,14 +137,15 @@ ID3D11DepthStencilView *ESRAMTexture::AsD3D11DepthStencilView()
 	}
 	return depthStencilView;
 }
-ID3D11RenderTargetView *ESRAMTexture::AsD3D11RenderTargetView()
+
+ID3D11RenderTargetView *ESRAMTexture::AsD3D11RenderTargetView(int index,int mip)
 {
 	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );   
 	if(in_esram)
 	{
 		return esramTextureData.m_pESRAMRTV;
 	}
-	return *renderTargetViews;
+	return dx11::Texture::AsD3D11RenderTargetView(index, mip);
 }
 bool ESRAMTexture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
 												 ,int w,int l

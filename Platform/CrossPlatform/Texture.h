@@ -87,11 +87,11 @@ namespace simul
 			virtual void InvalidateDeviceObjects()=0;
 			virtual sce::Gnm::Texture *AsGnmTexture(int=-1){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
-			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int =-1){return 0;}
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int =0){return 0;}
+			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int=-1,int=-1){return 0;}
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int=-1){return 0;}
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
-			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(){return 0;}
-			virtual bool HasRenderTargets() const{return (num_rt>0);}
+			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(int=-1,int=-1){return 0;}
+			virtual bool HasRenderTargets() const{return 0;}
 			virtual bool IsComputable() const=0;
 			/// Asynchronously move this texture to fast RAM.
 			/// Some hardware has "fast RAM" that we can prefetch textures into.
@@ -111,7 +111,7 @@ namespace simul
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false)=0;
 			//! Initialize as an array texture if necessary. Returns true if the texture was initialized, or false if it was already in the required format.
-			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
+			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,int mips,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
 			//! Initialize as a volume texture.
 			virtual bool ensureTexture3DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int d,PixelFormat frmt,bool computable=false,int mips=1,bool rendertargets=false)=0;
 			//! Generate the mipmaps automatically.
@@ -119,7 +119,7 @@ namespace simul
 			//! Set the texture data from CPU memory.
 			virtual void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)=0;
 			//! Activate as a rendertarget - must call deactivateRenderTarget afterwards.
-			virtual void activateRenderTarget(DeviceContext &deviceContext,int array_index=-1)=0;
+			virtual void activateRenderTarget(DeviceContext &deviceContext,int array_index=-1,int mip_index=0)=0;
 			//! Deactivate as a rendertarget.
 			virtual void deactivateRenderTarget(DeviceContext &deviceContext)=0;
 			virtual int GetLength() const
@@ -154,7 +154,6 @@ namespace simul
 			int width,length,depth,arraySize,dim,mips;
 			PixelFormat pixelFormat;
 			RenderPlatform *renderPlatform;
-			int num_rt;
 		};
 	}
 }

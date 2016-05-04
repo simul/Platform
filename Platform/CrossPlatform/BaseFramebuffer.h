@@ -177,9 +177,9 @@ namespace simul
 			//! Set the size of the framebuffer in pixel height and width.
 			virtual void ClearColour(crossplatform::DeviceContext &context,float,float,float,float)=0;
 			//! Set the size of the framebuffer.
-			virtual void SetWidthAndHeight(int w,int h);
+			virtual void SetWidthAndHeight(int w,int h,int num_mips=1);
 			//! Set this to be a cubemap framebuffer, so that its texture object will be a cubemap. Equivalent to SetWidthAndHeight.
-			virtual void SetAsCubemap(int face_size);
+			virtual void SetAsCubemap(int face_size,int num_mips=1);
 			virtual void SetCubeFace(int f);
 			//! Some hardware has fast RAM that's good for framebuffers.
 			virtual void SetUseFastRAM(bool /*colour*/,bool /*depth*/){};
@@ -211,6 +211,7 @@ namespace simul
 		//protected:
 			//! The size of the buffer
 			int Width,Height;
+			int mips;
 			int numAntialiasingSamples;
 			bool depth_active, colour_active;
 			crossplatform::RenderPlatform *renderPlatform;

@@ -50,6 +50,7 @@ void AmortizationStruct::setAmortization(int a)
 BaseFramebuffer::BaseFramebuffer(const char *n)
 	:Width(0)
 	,Height(0)
+	,mips(0)
 	,numAntialiasingSamples(1)	// no AA by default
 	,depth_active(false)
 	,colour_active(false)
@@ -109,14 +110,17 @@ void BaseFramebuffer::InvalidateDeviceObjects()
 	sphericalSamples.InvalidateDeviceObjects();
 }
 
-void BaseFramebuffer::SetWidthAndHeight(int w,int h)
+void BaseFramebuffer::SetWidthAndHeight(int w,int h,int m)
 {
-	if(Width!=w||Height!=h)
+	if(Width!=w||Height!=h||mips!=m)
 	{
 		Width=w;
 		Height=h;
-		if(renderPlatform)
-			InvalidateDeviceObjects();
+		mips=m;
+		if(buffer_texture)
+			buffer_texture->InvalidateDeviceObjects();
+		if(buffer_depth_texture)
+			buffer_depth_texture->InvalidateDeviceObjects();
 	}
 }
 
@@ -141,9 +145,9 @@ void BaseFramebuffer::SetGenerateMips(bool m)
 	GenerateMips=m;
 }
 
-void BaseFramebuffer::SetAsCubemap(int w)
+void BaseFramebuffer::SetAsCubemap(int w,int num_mips)
 {
-	SetWidthAndHeight(w,w);
+	SetWidthAndHeight(w,w,num_mips);
 	is_cubemap=true;
 }
 
@@ -176,8 +180,10 @@ void BaseFramebuffer::SetExternalTextures(crossplatform::Texture *colour,crosspl
 {
 	if(buffer_texture==colour&&buffer_depth_texture==depth&&(!colour||(colour->width==Width&&colour->length==Height)))
 		return;
-	SAFE_DELETE(buffer_texture);
-	SAFE_DELETE(buffer_depth_texture);
+	if(!external_texture)
+		SAFE_DELETE(buffer_texture);
+	if(!external_depth_texture)
+		SAFE_DELETE(buffer_depth_texture);
 	buffer_texture=colour;
 	buffer_depth_texture=depth;
 
@@ -224,7 +230,7 @@ bool BaseFramebuffer::CreateBuffers()
 		if(!is_cubemap)
 			buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,target_format,false,true,false,numAntialiasingSamples,quality);
 		else
-			buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform,Width,Height,6,target_format,false,true,true);
+			buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform,Width,Height,6,mips,target_format,false,true,true);
 	}
 	if(!external_depth_texture&&depth_format!=crossplatform::UNKNOWN)
 	{

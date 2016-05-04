@@ -581,7 +581,7 @@ crossplatform::EffectTechnique *Effect::GetTechniqueByIndex(int index)
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex,int mip)
 {
-	SetTex(name,tex, mip);
+	SetTex(name,tex,0,mip);
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int mip)
@@ -617,7 +617,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform
 	GL_ERROR_CHECK
 }
 
-void Effect::SetTex(const char *name,crossplatform::Texture *tex,int mip)
+void Effect::SetTex(const char *name,crossplatform::Texture *tex,int index,int mip)
 {
 	GL_ERROR_CHECK
 	int texture_number=-1;
@@ -628,15 +628,15 @@ void Effect::SetTex(const char *name,crossplatform::Texture *tex,int mip)
 		{
 		//	bool layered=tex->IsCubemap()||tex->GetDimension()==3;
 			glfxSetEffectTexture((int)platform_effect,texture_number
-			,tex->AsGLuint(mip)
-			,tex->GetDimension()
-			,tex->GetDepth()
-			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
-			,true
-			,0//layered?0:mip
-			,false//layered
-			,0//layered?mip:0
-			,false);
+									,tex->AsGLuint(mip)
+									,tex->GetDimension()
+									,tex->GetDepth()
+									,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
+									,true
+									,0//layered?0:mip
+									,false//layered
+									,0//layered?mip:0
+									,false);
 		}
 		else
 			glfxSetEffectTexture((int)platform_effect,texture_number
@@ -700,7 +700,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	return res;
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int mip)
+void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int index,int mip)
 {
 	int texture_number=(int)shaderResource.platform_shader_resource;
 	bool write=false;
@@ -714,9 +714,9 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat()),write,mip,false,0,tex->IsCubemap());
 }
 
-void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex,int mip)
+void Effect::SetTexture(crossplatform::DeviceContext &,const char *name,crossplatform::Texture *tex,int index,int mip)
 {
-	SetTex(name,tex,mip);
+	SetTex(name,tex,index,mip);
 }
 
 void Effect::SetSamplerState(crossplatform::DeviceContext &,const char *name,crossplatform::SamplerState *s)
