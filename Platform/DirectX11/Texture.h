@@ -112,7 +112,7 @@ namespace simul
 			ID3D11Resource				*stagingBuffer;
 
 			D3D11_MAPPED_SUBRESOURCE	mapped;
-			DXGI_FORMAT					format;
+			DXGI_FORMAT					dxgi_format;
 			void copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel=0,int texels=0);
 			void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels);
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);

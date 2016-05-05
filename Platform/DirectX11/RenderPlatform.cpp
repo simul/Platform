@@ -338,6 +338,11 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
 
 void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s)
 {
+	if(!t||!s)
+	{
+		SIMUL_BREAK_ONCE("Can't copy null texture");
+		return;
+	}
 	deviceContext.asD3D11DeviceContext()->CopyResource(t->AsD3D11Texture2D(),s->AsD3D11Texture2D());
 }
 

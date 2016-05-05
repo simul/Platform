@@ -129,7 +129,8 @@ void BaseFramebuffer::SetFormat(crossplatform::PixelFormat f)
 	if(f==target_format)
 		return;
 	target_format=f;
-	InvalidateDeviceObjects();
+	if(buffer_texture)
+		buffer_texture->InvalidateDeviceObjects();
 }
 
 void BaseFramebuffer::SetDepthFormat(crossplatform::PixelFormat f)
@@ -137,7 +138,8 @@ void BaseFramebuffer::SetDepthFormat(crossplatform::PixelFormat f)
 	if(f==depth_format)
 		return;
 	depth_format=f;
-	InvalidateDeviceObjects();
+	if(buffer_depth_texture)
+		buffer_depth_texture->InvalidateDeviceObjects();
 }
 
 void BaseFramebuffer::SetGenerateMips(bool m)
@@ -145,9 +147,10 @@ void BaseFramebuffer::SetGenerateMips(bool m)
 	GenerateMips=m;
 }
 
-void BaseFramebuffer::SetAsCubemap(int w,int num_mips)
+void BaseFramebuffer::SetAsCubemap(int w,int num_mips,crossplatform::PixelFormat f)
 {
 	SetWidthAndHeight(w,w,num_mips);
+	SetFormat(f);
 	is_cubemap=true;
 }
 
@@ -241,8 +244,6 @@ bool BaseFramebuffer::CreateBuffers()
 
 void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)
 {
-	if(!sphericalHarmonicsEffect)
-		RecompileShaders();
 	int num_coefficients=bands*bands;
 	static int BLOCK_SIZE=1;
 	static int sqrt_jitter_samples					=4;
@@ -251,6 +252,8 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 		sphericalHarmonics.RestoreDeviceObjects(renderPlatform,num_coefficients,true);
 		sphericalSamples.RestoreDeviceObjects(renderPlatform,sqrt_jitter_samples*sqrt_jitter_samples,true);
 	}
+	if(!sphericalHarmonicsEffect)
+		RecompileShaders();
 	sphericalHarmonicsConstants.num_bands			=bands;
 	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
 	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;

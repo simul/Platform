@@ -194,7 +194,7 @@ bool Texture::IsValid() const
 
 void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels)
 {
-	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);
+	int byteSize=simul::dx11::ByteSizeOfFormatElement(dxgi_format);
 	if(!stagingBuffer)
 	{
 		//Create a "Staging" Resource to actually copy data to-from the GPU buffer. 
@@ -203,7 +203,7 @@ void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *tar
 		stagingBufferDesc.Width			=width;
 		stagingBufferDesc.Height		=length;
 		stagingBufferDesc.Depth			=depth;
-		stagingBufferDesc.Format		=format;
+		stagingBufferDesc.Format		=dxgi_format;
 		stagingBufferDesc.MipLevels		=1;
 		stagingBufferDesc.Usage			=D3D11_USAGE_STAGING;
 		stagingBufferDesc.BindFlags		=0;
@@ -251,7 +251,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		last_context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
 	if(!mapped.pData)
 		return;
-	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);
+	int byteSize=simul::dx11::ByteSizeOfFormatElement(dxgi_format);
 	const unsigned char *source=(const unsigned char*)src;
 	unsigned char *target=(unsigned char*)mapped.pData;
 	int expected_pitch=byteSize*width;
@@ -303,13 +303,13 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 	}
 }
 
-void Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format)
+void Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT dxgi_format)
 {
 	D3D11_TEXTURE2D_DESC textureDesc=
 	{
 		w,l,
 		1,1,
-		format,
+		dxgi_format,
 		{1,0}
 		,D3D11_USAGE_DYNAMIC,
 		D3D11_BIND_SHADER_RESOURCE,
@@ -359,6 +359,8 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *rend
 		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
 		{
 			ppd->GetDesc(&textureDesc);
+			dxgi_format=textureDesc.Format;
+			pixelFormat=RenderPlatform::FromDxgiFormat(textureDesc.Format);
 			width=textureDesc.Width;
 			length=textureDesc.Height;
 			if(!srv)
@@ -452,7 +454,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		textureDesc.Width			=width=w;
 		textureDesc.Height			=length=l;
 		textureDesc.Depth			=depth=d;
-		textureDesc.Format			=format=f;
+		textureDesc.Format			=dxgi_format=f;
 		textureDesc.MipLevels		=m;
 		textureDesc.Usage			=(computable|rendertargets)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
 		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertargets?D3D11_BIND_RENDER_TARGET:0);
@@ -545,9 +547,9 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 {
 	int m=1;
 	pixelFormat=f;
-	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
-	DXGI_FORMAT texture2dFormat=format;
-	DXGI_FORMAT srvFormat=format;
+	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT texture2dFormat=dxgi_format;
+	DXGI_FORMAT srvFormat=dxgi_format;
 	if(texture2dFormat==DXGI_FORMAT_D32_FLOAT)
 	{
 		texture2dFormat	=DXGI_FORMAT_R32_TYPELESS;
@@ -679,7 +681,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 		dsv.MipSlice=0;
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
 		depthDesc.ViewDimension		=num_samples>1?D3D11_DSV_DIMENSION_TEXTURE2DMS:D3D11_DSV_DIMENSION_TEXTURE2D;
-		depthDesc.Format			=format;
+		depthDesc.Format			=dxgi_format;
 		depthDesc.Flags				=0;
 		depthDesc.Texture2D			=dsv;
 		SAFE_RELEASE(depthStencilView);
@@ -694,7 +696,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
 {
 	renderPlatform=r;
-	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	D3D11_TEXTURE2D_DESC textureDesc;
 	bool ok=true;
 	if(texture)
@@ -705,7 +707,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=format)
+			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=dxgi_format)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -721,7 +723,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 
 	pixelFormat=f;
 	InvalidateDeviceObjects();
-	format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
+	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	D3D11_TEXTURE2D_DESC desc;
 /*	int m			=cubemap?1:5;
 	int s=2<<m;
@@ -736,7 +738,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	dim						=2;
 	desc.Width				=w;
 	desc.Height				=l;
-	desc.Format				=format;
+	desc.Format				=dxgi_format;
 	desc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0);
 	desc.Usage				=D3D11_USAGE_DEFAULT;
 	desc.CPUAccessFlags		=0;
@@ -769,7 +771,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	{
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format							=format;
+		uav_desc.Format							=dxgi_format;
 		uav_desc.ViewDimension					=D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
 		uav_desc.Texture2DArray.ArraySize		=num;
 		uav_desc.Texture2DArray.FirstArraySlice	=0;
@@ -808,7 +810,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		InitRTVTables(num, m);
 		// Create the multi-face render target view
 		D3D11_RENDER_TARGET_VIEW_DESC DescRT;
-		DescRT.Format							=format;
+		DescRT.Format							=dxgi_format;
 		DescRT.ViewDimension					=D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 		DescRT.Texture2DArray.FirstArraySlice	=0;
 		DescRT.Texture2DArray.ArraySize			=num;
@@ -835,7 +837,7 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap)
 {
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
-	SRVDesc.Format						=format;
+	SRVDesc.Format						=dxgi_format;
 	SRVDesc.ViewDimension				=cubemap?D3D11_SRV_DIMENSION_TEXTURECUBE:D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 	SRVDesc.TextureCube.MipLevels		=m;
 	SRVDesc.TextureCube.MostDetailedMip =0;
@@ -854,7 +856,7 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC face_srv_desc;
 		ZeroMemory(&face_srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		face_srv_desc.Format					= format;
+		face_srv_desc.Format					= dxgi_format;
 		face_srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 		for(int i=0;i<num;i++)
 		{
@@ -906,7 +908,7 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 		memset(&textureDesc,0,sizeof(textureDesc));
 		textureDesc.Width			=width=w;
 		length						=depth=1;
-		textureDesc.Format			=format=f;
+		textureDesc.Format			=dxgi_format=f;
 		textureDesc.MipLevels		=m;
 		textureDesc.ArraySize		=1;
 		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
@@ -999,7 +1001,7 @@ vec4 Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoord
 		desc.Width			=1;
 		desc.Height		=1;
 		desc.ArraySize = 1;
-		desc.Format		=format;
+		desc.Format		=dxgi_format;
 		desc.Usage			=D3D11_USAGE_STAGING;
 		desc.CPUAccessFlags=D3D11_CPU_ACCESS_READ;
 		desc.SampleDesc.Count=1;

@@ -83,6 +83,23 @@
 			for(int i=0;i<16;i++)
 				m[i]=v[i];
 		}
+		inline static void mul(mat4 &r,const mat4 &a,const mat4 &b)
+		{
+			for(int i=0;i<4;i++)
+			{
+				for(int j=0;j<4;j++)
+				{
+					const float *m1row=&a.m[i*4+0];
+					float t=0.f;
+					int k=0;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];
+					r.M[i][j]=t;
+				}
+			}
+		}
 		void operator*=(float c)
 		{
 			for(int i=0;i<16;i++)

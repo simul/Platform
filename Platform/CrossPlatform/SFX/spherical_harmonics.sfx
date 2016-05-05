@@ -79,7 +79,7 @@ shader void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	for(int n=0;n<numJitterSamples;n++)
 	{ 
 		SphericalHarmonicsSample shs	=samplesBuffer[n];
-		vec4 colour						=texture_wrap_lod(cubemapTexture,-shs.dir,0);
+		vec4 colour						=texture_wrap_lod(cubemapTexture,shs.dir,0);
 		total							+=colour*factor*shs.coeff[sub_pos.x];
 	}
 	targetBuffer[sub_pos.x]=total;

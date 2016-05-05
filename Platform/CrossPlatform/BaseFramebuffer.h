@@ -179,7 +179,7 @@ namespace simul
 			//! Set the size of the framebuffer.
 			virtual void SetWidthAndHeight(int w,int h,int num_mips=1);
 			//! Set this to be a cubemap framebuffer, so that its texture object will be a cubemap. Equivalent to SetWidthAndHeight.
-			virtual void SetAsCubemap(int face_size,int num_mips=1);
+			virtual void SetAsCubemap(int face_size,int num_mips=1,crossplatform::PixelFormat f=RGBA_32_FLOAT);
 			virtual void SetCubeFace(int f);
 			//! Some hardware has fast RAM that's good for framebuffers.
 			virtual void SetUseFastRAM(bool /*colour*/,bool /*depth*/){};
