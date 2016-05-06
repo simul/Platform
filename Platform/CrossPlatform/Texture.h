@@ -85,7 +85,7 @@ namespace simul
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects()=0;
-			virtual sce::Gnm::Texture *AsGnmTexture(int=-1){return 0;}
+			virtual sce::Gnm::Texture *AsGnmTexture(int=-1,int=-1){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int=-1,int=-1){return 0;}
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int=-1){return 0;}

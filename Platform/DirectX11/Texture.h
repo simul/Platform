@@ -147,13 +147,13 @@ namespace simul
 			ID3D11RenderTargetView*		m_pOldRenderTargets[16];
 			ID3D11DepthStencilView*		m_pOldDepthSurface;
 			ID3D11Resource*				texture;
-			ID3D11ShaderResourceView*   mainShaderResourceView;		// SRV for the whole texture including all layers and mips.	
-			ID3D11ShaderResourceView**	layerShaderResourceViews;	// SRV's for each layer, including all mips
-			ID3D11ShaderResourceView**  mainMipShaderResourceViews;	// SRV's for the whole texture at different mips.
-			ID3D11ShaderResourceView***	layerMipShaderResourceViews;// SRV's for each layer at different mips.
+			ID3D11ShaderResourceView*   mainShaderResourceView;			// SRV for the whole texture including all layers and mips.	
+			ID3D11ShaderResourceView**	layerShaderResourceViews;		// SRV's for each layer, including all mips
+			ID3D11ShaderResourceView**  mainMipShaderResourceViews;		// SRV's for the whole texture at different mips.
+			ID3D11ShaderResourceView***	layerMipShaderResourceViews;	// SRV's for each layer at different mips.
 			ID3D11UnorderedAccessView**  unorderedAccessViews;
 			ID3D11DepthStencilView*		depthStencilView;
-			ID3D11RenderTargetView***	renderTargetViews;			// 2D table: layers and mips.
+			ID3D11RenderTargetView***	renderTargetViews;				// 2D table: layers and mips.
 			D3D11_VIEWPORT				m_OldViewports[16];
 			unsigned					num_OldViewports;
 			void InitSRVTables(int l,int m);
