@@ -35,13 +35,13 @@ namespace simul
 	{
 		void SetGpuProfilingInterface(crossplatform::DeviceContext &context,GpuProfilingInterface *p)
 		{
-			gpuProfilingInterface[&context]=p;
+			gpuProfilingInterface[context.platform_context]=p;
 		}
 		GpuProfilingInterface *GetGpuProfilingInterface(crossplatform::DeviceContext &context)
 		{
-			if(gpuProfilingInterface.find(&context)==gpuProfilingInterface.end())
+			if(gpuProfilingInterface.find(context.platform_context)==gpuProfilingInterface.end())
 				return NULL;
-			return gpuProfilingInterface[&context];
+			return gpuProfilingInterface[context.platform_context];
 		}
 	}
 }

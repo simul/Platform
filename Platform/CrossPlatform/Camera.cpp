@@ -244,7 +244,8 @@ void simul::crossplatform::MakeCentredWorldViewProjMatrix(float *wvp,const float
 
 void simul::crossplatform::GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,float *up)
 {
-	simul::math::Matrix4x4 tmp1,view(v);
+	simul::math::Matrix4x4 tmp1;
+	const simul::math::Matrix4x4 &view(*((const simul::math::Matrix4x4*)v));
 	ERRNO_BREAK
 	view.Inverse(tmp1);
 	ERRNO_BREAK

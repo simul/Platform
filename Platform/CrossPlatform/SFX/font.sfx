@@ -43,7 +43,7 @@ BlendState AlphaBlendRGB
     SrcBlendAlpha		= ZERO;
     DestBlendAlpha		= ZERO;
     BlendOpAlpha		= ADD;
-    RenderTargetWriteMask[0] = 0x07;
+    RenderTargetWriteMask[0] = 7;
 };
 BlendState AddBlendRGB
 {
@@ -51,7 +51,7 @@ BlendState AddBlendRGB
 	BlendEnable[1]	=TRUE;
 	SrcBlend		=ONE;
 	DestBlend		=ONE;
-    RenderTargetWriteMask[0] = 0x07;
+    RenderTargetWriteMask[0] = 7;
 };
 
 VertexShader vs = CompileShader(vs_4_0, FontVertexShader());

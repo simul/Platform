@@ -174,8 +174,10 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 						);
 		//pContext->UpdateSubresource(m_pArrayTexture,i*num_mips, NULL,subResources[i].pSysMem,subResources[i].SysMemPitch,subResources[i].SysMemSlicePitch);
 	}
-	SAFE_RELEASE(mainShaderResourceView);
-	r->AsD3D11Device()->CreateShaderResourceView(tex,NULL,&mainShaderResourceView);
+	void FreeSRVTables();
+	void FreeRTVTables();
+//	InitSRVTables(texture_files.size(),m);
+	V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(tex,NULL,&mainShaderResourceView));
 	//delete [] subResources;
 	for(unsigned i=0;i<textures.size();i++)
 	{
@@ -185,6 +187,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	pContext->GenerateMips(mainShaderResourceView);
 	SAFE_RELEASE(pContext)
 	mips=m;
+	arraySize=texture_files.size();
 }
 
 bool Texture::IsValid() const

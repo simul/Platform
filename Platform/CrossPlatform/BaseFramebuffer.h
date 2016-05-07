@@ -25,11 +25,13 @@ namespace simul
 			int4 validRegion;
 		public:
 			int framenumber;
+			int framesPerIncrement;
 			uint3 *pattern;
 			int numOffsets;
 			AmortizationStruct()
 				:amortization(1)
 				,framenumber(0)
+				,framesPerIncrement(1)
 				,validRegion(0,0,0,0)
 				,pattern(NULL)
 				,numOffsets(1)
@@ -60,8 +62,7 @@ namespace simul
 			{
 				if(!pattern||amortization<=1)
 					return uint3(0,0,0);
-//				int a			=amortization;
-				int sub_frame	=framenumber%(numOffsets);
+				int sub_frame	=(framenumber/framesPerIncrement)%(numOffsets);
 				return pattern[sub_frame];
 			}
 			int4 xy(int2 texsize) const

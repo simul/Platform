@@ -47,7 +47,7 @@ namespace simul
 					return NULL;
 				}
 #endif
-				if(mips<=1&&arraySize<=1)
+				if(mips<=1&&arraySize<=1||(index<0&&mip<0))
 				{
 					return mainShaderResourceView;
 				}
