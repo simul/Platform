@@ -43,7 +43,15 @@ BlendState AlphaBlendRGB
     SrcBlendAlpha		= ZERO;
     DestBlendAlpha		= ZERO;
     BlendOpAlpha		= ADD;
-    //RenderTargetWriteMask[0] = 0x0F;
+    RenderTargetWriteMask[0] = 0x07;
+};
+BlendState AddBlendRGB
+{
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=ONE;
+    RenderTargetWriteMask[0] = 0x07;
 };
 
 VertexShader vs = CompileShader(vs_4_0, FontVertexShader());
@@ -66,7 +74,7 @@ technique text
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(AddBlendRGB,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs);
 		SetPixelShader(CompileShader(ps_4_0,FontPixelShader()));

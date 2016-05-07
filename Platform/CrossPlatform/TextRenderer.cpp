@@ -203,9 +203,12 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		constantBuffer.text_rect.w*=-1.0f;
 	}
 	constantBuffer.Apply(deviceContext);
-	effect->Apply(deviceContext,backgTech,0);
-	renderPlatform->DrawQuad(deviceContext);
-	effect->Unapply(deviceContext);
+	if(constantBuffer.background.w>0.0f)
+	{
+		effect->Apply(deviceContext,backgTech,0);
+		renderPlatform->DrawQuad(deviceContext);
+		effect->Unapply(deviceContext);
+	}
 
 	effect->SetTexture(deviceContext,textureResource,font_texture);
 	effect->Apply(deviceContext,textTech,0);
