@@ -334,6 +334,8 @@ const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,i
 		return u->second;
 	}
 	crossplatform::ProfileData *p=(crossplatform::ProfileData*)parent;
+	if(!p->updatedThisFrame)
+		return NULL;
 	int j=0;
 	for(auto it=p->children.begin();it!=p->children.end();it++,j++)
 	{

@@ -293,14 +293,16 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth				=reverseDepth;
+
+	float depth						=texture_wrap_nearest_lod(depthTexture,IN.depth_texc,0).x;
+	float dist						=depthToFadeDistance(depth,IN.clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	TwoColourCompositeOutput result						=CompositeAtmospherics(IN.clip_pos
-															,IN.depth_texc
 															,farImageTexture
 															,nearImageTexture
 															,nearFarTexture
 															,lightpassTexture
 															,loss2dTexture
-															,depthTexture
+															,dist
 															,invViewProj
 															,viewPos
 															,invShadowMatrix
@@ -323,14 +325,24 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
+	vec3 view	=normalize(mul(invViewProj, IN.clip_pos).xyz);
+	float sine	=view.z;
+	// TODO: Custom planet radius here
+	float R		=6378.0;
+	float r		=R+viewPos.z/1000.0;
+	// instead of a depth texture, we use an equation for dist based on our altitude.
+	float dist	=1.0;
+	float m		=R*R+r*r*(sine*sine-1.0);
+	dist		=step(0.0,m)*(-r*sine-sqrt(max(0.0,m)))/maxFadeDistanceKm;
+	if(dist<=0)
+		dist=1.0;
 	TwoColourCompositeOutput result	=	CompositeAtmospherics(IN.clip_pos
-															,IN.depth_texc
 															,farImageTexture
 															,farImageTexture
 															,nearFarTexture
 															,lightpassTexture
 															,loss2dTexture
-															,depthTexture
+															,dist
 															,invViewProj
 															,viewPos
 															,invShadowMatrix
@@ -341,9 +353,8 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,maxFadeDistanceKm
 															,cloudShadowStrength
 															,nearDist);
-	vec3 view = normalize(mul(invViewProj, IN.clip_pos).xyz);
-	if (view.z < 0)
-		result.add.rgb *= 0;
+	//if (view.z < 0)
+	//	result.add.rgb *= 0;
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	

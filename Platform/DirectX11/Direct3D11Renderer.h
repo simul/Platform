@@ -29,7 +29,7 @@ namespace simul
 	{
 		class Environment;
 		class BaseWeatherRenderer;
-		enum TrueSkyRenderMode;
+		enum class TrueSkyRenderMode;
 	}
 	namespace crossplatform
 	{

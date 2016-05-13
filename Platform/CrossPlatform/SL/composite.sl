@@ -25,13 +25,12 @@ struct LookupQuad4
 #define VOLUME_INSCATTER
 #define SCREENSPACE_VOL
 TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
-				,vec2 depth_texc
 				,TextureCube farCloudTexture
 				,TextureCube nearCloudTexture
 				,TextureCube nearFarTexture
 				,TextureCube lightpassTexture
 				,Texture2D loss2dTexture
-				,Texture2D depthTexture
+				,float dist
 				,mat4 invViewProj
 				,vec3 viewPos
 				,mat4 invShadowMatrix
@@ -47,10 +46,6 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec3 view						=normalize(mul(invViewProj,clip_pos).xyz);
 	float sine						=view.z;
 	vec4 nearFarCloud				=texture_cube_lod(nearFarTexture	,view		,0);
-
-	float depth						=texture_wrap_nearest_lod(depthTexture,depth_texc,0).x;
-
-	float dist						=depthToFadeDistance(depth,clip_pos.xy,dis,tanHalfFov);
 	
 	
 	float dist_rt					=pow(dist,0.5);
