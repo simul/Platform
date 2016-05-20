@@ -29,7 +29,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
 	//float sineFactor		=1.0/length(clip_pos.xyz);
-	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
+	vec3 view				=normalize(mul(invViewProj[cubemapTargetIndex],clip_pos).xyz);
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
 	vec3 lightDir			=lerp(directionToMoon,directionToSun,s);

@@ -518,13 +518,13 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 	return tech;
 }
 
-void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int mip)
+void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int index,int mip)
 {
 	crossplatform::ShaderResource shaderResource			=GetShaderResource(name);
-	SetUnorderedAccessView(deviceContext,shaderResource,t,mip);
+	SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
 }
 
-void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int mip)
+void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
 {
 	ID3DX11EffectUnorderedAccessViewVariable *var=(ID3DX11EffectUnorderedAccessViewVariable*)(shaderResource.platform_shader_resource);
 	if(!asD3DX11Effect())
@@ -539,7 +539,7 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crosspl
 	}
 	if(t)
 	{
-		ID3D11UnorderedAccessView *uav=t->AsD3D11UnorderedAccessView(mip);
+		ID3D11UnorderedAccessView *uav=t->AsD3D11UnorderedAccessView(index,mip);
 		if(!uav)
 		{
 			SIMUL_CERR<<"Unordered access view not found."<<std::endl;
@@ -581,7 +581,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 	if(t)
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
-		auto srv=T->AsD3D11ShaderResourceView(index,mip);
+		auto srv=T->AsD3D11ShaderResourceView(shaderResource.shaderResourceType,index,mip);
 		var->SetResource(srv);
 	}
 	else

@@ -31,6 +31,50 @@ namespace simul
 			,D_24_UNORM_S_8_UINT
 			,D_16_UNORM
 		};
+		//! This refers to the type of a shader resource, which should be compatible with the type of any resource assigned to it.
+		enum class ShaderResourceType
+		{
+			UNKNOWN=0
+			,RW		=1
+			,ARRAY	=2
+			,MS		=4
+			,TEXTURE_1D					=8 
+			,TEXTURE_2D					=16 
+			,TEXTURE_3D					=32
+			,TEXTURE_CUBE				=64
+			,SAMPLER					=128
+			,BUFFER						=256
+			,CBUFFER					=512
+			,TBUFFER					=1024
+			,BYTE_ADDRESS_BUFFER		=2048
+			,STRUCTURED_BUFFER			=4096
+			,APPEND_STRUCTURED_BUFFER	=8192
+			,CONSUME_STRUCTURED_BUFFER	=16384
+			,TEXTURE_2DMS				=TEXTURE_2D|MS  
+			,RW_TEXTURE_1D				=TEXTURE_1D|RW  
+			,RW_TEXTURE_2D				=TEXTURE_2D|RW  
+			,RW_TEXTURE_3D				=TEXTURE_3D|RW  
+			,RW_BUFFER					=BUFFER|RW
+			,RW_BYTE_ADDRESS_BUFFER		=RW|BYTE_ADDRESS_BUFFER
+			,RW_STRUCTURED_BUFFER		=RW|STRUCTURED_BUFFER
+			,TEXTURE_1D_ARRAY			=TEXTURE_1D|ARRAY
+			,TEXTURE_2D_ARRAY 			=TEXTURE_2D|ARRAY  
+			,TEXTURE_3D_ARRAY			=TEXTURE_3D|ARRAY   
+			,TEXTURE_2DMS_ARRAY			=TEXTURE_2D|MS|ARRAY  
+			,TEXTURE_CUBE_ARRAY 		=TEXTURE_CUBE|ARRAY   
+			,RW_TEXTURE_1D_ARRAY		=RW|TEXTURE_1D|ARRAY
+			,RW_TEXTURE_2D_ARRAY		=RW|TEXTURE_2D|ARRAY  
+			,RW_TEXTURE_3D_ARRAY		=RW|TEXTURE_3D|ARRAY   
+			,COUNT  
+		};
+		inline ShaderResourceType operator|(ShaderResourceType a, ShaderResourceType b)
+		{
+			return static_cast<ShaderResourceType>(static_cast<unsigned int>(a) | static_cast<unsigned int>(b));
+		}
+		inline ShaderResourceType operator&(ShaderResourceType a, ShaderResourceType b)
+		{
+			return static_cast<ShaderResourceType>(static_cast<unsigned int>(a) & static_cast<unsigned int>(b));
+		}
 		inline int GetElementSize(PixelFormat p)
 		{
 			switch(p)

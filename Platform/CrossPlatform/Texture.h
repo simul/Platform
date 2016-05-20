@@ -85,11 +85,16 @@ namespace simul
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects()=0;
-			virtual sce::Gnm::Texture *AsGnmTexture(int=-1,int=-1){return 0;}
+			//! Returns the GnmTexture specified by layer,mip. Default values of -1 mean "all".
+			virtual sce::Gnm::Texture *AsGnmTexture(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
-			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int=-1,int=-1){return 0;}
-			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int=-1){return 0;}
+			//! Returns the SRV specified by layer,mip. The type t ensures that the assigned resource is compatible (UNKNWON matches anything).
+			//! Layer -1 means all layers at the given mip, while mip -1 defaults to the whole texture/layer.
+			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(crossplatform::ShaderResourceType t=crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}
+			//! Returns the UAV specified by layer,mip. Layer -1 means all layers at the given mip, while mip -1 defaults to mip zero.
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int=-1,int=-1){return 0;}
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
+			//! Returns the RTV specified by layer,mip. Layer -1 means all layers at the given mip, while mip -1 defaults to mip zero.
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(int=-1,int=-1){return 0;}
 			virtual bool HasRenderTargets() const{return 0;}
 			virtual bool IsComputable() const=0;

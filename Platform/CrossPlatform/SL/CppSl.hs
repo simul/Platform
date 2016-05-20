@@ -22,9 +22,16 @@
 	#define SIMUL_STATE_REGISTER(s)
 
 	#define constant_buffer ALIGN_16 cbuffer
-
-	#define SIMUL_CONSTANT_BUFFER(name,buff_num) struct name {static const int bindingIndex=buff_num;
-	#define SIMUL_CONSTANT_BUFFER_END };
+#ifdef _MSC_VER
+	#define prag(c) __pragma(c)
+#else
+	#define prag(c) _Pragma(#c)
+#endif
+	#define SIMUL_CONSTANT_BUFFER(name,buff_num) prag(pack(push)) \
+												prag(pack(4)) \
+												struct name {static const int bindingIndex=buff_num;
+	#define SIMUL_CONSTANT_BUFFER_END };\
+									prag(pack(pop))
 
 	struct mat2
 	{

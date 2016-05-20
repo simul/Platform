@@ -19,19 +19,6 @@ struct FarNearPixelOutput
 	vec4 nearColour		;
 };
 
-struct All8DepthOutput
-{
-	vec4 colour1 SIMUL_RENDERTARGET_OUTPUT(0);
-	vec4 colour2 SIMUL_RENDERTARGET_OUTPUT(1);
-	vec4 colour3 SIMUL_RENDERTARGET_OUTPUT(2);
-	vec4 colour4 SIMUL_RENDERTARGET_OUTPUT(3);
-	vec4 colour5 SIMUL_RENDERTARGET_OUTPUT(4);
-	vec4 colour6 SIMUL_RENDERTARGET_OUTPUT(5);
-	vec4 colour7 SIMUL_RENDERTARGET_OUTPUT(6);
-	vec4 colour8 SIMUL_RENDERTARGET_OUTPUT(7);
-	float depth	SIMUL_DEPTH_OUTPUT;
-};
-
 float MakeRainMap(Texture3D cloudDensity,vec2 texCoords)
 {
 	vec3 texc		=vec3(texCoords.xy,precipitationThreshold);
@@ -523,15 +510,15 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	viewScaled				=normalize(viewScaled);
 
 	vec3 offset_vec			=vec3(0,0,0);
-	if(world_pos.z<min_z)
+	//if(world_pos.z<min_z)
 	{
 		float a		=1.0/(view.z+0.00001);
-		offset_vec	=(min_z-world_pos.z)*vec3(view.x*a,view.y*a,1.0);
+		offset_vec	+=max(0.0,min_z-world_pos.z)*vec3(view.x*a,view.y*a,1.0);
 	}
-	if(view.z<0&&world_pos.z>max_z)
+	//if(view.z<0&&world_pos.z>max_z)
 	{
 		float a		=1.0/(-view.z+0.00001);
-		offset_vec	=(world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
+		offset_vec	+=max(0.0,world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
 	}
 	vec3 halfway					=0.5*(lightDir-view);
 	world_pos						+=offset_vec;

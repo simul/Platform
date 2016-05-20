@@ -38,47 +38,8 @@ namespace simul
 			{
 				return (ID3D11Texture2D*)texture;
 			}
-			ID3D11ShaderResourceView *AsD3D11ShaderResourceView(int index=-1,int mip=-1)
-			{
-#ifdef _DEBUG
-				if(index>=arraySize||mip>=mips)
-				{
-					SIMUL_BREAK_ONCE("AsD3D11UnorderedAccessView: mip or index out of range");
-					return NULL;
-				}
-#endif
-				if(mips<=1&&arraySize<=1||(index<0&&mip<0))
-				{
-					return mainShaderResourceView;
-				}
-				if(layerShaderResourceViews&&(mip<0||mips<=1))
-				{
-					if(index<0||arraySize<=1)
-						return mainShaderResourceView;
-					return layerShaderResourceViews[index];
-				}
-				if(mainMipShaderResourceViews&&index<0)
-					return mainMipShaderResourceViews[mip];
-				if(layerMipShaderResourceViews)
-					return layerMipShaderResourceViews[index][mip];
-				
-				return nullptr;
-			}
-			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=-1)
-			{
-				if(mip<0)
-					mip=0;
-#ifdef _DEBUG
-				if(mip>=mips)
-				{
-					SIMUL_BREAK_ONCE("AsD3D11UnorderedAccessView: mip or index out of range");
-					return NULL;
-				}
-#endif
-				if(!unorderedAccessViews)
-					return NULL;
-				return unorderedAccessViews[mip];
-			}
+			ID3D11ShaderResourceView *AsD3D11ShaderResourceView(crossplatform::ShaderResourceType t=crossplatform::ShaderResourceType::UNKNOWN,int index=-1,int mip=-1);
+			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int index=-1,int mip=-1);
 			ID3D11DepthStencilView *AsD3D11DepthStencilView()
 			{
 				return depthStencilView;
@@ -148,19 +109,22 @@ namespace simul
 			ID3D11DepthStencilView*		m_pOldDepthSurface;
 			ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   mainShaderResourceView;			// SRV for the whole texture including all layers and mips.	
+			ID3D11ShaderResourceView*	arrayShaderResourceView;		// SRV that describes a cubemap texture as an array, used only for cubemaps.
 			ID3D11ShaderResourceView**	layerShaderResourceViews;		// SRV's for each layer, including all mips
 			ID3D11ShaderResourceView**  mainMipShaderResourceViews;		// SRV's for the whole texture at different mips.
 			ID3D11ShaderResourceView***	layerMipShaderResourceViews;	// SRV's for each layer at different mips.
-			ID3D11UnorderedAccessView**  unorderedAccessViews;
+			ID3D11UnorderedAccessView**  mipUnorderedAccessViews;		// UAV for the whole texture at various mips: only for 2D arrays.
+			ID3D11UnorderedAccessView***  layerMipUnorderedAccessViews;	// UAV's for the layers and mips
 			ID3D11DepthStencilView*		depthStencilView;
 			ID3D11RenderTargetView***	renderTargetViews;				// 2D table: layers and mips.
 			D3D11_VIEWPORT				m_OldViewports[16];
 			unsigned					num_OldViewports;
+			void InitUAVTables(int l,int m);
+			void FreeUAVTables();
 			void InitSRVTables(int l,int m);
 			void FreeSRVTables();
 			void FreeRTVTables();
 			void InitRTVTables(int l,int m);
-			int GetNumUav() const;
 			void CreateSRVTables(int num,int m,bool cubemap);
 		};
 	}

@@ -329,7 +329,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 	float sine	=view.z;
 	// TODO: Custom planet radius here
 	float R		=6378.0;
-	float r		=R+viewPos.z/1000.0;
+	float r		=R+max(1.0,viewPos.z/1000.0);
 	// instead of a depth texture, we use an equation for dist based on our altitude.
 	float dist	=1.0;
 	float m		=R*R+r*r*(sine*sine-1.0);

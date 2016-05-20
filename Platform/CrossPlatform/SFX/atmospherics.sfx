@@ -184,8 +184,7 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 #endif
 		vec4 res			=colour+vec4(skyl,0);
 		int3 pos			=int3(idx.xy,i);
-//res.rgb			=saturate(ls_texc);
-//res.a=1.0;
+
 		IMAGE_STORE_3D(targetVolume,pos,res);
 		last				=next;
 	}

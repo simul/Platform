@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "GpuProfiler.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Base/StringFunctions.h"
@@ -8,7 +9,7 @@
 #include <sstream>
 #include <iostream>
 #include <map>
-
+#include <algorithm>
 
 using namespace simul;
 using namespace crossplatform;
@@ -43,6 +44,14 @@ namespace simul
 				return NULL;
 			return gpuProfilingInterface[context.platform_context];
 		}
+		void ClearGpuProfilers()
+		{
+			for(auto i:gpuProfilingInterface)
+			{
+				i.second->InvalidateDeviceObjects();
+	}
+			gpuProfilingInterface.clear();
+}
 	}
 }
 
@@ -72,21 +81,24 @@ void GpuProfiler::InvalidateDeviceObjects()
 #ifdef SIMUL_WIN8_SDK
 	SAFE_RELEASE(pUserDefinedAnnotation);
 #endif
-    for(auto iter = profileMap.begin(); iter != profileMap.end(); iter++)
-    {
-        base::ProfileData *profile = (*iter).second;
-		delete profile;
-	}
-	profileMap.clear();
     renderPlatform = NULL;
     enabled=true;
+	last_context.clear();
+	last_name.clear();
+	BaseProfilingInterface::Clear();
 }
 
 void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *name)
 {
+	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
+    if(!enabled||!renderPlatform||!context)
+        return;
+	// We will use event signals irrespective of level, to better track things in external GPU tools.
+	renderPlatform->BeginEvent(deviceContext,name);
 	level++;
 	if(level>max_level)
 		return;
+	max_level_this_frame=std::max(max_level_this_frame,level);
 	std::string parent;
 	if(last_name.size())
 		parent=(last_name.back());
@@ -182,26 +194,24 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 
 			profileData->QueryStarted = true;
 		}
-		renderPlatform->BeginEvent(deviceContext,name);
 	}
 }
 
-void GpuProfiler::End()
+void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 {
+	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
+    if(!enabled||!renderPlatform||!context)
+        return;
+	renderPlatform->EndEvent(deviceContext);
 	level--;
-	if(level>=max_level)
+	if(level>=max_level_this_frame)
 		return;
 	if(!last_name.size())
 		return;
 	std::string name		=last_name.back();
 	last_name.pop_back();
-	crossplatform::DeviceContext *deviceContext=last_context.back();
-	ID3D11DeviceContext *context=deviceContext->asD3D11DeviceContext();
 	last_context.pop_back();
-    if(!enabled||!renderPlatform||!context)
-        return;
 	
-	renderPlatform->EndEvent(*deviceContext);
     crossplatform::ProfileData *profileData=(crossplatform::ProfileData*) profileMap[name];
 	
     if(profileData->QueryStarted != true)
@@ -209,26 +219,17 @@ void GpuProfiler::End()
 	profileData->updatedThisFrame=true;
     SIMUL_ASSERT(profileData->QueryFinished == false);
     // Insert the end timestamp    
+	profileData->TimestampEndQuery->End(deviceContext);
     //context->End(profileData->TimestampEndQuery[currFrame]);
-	profileData->TimestampEndQuery->End(*deviceContext);
+	profileData->DisjointQuery->End(deviceContext);
     // End the disjoint query
-  //  context->End(profileData->DisjointQuery[currFrame]);
-	profileData->DisjointQuery->End(*deviceContext);
-
     profileData->QueryStarted = false;
     profileData->QueryFinished = true;
 }
 
 void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
-	if(!root)
-	{
-		root=CreateProfileData();
-		profileMap["root"]=root;
-	}
-	level=0;
-	
-	root->last_child_updated=0;
+	base::BaseProfilingInterface::StartFrame();
     for(auto iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         base::ProfileData *profile = ((*iter).second);
@@ -298,6 +299,29 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 			profile->time=10.0f;
 		}
     }
+    for(iter = profileMap.begin(); iter != profileMap.end(); iter++)
+    {
+        crossplatform::ProfileData *profile =(crossplatform::ProfileData*)((*iter).second);
+		if(profile==root)
+			continue;
+		if(!profile->updatedThisFrame&&profile->children.size()==0)
+		{
+			if(profile->parent)
+			{
+				for(auto u:profile->parent->children)
+				{
+					if(u.second==profile)
+					{
+						profile->parent->children.erase(u.first);
+						break;
+					}
+				}
+			}
+			delete iter->second;
+			profileMap.erase(iter);
+			break;
+		}
+	}
 
 	root->time=0.0f;
 	for(auto i=root->children.begin();i!=root->children.end();i++)
@@ -372,7 +396,7 @@ ProfileBlock::ProfileBlock(crossplatform::DeviceContext &deviceContext,
 ProfileBlock::~ProfileBlock()
 {
 	if(profiler)
-		profiler->End();
+		profiler->End(*context);
 }
 
 float ProfileBlock::GetTime() const

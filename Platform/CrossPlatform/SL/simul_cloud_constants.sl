@@ -13,39 +13,45 @@ struct LayerData
 	float pad13;
 };
 
+SIMUL_CONSTANT_BUFFER(CloudStaticConstants,12)
+	uniform mat4 invViewProj[6];	// Cubemap matrices
+SIMUL_CONSTANT_BUFFER_END
+
+
 SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 
-	uniform mat4 invViewProj;
+	uniform uint4 targetRange[6];
+
 	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
 
 	uniform mat4 worldToScatteringVolumeMatrix;
+
 	uniform vec4 depthToLinFadeDistParams;
+
 	uniform vec3 scaleOfGridCoords;
 	uniform int halfClipSize;			// Actually half the full clip size.
+
 	uniform vec3 gridOriginPosKm;
-	uniform float pad151663;
+	uniform int cubemapViewIndex;
+
 	uniform vec3 viewPosKm;
 	uniform float nearZ_deprecated;
-
-	uniform vec2 tanHalfFov_deprecated;
-	uniform float exposure;
-	uniform float maxCloudDistanceKm;
 
 	uniform float shadowRange;
 	uniform int shadowTextureSize;
 	uniform float depthMix;
-	uniform float CloudPerViewConstantsPad3;
+	uniform int cubemapTargetIndex;
 
 	uniform uint3 amortizationOffset;
-	uniform float farZXXXXXXX;
+	uniform float exposure;
 	
-	uniform uint4 targetRange;
-
 	uniform uint2 targetTextureSize;
 	uniform uint2 edge;
 
 	uniform uint3 amortizationScale;
-	uniform float extentZKmXXX;
+	uniform float maxCloudDistanceKm;
+
+	uniform uint4 cubemapFaceIndex[6];
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)

@@ -33,10 +33,12 @@ void SamplerState::InvalidateDeviceObjects()
 Texture::Texture()
 	:texture(NULL)
 	,mainShaderResourceView(NULL)
+	,arrayShaderResourceView(nullptr)
 	,layerShaderResourceViews(NULL)
 	,mainMipShaderResourceViews(NULL)
 	,layerMipShaderResourceViews(NULL)
-	,unorderedAccessViews(NULL)
+	,mipUnorderedAccessViews(NULL)
+	,layerMipUnorderedAccessViews(NULL)
 	,depthStencilView(NULL)
 	,renderTargetViews(NULL)
 	,stagingBuffer(NULL)
@@ -72,6 +74,48 @@ void Texture::FreeRTVTables()
 	}
 }
 
+void Texture::InitUAVTables(int l,int m)
+{
+	mipUnorderedAccessViews			=nullptr;
+	if(m&&dim<3)
+		mipUnorderedAccessViews		=new ID3D11UnorderedAccessView*[m];		// UAV's for whole texture at different mips.
+	layerMipUnorderedAccessViews	=nullptr;
+	if(l&&m)
+	{
+		layerMipUnorderedAccessViews	=new ID3D11UnorderedAccessView**[l];			
+		for(int i=0;i<l;i++)
+		{
+			layerMipUnorderedAccessViews[i]=new ID3D11UnorderedAccessView*[m];	// UAV's for each layer at different mips.
+		}
+	}
+}
+
+void Texture::FreeUAVTables()
+{
+	if(mipUnorderedAccessViews)
+	{
+		for(int j=0;j<mips;j++)
+		{
+			SAFE_RELEASE(mipUnorderedAccessViews[j]);
+		}
+		delete [] mipUnorderedAccessViews;
+	}
+	mipUnorderedAccessViews=nullptr;
+	if(layerMipUnorderedAccessViews)
+	{
+		for(int i=0;i<arraySize;i++)
+		{
+			for(int j=0;j<mips;j++)
+			{
+				SAFE_RELEASE(layerMipUnorderedAccessViews[i][j]);
+			}
+			delete [] layerMipUnorderedAccessViews[i];
+		}
+		delete [] layerMipUnorderedAccessViews;
+		layerMipUnorderedAccessViews=nullptr;
+	}
+}
+
 void Texture::InitRTVTables(int l,int m)
 {
 	renderTargetViews=nullptr;
@@ -83,24 +127,10 @@ void Texture::InitRTVTables(int l,int m)
 	}
 }
 
-int Texture::GetNumUav() const
-{
-	if(cubemap)
-		return 6;
-	else
-		return mips;
-}
-
 void Texture::InvalidateDeviceObjects()
 {
 	FreeRTVTables();
-	if(unorderedAccessViews)
-	{
-		for(int i=0;i<GetNumUav();i++)
-			SAFE_RELEASE(unorderedAccessViews[i]);
-		delete [] unorderedAccessViews;
-		unorderedAccessViews=NULL;
-	}
+	FreeUAVTables();
 	FreeSRVTables();
 	if(last_context&&mapped.pData)
 	{
@@ -126,6 +156,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	const std::vector<std::string> &pathsUtf8=renderPlatform->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
 	SAFE_RELEASE(mainShaderResourceView);
+	SAFE_RELEASE(arrayShaderResourceView);
 	mainShaderResourceView	=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8,pathsUtf8);
 	SetDebugObjectName(texture,pFilePathUtf8);
 }
@@ -193,6 +224,52 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 bool Texture::IsValid() const
 {
 	return (mainShaderResourceView!=NULL);
+}
+
+ID3D11ShaderResourceView *Texture::AsD3D11ShaderResourceView(crossplatform::ShaderResourceType t,int index,int mip)
+{
+#ifdef _DEBUG
+	if(index>=arraySize||mip>=mips)
+	{
+		SIMUL_BREAK_ONCE("AsD3D11UnorderedAccessView: mip or index out of range");
+		return NULL;
+	}
+#endif
+	if(mips<=1&&arraySize<=1||(index<0&&mip<0))
+	{
+		if(IsCubemap()&&t==crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY)
+			return arrayShaderResourceView;
+		return mainShaderResourceView;
+	}
+	if(layerShaderResourceViews&&(mip<0||mips<=1))
+	{
+		if(index<0||arraySize<=1)
+			return mainShaderResourceView;
+		return layerShaderResourceViews[index];
+	}
+	if(mainMipShaderResourceViews&&index<0)
+		return mainMipShaderResourceViews[mip];
+	if(layerMipShaderResourceViews)
+		return layerMipShaderResourceViews[index][mip];
+	
+	return nullptr;
+}
+
+ID3D11UnorderedAccessView *Texture::AsD3D11UnorderedAccessView(int index,int mip)
+{
+	if(mip<0)
+	{
+		mip=0;
+	}
+	if(index<0)
+	{
+		if(mipUnorderedAccessViews)
+			return mipUnorderedAccessViews[mip];		// UAV for the whole texture at various mips
+		else index=0;
+	}
+	if(!layerMipUnorderedAccessViews)
+		return NULL;
+	return layerMipUnorderedAccessViews[index][mip];
 }
 
 void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels)
@@ -319,19 +396,21 @@ void Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT dxgi_format)
 		D3D11_CPU_ACCESS_WRITE,
 		0
 	};
+	exit(1);
 	width=w;
 	length=l;
 	dim=2;
 	SAFE_RELEASE(texture);
 	pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)&(texture));
 	SAFE_RELEASE(mainShaderResourceView);
+	SAFE_RELEASE(arrayShaderResourceView);
 	pd3dDevice->CreateShaderResourceView(texture,NULL,&mainShaderResourceView);
 	SAFE_RELEASE(stagingBuffer);
 }
 
 bool Texture::IsComputable() const
 {
-	return unorderedAccessViews!=nullptr;
+	return (mipUnorderedAccessViews!=nullptr||layerMipUnorderedAccessViews!=nullptr);
 }
 
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt)
@@ -339,7 +418,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPla
 	InitFromExternalD3D11Texture2D(renderPlatform,(ID3D11Texture2D*)t,(ID3D11ShaderResourceView*)srv,make_rt);
 }
 
-void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt)
+void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt)
 {
 	// If it's the same as before, return.
 	if ((texture == t && srv==mainShaderResourceView) && mainShaderResourceView != NULL && (!make_rt || renderTargetViews == NULL))
@@ -347,8 +426,9 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *rend
 	// If it's the same texture, and we created our own srv, that's fine, return.
 	if (texture!=NULL&&texture == t&&mainShaderResourceView != NULL&&srv == NULL)
 		return;
-	if(mainShaderResourceView)
+	renderPlatform=r;
 		SAFE_RELEASE(mainShaderResourceView);
+	SAFE_RELEASE(arrayShaderResourceView);
 	SAFE_RELEASE(texture);
 	texture=t;
 	mainShaderResourceView=srv;
@@ -362,25 +442,17 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *rend
 		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
 		{
 			ppd->GetDesc(&textureDesc);
+			FreeSRVTables();
+			// ASSUME it's a cubemap if it's an array of six.
+			cubemap=(textureDesc.ArraySize==6);
 			dxgi_format=textureDesc.Format;
 			pixelFormat=RenderPlatform::FromDxgiFormat(textureDesc.Format);
 			width=textureDesc.Width;
 			length=textureDesc.Height;
 			if(!srv)
 			{
-				D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-				ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-				srv_desc.ViewDimension			=(textureDesc.ArraySize==6)?D3D_SRV_DIMENSION_TEXTURECUBE:D3D11_SRV_DIMENSION_TEXTURE2D;
-				srv_desc.Texture2D.MipLevels	=textureDesc.MipLevels;
-				srv_desc.Texture2D.MostDetailedMip = 0;
-				if (IsTypeless(textureDesc.Format,true))
-					srv_desc.Format					=TypelessToSrvFormat(textureDesc.Format);
-				else
-					srv_desc.Format					=textureDesc.Format;
-				V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&srv_desc, &mainShaderResourceView));
-				
-				//FreeSRVTables();
-				//InitSRVTables(textureDesc.ArraySize,textureDesc.MipLevels);
+				InitSRVTables(textureDesc.ArraySize,textureDesc.MipLevels);
+				CreateSRVTables(textureDesc.ArraySize,textureDesc.MipLevels,cubemap);
 				arraySize=textureDesc.ArraySize;
 				mips=textureDesc.MipLevels;
 			}
@@ -483,8 +555,10 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 			V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &srv_desc, &mainMipShaderResourceViews[j]));
 		}
 	}
-	if(computable&&(!unorderedAccessViews||!ok))
+	if(computable&&(!layerMipUnorderedAccessViews||!ok))
 	{
+		FreeUAVTables();
+		InitUAVTables(1,m);// 1 layer, m mips.
 		changed=true;
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
@@ -494,26 +568,11 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		uav_desc.Texture3D.WSize	= d;
 		uav_desc.Texture3D.FirstWSlice=0;
 		
-		D3D11_SHADER_RESOURCE_VIEW_DESC mip_srv_desc;
-		ZeroMemory(&mip_srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		mip_srv_desc.Format						= f;
-		mip_srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
-		mip_srv_desc.Texture3D.MipLevels		= 1;
-		mip_srv_desc.Texture3D.MostDetailedMip	= 0;
-
-		if(unorderedAccessViews)
-		{
-			for(int i=0;i<GetNumUav();i++)
-				SAFE_RELEASE(unorderedAccessViews[i]);
-			delete [] unorderedAccessViews;
-			unorderedAccessViews=NULL;
-		}
-		unorderedAccessViews=new ID3D11UnorderedAccessView*[m];
-		if(unorderedAccessViews)
+		if(layerMipUnorderedAccessViews)
 		for(int i=0;i<m;i++)
 		{
 			uav_desc.Texture3D.MipSlice=i;
-			V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessViews[i]));
+			V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][i]));
 			uav_desc.Texture3D.WSize/=2;
 		}
 	}
@@ -632,34 +691,36 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 		srv_desc.Texture2D.MipLevels		=m;
 		srv_desc.Texture2D.MostDetailedMip	=0;
 		SAFE_RELEASE(mainShaderResourceView);
+		SAFE_RELEASE(arrayShaderResourceView);
 		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&mainShaderResourceView));
 		SetDebugObjectName(mainShaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat mainShaderResourceView");
 	}
-	if(computable&&(!unorderedAccessViews||!ok))
+	if(computable&&(!layerMipUnorderedAccessViews||!ok))
 	{
+		FreeUAVTables();
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
 		uav_desc.Format						=texture2dFormat;
 		uav_desc.ViewDimension				=D3D11_UAV_DIMENSION_TEXTURE2D;
 		uav_desc.Texture2D.MipSlice			=0;
 		
-		if(unorderedAccessViews)
-		{
-			for(int i=0;i<GetNumUav();i++)
-				SAFE_RELEASE(unorderedAccessViews[i]);
-			delete [] unorderedAccessViews;
-			unorderedAccessViews=NULL;
-		}
 		if(m<1)
 			m=1;
-		unorderedAccessViews=new ID3D11UnorderedAccessView*[m];
-		if(unorderedAccessViews)
+		InitUAVTables(1,m);
+		if(mipUnorderedAccessViews)
 		for(int i=0;i<m;i++)
 		{
 			uav_desc.Texture2D.MipSlice=i;
-			V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessViews[i]));
-			SetDebugObjectName(unorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
+			SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
+		if(layerMipUnorderedAccessViews)
+		for(int i=0;i<m;i++)
+		{
+			uav_desc.Texture2D.MipSlice=i;
+			V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][i]));
+			SetDebugObjectName(layerMipUnorderedAccessViews[0][i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+	}
 	}
 	if(rendertarget&&(!renderTargetViews||!ok))
 	{
@@ -767,6 +828,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	FreeRTVTables();
 	InitSRVTables(num,m);
 
+	FreeUAVTables();
 	
 	CreateSRVTables(num,m,cubemap);
 
@@ -778,36 +840,25 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		uav_desc.ViewDimension					=D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
 		uav_desc.Texture2DArray.ArraySize		=num;
 		uav_desc.Texture2DArray.FirstArraySlice	=0;
-		if(unorderedAccessViews)
+		InitUAVTables(num,m);
+		if(mipUnorderedAccessViews)
+		for(int i=0;i<m;i++)
 		{
-			for(int i=0;i<GetNumUav();i++)
-				SAFE_RELEASE(unorderedAccessViews[i]);
-			delete [] unorderedAccessViews;
-			unorderedAccessViews=NULL;
+			uav_desc.Texture2DArray.MipSlice=i;
+			V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
+			SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
-		if(cubemap)
+		if(layerMipUnorderedAccessViews)
+		for(int i=0;i<num;i++)
+		for(int j=0;j<m;j++)
 		{
-			unorderedAccessViews=new ID3D11UnorderedAccessView*[6];
-			if(unorderedAccessViews)
-			for(int i=0;i<6;i++)
-			{
-				uav_desc.Texture2DArray.ArraySize	=1;
 				uav_desc.Texture2DArray.FirstArraySlice=i;
-
-				V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessViews[i]));
+			uav_desc.Texture2DArray.ArraySize=1;
+			uav_desc.Texture2DArray.MipSlice=j;
+			V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[i][j]));
+			SetDebugObjectName(layerMipUnorderedAccessViews[i][j],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 			}
 		}
-		else if(m>0)
-		{
-			unorderedAccessViews=new ID3D11UnorderedAccessView*[m];
-			if(unorderedAccessViews)
-			for(int i=0;i<m;i++)
-			{
-				uav_desc.Texture2DArray.MipSlice=i;
-				V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessViews[i]));
-			}
-		}
-	}
 	if(rendertarget)
 	{
 		InitRTVTables(num, m);
@@ -840,14 +891,40 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap)
 {
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
-	SRVDesc.Format						=dxgi_format;
-	SRVDesc.ViewDimension				=cubemap?D3D11_SRV_DIMENSION_TEXTURECUBE:D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+	SRVDesc.Format						= TypelessToSrvFormat(dxgi_format);
+	SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURE2D;
+	if(cubemap)
+	{
+		SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURECUBE;
 	SRVDesc.TextureCube.MipLevels		=m;
 	SRVDesc.TextureCube.MostDetailedMip =0;
-	
+	}
+	else if(num>1)
+	{
+		SRVDesc.ViewDimension					=D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		SRVDesc.Texture2DArray.ArraySize		=num;
+		SRVDesc.Texture2DArray.FirstArraySlice	=0;		
+		SRVDesc.Texture2DArray.MipLevels		=m;
+		SRVDesc.Texture2DArray.MostDetailedMip	=0;
+	}
+	else
+	{ 
+		SRVDesc.Texture2D.MipLevels				=m;
+		SRVDesc.Texture2D.MostDetailedMip		 =0;
+	}
 	SAFE_RELEASE(mainShaderResourceView);
-	V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,cubemap?&SRVDesc:NULL,&mainShaderResourceView));
+	V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&SRVDesc,&mainShaderResourceView));
 	
+	SAFE_RELEASE(arrayShaderResourceView);
+	if(cubemap)
+	{
+		SRVDesc.ViewDimension=D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		SRVDesc.Texture2DArray.ArraySize=6;
+		SRVDesc.Texture2DArray.FirstArraySlice=0;
+		SRVDesc.Texture2DArray.MipLevels=m;
+		SRVDesc.Texture2DArray.MostDetailedMip=0;
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&SRVDesc, &arrayShaderResourceView));
+	}
 	if(mainMipShaderResourceViews)
 	for(int j=0;j<m;j++)
 	{
@@ -859,7 +936,7 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC face_srv_desc;
 		ZeroMemory(&face_srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		face_srv_desc.Format					= dxgi_format;
+		face_srv_desc.Format					= SRVDesc.Format;
 		face_srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 		for(int i=0;i<num;i++)
 		{
@@ -936,31 +1013,28 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 			V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &srv_desc, &mainMipShaderResourceViews[j]));
 		}
 	}
-	if(computable&&(!unorderedAccessViews||!ok))
+	if(computable&&(!layerMipUnorderedAccessViews||!ok))
 	{
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
 		uav_desc.Format				= f;
 		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE1D;
 		uav_desc.Texture1D.MipSlice	= 0;
-		if(unorderedAccessViews)
+		
+		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+		uav_desc.Format							=dxgi_format;
+		uav_desc.ViewDimension					=D3D11_UAV_DIMENSION_TEXTURE1D;
+		InitUAVTables(1,m);
+		if(layerMipUnorderedAccessViews)
+		for(int j=0;j<m;j++)
 		{
-			for(int i=0;i<GetNumUav();i++)
-				SAFE_RELEASE(unorderedAccessViews[i]);
-			delete [] unorderedAccessViews;
-			unorderedAccessViews=NULL;
+			uav_desc.Texture1D.MipSlice=j;
+			V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][j]));
+			SetDebugObjectName(layerMipUnorderedAccessViews[0][j],"dx11::Texture::ensureTexture1DSizeAndFormat unorderedAccessView");
 		}
-		if(m>0)
-		{
-			unorderedAccessViews=new ID3D11UnorderedAccessView*[m];
-			if(unorderedAccessViews)
-			for(int i=0;i<m;i++)
-			{
-				uav_desc.Texture2DArray.MipSlice=i;
-				V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessViews[i]));
+
+
 			}
-		}
-	}
 	mips=m;
 }
 
@@ -1162,6 +1236,7 @@ void Texture::InitSRVTables(int l,int m)
 
 void Texture::FreeSRVTables()
 {
+	SAFE_RELEASE(arrayShaderResourceView);
 	SAFE_RELEASE(mainShaderResourceView);
 	for(int i=0;i<arraySize;i++)
 	{

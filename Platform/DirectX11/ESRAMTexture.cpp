@@ -102,30 +102,28 @@ ID3D11Texture2D *ESRAMTexture::AsD3D11Texture2D()
 	else
 		return (ID3D11Texture2D*)texture;
 }
-ID3D11ShaderResourceView *ESRAMTexture::AsD3D11ShaderResourceView(int index,int mip)
+ID3D11ShaderResourceView *ESRAMTexture::AsD3D11ShaderResourceView(crossplatform::ShaderResourceType t,int index,int mip)
 {
 	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );   
 	if(in_esram)
 	{
 		return esramTextureData.m_pESRAMSRV;
 	}
-	return dx11::Texture::AsD3D11ShaderResourceView(index,mip);
+	return dx11::Texture::AsD3D11ShaderResourceView(t,index,mip);
 }
 
-ID3D11UnorderedAccessView *ESRAMTexture::AsD3D11UnorderedAccessView(int mip)
+ID3D11UnorderedAccessView *ESRAMTexture::AsD3D11UnorderedAccessView(int index,int mip)
 {
 	if(mip<0)
 		mip=0;
 	if(mip>=mips)
-		return NULL;
-	if(!unorderedAccessViews)
 		return NULL;
 	eSRAMManager->InsertGPUWait( esramTextureData.m_esramResource );   
 	if(in_esram)
 	{
 		return esramTextureData.m_pESRAMUAV;
 	}
-	return dx11::Texture::AsD3D11UnorderedAccessView(mip);
+	return dx11::Texture::AsD3D11UnorderedAccessView(index,mip);
 }
 
 ID3D11DepthStencilView *ESRAMTexture::AsD3D11DepthStencilView()

@@ -19,10 +19,11 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT GpuProfilingInterface:public base::BaseProfilingInterface
 		{
 		public:
+			virtual void InvalidateDeviceObjects() =0;
 			//! Mark the start of a render profiling block. Some API's require a context pointer.
 			virtual void Begin(crossplatform::DeviceContext &deviceContext,const char *)=0;
 			//! Mark the end of the current render profiling block.
-			virtual void End()=0;
+			virtual void End(crossplatform::DeviceContext &deviceContext)=0;
 			//! Call this at the start of the frame to reset values.
 			virtual void StartFrame(crossplatform::DeviceContext &deviceContext)=0;
 			//! Call this at the end of the frame to prepare the data to be read.
@@ -86,9 +87,9 @@ namespace simul
 			/// Call this when the profiler is to be initialized with a device pointer - must be done before use.
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			/// Call this when the profiler is to be shut-down, or the device pointer has been lost or changed.
-			virtual void InvalidateDeviceObjects();
+			virtual void InvalidateDeviceObjects() override;
 			virtual void Begin(crossplatform::DeviceContext &deviceContext,const char *) override;
-			virtual void End() override;
+			virtual void End(crossplatform::DeviceContext &deviceContext) override;
 			/// Call this before any timeable events in a frame.
 			virtual void StartFrame(crossplatform::DeviceContext &deviceContext) override;
 			/// Call this after all timeable events in a frame have completed. It is acceptable
@@ -96,7 +97,7 @@ namespace simul
 			virtual void EndFrame(crossplatform::DeviceContext &deviceContext) override;
 			virtual const char *GetDebugText(simul::base::TextStyle st = simul::base::PLAINTEXT) const override;
 		
-			const base::ProfileData *GetEvent(const base::ProfileData *parent,int i) const;
+			const base::ProfileData *GetEvent(const base::ProfileData *parent,int i) const override;
 			std::string GetChildText(const char *name,std::string tab) const;
 
 			float GetTime(const std::string &name) const;
@@ -126,6 +127,7 @@ bool enabled;
 			crossplatform::DeviceContext* context;
 			std::string name;
 		};
+		extern SIMUL_CROSSPLATFORM_EXPORT void ClearGpuProfilers();
 	}
 }
 
@@ -147,7 +149,7 @@ bool enabled;
 		#define SIMUL_GPU_PROFILE_END(ctx) \
 			{simul::crossplatform::GpuProfilingInterface *gpuProfilingInterface=simul::crossplatform::GetGpuProfilingInterface(ctx); \
 			if(gpuProfilingInterface) \
-				gpuProfilingInterface->End();}
+				gpuProfilingInterface->End(ctx);}
 		
 		#define SIMUL_COMBINED_PROFILE_START(ctx,name) \
 			SIMUL_GPU_PROFILE_START(ctx,name) \

@@ -2,6 +2,7 @@
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/Topology.h"
+#include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Base/RuntimeError.h"
 #include <string>
 #include <map>
@@ -42,36 +43,6 @@ namespace simul
 			SHADERTYPE_COUNT
 		};
 		//! This 
-		enum class ShaderResourceType
-		{
-			TEXTURE_1D
-			,TEXTURE_2D        
-			,TEXTURE_3D        
-			,TEXTURE_CUBE      
-			,SAMPLER          
-			,BUFFER           
-			,CBUFFER          
-			,TBUFFER          
-			,TEXTURE_1D_ARRAY   
-			,TEXTURE_2D_ARRAY   
-			,TEXTURE_2DMS      
-			,TEXTURE_2DMS_ARRAY 
-			,TEXTURE_CUBE_ARRAY 
-			,RW_TEXTURE_1D
-			,RW_TEXTURE_1D_ARRAY
-			,RW_TEXTURE_2D
-			,RW_TEXTURE_2D_ARRAY
-			,RW_TEXTURE_3D
-			,RW_BUFFER
-			,BYTE_ADDRESS_BUFFER
-			,RW_BYTE_ADDRESS_BUFFER
-			,STRUCTURED_BUFFER
-			,RW_STRUCTURED_BUFFER
-			,APPEND_STRUCTURED_BUFFER
-			,CONSUME_STRUCTURED_BUFFER
-			,COUNT  
-		};
-		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
 		enum ShaderBuildMode
 		{
 			NEVER_BUILD=0
@@ -580,10 +551,10 @@ namespace simul
 			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
 			//! Set the texture for read-write access by compute shaders in this effect.
-			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int mip=-1)	=0;
+			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int index=-1,int mip=-1)	=0;
 			virtual ShaderResource GetShaderResource(const char *name)=0;
 			//! Set the texture for read-write access by compute shaders in this effect.
-			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,ShaderResource &name,Texture *tex,int mip=-1)	=0;
+			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,ShaderResource &name,Texture *tex,int index=-1,int mip=-1)	=0;
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
 			virtual void SetTexture		(DeviceContext &deviceContext,ShaderResource &name	,Texture *tex,int array_idx=-1,int mip=-1)=0;
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
