@@ -48,10 +48,11 @@ namespace simul
 		{
 			for(auto i:gpuProfilingInterface)
 			{
-				i.second->InvalidateDeviceObjects();
-	}
+				if(i.second)
+					i.second->InvalidateDeviceObjects();
+			}
 			gpuProfilingInterface.clear();
-}
+		}
 	}
 }
 
