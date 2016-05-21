@@ -322,7 +322,7 @@ void Lightpass(uint3 pos,bool depth)
 
 	float ls_angle			=asin(lightspaceView.z);
 	vec3 volumeTexCoordsXyC	=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*ls_angle/pi),max(0.3,cos(ls_angle)));
-
+#ifndef _XBOX_ONE
 	FarNearPixelOutput f	=Lightpass(cloudDensity
 										,noiseTexture3D
 										,dlookup
@@ -335,6 +335,11 @@ void Lightpass(uint3 pos,bool depth)
 										,maxRadiusKm
 										,irradianceThreshold
 										);
+#else
+	FarNearPixelOutput f;
+	f.farColour=vec4(0,0,0,0);
+	f.nearColour=vec4(0,0,0,0);
+#endif
 	outputTexture1[pos]		=f.farColour;
 	outputTexture2[pos]		=f.nearColour;
 }

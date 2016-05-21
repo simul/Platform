@@ -69,6 +69,7 @@
     <FxCompile />
     <FxCompile>
       <ObjectFileOutput>$(OutDir)%(Filename).fxo</ObjectFileOutput>
+      <PreprocessorDefinitions>_XBOX_ONE</PreprocessorDefinitions>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -125,6 +126,7 @@
       <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</DisableOptimizations>
       <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</EnableDebuggingInformation>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <SuppressStartupBanner Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</SuppressStartupBanner>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="..\CrossPlatform\SFX\clouds.sfx">
@@ -132,7 +134,6 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-      <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</DisableOptimizations>
       <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</EnableDebuggingInformation>
     </FxCompile>
     <FxCompile Include="..\CrossPlatform\SFX\debug.sfx">
