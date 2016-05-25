@@ -26,9 +26,9 @@ void AmortizationStruct::setAmortization(int a)
 	std::vector<uint3> src;
 	src.reserve(sz);
 	int n=0;
-	for(int i=0;i<xyz.x;i++)
+	for(unsigned i=0;i<xyz.x;i++)
 	{
-		for(int j=0;j<xyz.y;j++)
+		for(unsigned j=0;j<xyz.y;j++)
 		{
 			uint3 v(i,j,0);
 			src.push_back(v);
