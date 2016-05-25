@@ -31,8 +31,7 @@
 #ifdef SIMUL_ENABLE_PIX
 #include "pix.h"
 #endif
-#ifdef SIMUL_WIN8_SDK
-#endif
+
 #include "Simul/Platform/DirectX11/Utilities.h"
 
 using namespace simul;

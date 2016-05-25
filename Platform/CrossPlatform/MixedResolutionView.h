@@ -93,14 +93,14 @@ namespace simul
 			crossplatform::RenderPlatform				*renderPlatform;
 		public:
 			/// Width of the screen.
-			int								ScreenWidth;
+			int											ScreenWidth;
 			/// Height of the screen.
-			int								ScreenHeight;
-			int								Downscale;
-			int								last_framenumber;
+			int											ScreenHeight;
+			int											Downscale;
+			int											last_framenumber;
 		public:
 			/// true to use external framebuffer.
-			bool							useExternalFramebuffer;
+			bool										useExternalFramebuffer;
 		};
 
 		/// A class to store a set of MixedResolutionView objects, one per view id.

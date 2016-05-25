@@ -110,7 +110,6 @@ namespace simul
 			float queryTime;
 			crossplatform::RenderPlatform *renderPlatform;
 bool enabled;
- 			std::vector<std::string> last_name;
 			std::vector<crossplatform::DeviceContext *> last_context;
 		};
 		class ProfileBlock

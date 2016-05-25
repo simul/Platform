@@ -15,6 +15,41 @@ namespace simul
 			/// Depth textures are interpreted as representing a linear distance in the z-direction from the near clipping plane.
 			,DISTANCE_FROM_NEAR_PLANE
 		};
+		// NVCHANGE_BEGIN: TrueSky + VR MultiRes Support
+		struct MultiResViewport
+		{
+			vec2 TopLeft;
+			vec2 Size;
+		};
+		struct MultiResScissorRect
+		{
+			vec2 Min;
+			vec2 Max;
+		};
+		struct MultiResConstants
+		{
+			vec2 multiResToLinearSplitsX;
+			vec2 multiResToLinearSplitsY;
+			vec2 multiResToLinearX0;
+			vec2 multiResToLinearX1;
+			vec2 multiResToLinearX2;
+			vec2 multiResToLinearY0;
+			vec2 multiResToLinearY1;
+			vec2 multiResToLinearY2;
+
+			vec2 linearToMultiResSplitsX;
+			vec2 linearToMultiResSplitsY;
+			vec2 linearToMultiResX0;
+			vec2 linearToMultiResX1;
+			vec2 linearToMultiResX2;
+			vec2 linearToMultiResY0;
+			vec2 linearToMultiResY1;
+			vec2 linearToMultiResY2;
+
+			MultiResViewport multiResViewports[9];
+			MultiResScissorRect multiResScissorRects[9];
+		};
+		// NVCHANGE_END: TrueSky + VR MultiRes Support
 		/// A simple struct encapsulating a view and a projection matrix.
 		struct ViewStruct
 		{

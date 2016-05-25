@@ -315,8 +315,6 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,nearDist);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
-//vec3 view = normalize(mul(invViewProj, IN.clip_pos).xyz);
-//result.add.rgb=saturate(view);
 	return result;
 }
 

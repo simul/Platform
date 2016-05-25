@@ -512,12 +512,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec3 offset_vec			=vec3(0,0,0);
 	//if(world_pos.z<min_z)
 	{
-		float a		=1.0/(view.z+0.00001);
+		float a		=1.0/(saturate(view.z)+0.00001);
 		offset_vec	+=max(0.0,min_z-world_pos.z)*vec3(view.x*a,view.y*a,1.0);
 	}
 	//if(view.z<0&&world_pos.z>max_z)
 	{
-		float a		=1.0/(-view.z+0.00001);
+		float a		=1.0/(saturate(-view.z)+0.00001);
 		offset_vec	+=max(0.0,world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
 	}
 	vec3 halfway					=0.5*(lightDir-view);

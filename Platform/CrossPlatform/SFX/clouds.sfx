@@ -1,11 +1,17 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+
+// Recommended by D Cook of MS to fix Xbox compiler crash:
+#define __XBOX_DISABLE_ITERATION
+
 #include "shader_platform.sl"
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/simul_cloud_constants.sl"
 #include "../SL/depth.sl"
+
 uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
+
 #include "../SL/simul_clouds.sl"
 #include "../SL/clouds_simple.sl"
 #include "../SL/states.sl"
@@ -64,8 +70,6 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	
 	volumeQueries[sub_pos.x]		=res;
 }
-
-
 
 CS_LAYOUT(1,1,1)
 shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
@@ -294,7 +298,7 @@ void Raytrace(uint3 pos,bool include_rain,bool depth)
 	c.rgb					+=f.colour.rgb;
 
 	c.a						=t2d.a*f.colour.a;
-
+	
 	outputTexture1[pos]		=c;
 	float n					=float(dlookup.y>=1.0);
 	vec4 cn					=t2d;
@@ -322,7 +326,7 @@ void Lightpass(uint3 pos,bool depth)
 
 	float ls_angle			=asin(lightspaceView.z);
 	vec3 volumeTexCoordsXyC	=vec3(atan2(lightspaceView.x,lightspaceView.y)/(2.0*pi),0.5*(1.0+2.0*ls_angle/pi),max(0.3,cos(ls_angle)));
-#ifndef _XBOX_ONE
+#if 1//ndef _XBOX_ONE
 	FarNearPixelOutput f	=Lightpass(cloudDensity
 										,noiseTexture3D
 										,dlookup
@@ -357,8 +361,6 @@ void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rai
 		return;
 	if(updateTexture[pos].b==0.0)
 		return;
-	//outputTexture1[idx]		=vec4(0,1,0,1);
-	//outputTexture2[pos]		=vec4(1,1,0,1);
 	Raytrace(pos,include_rain,depth);
 }
 

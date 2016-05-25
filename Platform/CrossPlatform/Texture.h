@@ -96,7 +96,7 @@ namespace simul
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
 			//! Returns the RTV specified by layer,mip. Layer -1 means all layers at the given mip, while mip -1 defaults to mip zero.
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(int=-1,int=-1){return 0;}
-			virtual bool HasRenderTargets() const{return 0;}
+			virtual bool HasRenderTargets() const {return 0;}
 			virtual bool IsComputable() const=0;
 			/// Asynchronously move this texture to fast RAM.
 			/// Some hardware has "fast RAM" that we can prefetch textures into.

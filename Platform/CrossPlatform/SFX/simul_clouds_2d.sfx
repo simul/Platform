@@ -411,9 +411,9 @@ shader void CS_Clouds2D_Cubemap(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 	int2 idx		=int2(g.xy*8+t.xy);
 	uint2 offset	=(amortizationOffset.xy+idx)%amortizationScale.xy;
 	uint2 pos		=targetRange.xy+idx*amortizationScale.xy+offset;
-	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
-		return;
-//	outputTexture[pos]=vec4(0,0,1,1);
+//	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
+//		return;
+	//outputTexture[pos]=vec4(0,0,1,1);
 	CSClouds2D(pos,false);
 }
 

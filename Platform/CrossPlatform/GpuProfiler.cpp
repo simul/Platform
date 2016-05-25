@@ -230,6 +230,9 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 
 void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 {
+	SIMUL_ASSERT_WARN_ONCE(level==0,"level not zero at StartFrame")
+	if(level!=0)
+        return;
 	base::BaseProfilingInterface::StartFrame();
     for(auto iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
@@ -240,7 +243,9 @@ void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 
 void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 {
-	SIMUL_ASSERT(level==0)
+	SIMUL_ASSERT_WARN_ONCE(level==0,"level not zero at EndFrame")
+	if(level!=0)
+        return;
     if(!root||!enabled||!renderPlatform)
         return;
 
