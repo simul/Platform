@@ -527,7 +527,11 @@ crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
 	crossplatform::Texture * tex=new opengl::Texture;
 	if(fileNameUtf8&&strlen(fileNameUtf8)>0&&strcmp(fileNameUtf8,"ESRAM")!=0)
-		tex->LoadFromFile(this,fileNameUtf8);
+	{
+		std::string str(fileNameUtf8);
+		if(str.find(".")<str.length())
+			tex->LoadFromFile(this,fileNameUtf8);
+	}
 	return tex;
 }
 

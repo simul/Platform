@@ -371,12 +371,7 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 	rain_texc.xy		+=rain_texc.z*rainTangent;
 	float rain_lookup	=sample_3d_lod(rainMapTexture,cloudSamplerState,rain_texc.xy*inverseScalesKm.xy,0).x;
 	//vec4 streak			=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
-	return				rain_lookup
-							*saturate((rainRadiusKm-length(world_pos_km.xy-rainCentreKm.xy))*3.0)
-							*saturate(1.0-cloudWorldOffsetKm.z/1.0)
-							*saturate(cloudWorldOffsetKm.z/4.0+1.0)//+4.0*streak.y)
-							//*(0.4+0.6*streak.x)
-							;
+	return				rain_lookup*saturate((rainRadiusKm-length(world_pos_km.xy-rainCentreKm.xy))*3.0)*saturate(1.0-cloudWorldOffsetKm.z/1.0)*saturate(cloudWorldOffsetKm.z/4.0+1.0);
 }
 
 void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDistance,inout float brightness_factor
@@ -400,7 +395,7 @@ void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDist
 		if (noise)
 			clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
 											,density
-											,BetaClouds//+blinn_phong
+											,BetaClouds
 											,lightResponse
 											,ambientColour
 											,world_pos

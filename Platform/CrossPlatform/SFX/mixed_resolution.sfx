@@ -48,7 +48,7 @@ vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture
 			// VERY important to use NEAREST, and not filter the source depth texture!
 			vec2 d		=texture_nearest_lod(sourceDepthTexture,texc,0).xx;
 			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
-			float s		=saturate((dist)/thr);
+			float s		=saturate((dist.x)/thr.x);
 			fn.yw		=min(fn.yw,vec2((1.0-s),0.0)+dist);
 			fn.xz		=max(fn.xz,dist);
 			//	fn.xz		=max(fn.xz,dist);
@@ -58,7 +58,7 @@ vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture
 	return fn;
 }
 
-vec4 GetFrustumClipPos(int2 idx)
+vec4 GetFrustumClipPos(uint2 idx)
 {
 	vec2 texCoords			=(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
@@ -123,7 +123,7 @@ void DownscaleStochastic(uint2 idx1,bool reverseDepth)
 	nextUpdateTexture[idx]	=vec4(u.b,0,1.0,0);
 }
 
-void Direct(int2 idx,bool reverseDepth) 
+void Direct(uint2 idx,bool reverseDepth) 
 {
 	vec4 frustum_clip_pos			=GetFrustumClipPos(idx);
 	vec2 sourceTexCoords			=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
@@ -141,28 +141,28 @@ void Direct(int2 idx,bool reverseDepth)
 CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
 shader void CS_Direct_ReverseDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
 {
-	int2 idx				=int2(g.xy*BLOCKSIZE+t.xy);
+	uint2 idx				=uint2(g.xy*BLOCKSIZE+t.xy);
 	Direct(idx,true);
 }
 
 CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
 shader void CS_Direct_ForwardDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
 {
-	int2 idx				=int2(g.xy*BLOCKSIZE+t.xy);
+	uint2 idx				=uint2(g.xy*BLOCKSIZE+t.xy);
 	Direct(idx,false);
 }
 
 CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
 shader void CS_DownscaleStochastic_ReverseDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
 {
-	int2 idx				=int2(g.xy*BLOCKSIZE+t.xy);
+	uint2 idx				=uint2(g.xy*BLOCKSIZE+t.xy);
 	DownscaleStochastic(idx,true);
 }
 
 CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
 shader void CS_DownscaleStochastic_ForwardDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
 {
-	int2 idx				=int2(g.xy*BLOCKSIZE+t.xy);
+	uint2 idx				=uint2(g.xy*BLOCKSIZE+t.xy);
 	DownscaleStochastic(idx,false);
 }
 

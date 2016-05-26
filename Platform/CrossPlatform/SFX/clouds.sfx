@@ -39,9 +39,9 @@ uniform Texture2DArray updateTexture;
 uniform RWTexture3D<uchar4> inputTexture3d;
 uniform RWTexture3D<uchar4> outputTexture3d;
 
-RWTexture2DArray<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
-RWTexture2DArray<vec4> outputTexture2		SIMUL_RWTEXTURE_REGISTER(1);
-RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);
+uniform RWTexture2DArray<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture2DArray<vec4> outputTexture2		SIMUL_RWTEXTURE_REGISTER(1);
+uniform RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);
 
 uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries;
 
