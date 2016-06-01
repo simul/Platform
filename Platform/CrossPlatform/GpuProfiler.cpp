@@ -245,7 +245,11 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 {
 	SIMUL_ASSERT_WARN_ONCE(level==0,"level not zero at EndFrame")
 	if(level!=0)
+	{
+		level=0;
+		Clear();
         return;
+	}
     if(!root||!enabled||!renderPlatform)
         return;
 

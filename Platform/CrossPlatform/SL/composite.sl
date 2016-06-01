@@ -79,7 +79,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	
 
 	vec3 worldPos				=viewPos+offsetMetres;
-	float illum=1.0;
+	float illum						=1.0;
 	
 	vec3 texc			=mul(invShadowMatrix,vec4(worldPos,1.0)).xyz;
 	vec4 texel			=texture_wrap_lod(cloudShadowTexture,texc.xy,0);
