@@ -246,6 +246,12 @@
 			y*=m;
 			z*=m;
 		}
+		void operator/=(float m)
+		{
+			x/=m;
+			y/=m;
+			z/=m;
+		}
 		vec3 operator*(float m) const
 		{
 			vec3 r;

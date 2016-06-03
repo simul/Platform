@@ -279,10 +279,34 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 		sphericalHarmonicsEffect->SetUnorderedAccessView(deviceContext,"samplesBufferRW",NULL);
 		sphericalHarmonicsEffect->Unapply(deviceContext);
 	}
+	static bool test=false;
+	if(test)
+	{
+	// testing:
+		sphericalSamples.CopyToReadBuffer(deviceContext);
+		const SphericalHarmonicsSample* sam=(const SphericalHarmonicsSample* )sphericalSamples.OpenReadBuffer(deviceContext);
+		if(sam)
+		{
+			for(int i=0;i<sphericalSamples.count;i++)
+			{
+				std::cout<<i<<": "<<sam[i].dir.x<<","<<sam[i].dir.y<<","<<sam[i].dir.z;
+				for(int j=0;j<9;j++)
+				{
+					if(j)
+						std::cout<<", ";
+					std::cout<<sam[i].coeff[j];
+				}
+				std::cout<<std::endl;
+			}
+			std::cout<<std::endl;
+		}
+		sphericalSamples.CloseReadBuffer(deviceContext);
+	}
+
+
 
 	crossplatform::EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
 	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapTexture"	,buffer_texture);
-	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, "samplesBuffer");
 	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, "samplesBuffer");
 	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	
