@@ -70,9 +70,10 @@ shader vec4 PS_TestAlphaToCoverage(testOutput IN): SV_TARGET
 shader vec4 PS_Main( vertexOutput IN) : SV_TARGET
 {
 	vec4 result;
-	vec4 layer1	=texture_wwc(textureArray,vec3(IN.texcoord,0.0));
-	vec4 layer2	=texture_wwc(textureArray,vec3(IN.texcoord,1.0));
-	vec4 texel	=mix(layer1,layer2,clamp(1.0-IN.wPosition.z/100.0,0.0,1.0));
+	float interp=clamp(1.0-IN.wPosition.z/100.0,0.0,1.0);
+	vec4 layer1	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,floor(interp)));
+	vec4 layer2	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,floor(interp)+1.0));
+	vec4 texel	=mix(layer1,layer2,interp);
 	float dotp	=lightDir.z;
 	
 	float from_lightning_centre_km	=0.001*length(IN.wPosition.xy-lightningCentre.xy);
