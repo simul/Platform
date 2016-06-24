@@ -51,7 +51,10 @@ ERRNO_CHECK
 		*ppData = buf;
 		*pBytes = (UINT)fileSize;
 		if(!*ppData)
+		{
+			SIMUL_CERR<<"Can't find file "<<finalPathUtf8.c_str()<<std::endl;
 			return E_FAIL;
+		}
 		std::string pathOnly = finalPathUtf8;
 		int last_slash = (int)pathOnly.find_last_of("/");
 		int last_bslash = (int)pathOnly.find_last_of("\\");
