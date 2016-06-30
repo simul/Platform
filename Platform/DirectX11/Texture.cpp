@@ -444,7 +444,11 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 			ppd->GetDesc(&textureDesc);
 			FreeSRVTables();
 			// ASSUME it's a cubemap if it's an array of six.
-			cubemap=(textureDesc.ArraySize==6);
+			if(textureDesc.ArraySize==6)
+			{
+				cubemap=(textureDesc.ArraySize==6);
+				textureDesc.ArraySize=1;
+			}
 			dxgi_format=textureDesc.Format;
 			pixelFormat=RenderPlatform::FromDxgiFormat(textureDesc.Format);
 			width=textureDesc.Width;

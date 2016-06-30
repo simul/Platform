@@ -32,7 +32,7 @@ float factorial(int j)
 
 float K(int l,int m) 
 { 
-	static const float kval[]={0.282094792
+	const float kval[]={0.282094792
 							,0.488602512
 							,0.345494149
 							,0.630783131

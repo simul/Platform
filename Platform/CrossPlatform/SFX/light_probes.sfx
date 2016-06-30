@@ -45,7 +45,7 @@ shader vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	//A_5 = 0 
 	//A_6 = 0.049087 
 
-	static float A[]={		3.1415926
+	float A[]={		3.1415926
 						,2.094395
 						,0.785398
 						,0		
