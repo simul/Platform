@@ -216,11 +216,14 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	{
 		for(int i=0;i<texture->arraySize;i++)
 		{
-			texture->activateRenderTarget(deviceContext,i);
-			debugEffect->Apply(deviceContext,"clear",0);
-				DrawQuad(deviceContext);
-			debugEffect->Unapply(deviceContext);
-			texture->deactivateRenderTarget(deviceContext);
+			for(int j=0;j<texture->mips;j++)
+			{
+				texture->activateRenderTarget(deviceContext,i,j);
+				debugEffect->Apply(deviceContext,"clear",0);
+					DrawQuad(deviceContext);
+				debugEffect->Unapply(deviceContext);
+				texture->deactivateRenderTarget(deviceContext);
+			}
 		}
 	}
 	// Otherwise, is it computable? We can set the colour value with a compute shader.

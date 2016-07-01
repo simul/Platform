@@ -413,6 +413,11 @@ bool Texture::IsComputable() const
 	return (mipUnorderedAccessViews!=nullptr||layerMipUnorderedAccessViews!=nullptr);
 }
 
+bool Texture::HasRenderTargets() const
+{
+	return (renderTargetViews!=nullptr);
+}
+
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt)
 {
 	InitFromExternalD3D11Texture2D(renderPlatform,(ID3D11Texture2D*)t,(ID3D11ShaderResourceView*)srv,make_rt);
