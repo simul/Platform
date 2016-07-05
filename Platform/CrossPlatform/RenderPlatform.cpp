@@ -268,7 +268,9 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				}
 				else
 				{
-					//DispatchCompute(deviceContext,W,L,std::min(4,D));
+#ifndef __ORBIS__
+					DispatchCompute(deviceContext,W,L,std::min(16,D));
+#endif
 				}
 				debugEffect->Unapply(deviceContext);
 			}
