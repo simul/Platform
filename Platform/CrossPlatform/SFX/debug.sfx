@@ -428,20 +428,24 @@ shader vec4 PS_Clear(posTexVertexOutput IN) : SV_TARGET
 	return debugColour;
 }
 
-[numthreads(8,8,1)]
+[numthreads(4,4,1)]
 shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	uint2 sub_pos = g.xy * 8 + t.xy;
+	uint2 sub_pos = g.xy * 4 + t.xy;
 	if(sub_pos.x<texSize.x&&sub_pos.y<texSize.y)
-	FastClearTarget[sub_pos] = debugColour;
+	{
+		FastClearTarget[sub_pos] = debugColour;
+	}
 }
 
-[numthreads(8,8,1)]
+[numthreads(4,4,4)]
 shader void CS_Clear3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	uint3 sub_pos = g * 8 + t;
+	uint3 sub_pos = g * 4 + t;
 	if(sub_pos.x<texSize.x&&sub_pos.y<texSize.y&&sub_pos.z<texSize.z)
-	FastClearTarget3D[sub_pos] = debugColour;
+	{
+		FastClearTarget3D[sub_pos] = debugColour;
+	}
 }
 
 technique copy_2d

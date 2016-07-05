@@ -42,7 +42,7 @@ shader vertexOutput VS_Solid(vertexInput IN)
 #ifdef GLSL
     OUT.normal.xyz	=mul(mat3(world),IN.normal);
 #else
-    OUT.normal.xyz	=mul((mat3)(world),IN.normal);
+    OUT.normal.xyz	=mul(world,vec4(IN.normal,0.0)).xyz;
 #endif
 	OUT.hPosition	=OUT.clip_pos;
     return OUT;

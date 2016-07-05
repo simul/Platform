@@ -509,6 +509,21 @@ const float *Camera::MakeDepthReversedProjectionMatrix(float h,float v,float zNe
 	{
 		m._33	=zNear/(zFar-zNear);	m._34	=-1.f;
 		m._43	=zFar*zNear/(zFar-zNear);
+		// i.e. z=((n/(f-n)*d+nf/(f-n))/(-d)
+		//		 =(n+nf/d)/(f-n)
+		//		 =n(1+f/d)/(f-n)
+		// so at d=-f, z=0
+		// and at d=-n, z=(n-f)/(f-n)=-1
+
+		// suppose we say:
+		//			-Z=(n-nf/d)/(f-n)
+		// i.e.      Z=n(f/d-1)/(f-n)
+
+		// then we would have:
+		//			at d=n, Z	=n(f/n-1)/(f-n)
+		//						=(f-n)/(f-n)=1.0
+		// and at      d=f, Z	=n(f/f-1)/(f-n)
+		//						=0.
 	}
 	else // infinite far plane.
 	{
