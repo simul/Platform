@@ -31,8 +31,8 @@ namespace simul
 			AmortizationStruct()
 				:amortization(1)
 				,framenumber(0)
-				,framesPerIncrement(1)
 				,validRegion(0,0,0,0)
+				,framesPerIncrement(1)
 				,pattern(NULL)
 				,numOffsets(1)
 			{

@@ -249,6 +249,10 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",texture,i);
 				techname="compute_clear_3d";
 			}
+			else
+			{
+				SIMUL_CERR_ONCE<<("Can't clear texture dim.\n");
+			}
 			debugEffect->Apply(deviceContext,techname,0);
 			DispatchCompute(deviceContext,W,L,D);
 			debugEffect->Unapply(deviceContext);
@@ -368,12 +372,12 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	
 		// Setup the viewport for rendering.
 	Viewport viewport;
-	viewport.w		=oldv.w*size;
-	viewport.h		=oldv.h*size;
+	viewport.w		=(int)oldv.w*size;
+	viewport.h		=(int)oldv.h*size;
 	viewport.zfar	=1.0f;
 	viewport.znear	=0.0f;
-	viewport.x	=0.5f*(1.f+offsetx)*oldv.w-viewport.w/2;
-	viewport.y	=0.5f*(1.f-offsety)*oldv.h-viewport.h/2;
+	viewport.x	=(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
+	viewport.y	=(int)(0.5f*(1.f-offsety)*oldv.h-viewport.h/2);
 	SetViewports(deviceContext,1,&viewport);
 	
 	math::Matrix4x4 view=deviceContext.viewStruct.view;

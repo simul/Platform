@@ -313,7 +313,7 @@ int3 TextFileInput::Get(const char *name,int3 dflt)
 	{
 		size_t comma_pos=str.find(",",pos+1);
 		string s=str.substr(pos,comma_pos-pos);
-		val[i]=(float)atoi(s.c_str());
+		val[i]=(int)atoi(s.c_str());
 		pos=comma_pos+1;
 	}
 	int3 ret=val;
