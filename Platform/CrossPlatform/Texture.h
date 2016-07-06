@@ -69,6 +69,7 @@ namespace simul
 		/// Base class for a view of a texture (i.e. for shaders to use). TextureView instances should not be created, except inside derived classes of crossplatform::Texture.
 		class SIMUL_CROSSPLATFORM_EXPORT TextureView
 		{
+		public:
 			ShaderResourceType type;
 		};
 		/// A Texture base class.

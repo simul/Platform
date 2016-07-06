@@ -218,7 +218,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	pContext->GenerateMips(mainShaderResourceView);
 	SAFE_RELEASE(pContext)
 	mips=m;
-	arraySize=texture_files.size();
+	arraySize=(int)texture_files.size();
 }
 
 bool Texture::IsValid() const
@@ -235,7 +235,8 @@ ID3D11ShaderResourceView *Texture::AsD3D11ShaderResourceView(crossplatform::Shad
 		return NULL;
 	}
 #endif
-	if(mips<=1&&arraySize<=1||(index<0&&mip<0))
+	bool no_array=!cubemap&&(arraySize<=1);
+	if(mips<=1&&no_array||(index<0&&mip<0))
 	{
 		if(IsCubemap()&&t==crossplatform::ShaderResourceType::TEXTURE_2D_ARRAY)
 			return arrayShaderResourceView;
@@ -243,7 +244,7 @@ ID3D11ShaderResourceView *Texture::AsD3D11ShaderResourceView(crossplatform::Shad
 	}
 	if(layerShaderResourceViews&&(mip<0||mips<=1))
 	{
-		if(index<0||arraySize<=1)
+		if(index<0||no_array)
 			return mainShaderResourceView;
 		return layerShaderResourceViews[index];
 	}
@@ -482,10 +483,10 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 				
 					renderTargetViewDesc.Texture2DArray.FirstArraySlice		=0;
 					renderTargetViewDesc.Texture2DArray.ArraySize			=1;
-					for(int i=0;i<textureDesc.ArraySize;i++)
+					for(int i=0;i<(int)textureDesc.ArraySize;i++)
 					{
 						renderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
-						for(int j=0;j<textureDesc.MipLevels;j++)
+						for(int j=0;j<(int)textureDesc.MipLevels;j++)
 						{
 							renderTargetViewDesc.Texture2DArray.MipSlice			=j;
 							V_CHECK(renderPlatform->AsD3D11Device()->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[i][j])));
@@ -769,6 +770,8 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int num,int m,crossplatform::PixelFormat f,bool computable,bool rendertarget,bool cubemap)
 {
 	renderPlatform=r;
+
+	int total_num			=cubemap?6*num:num;
 	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	D3D11_TEXTURE2D_DESC textureDesc;
 	bool ok=true;
@@ -780,7 +783,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=dxgi_format)
+			if(textureDesc.ArraySize!=total_num||textureDesc.MipLevels!=m||textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=dxgi_format)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -798,13 +801,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	InvalidateDeviceObjects();
 	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	D3D11_TEXTURE2D_DESC desc;
-/*	int m			=cubemap?1:5;
-	int s=2<<m;
-	while(m>1&&(s>w||s>l))
-	{
-		m--;
-		s=2<<m;
-	}*/
+
 	width					=w;
 	length					=l;
 	depth					=1;
@@ -815,7 +812,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	desc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0);
 	desc.Usage				=D3D11_USAGE_DEFAULT;
 	desc.CPUAccessFlags		=0;
-	desc.ArraySize			=num;
+	desc.ArraySize			=total_num;
 	desc.MiscFlags			=(rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0)|(cubemap?D3D11_RESOURCE_MISC_TEXTURECUBE:0);
 	desc.MipLevels			=m;
 	desc.SampleDesc.Count	=1;
@@ -825,17 +822,9 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	SAFE_RELEASE(texture);
 	texture=pArrayTexture;
 	
-	if(cubemap)
-	{
-		if(num!=6)
-		{
-			SIMUL_BREAK_ONCE("cubemap=true: array size should be 6.");
-		}
-		num=6;
-	}
 	FreeSRVTables();
 	FreeRTVTables();
-	InitSRVTables(num,m);
+	InitSRVTables(total_num,m);
 
 	FreeUAVTables();
 	
@@ -847,9 +836,9 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
 		uav_desc.Format							=dxgi_format;
 		uav_desc.ViewDimension					=D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
-		uav_desc.Texture2DArray.ArraySize		=num;
+		uav_desc.Texture2DArray.ArraySize		=total_num;
 		uav_desc.Texture2DArray.FirstArraySlice	=0;
-		InitUAVTables(num,m);
+		InitUAVTables(total_num,m);
 		if(mipUnorderedAccessViews)
 		for(int i=0;i<m;i++)
 		{
@@ -858,27 +847,27 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
 		if(layerMipUnorderedAccessViews)
-		for(int i=0;i<num;i++)
+		for(int i=0;i<total_num;i++)
 		for(int j=0;j<m;j++)
 		{
-				uav_desc.Texture2DArray.FirstArraySlice=i;
+			uav_desc.Texture2DArray.FirstArraySlice=i;
 			uav_desc.Texture2DArray.ArraySize=1;
 			uav_desc.Texture2DArray.MipSlice=j;
 			V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[i][j]));
 			SetDebugObjectName(layerMipUnorderedAccessViews[i][j],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
-			}
 		}
+	}
 	if(rendertarget)
 	{
-		InitRTVTables(num, m);
+		InitRTVTables(total_num, m);
 		// Create the multi-face render target view
 		D3D11_RENDER_TARGET_VIEW_DESC DescRT;
 		DescRT.Format							=dxgi_format;
 		DescRT.ViewDimension					=D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 		DescRT.Texture2DArray.FirstArraySlice	=0;
-		DescRT.Texture2DArray.ArraySize			=num;
+		DescRT.Texture2DArray.ArraySize			=total_num;
 		if(renderTargetViews)
-		for(int i=0;i<num;i++)
+		for(int i=0;i<total_num;i++)
 		{
 			DescRT.Texture2DArray.FirstArraySlice = i;
 			DescRT.Texture2DArray.ArraySize = 1;
@@ -902,11 +891,23 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap)
 	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
 	SRVDesc.Format						= TypelessToSrvFormat(dxgi_format);
 	SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURE2D;
+	int total_num						=cubemap?6*num:num;
 	if(cubemap)
 	{
-		SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURECUBE;
-	SRVDesc.TextureCube.MipLevels		=m;
-	SRVDesc.TextureCube.MostDetailedMip =0;
+		if(num<=1)
+		{
+			SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURECUBE;
+			SRVDesc.TextureCube.MipLevels		=m;
+			SRVDesc.TextureCube.MostDetailedMip =0;
+		}
+		else
+		{
+			SRVDesc.ViewDimension						=D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+			SRVDesc.TextureCubeArray.MipLevels			=m;
+			SRVDesc.TextureCubeArray.MostDetailedMip	=0;
+			SRVDesc.TextureCubeArray.First2DArrayFace	=0;
+			SRVDesc.TextureCubeArray.NumCubes			=num;
+		}
 	}
 	else if(num>1)
 	{
@@ -928,7 +929,7 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap)
 	if(cubemap)
 	{
 		SRVDesc.ViewDimension=D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		SRVDesc.Texture2DArray.ArraySize=6;
+		SRVDesc.Texture2DArray.ArraySize=total_num;
 		SRVDesc.Texture2DArray.FirstArraySlice=0;
 		SRVDesc.Texture2DArray.MipLevels=m;
 		SRVDesc.Texture2DArray.MostDetailedMip=0;
@@ -947,7 +948,7 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap)
 		ZeroMemory(&face_srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 		face_srv_desc.Format					= SRVDesc.Format;
 		face_srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		for(int i=0;i<num;i++)
+		for(int i=0;i<total_num;i++)
 		{
 			face_srv_desc.Texture2DArray.ArraySize=1;
 			face_srv_desc.Texture2DArray.FirstArraySlice=i;
@@ -1181,12 +1182,12 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 		last_context->OMSetRenderTargets(1,&(renderTargetViews[array_index][mip]),NULL);
 		{
 			D3D11_VIEWPORT viewport;
-			viewport.Width = std::max(1,(width>>mip));
-			viewport.Height = std::max(1,(length>>mip));
-			viewport.TopLeftX = 0;
-			viewport.TopLeftY = 0;
-			viewport.MinDepth = 0.0f;
-			viewport.MaxDepth = 1.0f;
+			viewport.Width		=(float)(std::max(1,(width>>mip)));
+			viewport.Height		=(float)(std::max(1,(length>>mip)));
+			viewport.TopLeftX	=0;
+			viewport.TopLeftY	=0;
+			viewport.MinDepth	=0.0f;
+			viewport.MaxDepth	=1.0f;
 			last_context->RSSetViewports(1, &viewport);
 		}
 	}

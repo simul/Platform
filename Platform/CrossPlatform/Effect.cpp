@@ -119,6 +119,7 @@ EffectTechnique *Effect::EnsureTechniqueExists(const string &groupname,const str
 				techname=(groupname+"::")+techname;
 			techniques[techname]			=tech;
 			techniques_by_index[index]		=tech;
+			tech->name						=techname;
 		}
 	}
 	return tech;

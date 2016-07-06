@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "RenderPlatform.h"
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Base/RuntimeError.h"
@@ -9,6 +10,7 @@
 #include "Simul/Platform/CrossPlatform/Material.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Effect.h"
+#include <algorithm>
 #ifdef _MSC_VER
 #define isinf !_finite
 #else
@@ -207,6 +209,9 @@ void RenderPlatform::Clear				(DeviceContext &deviceContext,vec4 colour_rgba)
 
 void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour)
 {
+	// Silently return if not initialized
+	if(!texture->IsValid())
+		return;
 	debugConstants.debugColour=colour;
 	debugConstants.texSize=uint4(texture->width,texture->length,texture->depth,1);
 	debugConstants.Apply(deviceContext);
@@ -233,32 +238,50 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 		int a=texture->GetArraySize();
 		if(a==0)
 			a=1;
+#if 1
 		for(int i=0;i<a;i++)
 		{
-			const char *techname="compute_clear";
-			int W=(texture->width+8-1)/8;
-			int L=(texture->length+8-1)/8;
-			int D=(texture->depth+8-1)/8;
-			if(texture->dim==2)
+			for(int j=0;j<texture->mips;j++)
 			{
-				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",texture,i);
-				D=1;
+				const char *techname="compute_clear";
+				int W=(texture->width+8-1)/8;
+				int L=(texture->length+8-1)/8;
+				int D=(texture->depth+8-1)/8;
+				if(texture->dim==2)
+				{
+					debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",texture,i,j);
+					D=1;
+				}
+				else if(texture->dim==3)
+				{
+					debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",texture,i,j);
+					techname="compute_clear_3d";
+				}
+				else
+				{
+					SIMUL_CERR_ONCE<<("Can't clear texture dim.\n");
+				}
+				debugEffect->Apply(deviceContext,techname,0);
+				if(deviceContext.platform_context!=immediateContext.platform_context)
+				{
+					DispatchCompute(deviceContext,W,L,D);
+				}
+				else
+				{
+#ifndef __ORBIS__
+					DispatchCompute(deviceContext,W,L,std::min(16,D));
+#endif
+				}
+				debugEffect->Unapply(deviceContext);
 			}
-			else if(texture->dim==3)
-			{
-				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",texture,i);
-				techname="compute_clear_3d";
-			}
-			debugEffect->Apply(deviceContext,techname,0);
-			DispatchCompute(deviceContext,W,L,D);
-			debugEffect->Unapply(deviceContext);
 		}
+
+#endif
 	}
 	else
 	{
 		SIMUL_CERR_ONCE<<("No method was found to clear this texture.\n");
 	}
-
 }
 
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()
@@ -368,12 +391,12 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	
 		// Setup the viewport for rendering.
 	Viewport viewport;
-	viewport.w		=oldv.w*size;
-	viewport.h		=oldv.h*size;
+	viewport.w		=(int)oldv.w*size;
+	viewport.h		=(int)oldv.h*size;
 	viewport.zfar	=1.0f;
 	viewport.znear	=0.0f;
-	viewport.x	=0.5f*(1.f+offsetx)*oldv.w-viewport.w/2;
-	viewport.y	=0.5f*(1.f-offsety)*oldv.h-viewport.h/2;
+	viewport.x	=(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
+	viewport.y	=(int)(0.5f*(1.f-offsety)*oldv.h-viewport.h/2);
 	SetViewports(deviceContext,1,&viewport);
 	
 	math::Matrix4x4 view=deviceContext.viewStruct.view;

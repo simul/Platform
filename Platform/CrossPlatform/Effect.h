@@ -461,6 +461,7 @@ namespace simul
 			typedef std::map<std::string,void *> PassMap;
 			typedef std::map<int,void *> PassIndexMap;
 			typedef std::map<std::string,int> IndexMap;
+			std::string name;
 			PassMap passes_by_name;
 			PassIndexMap passes_by_index;
 			IndexMap pass_indices;

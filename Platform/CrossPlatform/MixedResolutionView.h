@@ -109,8 +109,8 @@ namespace simul
 		public:
 			/// Default constructor.
 			MixedResolutionViewManager():
-				last_created_view_id(-1)
-				,renderPlatform(NULL)
+				renderPlatform(NULL)
+				,last_created_view_id(-1)
 			{}
 
 			typedef std::map<int,MixedResolutionView*>	ViewMap;

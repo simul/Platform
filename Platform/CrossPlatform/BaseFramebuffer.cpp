@@ -39,7 +39,7 @@ void AmortizationStruct::setAmortization(int a)
 	pattern=new uint3[numOffsets];
 	for(int i=0;i<n;i++)
 	{
-		int idx=rand.IRand(src.size());
+		int idx=(int)rand.IRand(src.size());
 		auto u=src.begin()+idx;
 		uint3 v=*u;
 		pattern[i]=v;
@@ -233,7 +233,7 @@ bool BaseFramebuffer::CreateBuffers()
 		if(!is_cubemap)
 			buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,target_format,false,true,false,numAntialiasingSamples,quality);
 		else
-			buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform,Width,Height,6,mips,target_format,false,true,true);
+			buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform,Width,Height,1,mips,target_format,false,true,true);
 	}
 	if(!external_depth_texture&&depth_format!=crossplatform::UNKNOWN)
 	{
