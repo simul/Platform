@@ -275,9 +275,10 @@ namespace simul
 			void							EnsureEffectIsBuiltPartialSpec	(const char *filename_utf8,const std::vector<EffectDefineOptions> &options,const std::map<std::string,std::string> &defines);
 		};
 
-		/// Draw a horizontal grid, centred around the camera, at z=0.
+		/// Draw a horizontal grid in 3D.
 		///
 		/// \param [in,out]	deviceContext	Context for the device.
+		/// \param [in]	centrePos	Origin of the grid in 3D.
 		/// \param [in]	square_size	Spacing between lines - in whatever units the renderer is working in.
 		/// \param [in]	brightness 	Brightness of the lines.
 		/// \param [in]	numLines	Number of gridlines to draw.
