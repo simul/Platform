@@ -156,6 +156,11 @@ namespace simul
 			//! while 1 means it is MS, even though the sample count is unity.
 			virtual int GetSampleCount() const=0;
 			virtual bool IsCubemap() const;
+			//! The number of "faces": either equal to the array size, or in the case of a cubemap, six times that number.
+			int NumFaces() const
+			{
+				return cubemap?arraySize*6:arraySize;
+			}
 			virtual void copyToMemory(DeviceContext &deviceContext,void *target,int start_texel,int num_texels)=0;
 			int width,length,depth,arraySize,dim,mips;
 			PixelFormat pixelFormat;

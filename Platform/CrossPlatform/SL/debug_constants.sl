@@ -23,5 +23,6 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,8)
 	uniform uint4 texSize;	// xy, z if needed, w=array size
 
 	uniform float displayLod;
+	uniform float displayLevel;
 SIMUL_CONSTANT_BUFFER_END
 #endif

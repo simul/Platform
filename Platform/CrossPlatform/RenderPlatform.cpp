@@ -476,7 +476,23 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend)
 {
+	static int lod=0;
+	static int frames=300;
+	static int count=frames;
+	count--;
+	if(!count)
+	{
+		lod++;
+		count=frames;
+	}
+	float displayLod=0.0f;
+	if(tex)
+	{
+		displayLod=float((lod%(tex->GetMipCount()?tex->GetMipCount():1)));
+	}
+
 	debugConstants.multiplier=mult;
+	debugConstants.displayLod=displayLod;
 	crossplatform::EffectTechnique *tech=textured;
 	if(tex&&tex->GetDimension()==3)
 	{
@@ -488,9 +504,14 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 		tech=debugEffect->GetTechniqueByName("show_cubemap");
 		debugEffect->SetTexture(deviceContext,"cubeTexture",tex);
 	}
-	else
+	else if(tex)
 	{
 		debugEffect->SetTexture(deviceContext,imageTexture,tex);
+	}
+	else
+	{
+		tech=debugEffect->GetTechniqueByName("untextured");
+		DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
 	}
 	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
 }

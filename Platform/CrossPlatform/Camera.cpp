@@ -530,6 +530,7 @@ const float *Camera::MakeDepthReversedProjectionMatrix(float h,float v,float zNe
 		m._33	=0.f;					m._34	=-1.f;
 		m._43	=zNear;
 		// z = (33 Z + 43) / (34 Z +44)
+		//   = near/-Z
 		// z = -n/Z
 		// But if z = (33 Z + 34) / (43 Z +44)
 		// z = -1/nZ

@@ -58,7 +58,7 @@ namespace simul
 					SIMUL_BREAK_ONCE("AsD3D11RenderTargetView: mip out of range");
 					return NULL;
 				}
-				if(index>=arraySize)
+				if(index>=NumFaces())
 				{
 					SIMUL_BREAK_ONCE("AsD3D11RenderTargetView: layer index out of range");
 					return NULL;
