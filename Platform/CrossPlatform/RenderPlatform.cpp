@@ -511,7 +511,6 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	else
 	{
 		tech=debugEffect->GetTechniqueByName("untextured");
-		DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
 	}
 	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
 }

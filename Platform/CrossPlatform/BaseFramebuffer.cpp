@@ -274,6 +274,7 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 		sphericalSamples.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "samplesBufferRW");
 		sphericalHarmonicsEffect->Apply(deviceContext,jitter,0);
 		int u = (sqrt_jitter_samples + BLOCK_SIZE - 1) / BLOCK_SIZE;
+		sphericalHarmonicsConstants.Apply(deviceContext);
 		renderPlatform->DispatchCompute(deviceContext, u, u, 1);
 		sphericalHarmonicsEffect->UnbindTextures(deviceContext);
 		sphericalHarmonicsEffect->SetUnorderedAccessView(deviceContext,"samplesBufferRW",NULL);
@@ -311,6 +312,7 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	
 	static bool sh_by_samples=false;
+	sphericalHarmonicsConstants.Apply(deviceContext);
 	sphericalHarmonicsEffect->Apply(deviceContext,tech,0);
 	int n = sh_by_samples ? sphericalHarmonicsConstants.numJitterSamples : num_coefficients;
 	int U = ((n) + BLOCK_SIZE - 1) / BLOCK_SIZE;
