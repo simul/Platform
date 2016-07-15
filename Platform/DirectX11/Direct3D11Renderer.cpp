@@ -47,7 +47,6 @@ TrueSkyRenderer::~TrueSkyRenderer()
 void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	clouds::TrueSkyRenderer::RestoreDeviceObjects(r);
-	renderPlatform=r;
 	if(!renderPlatform)
 		return;
 	RecompileShaders();

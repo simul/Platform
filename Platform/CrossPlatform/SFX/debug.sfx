@@ -15,6 +15,7 @@ uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
 uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
 uniform RWTexture2D<vec4> FastClearTarget;
 uniform RWTexture3D<vec4> FastClearTarget3D;
+uniform RWStructuredBuffer<vec4> textureQueryResults;
 
 uniform sampler3D volumeTexture;
 
@@ -473,6 +474,13 @@ shader void CS_Clear3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	}
 }
 
+[numthreads(1,1,1)]
+shader void CS_TexelQuery(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos = g + t;
+	textureQueryResults[sub_pos.x]=imageTexture[queryPos];
+}
+
 technique copy_2d
 {
     pass replace
@@ -520,6 +528,13 @@ technique compute_clear_3d
     }
 }
 
+technique texel_query
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_TexelQuery()));
+    }
+}
 
 technique clear
 {

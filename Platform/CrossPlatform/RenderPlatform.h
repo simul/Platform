@@ -237,6 +237,8 @@ namespace simul
 			virtual void					SaveTexture(Texture *texture,const char *lFileNameUtf8)=0;
 			/// Clear the contents of the given texture to the specified colour
 			virtual void					ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
+			//! Query for the texture value at the specified position in the texture. On most API's, the query will have a few frames' latency.
+			vec4							TexelQuery(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture);
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY, mirrorY2, mirrorYText;
 			crossplatform::Effect *solidEffect;
@@ -267,6 +269,8 @@ namespace simul
 
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
+			
+			crossplatform::StructuredBuffer<vec4> textureQueryResult;
 			crossplatform::GpuProfiler		*gpuProfiler;
 		public:		
 			crossplatform::GpuProfiler		*GetGpuProfiler();

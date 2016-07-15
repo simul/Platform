@@ -24,5 +24,7 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,8)
 
 	uniform float displayLod;
 	uniform float displayLevel;
+
+	uniform uint2 queryPos;	// for texture queries.
 SIMUL_CONSTANT_BUFFER_END
 #endif

@@ -112,4 +112,17 @@ technique blend_mip
 		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
+
+technique overwrite_mip
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+		SetPixelShader(CompileShader(ps_5_0,PS_BlendMip()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+    }
+}
 #endif

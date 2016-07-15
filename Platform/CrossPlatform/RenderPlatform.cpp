@@ -112,6 +112,8 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	debugConstants.RestoreDeviceObjects(this);
 	ERRNO_BREAK
 	gpuProfiler->RestoreDeviceObjects(this);
+	textureQueryResult.InvalidateDeviceObjects();
+	textureQueryResult.RestoreDeviceObjects(this,1,true);
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
@@ -129,6 +131,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(solidEffect);
 	textured=NULL;
 	showVolume=NULL;
+	textureQueryResult.InvalidateDeviceObjects();
 }
 
 void RenderPlatform::RecompileShaders()
@@ -282,6 +285,27 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	{
 		SIMUL_CERR_ONCE<<("No method was found to clear this texture.\n");
 	}
+}
+
+vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture)
+{
+	if((int)query_id>=textureQueryResult.count)
+	{
+		textureQueryResult.InvalidateDeviceObjects();
+		textureQueryResult.RestoreDeviceObjects(this,(int)query_id+1,true);
+	}
+	debugConstants.queryPos=pos;
+	debugConstants.Apply(deviceContext);
+	textureQueryResult.ApplyAsUnorderedAccessView(deviceContext,debugEffect,"textureQueryResults");
+	debugEffect->SetTexture(deviceContext,"imageTexture",texture);
+	debugEffect->Apply(deviceContext,"texel_query",0);
+	DispatchCompute(deviceContext,textureQueryResult.count,1,1);
+	debugEffect->Unapply(deviceContext);
+	textureQueryResult.CopyToReadBuffer(deviceContext);
+	const vec4 *result=textureQueryResult.OpenReadBuffer(deviceContext);
+	vec4 r=result[query_id];
+	textureQueryResult.CloseReadBuffer(deviceContext);
+	return r;
 }
 
 std::vector<std::string> RenderPlatform::GetTexturePathsUtf8()

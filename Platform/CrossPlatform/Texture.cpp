@@ -27,8 +27,8 @@ Texture::Texture(const char *n):cubemap(false)
 
 Texture::~Texture()
 {
+	//InvalidateDeviceObjects();
 }
-
 
 bool Texture::IsCubemap() const
 {

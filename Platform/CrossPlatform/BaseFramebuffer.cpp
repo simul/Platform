@@ -72,6 +72,11 @@ BaseFramebuffer::BaseFramebuffer(const char *n)
 		name=n;
 }
 
+BaseFramebuffer::~BaseFramebuffer()
+{
+	InvalidateDeviceObjects();
+}
+
 void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;

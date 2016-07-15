@@ -143,7 +143,7 @@ namespace simul
 		{
 		public:
 			BaseFramebuffer(const char *n);
-			virtual ~BaseFramebuffer(){};
+			virtual ~BaseFramebuffer();
 			//! Call this when the API-dependent device has been created.
 			virtual void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
 			//! Call this when the API-dependent device has been lost or is shutting down.

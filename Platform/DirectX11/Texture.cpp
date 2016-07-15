@@ -61,7 +61,8 @@ void Texture::FreeRTVTables()
 {
 	if(renderTargetViews)
 	{
-		for(int i=0;i<arraySize;i++)
+		int total_num=cubemap?arraySize*6:arraySize;
+		for(int i=0;i<total_num;i++)
 		{
 			for(int j=0;j<mips;j++)
 			{
@@ -103,7 +104,8 @@ void Texture::FreeUAVTables()
 	mipUnorderedAccessViews=nullptr;
 	if(layerMipUnorderedAccessViews)
 	{
-		for(int i=0;i<arraySize;i++)
+		int total_num=cubemap?arraySize*6:arraySize;
+		for(int i=0;i<total_num;i++)
 		{
 			for(int j=0;j<mips;j++)
 			{
@@ -384,31 +386,6 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 	}
 }
 
-void Texture::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT dxgi_format)
-{
-	D3D11_TEXTURE2D_DESC textureDesc=
-	{
-		w,l,
-		1,1,
-		dxgi_format,
-		{1,0}
-		,D3D11_USAGE_DYNAMIC,
-		D3D11_BIND_SHADER_RESOURCE,
-		D3D11_CPU_ACCESS_WRITE,
-		0
-	};
-	exit(1);
-	width=w;
-	length=l;
-	dim=2;
-	SAFE_RELEASE(texture);
-	pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)&(texture));
-	SAFE_RELEASE(mainShaderResourceView);
-	SAFE_RELEASE(arrayShaderResourceView);
-	pd3dDevice->CreateShaderResourceView(texture,NULL,&mainShaderResourceView);
-	SAFE_RELEASE(stagingBuffer);
-}
-
 bool Texture::IsComputable() const
 {
 	return (mipUnorderedAccessViews!=nullptr||layerMipUnorderedAccessViews!=nullptr);
@@ -427,13 +404,13 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPla
 void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt)
 {
 	// If it's the same as before, return.
-	if ((texture == t && srv==mainShaderResourceView) && mainShaderResourceView != NULL && (!make_rt || renderTargetViews == NULL))
+	if ((texture == t && srv==mainShaderResourceView) && mainShaderResourceView != NULL && (make_rt ==( renderTargetViews != NULL)))
 		return;
 	// If it's the same texture, and we created our own srv, that's fine, return.
 	if (texture!=NULL&&texture == t&&mainShaderResourceView != NULL&&srv == NULL)
 		return;
 	renderPlatform=r;
-		SAFE_RELEASE(mainShaderResourceView);
+	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
 	SAFE_RELEASE(texture);
 	texture=t;
@@ -824,12 +801,14 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	
 	FreeSRVTables();
 	FreeRTVTables();
+	FreeUAVTables();
+	if(!texture)
+		return false;
 	InitSRVTables(total_num,m);
 
-	FreeUAVTables();
 	
 	CreateSRVTables(num,m,cubemap);
-
+	
 	if(computable)
 	{
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
@@ -857,6 +836,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			SetDebugObjectName(layerMipUnorderedAccessViews[i][j],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
 	}
+#if 1
 	if(rendertarget)
 	{
 		InitRTVTables(total_num, m);
@@ -879,6 +859,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		}
 	}
 	SetDebugObjectName(texture,"ensureTextureArraySizeAndFormat");
+#endif
 	mips=m;
 	arraySize=num;
 	this->cubemap=cubemap;
@@ -1248,7 +1229,8 @@ void Texture::FreeSRVTables()
 {
 	SAFE_RELEASE(arrayShaderResourceView);
 	SAFE_RELEASE(mainShaderResourceView);
-	for(int i=0;i<arraySize;i++)
+	int total_num=cubemap?arraySize*6:arraySize;
+	for(int i=0;i<total_num;i++)
 	{
 		if(layerShaderResourceViews)
 			SAFE_RELEASE(layerShaderResourceViews[i]);				// SRV's for each layer, including all mips
