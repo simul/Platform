@@ -88,13 +88,13 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 				,vec2 fade_texc
 				,out float brightnessFactor)
 {
-	float sun_alt_texc			=((world_pos.z-minSunlightAltitudeKm)/fadeAltitudeRangeKm);
+	float sun_alt_texc			=GetAltTexCoord(world_pos.z,minSunlightAltitudeKm,fadeAltitudeRangeKm);
 	vec3 combinedLightColour	=texture_clamp_lod(lightTableTexture,vec2(sun_alt_texc,3.5/4.0),0).rgb;
 	float alt_texc				=(world_pos.z/fadeAltitudeRangeKm);
 	ambientColour				=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
 	vec3 ambient				=density.w*ambientColour.rgb;
 	vec4 c;
-	//float l				=0.75+smoothstep(0.75, 0.8f, density.x);
+	//float l					=0.75+smoothstep(0.75, 0.8f, density.x);
 	c.rgb						=(density.y*Beta+lightResponse.y*density.x)*combinedLightColour+ambient.rgb;
 	c.a							=density.z;
 	brightnessFactor			=unshadowedBrightness(Beta,lightResponse,ambientColour);
@@ -144,7 +144,7 @@ vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 nois
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
 	vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,pos,0);
 	density.z			*=layerFade;
-	density.z			=saturate(density.z*(1.0+alphaSharpness));
+	density.z			=saturate(density.z*(1.0+10.0*alphaSharpness));
 	return density;
 }
 
@@ -372,7 +372,8 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 	rain_texc.xy		+=rain_texc.z*rainTangent;
 	float rain_lookup	=sample_3d_lod(rainMapTexture,cloudSamplerState,rain_texc.xy*inverseScalesKm.xy,0).x;
 	//vec4 streak			=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
-	return				rain_lookup*saturate((rainRadiusKm-length(world_pos_km.xy-rainCentreKm.xy))*3.0)*saturate(1.0-cloudWorldOffsetKm.z/1.0)*saturate(cloudWorldOffsetKm.z/4.0+1.0);
+	return				rain_lookup*saturate((rainRadiusKm-length(world_pos_km.xy-rainCentreKm.xy))*3.0)
+		*saturate(1.0-cloudWorldOffsetKm.z/1.0)*(0.5+0.5*saturate(cloudWorldOffsetKm.z/4.0+1.0));
 }
 
 void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDistance,inout float brightness_factor

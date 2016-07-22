@@ -249,6 +249,7 @@ namespace simul
 			bool external_texture;
 			bool external_depth_texture;
 			std::string name;
+			int shSeed;
 		};
 	}
 }

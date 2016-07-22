@@ -17,7 +17,7 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,8)
 	uniform vec4 debugDepthToLinFadeDistParams;
 
 	uniform vec2 debugTanHalfFov;
-	uniform float debugExposure;
+	uniform float debugExposureXXX;
 	uniform float debugGamma;
 
 	uniform uint4 texSize;	// xy, z if needed, w=array size

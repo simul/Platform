@@ -178,6 +178,8 @@ struct CloudShadowStruct
 	float godrays_strength;
 	bool wrap;
 	simul::crossplatform::SamplerState *samplerState;
+	vec3 originKm;
+	vec3 scaleKm;
 };
 #else
 #endif

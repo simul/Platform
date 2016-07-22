@@ -264,14 +264,20 @@ void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,floa
 		dx11::Texture *t=(dx11::Texture *)buffer_texture;
 		if(current_face>=0)
 		{
-			pContext->ClearRenderTargetView(t->AsD3D11RenderTargetView(current_face),clearColor);
+			for(int i=0;i<t->GetMipCount();i++)
+			{
+				pContext->ClearRenderTargetView(t->AsD3D11RenderTargetView(current_face,i),clearColor);
+			}
 		}
 		else
 		{
-			for(int i=0;i<6;i++)
+			for(int i=0;i<6*t->arraySize;i++)
 			{
-				if(t->AsD3D11RenderTargetView(i))
-					pContext->ClearRenderTargetView(t->AsD3D11RenderTargetView(i),clearColor);
+				for(int j=0;j<t->GetMipCount();j++)
+				{
+					if(t->AsD3D11RenderTargetView(i,j))
+						pContext->ClearRenderTargetView(t->AsD3D11RenderTargetView(i,j),clearColor);
+				}
 			}
 		}
 	}

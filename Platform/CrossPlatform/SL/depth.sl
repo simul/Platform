@@ -12,6 +12,13 @@ struct DepthIntepretationStruct
 	bool reverseDepth;
 };
 
+float GetAltTexCoord(float alt_km,float minSunlightAltitudeKm,float fadeAltitudeRangeKm)
+{
+	float sun_alt_texc			=0.5+0.5*saturate((alt_km-minSunlightAltitudeKm)/fadeAltitudeRangeKm);
+	sun_alt_texc				-=0.5*saturate((minSunlightAltitudeKm-alt_km)/(minSunlightAltitudeKm+1.0));
+	return sun_alt_texc;
+}
+
 float depthToLinearDistance(float depth,DepthIntepretationStruct dis)
 {
 	if(dis.reverseDepth)

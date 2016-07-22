@@ -67,6 +67,7 @@ BaseFramebuffer::BaseFramebuffer(const char *n)
 	,sphericalHarmonicsEffect(NULL)
 	,external_texture(false)
 	,external_depth_texture(false)
+	,shSeed(0)
 {
 	if(n)
 		name=n;
@@ -84,6 +85,9 @@ void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		SAFE_DELETE(buffer_texture);
 	if(!external_depth_texture)
 		SAFE_DELETE(buffer_depth_texture);
+	static int seed = 0;
+	seed = seed % 1001;
+	shSeed=seed++;
 	if(renderPlatform)
 	{
 		if(!external_texture)
@@ -246,7 +250,7 @@ bool BaseFramebuffer::CreateBuffers()
 	}
 	return true;
 }
-
+#pragma optimize("",off)
 void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)
 {
 	int num_coefficients=bands*bands;
@@ -263,9 +267,7 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
 	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;
 	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
-	static int seed = 0;
-	sphericalHarmonicsConstants.randomSeed			= seed++;
-	seed = seed % 10000;
+	sphericalHarmonicsConstants.randomSeed			= shSeed;
 	sphericalHarmonicsConstants.Apply(deviceContext);
 	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	crossplatform::EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");
@@ -295,7 +297,7 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 		{
 			for(int i=0;i<sphericalSamples.count;i++)
 			{
-				std::cout<<i<<": "<<sam[i].dir.x<<","<<sam[i].dir.y<<","<<sam[i].dir.z;
+				std::cout<<i<<": "<<sam[i].dir.x<<","<<sam[i].dir.y<<","<<sam[i].dir.z<<" ";
 				for(int j=0;j<9;j++)
 				{
 					if(j)

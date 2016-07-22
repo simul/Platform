@@ -134,15 +134,19 @@ shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	uint3 pos						=sub_pos+threadOffset;
 //	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
 //		return;
+	// Sunlight starts at 0.5. Below that, only moonlight is visible.
 	float alt_texc					=float(pos.x)/float(targetSize.x);
-	float alt_km					=maxOutputAltKm*alt_texc;
-	float sun_alt_km				=(maxOutputAltKm-sun_start_alt_km)*(alt_texc)+sun_start_alt_km;
-	vec4 sunlight					=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,sun_alt_km,lightDir);
-
-	vec4 moonlight					=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,directionToMoon)
-		*vec4(moonIrradianceFactor,1.0);
+	// start fropm 1km below the surface.
+	float alt_km					=(alt_texc/0.5)*(sun_start_alt_km+1.0)-1.0;
+//	float alt_km					=sun_start_alt_km-maxOutputAltKm+(alt_texc/0.5)*maxOutputAltKm;
+	// Above 0.5, the altitude is from sun_start_alt up to max output alt.
+	if(alt_texc>=0.5)
+		alt_km					=lerp(sun_start_alt_km,maxOutputAltKm,(alt_texc-0.5)/0.5);
+	float sun_alt_km			=(maxOutputAltKm-sun_start_alt_km)*(alt_texc)+sun_start_alt_km;
+	vec4 sunlight				=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,lightDir)*smoothstep(-.15,0.0,alt_km);
+	vec4 moonlight				=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,directionToMoon)*vec4(moonIrradianceFactor,1.0);
 	// equivalent to GetAnisotropicInscatterFactor(true,altitude_km,pi/2.f,0,1e5f,sun_irradiance,starlight,dir_to_sun,dir_to_moon,haze,overcast,false,0):
-	vec4 ambientLight				=vec4(getSkylight(alt_km, insc_texture),1.0);
+	vec4 ambientLight			=vec4(getSkylight(alt_km, insc_texture),1.0);
 
 	uint3 pos_sun					=uint3(pos.xy,0);
 	if(pos.x==0&&sun_start_alt_km>0.0)

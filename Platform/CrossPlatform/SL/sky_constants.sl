@@ -27,7 +27,7 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	uniform float maxFadeDistanceKm;
 
 	uniform float maxFadeAltitudeKm;		// As a distance texcoord
-	uniform float exposure;	
+	uniform float minSunlightAltitudeKm;	
 	uniform uint cycled_index;
 	uniform float overlayAlpha;
 	

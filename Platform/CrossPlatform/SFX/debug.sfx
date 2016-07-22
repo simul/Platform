@@ -118,9 +118,11 @@ shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
 	vec3 v = abs(view);
 	float e = max(max(v.x, v.y), v.z);
 	// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
-	vec3 N = 0.001*step( vec3(e, e, e), v);
-
-	res				=vec4(pow(res.xyz+N,vec3(0.44,0.44,0.44)),1.0);
+	vec3 N = step( vec3(e, e, e), v);
+	if(dot(N,view)<0)
+		N=vec3(1.0,1.0,1.0)-N;
+	N*=0.001;
+	res				=vec4(pow(res.xyz+N,vec3(debugGamma,debugGamma,debugGamma)),1.0);
 	return res;
 }
 
@@ -138,9 +140,11 @@ shader vec4 PS_ShowCubemapArray(posTexVertexOutput IN) : SV_TARGET
 	vec3 v	= abs(view);
 	float e	= max(max(v.x, v.y), v.z);
 	// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
-	vec3 N	= 0.001*step( vec3(e, e, e), v);
-
-	res		=vec4(pow(res.xyz+N,vec3(0.44,0.44,0.44)),1.0);
+	vec3 N = step( vec3(e, e, e), v);
+	if(dot(N,view)<0)
+		N=vec3(1.0,1.0,1.0)-N;
+	N*=0.03;
+	res		=vec4(pow(res.xyz,vec3(0.44,0.44,0.44))+N,1.0);
 	return res;
 }
 
@@ -185,7 +189,7 @@ shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
 	vec3 view		=(IN.wDirection.xyz);
 	vec4 result		=texture_cube_lod(cubeTexture,view,displayLod);
-	result.rgb		*=debugExposure;
+	result.rgb		*=multiplier;
 	result.rgb		=pow(result.rgb,vec3(debugGamma,debugGamma,debugGamma));
 	vec4 u			= vec4(result.rgb,1.0);
 	return u;
@@ -209,17 +213,6 @@ shader vec4 PS_Untextured(posTexVertexOutput IN) : SV_TARGET
 
 shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 {
-#if 0
-	vec2 offset		=2.0*(IN.texCoords.xy-vec2(0.5,0.5));
-	float r			=length(offset);
-	float az		=atan2(-offset.y,-offset.x);
-	float z			=.5;//floor(8.0f*IN.texCoords.x)/8.0f;
-	vec3 texc		=vec3(frac(az/(2.0*3.1415926)),r,z);
-	vec4 colour		=multiplier*texture_3d_nearest_lod(volumeTexture,texc,0);
-	colour			+=colour.a;
-	if(r>1.0)
-		colour*=0;
-#else
 	vec2 texc		=IN.texCoords.xy;
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y			=1.0-texc.y;
@@ -236,11 +229,11 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 	}
 	vec3 tc			=vec3(texc.x,lerp(texc.y,z,sideview),lerp(z,texc.y,sideview));
 	vec4 colour		=texture_3d_nearest_lod(volumeTexture,tc,0);
-	colour.rgb*=multiplier.rgb;
+	colour.rgb		*=multiplier.rgb;
 	colour.rgb		=abs(colour.rgb);
 	colour.rgb		*=colour.a;
-	colour.rgb		=lerp(colour.rgb,tc,0.2);
-#endif
+	colour.rgb		=lerp(colour.rgb,tc,0.4);
+
 	return colour;
 }
 

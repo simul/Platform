@@ -451,8 +451,8 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	debugConstants.latitudes		=16;
 	debugConstants.longitudes		=32;
 	debugConstants.radius			=rr;
-	debugConstants.debugExposure			=exposure;
-	debugConstants.debugGamma			=gamma;
+	debugConstants.multiplier		=vec4(exposure,exposure,exposure,0.0f);
+	debugConstants.debugGamma		=gamma;
 	debugConstants.Apply(deviceContext);
 	debugEffect->Apply(deviceContext,tech,0);
 	//Topology old_top=GetTopology
@@ -498,7 +498,7 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 	Print(deviceContext,(int)pos.x+offsetx,(int)pos.y+offsety,text,colr,NULL);
 }
 
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend)
+void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma)
 {
 	static int lod=0;
 	static int frames=300;
@@ -514,7 +514,8 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	{
 		displayLod=float((lod%(tex->GetMipCount()?tex->GetMipCount():1)));
 	}
-
+	
+	debugConstants.debugGamma=gamma;
 	debugConstants.multiplier=mult;
 	debugConstants.displayLod=displayLod;
 	crossplatform::EffectTechnique *tech=textured;
@@ -525,8 +526,16 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	}
 	else if(tex&&tex->IsCubemap())
 	{
-		tech=debugEffect->GetTechniqueByName("show_cubemap");
-		debugEffect->SetTexture(deviceContext,"cubeTexture",tex);
+		if(tex->arraySize>1)
+		{
+			tech=debugEffect->GetTechniqueByName("show_cubemap_array");
+			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex);
+		}
+		else
+		{
+			tech=debugEffect->GetTechniqueByName("show_cubemap");
+			debugEffect->SetTexture(deviceContext,"cubeTexture",tex);
+		}
 	}
 	else if(tex)
 	{
@@ -537,11 +546,19 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 		tech=debugEffect->GetTechniqueByName("untextured");
 	}
 	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
+	if(tex&&tex->GetMipCount()>1&&lod>0&&lod<10)
+	{
+		vec4 white(1.0, 1.0, 1.0, 1.0);
+		vec4 semiblack(0, 0, 0, 0.5);
+		char txt[]="0";
+		txt[0]='0'+lod;
+		Print(deviceContext,x1,y1,txt,white,semiblack);
+	}
 }
 
-void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend)
+void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma)
 {
-	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend);
+	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma);
 }
 
 void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v
