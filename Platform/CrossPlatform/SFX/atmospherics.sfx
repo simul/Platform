@@ -70,18 +70,19 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 		vec3 pos_l				=vec3(x,y,z);
 		vec3 pos_w				=mul(lightspaceToWorldMatrix,vec4(pos_l,1.0)).xyz;
 		vec4 depth_lookup		=texture_cube_lod(cubeDepthTexture,normalize(pos_w),0);
-		float dist				=length(pos_w)/300000.0;
+		float dist				=length(pos_w)*0.001/maxFadeDistanceKm;
 
 		vec3 pos_m				=viewPosition+pos_w;
-		//vec3 texc				=viewposCloudspace+distanceKm*viewCloudspace;
+		
 		vec3 viewposCloudspace	=mul(worldToCloudMatrix,vec4(pos_m,1.0)).xyz;
 		float illum				=1.0-godraysIntensity*(1.0-GetCloudIllum(cloudTexture, cloudSamplerState, viewposCloudspace, lightDirCloudspace,clampClouds));
 		//earth_shadow_illum	=IlluminationAtPosition(viewPosKm+view*dist*maxFadeDistanceKm,sunDir,planetRadiusKm,vec3(45.0,35.0,25.0));
 		//illum					=saturate(1.0-15.0*godraysIntensity*(1.0-illum));
 		total_illum				*=illum;
-		if(dist>depth_lookup.x)
-			total_illum=0;
-		vec4 res				=vec4(total_illum,total_illum,total_illum,1.0);//total_illum,total_illum,total_illum,total_illum);
+		float t					=0.1;
+		total_illum				*=saturate((depth_lookup.x-dist+t)/t);
+			
+		vec4 res				=vec4(total_illum,total_illum,total_illum,1.0);
 		int3 pos				=int3(idx.xy,scatteringVolumeDims.z-1-i);
 		IMAGE_STORE_3D(targetVolume,pos,res);
 	}

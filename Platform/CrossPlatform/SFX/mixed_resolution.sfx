@@ -171,7 +171,6 @@ void MinMax(uint2 idx1,bool reverseDepth)
 	uint2 idx = targetRange.xy + idx1;
 	if (idx.x<targetRange.x || idx.x>=targetRange.z || idx.y<targetRange.y || idx.y>=targetRange.w)
 	{
-		targetTexture[idx] = vec4(0, 0, 0, 0);
 		return;
 	}
 	vec2 texCoords			=vec2(idx)/vec2(target_dims);
@@ -189,8 +188,8 @@ void MinMax(uint2 idx1,bool reverseDepth)
 	vec4 fn2	=sourceTexture2[idx];
 	vec4 fn3	=sourceTexture3[idx];
 	vec4 fn		=vec4(0.0,1.0,0.0,1.0);
-	fn.yw = min(fn.yw,/*step(fn1.yw, thr)+*/fn1.yw);
-	fn.xz = max(fn.xz,/*step(thr, fn1.xz)**/fn1.xz);
+	fn.yw = min(fn.yw,fn1.yw);
+	fn.xz = max(fn.xz,fn1.xz);
 	if(updateTexture[idx].r>=1.0)
 	{
 		fn.yw	=min(fn.yw,fn2.yw);
@@ -198,9 +197,6 @@ void MinMax(uint2 idx1,bool reverseDepth)
 		fn.yw	=min(fn.yw,fn3.yw);
 		fn.xz	=max(fn.xz,fn3.xz);
 	}
-//	fn.yw = saturate(pow(saturate((thr - fn.yw) / thr), 2.0) + fn.yw);
-//	fn.xz = saturate(saturate((thr - fn.xz) / thr) + fn.xz);
-	//fn.yw = saturate(min(fn.yw, fn.xz));
 	fn.z = nearThresholdDist;
 	targetTexture[idx]				=saturate(fn);
 }
