@@ -222,7 +222,8 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	// Does it have rendertargets? We can clear each of these in turn.
 	if(texture->HasRenderTargets()&&texture->arraySize)
 	{
-		for(int i=0;i<texture->arraySize;i++)
+		int total_num=texture->arraySize*(texture->IsCubemap()?6:1);
+		for(int i=0;i<total_num;i++)
 		{
 			for(int j=0;j<texture->mips;j++)
 			{

@@ -608,7 +608,7 @@ vec4 PSRainParticles(RainParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 
 vec4 PS_RainParticles(RainParticleGeometryOutput IN,bool reverseDepth)
 {
-	vec3 light			=cubeTexture.Sample(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0)).xyz).rgb;
+	vec3 light			=cubeTexture.SampleLevel(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0)).xyz,8.0).rgb;
 	return PSRainParticles(IN,reverseDepth,light);
 }
 

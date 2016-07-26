@@ -148,7 +148,7 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 	vec2 illum_texc			=vec2(world_azimuth/(2.0*PI),(1.0+sine)*0.5);
 	vec4 colour				=vec4(0,0,0,0);
 	vec4 last				=vec4(0,0,0,0);
-	float godraysIntensity	=1.0;
+	//float godraysIntensity	=1.0;
 	float cos0				=dot(view.xyz,lightDir);
 	vec3 lightDirCloudspace	=normalize(mul(worldToCloudMatrix,vec4(lightDir,0.0)).xyz);
 	vec3 viewCloudspace		=mul(worldToCloudMatrix,vec4(view,0.0)).xyz*1000.0;
