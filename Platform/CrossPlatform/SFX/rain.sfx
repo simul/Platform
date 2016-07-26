@@ -39,7 +39,7 @@ struct particleVertexOutput
 {
     vec4 position0		:SV_POSITION;
     vec4 position1		:TEXCOORD2;
-	float pointSize		:PSIZE;
+	float pointSize		:PSIZE;			// not supported on modern api's
 	float brightness	:TEXCOORD0;
 	vec3 view			:TEXCOORD1;
 	float fade			:TEXCOORD3;

@@ -33,7 +33,7 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	
 	uniform float sunBrightness;
 	uniform float glowBrightness;
-	uniform float SkyConstantspad1;
+	uniform float minimumPixelSize;
 	uniform float SkyConstantspad2;
 
 	//uniform mat4 cubemapViews[6]; messes up alignment if not at the end
