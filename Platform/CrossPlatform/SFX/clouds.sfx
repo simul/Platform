@@ -145,7 +145,6 @@ shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec4 c1=cloudDensity[pos];
 	vec4 c2=cloudDensity2[pos];
     vec4 res= lerp(c1,c2,cloud_interp);
-	res.z	=saturate((res.z-0.5)*1.5+0.5);
 	IMAGE_STORE_3D(outputTexture3d,pos,res);
 }
 

@@ -585,8 +585,8 @@ float CSDensity(uint3 pos)
 	hm							=saturate(hm+mask.r-mask.g);
 	hm							*=GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity);
 	float dens					=noise_val+2.5*hm-1.0;
-	dens						=saturate((dens-0.5)/diffusivity/1.5+0.5);
-//	dens						=saturate(3.0*dens-2.0+2.0*worleyNoiseStrength*(1.5+w));
+	dens						=saturate((dens-0.5)/diffusivity+0.5);
+	dens						=saturate(3.0*dens-2.0+2.0*worleyNoiseStrength*(1.5+w));
 	vec3 wPos					=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
 	
 	for(int i=0;i<numVolumes;i++)
