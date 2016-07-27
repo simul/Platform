@@ -501,6 +501,7 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma)
 {
+	static int level=0;
 	static int lod=0;
 	static int frames=300;
 	static int count=frames;
@@ -536,6 +537,11 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap");
 			debugEffect->SetTexture(deviceContext,"cubeTexture",tex);
+			static char c=0;
+			c--;
+			if(!c)
+				level++;
+			debugConstants.displayLevel=(float)(level%std::max(1,tex->arraySize));
 		}
 	}
 	else if(tex)

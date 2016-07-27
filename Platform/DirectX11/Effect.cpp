@@ -205,6 +205,8 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 			SIMUL_CERR<<"PlatformStructuredBuffer::OpenReadBuffer waited "<<wait<<" times."<<std::endl;
 		if(hr!=S_OK)
 			mapped.pData=NULL;
+		if(wait>1)
+			SIMUL_CERR<<"PlatformStructuredBuffer::OpenReadBuffer waited "<<wait<<" times."<<std::endl;
 	}
 	return mapped.pData;
 }
@@ -419,7 +421,7 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 		filenameInUseUtf8=(renderPlatform->GetShaderPathsUtf8()[index]+"/")+filename_fx;
 	unsigned flags=D3DCOMPILE_OPTIMIZATION_LEVEL3;
 	// D3D shader compiler is broken for some shaders...
-	if(filename_fx.find("atmospherics")==0||filename_fx.find("spherical_harmonics"))
+	if(filename_fx.find("atmospherics")==0||filename_fx.find("spherical_harmonics")==0)
 		flags=D3DCOMPILE_SKIP_OPTIMIZATION;
 
 	HRESULT hr = CreateEffect(renderPlatform->AsD3D11Device(), &e, filename_fx.c_str(), defines,flags, renderPlatform->GetShaderBuildMode()
@@ -541,12 +543,12 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crosspl
 	ID3DX11EffectUnorderedAccessViewVariable *var=(ID3DX11EffectUnorderedAccessViewVariable*)(shaderResource.platform_shader_resource);
 	if(!asD3DX11Effect())
 	{
-		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		SIMUL_CERR_ONCE<<"Invalid effect "<<std::endl;
 		return;
 	}
 	if(!var)
 	{
-		SIMUL_CERR<<"Invalid Resource "<<std::endl;
+		SIMUL_CERR_ONCE<<"Invalid Resource "<<std::endl;
 		return;
 	}
 	if(t)
@@ -554,7 +556,7 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crosspl
 		ID3D11UnorderedAccessView *uav=t->AsD3D11UnorderedAccessView(index,mip);
 		if(!uav)
 		{
-			SIMUL_CERR<<"Unordered access view not found."<<std::endl;
+			SIMUL_CERR_ONCE<<"Unordered access view not found."<<std::endl;
 		}
 		var->SetUnorderedAccessView(uav);
 	}
