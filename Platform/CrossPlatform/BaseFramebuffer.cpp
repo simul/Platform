@@ -264,6 +264,7 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 	if(!sphericalHarmonicsEffect)
 		RecompileShaders();
 	sphericalHarmonicsConstants.num_bands			=bands;
+	sphericalHarmonicsConstants.numCoefficients		=num_coefficients;
 	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
 	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;
 	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
@@ -297,7 +298,7 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 		{
 			for(int i=0;i<sphericalSamples.count;i++)
 			{
-				std::cout<<i<<": "<<sam[i].dir.x<<","<<sam[i].dir.y<<","<<sam[i].dir.z<<" ";
+				std::cout<<i<<": ("<<sam[i].dir.x<<","<<sam[i].dir.y<<","<<sam[i].dir.z<<") coefficients: ";
 				for(int j=0;j<9;j++)
 				{
 					if(j)
@@ -310,8 +311,6 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 		}
 		sphericalSamples.CloseReadBuffer(deviceContext);
 	}
-
-
 
 	crossplatform::EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
 	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapTexture"	,buffer_texture);

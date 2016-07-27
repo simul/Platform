@@ -1158,6 +1158,8 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 		array_index=0;
 	if(mip<0)
 		mip=0;
+	if(mip>=mips)
+		return;
 	if(renderTargetViews)
 	{
 		last_context->OMSetRenderTargets(1,&(renderTargetViews[array_index][mip]),NULL);

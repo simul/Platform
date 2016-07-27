@@ -26,8 +26,10 @@ shader void CS_Jitter(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	// fill an N*N*2 array with uniformly distributed 
 	// samples across the sphere using jittered stratification 
 	float oneoverN			= 1.0/sqrtJitterSamples; 
-	int a=int(pos.x);
-	int b=int(pos.y);
+	int a					=int(pos.x);
+	if (a >= numJitterSamples)
+		return;
+	int b					=int(pos.y);
 	int i					=(a*sqrtJitterSamples+b)%numJitterSamples; // array index 
 	// generate unbiased distribution of spherical coords 
 	float x					=(rand(vec2(a,b))); // do not reuse results 
@@ -35,19 +37,22 @@ shader void CS_Jitter(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	float theta				=asin(2.0*x-1.0); 
 	float phi				=2.0 * PI * y;
 	// convert spherical coords to unit vector 
-	vec3 vec				=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
-	samplesBufferRW[i].dir	=vec;
+	vec3 dir				=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
+	samplesBufferRW[i].dir	=dir;
+	int2 lm[]={{0,0}
+				,{1,-1},{1,0},{1,1}
+				,{2,-2},{2,-1},{2,0},{2,1},{2,2}
+				,{3,-3},{3,-2},{3,-1},{3,0},{3,1},{3,2},{3,3}
+	};
 	// precompute all SH coefficients for this sample 
 	int n = 0;
-	for (int l = 0; l<MAX_SH_BANDS; l++)
+	for (int j = 0; j<MAX_SH_COEFFICIENTS; j++)
 	{
-		if (l >= num_bands)
+		if (j >= numCoefficients)
 			break;
-		for(int m=-l; m<=l; m++)
-		{ 
-//			int index = l*(l+1)/2+m; 
-			samplesBufferRW[i].coeff[n++] = SH(l, m, theta, phi);
-		}
+		int2 p		=lm[j];
+		float co	=SH(p.x,p.y,theta,phi);
+		samplesBufferRW[i].coeff[j] =co;
 	}
 }
 
@@ -58,7 +63,7 @@ shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	targetBuffer[sub_pos.x]	=vec4(0,0,0,0);
 }
 
-[numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
+[numthreads(BLOCK_SIZE,1,1)]
 shader void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 sub_pos						= g * BLOCK_SIZE + t;
@@ -71,16 +76,18 @@ shader void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	vec4 colour							=cubemapTexture.SampleLevel(wrapSamplerState,-sample.dir,0);
 	for(int n=0;n<num_bands;n++)
 	{ 
-		targetBuffer[n]					+=colour;//*factor*sample.coeff[n]; 
+		targetBuffer[n]					+=colour*factor*sample.coeff[n]; 
 	}
 #else
 
 	vec4 total=vec4(0,0,0,0);
-	for(int n=0;n<numJitterSamples;n++)
+	for(int n=0;n<MAX_SH_SAMPLES;n++)
 	{ 
+		if (n >= numJitterSamples)
+			break;
 		SphericalHarmonicsSample shs	=samplesBuffer[n];
 		vec4 colour						=texture_cube_lod(cubemapTexture,shs.dir,0);
-		total							+=colour*factor*shs.coeff[sub_pos.x];
+		total							+=factor*shs.coeff[sub_pos.x]*colour;//*vec4(1,0,0,0);//;//
 	}
 	targetBuffer[sub_pos.x]=total;
 #endif

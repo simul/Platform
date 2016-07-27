@@ -336,7 +336,10 @@ namespace simul
 		/// A base class for structured buffers, used by StructuredBuffer internally.
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer
 		{
+		protected:
+			int numCopies;	// for tracking when the data should be valid, i.e. when numCopies==Latency.
 		public:
+			PlatformStructuredBuffer():numCopies(0){}
 			virtual ~PlatformStructuredBuffer(){}
 			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,bool computable,void *init_data)=0;
 			virtual void InvalidateDeviceObjects()=0;

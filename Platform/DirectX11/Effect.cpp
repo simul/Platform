@@ -176,6 +176,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		uav_desc.Buffer.NumElements			=num_elements;
 		V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(buffer, &uav_desc,&unorderedAccessView));
 	}
+	numCopies=0;
 }
 
 void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceContext)
@@ -191,17 +192,20 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 {
 	lastContext=deviceContext.asD3D11DeviceContext();
 	mapped.pData=NULL;
-	HRESULT hr=DXGI_ERROR_WAS_STILL_DRAWING;
-	int wait=0;
-	while(hr==DXGI_ERROR_WAS_STILL_DRAWING)
+	if(numCopies>=NUM_STAGING_BUFFERS)
 	{
-		hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,D3D11_MAP_FLAG_DO_NOT_WAIT,&mapped);
-		wait++;
+		HRESULT hr=DXGI_ERROR_WAS_STILL_DRAWING;
+		int wait=0;
+		while(hr==DXGI_ERROR_WAS_STILL_DRAWING)
+		{
+			hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,D3D11_MAP_FLAG_DO_NOT_WAIT,&mapped);
+			wait++;
+		}
+		if(wait>1)
+			SIMUL_CERR<<"PlatformStructuredBuffer::OpenReadBuffer waited "<<wait<<" times."<<std::endl;
+		if(hr!=S_OK)
+			mapped.pData=NULL;
 	}
-	if(wait>1)
-		SIMUL_CERR<<"PlatformStructuredBuffer::OpenReadBuffer waited "<<wait<<" times."<<std::endl;
-	if(hr!=S_OK)
-		mapped.pData=NULL;
 	return mapped.pData;
 }
 
@@ -217,7 +221,14 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext &de
 	lastContext=deviceContext.asD3D11DeviceContext();
 	for(int i=0;i<NUM_STAGING_BUFFERS-1;i++)
 		std::swap(stagingBuffers[(NUM_STAGING_BUFFERS-1-i)],stagingBuffers[(NUM_STAGING_BUFFERS-2-i)]);
-	lastContext->CopyResource(stagingBuffers[0],buffer);
+	if(numCopies<NUM_STAGING_BUFFERS)
+	{
+		numCopies++;
+	}
+	else
+	{
+		lastContext->CopyResource(stagingBuffers[0],buffer);
+	}
 }
 
 
@@ -407,7 +418,8 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 	else if(index<renderPlatform->GetShaderPathsUtf8().size())
 		filenameInUseUtf8=(renderPlatform->GetShaderPathsUtf8()[index]+"/")+filename_fx;
 	unsigned flags=D3DCOMPILE_OPTIMIZATION_LEVEL3;
-	if(filename_fx.find("atmospherics")==0)
+	// D3D shader compiler is broken for some shaders...
+	if(filename_fx.find("atmospherics")==0||filename_fx.find("spherical_harmonics"))
 		flags=D3DCOMPILE_SKIP_OPTIMIZATION;
 
 	HRESULT hr = CreateEffect(renderPlatform->AsD3D11Device(), &e, filename_fx.c_str(), defines,flags, renderPlatform->GetShaderBuildMode()
