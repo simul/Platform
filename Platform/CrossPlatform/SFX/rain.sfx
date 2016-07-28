@@ -61,7 +61,7 @@ vec3 WrapParticleZone(vec3 pos,float zoneSize)
 		pos.y+=2.0*zoneSize;
 	else if(pos.y>zoneSize)
 		pos.y-=2.0*zoneSize;
-	static const vec3 c=vec3(0.5,0.5,0.5);
+	const vec3 c=vec3(0.5,0.5,0.5);
 	vec3 box	=pos/(2.0*zoneSize)+c;
 	pos			=(frac(box)-c)*2.0*zoneSize;
 	return pos;
@@ -124,7 +124,7 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 CS_LAYOUT(8,8,8)
 shader void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 {
-	int X,Yy,N;
+	unsigned X,Yy,N;
 	int n					=int(idx.z);
 	float fn=float(n);
 	float fn9=fn+0.9;
