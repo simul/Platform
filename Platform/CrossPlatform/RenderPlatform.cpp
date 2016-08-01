@@ -58,7 +58,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::BLEND;
 	desc.blend.numRTs=1;
-	desc.blend.RenderTarget[0].BlendEnable			=false;
+	desc.blend.RenderTarget[0].blendOperation		=BLEND_OP_NONE;
 	desc.blend.RenderTarget[0].RenderTargetWriteMask=15;
 	desc.blend.RenderTarget[0].SrcBlend				=crossplatform::BLEND_ONE;
 	desc.blend.RenderTarget[0].DestBlend			=crossplatform::BLEND_ZERO;
@@ -67,7 +67,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	RenderState *opaque=CreateRenderState(desc);
 	standardRenderStates[STANDARD_OPAQUE_BLENDING]=opaque;
 
-	desc.blend.RenderTarget[0].BlendEnable			=true;
+	desc.blend.RenderTarget[0].blendOperation		=BLEND_OP_ADD;
 	desc.blend.RenderTarget[0].SrcBlend				=crossplatform::BLEND_SRC_ALPHA;
 	desc.blend.RenderTarget[0].DestBlend			=crossplatform::BLEND_INV_SRC_ALPHA;
 	desc.blend.RenderTarget[0].SrcBlendAlpha		=crossplatform::BLEND_SRC_ALPHA;

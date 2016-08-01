@@ -1,4 +1,8 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+
+// PS4 register overrun - must fix
+#pragma warning(disable:7203)
+
 #include "shader_platform.sl"
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
@@ -56,8 +60,8 @@ shader void GS_Fractal(line F_Vertex IN[2],inout PointStream<F_Vertex> vStream)
 	F_Vertex OUT;
 	vec3 startP			=IN[0].position;
 	vec3 endP			=IN[1].position;
-	uint num_octaves	=7;
-	uint num_steps		=1<<num_octaves;
+	uint MAX_OCTAVES	=7;
+	uint num_steps		=1<<MAX_OCTAVES;
 	uint num_pts		=num_steps+1;
 	vec3 outpos[129];
 	outpos[0]			=startP;
@@ -66,7 +70,7 @@ shader void GS_Fractal(line F_Vertex IN[2],inout PointStream<F_Vertex> vStream)
 	float persistence	=0.8;
 	float off			=roughness;
 	float time			=phaseTime;
-	for(uint i=0;i<num_octaves;i++)
+	for(uint i=0;i<MAX_OCTAVES;i++)
 	{
 		for(uint j=del/2;j<num_steps;j+=del)
 		{
@@ -151,8 +155,8 @@ shader void GS_Branch(line F_IdVertex IN[2], inout PointStream<F_Vertex> vStream
 			vec3 XX=cross(vec3(1.0,0.0,0.0),(s-e));
 			vec3 YY=cross(vec3(0.0,1.0,0.0),(s-e));
 			vec3 x=0.5*(s+e);
-			vec2 noise_texc		=vec2(5.7*i-9.3*j+time,3.1*i+4.5*j);
-			vec4 noise_lookup	=texture_wrap_lod(randomTexture,noise_texc,0);
+			vec2 noise_texc1		=vec2(5.7*i-9.3*j+time,3.1*i+4.5*j);
+			vec4 noise_lookup	=texture_wrap_lod(randomTexture,noise_texc1,0);
 			float angle			=noise_lookup.x*2.0*3.14159;
 			x+=off*(XX*cos(angle)+YY*sin(angle));
 			outpos[j]=x;
@@ -183,11 +187,18 @@ shader void GS_Branch(line F_IdVertex IN[2], inout PointStream<F_Vertex> vStream
 
 VertexShader vs_init		=CompileShader(vs_5_0,VS_InitialFractal());
 GeometryShader gs_fractal	=CompileShader(gs_5_0,GS_Fractal());
-GeometryShader so_fractal	=ConstructGSWithSO(gs_fractal, "POSITION.xyz;TEXCOORD0.xy;TEXCOORD1.x");
-
+#ifdef __PSSL__
+GeometryShader so_fractal	=ConstructGSWithSO(gs_fractal,"0,24,0:0:S_POSITION.xyz,12:0:TEXCOORD0.xy,20:0:TEXCOORD1.x");
+#else
+GeometryShader so_fractal	=ConstructGSWithSO(gs_fractal,"POSITION.xyz;TEXCOORD0.xy;TEXCOORD1.x");
+#endif
 VertexShader vs_branch		=CompileShader(vs_5_0,VS_Branch());
 GeometryShader gs_branch	=CompileShader(gs_5_0,GS_Branch());
-GeometryShader so_branch	=ConstructGSWithSO(gs_branch, "POSITION.xyz;TEXCOORD0.xy;TEXCOORD1.x");
+#ifdef __PSSL__
+GeometryShader so_branch	=ConstructGSWithSO(gs_branch,"0,24,0:0:S_POSITION.xyz,12:0:TEXCOORD0.xy,20:0:TEXCOORD1.x");
+#else
+GeometryShader so_branch	=ConstructGSWithSO(gs_branch,"POSITION.xyz;TEXCOORD0.xy;TEXCOORD1.x");
+#endif
 
 technique initial_fractal
 {

@@ -15,6 +15,7 @@
 using namespace simul;
 using namespace dx11;
 #pragma optimize("",off)
+
 D3D11_QUERY toD3dQueryType(crossplatform::QueryType t)
 {
 	switch(t)

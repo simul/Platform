@@ -975,7 +975,7 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext &,const crosspl
 	opengl::RenderState *S=(opengl::RenderState*)s;
 	if(S->desc.type==crossplatform::BLEND)
 	{
-		if(S->desc.blend.RenderTarget[0].BlendEnable)
+		if(S->desc.blend.RenderTarget[0].blendOperation!=crossplatform::BLEND_OP_NONE)
 		{
 			glEnable(GL_BLEND);
 			for(int i=0;i<S->desc.blend.numRTs;i++)

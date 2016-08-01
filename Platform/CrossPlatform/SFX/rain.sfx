@@ -264,10 +264,10 @@ shader vec4 PS_SnowParticles(particleGeometryOutput IN): SV_TARGET
 {
 	vec4 result		=IN.brightness*cubeTexture.Sample(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0)).xyz);
 	vec2 pos		=IN.texCoords*2.0-1.0;
-	float radius	=length(pos.xy);
+	float radius1	=length(pos.xy);
 	float angle		=atan2(pos.x,pos.y);
 	//float spoke	=fract(angle/pi*3.0)-0.5;
-	float opacity	=IN.fade*saturate(1.0-radius);//-spoke*spoke);
+	float opacity	=IN.fade*saturate(1.0-radius1);//-spoke*spoke);
 	//return vec4(1,0,1,opacity);
 	return vec4(1.0*result.rgb,opacity);
 }
@@ -276,10 +276,10 @@ shader vec4 PS_SnowParticles_NoCubemap(particleGeometryOutput IN): SV_TARGET
 {
 	vec4 result		=IN.brightness*vec4(lightColour.rgb,1.0);
 	vec2 pos		=IN.texCoords*2.0-1.0;
-	float radius	=length(pos.xy);
+	float radius1	=length(pos.xy);
 	float angle		=atan2(pos.x,pos.y);
 	//float spoke	=fract(angle/pi*3.0)-0.5;
-	float opacity	=IN.fade*saturate(1.0-radius);//-spoke*spoke);
+	float opacity	=IN.fade*saturate(1.0-radius1);//-spoke*spoke);
 	
 	//return vec4(1,0,1,opacity);
 	return vec4(result.rgb,opacity);

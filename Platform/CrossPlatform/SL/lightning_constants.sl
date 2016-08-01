@@ -52,13 +52,13 @@ struct LightningVertex
 #ifndef __cplusplus
 struct LightningVertexInput
 {
-    vec3 position		: POSITION;
+    vec3 position		: SV_POSITION;
     vec2 texCoords		: TEXCOORD0;
 	float progress		: TEXCOORD1;
 };
 struct LightningVertexOutput
 {
-    vec4 position			: POSITION;
+    vec4 position			: SV_POSITION;
     float brightness		: TEXCOORD0;
     float thicknessMetres	: TEXCOORD1;
 	float depth				: TEXCOORD2;
