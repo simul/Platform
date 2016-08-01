@@ -42,7 +42,7 @@ namespace simul
 			SHADERTYPE_COMPUTE,
 			SHADERTYPE_COUNT
 		};
-		//! This 
+		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
 		enum ShaderBuildMode
 		{
 			NEVER_BUILD=0

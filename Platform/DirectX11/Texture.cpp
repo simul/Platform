@@ -707,7 +707,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 			uav_desc.Texture2D.MipSlice=i;
 			V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][i]));
 			SetDebugObjectName(layerMipUnorderedAccessViews[0][i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
-	}
+		}
 	}
 	if(rendertarget&&(!renderTargetViews||!ok))
 	{

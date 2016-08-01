@@ -604,13 +604,13 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform
 			//bool layered=tex->IsCubemap()||tex->GetDimension()==3;
 			glfxSetEffectTexture((int)platform_effect,texture_number
 				,tex->AsGLuint(mip),tex->GetDimension()
-			,tex->GetDepth()
-			,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
-			,true
-			,0
+				,tex->GetDepth()
+				,opengl::RenderPlatform::ToGLFormat(tex->GetFormat())
+				,true
+				,0
 				,index>=0
 				,index
-			,tex->IsCubemap());
+				,tex->IsCubemap());
 		}
 		else
 			glfxSetEffectTexture((int)platform_effect,texture_number

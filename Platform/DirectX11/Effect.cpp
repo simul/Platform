@@ -705,7 +705,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 		ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
 		if (!tech->IsValid())
 		{
-			const char *techname="";//effectTechnique->getName();
+			const char *techname=effectTechnique->name.c_str();
 			SIMUL_BREAK_ONCE(base::QuickFormat("Invalid technique %s of shader %s\n",techname,this->filename.c_str()));
 			return;
 		}
