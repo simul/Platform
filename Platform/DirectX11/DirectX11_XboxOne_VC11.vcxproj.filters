@@ -278,9 +278,6 @@
     <FxCompile Include="..\CrossPlatform\SFX\debug.sfx">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\foliage.sfx">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="..\CrossPlatform\SFX\font.sfx">
       <Filter>Shaders</Filter>
     </FxCompile>

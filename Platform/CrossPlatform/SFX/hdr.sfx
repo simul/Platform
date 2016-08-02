@@ -17,17 +17,13 @@ uniform TextureCube nearImageTexture;
 uniform TextureCube farImageTexture;
 uniform TextureCube nearFarTexture;
 uniform TextureCube lightpassTexture;
-uniform Texture2D depthTexture;
-uniform TEXTURE2DMS_FLOAT4 depthTextureMS;
-uniform Texture2D lowResDepthTexture;
-uniform Texture2D hiResDepthTexture;
+uniform Texture2D depthTexture					SIMUL_TEXTURE_REGISTER(1);
+uniform TEXTURE2DMS_FLOAT4 depthTextureMS		SIMUL_TEXTURE_REGISTER(1);
 uniform TEXTURE2D_UINT glowTexture;
 
 uniform Texture2D inscatterTexture;			// Far, or default inscatter
-uniform Texture2D nearInscatterTexture;		// Near inscatter.
 uniform Texture2D shadowTexture;
 uniform Texture2D loss2dTexture;
-uniform Texture3D lossVolumeTexture;
 uniform Texture3D inscatterVolumeTexture;
 uniform Texture3D godraysVolumeTexture;
 

@@ -42,7 +42,7 @@ namespace simul
 			SHADERTYPE_COMPUTE,
 			SHADERTYPE_COUNT
 		};
-		//! This 
+		/// Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
 		enum ShaderBuildMode
 		{
 			NEVER_BUILD=0
@@ -127,9 +127,18 @@ namespace simul
 			,BLEND_SRC1_ALPHA
 			,BLEND_INV_SRC1_ALPHA
 		};
+		enum BlendOperation
+		{
+			BLEND_OP_NONE
+			,BLEND_OP_ADD
+			,BLEND_OP_SUBTRACT
+			,BLEND_OP_MAX
+			,BLEND_OP_MIN
+		};
 		struct RTBlendDesc
 		{
-			bool BlendEnable;
+			BlendOperation blendOperation;
+			BlendOperation blendOperationAlpha;
 			BlendOption SrcBlend;
 			BlendOption DestBlend;
 			BlendOption SrcBlendAlpha;
@@ -484,9 +493,9 @@ namespace simul
 			{
 				return (GLuint)0;
 			}
-			inline int GetPassIndex(const char *name)
+			inline int GetPassIndex(const char *n)
 			{
-				std::string str(name);
+				std::string str(n);
 				if(pass_indices.find(str)==pass_indices.end())
 					return -1;
 				return pass_indices[str];

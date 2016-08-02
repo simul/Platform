@@ -897,7 +897,24 @@ static D3D11_COMPARISON_FUNC toD3dComparison(crossplatform::DepthComparison d)
 	};
 	return D3D11_COMPARISON_LESS;
 }
-static D3D11_BLEND toD3dBlendOp(crossplatform::BlendOption o)
+static D3D11_BLEND_OP toD3dBlendOp(crossplatform::BlendOperation o)
+{
+	switch(o)
+	{
+	case crossplatform::BLEND_OP_ADD:
+		return D3D11_BLEND_OP_ADD;
+	case crossplatform::BLEND_OP_SUBTRACT:
+		return D3D11_BLEND_OP_SUBTRACT;
+	case crossplatform::BLEND_OP_MAX:
+		return D3D11_BLEND_OP_MAX;
+	case crossplatform::BLEND_OP_MIN:
+		return D3D11_BLEND_OP_MIN;
+	default:
+		break;
+	};
+	return D3D11_BLEND_OP_ADD;
+}
+static D3D11_BLEND toD3dBlend(crossplatform::BlendOption o)
 {
 	switch(o)
 	{
@@ -951,13 +968,13 @@ crossplatform::RenderState *RenderPlatform::CreateRenderState(const crossplatfor
 		ZeroMemory( &omDesc, sizeof( D3D11_BLEND_DESC ) );
 		for(int i=0;i<desc.blend.numRTs;i++)
 		{
-			omDesc.RenderTarget[i].BlendEnable				=desc.blend.RenderTarget[i].BlendEnable;
-			omDesc.RenderTarget[i].BlendOp					=D3D11_BLEND_OP_ADD;
-			omDesc.RenderTarget[i].SrcBlend					=toD3dBlendOp(desc.blend.RenderTarget[i].SrcBlend);
-			omDesc.RenderTarget[i].DestBlend				=toD3dBlendOp(desc.blend.RenderTarget[i].DestBlend);
-			omDesc.RenderTarget[i].BlendOpAlpha				=D3D11_BLEND_OP_ADD;
-			omDesc.RenderTarget[i].SrcBlendAlpha			=toD3dBlendOp(desc.blend.RenderTarget[i].SrcBlendAlpha);
-			omDesc.RenderTarget[i].DestBlendAlpha			=toD3dBlendOp(desc.blend.RenderTarget[i].DestBlendAlpha);
+			omDesc.RenderTarget[i].BlendEnable				=(desc.blend.RenderTarget[i].blendOperation!=crossplatform::BLEND_OP_NONE)||(desc.blend.RenderTarget[i].blendOperationAlpha!=crossplatform::BLEND_OP_NONE);
+			omDesc.RenderTarget[i].BlendOp					=toD3dBlendOp(desc.blend.RenderTarget[i].blendOperation);
+			omDesc.RenderTarget[i].SrcBlend					=toD3dBlend(desc.blend.RenderTarget[i].SrcBlend);
+			omDesc.RenderTarget[i].DestBlend				=toD3dBlend(desc.blend.RenderTarget[i].DestBlend);
+			omDesc.RenderTarget[i].BlendOpAlpha				=toD3dBlendOp(desc.blend.RenderTarget[i].blendOperationAlpha);
+			omDesc.RenderTarget[i].SrcBlendAlpha			=toD3dBlend(desc.blend.RenderTarget[i].SrcBlendAlpha);
+			omDesc.RenderTarget[i].DestBlendAlpha			=toD3dBlend(desc.blend.RenderTarget[i].DestBlendAlpha);
 			omDesc.RenderTarget[i].RenderTargetWriteMask	=desc.blend.RenderTarget[i].RenderTargetWriteMask;
 		}
 		omDesc.IndependentBlendEnable			=desc.blend.IndependentBlendEnable;
