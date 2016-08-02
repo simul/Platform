@@ -59,7 +59,6 @@ struct TransformedParticle
 {
     vec4 position;
 	float pointSize;
-	float brightness;
 	vec3 view;
 	float fade;
 };
