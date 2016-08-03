@@ -686,6 +686,17 @@ shader vec4 PS_ShowArrayTexture(posTexVertexOutput IN): SV_TARGET
 	r.b=float(slice%2);
     return r;
 }
+
+BlendState AlphaBlendNoAlphaWrite
+{
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
+	SrcBlend		=SRC_ALPHA;
+	DestBlend		=INV_SRC_ALPHA;
+	RenderTargetWriteMask[0]=7;
+	RenderTargetWriteMask[1]=7;
+};
+
 technique rain_particles_blur
 {
     pass reverse_depth
@@ -719,7 +730,7 @@ technique rain_particles
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ReverseDepth()));
         
-        SetBlendState( AlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//DontBlend
+        SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//DontBlend
        // SetDepthStencilState( EnableDepth, 0 );
     }
     pass forward_depth
@@ -729,7 +740,7 @@ technique rain_particles
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_ForwardDepth()));
         
-        SetBlendState( AlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
+        SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
        // SetDepthStencilState( EnableDepth, 0 );
     }
 }
@@ -742,7 +753,7 @@ technique rain_particles_no_cubemap
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ReverseDepth()));
         
-        SetBlendState( AlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
+        SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
        // SetDepthStencilState( EnableDepth, 0 );
     }
 	pass forward_depth
@@ -752,7 +763,7 @@ technique rain_particles_no_cubemap
         SetGeometryShader(CompileShader( gs_5_0,GS_RainParticles()));
         SetPixelShader(CompileShader(    ps_5_0,PS_RainParticles_NoCubemap_ForwardDepth()));
         
-        SetBlendState( AlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
+        SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
        // SetDepthStencilState( EnableDepth, 0 );
     }
 }
@@ -781,7 +792,7 @@ technique snow_particles
 		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
 		//SetDepthStencilState(EnableDepth,0);
-		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(AlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
     pass forward_depth 
     {
@@ -791,7 +802,7 @@ technique snow_particles
 		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
 		//SetDepthStencilState(EnableDepth,0);
-		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(AlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
 }
 

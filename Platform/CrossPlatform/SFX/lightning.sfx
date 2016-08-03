@@ -614,6 +614,8 @@ BlendState MaxBlend
 	SrcBlend		=ONE;
 	DestBlend		=ONE;
 	BlendOp			=MAX;
+	RenderTargetWriteMask[0]=7;
+	RenderTargetWriteMask[1]=7;
 };
 
 technique lightning_thick
