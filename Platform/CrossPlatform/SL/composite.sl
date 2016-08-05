@@ -61,7 +61,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 												,r);
 	vec4 insc						=texture_3d_wmc_lod(inscatterVolumeTexture,worldspaceVolumeTexCoords,0);
 	vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
-	insc*=godrays;
+	insc							*=godrays;
 	vec2 loss_texc					=vec2(dist_rt,0.5*(1.f-sine));
 	float hiResInterp				=1.0-pow(saturate(( nearFarCloud.x-dist) / max(0.00001,nearFarCloud.x-nearFarCloud.y)),1.0);
 	// we're going to do TWO interpolations. One from zero to the near distance,

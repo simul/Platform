@@ -19,7 +19,7 @@ uniform RWTexture3D<vec4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
 
 struct vertexInput
 {
-    vec3 position		: POSITION;
+    vec3 position	: POSITION;
     vec2 texCoords	: TEXCOORD0;
 };
 
@@ -141,16 +141,18 @@ shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 //	float alt_km					=sun_start_alt_km-maxOutputAltKm+(alt_texc/0.5)*maxOutputAltKm;
 	// Above 0.5, the altitude is from sun_start_alt up to max output alt.
 	if(alt_texc>=0.5)
-		alt_km					=lerp(sun_start_alt_km,maxOutputAltKm,(alt_texc-0.5)/0.5);
-	float sun_alt_km			=(maxOutputAltKm-sun_start_alt_km)*(alt_texc)+sun_start_alt_km;
-	vec4 sunlight				=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,lightDir)*smoothstep(-.15,0.0,alt_km);
-	vec4 moonlight				=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,directionToMoon)*vec4(moonIrradianceFactor,1.0);
+		alt_km						=lerp(sun_start_alt_km,maxOutputAltKm,(alt_texc-0.5)/0.5);
+	float sun_alt_km				=(maxOutputAltKm-sun_start_alt_km)*(alt_texc)+sun_start_alt_km;
+	vec4 sunlight					=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,max(alt_km,sun_start_alt_km),lightDir)*smoothstep(-.15,0.0,alt_km);
+	vec4 moonlight					=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,directionToMoon)*vec4(moonIrradianceFactor,1.0);
 	// equivalent to GetAnisotropicInscatterFactor(true,altitude_km,pi/2.f,0,1e5f,sun_irradiance,starlight,dir_to_sun,dir_to_moon,haze,overcast,false,0):
-	vec4 ambientLight			=vec4(getSkylight(alt_km, insc_texture),1.0);
+	vec4 ambientLight				=vec4(getSkylight(alt_km, insc_texture),1.0);
 
 	uint3 pos_sun					=uint3(pos.xy,0);
 	if(pos.x==0&&sun_start_alt_km>0.0)
 		sunlight					=vec4(0,0,0,0);
+	if(sun_start_alt_km>0.0&&alt_texc>0.5)
+		sunlight*=saturate((alt_km-sun_start_alt_km)/3.0);
 	IMAGE_STORE_3D(targetTexture,pos_sun,sunlight);
 	uint3 pos_moon					=uint3(pos.xy,1);
 	IMAGE_STORE_3D(targetTexture,pos_moon,moonlight);
@@ -158,7 +160,10 @@ shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	IMAGE_STORE_3D(targetTexture,pos_amb,ambientLight);
 	// Combined sun and moonlight:
 	uint3 pos_both		=uint3(pos.xy,3);
-	IMAGE_STORE_3D(targetTexture,pos_both,sunlight+moonlight);
+	vec4 both=sunlight+moonlight;
+//	if(alt_texc>=0.5)
+//		both=vec4(0,0,1.0,1.0);
+	IMAGE_STORE_3D(targetTexture,pos_both,both);
 }
 
 CS_LAYOUT(8,1,1)

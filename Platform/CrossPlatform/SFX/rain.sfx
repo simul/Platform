@@ -101,7 +101,8 @@ shader posTexVertexOutput VS_ShowTexture(idOnly id)
     return VS_ScreenQuad(id,rect);
 }
 
-void transf(out TransformedParticle p,in vec3 position,int i)
+// i is the frame 0 or 1, id the the 
+void transf(out TransformedParticle p,in vec3 position,int i)//,int id)
 {
 	vec3 particlePos	=position.xyz;
 	particlePos			+=i*viewPositionOffset.xyz;
@@ -109,8 +110,8 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 	float ph			=flurryRate*phase;
 	vec3 rand1			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/100.0,0).xyz;
 	vec3 rand2			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/100.0*5.0,0).xyz;
-	//particlePos			+=5.0*flurry*rand1;
-	//particlePos			+=1.4*flurry*rand2;
+	particlePos			+=5.0*flurry*rand1;
+	particlePos			+=1.4*flurry*rand2;
 	p.position			=mul(worldViewProj[i],vec4(particlePos.xyz,1.0));
 	p.view				=normalize(particlePos.xyz);
 	p.pointSize			=particleWidth*(1.0+0.4*rand2.y);
@@ -168,11 +169,13 @@ shader ParticleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)
 	TransformedParticle p1;
 	vec3 df			=0.00002*vec3(meanFallVelocity+meanFallVelocity.z*IN.velocity*flurry);
 	transf(p1,-offset[1].xyz+IN.position.xyz*particleZoneSize+df+(pos-pos0),1);
+	vec3 map_texc		=mul(rainMapMatrix,vec4(viewPos[1].xyz,1.0)).xyz;
+	float mapped_rain	=texture_wrap_lod(rainMapTexture,map_texc.xy,0).x;
 	
     OUT.position0	=p0.position;
     OUT.position1	=p1.position;
 	OUT.pointSize	=p1.pointSize;
-	OUT.strength	=p1.fade;
+	OUT.strength	=p1.fade*mapped_rain;
 	OUT.view		=p1.view;
 	OUT.velocity	=vec3(0,0,0);
 	OUT.type		=1;
@@ -286,20 +289,20 @@ vec4 PSSnowParticles(ParticleGeometryOutput IN,bool reverseDepth)
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistRain;
 	float rain_dist		=depthToFadeDistance(render_depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 	
-	if(rain_dist>solid_dist)
+	if(IN.strength<=0||rain_dist>solid_dist)
 	{
 		discard;
 	}
 
-	vec4 result				=cubeTexture.SampleLevel(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0)).xyz,6);
+	vec4 result				=cubeTexture.SampleLevel(wrapSamplerState,mul(cubemapTransform,vec4(-IN.view,0)).xyz,4);
 	vec2 pos				=IN.texCoords*2.0-1.0;
 	float cos0				=dot(IN.view,lightDir);
 	float BetaMie			=HenyeyGreenstein(0.5,cos0);
 	vec3 directionalLight	=BetaMie*lightColour;
 	result.rgb				+=directionalLight;
-	float radius1			=length(pos.xy);
+	float radius1			=pow(length(pos.xy),.5);
 	float angle				=atan2(pos.x,pos.y);
-	//float spoke			=fract(angle/pi*3.0)-0.5;
+//	float spoke			=fract(angle/pi*3.0)-0.5;
 	float opacity			=IN.strength*saturate(1.0-radius1);//-spoke*spoke);
 	return vec4(result.rgb,opacity);
 }
@@ -687,6 +690,17 @@ shader vec4 PS_ShowArrayTexture(posTexVertexOutput IN): SV_TARGET
     return r;
 }
 
+BlendState AddAlphaBlendNoAlphaWrite
+{
+	BlendEnable[0]	=TRUE;
+	BlendEnable[1]	=TRUE;
+	SrcBlend		=SRC_ALPHA;
+	DestBlend		=ONE;
+	RenderTargetWriteMask[0]=7;
+	RenderTargetWriteMask[1]=7;
+};
+
+
 BlendState AlphaBlendNoAlphaWrite
 {
 	BlendEnable[0]	=TRUE;
@@ -792,7 +806,7 @@ technique snow_particles
 		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
 		//SetDepthStencilState(EnableDepth,0);
-		SetBlendState(AlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
     pass forward_depth 
     {
@@ -802,7 +816,7 @@ technique snow_particles
 		SetVertexShader(CompileShader(vs_5_0,VS_SnowParticles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_SnowParticles()));
 		//SetDepthStencilState(EnableDepth,0);
-		SetBlendState(AlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
+		SetBlendState(AddAlphaBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
     }
 }
 
