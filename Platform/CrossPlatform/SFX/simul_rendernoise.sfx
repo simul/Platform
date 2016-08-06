@@ -151,9 +151,9 @@ shader void CS_Worley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV
 	int grid=8;
 	vec4 result;
 	result.x		=Worley(texCoords,5,1);
-	result.y		=Worley(texCoords,9,2);
-	result.z		=Worley(texCoords,16,3);
-	result.w		=Worley(texCoords,24,4);
+	result.y		=0.5*Worley(texCoords,9,2);
+	result.z		=0.25*Worley(texCoords,16,3);
+	result.w		=0.125*Worley(texCoords,24,4);
 	IMAGE_STORE_3D(targetTextureU8,idx,result);
 }
 

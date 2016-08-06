@@ -162,7 +162,7 @@ float DensityFunction(Texture3D volumeNoiseTexture,vec3 noisespace_texcoord,floa
 float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float t,float height,float texel)
 {
 	float dens=0.0;
-	float mult=0.5;
+	float mult=1.0;
 	float sum=0.0;
 	for(int i=0;i<5;i++)
 	{
