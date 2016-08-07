@@ -364,5 +364,8 @@
     <None Include="SL\simul_2d_cloud_constants.sl">
       <Filter>SL</Filter>
     </None>
+    <None Include="SL\clouds_raytrace.sl">
+      <Filter>SL</Filter>
+    </None>
   </ItemGroup>
 </Project>

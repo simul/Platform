@@ -22,7 +22,7 @@ vec3 assemble3dTexcoord(vec2 texcoord2,float zPixel,float zSize)
 	vec3 texcoord3	=vec3(texcoord.xy,zPos);
 	return texcoord3;
 }
-
+/*
 float GetShapeFunction(float z,float ztop,float baseLayer,float transition,float upperDensity)
 {
 	// i is the lerp variable between the top of the base layer and the upper layer.
@@ -31,7 +31,7 @@ float GetShapeFunction(float z,float ztop,float baseLayer,float transition,float
 	float j		=1.0-saturate((0.8+0.2*ztop-z)/transition);
 	m			*=sqrt(1.0-j*j);
 	return m;
-}
+}*/
 
 float GetHumidityMultiplier(float z,float baseLayer,float transition,float upperDensity)
 {
@@ -41,13 +41,20 @@ float GetHumidityMultiplier(float z,float baseLayer,float transition,float upper
 	return m;
 }
 
+float inv_smoothstep(float x)
+{
+	return x*(2.0*x*x-3.0*x+2.0);
+}
+
 float GetHumidityMultiplier2(float z,float baseLayer,float transition,float upperDensity)
 {
 //	float i		=saturate((z-baseLayer)/transition);
-	float i		=pow(saturate((z-baseLayer)/transition),0.5);
-	float m		=(1.0-i)+upperDensity*i;
-	//m			*=lerp(0.75,1.0,saturate((1.0-z)/transition));
-	m			*=pow(saturate((1.0-z)/transition),0.5);
+	float i		=saturate((z-baseLayer)/transition);
+	float m		=1.0-i;//*i;
+	float t2	=max(1.0-baseLayer-transition,0.0001);
+	float j		=1.0-saturate((1.0-z));
+	float n		=upperDensity*(1.0-j*j*j);
+	m			=max(m,n);
 	return m;
 }
 
@@ -155,7 +162,7 @@ float DensityFunction(Texture3D volumeNoiseTexture,vec3 noisespace_texcoord,floa
 float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float t,float height,float texel)
 {
 	float dens=0.0;
-	float mult=0.5;
+	float mult=1.0;
 	float sum=0.0;
 	for(int i=0;i<5;i++)
 	{
