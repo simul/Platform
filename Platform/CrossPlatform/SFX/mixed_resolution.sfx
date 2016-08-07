@@ -20,6 +20,8 @@ uniform Texture2D updateTexture;
 uniform RWTexture2D<vec4> targetTexture;
 uniform RWTexture2D<vec4> nextUpdateTexture;
 
+uniform RWTexture2D<vec4> targetTexture2;
+uniform RWTexture2D<vec4> targetTexture3;
 #define BLOCKSIZE 8
 
 vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 sourceTexCoords,vec2 frustum_clip_pos, vec2 texelRange
@@ -118,8 +120,14 @@ void DownscaleStochastic(uint2 idx1,bool reverseDepth)
 									,nearThresholdDepth
 									,stochasticOffset
 									,scale);
-//	res=vec4(sourceTexCoords,.5,.5);
+
 	targetTexture[idx]		=res;
+	// This part was not previously updated. Therefore we will calculate all THREE target depth textures:
+	if(u.b==0)
+	{
+		targetTexture2[idx]		=res;
+		targetTexture3[idx]		=res;
+	}
 	nextUpdateTexture[idx]	=vec4(u.b,0,1.0,0);
 }
 

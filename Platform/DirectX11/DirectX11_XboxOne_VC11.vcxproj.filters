@@ -267,6 +267,12 @@
     <None Include="..\CrossPlatform\SL\states.sl">
       <Filter>SL</Filter>
     </None>
+    <None Include="..\CrossPlatform\SL\clouds_raytrace.sl">
+      <Filter>SL</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\composite.sl">
+      <Filter>SL</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\CrossPlatform\SFX\atmospherics.sfx">
