@@ -237,6 +237,7 @@
     <None Include="SFX\terrain.sfx" />
     <None Include="SL\atmospherics.sl" />
     <None Include="SL\atmospherics_constants.sl" />
+    <None Include="SL\clouds_raytrace.sl" />
     <None Include="SL\clouds_simple.sl" />
     <None Include="SL\cloud_shadow.sl" />
     <None Include="SL\colour_packing.sl" />

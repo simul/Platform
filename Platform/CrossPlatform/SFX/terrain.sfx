@@ -74,14 +74,14 @@ shader vec4 PS_Main( vertexOutput IN) : SV_TARGET
 	vec4 layer1	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,floor(interp)));
 	vec4 layer2	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,floor(interp)+1.0));
 	vec4 texel	=mix(layer1,layer2,interp);
-	float dotp	=lightDir.z;
+	float dotp	=saturate(lightDir.z);
 	
 	float from_lightning_centre_km	=0.001*length(IN.wPosition.xy-lightningCentre.xy);
 	vec3 lightning					=20*lightningColour.rgb*saturate(1.0/pow(from_lightning_centre_km+.0001,2.0));
 	
 	vec3 light	=ambientColour.rgb+dotp*sunlight.rgb+lightning.rgb;
 //	light		*=GetSimpleIlluminationAt(cloudShadowTexture,invShadowMatrix,IN.wPosition.xyz).x;
-	result.rgb	=texel.rgb*light.rgb;
+	result.rgb	=(texel.rgb*light.rgb);
 	result.a	=1.0;
 	//result.rgb	=ambientColour.rgb;
 //	result+=vec4(IN.wPosition.zzz/1000.0,1);

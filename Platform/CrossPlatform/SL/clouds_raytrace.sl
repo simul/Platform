@@ -1,8 +1,7 @@
-//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
-#ifndef CLOUDS_SIMPLE_SL
-#define CLOUDS_SIMPLE_SL
-
-RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
+// groupshared has 32k available.
+// each vec4 is 16 bytes. So 1024 vec4's will be 16k
+//groupshared vec4 distance[4][4][1024];
+RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,Texture2D rainMapTexture
 											,Texture3D noiseTexture3D
 											,Texture2D lightTableTexture
@@ -53,7 +52,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float minDistance		=1.0;
 	float maxDistance		=0.0;
 	// Precalculate hg effects
-	float BetaClouds		=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
+	float BetaClouds		=HenyeyGreenstein(cloudEccentricity,cos0);
 	float BetaRayleigh		=CalcRayleighBeta(cos0);
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
 
@@ -111,50 +110,91 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float lastFadeDistance			=0.0;
 	int3 b							=abs(c-C0*2);
 
+
+
+	for(int j=0;j<8;j++)
+	{
+		if(max(max(b.x,b.y),0)>=W)
+		{
+			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
+			// Just dividing by 2 gives 3/2 -> 1, and -3/2 -> -1.
+			c0			=	C0;
+			c			+=	start_c_offset;
+			c			-=	abs(c&int3(1,1,1));
+			c			=	c>>1;
+			gridScale	*=	2.0;
+			viewScale	*=	2.0;
+			if(idx==0)
+				W*=2;
+			p0			=	P0;
+			P0			=	startOffsetFromOrigin/gridScale/2.0;
+			C0			+=	start_c_offset;
+			C0			-=	abs(C0&int3(1,1,1));
+			C0			=	C0>>1;
+			idx			++;
+			b			=	abs(c-C0*2);
+		}
+		else break;
+	}
 	//float blinn_phong=0.0;
 	//bool found=false;
 	float distScale =  0.6 / maxFadeDistanceKm;
-		float K=log(maxCloudDistanceKm);
-		bool found=false;
-		float stepKm				=K*(1.2+distanceKm)/512.0;
+
 	for(int i=0;i<768;i++)
 	{
-		//world_pos					+=0.001*view;
+		world_pos					+=0.001*view;
 		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm)//||solidDist_nearFar.y<lastFadeDistance)
 			break;
 		offsetFromOrigin			=world_pos-gridOriginPos;
 
 		// Next pos.
-		int3 c1						=c+c_offset;//viewScale;
-		stepKm						*=(1.0+K/512.0);
-		distanceKm					+=stepKm;
+		int3 c1						=c+c_offset;
+
+		//find the correct d:
+		vec3 p						=offsetFromOrigin/gridScale;
+		vec3 p1						=c1;
+		vec3 dp						=p1-p;
+		vec3 D						=(dp/viewScaled);
+
+		float e						=min(min(D.x,D.y),D.z);
+		// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
+		vec3 N						=step(D,vec3(e,e,e));
+
+		int3 c_step					=c_offset*int3(N);
+		float d						=e*viewScale;
+		distanceKm					+=d;
+
+		// What offset was the original position from the centre of the cube?
+		p1							=p+e*viewScaled;
 		// We fade out the intermediate steps as we approach the boundary of a detail change.
 		// Now sample at the end point:
-		world_pos					+=stepKm*view;
+		world_pos					+=d*view;
 		vec3 cloudWorldOffsetKm		=world_pos-cornerPosKm;
 		vec3 cloudTexCoords			=(cloudWorldOffsetKm)*inverseScalesKm;
-		float fade					=1.0;
+		c							+=c_step;
+		int3 intermediate			=abs(c&int3(1,1,1));
+		float is_inter				=dot(N,vec3(intermediate));
+		// A spherical shell, whose outer radius is W, and, wholly containing the inner box, the inner radius must be sqrt(3 (W/2)^2).
+		// i.e. from 0.5*(3)^0.5 to 1, from sqrt(3/16) to 0.5, from 0.433 to 0.5
+		vec3 pw						=abs(p1-p0);//+start_c_offset
+		float fade_inter			=saturate((length(pw.xy)/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
+	
+		float fade					=1.0-(fade_inter);
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
 		// maxDistance is the furthest we can *see*.
-		maxDistance					=max(fadeDistance,maxDistance);
-
+		maxDistance				=max(fadeDistance,maxDistance);
+		b							=abs(c-C0*2);
 		if(fade>0)
 		{
-			if(!found)
+			/*if(!found)
 			{
-				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,1);
+				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
 				found				=found||(density.z>0);
-				if(found)
-				{
-			//		distanceKm		-=1.0*stepKm;
-				//	stepKm/=2.0;
-			//		continue;
-				}
 			}
-			if(found)
+			if(found)*/
 			{
-				vec3 noise_texc			=(world_pos.xyz)*noise3DTexcoordScale+noise3DTexcoordOffset;
+				vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise)
@@ -169,22 +209,25 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				}
 				if(density.z>0)
 				{
-					minDistance		=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
-					vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
+					minDistance = min(max(0,fadeDistance-density.z*d/maxFadeDistanceKm), minDistance);
+					// no point in having the near buffer empty.
+				//	solidDist_nearFar.x =  min(solidDist_nearFar.y - distScale, max(solidDist_nearFar.x + distScale, lastFadeDistance) - distScale);
+					vec4 worley		=pow(texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0),0.5);
 					//density.z		=saturate(4.0*density.z-0.2);
-					float wo		=worleyNoise*(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
-					density.z		=saturate((density.z+wo)*(1.0+alphaSharpness)-alphaSharpness);
-					//density.xy		*=1.0+wo;
+					float wo		=worleyNoise*.25*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1));
+					density.z		=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness+wo);
+					density.xy		*=1.0+wo;
 					float brightness_factor;
+					float cosine			=dot(N,viewScaled);
 					fade_texc.x				=sqrt(fadeDistance);
 					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);
 
 					ColourStep( colour, nearColour, meanFadeDistance, brightness_factor
-								, lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
+								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
 								,density, distanceKm, fadeDistance
 								,world_pos
 								,cloudTexCoords, fade_texc, nearFarTexc
-								,1.0, volumeTexCoords
+								,cosine, volumeTexCoords
 								,BetaClouds, BetaRayleigh, BetaMie
 								,solidDist_nearFar, noise, do_depth_mix,distScale);
 					if(nearColour.a*brightness_factor<0.003)
@@ -193,8 +236,27 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 						break;
 					}
 				}
-				lastFadeDistance = lerp(lastFadeDistance, fadeDistance - density.z*stepKm / maxFadeDistanceKm, colour.a);
+				lastFadeDistance = lerp(lastFadeDistance, fadeDistance - density.z*d / maxFadeDistanceKm, colour.a);
 			}
+		}
+		if(max(max(b.x,b.y),0)>=W)
+		{
+			// We want to round c and C0 downwards. That means that 3/2 should go to 1, but that -3/2 should go to -2.
+			// Just dividing by 2 gives 3/2 -> 1, and -3/2 -> -1.
+			c0			=	C0;
+			c			+=	start_c_offset;
+			c			-=	abs(c&int3(1,1,1));
+			c			=	c>>1;
+			gridScale	*=	2.0;
+			viewScale	*=	2.0;
+			if(idx==0)
+				W*=2;
+			p0			=	P0;
+			P0			=	startOffsetFromOrigin/gridScale/2.0;
+			C0			+=	start_c_offset;
+			C0			-=	abs(C0&int3(1,1,1));
+			C0			=	C0>>1;
+			idx			++;
 		}
 	}
     res.colour			=colour;
@@ -208,8 +270,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	// Instead of using the far depth, we will use the cloud distance.
 //	res.nearFarDepth.y = max(res.nearFarDepth.y,minDistance);
 //	res.nearFarDepth.x = min(res.nearFarDepth.x,max(lastFadeDistance, res.nearFarDepth.y + distScale ));
-	//res.nearFarDepth.w	=	meanFadeDistance;
-	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
+	res.nearFarDepth.w	=	meanFadeDistance;
+	res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	return res;
 }
-#endif

@@ -246,8 +246,10 @@
     </FxCompile>
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
+    <None Include="..\CrossPlatform\SL\clouds_raytrace.sl" />
     <None Include="..\CrossPlatform\SL\cloud_shadow.sl" />
     <None Include="..\CrossPlatform\SL\colour_packing.sl" />
+    <None Include="..\CrossPlatform\SL\composite.sl" />
     <None Include="..\CrossPlatform\SL\compositing_constants.sl" />
     <None Include="..\CrossPlatform\SL\CppSl.hs" />
     <None Include="..\CrossPlatform\SL\earth_shadow.sl" />

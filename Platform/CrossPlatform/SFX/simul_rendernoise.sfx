@@ -112,15 +112,20 @@ float Worley(vec3 texc,int grid,int seed)
 			{
 				vec3 c		=vec3(i,j,k);
 				int3 u		=(ip+int3(i,j,k));
-				u			%=grid;
-				vec3 random	=SphericalRandom(vec3(u)*seed);
+				int3 v		=(u+int3(grid,grid,grid))%int3(grid,grid,grid);
+				vec3 random	=SphericalRandom(vec3(v)*seed);
 				c			+=random.xyz;
+				//c+=vec3(1.5,.5,.5);
+				//.c			-=(u-v);
 				float k1	=length(loc-c);
 				n			=min(n,k1);
 			}
 		}
 	}
-	float p			=saturate(1.0-pow(1.5*n,4.0))/1.0;
+	//float p			=saturate(1.0-pow(1.5*n,4.0))/1.0;
+	// now n is the distance to the nearest centre. We want the value to be
+	// 1.0 when at the nearest centre, out to some maximum radius.
+	float p			=saturate(1.0-n/1.0);
 	return p;
 }
 
@@ -133,10 +138,10 @@ shader void CS_PerlinWorley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 		return;
 	vec3 texCoords	=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec4 result;
-	result.x		=Worley(texCoords,8,1);//saturate(Noise3D(noise_texture_frequency,texCoords,5, persistence).x+Worley(texCoords,16,1)-0.5);
-	result.y		=Worley(texCoords,8,2);
-	result.z		=Worley(texCoords,16,1);
-	result.w		=Worley(texCoords,32,1);
+	result			=Worley(texCoords,4,1);//saturate(Noise3D(noise_texture_frequency,texCoords,5, persistence).x+Worley(texCoords,16,1)-0.5);
+	//result			=saturate(2.0*result.x-1.0+0.25*Worley(texCoords,18,2));
+//	result.z		=0.25*Worley(texCoords,16,1);
+//	result.w		=0.125*Worley(texCoords,32,1);
 	IMAGE_STORE_3D(targetTextureU8,idx,result);
 }
 
@@ -150,10 +155,10 @@ shader void CS_Worley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV
 	vec3 texCoords		=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(dims);
 	int grid=8;
 	vec4 result;
-	result.x		=Worley(texCoords,5,1);
-	result.y		=Worley(texCoords,9,2);
-	result.z		=Worley(texCoords,16,3);
-	result.w		=Worley(texCoords,24,4);
+	result			=Worley(texCoords,5,7);
+	result.y		=0.5*Worley(texCoords,9,2);
+	result.z		=0.25*Worley(texCoords,16,3);
+	result.w		=0.125*Worley(texCoords,24,4);
 	IMAGE_STORE_3D(targetTextureU8,idx,result);
 }
 
