@@ -49,7 +49,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	
 	
 	float dist_rt					=pow(dist,0.5);
-	vec4 cloud						=texture_cube_lod(farCloudTexture,view,0);
+	vec4 cloudFar					=texture_cube_lod(farCloudTexture,view,0);
 	vec3 offsetMetres				=view*dist*1000.0*maxFadeDistanceKm;
 	vec3 lightspaceOffset			=(mul(worldToScatteringVolumeMatrix,vec4(offsetMetres,1.0)).xyz);
 	vec3 worldspaceVolumeTexCoords	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(sine)/pi),sqrt(dist));
@@ -68,13 +68,13 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	// and one from the near to the far distance.
 	float nearInterp				=pow(saturate((dist )/0.0033),1.0);
 	nearInterp						=saturate((dist-nearDist)/max(0.00000001,2.0*nearDist));
-		//
+		
 	vec4 lp							=texture_cube_lod(lightpassTexture,view,0);
-	cloud.rgb						+=lp.rgb;
+	cloudFar.rgb						+=lp.rgb;
 	
 	vec4 cloudNear					=texture_cube_lod(nearCloudTexture, view, 0);
 	
-	cloud							=lerp(cloudNear, cloud,hiResInterp);
+	vec4 cloud						=lerp(cloudNear, cloudFar,hiResInterp);
 	cloud							=lerp(vec4(0, 0, 0, 1.0), cloud, nearInterp);
 	
 	vec3 worldPos					=viewPos+offsetMetres;
@@ -93,6 +93,34 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	insc							+=cloud;
 	res.multiply					=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a*shadow;
 	res.add							=insc;//vec4(lightspaceVolumeTexCoords,1.0);
+/*	
+	if(clip_pos.x>.45)
+	{
+		res.add=nearFarCloud.xxxx;
+			res.multiply=vec4(0,0,0,0);
+	}
+	else if(clip_pos.x>0.3)
+	{
+		res.add=nearFarCloud.yyyy;
+			res.multiply=vec4(0,0,0,0);
+	}
+	else if(clip_pos.x<-.45)
+	{
+			res.add=hiResInterp;
+	}
+	else if(clip_pos.x<-.3)
+	{
+		if(clip_pos.y<0)
+		{
+			res.multiply=vec4(1,0,0,0);
+			res.add=cloudNear;
+		}
+		else
+		{
+			res.multiply=vec4(0,1,0,0);
+			res.add=cloudFar;
+		}
+	}*/
     return res;
 }
 

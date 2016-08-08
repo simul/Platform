@@ -583,11 +583,11 @@ float CSDensity(uint3 pos)
 		vec4 w1					=texture_wrap_lod(worleyTexture3D,fl*worley_texcoord,0);
 		vec4 w2					=texture_wrap_lod(worleyTexture3D,(fl+1.0)*worley_texcoord,0);
 		worley					=pow(lerp(w1,w2,ff),0.5);
-		w						+=4.0*m*((worley.x-1.0)+p*(worley.y-1.0)+p*p*(worley.z-1.0)+p*p*p*(worley.w-1.0))/(1.0+p+p*p+p*p*p);
+		w						+=m*(w1.xxxx-0.6);//4.0*m*((worley.x-1.0)+p*(worley.y-1.0)+p*p*(worley.z-1.0)+p*p*p*(worley.w-1.0))/(1.0+p+p*p+p*p*p);
 		m						*=persistence;
 		worley_texcoord			*=3.0;
 	}
-	w							/=(1.0+persistence+persistence*persistence+persistence*persistence*persistence);
+//	w							/=(1.0+persistence+persistence*persistence+persistence*persistence*persistence);
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
 	
 	vec4 mask					=texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0);
@@ -597,8 +597,8 @@ float CSDensity(uint3 pos)
 	float dens					=noise_val+2.5*hm-1.0;
 
 	dens						=saturate((dens-0.5)/diffusivity/5.0+0.5);
-	dens						=saturate(4.0*dens-3.0+worleyNoiseStrength*2.0*(1.5+w));
-
+	dens						=saturate(2.0*dens-1.0+2.0*worleyNoiseStrength*(w));
+//
 	vec3 wPos					=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
 	
 	for(int i=0;i<numVolumes;i++)

@@ -50,11 +50,14 @@ float GetHumidityMultiplier2(float z,float baseLayer,float transition,float uppe
 {
 //	float i		=saturate((z-baseLayer)/transition);
 	float i		=saturate((z-baseLayer)/transition);
-	float m		=1.0-i;//*i;
+	float m		=lerp(1.0,upperDensity,i);//*i;
 	float t2	=max(1.0-baseLayer-transition,0.0001);
-	float j		=1.0-saturate((1.0-z));
-	float n		=upperDensity*(1.0-j*j*j);
+	float upperLayer=1.0-baseLayer-transition;
+	float j		=1.0-saturate((1.0-z)/upperLayer);
+	float n		=upperDensity*sqrt(1.0-j*j);
+	m			*=step(z,baseLayer+transition);
 	m			=max(m,n);
+
 	return m;
 }
 

@@ -78,7 +78,7 @@ void Texture::FreeRTVTables()
 void Texture::InitUAVTables(int l,int m)
 {
 	mipUnorderedAccessViews			=nullptr;
-	if(m&&dim<3)
+	if(m)
 		mipUnorderedAccessViews		=new ID3D11UnorderedAccessView*[m];		// UAV's for whole texture at different mips.
 	layerMipUnorderedAccessViews	=nullptr;
 	if(l&&m)
@@ -250,7 +250,7 @@ ID3D11ShaderResourceView *Texture::AsD3D11ShaderResourceView(crossplatform::Shad
 			return mainShaderResourceView;
 		return layerShaderResourceViews[index];
 	}
-	if(mainMipShaderResourceViews&&index<0)
+	if(mainMipShaderResourceViews&&(no_array||index<0))
 		return mainMipShaderResourceViews[mip];
 	if(layerMipShaderResourceViews)
 		return layerMipShaderResourceViews[index][mip];
@@ -533,13 +533,13 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		srv_desc.Texture3D.MostDetailedMip	= 0;
 		FreeSRVTables();
 		InitSRVTables(1,m);
-		V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(texture, &srv_desc,&mainShaderResourceView));
+		V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(texture,&srv_desc,&mainShaderResourceView));
 		if(mainMipShaderResourceViews)
-		for(int j=0;j<mips;j++)
+		for(int j=0;j<m;j++)
 		{
 			srv_desc.Texture3D.MipLevels=1;
 			srv_desc.Texture3D.MostDetailedMip=j;
-			V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &srv_desc, &mainMipShaderResourceViews[j]));
+			V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(texture, &srv_desc, &mainMipShaderResourceViews[j]));
 		}
 	}
 	if(computable&&(!layerMipUnorderedAccessViews||!ok))
@@ -555,6 +555,15 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		uav_desc.Texture3D.WSize	= d;
 		uav_desc.Texture3D.FirstWSlice=0;
 		
+		if(mipUnorderedAccessViews)
+		for(int i=0;i<m;i++)
+		{
+			uav_desc.Texture3D.MipSlice=i;
+			V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
+			uav_desc.Texture3D.WSize/=2;
+		}
+		
+		uav_desc.Texture3D.WSize	= d;
 		if(layerMipUnorderedAccessViews)
 		for(int i=0;i<m;i++)
 		{
@@ -1023,9 +1032,7 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 			V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][j]));
 			SetDebugObjectName(layerMipUnorderedAccessViews[0][j],"dx11::Texture::ensureTexture1DSizeAndFormat unorderedAccessView");
 		}
-
-
-			}
+	}
 	mips=m;
 }
 

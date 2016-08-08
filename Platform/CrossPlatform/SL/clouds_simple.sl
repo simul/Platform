@@ -154,7 +154,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 			}
 			if(found)
 			{
-				vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
+				vec3 noise_texc			=(world_pos.xyz)*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise)
@@ -172,7 +172,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 					minDistance		=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
 					vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
-					float wo		=worleyNoise*(worley.x+worley.y+worley.z+worley.w-0.7*(1.0+0.5+0.25+0.125));
+					float wo		=worleyNoise*(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
 					density.z		=saturate((density.z+wo)*(1.0+alphaSharpness)-alphaSharpness);
 					//density.xy		*=1.0+wo;
 					float brightness_factor;
@@ -208,8 +208,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	// Instead of using the far depth, we will use the cloud distance.
 //	res.nearFarDepth.y = max(res.nearFarDepth.y,minDistance);
 //	res.nearFarDepth.x = min(res.nearFarDepth.x,max(lastFadeDistance, res.nearFarDepth.y + distScale ));
-	res.nearFarDepth.w	=	meanFadeDistance;
-	res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
+	//res.nearFarDepth.w	=	meanFadeDistance;
+	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	return res;
 }
 #endif

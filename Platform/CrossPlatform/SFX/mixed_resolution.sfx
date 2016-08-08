@@ -30,10 +30,10 @@ vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture
 	,uint2 scale)
 {
 	// Stochastic offset goes from -1 to +1
-	vec2 texCoords = sourceTexCoords + .6*texelRange*stochasticOffset;// / vec2(scale);
-	vec4 fn				=vec4(0.0,1.0,0.0,1.0);
-	vec2 thr = vec2(nearThresholdDist, nearThresholdDist);
-	vec2 offsets[4];
+	vec2 texCoords	=sourceTexCoords+texelRange*stochasticOffset;// / vec2(scale);
+	vec4 fn			=vec4(0.0,1.0,0.0,1.0);
+	vec2 thr		=vec2(nearThresholdDist, nearThresholdDist);
+	vec2 offsets[3];
 	offsets[0]	=vec2(-0.4,0.3);
 	offsets[1]	=vec2(0.4,0.3);
 	offsets[2]	=vec2(0.0,-0.5);
@@ -42,13 +42,12 @@ vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture
 		//float x=(0.5+float(i)-scale.x/2.0)/float(scale.x);
 		//for(int j=0;j<scale.y;j++)
 		{
-			//float y	=(0.5+float(j)-scale.y/2.0)/float(scale.y);
-			vec2 offs	=texelRange*offsets[i];//texelRange*vec2(x,y);
-			vec2 texc	=saturate(1.01*(texCoords+.6*offs))/1.01;
+			vec2 offs	=texelRange*offsets[i];
+			vec2 texc	=saturate(1.0*(texCoords+offs))/1.0;
 			texc		*=depthWindow.zw;
 			texc		+=depthWindow.xy;
 			// VERY important to use NEAREST, and not filter the source depth texture!
-			vec2 d		=texture_nearest_lod(sourceDepthTexture,texc,0).xx;
+			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
 			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 			float s		=saturate((dist.x)/thr.x);
 			fn.yw		=min(fn.yw,vec2((1.0-s),0.0)+dist);
@@ -187,10 +186,10 @@ void MinMax(uint2 idx1,bool reverseDepth)
 	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
 	sourceTexCoords.y		=1.0-sourceTexCoords.y;
 	vec4 clipRange			=frustumClipRange;
-//	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
-//		return;
-//	if (updateTexture[idx].b == 0.0)
-//		return;
+	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
+		return;
+	if (updateTexture[idx].b == 0.0)
+		return;
 	vec2 thr	=vec2(nearThresholdDist, nearThresholdDist);
 	vec4 fn1	=sourceTexture1[idx];
 	vec4 fn2	=sourceTexture2[idx];

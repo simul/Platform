@@ -214,13 +214,13 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth)
 	if (depth)
 	{
 		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
-		vec4 xlookup = vec4(0,0,0,0);
+	/*	vec4 xlookup = vec4(0,0,0,0);
 		xlookup	+=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0, 1.0, 1.0)),0);
 		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0,-1.0, 1.0)),0);
 		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3(-1.0, 1.0, 1.0)),0);
 		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0 ,1.0,-1.0)),0);
 		dlookup.xz = max(dlookup.xz, xlookup.xz);
-		dlookup.yw = min(dlookup.yw, xlookup.yw);
+		dlookup.yw = min(dlookup.yw, xlookup.yw);*/
 	}
 	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(view.z)/pi),0);
 	
@@ -576,8 +576,8 @@ shader vec4 PS_Show3DNoise(posTexVertexOutput IN):SV_TARGET
 		z=0.5;
 	vec4 lookup		=texture_3d_nearest_lod(noiseTexture3D,vec3(IN.texCoords,z),0);
 	//lookup=abs(lookup);
-	return vec4(saturate(lookup.rgb),1.0);
-	//return vec4(0.5*(lookup.rgb+1.0),1.0);
+	//return vec4(saturate(lookup.rgb),1.0);
+	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
 shader vec4 PS_ShowShadow(posTexVertexOutput IN):SV_TARGET
