@@ -405,6 +405,25 @@ void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool inclu
 	SimpleRaytrace(pos,include_rain,depth);
 }
 
+void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth)
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z			=cubemapFaceIndex[g.z+t.z].x;
+	uint3 pos		=uint3(targetRange[Z].xy+idx,Z);
+	if(pos.x>=edge.x||pos.y>=edge.y)
+		return;
+	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
+		return;
+	vec4 u=updateTexture[pos];
+	if (u.r<1.0&&u.b>0.0)
+	{
+	//outputTexture1[pos]		=vec4(1,1,0,1);
+	//outputTexture2[pos]		=vec4(1,1,0,1);
+	//outputTexture3[pos]		=vec4(1,1,0,1);
+	SimpleRaytrace(pos,include_rain,depth);
+	}
+}
+
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_Lightpass(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 {
@@ -515,6 +534,20 @@ CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceStaticNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	CS_RaytraceStatic(g,t,false,true);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticEdgeRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStaticEdge(g,t,true,true);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticEdgeNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStaticEdge(g,t,false,true);
 }
 
 
@@ -702,18 +735,32 @@ fxgroup raytrace
 			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceNoRain()));
 		}
 	}
-	technique stat
+	technique stat_rain
 	{
 		pass p0 
 		{
 			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticRain()));
 		}
 	}
-	technique stat_norain
+	technique stat
 	{
 		pass p0 
 		{
 			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticNoRain()));
+		}
+	}
+	technique edge_stat_rain
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticEdgeRain()));
+		}
+	}
+	technique edge_stat
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticEdgeNoRain()));
 		}
 	}
 }
@@ -730,7 +777,6 @@ technique cloud_shadow
 		SetPixelShader(CompileShader(ps_5_0,PS_CloudShadow()));
     }
 }
-
 
 technique rain_map
 {
@@ -842,6 +888,7 @@ technique point_queries
 		SetComputeShader(CompileShader(cs_5_0,CS_PointQueries()));
     }
 }
+
 technique line_queries
 {
     pass p0

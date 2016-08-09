@@ -304,7 +304,9 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 	debugEffect->Unapply(deviceContext);
 	textureQueryResult.CopyToReadBuffer(deviceContext);
 	const vec4 *result=textureQueryResult.OpenReadBuffer(deviceContext);
-	vec4 r=result[query_id];
+	vec4 r;
+	if(result)
+		r=result[query_id];
 	textureQueryResult.CloseReadBuffer(deviceContext);
 	return r;
 }
