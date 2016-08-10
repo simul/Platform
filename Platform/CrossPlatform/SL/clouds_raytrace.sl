@@ -1,6 +1,6 @@
-// groupshared has 32k available.
-// each vec4 is 16 bytes. So 1024 vec4's will be 16k
-//groupshared vec4 distance[4][4][1024];
+//  Copyright (c) 2007-2016 Simul Software Ltd. All rights reserved.
+#ifndef CLOUDS_RAYTRACE_SL
+#define CLOUDS_RAYTRACE_SL
 RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,Texture2D rainMapTexture
 											,Texture3D noiseTexture3D
@@ -52,13 +52,13 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float minDistance		=1.0;
 	float maxDistance		=0.0;
 	// Precalculate hg effects
-	float BetaClouds		=HenyeyGreenstein(cloudEccentricity,cos0);
+	float BetaClouds		=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	float BetaRayleigh		=CalcRayleighBeta(cos0);
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
 
 	vec4 rainbowColour;
 	if(do_rainbow)
-		rainbowColour=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
+		rainbowColour		=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
 												rainbowIntensity,view,lightDir);
 	float moisture			=0.0;
 
@@ -139,8 +139,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	//float blinn_phong=0.0;
 	//bool found=false;
 	float distScale =  0.6 / maxFadeDistanceKm;
-
-	for(int i=0;i<768;i++)
+	int i=0;
+	for(i=0;i<768;i++)
 	{
 		world_pos					+=0.001*view;
 		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm)//||solidDist_nearFar.y<lastFadeDistance)
@@ -150,7 +150,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		// Next pos.
 		int3 c1						=c+c_offset;
 
-		//find the correct d:
+		//find the correct stepKm:
 		vec3 p						=offsetFromOrigin/gridScale;
 		vec3 p1						=c1;
 		vec3 dp						=p1-p;
@@ -161,14 +161,14 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		vec3 N						=step(D,vec3(e,e,e));
 
 		int3 c_step					=c_offset*int3(N);
-		float d						=e*viewScale;
-		distanceKm					+=d;
+		float stepKm						=e*viewScale;
+		distanceKm					+=stepKm;
 
 		// What offset was the original position from the centre of the cube?
 		p1							=p+e*viewScaled;
 		// We fade out the intermediate steps as we approach the boundary of a detail change.
 		// Now sample at the end point:
-		world_pos					+=d*view;
+		world_pos					+=stepKm*view;
 		vec3 cloudWorldOffsetKm		=world_pos-cornerPosKm;
 		vec3 cloudTexCoords			=(cloudWorldOffsetKm)*inverseScalesKm;
 		c							+=c_step;
@@ -183,7 +183,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
 		// maxDistance is the furthest we can *see*.
-		maxDistance				=max(fadeDistance,maxDistance);
+		maxDistance					=max(fadeDistance,maxDistance);
 		b							=abs(c-C0*2);
 		if(fade>0)
 		{
@@ -199,7 +199,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise)
 					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
-				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
+				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance);
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
@@ -209,14 +209,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				}
 				if(density.z>0)
 				{
-					minDistance = min(max(0,fadeDistance-density.z*d/maxFadeDistanceKm), minDistance);
-					// no point in having the near buffer empty.
-				//	solidDist_nearFar.x =  min(solidDist_nearFar.y - distScale, max(solidDist_nearFar.x + distScale, lastFadeDistance) - distScale);
-					vec4 worley		=pow(texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0),0.5);
+					minDistance		=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
+					vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
-					float wo		=worleyNoise*.25*((worley.x-1)+(worley.y-1)+(worley.z-1)+(worley.w-1));
-					density.z		=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness+wo);
-					density.xy		*=1.0+wo;
+					float wo		=worleyNoise*(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
+					density.z		=saturate((density.z+wo)*(1.0+alphaSharpness)-alphaSharpness);
+					//density.xy		*=1.0+wo;
 					float brightness_factor;
 					float cosine			=dot(N,viewScaled);
 					fade_texc.x				=sqrt(fadeDistance);
@@ -229,14 +227,14 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 								,cloudTexCoords, fade_texc, nearFarTexc
 								,cosine, volumeTexCoords
 								,BetaClouds, BetaRayleigh, BetaMie
-								,solidDist_nearFar, noise, do_depth_mix,distScale);
+								,solidDist_nearFar, noise, do_depth_mix,distScale,idx);
 					if(nearColour.a*brightness_factor<0.003)
 					{
 						nearColour.a=colour.a = 0.0;
 						break;
 					}
 				}
-				lastFadeDistance = lerp(lastFadeDistance, fadeDistance - density.z*d / maxFadeDistanceKm, colour.a);
+				lastFadeDistance = lerp(lastFadeDistance, fadeDistance - density.z*stepKm / maxFadeDistanceKm, colour.a);
 			}
 		}
 		if(max(max(b.x,b.y),0)>=W)
@@ -261,6 +259,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	}
     res.colour			=colour;
     res.nearColour		=nearColour;
+/*   if(clip_pos.x<0)
+   {
+	   res.colour.rgb			=saturate(float(i)/75.0)*(1.0-res.colour.a			);
+	   res.nearColour.rgb		=saturate(float(i)/75.0)*(1.0-res.nearColour.a		);
+   }*/
+
 #ifndef INFRARED
 	if(do_rainbow)
 		res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
@@ -274,3 +278,4 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	return res;
 }
+#endif

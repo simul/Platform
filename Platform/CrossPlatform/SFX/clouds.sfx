@@ -144,16 +144,16 @@ shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec4 c1		=cloudDensity[pos];
 	vec4 c2		=cloudDensity2[pos];
     vec4 res	=lerp(c1,c2,cloud_interp);
-	//res.z		=saturate((res.z-0.5)*5.0+0.5);
+	res.z		=saturate((res.z-0.5)*5.0+0.5);
 	IMAGE_STORE_3D(outputTexture3d,pos,res);
 }
 
 
-CS_LAYOUT(4,4,4)
+CS_LAYOUT(4,4,1)
 shader void CS_Mip( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	int3 pos=int3(g*4+t);
-	int3 pos2=pos*2;
+	uint3 pos=(g*uint3(4,4,1)+t)*uint3(amortizationScale)+uint3(amortizationOffset.xyz);
+	int3 pos2=int3(pos)*2;
 
 #ifndef __PSSL__
 	vec4 c1= cloudDensity[pos2+int3(0,0,0)];
@@ -214,13 +214,13 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth)
 	if (depth)
 	{
 		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
-	/*	vec4 xlookup = vec4(0,0,0,0);
-		xlookup	+=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0, 1.0, 1.0)),0);
-		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0,-1.0, 1.0)),0);
-		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3(-1.0, 1.0, 1.0)),0);
-		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0 ,1.0,-1.0)),0);
+		vec4 xlookup = vec4(0,0,0,0);
+		xlookup	+=0.1*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0, 1.0, 1.0)),0);
+		xlookup +=0.1*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0,-1.0, 1.0)),0);
+		xlookup +=0.1*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3(-1.0, 1.0, 1.0)),0);
+		xlookup +=0.1*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0 ,1.0,-1.0)),0);
 		dlookup.xz = max(dlookup.xz, xlookup.xz);
-		dlookup.yw = min(dlookup.yw, xlookup.yw);*/
+		dlookup.yw = min(dlookup.yw, xlookup.yw);
 	}
 	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(view.z)/pi),0);
 	

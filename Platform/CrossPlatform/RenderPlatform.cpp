@@ -422,8 +422,8 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	viewport.h		=(int)oldv.h*size;
 	viewport.zfar	=1.0f;
 	viewport.znear	=0.0f;
-	viewport.x	=(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
-	viewport.y	=(int)(0.5f*(1.f-offsety)*oldv.h-viewport.h/2);
+	viewport.x		=(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
+	viewport.y		=(int)(0.5f*(1.f-offsety)*oldv.h-viewport.h/2);
 	SetViewports(deviceContext,1,&viewport);
 	
 	math::Matrix4x4 view=deviceContext.viewStruct.view;

@@ -1,4 +1,4 @@
-//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+//  Copyright (c) 2007-2016 Simul Software Ltd. All rights reserved.
 #ifndef CLOUDS_SIMPLE_SL
 #define CLOUDS_SIMPLE_SL
 
@@ -157,9 +157,9 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				vec3 noise_texc			=(world_pos.xyz)*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 				vec4 noiseval			=vec4(0,0,0,0);
-				if(noise)
-					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
-				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
+				if(noise&&12.0*fadeDistance<4.0)
+					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,12.0*fadeDistance);
+				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance);
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
@@ -180,13 +180,13 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);
 
 					ColourStep( colour, nearColour, meanFadeDistance, brightness_factor
-								, lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
+								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
 								,density, distanceKm, fadeDistance
 								,world_pos
 								,cloudTexCoords, fade_texc, nearFarTexc
 								,1.0, volumeTexCoords
 								,BetaClouds, BetaRayleigh, BetaMie
-								,solidDist_nearFar, noise, do_depth_mix,distScale);
+								,solidDist_nearFar, noise, do_depth_mix,distScale,0);
 					if(nearColour.a*brightness_factor<0.003)
 					{
 						nearColour.a=colour.a = 0.0;
@@ -208,8 +208,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	// Instead of using the far depth, we will use the cloud distance.
 //	res.nearFarDepth.y = max(res.nearFarDepth.y,minDistance);
 //	res.nearFarDepth.x = min(res.nearFarDepth.x,max(lastFadeDistance, res.nearFarDepth.y + distScale ));
-	//res.nearFarDepth.w	=	meanFadeDistance;
-	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
+	res.nearFarDepth.w	=	meanFadeDistance;
+	res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	return res;
 }
 #endif

@@ -70,7 +70,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	nearInterp						=saturate((dist-nearDist)/max(0.00000001,2.0*nearDist));
 		
 	vec4 lp							=texture_cube_lod(lightpassTexture,view,0);
-	cloudFar.rgb						+=lp.rgb;
+	cloudFar.rgb					+=lp.rgb;
 	
 	vec4 cloudNear					=texture_cube_lod(nearCloudTexture, view, 0);
 	

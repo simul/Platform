@@ -136,14 +136,15 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 	return c;
 }
 
-vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale)
+vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float dist)
 {
 	//texCoords=saturate(texCoords);
 	float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(texCoords.z));
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
-	vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,pos,0);
-	density.z			*=layerFade;
+	vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,pos,dist*4.0);
+	float tz			=texCoords.z*32.0;
+	density.z			*=layerFade*saturate(tz+1.0)*saturate(32.0-tz);
 	return density;
 }
 
@@ -299,7 +300,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 
 			vec4 noiseval			=vec4(0,0,0,0);
 			noiseval				=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
-			vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale);
+			vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance);
 			
 			if(density.z>0)
 			{
@@ -375,6 +376,8 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 		*saturate(1.0-cloudWorldOffsetKm.z/1.0)*(0.5+0.5*saturate(cloudWorldOffsetKm.z/4.0+1.0));
 }
 
+	vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};
+
 void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDistance,inout float brightness_factor
 	,Texture2D lossTexture,Texture2D inscTexture,Texture2D skylTexture,Texture3D inscatterVolumeTexture,Texture2D lightTableTexture
 	,vec4 density,float distanceKm,float fadeDistance
@@ -382,7 +385,7 @@ void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDist
 	,vec3 cloudTexCoords,vec2 fade_texc,vec2 nearFarTexc
 	,float cosine,vec3 volumeTexCoords
 	,float BetaClouds,float BetaRayleigh,float BetaMie
-	,vec2 solidDist_nearFar,bool noise,bool do_depth_mix,float distScale)
+	,vec2 solidDist_nearFar,bool noise,bool do_depth_mix,float distScale,int idx)
 {
 	density.z				*=cosine;
 	density.z				*=cosine;
@@ -414,6 +417,10 @@ void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDist
 											,fade_texc
 											,nearFarTexc
 											,brightness_factor);
+		/*if(world_pos.x<0)
+		{
+			clr.rgb=colours[idx];
+		}*/
 		if(do_depth_mix)
 		{
 			vec4 clr_n		=clr;
