@@ -111,7 +111,7 @@ namespace simul
 			ID3D11ShaderResourceView*   mainShaderResourceView;			// SRV for the whole texture including all layers and mips.	
 			ID3D11ShaderResourceView*	arrayShaderResourceView;		// SRV that describes a cubemap texture as an array, used only for cubemaps.
 			ID3D11ShaderResourceView**	layerShaderResourceViews;		// SRV's for each layer, including all mips
-		ID3D11ShaderResourceView**  mainMipShaderResourceViews;		// SRV's for the whole texture at different mips.
+			ID3D11ShaderResourceView**  mainMipShaderResourceViews;		// SRV's for the whole texture at different mips.
 			ID3D11ShaderResourceView***	layerMipShaderResourceViews;	// SRV's for each layer at different mips.
 			ID3D11UnorderedAccessView**  mipUnorderedAccessViews;		// UAV for the whole texture at various mips: only for 2D arrays.
 			ID3D11UnorderedAccessView***  layerMipUnorderedAccessViews;	// UAV's for the layers and mips
