@@ -15,8 +15,8 @@ struct RaytracePixelOutput
 
 struct FarNearPixelOutput
 {
-	vec4 farColour		;
-	vec4 nearColour		;
+	vec4 farColour	;
+	vec4 nearColour	;
 };
 
 float MakeRainMap(Texture3D cloudDensity,vec2 texCoords)

@@ -108,7 +108,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	{
 			res.add=hiResInterp;
 	}
-	else if(clip_pos.x<-.3)
+	else
+	if(clip_pos.x<-.3)
 	{
 		if(clip_pos.y<0)
 		{
@@ -120,7 +121,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 			res.multiply=vec4(0,1,0,0);
 			res.add=cloudFar;
 		}
-	}*/
+	} */
     return res;
 }
 
