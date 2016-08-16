@@ -140,12 +140,14 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 CS_LAYOUT(4,4,4)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	uint3 pos	=(g*4+t)*uint3(amortizationScale)+uint3(amortizationOffset.xyz);
-	vec4 c1		=cloudDensity[pos];
-	vec4 c2		=cloudDensity2[pos];
+	uint3 idx	=(g*4+t)*uint3(amortizationScale)+uint3(amortizationOffset.xyz);
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	vec3 texc	=vec3(idx)*scale+offset;
+	vec4 c1		=cloudDensity.SampleLevel(cloudSamplerState,texc,0);
+	vec4 c2		=cloudDensity2.SampleLevel(cloudSamplerState,texc,0);
     vec4 res	=lerp(c1,c2,cloud_interp);
 	res.z		=saturate((res.z-0.5)*5.0+0.5);
-	IMAGE_STORE_3D(outputTexture3d,pos,res);
+	IMAGE_STORE_3D(outputTexture3d,idx,res);
 }
 
 
@@ -156,15 +158,15 @@ shader void CS_Mip( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	int3 pos2=int3(pos)*2;
 
 #ifndef __PSSL__
-	vec4 c1= cloudDensity[pos2+int3(0,0,0)];
-	vec4 c2= cloudDensity[pos2+int3(1,0,0)];
-	vec4 c3= cloudDensity[pos2+int3(0,1,0)];
-	vec4 c4= cloudDensity[pos2+int3(1,1,0)];
-	vec4 c5= cloudDensity[pos2+int3(0,0,1)];
-	vec4 c6= cloudDensity[pos2+int3(1,0,1)];
-	vec4 c7= cloudDensity[pos2+int3(0,1,1)];
-	vec4 c8= cloudDensity[pos2+int3(1,1,1)];
-	vec4 res=0.125*(c1+c2+c3+c4+c5+c6+c7+c8);
+	vec4 c1		=cloudDensity[pos2+int3(0,0,0)];
+	vec4 c2		=cloudDensity[pos2+int3(1,0,0)];
+	vec4 c3		=cloudDensity[pos2+int3(0,1,0)];
+	vec4 c4		=cloudDensity[pos2+int3(1,1,0)];
+	vec4 c5		=cloudDensity[pos2+int3(0,0,1)];
+	vec4 c6		=cloudDensity[pos2+int3(1,0,1)];
+	vec4 c7		=cloudDensity[pos2+int3(0,1,1)];
+	vec4 c8		=cloudDensity[pos2+int3(1,1,1)];
+	vec4 res	=0.125*(c1+c2+c3+c4+c5+c6+c7+c8);
 	IMAGE_STORE_3D(outputTexture3d,pos,res);
 #endif
 }
@@ -215,10 +217,10 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth)
 	{
 		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
 		vec4 xlookup = vec4(0,0,0,0);
-		xlookup	+=0.1*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0, 1.0, 1.0)),0);
-		xlookup +=0.1*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0,-1.0, 1.0)),0);
-		xlookup +=0.1*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3(-1.0, 1.0, 1.0)),0);
-		xlookup +=0.1*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0 ,1.0,-1.0)),0);
+		xlookup	+=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3( 1.0, 1.0, 1.0)),0);
+		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3( 1.0,-1.0, 1.0)),0);
+		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3(-1.0, 1.0, 1.0)),0);
+		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3( 1.0 ,1.0,-1.0)),0);
 		dlookup.xz = max(dlookup.xz, xlookup.xz);
 		dlookup.yw = min(dlookup.yw, xlookup.yw);
 	}

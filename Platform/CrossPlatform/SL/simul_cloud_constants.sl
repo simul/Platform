@@ -52,6 +52,12 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform float maxCloudDistanceKm;
 
 	uniform uint4 cubemapFaceIndex[6];
+
+	uniform vec3 scale;
+	uniform float pad61422;
+
+	uniform vec3 offset;
+	uniform float pad132890;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
