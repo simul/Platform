@@ -485,7 +485,7 @@ shader void CS_Edge_Rain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint2 idx				=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z					=cubemapFaceIndex[g.z+t.z].x;
-	uint3 pos				=uint3(targetRange[t.z].xy+idx,Z);
+	uint3 pos				=uint3(targetRange[Z].xy+idx,Z);
 	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
 		return;
 	vec4 u=updateTexture[pos];
