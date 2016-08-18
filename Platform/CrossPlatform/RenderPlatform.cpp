@@ -239,7 +239,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	// Finally, is it mappable? We can set the colour from CPU memory.
 	else if(texture->IsComputable())
 	{
-		int a=texture->GetArraySize();
+		int a=texture->NumFaces();
 		if(a==0)
 			a=1;
 #if 1
