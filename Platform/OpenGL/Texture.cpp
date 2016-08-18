@@ -315,7 +315,7 @@ GL_ERROR_CHECK
 GL_ERROR_CHECK
 	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w,l, internal_format, RenderPlatform::ToGLExternalFormat(pixelFormat), NULL);
 	//glTexImage2D(GL_TEXTURE_2D,0,internal_format,w,l,0,RenderPlatform::ToGLExternalFormat(pixelFormat),RenderPlatform::DataType(pixelFormat),NULL);
-glGenerateMipmap(GL_TEXTURE_2D); 
+	glGenerateMipmap(GL_TEXTURE_2D); 
 GL_ERROR_CHECK
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
@@ -573,6 +573,7 @@ void Texture::activateRenderTarget(simul::crossplatform::DeviceContext &,int arr
 {
 	if(!m_fb)
 		return;
+	if (array_index < 0) array_index = 0;
     glBindFramebuffer(GL_FRAMEBUFFER, m_fb[array_index][mip_index]); 
 	GL_ERROR_CHECK
 	FramebufferGL::CheckFramebufferStatus();
