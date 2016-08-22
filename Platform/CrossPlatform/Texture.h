@@ -105,7 +105,7 @@ namespace simul
 			/// Asynchronously move this texture to slow RAM.
 			virtual void MoveToSlowRAM() {}
 			virtual void DiscardFromFastRAM() {}
-			virtual GLuint AsGLuint(int =-1){return 0;}
+			virtual GLuint AsGLuint(int =-1, int = -1){return 0;}
 			//! Get the crossplatform pixel format.
 			PixelFormat GetFormat() const
 			{
