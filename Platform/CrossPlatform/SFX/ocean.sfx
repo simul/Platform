@@ -366,14 +366,14 @@ shader VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
 
 	// Displacement map
 	vec3 displacement = vec3(0,0,0);
-	if (blend_factor > 0)
+	//if (blend_factor > 0)
 		displacement = g_texDisplacement.SampleLevel(samplerStateNearestWrap, uv_local, 0).xyz;
-	displacement = lerp(vec3(0, 0, perlin), displacement, blend_factor);
+	//displacement = lerp(vec3(0, 0, perlin), displacement, blend_factor);
 	pos_local.xyz += displacement;
 //pos_local.z+=500.0*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
 	// Transform
-	Output.Position = mul(pos_local, g_matWorldViewProj);
-   // Output.Position = mul( g_matWorldViewProj,pos_local);
+	//Output.Position = mul(pos_local, g_matWorldViewProj);
+    Output.Position = mul(g_matWorldViewProj, pos_local);
 	Output.LocalPos = pos_local.xyz;
 	
 	// Pass thru texture coordinate
@@ -431,8 +431,8 @@ shader float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	// ramp.x for fresnel term.
 	float4 ramp = g_texFresnel.Sample(g_samplerFresnel,vec2(cos_angle,0)).xyzw;
 // A workaround to deal with "indirect reflection vectors" (which are rays requiring multiple reflections to reach the sky).
-//	if (reflect_vec.z < g_BendParam.x)
-//		ramp = lerp(ramp, g_BendParam.z, (g_BendParam.x - reflect_vec.z)/(g_BendParam.x - g_BendParam.y));
+	if (reflect_vec.z < g_BendParam.x)
+		ramp = lerp(ramp, g_BendParam.z, (g_BendParam.x - reflect_vec.z)/(g_BendParam.x - g_BendParam.y));
 	reflect_vec.z		=max(0, reflect_vec.z);
 
 	vec3 reflected_color=g_texReflectCube.Sample(wrapSamplerState,-reflect_vec.xyz).xyz;
