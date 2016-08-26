@@ -145,7 +145,7 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 	float ce				=cos(elevation);
 	float x					=sin(azimuth)*se;
 	float y					=cos(azimuth)*se;
-	vec3 view				=vec4(x,y,ce,1.0).xyz;//x*xAxis+y*yAxis+lightDir*ce;
+	vec3 view				=vec3(x,y,ce);
 	
 	float sine				=view.z;
 
@@ -194,7 +194,7 @@ shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
 #endif
 		vec4 res			=colour+vec4(skyl,0);
 		int3 pos			=int3(idx.xy,i);
-
+	
 		IMAGE_STORE_3D(targetVolume,pos,res);
 		last				=next;
 	}

@@ -233,8 +233,7 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 	colour.rgb		*=multiplier.rgb;
 	colour.rgb		=abs(colour.rgb);
 	colour.rgb		*=colour.a;
-	colour.rgb		=lerp(colour.rgb,tc,0.4);
-
+	colour.rgb		=lerp(colour.rgb,tc,0.1);
 	return colour;
 }
 

@@ -409,6 +409,7 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 	// If it's the same texture, and we created our own srv, that's fine, return.
 	if (texture!=NULL&&texture == t&&mainShaderResourceView != NULL&&srv == NULL)
 		return;
+	FreeSRVTables();
 	renderPlatform=r;
 	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
@@ -425,7 +426,6 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)==S_OK)
 		{
 			ppd->GetDesc(&textureDesc);
-			FreeSRVTables();
 			// ASSUME it's a cubemap if it's an array of six.
 			if(textureDesc.ArraySize==6)
 			{

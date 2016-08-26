@@ -117,12 +117,15 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float worleyScale;
 	uniform float worleyNoise;
 	uniform int firstInput;
-	
-	uniform float precipitation;
 
-	uniform vec2 rainCentreKm;
+	uniform vec3 rainCentreKm;
 	uniform float rainRadiusKm;
-	uniform float startZKmXXX;
+
+	uniform vec3 rainNoiseInvScale;
+	uniform float rainVerticalTexcoord;
+
+	uniform float rainEdgeKm;
+	uniform float precipitation;
 SIMUL_CONSTANT_BUFFER_END
 	
 
