@@ -203,7 +203,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
-					float dm			=rainEffect*fade*GetRainAtOffsetKm(rainMapTexture,cloudWorldOffsetKm,inverseScalesKm, world_pos, rainCentreKm, rainRadiusKm);
+					float dm			=rainEffect*fade*GetRainAtOffsetKm(rainMapTexture,cloudWorldOffsetKm,inverseScalesKm, world_pos, rainCentreKm, rainRadiusKm,rainEdgeKm);
 					moisture			+=0.01*dm*density.x;
 					density.z			=saturate(density.z+dm);
 				}
