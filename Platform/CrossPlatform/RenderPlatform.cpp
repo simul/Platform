@@ -27,6 +27,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,textRenderer(NULL)
 	,shaderBuildMode(BUILD_IF_CHANGED)
 	,solidEffect(NULL)
+	,copyEffect(NULL)
 	,debugEffect(NULL)
 	,textured(NULL)
 	,showVolume(NULL)
@@ -129,6 +130,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	debugConstants.InvalidateDeviceObjects();
 	SAFE_DELETE(debugEffect);
 	SAFE_DELETE(solidEffect);
+	SAFE_DELETE(copyEffect);
 	textured=NULL;
 	showVolume=NULL;
 	textureQueryResult.InvalidateDeviceObjects();
@@ -138,6 +140,7 @@ void RenderPlatform::RecompileShaders()
 {
 	SAFE_DELETE(debugEffect);
 	SAFE_DELETE(solidEffect);
+	SAFE_DELETE(copyEffect);
 	ERRNO_BREAK
 	textRenderer->RecompileShaders();
 	ERRNO_BREAK
@@ -151,6 +154,7 @@ void RenderPlatform::RecompileShaders()
 		imageTexture=debugEffect->GetShaderResource("imageTexture");
 	}		
 	solidEffect=CreateEffect("solid",defines);
+	copyEffect=CreateEffect("copy",defines);
 	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
 	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
 }
@@ -364,6 +368,21 @@ void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const 
 	DrawLines(deviceContext,line_vertices,2,false,false,false);
 }
 
+static float length(const vec3 &u)
+{
+	float size=u.x*u.x+u.y*u.y+u.z*u.z;
+	return sqrt(size);
+}
+void RenderPlatform::DrawCircle(DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill)
+{
+	vec3 pos=GetCameraPosVector(deviceContext.viewStruct.view);
+	vec3 d=dir;
+	d/=length(d);
+	pos+=d;
+	float radius=rads;
+	DrawCircle(deviceContext,pos,dir,radius,colr,fill);
+}
+
 void RenderPlatform::DrawCircle(DeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill)
 {
 	PosColourVertex line_vertices[36];
@@ -563,6 +582,29 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 		txt[0]='0'+lod;
 		Print(deviceContext,x1,y1,txt,white,semiblack);
 	}
+}
+
+void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
+	,crossplatform::EffectTechnique *technique,const char *pass)
+{
+	unsigned int num_v=1;
+	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
+	vec4 r(2.f*(float)x1/(float)viewport.w-1.f
+		,1.f-2.f*(float)(y1+dy)/(float)viewport.h
+		,2.f*(float)dx/(float)viewport.w
+		,2.f*(float)dy/(float)viewport.h);
+	if(mirrorY)
+		y1=(int)viewport.h-y1-dy;
+	debugConstants.LinkToEffect(effect,"DebugConstants");
+	debugConstants.rect=//vec4(0.f,0.f,1.f,1.f);
+							vec4(2.f*(float)x1/(float)viewport.w-1.f
+							,1.f-2.f*(float)(y1+dy)/(float)viewport.h
+							,2.f*(float)dx/(float)viewport.w
+							,2.f*(float)dy/(float)viewport.h);
+	debugConstants.Apply(deviceContext);
+	effect->Apply(deviceContext,technique,pass);
+	DrawQuad(deviceContext);
+	effect->Unapply(deviceContext);
 }
 
 void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma)
