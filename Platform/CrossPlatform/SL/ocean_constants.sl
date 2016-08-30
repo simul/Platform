@@ -33,10 +33,10 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform vec3		g_WaterbodyColor;
 
 	// The strength, direction and color of sun streak
-	uniform float		g_ShinenessX;
-	uniform vec3		g_SunDirX;
+	uniform float		g_Shineness;
+	uniform vec3		g_SunDir;
 	uniform float		xxxxxxxxxxx;
-	uniform vec3		g_SunColorX;
+	uniform vec3		g_SunColor;
 	uniform float		xxxxxxxxxxxx;
 	
 	// The parameter is used for fixing an artifact
