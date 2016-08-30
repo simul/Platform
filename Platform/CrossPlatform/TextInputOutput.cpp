@@ -392,6 +392,19 @@ TextInput *TextFileInput::GetSubElement(const char *name)
 	return &subElements[name];
 }
 
+
+const char *TextFileInput::GetSubElement(int index)
+{
+	auto u=subElements.begin();
+	for(int i=0;i<index;i++)
+	{
+		u++;
+	}
+	if(u==subElements.end())
+		return nullptr;
+	return u->first.c_str();
+}
+
 TextInput::Array &TextFileInput::GetArray(const char *name)
 {
 	return arrays[name];

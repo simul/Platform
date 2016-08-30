@@ -65,7 +65,7 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.direct_light				=lookup.y;
 	res.indirect_light				=lookup.x;
 	res.ambient_light				=lookup.w;
-	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km, rainCentreKm, rainRadiusKm);
+	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km, rainCentreKm, rainRadiusKm,rainEdgeKm);
 	
 	volumeQueries[sub_pos.x]		=res;
 }
@@ -380,8 +380,8 @@ void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rai
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
 	uint3 pos		=uint3(targetRange[Z].xy+idx*amortizationScale.xy,Z);
-	uint2 offset = (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
-	pos.xy += offset;
+	uint2 offs		= (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
+	pos.xy += offs;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
@@ -396,8 +396,8 @@ void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool inclu
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
 	uint3 pos		=uint3(targetRange[Z].xy+idx*amortizationScale.xy,Z);
-	uint2 offset = (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
-	pos.xy += offset;
+	uint2 offs	= (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
+	pos.xy += offs;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
