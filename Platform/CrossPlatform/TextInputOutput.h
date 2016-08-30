@@ -47,6 +47,8 @@ namespace simul
 			virtual const char *Get(int propertyIndex)=0;
 			//! Sub-element with the given name. If null, the Value() should be non-null.
 			virtual TextInput *GetSubElement(const char *name)=0;
+			//! Sub-element with the given index, starting at zero. If null, it's past the end of the list
+			virtual const char *GetSubElement(int)=0;
 			typedef std::vector<TextInput*> Array;
 			virtual Array &GetArray(const char *name)=0;
 			virtual const Array &GetArray(const char *name) const=0;
@@ -112,6 +114,7 @@ namespace simul
 			virtual const char *Get(int propertyIndex);
 			// Sub-element with the given name. If null, the Value() should be non-null.
 			TextInput *GetSubElement(const char *name);
+			const char *GetSubElement(int);
 			Array &GetArray(const char *name);
 			const Array &GetArray(const char *name) const;
 			bool HasArray(const char *name) const;
