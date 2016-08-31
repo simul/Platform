@@ -8,8 +8,8 @@
 #include "../SL/ocean_constants.sl"
 #include "../SL/simul_inscatter_fns.sl"
 
-#define PATCH_BLEND_BEGIN		80
-#define PATCH_BLEND_END			2000
+#define PATCH_BLEND_BEGIN		8000
+#define PATCH_BLEND_END			40000
 
 #define PI 3.1415926536f
 #define BLOCK_SIZE_X 16
@@ -60,7 +60,7 @@ SamplerState g_samplerGradient SIMUL_STATE_REGISTER(4)
 	MaxAnisotropy = 8;
 };
 // Fresnel factor lookup table
-SamplerState g_samplerFresnel SIMUL_STATE_REGISTER(5)
+SamplerState g_samplerFresnel SIMUL_STATE_REGISTER(8)
 {
 	Filter =MIN_MAG_MIP_LINEAR;
 	AddressU =CLAMP;
@@ -302,10 +302,10 @@ shader float4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
 	vec2 tc_back  = vec2(In.texCoords.x, In.texCoords.y - one_texel.y);
 	vec2 tc_front = vec2(In.texCoords.x, In.texCoords.y + one_texel.y);
 
-	vec3 displace_left  = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_left).xyz;
-	vec3 displace_right = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_right).xyz;
-	vec3 displace_back  = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_back).xyz;
-	vec3 displace_front = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_front).xyz;
+	vec3 displace_left  = g_samplerDisplacementMap.Sample(wrapSamplerState, tc_left).xyz;
+	vec3 displace_right = g_samplerDisplacementMap.Sample(wrapSamplerState, tc_right).xyz;
+	vec3 displace_back  = g_samplerDisplacementMap.Sample(wrapSamplerState, tc_back).xyz;
+	vec3 displace_front = g_samplerDisplacementMap.Sample(wrapSamplerState, tc_front).xyz;
 	
 	// Do not store the actual normal value. Using gradient instead, which preserves two differential values.
 	vec2 gradient = vec2(-(displace_right.z - displace_left.z), -(displace_front.z - displace_back.z));
@@ -333,16 +333,40 @@ struct VS_OUTPUT
     vec2 texCoords	: TEXCOORD0;
     vec3 LocalPos	: TEXCOORD1;
     vec2 fade_texc	: TEXCOORD2;
+	vec4 vecColour  : TEXCOORD3;
 };
 #ifndef MAX_FADE_DISTANCE_METRES
 	#define MAX_FADE_DISTANCE_METRES (300000.0)
 #endif
-shader VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
+shader VS_OUTPUT OceanSurfVS(idOnly IN)
 {
 	VS_OUTPUT Output;
 
 	// Local position
-	float4 pos_local = mul(float4(vPos, 0, 1), g_matLocal);
+	
+	int quadsPerRing = 360;
+	float baseDegree = 6.28319 / float(quadsPerRing);
+	float radius = 1.9f;
+
+	uint absoluteVertexNo = IN.vertex_id;
+
+	uint vertexNo = absoluteVertexNo % ((quadsPerRing * 2) + 1);
+	float vertexColour = float(float(vertexNo) / ((float(quadsPerRing) * 2) + 1));
+	Output.vecColour = vec4(vertexColour, 0.1, 0.1, 1.0);
+	uint ringNo = (absoluteVertexNo - vertexNo) / ((quadsPerRing * 2) + 1);
+
+	int inOrOut = (vertexNo % 2);
+	//ringNo += inOrOut;
+
+	float distance = pow(float(ringNo + inOrOut) , radius);
+
+	float degree = baseDegree * float(vertexNo / 2);
+
+	vec2 vPos;
+	vPos.x = distance * cos(degree) + g_LocalEye.x;
+	vPos.y = distance * sin(degree) + g_LocalEye.y;
+	
+	float4 pos_local = float4(vPos, 0, 1);
 	// UV
 	vec2 uv_local = pos_local.xy * g_UVScale + g_UVOffset;
 
@@ -366,11 +390,11 @@ shader VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
 
 	// Displacement map
 	vec3 displacement = vec3(0,0,0);
-	//if (blend_factor > 0)
-		displacement = g_texDisplacement.SampleLevel(samplerStateNearestWrap, uv_local, 0).xyz;
-	//displacement = lerp(vec3(0, 0, perlin), displacement, blend_factor);
+	if (blend_factor > 0)
+		displacement = g_texDisplacement.SampleLevel(wrapSamplerState, uv_local, 0).xyz;
+	displacement = lerp(vec3(0, 0, perlin), displacement, blend_factor);
 	pos_local.xyz += displacement;
-//pos_local.z+=500.0*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
+    pos_local.z+=500.0*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
 	// Transform
 	//Output.Position = mul(pos_local, g_matWorldViewProj);
     Output.Position = mul(g_matWorldViewProj, pos_local);
@@ -439,21 +463,22 @@ shader float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 
 	// Combine waterbody color and reflected color
 	vec3 water_color	=lerp(g_WaterbodyColor, reflected_color, ramp.x);
-//	water_color	=reflected_color;
+//	water_color	= reflected_color;
 	// --------------- Sun spots
-/*	float cos_spec = clamp(dot(reflect_vec, g_SunDir), 0, 1);
+	float cos_spec = clamp(dot(reflect_vec, g_SunDir), 0, 1);
 	float sun_spot = pow(cos_spec, g_Shineness);
-	water_color += g_SunColor * sun_spot;*/
+	water_color += g_SunColor * sun_spot;
 	vec3 loss		=g_skyLossTexture.Sample(cmcSamplerState,In.fade_texc).rgb;
 	vec4 insc		=g_skyInscatterTexture.Sample(cmcSamplerState,In.fade_texc);
 	vec3 inscatter	=InscatterFunction(insc, hazeEccentricity, cos_angle, mieRayleighRatio);
-	//water_color*=loss;
+	water_color *= loss;
+	water_color *= inscatter;
 	return vec4(water_color, 1);
 }
 
-shader float4 WireframePS() : SV_Target
+shader float4 WireframePS(VS_OUTPUT IN) : SV_Target
 {
-	return float4(0.9f, 0.9f, 0.9f, 1);
+	return IN.vecColour;
 }
 
 shader posTexVertexOutput VS_ShowTexture(idOnly id)
