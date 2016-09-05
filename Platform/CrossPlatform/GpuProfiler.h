@@ -103,6 +103,7 @@ namespace simul
 			float GetTime(const std::string &name) const;
 
 		protected:
+			void WalkEndFrame(crossplatform::DeviceContext &deviceContext,crossplatform::ProfileData *p);
 			std::string Walk(base::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
 			int level;
 			__int64 currFrame;

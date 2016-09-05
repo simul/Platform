@@ -86,6 +86,7 @@ void GpuProfiler::InvalidateDeviceObjects()
     enabled=true;
 	last_context.clear();
 	last_name.clear();
+	profileStack.clear();
 	BaseProfilingInterface::Clear();
 }
 
@@ -100,36 +101,37 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 	if(level>max_level)
 		return;
 	max_level_this_frame=std::max(max_level_this_frame,level);
-	std::string parent;
+	const char *parent=nullptr;
 	if(last_name.size())
 		parent=(last_name.back());
+	last_name.push_back(name);
 	{
-		std::string qualified_name(name);
-		if(last_name.size())
-			qualified_name=(parent+".")+name;
-		last_name.push_back(qualified_name);
 		last_context.push_back(&deviceContext);
 		if(!enabled||!renderPlatform)
 			return;
-		crossplatform::ProfileData *profileData = NULL;
-		if(profileMap.find(qualified_name)==profileMap.end())
+	    crossplatform::ProfileData *parentData=NULL;
+		if(profileStack.size())
+			parentData=(crossplatform::ProfileData*)profileStack.back();
+		else
 		{
-			profileMap[qualified_name]=profileData=new crossplatform::ProfileData;
+			parentData=(crossplatform::ProfileData*)root;
+		}
+		crossplatform::ProfileData *profileData = NULL;
+		if(parentData->children.find(name)==parentData->children.end())
+		{
+			profileData=new crossplatform::ProfileData;
+			parentData->children[name]=profileData;
 			profileData->unqualifiedName=name;
 		}
 		else
 		{
-			profileData=(crossplatform::ProfileData*)profileMap[qualified_name];
+			profileData=(crossplatform::ProfileData*)parentData->children[name];
 		}
 		profileData->name=name;
 		profileData->last_child_updated=0;
-		crossplatform::ProfileData *parentData=NULL;
-		if(parent.length())
-			parentData=(crossplatform::ProfileData*)profileMap[parent];
-		else
-			parentData=(crossplatform::ProfileData*)root;
+		profileStack.push_back(profileData);
 		parentData->updatedThisFrame=true;
-		if(parentData)
+/*		if(parentData)
 		{
 			base::ChildMap::iterator in_parent=parentData->children.end();
 			if(profileData->child_index!=0)
@@ -161,8 +163,8 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 					break;
 				}
 			}
-		}
-		parentData->last_child_updated=profileData->child_index;
+		}*/
+	//	parentData->last_child_updated=profileData->child_index;
 		profileData->parent=parentData;
 		SIMUL_ASSERT(profileData->QueryStarted == false);
 		if(profileData->QueryFinished!= false)
@@ -171,19 +173,20 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 		if(profileData->DisjointQuery == NULL)
 		{
 			// Create the queries
-			std::string disjointName=qualified_name+"disjoint";
-			std::string startName	=qualified_name+"start";
-			std::string endName		=qualified_name+"end";
+			std::string n=name;
+			//std::string disjointName=n+"disjoint";
+		//	std::string startName	=n+"start";
+			//std::string endName		=n+"end";
 			profileData->DisjointQuery			=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP_DISJOINT);
 			profileData->DisjointQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
 			//	CreateQuery(device,desc,disjointName.c_str());
-			profileData->DisjointQuery->SetName(disjointName.c_str());
+			//profileData->DisjointQuery->SetName(disjointName.c_str());
 			profileData->TimestampStartQuery	=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP);
 			profileData->TimestampStartQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
-			profileData->TimestampStartQuery->SetName(startName.c_str());
+			//profileData->TimestampStartQuery->SetName(startName.c_str());
 			profileData->TimestampEndQuery		=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP);
 			profileData->TimestampEndQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
-			profileData->TimestampEndQuery->SetName(endName.c_str());
+			//profileData->TimestampEndQuery->SetName(endName.c_str());
 		}
 		if(profileData->DisjointQuery)
 		{
@@ -213,8 +216,9 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 	last_name.pop_back();
 	last_context.pop_back();
 	
-    crossplatform::ProfileData *profileData=(crossplatform::ProfileData*) profileMap[name];
+    crossplatform::ProfileData *profileData=(crossplatform::ProfileData *)profileStack.back();
 	
+	profileStack.pop_back();
     if(profileData->QueryStarted != true)
 		return;
 	profileData->updatedThisFrame=true;
@@ -234,10 +238,76 @@ void GpuProfiler::StartFrame(crossplatform::DeviceContext &deviceContext)
 	if(level!=0)
         return;
 	base::BaseProfilingInterface::StartFrame();
-    for(auto iter = profileMap.begin(); iter != profileMap.end(); iter++)
+}
+
+void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,crossplatform::ProfileData *profile)
+{
+    for(auto i:profile->children)
+	{
+		WalkEndFrame(deviceContext,(crossplatform::ProfileData*)i.second);
+	}
+		if(profile->updatedThisFrame)
+			profile->age=0;
+	if(profile!=root)
+	{
+		for(auto u:profile->children)
+		{
+			ProfileData	*child=(ProfileData*)u.second;
+			if(!child->updatedThisFrame&&child->children.size()==0)
+			{
+				child->age++;
+				if(child->age>1000)
+				{
+					profile->children.erase(u.first);
+					break;
+				}
+			}
+		}
+	}
+	static float mix=0.07f;
+	profile->time*=(1.f-mix);
+
+	if(profile->QueryFinished == false)
+		return;
+
+	profile->QueryFinished = false;
+
+	if(profile->DisjointQuery == NULL)
+		return;
+
+	timer.UpdateTime();
+
+	// Get the query data
+	UINT64 startTime = 0;
+	if(!profile->TimestampStartQuery->GetData(deviceContext,&startTime, sizeof(startTime)))
+		return;
+//       while(context->GetData(profile.TimestampStartQuery[currFrame], &startTime, sizeof(startTime), 0) != S_OK);
+
+    UINT64 endTime = 0;
+    if(!profile->TimestampEndQuery->GetData(deviceContext,&endTime, sizeof(endTime)))
+        return;
+    // while(context->GetData(profile.TimestampEndQuery[currFrame], &endTime, sizeof(endTime), 0) != S_OK);
+	
+    crossplatform::DisjointQueryStruct disjointData;
+    if(!profile->DisjointQuery->GetData(deviceContext,&disjointData, sizeof(disjointData)))
+        return;
+    timer.UpdateTime();
+    queryTime += timer.Time;
+
+    float time = 0.0f;
+    if(disjointData.Disjoint == false)
     {
-        base::ProfileData *profile = ((*iter).second);
-		profile->updatedThisFrame=false;
+        UINT64 delta = endTime - startTime;
+		if(endTime>startTime)
+		{
+			float frequency = static_cast<float>(disjointData.Frequency);
+			time = (delta / frequency) * 1000.0f;
+		}
+    }        
+    profile->time+=mix*time;
+	if(profile->time>10.0f)
+	{
+		profile->time=10.0f;
 	}
 }
 
@@ -252,86 +322,12 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 	}
     if(!root||!enabled||!renderPlatform)
         return;
-
     currFrame = (currFrame + 1) % crossplatform::Query::QueryLatency;    
 
     queryTime = 0.0f;
     timer.StartTime();
-    // Iterate over all of the profileMap
-	base::ProfileMap::iterator iter;
-    for(iter = profileMap.begin(); iter != profileMap.end(); iter++)
-    {
-        crossplatform::ProfileData *profile =(crossplatform::ProfileData*)((*iter).second);
-
-		static float mix=0.07f;
-		profile->time*=(1.f-mix);
-
-        if(profile->QueryFinished == false)
-            continue;
-
-        profile->QueryFinished = false;
-
-        if(profile->DisjointQuery == NULL)
-            continue;
-
-        timer.UpdateTime();
-
-        // Get the query data
-        UINT64 startTime = 0;
-        if(!profile->TimestampStartQuery->GetData(deviceContext,&startTime, sizeof(startTime)))
-            continue;
-//       while(context->GetData(profile.TimestampStartQuery[currFrame], &startTime, sizeof(startTime), 0) != S_OK);
-
-        UINT64 endTime = 0;
-        if(!profile->TimestampEndQuery->GetData(deviceContext,&endTime, sizeof(endTime)))
-            continue;
-       // while(context->GetData(profile.TimestampEndQuery[currFrame], &endTime, sizeof(endTime), 0) != S_OK);
-		
-        crossplatform::DisjointQueryStruct disjointData;
-        if(!profile->DisjointQuery->GetData(deviceContext,&disjointData, sizeof(disjointData)))
-            continue;
-        timer.UpdateTime();
-        queryTime += timer.Time;
-
-        float time = 0.0f;
-        if(disjointData.Disjoint == false)
-        {
-            UINT64 delta = endTime - startTime;
-			if(endTime>startTime)
-			{
-				float frequency = static_cast<float>(disjointData.Frequency);
-				time = (delta / frequency) * 1000.0f;
-			}
-        }        
-        profile->time+=mix*time;
-		if(profile->time>10.0f)
-		{
-			profile->time=10.0f;
-		}
-    }
-    for(iter = profileMap.begin(); iter != profileMap.end(); iter++)
-    {
-        crossplatform::ProfileData *profile =(crossplatform::ProfileData*)((*iter).second);
-		if(profile==root)
-			continue;
-		if(!profile->updatedThisFrame&&profile->children.size()==0)
-		{
-			if(profile->parent)
-			{
-				for(auto u:profile->parent->children)
-				{
-					if(u.second==profile)
-					{
-						profile->parent->children.erase(u.first);
-						break;
-					}
-				}
-			}
-			delete iter->second;
-			profileMap.erase(iter);
-			break;
-		}
-	}
+	
+	WalkEndFrame(deviceContext,(crossplatform::ProfileData*)root);
 
 	root->time=0.0f;
 	for(auto i=root->children.begin();i!=root->children.end();i++)
@@ -361,14 +357,9 @@ const char *GpuProfiler::GetDebugText(base::TextStyle style) const
 const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,int i) const
 {
 	if(parent==NULL)
-	{
-		auto u=profileMap.find("root");
-		if(u==profileMap.end())
-			return NULL;
-		return u->second;
-	}
+		parent=root;
 	crossplatform::ProfileData *p=(crossplatform::ProfileData*)parent;
-	if(!p->updatedThisFrame)
+	if(p!=root&&!p->updatedThisFrame)
 		return NULL;
 	int j=0;
 	for(auto it=p->children.begin();it!=p->children.end();it++,j++)
@@ -388,7 +379,7 @@ float GpuProfiler::GetTime(const std::string &name) const
 {
 	if(!enabled)
 		return 0.f;
-	return profileMap.find(name)->second->time;
+	return 0.0f;
 }
 
 // == ProfileBlock ================================================================================

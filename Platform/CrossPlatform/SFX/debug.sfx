@@ -31,6 +31,11 @@ struct v2f
     vec4 colour		: TEXCOORD0;
 };
 
+struct vec3input
+{
+    vec3 position	: POSITION;
+};
+
 shader posTexVertexOutput VS_Quad(idOnly id)
 {
     return VS_ScreenQuad(id,rect);
@@ -147,11 +152,6 @@ shader vec4 PS_ShowCubemapArray(posTexVertexOutput IN) : SV_TARGET
 	res		=vec4(pow(res.xyz,vec3(0.44,0.44,0.44))+N,1.0);
 	return res;
 }
-
-struct vec3input
-{
-    vec3 position	: POSITION;
-};
 
 struct v2f_cubemap
 {
