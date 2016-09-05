@@ -138,7 +138,6 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 
 vec4 calcDensity(Texture3D cloudDensity,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float dist)
 {
-	//texCoords=saturate(texCoords);
 	float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(texCoords.z));
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
