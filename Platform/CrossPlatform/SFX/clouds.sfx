@@ -158,6 +158,8 @@ shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	vec3 texc	=vec3(idx)*scale+offset;
 	vec4 res	=texture_clamp_lod(rainMapTexture,texc.xy,0);
+	float maxz	=res.x;
+	res			*=saturate((maxz-texc.z)/0.1);
 	IMAGE_STORE_3D(outputTexture3d,idx,res);
 }
 

@@ -1516,11 +1516,11 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,cross
 		UINT Offsets[1];
 		Strides[0] = stride;
 		Offsets[0] = 0;
-		pContext->IASetVertexBuffers(	0,							// the first input slot for binding
-													1,				// the number of buffers in the array
-													&vertexBuffer,	// the array of vertex buffers
-													&stride,		// array of stride values, one for each buffer
-													&offset);		// array of 
+		pContext->IASetVertexBuffers(	0,				// the first input slot for binding
+										1,				// the number of buffers in the array
+										&vertexBuffer,	// the array of vertex buffers
+										&stride,		// array of stride values, one for each buffer
+										&offset);		// array of 
 		hr=ApplyPass(pContext,tech->asD3DX11EffectTechnique()->GetPassByIndex(0));
 		pContext->Draw(vertex_count,0);
 		pContext->IASetPrimitiveTopology(previousTopology);
