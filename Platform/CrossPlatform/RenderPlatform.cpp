@@ -660,6 +660,16 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	}
 }
 
+void RenderPlatform::Draw2dLine(DeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour)
+{
+	PosColourVertex pts[2];
+	pts[0].pos=pos1;
+	pts[0].colour=colour;
+	pts[1].pos=pos2;
+	pts[1].colour=colour;
+	Draw2dLines(deviceContext,pts,2,false);
+}
+
 void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
 {
 	static float clr[]={1.f,1.f,0.f,1.f};
