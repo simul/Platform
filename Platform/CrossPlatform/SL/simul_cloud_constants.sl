@@ -57,7 +57,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform float pad61422;
 
 	uniform vec3 offset;
-	uniform float pad132890;
+	uniform float azimuth;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
@@ -124,6 +124,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 rainNoiseInvScale;
 	uniform float rainVerticalTexcoord;
 
+	uniform uint3 windowGrid;
 	uniform float rainEdgeKm;
 	uniform float precipitation;
 SIMUL_CONSTANT_BUFFER_END

@@ -18,6 +18,7 @@ uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 #include "../SL/states.sl"
 #include "../SL/earth_shadow_fade.sl"
 #include "../SL/debug_constants.sl"
+#include "../SL/gpu_cloud_constants.sl"
 
 uniform Texture3D cloudDensity;
 uniform Texture3D cloudDensity2			SIMUL_TEXTURE_REGISTER(1);
@@ -26,7 +27,7 @@ uniform Texture2D lossTexture;
 uniform Texture2D inscTexture;
 uniform Texture2D skylTexture;
 uniform TextureCube depthTexture;
-uniform Texture3D noiseTexture3D		SIMUL_TEXTURE_REGISTER(1);
+uniform Texture3D noiseTexture3D		SIMUL_TEXTURE_REGISTER(2);
 uniform TextureCube clouds2DTexture;
 uniform Texture2D illuminationTexture;
 uniform Texture2D lightTableTexture;
@@ -145,22 +146,83 @@ shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 texc	=vec3(idx)*scale+offset;
 	vec4 c1		=cloudDensity.SampleLevel(cloudSamplerState,texc,0);
 	vec4 c2		=cloudDensity2.SampleLevel(cloudSamplerState,texc,0);
-    vec4 res	=lerp(c1,c2,cloud_interp);
+	vec4 res	=lerp(c1,c2,cloud_interp);
 	res.z		=saturate((res.z-0.5)*5.0+0.5);
 	IMAGE_STORE_3D(outputTexture3d,idx,res);
 }
 
+float WorleyFactor(vec3 worley_texcoord)
+{
+	float c			=0.6;
+	float p						=1;
+	float m						=1.0;
+	float w						=0.0;
+	for(int j=0;j<4;j++)
+	{
+		vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texcoord,0);
+		w						+=m*(worley.x-c);//+p*(worley.y-c)+p*p*(worley.z-c)+p*p*p*(worley.w-c))/(1.0+p+p*p+p*p*p);
+		m						*=p;
+		worley_texcoord			*=5;
+	}
+	//vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texcoord,0);
+	//float w=worley.x-c;
+	return w;
+}
 
 CS_LAYOUT(4,4,4)
 shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	uint3 idx	=(g*4+t)*uint3(amortizationScale)+uint3(amortizationOffset.xyz);
-	// The position translates to a texture coordinate in the current cloudDensity texture:
+	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	vec3 texc	=vec3(idx)*scale+offset;
-	vec4 res	=texture_clamp_lod(rainMapTexture,texc.xy,0);
-	float maxz	=res.x*0.5;
-	res			*=saturate((maxz-texc.z)/0.1);
+	idx.xy		+=int2(edge);
+	idx.xy		+=int2(windowGrid.xy)/2;
+	idx.xy		=idx.xy%int2(windowGrid.xy);
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	float sine			=sin(azimuth);
+	float cosine		=cos(azimuth);
+	texc.xy				-=vec2(0.5,0.5);
+	vec2 texc_r			=vec2(texc.x*cosine+texc.y*sine,texc.x*-sine+texc.y*cosine);
+	texc_r				+=vec2(0.5,0.5);
+	vec4 res			=texture_clamp_lod(rainMapTexture,texc_r.xy,0);
+	res.z				*=step(0,texc_r.x)*step(0,texc_r.y)*step(texc_r.x,1.0)*step(texc_r.y,1.0);
+	float maxz			=res.x*0.5;
+	res.z				*=saturate((maxz-texc.z)/0.1);
+	float minz			=0.0625;
+	res.z				*=saturate((texc.z-minz)/0.1);
+	vec3 worley_texc	=0.3*vec3(idx)/float(windowGrid.z);
+	float w				=WorleyFactor(worley_texc);
+	res.z=saturate(2.0*res.z-1.0+2.0*0.5*w);
+//	res.xyw=w;
 	IMAGE_STORE_3D(outputTexture3d,idx,res);
+} 
+
+
+CS_LAYOUT(4,4,4)
+shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	int3 pos	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	vec3 texc	=vec3(pos)/vec3(windowGrid);
+
+	vec3 wpos			=texc/inverseScalesKm;
+	float thickness		=0.0;
+	int i				=0;
+	float stepLength	=1.0/inverseScalesKm.x/float(windowGrid.x);
+	float s				=stepLength;
+	float extinction	=0.4;
+	for( i=0;i<12;i++)
+	{
+		wpos		+=directionToSun*s;			// we expect stepLength in km for this shader
+		vec3 texc	=wpos*inverseScalesKm;
+		vec4 lookup	=texture_3d_clamp_lod(cloudDensity,texc,0);
+		thickness	+=lookup.z*s;
+		s			*=1.3;
+	}
+	vec4 illum;
+	illum.x			=exp(-extinction*thickness);
+	illum.y			=exp(-extinction*thickness/12.0);
+	illum.zw		=1.0;
+illum=texture_3d_wwc_lod(cloudDensity,texc,0);
+	IMAGE_STORE_3D(outputTexture3d,pos,illum);
 }
 
 
@@ -241,6 +303,7 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth)
 	
 	RaytracePixelOutput f	=RaytraceCloudsStatic( 
 									cloudDensity
+									,cloudDensity2
 									,rainMapTexture
 									,noiseTexture3D
 									,lightTableTexture
@@ -307,6 +370,7 @@ void Raytrace(uint3 pos,bool include_rain,bool depth)
 
 	RaytracePixelOutput f	=RaytraceCloudsForward(
 									cloudDensity
+									,cloudDensity2
 									,rainMapTexture
 									,noiseTexture3D
 									,lightTableTexture
@@ -432,10 +496,10 @@ void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool i
 	vec4 u=updateTexture[pos];
 	if (u.r<1.0&&u.b>0.0)
 	{
-	//outputTexture1[pos]		=vec4(1,1,0,1);
-	//outputTexture2[pos]		=vec4(1,1,0,1);
-	//outputTexture3[pos]		=vec4(1,1,0,1);
-	SimpleRaytrace(pos,include_rain,depth);
+		//outputTexture1[pos]		=vec4(1,1,0,1);
+		//outputTexture2[pos]		=vec4(1,1,0,1);
+		//outputTexture3[pos]		=vec4(1,1,0,1);
+		SimpleRaytrace(pos,include_rain,depth);
 	}
 }
 
@@ -452,6 +516,7 @@ shader void CS_Lightpass(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 		return;
 	Lightpass(pos,true);
 }
+
 shader vec4 PS_Lightpass(posTexVertexOutput IN):SV_TARGET
 {
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
@@ -645,7 +710,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 	vec2 uv = vec2(0,0);
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		vec4 density=texture_wwc_lod(cloudDensity,texc,1);
+		vec4 density=texture_wwc_lod(cloudDensity,texc,0);
 		vec3 colour=vec3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=vec2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;
@@ -656,6 +721,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 		uv += density.xy;
 		texc.y-=(1.0-yz)/float(CROSS_SECTION_STEPS);
 		texc.z+=yz/float(CROSS_SECTION_STEPS);
+		//accum=density.xyz;
 	}
 //	accum.rg = uv / float(CROSS_SECTION_STEPS);
     return vec4(accum,1);
@@ -664,6 +730,32 @@ vec4 CrossSection(vec2 texCoords,float yz)
 shader vec4 PS_CrossSection(posTexVertexOutput IN):SV_TARGET
 {
     return CrossSection(IN.texCoords,yz);
+}
+
+shader vec4 PS_BlendedCrossSection(posTexVertexOutput IN):SV_TARGET
+{
+	vec2 texCoords=IN.texCoords;
+	vec3 texc	=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
+	int i		=0;
+	vec3 accum	=vec3(0.0,0.5,1.0);
+	texc.y		+=0.5*(1.0-yz)/float(CROSS_SECTION_STEPS);
+	//texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
+	vec2 uv = vec2(0,0);
+	for(i=0;i<CROSS_SECTION_STEPS;i++)
+	{
+		vec4 density	=texture_wwc_lod(cloudDensity,texc,0);
+		vec4 light		=texture_wwc_lod(cloudDensity2,texc,0);
+		vec3 colour		=light.rgb;//(lightResponse.x*light.y+lightResponse.y*light.x);
+		colour.gb		+=vec2(.125,.25)*(lightResponse.z*light.w);
+		float opacity	=density.z;
+		colour			*=opacity;
+		accum			*=1.0-opacity;
+		accum			+=colour;
+		uv				+=density.xy;
+		texc.y			-=(1.0-yz)/float(CROSS_SECTION_STEPS);
+		texc.z			+=yz/float(CROSS_SECTION_STEPS);
+	}
+    return vec4(accum,1);
 }
 
 BlendState Blend1
@@ -821,6 +913,13 @@ technique map_to_window
 		SetComputeShader(CompileShader(cs_5_0,MapToWindow()));
     }
 }
+technique window_lighting
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,WindowLighting()));
+    }
+}
 
 technique cloud_mip
 {
@@ -851,6 +950,18 @@ technique cloud_placement_volume
     }
 }
 
+technique blended_cloud_cs
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_BlendedCrossSection()));
+    }
+}
 technique cross_section
 {
     pass p0 

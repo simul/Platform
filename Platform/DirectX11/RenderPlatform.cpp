@@ -1542,7 +1542,7 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 		unsigned int num_v=1;
 		D3D11_VIEWPORT								viewport;
 		pContext->RSGetViewports(&num_v,&viewport);
-		debugConstants.rect=vec4(-1.f,-1.f,2.f,2.f);//-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height);
+		debugConstants.rect=vec4(-1.f,-1.0,2.0f/viewport.Width,2.0f/viewport.Height);
 		debugConstants.Apply(deviceContext);
 
 		ID3D11Buffer *vertexBuffer=NULL;

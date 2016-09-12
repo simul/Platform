@@ -437,8 +437,8 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	
 		// Setup the viewport for rendering.
 	Viewport viewport;
-	viewport.w		=(int)oldv.w*size;
-	viewport.h		=(int)oldv.h*size;
+	viewport.w		=(int)(oldv.w*size);
+	viewport.h		=(int)(oldv.h*size);
 	viewport.zfar	=1.0f;
 	viewport.znear	=0.0f;
 	viewport.x		=(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
@@ -664,8 +664,10 @@ void RenderPlatform::Draw2dLine(DeviceContext &deviceContext,vec2 pos1,vec2 pos2
 {
 	PosColourVertex pts[2];
 	pts[0].pos=pos1;
+	pts[0].pos.z=0;
 	pts[0].colour=colour;
 	pts[1].pos=pos2;
+	pts[1].pos.z=0;
 	pts[1].colour=colour;
 	Draw2dLines(deviceContext,pts,2,false);
 }

@@ -773,8 +773,8 @@ CS_LAYOUT(8,8,8)
 shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 dims;
-	uint3 sub_pos = g * 8 + t;
-	uint3 pos=sub_pos+threadOffset;
+	uint3 sub_pos		=g*8+t;
+	uint3 pos			=sub_pos+threadOffset;
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
@@ -788,11 +788,11 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	if(pos.z==0)
 		wpos.z			+=cloudScalesKm.z*zPixel;
 	float thickness		=0.0;
-	int i=0;
+	int i				=0;
 	float s				=stepLength/2.0;
 	for( i=0;i<12;i++)
 	{
-		wpos			+=lightDir*s;// we expect stepLength in km for this shader
+		wpos			+=lightDir*s;			// we expect stepLength in km for this shader
 		vec3 texc		=wpos/cloudScalesKm;
 		vec4 lookup		=texture_3d_wwc_lod(densityTexture,texc,0);
 		thickness		+=lookup.x*s;
@@ -812,10 +812,8 @@ shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		s				*=1.2;
 	}
 	if (wrap==0&&(pos.x <= 0 || pos.y<= 0 || pos.x>= dims.x - 1 || pos.y >= dims.y - 1))
-		density = 0;
-	//if (pos.x <= 12|| pos.y<= 12 || pos.x>= dims.x - 12 || pos.y >= dims.y - 12)
-	//	density = 0;
-    vec4 res					=vec4(illum.yx,density,0.5*(ambient.x+ambient.y));
+		density			=0;
+    vec4 res			=vec4(illum.yx,density,0.5*(ambient.x+ambient.y));
 	IMAGE_STORE_3D(targetTexture,pos,res);
 }
 

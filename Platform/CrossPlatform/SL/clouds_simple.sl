@@ -3,6 +3,7 @@
 #define CLOUDS_SIMPLE_SL
 
 RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
+									,Texture3D cloudLight
 											,Texture2D rainMapTexture
 											,Texture3D noiseTexture3D
 											,Texture2D lightTableTexture
@@ -159,7 +160,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise&&12.0*fadeDistance<4.0)
 					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,12.0*fadeDistance);
-				vec4 density			=calcDensity(cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance);
+				vec4 density			=calcDensity(cloudDensity,cloudLight,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance);
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
