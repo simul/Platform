@@ -645,14 +645,6 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="..\..\External\DirectX\Effects11_Win8SDK\Effects11_2012.vcxproj">
-      <Project>{a680f4ee-3ee2-47ef-a572-981c0d44d7e3}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
     <ProjectReference Include="..\..\Math\Math_x64_VC11.vcxproj">
       <Project>{b6cb4ee4-90e3-4b11-8706-e4d7b9024801}</Project>
       <Private>false</Private>
