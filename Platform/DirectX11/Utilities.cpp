@@ -2,7 +2,6 @@
 #include "Utilities.h"
 #include "MacrosDX1x.h"
 #include "Simul\Base\StringToWString.h"
-#include "Simul/Sky/Float4.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/DirectX11/Effect.h"
 #include "Simul/Platform/DirectX11/DX11Exception.h"

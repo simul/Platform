@@ -17,7 +17,6 @@
 #include <string>
 #include <assert.h>
 
-#include "Simul/Sky/Float4.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"

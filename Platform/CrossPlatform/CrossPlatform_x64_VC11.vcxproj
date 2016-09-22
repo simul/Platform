@@ -100,7 +100,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
@@ -128,7 +127,6 @@
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
@@ -284,6 +282,17 @@
     <None Include="SL\spherical_harmonics_constants.sl" />
     <None Include="SL\states.sl" />
     <None Include="SL\text_constants.sl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Base\Base_x64_VC11.vcxproj">
+      <Project>{9a8051a1-5c9f-4635-92cd-ad8da3f8ff41}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Geometry\Geometry_x64_VC11.vcxproj">
+      <Project>{a7281b81-3b5d-4923-8aa2-108b419a1e32}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Math\Math_x64_VC11.vcxproj">
+      <Project>{b6cb4ee4-90e3-4b11-8706-e4d7b9024801}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
