@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <GL/glew.h>
 #pragma warning(disable:4505)	// Fix GLUT warnings
-#include <GL/glut.h>
-#include <GL/freeglut_ext.h>
 #endif
 #include "OpenGLRenderer.h"
 // For font definition define:
@@ -54,7 +52,7 @@ using namespace opengl;
 using namespace std;
 static bool glut_initialized=false;
 
-OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut)
+OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool )
 		:trueSkyRenderer(env,sc,m,true)
 	,ShowWater(true)
 	,Exposure(1.0f)
@@ -65,7 +63,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	renderPlatformOpenGL->SetShaderBuildMode(crossplatform::BUILD_IF_CHANGED|crossplatform::TRY_AGAIN_ON_FAIL|crossplatform::BREAK_ON_FAIL);
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 	//sceneCache=new scene::BaseObjectRenderer(gScene,&renderPlatform);
-	if(init_glut&&!glut_initialized)
+	/*if(init_glut&&!glut_initialized)
 	{
 		char argv[]="no program";
 		char *a=argv;
@@ -83,7 +81,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 		//	std::cout<<s<<std::endl;
 		}
 
-	}
+	}*/
 }
 
 void OpenGLRenderer::InvalidateDeviceObjects()
