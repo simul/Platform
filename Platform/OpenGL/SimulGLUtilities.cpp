@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <GL/glew.h>
 #pragma warning(disable:4505)	// Fix GLUT warnings
-#include <GL/glut.h>
+//#include <GL/glut.h>
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Sky/Float4.h"

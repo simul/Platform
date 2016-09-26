@@ -46,6 +46,7 @@ void opengl::Light::UpdateLight(const double * /*lLightGlobalPosition*/,float lC
     // Draw wire-frame geometry.
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
+#if 0
     if (mType == eSpot)
     {
         // Draw a cone for spot light.
@@ -69,6 +70,7 @@ const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
 #endif
         gluDeleteQuadric(lQuadObj);
     }
+#endif
     
     
 #if 1

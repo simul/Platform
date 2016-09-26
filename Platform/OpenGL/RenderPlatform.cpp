@@ -15,7 +15,7 @@
 #include "Simul/Platform/CrossPlatform/Macros.h"
 
 #pragma warning(disable:4505)	// Fix GLUT warnings
-#include <GL/glut.h>
+//#include <GL/glut.h>
 #include <ios>					// For std::cout and cerr .
 #include <iomanip>				// For std::cerr formatting.
 #include "Simul/Platform/CrossPlatform/Camera.h"
