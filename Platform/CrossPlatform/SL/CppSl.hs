@@ -213,6 +213,21 @@
 			r.y=y/m;
 			return r;
 		}
+		
+		vec2 operator*(vec2 v) const
+		{
+			vec2 r;
+			r.x=x*v.x;
+			r.y=y*v.y;
+			return r;
+		}
+		vec2 operator/(vec2 v) const
+		{
+			vec2 r;
+			r.x=x/v.x;
+			r.y=y/v.y;
+			return r;
+		}
 		friend vec2 operator*(float m,vec2 v)
 		{
 			vec2 r;
