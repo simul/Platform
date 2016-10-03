@@ -79,7 +79,6 @@ shader void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		targetBuffer[n]					+=colour*factor*sample.coeff[n]; 
 	}
 #else
-
 	vec4 total=vec4(0,0,0,0);
 	for(int n=0;n<MAX_SH_SAMPLES;n++)
 	{ 

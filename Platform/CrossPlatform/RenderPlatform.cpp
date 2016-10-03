@@ -280,9 +280,11 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				else
 				{
 #if 1//ndef __ORBIS__
-					DispatchCompute(deviceContext,W,L,std::min(16,D));
+					DispatchCompute(deviceContext,W,L,D);
 #endif
 				}
+				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",nullptr);
+				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",nullptr);
 				w/=2;
 				l/=2;
 				d/=2;
