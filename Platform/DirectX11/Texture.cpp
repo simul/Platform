@@ -834,15 +834,17 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
 			SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
-		if(layerMipUnorderedAccessViews)
-		for(int i=0;i<total_num;i++)
-		for(int j=0;j<m;j++)
+		if (layerMipUnorderedAccessViews)
 		{
-			uav_desc.Texture2DArray.FirstArraySlice=i;
-			uav_desc.Texture2DArray.ArraySize=1;
-			uav_desc.Texture2DArray.MipSlice=j;
-			V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[i][j]));
-			SetDebugObjectName(layerMipUnorderedAccessViews[i][j],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			uav_desc.Texture2DArray.ArraySize = 1;
+			for (int i = 0; i < total_num; i++)
+				for (int j = 0; j < m; j++)
+				{
+					uav_desc.Texture2DArray.FirstArraySlice = i;
+					uav_desc.Texture2DArray.MipSlice = j;
+					V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[i][j]));
+					SetDebugObjectName(layerMipUnorderedAccessViews[i][j], "dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+				}
 		}
 	}
 #if 1

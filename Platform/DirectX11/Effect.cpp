@@ -597,7 +597,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
 		auto srv=T->AsD3D11ShaderResourceView(shaderResource.shaderResourceType,index,mip);
-		var->SetResource(srv);
+		V_CHECK(var->SetResource(srv));
 	}
 	else
 	{

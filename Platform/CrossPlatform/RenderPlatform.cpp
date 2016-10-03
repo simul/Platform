@@ -252,9 +252,9 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 			for(int j=0;j<texture->mips;j++)
 			{
 				const char *techname="compute_clear";
-				int W=(texture->width+8-1)/8;
-				int L=(texture->length+8-1)/8;
-				int D=(texture->depth+8-1)/8;
+				int W=(texture->width+4-1)/4;
+				int L=(texture->length+4-1)/4;
+				int D=(texture->depth+4-1)/4;
 				if(texture->dim==2)
 				{
 					debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",texture,i,j);
@@ -277,9 +277,11 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				else
 				{
 #if 1//ndef __ORBIS__
-					DispatchCompute(deviceContext,W,L,std::min(16,D));
+					DispatchCompute(deviceContext,W,L,D);
 #endif
 				}
+				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",nullptr);
+				debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",nullptr);
 				debugEffect->Unapply(deviceContext);
 			}
 		}
