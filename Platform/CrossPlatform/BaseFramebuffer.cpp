@@ -4,6 +4,7 @@
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
+#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Math/RandomNumberGenerator.h"
 using namespace simul;
 using namespace crossplatform;
@@ -102,6 +103,7 @@ void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	sphericalHarmonics.InvalidateDeviceObjects();
 	sphericalSamples.InvalidateDeviceObjects();
 	sphericalHarmonicsConstants.RestoreDeviceObjects(renderPlatform);
+	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect,"SphericalHarmonicsConstants");
 	CreateBuffers();
 }
 
@@ -250,11 +252,12 @@ bool BaseFramebuffer::CreateBuffers()
 	}
 	return true;
 }
-#pragma optimize("",off)
+
 void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)
 {
+	SIMUL_COMBINED_PROFILE_START(deviceContext,"Calc Spherical Harmonics")
 	int num_coefficients=bands*bands;
-	static int BLOCK_SIZE=1;
+	static int BLOCK_SIZE=4;
 	static int sqrt_jitter_samples					=4;
 	if(!sphericalHarmonics.count)
 	{
@@ -263,27 +266,32 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 	}
 	if(!sphericalHarmonicsEffect)
 		RecompileShaders();
+	SIMUL_COMBINED_PROFILE_START(deviceContext,"clear")
 	sphericalHarmonicsConstants.num_bands			=bands;
 	sphericalHarmonicsConstants.numCoefficients		=num_coefficients;
 	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
 	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;
 	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
-	sphericalHarmonicsConstants.randomSeed			= shSeed;
+	sphericalHarmonicsConstants.randomSeed			=shSeed;
 	sphericalHarmonicsConstants.Apply(deviceContext);
 	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	crossplatform::EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");
 	sphericalHarmonicsEffect->Apply(deviceContext,clear,0);
 	renderPlatform->DispatchCompute(deviceContext,(num_coefficients+BLOCK_SIZE-1)/BLOCK_SIZE,1,1);
 	sphericalHarmonicsEffect->Unapply(deviceContext);
+	
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
+	SIMUL_COMBINED_PROFILE_START(deviceContext,"jitter")
 	{
 		// The table of 3D directional sample positions. sqrt_jitter_samples x sqrt_jitter_samples
 		// We just fill this buffer_texture with random 3d directions.
 		crossplatform::EffectTechnique *jitter=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
 		sphericalSamples.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "samplesBufferRW");
+	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapTexture"	,buffer_texture);
 		sphericalHarmonicsEffect->Apply(deviceContext,jitter,0);
-		int u = (sqrt_jitter_samples + BLOCK_SIZE - 1) / BLOCK_SIZE;
+		int u = (sphericalHarmonicsConstants.numJitterSamples + BLOCK_SIZE - 1) / BLOCK_SIZE;
 		sphericalHarmonicsConstants.Apply(deviceContext);
-		renderPlatform->DispatchCompute(deviceContext, u, u, 1);
+		renderPlatform->DispatchCompute(deviceContext, u, 1, 1);
 		sphericalHarmonicsEffect->UnbindTextures(deviceContext);
 		sphericalHarmonicsEffect->SetUnorderedAccessView(deviceContext,"samplesBufferRW",NULL);
 		sphericalHarmonicsEffect->Unapply(deviceContext);
@@ -311,9 +319,10 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 		}
 		sphericalSamples.CloseReadBuffer(deviceContext);
 	}
-
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
+	SIMUL_COMBINED_PROFILE_START(deviceContext,"encode")
 	crossplatform::EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
-	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapTexture"	,buffer_texture);
+//	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapTexture"	,buffer_texture);
 	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, "samplesBuffer");
 	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	
@@ -321,11 +330,15 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 	sphericalHarmonicsConstants.Apply(deviceContext);
 	sphericalHarmonicsEffect->Apply(deviceContext,tech,0);
 	int n = sh_by_samples ? sphericalHarmonicsConstants.numJitterSamples : num_coefficients;
-	int U = ((n) + BLOCK_SIZE - 1) / BLOCK_SIZE;
-	renderPlatform->DispatchCompute(deviceContext, U, 1, 1);
+	//static int ENCODE_BLOCK_SIZE=2;
+	//int U = ((n) + ENCODE_BLOCK_SIZE - 1) / ENCODE_BLOCK_SIZE;
+	renderPlatform->DispatchCompute(deviceContext, n, 1, 1);
 	sphericalHarmonicsEffect->UnbindTextures(deviceContext);
 	sphericalHarmonicsConstants.Unbind(deviceContext);
 	sphericalHarmonicsEffect->Unapply(deviceContext);
+	sphericalHarmonics.CopyToReadBuffer(deviceContext);
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 
 void BaseFramebuffer::RecompileShaders()

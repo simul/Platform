@@ -342,11 +342,21 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,cro
 		SIMUL_BREAK_ONCE("Can't copy null texture");
 		return;
 	}
-	deviceContext.asD3D11DeviceContext()->CopyResource(t->AsD3D11Texture2D(),s->AsD3D11Texture2D());
+	ID3D11Resource *T=t->AsD3D11Resource();
+	ID3D11Resource *S=s->AsD3D11Resource();
+	if(T!=nullptr&&S!=nullptr)
+	{
+		deviceContext.asD3D11DeviceContext()->CopyResource(T,S);
+	}
+	else
+	{
+		return;
+	}
 }
 
 void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
+	ApplyContextState(deviceContext);
 	deviceContext.asD3D11DeviceContext()->Dispatch(w,l,d);
 }
 
@@ -357,12 +367,14 @@ void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext
 
 void RenderPlatform::Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
 {
+	ApplyContextState(deviceContext);
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
 	pContext->Draw(num_verts,start_vert);
 }
 
 void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index,int base_vert)
 {
+	ApplyContextState(deviceContext);
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
 	pContext->DrawIndexed(num_indices,start_index,base_vert);
 }
@@ -1402,6 +1414,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 		pContext->IAGetPrimitiveTopology(&previousTopology);
 		pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		debugEffect->Apply(deviceContext,tech,"noblend");
+	ApplyContextState(deviceContext);
 		pContext->Draw(4,0);
 		pContext->IASetPrimitiveTopology(previousTopology);
 		debugEffect->UnbindTextures(deviceContext);
@@ -1419,26 +1432,6 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 		//DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsD3D11ShaderResourceView(),mult,blend);
 }
 
-void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
-	,crossplatform::EffectTechnique *technique,const char *pass)
-{
-	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
-	unsigned int num_v=1;
-	D3D11_VIEWPORT viewport;
-	pContext->RSGetViewports(&num_v,&viewport);
-	if(mirrorY)
-		y1=(int)viewport.Height-y1-dy;
-	debugConstants.LinkToEffect(effect,"DebugConstants");
-	debugConstants.rect=vec4(2.f*(float)x1/(float)viewport.Width-1.f
-							,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
-							,2.f*(float)dx/(float)viewport.Width
-							,2.f*(float)dy/(float)viewport.Height);
-	debugConstants.Apply(deviceContext);
-	effect->Apply(deviceContext,technique,pass);
-	DrawQuad(deviceContext);
-	effect->Unapply(deviceContext);
-}
-
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
@@ -1446,6 +1439,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	pContext->IASetInputLayout(NULL);
+	ApplyContextState(deviceContext);
 	pContext->Draw(4,0);
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
@@ -1516,12 +1510,13 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,cross
 		UINT Offsets[1];
 		Strides[0] = stride;
 		Offsets[0] = 0;
-		pContext->IASetVertexBuffers(	0,				// the first input slot for binding
-										1,				// the number of buffers in the array
-										&vertexBuffer,	// the array of vertex buffers
-										&stride,		// array of stride values, one for each buffer
-										&offset);		// array of 
+		pContext->IASetVertexBuffers(	0,							// the first input slot for binding
+													1,				// the number of buffers in the array
+													&vertexBuffer,	// the array of vertex buffers
+													&stride,		// array of stride values, one for each buffer
+													&offset);		// array of 
 		hr=ApplyPass(pContext,tech->asD3DX11EffectTechnique()->GetPassByIndex(0));
+	ApplyContextState(deviceContext);
 		pContext->Draw(vertex_count,0);
 		pContext->IASetPrimitiveTopology(previousTopology);
 		pContext->IASetInputLayout( previousInputLayout );
@@ -1542,7 +1537,7 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 		unsigned int num_v=1;
 		D3D11_VIEWPORT								viewport;
 		pContext->RSGetViewports(&num_v,&viewport);
-		debugConstants.rect=vec4(-1.f,-1.0,2.0f/viewport.Width,2.0f/viewport.Height);
+		debugConstants.rect=vec4(-1.f,-1.f,2.f,2.f);//-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height);
 		debugConstants.Apply(deviceContext);
 
 		ID3D11Buffer *vertexBuffer=NULL;
@@ -1592,6 +1587,7 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 										&stride,		// array of stride values, one for each buffer
 										&offset);		// array of 
 		hr=ApplyPass(pContext,tech->GetPassByIndex(0));
+	ApplyContextState(deviceContext);
 		pContext->Draw(vertex_count,0);
 		pContext->IASetPrimitiveTopology(previousTopology);
 		pContext->IASetInputLayout( previousInputLayout );
@@ -1600,7 +1596,7 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 		SAFE_RELEASE(m_pVtxDecl);
 	}
 }
-
+/*
 void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill)
 {
 	ID3D11DeviceContext *pContext	=deviceContext.asD3D11DeviceContext();
@@ -1638,7 +1634,7 @@ void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,cons
 	}
 	pContext->Draw(fill?64:32,0);
 	pContext->IASetPrimitiveTopology(previousTopology);
-}
+}*/
 
 void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 {
@@ -1667,7 +1663,7 @@ void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+	ApplyContextState(deviceContext);
 	pContext->Draw(36,0);
 
 	pContext->IASetPrimitiveTopology(previousTopology);

@@ -136,6 +136,7 @@ namespace simul
 			void validate(int4 region)
 			{
 				validRegion=region;
+				framenumber++;
 			}
 		};
 		//! A base class for API-dependent framebuffer classes.

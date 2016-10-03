@@ -49,7 +49,7 @@ SIMUL_CONSTANT_BUFFER(GpuSkyConstants,8)
 	uniform float interpColours;
 	uniform float sun_start_alt_km;
 
-	uniform int3 targetSize;
+	uniform uint3 targetSize;
 	uniform float fuyofyu;
 
 	uniform vec3 moonIrradianceFactor;		// as proportion of sunlight

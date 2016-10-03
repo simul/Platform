@@ -230,8 +230,10 @@ bool Texture::IsValid() const
 
 ID3D11ShaderResourceView *Texture::AsD3D11ShaderResourceView(crossplatform::ShaderResourceType t,int index,int mip)
 {
+	if(mip>=mips)
+		mip=mips-1;
 #ifdef _DEBUG
-	if(index>=arraySize||mip>=mips)
+	if(index>=arraySize)
 	{
 		SIMUL_BREAK_ONCE("AsD3D11UnorderedAccessView: mip or index out of range");
 		return NULL;
@@ -549,11 +551,11 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		changed=true;
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format				= f;
-		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE3D;
-		uav_desc.Texture3D.MipSlice	= 0;
-		uav_desc.Texture3D.WSize	= d;
-		uav_desc.Texture3D.FirstWSlice=0;
+		uav_desc.Format					=f;
+		uav_desc.ViewDimension			=D3D11_UAV_DIMENSION_TEXTURE3D;
+		uav_desc.Texture3D.MipSlice		=0;
+		uav_desc.Texture3D.WSize		=d;
+		uav_desc.Texture3D.FirstWSlice	=0;
 		
 		if(mipUnorderedAccessViews)
 		for(int i=0;i<m;i++)
@@ -845,7 +847,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			SetDebugObjectName(layerMipUnorderedAccessViews[i][j],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
 	}
-#if 1
+
 	if(rendertarget)
 	{
 		InitRTVTables(total_num, m);
@@ -868,7 +870,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		}
 	}
 	SetDebugObjectName(texture,"ensureTextureArraySizeAndFormat");
-#endif
+
 	mips=m;
 	arraySize=num;
 	this->cubemap=cubemap;

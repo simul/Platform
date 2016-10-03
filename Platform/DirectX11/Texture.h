@@ -38,6 +38,10 @@ namespace simul
 			{
 				return (ID3D11Texture2D*)texture;
 			}
+			ID3D11Resource *AsD3D11Resource() override
+			{
+				return texture;
+			}
 			ID3D11ShaderResourceView *AsD3D11ShaderResourceView(crossplatform::ShaderResourceType t=crossplatform::ShaderResourceType::UNKNOWN,int index=-1,int mip=-1);
 			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int index=-1,int mip=-1);
 			ID3D11DepthStencilView *AsD3D11DepthStencilView()

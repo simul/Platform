@@ -249,12 +249,15 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 #if 1
 		for(int i=0;i<a;i++)
 		{
+			int w=texture->width;
+			int l=texture->length;
+			int d=texture->depth;
 			for(int j=0;j<texture->mips;j++)
 			{
 				const char *techname="compute_clear";
-				int W=(texture->width+8-1)/8;
-				int L=(texture->length+8-1)/8;
-				int D=(texture->depth+8-1)/8;
+				int W=(w+4-1)/4;
+				int L=(l+4-1)/4;
+				int D=(d+4-1)/4;
 				if(texture->dim==2)
 				{
 					debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",texture,i,j);
@@ -280,6 +283,9 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 					DispatchCompute(deviceContext,W,L,std::min(16,D));
 #endif
 				}
+				w/=2;
+				l/=2;
+				d/=2;
 				debugEffect->Unapply(deviceContext);
 			}
 		}
@@ -437,8 +443,8 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	
 		// Setup the viewport for rendering.
 	Viewport viewport;
-	viewport.w		=(int)(oldv.w*size);
-	viewport.h		=(int)(oldv.h*size);
+	viewport.w		=(int)oldv.w*size;
+	viewport.h		=(int)oldv.h*size;
 	viewport.zfar	=1.0f;
 	viewport.znear	=0.0f;
 	viewport.x		=(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
@@ -486,7 +492,7 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	SetViewports(deviceContext,1,&oldv);
 }
 
-void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,int offsetx,int offsety,bool centred)
+void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg,int offsetx,int offsety,bool centred)
 {
 	unsigned int num_v=1;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
@@ -517,7 +523,7 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 		pos.y*=viewport.h;
 	}
 
-	Print(deviceContext,(int)pos.x+offsetx,(int)pos.y+offsety,text,colr,NULL);
+	Print(deviceContext,(int)pos.x+offsetx,(int)pos.y+offsety,text,colr,bkg);
 }
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma)
@@ -535,7 +541,8 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	float displayLod=0.0f;
 	if(tex)
 	{
-		displayLod=float((lod%(tex->GetMipCount()?tex->GetMipCount():1)));
+		int m=tex->GetMipCount();
+		displayLod=float((lod%(m?m:1)));
 	}
 	
 	debugConstants.debugGamma=gamma;
@@ -553,16 +560,17 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap_array");
 			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex);
-		}
-		else
-		{
-			tech=debugEffect->GetTechniqueByName("show_cubemap");
-			debugEffect->SetTexture(deviceContext,"cubeTexture",tex);
 			static char c=0;
 			c--;
 			if(!c)
 				level++;
 			debugConstants.displayLevel=(float)(level%std::max(1,tex->arraySize));
+		}
+		else
+		{
+			tech=debugEffect->GetTechniqueByName("show_cubemap");
+			debugEffect->SetTexture(deviceContext,"cubeTexture",tex);
+			debugConstants.displayLevel=0;
 		}
 	}
 	else if(tex)

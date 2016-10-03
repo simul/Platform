@@ -160,14 +160,6 @@ void TextRenderer::Recompile()
 	textTech	=effect->GetTechniqueByName("text");
 	textureResource=effect->GetShaderResource("fontTexture");
 }
-void TextRenderer::R1(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
-{
-	if (recompile)
-		Recompile();
-	//effect->Apply(deviceContext,effect->GetTechniqueByName("backg"),0);
-//	renderPlatform->DrawQuad(deviceContext);
-	//effect->Unapply(deviceContext);
-}
 
 void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY)
 {
@@ -179,7 +171,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		clr=white;
 	if(!bck)
 		bck=transp;
-//renderPlatform->DrawQuad(deviceContext,20,20,50,50,effect,effect->GetTechniqueByName("textured"),"noblend");
+	//renderPlatform->DrawQuad(deviceContext,20,20,50,50,effect,effect->GetTechniqueByName("textured"),"noblend");
 	//renderPlatform->StoreRenderState(deviceContext);
 	constantBuffer.colour		=vec4(clr);
 	constantBuffer.background	=vec4(bck);

@@ -24,7 +24,6 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
 			void Render(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL,const float *bck=NULL,bool mirrorY=false);
-			void R1(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr,const float *bck,bool mirrorY);
 		private:
 
 			void Recompile();

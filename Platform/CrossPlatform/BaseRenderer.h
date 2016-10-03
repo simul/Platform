@@ -2,19 +2,17 @@
 #define SIMUL_PLATFORM_CROSSPLATFORM_BASERENDERER_H
 #include "Simul/Math/Matrix4x4.h"
 #include "SL/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/Camera.h"
 
+
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
 namespace simul
 {
 	namespace crossplatform
 	{
-/// How to interpret the depth texture.
-		enum DepthTextureStyle
-		{
-			/// Depth textures are interpreted as representing the z-output of the projection matrix transformation.
-			PROJECTION
-			/// Depth textures are interpreted as representing a linear distance in the z-direction from the near clipping plane.
-			,DISTANCE_FROM_NEAR_PLANE
-		};
 		// NVCHANGE_BEGIN: TrueSky + VR MultiRes Support
 		struct MultiResViewport
 		{
@@ -51,7 +49,7 @@ namespace simul
 		};
 		// NVCHANGE_END: TrueSky + VR MultiRes Support
 		/// A simple struct encapsulating a view and a projection matrix.
-		struct ViewStruct
+		struct SIMUL_CROSSPLATFORM_EXPORT ViewStruct
 		{
 			ViewStruct():view_id(0)
 				,depthTextureStyle(DepthTextureStyle::PROJECTION)
@@ -60,7 +58,12 @@ namespace simul
 			int view_id;							///< An id unique to each rendered view, but persistent across frames.
 			math::Matrix4x4 view;					///< The view matrix. If considered as row-major, position information is in the 4th row.
 			math::Matrix4x4 proj;					///< The projection matrix, row-major.
+			math::Matrix4x4 invViewProj;
+			vec3 cam_pos,view_dir,up;
+			simul::crossplatform::Frustum frustum;	///< THe viewing frustum, calculated from the proj matrix and stored for convenience using simul::crossplatform::GetFrustumFromProjectionMatrix.
 			DepthTextureStyle depthTextureStyle;	///< How to interpret any depth texture passed from outside.
+			//! MUST be called whenever view or proj change.
+			void Init();
 		};
 		/// Values that represent what pass to render, be it the near pass, the far, or both: far to render target 0, near to render target 1.
 		enum NearFarPass
@@ -137,4 +140,8 @@ namespace simul
 		};
 	}
 }
+
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif
 #endif

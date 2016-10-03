@@ -59,7 +59,6 @@ namespace simul
 GpuProfiler::GpuProfiler()
 	:renderPlatform(NULL)
 	,enabled(false)
-	,level(0)
 {
 }
 
@@ -85,7 +84,6 @@ void GpuProfiler::InvalidateDeviceObjects()
     renderPlatform = NULL;
     enabled=true;
 	last_context.clear();
-	last_name.clear();
 	profileStack.clear();
 	BaseProfilingInterface::Clear();
 }
@@ -101,10 +99,6 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 	if(level>max_level)
 		return;
 	max_level_this_frame=std::max(max_level_this_frame,level);
-	const char *parent=nullptr;
-	if(last_name.size())
-		parent=(last_name.back());
-	last_name.push_back(name);
 	{
 		last_context.push_back(&deviceContext);
 		if(!enabled||!renderPlatform)
@@ -131,39 +125,6 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 		profileData->last_child_updated=0;
 		profileStack.push_back(profileData);
 		parentData->updatedThisFrame=true;
-/*		if(parentData)
-		{
-			base::ChildMap::iterator in_parent=parentData->children.end();
-			if(profileData->child_index!=0)
-			{
-				in_parent=parentData->children.find(profileData->child_index);
-				if(in_parent->second!=profileData)
-					in_parent=parentData->children.end();
-			}
-			else
-				profileData->child_index=parentData->last_child_updated+1;
-			while(in_parent==parentData->children.end())
-			{
-				in_parent=parentData->children.find(profileData->child_index);
-				// No such child? Add it.
-				if(in_parent==parentData->children.end())
-				{
-					parentData->children[profileData->child_index]=profileData;
-					break;
-				}
-				// This child exists, but it's not the current profile? Keep looking
-				if(in_parent->second!=profileData)
-				{
-					in_parent=parentData->children.end();
-					profileData->child_index++;
-				}
-				else
-				{
-					// Found our spot
-					break;
-				}
-			}
-		}*/
 	//	parentData->last_child_updated=profileData->child_index;
 		profileData->parent=parentData;
 		SIMUL_ASSERT(profileData->QueryStarted == false);
@@ -210,10 +171,8 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 	level--;
 	if(level>=max_level_this_frame)
 		return;
-	if(!last_name.size())
+	if(!profileStack.size())
 		return;
-	std::string name		=last_name.back();
-	last_name.pop_back();
 	last_context.pop_back();
 	
     crossplatform::ProfileData *profileData=(crossplatform::ProfileData *)profileStack.back();
@@ -264,7 +223,9 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 			}
 		}
 	}
-	static float mix=0.07f;
+	static float mix=0.05f;
+	mix*=0.99f;
+	mix+=0.01f*(0.005f);
 	profile->time*=(1.f-mix);
 
 	if(profile->QueryFinished == false)
@@ -303,8 +264,9 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 			float frequency = static_cast<float>(disjointData.Frequency);
 			time = (delta / frequency) * 1000.0f;
 		}
-    }        
-    profile->time+=mix*time;
+	}
+	if(profile->updatedThisFrame)
+		profile->time+=mix*time;
 	if(profile->time>10.0f)
 	{
 		profile->time=10.0f;

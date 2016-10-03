@@ -25,6 +25,7 @@ struct ID3D11UnorderedAccessView;
 struct ID3D11DepthStencilView;
 struct ID3D11RenderTargetView;
 struct ID3D11Texture2D;
+struct ID3D11Resource;
 struct ID3D11SamplerState;
 typedef unsigned GLuint;
 
@@ -89,6 +90,7 @@ namespace simul
 			//! Returns the GnmTexture specified by layer,mip. Default values of -1 mean "all".
 			virtual sce::Gnm::Texture *AsGnmTexture(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
+			virtual ID3D11Resource *AsD3D11Resource(){return 0;}
 			//! Returns the SRV specified by layer,mip. The type t ensures that the assigned resource is compatible (UNKNWON matches anything).
 			//! Layer -1 means all layers at the given mip, while mip -1 defaults to the whole texture/layer.
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}

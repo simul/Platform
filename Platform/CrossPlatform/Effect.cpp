@@ -10,6 +10,98 @@ using namespace simul;
 using namespace crossplatform;
 using namespace std;
 
+bool EffectPass::usesTextureSlot(int s) const
+{
+	if(s>=1000)
+		return usesRwTextureSlot(s-1000);
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return (textureSlots&m)!=0;
+}
+
+bool EffectPass::usesTextureSlotForSB(int s) const
+{
+	if(s>=1000)
+		return usesRwTextureSlotForSB(s-1000);
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return (textureSlotsForSB&m)!=0;
+}
+
+bool EffectPass::usesRwTextureSlotForSB(int s) const
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return (rwTextureSlotsForSB&m)!=0;
+}
+
+bool EffectPass::usesBufferSlot(int s) const
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return (bufferSlots&m)!=0;
+}
+
+bool EffectPass::usesSamplerSlot(int s) const
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return true;//(samplerSlots&m)!=0;
+}
+
+bool EffectPass::usesRwTextureSlot(int s) const
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return (rwTextureSlots&m)!=0;
+}
+
+
+bool EffectPass::usesTextures() const
+{
+	return (textureSlots+rwTextureSlots)!=0;
+}
+
+bool EffectPass::usesSBs() const
+{
+	return textureSlotsForSB+rwTextureSlotsForSB;
+}
+
+bool EffectPass::usesBuffers() const
+{
+	return bufferSlots!=0;
+}
+
+bool EffectPass::usesSamplers() const
+{
+	return samplerSlots!=0;
+}
+
+
+void EffectPass::SetUsesBufferSlots(unsigned s)
+{
+	bufferSlots|=s;
+}
+
+void EffectPass::SetUsesTextureSlots(unsigned s)
+{
+	textureSlots|=s;
+}
+
+void EffectPass::SetUsesTextureSlotsForSB(unsigned s)
+{
+	textureSlotsForSB|=s;
+}
+
+void EffectPass::SetUsesRwTextureSlots(unsigned s)
+{
+	rwTextureSlots|=s;
+}
+
+void EffectPass::SetUsesRwTextureSlotsForSB(unsigned s)
+{
+	rwTextureSlotsForSB|=s;
+}
+
+void EffectPass::SetUsesSamplerSlots(unsigned s)
+{
+	samplerSlots|=s;
+}
+
 EffectTechniqueGroup::~EffectTechniqueGroup()
 {
 	for (crossplatform::TechniqueMap::iterator i = techniques.begin(); i != techniques.end(); i++)
@@ -17,6 +109,7 @@ EffectTechniqueGroup::~EffectTechniqueGroup()
 		delete i->second;
 	}
 	techniques.clear();
+	charMap.clear();
 }
 
 Effect::Effect()
@@ -42,6 +135,7 @@ void Effect::InvalidateDeviceObjects()
 		delete i->second;
 	}
 	groups.clear();
+	groupCharMap.clear();
 }
 
 EffectTechnique::EffectTechnique()
@@ -55,11 +149,21 @@ EffectTechnique::~EffectTechnique()
 
 EffectTechnique *EffectTechniqueGroup::GetTechniqueByName(const char *name)
 {
-	TechniqueMap::iterator i=techniques.find(name);
-	if(i==techniques.end())
+	TechniqueCharMap::iterator i=charMap.find(name);
+	if(i!=charMap.end())
+		return i->second;
+	TechniqueMap::iterator j=techniques.find(name);
+	if(j==techniques.end())
 		return NULL;
-	return i->second;
+	charMap[name]=j->second;
+	return j->second;
 }
+
+crossplatform::EffectTechnique *Effect::GetTechniqueByName(const char *name)
+{
+	return groupCharMap[0]->GetTechniqueByName(name);
+}
+
 
 EffectTechnique *EffectTechniqueGroup::GetTechniqueByIndex(int index)
 {
@@ -68,7 +172,13 @@ EffectTechnique *EffectTechniqueGroup::GetTechniqueByIndex(int index)
 
 EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 {
-	return groups[name];
+	auto i=groupCharMap.find(name);
+	if(i!=groupCharMap.end())
+		return i->second;
+	auto j=groups.find(name);
+	if(j!=groups.end())
+		return j->second;
+	return nullptr;
 }
 
 EffectDefineOptions simul::crossplatform::CreateDefineOptions(const char *name,const char *option1)
@@ -105,6 +215,8 @@ EffectTechnique *Effect::EnsureTechniqueExists(const string &groupname,const str
 		if(groups.find(groupname)==groups.end())
 		{
 			groups[groupname]=new crossplatform::EffectTechniqueGroup;
+			if(groupname.length()==0)
+				groupCharMap[nullptr]=groups[groupname];
 		}
 		crossplatform::EffectTechniqueGroup *group=groups[groupname];
 		if(group->techniques.find(techname)!=group->techniques.end())

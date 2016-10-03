@@ -105,7 +105,6 @@ namespace simul
 		protected:
 			void WalkEndFrame(crossplatform::DeviceContext &deviceContext,crossplatform::ProfileData *p);
 			std::string Walk(base::ProfileData *p, int tab, float parent_time, base::TextStyle style) const;
-			int level;
 			__int64 currFrame;
 			simul::base::Timer timer;
 			float queryTime;

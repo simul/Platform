@@ -144,8 +144,7 @@ void HdrRenderer::RecompileShaders()
 	hdr_effect					=renderPlatform->CreateEffect("hdr",defs);
 	exposureGammaTechnique		=hdr_effect->GetTechniqueByName("exposure_gamma");
 	glowExposureGammaTechnique	=hdr_effect->GetTechniqueByName("glow_exposure_gamma");
-	warpExposureGamma			=hdr_effect->GetTechniqueByName("warp_exposure_gamma");
-	warpGlowExposureGamma		=hdr_effect->GetTechniqueByName("warp_glow_exposure_gamma");
+
 	glowTechnique				=hdr_effect->GetTechniqueByName("simul_glow");
 	hdrConstants.LinkToEffect(hdr_effect,"HdrConstants");
 	

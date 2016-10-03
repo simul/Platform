@@ -126,17 +126,17 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&factory);
 SIMUL_ASSERT(result==S_OK);*/
 
-  IDXGIDevice * pDXGIDevice;
-  d3dDevice->QueryInterface(__uuidof(IDXGIDevice), (void **)&pDXGIDevice);      
-  IDXGIAdapter * pDXGIAdapter;
-  pDXGIDevice->GetParent(__uuidof(IDXGIAdapter), (void **)&pDXGIAdapter);
-  IDXGIFactory * factory;
-  V_CHECK(pDXGIAdapter->GetParent(__uuidof(IDXGIFactory), (void **)&factory));
+	IDXGIDevice * pDXGIDevice;
+	d3dDevice->QueryInterface(__uuidof(IDXGIDevice), (void **)&pDXGIDevice);      
+	IDXGIAdapter * pDXGIAdapter;
+	pDXGIDevice->GetParent(__uuidof(IDXGIAdapter), (void **)&pDXGIAdapter);
+	IDXGIFactory * factory;
+	V_CHECK(pDXGIAdapter->GetParent(__uuidof(IDXGIFactory), (void **)&factory));
 	V_CHECK(factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain));
 //	CreateSwapChainForHwnd 
-  SAFE_RELEASE(factory);
-  SAFE_RELEASE(pDXGIAdapter);
-  SAFE_RELEASE(pDXGIDevice);
+	SAFE_RELEASE(factory);
+	SAFE_RELEASE(pDXGIAdapter);
+	SAFE_RELEASE(pDXGIDevice);
 #endif
 	CreateRenderTarget(d3dDevice);
 	CreateDepthBuffer(d3dDevice);
@@ -208,6 +208,8 @@ void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
 void Window::CreateRenderTarget(ID3D11Device* d3dDevice)
 {
 	if(!d3dDevice)
+		return;
+	if(!m_swapChain)
 		return;
 	ID3D11Texture2D* backBufferPtr;
 	HRESULT result = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);

@@ -11,6 +11,14 @@
 using namespace simul;
 using namespace math;
 using namespace crossplatform;
+
+void ViewStruct::Init()
+{
+	frustum=GetFrustumFromProjectionMatrix(proj);
+	MakeInvViewProjMatrix((float*)&invViewProj,(const float*)&view,(const float*)&proj);
+	GetCameraPosVector((const float *)&view,(float*)&cam_pos,(float *)&view_dir,(float*)&up);
+}
+
 static const float DEG_TO_RAD=pi/180.f;
 static const float RAD_TO_DEG=180.f/pi;
 /*
@@ -68,6 +76,25 @@ static float U(float x)
 	return atan(x/2.f);
 }
 
+vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const ViewStruct &viewStruct, float max_dist_metres)
+{
+	// 	Z = x/(depth*y + z)+w*depth;
+	// e.g. for depth-rev, infinite far plane:
+	//	m._33	=0.f;					m._34	=-1.f;
+	//	m._43	=zNear;
+	// so x=m43=nearplane, y=1.0, z= 0, w=0.
+	// and Z = near/depth
+	//	vec4 c(proj[3*4+2],max_dist_metres,proj[2*4+2]*max_dist_metres,0);
+	if (depthTextureStyle == crossplatform::PROJECTION)
+		return vec4(viewStruct.proj.m[3][2], max_dist_metres,viewStruct.proj.m[2][2] * max_dist_metres, 0.0f);
+	if (depthTextureStyle == crossplatform::DISTANCE_FROM_NEAR_PLANE)
+	{
+		return vec4(viewStruct.frustum.nearZ / max_dist_metres, 0.0f, 1.f, (viewStruct.frustum.farZ - viewStruct.frustum.nearZ) / max_dist_metres);
+	}
+	return vec4(0, 0, 0, 0);
+}
+
+
 vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const math::Matrix4x4 &proj, float max_dist_metres)
 {
 	// 	Z = x/(depth*y + z)+w*depth;
@@ -89,7 +116,7 @@ vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthT
 
 vec4 simul::crossplatform::GetDepthToDistanceParameters(const crossplatform::ViewStruct &viewStruct,float max_dist_metres)
 {
-	return GetDepthToDistanceParameters(viewStruct.depthTextureStyle, viewStruct.proj, max_dist_metres);
+	return GetDepthToDistanceParameters(viewStruct.depthTextureStyle, viewStruct, max_dist_metres);
 }
 
 Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
@@ -192,8 +219,6 @@ void simul::crossplatform::MakeInvViewProjMatrix(float *ivp,const float *v,const
 	simul::math::Matrix4x4 viewproj;
 	view(3,0)=view(3,1)=view(3,2)=0;
 	simul::math::Multiply4x4(viewproj,view,proj);
-//	viewproj.Transpose(vpt);
-	//simul::math::Matrix4x4 invp;
 	viewproj.Inverse(*((simul::math::Matrix4x4*)ivp));
 }
 
@@ -226,11 +251,17 @@ void simul::crossplatform::MakeCentredViewProjMatrix(float *vp,const float *v,co
 
 void simul::crossplatform::MakeWorldViewProjMatrix(float *wvp,const float *w,const float *v,const float *p)
 {
-	simul::math::Matrix4x4 tmp1,tmp2,view(v),proj(p),world(w);
-	simul::math::Multiply4x4(tmp1,view,proj);
-	simul::math::Multiply4x4(*((simul::math::Matrix4x4*)wvp),world,tmp1);
-	//simul::math::Multiply4x4(tmp2,world,tmp1);
-	//tmp2.Transpose();
+	simul::math::Matrix4x4 tmp1,tmp2,view(v),proj(p),world;
+	if(w)
+	{
+		simul::math::Multiply4x4(tmp1,view,proj);
+		world=w;
+		simul::math::Multiply4x4(*((simul::math::Matrix4x4*)wvp),world,tmp1);
+	}
+	else
+	{
+		simul::math::Multiply4x4(*((simul::math::Matrix4x4*)wvp),view,proj);
+	}
 }
 
 void simul::crossplatform::MakeCentredWorldViewProjMatrix(float *wvp,const float *w,const float *v,const float *p)
@@ -536,7 +567,7 @@ const float *Camera::MakeDepthReversedProjectionMatrix(float h,float v,float zNe
 		// z = -1/nZ
 	}
 	// testing:
-	GetFrustumFromProjectionMatrix(m);
+	//GetFrustumFromProjectionMatrix(m);
 	return m;
 }
 

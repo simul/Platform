@@ -6,6 +6,7 @@
 #include "Simul/Base/RuntimeError.h"
 #include <string>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <set>
 #include <stdint.h>
@@ -231,15 +232,93 @@ namespace simul
 			RenderState():type(NONE){}
 			virtual ~RenderState(){}
 		};
-		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
+		class SIMUL_CROSSPLATFORM_EXPORT EffectPass
 		{
 		public:
+			EffectPass()
+				:samplerSlots(0)
+				,bufferSlots(0)
+				,textureSlots(0)
+				,textureSlotsForSB(0)
+				,rwTextureSlots(0)
+				,rwTextureSlotsForSB(0)
+			{}
+			virtual ~EffectPass(){}
+			bool usesTextureSlot(int s) const;
+			bool usesTextureSlotForSB(int s) const;
+			bool usesRwTextureSlotForSB(int s) const;
+			bool usesBufferSlot(int s) const;
+			bool usesSamplerSlot(int s) const;
+			bool usesRwTextureSlot(int s) const;
+
+			bool usesTextures() const;
+			bool usesSBs() const;
+			bool usesRwSBs() const;
+			bool usesBuffers() const;
+			bool usesSamplers() const;
+			bool usesRwTextures() const;
+
+			void SetUsesBufferSlots(unsigned);
+			void SetUsesTextureSlots(unsigned);
+			void SetUsesTextureSlotsForSB(unsigned);
+			void SetUsesRwTextureSlots(unsigned);
+			void SetUsesRwTextureSlotsForSB(unsigned);
+			void SetUsesSamplerSlots(unsigned);
+			unsigned GetRwTextureSlots() const
+			{
+				return rwTextureSlots;
+			}
+			unsigned GetTextureSlots() const
+			{
+				return textureSlots;
+			}
+			unsigned GetRwStructuredBufferSlots() const
+			{
+				return rwTextureSlotsForSB;
+			}
+			unsigned GetStructuredBufferSlots() const
+			{
+				return textureSlotsForSB;
+			}
+			unsigned GetConstantBufferSlots() const
+			{
+				return bufferSlots;
+			}
+		protected:
+			unsigned samplerSlots;
+			unsigned bufferSlots;
+			unsigned textureSlots;
+			unsigned textureSlotsForSB;
+			unsigned rwTextureSlots;
+			unsigned rwTextureSlotsForSB;
+		};
+		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
+		{
+		protected:
+			int index;
+			bool changed;
+		public:
+			PlatformConstantBuffer():index(0),changed(true){}
 			virtual ~PlatformConstantBuffer(){}
 			virtual void RestoreDeviceObjects(RenderPlatform *dev,size_t sz,void *addr)=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)=0;
 			virtual void Apply(DeviceContext &deviceContext,size_t size,void *addr)=0;
+			virtual void Reapply(DeviceContext &deviceContext,size_t size,void *addr)
+			{
+				Apply(deviceContext,size,addr);
+			}
 			virtual void Unbind(DeviceContext &deviceContext)=0;
+			int GetIndex() const
+			{
+				return index;
+			}
+			void SetChanged()
+			{
+				changed=true;
+			}
+			/// For RenderPlatform's use only: do not call.
+			virtual void ActualApply(simul::crossplatform::DeviceContext &,EffectPass *){}
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase
 		{
@@ -258,6 +337,7 @@ namespace simul
 				return platformConstantBuffer;
 			}
 			virtual void Apply(DeviceContext &deviceContext)=0;
+			virtual void Reapply(DeviceContext &deviceContext)=0;
 		};
 		template<class T> class ConstantBuffer:public ConstantBufferBase,public T
 		{
@@ -335,6 +415,12 @@ namespace simul
 				if(platformConstantBuffer)
 					platformConstantBuffer->Apply(deviceContext,sizeof(T),(T*)this);
 			}
+			//! Apply, but assume the existing GPU data is already valid.
+			void Reapply(DeviceContext &deviceContext) override
+			{
+				if(platformConstantBuffer)
+					platformConstantBuffer->Reapply(deviceContext,sizeof(T),(T*)this);
+			}
 			//! Unbind from the effect.
 			void Unbind(DeviceContext &deviceContext)
 			{
@@ -362,6 +448,8 @@ namespace simul
 			virtual void SetData(crossplatform::DeviceContext &deviceContext,void *data)=0;
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return NULL;}
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int =0){return NULL;}
+			/// For RenderPlatform's use only: do not call.
+			virtual void ActualApply(simul::crossplatform::DeviceContext &deviceContext,EffectPass *currentEffectPass,int slot){}
 		};
 
 		/// Templated structured buffer, which uses platform-specific implementations of PlatformStructuredBuffer.
@@ -502,10 +590,12 @@ namespace simul
 			}
 		};
 		typedef std::map<std::string,EffectTechnique *> TechniqueMap;
+		typedef std::unordered_map<const char *,EffectTechnique *> TechniqueCharMap;
 		typedef std::map<int,EffectTechnique *> IndexMap;
 		/// Crossplatform equivalent of D3DXEffectGroup - a named group of techniques.
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechniqueGroup
 		{
+			TechniqueCharMap charMap;
 		public:
 			~EffectTechniqueGroup();
 			TechniqueMap techniques;
@@ -524,6 +614,7 @@ namespace simul
 		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2);
 		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2,const char *option3);
 		typedef std::map<std::string,EffectTechniqueGroup *> GroupMap;
+		typedef std::unordered_map<const char *,EffectTechniqueGroup *> GroupCharMap;
 		/// The cross-platform base class for shader effects.
 		class SIMUL_CROSSPLATFORM_EXPORT Effect
 		{
@@ -534,6 +625,7 @@ namespace simul
 			const char *GetTechniqueName(const EffectTechnique *t) const;
 			std::set<ConstantBufferBase*> linkedConstantBuffers;
 			std::map<const char *,crossplatform::ShaderResource> shaderResources;
+			GroupCharMap groupCharMap;
 		public:
 			GroupMap groups;
 			TechniqueMap techniques;
@@ -561,7 +653,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
-			virtual EffectTechnique *GetTechniqueByName(const char *name)		=0;
+			virtual EffectTechnique *GetTechniqueByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
 			//! Set the texture for read-write access by compute shaders in this effect.
 			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int index=-1,int mip=-1)	=0;
