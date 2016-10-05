@@ -53,9 +53,23 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 
 	// Constants for calculating texcoord from position
 	uniform float		g_TexelLength_x2;
-	uniform float		g_UVScale;
-	uniform float		g_UVOffset;
 	uniform float		xxxxxxxxxxxxxxxxxx;
+	uniform float		g_UVScale;
+	uniform float		xxxxxxxxxxxxxxxxxxx;
+	uniform float		g_UVOffset;
+	uniform float		xxxxxxxxxxxxxxxxxxxx;
+	uniform float		g_WorldScale;
+	uniform float		xxxxxxxxxxxxxxxxxxxxx;
+
+	//Depth parameters for depth calculations
+	uniform vec4		g_DepthToLinFadeParams;
+	uniform float		xxxxxxxxxxxxxxxxxxxxxxx;
+	uniform vec2		g_HalfTan;
+	uniform float		xxxxxxxxxxxxxxxxxxxxxxxx;
+	uniform int			g_totalVerticies;
+	uniform float		xxxxxxxxxxxxxxxxxxxxxxxxx;
+	uniform int			g_quadsPerRing;
+	uniform float		xxxxxxxxxxxxxxxxxxxxxxxxxx;
 SIMUL_CONSTANT_BUFFER_END
 
 // Per draw call constants
@@ -63,6 +77,7 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 	// Transform matrices
 	uniform mat4	g_matLocal;
 	uniform mat4	g_matWorldViewProj;
+	uniform mat4	g_matInvViewProj;
 	uniform mat4	g_matWorld;
 
 	// Misc per draw call constants

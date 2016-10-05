@@ -91,7 +91,7 @@ void GpuProfiler::InvalidateDeviceObjects()
 void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *name)
 {
 	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
-    if(!enabled||!renderPlatform||!context)
+    if(!enabled||!renderPlatform||!context||!root)
         return;
 	// We will use event signals irrespective of level, to better track things in external GPU tools.
 	renderPlatform->BeginEvent(deviceContext,name);
@@ -165,7 +165,7 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext *context=deviceContext.asD3D11DeviceContext();
-    if(!enabled||!renderPlatform||!context)
+    if(!enabled||!renderPlatform||!context||!root)
         return;
 	renderPlatform->EndEvent(deviceContext);
 	level--;
@@ -321,7 +321,7 @@ const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,i
 	if(parent==NULL)
 		parent=root;
 	crossplatform::ProfileData *p=(crossplatform::ProfileData*)parent;
-	if(p!=root&&!p->updatedThisFrame)
+	if(!p||(p!=root&&!p->updatedThisFrame))
 		return NULL;
 	int j=0;
 	for(auto it=p->children.begin();it!=p->children.end();it++,j++)

@@ -7,6 +7,7 @@
 #include "../SL/states.sl"
 #include "../SL/ocean_constants.sl"
 #include "../SL/simul_inscatter_fns.sl"
+#include "../SL/depth.sl"
 
 #define PATCH_BLEND_BEGIN		8000
 #define PATCH_BLEND_END			40000
@@ -22,6 +23,8 @@ uniform Texture2D	g_texDisplacement			SIMUL_TEXTURE_REGISTER(0);		// FFT wave di
 uniform Texture2D	g_texPerlin					SIMUL_TEXTURE_REGISTER(1);		// FFT wave gradient map in PS
 uniform Texture2D	g_texGradient				SIMUL_TEXTURE_REGISTER(2);		// Perlin wave displacement & gradient map in both VS & PS
 uniform Texture2D	g_texFresnel				SIMUL_TEXTURE_REGISTER(3);		// Fresnel factor lookup table. Actually 1D, but some platforms don't support that.
+uniform Texture2D	g_texDepth					SIMUL_TEXTURE_REGISTER(7);		// Depth of rendered scene up till now
+uniform Texture2D	g_waterDepth				SIMUL_TEXTURE_REGISTER(8);		// Depth of the water
 uniform TextureCube	g_texReflectCube			: register(t4);					// A small skybox cube texture for reflection
 uniform Texture2D	g_skyLossTexture			: register(t5);
 uniform Texture2D	g_skyInscatterTexture		: register(t6);
@@ -30,6 +33,12 @@ uniform StructuredBuffer<vec2> g_InputDxyz		;
 uniform StructuredBuffer<vec2>	g_InputH0		;
 uniform RWStructuredBuffer<vec2> g_OutputHt		;
 uniform StructuredBuffer<float>	g_InputOmega	;
+
+struct TwoColourCompositeOutput
+{
+	vec4 add		SIMUL_RENDERTARGET_OUTPUT(0);
+	vec4 multiply	SIMUL_RENDERTARGET_OUTPUT(1);
+};
 
 // FFT wave displacement map in VS, XY for choppy field, Z for height field
 //SamplerState g_samplerDisplacement	now use nearestWrap
@@ -334,6 +343,7 @@ struct VS_OUTPUT
     vec3 LocalPos	: TEXCOORD1;
     vec2 fade_texc	: TEXCOORD2;
 	vec4 vecColour  : TEXCOORD3;
+	vec4 SurePosition : TEXCOORD4;
 };
 #ifndef MAX_FADE_DISTANCE_METRES
 	#define MAX_FADE_DISTANCE_METRES (300000.0)
@@ -343,22 +353,34 @@ shader VS_OUTPUT OceanSurfVS(idOnly IN)
 	VS_OUTPUT Output;
 
 	// Local position
+	float baseDegree = 6.28319 / float(g_quadsPerRing);
+	float radius = 2.0f;
 	
-	int quadsPerRing = 360;
-	float baseDegree = 6.28319 / float(quadsPerRing);
-	float radius = 1.9f;
+	uint verticiesPerRing = (g_quadsPerRing * 2) + 2;
 
-	uint absoluteVertexNo = IN.vertex_id;
+	uint totalRings = g_totalVerticies / verticiesPerRing;
 
-	uint vertexNo = absoluteVertexNo % ((quadsPerRing * 2) + 1);
-	float vertexColour = float(float(vertexNo) / ((float(quadsPerRing) * 2) + 1));
-	Output.vecColour = vec4(vertexColour, 0.1, 0.1, 1.0);
-	uint ringNo = (absoluteVertexNo - vertexNo) / ((quadsPerRing * 2) + 1);
+	uint absoluteVertexNo = g_totalVerticies - IN.vertex_id;
 
-	int inOrOut = (vertexNo % 2);
-	//ringNo += inOrOut;
+	uint vertexNo = absoluteVertexNo % verticiesPerRing;
 
-	float distance = pow(float(ringNo + inOrOut) , radius);
+	uint ringNo = (absoluteVertexNo - vertexNo) / verticiesPerRing;
+
+	uint inOrOut = (vertexNo % 2);
+	float distance;
+
+	float h = g_LocalEye.z;
+	float a = atan( 300000.0 / h);
+	float g = (a / float(totalRings - 2));
+	float L = h * tan(clamp(float(ringNo + inOrOut) * g, 0.0, 1.55));
+
+	if ((totalRings - ringNo) == 0)
+	{
+		distance = inOrOut * 30000.0;
+	}
+	else {
+		distance = L;
+	}
 
 	float degree = baseDegree * float(vertexNo / 2);
 
@@ -367,8 +389,10 @@ shader VS_OUTPUT OceanSurfVS(idOnly IN)
 	vPos.y = distance * sin(degree) + g_LocalEye.y;
 	
 	float4 pos_local = float4(vPos, 0, 1);
+
 	// UV
 	vec2 uv_local = pos_local.xy * g_UVScale + g_UVOffset;
+	uv_local /= g_WorldScale;
 
 	// Blend displacement to avoid tiling artifact
 	vec3 eye_vec = pos_local.xyz - g_LocalEye;
@@ -391,15 +415,21 @@ shader VS_OUTPUT OceanSurfVS(idOnly IN)
 	// Displacement map
 	vec3 displacement = vec3(0,0,0);
 	if (blend_factor > 0)
-		displacement = g_texDisplacement.SampleLevel(wrapSamplerState, uv_local, 0).xyz;
+		displacement = g_texDisplacement.SampleLevel(wrapSamplerState, uv_local, 0).xyz * (g_WorldScale/ 2.0);
 	displacement = lerp(vec3(0, 0, perlin), displacement, blend_factor);
-	pos_local.xyz += displacement;
-    pos_local.z+=500.0*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
+	//if (displacement.x > 1.0) displacement.x = 1.0;
+	//if (displacement.y > 1.0) displacement.y = 1.0;
+	pos_local.xyz += displacement + vec3(0.0,0.0,400.0);
+	Output.vecColour = vec4(0.0, 0.0, 0.0, 0.0);
+	if (((totalRings - ringNo) == 0) ||((totalRings - ringNo - inOrOut) == 0))
+	{
+		pos_local.xyz -= vec3(0.0, 0.0, 1000.0);
+		Output.vecColour = vec4(1.0, 0.0, 0.0, 0.0);
+	}
+    pos_local.z+=50.0*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
 	// Transform
-	//Output.Position = mul(pos_local, g_matWorldViewProj);
     Output.Position = mul(g_matWorldViewProj, pos_local);
 	Output.LocalPos = pos_local.xyz;
-	
 	// Pass thru texture coordinate
 	Output.texCoords = uv_local;
 
@@ -409,25 +439,65 @@ shader VS_OUTPUT OceanSurfVS(idOnly IN)
 	vec3 view=normalize(wPosition.xyz);
 	float sine=view.z;
 	float depth=length(wPosition.xyz)/MAX_FADE_DISTANCE_METRES;
-	//OUT.fade_texc=vec2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5*(1.0-sine));
 	Output.fade_texc=vec2(sqrt(depth),0.5*(1.0-sine));
+
+	Output.SurePosition = Output.Position;
 	return Output; 
 }
 
-
-shader float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
+//Calculate water depth
+shader float4 OceanSurfDepthPS(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
 {
-	// Calculate eye vector.
 	vec3 eye_vec = g_LocalEye - In.LocalPos;
-	vec3 eye_dir = normalize(eye_vec);
-	// --------------- Blend perlin noise for reducing the tiling artifacts
-	// Blend displacement to avoid tiling artifact
-	float dist_2d = length(eye_vec.xy);
-	float blend_factor = (PATCH_BLEND_END - dist_2d) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
+	float surfaceDepth = length(eye_vec)/300000.0;
+	DepthIntepretationStruct dis;
+	dis.reverseDepth = true;
+	dis.depthToLinFadeDistParams = g_DepthToLinFadeParams;
+	vec2 TexCoord = (vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w) + 1.0) / 2.0;
+	float subsurfaceSample = g_texDepth.Sample(wrapSamplerState, TexCoord);
+	float subsurfaceDepth = depthToFadeDistance(subsurfaceSample, vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w), dis, g_HalfTan);
+
+	float finalDepth;
+
+	if (In.vecColour.x > 0.0 || frontFacing)
+	{
+		finalDepth = -min(subsurfaceDepth, surfaceDepth);
+		return vec4(finalDepth, min(subsurfaceDepth, surfaceDepth), In.texCoords);
+	}
+
+	if (subsurfaceDepth > surfaceDepth) {
+		finalDepth = subsurfaceDepth - surfaceDepth;
+	}
+	else
+	{
+		finalDepth = 0;
+	}
+
+	return vec4(finalDepth, min(subsurfaceDepth, surfaceDepth), In.texCoords);
+}
+
+shader TwoColourCompositeOutput OceanSurfFinalPS(posTexVertexOutput In) : SV_Target
+{
+
+	float4 input = g_waterDepth.Sample(wrapSamplerState, In.texCoords);
+	float waterDepth = input.x;
+	float fadeDistance = 300000 * g_WorldScale;
+
+	//Discard occulded fragments
+	if (waterDepth == 0.0)
+	{
+		discard;
+	}
+	  
+	vec4 clip = vec4((In.texCoords.x * 2) - 1, ((1 - In.texCoords.y) * 2) - 1, 1.0, 1.0);
+	vec4 v = mul(g_matInvViewProj, clip);
+	vec3 eye_dir = normalize(v.xyz / v.w);
+
+	float blend_factor = (PATCH_BLEND_END - input.y) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
 	blend_factor = clamp(blend_factor * blend_factor * blend_factor, 0, 1);
 
 	// Compose perlin waves from three octaves
-	vec2 perlin_tc = In.texCoords * g_PerlinSize + g_UVBase;
+	vec2 perlin_tc = input.zw * g_PerlinSize + g_UVBase;
 	vec2 perlin_tc0 = (blend_factor < 1) ? perlin_tc * g_PerlinOctave.x + g_PerlinMovement : 0;
 	vec2 perlin_tc1 = (blend_factor < 1) ? perlin_tc * g_PerlinOctave.y + g_PerlinMovement : 0;
 	vec2 perlin_tc2 = (blend_factor < 1) ? perlin_tc * g_PerlinOctave.z + g_PerlinMovement : 0;
@@ -440,40 +510,83 @@ shader float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 
 	// --------------- Water body color
 	// Texcoord mash optimization: Texcoord of FFT wave is not required when blend_factor > 1
-	vec2 fft_tc = (blend_factor > 0) ? In.texCoords : 0;
+	vec2 fft_tc = (blend_factor > 0) ? input.zw : 0;
 
 	vec2 grad = g_texGradient.Sample(g_samplerGradient, fft_tc).xy;
 	grad = lerp(perlin, grad, blend_factor);
 
 	// Calculate normal here.
-	vec3 normal = normalize(vec3(grad, g_TexelLength_x2));
-	// Reflected ray
-	vec3 reflect_vec = reflect(-eye_dir, normal);
-	// dot(N, V)
-	float cos_angle = dot(normal, eye_dir);
+	vec3 normal = normalize(vec3(grad.x, grad.y, g_TexelLength_x2));
+
+	TwoColourCompositeOutput Output;
+
+	//SSS calculations
+	float A = acos(dot(g_SunDir, vec3(g_SunDir.x, g_SunDir.y, 0.0)) / (length(g_SunDir) * length(vec3(g_SunDir.x, g_SunDir.y, 0.0))));
+	float B = acos(dot(-eye_dir, normal) / (length(-eye_dir) * length(normal)));
+	float c = (sin(A) / sin(B));
+	float p = 0.079577;
+
+	vec3 scattering = vec3(0.0007, 0.0013, 0.002);
+	vec3 absorbtion = vec3(0.2916, 0.0474, 0.0092);
+	vec3 extinction = scattering + absorbtion;
+	vec3 albedo = scattering / extinction;
+
+	//Unfinished SSS refinements
+	/*float eyeToHorizontal = acos(dot(eye_dir, vec3(eye_dir.x, eye_dir.y, 0.0)) / (length(eye_dir) * length(vec3(eye_dir.x, eye_dir.y, 0.0))));
+	float sunL = (5 * waterDepth * sin(eyeToHorizontal)) / sin(A);
+	float sunEyeAngle = acos(clamp(dot(eye_dir.xy, g_SunDir.xy), 0.0, 0.75) / (0.75 * length(g_SunDir.xy)));
+
+	float y = 5 * sunL * sin(A);
+	float z = 5 * sunL * cos(eyeToHorizontal);
+	float x = y * (tan(sunEyeAngle));
+
+	float absorbtionMod = clamp(x, 0.01, 0.2);*/
+	
+	//Camera is below the water
+	if (waterDepth < 0.0)
+	{
+		waterDepth *= -1.0;
+		vec4 mult = vec4(exp(-extinction * waterDepth * fadeDistance) * g_SunColor, waterDepth * fadeDistance);
+		Output.multiply = saturate(mult);
+		Output.add = vec4(0.0,0.0,0.0,0.0);
+		return Output;
+	}
+	
+	//Calculate absorbtion and SSS
+	vec4 mult = vec4(exp(-extinction * waterDepth * fadeDistance) * g_SunColor, waterDepth * fadeDistance);
+	vec3 sunEffect = g_SunColor;
+	vec4 newSSS = vec4(albedo * (p / 1 + c) * (1 - exp(-extinction * waterDepth * (1 + c)  * fadeDistance )) * sunEffect , waterDepth * fadeDistance);
+
+	Output.multiply = saturate(mult);
+	Output.add =saturate(newSSS);
+	
+	
 	// --------------- Reflected color
+	float cos_angle = dot(normal, -eye_dir);
+	vec3 reflect_vec = reflect(eye_dir, normal);
 	// ramp.x for fresnel term.
 	float4 ramp = g_texFresnel.Sample(g_samplerFresnel,vec2(cos_angle,0)).xyzw;
 // A workaround to deal with "indirect reflection vectors" (which are rays requiring multiple reflections to reach the sky).
 	if (reflect_vec.z < g_BendParam.x)
 		ramp = lerp(ramp, g_BendParam.z, (g_BendParam.x - reflect_vec.z)/(g_BendParam.x - g_BendParam.y));
 	reflect_vec.z		=max(0, reflect_vec.z);
-
-	vec3 reflected_color=g_texReflectCube.Sample(wrapSamplerState,-reflect_vec.xyz).xyz;
-
-	// Combine waterbody color and reflected color
-	vec3 water_color	=lerp(g_WaterbodyColor, reflected_color, ramp.x);
 //	water_color	= reflected_color;
+
 	// --------------- Sun spots
-	float cos_spec = clamp(dot(reflect_vec, g_SunDir), 0, 1);
+	float cos_spec = max(dot(reflect_vec, g_SunDir), 0.0);
 	float sun_spot = pow(cos_spec, g_Shineness);
-	water_color += g_SunColor * sun_spot;
-	vec3 loss		=g_skyLossTexture.Sample(cmcSamplerState,In.fade_texc).rgb;
-	vec4 insc		=g_skyInscatterTexture.Sample(cmcSamplerState,In.fade_texc);
+	Output.add += vec4(g_SunColor * sun_spot, sun_spot);
+
+	float sine = v.z;
+	vec2 fadeTexc = vec2(sqrt(input.y * g_WorldScale), 0.5*(1.0 - sine));
+
+	vec3 loss = g_skyLossTexture.Sample(cmcSamplerState, fadeTexc).rgb;
+	vec4 insc = g_skyInscatterTexture.Sample(cmcSamplerState, fadeTexc);
 	vec3 inscatter	=InscatterFunction(insc, hazeEccentricity, cos_angle, mieRayleighRatio);
-	water_color *= loss;
-	water_color *= inscatter;
-	return vec4(water_color, 1);
+	//Output.add += vec4(loss + inscatter, 1.0);
+	Output.add += vec4(loss, 1.0);
+	//Output.add = vec4(0.21 - absorbtionMod, 0.0, 0.0, 1.0);
+	return Output;
 }
 
 shader float4 WireframePS(VS_OUTPUT IN) : SV_Target
@@ -507,10 +620,10 @@ technique ocean
     {
 		SetRasterizerState( RenderNoCull );
 		//SetDepthStencilState( EnableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_5_0,OceanSurfVS()));
+		SetBlendState(CompositeBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
 		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,OceanSurfPS()));
+		SetPixelShader(CompileShader(ps_5_0, OceanSurfFinalPS()));
 	}
 }
 
@@ -549,6 +662,19 @@ technique wireframe
 		SetVertexShader(CompileShader(vs_5_0,OceanSurfVS()));
 		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,WireframePS()));
+	}
+}
+
+technique render_depth
+{
+	pass p0
+	{
+		SetRasterizerState(RenderNoCull);
+		//SetDepthStencilState( EnableDepth, 0 );
+		SetBlendState(DontBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0,OceanSurfVS()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,OceanSurfDepthPS()));
 	}
 }
 

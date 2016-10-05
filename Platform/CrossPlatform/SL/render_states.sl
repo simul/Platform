@@ -166,6 +166,17 @@ BlendState SubtractBlend
 	DestBlend		=ONE;
 };
 
+// special blend for 3-colour blending!
+//TODO: implement different blend for each RT on all platforms.
+BlendState CompositeBlend
+{
+	BlendEnable[0]	=TRUE;
+	//BlendEnable[1]	=TRUE;
+	SrcBlend		=ONE;
+	DestBlend		=SRC1_COLOR;
+    BlendOp			=ADD;
+};
+
 RasterizerState RenderNoCull
 {
 	FillMode					= SOLID;
