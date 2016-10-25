@@ -19,6 +19,7 @@ uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 #include "../SL/earth_shadow_fade.sl"
 #include "../SL/debug_constants.sl"
 #include "../SL/gpu_cloud_constants.sl"
+#include "../SL/simul_gpu_clouds.sl"
 
 uniform Texture3D cloudDensity;
 uniform Texture3D cloudDensity2			SIMUL_TEXTURE_REGISTER(1);
@@ -153,20 +154,21 @@ shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 
 float WorleyFactor(vec3 worley_texcoord)
 {
-	float c			=0.6;
-	float p						=1;
+	float c			=0.5;
+	float p						=0.75;
 	float m						=1.0;
 	float w						=0.0;
-	for(int j=0;j<4;j++)
+	worley_texcoord	*=2.3;
+	for(int j=0;j<2;j++)
 	{
 		vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texcoord,0);
 		w						+=m*(worley.x-c);//+p*(worley.y-c)+p*p*(worley.z-c)+p*p*p*(worley.w-c))/(1.0+p+p*p+p*p*p);
 		m						*=p;
-		worley_texcoord			*=5;
+		worley_texcoord			*=3.7;
 	}
 	//vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texcoord,0);
 	//float w=worley.x-c;
-	return w;
+	return w;//2.0*w+0.5;
 }
 
 CS_LAYOUT(4,4,4)
@@ -185,14 +187,17 @@ shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	texc_r				+=vec2(0.5,0.5);
 	vec4 res			=texture_clamp_lod(rainMapTexture,texc_r.xy,0);
 	res.z				*=step(0,texc_r.x)*step(0,texc_r.y)*step(texc_r.x,1.0)*step(texc_r.y,1.0);
-	float maxz			=res.x*0.5;
-	res.z				*=saturate((maxz-texc.z)/0.1);
-	float minz			=0.0625;
+
+	res.z				*=GetHumidityMultiplier(texc.z,res.z,baseLayer,transition,upperDensity);
+
+	float maxz			=res.x;
+	//res.z				*=saturate((maxz-texc.z)/0.1);
+	float minz			=(cloudBaseKm-cloudOriginKm.z)/cloudScalesKm.z;
 	res.z				*=saturate((texc.z-minz)/0.1);
-	vec3 worley_texc	=0.3*vec3(idx)/float(windowGrid.z);
+	vec3 worley_texc	=worleyNoiseScale*vec3(idx)/float(windowGrid.z);
 	float w				=WorleyFactor(worley_texc);
-	res.z=saturate(2.0*res.z-1.0+2.0*0.5*w);
-//	res.xyw=w;
+	res.z				=saturate(3.0*res.z-1.0+worleyNoiseStrength*w);
+	//res.xyw=2.0*(float(idx.z)/64.0-0.5);
 	IMAGE_STORE_3D(outputTexture3d,idx,res);
 } 
 
@@ -206,22 +211,23 @@ shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 wpos			=texc/inverseScalesKm;
 	float thickness		=0.0;
 	int i				=0;
-	float stepLength	=1.0/inverseScalesKm.x/float(windowGrid.x);
+	float stepLength	=0.25/inverseScalesKm.x/float(windowGrid.x);
 	float s				=stepLength;
-	float extinction	=0.4;
+	float maxh			=1.0/inverseScalesKm.z;
+	float extinction	=1.5;
 	for( i=0;i<12;i++)
 	{
 		wpos		+=directionToSun*s;			// we expect stepLength in km for this shader
 		vec3 texc	=wpos*inverseScalesKm;
-		vec4 lookup	=texture_3d_clamp_lod(cloudDensity,texc,0);
+		vec4 lookup	=texture_3d_wwc_lod(cloudDensity,texc,0)*saturate((maxh-wpos.z)/stepLength);
 		thickness	+=lookup.z*s;
 		s			*=1.3;
 	}
 	vec4 illum;
 	illum.x			=exp(-extinction*thickness);
 	illum.y			=exp(-extinction*thickness/12.0);
-	illum.zw		=1.0;
-illum=texture_3d_wwc_lod(cloudDensity,texc,0);
+	illum.zw		=0;
+//illum=texture_3d_wwc_lod(cloudDensity,texc,0);
 	IMAGE_STORE_3D(outputTexture3d,pos,illum);
 }
 
@@ -711,7 +717,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
 		vec4 density=texture_wwc_lod(cloudDensity,texc,0);
-		vec3 colour=vec3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
+		vec3 colour=vec3(1.0,1.0,1.0)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=vec2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;
 		colour*=opacity;

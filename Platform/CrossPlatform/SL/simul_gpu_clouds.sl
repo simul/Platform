@@ -33,22 +33,28 @@ float GetShapeFunction(float z,float ztop,float baseLayer,float transition,float
 	return m;
 }*/
 
-float GetHumidityMultiplier(float z,float baseLayer,float transition,float upperDensity)
-{
-	float i		=saturate((z-baseLayer)/transition);
-	float m		=(1.0-i)+upperDensity*i;
-	m			*=lerp(0.75,1.0,saturate((1.0-z)/transition));
-	return m;
-}
-
 float inv_smoothstep(float x)
 {
 	return x*(2.0*x*x-3.0*x+2.0);
 }
 
+float GetHumidityMultiplier(float z,float maxz,float baseLayer,float transition,float upperDensity)
+{
+	float i		=saturate((z-baseLayer)/transition);
+	float m		=lerp(1.0,upperDensity,i);
+	float t2	=max(1.0-baseLayer-transition,0.0001);
+	float upperLayer=1.0-baseLayer-transition;
+	float j		=1.0-saturate((1.0-z)/upperLayer);
+	float n		=upperDensity*sqrt(1.0-j*j);
+	m			*=step(z,baseLayer+transition);
+	m			=max(m,n);
+	
+	m			*=saturate((maxz-z)/0.1);
+	return m;
+}
+
 float GetHumidityMultiplier2(float z,float baseLayer,float transition,float upperDensity)
 {
-//	float i		=saturate((z-baseLayer)/transition);
 	float i		=saturate((z-baseLayer)/transition);
 	float m		=lerp(1.0,upperDensity,i);//*i;
 	float t2	=max(1.0-baseLayer-transition,0.0001);

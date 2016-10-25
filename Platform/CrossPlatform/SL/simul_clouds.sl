@@ -98,11 +98,11 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	c.rgb						=(density.y*lightResponse.x*(Beta+l)+lightResponse.y*density.x)*combinedLightColour+ambient.rgb;
 	c.a							=density.z;
 	brightnessFactor			=unshadowedBrightness(Beta,lightResponse,ambientColour);
-	
 #ifdef INFRARED
 	c.rgb						=lerp(cloudIrRadiance1,cloudIrRadiance2,saturate(cloudTexCoords.z));//*c.a;
 #endif
 	c.rgb						=applyFades(lossTexture, inscatterVolumeTexture,volumeTexCoords,c.rgb,fade_texc);
+//c.rgb=density.xyw;
 	return c;
 }
 

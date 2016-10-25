@@ -6,28 +6,26 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	uniform mat4 transformMatrix;
 	uniform vec4 yRange;
 	uniform vec3 noiseScale;
-	uniform float noiseDimsZ;
+	uniform float sourceNoiseScaleKm;
 	uniform vec2 extinctions;
 	uniform float stepLength;
 	uniform float cloudBaseKm;		
-	uniform uint3 gaussianOffset;
-	uniform int octaves;
 	uniform uint3 threadOffset;
-	uniform float zPosition;
+	uniform int octaves;
 
 	uniform float time;
 	uniform float persistence;
 	uniform float humidity;
-	uniform float zPixelLightspace;
+	uniform float numWorleyOctaves;	// float for interpolation
 
 	uniform float zPixel;
-	uniform float zSize;
+	uniform int numVolumes;
 	uniform float baseLayer;
 	uniform float transition;
 
 	uniform float upperDensity;
 	uniform float diffusivity;
-	uniform float invFractalSum;
+	uniform float baseMixingRatio;
 	uniform float maskThickness;
 
 	uniform vec2 maskCentre;
@@ -50,15 +48,9 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 
 	uniform float worleyNoiseStrength;
 	uniform float worleyNoiseScale;
-	uniform float padGpuCC2;
+	uniform float noisePeriod;
 	uniform int numAffectors;
 
-	uniform float baseMixingRatio;
-	uniform int numVolumes;
-	uniform float numWorleyOctaves;	// float for interpolation
-	uniform float noisePeriod;
-
-	uniform float sourceNoiseScaleKm;
 SIMUL_CONSTANT_BUFFER_END
 
 #ifdef __cplusplus

@@ -161,8 +161,6 @@ shader void CS_InitSimulation( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID 
 	vec3 texc						=convertPosToTexc(pos,dims);
 	vec4 lookup						=TEXTURE_LOAD_3D(inputTexture3D,pos);
 	vec2 from_ctr					=texc.xy-vec2(0.5,0.5);
-	//float u							=step(length(from_ctr),0.1);
-//	float T							=210;//+150.0*u;
 	// .61v = c
 	AtmosphericProperties a_base	=SaturationRatio(vec3(0,0,cloudBaseKm+0.5*cloudScalesKm.z));
 	AtmosphericProperties a_local	=SaturationRatio(cloudOriginKm+texc*cloudScalesKm);
@@ -400,18 +398,6 @@ shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
 		props.x=0;
 		props.y=baseMixingRatio;
 	}
-	/*if(pos.z==0)
-	{
-		AtmosphericProperties a_base	=SaturationRatio(cloudBaseKm+0.1*cloudScalesKm.z);
-		uint3 noise_dims;
-		GET_DIMENSIONS_3D(volumeNoiseTexture,noise_dims.x,noise_dims.y,noise_dims.z);
-		vec3 noisespace_texcoord		=vec3(texc.xy,0)*vec3(noiseScale)+vec3(1.0,1.0,0);
-		float noise_texel				=1.0/float(noise_dims.z);
-		float noise_val					=NoiseFunction2(volumeNoiseTexture,noisespace_texcoord.xy,octaves,persistence,time,noise_texel);
-		props.y						=a_base.qvs*saturate((noise_val + 2.0*humidity - 1.0) / 0.002);
-		props.x						=0;
-		props.z						=a_base.T_K;
-	}*/
 	IMAGE_STORE_3D(outputTexture,pos,props);
 }
 
@@ -598,7 +584,7 @@ float CSDensity(uint3 pos)
 
 	dens						=saturate((dens-0.5)/diffusivity/5.0+0.5);
 	dens						=saturate(2.0*dens-1.0+2.0*worleyNoiseStrength*(w));
-//
+
 	vec3 wPos					=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
 	
 	for(int i=0;i<numVolumes;i++)

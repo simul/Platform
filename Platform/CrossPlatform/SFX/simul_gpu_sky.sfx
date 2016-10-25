@@ -115,9 +115,9 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 
 		loss				*=previous_loss;
 
-		
-	
-		IMAGE_STORE_3D(targetTexture,idx,vec4(loss.rgb,1.0));
+		loss.a=1.0;
+	//loss=texture_clamp_lod(density_texture,vec2(idx.zy)/vec2(targetSize.zy),0);
+		IMAGE_STORE_3D(targetTexture,idx,loss);
 		prevDist_km			=dist_km;
 		previous_loss		=loss;
 	}
