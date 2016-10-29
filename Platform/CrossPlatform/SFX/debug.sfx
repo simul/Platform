@@ -202,7 +202,7 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 	texc.y		=1.0-texc.y;
 	vec4 res	=multiplier*texture_nearest_lod(imageTexture,texc.xy,0);
 	res.rgb		+=res.aaa;
-	res.rg += .2*texc;
+//	res.rg += .2*texc;
 	return res;
 }
 shader vec4 PS_Untextured(posTexVertexOutput IN) : SV_TARGET
