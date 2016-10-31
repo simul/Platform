@@ -438,7 +438,6 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 
 void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
 {
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	unsigned int num_v=0;
 
 	Viewport oldv=GetViewport(deviceContext,0);
