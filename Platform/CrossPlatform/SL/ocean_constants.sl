@@ -94,7 +94,6 @@ SIMUL_CONSTANT_BUFFER(cbChangePerCall,4)
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(OsdConstants,5)
-	uniform vec4 rect;
 	uniform vec2 bufferGrid;
 	uniform float showMultiplier;
 	uniform float agaher;
