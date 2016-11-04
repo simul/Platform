@@ -16,7 +16,7 @@
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 
-#pragma comment(lib,"glfx")
+#pragma comment(lib,"glfx.lib")
 
 using namespace simul;
 using namespace opengl;

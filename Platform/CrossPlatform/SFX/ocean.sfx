@@ -608,8 +608,8 @@ shader vec4 PS_ShowTexture( posTexVertexOutput IN):SV_TARGET
 
 shader vec4 PS_ShowStructuredBuffer( posTexVertexOutput In):SV_TARGET
 {
-	int index_x = int(In.texCoords.x * float(g_ActualDim));
-	int index_y = int(In.texCoords.y * float(g_ActualDim));
+	int index_x = int(In.texCoords.x * (g_ActualDim));
+	int index_y = int(In.texCoords.y * (g_ActualDim));
 	int addr = int(bufferGrid.x) * index_y + index_x;
     vec2 lookup=g_InputDxyz[addr];
 	return vec4(showMultiplier*lookup.rg,0.0,1.0);

@@ -26,18 +26,10 @@
 
 #pragma comment(lib,"opengl32")
 
-#ifdef SIMUL_DYNAMIC_LINK
-#ifdef _DEBUG
-#pragma comment(lib,"glew32d")
-#else
-#pragma comment(lib,"glew32")
-#endif
-#else
 #ifdef _DEBUG
 #pragma comment(lib,"glew32sd")
 #else
 #pragma comment(lib,"glew32s")
-#endif
 #endif
 
 #ifndef _MSC_VER
