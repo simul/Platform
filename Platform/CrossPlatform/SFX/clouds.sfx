@@ -487,6 +487,9 @@ void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool inclu
 		return;
 	if(updateTexture[pos].b==0.0)
 		return;
+		//outputTexture1[pos]		=vec4(1,1,0,1);
+		//outputTexture2[pos]		=vec4(1,1,0,1);
+		//outputTexture3[pos]		=vec4(1,1,0,1);
 	SimpleRaytrace(pos,include_rain,depth);
 }
 
