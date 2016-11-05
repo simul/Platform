@@ -1,7 +1,6 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef ATMOSPHERICS_SL
 #define ATMOSPHERICS_SL
-#include "earth_shadow.sl"
 #ifndef PI
 #define PI (3.1415926536)
 #endif
@@ -50,10 +49,15 @@ vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,T
 	return loss;
 }
 
-float GetCloudIllum(Texture3D cloudTexture, SamplerState cloudSamplerState,vec3 texc, vec3 lightDirCloudspace,int clamp)
+float GetCloudIllum(Texture3D cloudTexture,SamplerState cloudSamplerState,vec3 texc,vec3 lightDirCloudspace,int clamp)
 {
 	vec3 l			=lightDirCloudspace;
+	// if light is shining downwards, and we are under the clouds (texc.z<0) we want to project upward towards the light.
+	// if we are IN or above the clouds, we want to stay where we are.
+	// Therefore, using max(0,-texc.z) will give zero for texc.z>0, and |texc.z| for texc.z<0.
+	// dividing this by l.z will give us the projection distance up to the cloudbase, unless l.z<0
 	float zproject	=max(0.0,-texc.z)/max(l.z,0.0001)-max(0,texc.z-1.0)/min(l.z,-0.0001);
+//	float zproject	=max(0.0,-texc.z)/max(l.z,0.0001)*step(0,l.z)-max(0,texc.z-1.0)/min(l.z,-0.0001)*step(0,-l.z);
 	texc			+=l*zproject;
 	if(clamp!=0)
 	{
@@ -64,7 +68,7 @@ float GetCloudIllum(Texture3D cloudTexture, SamplerState cloudSamplerState,vec3 
 		float yproject	=max(0.0,-texc.y)/max(l.y,0.0001)-max(0,texc.y-1.0)/min(l.y,-0.0001);
 		texc			+=l*yproject;
 	}
-	vec4 texel			=sample_3d_lod(cloudTexture,cloudSamplerState, texc, 0);
+	vec4 texel			=sample_3d_lod(cloudTexture,cloudSamplerState, texc,0);
 	//float above			=saturate(texc.z-1.0);
 	//texel.y				+=above;
 	return saturate(texel.x);

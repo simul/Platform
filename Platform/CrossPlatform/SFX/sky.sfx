@@ -129,13 +129,6 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 	return result;
 }
 
-shader vec4 PS_IlluminationBuffer(posTexVertexOutput IN): SV_TARGET
-{
-	float alt_km		=eyePosition.z/1000.0;
-	vec4 ret			=IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,maxFadeDistanceKm,maxFadeDistance,terminatorDistance,radiusOnCylinder,earthShadowNormal,sunDir);
-	return ret;
-}
-
 vec4 PS_BackgroundLatLongSphere(posTexVertexOutput IN,bool reverseDepth)
 {
 	vec2 depth_texc	= viewportCoordToTexRegionCoord(IN.texCoords.xy, viewportToTexRegionScaleBias);
@@ -209,6 +202,12 @@ shader vec4 PS_ShowFadeCrossSection(posTexVertexOutput IN): SV_TARGET
 	//result.r=saturate(altitudeTexCoord);
 	//result.rgb=IN.texCoords.xyy;
     return result;
+}
+shader vec4 PS_Show2D(posTexVertexOutput IN): SV_TARGET
+{
+	vec4 colour1=texture_clamp(inscTexture,IN.texCoords.xy);
+	colour1.a=1.0;
+    return colour1;
 }
 
 shader vec4 PS_ShowFadeTable(posTexVertexOutput IN): SV_TARGET
@@ -299,9 +298,9 @@ struct starsVertexInput
 struct starsVertexOutput
 {
     vec4 hPosition		: SV_POSITION;
-    float tex			: TEXCOORD0;
-	vec4 clip_pos		: TEXCOORD1;
-	vec2 texCoord		: TEXCOORD2;
+	vec4 clip_pos		: TEXCOORD0;
+	vec2 texCoord		: TEXCOORD1;
+    float tex			: TEXCOORD2;
 };
 
 shader starsVertexOutput VS_Stars(starsVertexInput IN) 
@@ -319,6 +318,8 @@ shader starsVertexOutput VS_Stars(starsVertexInput IN)
 [maxvertexcount(4)]
 shader void GS_Stars(point starsVertexOutput inp[1], inout TriangleStream<starsVertexOutput> SpriteStream)
 {
+	if(inp[0].clip_pos.z<0)
+		return;
     starsVertexOutput outp;
 	// Emit two new triangles.
 	vec4 pos1			=inp[0].hPosition;
@@ -332,7 +333,7 @@ shader void GS_Stars(point starsVertexOutput inp[1], inout TriangleStream<starsV
         vec2(-0.5, 0.5),
         vec2( 0.5, 0.5),
     };
-
+	
 	outp.hPosition		=pos1+vec4(g_positions[0].xy*sz,0,0);
 	outp.texCoord		=g_positions[0]; 
 	outp.clip_pos		=inp[0].clip_pos;
@@ -344,10 +345,21 @@ shader void GS_Stars(point starsVertexOutput inp[1], inout TriangleStream<starsV
 	outp.texCoord		=g_positions[2]; 
 	outp.hPosition		=pos1+vec4(g_positions[2].xy*sz,0,0); 
 	SpriteStream.Append(outp);
+	//outp.texCoord		=g_positions[3]; 
+	///outp.hPosition		=pos1+vec4(g_positions[3].xy*sz,0,0); 
+	//SpriteStream.Append(outp);
+   // SpriteStream.RestartStrip();
+	
+/*	outp.texCoord		=g_positions[1]; 
+	outp.hPosition		=pos1+vec4(g_positions[1].xy*sz,0,0); 
+	SpriteStream.Append(outp);
 	outp.texCoord		=g_positions[3]; 
 	outp.hPosition		=pos1+vec4(g_positions[3].xy*sz,0,0); 
 	SpriteStream.Append(outp);
-	
+	outp.texCoord		=g_positions[2]; 
+	outp.hPosition		=pos1+vec4(g_positions[2].xy*sz,0,0); 
+	SpriteStream.Append(outp);*/
+
     SpriteStream.RestartStrip();
 }
 
@@ -365,9 +377,10 @@ vec4 PS_StarsDepthTex(starsVertexOutput IN,bool reverseDepth)
 	vec2 depth_texc	= viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
 	float depth		= texture_clamp_lod(depthTexture, depth_texc.xy, 0).x;
 	discardUnlessFar(depth,reverseDepth);
-	vec3 ocolour=vec3(1.0,1.0,1.0)*(starBrightness*IN.tex);
+	vec3 ocolour	=vec3(1.0,1.0,1.0)*(starBrightness*IN.tex);
 	float alpha		=saturate(0.5-(length(IN.texCoord))*5.0);
-	vec4 result=vec4(ocolour*alpha,0.0);
+	vec4 result		=vec4(ocolour*alpha,0.0);
+//result.rb=1.0;
 	return result;
 }
 shader vec4 PS_Stars_ReverseDepth(starsVertexOutput IN) : SV_TARGET
@@ -640,16 +653,16 @@ technique show_cross_section
     }
 }
 
-technique illumination_buffer
+technique show_2d
 {
     pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
-		SetVertexShader(vs_fade3dto2d);
+		SetVertexShader(vs_showfade);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_IlluminationBuffer()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Show2D()));
     }
 }
 

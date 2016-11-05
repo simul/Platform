@@ -23,40 +23,34 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsUniforms,11)
 
 	uniform vec3 fogColour;
 	uniform float fogScaleHeight;
-    uniform vec3 infraredIntegrationFactorsUNUSED;
-	uniform float fogDensity;
-    uniform vec3 yAxisXXX;
-	uniform float pad9;
-    uniform vec3 xAxisXXX;
-	uniform float pad10;
+    uniform vec3 atmosphericsDirectionToSun;
+	uniform float atmosphericsPlanetRadiusKm;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform mat4 lightspaceToWorldMatrix;
-	//uniform mat4 worldToLightspaceMatrix;
-	uniform mat4 invViewProj;
-	uniform mat4 invShadowMatrix;
-	
+	uniform mat4 scatterspaceToWorldMatrix;
 	uniform mat4 worldToCloudMatrix;
-	uniform vec4 viewportToTexRegionScaleBias;
-	uniform vec4 mixedResolutionTransformXYWH;
-	uniform vec4 depthToLinFadeDistParams;
+	uniform vec3 cloudOriginKm;
+	uniform float padXXXXXXX;
+	uniform vec3 cloudScaleKm;
+	uniform float padXXXXXXXX;
+
 	uniform vec3 viewPosition;
-	uniform float exposure;
-	uniform vec2 tanHalfFov;
 	uniform float zOrigin;
-	uniform float farZXXX;
 	
     uniform uint3 scatteringVolumeDims;
 	uniform float godraysIntensity;
+
+    uniform uint3 godraysVolumeDims;
+	uniform float q35uj64jwq;
 	
 	uniform uint3 amortizationOffset;
 	uniform float startZMetresZZZ;
 
 	uniform uint3 amortization;
-	uniform float test;
+	uniform float testXXXX;
 
-	uniform int2 offsetToCorner;
 	uniform uint2 edge;
 
 SIMUL_CONSTANT_BUFFER_END
