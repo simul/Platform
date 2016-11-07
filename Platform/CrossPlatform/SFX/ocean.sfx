@@ -473,7 +473,7 @@ shader VS_OUTPUT OceanSurfVS(idOnly IN)
 }
 
 //Calculate water depth
-shader float4 OceanSurfDepthPS(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
+shader vec4 PS_OceanSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) : SV_Target
 {
 	vec3 eye_vec = g_LocalEye - In.LocalPos;
 	float surfaceDepth = length(eye_vec)/300000.0;
@@ -706,7 +706,7 @@ technique render_depth
 		SetBlendState(DontBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_5_0,OceanSurfVS()));
 		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0,OceanSurfDepthPS()));
+		SetPixelShader(CompileShader(ps_5_0,PS_OceanSurfDepth()));
 	}
 }
 

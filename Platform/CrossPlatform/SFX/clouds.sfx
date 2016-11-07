@@ -13,8 +13,8 @@
 uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 
 #include "../SL/simul_clouds.sl"
-#include "../SL/clouds_raytrace.sl"
 #include "../SL/clouds_simple.sl"
+#include "../SL/clouds_raytrace.sl"
 #include "../SL/states.sl"
 #include "../SL/earth_shadow_fade.sl"
 #include "../SL/debug_constants.sl"
@@ -23,7 +23,7 @@ uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 
 uniform Texture3D cloudDensity;
 uniform Texture3D cloudDensity2			SIMUL_TEXTURE_REGISTER(1);
-
+ 
 uniform Texture2D lossTexture;
 uniform Texture2D inscTexture;
 uniform Texture2D skylTexture;
@@ -285,7 +285,7 @@ struct FarNearDepthPixelOutput
 	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
 };
 
-void SimpleRaytrace(uint3 pos,bool include_rain,bool depth)
+void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=true,int numSteps=512)
 {
 	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
@@ -332,7 +332,15 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth)
 	f.colour=depthToLinFadeDistParams;
 	f.nearColour=lightResponse;
 	f.nearFarDepth=vec4(0,0,1,.5);*/
-	vec4 t2d				=texture_cube_lod(clouds2DTexture,view,0);
+	vec4 t2d;
+	if(background2d)
+	{
+		t2d				=texture_cube_lod(clouds2DTexture,view,0);
+	}
+	else
+	{
+		t2d				=vec4(0,0,0,1.0);
+	}
 	// blend:
 
 	vec4 c					=t2d;
@@ -349,7 +357,8 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth)
 	cn.rgb					+=f.nearColour.rgb;
 	cn.a					*=f.nearColour.a;
 	outputTexture2[pos]		=cn;
-	outputTexture3[pos]		=f.nearFarDepth;
+	if(background2d)
+		outputTexture3[pos]		=f.nearFarDepth;
 }
 
 void Raytrace(uint3 pos,bool include_rain,bool depth)
@@ -361,7 +370,7 @@ void Raytrace(uint3 pos,bool include_rain,bool depth)
 	float sineFactor		=1.0/length(clip_pos.xyz);
 	vec3 view				=normalize(mul(invViewProj[pos.z],clip_pos).xyz);
 	vec4 dlookup			=vec4(1.0,1.0,0.000001,1.0);
-	if (depth)
+	if(depth)
 	{
 		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
 		vec4 xlookup = vec4(0,0,0,0);
@@ -416,8 +425,11 @@ void Raytrace(uint3 pos,bool include_rain,bool depth)
 	cn.a					=1.0-n*(1.0-t2d.a);
 	cn.rgb					+=f.nearColour.rgb;
 	cn.a					*=f.nearColour.a;
-	outputTexture2[pos]		=cn;
-	outputTexture3[pos]		=f.nearFarDepth;
+	if(depth)
+	{
+		outputTexture2[pos]		=cn;
+		outputTexture3[pos]		=f.nearFarDepth;
+	}
 }
 
 void Lightpass(uint3 pos,bool depth)
@@ -594,8 +606,8 @@ shader void CS_RaytraceSimple(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
 	uint2 idx				=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z					=cubemapFaceIndex[g.z+t.z].x;
 	uint3 pos				=uint3(targetRange[t.z].xy+idx*amortizationScale.xy+amortizationOffset.xy,Z);
-
-	Raytrace(pos,false,false);
+	
+	SimpleRaytrace(pos,false,false,false,128);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)

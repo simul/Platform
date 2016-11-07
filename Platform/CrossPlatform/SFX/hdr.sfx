@@ -22,7 +22,6 @@ uniform TEXTURE2DMS_FLOAT4 depthTextureMS		SIMUL_TEXTURE_REGISTER(1);
 uniform TEXTURE2D_UINT glowTexture;
 
 uniform Texture2D inscatterTexture;			// Far, or default inscatter
-uniform Texture2D shadowTexture;
 uniform Texture2D loss2dTexture;
 uniform Texture3D inscatterVolumeTexture;
 uniform Texture3D godraysVolumeTexture;
@@ -69,8 +68,8 @@ shader CompositeShaderInput VS_Composite(idOnly IN)
 	OUT.lowResTexCoords	=OUT.texCoords.xy;
 	OUT.clip_pos		=vec4(-1.0,1.0,1.0,1.0);
 	OUT.clip_pos.x		+=2.0*OUT.texCoords.x;
-	OUT.clip_pos.y		-= 2.0*OUT.texCoords.y;
-	OUT.depth_texc		= viewportCoordToTexRegionCoord(OUT.texCoords.xy, viewportToTexRegionScaleBias);
+	OUT.clip_pos.y		-=2.0*OUT.texCoords.y;
+	OUT.depth_texc		=viewportCoordToTexRegionCoord(OUT.texCoords.xy, viewportToTexRegionScaleBias);
     return OUT;
 }
 
@@ -227,30 +226,6 @@ shader vec4 ExposureGammaPS_MSAA(posTexVertexOutput IN) : SV_Target
 	return u;
 }
 
-// Scales input texture coordinates for distortion.
-vec2 HmdWarp(vec2 texCoords)
-{
-	vec2 theta		= (texCoords - warpLensCentre) * warpScaleIn; // Scales to [-1, 1]
-	float rSq		= theta.x*theta.x+theta.y*theta.y;
-	vec2 rvector	= theta * (warpHmdWarpParam.x + warpHmdWarpParam.y * rSq +
-								warpHmdWarpParam.z * rSq * rSq +
-								warpHmdWarpParam.w * rSq * rSq * rSq);
-	vec2 ret= warpLensCentre+rvector*warpScale;
-	return ret;
-}
-
-shader vec4 WarpExposureGammaPS(posTexVertexOutput IN) : SV_Target
-{
-	vec2 tc = HmdWarp(IN.texCoords);
-	//if(any(clamp(tc,warpScreenCentre-vec2(0.25,0.5),warpScreenCentre+vec2(0.25, 0.5))-tc))
-	//	return vec4(0,0,0,0);
-	vec4 c=texture_clamp(imageTexture,tc);
-	c.rgb*=exposure;
-	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
-//	c.r=offset.x;
-    vec4 u=vec4(c.rgb,1.0);
-	return u;
-}
 
 void UpdateNearestSample(	inout float MinDist,
 							inout vec2 NearestUV,
@@ -284,7 +259,7 @@ shader vec4 DirectPS(posTexVertexOutput IN) : SV_Target
 }
 
 
-TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool reverseDepth)
+TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool reverseDepth,bool doLightpass,bool doGodrays)
 {
 	DepthIntepretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams	=depthToLinFadeDistParams;
@@ -301,16 +276,14 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,dist
 															,invViewProj
 															,viewPos
-															,invShadowMatrix
-															,depthInterpretationStruct
 															,inscatterVolumeTexture
 															,godraysVolumeTexture
-															,shadowTexture
 															,maxFadeDistanceKm
-															,cloudShadowStrength
-															,nearDist);
-	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
-	result.add.rgb	*=exposure;
+															,nearDist
+															,doLightpass
+															,doGodrays);
+//	result.add		=vec4(1.0,0,0,0);
+//	result.multiply	=vec4(1.0,1.0,1.0,1.0);
 	return result;
 }
 
@@ -339,14 +312,11 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,dist
 															,invViewProj
 															,viewPos
-															,invShadowMatrix
-															,depthInterpretationStruct
 															,inscatterVolumeTexture
 															,godraysVolumeTexture
-															,shadowTexture
 															,maxFadeDistanceKm
-															,cloudShadowStrength
-															,nearDist);
+															,nearDist
+															,false,false);
 	//if (view.z < 0)
 	//	result.add.rgb *= 0;
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
@@ -359,12 +329,42 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_ReverseDepth(CompositeShaderInput IN) 
 {
-	return PS_CompositeAtmospherics(IN,true);
+	return PS_CompositeAtmospherics(IN,true,false,false);
 }
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_ForwardDepth(CompositeShaderInput IN) 
 {
-	return PS_CompositeAtmospherics(IN,false);
+	return PS_CompositeAtmospherics(IN,false,false,false);
+}
+
+shader TwoColourCompositeOutput PS_CompositeAtmospherics_ReverseDepth_Lightpass(CompositeShaderInput IN) 
+{
+	return PS_CompositeAtmospherics(IN,true,true,false);
+}
+
+shader TwoColourCompositeOutput PS_CompositeAtmospherics_ForwardDepth_Lightpass(CompositeShaderInput IN) 
+{
+	return PS_CompositeAtmospherics(IN,false,true,false);
+}
+
+shader TwoColourCompositeOutput PS_CompositeAtmospherics_ReverseDepth_Godrays(CompositeShaderInput IN) 
+{
+	return PS_CompositeAtmospherics(IN,true,false,true);
+}
+
+shader TwoColourCompositeOutput PS_CompositeAtmospherics_ForwardDepth_Godrays(CompositeShaderInput IN) 
+{
+	return PS_CompositeAtmospherics(IN,false,false,true);
+}
+
+shader TwoColourCompositeOutput PS_CompositeAtmospherics_ReverseDepth_Lightpass_Godrays(CompositeShaderInput IN) 
+{
+	return PS_CompositeAtmospherics(IN,true,true,true);
+}
+
+shader TwoColourCompositeOutput PS_CompositeAtmospherics_ForwardDepth_Lightpass_Godrays(CompositeShaderInput IN) 
+{
+	return PS_CompositeAtmospherics(IN,false,true,true);
 }
 
 shader vec4 PS_CubemapToScreenspace(posTexVertexOutput IN): SV_Target
@@ -408,8 +408,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 																,viewportToTexRegionScaleBias
 																,depthInterpretationStruct
 																,IN.lowResTexCoords
-																,inscatterVolumeTexture
-																,shadowTexture);
+																,inscatterVolumeTexture);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	return result;
@@ -495,19 +494,6 @@ technique exposure_gamma
     }
 }
 
-technique warp_exposure_gamma
-{
-    pass main
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
-		SetPixelShader(CompileShader(ps_4_0,WarpExposureGammaPS()));
-    }
-}
-
 technique infra_red
 {
 	pass main
@@ -530,18 +516,6 @@ technique infra_red
 	}
 }
 
-technique warp_glow_exposure_gamma
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
-		SetPixelShader(CompileShader(ps_4_0,WarpExposureGammaPS()));
-    }
-}
 
 technique glow_exposure_gamma
 {
@@ -565,6 +539,8 @@ technique glow_exposure_gamma
     }
 }
 
+// special blend for 3-colour blending!
+//TODO: implement different blend for each RT on all platforms.
 BlendState CubemapCompositeBlend
 {
 	BlendEnable[0]	=TRUE;
@@ -610,6 +586,69 @@ fxgroup composite_atmospherics
 			SetGeometryShader(NULL);
 			SetVertexShader(compositevs_5_0);
 			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_ForwardDepth()));
+		}
+	}
+	technique main_with_godrays
+	{
+		pass reverse_depth
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(compositevs_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_ReverseDepth_Godrays()));
+		}
+		pass forward_depth
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(compositevs_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_ForwardDepth_Godrays()));
+		}
+	}
+	technique main_with_lightpass
+	{
+		pass reverse_depth
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(compositevs_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_ReverseDepth_Lightpass()));
+		}
+		pass forward_depth
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(compositevs_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_ForwardDepth_Lightpass()));
+		}
+	}
+	technique main_with_lightpass_godrays
+	{
+		pass reverse_depth
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(compositevs_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_ReverseDepth_Lightpass_Godrays()));
+		}
+		pass forward_depth
+		{
+			SetRasterizerState( RenderNoCull );
+			SetDepthStencilState( DisableDepth, 0 );
+			SetBlendState(CompositeBlend,vec4(1.0,1.0,1.0,1.0 ), 0xFFFFFFFF );
+			SetGeometryShader(NULL);
+			SetVertexShader(compositevs_5_0);
+			SetPixelShader(CompileShader(ps_5_0,PS_CompositeAtmospherics_ForwardDepth_Lightpass_Godrays()));
 		}
 	}
 	technique msaa
