@@ -27,9 +27,9 @@
 #pragma comment(lib,"opengl32")
 
 #ifdef _DEBUG
-#pragma comment(lib,"glew32sd")
+#pragma comment(lib,"glew32d")
 #else
-#pragma comment(lib,"glew32s")
+#pragma comment(lib,"glew32")
 #endif
 
 #ifndef _MSC_VER
