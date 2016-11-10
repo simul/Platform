@@ -55,22 +55,22 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulLib_VC14.props" />
+    <Import Project="..\..\SimulLib.props" />
     <Import Project="..\..\SimulStaticRelease.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulLib_VC14.props" />
+    <Import Project="..\..\SimulLib.props" />
     <Import Project="..\..\SimulStaticDebug.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulRelease.props" />
-    <Import Project="..\..\SimulDLL_VC14.props" />
+    <Import Project="..\..\SimulDLL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulDLL_VC14.props" />
+    <Import Project="..\..\SimulDLL.props" />
     <Import Project="..\..\SimulDebug.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -85,7 +85,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC14/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>true</MinimalRebuild>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -107,7 +107,7 @@
     <ClCompile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC14/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -133,7 +133,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC14/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <PrecompiledHeader>
@@ -149,7 +149,7 @@
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC14/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/FreeImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>
       </PrecompiledHeader>

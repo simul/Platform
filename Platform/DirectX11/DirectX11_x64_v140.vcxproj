@@ -57,25 +57,25 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulLib_VC14.props" />
+    <Import Project="..\..\SimulLib.props" />
     <Import Project="..\..\SimulStaticRelease.props" />
     <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulLib_VC14.props" />
+    <Import Project="..\..\SimulLib.props" />
     <Import Project="..\..\SimulStaticDebug.props" />
     <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulDLL_VC14.props" />
+    <Import Project="..\..\SimulDLL.props" />
     <Import Project="..\..\SimulRelease.props" />
     <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulDLL_VC14.props" />
+    <Import Project="..\..\SimulDLL.props" />
     <Import Project="..\..\SimulDebug.props" />
     <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
@@ -108,6 +108,7 @@
       <TargetMachine>MachineX64</TargetMachine>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -136,6 +137,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <PostBuildEvent>
       <Command>
