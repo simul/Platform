@@ -57,27 +57,27 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulLib_VC11.props" />
+    <Import Project="..\..\SimulLib.props" />
     <Import Project="..\..\SimulStaticRelease.props" />
-    <Import Project="SimulUseDXSDK.props" />
+    <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulLib_VC11.props" />
+    <Import Project="..\..\SimulLib.props" />
     <Import Project="..\..\SimulStaticDebug.props" />
-    <Import Project="SimulUseDXSDK.props" />
+    <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulDLL_VC11.props" />
+    <Import Project="..\..\SimulDLL.props" />
     <Import Project="..\..\SimulRelease.props" />
-    <Import Project="SimulUseDXSDK.props" />
+    <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulDLL_VC11.props" />
+    <Import Project="..\..\SimulDLL.props" />
     <Import Project="..\..\SimulDebug.props" />
-    <Import Project="SimulUseDXSDK.props" />
+    <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -108,6 +108,7 @@
       <TargetMachine>MachineX64</TargetMachine>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -136,6 +137,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -633,26 +635,13 @@
     <None Include="SimulUseWin8SDK.props" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Clouds\Clouds_x64_VC11.vcxproj">
-      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\External\DirectX\Effects11_DXSDK\Effects11_DXSDK_2012.vcxproj">
-      <Project>{df460eab-570d-4b50-9089-2e2fc801bf38}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Math\Math_x64_VC11.vcxproj">
+    <ProjectReference Include="..\..\Math\Math_x64_v140.vcxproj">
       <Project>{b6cb4ee4-90e3-4b11-8706-e4d7b9024801}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
-    <ProjectReference Include="..\CrossPlatform\CrossPlatform_x64_VC11.vcxproj">
-      <Project>{7f8bc215-2b2a-4703-af7c-f7f7351fb99d}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -10,7 +10,11 @@
 #include "Simul/Base/FileLoader.h"
 
 #ifdef _MSC_VER
-#pragma comment(lib,"freeImage.lib")
+#ifdef _DEBUG
+#pragma comment(lib,"freeImaged")
+#else
+#pragma comment(lib,"freeImage")
+#endif
 #endif
 
 using namespace std;
