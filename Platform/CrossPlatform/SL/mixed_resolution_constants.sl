@@ -3,7 +3,10 @@
 #define MIXED_RESOLUTIONS_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
-	uniform mat4 invViewProj;		// Transform from render clip to true view direction
+	uniform uint4 cubeIndex[8];
+	uniform uint4 drawRange[8];
+	uniform uint4 targetRange[8];
+	uniform mat4 invViewProj[8];		// Transform from render clip to true view direction
 	uniform mat4 viewProj;			// Transform from worldspace view direction to current frustum
 	uniform mat4 proj;				// Transform from viewspace view direction to current frustum
 	uniform vec4 frustumClipRange;
@@ -13,8 +16,6 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 
 	uniform uint2 target_dims;
 	uniform uint2 source_offset;	// The offset into the area of the texture that's of interest
-	uniform uint4 targetRange;
-	uniform uint4 drawRange;
 
 	uniform uint2 scale;
 	uniform vec2 texelRange;
@@ -25,9 +26,6 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 	uniform vec2 tanHalfFov;
 	uniform float nearThresholdDepth;
 	uniform float nearThresholdDist;
-
-	uniform int cubeIndex;
-	uniform float farZ;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

@@ -233,7 +233,7 @@ ID3D11ShaderResourceView *Texture::AsD3D11ShaderResourceView(crossplatform::Shad
 	if(mip>=mips)
 		mip=mips-1;
 #ifdef _DEBUG
-	if(index>=arraySize)
+	if(index>=arraySize*(cubemap?6:1))
 	{
 		SIMUL_BREAK_ONCE("AsD3D11UnorderedAccessView: mip or index out of range");
 		return NULL;
