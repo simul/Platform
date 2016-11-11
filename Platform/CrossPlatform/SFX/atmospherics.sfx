@@ -1,0 +1,269 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+#include "shader_platform.sl"
+#include "../SL/common.sl"
+#include "../SL/render_states.sl"
+#include "../SL/depth.sl"
+#include "../SL/simul_inscatter_fns.sl"
+#include "../SL/cloud_shadow.sl"
+#include "../SL/atmospherics.sl"
+#include "../SL/atmospherics_constants.sl"
+#include "../SL/colour_packing.sl"
+#include "../SL/illumination.sl"
+
+uniform Texture2D inscTexture;
+uniform Texture2D skylTexture;
+
+uniform Texture3D cloudTexture;
+uniform Texture2D godraysTexture;
+SamplerState cloudSamplerState;
+uniform TextureCube cubeDepthTexture;
+uniform TextureCube cubeUpdateTexture;
+uniform RWTexture3D<vec4> targetVolume;
+uniform RWTexture2D<vec4> targetTexture;
+
+#include "../SL/cloud_shadow.sl"
+#include "../SL/godrays.sl"
+	
+#define pi (3.1415926536)
+
+struct atmosVertexInput
+{
+	uint vertex_id			: SV_VertexID;
+};
+
+struct atmosVertexOutput
+{
+    vec4 position		: SV_POSITION;
+    vec2 texCoords		: TEXCOORD0;
+    vec2 pos			: TEXCOORD1;
+};
+
+#define clampClouds (0)
+#define BLOCK_X 16
+#define BLOCK_Y 16
+
+CS_LAYOUT(BLOCK_X,BLOCK_Y,1)
+shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
+{
+	uint3 idx			=p*amortization+amortizationOffset;
+	//if(p.x>=edge.x||p.y>=edge.y)
+	//	return;
+	// We must convert the idx values into a direction and distance in real space.
+	// x is azimuth and y is distance.
+	float az_texc		=float(idx.x)/float(godraysVolumeDims.x);
+	float radial_texc	=float(idx.y)/float(godraysVolumeDims.y-1);
+	float azimuth		=az_texc*2.0*PI;
+	float x				=radial_texc*sin(azimuth);
+	float y				=radial_texc*cos(azimuth);
+//vec3 view			=mul(lightspaceToWorldMatrix,vec4(x,y,ce,1.0)).xyz;
+
+//	float godraysIntensity	=1.0;
+	vec3 lightDirCloudspace	=normalize(mul(worldToCloudMatrix,vec4(lightDir,0.0)).xyz);
+
+	vec3 viewPosKm			=viewPosition/1000.0;
+	float maxFadeDistanceKm	=maxFadeDistanceMetres*0.001;
+	float total=0.0;
+	float total_illum=1.0;
+	vec3 pos_w0				=mul(lightspaceToWorldMatrix,vec4(x,y,0.0,1.0)).xyz;
+	uint i=0;
+	vec4 res				=vec4(0,0,0,1.0);
+	vec3 wvec				=lightspaceToWorldMatrix._m02_m12_m22;
+	float illum=1.0;
+	float shadow_distance=1.0;
+	for(i=0;i<godraysVolumeDims.z;i++)
+	{
+		float z_texc			=float(i)/float(godraysVolumeDims.z-1);
+		float z					=lerp(1.0,-1.0,z_texc);
+		vec3 pos_l				=vec3(x,y,z);
+		// x and y are constant, while z varies from 1.0 to -1.0.
+		// Therefore,	 pos_w	=M*(pos_0+pos_z,1.0)=M*(pos_0,1.0)+ M*(pos_z,0.0)
+		// where pos_0 is vec3(x,y,0) and pos_z is vec3(0,0,z).
+		// Having precalculated M*pos_0, how can we simplify M*pos_z?
+		// M*pos_z is actually M4x4 * vec4(0,0,z,0.0).
+		// i.e. it's z times the third row of the matrix.
+		vec3 pos_w1				=z*wvec;
+		vec3 pos_w				=pos_w0+pos_w1;
+		vec3 pos_n				=normalize(pos_w);
+		vec4 depth_lookup		=texture_cube_lod(cubeDepthTexture,pos_n,0);
+		vec4 update				=texture_cube_lod(cubeUpdateTexture,pos_n,0);
+		depth_lookup.x			=lerp(1.0,depth_lookup.x,update.r);
+		// problem: depth_lookup is not guaranteed to be valid. We must use the update texture to determine if it is.
+		// Later we can think about doing a "level of validity" - how old the data might be.
+		float dist				=saturate(length(pos_w)*0.001/maxFadeDistanceKm);
+
+		vec3 pos_km				=viewPosKm+pos_w*0.001;
+		// NOTE: We are assuming now that the cloud volume is worldspace-aligned.
+		vec3 posCloudspace		=(pos_km-cloudOriginKm)/cloudScaleKm;
+	//	if(viewposCloudspace.z>0.0&&viewposCloudspace.z<1.0)
+		{
+			illum				=1.0-(godraysIntensity*(1.0-GetCloudIllum(cloudTexture, cloudSamplerState, posCloudspace,lightDirCloudspace,clampClouds)));
+		}
+		total_illum				*=illum;
+		float t					=0.1;
+		total_illum				*=lerp(1.0,saturate((depth_lookup.x-dist+t)/t),abs(2.0*depth_lookup.x-1.0));
+
+		res						=vec4(total_illum,total_illum,total_illum,1.0);
+		int3 pos				=int3(idx.xy,godraysVolumeDims.z-1-i);
+		shadow_distance			=lerp(shadow_distance,float(i+1)/float(godraysVolumeDims.z-1),total_illum);
+		if(total_illum<=0)
+			break;
+	}
+	targetTexture[idx.xy]=shadow_distance;
+}
+
+// In the second pass, we travel radially outward from the viewer. In this context, lightspace is (azimuth around lightDir, elevation towards/away from lightDir, and distance).
+// so to translate from the position in this space to the texcoord in the previous cloud-shadow space, we keep the x.
+
+CS_LAYOUT(BLOCK_X,BLOCK_Y,1)
+shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
+{
+	uint3 idx				=p;//*amortization+amortizationOffset;
+//	if(p.x>=edge.x||p.y>=edge.z)
+//		return;
+	vec4 unity				=vec4(1.0,1.0,1.0,1.0);
+	vec4 total				=unity;
+	//IMAGE_STORE_3D(targetVolume,int3(idx.x,0,idx.y),unity);
+	vec3 texc				=vec3(idx+uint3(0,1,0))/vec3(godraysVolumeDims.xzy);
+	// Elevation: pi/2 is 90 degrees. The top (texc.y=1.0) should be pi/2,
+	// the bottom (texc.y=0) should be -pi/2.
+	float elevation			=pi*(.5-texc.y);
+	float sum				=0.0;
+	float mean_illumination	=1.0;
+	vec4 mi					=vec4(mean_illumination,mean_illumination,mean_illumination,mean_illumination);
+	for(uint i=0;i<godraysVolumeDims.y;i++)
+	{
+		uint3 pos		=uint3(idx.x,idx.y,i);
+		texc.z			=float(i)/float(godraysVolumeDims.y);
+		float dist		=texc.z;
+		vec3 texc_gr	=vec3(texc.x,dist*cos(elevation),1.0-0.5*(1.0-dist*sin(elevation)+zOrigin));
+		vec4 lookup		=godraysTexture.SampleLevel(wccSamplerState,texc_gr.xy,0);
+		float light		=saturate((lookup.x-texc_gr.z+0.001)/0.001);
+		total			+=light;
+		sum				+=1.0;
+
+		vec4 result		=lerp(total/sum,mi,pow(0.5*float(i)/float(godraysVolumeDims.y-1),1.0));
+		IMAGE_STORE_3D(targetVolume,pos,result);
+	}
+}
+
+/// Given a position in km, a direction to the sun, and the planet's radius, this
+/// function gives the amount of illumination between zero and one, 
+/// given the planet's shadow.
+vec3 IlluminationAtPosition(vec3 pos_km,vec3 dirToSun,float planetRadiusKm,vec3 range_km)
+{
+	// get the position relative to the planet's centre:
+	pos_km.z					+=planetRadiusKm;
+	// Resolve it on the terminator plane:
+	float along					=dot(dirToSun,pos_km);
+	if(along>0.0)
+		return vec3(1,1,1);
+	pos_km						-=along*dirToSun;
+	float radius_on_cylinder_km	=length(pos_km);
+	float dif					=radius_on_cylinder_km-planetRadiusKm;
+	vec3 d						=vec3(dif,dif,dif)+range_km;
+	vec3 illum					=saturate(d/range_km);
+	return illum;
+}
+// With this function we will create a 3D volume texture that encompasses the scattering for a frame,
+// where the x-axis is azimuth around the light source, y-axis is angle from the light source (maximum = 180 deg)
+// and z-axis is distance from the viewer.
+
+void ScatteringVolume(uint3 p,bool godrays)
+{
+	uint3 idx			=p*amortization+amortizationOffset;
+	//if(p.x>=edge.x||p.y>=edge.y)
+	//	return;
+	// We must convert the idx values into a direction and distance in real space.
+	vec2 texc				=vec2(float(idx.x)/float(scatteringVolumeDims.x),float(idx.y)/float((scatteringVolumeDims.y-1)));
+	float azimuth			=texc.x*2.0*PI;
+	float elevation			=(1.0-texc.y)*PI;
+	float se				=sin(elevation);
+	float ce				=cos(elevation);
+	float x					=sin(azimuth)*se;
+	float y					=cos(azimuth)*se;
+	vec3 view				=vec3(x,y,ce);
+	float sine				=view.z;
+
+	float fade_texc_y		=0.5*(1.0-sine);
+	vec4 colour				=vec4(0,0,0,0);
+	vec4 last				=vec4(0,0,0,0);
+
+	float cos0				=dot(view.xyz,lightDir);
+
+	vec3 viewPosKm			=vec3(0.0,0.0,viewPosition.z/1000.0);
+	float maxFadeDistanceKm	=maxFadeDistanceMetres*0.001;
+	
+	for(int i=0;i<scatteringVolumeDims.z;i++)
+	{
+		float dist_texc	=float(i)/float(scatteringVolumeDims.z-1);
+		float dist		=pow(dist_texc,2.0);
+		float distanceKm=dist*maxFadeDistanceKm;
+		vec3 offsetKm	=view*distanceKm;
+		vec3 ls_pos		=mul(scatterspaceToWorldMatrix,vec4(1000.0*offsetKm,1.0)).xyz;
+		float r			=length(ls_pos);
+		vec2 fade_texc	=vec2(dist_texc,fade_texc_y);
+		vec4 insc		=texture_clamp_lod(inscTexture,fade_texc,0);
+		vec3 skyl		=texture_clamp_lod(skylTexture,fade_texc,0).rgb;
+	#ifdef INFRARED
+		vec4 next		=vec4(skyl.rgb,1.0);
+		float shadow	=1.0;
+		colour			+=max(vec4(0,0,0,0),(next-last));
+	#else
+		float illum=0;
+		vec3 earth_shadow_illum=IlluminationAtPosition(viewPosKm+offsetKm,atmosphericsDirectionToSun,atmosphericsPlanetRadiusKm,vec3(45.0,35.0,25.0));
+		vec4 next			=vec4(InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio),1.0);
+		vec4 dc				=max(vec4(0,0,0,0),(next-last));
+		dc.rgb				*=earth_shadow_illum;
+		colour				+=dc;
+		//colour=insc;
+		colour.a			=1.0;
+	#endif
+		vec4 res			=colour+vec4(skyl,0);
+		int3 pos			=int3(idx.xy,i);
+
+		IMAGE_STORE_3D(targetVolume,pos,res);
+		last				=next;
+	}
+}
+
+CS_LAYOUT(BLOCK_X,BLOCK_Y,1)
+shader void CS_ScatteringVolume_Godrays(uint3 p: SV_DispatchThreadID)
+{
+	ScatteringVolume(p,true);
+}
+CS_LAYOUT(BLOCK_X,BLOCK_Y,1)
+shader void CS_ScatteringVolume(uint3 p: SV_DispatchThreadID)
+{
+	ScatteringVolume(p,false);
+}
+
+technique scattering_volume
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_ScatteringVolume()));
+    }
+}
+technique scattering_volume_godrays
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_ScatteringVolume_Godrays()));
+    }
+}
+
+technique godrays_volume
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_GodraysVolume()));
+    }
+} 
+
+technique godrays_accumulation
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_GodraysAccumulation()));
+    }
+}

@@ -1,0 +1,334 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{c51d314d-d24a-45d0-b450-9c10e4d7ef2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CrossPlatform">
+      <UniqueIdentifier>{24e025b9-5372-4d13-a288-03ce7db701fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLFX">
+      <UniqueIdentifier>{43ec6d2f-fc44-4859-8833-7757e68091d4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="FramebufferGL.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LoadGLImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="objload.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGLRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Profiler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SimulGLUtilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPlatform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Layout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrintEffectLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Export.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FramebufferGL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LoadGLImage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="objload.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenGLRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Profiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulGLUtilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPlatform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Layout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PrintEffectLog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GLSL\CppGlsl.hs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\saturate.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simple.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simple.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_2d_cloud_detail.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_2d_cloud_detail_lighting.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_2d_noise.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_atmospherics.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_cloud_cross_section.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_cloud_cross_section.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_cloud_overlay.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_cloudmix.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_cloudmix.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_clouds.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_clouds.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_clouds_2d.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_clouds_2d.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_earthshadow_sky.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_fade_3d_to_2d.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_fade_3d_to_2d.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_flare.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_glow.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_cloud_density.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_cloud_density.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_cloud_transform.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_cloud_transform.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_clouds.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_clouds.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_clouds.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_insc.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_loss.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_sky.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_skyl.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_hdr_blur.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_lightning.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_lightning.geom">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_lightning.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_noise.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_planet.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_rain.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_rain.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_simple_lightning.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_simple_lightning.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_sky.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_sky.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_stars.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_sun.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_sun.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_sun_planet_flare.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_terrain.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_terrain.geom">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_terrain.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\tonemap.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\tonemap.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_atmospherics_godrays.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_insc.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_insc_earthshadow.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_loss.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_raytrace_clouds.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\sky.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\gpu_cloud_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="GLSL\sky.nvfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\atmospherics.nvfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_cloud_shadow.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_sky_copy.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\solid.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\solid.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SL\depth.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="GLSL\simul_gpu_clouds.glfx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\shader_platform.sl">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+</Project>

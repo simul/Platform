@@ -1,0 +1,257 @@
+//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+#include "shader_platform.sl"
+#include "../SL/common.sl"
+#include "../SL/render_states.sl"
+#include "../SL/mixed_resolution_constants.sl"
+#include "../SL/depth.sl"
+#include "../SL/colour_packing.sl"
+#include "../SL/debug_constants.sl"
+
+uniform TEXTURE2DMS_FLOAT4 sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
+uniform TEXTURE2DMS_FLOAT4 sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
+uniform Texture2D sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);
+uniform RW_TEXTURE2D_FLOAT4 target2DTexture;
+
+uniform Texture2D previousTexture;
+uniform Texture2D sourceTexture1;
+uniform Texture2D sourceTexture2;
+uniform Texture2D sourceTexture3;
+uniform Texture2D updateTexture;
+uniform RWTexture2D<vec4> targetTexture;
+uniform RWTexture2D<vec4> nextUpdateTexture;
+
+uniform RWTexture2D<vec4> targetTexture2;
+uniform RWTexture2D<vec4> targetTexture3;
+#define BLOCKSIZE 8
+
+vec4 GetStochasticSamples(Texture2D previousTexture,Texture2D sourceDepthTexture,vec2 sourceTexCoords,vec2 frustum_clip_pos, vec2 texelRange
+	, DepthIntepretationStruct depthInterpretationStruct,vec2 tanHalfFov, float nearThresholdDepth
+	,vec2 stochasticOffset
+	,uint2 scale)
+{
+	// Stochastic offset goes from -1 to +1
+	vec2 texCoords	=sourceTexCoords+texelRange*stochasticOffset;// / vec2(scale);
+	vec4 fn			=vec4(0.0,1.0,0.0,1.0);
+	vec2 thr		=vec2(nearThresholdDist, nearThresholdDist);
+	vec2 offsets[3];
+	offsets[0]	=vec2(-0.4,0.3);
+	offsets[1]	=vec2(0.4,0.3);
+	offsets[2]	=vec2(0.0,-0.5);
+	for(int i=0;i<3;i++)
+	{
+		//float x=(0.5+float(i)-scale.x/2.0)/float(scale.x);
+		//for(int j=0;j<scale.y;j++)
+		{
+			vec2 offs	=texelRange*offsets[i];
+			vec2 texc	=saturate(1.0*(texCoords+offs))/1.0;
+			texc		*=depthWindow.zw;
+			texc		+=depthWindow.xy;
+			// VERY important to use NEAREST, and not filter the source depth texture!
+			vec2 d		=texture_clamp_lod(sourceDepthTexture,texc,0).xx;
+			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+			float s		=saturate((dist.x)/thr.x);
+			fn.yw		=min(fn.yw,vec2((1.0-s),0.0)+dist);
+			fn.xz		=max(fn.xz,dist);
+			//	fn.xz		=max(fn.xz,dist);
+		//	fn.yw = min(fn.yw, dist);
+		}
+	}
+	return fn;
+}
+
+vec4 GetFrustumClipPos(uint2 idx)
+{
+	vec2 texCoords			=(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims);
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
+	// Transform view into the proper frustum
+	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
+	frustum_clip_pos		/=frustum_clip_pos.w;
+
+	return frustum_clip_pos;
+}
+
+void DownscaleStochastic(uint2 idx1,bool reverseDepth) 
+{
+	uint2 idx=drawRange.xy+idx1;
+	if(idx.x<targetRange.x||idx.x>=targetRange.z||idx.y<targetRange.y||idx.y>=targetRange.w)
+	{
+		nextUpdateTexture[idx]	=vec4(0,0,0,0);
+		return;
+	}
+	// old update
+	vec4 u					=updateTexture[idx];
+	vec2 texCoords			=(vec2(idx)+vec2(0.5,0.5))/vec2(target_dims);
+	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
+	// Transform view into the proper frustum
+	vec4 frustum_clip_pos	=mul(viewProj,vec4(view,1.0));
+	frustum_clip_pos		/=frustum_clip_pos.w;
+	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
+	sourceTexCoords.y		=1.0-sourceTexCoords.y;
+	vec4 clipRange			=frustumClipRange;//vec4(-1.0,-1.0,1.0,1.0);
+	if(frustum_clip_pos.z<0.0)
+	{
+		nextUpdateTexture[idx]=vec4(0,0,0,0);
+		return;
+	}
+	//if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<-1.0||frustum_clip_pos.x>1.0||frustum_clip_pos.y<-1.0||frustum_clip_pos.y>1.0)
+	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
+	{
+		nextUpdateTexture[idx]=vec4(0,0,0,0);
+		return;
+	}
+	DepthIntepretationStruct ds;
+	ds.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+	ds.reverseDepth				=reverseDepth;
+	vec4 res					=GetStochasticSamples(
+									previousTexture
+									,sourceDepthTexture
+									,sourceTexCoords
+									,frustum_clip_pos.xy
+									,texelRange
+									,ds
+									,tanHalfFov
+									,nearThresholdDepth
+									,stochasticOffset
+									,scale);
+
+	targetTexture[idx]		=res;
+	// This part was not previously updated. Therefore we will calculate all THREE target depth textures:
+	if(u.b==0)
+	{
+		targetTexture2[idx]		=res;
+		targetTexture3[idx]		=res;
+	}
+	nextUpdateTexture[idx]	=vec4(u.b,0,1.0,0);
+}
+
+void Direct(uint2 idx,bool reverseDepth) 
+{
+	vec4 frustum_clip_pos			=GetFrustumClipPos(idx);
+	vec2 sourceTexCoords			=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
+	sourceTexCoords.y				=1.0-sourceTexCoords.y;
+	DepthIntepretationStruct dis;
+	dis.depthToLinFadeDistParams	=depthToLinFadeDistParams;
+	dis.reverseDepth				=reverseDepth;
+	vec4 res						=GetStochasticSamples(previousTexture,sourceDepthTexture,sourceTexCoords,frustum_clip_pos.xy,texelRange,dis
+										,tanHalfFov,  nearThresholdDepth,stochasticOffset,scale);
+	vec4 lin						=depthToFadeDistance(res,frustum_clip_pos.xy,dis,tanHalfFov);
+	targetTexture[idx]				=vec4(1.0,0.0000001,0.0000001,0.0000001);//lin;
+	nextUpdateTexture[idx]			=vec4(1.0,0,1,0);
+}
+
+CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
+shader void CS_Direct_ReverseDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
+{
+	uint2 idx				=uint2(g.xy*BLOCKSIZE+t.xy);
+	Direct(idx,true);
+}
+
+CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
+shader void CS_Direct_ForwardDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
+{
+	uint2 idx				=uint2(g.xy*BLOCKSIZE+t.xy);
+	Direct(idx,false);
+}
+
+CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
+shader void CS_DownscaleStochastic_ReverseDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
+{
+	uint2 idx				=uint2(g.xy*BLOCKSIZE+t.xy);
+	DownscaleStochastic(idx,true);
+}
+
+CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
+shader void CS_DownscaleStochastic_ForwardDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
+{
+	uint2 idx				=uint2(g.xy*BLOCKSIZE+t.xy);
+	DownscaleStochastic(idx,false);
+}
+
+void MinMax(uint2 idx1,bool reverseDepth)
+{
+	uint2 idx = targetRange.xy + idx1;
+	if (idx.x<targetRange.x || idx.x>=targetRange.z || idx.y<targetRange.y || idx.y>=targetRange.w)
+	{
+		return;
+	}
+	vec2 texCoords			=vec2(idx)/vec2(target_dims);
+	vec4 frustum_clip_pos	=GetFrustumClipPos(idx);
+
+	vec2 sourceTexCoords	=0.5*(frustum_clip_pos.xy+vec2(1.0,1.0));
+	sourceTexCoords.y		=1.0-sourceTexCoords.y;
+	vec4 clipRange			=frustumClipRange;
+	if(frustum_clip_pos.z<0.0||frustum_clip_pos.x<clipRange.x||frustum_clip_pos.x>clipRange.z||frustum_clip_pos.y<clipRange.y||frustum_clip_pos.y>clipRange.w)
+		return;
+	if (updateTexture[idx].b == 0.0)
+		return;
+	vec2 thr	=vec2(nearThresholdDist, nearThresholdDist);
+	vec4 fn1	=sourceTexture1[idx];
+	vec4 fn2	=sourceTexture2[idx];
+	vec4 fn3	=sourceTexture3[idx];
+	vec4 fn		=vec4(0.0,1.0,0.0,1.0);
+	fn.yw = min(fn.yw,fn1.yw);
+	fn.xz = max(fn.xz,fn1.xz);
+	if(updateTexture[idx].r>=1.0)
+	{
+		fn.yw	=min(fn.yw,fn2.yw);
+		fn.xz	=max(fn.xz,fn2.xz);
+		fn.yw	=min(fn.yw,fn3.yw);
+		fn.xz	=max(fn.xz,fn3.xz);
+	}
+	fn.z = nearThresholdDist;
+	targetTexture[idx]				=saturate(fn);
+}
+
+CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
+shader void CS_MinMax_ForwardDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
+{
+	uint2 idx1		=uint2(g.xy*BLOCKSIZE+t.xy);
+	MinMax(idx1,false);
+}
+
+CS_LAYOUT(BLOCKSIZE,BLOCKSIZE,1)
+shader void CS_MinMax_ReverseDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint2 idx1 = uint2(g.xy*BLOCKSIZE + t.xy);
+	MinMax(idx1,true);
+}
+technique direct
+{
+    pass reverse_depth
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Direct_ReverseDepth()));
+    }
+    pass forward_depth
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Direct_ForwardDepth()));
+    }
+}
+
+technique downscale_stochastic_compute
+{
+    pass reverse_depth
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_ReverseDepth()));
+    }
+    pass forward_depth
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_ForwardDepth()));
+    }
+}
+technique minmax
+{
+    pass reverse_depth
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MinMax_ReverseDepth()));
+    }
+    pass forward_depth
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MinMax_ForwardDepth()));
+    }
+}

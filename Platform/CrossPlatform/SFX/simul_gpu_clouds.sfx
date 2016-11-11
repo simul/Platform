@@ -1,0 +1,993 @@
+// Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+
+#include "shader_platform.sl"
+#include "../SL/common.sl"
+uniform sampler3D			densityTexture SIMUL_TEXTURE_REGISTER(0);
+uniform sampler2D			maskTexture SIMUL_TEXTURE_REGISTER(3);
+uniform sampler3D			ambientTexture;
+uniform sampler3D			volumeNoiseTexture SIMUL_TEXTURE_REGISTER(6);
+uniform sampler3D			worleyTexture3D SIMUL_TEXTURE_REGISTER(7);
+uniform RWTexture3D<uchar4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture3D<float>	targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
+uniform Texture3D			inputTexture3D;
+uniform Texture3D			inputTexture3DB;
+uniform Texture3D			inputTexture3DC;
+uniform Texture3D			inputTexture3DD;
+uniform RWTexture3D<vec4>	outputTexture;
+
+#include "../SL/render_states.sl"
+#include "../SL/gpu_cloud_constants.sl"
+#include "../SL/simul_gpu_clouds.sl"
+
+SamplerState lightSamplerState SIMUL_SAMPLER_REGISTER(8);
+SamplerState densSamplerState SIMUL_SAMPLER_REGISTER(9);
+uniform StructuredBuffer<CloudAffector> cloudAffectors;
+uniform StructuredBuffer<CloudVolume_densityspace> cloudVolumes;
+
+#define q	(10000.0)
+
+struct vertexOutput
+{
+    vec4 hPosition	: SV_POSITION;
+	vec2 texCoords	: TEXCOORD0;		
+};
+
+shader vertexOutput VS_Main(idOnly IN)
+{
+    vertexOutput OUT;
+	vec2 poss[4]=
+	{
+		{ 1.0, 0.0},
+		{ 1.0, 1.0},  
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
+	};
+	vec2 pos		=poss[IN.vertex_id];
+	pos.y			=yRange.x+pos.y*yRange.y;
+	vec4 vert_pos	=vec4(vec2(-1.0,1.0)+2.0*vec2(pos.x,-pos.y),1.0,1.0);
+    OUT.hPosition	=vert_pos;
+    OUT.texCoords	=pos;
+    return OUT;
+}
+
+struct ColourDepthOutput
+{
+	vec4 colour SIMUL_TARGET_OUTPUT;
+	float depth	SIMUL_DEPTH_OUTPUT;
+};
+
+shader ColourDepthOutput PS_DensityMask(vertexOutput IN)
+{
+	ColourDepthOutput result;
+	float dens					=GpuCloudMask(IN.texCoords, maskCentre, maskRadius,maskFeather, maskThickness,transformMatrix);
+	result.colour				=vec4(0.0,0.0,0.0,dens);
+	result.depth				=dens;
+	return result;
+}
+
+shader vec4 PS_CloudPlacementTexture(vertexOutput IN) SIMUL_TARGET_OUTPUT
+{
+	vec2 wPosKm		=0.001*(mul(transformMatrix, vec4(IN.texCoords.xy,0, 1.0))).xy;
+	vec2 offs_km	=wPosKm.xy - maskCentre;
+	vec2 texCoords	=vec2(0.5,0.5)+offs_km/cloudScalesKm.xy;
+	vec4 lookup		=texture_clamp_lod(maskTexture,texCoords,0);
+	return lookup;
+}
+
+vec3 convertPosToTexc(uint3 pos,uint3 dims)
+{
+	return (vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
+}
+
+vec4 advect(vec3 texc		// grid coordinates
+			,float timestep
+			,vec3 cloudScales				// 1 / grid scale
+			,vec3 velocity			// input velocity
+			,Texture3D inputField)    // qty to advect
+{
+  // follow the velocity field "back in time"
+   vec3 source_texc		= texc - timestep * velocity/cloudScales;
+  // interpolate and write to the output fragment
+	vec4 newval			= texture_wwc_lod(inputField,source_texc,0);
+	return newval;
+}
+
+float Get2DNormalizedRadius(vec3 posKm,CloudAffector aff)
+{
+	vec2 offsetKm	=cloudScalesKm.xy*(frac((posKm.xy-aff.pos.xy)/cloudScalesKm.xy+vec2(0.5,0.5))-vec2(0.5,0.5));
+	float inSource	=length(offsetKm)/(aff.size+0.001);
+	return inSource;
+}
+
+float GetSourceValue(vec3 posKm,CloudAffector aff,float n)
+{
+	float inSource	=Get2DNormalizedRadius(posKm,aff);
+	float add		=saturate(1.0-inSource*inSource)*aff.strength;
+	return add;
+}
+
+struct AtmosphericProperties
+{
+	float T_K;		// Temperature
+	float qvs;		// Saturation point
+	float PI;		// Exner function
+};
+
+AtmosphericProperties SaturationRatio(vec3 posKm)
+{
+	AtmosphericProperties a;
+	float g			=0.00981;	//km/s2
+	float T0		=seaLevelTemperatureK;		// at sea level
+	float p0		=100.0;
+	float k			=0.286;
+	float GAMMA		=10.0;		// K/km
+	a.T_K			=T0-posKm.z*GAMMA;
+
+	// Apply noise variation to temperature:
+	{
+		vec3 densityspace_texcoord	=(posKm-cloudOriginKm)/cloudScalesKm;
+		vec3 noisespace_texcoord	=(densityspace_texcoord+vec3(0,0,0.0*zPixel))*vec3(noiseScale)+vec3(1.0,1.0,0);
+		// noise_texel is the size of a noise texel
+		float noise_texel			=1.0;
+		float height				=noiseScale.z;
+		float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
+		a.T_K						+=50.0*(noise_val-0.5);
+	}
+	//float TC		=a.T_K-273.0;	// At the lowest texel, we know that T=T0-z GAMMA = T0-(cloudbase*GAMMA) = Tbase
+	// and we want it to be at the dew point at that altitude.
+	float Rd		=0.000287;		// MJ/(kg.K) = kg.km2/s2/(kg.K) =km2/(s2.K) 
+	float p_ratio	=pow(1.0-posKm.z*GAMMA/T0,g/(GAMMA*Rd));
+						//pwr is km/s2/(K/km)/km2*s2.K
+						//      km*km/km2
+	float p			=p_ratio*p0;
+	a.PI			=pow(p_ratio,k);
+	// saturation mixing ratio:
+//	a.qvs			=380.16/p*exp(17.67*(a.T_K-273.0)/(a.T_K-29.5));
+	//				=380.16/p*exp(17.67*(a.T_K-29.5+29.5-273.0)/(a.T_K-29.5))
+	//				=380.16/p*exp(17.67*(1.0+(29.5-273.0)/(a.T_K-29.5))
+	//				=380.16/p*exp(17.67)*exp(-17.67*243.5/(a.T_K-29.5))
+	a.qvs			=0.38016/p*exp(17.67-4302.645/(a.T_K-29.5));
+	return a;
+}
+
+// Initially we have a cloud texture where 0 is clear and 1 is cloud.
+// But in the simulation, we use mixing ratios, which can be up to about 50 g/kg (50/1000=0.05)
+CS_LAYOUT(8,8,8)
+shader void CS_InitSimulation( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos						=g*8+t;
+	vec3 texc						=convertPosToTexc(pos,dims);
+	vec4 lookup						=TEXTURE_LOAD_3D(inputTexture3D,pos);
+	vec2 from_ctr					=texc.xy-vec2(0.5,0.5);
+	// .61v = c
+	AtmosphericProperties a_base	=SaturationRatio(vec3(0,0,cloudBaseKm+0.5*cloudScalesKm.z));
+	AtmosphericProperties a_local	=SaturationRatio(cloudOriginKm+texc*cloudScalesKm);
+
+	float qc						=lookup.z/q;
+	float qv						=a_base.qvs*lookup.z;//qc/0.61;//04-qc;
+	vec4 newval						=vec4(qc,qv,lerp(a_local.T_K,a_base.T_K,lookup.z),0);
+	IMAGE_STORE_3D(outputTexture,pos,newval);
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Advection( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos				=g*8+t;
+	vec3 texc				=convertPosToTexc(pos,dims);
+	vec4 c1					=TEXTURE_LOAD_3D(inputTexture3DB,pos);
+	vec4 newval				=advect(texc,time_step,cloudScalesKm,c1.xyz,inputTexture3D);
+	IMAGE_STORE_3D(outputTexture,pos,newval);
+}
+vec4 Laplacian(Texture3D tex3D,vec3 texc)
+{
+	uint3 dims=uint3(0,0,0);
+#ifdef IN_COMPUTE_SHADER
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+#endif
+	vec3 gridScale	=cloudScalesKm/vec3(dims);
+	vec3 d			=vec3(0.5,0.5,0.5)/vec3(dims);
+	vec4 p			=texture_wwc_lod(tex3D,texc,0);
+	vec4 pL			=texture_wwc_lod(tex3D,texc-vec3(d.x,0,0),0);
+	vec4 pR			=texture_wwc_lod(tex3D,texc+vec3(d.x,0,0),0);
+	vec4 pB			=texture_wwc_lod(tex3D,texc-vec3(0,d.y,0),0);
+	vec4 pF			=texture_wwc_lod(tex3D,texc+vec3(0,d.y,0),0);
+	vec4 pD			=texture_wwc_lod(tex3D,texc-vec3(0,0,d.z),0);
+	vec4 pU			=texture_wwc_lod(tex3D,texc+vec3(0,0,d.z),0);
+
+	vec3 dx2		=gridScale*gridScale;
+	vec4 laplacian	=(pR -2.0*p + pL)/dx2.x + (pF -2.0*p+pB)/dx2.y+ (pU -2.0*p+ pD)/dx2.z;
+	return laplacian;
+}
+
+vec3 DelW(Texture3D tex3D,vec3 texc)
+{
+	uint3 dims;
+#ifdef IN_COMPUTE_SHADER
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+#endif
+	vec3 gridScale	=cloudScalesKm/vec3(dims);
+	vec3 d			=vec3(0.5,0.5,0.5)/vec3(dims);
+
+	vec4 pL			=texture_wwc_lod(tex3D,texc-vec3(d.x,0,0),0);
+	vec4 pR			=texture_wwc_lod(tex3D,texc+vec3(d.x,0,0),0);
+	vec4 pB			=texture_wwc_lod(tex3D,texc-vec3(0,d.y,0),0);
+	vec4 pF			=texture_wwc_lod(tex3D,texc+vec3(0,d.y,0),0);
+	vec4 pD			=texture_wwc_lod(tex3D,texc-vec3(0,0,d.z),0);
+	vec4 pU			=texture_wwc_lod(tex3D,texc+vec3(0,0,d.z),0);
+
+	vec3 del		=vec3((pR-pL).w/gridScale.x,(pF-pB).w/gridScale.y,(pU-pD).w/gridScale.z);
+	return del;
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Diffusion( uint3 g: SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos				=g*8+t;
+	vec3 texc				=convertPosToTexc(pos,dims);
+	vec4 oldval				=texture_wwc_lod(inputTexture3D,texc,0);
+	vec4 newval				=oldval+viscousCoefficient*Laplacian(inputTexture3D,texc);
+	IMAGE_STORE_3D(outputTexture,pos,newval);
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Vorticity( uint3 gr: SV_GroupID, uint3 t: SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos		=gr*8+t;
+	vec3 texc		=convertPosToTexc(pos,dims);
+	vec3 gridScale	=cloudScalesKm/vec3(dims);
+	vec3 d			=vec3(0.5,0.5,0.5)/vec3(dims);
+	vec4 wL			=texture_wwc_lod(inputTexture3D,texc-vec3(d.x,0,0),0);
+	vec4 wR			=texture_wwc_lod(inputTexture3D,texc+vec3(d.x,0,0),0);
+	vec4 wB			=texture_wwc_lod(inputTexture3D,texc-vec3(0,d.y,0),0);
+	vec4 wF			=texture_wwc_lod(inputTexture3D,texc+vec3(0,d.y,0),0);
+	vec4 wD			=texture_wwc_lod(inputTexture3D,texc-vec3(0,0,d.z),0);
+	vec4 wU			=texture_wwc_lod(inputTexture3D,texc+vec3(0,0,d.z),0);
+	vec3 w			=vec3(	(wF.z - wB.z)/gridScale.y-(wU.y - wD.y)/gridScale.z
+							,(wU.x - wD.x)/gridScale.z-(wR.z - wL.z)/gridScale.x
+							,(wR.y - wL.y)/gridScale.x-(wF.x - wB.x)/gridScale.y);
+	vec4 newval		=vec4(w,length(w));
+	IMAGE_STORE_3D(outputTexture,pos,newval);
+}
+
+// inputTexture3D is vorticity
+CS_LAYOUT(8,8,8)
+shader void CS_VorticityField( uint3 gr: SV_GroupID, uint3 t: SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos		=gr*8+t;
+	vec3 texc		=convertPosToTexc(pos,dims);
+	vec3 eta		=DelW(inputTexture3D,texc);
+	float mag		=0.000001+length(eta);
+	vec4 N			=vec4(eta/mag,1.0);
+	IMAGE_STORE_3D(outputTexture,pos,N);
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Force( uint3 gr : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos				=gr*8+t;
+	vec4 props				=TEXTURE_LOAD_3D(inputTexture3DB,pos);
+	vec3 vorticity			=TEXTURE_LOAD_3D(inputTexture3DC,pos).xyz;
+	vec3 vorticity_field	=TEXTURE_LOAD_3D(inputTexture3DD,pos).xyz;
+	vec3 vort_conf			=100.0*vorticityConfinement*cloudScalesKm.z/float(dims.z)*(cross(vorticity_field.xyz,vorticity.xyz));
+	// Properties are: x=cloud, y=water vapour, z=potential temperature, w unused.
+	vec4 vd					=TEXTURE_LOAD_3D(inputTexture3D,pos);
+	float g					=0.00981;	//km/s2
+	vec3 buoyant			=g*(props.z*(1.0+0.61*props.y)/300.0-props.x-1.0)*vec3(0,0,1.0);
+	vec3 delta				=(buoyant+vort_conf)*time_step;
+	vd.xyz					+=delta;
+	if(pos.z==dims.z-1)
+		vd.z				=0;
+	
+	vec3 texc				=convertPosToTexc(pos,dims);
+	vec3 posKm				=(cloudScalesKm*texc)+cloudOriginKm;
+	{
+		vec3 noise_texc		=cloudScalesKm*texc/sourceNoiseScaleKm;
+		float n				=texture_wrap_lod(volumeNoiseTexture,noise_texc,0).x;
+		// boundary conditions at top/bottom
+		if(pos.z==0||pos.z==dims.z-1)
+		{
+			vd.xyz			=vec3(0,0,0);
+		}
+		for(int i=0;i<numAffectors;i++)
+		{
+			CloudAffector aff	=cloudAffectors[i];
+			if(aff.type>0)
+			{
+				float add			=GetSourceValue(posKm,aff,n);
+				if(aff.type==1)
+				{
+					float noise_mult=.5+.5*cos(2.0*3.14159*(n+time/noisePeriod));
+					add				*=noise_mult;
+					if(pos.z<=1)
+					{
+						vd.xyz		=lerp(vd.xyz,aff.vel,add);
+					}
+				}
+				else if(aff.type==2)
+				{
+					if(pos.z<=1)
+					{
+						vec2 offsetKm	=cloudScalesKm.xy*(frac((posKm.xy-aff.pos.xy)/cloudScalesKm.xy+vec2(0.5,0.5))-vec2(0.5,0.5));
+						float rad		=length(offsetKm)/(aff.size+0.001);
+						float sc		=saturate(1.0/(rad+0.001));
+						float speed		=10.0+0.002*length(aff.vel);
+						speed			*=saturate(rad);
+						speed			*=saturate(sc*sc);
+						vec2 vel		=normalize(vec2(offsetKm.y,-offsetKm.x))*speed;
+						vd.xyz			=lerp(vd.xyz,vec3(vel,0),aff.strength);
+						vd.xyz			+=vec3(vel,-10.1*speed*saturate(1.0-rad))*aff.strength;
+					}
+				}
+			}
+		}
+	}
+
+	IMAGE_STORE_3D(outputTexture,pos,vd);
+}
+
+// buoyant force is zero when g*(theta*(1.0+0.61*v)/300.0-props.x-1.0)=0
+// where c is cloud mr and v is vapour mr.
+// i.e. theta*(1.0+0.61*v)/300.0=c+1.0
+//             (1+.61v) (theta/300) = 1+c
+// For stable cloud layer, we want the force to decrease with altitude.
+// i.e.			v decreases, c increases, or theta decreases.
+
+CS_LAYOUT(8,8,8)
+shader void CS_CloudUpdate( uint3 gr: SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos		=gr*8+t;
+	vec3 texc		=convertPosToTexc(pos,dims);
+	vec4 props		=TEXTURE_LOAD_3D(inputTexture3D,pos);
+	
+	vec3 posKm		=(cloudScalesKm*texc)+cloudOriginKm;	
+	float L			=2.501;	// Latent heat of vaporization J/kg
+	float GAMMA		=10.0;		// K/km
+	float zkm		=posKm.z;	
+	float T0		=seaLevelTemperatureK;		// at sea level
+	//float p0		=100.0*1000.0;
+	// and we want it to be at the dew point at that altitude.
+	float Rd		=287.0;		// J/kg.K
+	float g			=0.00981;	//km/s2
+	float p_ratio	=pow(1.0-zkm*GAMMA/T0,g/(GAMMA*Rd));
+	float k			=0.286;
+	float PI		=pow(p_ratio,k);
+	// saturation mixing ratio:
+	AtmosphericProperties a	=SaturationRatio(posKm);
+
+	if(pos.z==0)
+		props.x=0;
+	{
+		vec3 noise_texc=cloudScalesKm*texc/sourceNoiseScaleKm;
+		float n			=texture_wrap_lod(volumeNoiseTexture,noise_texc,0).x;
+		for(int i=0;i<numAffectors;i++)
+		{
+			CloudAffector aff=cloudAffectors[i];
+			if(aff.type==1&&pos.z<=1)
+			{
+				float add		=0.01*GetSourceValue(posKm,aff,n);
+				props.y			=max(props.y,add);
+			}
+		}
+	}
+	// Dobashi's expression for qvs is:
+	//qvs				= 217.0*exp(19.482-4303.4/(T-29.5))/T);			// T is possibly in kelvins here.
+
+	// Properties are: x=cloud, y=water vapour, z=potential temperature, w unused.
+	float dc		=-0.1*min(a.qvs-props.y,props.x);
+	float Cp		=1006.0;		// J/KG/K
+	props.z			+=dc*L*PI/Cp;
+	props.x			+=dc;
+	props.y			-=dc;
+
+	if(pos.z==0)
+	{
+		props.x=0;
+		props.y=baseMixingRatio;
+	}
+	IMAGE_STORE_3D(outputTexture,pos,props);
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Divergence( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos		=g*8+t;
+	vec3 texc		=convertPosToTexc(pos,dims);
+	vec3 gridScale	=cloudScalesKm/vec3(dims);
+	vec3 d			=vec3(0.5,0.5,0.5)/vec3(dims);
+	vec4 wL			=texture_wwc_lod(inputTexture3D,texc-vec3(d.x,0,0),0);
+	vec4 wR			=texture_wwc_lod(inputTexture3D,texc+vec3(d.x,0,0),0);
+	vec4 wB			=texture_wwc_lod(inputTexture3D,texc-vec3(0,d.y,0),0);
+	vec4 wF			=texture_wwc_lod(inputTexture3D,texc+vec3(0,d.y,0),0);
+	vec4 wD			=texture_wwc_lod(inputTexture3D,texc-vec3(0,0,d.z),0);
+	vec4 wU			=texture_wwc_lod(inputTexture3D,texc+vec3(0,0,d.z),0);
+	if(pos.z==0||pos.z==dims.z-1)
+		wU=wD;
+	//vec3 halfrdx	=0.5/gridScale;
+	float div		= ((wR.x - wL.x)/gridScale.x + (wF.y - wB.y)/gridScale.y+ (wU.z - wD.z)/gridScale.z);
+	IMAGE_STORE_3D(outputTexture,pos,vec4(div,div,div,div));
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Clear3D( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 pos			=g*8+t;
+	vec4 j = vec4(0,0,0,0);
+	IMAGE_STORE_3D(outputTexture,pos,j);
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Jacobi( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos			=g*8+t;
+	vec3 texc			=convertPosToTexc(pos,dims);
+	
+	// NB: Use SUCCESSIVE OVERRELAXATION (SOR) to speed this up
+	// over-relaxation factor w=1/(1+sin(pi*2*dx)) 
+	// And use alternate red-black iteration: see Moastuen(2007)
+
+	// left, right, bottom, and top x samples
+	vec3 d		=vec3(1.0,1.0,1.0)/vec3(dims);
+	vec3 i_g	=vec3(dims)/cloudScalesKm;		// inverse of one grid step
+	vec3 i_g2	=i_g*i_g;
+	vec4 xL		=texture_wwc_lod(inputTexture3D,texc-vec3(d.x,0,0),0);
+	vec4 xR		=texture_wwc_lod(inputTexture3D,texc+vec3(d.x,0,0),0);
+	vec4 xB		=texture_wwc_lod(inputTexture3D,texc-vec3(0,d.y,0),0);
+	vec4 xF		=texture_wwc_lod(inputTexture3D,texc+vec3(0,d.y,0),0);
+	vec4 xD		=texture_wwc_lod(inputTexture3D,texc-vec3(0,0,d.z),0);
+	vec4 xU		=texture_wwc_lod(inputTexture3D,texc+vec3(0,0,d.z),0);
+	
+	vec4 x		=texture_wwc_lod(inputTexture3D,texc,0);
+	if(pos.z==0||pos.z==dims.z-1)
+		i_g2.z=0;
+	// b sample, from center
+	vec4 bC		=alpha*texture_wwc_lod(inputTexture3DB,texc,0);
+	// evaluate Jacobi iteration
+	float beta	=2.0*(i_g2.x+i_g2.y+i_g2.z);
+	vec4 j		=((xL+xR)*i_g2.x + (xB+xF)*i_g2.y + (xU+xD)*i_g2.z - bC)*invBeta/beta;
+
+	float err	=abs((x.x-j.x)/(abs(j.x)+0.0000001));
+	
+	j.b			=err;	// blue= error.
+	j.ga		=j.rr;
+	IMAGE_STORE_3D(outputTexture,pos,j);
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_SubtractGradient( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(outputTexture,dims.x,dims.y,dims.z);
+	uint3 pos			=g*8+t;
+	vec3 texc			=convertPosToTexc(pos,dims);
+	
+	vec3 d				=vec3(1.0,1.0,1.0)/vec3(dims);
+	float pL			=texture_wwc_lod(inputTexture3DB,texc-vec3(d.x,0,0),0).x;
+	float pR			=texture_wwc_lod(inputTexture3DB,texc+vec3(d.x,0,0),0).x;
+	float pB			=texture_wwc_lod(inputTexture3DB,texc-vec3(0,d.y,0),0).x;
+	float pF			=texture_wwc_lod(inputTexture3DB,texc+vec3(0,d.y,0),0).x;
+	float pD			=texture_wwc_lod(inputTexture3DB,texc-vec3(0,0,d.z),0).x;
+	float pU			=texture_wwc_lod(inputTexture3DB,texc+vec3(0,0,d.z),0).x;
+	
+	if(pos.z==0||pos.z==dims.z-1)
+		pU=pD;
+	vec3 gridScale		=cloudScalesKm/vec3(dims);
+	vec4 uNew			=texture_wwc_lod(inputTexture3D, texc,0);
+	uNew.xyz			-=0.5*vec3(pR-pL,pF-pB,pU-pD)/gridScale;
+	if(pos.z==0||pos.z==dims.z-1)
+		uNew.z=0;
+	IMAGE_STORE_3D(outputTexture,pos,uNew);
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
+	uint3 pos			=g*8+t;
+	vec3 texc			=convertPosToTexc(pos,dims);
+	vec4 c1				=TEXTURE_LOAD_3D(inputTexture3D,pos);
+	float h				=saturate(0.5+float(pos.z)/float(dims.z));
+	//float dens			=saturate(c1.x);//2.0*(c1.x-0.25));
+	//float q=1.0;
+	float dens			=c1.x*q;//saturate(q*c1.x-0.0001);//2.0*(c1.x-0.25));
+	if(pos.z==0)
+		dens=0;
+	if(wrap==0&&pos.x*pos.y*(dims.x-1-pos.x)*(dims.y-1-pos.y)==0)
+	{
+		dens=0;
+	}
+	//dens				*=saturate(h/zPixel-0.5)*saturate((1.0-h)/zPixel-1.5);
+	vec2 illum			=vec2(1.0,1.0);
+	vec3 wpos			=texc*cloudScalesKm;
+	for(int i=0;i<12;i++)
+	{
+		wpos			+=lightDir*stepLength;// we expect stepLength in km for this shader
+		texc			=wpos/cloudScalesKm;
+		vec4 lookup		=texture_wwc_lod(inputTexture3D,texc,0);
+		illum			*=exp(-extinctions.xy*saturate(lookup.x*q)*stepLength);
+	}
+	float ambient		=1.0;
+	vec4 res			=vec4(illum.yx,dens,ambient);
+	IMAGE_STORE_3D(targetTexture,pos,res);
+	//outputTexture3d[pos].rgba=res;
+}
+
+float CSDensity(uint3 pos)
+{
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
+	uint3 noise_dims;
+	GET_DIMENSIONS_3D(volumeNoiseTexture, noise_dims.x, noise_dims.y, noise_dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return 0.0;
+	vec3 densityspace_texcoord	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
+//	densityspace_texcoord.x	+=0.05*densityspace_texcoord.z;
+	vec3 noisespace_texcoord	=(densityspace_texcoord+vec3(0,0,0.0*zPixel))*vec3(noiseScale)+vec3(1.0,1.0,0);
+	vec4 worley					=vec4(0,0,0,0);
+	vec3 tc						=2*noisespace_texcoord;
+	float u						=1.5;
+	float a						=.75;
+	/*f.or(int i=0;i<4;i++)
+	{
+		if(float(i)<numWorleyOctaves)
+		{
+			worley				+=u*(texture_wrap_lod(worleyTexture3D,tc,0)-vec4(a,a,a,a));
+			tc*=2.0;
+			tc+=.3;
+		}
+	}*/
+	// noise_texel is the size of a noise texel
+	float noise_texel			=1.0/float(noise_dims.z);
+	float height				=noiseScale.z;
+	float fl					=0.0;
+	float ff					=modf(worleyNoiseScale,fl);
+	vec3 worley_texcoord		=noisespace_texcoord;
+//	worley_texcoord.z			-=1.0*time;
+	float p						=0;
+	float m						=1.0;
+	float w						=0.0;
+	for(int j=0;j<4;j++)
+	{
+		vec4 w1					=texture_wrap_lod(worleyTexture3D,fl*worley_texcoord,0);
+		vec4 w2					=texture_wrap_lod(worleyTexture3D,(fl+1.0)*worley_texcoord,0);
+		worley					=pow(lerp(w1,w2,ff),0.5);
+		w						+=m*(w1.xxxx-0.6);//4.0*m*((worley.x-1.0)+p*(worley.y-1.0)+p*p*(worley.z-1.0)+p*p*p*(worley.w-1.0))/(1.0+p+p*p+p*p*p);
+		m						*=persistence;
+		worley_texcoord			*=3.0;
+	}
+//	w							/=(1.0+persistence+persistence*persistence+persistence*persistence*persistence);
+	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
+	
+	vec4 mask					=texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0);
+	float hm					=humidity*mask.a;
+	hm							=saturate(hm+mask.r-mask.g);
+	hm							*=GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity);
+	float dens					=noise_val+2.5*hm-1.0;
+
+	dens						=saturate((dens-0.5)/diffusivity/5.0+0.5);
+	dens						=saturate(2.0*dens-1.0+2.0*worleyNoiseStrength*(w));
+
+	vec3 wPos					=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
+	
+	for(int i=0;i<numVolumes;i++)
+	{
+		vec3 vol_pos		=mul(cloudVolumes[i].transformMatrix,vec4(wPos,1.0)).xyz;
+		if(wrap!=0)
+		{
+			vec3 f5			=vec3(0.5,0.5,0.5);
+			vec3 unit		=frac(vol_pos*0.001/cloudScalesKm+f5)-f5;
+			vol_pos			=unit*cloudScalesKm*1000.0;
+		}
+		vec3 offs			=vol_pos/cloudVolumes[i].extents;
+		if(cloudVolumes[i].type==1)
+		{
+			offs.xy				-=cloudVolumes[i].rake*offs.z;
+			float r				=length(offs.xy);
+			float incus_radius	=0.5*(offs.z+1.0);
+			// incus:
+			float incus_density	=saturate(1.0-pow(r/incus_radius,4.0));
+
+			float rb			=length((offs-vec3(0,0,-1.0))/vec3(0.6,0.6,1.0));// say 0.6 is the base rad
+			float base_density	=((1.0-rb)*10);
+			vec4 cu_worley		=texture_wrap_lod(worleyTexture3D,9*noisespace_texcoord,0);
+			base_density		=saturate(base_density+4.0*((cu_worley.x-0.6)+(cu_worley.y-0.6)+(cu_worley.z-0.6)));
+		
+			if(r<1.0&&offs.z>-1.0&&offs.z<1.0)
+				dens=saturate(dens+base_density+incus_density);//cloudVolumes[i].transformMatrix._11;//saturate(vol_pos.x/1.0);
+		}
+		if(cloudVolumes[i].type==2)
+		{
+			float r				=length(offs.xyz);
+			if(r<1.0)
+				dens=saturate(dens+1.0);//cloudVolumes[i].transformMatrix._11;//saturate(vol_pos.x/1.0);
+		}
+	}
+
+	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
+	return dens;
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
+{
+	uint3 sub_pos				= g * 8 + t;
+	uint3 pos					=sub_pos+threadOffset;
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
+	uint3 noise_dims			=uint3(128,128,128);
+	//GET_DIMENSIONS_3D(volumeNoiseTexture,noise_dims.x,noise_dims.y,noise_dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;
+	float dens					=CSDensity(pos);
+	IMAGE_STORE_3D(targetTexture1,int3(pos),vec4(dens,dens,dens,dens));
+}
+
+CS_LAYOUT(8, 8, 8)
+shader void CS_Density_DontWrap(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
+{
+	uint3 sub_pos = g * 8 + t;
+	uint3 pos = sub_pos + threadOffset;
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(targetTexture1, dims.x, dims.y, dims.z);
+	uint3 noise_dims;
+	GET_DIMENSIONS_3D(volumeNoiseTexture, noise_dims.x, noise_dims.y, noise_dims.z);
+	if (pos.x >= dims.x || pos.y >= dims.y || pos.z >= dims.z)
+		return;
+	float dens						=CSDensity(pos);
+	IMAGE_STORE_3D(targetTexture1, int3(pos), vec4(dens, dens, dens, dens));
+}
+
+
+CS_LAYOUT(8,8,1)
+shader void CS_Lighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
+{
+	uint3 sub_pos = uint3(g.xy * 8 + t.xy,g.z+t.z);
+	uint3 dims;
+	uint3 pos						=sub_pos+threadOffset;
+	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;
+	float direct_light				=1.0;
+	IMAGE_STORE_3D(targetTexture1,int3(pos.xy,0),vec4(1.0,1.0,1.0,1.0));
+	float optical_distance			=0.0;
+	for(uint i=1;i<dims.z;i++)
+	{
+		uint3 idx					=uint3(pos.xy,i);
+		vec4 v=vec4(optical_distance,0,0,0);
+		IMAGE_STORE_3D(targetTexture1,idx,v);
+
+		vec3 lightspace_texcoord	=vec3(pos.xy,float(i)+0.5)/vec3(dims);
+		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
+		float density				=sample_3d_lod(densityTexture,densSamplerState, densityspace_texcoord, 0).x;
+		optical_distance			+=density*stepLength;
+//		direct_light				*=exp(-extinctions.x*density*stepLength);
+		//if(density==0)
+		//	direct_light=1.0;
+	}
+}
+
+CS_LAYOUT(8,8,1)
+shader void CS_SecondaryLighting(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)
+{
+	uint3 sub_pos = uint3(g.xy * 8 + t.xy, g.z + t.z);
+	uint3 dims;
+	uint3 pos	  = uint3(sub_pos)+uint3(threadOffset);
+	GET_IMAGE_DIMENSIONS_3D(targetTexture1,dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;
+	float indirect_light			=0.0;
+	if(pos.z>0)
+	{
+		uint Z			=pos.z-1;
+		uint x1			=(pos.x+2)%dims.x;
+		uint xn			=(pos.x+dims.x-2)%dims.x;
+		uint y1			=(pos.y+2)%dims.y;
+		uint yn			=(pos.y+dims.y-2)%dims.y;
+		int3 sample_pts[5]	={int3(pos.xy,Z),int3(xn,pos.y,Z),int3(x1,pos.y,Z),int3(pos.x,yn,Z),int3(pos.x,y1,Z)};
+		for(int i=0;i<5;i++)
+		{
+			//vec3 lightspace_texcoord	=(vec3(sample_pts[i])+0.5)/vec3(dims);
+			//vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
+			//float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
+			indirect_light	+=IMAGE_LOAD_3D(targetTexture1,sample_pts[i]).x;
+		}
+		indirect_light	/=5.0;
+	}
+	uint i=pos.z;
+	{
+		uint3 idx					=uint3(pos.xy,i);
+		vec3 lightspace_texcoord	=(vec3(idx)+0.5)/vec3(dims);
+
+		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
+		float density				= sample_3d_lod(densityTexture,densSamplerState, densityspace_texcoord, 0).x;
+		indirect_light				*=exp(-extinctions.y*density*stepLength);
+		
+		//NOTE: Causes artifact underneath clouds:
+		if(density==0&&pos.z<dims.z-1)
+			indirect_light			=1.0;//-(1.0-indirect_light)*exp(-5.0*stepLength);
+		IMAGE_STORE_3D(targetTexture1,idx,vec4(indirect_light,indirect_light,indirect_light,indirect_light));
+	}
+}
+
+float filterLight(Texture3D lightTex,vec3 texc)
+{
+	uint3 dims;
+	GET_DIMENSIONS_3D(lightTex,dims.x,dims.y,dims.z);
+	vec3 up			=vec3(0,0,1.0/float(dims.z));
+	vec3 forward	=vec3(0,1.0/float(dims.y),0);
+	vec3 right		=vec3(1.0/float(dims.x),0,0);
+#ifdef GLSL
+	vec3 offsets[7];
+	offsets[0]=vec3(0,0,0);
+	offsets[1]=up;
+	offsets[2]=-up;
+	offsets[3]=right;
+	offsets[4]=-right;
+	offsets[5]=forward;
+	offsets[6]=-forward;
+#else
+	vec3 offsets[]	={vec3(0,0,0),up,-up,right,-right,forward,-forward};
+#endif
+	float res=0.0;
+	for(int i=0;i<7;i++)
+	{
+		vec3 t=texc+offsets[i];
+		res+=sample_3d_lod(lightTex,lightSamplerState,t,0).x;
+	}
+	return res/7.0;
+}
+
+CS_LAYOUT(8,8,8)
+shader void CS_Transform(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 dims;
+	uint3 sub_pos		=g*8+t;
+	uint3 pos			=sub_pos+threadOffset;
+	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;
+	vec3 densityspace_texcoord	=(pos.xyz+vec3(0.5,0.5,0.5))/vec3(dims);
+	//vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
+	//vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
+	
+	float density		=densityTexture[pos].x;
+	vec2 illum			=vec2(1.0,1.0);
+	vec3 wpos			=densityspace_texcoord*cloudScalesKm;
+	if(pos.z==0)
+		wpos.z			+=cloudScalesKm.z*zPixel;
+	float thickness		=0.0;
+	int i				=0;
+	float s				=stepLength/2.0;
+	for( i=0;i<12;i++)
+	{
+		wpos			+=lightDir*s;			// we expect stepLength in km for this shader
+		vec3 texc		=wpos/cloudScalesKm;
+		vec4 lookup		=texture_3d_wwc_lod(densityTexture,texc,0);
+		thickness		+=lookup.x*s;
+		s				*=1.3;
+	}
+	illum.x				=exp(-extinctions.x*thickness);
+	illum.y				=exp(-extinctions.y*thickness);//*(.5+.5*saturate(100*thickness*thickness));
+	vec2 ambient		=vec2(1.0,1.0);
+	wpos				=densityspace_texcoord*cloudScalesKm;
+	s					=stepLength/2.0;
+	for( i=0;i<12;i++)
+	{
+		wpos			+=vec3(0,0,1.0)*s;// we expect stepLength in km for this shader
+		vec3 texc		=wpos/cloudScalesKm;
+		vec4 lookup		=texture_wwc_lod(densityTexture,texc,0);
+		ambient			*=exp(-extinctions.xy*lookup.x*s);
+		s				*=1.2;
+	}
+	if (wrap==0&&(pos.x <= 0 || pos.y<= 0 || pos.x>= dims.x - 1 || pos.y >= dims.y - 1))
+		density			=0;
+    vec4 res			=vec4(illum.yx,density,0.5*(ambient.x+ambient.y));
+	IMAGE_STORE_3D(targetTexture,pos,res);
+}
+
+
+CS_LAYOUT(4,4,4)
+shader void CS_GenMip( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	int3 pos=int3(g*4+t);
+	int3 pos2=pos*2;
+	int x=1;
+	int y=1;
+	vec4 c1= densityTexture[pos2+int3(0,0,0)];
+	vec4 c2= densityTexture[pos2+int3(x,0,0)];
+	vec4 c3= densityTexture[pos2+int3(0,y,0)];
+	vec4 c4= densityTexture[pos2+int3(x,y,0)];
+	vec4 c5= densityTexture[pos2+int3(0,0,1)];
+	vec4 c6= densityTexture[pos2+int3(x,0,1)];
+	vec4 c7= densityTexture[pos2+int3(0,y,1)];
+	vec4 c8= densityTexture[pos2+int3(x,y,1)];
+	vec4 res	=0.125*(c1+c2+c3+c4+c5+c6+c7+c8);
+	vec4 mx		=max(max(max(c1,c2),max(c3,c4)),max(max(c5,c6),max(c7,c8)));
+	uint3 dims;
+	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
+	if(pos.z==0||pos.z==dims.z-1)
+	{
+		res=vec4(mx.xy,res.z,mx.w);
+		//res.z			=0;
+	}
+	IMAGE_STORE_3D(targetTexture,pos,res);
+}
+
+technique density_mask
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState(ReverseDepth, 0 );
+		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_DensityMask()));
+    }
+}
+
+technique cloud_placement_texture
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState(DisableDepth, 0 );
+		SetBlendState(AddBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_CloudPlacementTexture()));
+    }
+}
+
+technique gpu_density_compute
+{
+	pass wrap
+	{
+		SetComputeShader(CompileShader(cs_5_0, CS_Density()));
+	}
+    pass dont_wrap 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Density_DontWrap()));
+    }
+}
+
+technique gpu_lighting_compute
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Lighting()));
+    }
+}
+
+technique gpu_secondary_compute
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_SecondaryLighting()));
+    }
+}
+
+technique gpu_transform_compute
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Transform()));
+    }
+}
+
+technique init_simulation
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_InitSimulation()));
+    }
+}
+
+technique advection
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Advection()));
+    }
+}
+
+technique diffusion
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Diffusion()));
+    }
+}
+
+technique cloud_update
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_CloudUpdate()));
+    }
+}
+
+technique vorticity
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Vorticity()));
+    }
+}
+
+technique vorticity_field
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_VorticityField()));
+    }
+}
+
+technique force
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Force()));
+    }
+}
+
+technique divergence
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Divergence()));
+    }
+}
+
+technique jacobi
+{
+    pass clear
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Clear3D()));
+    }
+    pass iterate
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Jacobi()));
+    }
+}
+
+technique subtract_gradient
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_SubtractGradient()));
+    }
+}
+
+technique simulated_to_target
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_SimToTarget()));
+    }
+}
+technique mipmap
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_GenMip()));
+    }
+}
