@@ -115,7 +115,7 @@ ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	ID3D11ShaderResourceView* tex=NULL;
 	std::string str;
 	int idx=simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(filename,texturePathsUtf8);
-	if(idx<-1||idx>=texturePathsUtf8.size())
+	if(idx<-1||idx>=(int)texturePathsUtf8.size())
 			return NULL;
 	str=filename;
 	if(idx>=0)
