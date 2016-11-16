@@ -37,7 +37,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec3 viewPosKm;
 	uniform float nearZ_deprecated;
 
-	uniform float shadowRange;
+	uniform float shadowRangeKm;
 	uniform int shadowTextureSize;
 	uniform float depthMix;
 	uniform int cubemapTargetIndex;
@@ -183,7 +183,7 @@ struct CloudShadowStruct
 	mat4 worldspaceToCloudspaceMatrix;
 	float minAltKm;
 	float maxAltKm;
-	float shadowRange;
+	float shadowRangeKm;
 	float rainbowIntensity;
 	float godrays_strength;
 	bool wrap;

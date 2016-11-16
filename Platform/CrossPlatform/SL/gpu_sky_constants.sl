@@ -53,5 +53,12 @@ SIMUL_CONSTANT_BUFFER(GpuSkyConstants,8)
 	uniform float fuyofyu;
 
 	uniform vec3 moonIrradianceFactor;		// as proportion of sunlight
+
+	uniform float jhq48qutq4409tq;
+
+	uniform vec3 zenith;
+	uniform float j20tj20984u890;
+	uniform vec3 horizon;
+	uniform float j4tiw4t83yu259hwef;
 SIMUL_CONSTANT_BUFFER_END
 #endif

@@ -59,7 +59,7 @@ vec4 CloudShadow(Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 co
 	}
 	vec3 simple_texc				=vec3(texCoords,0);
 	vec2 shadow						=sample_3d_lod(cloudDensity,wwcSamplerState,simple_texc,0).xy;
-	return vec4(shadow.xy,1,1);//*edge
+	return vec4(U,U,U,1);//*edge
 }
 
 
