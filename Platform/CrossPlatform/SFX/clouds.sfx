@@ -142,15 +142,22 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 CS_LAYOUT(4,4,4)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	uint3 idx	=(g*4+t)*uint3(amortizationScale)+uint3(amortizationOffset.xyz);
+	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	idx.xy		+=int2(edge);
+	idx.xy		+=int2(windowGrid.xy)/2;
+	idx.xy		=idx.xy%int2(windowGrid.xy);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	vec3 texc	=vec3(idx)*scale+offset;
 	vec4 c1		=cloudDensity.SampleLevel(cloudSamplerState,texc,0);
 	vec4 c2		=cloudDensity2.SampleLevel(cloudSamplerState,texc,0);
 	vec4 res	=lerp(c1,c2,cloud_interp);
 	res.z		=saturate((res.z-0.5)*5.0+0.5);
-	res.z = frac(texc.x);
-	IMAGE_STORE_3D(outputTexture3d,idx,res);
+	res.x		=localNoiseStrength;
+	res.y		=localCellNoiseStrength;
+	if (res.z > 0)
+	{
+		IMAGE_STORE_3D(outputTexture3d,idx,res);
+	}
 }
 
 float WorleyFactor(vec3 worley_texcoord)
@@ -175,11 +182,11 @@ float WorleyFactor(vec3 worley_texcoord)
 CS_LAYOUT(4,4,4)
 shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	vec3 texc	=vec3(idx)*scale+offset;
-	idx.xy		+=int2(edge);
-	idx.xy		+=int2(windowGrid.xy)/2;
-	idx.xy		=idx.xy%int2(windowGrid.xy);
+	int3 idx			=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	vec3 texc			=vec3(idx)*scale+offset;
+	idx.xy				+=int2(edge);
+	idx.xy				+=int2(windowGrid.xy)/2;
+	idx.xy				=idx.xy%int2(windowGrid.xy);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	float sine			=sin(azimuth);
 	float cosine		=cos(azimuth);
@@ -195,11 +202,16 @@ shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	//res.z				*=saturate((maxz-texc.z)/0.1);
 	float minz			=(cloudBaseKm-cloudOriginKm.z)/cloudScalesKm.z;
 	res.z				*=saturate((texc.z-minz)/0.1);
-	vec3 worley_texc	=worleyNoiseScale*vec3(idx)/float(windowGrid.z);
+	vec3 worley_texc	=0*worleyNoiseScale*vec3(idx)/float(windowGrid.z);
 	float w				=WorleyFactor(worley_texc);
 	res.z				=saturate(3.0*res.z-1.0+worleyNoiseStrength*w);
 	//res.xyw=2.0*(float(idx.z)/64.0-0.5);
-	IMAGE_STORE_3D(outputTexture3d,idx,res);
+	res.x				=localNoiseStrength;
+	res.y				=localCellNoiseStrength;
+	if (res.z > 0)
+	{
+		IMAGE_STORE_3D(outputTexture3d, idx, res);
+	}
 } 
 
 
@@ -212,17 +224,17 @@ shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 wpos			=texc/inverseScalesKm;
 	float thickness		=0.0;
 	int i				=0;
-	float stepLength	=0.25/inverseScalesKm.x/float(windowGrid.x);
-	float s				=stepLength;
+	float stepLength	=1.0/inverseScalesKm.x/float(windowGrid.x);
+	float s				=0.5*stepLength;
 	float maxh			=1.0/inverseScalesKm.z;
-	float extinction	=1.5;
+	float extinction	=6.5;
 	for( i=0;i<12;i++)
 	{
 		wpos		+=directionToSun*s;			// we expect stepLength in km for this shader
 		vec3 texc	=wpos*inverseScalesKm;
-		vec4 lookup	=texture_3d_wwc_lod(cloudDensity,texc,0)*saturate((maxh-wpos.z)/stepLength);
+		vec4 lookup	=texture_3d_wwc_lod(cloudDensity,texc,1)*saturate((maxh-wpos.z)/s);
 		thickness	+=lookup.z*s;
-		s			*=1.3;
+		s			*=1.05;
 	}
 	vec4 illum;
 	illum.x			=exp(-extinction*thickness);

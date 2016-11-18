@@ -200,7 +200,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise)
 					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
-				vec4 density			=calcDensity(cloudDensity,cloudLight,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance);
+				vec4 density,light;
+				calcDensity(cloudDensity,cloudLight,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance,density,light);
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
@@ -223,7 +224,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 
 					ColourStep( colour, nearColour, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
-								,density, distanceKm, fadeDistance
+								,density, light,distanceKm, fadeDistance
 								,world_pos
 								,cloudTexCoords, fade_texc, nearFarTexc
 								,cosine, volumeTexCoords

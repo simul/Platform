@@ -83,7 +83,7 @@ vec3 applyFades(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 }
 
 vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volumeTexCoords,Texture2D lightTableTexture
-				,vec4 density,float Beta,vec4 lightResponse,vec3 ambientColour
+				,vec4 density,vec4 light,float Beta,vec4 lightResponse,vec3 ambientColour
 				,vec3 world_pos,vec3 cloudTexCoords
 				,vec2 fade_texc
 				,out float brightnessFactor)
@@ -92,10 +92,10 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	vec3 combinedLightColour	=texture_clamp_lod(lightTableTexture,vec2(sun_alt_texc,3.5/4.0),0).rgb;
 	float alt_texc				=(world_pos.z/fadeAltitudeRangeKm);
 	ambientColour				=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
-	vec3 ambient				=density.w*ambientColour.rgb;
+	vec3 ambient				=light.w*ambientColour.rgb;
 	vec4 c;
-	float l						=lerp(0.0f, 0.5, density.z);
-	c.rgb						=(density.y*lightResponse.x*(Beta+l)+lightResponse.y*density.x)*combinedLightColour+ambient.rgb;
+	float l						=lerp(0.2, 0.5, density.z);
+	c.rgb						=(light.y*lightResponse.x*(Beta+l)+lightResponse.y*light.x)*combinedLightColour+ambient.rgb;
 	c.a							=density.z;
 	brightnessFactor			=unshadowedBrightness(Beta,lightResponse,ambientColour);
 #ifdef INFRARED
@@ -136,16 +136,15 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 	return c;
 }
 
-vec4 calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float dist)
+void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float dist,out vec4 density,out vec4 light)
 {
 	float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(texCoords.z));
 	noiseval.rgb		*=noise_factor;
 	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
-	vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,pos,dist*4.0);
-	density.xyw			=sample_3d_lod(cloudLight,cloudSamplerState,pos,dist*4.0).xyw;
+	density				=sample_3d_lod(cloudDensity,cloudSamplerState,pos,dist*4.0);
+	light				=sample_3d_lod(cloudLight,cloudSamplerState,pos,dist*4.0);
 	float tz			=texCoords.z*32.0;
 	density.z			*=layerFade*saturate(tz+1.0)*saturate(32.0-tz);
-	return density;
 }
 
 FarNearPixelOutput Lightpass(Texture3D cloudDensity
@@ -300,7 +299,8 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 
 			vec4 noiseval			=vec4(0,0,0,0);
 			noiseval				=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
-			vec4 density			=calcDensity(cloudDensity,cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance);
+			vec4 density,light;
+			calcDensity(cloudDensity,cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance,density,light);
 			
 			if(density.z>0)
 			{
@@ -380,7 +380,7 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 
 void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDistance,inout float brightness_factor
 	,Texture2D lossTexture,Texture2D inscTexture,Texture2D skylTexture,Texture3D inscatterVolumeTexture,Texture2D lightTableTexture
-	,vec4 density,float distanceKm,float fadeDistance
+	,vec4 density,vec4 light,float distanceKm,float fadeDistance
 	,vec3 world_pos
 	,vec3 cloudTexCoords,vec2 fade_texc,vec2 nearFarTexc
 	,float cosine,vec3 volumeTexCoords
@@ -399,6 +399,7 @@ void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDist
 		if (noise)
 			clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
 											,density
+											,light
 											,BetaClouds
 											,lightResponse
 											,ambientColour
@@ -408,7 +409,7 @@ void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDist
 											,brightness_factor);
 		else
 			clr					=calcColourSimple(lossTexture,inscTexture,skylTexture,lightTableTexture
-											,density
+											,vec4(light.xyw,density.z)
 											,BetaClouds,BetaRayleigh,BetaMie
 											,lightResponse
 											,ambientColour

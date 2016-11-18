@@ -564,12 +564,12 @@ float CSDensity(uint3 pos)
 	float p						=0;
 	float m						=1.0;
 	float w						=0.0;
-	for(int j=0;j<4;j++)
+	for(int j=0;j<8;j++)
 	{
 		vec4 w1					=texture_wrap_lod(worleyTexture3D,fl*worley_texcoord,0);
 		vec4 w2					=texture_wrap_lod(worleyTexture3D,(fl+1.0)*worley_texcoord,0);
 		worley					=pow(lerp(w1,w2,ff),0.5);
-		w						+=m*(w1.xxxx-0.6);//4.0*m*((worley.x-1.0)+p*(worley.y-1.0)+p*p*(worley.z-1.0)+p*p*p*(worley.w-1.0))/(1.0+p+p*p+p*p*p);
+		w						+=m*(w1.x-0.5);//4.0*m*((worley.x-1.0)+p*(worley.y-1.0)+p*p*(worley.z-1.0)+p*p*p*(worley.w-1.0))/(1.0+p+p*p+p*p*p);
 		m						*=persistence;
 		worley_texcoord			*=3.0;
 	}

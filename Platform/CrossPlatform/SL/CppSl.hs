@@ -162,6 +162,12 @@
 			y=v[1];
 			return *this;
 		}
+		const vec2& operator=(const vec2 &v)
+		{
+			x=v.x;
+			y=v.y;
+			return *this;
+		}
 		void operator+=(vec2 v)
 		{
 			x+=v.x;
@@ -305,8 +311,16 @@
 		{
 			vec3 r;
 			r.x=v.x*x;
-			r.y=v.x*y;
-			r.z=v.x*z;
+			r.y=v.y*y;
+			r.z=v.z*z;
+			return r;
+		}
+		vec3 operator/(vec3 v) const
+		{
+			vec3 r;
+			r.x=x/v.x;
+			r.y=y/v.y;
+			r.z=z/v.z;
 			return r;
 		}
 		vec3 operator+(vec3 v) const

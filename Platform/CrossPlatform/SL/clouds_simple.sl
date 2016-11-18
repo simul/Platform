@@ -142,9 +142,9 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 
 		if(fade>0)
 		{
+			vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,1);
 			if(!found)
 			{
-				vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,1);
 				found				=found||(density.z>0);
 				if(found)
 				{
@@ -159,13 +159,14 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise&&12.0*fadeDistance<4.0)
-					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,12.0*fadeDistance);
-				vec4 density			=calcDensity(cloudDensity,cloudLight,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance);
+					noiseval			=density.x*texture_3d_wrap_lod(noiseTexture3D,noise_texc,12.0*fadeDistance);
+				vec4 light;
+				calcDensity(cloudDensity,cloudLight,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance,density,light);
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
 					float dm			=rainEffect*fade*GetRainAtOffsetKm(rainMapTexture,cloudWorldOffsetKm,inverseScalesKm, world_pos, rainCentreKm, rainRadiusKm,rainEdgeKm);
-					moisture			+=0.01*dm*density.x;
+					moisture			+=0.01*dm*light.x;
 					density.z			=saturate(density.z+dm);
 				}
 				if(density.z>0)
@@ -173,7 +174,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 					minDistance		=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
 					vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
-					float wo		=worleyNoise*(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
+					float wo		=density.y*(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
 					density.z		=saturate(0.1+(1.0+alphaSharpness)*((density.z+wo)-0.1));
 					//density.xy		*=1.0+wo;
 					float brightness_factor;
@@ -182,7 +183,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 
 					ColourStep( colour, nearColour, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
-								,density, distanceKm, fadeDistance
+								,density, light,distanceKm, fadeDistance
 								,world_pos
 								,cloudTexCoords, fade_texc, nearFarTexc
 								,1.0, volumeTexCoords

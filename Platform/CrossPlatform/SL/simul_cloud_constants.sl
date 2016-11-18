@@ -54,7 +54,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform uint4 cubemapFaceIndex[6];
 
 	uniform vec3 scale;
-	uniform float pad61422;
+	uniform float cloud_interp;
 
 	uniform vec3 offset;
 	uniform float azimuth;
@@ -65,7 +65,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float rainbowIntensity;
 
 	uniform vec3 ambientColour;
-	uniform float cloud_interp;
+	uniform float cloud_interpXXXXX;
 
 	uniform vec3 fractalScale;
 	uniform float cloudEccentricity;
