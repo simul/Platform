@@ -183,7 +183,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 
 					ColourStep( colour, nearColour, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
-								,density, light,distanceKm, fadeDistance
+								,density, light, distanceKm, fadeDistance
 								,world_pos
 								,cloudTexCoords, fade_texc, nearFarTexc
 								,1.0, volumeTexCoords

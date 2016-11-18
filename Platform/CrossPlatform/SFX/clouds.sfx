@@ -152,7 +152,7 @@ shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec4 c2		=cloudDensity2.SampleLevel(cloudSamplerState,texc,0);
 	vec4 res	=lerp(c1,c2,cloud_interp);
 	res.z		=saturate((res.z-0.5)*5.0+0.5);
-	res.x		=localNoiseStrength;
+	res.x		=localNoiseStrength/100.0;
 	res.y		=localCellNoiseStrength;
 	if (res.z > 0)
 	{
@@ -206,7 +206,7 @@ shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	float w				=WorleyFactor(worley_texc);
 	res.z				=saturate(3.0*res.z-1.0+worleyNoiseStrength*w);
 	//res.xyw=2.0*(float(idx.z)/64.0-0.5);
-	res.x				=localNoiseStrength;
+	res.x				=localNoiseStrength/100.0;
 	res.y				=localCellNoiseStrength;
 	if (res.z > 0)
 	{
