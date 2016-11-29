@@ -652,6 +652,11 @@ namespace simul
 			}
 			void InvalidateDeviceObjects();
 			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
+			void Load(RenderPlatform *renderPlatform,const char *filename_utf8)
+			{
+				std::map<std::string,std::string> defines;
+				Load(renderPlatform,filename_utf8,defines);
+			}
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;

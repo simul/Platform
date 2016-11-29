@@ -15,8 +15,8 @@ namespace simul
 				:pos_x(16)
 				,pos_y(16)
 				,quitafterframe(0)
-				,win_h(480)
-				,win_w(640)
+				,win_h(720)
+				,win_w(1280)
 				,screenshot(false)
 			{
 			}

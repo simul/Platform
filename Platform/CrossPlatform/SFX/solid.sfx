@@ -92,12 +92,11 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 	float shadow				=shadow_lookup.x;
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
 	vec4 insc					=texture_3d_wwc_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
-	float visibility			=1.0-saturate((dist-nearFarCloud.w) / (nearFarCloud.z));//(nearFarCloud.x-nearFarCloud.y));
+	float visibility			=1.0-saturate((dist-nearFarCloud.w) / (0.0000001));//(nearFarCloud.x-nearFarCloud.y));
 
 	insc.rgb					*=visibility;
 	loss						=vec4(texture_clamp_lod(loss2dTexture,loss_texc,0).rgb,visibility);
 	add							=insc.rgb;
-	//add.r						=visibility;
 }
 
 shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
