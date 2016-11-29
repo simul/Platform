@@ -11,14 +11,14 @@ uniform Texture2D<int4> SourceTex2i : register(t0);
 uniform RWTexture3D<int4> DestTex3i : register(u0);
 uniform Texture3D<int4> SourceTex3i : register(t0);
 
-uniform RWTexture1D<float4> DestTex1 : register(u0);
-uniform Texture1D<float4> SourceTex1 : register(t0);
+uniform RWTexture1D<vec4> DestTex1 : register(u0);
+uniform Texture1D<vec4> SourceTex1 : register(t0);
 
-uniform RWTexture2D<float4> DestTex2 : register(u0);
-uniform Texture2D<float4> SourceTex2 : register(t0);
+uniform RWTexture2D<vec4> DestTex2 : register(u0);
+uniform Texture2D<vec4> SourceTex2 : register(t0);
 
-uniform RWTexture3D<float4> DestTex3 : register(u0);
-uniform Texture3D<float4> SourceTex3 : register(t0);
+uniform RWTexture3D<vec4> DestTex3 : register(u0);
+uniform Texture3D<vec4> SourceTex3 : register(t0);
 
 #ifdef __PSSL__
 CS_LAYOUT(64,1,1)
@@ -42,10 +42,8 @@ shader void Copy3DInt4( uint3 position : SV_DispatchThreadID )
 CS_LAYOUT(64,1,1)
 shader void Copy1D( uint3 position : SV_DispatchThreadID )
 {
-	DestTex1[position.x] = SourceTex1.Load(int2(position.x, 0));
+	DestTex1[position.x] = SourceTex1.Load(position.x);
 }
-#ifdef __PSSL__
-#endif
 
 CS_LAYOUT(8,8,1)
 shader void Copy2D( uint3 position : SV_DispatchThreadID )
