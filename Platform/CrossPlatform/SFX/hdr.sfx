@@ -282,8 +282,8 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,nearDist
 															,doLightpass
 															,doGodrays);
-//	result.add		=vec4(1.0,0,0,0);
-//	result.multiply	=vec4(1.0,1.0,1.0,1.0);
+	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
+	result.add.rgb	*=exposure;
 	return result;
 }
 
