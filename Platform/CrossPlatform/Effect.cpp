@@ -58,7 +58,7 @@ bool EffectPass::usesTextures() const
 
 bool EffectPass::usesSBs() const
 {
-	return textureSlotsForSB+rwTextureSlotsForSB;
+	return (textureSlotsForSB+rwTextureSlotsForSB)!=0;
 }
 
 bool EffectPass::usesBuffers() const

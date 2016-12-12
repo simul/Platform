@@ -2,24 +2,30 @@
 #ifndef CLOUDS_SL
 #define CLOUDS_SL
 
-SamplerState cloudSamplerState: register( s0);
+#define MIN_SUN_ELEV (0.2)
+#ifdef __ORBIS__
+#define NUM_CLOUD_INTERP (2)
+#else
+#define NUM_CLOUD_INTERP (4)
+#endif
 
+#ifndef CLOUD_DEFS_ONLY
 #define MIN_SUN_ELEV (0.2)
 
+SamplerState cloudSamplerState: register( s0);
 struct RaytracePixelOutput
 {
-	vec4 colour			;
-	vec4 nearColour		;
-	vec4 nearFarDepth	;
+	vec4 colour[NUM_CLOUD_INTERP];
+	vec4 nearFarDepth;
 };
 
 struct FarNearPixelOutput
 {
-	vec4 farColour	;
-	vec4 nearColour	;
+	vec4 farColour;
+	vec4 nearColour;
 };
 
-float MakeRainMap(Texture3D cloudDensity,vec2 texCoords)
+float MakeRainMap(Texture3D cloudDensity,SamplerState cloudSamplerState,vec2 texCoords,float precipitationThreshold)
 {
 	vec3 texc		=vec3(texCoords.xy,precipitationThreshold);
 	vec4 density	=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
@@ -28,40 +34,6 @@ float MakeRainMap(Texture3D cloudDensity,vec2 texCoords)
 		r=0;
 	return r;
 }
-
-#define NUM_STEPS 8
-
-vec4 CloudShadow(Texture3D cloudDensity,vec2 texCoords,mat4 shadowMatrix,vec3 cornerPosKm,vec3 inverseScalesKm)
-{
-//for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
-	vec2 pos_xy						=2.0*texCoords.xy-1.0;
-	//float distance_off_centre		=length(pos_xy);
-	vec2 illumination				=vec2(1.0,1.0);
-	float U							=-1.0;
-	vec3 cartesian_1				=vec3(pos_xy.xy,1.0);
-	vec3 wpos_1						=mul(shadowMatrix,vec4(cartesian_1,1.0)).xyz;
-	vec3 cartesian_2				=vec3(pos_xy.xy,0.0);
-	vec3 wpos_2						=mul(shadowMatrix,vec4(cartesian_2,1.0)).xyz;
-	vec3 texc_1						=(wpos_1-cornerPosKm)*inverseScalesKm;
-	vec3 texc_2						=(wpos_2-cornerPosKm)*inverseScalesKm;
-	for(int i=0;i<NUM_STEPS;i++)
-	{
-		//float u					=1.0-float(i)/float(NUM_STEPS);
-		float u						=float(i)/float(NUM_STEPS);
-		vec3 texc					=lerp(texc_1,texc_2,u);//(wpos-cornerPosKm)*inverseScalesKm;
-	
-		vec4 density				=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
-		if(density.z>0)
-		{
-			illumination			=lerp(illumination,vec2(0,0),density.z);//density.xy
-			U						=lerp(U,u,density.z);
-		}
-	}
-	vec3 simple_texc				=vec3(texCoords,0);
-	vec2 shadow						=sample_3d_lod(cloudDensity,wwcSamplerState,simple_texc,0).xy;
-	return vec4(U,U,U,1);//*edge
-}
-
 
 float unshadowedBrightness(float Beta,vec4 lightResponse,vec3 ambientColour)
 {
@@ -378,26 +350,26 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 
 	vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};
 
-void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDistance,inout float brightness_factor
+void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP],inout float meanFadeDistance,inout float brightness_factor
 	,Texture2D lossTexture,Texture2D inscTexture,Texture2D skylTexture,Texture3D inscatterVolumeTexture,Texture2D lightTableTexture
 	,vec4 density,vec4 light,float distanceKm,float fadeDistance
 	,vec3 world_pos
 	,vec3 cloudTexCoords,vec2 fade_texc,vec2 nearFarTexc
 	,float cosine,vec3 volumeTexCoords
 	,float BetaClouds,float BetaRayleigh,float BetaMie
-	,vec2 solidDist_nearFar,bool noise,bool do_depth_mix,float distScale,int idx)
+	,float solidDist_nearFar[NUM_CLOUD_INTERP],bool noise,bool do_depth_mix,float distScale,int idx)
 {
 	density.z				*=cosine;
 	density.z				*=cosine;
 	density.z				*=saturate(distanceKm/0.24);
-		vec4 clr;
+	vec4 clr[NUM_CLOUD_INTERP];
 		// The "normal" that the ray has hit is equal to N, but with the negative signs of the components of viewScaled or view.
 		//vec3 normal				=0.5*(-N*sign(viewScaled)-view);
 	
 	//	blinn_phong				=0.1*pow(dot(normal,halfway),4.0)*density.z;
 
 		if (noise)
-			clr					=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
+			clr[NUM_CLOUD_INTERP - 1] =	calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
 											,density
 											,light
 											,BetaClouds
@@ -408,7 +380,7 @@ void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDist
 											,fade_texc
 											,brightness_factor);
 		else
-			clr					=calcColourSimple(lossTexture,inscTexture,skylTexture,lightTableTexture
+			clr[NUM_CLOUD_INTERP - 1] = calcColourSimple(lossTexture,inscTexture,skylTexture,lightTableTexture
 											,vec4(light.xyw,density.z)
 											,BetaClouds,BetaRayleigh,BetaMie
 											,lightResponse
@@ -418,25 +390,30 @@ void ColourStep(inout vec4 colour,inout vec4 nearColour,inout float meanFadeDist
 											,fade_texc
 											,nearFarTexc
 											,brightness_factor);
-		/*if(world_pos.x<0)
+
+
+	meanFadeDistance	=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-density.z)*colour[NUM_CLOUD_INTERP-1].a);
+//clr[NUM_CLOUD_INTERP-1].rgb	=vec3(1.0,1.0,1.0);
+	//if(do_depth_mix)
+	{
+		for(int i=0;i<NUM_CLOUD_INTERP;i++)
 		{
-			clr.rgb=colours[idx];
-		}*/
-		if(do_depth_mix)
-		{
-			vec4 clr_n		=clr;
-			vec2 m			=saturate((solidDist_nearFar.xy-vec2(fadeDistance,fadeDistance))/distScale);
-			clr.a			*=m.y;
-			clr_n.a			*=m.x;
-			nearColour.rgb	+=clr_n.rgb*clr_n.a*(nearColour.a);
-			nearColour.a	*=(1.0-clr_n.a);
+			clr[i]			=clr[NUM_CLOUD_INTERP-1];
+			if(do_depth_mix)
+			{
+				float m			=saturate((solidDist_nearFar[i]-fadeDistance)/distScale);
+				clr[i].a		*=m;
+			}
+			colour[i].rgb	+=clr[i].rgb*clr[i].a*(colour[i].a);
+			colour[i].a		*=(1.0-clr[i].a);
 		}
-		colour.rgb			+=clr.rgb*clr.a*colour.a;
-		meanFadeDistance	=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-density.z)*colour.a);
-	//if(meanFadeDistance>=1.0)
-	//	meanFadeDistance		=fadeDistance;
-		// minDistance is the closest cloud.
-		colour.a				*=(1.0-clr.a);
+	}
+	//else
+	{
+		//colour[NUM_CLOUD_INTERP - 1] = clr[NUM_CLOUD_INTERP - 1];// += clr[NUM_CLOUD_INTERP - 1].rgb*clr[NUM_CLOUD_INTERP - 1].a*colour[NUM_CLOUD_INTERP - 1].a;
+	//	colour[NUM_CLOUD_INTERP-1].a			*=(1.0-clr[NUM_CLOUD_INTERP-1].a);
+	}
 }
 
+#endif
 #endif

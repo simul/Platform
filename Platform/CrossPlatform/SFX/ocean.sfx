@@ -385,9 +385,9 @@ shader VS_OUTPUT OceanSurfVS(idOnly IN)
 	
 	uint verticiesPerRing = (g_quadsPerRing * 2) + 2;
 
-	uint totalRings = g_totalVerticies / verticiesPerRing;
+	uint totalRings = g_totalVertices / verticiesPerRing;
 
-	uint absoluteVertexNo = g_totalVerticies - IN.vertex_id;
+	uint absoluteVertexNo = g_totalVertices - IN.vertex_id;
 
 	uint vertexNo = absoluteVertexNo % verticiesPerRing;
 
@@ -477,7 +477,7 @@ shader vec4 PS_OceanSurfDepth(VS_OUTPUT In, bool frontFacing : SV_IsFrontFace) :
 {
 	vec3 eye_vec = g_LocalEye - In.LocalPos;
 	float surfaceDepth = length(eye_vec)/300000.0;
-	DepthIntepretationStruct dis;
+	DepthInterpretationStruct dis;
 	dis.reverseDepth = true;
 	dis.depthToLinFadeDistParams = g_DepthToLinFadeParams;
 	vec2 TexCoord = (vec2(In.SurePosition.x / In.SurePosition.w, In.SurePosition.y / -In.SurePosition.w) + 1.0) / 2.0;

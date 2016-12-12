@@ -16,9 +16,7 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,8)
 	uniform vec4 debugColour;
 	uniform vec4 debugDepthToLinFadeDistParams;
 
-	uniform vec2 debugTanHalfFov;
-	uniform float debugExposureXXX;
-	uniform float debugGamma;
+	uniform vec4 debugTanHalfFov;
 
 	uniform uint4 texSize;	// xy, z if needed, w=array size
 
@@ -26,5 +24,7 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,8)
 	uniform float displayLevel;
 
 	uniform uint2 queryPos;	// for texture queries.
+	uniform float debugGamma;
+	uniform float debugExposureXXX;
 SIMUL_CONSTANT_BUFFER_END
 #endif

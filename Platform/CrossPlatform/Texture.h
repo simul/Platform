@@ -49,6 +49,27 @@ namespace simul
 			Filtering filtering;
 			int slot;			// register slot
 		};
+		/// A crossplatform viewport structure.
+		struct Viewport
+		{
+			int x,y;
+			int w,h;
+			float znear,zfar;
+		};
+		typedef void ApiRenderTarget;
+		typedef void ApiDepthRenderTarget;
+		// TODO: Can only store a single rt here, what if we need to restore a multi-buffer rt?
+		struct TargetsAndViewport
+		{
+			TargetsAndViewport():temp(false),num(0)
+			{
+			}
+			bool temp;
+			int num;
+			const ApiRenderTarget *m_rt[8];
+			const ApiDepthRenderTarget *m_dt;
+			crossplatform::Viewport viewport;
+		};
 		class SIMUL_CROSSPLATFORM_EXPORT SamplerState
 		{
 		public:
@@ -79,6 +100,7 @@ namespace simul
 		protected:
 			bool cubemap;
 			std::string name;
+			simul::crossplatform::TargetsAndViewport targetsAndViewport;
 		public:
 			Texture(const char *name=NULL);
 			virtual ~Texture();
@@ -127,7 +149,7 @@ namespace simul
 			//! Set the texture data from CPU memory.
 			virtual void setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)=0;
 			//! Activate as a rendertarget - must call deactivateRenderTarget afterwards.
-			virtual void activateRenderTarget(DeviceContext &deviceContext,int array_index=-1,int mip_index=0)=0;
+			virtual void activateRenderTarget(DeviceContext &deviceContext,int array_index=-1,int mip_index=0);
 			//! Deactivate as a rendertarget.
 			virtual void deactivateRenderTarget(DeviceContext &deviceContext)=0;
 			virtual int GetLength() const

@@ -5,16 +5,16 @@
 SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform mat4 worldToScatteringVolumeMatrix;
 	uniform mat4 invViewProj;
-	uniform mat4 invShadowMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
 
 	uniform vec2 offset;
 	uniform float alpha;
-	uniform float cloudShadowStrength;
+	uniform float nearDist;					// near threshold for discarding depths.
 	
 	uniform vec4 colour2;
+	uniform vec4 tanHalfFov;				// tanHalf and asymmetric offset
 
-	uniform vec2 tanHalfFov;
+	uniform vec2 tanHalfFovUnused;
 	uniform float exposure;
 	uniform float gamma;
 
@@ -41,7 +41,6 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform int randomSeed;
 
 	uniform vec3 viewPos;
-	uniform float nearDist;					// near threshold for discarding depths.
 SIMUL_CONSTANT_BUFFER_END
 	
 #endif

@@ -29,6 +29,10 @@ Texture::~Texture()
 {
 }
 
+void Texture::activateRenderTarget(DeviceContext &deviceContext,int array_index,int mip_index)
+{
+}
+
 bool Texture::IsCubemap() const
 {
 	return cubemap;

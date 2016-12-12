@@ -37,6 +37,7 @@ namespace simul
 		class EffectTechnique;
 		class TextRenderer;
 		struct EffectDefineOptions;
+		struct Viewport;
 		class Light;
 		class Texture;
 		class BaseFramebuffer;
@@ -53,13 +54,7 @@ namespace simul
 		struct SamplerStateDesc;
 		struct PhysicalLightRenderData;
 		struct Query;
-		/// A crossplatform viewport structure.
-		struct Viewport
-		{
-			int x,y;
-			int w,h;
-			float znear,zfar;
-		};
+		struct TargetsAndViewport;
 		/// A vertex format for debugging.
 		struct PosColourVertex
 		{
@@ -83,7 +78,8 @@ namespace simul
 		{
 		protected:
 			//! This is called by draw functions to do any lazy updating prior to the actual API draw/dispatch call.
-			virtual void ApplyContextState(crossplatform::DeviceContext &deviceContext,bool error_checking=true){}
+			virtual void ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true){}
+			virtual Viewport PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index);
 		public:
 			virtual void T1(){}
 			RenderPlatform(simul::base::MemoryInterface*m=NULL);
@@ -212,7 +208,7 @@ namespace simul
 			virtual void					DeactivateRenderTargets			(DeviceContext &deviceContext) =0;
 			virtual void					SetViewports(DeviceContext &deviceContext,int num,const Viewport *vps)=0;
 			/// Get the viewport at the given index.
-			virtual Viewport				GetViewport(DeviceContext &deviceContext,int index)=0;
+			virtual Viewport				GetViewport(DeviceContext &deviceContext,int index);
 			/// Activate the specified index buffer in preparation for rendering.
 			virtual void					SetIndexBuffer					(DeviceContext &deviceContext,Buffer *buffer)=0;
 			//! Set the topology for following draw calls, e.g. TRIANGLELIST etc.

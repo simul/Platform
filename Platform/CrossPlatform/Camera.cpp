@@ -14,7 +14,9 @@ using namespace crossplatform;
 
 void ViewStruct::Init()
 {
+	ERRNO_BREAK
 	frustum=GetFrustumFromProjectionMatrix(proj);
+	ERRNO_BREAK
 	MakeInvViewProjMatrix((float*)&invViewProj,(const float*)&view,(const float*)&proj);
 	GetCameraPosVector((const float *)&view,(float*)&cam_pos,(float *)&view_dir,(float*)&up);
 }
@@ -119,6 +121,8 @@ vec4 simul::crossplatform::GetDepthToDistanceParameters(const crossplatform::Vie
 	return GetDepthToDistanceParameters(viewStruct.depthTextureStyle, viewStruct, max_dist_metres);
 }
 
+static float x_sgn = -1.f;
+static float y_sgn = -1.f;
 Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 {
 	Frustum frustum;
@@ -140,8 +144,11 @@ Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 		frustum.nearZ		=-z1;
 		frustum.farZ		=-z0;
 	}
-	frustum.tanHalfHorizontalFov=1.f/M._11;
-	frustum.tanHalfVerticalFov=1.f/M._22;
+	frustum.tanHalfFov.x=M._34/M._11;
+	frustum.tanHalfFov.y=M._34/M._22;
+	frustum.tanHalfFov.z= x_sgn*M._31/M._11;
+	frustum.tanHalfFov.w= y_sgn*M._32/M._22;
+	ERRNO_BREAK
 	return frustum;
 }
 

@@ -9,6 +9,7 @@
 #include "Simul/Platform/CrossPlatform/Layout.h"
 #include "Simul/Platform/CrossPlatform/Material.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
+#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -444,8 +445,8 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	
 		// Setup the viewport for rendering.
 	Viewport viewport;
-	viewport.w		=(int)oldv.w*size;
-	viewport.h		=(int)oldv.h*size;
+	viewport.w		=(int)(oldv.w*size);
+	viewport.h		=(int)(oldv.h*size);
 	viewport.zfar	=1.0f;
 	viewport.znear	=0.0f;
 	viewport.x		=(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
@@ -531,7 +532,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 {
 	static int level=0;
 	static int lod=0;
-	static int frames=300;
+	static int frames=100;
 	static int count=frames;
 	count--;
 	if(!count)
@@ -642,7 +643,7 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 	if(!proj)
 		proj=deviceContext.viewStruct.proj;
 	simul::crossplatform::Frustum frustum=simul::crossplatform::GetFrustumFromProjectionMatrix(proj);
-	debugConstants.debugTanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	debugConstants.debugTanHalfFov=(frustum.tanHalfFov);
 
 	vec4 depthToLinFadeDistParams=crossplatform::GetDepthToDistanceParameters(deviceContext.viewStruct,isinf(frustum.farZ)?300000.0f:frustum.farZ);
 	debugConstants.debugDepthToLinFadeDistParams=depthToLinFadeDistParams;
@@ -708,6 +709,31 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 		pos++;
 		y+=16;
 	}
+}
+		
+crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index)
+{
+	crossplatform::Viewport v;
+	memset(&v,0,sizeof(v));
+	return v;
+}
+
+crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &deviceContext,int index)
+{
+	crossplatform::Viewport v;
+	if(BaseFramebuffer::GetFrameBufferStack().size())
+	{
+		v=BaseFramebuffer::GetFrameBufferStack().top()->viewport;
+	}
+	else
+	{
+		if(BaseFramebuffer::defaultTargetsAndViewport.viewport.w*BaseFramebuffer::defaultTargetsAndViewport.viewport.h==0)
+		{
+			SIMUL_BREAK_ONCE("The default viewport is empty. Please call simul::crossplatform::BaseFramebuffer::setDefaultRenderTargets() at least once on initialization or at the start of the trueSKY frame.");
+		}
+		v=BaseFramebuffer::defaultTargetsAndViewport.viewport;
+	}
+	return v;
 }
 
 void RenderPlatform::SetLayout(DeviceContext &deviceContext,Layout *l)

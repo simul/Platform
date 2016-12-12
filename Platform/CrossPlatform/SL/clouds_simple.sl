@@ -3,7 +3,7 @@
 #define CLOUDS_SIMPLE_SL
 
 RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
-									,Texture3D cloudLight
+											,Texture3D cloudLight
 											,Texture2D rainMapTexture
 											,Texture3D noiseTexture3D
 											,Texture2D lightTableTexture
@@ -23,11 +23,12 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,bool do_rain_effect
 											,bool do_rainbow
 											,vec3 cloudIrRadiance1
-											,vec3 cloudIrRadiance2)
+											,vec3 cloudIrRadiance2
+											,int numSteps)
 {
 	RaytracePixelOutput res;
-	res.colour				=vec4(0,0,0,1.0);
-	res.nearColour			=vec4(0,0,0,1.0);
+	for(int ii=0;ii<NUM_CLOUD_INTERP;ii++)
+		res.colour[ii]			=vec4(0,0,0,1.0);
 	res.nearFarDepth		=dlookup;
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
@@ -44,7 +45,26 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
 	
-	vec2 solidDist_nearFar	=(dlookup.yx)+100.0*step(vec2(1.0,1.0), dlookup.yx);
+	float solidDist_nearFar	[NUM_CLOUD_INTERP];
+	vec2 nfd				=(dlookup.yx)+100.0*step(vec2(1.0,1.0), dlookup.yx);
+	//res.nearFarDepth.xy	=nfd.yx;
+	solidDist_nearFar[0]					=	nfd.x;
+	solidDist_nearFar[NUM_CLOUD_INTERP-1]	=	nfd.y;
+	float n									=	nfd.x;
+	float f									=	nfd.y;
+	for(int l=1;l<NUM_CLOUD_INTERP-1;l++)
+	{
+		float interp			=1.0-float(l)/float(NUM_CLOUD_INTERP-1);
+		// This is z. So let:
+		//						Z				=	n (f/d-1) / (f-n)
+		// i.e.					Z(f-n)/n		=	f/d - 1
+		//						1 + Z(f-n)/n	=	f/d
+		//						d				=	f/ ( 1 + Z(f-n)/n )
+		//						d				=	fn / (n + Z(f-n))
+		solidDist_nearFar[l]	//=f*n/ (n+interp*(f-n));
+								=lerp(solidDist_nearFar[0],solidDist_nearFar[NUM_CLOUD_INTERP-1],1.0-interp);
+								
+	}
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	// Lookup in the illumination texture.
 	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
@@ -116,9 +136,9 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	//bool found=false;
 	float distScale =  0.6 / maxFadeDistanceKm;
 		float K=log(maxCloudDistanceKm);
-		bool found=false;
-		float stepKm				=K*(1.2+distanceKm)/512.0;
-	for(int i=0;i<768;i++)
+	bool found=false;
+	float stepKm				=K*(1.2+distanceKm)/512.0;
+	for(int i=0;i<numSteps;i++)
 	{
 		//world_pos					+=0.001*view;
 		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm)//||solidDist_nearFar.y<lastFadeDistance)
@@ -181,7 +201,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 					fade_texc.x				=sqrt(fadeDistance);
 					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);
 
-					ColourStep( colour, nearColour, meanFadeDistance, brightness_factor
+					ColourStep(res.colour, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
 								,density, light, distanceKm, fadeDistance
 								,world_pos
@@ -189,9 +209,10 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 								,1.0, volumeTexCoords
 								,BetaClouds, BetaRayleigh, BetaMie
 								,solidDist_nearFar, noise, do_depth_mix,distScale,0);
-					if(nearColour.a*brightness_factor<0.003)
+					if(res.colour[0].a*brightness_factor<0.003)
 					{
-						nearColour.a=colour.a = 0.0;
+						for(int o=0;o<NUM_CLOUD_INTERP;o++)
+							res.colour[o].a =0.0;
 						break;
 					}
 				}
@@ -199,17 +220,11 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 			}
 		}
 	}
-    res.colour			=colour;
-    res.nearColour		=nearColour;
 #ifndef INFRARED
 	if(do_rainbow)
-		res.colour.rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
+		res.colour[NUM_CLOUD_INTERP-1].rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-	//res.nearFarDepth.y = solidDist_nearFar.x;
-	// y is the near depth. x is the distance at which we will interpolate to the far depth value.
-	// Instead of using the far depth, we will use the cloud distance.
-//	res.nearFarDepth.y = max(res.nearFarDepth.y,minDistance);
-//	res.nearFarDepth.x = min(res.nearFarDepth.x,max(lastFadeDistance, res.nearFarDepth.y + distScale ));
+	res.nearFarDepth.y	=max(0.00001,res.nearFarDepth.x-res.nearFarDepth.y);
 	res.nearFarDepth.w	=	meanFadeDistance;
 	res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	return res;

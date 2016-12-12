@@ -98,6 +98,11 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 	level++;
 	if(level>max_level)
 		return;
+	level_in_use++;
+	if (level_in_use != level)
+	{
+		SIMUL_CERR << "Profiler level out of whack! Do you have a mismatched begin/end pair?" << std::endl;
+	}
 	max_level_this_frame=std::max(max_level_this_frame,level);
 	{
 		last_context.push_back(&deviceContext);
@@ -169,6 +174,13 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
         return;
 	renderPlatform->EndEvent(deviceContext);
 	level--;
+	if(level>=max_level)
+		return;
+	level_in_use--;
+	if (level_in_use != level)
+	{
+		SIMUL_CERR << "Profiler level out of whack! Do you have a mismatched begin/end pair?" << std::endl;
+	}
 	if(level>=max_level_this_frame)
 		return;
 	if(!profileStack.size())
@@ -321,7 +333,7 @@ const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,i
 	if(parent==NULL)
 		parent=root;
 	crossplatform::ProfileData *p=(crossplatform::ProfileData*)parent;
-	if(!p||(p!=root&&!p->updatedThisFrame))
+	if(p!=root&&!p->updatedThisFrame)
 		return NULL;
 	int j=0;
 	for(auto it=p->children.begin();it!=p->children.end();it++,j++)

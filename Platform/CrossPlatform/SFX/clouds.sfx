@@ -282,12 +282,14 @@ shader void CS_Simulate( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 // Then trace down to find first intersection with clouds, if any.
 shader vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 {
-	return CloudShadow(cloudDensity,IN.texCoords,shadowMatrix,cornerPosKm,inverseScalesKm);
+	vec3 simple_texc				=vec3(IN.texCoords,0);
+	vec2 shadow						=saturate(3.0*sample_3d_lod(cloudDensity,wwcSamplerState,simple_texc,0).xy-vec2(2.0,2.0));
+	return vec4(shadow.xy,0,shadow.x);
 }
 
 shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 {
-	float r=MakeRainMap(cloudDensity,IN.texCoords);
+	float r=MakeRainMap(cloudDensity,cloudSamplerState,IN.texCoords,precipitationThreshold);
 	return precipitation*vec4(r,r,r,r);
 }
 
@@ -310,13 +312,13 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=tru
 	if (depth)
 	{
 		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
-		vec4 xlookup = vec4(0,0,0,0);
+	/*	vec4 xlookup = vec4(0,0,0,0);
 		xlookup	+=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3( 1.0, 1.0, 1.0)),0);
 		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3( 1.0,-1.0, 1.0)),0);
 		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3(-1.0, 1.0, 1.0)),0);
 		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3( 1.0 ,1.0,-1.0)),0);
 		dlookup.xz = max(dlookup.xz, xlookup.xz);
-		dlookup.yw = min(dlookup.yw, xlookup.yw);
+		dlookup.yw = min(dlookup.yw, xlookup.yw);*/
 	}
 	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(view.z)/pi),0);
 	
@@ -340,11 +342,8 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=tru
 									,true
 									,include_rain
 									,false
-									,cloudIrRadiance1,cloudIrRadiance2);
-	/*RaytracePixelOutput f;
-	f.colour=depthToLinFadeDistParams;
-	f.nearColour=lightResponse;
-	f.nearFarDepth=vec4(0,0,1,.5);*/
+									,cloudIrRadiance1,cloudIrRadiance2
+									,numSteps);
 	vec4 t2d;
 	if(background2d)
 	{
@@ -357,19 +356,21 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=tru
 	// blend:
 
 	vec4 c					=t2d;
-	c.rgb					*=f.colour.a;
-	c.rgb					+=f.colour.rgb;
+	c.rgb					*=f.colour[1].a;
+	c.rgb					+=f.colour[1].rgb;
 
-	c.a						=t2d.a*f.colour.a;
-	
-	outputTexture1[pos]		=c;
+	c.a						=t2d.a*f.colour[1].a;
+	if(background2d)
+		outputTexture1[pos+uint3(0,0,6*(1))]		=c;
 	float n					=float(dlookup.y>=1.0);
-	vec4 cn					=t2d;
-	cn.rgb					*=f.nearColour.a*n;
-	cn.a					=1.0-n*(1.0-t2d.a);
-	cn.rgb					+=f.nearColour.rgb;
-	cn.a					*=f.nearColour.a;
-	outputTexture2[pos]		=cn;
+	{
+		vec4 cn					=t2d;
+		cn.rgb					*=f.colour[0].a*n;
+		cn.a					=1.0-n*(1.0-t2d.a);
+		cn.rgb					+=f.colour[0].rgb;
+		cn.a					*=f.colour[0].a;
+		outputTexture1[pos]		=cn;
+	}
 	if(background2d)
 		outputTexture3[pos]		=f.nearFarDepth;
 }
@@ -382,17 +383,24 @@ void Raytrace(uint3 pos,bool include_rain,bool depth)
 	clip_pos.y				-=2.0*texCoords.y;
 	float sineFactor		=1.0/length(clip_pos.xyz);
 	vec3 view				=normalize(mul(invViewProj[pos.z],clip_pos).xyz);
+	vec3 v	=abs(view);
+	float e	=max(max(v.x,v.y),v.z);
+	float ef	=max(max(view.x,view.y),view.z);
+	// All D components are positive. Only the smallest is equal to e. Step(x,y) returns (y>=x). So step(D.x,e) returns (e>=D.x), which is only true if e==D.x
+	vec3 N	=0.005*saturate(-view)+saturate(view);
+
+#if 1
 	vec4 dlookup			=vec4(1.0,1.0,0.000001,1.0);
 	if(depth)
 	{
 		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
-		vec4 xlookup = vec4(0,0,0,0);
-		xlookup	+=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0, 1.0, 1.0)),0);
-		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0,-1.0, 1.0)),0);
-		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3(-1.0, 1.0, 1.0)),0);
-		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0 ,1.0,-1.0)),0);
-		dlookup.xz = max(dlookup.xz, xlookup.xz);
-		dlookup.yw = min(dlookup.yw, xlookup.yw);
+		//vec4 xlookup = vec4(0,0,0,0);
+		//xlookup	+=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0, 1.0, 1.0)),0);
+		//xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0,-1.0, 1.0)),0);
+		//xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3(-1.0, 1.0, 1.0)),0);
+		//xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.01*vec3( 1.0 ,1.0,-1.0)),0);
+		//dlookup.xz = max(dlookup.xz, xlookup.xz);
+		//dlookup.yw = min(dlookup.yw, xlookup.yw);
 	}
 	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(view.z)/pi),0);
 
@@ -426,23 +434,23 @@ void Raytrace(uint3 pos,bool include_rain,bool depth)
 	// blend:
 
 	vec4 c					=t2d;
-	c.rgb					*=f.colour.a;
-	c.rgb					+=f.colour.rgb;
+	c.rgb					*=f.colour[1].a;
+	c.rgb					+=f.colour[1].rgb;
 
-	c.a						=t2d.a*f.colour.a;
+	c.a						=t2d.a*f.colour[1].a;
 	
-	outputTexture1[pos]		=c;
+	outputTexture1[pos+uint3(0,0,6)]		=c;
 	float n					=float(dlookup.y>=1.0);
-	vec4 cn					=t2d;
-	cn.rgb					*=f.nearColour.a*n;
-	cn.a					=1.0-n*(1.0-t2d.a);
-	cn.rgb					+=f.nearColour.rgb;
-	cn.a					*=f.nearColour.a;
-	if(depth)
 	{
-		outputTexture2[pos]		=cn;
-		outputTexture3[pos]		=f.nearFarDepth;
+		vec4 cn					=t2d;
+		cn.rgb					*=f.colour[0].a*n;
+		cn.a					=1.0-n*(1.0-t2d.a);
+		cn.rgb					+=f.colour[0].rgb;
+		cn.a					*=f.colour[0].a;
+		outputTexture1[pos]		=cn;
 	}
+	outputTexture3[pos]		=f.nearFarDepth;//vec4(1,1,0,0);
+#endif
 }
 
 void Lightpass(uint3 pos,bool depth)
@@ -480,7 +488,7 @@ void Lightpass(uint3 pos,bool depth)
 	f.nearColour=vec4(0,0,0,0);
 #endif
 	outputTexture1[pos]		=f.farColour;
-	outputTexture2[pos]		=f.nearColour;
+	outputTexture1[pos+uint3(0,0,6)]		=f.nearColour;
 }
 #define BLOCK_SIZE 8
 void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth)

@@ -19,7 +19,7 @@ struct All8Output
 
 // Given a full-res, non-MS depth texture, and a half-res near far depth, 
 void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
-	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,DepthIntepretationStruct depthInterpretationStruct,vec2 tanHalfFov)
+	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,DepthInterpretationStruct depthInterpretationStruct,vec4 tanHalfFov)
 {
 	vec3 view		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view			=normalize(view);
@@ -35,7 +35,7 @@ void LossComposite(out vec3 farLoss,out vec3 nearLoss,Texture2D nearFarDepthText
 }
 
 vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
-	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,DepthIntepretationStruct depthInterpretationStruct,vec2 tanHalfFov)
+	,mat4 invViewProj,vec2 texCoords,vec2 clip_pos,DepthInterpretationStruct depthInterpretationStruct,vec4 tanHalfFov)
 {
 	vec3 view		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view			=normalize(view);
@@ -97,8 +97,8 @@ vec4 Inscatter(	Texture2D inscTexture
 						,float hazeEccentricity
 						,vec3 mieRayleighRatio
 						,vec4 viewportToTexRegionScaleBias
-						,DepthIntepretationStruct depthInterpretationStruct
-						,vec2 tanHalfFov)
+						,DepthInterpretationStruct depthInterpretationStruct
+						,vec4 tanHalfFov)
 {
 	vec2 clip_pos	=vec2(-1.0,1.0);
 	clip_pos.x		+=2.0*texCoords.x;
@@ -144,8 +144,8 @@ vec4 Inscatter_NFDepth(	Texture2D inscTexture
 				,float hazeEccentricity
 				,vec3 mieRayleighRatio
 				,vec4 viewportToTexRegionScaleBias
-				,DepthIntepretationStruct depthInterpretationStruct
-				,vec2 tanHalfFov
+				,DepthInterpretationStruct depthInterpretationStruct
+				,vec4 tanHalfFov
 				,bool discardNear
 				,bool nearPass)
 {

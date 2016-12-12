@@ -64,10 +64,8 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	//Depth parameters for depth calculations
 	uniform vec4		g_DepthToLinFadeParams;
 	uniform float		xxxxxxxxxxxxxxxxxxxxxxx;
-	uniform vec2		g_HalfTan;
-	uniform float		xxxxxxxxxxxxxxxxxxxxxxxx;
-	uniform int			g_totalVerticies;
-	uniform float		xxxxxxxxxxxxxxxxxxxxxxxxx;
+	uniform vec4		g_HalfTan;
+	uniform int			g_totalVertices;
 	uniform int			g_quadsPerRing;
 	uniform float		xxxxxxxxxxxxxxxxxxxxxxxxxx;
 SIMUL_CONSTANT_BUFFER_END

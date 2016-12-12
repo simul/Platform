@@ -449,7 +449,7 @@ namespace simul
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return NULL;}
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int =0){return NULL;}
 			/// For RenderPlatform's use only: do not call.
-			virtual void ActualApply(simul::crossplatform::DeviceContext &deviceContext,EffectPass *currentEffectPass,int slot){}
+			virtual void ActualApply(simul::crossplatform::DeviceContext & /*deviceContext*/,EffectPass * /*currentEffectPass*/,int /*slot*/){}
 		};
 
 		/// Templated structured buffer, which uses platform-specific implementations of PlatformStructuredBuffer.

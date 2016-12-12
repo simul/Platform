@@ -510,7 +510,7 @@ shader void GS_Thick(lineadj LightningVertexOutput IN[4], inout TriangleStream<t
 
 vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 {
-	DepthIntepretationStruct depthInterpretationStruct;
+	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 texc				=vec2(IN.texc.x,1.0-IN.texc.y);
@@ -585,7 +585,7 @@ vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 		depth			=max(dlookup.x,clookup.x);
 	else
 		depth			=min(dlookup.x,clookup.x);
-	DepthIntepretationStruct depthInterpretationStruct;
+	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);

@@ -6,6 +6,10 @@
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
 namespace simul
 {
 	namespace crossplatform
@@ -28,7 +32,8 @@ namespace simul
 		/// A useful class to represent a view frustum.
 		struct SIMUL_CROSSPLATFORM_EXPORT Frustum
 		{
-			float nearZ,farZ,tanHalfHorizontalFov,tanHalfVerticalFov;
+			vec4 tanHalfFov;		//xy= tangent of half-angle, zw=offset
+			float nearZ, farZ;
 			bool reverseDepth;
 		};
 		/// A struct to represent the state of a mouse-controlled camera.
@@ -212,4 +217,8 @@ namespace simul
 		};
 	}
 }
+
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif
 #endif

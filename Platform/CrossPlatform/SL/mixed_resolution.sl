@@ -56,7 +56,7 @@ void ExtendDepths(inout vec2 farthest_nearest,vec4 d,bool reverseDepth)
 	}
 }
 
-vec2 depthToLinearDistanceM(vec2 depth,DepthIntepretationStruct depthInterpretationStruct,float max_dist)
+vec2 depthToLinearDistanceM(vec2 depth,DepthInterpretationStruct depthInterpretationStruct,float max_dist)
 {
 	vec2 linearFadeDistanceZ = saturate(depthInterpretationStruct.depthToLinFadeDistParams.xx / (depth*depthInterpretationStruct.depthToLinFadeDistParams.yy + depthInterpretationStruct.depthToLinFadeDistParams.zz) + depthInterpretationStruct.depthToLinFadeDistParams.ww*depth);
 	if(depthInterpretationStruct.reverseDepth)
@@ -75,7 +75,7 @@ vec2 depthToLinearDistanceM(vec2 depth,DepthIntepretationStruct depthInterpretat
 
 vec4 HalfscaleInitial_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture,int2 source_dims,int2 max_dims
 	,int2 source_offset,int2 cornerOffset,int2 pos
-	,DepthIntepretationStruct depthInterpretationStruct
+	,DepthInterpretationStruct depthInterpretationStruct
 	,float nearThresholdDepth)
 {
 	int2 pos0			=pos*2;
@@ -148,7 +148,7 @@ vec4 Samescale_MSAA(TEXTURE2DMS_FLOAT4 sourceMSDepthTexture
 	,int2 source_dims
 	,int2 source_offset
 	,int2 pos
-	,DepthIntepretationStruct depthInterpretationStruct
+	,DepthInterpretationStruct depthInterpretationStruct
 	,float nearThresholdDepth)
 {
 	int2 pos2		=pos;
@@ -189,7 +189,7 @@ vec4 Samescale(Texture2D sourceDepthTexture
 	,int2 source_dims
 	,int2 source_offset
 	,int2 pos
-	,DepthIntepretationStruct depthInterpretationStruct
+	,DepthInterpretationStruct depthInterpretationStruct
 	,bool split_view
 	,float nearThresholdDepth)
 {
@@ -216,7 +216,7 @@ vec4 Samescale(Texture2D sourceDepthTexture
 
 vec4 HalfscaleInitial(Texture2D sourceDepthTexture,int2 source_dims,int2 max_dims
 	, uint2 source_offset, int2 cornerOffset, int2 pos
-	, DepthIntepretationStruct depthInterpretationStruct
+	, DepthInterpretationStruct depthInterpretationStruct
 	, bool split_view
 	, float nearThresholdDepth)
 {
@@ -300,7 +300,7 @@ vec4 HalfscaleInitial(Texture2D sourceDepthTexture,int2 source_dims,int2 max_dim
 	return res;
 }
 
-vec4 Halfscale(Texture2D sourceDepthTexture, uint2 source_dims, uint2 source_offset, int2 cornerOffset, int2 pos, DepthIntepretationStruct depthInterpretationStruct, float nearThresholdDepth)
+vec4 Halfscale(Texture2D sourceDepthTexture, uint2 source_dims, uint2 source_offset, int2 cornerOffset, int2 pos, DepthInterpretationStruct depthInterpretationStruct, float nearThresholdDepth)
 {
 	int2 pos0			=int2(pos * 2);
 

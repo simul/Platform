@@ -174,7 +174,11 @@ BlendState CompositeBlend
 	//BlendEnable[1]	=TRUE;
 	SrcBlend		=ONE;
 	DestBlend		=SRC1_COLOR;
+	SrcBlendAlpha	=ZERO;
+	DestBlendAlpha	=ONE;
     BlendOp			=ADD;
+	RenderTargetWriteMask[0]=7;
+	RenderTargetWriteMask[1]=7;
 };
 
 RasterizerState RenderNoCull

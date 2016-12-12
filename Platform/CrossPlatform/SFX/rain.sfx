@@ -282,7 +282,7 @@ vec4 PSSnowParticles(ParticleGeometryOutput IN,bool reverseDepth)
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(screen_texc,viewportToTexRegionScaleBias);
 	float solid_depth	=texture_clamp(depthTexture,depth_texc.xy).x;
 	float render_depth	=clip_pos.z;
-	DepthIntepretationStruct depthInterpretationStruct;
+	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistTexture;
 	float solid_dist	=depthToFadeDistance(solid_depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
@@ -603,7 +603,7 @@ vec4 PSRainParticles(ParticleGeometryOutput IN,bool reverseDepth,vec3 light)
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(screen_texc,viewportToTexRegionScaleBias);
 	float solid_depth	=texture_clamp(depthTexture,depth_texc.xy).x;
 	float render_depth	=clip_pos.z;
-	DepthIntepretationStruct depthInterpretationStruct;
+	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistTexture;
 	float solid_dist	=depthToFadeDistance(solid_depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);

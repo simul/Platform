@@ -24,6 +24,7 @@ SIMUL_CONSTANT_BUFFER(LightningConstants,10)
 
 	uniform float brightness;
 	uniform float progress;
+	uniform float vertical;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
@@ -34,10 +35,10 @@ SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
 	uniform vec2 viewportPixels;
 	uniform vec2 _line_width;
 
-	uniform vec2 tanHalfFov;
+	uniform vec2 tanHalfFovUnused;
 	uniform float brightnessToUnity;
 	uniform float minPixelWidth;
-
+	uniform vec4 tanHalfFov;
 	uniform vec3 viewPosition;
 	uniform float maxFadeDistance;
 SIMUL_CONSTANT_BUFFER_END

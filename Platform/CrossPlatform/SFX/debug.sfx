@@ -97,7 +97,7 @@ vec4 ShowDepthCube(posTexVertexOutput IN,bool reverseDepth)
 	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
 	vec4 depth		=texture_cube(cubeTexture,view);
 
-	DepthIntepretationStruct depthInterpretationStruct;
+	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=debugDepthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec4 dist		=depthToLinearDistance(depth,depthInterpretationStruct);
@@ -268,7 +268,7 @@ vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth)
 	texc.y			=1.0-texc.y;
 	vec4 depth		=texture_nearest_lod(imageTexture,texc,0);
 
-	DepthIntepretationStruct depthInterpretationStruct;
+	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=debugDepthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec4 dist		=depthToFadeDistance(depth,2.0*(IN.texCoords-0.5),depthInterpretationStruct,debugTanHalfFov);
@@ -316,7 +316,7 @@ vec4 ShowDepthMS_PS(posTexVertexOutput IN,bool reverseDepth)
 	GET_DIMENSIONS_MSAA(imageTextureMS,dims.x,dims.y,numSamples);
 	int2 pos		=int2(texc.xy*vec2(dims.xy));
 	vec4 depth		=TEXTURE_LOAD_MSAA(imageTextureMS,pos,0);
-	DepthIntepretationStruct depthInterpretationStruct;
+	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=debugDepthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 dist		=depthToFadeDistance(depth.xx,2.0*(texc-0.5),depthInterpretationStruct,debugTanHalfFov);

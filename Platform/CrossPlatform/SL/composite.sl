@@ -8,6 +8,8 @@
 #define PI (3.1415926536)
 #endif
 
+#define CLOUD_DEFS_ONLY
+#include "simul_clouds.sl"
 struct TwoColourCompositeOutput
 {
 	vec4 add		SIMUL_RENDERTARGET_OUTPUT(0);
@@ -25,8 +27,7 @@ struct LookupQuad4
 #define VOLUME_INSCATTER
 #define SCREENSPACE_VOL
 TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
-				,TextureCube farCloudTexture
-				,TextureCube nearCloudTexture
+				,TextureCubeArray cloudCubeArray
 				,TextureCube nearFarTexture
 				,TextureCube lightpassTexture
 				,Texture2D loss2dTexture
@@ -38,7 +39,9 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,float maxFadeDistanceKm
 				,float nearDist
 				,bool do_lightpass
-				,bool do_godrays)
+				,bool do_godrays
+				,bool do_interp
+				,bool do_near)
 {
 	TwoColourCompositeOutput res;
 	vec3 view						=normalize(mul(invViewProj,clip_pos).xyz);
@@ -46,7 +49,6 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 nearFarCloud				=texture_cube_lod(nearFarTexture	,view		,0);
 	
 	float dist_rt					=sqrt(dist);
-	vec4 cloudFar					=texture_cube_lod(farCloudTexture,view,0);
 	vec3 offsetMetres				=view*dist*1000.0*maxFadeDistanceKm;
 	vec3 lightspaceOffset			=(mul(worldToScatteringVolumeMatrix,vec4(offsetMetres,1.0)).xyz);
 	vec3 worldspaceVolumeTexCoords	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(sine)/pi),dist_rt);
@@ -63,67 +65,47 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		insc							*=godrays;
 	}
 	vec2 loss_texc					=vec2(dist_rt,0.5*(1.f-sine));
-	float hiResInterp				=1.0-pow(saturate(( nearFarCloud.x-dist) / max(0.00001,nearFarCloud.x-nearFarCloud.y)),1.0);
-	// we're going to do TWO interpolations. One from zero to the near distance,
-	// and one from the near to the far distance.
-	float nearInterp				=pow(saturate((dist )/0.0033),1.0);
-	nearInterp						=saturate((dist-nearDist)/max(0.00000001,2.0*nearDist));
-	vec4 lp						=vec4(0,0,0,0);
-	if(do_lightpass)
-		lp						=texture_cube_lod(lightpassTexture,view,0);
-	
-	vec4 cloudNear					=texture_cube_lod(nearCloudTexture, view, 0);
-	
-	vec4 cloud						=lerp(cloudNear, cloudFar,hiResInterp);
 
+	float f							=nearFarCloud.x;
+	float n							=nearFarCloud.y;
+	float hiResInterp				=1.0-saturate(( f- dist) / max(0.000000001,f-n));
+	// This is the interp from the near to the far clouds.
+	float cloudLevel				=float(NUM_CLOUD_INTERP-1)*saturate(hiResInterp);	// i.e. 0,1,2 levels of the array.
+	float cloudLevel_0				=floor(cloudLevel);
+	vec4 lp;
 	if(do_lightpass)
-		cloud.rgb					+=lp.rgb;
-	cloud							=lerp(vec4(0, 0, 0, 1.0), cloud, nearInterp);
+		lp							=texture_cube_lod(lightpassTexture,view,0);
 	
-	vec3 worldPos					=viewPos+offsetMetres;
-	float illum						=1.0;
+	vec4 cloudNear					=cloudCubeArray.Sample(cubeSamplerState,vec4(view,cloudLevel_0));
+	vec4 cloud;
+	if(do_interp)
+	{
+		vec4 cloudFar					=cloudCubeArray.Sample(cubeSamplerState,vec4(view,cloudLevel_0+1.0));
+		if(do_lightpass)
+			cloudFar.rgb				+=lp.rgb;
+		cloud							=lerp(cloudNear, cloudFar,frac(cloudLevel));
+		if(do_near)
+		{
+			float nearInterp				=saturate((dist-nearDist)/ max(0.00000001, 2.0*nearDist));
+			cloud							=lerp(vec4(0, 0, 0, 1.0), cloud, nearInterp);
+		}
+	}
+	else
+	{
+		cloud=cloudNear;
+	}
 	
 	insc.rgb						*=cloud.a;
 
 	insc							+=cloud;
 	res.multiply					=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a;
-	res.add							=insc;//vec4(lightspaceVolumeTexCoords,1.0);
-/*	
-	if(clip_pos.x>.45)
-	{
-		res.add=nearFarCloud.xxxx;
-			res.multiply=vec4(0,0,0,0);
-	}
-	else if(clip_pos.x>0.3)
-	{
-		res.add=nearFarCloud.yyyy;
-			res.multiply=vec4(0,0,0,0);
-	}
-	else if(clip_pos.x<-.45)
-	{
-			res.add=hiResInterp;
-	}
-	else
-	if(clip_pos.x<-.3)
-	{
-		if(clip_pos.y<0)
-		{
-			res.multiply=vec4(1,0,0,0);
-			res.add=cloudNear;
-		}
-		else
-		{
-			res.multiply=vec4(0,1,0,0);
-			res.add=cloudFar;
-		}
-	} */
+	res.add							=insc;
     return res;
 }
 
 TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 													,vec2 depth_texc
-													,TextureCube farCloudTexture
-													,TextureCube nearCloudTexture
+													,TextureCubeArray cloudCubeArray
 													,TextureCube nearFarTexture
 													,Texture2D loss2dTexture
 													,TEXTURE2DMS_FLOAT4 depthTextureMS
@@ -131,7 +113,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 													,uint2 fullResDims
 													,mat4 invViewProj
 													,vec4 viewportToTexRegionScaleBias
-													,DepthIntepretationStruct depthInterpretationStruct
+													,DepthInterpretationStruct depthInterpretationStruct
 													,vec2 lowResTexCoords
 													,Texture3D inscatterVolumeTexture
 													)
@@ -150,8 +132,8 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 	vec4 nearFarCloud			=texture_cube_lod(nearFarTexture	,view		,0);
 	
 	float dd					=abs(nearFarCloud.x-nearFarCloud.y);
-	vec4 cloud					=texture_cube_lod(farCloudTexture,view,0);
-	vec4 cloudNear				=texture_cube_lod(nearCloudTexture, view, 0);
+	vec4 cloud					=texture_cube_lod(cloudCubeArray,vec4(view,1.0),0);
+	vec4 cloudNear				=texture_cube_lod(cloudCubeArray,vec4(view,0.0), 0);
 	
 	float hires_edge			=dd;
 	res.add						=vec4(0,0,0,1.0);

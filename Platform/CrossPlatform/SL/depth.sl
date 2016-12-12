@@ -6,7 +6,7 @@
 #define NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
 
 
-struct DepthIntepretationStruct
+struct DepthInterpretationStruct
 {
 	vec4 depthToLinFadeDistParams;
 	bool reverseDepth;
@@ -19,7 +19,7 @@ float GetAltTexCoord(float alt_km,float minSunlightAltitudeKm,float fadeAltitude
 	return sun_alt_texc;
 }
 
-float depthToLinearDistance(float depth,DepthIntepretationStruct dis)
+float depthToLinearDistance(float depth,DepthInterpretationStruct dis)
 {
 	if(dis.reverseDepth)
 	{
@@ -35,7 +35,7 @@ float depthToLinearDistance(float depth,DepthIntepretationStruct dis)
 	return linearFadeDistanceZ;
 }
 
-vec4 depthToLinearDistance(vec4 depth,DepthIntepretationStruct dis)
+vec4 depthToLinearDistance(vec4 depth,DepthInterpretationStruct dis)
 {
 	vec4 linearFadeDistanceZ = saturate(dis.depthToLinFadeDistParams.xxxx / (depth*dis.depthToLinFadeDistParams.yyyy + dis.depthToLinFadeDistParams.zzzz)+dis.depthToLinFadeDistParams.wwww*depth);
 
@@ -52,7 +52,7 @@ vec4 depthToLinearDistance(vec4 depth,DepthIntepretationStruct dis)
 	return linearFadeDistanceZ;
 }
 
-vec2 depthToLinearDistance(vec2 depth,DepthIntepretationStruct dis)
+vec2 depthToLinearDistance(vec2 depth,DepthInterpretationStruct dis)
 {
 	vec2 linearFadeDistanceZ =saturate(dis.depthToLinFadeDistParams.xx / (depth*dis.depthToLinFadeDistParams.yy + dis.depthToLinFadeDistParams.zz)+dis.depthToLinFadeDistParams.ww*depth);
 	
@@ -106,7 +106,7 @@ void discardUnlessFar(float depth,bool reverseDepth)
 //									0->0.07/(300000*0).
 //									i.e. infinite.
 //									1->0.07/(300000) -> v small value.
-float depthToFadeDistance(float depth,vec2 xy,DepthIntepretationStruct dis,vec2 tanHalf)
+float depthToFadeDistance(float depth,vec2 xy,DepthInterpretationStruct dis,vec4 tanHalf)
 {
 	if(dis.reverseDepth)
 	{
@@ -119,17 +119,17 @@ float depthToFadeDistance(float depth,vec2 xy,DepthIntepretationStruct dis,vec2 
 			return UNITY_DIST;
 	}
 	float linearFadeDistanceZ = dis.depthToLinFadeDistParams.x / (depth*dis.depthToLinFadeDistParams.y + dis.depthToLinFadeDistParams.z)+dis.depthToLinFadeDistParams.w*depth;
-	float Tx=xy.x*tanHalf.x;
-	float Ty=xy.y*tanHalf.y;
+	float Tx=xy.x*tanHalf.x+tanHalf.z;
+	float Ty=xy.y*tanHalf.y+tanHalf.w;
 	float fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
 	return fadeDist;
 }
 
-vec2 depthToFadeDistance(vec2 depth,vec2 xy,DepthIntepretationStruct dis,vec2 tanHalf)
+vec2 depthToFadeDistance(vec2 depth,vec2 xy,DepthInterpretationStruct dis,vec4 tanHalf)
 {
 	vec2 linearFadeDistanceZ	=saturate(dis.depthToLinFadeDistParams.xx / (depth*dis.depthToLinFadeDistParams.yy + dis.depthToLinFadeDistParams.zz)+dis.depthToLinFadeDistParams.ww*depth);
-	float Tx					=xy.x*tanHalf.x;
-	float Ty					=xy.y*tanHalf.y;
+	float Tx = xy.x*tanHalf.x + tanHalf.z;
+	float Ty = xy.y*tanHalf.y + tanHalf.w;
 	vec2 fadeDist				=linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
 	if(dis.reverseDepth)
 	{
@@ -144,11 +144,11 @@ vec2 depthToFadeDistance(vec2 depth,vec2 xy,DepthIntepretationStruct dis,vec2 ta
 	return fadeDist;
 }
 
-vec4 depthToFadeDistance(vec4 depth,vec2 xy,DepthIntepretationStruct dis,vec2 tanHalf)
+vec4 depthToFadeDistance(vec4 depth,vec2 xy,DepthInterpretationStruct dis,vec4 tanHalf)
 {
 	vec4 linearFadeDistanceZ	=saturate(dis.depthToLinFadeDistParams.xxxx / (depth*dis.depthToLinFadeDistParams.yyyy + dis.depthToLinFadeDistParams.zzzz)+dis.depthToLinFadeDistParams.wwww*depth);
-	float Tx					=xy.x*tanHalf.x;
-	float Ty					=xy.y*tanHalf.y;
+	float Tx					=xy.x*tanHalf.x + tanHalf.z;
+	float Ty					=xy.y*tanHalf.y + tanHalf.w;
 	vec4 fadeDist				=linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
 	if(dis.reverseDepth)
 	{
@@ -167,10 +167,10 @@ vec4 depthToFadeDistance(vec4 depth,vec2 xy,DepthIntepretationStruct dis,vec2 ta
 	return fadeDist;
 }
 
-float fadeDistanceToDepth(float dist,vec2 xy,DepthIntepretationStruct dis,vec2 tanHalf)
+float fadeDistanceToDepth(float dist,vec2 xy,DepthInterpretationStruct dis,vec4 tanHalf)
 {
-	float Tx				=xy.x*tanHalf.x;
-	float Ty				=xy.y*tanHalf.y;
+	float Tx = xy.x*tanHalf.x + tanHalf.z;
+	float Ty = xy.y*tanHalf.y + tanHalf.w;
 	float linearDistanceZ	=dist/sqrt(1.0+Tx*Tx+Ty*Ty);
 	float depth =0;
 

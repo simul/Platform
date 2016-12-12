@@ -3,8 +3,10 @@
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
+#include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/spherical_harmonics_constants.sl"
+#include <stack>
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -30,8 +32,8 @@ namespace simul
 			int numOffsets;
 			AmortizationStruct()
 				:amortization(1)
-				,framenumber(0)
 				,validRegion(0,0,0,0)
+				,framenumber(0)
 				,framesPerIncrement(1)
 				,pattern(NULL)
 				,numOffsets(1)
@@ -231,7 +233,21 @@ namespace simul
 					sphericalHarmonics.InvalidateDeviceObjects();
 				}
 			}
+		public:
+			static std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
+			static crossplatform::TargetsAndViewport defaultTargetsAndViewport;
+			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once,
+			//! as 
+			static void setDefaultRenderTargets(const ApiRenderTarget*,
+												const ApiDepthRenderTarget*,
+												uint32_t viewportLeft,
+												uint32_t viewportTop,
+												uint32_t viewportRight,
+												uint32_t viewportBottom
+												);
 		protected:
+			crossplatform::TargetsAndViewport targetsAndViewport;
+			static std::stack<crossplatform::TargetsAndViewport*> targetStack;
 			//! The depth buffer.
 			crossplatform::Texture				*buffer_texture;
 			crossplatform::Texture				*buffer_depth_texture;
