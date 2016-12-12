@@ -312,10 +312,10 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=tru
 	{
 		dlookup =depthTexture.SampleLevel(wrapSamplerState, view, 0);
 	/*	vec4 xlookup = vec4(0,0,0,0);
-		xlookup	+=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3( 1.0, 1.0, 1.0)),0);
-		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3( 1.0,-1.0, 1.0)),0);
-		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3(-1.0, 1.0, 1.0)),0);
-		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.005*vec3( 1.0 ,1.0,-1.0)),0);
+		xlookup	+=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.0004*vec3( 1.0, 1.0, 1.0)),0);
+		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.0004*vec3( 1.0,-1.0, 1.0)),0);
+		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.0004*vec3(-1.0, 1.0, 1.0)),0);
+		xlookup +=0.25*depthTexture.SampleLevel(wrapSamplerState,(view+0.0004*vec3( 1.0 ,1.0,-1.0)),0);
 		dlookup.xz = max(dlookup.xz, xlookup.xz);
 		dlookup.yw = min(dlookup.yw, xlookup.yw);*/
 	}

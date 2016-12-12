@@ -563,9 +563,13 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 			tech=debugEffect->GetTechniqueByName("show_cubemap_array");
 			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex);
 			static char c=0;
+			static char cc=20;
 			c--;
 			if(!c)
+			{
 				level++;
+				c=cc;
+			}
 			debugConstants.displayLevel=(float)(level%std::max(1,tex->arraySize));
 		}
 		else
@@ -584,12 +588,20 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 		tech=debugEffect->GetTechniqueByName("untextured");
 	}
 	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
+	vec4 white(1.0, 1.0, 1.0, 1.0);
+	vec4 semiblack(0, 0, 0, 0.5);
+	char txt[]="0";
+	y1+=12;
 	if(tex&&tex->GetMipCount()>1&&lod>0&&lod<10)
 	{
-		vec4 white(1.0, 1.0, 1.0, 1.0);
-		vec4 semiblack(0, 0, 0, 0.5);
-		char txt[]="0";
 		txt[0]='0'+lod;
+		Print(deviceContext,x1,y1,txt,white,semiblack);
+	}
+	if(tex&&tex->arraySize>1)
+	{
+		int l=level%tex->arraySize;
+		if(l<10)
+			txt[0]='0'+(l);
 		Print(deviceContext,x1,y1,txt,white,semiblack);
 	}
 }
@@ -616,7 +628,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 	DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);
 }
-
+   
 void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma)
 {
 	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma);

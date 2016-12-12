@@ -70,7 +70,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	float n							=nearFarCloud.y;
 	float hiResInterp				=1.0-saturate(( f- dist) / max(0.000000001,f-n));
 	// This is the interp from the near to the far clouds.
-	float cloudLevel				=float(NUM_CLOUD_INTERP-1)*saturate(hiResInterp);	// i.e. 0,1,2 levels of the array.
+	float cloudLevel				=float(NUM_CLOUD_INTERP-1)*(hiResInterp);	// i.e. 0,1,2 levels of the array.
 	float cloudLevel_0				=floor(cloudLevel);
 	vec4 lp;
 	if(do_lightpass)
@@ -80,19 +80,19 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	vec4 cloud;
 	if(do_interp)
 	{
-		vec4 cloudFar					=cloudCubeArray.Sample(cubeSamplerState,vec4(view,cloudLevel_0+1.0));
+		vec4 cloudFar				=cloudCubeArray.Sample(cubeSamplerState,vec4(view,cloudLevel_0+1.0));
 		if(do_lightpass)
-			cloudFar.rgb				+=lp.rgb;
-		cloud							=lerp(cloudNear, cloudFar,frac(cloudLevel));
+			cloudFar.rgb			+=lp.rgb;
+		cloud						=lerp(cloudNear, cloudFar,frac(cloudLevel));
 		if(do_near)
 		{
-			float nearInterp				=saturate((dist-nearDist)/ max(0.00000001, 2.0*nearDist));
-			cloud							=lerp(vec4(0, 0, 0, 1.0), cloud, nearInterp);
+			float nearInterp		=saturate((dist-nearDist)/ max(0.00000001, 2.0*nearDist));
+			cloud					=lerp(vec4(0, 0, 0, 1.0), cloud, nearInterp);
 		}
 	}
 	else
 	{
-		cloud=cloudNear;
+		cloud						=cloudNear;
 	}
 	
 	insc.rgb						*=cloud.a;

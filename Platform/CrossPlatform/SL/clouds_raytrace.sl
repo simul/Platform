@@ -106,10 +106,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec3 halfway					=0.5*(lightDir-view);
 	world_pos						+=offset_vec;
 	float viewScale					=length(viewScaled*scaleOfGridCoords);
-	vec3 gridOriginPos				=gridOriginPosKm;//+scaleOfGridCoords*2.0*texture_3d_wrap_lod(noiseTexture3D,frac(view*12.0),0).xyz;
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
-	vec3 startOffsetFromOrigin		=viewPosKm-gridOriginPos;
-	vec3 offsetFromOrigin			=world_pos-gridOriginPos;
+	vec3 startOffsetFromOrigin		=viewPosKm-gridOriginPosKm;
+	vec3 offsetFromOrigin			=world_pos-gridOriginPosKm;
 	vec3 p0							=startOffsetFromOrigin/scaleOfGridCoords;
 	int3 c0							=int3(floor(p0) + start_c_offset);
 	vec3 gridScale					=scaleOfGridCoords;
@@ -125,8 +124,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	const float ends				=1.0;
 	const float range				=ends-start;
 
-	vec4 colour						=vec4(0.0,0.0,0.0,1.0);
-	vec4 nearColour					=vec4(0.0,0.0,0.0,1.0);
 	float lastFadeDistance			=0.0;
 	int3 b							=abs(c-C0*2);
 
@@ -159,13 +156,13 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	//float blinn_phong=0.0;
 	//bool found=false;
 	float distScale =  0.6 / maxFadeDistanceKm;
-	int i=0;
-	for(i=0;i<768;i++)
+
+	for(int i=0;i<768;i++)
 	{
 		world_pos					+=0.001*view;
 		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm)//||solidDist_nearFar.y<lastFadeDistance)
 			break;
-		offsetFromOrigin			=world_pos-gridOriginPos;
+		offsetFromOrigin			=world_pos-gridOriginPosKm;
 
 		// Next pos.
 		int3 c1						=c+c_offset;
@@ -256,7 +253,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 						break;
 					}
 				}
-				lastFadeDistance = lerp(lastFadeDistance, fadeDistance - density.z*stepKm / maxFadeDistanceKm, colour.a);
+				lastFadeDistance = lerp(lastFadeDistance, fadeDistance - density.z*stepKm / maxFadeDistanceKm,res.colour[NUM_CLOUD_INTERP-1].a);
 			}
 		}
 		if(max(max(b.x,b.y),0)>=W)
@@ -288,7 +285,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	// Instead of using the far depth, we will use the cloud distance.
 //	res.nearFarDepth.y = max(res.nearFarDepth.y,minDistance);
 //	res.nearFarDepth.x = min(res.nearFarDepth.x,max(lastFadeDistance, res.nearFarDepth.y + distScale ));
-	res.nearFarDepth.y	=max(0.00001,res.nearFarDepth.x-res.nearFarDepth.y);
+	//res.nearFarDepth.y	=max(0.00001,res.nearFarDepth.x-res.nearFarDepth.y);
 	res.nearFarDepth.w	=	meanFadeDistance;
 	res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	return res;

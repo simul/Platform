@@ -12,7 +12,7 @@ uniform TextureCube diffuseCubemap;
 uniform TextureCube nearFarTextureCube;
 uniform Texture2D loss2dTexture;
 uniform Texture2D shadowTexture;
-uniform Texture3D screenSpaceInscVolumeTexture;
+uniform Texture3D inscatterVolumeTexture;
 //////////////////////////
 
 struct vertexInput
@@ -68,7 +68,7 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 				,TextureCube nearFarTextureCube
 				,Texture2D loss2dTexture
 				,Texture2D shadowTexture
-				,Texture3D screenSpaceInscVolumeTexture
+				,Texture3D inscatterVolumeTexture
 				,vec4 depthToLinFadeDistParams)
 {
 	clip_pos/=clip_pos.w;
@@ -86,15 +86,13 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 	depthInterpretationStruct.reverseDepth=(reverseDepth!=0);
 	float dist					=depthToLinearDistance(clip_pos.z	,depthInterpretationStruct);
 	float dist_rt				=pow(dist,0.5);
+	const float pi				=3.1415926536;
+	vec3 worldspaceVolumeTexCoords	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(sine)/pi),dist_rt);
 	
-	vec3 volumeTexCoords		=vec3(lowResTexCoords,dist_rt);
-	// Shadow of the clouds on the object:
-	vec4 shadow_lookup			=texture_wrap_lod(shadowTexture, lowResTexCoords, 0);
-	float shadow				=shadow_lookup.x;
+	// Inscatter from air:
+	vec4 insc						=texture_3d_wmc_lod(inscatterVolumeTexture,worldspaceVolumeTexCoords,0);
 	
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
-	// Inscatter from air:
-	vec4 insc					=texture_3d_wwc_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
 
 	// Visibility due to clouds:
 	float visibility			=1.0-saturate((dist-nearFarCloud.w) / (0.001));//(nearFarCloud.x-nearFarCloud.y));
@@ -122,7 +120,7 @@ shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 				,nearFarTextureCube
 				,loss2dTexture
 				,shadowTexture
-				,screenSpaceInscVolumeTexture
+				,inscatterVolumeTexture
 				,depthToLinFadeDistParams
 				);
 // Loss is multiplied over the original colour, and inscatter is added:
