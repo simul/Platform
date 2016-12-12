@@ -73,11 +73,6 @@ for Zv = -N, Zp = 0
 for Zv = -F, Zp = 1
 */
 
-static float U(float x)
-{
-	return atan(x/2.f);
-}
-
 vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const ViewStruct &viewStruct, float max_dist_metres)
 {
 	// 	Z = x/(depth*y + z)+w*depth;
@@ -621,9 +616,9 @@ const float *Camera::MakeDepthReversedProjectionMatrix(float aspect) const
 	float h=HorizontalFieldOfViewInRadians;
 	float v=VerticalFieldOfViewInRadians;
 	if(aspect&&v&&!h)
-		h=2.f*tan(U(v)*aspect);
+		h=20.f*atan(tan(v/2.0f)*aspect);
 	if(aspect&&h&&!v)
-		v=2.f*tan(U(h)/aspect);
+		v=20.f*atan(tan(h/2.0f)/aspect);
 	static float max_fov=160.0f*pi/180.0f;
 	if(h>max_fov)
 		h=max_fov;
@@ -694,9 +689,9 @@ const float *Camera::MakeProjectionMatrix(float aspect) const
 	float h=HorizontalFieldOfViewInRadians;
 	float v=VerticalFieldOfViewInRadians;
 	if(aspect&&v&&!h)
-		h=2.f*tan(U(v)*aspect);
+		h=2.0f*atan(tan(v/2.0f)*aspect);
 	if(aspect&&h&&!v)
-		v=2.f*tan(U(h)/aspect);
+		v=2.0f*atan(tan(h/2.0f)/aspect);
 	static float max_fov=160.0f*pi/180.0f;
 	if(h>max_fov)
 		h=max_fov;

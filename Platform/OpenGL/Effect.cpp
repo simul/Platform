@@ -438,7 +438,7 @@ GL_ERROR_CHECK
 		}
 		*m=*d = NULL;
 	GL_ERROR_CHECK
-		glfxSetCacheDirectory(renderPlatform->GetShaderBinaryPath());
+		//glfxSetCacheDirectory(renderPlatform->GetShaderBinaryPath());
 		if (!glfxParseEffectFromFile(effect,fn_utf8.c_str(),paths,macros,defs))
 		{
 			std::string log=glfxGetEffectLog(effect);
