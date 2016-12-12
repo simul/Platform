@@ -41,7 +41,6 @@ uniform Texture2DArray updateTexture;
 uniform RWTexture3D<uchar4> outputTexture3d;
 
 uniform RWTexture2DArray<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
-uniform RWTexture2DArray<vec4> outputTexture2		SIMUL_RWTEXTURE_REGISTER(1);
 uniform RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);
 
 uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries;
@@ -356,21 +355,25 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=tru
 	// blend:
 
 	vec4 c					=t2d;
-	c.rgb					*=f.colour[1].a;
-	c.rgb					+=f.colour[1].rgb;
+	c.rgb					*=f.colour[NUM_CLOUD_INTERP-1].a;
+	c.rgb					+=f.colour[NUM_CLOUD_INTERP-1].rgb;
 
-	c.a						=t2d.a*f.colour[1].a;
-	if(background2d)
-		outputTexture1[pos+uint3(0,0,6*(1))]		=c;
+	c.a						=t2d.a*f.colour[NUM_CLOUD_INTERP-1].a;
+	
+	//c						+=vec4(saturate(view),0.0);
+	outputTexture1[pos+uint3(0,0,6*(NUM_CLOUD_INTERP-1))]		=c;
+//	outputTexture3[pos]		=f.nearFarDepth;
 	float n					=float(dlookup.y>=1.0);
+	for(int u=0;u<NUM_CLOUD_INTERP-1;u++)
 	{
 		vec4 cn					=t2d;
-		cn.rgb					*=f.colour[0].a*n;
+		cn.rgb					*=f.colour[u].a*n;
 		cn.a					=1.0-n*(1.0-t2d.a);
-		cn.rgb					+=f.colour[0].rgb;
-		cn.a					*=f.colour[0].a;
-		outputTexture1[pos]		=cn;
+		cn.rgb					+=f.colour[u].rgb;
+		cn.a					*=f.colour[u].a;
+		outputTexture1[pos+uint3(0,0,6*u)]		=cn;
 	}
+	//	outputTexture1[pos+uint3(0,0,6*2)]		=vec4(0,1,0,0);
 	if(background2d)
 		outputTexture3[pos]		=f.nearFarDepth;
 }
@@ -434,22 +437,25 @@ void Raytrace(uint3 pos,bool include_rain,bool depth)
 	// blend:
 
 	vec4 c					=t2d;
-	c.rgb					*=f.colour[1].a;
-	c.rgb					+=f.colour[1].rgb;
+	c.rgb					*=f.colour[NUM_CLOUD_INTERP-1].a;
+	c.rgb					+=f.colour[NUM_CLOUD_INTERP-1].rgb;
 
-	c.a						=t2d.a*f.colour[1].a;
+	c.a						=t2d.a*f.colour[NUM_CLOUD_INTERP-1].a;
 	
-	outputTexture1[pos+uint3(0,0,6)]		=c;
+	//c						+=vec4(saturate(view),0.0);
+	outputTexture1[pos+uint3(0,0,6*(NUM_CLOUD_INTERP-1))]		=c;
+//	outputTexture3[pos]		=f.nearFarDepth;
 	float n					=float(dlookup.y>=1.0);
+	for(int u=0;u<NUM_CLOUD_INTERP-1;u++)
 	{
 		vec4 cn					=t2d;
-		cn.rgb					*=f.colour[0].a*n;
+		cn.rgb					*=f.colour[u].a*n;
 		cn.a					=1.0-n*(1.0-t2d.a);
-		cn.rgb					+=f.colour[0].rgb;
-		cn.a					*=f.colour[0].a;
-		outputTexture1[pos]		=cn;
+		cn.rgb					+=f.colour[u].rgb;
+		cn.a					*=f.colour[u].a;
+		outputTexture1[pos+uint3(0,0,6*u)]		=cn;
 	}
-	outputTexture3[pos]		=f.nearFarDepth;//vec4(1,1,0,0);
+	outputTexture3[pos]		=f.nearFarDepth;
 #endif
 }
 
@@ -521,7 +527,6 @@ void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool inclu
 	if(updateTexture[pos].b==0.0)
 		return;
 		//outputTexture1[pos]		=vec4(1,1,0,1);
-		//outputTexture2[pos]		=vec4(1,1,0,1);
 		//outputTexture3[pos]		=vec4(1,1,0,1);
 	SimpleRaytrace(pos,include_rain,depth);
 }
@@ -539,7 +544,6 @@ void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool i
 	if (u.r<1.0&&u.b>0.0)
 	{
 		//outputTexture1[pos]		=vec4(1,1,0,1);
-		//outputTexture2[pos]		=vec4(1,1,0,1);
 		//outputTexture3[pos]		=vec4(1,1,0,1);
 		SimpleRaytrace(pos,include_rain,depth);
 	}
@@ -598,7 +602,6 @@ shader void CS_Edge(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	{
 		Raytrace(pos, include_rain, true);
 	//	outputTexture1[pos]		=vec4(0,1,0,1);
-	//	outputTexture2[pos]		=vec4(0,1,0,1);
 	//	outputTexture3[pos]		=vec4(0,1,0,1);
 	}
 }
@@ -616,7 +619,6 @@ shader void CS_Edge_Rain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	{
 		Raytrace(pos,true,true);
 	//outputTexture1[pos]		=u;
-	//	outputTexture2[pos]		=vec4(0,1,0,1);
 	//	outputTexture3[pos]		=vec4(0,1,0,1);
 	}
 }

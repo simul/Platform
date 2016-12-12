@@ -416,7 +416,7 @@ void MinMax(uint3 idx,bool reverseDepth)
 	vec4 res	=saturate(fn);
 
 
-	if (updateTexture[idx].g < 1.0)
+	//if (updateTexture[idx].g < 1.0)
 	{
 		targetTexture[idx] = res;
 		return;

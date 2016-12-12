@@ -616,9 +616,9 @@ const float *Camera::MakeDepthReversedProjectionMatrix(float aspect) const
 	float h=HorizontalFieldOfViewInRadians;
 	float v=VerticalFieldOfViewInRadians;
 	if(aspect&&v&&!h)
-		h=20.f*atan(tan(v/2.0f)*aspect);
+		h=2.f*atan(tan(v/2.0f)*aspect);
 	if(aspect&&h&&!v)
-		v=20.f*atan(tan(h/2.0f)/aspect);
+		v=2.f*atan(tan(h/2.0f)/aspect);
 	static float max_fov=160.0f*pi/180.0f;
 	if(h>max_fov)
 		h=max_fov;

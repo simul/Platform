@@ -225,8 +225,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		res.colour[NUM_CLOUD_INTERP-1].rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
 	res.nearFarDepth.y	=max(0.00001,res.nearFarDepth.x-res.nearFarDepth.y);
-	res.nearFarDepth.w	=	meanFadeDistance;
 	res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
+	res.nearFarDepth.w	=	meanFadeDistance;
 	return res;
 }
 #endif

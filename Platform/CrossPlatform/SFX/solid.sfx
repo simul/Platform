@@ -9,7 +9,7 @@ uniform Texture2D diffuseTexture;
 uniform TextureCube diffuseCubemap;
 
 //////////////////////////
-uniform Texture2D nearFarTexture;
+uniform TextureCube nearFarTextureCube;
 uniform Texture2D loss2dTexture;
 uniform Texture2D shadowTexture;
 uniform Texture3D screenSpaceInscVolumeTexture;
@@ -61,10 +61,11 @@ shader vec4 PS_Solid(vertexOutput IN) : SV_TARGET
 	return u;
 }
 
+/// A function that applies atmospherics and cloud visibility to a pixel of a transparent object.
 void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 				,vec4 clip_pos
 				,vec3 view
-				,Texture2D nearFarTexture
+				,TextureCube nearFarTextureCube
 				,Texture2D loss2dTexture
 				,Texture2D shadowTexture
 				,Texture3D screenSpaceInscVolumeTexture
@@ -75,10 +76,11 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 	// so only dot-product the third row of invViewProj, with clip_pos.
 	float sine					=normalize(view).z;
 	vec2 texCoords				=0.5*vec2(clip_pos.x+1.0,1.0-clip_pos.y);
-	vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
+	//vec2 lowResTexCoords		=fullResToLowResTransformXYWH.xy+texCoords*fullResToLowResTransformXYWH.zw;
 
-	vec4 nearFarCloud			=texture_wrap_lod(nearFarTexture	,lowResTexCoords		,0);
+	vec4 nearFarCloud			=texture_wrap_lod(nearFarTextureCube	,view		,0);
 
+	// translate from depth to linear distance.
 	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=(reverseDepth!=0);
@@ -86,41 +88,47 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 	float dist_rt				=pow(dist,0.5);
 	
 	vec3 volumeTexCoords		=vec3(lowResTexCoords,dist_rt);
-	vec4 shadow_lookup			=vec4(1.0, 1.0, 0, 0);
-	//if (depth>0.0)
-		shadow_lookup			=texture_wrap_lod(shadowTexture, lowResTexCoords, 0);
+	// Shadow of the clouds on the object:
+	vec4 shadow_lookup			=texture_wrap_lod(shadowTexture, lowResTexCoords, 0);
 	float shadow				=shadow_lookup.x;
+	
 	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
+	// Inscatter from air:
 	vec4 insc					=texture_3d_wwc_lod(screenSpaceInscVolumeTexture,volumeTexCoords,0);
-	float visibility			=1.0-saturate((dist-nearFarCloud.w) / (0.0000001));//(nearFarCloud.x-nearFarCloud.y));
+
+	// Visibility due to clouds:
+	float visibility			=1.0-saturate((dist-nearFarCloud.w) / (0.001));//(nearFarCloud.x-nearFarCloud.y));
 
 	insc.rgb					*=visibility;
+	// loss due to air (alpha is visilibity due to cloud occlusion).
 	loss						=vec4(texture_clamp_lod(loss2dTexture,loss_texc,0).rgb,visibility);
 	add							=insc.rgb;
 }
 
+/// An example shader for rendering transparent objects.
 shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 {
     vec3 normal	=normalize(IN.normal);
+// Here is whatever colour your shader would normally generate in the absence of atmospherics:
     vec4 c = vec4(0.5,0.5,0.5,0.5);
-	//texture_wrap(diffuseTexture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
-	vec3 totalDiff=sample_3d(diffuseCubemap,cubeSamplerState,-normal.xyz).rgb;
-	//c.rgb*=totalDiff;
+
+// Now we calculate the atmospheric effects:
 	vec4 loss;
 	vec3 add;
+// We need clip_pos and view direction (i.e. the direction in world xyz to the pixel from the camera).
 	AtmosphericsAndCloudOcclusion(loss,add
 				,IN.clip_pos
 				,IN.view
-				,nearFarTexture
+				,nearFarTextureCube
 				,loss2dTexture
 				,shadowTexture
 				,screenSpaceInscVolumeTexture
 				,depthToLinFadeDistParams
 				);
-	c*=loss;
+// Loss is multiplied over the original colour, and inscatter is added:
+	c.rgba*=loss.rgba;
 	c.rgb+=add;
-    vec4 u= vec4(c.rgb,c.a);
-	return u;
+	return c;
 }
 
 VertexShader vs_solid = CompileShader(vs_4_0, VS_Solid());
@@ -144,7 +152,7 @@ technique transparent
     pass base 
     {
 		SetRasterizerState(RenderBackfaceCull);
-		//SetDepthStencilState(EnableDepth,0);
+		//SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetBlendState(AlphaBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Solid()));
         SetGeometryShader(NULL);
