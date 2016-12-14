@@ -1,7 +1,7 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef DEPTH_SL
 #define DEPTH_SL
-#define UNITY_DIST 1.0;
+#define UNITY_DIST 1.0
 // Enable the following to use a 3-parameter depth conversion, for possible slight speed improvement
 #define NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
 

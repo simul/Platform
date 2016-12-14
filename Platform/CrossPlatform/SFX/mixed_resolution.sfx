@@ -51,8 +51,11 @@ bool GetStochasticSamples(Texture2D sourceDepthTexture,vec4 depthWind,vec2 sourc
 			texc		+= depthWind.xy;
 			// VERY important to use NEAREST, and not filter the source depth texture!
 			vec2 d		=texture_nearest_lod(sourceDepthTexture,texc,0).xx;
-			if(d.x>=1.0)
-				continue;
+			if(depthInterpretationStruct.reverseDepth)
+			{
+				if(d.x>=1.0)
+					continue;
+			}
 			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 			if(dist.x<thr.x)
 				 continue;
@@ -97,8 +100,11 @@ bool GetStochasticSamples_twoEyes(Texture2D sourceDepthTexture
 			texc += depthWindow[j].xy;
 			// VERY important to use NEAREST, and not filter the source depth texture!
 			vec2 d = texture_nearest_lod(sourceDepthTexture, texc, 0).xx;
-			if (d.x >= 1.0)
-				continue;
+			if(depthInterpretationStruct.reverseDepth)
+			{
+				if(d.x>=1.0)
+					continue;
+			}
 			vec2 dist = depthToFadeDistance(d, frustum_clip_pos[j].xy, depthInterpretationStruct, tanHalfFov);
 			float s = saturate((dist.x) / thr.x);
 			fn.yw = min(fn.yw, vec2((1.0 - s), 0.0) + dist);
