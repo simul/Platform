@@ -365,15 +365,6 @@ shader TwoColourCompositeOutput PS_CompositeAtmospherics_ForwardDepth_Lightpass_
 
 
 
-
-
-
-
-
-
-
-
-
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_ReverseDepth_NearInterp(CompositeShaderInput IN) 
 {
 	return PS_CompositeAtmospherics(IN,true,false,false,true);
@@ -438,7 +429,7 @@ shader vec4 PS_CubemapToScreenspaceVisibility(posTexVertexOutput IN): SV_Target
 	return result;
 }
 
-TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,bool reverseDepth)
+TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,bool reverseDepth,bool doLightpass,bool doGodrays,bool doNear)
 {
 	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
@@ -447,6 +438,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 																,IN.depth_texc
 																,imageCubeArray
 																,nearFarTexture
+				, lightpassTexture
 																,loss2dTexture
 																,depthTextureMS
 																,numSamples
@@ -455,7 +447,14 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 																,viewportToTexRegionScaleBias
 																,depthInterpretationStruct
 																,IN.lowResTexCoords
-																,inscatterVolumeTexture);
+																,inscatterVolumeTexture
+															,godraysVolumeTexture
+															,maxFadeDistanceKm
+															,nearDist
+															,doLightpass
+															,doGodrays
+															,true
+															,doNear);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	return result;
@@ -463,12 +462,12 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ReverseDepth(CompositeShaderInput IN) 
 {
-	return PS_CompositeAtmospherics_MSAA(IN,true);
+	return PS_CompositeAtmospherics_MSAA(IN,true,false,false,false);
 }
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ForwardDepth(CompositeShaderInput IN) 
 {
-	return PS_CompositeAtmospherics_MSAA(IN,false);
+	return PS_CompositeAtmospherics_MSAA(IN,false,false,false,false);
 }
  
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap_ReverseDepth(CompositeShaderInput IN) 

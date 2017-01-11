@@ -8,7 +8,6 @@
 #include "../SL/debug_constants.sl"
 
 uniform TEXTURE2DMS_FLOAT4 sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
-uniform TEXTURE2DMS_FLOAT4 sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2D sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);
 
 uniform Texture2DArray<vec4> previousCombinedTexture;
@@ -51,6 +50,50 @@ bool GetStochasticSamples(Texture2D sourceDepthTexture,vec4 depthWind,vec2 sourc
 			texc		+= depthWind.xy;
 			// VERY important to use NEAREST, and not filter the source depth texture!
 			vec2 d		=texture_nearest_lod(sourceDepthTexture,texc,0).xx;
+			if(depthInterpretationStruct.reverseDepth)
+			{
+				if(d.x>=1.0)
+					continue;
+			}
+			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
+			if(dist.x<thr.x)
+				 continue;
+			float s		=saturate((dist.x)/thr.x);
+			fn.yw		=min(fn.yw,vec2((1.0-s),0.0)+dist);
+			fn.xz		=max(fn.xz,dist);
+			any_result=true;
+		}
+	}
+	result=saturate(fn.xyzw);
+	return any_result;
+}
+
+// This function should track the above, but use MSAA Load instead of Sample
+bool GetStochasticSamples_MSAA(Texture2DMS<float4> sourceDepthTextureMS,vec4 depthWind,vec2 sourceTexCoords,vec2 frustum_clip_pos, vec2 texelRange
+	, DepthInterpretationStruct depthInterpretationStruct,vec4 tanHalfFov, float nearThresholdDepth
+	,vec2 stochasticOffset
+	,uint2 scale,bool twoStep,int j
+	,out vec4 result)
+{
+	// Stochastic offset goes from -1 to +1
+	vec2 texCoords		=sourceTexCoords + .3*texelRange*stochasticOffset;// / vec2(scale);
+	vec4 fn				=vec4(0.0,1.0,0.0,1.0);
+	vec2 thr			=vec2(nearThresholdDist, nearThresholdDist);
+	vec2 offsets[3];
+	offsets[0]	=vec2(-0.4,0.3);
+	offsets[1]	=vec2(0.4,0.3);
+	offsets[2]	=vec2(0.0,-0.5);
+	bool any_result=false;
+	for(int i=0;i<3;i++)
+	{
+		{
+			vec2 offs	=texelRange*offsets[i];
+			vec2 texc	=saturate(1.01*(texCoords+.6*offs))/1.01;
+			uint2 tex_pos=uint2(texc*source_dims+vec2(0.5,0.5));
+			texc		*= depthWind.zw;
+			texc		+= depthWind.xy;
+			// VERY important to use NEAREST, and not filter the source depth texture!
+			vec2 d		=sourceDepthTextureMS.Load(tex_pos,0).xx;
 			if(depthInterpretationStruct.reverseDepth)
 			{
 				if(d.x>=1.0)
@@ -130,7 +173,7 @@ vec4 GetFrustumClipPos(uint3 idx)
 	return frustum_clip_pos;
 }
 
-void DownscaleStochastic(uint3 idx,bool reverseDepth,bool twoStep) 
+void DownscaleStochastic(uint3 idx,bool reverseDepth,bool twoStep,bool msaa=false) 
 {
 	if(idx.x<targetRange[idx.z].x||idx.x>=targetRange[idx.z].z||idx.y<targetRange[idx.z].y||idx.y>=targetRange[idx.z].w)
 	{
@@ -164,7 +207,24 @@ void DownscaleStochastic(uint3 idx,bool reverseDepth,bool twoStep)
 	ds.depthToLinFadeDistParams	=depthToLinFadeDistParams;
 	ds.reverseDepth				=reverseDepth;
 	vec4 res					=vec4(0,0,0,0);
-	bool any_result	=GetStochasticSamples(
+	bool any_result;
+	if(msaa)
+		any_result	=GetStochasticSamples_MSAA(
+									sourceMSDepthTexture
+									,depthWindow[0]
+									,sourceTexCoords
+									,frustum_clip_pos.xy
+									,texelRange
+									,ds
+									,tanHalfFov
+									,nearThresholdDepth
+									,stochasticOffset
+									,scale
+									,twoStep
+									,0
+									,res);
+	else
+		any_result	=GetStochasticSamples(
 									sourceDepthTexture
 									,depthWindow[0]
 									,sourceTexCoords
@@ -352,6 +412,26 @@ shader void CS_DownscaleStochastic_ForwardDepth(uint3 g : SV_GroupID, uint3 t : 
 	DownscaleStochastic(pos,false,false);
 }
 
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_DownscaleStochastic_MSAA_ReverseDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z			=cubeIndex[g.z+t.z].x;
+	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
+		
+	//nextUpdateTexture[pos]	=vec4(0,0,1,0);
+	DownscaleStochastic(pos,true,false,true);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_DownscaleStochastic_MSAA_ForwardDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z			=cubeIndex[g.z+t.z].x;
+	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
+	DownscaleStochastic(pos,false,false,true);
+}
+
 
 CS_LAYOUT(BLOCK_SIZE, BLOCK_SIZE, 1)
 shader void CS_DownscaleStochastic_twoEyes_ReverseDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
@@ -485,6 +565,18 @@ technique downscale_stochastic_compute
     pass forward_depth
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_ForwardDepth()));
+    }
+}
+
+technique downscale_stochastic_compute_msaa
+{
+    pass reverse_depth
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_MSAA_ReverseDepth()));
+    }
+    pass forward_depth
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_MSAA_ForwardDepth()));
     }
 }
 
