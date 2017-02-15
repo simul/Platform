@@ -192,6 +192,50 @@ shader vec4 PS_DrawSphere(v2f_cubemap IN): SV_TARGET
 	return u;
 }
 
+shader v2f VS_DrawLatLongSphere(idOnly IN) 
+{
+    v2f OUT;
+	// we have (latitudes+1)*(longitudes+1)*2 id's
+	uint vertex_id		=IN.vertex_id;
+	vec3 pos;
+	if(vertex_id<(latitudes+1)*(longitudes+1))
+	{
+		uint latitude_strip	=vertex_id/(longitudes+1);
+		vertex_id			-=latitude_strip*(longitudes+1);
+		uint longitude		=vertex_id;
+		float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);
+		float elevation		=.999*(float(latitude_strip)/float(latitudes+1)-0.5)*3.1415926536;
+		float cos_el		=cos(elevation);
+		pos					=radius*vec3(sin(azimuth)*cos_el,cos(azimuth)*cos_el,sin(elevation));
+		OUT.colour			=vec4(1.0,0.5,0.5,longitude>0&&longitude<longitudes?1.0:0.0);
+	}
+	else
+	{
+		vertex_id				-=(latitudes+1)*(longitudes+1);
+		uint longitude_strip	=vertex_id/(latitudes+1);
+		int latitude			=vertex_id-longitude_strip*(latitudes+1);
+		float azimuth			=2.0*3.1415926536*float(longitude_strip)/float(longitudes);
+		float elevation			=.999*(float(latitude)/float(latitudes+1)-0.5)*3.1415926536;
+		float cos_el			=cos(elevation);
+		pos						=radius*vec3(sin(azimuth)*cos_el,cos(azimuth)*cos_el,sin(elevation));
+		OUT.colour				=vec4(0.0,1.0,0.0,latitude>0&&latitude<latitudes?1.0:0.0);
+	}
+	OUT.hPosition				=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	vec4 temp					=mul(debugWorldViewProj,vec4(2.0*pos.xyz,1.0));
+	if(temp.z/temp.w<OUT.hPosition.z/OUT.hPosition.w)
+		OUT.colour.a=0;
+    return OUT;
+}
+shader v2f VS_DrawQuadOnSphere(idOnly IN) 
+{
+    v2f OUT;
+	vec3 poss[4];
+	poss[0]			=vec2( 1.0,-1.0,0.0);
+	poss[1]			=vec2( 1.0, 1.0,0.0);
+	poss[2]			=vec2(-1.0,-1.0,0.0);
+	poss[3]			=vec2(-1.0, 1.0,0.0);
+	OUT.colour		=vec4(1.0,1.0,0.0,1.0);
+}
 shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
 	vec3 view		=IN.wDirection.xyz;
@@ -732,6 +776,19 @@ technique draw_cubemap_sphere
 		SetPixelShader(CompileShader(ps_5_0,PS_DrawCubemap()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+}
+
+technique draw_lat_long_sphere
+{
+    pass p0 
+    {		
+		SetRasterizerState( RenderBackfaceCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawLatLongSphere()));
+		SetPixelShader(debugps_5_0);
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 }
 

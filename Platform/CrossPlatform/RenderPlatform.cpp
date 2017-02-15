@@ -437,13 +437,59 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
 }
 
+void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int longt,vec3 origin,float size,vec4 colour)
+{
+	Viewport viewport=GetViewport(deviceContext,0);
+	math::Matrix4x4 view=deviceContext.viewStruct.view;
+	math::Matrix4x4 proj=crossplatform::Camera::MakeDepthReversedProjectionMatrix(1.f,(float)viewport.h/(float)viewport.w,0.1f,100000.f);
+
+	math::Matrix4x4 wvp,world;
+	world.ResetToUnitMatrix();
+	float tan_x=1.0f/proj(0, 0);
+	float tan_y=1.0f/proj(1, 1);
+	float size_req=tan_x*.5f;
+	static float sizem=3.f;
+	float d=2.0f*sizem/size_req;
+	simul::math::Vector3 offs0(0,0,-d);
+	view._41=0;
+	view._42=0;
+	view._43=0;
+	simul::math::Vector3 offs;
+	Multiply3(offs,view,offs0);
+	world._41=origin.x;
+	world._42=origin.y;
+	world._43=origin.z;
+	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
+	debugConstants.debugWorldViewProj=wvp;
+	vec3 view_dir;
+	math::Vector3 cam_pos;
+	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
+	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_lat_long_sphere");
+	static float rr=6.f;
+	debugConstants.latitudes		=lat;
+	debugConstants.longitudes		=longt;
+	debugConstants.radius			=rr;
+	debugConstants.multiplier		=colour;
+	debugConstants.debugViewDir		=view_dir;
+	debugConstants.Apply(deviceContext);
+	debugEffect->Apply(deviceContext,tech,0);
+
+	SetTopology(deviceContext,LINESTRIP);
+	// first draw the latitudes:
+	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
+	// first draw the longitudes:
+	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
+
+	debugEffect->Unapply(deviceContext);
+}
+
 void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
 {
 	unsigned int num_v=0;
 
 	Viewport oldv=GetViewport(deviceContext,0);
 	
-		// Setup the viewport for rendering.
+	// Setup the viewport for rendering.
 	Viewport viewport;
 	viewport.w		=(int)(oldv.w*size);
 	viewport.h		=(int)(oldv.h*size);
@@ -485,7 +531,7 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	debugConstants.debugGamma		=gamma;
 	debugConstants.Apply(deviceContext);
 	debugEffect->Apply(deviceContext,tech,0);
-	//Topology old_top=GetTopology
+
 	SetTopology(deviceContext,TRIANGLESTRIP);
 	Draw(deviceContext, (debugConstants.longitudes+1)*(debugConstants.latitudes+1)*2, 0);
 

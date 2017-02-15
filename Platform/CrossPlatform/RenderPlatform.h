@@ -159,6 +159,7 @@ namespace simul
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill=false);
 			/// Draw a cubemap as a sphere at the specified screen position and size.
 			virtual void DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod=0.0f);
+			void DrawLatLongSphere			(DeviceContext &deviceContext,int lat,int longi,vec3 origin,float size,vec4 colour);
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr,int offsetx=0,int offsety=0,bool centred=false);
 			virtual void SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
 			virtual void					ApplyDefaultMaterial			()	=0;
