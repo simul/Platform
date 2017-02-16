@@ -367,7 +367,7 @@
     <None Include="SL\clouds_raytrace.sl">
       <Filter>SL</Filter>
     </None>
-    <None Include="SL\camera_constants.sl">
+    <None Include="SL\quaternion.sl">
       <Filter>SL</Filter>
     </None>
   </ItemGroup>
