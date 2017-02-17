@@ -812,6 +812,7 @@
 				double	r, g, b;
 			};
 		};
+		vec3d(double a=0.0,double b=0.0,double c=0.0):x(a),y(b),z(c){}
 		operator double *()
 		{
 			return v;
@@ -824,6 +825,44 @@
 		{
 			for(int i=0;i<3;i++)
 				v[i]=u[i];
+		}
+		vec3d operator*(vec3d v) const
+		{
+			vec3d r;
+			r.x=v.x*x;
+			r.y=v.y*y;
+			r.z=v.z*z;
+			return r;
+		}
+		vec3d operator/(vec3d v) const
+		{
+			vec3d r;
+			r.x=x/v.x;
+			r.y=y/v.y;
+			r.z=z/v.z;
+			return r;
+		}
+		vec3d operator+(vec3d v) const
+		{
+			vec3d r;
+			r.x=x+v.x;
+			r.y=y+v.y;
+			r.z=z+v.z;
+			return r;
+		}
+		vec3d operator-(vec3d v) const
+		{
+			vec3d r;
+			r.x=x-v.x;
+			r.y=y-v.y;
+			r.z=z-v.z;
+			return r;
+		}
+		void operator/=(double m)
+		{
+			x/=m;
+			y/=m;
+			z/=m;
 		}
 	};
 	//! Very simple 4x4 matrix of doubles.

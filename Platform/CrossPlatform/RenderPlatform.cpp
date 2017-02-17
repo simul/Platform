@@ -522,8 +522,8 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 	debugEffect->SetConstantBuffer(deviceContext,"DebugConstants",&debugConstants);
 	debugEffect->Apply(deviceContext,tech,0);
 
-	SetTopology(deviceContext,LINESTRIP);
-	Draw(deviceContext,5, 0);
+	SetTopology(deviceContext,LINELIST);
+	Draw(deviceContext,16, 0);
 
 	debugEffect->Unapply(deviceContext);
 }
