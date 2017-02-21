@@ -253,16 +253,17 @@ void simul::crossplatform::MakeCentredViewProjMatrix(float *vp,const float *v,co
 
 void simul::crossplatform::MakeWorldViewProjMatrix(float *wvp,const float *w,const float *v,const float *p)
 {
-	simul::math::Matrix4x4 tmp1,tmp2,view(v),proj(p),world;
+	simul::math::Matrix4x4 tmp1,view(v),proj(p),world;
+	simul::math::Matrix4x4 &tmp2(*((simul::math::Matrix4x4*)wvp));
 	if(w)
 	{
 		simul::math::Multiply4x4(tmp1,view,proj);
 		world=w;
-		simul::math::Multiply4x4(*((simul::math::Matrix4x4*)wvp),world,tmp1);
+		simul::math::Multiply4x4(tmp2,world,tmp1);
 	}
 	else
 	{
-		simul::math::Multiply4x4(*((simul::math::Matrix4x4*)wvp),view,proj);
+		simul::math::Multiply4x4(tmp2,view,proj);
 	}
 }
 

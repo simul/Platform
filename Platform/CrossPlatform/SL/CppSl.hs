@@ -60,79 +60,6 @@
 #ifdef _MSC_VER
 #pragma warning(disable:4201) // anonymous unions warning
 #endif
-	struct mat4
-	{
-		union
-		{
-			float m[16];
-			struct
-			{
-				float        _11, _12, _13, _14;
-				float        _21, _22, _23, _24;
-				float        _31, _32, _33, _34;
-				float        _41, _42, _43, _44;
-			};
-			struct
-			{
-				float        _m00, _m01, _m02, _m03;
-				float        _m10, _m11, _m12, _m13;
-				float        _m20, _m21, _m22, _m23;
-				float        _m30, _m31, _m32, _m33;
-			};
-			float M[4][4];
-		};
-		operator const float *()
-		{
-			return m;
-		}
-		void operator=(const float *v)
-		{
-			for(int i=0;i<16;i++)
-				m[i]=v[i];
-		}
-		inline static void mul(mat4 &r,const mat4 &a,const mat4 &b)
-		{
-			for(int i=0;i<4;i++)
-			{
-				for(int j=0;j<4;j++)
-				{
-					const float *m1row=&a.m[i*4+0];
-					float t=0.f;
-					int k=0;
-					t+=m1row[k]*b.m[k*4+j];	++k;
-					t+=m1row[k]*b.m[k*4+j];	++k;
-					t+=m1row[k]*b.m[k*4+j];	++k;
-					t+=m1row[k]*b.m[k*4+j];
-					r.M[i][j]=t;
-				}
-			}
-		}
-		void operator*=(float c)
-		{
-			for(int i=0;i<16;i++)
-				m[i]*=c;
-		}
-		void transpose()
-		{
-			for(int i=0;i<4;i++)
-				for(int j=0;j<4;j++)
-					if(i<j)
-					{
-						float temp=m[i*4+j];
-						m[i*4+j]=m[j*4+i];
-						m[j*4+i]=temp;
-					}
-		}
-		static inline mat4 identity()
-		{
-			mat4 m;
-			for(int i=0;i<4;i++)
-				for(int j=0;j<4;j++)
-					m.M[i][j]=0.0f;
-			m._11=m._22=m._33=m._44=1.0f;
-			return m;
-		}
-	};
 	struct vec2
 	{
 		float x,y;
@@ -290,6 +217,14 @@
 			x/=m;
 			y/=m;
 			z/=m;
+		}
+		vec3 operator-() const
+		{
+			vec3 r;
+			r.x=-x;
+			r.y=-y;
+			r.z=-z;
+			return r;
 		}
 		vec3 operator*(float m) const
 		{
@@ -471,6 +406,87 @@
 		r.w=m*v.w;
 		return r;
 	}
+	struct mat4
+	{
+		union
+		{
+			float m[16];
+			struct
+			{
+				float        _11, _12, _13, _14;
+				float        _21, _22, _23, _24;
+				float        _31, _32, _33, _34;
+				float        _41, _42, _43, _44;
+			};
+			struct
+			{
+				float        _m00, _m01, _m02, _m03;
+				float        _m10, _m11, _m12, _m13;
+				float        _m20, _m21, _m22, _m23;
+				float        _m30, _m31, _m32, _m33;
+			};
+			float M[4][4];
+		};
+		operator const float *()
+		{
+			return m;
+		}
+		void operator=(const float *v)
+		{
+			for(int i=0;i<16;i++)
+				m[i]=v[i];
+		}
+		inline static void mul(mat4 &r,const mat4 &a,const mat4 &b)
+		{
+			for(int i=0;i<4;i++)
+			{
+				for(int j=0;j<4;j++)
+				{
+					const float *m1row=&a.m[i*4+0];
+					float t=0.f;
+					int k=0;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];
+					r.M[i][j]=t;
+				}
+			}
+		}
+		void operator*=(float c)
+		{
+			for(int i=0;i<16;i++)
+				m[i]*=c;
+		}
+		void transpose()
+		{
+			for(int i=0;i<4;i++)
+				for(int j=0;j<4;j++)
+					if(i<j)
+					{
+						float temp=m[i*4+j];
+						m[i*4+j]=m[j*4+i];
+						m[j*4+i]=temp;
+					}
+		}
+		static inline mat4 identity()
+		{
+			mat4 m;
+			for(int i=0;i<4;i++)
+				for(int j=0;j<4;j++)
+					m.M[i][j]=0.0f;
+			m._11=m._22=m._33=m._44=1.0f;
+			return m;
+		}
+		static inline mat4 translation(vec3 tr)
+		{
+			mat4 m=identity();
+			m._41=tr.x;
+			m._42=tr.y;
+			m._43=tr.z;
+			return m;
+		}
+	};
 	inline vec4 operator*(const mat4 &m,const vec4 &v)
 	{
 		vec4 r;

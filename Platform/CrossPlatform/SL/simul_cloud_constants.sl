@@ -58,6 +58,8 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 
 	uniform vec3 offset;
 	uniform float azimuth;
+
+	uniform int2 gridCentreTexel;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)

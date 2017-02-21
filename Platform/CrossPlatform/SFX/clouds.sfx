@@ -142,7 +142,7 @@ CS_LAYOUT(4,4,4)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	idx.xy		+=int2(edge);
+	idx.xy		+=gridCentreTexel;
 	idx.xy		+=int2(windowGrid.xy)/2;
 	idx.xy		=idx.xy%int2(windowGrid.xy);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
@@ -182,7 +182,7 @@ CS_LAYOUT(4,4,4)
 shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	int3 idx			=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	idx.xy				+=int2(edge);
+	idx.xy				+=gridCentreTexel;
 	idx.xy				+=int2(windowGrid.xy)/2;
 	vec3 texc			=vec3(idx)*scale+offset;
 	idx.xy				=idx.xy%int2(windowGrid.xy);
@@ -207,7 +207,7 @@ shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	//res.xyw=2.0*(float(idx.z)/64.0-0.5);
 	res.x				=localNoiseStrength/100.0;
 	res.y				=localCellNoiseStrength;
-	if (res.z > 0)
+	if (res.z > 50)
 	{
 		IMAGE_STORE_3D(outputTexture3d, idx, res);
 	}

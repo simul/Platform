@@ -535,12 +535,6 @@ void RenderPlatform::ApplyDefaultMaterial()
     glBindTexture(GL_TEXTURE_2D, 0);*/
 }
 
-void MakeWorldViewProjMatrix(float *wvp,const double *w,const float *v,const float *p)
-{
-	simul::math::Matrix4x4 tmp1,view(v),proj(p),model(w);
-	simul::math::Multiply4x4(tmp1,model,view);
-	simul::math::Multiply4x4(*(simul::math::Matrix4x4*)wvp,tmp1,proj);
-}
 
 crossplatform::Material *RenderPlatform::CreateMaterial()
 {
@@ -1596,45 +1590,6 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 		SAFE_RELEASE(m_pVtxDecl);
 	}
 }
-/*
-void RenderPlatform::DrawCircle(crossplatform::DeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill)
-{
-	ID3D11DeviceContext *pContext	=deviceContext.asD3D11DeviceContext();
-	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
-	pContext->IAGetPrimitiveTopology(&previousTopology);
-	pContext->IASetPrimitiveTopology(fill?D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
-	pContext->IASetInputLayout(NULL);
-	{
-		ID3DX11EffectGroup *g=debugEffect->asD3DX11Effect()->GetGroupByName("circle");
-		ID3DX11EffectTechnique *tech=fill?g->GetTechniqueByName("filled"):g->GetTechniqueByName("outline");
-		
-		simul::math::Vector3 d(dir);
-		d.Normalize();
-		float Yaw=atan2(d.x,d.y);
-		float Pitch=-asin(d.z);
-		simul::math::Matrix4x4 world, tmp1, tmp2;
-	
-		simul::geometry::SimulOrientation ori;
-		ori.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
-		ori.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
-		world	=ori.T4;
-		//set up matrices
-		math::Matrix4x4 view=deviceContext.viewStruct.view;
-		view._41=0.f;
-		view._42=0.f;
-		view._43=0.f;
-		simul::math::Multiply4x4(tmp1,world,view);
-		simul::math::Multiply4x4(tmp2,tmp1,deviceContext.viewStruct.proj);
-		crossplatform::MakeWorldViewProjMatrix(tmp2,world,view,deviceContext.viewStruct.proj);
-		debugConstants.debugWorldViewProj=tmp2;
-		debugConstants.radius		=rads;
-		debugConstants.debugColour	=colr;
-		debugConstants.Apply(deviceContext);
-		ApplyPass(pContext,tech->GetPassByIndex(0));
-	}
-	pContext->Draw(fill?64:32,0);
-	pContext->IASetPrimitiveTopology(previousTopology);
-}*/
 
 void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 {
