@@ -142,8 +142,10 @@ CS_LAYOUT(4,4,4)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
+	//	return;
 	idx.xy		+=gridCentreTexel;
-	idx.xy		+=int2(windowGrid.xy)/2;
+	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	vec3 texc	=vec3(idx)*scale+offset;
@@ -182,6 +184,8 @@ CS_LAYOUT(4,4,4)
 shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	int3 idx			=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
+	//	return;
 	idx.xy				+=gridCentreTexel;
 	idx.xy				+=int2(windowGrid.xy)/2;
 	vec3 texc			=vec3(idx)*scale+offset;
@@ -217,8 +221,10 @@ shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 CS_LAYOUT(4,4,4)
 shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	int3 pos	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	vec3 texc	=vec3(pos)/vec3(windowGrid);
+	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
+	//	return;
+	vec3 texc	=vec3(idx)/vec3(windowGrid);
 
 	vec3 wpos			=texc/inverseScalesKm;
 	float thickness		=0.0;
@@ -240,7 +246,7 @@ shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	illum.y			=exp(-extinction*thickness/12.0);
 	illum.zw		=0;
 //illum=texture_3d_wwc_lod(cloudDensity,texc,0);
-	IMAGE_STORE_3D(outputTexture3d,pos,illum);
+	IMAGE_STORE_3D(outputTexture3d,idx,illum);
 }
 
 
