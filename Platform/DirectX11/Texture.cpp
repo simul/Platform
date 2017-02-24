@@ -5,7 +5,7 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
-
+#include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 #include <string>
 #include <algorithm>
 
@@ -205,16 +205,13 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 						,0
 						,NULL
 						);
-		//pContext->UpdateSubresource(m_pArrayTexture,i*num_mips, NULL,subResources[i].pSysMem,subResources[i].SysMemPitch,subResources[i].SysMemSlicePitch);
 	}
 	void FreeSRVTables();
 	void FreeRTVTables();
 //	InitSRVTables(texture_files.size(),m);
 	V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(tex,NULL,&mainShaderResourceView));
-	//delete [] subResources;
 	for(unsigned i=0;i<textures.size();i++)
 	{
-	//	pContext->Unmap(textures[i],0);
 		SAFE_RELEASE(textures[i])
 	}
 	pContext->GenerateMips(mainShaderResourceView);
@@ -233,7 +230,7 @@ ID3D11ShaderResourceView *Texture::AsD3D11ShaderResourceView(crossplatform::Shad
 	if(mip>=mips)
 		mip=mips-1;
 #ifdef _DEBUG
-	if(index>=arraySize*(cubemap?6:1))
+	if(index>=arraySize)
 	{
 		SIMUL_BREAK_ONCE("AsD3D11UnorderedAccessView: mip or index out of range");
 		return NULL;
@@ -299,7 +296,7 @@ void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *tar
 	}
 	deviceContext.asD3D11DeviceContext()->CopyResource(stagingBuffer,texture);
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	V_CHECK(deviceContext.asD3D11DeviceContext()->Map( stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource));
+	V_CHECK(deviceContext.asD3D11DeviceContext()->Map( stagingBuffer, 0, D3D11_MAP_READ, SIMUL_D3D11_MAP_FLAGS, &mappedResource));
 	unsigned char *source = (unsigned char *)(mappedResource.pData);
 	
 	int expected_pitch=byteSize*width;
@@ -332,10 +329,31 @@ void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *tar
 void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)
 {
 	last_context=deviceContext.asD3D11DeviceContext();
+#ifdef _XBOX_ONE
+	
+// block ME until all shader stages are done at EOP, i.e. GPU idling
+((ID3D11DeviceContextX*)last_context)->InsertWaitUntilIdle(0);
+
+// flush and invalidate all caches at PFP
+((ID3D11DeviceContextX*)last_context)->FlushGpuCacheRange(  D3D11_FLUSH_TEXTURE_L1_INVALIDATE  |
+		     D3D11_FLUSH_TEXTURE_L2_INVALIDATE |
+		     D3D11_FLUSH_COLOR_BLOCK_INVALIDATE |
+		     D3D11_FLUSH_DEPTH_BLOCK_INVALIDATE |
+		     D3D11_FLUSH_KCACHE_INVALIDATE |
+		     D3D11_FLUSH_ICACHE_INVALIDATE |
+		     D3D11_FLUSH_ENGINE_PFP
+				,nullptr,0);
+#endif
+	D3D11_MAP map_type=D3D11_MAP_WRITE_DISCARD;
+/*	if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
+		map_type=D3D11_MAP_WRITE;*/
 	if(!mapped.pData)
-		last_context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+		last_context->Map(texture,0,map_type,SIMUL_D3D11_MAP_FLAGS,&mapped);
 	if(!mapped.pData)
+	{
+		SIMUL_CERR<<"Failed to set texels on texture "<<name.c_str()<<std::endl;
 		return;
+	}
 	int byteSize=simul::dx11::ByteSizeOfFormatElement(dxgi_format);
 	const unsigned char *source=(const unsigned char*)src;
 	unsigned char *target=(unsigned char*)mapped.pData;
@@ -386,6 +404,21 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		last_context->Unmap(texture,0);
 		memset(&mapped,0,sizeof(mapped));
 	}
+#ifdef _XBOX_ONE
+	
+// block ME until all shader stages are done at EOP, i.e. GPU idling
+((ID3D11DeviceContextX*)last_context)->InsertWaitUntilIdle(0);
+
+// flush and invalidate all caches at PFP
+((ID3D11DeviceContextX*)last_context)->FlushGpuCacheRange(  D3D11_FLUSH_TEXTURE_L1_INVALIDATE  |
+		     D3D11_FLUSH_TEXTURE_L2_INVALIDATE |
+		     D3D11_FLUSH_COLOR_BLOCK_INVALIDATE |
+		     D3D11_FLUSH_DEPTH_BLOCK_INVALIDATE |
+		     D3D11_FLUSH_KCACHE_INVALIDATE |
+		     D3D11_FLUSH_ICACHE_INVALIDATE |
+		     D3D11_FLUSH_ENGINE_PFP
+				,nullptr,0);
+#endif
 }
 
 bool Texture::IsComputable() const
@@ -441,7 +474,7 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 			if(!srv)
 			{
 				InitSRVTables(textureDesc.ArraySize,textureDesc.MipLevels);
-				CreateSRVTables(textureDesc.ArraySize,textureDesc.MipLevels,cubemap);
+				CreateSRVTables(textureDesc.ArraySize,textureDesc.MipLevels,cubemap,false,textureDesc.SampleDesc.Count>1);
 				arraySize=textureDesc.ArraySize;
 				mips=textureDesc.MipLevels;
 			}
@@ -483,6 +516,79 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 	dim=2;
 }
 
+void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *ta,void *srv,bool make_uav)
+{
+	// If it's the same as before, return.
+	if ((texture == ta && srv==mainShaderResourceView) && mainShaderResourceView != NULL && (make_uav ==( mipUnorderedAccessViews != NULL)))
+		return;
+	// If it's the same texture, and we created our own srv, that's fine, return.
+	if (texture!=NULL&&texture == ta&&mainShaderResourceView != NULL&&srv == NULL)
+		return;
+	FreeSRVTables();
+	renderPlatform=r;
+	SAFE_RELEASE(mainShaderResourceView);
+	SAFE_RELEASE(arrayShaderResourceView);
+	SAFE_RELEASE(texture);
+	texture=(ID3D11Resource*)ta;
+	mainShaderResourceView=(ID3D11ShaderResourceView*)srv;
+	if(mainShaderResourceView)
+		mainShaderResourceView->AddRef();
+	if(texture)
+	{
+		texture->AddRef();
+		ID3D11Texture3D* ppd3(NULL);
+		D3D11_TEXTURE3D_DESC textureDesc3;
+		if(texture->QueryInterface( __uuidof(ID3D11Texture3D),(void**)&ppd3)==S_OK)
+		{
+			ppd3->GetDesc(&textureDesc3);
+			dxgi_format=TypelessToSrvFormat(textureDesc3.Format);
+			pixelFormat=RenderPlatform::FromDxgiFormat(dxgi_format);
+			width=textureDesc3.Width;
+			length=textureDesc3.Height;
+			if(!srv)
+			{
+				InitSRVTables(1,textureDesc3.MipLevels);
+				CreateSRVTables(1,textureDesc3.MipLevels,false,true);
+				arraySize=1;
+				mips=textureDesc3.MipLevels;
+			}
+			depth=textureDesc3.Depth;
+			FreeUAVTables();
+			InitUAVTables(1,textureDesc3.MipLevels);// 1 layer, m mips.
+	
+			D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+			ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+			uav_desc.Format					=dxgi_format;
+			uav_desc.ViewDimension			=D3D11_UAV_DIMENSION_TEXTURE3D;
+			uav_desc.Texture3D.MipSlice		=0;
+			uav_desc.Texture3D.WSize		=textureDesc3.Depth;
+			uav_desc.Texture3D.FirstWSlice	=0;
+		
+			if(mipUnorderedAccessViews)
+			for(int i=0;i<textureDesc3.MipLevels;i++)
+			{
+				uav_desc.Texture3D.MipSlice=i;
+				V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
+				uav_desc.Texture3D.WSize/=2;
+			}
+		
+			uav_desc.Texture3D.WSize	= textureDesc3.Depth;
+			if(layerMipUnorderedAccessViews)
+			for(int i=0;i<textureDesc3.MipLevels;i++)
+			{
+				uav_desc.Texture3D.MipSlice=i;
+				V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][i]));
+				uav_desc.Texture3D.WSize/=2;
+			}
+		}
+		else
+		{
+			SIMUL_BREAK_ONCE("Not a valid D3D Texture");
+		}
+		SAFE_RELEASE(ppd3);
+	}
+	dim=3;
+}
 bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {
 	pixelFormat = pf;
@@ -512,6 +618,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	bool changed=!ok;
 	if(!ok)
 	{
+		renderPlatform=r;
 		SIMUL_ASSERT(w > 0 && l > 0 && w <= 65536 && l <= 65536);
 		InvalidateDeviceObjects();
 		memset(&textureDesc,0,sizeof(textureDesc));
@@ -520,7 +627,10 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		textureDesc.Depth			=depth=d;
 		textureDesc.Format			=dxgi_format=f;
 		textureDesc.MipLevels		=m;
-		textureDesc.Usage			=(computable|rendertargets)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		D3D11_USAGE usage			=D3D11_USAGE_DYNAMIC;
+		//if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
+		//	usage=D3D11_USAGE_DEFAULT;
+		textureDesc.Usage			=(computable|rendertargets)?D3D11_USAGE_DEFAULT:usage;
 		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertargets?D3D11_BIND_RENDER_TARGET:0);
 		textureDesc.CPUAccessFlags	=(computable|rendertargets)?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags		=0;
@@ -599,13 +709,14 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	return changed;
 }
 
-bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *renderPlatform
+bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 												 ,int w,int l
 												 ,crossplatform::PixelFormat f
 												 ,bool computable,bool rendertarget,bool depthstencil
 												 ,int num_samples,int aa_quality,bool )
 {
 	int m=1;
+	renderPlatform=r;
 	pixelFormat=f;
 	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	DXGI_FORMAT texture2dFormat=dxgi_format;
@@ -672,7 +783,10 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *render
 		textureDesc.Format					=texture2dFormat;
 		textureDesc.MipLevels				=m;
 		textureDesc.ArraySize				=1;
-		textureDesc.Usage					=(computable||rendertarget||depthstencil)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		D3D11_USAGE usage					=D3D11_USAGE_DYNAMIC;
+	//	if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
+	//		usage							=D3D11_USAGE_DEFAULT;
+		textureDesc.Usage					=(computable||rendertarget||depthstencil)?D3D11_USAGE_DEFAULT:usage;
 		textureDesc.BindFlags				=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0)|(depthstencil?D3D11_BIND_DEPTH_STENCIL:0);
 		textureDesc.CPUAccessFlags			=(computable||rendertarget||depthstencil)?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags				=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
@@ -837,18 +951,16 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
 		if (layerMipUnorderedAccessViews)
-		{
-			uav_desc.Texture2DArray.ArraySize = 1;
 			for (int i = 0; i < total_num; i++)
 				for (int j = 0; j < m; j++)
 				{
 					uav_desc.Texture2DArray.FirstArraySlice = i;
+			uav_desc.Texture2DArray.ArraySize=1;
 					uav_desc.Texture2DArray.MipSlice = j;
 					V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[i][j]));
 					SetDebugObjectName(layerMipUnorderedAccessViews[i][j], "dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 				}
 		}
-	}
 
 	if(rendertarget)
 	{
@@ -879,10 +991,13 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	return true;
 }
 
-void Texture::CreateSRVTables(int num,int m,bool cubemap)
+void Texture::CreateSRVTables(int num,int m,bool cubemap,bool volume,bool msaa)
 {
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
+
+	if(!volume)
+	{
 	SRVDesc.Format						= TypelessToSrvFormat(dxgi_format);
 	SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURE2D;
 	int total_num						=cubemap?6*num:num;
@@ -911,6 +1026,10 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap)
 		SRVDesc.Texture2DArray.MipLevels		=m;
 		SRVDesc.Texture2DArray.MostDetailedMip	=0;
 	}
+		else if(msaa)
+		{
+			SRVDesc.ViewDimension					=D3D11_SRV_DIMENSION_TEXTURE2DMS;
+		}
 	else
 	{ 
 		SRVDesc.Texture2D.MipLevels				=m;
@@ -960,6 +1079,24 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap)
 		}
 	}
 }
+	else
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+		srv_desc.Format						= TypelessToSrvFormat(dxgi_format);
+		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
+		srv_desc.Texture3D.MipLevels		= m;
+		srv_desc.Texture3D.MostDetailedMip	= 0;
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&srv_desc,&mainShaderResourceView));
+		if(mainMipShaderResourceViews)
+		for(int j=0;j<m;j++)
+		{
+			srv_desc.Texture3D.MipLevels=1;
+			srv_desc.Texture3D.MostDetailedMip=j;
+			V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &srv_desc, &mainMipShaderResourceViews[j]));
+		}
+	}
+}
 
 void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat pf,bool computable)
 {
@@ -995,7 +1132,10 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 		textureDesc.Format			=dxgi_format=f;
 		textureDesc.MipLevels		=m;
 		textureDesc.ArraySize		=1;
-		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		D3D11_USAGE usage					=D3D11_USAGE_DYNAMIC;
+		//if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
+		//	usage							=D3D11_USAGE_DEFAULT;
+		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:usage;
 		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
 		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags		=0;
@@ -1054,7 +1194,10 @@ void Texture::map(ID3D11DeviceContext *context)
 	if(mapped.pData!=NULL)
 		return;
 	last_context=context;
-	last_context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+	D3D11_MAP map_type=D3D11_MAP_WRITE_DISCARD;
+	//if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
+	///	map_type=D3D11_MAP_WRITE;
+	last_context->Map(texture,0,map_type,((dx11::RenderPlatform*)renderPlatform)->GetMapFlags(),&mapped);
 }
 
 bool Texture::isMapped() const
@@ -1135,7 +1278,7 @@ vec4 Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoord
 		deviceContext.asD3D11DeviceContext()->CopySubresourceRegion(stagingBuffer, 0, 0, 0, 0, texture, 0, &srcBox);
 
 		D3D11_MAPPED_SUBRESOURCE msr;
-		deviceContext.asD3D11DeviceContext()->Map(stagingBuffer, 0, D3D11_MAP_READ, 0, &msr);
+		deviceContext.asD3D11DeviceContext()->Map(stagingBuffer, 0, D3D11_MAP_READ,SIMUL_D3D11_MAP_FLAGS, &msr);
 		pixel = msr.pData;
 		// copy data
 		deviceContext.asD3D11DeviceContext()->Unmap(stagingBuffer, 0);

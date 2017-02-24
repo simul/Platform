@@ -1,4 +1,5 @@
 #include "Simul/Platform/CrossPlatform/Texture.h"
+#include "Simul/Base/RuntimeError.h"
 #include <iostream>
 
 using namespace simul;
@@ -12,6 +13,8 @@ SamplerState::~SamplerState()
 }
 
 Texture::Texture(const char *n):cubemap(false)
+				,fence(0)
+				,unfenceable(false)
 				,width(0)
 				,length(0)
 				,depth(0)
@@ -41,4 +44,24 @@ bool Texture::IsCubemap() const
 void Texture::SetName(const char *n)
 {
 	name=n;
+}
+unsigned long long Texture::GetFence() const
+{
+	return fence;
+}
+
+void Texture::SetFence(unsigned long long f)
+{
+	if(fence!=0&&f!=fence)
+	{
+		// This is probably ok. We might be adding to a different part of a texture.
+	//	SIMUL_CERR<<"Setting fence when the last one is not cleared yet\n"<<std::endl;
+	}
+	fence=f;
+}
+
+
+void Texture::ClearFence()
+{
+	fence=0;
 }

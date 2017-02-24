@@ -11,7 +11,9 @@ namespace simul
 			,RGBA_16_FLOAT
 			,RGBA_32_FLOAT
 			,RGB_32_FLOAT
+			,RGB_11_11_10_FLOAT
 			,RG_32_FLOAT
+			,RG_16_FLOAT
 			,R_32_FLOAT
 			,LUM_32_FLOAT
 			,INT_32_FLOAT

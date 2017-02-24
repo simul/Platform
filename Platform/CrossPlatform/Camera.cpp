@@ -19,6 +19,7 @@ void ViewStruct::Init()
 	ERRNO_BREAK
 	MakeInvViewProjMatrix((float*)&invViewProj,(const float*)&view,(const float*)&proj);
 	GetCameraPosVector((const float *)&view,(float*)&cam_pos,(float *)&view_dir,(float*)&up);
+	initialized=true;
 }
 
 static const float DEG_TO_RAD=pi/180.f;

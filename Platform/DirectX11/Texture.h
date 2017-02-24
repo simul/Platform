@@ -75,6 +75,7 @@ namespace simul
 			// Use this dx11::Texture as a wrapper for a texture and its corresponding SRV. If a srv is not provided, one will be created internally. If \a make_rt is true and it is a rendertarget texture, a rendertarget will be created.
 			void InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *renderPlatform,ID3D11Texture2D *t,ID3D11ShaderResourceView *srv,bool make_rt=false);
 			void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false) override;
+			void InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
 			ID3D11Resource				*stagingBuffer;
 
 			D3D11_MAPPED_SUBRESOURCE	mapped;
@@ -129,7 +130,7 @@ namespace simul
 			void FreeSRVTables();
 			void FreeRTVTables();
 			void InitRTVTables(int l,int m);
-			void CreateSRVTables(int num,int m,bool cubemap);
+			void CreateSRVTables(int num,int m,bool cubemap,bool volume=false,bool msaa=false);
 		};
 	}
 }

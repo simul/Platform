@@ -84,6 +84,14 @@ namespace simul
 			virtual void T1(){}
 			RenderPlatform(simul::base::MemoryInterface*m=NULL);
 			virtual ~RenderPlatform();
+			void SetCanSaveAndRestore(bool b)
+			{
+				can_save_and_restore=b;
+			}
+			bool GetCanSaveAndRestore() const
+			{
+				return can_save_and_restore;
+			}
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
 			virtual ID3D11Device *AsD3D11Device();
@@ -275,6 +283,7 @@ namespace simul
 			
 			crossplatform::StructuredBuffer<vec4> textureQueryResult;
 			crossplatform::GpuProfiler		*gpuProfiler;
+			bool can_save_and_restore;
 		public:		
 			crossplatform::GpuProfiler		*GetGpuProfiler();
 			TextRenderer					*textRenderer;

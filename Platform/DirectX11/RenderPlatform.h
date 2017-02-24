@@ -45,6 +45,13 @@ namespace simul
 			void RestoreDeviceObjects(void*);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
+
+			D3D11_MAP_FLAG GetMapFlags();
+
+			bool UsesFastSemantics() const
+			{
+				return !can_save_and_restore;
+			}
 			ID3D11Device *AsD3D11Device()
 			{
 				return device;

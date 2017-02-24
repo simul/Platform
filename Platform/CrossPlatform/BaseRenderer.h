@@ -51,10 +51,12 @@ namespace simul
 		/// A simple struct encapsulating a view and a projection matrix.
 		struct SIMUL_CROSSPLATFORM_EXPORT ViewStruct
 		{
-			ViewStruct():view_id(0)
+			ViewStruct():
+				initialized(false)
+				,view_id(0)
 				,depthTextureStyle(DepthTextureStyle::PROJECTION)
 			{}
-
+			bool initialized;
 			int view_id;							///< An id unique to each rendered view, but persistent across frames.
 			math::Matrix4x4 view;					///< The view matrix. If considered as row-major, position information is in the 4th row.
 			math::Matrix4x4 proj;					///< The projection matrix, row-major.

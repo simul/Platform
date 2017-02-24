@@ -101,10 +101,30 @@ namespace simul
 			bool cubemap;
 			std::string name;
 			simul::crossplatform::TargetsAndViewport targetsAndViewport;
+			// For API's that don't track resources:
+			unsigned long long fence;
+			bool unfenceable;
 		public:
 			Texture(const char *name=NULL);
 			virtual ~Texture();
 			void SetName(const char *n);
+			/// Set the fence on this texture: it cannot be used until the fence has been triggered by the rendering API.
+			void SetFence(unsigned long long);
+			/// Get the current fence on this texture; it should not be used until the API has passed this fence.
+			unsigned long long GetFence() const;
+			/// Clear the fence: this texture is ok to use now.
+			void ClearFence();
+			/// Is the texture "unfenceable": if so, it need never be checked for fences, either because it is constant,
+			/// or because we don't care if it's not been updated.
+			bool IsUnfenceable() const
+			{
+				return unfenceable;
+			}
+			/// Set whether to never check for fences on this texture.
+			void SetUnfenceable(bool v)
+			{
+				unfenceable=v;
+			}
 			virtual void LoadFromFile(RenderPlatform *r,const char *pFilePathUtf8)=0;
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files)=0;
 			virtual bool IsValid() const=0;
@@ -137,6 +157,7 @@ namespace simul
 			}
 			//! Initialize this object as a wrapper around a native, platform-specific texture. The interpretations of t and srv are platform-dependent.
 			virtual void InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false)=0;
+			virtual void InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) {}
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
 				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false)=0;
