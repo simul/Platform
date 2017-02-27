@@ -483,10 +483,9 @@ EffectTechnique *Effect::CreateTechnique()
 void Effect::AddPass(std::string groupname,std::string techname, std::string passname, GLuint t)
 {
 	crossplatform::EffectTechnique *tech = EnsureTechniqueExists(groupname, techname, passname);
-	tech->passes_by_name[passname] = (void*)t;
 	int pass_idx = (int)tech->passes_by_index.size();
-	tech->passes_by_index[pass_idx] = (void*)t;
-	tech->pass_indices[passname] = pass_idx;
+	tech->AddPass( passname.c_str(),pass_idx);
+	tech->passes_by_name[passname]->SetPlatformPass((void*)t);
 }
 
 // convert GL programs into techniques and passes.

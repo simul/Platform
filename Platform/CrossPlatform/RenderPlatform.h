@@ -65,6 +65,79 @@ namespace simul
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const Viewport *vi,const Texture *t);
 		/// A base class for API-specific rendering.
 
+		
+		struct TextureAssignment
+		{
+			crossplatform::Texture *texture;
+			int dimensions;
+			bool uav;
+			int mip;// if -1, it's the whole texture.
+			int index;	// if -1 it's the whole texture
+			crossplatform::ShaderResourceType resourceType;
+		};
+		/// A structure to describe the state that is associated with a given deviceContext.
+		/// When rendering is to be performed, we can ensure that the state is applied.
+		struct ContextState
+		{
+			ContextState()
+				:last_action_was_compute(false)
+				,currentEffectPass(NULL)
+				,currentTechnique(NULL)
+				,currentEffect(NULL)
+				,effectPassValid(false)
+				,vertexBuffersValid(false)
+				,buffersValid(false)
+				,structuredBuffersValid(false)
+				,samplerStateOverridesValid(false)
+				,textureAssignmentMapValid(false)
+				,streamoutTargetsValid(false)
+				,textureSlots(0)
+				,rwTextureSlots(0)
+				,rwTextureSlotsForSB(0)
+				,textureSlotsForSB(0)
+				,bufferSlots(0)
+			{
+
+			}
+			bool last_action_was_compute;
+			std::unordered_map<int,crossplatform::Buffer*> applyVertexBuffers;
+			std::unordered_map<int,crossplatform::Buffer*> streamoutTargets;
+			std::unordered_map<int,crossplatform::ConstantBufferBase*> applyBuffers;
+			std::unordered_map<int,crossplatform::PlatformStructuredBuffer*> applyStructuredBuffers;
+			std::unordered_map<int,crossplatform::SamplerState*> samplerStateOverrides;
+			std::unordered_map<int, TextureAssignment> textureAssignmentMap;
+			crossplatform::EffectPass *currentEffectPass;
+			crossplatform::EffectTechnique *currentTechnique;
+			crossplatform::Effect *currentEffect;
+			void invalidate()
+			{
+				effectPassValid=false;
+				vertexBuffersValid=false;
+				buffersValid=false;
+				structuredBuffersValid=false;
+				samplerStateOverridesValid=false;
+				textureAssignmentMapValid=false;
+				streamoutTargetsValid=false;
+				textureSlots=0;
+				rwTextureSlots=0;
+				rwTextureSlotsForSB=0;
+				textureSlotsForSB=0;
+				bufferSlots=0;
+			}
+			bool effectPassValid;
+			bool vertexBuffersValid;
+			bool buffersValid;
+			bool structuredBuffersValid;
+			bool samplerStateOverridesValid;
+			bool textureAssignmentMapValid;
+			bool streamoutTargetsValid;
+			unsigned textureSlots;
+			unsigned rwTextureSlots;
+			unsigned rwTextureSlotsForSB;
+			unsigned textureSlotsForSB;
+			unsigned bufferSlots;
+		};
+
 		/*! RenderPlatform is an interface that allows Simul's rendering functions to be developed
 			in a cross-platform manner. By abstracting the common functionality of the different graphics API's
 			into an interface, we can write render code that need not know which API is being used. It is possible
@@ -81,6 +154,8 @@ namespace simul
 			virtual void ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true){}
 			virtual Viewport PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index);
 		public:
+			/// Get the current state to be applied to the given context at the next draw or dispatch.
+			crossplatform::ContextState *GetContextState(crossplatform::DeviceContext &deviceContext);
 			virtual void T1(){}
 			RenderPlatform(simul::base::MemoryInterface*m=NULL);
 			virtual ~RenderPlatform();
@@ -249,6 +324,8 @@ namespace simul
 			virtual void					ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
 			//! Query for the texture value at the specified position in the texture. On most API's, the query will have a few frames' latency.
 			vec4							TexelQuery(DeviceContext &deviceContext,int query_id,uint2 pos,Texture *texture);
+			virtual void					WaitForGpu(DeviceContext &deviceContext){}
+			virtual void					WaitForFencedResources(crossplatform::DeviceContext &deviceContext){}
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY, mirrorY2, mirrorYText;
 			crossplatform::Effect *solidEffect;
@@ -285,6 +362,7 @@ namespace simul
 			crossplatform::GpuProfiler		*gpuProfiler;
 			bool can_save_and_restore;
 		public:		
+			std::map<const void *,ContextState *> contextState;
 			crossplatform::GpuProfiler		*GetGpuProfiler();
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
@@ -317,6 +395,7 @@ namespace simul
 				return;
 			if (effect&&platformConstantBuffer)
 			{
+				defaultName=name;
 				platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);
 				linkedEffects.insert(effect);
 				effect->StoreConstantBufferLink(this);

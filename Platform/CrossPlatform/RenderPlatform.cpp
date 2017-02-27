@@ -32,6 +32,11 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,debugEffect(NULL)
 	,textured(NULL)
 	,showVolume(NULL)
+#ifdef _XBOX_ONE
+	,can_save_and_restore(false)
+#else
+	,can_save_and_restore(true)
+#endif
 {
 	immediateContext.renderPlatform=this;
 	gpuProfiler=new GpuProfiler;
@@ -41,6 +46,17 @@ RenderPlatform::~RenderPlatform()
 {
 	InvalidateDeviceObjects();
 	delete gpuProfiler;
+}
+
+crossplatform::ContextState *RenderPlatform::GetContextState(crossplatform::DeviceContext &deviceContext)
+{
+	auto i=contextState.find(deviceContext.platform_context);
+	if(i==contextState.end())
+	{
+		contextState[deviceContext.platform_context]=new crossplatform::ContextState;
+		i=contextState.find(deviceContext.platform_context);
+	}
+	return i->second;
 }
 
 ID3D11Device *RenderPlatform::AsD3D11Device()
@@ -645,6 +661,8 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	{
 		int m=tex->GetMipCount();
 		displayLod=float((lod%(m?m:1)));
+		if(!tex->IsValid())
+			tex=nullptr;
 	}
 	
 	debugConstants.debugGamma=gamma;

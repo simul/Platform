@@ -283,9 +283,22 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 	texc.y		=1.0-texc.y;
 	vec4 res	=multiplier*texture_nearest_lod(imageTexture,texc.xy,0);
 	res.rgb		+=res.aaa;
-	//res.rg += .2*texc;
+	//res.rgb=IN.texCoords.xyy;
 	return res;
 }
+
+shader vec4 PS_ShowTextureRadial(posTexVertexOutput IN) : SV_TARGET
+{
+	vec2 offs	=IN.texCoords.xy-vec2(.5,.5);
+	float rad	=length(offs)/0.5;
+	float azim	=frac(atan2(offs.x,offs.y)/(2.0*3.1415926536));
+	vec2 texc	=vec2(azim,rad);
+	vec4 res	=texture_nearest_lod(imageTexture,texc.xy,0);
+	res			*=step(rad,1.0);
+	//res.rgb=IN.texCoords.xyy;
+	return res;
+}
+
 shader vec4 PS_Untextured(posTexVertexOutput IN) : SV_TARGET
 {
 	vec4 res	=multiplier;
@@ -350,7 +363,10 @@ vec4 ShowDepthPS(posTexVertexOutput IN,bool reverseDepth)
 		dist.xy		=dist.zw;
 	dist.z			=0;
     vec4 result		=vec4(pow(dist.xyz,vec3(0.44,0.44,0.44)),1.0);
-
+	if (depth.x <= 0)
+		return vec4(1, 0, 0, 0);
+	if (depth.x== 1.0)
+		return vec4(0, 0, 1, 0);
 	return result;
 }
 
@@ -639,6 +655,24 @@ technique clear
     }
 }
 
+BlendState DontWriteColour
+{
+	BlendEnable[0]	=FALSE;
+	RenderTargetWriteMask[0]=0;
+};
+technique clear_depth
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontWriteColour, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_simplefullscreen_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_Clear()));
+    }
+}
+
 
 BlendState AlphaBlendNoAlphaWrite
 {
@@ -652,6 +686,20 @@ BlendState NoBlendNoAlphaWrite
 {
 	BlendEnable[0] = FALSE;
 	RenderTargetWriteMask[0]=7;
+	SrcBlend			= ONE;
+	DestBlend			= ZERO;
+};
+
+BlendState NoBlendSetAlpha
+{
+	BlendEnable[0] = FALSE;
+	RenderTargetWriteMask[0]=7;
+	SrcBlend			= ONE;
+	DestBlend			= ZERO;
+    BlendOp				= ADD;
+    SrcBlendAlpha		= ZERO;
+    DestBlendAlpha		= ZERO;
+    BlendOpAlpha		= ADD;
 };
 
 technique show_cubemap_array
@@ -673,6 +721,28 @@ technique show_cubemap_array
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowCubemapArray()));
+    }
+}
+
+technique show_texture
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
+    }
+    pass blend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
     }
 }
 
@@ -698,13 +768,26 @@ technique show_cubemap
     }
 }
 
+technique radial
+{
+    pass noblend
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlendSetAlpha, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureRadial()));
+    }
+}
+
 technique textured
 {
     pass noblend
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendSetAlpha, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
@@ -713,7 +796,7 @@ technique textured
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
@@ -726,7 +809,7 @@ technique untextured
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_Untextured()));
@@ -735,7 +818,7 @@ technique untextured
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_Untextured()));
@@ -747,7 +830,7 @@ technique show_volume
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowVolume()));
@@ -769,7 +852,7 @@ technique texturedMS
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureMS()));
@@ -799,7 +882,7 @@ technique draw_cubemap
 		SetVertexShader(CompileShader(vs_5_0,VS_DrawCubemap()));
 		SetPixelShader(CompileShader(ps_5_0,PS_DrawCubemap()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
     pass blend  
     {		
@@ -808,7 +891,7 @@ technique draw_cubemap
 		SetVertexShader(CompileShader(vs_5_0,VS_DrawCubemap()));
 		SetPixelShader(CompileShader(ps_5_0,PS_DrawCubemap()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 }
 
@@ -821,7 +904,7 @@ technique draw_cubemap_sphere
 		SetVertexShader(CompileShader(vs_5_0,VS_DrawCubemapSphere()));
 		SetPixelShader(CompileShader(ps_5_0,PS_DrawCubemap()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 }
 
@@ -869,7 +952,7 @@ technique show_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepth_Reverse()));
@@ -878,7 +961,7 @@ technique show_depth
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepth_Forward()));
@@ -890,7 +973,7 @@ technique show_depth_cube
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthCube_Reverse()));
@@ -899,7 +982,7 @@ technique show_depth_cube
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthCube_Forward()));
@@ -912,7 +995,7 @@ technique show_depth_ms
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthMS_Reverse()));
@@ -921,7 +1004,7 @@ technique show_depth_ms
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowDepthMS_Forward()));
@@ -934,7 +1017,7 @@ technique compacted_texture
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(NoBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));
@@ -943,7 +1026,7 @@ technique compacted_texture
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_CompactedTexture()));

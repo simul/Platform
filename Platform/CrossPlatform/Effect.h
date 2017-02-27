@@ -319,10 +319,9 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{
 		protected:
-			int index;
 			bool changed;
 		public:
-			PlatformConstantBuffer():index(0),changed(true){}
+			PlatformConstantBuffer():changed(true){}
 			virtual ~PlatformConstantBuffer(){}
 			virtual void RestoreDeviceObjects(RenderPlatform *dev,size_t sz,void *addr)=0;
 			virtual void InvalidateDeviceObjects()=0;
@@ -333,16 +332,12 @@ namespace simul
 				Apply(deviceContext,size,addr);
 			}
 			virtual void Unbind(DeviceContext &deviceContext)=0;
-			int GetIndex() const
-			{
-				return index;
-			}
 			void SetChanged()
 			{
 				changed=true;
 			}
 			/// For RenderPlatform's use only: do not call.
-			virtual void ActualApply(simul::crossplatform::DeviceContext &,EffectPass *){}
+			virtual void ActualApply(simul::crossplatform::DeviceContext &,EffectPass *,int){}
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT ConstantBufferBase
 		{
@@ -497,8 +492,15 @@ namespace simul
 			virtual void SetData(crossplatform::DeviceContext &deviceContext,void *data)=0;
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return NULL;}
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int =0){return NULL;}
+			void ResetCopies()
+			{
+				numCopies=0;
+			}
 			/// For RenderPlatform's use only: do not call.
 			virtual void ActualApply(simul::crossplatform::DeviceContext & /*deviceContext*/,EffectPass * /*currentEffectPass*/,int /*slot*/){}
+		};
+		class SIMUL_CROSSPLATFORM_EXPORT BaseStructuredBuffer
+		{
 		};
 
 		/// Templated structured buffer, which uses platform-specific implementations of PlatformStructuredBuffer.
@@ -507,7 +509,7 @@ namespace simul
 		/// \code
 		/// 	StructuredBuffer<Example> example;
 		/// \endcode
-		template<class T> class StructuredBuffer 
+		template<class T> class StructuredBuffer : public BaseStructuredBuffer
 		{
 			PlatformStructuredBuffer *platformStructuredBuffer;
 		public:
@@ -593,22 +595,30 @@ namespace simul
 				platformStructuredBuffer=NULL;
 				count=0;
 			}
+			void ResetCopies()
+			{
+				if(platformStructuredBuffer)
+					platformStructuredBuffer->ResetCopies();
+			}
+
 			int count;
 		};
 		class Texture;
 		class SamplerState;
 		struct ShaderResource
 		{
-			ShaderResource():valid(false){}
+			ShaderResource():slot(-1),dimensions(-1),valid(false){}
 			ShaderResourceType shaderResourceType;
 			void *platform_shader_resource;
+			int slot;
+			int dimensions;
 			bool valid;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectTechnique
 		{
 		public:
-			typedef std::map<std::string,void *> PassMap;
-			typedef std::map<int,void *> PassIndexMap;
+			typedef std::map<std::string,EffectPass *> PassMap;
+			typedef std::map<int,EffectPass *> PassIndexMap;
 			typedef std::map<std::string,int> IndexMap;
 			std::string name;
 			PassMap passes_by_name;
@@ -616,7 +626,6 @@ namespace simul
 			IndexMap pass_indices;
 			EffectTechnique();
 			virtual ~EffectTechnique();
-			virtual int NumPasses() const=0;
 			void *platform_technique;
 			inline ID3DX11EffectTechnique *asD3DX11EffectTechnique()
 			{
@@ -637,6 +646,20 @@ namespace simul
 					return -1;
 				return pass_indices[str];
 			}
+			bool shouldFenceOutputs() const
+			{
+				return should_fence_outputs;
+			}
+			
+			void setShouldFenceOutputs(bool f) 
+			{
+				should_fence_outputs=f;
+			}
+			bool should_fence_outputs;
+			int NumPasses() const;
+			virtual EffectPass *AddPass(const char *name,int i);
+			EffectPass *GetPass(int i);
+			EffectPass *GetPass(const char *name);
 		};
 		typedef std::map<std::string,EffectTechnique *> TechniqueMap;
 		typedef std::unordered_map<const char *,EffectTechnique *> TechniqueCharMap;
@@ -710,27 +733,44 @@ namespace simul
 			}
 			void InvalidateDeviceObjects();
 			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
-			void Load(RenderPlatform *renderPlatform,const char *filename_utf8)
+			void Load(RenderPlatform *r,const char *filename_utf8)
 			{
 				std::map<std::string,std::string> defines;
-				Load(renderPlatform,filename_utf8,defines);
+				Load(r,filename_utf8,defines);
+			}
+			// Which texture is at this slot. Warning: slow.
+			std::string GetTextureForSlot(int s) const
+			{
+				for(auto i:textureDetailsMap)
+				{
+					if(i.second->slot==s)
+						return i.first;
+				}
+				return std::string("Unknown");
+
 			}
 			EffectTechniqueGroup *GetTechniqueGroupByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByName(const char *name);
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
 			//! Set the texture for read-write access by compute shaders in this effect.
-			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int index=-1,int mip=-1)	=0;
+			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int index=-1,int mip=-1)	;
 			virtual ShaderResource GetShaderResource(const char *name)=0;
 			//! Set the texture for read-write access by compute shaders in this effect.
-			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,ShaderResource &name,Texture *tex,int index=-1,int mip=-1)	=0;
+			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,ShaderResource &name,Texture *tex,int index=-1,int mip=-1)	;
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
-			virtual void SetTexture		(DeviceContext &deviceContext,ShaderResource &name	,Texture *tex,int array_idx=-1,int mip=-1)=0;
+			virtual void SetTexture		(DeviceContext &deviceContext,ShaderResource &name	,Texture *tex,int array_idx=-1,int mip=-1);
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
-			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex,int array_idx=-1,int mip=-1)=0;
+			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex,int array_idx=-1,int mip=-1);
+			
 			//! Set the texture for this effect.
 			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s)=0;
 			//! Set a constant buffer for this effect.
 			virtual void SetConstantBuffer(DeviceContext &deviceContext,const char *name	,ConstantBufferBase *s)=0;
+			//! Set a constant buffer for this effect.
+			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s)
+			{
+				SetConstantBuffer(deviceContext,s->GetDefaultName(),s);
+			}
 			/// Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,const char *tech_name,const char *pass);
 			/// Activate the shader. Unapply must be called after rendering is done.
@@ -748,6 +788,11 @@ namespace simul
 
 			void StoreConstantBufferLink(crossplatform::ConstantBufferBase *);
 			bool IsLinkedToConstantBuffer(crossplatform::ConstantBufferBase*) const;
+			
+			int GetSlot(const char *name);
+			int GetSamplerStateSlot(const char *name);
+			int GetDimensions(const char *name);
+			crossplatform::ShaderResourceType GetResourceType(const char *name);
 		};
 	}
 }

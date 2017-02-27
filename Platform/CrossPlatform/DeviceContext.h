@@ -24,10 +24,13 @@ namespace simul
 			void *platform_context;
 			RenderPlatform *renderPlatform;
 			EffectTechnique *activeTechnique;
+			long long frame_number;
+			bool initialized;
 			DeviceContext():
 				platform_context(0)
 				,renderPlatform(0)
 				,activeTechnique(0)
+				,frame_number(0)
 			{
 				viewStruct.depthTextureStyle=crossplatform::PROJECTION;
 			}

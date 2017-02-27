@@ -292,11 +292,11 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *,void *t,
 }
 
 bool Texture::ensureTexture2DSizeAndFormat(simul::crossplatform::RenderPlatform *,int w,int l
-	,crossplatform::PixelFormat p,bool computable,bool rendertarget,bool depthstencil,int /*num_samples*/,int /*aa_quality*/,bool wrap)
+	,crossplatform::PixelFormat p,bool comp,bool rendertarget,bool depthstencil,int /*num_samples*/,int /*aa_quality*/,bool wrap)
 {
-	if(w==width&&l==length&&pixelFormat==p&&this->computable==computable)
+	if(w==width&&l==length&&pixelFormat==p&&this->computable==comp)
 		return false;
-	this->computable=computable;
+	this->computable=comp;
 GL_ERROR_CHECK
 	pixelFormat=p;
 	GLuint internal_format=opengl::RenderPlatform::ToGLFormat(pixelFormat);
@@ -359,12 +359,12 @@ GL_ERROR_CHECK
 	return true;
 }
 
-bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int num_layers,int m,crossplatform::PixelFormat f,bool computable,bool /*rendertarget*/,bool cubemap)
+bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,int w,int l,int num_layers,int m,crossplatform::PixelFormat f,bool comp,bool /*rendertarget*/,bool cubemap)
 {
 	pixelFormat=f;
-	if(w==width&&l==length&&cubemap==this->cubemap&&computable==this->IsComputable())
+	if(w==width&&l==length&&cubemap==this->cubemap&&comp==this->IsComputable())
 		return false;
-	this->computable=computable;
+	this->computable=comp;
 	InvalidateDeviceObjects();
 	this->cubemap=cubemap;
 	pixelFormat=f;
@@ -409,7 +409,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *,in
 		glBindTexture(GL_TEXTURE_2D_ARRAY,0);
 	GL_ERROR_CHECK
 	}
-	if(computable&&num_layers>0)
+	if(comp&&num_layers>0)
 	{
 		FreeViewTables();
 		InitViewTables(num_layers,m);

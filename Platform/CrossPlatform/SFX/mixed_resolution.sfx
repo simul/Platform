@@ -8,6 +8,7 @@
 #include "../SL/debug_constants.sl"
 
 uniform TEXTURE2DMS_FLOAT4 sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
+uniform TEXTURE2DMS_FLOAT4 sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2D sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);
 
 uniform Texture2DArray<vec4> previousCombinedTexture;
