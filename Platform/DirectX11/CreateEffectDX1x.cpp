@@ -660,7 +660,7 @@ static const DWORD default_effect_flags=0;
 					pVs->GetVertexShader(vsPassDesc.ShaderIndex,&vertexShader);
 					if(vertexShader)
 					{
-						simul::dx11::SetDebugObjectName(vertexShader,filename_utf8.c_str());
+					//	simul::dx11::SetDebugObjectName(vertexShader,filename_utf8.c_str());
 						vertexShader->Release();
 					}
 				}
@@ -676,47 +676,6 @@ static const DWORD default_effect_flags=0;
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
 #endif
-
-
-HRESULT Map2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp)
-{
-	return pImmediateContext->Map(tex,0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-}
-
-HRESULT Map3D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture3D *tex,D3D1x_MAPPED_TEXTURE3D *mp)
-{
-	return pImmediateContext->Map(tex,0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-}
-
-HRESULT Map1D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture1D *tex,D3D1x_MAPPED_TEXTURE1D *mp)
-{
-	return pImmediateContext->Map(tex,0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-}
-
-void Unmap2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex)
-{
-	pImmediateContext->Unmap(tex,0);
-}
-
-void Unmap3D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture3D *tex)
-{
-	pImmediateContext->Unmap(tex,0);
-}
-
-void Unmap1D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture1D *tex)
-{
-	pImmediateContext->Unmap(tex,0);
-}
-
-HRESULT MapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuffer,D3D11_MAPPED_SUBRESOURCE*vert)
-{
-	return pImmediateContext->Map(vertexBuffer,0,D3D1x_MAP_WRITE_DISCARD,0,vert);
-}
-
-void UnmapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuffer)
-{
-	pImmediateContext->Unmap(vertexBuffer,0);
-}
 
 HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass)
 {

@@ -233,7 +233,11 @@ namespace simul
 		{
 		  #if (defined(_DEBUG) || defined(PROFILE)) && !defined(_XBOX_ONE)
 			if(resource)
-				resource->SetPrivateData(WKPDID_D3DDebugObjectName,(UINT)(name?strlen(name):0),name?name:"un-named resource");
+			{
+				char str[200];
+				sprintf_s(str,199,"%s %lld",name,(unsigned long long)resource);
+			//	resource->SetPrivateData(WKPDID_D3DDebugObjectName,(UINT)(strlen(str)),str);
+			}
 			#else
 			name;resource;
 		  #endif

@@ -160,7 +160,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
 	mainShaderResourceView	=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8,pathsUtf8);
-	SetDebugObjectName(texture,pFilePathUtf8);
+	dx11::SetDebugObjectName(texture,pFilePathUtf8);
 }
 
 void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files)
@@ -795,7 +795,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 
-		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
+		dx11::SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 		srv_desc.Format						=srvFormat;
@@ -805,7 +805,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		SAFE_RELEASE(mainShaderResourceView);
 		SAFE_RELEASE(arrayShaderResourceView);
 		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&mainShaderResourceView));
-		SetDebugObjectName(mainShaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat mainShaderResourceView");
+		dx11::SetDebugObjectName(mainShaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat mainShaderResourceView");
 	}
 	if(computable&&(!layerMipUnorderedAccessViews||!ok))
 	{
@@ -824,14 +824,14 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		{
 			uav_desc.Texture2D.MipSlice=i;
 			V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
-			SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			dx11::SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
 		if(layerMipUnorderedAccessViews)
 		for(int i=0;i<m;i++)
 		{
 			uav_desc.Texture2D.MipSlice=i;
 			V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][i]));
-			SetDebugObjectName(layerMipUnorderedAccessViews[0][i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			dx11::SetDebugObjectName(layerMipUnorderedAccessViews[0][i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
 	}
 	if(rendertarget&&(!renderTargetViews||!ok))
@@ -848,7 +848,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		{
 			renderTargetViewDesc.Texture2D.MipSlice	=j;
 			V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[0][j])));
-			SetDebugObjectName((renderTargetViews[0][j]),"dx11::Texture::ensureTexture2DSizeAndFormat renderTargetView");
+			dx11::SetDebugObjectName((renderTargetViews[0][j]),"dx11::Texture::ensureTexture2DSizeAndFormat renderTargetView");
 		}
 	}
 	if(depthstencil&&(!depthStencilView||!ok))
@@ -863,7 +863,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		SAFE_RELEASE(depthStencilView);
 		V_CHECK(pd3dDevice->CreateDepthStencilView(texture,&depthDesc,&depthStencilView));
 	}
-	SetDebugObjectName(texture,"ensureTexture2DSizeAndFormat");
+	dx11::SetDebugObjectName(texture,"ensureTexture2DSizeAndFormat");
 	mips=m;
 	arraySize=1;
 	return !ok;
@@ -948,7 +948,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		{
 			uav_desc.Texture2DArray.MipSlice=i;
 			V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
-			SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			dx11::SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
 		if (layerMipUnorderedAccessViews)
 			for (int i = 0; i < total_num; i++)
@@ -958,7 +958,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			uav_desc.Texture2DArray.ArraySize=1;
 					uav_desc.Texture2DArray.MipSlice = j;
 					V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[i][j]));
-					SetDebugObjectName(layerMipUnorderedAccessViews[i][j], "dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+					dx11::SetDebugObjectName(layerMipUnorderedAccessViews[i][j], "dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 				}
 		}
 
@@ -983,7 +983,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			}
 		}
 	}
-	SetDebugObjectName(texture,"ensureTextureArraySizeAndFormat");
+	dx11::SetDebugObjectName(texture,"ensureTextureArraySizeAndFormat");
 
 	mips=m;
 	arraySize=num;
@@ -1174,7 +1174,7 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 		{
 			uav_desc.Texture1D.MipSlice=j;
 			V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][j]));
-			SetDebugObjectName(layerMipUnorderedAccessViews[0][j],"dx11::Texture::ensureTexture1DSizeAndFormat unorderedAccessView");
+			dx11::SetDebugObjectName(layerMipUnorderedAccessViews[0][j],"dx11::Texture::ensureTexture1DSizeAndFormat unorderedAccessView");
 		}
 	}
 	mips=m;

@@ -3,11 +3,14 @@
 #define SIMUL_2D_CLOUD_CONSTANTS_SL
 
 SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
+	uniform uint4 targetRange2d[6];
+	uniform uint4 cubemapFaceIndex2d[6];
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform mat4 worldViewProj;
 	uniform mat4 invViewProj;
 	//uniform mat4 frustumViewProj; as opposed to cubemap - not used.
 	uniform mat4 worldToScatteringVolumeMatrix;
+	uniform vec4 tanHalfFov;
 
 	uniform vec3 origin;
 	uniform float globalScale;
@@ -33,7 +36,7 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform float fractalWavelength;
 	uniform float fractalAmplitude;
 	
-	uniform vec2 tanHalfFov;
+	uniform vec2 tanHalfFovUnused;
 	uniform float nearZ;
 	uniform float detailDensity;
 
@@ -50,11 +53,11 @@ SIMUL_CONSTANT_BUFFER(Cloud2DConstants,11)
 	uniform vec3 cloudIrRadiance;
 	uniform float exposure;
 	
-	uniform uint4 targetRange;
 	uniform uint2 edge;
 	uniform uint2 amortizationScale;
 
 	uniform uint2 amortizationOffset;
+	uniform uint2 filler;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(Detail2DConstants,12)

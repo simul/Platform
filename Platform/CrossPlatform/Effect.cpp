@@ -3,6 +3,7 @@
 #endif
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
+#include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include <iostream>
 
@@ -170,6 +171,11 @@ EffectTechnique *EffectTechniqueGroup::GetTechniqueByIndex(int index)
 	return techniques_by_index[index];
 }
 
+int EffectTechnique::NumPasses() const
+{
+	return (int)passes_by_name.size();
+}
+
 EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 {
 	auto i=groupCharMap.find(name);
@@ -179,6 +185,26 @@ EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 	if(j!=groups.end())
 		return j->second;
 	return nullptr;
+}
+
+
+void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &res,crossplatform::Texture *tex,int index,int mip)
+{
+}
+
+void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int index,int mip)
+{
+}
+
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, crossplatform::ShaderResource &res, crossplatform::Texture *tex,int index,int mip)
+{
+	// If not valid, we've already put out an error message when we assigned the resource, so fail silently. Don't risk overwriting a slot.
+	if(!res.valid)
+		return;
+}
+
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::Texture *t,int index, int mip)
+{
 }
 
 EffectDefineOptions simul::crossplatform::CreateDefineOptions(const char *name,const char *option1)
@@ -258,6 +284,19 @@ void Effect::Apply(DeviceContext &deviceContext,const char *tech_name,int pass)
 	Apply(deviceContext,GetTechniqueByName(tech_name),pass);
 }
 
+
+void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
+{
+	currentTechnique				=effectTechnique;
+	currentPass=pass_num;
+}
+
+
+void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)
+{
+	currentTechnique				=effectTechnique;
+}
+
 void Effect::StoreConstantBufferLink(crossplatform::ConstantBufferBase *b)
 {
 	linkedConstantBuffers.insert(b);
@@ -266,4 +305,15 @@ void Effect::StoreConstantBufferLink(crossplatform::ConstantBufferBase *b)
 bool Effect::IsLinkedToConstantBuffer(crossplatform::ConstantBufferBase*b) const
 {
 	return (linkedConstantBuffers.find(b)!=linkedConstantBuffers.end());
+}
+
+
+const ShaderResource *Effect::GetTextureDetails(const char *name)
+{
+	return nullptr;
+}
+
+
+void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
+{
 }

@@ -15,6 +15,7 @@ uniform TextureCubeArray cubeTextureArray;
 uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
 uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
 uniform RWTexture2D<vec4> FastClearTarget;
+uniform RWTexture2DArray<vec4> FastClearTarget2DArray;
 uniform RWTexture3D<vec4> FastClearTarget3D;
 uniform RWStructuredBuffer<vec4> textureQueryResults;
 
@@ -30,11 +31,6 @@ struct v2f
 {
     vec4 hPosition	: SV_POSITION;
     vec4 colour		: TEXCOORD0;
-};
-
-struct vec3input
-{
-    vec3 position	: POSITION;
 };
 
 shader posTexVertexOutput VS_Quad(idOnly id)
@@ -153,6 +149,11 @@ shader vec4 PS_ShowCubemapArray(posTexVertexOutput IN) : SV_TARGET
 	res		=vec4(pow(res.xyz,vec3(0.44,0.44,0.44))+N,1.0);
 	return res;
 }
+
+struct vec3input
+{
+    vec3 position	: POSITION;
+};
 
 struct v2f_cubemap
 {
@@ -527,14 +528,22 @@ shader vec4 PS_Clear(posTexVertexOutput IN) : SV_TARGET
 	return debugColour;
 }
 
-[numthreads(4,4,1)]
+[numthreads(8,8,1)]
 shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	uint2 sub_pos = g.xy * 4 + t.xy;
+	uint2 sub_pos = g.xy * 8 + t.xy;
 	if(sub_pos.x<texSize.x&&sub_pos.y<texSize.y)
 	{
 		FastClearTarget[sub_pos] = debugColour;
 	}
+}
+
+[numthreads(8,8,1)]
+shader void CS_Clear2DArray(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos =uint3(g.xy * 8 + t.xy,t.z);
+	if(sub_pos.x<texSize.x&&sub_pos.y<texSize.y)
+		FastClearTarget2DArray[sub_pos] = debugColour;
 }
 
 [numthreads(4,4,4)]
@@ -590,6 +599,14 @@ technique compute_clear
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Clear()));
+    }
+}
+
+technique compute_clear_2d_array
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Clear2DArray()));
     }
 }
 

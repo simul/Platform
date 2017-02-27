@@ -86,6 +86,7 @@ namespace simul
 			int currFrame;
 			QueryType type;
 			bool gotResults[QueryLatency];
+			bool doneQuery[QueryLatency];
 			Query(QueryType t)
 				:QueryStarted(false)
 				,QueryFinished(false)
@@ -93,7 +94,10 @@ namespace simul
 				,type(t)
 			{
 				for(int i=0;i<QueryLatency;i++)
+				{
 					gotResults[i]=true;
+					doneQuery[i]=false;
+				}
 			}
 			virtual ~Query()
 			{
@@ -242,6 +246,8 @@ namespace simul
 				,textureSlotsForSB(0)
 				,rwTextureSlots(0)
 				,rwTextureSlotsForSB(0)
+				,should_fence_outputs(true)
+				,platform_pass(nullptr)
 			{}
 			virtual ~EffectPass(){}
 			bool usesTextureSlot(int s) const;
@@ -257,7 +263,15 @@ namespace simul
 			bool usesBuffers() const;
 			bool usesSamplers() const;
 			bool usesRwTextures() const;
+			bool shouldFenceOutputs() const
+			{
+				return should_fence_outputs;
+			}
 
+			void setShouldFenceOutputs(bool f) 
+			{
+				should_fence_outputs=f;
+			}
 			void SetUsesBufferSlots(unsigned);
 			void SetUsesTextureSlots(unsigned);
 			void SetUsesTextureSlotsForSB(unsigned);
@@ -284,6 +298,14 @@ namespace simul
 			{
 				return bufferSlots;
 			}
+			void *GetPlatformPass()
+			{
+				return platform_pass;
+			}
+			void SetPlatformPass(void *p)
+			{
+				platform_pass=p;
+			}
 		protected:
 			unsigned samplerSlots;
 			unsigned bufferSlots;
@@ -291,6 +313,8 @@ namespace simul
 			unsigned textureSlotsForSB;
 			unsigned rwTextureSlots;
 			unsigned rwTextureSlotsForSB;
+			bool should_fence_outputs;
+			void *platform_pass;
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{
@@ -324,6 +348,7 @@ namespace simul
 		{
 		protected:
 			PlatformConstantBuffer *platformConstantBuffer;
+			std::string defaultName;
 		public:
 			ConstantBufferBase():platformConstantBuffer(NULL)
 			{
@@ -332,10 +357,18 @@ namespace simul
 			{
 				delete platformConstantBuffer;
 			}
+			const char *GetDefaultName() const
+			{
+				return defaultName.c_str();
+			}
+		
 			PlatformConstantBuffer *GetPlatformConstantBuffer()
 			{
 				return platformConstantBuffer;
 			}
+			virtual int GetIndex() const=0;
+			virtual size_t GetSize() const=0;
+			virtual void * GetAddr() const=0;
 			virtual void Apply(DeviceContext &deviceContext)=0;
 			virtual void Reapply(DeviceContext &deviceContext)=0;
 		};
@@ -343,7 +376,7 @@ namespace simul
 		{
 			std::set<Effect*> linkedEffects;
 		public:
-			ConstantBuffer()
+			ConstantBuffer():ConstantBufferBase()
 			{
 				// Clear out the part of memory that corresponds to the base class.
 				// We should ONLY inherit from simple structs.
@@ -356,6 +389,21 @@ namespace simul
 			void copyTo(void *pData)
 			{
 				*(T*)pData = *this;
+			}
+			/// For Effect's use only, do not call.
+			size_t GetSize() const override
+			{
+				return sizeof(T);
+			}
+			/// For Effect's use only, do not call.
+			void * GetAddr() const override
+			{
+				return (void*)((T*)this);
+			}
+			/// Get the binding index in shaders.
+			int GetIndex() const override
+			{
+				return T::bindingIndex;
 			}
 			//! Create the buffer object.
 #ifdef _MSC_VER
@@ -374,6 +422,7 @@ namespace simul
 					return;
 				if (IsLinkedToEffect(effect))
 					return;
+				defaultName=name;
 				SIMUL_ASSERT(platformConstantBuffer!=nullptr);
 				SIMUL_ASSERT(effect!=nullptr);
 				if (effect&&platformConstantBuffer)
@@ -626,6 +675,15 @@ namespace simul
 			std::set<ConstantBufferBase*> linkedConstantBuffers;
 			std::map<const char *,crossplatform::ShaderResource> shaderResources;
 			GroupCharMap groupCharMap;
+			typedef std::unordered_map<std::string,ShaderResource*> TextureDetailsMap;
+			typedef std::unordered_map<const char *,ShaderResource*> TextureCharMap;
+			TextureDetailsMap textureDetailsMap;
+			mutable TextureCharMap textureCharMap;
+			std::unordered_map<std::string,crossplatform::SamplerState *> samplerStates;
+			std::unordered_map<std::string,crossplatform::RenderState *> depthStencilStates;
+			std::unordered_map<std::string,crossplatform::RenderState *> blendStates;
+			std::unordered_map<std::string,crossplatform::RenderState *> rasterizerStates;
+			const ShaderResource *GetTextureDetails(const char *name);
 		public:
 			GroupMap groups;
 			TechniqueMap techniques;
@@ -678,15 +736,15 @@ namespace simul
 			/// Activate the shader. Unapply must be called after rendering is done.
 			virtual void Apply(DeviceContext &deviceContext,const char *tech_name,int pass=0);
 			/// Activate the shader. Unapply must be called after rendering is done.
-			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass=0)=0;
+			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,int pass=0);
 			/// Activate the shader. Unapply must be called after rendering is done.
-			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,const char *pass)=0;
+			virtual void Apply(DeviceContext &deviceContext,EffectTechnique *effectTechnique,const char *pass);
 			/// Call Reapply between Apply and Unapply to apply the effect of modified constant buffers etc.
 			virtual void Reapply(DeviceContext &deviceContext)=0;
 			/// Deactivate the shader.
 			virtual void Unapply(DeviceContext &deviceContext)=0;
 			/// Zero-out the textures that are set for this shader. Call before apply.
-			virtual void UnbindTextures(crossplatform::DeviceContext &deviceContext)=0;
+			virtual void UnbindTextures(crossplatform::DeviceContext &deviceContext);
 
 			void StoreConstantBufferLink(crossplatform::ConstantBufferBase *);
 			bool IsLinkedToConstantBuffer(crossplatform::ConstantBufferBase*) const;

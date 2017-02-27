@@ -48,6 +48,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	for(int i=0;i<QueryLatency;i++)
 	{
 		gotResults[i]=true;
+		doneQuery[i]=false;
 		m_pd3dDevice->CreateQuery(&qdesc,&d3d11Query[i]);
 	}
 }
@@ -56,11 +57,19 @@ void Query::InvalidateDeviceObjects()
 	for(int i=0;i<QueryLatency;i++)
 		SAFE_RELEASE(d3d11Query[i]);
 	for(int i=0;i<QueryLatency;i++)
+	{
 		gotResults[i]=true;
+		doneQuery[i]=false;
+	}
 }
 
 void Query::Begin(crossplatform::DeviceContext &deviceContext)
 {
+	if(!gotResults[currFrame])
+	{
+		SIMUL_CERR<<"No results yet for this query."<<std::endl;
+		return;
+	}
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->Begin(d3d11Query[currFrame]);
 }
@@ -70,18 +79,18 @@ void Query::End(crossplatform::DeviceContext &deviceContext)
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->End(d3d11Query[currFrame]);
 	gotResults[currFrame]=false;
+	doneQuery[currFrame]=true;
 }
 
 bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)
 {
+	gotResults[currFrame]=true;
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	currFrame = (currFrame + 1) % QueryLatency;
+	if(!doneQuery[currFrame])
+		return false;
 	// Get the data from the "next" query - which is the oldest!
 	HRESULT hr=pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0);
-	if(hr== S_OK)
-	{
-		gotResults[currFrame]=true;
-	}
 	return hr== S_OK;
 }
 
@@ -214,7 +223,8 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 
 void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
 {
-	lastContext->Unmap(stagingBuffers[NUM_STAGING_BUFFERS-1], 0 );
+	if(numCopies>=NUM_STAGING_BUFFERS)
+		lastContext->Unmap(stagingBuffers[NUM_STAGING_BUFFERS-1], 0 );
 	mapped.pData=NULL;
 	lastContext=NULL;
 }
@@ -597,7 +607,11 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
 		auto srv=T->AsD3D11ShaderResourceView(shaderResource.shaderResourceType,index,mip);
-		V_CHECK(var->SetResource(srv));
+		HRESULT hr=(var->SetResource(srv));
+		if(hr!=S_OK)
+		{
+			SIMUL_BREAK_ONCE("Failed to set resource");
+		}
 	}
 	else
 	{
@@ -716,7 +730,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 			currentPass = tech->GetPassByName(passname);
 		if (!currentPass->IsValid())
 		{
-			const char *techname="";//effectTechnique->getName();
+			const char *techname=effectTechnique->name.c_str();
 			SIMUL_BREAK_ONCE(base::QuickFormat("Invalid pass %s sent to Effect::Apply for technique %s of shader %s\n",passname,techname,this->filename.c_str()));
 			D3DX11_TECHNIQUE_DESC desc;
 			ID3DX11EffectTechnique *t=const_cast<ID3DX11EffectTechnique*>(tech);
@@ -741,6 +755,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	{
 		SIMUL_BREAK_ONCE(base::QuickFormat("NULL technique sent to Effect::Apply for shader %s\n",this->filename.c_str()));
 	}
+	crossplatform::Effect::Apply(deviceContext,effectTechnique,passname);
 }
 
 void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
@@ -766,41 +781,24 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 	apply_count--;
 	if(currentPass)
 		currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
+	deviceContext.asD3D11DeviceContext()->CSSetShader(nullptr,nullptr,0);
+	deviceContext.asD3D11DeviceContext()->PSSetShader(nullptr,nullptr,0);
+	deviceContext.asD3D11DeviceContext()->VSSetShader(nullptr,nullptr,0);
 	currentTechnique=NULL;
 	currentPass = NULL;
 	//UnbindTextures(deviceContext);
 }
 void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 {
-	//if(apply_count!=1)
-	//	SIMUL_BREAK_ONCE(base::QuickFormat("UnbindTextures can only be called after Apply and before Unapply! Effect: %s\n",this->filename.c_str()))
-	ID3DX11Effect *effect			=asD3DX11Effect();
-
-	D3DX11_EFFECT_DESC edesc;
-	if(!effect)
-		return;
-	effect->GetDesc(&edesc);
-	for(unsigned i=0;i<edesc.GlobalVariables;i++)
-	{
-		ID3DX11EffectVariable *var	=effect->GetVariableByIndex(i);
-		D3DX11_EFFECT_VARIABLE_DESC desc;
-		var->GetDesc(&desc);
-		ID3DX11EffectType *s=var->GetType();
-		//if(var->IsShaderResource())
-		{
-			ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
-			if(srv->IsValid())
-				srv->SetResource(NULL);
-		}
-		//if(var->IsUnorderedAccessView())
-		{
-			ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
-			if(uav->IsValid())
-				uav->SetUnorderedAccessView(NULL);
-		}
-	}
-	if(apply_count!=1&&effect)
-	{
-		V_CHECK(effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->Apply(0,deviceContext.asD3D11DeviceContext()));
-	}
+	auto c=deviceContext.asD3D11DeviceContext();
+	static ID3D11ShaderResourceView *src[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	c->VSSetShaderResources(0, 32,src);
+	c->HSSetShaderResources(0, 32,src);
+	c->DSSetShaderResources(0, 32,src);
+	c->GSSetShaderResources(0, 32,src);
+	c->PSSetShaderResources(0, 32,src);
+	c->CSSetShaderResources(0, 32,src);
+	static ID3D11UnorderedAccessView *uav[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	c->CSSetUnorderedAccessViews(0, 8,uav,0);
+	crossplatform::Effect::UnbindTextures(deviceContext);
 }

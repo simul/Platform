@@ -638,7 +638,8 @@ void Direct3D11Manager::Shutdown()
 #ifndef _XBOX_ONE
 	if(d3dDebug)
 	{
-		d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+		// Watch out - this will ALWAYS BREAK, but that doesn't mean there are live objects.
+	//	d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 	}
 #endif
 	ReportMessageFilterState();

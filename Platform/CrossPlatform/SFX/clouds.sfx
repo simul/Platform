@@ -38,7 +38,7 @@ uniform Texture3D volumeInscatterTexture;
 uniform Texture2D rainMapTexture;
 /// The previous texture area:
 uniform Texture2DArray updateTexture;
-uniform RWTexture3D<uchar4> outputTexture3d;
+uniform RWTexture3D<uchar4> outputTexture3d		SIMUL_RWTEXTURE_REGISTER(1);
 
 uniform RWTexture2DArray<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);

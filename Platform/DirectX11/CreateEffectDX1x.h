@@ -74,16 +74,6 @@ namespace simul
 #ifndef D3DCOMPILE_OPTIMIZATION_LEVEL3
 #define D3DCOMPILE_OPTIMIZATION_LEVEL3            (1 << 15)
 #endif
-
-extern SIMUL_DIRECTX11_EXPORT HRESULT Map2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp);
-extern SIMUL_DIRECTX11_EXPORT void Unmap2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex);
-extern SIMUL_DIRECTX11_EXPORT HRESULT Map3D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture3D *tex,D3D1x_MAPPED_TEXTURE3D *mp);
-extern SIMUL_DIRECTX11_EXPORT void Unmap3D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture3D *tex);
-extern SIMUL_DIRECTX11_EXPORT HRESULT Map1D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture1D *tex,D3D1x_MAPPED_TEXTURE1D *mp);
-extern SIMUL_DIRECTX11_EXPORT void Unmap1D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture1D *tex);
-
-extern SIMUL_DIRECTX11_EXPORT HRESULT MapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuffer,D3D11_MAPPED_SUBRESOURCE *vert);
-extern SIMUL_DIRECTX11_EXPORT void UnmapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuffer);
 extern SIMUL_DIRECTX11_EXPORT HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass);
 
 #define PAD16(n) (((n)+15)/16*16)

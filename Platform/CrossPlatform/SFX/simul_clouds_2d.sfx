@@ -14,9 +14,9 @@ uniform Texture2DMS<vec4> depthTextureMS;
 uniform sampler2D illuminationTexture;
 uniform sampler2D lightTableTexture;
 /// The previous texture area:
-uniform Texture2D updateTexture				;
+uniform Texture2DArray updateTexture				;
 
-uniform RWTexture2D<vec4> outputTexture		SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture2DArray<vec4> outputTexture		SIMUL_RWTEXTURE_REGISTER(0);
 
 SamplerState samplerState 
 {
@@ -27,6 +27,9 @@ SamplerState samplerState
 
 #include "../SL/simul_2d_cloud_constants.sl"
 
+SIMUL_CONSTANT_BUFFER(CloudStaticConstants,12)
+	uniform mat4 cubeInvViewProj[6];	// Cubemap matrices
+SIMUL_CONSTANT_BUFFER_END
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/earth_shadow_uniforms.sl"
 #include "../SL/earth_shadow.sl"
@@ -271,33 +274,6 @@ shader vec4 RandomPS(v2f2 IN) : SV_TARGET
     return frac(c);
 }
 
-vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture,float amplitude,float density,float diffusivity,float foctaves)
-{
-	float dens				=0.0;
-	float mult				=0.5;
-	float current_phase		=phase;
-	int ioctaves			=int(foctaves)+1;
-    for(int i=0;i<6;i++)//
-    {
-		if(i>=ioctaves)
-			break;
-		vec4 c				=saturate(1.5*texture_wrap(imageTexture,texcoords)-0.5);
-		vec2 u				=saturate(cos(2.0*3.14159*texcoords.xy+current_phase)/(1.515+7.135*c.a)+c.a);//(c+current_phase));
-		mult				*=saturate(foctaves-i);
-		texcoords			*=2.0;
-		vec2 texc_offset	=vec2(0.1,0.1)*amplitude*u.xy;
-		texcoords			+=mult*texc_offset;
-		dens				+=mult*(u.x*u.y);
-		dens				*=saturate(1.0-.4*mult*length(texc_offset));
-		mult				*=persistence;
-		current_phase		*=2.0;
-    }
-    vec4 result;
-	float a=0;//amplitude/240.0;
-	result.a			=saturate((dens+2.0*density+diffusivity-2.0-a)/(1-a)/diffusivity);
-	result.xyz			=result.aaa;//saturate(dens*1.5);
-    return result;
-}
 
 shader vec4 DetailPS(v2f2 IN) : SV_TARGET
 {
@@ -309,7 +285,7 @@ shader vec4 DetailLightingPS(v2f2 IN) : SV_TARGET
     return DetailLighting(imageTexture,IN.texCoords,vec2(detailTextureSize,detailTextureSize));
 }
 
-void CSClouds2D(uint2 pos,bool depth)
+void CSClouds2D(uint3 pos,bool depth)
 {
 	// offset by one texel to allow -1 in x and y:
 	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize1);
@@ -318,7 +294,7 @@ void CSClouds2D(uint2 pos,bool depth)
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
 
-	vec3 view				=-normalize(mul(invViewProj,clip_pos).xyz);
+	vec3 view				=normalize(mul(cubeInvViewProj[pos.z],clip_pos).xyz);
 
 	float dz				=cloudAltitudeKm-0.001*eyePosition.z;
 
@@ -384,36 +360,34 @@ void CSClouds2D(uint2 pos,bool depth)
 		}
 	}
 #endif
-	//if(!depth)
-	//	ret.ga=.5;
 	outputTexture[pos]	=ret;//vec4(0,0.0,0.5,0.5);
 }
 
 CS_LAYOUT(8,8,1)
 shader void CS_Clouds2D_Fill(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 {
+	uint Z					=cubemapFaceIndex2d[g.z+t.z].x;
 	uint2 idx				=uint2(g.xy*8+t.xy);
-	uint2 pos				=targetRange.xy+idx;
-	if(updateTexture[pos].r>=1.0)
-		return;
-	if(pos.x>=edge.x||pos.y>=edge.y)
-		return;
-	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
-		return;
-	if(updateTexture[pos].b==0.0)
-		return;
+	uint3 pos				=uint3(targetRange2d[Z].xy+idx,Z);
+	//if(pos.x>=edge.x||pos.y>=edge.y)
+	//	return;
+	//if(pos.x>=targetRange2d[Z].z||pos.y>=targetRange2d[Z].w)
+	//	return;
+	vec4 u=updateTexture[pos];
+	if (u.g<1.0&&u.b>0.0)
+	{
+		//outputTexture[pos]=vec4(1,0,dist.x,0.5);
 	CSClouds2D(pos,true);
+}
 }
 
 CS_LAYOUT(8,8,1)
 shader void CS_Clouds2D_Cubemap(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 {
+	uint Z				=cubemapFaceIndex2d[g.z+t.z].x;
 	int2 idx		=int2(g.xy*8+t.xy);
-	uint2 offset	=(amortizationOffset.xy+idx)%amortizationScale.xy;
-	uint2 pos		=targetRange.xy+idx*amortizationScale.xy+offset;
-//	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
-//		return;
-	//outputTexture[pos]=vec4(0,0,1,1);
+	uint3 pos			=uint3(targetRange2d[Z].xy+idx,Z);
+//	outputTexture[idx]	=vec4(0,0.0,0.5,0.5);
 	CSClouds2D(pos,false);
 }
 
@@ -421,11 +395,13 @@ CS_LAYOUT(8,8,1)
 shader void CS_Clouds2D(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 {
 	uint2 idx		=uint2(g.xy*8+t.xy);
-	uint2 offset		=(amortizationOffset.xy+idx)%amortizationScale.xy;
-	uint2 pos		=targetRange.xy+idx*amortizationScale.xy+offset;
+	uint Z			=cubemapFaceIndex2d[g.z+t.z].x;
+	uint3 pos		=uint3(targetRange2d[Z].xy+idx*amortizationScale.xy,Z);
+	uint2 offset	=(amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
+	pos.xy += offset;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
-	if(pos.x>=targetRange.z||pos.y>=targetRange.w)
+	if(pos.x>=targetRange2d[Z].z||pos.y>=targetRange2d[Z].w)
 		return;
 	if(updateTexture[pos].b==0.0)
 		return;

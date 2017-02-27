@@ -196,6 +196,11 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 		tech=glowExposureGammaTechnique;
 		hdr_effect->SetTexture(deviceContext,"glowTexture",glowTextures[0]);
 	}
+	bool msaa=texture?(texture->GetSampleCount()>1):false;
+	if(msaa)
+		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
+	else
+		hdr_effect->SetTexture(deviceContext,"imageTexture"	,texture);
 	if(blurTexture->IsValid())
 	{	
 		crossplatform::Texture *src=texture;
@@ -208,14 +213,14 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 		{
 			static float kernelSize=3.0f;
 			static float alpha	=0.05f;
+			hdrConstants.fullResDims		=uint2(texture->width,texture->length);
 			hdrConstants.offset				=kernelSize*vec2(htexel,vtexel);
 			hdrConstants.randomSeed			=randomSeed++;
 			randomSeed=randomSeed%100;
 			hdrConstants.alpha				=alpha;
 			hdrConstants.Apply(deviceContext);
-			hdr_effect->SetTexture(deviceContext,"imageTexture",src);
 			dst->activateRenderTarget(deviceContext);
-			hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName("blur"),0);
+			hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName(msaa?"blur_msaa":"blur"),0);
 			renderPlatform->DrawQuad(deviceContext);
 			hdr_effect->Unapply(deviceContext);
 			dst->deactivateRenderTarget(deviceContext);
@@ -223,11 +228,6 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 		}
 		SIMUL_COMBINED_PROFILE_END(deviceContext)
 	}
-	bool msaa=texture?(texture->GetSampleCount()>1):false;
-	if(msaa)
-		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
-	else
-		hdr_effect->SetTexture(deviceContext,"imageTexture"	,texture);
 	hdr_effect->Apply(deviceContext,tech,(msaa?"msaa":"main"));
 	renderPlatform->DrawQuad(deviceContext);
 

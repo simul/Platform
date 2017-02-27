@@ -8,6 +8,7 @@ uniform TextureCube backgroundCubemap;
 uniform Texture2D inscTexture;
 uniform Texture2D lossTexture;
 uniform Texture2D depthTexture;
+uniform Texture2DMS<float4> depthTextureMS;
 
 SamplerState samplerState
 {
@@ -159,6 +160,47 @@ shader vec4 PS_Background_ForwardDepth(posTexVertexOutput IN): SV_TARGET
 	return ret;
 }
 
+float ms_depth(vec2 depth_texc)
+{
+	uint2 texsize;
+	uint numberOfSamples;
+	depthTextureMS.GetDimensions(texsize.x,texsize.y,numberOfSamples);
+	int2 pos		=int2(depth_texc*vec2(texsize));
+	float depth		=depthTextureMS.Load(pos,0).x;
+	return depth;
+}
+
+
+vec4 PS_BackgroundLatLongSphere_MSAA(posTexVertexOutput IN,bool reverseDepth)
+{
+	vec2 depth_texc	= viewportCoordToTexRegionCoord(IN.texCoords.xy, viewportToTexRegionScaleBias);
+	float depth=ms_depth(depth_texc);
+	if(reverseDepth)
+	{
+		if(depth!=0.0)
+			discard;
+	}
+	else
+	{
+		if(depth<1.0)
+			discard;
+	}
+	vec4 ret= BackgroundLatLongSphere(backgroundTexture,IN.texCoords.xy.xy);
+	return ret;
+}
+
+shader vec4 PS_Background_ReverseDepth_MSAA(posTexVertexOutput IN): SV_TARGET
+{
+	vec4 ret=PS_BackgroundLatLongSphere_MSAA(IN,true);
+	return ret;
+}
+
+shader vec4 PS_Background_ForwardDepth_MSAA(posTexVertexOutput IN): SV_TARGET
+{
+	vec4 ret= PS_BackgroundLatLongSphere_MSAA(IN,false);
+	return ret;
+}
+
 shader posTexVertexOutput VS_Fade3DTo2D(idOnly IN) 
 {
     posTexVertexOutput OUT;
@@ -169,12 +211,12 @@ shader posTexVertexOutput VS_Fade3DTo2D(idOnly IN)
 		{ 0.0, 0.0},
 		{ 0.0, 1.0},
 	};
-	uint vid		=min(uint(3),IN.vertex_id);
-	vec2 pos		=poss[vid];
-	OUT.hPosition	=vec4(vec2(-1.0,-1.0)+2.0*pos,0.0,1.0);
+	//uint vid		=min(uint(3),IN.vertex_id);
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(vec2(-1.0,-1.0)+2.0*pos,1.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
 
-	OUT.hPosition.z	=OUT.hPosition.w; 
+	//OUT.hPosition.z	=OUT.hPosition.w; 
     OUT.texCoords	=pos;
     return OUT;
 }
@@ -299,23 +341,22 @@ struct starsVertexOutput
 {
     vec4 hPosition		: SV_POSITION;
 	vec4 clip_pos		: TEXCOORD0;
-	vec2 texCoord		: TEXCOORD1;
-    float tex			: TEXCOORD2;
+	vec4 texCoord		: TEXCOORD1;
 };
 
 shader starsVertexOutput VS_Stars(starsVertexInput IN) 
 {
     starsVertexOutput OUT;
-    OUT.hPosition		=mul(worldViewProj,vec4(IN.position.xyz,1.0));
+    OUT.hPosition		=mul(worldViewProj,vec4(IN.position.xyz,0.0));//
 	OUT.clip_pos		=OUT.hPosition.xyzw;
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
-	OUT.hPosition.z		=isForwardDepth*OUT.hPosition.w;
-    OUT.tex				=IN.tex;
-	OUT.texCoord		=vec2(0,0);
+//	OUT.hPosition.z		=isForwardDepth*OUT.hPosition.w;
+	OUT.texCoord		=vec4(0,0,0,0);
+    OUT.texCoord.z		=IN.tex;
     return OUT;
 }
 
-[maxvertexcount(4)]
+[maxvertexcount(6)]
 shader void GS_Stars(point starsVertexOutput inp[1], inout TriangleStream<starsVertexOutput> SpriteStream)
 {
 	if(inp[0].clip_pos.z<0)
@@ -323,50 +364,37 @@ shader void GS_Stars(point starsVertexOutput inp[1], inout TriangleStream<starsV
     starsVertexOutput outp;
 	// Emit two new triangles.
 	vec4 pos1			=inp[0].hPosition;
-//	vec3 rightVector	=invViewProj._m00_m01_m02;
-//	vec3 upVector		=invViewProj._m20_m21_m22;11
-	vec2 sz=max(ceil(minimumPixelSize),inp[0].tex)*4.0*vec2(0.5,1.0);
-    vec2 g_positions[4] =
+	vec2 sz=max(ceil(minimumPixelSize),inp[0].texCoord.z)*4.0*vec2(0.5,1.0);
+    vec2 g_positions[3] =
     {
-        vec2(-0.5,-0.5),
-        vec2( 0.5,-0.5),
-        vec2(-0.5, 0.5),
-        vec2( 0.5, 0.5),
+        vec2(0.0	,2.0),
+        vec2(-1.74	,-1.0),
+        vec2(1.74	,-1.0),
     };
-	
-	outp.hPosition		=pos1+vec4(g_positions[0].xy*sz,0,0);
-	outp.texCoord		=g_positions[0]; 
 	outp.clip_pos		=inp[0].clip_pos;
-	outp.tex			=inp[0].tex;
-	SpriteStream.Append(outp);
-	outp.texCoord		=g_positions[1]; 
-	outp.hPosition		=pos1+vec4(g_positions[1].xy*sz,0,0); 
-	SpriteStream.Append(outp);
-	outp.texCoord		=g_positions[2]; 
-	outp.hPosition		=pos1+vec4(g_positions[2].xy*sz,0,0); 
-	SpriteStream.Append(outp);
-	//outp.texCoord		=g_positions[3]; 
-	///outp.hPosition		=pos1+vec4(g_positions[3].xy*sz,0,0); 
-	//SpriteStream.Append(outp);
-   // SpriteStream.RestartStrip();
+	outp.texCoord.zw	=inp[0].texCoord.zw;
+	/**/
 	
-/*	outp.texCoord		=g_positions[1]; 
+	outp.texCoord.xy	=g_positions[1]; 
 	outp.hPosition		=pos1+vec4(g_positions[1].xy*sz,0,0); 
 	SpriteStream.Append(outp);
-	outp.texCoord		=g_positions[3]; 
-	outp.hPosition		=pos1+vec4(g_positions[3].xy*sz,0,0); 
+	outp.hPosition		=pos1+vec4(g_positions[0].xy*sz,0,0);
+	outp.texCoord.xy	=g_positions[0]; 
 	SpriteStream.Append(outp);
-	outp.texCoord		=g_positions[2]; 
+	outp.texCoord.xy	=g_positions[2]; 
 	outp.hPosition		=pos1+vec4(g_positions[2].xy*sz,0,0); 
-	SpriteStream.Append(outp);*/
+	SpriteStream.Append(outp);
 
     SpriteStream.RestartStrip();
 }
 
-shader vec4 PS_Stars(starsVertexOutput IN) : SV_TARGET
+vec4 PS_StarsDepth(starsVertexOutput IN,bool reverseDepth,float depth)
 {
-	vec3 ocolour = vec3(1.0, 1.0, 1.0)*(starBrightness*IN.tex);
-	vec4 result=vec4(ocolour, 1.0);
+	discardUnlessFar(depth,reverseDepth);
+	vec3 ocolour	=vec3(1.0,1.0,1.0)*(starBrightness*IN.texCoord.z);
+	float alpha		=saturate(0.5-(length(IN.texCoord))*5.0);
+	vec4 result		=vec4(ocolour*alpha,0.0);
+//result=vec4(1,alpha,1,0.5);
 	return result;
 }
 
@@ -376,11 +404,22 @@ vec4 PS_StarsDepthTex(starsVertexOutput IN,bool reverseDepth)
 	viewportTexCoords.y		=1.0-viewportTexCoords.y;
 	vec2 depth_texc	= viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
 	float depth		= texture_clamp_lod(depthTexture, depth_texc.xy, 0).x;
-	discardUnlessFar(depth,reverseDepth);
-	vec3 ocolour	=vec3(1.0,1.0,1.0)*(starBrightness*IN.tex);
-	float alpha		=saturate(0.5-(length(IN.texCoord))*5.0);
-	vec4 result		=vec4(ocolour*alpha,0.0);
-//result.rb=1.0;
+	return PS_StarsDepth(IN,reverseDepth,depth);
+}
+
+vec4 PS_StarsDepthTex_MSAA(starsVertexOutput IN,bool reverseDepth)
+{
+	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
+	viewportTexCoords.y		=1.0-viewportTexCoords.y;
+	vec2 depth_texc	= viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
+	float depth=ms_depth(depth_texc);
+	return PS_StarsDepth(IN,reverseDepth,depth);
+}
+
+shader vec4 PS_Stars(starsVertexOutput IN) : SV_TARGET
+{
+	vec3 ocolour = vec3(1.0, 1.0, 1.0)*(starBrightness*IN.texCoord.z);
+	vec4 result=vec4(ocolour, 1.0);
 	return result;
 }
 shader vec4 PS_Stars_ReverseDepth(starsVertexOutput IN) : SV_TARGET
@@ -391,6 +430,19 @@ shader vec4 PS_Stars_ReverseDepth(starsVertexOutput IN) : SV_TARGET
 shader vec4 PS_Stars_ForwardDepth(starsVertexOutput IN) : SV_TARGET
 {
 	vec4 result= PS_StarsDepthTex(IN,false);
+	return result;
+}
+
+
+shader vec4 PS_Stars_ReverseDepth_MSAA(starsVertexOutput IN) : SV_TARGET
+{
+	vec4 result= PS_StarsDepthTex_MSAA(IN,true);
+	return result;
+}
+
+shader vec4 PS_Stars_ForwardDepth_MSAA(starsVertexOutput IN) : SV_TARGET
+{
+	vec4 result= PS_StarsDepthTex_MSAA(IN,false);
 	return result;
 }
 
@@ -436,6 +488,29 @@ shader vec4 PS_Sun_ReverseDepth(svertexOutput IN) : SV_TARGET
 shader vec4 PS_Sun_ForwardDepth(svertexOutput IN) : SV_TARGET
 {
 	vec4 result = PS_SunDepthTexture(IN,false);
+	return result;
+}
+
+
+vec4 PS_SunDepthTexture_MSAA(svertexOutput IN,bool reverseDepth)
+{
+	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
+	viewportTexCoords.y		=1.0-viewportTexCoords.y;
+	vec2 depth_texc = viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
+	float depth=ms_depth(depth_texc);
+	discardUnlessFar(depth,reverseDepth);
+	return Sun(IN);
+}
+
+shader vec4 PS_Sun_ReverseDepth_MSAA(svertexOutput IN) : SV_TARGET
+{
+	vec4 result = PS_SunDepthTexture_MSAA(IN,true);
+	return result;
+}
+
+shader vec4 PS_Sun_ForwardDepth_MSAA(svertexOutput IN) : SV_TARGET
+{
+	vec4 result = PS_SunDepthTexture_MSAA(IN,false);
 	return result;
 }
 
@@ -516,12 +591,30 @@ shader vec4 PS_Planet_ForwardDepth(svertexOutput IN) : SV_TARGET
 	return result;
 }
 
-shader vec4 PS_PlanetUntextured(svertexOutput IN): SV_TARGET
+
+vec4 PS_Planet_DepthTexture_MSAA(svertexOutput IN,bool reverseDepth)
 {
-	vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
+	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
+	viewportTexCoords.y		=1.0-viewportTexCoords.y;
+	vec2 depth_texc			= viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
+	float depth=ms_depth(depth_texc);
+	discardUnlessFar(depth,reverseDepth);
+	vec4 result				= texture_clamp(flareTexture, vec2(0.5,0.5) - 0.5*IN.tex);
+
 	result = Planet(result,IN.tex);
 	return result;
 }
+shader vec4 PS_Planet_ReverseDepth_MSAA(svertexOutput IN) : SV_TARGET
+{
+	vec4 result = PS_Planet_DepthTexture(IN,true);
+	return result;
+}
+shader vec4 PS_Planet_ForwardDepth_MSAA(svertexOutput IN) : SV_TARGET
+{
+	vec4 result = PS_Planet_DepthTexture_MSAA(IN,false);
+	return result;
+}
+
 
 vec4 PS_PlanetUntextured_DepthTexture(svertexOutput IN,bool reverseDepth)
 {
@@ -544,6 +637,35 @@ shader vec4 PS_PlanetUntextured_ForwardDepth(svertexOutput IN) : SV_TARGET
 	return result;
 }
 
+
+shader vec4 PS_PlanetUntextured(svertexOutput IN): SV_TARGET
+{
+	vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
+	result = Planet(result,IN.tex);
+	return result;
+}
+
+vec4 PS_PlanetUntextured_DepthTexture_MSAA(svertexOutput IN,bool reverseDepth)
+{
+	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
+	viewportTexCoords.y		=1.0-viewportTexCoords.y;
+	vec2 depth_texc = viewportCoordToTexRegionCoord(viewportTexCoords.xy, viewportToTexRegionScaleBias);
+	float depth				=ms_depth(depth_texc);
+	discardUnlessFar(depth,reverseDepth);
+	vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
+	result = Planet(result, IN.tex);
+	return result;
+}
+shader vec4 PS_PlanetUntextured_ReverseDepth_MSAA(svertexOutput IN) : SV_TARGET
+{
+	vec4 result = PS_PlanetUntextured_DepthTexture_MSAA(IN,true);
+	return result;
+}
+shader vec4 PS_PlanetUntextured_ForwardDepth_MSAA(svertexOutput IN) : SV_TARGET
+{
+	vec4 result = PS_PlanetUntextured_DepthTexture_MSAA(IN,false);
+	return result;
+}
 VertexShader vs_fade3dto2d	=CompileShader(vs_5_0,VS_Fade3DTo2D());
 VertexShader vs_showfade	=CompileShader(vs_5_0,VS_ShowFade());
 VertexShader vs_stars		=CompileShader(vs_5_0,VS_Stars());
@@ -558,7 +680,7 @@ technique show_fade_table
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(vs_showfade);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTable()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowFadeTable()));
     }
 }
 
@@ -571,7 +693,7 @@ technique show_illumination_buffer
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(vs_showfade);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowIlluminationBuffer()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowIlluminationBuffer()));
     }
 }
 
@@ -584,7 +706,7 @@ technique show_fade_texture
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(vs_showfade);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTexture()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowFadeTexture()));
     }
 }
 
@@ -597,7 +719,7 @@ technique colour_technique
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(vs_showfade);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Colour()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Colour()));
     }
 }
 
@@ -610,7 +732,7 @@ technique show_light_table
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(vs_showfade);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Show3DLightTable()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Show3DLightTable()));
     }
 }
 
@@ -623,7 +745,7 @@ technique show_2d_light_table
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(vs_showfade);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Show2DLightTable()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Show2DLightTable()));
     }
 }
 
@@ -636,7 +758,7 @@ technique fade_3d_to_2d
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(vs_fade3dto2d);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Fade3DTo2D()));
     }
 }
 
@@ -649,7 +771,7 @@ technique show_cross_section
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(vs_showfade);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeCrossSection()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowFadeCrossSection()));
     }
 }
 
@@ -662,7 +784,7 @@ technique show_2d
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(vs_showfade);
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Show2D()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Show2D()));
     }
 }
 
@@ -687,7 +809,7 @@ technique stars
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_stars);
-		SetPixelShader(CompileShader(ps_4_0, PS_Stars()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Stars()));
 		//SetDepthStencilState( TestDepth, 0 );
 		SetBlendState(AddBlend, vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
 	}
@@ -695,8 +817,8 @@ technique stars
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0, VS_Stars()));
-		SetPixelShader(CompileShader(ps_4_0, PS_Stars_ReverseDepth()));
+		SetVertexShader(CompileShader(vs_5_0, VS_Stars()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Stars_ReverseDepth()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
 	}
@@ -704,8 +826,8 @@ technique stars
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0, VS_Stars()));
-		SetPixelShader(CompileShader(ps_4_0, PS_Stars_ForwardDepth()));
+		SetVertexShader(CompileShader(vs_5_0, VS_Stars()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Stars_ForwardDepth()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
 	}
@@ -742,6 +864,68 @@ technique geometry_stars
 	}
 }
 
+technique stars_msaa
+{
+    pass depth_test
+    {
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_stars);
+		SetPixelShader(CompileShader(ps_5_0, PS_Stars()));
+		//SetDepthStencilState( TestDepth, 0 );
+		SetBlendState(AddBlend, vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
+	}
+	pass reverse_depth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Stars()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Stars_ReverseDepth_MSAA()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+	}
+	pass forward_depth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Stars()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Stars_ForwardDepth_MSAA()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+	}
+}
+
+technique geometry_stars_msaa
+{
+    pass depth_test
+    {
+		SetRasterizerState( RenderNoCull );
+		SetVertexShader(CompileShader(vs_5_0, VS_Stars()));
+        SetGeometryShader(CompileShader(gs_5_0,GS_Stars()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Stars()));
+		//SetDepthStencilState( TestDepth, 0 );
+		SetBlendState(AddBlend, vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
+	}
+	pass reverse_depth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetVertexShader(CompileShader(vs_5_0, VS_Stars()));
+        SetGeometryShader(CompileShader(gs_5_0,GS_Stars()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Stars_ReverseDepth_MSAA()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+	}
+	pass forward_depth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetVertexShader(CompileShader(vs_5_0, VS_Stars()));
+        SetGeometryShader(CompileShader(gs_5_0,GS_Stars()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Stars_ForwardDepth_MSAA()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+	}
+}
+
 technique sun
 {
 	pass depth_test
@@ -749,7 +933,7 @@ technique sun
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
-		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Sun()));
 		//SetDepthStencilState(TestDepth,0);
 		SetBlendState(AddBlend,vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
 	}
@@ -758,7 +942,7 @@ technique sun
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
-		SetPixelShader(CompileShader(ps_4_0, PS_Sun_ReverseDepth()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Sun_ReverseDepth()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
 	}
@@ -767,7 +951,38 @@ technique sun
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
-		SetPixelShader(CompileShader(ps_4_0, PS_Sun_ForwardDepth()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Sun_ForwardDepth()));
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+	}
+}
+
+technique sun_msaa
+{
+	pass depth_test
+    {
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_sun);
+		SetPixelShader(CompileShader(ps_5_0,PS_Sun()));
+		//SetDepthStencilState(TestDepth,0);
+		SetBlendState(AddBlend,vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
+	}
+	pass reverse_depth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(vs_sun);
+		SetPixelShader(CompileShader(ps_5_0, PS_Sun_ReverseDepth_MSAA()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+	}
+	pass forward_depth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(vs_sun);
+		SetPixelShader(CompileShader(ps_5_0, PS_Sun_ForwardDepth_MSAA()));
 		SetDepthStencilState(DisableDepth,0);
 		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
 	}
@@ -780,7 +995,7 @@ technique sun_gaussian
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
-		SetPixelShader(CompileShader(ps_4_0,PS_SunGaussian()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SunGaussian()));
 		//SetDepthStencilState(TestDepth,0);
 		SetBlendState(AddBlend,vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
     }
@@ -793,7 +1008,7 @@ technique sun_query
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
-		SetPixelShader(CompileShader(ps_4_0,PS_SunQuery()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SunQuery()));
 		//SetDepthStencilState(TestDepth,0);
 		SetBlendState(BlendWithoutWrite, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
     }
@@ -806,7 +1021,7 @@ technique flare
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
-		SetPixelShader(CompileShader(ps_4_0,PS_Flare()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Flare()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AddBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
     }
@@ -819,7 +1034,7 @@ technique planet
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
-		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Planet()));
 		//SetDepthStencilState(TestDepth,0);
 		SetBlendState(AlphaBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
 	}
@@ -827,8 +1042,8 @@ technique planet
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Planet_ReverseDepth()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Sun()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Planet_ReverseDepth()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AlphaBlend, vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
@@ -836,8 +1051,8 @@ technique planet
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0, VS_Sun()));
-		SetPixelShader(CompileShader(ps_4_0, PS_Planet_ForwardDepth()));
+		SetVertexShader(CompileShader(vs_5_0, VS_Sun()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Planet_ForwardDepth()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AlphaBlend, vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
@@ -850,7 +1065,7 @@ technique planet_untextured
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
-		SetPixelShader(CompileShader(ps_4_0,PS_PlanetUntextured()));
+		SetPixelShader(CompileShader(ps_5_0,PS_PlanetUntextured()));
 		//SetDepthStencilState(TestDepth,0);
 		SetBlendState(AlphaBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
 	}
@@ -859,7 +1074,7 @@ technique planet_untextured
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
-		SetPixelShader(CompileShader(ps_4_0, PS_PlanetUntextured_ReverseDepth()));
+		SetPixelShader(CompileShader(ps_5_0, PS_PlanetUntextured_ReverseDepth()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AlphaBlend, vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
@@ -868,7 +1083,70 @@ technique planet_untextured
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
 		SetVertexShader(vs_sun);
-		SetPixelShader(CompileShader(ps_4_0, PS_PlanetUntextured_ForwardDepth()));
+		SetPixelShader(CompileShader(ps_5_0, PS_PlanetUntextured_ForwardDepth()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlend, vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+}
+
+
+technique planet_msaa
+{
+    pass depth_test
+    {		
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_sun);
+		SetPixelShader(CompileShader(ps_5_0,PS_Planet()));
+		//SetDepthStencilState(TestDepth,0);
+		SetBlendState(AlphaBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+	}
+	pass reverse_depth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Sun()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Planet_ReverseDepth_MSAA()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlend, vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+	pass forward_depth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0, VS_Sun()));
+		SetPixelShader(CompileShader(ps_5_0, PS_Planet_ForwardDepth_MSAA()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlend, vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+}
+
+technique planet_untextured_msaa
+{
+	pass depth_test
+    {		
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(vs_sun);
+		SetPixelShader(CompileShader(ps_5_0,PS_PlanetUntextured()));
+		//SetDepthStencilState(TestDepth,0);
+		SetBlendState(AlphaBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+	}
+	pass reverse_depth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(vs_sun);
+		SetPixelShader(CompileShader(ps_5_0, PS_PlanetUntextured_ReverseDepth_MSAA()));
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlend, vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	}
+	pass forward_depth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetVertexShader(vs_sun);
+		SetPixelShader(CompileShader(ps_5_0, PS_PlanetUntextured_ForwardDepth_MSAA()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AlphaBlend, vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
 	}
@@ -893,22 +1171,36 @@ technique lighting_queries
 
 technique background_latlongsphere
 {
+    pass reverse_depth_msaa
+    {
+		SetRasterizerState( RenderNoCull );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_Background_ReverseDepth_MSAA()));
+    }
+    pass forward_depth_msaa
+    {
+		SetRasterizerState( RenderNoCull );
+		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_Background_ForwardDepth_MSAA()));
+    }
     pass reverse_depth
     {
 		SetRasterizerState( RenderNoCull );
-		//SetDepthStencilState( TestDepth, 0 );
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Background_ReverseDepth()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Background_ReverseDepth()));
     }
     pass forward_depth
     {
 		SetRasterizerState( RenderNoCull );
-		//SetDepthStencilState( TestDepth, 0 );
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Background_ForwardDepth()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Background_ForwardDepth()));
     }
 }
