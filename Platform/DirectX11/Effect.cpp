@@ -407,10 +407,11 @@ EffectTechnique *Effect::CreateTechnique()
 	return new dx11::EffectTechnique;
 }
 #define D3DCOMPILE_DEBUG 1
-void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)
+void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
 	SAFE_RELEASE(e);
+	renderPlatform=r;
 	if(!renderPlatform)
 		return;
 	// PREFER to use the platform shader:
@@ -459,6 +460,7 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 				D3DX11_TECHNIQUE_DESC tdesc;
 				t->GetDesc(&tdesc);
 				dx11::EffectTechnique *T	=new dx11::EffectTechnique;
+				T->name						=tdesc.Name;
 				G->techniques[tdesc.Name]	=T;
 				T->platform_technique		=t;
 				G->techniques_by_index[j]	=T;
@@ -466,8 +468,10 @@ void Effect::Load(crossplatform::RenderPlatform *renderPlatform,const char *file
 				{
 					ID3DX11EffectPass *p=t->GetPassByIndex(k);
 					D3DX11_PASS_DESC passDesc;
+					p->GetDesc(&passDesc);
 					D3DX11_PASS_SHADER_DESC shaderDesc;
 					p->GetComputeShaderDesc(&shaderDesc);
+					T->AddPass(passDesc.Name,k);
 				}
 			}
 		}
@@ -491,6 +495,11 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 	if(techniques.find(name)!=techniques.end())
 	{
 		return techniques[name];
+	}
+	auto g=groups[""];
+	if(g->techniques.find(name)!=g->techniques.end())
+	{
+		return g->techniques[name];
 	}
 	if(!platform_effect)
 		return NULL;
@@ -519,6 +528,11 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 	{
 		return techniques_by_index[index];
 	}
+	auto g=groups[""];
+	if(g->techniques_by_index.find(index)!=g->techniques_by_index.end())
+	{
+		return g->techniques_by_index[index];
+	}
 	if(!platform_effect)
 		return NULL;
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
@@ -543,13 +557,13 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByIndex(int index)
 	return tech;
 }
 
-void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int index,int mip)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int index,int mip)
 {
 	crossplatform::ShaderResource shaderResource			=GetShaderResource(name);
 	SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
 }
 
-void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
+void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
 {
 	ID3DX11EffectUnorderedAccessViewVariable *var=(ID3DX11EffectUnorderedAccessViewVariable*)(shaderResource.platform_shader_resource);
 	if(!asD3DX11Effect())
@@ -573,6 +587,7 @@ void dx11::Effect::SetUnorderedAccessView(crossplatform::DeviceContext &,crosspl
 	}
 	else
 		var->SetUnorderedAccessView(NULL);
+	crossplatform::Effect::SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
 }
 
 
@@ -591,7 +606,7 @@ void dx11::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const 
 }
 
 
-void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
+void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
 {
 	// If invalid, we already had the error when we assigned this ShaderResource. So fail silently to avoid spamming output.
 	if(!shaderResource.valid)
@@ -607,16 +622,13 @@ void Effect::SetTexture(crossplatform::DeviceContext &,crossplatform::ShaderReso
 	{
 		dx11::Texture *T=(dx11::Texture*)t;
 		auto srv=T->AsD3D11ShaderResourceView(shaderResource.shaderResourceType,index,mip);
-		HRESULT hr=(var->SetResource(srv));
-		if(hr!=S_OK)
-		{
-			SIMUL_BREAK_ONCE("Failed to set resource");
-		}
+		var->SetResource(srv);
 	}
 	else
 	{
 		var->SetResource(NULL);
 	}
+	crossplatform::Effect::SetTexture(deviceContext,shaderResource,t,index,mip);
 }
 
 void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s)	
@@ -658,6 +670,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	var->GetType()->GetDesc(&desc);
 	desc.Class;
 	res.shaderResourceType=((simul::dx11::RenderPlatform*)renderPlatform)->FromD3DShaderVariableType(desc.Type);
+	res.slot=(int)shaderResources.size();
 	ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
 	if(srv->IsValid())
 	{
@@ -668,6 +681,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		ID3DX11EffectUnorderedAccessViewVariable *uav=var->AsUnorderedAccessView();
 		if(uav->IsValid())
 		{
+			res.slot+=1000;
 			res.platform_shader_resource=(void*)uav;
 		}
 		else
@@ -705,6 +719,7 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
 	currentPass						=tech->GetPassByIndex(pass_num);
 	HRESULT hr						=currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
+	crossplatform::Effect::Apply(deviceContext,effectTechnique,pass_num);
 	V_CHECK_ONCE(hr);
 }
 
@@ -713,6 +728,10 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	if(apply_count!=0)
 		SIMUL_BREAK_ONCE("Effect::Apply without a corresponding Unapply!")
 	apply_count++;
+	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
+	cs->invalidate();
+	cs->currentTechnique=effectTechnique;
+	cs->currentEffect=this;
 	ID3DX11Effect *effect			=asD3DX11Effect();
 	currentTechnique				=effectTechnique;
 	if(effectTechnique)

@@ -70,6 +70,15 @@ namespace simul
 			int element_bytesize;
 			ID3D11DeviceContext					*lastContext;
 			unsigned char *read_data;
+	#ifdef _XBOX_ONE
+			BYTE* m_pPlacementBuffer;
+			UINT byteWidth;
+			std::vector< UINT > m_index;
+	#endif
+			UINT m_nContexts;
+			UINT m_nObjects;
+			UINT m_nBuffering;
+			UINT iObject;
 		public:
 			PlatformStructuredBuffer();
 			virtual ~PlatformStructuredBuffer();
@@ -117,10 +126,10 @@ namespace simul
 			void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int index=-1,int mip=-1) override;
 			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);
 			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s);
-			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass);
-			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass);
+			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass) override;
+			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass) override;
 			void Reapply(crossplatform::DeviceContext &deviceContext);
-			void Unapply(crossplatform::DeviceContext &deviceContext);
+			void Unapply(crossplatform::DeviceContext &deviceContext) override;
 			void UnbindTextures(crossplatform::DeviceContext &deviceContext);
 		};
 	}
