@@ -65,6 +65,9 @@
     <ClCompile Include="Layout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ConstantBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompileShaderDX1x.h">
@@ -134,6 +137,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulDirectXHeader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstantBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

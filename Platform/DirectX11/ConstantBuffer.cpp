@@ -151,6 +151,15 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform 
 //! Find the constant buffer in the given effect, and link to it.
 void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)
 {
+	if(!effect)
+		return;
+	if(!effect->asD3DX11Effect())
+		return;
+	m_pD3DX11EffectConstantBuffer=effect->asD3DX11Effect()->GetConstantBufferByName(name);
+	if(m_pD3DX11EffectConstantBuffer)
+		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
+	else
+		SIMUL_CERR<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the effect."<<std::endl;
 }
 
 void PlatformConstantBuffer::InvalidateDeviceObjects()
@@ -213,7 +222,9 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 			map_type=D3D11_MAP_WRITE;
 		V_CHECK(pContext->Map(m_pD3D11Buffer, 0, map_type, ((dx11::RenderPlatform*)deviceContext.renderPlatform)->GetMapFlags(), &mapped_res));
 		memcpy(mapped_res.pData,addr,size);
-		pContext->Unmap(m_pD3D11Buffer, 0);
+			pContext->Unmap(m_pD3D11Buffer, 0);
+		if(m_pD3DX11EffectConstantBuffer)
+			m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 	}
 }
 

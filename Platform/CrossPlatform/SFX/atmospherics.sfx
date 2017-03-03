@@ -24,7 +24,10 @@ uniform RWTexture2D<vec4> targetTexture;
 #include "../SL/cloud_shadow.sl"
 #include "../SL/godrays.sl"
 	
+#ifndef pi
 #define pi (3.1415926536)
+#endif
+
 
 struct atmosVertexInput
 {
@@ -86,7 +89,8 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 		vec3 pos_n				=normalize(pos_w);
 		vec4 depth_lookup		=texture_cube_lod(cubeDepthTexture,pos_n,0);
 		vec4 update				=texture_cube_lod(cubeUpdateTexture,pos_n,0);
-		depth_lookup.x			=lerp(1.0,depth_lookup.x,update.r);
+		// We will ignore any depths nearer than 0.2, an arbitrary cutoff to prevent godrays due to near objects.
+		depth_lookup.x			=lerp(saturate(depth_lookup.x-0.2)/0.8,1.0,saturate(1.0-update.r)+saturate((depth_lookup-0.9)/0.1));
 		// problem: depth_lookup is not guaranteed to be valid. We must use the update texture to determine if it is.
 		// Later we can think about doing a "level of validity" - how old the data might be.
 		float dist				=saturate(length(pos_w)*0.001/maxFadeDistanceKm);
@@ -96,11 +100,11 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 		vec3 posCloudspace		=(pos_km-cloudOriginKm)/cloudScaleKm;
 	//	if(viewposCloudspace.z>0.0&&viewposCloudspace.z<1.0)
 		{
-			illum				=1.0-(godraysIntensity*(1.0-GetCloudIllum(cloudTexture, cloudSamplerState, posCloudspace,lightDirCloudspace,clampClouds)));
+			illum				=GetCloudIllum(cloudTexture,cloudSamplerState,posCloudspace,lightDirCloudspace,clampClouds,averageCoverage);
 		}
 		total_illum				*=illum;
 		float t					=0.1;
-		total_illum				*=lerp(1.0,saturate((depth_lookup.x-dist+t)/t),abs(2.0*depth_lookup.x-1.0));
+		total_illum				*=lerp(1.0,1.0-saturate((depth_lookup.x-dist+t)/t),abs(2.0*depth_lookup.x-1.0));
 
 		res						=vec4(total_illum,total_illum,total_illum,1.0);
 		int3 pos				=int3(idx.xy,godraysVolumeDims.z-1-i);
@@ -130,6 +134,7 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 	float sum				=0.0;
 	float mean_illumination	=1.0;
 	vec4 mi					=vec4(mean_illumination,mean_illumination,mean_illumination,mean_illumination);
+	float fade_away			=saturate(1.0-godraysIntensity*(texc.y)/1.0);
 	for(uint i=0;i<godraysVolumeDims.y;i++)
 	{
 		uint3 pos		=uint3(idx.x,idx.y,i);
@@ -141,7 +146,7 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 		total			+=light;
 		sum				+=1.0;
 
-		vec4 result		=lerp(total/sum,mi,pow(0.5*float(i)/float(godraysVolumeDims.y-1),1.0));
+		vec4 result		=lerp(total/sum,mi,fade_away);
 		IMAGE_STORE_3D(targetVolume,pos,result);
 	}
 }
@@ -193,7 +198,7 @@ void ScatteringVolume(uint3 p,bool godrays)
 	vec3 viewPosKm			=vec3(0.0,0.0,viewPosition.z/1000.0);
 	float maxFadeDistanceKm	=maxFadeDistanceMetres*0.001;
 	
-	for(int i=0;i<scatteringVolumeDims.z;i++)
+	for(uint i=0;i<scatteringVolumeDims.z;i++)
 	{
 		float dist_texc	=float(i)/float(scatteringVolumeDims.z-1);
 		float dist		=pow(dist_texc,2.0);
@@ -215,11 +220,11 @@ void ScatteringVolume(uint3 p,bool godrays)
 		vec4 dc				=max(vec4(0,0,0,0),(next-last));
 		dc.rgb				*=earth_shadow_illum;
 		colour				+=dc;
-		//colour=insc;
+	
 		colour.a			=1.0;
 	#endif
 		vec4 res			=colour+vec4(skyl,0);
-		int3 pos			=int3(idx.xy,i);
+		uint3 pos			=uint3(idx.xy,i);
 
 		IMAGE_STORE_3D(targetVolume,pos,res);
 		last				=next;

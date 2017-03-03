@@ -180,6 +180,7 @@
   <ItemGroup>
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="CompileShaderDX1x.cpp" />
+    <ClCompile Include="ConstantBuffer.cpp" />
     <ClCompile Include="CreateEffectDX1x.cpp" />
     <ClCompile Include="Direct3D11Manager.cpp" />
     <ClCompile Include="Direct3D11Renderer.cpp" />
@@ -198,6 +199,7 @@
   <ItemGroup>
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="CompileShaderDX1x.h" />
+    <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="CreateEffectDX1x.h" />
     <ClInclude Include="Direct3D11CallbackInterface.h" />
     <ClInclude Include="Direct3D11Manager.h" />

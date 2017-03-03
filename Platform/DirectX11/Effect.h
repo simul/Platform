@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include "SimulDirectXHeader.h"
+#include "Simul/Platform/DirectX11/ConstantBuffer.h"
 
 #pragma warning(disable:4251)
 
@@ -39,25 +40,6 @@ namespace simul
 			ID3D11BlendState			*m_blendState;
 			RenderState();
 			virtual ~RenderState();
-		};
-		// Platform-specific data for constant buffer, managed by RenderPlatform.
-		class PlatformConstantBuffer : public crossplatform::PlatformConstantBuffer
-		{
-			ID3D11Buffer*					m_pD3D11Buffer;
-			ID3DX11EffectConstantBuffer*	m_pD3DX11EffectConstantBuffer;
-		public:
-			PlatformConstantBuffer():m_pD3D11Buffer(NULL),m_pD3DX11EffectConstantBuffer(NULL)
-			{
-			}
-			inline ID3D11Buffer *asD3D11Buffer()
-			{
-				return m_pD3D11Buffer;
-			}
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t sz,void *addr);
-			void InvalidateDeviceObjects();
-			void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex);
-			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
-			void Unbind(simul::crossplatform::DeviceContext &deviceContext);
 		};
 		class PlatformStructuredBuffer:public crossplatform::PlatformStructuredBuffer
 		{

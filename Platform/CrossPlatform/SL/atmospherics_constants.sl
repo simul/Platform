@@ -49,7 +49,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform float startZMetresZZZ;
 
 	uniform uint3 amortization;
-	uniform float testXXXX;
+	uniform float averageCoverage;
 
 	uniform uint2 edge;
 

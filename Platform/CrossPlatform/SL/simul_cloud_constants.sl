@@ -186,6 +186,7 @@ struct CloudShadowStruct
 	float minAltKm;
 	float maxAltKm;
 	float shadowRangeKm;
+	float averageCoverage;			///< Between 0 and 1, blend shadows to this in the distance.
 	float rainbowIntensity;
 	float godrays_strength;
 	bool wrap;

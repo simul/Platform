@@ -18,6 +18,7 @@ namespace simul
 		class PlatformConstantBuffer : public crossplatform::PlatformConstantBuffer
 		{
 			ID3D11Buffer *m_pD3D11Buffer;
+			ID3DX11EffectConstantBuffer*	m_pD3DX11EffectConstantBuffer;
 	#if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
 			// each context will have its own index into the array of buffers.
 			std::vector<unsigned > m_index;

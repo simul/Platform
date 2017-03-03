@@ -16,6 +16,22 @@ using namespace simul;
 using namespace dx11;
 #pragma optimize("",off)
 
+    inline bool IsPowerOfTwo( UINT64 n )
+    {
+        return ( ( n & (n-1) ) == 0 && (n) != 0 );
+    }
+    inline UINT64 NextMultiple( UINT64 value, UINT64 multiple )
+    {
+       SIMUL_ASSERT( IsPowerOfTwo(multiple) );
+
+        return (value + multiple - 1) & ~(multiple - 1);
+    }
+    template< class T >
+    UINT64 BytePtrToUint64( _In_ T* ptr )
+    {
+        return static_cast< UINT64 >( reinterpret_cast< BYTE* >( ptr ) - static_cast< BYTE* >( nullptr ) );
+    }
+
 D3D11_QUERY toD3dQueryType(crossplatform::QueryType t)
 {
 	switch(t)
@@ -91,6 +107,10 @@ bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_
 		return false;
 	// Get the data from the "next" query - which is the oldest!
 	HRESULT hr=pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0);
+	if(hr== S_OK)
+	{
+		gotResults[currFrame]=true;
+	}
 	return hr== S_OK;
 }
 
@@ -113,6 +133,14 @@ PlatformStructuredBuffer::PlatformStructuredBuffer()
 				,shaderResourceView(0)
 				,unorderedAccessView(0)
 				,lastContext(NULL)
+#if _XBOX_ONE
+	,m_pPlacementBuffer( nullptr )
+	,byteWidth( 0 )
+#endif
+	,m_nContexts( 0 )
+	,m_nObjects( 0 )
+	,m_nBuffering( 0 )
+	,iObject(0)
 			{
 				stagingBuffers=new ID3D11Buffer*[NUM_STAGING_BUFFERS];
 				for(int i=0;i<NUM_STAGING_BUFFERS;i++)
@@ -141,7 +169,10 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	else
 	{
 		sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE ;
-		sbDesc.Usage				=D3D11_USAGE_DYNAMIC;
+		D3D11_USAGE usage			=D3D11_USAGE_DYNAMIC;
+		if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
+			usage=D3D11_USAGE_DEFAULT;
+		sbDesc.Usage				=usage;
 		sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
 	}
 	sbDesc.MiscFlags			=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED ;
@@ -150,7 +181,37 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	
 	D3D11_SUBRESOURCE_DATA sbInit = {init_data, 0, 0};
 
+	m_nContexts = 1;
+	m_nObjects = 1;
+	m_nBuffering = 12;
+#if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
+	if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
+	{
+		m_index.resize( m_nContexts * m_nObjects, 0 );
+		UINT numBuffers = m_nContexts * m_nObjects * m_nBuffering;
+		SIMUL_ASSERT( sbDesc.Usage == D3D11_USAGE_DEFAULT );
+		byteWidth = sbDesc.ByteWidth;
+
+		#ifdef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
+		// Force cache line alignment and packing to avoid cache flushing on Unmap in RoundRobinBuffers
+		byteWidth  = static_cast<UINT>( NextMultiple( byteWidth, SIMUL_D3D11_BUFFER_CACHE_LINE_SIZE ) );
+		#endif
+	
+		m_pPlacementBuffer = static_cast<BYTE*>( VirtualAlloc( nullptr, numBuffers * byteWidth, 
+			MEM_LARGE_PAGES | MEM_GRAPHICS | MEM_RESERVE | MEM_COMMIT, 
+			PAGE_WRITECOMBINE | PAGE_READWRITE ));
+
+		#ifdef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
+		SIMUL_ASSERT( ( BytePtrToUint64( m_pPlacementBuffer ) & ( SIMUL_D3D11_BUFFER_CACHE_LINE_SIZE - 1 ) ) == 0 );
+		#endif
+
+		V_CHECK( ((ID3D11DeviceX*)renderPlatform->AsD3D11Device())->CreatePlacementBuffer( &sbDesc, m_pPlacementBuffer, &buffer ) );
+	}
+	else
+#endif
+	{
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &buffer));
+	}
 	
 	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
 		SAFE_RELEASE(stagingBuffers[i]);
@@ -191,11 +252,33 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 
 void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceContext)
 {
+#if  SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
+	if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
+	{
+		iObject++;
+		iObject=iObject%m_nObjects;
+		UINT iObjectIdx = iObject;
+		UINT &iBufIdx = m_index[ iObjectIdx ];
+		iBufIdx++;
+		if ( iBufIdx >= m_nBuffering )
+		{
+			iBufIdx = 0;
+		}
+		void *ppMappedData =( &m_pPlacementBuffer[ ( iObjectIdx * m_nBuffering + iBufIdx ) * byteWidth ] );
+		return ppMappedData;
+	}
+	else
+#endif
+	{
 	lastContext=deviceContext.asD3D11DeviceContext();
+		D3D11_MAP map_type=D3D11_MAP_WRITE_DISCARD;
+		if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
+			map_type=D3D11_MAP_WRITE;
 	if(!mapped.pData)
-		lastContext->Map(buffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+			lastContext->Map(buffer,0,map_type,SIMUL_D3D11_MAP_FLAGS,&mapped);
 	void *ptr=(void *)mapped.pData;
 	return ptr;
+}
 }
 
 const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext &deviceContext)
@@ -208,7 +291,7 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 		int wait=0;
 		while(hr==DXGI_ERROR_WAS_STILL_DRAWING)
 		{
-			hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,D3D11_MAP_FLAG_DO_NOT_WAIT,&mapped);
+			hr=lastContext->Map(stagingBuffers[NUM_STAGING_BUFFERS-1],0,D3D11_MAP_READ,D3D11_MAP_FLAG_DO_NOT_WAIT|SIMUL_D3D11_MAP_FLAGS,&mapped);
 			wait++;
 		}
 		if(wait>1)
@@ -223,7 +306,7 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 
 void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
 {
-	if(numCopies>=NUM_STAGING_BUFFERS)
+	if(mapped.pData)
 		lastContext->Unmap(stagingBuffers[NUM_STAGING_BUFFERS-1], 0 );
 	mapped.pData=NULL;
 	lastContext=NULL;
@@ -250,7 +333,11 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceConte
 	lastContext=deviceContext.asD3D11DeviceContext();
 	if(lastContext)
 	{
-		HRESULT hr=lastContext->Map(buffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+		lastContext=deviceContext.asD3D11DeviceContext();
+		D3D11_MAP map_type=D3D11_MAP_WRITE_DISCARD;
+		if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
+			map_type=D3D11_MAP_WRITE;
+		HRESULT hr=lastContext->Map(buffer,0,map_type,SIMUL_D3D11_MAP_FLAGS,&mapped);
 		if(hr==S_OK)
 		{
 			memcpy(mapped.pData,data,num_elements*element_bytesize);
@@ -321,73 +408,6 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
 		SAFE_RELEASE(stagingBuffers[i]);
 	num_elements=0;
-}
-
-void dx11::PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t size,void *addr)
-{
-	InvalidateDeviceObjects();
-	if(!r)
-		return;
-	SAFE_RELEASE(m_pD3D11Buffer);	
-	D3D11_SUBRESOURCE_DATA cb_init_data;
-	cb_init_data.pSysMem			= addr;
-	cb_init_data.SysMemPitch		= 0;
-	cb_init_data.SysMemSlicePitch	= 0;
-	D3D11_BUFFER_DESC cb_desc;
-	cb_desc.Usage				= D3D11_USAGE_DYNAMIC;
-	cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
-	cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
-	cb_desc.MiscFlags			= 0;
-	cb_desc.ByteWidth			= (UINT)(PAD16(size));
-	cb_desc.StructureByteStride = 0;
-	ID3D11Device *device=r->AsD3D11Device();
-	device->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
-	if(m_pD3DX11EffectConstantBuffer)
-		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
-}
-
-//! Find the constant buffer in the given effect, and link to it.
-void dx11::PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int )
-{
-	if(!effect)
-		return;
-	if(!effect->asD3DX11Effect())
-		return;
-	m_pD3DX11EffectConstantBuffer=effect->asD3DX11Effect()->GetConstantBufferByName(name);
-	if(m_pD3DX11EffectConstantBuffer)
-		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
-	else
-		SIMUL_CERR<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the effect."<<std::endl;
-}
-
-void dx11::PlatformConstantBuffer::InvalidateDeviceObjects()
-{
-	SAFE_RELEASE(m_pD3D11Buffer);
-	m_pD3DX11EffectConstantBuffer=NULL;
-}
-
-void dx11::PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr)
-{
-	if(!m_pD3D11Buffer)
-	{
-		SIMUL_CERR<<"Attempting to apply an uninitialized Constant Buffer"<<std::endl;
-		return;
-	}
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
-	
-	D3D11_MAPPED_SUBRESOURCE mapped_res;
-	if(pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res)!=S_OK)
-		return;
-	memcpy(mapped_res.pData,addr,size);
-	pContext->Unmap(m_pD3D11Buffer, 0);
-	if(m_pD3DX11EffectConstantBuffer)
-		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
-}
-
-void dx11::PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &deviceContext)
-{
-	if(m_pD3DX11EffectConstantBuffer)
-		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
 }
 
 int EffectTechnique::NumPasses() const
