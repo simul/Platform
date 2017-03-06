@@ -32,12 +32,12 @@ namespace simul
 			double AngleInDirection(const vec3d &vv) const;
 			double Angle() const;  
 			/// Multiply, or rotate, vec3d v by q, return the value in vec3d ret. v and ret must have size 3.
-			friend void SIMUL_MATH_EXPORT_FN Multiply(vec3d &ret,const Quaterniond &q,const vec3d &v);    
-			friend void SIMUL_MATH_EXPORT_FN MultiplyByNegative(Quaterniond &ret,const Quaterniond &q1,const Quaterniond &q2);
-			friend void SIMUL_MATH_EXPORT_FN MultiplyNegativeByQuaterniond(Quaterniond &r,const Quaterniond &q1,const Quaterniond &q2);
-			friend void SIMUL_MATH_EXPORT_FN Divide(vec3d &ret,const Quaterniond &q,const vec3d &v);
-			friend void SIMUL_MATH_EXPORT_FN AddQuaterniondTimesVector(vec3d &ret,const Quaterniond &q,const vec3d &v);
-			friend void SIMUL_MATH_EXPORT_FN Multiply(Quaterniond &r,const Quaterniond &q1,const Quaterniond &q2);
+			friend void SIMUL_CROSSPLATFORM_EXPORT_FN Multiply(vec3d &ret,const Quaterniond &q,const vec3d &v);    
+			friend void SIMUL_CROSSPLATFORM_EXPORT_FN MultiplyByNegative(Quaterniond &ret,const Quaterniond &q1,const Quaterniond &q2);
+			friend void SIMUL_CROSSPLATFORM_EXPORT_FN MultiplyNegativeByQuaterniond(Quaterniond &r,const Quaterniond &q1,const Quaterniond &q2);
+			friend void SIMUL_CROSSPLATFORM_EXPORT_FN Divide(vec3d &ret,const Quaterniond &q,const vec3d &v);
+			friend void SIMUL_CROSSPLATFORM_EXPORT_FN AddQuaterniondTimesVector(vec3d &ret,const Quaterniond &q,const vec3d &v);
+			friend void SIMUL_CROSSPLATFORM_EXPORT_FN Multiply(Quaterniond &r,const Quaterniond &q1,const Quaterniond &q2);
 			// Operations
 			operator const double*() const
 			{
@@ -110,7 +110,7 @@ namespace simul
 			Quaterniond& Rotate(double angle,const vec3d &axis);
 			void Rotate(const vec3d &d);
 		};
-		extern void SIMUL_MATH_EXPORT_FN Slerp(Quaterniond &ret,const Quaterniond &q1,const Quaterniond &q2,double l);  
+		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Slerp(Quaterniond &ret,const Quaterniond &q1,const Quaterniond &q2,double l);  
 	}
 }
 #endif

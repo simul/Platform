@@ -605,7 +605,7 @@ namespace simul
 		};
 		class Texture;
 		class SamplerState;
-		struct ShaderResource
+		struct SIMUL_CROSSPLATFORM_EXPORT ShaderResource
 		{
 			ShaderResource():slot(-1),dimensions(-1),valid(false){}
 			ShaderResourceType shaderResourceType;

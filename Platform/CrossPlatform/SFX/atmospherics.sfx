@@ -90,7 +90,7 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 		vec4 depth_lookup		=texture_cube_lod(cubeDepthTexture,pos_n,0);
 		vec4 update				=texture_cube_lod(cubeUpdateTexture,pos_n,0);
 		// We will ignore any depths nearer than 0.2, an arbitrary cutoff to prevent godrays due to near objects.
-		depth_lookup.x			=lerp(saturate(depth_lookup.x-0.2)/0.8,1.0,saturate(1.0-update.r)+saturate((depth_lookup-0.9)/0.1));
+		depth_lookup.x			=lerp(saturate(depth_lookup.x-0.2)/0.8,1.0,saturate(1.0-update.r)+saturate((depth_lookup.x-0.9)/0.1));
 		// problem: depth_lookup is not guaranteed to be valid. We must use the update texture to determine if it is.
 		// Later we can think about doing a "level of validity" - how old the data might be.
 		float dist				=saturate(length(pos_w)*0.001/maxFadeDistanceKm);
