@@ -10,19 +10,19 @@
 #include "../SL/debug_constants.sl"
 #include "../SL/noise.sl"
 
-uniform Texture2D imageTexture;
-uniform TEXTURE2DMS_FLOAT4 imageTextureMS;
-uniform TextureCubeArray imageCubeArray;
-uniform TextureCube nearFarTexture;
-uniform TextureCube lightpassTexture;
+uniform Texture2D imageTexture					SIMUL_TEXTURE_REGISTER(0);
+uniform TEXTURE2DMS_FLOAT4 imageTextureMS		SIMUL_TEXTURE_REGISTER(0);
+uniform TextureCubeArray imageCubeArray			SIMUL_TEXTURE_REGISTER(2);
+uniform TextureCube nearFarTexture				SIMUL_TEXTURE_REGISTER(3);
+uniform TextureCube lightpassTexture			SIMUL_TEXTURE_REGISTER(4);
 uniform Texture2D depthTexture					SIMUL_TEXTURE_REGISTER(1);
 uniform TEXTURE2DMS_FLOAT4 depthTextureMS		SIMUL_TEXTURE_REGISTER(1);
-uniform TEXTURE2D_UINT glowTexture;
+uniform TEXTURE2D_UINT glowTexture				SIMUL_TEXTURE_REGISTER(8);
 
-uniform Texture2D inscatterTexture;				// Far, or default inscatter
-uniform Texture2D loss2dTexture;
-uniform Texture3D inscatterVolumeTexture;
-uniform Texture3D godraysVolumeTexture;
+uniform Texture2D inscatterTexture				SIMUL_TEXTURE_REGISTER(8);				// Far, or default inscatter
+uniform Texture2D loss2dTexture					SIMUL_TEXTURE_REGISTER(9);
+uniform Texture3D inscatterVolumeTexture		SIMUL_TEXTURE_REGISTER(6);
+uniform Texture3D godraysVolumeTexture			SIMUL_TEXTURE_REGISTER(7);
 
 struct CompositeShaderInput
 {

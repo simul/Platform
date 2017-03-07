@@ -47,27 +47,19 @@ SIMUL_CONSTANT_BUFFER(cbShading,3)
 	uniform vec3		g_PerlinAmplitude;
 	uniform float		xxxxxxxxxxxxxxx;
 	uniform vec3		g_PerlinOctave;
-	uniform float		xxxxxxxxxxxxxxxx;
+	uniform int			g_totalVertices;
 	uniform vec3		g_PerlinGradient;
-	uniform float		xxxxxxxxxxxxxxxxx;
+	uniform int			g_quadsPerRing;
 
 	// Constants for calculating texcoord from position
 	uniform float		g_TexelLength_x2;
-	uniform float		xxxxxxxxxxxxxxxxxx;
 	uniform float		g_UVScale;
-	uniform float		xxxxxxxxxxxxxxxxxxx;
 	uniform float		g_UVOffset;
-	uniform float		xxxxxxxxxxxxxxxxxxxx;
 	uniform float		g_WorldScale;
-	uniform float		xxxxxxxxxxxxxxxxxxxxx;
 
 	//Depth parameters for depth calculations
 	uniform vec4		g_DepthToLinFadeParams;
-	uniform float		xxxxxxxxxxxxxxxxxxxxxxx;
 	uniform vec4		g_HalfTan;
-	uniform int			g_totalVertices;
-	uniform int			g_quadsPerRing;
-	uniform float		xxxxxxxxxxxxxxxxxxxxxxxxxx;
 SIMUL_CONSTANT_BUFFER_END
 
 // Per draw call constants
