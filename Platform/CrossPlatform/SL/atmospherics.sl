@@ -49,7 +49,7 @@ vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,T
 	return loss;
 }
 
-float GetCloudIllum(Texture3D cloudTexture,SamplerState cloudSamplerState,vec3 texc,vec3 lightDirCloudspace,int clamp,float averageCoverage)
+float GetCloudIllum(Texture3D cloudTexture,SamplerState cloudSamplerState,vec3 texc,vec3 lightDirCloudspace,int clamp,float averageIllum)
 {
 	vec3 l			=lightDirCloudspace;
 	// if light is shining downwards, and we are under the clouds (texc.z<0) we want to project upward towards the light.
@@ -58,7 +58,7 @@ float GetCloudIllum(Texture3D cloudTexture,SamplerState cloudSamplerState,vec3 t
 	// dividing this by l.z will give us the projection distance up to the cloudbase, unless l.z<0
 	float zproject	=max(0.0,-texc.z)/max(l.z,0.0001)-max(0,texc.z-1.0)/min(l.z,-0.0001);
 //	float zproject	=max(0.0,-texc.z)/max(l.z,0.0001)*step(0,l.z)-max(0,texc.z-1.0)/min(l.z,-0.0001)*step(0,-l.z);
-	texc			+=l*zproject;
+//	texc			+=l*zproject;
 	if(clamp!=0)
 	{
 		//
@@ -68,8 +68,9 @@ float GetCloudIllum(Texture3D cloudTexture,SamplerState cloudSamplerState,vec3 t
 		float yproject	=max(0.0,-texc.y)/max(l.y,0.0001)-max(0,texc.y-1.0)/min(l.y,-0.0001);
 		texc			+=l*yproject;
 	}
-	vec4 texel			=sample_3d_lod(cloudTexture,cloudSamplerState, texc,10);
-	texel.x				=lerp(averageCoverage,texel.x,exp(-abs(zproject)));
+	texc				=vec3(.5,.5,1.0);
+	vec4 texel			=1;//sample_3d_lod(cloudTexture,cloudSamplerState, texc,0);
+	//texel.x			=lerp(averageIllum,texel.x,exp(-abs(zproject/100.0)));
 	return saturate(texel.x);
 }
 
