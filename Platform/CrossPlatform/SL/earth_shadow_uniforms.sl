@@ -11,6 +11,9 @@ SIMUL_CONSTANT_BUFFER(EarthShadowConstants,9)
 	uniform float terminatorDistance;
 	uniform float earthShadowEffectStrength;
 	uniform float planetRadiusKm;
+	uniform float pad21473485;
+	uniform float pad2754763;
+	uniform float pad24633;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

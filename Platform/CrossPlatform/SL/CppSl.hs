@@ -169,6 +169,7 @@
 			return r;
 		}
 	};
+	struct vec3d;
 	struct vec3
 	{
 		float x,y,z;
@@ -206,6 +207,7 @@
 			y=v[1];
 			z=v[2];
 		}
+		void operator=(const vec3d &v);
 		void operator*=(float m)
 		{
 			x*=m;
@@ -291,6 +293,87 @@
 			x-=v[0];
 			y-=v[1];
 			z-=v[2];
+		}
+	};
+	struct mat4
+	{
+		union
+		{
+			float m[16];
+			struct
+			{
+				float        _11, _12, _13, _14;
+				float        _21, _22, _23, _24;
+				float        _31, _32, _33, _34;
+				float        _41, _42, _43, _44;
+			};
+			struct
+			{
+				float        _m00, _m01, _m02, _m03;
+				float        _m10, _m11, _m12, _m13;
+				float        _m20, _m21, _m22, _m23;
+				float        _m30, _m31, _m32, _m33;
+			};
+			float M[4][4];
+		};
+		operator const float *()
+		{
+			return m;
+		}
+		void operator=(const float *v)
+		{
+			for(int i=0;i<16;i++)
+				m[i]=v[i];
+		}
+		inline static void mul(mat4 &r,const mat4 &a,const mat4 &b)
+		{
+			for(int i=0;i<4;i++)
+			{
+				for(int j=0;j<4;j++)
+				{
+					const float *m1row=&a.m[i*4+0];
+					float t=0.f;
+					int k=0;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];	++k;
+					t+=m1row[k]*b.m[k*4+j];
+					r.M[i][j]=t;
+				}
+			}
+		}
+		void operator*=(float c)
+		{
+			for(int i=0;i<16;i++)
+				m[i]*=c;
+		}
+		void transpose()
+		{
+			for(int i=0;i<4;i++)
+				for(int j=0;j<4;j++)
+					if(i<j)
+					{
+						float temp=m[i*4+j];
+						m[i*4+j]=m[j*4+i];
+						m[j*4+i]=temp;
+					}
+		}
+		static inline mat4 identity()
+		{
+			mat4 m;
+			for(int i=0;i<4;i++)
+				for(int j=0;j<4;j++)
+					m.M[i][j]=0.0f;
+			m._11=m._22=m._33=m._44=1.0f;
+			return m;
+		}
+		static inline mat4 translation(vec3 tr)
+		{
+			mat4 m=identity();
+			m._41=tr.x;
+			m._42=tr.y;
+			m._43=tr.z;
+			return m;
 		}
 	};
 	inline vec3 operator*(float m,vec3 v)
@@ -406,87 +489,6 @@
 		r.w=m*v.w;
 		return r;
 	}
-	struct mat4
-	{
-		union
-		{
-			float m[16];
-			struct
-			{
-				float        _11, _12, _13, _14;
-				float        _21, _22, _23, _24;
-				float        _31, _32, _33, _34;
-				float        _41, _42, _43, _44;
-			};
-			struct
-			{
-				float        _m00, _m01, _m02, _m03;
-				float        _m10, _m11, _m12, _m13;
-				float        _m20, _m21, _m22, _m23;
-				float        _m30, _m31, _m32, _m33;
-			};
-			float M[4][4];
-		};
-		operator const float *()
-		{
-			return m;
-		}
-		void operator=(const float *v)
-		{
-			for(int i=0;i<16;i++)
-				m[i]=v[i];
-		}
-		inline static void mul(mat4 &r,const mat4 &a,const mat4 &b)
-		{
-			for(int i=0;i<4;i++)
-			{
-				for(int j=0;j<4;j++)
-				{
-					const float *m1row=&a.m[i*4+0];
-					float t=0.f;
-					int k=0;
-					t+=m1row[k]*b.m[k*4+j];	++k;
-					t+=m1row[k]*b.m[k*4+j];	++k;
-					t+=m1row[k]*b.m[k*4+j];	++k;
-					t+=m1row[k]*b.m[k*4+j];
-					r.M[i][j]=t;
-				}
-			}
-		}
-		void operator*=(float c)
-		{
-			for(int i=0;i<16;i++)
-				m[i]*=c;
-		}
-		void transpose()
-		{
-			for(int i=0;i<4;i++)
-				for(int j=0;j<4;j++)
-					if(i<j)
-					{
-						float temp=m[i*4+j];
-						m[i*4+j]=m[j*4+i];
-						m[j*4+i]=temp;
-					}
-		}
-		static inline mat4 identity()
-		{
-			mat4 m;
-			for(int i=0;i<4;i++)
-				for(int j=0;j<4;j++)
-					m.M[i][j]=0.0f;
-			m._11=m._22=m._33=m._44=1.0f;
-			return m;
-		}
-		static inline mat4 translation(vec3 tr)
-		{
-			mat4 m=identity();
-			m._41=tr.x;
-			m._42=tr.y;
-			m._43=tr.z;
-			return m;
-		}
-	};
 	inline vec4 operator*(const mat4 &m,const vec4 &v)
 	{
 		vec4 r;
@@ -828,7 +830,13 @@
 				double	r, g, b;
 			};
 		};
-		vec3d(double a=0.0,double b=0.0,double c=0.0):x(a),y(b),z(c){}
+		vec3d()
+		{
+		}
+		vec3d(double X,double Y,double Z)
+			:x(X),y(Y),z(Z)
+		{
+		}
 		operator double *()
 		{
 			return v;
@@ -842,43 +850,67 @@
 			for(int i=0;i<3;i++)
 				v[i]=u[i];
 		}
-		vec3d operator*(vec3d v) const
+		void operator=(const vec3 &u)
 		{
-			vec3d r;
-			r.x=v.x*x;
-			r.y=v.y*y;
-			r.z=v.z*z;
-			return r;
+			x=double(u.x);
+			y=double(u.y);
+			z=double(u.z);
 		}
-		vec3d operator/(vec3d v) const
+		void operator*=(double m)
 		{
-			vec3d r;
-			r.x=x/v.x;
-			r.y=y/v.y;
-			r.z=z/v.z;
-			return r;
-		}
-		vec3d operator+(vec3d v) const
-		{
-			vec3d r;
-			r.x=x+v.x;
-			r.y=y+v.y;
-			r.z=z+v.z;
-			return r;
-		}
-		vec3d operator-(vec3d v) const
-		{
-			vec3d r;
-			r.x=x-v.x;
-			r.y=y-v.y;
-			r.z=z-v.z;
-			return r;
+			x*=m;
+			y*=m;
+			z*=m;
 		}
 		void operator/=(double m)
 		{
 			x/=m;
 			y/=m;
 			z/=m;
+		}
+		void operator+=(vec3d u)
+		{
+			x+=u.x;
+			y+=u.y;
+			z+=u.z;
+		}
+		void operator-=(vec3d u)
+		{
+			x-=u.x;
+			y-=u.y;
+			z-=u.z;
+		}
+		vec3d operator*(vec3d v2) const
+		{
+			vec3d ret;
+			ret.x=v2.x*x;
+			ret.y=v2.y*y;
+			ret.z=v2.z*z;
+			return ret;
+		}
+		vec3d operator/(vec3d v2) const
+		{
+			vec3d ret;
+			ret.x=x/v2.x;
+			ret.y=y/v2.y;
+			ret.z=z/v2.z;
+			return ret;
+		}
+		vec3d operator+(vec3d v2) const
+		{
+			vec3d ret;
+			ret.x=x+v2.x;
+			ret.y=y+v2.y;
+			ret.z=z+v2.z;
+			return ret;
+		}
+		vec3d operator-(vec3d v2) const
+		{
+			vec3d ret;
+			ret.x=x-v2.x;
+			ret.y=y-v2.y;
+			ret.z=z-v2.z;
+			return ret;
 		}
 	};
 	//! Very simple 4x4 matrix of doubles.

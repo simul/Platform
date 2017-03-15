@@ -26,6 +26,10 @@ struct LookupQuad4
 
 #define VOLUME_INSCATTER
 #define SCREENSPACE_VOL
+
+
+// NOTE: Performance here is ALL about texture bandwidth. If the textures can be made to use smaller formats: 16-bit floats,
+// R11G11B10 etc, the shader will go much faster.
 TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,TextureCubeArray cloudCubeArray
 				,TextureCube nearFarTexture

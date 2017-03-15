@@ -1,6 +1,6 @@
 #pragma once
 //! Forward declaration for this, means we needn't include the dx11 headers yet.
-typedef enum D3D_FEATURE_LEVEL;
+enum D3D_FEATURE_LEVEL;
 namespace simul
 {
 	namespace dx11

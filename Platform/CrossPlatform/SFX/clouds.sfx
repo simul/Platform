@@ -215,8 +215,7 @@ shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	{
 		IMAGE_STORE_3D(outputTexture3d, idx, res);
 	}
-} 
-
+}
 
 CS_LAYOUT(4,4,4)
 shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
