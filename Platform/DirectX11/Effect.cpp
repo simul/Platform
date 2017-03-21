@@ -81,11 +81,11 @@ void Query::InvalidateDeviceObjects()
 
 void Query::Begin(crossplatform::DeviceContext &deviceContext)
 {
-	if(!gotResults[currFrame])
+/*	if(!gotResults[currFrame])
 	{
 		SIMUL_CERR<<"No results yet for this query."<<std::endl;
 		return;
-	}
+	}*/
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->Begin(d3d11Query[currFrame]);
 }

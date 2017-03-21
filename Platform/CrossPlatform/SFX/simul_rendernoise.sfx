@@ -58,7 +58,7 @@ CS_LAYOUT(8,8,8)
 shader void CS_Random3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 pos = g * 8 + t;
-	int3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
+	uint3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
 	//targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;

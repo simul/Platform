@@ -14,26 +14,29 @@ uniform RWStructuredBuffer<SphericalHarmonicsSample> samplesBufferRW;
 uniform StructuredBuffer<SphericalHarmonicsSample> samplesBuffer;
 
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE 1
+#define BLOCK_SIZE 16
 #endif
 
-[numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
+CS_LAYOUT(BLOCK_SIZE,1,1)
+shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 sub_pos = g * BLOCK_SIZE + t;
+	if(sub_pos.x>=numCoefficients)
+		return;
+	targetBuffer[sub_pos.x]	=vec4(0,1,0,0);
+}
+
+CS_LAYOUT(BLOCK_SIZE,1,1)
 shader void CS_Jitter(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 pos = g * BLOCK_SIZE + t;
-	pos += uint3(randomSeed, randomSeed, 0);
-
-	// fill an N*N*2 array with uniformly distributed 
-	// samples across the sphere using jittered stratification 
-	float oneoverN			= 1.0/sqrtJitterSamples; 
-	int a					=int(pos.x);
-	if (a >= numJitterSamples)
+	int i		=int(pos.x); // array index 
+	if (i>= numJitterSamples)
 		return;
-	int b					=int(pos.y);
-	int i					=(a*sqrtJitterSamples+b)%numJitterSamples; // array index 
+	int r		=i+randomSeed;
 	// generate unbiased distribution of spherical coords 
-	float x					=(rand(vec2(a,b))); // do not reuse results 
-	float y					=(rand(vec2(2.45*a,11.1*b))); // each sample must be random 
+	float x					=(rand(vec2(r,1.0))); // do not reuse results 
+	float y					=(rand(vec2(2.45*r,11.1*r))); // each sample must be random 
 	float theta				=asin(2.0*x-1.0); 
 	float phi				=2.0 * PI * y;
 	// convert spherical coords to unit vector 
@@ -54,19 +57,17 @@ shader void CS_Jitter(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		float co	=SH(p.x,p.y,theta,phi);
 		samplesBufferRW[i].coeff[j] =co;
 	}
+	samplesBufferRW[i].lookup=texture_cube_lod(cubemapTexture,dir,0);
 }
+groupshared vec4 contribution[MAX_SH_SAMPLES];
 
-[numthreads(BLOCK_SIZE,BLOCK_SIZE,1)]
-shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
-{
-	uint3 sub_pos = g * BLOCK_SIZE + t;
-	targetBuffer[sub_pos.x]	=vec4(0,0,0,0);
-}
+// Each group is all the samples for a given coefficient.
 
-[numthreads(BLOCK_SIZE,1,1)]
+CS_LAYOUT(1,MAX_SH_SAMPLES,1)
 shader void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	uint3 sub_pos						= g * BLOCK_SIZE + t;
+	uint3 sub_pos						= uint3(g.x,t.y,0);
+	sub_pos.x							=min(8,sub_pos.x);
 	// The sub_pos gives the co-ordinate in the table of sam
 	const float weight					=4.0*PI; 
 	// divide the result by weight and number of samples 
@@ -79,25 +80,33 @@ shader void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 		targetBuffer[n]					+=colour*factor*sample.coeff[n]; 
 	}
 #else
-	vec4 total=vec4(0,0,0,0);
-	for(int n=0;n<MAX_SH_SAMPLES;n++)
-	{ 
-		if (n >= numJitterSamples)
-			break;
-		SphericalHarmonicsSample shs	=samplesBuffer[n];
+
+	//for(int n=0;n<MAX_SH_SAMPLES;n++)
+	vec4 contrib=vec4(0,0,0,0);
+	if (sub_pos.y<MAX_SH_SAMPLES)
+	{
+		SphericalHarmonicsSample shs	=samplesBuffer[sub_pos.y];
 		vec4 colour						=texture_cube_lod(cubemapTexture,shs.dir,0);
-		total							+=factor*shs.coeff[sub_pos.x]*colour;//*vec4(1,0,0,0);//;//
+		contrib			=factor*shs.coeff[sub_pos.x]*colour;
+	}
+	
+	contribution[sub_pos.y]=contrib;
+	GroupMemoryBarrierWithGroupSync();
+	//	targetBuffer[sub_pos.x]=vec4(1,0,0,0);
+	if(sub_pos.x>=numCoefficients)
+		return;
+	if(sub_pos.x>8)
+		return;
+	if(sub_pos.y==0)
+	{
+	vec4 total=vec4(0,0,0,0);
+		for(int i=0;i<MAX_SH_SAMPLES;i++)
+	{ 
+			total+=contribution[i];
 	}
 	targetBuffer[sub_pos.x]=total;
+	}
 #endif
-}
-
-technique jitter
-{
-    pass p0 
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_Jitter()));
-    }
 }
 
 technique clear
@@ -105,6 +114,14 @@ technique clear
     pass p0 
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Clear()));
+    }
+}
+
+technique jitter
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Jitter()));
     }
 }
 

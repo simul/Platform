@@ -181,7 +181,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
-					float dm			=rainEffect*fade*GetRainAtOffsetKm(rainMapTexture,cloudWorldOffsetKm,inverseScalesKm, world_pos, rainCentreKm, rainRadiusKm,rainEdgeKm);
+					float dm			=rainEffect*fade*GetRainAtOffsetKm(rainMapTexture,cloudWorldOffsetKm,inverseScalesKm, world_pos, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
 					moisture			+=0.01*dm*light.x;
 					density.z			=saturate(density.z+dm);
 				}
@@ -190,8 +190,11 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 					minDistance		=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
 					vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
 					//density.z		=saturate(4.0*density.z-0.2);
+					
+					float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(cloudTexCoords.z));
 					float wo		=density.y*(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
-					density.z		=saturate(0.1+(1.0+alphaSharpness)*((density.z+wo)-0.1));
+					wo				*=noise_factor;
+					density.z		=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3-saturate(0.6-density.z)));
 					//density.xy		*=1.0+wo;
 					float brightness_factor;
 					fade_texc.x				=sqrt(fadeDistance);

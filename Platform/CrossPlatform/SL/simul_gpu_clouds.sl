@@ -168,6 +168,8 @@ float DensityFunction(Texture3D volumeNoiseTexture,vec3 noisespace_texcoord,floa
 }
 
 // height is the height of the total cloud volume as a proportion of the initial noise volume
+// The noise texture has values between 0 and 1.
+// NoiseFunction returns values between -1 and 1
 float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float t,float height,float texel)
 {
 	float dens=0.0;

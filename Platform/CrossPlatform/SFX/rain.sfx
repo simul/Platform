@@ -27,7 +27,7 @@ uniform Texture2D depthTexture;
 uniform Texture2DArray rainTextureArray;
 uniform RWTexture2DArray<vec4> targetTextureArray;
 uniform RWStructuredBuffer<PrecipitationVertex> targetVertexBuffer;
-
+uniform Texture2D rainDepthTexture;
 struct fullscreenVertexOutput
 {
     vec4 position		: SV_POSITION;
@@ -101,8 +101,7 @@ shader posTexVertexOutput VS_ShowTexture(idOnly id)
     return VS_ScreenQuad(id,rect);
 }
 
-// i is the frame 0 or 1, id the the 
-void transf(out TransformedParticle p,in vec3 position,int i)//,int id)
+void transf(out TransformedParticle p,in vec3 position,int i)
 {
 	vec3 particlePos	=position.xyz;
 	particlePos			+=i*viewPositionOffset.xyz;
@@ -374,88 +373,6 @@ shader vec4 PS_RenderRandomTexture(fullscreenVertexOutput IN): SV_TARGET
 //--------------------------------------------------------------------------------------------
 // draw rain
 //--------------------------------------------------------------------------------------------
-
-struct RainSplashVertexInput
-{
-    vec3 position	:POSITION;
-	vec3 normal		:TEXCOORD0;
-    float strength	:TEXCOORD1;
-};
-struct RainSplashVertexOutput
-{
-    vec3 position	: POSITION;
-	vec3 normal		:TEXCOORD0;
-    float strength	:TEXCOORD1;
-};
-
-struct RainSplashGeometryOutput
-{
-    vec4 position		:SV_POSITION;
-    vec2 texCoords		:TEXCOORD0;
-	float strength		:TEXCOORD1;
-};
-
-
-shader RainSplashVertexOutput VS_RainSplash(PrecipitationVertexInput inp )
-{
-	RainSplashVertexOutput p;
-	p.position	=inp.position;
-	p.normal	=vec3(0,0,1.0);
-	p.strength	=1.0;
-    return p;
-}
-
-[maxvertexcount(6)]
-shader void GS_RainSplash(point RainSplashVertexOutput inp[1], inout TriangleStream<RainSplashGeometryOutput> SpriteStream)
-{
-    RainSplashGeometryOutput outp;
-	// Emit two new triangles.
-	// The two centres of the streak positions.
-	float sz=.1;
-	vec4 pos1			=mul(worldViewProj[1],vec4(inp[0].position.xyz,1.0));
-	outp.strength		=inp[0].strength; 
-	{
-		vec2 g_positions[4] =
-		{
-			vec2(-0.5,-0.5),
-			vec2( 0.5,-0.5),
-			vec2(-0.5, 0.5),
-			vec2( 0.5, 0.5),
-		};
-		vec2 g_texcoords[4]=
-		{ 
-			vec2(0,0),
-			vec2(1,0), 
-			vec2(0,1),
-			vec2(1,1),
-		}; 
-		// bottom-left quadrant:
-		outp.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
-		outp.texCoords	=g_texcoords[0];
-		SpriteStream.Append(outp);
-		outp.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
-		outp.texCoords	=g_texcoords[1];
-		SpriteStream.Append(outp);
-		outp.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
-		outp.texCoords	=g_texcoords[2];
-		SpriteStream.Append(outp);
-		outp.position		=pos1+vec4(g_positions[1].xy*sz,0,0);  
-		outp.texCoords	=g_texcoords[1];
-		SpriteStream.Append(outp);
-		outp.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
-		outp.texCoords	=g_texcoords[2];
-		SpriteStream.Append(outp);
-		outp.position		=pos1+vec4(g_positions[3].xy*sz,0,0); 
-		outp.texCoords	=g_texcoords[3];
-		SpriteStream.Append(outp);
-		SpriteStream.RestartStrip();
-	}
-}
-
-shader vec4 PS_RainSplash(RainSplashGeometryOutput IN) : SV_Target
-{
-	return vec4(IN.texCoords.xyy,1.0);
-}
 
 bool cullSprite( vec3 position, float SpriteSize)
 {
@@ -780,20 +697,6 @@ technique rain_particles_no_cubemap
         SetBlendState( AlphaBlendNoAlphaWrite, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );//
        // SetDepthStencilState( EnableDepth, 0 );
     }
-}
-
-technique splash
-{
-    pass p0
-    {
-        SetRasterizerState( RenderNoCull );
-        SetVertexShader(CompileShader(vs_5_0,VS_RainSplash()));
-        SetGeometryShader(CompileShader(gs_5_0,GS_RainSplash()));
-        SetPixelShader(CompileShader(ps_5_0,PS_RainSplash()));
-        
-        SetBlendState( AddAlphaBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        //SetDepthStencilState( EnableDepth, 0 );
-    }  
 }
 
 technique snow_particles

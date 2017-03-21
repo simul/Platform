@@ -3,10 +3,10 @@
 #define SPHERICAL_HARMONICS_CONSTANTS_SL
 
 #ifndef MAX_SH_BANDS
-#define MAX_SH_BANDS (12)
+#define MAX_SH_BANDS (4)
 #endif
 #ifndef MAX_SH_SAMPLES
-#define MAX_SH_SAMPLES (16)
+#define MAX_SH_SAMPLES 16
 #endif
 #ifndef MAX_SH_COEFFICIENTS
 #define MAX_SH_COEFFICIENTS (16)
@@ -25,6 +25,7 @@ struct SphericalHarmonicsSample
 { 
 	vec3 dir; 
 	float dummy3;
+	vec4 lookup;
 	float coeff[MAX_SH_BANDS*MAX_SH_BANDS]; 
 }; 
 

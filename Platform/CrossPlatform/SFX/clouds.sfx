@@ -66,7 +66,7 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	res.direct_light				=lookup.y;
 	res.indirect_light				=lookup.x;
 	res.ambient_light				=lookup.w;
-	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km, rainCentreKm, rainRadiusKm,rainEdgeKm);
+	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
 	
 	volumeQueries[sub_pos.x]		=res;
 }
@@ -152,10 +152,10 @@ shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec4 c1		=cloudDensity.SampleLevel(cloudSamplerState,texc,0);
 	vec4 c2		=cloudDensity2.SampleLevel(cloudSamplerState,texc,0);
 	vec4 res	=lerp(c1,c2,cloud_interp);
-	res.z		=saturate((res.z-0.5)*5.0+0.5);
+	res.z		=saturate((res.z*2.0-0.5)*1.5+0.7);
 	res.x		=localNoiseStrength/100.0;
 	res.y		=localCellNoiseStrength;
-	if (res.z > 0)
+	//if (res.z > 0)
 	{
 		IMAGE_STORE_3D(outputTexture3d,idx,res);
 	}
@@ -164,9 +164,9 @@ shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 float WorleyFactor(vec3 worley_texcoord)
 {
 	float c			=0.5;
-	float p						=0.75;
-	float m						=1.0;
-	float w						=0.0;
+	float p			=0.75;
+	float m			=1.0;
+	float w			=0.0;
 	worley_texcoord	*=2.3;
 	for(int j=0;j<2;j++)
 	{
@@ -215,8 +215,7 @@ shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	{
 		IMAGE_STORE_3D(outputTexture3d, idx, res);
 	}
-} 
-
+}
 
 CS_LAYOUT(4,4,4)
 shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
@@ -242,8 +241,8 @@ shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 		s			*=1.05;
 	}
 	vec4 illum;
-	illum.x			=exp(-extinction*thickness);
-	illum.y			=exp(-extinction*thickness/12.0);
+	illum.x			=exp(-extinction*thickness/36.0);
+	illum.y			=exp(-extinction*thickness);
 	illum.zw		=0;
 //illum=texture_3d_wwc_lod(cloudDensity,texc,0);
 	IMAGE_STORE_3D(outputTexture3d,idx,illum);

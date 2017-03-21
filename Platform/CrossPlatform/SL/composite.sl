@@ -26,6 +26,10 @@ struct LookupQuad4
 
 #define VOLUME_INSCATTER
 #define SCREENSPACE_VOL
+
+
+// NOTE: Performance here is ALL about texture bandwidth. If the textures can be made to use smaller formats: 16-bit floats,
+// R11G11B10 etc, the shader will go much faster.
 TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,TextureCubeArray cloudCubeArray
 				,TextureCube nearFarTexture
@@ -55,15 +59,6 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 
 	// cut-off at the edges.
 	vec4 insc						=texture_3d_wmc_lod(inscatterVolumeTexture,worldspaceVolumeTexCoords,0);
-	if(do_godrays)
-	{
-		float r							=length(lightspaceOffset);
-		vec3 lightspaceVolumeTexCoords	=vec3(frac(atan2(lightspaceOffset.x,lightspaceOffset.y)/(2.0*pi))
-													,0.5+0.5*asin(lightspaceOffset.z/r)*2.0/pi
-													,r);
-		vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
-		insc							*=godrays;
-	}
 	vec2 loss_texc					=vec2(dist_rt,0.5*(1.f-sine));
 
 	float f							=nearFarCloud.x;
@@ -96,6 +91,15 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	}
 	
 	insc.rgb						*=cloud.a;
+	if(do_godrays)
+	{
+		float r							=length(lightspaceOffset);
+		vec3 lightspaceVolumeTexCoords	=vec3(frac(atan2(lightspaceOffset.x,lightspaceOffset.y)/(2.0*pi))
+													,0.5+0.5*asin(lightspaceOffset.z/r)*2.0/pi
+													,r);
+		vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
+		insc.rgb						*=godrays;
+	}
 
 	insc							+=cloud;
 	res.multiply					=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a;
@@ -145,15 +149,6 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 	
 		// cut-off at the edges.
 		vec4 insc						=texture_3d_wmc_lod(inscatterVolumeTexture,worldspaceVolumeTexCoords,0);
-		if(do_godrays)
-		{
-			float r							=length(lightspaceOffset);
-			vec3 lightspaceVolumeTexCoords	=vec3(frac(atan2(lightspaceOffset.x,lightspaceOffset.y)/(2.0*pi))
-														,0.5+0.5*asin(lightspaceOffset.z/r)*2.0/pi
-														,r);
-			vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
-			insc							*=godrays;
-		}
 		vec2 loss_texc					=vec2(dist_rt,0.5*(1.f-sine));
 	
 		float f							=nearFarCloud.x;
@@ -188,6 +183,15 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 		insc.rgb						*=cloud.a;
 	
 		insc							+=cloud;
+		if(do_godrays)
+		{
+			float r							=length(lightspaceOffset);
+			vec3 lightspaceVolumeTexCoords	=vec3(frac(atan2(lightspaceOffset.x,lightspaceOffset.y)/(2.0*pi))
+														,0.5+0.5*asin(lightspaceOffset.z/r)*2.0/pi
+														,r);
+			vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
+			insc.rgb						*=godrays;
+		}
 		res.multiply					+=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a;
 		res.add							+=insc;
 	}

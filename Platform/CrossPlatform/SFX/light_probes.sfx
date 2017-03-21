@@ -14,7 +14,7 @@
 // A texture (l+1)^2 of basis coefficients.
 uniform StructuredBuffer<float4> basisBuffer;
 
-uniform sampler2D sourceTexture;
+uniform Texture2DArray<vec4> sourceTextureArray;
 
 float WindowFunction(float x)
 {
@@ -82,7 +82,7 @@ shader vec4 PS_BlendMip(posTexVertexOutput IN) : SV_TARGET
 {
 	// sourceTexture is the source mip. So we sample "mip level 0", actually just the only mip we have.
 	// TODO: blend from surrounding texels.
-	vec4 src_lookup=sourceTexture.SampleLevel(clampSamplerState,IN.texCoords.xy,0);
+	vec4 src_lookup=sourceTextureArray.SampleLevel(clampSamplerState,vec3(IN.texCoords.xy,0),0);
 	src_lookup.a=alpha;
 	return src_lookup;
 }
