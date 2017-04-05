@@ -119,12 +119,13 @@ public:
 			fn+=logfilename;
 		}
 		logFile.open(fn.c_str());
-		if(errno!=0)
-		{
-			ERRNO_CHECK
-		}
 		if(logFile.good())
 			to_logfile=true;
+		else if(errno!=0)
+		{
+			SIMUL_CERR<<"Failed to create logfile "<<fn.c_str()<<std::endl;
+			errno=0;
+		}
 	}
 	void setCallback(DebugOutputCallback c)
 	{
