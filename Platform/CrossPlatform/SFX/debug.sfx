@@ -247,7 +247,7 @@ shader v2f VS_DrawQuadOnSphere(idOnly IN)
 		pos				*=sideview;
 		pos.z			=1.0;
 		pos				=normalize(pos);
-		OUT.colour		=vec4(1.0,1.0,0.0,1.0);
+		OUT.colour		=debugColour;
 	}
 	else
 	{

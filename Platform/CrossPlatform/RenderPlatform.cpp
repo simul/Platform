@@ -542,7 +542,7 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 	debugConstants.quaternion		=orient_quat;
 	debugConstants.radius			=rr;
 	debugConstants.sideview			=size;
-	debugConstants.multiplier		=colour;
+	debugConstants.debugColour		=colour;
 	debugConstants.debugViewDir		=view_dir;
 	debugConstants.Apply(deviceContext);
 	debugEffect->SetConstantBuffer(deviceContext,"DebugConstants",&debugConstants);

@@ -17,7 +17,7 @@ namespace simul
 			class BadParameter{};
 			// Constructors
 			Quaterniond();    
-			Quaterniond(double s,double x,double y,double z,bool normalize);
+			Quaterniond(double s,double x,double y,double z,bool normalize=true);
 			Quaterniond(const double *q);
 			Quaterniond(const Quaterniond &q);
 			Quaterniond(double angle_radians,const vec3d &vv);

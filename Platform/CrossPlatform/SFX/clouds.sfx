@@ -181,21 +181,22 @@ float WorleyFactor(vec3 worley_texcoord)
 }
 
 CS_LAYOUT(4,4,4)
-shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+shader void CS_MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	int3 idx			=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
 	//	return;
 	idx.xy				+=gridCentreTexel;
 	idx.xy				+=int2(windowGrid.xy)/2;
-	vec3 texc			=vec3(idx)*scale+offset;
+	vec3 texc			=vec3(idx)*scale;//+offset;
 	idx.xy				=idx.xy%int2(windowGrid.xy);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
-	float sine			=sin(azimuth);
-	float cosine		=cos(azimuth);
+	float sine			=0;//sin(azimuth);
+	float cosine		=1;//cos(azimuth);
 	texc.xy				-=vec2(0.5,0.5);
-	vec2 texc_r			=vec2(texc.x*cosine+texc.y*sine,texc.x*-sine+texc.y*cosine);
-	texc_r				+=vec2(0.5,0.5);
+	vec2 texc_r		=texc;//	=vec2(texc.x*cosine+texc.y*sine,texc.x*-sine+texc.y*cosine);
+	//texc_r				+=vec2(0.5,0.5);
+
 	vec4 res			=texture_clamp_lod(rainMapTexture,texc_r.xy,0);
 	res.z				*=step(0,texc_r.x)*step(0,texc_r.y)*step(texc_r.x,1.0)*step(texc_r.y,1.0);
 
@@ -211,7 +212,7 @@ shader void MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	//res.xyw=2.0*(float(idx.z)/64.0-0.5);
 	res.x				=localNoiseStrength/100.0;
 	res.y				=localCellNoiseStrength;
-	if (res.z > 50)
+	if (res.z > 0.50)
 	{
 		IMAGE_STORE_3D(outputTexture3d, idx, res);
 	}
@@ -959,7 +960,7 @@ technique map_to_window
 {
     pass p0
     {
-		SetComputeShader(CompileShader(cs_5_0,MapToWindow()));
+		SetComputeShader(CompileShader(cs_5_0,CS_MapToWindow()));
     }
 }
 technique window_lighting
