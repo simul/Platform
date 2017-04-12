@@ -227,8 +227,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				}
 				if(density.z>0)
 				{
+					vec3 worley_texc		=(world_pos.xyz)*worleyTexcoordScale+worleyTexcoordOffset;
 					minDistance		=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
-					vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
+					vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,worley_texc,0);
 					//density.z		=saturate(4.0*density.z-0.2);
 					float wo		=worleyNoise*(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
 					density.z		=saturate((density.z+wo)*(1.0+alphaSharpness)-alphaSharpness);

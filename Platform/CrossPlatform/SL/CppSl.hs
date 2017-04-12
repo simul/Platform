@@ -850,6 +850,11 @@
 			for(int i=0;i<3;i++)
 				v[i]=u[i];
 		}
+		void operator=(const float *u)
+		{
+			for(int i=0;i<3;i++)
+				v[i]=(double)u[i];
+		}
 		void operator=(const vec3 &u)
 		{
 			x=double(u.x);
@@ -913,6 +918,14 @@
 			return ret;
 		}
 	};
+	inline vec3d cross(const vec3d &a,const vec3d &b)
+	{
+		vec3d r;
+		r.x=a.y*b.z-b.y*a.z;
+		r.y=a.z*b.x-b.z*a.x;
+		r.z=a.x*b.y-b.x*a.y;
+		return r;
+	}
 	//! Very simple 4x4 matrix of doubles.
 	struct mat4d
 	{

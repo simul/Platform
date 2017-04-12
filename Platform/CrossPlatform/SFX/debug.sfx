@@ -266,6 +266,20 @@ shader v2f VS_DrawQuadOnSphere(idOnly IN)
 	return OUT;
 }
 
+shader v2f VS_DrawCircleOnSphere(idOnly IN) 
+{
+    v2f OUT;
+	float angle			=float(IN.vertex_id)/31.0*3.1415926536*2.0;
+	vec3 pos			=vec3(sideview*cos(angle), sideview*sin(angle),1.0);
+	pos					=normalize(pos);
+	OUT.colour			=debugColour;
+	
+	pos					=radius*rotate_by_quaternion(quaternion,pos);
+	// The default orientation is on the equator, whereby X=East, Y=North and Z=Up.
+	// The quaternion rotates from that position.
+	OUT.hPosition		=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	return OUT;
+}
 shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
 	vec3 view		=IN.wDirection.xyz;
@@ -933,6 +947,20 @@ technique draw_quad_on_sphere
 		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 }
+
+technique draw_circle_on_sphere
+{
+    pass p0 
+    {		
+		SetRasterizerState( RenderBackfaceCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawCircleOnSphere()));
+		SetPixelShader(debugps_5_0);
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
+    }
+}
+
 
 technique draw_sphere
 {

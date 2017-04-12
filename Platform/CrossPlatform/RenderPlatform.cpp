@@ -395,12 +395,12 @@ ConstantBuffer<SolidConstants> &RenderPlatform::GetSolidConstantBuffer()
 void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)
 {
 	PosColourVertex line_vertices[2];
-	line_vertices[0].pos=startp;
+	line_vertices[0].pos= vec3(startp)-deviceContext.viewStruct.cam_pos;
 	line_vertices[0].colour=colour;
-	line_vertices[1].pos=endp;
+	line_vertices[1].pos= vec3(endp)-deviceContext.viewStruct.cam_pos;
 	line_vertices[1].colour=colour;
-	
-	DrawLines(deviceContext,line_vertices,2,false,false,false);
+
+	DrawLines(deviceContext,line_vertices,2,true,false,true);
 }
 
 static float length(const vec3 &u)
@@ -466,8 +466,8 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int longt,vec3 origin,float size,vec4 colour)
 {
 	Viewport viewport=GetViewport(deviceContext,0);
-	math::Matrix4x4 view=deviceContext.viewStruct.view;
-	math::Matrix4x4 proj=crossplatform::Camera::MakeDepthReversedProjectionMatrix(1.f,(float)viewport.h/(float)viewport.w,0.1f,100000.f);
+	math::Matrix4x4 &view=deviceContext.viewStruct.view;
+	math::Matrix4x4 &proj = deviceContext.viewStruct.proj;// crossplatform::Camera::MakeDepthReversedProjectionMatrix(1.f, (float)viewport.h / (float)viewport.w, 0.1f, 100000.f);
 
 	math::Matrix4x4 wvp,world;
 	world.ResetToUnitMatrix();
@@ -514,7 +514,7 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 {
 	Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
-	math::Matrix4x4 proj=crossplatform::Camera::MakeDepthReversedProjectionMatrix(1.f,(float)viewport.h/(float)viewport.w,0.1f,100000.f);
+	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj; //crossplatform::Camera::MakeDepthReversedProjectionMatrix(1.f,(float)viewport.h/(float)viewport.w,0.1f,100000.f);
 
 	math::Matrix4x4 wvp,world;
 	world.ResetToUnitMatrix();
@@ -550,6 +550,51 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 
 	SetTopology(deviceContext,LINELIST);
 	Draw(deviceContext,16, 0);
+
+	debugEffect->Unapply(deviceContext);
+}
+void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origin, vec4 q, float rad, vec4 colour)
+{
+	Viewport viewport = GetViewport(deviceContext, 0);
+	math::Matrix4x4 view = deviceContext.viewStruct.view;
+	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
+	math::Matrix4x4 wvp, world;
+	world.ResetToUnitMatrix();
+	float tan_x = 1.0f / proj(0, 0);
+	float tan_y = 1.0f / proj(1, 1);
+	float size_req = tan_x*.5f;
+	static float sizem = 3.f;
+	float d = 2.0f*sizem / size_req;
+	simul::math::Vector3 offs0(0, 0, -d);
+	view._41 = 0;
+	view._42 = 0;
+	view._43 = 0;
+	simul::math::Vector3 offs;
+	Multiply3(offs, view, offs0);
+	world._41 = origin.x;
+	world._42 = origin.y;
+	world._43 = origin.z;
+	crossplatform::MakeWorldViewProjMatrix(wvp, world, view, proj);
+	debugConstants.debugWorldViewProj = wvp;
+	vec3 view_dir;
+	math::Vector3 cam_pos;
+	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view, (float*)&cam_pos, (float*)&view_dir);
+	crossplatform::EffectTechnique*		tech = debugEffect->GetTechniqueByName("draw_circle_on_sphere");
+
+
+
+	debugConstants.quaternion = q;
+	static float rr = 6.f;
+	debugConstants.radius = rr;
+	debugConstants.sideview = rad;
+	debugConstants.debugColour = colour;
+	debugConstants.debugViewDir = view_dir;
+	debugConstants.Apply(deviceContext);
+	debugEffect->SetConstantBuffer(deviceContext, "DebugConstants", &debugConstants);
+	debugEffect->Apply(deviceContext, tech, 0);
+
+	SetTopology(deviceContext, LINESTRIP);
+	Draw(deviceContext, 32, 0);
 
 	debugEffect->Unapply(deviceContext);
 }

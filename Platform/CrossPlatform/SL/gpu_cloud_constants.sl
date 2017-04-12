@@ -53,6 +53,7 @@ SIMUL_CONSTANT_BUFFER(GpuCloudConstants,8)
 	
 	uniform float localNoiseStrength;
 	uniform float localCellNoiseStrength;
+	uniform float baseNoiseFactor;
 SIMUL_CONSTANT_BUFFER_END
 
 #ifdef __cplusplus

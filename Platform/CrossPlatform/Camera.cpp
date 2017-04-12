@@ -840,6 +840,20 @@ void Camera::SetVerticalFieldOfViewDegrees(float f)
 	VerticalFieldOfViewInRadians=f*DEG_TO_RAD;
 }
 
+void Camera::CreateViewMatrix(float *mat,const float *view_dir, const float *view_up)
+{
+	Matrix4x4 &M=*((Matrix4x4*)mat);
+	Vector3 d(view_dir);
+	d.Normalize();
+	Vector3 u(view_up);
+	Vector3 x = d^u;
+	x.Normalize();
+	u = x^d;
+	simul::geometry::SimulOrientation ori;
+	ori.DefineFromYZ(u, d);
+	ori.T4.Inverse(M);
+}
+
 void Camera::LookInDirection(const float *view_dir,const float *view_up)
 {
 	Vector3 d(view_dir);
@@ -850,7 +864,6 @@ void Camera::LookInDirection(const float *view_dir,const float *view_up)
 	u=x^d;
 	Orientation.DefineFromYZ(u,d);
 }
-
 
 void Camera::LookInDirection(const float *view_dir)
 {

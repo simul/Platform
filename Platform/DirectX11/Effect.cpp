@@ -821,6 +821,7 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 	if(currentPass)
 		currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
 	deviceContext.asD3D11DeviceContext()->CSSetShader(nullptr,nullptr,0);
+	deviceContext.asD3D11DeviceContext()->GSSetShader(nullptr,nullptr,0);
 	deviceContext.asD3D11DeviceContext()->PSSetShader(nullptr,nullptr,0);
 	deviceContext.asD3D11DeviceContext()->VSSetShader(nullptr,nullptr,0);
 	currentTechnique=NULL;
@@ -831,13 +832,13 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 {
 	auto c=deviceContext.asD3D11DeviceContext();
 	static ID3D11ShaderResourceView *src[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-	c->VSSetShaderResources(0, 32,src);
-	c->HSSetShaderResources(0, 32,src);
-	c->DSSetShaderResources(0, 32,src);
-	c->GSSetShaderResources(0, 32,src);
-	c->PSSetShaderResources(0, 32,src);
-	c->CSSetShaderResources(0, 32,src);
+	c->VSSetShaderResources(0,32,src);
+	c->HSSetShaderResources(0,32,src);
+	c->DSSetShaderResources(0,32,src);
+	c->GSSetShaderResources(0,32,src);
+	c->PSSetShaderResources(0,32,src);
+	c->CSSetShaderResources(0,32,src);
 	static ID3D11UnorderedAccessView *uav[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-	c->CSSetUnorderedAccessViews(0, 8,uav,0);
+	c->CSSetUnorderedAccessViews(0,8,uav,0);
 	crossplatform::Effect::UnbindTextures(deviceContext);
 }

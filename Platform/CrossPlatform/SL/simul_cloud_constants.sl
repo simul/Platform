@@ -110,15 +110,18 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform float noise3DOctaveScale;
 
 	uniform vec3 directionToMoon;
-	uniform float baseNoiseFactor;
+	uniform float baseNoiseFactorDeprecated;
 
 	uniform vec3 noise3DTexcoordOffset;
 	uniform float dropletRadius;
-
+	
+	uniform vec3 worleyTexcoordScale;
 	uniform float precipitationThreshold;
-	uniform float worleyScale;
+	
+	uniform float worleyScaleXXX;
 	uniform float worleyNoise;
 	uniform int firstInput;
+	uniform float pad892345;
 
 	uniform vec3 rainCentreKm;
 	uniform float rainRadiusKm;
@@ -128,6 +131,8 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 
 	uniform uint3 windowGrid;
 	uniform float rainEdgeKm;
+
+	uniform vec3 worleyTexcoordOffset;
 	uniform float precipitation;
 SIMUL_CONSTANT_BUFFER_END
 	

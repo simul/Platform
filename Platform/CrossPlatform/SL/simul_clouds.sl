@@ -25,16 +25,6 @@ struct FarNearPixelOutput
 	vec4 nearColour;
 };
 
-float MakeRainMap(Texture3D cloudDensity,SamplerState cloudSamplerState,vec2 texCoords,float precipitationThreshold)
-{
-	vec3 texc		=vec3(texCoords.xy,precipitationThreshold);
-	vec4 density	=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
-	float r			=density.z;
-	if(r<precipitationThreshold)
-		r=0;
-	return r;
-}
-
 float unshadowedBrightness(float Beta,vec4 lightResponse,vec3 ambientColour)
 {
 	return max(1.0,(Beta+lightResponse.y)+ambientColour.b);
@@ -342,8 +332,8 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 	rain_texc.xy		+=rain_texc.z*rainTangent;
 	float rain_lookup	=sample_3d_lod(rainMapTexture,cloudSamplerState,rain_texc.xy*inverseScalesKm.xy,0).x;
 	//vec4 streak			=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
-	return				rain_lookup*saturate((rainRadiusKm-length(world_pos_km.xy-rainCentreKm.xy))*3.0)
-		*saturate(1.0-cloudWorldOffsetKm.z/1.0)*(0.5+0.5*saturate(cloudWorldOffsetKm.z/4.0+1.0));
+	return				rain_lookup.x*saturate((rainRadiusKm-length(world_pos_km.xy-rainCentreKm.xy))*3.0)
+		*saturate(1.0-cloudWorldOffsetKm.z/1.0);//*(0.5+0.5*saturate(cloudWorldOffsetKm.z/4.0+1.0));
 }
 
 	vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};

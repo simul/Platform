@@ -10,7 +10,6 @@ SIMUL_CONSTANT_BUFFER(RainConstants,10)
 	uniform float particleWidth;
 	uniform vec3 meanFallVelocity;
 	uniform float intensity;
-	uniform vec3 viewPositionOffset;
 	uniform float flurry;
 	uniform float flurryRate;
 	uniform float phase;
@@ -38,6 +37,7 @@ SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	vec4 viewportToTexRegionScaleBias;
 	vec2 tanHalfFovUnused;
 	vec2 screenSize;
+	uniform vec3 viewPositionOffset;
 	float nearRainDistance;// as a proportion of max fade distance
 	float ateaethkltdujr;
 	float splashDelta;	

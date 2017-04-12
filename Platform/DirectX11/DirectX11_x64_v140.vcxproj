@@ -690,6 +690,9 @@
     <None Include="SimulUseWin8SDK.props" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Clouds\Clouds_x64_v140.vcxproj">
+      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\Math\Math_x64_v140.vcxproj">
       <Project>{b6cb4ee4-90e3-4b11-8706-e4d7b9024801}</Project>
       <Private>false</Private>
@@ -697,6 +700,9 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\CrossPlatform\CrossPlatform_x64_v140.vcxproj">
+      <Project>{7f8bc215-2b2a-4703-af7c-f7f7351fb99d}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -63,9 +63,10 @@ shader void CS_PointQueries(uint3 sub_pos: SV_DispatchThreadID )
 	vec3 cloudTexCoords				=cloudWorldOffsetKm*inverseScalesKm;
 	vec4 lookup						=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
 	res.density						=lookup.z;
-	res.direct_light				=lookup.y;
-	res.indirect_light				=lookup.x;
-	res.ambient_light				=lookup.w;
+	vec4 light_lookup				=sample_3d_lod(cloudDensity2,cloudSamplerState,cloudTexCoords,0);
+	res.direct_light				=light_lookup.y;
+	res.indirect_light				=light_lookup.x;
+	res.ambient_light				=light_lookup.w;
 	res.precipitation				=GetRainAtOffsetKm( rainMapTexture, cloudWorldOffsetKm, inverseScalesKm, res.pos_km, rainCentreKm.xy, rainRadiusKm,rainEdgeKm);
 	
 	volumeQueries[sub_pos.x]		=res;
@@ -138,8 +139,7 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
-CS_LAYOUT(4,4,4)
-shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+void MixInLayer( uint3 g, uint3 t,bool clears)
 {
 	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
@@ -153,12 +153,31 @@ shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec4 c2		=cloudDensity2.SampleLevel(cloudSamplerState,texc,0);
 	vec4 res	=lerp(c1,c2,cloud_interp);
 	res.z		=saturate((res.z*2.0-0.5)*1.5+0.7);
-	res.x		=localNoiseStrength/100.0;
-	res.y		=localCellNoiseStrength;
-	//if (res.z > 0)
+
+	if (res.z > 0.05)
 	{
+		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
+		res.x		=localNoiseStrength/100.0*noise_factor;
+		res.y		=localCellNoiseStrength*noise_factor;
 		IMAGE_STORE_3D(outputTexture3d,idx,res);
 	}
+	else if(clears)
+	{
+		res.xy=0;
+		IMAGE_STORE_3D(outputTexture3d,idx,res);
+	}
+}
+
+CS_LAYOUT(4,4,4)
+shader void CS_MixInit( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	MixInLayer(g,t,true);
+}
+
+CS_LAYOUT(4,4,4)
+shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	MixInLayer(g,t,false);
 }
 
 float WorleyFactor(vec3 worley_texcoord)
@@ -180,8 +199,7 @@ float WorleyFactor(vec3 worley_texcoord)
 	return w;//2.0*w+0.5;
 }
 
-CS_LAYOUT(4,4,4)
-shader void CS_MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+void MapToWindow( uint3 g , uint3 t ,bool clears)
 {
 	int3 idx			=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
@@ -212,11 +230,22 @@ shader void CS_MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	//res.xyw=2.0*(float(idx.z)/64.0-0.5);
 	res.x				=localNoiseStrength/100.0;
 	res.y				=localCellNoiseStrength;
-	if (res.z > 0.50)
+	if (clears||res.z > 0.50)
 	{
 		IMAGE_STORE_3D(outputTexture3d, idx, res);
 	}
 }
+CS_LAYOUT(4,4,4)
+shader void CS_MapToWindow( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	MapToWindow(g,t,false);
+}
+CS_LAYOUT(4,4,4)
+shader void CS_MapToWindowInit( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+{
+	MapToWindow(g,t,true);
+}
+
 
 CS_LAYOUT(4,4,4)
 shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
@@ -259,13 +288,12 @@ shader void CS_Mip( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 #ifndef __PSSL__
 	vec4 c1		=cloudDensity[pos2+int3(0,0,0)];
 	vec4 c2		=cloudDensity[pos2+int3(1,0,0)];
-	vec4 c3		=cloudDensity[pos2+int3(0,1,0)];
-	vec4 c4		=cloudDensity[pos2+int3(1,1,0)];
-	vec4 c5		=cloudDensity[pos2+int3(0,0,1)];
-	vec4 c6		=cloudDensity[pos2+int3(1,0,1)];
-	vec4 c7		=cloudDensity[pos2+int3(0,1,1)];
-	vec4 c8		=cloudDensity[pos2+int3(1,1,1)];
-	vec4 res	=0.125*(c1+c2+c3+c4+c5+c6+c7+c8);
+	vec4 c3		=cloudDensity[pos2+int3(-1,0,0)];
+	vec4 c4		=cloudDensity[pos2+int3(0,1,0)];
+	vec4 c5		=cloudDensity[pos2+int3(0,-1,0)];
+	vec4 c6		=cloudDensity[pos2+int3(0,0,1)];
+	vec4 c7		=cloudDensity[pos2+int3(0,0,-1)];
+	vec4 res	=(c1+c2+c3+c4+c5+c6+c7)/7.0;
 	IMAGE_STORE_3D(outputTexture3d,pos,res);
 #endif
 }
@@ -292,10 +320,24 @@ shader vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 	return vec4(shadow.xy,0,shadow.x);
 }
 
+float MakeRainMap(Texture3D cloudDensity,SamplerState cloudSamplerState,vec2 texCoords,float precipitationThreshold)
+{
+}
+
 shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 {
-	float r=MakeRainMap(cloudDensity,cloudSamplerState,IN.texCoords,precipitationThreshold);
-	return precipitation*vec4(r,r,r,r);
+	float total_cloud=0.0;
+	float max_tex_z=0.0;
+	for(int i=0;i<8;i++)
+	{
+		float tex_z		=float(i)/8.0;
+		vec3 texc		=vec3(IN.texCoords.xy,tex_z);
+		vec4 density	=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
+		total_cloud		+=0.125*density.z;
+		max_tex_z		=max(max_tex_z,step(0.5,density.z)*tex_z);
+	}
+	total_cloud=saturate((total_cloud-precipitationThreshold)/0.1);
+	return vec4(total_cloud*precipitation,max_tex_z,0,0);
 }
 
 struct FarNearDepthPixelOutput
@@ -305,7 +347,7 @@ struct FarNearDepthPixelOutput
 	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
 };
 
-void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=true,int numSteps=512)
+void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=true,int numSteps=512,int num_interp=NUM_CLOUD_INTERP)
 {
 	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
@@ -339,16 +381,17 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=tru
 									,lossTexture
 									,inscTexture
 									,skylTexture,volumeInscatterTexture
-									,true
+									,depth
 									,dlookup
 									,view
 									,clip_pos
 									,worldspaceVolumeTexCoordsXyC
-									,true
+									,background2d		// noise? 
 									,include_rain
 									,false
 									,cloudIrRadiance1,cloudIrRadiance2
-									,numSteps);
+									,numSteps
+									,num_interp);
 	vec4 t2d;
 	if(background2d)
 	{
@@ -368,7 +411,6 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=tru
 	
 	//c						+=vec4(saturate(view),0.0);
 	outputTexture1[pos+uint3(0,0,6*(NUM_CLOUD_INTERP-1))]		=c;
-//	outputTexture3[pos]		=f.nearFarDepth;
 	float n					=float(dlookup.y>=1.0);
 	for(int u=0;u<NUM_CLOUD_INTERP-1;u++)
 	{
@@ -377,6 +419,7 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=tru
 		cn.a					=1.0-n*(1.0-t2d.a);
 		cn.rgb					+=f.colour[u].rgb;
 		cn.a					*=f.colour[u].a;
+		//cn.b=1;
 		outputTexture1[pos+uint3(0,0,6*u)]		=cn;
 	}
 	//	outputTexture1[pos+uint3(0,0,6*2)]		=vec4(0,1,0,0);
@@ -502,7 +545,7 @@ void Lightpass(uint3 pos,bool depth)
 	outputTexture1[pos]		=f.farColour;
 	outputTexture1[pos+uint3(0,0,6)]		=f.nearColour;
 }
-#define BLOCK_SIZE 8
+#define BLOCK_SIZE 4
 void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
@@ -636,7 +679,7 @@ shader void CS_RaytraceSimple(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
 	uint Z					=cubemapFaceIndex[g.z+t.z].x;
 	uint3 pos				=uint3(targetRange[t.z].xy+idx*amortizationScale.xy+amortizationOffset.xy,Z);
 	
-	SimpleRaytrace(pos,false,false,false,128);
+	SimpleRaytrace(pos,false,false,false,128,1);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -955,12 +998,26 @@ technique mix_clouds
 		SetComputeShader(CompileShader(cs_5_0,CS_Mix()));
     }
 }
+technique mix_clouds_init
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MixInit()));
+    }
+}
 
 technique map_to_window
 {
     pass p0
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_MapToWindow()));
+    }
+}
+technique map_to_window_init
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MapToWindowInit()));
     }
 }
 technique window_lighting

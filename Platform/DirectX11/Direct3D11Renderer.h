@@ -42,18 +42,6 @@ namespace simul
 	}
 	namespace dx11
 	{
-		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
-		class SIMUL_DIRECTX11_EXPORT TrueSkyRenderer:public clouds::TrueSkyRenderer
-		{
-		public:
-			//! Constructor - pass a pointer to your Environment, and either an implementation of MemoryInterface, or NULL.
-			TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);
-			virtual ~TrueSkyRenderer();
-			void RestoreDeviceObjects	(crossplatform::RenderPlatform *r);
-		protected:
-			// Different kinds of view for Render() to call:
-			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
-		};
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface
 		{
@@ -61,11 +49,11 @@ namespace simul
 			Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);
 			~Direct3D11Renderer();
 			simul::dx11::RenderPlatform renderPlatformDx11;
-			TrueSkyRenderer *GetTrueSkyRenderer()
+			clouds::TrueSkyRenderer *GetTrueSkyRenderer()
 			{
 				return &trueSkyRenderer;
 			}
-			TrueSkyRenderer trueSkyRenderer;
+			clouds::TrueSkyRenderer trueSkyRenderer;
 			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
 			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);
 			virtual int					AddView				(bool external_fb);

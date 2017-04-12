@@ -24,10 +24,11 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,bool do_rainbow
 											,vec3 cloudIrRadiance1
 											,vec3 cloudIrRadiance2
-											,int numSteps)
+											,int numSteps
+											,const int num_interp=NUM_CLOUD_INTERP)
 {
 	RaytracePixelOutput res;
-	for(int ii=0;ii<NUM_CLOUD_INTERP;ii++)
+	for(int ii=0;ii<num_interp;ii++)
 		res.colour[ii]			=vec4(0,0,0,1.0);
 	res.nearFarDepth		=dlookup;
 
@@ -51,10 +52,10 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float n									=	nfd.x;
 	float f									=	nfd.y;
 	solidDist_nearFar[0]					=	n;
-	solidDist_nearFar[NUM_CLOUD_INTERP-1]	=	f;
-	for(int l=1;l<NUM_CLOUD_INTERP-1;l++)
+	solidDist_nearFar[num_interp-1]	=	f;
+	for(int l=1;l<num_interp-1;l++)
 	{
-		float interp			=float(l)/float(NUM_CLOUD_INTERP-1);
+		float interp			=float(l)/float(num_interp-1);
 		// This is z. So let:
 		//						Z				=	n (f/d-1) / (f-n)
 		// i.e.					Z(f-n)/n		=	f/d - 1
@@ -67,7 +68,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	// Lookup in the illumination texture.
 	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	vec4 illum_lookup		=texture_wrap_mirror(illuminationTexture,illum_texc);
+	vec4 illum_lookup		=texture_wrap_mirror_lod(illuminationTexture,illum_texc,0);
 	vec2 nearFarTexc		=illum_lookup.xy;
 	float meanFadeDistance	=1.0;
 	float minDistance		=1.0;
@@ -133,7 +134,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float distScale =  0.6 / maxFadeDistanceKm;
 		float K=log(maxCloudDistanceKm);
 	bool found=false;
-	float stepKm				=K*(1.2+distanceKm)/512.0;
+	float stepKm				=K*(1.2+distanceKm)/float(numSteps);
 	for(int i=0;i<numSteps;i++)
 	{
 		//world_pos					+=0.001*view;
@@ -143,7 +144,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 
 		// Next pos.
 		int3 c1						=c+c_offset;//viewScale;
-		stepKm						*=(1.0+K/512.0);
+		stepKm						*=(1.0+K/float(numSteps));
 		distanceKm					+=stepKm;
 		// We fade out the intermediate steps as we approach the boundary of a detail change.
 		// Now sample at the end point:
@@ -155,10 +156,11 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 
 		// maxDistance is the furthest we can *see*.
 		maxDistance					=max(fadeDistance,maxDistance);
-
+		
 		if(fade>0)
 		{
 			vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,1);
+	
 			if(!found)
 			{
 				found				=found||(density.z>0);
@@ -176,7 +178,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise&&12.0*fadeDistance<4.0)
 					noiseval			=density.x*texture_3d_wrap_lod(noiseTexture3D,noise_texc,12.0*fadeDistance);
-				vec4 light;
+				vec4 light=vec4(1,1,1,1);
 				calcDensity(cloudDensity,cloudLight,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance,density,light);
 				if(do_rain_effect)
 				{
@@ -187,13 +189,12 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				}
 				if(density.z>0)
 				{
-					minDistance		=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
-					vec4 worley		=texture_wrap_lod(smallWorleyTexture3D,world_pos.xyz/worleyScale,0);
-					//density.z		=saturate(4.0*density.z-0.2);
+					vec3 worley_texc		=(world_pos.xyz)*worleyTexcoordScale+worleyTexcoordOffset;
+					minDistance				=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
+					vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texc,0);
+					//density.z				=saturate(4.0*density.z-0.2);
 					
-					float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(cloudTexCoords.z));
 					float wo		=density.y*(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
-					wo				*=noise_factor;
 					density.z		=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3-saturate(0.6-density.z)));
 					//density.xy		*=1.0+wo;
 					float brightness_factor;
@@ -208,25 +209,29 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 								,1.0, volumeTexCoords
 								,BetaClouds, BetaRayleigh, BetaMie
 								,solidDist_nearFar, noise, do_depth_mix,distScale,0);
+					//res.colour[0].rgb=view;
+					//res.colour[1].r = density.x;
+					//res.colour[2].r = density.x;
+					//res.colour[3].r = density.x;
 					if(res.colour[0].a*brightness_factor<0.003)
 					{
-						for(int o=0;o<NUM_CLOUD_INTERP;o++)
+						for(int o=0;o<num_interp;o++)
 							res.colour[o].a =0.0;
 						break;
 					}
 				}
-				lastFadeDistance = lerp(lastFadeDistance, fadeDistance - density.z*stepKm / maxFadeDistanceKm,res.colour[NUM_CLOUD_INTERP-1].a);
+				lastFadeDistance = lerp(lastFadeDistance, fadeDistance - density.z*stepKm / maxFadeDistanceKm,res.colour[num_interp-1].a);
 			}
 		}
 	}
 #ifndef INFRARED
 	if(do_rainbow)
-		res.colour[NUM_CLOUD_INTERP-1].rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
+		res.colour[num_interp-1].rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
 	//res.nearFarDepth.y	=	max(0.00001,res.nearFarDepth.x-res.nearFarDepth.y);
 	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	res.nearFarDepth.w	=	meanFadeDistance;
-//for(int i=0;i<NUM_CLOUD_INTERP;i++)
+//for(int i=0;i<num_interp;i++)
 	//res.colour[i]=solidDist_nearFar[i];
 	return res;
 }

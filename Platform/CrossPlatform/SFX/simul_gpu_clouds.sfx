@@ -581,7 +581,6 @@ float CSDensity(uint3 pos)
 		worley_texcoord			*=3.35;
 	}
 //	dens						=saturate(2.0*dens-8.0*saturate(0.6-dens)-1.0+2.0*worleyNoiseStrength*(w));
-	//dens=saturate(dens);
 	vec3 wPos					=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
 	
 	for(int i=0;i<numVolumes;i++)
@@ -618,7 +617,7 @@ float CSDensity(uint3 pos)
 		}
 	}
 
-	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
+	dens  *= saturate(densityspace_texcoord.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - densityspace_texcoord.z) / zPixel);
 	return dens;
 }
 

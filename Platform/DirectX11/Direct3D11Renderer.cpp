@@ -24,25 +24,6 @@
 using namespace simul;
 using namespace dx11;
 
-TrueSkyRenderer::TrueSkyRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m)
-		:clouds::TrueSkyRenderer(env,sc,m,true)
-{
-	sc;
-	ReverseDepthChanged();
-}
-
-TrueSkyRenderer::~TrueSkyRenderer()
-{
-	InvalidateDeviceObjects();
-}
-
-void TrueSkyRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
-{
-	clouds::TrueSkyRenderer::RestoreDeviceObjects(r);
-	if(!renderPlatform)
-		return;
-	RecompileShaders();
-}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m)
 	:trueSkyRenderer(env,s,m)

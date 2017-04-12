@@ -210,6 +210,7 @@ namespace simul
 			void SetHorizontalFieldOfViewDegrees(float f);
 			float GetVerticalFieldOfViewDegrees() const;
 			void SetVerticalFieldOfViewDegrees(float f);
+			static void CreateViewMatrix(float *mat, const float *view_dir, const float *view_up);
 			static const float *MakeDepthReversedProjectionMatrix(float h, float v, float zNear, float zFar);
 			static const float *MakeDepthReversedProjectionMatrix(const FovPort &fovPort, float zNear, float zFar);
 			static const float *MakeProjectionMatrix(float h, float v, float zNear, float zFar);
