@@ -1,8 +1,8 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef SKY_SL
 #define SKY_SL
-#ifndef pi
-#define pi 3.1415926536
+#ifndef SIMUL_PI_F
+#define SIMUL_PI_F 3.1415926536
 #endif
 float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 {
@@ -32,7 +32,7 @@ vec4 BackgroundLatLongSphere(Texture2D backgroundTexture,vec2 texCoords)
 	// Plate-carree projection:
 	float ang			=atan2(view.y,-view.x);
 	
-	vec2 lat_long_texc	=vec2((ang/(pi*2.0)),0.5-asin(view.z)/pi);
+	vec2 lat_long_texc	=vec2((ang/(SIMUL_PI_F*2.0)),0.5-asin(view.z)/SIMUL_PI_F);
 	float interp		=saturate(abs(lat_long_texc.x)*100.0);
 	vec4 result1		=texture_wrap(backgroundTexture,lat_long_texc);
 	

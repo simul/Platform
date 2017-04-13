@@ -133,8 +133,8 @@ shader void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 	float b					=rand(float(n)+0.5);
 	float y					=float(idx.y)/float(Yy);
 	float yb				=y+b;
-	float V					=0.4/pi*(0.6+0.8*rand(n));
-	float U					=0.4/pi*(0.6+0.8*rand(n*4.41));
+	float V					=0.4/SIMUL_PI_F*(0.6+0.8*rand(n));
+	float U					=0.4/SIMUL_PI_F*(0.6+0.8*rand(n*4.41));
 	float c					=0.25*sin(y/V);
 	float brightness		=brightnessMult*(0.5+0.5*abs(sin((yb)/U)));
 	float h					=rand(fn9);
@@ -301,7 +301,7 @@ vec4 PSSnowParticles(ParticleGeometryOutput IN,bool reverseDepth)
 	result.rgb				+=directionalLight;
 	float radius1			=pow(length(pos.xy),.5);
 	float angle				=atan2(pos.x,pos.y);
-//	float spoke			=fract(angle/pi*3.0)-0.5;
+//	float spoke			=fract(angle/SIMUL_PI_F*3.0)-0.5;
 	float opacity			=IN.strength*saturate(1.0-radius1);//-spoke*spoke);
 	return vec4(result.rgb,opacity);
 }
@@ -321,7 +321,7 @@ shader vec4 PS_SnowParticles_NoCubemap(ParticleGeometryOutput IN): SV_TARGET
 	vec2 pos				=IN.texCoords*2.0-1.0;
 	float radius1			=length(pos.xy);
 	float angle				=atan2(pos.x,pos.y);
-	//float spoke			=fract(angle/pi*3.0)-0.5;
+	//float spoke			=fract(angle/SIMUL_PI_F*3.0)-0.5;
 	float opacity			=IN.strength*saturate(1.0-radius1);//-spoke*spoke);
 	
 	//return vec4(1,0,1,opacity);

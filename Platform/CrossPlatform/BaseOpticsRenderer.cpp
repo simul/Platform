@@ -98,7 +98,7 @@ void BaseOpticsRenderer::RenderFlare(crossplatform::DeviceContext &deviceContext
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
-	// equal to pi/(120^2), or about 1/2700 steradians;
+	// equal to SIMUL_PI_F/(120^2), or about 1/2700 steradians;
 	static float sun_mult=0.05f;
 	simul::math::Vector3 cam_pos,cam_dir;
 	simul::crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&cam_dir);

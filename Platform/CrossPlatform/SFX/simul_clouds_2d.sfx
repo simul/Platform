@@ -324,7 +324,7 @@ void CSClouds2D(uint3 pos,bool depth)
 				vec3 wEyeToPos			=1000.0*view*d;
 				vec3 wPosition			=eyePosition+wEyeToPos;
 				
-	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*pi),0.5*(1.0+2.0*asin(view.z)/pi),0);
+	vec3 worldspaceVolumeTexCoordsXyC	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(view.z)/SIMUL_PI_F),0);
 
 				vec2 wOffset			=wPosition.xy-origin.xy;
 				vec2 texc_global		=wOffset/globalScale;

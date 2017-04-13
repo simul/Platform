@@ -22,8 +22,8 @@ void ViewStruct::Init()
 	initialized=true;
 }
 
-static const float DEG_TO_RAD=pi/180.f;
-static const float RAD_TO_DEG=180.f/pi;
+static const float DEG_TO_RAD=SIMUL_PI_F/180.f;
+static const float RAD_TO_DEG=180.f/SIMUL_PI_F;
 /*
 The projection matrix converts cartesian coordinates in view-space (e.g. in metres relative to camera-fixed xyz axes) into projection space.
 Here is a symmetric projection matrix:
@@ -474,7 +474,7 @@ void simul::crossplatform::GetCubeMatrixAtPosition(float *mat4x4,int face,vec3 c
 void MakeCubeInvViewProjMatrices(simul::math::Matrix4x4 mat[],bool ReverseDepth,bool ReverseDirection)
 {
 	static math::Matrix4x4 view,proj;
-	proj			=crossplatform::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,1.0f,0.0f);
+	proj			=crossplatform::Camera::MakeDepthReversedProjectionMatrix(SIMUL_PI_F/2.f,SIMUL_PI_F/2.f,1.0f,0.0f);
 	for(int i=0;i<6;i++)
 	{
 		GetCubeMatrix((float*)&view,i,ReverseDepth,ReverseDirection);
@@ -519,7 +519,7 @@ math::Matrix4x4 simul::crossplatform::MakeOrthoProjectionMatrix(float left,
 Camera::Camera():Orientation()
 {
 	InitializePropertiesDefinition();
-	VerticalFieldOfViewInRadians=60.f*pi/180.f;
+	VerticalFieldOfViewInRadians=60.f*SIMUL_PI_F/180.f;
 	HorizontalFieldOfViewInRadians=0;
 	Orientation.Rotate(3.14f/2.f,simul::math::Vector3(1,0,0));
 }
@@ -626,7 +626,7 @@ const float *Camera::MakeDepthReversedProjectionMatrix(float aspect) const
 		h=2.f*atan(tan(v/2.0f)*aspect);
 	if(aspect&&h&&!v)
 		v=2.f*atan(tan(h/2.0f)/aspect);
-	static float max_fov=160.0f*pi/180.0f;
+	static float max_fov=160.0f*SIMUL_PI_F/180.0f;
 	if(h>max_fov)
 		h=max_fov;
 	if(v>max_fov)
@@ -699,7 +699,7 @@ const float *Camera::MakeProjectionMatrix(float aspect) const
 		h=2.0f*atan(tan(v/2.0f)*aspect);
 	if(aspect&&h&&!v)
 		v=2.0f*atan(tan(h/2.0f)/aspect);
-	static float max_fov=160.0f*pi/180.0f;
+	static float max_fov=160.0f*SIMUL_PI_F/180.0f;
 	if(h>max_fov)
 		h=max_fov;
 	if(v>max_fov)
