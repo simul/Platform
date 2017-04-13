@@ -24,8 +24,8 @@ uniform RWTexture2D<vec4> targetTexture;
 #include "../SL/cloud_shadow.sl"
 #include "../SL/godrays.sl"
 	
-#ifndef pi
-#define pi (3.1415926536)
+#ifndef SIMUL_PI_F
+#define SIMUL_PI_F (3.1415926536)
 #endif
 
 
@@ -128,9 +128,9 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 	vec4 total				=unity;
 	//IMAGE_STORE_3D(targetVolume,int3(idx.x,0,idx.y),unity);
 	vec3 texc				=vec3(idx+uint3(0,1,0))/vec3(godraysVolumeDims.xzy);
-	// Elevation: pi/2 is 90 degrees. The top (texc.y=1.0) should be pi/2,
-	// the bottom (texc.y=0) should be -pi/2.
-	float elevation			=pi*(.5-texc.y);
+	// Elevation: SIMUL_PI_F/2 is 90 degrees. The top (texc.y=1.0) should be SIMUL_PI_F/2,
+	// the bottom (texc.y=0) should be -SIMUL_PI_F/2.
+	float elevation			=SIMUL_PI_F*(.5-texc.y);
 	float sum				=0.0;
 	float mean_illumination	=1.0;
 	vec4 mi					=vec4(mean_illumination,mean_illumination,mean_illumination,mean_illumination);

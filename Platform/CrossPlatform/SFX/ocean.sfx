@@ -291,7 +291,7 @@ shader vec4 UpdateDisplacementPS(posTexVertexOutput In) : SV_Target
 	uint index_y = uint(In.texCoords.y * float(g_OutHeight));
 	uint addr = g_OutWidth * index_y + index_x;
 
-	// cos(pi * (m1 + m2))
+	// cos(SIMUL_PI_F * (m1 + m2))
 	int sign_correction = (((index_x + index_y) & 1) != 0) ? -1 : 1;
 
 	float dx=100.0f*g_InputDxyz[addr + g_DxAddressOffset].x * sign_correction * g_ChoppyScale;

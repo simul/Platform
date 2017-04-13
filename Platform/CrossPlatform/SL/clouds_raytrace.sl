@@ -216,7 +216,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise)
 					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
-				vec4 density,light;
+				vec4 density=vec4(1,1,1,1),light;
 				calcDensity(cloudDensity,cloudLight,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance,density,light);
 				if(do_rain_effect)
 				{

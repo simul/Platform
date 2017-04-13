@@ -440,7 +440,7 @@ shader void CS_Jacobi( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 texc			=convertPosToTexc(pos,dims);
 	
 	// NB: Use SUCCESSIVE OVERRELAXATION (SOR) to speed this up
-	// over-relaxation factor w=1/(1+sin(pi*2*dx)) 
+	// over-relaxation factor w=1/(1+sin(SIMUL_PI_F*2*dx)) 
 	// And use alternate red-black iteration: see Moastuen(2007)
 
 	// left, right, bottom, and top x samples

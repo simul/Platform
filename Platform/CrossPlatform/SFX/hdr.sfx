@@ -508,7 +508,7 @@ shader vec4 PS_Blur(posTexVertexOutput IN) : SV_Target
 	float r1=rand(IN.texCoords.xy+vec2(11.19*randomSeed,2.3*randomSeed));
 	float r2=rand(vec2(1.0,0.5)+13.09*IN.texCoords.xy-vec2(5.1*randomSeed,3.9*randomSeed));
 	float rad		=sqrt(-2.0*safelog(r1));
-	float angle		=2.0*pi*r2;
+	float angle		=2.0*SIMUL_PI_F*r2;
 	vec2 sampleOffset=offset*rad*vec2(cos(angle),sin( angle ));
     vec4 c=texture_clamp_lod(imageTexture,IN.texCoords+sampleOffset,0);
     return vec4(c.rgb,alpha);
@@ -520,7 +520,7 @@ shader vec4 PS_Blur_MSAA(posTexVertexOutput IN) : SV_Target
 	float r1		=rand(IN.texCoords.xy+vec2(11.19*randomSeed,2.3*randomSeed));
 	float r2		=rand(vec2(1.0,0.5)+13.09*IN.texCoords.xy-vec2(5.1*randomSeed,3.9*randomSeed));
 	float rad		=sqrt(-2.0*safelog(r1));
-	float angle		=2.0*pi*r2;
+	float angle		=2.0*SIMUL_PI_F*r2;
 	vec2 sampleOffset=offset*rad*vec2(cos(angle),sin( angle ));
 	uint2 tex_pos=uint2((IN.texCoords.xy+sampleOffset)*fullResDims+vec2(0.5,0.5));
     vec4 c			=imageTextureMS.Load(tex_pos,0);

@@ -189,13 +189,16 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 				}
 				if(density.z>0)
 				{
-					vec3 worley_texc		=(world_pos.xyz)*worleyTexcoordScale+worleyTexcoordOffset;
-					minDistance				=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
-					vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texc,0);
+					if(noise)
+					{
+						vec3 worley_texc		=(world_pos.xyz+worleyTexcoordOffset)*worleyTexcoordScale;
+						minDistance				=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
+						vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texc,0);
 					//density.z				=saturate(4.0*density.z-0.2);
 					
-					float wo		=density.y*(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
-					density.z		=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3-saturate(0.6-density.z)));
+						float wo		=density.y*(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
+						density.z		=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3-saturate(0.6-density.z)));
+					}
 					//density.xy		*=1.0+wo;
 					float brightness_factor;
 					fade_texc.x				=sqrt(fadeDistance);
@@ -232,7 +235,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	res.nearFarDepth.w	=	meanFadeDistance;
 //for(int i=0;i<num_interp;i++)
-	//res.colour[i]=solidDist_nearFar[i];
 	return res;
 }
 #endif

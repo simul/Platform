@@ -8,8 +8,8 @@
 #include "../SL/light_probe_constants.sl"
 
 #ifndef GLSL
-#ifndef pi
-#define pi (3.1415926536)
+#ifndef SIMUL_PI_F
+#define SIMUL_PI_F (3.1415926536)
 #endif
 // A texture (l+1)^2 of basis coefficients.
 uniform StructuredBuffer<float4> basisBuffer;
@@ -18,7 +18,7 @@ uniform Texture2DArray<vec4> sourceTextureArray;
 
 float WindowFunction(float x)
 {
-	return saturate((0.0001+sin(pi*x))/(0.0001+pi*x));
+	return saturate((0.0001+sin(SIMUL_PI_F*x))/(0.0001+SIMUL_PI_F*x));
 }
 
 shader vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET

@@ -2,8 +2,8 @@
 #ifndef SIMUL_INSCATTER_FNS_HLSL
 #define SIMUL_INSCATTER_FNS_HLSL
 
-#ifndef pi
-#define pi (3.1415926536)
+#ifndef SIMUL_PI_F
+#define SIMUL_PI_F (3.1415926536)
 #endif
 
 #ifndef RAYLEIGH_BETA_FACTOR
@@ -19,7 +19,7 @@ vec3 ScreenToVolumeTexcoords(mat4 clipToVolMatrix,vec2 texCoords,float dist)
 	view_sc						/=length(view_sc);
 	float azimuth				=atan2(view_sc.x,view_sc.y);
 	float elevation				=acos(view_sc.z);
-	vec3 volume_texc			=vec3(azimuth/(pi*2.0),elevation/pi,dist);
+	vec3 volume_texc			=vec3(azimuth/(SIMUL_PI_F*2.0),elevation/SIMUL_PI_F,dist);
 	return volume_texc;
 }
 
@@ -32,7 +32,7 @@ float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
 	float u=1.0+g2-2.0*g*cos0;
-	return (1.0-g2)*pow(u,-1.5)/(4.0*pi);
+	return (1.0-g2)*pow(u,-1.5)/(4.0*SIMUL_PI_F);
 }
 
 vec3 PrecalculatedInscatterFunction(vec4 inscatter_factor,float BetaRayleigh,float BetaMie,vec3 mieRayleighRatio)

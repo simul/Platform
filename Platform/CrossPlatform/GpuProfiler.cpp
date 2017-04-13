@@ -16,7 +16,7 @@ using namespace crossplatform;
 using namespace std;
 static std::map<void*,simul::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
 typedef uint64_t UINT64;
-typedef int                 BOOL;
+typedef int BOOL;
 
 ProfileData::ProfileData()
 				:DisjointQuery(NULL)
@@ -140,19 +140,12 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 		{
 			// Create the queries
 			std::string n=name;
-			//std::string disjointName=n+"disjoint";
-		//	std::string startName	=n+"start";
-			//std::string endName		=n+"end";
 			profileData->DisjointQuery			=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP_DISJOINT);
 			profileData->DisjointQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
-			//	CreateQuery(device,desc,disjointName.c_str());
-			//profileData->DisjointQuery->SetName(disjointName.c_str());
 			profileData->TimestampStartQuery	=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP);
 			profileData->TimestampStartQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
-			//profileData->TimestampStartQuery->SetName(startName.c_str());
 			profileData->TimestampEndQuery		=renderPlatform->CreateQuery(crossplatform::QUERY_TIMESTAMP);
 			profileData->TimestampEndQuery->RestoreDeviceObjects(deviceContext.renderPlatform);
-			//profileData->TimestampEndQuery->SetName(endName.c_str());
 		}
 		if(profileData->DisjointQuery)
 		{
@@ -161,7 +154,6 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 
 		// Insert the start timestamp   
 			profileData->TimestampStartQuery->End(deviceContext);
-
 			profileData->QueryStarted = true;
 		}
 	}
@@ -252,18 +244,18 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 
 	// Get the query data
 	UINT64 startTime = 0;
-	if(!profile->TimestampStartQuery->GetData(deviceContext,&startTime, sizeof(startTime)))
-		return;
+	bool ok=profile->TimestampStartQuery->GetData(deviceContext,&startTime, sizeof(startTime));
+		
 //       while(context->GetData(profile.TimestampStartQuery[currFrame], &startTime, sizeof(startTime), 0) != S_OK);
 
     UINT64 endTime = 0;
-    if(!profile->TimestampEndQuery->GetData(deviceContext,&endTime, sizeof(endTime)))
-        return;
+	ok&=profile->TimestampEndQuery->GetData(deviceContext,&endTime, sizeof(endTime));
     // while(context->GetData(profile.TimestampEndQuery[currFrame], &endTime, sizeof(endTime), 0) != S_OK);
 	
     crossplatform::DisjointQueryStruct disjointData;
-    if(!profile->DisjointQuery->GetData(deviceContext,&disjointData, sizeof(disjointData)))
-        return;
+    ok&=profile->DisjointQuery->GetData(deviceContext,&disjointData, sizeof(disjointData));
+	if(!ok)
+		return;
     timer.UpdateTime();
     queryTime += timer.Time;
 
@@ -279,9 +271,9 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 	}
 	if(profile->updatedThisFrame)
 		profile->time+=mix*time;
-	if(profile->time>10.0f)
+	if(profile->time>100.0f)
 	{
-		profile->time=10.0f;
+		profile->time=100.0f;
 	}
 }
 
@@ -333,7 +325,7 @@ const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,i
 	if(parent==NULL)
 		parent=root;
 	crossplatform::ProfileData *p=(crossplatform::ProfileData*)parent;
-	if(p!=root&&!p->updatedThisFrame)
+	if(!p||(p!=root&&!p->updatedThisFrame))
 		return NULL;
 	int j=0;
 	for(auto it=p->children.begin();it!=p->children.end();it++,j++)

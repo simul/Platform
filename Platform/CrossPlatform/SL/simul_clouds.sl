@@ -330,10 +330,10 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 {
 	vec3 rain_texc		=cloudWorldOffsetKm;
 	rain_texc.xy		+=rain_texc.z*rainTangent;
-	float rain_lookup	=sample_3d_lod(rainMapTexture,cloudSamplerState,rain_texc.xy*inverseScalesKm.xy,0).x;
+	float rain_lookup	=rainMapTexture.SampleLevel(cloudSamplerState,rain_texc.xy*inverseScalesKm.xy,0).x;
 	//vec4 streak			=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
 	return				rain_lookup.x*saturate((rainRadiusKm-length(world_pos_km.xy-rainCentreKm.xy))*3.0)
-		*saturate(1.0-cloudWorldOffsetKm.z/1.0);//*(0.5+0.5*saturate(cloudWorldOffsetKm.z/4.0+1.0));
+		*saturate((3.0-cloudWorldOffsetKm.z)/1.0);//*(0.5+0.5*saturate(cloudWorldOffsetKm.z/4.0+1.0));
 }
 
 	vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};

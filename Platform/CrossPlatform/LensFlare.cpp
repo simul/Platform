@@ -8,7 +8,7 @@ using namespace crossplatform;
 
 LensFlare::LensFlare()
 {
-	min_cosine=cos(45.f*pi/180.f);
+	min_cosine=cos(45.f*SIMUL_PI_F/180.f);
 	lightPosition[0]=0;
 	lightPosition[1]=0;
 	lightPosition[2]=0;
