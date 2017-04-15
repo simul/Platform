@@ -13,6 +13,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,Texture2D inscTexture
 											,Texture2D skylTexture
 											,Texture3D inscatterVolumeTexture
+											,TextureCube ambientCubemapTexture
                                             ,bool do_depth_mix
 											,vec4 dlookup
 											,vec3 view
@@ -127,7 +128,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	float lastFadeDistance			=0.0;
 	int3 b							=abs(c-C0*2);
 
-
+	vec3 amb_dir=view;
 
 	for(int j=0;j<8;j++)
 	{
@@ -214,8 +215,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 				vec4 noiseval			=vec4(0,0,0,0);
-				if(noise)
-					noiseval			=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
+				if(noise&&12.0*fadeDistance<4.0)
+					noiseval			=.12*texture_3d_wrap_lod(noiseTexture3D,noise_texc,12.0*fadeDistance);
 				vec4 density=vec4(1,1,1,1),light;
 				calcDensity(cloudDensity,cloudLight,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance,density,light);
 				if(do_rain_effect)
@@ -241,10 +242,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 
 					ColourStep( res.colour, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
+								,ambientCubemapTexture
 								,density, light,distanceKm, fadeDistance
 								,world_pos
 								,cloudTexCoords, fade_texc, nearFarTexc
-								,cosine, volumeTexCoords
+								,cosine, volumeTexCoords,amb_dir
 								,BetaClouds, BetaRayleigh, BetaMie
 								,solidDist_nearFar, noise, do_depth_mix,distScale,idx);
 					if(res.colour[0].a*brightness_factor<0.003)

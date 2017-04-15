@@ -14,6 +14,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,Texture2D inscTexture
 											,Texture2D skylTexture
 											,Texture3D inscatterVolumeTexture
+											,TextureCube ambientCubemapTexture
                                             ,bool do_depth_mix
 											,vec4 dlookup
 											,vec3 view
@@ -48,7 +49,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	
 	float solidDist_nearFar	[NUM_CLOUD_INTERP];
 	vec2 nfd				=(dlookup.yx)+100.0*step(vec2(1.0,1.0), dlookup.yx);
-	//res.nearFarDepth.xy	=nfd.yx;
+
 	float n									=	nfd.x;
 	float f									=	nfd.y;
 	solidDist_nearFar[0]					=	n;
@@ -56,14 +57,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	for(int l=1;l<num_interp-1;l++)
 	{
 		float interp			=float(l)/float(num_interp-1);
-		// This is z. So let:
-		//						Z				=	n (f/d-1) / (f-n)
-		// i.e.					Z(f-n)/n		=	f/d - 1
-		//						1 + Z(f-n)/n	=	f/d
-		//						d				=	f/ ( 1 + Z(f-n)/n )
-		//						d				=	fn / (n + Z(f-n))
 		solidDist_nearFar[l]	=lerp(n,f,interp);
-								
 	}
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 	// Lookup in the illumination texture.
@@ -95,55 +89,32 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	viewScaled				=normalize(viewScaled);
 
 	vec3 offset_vec			=vec3(0,0,0);
-	//if(world_pos.z<min_z)
+	
 	{
 		float a		=1.0/(saturate(view.z)+0.00001);
 		offset_vec	+=max(0.0,min_z-world_pos.z)*vec3(view.x*a,view.y*a,1.0);
 	}
-	//if(view.z<0&&world_pos.z>max_z)
+	
 	{
 		float a		=1.0/(saturate(-view.z)+0.00001);
 		offset_vec	+=max(0.0,world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
 	}
 	vec3 halfway					=0.5*(lightDir-view);
 	world_pos						+=offset_vec;
-	float viewScale					=length(viewScaled*scaleOfGridCoords);
-	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
-	vec3 startOffsetFromOrigin		=viewPosKm-gridOriginPosKm;
-	vec3 offsetFromOrigin			=world_pos-gridOriginPosKm;
-	vec3 p0							=startOffsetFromOrigin/scaleOfGridCoords;
-	int3 c0							=int3(floor(p0) + start_c_offset);
-	vec3 gridScale					=scaleOfGridCoords;
-	vec3 P0							=startOffsetFromOrigin/scaleOfGridCoords/2.0;
-	int3 C0							=c0>>1;
 	
 	float distanceKm				=length(offset_vec);
-	vec3 p_							=offsetFromOrigin/scaleOfGridCoords;
-	int3 c							=int3(floor(p_) + start_c_offset);
-	int idx=0;
-	float W							=halfClipSize;
-	const float start				=0.866*0.866;//0.707 for 2D, 0.866 for 3D;
-	const float ends				=1.0;
-	const float range				=ends-start;
 
-	float lastFadeDistance			=0.0;
-	int3 b							=abs(c-C0*2);
-
-	//float blinn_phong=0.0;
-	//bool found=false;
-	float distScale =  0.6 / maxFadeDistanceKm;
-		float K=log(maxCloudDistanceKm);
+	float distScale			=0.6/maxFadeDistanceKm;
+	float K					=log(maxCloudDistanceKm);
 	bool found=false;
 	float stepKm				=K*(1.2+distanceKm)/float(numSteps);
-	for(int i=0;i<numSteps;i++)
+	
+	vec3 amb_dir=view;
+	for(int i=0;i<768;i++)
 	{
 		//world_pos					+=0.001*view;
 		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm)//||solidDist_nearFar.y<lastFadeDistance)
 			break;
-		offsetFromOrigin			=world_pos-gridOriginPosKm;
-
-		// Next pos.
-		int3 c1						=c+c_offset;//viewScale;
 		stepKm						*=(1.0+K/float(numSteps));
 		distanceKm					+=stepKm;
 		// We fade out the intermediate steps as we approach the boundary of a detail change.
@@ -159,7 +130,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		
 		if(fade>0)
 		{
-			vec4 density		=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,1);
+			vec4 density			=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
 	
 			if(!found)
 			{
@@ -196,8 +167,9 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 						vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texc,0);
 					//density.z				=saturate(4.0*density.z-0.2);
 					
-						float wo		=density.y*(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
+						float wo		=density.y*(worley.w-0.6);//(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
 						density.z		=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3-saturate(0.6-density.z)));
+						amb_dir=lerp(amb_dir,worley.xyz,0.1*density.z);
 					}
 					//density.xy		*=1.0+wo;
 					float brightness_factor;
@@ -206,16 +178,13 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 
 					ColourStep(res.colour, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
+								,ambientCubemapTexture
 								,density, light, distanceKm, fadeDistance
 								,world_pos
 								,cloudTexCoords, fade_texc, nearFarTexc
-								,1.0, volumeTexCoords
+								,1.0, volumeTexCoords,amb_dir
 								,BetaClouds, BetaRayleigh, BetaMie
 								,solidDist_nearFar, noise, do_depth_mix,distScale,0);
-					//res.colour[0].rgb=view;
-					//res.colour[1].r = density.x;
-					//res.colour[2].r = density.x;
-					//res.colour[3].r = density.x;
 					if(res.colour[0].a*brightness_factor<0.003)
 					{
 						for(int o=0;o<num_interp;o++)
@@ -223,7 +192,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 						break;
 					}
 				}
-				lastFadeDistance = lerp(lastFadeDistance, fadeDistance - density.z*stepKm / maxFadeDistanceKm,res.colour[num_interp-1].a);
 			}
 		}
 	}

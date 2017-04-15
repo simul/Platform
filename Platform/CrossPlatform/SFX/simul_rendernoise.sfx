@@ -96,7 +96,7 @@ shader void CS_Noise3D_float(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	/
     IMAGE_STORE_3D(targetTexture32,pos,result);
 }
 
-float Worley(vec3 texc,int grid,int seed)
+vec4 Worley(vec3 texc,int grid,int seed)
 {
 	vec3 pos			=float(grid)*texc;
 	vec3 fractional,intpart;
@@ -104,6 +104,7 @@ float Worley(vec3 texc,int grid,int seed)
 	int3 ip				=int3(intpart);
 	vec3 loc			=fractional-vec3(0.5,0.5,0.5);
 	float n				=float(grid);
+	vec3 dir			=vec3(0,0,0);
     for (int i = -1; i < 2; ++i)
 	{
         for (int j = -1; j < 2; ++j)
@@ -115,9 +116,9 @@ float Worley(vec3 texc,int grid,int seed)
 				int3 v		=(u+int3(grid,grid,grid))%int3(grid,grid,grid);
 				vec3 random	=SphericalRandom(vec3(v)*seed);
 				c			+=random.xyz;
-				//c+=vec3(1.5,.5,.5);
-				//.c			-=(u-v);
 				float k1	=length(loc-c);
+				// if k1<n, let dir=random.
+				dir			=lerp(dir,loc-c,step(k1,n));
 				n			=min(n,k1);
 			}
 		}
@@ -126,7 +127,7 @@ float Worley(vec3 texc,int grid,int seed)
 	// now n is the distance to the nearest centre. We want the value to be
 	// 1.0 when at the nearest centre, out to some maximum radius.
 	float p			=saturate(1.0-n/1.0);
-	return p;
+	return vec4(dir,p);
 }
 
 CS_LAYOUT(8,8,8)
@@ -138,10 +139,8 @@ shader void CS_PerlinWorley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 		return;
 	vec3 texCoords	=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec4 result;
-	result			=Worley(texCoords,4,1);//saturate(Noise3D(noise_texture_frequency,texCoords,5, persistence).x+Worley(texCoords,16,1)-0.5);
-	//result			=saturate(2.0*result.x-1.0+0.25*Worley(texCoords,18,2));
-//	result.z		=0.25*Worley(texCoords,16,1);
-//	result.w		=0.125*Worley(texCoords,32,1);
+	result			=Worley(texCoords,4,1).wwww;
+
 	IMAGE_STORE_3D(targetTextureU8,idx,result);
 }
 
@@ -156,9 +155,9 @@ shader void CS_Worley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV
 	int grid=8;
 	vec4 result;
 	result			=Worley(texCoords,5,7);
-	result.y		=0.5*Worley(texCoords,9,2);
-	result.z		=0.25*Worley(texCoords,16,3);
-	result.w		=0.125*Worley(texCoords,24,4);
+	//result.y		=0.5*Worley(texCoords,9,2).w;
+//	result.z		=0.25*Worley(texCoords,16,3).w;
+	//result.w		=0.125*Worley(texCoords,24,4).w;
 	IMAGE_STORE_3D(targetTextureU8,idx,result);
 }
 

@@ -45,7 +45,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,bool do_lightpass
 				,bool do_godrays
 				,bool do_interp
-				,bool do_near)
+				,bool do_near
+				,bool do_clouds=true)
 {
 	TwoColourCompositeOutput res;
 	vec3 view						=normalize(mul(invViewProj,clip_pos).xyz);
@@ -89,8 +90,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	{
 		cloud						=cloudNear;
 	}
-	
-	insc.rgb						*=cloud.a;
+	if(do_clouds)
+		insc.rgb						*=cloud.a;
 	if(do_godrays)
 	{
 		float r							=length(lightspaceOffset);
@@ -100,9 +101,12 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
 		insc.rgb						*=godrays;
 	}
-
-	insc							+=cloud;
+	
+	if(do_clouds)
+		insc							+=cloud;
 	res.multiply					=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a;
+	if(do_clouds)
+		res.multiply				*=cloud.a;
 	res.add							=insc;
     return res;
 }
