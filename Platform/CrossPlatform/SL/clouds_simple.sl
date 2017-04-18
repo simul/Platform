@@ -14,7 +14,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,Texture2D inscTexture
 											,Texture2D skylTexture
 											,Texture3D inscatterVolumeTexture
-											,TextureCube ambientCubemapTexture
                                             ,bool do_depth_mix
 											,vec4 dlookup
 											,vec3 view
@@ -178,7 +177,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 
 					ColourStep(res.colour, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
-								,ambientCubemapTexture
 								,density, light, distanceKm, fadeDistance
 								,world_pos
 								,cloudTexCoords, fade_texc, nearFarTexc

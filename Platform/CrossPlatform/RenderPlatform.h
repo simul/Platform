@@ -314,7 +314,7 @@ namespace simul
 			/// Apply a standard renderstate - e.g. opaque blending
 			virtual void					SetStandardRenderState			(DeviceContext &deviceContext,StandardRenderState s);
 			//! Store the current rendertargets and viewports at the top of the stack
-			virtual void					PushRenderTargets(DeviceContext &deviceContext)=0;
+			virtual void					PushRenderTargets(DeviceContext &deviceContext, TargetsAndViewport *tv);
 			//! Restore rendertargets and viewports from the top of the stack.
 			virtual void					PopRenderTargets(DeviceContext &deviceContext)=0;
 			//! Resolve a MSAA texture to a normal texture.

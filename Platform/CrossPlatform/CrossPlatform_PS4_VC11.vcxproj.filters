@@ -82,6 +82,7 @@
     <ClInclude Include="Topology.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Quaterniond.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SL">
@@ -155,5 +156,6 @@
     <ClCompile Include="LensFlare.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="Quaterniond.cpp" />
   </ItemGroup>
 </Project>

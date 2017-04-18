@@ -29,9 +29,8 @@ uniform Texture2D lossTexture;
 uniform Texture2D inscTexture;
 uniform Texture2D skylTexture;
 uniform TextureCube depthTexture;
-uniform TextureCube ambientCubemapTexture;
 uniform Texture3D noiseTexture3D		SIMUL_TEXTURE_REGISTER(2);
-uniform TextureCube clouds2DTexture;
+uniform TextureCube clouds2DTexture		SIMUL_TEXTURE_REGISTER(3);
 uniform Texture2D illuminationTexture;
 uniform Texture2D lightTableTexture;
 uniform Texture2D rainbowLookupTexture;
@@ -47,7 +46,7 @@ uniform RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);
 
 uniform RWStructuredBuffer<VolumeQueryResult> volumeQueries;
 
-uniform StructuredBuffer<vec3> queryInputs;
+uniform StructuredBuffer<vec3> queryInputs SIMUL_TEXTURE_REGISTER(3);
 
 uniform RWStructuredBuffer<LineQueryResult> lineQueryResults;
 CS_LAYOUT(1,1,1)
@@ -347,10 +346,6 @@ shader vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 	return vec4(shadow.xy,0,shadow.x);
 }
 
-float MakeRainMap(Texture3D cloudDensity,SamplerState cloudSamplerState,vec2 texCoords,float precipitationThreshold)
-{
-}
-
 shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 {
 	float total_cloud=0.0;
@@ -402,7 +397,6 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d=tru
 									,inscTexture
 									,skylTexture
 									,volumeInscatterTexture
-									,ambientCubemapTexture
 									,depth
 									,dlookup
 									,view
@@ -489,7 +483,6 @@ void Raytrace(uint3 pos,bool include_rain,bool depth)
 									,lossTexture
 									,inscTexture
 									,skylTexture,volumeInscatterTexture
-											,ambientCubemapTexture
 									,true
 									,dlookup
 									,view

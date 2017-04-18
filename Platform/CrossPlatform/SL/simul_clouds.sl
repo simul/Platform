@@ -45,7 +45,6 @@ vec3 applyFades(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 }
 
 vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volumeTexCoords,Texture2D lightTableTexture
-	,TextureCube ambientCubemapTexture
 				,vec4 density,vec4 light,float Beta,vec4 lightResponse,vec3 ambientColour
 				,vec3 world_pos,vec3 cloudTexCoords,vec3 amb_dir
 				,vec2 fade_texc
@@ -57,7 +56,7 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	//light.zw*=2;
 //	vec3 ambient_dir			=vec3(light.zw,sqrt(1.0-length(light.zw)));
 	float alt_texc				=(world_pos.z/fadeAltitudeRangeKm);
-	vec4 amb_lookup				=texture_cube_lod(ambientCubemapTexture,amb_dir,0);
+	vec4 amb_lookup				=vec4(0,0,0,0);//texture_cube_lod(ambientCubemapTexture,amb_dir,0);
 	ambientColour				=lightResponse.w*amb_lookup.rgb;
 	brightnessFactor			=unshadowedBrightness(Beta,lightResponse,ambientColour);
 	float sun_alt_texc			=GetAltTexCoord(world_pos.z,minSunlightAltitudeKm,fadeAltitudeRangeKm);
@@ -345,7 +344,6 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP],inout float meanFadeDistance,inout float brightness_factor
 	,Texture2D lossTexture,Texture2D inscTexture,Texture2D skylTexture
 	,Texture3D inscatterVolumeTexture,Texture2D lightTableTexture
-	,TextureCube ambientCubemapTexture
 	,vec4 density,vec4 light,float distanceKm,float fadeDistance
 	,vec3 world_pos
 	,vec3 cloudTexCoords,vec2 fade_texc,vec2 nearFarTexc
@@ -360,7 +358,6 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP],inout float meanFadeDistance
 	brightness_factor		=1.0;
 	if (noise)
 		clr[NUM_CLOUD_INTERP - 1] =	calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
-										,ambientCubemapTexture
 										,density
 										,light
 										,BetaClouds

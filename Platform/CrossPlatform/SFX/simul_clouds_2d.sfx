@@ -377,8 +377,8 @@ shader void CS_Clouds2D_Fill(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 	if (u.g<1.0&&u.b>0.0)
 	{
 		//outputTexture[pos]=vec4(1,0,dist.x,0.5);
-	CSClouds2D(pos,true);
-}
+		CSClouds2D(pos,true);
+	}
 }
 
 CS_LAYOUT(8,8,1)

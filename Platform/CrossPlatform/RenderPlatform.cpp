@@ -185,6 +185,11 @@ void RenderPlatform::PopTexturePath()
 	texturePathsUtf8.pop_back();
 }
 
+void RenderPlatform::PushRenderTargets(DeviceContext &deviceContext, TargetsAndViewport *tv)
+{
+	crossplatform::BaseFramebuffer::GetFrameBufferStack().push(tv);
+}
+
 void RenderPlatform::PushShaderPath(const char *path_utf8)
 {
 	shaderPathsUtf8.push_back(std::string(path_utf8)+"/");
