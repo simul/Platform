@@ -88,39 +88,5 @@ extern void SIMUL_DIRECTX11_EXPORT BreakIfDebugging();
 	#endif
 #endif
 	
-#define MAKE_CONSTANT_BUFFER(cb,type)	\
-	{\
-		SAFE_RELEASE(cb);	\
-		D3D11_SUBRESOURCE_DATA cb_init_data;\
-		type x;\
-		cb_init_data.pSysMem = &x;\
-		cb_init_data.SysMemPitch = 0;\
-		cb_init_data.SysMemSlicePitch = 0;\
-		D3D11_BUFFER_DESC cb_desc;\
-		cb_desc.Usage				= D3D11_USAGE_DYNAMIC;\
-		cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;\
-		cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;\
-		cb_desc.MiscFlags			= 0;\
-		cb_desc.ByteWidth			= PAD16(sizeof(type));\
-		cb_desc.StructureByteStride = 0;\
-		m_pd3dDevice->CreateBuffer(&cb_desc, &cb_init_data, &cb);\
-	}
-
-#define UPDATE_CONSTANT_BUFFER(pContext,cb,DataStructType,dataStruct)	\
-	{	\
-		D3D11_MAPPED_SUBRESOURCE mapped_res;	\
-		pContext->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);	\
-		*(DataStructType*)mapped_res.pData = dataStruct;	\
-		pContext->Unmap(cb, 0);	\
-	}
-
-#define UPDATE_CONSTANT_BUFFERS(pContext,cb,DataStructType,dataStructList,num)	\
-	{	\
-		D3D11_MAPPED_SUBRESOURCE mapped_res;	\
-		pContext->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);	\
-		for(int i=0;i<num;i++)\
-		{	((DataStructType*)(mapped_res.pData))[i]=dataStructList[i];	}\
-		pContext->Unmap(cb, 0);	\
-	}
 
 #endif

@@ -213,7 +213,7 @@ void MapToWindow( uint3 g , uint3 t ,bool clears)
 	float sine			=0;//sin(azimuth);
 	float cosine		=1;//cos(azimuth);
 	texc.xy				-=vec2(0.5,0.5);
-	vec2 texc_r		=texc;//	=vec2(texc.x*cosine+texc.y*sine,texc.x*-sine+texc.y*cosine);
+	vec2 texc_r		=texc.xy;//	=vec2(texc.x*cosine+texc.y*sine,texc.x*-sine+texc.y*cosine);
 	//texc_r				+=vec2(0.5,0.5);
 
 	vec4 res			=texture_clamp_lod(rainMapTexture,texc_r.xy,0);
@@ -252,15 +252,15 @@ float ThicknessInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir)
 	vec3 wpos			=texc/inverseScalesKm;
 	float thickness		=0.0;
 	int i				=0;
-	float stepLength	=1.0/inverseScalesKm.x/float(windowGrid.x);
-	float s				=0.5*stepLength;
+	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
+	float s				=0.5*stepLengthKm;
 	float maxh			=1.0/inverseScalesKm.z;
 	float extinction	=6.5;
 	for( i=0;i<122;i++)
 	{
 		wpos		+=dir*s;			// we expect stepLength in km for this shader
-		vec3 texc	=wpos*inverseScalesKm;
-		vec4 lookup	=texture_3d_wwc_lod(cloudDensity,texc,1)*saturate((maxh-wpos.z)/s);
+		vec3 tx		=wpos*inverseScalesKm;
+		vec4 lookup	=texture_3d_wwc_lod(cloudDensity,tx,1)*saturate((maxh-wpos.z)/s);
 		thickness	+=lookup.z*s;
 		s			*=1.005;
 	}
@@ -278,8 +278,8 @@ shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 wpos			=texc/inverseScalesKm;
 	float thickness		=0.0;
 	int i				=0;
-	float stepLength	=1.0/inverseScalesKm.x/float(windowGrid.x);
-	float s				=0.5*stepLength;
+	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
+	float s				=0.5*stepLengthKm;
 	float maxh			=1.0/inverseScalesKm.z;
 	float extinction	=6.5;
 	thickness			=ThicknessInDirection(texc,inverseScalesKm,directionToSun);

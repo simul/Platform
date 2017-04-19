@@ -194,7 +194,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		constantBuffer.text_rect.y=-constantBuffer.text_rect.y;
 		constantBuffer.text_rect.w*=-1.0f;
 	}
-	constantBuffer.Apply(deviceContext);
+	effect->SetConstantBuffer(deviceContext,&constantBuffer);
 	if(constantBuffer.background.w>0.0f)
 	{
 		effect->Apply(deviceContext,backgTech,0);
@@ -219,7 +219,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 			constantBuffer.text_rect.z	=2.0f*(float)f.pixel_width/screen_width;
 			static float u			=1024.f/598.f;
 			constantBuffer.texc		=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
-			constantBuffer.Apply(deviceContext);
+	effect->SetConstantBuffer(deviceContext,&constantBuffer);
 			renderPlatform->DrawQuad(deviceContext);
 		}
 		x+=f.pixel_width+1;

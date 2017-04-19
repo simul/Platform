@@ -17,8 +17,6 @@ Mesh::Mesh()
 	:vertexBuffer(NULL)
 	,indexBuffer(NULL)
 	,inputLayout(NULL)
-	,previousInputLayout(NULL)
-	,previousTopology(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED)
 {
 }
 
@@ -145,8 +143,8 @@ void Mesh::releaseBuffers()
 void Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	pContext->IAGetInputLayout( &previousInputLayout );
-	pContext->IAGetPrimitiveTopology(&previousTopology);
+	//pContext->IAGetInputLayout( &previousInputLayout );
+	//pContext->IAGetPrimitiveTopology(&previousTopology);
 	// Set the input layout
 	pContext->IASetInputLayout(inputLayout);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -177,9 +175,6 @@ void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,c
 void Mesh::EndDraw(crossplatform::DeviceContext &deviceContext) const
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	pContext->IASetPrimitiveTopology(previousTopology);
-	pContext->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
 	done_begin=false;
 }
 

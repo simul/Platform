@@ -110,8 +110,6 @@ namespace simul
 			int GetSampleCount() const;
 		protected:
 			ID3D11DeviceContext *last_context;
-			ID3D11RenderTargetView*		m_pOldRenderTargets[16];
-			ID3D11DepthStencilView*		m_pOldDepthSurface;
 			ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   mainShaderResourceView;			// SRV for the whole texture including all layers and mips.	
 			ID3D11ShaderResourceView*	arrayShaderResourceView;		// SRV that describes a cubemap texture as an array, used only for cubemaps.
@@ -122,8 +120,7 @@ namespace simul
 			ID3D11UnorderedAccessView***  layerMipUnorderedAccessViews;	// UAV's for the layers and mips
 			ID3D11DepthStencilView*		depthStencilView;
 			ID3D11RenderTargetView***	renderTargetViews;				// 2D table: layers and mips.
-			D3D11_VIEWPORT				m_OldViewports[16];
-			unsigned					num_OldViewports;
+		
 			void InitUAVTables(int l,int m);
 			void FreeUAVTables();
 			void InitSRVTables(int l,int m);

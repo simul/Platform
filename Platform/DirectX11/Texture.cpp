@@ -43,12 +43,8 @@ Texture::Texture()
 	,renderTargetViews(NULL)
 	,stagingBuffer(NULL)
 	,last_context(NULL)
-	,m_pOldDepthSurface(NULL)
-	,num_OldViewports(0)
 {
 	memset(&mapped,0,sizeof(mapped));
-	for(int i=0;i<16;i++)
-		m_pOldRenderTargets[i]=NULL;
 }
 
 
@@ -142,11 +138,6 @@ void Texture::InvalidateDeviceObjects()
 	SAFE_RELEASE(texture);
 	SAFE_RELEASE(depthStencilView);
 	SAFE_RELEASE(stagingBuffer);
-	for(int i=0;i<16;i++)
-	{
-		SAFE_RELEASE(m_pOldRenderTargets[i]);
-	}
-	SAFE_RELEASE(m_pOldDepthSurface);
 	arraySize=0;
 	mips=0;
 }
@@ -160,7 +151,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
 	mainShaderResourceView	=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8,pathsUtf8);
-	dx11::SetDebugObjectName(texture,pFilePathUtf8);
+	SetDebugObjectName(texture,pFilePathUtf8);
 }
 
 void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files)
@@ -795,7 +786,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 
-		dx11::SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
+		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 		srv_desc.Format						=srvFormat;
@@ -805,7 +796,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		SAFE_RELEASE(mainShaderResourceView);
 		SAFE_RELEASE(arrayShaderResourceView);
 		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&mainShaderResourceView));
-		dx11::SetDebugObjectName(mainShaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat mainShaderResourceView");
+		SetDebugObjectName(mainShaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat mainShaderResourceView");
 	}
 	if(computable&&(!layerMipUnorderedAccessViews||!ok))
 	{
@@ -824,14 +815,14 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		{
 			uav_desc.Texture2D.MipSlice=i;
 			V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
-			dx11::SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
 		if(layerMipUnorderedAccessViews)
 		for(int i=0;i<m;i++)
 		{
 			uav_desc.Texture2D.MipSlice=i;
 			V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][i]));
-			dx11::SetDebugObjectName(layerMipUnorderedAccessViews[0][i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			SetDebugObjectName(layerMipUnorderedAccessViews[0][i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
 	}
 	if(rendertarget&&(!renderTargetViews||!ok))
@@ -848,7 +839,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		{
 			renderTargetViewDesc.Texture2D.MipSlice	=j;
 			V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[0][j])));
-			dx11::SetDebugObjectName((renderTargetViews[0][j]),"dx11::Texture::ensureTexture2DSizeAndFormat renderTargetView");
+			SetDebugObjectName((renderTargetViews[0][j]),"dx11::Texture::ensureTexture2DSizeAndFormat renderTargetView");
 		}
 	}
 	if(depthstencil&&(!depthStencilView||!ok))
@@ -863,7 +854,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		SAFE_RELEASE(depthStencilView);
 		V_CHECK(pd3dDevice->CreateDepthStencilView(texture,&depthDesc,&depthStencilView));
 	}
-	dx11::SetDebugObjectName(texture,"ensureTexture2DSizeAndFormat");
+	SetDebugObjectName(texture,"ensureTexture2DSizeAndFormat");
 	mips=m;
 	arraySize=1;
 	return !ok;
@@ -948,7 +939,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		{
 			uav_desc.Texture2DArray.MipSlice=i;
 			V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
-			dx11::SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 		}
 		if (layerMipUnorderedAccessViews)
 			for (int i = 0; i < total_num; i++)
@@ -958,7 +949,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			uav_desc.Texture2DArray.ArraySize=1;
 					uav_desc.Texture2DArray.MipSlice = j;
 					V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[i][j]));
-					dx11::SetDebugObjectName(layerMipUnorderedAccessViews[i][j], "dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			SetDebugObjectName(layerMipUnorderedAccessViews[i][j],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
 				}
 		}
 
@@ -983,7 +974,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			}
 		}
 	}
-	dx11::SetDebugObjectName(texture,"ensureTextureArraySizeAndFormat");
+	SetDebugObjectName(texture,"ensureTextureArraySizeAndFormat");
 
 	mips=m;
 	arraySize=num;
@@ -1174,7 +1165,7 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 		{
 			uav_desc.Texture1D.MipSlice=j;
 			V_CHECK(renderPlatform->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][j]));
-			dx11::SetDebugObjectName(layerMipUnorderedAccessViews[0][j],"dx11::Texture::ensureTexture1DSizeAndFormat unorderedAccessView");
+			SetDebugObjectName(layerMipUnorderedAccessViews[0][j],"dx11::Texture::ensureTexture1DSizeAndFormat unorderedAccessView");
 		}
 	}
 	mips=m;
@@ -1298,27 +1289,17 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 	if(!deviceContext.asD3D11DeviceContext())
 		return;
 	last_context=deviceContext.asD3D11DeviceContext();
-	{
-		num_OldViewports=0;
-		last_context->RSGetViewports(&num_OldViewports,NULL);
-		SIMUL_ASSERT(num_OldViewports>=0&&num_OldViewports<=16)
-		if(num_OldViewports>0)
-			last_context->RSGetViewports(&num_OldViewports,m_OldViewports);
-		last_context->OMGetRenderTargets(	num_OldViewports,
-											m_pOldRenderTargets,
-											&m_pOldDepthSurface);
-	}
 	if(array_index<0)
 		array_index=0;
 	if(mip<0)
 		mip=0;
 	if(mip>=mips)
 		return;
+	D3D11_VIEWPORT viewport;
 	if(renderTargetViews)
 	{
 		last_context->OMSetRenderTargets(1,&(renderTargetViews[array_index][mip]),NULL);
 		{
-			D3D11_VIEWPORT viewport;
 			viewport.Width		=(float)(std::max(1,(width>>mip)));
 			viewport.Height		=(float)(std::max(1,(length>>mip)));
 			viewport.TopLeftX	=0;
@@ -1328,20 +1309,26 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 			last_context->RSSetViewports(1, &viewport);
 		}
 	}
+
+	targetsAndViewport.m_rt[0]=&renderTargetViews[array_index][mip];
+	targetsAndViewport.m_dt=nullptr;
+	targetsAndViewport.viewport.x=targetsAndViewport.viewport.y=0;
+	targetsAndViewport.viewport.w=viewport.Width;
+	targetsAndViewport.viewport.h=viewport.Height;
+	targetsAndViewport.viewport.zfar=1.0f;
+	targetsAndViewport.viewport.znear=0.0f;
+	targetsAndViewport.num=1;
+	
+	crossplatform::BaseFramebuffer::GetFrameBufferStack().push(&targetsAndViewport);
+
 }
 
 void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext)
 {
-	deviceContext.asD3D11DeviceContext()->OMSetRenderTargets(	num_OldViewports,
-										m_pOldRenderTargets,
-										m_pOldDepthSurface
-										);
-	deviceContext.asD3D11DeviceContext()->RSSetViewports(num_OldViewports,m_OldViewports);
-	for(int i=0;i<(int)num_OldViewports;i++)
-	{
-		SAFE_RELEASE(m_pOldRenderTargets[i]);
-	}
-	SAFE_RELEASE(m_pOldDepthSurface);
+	if(renderPlatform)
+		renderPlatform->DeactivateRenderTargets(deviceContext);
+	else
+		crossplatform::BaseFramebuffer::GetFrameBufferStack().pop();
 }
 
 int Texture::GetSampleCount() const

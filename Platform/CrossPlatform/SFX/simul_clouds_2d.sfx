@@ -385,10 +385,10 @@ CS_LAYOUT(8,8,1)
 shader void CS_Clouds2D_Cubemap(uint3 g: SV_GroupID,uint3 t: SV_GroupThreadID)
 {
 	uint Z				=cubemapFaceIndex2d[g.z+t.z].x;
-	int2 idx		=int2(g.xy*8+t.xy);
+	int2 idx			=int2(g.xy*8+t.xy);
 	uint3 pos			=uint3(targetRange2d[Z].xy+idx,Z);
-//	outputTexture[idx]	=vec4(0,0.0,0.5,0.5);
-	CSClouds2D(pos,false);
+	outputTexture[pos]	=vec4(0,0.0,0.5,0.5);
+	//CSClouds2D(pos,false);
 }
 
 CS_LAYOUT(8,8,1)

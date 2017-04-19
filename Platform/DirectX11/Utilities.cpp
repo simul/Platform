@@ -243,24 +243,24 @@ struct Vertext
 
 void UtilityRenderer::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
-	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
+	//D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	pContext->IAGetPrimitiveTopology(&previousTopology);
+	//pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	pContext->IASetInputLayout(NULL);
 	pContext->Draw(4,0);
-	pContext->IASetPrimitiveTopology(previousTopology);
+//	pContext->IASetPrimitiveTopology(previousTopology);
 }			
 
 
 void UtilityRenderer::DrawSphere(crossplatform::DeviceContext &deviceContext,int latitudes,int longitudes)
 {
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	D3D_PRIMITIVE_TOPOLOGY previousTopology;
-	pContext->IAGetPrimitiveTopology(&previousTopology);
+	//D3D_PRIMITIVE_TOPOLOGY previousTopology;
+	//pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	// The number of indices per lat strip is (longitudes+1)*2.
 	// The number of lat strips is (latitudes+1)
 	pContext->Draw((longitudes+1)*(latitudes+1)*2,0);
-	pContext->IASetPrimitiveTopology(previousTopology);
+	//pContext->IASetPrimitiveTopology(previousTopology);
 }

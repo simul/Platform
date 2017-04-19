@@ -35,6 +35,7 @@ namespace simul
 			ID3D11InputLayout				*m_pCubemapVtxDecl;
 			ID3D11Buffer					*m_pVertexBuffer;
 			ID3D11InputLayout*				m_pVtxDecl;
+			UINT64 fence;
 		public:
 			RenderPlatform();
 			virtual ~RenderPlatform();
@@ -102,7 +103,7 @@ namespace simul
 			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);
 			void									DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext) override;
 		
-			crossplatform::Viewport					GetViewport(crossplatform::DeviceContext &deviceContext,int index);
+		//	crossplatform::Viewport					GetViewport(crossplatform::DeviceContext &deviceContext,int index);
 			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps);
 			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer);
 			
@@ -111,7 +112,6 @@ namespace simul
 			
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
-			void									PushRenderTargets(crossplatform::DeviceContext &deviceContext);
 			void									PopRenderTargets(crossplatform::DeviceContext &deviceContext);
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
@@ -121,6 +121,7 @@ namespace simul
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 			crossplatform::ShaderResourceType FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t);
 		protected:
+			void WaitForFencedResources(crossplatform::DeviceContext &deviceContext);
 			ID3DUserDefinedAnnotation *pUserDefinedAnnotation;
 			/// \todo The stored states are implemented per-RenderPlatform for DX11, but need to be implemented per-DeviceContext.
 			struct StoredState
@@ -159,22 +160,21 @@ namespace simul
 				ID3D11DomainShader *pDomainShader;
 				ID3D11GeometryShader *pGeometryShader;
 				ID3D11ComputeShader *pComputeShader;
-				ID3D11ClassInstance *m_pPixelClassInstances[16];
+				ID3D11ClassInstance *m_pPixelClassInstances[32];
 				UINT numPixelClassInstances;
-				ID3D11ClassInstance *m_pVertexClassInstances[16];
+				ID3D11ClassInstance *m_pVertexClassInstances[32];
 				UINT numVertexClassInstances;
-				ID3D11ClassInstance *m_pGeometryClassInstances[16];
+				ID3D11ClassInstance *m_pGeometryClassInstances[32];
 				UINT numGeometryClassInstances;
-				ID3D11ClassInstance *m_pHullClassInstances[16];
+				ID3D11ClassInstance *m_pHullClassInstances[32];
 				UINT numHullClassInstances;
-				ID3D11ClassInstance *m_pDomainClassInstances[16];
+				ID3D11ClassInstance *m_pDomainClassInstances[32];
 				UINT numDomainClassInstances;
-				ID3D11ClassInstance *m_pComputeClassInstances[16];
+				ID3D11ClassInstance *m_pComputeClassInstances[32];
 				UINT numComputeClassInstances;
 			};
 			int storedStateCursor;
 			std::vector<StoredState> storedStates;
-			std::vector<struct RTState*> storedRTStates;
 			void DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *tex,vec4 mult,bool blend=false);
 		};
 	}

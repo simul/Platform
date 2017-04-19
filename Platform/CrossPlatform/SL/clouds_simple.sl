@@ -25,7 +25,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,vec3 cloudIrRadiance1
 											,vec3 cloudIrRadiance2
 											,int numSteps
-											,const int num_interp=NUM_CLOUD_INTERP)
+											,const int num_interp)
 {
 	RaytracePixelOutput res;
 	for(int ii=0;ii<num_interp;ii++)
@@ -62,7 +62,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	// Lookup in the illumination texture.
 	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	vec4 illum_lookup		=texture_wrap_mirror_lod(illuminationTexture,illum_texc,0);
-	vec2 nearFarTexc		=illum_lookup.xy;
+	// TODO: reimplement illum if needed.
+	vec2 nearFarTexc		=vec2(0,1.0);	//illum_lookup.xy;
 	float meanFadeDistance	=1.0;
 	float minDistance		=1.0;
 	float maxDistance		=0.0;

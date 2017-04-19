@@ -1,5 +1,8 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+
+#ifndef SIMUL_PI_F
 #define SIMUL_PI_F (3.1415926536)
+#endif
 
 int3 LinearThreadToPos2D(int linear_pos,int3 dims)
 {

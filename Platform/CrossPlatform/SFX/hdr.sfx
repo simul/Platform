@@ -524,7 +524,7 @@ shader vec4 PS_Blur_MSAA(posTexVertexOutput IN) : SV_Target
 	float rad		=sqrt(-2.0*safelog(r1));
 	float angle		=2.0*SIMUL_PI_F*r2;
 	vec2 sampleOffset=offset*rad*vec2(cos(angle),sin( angle ));
-	uint2 tex_pos=uint2((IN.texCoords.xy+sampleOffset)*fullResDims+vec2(0.5,0.5));
+	int2 tex_pos	=int2((IN.texCoords.xy+sampleOffset)*fullResDims+vec2(0.5,0.5));
     vec4 c			=imageTextureMS.Load(tex_pos,0);
     return vec4(c.rgb,alpha);
 }

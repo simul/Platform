@@ -74,5 +74,32 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	simul::crossplatform::SetGpuProfilingInterface(deviceContext,renderPlatformDx11.GetGpuProfiler());
 	deviceContext.renderPlatform	=&renderPlatformDx11;
 	deviceContext.viewStruct.view_id=view_id;
+	unsigned num=0;
+	D3D11_VIEWPORT d3d11viewports[8];
+	ID3D11RenderTargetView *pOldRenderTarget[] = { NULL,NULL,NULL,NULL };
+	ID3D11DepthStencilView *pOldDepthSurface=NULL;
+	pContext->RSGetViewports(&num,NULL);
+	pContext->RSGetViewports(&num,d3d11viewports);
+	pContext->OMGetRenderTargets(	4,
+					pOldRenderTarget,
+					&pOldDepthSurface
+					);
+	pContext->OMSetRenderTargets(1,pOldRenderTarget,NULL);
+	
+	simul::crossplatform::BaseFramebuffer::setDefaultRenderTargets(pOldRenderTarget[0],
+															pOldDepthSurface,
+															d3d11viewports[0].TopLeftX,
+															d3d11viewports[0].TopLeftY,
+															d3d11viewports[0].TopLeftX+d3d11viewports[0].Width,
+															d3d11viewports[0].TopLeftY+d3d11viewports[0].Height
+															);
 	trueSkyRenderer.Render(deviceContext);
+	
+	pContext->OMSetRenderTargets(4,pOldRenderTarget,pOldDepthSurface);
+	if(pOldRenderTarget[0])
+		pOldRenderTarget[0]->Release();
+	if(pOldDepthSurface)
+		pOldDepthSurface->Release();
+	pContext->RSSetViewports(1,d3d11viewports);
+	
 }

@@ -98,7 +98,7 @@ void BaseOpticsRenderer::RenderFlare(crossplatform::DeviceContext &deviceContext
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
-	// equal to SIMUL_PI_F/(120^2), or about 1/2700 steradians;
+	// equal to pi/(120^2), or about 1/2700 steradians;
 	static float sun_mult=0.05f;
 	simul::math::Vector3 cam_pos,cam_dir;
 	simul::crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&cam_dir);
@@ -109,7 +109,8 @@ void BaseOpticsRenderer::RenderFlare(crossplatform::DeviceContext &deviceContext
 	{
 		effect->SetTexture(deviceContext,"flareTexture",flare_texture);
 		SetOpticsConstants(opticsConstants,deviceContext.viewStruct,dir,sunlight,flare_angular_size*flare_magnitude);
-		opticsConstants.Apply(deviceContext);
+
+effect->SetConstantBuffer(deviceContext,&		opticsConstants);
 		effect->Apply(deviceContext,m_hTechniqueFlare,0);
 		renderPlatform->DrawQuad(deviceContext);
 		sunlight*=0.25f;
@@ -120,7 +121,8 @@ void BaseOpticsRenderer::RenderFlare(crossplatform::DeviceContext &deviceContext
 			int t=lensFlare.GetArtifactType(i);
 			effect->SetTexture(deviceContext,"flareTexture",halo_textures[t]);
 			SetOpticsConstants(opticsConstants,deviceContext.viewStruct,pos,sunlight,flare_angular_size*sz*flare_magnitude);
-			opticsConstants.Apply(deviceContext);
+
+effect->SetConstantBuffer(deviceContext,&			opticsConstants);
 			effect->Reapply(deviceContext);
 			renderPlatform->DrawQuad(deviceContext);
 		}

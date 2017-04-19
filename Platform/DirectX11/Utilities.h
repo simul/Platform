@@ -84,7 +84,7 @@ namespace simul
 				D3D11_BUFFER_DESC desc	=
 				{
 					numVertices*sizeof(T),
-					cpu_write?D3D11_USAGE_DYNAMIC:D3D11_USAGE_DEFAULT,
+					cpu_write?SIMUL_D3D11_USAGE:D3D11_USAGE_DEFAULT,
 					D3D11_BIND_VERTEX_BUFFER|(stream_output?D3D11_BIND_STREAM_OUTPUT:0)//D3D11_BIND_UNORDERED_ACCESS is useless for VB's in DX11
 					,(cpu_write?D3D11_CPU_ACCESS_WRITE:0)// CPU
 					,0//D3D11_RESOURCE_MISC_BUFFER_STRUCTURED
@@ -100,7 +100,7 @@ namespace simul
 			D3D11_MAPPED_SUBRESOURCE mapped;
 			T *Map(ID3D11DeviceContext *pContext)
 			{
-				HRESULT hr=pContext->Map(vertexBuffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+				HRESULT hr=pContext->Map(vertexBuffer,0,SIMUL_D3D11_MAP_WRITE,0,&mapped);
 				return (T*)mapped.pData;
 			}
 			void Unmap(ID3D11DeviceContext *pContext)
@@ -180,7 +180,7 @@ namespace simul
 				cb_init_data.SysMemPitch = 0;
 				cb_init_data.SysMemSlicePitch = 0;
 				D3D11_BUFFER_DESC cb_desc;
-				cb_desc.Usage				= D3D11_USAGE_DYNAMIC;
+				cb_desc.Usage				= SIMUL_D3D11_USAGE;
 				cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
 				cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
 				cb_desc.MiscFlags			= 0;
@@ -221,7 +221,7 @@ namespace simul
 			void Apply(ID3D11DeviceContext *pContext)
 			{
 				D3D11_MAPPED_SUBRESOURCE mapped_res;
-				if(pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res)!=S_OK)
+				if(pContext->Map(m_pD3D11Buffer, 0, SIMUL_D3D11_MAP_WRITE, 0, &mapped_res)!=S_OK)
 					return;
 				*(T*)mapped_res.pData = *this;
 				pContext->Unmap(m_pD3D11Buffer, 0);
@@ -233,11 +233,7 @@ namespace simul
 		{
 		  #if (defined(_DEBUG) || defined(PROFILE)) && !defined(_XBOX_ONE)
 			if(resource)
-			{
-				char str[200];
-				sprintf_s(str,199,"%s %lld",name,(unsigned long long)resource);
-			//	resource->SetPrivateData(WKPDID_D3DDebugObjectName,(UINT)(strlen(str)),str);
-			}
+				resource->SetPrivateData(WKPDID_D3DDebugObjectName,(UINT)(name?strlen(name):0),name?name:"un-named resource");
 			#else
 			name;resource;
 		  #endif
@@ -272,7 +268,7 @@ namespace simul
 				else
 				{
 				sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE ;
-				sbDesc.Usage				=D3D11_USAGE_DYNAMIC;
+				sbDesc.Usage				=SIMUL_D3D11_USAGE;
 				sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
 				}
 				sbDesc.MiscFlags			=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED ;
@@ -306,7 +302,7 @@ namespace simul
 			{
 				lastContext=pContext;
 				if(!mapped.pData)
-					pContext->Map(buffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+					pContext->Map(buffer,0,SIMUL_D3D11_MAP_WRITE,0,&mapped);
 				T *ptr=(T *)mapped.pData;
 				return ptr;
 			}

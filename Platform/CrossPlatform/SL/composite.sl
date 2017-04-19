@@ -51,7 +51,9 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	TwoColourCompositeOutput res;
 	vec3 view						=normalize(mul(invViewProj,clip_pos).xyz);
 	float sine						=view.z;
-	vec4 nearFarCloud				=texture_cube_lod(nearFarTexture	,view		,0);
+	vec4 nearFarCloud				=vec4(1.0,0.0,0,0);
+	if(do_interp)
+		nearFarCloud					=texture_cube_lod(nearFarTexture	,view		,0);
 	
 	float dist_rt					=sqrt(dist);
 	vec3 offsetMetres				=view*dist*1000.0*maxFadeDistanceKm;
@@ -99,7 +101,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 													,0.5+0.5*asin(lightspaceOffset.z/r)*2.0/SIMUL_PI_F
 													,r);
 		vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
-		insc.rgb						*=godrays;
+		insc.rgb						*=godrays.rgb;
 	}
 	
 	if(do_clouds)
@@ -194,7 +196,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 														,0.5+0.5*asin(lightspaceOffset.z/r)*2.0/SIMUL_PI_F
 														,r);
 			vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
-			insc.rgb						*=godrays;
+			insc.rgb						*=godrays.rgb;
 		}
 		res.multiply					+=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a;
 		res.add							+=insc;

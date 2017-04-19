@@ -1,6 +1,8 @@
 #include "Buffer.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/SimulDirectXHeader.h"
 using namespace simul;
 using namespace dx11;
 
@@ -36,9 +38,14 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
     memset( &InitData,0,sizeof(D3D11_SUBRESOURCE_DATA) );
     InitData.pSysMem		=data;
     InitData.SysMemPitch	=layout->GetStructSize();
+	D3D11_USAGE usage			=D3D11_USAGE_DYNAMIC;
+	if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
+		usage=D3D11_USAGE_DEFAULT;
 	D3D11_BUFFER_DESC desc=
 	{
-        num_vertices*layout->GetStructSize(),cpu_access?D3D11_USAGE_DYNAMIC:D3D11_USAGE_DEFAULT,D3D11_BIND_VERTEX_BUFFER|(streamout_target?D3D11_BIND_STREAM_OUTPUT:0)
+		(unsigned)num_vertices*layout->GetStructSize()
+		,cpu_access?usage:D3D11_USAGE_DEFAULT
+		,D3D11_BIND_VERTEX_BUFFER|(streamout_target?D3D11_BIND_STREAM_OUTPUT:0)
 		,(cpu_access?D3D11_CPU_ACCESS_WRITE:0),0
 	};
 	SAFE_RELEASE(d3d11Buffer);
@@ -68,7 +75,10 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 
 void *Buffer::Map(crossplatform::DeviceContext &deviceContext)
 {
-	V_CHECK(deviceContext.asD3D11DeviceContext()->Map(d3d11Buffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped));
+	D3D11_MAP map_type=D3D11_MAP_WRITE_DISCARD;
+	if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
+		map_type=D3D11_MAP_WRITE;
+	V_CHECK(deviceContext.asD3D11DeviceContext()->Map(d3d11Buffer,0,map_type,0,&mapped));
 	return (void*)mapped.pData;
 }
 

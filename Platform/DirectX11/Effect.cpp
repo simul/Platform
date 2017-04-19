@@ -81,11 +81,6 @@ void Query::InvalidateDeviceObjects()
 
 void Query::Begin(crossplatform::DeviceContext &deviceContext)
 {
-/*	if(!gotResults[currFrame])
-	{
-		SIMUL_CERR<<"No results yet for this query."<<std::endl;
-		return;
-	}*/
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	pContext->Begin(d3d11Query[currFrame]);
 }
@@ -408,6 +403,9 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
 		SAFE_RELEASE(stagingBuffers[i]);
 	num_elements=0;
+#if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
+	VirtualFree( m_pPlacementBuffer, 0, MEM_RELEASE );
+#endif
 }
 
 int EffectTechnique::NumPasses() const
@@ -660,7 +658,19 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const
 	{
 		crossplatform::PlatformConstantBuffer *pcb=s->GetPlatformConstantBuffer();
 		dx11::PlatformConstantBuffer *pcb11=(dx11::PlatformConstantBuffer *)pcb;
+		pcb11->Apply(deviceContext,s->GetSize(),s->GetAddr());
+#ifdef D3D11_FAST_SEMANTICS
+		if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
+			pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer(),pcb11->GetBaseAddr());
+		else
+#endif
 		pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer());
+		if (currentTechnique)
+		{
+			ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
+			if(currentPass)
+				V_CHECK(currentPass->Apply(0, deviceContext.asD3D11DeviceContext()));
+		}
 	}
 }
 

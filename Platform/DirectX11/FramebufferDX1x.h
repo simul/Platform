@@ -51,10 +51,6 @@ namespace simul
 
 		protected:
 			bool useESRAM,useESRAMforDepth;
-			ID3D11RenderTargetView*				m_pOldRenderTarget;
-			ID3D11DepthStencilView*				m_pOldDepthSurface;
-			D3D11_VIEWPORT						m_OldViewports[16];
-			unsigned							num_OldViewports;
 		protected:
 			void SaveOldRTs(crossplatform::DeviceContext &deviceContext);
 			void SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float Z=0.0f,float D=1.0f);

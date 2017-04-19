@@ -181,8 +181,8 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"HDR")
 	hdrConstants.gamma		=Gamma;
 	hdrConstants.exposure	=Exposure;
-	hdrConstants.offset		=vec2(offsetX,0.0f);
-	hdrConstants.Apply(deviceContext);
+	hdrConstants.offset		=vec2(offsetX,0.0f);
+	hdr_effect->SetConstantBuffer(deviceContext,&hdrConstants);
 	crossplatform::EffectTechnique *tech=exposureGammaTechnique;
 	if(Glow)
 	{
@@ -212,7 +212,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 			hdrConstants.randomSeed			=randomSeed++;
 			randomSeed=randomSeed%100;
 			hdrConstants.alpha				=alpha;
-			hdrConstants.Apply(deviceContext);
+			hdr_effect->SetConstantBuffer(deviceContext,&hdrConstants);
 			dst->activateRenderTarget(deviceContext);
 			hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName(msaa?"blur_msaa":"blur"),0);
 			renderPlatform->DrawQuad(deviceContext);
@@ -246,7 +246,7 @@ void HdrRenderer::RenderInfraRed(crossplatform::DeviceContext &deviceContext,cro
 	hdrConstants.exposure					=Exposure;
 	hdrConstants.infraredIntegrationFactors	=infrared_integration_factors;
 	hdrConstants.offset						=vec2(0.f,0.f);
-	hdrConstants.Apply(deviceContext);
+	hdr_effect->SetConstantBuffer(deviceContext,&	hdrConstants);
 	crossplatform::EffectTechnique *tech=hdr_effect->GetTechniqueByName("infra_red");
 	hdr_effect->Apply(deviceContext,tech,(msaa?"msaa":"main"));
 	renderPlatform->DrawQuad(deviceContext);
@@ -286,7 +286,7 @@ hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
 	hdrConstants.warpScale			=vec2(0.5f* scaleFactor, 0.5f* scaleFactor * as);
 	hdrConstants.warpScaleIn		=vec2(2.f,2.f/ as);
 	hdrConstants.offset				=vec2(offsetX,0.0f);
-	hdrConstants.Apply(deviceContext);
+	hdr_effect->SetConstantBuffer(deviceContext,&	hdrConstants);
 	if(Glow)
 	{
 		RenderGlowTexture(deviceContext,texture);
@@ -325,8 +325,8 @@ void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,
 	{
 		hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
 		hdr_effect->SetTexture(deviceContext,"imageTextureMS",texture);
-		hdrConstants.offset				=vec2(1.f/Width,1.f/Height);
-		hdrConstants.Apply(deviceContext);
+		hdrConstants.offset				=vec2(1.f/Width,1.f/Height);
+		hdr_effect->SetConstantBuffer(deviceContext,&		hdrConstants);
 		hdr_effect->Apply(deviceContext,glowTechnique,(0));
 		brightpassTextures[0]->activateRenderTarget(deviceContext);
 		renderPlatform->DrawQuad(deviceContext);
@@ -379,7 +379,7 @@ void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crosspl
 	imageConstants.g_FracHalfBoxFilterWidth		=frac_half_box_width;
 	imageConstants.g_InvFracHalfBoxFilterWidth	=inv_frac_half_box_width;
 	imageConstants.g_RcpBoxFilterWidth			=rcp_box_width;
-	imageConstants.Apply(deviceContext);
+	m_pGaussianEffect->SetConstantBuffer(deviceContext,&imageConstants);
 	// Select pass
 	gaussianColTechnique						=m_pGaussianEffect->GetTechniqueByName("simul_gaussian_col");
 	m_pGaussianEffect->Apply(deviceContext,gaussianColTechnique,0);
@@ -396,8 +396,8 @@ void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crosspl
 	m_pGaussianEffect->SetTexture(deviceContext,"g_texInput",brightpassTextures[0]);
 	// Output texture
 	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",glowTextures[0]);
-	imageConstants.texelsPerThread				=(brightpassTextures[0]->width + threadsPerGroup - 1)/threadsPerGroup;
-	imageConstants.Apply(deviceContext);
+	imageConstants.texelsPerThread				=(brightpassTextures[0]->width + threadsPerGroup - 1)/threadsPerGroup;
+	m_pGaussianEffect->SetConstantBuffer(deviceContext,&	imageConstants);
 	// Select pass
 	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");
 	m_pGaussianEffect->Apply(deviceContext,gaussianRowTechnique,0);

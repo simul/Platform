@@ -10,10 +10,10 @@ using namespace simul;
 using namespace crossplatform;
 
 crossplatform::TargetsAndViewport BaseFramebuffer::defaultTargetsAndViewport;
+ std::stack<crossplatform::TargetsAndViewport*> BaseFramebuffer::targetStack;
 // Change this from a static construtor to a dynamic construtor so that the memory is allocated by the application rather than the C runtime
 std::stack<crossplatform::TargetsAndViewport*>& BaseFramebuffer::GetFrameBufferStack()
 {
-	static std::stack<crossplatform::TargetsAndViewport*> targetStack;
 	return targetStack;
 }
 
@@ -287,7 +287,7 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 {
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"Calc Spherical Harmonics")
 	int num_coefficients=bands*bands;
-	static int BLOCK_SIZE=4;
+	static int BLOCK_SIZE=16;
 	static int sqrt_jitter_samples					=4;
 	if(!sphericalHarmonics.count)
 	{
@@ -302,13 +302,12 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
 	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;
 	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
-	sphericalHarmonicsConstants.randomSeed			=shSeed;
-	sphericalHarmonicsConstants.Apply(deviceContext);
+	sphericalHarmonicsConstants.randomSeed			=shSeed;	/*sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
 	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	crossplatform::EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");
 	sphericalHarmonicsEffect->Apply(deviceContext,clear,0);
 	renderPlatform->DispatchCompute(deviceContext,(num_coefficients+BLOCK_SIZE-1)/BLOCK_SIZE,1,1);
-	sphericalHarmonicsEffect->Unapply(deviceContext);
+	sphericalHarmonicsEffect->Unapply(deviceContext);*/
 	
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"jitter")
@@ -317,8 +316,8 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 		// We just fill this buffer_texture with random 3d directions.
 		crossplatform::EffectTechnique *jitter=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
 		sphericalSamples.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "samplesBufferRW");
-	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapTexture"	,buffer_texture);
-		sphericalHarmonicsConstants.Apply(deviceContext);
+		sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapTexture"	,buffer_texture);
+		sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&	sphericalHarmonicsConstants);
 		sphericalHarmonicsEffect->Apply(deviceContext,jitter,0);
 		int u = (sphericalHarmonicsConstants.numJitterSamples + BLOCK_SIZE - 1) / BLOCK_SIZE;
 		renderPlatform->DispatchCompute(deviceContext, u, 1, 1);
@@ -356,8 +355,8 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, "samplesBuffer");
 	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	
-	static bool sh_by_samples=false;
-	sphericalHarmonicsConstants.Apply(deviceContext);
+	static bool sh_by_samples=false;
+	sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
 	sphericalHarmonicsEffect->Apply(deviceContext,tech,0);
 	int n = sh_by_samples ? sphericalHarmonicsConstants.numJitterSamples : num_coefficients;
 	//static int ENCODE_BLOCK_SIZE=2;

@@ -230,7 +230,7 @@ void RenderPlatform::Clear				(DeviceContext &deviceContext,vec4 colour_rgba)
 {
 	crossplatform::EffectTechnique *clearTechnique=clearTechnique=debugEffect->GetTechniqueByName("clear");
 	debugConstants.debugColour=colour_rgba;
-	debugConstants.Apply(deviceContext);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,clearTechnique,0);
 	DrawQuad(deviceContext);
 	debugEffect->Unapply(deviceContext);
@@ -243,7 +243,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 		return;
 	debugConstants.debugColour=colour;
 	debugConstants.texSize=uint4(texture->width,texture->length,texture->depth,1);
-	debugConstants.Apply(deviceContext);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	// Clear the texture: how we do this depends on what kind of texture it is.
 	// Does it have rendertargets? We can clear each of these in turn.
 	if(texture->HasRenderTargets()&&texture->arraySize)
@@ -340,7 +340,7 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 		textureQueryResult.RestoreDeviceObjects(this,(int)query_id+1,true);
 	}
 	debugConstants.queryPos=pos;
-	debugConstants.Apply(deviceContext);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	textureQueryResult.ApplyAsUnorderedAccessView(deviceContext,debugEffect,"textureQueryResults");
 	debugEffect->SetTexture(deviceContext,"imageTexture",texture);
 	debugEffect->Apply(deviceContext,"texel_query",0);
@@ -462,7 +462,7 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 
 	solidConstants.lightIrradiance = physicalLightRenderData.lightColour;
 	solidConstants.lightDir = physicalLightRenderData.dirToLight;
-	solidConstants.Apply(deviceContext);
+	debugEffect->SetConstantBuffer(deviceContext,&solidConstants);
 
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
@@ -502,7 +502,7 @@ void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	debugConstants.radius			=rr;
 	debugConstants.multiplier		=colour;
 	debugConstants.debugViewDir		=view_dir;
-	debugConstants.Apply(deviceContext);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->SetConstantBuffer(deviceContext,"DebugConstants",&debugConstants);
 	debugEffect->Apply(deviceContext,tech,0);
 
@@ -549,7 +549,7 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 	debugConstants.sideview			=size;
 	debugConstants.debugColour		=colour;
 	debugConstants.debugViewDir		=view_dir;
-	debugConstants.Apply(deviceContext);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->SetConstantBuffer(deviceContext,"DebugConstants",&debugConstants);
 	debugEffect->Apply(deviceContext,tech,0);
 
@@ -594,7 +594,7 @@ void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origi
 	debugConstants.sideview = rad;
 	debugConstants.debugColour = colour;
 	debugConstants.debugViewDir = view_dir;
-	debugConstants.Apply(deviceContext);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->SetConstantBuffer(deviceContext, "DebugConstants", &debugConstants);
 	debugEffect->Apply(deviceContext, tech, 0);
 
@@ -649,7 +649,7 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	debugConstants.radius			=rr;
 	debugConstants.multiplier		=vec4(exposure,exposure,exposure,0.0f);
 	debugConstants.debugGamma		=gamma;
-	debugConstants.Apply(deviceContext);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,tech,0);
 
 	SetTopology(deviceContext,TRIANGLESTRIP);
@@ -791,7 +791,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 							,1.f-2.f*(float)(y1+dy)/(float)viewport.h
 							,2.f*(float)dx/(float)viewport.w
 							,2.f*(float)dy/(float)viewport.h);
-	debugConstants.Apply(deviceContext);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	effect->Apply(deviceContext,technique,pass);
 	DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);
@@ -842,7 +842,7 @@ void RenderPlatform::DrawDepth(crossplatform::DeviceContext &deviceContext,int x
 								,1.f-2.f*(float)(y1+dy)/(float)viewport.h
 								,2.f*(float)dx/(float)viewport.w
 								,2.f*(float)dy/(float)viewport.h);
-		debugConstants.Apply(deviceContext);
+		debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 		debugEffect->Apply(deviceContext,tech,frustum.reverseDepth?"reverse_depth":"forward_depth");
 		DrawQuad(deviceContext);
 		debugEffect->UnbindTextures(deviceContext);

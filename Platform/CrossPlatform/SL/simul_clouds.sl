@@ -10,7 +10,6 @@
 #endif
 
 #ifndef CLOUD_DEFS_ONLY
-#define MIN_SUN_ELEV (0.2)
 
 SamplerState cloudSamplerState: register( s0);
 struct RaytracePixelOutput

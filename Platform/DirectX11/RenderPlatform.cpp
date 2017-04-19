@@ -24,15 +24,17 @@
 #ifdef _XBOX_ONE
 #include "Simul/Platform/DirectX11/ESRAMManager.h"
 #include <D3Dcompiler_x.h>
+#include <d3d11_x.h>
 #else
 #include <D3Dcompiler.h>
 #endif
 #include <algorithm>
-#ifdef SIMUL_ENABLE_PIX
-#include "pix.h"
+#ifdef USE_PIX
+#include <pix.h>
 #endif
 
 #include "Simul/Platform/DirectX11/Utilities.h"
+#pragma optimize("",off)
 
 using namespace simul;
 using namespace dx11;
@@ -159,6 +161,7 @@ RenderPlatform::RenderPlatform()
 	,m_pVtxDecl(NULL)
 	,storedStateCursor(0)
 	,pUserDefinedAnnotation(NULL)
+	,fence(0)
 {
 	storedStates.resize(4);
 }
@@ -175,6 +178,7 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 {
 	if(device==d)
 		return;
+	fence=0;
 	device=(ID3D11Device*)d;
 	crossplatform::RenderPlatform::RestoreDeviceObjects(d);
 	
@@ -274,12 +278,12 @@ void RenderPlatform::RecompileShaders()
 void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name)
 {
 #ifdef SIMUL_WIN8_SDK
+	const wchar_t *wstr_name=base::Utf8ToWString(name).c_str();
 		if(pUserDefinedAnnotation)
-			pUserDefinedAnnotation->BeginEvent(base::StringToWString(name).c_str());
+		pUserDefinedAnnotation->BeginEvent(wstr_name);
 #endif
-#ifdef SIMUL_ENABLE_PIX
-	if(last_name==string(name))
-		PIXBeginEvent( 0, name, name );
+#ifdef USE_PIX
+	PIXBeginEvent( 0, wstr_name );
 #endif
 }
 
@@ -289,7 +293,7 @@ void RenderPlatform::EndEvent			(crossplatform::DeviceContext &deviceContext)
 	if(pUserDefinedAnnotation)
 		pUserDefinedAnnotation->EndEvent();
 #endif
-#ifdef SIMUL_ENABLE_PIX
+#ifdef USE_PIX
 	PIXEndEvent();
 #endif
 }
@@ -366,7 +370,35 @@ D3D11_MAP_FLAG RenderPlatform::GetMapFlags()
 void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContext,int w,int l,int d)
 {
 	ApplyContextState(deviceContext);
+	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
+#ifdef _XBOX_ONE
+	if(UsesFastSemantics())
+	{
+		// Does this draw call use any fenced resources?
+		WaitForFencedResources(deviceContext);
+	}
+#endif
 	deviceContext.asD3D11DeviceContext()->Dispatch(w,l,d);
+#ifdef _XBOX_ONE
+	if(UsesFastSemantics())
+	{
+		// assign this fence to all active UAV textures.
+		crossplatform::ContextState *cs=GetContextState(deviceContext);
+		if(cs->currentTechnique&&cs->currentTechnique->shouldFenceOutputs())
+		{
+			fence=((ID3D11DeviceContextX*)pContext)->InsertFence(0);
+			for(auto i=cs->textureAssignmentMap.begin();i!=cs->textureAssignmentMap.end();i++)
+			{
+				int slot=i->first;
+				if (slot<1000)
+					continue;
+				const crossplatform::TextureAssignment &ta=i->second;
+				if(ta.texture&&!ta.texture->IsUnfenceable())
+					ta.texture->SetFence(fence);
+			}
+		}
+	}
+#endif
 }
 
 void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,crossplatform::EffectTechnique *tech,int index)
@@ -1081,7 +1113,6 @@ void RenderPlatform::SetStreamOutTarget(crossplatform::DeviceContext &deviceCont
 
 void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth)
 {
-	PushRenderTargets(deviceContext);
 	ID3D11RenderTargetView *rt[8];
 	SIMUL_ASSERT(num<=8);
 	for(int i=0;i<num;i++)
@@ -1093,6 +1124,25 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::DeviceContext &deviceC
 
 	int w=targs[0]->width, h = targs[0]->length;
 	crossplatform::Viewport v[] = { { 0, 0, w, h, 0, 1.f }, { 0, 0, w, h, 0, 1.f }, { 0, 0, w, h, 0, 1.f } };
+
+	crossplatform::TargetsAndViewport *targetAndViewport=new crossplatform::TargetsAndViewport;
+	targetAndViewport->temp=true;
+	targetAndViewport->num=num;
+	for(int i=0;i<num;i++)
+	{
+		if(targs[i]&&targs[i]->IsValid())
+		{
+			targetAndViewport->m_rt[i]=rt[i];
+		}
+	}
+	targetAndViewport->m_dt=d;
+	targetAndViewport->viewport.x=targetAndViewport->viewport.y=0;
+	targetAndViewport->viewport.w=targs[0]->width;
+	targetAndViewport->viewport.h=targs[0]->length;
+	targetAndViewport->viewport.zfar=1.0f;
+	targetAndViewport->viewport.znear=0.0f;
+	PushRenderTargets(deviceContext,targetAndViewport);
+
 	SetViewports(deviceContext,num,v);
 }
 
@@ -1103,6 +1153,8 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::DeviceContext &devic
 
 void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps)
 {
+	if(!vps)
+		return;
 	D3D11_VIEWPORT viewports[8];
 	SIMUL_ASSERT(num<=8);
 	for(int i=0;i<num;i++)
@@ -1111,12 +1163,22 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		viewports[i].Height		=(float)vps[i].h;
 		viewports[i].TopLeftX	=(float)vps[i].x;
 		viewports[i].TopLeftY	=(float)vps[i].y;
-		viewports[i].MinDepth	=vps[i].znear;
-		viewports[i].MaxDepth	=vps[i].zfar;
+		viewports[i].MinDepth	=0.0f;
+		viewports[i].MaxDepth	=1.0f;
 	}
 	deviceContext.asD3D11DeviceContext()->RSSetViewports(num,viewports);
+	if(crossplatform::BaseFramebuffer::GetFrameBufferStack().size())
+	{
+		crossplatform::TargetsAndViewport *f=crossplatform::BaseFramebuffer::GetFrameBufferStack().top();
+		if(f)
+			f->viewport=*vps;
 }
-
+	else
+	{
+		crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport=*vps;
+	}
+}
+/*
 crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &deviceContext,int index)
 {
 	D3D11_VIEWPORT viewports[8];
@@ -1131,7 +1193,7 @@ crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext
 	v.znear	=viewports[index].MinDepth;
 	v.zfar	=viewports[index].MaxDepth;
 	return v;
-}
+}*/
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
 {
@@ -1228,9 +1290,11 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 {
 	dx11::SaveTexture(device,texture->AsD3D11Texture2D(),lFileNameUtf8);
 }
-#pragma optimize("",off)
+
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
+	if(!can_save_and_restore)
+		return;
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	if(storedStateCursor>=storedStates.size())
 	{
@@ -1276,10 +1340,14 @@ void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceConte
 	pContext->IAGetIndexBuffer(&s.pIndexBufferStored11,
 								&s.m_indexFormatStored11,
 								&s.m_indexOffset);
+#ifndef _XBOX_ONE
+#endif
 }
 
 void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
+	if (!can_save_and_restore)
+		return;
 	storedStateCursor--;
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	StoredState &s=storedStates[storedStateCursor];
@@ -1405,28 +1473,28 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 		}
 	}
 	unsigned int num_v=1;
-	D3D11_VIEWPORT viewport;
-	pContext->RSGetViewports(&num_v,&viewport);
+	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
+	//pContext->RSGetViewports(&num_v,&viewport);
 	if(mirrorY2)
 	{
-		y1=(int)viewport.Height-y1;
+		y1=(int)viewport.h-y1;
 		dy*=-1;
 	}
-	debugConstants.rect=vec4(2.f*(float)x1/(float)viewport.Width-1.f
-			,1.f-2.f*(float)(y1+dy)/(float)viewport.Height
-			,2.f*(float)dx/(float)viewport.Width
-			,2.f*(float)dy/(float)viewport.Height);
+	debugConstants.rect=vec4(2.f*(float)x1/(float)viewport.w-1.f
+			,1.f-2.f*(float)(y1+dy)/(float)viewport.h
+			,2.f*(float)dx/(float)viewport.w
+			,2.f*(float)dy/(float)viewport.h);
 	debugConstants.sideview=0.0;
-	debugConstants.Apply(deviceContext);
+	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 	{
-		D3D11_PRIMITIVE_TOPOLOGY previousTopology;
+	//	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 		ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-		pContext->IAGetPrimitiveTopology(&previousTopology);
+		//pContext->IAGetPrimitiveTopology(&previousTopology);
 		pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		debugEffect->Apply(deviceContext,tech,"noblend");
 	ApplyContextState(deviceContext);
 		pContext->Draw(4,0);
-		pContext->IASetPrimitiveTopology(previousTopology);
+		//pContext->IASetPrimitiveTopology(previousTopology);
 		debugEffect->UnbindTextures(deviceContext);
 		debugEffect->Unapply(deviceContext);
 	}
@@ -1442,16 +1510,64 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 		//DrawTexture(deviceContext,x1,y1,dx,dy,tex->AsD3D11ShaderResourceView(),mult,blend);
 }
 
+void RenderPlatform::WaitForFencedResources(crossplatform::DeviceContext &deviceContext)
+{
+#ifdef _XBOX_ONE
+	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
+	crossplatform::ContextState *contextState=GetContextState(deviceContext);
+	for(auto i=contextState->textureAssignmentMap.begin();i!=contextState->textureAssignmentMap.end();i++)
+	{
+		int slot=i->first;
+		const crossplatform::TextureAssignment &ta=i->second;
+		if(!ta.texture)
+			continue;
+		// don't need to wait for a writeable texture. PROBABLY
+		if(slot<0||slot>=1000)
+			continue;
+		unsigned long long fence=ta.texture->GetFence();
+		if(fence)
+		{
+			((ID3D11DeviceContextX*)pContext)->InsertWaitOnFence(0,fence);
+			ta.texture->ClearFence();
+		}
+	}
+#endif
+}
+
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
 	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
-	pContext->IAGetPrimitiveTopology(&previousTopology);
+//	pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	pContext->IASetInputLayout(NULL);
 	ApplyContextState(deviceContext);
+#ifdef _XBOX_ONE
+	if(UsesFastSemantics())
+	{
+		// Does this draw call use any fenced resources?
+		WaitForFencedResources(deviceContext);
+	}
+#endif
 	pContext->Draw(4,0);
-	pContext->IASetPrimitiveTopology(previousTopology);
+#ifdef _XBOX_ONE
+	// Fence the rendertarget:
+	if(UsesFastSemantics())
+	{
+		fence=((ID3D11DeviceContextX*)pContext)->InsertFence(0);
+		// assign this fence to all active texture targets.
+		crossplatform::ContextState *cs=GetContextState(deviceContext);
+		for(auto i=cs->textureAssignmentMap.begin();i!=cs->textureAssignmentMap.end();i++)
+		{
+			int slot=i->first;
+			if (slot<1000)
+				continue;
+			const crossplatform::TextureAssignment &ta=i->second;
+			if(ta.texture&&!ta.texture->IsUnfenceable())
+				ta.texture->SetFence(fence);
+		}
+	}
+#endif
 }
 
 void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *line_vertices,int vertex_count,bool strip,bool test_depth,bool view_centred)
@@ -1479,13 +1595,16 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,cross
 			debugConstants.debugWorldViewProj=wvp;
 			debugConstants.debugWorldViewProj.transpose();
 		}
-		debugConstants.Apply(deviceContext);
+		debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 		ID3D11Buffer *					vertexBuffer=NULL;
+		D3D11_USAGE usage			=D3D11_USAGE_DYNAMIC;
+		if(UsesFastSemantics())
+			usage=D3D11_USAGE_DEFAULT;
 		// Create the vertex buffer:
 		D3D11_BUFFER_DESC desc=
 		{
 			vertex_count*sizeof(crossplatform::PosColourVertex),
-			D3D11_USAGE_DYNAMIC,
+			usage,
 			D3D11_BIND_VERTEX_BUFFER,
 			D3D11_CPU_ACCESS_WRITE,
 			0
@@ -1508,11 +1627,11 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,cross
 		if(!m_pVtxDecl)
 			hr=AsD3D11Device()->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
-		ID3D11InputLayout* previousInputLayout;
-		pContext->IAGetInputLayout( &previousInputLayout );
+		//ID3D11InputLayout* previousInputLayout;
+		//pContext->IAGetInputLayout( &previousInputLayout );
 		pContext->IASetInputLayout(m_pVtxDecl);
-		D3D_PRIMITIVE_TOPOLOGY previousTopology;
-		pContext->IAGetPrimitiveTopology(&previousTopology);
+		//D3D_PRIMITIVE_TOPOLOGY previousTopology;
+		//pContext->IAGetPrimitiveTopology(&previousTopology);
 		pContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		UINT stride = sizeof(crossplatform::PosColourVertex);
 		UINT offset = 0;
@@ -1525,12 +1644,12 @@ void RenderPlatform::DrawLines(crossplatform::DeviceContext &deviceContext,cross
 													&vertexBuffer,	// the array of vertex buffers
 													&stride,		// array of stride values, one for each buffer
 													&offset);		// array of 
-		hr=ApplyPass(pContext,tech->asD3DX11EffectTechnique()->GetPassByIndex(0));
+		hr=tech->asD3DX11EffectTechnique()->GetPassByIndex(0)->Apply(0,pContext);
 	ApplyContextState(deviceContext);
 		pContext->Draw(vertex_count,0);
-		pContext->IASetPrimitiveTopology(previousTopology);
-		pContext->IASetInputLayout( previousInputLayout );
-		SAFE_RELEASE(previousInputLayout);
+		//pContext->IASetPrimitiveTopology(previousTopology);
+		//pContext->IASetInputLayout( previousInputLayout );
+		//SAFE_RELEASE(previousInputLayout);
 		SAFE_RELEASE(vertexBuffer);
 	}
 }
@@ -1545,17 +1664,21 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 		ID3DX11EffectTechnique *tech			=debugEffect->asD3DX11Effect()->GetTechniqueByName("lines_2d");
 		
 		unsigned int num_v=1;
-		D3D11_VIEWPORT								viewport;
-		pContext->RSGetViewports(&num_v,&viewport);
-		debugConstants.rect=vec4(-1.f,-1.f,2.0f/viewport.Width,2.0f/viewport.Height);
-		debugConstants.Apply(deviceContext);
+		//D3D11_VIEWPORT								viewport;
+		//pContext->RSGetViewports(&num_v,&viewport);
+	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
+		debugConstants.rect=vec4(-1.f,-1.f,2.f,2.f);//-1.0,-1.0,2.0f/viewport.Width,2.0f/viewport.Height);
+		debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
 
+		D3D11_USAGE usage			=D3D11_USAGE_DYNAMIC;
+		if(UsesFastSemantics())
+			usage=D3D11_USAGE_DEFAULT;
 		ID3D11Buffer *vertexBuffer=NULL;
 		// Create the vertex buffer:
 		D3D11_BUFFER_DESC desc=
 		{
 			vertex_count*sizeof(VertexXyzRgba),
-			D3D11_USAGE_DYNAMIC,
+			usage,
 			D3D11_BIND_VERTEX_BUFFER,
 			D3D11_CPU_ACCESS_WRITE,
 			0
@@ -1580,10 +1703,10 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 		hr=AsD3D11Device()->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
 		pContext->IASetInputLayout(m_pVtxDecl);
-		ID3D11InputLayout* previousInputLayout;
-		pContext->IAGetInputLayout( &previousInputLayout );
-		D3D_PRIMITIVE_TOPOLOGY previousTopology;
-		pContext->IAGetPrimitiveTopology(&previousTopology);
+	//	ID3D11InputLayout* previousInputLayout;
+	//	pContext->IAGetInputLayout( &previousInputLayout );
+	//	D3D_PRIMITIVE_TOPOLOGY previousTopology;
+	//	pContext->IAGetPrimitiveTopology(&previousTopology);
 		pContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		UINT stride = sizeof(VertexXyzRgba);
 		UINT offset = 0;
@@ -1596,12 +1719,12 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 										&vertexBuffer,	// the array of vertex buffers
 										&stride,		// array of stride values, one for each buffer
 										&offset);		// array of 
-		hr=ApplyPass(pContext,tech->GetPassByIndex(0));
+		hr=tech->GetPassByIndex(0)->Apply(0,pContext);
 	ApplyContextState(deviceContext);
 		pContext->Draw(vertex_count,0);
-		pContext->IASetPrimitiveTopology(previousTopology);
-		pContext->IASetInputLayout( previousInputLayout );
-		SAFE_RELEASE(previousInputLayout);
+	//	pContext->IASetPrimitiveTopology(previousTopology);
+	//	pContext->IASetInputLayout( previousInputLayout );
+	//	SAFE_RELEASE(previousInputLayout);
 		SAFE_RELEASE(vertexBuffer);
 		SAFE_RELEASE(m_pVtxDecl);
 	}
@@ -1642,52 +1765,40 @@ void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 	SAFE_RELEASE(previousInputLayout);
 }
 
-namespace simul
-{
-	namespace dx11
-	{
-		struct RTState
-		{
-			RTState():depthSurface(NULL),numViewports(0)
-			{
-				memset(renderTargets,0,sizeof(renderTargets));
-				memset(viewports,0,sizeof(viewports));
-			}
-			ID3D11RenderTargetView*				renderTargets[16];
-			ID3D11DepthStencilView*				depthSurface;
-			D3D11_VIEWPORT						viewports[16];
-			unsigned							numViewports;
-		};
-	}
-}
-
-void RenderPlatform::PushRenderTargets(crossplatform::DeviceContext &deviceContext)
-{
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	RTState *state=new RTState;
-	pContext->RSGetViewports(&state->numViewports,NULL);
-	if(state->numViewports>0)
-		pContext->RSGetViewports(&state->numViewports,state->viewports);
-	pContext->OMGetRenderTargets(	state->numViewports,
-									state->renderTargets,
-									&state->depthSurface);
-	storedRTStates.push_back(state);
-}
-
 void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContext)
 {
+	std::stack<crossplatform::TargetsAndViewport*> &fbs=Framebuffer::GetFrameBufferStack();
+	crossplatform::TargetsAndViewport *oldtv=fbs.top();
+	fbs.pop();
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	RTState *state=storedRTStates.back();
-	pContext->OMSetRenderTargets(	state->numViewports,
-									state->renderTargets,
-									state->depthSurface);
-	for(int i=0;i<(int)state->numViewports;i++)
-	{
-		SAFE_RELEASE(state->renderTargets[i]);
+
+	crossplatform::TargetsAndViewport *state=&crossplatform::BaseFramebuffer::defaultTargetsAndViewport;
+	if(fbs.size())
+		state=fbs.top();
+	ID3D11RenderTargetView **rt=(ID3D11RenderTargetView**)state->m_rt;
+	ID3D11DepthStencilView *dt=(ID3D11DepthStencilView*)state->m_dt;
+	pContext->OMSetRenderTargets(	state->num,
+									rt,
+									dt);
+	D3D11_VIEWPORT viewports[8];
+	for(int i=0;i<state->num;i++)
+{
+		viewports[i].Width		=(float)state->viewport.w;
+		viewports[i].Height		=(float)state->viewport.h;
+		viewports[i].TopLeftX	=(float)state->viewport.x;
+		viewports[i].TopLeftY	=(float)state->viewport.y;
+		viewports[i].MinDepth	=0.0f;
+		viewports[i].MaxDepth	=1.0f;
 	}
-	SAFE_RELEASE(state->depthSurface);
-	if(state->numViewports>0)
-		pContext->RSSetViewports(state->numViewports,state->viewports);
-	delete state;
-	storedRTStates.pop_back();
+	pContext->RSSetViewports(state->num,viewports);
+	//unsigned num=1;
+	//pContext->RSGetViewports(&num,viewports);
+	for(int i=0;i<(int)oldtv->num;i++)
+	{
+		ID3D11RenderTargetView *r=(ID3D11RenderTargetView*)oldtv->m_rt[i];
+	}
+	ID3D11DepthStencilView *d=(ID3D11DepthStencilView*)oldtv->m_dt;
+	//SetViewports(deviceContext,state->num,&state->viewport);
+	if(oldtv->temp)
+		delete oldtv;
 }

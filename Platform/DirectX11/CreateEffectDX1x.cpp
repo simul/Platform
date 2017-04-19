@@ -344,13 +344,6 @@ void simul::dx11::setMatrix(ID3DX11Effect *effect,const char *name	,const float 
 	var->SetMatrix(value);
 }
 
-void simul::dx11::setConstantBuffer(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b)
-{
-	ID3DX11EffectConstantBuffer*	pD3DX11EffectConstantBuffer=effect->GetConstantBufferByName(name);
-	SIMUL_ASSERT_WARN(pD3DX11EffectConstantBuffer->IsValid()!=0,(std::string("Invalid constant buffer: ")+name).c_str());
-	pD3DX11EffectConstantBuffer->SetConstantBuffer(b);
-}
-
 
 struct d3dMacro
 {
@@ -676,11 +669,6 @@ static const DWORD default_effect_flags=0;
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
 #endif
-
-HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass)
-{
-	return pass->Apply(0,pImmediateContext);
-}
 
 void BreakIfDebugging()
 {

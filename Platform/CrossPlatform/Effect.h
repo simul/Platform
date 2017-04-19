@@ -364,8 +364,6 @@ namespace simul
 			virtual int GetIndex() const=0;
 			virtual size_t GetSize() const=0;
 			virtual void * GetAddr() const=0;
-			virtual void Apply(DeviceContext &deviceContext)=0;
-			virtual void Reapply(DeviceContext &deviceContext)=0;
 		};
 		template<class T> class ConstantBuffer:public ConstantBufferBase,public T
 		{
@@ -420,6 +418,7 @@ namespace simul
 				defaultName=name;
 				SIMUL_ASSERT(platformConstantBuffer!=nullptr);
 				SIMUL_ASSERT(effect!=nullptr);
+				defaultName=name;
 				if (effect&&platformConstantBuffer)
 				{
 					platformConstantBuffer->LinkToEffect(effect, name, T::bindingIndex);
@@ -452,18 +451,6 @@ namespace simul
 					platformConstantBuffer->InvalidateDeviceObjects();
 				delete platformConstantBuffer;
 				platformConstantBuffer=NULL;
-			}
-			//! Apply the stored data using the given context, in preparation for rendering.
-			void Apply(DeviceContext &deviceContext) override
-			{
-				if(platformConstantBuffer)
-					platformConstantBuffer->Apply(deviceContext,sizeof(T),(T*)this);
-			}
-			//! Apply, but assume the existing GPU data is already valid.
-			void Reapply(DeviceContext &deviceContext) override
-			{
-				if(platformConstantBuffer)
-					platformConstantBuffer->Reapply(deviceContext,sizeof(T),(T*)this);
 			}
 			//! Unbind from the effect.
 			void Unbind(DeviceContext &deviceContext)

@@ -82,8 +82,6 @@ namespace simul
 			ID3D11InputLayout	*inputLayout;
 		protected:
 			void UpdateVertexPositions(int lVertexCount, float *lVertices) const;
-			mutable ID3D11InputLayout* previousInputLayout;
-			mutable D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 		};
 	}
 }

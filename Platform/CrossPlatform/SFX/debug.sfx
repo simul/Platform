@@ -14,10 +14,10 @@ uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
 uniform TextureCubeArray cubeTextureArray;
 uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);
 uniform TEXTURE2D_UINT4 imageTextureUint4 SIMUL_TEXTURE_REGISTER(6);
-uniform RWTexture2D<vec4> FastClearTarget;
-uniform RWTexture2DArray<vec4> FastClearTarget2DArray;
-uniform RWTexture3D<vec4> FastClearTarget3D;
-uniform RWStructuredBuffer<vec4> textureQueryResults;
+uniform RWTexture2D<vec4> FastClearTarget SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture2DArray<vec4> FastClearTarget2DArray SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture3D<vec4> FastClearTarget3D SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWStructuredBuffer<vec4> textureQueryResults SIMUL_RWTEXTURE_REGISTER(0);
 
 uniform sampler3D volumeTexture;
 
