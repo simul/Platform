@@ -3,6 +3,7 @@
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/Topology.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
+#include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Base/RuntimeError.h"
 #include <string>
 #include <map>
@@ -236,11 +237,54 @@ namespace simul
 			RenderState():type(NONE){}
 			virtual ~RenderState(){}
 		};
+		class SIMUL_CROSSPLATFORM_EXPORT Shader
+		{
+		public:
+			Shader():
+				textureSlots(0)
+				,textureSlotsForSB(0)
+				,rwTextureSlots(0)
+				,rwTextureSlotsForSB(0)
+				,bufferSlots(0)
+				,samplerSlots(0)
+				{
+				}
+			void setUsesTextureSlot(int s);
+			void setUsesTextureSlotForSB(int s);
+			void setUsesBufferSlot(int s);
+			void setUsesSamplerSlot(int s);
+			void setUsesRwTextureSlot(int s);
+			void setUsesRwTextureSlotForSB(int s);
+			bool usesTextureSlot(int s) const;
+			bool usesTextureSlotForSB(int s) const;
+			bool usesRwTextureSlotForSB(int s) const;
+			bool usesBufferSlot(int s) const;
+			bool usesSamplerSlot(int s) const;
+			bool usesRwTextureSlot(int s) const;
+			std::string pixel_str;
+			crossplatform::ShaderType type;
+			std::unordered_map<crossplatform::SamplerState *,int>	samplerStates;
+			unsigned textureSlots;			//t
+			unsigned textureSlotsForSB;		//t
+			unsigned rwTextureSlots;		//u
+			unsigned rwTextureSlotsForSB;	//u
+			unsigned bufferSlots;			//b
+			unsigned samplerSlots;			//s
+		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectPass
 		{
 		public:
+			crossplatform::RenderState *blendState;
+			crossplatform::RenderState *depthStencilState;
+			crossplatform::RenderState *rasterizerState;
+			
+			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
+			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
 			EffectPass()
-				:samplerSlots(0)
+				:blendState(NULL)
+				,depthStencilState(NULL)
+				,rasterizerState(NULL)
+				,samplerSlots(0)
 				,bufferSlots(0)
 				,textureSlots(0)
 				,textureSlotsForSB(0)
@@ -248,8 +292,14 @@ namespace simul
 				,rwTextureSlotsForSB(0)
 				,should_fence_outputs(true)
 				,platform_pass(nullptr)
-			{}
+			{
+				for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)
+					shaders[i]=NULL;
+				for(int i=0;i<OUTPUT_FORMAT_COUNT;i++)
+					pixelShaders[i]=NULL;
+			}
 			virtual ~EffectPass(){}
+
 			bool usesTextureSlot(int s) const;
 			bool usesTextureSlotForSB(int s) const;
 			bool usesRwTextureSlotForSB(int s) const;
@@ -306,6 +356,7 @@ namespace simul
 			{
 				platform_pass=p;
 			}
+			virtual void Apply(crossplatform::DeviceContext &deviceContext,bool test)=0;
 		protected:
 			unsigned samplerSlots;
 			unsigned bufferSlots;
@@ -644,7 +695,7 @@ namespace simul
 			}
 			bool should_fence_outputs;
 			int NumPasses() const;
-			virtual EffectPass *AddPass(const char *name,int i);
+			virtual EffectPass *AddPass(const char *name,int i)=0;
 			EffectPass *GetPass(int i);
 			EffectPass *GetPass(const char *name);
 		};
@@ -719,7 +770,7 @@ namespace simul
 				return filename.c_str();
 			}
 			void InvalidateDeviceObjects();
-			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines)=0;
+			virtual void Load(RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			void Load(RenderPlatform *r,const char *filename_utf8)
 			{
 				std::map<std::string,std::string> defines;

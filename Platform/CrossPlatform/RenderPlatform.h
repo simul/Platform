@@ -284,6 +284,12 @@ namespace simul
 			virtual RenderState				*CreateRenderState				(const RenderStateDesc &desc)=0;
 			/// Create an API-specific query object, e.g. for occlusion or timing tests.
 			virtual Query					*CreateQuery					(QueryType q)=0;
+			/// Get or create an API-specific shader object.
+			virtual Shader					*EnsureShader					(const char *filenameUtf8,ShaderType t)
+			{
+				// Some API's don't use this.
+				return nullptr;
+			}
 			// API stuff: these are the main API-call replacements, corresponding to devicecontext calls in DX11:
 			/// Activate the specifided vertex buffers in preparation for rendering.
 			virtual void					SetVertexBuffers				(DeviceContext &deviceContext,int slot,int num_buffers,Buffer **buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL)=0;

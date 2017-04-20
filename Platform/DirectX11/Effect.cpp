@@ -852,3 +852,13 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 	c->CSSetUnorderedAccessViews(0,8,uav,0);
 	crossplatform::Effect::UnbindTextures(deviceContext);
 }
+crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
+{
+	crossplatform::EffectPass *p=new dx11::EffectPass;
+	passes_by_name[name]=passes_by_index[i]=p;
+	return p;
+}
+void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool test)
+{
+
+}

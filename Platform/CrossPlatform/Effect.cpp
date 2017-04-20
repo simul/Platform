@@ -1,3 +1,4 @@
+#define NOMINMAX
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif
@@ -5,7 +6,11 @@
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/PixelFormat.h"
+#include "Simul/Base/DefaultFileLoader.h"
+#include "Simul/Base/StringFunctions.h"
 #include <iostream>
+#include <algorithm>
 
 using namespace simul;
 using namespace crossplatform;
@@ -175,13 +180,6 @@ EffectTechnique *EffectTechniqueGroup::GetTechniqueByIndex(int index)
 int EffectTechnique::NumPasses() const
 {
 	return (int)passes_by_name.size();
-}
-
-EffectPass *EffectTechnique::AddPass(const char *name,int i)
-{
-	EffectPass *p=new EffectPass;
-	passes_by_name[name]=passes_by_index[i]=p;
-	return p;
 }
 
 EffectPass *EffectTechnique::GetPass(int i)
@@ -490,4 +488,539 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 	cs->applyBuffers.clear();  //Because we might otherwise have invalid data
 	cs->applyVertexBuffers.clear();
 	cs->invalidate();
+}
+static bool is_equal(std::string str,const char *tst)
+{
+	return (_stricmp(str.c_str(),tst) == 0);
+}
+
+crossplatform::SamplerStateDesc::Wrapping stringToWrapping(string s)
+{
+	if(is_equal(s,"WRAP"))
+		return crossplatform::SamplerStateDesc::WRAP;
+	if(is_equal(s,"CLAMP"))
+		return crossplatform::SamplerStateDesc::CLAMP;
+	if(is_equal(s,"MIRROR"))
+		return crossplatform::SamplerStateDesc::MIRROR;
+	SIMUL_BREAK((string("Invalid string")+s).c_str());
+	return crossplatform::SamplerStateDesc::WRAP;
+}
+
+crossplatform::SamplerStateDesc::Filtering stringToFilter(string s)
+{
+	if(is_equal(s,"POINT"))
+		return crossplatform::SamplerStateDesc::POINT;
+	if(is_equal(s,"LINEAR"))
+		return crossplatform::SamplerStateDesc::LINEAR;
+	SIMUL_BREAK((string("Invalid string")+s).c_str());
+	return crossplatform::SamplerStateDesc::POINT;
+}
+
+static int toInt(string s)
+{
+	const char *t=s.c_str();
+	return atoi(t);
+}
+
+static crossplatform::CullFaceMode toCullFadeMode(string s)
+{
+	if(is_equal(s,"CULL_BACK"))
+		return crossplatform::CULL_FACE_BACK;
+	else if(is_equal(s,"CULL_FRONT"))
+		return crossplatform::CULL_FACE_FRONT;
+	else if(is_equal(s,"CULL_FRONTANDBACK"))
+		return crossplatform::CULL_FACE_FRONTANDBACK;
+	else if(is_equal(s,"CULL_NONE"))
+		return crossplatform::CULL_FACE_NONE;
+	SIMUL_BREAK((string("Invalid string")+s).c_str());
+	crossplatform::CULL_FACE_NONE;
+}
+
+static crossplatform::PolygonMode toPolygonMode(string s)
+{
+	if(is_equal(s,"FILL_SOLID"))
+		return crossplatform::PolygonMode::POLYGON_MODE_FILL;
+	else if(is_equal(s,"FILL_WIREFRAME"))
+		return crossplatform::PolygonMode::POLYGON_MODE_LINE;
+	else if(is_equal(s,"FILL_POINT"))
+		return crossplatform::PolygonMode::POLYGON_MODE_POINT;
+}
+
+static bool toBool(string s)
+{
+	string ss=s.substr(0,4);
+	const char *t=ss.c_str();
+	if(_stricmp(t,"true")==0)
+		return true;
+	ss=s.substr(0,5);
+	t=ss.c_str();
+	if(_stricmp(t,"false")==0)
+		return false;
+	SIMUL_CERR<<"Unknown bool "<<s<<std::endl;
+	return false;
+}
+
+void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, const std::map<std::string, std::string> &defines)
+{
+	renderPlatform=r;
+	groups.clear();
+	groupCharMap.clear();
+	for(auto i:textureDetailsMap)
+	{
+		delete i.second;
+	}
+	textureDetailsMap.clear();
+	textureCharMap.clear();
+	// We will load the .sfxo file, which contains the list of .sb files, and also the arrangement of textures, buffers etc. in numeric slots.
+
+	std::string filenameUtf8=renderPlatform->GetShaderBinaryPath();
+	if (filenameUtf8[filenameUtf8.length() - 1] != '/')
+		filenameUtf8+="/";
+	filenameUtf8+=filename_utf8;
+	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
+	{
+		// Some engines force filenames to lower case because reasons:
+		std::transform(filenameUtf8.begin(), filenameUtf8.end(), filenameUtf8.begin(), ::tolower);
+		if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
+		{
+			SIMUL_CERR<<"Shader file not found: "<<filenameUtf8.c_str()<<std::endl;
+			filenameUtf8=filename_utf8;
+		// The psfxo does not exist, so we can't load this effect.
+			return;
+		}
+	}
+	void *ptr;
+	unsigned int num_bytes;
+	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(ptr,num_bytes,filenameUtf8.c_str(),true);
+	const char *txt=(const char *)ptr;
+	std::string str;
+	str.reserve(num_bytes);
+	str=txt;
+	str.resize((size_t)num_bytes, 0);
+	// Load all the .sb's
+	int pos					=0;
+	int next				=(int)str.find('\n',pos+1);
+	int line_number			=0;
+	enum Level
+	{
+		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,TOO_FAR=4
+	};
+	Level level				=OUTSIDE;
+	EffectTechnique *tech	=NULL;
+	EffectPass *p			=NULL;
+	string group_name,tech_name,pass_name;
+	while(next>=0)
+	{
+		string line		=str.substr(pos,next-pos-1);
+		base::ClipWhitespace(line);
+		vector<string> words=simul::base::split(line,' ');
+		pos				=next;
+		int sp=line.find(" ");
+		int open_brace=line.find("{");
+		if(open_brace>=0)
+			level=(Level)(level+1);
+		string word;
+		if(sp >= 0)
+			word=line.substr(0, sp);
+		if(level==OUTSIDE)
+		{
+			tech=nullptr;
+			p=nullptr;
+			if (is_equal(word, "group") )
+			{
+				group_name = line.substr(sp + 1, line.length() - sp - 1);
+			}
+			else if(is_equal(word,"texture"))
+			{
+				const string &texture_name	=words[1];
+				const string &texture_dim	=words[2];
+				const string &read_write	=words[3];
+				const string &register_num	=words[4];
+				string is_array				=words.size()>5?words[5]:"single";
+				int slot=atoi(register_num.c_str());
+				int dim=is_equal(texture_dim,"3d")?3:2;
+				bool is_cubemap=is_equal(texture_dim,"cubemap");
+				bool rw=is_equal(read_write,"read_write");
+				bool ar=is_equal(is_array,"array");
+				crossplatform::ShaderResource *tds=new crossplatform::ShaderResource;
+				textureDetailsMap[texture_name]=tds;
+				tds->slot				=slot;
+				tds->dimensions			=dim;
+				crossplatform::ShaderResourceType rt=crossplatform::ShaderResourceType::COUNT;
+				if(!rw)
+				{
+					if(is_cubemap)
+					{
+							rt	=crossplatform::ShaderResourceType::TEXTURE_CUBE;
+					}
+					else
+					{
+						switch(dim)
+						{
+						case 1:
+							rt	=crossplatform::ShaderResourceType::TEXTURE_1D;
+							break;
+						case 2:
+							rt	=crossplatform::ShaderResourceType::TEXTURE_2D;
+							break;
+						case 3:
+							rt	=crossplatform::ShaderResourceType::TEXTURE_3D;
+							break;
+						default:
+							break;
+						}
+					}
+				}
+				else
+				{
+					switch(dim)
+					{
+					case 1:
+						rt	=crossplatform::ShaderResourceType::RW_TEXTURE_1D;
+						break;
+					case 2:
+						rt	=crossplatform::ShaderResourceType::RW_TEXTURE_2D;
+						break;
+					case 3:
+						rt	=crossplatform::ShaderResourceType::RW_TEXTURE_3D;
+						break;
+					default:
+						break;
+					}
+				}
+				if(ar)
+					rt=rt|crossplatform::ShaderResourceType::ARRAY;
+				tds->shaderResourceType=rt;
+			}
+			else if(is_equal(word, "BlendState"))
+			{
+				string name		=words[1];
+				string props	=words[2];
+				size_t pos		=0;
+				crossplatform::RenderStateDesc desc;
+				desc.type=crossplatform::BLEND;
+				desc.blend.AlphaToCoverageEnable=toBool(simul::base::toNext(props,',',pos));
+				pos++;
+				string enablestr=simul::base::toNext(props,')',pos);
+				vector<string> en=base::split(enablestr,',');
+
+				desc.blend.numRTs=en.size();
+				pos++;
+				crossplatform::BlendOperation BlendOp		=(crossplatform::BlendOperation)toInt(base::toNext(props,',',pos));
+				crossplatform::BlendOperation BlendOpAlpha	=(crossplatform::BlendOperation)toInt(base::toNext(props,',',pos));
+				crossplatform::BlendOption SrcBlend			=(crossplatform::BlendOption)toInt(base::toNext(props,',',pos));
+				crossplatform::BlendOption DestBlend		=(crossplatform::BlendOption)toInt(base::toNext(props,',',pos));
+				crossplatform::BlendOption SrcBlendAlpha	=(crossplatform::BlendOption)toInt(base::toNext(props,',',pos));
+				crossplatform::BlendOption DestBlendAlpha	=(crossplatform::BlendOption)toInt(base::toNext(props,',',pos));
+				pos++;
+				string maskstr=base::toNext(props,')',pos);
+				vector<string> ma=base::split(maskstr,',');
+
+				for(int i=0;i<desc.blend.numRTs;i++)
+				{
+					bool enable=toBool(en[i]);
+					desc.blend.RenderTarget[i].blendOperation				=enable?BlendOp:crossplatform::BLEND_OP_NONE;
+					desc.blend.RenderTarget[i].blendOperationAlpha			=enable?BlendOpAlpha:crossplatform::BLEND_OP_NONE;
+					if(desc.blend.RenderTarget[i].blendOperation!=crossplatform::BLEND_OP_NONE)
+					{
+						desc.blend.RenderTarget[i].SrcBlend					=SrcBlend;
+						desc.blend.RenderTarget[i].DestBlend				=DestBlend;
+					}
+					else
+					{
+						desc.blend.RenderTarget[i].SrcBlendAlpha			=crossplatform::BLEND_ONE;
+						desc.blend.RenderTarget[i].DestBlendAlpha			=crossplatform::BLEND_ZERO;
+					}
+					if(desc.blend.RenderTarget[i].blendOperationAlpha!=crossplatform::BLEND_OP_NONE)
+					{
+						desc.blend.RenderTarget[i].SrcBlendAlpha			=SrcBlendAlpha;
+						desc.blend.RenderTarget[i].DestBlendAlpha			=DestBlendAlpha;
+					}
+					else
+					{
+						desc.blend.RenderTarget[i].SrcBlendAlpha			=crossplatform::BLEND_ONE;
+						desc.blend.RenderTarget[i].DestBlendAlpha			=crossplatform::BLEND_ZERO;
+					}
+					desc.blend.RenderTarget[i].RenderTargetWriteMask	=(i<(int)ma.size())?toInt(ma[i]):0xF;
+				}
+				crossplatform::RenderState *bs=renderPlatform->CreateRenderState(desc);
+				blendStates[name]=bs;
+			}
+			else if(is_equal(word, "RasterizerState"))
+			{
+				string name		=words[1];
+				size_t pos		=0;
+				crossplatform::RenderStateDesc desc;
+				desc.type=crossplatform::RASTERIZER;
+				// e.g. RenderBackfaceCull (false,CULL_BACK,0,0,false,FILL_WIREFRAME,true,false,false,0)
+				vector<string> props=simul::base::split(words[2],',');
+				//desc.rasterizer.antialias=toInt(props[0]);
+				desc.rasterizer.cullFaceMode=toCullFadeMode(props[1]);
+				desc.rasterizer.frontFace=toBool(props[6])?crossplatform::FRONTFACE_COUNTERCLOCKWISE:crossplatform::FRONTFACE_CLOCKWISE;
+				desc.rasterizer.polygonMode=toPolygonMode(props[5]);
+				desc.rasterizer.polygonOffsetMode=crossplatform::POLYGON_OFFSET_DISABLE;
+				desc.rasterizer.viewportScissor=toBool(props[8])?crossplatform::VIEWPORT_SCISSOR_ENABLE:crossplatform::VIEWPORT_SCISSOR_DISABLE;
+				/*
+					0 AntialiasedLineEnable
+					1 cullMode
+					2 DepthBias
+					3 DepthBiasClamp
+					4 DepthClipEnable
+					5 fillMode
+					6 FrontCounterClockwise
+					7 MultisampleEnable
+					8 ScissorEnable
+					9 SlopeScaledDepthBias
+			*/
+				crossplatform::RenderState *bs=renderPlatform->CreateRenderState(desc);
+				rasterizerStates[name]=bs;
+			}
+			else if(is_equal(word, "DepthStencilState"))
+			{
+				string name		=words[1];
+				string props	=words[2];
+				size_t pos		=0;
+				crossplatform::RenderStateDesc desc;
+				desc.type=crossplatform::DEPTH;
+				desc.depth.test=toBool(simul::base::toNext(props,',',pos));
+				desc.depth.write=toInt(simul::base::toNext(props,',',pos));
+				desc.depth.comparison=(crossplatform::DepthComparison)toInt(simul::base::toNext(props,',',pos));
+				crossplatform::RenderState *ds=renderPlatform->CreateRenderState(desc);
+				depthStencilStates[name]=ds;
+			}
+			else if(is_equal(word, "SamplerState"))
+			{
+				//SamplerState clampSamplerState 9,MIN_MAG_MIP_LINEAR,CLAMP,CLAMP,CLAMP,
+				int sp2=line.find(" ",sp+1);
+				string sampler_name = line.substr(sp + 1, sp2 - sp - 1);
+				int comma=(int)std::min(line.length(),line.find(",",sp2+1));
+				string register_num = line.substr(sp2 + 1, comma - sp2 - 1);
+				int reg=atoi(register_num.c_str());
+				simul::crossplatform::SamplerStateDesc desc;
+				string state=line.substr(comma+1,line.length()-comma-1);
+				vector<string> st=simul::base::split(state,',');
+				desc.filtering=stringToFilter(st[0]);
+				desc.x=stringToWrapping(st[1]);
+				desc.y=stringToWrapping(st[2]);
+				desc.z=stringToWrapping(st[3]);
+				desc.slot=reg;
+				crossplatform::SamplerState *ss=renderPlatform->GetOrCreateSamplerStateByName(sampler_name.c_str(),&desc);
+				samplerStates[sampler_name]=ss;
+			}
+		}
+		else if (level == GROUP)
+		{
+			if (sp >= 0 && _stricmp(line.substr(0, sp).c_str(), "technique") == 0)
+			{
+				tech_name = line.substr(sp + 1, line.length() - sp - 1);
+				tech = (EffectTechnique*)EnsureTechniqueExists(group_name, tech_name, "main");
+				p=nullptr;
+			}
+		}
+		else if (level == TECHNIQUE)
+		{
+			if(sp>=0&&_stricmp(line.substr(0,sp).c_str(),"pass")==0)
+			{
+				pass_name=line.substr(sp+1,line.length()-sp-1);
+				p=(EffectPass*)tech->AddPass(pass_name.c_str(),0);
+			}
+		}
+		else if(level==PASS)
+		{
+			// Find the shader definitions:
+			// vertex: simple_VS_Main_vv.sb
+			// pixel: simple_PS_Main_p.sb
+			int cl=line.find(":");
+			int cm=line.find(",",cl+1);
+			if(cm<0)
+				cm=line.length();
+			if(cl>=0&&tech)
+			{
+				string type=line.substr(0,cl);
+				string filename=line.substr(cl+1,cm-cl-1);
+				string uses;
+				if(cm<line.length())
+					uses=line.substr(cm+1,line.length()-cm-1);
+				// textures,buffers,samplers
+				vector<string> uses_tbs=simul::base::split(uses,',');
+				base::ClipWhitespace(uses);
+				base::ClipWhitespace(type);
+				base::ClipWhitespace(filename);
+				const string &name=words[1];
+				crossplatform::ShaderType t=crossplatform::ShaderType::SHADERTYPE_COUNT;
+				PixelOutputFormat fmt=FMT_32_ABGR;
+				if(_stricmp(type.c_str(),"blend")==0)
+				{
+					if(blendStates.find(name)!=blendStates.end())
+					{
+						p->blendState=blendStates[name];
+					}
+					else
+					{
+						SIMUL_CERR<<"State not found: "<<name<<std::endl;
+					}
+				}
+				else if(_stricmp(type.c_str(),"rasterizer")==0)
+				{
+					if(rasterizerStates.find(name)!=rasterizerStates.end())
+					{
+						p->rasterizerState=rasterizerStates[name];
+					}
+					else
+					{
+						SIMUL_CERR<<"Rasterizer state not found: "<<name<<std::endl;
+					}
+				}
+				else if(_stricmp(type.c_str(),"depthstencil")==0)
+				{
+					if(depthStencilStates.find(name)!=depthStencilStates.end())
+					{
+						p->depthStencilState=depthStencilStates[name];
+					}
+					else
+					{
+						SIMUL_CERR<<"Depthstencil state not found: "<<name<<std::endl;
+					}
+				}
+				else
+				{
+					if(_stricmp(type.c_str(),"vertex")==0)
+						t=crossplatform::SHADERTYPE_VERTEX;
+					else if(_stricmp(type.c_str(),"export")==0)
+						t=crossplatform::SHADERTYPE_VERTEX;
+					else if(_stricmp(type.c_str(),"geometry")==0)
+						t=crossplatform::SHADERTYPE_GEOMETRY;
+					else if(_stricmp(type.substr(0,5).c_str(),"pixel")==0)
+					{
+						t=crossplatform::SHADERTYPE_PIXEL;
+						if(type.length()>6)
+						{
+							string out_fmt=type.substr(6,type.length()-7);
+							if(_stricmp(out_fmt.c_str(),"float16abgr")==0)
+								fmt=FMT_FP16_ABGR;
+							else if(_stricmp(out_fmt.c_str(),"float32abgr")==0)
+								fmt=FMT_32_ABGR;
+							else if(_stricmp(out_fmt.c_str(),"snorm16abgr")==0)
+								fmt=FMT_SNORM16_ABGR;
+							else if(_stricmp(out_fmt.c_str(),"unorm16abgr")==0)
+								fmt=FMT_UNORM16_ABGR;
+						}
+					}
+					else if(_stricmp(type.c_str(),"compute")==0)
+						t=crossplatform::SHADERTYPE_COMPUTE;
+					else
+					{
+						SIMUL_BREAK(base::QuickFormat("Unknown shader type or command: %s\n",type.c_str()));
+						continue;
+					}
+					Shader *s=renderPlatform->EnsureShader(filename.c_str(),t);
+					if(s)
+					{
+						if(t==crossplatform::SHADERTYPE_PIXEL)
+							p->pixelShaders[fmt]=s;
+						else
+							p->shaders[t]=s;
+					}
+					// Now we will know which slots must be used by the pass:
+					p->SetUsesBufferSlots(s->bufferSlots);
+					p->SetUsesTextureSlots(s->textureSlots);
+					p->SetUsesTextureSlotsForSB(s->textureSlotsForSB);
+					p->SetUsesRwTextureSlots(s->rwTextureSlots);
+					p->SetUsesRwTextureSlotsForSB(s->rwTextureSlotsForSB);
+					p->SetUsesSamplerSlots(s->samplerSlots);
+				}
+			}
+		}
+		int close_brace=line.find("}");
+		if (close_brace >= 0)
+		{
+			level = (Level)(level - 1);
+			if (level == OUTSIDE)
+				group_name = "";
+		}
+		next			=(int)str.find('\n',pos+1);
+	}
+	SIMUL_ASSERT(level==OUTSIDE);
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
+	
+}
+void Shader::setUsesTextureSlot(int s)
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	if((textureSlotsForSB&m)!=0)
+	{
+		SIMUL_BREAK_ONCE("Can't use slot for Texture and Structured Buffer in the same shader.");
+	}
+	textureSlots=textureSlots|m;
+}
+void Shader::setUsesTextureSlotForSB(int s)
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	if((textureSlots&m)!=0)
+	{
+		SIMUL_BREAK_ONCE("Can't use slot for Texture and Structured Buffer in the same shader.");
+	}
+	textureSlotsForSB=textureSlotsForSB|m;
+}
+
+void Shader::setUsesBufferSlot(int s)
+{
+	bufferSlots=bufferSlots|((unsigned)1<<(unsigned)s);
+}
+
+void Shader::setUsesSamplerSlot(int s)
+{
+	samplerSlots=samplerSlots|((unsigned)1<<(unsigned)s);
+}
+
+void Shader::setUsesRwTextureSlot(int s)
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	rwTextureSlots=rwTextureSlots|m;
+}
+
+void Shader::setUsesRwTextureSlotForSB(int s)
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	if((rwTextureSlots&m)!=0)
+	{
+		SIMUL_BREAK_ONCE("Can't use slot for RW Texture and Structured Buffer in the same shader.");
+	}
+	rwTextureSlotsForSB=rwTextureSlotsForSB|m;
+}
+
+bool Shader::usesTextureSlot(int s) const
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return (textureSlots&m)!=0;
+}
+
+bool Shader::usesTextureSlotForSB(int s) const
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return (textureSlotsForSB&m)!=0;
+}
+
+bool Shader::usesRwTextureSlotForSB(int s) const
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return (rwTextureSlotsForSB&m)!=0;
+}
+
+bool Shader::usesBufferSlot(int s) const
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return (bufferSlots&m)!=0;
+}
+
+bool Shader::usesSamplerSlot(int s) const
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return true;//(samplerSlots&m)!=0;
+}
+
+bool Shader::usesRwTextureSlot(int s) const
+{
+	unsigned m=((unsigned)1<<(unsigned)s);
+	return (rwTextureSlots&m)!=0;
 }

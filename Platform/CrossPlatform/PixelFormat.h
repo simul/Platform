@@ -33,6 +33,20 @@ namespace simul
 			,D_24_UNORM_S_8_UINT
 			,D_16_UNORM
 		};
+		//! Pixel formats for pixel shader output - only relevant for some API's.
+		enum PixelOutputFormat
+		{
+			FMT_UNKNOWN
+			,FMT_32_GR
+			,FMT_32_AR 
+			,FMT_FP16_ABGR 
+			,FMT_UNORM16_ABGR 
+			,FMT_SNORM16_ABGR 
+			,FMT_UINT16_ABGR 
+			,FMT_SINT16_ABGR 
+			,FMT_32_ABGR 
+			,OUTPUT_FORMAT_COUNT
+		};
 		//! This refers to the type of a shader resource, which should be compatible with the type of any resource assigned to it.
 		enum class ShaderResourceType
 		{

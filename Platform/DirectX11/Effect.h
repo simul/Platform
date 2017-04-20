@@ -83,9 +83,16 @@ namespace simul
 			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
 			void Unbind(crossplatform::DeviceContext &deviceContext);
 		};
+		class SIMUL_DIRECTX11_EXPORT EffectPass:public simul::crossplatform::EffectPass
+		{
+		public:
+			void Apply(crossplatform::DeviceContext &deviceContext,bool test) override;
+		};
 		class SIMUL_DIRECTX11_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
 		{
+		public:
 			int NumPasses() const;
+			crossplatform::EffectPass *AddPass(const char *name,int i) override;
 		};
 		class SIMUL_DIRECTX11_EXPORT Effect:public simul::crossplatform::Effect
 		{
