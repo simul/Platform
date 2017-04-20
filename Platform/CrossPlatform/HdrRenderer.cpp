@@ -181,7 +181,8 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"HDR")
 	hdrConstants.gamma		=Gamma;
 	hdrConstants.exposure	=Exposure;
-	hdrConstants.offset		=vec2(offsetX,0.0f);
+	hdrConstants.offset		=vec2(offsetX,0.0f);
+
 	hdr_effect->SetConstantBuffer(deviceContext,&hdrConstants);
 	crossplatform::EffectTechnique *tech=exposureGammaTechnique;
 	if(Glow)
@@ -325,7 +326,8 @@ void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,
 	{
 		hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
 		hdr_effect->SetTexture(deviceContext,"imageTextureMS",texture);
-		hdrConstants.offset				=vec2(1.f/Width,1.f/Height);
+		hdrConstants.offset				=vec2(1.f/Width,1.f/Height);
+
 		hdr_effect->SetConstantBuffer(deviceContext,&		hdrConstants);
 		hdr_effect->Apply(deviceContext,glowTechnique,(0));
 		brightpassTextures[0]->activateRenderTarget(deviceContext);
@@ -396,7 +398,8 @@ void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crosspl
 	m_pGaussianEffect->SetTexture(deviceContext,"g_texInput",brightpassTextures[0]);
 	// Output texture
 	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",glowTextures[0]);
-	imageConstants.texelsPerThread				=(brightpassTextures[0]->width + threadsPerGroup - 1)/threadsPerGroup;
+	imageConstants.texelsPerThread				=(brightpassTextures[0]->width + threadsPerGroup - 1)/threadsPerGroup;
+
 	m_pGaussianEffect->SetConstantBuffer(deviceContext,&	imageConstants);
 	// Select pass
 	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");
