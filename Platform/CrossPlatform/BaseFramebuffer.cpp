@@ -10,7 +10,7 @@ using namespace simul;
 using namespace crossplatform;
 
 crossplatform::TargetsAndViewport BaseFramebuffer::defaultTargetsAndViewport;
- std::stack<crossplatform::TargetsAndViewport*> BaseFramebuffer::targetStack;
+std::stack<crossplatform::TargetsAndViewport*> BaseFramebuffer::targetStack;
 // Change this from a static construtor to a dynamic construtor so that the memory is allocated by the application rather than the C runtime
 std::stack<crossplatform::TargetsAndViewport*>& BaseFramebuffer::GetFrameBufferStack()
 {
