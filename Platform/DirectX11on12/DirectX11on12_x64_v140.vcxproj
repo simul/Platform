@@ -1,0 +1,353 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Static Debug|x64">
+      <Configuration>Static Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Static Release|x64">
+      <Configuration>Static Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>SimulDirectX11on12</ProjectName>
+    <ProjectGuid>{E5C264EF-011A-43A6-B805-6DE799C43A9B}</ProjectGuid>
+    <RootNamespace>DirectX11on12</RootNamespace>
+    <Keyword>x64Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(ProjectDir)SfxBuildRule.props" />
+  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\SimulLib.props" />
+    <Import Project="..\..\SimulStaticRelease.props" />
+    <Import Project="SimulUseWin8SDK.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\SimulLib.props" />
+    <Import Project="..\..\SimulStaticDebug.props" />
+    <Import Project="SimulUseWin8SDK.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\SimulDLL.props" />
+    <Import Project="..\..\SimulRelease.props" />
+    <Import Project="SimulUseWin8SDK.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\SimulDLL.props" />
+    <Import Project="..\..\SimulDebug.props" />
+    <Import Project="SimulUseWin8SDK.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedManifest>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <SfxBeforeTargets>Midl</SfxBeforeTargets>
+    <SfxAfterTargets>CustomBuild</SfxAfterTargets>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PreprocessorDefinitions>WIN64;SIMUL_DIRECTX11_DLL;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ShowIncludes>false</ShowIncludes>
+    </ClCompile>
+    <Sfx>
+      <IncludePaths>$(SIMUL)\Platform\DirectX11on12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL.json</SfxConfig>
+      <OutputPath>$(SIMUL)\Platform\DirectX11on12\shaderbin</OutputPath>
+    </Sfx>
+    <Link>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX64</TargetMachine>
+      <DelayLoadDLLs>
+      </DelayLoadDLLs>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PreprocessorDefinitions>WIN64;SIMUL_DIRECTX11_DLL;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <Sfx>
+      <IncludePaths>$(SIMUL)\Platform\DirectX11on12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL11on12.json</SfxConfig>
+      <OutputPath>$(SIMUL)\Platform\DirectX11on12\shaderbin</OutputPath>
+    </Sfx>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PreprocessorDefinitions>WIN64;SIMUL_DIRECTX11_DLL;_MBCS;FREEGLUT_STATIC;GLFX_STATIC;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Lib>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Lib>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <Sfx>
+      <IncludePaths>$(SIMUL)\Platform\DirectX11on12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL.json</SfxConfig>
+      <OutputPath>$(SIMUL)\Platform\DirectX11on12\shaderbin</OutputPath>
+    </Sfx>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PreprocessorDefinitions>WIN64;SIMUL_DIRECTX11_DLL;_MBCS;FREEGLUT_STATIC;GLFX_STATIC;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Lib>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Lib>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <Sfx>
+      <IncludePaths>$(SIMUL)\Platform\DirectX11on12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL.json</SfxConfig>
+      <OutputPath>$(SIMUL)\Platform\DirectX11on12\shaderbin</OutputPath>
+    </Sfx>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="CompileShaderDX1x.cpp" />
+    <ClCompile Include="ConstantBuffer.cpp" />
+    <ClCompile Include="CreateEffectDX1x.cpp" />
+    <ClCompile Include="Direct3D11Manager.cpp" />
+    <ClCompile Include="Direct3D11Renderer.cpp" />
+    <ClCompile Include="DX11Exception.cpp" />
+    <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="FramebufferDX1x.cpp" />
+    <ClCompile Include="Layout.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="SaveTextureDX1x.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Utilities.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Buffer.h" />
+    <ClInclude Include="CompileShaderDX1x.h" />
+    <ClInclude Include="ConstantBuffer.h" />
+    <ClInclude Include="CreateEffectDX1x.h" />
+    <ClInclude Include="d3dx12.h" />
+    <ClInclude Include="Direct3D11CallbackInterface.h" />
+    <ClInclude Include="Direct3D11Manager.h" />
+    <ClInclude Include="Direct3D11ManagerInterface.h" />
+    <ClInclude Include="direct3d11renderer.h" />
+    <ClInclude Include="DX11Exception.h" />
+    <ClInclude Include="Effect.h" />
+    <ClInclude Include="Export.h" />
+    <ClInclude Include="FramebufferDX1x.h" />
+    <ClInclude Include="Layout.h" />
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="MacrosDx1x.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="RenderPlatform.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="ResourcesDx1x.h" />
+    <ClInclude Include="SaveTextureDX1x.h" />
+    <ClInclude Include="SimulDirectXHeader.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="Utilities.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\CrossPlatform\SL\atmospherics.sl" />
+    <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
+    <None Include="..\CrossPlatform\SL\camera_constants.sl" />
+    <None Include="..\CrossPlatform\SL\clouds_raytrace.sl" />
+    <None Include="..\CrossPlatform\SL\clouds_simple.sl" />
+    <None Include="..\CrossPlatform\SL\cloud_shadow.sl" />
+    <None Include="..\CrossPlatform\SL\colour_packing.sl" />
+    <None Include="..\CrossPlatform\SL\common.sl" />
+    <None Include="..\CrossPlatform\SL\composite.sl" />
+    <None Include="..\CrossPlatform\SL\compositing_constants.sl" />
+    <None Include="..\CrossPlatform\SL\CppSl.hs" />
+    <None Include="..\CrossPlatform\SL\debug_constants.sl" />
+    <None Include="..\CrossPlatform\SL\depth.sl" />
+    <None Include="..\CrossPlatform\SL\earth_shadow.sl" />
+    <None Include="..\CrossPlatform\SL\earth_shadow_fade.sl" />
+    <None Include="..\CrossPlatform\SL\earth_shadow_uniforms.sl" />
+    <None Include="..\CrossPlatform\SL\foliage_constants.sl" />
+    <None Include="..\CrossPlatform\SL\godrays.sl" />
+    <None Include="..\CrossPlatform\SL\gpu_cloud_constants.sl" />
+    <None Include="..\CrossPlatform\SL\gpu_sky_constants.sl" />
+    <None Include="..\CrossPlatform\SL\hdr_constants.sl" />
+    <None Include="..\CrossPlatform\SL\illumination.sl" />
+    <None Include="..\CrossPlatform\SL\image_constants.sl" />
+    <None Include="..\CrossPlatform\SL\lightning_constants.sl" />
+    <None Include="..\CrossPlatform\SL\light_probe_constants.sl" />
+    <None Include="..\CrossPlatform\SL\mixed_resolution.sl" />
+    <None Include="..\CrossPlatform\SL\mixed_resolution_constants.sl" />
+    <None Include="..\CrossPlatform\SL\noise.sl" />
+    <None Include="..\CrossPlatform\SL\noise_constants.sl" />
+    <None Include="..\CrossPlatform\SL\nv_multi_res.sl" />
+    <None Include="..\CrossPlatform\SL\nv_multi_res_constants.sl" />
+    <None Include="..\CrossPlatform\SL\ocean_constants.sl" />
+    <None Include="..\CrossPlatform\SL\optics_constants.sl" />
+    <None Include="..\CrossPlatform\SL\quaternion.sl" />
+    <None Include="..\CrossPlatform\SL\rain.sl" />
+    <None Include="..\CrossPlatform\SL\rain_constants.sl" />
+    <None Include="..\CrossPlatform\SL\raytrace_new.sl" />
+    <None Include="..\CrossPlatform\SL\render_states.sl" />
+    <None Include="..\CrossPlatform\SL\simul_2d_clouds.sl" />
+    <None Include="..\CrossPlatform\SL\simul_2d_cloud_constants.sl" />
+    <None Include="..\CrossPlatform\SL\simul_2d_cloud_detail.sl" />
+    <None Include="..\CrossPlatform\SL\simul_clouds.sl" />
+    <None Include="..\CrossPlatform\SL\simul_cloud_constants.sl" />
+    <None Include="..\CrossPlatform\SL\simul_gpu_clouds.sl" />
+    <None Include="..\CrossPlatform\SL\simul_gpu_sky.sl" />
+    <None Include="..\CrossPlatform\SL\simul_inscatter_fns.sl" />
+    <None Include="..\CrossPlatform\SL\simul_terrain_constants.sl" />
+    <None Include="..\CrossPlatform\SL\sky.sl" />
+    <None Include="..\CrossPlatform\SL\sky_constants.sl" />
+    <None Include="..\CrossPlatform\SL\solid_constants.sl" />
+    <None Include="..\CrossPlatform\SL\spherical_harmonics.sl" />
+    <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
+    <None Include="..\CrossPlatform\SL\states.sl" />
+    <None Include="..\CrossPlatform\SL\text_constants.sl" />
+    <None Include="HLSL\CppHLSL.hlsl" />
+    <None Include="HLSL\shader_platform.sl" />
+    <None Include="SimulUseDXSDK.props" />
+    <None Include="SimulUseWin8SDK.props">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Math\Math_x64_v140.vcxproj">
+      <Project>{b6cb4ee4-90e3-4b11-8706-e4d7b9024801}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Sfx Include="..\CrossPlatform\SFX\atmospherics.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\clouds.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\copy.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\debug.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\font.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\gaussian.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\hdr.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\lightning.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\light_probes.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\mixed_resolution.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\ocean.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\optics.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\rain.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\simul_gaussian.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\simul_rendernoise.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\sky.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\solid.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\spherical_harmonics.sfx" />
+    <Sfx Include="..\CrossPlatform\SFX\terrain.sfx" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(ProjectDir)SfxBuildRule.targets" />
+  </ImportGroup>
+</Project>

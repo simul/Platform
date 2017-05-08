@@ -28,7 +28,6 @@ uniform RWTexture2D<vec4> targetTexture;
 #define SIMUL_PI_F (3.1415926536)
 #endif
 
-
 struct atmosVertexInput
 {
 	uint vertex_id			: SV_VertexID;
