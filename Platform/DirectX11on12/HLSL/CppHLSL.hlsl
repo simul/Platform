@@ -10,9 +10,6 @@
 #pragma warning( disable : 3557)
 // Because HLSL doesn't moan about seeing compute types in non-compute shaders, we can just:
 #define IN_COMPUTE_SHADER
-#define shader
-#define technique technique11
-#define group fxgroup
 #define f32touint16 f32tof16
 
 #endif

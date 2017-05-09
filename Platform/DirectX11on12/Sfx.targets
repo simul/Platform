@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <PropertyPageSchema
+      Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml" />
+    <AvailableItemName
+      Include="Sfx_Rule">
+      <Targets>_Sfx_Rule</Targets>
+    </AvailableItemName>
+  </ItemGroup>
+  <UsingTask
+    TaskName="Sfx_Rule"
+    TaskFactory="XamlTaskFactory"
+    AssemblyName="Microsoft.Build.Tasks.v4.0">
+    <Task>$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml</Task>
+  </UsingTask>
+  <Target
+    Name="_Sfx_Rule"
+    BeforeTargets="$(Sfx_RuleBeforeTargets)"
+    AfterTargets="$(Sfx_RuleAfterTargets)"
+    Condition="'@(Sfx_Rule)' != ''"
+    DependsOnTargets="$(Sfx_RuleDependsOn);ComputeSfx_RuleOutput"
+    Outputs="%(Sfx_Rule.Outputs)"
+    Inputs="%(Sfx_Rule.Identity);%(Sfx_Rule.AdditionalDependencies);$(MSBuildProjectFile)">
+    <ItemGroup
+      Condition="'@(SelectedFiles)' != ''">
+      <Sfx_Rule
+        Remove="@(Sfx_Rule)"
+        Condition="'%(Identity)' != '@(SelectedFiles)'" />
+    </ItemGroup>
+    <ItemGroup>
+      <Sfx_Rule_tlog
+        Include="%(Sfx_Rule.Outputs)"
+        Condition="'%(Sfx_Rule.Outputs)' != '' and '%(Sfx_Rule.ExcludedFromBuild)' != 'true'">
+        <Source>@(Sfx_Rule, '|')</Source>
+      </Sfx_Rule_tlog>
+    </ItemGroup>
+    <Message
+      Importance="High"
+      Text="%(Sfx_Rule.ExecutionDescription)" />
+    <WriteLinesToFile
+      Condition="'@(Sfx_Rule_tlog)' != '' and '%(Sfx_Rule_tlog.ExcludedFromBuild)' != 'true'"
+      File="$(TLogLocation)$(ProjectName).write.1.tlog"
+      Lines="^%(Sfx_Rule_tlog.Source);@(Sfx_Rule_tlog-&gt;'%(Fullpath)')" />
+    <Sfx_Rule
+      Condition="'@(Sfx_Rule)' != '' and '%(Sfx_Rule.ExcludedFromBuild)' != 'true'"
+      CommandLineTemplate="%(Sfx_Rule.CommandLineTemplate)"
+      IncludePaths="%(Sfx_Rule.IncludePaths)"
+      SfxConfig="%(Sfx_Rule.SfxConfig)"
+      OutputPath="%(Sfx_Rule.OutputPath)"
+      AdditionalOptions="%(Sfx_Rule.AdditionalOptions)"
+      Inputs="%(Sfx_Rule.Identity)" />
+  </Target>
+  <PropertyGroup>
+    <ComputeLinkInputsTargets>
+            $(ComputeLinkInputsTargets);
+            ComputeSfx_RuleOutput;
+          </ComputeLinkInputsTargets>
+    <ComputeLibInputsTargets>
+            $(ComputeLibInputsTargets);
+            ComputeSfx_RuleOutput;
+          </ComputeLibInputsTargets>
+  </PropertyGroup>
+  <Target
+    Name="ComputeSfx_RuleOutput"
+    Condition="'@(Sfx_Rule)' != ''">
+    <ItemGroup>
+      <Sfx_RuleDirsToMake
+        Condition="'@(Sfx_Rule)' != '' and '%(Sfx_Rule.ExcludedFromBuild)' != 'true'"
+        Include="%(Sfx_Rule.Outputs)" />
+      <Link
+        Include="%(Sfx_RuleDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+      <Lib
+        Include="%(Sfx_RuleDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+      <ImpLib
+        Include="%(Sfx_RuleDirsToMake.Identity)"
+        Condition="'%(Extension)'=='.obj' or '%(Extension)'=='.res' or '%(Extension)'=='.rsc' or '%(Extension)'=='.lib'" />
+    </ItemGroup>
+    <MakeDir
+      Directories="@(Sfx_RuleDirsToMake-&gt;'%(RootDir)%(Directory)')" />
+  </Target>
+</Project>

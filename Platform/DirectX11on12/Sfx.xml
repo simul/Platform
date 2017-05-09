@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ProjectSchemaDefinitions xmlns="clr-namespace:Microsoft.Build.Framework.XamlTypes;assembly=Microsoft.Build.Framework" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="clr-namespace:System;assembly=mscorlib" xmlns:transformCallback="Microsoft.Cpp.Dev10.ConvertPropertyCallback">
   <Rule
-    Name="Sfx"
+    Name="Sfx_Rule"
     PageTemplate="tool"
     DisplayName="Sfx"
     Order="200">
     <Rule.DataSource>
       <DataSource
         Persistence="ProjectFile"
-        ItemType="Sfx" />
+        ItemType="Sfx_Rule" />
     </Rule.DataSource>
     <Rule.Categories>
       <Category
@@ -33,7 +33,7 @@
       <StringListProperty.DataSource>
         <DataSource
           Persistence="ProjectFile"
-          ItemType="Sfx"
+          ItemType="Sfx_Rule"
           SourceType="Item" />
       </StringListProperty.DataSource>
     </StringListProperty>
@@ -44,26 +44,25 @@
       Description="Include Paths"
       Separator=";"
       Switch="-I&quot;[value]&quot;" />
-    <StringListProperty 
+    <StringProperty 
       Name="SfxConfig"
       HelpContext="0"
       DisplayName="SfxConfig"
       Description="SfxConfig"
-      Switch="-P&quot; [value]&quot;" />
-    <StringListProperty
+      Switch="-P&quot;[value]&quot;" />
+    <StringProperty
       Name="OutputPath"
       HelpContext="0"
       DisplayName="OutputPath"
       Description="Output Path"
-      Separator=";"
-      Switch="/Fo&quot;[value]&quot;" />
+      Switch="-O&quot;[value]&quot;" />
     <StringProperty
       Name="CommandLineTemplate"
       DisplayName="Command Line"
-      Visible="True"
+      Visible="False"
       IncludeInCommandLine="False" />
     <DynamicEnumProperty
-      Name="SfxBeforeTargets"
+      Name="Sfx_RuleBeforeTargets"
       Category="General"
       EnumProvider="Targets"
       IncludeInCommandLine="False">
@@ -76,7 +75,7 @@
       <DynamicEnumProperty.ProviderSettings>
         <NameValuePair
           Name="Exclude"
-          Value="^SfxBeforeTargets|^Compute" />
+          Value="^Sfx_RuleBeforeTargets|^Compute" />
       </DynamicEnumProperty.ProviderSettings>
       <DynamicEnumProperty.DataSource>
         <DataSource
@@ -85,7 +84,7 @@
       </DynamicEnumProperty.DataSource>
     </DynamicEnumProperty>
     <DynamicEnumProperty
-      Name="SfxAfterTargets"
+      Name="Sfx_RuleAfterTargets"
       Category="General"
       EnumProvider="Targets"
       IncludeInCommandLine="False">
@@ -98,7 +97,7 @@
       <DynamicEnumProperty.ProviderSettings>
         <NameValuePair
           Name="Exclude"
-          Value="^SfxAfterTargets|^Compute" />
+          Value="^Sfx_RuleAfterTargets|^Compute" />
       </DynamicEnumProperty.ProviderSettings>
       <DynamicEnumProperty.DataSource>
         <DataSource
@@ -110,7 +109,7 @@
     <StringListProperty
       Name="Outputs"
       DisplayName="Outputs"
-      Visible="True"
+      Visible="False"
       IncludeInCommandLine="False" />
     <StringProperty
       Name="ExecutionDescription"
@@ -135,16 +134,13 @@
     </StringProperty>
   </Rule>
   <ItemType
-    Name="Sfx"
-    DisplayName="Simul Sfx Compiler" />
+    Name="Sfx_Rule"
+    DisplayName="Sfx Shader Effect Source" />
   <FileExtension
     Name="*.sfx"
-    ContentType="Sfx" />
-  <FileExtension
-    Name="*.sfx"
-    ContentType="Sfx" />
+    ContentType="Sfx_Rule" />
   <ContentType
-    Name="Sfx"
-    DisplayName="Sfx"
-    ItemType="Sfx" />
+    Name="Sfx_Rule"
+    DisplayName="Sfx Shader Effect Source"
+    ItemType="Sfx_Rule" />
 </ProjectSchemaDefinitions>

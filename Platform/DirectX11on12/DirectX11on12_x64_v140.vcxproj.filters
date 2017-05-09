@@ -320,76 +320,82 @@
     <None Include="..\CrossPlatform\SL\text_constants.sl">
       <Filter>SL</Filter>
     </None>
+    <None Include="..\CrossPlatform\SFX\atmospherics.sfxo">
+      <Filter>SFX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\SFX\clouds.sfxo">
+      <Filter>SFX</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Sfx Include="..\CrossPlatform\SFX\atmospherics.sfx">
+    <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\clouds.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\clouds.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\copy.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\copy.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\debug.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\debug.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\font.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\gaussian.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\gaussian.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\hdr.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\hdr.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\light_probes.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\light_probes.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\lightning.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\ocean.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\ocean.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\optics.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\rain.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\simul_gaussian.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gaussian.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\sky.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\sky.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\solid.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
-    <Sfx Include="..\CrossPlatform\SFX\terrain.sfx">
+    </Sfx_Rule>
+    <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
       <Filter>SFX</Filter>
-    </Sfx>
+    </Sfx_Rule>
   </ItemGroup>
 </Project>

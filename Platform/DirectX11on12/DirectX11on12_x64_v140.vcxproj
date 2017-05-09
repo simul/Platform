@@ -52,9 +52,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(ProjectDir)SfxBuildRule.props" />
-  </ImportGroup>
-  <ImportGroup Label="ExtensionSettings">
+    <Import Project="Sfx.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -88,10 +86,7 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedManifest>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <SfxBeforeTargets>Midl</SfxBeforeTargets>
-    <SfxAfterTargets>CustomBuild</SfxAfterTargets>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -106,11 +101,11 @@
       <PreprocessorDefinitions>WIN64;SIMUL_DIRECTX11_DLL;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ShowIncludes>false</ShowIncludes>
     </ClCompile>
-    <Sfx>
+    <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\DirectX11on12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\DirectX11on12\shaderbin</OutputPath>
-    </Sfx>
+    </Sfx_Rule>
     <Link>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -153,11 +148,11 @@
       <Command>
       </Command>
     </PostBuildEvent>
-    <Sfx>
+    <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\DirectX11on12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL11on12.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\DirectX11on12\shaderbin</OutputPath>
-    </Sfx>
+    </Sfx_Rule>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">
     <ClCompile>
@@ -178,11 +173,11 @@
       <Command>
       </Command>
     </PostBuildEvent>
-    <Sfx>
+    <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\DirectX11on12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\DirectX11on12\shaderbin</OutputPath>
-    </Sfx>
+    </Sfx_Rule>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">
     <ClCompile>
@@ -197,11 +192,11 @@
       <Command>
       </Command>
     </PostBuildEvent>
-    <Sfx>
+    <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\DirectX11on12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
       <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\DirectX11on12\shaderbin</OutputPath>
-    </Sfx>
+    </Sfx_Rule>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Buffer.cpp" />
@@ -250,6 +245,8 @@
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CrossPlatform\SFX\atmospherics.sfxo" />
+    <None Include="..\CrossPlatform\SFX\clouds.sfxo" />
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
     <None Include="..\CrossPlatform\SL\camera_constants.sl" />
@@ -322,32 +319,32 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Sfx Include="..\CrossPlatform\SFX\atmospherics.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\clouds.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\copy.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\debug.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\font.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\gaussian.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\hdr.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\lightning.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\light_probes.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\mixed_resolution.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\ocean.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\optics.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\rain.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\simul_gaussian.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\simul_rendernoise.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\sky.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\solid.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\spherical_harmonics.sfx" />
-    <Sfx Include="..\CrossPlatform\SFX\terrain.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\clouds.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\copy.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\debug.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\gaussian.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\hdr.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\lightning.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\light_probes.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\mixed_resolution.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\ocean.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\optics.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\rain.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gaussian.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_rendernoise.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\sky.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\solid.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\spherical_harmonics.sfx" />
+    <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(ProjectDir)SfxBuildRule.targets" />
+    <Import Project="Sfx.targets" />
   </ImportGroup>
 </Project>
