@@ -67,7 +67,7 @@ shader void CS_Random3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV
 	// Range from -1 to 1.
 	vec4 c					=vec4(SphericalRandom(texCoords),rand3(513.1*texCoords));
    // vec4 c				=2.0*vec4(rand(texc2),rand(1.7*texc2),rand(0.11*texc2),rand(513.1*texc2))-vec4(1.0,1.0,1.0,1.0);
-    IMAGE_STORE_3D(targetTexture8,pos,c.xyzw);
+    targetTexture8[pos]		=c.xyzw;
 }
 
 CS_LAYOUT(8,8,8)
