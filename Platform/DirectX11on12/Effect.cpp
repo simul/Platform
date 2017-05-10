@@ -10,6 +10,7 @@
 #include "Simul/Platform/DirectX11on12/RenderPlatform.h"
 #include "D3dx11effect.h"
 
+#include <algorithm>
 #include <string>
 
 using namespace simul;
@@ -429,9 +430,74 @@ EffectTechnique *Effect::CreateTechnique()
 {
 	return new dx11on12::EffectTechnique;
 }
+
+void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *filename_utf8, crossplatform::ShaderType t)
+{
+	simul::base::MemoryInterface *allocator = renderPlatform->GetMemoryInterface();
+	void* pShaderBytecode;
+	uint32_t BytecodeLength;
+	simul::base::FileLoader *fileLoader = simul::base::FileLoader::GetFileLoader();
+	std::string filenameUtf8 = renderPlatform->GetShaderBinaryPath();
+	filenameUtf8 += "/";
+	filenameUtf8 += filename_utf8;
+	fileLoader->AcquireFileContents(pShaderBytecode, BytecodeLength, filenameUtf8.c_str(), false);
+	if (!pShaderBytecode)
+	{
+		// Some engines force filenames to lower case because reasons:
+		std::transform(filenameUtf8.begin(), filenameUtf8.end(), filenameUtf8.begin(), ::tolower);
+		fileLoader->AcquireFileContents(pShaderBytecode, BytecodeLength, filenameUtf8.c_str(), false);
+		if (!pShaderBytecode)
+			return;
+	}
+	ID3D11Device *device=renderPlatform->AsD3D11Device();
+	ID3D11ClassLinkage *pClassLinkage = nullptr;
+	HRESULT hr = S_FALSE;
+	if (t == crossplatform::SHADERTYPE_PIXEL)
+	{
+		 hr	=device->CreatePixelShader(
+				pShaderBytecode,
+				BytecodeLength,
+				pClassLinkage,
+				&pixelShader
+			);
+	}
+	else if (t == crossplatform::SHADERTYPE_VERTEX)
+	{
+		hr = device->CreateVertexShader(
+				pShaderBytecode,
+				BytecodeLength,
+				pClassLinkage,
+				&vertexShader
+			);
+	}
+	else if (t == crossplatform::SHADERTYPE_COMPUTE)
+	{
+		hr = device->CreateComputeShader(
+			pShaderBytecode,
+			BytecodeLength,
+			pClassLinkage,
+			&computeShader
+		);
+	}
+	else if (t == crossplatform::SHADERTYPE_GEOMETRY)
+	{
+		hr = device->CreateGeometryShader(
+			pShaderBytecode,
+			BytecodeLength,
+			pClassLinkage,
+			&geometryShader
+		);
+	}
+	else
+	{
+	}
+}
+
 #define D3DCOMPILE_DEBUG 1
 void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
+	crossplatform::Effect::Load(r, filename_utf8, defines);
+	return;
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
 	SAFE_RELEASE(e);
 	renderPlatform=r;

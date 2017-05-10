@@ -1627,3 +1627,9 @@ void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContex
 	delete state;
 	storedRTStates.pop_back();
 }
+
+crossplatform::Shader *RenderPlatform::CreateShader()
+{
+	Shader *S = new Shader();
+	return S;
+}

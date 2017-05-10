@@ -29,7 +29,7 @@ namespace simul
 		class ConstantBufferCache;
 		class Material;
 		//! A class to implement common rendering functionality for DirectX 11.
-		class SIMUL_DIRECTX11_EXPORT RenderPlatform:public crossplatform::RenderPlatform
+		class SIMUL_DIRECTX12_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
 			ID3D11Device*					device;
 			ID3D11InputLayout				*m_pCubemapVtxDecl;
@@ -95,6 +95,7 @@ namespace simul
 			crossplatform::Layout					*CreateLayout(int num_elements,const crossplatform::LayoutDesc *);			
 			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
+			crossplatform::Shader					*CreateShader() override;
 
 			void									*GetDevice();
 			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);

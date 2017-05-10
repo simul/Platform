@@ -11,7 +11,7 @@ namespace simul
 {
 	namespace dx11on12
 	{
-		class SIMUL_DIRECTX11_EXPORT Light:public crossplatform::Light
+		class SIMUL_DIRECTX12_EXPORT Light:public crossplatform::Light
 		{
 		public:
 			Light();

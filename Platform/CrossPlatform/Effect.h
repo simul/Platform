@@ -249,6 +249,7 @@ namespace simul
 				,samplerSlots(0)
 				{
 				}
+			virtual void load(crossplatform::RenderPlatform *renderPlatform, const char *filename, crossplatform::ShaderType t) = 0;
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
 			void setUsesBufferSlot(int s);

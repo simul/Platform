@@ -13,7 +13,7 @@ namespace simul
 {
 	namespace dx11on12
 	{
-		class SIMUL_DIRECTX11_EXPORT SamplerState:public crossplatform::SamplerState
+		class SIMUL_DIRECTX12_EXPORT SamplerState:public crossplatform::SamplerState
 		{
 		public:
 			ID3D11SamplerState *m_pd3D11SamplerState;
@@ -25,7 +25,7 @@ namespace simul
 				return m_pd3D11SamplerState;
 			}
 		};
-		class SIMUL_DIRECTX11_EXPORT Texture:public crossplatform::Texture
+		class SIMUL_DIRECTX12_EXPORT Texture:public crossplatform::Texture
 		{
 		public:
 			Texture();

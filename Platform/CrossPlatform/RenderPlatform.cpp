@@ -991,6 +991,17 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 	return e;
 }
 
+crossplatform::Shader *RenderPlatform::EnsureShader(const char *filenameUtf8, crossplatform::ShaderType t)
+{
+	std::string name(filenameUtf8);
+	if (shaders.find(name) != shaders.end())
+		return shaders[name];
+	Shader *s = CreateShader();
+	shaders[name] = s;
+	s->load(this, filenameUtf8, t);
+	return s;
+}
+
 void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8,const std::vector<crossplatform::EffectDefineOptions> &opts)
 {
 	const std::map<std::string,std::string> defines;

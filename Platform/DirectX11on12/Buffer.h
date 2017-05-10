@@ -11,7 +11,7 @@ namespace simul
 {
 	namespace dx11on12
 	{
-		class SIMUL_DIRECTX11_EXPORT Buffer:public simul::crossplatform::Buffer
+		class SIMUL_DIRECTX12_EXPORT Buffer:public simul::crossplatform::Buffer
 		{
 			ID3D11Buffer *d3d11Buffer;
 			D3D11_MAPPED_SUBRESOURCE mapped;

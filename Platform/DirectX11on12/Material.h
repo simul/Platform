@@ -9,7 +9,7 @@ namespace simul
 {
 	namespace dx11on12
 	{
-		class SIMUL_DIRECTX11_EXPORT Material:public crossplatform::Material
+		class SIMUL_DIRECTX12_EXPORT Material:public crossplatform::Material
 		{
 		public:
 			Material();

@@ -13,7 +13,7 @@ namespace simul
 	namespace dx11on12
 	{
 		//! A DirectX 11 framebuffer class.
-		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer : public crossplatform::BaseFramebuffer
+		SIMUL_DIRECTX12_EXPORT_CLASS Framebuffer : public crossplatform::BaseFramebuffer
 		{
 		public:
 			Framebuffer(const char *name);

@@ -681,6 +681,10 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 	crossplatform::Buffer *b=new dx11::Buffer();
 	return b;
 }
+crossplatform::Shader *RenderPlatform::CreateShader()
+{
+	return new Shader;
+}
 
 DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 {

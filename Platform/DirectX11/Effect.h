@@ -82,6 +82,11 @@ namespace simul
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
 			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
 			void Unbind(crossplatform::DeviceContext &deviceContext);
+		}; 
+		class SIMUL_DIRECTX11_EXPORT Shader :public simul::crossplatform::Shader
+		{
+		public:
+			virtual void load(crossplatform::RenderPlatform *renderPlatform, const char *filename, crossplatform::ShaderType t) {}
 		};
 		class SIMUL_DIRECTX11_EXPORT EffectPass:public simul::crossplatform::EffectPass
 		{

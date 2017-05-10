@@ -15,7 +15,7 @@ namespace simul
 {
 	namespace dx11on12
 	{
-		struct SIMUL_DIRECTX11_EXPORT Query:public crossplatform::Query
+		struct SIMUL_DIRECTX12_EXPORT Query:public crossplatform::Query
 		{
 			ID3D11Query *d3d11Query[crossplatform::Query::QueryLatency];
 			Query(crossplatform::QueryType t):crossplatform::Query(t)
@@ -34,7 +34,7 @@ namespace simul
 			bool GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
 			void SetName(const char *n) override;
 		};
-		struct SIMUL_DIRECTX11_EXPORT RenderState:public crossplatform::RenderState
+		struct SIMUL_DIRECTX12_EXPORT RenderState:public crossplatform::RenderState
 		{
 			ID3D11DepthStencilState		*m_depthStencilState;
 			ID3D11BlendState			*m_blendState;
@@ -83,18 +83,30 @@ namespace simul
 			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
 			void Unbind(crossplatform::DeviceContext &deviceContext);
 		};
-		class SIMUL_DIRECTX11_EXPORT EffectPass:public simul::crossplatform::EffectPass
+		class SIMUL_DIRECTX12_EXPORT EffectPass:public simul::crossplatform::EffectPass
 		{
 		public:
 			void Apply(crossplatform::DeviceContext &deviceContext,bool test) override;
 		};
-		class SIMUL_DIRECTX11_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
+		class SIMUL_DIRECTX12_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique
 		{
 		public:
 			int NumPasses() const;
 			crossplatform::EffectPass *AddPass(const char *name,int i) override;
 		};
-		class SIMUL_DIRECTX11_EXPORT Effect:public simul::crossplatform::Effect
+		class SIMUL_DIRECTX12_EXPORT Shader :public simul::crossplatform::Shader
+		{
+		public:
+			void load(crossplatform::RenderPlatform *renderPlatform, const char *filename, crossplatform::ShaderType t) override;
+			union
+			{
+				ID3D11GeometryShader		*geometryShader;
+				ID3D11VertexShader			*vertexShader;
+				ID3D11PixelShader			*pixelShader;
+				ID3D11ComputeShader			*computeShader;
+			};
+		};
+		class SIMUL_DIRECTX12_EXPORT Effect:public simul::crossplatform::Effect
 		{
 		protected:
 			EffectTechnique *CreateTechnique();

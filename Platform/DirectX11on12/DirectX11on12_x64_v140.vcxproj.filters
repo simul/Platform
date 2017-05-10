@@ -326,6 +326,9 @@
     <None Include="..\CrossPlatform\SFX\clouds.sfxo">
       <Filter>SFX</Filter>
     </None>
+    <None Include="HLSL\HLSL11on12.json">
+      <Filter>HLSL</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx">
@@ -341,9 +344,6 @@
       <Filter>SFX</Filter>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\font.sfx">
-      <Filter>SFX</Filter>
-    </Sfx_Rule>
-    <Sfx_Rule Include="..\CrossPlatform\SFX\gaussian.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\hdr.sfx">
@@ -368,9 +368,6 @@
       <Filter>SFX</Filter>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
-      <Filter>SFX</Filter>
-    </Sfx_Rule>
-    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gaussian.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">

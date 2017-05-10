@@ -571,12 +571,14 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	}
 	textureDetailsMap.clear();
 	textureCharMap.clear();
-	// We will load the .sfxo file, which contains the list of .sb files, and also the arrangement of textures, buffers etc. in numeric slots.
+	// We will load the .sfxo file, which contains the list of shader binary files, and also the arrangement of textures, buffers etc. in numeric slots.
 
 	std::string filenameUtf8=renderPlatform->GetShaderBinaryPath();
 	if (filenameUtf8[filenameUtf8.length() - 1] != '/')
 		filenameUtf8+="/";
 	filenameUtf8+=filename_utf8;
+	if (filenameUtf8.find(".") >= filenameUtf8.length())
+		filenameUtf8 += ".sfxo";
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
 	{
 		// Some engines force filenames to lower case because reasons:
@@ -585,7 +587,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		{
 			SIMUL_CERR<<"Shader file not found: "<<filenameUtf8.c_str()<<std::endl;
 			filenameUtf8=filename_utf8;
-		// The psfxo does not exist, so we can't load this effect.
+		// The sfxo does not exist, so we can't load this effect.
 			return;
 		}
 	}
