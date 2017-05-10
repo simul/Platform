@@ -38,7 +38,7 @@ extern const char *GetErrorText(HRESULT hr);
 		#define SAFE_RELEASE_ARRAY(p,n)		{ if(p) for(int i=0;i<n;i++) if(p[i]) { (p[i])->Release(); (p[i])=NULL; } }
 	#endif
 
-extern void SIMUL_DIRECTX11_EXPORT BreakIfDebugging();
+extern void SIMUL_DIRECTX12_EXPORT BreakIfDebugging();
 #ifdef UNICODE
 
 	#define WIDEN2(x) L ## x

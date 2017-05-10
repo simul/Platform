@@ -8,8 +8,13 @@
 #include "../SL/states.sl"
 #include "../SL/quaternion.sl"
 
-uniform sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
-uniform TEXTURE2DMS_FLOAT4 imageTextureMS SIMUL_TEXTURE_REGISTER(1);
+uniform Texture2D imageTexture SIMUL_TEXTURE_REGISTER(0);
+
+
+uniform Texture2DMS<vec4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
+
+
+
 uniform TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
 uniform TextureCubeArray cubeTextureArray;
 uniform TEXTURE2D_UINT imageTextureUint SIMUL_TEXTURE_REGISTER(3);

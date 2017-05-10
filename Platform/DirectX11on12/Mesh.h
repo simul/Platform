@@ -1,6 +1,7 @@
 #pragma once
 #include "Simul/Platform/DirectX11on12/Export.h"
 #include "Simul/Platform/CrossPlatform/Mesh.h"
+#include "Simul/Platform/CrossPlatform/Buffer.h"
 #include "SimulDirectXHeader.h"
 #include <vector>
 
@@ -16,7 +17,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			// Implementing crossplatform::Mesh
 			bool Initialize(crossplatform::RenderPlatform *renderPlatform, int lPolygonVertexCount, const float *lVertices, const float *lNormals, const float *lUVs, int lPolygonCount, const unsigned int *lIndices);
-			void GetVertices(void *target,void *indices);
+			void GetVertices(void *target, void *indices);
 			void releaseBuffers();
 			// Implementing crossplatform::Mesh
 			void BeginDraw	(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const;
@@ -60,7 +61,7 @@ namespace simul
 				ZeroMemory(&InitData,sizeof(D3D11_SUBRESOURCE_DATA));
 				InitData.pSysMem = vertices;
 				InitData.SysMemPitch = sizeof(T);
-				HRESULT hr=renderPlatform->AsD3D11Device()->CreateBuffer(&vertexBufferDesc,&InitData,&vertexBuffer);
+				vertexBuffer=renderPlatform->CreateBuffer();
 				
 				// index buffer
 				D3D11_BUFFER_DESC indexBufferDesc=
@@ -74,16 +75,14 @@ namespace simul
 				ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
 				InitData.pSysMem = indices;
 				InitData.SysMemPitch = sizeof(U);
-				hr=renderPlatform->AsD3D11Device()->CreateBuffer(&indexBufferDesc,&InitData,&indexBuffer);
+				indexBuffer=renderPlatform->CreateBuffer();
 			}
-			void apply(ID3D11DeviceContext *pImmediateContext,unsigned instanceStride,ID3D11Buffer *instanceBuffer);
-			ID3D11Buffer		*vertexBuffer;
-			ID3D11Buffer		*indexBuffer;
-			ID3D11InputLayout	*inputLayout;
+			void apply(crossplatform::DeviceContext &deviceContext,unsigned instanceStride, crossplatform::Buffer *instanceBuffer);
+			crossplatform::Buffer		*vertexBuffer;
+			crossplatform::Buffer		*indexBuffer;
+			crossplatform::Layout	*inputLayout;
 		protected:
 			void UpdateVertexPositions(int lVertexCount, float *lVertices) const;
-			mutable ID3D11InputLayout* previousInputLayout;
-			mutable D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 		};
 	}
 }

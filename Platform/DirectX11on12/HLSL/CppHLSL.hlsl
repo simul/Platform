@@ -13,6 +13,8 @@
 #define f32touint16 f32tof16
 
 #endif
+#define uniform
+
 
 #define constant_buffer ALIGN_16 cbuffer
 #define sampler1D texture1D
@@ -20,7 +22,7 @@
 #define sampler3D texture3D
 
 #ifndef __cplusplus
-#define char4 vec4
+	#define char4 vec4
 	#define vec2 float2
 	#define vec3 float3
 	#define vec4 float4

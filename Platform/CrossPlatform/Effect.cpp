@@ -297,6 +297,27 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 	cs->textureAssignmentMapValid=false;
 }
 
+crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
+{
+	crossplatform::ShaderResource res;
+	auto i = GetTextureDetails(name);
+	if (!i)
+	{
+		res.valid = false;
+		SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
+		SIMUL_BREAK_ONCE("")
+			return res;
+	}
+	else
+		res.valid = true;
+	unsigned slot = GetSlot(name);
+	unsigned dim = GetDimensions(name);
+	res.platform_shader_resource = (void*)nullptr;
+	res.slot = slot;
+	res.shaderResourceType = GetResourceType(name);
+	return res;
+}
+
 EffectDefineOptions simul::crossplatform::CreateDefineOptions(const char *name,const char *option1)
 {
 	EffectDefineOptions o;
@@ -377,6 +398,9 @@ void Effect::Apply(DeviceContext &deviceContext,const char *tech_name,int pass)
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {
+	if (apply_count != 0)
+		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
+	apply_count++;
 	currentTechnique				=effectTechnique;
 	if(effectTechnique)
 	{
@@ -399,6 +423,10 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)
 {
 	currentTechnique				=effectTechnique;
+	if (apply_count != 0)
+		SIMUL_BREAK("Effect::Apply without a corresponding Unapply!")
+	apply_count++;
+	currentTechnique = effectTechnique;
 	if (effectTechnique)
 	{
 		EffectPass *p = NULL;
@@ -419,6 +447,18 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 	}
 }
 
+void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
+{
+	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
+	cs->currentEffectPass = NULL;
+	cs->currentEffect = NULL;
+	if (apply_count <= 0)
+		SIMUL_BREAK("Effect::Unapply without a corresponding Apply!")
+	else if (apply_count>1)
+		SIMUL_BREAK("Effect::Apply has been called too many times!")
+		apply_count--;
+	currentTechnique = NULL;
+}
 void Effect::StoreConstantBufferLink(crossplatform::ConstantBufferBase *b)
 {
 	linkedConstantBuffers.insert(b);
@@ -489,6 +529,7 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 	cs->applyVertexBuffers.clear();
 	cs->invalidate();
 }
+
 static bool is_equal(std::string str,const char *tst)
 {
 	return (_stricmp(str.c_str(),tst) == 0);
@@ -571,12 +612,14 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	}
 	textureDetailsMap.clear();
 	textureCharMap.clear();
-	// We will load the .sfxo file, which contains the list of .sb files, and also the arrangement of textures, buffers etc. in numeric slots.
+	// We will load the .sfxo file, which contains the list of shader binary files, and also the arrangement of textures, buffers etc. in numeric slots.
 
 	std::string filenameUtf8=renderPlatform->GetShaderBinaryPath();
 	if (filenameUtf8[filenameUtf8.length() - 1] != '/')
 		filenameUtf8+="/";
 	filenameUtf8+=filename_utf8;
+	if (filenameUtf8.find(".") >= filenameUtf8.length())
+		filenameUtf8 += ".sfxo";
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
 	{
 		// Some engines force filenames to lower case because reasons:
@@ -585,7 +628,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		{
 			SIMUL_CERR<<"Shader file not found: "<<filenameUtf8.c_str()<<std::endl;
 			filenameUtf8=filename_utf8;
-		// The psfxo does not exist, so we can't load this effect.
+		// The sfxo does not exist, so we can't load this effect.
 			return;
 		}
 	}

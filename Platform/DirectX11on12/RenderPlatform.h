@@ -29,7 +29,7 @@ namespace simul
 		class ConstantBufferCache;
 		class Material;
 		//! A class to implement common rendering functionality for DirectX 11.
-		class SIMUL_DIRECTX11_EXPORT RenderPlatform:public crossplatform::RenderPlatform
+		class SIMUL_DIRECTX12_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
 			ID3D11Device*					device;
 			ID3D11InputLayout				*m_pCubemapVtxDecl;
@@ -95,9 +95,10 @@ namespace simul
 			crossplatform::Layout					*CreateLayout(int num_elements,const crossplatform::LayoutDesc *);			
 			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
+			crossplatform::Shader					*CreateShader() override;
 
 			void									*GetDevice();
-			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer **buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
+			void									SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers,crossplatform::Buffer *const*buffers,const crossplatform::Layout *layout,const int *vertexSteps=NULL);
 			void									SetStreamOutTarget(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer,int start_index=0);
 			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);
 			void									DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext) override;
@@ -116,6 +117,8 @@ namespace simul
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
+			void									ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking = true) override;
+
 			// DX11-specific stuff:
 			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);

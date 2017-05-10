@@ -92,7 +92,7 @@
 
 struct idOnly
 {
-	uint vertex_id			: SV_VertexID;
+	uint vertex_id			: SV_VertexId;
 };
 
 struct posTexVertexOutput

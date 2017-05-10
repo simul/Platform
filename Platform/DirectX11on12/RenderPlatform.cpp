@@ -1047,7 +1047,7 @@ void *RenderPlatform::GetDevice()
 }
 
 void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers
-	,crossplatform::Buffer **buffers
+	,crossplatform::Buffer *const*buffers
 	,const crossplatform::Layout *layout
 	,const int *vertexSteps)
 {
@@ -1228,6 +1228,10 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 {
 	dx11on12::SaveTexture(device,texture->AsD3D11Texture2D(),lFileNameUtf8);
 }
+void RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking )
+{
+}
+
 #pragma optimize("",off)
 void RenderPlatform::StoreRenderState( crossplatform::DeviceContext &deviceContext )
 {
@@ -1626,4 +1630,10 @@ void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContex
 		pContext->RSSetViewports(state->numViewports,state->viewports);
 	delete state;
 	storedRTStates.pop_back();
+}
+
+crossplatform::Shader *RenderPlatform::CreateShader()
+{
+	Shader *S = new Shader();
+	return S;
 }

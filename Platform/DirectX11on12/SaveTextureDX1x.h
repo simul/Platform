@@ -1,5 +1,5 @@
 #pragma once
-
+#include "Export.h"
 #include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
 #include <d3dx11.h>
@@ -18,13 +18,11 @@ typedef enum D3DX11_IMAGE_FILE_FORMAT
 
 } D3DX11_IMAGE_FILE_FORMAT;
 #endif
-#include "Simul/Platform/DirectX11/Export.h"
 
 namespace simul
 {
 	namespace dx11on12
 	{
-		//extern void SaveScreenshot(ID3D11Device* pd3dDevice,const char *txt);
-		extern SIMUL_DIRECTX11_EXPORT void SaveTexture(ID3D11Device *pd3dDevice,ID3D11Texture2D *texture,const char *filename_utf8);
+		extern SIMUL_DIRECTX12_EXPORT void SaveTexture(ID3D11Device *pd3dDevice,ID3D11Texture2D *texture,const char *filename_utf8);
 	}
 }

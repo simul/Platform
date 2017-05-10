@@ -681,6 +681,10 @@ crossplatform::Buffer *RenderPlatform::CreateBuffer()
 	crossplatform::Buffer *b=new dx11::Buffer();
 	return b;
 }
+crossplatform::Shader *RenderPlatform::CreateShader()
+{
+	return new Shader;
+}
 
 DXGI_FORMAT RenderPlatform::ToDxgiFormat(crossplatform::PixelFormat p)
 {
@@ -1079,7 +1083,7 @@ void *RenderPlatform::GetDevice()
 }
 
 void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContext,int slot,int num_buffers
-	,crossplatform::Buffer **buffers
+	,crossplatform::Buffer *const*buffers
 	,const crossplatform::Layout *layout
 	,const int *vertexSteps)
 {

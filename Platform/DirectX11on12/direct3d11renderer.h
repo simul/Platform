@@ -43,7 +43,7 @@ namespace simul
 	namespace dx11on12
 	{
 		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
-		class SIMUL_DIRECTX11_EXPORT TrueSkyRenderer:public clouds::TrueSkyRenderer
+		class SIMUL_DIRECTX12_EXPORT TrueSkyRenderer:public clouds::TrueSkyRenderer
 		{
 		public:
 			//! Constructor - pass a pointer to your Environment, and either an implementation of MemoryInterface, or NULL.
@@ -54,7 +54,7 @@ namespace simul
 			// Different kinds of view for Render() to call:
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
 		};
-		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
+		class SIMUL_DIRECTX12_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface
 		{
 		public:

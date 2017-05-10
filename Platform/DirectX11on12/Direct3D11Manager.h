@@ -35,7 +35,7 @@ namespace simul
 {
 	namespace dx11on12
 	{
-		struct SIMUL_DIRECTX11_EXPORT Window
+		struct SIMUL_DIRECTX12_EXPORT Window
 		{
 			Window();
 			~Window();
@@ -117,7 +117,7 @@ namespace simul
 
 		//! Direct3D11Manager corresponds to a single ID3D11Device, which it creates when initialized (i.e. a single graphics card accessed with this interface).
 		//! With each graphics window it manages (identified by HWND's), Direct3D11Manager creates and manages a IDXGISwapChain instance.
-		class SIMUL_DIRECTX11_EXPORT Direct3D11Manager: public Direct3D11ManagerInterface
+		class SIMUL_DIRECTX12_EXPORT Direct3D11Manager: public Direct3D11ManagerInterface
 		{
 		public:
 			Direct3D11Manager();

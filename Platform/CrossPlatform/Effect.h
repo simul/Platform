@@ -249,6 +249,7 @@ namespace simul
 				,samplerSlots(0)
 				{
 				}
+			virtual void load(crossplatform::RenderPlatform *renderPlatform, const char *filename, crossplatform::ShaderType t) = 0;
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
 			void setUsesBufferSlot(int s);
@@ -792,7 +793,7 @@ namespace simul
 			virtual EffectTechnique *GetTechniqueByIndex(int index)				=0;
 			//! Set the texture for read-write access by compute shaders in this effect.
 			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,const char *name,Texture *tex,int index=-1,int mip=-1)	;
-			virtual ShaderResource GetShaderResource(const char *name)=0;
+			virtual ShaderResource GetShaderResource(const char *name);
 			//! Set the texture for read-write access by compute shaders in this effect.
 			virtual void SetUnorderedAccessView(DeviceContext &deviceContext,ShaderResource &name,Texture *tex,int index=-1,int mip=-1)	;
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
@@ -820,7 +821,7 @@ namespace simul
 			/// Call Reapply between Apply and Unapply to apply the effect of modified constant buffers etc.
 			virtual void Reapply(DeviceContext &deviceContext)=0;
 			/// Deactivate the shader.
-			virtual void Unapply(DeviceContext &deviceContext)=0;
+			virtual void Unapply(DeviceContext &deviceContext);
 			/// Zero-out the textures that are set for this shader. Call before apply.
 			virtual void UnbindTextures(crossplatform::DeviceContext &deviceContext);
 

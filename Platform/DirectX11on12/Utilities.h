@@ -136,7 +136,7 @@ namespace simul
 			UINT offset=0;
 			pContext->SOSetTargets(1,&pBuffer,&offset);
 		}
-		class SIMUL_DIRECTX11_EXPORT UtilityRenderer
+		class SIMUL_DIRECTX12_EXPORT UtilityRenderer
 		{
 			static int instance_count;
 		public:

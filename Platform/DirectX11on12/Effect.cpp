@@ -10,6 +10,7 @@
 #include "Simul/Platform/DirectX11on12/RenderPlatform.h"
 #include "D3dx11effect.h"
 
+#include <algorithm>
 #include <string>
 
 using namespace simul;
@@ -429,9 +430,74 @@ EffectTechnique *Effect::CreateTechnique()
 {
 	return new dx11on12::EffectTechnique;
 }
+
+void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *filename_utf8, crossplatform::ShaderType t)
+{
+	simul::base::MemoryInterface *allocator = renderPlatform->GetMemoryInterface();
+	void* pShaderBytecode;
+	uint32_t BytecodeLength;
+	simul::base::FileLoader *fileLoader = simul::base::FileLoader::GetFileLoader();
+	std::string filenameUtf8 = renderPlatform->GetShaderBinaryPath();
+	filenameUtf8 += "/";
+	filenameUtf8 += filename_utf8;
+	fileLoader->AcquireFileContents(pShaderBytecode, BytecodeLength, filenameUtf8.c_str(), false);
+	if (!pShaderBytecode)
+	{
+		// Some engines force filenames to lower case because reasons:
+		std::transform(filenameUtf8.begin(), filenameUtf8.end(), filenameUtf8.begin(), ::tolower);
+		fileLoader->AcquireFileContents(pShaderBytecode, BytecodeLength, filenameUtf8.c_str(), false);
+		if (!pShaderBytecode)
+			return;
+	}
+	ID3D11Device *device=renderPlatform->AsD3D11Device();
+	ID3D11ClassLinkage *pClassLinkage = nullptr;
+	HRESULT hr = S_FALSE;
+	if (t == crossplatform::SHADERTYPE_PIXEL)
+	{
+		 hr	=device->CreatePixelShader(
+				pShaderBytecode,
+				BytecodeLength,
+				pClassLinkage,
+				&pixelShader
+			);
+	}
+	else if (t == crossplatform::SHADERTYPE_VERTEX)
+	{
+		hr = device->CreateVertexShader(
+				pShaderBytecode,
+				BytecodeLength,
+				pClassLinkage,
+				&vertexShader
+			);
+	}
+	else if (t == crossplatform::SHADERTYPE_COMPUTE)
+	{
+		hr = device->CreateComputeShader(
+			pShaderBytecode,
+			BytecodeLength,
+			pClassLinkage,
+			&computeShader
+		);
+	}
+	else if (t == crossplatform::SHADERTYPE_GEOMETRY)
+	{
+		hr = device->CreateGeometryShader(
+			pShaderBytecode,
+			BytecodeLength,
+			pClassLinkage,
+			&geometryShader
+		);
+	}
+	else
+	{
+	}
+}
+
 #define D3DCOMPILE_DEBUG 1
 void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
+	crossplatform::Effect::Load(r, filename_utf8, defines);
+	return;
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
 	SAFE_RELEASE(e);
 	renderPlatform=r;
@@ -680,54 +746,6 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const
 }
 
 
-crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
-{
-	// First do a simple search by pointer.
-	auto i=shaderResources.find(name);
-	if(i!=shaderResources.end())
-		return i->second;
-	crossplatform::ShaderResource &res=shaderResources[name];
-	res.platform_shader_resource=0;
-	res.valid=false;
-	ID3DX11Effect *effect=asD3DX11Effect();
-	if(!effect)
-	{
-		SIMUL_CERR<<"Invalid effect "<<std::endl;
-		return res;
-	}
-	ID3DX11EffectVariable *var=effect->GetVariableByName(name);
-	if(!var->IsValid())
-	{
-		SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Invalid shader variable ")+name).c_str());
-		return res;
-	}
-	D3DX11_EFFECT_TYPE_DESC  desc;
-	var->GetType()->GetDesc(&desc);
-	desc.Class;
-	res.shaderResourceType=((simul::dx11on12::RenderPlatform*)renderPlatform)->FromD3DShaderVariableType(desc.Type);
-	res.slot=(int)shaderResources.size();
-	ID3DX11EffectShaderResourceVariable*	srv	=var->AsShaderResource();
-	if(srv->IsValid())
-	{
-		res.platform_shader_resource=(void*)srv;
-	}
-	else
-	{
-		ID3DX11EffectUnorderedAccessViewVariable *uav=var->AsUnorderedAccessView();
-		if(uav->IsValid())
-		{
-			res.slot+=1000;
-			res.platform_shader_resource=(void*)uav;
-		}
-		else
-		{
-			SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Unknown resource type ")+name).c_str());
-			return res;
-		}
-	}
-	res.valid=true;
-	return res;
-}
 
 void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)
 {

@@ -17,8 +17,6 @@ Mesh::Mesh()
 	:vertexBuffer(NULL)
 	,indexBuffer(NULL)
 	,inputLayout(NULL)
-	,previousInputLayout(NULL)
-	,previousTopology(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED)
 {
 }
 
@@ -29,61 +27,12 @@ Mesh::~Mesh()
 void Mesh::InvalidateDeviceObjects()
 {
 	releaseBuffers();
-	SAFE_RELEASE(inputLayout);
-	SAFE_RELEASE(inputLayout);
 }
 
-void Mesh::GetVertices(void *target,void *indices)
-{
-	ID3D11Buffer *stagingVertexBuffer = NULL;
-	ID3D11Buffer *stagingIndexBuffer = NULL;
-
-	D3D11_BUFFER_DESC vertexBufferDesc =
-	{
-		numVertices*stride,
-		D3D11_USAGE_STAGING,
-		0,
-		D3D11_CPU_ACCESS_READ,
-		0,
-		stride
-	};
-	V_CHECK_RETURN(renderPlatform->AsD3D11Device()->CreateBuffer(&vertexBufferDesc, NULL, &stagingVertexBuffer));
-
-	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->CopyResource(stagingVertexBuffer,vertexBuffer);
-	D3D11_MAPPED_SUBRESOURCE mapped;
-
-	V_CHECK_RETURN(renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Map(stagingVertexBuffer, 0, D3D11_MAP_READ, 0,&mapped));
-	if(mapped.pData&&target&&(stride*numVertices))
-		memcpy(target, mapped.pData,stride*numVertices);
-	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Unmap(stagingVertexBuffer, 0);
-	SAFE_RELEASE(stagingVertexBuffer);
-	
-	// index buffer
-	D3D11_BUFFER_DESC indexBufferDesc =
-	{
-		numIndices*indexSize,
-		D3D11_USAGE_STAGING,
-		0,
-		D3D11_CPU_ACCESS_READ,
-		0,
-		indexSize
-	};
-	V_CHECK_RETURN(renderPlatform->AsD3D11Device()->CreateBuffer(&indexBufferDesc, NULL, &stagingIndexBuffer));
-	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->CopyResource(stagingIndexBuffer, indexBuffer);
-
-	V_CHECK_RETURN(renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Map(stagingIndexBuffer, 0, D3D11_MAP_READ, 0, &mapped));
-	if(mapped.pData&&indices&&(indexSize*numIndices))
-		memcpy(indices, mapped.pData, indexSize*numIndices);
-	renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Unmap(stagingIndexBuffer, 0);
-
-	SAFE_RELEASE(stagingIndexBuffer);
-}
 
 bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs,int lPolygonCount,const unsigned int *lIndices)
 {
 	renderPlatform = r;
-	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(indexBuffer);
 	stride=0;
 	numVertices=0;
 	numIndices=0;
@@ -99,14 +48,14 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 		if(!tech)
 			return false;
 		tech->asD3DX11EffectTechnique()->GetPassByIndex(0)->GetDesc(&PassDesc);
-		D3D11_INPUT_ELEMENT_DESC decl[]=
+		const crossplatform::LayoutDesc layoutDesc[]=
 		{
-			{"POSITION"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0,0,	D3D11_INPUT_PER_VERTEX_DATA,0},
-			{"TEXCOORD"	,0	,DXGI_FORMAT_R32G32_FLOAT		,0,12,	D3D11_INPUT_PER_VERTEX_DATA,0},
-			{"TEXCOORD"	,1	,DXGI_FORMAT_R32G32B32_FLOAT	,0,20,	D3D11_INPUT_PER_VERTEX_DATA,0},
+			{"POSITION"	,0	,crossplatform::PixelFormat::RGBA_32_FLOAT,0,0,	false,0},
+			{"TEXCOORD"	,0	,crossplatform::PixelFormat::RG_32_FLOAT,0,12, false,0},
+			{"TEXCOORD"	,1	,crossplatform::PixelFormat::RGB_32_FLOAT,0,20, false,0},
 		};
-		SAFE_RELEASE(inputLayout);
-		V_CHECK(renderPlatform->AsD3D11Device()->CreateInputLayout(decl,3,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &inputLayout));
+		delete inputLayout;
+		inputLayout= renderPlatform->CreateLayout(3, layoutDesc);
 		SAFE_DELETE(effect);
 	}
 	// Put positions, texcoords and normals in an array of structs:
@@ -136,20 +85,23 @@ bool Mesh::Initialize(crossplatform::RenderPlatform *r,int lPolygonVertexCount,c
 
 void Mesh::releaseBuffers()
 {
-	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(indexBuffer);
+	delete (vertexBuffer);
+	delete (indexBuffer);
 	numVertices=0;
 	numIndices=0;
 }
 
+void Mesh::GetVertices(void *target, void *indices)
+{
+}
+
+
 void Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	pContext->IAGetInputLayout( &previousInputLayout );
-	pContext->IAGetPrimitiveTopology(&previousTopology);
 	// Set the input layout
-	pContext->IASetInputLayout(inputLayout);
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	renderPlatform->SetLayout(deviceContext,inputLayout);
+	renderPlatform->SetTopology(deviceContext,crossplatform::TRIANGLELIST);
 	done_begin=true;
 }
 
@@ -161,12 +113,12 @@ void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,c
 		BeginDraw(deviceContext,crossplatform::SHADING_MODE_SHADED);
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
 	UINT offset = 0;
-	pContext->IASetVertexBuffers(	0,					// the first input slot for binding
-									1,					// the number of buffers in the array
-									&vertexBuffer,		// the array of vertex buffers
-									&stride,			// array of stride values, one for each buffer
-									&offset );			// array of offset values, one for each buffer
-	pContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R32_UINT,0);					
+	renderPlatform->SetVertexBuffers(deviceContext
+									,0					// the first input slot for binding
+									,1					// the number of buffers in the array
+									,&vertexBuffer		// the array of vertex buffers
+									,inputLayout);			// array of offset values, one for each buffer
+	renderPlatform->SetIndexBuffer(deviceContext,indexBuffer);					
 
 	pContext->DrawIndexed(numIndices,0,0);
 	if(!init)
@@ -177,31 +129,16 @@ void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,c
 void Mesh::EndDraw(crossplatform::DeviceContext &deviceContext) const
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
-	pContext->IASetPrimitiveTopology(previousTopology);
-	pContext->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
 	done_begin=false;
 }
 
-void Mesh::apply(ID3D11DeviceContext *pImmediateContext,unsigned instanceStride,ID3D11Buffer *instanceBuffer)
+void Mesh::apply(crossplatform::DeviceContext &deviceContext,unsigned instanceStride,crossplatform::Buffer *instanceBuffer)
 {
 	UINT strides[]={stride,instanceStride};
 	UINT offsets[]={0,0};
-	ID3D11Buffer *buffers[]={vertexBuffer,instanceBuffer};
-
-	pImmediateContext->IASetVertexBuffers(	0,			// the first input slot for binding
-												2,			// the number of buffers in the array
-												buffers,	// the array of vertex buffers
-												strides,	// array of stride values, one for each buffer
-												offsets);	// array of offset values, one for each buffer
-
-	UINT Strides[1];
-	UINT Offsets[1];
-	Strides[0] = 0;
-	Offsets[0] = 0;
-	pImmediateContext->IASetIndexBuffer(	indexBuffer,
-											DXGI_FORMAT_R16_UINT,	// unsigned short
-											0);						// array of offset values, one for each buffer
+	crossplatform::Buffer *buffers[]={vertexBuffer,instanceBuffer};
+	renderPlatform->SetVertexBuffers(deviceContext, 0, 2, buffers, inputLayout);
+	renderPlatform->SetIndexBuffer(deviceContext, indexBuffer);
 	
 }
 
