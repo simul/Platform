@@ -91,6 +91,11 @@ void Mesh::releaseBuffers()
 	numIndices=0;
 }
 
+void Mesh::GetVertices(void *target, void *indices)
+{
+}
+
+
 void Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.asD3D11DeviceContext();
@@ -101,7 +106,7 @@ void Mesh::BeginDraw(crossplatform::DeviceContext &deviceContext,crossplatform::
 }
 
 // Draw all the faces with specific material with given shading mode.
-void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode)
+void Mesh::Draw(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const
 {
 	bool init=done_begin;
 	if(!init)

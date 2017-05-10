@@ -17,11 +17,12 @@ namespace simul
 			void InvalidateDeviceObjects();
 			// Implementing crossplatform::Mesh
 			bool Initialize(crossplatform::RenderPlatform *renderPlatform, int lPolygonVertexCount, const float *lVertices, const float *lNormals, const float *lUVs, int lPolygonCount, const unsigned int *lIndices);
+			void GetVertices(void *target, void *indices);
 			void releaseBuffers();
 			// Implementing crossplatform::Mesh
 			void BeginDraw	(crossplatform::DeviceContext &deviceContext,crossplatform::ShadingMode pShadingMode) const;
 			// Draw all the faces with specific material with given shading mode.
-			void Draw		(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode);
+			void Draw		(crossplatform::DeviceContext &deviceContext,int pMaterialIndex,crossplatform::ShadingMode pShadingMode) const;
 			// Unbind buffers, reset vertex arrays, turn off lighting and texture.
 			void EndDraw	(crossplatform::DeviceContext &deviceContext) const;
 			// Template function to initialize vertices from an arbitrary vertex structure.
@@ -60,7 +61,7 @@ namespace simul
 				ZeroMemory(&InitData,sizeof(D3D11_SUBRESOURCE_DATA));
 				InitData.pSysMem = vertices;
 				InitData.SysMemPitch = sizeof(T);
-				HRESULT hr=renderPlatform->CreateBuffer(&vertexBufferDesc,&InitData,&vertexBuffer);
+				vertexBuffer=renderPlatform->CreateBuffer();
 				
 				// index buffer
 				D3D11_BUFFER_DESC indexBufferDesc=
@@ -74,7 +75,7 @@ namespace simul
 				ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
 				InitData.pSysMem = indices;
 				InitData.SysMemPitch = sizeof(U);
-				hr=renderPlatform->AsD3D11Device()->CreateBuffer(&indexBufferDesc,&InitData,&indexBuffer);
+				indexBuffer=renderPlatform->CreateBuffer();
 			}
 			void apply(crossplatform::DeviceContext &deviceContext,unsigned instanceStride, crossplatform::Buffer *instanceBuffer);
 			crossplatform::Buffer		*vertexBuffer;
