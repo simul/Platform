@@ -422,7 +422,7 @@ int EffectTechnique::NumPasses() const
 	return (int)desc.Passes;
 }
 
-dx11on12::Effect::Effect() :currentPass(NULL)
+dx11on12::Effect::Effect() 
 {
 }
 
@@ -697,55 +697,21 @@ void dx11on12::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,co
 
 void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
 {
-	// If invalid, we already had the error when we assigned this ShaderResource. So fail silently to avoid spamming output.
-	if(!shaderResource.valid)
-		return;
-	// TODO: disallow SetTexture when the texture doesn't match the ShaderResource's type.
-	ID3DX11EffectShaderResourceVariable *var=(ID3DX11EffectShaderResourceVariable*)(shaderResource.platform_shader_resource);
-	if(!var||!var->IsValid())
-	{
-		SIMUL_BREAK_ONCE("Invalid shader texture ");
-		return;
-	}
-	if(t)
-	{
-		dx11on12::Texture *T=(dx11on12::Texture*)t;
-		auto srv=T->AsD3D11ShaderResourceView(shaderResource.shaderResourceType,index,mip);
-		var->SetResource(srv);
-	}
-	else
-	{
-		var->SetResource(NULL);
-	}
 	crossplatform::Effect::SetTexture(deviceContext,shaderResource,t,index,mip);
 }
 
 void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s)	
 {
-	if(!asD3DX11Effect())
-		return;
-	ID3DX11EffectConstantBuffer *pD3DX11EffectConstantBuffer=asD3DX11Effect()->GetConstantBufferByName(name);
-	if(pD3DX11EffectConstantBuffer)
-	{
-		crossplatform::PlatformConstantBuffer *pcb=s->GetPlatformConstantBuffer();
-		dx11on12::PlatformConstantBuffer *pcb11=(dx11on12::PlatformConstantBuffer *)pcb;
-		pcb11->Apply(deviceContext,s->GetSize(),s->GetAddr());
+	crossplatform::PlatformConstantBuffer *pcb=s->GetPlatformConstantBuffer();
+	dx11on12::PlatformConstantBuffer *pcb11=(dx11on12::PlatformConstantBuffer *)pcb;
+	pcb11->Apply(deviceContext,s->GetSize(),s->GetAddr());
 #ifdef D3D11_FAST_SEMANTICS
-		if(((dx11on12::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
-			pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer(),pcb11->GetBaseAddr());
-		else
+	if(((dx11on12::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
+		pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer(),pcb11->GetBaseAddr());
+	else
 #endif
-		pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer());
-		if (currentTechnique)
-		{
-			ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
-			if(currentPass)
-				V_CHECK(currentPass->Apply(0, deviceContext.asD3D11DeviceContext()));
-		}
-	}
+	pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer());
 }
-
-
 
 void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)
 {
@@ -756,77 +722,17 @@ void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,cro
 	}
 	if (!s)
 		return;
-	ID3DX11EffectSamplerVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsSampler();
+	ID3DX11EffectSamplerVariable*	var=asD3DX11Effect()->GetVariableByName(name)->AsSampler();
 	var->SetSampler(0,s->asD3D11SamplerState());
 }
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {
-	if(apply_count!=0)
-		SIMUL_BREAK_ONCE("Effect::Apply without a corresponding Unapply!")
-	apply_count++;
-	if(!effectTechnique)
-		return;
-	ID3DX11Effect *effect			=asD3DX11Effect();
-	currentTechnique				=effectTechnique;
-	ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
-	currentPass						=tech->GetPassByIndex(pass_num);
-	HRESULT hr						=currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
 	crossplatform::Effect::Apply(deviceContext,effectTechnique,pass_num);
-	V_CHECK_ONCE(hr);
 }
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)
 {
-	if(apply_count!=0)
-		SIMUL_BREAK_ONCE("Effect::Apply without a corresponding Unapply!")
-	apply_count++;
-	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-	cs->invalidate();
-	cs->currentTechnique=effectTechnique;
-	cs->currentEffect=this;
-	ID3DX11Effect *effect			=asD3DX11Effect();
-	currentTechnique				=effectTechnique;
-	if(effectTechnique)
-	{
-		ID3DX11EffectTechnique *tech	=effectTechnique->asD3DX11EffectTechnique();
-		if (!tech->IsValid())
-		{
-			const char *techname=effectTechnique->name.c_str();
-			SIMUL_BREAK_ONCE(base::QuickFormat("Invalid technique %s of shader %s\n",techname,this->filename.c_str()));
-			return;
-		}
-		if(!passname)
-			currentPass = tech->GetPassByIndex(0);
-		else
-			currentPass = tech->GetPassByName(passname);
-		if (!currentPass->IsValid())
-		{
-			const char *techname=effectTechnique->name.c_str();
-			SIMUL_BREAK_ONCE(base::QuickFormat("Invalid pass %s sent to Effect::Apply for technique %s of shader %s\n",passname,techname,this->filename.c_str()));
-			D3DX11_TECHNIQUE_DESC desc;
-			ID3DX11EffectTechnique *t=const_cast<ID3DX11EffectTechnique*>(tech);
-			t->GetDesc(&desc);
-			std::cerr<<"Passes are: ";
-			for(int i=0;i<(int)desc.Passes;i++)
-			{
-				ID3DX11EffectPass *p=tech->GetPassByIndex(i);
-				D3DX11_PASS_DESC pdesc;
-				p->GetDesc(&pdesc);
-				std::cerr<<pdesc.Name<<" ";
-			}
-			std::cerr<<std::endl;
-		}
-		else
-		{
-			HRESULT hr = currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
-			V_CHECK(hr);
-		}
-	}
-	else
-	{
-		SIMUL_BREAK_ONCE(base::QuickFormat("NULL technique sent to Effect::Apply for shader %s\n",this->filename.c_str()));
-	}
 	crossplatform::Effect::Apply(deviceContext,effectTechnique,passname);
 }
 
@@ -834,33 +740,15 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 {
 	if(apply_count!=1)
 		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n",this->filename.c_str()));
-	ID3DX11Effect *effect			=asD3DX11Effect();
-	if(!effect)
-		return;
-	if (!currentTechnique)
-		return;
-	ID3DX11EffectTechnique *tech	=currentTechnique->asD3DX11EffectTechnique();
-	if(currentPass)
-		V_CHECK(currentPass->Apply(0, deviceContext.asD3D11DeviceContext()));
+
+	crossplatform::Effect::Apply(deviceContext, currentTechnique, currentPass);
 }
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
-	if(apply_count<=0)
-		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Unapply without a corresponding Apply! Effect: %s\n",this->filename.c_str()))
-	else if(apply_count>1)
-		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Apply has been called too many times! Effect: %s\n",this->filename.c_str()))
-	apply_count--;
-	if(currentPass)
-		currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
-	deviceContext.asD3D11DeviceContext()->CSSetShader(nullptr,nullptr,0);
-	deviceContext.asD3D11DeviceContext()->GSSetShader(nullptr,nullptr,0);
-	deviceContext.asD3D11DeviceContext()->PSSetShader(nullptr,nullptr,0);
-	deviceContext.asD3D11DeviceContext()->VSSetShader(nullptr,nullptr,0);
-	currentTechnique=NULL;
-	currentPass = NULL;
-	//UnbindTextures(deviceContext);
+	crossplatform::Effect::Unapply(deviceContext);
 }
+
 void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 {
 	auto c=deviceContext.asD3D11DeviceContext();

@@ -1603,8 +1603,8 @@ void Direct3D11Manager::LoadAssets(Window *window)
 
 
 		//cpo //todo sorrt out fixed path
-		D3DCompileFromFile(L"C:\\Simul\\dx12\\Simul\\Samples\\DirectX11On12Sample\\shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr);
-		D3DCompileFromFile(L"C:\\Simul\\dx12\\Simul\\Samples\\DirectX11On12Sample\\shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr);
+		D3DCompileFromFile(L"C:\\Simul\\master\\Simul\\Samples\\DirectX11On12Sample\\shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr);
+		D3DCompileFromFile(L"C:\\Simul\\master\\Simul\\Samples\\DirectX11On12Sample\\shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr);
 
 		// Define the vertex input layout.
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =

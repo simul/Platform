@@ -110,7 +110,6 @@ namespace simul
 		{
 		protected:
 			EffectTechnique *CreateTechnique();
-			ID3DX11EffectPass *currentPass;
 		public:
 			Effect();
 			virtual ~Effect();
