@@ -103,7 +103,7 @@
     </ClCompile>
     <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\DirectX11on12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
-      <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL.json</SfxConfig>
+      <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL11on12.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\DirectX11on12\shaderbin</OutputPath>
     </Sfx_Rule>
     <Link>
@@ -194,7 +194,7 @@
     </PostBuildEvent>
     <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\DirectX11on12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
-      <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL.json</SfxConfig>
+      <SfxConfig>$(SIMUL)\Platform\DirectX11on12\HLSL\HLSL11on12.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\DirectX11on12\shaderbin</OutputPath>
     </Sfx_Rule>
   </ItemDefinitionGroup>

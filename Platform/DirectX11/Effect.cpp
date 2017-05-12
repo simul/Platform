@@ -741,7 +741,6 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 {
 	if(apply_count!=0)
 		SIMUL_BREAK_ONCE("Effect::Apply without a corresponding Unapply!")
-	apply_count++;
 	if(!effectTechnique)
 		return;
 	ID3DX11Effect *effect			=asD3DX11Effect();
@@ -757,7 +756,6 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 {
 	if(apply_count!=0)
 		SIMUL_BREAK_ONCE("Effect::Apply without a corresponding Unapply!")
-	apply_count++;
 	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
 	cs->invalidate();
 	cs->currentTechnique=effectTechnique;
@@ -823,11 +821,6 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
-	if(apply_count<=0)
-		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Unapply without a corresponding Apply! Effect: %s\n",this->filename.c_str()))
-	else if(apply_count>1)
-		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Apply has been called too many times! Effect: %s\n",this->filename.c_str()))
-	apply_count--;
 	if(currentPass)
 		currentPass->Apply(0, deviceContext.asD3D11DeviceContext());
 	deviceContext.asD3D11DeviceContext()->CSSetShader(nullptr,nullptr,0);
@@ -837,6 +830,7 @@ void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 	currentTechnique=NULL;
 	currentPass = NULL;
 	//UnbindTextures(deviceContext);
+	crossplatform::Effect::Unapply(deviceContext);
 }
 void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 {

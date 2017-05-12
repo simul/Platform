@@ -710,7 +710,6 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const
 		pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer(),pcb11->GetBaseAddr());
 	else
 #endif
-	pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer());
 }
 
 void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)
