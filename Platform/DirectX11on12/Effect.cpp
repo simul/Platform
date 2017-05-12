@@ -354,47 +354,6 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceConte
 	mapped.pData=NULL;
 }
 
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
-{
-	if(lastContext&&mapped.pData)
-		lastContext->Unmap(buffer,0);
-	mapped.pData=NULL;
-	if(!effect)
-		return;
-	if(!effect->asD3DX11Effect())
-		return;
-	if(!effect->asD3DX11Effect()->GetVariableByName(name))
-		return;
-	ID3DX11EffectShaderResourceVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsShaderResource();
-		
-	if(!var->IsValid())
-	{
-		SIMUL_CERR<<"Constant Buffer not found: "<<name<<", in effect "<<effect->filename.c_str()<<std::endl;
-		if(effect->filenameInUseUtf8.length())
-			SIMUL_FILE_LINE_CERR(effect->filenameInUseUtf8.c_str(),0)<<"See effect file."<<std::endl;
-	}
-	var->SetResource(shaderResourceView);
-}
-
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name)
-{
-	if(lastContext&&mapped.pData)
-		lastContext->Unmap(buffer,0);
-	mapped.pData=NULL;
-	if (!effect->asD3DX11Effect())
-		return;
-	if (!effect->asD3DX11Effect()->GetVariableByName(name))
-		return;
-	ID3DX11EffectUnorderedAccessViewVariable *var	=effect->asD3DX11Effect()->GetVariableByName(name)->AsUnorderedAccessView();
-	if(!var->IsValid())
-	{
-		SIMUL_CERR<<"Constant Buffer not found: "<<name<<", in effect "<<effect->filename.c_str()<<std::endl;
-		if(effect->filenameInUseUtf8.length())
-			SIMUL_FILE_LINE_CERR(effect->filenameInUseUtf8.c_str(),0)<<"See effect file."<<std::endl;
-	}
-	var->SetUnorderedAccessView(unorderedAccessView);
-}
-
 void PlatformStructuredBuffer::Unbind(crossplatform::DeviceContext &deviceContext)
 {
 }
@@ -460,6 +419,7 @@ void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *fil
 				pClassLinkage,
 				&pixelShader
 			);
+		 harwe
 	}
 	else if (t == crossplatform::SHADERTYPE_VERTEX)
 	{
@@ -646,85 +606,6 @@ crossplatform::EffectTechnique *dx11on12::Effect::GetTechniqueByIndex(int index)
 	return tech;
 }
 
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int index,int mip)
-{
-	crossplatform::ShaderResource shaderResource			=GetShaderResource(name);
-	SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
-}
-
-void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
-{
-	ID3DX11EffectUnorderedAccessViewVariable *var=(ID3DX11EffectUnorderedAccessViewVariable*)(shaderResource.platform_shader_resource);
-	if(!asD3DX11Effect())
-	{
-		SIMUL_CERR_ONCE<<"Invalid effect "<<std::endl;
-		return;
-	}
-	if(!var)
-	{
-		SIMUL_CERR_ONCE<<"Invalid Resource "<<std::endl;
-		return;
-	}
-	if(t)
-	{
-		ID3D11UnorderedAccessView *uav=t->AsD3D11UnorderedAccessView(index,mip);
-		if(!uav)
-		{
-			SIMUL_CERR_ONCE<<"Unordered access view not found."<<std::endl;
-		}
-		var->SetUnorderedAccessView(uav);
-	}
-	else
-		var->SetUnorderedAccessView(NULL);
-	crossplatform::Effect::SetUnorderedAccessView(deviceContext,shaderResource,t,index,mip);
-}
-
-
-void dx11on12::Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *t,int index,int mip)
-{
-	if(!asD3DX11Effect())
-	{
-		SIMUL_CERR<<"Invalid effect "<<std::endl;
-		return;
-	}
-	ID3DX11Effect *e=asD3DX11Effect();
-	if(!e)
-		return;
-	crossplatform::ShaderResource res			=GetShaderResource(name);
-	SetTexture(deviceContext, res, t, index,mip);
-}
-
-
-void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index,int mip)
-{
-	crossplatform::Effect::SetTexture(deviceContext,shaderResource,t,index,mip);
-}
-
-void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s)	
-{
-	crossplatform::PlatformConstantBuffer *pcb=s->GetPlatformConstantBuffer();
-	dx11on12::PlatformConstantBuffer *pcb11=(dx11on12::PlatformConstantBuffer *)pcb;
-	pcb11->Apply(deviceContext,s->GetSize(),s->GetAddr());
-#ifdef D3D11_FAST_SEMANTICS
-	if(((dx11on12::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
-		pD3DX11EffectConstantBuffer->SetConstantBuffer(pcb11->asD3D11Buffer(),pcb11->GetBaseAddr());
-	else
-#endif
-}
-
-void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s)
-{
-	if(!asD3DX11Effect())
-	{
-		SIMUL_CERR<<"Invalid effect "<<std::endl;
-		return;
-	}
-	if (!s)
-		return;
-	ID3DX11EffectSamplerVariable*	var=asD3DX11Effect()->GetVariableByName(name)->AsSampler();
-	var->SetSampler(0,s->asD3D11SamplerState());
-}
-
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {
 	crossplatform::Effect::Apply(deviceContext,effectTechnique,pass_num);
@@ -739,7 +620,9 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 {
 	if(apply_count!=1)
 		SIMUL_BREAK_ONCE(base::QuickFormat("Effect::Reapply can only be called after Apply and before Unapply. Effect: %s\n",this->filename.c_str()));
-
+	apply_count--;
+	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
+	cs->textureAssignmentMapValid = false;
 	crossplatform::Effect::Apply(deviceContext, currentTechnique, currentPass);
 }
 
@@ -770,5 +653,92 @@ crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
 }
 void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool test)
 {
-
+	ID3D11DeviceContext *d3d11DeviceContext = deviceContext.asD3D11DeviceContext();
+	// Apply the shaders
+	dx11on12::Shader *c = (dx11on12::Shader*)shaders[crossplatform::SHADERTYPE_COMPUTE];
+	dx11on12::Shader *v = (dx11on12::Shader*)shaders[crossplatform::SHADERTYPE_VERTEX];
+	dx11on12::Shader *p = (dx11on12::Shader*)shaders[crossplatform::SHADERTYPE_PIXEL];
+	dx11on12::Shader *g = (dx11on12::Shader*)shaders[crossplatform::SHADERTYPE_GEOMETRY];
+	if (g)
+	{
+		g = (dx11on12::Shader*)shaders[crossplatform::SHADERTYPE_GEOMETRY];
+		d3d11DeviceContext->GSSetShader(g->geometryShader, nullptr, 0);
+	}
+	else
+	{
+		d3d11DeviceContext->GSSetShader(nullptr, nullptr, 0);
+	}
+	if (v)
+	{
+		// TODO: Why is this needed for DrawCubemap?
+		//d3d11DeviceContext->m_lwcue.invalidateShaderStage(sce::Gnm::ShaderStage::kShaderStageVs);
+		if (v)
+			d3d11DeviceContext->VSSetShader(v->vertexShader, nullptr, 0);
+		else
+			d3d11DeviceContext->VSSetShader(NULL, nullptr, 0);
+		if (test)
+			return;
+	}
+	if (test)
+		return;
+	// What output format?
+	dx11on12::RenderPlatform *rp = (dx11on12::RenderPlatform*)deviceContext.renderPlatform;
+	if (rp && (g || v))
+	{
+		if (p)
+		{
+			SIMUL_ASSERT(p->pixelShader != NULL);
+			if (p->pixelShader)
+				d3d11DeviceContext->PSSetShader(p->pixelShader, nullptr, 0);
+			else
+				d3d11DeviceContext->PSSetShader(NULL, nullptr, 0);
+			//d3d11DeviceContext->SOSetTargets(false);
+		}
+		else
+		{
+			// Maybe we're doing streamout.
+			//d3d11DeviceContext->SOSetTargets(true);
+			////	SIMUL_BREAK("Can't find valid pixel shader for output format.");
+			//	PixelOutputFormat pfm=rp->GetCurrentPixelOutputFormat(deviceContext);
+		}
+	}
+	if (c)
+	{
+		SIMUL_ASSERT(c->computeShader != NULL);
+		if (c->computeShader)
+			d3d11DeviceContext->CSSetShader(c->computeShader, nullptr,0);
+		else
+			d3d11DeviceContext->CSSetShader(nullptr, nullptr, 0);
+	}
+	for (int i = 0; i<crossplatform::SHADERTYPE_COUNT; i++)
+	{
+		Shader *s = (Shader*)shaders[i];
+		if (s&&s->samplerStates.size())
+		{
+			for (auto i = s->samplerStates.begin(); i != s->samplerStates.end(); i++)
+			{
+				auto ss = i->first->asD3D11SamplerState();
+				if(c==s)
+					d3d11DeviceContext->CSSetSamplers(i->second, 1, &ss);
+				if (s==v)
+					d3d11DeviceContext->VSSetSamplers(i->second, 1, &ss);
+				if (s==g)
+					d3d11DeviceContext->GSSetSamplers(i->second, 1, &ss);
+				if (s==p)
+					d3d11DeviceContext->PSSetSamplers(i->second, 1, &ss);
+			}
+		}
+	}
+	if (blendState)
+	{
+		deviceContext.renderPlatform->SetRenderState(deviceContext, blendState);
+	}
+	if (depthStencilState)
+	{
+		deviceContext.renderPlatform->SetRenderState(deviceContext, depthStencilState);
+	}
+	if (rasterizerState)
+	{
+		deviceContext.renderPlatform->SetRenderState(deviceContext, rasterizerState);
+	}
 }

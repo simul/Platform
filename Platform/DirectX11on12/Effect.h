@@ -79,8 +79,6 @@ namespace simul
 				return unorderedAccessView;
 			}
 			void InvalidateDeviceObjects();
-			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
-			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *effect,const char *name);
 			void Unbind(crossplatform::DeviceContext &deviceContext);
 		};
 		class SIMUL_DIRECTX12_EXPORT EffectPass:public simul::crossplatform::EffectPass
@@ -117,14 +115,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);
 			crossplatform::EffectTechnique *GetTechniqueByIndex(int index);
-			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int index=-1,int mip=-1);
-			
-			void SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *tex,int index=-1,int mip=-1);
-			
-			void SetTexture		(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index=-1,int mip=-1) override;
-			void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int index=-1,int mip=-1) override;
-			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);
-			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s);
+
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass) override;
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass) override;
 			void Reapply(crossplatform::DeviceContext &deviceContext);

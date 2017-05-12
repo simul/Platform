@@ -521,8 +521,8 @@ namespace simul
 			virtual ~PlatformStructuredBuffer(){}
 			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,bool computable,void *init_data)=0;
 			virtual void InvalidateDeviceObjects()=0;
-			virtual void Apply(DeviceContext &deviceContext,Effect *effect,const char *name)=0;
-			virtual void ApplyAsUnorderedAccessView(DeviceContext &deviceContext,Effect *effect,const char *name)=0;
+			virtual void Apply(DeviceContext &deviceContext,Effect *effect,const char *name);
+			virtual void ApplyAsUnorderedAccessView(DeviceContext &deviceContext,Effect *effect,const char *name);
 			virtual void Unbind(DeviceContext &deviceContext)=0;
 			virtual void *GetBuffer(crossplatform::DeviceContext &deviceContext)=0;
 			virtual const void *OpenReadBuffer(crossplatform::DeviceContext &deviceContext)=0;
@@ -802,9 +802,9 @@ namespace simul
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex,int array_idx=-1,int mip=-1);
 			
 			//! Set the texture for this effect.
-			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s)=0;
+			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s);
 			//! Set a constant buffer for this effect.
-			virtual void SetConstantBuffer(DeviceContext &deviceContext,const char *name	,ConstantBufferBase *s)=0;
+			virtual void SetConstantBuffer(DeviceContext &deviceContext,const char *name	,ConstantBufferBase *s);
 			//! Set a constant buffer for this effect.
 			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s)
 			{
