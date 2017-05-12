@@ -1228,8 +1228,285 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 {
 	dx11on12::SaveTexture(device,texture->AsD3D11Texture2D(),lFileNameUtf8);
 }
-void RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking )
+
+void RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking)
 {
+	crossplatform::ContextState *cs = GetContextState(deviceContext);
+	if (!cs || !cs->currentEffectPass)
+	{
+		SIMUL_BREAK("No valid shader pass in ApplyContextState");
+		return;
+	}
+	ID3D11DeviceContext *d3d11DeviceContext = deviceContext.asD3D11DeviceContext();
+
+	// NULL ptr here if we've not applied a valid shader..
+	dx11on12::EffectPass *pass = static_cast<dx11on12::EffectPass*>(cs->currentEffectPass);
+	if (!cs->effectPassValid)
+	{
+		if (cs->last_action_was_compute&&pass->shaders[crossplatform::SHADERTYPE_VERTEX] != nullptr)
+		{
+			cs->last_action_was_compute = false;
+		}
+		else if ((!cs->last_action_was_compute) && pass->shaders[crossplatform::SHADERTYPE_COMPUTE] != nullptr)
+		{
+			cs->last_action_was_compute = true;
+		}
+		// This applies the pass, and also any associated state: Blend, Depth and Rasterizer states:
+		pass->Apply(deviceContext, false);
+		cs->effectPassValid = true;
+	}
+	if (!cs->samplerStateOverridesValid)
+	{
+		cs->samplerStateOverridesValid = true;
+		for (auto i = cs->samplerStateOverrides.begin(); i != cs->samplerStateOverrides.end(); i++)
+		{
+			int slot = i->first;
+			if (slot >= 0 && i->second>0)
+			{
+				auto c = i->second->asD3D11SamplerState();
+				if (pass->shaders[crossplatform::SHADERTYPE_GEOMETRY])
+				{
+					deviceContext.asD3D11DeviceContext()->GSSetSamplers(slot, 1,&c);
+				}
+				else if (pass->shaders[crossplatform::SHADERTYPE_VERTEX])
+					deviceContext.asD3D11DeviceContext()->VSSetSamplers(slot, 1,&c);
+				if (pass->shaders[crossplatform::SHADERTYPE_PIXEL])
+					deviceContext.asD3D11DeviceContext()->PSSetSamplers(slot, 1,&c);
+				if (pass->shaders[crossplatform::SHADERTYPE_COMPUTE])
+					deviceContext.asD3D11DeviceContext()->CSSetSamplers(slot, 1,&c);
+			}
+		}
+	}
+	// Apply buffers:
+	if (!cs->buffersValid&&pass->usesBuffers())
+	{
+		cs->bufferSlots = 0;
+		for (auto i = cs->applyBuffers.begin(); i != cs->applyBuffers.end(); i++)
+		{
+			int slot = i->first;
+			if (slot != i->second->GetIndex())
+			{
+				SIMUL_BREAK_ONCE("This buffer assigned to the wrong index.");
+			}
+			i->second->GetPlatformConstantBuffer()->ActualApply(deviceContext, pass, i->second->GetIndex());
+			if (error_checking&&pass->usesBufferSlot(slot))
+				cs->bufferSlots |= (1 << slot);;
+		}
+		if (error_checking)
+		{
+			unsigned required_buffer_slots = pass->GetConstantBufferSlots();
+			if ((cs->bufferSlots&required_buffer_slots) != required_buffer_slots)
+			{
+				SIMUL_BREAK_ONCE("Not all constant buffers are assigned.");
+				unsigned missing_slots = required_buffer_slots&(~cs->bufferSlots);
+				for (unsigned i = 0; i<32; i++)
+				{
+					unsigned slot = 1 << i;
+					if (slot&missing_slots)
+						SIMUL_CERR << "Slot " << i << " was not set." << std::endl;
+				}
+			}
+		}
+		//else
+		//	cs->buffersValid=true;
+		// Constant buffers allocated from the command buffer, therefore never mark "valid",
+		// because the old value will be consumed.
+	}
+	if (!cs->streamoutTargetsValid)
+	{
+		for (auto i = cs->streamoutTargets.begin(); i != cs->streamoutTargets.end(); i++)
+		{
+			int slot = i->first;
+			dx11on12::Buffer *vertexBuffer = (dx11on12::Buffer*)i->second;
+			if (!vertexBuffer)
+				continue;
+
+			ID3D11Buffer *b = vertexBuffer->AsD3D11Buffer();
+			if (!b)
+				continue;
+			// TODO: nonzero offsets.
+			unsigned offset = 0;
+		/*	sce::Gnm::StreamoutBufferMapping bufferBinding;
+			bufferBinding.init();
+			bufferBinding.bindStream(sce::Gnm::kStreamoutBuffer0, sce::Gnm::StreamoutBufferMapping::kGsStreamBuffer0);
+			sce::Gnmx::LightweightGfxContext *d3d11DeviceContext = deviceContext.asD3D11DeviceContext();
+			// Setting partial vs wave, needed for streamout, the rest of the parameters are default values
+			
+			d3d11DeviceContext->setVgtControl(255, sce::Gnm::VgtPartialVsWaveMode::kVgtPartialVsWaveDisable);
+			// Setting streamout parameters
+			d3d11DeviceContext->flushStreamout();
+			d3d11DeviceContext->setStreamoutMapping(&bufferBinding);
+			unsigned bufferSizeDW = b->getSize() / 4;;
+			unsigned bufferStrideDW = b->getStride() / 4;;
+			d3d11DeviceContext->setStreamoutBufferDimensions(sce::Gnm::kStreamoutBuffer0, bufferSizeDW, bufferStrideDW);
+			d3d11DeviceContext->writeStreamoutBufferOffset(sce::Gnm::kStreamoutBuffer0, 0);*/
+		}
+		cs->streamoutTargetsValid = true;
+	}
+	if (!cs->vertexBuffersValid)
+	{
+		for (auto i : cs->applyVertexBuffers)
+		{
+			//if(pass->UsesBufferSlot(i.first))
+			dx11on12::Buffer* b = (dx11on12::Buffer*)(i.second);
+
+			auto B=b->AsD3D11Buffer();
+			d3d11DeviceContext->IASetVertexBuffers( i.first, b->count,&B,nullptr,nullptr);
+		}
+		cs->vertexBuffersValid = true;
+	}
+	cs->textureSlotsForSB = 0;
+	cs->rwTextureSlotsForSB = 0;
+	if (pass->usesSBs())
+	{
+		for (auto i = cs->applyStructuredBuffers.begin(); i != cs->applyStructuredBuffers.end(); i++)
+		{
+			int slot = i->first;
+			if (!pass->usesTextureSlotForSB(slot))
+				continue;
+			i->second->ActualApply(deviceContext, pass, slot);
+			Shader **sh = (dx11on12::Shader**)pass->shaders;
+			if (slot<1000)
+			{
+				if (sh[crossplatform::SHADERTYPE_VERTEX] && sh[crossplatform::SHADERTYPE_VERTEX]->usesTextureSlotForSB(slot))
+					cs->textureSlotsForSB |= (1 << slot);
+				if (sh[crossplatform::SHADERTYPE_PIXEL] && sh[crossplatform::SHADERTYPE_PIXEL]->usesTextureSlotForSB(slot))
+					cs->textureSlotsForSB |= (1 << slot);
+				if (sh[crossplatform::SHADERTYPE_GEOMETRY] && sh[crossplatform::SHADERTYPE_GEOMETRY]->usesTextureSlotForSB(slot))
+					cs->textureSlotsForSB |= (1 << slot);
+				if (sh[crossplatform::SHADERTYPE_COMPUTE] && sh[crossplatform::SHADERTYPE_COMPUTE]->usesTextureSlotForSB(slot))
+					cs->textureSlotsForSB |= (1 << slot);
+			}
+			else
+			{
+				if (sh[crossplatform::SHADERTYPE_COMPUTE] && sh[crossplatform::SHADERTYPE_COMPUTE]->usesRwTextureSlotForSB(slot - 1000))
+					cs->rwTextureSlotsForSB |= (1 << (slot - 1000));
+			}
+		}
+		if (error_checking)
+		{
+			unsigned required_sb_slots = pass->GetStructuredBufferSlots();
+			if ((cs->textureSlotsForSB&required_sb_slots) != required_sb_slots)
+			{
+				SIMUL_BREAK_ONCE("Not all texture slots are assigned.");
+			}
+			unsigned required_rw_sb_slots = pass->GetRwStructuredBufferSlots();
+			if ((cs->rwTextureSlotsForSB&required_rw_sb_slots) != required_rw_sb_slots)
+			{
+				SIMUL_BREAK_ONCE("Not all texture slots are assigned.");
+			}
+		}
+	}
+	// Apply textures:
+	if (!cs->textureAssignmentMapValid&&pass->usesTextures())
+	{
+		cs->textureSlots = 0;
+		cs->rwTextureSlots = 0;
+		cs->textureAssignmentMapValid = true;
+		for (auto i = cs->textureAssignmentMap.begin(); i != cs->textureAssignmentMap.end(); i++)
+		{
+			int slot = i->first;
+			if (slot<0)
+				continue;
+			const crossplatform::TextureAssignment &ta = i->second;
+			{
+				sce::Gnm::Texture *t=nullptr;
+				if (ta.texture&&ta.texture->IsValid())
+					t = ta.texture->AsGnmTexture(ta.resourceType, ta.index, ta.mip);
+			//	else
+			//		t = GetDummyTexture(ta.dimensions);
+				if (!t)
+					continue;
+				Shader **sh = (Shader**)pass->shaders;
+				if (ta.uav)
+				{
+					SIMUL_ASSERT_WARN_ONCE(slot >= 1000, "Bad slot number");
+					if (sh[crossplatform::SHADERTYPE_COMPUTE]
+						&& sh[crossplatform::SHADERTYPE_COMPUTE]->usesRwTextureSlot(slot - 1000))
+					{
+						auto T = ta.texture->AsD3D11UnorderedAccessView(ta.index, ta.mip);
+						d3d11DeviceContext->CSSetUnorderedAccessViews( slot - 1000, 1, &T,0);
+						cs->rwTextureSlots |= 1 << (slot - 1000);
+					}
+				}
+				else
+				{
+					auto T = ta.texture->AsD3D11ShaderResourceView(ta.resourceType,ta.index, ta.mip);
+					SIMUL_ASSERT_WARN_ONCE(slot<1000, "Bad slot number");
+					if (sh[crossplatform::SHADERTYPE_GEOMETRY] && sh[crossplatform::SHADERTYPE_GEOMETRY]->usesTextureSlot(slot))
+					{
+						d3d11DeviceContext->GSSetShaderResources( slot, 1, &T);
+						cs->textureSlots |= (1 << slot);
+					}
+					if (sh[crossplatform::SHADERTYPE_VERTEX] && sh[crossplatform::SHADERTYPE_VERTEX]->usesTextureSlot(slot))
+					{
+						d3d11DeviceContext->VSSetShaderResources( slot, 1, &T);
+						cs->textureSlots |= (1 << slot);
+					}
+					Shader *p = sh[crossplatform::SHADERTYPE_PIXEL];
+					if (p&&p->usesTextureSlot(slot))
+					{
+						d3d11DeviceContext->PSSetShaderResources( slot, 1, &T);
+						cs->textureSlots |= (1 << slot);
+					}
+					if (sh[crossplatform::SHADERTYPE_COMPUTE] && sh[crossplatform::SHADERTYPE_COMPUTE]->usesTextureSlot(slot))
+					{
+						d3d11DeviceContext->CSSetShaderResources( slot, 1, &T);
+						cs->textureSlots |= (1 << slot);
+					}
+				}
+			}
+		}
+		// Now verify that ALL resource are set:
+		if (error_checking)
+		{
+			unsigned required_slots = pass->GetTextureSlots();
+			if ((cs->textureSlots&required_slots) != required_slots)
+			{
+				static int count = 10;
+				count--;
+				if (count>0)
+				{
+					SIMUL_CERR << "Not all texture slots are assigned:" << std::endl;
+					unsigned missing_slots = required_slots&(~cs->textureSlots);
+					for (unsigned i = 0; i<32; i++)
+					{
+						unsigned slot = 1 << i;
+						if (slot&missing_slots)
+						{
+							std::string name;
+							if (cs->currentEffect)
+								name = cs->currentEffect->GetTextureForSlot(i);
+							SIMUL_CERR << "\tSlot " << i << ": " << name.c_str() << ", was not set." << std::endl;
+						}
+					}
+					SIMUL_BREAK_ONCE("Many API's require all used textures to have valid data.");
+				}
+			}
+			unsigned required_rw_slots = pass->GetRwTextureSlots();
+			if ((cs->rwTextureSlots&required_rw_slots) != required_rw_slots)
+			{
+				static int count = 10;
+				count--;
+				if (count>0)
+				{
+					SIMUL_BREAK_ONCE("Not all rw texture slots are assigned.");
+					required_rw_slots = required_rw_slots&(~cs->rwTextureSlots);
+					for (unsigned i = 0; i<32; i++)
+					{
+						unsigned slot = 1 << i;
+						if (slot&required_rw_slots)
+						{
+							std::string name;
+							if (cs->currentEffect)
+								name = cs->currentEffect->GetTextureForSlot(1000 + i);
+							SIMUL_CERR << "RW Slot " << i << " was not set (" << name.c_str() << ")." << std::endl;
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 #pragma optimize("",off)

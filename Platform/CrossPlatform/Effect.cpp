@@ -16,6 +16,25 @@ using namespace simul;
 using namespace crossplatform;
 using namespace std;
 
+
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext, crossplatform::Effect *effect, const char *name)
+{
+	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
+	crossplatform::ContextState *cs = r->GetContextState(deviceContext);
+	Effect *e = (Effect *)effect;
+	int index = e->GetSlot(name) + 1000;
+	cs->applyStructuredBuffers[index] = this;
+}
+
+void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext, crossplatform::Effect *effect, const char *name)
+{
+	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
+	crossplatform::ContextState *cs = r->GetContextState(deviceContext);
+	Effect *e = (Effect *)effect;
+	int index = e->GetSlot(name);
+	cs->applyStructuredBuffers[index] = this;
+}
+
 bool EffectPass::usesTextureSlot(int s) const
 {
 	if(s>=1000)
@@ -204,6 +223,35 @@ EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 	return nullptr;
 }
 
+void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::SamplerState *s)
+{
+	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
+	auto i = samplerStates.find(name);
+	if (i == samplerStates.end())
+	{
+		SIMUL_CERR << "Sampler state " << name << " not found." << std::endl;
+		return;
+	}
+	if (!s)
+	{
+		SIMUL_CERR << "Sampler state " << name << " null." << std::endl;
+		s = renderPlatform->GetOrCreateSamplerStateByName("clampSamplerState");
+	}
+	crossplatform::SamplerState *ss = i->second;
+	cs->samplerStateOverrides[ss->default_slot] = s;
+	cs->samplerStateOverridesValid = false;
+}
+
+void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::ConstantBufferBase *s)
+{
+	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
+	crossplatform::ContextState *cs = r->GetContextState(deviceContext);
+	PlatformConstantBuffer *pcb = (PlatformConstantBuffer*)s->GetPlatformConstantBuffer();
+
+	cs->applyBuffers[s->GetIndex()] = s;
+	cs->buffersValid = false;
+	pcb->SetChanged();
+}
 
 void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &res,crossplatform::Texture *tex,int index,int mip)
 {
