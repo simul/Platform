@@ -107,12 +107,6 @@ struct positionColourVertexInput
 	vec4 colour		: TEXCOORD0;		
 };
 
-shader vec4 AGAEGAEGEAG(posTexVertexOutput IN): SV_TARGET
-{
-	vec3 poss[4];
-	return res;
-}
-
 posTexVertexOutput SimpleFullscreen(idOnly IN)
 {
 	posTexVertexOutput OUT;

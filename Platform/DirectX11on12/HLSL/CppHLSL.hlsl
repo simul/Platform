@@ -1,5 +1,11 @@
 #ifndef CPP_HLSL
 #define CPP_HLSL
+
+shader vec4 AGAEGAEGEAG(posTexVertexOutput IN) : SV_TARGET
+{
+	vec3 startP = IN[0].position;
+return res;
+}
 #include "../../CrossPlatform/SL/CppSl.hs"
 
 #ifndef __cplusplus

@@ -289,7 +289,7 @@ shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	vec3 nearest_dir=vec3(0,0,0);
 	float total=0.0;
 /*	for(int i=0;i<12;i++)
-	{
+ 	{
 		vec3 random_dir=SphericalRandom(i*1.15+texc);
 		float t			=0.00001+ThicknessInDirection(texc,inverseScalesKm,random_dir);
 		nearest_dir+=random_dir/t;

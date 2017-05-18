@@ -4,6 +4,7 @@
 #pragma warning(disable:7203)
 
 #include "shader_platform.sl"
+
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
 #include "../SL/lightning_constants.sl"
