@@ -1,5 +1,6 @@
 // Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
+
 #include "../SL/common.sl"
 #define SIMUL_PI_F (3.1415926536f)
 
@@ -49,7 +50,7 @@ CS_LAYOUT(1,1,1)
 shader void CS_InterpLightTable(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint2 dims;
-	GET_IMAGE_DIMENSIONS(targetTexture,dims.x, dims.y);
+	targetTexture.GetDimensions(dims.x, dims.y);
 	uint3 pos		=g*1+t;
 	if(pos.x>=dims.x||pos.y>=dims.y)
 		return;

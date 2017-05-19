@@ -419,7 +419,6 @@ void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *fil
 				pClassLinkage,
 				&pixelShader
 			);
-		 harwe
 	}
 	else if (t == crossplatform::SHADERTYPE_VERTEX)
 	{

@@ -1,5 +1,12 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
+
+shader vec4 test()
+{
+	vec3 lightDirCloudspace	=normalize(mul(worldToCloudMatrix,vec4(lightDir,0.0)).xyz);
+}
+SamplerState cloudSamplerState;
+
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
 #include "../SL/depth.sl"
@@ -15,7 +22,6 @@ uniform Texture2D skylTexture;
 
 uniform Texture3D cloudTexture;
 uniform Texture2D godraysTexture;
-SamplerState cloudSamplerState;
 uniform TextureCube cubeDepthTexture;
 uniform TextureCube cubeUpdateTexture;
 uniform RWTexture3D<vec4> targetVolume;

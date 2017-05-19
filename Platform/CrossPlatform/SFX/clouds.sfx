@@ -3,7 +3,16 @@
 // Recommended by D Cook of MS to fix Xbox compiler crash:
 #define __XBOX_DISABLE_ITERATION
 
+vec4 testf(int IN)
+{
+}
+vec3 abc;
+vec3 colours[]={{1,0,0}};
+
 #include "shader_platform.sl"
+
+
+
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
 #include "../SL/simul_inscatter_fns.sl"

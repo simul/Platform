@@ -1,6 +1,12 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-
+shader void Tst()
+{
+	uint2 dims;
+	uint3 pos;
+	if(pos.x>=dims.x||pos.y>=dims.y)
+		return;
+}
 
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
