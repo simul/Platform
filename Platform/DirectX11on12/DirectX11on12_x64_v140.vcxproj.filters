@@ -376,9 +376,6 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
-    <Sfx_Rule Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx">
-      <Filter>SFX</Filter>
-    </Sfx_Rule>
     <Sfx_Rule Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>

@@ -116,7 +116,7 @@ vec4 Noise3D(Texture3D random_texture_3d,int freq,vec3 texCoords,int octaves,flo
 		vec4 c		=texture_3d_wrap_lod(random_texture_3d,texCoords,0);
 		vec3 u		=cross(last.rgb,c.rgb);
 		float ul	=length(u)+0.001;
-		u			=(u)/ul*length(c.rgb);
+		u			=u/ul*length(c.rgb);
 		c.rgb		=u;
 		texCoords	*=2.0;
 		total		+=mult;

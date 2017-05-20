@@ -3,13 +3,13 @@
 #define SPHERICAL_HARMONICS_CONSTANTS_SL
 
 #ifndef MAX_SH_BANDS
-#define MAX_SH_BANDS (4)
+#define MAX_SH_BANDS 4
 #endif
 #ifndef MAX_SH_SAMPLES
 #define MAX_SH_SAMPLES 16
 #endif
 #ifndef MAX_SH_COEFFICIENTS
-#define MAX_SH_COEFFICIENTS (16)
+#define MAX_SH_COEFFICIENTS 16
 #endif
 
 SIMUL_CONSTANT_BUFFER(SphericalHarmonicsConstants,10)

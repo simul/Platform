@@ -68,7 +68,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	float n							=nearFarCloud.y;
 	float hiResInterp				=1.0-saturate(( f- dist) / max(0.000000001,f-n));
 	// This is the interp from the near to the far clouds.
-	float cloudLevel				=float(NUM_CLOUD_INTERP-1)*(hiResInterp);	// i.e. 0,1,2 levels of the array.
+	float cloudLevel				=float(NUM_CLOUD_INTERP-1)*hiResInterp;	// i.e. 0,1,2 levels of the array.
 	float cloudLevel_0				=floor(cloudLevel);
 	vec4 lp;
 	if(do_lightpass)
@@ -161,7 +161,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 		float n							=nearFarCloud.y;
 		float hiResInterp				=1.0-saturate(( f- dist) / max(0.000000001,f-n));
 		// This is the interp from the near to the far clouds.
-		float cloudLevel				=float(NUM_CLOUD_INTERP-1)*(hiResInterp);	// i.e. 0,1,2 levels of the array.
+		float cloudLevel				=float(NUM_CLOUD_INTERP-1)*hiResInterp;	// i.e. 0,1,2 levels of the array.
 		float cloudLevel_0				=floor(cloudLevel);
 		vec4 lp;
 		if(do_lightpass)

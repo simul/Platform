@@ -1,5 +1,11 @@
 
-
+/*
+float Tst()
+{
+	float u = (ul);
+	return u;
+}
+*/
 
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
@@ -136,10 +142,10 @@ shader void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 	float V					=0.4/SIMUL_PI_F*(0.6+0.8*rand(n));
 	float U					=0.4/SIMUL_PI_F*(0.6+0.8*rand(n*4.41));
 	float c					=0.25*sin(y/V);
-	float brightness		=brightnessMult*(0.5+0.5*abs(sin((yb)/U)));
+	float brightness		=brightnessMult*(0.5+0.5*abs(sin(yb/U)));
 	float h					=rand(fn9);
 	float yh				=y+h;
-	float highlight			=12.0*saturate(sin((yh)/V)-0.95);
+	float highlight			=12.0*saturate(sin(yh/V)-0.95);
 	
 	float x					=2.0*(float(idx.x)+0.5)/float(X)-1.0;		// goes between -1 and 1
 	float dx				=(x-c)*2.0;
@@ -155,7 +161,7 @@ shader void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 	vec2 outgoing			=2.0*sin(internal-init);
 	result.rg				=asin(outgoing);
 	result.b				=sqrt(1.0-length(result.rg));
-	targetTextureArray[idx]	=(result);
+	targetTextureArray[idx]	=result;
 }
 
 shader ParticleVertexOutput VS_SnowParticles(PrecipitationVertexInput IN)

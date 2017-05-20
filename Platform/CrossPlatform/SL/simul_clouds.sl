@@ -4,9 +4,9 @@
 
 #define MIN_SUN_ELEV (0.2)
 #ifdef __ORBIS__
-#define NUM_CLOUD_INTERP (2)
+#define NUM_CLOUD_INTERP 2
 #else
-#define NUM_CLOUD_INTERP (4)
+#define NUM_CLOUD_INTERP 4
 #endif
 
 #ifndef CLOUD_DEFS_ONLY
@@ -251,7 +251,7 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 		vec3 pw						=abs(p1-p0);
 		float fade_inter			=saturate((length(pw.xy)/(float(W)*(2.0-is_inter)-1.0)-start)/range);// /(2.0-is_inter)
 	
-		float fade					=1.0-(fade_inter);
+		float fade					=1.0-fade_inter;
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
 
 		b							=abs(c-C0*2);

@@ -17,9 +17,6 @@
 
 
 #define constant_buffer ALIGN_16 cbuffer
-#define sampler1D texture1D
-#define sampler2D texture2D
-#define sampler3D texture3D
 
 #ifndef __cplusplus
 	#define char4 vec4
@@ -33,8 +30,6 @@
 	#define mix lerp
 	#define fract frac
 	#define layout(a)
-
-	
 #endif
 
 #endif

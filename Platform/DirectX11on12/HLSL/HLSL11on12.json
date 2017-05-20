@@ -3,6 +3,7 @@
   "defaultOptions": "/T {shader_model} /nologo",
   "sourceExtension": "hlsl",
   "outputExtension": "cso",
-  "outputOption": "/Fo",
+	"outputOption": "/Fo",
+	"entryPointOption":  "/E{name}",
   "multiplePixelOutputFormats": false
 }
