@@ -13,7 +13,6 @@
 #define f32touint16 f32tof16
 
 #endif
-#define uniform
 
 
 #define constant_buffer ALIGN_16 cbuffer
