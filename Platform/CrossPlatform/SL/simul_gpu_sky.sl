@@ -63,22 +63,28 @@ float getHazeOpticalLength(float sine_elevation,float h_km)
 	return haze_opt_len;
 }
 
-vec4 getSunlightFactor(Texture2D optical_depth_texture,float alt_km,vec3 DirectionToLight)
+vec4 getSunlightFactor(Texture2D optical_depth_texture,float alt_km,vec3 DirectionToLight,float sunRadiusRadians=0.0)
 {
-	float sine				=clamp(DirectionToLight.z,-1.0,1.0);
-	vec2 table_texc			=vec2(tableSize.x*(0.5+0.5*sine),tableSize.y*(alt_km/maxDensityAltKm));
+	vec4 mean_factor		=vec4(0,0,0,0);
+	for(int i=0;i<3;i++)
+	{
+		float offsetR			=float(i-1)*sunRadiusRadians;
+		float sine				=clamp(DirectionToLight.z+offsetR,-1.0,1.0);
+		vec2 table_texc			=vec2(tableSize.x*(0.5+0.5*sine),tableSize.y*(alt_km/maxDensityAltKm));
 
-	table_texc				+=vec2(texelOffset,texelOffset);
-	table_texc				=vec2(table_texc.x/tableSize.x,table_texc.y/tableSize.y);
+		table_texc				+=vec2(texelOffset,texelOffset);
+		table_texc				=vec2(table_texc.x/tableSize.x,table_texc.y/tableSize.y);
 	
-	vec4 lookup				=texture_clamp_lod(optical_depth_texture,table_texc,0);
-	float illuminated_length=lookup.x;
-	float vis				=lookup.y;
-	float ozone_length		=lookup.w;
-	float haze_opt_len		=getHazeOpticalLength(sine,alt_km);
-	vec4 factor				=vec4(vis,vis,vis,vis);
-	factor.rgb				*=exp(-rayleigh*illuminated_length-hazeMie*haze_opt_len-ozone*ozone_length);
-	return factor;
+		vec4 lookup				=texture_clamp_lod(optical_depth_texture,table_texc,0);
+		float illuminated_length=lookup.x;
+		float vis				=lookup.y;
+		float ozone_length		=lookup.w;
+		float haze_opt_len		=getHazeOpticalLength(sine,alt_km);
+		vec4 factor				=vec4(vis,vis,vis,vis);
+		factor.rgb				*=exp(-rayleigh*illuminated_length-hazeMie*haze_opt_len-ozone*ozone_length);
+		mean_factor				+=factor;
+	}
+	return mean_factor/3.0;
 }
 
 float GetOpticalDepth(Texture2D density_texture,float max_altitude_km,float alt_km,vec3 dir)
@@ -294,10 +300,8 @@ vec4 Skyl(Texture3D insc_texture
 	bb					*=1.0-emis_ext;
 	skyl.rgb			+=bb;
  #endif
-	//skyl.w			=(loss.w)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 	skyl.rgb			*=previous_loss.rgb;
 	skyl.rgb			+=previous_skyl.rgb;
-		//skyl.rgb*=10.0;
 	float lossw			=1.0;
 	skyl.w				=(lossw)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 	return skyl;

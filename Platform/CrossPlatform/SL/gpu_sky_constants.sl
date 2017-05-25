@@ -28,7 +28,7 @@ SIMUL_CONSTANT_BUFFER(GpuSkyConstants,8)
 	uniform vec3 hazeMie;
 	uniform float XovercastRangeKmX;
 	uniform vec3 ozone;
-	uniform float moonIrradianceFactorXXX;		// as proportion of sunlight
+	uniform float sunRadiusRadians;		// as proportion of sunlight
 
 	uniform vec3 sunIrradiance;
 	uniform float maxDistanceKm;

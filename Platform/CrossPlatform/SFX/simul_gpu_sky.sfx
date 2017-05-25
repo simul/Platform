@@ -47,12 +47,6 @@ shader vertexOutput VS_Main(idOnly IN)
     return OUT;
 }
 
-shader vec4 PS_Loss(vertexOutput IN) : SV_TARGET
-{
-	vec4 loss=PSLoss(input_texture,density_texture,IN.texCoords.xy);
-	return loss;
-}
-
 CS_LAYOUT(4,4,4)
 shader void CS_BlendColour3D(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
@@ -115,9 +109,9 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 
 		loss				*=previous_loss;
 
-		loss.a=1.0;
-	//loss=texture_clamp_lod(density_texture,vec2(idx.zy)/vec2(targetSize.zy),0);
-		IMAGE_STORE_3D(targetTexture,idx,loss);
+		
+	
+		IMAGE_STORE_3D(targetTexture,idx,vec4(loss.rgb,1.0));
 		prevDist_km			=dist_km;
 		previous_loss		=loss;
 	}
@@ -290,53 +284,6 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	
 }
 
-shader vec4 PS_Insc(vertexOutput IN) : SV_TARGET
-{
-	vec4 ret=Insc(input_texture,loss_texture,density_texture,optical_depth_texture,IN.texCoords);
-	return ret;
-}
-
-shader vec4 PS_Skyl(vertexOutput IN) : SV_TARGET
-{
-	vec4 previous_skyl	=texture_clamp(input_texture,IN.texCoords.xy);
-	vec3 previous_loss	=texture_3d_clamp(loss_texture,vec3(IN.texCoords.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;
-	// should adjust texCoords - we want the PREVIOUS loss!
-	float sin_e			=clamp(1.0-2.0*(IN.texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
-	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(IN.texCoords.x*texSize.x-texelOffset)/(texSize.x-1.0);
-	float viewAltKm		=texcToAltKm(altTexc,minOutputAltKm,maxOutputAltKm);
-	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
-	float maxd			=min(spaceDistKm,distanceKm);
-	float mind			=min(spaceDistKm,prevDistanceKm);
-	float dist			=0.5*(mind+maxd);
-	float stepLengthKm	=max(0.0,maxd-mind);
-	float y				=planetRadiusKm+viewAltKm+dist*sin_e;
-	float x				=dist*cos_e;
-	float r				=sqrt(x*x+y*y);
-	float alt_km		=r-planetRadiusKm;
-	// lookups is: dens_factor,ozone_factor,haze_factor;
-	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-	vec4 lookups		=texture_clamp(density_texture,vec2(dens_texc,dens_texc));
-	float dens_factor	=lookups.x;
-	float ozone_factor	=lookups.y;
-	float haze_factor	=getHazeFactorAtAltitude(alt_km);
-	vec4 light			=vec4(starlight+getSkylight(alt_km,insc_texture),0.0);
-	vec4 skyl			=light;
-	vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
-	vec3 total_ext		=extinction+ozone*ozone_factor;
-	vec3 loss			=exp(-extinction*stepLengthKm);
-	skyl.rgb			*=vec3(1.0,1.0,1.0)-loss;
-	float mie_factor	=exp(-skyl.w*stepLengthKm*haze_factor*hazeMie.x);
-	skyl.w				=saturate((1.0-mie_factor)/(1.0-total_ext.x+0.0001f));
-	
-	//skyl.w				=(loss.w)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
-	skyl.rgb			*=previous_loss.rgb;
-	skyl.rgb			+=previous_skyl.rgb;
-	float lossw=1.0;
-	skyl.w				=(lossw)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
-    return skyl;
-}
-
 
 //------------------------------------
 // Technique
@@ -352,44 +299,6 @@ BlendState DontBlend
 };
 RasterizerState RenderNoCull { CullMode = none; };
 
-technique simul_gpu_loss
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Loss()));
-    }
-}
-
-technique simul_gpu_insc
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Insc()));
-    }
-}
-
-technique simul_gpu_skyl
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Skyl()));
-    }
-}
 technique gpu_light_table_compute
 {
     pass p0 

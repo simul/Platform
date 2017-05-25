@@ -786,12 +786,8 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 	if(mirrorY)
 		y1=(int)viewport.h-y1-dy;
 	debugConstants.LinkToEffect(effect,"DebugConstants");
-	debugConstants.rect=//vec4(0.f,0.f,1.f,1.f);
-							vec4(2.f*(float)x1/(float)viewport.w-1.f
-							,1.f-2.f*(float)(y1+dy)/(float)viewport.h
-							,2.f*(float)dx/(float)viewport.w
-							,2.f*(float)dy/(float)viewport.h);
-	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
+	debugConstants.rect=r;
+	effect->SetConstantBuffer(deviceContext,&debugConstants);
 	effect->Apply(deviceContext,technique,pass);
 	DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);

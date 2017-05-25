@@ -178,6 +178,7 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 {
 	if(device==d)
 		return;
+	ERRNO_BREAK
 	fence=0;
 	device=(ID3D11Device*)d;
 	crossplatform::RenderPlatform::RestoreDeviceObjects(d);
