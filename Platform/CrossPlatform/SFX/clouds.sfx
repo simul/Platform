@@ -771,7 +771,7 @@ shader posTexVertexOutput VS_PlacementVolume(idOnly IN)
 	{
 		pos.z=1.0;
 		uint i=uint(IN.vertex_id)-8;
-		uint j=((i)/2+odd);
+		uint j=(i/2+odd);
 		pos.xy=poss[j%4];
 	}
 	else
