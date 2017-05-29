@@ -104,10 +104,10 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	
 	float distanceKm				=length(offset_vec);
 
-	float distScale			=0.6/maxFadeDistanceKm;
-	float K					=log(maxCloudDistanceKm);
+	float distScale					=0.6/maxFadeDistanceKm;
+	float K							=log(maxCloudDistanceKm);
 	bool found=false;
-	float stepKm				=K*(1.2+distanceKm)/float(numSteps);
+	float stepKm					=K*(1.2+distanceKm)/float(numSteps);
 	
 	vec3 amb_dir=view;
 	for(int i=0;i<768;i++)
@@ -167,7 +167,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 						vec4 worley				=texture_wrap_lod(smallWorleyTexture3D,worley_texc,0);
 					//density.z				=saturate(4.0*density.z-0.2);
 					
-						float wo		=density.y*(worley.w-0.6);//(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
+						float wo		=4*density.y*(worley.w-0.6)*saturate(1.0/(12.0*fadeDistance));//(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
 						density.z		=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3-saturate(0.6-density.z)));
 						amb_dir=lerp(amb_dir,worley.xyz,0.1*density.z);
 					}

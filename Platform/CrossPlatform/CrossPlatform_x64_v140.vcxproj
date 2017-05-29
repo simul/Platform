@@ -162,6 +162,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\CrossPlatform\BaseRenderer.h" />
+    <ClInclude Include="AmortizationStruct.h" />
     <ClInclude Include="BaseFramebuffer.h" />
     <ClInclude Include="BaseOpticsRenderer.h" />
     <ClInclude Include="Buffer.h" />
@@ -191,6 +192,7 @@
     <ClInclude Include="Topology.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AmortizationStruct.cpp" />
     <ClCompile Include="BaseFramebuffer.cpp" />
     <ClCompile Include="BaseOpticsRenderer.cpp" />
     <ClCompile Include="Buffer.cpp" />

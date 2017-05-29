@@ -39,7 +39,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 
 	uniform float shadowRangeKm;
 	uniform int shadowTextureSize;
-	uniform float depthMix;
+	uniform int raytraceSteps;
 	uniform int cubemapTargetIndex;
 
 	uniform uint3 amortizationOffset;
