@@ -318,6 +318,9 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <ProjectReference Include="..\CrossPlatform\CrossPlatform_x64_v140.vcxproj">
+      <Project>{7f8bc215-2b2a-4703-af7c-f7f7351fb99d}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx" />

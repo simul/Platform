@@ -623,6 +623,7 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 	
 	SAFE_RELEASE(s->m_pd3D11SamplerState);
 	AsD3D11Device()->CreateSamplerState(&samplerDesc,&s->m_pd3D11SamplerState);
+	s->default_slot=d->slot;
 	return s;
 }
 
@@ -1410,12 +1411,7 @@ void RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 				continue;
 			const crossplatform::TextureAssignment &ta = i->second;
 			{
-				sce::Gnm::Texture *t=nullptr;
-				if (ta.texture&&ta.texture->IsValid())
-					t = ta.texture->AsGnmTexture(ta.resourceType, ta.index, ta.mip);
-			//	else
-			//		t = GetDummyTexture(ta.dimensions);
-				if (!t)
+				if (!ta.texture||!ta.texture->IsValid())
 					continue;
 				Shader **sh = (Shader**)pass->shaders;
 				if (ta.uav)

@@ -11,6 +11,7 @@
 #include "Simul/Base/StringFunctions.h"
 #include <iostream>
 #include <algorithm>
+#include <regex>		// for file loading
 
 using namespace simul;
 using namespace crossplatform;
@@ -932,8 +933,6 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				string uses;
 				if(cm<line.length())
 					uses=line.substr(cm+1,line.length()-cm-1);
-				// textures,buffers,samplers
-				vector<string> uses_tbs=simul::base::split(uses,',');
 				base::ClipWhitespace(uses);
 				base::ClipWhitespace(type);
 				base::ClipWhitespace(filename);
@@ -1012,6 +1011,47 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						else
 							p->shaders[t]=s;
 					}
+					// Set what the shader uses.
+
+					// textures,buffers,samplers
+					std::regex re_resources("([a-z]):\\(([^\\)]*)\\)");
+					std::smatch res_smatch;
+
+					auto i_begin =std::sregex_iterator(uses.begin(),uses.end(),re_resources);
+					auto i_end = std::sregex_iterator();
+					for(std::sregex_iterator i = i_begin; i != i_end; ++i)
+					{
+						string mtch= i->str(0);
+						string type_letter = i->str(1);
+						char type_char		=type_letter[0];
+						string spec			=i->str(2);
+						smatch res;
+
+						std::regex re("([0-9]+)");
+						std::smatch res_smatch;
+						if(std::regex_search(spec,res_smatch,re))
+						{
+							for(size_t i = 0; i < res_smatch.size(); ++i)
+							{
+								int t=atoi(res_smatch[i].str().c_str());
+								if(type_char=='b')
+									s->setUsesBufferSlot(t);
+								else if(type_char=='s')
+									s->setUsesSamplerSlot(t);
+								else if(type_char=='t')
+								{
+									if(t<1000)
+										s->setUsesTextureSlot(t);
+									else
+										s->setUsesRwTextureSlot(t-1000);
+								}
+								else
+								{
+									SIMUL_CERR<<"Unknown resource letter "<<type_char<<std::endl;
+								}
+							}
+						}
+					}
 					// Now we will know which slots must be used by the pass:
 					p->SetUsesBufferSlots(s->bufferSlots);
 					p->SetUsesTextureSlots(s->textureSlots);
@@ -1019,6 +1059,29 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					p->SetUsesRwTextureSlots(s->rwTextureSlots);
 					p->SetUsesRwTextureSlotsForSB(s->rwTextureSlotsForSB);
 					p->SetUsesSamplerSlots(s->samplerSlots);
+
+					// set the actual sampler states for each shader based on the slots it uses:
+	// Which sampler states are needed?
+					unsigned slots=s->samplerSlots;
+					for(int slot=0;slot<64;slot++)
+					{
+						unsigned bit=1<<slot;
+						if(slots&(bit))
+						{
+							for(auto j:samplerStates)
+							{
+								if(j.second->default_slot==slot)
+								{
+									std::string ss_name=j.first;
+									crossplatform::SamplerState *ss=renderPlatform->GetOrCreateSamplerStateByName(ss_name.c_str());
+									s->samplerStates[ss]=slot;
+								}
+							}
+						}
+						slots&=(~bit);
+						if(!slots)
+							break;
+					}
 				}
 			}
 		}
