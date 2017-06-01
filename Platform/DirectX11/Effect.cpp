@@ -526,14 +526,15 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 	if(!platform_effect)
 		return NULL;
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
-	crossplatform::EffectTechnique *tech=new dx11::EffectTechnique;
 	ID3DX11EffectTechnique *t=e->GetTechniqueByName(name);
 	if(!t->IsValid())
 	{
 		SIMUL_CERR<<"Invalid Effect technique "<<name<<" in effect "<<this->filename.c_str()<<std::endl;
 		if(this->filenameInUseUtf8.length())
 			SIMUL_FILE_LINE_CERR(this->filenameInUseUtf8.c_str(),0)<<"See effect file."<<std::endl;
+		return nullptr;
 	}
+	crossplatform::EffectTechnique *tech=new dx11::EffectTechnique;
 	tech->platform_technique=t;
 	techniques[name]=tech;
 	groups[""]->techniques[name]=tech;
