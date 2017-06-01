@@ -43,7 +43,7 @@ namespace simul
 			};
 			enum Filtering
 			{
-				POINT,LINEAR
+				POINT,LINEAR,ANISOTROPIC
 			};
 			Wrapping x,y,z;
 			Filtering filtering;

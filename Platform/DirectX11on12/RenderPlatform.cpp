@@ -1411,8 +1411,11 @@ void RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 				continue;
 			const crossplatform::TextureAssignment &ta = i->second;
 			{
-				if (!ta.texture||!ta.texture->IsValid())
+				if (!ta.texture || !ta.texture->IsValid())
+				{
+
 					continue;
+				}
 				Shader **sh = (Shader**)pass->shaders;
 				if (ta.uav)
 				{
@@ -1476,7 +1479,7 @@ void RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 							SIMUL_CERR << "\tSlot " << i << ": " << name.c_str() << ", was not set." << std::endl;
 						}
 					}
-					SIMUL_BREAK_ONCE("Many API's require all used textures to have valid data.");
+					//SIMUL_BREAK_ONCE("Many API's require all used textures to have valid data.");
 				}
 			}
 			unsigned required_rw_slots = pass->GetRwTextureSlots();

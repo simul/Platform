@@ -602,7 +602,9 @@ crossplatform::SamplerStateDesc::Filtering stringToFilter(string s)
 		return crossplatform::SamplerStateDesc::POINT;
 	if(is_equal(s,"LINEAR"))
 		return crossplatform::SamplerStateDesc::LINEAR;
-	SIMUL_BREAK((string("Invalid string")+s).c_str());
+	if(is_equal(s,"ANISOTROPIC"))
+		return crossplatform::SamplerStateDesc::ANISOTROPIC;
+	SIMUL_BREAK((string("Invalid string: ")+s).c_str());
 	return crossplatform::SamplerStateDesc::POINT;
 }
 
@@ -1026,14 +1028,14 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						char type_char		=type_letter[0];
 						string spec			=i->str(2);
 						smatch res;
-
 						std::regex re("([0-9]+)");
 						std::smatch res_smatch;
 						if(std::regex_search(spec,res_smatch,re))
 						{
-							for(size_t i = 0; i < res_smatch.size(); ++i)
+							auto j_begin = std::sregex_iterator(spec.begin(), spec.end(), re);
+							for (std::sregex_iterator j = j_begin; j != i_end; ++j)
 							{
-								int t=atoi(res_smatch[i].str().c_str());
+								int t=atoi(j->str().c_str());
 								if(type_char=='b')
 									s->setUsesBufferSlot(t);
 								else if(type_char=='s')
