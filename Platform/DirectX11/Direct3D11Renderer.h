@@ -6,7 +6,7 @@
 #include <dxerr.h>
 #endif
 
-#include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
+#include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
@@ -43,7 +43,7 @@ namespace simul
 	namespace dx11
 	{
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
-			:public Direct3D11CallbackInterface
+			:public crossplatform::PlatformRendererInterface
 		{
 		public:
 			Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);
@@ -55,11 +55,11 @@ namespace simul
 			}
 			clouds::TrueSkyRenderer trueSkyRenderer;
 			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
-			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);
+			virtual void				OnCreateDevice(void* pd3dDevice);
 			virtual int					AddView				(bool external_fb);
 			virtual void				RemoveView			(int);
-			virtual void				ResizeView			(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
-			virtual void				Render				(int,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext);
+			virtual void				ResizeView			(int view_id,int w,int h);
+			virtual void				Render				(int,void* pd3dDevice,void* pd3dImmediateContext);
 			virtual void				OnD3D11LostDevice	();
 		};
 	}

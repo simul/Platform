@@ -6,7 +6,7 @@
 #include <dxerr.h>
 #endif
 
-#include "Simul/Platform/DirectX11on12/Direct3D11CallbackInterface.h"
+#include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Platform/DirectX11on12/Export.h"
 #include "Simul/Platform/DirectX11on12/FramebufferDX1x.h"
@@ -55,7 +55,7 @@ namespace simul
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
 		};
 		class SIMUL_DIRECTX12_EXPORT Direct3D11Renderer
-			:public Direct3D11CallbackInterface
+			:public crossplatform::PlatformRendererInterface
 		{
 		public:
 			Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m);

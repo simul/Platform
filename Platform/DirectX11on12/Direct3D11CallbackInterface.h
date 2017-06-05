@@ -7,10 +7,9 @@ namespace simul
 	{
 		//! An interface to abstract the nuts and bolts of D3D device creation/management (e.g. what DXUT does) from the application-specific tasks of object allocation and rendering
 		//! (what the derived classes of this one will do).
-		class Direct3D11CallbackInterface
+		class PlatformRendererInterface
 		{
 		public:
-			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const=0;
 			virtual void				OnD3D11CreateDevice	(struct ID3D11Device* pd3dDevice)=0;
 			//! Add a view. This tells the renderer to create any internal stuff it needs to handle a viewport, so that it is ready when Render() is called. It returns an identifier for that view.
 			virtual int					AddView				(bool external_fb)=0;

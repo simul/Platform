@@ -174,6 +174,7 @@
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="GpuProfiler.h" />
+    <ClInclude Include="GraphicsDeviceInterface.h" />
     <ClInclude Include="HdrRenderer.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="LensFlare.h" />
@@ -181,7 +182,7 @@
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="MixedResolutionView.h" />
+    <ClInclude Include="View.h" />
     <ClInclude Include="PixelFormat.h" />
     <ClInclude Include="Quaterniond.h" />
     <ClInclude Include="RenderPlatform.h" />
@@ -207,7 +208,7 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="MixedResolutionView.cpp" />
+    <ClCompile Include="View.cpp" />
     <ClCompile Include="Quaterniond.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="TextInputOutput.cpp" />
