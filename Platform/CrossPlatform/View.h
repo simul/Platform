@@ -26,7 +26,6 @@ namespace simul
 		enum ViewType
 		{
 			MAIN_3D_VIEW
-			,OCULUS_VR
 		};
 		//! A class that encapsulates the generated mixed-resolution depth textures, and (optionally) a framebuffer with colour and depth.
 		//! One instance of View will be created and maintained for each live 3D view.
