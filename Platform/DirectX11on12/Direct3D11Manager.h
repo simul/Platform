@@ -2,8 +2,7 @@
 #include "SimulDirectXHeader.h"
 #include <map>
 #include <string>
-#include "Simul/Platform/DirectX11on12/Direct3D11CallbackInterface.h"
-#include "Simul/Platform/DirectX11on12/Direct3D11ManagerInterface.h"
+#include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Simul/Platform/DirectX11on12/Export.h"
 
 //cpo make sure this is the right place
@@ -48,7 +47,7 @@ namespace simul
 			void CreateDepthBuffer(ID3D11Device* d3dDevice);
 
 
-			void SetRenderer(Direct3D11CallbackInterface *ci, int view_id);
+			void SetRenderer(crossplatform::PlatformRendererInterface *ci, int view_id);
 			void ResizeSwapChain(ID3D12Device* d3dDevice);
 			HWND hwnd;
 			/// The id assigned by the renderer to correspond to this hwnd
@@ -64,7 +63,7 @@ namespace simul
 			ID3D11DepthStencilView		*m_depthStencilView;
 			ID3D11RasterizerState		*m_rasterState;
 			D3D11_VIEWPORT				viewport;
-			Direct3D11CallbackInterface *renderer;
+			crossplatform::PlatformRendererInterface *renderer;
 			//cpo extensions for dx12
 			ID3D12Resource* backBufferPtr[3];											//cpo FrameCount
 
@@ -117,7 +116,7 @@ namespace simul
 
 		//! Direct3D11Manager corresponds to a single ID3D11Device, which it creates when initialized (i.e. a single graphics card accessed with this interface).
 		//! With each graphics window it manages (identified by HWND's), Direct3D11Manager creates and manages a IDXGISwapChain instance.
-		class SIMUL_DIRECTX12_EXPORT Direct3D11Manager: public Direct3D11ManagerInterface
+		class SIMUL_DIRECTX12_EXPORT Direct3D11Manager: public crossplatform::GraphicsDeviceInterface
 		{
 		public:
 			Direct3D11Manager();
@@ -145,7 +144,7 @@ namespace simul
 			IDXGISwapChain *GetSwapChain(HWND hwnd);
 			void Render(HWND hwnd);
 			
-			void SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci,int view_id);
+			void SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci,int view_id);
 			void SetFullScreen(HWND hwnd,bool fullscreen,int which_output);
 			void ResizeSwapChain(HWND hwnd);
 			ID3D11Device* GetDevice();

@@ -307,7 +307,7 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 	surfaceDesc.Width		=swapDesc.Width;
 	surfaceDesc.Height		=swapDesc.Height;
 	if(renderer)
-		renderer->ResizeView(view_id,&surfaceDesc);
+		renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 
 void Window::CreateRenderTarget(ID3D12Device* d3dDevice)
@@ -688,7 +688,7 @@ void Window::CreateDepthBuffer(ID3D12Device* d3dDevice)
 	viewport.TopLeftY = 0.0f;
 }
 
-void Window::SetRenderer(Direct3D11CallbackInterface *ci,int vw_id)
+void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 {
 	if(renderer==ci)
 		return;
@@ -714,7 +714,7 @@ void Window::SetRenderer(Direct3D11CallbackInterface *ci,int vw_id)
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
 	if(view_id<0)
 		view_id				=renderer->AddView(false);
-	renderer->ResizeView(view_id,&surfaceDesc);
+	renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 
 
@@ -1444,7 +1444,7 @@ void Direct3D11Manager::PopulateCommandList(Window *window)
 
 
 
-void Direct3D11Manager::SetRenderer(HWND hwnd, Direct3D11CallbackInterface *ci, int view_id)
+void Direct3D11Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
 {
 	if(windows.find(hwnd)==windows.end())
 		return;

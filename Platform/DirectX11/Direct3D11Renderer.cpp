@@ -18,13 +18,9 @@
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Math/pi.h"
-#ifdef SIMUL_USE_SCENE
-#include "Simul/Scene/BaseSceneRenderer.h"
-#endif
 using namespace simul;
 using namespace dx11;
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m)
 	:trueSkyRenderer(env,s,m)
 {
@@ -35,7 +31,7 @@ Direct3D11Renderer::~Direct3D11Renderer()
 	trueSkyRenderer.InvalidateDeviceObjects();
 }
 
-void Direct3D11Renderer::OnD3D11CreateDevice	(ID3D11Device* pd3dDevice)
+void Direct3D11Renderer::OnCreateDevice(void* pd3dDevice)
 {
 	renderPlatformDx11.RestoreDeviceObjects(pd3dDevice);
 	trueSkyRenderer.RestoreDeviceObjects(&renderPlatformDx11);
@@ -62,14 +58,15 @@ void Direct3D11Renderer::RemoveView			(int view_id)
 	return trueSkyRenderer.RemoveView(view_id);
 }
 
-void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
+void Direct3D11Renderer::ResizeView(int view_id,int w,int h)
 {
-	return trueSkyRenderer.ResizeView(view_id,pBackBufferSurfaceDesc->Width,pBackBufferSurfaceDesc->Height);
+	return trueSkyRenderer.ResizeView(view_id,w,h);
 }
 
-void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)
+void Direct3D11Renderer::Render(int view_id,void* pd3dDevice,void* context)
 {
 	crossplatform::DeviceContext deviceContext;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	deviceContext.platform_context	=pContext;
 	simul::crossplatform::SetGpuProfilingInterface(deviceContext,renderPlatformDx11.GetGpuProfiler());
 	deviceContext.renderPlatform	=&renderPlatformDx11;

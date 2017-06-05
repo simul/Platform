@@ -26,53 +26,38 @@ namespace simul
 		enum ViewType
 		{
 			MAIN_3D_VIEW
-			,OCULUS_VR
 		};
 		//! A class that encapsulates the generated mixed-resolution depth textures, and (optionally) a framebuffer with colour and depth.
-		//! One instance of MixedResolutionView will be created and maintained for each live 3D view.
-		class SIMUL_CROSSPLATFORM_EXPORT MixedResolutionView
+		//! One instance of View will be created and maintained for each live 3D view.
+		class SIMUL_CROSSPLATFORM_EXPORT View
 		{
 		public:
 			/// Default constructor.
-			MixedResolutionView();
+			View();
 			/// Destructor.
-			~MixedResolutionView();
+			~View();
 
 			/// Restore device objects.
-			///
 			/// \param [in,out]	renderPlatform	If non-null, the render platform.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			/// Invalidate device objects.
 			void InvalidateDeviceObjects();
 
 			/// Gets screen width.
-			///
-			/// \return	The screen width.
 			int GetScreenWidth() const;
 
 			/// Gets screen height.
-			///
-			/// \return	The screen height.
 			int GetScreenHeight() const;
 
 			/// Sets the resolution.
-			///
-			/// \param	w	The width.
-			/// \param	h	The height.
 			void SetResolution(int w,int h);
 
 			/// Sets external framebuffer.
-			///
-			/// \param	ext	Whether to use an external framebuffer.
 			void SetExternalFramebuffer(bool ext);
-			/// Gets resolved header buffer.
-			///
-			/// \return	null if it fails, else the resolved header buffer.
+			/// Gets resolved HDR buffer.
 			crossplatform::Texture						*GetResolvedHDRBuffer();
 
 			/// Gets the framebuffer.
-			///
-			/// \return	null if it fails, else the framebuffer.
 			crossplatform::BaseFramebuffer				*GetFramebuffer()
 			{
 				return hdrFramebuffer;
@@ -85,7 +70,7 @@ namespace simul
 			crossplatform::ViewType						viewType;
 			bool										vrDistortion;
 		private:
-			///      A framebuffer with depth.
+			/// A framebuffer with depth.
 			simul::crossplatform::BaseFramebuffer		*hdrFramebuffer;
 			/// The resolved texture.
 			simul::crossplatform::Texture				*resolvedTexture;
@@ -96,59 +81,38 @@ namespace simul
 			int											ScreenWidth;
 			/// Height of the screen.
 			int											ScreenHeight;
-			int											Downscale;
 			int											last_framenumber;
 		public:
 			/// true to use external framebuffer.
 			bool										useExternalFramebuffer;
 		};
 
-		/// A class to store a set of MixedResolutionView objects, one per view id.
-		class SIMUL_CROSSPLATFORM_EXPORT MixedResolutionViewManager
+		/// A class to store a set of View objects, one per view id.
+		class SIMUL_CROSSPLATFORM_EXPORT ViewManager
 		{
 		public:
 			/// Default constructor.
-			MixedResolutionViewManager():
+			ViewManager():
 				renderPlatform(NULL)
 				,last_created_view_id(-1)
 			{}
-
-			typedef std::map<int,MixedResolutionView*>	ViewMap;
-
+			typedef std::map<int,View*>	ViewMap;
 			/// Restore the device objects.
-			///
-			/// \param [in,out]	renderPlatform	If non-null, the render platform.
-			void							RestoreDeviceObjects	(crossplatform::RenderPlatform *renderPlatform);
+			void							RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			/// Invalidate device objects.
 			void							InvalidateDeviceObjects	();
-
 			/// Gets a view.
-			///
-			/// \param	view_id	Identifier for the view.
-			///
 			/// \return	null if it fails, else the view.
-			MixedResolutionView				*GetView				(int view_id);
-
-			const MixedResolutionView		*GetView		(int view_id) const;
-
+			View				*GetView		(int view_id);
+			const View		*GetView		(int view_id) const;
 			/// Delete old views
 			void CleanUp(int current_framenumber,int max_age);
-
 			/// Gets the views.
-			///
-			/// \return	the views.
 			const ViewMap &GetViews() const;
-
 			/// Adds a view.
-			///
-			/// \param	external_framebuffer	Whether to use an external framebuffer.
-			///
 			/// \return	An int view_id.
 			int								AddView					(bool external_framebuffer);
-
 			/// Removes the view.
-			///
-			/// \param	view_id	The id of the view to remove.
 			void							RemoveView				(int view_id);
 			/// Clears this object to its blank/initial state.
 			void							Clear					();

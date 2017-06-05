@@ -2,7 +2,7 @@
 #ifdef _MSC_VER
 #define NOMINMAX
 #endif
-#include "MixedResolutionView.h"
+#include "View.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
@@ -18,10 +18,9 @@
 using namespace simul;
 using namespace crossplatform;
 
-MixedResolutionView::MixedResolutionView()
+View::View()
 	:ScreenWidth(0)
 	,ScreenHeight(0)
-	,Downscale(4)
 	,viewType(MAIN_3D_VIEW)
 	,useExternalFramebuffer(false)
 	,hdrFramebuffer(NULL)
@@ -30,12 +29,12 @@ MixedResolutionView::MixedResolutionView()
  {
  }
 
- MixedResolutionView::~MixedResolutionView()
+ View::~View()
  {
 	 InvalidateDeviceObjects();
  }
 
-void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+void View::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
 	SAFE_DELETE(hdrFramebuffer);
@@ -54,7 +53,7 @@ void MixedResolutionView::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	}
 }
 
-void MixedResolutionView::InvalidateDeviceObjects()
+void View::InvalidateDeviceObjects()
 {
 	if(hdrFramebuffer)
 		hdrFramebuffer->InvalidateDeviceObjects();
@@ -64,17 +63,17 @@ void MixedResolutionView::InvalidateDeviceObjects()
 	SAFE_DELETE(resolvedTexture);
 }
 
-int MixedResolutionView::GetScreenWidth() const
+int View::GetScreenWidth() const
 {
 	return ScreenWidth;
 }
 
-int MixedResolutionView::GetScreenHeight() const
+int View::GetScreenHeight() const
 {
 	return ScreenHeight;
 }
 
-void MixedResolutionView::SetResolution(int w,int h)
+void View::SetResolution(int w,int h)
 {
 	if(ScreenWidth==w&&ScreenHeight==h)
 		return;
@@ -82,7 +81,7 @@ void MixedResolutionView::SetResolution(int w,int h)
 	ScreenHeight=h;
 }
 
-void MixedResolutionView::SetExternalFramebuffer(bool e)
+void View::SetExternalFramebuffer(bool e)
 {
 	if(useExternalFramebuffer!=e)
 	{
@@ -91,7 +90,7 @@ void MixedResolutionView::SetExternalFramebuffer(bool e)
 	}
 }
 
-crossplatform::Texture *MixedResolutionView::GetResolvedHDRBuffer()
+crossplatform::Texture *View::GetResolvedHDRBuffer()
 {
 	if(hdrFramebuffer->numAntialiasingSamples>1)
 		return resolvedTexture;
@@ -99,7 +98,7 @@ crossplatform::Texture *MixedResolutionView::GetResolvedHDRBuffer()
 		return hdrFramebuffer->GetTexture();
 }
 
-void MixedResolutionViewManager::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+void ViewManager::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
 	auto views=GetViews();
@@ -109,7 +108,7 @@ void MixedResolutionViewManager::RestoreDeviceObjects(crossplatform::RenderPlatf
 	}
 }
 
-void MixedResolutionViewManager::InvalidateDeviceObjects()
+void ViewManager::InvalidateDeviceObjects()
 {
 	renderPlatform=NULL;
 	auto views=GetViews();
@@ -119,17 +118,17 @@ void MixedResolutionViewManager::InvalidateDeviceObjects()
 	}
 }
 
-int	MixedResolutionViewManager::AddView(bool external_framebuffer)
+int	ViewManager::AddView(bool external_framebuffer)
 {
 	last_created_view_id++;
 	int view_id		=last_created_view_id;
-	MixedResolutionView *view		=views[view_id]=new MixedResolutionView();
+	View *view		=views[view_id]=new View();
 	view->useExternalFramebuffer=external_framebuffer;
 	view->RestoreDeviceObjects(renderPlatform);
 	return view_id;
 }
 
-void MixedResolutionViewManager::RemoveView(int view_id)
+void ViewManager::RemoveView(int view_id)
 { 
 	if(views.find(view_id)!=views.end())
 	{
@@ -138,7 +137,7 @@ void MixedResolutionViewManager::RemoveView(int view_id)
 	}
 }
 
-MixedResolutionView *MixedResolutionViewManager::GetView(int view_id)
+View *ViewManager::GetView(int view_id)
 {
 	ViewMap::iterator i=views.find(view_id);
 	if(i==views.end())
@@ -146,7 +145,7 @@ MixedResolutionView *MixedResolutionViewManager::GetView(int view_id)
 	return i->second;
 }
 
-const MixedResolutionView *MixedResolutionViewManager::GetView(int view_id) const
+const View *ViewManager::GetView(int view_id) const
 {
 	ViewMap::const_iterator i=views.find(view_id);
 	if(i==views.end())
@@ -154,11 +153,11 @@ const MixedResolutionView *MixedResolutionViewManager::GetView(int view_id) cons
 	return i->second;
 }
 
-const MixedResolutionViewManager::ViewMap &MixedResolutionViewManager::GetViews() const
+const ViewManager::ViewMap &ViewManager::GetViews() const
 {
 	return views;
 }
-void MixedResolutionViewManager::CleanUp(int current_frame,int max_age)
+void ViewManager::CleanUp(int current_frame,int max_age)
 {
 	for (auto i:views)
 	{
@@ -170,7 +169,7 @@ void MixedResolutionViewManager::CleanUp(int current_frame,int max_age)
 		}
 	}
 }
-void MixedResolutionViewManager::Clear()
+void ViewManager::Clear()
 {
 	for(ViewMap::iterator i=views.begin();i!=views.end();i++)
 	{
