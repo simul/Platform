@@ -26,6 +26,7 @@ namespace simul
 		enum ViewType
 		{
 			MAIN_3D_VIEW
+			,OCULUS_VR
 		};
 		//! A class that encapsulates the generated mixed-resolution depth textures, and (optionally) a framebuffer with colour and depth.
 		//! One instance of View will be created and maintained for each live 3D view.
@@ -38,7 +39,6 @@ namespace simul
 			~View();
 
 			/// Restore device objects.
-			/// \param [in,out]	renderPlatform	If non-null, the render platform.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			/// Invalidate device objects.
 			void InvalidateDeviceObjects();
@@ -103,7 +103,7 @@ namespace simul
 			void							InvalidateDeviceObjects	();
 			/// Gets a view.
 			/// \return	null if it fails, else the view.
-			View				*GetView		(int view_id);
+			View			*GetView		(int view_id);
 			const View		*GetView		(int view_id) const;
 			/// Delete old views
 			void CleanUp(int current_framenumber,int max_age);
