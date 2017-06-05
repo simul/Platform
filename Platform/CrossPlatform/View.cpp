@@ -118,12 +118,18 @@ void ViewManager::InvalidateDeviceObjects()
 	}
 }
 
-int	ViewManager::AddView(bool external_framebuffer)
+int	ViewManager::AddView()
+{
+	View *view=new View();
+	return AddView(view);
+}
+
+int	ViewManager::AddView(View *v)
 {
 	last_created_view_id++;
 	int view_id		=last_created_view_id;
-	View *view		=views[view_id]=new View();
-	view->useExternalFramebuffer=external_framebuffer;
+	View *view		=views[view_id]=v;
+	view->useExternalFramebuffer=false;
 	view->RestoreDeviceObjects(renderPlatform);
 	return view_id;
 }
