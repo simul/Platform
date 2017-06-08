@@ -16,9 +16,6 @@ Window::Window():
 	,vsync(false)
 	,m_swapChain(0)
 	,m_renderTargetView(0)
-	,m_depthStencilTexture(0)
-	,m_depthStencilState(0)
-	,m_depthStencilView(0)
 	,m_rasterState(0)
 	,renderer(NULL)
 {
@@ -185,12 +182,7 @@ void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
 	if(swapDesc.BufferDesc.Width==W&&swapDesc.BufferDesc.Height==H)
 		return;
 	SAFE_RELEASE(m_renderTargetView);
-	SAFE_RELEASE(m_depthStencilTexture);
-	SAFE_RELEASE(m_depthStencilView);
-	SAFE_RELEASE(m_depthStencilState);
 	SAFE_RELEASE(m_rasterState);
-			//		*m_depthStencilState;
-			//		*m_rasterState;
 	V_CHECK(m_swapChain->ResizeBuffers(1,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0));
 	CreateRenderTarget(d3dDevice);
 	CreateDepthBuffer(d3dDevice);
@@ -238,7 +230,7 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 	// The stencil buffer can be used to achieve effects such as motion blur, volumetric shadows, and other things.
 	// Initialize the description of the depth buffer.
 	D3D11_TEXTURE2D_DESC depthBufferDesc;
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+//	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
 	ZeroMemory(&depthBufferDesc, sizeof(depthBufferDesc));
 
 	// Set up the description of the depth buffer.
@@ -253,6 +245,8 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 	depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 	depthBufferDesc.CPUAccessFlags = 0;
 	depthBufferDesc.MiscFlags = 0;
+
+#if 0
 	// Now we create the depth/stencil buffer using that description.
 	// You will notice we use the CreateTexture2D function to make the buffers,
 	// hence the buffer is just a 2D texture.
@@ -313,10 +307,11 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
-	SAFE_RELEASE(m_depthStencilView)
-	result = d3dDevice->CreateDepthStencilView(m_depthStencilTexture, &depthStencilViewDesc, &m_depthStencilView);
-	SetDebugObjectName( m_depthStencilView,"Window m_depthStencilView");
-	SIMUL_ASSERT(result==S_OK);
+	//SAFE_RELEASE(m_depthStencilView)
+	//result = d3dDevice->CreateDepthStencilView(m_depthStencilTexture, &depthStencilViewDesc, &m_depthStencilView);
+	//SetDebugObjectName( m_depthStencilView,"Window m_depthStencilView");
+	//SIMUL_ASSERT(result==S_OK);
+#endif
 	//The viewport also needs to be setup so that Direct3D can map clip space coordinates to the render target space.
 	//Set this to be the entire size of the window.
 
@@ -358,9 +353,9 @@ void Window::Release()
 		m_swapChain->SetFullscreenState(false, NULL);
 	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE(m_renderTargetView);
-	SAFE_RELEASE(m_depthStencilTexture);
-	SAFE_RELEASE(m_depthStencilState);
-	SAFE_RELEASE(m_depthStencilView);
+	//SAFE_RELEASE(m_depthStencilTexture);
+	//SAFE_RELEASE(m_depthStencilState);
+	//SAFE_RELEASE(m_depthStencilView);
 	SAFE_RELEASE(m_rasterState);
 }
 
@@ -706,9 +701,9 @@ ERRNO_BREAK
 	}
 ERRNO_BREAK
 	// Set the depth stencil state.
-	d3dDeviceContext->OMSetDepthStencilState(w->m_depthStencilState, 1);
+	//d3dDeviceContext->OMSetDepthStencilState(w->m_depthStencilState, 1);
 	// Bind the render target view and depth stencil buffer to the output render pipeline.
-	d3dDeviceContext->OMSetRenderTargets(1, &w->m_renderTargetView,w->m_depthStencilView);
+	d3dDeviceContext->OMSetRenderTargets(1, &w->m_renderTargetView,nullptr);//w->m_depthStencilView);
 	// Create the viewport.
 	d3dDeviceContext->RSSetViewports(1, &w->viewport);
 	// Now set the rasterizer state.

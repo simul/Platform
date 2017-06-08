@@ -23,7 +23,7 @@ namespace simul
 		struct Viewport;
 		class RenderPlatform;
 		///
-		enum ViewType
+		enum ViewType : int
 		{
 			MAIN_3D_VIEW
 			,OCULUS_VR
@@ -32,12 +32,24 @@ namespace simul
 		//! One instance of View will be created and maintained for each live 3D view.
 		class SIMUL_CROSSPLATFORM_EXPORT View
 		{
+		protected:
+			static int last_class_id;
+		private:
+			static int static_class_id;
 		public:
 			/// Default constructor.
 			View();
 			/// Destructor.
 			virtual ~View();
 
+			virtual int GetClassId() const
+			{
+				return static_class_id;
+			}
+			static int GetStaticClassId()
+			{
+				return static_class_id;
+			}
 			/// Restore device objects.
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform);
 			/// Invalidate device objects.
@@ -57,19 +69,10 @@ namespace simul
 			/// Gets resolved HDR buffer.
 			crossplatform::Texture						*GetResolvedHDRBuffer();
 
-			/// Gets the framebuffer.
-			crossplatform::BaseFramebuffer				*GetFramebuffer()
-			{
-				return hdrFramebuffer;
-			}
-			const crossplatform::BaseFramebuffer		*GetFramebuffer() const
-			{
-				return hdrFramebuffer;
-			}
 			/// Type of view.
 			crossplatform::ViewType						viewType;
 			bool										vrDistortion;
-		private:
+		protected:
 			/// A framebuffer with depth.
 			simul::crossplatform::BaseFramebuffer		*hdrFramebuffer;
 			/// The resolved texture.
@@ -82,7 +85,6 @@ namespace simul
 			/// Height of the screen.
 			int											ScreenHeight;
 			int											last_framenumber;
-		public:
 			/// true to use external framebuffer.
 			bool										useExternalFramebuffer;
 		};

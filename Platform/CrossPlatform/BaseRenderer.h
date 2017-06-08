@@ -3,6 +3,7 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/Camera.h"
+#include "Simul/Base/Delegate.h"
 
 
 #ifdef _MSC_VER
@@ -137,8 +138,7 @@ namespace simul
 		//! The base class for renderers. Placeholder for now.
 		class BaseRenderer
 		{
-		//protected:
-		//	virtual scene::RenderPlatform *GetRenderPlatform()=0;
+		
 		};
 	}
 }

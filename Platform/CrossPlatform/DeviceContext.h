@@ -1,6 +1,7 @@
 #ifndef SIMUL_PLATFORM_CROSSPLATFORM_DEVICECONTEXT_H
 #define SIMUL_PLATFORM_CROSSPLATFORM_DEVICECONTEXT_H
 #include "BaseRenderer.h"
+#include <functional>
 struct ID3D11DeviceContext;
 struct IDirect3DDevice9;
 namespace sce
@@ -48,6 +49,13 @@ namespace simul
 			}
 			ViewStruct viewStruct;
 		};
+
+		struct DeviceContext;
+	
+		// A simple render delegate, it will usually be a function partially bound with std::bind.
+		typedef std::function<void(crossplatform::DeviceContext&)> RenderDelegate;
+		typedef std::function<void(void*)> StartupDeviceDelegate;
+		typedef std::function<void()> ShutdownDeviceDelegate;
 	}
 }
 #endif

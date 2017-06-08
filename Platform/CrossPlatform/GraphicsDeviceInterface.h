@@ -1,6 +1,7 @@
 #ifndef GRAPHICSDEVICEINTERFACE
 #define GRAPHICSDEVICEINTERFACE
 #include <string>
+
 struct Output
 {
 	std::string monitorName;

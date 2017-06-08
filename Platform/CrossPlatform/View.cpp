@@ -18,6 +18,9 @@
 using namespace simul;
 using namespace crossplatform;
 
+int View::last_class_id=0;
+int View::static_class_id=0;
+
 View::View()
 	:ScreenWidth(0)
 	,ScreenHeight(0)
@@ -27,6 +30,8 @@ View::View()
 	,resolvedTexture(NULL)
 	, last_framenumber(-1)
  {
+	if(!static_class_id)
+		static_class_id=last_class_id++;
  }
 
  View::~View()

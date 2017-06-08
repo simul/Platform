@@ -28,9 +28,9 @@ namespace simul
 			bool vsync;
 			IDXGISwapChain				*m_swapChain;
 			ID3D11RenderTargetView		*m_renderTargetView;
-			ID3D11Texture2D				*m_depthStencilTexture;
-			ID3D11DepthStencilState		*m_depthStencilState;
-			ID3D11DepthStencilView		*m_depthStencilView;
+			//ID3D11Texture2D				*m_depthStencilTexture;
+			//ID3D11DepthStencilState		*m_depthStencilState;
+			//ID3D11DepthStencilView		*m_depthStencilView;
 			ID3D11RasterizerState		*m_rasterState;
 			D3D11_VIEWPORT				viewport;
 			crossplatform::PlatformRendererInterface *renderer;
