@@ -3,7 +3,6 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Base/Delegate.h"
 
 
 #ifdef _MSC_VER

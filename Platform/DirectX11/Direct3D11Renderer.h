@@ -10,7 +10,6 @@
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Simul/Clouds/TrueSkyRenderer.h"
-#include "Simul/Base/Delegate.h"
 #include <functional>
 
 #pragma warning(push)
