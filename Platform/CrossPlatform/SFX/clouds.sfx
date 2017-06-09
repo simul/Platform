@@ -160,7 +160,7 @@ void MixInLayer( uint3 g, uint3 t,bool clears)
 //	res.z		=saturate((res.z*2.0-0.5)*1.5+0.7);
 	res.z		=saturate((res.z-0.25)/diffusivity+0.25);
 
-	res.z*= saturate(texc.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - texc.z) / zPixel);
+	res.z*= humidity/0.5*saturate(texc.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - texc.z) / zPixel);
 
 	if (res.z > 0.05)
 	{

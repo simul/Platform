@@ -713,7 +713,7 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
 	if(view_id<0)
-		view_id				=renderer->AddView(false);
+		view_id				=renderer->AddView();
 	renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 
@@ -1532,12 +1532,12 @@ void Direct3D11Manager::ResizeSwapChain(HWND hwnd)
 
 
 
-ID3D11Device* Direct3D11Manager::GetDevice()
+void* Direct3D11Manager::GetDevice()
 {
 	return d3dDevice;
 }
 
-ID3D11DeviceContext* Direct3D11Manager::GetDeviceContext()
+void* Direct3D11Manager::GetDeviceContext()
 {
 	return d3dDeviceContext;
 }

@@ -182,6 +182,7 @@ void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
 	if(swapDesc.BufferDesc.Width==W&&swapDesc.BufferDesc.Height==H)
 		return;
 	SAFE_RELEASE(m_renderTargetView);
+	SAFE_RELEASE(m_renderTexture);
 	SAFE_RELEASE(m_rasterState);
 	V_CHECK(m_swapChain->ResizeBuffers(1,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0));
 	CreateRenderTarget(d3dDevice);
@@ -203,17 +204,14 @@ void Window::CreateRenderTarget(ID3D11Device* d3dDevice)
 		return;
 	if(!m_swapChain)
 		return;
-	ID3D11Texture2D* backBufferPtr;
-	HRESULT result = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
+	HRESULT result = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&m_renderTexture);
 	SIMUL_ASSERT(result==S_OK);
 	// Create the render target view with the back buffer pointer.
 	SAFE_RELEASE(m_renderTargetView);
-	result = d3dDevice->CreateRenderTargetView(backBufferPtr, NULL, &m_renderTargetView);
-	SetDebugObjectName( backBufferPtr,"Window backBufferPtr");
+	result = d3dDevice->CreateRenderTargetView(m_renderTexture, NULL, &m_renderTargetView);
+	SetDebugObjectName(m_renderTexture,"Window backBuffer Texture");
 	SetDebugObjectName( m_renderTargetView,"Window m_renderTargetView");
 	SIMUL_ASSERT(result==S_OK);
-	// Release pointer to the back buffer as we no longer need it.
-	SAFE_RELEASE(backBufferPtr);
 }
 
 void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
@@ -342,20 +340,21 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
 	if(view_id<0)
-		view_id				=renderer->AddView(false);
+		view_id				=renderer->AddView();
 	renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 
 void Window::Release()
 {
+	if(renderer)
+		renderer->RemoveView(view_id);
 	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
 	if(m_swapChain)
 		m_swapChain->SetFullscreenState(false, NULL);
 	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE(m_renderTargetView);
-	//SAFE_RELEASE(m_depthStencilTexture);
-	//SAFE_RELEASE(m_depthStencilState);
-	//SAFE_RELEASE(m_depthStencilView);
+	// Release pointer to the back buffer as we no longer need it.
+	SAFE_RELEASE(m_renderTexture);
 	SAFE_RELEASE(m_rasterState);
 }
 
@@ -710,7 +709,7 @@ ERRNO_BREAK
 	d3dDeviceContext->RSSetState(w->m_rasterState);
 	if(w->renderer)
 	{
-		w->renderer->Render(w->view_id,GetDevice(),GetDeviceContext());
+		w->renderer->Render(w->view_id,GetDeviceContext(),w->m_renderTargetView);
 	}
 	static DWORD dwFlags = 0;
 	// 0 - don't wait for 60Hz refresh.
@@ -805,12 +804,12 @@ void Direct3D11Manager::ResizeSwapChain(HWND hwnd)
 	w->ResizeSwapChain(d3dDevice);
 }
 
-ID3D11Device* Direct3D11Manager::GetDevice()
+void* Direct3D11Manager::GetDevice()
 {
 	return d3dDevice;
 }
 
-ID3D11DeviceContext* Direct3D11Manager::GetDeviceContext()
+void* Direct3D11Manager::GetDeviceContext()
 {
 	return d3dDeviceContext;
 }
