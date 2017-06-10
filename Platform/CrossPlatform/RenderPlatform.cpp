@@ -285,8 +285,16 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 					W=(w+8-1)/1;
 					L=(l+8-1)/1;
 					D = d;
-					debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget2DArray", texture, i);
 					techname = "compute_clear_2d_array";
+					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM)
+					{
+						techname="compute_clear_2d_array_u8";
+						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArrayU8",texture,i);
+					}
+					else
+					{
+						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArray",texture,i);
+					}
 				}
 				else if(texture->dim==2)
 				{
@@ -958,8 +966,10 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 		}
 		else
 		{
-			SIMUL_CERR<<"Simul fx error: the sampler state "<<name_utf8<<" was declared with slots "<<s->default_slot<<" and "<<desc->slot<<std::endl;
-			SIMUL_BREAK("Sampler state slot conflict")
+			SIMUL_COUT<<"Simul fx: the sampler state "<<name_utf8<<" was declared with slots "<<s->default_slot<<" and "<<desc->slot
+				<<"\nTherefore it will have no default slot."<<std::endl;
+			s->default_slot=-1;
+			ss=s;
 		}
 	}
 	else

@@ -21,6 +21,7 @@ uniform Texture2D godraysTexture;
 uniform TextureCube cubeDepthTexture;
 uniform TextureCube cubeUpdateTexture;
 uniform RWTexture3D<vec4> targetVolume;
+uniform RWTexture3D<uchar4> targetVolume_U8;
 uniform RWTexture2D<vec4> targetTexture;
 
 #include "../SL/cloud_shadow.sl"
@@ -148,7 +149,7 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 		sum				+=1.0;
 
 		vec4 result		=lerp(total/sum,mi,fade_away);
-		IMAGE_STORE_3D(targetVolume,pos,result);
+		IMAGE_STORE_3D(targetVolume_U8,pos,result);
 	}
 }
 

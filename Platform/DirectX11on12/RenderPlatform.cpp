@@ -376,7 +376,8 @@ void RenderPlatform::ApplyShaderPass(crossplatform::DeviceContext &deviceContext
 
 void RenderPlatform::Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert)
 {
-	ApplyContextState(deviceContext);
+	if(!ApplyContextState(deviceContext))
+		return;
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
 	pContext->Draw(num_verts,start_vert);
 }
@@ -1230,18 +1231,22 @@ void RenderPlatform::SaveTexture(crossplatform::Texture *texture,const char *lFi
 	dx11on12::SaveTexture(device,texture->AsD3D11Texture2D(),lFileNameUtf8);
 }
 
-void RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking)
+bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking)
 {
 	crossplatform::ContextState *cs = GetContextState(deviceContext);
 	if (!cs || !cs->currentEffectPass)
 	{
 		SIMUL_BREAK("No valid shader pass in ApplyContextState");
-		return;
+		return false;
 	}
 	ID3D11DeviceContext *d3d11DeviceContext = deviceContext.asD3D11DeviceContext();
 
 	// NULL ptr here if we've not applied a valid shader..
 	dx11on12::EffectPass *pass = static_cast<dx11on12::EffectPass*>(cs->currentEffectPass);
+	Shader **sh = (dx11on12::Shader**)pass->shaders;
+	// TODO: re-enable geometry shaders maybe
+	if(sh[crossplatform::SHADERTYPE_GEOMETRY]||(sh[crossplatform::SHADERTYPE_VERTEX]!=nullptr&&sh[crossplatform::SHADERTYPE_PIXEL]==nullptr))
+		return false;
 	if (!cs->effectPassValid)
 	{
 		if (cs->last_action_was_compute&&pass->shaders[crossplatform::SHADERTYPE_VERTEX] != nullptr)
@@ -1366,7 +1371,6 @@ void RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 			if (!pass->usesTextureSlotForSB(slot))
 				continue;
 			i->second->ActualApply(deviceContext, pass, slot);
-			Shader **sh = (dx11on12::Shader**)pass->shaders;
 			if (slot<1000)
 			{
 				if (sh[crossplatform::SHADERTYPE_VERTEX] && sh[crossplatform::SHADERTYPE_VERTEX]->usesTextureSlotForSB(slot))
@@ -1413,7 +1417,9 @@ void RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 			{
 				if (!ta.texture || !ta.texture->IsValid())
 				{
-
+					// A NULL texture means we want default values. It would be NICE if DX would 
+					// use its own documented behaviour:
+					cs->textureSlots |= (1 << slot);
 					continue;
 				}
 				Shader **sh = (Shader**)pass->shaders;
@@ -1477,6 +1483,9 @@ void RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 							if (cs->currentEffect)
 								name = cs->currentEffect->GetTextureForSlot(i);
 							SIMUL_CERR << "\tSlot " << i << ": " << name.c_str() << ", was not set." << std::endl;
+							missing_slots=missing_slots&(~slot);
+							if(!missing_slots)
+								break;
 						}
 					}
 					//SIMUL_BREAK_ONCE("Many API's require all used textures to have valid data.");
@@ -1506,6 +1515,7 @@ void RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 			}
 		}
 	}
+	return true;
 }
 
 #pragma optimize("",off)

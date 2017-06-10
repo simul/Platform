@@ -151,7 +151,7 @@ namespace simul
 		{
 		protected:
 			//! This is called by draw functions to do any lazy updating prior to the actual API draw/dispatch call.
-			virtual void ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true){}
+			virtual bool ApplyContextState(crossplatform::DeviceContext & /*deviceContext*/,bool /*error_checking*/ =true){return true;}
 			virtual Viewport PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index);
 		public:
 			/// Get the current state to be applied to the given context at the next draw or dispatch.

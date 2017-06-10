@@ -294,7 +294,7 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 	SAFE_RELEASE(m_rasterState);
 			//		*m_depthStencilState;
 			//		*m_rasterState;
-	V_CHECK(m_swapChain->ResizeBuffers(1,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0));
+	V_CHECK(m_swapChain->ResizeBuffers(2,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0));
 	CreateRenderTarget(d3dDevice);
 //	CreateDepthBuffer(d3dDevice);					//cpo create a d3d11 depth buffer 
 	CreateDepthBuffer(d3d11Device);					//cpo create a d3d11 depth buffer 
@@ -702,8 +702,6 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 
 	//cpo //todo commandlist set here
 	//cpo framestart
-
-
 
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	DXGI_SURFACE_DESC surfaceDesc;

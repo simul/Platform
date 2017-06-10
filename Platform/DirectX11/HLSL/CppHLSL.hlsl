@@ -23,11 +23,11 @@
 #define sampler3D texture3D
 
 #ifndef __cplusplus
-#define char4 vec4
+#define char4 snorm float4
 #define vec2 float2
 #define vec3 float3
 #define vec4 float4
-#define uchar4 float4
+#define uchar4 unorm float4
 #define mat2 float2x2
 #define mat3 float3x3
 #define mat4 float4x4
