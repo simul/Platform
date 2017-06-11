@@ -118,13 +118,17 @@ bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_
 RenderState::RenderState()
 	:m_depthStencilState(NULL)
 	,m_blendState(NULL)
+	,m_rasterizerState(NULL)
 {
 }
+
 RenderState::~RenderState()
 {
 	SAFE_RELEASE(m_depthStencilState)
 	SAFE_RELEASE(m_blendState)
+	SAFE_RELEASE(m_rasterizerState)
 }
+
 static const int NUM_STAGING_BUFFERS=4;
 PlatformStructuredBuffer::PlatformStructuredBuffer()
 				:num_elements(0)
@@ -628,6 +632,13 @@ void Effect::Reapply(crossplatform::DeviceContext &deviceContext)
 void Effect::Unapply(crossplatform::DeviceContext &deviceContext)
 {
 	crossplatform::Effect::Unapply(deviceContext);
+}
+
+void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::ConstantBufferBase *s)
+{
+	RenderPlatform *r = (RenderPlatform *)deviceContext.renderPlatform;
+	s->GetPlatformConstantBuffer()->Apply(deviceContext, s->GetSize(), s->GetAddr());
+	crossplatform::Effect::SetConstantBuffer(deviceContext, name, s);
 }
 
 void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)

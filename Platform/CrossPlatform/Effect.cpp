@@ -355,16 +355,16 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		res.valid = false;
 		SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
 		SIMUL_BREAK_ONCE("")
-			return res;
+		return res;
 	}
 	else
-		res.valid = true;
-	unsigned slot = GetSlot(name);
-	unsigned dim = GetDimensions(name);
-	res.platform_shader_resource = (void*)nullptr;
-	res.slot = slot;
-	res.dimensions=dim;
-	res.shaderResourceType = GetResourceType(name);
+		res.valid					=true;
+	unsigned slot					=GetSlot(name);
+	unsigned dim					=GetDimensions(name);
+	res.platform_shader_resource	=(void*)nullptr;
+	res.slot						=slot;
+	res.dimensions					=dim;
+	res.shaderResourceType			=GetResourceType(name);
 	return res;
 }
 

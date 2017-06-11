@@ -800,7 +800,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 	DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);
 }
-   
+
 void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma)
 {
 	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma);
@@ -868,6 +868,7 @@ void RenderPlatform::Draw2dLine(DeviceContext &deviceContext,vec2 pos1,vec2 pos2
 
 void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
 {
+	SIMUL_COMBINED_PROFILE_START(deviceContext, "text")
 	static float clr[]={1.f,1.f,0.f,1.f};
 	static float black[]={0.f,0.f,0.f,0.0f};
 	if(!colr)
@@ -893,6 +894,7 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 		pos++;
 		y+=16;
 	}
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 		
 crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index)

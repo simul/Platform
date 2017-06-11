@@ -429,7 +429,6 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 	vec4 c					=t2d;
 	c.rgb					*=f.colour[num_interp-1].a;
 	c.rgb					+=f.colour[num_interp-1].rgb;
-
 	c.a						=t2d.a*f.colour[num_interp-1].a;
 	
 	outputTexture1[pos+uint3(0,0,6*(num_interp-1))]		=c;
@@ -441,7 +440,6 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 		cn.a					=1.0-n*(1.0-t2d.a);
 		cn.rgb					+=f.colour[u].rgb;
 		cn.a					*=f.colour[u].a;
-		//cn.b=1;
 		outputTexture1[pos+uint3(0,0,6*u)]		=cn;
 	}
 	//	outputTexture1[pos+uint3(0,0,6*2)]		=vec4(0,1,0,0);
@@ -589,16 +587,16 @@ void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool inclu
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
 	uint3 pos		=uint3(targetRange[Z].xy+idx*amortizationScale.xy,Z);
-	uint2 offs	= (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
-	pos.xy += offs;
+	uint2 offs		= (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
+	pos.xy			+= offs;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
 		return;
 	if(updateTexture[pos].b==0.0)
 		return;
-		//outputTexture1[pos]		=vec4(1,1,0,1);
-		//outputTexture3[pos]		=vec4(1,1,0,1);
+	//outputTexture1[pos]		=vec4(1,1,0,1);
+	//outputTexture3[pos]		=vec4(1,1,0,1);
 	SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps);
 }
 

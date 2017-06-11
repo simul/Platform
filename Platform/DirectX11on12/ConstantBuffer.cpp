@@ -220,7 +220,7 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 		if (((dx11on12::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
 			map_type = D3D11_MAP_WRITE;
 		V_CHECK(pContext->Map(m_pD3D11Buffer, 0, map_type, ((dx11on12::RenderPlatform*)deviceContext.renderPlatform)->GetMapFlags(), &mapped_res));
-		memcpy(mapped_res.pData, last_placement, byteWidth);
+		memcpy(mapped_res.pData, addr, byteWidth);
 		pContext->Unmap(m_pD3D11Buffer, 0);
 		last_placement = nullptr;
 	}
