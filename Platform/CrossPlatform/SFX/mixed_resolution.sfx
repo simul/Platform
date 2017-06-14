@@ -582,7 +582,7 @@ technique downscale_stochastic_compute_msaa
 }
 
 technique downscale_stochastic_two_eyes
-	{
+{
 		pass reverse_depth
 	{
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_twoEyes_ReverseDepth()));
@@ -591,7 +591,7 @@ technique downscale_stochastic_two_eyes
 	{
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_twoEyes_ForwardDepth()));
 	}
-	}
+}
 
 technique downscale_stochastic_compute_two_step
 {

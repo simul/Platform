@@ -129,7 +129,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		
 		if(fade>0)
 		{
-			vec4 density =  sample_3d_lod(cloudDensity, cloudSamplerState, vec3(.5, .5, .5), 0);
+			vec4 density =  sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, 0);
 	
 			//if(!found)
 			{

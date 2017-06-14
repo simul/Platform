@@ -40,7 +40,7 @@ uniform Texture3D volumeInscatterTexture;
 uniform Texture2D rainMapTexture;
 /// The previous texture area:
 uniform Texture2DArray updateTexture;
-uniform RWTexture3D<uchar4> outputTexture3d		SIMUL_RWTEXTURE_REGISTER(1);
+uniform RWTexture3D<uchar4> outputTexture3d		SIMUL_RWTEXTURE_REGISTER(0);
 
 uniform RWTexture2DArray<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);
@@ -430,7 +430,6 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 	c.rgb					*=f.colour[num_interp-1].a;
 	c.rgb					+=f.colour[num_interp-1].rgb;
 	c.a						=t2d.a*f.colour[num_interp-1].a;
-	
 	outputTexture1[pos+uint3(0,0,6*(num_interp-1))]		=c;
 	float n					=float(dlookup.y>=1.0);
 	for(int u=0;u<num_interp-1;u++)
