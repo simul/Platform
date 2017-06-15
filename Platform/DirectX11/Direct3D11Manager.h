@@ -3,7 +3,6 @@
 #include <map>
 #include <string>
 #include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
-#include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Simul/Platform/DirectX11/Export.h"
 struct ID3D11Debug;
 #pragma warning(push)
@@ -28,7 +27,7 @@ namespace simul
 			bool vsync;
 			IDXGISwapChain				*m_swapChain;
 			ID3D11RenderTargetView		*m_renderTargetView;
-			//ID3D11Texture2D				*m_depthStencilTexture;
+			ID3D11Texture2D				*m_renderTexture;
 			//ID3D11DepthStencilState		*m_depthStencilState;
 			//ID3D11DepthStencilView		*m_depthStencilView;
 			ID3D11RasterizerState		*m_rasterState;
@@ -55,8 +54,8 @@ namespace simul
 			void SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci,int view_id);
 			void SetFullScreen(HWND hwnd,bool fullscreen,int which_output);
 			void ResizeSwapChain(HWND hwnd);
-			ID3D11Device* GetDevice();
-			ID3D11DeviceContext* GetDeviceContext();
+			void* GetDevice();
+			void* GetDeviceContext();
 			int GetNumOutputs();
 			Output GetOutput(int i);
 

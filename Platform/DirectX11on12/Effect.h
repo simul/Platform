@@ -38,6 +38,7 @@ namespace simul
 		{
 			ID3D11DepthStencilState		*m_depthStencilState;
 			ID3D11BlendState			*m_blendState;
+			ID3D11RasterizerState		*m_rasterizerState;
 			RenderState();
 			virtual ~RenderState();
 		};
@@ -121,6 +122,7 @@ namespace simul
 			void Reapply(crossplatform::DeviceContext &deviceContext);
 			void Unapply(crossplatform::DeviceContext &deviceContext) override;
 			void UnbindTextures(crossplatform::DeviceContext &deviceContext);
+			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::ConstantBufferBase *s) override;
 		};
 	}
 }

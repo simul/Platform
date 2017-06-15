@@ -61,7 +61,7 @@ bool EffectPass::usesRwTextureSlotForSB(int s) const
 bool EffectPass::usesBufferSlot(int s) const
 {
 	unsigned m=((unsigned)1<<(unsigned)s);
-	return (bufferSlots&m)!=0;
+	return (constantBufferSlots&m)!=0;
 }
 
 bool EffectPass::usesSamplerSlot(int s) const
@@ -89,7 +89,7 @@ bool EffectPass::usesSBs() const
 
 bool EffectPass::usesBuffers() const
 {
-	return bufferSlots!=0;
+	return constantBufferSlots !=0;
 }
 
 bool EffectPass::usesSamplers() const
@@ -100,7 +100,7 @@ bool EffectPass::usesSamplers() const
 
 void EffectPass::SetUsesBufferSlots(unsigned s)
 {
-	bufferSlots|=s;
+	constantBufferSlots |=s;
 }
 
 void EffectPass::SetUsesTextureSlots(unsigned s)
@@ -239,7 +239,7 @@ void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext, const 
 		s = renderPlatform->GetOrCreateSamplerStateByName("clampSamplerState");
 	}
 	crossplatform::SamplerState *ss = i->second;
-	cs->samplerStateOverrides[ss->default_slot] = s;
+	cs->samplerStateOverrides[samplerSlots[ss]] = s;
 	cs->samplerStateOverridesValid = false;
 }
 
@@ -355,15 +355,16 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		res.valid = false;
 		SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
 		SIMUL_BREAK_ONCE("")
-			return res;
+		return res;
 	}
 	else
-		res.valid = true;
-	unsigned slot = GetSlot(name);
-	unsigned dim = GetDimensions(name);
-	res.platform_shader_resource = (void*)nullptr;
-	res.slot = slot;
-	res.shaderResourceType = GetResourceType(name);
+		res.valid					=true;
+	unsigned slot					=GetSlot(name);
+	unsigned dim					=GetDimensions(name);
+	res.platform_shader_resource	=(void*)nullptr;
+	res.slot						=slot;
+	res.dimensions					=dim;
+	res.shaderResourceType			=GetResourceType(name);
 	return res;
 }
 
@@ -900,6 +901,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				desc.slot=reg;
 				crossplatform::SamplerState *ss=renderPlatform->GetOrCreateSamplerStateByName(sampler_name.c_str(),&desc);
 				samplerStates[sampler_name]=ss;
+				samplerSlots[ss]=reg;
 			}
 		}
 		else if (level == GROUP)
@@ -940,7 +942,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				base::ClipWhitespace(filename);
 				const string &name=words[1];
 				crossplatform::ShaderType t=crossplatform::ShaderType::SHADERTYPE_COUNT;
-				PixelOutputFormat fmt=FMT_32_ABGR;
+				PixelOutputFormat fmt=FMT_UNKNOWN;
 				if(_stricmp(type.c_str(),"blend")==0)
 				{
 					if(blendStates.find(name)!=blendStates.end())
@@ -1008,7 +1010,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 					Shader *s=renderPlatform->EnsureShader(filename.c_str(),t);
 					if(s)
 					{
-						if(t==crossplatform::SHADERTYPE_PIXEL)
+						if(t==crossplatform::SHADERTYPE_PIXEL&&fmt!=FMT_UNKNOWN)
 							p->pixelShaders[fmt]=s;
 						else
 							p->shaders[t]=s;
@@ -1036,8 +1038,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 							for (std::sregex_iterator j = j_begin; j != i_end; ++j)
 							{
 								int t=atoi(j->str().c_str());
-								if(type_char=='b')
-									s->setUsesBufferSlot(t);
+								if(type_char=='c')
+									s->setUsesConstantBufferSlot(t);
 								else if(type_char=='s')
 									s->setUsesSamplerSlot(t);
 								else if(type_char=='t')
@@ -1047,6 +1049,13 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 									else
 										s->setUsesRwTextureSlot(t-1000);
 								}
+								else if(type_char=='b')
+								{
+									if(t<1000)
+										s->setUsesTextureSlotForSB(t);
+									else
+										s->setUsesRwTextureSlotForSB(t-1000);
+								}
 								else
 								{
 									SIMUL_CERR<<"Unknown resource letter "<<type_char<<std::endl;
@@ -1055,7 +1064,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						}
 					}
 					// Now we will know which slots must be used by the pass:
-					p->SetUsesBufferSlots(s->bufferSlots);
+					p->SetUsesBufferSlots(s->constantBufferSlots);
 					p->SetUsesTextureSlots(s->textureSlots);
 					p->SetUsesTextureSlotsForSB(s->textureSlotsForSB);
 					p->SetUsesRwTextureSlots(s->rwTextureSlots);
@@ -1072,7 +1081,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						{
 							for(auto j:samplerStates)
 							{
-								if(j.second->default_slot==slot)
+								if(samplerSlots[j.second]==slot)
 								{
 									std::string ss_name=j.first;
 									crossplatform::SamplerState *ss=renderPlatform->GetOrCreateSamplerStateByName(ss_name.c_str());
@@ -1119,9 +1128,9 @@ void Shader::setUsesTextureSlotForSB(int s)
 	textureSlotsForSB=textureSlotsForSB|m;
 }
 
-void Shader::setUsesBufferSlot(int s)
+void Shader::setUsesConstantBufferSlot(int s)
 {
-	bufferSlots=bufferSlots|((unsigned)1<<(unsigned)s);
+	constantBufferSlots=constantBufferSlots|((unsigned)1<<(unsigned)s);
 }
 
 void Shader::setUsesSamplerSlot(int s)
@@ -1163,10 +1172,10 @@ bool Shader::usesRwTextureSlotForSB(int s) const
 	return (rwTextureSlotsForSB&m)!=0;
 }
 
-bool Shader::usesBufferSlot(int s) const
+bool Shader::usesConstantBufferSlot(int s) const
 {
 	unsigned m=((unsigned)1<<(unsigned)s);
-	return (bufferSlots&m)!=0;
+	return (constantBufferSlots&m)!=0;
 }
 
 bool Shader::usesSamplerSlot(int s) const

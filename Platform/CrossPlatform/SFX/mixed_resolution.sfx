@@ -15,9 +15,9 @@ uniform Texture2DArray<vec4> previousCombinedTexture;
 uniform Texture2DArray<vec4> sourceTexture1;
 uniform Texture2DArray<vec4> sourceTexture2;
 uniform Texture2DArray<vec4> sourceTexture3;
-uniform Texture2DArray<vec4> updateTexture;
+uniform Texture2DArray<uchar4> updateTexture;
 uniform RWTexture2DArray<vec4> targetTexture;
-uniform RWTexture2DArray<vec4> nextUpdateTexture;
+uniform RWTexture2DArray<uchar4> nextUpdateTexture;
 
 uniform RWTexture2DArray<vec4> targetTexture2;
 uniform RWTexture2DArray<vec4> targetTexture3;
@@ -582,7 +582,7 @@ technique downscale_stochastic_compute_msaa
 }
 
 technique downscale_stochastic_two_eyes
-	{
+{
 		pass reverse_depth
 	{
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_twoEyes_ReverseDepth()));
@@ -591,7 +591,7 @@ technique downscale_stochastic_two_eyes
 	{
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_twoEyes_ForwardDepth()));
 	}
-	}
+}
 
 technique downscale_stochastic_compute_two_step
 {

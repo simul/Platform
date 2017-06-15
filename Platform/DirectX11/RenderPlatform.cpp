@@ -1796,14 +1796,13 @@ void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContex
 		viewports[i].MaxDepth	=1.0f;
 	}
 	pContext->RSSetViewports(state->num,viewports);
-	//unsigned num=1;
-	//pContext->RSGetViewports(&num,viewports);
+
 	for(int i=0;i<(int)oldtv->num;i++)
 	{
 		ID3D11RenderTargetView *r=(ID3D11RenderTargetView*)oldtv->m_rt[i];
 	}
 	ID3D11DepthStencilView *d=(ID3D11DepthStencilView*)oldtv->m_dt;
-	//SetViewports(deviceContext,state->num,&state->viewport);
+
 	if(oldtv->temp)
 		delete oldtv;
 }

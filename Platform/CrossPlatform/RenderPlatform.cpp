@@ -285,8 +285,16 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 					W=(w+8-1)/1;
 					L=(l+8-1)/1;
 					D = d;
-					debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget2DArray", texture, i);
 					techname = "compute_clear_2d_array";
+					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM)
+					{
+						techname="compute_clear_2d_array_u8";
+						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArrayU8",texture,i);
+					}
+					else
+					{
+						debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArray",texture,i);
+					}
 				}
 				else if(texture->dim==2)
 				{
@@ -792,7 +800,7 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1
 	DrawQuad(deviceContext);
 	effect->Unapply(deviceContext);
 }
-   
+
 void RenderPlatform::DrawTexture(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult,bool blend,float gamma)
 {
 	DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma);
@@ -860,6 +868,7 @@ void RenderPlatform::Draw2dLine(DeviceContext &deviceContext,vec2 pos1,vec2 pos2
 
 void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *text,const float* colr,const float* bkg)
 {
+	SIMUL_COMBINED_PROFILE_START(deviceContext, "text")
 	static float clr[]={1.f,1.f,0.f,1.f};
 	static float black[]={0.f,0.f,0.f,0.0f};
 	if(!colr)
@@ -885,6 +894,7 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 		pos++;
 		y+=16;
 	}
+	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }
 		
 crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::DeviceContext &deviceContext,int index)
@@ -958,8 +968,10 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 		}
 		else
 		{
-			SIMUL_CERR<<"Simul fx error: the sampler state "<<name_utf8<<" was declared with slots "<<s->default_slot<<" and "<<desc->slot<<std::endl;
-			SIMUL_BREAK("Sampler state slot conflict")
+			SIMUL_COUT<<"Simul fx: the sampler state "<<name_utf8<<" was declared with slots "<<s->default_slot<<" and "<<desc->slot
+				<<"\nTherefore it will have no default slot."<<std::endl;
+			s->default_slot=-1;
+			ss=s;
 		}
 	}
 	else

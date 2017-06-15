@@ -40,7 +40,7 @@ uniform Texture3D volumeInscatterTexture;
 uniform Texture2D rainMapTexture;
 /// The previous texture area:
 uniform Texture2DArray updateTexture;
-uniform RWTexture3D<uchar4> outputTexture3d		SIMUL_RWTEXTURE_REGISTER(1);
+uniform RWTexture3D<uchar4> outputTexture3d		SIMUL_RWTEXTURE_REGISTER(0);
 
 uniform RWTexture2DArray<vec4> outputTexture1		SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture2DArray<vec4> outputTexture3		SIMUL_RWTEXTURE_REGISTER(2);
@@ -160,7 +160,7 @@ void MixInLayer( uint3 g, uint3 t,bool clears)
 //	res.z		=saturate((res.z*2.0-0.5)*1.5+0.7);
 	res.z		=saturate((res.z-0.25)/diffusivity+0.25);
 
-	res.z*= saturate(texc.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - texc.z) / zPixel);
+	res.z*= humidity/0.5*saturate(texc.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - texc.z) / zPixel);
 
 	if (res.z > 0.05)
 	{
@@ -429,9 +429,7 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 	vec4 c					=t2d;
 	c.rgb					*=f.colour[num_interp-1].a;
 	c.rgb					+=f.colour[num_interp-1].rgb;
-
 	c.a						=t2d.a*f.colour[num_interp-1].a;
-	
 	outputTexture1[pos+uint3(0,0,6*(num_interp-1))]		=c;
 	float n					=float(dlookup.y>=1.0);
 	for(int u=0;u<num_interp-1;u++)
@@ -441,7 +439,6 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 		cn.a					=1.0-n*(1.0-t2d.a);
 		cn.rgb					+=f.colour[u].rgb;
 		cn.a					*=f.colour[u].a;
-		//cn.b=1;
 		outputTexture1[pos+uint3(0,0,6*u)]		=cn;
 	}
 	//	outputTexture1[pos+uint3(0,0,6*2)]		=vec4(0,1,0,0);
@@ -589,16 +586,16 @@ void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool inclu
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
 	uint3 pos		=uint3(targetRange[Z].xy+idx*amortizationScale.xy,Z);
-	uint2 offs	= (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
-	pos.xy += offs;
+	uint2 offs		= (amortizationOffset.xy + (idx.xy + idx.yx)) % amortizationScale.xy;
+	pos.xy			+= offs;
 	if(pos.x>=edge.x||pos.y>=edge.y)
 		return;
 	if(pos.x>=targetRange[Z].z||pos.y>=targetRange[Z].w)
 		return;
 	if(updateTexture[pos].b==0.0)
 		return;
-		//outputTexture1[pos]		=vec4(1,1,0,1);
-		//outputTexture3[pos]		=vec4(1,1,0,1);
+	//outputTexture1[pos]		=vec4(1,1,0,1);
+	//outputTexture3[pos]		=vec4(1,1,0,1);
 	SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps);
 }
 

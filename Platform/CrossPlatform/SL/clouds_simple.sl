@@ -45,7 +45,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 
 	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
-	
 	float solidDist_nearFar	[NUM_CLOUD_INTERP];
 	vec2 nfd				=(dlookup.yx)+100.0*step(vec2(1.0,1.0), dlookup.yx);
 
@@ -130,17 +129,11 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		
 		if(fade>0)
 		{
-			vec4 density			=sample_3d_lod(cloudDensity,cloudSamplerState,cloudTexCoords,0);
+			vec4 density =  sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, 0);
 	
-			if(!found)
+			//if(!found)
 			{
-				found				=found||(density.z>0);
-				if(found)
-				{
-			//		distanceKm		-=1.0*stepKm;
-				//	stepKm/=2.0;
-			//		continue;
-				}
+				found = found || (density.z > 0);
 			}
 			if(found)
 			{

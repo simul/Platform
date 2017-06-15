@@ -172,60 +172,81 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	last_placement=nullptr;
 }
 
-void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr)
+void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t size, void *addr)
 {
-	if(!m_pD3D11Buffer)
+	if (!m_pD3D11Buffer)
 	{
-		SIMUL_CERR<<"Attempting to apply an uninitialized Constant Buffer"<<std::endl;
+		SIMUL_CERR << "Attempting to apply an uninitialized Constant Buffer" << std::endl;
 		return;
 	}
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
+	ID3D11DeviceContext *pContext = (ID3D11DeviceContext *)deviceContext.platform_context;
 	D3D11_MAPPED_SUBRESOURCE mapped_res;
 #if  SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
-	if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
+	if (((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
 	{
-		if(resize)
+		if (resize)
 		{
-			SetNumBuffers(deviceContext.renderPlatform,m_nContexts,m_nBuffering*2,m_nFramesBuffering);
-			resize=false;
+			SetNumBuffers(deviceContext.renderPlatform, m_nContexts, m_nBuffering * 2, m_nFramesBuffering);
+			resize = false;
 		}
-		UINT &buffer_index = m_index[ 0 ];
-		last_placement =( &m_pPlacementBuffer[buffer_index* byteWidth ] );
-		memcpy(last_placement,addr,size);
+		UINT &buffer_index = m_index[0];
+		last_placement = (&m_pPlacementBuffer[buffer_index* byteWidth]);
+		memcpy(last_placement, addr, size);
 		buffer_index++;
-		if ( buffer_index >= m_nBuffering )
+		if (buffer_index >= m_nBuffering)
 		{
 			buffer_index = 0;
 		}
-		if(num_this_frame>m_nBuffering)
+		if (num_this_frame>m_nBuffering)
 		{
 			// Too many, need a bigger buffer.
-			SIMUL_CERR<<"Need a bigger buffer for PlatformConstantBuffer"<<std::endl;
-			resize=true;
+			SIMUL_CERR << "Need a bigger buffer for PlatformConstantBuffer" << std::endl;
+			resize = true;
 		}
-		if(framenumber!=deviceContext.frame_number)
+		if (framenumber != deviceContext.frame_number)
 		{
-			num_this_frame=0;
+			num_this_frame = 0;
 		}
 		num_this_frame++;
-		framenumber=deviceContext.frame_number;
-		#ifndef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
-			#error use cache line aligned buffers, otherwise an explicit flush for fast semantics is required here
-		#endif
+		framenumber = deviceContext.frame_number;
+#ifndef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
+#error use cache line aligned buffers, otherwise an explicit flush for fast semantics is required here
+#endif
 	}
 	else
 #endif
 	{
-		last_placement=nullptr;
-		D3D11_MAP map_type=D3D11_MAP_WRITE_DISCARD;
-		if(((dx11on12::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
-			map_type=D3D11_MAP_WRITE;
+		D3D11_MAP map_type = D3D11_MAP_WRITE_DISCARD;
+		if (((dx11on12::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
+			map_type = D3D11_MAP_WRITE;
 		V_CHECK(pContext->Map(m_pD3D11Buffer, 0, map_type, ((dx11on12::RenderPlatform*)deviceContext.renderPlatform)->GetMapFlags(), &mapped_res));
-		memcpy(mapped_res.pData,addr,size);
-			pContext->Unmap(m_pD3D11Buffer, 0);
-		if(m_pD3DX11EffectConstantBuffer)
-			m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
+		memcpy(mapped_res.pData, addr, byteWidth);
+		pContext->Unmap(m_pD3D11Buffer, 0);
+		last_placement = nullptr;
 	}
+	if (changed)
+	{
+		changed = false;
+	}
+}
+
+
+void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceContext, crossplatform::EffectPass *currentEffectPass, int slot)
+{
+	ID3D11DeviceContext *pContext = (ID3D11DeviceContext *)deviceContext.platform_context;
+	crossplatform::Shader **sh = (crossplatform::Shader**)currentEffectPass->shaders;
+	if (sh[crossplatform::SHADERTYPE_PIXEL] && sh[crossplatform::SHADERTYPE_PIXEL]->usesConstantBufferSlot(slot))
+		pContext->PSSetConstantBuffers(slot,1,&m_pD3D11Buffer);
+	if (sh[crossplatform::SHADERTYPE_GEOMETRY] && sh[crossplatform::SHADERTYPE_GEOMETRY]->usesConstantBufferSlot(slot))
+	{
+		pContext->GSSetConstantBuffers(slot, 1, &m_pD3D11Buffer);
+	}
+	if (sh[crossplatform::SHADERTYPE_VERTEX] && sh[crossplatform::SHADERTYPE_VERTEX]->usesConstantBufferSlot(slot))
+	{
+		pContext->VSSetConstantBuffers(slot, 1, &m_pD3D11Buffer);
+	}
+	if (sh[crossplatform::SHADERTYPE_COMPUTE] && sh[crossplatform::SHADERTYPE_COMPUTE]->usesConstantBufferSlot(slot))
+		pContext->CSSetConstantBuffers(slot, 1, &m_pD3D11Buffer);
 }
 
 void *PlatformConstantBuffer::GetBaseAddr()

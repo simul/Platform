@@ -1,27 +1,29 @@
 #pragma once
-// Direct3D includes
-#include "SimulDirectXHeader.h"
-#ifndef SIMUL_WIN8_SDK
-#include <d3dx11.h>
-#include <dxerr.h>
-#endif
 
 #include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Simul/Clouds/TrueSkyRenderer.h"
 #include <functional>
+#include <unordered_map>
 
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul
 {
+	namespace crossplatform
+	{
+		class CameraOutputInterface;
+		class BaseOpticsRenderer;
+	}
 	namespace dx11
 	{
+		/// A class that faces the raw API and implements PlatformRendererInterface
+		/// in order to translate to the platform-independent renderer.
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public crossplatform::PlatformRendererInterface
 		{
-			crossplatform::RenderDelegate renderDelegate;
+			std::unordered_map<int,crossplatform::RenderDelegate> renderDelegate;
+			std::unordered_map<int,int2> viewSize;
 			std::vector<crossplatform::StartupDeviceDelegate> startupDeviceDelegates;
 			std::vector<crossplatform::ShutdownDeviceDelegate> shutdownDeviceDelegates;
 			void *device;
@@ -35,12 +37,12 @@ namespace simul
 			}
 			clouds::TrueSkyRenderer trueSkyRenderer;
 			virtual void	OnCreateDevice				(void* pd3dDevice);
-			virtual int		AddView						(bool external_fb);
+			virtual int		AddView						();
 			virtual void	RemoveView					(int);
 			virtual void	ResizeView					(int view_id,int w,int h);
-			virtual void	Render						(int,void* pd3dDevice,void* pd3dImmediateContext);
+			virtual void	Render						(int,void* context,void* rendertexture);
 			virtual void	OnLostDevice				();
-			void			SetRenderDelegate			(crossplatform::RenderDelegate d);
+			void			SetRenderDelegate			(int view_id,crossplatform::RenderDelegate d);
 			void			RegisterStartupDelegate		(crossplatform::StartupDeviceDelegate d);
 			void			RegisterShutdownDelegate	(crossplatform::ShutdownDeviceDelegate d);
 		};

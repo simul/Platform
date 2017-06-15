@@ -294,7 +294,7 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 	SAFE_RELEASE(m_rasterState);
 			//		*m_depthStencilState;
 			//		*m_rasterState;
-	V_CHECK(m_swapChain->ResizeBuffers(1,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0));
+	V_CHECK(m_swapChain->ResizeBuffers(2,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0));
 	CreateRenderTarget(d3dDevice);
 //	CreateDepthBuffer(d3dDevice);					//cpo create a d3d11 depth buffer 
 	CreateDepthBuffer(d3d11Device);					//cpo create a d3d11 depth buffer 
@@ -703,8 +703,6 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 	//cpo //todo commandlist set here
 	//cpo framestart
 
-
-
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	DXGI_SURFACE_DESC surfaceDesc;
 	m_swapChain->GetDesc(&swapDesc);
@@ -713,7 +711,7 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
 	if(view_id<0)
-		view_id				=renderer->AddView(false);
+		view_id				=renderer->AddView();
 	renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 
@@ -1532,12 +1530,12 @@ void Direct3D11Manager::ResizeSwapChain(HWND hwnd)
 
 
 
-ID3D11Device* Direct3D11Manager::GetDevice()
+void* Direct3D11Manager::GetDevice()
 {
 	return d3dDevice;
 }
 
-ID3D11DeviceContext* Direct3D11Manager::GetDeviceContext()
+void* Direct3D11Manager::GetDeviceContext()
 {
 	return d3dDeviceContext;
 }

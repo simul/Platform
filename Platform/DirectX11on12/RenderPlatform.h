@@ -117,7 +117,7 @@ namespace simul
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
 			void									Resolve(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
-			void									ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking = true) override;
+			bool									ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking = true) override;
 
 			// DX11-specific stuff:
 			static DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);

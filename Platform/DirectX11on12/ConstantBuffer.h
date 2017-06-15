@@ -41,10 +41,9 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex);
 			void Apply(simul::crossplatform::DeviceContext &deviceContext,size_t size,void *addr);
+			void ActualApply(crossplatform::DeviceContext &deviceContext, crossplatform::EffectPass *currentEffectPass, int slot) override;
 			void Unbind(simul::crossplatform::DeviceContext &deviceContext);
-			
 			void CreateBuffers( crossplatform::RenderPlatform* r, void *addr);
-
 			void *GetBaseAddr();
 		public:
 			void SetNumBuffers(crossplatform::RenderPlatform* r,UINT nContexts,  UINT nMapsPerFrame, UINT nFramesBuffering );

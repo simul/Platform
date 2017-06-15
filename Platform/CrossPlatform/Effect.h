@@ -245,21 +245,21 @@ namespace simul
 				,textureSlotsForSB(0)
 				,rwTextureSlots(0)
 				,rwTextureSlotsForSB(0)
-				,bufferSlots(0)
+				,constantBufferSlots(0)
 				,samplerSlots(0)
 				{
 				}
 			virtual void load(crossplatform::RenderPlatform *renderPlatform, const char *filename, crossplatform::ShaderType t) = 0;
 			void setUsesTextureSlot(int s);
 			void setUsesTextureSlotForSB(int s);
-			void setUsesBufferSlot(int s);
+			void setUsesConstantBufferSlot(int s);
 			void setUsesSamplerSlot(int s);
 			void setUsesRwTextureSlot(int s);
 			void setUsesRwTextureSlotForSB(int s);
 			bool usesTextureSlot(int s) const;
 			bool usesTextureSlotForSB(int s) const;
 			bool usesRwTextureSlotForSB(int s) const;
-			bool usesBufferSlot(int s) const;
+			bool usesConstantBufferSlot(int s) const;
 			bool usesSamplerSlot(int s) const;
 			bool usesRwTextureSlot(int s) const;
 			std::string pixel_str;
@@ -269,7 +269,7 @@ namespace simul
 			unsigned textureSlotsForSB;		//t
 			unsigned rwTextureSlots;		//u
 			unsigned rwTextureSlotsForSB;	//u
-			unsigned bufferSlots;			//b
+			unsigned constantBufferSlots;			//b
 			unsigned samplerSlots;			//s
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectPass
@@ -286,7 +286,7 @@ namespace simul
 				,depthStencilState(NULL)
 				,rasterizerState(NULL)
 				,samplerSlots(0)
-				,bufferSlots(0)
+				,constantBufferSlots(0)
 				,textureSlots(0)
 				,textureSlotsForSB(0)
 				,rwTextureSlots(0)
@@ -347,7 +347,7 @@ namespace simul
 			}
 			unsigned GetConstantBufferSlots() const
 			{
-				return bufferSlots;
+				return constantBufferSlots;
 			}
 			void *GetPlatformPass()
 			{
@@ -360,7 +360,7 @@ namespace simul
 			virtual void Apply(crossplatform::DeviceContext &deviceContext,bool test)=0;
 		protected:
 			unsigned samplerSlots;
-			unsigned bufferSlots;
+			unsigned constantBufferSlots;
 			unsigned textureSlots;
 			unsigned textureSlotsForSB;
 			unsigned rwTextureSlots;
@@ -745,6 +745,7 @@ namespace simul
 			std::unordered_map<std::string,crossplatform::RenderState *> depthStencilStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> blendStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> rasterizerStates;
+			std::unordered_map<crossplatform::SamplerState*,int> samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
 			const ShaderResource *GetTextureDetails(const char *name);
 		public:
 			GroupMap groups;
@@ -782,7 +783,9 @@ namespace simul
 			{
 				for(auto i:textureDetailsMap)
 				{
-					if(i.second->slot==s)
+					if(i.second->slot==s&&(i.second->shaderResourceType&ShaderResourceType::RW)!=ShaderResourceType::RW)
+						return i.first;
+					if(i.second->slot+1000==s&&(i.second->shaderResourceType&ShaderResourceType::RW)==ShaderResourceType::RW)
 						return i.first;
 				}
 				return std::string("Unknown");
@@ -800,7 +803,6 @@ namespace simul
 			virtual void SetTexture		(DeviceContext &deviceContext,ShaderResource &name	,Texture *tex,int array_idx=-1,int mip=-1);
 			//! Set the texture for this effect. If mip is specified, the specific mipmap will be used, otherwise it's the full texture with all its mipmaps.
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex,int array_idx=-1,int mip=-1);
-			
 			//! Set the texture for this effect.
 			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s);
 			//! Set a constant buffer for this effect.
