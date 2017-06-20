@@ -709,7 +709,7 @@ ERRNO_BREAK
 	d3dDeviceContext->RSSetState(w->m_rasterState);
 	if(w->renderer)
 	{
-		w->renderer->Render(w->view_id,GetDevice(),GetDeviceContext());
+		w->renderer->Render(w->view_id,GetDeviceContext(), w->m_renderTargetView);
 	}
 	static DWORD dwFlags = 0;
 	// 0 - don't wait for 60Hz refresh.
