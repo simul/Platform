@@ -150,7 +150,7 @@ namespace simul
 			void* GetDevice();
 			void* GetDeviceContext();
 			int GetNumOutputs();
-			Output GetOutput(int i);
+			crossplatform::Output GetOutput(int i);
 
 			void GetVideoCardInfo(char*, int&);
 			int GetViewId(HWND hwnd);
