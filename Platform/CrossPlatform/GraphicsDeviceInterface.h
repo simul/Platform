@@ -2,20 +2,20 @@
 #define GRAPHICSDEVICEINTERFACE
 #include <string>
 
-struct Output
-{
-	std::string monitorName;
-	int desktopX;
-	int desktopY;
-	int width;
-	int height;
-	int numerator,denominator;
-};
 typedef HWND__ *HWND;
 namespace simul
 {
 	namespace crossplatform
 	{
+		struct Output
+		{
+			std::string monitorName;
+			int desktopX;
+			int desktopY;
+			int width;
+			int height;
+			int numerator, denominator;
+		};
 		/// This represents an interface that faces the raw API.
 		/// The implementing class should keep a list of integer view id's
 		class PlatformRendererInterface
@@ -36,17 +36,17 @@ namespace simul
 		class GraphicsDeviceInterface
 		{
 		public:
-			virtual void						AddWindow(HWND h)=0;
-			virtual void						RemoveWindow(HWND h)=0;
-			virtual void						Render(HWND h)=0;
-			virtual void						SetRenderer(HWND,PlatformRendererInterface *ci,int view_id)=0;
-			virtual void						SetFullScreen(HWND hwnd,bool fullscreen,int which_output)=0;
-			virtual void						ResizeSwapChain(HWND hwnd)=0;
-			virtual void*						GetDevice()=0;
-			virtual void*						GetDeviceContext()=0;
-			virtual int							GetNumOutputs()=0;
-			virtual Output						GetOutput(int i)=0;
-			virtual int							GetViewId(HWND h)=0;
+			virtual void	AddWindow(HWND h)=0;
+			virtual void	RemoveWindow(HWND h)=0;
+			virtual void	Render(HWND h)=0;
+			virtual void	SetRenderer(HWND,PlatformRendererInterface *ci,int view_id)=0;
+			virtual void	SetFullScreen(HWND hwnd,bool fullscreen,int which_output)=0;
+			virtual void	ResizeSwapChain(HWND hwnd)=0;
+			virtual void*	GetDevice()=0;
+			virtual void*	GetDeviceContext()=0;
+			virtual int		GetNumOutputs()=0;
+			virtual Output	GetOutput(int i)=0;
+			virtual int		GetViewId(HWND h)=0;
 		};
 	}
 }

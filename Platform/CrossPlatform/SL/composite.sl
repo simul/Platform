@@ -103,7 +103,6 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
 		insc.rgb						*=godrays.rgb;
 	}
-	
 	if(do_clouds)
 		insc							+=cloud;
 	res.multiply					=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a;

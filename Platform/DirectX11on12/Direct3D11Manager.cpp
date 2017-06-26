@@ -1186,10 +1186,10 @@ int Direct3D11Manager::GetNumOutputs()
 	return (int)outputs.size();
 }
 
-Output Direct3D11Manager::GetOutput(int i)
+crossplatform::Output Direct3D11Manager::GetOutput(int i)
 {
 	unsigned numModes;
-	Output o;
+	crossplatform::Output o;
 	IDXGIOutput *output=outputs[i];
 #ifndef _XBOX_ONE
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
@@ -1553,7 +1553,7 @@ void Direct3D11Manager::AddWindow(HWND hwnd)
 	window->setD3D11Device(d3dDevice);
 	
 
-	Output o=GetOutput(0);
+	crossplatform::Output o=GetOutput(0);
 //	window->RestoreDeviceObjects(d3dDevice, m_vsync_enabled, o.numerator, o.denominator);
 	window->RestoreDeviceObjects(m_d3d12Device, m_vsync_enabled, o.numerator, o.denominator); //cpo
 
