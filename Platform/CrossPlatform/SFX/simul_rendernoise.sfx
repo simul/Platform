@@ -74,7 +74,7 @@ CS_LAYOUT(8,8,8)
 shader void CS_Noise3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 pos = g * 8 + t;
-	int3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
+	uint3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	vec3 texCoords		=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
@@ -86,7 +86,7 @@ CS_LAYOUT(8,8,8)
 shader void CS_Noise3D_float(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 pos		=g*8+t;
-	int3 dims		=int3(noise_texture_size,noise_texture_size,noise_texture_size);
+	uint3 dims		=int3(noise_texture_size,noise_texture_size,noise_texture_size);
 	//targetTexture32.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
@@ -96,6 +96,7 @@ shader void CS_Noise3D_float(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	/
     IMAGE_STORE_3D(targetTexture32,pos,result);
 }
 
+// We will store three values. The overall nearest, the nearest above and the nearest below
 vec4 Worley(vec3 texc,int grid,int seed)
 {
 	vec3 pos			=float(grid)*texc;
@@ -104,7 +105,9 @@ vec4 Worley(vec3 texc,int grid,int seed)
 	int3 ip				=int3(intpart);
 	vec3 loc			=fractional-vec3(0.5,0.5,0.5);
 	float n				=float(grid);
-	vec3 dir			=vec3(0,0,0);
+	float t = float(grid);
+	float b = float(grid);
+	vec3 nearest_centre =vec3(0.5,0.5,0.5);
     for (int i = -1; i < 2; ++i)
 	{
         for (int j = -1; j < 2; ++j)
@@ -116,30 +119,37 @@ vec4 Worley(vec3 texc,int grid,int seed)
 				int3 v		=(u+int3(grid,grid,grid))%int3(grid,grid,grid);
 				vec3 random	=SphericalRandom(vec3(v)*seed);
 				c			+=random.xyz;
-				float k1	=length(loc-c);
-				// if k1<n, let dir=random.
-				dir			=lerp(dir,loc-c,step(k1,n));
-				n			=min(n,k1);
+				vec3 diff	=loc - c;
+				float dist	=length(diff);
+				// if dist<n, let dir=random.
+				//nearest_centre =lerp(nearest_centre,c-loc,step(k1,n));
+				n			=min(n,dist);
+				if(diff.z>=.5)
+					t		=min(t,dist);
+				if(diff.z<=-.5)
+					b		=min(b,dist);
 			}
 		}
 	}
 	//float p			=saturate(1.0-pow(1.5*n,4.0))/1.0;
 	// now n is the distance to the nearest centre. We want the value to be
 	// 1.0 when at the nearest centre, out to some maximum radius.
-	float p			=saturate(1.0-n/1.0);
-	return vec4(dir,p);
+	float p	=saturate(1.0-n/1.0);
+	float q =saturate(1.0-t/1.0);
+	float r =saturate(1.0-b/1.0);
+	return vec4(p,p,p,p);
 }
 
 CS_LAYOUT(8,8,8)
 shader void CS_PerlinWorley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 idx = g * 8 + t;
-	int3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
+	uint3 dims=uint3(noise_texture_size,noise_texture_size,noise_texture_size);
 	if(idx.x>=dims.x||idx.y>=dims.y||idx.z>=dims.z)
 		return;
 	vec3 texCoords	=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(dims);
 	vec4 result;
-	result			=Worley(texCoords,4,1).wwww;
+	result			=Worley(texCoords,4,1).xyzw;
 
 	IMAGE_STORE_3D(targetTextureU8,idx,result);
 }
@@ -148,16 +158,13 @@ CS_LAYOUT(8,8,8)
 shader void CS_Worley3D_8(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
 {
 	uint3 idx = g * 8 + t;
-	int3 dims=int3(noise_texture_size,noise_texture_size,noise_texture_size);
+	uint3 dims=uint3(noise_texture_size,noise_texture_size,noise_texture_size);
 	if(idx.x>=dims.x||idx.y>=dims.y||idx.z>=dims.z)
 		return;
 	vec3 texCoords		=(vec3(idx)+vec3(0.5,0.5,0.5))/vec3(dims);
 	int grid=8;
 	vec4 result;
-	result			=Worley(texCoords,5,7);
-	//result.y		=0.5*Worley(texCoords,9,2).w;
-//	result.z		=0.25*Worley(texCoords,16,3).w;
-	//result.w		=0.125*Worley(texCoords,24,4).w;
+	result			=Worley(texCoords,5,7).wwww;
 	IMAGE_STORE_3D(targetTextureU8,idx,result);
 }
 

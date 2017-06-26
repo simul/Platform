@@ -213,7 +213,7 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 			map_type=D3D11_MAP_WRITE;
 		V_CHECK(pContext->Map(m_pD3D11Buffer, 0, map_type, ((dx11::RenderPlatform*)deviceContext.renderPlatform)->GetMapFlags(), &mapped_res));
 		memcpy(mapped_res.pData,addr,size);
-			pContext->Unmap(m_pD3D11Buffer, 0);
+		pContext->Unmap(m_pD3D11Buffer, 0);
 	}
 }
 
@@ -226,8 +226,6 @@ void *PlatformConstantBuffer::GetBaseAddr()
 	return nullptr;
  #endif
 }
-
-
 
 void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &)
 {

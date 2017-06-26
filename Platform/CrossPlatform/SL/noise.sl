@@ -62,38 +62,47 @@ vec4 Noise(Texture2D noise_texture,vec2 texCoords,float persistence,int octaves)
     return result;
 }
 
-vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed)
+vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool filter=true)
 {
 	vec4 result		=vec4(0,0,0,0);
-	vec3 pos		=texCoords*gridsize;
+	vec3 pos		=frac(texCoords)*gridsize;
 	vec3 intpart,floatpart;
 	floatpart		=modf(pos,intpart);
-	int3 seedpos	=int3(1*seed,2*seed,3*seed);
+	int3 seedpos	=int3(2*seed,17*seed,7*seed);
 	int3 firstCorner=int3(intpart);
-    for (int i = 0; i < 2; i++)
+	if (filter)
 	{
-        for (int j  = 0; j < 2; j++)
+		for (int i = 0; i < 2; i++)
 		{
-            for (int k  = 0; k < 2; k++)
+			for (int j = 0; j < 2; j++)
 			{
-				int3 corner_pos		=firstCorner+int3(1-i,1-j,1-k);
-				// NOTE: operator % does NOT seem to work properly here.
-				if(corner_pos.x==gridsize)
-					corner_pos.x=0;
-				if(corner_pos.y==gridsize)
-					corner_pos.y=0;
-				if(corner_pos.z==gridsize)
-					corner_pos.z=0;
-				vec3 lookup_pos		=seedpos+vec3(corner_pos);
-				vec4 rnd_lookup		=vec4(SphericalRandom(lookup_pos),rand3(lookup_pos));
-				float proportion	=abs(i-floatpart.x)*abs(j-floatpart.y)*abs(k-floatpart.z);
-				result				+=rnd_lookup*proportion;
+				for (int k = 0; k < 2; k++)
+				{
+					int3 corner_pos = firstCorner + int3(1 - i, 1 - j, 1 - k);
+					// NOTE: operator % does NOT seem to work properly here.
+					if (corner_pos.x == gridsize)
+						corner_pos.x = 0;
+					if (corner_pos.y == gridsize)
+						corner_pos.y = 0;
+					if (corner_pos.z == gridsize)
+						corner_pos.z = 0;
+					vec3 lookup_pos		=seedpos + vec3(corner_pos);
+					vec4 rnd_lookup		=rand3(lookup_pos);
+					float proportion	=abs(i - floatpart.x)*abs(j - floatpart.y)*abs(k - floatpart.z);
+					result				+=rnd_lookup*proportion;
+				}
 			}
 		}
 	}
+	else
+	{
+		// nearest.
+		int3 corner_pos = int3(pos+vec3(0.5, 0.5, 0.5));
+		vec3 lookup_pos = seedpos + vec3(corner_pos);
+		result =  rand3(lookup_pos);
+	}
 	return result;
 }
-
 
 vec4 Noise3D(Texture3D random_texture_3d,int freq,vec3 texCoords,int octaves,float persistence,float strength)
 {
@@ -164,4 +173,5 @@ float cellular3x3(vec3 P)
 	d.x			=min(min(min(d.x,d.y),d.z),d.w);
 	return 1.0-1.5*d.x;
 }
+
 #endif

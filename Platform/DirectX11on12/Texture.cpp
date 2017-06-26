@@ -694,7 +694,7 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 			uav_desc.Texture3D.FirstWSlice	=0;
 		
 			if(mipUnorderedAccessViews)
-			for(int i=0;i<textureDesc3.MipLevels;i++)
+			for(unsigned i=0;i<textureDesc3.MipLevels;i++)
 			{
 				uav_desc.Texture3D.MipSlice=i;
 				V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
@@ -703,7 +703,7 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 		
 			uav_desc.Texture3D.WSize	= textureDesc3.Depth;
 			if(layerMipUnorderedAccessViews)
-			for(int i=0;i<textureDesc3.MipLevels;i++)
+			for(unsigned i=0;i<textureDesc3.MipLevels;i++)
 			{
 				uav_desc.Texture3D.MipSlice=i;
 				V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][i]));

@@ -78,6 +78,8 @@ void Direct3D11Renderer::Render(int view_id,void* context,void* rendertarget)
 															NULL,
 															0,0,vs.x,vs.y
 															);
-	if(renderDelegate[view_id])
+	if (renderDelegate[view_id])
+	{
 		renderDelegate[view_id](deviceContext);
+	}
 }

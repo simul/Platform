@@ -540,10 +540,10 @@ int Direct3D11Manager::GetNumOutputs()
 	return (int)outputs.size();
 }
 
-Output Direct3D11Manager::GetOutput(int i)
+crossplatform::Output Direct3D11Manager::GetOutput(int i)
 {
 	unsigned numModes;
-	Output o;
+	crossplatform::Output o;
 	IDXGIOutput *output=outputs[i];
 #ifndef _XBOX_ONE
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
@@ -709,7 +709,7 @@ ERRNO_BREAK
 	d3dDeviceContext->RSSetState(w->m_rasterState);
 	if(w->renderer)
 	{
-		w->renderer->Render(w->view_id,GetDeviceContext(),w->m_renderTargetView);
+		w->renderer->Render(w->view_id,GetDeviceContext(), w->m_renderTargetView);
 	}
 	static DWORD dwFlags = 0;
 	// 0 - don't wait for 60Hz refresh.
@@ -821,6 +821,6 @@ void Direct3D11Manager::AddWindow(HWND hwnd)
 	Window *window=new Window;
 	windows[hwnd]=window;
 	window->hwnd=hwnd;
-	Output o=GetOutput(0);
+	crossplatform::Output o=GetOutput(0);
 	window->RestoreDeviceObjects(d3dDevice,m_vsync_enabled,o.numerator,o.denominator);
 }
