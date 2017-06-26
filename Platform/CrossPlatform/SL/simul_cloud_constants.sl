@@ -2,6 +2,8 @@
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
 
+#define MaxNoiseAmplitudeKm 10.0
+
 struct LayerData
 {
 	vec2 noiseOffset;

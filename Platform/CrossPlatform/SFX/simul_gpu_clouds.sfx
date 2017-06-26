@@ -530,6 +530,42 @@ shader void CS_SimToTarget( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	//outputTexture3d[pos].rgba=res;
 }
 
+// Pass a texc that is 0-1 in the z and repeats in the x and y.
+// ignore any cell that would extend beyond 0 or 1 in the z direction.
+float RestrictedWorley(vec3 texc, int grid, int seed, float zmax)
+{
+	vec3 pos	=float(grid)*texc;
+	vec3 fractional, intpart;
+	fractional	=modf(pos,intpart);
+	int3 ip		=int3(intpart);
+	vec3 loc	=fractional - vec3(0.5, 0.5, 0.5);
+	float g		=float(grid);
+	float n		=g;
+	for (int i = -1; i < 2; ++i)
+	{
+		for (int j = -1; j < 2; ++j)
+		{
+			for (int k = -1; k < 2; ++k)
+			{
+				vec3 c		= vec3(i, j, k);
+				int3 u		= (ip + int3(i, j, k));
+				int3 v		= (u + int3(grid, grid, grid)) % int3(grid, grid, grid);
+				vec3 random = SphericalRandom(vec3(v)*seed);
+				c			+= random.xyz;
+				vec3 diff	= loc - c;
+				float dist	= length(diff);
+
+				float top = (ip.z+c.z + 1.0) / g;
+				float bot = (ip.z+c.z - 1.0) / g;
+				if(top<zmax)//&&bot>-1.0)
+					n = min(n, dist);
+			}
+		}
+	}
+	float p = saturate(1.0 - n / 1.0);
+	return p;
+}
+
 float CSDensity(uint3 pos)
 {
 	uint3 dims;
@@ -540,7 +576,7 @@ float CSDensity(uint3 pos)
 		return 0.0;
 	vec3 densityspace_texcoord	=(vec3(pos)+vec3(0.5,0.5,0.5))/vec3(dims);
 //	densityspace_texcoord.x	+=0.05*densityspace_texcoord.z;
-	vec3 noisespace_texcoord	=(densityspace_texcoord+vec3(0,0,0.0*zPixel))*noiseScale+vec3(1.0,1.0,0);
+	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale;// +vec3(1.0, 1.0, 0);
 	vec4 worley					=vec4(0,0,0,0);
 	vec3 tc						=2*noisespace_texcoord;
 	float u						=1.5;
@@ -554,7 +590,7 @@ float CSDensity(uint3 pos)
 //	worley_texcoord.z			-=1.0*time;
 	float p						=0;
 	float m						=4.0;
-	float w						=0.0;
+	//float w						=0.0;
 	// humidity is 0 - 1.
 	float hm					=2.0*(humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)-0.5);
 							
@@ -564,21 +600,28 @@ float CSDensity(uint3 pos)
 	// Our initial density. If hm=0, this value is between -1 and 1.
 	// If hm=1, it is between 1 and 2.
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
-	float dens					=hm+noise_val;
+	float dens =  hm + noise_val;
 	
 	//dens						=dens/diffusivity; We now apply diffusivity in the layer mixing stage.
-	for(int j=0;j<5;j++)
+	float texc_scale = noiseScale.z;
+	// grid that was used to make the worley texture is 4.
+	float grid1 = fl*4;
+	float grid2 = (fl+1.0) * 4;
+	for(int j=0;j<4;j++)
 	{
-		vec4 w1					=texture_wrap_lod(worleyTexture3D,fl*worley_texcoord,0);
-		vec4 w2					=texture_wrap_lod(worleyTexture3D,(fl+1.0)*worley_texcoord,0);
-		worley					=pow(lerp(w1,w2,ff),1.0);
-		
-		w						=m*(worley.x-0.52);//4.0*m*((worley.x-1.0)+p*(worley.y-1.0)+p*p*(worley.z-1.0)+p*p*p*(worley.w-1.0))/(1.0+p+p*p+p*p*p);
-		dens					=(dens+worleyNoiseStrength*w);
-		m						*=0.5;
-		worley_texcoord			*=2.35;
+		float w1 = RestrictedWorley(densityspace_texcoord*noiseScale / noiseScale.x, grid1, grid1, noiseScale.z / noiseScale.x);
+		float w2 = RestrictedWorley(densityspace_texcoord*noiseScale / noiseScale.x, grid2, grid2, noiseScale.z / noiseScale.x);
+		float w	=pow(lerp(w1,w2,ff),0.7);
+		w							=m*(w-0.52);//4.0*m*((worley.x-1.0)+p*(worley.y-1.0)+p*p*(worley.z-1.0)+p*p*p*(worley.w-1.0))/(1.0+p+p*p+p*p*p);
+
+		dens						=(dens+worleyNoiseStrength*w);
+		m							*=.53;
+		grid1*= 2.0;
+		grid2*= 2.0;
+		grid1 += 1.0;
+		grid2 += 1.0;
 	}
-	vec3 wPos					=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
+	vec3 wPos						=(mul(transformMatrix, vec4(densityspace_texcoord.xyz, 1.0))).xyz;
 	
 	//dens  *= saturate(densityspace_texcoord.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - densityspace_texcoord.z) / zPixel);
 	return dens;
@@ -595,7 +638,7 @@ shader void CS_Density(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)	//SV_Di
 	//GET_DIMENSIONS_3D(volumeNoiseTexture,noise_dims.x,noise_dims.y,noise_dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
-	float dens					=CSDensity(pos);
+	float dens = CSDensity(pos);
 	IMAGE_STORE_3D(targetTexture1,int3(pos),vec4(dens,dens,dens,dens));
 }
 
@@ -617,10 +660,10 @@ shader void CS_Density_DontWrap(uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID)	//S
 CS_LAYOUT(4,4,4)
 shader void CS_GenMip( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
-	int3 pos=int3(g*4+t);
-	int3 pos2=pos*2;
-	int x=1;
-	int y=1;
+	uint3 pos=uint3(g*4+t);
+	uint3 pos2=pos*2;
+	uint x=1;
+	uint y=1;
 	vec4 c1= densityTexture[pos2+int3(0,0,0)];
 	vec4 c2= densityTexture[pos2+int3(x,0,0)];
 	vec4 c3= densityTexture[pos2+int3(0,y,0)];

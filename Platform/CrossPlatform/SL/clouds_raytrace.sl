@@ -246,7 +246,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 								,cloudTexCoords, fade_texc, nearFarTexc
 								,cosine, volumeTexCoords,amb_dir
 								,BetaClouds, BetaRayleigh, BetaMie
-								,solidDist_nearFar, noise, do_depth_mix,distScale,idx);
+								,solidDist_nearFar, noise, do_depth_mix,distScale,idx,noiseval);
 					if(res.colour[0].a*brightness_factor<0.003)
 					{
 						for(int o=0;o<NUM_CLOUD_INTERP;o++)

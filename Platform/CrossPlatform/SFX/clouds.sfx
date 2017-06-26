@@ -141,6 +141,7 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
+
 void MixInLayer( uint3 g, uint3 t,bool clears)
 {
 	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
@@ -151,21 +152,24 @@ void MixInLayer( uint3 g, uint3 t,bool clears)
 	idx.xy		=idx.xy%int2(windowGrid.xy);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	vec3 texc	=vec3(idx)*scale+offset;
-	vec4 c1		=cloudDensity.SampleLevel(cloudSamplerState,texc,0);
-	vec4 c2		=cloudDensity2.SampleLevel(cloudSamplerState,texc,0);
+	vec4 c1		=cloudDensity.SampleLevel(wrapSamplerState,texc,0);
+	vec4 c2		=cloudDensity2.SampleLevel(wrapSamplerState,texc,0);
 
 	vec4 res	=lerp(c1,c2,cloud_interp).zyxw;
 	float zPixel=1.0/32.0;
 
-//	res.z		=saturate((res.z*2.0-0.5)*1.5+0.7);
+
 	res.z		=saturate((res.z-0.25)/diffusivity+0.25);
 
 	res.z*= humidity/0.5*saturate(texc.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - texc.z) / zPixel);
 
 	if (res.z > 0.05)
 	{
+		// stronger noise at the top:
 		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
-		res.x		=localNoiseStrength/100.0*noise_factor;
+		// variation:
+		noise_factor *= (0.05 + rand3(idx).x);
+		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
 		res.y		=localCellNoiseStrength*noise_factor;
 		IMAGE_STORE_3D(outputTexture3d,idx,res);
 	}
@@ -236,7 +240,7 @@ void MapToWindow( uint3 g , uint3 t ,bool clears)
 	float w				=WorleyFactor(worley_texc);
 	res.z				=saturate(3.0*res.z-1.0+worleyNoiseStrength*w);
 	//res.xyw=2.0*(float(idx.z)/64.0-0.5);
-	res.x				=localNoiseStrength/100.0;
+	res.x				=saturate(localNoiseStrength/MaxNoiseAmplitudeKm);
 	res.y				=localCellNoiseStrength;
 	if (clears||res.z > 0.50)
 	{
@@ -275,7 +279,7 @@ float ThicknessInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir)
 }
 
 CS_LAYOUT(4,4,4)
-shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+shader void CS_WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
@@ -304,6 +308,7 @@ shader void WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	}
 	nearest_dir=0.5+0.5*normalize(nearest_dir);*/
 	vec4 illum;
+
 	illum.x			=exp(-extinction*thickness/36.0);
 	illum.y			=exp(-extinction*thickness);
 	illum.zw		=1;//nearest_dir.xy;
@@ -791,17 +796,18 @@ shader vec4 PS_PlacementVolume(posTexVertexOutput IN):SV_TARGET
 shader vec4 PS_ShowNoise(posTexVertexOutput IN):SV_TARGET
 {
     vec4 lookup=texture_wrap(rainMapTexture,IN.texCoords.xy);
+					
 	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
 shader vec4 PS_Show3DNoise(posTexVertexOutput IN):SV_TARGET
 {
-	float z			=floor(8.0f*IN.texCoords.x)/8.0f;
-	if(IN.texCoords.y<0.5)
+	float z = 0; floor(8.0f*IN.texCoords.x) / 8.0f;
+	//if(IN.texCoords.y<0.5)
 		z=0.5;
 	vec4 lookup		=texture_3d_nearest_lod(noiseTexture3D,vec3(IN.texCoords,z),0);
-	//lookup=abs(lookup);
-	//return vec4(saturate(lookup.rgb),1.0);
+	
+	//vec4 lookup = VirtualNoiseLookup(vec3(IN.texCoords, z), 4, 1, true);
 	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
@@ -816,7 +822,7 @@ vec4 CrossSection(vec2 texCoords,float yz)
 {
 	vec3 texc	=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
 	int i		=0;
-	vec3 accum	=vec3(0.0,0.5,1.0);
+	vec3 accum	=vec3(0.0,0.0,0.0);
 	texc.y		+=0.5*(1.0-yz)/float(CROSS_SECTION_STEPS);
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
@@ -830,8 +836,8 @@ vec4 CrossSection(vec2 texCoords,float yz)
 		colour*=opacity;
 		accum*=1.0-opacity;
 		accum += colour; 
-		texc.y-=(1.0-yz)/float(CROSS_SECTION_STEPS);
-		texc.z+=yz/float(CROSS_SECTION_STEPS);
+		//texc.y-=(1.0-yz)/float(CROSS_SECTION_STEPS);
+		//texc.z+=yz/float(CROSS_SECTION_STEPS);
 	}
     return vec4(accum,1);
 }
@@ -1040,7 +1046,7 @@ technique window_lighting
 {
     pass p0
     {
-		SetComputeShader(CompileShader(cs_5_0,WindowLighting()));
+		SetComputeShader(CompileShader(cs_5_0,CS_WindowLighting()));
     }
 }
 

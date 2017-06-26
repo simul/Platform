@@ -341,15 +341,34 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 
 	vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};
 
-void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP],inout float meanFadeDistance,inout float brightness_factor
-	,Texture2D lossTexture,Texture2D inscTexture,Texture2D skylTexture
-	,Texture3D inscatterVolumeTexture,Texture2D lightTableTexture
-	,vec4 density,vec4 light,float distanceKm,float fadeDistance
-	,vec3 world_pos
-	,vec3 cloudTexCoords,vec2 fade_texc,vec2 nearFarTexc
-	,float cosine,vec3 volumeTexCoords,vec3 amb_dir
-	,float BetaClouds,float BetaRayleigh,float BetaMie
-	,float solidDist_nearFar[NUM_CLOUD_INTERP],bool noise,bool do_depth_mix,float distScale,int idx)
+void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
+				,inout float meanFadeDistance
+				,inout float brightness_factor
+				,Texture2D lossTexture
+				,Texture2D inscTexture
+				,Texture2D skylTexture
+				,Texture3D inscatterVolumeTexture
+				,Texture2D lightTableTexture
+				,vec4 density
+				,vec4 light
+				,float distanceKm
+				,float fadeDistance
+				,vec3 world_pos
+				,vec3 cloudTexCoords
+				,vec2 fade_texc
+				,vec2 nearFarTexc
+				,float cosine
+				,vec3 volumeTexCoords
+				,vec3 amb_dir
+				,float BetaClouds
+				,float BetaRayleigh
+				,float BetaMie
+				,float solidDist_nearFar[NUM_CLOUD_INTERP]
+				,bool noise
+				,bool do_depth_mix
+				,float distScale
+				,int idx
+				,vec4 noiseval)
 {
 	density.z				*=cosine;
 	density.z				*=cosine;
@@ -357,7 +376,7 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP],inout float meanFadeDistance
 	vec4 clr[NUM_CLOUD_INTERP];
 	brightness_factor		=1.0;
 	if (noise)
-		clr[NUM_CLOUD_INTERP - 1] =	calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
+		clr[NUM_CLOUD_INTERP - 1]	=calcColour(lossTexture,inscatterVolumeTexture,volumeTexCoords,lightTableTexture
 										,density
 										,light
 										,BetaClouds
@@ -369,7 +388,7 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP],inout float meanFadeDistance
 										,fade_texc
 										,brightness_factor);
 	else
-		clr[NUM_CLOUD_INTERP - 1] = calcColourSimple(lossTexture,inscTexture,skylTexture,lightTableTexture
+		clr[NUM_CLOUD_INTERP - 1]	=calcColourSimple(lossTexture,inscTexture,skylTexture,lightTableTexture
 										,vec4(light.xyw,density.z)
 										,BetaClouds,BetaRayleigh,BetaMie
 										,lightResponse
@@ -381,25 +400,20 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP],inout float meanFadeDistance
 										,brightness_factor);
 
 	meanFadeDistance	=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-density.z)*colour[NUM_CLOUD_INTERP-1].a);
-	//if(do_depth_mix)
+
+	for(int i=0;i<NUM_CLOUD_INTERP;i++)
 	{
-		for(int i=0;i<NUM_CLOUD_INTERP;i++)
+		clr[i]			= clr[NUM_CLOUD_INTERP-1];
+	//	clr[i].rgb = density.x;
+		if(do_depth_mix)
 		{
-			clr[i]			=clr[NUM_CLOUD_INTERP-1];
-			if(do_depth_mix)
-			{
-				float m			=saturate((solidDist_nearFar[i]-fadeDistance)/distScale);
-				clr[i].a		*=m;
-			}
-			colour[i].rgb	+=clr[i].rgb*clr[i].a*(colour[i].a);
-			colour[i].a		*=(1.0-clr[i].a);
+			float m			=saturate((solidDist_nearFar[i]-fadeDistance)/distScale);
+			clr[i].a		*=m;
 		}
+		colour[i].rgb	+=clr[i].rgb*clr[i].a*(colour[i].a);
+		colour[i].a		*=(1.0-clr[i].a);
 	}
-	//else
-	{
-		//colour[NUM_CLOUD_INTERP - 1] = clr[NUM_CLOUD_INTERP - 1];// += clr[NUM_CLOUD_INTERP - 1].rgb*clr[NUM_CLOUD_INTERP - 1].a*colour[NUM_CLOUD_INTERP - 1].a;
-	//	colour[NUM_CLOUD_INTERP-1].a			*=(1.0-clr[NUM_CLOUD_INTERP-1].a);
-	}
+	
 }
 
 #endif

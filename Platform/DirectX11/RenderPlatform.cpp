@@ -1094,12 +1094,22 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	UINT offsets[10];
 	for(int i=0;i<num_buffers;i++)
 	{
+		if (buffers)
+		{
 		strides[i]=buffers[i]->stride;
 		if(vertexSteps&&vertexSteps[i]>=1)
 			strides[i]*=vertexSteps[i];
 		buf[i]=buffers[i]->AsD3D11Buffer();
+		}
+		else
+		{
+			buf[i] = nullptr;
+			strides[i] = 0;
+		}
+
 		offsets[i]=0;
 	}
+	
 	deviceContext.asD3D11DeviceContext()->IASetVertexBuffers(	0,	// the first input slot for binding
 									num_buffers,					// the number of buffers in the array
 									buf,							// the array of vertex buffers
