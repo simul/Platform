@@ -19,18 +19,7 @@
 	#endif
 #endif
 
-#if defined(SIMUL_DYNAMIC_LINK) && !defined(DOXYGEN)
-// In this lib:
-	#if !defined(SIMUL_DIRECTX1x_DLL) 
-	// If we're building dll libraries but not in this library IMPORT the classes
-		#define SIMUL_DIRECTX11_EXPORT __declspec(dllimport)
-	#else
-	// In ALL OTHER CASES we EXPORT the classes!
-		#define SIMUL_DIRECTX11_EXPORT __declspec(dllexport)
-	#endif
-#else
-	#define SIMUL_DIRECTX11_EXPORT
-#endif
+#define SIMUL_DIRECTX11_EXPORT
 
 #ifdef _MSC_VER
 	#define SIMUL_DIRECTX11_EXPORT_FN SIMUL_DIRECTX11_EXPORT __cdecl
