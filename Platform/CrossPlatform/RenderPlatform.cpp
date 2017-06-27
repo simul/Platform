@@ -763,7 +763,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	{
 		tech=debugEffect->GetTechniqueByName("untextured");
 	}
-	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,blend?"blend":"noblend");
 	vec4 white(1.0, 1.0, 1.0, 1.0);
 	vec4 semiblack(0, 0, 0, 0.5);
 	char txt[]="0";
