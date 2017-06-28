@@ -810,6 +810,15 @@ technique radial
 		SetVertexShader(vs_quad_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureRadial()));
     }
+	pass blend
+	{
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(AlphaBlendNoAlphaWrite, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
+		SetGeometryShader(NULL);
+		SetVertexShader(vs_quad_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTextureRadial()));
+	}
 }
 
 technique textured
@@ -855,6 +864,7 @@ technique untextured
 		SetPixelShader(CompileShader(ps_5_0,PS_Untextured()));
     }
 }
+
 technique show_volume
 {
     pass noblend
@@ -879,7 +889,7 @@ technique show_volume
 
 technique texturedMS
 {
-    pass p0
+    pass noblend
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
@@ -928,7 +938,7 @@ technique draw_cubemap
 
 technique draw_cubemap_sphere
 {
-    pass p0 
+    pass noblend
     {		
 		SetRasterizerState( RenderBackfaceCull );
         SetGeometryShader(NULL);
@@ -941,7 +951,7 @@ technique draw_cubemap_sphere
 
 technique draw_lat_long_sphere
 {
-    pass p0 
+    pass noblend
     {		
 		SetRasterizerState( RenderBackfaceCull );
         SetGeometryShader(NULL);
@@ -991,6 +1001,7 @@ technique draw_sphere
 		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 }
+
 technique show_depth
 {
     pass reverse_depth

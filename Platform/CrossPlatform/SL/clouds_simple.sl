@@ -106,7 +106,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float distScale					=0.6/maxFadeDistanceKm;
 	float K							=log(maxCloudDistanceKm);
 	bool found=false;
-	float stepKm					=K*(1.2+distanceKm)/float(numSteps);
+	float stepKm = K*(1.2 + distanceKm) / float(numSteps);
+	/// (1.0 + 100.0*abs(view.z));
 	
 	vec3 amb_dir=view;
 	for(int i=0;i<768;i++)
