@@ -116,7 +116,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 													,vec2 depth_texc
 													,TextureCubeArray cloudCubeArray
 													,TextureCube nearFarTexture
-				,TextureCube lightpassTexture
+													,TextureCube lightpassTexture
 													,Texture2D loss2dTexture
 													,TEXTURE2DMS_FLOAT4 depthTextureMS
 													,int numSamples
@@ -126,13 +126,13 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 													,DepthInterpretationStruct depthInterpretationStruct
 													,vec2 lowResTexCoords
 													,Texture3D inscatterVolumeTexture
-				,Texture3D godraysVolumeTexture
-				,float maxFadeDistanceKm
-				,float nearDist
-				,bool do_lightpass
-				,bool do_godrays
-				,bool do_interp
-				,bool do_near)
+													,Texture3D godraysVolumeTexture
+													,float maxFadeDistanceKm
+													,float nearDist
+													,bool do_lightpass
+													,bool do_godrays
+													,bool do_interp
+													,bool do_near)
 {
 	TwoColourCompositeOutput res;
 	vec3 view						=normalize(mul(invViewProj,clip_pos).xyz);
