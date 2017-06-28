@@ -248,6 +248,8 @@ bool BaseFramebuffer::CreateBuffers()
 
 void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)
 {
+	if (!bands)
+		return;
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"Calc Spherical Harmonics")
 	int num_coefficients=bands*bands;
 	static int BLOCK_SIZE=16;

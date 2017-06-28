@@ -753,7 +753,11 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	if(!ok)
 	{
 		InvalidateDeviceObjects();
-
+		if (w <= 0 || l <= 0)
+		{
+			SIMUL_CERR_ONCE << "Cannot initialize a texture with size 0" << std::endl;
+			return false;
+		}
 		unsigned int numQualityLevels=0;
 		while(numQualityLevels==0&&num_samples>1)
 		{

@@ -350,7 +350,7 @@ shader void CS_Simulate( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 }
 // Given texture position from texCoords, convert to a worldpos with shadowMatrix.
 // Then, trace towards sun to find initial intersection with cloud volume
-// Then trace down to find first intersection with clouds, if any.
+// Then trace down to find first intersection with clouds, if any. 
 shader vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 {
 	vec3 simple_texc				=vec3(IN.texCoords,0);
@@ -362,13 +362,16 @@ shader vec4 PS_RainMap(posTexVertexOutput IN) : SV_TARGET
 {
 	float total_cloud=0.0;
 	float max_tex_z=0.0;
+	float thickness = 0.0;
+	// We will trace downward. The first point where enough cloud has accumulated on the way is where rain starts.
 	for(int i=0;i<14;i++)
 	{
-		float tex_z		=float(i)/14.0/3.0;
+		float tex_z		=float(14.0-i)/20.0;
 		vec3 texc		=vec3(IN.texCoords.xy,tex_z);
 		vec4 density	=sample_3d_lod(cloudDensity,cloudSamplerState,texc,0);
 		total_cloud		+=0.125*density.z;
-		max_tex_z		=max(max_tex_z,step(0.5,density.z)*tex_z);
+		thickness		+=1.0*density.z;		// effective cloud thickness in km.
+		max_tex_z		=max(max_tex_z,step(1.0, thickness)*tex_z);
 	}
 	total_cloud=saturate((total_cloud-0)/0.1);
 	return vec4(total_cloud*precipitation,max_tex_z,0,0);

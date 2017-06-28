@@ -39,9 +39,9 @@ SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	vec2 screenSize;
 	uniform vec3 viewPositionOffset;
 	float nearRainDistance;// as a proportion of max fade distance
-	float ateaethkltdujr;
+	float gamma;
 	float splashDelta;	
-	float srhshrhrs;
+	float exposure;
 SIMUL_CONSTANT_BUFFER_END
 
 struct PrecipitationVertex

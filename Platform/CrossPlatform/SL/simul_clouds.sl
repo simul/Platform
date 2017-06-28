@@ -77,9 +77,9 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 , vec2 fade_texc, vec2 nearFarTexc
 , out float brightnessFactor)
 {
-	float alt_texc = world_pos.z / fadeAltitudeRangeKm;
-	vec3 combinedLightColour = texture_clamp_lod(lightTableTexture, vec2(alt_texc, 3.5 / 4.0), 0).rgb;
-	ambientColour = lightResponse.w*texture_clamp_lod(lightTableTexture, vec2(alt_texc, 2.5 / 4.0), 0).rgb;
+	float sun_alt_texc = GetAltTexCoord(world_pos.z, minSunlightAltitudeKm, fadeAltitudeRangeKm);
+	vec3 combinedLightColour = texture_clamp_lod(lightTableTexture, vec2(sun_alt_texc, 3.5 / 4.0), 0).rgb;
+	ambientColour = lightResponse.w*texture_clamp_lod(lightTableTexture, vec2(sun_alt_texc, 2.5 / 4.0), 0).rgb;
 
 	vec3 ambient = density.w*ambientColour.rgb;
 	float opacity = density.z;
@@ -333,10 +333,10 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 {
 	vec3 rain_texc		=cloudWorldOffsetKm;
 	rain_texc.xy		+=rain_texc.z*rainTangent;
-	float rain_lookup	=rainMapTexture.SampleLevel(cloudSamplerState,rain_texc.xy*inverseScalesKm.xy,0).x;
+	vec4 rain_lookup	=rainMapTexture.SampleLevel(cloudSamplerState,rain_texc.xy*inverseScalesKm.xy,0);
 	//vec4 streak			=texture_wrap_lod(noiseTexture,0.00003*rain_texc.xy,0);
 	return				rain_lookup.x*saturate((rainRadiusKm-length(world_pos_km.xy-rainCentreKm.xy))*3.0)
-		*saturate((3.0-cloudWorldOffsetKm.z)/1.0);//*(0.5+0.5*saturate(cloudWorldOffsetKm.z/4.0+1.0));
+		*saturate((20.0*rain_lookup.y-cloudWorldOffsetKm.z)/0.1);//*(0.5+0.5*saturate(cloudWorldOffsetKm.z/4.0+1.0));
 }
 
 	vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};
