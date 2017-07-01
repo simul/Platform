@@ -205,10 +205,11 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	else
 #endif
 	{
-		if (renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &buffer) != S_OK)
+		HRESULT hr = renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &buffer);
+		if (hr != S_OK)
 		{
-			HRESULT rr=renderPlatform->AsD3D11Device()->GetDeviceRemovedReason();
-			SIMUL_CERR<<GetErrorText(rr)<<std::endl;
+			SIMUL_CERR<<GetErrorText(hr)<<std::endl;
+			return;
 		}
 	}
 	

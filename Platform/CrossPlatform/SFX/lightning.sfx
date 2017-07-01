@@ -41,11 +41,6 @@ struct F_IdVertex
 	uint vertex_id	: TEXCOORD2;
 };
 
-struct F_Vertex_out
-{
-    vec4 hPosition	: SV_Position;
-};
-
 shader F_Vertex VS_InitialFractal(idOnly IN )
 {
 	F_Vertex OUT;

@@ -281,6 +281,8 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,doGodrays
 															,true
 															,doNear);
+	result.add.rgb = pow(result.add.rgb, vec3(gamma, gamma, gamma));
+	result.add.rgb *= exposure;
 	return result;
 }
 
@@ -313,13 +315,9 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,maxFadeDistanceKm
 															,nearDist
 															,false,false,false,false
-		//TEMP: disabled clouds in cubemap comp
-	,false);
-	//if (view.z < 0)
-	//result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
-	//result.add.rgb	*=exposure;
-	//result.add.rgb *= 0;
-	
+	,true);
+	result.add.rgb = pow(result.add.rgb, vec3(gamma, gamma, gamma));
+	result.add.rgb *= exposure;
 	
 	return result;
 }

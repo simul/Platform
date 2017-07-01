@@ -305,8 +305,16 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				}
 				else if(texture->dim==3)
 				{
-					debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",texture,i,j);
+					if (texture->GetFormat() == PixelFormat::RGBA_8_UNORM)
+					{
+						techname = "compute_clear_3d_u8";
+						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3DU8", texture, i);
+					}
+					else
+					{
 					techname="compute_clear_3d";
+						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", texture, i);
+					}
 				}
 				else
 				{
@@ -763,7 +771,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	{
 		tech=debugEffect->GetTechniqueByName("untextured");
 	}
-	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,blend?"blend":"noblend");
 	vec4 white(1.0, 1.0, 1.0, 1.0);
 	vec4 semiblack(0, 0, 0, 0.5);
 	char txt[]="0";
