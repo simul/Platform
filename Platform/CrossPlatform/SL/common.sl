@@ -53,7 +53,7 @@
 	#define SIMUL_RWTEXTURE_REGISTER(rwtex_num) : register(u##rwtex_num)
 	#define SIMUL_STATE_REGISTER(snum) : register(s##snum)
 
-	#define SIMUL_CONSTANT_BUFFER(name,buff_num) constant_buffer name SIMUL_BUFFER_REGISTER(buff_num) {
+	#define SIMUL_CONSTANT_BUFFER(name,buff_num) cbuffer name SIMUL_BUFFER_REGISTER(buff_num) {
 	#define SIMUL_CONSTANT_BUFFER_END };
 
 	#define SIMUL_TARGET_OUTPUT : SV_TARGET

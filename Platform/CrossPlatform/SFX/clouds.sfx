@@ -152,12 +152,18 @@ void MixInLayer( uint3 g, uint3 t,bool clears)
 	idx.xy		=idx.xy%int2(windowGrid.xy);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	vec3 texc	=vec3(idx)*scale+offset;
-	vec4 c1		=cloudDensity.SampleLevel(wrapSamplerState,texc,0);
-	vec4 c2		=cloudDensity2.SampleLevel(wrapSamplerState,texc,0);
+	vec4 res = 0.0;
+	for (int i = -2; i < 3; i++)
+	{
+		vec3 tc		= texc;
+		tc.z		+= zPixel*i;
+		vec4 c1		= cloudDensity.SampleLevel(wrapSamplerState, tc, 0);
+		vec4 c2		= cloudDensity2.SampleLevel(wrapSamplerState, tc, 0);
 
-	vec4 res	=lerp(c1,c2,cloud_interp).zyxw;
-	float zPixel=1.0/32.0;
+		res			+= lerp(c1, c2, cloud_interp).zyxw/5.0;
+	}
 
+	float zPixel=1.0/float(windowGrid.z);
 
 	res.z		=saturate((res.z-0.25)/diffusivity+0.25);
 

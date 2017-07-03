@@ -33,9 +33,9 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	res.nearFarDepth		=dlookup;
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
-	vec3 lightDir			=lerp(directionToMoon,directionToSun,s);
+	vec3 lightDirection		=lerp(directionToMoon,directionToSun,s);
 
-	float cos0				=dot(lightDir.xyz,view.xyz);
+	float cos0				=dot(lightDirection.xyz,view.xyz);
 	float sine				=view.z;
 
 	float min_z				=cornerPosKm.z-(fractalScale.z*1.5)/inverseScalesKm.z;
@@ -74,7 +74,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	vec4 rainbowColour;
 	if(do_rainbow)
 		rainbowColour=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
-												rainbowIntensity,view,lightDir);
+												rainbowIntensity,view,lightDirection);
 	float moisture			=0.0;
 
 	vec3 world_pos			=viewPosKm;
@@ -98,7 +98,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		float a		=1.0/(saturate(-view.z)+0.00001);
 		offset_vec	+=max(0.0,world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
 	}
-	vec3 halfway					=0.5*(lightDir-view);
+	vec3 halfway					=0.5*(lightDirection-view);
 	world_pos						+=offset_vec;
 	
 	float distanceKm				=length(offset_vec);
