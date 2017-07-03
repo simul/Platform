@@ -41,11 +41,12 @@ SIMUL_CONSTANT_BUFFER(LightningPerViewConstants,8)
 	uniform vec4 tanHalfFov;
 	uniform vec3 viewPosition;
 	uniform float maxFadeDistance;
+	uniform uint parent_point;
 SIMUL_CONSTANT_BUFFER_END
 
 struct LightningVertex
 {
-    vec4 position;
+    vec3 position;
 	vec2 texCoords;				// x= width in pixels
 	float progress;
 };
@@ -57,6 +58,7 @@ struct LightningVertexInput
     vec2 texCoords		: TEXCOORD0;
 	float progress		: TEXCOORD1;
 };
+
 struct LightningVertexOutput
 {
     vec4 position			: SV_POSITION;
