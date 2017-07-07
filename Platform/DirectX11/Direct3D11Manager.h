@@ -43,7 +43,7 @@ namespace simul
 		public:
 			Direct3D11Manager();
 			~Direct3D11Manager();
-			void Initialize(bool use_debug=false,bool instrument=false);
+			void Initialize(bool use_debug=false,bool instrument=false,bool default_driver=false);
 			//! Add a window. Creates a new Swap Chain.
 			void AddWindow(HWND h);
 			//! Removes the window and destroys its associated Swap Chain.
