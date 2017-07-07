@@ -483,7 +483,7 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_d
 			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
 			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
 			d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, true );
-	
+			
 			ReportMessageFilterState();
 			d3dInfoQueue->ClearStoredMessages();
 			d3dInfoQueue->ClearRetrievalFilter();
@@ -520,13 +520,27 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument,bool default_d
 		filter.AllowList.NumSeverities = 2; 
 		filter.AllowList.pSeverityList = sevs;
 		filter.AllowList.NumIDs = 0;//sizeof(ids) / sizeof(UINT);
+		filter.AllowList.NumCategories=0;
 		//..filter.AllowList.pIDList = ids;
 
+		D3D11_MESSAGE_SEVERITY deny_sevs[] = { 
+			D3D11_MESSAGE_SEVERITY_INFO};
+		filter.DenyList.NumSeverities=1;
+		filter.DenyList.pSeverityList=deny_sevs;
+		filter.DenyList.NumIDs=1;
+		D3D11_MESSAGE_ID deny_ids[]={D3D11_MESSAGE_ID_DESTROY_BLENDSTATE};
+		filter.DenyList.pIDList=deny_ids;
 		// To set the type of messages to deny, set filter.DenyList 
 		// similarly to the preceding filter.AllowList.
 		if(d3dInfoQueue)
+		{
+			d3dInfoQueue->ClearStorageFilter();
+			d3dInfoQueue->ClearRetrievalFilter();
+			D3D11_INFO_QUEUE_FILTER filters[]={filter,NULL};
 		// The following single call sets all of the preceding information.
-			V_CHECK(d3dInfoQueue->AddStorageFilterEntries( &filter ));
+			V_CHECK(d3dInfoQueue->AddStorageFilterEntries( filters ));
+			V_CHECK(d3dInfoQueue->AddRetrievalFilterEntries( filters ));
+		}
 		ReportMessageFilterState();
 	}
 	//d3dDevice->AddRef();

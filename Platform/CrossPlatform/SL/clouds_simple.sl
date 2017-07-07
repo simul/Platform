@@ -48,10 +48,10 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float solidDist_nearFar	[NUM_CLOUD_INTERP];
 	vec2 nfd				=(dlookup.yx)+100.0*step(vec2(1.0,1.0), dlookup.yx);
 
-	float n									=	nfd.x;
-	float f									=	nfd.y;
-	solidDist_nearFar[0]					=	n;
-	solidDist_nearFar[num_interp-1]	=	f;
+	float n							=nfd.x;
+	float f							=nfd.y;
+	solidDist_nearFar[0]			=n;
+	solidDist_nearFar[num_interp-1]	=f;
 	for(int l=1;l<num_interp-1;l++)
 	{
 		float interp			=float(l)/float(num_interp-1);
@@ -134,9 +134,9 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	
 			//if(!found)
 			{
-				found = found || (density.z > 0);
+			//	found = found || (density.z > 0);
 			}
-			if(found)
+			//if(found)
 			{
 				vec3 noise_texc			=(world_pos.xyz)*noise3DTexcoordScale+noise3DTexcoordOffset;
 

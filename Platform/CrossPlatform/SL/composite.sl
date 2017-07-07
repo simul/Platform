@@ -46,8 +46,11 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,bool do_godrays
 				,bool do_interp
 				,bool do_near
-				,bool do_clouds=true
-				, bool do_height_fog = false)
+				,bool do_clouds
+				,bool do_height_fog=false
+				,float fogExtinction=0.0
+				,vec3 fogColour=vec3(0,0,0)
+				,float fogHeightKm=0.0)
 {
 	TwoColourCompositeOutput res;
 	vec3 view						=normalize(mul(invViewProj,clip_pos).xyz);
@@ -93,16 +96,6 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	{
 		cloud						=cloudNear;
 	}
-	if (do_height_fog)
-	{
-		//
-		float dh			=max(min(viewPos.z,1000.0)-(viewPos.z+offsetMetres.z),0);
-		float thickness = dist*1000.0*maxFadeDistanceKm;// min(dist*1000.0*maxFadeDistanceKm, dh / abs(sine));
-		float T				=10000.0;
-		float retain		=saturate(exp(-thickness / T));
-		insc.rgb			*=retain;
-		insc.rgb +=  (1.0 - retain)*vec3(3, 3, 3);
-	}
 	if(do_clouds)
 		insc.rgb						*=cloud.a;
 	if(do_godrays)
@@ -117,8 +110,50 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	if(do_clouds)
 		insc							+=cloud;
 	res.multiply					=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a;
-	if(do_clouds)
-		res.multiply				*=cloud.a;
+	if (do_height_fog)
+	{
+		// we seek two distances: the maximum distance that fog is seen, and the minimum.
+		// We find these by tracing toward the eye from maxFadeDistanceKm to dist*maxFadeDistanceKm.
+		// The maximum fog distance is the furthest 
+		// distance from the eye to the fog "surface":
+		float H_km = fogHeightKm;
+		float d_solid	= maxFadeDistanceKm*dist;
+		float z			= viewPos.z / 1000.0;
+		float zs		= z + sine*d_solid;
+		// z_max is the highest of the two heights, and z_min is the lowest.
+		float z_max		= max(z,zs);
+		float z_min		= min(z,zs);
+		// z_1 and z_2 are the start and end heights of our integral.
+		float z_1		= min(z_min,H_km);
+		float z_2		= min(z_max,H_km);
+		// The distance between the points of integration is:
+		float s1		= (max(0,z_1) / abs(sine))/maxFadeDistanceKm;
+		float s			= min(d_solid, (z_2 - z_1) / abs(sine));
+		// Integral of p0 (H_km-z)/H
+		float retain	= saturate(exp(-s * fogExtinction));// fogExtinction is 1/km.
+
+		vec3 fogLoss	=texture_clamp_mirror_lod(loss2dTexture, vec2(loss_texc.x,s1), 0).rgb*cloud.a;
+		insc.rgb		+= (1.0- retain)*fogColour*fogLoss;
+#if 0
+		// example, if viewPos.z-H>0 and sine>0, d_surf would be max.
+		float km_above = max(0, z - H_km);
+		float d_surf = min(km_above / max(-sine, 0.00001), maxFadeDistanceKm);
+		float d_min = min(d_surf, d_solid);
+		float d_max = d_solid;
+
+		float zmin = viewPos.z / 1000.0;
+		zmin = min(zmin, zmin + sine*d_solid);
+		float dens = exp(-zmin);
+		float sn = abs(sine);
+		float thickness = max(0, H_km/sn*dens*(1.0-exp(-d_solid*sn/H_km)));// dens*(d_solid - d_solid*d_solid*sine / 2.0 / H_km));
+		float T = 1.0;
+		float retain = saturate(exp(-thickness / T));
+	//	insc.rgb *= retain;
+		insc.rgb +=  (1.0 - retain)*vec3(1, 1, 1)*res.multiply.rgb;
+#endif
+	}
+	//if(do_clouds)
+	//	res.multiply				*=cloud.a;
 	res.add							=insc;
     return res;
 }
