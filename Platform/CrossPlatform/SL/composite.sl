@@ -46,7 +46,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,bool do_godrays
 				,bool do_interp
 				,bool do_near
-				,bool do_clouds=true)
+				,bool do_clouds=true
+				, bool do_height_fog = false)
 {
 	TwoColourCompositeOutput res;
 	vec3 view						=normalize(mul(invViewProj,clip_pos).xyz);
@@ -91,6 +92,16 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	else
 	{
 		cloud						=cloudNear;
+	}
+	if (do_height_fog)
+	{
+		//
+		float dh			=max(min(viewPos.z,1000.0)-(viewPos.z+offsetMetres.z),0);
+		float thickness = dist*1000.0*maxFadeDistanceKm;// min(dist*1000.0*maxFadeDistanceKm, dh / abs(sine));
+		float T				=10000.0;
+		float retain		=saturate(exp(-thickness / T));
+		insc.rgb			*=retain;
+		insc.rgb +=  (1.0 - retain)*vec3(3, 3, 3);
 	}
 	if(do_clouds)
 		insc.rgb						*=cloud.a;
