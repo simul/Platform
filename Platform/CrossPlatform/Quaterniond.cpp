@@ -1,13 +1,5 @@
 #define SIM_MATH
 #include "Quaterniond.h"
-//---------------------------------------------------------------------------     
-#ifdef WIN32
-	//#define SIMD
-#endif
-
-#ifdef PLAYSTATION_2
-	#define PLAYSTATION2
-#endif        
 
 #include <math.h>
 
@@ -104,7 +96,6 @@ void Quaterniond::MakeUnit()
 
 void Quaterniond::DefineSmall(double ss,const vec3d &vv)
 {
-#ifndef PLAYSTATION2
 	ss*=0.5f;
 	x=ss*vv.x;
 	y=ss*vv.y;
@@ -118,47 +109,6 @@ void Quaterniond::DefineSmall(double ss,const vec3d &vv)
 	y/=magnitude;
 	z/=magnitude;
 	s/=magnitude;
-#else
-	ss;vv;
-		asm __volatile__("
-			.set noreorder
-			add t1,zero,2
-			mtc1 t1,$f12
-			add t1,zero,1
-			mtc1 t1,$f4				// f4 = 1
-			lwc1 $f10,0(%1)			// ss   
-			//mtc1 %1,$f10		
-
-			add t0,zero,%0			// vv.Values
-			cvt.s.w	$f12,$f12
-			div.s $f10,$f10,$f12	// f10 = ss/2
-			cvt.s.w	$f4,$f4
-			
-			lwc1		$f1,0(t0)	// load v1[X]
-			lwc1		$f2,4(t0)	// load v1[Y]
-			lwc1		$f3,8(t0)	// load v1[Z]
-			
-			mul.s $f1,$f1,$f10
-			mul.s $f2,$f2,$f10
-			mul.s $f3,$f3,$f10
-			
-			mula.s	$f1,$f1			// ACC = v1[X] * v2[X]
-			madda.s	$f2,$f2			// ACC += v1[Y] * v2[Y]
-			madda.s	$f3,$f3			// ACC += v1[Y] * v2[Y]
-			madd.s	$f5,$f4,$f4		// rv = ACC + v1[Z] * v2[Z]
-			sqrt.s	$f6,$f5
-			div.s $f1,$f6
-			div.s $f2,$f6
-			div.s $f3,$f6
-			div.s $f4,$f6
-			swc1 $f1, 0(a0)			// store v1[X]
-			swc1 $f2, 4(a0)			// store v1[Y]
-			swc1 $f3, 8(a0)			// store v1[Z]
-			swc1 $f4, 12(a0)			// store v1[Z]
-		"					:
-							: "r" (vv.Values),"g" (&ss)
-							: );
-#endif
 }
 double dot(vec3d a,vec3d b)
 {
@@ -239,9 +189,8 @@ Quaterniond Quaterniond::operator/(const Quaterniond &q) const
 }          
 Quaterniond& Quaterniond::operator/=(const Quaterniond &q)
 {
-#ifndef PLAYSTATION2
 #ifndef SIMD
-	register double X,Y,Z;
+	double X,Y,Z;
 	X=s*q.x+q.s*x+q.y*z-q.z*y;
 	Y=s*q.y+q.s*y+q.z*x-q.x*z;
 	Z=s*q.z+q.s*z+q.x*y-q.y*x;
@@ -325,28 +274,6 @@ Quaterniond& Quaterniond::operator/=(const Quaterniond &q)
 	movss [eax+12],xmm0
 	};
 #endif
-#else
-	//double *rVal=&(x);
-	const double *Q1=&(x);
-	const double *Q2=&(q.x);
-	asm __volatile__("
-			.set noreorder
-		lqc2			vf1,0(%1)			// Load v1's double address into vf1
-		lqc2			vf2,0(%2)			// Load v2's double address into vf1
-		vmul            vf4,vf1,vf2			// xx yy zz ww
-		vsubaz          ACC,vf4,vf4z		// ACC.w is now vf4.w - vf4.z, which is ww-zz
-		vmsubay         ACC,vf0,vf4y		// ACC.w is now ACC.w*vf0.w - vf4.y, which is ww - zz - yy
-		vmsubx	       	vf3,vf0,vf4x		// vf3.w is now ACC.w*vf0.w - vf4.x, which is ww - zz - yy - xx
-		vopmula.xyz     ACC,vf2,vf1   		// Start Outerproduct
-		vmaddaw       	ACC,vf1,vf2w		// Add w2.xyz1
-		vmaddaw			ACC,vf2,vf1w		// Add w1.xyz2
-		vopmsub.xyz     vf3,vf1,vf2  		// Finish Outerproduct
-		sqc2			vf3,0(%0)			// Load vf3 into r's double address
-		.set reorder
-		"					: /* Outputs. */
-							: /* Inputs */ "r" (this),"r" (Q1), "r" (Q2)
-							: /* Clobber */ "$vf1");
-#endif
 	return *this;
 }
 namespace simul
@@ -355,32 +282,10 @@ namespace simul
 	{
 		void Multiply(Quaterniond &r,const Quaterniond &q1,const Quaterniond &q2)
 		{
-		#ifndef PLAYSTATION2
 			r.s=q1.s*q2.s-q1.x*q2.x-q1.y*q2.y-q1.z*q2.z;
 			r.x=q2.s*q1.x+q1.s*q2.x+q1.y*q2.z-q1.z*q2.y;
 			r.y=q2.s*q1.y+q1.s*q2.y+q1.z*q2.x-q1.x*q2.z;
 			r.z=q2.s*q1.z+q1.s*q2.z+q1.x*q2.y-q1.y*q2.x;
-		#else
-			//double *rVal=&(r.x);
-			const double *Q1=&(q1.x);
-			const double *Q2=&(q2.x);
-			asm __volatile__("
-					.set noreorder
-				lqc2			vf1,0(%1)			// Load v1's double address into vf1
-				lqc2			vf2,0(%2)			// Load v2's double address into vf1
-				vmul            vf4,vf1,vf2			// xx yy zz ww
-				vsubaz          ACC,vf4,vf4z		// ACC.w is now vf4.w - vf4.z, which is ww-zz
-				vmsubay         ACC,vf0,vf4y		// ACC.w is now ACC.w*vf0.w - vf4.y, which is ww - zz - yy
-				vmsubx	       	vf3,vf0,vf4x		// vf3.w is now ACC.w*vf0.w - vf4.x, which is ww - zz - yy - xx
-				vopmula.xyz     ACC,vf1,vf2   		// Start Outerproduct
-				vmaddaw       	ACC,vf1,vf2w		// Add w2.xyz1
-				vmaddaw			ACC,vf2,vf1w		// Add w1.xyz2
-				vopmsub.xyz     vf3,vf2,vf1  		// Finish Outerproduct
-				sqc2			vf3,0(%0)			// Load vf3 into r's double address
-				"					: /* Outputs. */
-									: /* Inputs */  "r" (&r),"r" (Q1), "r" (Q2)
-									: /* Clobber */ "$vf1");
-		#endif
 		}           
 		//------------------------------------------------------------------------------
 		void MultiplyNegativeByQuaternion(Quaterniond &r,const Quaterniond &q1,const Quaterniond &q2)
@@ -392,32 +297,10 @@ namespace simul
 		}
 		void MultiplyByNegative(Quaterniond &r,const Quaterniond &q1,const Quaterniond &q2)
 		{
-		#ifndef PLAYSTATION2
 			r.s=q1.s*q2.s+q1.x*q2.x+q1.y*q2.y+q1.z*q2.z;
 			r.x=q2.s*q1.x-q1.s*q2.x-q1.y*q2.z+q1.z*q2.y;
 			r.y=q2.s*q1.y-q1.s*q2.y-q1.z*q2.x+q1.x*q2.z;
 			r.z=q2.s*q1.z-q1.s*q2.z-q1.x*q2.y+q1.y*q2.x;
-		#else
-			//double *rVal=&(r.x);
-			const double *Q1=&(q1.x);
-			const double *Q2=&(q2.x);
-			asm __volatile__("
-					.set noreorder
-				lqc2			vf1,0(%1)			// Load v1's double address into vf1
-				lqc2			vf2,0(%2)			// Load v2's double address into vf1
-				vmul            vf4,vf1,vf2			// xx yy zz ww
-				vsubaz          ACC,vf4,vf4z		// ACC.w is now vf4.w - vf4.z, which is ww-zz
-				vmsubay         ACC,vf0,vf4y		// ACC.w is now ACC.w*vf0.w - vf4.y, which is ww - zz - yy
-				vmsubx	       	vf3,vf0,vf4x		// vf3.w is now ACC.w*vf0.w - vf4.x, which is ww - zz - yy - xx
-				vopmula.xyz     ACC,vf1,vf2   		// Start Outerproduct
-				vmaddaw       	ACC,vf1,vf2w		// Add w2.xyz1
-				vmaddaw			ACC,vf2,vf1w		// Add w1.xyz2
-				vopmsub.xyz     vf3,vf2,vf1  		// Finish Outerproduct
-				sqc2			vf3,0(%0)			// Load vf3 into r's double address
-				"					: /* Outputs. */
-									: /* Inputs */  "r" (&r),"r" (Q1), "r" (Q2)
-									: /* Clobber */ "$vf1");
-		#endif
 		}
 		// v must be a 3-vector, ret must be a 3-vector.
 		void Multiply(vec3d &ret,const Quaterniond &q,const vec3d &v)
