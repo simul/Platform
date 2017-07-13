@@ -323,7 +323,7 @@ const char *GpuProfiler::GetDebugText(base::TextStyle style) const
 const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,int i) const
 {
 	if(parent==NULL)
-		parent=root;
+		return root;
 	crossplatform::ProfileData *p=(crossplatform::ProfileData*)parent;
 	if(!p||(p!=root&&!p->updatedThisFrame))
 		return NULL;
