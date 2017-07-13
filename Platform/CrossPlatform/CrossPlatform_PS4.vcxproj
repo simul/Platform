@@ -67,7 +67,6 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="MixedResolutionView.cpp" />
     <ClCompile Include="prx.cpp" />
     <ClCompile Include="Quaterniond.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
@@ -95,7 +94,6 @@
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="MixedResolutionView.h" />
     <ClInclude Include="PixelFormat.h" />
     <ClInclude Include="Quaterniond.h" />
     <ClInclude Include="RenderPlatform.h" />

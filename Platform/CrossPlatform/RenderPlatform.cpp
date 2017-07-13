@@ -305,8 +305,16 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				}
 				else if(texture->dim==3)
 				{
-					debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget3D",texture,i,j);
+					if (texture->GetFormat() == PixelFormat::RGBA_8_UNORM)
+					{
+						techname = "compute_clear_3d_u8";
+						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3DU8", texture, i);
+					}
+					else
+					{
 					techname="compute_clear_3d";
+						debugEffect->SetUnorderedAccessView(deviceContext, "FastClearTarget3D", texture, i);
+					}
 				}
 				else
 				{

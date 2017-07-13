@@ -91,8 +91,8 @@ bool GetStochasticSamples_MSAA(Texture2DMS<float4> sourceDepthTextureMS,vec4 dep
 			vec2 offs	=texelRange*offsets[i];
 			vec2 texc	=saturate(1.01*(texCoords+.6*offs))/1.01;
 			uint2 tex_pos=uint2(texc*source_dims+vec2(0.5,0.5));
-			texc		*= depthWind.zw;
-			texc		+= depthWind.xy;
+			texc		*=depthWind.zw;
+			texc		+=depthWind.xy;
 			// VERY important to use NEAREST, and not filter the source depth texture!
 			vec2 d		=sourceDepthTextureMS.Load(tex_pos,0).xx;
 			if(depthInterpretationStruct.reverseDepth)
@@ -109,6 +109,8 @@ bool GetStochasticSamples_MSAA(Texture2DMS<float4> sourceDepthTextureMS,vec4 dep
 			any_result=true;
 		}
 	}
+	if(!any_result)
+		fn=vec4(1.0,1.0,1.0,1.0);
 	result=saturate(fn.xyzw);
 	return any_result;
 }

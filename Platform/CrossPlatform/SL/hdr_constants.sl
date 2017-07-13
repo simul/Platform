@@ -41,6 +41,10 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 	uniform int randomSeed;
 
 	uniform vec3 viewPos;
+	uniform float fogExtinction;
+
+	uniform vec3 fogColour;
+	uniform float fogCeilingKm;
 SIMUL_CONSTANT_BUFFER_END
 	
 #endif

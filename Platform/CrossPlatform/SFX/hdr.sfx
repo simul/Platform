@@ -7,6 +7,7 @@
 #include "../SL/colour_packing.sl"
 #include "../SL/simul_inscatter_fns.sl"
 #include "../SL/composite.sl"
+#include "../SL/composite_msaa.sl"
 #include "../SL/debug_constants.sl"
 #include "../SL/noise.sl"
 
@@ -280,7 +281,13 @@ TwoColourCompositeOutput PS_CompositeAtmospherics(CompositeShaderInput IN,bool r
 															,doLightpass
 															,doGodrays
 															,true
-															,doNear);
+															,doNear
+															,true
+															,true
+															,fogExtinction
+															,fogColour
+															,fogCeilingKm
+	);
 	result.add.rgb = pow(result.add.rgb, vec3(gamma, gamma, gamma));
 	result.add.rgb *= exposure;
 	return result;
@@ -315,7 +322,8 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap(CompositeShaderInput I
 															,maxFadeDistanceKm
 															,nearDist
 															,false,false,false,false
-	,true);
+															,true
+															,false);
 	result.add.rgb = pow(result.add.rgb, vec3(gamma, gamma, gamma));
 	result.add.rgb *= exposure;
 	
@@ -438,23 +446,30 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 																,IN.depth_texc
 																,imageCubeArray
 																,nearFarTexture
-				, lightpassTexture
+																, lightpassTexture
 																,loss2dTexture
 																,depthTextureMS
 																,numSamples
 																,int2(fullResDims)
 																,invViewProj
+																,viewPos
 																,viewportToTexRegionScaleBias
 																,depthInterpretationStruct
 																,IN.lowResTexCoords
 																,inscatterVolumeTexture
-															,godraysVolumeTexture
-															,maxFadeDistanceKm
-															,nearDist
-															,doLightpass
-															,doGodrays
-															,true
-															,doNear);
+																,godraysVolumeTexture
+																,maxFadeDistanceKm
+																,nearDist
+																,doLightpass
+																,doGodrays
+																,true
+																,doNear
+																,true
+																,true
+																,fogExtinction
+																,fogColour
+																,fogCeilingKm
+															);
 	result.add.rgb	=pow(result.add.rgb,vec3(gamma,gamma,gamma));
 	result.add.rgb	*=exposure;
 	return result;
@@ -462,12 +477,12 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ReverseDepth(CompositeShaderInput IN) 
 {
-	return PS_CompositeAtmospherics_MSAA(IN,true,false,false,false);
+	return PS_CompositeAtmospherics_MSAA(IN,true,false,false,true);
 }
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ForwardDepth(CompositeShaderInput IN) 
 {
-	return PS_CompositeAtmospherics_MSAA(IN,false,false,false,false);
+	return PS_CompositeAtmospherics_MSAA(IN,false,false,false,true);
 }
  
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap_ReverseDepth(CompositeShaderInput IN) 

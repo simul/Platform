@@ -324,22 +324,30 @@ shader void CS_WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 
 
 CS_LAYOUT(4,4,1)
-shader void CS_Mip( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
+shader void CS_Mip( uint3 p: SV_DispatchThreadID )
 {
-	uint3 pos=(g*uint3(4,4,1)+t)*uint3(amortizationScale)+uint3(amortizationOffset.xyz);
-	int3 pos2=int3(pos)*2;
-
-#ifndef __PSSL__
-	vec4 c1		=cloudDensity[pos2+int3(0,0,0)];
-	vec4 c2		=cloudDensity[pos2+int3(1,0,0)];
-	vec4 c3		=cloudDensity[pos2+int3(-1,0,0)];
-	vec4 c4		=cloudDensity[pos2+int3(0,1,0)];
-	vec4 c5		=cloudDensity[pos2+int3(0,-1,0)];
-	vec4 c6		=cloudDensity[pos2+int3(0,0,1)];
-	vec4 c7		=cloudDensity[pos2+int3(0,0,-1)];
-	vec4 res	=(c1+c2+c3+c4+c5+c6+c7)/7.0;
-	IMAGE_STORE_3D(outputTexture3d,pos,res);
-#endif
+	uint3 pos=(p)*uint3(amortizationScale)+uint3(amortizationOffset.xyz);
+	uint3 pos2=pos*2;
+	vec4 res;
+	//uint3 dim;
+	//uint m=1,l=0;
+	//outputTexture3d.GetDimensions(m,dim.x,dim.y,dim.z,l);
+	if(pos.x<targetTextureSize.x-1&&pos.y<targetTextureSize.x-1&&pos.z<targetTextureSize.y-1)
+	//if(pos.z<dim.z/2)
+	{
+		vec4 c1		=cloudDensity[pos2];
+		vec4 c2		=cloudDensity[pos2+uint3(0,0,0)];
+		vec4 c3		=cloudDensity[pos2+uint3(0,0,0)];
+		vec4 c4		=cloudDensity[pos2+uint3(0,0,0)];
+		vec4 c5		=cloudDensity[pos2+uint3(0,0,0)];
+		vec4 c6		=cloudDensity[pos2+uint3(0,0,0)];
+		vec4 c7		=cloudDensity[pos2+uint3(0,0,0)];
+		vec4 c8		=cloudDensity[pos2+uint3(0,0,0)];
+		res			=(c1+c2+c3+c4+c5+c6+c7+c8)/8.0;
+	}
+	else
+		res=0;
+	outputTexture3d[pos]=res;
 }
 
 CS_LAYOUT(8,8,8)
@@ -867,8 +875,8 @@ shader vec4 PS_BlendedCrossSection(posTexVertexOutput IN):SV_TARGET
 	vec2 uv = vec2(0,0);
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		vec4 density	=texture_wwc_lod(cloudDensity,texc,0);
-		vec4 light		=texture_wwc_lod(cloudDensity2,texc,0);
+		vec4 density	=texture_wwc_lod(cloudDensity,texc,2);
+		vec4 light		=texture_wwc_lod(cloudDensity2,texc,2);
 		vec3 colour		=light.rgb;//(lightResponse.x*light.y+lightResponse.y*light.x);
 		colour.gb		+=vec2(.125,.25)*(lightResponse.z*light.w);
 		float opacity	=density.z;

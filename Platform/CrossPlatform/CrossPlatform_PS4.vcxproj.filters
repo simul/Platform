@@ -34,9 +34,6 @@
     <ClInclude Include="Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MixedResolutionView.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="BaseRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -82,7 +79,9 @@
     <ClInclude Include="Topology.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Quaterniond.h" />
+    <ClInclude Include="Quaterniond.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SL">
@@ -112,9 +111,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Material.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MixedResolutionView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Buffer.cpp">
@@ -156,6 +152,8 @@
     <ClCompile Include="LensFlare.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="Quaterniond.cpp" />
+    <ClCompile Include="Quaterniond.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
