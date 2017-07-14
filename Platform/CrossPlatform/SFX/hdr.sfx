@@ -455,6 +455,7 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 																,viewPos
 																,viewportToTexRegionScaleBias
 																,depthInterpretationStruct
+																,tanHalfFov
 																,IN.lowResTexCoords
 																,inscatterVolumeTexture
 																,godraysVolumeTexture

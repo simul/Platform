@@ -639,6 +639,7 @@
     <None Include="..\CrossPlatform\SL\colour_packing.sl" />
     <None Include="..\CrossPlatform\SL\common.sl" />
     <None Include="..\CrossPlatform\SL\composite.sl" />
+    <None Include="..\CrossPlatform\SL\composite_msaa.sl" />
     <None Include="..\CrossPlatform\SL\compositing_constants.sl" />
     <None Include="..\CrossPlatform\SL\CppSl.hs" />
     <None Include="..\CrossPlatform\SL\debug_constants.sl" />

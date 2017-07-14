@@ -272,12 +272,11 @@ float ThicknessInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir)
 	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
 	float s				=0.5*stepLengthKm;
 	float maxh			=1.0/inverseScalesKm.z;
-	float extinction	=6.5;
-	for( i=0;i<122;i++)
+	for( i=0;i<12;i++)
 	{
 		wpos		+=dir*s;			// we expect stepLength in km for this shader
 		vec3 tx		=wpos*inverseScalesKm;
-		vec4 lookup	=texture_3d_wwc_lod(cloudDensity,tx,1)*saturate((maxh-wpos.z)/s);
+		vec4 lookup	=texture_3d_wwc_lod(cloudDensity,tx,0)*saturate((maxh-wpos.z)/s);
 		thickness	+=lookup.z*s;
 		s			*=1.005;
 	}
@@ -298,7 +297,7 @@ shader void CS_WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	float stepLengthKm	=1.0/inverseScalesKm.x/float(windowGrid.x);
 	float s				=0.5*stepLengthKm;
 	float maxh			=1.0/inverseScalesKm.z;
-	float extinction	=6.5;
+	float extinction	=1.5;
 	thickness			=ThicknessInDirection(texc,inverseScalesKm,directionToSun);
 
 	// find nearest direction to light for ambient lighting:
