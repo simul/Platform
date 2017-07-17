@@ -47,9 +47,10 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 				,bool do_interp
 				,bool do_near
 				,bool do_clouds
+				,vec3 fogColour
+				,vec3 fogAmbient
 				,bool do_height_fog=false
 				,float fogExtinction=0.0
-				,vec3 fogColour=vec3(0,0,0)
 				,float fogHeightKm=0.0)
 {
 	TwoColourCompositeOutput res;
@@ -116,7 +117,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		// We find these by tracing toward the eye from maxFadeDistanceKm to dist*maxFadeDistanceKm.
 		// The maximum fog distance is the furthest 
 		// distance from the eye to the fog "surface":
-		float H_km = fogHeightKm;
+		float H_km		= fogHeightKm;
 		float d_solid	= maxFadeDistanceKm*dist;
 		float z			= viewPos.z / 1000.0;
 		float zs		= z + sine*d_solid;
@@ -126,16 +127,25 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		// z_1 and z_2 are the start and end heights of our integral.
 		float z_1		= min(z_min,H_km);
 		float z_2		= min(z_max,H_km);
-		float sn		=max(0.01,abs(sine));
+		float sn		=max(0.0000000001,abs(sine));
 		// The distance between the points of integration is:
-		float s1		= (max(0,z_1) / sn)/maxFadeDistanceKm;
-		float s			= min(d_solid, (z_2 - z_1) / sn);
+		float s1		= (max(0,z-z_1) / sn)/maxFadeDistanceKm;
+		float s			= min(d_solid,(z_2 - z_1) / sn);
 		// Integral of p0 (H_km-z)/H
 		float retain	= saturate(exp(-s * fogExtinction));// fogExtinction is 1/km.
 
-		vec3 fogLoss	=texture_clamp_mirror_lod(loss2dTexture, vec2(loss_texc.x,s1), 0).rgb*cloud.a;
-		insc.rgb		*=retain;
-		insc.rgb		+= (1.0- retain)*fogColour*fogLoss;
+		vec3 fogLoss	=1.0;
+
+		// retain is the amount of visibility for whatever's behind the fog.
+		// It gives us the fog inscatter also.
+		if(z<H_km)
+			insc.rgb		*=retain;
+		else
+		{
+			fogLoss			*=cloud.a*texture_clamp_mirror_lod(loss2dTexture, vec2(loss_texc.x,s1), 0).rgb;
+
+		}
+		insc.rgb		+=(1.0-retain)*(fogColour+fogAmbient)*fogLoss;
 		res.multiply	*=retain;
 	}
 	//if(do_clouds)

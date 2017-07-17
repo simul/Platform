@@ -45,6 +45,9 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,12)
 
 	uniform vec3 fogColour;
 	uniform float fogCeilingKm;
+
+	uniform vec3 fogAmbient;
+	uniform float anotherFloatXXX;
 SIMUL_CONSTANT_BUFFER_END
 	
 #endif
