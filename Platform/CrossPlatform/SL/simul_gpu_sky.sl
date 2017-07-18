@@ -84,7 +84,7 @@ vec4 getSunlightFactor(Texture2D optical_depth_texture,float alt_km,vec3 Directi
 		factor.rgb				*=exp(-rayleigh*illuminated_length-hazeMie*haze_opt_len-ozone*ozone_length);
 		mean_factor				+=factor;
 	}
-	return mean_factor/3.0;
+	return saturate(mean_factor/3.0);
 }
 
 float GetOpticalDepth(Texture2D density_texture,float max_altitude_km,float alt_km,vec3 dir)
@@ -130,7 +130,7 @@ vec4 getSunlightFactor2(Texture2D optical_depth_texture,Texture2D density_textur
 	vec4 factor				=vec4(vis,vis,vis,vis);
 	factor.rgb				*=exp(-rayleigh*opt_depth_km-hazeMie*haze_opt_len-ozone*ozone_length);
 
-	return factor;
+	return saturate(factor);
 }
 
 float getShortestDistanceToAltitude(float sine_elevation,float start_h_km,float finish_h_km)
