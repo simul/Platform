@@ -210,7 +210,7 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 		float ozone_factor	=lookups.y;
 		float haze_factor	=getHazeFactorAtAltitude(alt_km);
 		vec4 light			=vec4(sunIrradiance,1.0)*(getSunlightFactor(optical_depth_texture,alt_km,lightDir)
-													+vec4(moonIrradianceFactor,1.0)*getSunlightFactor(optical_depth_texture,alt_km,directionToMoon));
+														+vec4(moonIrradianceFactor,1.0)*getSunlightFactor(optical_depth_texture,alt_km,directionToMoon));
 		light.rgb			*=RAYLEIGH_BETA_FACTOR;
 		vec4 insc			=light;
 

@@ -138,7 +138,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 				insc.rgb		*=retain;
 			else
 			{
-				fogLoss			*=cloud.a*texture_clamp_mirror_lod(loss2dTexture, vec2(loss_texc.x,s1), 0).rgb;
+				fogLoss			*=cloud.a*texture_clamp_mirror_lod(loss2dTexture, vec2(sqrt(s1),loss_texc.y), 0).rgb;
 
 			}
 			insc.rgb		+=(1.0-retain)*(fogColour+fogAmbient)*fogLoss;

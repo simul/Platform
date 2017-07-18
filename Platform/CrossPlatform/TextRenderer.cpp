@@ -187,8 +187,9 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		const FontIndex &f=fontIndices[idx];
 		w+=f.pixel_width+1;
 	}
+	static float ht=32.0f;
 	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
-	constantBuffer.text_rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+16.f)/screen_height,2.0f*(float)w/screen_width,2.0f*16.f/screen_height);
+	constantBuffer.text_rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+ht)/screen_height,2.0f*(float)w/screen_width,2.0f*ht/screen_height);
 	if(mirrorY)
 	{
 		constantBuffer.text_rect.y=-constantBuffer.text_rect.y;
@@ -216,13 +217,13 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		if(idx>0)
 		{
 			constantBuffer.text_rect.x	=2.0f*x/screen_width-1.f;
-			constantBuffer.text_rect.z	=2.0f*(float)f.pixel_width/screen_width;
+			constantBuffer.text_rect.z	=2.0f*(float)f.pixel_width*2.0f/screen_width;
 			static float u			=1024.f/598.f;
 			constantBuffer.texc		=vec4(f.x*u,0.0f,(f.w-f.x)*u,1.0f);
-	effect->SetConstantBuffer(deviceContext,&constantBuffer);
+			effect->SetConstantBuffer(deviceContext,&constantBuffer);
 			renderPlatform->DrawQuad(deviceContext);
 		}
-		x+=f.pixel_width+1;
+		x+=f.pixel_width*2.0f+1;
 	}
 	effect->UnbindTextures(deviceContext);
 	effect->Unapply(deviceContext);
