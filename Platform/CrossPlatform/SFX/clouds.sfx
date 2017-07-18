@@ -141,6 +141,13 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
+void MixInCirrus(uint3 p,bool clears)
+{
+	int3 idx	=int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	idx.xy		+=gridCentreTexel;
+	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy		=idx.xy%int2(windowGrid.xy);
+}
 
 void MixInLayer( uint3 g, uint3 t,bool clears)
 {
