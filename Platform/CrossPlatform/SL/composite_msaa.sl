@@ -121,9 +121,9 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 			// z_1 and z_2 are the start and end heights of our integral.
 			float z_1		= min(z_min,H_km);
 			float z_2		= min(z_max,H_km);
-		float sn		=max(0.0000000001,abs(sine));
+			float sn		=max(0.0000000001,abs(sine));
 			// The distance between the points of integration is:
-		float s1		= (max(0,z-z_1) / sn)/maxFadeDistanceKm;
+			float s1		= (max(0,z-z_1) / sn)/maxFadeDistanceKm;
 			float s			= min(d_solid, (z_2 - z_1) / sn);
 			// The distance to the first fog is:
 		//	float s1		= (max(0,z_1) / sn)/maxFadeDistanceKm;
@@ -138,7 +138,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 				insc.rgb		*=retain;
 			else
 			{
-				fogLoss			*=cloud.a*texture_clamp_mirror_lod(loss2dTexture, vec2(loss_texc.x,s1), 0).rgb;
+				fogLoss			*=cloud.a*texture_clamp_mirror_lod(loss2dTexture, vec2(sqrt(s1),loss_texc.y), 0).rgb;
 
 			}
 			insc.rgb		+=(1.0-retain)*(fogColour+fogAmbient)*fogLoss;
