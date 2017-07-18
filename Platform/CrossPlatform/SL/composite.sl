@@ -58,7 +58,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	float sine						=view.z;
 	vec4 nearFarCloud				=vec4(1.0,0.0,0,0);
 	if(do_interp)
-		nearFarCloud					=texture_cube_lod(nearFarTexture	,view		,0);
+		nearFarCloud				=texture_cube_lod(nearFarTexture	,view		,0);
 	
 	float dist_rt					=sqrt(dist);
 	vec3 offsetMetres				=view*dist*1000.0*maxFadeDistanceKm;
@@ -99,6 +99,8 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	}
 	if(do_clouds)
 		insc.rgb						*=cloud.a;
+	if(do_clouds)
+		insc							+=cloud;
 	if(do_godrays)
 	{
 		float r							=length(lightspaceOffset);
@@ -108,8 +110,6 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
 		insc.rgb						*=godrays.rgb;
 	}
-	if(do_clouds)
-		insc							+=cloud;
 	res.multiply						=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a;
 	if (do_height_fog)
 	{

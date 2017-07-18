@@ -98,11 +98,11 @@ shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 }
 
 CS_LAYOUT(1, 1, 1)
-shader void CS_Fractal(uint3 idx : SV_DispatchThreadID)
+shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
 {
 	uint branch_start_id = 33 * idx.x;
-	LightningVertex IN0 = vertices[0];
-	LightningVertex IN1 = vertices[1];
+	LightningVertex IN0 = vertices[idx.x*1+0];
+	LightningVertex IN1 = vertices[idx.x*1+1];
 	LightningVertex OUT;
 
 	vec3 startP		= IN0.position;
@@ -122,7 +122,7 @@ shader void CS_Fractal(uint3 idx : SV_DispatchThreadID)
 	vec3 adj		=vec3(1.0,1.0,vertical);
 	dir				*=adj;
 	dir				=normalize(dir);
-	vec3 off =  adj*roughness;
+	vec3 off =  roughness;//adj;//*roughness;
 
 	vec3 endP		=startP+dir*branchLengthMetres;
 
@@ -135,6 +135,14 @@ shader void CS_Fractal(uint3 idx : SV_DispatchThreadID)
 	float persistence	=0.8;
 	//float off			=roughness;
 	float time			=phaseTime;
+	OUT.position=startP;
+	OUT.texCoords=0;
+	OUT.progress=0.0;
+	verticesRW[0]			=OUT;
+
+	OUT.position=endP;
+	OUT.progress=1.0;
+	verticesRW[num_steps]	=OUT;
 	for(int i=0;i<num_octaves;i++)
 	{
 		for(int j=del/2;j<num_steps;j+=del)
@@ -144,32 +152,27 @@ shader void CS_Fractal(uint3 idx : SV_DispatchThreadID)
 			vec3 XX=cross(vec3(1.0,0.0,0.0),(s-e));
 			vec3 YY=cross(vec3(0.0,1.0,0.0),(s-e));
 			vec3 x=0.5*(s+e);
-			vec2 noise_texc1	=vec2(5.7*i-9.3*j+time,3.1*i+4.5*j);
-			vec4 noise_lookup	=texture_wrap_lod(randomTexture,noise_texc1,0);
+			vec2 noise_texc		=vec2(9.3*float(j+randomSeed)+time,3.1*float(i)+4.5*float(j));
+			vec4 noise_lookup	=texture_wrap_lod(randomTexture,noise_texc,0);
 			float angle			=noise_lookup.x*2.0*3.14159;
 			x+=off*(XX*cos(angle)+YY*sin(angle));
 			outpos[j]=x;
+			{
+				float v				=float(j)/float(num_pts);
+				float c				=saturate(float(num_pts-j)/5.0);
+				OUT.position		=outpos[j];
+				float br			=brightness*saturate(float(num_steps-j)/5.0);
+				float endpoint		=float(j>(num_steps-2));
+				OUT.texCoords		=c*vec2(strikeThicknessMetres,br);
+				OUT.progress		=IN0.progress+v;
+				verticesRW[branch_start_id+j]=OUT;
+			}
 		}
 		del/=2;
 		//off*=persistence;
 		time*=2.0;
 	}
 
-	OUT.position		=outpos[0];
-	OUT.position		-=dir;
-	OUT.texCoords		=vec2(strikeThicknessMetres,1.0);
-	OUT.progress		=IN0.progress;
-
-	for(int ii=0;ii<num_pts;ii++)
-	{
-		float c				=saturate(float(num_pts-ii)/5.0);
-		OUT.position		=outpos[ii];
-		float br			=brightness*saturate(float(num_steps-ii)/5.0);
-		float endpoint		=float(ii>(num_steps-2));
-		OUT.texCoords		=c*vec2(strikeThicknessMetres,br);
-		OUT.progress		=IN0.progress+float(ii)/float(num_pts);
-		verticesRW[branch_start_id+ii]=OUT;
-	}
 }
 
 technique initial_fractal
@@ -184,7 +187,7 @@ technique branch_fractal
 {
     pass main
     {
-		SetComputeShader(CompileShader(cs_5_0, CS_Fractal()));
+		SetComputeShader(CompileShader(cs_5_0, CS_BranchFractal()));
     }
 }
 
@@ -489,7 +492,6 @@ shader transformedVertex VS_Thick(idOnly id)
 
 vec4 PS_Main(transformedVertex IN,bool reverseDepth)
 {
-	return vec4(1, 1, 0, .5);
 	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
@@ -553,25 +555,24 @@ shader vec4 PS_Main_ForwardDepth(transformedVertex IN): SV_TARGET
 
 vec4 PS_Thin(transformedThinVertex IN,bool reverseDepth)
 {
-	return vec4(14, 0, 14, 0.5);
 	vec2 texc=vec2(IN.texc.x,1.0-IN.texc.y);
 	vec4 dlookup 		=texture_clamp(depthTexture,texc.xy);
-	vec3 view				=normalize(IN.view);
-	vec4 clookup 		=texture_cube_lod(cloudDepthTexture,view,0);
+	vec3 view			=normalize(IN.view);
+	vec4 nearFarCloud 		=texture_cube_lod(cloudDepthTexture,view,0);
 	float depth=0;
 	if(reverseDepth)
-		depth			=max(dlookup.x,clookup.x);
+		depth			=max(dlookup.x,nearFarCloud.x);
 	else
-		depth			=min(dlookup.x,clookup.x);
+		depth			=min(dlookup.x,nearFarCloud.x);
 	DepthInterpretationStruct depthInterpretationStruct;
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=reverseDepth;
 	vec2 dist			=depthToFadeDistance(vec2(depth,IN.depth),IN.screenPos.xy,depthInterpretationStruct,tanHalfFov);
-	//if(dist.x<dist.y)
-	//	discard;
+	float past				=saturate((nearFarCloud.w-dist.x)/0.008+1.0);
+	past					*=saturate((dist.y-dist.x)/0.01-0.9);
 	
-	vec4 colour		=vec4(lightningColour,1.0)*IN.brightness;//;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
-	colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
+	vec4 colour		=vec4(lightningColour,.5);//*IN.brightness;//;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	//colour			*=saturate(1.0-(dist.y-dist.x)/0.001);
     return colour;
 }
 

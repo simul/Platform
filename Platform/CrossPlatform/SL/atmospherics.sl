@@ -68,9 +68,12 @@ float GetCloudIllum(Texture3D cloudTexture,SamplerState cloudSamplerState,vec3 t
 		float yproject	=max(0.0,-texc.y)/max(l.y,0.0001)-max(0,texc.y-1.0)/min(l.y,-0.0001);
 		texc			+=l*yproject;
 	}
-	vec4 texel			=sample_3d_lod(cloudTexture,cloudSamplerState, texc,10);
-	texel.x				=lerp(averageIllum,texel.x,exp(-abs(zproject)));
-	return saturate(texel.x);
+	float range=.05;
+	float light			=saturate((sample_3d_lod(cloudTexture,cloudSamplerState, texc, 0).x-1.0+range)/range);
+	//if(texc.z>0&&texc.z<10.0)
+	//	light=0;
+//	texel.x				=lerp(averageIllum,texel.x,exp(-abs(zproject/1000.0)));
+	return saturate(light);
 }
 
 

@@ -1,8 +1,5 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #include "shader_platform.sl"
-
-SamplerState cloudSamplerState;
-
 #include "../SL/common.sl"
 #include "../SL/render_states.sl"
 #include "../SL/depth.sl"
@@ -18,11 +15,12 @@ uniform Texture2D skylTexture;
 
 uniform Texture3D cloudTexture;
 uniform Texture2D godraysTexture;
+SamplerState cloudSamplerState;
 uniform TextureCube cubeDepthTexture;
 uniform TextureCube cubeUpdateTexture;
-uniform RWTexture3D<vec4> targetVolume;
-uniform RWTexture3D<uchar4> targetVolume_U8;
-uniform RWTexture2D<vec4> targetTexture;
+uniform RWTexture3D<vec4> targetVolume SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture3D<uchar4> targetVolume_U8 SIMUL_RWTEXTURE_REGISTER(0);
+uniform RWTexture2D<vec4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
 
 #include "../SL/cloud_shadow.sl"
 #include "../SL/godrays.sl"
@@ -74,7 +72,7 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 	vec4 res				=vec4(0,0,0,1.0);
 	vec3 wvec				=lightspaceToWorldMatrix._m02_m12_m22;
 	float illum				=1.0;
-	float shadow_distance=1.0;
+	float shadow_distance=0.0;
 	for(i=0;i<godraysVolumeDims.z;i++)
 	{
 		float z_texc			=float(i)/float(godraysVolumeDims.z-1);
@@ -100,17 +98,20 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 		vec3 pos_km				=viewPosKm+pos_w*0.001;
 		// NOTE: We are assuming now that the cloud volume is worldspace-aligned.
 		vec3 posCloudspace		=(pos_km-cloudOriginKm)/cloudScaleKm;
+		//posCloudspace.z=.15;
 	//	if(viewposCloudspace.z>0.0&&viewposCloudspace.z<1.0)
 		{
 			illum				=GetCloudIllum(cloudTexture,cloudSamplerState,posCloudspace,lightDirCloudspace,clampClouds,1.0-averageCoverage);
 		}
 		total_illum				*=illum;
 		float t					=0.1;
-		total_illum				*=lerp(1.0,1.0-saturate((depth_lookup.x-dist+t)/t),abs(2.0*depth_lookup.x-1.0));
+		//total_illum			*=lerp(1.0,1.0-saturate((depth_lookup.x-dist+t)/t),abs(2.0*depth_lookup.x-1.0));
 
 		res						=vec4(total_illum,total_illum,total_illum,1.0);
 		int3 pos				=int3(idx.xy,godraysVolumeDims.z-1-i);
 		shadow_distance			=lerp(shadow_distance,float(i+1)/float(godraysVolumeDims.z-1),total_illum);
+
+		//shadow_distance=saturate((sample_3d_lod(cloudTexture,cloudSamplerState, posCloudspace,0).x-0.9)/0.1);
 	//	if(total_illum<=0)
 	//		break;
 	}
@@ -134,7 +135,7 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 	// the bottom (texc.y=0) should be -SIMUL_PI_F/2.
 	float elevation			=SIMUL_PI_F*(.5-texc.y);
 	float sum				=0.0;
-	float mean_illumination	=1.0;
+	float mean_illumination	=1.0-averageCoverage;
 	vec4 mi					=vec4(mean_illumination,mean_illumination,mean_illumination,mean_illumination);
 	float fade_away			=saturate(1.0-godraysIntensity*(texc.y)/1.0);
 	for(uint i=0;i<godraysVolumeDims.y;i++)
@@ -149,6 +150,7 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 		sum				+=1.0;
 
 		vec4 result		=lerp(total/sum,mi,fade_away);
+		
 		IMAGE_STORE_3D(targetVolume_U8,pos,result);
 	}
 }
@@ -190,7 +192,6 @@ void ScatteringVolume(uint3 p,bool godrays)
 	float y					=cos(azimuth)*se;
 	vec3 view				=vec3(x,y,ce);
 	float sine				=view.z;
-
 	float fade_texc_y		=0.5*(1.0-sine);
 	vec4 colour				=vec4(0,0,0,0);
 	vec4 last				=vec4(0,0,0,0);
@@ -227,7 +228,6 @@ void ScatteringVolume(uint3 p,bool godrays)
 	#endif
 		vec4 res			=colour+vec4(skyl,0);
 		uint3 pos			=uint3(idx.xy,i);
-
 		IMAGE_STORE_3D(targetVolume,pos,res);
 		last				=next;
 	}
@@ -251,6 +251,7 @@ technique scattering_volume
 		SetComputeShader(CompileShader(cs_5_0,CS_ScatteringVolume()));
     }
 }
+
 technique scattering_volume_godrays
 {
     pass p0
