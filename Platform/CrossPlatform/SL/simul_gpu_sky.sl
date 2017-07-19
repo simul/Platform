@@ -52,7 +52,7 @@ float getHazeOpticalLength(float sine_elevation,float h_km)
 	float n=hazeScaleHeightKm;
 	// s<0, and h2<h1
 	if(s<0.0)
-		haze_opt_len+=n/s*(exp(-h1/n)-exp(-h2/n));
+		haze_opt_len+=n/s*(saturate(exp(-h1/n))-saturate(exp(-h2/n)));
 	// Now the outward path, in this case h2 -> infinity
 	// and elevation is reversed.
 	if(s<0.0)
@@ -94,7 +94,7 @@ float GetOpticalDepth(Texture2D density_texture,float max_altitude_km,float alt_
 	// RH^2 = d^2 +Rh^2 - 2 d Rh cos(90+e)
 	// d=1/2 (-b + _/b^2-4ac )
 	float RH				=planetRadiusKm+atmosphereThicknessKm;
-	float Rh				=planetRadiusKm+alt_km;
+	float Rh				=planetRadiusKm+max(0.0,alt_km);
 	float cosine			=-dir.z;
 	float b					=-2*Rh*cosine;
 	float c					=Rh*Rh-RH*RH;
