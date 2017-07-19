@@ -86,7 +86,7 @@ shader void CS_LightingQueries(uint3 sub_pos: SV_DispatchThreadID )
 
 struct vertexInput
 {
-    vec3 position			: POSITION;
+    vec3 position		: POSITION;
 };
 
 struct posDirVertexOutput
@@ -238,7 +238,7 @@ shader vec4 PS_Fade3DTo2D(posTexVertexOutput IN): SV_TARGET
 
 shader vec4 PS_ShowFadeCrossSection(posTexVertexOutput IN): SV_TARGET
 {
-	vec3 texc=vec3(altitudeTexCoord,IN.texCoords.y,IN.texCoords.x);
+	vec3 texc=vec3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
 	vec4 colour1=texture_3d_cmc(fadeTexture1,texc);
 	vec4 colour2=texture_3d_cmc(fadeTexture2,texc);
 	vec4 result=lerp(colour1,colour2,skyInterp);

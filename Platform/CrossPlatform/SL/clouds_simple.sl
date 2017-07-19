@@ -130,7 +130,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		
 		if(fade>0)
 		{
-			vec4 density =  sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, 0);
+			vec4 density = sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, fadeDistance*4.0);
 	
 			//if(!found)
 			{
@@ -160,7 +160,9 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 						minDistance			=min(max(0,fadeDistance-density.z*stepKm/maxFadeDistanceKm), minDistance);
 						vec4 worley			=texture_wrap_lod(smallWorleyTexture3D,worley_texc,0);
 						float wo			=4*density.y*(worley.w-0.6)*saturate(1.0/(12.0*fadeDistance));//(worley.x+worley.y+worley.z+worley.w-0.6*(1.0+0.5+0.25+0.125));
-						density.z			=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3-saturate(0.6-density.z)));
+						density.z			=lerp(density.z,saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3-saturate(0.6-density.z))),density.w);
+						//density.z			=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3-saturate(0.6-density.z)));
+						//density.z			=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3+saturate(density.z-0.6)));
 						amb_dir				=lerp(amb_dir,worley.xyz,0.1*density.z);
 					}
 					//density.xy		*=1.0+wo;

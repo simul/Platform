@@ -141,13 +141,6 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
-void MixInCirrus(uint3 p,bool clears)
-{
-	int3 idx	=int3(p)*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	idx.xy		+=gridCentreTexel;
-	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
-	idx.xy		=idx.xy%int2(windowGrid.xy);
-}
 
 void MixInLayer( uint3 g, uint3 t,bool clears)
 {
@@ -176,6 +169,7 @@ void MixInLayer( uint3 g, uint3 t,bool clears)
 
 	res.z*= humidity/0.5*saturate(texc.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - texc.z) / zPixel);
 
+	res.w=1.0;
 	//res.z=saturate(texc.y>-0.5);
 	if (res.z > 0.05)
 	{
@@ -194,6 +188,55 @@ void MixInLayer( uint3 g, uint3 t,bool clears)
 	}
 }
 
+void MixInCirrus(uint3 ii,bool clears)
+{
+	int3 idx	=int3(ii)*int3(amortizationScale)+int3(amortizationOffset.xyz);
+	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
+	//	return;
+	idx.xy		+=gridCentreTexel;
+	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy		=idx.xy%int2(windowGrid.xy);
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	vec3 texc	=vec3(idx)*scale+offset;
+
+	float fall_amount=saturate(1.0-texc.z);
+	texc.z=0.5;
+	texc.xy+=.1*pow(fall_amount,2.0);
+
+	// fall streaks.
+
+
+	vec4 res = 0.0;
+	for (int i = -2; i < 3; i++)
+	{
+		vec3 tc		= texc;
+		tc.z		+= zPixel*i;
+		vec4 c1		=cloudDensity.SampleLevel(wrapSamplerState, tc, 0);
+		vec4 c2		=cloudDensity2.SampleLevel(wrapSamplerState, tc, 0);
+		res			+= lerp(c1, c2, cloud_interp).zyxw/5.0;
+	}
+
+	float zPixel=1.0/float(windowGrid.z);
+	//res.z		=saturate((res.z-0.5)/diffusivity);
+
+	res.z*=saturate(1.0-fall_amount)* humidity*saturate(texc.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - texc.z) / zPixel);
+	if (res.z > 0)
+	{
+		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));
+		noise_factor *= (0.05 + rand3(idx).x);
+		res.x		=saturate(localNoiseStrength/MaxNoiseAmplitudeKm*noise_factor);
+		res.y		=localCellNoiseStrength*noise_factor;
+		res.w=0.0;
+		IMAGE_STORE_3D(outputTexture3d,idx,res);
+	}
+	else if(clears)
+	{
+		res.xy=0;
+		res.w=1.0;
+		IMAGE_STORE_3D(outputTexture3d,idx,res);
+	}
+}
+
 CS_LAYOUT(4,4,4)
 shader void CS_MixInit( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
@@ -204,6 +247,18 @@ CS_LAYOUT(4,4,4)
 shader void CS_Mix( uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 {
 	MixInLayer(g,t,false);
+}
+
+CS_LAYOUT(4,4,4)
+shader void CS_MixCirrusInit( uint3 idx : SV_DispatchThreadID )
+{
+	MixInCirrus(idx,true);
+}
+
+CS_LAYOUT(4,4,4)
+shader void CS_MixCirrus( uint3 idx : SV_DispatchThreadID )
+{
+	MixInCirrus(idx,false);
 }
 
 float WorleyFactor(vec3 worley_texcoord)
@@ -1039,17 +1094,26 @@ technique rain_map
 
 technique mix_clouds
 {
-    pass p0
+    pass init
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MixInit()));
+    }
+    pass main
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Mix()));
     }
 }
-technique mix_clouds_init
+
+technique mix_cirrus
 {
-    pass p0
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_MixInit()));
-    }
+	pass init
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_MixCirrusInit()));
+	}
+		pass main
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_MixCirrus()));
+	}
 }
 
 technique map_to_window

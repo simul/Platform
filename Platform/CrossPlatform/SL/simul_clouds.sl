@@ -100,9 +100,9 @@ vec4 calcColourSimple(Texture2D lossTexture, Texture2D inscTexture, Texture2D sk
 	return c;
 }
 
-void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float dist,out vec4 density,out vec4 light)
+void calcDensity(Texture3D cloudDensity,Texture3D cloudLight,vec3 texCoords,float layerFade,vec4 noiseval,vec3 fractalScale,float dist,inout vec4 density,out vec4 light)
 {
-	vec3 pos			=texCoords.xyz+fractalScale.xyz*noiseval.xyz;
+	vec3 pos			=texCoords.xyz+fractalScale.xyz*(noiseval.xyz);
 	density				=sample_3d_lod(cloudDensity,cloudSamplerState,pos,dist*4.0);
 	// NOTE: VERY VERY IMPORTANT to use the original, not noise-modified, texture-coordinates for light.
 	light				=sample_3d_lod(cloudLight,cloudSamplerState,texCoords,dist*4.0);
@@ -262,7 +262,8 @@ FarNearPixelOutput Lightpass(Texture3D cloudDensity
 
 			vec4 noiseval			=vec4(0,0,0,0);
 			noiseval				=texture_3d_wrap_lod(noiseTexture3D,noise_texc,3.0*fadeDistance);
-			vec4 density,light;
+			vec4 density =sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, fadeDistance*4.0);
+			vec4 light;
 			calcDensity(cloudDensity,cloudDensity,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance,density,light);
 			
 			if(density.z>0)
