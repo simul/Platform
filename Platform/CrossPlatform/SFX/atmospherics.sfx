@@ -93,9 +93,9 @@ shader void CS_GodraysVolume(uint3 p: SV_DispatchThreadID)
 		depth_lookup.x			=lerp(saturate(depth_lookup.x-0.2)/0.8,1.0,saturate(1.0-update.r)+saturate((depth_lookup.x-0.9)/0.1));
 		// problem: depth_lookup is not guaranteed to be valid. We must use the update texture to determine if it is.
 		// Later we can think about doing a "level of validity" - how old the data might be.
-		float dist				=saturate(length(pos_w)*0.001/maxFadeDistanceKm);
+		float dist				=saturate(length(pos_w)/maxFadeDistanceKm);
 
-		vec3 pos_km				=viewPosKm+pos_w*0.001;
+		vec3 pos_km				=viewPosKm+pos_w;
 		// NOTE: We are assuming now that the cloud volume is worldspace-aligned.
 		vec3 posCloudspace		=(pos_km-cloudOriginKm)/cloudScaleKm;
 		//posCloudspace.z=.15;
@@ -135,9 +135,10 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 	// the bottom (texc.y=0) should be -SIMUL_PI_F/2.
 	float elevation			=SIMUL_PI_F*(.5-texc.y);
 	float sum				=0.0;
-	float mean_illumination	=1.0-averageCoverage;
+	float mean_illumination	=1.0;//-averageCoverage;
 	vec4 mi					=vec4(mean_illumination,mean_illumination,mean_illumination,mean_illumination);
-	float fade_away			=saturate(1.0-godraysIntensity*(texc.y)/1.0);
+	float fade_in			=saturate(godraysIntensity*(texc.y)/1.0);
+	// in order of distance.
 	for(uint i=0;i<godraysVolumeDims.y;i++)
 	{
 		uint3 pos		=uint3(idx.x,idx.y,i);
@@ -145,11 +146,11 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 		float dist		=texc.z;
 		vec3 texc_gr	=vec3(texc.x,dist*cos(elevation),1.0-0.5*(1.0-dist*sin(elevation)+zOrigin));
 		vec4 lookup		=godraysTexture.SampleLevel(wccSamplerState,texc_gr.xy,0);
-		float light		=saturate((lookup.x-texc_gr.z+0.001)/0.001);
+		float light		=saturate((lookup.x-texc_gr.z+0.00001)/0.00001);
 		total			+=light;
 		sum				+=1.0;
 
-		vec4 result		=lerp(total/sum,mi,fade_away);
+		vec4 result		=lerp(mi,total/sum,fade_in*dist*dist);
 		
 		IMAGE_STORE_3D(targetVolume_U8,pos,result);
 	}

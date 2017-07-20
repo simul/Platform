@@ -55,19 +55,20 @@ vec4 calcColour(Texture2D lossTexture,Texture3D inscatterVolumeTexture,vec3 volu
 	//light.zw*=2;
 //	vec3 ambient_dir			=vec3(light.zw,sqrt(1.0-length(light.zw)));
 	float alt_texc				=(world_pos.z/fadeAltitudeRangeKm);
-	vec4 amb_lookup				=vec4(0,0,0,0);//texture_cube_lod(ambientCubemapTexture,amb_dir,0);
-	ambientColour				=lightResponse.w*amb_lookup.rgb;
+//	vec4 amb_lookup				=texture_cube_lod(ambientCubemapTexture,amb_dir,0);
 	brightnessFactor			=unshadowedBrightness(Beta,lightResponse,ambientColour);
 	float sun_alt_texc			=GetAltTexCoord(world_pos.z,minSunlightAltitudeKm,fadeAltitudeRangeKm);
+	vec3 amb_lookup				=texture_clamp_lod(lightTableTexture,vec2(sun_alt_texc,2.5/4.0),0).rgb;
+	ambientColour				=lightResponse.w*amb_lookup.rgb;
 	vec3 combinedLightColour	=texture_clamp_lod(lightTableTexture,vec2(sun_alt_texc,3.5/4.0),0).rgb;
-	vec3 ambient				=ambientColour.rgb;///light.w;
+	vec3 ambient				=amb_lookup.rgb*light.w;
 	vec4 c;
 	float l						=lerp(0.2, 0.5, density.z);
 	c.rgb						=(light.y*lightResponse.x*(Beta+l)+lightResponse.y*light.x)*combinedLightColour+ambient.rgb;
 	c.a							=density.z;
 	c.rgb						=applyFades(lossTexture, inscatterVolumeTexture,volumeTexCoords,c.rgb,fade_texc);
 	//c.rgb=saturate(ambient_dir);
-	//c.rgb=ambient.xyz;
+//	c.rgb=amb_lookup.xyz;
 	return c;
 }
 

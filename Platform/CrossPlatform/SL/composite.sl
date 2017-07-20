@@ -56,13 +56,11 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 	TwoColourCompositeOutput res;
 	vec3 view						=normalize(mul(invViewProj,clip_pos).xyz);
 	float sine						=view.z;
-	vec4 nearFarCloud				=vec4(1.0,0.0,0,0);
+	vec4 nearFarCloud				=vec4(1.0,0.0,1,1);
 	if(do_interp)
 		nearFarCloud				=texture_cube_lod(nearFarTexture	,view		,0);
 	
 	float dist_rt					=sqrt(dist);
-	vec3 offsetMetres				=view*dist*1000.0*maxFadeDistanceKm;
-	vec3 lightspaceOffset			=(mul(worldToScatteringVolumeMatrix,vec4(offsetMetres,1.0)).xyz);
 	vec3 worldspaceVolumeTexCoords	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(sine)/SIMUL_PI_F),dist_rt);
 
 	// cut-off at the edges.
@@ -103,12 +101,15 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		insc							+=cloud;
 	if(do_godrays)
 	{
+		vec3 offsetKm					=view*min(nearFarCloud.z,dist)*maxFadeDistanceKm;
+		vec3 lightspaceOffset			=(mul(worldToScatteringVolumeMatrix,vec4(offsetKm,1.0)).xyz);
 		float r							=length(lightspaceOffset);
 		vec3 lightspaceVolumeTexCoords	=vec3(frac(atan2(lightspaceOffset.x,lightspaceOffset.y)/(2.0*SIMUL_PI_F))
 													,0.5+0.5*asin(lightspaceOffset.z/r)*2.0/SIMUL_PI_F
 													,r);
 		vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
 		insc.rgb						*=godrays.rgb;
+
 	}
 	res.multiply						=texture_clamp_mirror_lod(loss2dTexture, loss_texc, 0)*cloud.a;
 	if (do_height_fog)

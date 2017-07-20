@@ -31,7 +31,6 @@ uniform Texture2D inscTexture;
 uniform Texture2D skylTexture;
 uniform TextureCube depthTexture;
 uniform Texture3D noiseTexture3D		SIMUL_TEXTURE_REGISTER(2);
-uniform TextureCube clouds2DTexture		SIMUL_TEXTURE_REGISTER(3);
 uniform Texture2D illuminationTexture;
 uniform Texture2D lightTableTexture;
 uniform Texture2D rainbowLookupTexture;
@@ -337,11 +336,11 @@ float ThicknessInDirection(vec3 texc,vec3 inverseScalesKm,vec3 dir)
 	float maxh			=1.0/inverseScalesKm.z;
 	for( i=0;i<12;i++)
 	{
-		wpos		+=dir*s;			// we expect stepLength in km for this shader
-		vec3 tx		=wpos*inverseScalesKm;
-		vec4 lookup	=texture_3d_wwc_lod(cloudDensity,tx,0)*saturate((maxh-wpos.z)/s);
-		thickness	+=lookup.z*s;
-		s			*=1.005;
+		wpos			+=dir*s;			// we expect stepLength in km for this shader
+		vec3 tx			=wpos*inverseScalesKm;
+		float lookup	=texture_3d_wwc_lod(cloudDensity,tx,0).z*saturate((maxh-wpos.z)/s);
+		thickness		+=lookup*s;
+		s				*=1.3;
 	}
 	return thickness;
 }
@@ -499,15 +498,7 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 									,cloudIrRadiance1,cloudIrRadiance2
 									,numSteps
 									,num_interp);
-	vec4 t2d;
-	if(background2d)
-	{
-		t2d				=texture_cube_lod(clouds2DTexture,view,0);
-	}
-	else
-	{
-		t2d				=vec4(0,0,0,1.0);
-	}
+	vec4 t2d				=vec4(0,0,0,1.0);
 	// blend:
 
 	vec4 c					=t2d;
@@ -585,7 +576,7 @@ void Raytrace(uint3 pos,bool include_rain,bool depth)
 	f.colour=depthToLinFadeDistParams;
 	f.nearColour=lightResponse;
 	f.nearFarDepth=vec4(0,0,1,.5);*/
-	vec4 t2d				=texture_cube_lod(clouds2DTexture,view,0);
+	vec4 t2d				=vec4(0,0,0,1.0);
 	// blend:
 
 	vec4 c					=t2d;

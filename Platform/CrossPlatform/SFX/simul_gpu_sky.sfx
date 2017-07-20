@@ -145,7 +145,7 @@ shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	uint3 pos_sun					=uint3(pos.xy,0);
 	if(pos.x==0&&sun_start_alt_km>0.0)
 		sunlight					=vec4(0,0,0,0);
-	if(sun_start_alt_km>0.0&&alt_texc>0.5)
+	//if(sun_start_alt_km>0.0&&alt_texc>0.5)
 		sunlight*=saturate((alt_km-sun_start_alt_km)/3.0);
 	IMAGE_STORE_3D(targetTexture,pos_sun,sunlight);
 	uint3 pos_moon					=uint3(pos.xy,1);
