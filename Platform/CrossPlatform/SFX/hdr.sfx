@@ -485,12 +485,12 @@ TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA(CompositeShaderInput IN,b
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ReverseDepth(CompositeShaderInput IN) 
 {
-	return PS_CompositeAtmospherics_MSAA(IN,true,false,false,true);
+	return PS_CompositeAtmospherics_MSAA(IN,true,false,true,true);
 }
 
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_MSAA_ForwardDepth(CompositeShaderInput IN) 
 {
-	return PS_CompositeAtmospherics_MSAA(IN,false,false,false,true);
+	return PS_CompositeAtmospherics_MSAA(IN,false,false,true,true);
 }
  
 shader TwoColourCompositeOutput PS_CompositeAtmospherics_Cubemap_ReverseDepth(CompositeShaderInput IN) 

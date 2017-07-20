@@ -245,6 +245,7 @@
     <None Include="SL\colour_packing.sl" />
     <None Include="SL\common.sl" />
     <None Include="SL\composite.sl" />
+    <None Include="SL\composite_msaa.sl" />
     <None Include="SL\compositing_constants.sl" />
     <None Include="SL\CppSl.hs" />
     <None Include="SL\debug_constants.sl" />

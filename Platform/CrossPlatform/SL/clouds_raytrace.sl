@@ -25,8 +25,12 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,vec3 cloudIrRadiance2)
 {
 	RaytracePixelOutput res;
+	vec4 insc[NUM_CLOUD_INTERP];
 	for(int ii=0;ii<NUM_CLOUD_INTERP;ii++)
+	{
 		res.colour[ii]			=vec4(0,0,0,1.0);
+		insc[ii]				=vec4(0,0,0,0);
+	}
 	res.nearFarDepth		=dlookup;
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
@@ -239,7 +243,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					fade_texc.x				=sqrt(fadeDistance);
 					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);
 
-					ColourStep( res.colour, meanFadeDistance, brightness_factor
+					ColourStep( res.colour,insc, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
 								,density, light,distanceKm, fadeDistance
 								,world_pos

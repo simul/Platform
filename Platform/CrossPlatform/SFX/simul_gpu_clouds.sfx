@@ -592,7 +592,7 @@ float CSDensity(uint3 pos)
 	float m						=4.0;
 	//float w						=0.0;
 	// humidity is 0 - 1.
-	float hm					=2.0*(humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)-0.5);
+	float hm					=humidity+2.0*(humidity*GetHumidityMultiplier2(densityspace_texcoord.z,baseLayer,transition,upperDensity)-0.5);
 							
 	// noiseval is between -1 and 1.
 	// hm is between 0 and 1.

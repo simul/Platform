@@ -19,7 +19,6 @@ SamplerState cloudSamplerState;
 uniform TextureCube cubeDepthTexture;
 uniform TextureCube cubeUpdateTexture;
 uniform RWTexture3D<vec4> targetVolume SIMUL_RWTEXTURE_REGISTER(0);
-uniform RWTexture3D<uchar4> targetVolume_U8 SIMUL_RWTEXTURE_REGISTER(0);
 uniform RWTexture2D<vec4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
 
 #include "../SL/cloud_shadow.sl"
@@ -150,9 +149,9 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 		total			+=light;
 		sum				+=1.0;
 
-		vec4 result		=lerp(mi,total/sum,fade_in*dist*dist);
+		vec4 result		=lerp(mi,total/sum,fade_in*dist);
 		
-		IMAGE_STORE_3D(targetVolume_U8,pos,result);
+		IMAGE_STORE_3D(targetVolume,pos,result);
 	}
 }
 

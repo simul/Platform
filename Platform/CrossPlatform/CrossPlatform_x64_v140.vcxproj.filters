@@ -385,5 +385,8 @@
     <None Include="SL\quaternion.sl">
       <Filter>SL</Filter>
     </None>
+    <None Include="SL\composite_msaa.sl">
+      <Filter>SL</Filter>
+    </None>
   </ItemGroup>
 </Project>

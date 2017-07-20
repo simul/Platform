@@ -14,6 +14,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,Texture2D inscTexture
 											,Texture2D skylTexture
 											,Texture3D inscatterVolumeTexture
+											,Texture3D godraysVolumeTexture
                                             ,bool do_depth_mix
 											,vec4 dlookup
 											,vec3 view
@@ -25,11 +26,16 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,vec3 cloudIrRadiance1
 											,vec3 cloudIrRadiance2
 											,int numSteps
-											,const int num_interp)
+											,const int num_interp
+											,bool do_godrays=false)
 {
 	RaytracePixelOutput res;
+	vec4 insc[NUM_CLOUD_INTERP];
 	for(int ii=0;ii<num_interp;ii++)
+	{
 		res.colour[ii]			=vec4(0,0,0,1.0);
+		insc[ii]				=vec4(0,0,0,0);
+	}
 	res.nearFarDepth		=dlookup;
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
@@ -170,7 +176,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 					fade_texc.x				=sqrt(fadeDistance);
 					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);
 
-					ColourStep(res.colour, meanFadeDistance, brightness_factor
+					ColourStep(res.colour,insc, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
 								,density, light, distanceKm, fadeDistance
 								,world_pos
@@ -182,6 +188,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 					{
 						for(int o=0;o<num_interp;o++)
 							res.colour[o].a = 0.0;
+						meanFadeDistance=fadeDistance;
 						break;
 					}
 				}
@@ -196,6 +203,22 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	res.nearFarDepth.zw	=	meanFadeDistance;
 //for(int i=0;i<num_interp;i++)
+	// now lose inscatter due to godrays:
+	float gr=1.0;
+	if(do_godrays)
+	{
+		vec3 offsetKm					=view*min(meanFadeDistance,res.nearFarDepth.x)*maxFadeDistanceKm;
+		vec3 lightspaceOffset			=(mul(worldToScatteringVolumeMatrix,vec4(offsetKm,1.0)).xyz);
+		float r							=length(lightspaceOffset);
+		vec3 lightspaceVolumeTexCoords	=vec3(frac(atan2(lightspaceOffset.x,lightspaceOffset.y)/(2.0*SIMUL_PI_F))
+			,0.5+0.5*asin(lightspaceOffset.z/r)*2.0/SIMUL_PI_F
+			,r);
+		vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
+		gr								*=godrays.x;
+	}
+
+	for(int i=0;i<num_interp;i++)
+		res.colour[i].rgb+=insc[i]*gr;
 	return res;
 }
 #endif
