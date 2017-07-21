@@ -361,7 +361,7 @@ shader void CS_WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	float s				=0.5*stepLengthKm;
 	float maxh			=1.0/inverseScalesKm.z;
 	float extinction	=1.5;
-	thickness			=ThicknessInDirection(texc,inverseScalesKm,directionToSun);
+	thickness			=ThicknessInDirection(texc,inverseScalesKm,lightDir);
 
 	// find nearest direction to light for ambient lighting:
 	float nearest=10000.0;
