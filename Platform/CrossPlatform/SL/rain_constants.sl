@@ -35,13 +35,14 @@ SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	vec4 depthToLinFadeDistRain;
 	vec4 depthToLinFadeDistTexture;
 	vec4 viewportToTexRegionScaleBias;
-	vec2 tanHalfFovUnused;
+
+	vec2 depthTextureSize;
 	vec2 screenSize;
+
 	uniform vec3 viewPositionOffset;
 	float nearRainDistance;// as a proportion of max fade distance
-	float gammaXXX;
+
 	float splashDelta;	
-	float exposureXXX;
 SIMUL_CONSTANT_BUFFER_END
 
 struct PrecipitationVertex

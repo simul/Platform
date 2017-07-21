@@ -498,9 +498,9 @@ void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	static float sizem=3.f;
 	float d=2.0f*sizem/size_req;
 	simul::math::Vector3 offs0(0,0,-d);
-	view._41=0;
-	view._42=0;
-	view._43=0;
+	//view._41=0;
+	//view._42=0;
+//	view._43=0;
 	simul::math::Vector3 offs;
 	Multiply3(offs,view,offs0);
 	world._41=origin.x;
