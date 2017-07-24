@@ -217,8 +217,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		gr								*=godrays.x;
 	}
 
-	for(int i=0;i<num_interp;i++)
-		res.colour[i].rgb+=insc[i]*gr;
+	for(int j=0;j<num_interp;j++)
+		res.colour[j].rgb+=insc[j]*gr;
 	return res;
 }
 #endif

@@ -659,7 +659,7 @@ void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rai
 	Raytrace(pos,include_rain,depth);
 }
 
-void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth)
+void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
@@ -674,10 +674,10 @@ void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool inclu
 		return;
 	//outputTexture1[pos]		=vec4(1,1,0,1);
 	//outputTexture3[pos]		=vec4(1,1,0,1);
-	SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,true);
+	SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays);
 }
 
-void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth)
+void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
@@ -691,7 +691,7 @@ void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool i
 	{
 		//outputTexture1[pos]		=vec4(1,1,0,1);
 		//outputTexture3[pos]		=vec4(1,1,0,1);
-		SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,true);
+		SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays);
 	}
 }
 
@@ -796,28 +796,28 @@ shader void CS_RaytraceNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceStaticRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	CS_RaytraceStatic(g,t,true,true);
+	CS_RaytraceStatic(g,t,true,true,true);
 }
 
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceStaticNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	CS_RaytraceStatic(g,t,false,true);
+	CS_RaytraceStatic(g,t,false,true,true);
 }
 
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceStaticEdgeRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	CS_RaytraceStaticEdge(g,t,true,true);
+	CS_RaytraceStaticEdge(g,t,true,true,true);
 }
 
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceStaticEdgeNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	CS_RaytraceStaticEdge(g,t,false,true);
+	CS_RaytraceStaticEdge(g,t,false,true,true);
 }
 
 
