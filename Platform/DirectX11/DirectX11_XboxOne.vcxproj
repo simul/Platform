@@ -43,7 +43,7 @@
     <LibraryPath>$(Console_SdkLibPath)</LibraryPath>
     <LibraryWPath>$(Console_SdkLibPath);$(Console_SdkWindowsMetadataPath)</LibraryWPath>
     <IncludePath>$(Console_SdkIncludeRoot)</IncludePath>
-    <ExecutablePath>$(Console_SdkRoot)bin;$(VCInstallDir)bin\x86_amd64;$(VCInstallDir)bin;$(WindowsSDK_ExecutablePath_x86);$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(MSBuildToolsPath32);$(FxCopDir);$(PATH);</ExecutablePath>
+    <ExecutablePath>$(FXCToolPath);$(Console_SdkRoot)bin;$(VCInstallDir)bin\x86_amd64;$(VCInstallDir)bin;$(WindowsSDK_ExecutablePath_x86);$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(MSBuildToolsPath32);$(FxCopDir);$(PATH)</ExecutablePath>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">
@@ -59,8 +59,8 @@
     </Link>
     <ClCompile>
       <AdditionalUsingDirectories>$(Console_SdkPackagesRoot);$(Console_SdkWindowsMetadataPath);%(AdditionalUsingDirectories)</AdditionalUsingDirectories>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>NDEBUG;__WRL_NO_DEFAULT_LIB__;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>D3D11_FAST_SEMANTICS;_XBOX_ONE;NDEBUG;__WRL_NO_DEFAULT_LIB__;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <CompileAsWinRT>false</CompileAsWinRT>
@@ -68,13 +68,14 @@
     </ClCompile>
     <FxCompile />
     <FxCompile>
-      <ObjectFileOutput>$(OutDir)%(Filename).fxo</ObjectFileOutput>
+      <ObjectFileOutput>$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</ObjectFileOutput>
       <PreprocessorDefinitions>_XBOX_ONE</PreprocessorDefinitions>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="CompileShaderDX1x.h" />
+    <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="CreateEffectDX1x.h" />
     <ClInclude Include="Direct3D11CallbackInterface.h" />
     <ClInclude Include="Direct3D11Manager.h" />
@@ -102,6 +103,7 @@
   <ItemGroup>
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="CompileShaderDX1x.cpp" />
+    <ClCompile Include="ConstantBuffer.cpp" />
     <ClCompile Include="CreateEffectDX1x.cpp" />
     <ClCompile Include="Direct3D11Manager.cpp" />
     <ClCompile Include="Direct3D11Renderer.cpp" />
@@ -120,7 +122,7 @@
     <ClCompile Include="ESRAMTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="..\CrossPlatform\SFX\atmospherics.sfx">
+    <CustomBuild Include="..\CrossPlatform\SFX\atmospherics.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</DisableOptimizations>
@@ -128,125 +130,218 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <SuppressStartupBanner Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</SuppressStartupBanner>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\clouds.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\clouds.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\debug.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\font.sfx">
+      <FileType>Document</FileType>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\hdr.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
       <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</EnableDebuggingInformation>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\debug.sfx">
+      <AllResourcesBound Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</AllResourcesBound>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\lightning.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\font.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\light_probes.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\hdr.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\lightning.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\ocean.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\light_probes.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\optics.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\mixed_resolution.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\rain.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\ocean.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\optics.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\rain.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\simul_clouds_2d.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\simul_gpu_clouds.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\simul_gpu_sky.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\sky.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\simul_rendernoise.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\solid.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\simul_render_cubemap.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\sky.sfx">
+      <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</DisableOptimizations>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\terrain.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\solid.sfx">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
+    <CustomBuild Include="..\CrossPlatform\SFX\copy.sfx">
       <FileType>Document</FileType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\spherical_harmonics.sfx">
-      <FileType>Document</FileType>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="..\CrossPlatform\SFX\terrain.sfx">
-      <FileType>Document</FileType>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">HLSL</AdditionalIncludeDirectories>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">Effect</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">5.0</ShaderModel>
-    </FxCompile>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">"$(FxcToolPath)/fxc.exe" /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">fxc.exe /E"main" /Fo"$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo" /I"$(SIMUL)/Platform/DirectX11/HLSL" /Tfx_5_0  /I"$(SIMUL)/Platform/CrossPlatform/SL"  /D "_XBOX_ONE" /nologo "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">$(SIMUL)/Platform/XboxOne/shaderbin/%(Filename).fxo</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</LinkObjects>
+    </CustomBuild>
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
     <None Include="..\CrossPlatform\SL\clouds_raytrace.sl" />
+    <None Include="..\CrossPlatform\SL\clouds_simple.sl" />
     <None Include="..\CrossPlatform\SL\cloud_shadow.sl" />
     <None Include="..\CrossPlatform\SL\colour_packing.sl" />
     <None Include="..\CrossPlatform\SL\composite.sl" />
