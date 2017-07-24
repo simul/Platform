@@ -131,6 +131,9 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		// The distance between the points of integration is:
 		float s1		= (max(0,z-z_1) / sn)/maxFadeDistanceKm;
 		float s			= min(d_solid,(z_2 - z_1) / sn);
+		// The mean height is:
+		float z_mean	=0.5*(z_1+z_2);
+		s				*=saturate((H_km-z_mean)/0.1);
 		// Integral of p0 (H_km-z)/H
 		float retain	= saturate(exp(-s * fogExtinction));// fogExtinction is 1/km.
 
@@ -138,11 +141,12 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 
 		// retain is the amount of visibility for whatever's behind the fog.
 		// It gives us the fog inscatter also.
-		if(z<H_km)
-			insc.rgb		*=retain;
-		else
+		float transition=saturate(H_km-z);
+		//if(z<H_km)
+			insc.rgb		*=lerp(1.0,retain,transition);
+		//else
 		{
-			fogLoss			*=cloud.a*texture_clamp_mirror_lod(loss2dTexture, vec2(sqrt(s1),loss_texc.y), 0).rgb;
+			fogLoss			*=lerp(cloud.a*texture_clamp_mirror_lod(loss2dTexture, vec2(sqrt(s1),loss_texc.y), 0).rgb,vec3(1,1,1),transition);
 		}
 		insc.rgb		+=(1.0-retain)*(fogColour+fogAmbient)*fogLoss;
 		res.multiply	*=retain;
