@@ -13,6 +13,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,Texture2D inscTexture
 											,Texture2D skylTexture
 											,Texture3D inscatterVolumeTexture
+											,Texture3D godraysVolumeTexture
                                             ,bool do_depth_mix
 											,vec4 dlookup
 											,vec3 view
@@ -22,7 +23,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 											,bool do_rain_effect
 											,bool do_rainbow
 											,vec3 cloudIrRadiance1
-											,vec3 cloudIrRadiance2)
+											,vec3 cloudIrRadiance2
+											,bool do_godrays=false)
 {
 	RaytracePixelOutput res;
 	vec4 insc[NUM_CLOUD_INTERP];
@@ -46,6 +48,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 
 	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
+	vec3 godraysTexCoords	=vec3(0,0,0);
+	float lightspaceScale	=1.0;
+	if(do_godrays)
+	{
+		//vec3 offsetKm					=view*min(meanFadeDistance,res.nearFarDepth.x)*maxFadeDistanceKm;
+		// lightspaceView is a non-unit vector. Its length is the scaling from km to lightspace distance texcoord.
+		vec3 lightspaceView				=(mul(worldToScatteringVolumeMatrix,vec4(view,1.0)).xyz);
+		lightspaceScale					=length(lightspaceView);
+		godraysTexCoords				=vec3(frac(atan2(lightspaceView.x,lightspaceView.y)/(2.0*SIMUL_PI_F)),0.5+0.5*asin(lightspaceView.z/lightspaceScale)*2.0/SIMUL_PI_F,0);
+	}
+
 	
 	float solidDist_nearFar	[NUM_CLOUD_INTERP];
 	vec2 nfd				=(dlookup.yx)+100.0*step(vec2(1.0,1.0), dlookup.yx);
@@ -244,7 +257,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);
 
 					ColourStep( res.colour,insc, meanFadeDistance, brightness_factor
-								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
+								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture
+								,do_godrays, godraysVolumeTexture ,lightspaceScale, godraysTexCoords
+								, lightTableTexture
 								,density, light,distanceKm, fadeDistance
 								,world_pos
 								,cloudTexCoords, fade_texc, nearFarTexc

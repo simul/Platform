@@ -564,7 +564,9 @@ void Raytrace(uint3 pos,bool include_rain,bool depth)
 									,coronaLookupTexture
 									,lossTexture
 									,inscTexture
-									,skylTexture,volumeInscatterTexture
+									,skylTexture
+									,volumeInscatterTexture
+									,godraysTexture
 									,true
 									,dlookup
 									,view

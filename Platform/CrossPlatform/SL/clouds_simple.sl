@@ -51,6 +51,18 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 
 	else if(view.z<-0.01&&viewPosKm.z<cornerPosKm.z-fractalScale.z/inverseScalesKm.z)
 		return res;
+	vec3 godraysTexCoords	=vec3(0,0,0);
+	float lightspaceScale	=1.0;
+	if(do_godrays)
+	{
+		//vec3 offsetKm					=view*min(meanFadeDistance,res.nearFarDepth.x)*maxFadeDistanceKm;
+		// lightspaceView is a non-unit vector. Its length is the scaling from km to lightspace distance texcoord.
+		vec3 lightspaceView				=(mul(worldToScatteringVolumeMatrix,vec4(view,1.0)).xyz);
+		lightspaceScale					=length(lightspaceView);
+		godraysTexCoords				=vec3(frac(atan2(lightspaceView.x,lightspaceView.y)/(2.0*SIMUL_PI_F)),0.5+0.5*asin(lightspaceView.z/lightspaceScale)*2.0/SIMUL_PI_F,0);
+	}
+
+
 	float solidDist_nearFar	[NUM_CLOUD_INTERP];
 	vec2 nfd				=(dlookup.yx)+100.0*step(vec2(1.0,1.0), dlookup.yx);
 
@@ -177,7 +189,9 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);
 
 					ColourStep(res.colour,insc, meanFadeDistance, brightness_factor
-								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture, lightTableTexture
+								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture
+								,do_godrays, godraysVolumeTexture ,lightspaceScale, godraysTexCoords
+								,lightTableTexture
 								,density, light, distanceKm, fadeDistance
 								,world_pos
 								,cloudTexCoords, fade_texc, nearFarTexc
@@ -204,6 +218,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	res.nearFarDepth.zw	=	meanFadeDistance;
 //for(int i=0;i<num_interp;i++)
 	// now lose inscatter due to godrays:
+#ifdef AVERAGE_GODRAYS
 	float gr=1.0;
 	if(do_godrays)
 	{
@@ -216,9 +231,9 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
 		gr								*=godrays.x;
 	}
-
+#endif
 	for(int j=0;j<num_interp;j++)
-		res.colour[j].rgb+=insc[j]*gr;
+		res.colour[j].rgb+=insc[j];//*gr;
 	return res;
 }
 #endif
