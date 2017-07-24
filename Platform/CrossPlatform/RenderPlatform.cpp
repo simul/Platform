@@ -535,7 +535,7 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 {
 	Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
-	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj; //crossplatform::Camera::MakeDepthReversedProjectionMatrix(1.f,(float)viewport.h/(float)viewport.w,0.1f,100000.f);
+	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 
 	math::Matrix4x4 wvp,world;
 	world.ResetToUnitMatrix();

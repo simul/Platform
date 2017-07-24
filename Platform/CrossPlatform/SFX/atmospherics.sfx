@@ -136,7 +136,7 @@ shader void CS_GodraysAccumulation(uint3 p: SV_DispatchThreadID)
 	float sum				=0.0;
 	float mean_illumination	=1.0;//-averageCoverage;
 	vec4 mi					=vec4(mean_illumination,mean_illumination,mean_illumination,mean_illumination);
-	float fade_in			=saturate(godraysIntensity*(texc.y)/1.0);
+	float fade_in			=saturate(godraysIntensity*(texc.y)/1.5);
 	// in order of distance.
 	for(uint i=0;i<godraysVolumeDims.y;i++)
 	{

@@ -343,6 +343,10 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 				,Texture2D inscTexture
 				,Texture2D skylTexture
 				,Texture3D inscatterVolumeTexture
+				,bool godrays
+				,Texture3D godraysVolumeTexture
+				,float godraysScale
+				,vec3 godraysTexCoords
 				,Texture2D lightTableTexture
 				,vec4 density
 				,vec4 light
@@ -396,8 +400,12 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 										,nearFarTexc
 										,brightness_factor);
 
-	meanFadeDistance	=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-.4*density.z));
+	meanFadeDistance		=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-.4*density.z));
 
+	godraysTexCoords.z			=distanceKm*godraysScale;
+	float gr_mult				=1.0;
+	if(godrays)
+		gr_mult=texture_3d_wcc_lod(godraysVolumeTexture,godraysTexCoords,0).x;
 	for(int i=0;i<NUM_CLOUD_INTERP;i++)
 	{
 		clr[i]			= clr[NUM_CLOUD_INTERP-1];
@@ -407,11 +415,9 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 			clr[i].a		*=m;
 		}
 		colour[i].rgb	+=(clr[i].rgb)*clr[i].a*(colour[i].a);
-		insc[i].rgb		+=inscatter.rgb*clr[i].a*(colour[i].a);
+		insc[i].rgb		+=gr_mult*inscatter.rgb*clr[i].a*(colour[i].a);
 		colour[i].a		*=(1.0-clr[i].a);
-
 	}
-	
 }
 
 #endif
