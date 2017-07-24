@@ -351,7 +351,7 @@ shader starsVertexOutput VS_Stars(idOnly IN)
 	uint star_num		=IN.vertex_id / 3;
 	uint vert_id		=IN.vertex_id-star_num*3;
 	vec4 star			=starsSB[star_num];
-    OUT.hPosition		=mul(worldViewProj,vec4(star.xyz,0.0));//
+    OUT.hPosition		=mul(worldViewProj,vec4(star.xyz,1.0));//
 	OUT.clip_pos		=OUT.hPosition.xyzw;
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
 //	OUT.hPosition.z		=isForwardDepth*OUT.hPosition.w;
