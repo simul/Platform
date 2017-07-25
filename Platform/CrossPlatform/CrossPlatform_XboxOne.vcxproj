@@ -7,6 +7,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AmortizationStruct.cpp" />
     <ClCompile Include="BaseFramebuffer.cpp" />
     <ClCompile Include="BaseOpticsRenderer.cpp" />
     <ClCompile Include="Buffer.cpp" />
@@ -21,6 +22,7 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Quaterniond.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
@@ -28,6 +30,7 @@
     <ClCompile Include="View.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AmortizationStruct.h" />
     <ClInclude Include="BaseFramebuffer.h" />
     <ClInclude Include="BaseOpticsRenderer.h" />
     <ClInclude Include="BaseRenderer.h" />
@@ -49,6 +52,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MixedResolutionView.h" />
     <ClInclude Include="PixelFormat.h" />
+    <ClInclude Include="Quaterniond.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="ShaderMode.h" />
     <ClInclude Include="TextInputOutput.h" />
