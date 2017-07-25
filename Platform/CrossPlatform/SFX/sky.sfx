@@ -351,7 +351,7 @@ shader starsVertexOutput VS_Stars(idOnly IN)
 	uint star_num		=IN.vertex_id / 3;
 	uint vert_id		=IN.vertex_id-star_num*3;
 	vec4 star			=starsSB[star_num];
-    OUT.hPosition		=mul(worldViewProj,vec4(star.xyz,1.0));//
+    OUT.hPosition		=mul(worldViewProj,vec4(normalize(star.xyz),1.0));//
 	OUT.clip_pos		=OUT.hPosition.xyzw;
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
 //	OUT.hPosition.z		=isForwardDepth*OUT.hPosition.w;
@@ -360,7 +360,7 @@ shader starsVertexOutput VS_Stars(idOnly IN)
 	if (OUT.clip_pos.z<0)
 		OUT.texCoord=0;
 	// Emit new triangle.
-	vec2 sz=0.05*OUT.hPosition.w*max(minimumPixelSize, star.w)*vec2(0.25,0.5);
+	vec2 sz=OUT.clip_pos.w*minimumPixelSize;//45*max(minimumPixelSize, star.w)*vec2(0.25,0.5);
     vec2 g_positions[3] =
     {
         vec2(0.0	,2.0),
@@ -377,9 +377,8 @@ vec4 PS_StarsDepth(starsVertexOutput IN,bool reverseDepth,float depth)
 {
 	discardUnlessFar(depth,reverseDepth);
 	vec3 ocolour	=vec3(1.0,1.0,1.0)*(starBrightness*IN.texCoord.z);
-	float alpha		=saturate(0.5-(length(IN.texCoord))*5.0);
+	float alpha		=saturate((1.0-length(IN.texCoord))*1.0);
 	vec4 result		=vec4(ocolour*alpha,0.0);
-//result=vec4(1,alpha,1,0.5);
 	return result;
 }
 
@@ -812,37 +811,6 @@ technique stars
     pass depth_test
     {
 		SetRasterizerState( RenderNoCull );
-        SetGeometryShader(NULL);
-		SetVertexShader(vs_stars);
-		SetPixelShader(CompileShader(ps_5_0, PS_Stars()));
-		//SetDepthStencilState( TestDepth, 0 );
-		SetBlendState(AddBlend, vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
-	}
-	pass reverse_depth
-	{
-		SetRasterizerState(RenderNoCull);
-		SetGeometryShader(NULL);
-		SetVertexShader(vs_stars);
-		SetPixelShader(CompileShader(ps_5_0, PS_Stars_ReverseDepth()));
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
-	}
-	pass forward_depth
-	{
-		SetRasterizerState(RenderNoCull);
-		SetGeometryShader(NULL);
-		SetVertexShader(vs_stars);
-		SetPixelShader(CompileShader(ps_5_0, PS_Stars_ForwardDepth()));
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(AddBlend, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
-	}
-}
-
-technique geometry_stars
-{
-    pass depth_test
-    {
-		SetRasterizerState( RenderNoCull );
 		SetVertexShader(vs_stars);
 		SetPixelShader(CompileShader(ps_5_0, PS_Stars()));
 		//SetDepthStencilState( TestDepth, 0 );
@@ -890,34 +858,6 @@ technique stars_msaa
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(vs_stars);
-		SetPixelShader(CompileShader(ps_5_0, PS_Stars_ForwardDepth_MSAA()));
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(AddBlendDontWriteAlpha, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
-	}
-}
-
-technique geometry_stars_msaa
-{
-    pass depth_test
-    {
-		SetRasterizerState( RenderNoCull );
-		SetVertexShader(vs_stars);
-		SetPixelShader(CompileShader(ps_5_0, PS_Stars()));
-		//SetDepthStencilState( TestDepth, 0 );
-		SetBlendState(AddBlendDontWriteAlpha, vec4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
-	}
-	pass reverse_depth
-	{
-		SetRasterizerState(RenderNoCull);
-		SetVertexShader(vs_stars);
-		SetPixelShader(CompileShader(ps_5_0, PS_Stars_ReverseDepth_MSAA()));
-		SetDepthStencilState(DisableDepth, 0);
-		SetBlendState(AddBlendDontWriteAlpha, vec4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
-	}
-	pass forward_depth
-	{
-		SetRasterizerState(RenderNoCull);
 		SetVertexShader(vs_stars);
 		SetPixelShader(CompileShader(ps_5_0, PS_Stars_ForwardDepth_MSAA()));
 		SetDepthStencilState(DisableDepth, 0);

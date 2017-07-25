@@ -171,7 +171,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		clr=white;
 	if(!bck)
 		bck=transp;
-	static float fontScale=3.0;
+	static float fontScale=1.0;
 	//renderPlatform->DrawQuad(deviceContext,20,20,50,50,effect,effect->GetTechniqueByName("textured"),"noblend");
 	//renderPlatform->StoreRenderState(deviceContext);
 	constantBuffer.colour		=vec4(clr);
