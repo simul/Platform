@@ -23,20 +23,19 @@ uniform Texture3D smallWorleyTexture3D				SIMUL_TEXTURE_REGISTER(12);
 #include "../SL/simul_gpu_clouds.sl"
 #include "../SL/noise.sl"
 
-uniform Texture3D cloudDensity;
+uniform Texture3D cloudDensity			SIMUL_TEXTURE_REGISTER(0);
 uniform Texture3D cloudDensity2			SIMUL_TEXTURE_REGISTER(1);
- 
-uniform Texture2D lossTexture;
-uniform Texture2D inscTexture;
-uniform Texture2D skylTexture;
-uniform TextureCube depthTexture;
-uniform Texture3D godraysTexture;
 uniform Texture3D noiseTexture3D		SIMUL_TEXTURE_REGISTER(2);
+uniform Texture3D godraysTexture		SIMUL_TEXTURE_REGISTER(3);
+uniform Texture3D volumeInscatterTexture		SIMUL_TEXTURE_REGISTER(4);
+uniform Texture2D lossTexture		SIMUL_TEXTURE_REGISTER(5);
+uniform Texture2D inscTexture		SIMUL_TEXTURE_REGISTER(4);
+uniform Texture2D skylTexture	SIMUL_TEXTURE_REGISTER(3);
+uniform TextureCube depthTexture;
 uniform Texture2D illuminationTexture;
 uniform Texture2D lightTableTexture;
 uniform Texture2D rainbowLookupTexture;
 uniform Texture2D coronaLookupTexture;
-uniform Texture3D volumeInscatterTexture;
 uniform Texture2D rainMapTexture;
 /// The previous texture area:
 uniform Texture2DArray updateTexture;
