@@ -685,7 +685,9 @@ BlendState AlphaBlendNoAlphaWrite
 	RenderTargetWriteMask[0]=7;
 	RenderTargetWriteMask[1]=7;
 };
-VertexShader vs_rain=CompileShader(vs_5_0,VS_RainParticles());;
+
+VertexShader vs_rain=CompileShader(vs_5_0,VS_RainParticles());
+
 fxgroup rain_particles
 {
 	technique main

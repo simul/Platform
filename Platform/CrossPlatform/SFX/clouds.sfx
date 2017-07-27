@@ -192,15 +192,16 @@ void MixInCirrus(uint3 ii,bool clears)
 	int3 idx	=int3(ii)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
 	//	return;
+	vec3 texc	=vec3(idx)*scale+offset;
 	idx.xy		+=gridCentreTexel;
 	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
+	int3 offset_idx=idx-int3(gridCentreTexel.xy+windowGrid.xx/2,0);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
-	vec3 texc	=vec3(idx)*scale+offset;
-
+	
 	float fall_amount=saturate(1.0-texc.z);
 	
-	texc.xy+=.1*pow(fall_amount,2.0);
+	texc.xy+=.1*pow(fall_amount,3.0);
 
 	// fall streaks.
 
@@ -217,7 +218,7 @@ void MixInCirrus(uint3 ii,bool clears)
 
 	float zPixel=1.0/float(windowGrid.z);
 	res.z		=saturate((res.z-0.5)/diffusivity);
-
+	//res.z=frac(float(idx.x)/float(windowGrid.x));
 	res.z*=saturate(1.0-fall_amount)* max_density_gm3*saturate(texc.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - texc.z) / zPixel);
 	if (res.z > 0)
 	{
