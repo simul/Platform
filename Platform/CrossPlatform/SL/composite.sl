@@ -120,6 +120,7 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		float H_km		= fogHeightKm;
 		float d_solid	= maxFadeDistanceKm*dist;
 		float z			= viewPos.z / 1000.0;
+		float transition=pow(saturate(H_km-z),0.5);
 		float zs		= z + sine*d_solid;
 		// z_max is the highest of the two heights, and z_min is the lowest.
 		float z_max		= max(z,zs);
@@ -128,28 +129,34 @@ TwoColourCompositeOutput CompositeAtmospherics(vec4 clip_pos
 		float z_1		= min(z_min,H_km);
 		float z_2		= min(z_max,H_km);
 		float sn		=max(0.0000000001,abs(sine));
+		float sn1		=max(0.0000000001,(-sine));
 		// The distance between the points of integration is:
-		float s1		= (max(0,z-z_1) / sn)/maxFadeDistanceKm;
-		float s			= min(d_solid,(z_2 - z_1) / sn);
+		float s1		=min(dist,saturate((max(0,(z-z_2) / sn1))/maxFadeDistanceKm));
+		float above_fog	=step(0,z-H_km);
+		float upwards	=step(0,sine);
+		float dz		=z_2-z_1;
+		float s			=(1.0-above_fog*upwards)*min(maxFadeDistanceKm,min(d_solid,dz/ sn));
 		// The mean height is:
 		float z_mean	=0.5*(z_1+z_2);
 		s				*=saturate((H_km-z_mean)/0.1);
 		// Integral of p0 (H_km-z)/H
-		float retain	= saturate(exp(-s * fogExtinction));// fogExtinction is 1/km.
+		float fog_in	=1.0-saturate(exp(-s * fogExtinction));// fogExtinction is 1/km.
 
 		vec3 fogLoss	=1.0;
 
 		// retain is the amount of visibility for whatever's behind the fog.
 		// It gives us the fog inscatter also.
-		float transition=saturate(H_km-z);
+		//retain=lerp(1.0,retain,transition);
 		//if(z<H_km)
-			insc.rgb		*=lerp(1.0,retain,transition);
+			float rt_s1		=sqrt(s1);
+			//insc.rgb		=texture_3d_wmc_lod(inscatterVolumeTexture,vec3(worldspaceVolumeTexCoords.xy,rt_s1),0);
 		//else
 		{
-			fogLoss			*=lerp(cloud.a*texture_clamp_mirror_lod(loss2dTexture, vec2(sqrt(s1),loss_texc.y), 0).rgb,vec3(1,1,1),transition);
+			fogLoss			*=fog_in*lerp(cloud.a*texture_clamp_mirror_lod(loss2dTexture, vec2(rt_s1,loss_texc.y), 0).rgb,vec3(1,1,1),transition);
 		}
-		insc.rgb		+=(1.0-retain)*(fogColour+fogAmbient)*fogLoss;
-		res.multiply	*=retain;
+		insc.rgb		*=vec3(1.0,1.0,1.0)-fogLoss;///lerp(retain,1.0,saturate(z-H_km));
+		insc.rgb		+=(fogColour+fogAmbient)*fogLoss;
+		res.multiply	*=(1.0-fog_in);
 	}
 	//if(do_clouds)
 	//	res.multiply				*=cloud.a;
