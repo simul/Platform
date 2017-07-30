@@ -8,7 +8,6 @@
 #include "../SL/debug_constants.sl"
 
 uniform TEXTURE2DMS_FLOAT4 sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
-uniform TEXTURE2DMS_FLOAT4 sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2D sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);
 
 uniform Texture2DArray<vec4> previousCombinedTexture;
@@ -95,14 +94,20 @@ bool GetStochasticSamples_MSAA(Texture2DMS<float4> sourceDepthTextureMS,vec4 dep
 		{
 			vec2 offs	=texelRange*offsets[i];
 			vec2 texc	=saturate(1.01*(texCoords+.6*offs))/1.01;
-			uint2 tex_pos=uint2(texc*source_dims+vec2(0.5,0.5));
 			texc		*=depthWind.zw;
 			texc		+=depthWind.xy;
+			uint2 tex_pos=uint2(texc*source_dims+vec2(0.5,0.5));
+			//fn=vec4(texc,0,0);
 			// VERY important to use NEAREST, and not filter the source depth texture!
 			vec2 d		=sourceDepthTextureMS.Load(tex_pos,0).xx;
 			if(depthInterpretationStruct.reverseDepth)
 			{
 				if(d.x>=1.0)
+					continue;
+			}
+			else
+			{
+				if(d.x<=0.0)
 					continue;
 			}
 			vec2 dist	=depthToFadeDistance(d,frustum_clip_pos.xy,depthInterpretationStruct,tanHalfFov);
@@ -230,9 +235,8 @@ vec4 GetFrustumClipPos(uint3 idx)
 	return frustum_clip_pos;
 }
 
-void DownscaleStochastic(uint3 idx,bool reverseDepth,bool twoStep,bool msaa=false) 
+void DownscaleStochastic(uint3 idx,bool depth,bool reverseDepth,bool twoStep,bool msaa) 
 {
-	bool depth=true;
 	if(idx.x<targetRange[idx.z].x||idx.x>=targetRange[idx.z].z||idx.y<targetRange[idx.z].y||idx.y>=targetRange[idx.z].w)
 	{
 		nextUpdateTexture[idx]	=vec4(0,0,0,0);
@@ -270,8 +274,7 @@ void DownscaleStochastic(uint3 idx,bool reverseDepth,bool twoStep,bool msaa=fals
 	vec4 res					=vec4(0,0,0,0);
 	bool any_result;
 	if(msaa)
-		any_result	=GetStochasticSamples_MSAA(
-									sourceMSDepthTexture
+			any_result	=GetStochasticSamples_MSAA(sourceMSDepthTexture
 									,depthWindow[0]
 									,sourceTexCoords
 									,frustum_clip_pos.xy
@@ -285,8 +288,7 @@ void DownscaleStochastic(uint3 idx,bool reverseDepth,bool twoStep,bool msaa=fals
 									,0
 									,res);
 	else
-		any_result	=GetStochasticSamples(
-									sourceDepthTexture
+			any_result	=GetStochasticSamples(sourceDepthTexture
 									,depthWindow[0]
 									,sourceTexCoords
 									,frustum_clip_pos.xy
@@ -322,9 +324,8 @@ void DownscaleStochastic(uint3 idx,bool reverseDepth,bool twoStep,bool msaa=fals
 		nextUpdateTexture[idx]	=vec4(u.b,oldDepthValid,1.0,0.0);
 }
 
-void DownscaleStochastic_twoEyes(uint3 idx,bool reverseDepth,bool twoStep,bool msaa=false) 
+void DownscaleStochastic_twoEyes(uint3 idx,bool depth,bool reverseDepth,bool twoStep,bool msaa) 
 {
-	bool depth=true;
 	if(idx.x<targetRange[idx.z].x||idx.x>=targetRange[idx.z].z||idx.y<targetRange[idx.z].y||idx.y>=targetRange[idx.z].w)
 	{
 		nextUpdateTexture[idx]	=vec4(0,0,0,0);
@@ -382,8 +383,7 @@ void DownscaleStochastic_twoEyes(uint3 idx,bool reverseDepth,bool twoStep,bool m
 																, scale
 																, res);
 			else
-		any_result = GetStochasticSamples_twoEyes(
-			 sourceDepthTexture
+				any_result = GetStochasticSamples_twoEyes(sourceDepthTexture
 			, sourceTexCoords
 			, frustum_clip_pos
 			, texelRange
@@ -486,7 +486,7 @@ shader void CS_DownscaleStochastic_ReverseDepth(uint3 g : SV_GroupID, uint3 t : 
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubeIndex[g.z+t.z].x;
 	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
-	DownscaleStochastic(pos,true,false);
+	DownscaleStochastic(pos,true,true,false,false);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -495,7 +495,7 @@ shader void CS_DownscaleStochastic_ForwardDepth(uint3 g : SV_GroupID, uint3 t : 
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubeIndex[g.z+t.z].x;
 	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
-	DownscaleStochastic(pos,false,false);
+	DownscaleStochastic(pos,true,false,false,false);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -506,7 +506,7 @@ shader void CS_DownscaleStochastic_MSAA_ReverseDepth(uint3 g : SV_GroupID, uint3
 	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
 		
 	//nextUpdateTexture[pos]	=vec4(0,0,1,0);
-	DownscaleStochastic(pos,true,false,true);
+	DownscaleStochastic(pos,true,true,false,true);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -515,8 +515,18 @@ shader void CS_DownscaleStochastic_MSAA_ForwardDepth(uint3 g : SV_GroupID, uint3
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubeIndex[g.z+t.z].x;
 	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
-	DownscaleStochastic(pos,false,false,true);
+	DownscaleStochastic(pos,true,false,false,true);
 }
+
+CS_LAYOUT(BLOCK_SIZE, BLOCK_SIZE, 1)
+shader void CS_DownscaleStochastic_NoDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint2 idx = uint2(g.xy*BLOCK_SIZE + t.xy);
+	uint Z = cubeIndex[g.z + t.z].x;
+	uint3 pos = uint3(drawRange[Z].xy + idx, Z);
+	DownscaleStochastic(pos, false, false, false, false);
+}
+
 
 
 CS_LAYOUT(BLOCK_SIZE, BLOCK_SIZE, 1)
@@ -527,7 +537,7 @@ shader void CS_DownscaleStochastic_twoEyes_ReverseDepth(uint3 g : SV_GroupID, ui
 	uint3 pos = uint3(drawRange[Z].xy + idx, Z);
 
 	//nextUpdateTexture[pos]	=vec4(0,0,1,0);
-	DownscaleStochastic_twoEyes(pos, true, false);
+	DownscaleStochastic_twoEyes(pos, true,true, false, false);
 }
 
 CS_LAYOUT(BLOCK_SIZE, BLOCK_SIZE, 1)
@@ -536,7 +546,36 @@ shader void CS_DownscaleStochastic_twoEyes_ForwardDepth(uint3 g : SV_GroupID, ui
 	uint2 idx = uint2(g.xy*BLOCK_SIZE + t.xy);
 	uint Z = cubeIndex[g.z + t.z].x;
 	uint3 pos = uint3(drawRange[Z].xy + idx, Z);
-	DownscaleStochastic_twoEyes(pos, false, false);
+	DownscaleStochastic_twoEyes(pos, true,false, false, false);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_DownscaleStochastic_twoEyes_NoDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint2 idx = uint2(g.xy*BLOCK_SIZE + t.xy);
+	uint Z = cubeIndex[g.z + t.z].x;
+	uint3 pos = uint3(drawRange[Z].xy + idx, Z);
+	DownscaleStochastic_twoEyes(pos, false,false, false, false);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_DownscaleStochastic_twoEyes_MSAA_ReverseDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint2 idx = uint2(g.xy*BLOCK_SIZE + t.xy);
+	uint Z = cubeIndex[g.z + t.z].x;
+	uint3 pos = uint3(drawRange[Z].xy + idx, Z);
+
+	//nextUpdateTexture[pos]	=vec4(0,0,1,0);
+	DownscaleStochastic_twoEyes(pos, true,true, false, true);
+}
+
+CS_LAYOUT(BLOCK_SIZE, BLOCK_SIZE, 1)
+shader void CS_DownscaleStochastic_twoEyes_MSAA_ForwardDepth(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint2 idx = uint2(g.xy*BLOCK_SIZE + t.xy);
+	uint Z = cubeIndex[g.z + t.z].x;
+	uint3 pos = uint3(drawRange[Z].xy + idx, Z);
+	DownscaleStochastic_twoEyes(pos, true,false, false, true);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -547,7 +586,7 @@ shader void CS_DownscaleStochastic_ReverseDepth_TwoStep(uint3 g : SV_GroupID, ui
 	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
 		
 	//nextUpdateTexture[pos]	=vec4(0,0,1,0);
-	DownscaleStochastic(pos,true,true);
+	DownscaleStochastic(pos, true,true,true, false);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -556,8 +595,39 @@ shader void CS_DownscaleStochastic_ForwardDepth_TwoStep(uint3 g : SV_GroupID, ui
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubeIndex[g.z+t.z].x;
 	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
-	DownscaleStochastic(pos,false,true);
+	DownscaleStochastic(pos, true,false,true, false);
 }
+
+CS_LAYOUT(BLOCK_SIZE, BLOCK_SIZE, 1)
+shader void CS_DownscaleStochastic_NoDepth_TwoStep(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint2 idx = uint2(g.xy*BLOCK_SIZE + t.xy);
+	uint Z = cubeIndex[g.z + t.z].x;
+	uint3 pos = uint3(drawRange[Z].xy + idx, Z);
+	DownscaleStochastic(pos, false, false, true, false);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_DownscaleStochastic_MSAA_ReverseDepth_TwoStep(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z			=cubeIndex[g.z+t.z].x;
+	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
+
+	//nextUpdateTexture[pos]	=vec4(0,0,1,0);
+	DownscaleStochastic(pos, true,true,true, true);
+}
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_DownscaleStochastic_MSAA_ForwardDepth_TwoStep(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID) 
+{
+	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
+	uint Z			=cubeIndex[g.z+t.z].x;
+	uint3 pos		=uint3(drawRange[Z].xy+idx,Z);
+	DownscaleStochastic(pos, true,false,true, true);
+}
+
 
 void MinMax(uint3 idx,bool reverseDepth)
 {
@@ -640,6 +710,10 @@ technique direct
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Direct_ForwardDepth()));
     }
+	pass no_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Direct_NoDepth()));
+	}
 }
 
 technique downscale_stochastic_compute
@@ -652,6 +726,10 @@ technique downscale_stochastic_compute
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_ForwardDepth()));
     }
+	pass no_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_NoDepth()));
+	}
 }
 
 technique downscale_stochastic_compute_msaa
@@ -664,6 +742,10 @@ technique downscale_stochastic_compute_msaa
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_MSAA_ForwardDepth()));
     }
+	pass no_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_NoDepth()));
+}
 }
 
 technique downscale_stochastic_two_eyes
@@ -675,6 +757,10 @@ technique downscale_stochastic_two_eyes
 		pass forward_depth
 	{
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_twoEyes_ForwardDepth()));
+	}
+	pass no_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_twoEyes_NoDepth()));
 	}
 }
 
@@ -688,7 +774,44 @@ technique downscale_stochastic_compute_two_step
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_ForwardDepth_TwoStep()));
     }
+	pass no_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_NoDepth_TwoStep()));
+	}
 }
+
+technique downscale_stochastic_two_eyes_msaa
+{
+	pass reverse_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_twoEyes_MSAA_ReverseDepth()));
+	}
+		pass forward_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_twoEyes_MSAA_ForwardDepth()));
+	}
+	pass no_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_twoEyes_NoDepth()));
+	}
+}
+
+technique downscale_stochastic_compute_two_step_msaa
+{
+    pass reverse_depth
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_MSAA_ReverseDepth_TwoStep()));
+}
+    pass forward_depth
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_MSAA_ForwardDepth_TwoStep()));
+    }
+	pass no_depth
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleStochastic_NoDepth_TwoStep()));
+	}
+}
+
 technique minmax
 {
     pass reverse_depth
