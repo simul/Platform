@@ -1735,7 +1735,7 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 										&stride,		// array of stride values, one for each buffer
 										&offset);		// array of 
 		hr=tech->GetPassByIndex(0)->Apply(0,pContext);
-	ApplyContextState(deviceContext);
+		ApplyContextState(deviceContext);
 		pContext->Draw(vertex_count,0);
 	//	pContext->IASetPrimitiveTopology(previousTopology);
 	//	pContext->IASetInputLayout( previousInputLayout );
