@@ -11,7 +11,7 @@ uniform sampler2D lossTexture;
 uniform Texture3D volumeInscatterTexture;
 uniform TextureCube depthTexture;
 uniform Texture2DMS<vec4> depthTextureMS;
-uniform sampler2D illuminationTexture;
+//uniform sampler2D illuminationTexture;	// not in use
 uniform sampler2D lightTableTexture;
 /// The previous texture area:
 uniform Texture2DArray updateTexture				;
