@@ -113,13 +113,13 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float stepKm			=K*1.2/float(numSteps);// minimum is K*1.2/float(numSteps), maximum is that times step_ratio.
 	float start_offset_km	=0.0;
 	{
-		float a		=1.0;
-	//	start_offset_km	+=max(0.0,min_z-world_pos.z)/(saturate(view.z)+0.00001);
+		float a			=1.0/(saturate(view.z)+0.00001);
+		//start_offset_km	+=max(0.0,min_z-world_pos.z)*a;
 	}
 	
 	{
-		float a		=1.0/(saturate(-view.z)+0.00001);
-	//	start_offset_km	+=max(0.0,world_pos.z-max_z)/(saturate(-view.z)+0.00001);
+		float a			=1.0/(saturate(-view.z)+0.00001);
+		//start_offset_km	+=max(0.0,world_pos.z-max_z)*a;
 	}
 	// We want to skip a number of steps. but we also want consisten step sizes, so we must calculate
 	// the last step that yields a distance smaller than this offset.
@@ -146,10 +146,11 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float distScale					=0.6/maxFadeDistanceKm;
 	bool found						=false;
 	float fade0						=saturate((start_offset_km-stepKm)/stepKm);
-	vec3 amb_dir=view;
-	int steps=initialSteps-((1&stepPos)!=0);
+	vec3 amb_dir					=view;
+	int steps						=initialSteps-((1&stepPos)!=0);
 	int in_step=0,c=0;
-	float rangeKm				=initialSteps*stepKm;
+	float rangeKm					=initialSteps*stepKm;
+	float oddRangeKm				=(0.5*stepKm*initialSteps);
 	for(int i=0;i<768;i++)
 	{
 		//world_pos					+=0.001*view;
@@ -157,17 +158,19 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 			break;
 		distanceKm					+=stepKm;
 		int odd						=(steps-in_step)%2;
-		float fade_up				=saturate((rangeKm-distanceKm)/4.0f/stepKm);
+		float fade_up				=saturate((rangeKm-distanceKm)/oddRangeKm);
 		float fade					=odd?fade_up:1.0;
 		// doubles every P steps.
 		if(in_step++==steps)
 		{
 			stepKm					*=2.0;
 			c++;
-			steps					=initialSteps-(((1<<c)&(stepPos))!=0);
+			uint u					=(1<<c);
+			steps					=initialSteps-((u&stepPos)!=0);
 			in_step					=0;
 			// =range doubles.
-			rangeKm					*=3.0f;
+			rangeKm					=distanceKm+initialSteps*stepKm;
+			oddRangeKm				=(0.5*stepKm*initialSteps);
 		}
 		// We fade out the intermediate steps as we approach the boundary of a detail change.
 		// Now sample at the end point:
