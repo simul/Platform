@@ -196,7 +196,8 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
 	else
 		hdr_effect->SetTexture(deviceContext,"imageTexture"	,texture);
-	if(blurTexture->IsValid())
+	static bool doBlur=false;
+	if(blurTexture->IsValid() && doBlur)
 	{	
 		crossplatform::Texture *src=texture;
 		SIMUL_COMBINED_PROFILE_START(deviceContext,"blur")

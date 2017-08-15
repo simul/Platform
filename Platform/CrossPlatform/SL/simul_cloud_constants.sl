@@ -3,6 +3,7 @@
 #define CLOUD_CONSTANTS_SL
 
 #define MaxNoiseAmplitudeKm 10.0
+#define CLOUD_FADEIN_DIST 0.24
 
 struct LayerData
 {
@@ -37,7 +38,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int cubemapViewIndex;
 
 	uniform vec3 viewPosKm;
-	uniform float nearZ_deprecated;
+	uniform float forwardOffsetKm;
 
 	uniform float shadowRangeKm;
 	uniform int shadowTextureSize;
@@ -63,6 +64,10 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 
 	uniform int2 gridBackCornerTexel;
 	uniform int2 gridCentreTexel;
+
+	uniform int initialSteps;
+	uniform uint stepPos;
+
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)

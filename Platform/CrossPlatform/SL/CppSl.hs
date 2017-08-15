@@ -545,17 +545,25 @@
 			y=v[1];
 			return *this;
 		}
-		int2 operator+(int2 v)
+		int2 operator+(const int2 &v) const
 		{
 			return int2(x+v.x,y+v.y);
 		}
-		int2 operator-(int2 v)
+		int2 operator-(const int2 &v) const
 		{
 			return int2(x-v.x,y-v.y);
 		}
 		int2 operator*(float v)
 		{
 			return int2(int(x*v),int(y*v));
+		}
+		bool operator==(const int2 &v) const
+		{
+			return (this->x==v.x)&&(this->y==v.y);
+		}
+		bool operator!=(const int2 &v) const
+		{
+			return (this->x!=v.x)||(this->y!=v.y);
 		}
 		friend int2 operator*(int m,int2 v)
 		{
