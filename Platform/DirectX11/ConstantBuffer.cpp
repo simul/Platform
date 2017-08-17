@@ -68,6 +68,7 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* render
 		usage=D3D11_USAGE_DEFAULT;
 	cb_desc.Usage				= usage;
 #if (SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT)
+	num_this_frame = 0;
 	if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
 	{
 		UINT numBuffers			=m_nContexts*m_nBuffering;
@@ -117,7 +118,7 @@ void PlatformConstantBuffer::SetNumBuffers(crossplatform::RenderPlatform *r, UIN
 	{
 		m_nContexts = nContexts;
 		m_nFramesBuffering=nFramesBuffering;
-		m_nBuffering = nMapsPerFrame * nFramesBuffering;
+		m_nBuffering = nMapsPerFrame * nFramesBuffering+1;
 		m_index.resize( nContexts , 0 );
 	}
 	else
@@ -175,6 +176,12 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 #if  SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
 	if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
 	{
+		if(num_this_frame>=m_nBuffering)
+		{
+			// Too many, need a bigger buffer.
+			SIMUL_CERR<<"Need a bigger buffer for PlatformConstantBuffer: resizing.\n";
+			resize=true;
+		}
 		if(resize)
 		{
 			SetNumBuffers(deviceContext.renderPlatform,m_nContexts,m_nBuffering*2,m_nFramesBuffering);
@@ -187,12 +194,6 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 		if ( buffer_index >= m_nBuffering )
 		{
 			buffer_index = 0;
-		}
-		if(num_this_frame>m_nBuffering)
-		{
-			// Too many, need a bigger buffer.
-			SIMUL_CERR<<"Need a bigger buffer for PlatformConstantBuffer"<<std::endl;
-			resize=true;
 		}
 		if(framenumber!=deviceContext.frame_number)
 		{
@@ -211,7 +212,10 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 		D3D11_MAP map_type=D3D11_MAP_WRITE_DISCARD;
 		if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
 			map_type=D3D11_MAP_WRITE;
-		V_CHECK(pContext->Map(m_pD3D11Buffer, 0, map_type, ((dx11::RenderPlatform*)deviceContext.renderPlatform)->GetMapFlags(), &mapped_res));
+		unsigned flags = ((dx11::RenderPlatform*)deviceContext.renderPlatform)->GetMapFlags();
+		HRESULT hr = pContext->Map(m_pD3D11Buffer, 0, map_type, flags, &mapped_res);
+		V_CHECK(hr);
+		if(mapped_res.pData)
 		memcpy(mapped_res.pData,addr,size);
 		pContext->Unmap(m_pD3D11Buffer, 0);
 	}
@@ -226,6 +230,8 @@ void *PlatformConstantBuffer::GetBaseAddr()
 	return nullptr;
  #endif
 }
+
+
 
 void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &)
 {

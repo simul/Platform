@@ -2,7 +2,7 @@
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
 
-#define MaxNoiseAmplitudeKm 10.0
+#define MaxNoiseAmplitudeKm 3.0
 #define CLOUD_FADEIN_DIST 0.24
 
 struct LayerData
@@ -67,6 +67,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 
 	uniform int initialSteps;
 	uniform uint stepPos;
+	uniform float initialStepKm;
 
 SIMUL_CONSTANT_BUFFER_END
 

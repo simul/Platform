@@ -140,24 +140,25 @@ shader void CS_LineQueries(uint3 sub_pos: SV_DispatchThreadID )
 	#define DETAIL_NOISE 1
 #endif
 
-
+// idx is the position relative to the grid centre texel.
+// we add gridCentreTexel and mod to get the true position in the texture.
 void MixInLayer( uint3 g, uint3 t,bool clears)
 {
 	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
 	//	return;
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	vec3 texc	=vec3(idx)*scale+offset;
 	idx.xy		+=gridCentreTexel;
 	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
-	// The position translates to a texture coordinate in the current cloudDensity texture:
-	vec3 texc	=vec3(idx)*scale+offset;
 	vec4 res = 0.0;
 	for (int i = -2; i < 3; i++)
 	{
 		vec3 tc		= texc;
 		tc.z		+= zPixel*i;
-		vec4 c1		= cloudDensity.SampleLevel(wrapSamplerState, tc, 0);
-		vec4 c2		= cloudDensity2.SampleLevel(wrapSamplerState, tc, 0);
+		vec4 c1		= cloudDensity.SampleLevel(wwcSamplerState, tc, 0);
+		vec4 c2		= cloudDensity2.SampleLevel(wwcSamplerState, tc, 0);
 
 		res			+= lerp(c1, c2, cloud_interp).zyxw/5.0;
 	}
@@ -460,7 +461,7 @@ struct FarNearDepthPixelOutput
 	vec4 nearFarDepth	SIMUL_RENDERTARGET_OUTPUT(2);
 };
 
-void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int numSteps,int num_interp=NUM_CLOUD_INTERP,bool do_godrays=false)
+void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int numSteps,int num_interp,bool do_godrays,bool consistent_steps)
 {
 	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
@@ -500,7 +501,8 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 									,cloudIrRadiance1,cloudIrRadiance2
 									,numSteps
 									,num_interp
-									,do_godrays);
+									,do_godrays
+									,consistent_steps);
 	vec4 t2d				=vec4(0,0,0,1.0);
 	// blend:
 
@@ -661,7 +663,7 @@ void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rai
 	Raytrace(pos,include_rain,depth);
 }
 
-void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays)
+void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays,bool consistent_steps)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
@@ -676,10 +678,10 @@ void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool inclu
 		return;
 	//outputTexture1[pos]		=vec4(1,1,0,1);
 	//outputTexture3[pos]		=vec4(1,1,0,1);
-	SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays);
+	SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays,consistent_steps);
 }
 
-void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays)
+void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays,bool consistent_steps)
 {
 	uint2 idx		=uint2(g.xy*BLOCK_SIZE+t.xy);
 	uint Z			=cubemapFaceIndex[g.z+t.z].x;
@@ -693,7 +695,7 @@ void CS_RaytraceStaticEdge(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool i
 	{
 		//outputTexture1[pos]		=vec4(1,1,0,1);
 		//outputTexture3[pos]		=vec4(1,1,0,1);
-		SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays);
+		SimpleRaytrace(pos,include_rain,depth,true,raytraceSteps,NUM_CLOUD_INTERP,godrays,consistent_steps);
 	}
 }
 
@@ -778,7 +780,7 @@ shader void CS_RaytraceSimple(uint3 g : SV_GroupID,uint3 t : SV_GroupThreadID)
 	uint Z					=cubemapFaceIndex[g.z+t.z].x;
 	uint3 pos				=uint3(targetRange[t.z].xy+idx*amortizationScale.xy+amortizationOffset.xy,Z);
 	
-	SimpleRaytrace(pos,false,false,false,128,1);
+	SimpleRaytrace(pos,false,false,false,128,1,false,false);
 }
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
@@ -798,29 +800,68 @@ shader void CS_RaytraceNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceStaticRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	CS_RaytraceStatic(g,t,true,true,true);
+	CS_RaytraceStatic(g,t,true,true,true,false);
 }
 
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceStaticNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	CS_RaytraceStatic(g,t,false,true,true);
+	CS_RaytraceStatic(g,t,false,true,true,false);
 }
 
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceStaticEdgeRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	CS_RaytraceStaticEdge(g,t,true,true,true);
+	CS_RaytraceStaticEdge(g,t,true,true,true,false);
 }
 
 
 CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
 shader void CS_RaytraceStaticEdgeNoRain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
-	CS_RaytraceStaticEdge(g,t,false,true,true);
+	CS_RaytraceStaticEdge(g,t,false,true,true,false);
 }
+
+
+
+
+
+
+
+
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticRain_cons(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStatic(g,t,true,true,true,true);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticNoRain_cons(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStatic(g,t,false,true,true,true);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticEdgeRain_cons(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStaticEdge(g,t,true,true,true,true);
+}
+
+
+CS_LAYOUT(BLOCK_SIZE,BLOCK_SIZE,1)
+shader void CS_RaytraceStaticEdgeNoRain_cons(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	CS_RaytraceStaticEdge(g,t,false,true,true,true);
+}
+
+
+
 
 
 shader posTexVertexOutput VS_CrossSection(idOnly IN)
@@ -1058,6 +1099,34 @@ fxgroup raytrace
 		pass p0 
 		{
 			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticEdgeNoRain()));
+		}
+	}
+	technique cons_rain
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticRain_cons()));
+		}
+	}
+	technique cons
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticNoRain_cons()));
+		}
+	}
+	technique edge_cons_rain
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticEdgeRain_cons()));
+		}
+	}
+	technique edge_cons
+	{
+		pass p0 
+		{
+			SetComputeShader(CompileShader(cs_5_0,CS_RaytraceStaticEdgeNoRain_cons()));
 		}
 	}
 }

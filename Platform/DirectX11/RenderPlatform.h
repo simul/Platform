@@ -133,6 +133,8 @@ namespace simul
 				UINT m_indexOffset;
 				DXGI_FORMAT m_indexFormatStored11;
 				D3D_PRIMITIVE_TOPOLOGY m_previousTopology;
+				D3D11_RECT m_scissorRects[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+				UINT m_numRects;
 				ID3D11DepthStencilState* m_pDepthStencilStateStored11;
 				ID3D11RasterizerState* m_pRasterizerStateStored11;
 				ID3D11BlendState* m_pBlendStateStored11;
@@ -143,8 +145,12 @@ namespace simul
 				ID3D11SamplerState* m_pVertexSamplerStateStored11[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
 				ID3D11SamplerState* m_pComputeSamplerStateStored11[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
 				ID3D11SamplerState* m_pGeometrySamplerStateStored11[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
-				ID3D11ShaderResourceView* m_pShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+				ID3D11ShaderResourceView* m_pPSShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
 				ID3D11ShaderResourceView* m_pCSShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+				ID3D11ShaderResourceView* m_pVSShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+				ID3D11ShaderResourceView* m_pHSShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+				ID3D11ShaderResourceView* m_pGSShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+				ID3D11ShaderResourceView* m_pDSShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
 				ID3D11UnorderedAccessView* m_pUnorderedAccessViews[D3D11_PS_CS_UAV_REGISTER_COUNT];
 				ID3D11Buffer *m_pVertexBuffersStored11[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
 				UINT m_VertexStrides[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
