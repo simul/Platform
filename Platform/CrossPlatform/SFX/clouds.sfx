@@ -526,7 +526,7 @@ void SimpleRaytrace(uint3 pos,bool include_rain,bool depth,bool background2d,int
 		outputTexture3[pos]		=f.nearFarDepth;
 }
 
-void Raytrace(uint3 pos,bool include_rain,bool depth)
+void Raytrace(uint3 pos,bool include_rain,bool depth,int num_interp)
 {
 	vec2 texCoords			=(vec2(pos.xy)+vec2(0.5,0.5))/vec2(targetTextureSize);
 	vec4 clip_pos			=vec4(-1.0,1.0,1.0,1.0);
@@ -578,6 +578,7 @@ void Raytrace(uint3 pos,bool include_rain,bool depth)
 									,include_rain
 									,false
 									,cloudIrRadiance1,cloudIrRadiance2
+									,num_interp
 									);
 	/*RaytracePixelOutput f;
 	f.colour=depthToLinFadeDistParams;
@@ -660,7 +661,7 @@ void CS_Raytrace(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rai
 		return;
 	if(updateTexture[pos].b==0.0)
 		return;
-	Raytrace(pos,include_rain,depth);
+	Raytrace(pos,include_rain,depth,NUM_CLOUD_INTERP);
 }
 
 void CS_RaytraceStatic(uint3 g: SV_GroupID, uint3 t: SV_GroupThreadID,bool include_rain,bool depth,bool godrays,bool consistent_steps)
@@ -750,7 +751,7 @@ shader void CS_Edge(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	// current value is b, old value is r
 	if (u.r<1.0&&u.b>0.0)
 	{
-		Raytrace(pos, include_rain, true);
+		Raytrace(pos, include_rain, true,NUM_CLOUD_INTERP);
 	//	outputTexture1[pos]		=vec4(0,1,0,1);
 	//	outputTexture3[pos]		=vec4(0,1,0,1);
 	}
@@ -767,7 +768,7 @@ shader void CS_Edge_Rain(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	// current value is b, old value is r
 	if(u.r<1.0&&u.b>0.0)
 	{
-		Raytrace(pos,true,true);
+		Raytrace(pos,true,true,NUM_CLOUD_INTERP);
 	//outputTexture1[pos]		=u;
 	//	outputTexture3[pos]		=vec4(0,1,0,1);
 	}
@@ -823,13 +824,6 @@ shader void CS_RaytraceStaticEdgeNoRain(uint3 g : SV_GroupID, uint3 t : SV_Group
 {
 	CS_RaytraceStaticEdge(g,t,false,true,true,false);
 }
-
-
-
-
-
-
-
 
 
 

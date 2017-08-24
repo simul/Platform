@@ -383,8 +383,6 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 				,int idx
 				,vec4 noiseval)
 {
-	density.z				*=cosine;
-	density.z				*=cosine;
 	density.z				*=saturate(distanceKm/CLOUD_FADEIN_DIST);
 	vec4 clr[NUM_CLOUD_INTERP];
 	vec4 inscatter=vec4(0,0,0,0);
@@ -414,6 +412,7 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 										,nearFarTexc
 										,brightness_factor);
 
+	clr[NUM_CLOUD_INTERP - 1].a			*=cosine*cosine;
 	meanFadeDistance		=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-.4*density.z));
 
 	godraysTexCoords.z			=distanceKm*godraysScale;
