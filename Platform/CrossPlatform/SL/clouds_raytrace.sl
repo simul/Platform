@@ -196,7 +196,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		vec3 N						=step(D,vec3(e,e,e));
 
 		int3 c_step					=c_offset*int3(N);
-		float stepKm						=e*viewScale;
+		float stepKm				=e*viewScale;
 		distanceKm					+=stepKm;
 
 		// What offset was the original position from the centre of the cube?
