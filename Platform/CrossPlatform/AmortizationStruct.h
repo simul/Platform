@@ -1,6 +1,6 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/Export.h"
-#include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 namespace simul
 {
 namespace crossplatform

@@ -179,8 +179,6 @@ struct LineQueryResult
 };
 										  
 #ifdef __cplusplus
-//! A struct containing a pointer or id for the cloud shadow texture, along with 
-//! information on how to project it.
 namespace simul
 {
 	namespace crossplatform
@@ -190,14 +188,22 @@ namespace simul
 	}
 }
 
+//! A struct containing a pointer for the cloud shadow texture, along with 
+//! information on how to project it.
 struct CloudShadowStruct 
 {
-	simul::crossplatform::Texture *cloudTexture;			///< The cloud texture.
-	simul::crossplatform::Texture *lightTexture;			///< The cloud texture.
-	simul::crossplatform::Texture *cloudShadowTexture;		///< Cloud shadow texture.
-	simul::crossplatform::Texture *rainMapTexture;			///< Texture represents where in the horizontal plane of the cloud rain can fall.
-	mat4 shadowMatrix;										/// Transform a position from shadow space to world space
+	/// The cloud texture.
+	simul::crossplatform::Texture *cloudTexture;
+	/// The cloud light texture.
+	simul::crossplatform::Texture *lightTexture;
+	/// The 2D cloud shadow texture.
+	simul::crossplatform::Texture *cloudShadowTexture;	
+	/// The rain map texture.
+	simul::crossplatform::Texture *rainMapTexture;			/// Texture represents where in the horizontal plane of the cloud rain can fall.
+	/// Transform a position from shadow space to world space
+	mat4 shadowMatrix;
 	mat4 simpleOffsetMatrix;
+	/// Matrix to transform a position from world space to cloud or shadow space
 	mat4 worldspaceToCloudspaceMatrix;
 	float minAltKm;
 	float maxAltKm;
