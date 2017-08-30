@@ -196,7 +196,7 @@ struct CloudShadowStruct
 	simul::crossplatform::Texture *lightTexture;			///< The cloud texture.
 	simul::crossplatform::Texture *cloudShadowTexture;		///< Cloud shadow texture.
 	simul::crossplatform::Texture *rainMapTexture;			///< Texture represents where in the horizontal plane of the cloud rain can fall.
-	mat4 shadowMatrix;					/// Transform a position from shadow space to world space
+	mat4 shadowMatrix;										/// Transform a position from shadow space to world space
 	mat4 simpleOffsetMatrix;
 	mat4 worldspaceToCloudspaceMatrix;
 	float minAltKm;
