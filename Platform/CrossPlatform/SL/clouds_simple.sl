@@ -37,8 +37,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		res.colour[ii]			=vec4(0,0,0,1.0);
 		insc[ii]				=vec4(0,0,0,0);
 	}
-	vec4 colours[]={vec4(1.0,1.0,0.0,1.0),vec4(1.0,0.1,0.1,1.5),vec4(0.0,1.0,0.0,1.5),vec4(1.0,0.7,0.0,1.5),vec4(0.0,1.0,0.5,1.5)
-		,vec4(0.0,0.0,1.0,1.5),vec4(0.8,0.2,1.0,1.5),vec4(0.8,0.6,0.2,1.5)};
+	//vec4 colours[]={vec4(1.0,1.0,0.0,1.0),vec4(1.0,0.1,0.1,1.5),vec4(0.0,1.0,0.0,1.5),vec4(1.0,0.7,0.0,1.5),vec4(0.0,1.0,0.5,1.5)
+	//	,vec4(0.0,0.0,1.0,1.5),vec4(0.8,0.2,1.0,1.5),vec4(0.8,0.6,0.2,1.5)};
 	res.nearFarDepth		=dlookup;
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
@@ -262,7 +262,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	}
 #endif
 	for(int j=0;j<num_interp;j++)
-		res.colour[j].rgb+=insc[j];//*gr;
+		res.colour[j].rgb+=insc[j].rgb;//*gr;
 	return res;
 }
 #endif
