@@ -135,6 +135,11 @@ void Texture::InvalidateDeviceObjects()
 		last_context->Unmap(texture,0);
 		memset(&mapped,0,sizeof(mapped));
 	}
+	if(renderPlatform&&renderPlatform->GetMemoryInterface())
+	{
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(stagingBuffer);
+	}
 	SAFE_RELEASE(texture);
 	SAFE_RELEASE(depthStencilView);
 	SAFE_RELEASE(stagingBuffer);
@@ -152,6 +157,19 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	SAFE_RELEASE(arrayShaderResourceView);
 	mainShaderResourceView	=simul::dx11::LoadTexture(renderPlatform->AsD3D11Device(),pFilePathUtf8,pathsUtf8);
 	SetDebugObjectName(texture,pFilePathUtf8);
+}
+int Texture::GetMemorySize() const
+{
+	int w=width,l=length,d=depth;
+	int mem=0;
+	for(int i=0;i<mips;i++)
+	{
+		mem+=w*l*d*arraySize;
+		w/=2;
+		l/=2;
+		d/=2;
+	}
+	return mem*ByteSizeOfFormatElement(dxgi_format);
 }
 
 void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files)
@@ -182,6 +200,8 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	ID3D11Texture2D *tex;
 	r->AsD3D11Device()->CreateTexture2D(&desc,NULL,&tex);
 	texture=tex;
+	if(renderPlatform->GetMemoryInterface())
+		renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
 	if(tex)
 	for(unsigned i=0;i<textures.size();i++)
 	{
@@ -284,6 +304,8 @@ void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *tar
 		stagingBufferDesc.MiscFlags		=0;
 
 		deviceContext.renderPlatform->AsD3D11Device()->CreateTexture3D(&stagingBufferDesc,NULL,(ID3D11Texture3D**)(&stagingBuffer));
+		if(renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffer,GetMemorySize(),name.c_str());
 	}
 	deviceContext.asD3D11DeviceContext()->CopyResource(stagingBuffer,texture);
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -439,6 +461,8 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 	renderPlatform=r;
 	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
+	//if(renderPlatform->GetMemoryInterface())
+	//	renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
 	SAFE_RELEASE(texture);
 	texture=t;
 	mainShaderResourceView=srv;
@@ -519,6 +543,8 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 	renderPlatform=r;
 	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
+	//if(renderPlatform->GetMemoryInterface())
+//		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
 	SAFE_RELEASE(texture);
 	texture=(ID3D11Resource*)ta;
 	mainShaderResourceView=(ID3D11ShaderResourceView*)srv;
@@ -612,12 +638,14 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		renderPlatform=r;
 		SIMUL_ASSERT(w > 0 && l > 0 && w <= 65536 && l <= 65536);
 		InvalidateDeviceObjects();
+		FreeSRVTables();
 		memset(&textureDesc,0,sizeof(textureDesc));
 		textureDesc.Width			=width=w;
 		textureDesc.Height			=length=l;
 		textureDesc.Depth			=depth=d;
 		textureDesc.Format			=dxgi_format=f;
-		textureDesc.MipLevels		=m;
+		textureDesc.MipLevels		=mips=m;
+		arraySize=1;
 		D3D11_USAGE usage			=D3D11_USAGE_DYNAMIC;
 		//if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
 		//	usage=D3D11_USAGE_DEFAULT;
@@ -627,6 +655,8 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		textureDesc.MiscFlags		=0;
 		
 		V_CHECK(r->AsD3D11Device()->CreateTexture3D(&textureDesc,0,(ID3D11Texture3D**)(&texture)));
+		if(renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
@@ -634,7 +664,6 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
 		srv_desc.Texture3D.MipLevels		= m;
 		srv_desc.Texture3D.MostDetailedMip	= 0;
-		FreeSRVTables();
 		InitSRVTables(1,m);
 		V_CHECK(r->AsD3D11Device()->CreateShaderResourceView(texture,&srv_desc,&mainShaderResourceView));
 		if(mainMipShaderResourceViews)
@@ -695,8 +724,6 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 			V_CHECK(r->AsD3D11Device()->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[i])));
 		}*/
 	}
-	mips=m;
-	arraySize=1;
 	return changed;
 }
 
@@ -753,11 +780,9 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	if(!ok)
 	{
 		InvalidateDeviceObjects();
-		if (w <= 0 || l <= 0)
-		{
-			SIMUL_CERR_ONCE << "Cannot initialize a texture with size 0" << std::endl;
-			return false;
-		}
+		FreeUAVTables();
+		FreeRTVTables();
+
 		unsigned int numQualityLevels=0;
 		while(numQualityLevels==0&&num_samples>1)
 		{
@@ -776,8 +801,8 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		textureDesc.Height					=length=l;
 		depth								=1;
 		textureDesc.Format					=texture2dFormat;
-		textureDesc.MipLevels				=m;
-		textureDesc.ArraySize				=1;
+		textureDesc.MipLevels				=mips=m;
+		textureDesc.ArraySize				=arraySize=1;
 		D3D11_USAGE usage					=D3D11_USAGE_DYNAMIC;
 	//	if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
 	//		usage							=D3D11_USAGE_DEFAULT;
@@ -789,6 +814,8 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		textureDesc.SampleDesc.Quality		=aa_quality;
 		
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
+		if(renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
 
 		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
@@ -804,7 +831,6 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	}
 	if(computable&&(!layerMipUnorderedAccessViews||!ok))
 	{
-		FreeUAVTables();
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
 		uav_desc.Format						=texture2dFormat;
@@ -831,7 +857,6 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 	}
 	if(rendertarget&&(!renderTargetViews||!ok))
 	{
-		FreeRTVTables();
 		InitRTVTables(1,m);
 		// Setup the description of the render target view.
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
@@ -899,6 +924,12 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	dxgi_format=(DXGI_FORMAT)dx11::RenderPlatform::ToDxgiFormat(pixelFormat);
 	D3D11_TEXTURE2D_DESC desc;
 
+	FreeSRVTables();
+	FreeRTVTables();
+	FreeUAVTables();
+	mips=m;
+	arraySize=num;
+
 	width					=w;
 	length					=l;
 	depth					=1;
@@ -916,17 +947,15 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	desc.SampleDesc.Quality	=0;
 	ID3D11Texture2D *pArrayTexture;
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,NULL,&pArrayTexture));
+	if(renderPlatform->GetMemoryInterface())
+		renderPlatform->GetMemoryInterface()->TrackVideoMemory(pArrayTexture,GetMemorySize(),name.c_str());
+	if(renderPlatform->GetMemoryInterface())
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
 	SAFE_RELEASE(texture);
 	texture=pArrayTexture;
-	
-	FreeSRVTables();
-	FreeRTVTables();
-	FreeUAVTables();
 	if(!texture)
 		return false;
 	InitSRVTables(total_num,m);
-
-	
 	CreateSRVTables(num,m,cubemap);
 	
 	if(computable)
@@ -1136,6 +1165,8 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 		textureDesc.MiscFlags		=0;
 		
 		V_CHECK(pd3dDevice->CreateTexture1D(&textureDesc,0,(ID3D11Texture1D**)(&texture)));
+		if(renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
@@ -1226,6 +1257,8 @@ vec4 Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoord
 		ID3D11Texture2D *tex;
 		ID3D11Device *dev=deviceContext.renderPlatform->AsD3D11Device();
 		deviceContext.renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,NULL,&tex);
+		if(renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
 		stagingBuffer=tex;
 	}
 	if(wrap)
