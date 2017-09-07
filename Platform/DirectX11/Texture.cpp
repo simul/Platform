@@ -174,6 +174,7 @@ int Texture::GetMemorySize() const
 
 void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files)
 {
+	renderPlatform=r;
 	const std::vector<std::string> &pathsUtf8=r->GetTexturePathsUtf8();
 	InvalidateDeviceObjects();
 	std::vector<ID3D11Texture2D *> textures;
