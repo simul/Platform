@@ -594,7 +594,8 @@ static const DWORD default_effect_flags=0;
 	SIMUL_ASSERT(effect&&*effect&&(*effect)->IsValid()==TRUE);
 
 	// Name stuff:
-#ifdef _DEBUG
+// this is disabled because of lazy loading: the D3D objects are not created yet, so assertions would fail.
+#if 0//def _DEBUG
 	if(effect)
 	{
 		ID3DX11Effect *e=*effect;
@@ -629,6 +630,7 @@ static const DWORD default_effect_flags=0;
 					}
 				}
 			}
+#endif
 		}
 	}
 #endif
