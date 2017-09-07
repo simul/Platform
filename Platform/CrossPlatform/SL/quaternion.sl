@@ -38,10 +38,11 @@ vec4 quat_vec(vec4 q, vec3 v)
 
 vec3 rotate_by_quaternion(vec4 quat, vec3 position)
 { 
+//	quat.xyz*=-1.0;
   vec4 qr_conj		= quat_conj(quat);
   vec4 q_pos		= vec4(position, 0);
   
-  vec4 q_tmp		= quat_vec(quat,-position);
+  vec4 q_tmp		= quat_vec(quat,position);
   vec4 qr			= quat_mult(q_tmp,qr_conj);
   
   return qr.xyz;

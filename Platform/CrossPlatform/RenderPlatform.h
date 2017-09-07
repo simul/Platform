@@ -11,7 +11,7 @@
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Topology.h"
-#include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
 #include "Simul/Platform/CrossPlatform/Effect.h"
@@ -242,9 +242,9 @@ namespace simul
 			virtual void DrawCircle			(DeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill=false);
 			/// Draw a cubemap as a sphere at the specified screen position and size.
 			virtual void DrawCubemap		(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod=0.0f);
-			void DrawLatLongSphere			(DeviceContext &deviceContext,int lat,int longi,vec3 origin,float size,vec4 colour);
-			void DrawQuadOnSphere			(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float size,vec4 colour);
-			void DrawCircleOnSphere			(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat,  float rad,vec4 colour);
+			void DrawLatLongSphere			(DeviceContext &deviceContext,int lat,int longi,vec3 origin,float sph_radius,vec4 colour);
+			void DrawQuadOnSphere			(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float size,float sph_radius,vec4 colour);
+			void DrawCircleOnSphere			(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat,  float crc_rad,float sph_rad,vec4 colour);
 			virtual void PrintAt3dPos		(DeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr,int offsetx=0,int offsety=0,bool centred=false);
 			virtual void SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
 			virtual void					ApplyDefaultMaterial			()	=0;

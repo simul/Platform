@@ -27,7 +27,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 											,vec3 cloudIrRadiance2
 											,int numSteps
 											,const int num_interp
-											,bool do_godrays=false)
+											,bool do_godrays=false
+											,bool consistent_steps=false)
 {
 	RaytracePixelOutput res;
 	vec4 insc[NUM_CLOUD_INTERP];
@@ -36,7 +37,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		res.colour[ii]			=vec4(0,0,0,1.0);
 		insc[ii]				=vec4(0,0,0,0);
 	}
-	//vec4 colours[]={vec4(1.0,1.0,0.0,1.0),vec4(1.0,0.1,0.1,1.5),vec4(0.0,1.0,0.0,1.5),vec4(1.0,0.0,0.0,1.5),vec4(0.5,1.0,0.5,1.5)};
+	//vec4 colours[]={vec4(1.0,1.0,0.0,1.0),vec4(1.0,0.1,0.1,1.5),vec4(0.0,1.0,0.0,1.5),vec4(1.0,0.7,0.0,1.5),vec4(0.0,1.0,0.5,1.5)
+	//	,vec4(0.0,0.0,1.0,1.5),vec4(0.8,0.2,1.0,1.5),vec4(0.8,0.6,0.2,1.5)};
 	res.nearFarDepth		=dlookup;
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
@@ -110,72 +112,63 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	float maxDistKm			=maxCloudDistanceKm;//*sqrt(1.0-sine*sine)+1.0*sine;
 	float K					=log(maxDistKm);
 	float step_ratio		=1.0+K/float(numSteps);
-	float stepKm			=K*1.2/float(numSteps);// minimum is K*1.2/float(numSteps), maximum is that times step_ratio.
-	float start_offset_km	=0.0;
+	
 	{
-		float a			=1.0/(saturate(view.z)+0.00001);
-		//start_offset_km	+=max(0.0,min_z-world_pos.z)*a;
+		float a		=1.0/(saturate(view.z)+0.00001);
+		offset_vec	+=max(0.0,min_z-world_pos.z)*vec3(view.x*a,view.y*a,1.0);
 	}
 	
 	{
-		float a			=1.0/(saturate(-view.z)+0.00001);
-		//start_offset_km	+=max(0.0,world_pos.z-max_z)*a;
+		float a		=1.0/(saturate(-view.z)+0.00001);
+		offset_vec	+=max(0.0,world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
 	}
-	// We want to skip a number of steps. but we also want consisten step sizes, so we must calculate
-	// the last step that yields a distance smaller than this offset.
-
-	// distance = dist0+ SUM(step), where step2=step1^(step_ratio) and step0 is known.
-	// this gives distance = step0 (ratio^(i+1)-1.0)/(ratio-1.0), and ratio is K/N
-
-	int I	=max(log(start_offset_km/stepKm*(step_ratio-1.0)+1.0)/log(step_ratio)-1,0);
-	// calculate the offset as a whole step position.
-	//start_offset_km					=stepKm*(pow(step_ratio,I+1)-1.0)/(step_ratio-1.0);
-	// But the step is different also:
-	//stepKm							*=pow(step_ratio,I);
-
-	int stepPos						=int(forwardOffsetKm/stepKm);
-	float firstOffsetKm				=forwardOffsetKm-stepPos*stepKm;
-	stepPos							=1024-stepPos;
-
-	start_offset_km					+=firstOffsetKm;
-	//offset_vec						+=start_offset_km*view;
-	//world_pos						+=offset_vec;
-
+	vec3 halfway					=0.5*(lightDirection-view);
+	world_pos						+=offset_vec;
 	
-	float distanceKm				=start_offset_km+stepKm;
+	float distanceKm				=length(offset_vec);
+
 	float distScale					=0.6/maxFadeDistanceKm;
-	bool found						=false;
-	float fade0						=saturate((start_offset_km-stepKm)/stepKm);
-	vec3 amb_dir					=view;
-	int steps						=initialSteps-((1&stepPos)!=0);
+	bool found=false;
+	float stepKm = K*(1.2 + distanceKm) / float(numSteps);
+	/// (1.0 + 100.0*abs(view.z));
+
+	vec3 amb_dir=view;
+	int steps=initialSteps-((1&stepPos)!=0);
 	int in_step=0,c=0;
-	float rangeKm					=initialSteps*stepKm;
-	float oddRangeKm				=(0.5*stepKm*initialSteps);
-	for(int i=0;i<768;i++)
+	float rangeKm				=initialSteps*stepKm;
+
+	float oddRangeKm				=(0.5*stepKm*initialSteps);	for(int i=0;i<768;i++)
 	{
 		//world_pos					+=0.001*view;
-		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxDistKm)//||solidDist_nearFar.y<lastFadeDistance)
+		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm)//||solidDist_nearFar.y<lastFadeDistance)
 			break;
+		//stepKm						*=(1.0+K/float(numSteps));
 		distanceKm					+=stepKm;
-		int odd						=(steps-in_step)%2;
-		float fade_up				=saturate((rangeKm-distanceKm)/oddRangeKm);
-		float fade					=odd?fade_up:1.0;
-		// doubles every P steps.
-		if(in_step++==steps)
+		float fade					=1.0;
+		if(consistent_steps)
 		{
-			stepKm					*=2.0;
-			c++;
-			uint u					=(1<<c);
-			steps					=initialSteps-((u&stepPos)!=0);
-			in_step					=0;
-			// =range doubles.
-			rangeKm					=distanceKm+initialSteps*stepKm;
-			oddRangeKm				=(0.5*stepKm*initialSteps);
+			int odd						=(steps-in_step)%2;
+			float fade_up				=saturate((rangeKm-distanceKm)/oddRangeKm);
+			fade					=odd?fade_up:1.0;
+			// doubles every P steps.
+			if(in_step++==steps)
+			{
+				stepKm					*=2.0;
+				c++;
+				uint u					=(1<<c);
+				steps					=initialSteps-((u&stepPos)!=0);
+				in_step					=0;
+				// =range doubles.
+				rangeKm					=distanceKm+initialSteps*stepKm;
+				oddRangeKm				=(0.5*stepKm*initialSteps);
+			}
 		}
 		// We fade out the intermediate steps as we approach the boundary of a detail change.
 		// Now sample at the end point:
-		world_pos					=viewPosKm+distanceKm*view;
-		//stepKm						*=step_ratio;
+		world_pos					+=stepKm*view;
+		if(!consistent_steps)
+			stepKm					*=step_ratio;
+
 		vec3 cloudWorldOffsetKm		=world_pos-cornerPosKm;
 		vec3 cloudTexCoords			=(cloudWorldOffsetKm)*inverseScalesKm;
 		float fadeDistance			=saturate(distanceKm/maxFadeDistanceKm);
@@ -186,7 +179,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 		if(fade>0)
 		{
 			vec4 density = sample_3d_lod(cloudDensity, cloudSamplerState, cloudTexCoords, fadeDistance*4.0);
-	
 			//if(!found)
 			{
 			//	found = found || (density.z > 0);
@@ -200,7 +192,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 					noiseval			=density.x*texture_3d_wrap_lod(noiseTexture3D,noise_texc,12.0*fadeDistance);
 				vec4 light				=vec4(1,1,1,1);
 				calcDensity(cloudDensity,cloudLight,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance,density,light);
-			
 				if(do_rain_effect)
 				{
 					// The rain fall angle is used:
@@ -225,17 +216,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 					float brightness_factor;
 					fade_texc.x				=sqrt(fadeDistance);
 					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);
-/*
-					vec4 clr=colours[0];
-					//if(odd)
-					//	clr*=0.5;
-					clr.a=density.z*fade;
-					for(int i=0;i<num_interp;i++)
-					{
-						res.colour[i].rgb	+=(clr.rgb)*clr.a*(res.colour[i].a);
-						res.colour[i].a		*=(1.0-clr.a);
-					}
-					brightness_factor=1.0;*/
+
 					ColourStep(res.colour,insc, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture
 								,do_godrays, godraysVolumeTexture ,lightspaceScale, godraysTexCoords
@@ -281,7 +262,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	}
 #endif
 	for(int j=0;j<num_interp;j++)
-		res.colour[j].rgb+=insc[j];//*gr;
+		res.colour[j].rgb+=insc[j].rgb;//*gr;
 	return res;
 }
 #endif

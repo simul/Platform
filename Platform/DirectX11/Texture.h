@@ -109,6 +109,7 @@ namespace simul
 			}
 			int GetSampleCount() const;
 		protected:
+			int GetMemorySize() const;
 			ID3D11DeviceContext *last_context;
 			ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   mainShaderResourceView;			// SRV for the whole texture including all layers and mips.	

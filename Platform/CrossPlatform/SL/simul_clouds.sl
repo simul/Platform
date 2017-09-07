@@ -335,6 +335,20 @@ float GetRainAtOffsetKm(Texture2D rainMapTexture,vec3 cloudWorldOffsetKm,vec3 in
 
 	vec3 colours[]={{1,0,0},{0,1,0},{0,0,1},{1,1,0},{0,1,1},{1,0,1},{1,1,1}};
 
+void DebugStep(inout vec4 colour[NUM_CLOUD_INTERP]
+	,vec4 rgba,inout float brightness_factor)
+{
+	vec4 clr[NUM_CLOUD_INTERP];
+	clr[NUM_CLOUD_INTERP-1]=rgba;
+	for(int i=0;i<NUM_CLOUD_INTERP;i++)
+	{
+		clr[i]			= clr[NUM_CLOUD_INTERP-1];
+		colour[i].rgb	+=(clr[i].rgb)*clr[i].a*(colour[i].a);
+		colour[i].a		*=(1.0-clr[i].a);
+	}
+	brightness_factor=1.0;
+}
+
 void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 				,inout vec4 insc[NUM_CLOUD_INTERP]
 				,inout float meanFadeDistance
@@ -369,9 +383,7 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 				,int idx
 				,vec4 noiseval)
 {
-	density.z				*=cosine;
-	density.z				*=cosine;
-	density.z				*=saturate(distanceKm/0.24);
+	density.z				*=saturate(distanceKm/CLOUD_FADEIN_DIST);
 	vec4 clr[NUM_CLOUD_INTERP];
 	vec4 inscatter=vec4(0,0,0,0);
 	brightness_factor		=1.0;
@@ -400,6 +412,8 @@ void ColourStep(inout vec4 colour[NUM_CLOUD_INTERP]
 										,nearFarTexc
 										,brightness_factor);
 
+	clr[NUM_CLOUD_INTERP - 1].a			*=cosine*cosine;
+	//clr[NUM_CLOUD_INTERP - 1].rgb*=0.5*(1.0+colours[idx%7]);
 	meanFadeDistance		=lerp(min(fadeDistance,meanFadeDistance), meanFadeDistance,(1.0-.4*density.z));
 
 	godraysTexCoords.z			=distanceKm*godraysScale;

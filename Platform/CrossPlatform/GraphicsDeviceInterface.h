@@ -2,7 +2,13 @@
 #define GRAPHICSDEVICEINTERFACE
 #include <string>
 
+
+#ifdef DOXYGEN
+typedef void *HWND;
+#else
 typedef HWND__ *HWND;
+#endif
+
 namespace simul
 {
 	namespace crossplatform

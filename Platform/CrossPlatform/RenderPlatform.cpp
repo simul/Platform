@@ -484,25 +484,16 @@ void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext,
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
 }
 
-void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int longt,vec3 origin,float size,vec4 colour)
+void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int longt,vec3 origin,float radius,vec4 colour)
 {
 	Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 &view=deviceContext.viewStruct.view;
-	math::Matrix4x4 &proj = deviceContext.viewStruct.proj;// crossplatform::Camera::MakeDepthReversedProjectionMatrix(1.f, (float)viewport.h / (float)viewport.w, 0.1f, 100000.f);
-
+	math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 	math::Matrix4x4 wvp,world;
 	world.ResetToUnitMatrix();
 	float tan_x=1.0f/proj(0, 0);
 	float tan_y=1.0f/proj(1, 1);
 	float size_req=tan_x*.5f;
-	static float sizem=3.f;
-	float d=2.0f*sizem/size_req;
-	simul::math::Vector3 offs0(0,0,-d);
-	//view._41=0;
-	//view._42=0;
-//	view._43=0;
-	simul::math::Vector3 offs;
-	Multiply3(offs,view,offs0);
 	world._41=origin.x;
 	world._42=origin.y;
 	world._43=origin.z;
@@ -512,10 +503,10 @@ void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	math::Vector3 cam_pos;
 	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
 	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_lat_long_sphere");
-	static float rr=6.f;
+	
 	debugConstants.latitudes		=lat;
 	debugConstants.longitudes		=longt;
-	debugConstants.radius			=rr;
+	debugConstants.radius			=radius;
 	debugConstants.multiplier		=colour;
 	debugConstants.debugViewDir		=view_dir;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
@@ -531,7 +522,7 @@ void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	debugEffect->Unapply(deviceContext);
 }
 
-void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float size,vec4 colour)
+void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float qsize,float radius,vec4 colour)
 {
 	Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
@@ -542,14 +533,6 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 	float tan_x=1.0f/proj(0, 0);
 	float tan_y=1.0f/proj(1, 1);
 	float size_req=tan_x*.5f;
-	static float sizem=3.f;
-	float d=2.0f*sizem/size_req;
-	simul::math::Vector3 offs0(0,0,-d);
-	view._41=0;
-	view._42=0;
-	view._43=0;
-	simul::math::Vector3 offs;
-	Multiply3(offs,view,offs0);
 	world._41=origin.x;
 	world._42=origin.y;
 	world._43=origin.z;
@@ -559,10 +542,10 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 	math::Vector3 cam_pos;
 	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
 	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_quad_on_sphere");
-	static float rr=6.f;
+
 	debugConstants.quaternion		=orient_quat;
-	debugConstants.radius			=rr;
-	debugConstants.sideview			=size;
+	debugConstants.radius			=radius;
+	debugConstants.sideview			=qsize;
 	debugConstants.debugColour		=colour;
 	debugConstants.debugViewDir		=view_dir;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
@@ -574,7 +557,7 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 
 	debugEffect->Unapply(deviceContext);
 }
-void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origin, vec4 q, float rad, vec4 colour)
+void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origin, vec4 q, float rad,float sph_rad, vec4 colour)
 {
 	Viewport viewport = GetViewport(deviceContext, 0);
 	math::Matrix4x4 view = deviceContext.viewStruct.view;
@@ -584,14 +567,9 @@ void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origi
 	float tan_x = 1.0f / proj(0, 0);
 	float tan_y = 1.0f / proj(1, 1);
 	float size_req = tan_x*.5f;
-	static float sizem = 3.f;
-	float d = 2.0f*sizem / size_req;
-	simul::math::Vector3 offs0(0, 0, -d);
 	view._41 = 0;
 	view._42 = 0;
 	view._43 = 0;
-	simul::math::Vector3 offs;
-	Multiply3(offs, view, offs0);
 	world._41 = origin.x;
 	world._42 = origin.y;
 	world._43 = origin.z;
@@ -605,8 +583,7 @@ void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origi
 
 
 	debugConstants.quaternion = q;
-	static float rr = 6.f;
-	debugConstants.radius = rr;
+	debugConstants.radius = sph_rad;
 	debugConstants.sideview = rad;
 	debugConstants.debugColour = colour;
 	debugConstants.debugViewDir = view_dir;
