@@ -3,13 +3,16 @@
 #include "SimulDirectXHeader.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Platform/DirectX11on12/RenderPlatform.h"
+
 using namespace simul;
 using namespace dx11on12;
 
-Layout::Layout()
-	:d3d11InputLayout(0)
-	,previousInputLayout(0)
-	,previousTopology(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED)
+Layout::Layout():
+	d3d11InputLayout(0),
+	previousInputLayout(0),
+	previousTopology(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED),
+	mAppliedCount(0)
 {
 }
 
@@ -25,22 +28,19 @@ void Layout::InvalidateDeviceObjects()
 
 void Layout::Apply(crossplatform::DeviceContext &deviceContext)
 {
-	if(apply_count!=0)
-		SIMUL_BREAK("Layout::Apply without a corresponding Unapply!");
-	apply_count++;
-	deviceContext.asD3D11DeviceContext()->IAGetInputLayout( &previousInputLayout );
-	deviceContext.asD3D11DeviceContext()->IAGetPrimitiveTopology(&previousTopology);
-	deviceContext.asD3D11DeviceContext()->IASetInputLayout(AsD3D11InputLayout());
+	mAppliedCount++;
+	dx11on12::RenderPlatform* renderPlat = (dx11on12::RenderPlatform*)deviceContext.renderPlatform;
+	renderPlat->SetCurrentInputLayout(&Dx12LayoutDesc);
 }
 
 void Layout::Unapply(crossplatform::DeviceContext &deviceContext)
 {
-	if(apply_count<=0)
-		SIMUL_BREAK("Layout::Unapply without a corresponding Apply!")
-	else if(apply_count>1)
-		SIMUL_BREAK("Layout::Apply has been called too many times!")
-	apply_count--;
-	deviceContext.asD3D11DeviceContext()->IASetPrimitiveTopology(previousTopology);
-	deviceContext.asD3D11DeviceContext()->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
+	if (mAppliedCount == 0)
+	{
+		SIMUL_BREAK("Calling Unapply without a previous Apply");
+		return;
+	}
+	mAppliedCount--;
+	dx11on12::RenderPlatform* renderPlat = (dx11on12::RenderPlatform*)deviceContext.renderPlatform;
+	renderPlat->SetCurrentInputLayout(nullptr);
 }

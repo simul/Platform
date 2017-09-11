@@ -29,6 +29,9 @@ struct ID3D11Resource;
 struct ID3D11SamplerState;
 typedef unsigned GLuint;
 
+struct D3D12_CPU_DESCRIPTOR_HANDLE;
+struct ID3D12Resource;
+
 namespace simul
 {
 	namespace crossplatform
@@ -77,6 +80,10 @@ namespace simul
 			virtual ~SamplerState();
 			virtual void InvalidateDeviceObjects()=0;
 			virtual ID3D11SamplerState *asD3D11SamplerState()
+			{
+				return NULL;
+			}
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12SamplerState()
 			{
 				return NULL;
 			}
@@ -133,14 +140,19 @@ namespace simul
 			virtual sce::Gnm::Texture *AsGnmTexture(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
 			virtual ID3D11Resource *AsD3D11Resource(){return 0;}
+			virtual ID3D12Resource *AsD3D12Resource() { return 0; }
 			//! Returns the SRV specified by layer,mip. The type t ensures that the assigned resource is compatible (UNKNWON matches anything).
 			//! Layer -1 means all layers at the given mip, while mip -1 defaults to the whole texture/layer.
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(crossplatform::ShaderResourceType =crossplatform::ShaderResourceType::UNKNOWN,int=-1,int=-1){return 0;}
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView(bool = true,crossplatform::ShaderResourceType = crossplatform::ShaderResourceType::UNKNOWN, int = -1, int = -1) { return 0; }
 			//! Returns the UAV specified by layer,mip. Layer -1 means all layers at the given mip, while mip -1 defaults to mip zero.
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int=-1,int=-1){return 0;}
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12UnorderedAccessView(int = -1, int = -1) { return 0; }
 			virtual ID3D11DepthStencilView *AsD3D11DepthStencilView(){return 0;}
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12DepthStencilView() { return 0; }
 			//! Returns the RTV specified by layer,mip. Layer -1 means all layers at the given mip, while mip -1 defaults to mip zero.
 			virtual ID3D11RenderTargetView *AsD3D11RenderTargetView(int=-1,int=-1){return 0;}
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12RenderTargetView(int = -1, int = -1) { return 0; }
 			virtual bool HasRenderTargets() const {return 0;}
 			virtual bool IsComputable() const=0;
 			/// Asynchronously move this texture to fast RAM.
@@ -160,7 +172,8 @@ namespace simul
 			virtual void InitFromExternalTexture3D(crossplatform::RenderPlatform *,void *,void *,bool =false) {}
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l
-				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false)=0;
+				,PixelFormat f,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false,
+				vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0)=0;
 			//! Initialize as an array texture if necessary. Returns true if the texture was initialized, or false if it was already in the required format.
 			virtual bool ensureTextureArraySizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int num,int mips,PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false)=0;
 			//! Initialize as a volume texture.

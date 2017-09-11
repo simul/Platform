@@ -25,3 +25,8 @@
 #ifndef _XBOX_ONE
 	struct ID3DUserDefinedAnnotation;
 #endif
+
+
+#define DO_DX12
+#include "d3d12.h"
+#include "d3dx12.h"

@@ -3,6 +3,8 @@
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/Layout.h"
 struct ID3D11Buffer;
+struct D3D12_VERTEX_BUFFER_VIEW;
+struct D3D12_INDEX_BUFFER_VIEW;
 typedef unsigned GLuint;
 namespace simul
 {
@@ -34,6 +36,8 @@ namespace simul
 			virtual void Unmap(crossplatform::DeviceContext &deviceContext) =0;
 			int stride;
 			int count;
+			virtual D3D12_VERTEX_BUFFER_VIEW* GetVertexBufferView() { return NULL; }
+			virtual D3D12_INDEX_BUFFER_VIEW* GetIndexBufferView() { return NULL; }
 		};
 	}
 }

@@ -5,7 +5,9 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX11on12/RenderPlatform.h"
-#include "D3dx11effect.h"
+#include "SimulDirectXHeader.h"
+
+#include "d3dx12.h"
 
 #include <string>
 
@@ -33,234 +35,146 @@ template< class T > UINT64 BytePtrToUint64( _In_ T* ptr )
 
 
 PlatformConstantBuffer::PlatformConstantBuffer() :
-	m_pD3D11Buffer(NULL)
-#if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
-	,framenumber(0)
-	,num_this_frame(0)
-	,m_pPlacementBuffer( nullptr )
-#endif
-	,byteWidth( 0 )
-	,m_nContexts( 0 )
-	,m_nBuffering( 0 )
-	,m_nFramesBuffering(0)
-	,last_placement(nullptr)
-	,resize(false)
+	mSlots(0),
+	mMaxDescriptors(0),
+	mLastFrameIndex(UINT_MAX),
+	mCurApplyCount(0)
 {
 }
+
 PlatformConstantBuffer::~PlatformConstantBuffer()
 {
 	InvalidateDeviceObjects();
+	for (unsigned int i = 0; i < 3; i++)
+	{
+		mHeaps[i].Release((dx11on12::RenderPlatform*)mRenderPlatform);
+	}
 }
 
+static float megas = 0.0f;
 void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* renderPlatform, void *addr) 
 {
-	resize=false;
-	SAFE_RELEASE(m_pD3D11Buffer);	
-	D3D11_BUFFER_DESC cb_desc= { 0 };
-	cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
-	cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
-	cb_desc.MiscFlags			= 0;
-	cb_desc.ByteWidth			=byteWidth;
-	cb_desc.StructureByteStride = 0;
-//	ID3D11Device *device		=renderPlatform->AsD3D11Device();
-	D3D11_USAGE usage			=D3D11_USAGE_DYNAMIC;
-	if(((dx11on12::RenderPlatform*)renderPlatform)->UsesFastSemantics())
-		usage=D3D11_USAGE_DEFAULT;
-	cb_desc.Usage				= usage;
-#if (SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT)
-	if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
+	mRenderPlatform = renderPlatform;
+	if (addr)
+		SIMUL_BREAK("Nacho has to check this");
+
+	// Create the heaps (storage for our descriptors)
+	// mBufferSize / 256 (this is the max number of descriptors we can hold with this upload heaps
+	mMaxDescriptors = mBufferSize / (256 * mSlots);
+	for (unsigned int i = 0; i < 3; i++)
 	{
-		UINT numBuffers			=m_nContexts*m_nBuffering;
-		SIMUL_ASSERT( cb_desc.Usage == D3D11_USAGE_DEFAULT );
-		byteWidth				=cb_desc.ByteWidth;
+		mHeaps[i].Restore((dx11on12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "CBHeap", false);
+		}
 
-		#ifdef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
-		// Force cache line alignment and packing to avoid cache flushing on Unmap in RoundRobinBuffers
-		byteWidth				=static_cast<UINT>( NextMultiple( byteWidth, SIMUL_D3D11_BUFFER_CACHE_LINE_SIZE ) );
-		#endif
-	
-#if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
-		VirtualFree( m_pPlacementBuffer, 0, MEM_RELEASE );
-#endif
-		m_pPlacementBuffer = static_cast<BYTE*>( VirtualAlloc( nullptr, numBuffers * byteWidth, 
-			MEM_LARGE_PAGES | MEM_GRAPHICS | MEM_RESERVE | MEM_COMMIT, 
-			PAGE_WRITECOMBINE | PAGE_READWRITE ));
-
-		#ifdef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
-		SIMUL_ASSERT( ( BytePtrToUint64( m_pPlacementBuffer ) & ( SIMUL_D3D11_BUFFER_CACHE_LINE_SIZE - 1 ) ) == 0 );
-		#endif
-
-		V_CHECK( ((ID3D11DeviceX*)renderPlatform->AsD3D11Device())->CreatePlacementBuffer( &cb_desc, nullptr, &m_pD3D11Buffer ) );
-	}
-	else
-#endif
+	// Create the upload heap (the gpu memory that will hold the constant buffer)
+	// Each upload heap has 64KB.  (64KB aligned)
+	for (unsigned int i = 0; i < 3; i++)
 	{
-		if(addr==nullptr)
-		{
-			renderPlatform->AsD3D11Device()->CreateBuffer(&cb_desc,nullptr, &m_pD3D11Buffer);
-		}
-		else
-		{
-			D3D11_SUBRESOURCE_DATA cb_init_data;
-			cb_init_data.pSysMem			= addr;
-			cb_init_data.SysMemPitch		= 0;
-			cb_init_data.SysMemSlicePitch	= 0;
-			renderPlatform->AsD3D11Device()->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
-		}
+		HRESULT res;
+		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&mUploadHeap[i])
+		);
+		SIMUL_ASSERT(res == S_OK);
+
+		// Just debug memory usage
+		megas += (float)(mBufferSize) / 1048576.0f;
+		
+		// If it is an UPLOAD buffer, will be the memory allocated in VRAM too?
+		// as far as we know, an UPLOAD buffer has CPU read/write access and GPU read access.
+
+		//SIMUL_COUT << "Total MB Allocated in the GPU: " << std::to_string(megas) << std::endl;
 	}
 }
 
 void PlatformConstantBuffer::SetNumBuffers(crossplatform::RenderPlatform *r, UINT nContexts,  UINT nMapsPerFrame, UINT nFramesBuffering )
 {
-#if  (SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT)
-	if(((dx11::RenderPlatform*)r)->UsesFastSemantics())
-	{
-		m_nContexts = nContexts;
-		m_nFramesBuffering=nFramesBuffering;
-		m_nBuffering = nMapsPerFrame * nFramesBuffering;
-		m_index.resize( nContexts , 0 );
-	}
-	else
-#endif
-	{
-		UNREFERENCED_PARAMETER(nContexts);
-		UNREFERENCED_PARAMETER(nMapsPerFrame);
-		UNREFERENCED_PARAMETER(nFramesBuffering);
-		m_nContexts = 1;
-		m_nBuffering = 1;
-		m_nFramesBuffering=1;
-	}
 	CreateBuffers( r, nullptr);
 }
 
-ID3D11Buffer *PlatformConstantBuffer::asD3D11Buffer()
+
+D3D12_CPU_DESCRIPTOR_HANDLE simul::dx11on12::PlatformConstantBuffer::AsD3D12ConstantBuffer()
 {
-	return m_pD3D11Buffer;
+	// This method is a bit hacky, it basically returns the CPU handle of the last
+	// "current" descriptor we will increase the curApply after the aplly that's why 
+	// we substract 1 here
+	if (mCurApplyCount == 0)
+		SIMUL_BREAK("We must apply this cb first");
+	return D3D12_CPU_DESCRIPTOR_HANDLE(mHeaps[mLastFrameIndex].GetCpuHandleFromStartAfOffset(mCurApplyCount - 1));
 }
 
 void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t size,void *addr)
 {
+	// Calculate the number of slots this constant buffer will use:
+	// mSlots = 256 Aligned size / 256
+	mSlots = ((size + 255) & ~255) / 256;
+
 	InvalidateDeviceObjects();
 	if(!r)
 		return;
-	byteWidth= (UINT)(PAD16(size));
 	SetNumBuffers( r,1, 64, 2 );
-	last_placement=nullptr;
 }
 
 //! Find the constant buffer in the given effect, and link to it.
 void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)
 {
-	if(!effect)
-		return;
-	if(!effect->asD3DX11Effect())
-		return;
-	m_pD3DX11EffectConstantBuffer=effect->asD3DX11Effect()->GetConstantBufferByName(name);
-	if(m_pD3DX11EffectConstantBuffer)
-		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
-	else
-		SIMUL_CERR<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the effect."<<std::endl;
+
 }
 
 void PlatformConstantBuffer::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(m_pD3D11Buffer);
-#if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
-	if(m_pPlacementBuffer)
-		VirtualFree( m_pPlacementBuffer, 0, MEM_RELEASE );
-#endif
-	last_placement=nullptr;
+
 }
 
 void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t size, void *addr)
 {
-	if (!m_pD3D11Buffer)
+	if (mCurApplyCount >= mMaxDescriptors)
 	{
-		SIMUL_CERR << "Attempting to apply an uninitialized Constant Buffer" << std::endl;
-		return;
+		// This should really be solved by having like some kind of pool? Or allocating more space, something like that
+		SIMUL_BREAK("Nacho has to fix this");
 	}
-	ID3D11DeviceContext *pContext = (ID3D11DeviceContext *)deviceContext.platform_context;
-	D3D11_MAPPED_SUBRESOURCE mapped_res;
-#if  SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
-	if (((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
-	{
-		if (resize)
-		{
-			SetNumBuffers(deviceContext.renderPlatform, m_nContexts, m_nBuffering * 2, m_nFramesBuffering);
-			resize = false;
-		}
-		UINT &buffer_index = m_index[0];
-		last_placement = (&m_pPlacementBuffer[buffer_index* byteWidth]);
-		memcpy(last_placement, addr, size);
-		buffer_index++;
-		if (buffer_index >= m_nBuffering)
-		{
-			buffer_index = 0;
-		}
-		if (num_this_frame>m_nBuffering)
-		{
-			// Too many, need a bigger buffer.
-			SIMUL_CERR << "Need a bigger buffer for PlatformConstantBuffer" << std::endl;
-			resize = true;
-		}
-		if (framenumber != deviceContext.frame_number)
-		{
-			num_this_frame = 0;
-		}
-		num_this_frame++;
-		framenumber = deviceContext.frame_number;
-#ifndef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
-#error use cache line aligned buffers, otherwise an explicit flush for fast semantics is required here
-#endif
-	}
-	else
-#endif
-	{
-		D3D11_MAP map_type = D3D11_MAP_WRITE_DISCARD;
-		if (((dx11on12::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
-			map_type = D3D11_MAP_WRITE;
-		V_CHECK(pContext->Map(m_pD3D11Buffer, 0, map_type, ((dx11on12::RenderPlatform*)deviceContext.renderPlatform)->GetMapFlags(), &mapped_res));
-		memcpy(mapped_res.pData, addr, byteWidth);
-		pContext->Unmap(m_pD3D11Buffer, 0);
-		last_placement = nullptr;
-	}
-	if (changed)
-	{
-		changed = false;
-	}
-}
 
+	auto curFrameIndex = deviceContext.cur_backbuffer;
+	// If new frame, update current frame index and reset the apply count
+	if (mLastFrameIndex != curFrameIndex)
+	{
+		mLastFrameIndex = curFrameIndex;
+		mCurApplyCount = 0;
+	}
+
+	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer
+	// has a minimum size of 256Bytes)
+	UINT8* pDest = nullptr;
+	UINT64 offset = (256 * mSlots) * mCurApplyCount;	
+	const CD3DX12_RANGE range(0, 0);
+	mUploadHeap[curFrameIndex]->Map(0, &range, reinterpret_cast<void**>(&pDest));
+	{
+		memcpy(pDest + offset, addr, size);
+	}
+	mUploadHeap[curFrameIndex]->Unmap(0, &range);
+
+	// Create a CBV
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation					= mUploadHeap[curFrameIndex]->GetGPUVirtualAddress() + offset;
+	cbvDesc.SizeInBytes						= 256 * mSlots;
+	// If we applied this CB more than once this frame, we will be appending another descriptor (thats why we offset)
+	D3D12_CPU_DESCRIPTOR_HANDLE handle		= mHeaps[curFrameIndex].GetCpuHandleFromStartAfOffset(mCurApplyCount);
+	deviceContext.renderPlatform->AsD3D12Device()->CreateConstantBufferView(&cbvDesc, handle);
+
+	mCurApplyCount++;
+}
 
 void  PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceContext, crossplatform::EffectPass *currentEffectPass, int slot)
 {
-	ID3D11DeviceContext *pContext = (ID3D11DeviceContext *)deviceContext.platform_context;
-	crossplatform::Shader **sh = (crossplatform::Shader**)currentEffectPass->shaders;
-	if (sh[crossplatform::SHADERTYPE_PIXEL] && sh[crossplatform::SHADERTYPE_PIXEL]->usesConstantBufferSlot(slot))
-		pContext->PSSetConstantBuffers(slot,1,&m_pD3D11Buffer);
-	if (sh[crossplatform::SHADERTYPE_GEOMETRY] && sh[crossplatform::SHADERTYPE_GEOMETRY]->usesConstantBufferSlot(slot))
-	{
-		pContext->GSSetConstantBuffers(slot, 1, &m_pD3D11Buffer);
-	}
-	if (sh[crossplatform::SHADERTYPE_VERTEX] && sh[crossplatform::SHADERTYPE_VERTEX]->usesConstantBufferSlot(slot))
-	{
-		pContext->VSSetConstantBuffers(slot, 1, &m_pD3D11Buffer);
-	}
-	if (sh[crossplatform::SHADERTYPE_COMPUTE] && sh[crossplatform::SHADERTYPE_COMPUTE]->usesConstantBufferSlot(slot))
-		pContext->CSSetConstantBuffers(slot, 1, &m_pD3D11Buffer);
+
 }
-
-void *PlatformConstantBuffer::GetBaseAddr()
-{
-#if  SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
-	if(last_placement)
-		return last_placement;
-#else
-	return nullptr;
- #endif
-}
-
-
 
 void PlatformConstantBuffer::Unbind(simul::crossplatform::DeviceContext &)
 {
+
 }

@@ -21,6 +21,9 @@
     #pragma warning(disable:4251)
 #endif
 struct ID3D11Device;
+struct ID3D11On12Device;
+struct ID3D12Device;
+struct ID3D12GraphicsCommandList;
 struct VertexXyzRgba
 {
 	float x,y,z;
@@ -169,6 +172,10 @@ namespace simul
 			}
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
+			virtual ID3D11On12Device* AsD3D11On12Device();
+			//! Returns the DX12 graphics command list
+			virtual ID3D12GraphicsCommandList* AsD3D12CommandList();
+			virtual ID3D12Device* AsD3D12Device();
 			virtual ID3D11Device *AsD3D11Device();
 			//! Call this once, when the 3D graphics device has been initialized, and pass the API-specific device pointer/identifier.
 			virtual void RestoreDeviceObjects(void*);

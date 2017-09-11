@@ -67,7 +67,8 @@ bool EffectPass::usesBufferSlot(int s) const
 bool EffectPass::usesSamplerSlot(int s) const
 {
 	unsigned m=((unsigned)1<<(unsigned)s);
-	return true;//(samplerSlots&m)!=0;
+	//return true;//(samplerSlots&m)!=0;
+	return (samplerSlots&m) != 0;
 }
 
 bool EffectPass::usesRwTextureSlot(int s) const

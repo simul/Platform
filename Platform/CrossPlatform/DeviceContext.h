@@ -32,6 +32,7 @@ namespace simul
 				,renderPlatform(0)
 				,activeTechnique(0)
 				,frame_number(0)
+				,cur_backbuffer(0)
 			{
 				viewStruct.depthTextureStyle=crossplatform::PROJECTION;
 			}
@@ -48,6 +49,7 @@ namespace simul
 				return (sce::Gnmx::LightweightGfxContext*)platform_context;
 			}
 			ViewStruct viewStruct;
+			uint cur_backbuffer;
 		};
 
 		struct DeviceContext;

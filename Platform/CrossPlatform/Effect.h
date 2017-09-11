@@ -16,6 +16,7 @@ struct ID3DX11EffectTechnique;
 struct ID3D11ShaderResourceView;
 struct ID3D11UnorderedAccessView;
 typedef unsigned int GLuint;
+struct D3D12_CPU_DESCRIPTOR_HANDLE;
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable:4251)
@@ -531,6 +532,8 @@ namespace simul
 			virtual void SetData(crossplatform::DeviceContext &deviceContext,void *data)=0;
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return NULL;}
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int =0){return NULL;}
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView() { return NULL; }
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12UnorderedAccessView(int = 0) { return NULL; }
 			void ResetCopies()
 			{
 				numCopies=0;

@@ -111,6 +111,9 @@ namespace simul
 					sphericalHarmonics.InvalidateDeviceObjects();
 				}
 			}
+			vec4 DefaultClearColour;
+			float DefaultClearDepth;
+			uint DefaultClearStencil;
 		public:
 			static std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
 			static crossplatform::TargetsAndViewport defaultTargetsAndViewport;

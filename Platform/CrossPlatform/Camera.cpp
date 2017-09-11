@@ -145,8 +145,8 @@ Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 		frustum.nearZ		=-z1;
 		frustum.farZ		=-z0;
 	}
-	frustum.tanHalfFov.x=M._34/M._11;
-	frustum.tanHalfFov.y=M._34/M._22;
+	frustum.tanHalfFov.x=fabs(M._34/M._11);
+	frustum.tanHalfFov.y=fabs(M._34/M._22);
 	frustum.tanHalfFov.z= x_sgn*M._31/M._11;
 	frustum.tanHalfFov.w= y_sgn*M._32/M._22;
 	ERRNO_BREAK

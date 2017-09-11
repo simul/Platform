@@ -732,7 +732,8 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 												 ,int w,int l
 												 ,crossplatform::PixelFormat f
 												 ,bool computable,bool rendertarget,bool depthstencil
-												 ,int num_samples,int aa_quality,bool )
+												 ,int num_samples,int aa_quality,bool
+												 ,vec4 clear, float clearDepth, uint clearStencil)
 {
 	int m=1;
 	renderPlatform=r;

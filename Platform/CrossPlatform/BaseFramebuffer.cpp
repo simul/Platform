@@ -85,9 +85,9 @@ void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	if(renderPlatform)
 	{
 		if(!external_texture)
-			buffer_texture=renderPlatform->CreateTexture("BaseFramebuffer");
+			buffer_texture=renderPlatform->CreateTexture("BaseFramebufferColour");
 		if(!external_depth_texture)
-			buffer_depth_texture=renderPlatform->CreateTexture("BaseFramebuffer");
+			buffer_depth_texture=renderPlatform->CreateTexture("BaseFramebufferDepth");
 	}
 	// The table of coefficients.
 	int s=(bands+1);
@@ -235,7 +235,7 @@ bool BaseFramebuffer::CreateBuffers()
 	if(!external_texture&&target_format!=crossplatform::UNKNOWN)
 	{
 		if(!is_cubemap)
-			buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,target_format,false,true,false,numAntialiasingSamples,quality);
+			buffer_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,target_format,false,true,false,numAntialiasingSamples,quality,false,DefaultClearColour,DefaultClearDepth,DefaultClearStencil);
 		else
 			buffer_texture->ensureTextureArraySizeAndFormat(renderPlatform,Width,Height,1,mips,target_format,false,true,true);
 	}

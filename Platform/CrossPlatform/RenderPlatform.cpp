@@ -59,6 +59,21 @@ crossplatform::ContextState *RenderPlatform::GetContextState(crossplatform::Devi
 	return i->second;
 }
 
+ID3D11On12Device* RenderPlatform::AsD3D11On12Device()
+{
+	return NULL;
+}
+
+ID3D12GraphicsCommandList* RenderPlatform::AsD3D12CommandList()
+{
+	return NULL;
+}
+
+ID3D12Device* RenderPlatform::AsD3D12Device()
+{
+	return NULL;
+}
+
 ID3D11Device *RenderPlatform::AsD3D11Device()
 {
 	return NULL;
