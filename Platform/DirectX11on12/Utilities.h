@@ -231,12 +231,12 @@ namespace simul
 		};
 		inline void SetDebugObjectName( ID3D11DeviceChild* resource,const char *name)
 		{
-		  #if (defined(_DEBUG) || defined(PROFILE)) && !defined(_XBOX_ONE)
+		  #if (/*defined(_DEBUG) || defined(PROFILE)) &&*/ !defined(_XBOX_ONE))
 			if(resource)
 			{
 				char str[200];
 				sprintf_s(str,199,"%s %lld",name,(unsigned long long)resource);
-			//	resource->SetPrivateData(WKPDID_D3DDebugObjectName,(UINT)(strlen(str)),str);
+				resource->SetPrivateData(WKPDID_D3DDebugObjectName,(UINT)(strlen(str)),str);
 			}
 			#else
 			name;resource;

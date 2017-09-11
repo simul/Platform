@@ -207,7 +207,9 @@
     <ClCompile Include="Direct3D11Renderer.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
     <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="Fence.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
+    <ClCompile Include="Heap.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
@@ -230,7 +232,9 @@
     <ClInclude Include="DX11Exception.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
+    <ClInclude Include="Fence.h" />
     <ClInclude Include="FramebufferDX1x.h" />
+    <ClInclude Include="Heap.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="MacrosDx1x.h" />
@@ -245,8 +249,6 @@
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\CrossPlatform\SFX\atmospherics.sfxo" />
-    <None Include="..\CrossPlatform\SFX\clouds.sfxo" />
     <None Include="..\CrossPlatform\SL\atmospherics.sl" />
     <None Include="..\CrossPlatform\SL\atmospherics_constants.sl" />
     <None Include="..\CrossPlatform\SL\camera_constants.sl" />
@@ -310,6 +312,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Applications\Sfx\Sfx.vcxproj">
+      <Project>{21fda305-aeeb-418a-958e-5102cc5927bc}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\Math\Math_x64_v140.vcxproj">
       <Project>{b6cb4ee4-90e3-4b11-8706-e4d7b9024801}</Project>
       <Private>false</Private>

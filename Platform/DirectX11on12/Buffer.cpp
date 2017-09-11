@@ -1,83 +1,130 @@
 #include "Buffer.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX11on12/MacrosDX1x.h"
+#include "SimulDirectXHeader.h"
+
 using namespace simul;
 using namespace dx11on12;
 
-Buffer::Buffer()
-	:d3d11Buffer(NULL)
+Buffer::Buffer():
+	mUploadHeap(nullptr)
 {
 }
-
 
 Buffer::~Buffer()
 {
 	InvalidateDeviceObjects();
 }
 
-ID3D11Buffer *Buffer::AsD3D11Buffer()
-{
-	return d3d11Buffer;
-}
-
-const ID3D11Buffer *Buffer::AsD3D11Buffer() const
-{
-	return d3d11Buffer;
-}
-
-GLuint Buffer::AsGLuint()
-{
-	return 0;
-}
-
 void Buffer::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(d3d11Buffer);
+	SAFE_RELEASE(mUploadHeap);
 }
 
 void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const crossplatform::Layout *layout,const void *data,bool cpu_access,bool streamout_target)
 {
-    D3D11_SUBRESOURCE_DATA InitData;
-    memset( &InitData,0,sizeof(D3D11_SUBRESOURCE_DATA) );
-    InitData.pSysMem		=data;
-    InitData.SysMemPitch	=layout->GetStructSize();
-	D3D11_BUFFER_DESC desc=
+	HRESULT res = S_FALSE;
+
+	stride = layout->GetStructSize();
+	mBufferSize = num_vertices * layout->GetStructSize();
+
+	// Just debug memory usage
+	float megas = (float)mBufferSize / 1048576.0f;
+	//SIMUL_COUT << "Allocating: " << std::to_string(mBufferSize) << ".bytes in the GPU, (" << std::to_string(megas) << ".MB)\n";
+
+	// Upload heap to hold the vertex data in the GPU (we will be mapping it to copy new data)
+	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
+	(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&mUploadHeap)
+	);
+	SIMUL_ASSERT(res == S_OK);
+	mUploadHeap->SetName(L"VertexUpload");
+
+	// LOL! \O_O/
+	if (data)
 	{
-        num_vertices*layout->GetStructSize(),cpu_access?D3D11_USAGE_DYNAMIC:D3D11_USAGE_DEFAULT,D3D11_BIND_VERTEX_BUFFER|(streamout_target?D3D11_BIND_STREAM_OUTPUT:0)
-		,(cpu_access?D3D11_CPU_ACCESS_WRITE:0),0
-	};
-	SAFE_RELEASE(d3d11Buffer);
-	V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&desc,data?&InitData:NULL,&d3d11Buffer));
-	stride=layout->GetStructSize();
+		crossplatform::DeviceContext tmpCrap;
+		Map(tmpCrap);
+		memcpy(mGpuMappedPtr, data, mBufferSize);
+		Unmap(tmpCrap);
+	}
+	
+	// Make a vertex buffer view
+	mVertexBufferView.SizeInBytes		= mBufferSize;
+	mVertexBufferView.StrideInBytes		= stride;
+	mVertexBufferView.BufferLocation	= mUploadHeap->GetGPUVirtualAddress();
 }
 
 void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void *data)
 {
-	D3D11_BUFFER_DESC ib_desc;
-	ib_desc.ByteWidth			= num_indices * index_size_bytes;
-	ib_desc.Usage				= D3D11_USAGE_IMMUTABLE;
-	ib_desc.BindFlags			= D3D11_BIND_INDEX_BUFFER;
-	ib_desc.CPUAccessFlags		= 0;
-	ib_desc.MiscFlags			= 0;
-	ib_desc.StructureByteStride = index_size_bytes;
+	HRESULT res = S_FALSE;
+	mBufferSize = index_size_bytes * num_indices;
 
-	D3D11_SUBRESOURCE_DATA init_data;
-	init_data.pSysMem			= data;
-	init_data.SysMemPitch		= 0;
-	init_data.SysMemSlicePitch	= 0;
+	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
+	(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&mUploadHeap)
+	);
+	SIMUL_ASSERT(res == S_OK);
+	mUploadHeap->SetName(L"IndexUpload");
 
-	SAFE_RELEASE(d3d11Buffer);
-	renderPlatform->AsD3D11Device()->CreateBuffer(&ib_desc, &init_data, &d3d11Buffer);
-	stride=index_size_bytes;
+	// LOL! \O_O/
+	if (data)
+	{
+		crossplatform::DeviceContext tmpCrap;
+		Map(tmpCrap);
+		memcpy(mGpuMappedPtr, data, mBufferSize);
+		Unmap(tmpCrap);
+	}
+
+	DXGI_FORMAT indexFormat;
+	if (index_size_bytes == 4)
+	{
+		indexFormat = DXGI_FORMAT_R32_UINT;
+	}
+	else if (index_size_bytes == 2)
+	{
+		indexFormat = DXGI_FORMAT_R16_UINT;
+	}
+	else
+	{
+		SIMUL_BREAK("Improve this!");
+	}
+
+	mIndexBufferView.Format			= indexFormat;
+	mIndexBufferView.SizeInBytes	= mBufferSize;
+	mIndexBufferView.BufferLocation = mUploadHeap->GetGPUVirtualAddress();
 }
 
 void *Buffer::Map(crossplatform::DeviceContext &deviceContext)
 {
-	V_CHECK(deviceContext.asD3D11DeviceContext()->Map(d3d11Buffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped));
-	return (void*)mapped.pData;
+	const CD3DX12_RANGE range(0, 0);
+	mUploadHeap->Map(0, &range, reinterpret_cast<void**>(&mGpuMappedPtr));
+	return (void*)mGpuMappedPtr;
 }
 
 void Buffer::Unmap(crossplatform::DeviceContext &deviceContext)
 {
-	deviceContext.asD3D11DeviceContext()->Unmap(d3d11Buffer,0);
+	const CD3DX12_RANGE range(0, 0);
+	mUploadHeap->Unmap(0, &range);
 }
+
+D3D12_VERTEX_BUFFER_VIEW* Buffer::GetVertexBufferView()
+{
+	return &mVertexBufferView;
+}
+
+D3D12_INDEX_BUFFER_VIEW* Buffer::GetIndexBufferView()
+{
+	return &mIndexBufferView;
+}
+

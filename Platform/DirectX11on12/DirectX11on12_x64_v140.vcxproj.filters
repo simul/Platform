@@ -71,6 +71,12 @@
     <ClCompile Include="ConstantBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Heap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fence.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompileShaderDX1x.h">
@@ -146,6 +152,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="d3dx12.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Heap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fence.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -319,12 +331,6 @@
     </None>
     <None Include="..\CrossPlatform\SL\text_constants.sl">
       <Filter>SL</Filter>
-    </None>
-    <None Include="..\CrossPlatform\SFX\atmospherics.sfxo">
-      <Filter>SFX</Filter>
-    </None>
-    <None Include="..\CrossPlatform\SFX\clouds.sfxo">
-      <Filter>SFX</Filter>
     </None>
     <None Include="HLSL\HLSL11on12.json">
       <Filter>HLSL</Filter>
