@@ -109,7 +109,7 @@
     <StringListProperty
       Name="Outputs"
       DisplayName="Outputs"
-      Visible="False"
+      Visible="True"
       IncludeInCommandLine="False" />
     <StringProperty
       Name="ExecutionDescription"

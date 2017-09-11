@@ -667,12 +667,13 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	textureCharMap.clear();
 	// We will load the .sfxo file, which contains the list of shader binary files, and also the arrangement of textures, buffers etc. in numeric slots.
 
-	std::string filenameUtf8=renderPlatform->GetShaderBinaryPath();
-	if (filenameUtf8[filenameUtf8.length() - 1] != '/')
-		filenameUtf8+="/";
-	filenameUtf8+=filename_utf8;
+	std::string filepathUtf8=renderPlatform->GetShaderBinaryPath();
+	if (filepathUtf8[filepathUtf8.length() - 1] != '/')
+		filepathUtf8+="/";
+	std::string filenameUtf8=filename_utf8;
 	if (filenameUtf8.find(".") >= filenameUtf8.length())
 		filenameUtf8 += ".sfxo";
+	filenameUtf8=filepathUtf8+filenameUtf8;
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
 	{
 		// Some engines force filenames to lower case because reasons:

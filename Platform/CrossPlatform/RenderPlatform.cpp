@@ -275,6 +275,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				texture->deactivateRenderTarget(deviceContext);
 			}
 		}
+		debugEffect->UnbindTextures(deviceContext);
 	}
 	// Otherwise, is it computable? We can set the colour value with a compute shader.
 	// Finally, is it mappable? We can set the colour from CPU memory.
@@ -354,8 +355,8 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				debugEffect->Unapply(deviceContext);
 			}
 		}
-
 #endif
+		debugEffect->UnbindTextures(deviceContext);
 	}
 	else
 	{
@@ -764,6 +765,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 		tech=debugEffect->GetTechniqueByName("untextured");
 	}
 	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,blend?"blend":"noblend");
+	debugEffect->UnbindTextures(deviceContext);
 	vec4 white(1.0, 1.0, 1.0, 1.0);
 	vec4 semiblack(0, 0, 0, 0.5);
 	char txt[]="0";

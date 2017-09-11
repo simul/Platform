@@ -330,6 +330,14 @@ namespace simul
 			void SetUsesRwTextureSlots(unsigned);
 			void SetUsesRwTextureSlotsForSB(unsigned);
 			void SetUsesSamplerSlots(unsigned);
+
+			void SetBufferSlots(unsigned s)			{ constantBufferSlots = s; }
+			void SetTextureSlots(unsigned s)		{ textureSlots = s; }
+			void SetTextureSlotsForSB(unsigned s)	{ textureSlotsForSB = s; }
+			void SetRwTextureSlots(unsigned s)		{ rwTextureSlots = s; }
+			void SetRwTextureSlotsForSB(unsigned s) { rwTextureSlotsForSB = s; }
+			void SetSamplerSlots(unsigned s)		{ samplerSlots = s; }
+
 			unsigned GetRwTextureSlots() const
 			{
 				return rwTextureSlots;
