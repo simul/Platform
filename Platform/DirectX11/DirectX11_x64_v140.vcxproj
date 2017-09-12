@@ -70,13 +70,13 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulDLL.props" />
-    <Import Project="..\..\SimulRelease.props" />
+    <Import Project="..\..\SimulReleaseMD.props" />
     <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulDLL.props" />
-    <Import Project="..\..\SimulDebug.props" />
+    <Import Project="..\..\SimulDebugMD.props" />
     <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
