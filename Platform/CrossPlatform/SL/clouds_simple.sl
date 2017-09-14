@@ -137,7 +137,8 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 	int in_step=0,c=0;
 	float rangeKm				=initialSteps*stepKm;
 
-	float oddRangeKm				=(0.5*stepKm*initialSteps);	for(int i=0;i<768;i++)
+	float oddRangeKm				=(0.5*stepKm*initialSteps);
+	for(int i=0;i<768;i++)
 	{
 		//world_pos					+=0.001*view;
 		if((view.z<0&&world_pos.z<min_z)||(view.z>0&&world_pos.z>max_z)||distanceKm>maxCloudDistanceKm)//||solidDist_nearFar.y<lastFadeDistance)
@@ -212,7 +213,6 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 						//density.z			=saturate(0.3+(1.0+alphaSharpness)*((density.z+wo)-0.3+saturate(density.z-0.6)));
 						amb_dir				=lerp(amb_dir,worley.xyz,0.1*density.z);
 					}
-					//density.xy		*=1.0+wo;
 					float brightness_factor;
 					fade_texc.x				=sqrt(fadeDistance);
 					vec3 volumeTexCoords	=vec3(volumeTexCoordsXyC.xy,fade_texc.x);

@@ -37,9 +37,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	res.nearFarDepth		=dlookup;
 
 	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
-	vec3 lightDir			=lerp(directionToMoon,directionToSun,s);
+	vec3 lightDirection		=lerp(directionToMoon,directionToSun,s);
 
-	float cos0				=dot(lightDir.xyz,view.xyz);
+	float cos0				=dot(lightDirection.xyz,view.xyz);
 	float sine				=view.z;
 
 	float min_z				=cornerPosKm.z-(fractalScale.z*1.5)/inverseScalesKm.z;
@@ -97,7 +97,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	vec4 rainbowColour;
 	if(do_rainbow)
 		rainbowColour		=RainbowAndCorona(rainbowLookupTexture,coronaLookupTexture,dropletRadius,
-												rainbowIntensity,view,lightDir);
+												rainbowIntensity,view,lightDirection);
 	float moisture			=0.0;
 
 	vec3 world_pos			=viewPosKm;
@@ -121,7 +121,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 		float a		=1.0/(saturate(-view.z)+0.00001);
 		offset_vec	+=max(0.0,world_pos.z-max_z)*vec3(view.x*a,view.y*a,-1.0);
 	}
-	vec3 halfway					=0.5*(lightDir-view);
+	vec3 halfway					=0.5*(lightDirection-view);
 	world_pos						+=offset_vec;
 	float viewScale					=length(viewScaled*scaleOfGridCoords);
 	// origin of the grid - at all levels of detail, there will be a slice through this in 3 axes.
@@ -275,6 +275,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					{
 						for(int o=0;o<num_interp;o++)
 							res.colour[o].a =0.0;
+						meanFadeDistance=fadeDistance;
 						break;
 					}
 				}
@@ -305,17 +306,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	if(do_rainbow)
 		res.colour[num_interp-1].rgb		+=saturate(moisture)*sunlightColour1.rgb/25.0*rainbowColour.rgb;
 #endif
-	//res.nearFarDepth.y = solidDist_nearFar.x;
-	// y is the near depth. x is the distance at which we will interpolate to the far depth value.
-	// Instead of using the far depth, we will use the cloud distance.
-//	res.nearFarDepth.y = max(res.nearFarDepth.y,minDistance);
-//	res.nearFarDepth.x = min(res.nearFarDepth.x,max(lastFadeDistance, res.nearFarDepth.y + distScale ));
-	//res.nearFarDepth.y	=max(0.00001,res.nearFarDepth.x-res.nearFarDepth.y);
-	res.nearFarDepth.w	=	meanFadeDistance;
-	res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
-
+	//res.nearFarDepth.y	=	max(0.00001,res.nearFarDepth.x-res.nearFarDepth.y);
+	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
+	res.nearFarDepth.zw	=	meanFadeDistance;
 	for(int j=0;j<num_interp;j++)
-		res.colour[j].rgb+=insc[j];//*gr;
+		res.colour[j].rgb+=insc[j].rgb;//*gr;
 	return res;
 }
 #endif
