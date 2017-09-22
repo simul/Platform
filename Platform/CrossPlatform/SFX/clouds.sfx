@@ -163,11 +163,11 @@ void MixInLayer( uint3 g, uint3 t,bool clears)
 		res			+= lerp(c1, c2, cloud_interp).zyxw/5.0;
 	}
 
-	float zPixel=1.0/float(windowGrid.z);
+	float zPixel1=1.0/float(windowGrid.z);
 
 	res.z		=saturate((res.z-0.25)/diffusivity+0.25);
 
-	res.z*= max_density_gm3/0.5*saturate(texc.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - texc.z) / zPixel);
+	res.z*= max_density_gm3/0.5*saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
 
 	res.w=1.0;
 	//res.z=saturate(texc.y>-0.5);
@@ -216,10 +216,10 @@ void MixInCirrus(uint3 ii,bool clears)
 		res			+= lerp(c1, c2, cloud_interp).zyxw/5.0;
 	}
 
-	float zPixel=1.0/float(windowGrid.z);
+	float zPixel1=1.0/float(windowGrid.z);
 	res.z		=saturate((res.z-0.5)/diffusivity);
 	//res.z=frac(float(idx.x)/float(windowGrid.x));
-	res.z*=saturate(1.0-fall_amount)* max_density_gm3*saturate(texc.z / zPixel - 0.5)*saturate((1.0 - 0.5*zPixel - texc.z) / zPixel);
+	res.z*=saturate(1.0-fall_amount)* max_density_gm3*saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
 	if (res.z > 0)
 	{
 		float noise_factor=lerp(baseNoiseFactor,1.0,saturate(texc.z));

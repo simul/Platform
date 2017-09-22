@@ -290,9 +290,6 @@
     <None Include="SL\text_constants.sl" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Applications\Sfx\Sfx.vcxproj">
-      <Project>{21fda305-aeeb-418a-958e-5102cc5927bc}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\Base\Base_x64_v140.vcxproj">
       <Project>{9a8051a1-5c9f-4635-92cd-ad8da3f8ff41}</Project>
     </ProjectReference>

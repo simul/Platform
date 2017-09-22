@@ -235,7 +235,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 				vec4 noiseval			=vec4(0,0,0,0);
 				float cosine			=dot(N,viewScaled);
 				if(noise&&12.0*fadeDistance<4.0)
-					noiseval			=density.x*texture_3d_wrap_lod(noiseTexture3D,noise_texc,4.0*(fadeDistance+1.0-abs(cosine)));
+					noiseval			=density.x*texture_3d_wrap_lod(noiseTexture3D,noise_texc,1.0*(fadeDistance+1.0-abs(cosine)));
 				vec4 light				=vec4(1,1,1,1);
 				calcDensity(cloudDensity,cloudLight,cloudTexCoords,fade,noiseval,fractalScale,fadeDistance,density,light);
 				if(do_rain_effect)
@@ -264,7 +264,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 					ColourStep( res.colour,insc, meanFadeDistance, brightness_factor
 								,lossTexture, inscTexture, skylTexture, inscatterVolumeTexture
 								,do_godrays, godraysVolumeTexture ,lightspaceScale, godraysTexCoords
-								, lightTableTexture
+								,lightTableTexture
 								,density, light,distanceKm, fadeDistance
 								,world_pos
 								,cloudTexCoords, fade_texc, nearFarTexc

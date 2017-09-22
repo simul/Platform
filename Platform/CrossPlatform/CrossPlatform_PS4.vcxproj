@@ -53,6 +53,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AmortizationStruct.cpp" />
     <ClCompile Include="BaseFramebuffer.cpp" />
     <ClCompile Include="BaseOpticsRenderer.cpp" />
     <ClCompile Include="Buffer.cpp" />
@@ -73,8 +74,10 @@
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="View.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AmortizationStruct.h" />
     <ClInclude Include="BaseFramebuffer.h" />
     <ClInclude Include="BaseOpticsRenderer.h" />
     <ClInclude Include="BaseRenderer.h" />
@@ -87,6 +90,7 @@
     <ClInclude Include="Effect.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="GpuProfiler.h" />
+    <ClInclude Include="GraphicsDeviceInterface.h" />
     <ClInclude Include="HdrRenderer.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="LensFlare.h" />
@@ -102,6 +106,7 @@
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Topology.h" />
+    <ClInclude Include="View.h" />
   </ItemGroup>
   <Import Condition="'$(ConfigurationType)' == 'Makefile' and Exists('$(VCTargetsPath)\Platforms\$(Platform)\SCE.Makefile.$(Platform).targets')" Project="$(VCTargetsPath)\Platforms\$(Platform)\SCE.Makefile.$(Platform).targets" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

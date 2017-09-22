@@ -85,7 +85,8 @@ namespace simul
 				,bool rendertarget=false
 				,bool depthstencil=false
 				,int num_samples=1
-				,int aa_quality=0,bool wrap=false) override;
+				,int aa_quality=0,bool wrap=false
+				,vec4 clear = vec4(0.5f, 0.5f, 0.2f, 1.0f), float clearDepth = 1.0f, uint clearStencil = 0) override;
 			/// Asynchronously move this texture to ESRAM.
 			void MoveToFastRAM() override;
 			/// Asynchronously move this texture to DRAM.
