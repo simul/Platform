@@ -1115,6 +1115,7 @@ technique background_latlongsphere
 		SetRasterizerState( RenderNoCull );
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+		SetDepthStencilState(DisableDepth, 0);
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_Background_ReverseDepth_MSAA()));
     }
@@ -1123,6 +1124,7 @@ technique background_latlongsphere
 		SetRasterizerState( RenderNoCull );
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+		SetDepthStencilState(DisableDepth, 0);
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_Background_ForwardDepth_MSAA()));
     }
@@ -1131,6 +1133,7 @@ technique background_latlongsphere
 		SetRasterizerState( RenderNoCull );
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+		SetDepthStencilState(DisableDepth, 0);
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_Background_ReverseDepth()));
     }
@@ -1139,6 +1142,7 @@ technique background_latlongsphere
 		SetRasterizerState( RenderNoCull );
 		SetBlendState(DontBlend,vec4(0.0f,0.0f,0.0f,0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+		SetDepthStencilState(DisableDepth, 0);
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_Background_ForwardDepth()));
     }
