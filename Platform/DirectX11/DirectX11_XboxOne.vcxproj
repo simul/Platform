@@ -36,7 +36,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\XboxOne\SimulXboxOne.props" />
     <Import Project="..\..\SimulReleaseMD.props" />
-    <Import Project="..\..\SimulLib_VC11.props" />
+    <Import Project="..\..\SimulLib.props" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">
     <ReferencePath>$(Console_SdkLibPath);$(Console_SdkWindowsMetadataPath)</ReferencePath>
