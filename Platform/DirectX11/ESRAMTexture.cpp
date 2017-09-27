@@ -150,7 +150,7 @@ bool ESRAMTexture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 												 ,crossplatform::PixelFormat pixelFormat
 												 ,bool computable,bool rendertarget,bool depthstencil
 												 ,int num_samples,int aa_quality,bool wrap
-												 ,vec4 clear /*= vec4(0.5f, 0.5f, 0.2f, 1.0f)*/, float clearDepth /*= 1.0f*/, uint clearStencil /*= 0*/)
+	,vec4 clear, float clearDepth , uint clearStencil )
 {
 	bool res=dx11::Texture::ensureTexture2DSizeAndFormat(renderPlatform
 												 , w, l

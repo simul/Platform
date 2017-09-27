@@ -2,6 +2,8 @@
 #define CPP_HLSL
 #include "../../CrossPlatform/SL/CppSl.hs"
 
+#pragma warning( disable : 3550)
+
 #ifndef __cplusplus
 // Disable the warning "pow(f, e) will not work for negative f, use abs(f) or conditionally handle negative values..."
 // because it is not helpful for optimized code.

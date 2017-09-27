@@ -186,7 +186,7 @@ RaytracePixelOutput RaytraceCloudsStatic(Texture3D cloudDensity
 			}
 			//if(found)
 			{
-				vec3 noise_texc			=(world_pos.xyz)*noise3DTexcoordScale+noise3DTexcoordOffset;
+				vec3 noise_texc			=world_pos.xyz*noise3DTexcoordScale+noise3DTexcoordOffset;
 
 				vec4 noiseval			=vec4(0,0,0,0);
 				if(noise&&12.0*fadeDistance<4.0)
