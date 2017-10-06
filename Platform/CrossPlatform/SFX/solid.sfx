@@ -86,7 +86,7 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 	depthInterpretationStruct.reverseDepth=(reverseDepth!=0);
 	float dist					=depthToLinearDistance(clip_pos.z	,depthInterpretationStruct);
 	float dist_rt				=pow(dist,0.5);
-	const float SIMUL_PI_F				=3.1415926536;
+
 	vec3 worldspaceVolumeTexCoords	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(sine)/SIMUL_PI_F),dist_rt);
 	
 	// Inscatter from air:

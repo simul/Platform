@@ -185,7 +185,10 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 
 	hdr_effect->SetConstantBuffer(deviceContext,&hdrConstants);
 	crossplatform::EffectTechnique *tech=exposureGammaTechnique;
-	if(Glow)
+	
+	bool doGlow = true;		// nachoooooooo
+	bool doBlur=false;
+	if(Glow && doGlow)
 	{
 		RenderGlowTexture(deviceContext,texture);
 		tech=glowExposureGammaTechnique;
@@ -196,7 +199,6 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
 	else
 		hdr_effect->SetTexture(deviceContext,"imageTexture"	,texture);
-	static bool doBlur=false;
 	if(blurTexture->IsValid() && doBlur)
 	{	
 		crossplatform::Texture *src=texture;
@@ -232,6 +234,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 	hdrConstants.Unbind(deviceContext);
 	imageConstants.Unbind(deviceContext);
 	
+	hdr_effect->UnbindTextures(deviceContext);
 	hdr_effect->Unapply(deviceContext);
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }

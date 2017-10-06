@@ -15,7 +15,7 @@
 
 namespace simul
 {
-	namespace dx11on12
+	namespace dx12
 	{
 		//! An include-handler for Direct3D 11 shader compilation.
 		class ShaderIncludeHandler : public ID3DInclude

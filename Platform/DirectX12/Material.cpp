@@ -3,7 +3,7 @@
 #include "Utilities.h"
 
 using namespace simul;
-using namespace dx11on12;
+using namespace dx12;
 
 Material::Material()
 {

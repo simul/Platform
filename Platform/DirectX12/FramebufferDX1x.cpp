@@ -19,19 +19,17 @@
 
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
-#include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
 #include "Utilities.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
-#pragma optimize("",off)
-using namespace simul;
-using namespace dx11on12;
 
-// First figure out sizes, for placement create
-UINT64 iCurrentESRAMOffset = 0; // We allow this to grow beyond ESRAM_SIZE
-const UINT64 ESRAM_SIZE = 32 * 1024 * 1024;
+#pragma optimize("",off)
+
+using namespace simul;
+using namespace dx12;
+
 
 Framebuffer::Framebuffer(const char *n) :
 	BaseFramebuffer(n)
@@ -99,7 +97,7 @@ void Framebuffer::ActivateViewport(crossplatform::DeviceContext &deviceContext, 
 
 void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 {
-	auto rPlat = (dx11on12::RenderPlatform*)deviceContext.renderPlatform;
+	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 
 	SaveOldRTs(deviceContext);
 	if ((!buffer_texture || !buffer_texture->IsValid()) && (!buffer_depth_texture || !buffer_depth_texture->IsValid()))
@@ -107,25 +105,28 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	SIMUL_ASSERT(IsValid());
 
 	// Here we will set both colour and depth
-	dx11on12::Texture* col12Texture = (dx11on12::Texture*)buffer_texture;
-	dx11on12::Texture* depth12Texture = (dx11on12::Texture*)buffer_depth_texture;
+	dx12::Texture* col12Texture = (dx12::Texture*)buffer_texture;
+	dx12::Texture* depth12Texture = (dx12::Texture*)buffer_depth_texture;
 	if (!col12Texture && !depth12Texture)
 	{
 		SIMUL_BREAK_ONCE("No valid textures in the framebuffer");
 	}
-	rPlat->AsD3D12CommandList()->OMSetRenderTargets(1,buffer_texture->AsD3D12RenderTargetView(),false,buffer_depth_texture->AsD3D12DepthStencilView());
+	if(buffer_depth_texture->IsValid())
+		rPlat->AsD3D12CommandList()->OMSetRenderTargets(1,buffer_texture->AsD3D12RenderTargetView(),false,buffer_depth_texture->AsD3D12DepthStencilView());
+	else
+		rPlat->AsD3D12CommandList()->OMSetRenderTargets(1,buffer_texture->AsD3D12RenderTargetView(),false,nullptr);
 
 	// Inform the render platform the current output pixel format 
 	// TO-DO: same for depth!
 	mLastPixelFormat = rPlat->GetCurrentPixelFormat();
-	rPlat->SetCurrentPixelFormat(((dx11on12::Texture*)buffer_texture)->dxgi_format);
+	rPlat->SetCurrentPixelFormat(((dx12::Texture*)buffer_texture)->dxgi_format);
 
 	SetViewport(deviceContext,0,0,1.f,1.f,0,1.f);
 
 	// Push current target and viewport
 	mTargetAndViewport.num				= 1;
 	mTargetAndViewport.m_rt[0]			= buffer_texture->AsD3D12RenderTargetView();
-	mTargetAndViewport.m_dt				= buffer_depth_texture->AsD3D12DepthStencilView();
+	mTargetAndViewport.m_dt				= buffer_depth_texture->IsValid()?buffer_depth_texture->AsD3D12DepthStencilView():nullptr;
 	mTargetAndViewport.viewport.w		= mViewport.Width;
 	mTargetAndViewport.viewport.h		= mViewport.Height;
 	mTargetAndViewport.viewport.x		= mViewport.TopLeftX;
@@ -162,7 +163,7 @@ void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext)
 
 void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 {
-	auto rPlat = (dx11on12::RenderPlatform*)deviceContext.renderPlatform;
+	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	
 	// We should leave the state as it was when we started rendering
 	if (crossplatform::BaseFramebuffer::GetFrameBufferStack().size() <= 1)
@@ -209,6 +210,18 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 		nullptr
 	);
 	depth_active=false;
+
+	// TO-DO: check this NACHOOOOO! :)
+	if (crossplatform::BaseFramebuffer::GetFrameBufferStack().size())
+	{
+		auto curTop = crossplatform::BaseFramebuffer::GetFrameBufferStack().top();
+		curTop->m_dt = nullptr;
+	}
+	// And this :]
+	else
+	{
+		crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_dt = nullptr;
+	}
 }
 
 void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,float g,float b,float a,float depth,int mask)
@@ -237,15 +250,22 @@ void Framebuffer::Clear(crossplatform::DeviceContext &deviceContext,float r,floa
 
 void Framebuffer::ClearDepth(crossplatform::DeviceContext &context,float depth)
 {
-	context.renderPlatform->AsD3D12CommandList()->ClearDepthStencilView(*buffer_depth_texture->AsD3D12DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	if (buffer_depth_texture->AsD3D12DepthStencilView())
+	{
+		context.renderPlatform->AsD3D12CommandList()->ClearDepthStencilView(*buffer_depth_texture->AsD3D12DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
+	}
 }
 
 void Framebuffer::ClearColour(crossplatform::DeviceContext &deviceContext,float r,float g,float b,float a)
 {
-	float clearColor[4]={r,g,b,a};
+	float clearColor[4] = { r,g,b,a };
 	if (is_cubemap)
 	{
-		SIMUL_BREAK("Not implemented");
+		auto tex = (dx12::Texture*)buffer_texture;
+		for (int i = 0; i < 6; i++)
+		{
+			deviceContext.renderPlatform->AsD3D12CommandList()->ClearRenderTargetView(*tex->AsD3D12RenderTargetView(i), clearColor, 0, nullptr);
+		}
 	}
 	else
 	{

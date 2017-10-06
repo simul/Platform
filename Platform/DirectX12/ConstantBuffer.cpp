@@ -12,7 +12,7 @@
 #include <string>
 
 using namespace simul;
-using namespace dx11on12;
+using namespace dx12;
 #pragma optimize("",off)
 
 inline bool IsPowerOfTwo( UINT64 n )
@@ -40,15 +40,15 @@ PlatformConstantBuffer::PlatformConstantBuffer() :
 	mLastFrameIndex(UINT_MAX),
 	mCurApplyCount(0)
 {
+	for (unsigned int i = 0; i < kNumBuffers; i++)
+	{
+		mUploadHeap[i] = nullptr;
+	}
 }
 
 PlatformConstantBuffer::~PlatformConstantBuffer()
 {
 	InvalidateDeviceObjects();
-	for (unsigned int i = 0; i < 3; i++)
-	{
-		mHeaps[i].Release((dx11on12::RenderPlatform*)mRenderPlatform);
-	}
 }
 
 static float megas = 0.0f;
@@ -63,7 +63,7 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* render
 	mMaxDescriptors = mBufferSize / (256 * mSlots);
 	for (unsigned int i = 0; i < 3; i++)
 	{
-		mHeaps[i].Restore((dx11on12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "CBHeap", false);
+		mHeaps[i].Restore((dx12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "CBHeap", false);
 	}
 
 	// Create the upload heap (the gpu memory that will hold the constant buffer)
@@ -98,7 +98,7 @@ void PlatformConstantBuffer::SetNumBuffers(crossplatform::RenderPlatform *r, UIN
 }
 
 
-D3D12_CPU_DESCRIPTOR_HANDLE simul::dx11on12::PlatformConstantBuffer::AsD3D12ConstantBuffer()
+D3D12_CPU_DESCRIPTOR_HANDLE simul::dx12::PlatformConstantBuffer::AsD3D12ConstantBuffer()
 {
 	// This method is a bit hacky, it basically returns the CPU handle of the last
 	// "current" descriptor we will increase the curApply after the aplly that's why 
@@ -108,19 +108,19 @@ D3D12_CPU_DESCRIPTOR_HANDLE simul::dx11on12::PlatformConstantBuffer::AsD3D12Cons
 	return D3D12_CPU_DESCRIPTOR_HANDLE(mHeaps[mLastFrameIndex].GetCpuHandleFromStartAfOffset(mCurApplyCount - 1));
 }
 
-void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r,size_t size,void *addr)
+void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t size,void *addr)
 {
+	mRenderPlatform = r;
+
 	// Calculate the number of slots this constant buffer will use:
 	// mSlots = 256 Aligned size / 256
 	mSlots = ((size + 255) & ~255) / 256;
-
 	InvalidateDeviceObjects();
 	if(!r)
 		return;
 	SetNumBuffers( r,1, 64, 2 );
 }
 
-//! Find the constant buffer in the given effect, and link to it.
 void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const char *name,int bindingIndex)
 {
 
@@ -128,7 +128,12 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const ch
 
 void PlatformConstantBuffer::InvalidateDeviceObjects()
 {
-
+	auto rPlat = (dx12::RenderPlatform*)mRenderPlatform;
+	for (unsigned int i = 0; i < kNumBuffers; i++)
+	{
+		mHeaps[i].Release(rPlat);
+		rPlat->PushToReleaseManager(mUploadHeap[i], "ConstantBufferUpload");
+	}
 }
 
 void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t size, void *addr)
@@ -139,7 +144,8 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 		SIMUL_BREAK("Nacho has to fix this");
 	}
 
-	auto curFrameIndex = deviceContext.cur_backbuffer;
+	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
+	auto curFrameIndex = rPlat->GetIdx();
 	// If new frame, update current frame index and reset the apply count
 	if (mLastFrameIndex != curFrameIndex)
 	{
@@ -164,7 +170,7 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 	cbvDesc.SizeInBytes						= 256 * mSlots;
 	// If we applied this CB more than once this frame, we will be appending another descriptor (thats why we offset)
 	D3D12_CPU_DESCRIPTOR_HANDLE handle		= mHeaps[curFrameIndex].GetCpuHandleFromStartAfOffset(mCurApplyCount);
-	deviceContext.renderPlatform->AsD3D12Device()->CreateConstantBufferView(&cbvDesc, handle);
+	rPlat->AsD3D12Device()->CreateConstantBufferView(&cbvDesc, handle);
 
 	mCurApplyCount++;
 }

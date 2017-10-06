@@ -56,7 +56,7 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 		float dist						=depthToFadeDistance(depth,clip_pos.xy,depthInterpretationStruct,tanHalfFov);
 		float dist_rt					=sqrt(dist);
 		vec3 offsetMetres				=view*dist*1000.0*maxFadeDistanceKm;
-		vec3 lightspaceOffset			=(mul(worldToScatteringVolumeMatrix,vec4(offsetMetres,1.0)).xyz);
+		//vec3 lightspaceOffset			=(mul(worldToScatteringVolumeMatrix,vec4(offsetMetres,1.0)).xyz);
 		vec3 worldspaceVolumeTexCoords	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(sine)/SIMUL_PI_F),dist_rt);
 	
 		// cut-off at the edges.
@@ -94,10 +94,10 @@ TwoColourCompositeOutput CompositeAtmospherics_MSAA(vec4 clip_pos
 		if(do_godrays)
 		{
 			vec3 offsetKm					=view*min(nearFarCloud.z,dist)*maxFadeDistanceKm;
-			vec3 lightspaceOffset			=(mul(worldToScatteringVolumeMatrix,vec4(offsetKm,1.0)).xyz);
-			float r							=length(lightspaceOffset);
-			vec3 lightspaceVolumeTexCoords	=vec3(frac(atan2(lightspaceOffset.x,lightspaceOffset.y)/(2.0*SIMUL_PI_F))
-				,0.5+0.5*asin(lightspaceOffset.z/r)*2.0/SIMUL_PI_F
+			vec3 lightspaceOffset1			=(mul(worldToScatteringVolumeMatrix,vec4(offsetKm,1.0)).xyz);
+			float r							=length(lightspaceOffset1);
+			vec3 lightspaceVolumeTexCoords	=vec3(frac(atan2(lightspaceOffset1.x,lightspaceOffset1.y)/(2.0*SIMUL_PI_F))
+				,0.5+0.5*asin(lightspaceOffset1.z/r)*2.0/SIMUL_PI_F
 				,r);
 			vec4 godrays					=texture_3d_wcc_lod(godraysVolumeTexture,lightspaceVolumeTexCoords,0);
 			insc.rgb						*=godrays.x;

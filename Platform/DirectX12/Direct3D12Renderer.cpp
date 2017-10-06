@@ -4,7 +4,7 @@
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Math/pi.h"
 using namespace simul;
-using namespace dx11on12;
+using namespace dx12;
 
 Direct3D11Renderer::Direct3D11Renderer(crossplatform::RenderPlatform *r,simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m)
 	:renderPlatform(r)

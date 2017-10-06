@@ -3,7 +3,7 @@
 enum D3D_FEATURE_LEVEL;
 namespace simul
 {
-	namespace dx11on12
+	namespace dx12
 	{
 		//! An interface to abstract the nuts and bolts of D3D device creation/management (e.g. what DXUT does) from the application-specific tasks of object allocation and rendering
 		//! (what the derived classes of this one will do).

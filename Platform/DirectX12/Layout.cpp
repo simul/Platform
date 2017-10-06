@@ -6,7 +6,7 @@
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 
 using namespace simul;
-using namespace dx11on12;
+using namespace dx12;
 
 Layout::Layout():
 	d3d11InputLayout(0),
@@ -29,7 +29,7 @@ void Layout::InvalidateDeviceObjects()
 void Layout::Apply(crossplatform::DeviceContext &deviceContext)
 {
 	mAppliedCount++;
-	dx11on12::RenderPlatform* renderPlat = (dx11on12::RenderPlatform*)deviceContext.renderPlatform;
+	dx12::RenderPlatform* renderPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	renderPlat->SetCurrentInputLayout(&Dx12LayoutDesc);
 }
 
@@ -41,6 +41,6 @@ void Layout::Unapply(crossplatform::DeviceContext &deviceContext)
 		return;
 	}
 	mAppliedCount--;
-	dx11on12::RenderPlatform* renderPlat = (dx11on12::RenderPlatform*)deviceContext.renderPlatform;
+	dx12::RenderPlatform* renderPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 	renderPlat->SetCurrentInputLayout(nullptr);
 }

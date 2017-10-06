@@ -1,7 +1,7 @@
 //  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
 #ifndef COMMON_SL
 #define COMMON_SL
-
+#define SIMUL_PI_F 3.1415926536
 #define texture_clamp_mirror(tex,texc) tex.Sample(cmcSamplerState,texc)
 #define texture_clamp(tex,texc) tex.Sample(clampSamplerState,texc)
 #define texture_wrap_clamp(tex,texc) tex.Sample(wrapClampSamplerState,texc)
@@ -72,15 +72,12 @@
 	#define TEXTURE2D_UINT Texture2D<uint>
 	#define TEXTURE2D_UINT4 Texture2D<uint4>
 
-	//#define IMAGE_LOAD(a,b) imageLoad(a,b)
+
 	#define IMAGE_LOAD(a,b) a[b]
-	//#define TEXTURE_LOAD_MSAA(a,b,c) texelFetch(a,b,int(c))
 	#define TEXTURE_LOAD_MSAA(tex,uint2pos,sampl) tex.Load(uint2pos,sampl)
-	//#define TEXTURE_LOAD(a,b) texelFetch(a,int2(b),0)
-	//#define TEXTURE_LOAD_3D(a,b) texelFetch(a,int3(b),0)
 	#define TEXTURE_LOAD(tex,uintpos) tex.Load(int3(uintpos,0))
 	#define TEXTURE_LOAD_3D(tex,uintpos) tex.Load(int4(uintpos,0))
-	//#define IMAGE_LOAD_3D(a,b) imageLoad(a,int3(b))
+
 	#define IMAGE_LOAD_3D(tex,uintpos) tex[uintpos]
 #endif
 #define GET_DIMENSIONS_MSAA(tex,x,y,s) tex.GetDimensions(x,y,s)

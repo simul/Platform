@@ -12,7 +12,7 @@
 #endif
 #endif
 
-#define SIMUL_D3D11_MAP_FLAGS (((dx11on12::RenderPlatform*)deviceContext.renderPlatform)->GetMapFlags())	
+#define SIMUL_D3D11_MAP_FLAGS (((dx12::RenderPlatform*)deviceContext.renderPlatform)->GetMapFlags())	
 
 #ifdef _XBOX_ONE
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 1 

@@ -9,7 +9,7 @@
 
 namespace simul
 {
-	namespace dx11on12
+	namespace dx12
 	{
 		/// DirectX12 buffer class that can be used as index buffer and vertex buffer
 		class SIMUL_DIRECTX12_EXPORT Buffer:public simul::crossplatform::Buffer

@@ -1,5 +1,6 @@
 #include "Fence.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
+#include "Simul/Base/Timer.h"
 
 namespace simul
 {
@@ -19,11 +20,11 @@ namespace simul
 			Release();
 		}
 
-		void Fence::Restore(dx11on12::RenderPlatform * renderPlatform)
+		void Fence::Restore(dx12::RenderPlatform * renderPlatform)
 		{
 			Release();
 			HRESULT res = S_FALSE;
-			auto rPlat = (dx11on12::RenderPlatform*)renderPlatform;
+			auto rPlat = (dx12::RenderPlatform*)renderPlatform;
 
 			mFenceSignal	= 0;
 			mFenceValue		= 1;
@@ -33,7 +34,7 @@ namespace simul
 			SIMUL_ASSERT(mFenceEvent != nullptr);
 		}
 
-		void Fence::Signal(dx11on12::RenderPlatform* renderPlatform)
+		void Fence::Signal(dx12::RenderPlatform* renderPlatform)
 		{
 			if (mSignaled)
 			{
@@ -43,14 +44,14 @@ namespace simul
 
 			HRESULT res		= S_FALSE;
 			mSignaled		= true;
-			auto rPlat		= (dx11on12::RenderPlatform*)renderPlatform;
+			auto rPlat		= (dx12::RenderPlatform*)renderPlatform;
 			// Save the signal and increase the fence value
 			mFenceSignal	= mFenceValue++;
 			res				= rPlat->GetCommandQueue()->Signal(mFence, mFenceSignal);
 			SIMUL_ASSERT(res == S_OK);
 		}
 
-		void Fence::WaitUntilCompleted(dx11on12::RenderPlatform* renderPlatform)
+		void Fence::WaitUntilCompleted(dx12::RenderPlatform* renderPlatform)
 		{
 			if (!mSignaled)
 			{
@@ -65,7 +66,11 @@ namespace simul
 				res = mFence->SetEventOnCompletion(mFenceSignal, mFenceEvent);
 				SIMUL_ASSERT(res == S_OK);
 				const DWORD waitTime = 70;// mili seconds, in a 30FPS game, this is 2 frames!
+				
+				//simul::base::Timer timer;
 				auto waitRes = WaitForSingleObject(mFenceEvent, waitTime);
+				//std::cout<< "[INFO] This fence waited for:" << timer.FinishTime() << ".ms\n";
+
 				if (waitRes != WAIT_OBJECT_0)
 				{
 					SIMUL_CERR << "------ > This wait failed < ------ \n";
@@ -74,7 +79,7 @@ namespace simul
 			}
 		}
 
-		void Fence::WaitGPU(dx11on12::RenderPlatform * renderPlatform)
+		void Fence::WaitGPU(dx12::RenderPlatform * renderPlatform)
 		{
 			if (!mSignaled)
 			{

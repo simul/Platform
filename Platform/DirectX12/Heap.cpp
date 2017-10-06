@@ -12,7 +12,7 @@ namespace simul
 			
 		}
 
-		void Heap::Restore(dx11on12::RenderPlatform* renderPlatform, UINT totalCnt, D3D12_DESCRIPTOR_HEAP_TYPE type, const char* name /*= Heap*/, bool shaderVisible /*=true*/)
+		void Heap::Restore(dx12::RenderPlatform* renderPlatform, UINT totalCnt, D3D12_DESCRIPTOR_HEAP_TYPE type, const char* name /*= Heap*/, bool shaderVisible /*=true*/)
 		{
 			HRESULT res = S_FALSE;
 			auto device = renderPlatform->AsD3D12Device();
@@ -76,7 +76,7 @@ namespace simul
 			return h;
 		}
 
-		void Heap::Release(dx11on12::RenderPlatform* r)
+		void Heap::Release(dx12::RenderPlatform* r)
 		{
 			if (mHeap)
 			{

@@ -7,7 +7,7 @@
 #include "Simul/Platform/CrossPlatform/Effect.h"
 namespace simul
 {
-	namespace dx11on12
+	namespace dx12
 	{
 		class SIMUL_DIRECTX12_EXPORT Material:public crossplatform::Material
 		{

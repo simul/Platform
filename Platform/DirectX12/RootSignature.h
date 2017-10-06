@@ -17,7 +17,7 @@ namespace simul
 		struct DeviceContext;
 
 	}
-	namespace dx11on12
+	namespace dx12
 	{
 		class Shader;
 		class EffectPass;
@@ -31,14 +31,14 @@ namespace simul
 			~RootSignature();
 
 			ID3D12RootSignature* Get()const;
-			void Init(dx11on12::EffectPass* pass,crossplatform::DeviceContext* context);
+			void Init(dx12::EffectPass* pass,crossplatform::DeviceContext* context);
 
 			int ResIdx()const { return mResIdx; }
 			int SamIdx()const { return mSampIdx; }
 
 		private:
 			void CreateAPIRootSignature(crossplatform::DeviceContext* context);
-			void LoadResources(dx11on12::Shader* shader, D3D12_SHADER_DESC& desc,std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& cb, std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& sr, std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& ua);
+			void LoadResources(dx12::Shader* shader, D3D12_SHADER_DESC& desc,std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& cb, std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& sr, std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& ua);
 
 			bool					mIsCompute = false;
 			ID3D12RootSignature*	mApiRootSignature;
@@ -46,14 +46,14 @@ namespace simul
 			std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE> > mResources;
 			std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE> > mSamplers;
 
-			/// Root params
+			//! Root params
 			std::vector<CD3DX12_ROOT_PARAMETER> mRootParams;
 
-			/// CBV_SRV_UAV descriptors
+			//! CBV_SRV_UAV descriptors
 			UINT mResIdx = -1;
 			std::vector<CD3DX12_DESCRIPTOR_RANGE> mSrvCbvUavRanges;
 
-			/// SAMPLER descriptors
+			//! SAMPLER descriptors
 			UINT mSampIdx = -1;
 			std::vector<CD3DX12_DESCRIPTOR_RANGE> mSamplerRanges;
 		};

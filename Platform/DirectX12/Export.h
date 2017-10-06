@@ -6,18 +6,20 @@
 #if defined(_MSC_VER) && !defined(SIMUL_DIRECTX1x_DLL)
 #ifdef _DEBUG
 #ifdef _DLL
-#pragma comment(lib,"SimulDirectX11on12_MDd")
+#pragma comment(lib,"SimulDirectX12_MDd")
 #else
-#pragma comment(lib,"SimulDirectX11on12_MTd")
+#pragma comment(lib,"SimulDirectX12_MTd")
 #endif
 #else
 #ifdef _DLL
-#pragma comment(lib,"SimulDirectX11on12_MD")
+#pragma comment(lib,"SimulDirectX12_MD")
 #else
-#pragma comment(lib,"SimulDirectX11on12_MT")
+#pragma comment(lib,"SimulDirectX12_MT")
 #endif
 #endif
 #endif
+
+#pragma comment(lib,"D3D12")
 
 #if defined(SIMUL_DYNAMIC_LINK) && !defined(DOXYGEN)
 // In this lib:

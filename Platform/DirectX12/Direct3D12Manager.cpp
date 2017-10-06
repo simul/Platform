@@ -12,7 +12,7 @@
 #include <DirectXMath.h>
 
 using namespace simul;
-using namespace dx11on12;
+using namespace dx12;
 
 Window::Window():
 	hwnd(0),
@@ -45,7 +45,7 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 	int screenWidth			= abs(rect.right - rect.left);
 	int screenHeight		= abs(rect.bottom - rect.top);
 
-	// DX12 viewport
+	// Viewport
 	m_viewport.TopLeftX		= 0;
 	m_viewport.TopLeftY		= 0;
 	m_viewport.Width		= (float)screenWidth;
@@ -53,7 +53,7 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 	m_viewport.MinDepth		= 0.0f;
 	m_viewport.MaxDepth		= 1.0f;
 
-	// DX12 scissor rect	
+	// Scissor
 	m_scissorRect.left		= 0;
 	m_scissorRect.top		= 0;
 	m_scissorRect.right		= screenWidth;
@@ -108,6 +108,8 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 	// https://github.com/Microsoft/DirectX-Graphics-Samples/issues/48
 	// TO-DO: resize doesnt work yet
 	// TO-DO: Update the viewports and the depth texture
+
+	// We should have a wait here so we can delete the safelly the surfaces
 	
 	RECT rect;
 #if defined(WINVER) &&!defined(_XBOX_ONE)
@@ -116,6 +118,20 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 #endif
 	int W	=abs(rect.right-rect.left);
 	int H	=abs(rect.bottom-rect.top);
+
+	// DX12 viewport
+	m_viewport.TopLeftX		= 0;
+	m_viewport.TopLeftY		= 0;
+	m_viewport.Width		= (float)W;
+	m_viewport.Height		= (float)H;
+	m_viewport.MinDepth		= 0.0f;
+	m_viewport.MaxDepth		= 1.0f;
+
+	// DX12 scissor rect	
+	m_scissorRect.left		= 0;
+	m_scissorRect.top		= 0;
+	m_scissorRect.right		= W;
+	m_scissorRect.bottom	= H;
 
 	DXGI_SWAP_CHAIN_DESC1 swapDesc;
 	HRESULT hr = m_swapChain->GetDesc1(&swapDesc);
@@ -131,7 +147,9 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 	SAFE_RELEASE		(m_depthStencilState);
 	SAFE_RELEASE		(m_rasterState);
 	*/
-	V_CHECK				(m_swapChain->ResizeBuffers(2,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0));	// Nacho: that format ?? We should make a member to store this format
+
+	// Nacho: that format ?? We should make a member to store this format
+	hr = m_swapChain->ResizeBuffers(2,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0);	
 
 	CreateRenderTarget(d3dDevice);
 	CreateDepthStencil(d3dDevice);
@@ -210,7 +228,7 @@ void Window::CreateDepthStencil(ID3D12Device * d3dDevice)
 	// Default clear
 	D3D12_CLEAR_VALUE depthClear	= {};
 	depthClear.Format				= mDepthStencilFmt;
-	depthClear.DepthStencil.Depth	= 1.0f;
+	depthClear.DepthStencil.Depth	= 0.0f;
 	depthClear.DepthStencil.Stencil = 0;
 
 	// Create the depth stencil texture resource
@@ -233,7 +251,6 @@ void Window::CreateDepthStencil(ID3D12Device * d3dDevice)
 	dsViewDesc.Flags							= D3D12_DSV_FLAG_NONE;
 	d3dDevice->CreateDepthStencilView(m_depthStencilTexture12, &dsViewDesc, m_dsHeap->GetCPUDescriptorHandleForHeapStart());
 }
-
 
 void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 {
@@ -280,7 +297,7 @@ void Window::setCommandQueue(ID3D12CommandQueue *commandQueue)
 }
 
 
-Direct3D11Manager::Direct3D11Manager():
+Direct3D12Manager::Direct3D12Manager():
 	m_d3d12Device(nullptr),
 	m_commandQueue(nullptr),
 	m_commandList(nullptr),
@@ -288,12 +305,12 @@ Direct3D11Manager::Direct3D11Manager():
 {
 }
 
-Direct3D11Manager::~Direct3D11Manager()
+Direct3D12Manager::~Direct3D12Manager()
 {
 	Shutdown();
 }
 
-void Direct3D11Manager::Initialize(bool use_debug,bool instrument)
+void Direct3D12Manager::Initialize(bool use_debug,bool instrument)
 {
 	HRESULT res			= S_FALSE;
 
@@ -401,12 +418,12 @@ void Direct3D11Manager::Initialize(bool use_debug,bool instrument)
 #endif
 }
 
-int Direct3D11Manager::GetNumOutputs()
+int Direct3D12Manager::GetNumOutputs()
 {
 	return (int)outputs.size();
 }
 
-crossplatform::Output Direct3D11Manager::GetOutput(int i)
+crossplatform::Output Direct3D12Manager::GetOutput(int i)
 {
 	unsigned numModes;
 	crossplatform::Output o;
@@ -474,7 +491,7 @@ crossplatform::Output Direct3D11Manager::GetOutput(int i)
 #endif
 	return o;
 }
-void Direct3D11Manager::Shutdown()
+void Direct3D12Manager::Shutdown()
 {
 	// TO-DO: wait for the GPU to complete last work
 	for(OutputMap::iterator i=outputs.begin();i!=outputs.end();i++)
@@ -498,7 +515,7 @@ void Direct3D11Manager::Shutdown()
 	//SAFE_DELETE(m_fence);
 }
 
-void Direct3D11Manager::RemoveWindow(HWND hwnd)
+void Direct3D12Manager::RemoveWindow(HWND hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return;
@@ -508,7 +525,7 @@ void Direct3D11Manager::RemoveWindow(HWND hwnd)
 	windows.erase(hwnd);
 }
 
-IDXGISwapChain *Direct3D11Manager::GetSwapChain(HWND h)
+IDXGISwapChain *Direct3D12Manager::GetSwapChain(HWND h)
 {
 	if(windows.find(h)==windows.end())
 		return NULL;
@@ -518,7 +535,7 @@ IDXGISwapChain *Direct3D11Manager::GetSwapChain(HWND h)
 	return w->m_swapChain;
 }
 
-void Direct3D11Manager::Render(HWND h)
+void Direct3D12Manager::Render(HWND h)
 {
 	HRESULT res = S_FALSE;
 
@@ -564,7 +581,7 @@ void Direct3D11Manager::Render(HWND h)
 	// Submit commands
 	const float kClearColor[4] = { 0.2f,0.2f,0.2f,1.0f };
 	m_commandList->ClearRenderTargetView(w->mRtvCpuHandle[m_frameIndex], kClearColor , 0, nullptr);
-	m_commandList->ClearDepthStencilView(w->m_dsHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	m_commandList->ClearDepthStencilView(w->m_dsHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
 
 	if (w->renderer)
 	{
@@ -588,13 +605,13 @@ void Direct3D11Manager::Render(HWND h)
 
 	static DWORD dwFlags = 0;
 	static UINT SyncInterval = 1;									
-	V_CHECK(w->m_swapChain->Present(SyncInterval,dwFlags));			
+	res = w->m_swapChain->Present(SyncInterval,dwFlags);			
+	SIMUL_ASSERT(res == S_OK);
 
 	MoveToNextFrame(w);
-	ERRNO_BREAK
 }
 
-void Direct3D11Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
+void Direct3D12Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
 {
 	if(windows.find(hwnd)==windows.end())
 		return;
@@ -604,7 +621,7 @@ void Direct3D11Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInt
 	w->SetRenderer(ci,  view_id);
 }
 
-int Direct3D11Manager::GetViewId(HWND hwnd)
+int Direct3D12Manager::GetViewId(HWND hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return -1;
@@ -612,7 +629,7 @@ int Direct3D11Manager::GetViewId(HWND hwnd)
 	return w->view_id;
 }
 
-Window *Direct3D11Manager::GetWindow(HWND hwnd)
+Window *Direct3D12Manager::GetWindow(HWND hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return NULL;
@@ -620,13 +637,14 @@ Window *Direct3D11Manager::GetWindow(HWND hwnd)
 	return w;
 }
 
-void Direct3D11Manager::ReportMessageFilterState()
+void Direct3D12Manager::ReportMessageFilterState()
 {
 
 }
 
-void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output)
+void Direct3D12Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output)
 {
+	HRESULT res = S_FALSE;
 	Window *w=(Window*)GetWindow(hwnd);
 	if(!w)
 		return;
@@ -634,15 +652,15 @@ void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 	if(!w->m_swapChain)
 		return;
 	BOOL current_fullscreen;
-	V_CHECK(w->m_swapChain->GetFullscreenState(&current_fullscreen, NULL));
+	res = w->m_swapChain->GetFullscreenState(&current_fullscreen, NULL);
+	SIMUL_ASSERT(res == S_OK);
 	if((current_fullscreen==TRUE)==fullscreen)
 		return;
-	V_CHECK(w->m_swapChain->SetFullscreenState(fullscreen, NULL));
-
+	res = w->m_swapChain->SetFullscreenState(fullscreen, NULL);
 	ResizeSwapChain(hwnd);
 }
 
-void Direct3D11Manager::ResizeSwapChain(HWND hwnd)
+void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return;
@@ -653,12 +671,12 @@ void Direct3D11Manager::ResizeSwapChain(HWND hwnd)
 }
 
 
-void * simul::dx11on12::Direct3D11Manager::GetDevice12()
+void * simul::dx12::Direct3D12Manager::GetDevice12()
 {
 	return m_d3d12Device;
 }
 
-void Direct3D11Manager::AddWindow(HWND hwnd)
+void Direct3D12Manager::AddWindow(HWND hwnd)
 {
 	if(windows.find(hwnd)!=windows.end())
 		return;
@@ -676,7 +694,7 @@ void Direct3D11Manager::AddWindow(HWND hwnd)
 	m_commandList->SetName(L"Dx12CommandList");
 }
 
-void simul::dx11on12::Direct3D11Manager::InitialWaitForGpu()
+void simul::dx12::Direct3D12Manager::InitialWaitForGpu()
 {
 	// Close the command list and execute it to begin initial copies
 	m_commandList->Close();
@@ -703,7 +721,7 @@ void simul::dx11on12::Direct3D11Manager::InitialWaitForGpu()
 }
 
 // Wait for pending GPU work to complete.
-void Direct3D11Manager::WaitForGpu()
+void Direct3D12Manager::WaitForGpu()
 {
 	// Schedule a Signal command in the queue.
 	m_commandQueue->Signal(m_fence, m_fenceValues[m_frameIndex]);
@@ -717,7 +735,7 @@ void Direct3D11Manager::WaitForGpu()
 }
 
 // Prepare to render the next frame.
-void Direct3D11Manager::MoveToNextFrame(Window *window)
+void Direct3D12Manager::MoveToNextFrame(Window *window)
 {
 	// Schedule a Signal command in the queue.
 	const UINT64 currentFenceValue = m_fenceValues[m_frameIndex];

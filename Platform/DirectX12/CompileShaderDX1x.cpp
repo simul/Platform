@@ -11,7 +11,7 @@
 #endif
 
 using namespace simul;
-using namespace dx11on12;
+using namespace dx12;
 
 ShaderIncludeHandler::ShaderIncludeHandler(const char* shaderDirUtf8, const char* systemDirUtf8,const std::vector<std::string> &shaderPathsUtf8)
 	: m_ShaderDirUtf8(shaderDirUtf8), m_SystemDirUtf8(systemDirUtf8)

@@ -15,7 +15,7 @@ namespace simul
 		class CameraOutputInterface;
 		class BaseOpticsRenderer;
 	}
-	namespace dx11on12
+	namespace dx12
 	{
 		/// A class that faces the raw API and implements PlatformRendererInterface
 		/// in order to translate to the platform-independent renderer.

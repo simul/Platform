@@ -69,13 +69,13 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulDLL.props" />
-    <Import Project="..\..\SimulReleaseMD.props" />
+    <Import Project="..\..\SimulRelease.props" />
     <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulDLL.props" />
-    <Import Project="..\..\SimulDebugMD.props" />
+    <Import Project="..\..\SimulDebug.props" />
     <Import Project="SimulUseWin8SDK.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -88,10 +88,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">
-    <ExecutablePath>$(SIMUL)/Tools/bin;$(SIMUL)/External/win_flex_bison;$(VC_ExecutablePath_x64);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(FxCopDir);$(PATH);</ExecutablePath>
+    <ExecutablePath>$(SIMUL)/Tools/bin;$(SIMUL)/External/win_flex_bison;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">
-    <ExecutablePath>$(SIMUL)/Tools/bin;$(SIMUL)/External/win_flex_bison;$(VC_ExecutablePath_x64);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(FxCopDir);$(PATH);</ExecutablePath>
+    <ExecutablePath>$(SIMUL)/Tools/bin;$(SIMUL)/External/win_flex_bison;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -121,6 +121,7 @@
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <ShowProgress>LinkVerboseLib</ShowProgress>
+      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -129,7 +130,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <Optimization>Disabled</Optimization>
+      <Optimization>Full</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -149,6 +150,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -190,6 +192,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <PreprocessorDefinitions>WIN64;SIMUL_DIRECTX12_DLL;_MBCS;FREEGLUT_STATIC;GLFX_STATIC;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>Full</Optimization>
     </ClCompile>
     <Lib>
       <TargetMachine>MachineX64</TargetMachine>
@@ -208,7 +211,6 @@
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="CompileShaderDX1x.cpp" />
     <ClCompile Include="ConstantBuffer.cpp" />
-    <ClCompile Include="CreateEffectDX1x.cpp" />
     <ClCompile Include="Direct3D12Manager.cpp" />
     <ClCompile Include="Direct3D12Renderer.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
@@ -222,7 +224,6 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="RootSignature.cpp" />
-    <ClCompile Include="SaveTextureDX1x.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
@@ -230,7 +231,6 @@
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="CompileShaderDX1x.h" />
     <ClInclude Include="ConstantBuffer.h" />
-    <ClInclude Include="CreateEffectDX1x.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="Direct3D12CallbackInterface.h" />
     <ClInclude Include="Direct3D12Manager.h" />
@@ -251,7 +251,6 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
     <ClInclude Include="RootSignature.h" />
-    <ClInclude Include="SaveTextureDX1x.h" />
     <ClInclude Include="SimulDirectXHeader.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />

@@ -17,7 +17,7 @@ public:
 	uint3 *pattern;
 	int numOffsets;
 	AmortizationStruct()
-		:amortization(0)
+		:amortization(1)
 		,framenumber(0)
 		,framesPerIncrement(1)
 		,pattern(nullptr)
@@ -47,7 +47,7 @@ public:
 	}
 	uint3 offset() const
 	{
-		if(!pattern)
+		if(!pattern||amortization<=1)
 			return uint3(0,0,0);
 		int sub_frame	=(framenumber/framesPerIncrement)%(numOffsets);
 		return pattern[sub_frame];

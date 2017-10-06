@@ -11,9 +11,9 @@
 
 namespace simul
 {
-	namespace dx11on12
+	namespace dx12
 	{
-		/// Sampler class for DirectX12
+		//! Sampler class for DirectX12
 		class SIMUL_DIRECTX12_EXPORT SamplerState:public crossplatform::SamplerState
 		{
 		public:
@@ -29,18 +29,18 @@ namespace simul
 			D3D12_CPU_DESCRIPTOR_HANDLE mCpuHandle;
 		};
 
-		/// Texture class for DirectX12, it implement the base Texture methods
+		//! Texture class for DirectX12, it implement the base Texture methods
 		class SIMUL_DIRECTX12_EXPORT Texture:public crossplatform::Texture
 		{
 		public:
 			Texture();
 			virtual ~Texture() override;
 
-			/// Cleans all the resources related with this object
+			//! Cleans all the resources related with this object
 			void							InvalidateDeviceObjects();
-			/// Loads this texture from a file
+			//! Loads this texture from a file
 			void							LoadFromFile(crossplatform::RenderPlatform *r,const char *pFilePathUtf8);
-			/// Loads this texture from multiple files
+			//! Loads this texture from multiple files
 			void							LoadTextureArray(crossplatform::RenderPlatform *r,const std::vector<std::string> &texture_files);
 			bool							IsValid() const;
 			
@@ -53,7 +53,7 @@ namespace simul
 			bool							IsComputable() const override;
 			bool							HasRenderTargets() const override;
 
-			/// Initializes this texture from an external (already created texture)
+			//! Initializes this texture from an external (already created texture)
 			void							InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform *renderPlatform, ID3D12Resource* t, D3D12_CPU_DESCRIPTOR_HANDLE* srv, bool make_rt = false);
 			void							InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt=false) override;
 			void							InitFromExternalTexture3D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_uav=false) override;
@@ -89,24 +89,40 @@ namespace simul
 			}
 			int GetSampleCount() const;
 
-			D3D12_RESOURCE_STATES GetCurrentState()const 
-			{ 
-				return mCurrentState; 
-			}
+			//! Returns the current state of the resource or subresource if provided.
+			D3D12_RESOURCE_STATES GetCurrentState(int mip = -1, int index = -1);
+			//! Sets the state of the resource or subresource if provided.
+			void SetCurrentState(D3D12_RESOURCE_STATES state, int mip = -1, int index = -1);
 
-			DXGI_FORMAT					dxgi_format;
-
+			DXGI_FORMAT	dxgi_format;
 
 		protected:
+			void											InitUAVTables(int l, int m);
+			void											FreeUAVTables();
+
+			void											InitSRVTables(int l, int m);
+			void											FreeSRVTables();
+			void											CreateSRVTables(int num, int m, bool cubemap, bool volume = false, bool msaa = false);
+
+			void											FreeRTVTables();
+			void											InitRTVTables(int l, int m);
+
+			void											InitStateTable(int l, int m);
+
+			//! Texture data that lives in the GPU
+			ID3D12Resource*									mTextureDefault;
+			//! Used to upload texture data to the GPU
+			ID3D12Resource*									mTextureUpload;
+			//! States of the subresources mSubResourcesStates[index][mip]
+			std::vector<std::vector<D3D12_RESOURCE_STATES>>	mSubResourcesStates;
+			//! Full resource state
+			D3D12_RESOURCE_STATES							mResourceState;
 
 			dx12::Heap						mTextureSrvHeap;
 			dx12::Heap						mTextureUavHeap;
 			dx12::Heap						mTextureRtHeap;
 			dx12::Heap						mTextureDsHeap;
 
-			ID3D12Resource*					mTextureDefault;
-			ID3D12Resource*					mTextureUpload;
-			D3D12_RESOURCE_STATES			mCurrentState;
 			bool							mLoadedFromFile;	
 			bool							mIsUavAndRt = false; // UA will be initial state
 			bool							mInitializedFromExternal = false;
@@ -124,7 +140,7 @@ namespace simul
 			D3D12_CPU_DESCRIPTOR_HANDLE		arrayShaderResourceView12;		// SRV that describes a cubemap texture as an array, used only for cubemaps.
 
 			D3D12_CPU_DESCRIPTOR_HANDLE*	layerShaderResourceViews12;		// SRV's for each layer, including all mips
-			D3D12_CPU_DESCRIPTOR_HANDLE*	mainMipShaderResourceViews12;		// SRV's for the whole texture at different mips.
+			D3D12_CPU_DESCRIPTOR_HANDLE*	mainMipShaderResourceViews12;	// SRV's for the whole texture at different mips.
 			D3D12_CPU_DESCRIPTOR_HANDLE**	layerMipShaderResourceViews12;	// SRV's for each layer at different mips.
 
 			D3D12_CPU_DESCRIPTOR_HANDLE*	mipUnorderedAccessViews12;		// UAV for the whole texture at various mips: only for 2D arrays.
@@ -136,14 +152,6 @@ namespace simul
 			unsigned int					num_OldViewports12;
 			unsigned int					mRowPitch;
 			unsigned int					mDepthPitch;
-
-			void InitUAVTables(int l,int m);
-			void FreeUAVTables();
-			void InitSRVTables(int l,int m);
-			void FreeSRVTables();
-			void FreeRTVTables();
-			void InitRTVTables(int l,int m);
-			void CreateSRVTables(int num,int m,bool cubemap,bool volume=false,bool msaa=false);
 		};
 	}
 }

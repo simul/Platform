@@ -33,6 +33,11 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext
 	crossplatform::ContextState *cs = r->GetContextState(deviceContext);
 	Effect *e = (Effect *)effect;
 	int index = e->GetSlot(name);
+	if(index<0)
+	{
+		SIMUL_CERR_ONCE<<"SB "<<name<<"not found in effect "<<e->GetName()<<std::endl;
+		return;
+	}
 	cs->applyStructuredBuffers[index] = this;
 }
 
@@ -231,12 +236,12 @@ void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext, const 
 	auto i = samplerStates.find(name);
 	if (i == samplerStates.end())
 	{
-		SIMUL_CERR << "Sampler state " << name << " not found." << std::endl;
+		SIMUL_CERR_ONCE << "Sampler state " << name << " not found." << std::endl;
 		return;
 	}
 	if (!s)
 	{
-		SIMUL_CERR << "Sampler state " << name << " null." << std::endl;
+		SIMUL_CERR_ONCE << "Sampler state " << name << " null." << std::endl;
 		s = renderPlatform->GetOrCreateSamplerStateByName("clampSamplerState");
 	}
 	crossplatform::SamplerState *ss = i->second;
@@ -355,7 +360,7 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 	{
 		res.valid = false;
 		SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
-		SIMUL_BREAK_ONCE("")
+		//SIMUL_BREAK_ONCE("Invalid Shader resource")
 		return res;
 	}
 	else
@@ -627,7 +632,7 @@ static crossplatform::CullFaceMode toCullFadeMode(string s)
 	else if(is_equal(s,"CULL_NONE"))
 		return crossplatform::CULL_FACE_NONE;
 	SIMUL_BREAK((string("Invalid string")+s).c_str());
-	crossplatform::CULL_FACE_NONE;
+	return crossplatform::CULL_FACE_NONE;
 }
 
 static crossplatform::PolygonMode toPolygonMode(string s)
@@ -638,6 +643,7 @@ static crossplatform::PolygonMode toPolygonMode(string s)
 		return crossplatform::PolygonMode::POLYGON_MODE_LINE;
 	else if(is_equal(s,"FILL_POINT"))
 		return crossplatform::PolygonMode::POLYGON_MODE_POINT;
+	return crossplatform::PolygonMode::POLYGON_MODE_FILL;
 }
 
 static bool toBool(string s)
@@ -657,6 +663,8 @@ static bool toBool(string s)
 void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, const std::map<std::string, std::string> &defines)
 {
 	renderPlatform=r;
+
+	// Clear the effect
 	groups.clear();
 	groupCharMap.clear();
 	for(auto i:textureDetailsMap)
@@ -680,7 +688,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		std::transform(filenameUtf8.begin(), filenameUtf8.end(), filenameUtf8.begin(), ::tolower);
 		if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))
 		{
-			SIMUL_CERR<<"Shader file not found: "<<filenameUtf8.c_str()<<std::endl;
+			SIMUL_CERR<<"Shader effect file not found: "<<filenameUtf8.c_str()<<std::endl;
 			filenameUtf8=filename_utf8;
 		// The sfxo does not exist, so we can't load this effect.
 			return;

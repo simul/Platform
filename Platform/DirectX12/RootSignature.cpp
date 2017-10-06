@@ -24,11 +24,11 @@ namespace simul
 			return mApiRootSignature;
 		}
 
-		void RootSignature::Init(dx11on12::EffectPass* pass, crossplatform::DeviceContext* context)
+		void RootSignature::Init(dx12::EffectPass* pass, crossplatform::DeviceContext* context)
 		{
-			auto c = (dx11on12::Shader*)pass->shaders[crossplatform::SHADERTYPE_COMPUTE];
-			auto p = (dx11on12::Shader*)pass->shaders[crossplatform::SHADERTYPE_PIXEL];
-			auto v = (dx11on12::Shader*)pass->shaders[crossplatform::SHADERTYPE_VERTEX];
+			auto c = (dx12::Shader*)pass->shaders[crossplatform::SHADERTYPE_COMPUTE];
+			auto p = (dx12::Shader*)pass->shaders[crossplatform::SHADERTYPE_PIXEL];
+			auto v = (dx12::Shader*)pass->shaders[crossplatform::SHADERTYPE_VERTEX];
 
 			std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>> constantBuffers;
 			std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>> srViews;
@@ -144,7 +144,7 @@ namespace simul
 			mApiRootSignature->SetName(name.c_str());
 		}
 
-		void RootSignature::LoadResources(dx11on12::Shader* shader, D3D12_SHADER_DESC& desc,std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& cb, std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& sr, std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& ua)
+		void RootSignature::LoadResources(dx12::Shader* shader, D3D12_SHADER_DESC& desc,std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& cb, std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& sr, std::vector<std::pair<UINT, D3D12_DESCRIPTOR_RANGE_TYPE>>& ua)
 		{
 			HRESULT res = S_FALSE;
 			for (unsigned int j = 0; j < desc.BoundResources; j++)

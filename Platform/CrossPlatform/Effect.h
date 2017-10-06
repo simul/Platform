@@ -380,9 +380,10 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformConstantBuffer
 		{
 		protected:
+			crossplatform::RenderPlatform *renderPlatform;
 			bool changed;
 		public:
-			PlatformConstantBuffer():changed(true){}
+			PlatformConstantBuffer():renderPlatform(nullptr),changed(true){}
 			virtual ~PlatformConstantBuffer(){}
 			virtual void RestoreDeviceObjects(RenderPlatform *dev,size_t sz,void *addr)=0;
 			virtual void InvalidateDeviceObjects()=0;
@@ -524,11 +525,13 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer
 		{
 		protected:
+			simul::crossplatform::RenderPlatform *renderPlatform;
 			int numCopies;	// for tracking when the data should be valid, i.e. when numCopies==Latency.
+			bool cpu_read;
 		public:
-			PlatformStructuredBuffer():numCopies(0){}
+			PlatformStructuredBuffer():renderPlatform(nullptr),numCopies(0),cpu_read(false){}
 			virtual ~PlatformStructuredBuffer(){}
-			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,bool computable,void *init_data)=0;
+			virtual void RestoreDeviceObjects(RenderPlatform *r,int count,int unit_size,bool computable,bool cpu_read,void *init_data)=0;
 			virtual void InvalidateDeviceObjects()=0;
 			virtual void Apply(DeviceContext &deviceContext,Effect *effect,const char *name);
 			virtual void ApplyAsUnorderedAccessView(DeviceContext &deviceContext,Effect *effect,const char *name);
@@ -540,8 +543,8 @@ namespace simul
 			virtual void SetData(crossplatform::DeviceContext &deviceContext,void *data)=0;
 			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView(){return NULL;}
 			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int =0){return NULL;}
-			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView() { return NULL; }
-			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12UnorderedAccessView(int = 0) { return NULL; }
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext) { return NULL; }
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int = 0) { return NULL; }
 			void ResetCopies()
 			{
 				numCopies=0;
@@ -573,7 +576,7 @@ namespace simul
 				InvalidateDeviceObjects();
 			}
 #ifdef _MSC_VER
-			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable = false, T *data = NULL)
+			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable = false, bool cpu_read=true, T *data = NULL)
 			{
 				if(!p)
 					return;
@@ -581,60 +584,90 @@ namespace simul
 				delete platformStructuredBuffer;
 				platformStructuredBuffer = NULL;
 				platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
-				platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, data);
+				platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data);
 			}
 #else
-			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable = false, T *data = NULL);
+			void RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable = false, bool cpu_read=true, T *data = NULL);
 #endif
 			T *GetBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				if(!platformStructuredBuffer)
+				{
+					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return NULL;
+				}
 				return (T*)platformStructuredBuffer->GetBuffer(deviceContext);
 			}
 			const T *OpenReadBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				if(!platformStructuredBuffer)
+				{
+					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return NULL;
+				}
 				return (const T*)platformStructuredBuffer->OpenReadBuffer(deviceContext);
 			}
 			void CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				if(!platformStructuredBuffer)
+				{
+					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return ;
+				}
 				platformStructuredBuffer->CloseReadBuffer(deviceContext);
 			}
 			void CopyToReadBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				if(!platformStructuredBuffer)
+				{
+					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return ;
+				}
 				platformStructuredBuffer->CopyToReadBuffer(deviceContext);
 			}
 			void SetData(crossplatform::DeviceContext &deviceContext,T *data)
 			{
-				if(platformStructuredBuffer)
+				if (!platformStructuredBuffer)
+				{
+					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
+					return;
+				}
 					platformStructuredBuffer->SetData(deviceContext,(void*)data);
 			}
 			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
 				if(!platformStructuredBuffer)
+				{
+					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return NULL;
+				}
 				return platformStructuredBuffer->AsD3D11ShaderResourceView();
 			}
 			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip=0)
 			{
 				if(!platformStructuredBuffer)
+				{
+					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return NULL;
+				}
 				return platformStructuredBuffer->AsD3D11UnorderedAccessView();
 			}
 			void Apply(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
 			{
-				if(platformStructuredBuffer)
+				if (!platformStructuredBuffer)
+				{
+					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
+					return ;
+				}
 					platformStructuredBuffer->Apply(pContext,effect,name);
 			}
 			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &pContext,crossplatform::Effect *effect,const char *name)
 			{
-				if(platformStructuredBuffer)
+				if (!platformStructuredBuffer)
+				{
+					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
+					return;
+				}
 					platformStructuredBuffer->ApplyAsUnorderedAccessView(pContext,effect,name);
 			}
 			void InvalidateDeviceObjects()

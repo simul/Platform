@@ -4,7 +4,7 @@
 #include "SimulDirectXHeader.h"
 
 using namespace simul;
-using namespace dx11on12;
+using namespace dx12;
 
 Buffer::Buffer():
 	mUploadHeap(nullptr)

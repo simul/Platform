@@ -7,7 +7,7 @@
 enum D3D_PRIMITIVE_TOPOLOGY;
 namespace simul
 {
-	namespace dx11on12
+	namespace dx12
 	{
 		class Layout:public crossplatform::Layout
 		{

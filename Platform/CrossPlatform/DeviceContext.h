@@ -4,12 +4,17 @@
 #include <functional>
 struct ID3D11DeviceContext;
 struct IDirect3DDevice9;
+struct ID3D12GraphicsCommandList;
 namespace sce
 {
 	namespace Gnmx
 	{
 		class LightweightGfxContext;
 	}
+}
+namespace nvn
+{
+	class CommandBuffer;
 }
 namespace simul
 {
@@ -32,7 +37,6 @@ namespace simul
 				,renderPlatform(0)
 				,activeTechnique(0)
 				,frame_number(0)
-				,cur_backbuffer(0)
 			{
 				viewStruct.depthTextureStyle=crossplatform::PROJECTION;
 			}
@@ -48,8 +52,15 @@ namespace simul
 			{
 				return (sce::Gnmx::LightweightGfxContext*)platform_context;
 			}
+			inline nvn::CommandBuffer* asNVNContext()
+			{
+				return (nvn::CommandBuffer*)platform_context;
+			}
+			inline ID3D12GraphicsCommandList* asD3D12Context()
+			{
+				return (ID3D12GraphicsCommandList*)platform_context;
+			}
 			ViewStruct viewStruct;
-			uint cur_backbuffer;
 		};
 
 		struct DeviceContext;

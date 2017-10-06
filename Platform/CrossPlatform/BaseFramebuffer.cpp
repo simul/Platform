@@ -62,6 +62,9 @@ BaseFramebuffer::BaseFramebuffer(const char *n)
 	,external_texture(false)
 	,external_depth_texture(false)
 	,shSeed(0)
+	, DefaultClearColour(1.0f, 1.0f, 1.0f, 1.0f)
+	, DefaultClearDepth(1.0f)
+	, DefaultClearStencil(1)
 {
 	if(n)
 		name=n;
@@ -241,7 +244,7 @@ bool BaseFramebuffer::CreateBuffers()
 	}
 	if(!external_depth_texture&&depth_format!=crossplatform::UNKNOWN)
 	{
-		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform,Width,Height,depth_format,false,false,true,numAntialiasingSamples,quality);
+		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, depth_format, false, false, true, numAntialiasingSamples, quality, false, vec4(0.0f), DefaultClearDepth,DefaultClearStencil);
 	}
 	return true;
 }

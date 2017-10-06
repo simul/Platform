@@ -13,7 +13,7 @@
 #pragma warning(disable:4251)
 namespace simul
 {
-	namespace dx11on12
+	namespace dx12
 	{
 		struct Window;
 		typedef std::map<HWND, Window*> WindowMap;
@@ -78,11 +78,11 @@ namespace simul
 		};
 
 		/// Manages the rendering
-		class SIMUL_DIRECTX12_EXPORT Direct3D11Manager: public crossplatform::GraphicsDeviceInterface
+		class SIMUL_DIRECTX12_EXPORT Direct3D12Manager: public crossplatform::GraphicsDeviceInterface
 		{
 		public:
-									Direct3D11Manager();
-									~Direct3D11Manager();
+									Direct3D12Manager();
+									~Direct3D12Manager();
 
 			/// Initializes the manager, finds an adapter, checks feature level, creates a rendering device and a command queue
 			void					Initialize(bool use_debug=false,bool instrument=false);

@@ -1,5 +1,5 @@
-#ifndef DIRECT3D11MANAGERINTERFACE
-#define DIRECT3D11MANAGERINTERFACE
+#ifndef Direct3D12ManagerINTERFACE
+#define Direct3D12ManagerINTERFACE
 #include <string>
 struct Output
 {
@@ -13,7 +13,7 @@ struct Output
 
 namespace simul
 {
-	namespace dx11on12
+	namespace dx12
 	{
 		//! An interface class for managing Direct3D 11 windwos.
 		class GraphicsDeviceInterface

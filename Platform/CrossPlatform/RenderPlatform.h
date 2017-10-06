@@ -21,7 +21,6 @@
     #pragma warning(disable:4251)
 #endif
 struct ID3D11Device;
-struct ID3D11On12Device;
 struct ID3D12Device;
 struct ID3D12GraphicsCommandList;
 struct VertexXyzRgba
@@ -68,7 +67,6 @@ namespace simul
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const Viewport *vi,const Texture *t);
 		/// A base class for API-specific rendering.
 
-		
 		struct TextureAssignment
 		{
 			crossplatform::Texture *texture;
@@ -78,8 +76,8 @@ namespace simul
 			int index;	// if -1 it's the whole texture
 			crossplatform::ShaderResourceType resourceType;
 		};
-		/// A structure to describe the state that is associated with a given deviceContext.
-		/// When rendering is to be performed, we can ensure that the state is applied.
+		//! A structure to describe the state that is associated with a given deviceContext.
+		//! When rendering is to be performed, we can ensure that the state is applied.
 		struct ContextState
 		{
 			ContextState()
@@ -172,7 +170,6 @@ namespace simul
 			}
 			//! Returns the name of the render platform - DirectX 11, OpenGL, etc.
 			virtual const char *GetName() const = 0;
-			virtual ID3D11On12Device* AsD3D11On12Device();
 			//! Returns the DX12 graphics command list
 			virtual ID3D12GraphicsCommandList* AsD3D12CommandList();
 			virtual ID3D12Device* AsD3D12Device();
@@ -429,13 +426,13 @@ namespace simul
 			}
 			return false;
 		}
-		template<class T> void StructuredBuffer<T>::RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable, T *data)
+		template<class T> void StructuredBuffer<T>::RestoreDeviceObjects(RenderPlatform *p, int ct, bool computable, bool cpu_read, T *data)
 		{
 			count = ct;
 			delete platformStructuredBuffer;
 			platformStructuredBuffer = NULL;
 			platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
-			platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, data);
+			platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data);
 		}
 #endif
 	}

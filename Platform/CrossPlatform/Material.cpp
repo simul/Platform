@@ -1,4 +1,3 @@
-
 #include "Simul/Platform/CrossPlatform/Material.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 
@@ -15,6 +14,10 @@ Material::~Material()
 {
 	InvalidateDeviceObjects();
 } 
+
+void Material::Apply(crossplatform::DeviceContext &, crossplatform::PhysicalLightRenderData &)
+{
+}
 
 void Material::InvalidateDeviceObjects()
 {

@@ -1,7 +1,7 @@
 #include "Light.h"
 
 using namespace simul;
-using namespace dx11on12;
+using namespace dx12;
 
 namespace
 {
@@ -14,14 +14,14 @@ namespace
 }
 
 
-dx11on12::Light::Light()
+dx12::Light::Light()
 {
 }
 
-dx11on12::Light::~Light()
+dx12::Light::~Light()
 {
 }
 
-void dx11on12::Light::UpdateLight(const double *lLightGlobalPosition,float lConeAngle,const float lLightColor[4]) const
+void dx12::Light::UpdateLight(const double *lLightGlobalPosition,float lConeAngle,const float lLightColor[4]) const
 {
 }

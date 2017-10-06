@@ -1,19 +1,20 @@
 #define NOMINMAX
 #include "Texture.h"
-#include "Utilities.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Base/FileLoader.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
 #include <string>
 #include <algorithm>
 
+#include "MacrosDX1x.h"
 #include "d3d12.h"
 #include "d3dx12.h"
 
 using namespace simul;
-using namespace dx11on12;
+using namespace dx12;
 
 #pragma optimize("",off)
 
@@ -22,19 +23,6 @@ using namespace dx11on12;
 #else
 #include <DirectXTex.h>
 #endif // SIMUL_WIN8_SDK
-
-ID3D11ShaderResourceView* simul::dx11on12::LoadTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
-{
-	SIMUL_BREAK("This method shouldn't be called in DX12.");
-	return nullptr;
-}
-
-
-ID3D11Texture2D* simul::dx11on12::LoadStagingTexture(ID3D11Device* pd3dDevice,const char *filename,const std::vector<std::string> &texturePathsUtf8)
-{
-	return nullptr;
-}
-
 
 SamplerState::SamplerState(crossplatform::SamplerStateDesc *d)
 {
@@ -92,6 +80,8 @@ void Texture::FreeRTVTables()
 
 void Texture::InitUAVTables(int l,int m)
 {
+	InitStateTable(l, m);
+
 	mipUnorderedAccessViews12 = nullptr;
 	if (m)
 		mipUnorderedAccessViews12 = new D3D12_CPU_DESCRIPTOR_HANDLE[m];		// UAV's for whole texture at different mips.
@@ -129,10 +119,29 @@ void Texture::FreeUAVTables()
 
 void Texture::InitRTVTables(int l,int m)
 {
+	InitStateTable(l, m);
+
 	renderTargetViews12 = new D3D12_CPU_DESCRIPTOR_HANDLE*[l];
 	for (int i = 0; i<l; i++)
 	{
 		renderTargetViews12[i] = new D3D12_CPU_DESCRIPTOR_HANDLE[m];
+	}
+}
+
+void Texture::InitStateTable(int l, int m)
+{
+	// Create state table, at this point, we expect that the state
+	// has already being set !!!
+	auto curState = GetCurrentState();
+	mSubResourcesStates.clear();
+	mSubResourcesStates.resize(l);
+	for (int layer = 0; layer < l; layer++)
+	{
+		mSubResourcesStates[layer].resize(m);
+		for (int mip = 0; mip < m; mip++)
+		{
+			mSubResourcesStates[layer][mip] = curState;
+		}
 	}
 }
 
@@ -166,7 +175,7 @@ void Texture::InvalidateDeviceObjects()
 	{
 		// Critical resources like textures that could be in use by the GPU will be destroyed by the 
 		// release manager
-		auto rPlat = (dx11on12::RenderPlatform*)(renderPlatform);
+		auto rPlat = (dx12::RenderPlatform*)(renderPlatform);
 		rPlat->PushToReleaseManager(mTextureDefault, name + "_Default");
 		rPlat->PushToReleaseManager(mTextureUpload, name + "_Upload");
 
@@ -179,10 +188,10 @@ void Texture::InvalidateDeviceObjects()
 	// Make sure we leave it the correct state... hack?
 	else
 	{
-		if (mCurrentState != D3D12_RESOURCE_STATE_DEPTH_WRITE)
+		if (GetCurrentState() != D3D12_RESOURCE_STATE_DEPTH_WRITE)
 		{
-			auto rPlat = (dx11on12::RenderPlatform*)(renderPlatform);
-			rPlat->ResourceTransitionSimple(mTextureDefault, mCurrentState, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+			// auto rPlat = (dx12::RenderPlatform*)(renderPlatform);
+			// rPlat->ResourceTransitionSimple(mTextureDefault, GetCurrentState(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
 		}
 	}
 }
@@ -228,8 +237,8 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.Dimension			= D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	textureDesc.Alignment			= 0;							// Let runtime decide
-	textureDesc.Width				= metadata.width;
-	textureDesc.Height				= metadata.height;
+	textureDesc.Width				= (UINT64)metadata.width;
+	textureDesc.Height				= (UINT64)metadata.height;
 	textureDesc.DepthOrArraySize	= 1;
 	textureDesc.MipLevels			= 1;
 	textureDesc.Format				= metadata.format;
@@ -288,14 +297,17 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	textureSubData.SlicePitch				= image->rowPitch * textureDesc.Height; 
 	UpdateSubresources(renderPlatform->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, 1, &textureSubData);
 
+	// Init states
+	InitStateTable(arraySize, mips);
+
 	// Transition the resource to be used in the shaders
-	mCurrentState	= D3D12_RESOURCE_STATE_GENERIC_READ;
-	auto rPlat		= (dx11on12::RenderPlatform*)(renderPlatform);
-	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState);
+	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
+	auto rPlat		= (dx12::RenderPlatform*)(renderPlatform);
+	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState());
 
 	// Create a descriptor heap for this texture
 	// This heap won't be shader visible as we will be copying the descriptor from here to the FrameHeap (which is shader visible)
-	mTextureSrvHeap.Restore((dx11on12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,"TextureCpuHeap",false);
+	mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,"TextureCpuHeap",false);
 
 	// Create the descriptor (view) of this texture
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -309,8 +321,8 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	mainShaderResourceView12 = mTextureSrvHeap.GetCpuHandleFromStartAfOffset(0);
 
 	// Set the properties of this texture
-	width			= textureDesc.Width;
-	length			= textureDesc.Height;
+	width			= (int)textureDesc.Width;
+	length			= (int)textureDesc.Height;
 	mLoadedFromFile = true;
 
 	// Clean!
@@ -327,8 +339,8 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	// Set initial properties of the texture
 	name			= "Array:" + texture_files[0] + ",...";
 	mips			= 1;
-	arraySize		= texture_files.size();
-	depth			= texture_files.size();
+	arraySize		= (int)texture_files.size();
+	depth			= (int)texture_files.size();
 	cubemap			= false;
 	renderPlatform	= r;
 	// Find all the paths
@@ -459,10 +471,13 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	}
 	UpdateSubresources(r->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, arraySize, &textureSubDatas[0]);
 	
+	// Init states
+	InitStateTable(arraySize, mips);
+
 	// Transition the resource to be used in the shaders
-	mCurrentState = D3D12_RESOURCE_STATE_GENERIC_READ;
-	auto rPlat = (dx11on12::RenderPlatform*)(r);
-	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState);
+	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
+	auto rPlat = (dx12::RenderPlatform*)(r);
+	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState());
 	
 	// Create a descriptor heap for this texture
 	// This heap won't be shader visible as we will be copying the descriptor from here to the FrameHeap (which is shader visible)
@@ -509,22 +524,18 @@ ID3D12Resource* Texture::AsD3D12Resource()
 D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(bool setState /*= true*/, crossplatform::ShaderResourceType t, int index, int mip)
 {
 	// Ensure a valid state for the resource
-	if (mIsUavAndRt)
-	{
-
-	}
 	if (setState)
 	{
-		if ((((mCurrentState) & D3D12_RESOURCE_STATE_UNORDERED_ACCESS) == D3D12_RESOURCE_STATE_UNORDERED_ACCESS) &&
-		((mCurrentState)& D3D12_RESOURCE_STATE_RENDER_TARGET) == D3D12_RESOURCE_STATE_RENDER_TARGET)
+		auto curState = GetCurrentState(mip,index);
+		if	((((curState) & D3D12_RESOURCE_STATE_UNORDERED_ACCESS) == D3D12_RESOURCE_STATE_UNORDERED_ACCESS) &&
+			  ((curState) & D3D12_RESOURCE_STATE_RENDER_TARGET)    == D3D12_RESOURCE_STATE_RENDER_TARGET)
 		{
-			auto rPlat = (dx11on12::RenderPlatform*)renderPlatform;
 		}
-		else if ((mCurrentState & D3D12_RESOURCE_STATE_GENERIC_READ) != D3D12_RESOURCE_STATE_GENERIC_READ)
+		else if ((curState & D3D12_RESOURCE_STATE_GENERIC_READ) != D3D12_RESOURCE_STATE_GENERIC_READ)
 		{
-			auto rPlat = (dx11on12::RenderPlatform*)renderPlatform;
-			rPlat->ResourceTransitionSimple(mTextureDefault, mCurrentState, D3D12_RESOURCE_STATE_GENERIC_READ);
-			mCurrentState = D3D12_RESOURCE_STATE_GENERIC_READ;
+			auto rPlat = (dx12::RenderPlatform*)renderPlatform;
+			rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_GENERIC_READ,RenderPlatform::GetResourceIndex(mip, index,mips,arraySize));
+			SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ,mip,index);
 		}
 	}
 
@@ -559,18 +570,15 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(bool setState /*
 	return nullptr;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE *Texture::AsD3D12UnorderedAccessView(int index, int mip)
+D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(int index, int mip)
 {
 	// Ensure a valid state for the resource
-	if (mIsUavAndRt)
+	auto curState = GetCurrentState(mip, index);
+	if ((curState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS) != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 	{
-		
-	}
-	if ((mCurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS) != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-	{
-		auto rPlat = (dx11on12::RenderPlatform*)renderPlatform;
-		rPlat->ResourceTransitionSimple(mTextureDefault, mCurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		mCurrentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		auto rPlat = (dx12::RenderPlatform*)renderPlatform;
+		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, RenderPlatform::GetResourceIndex(mip, index, mips, arraySize));
+		SetCurrentState(D3D12_RESOURCE_STATE_UNORDERED_ACCESS,mip,index);
 	}
 
 	if (mip<0)
@@ -590,18 +598,20 @@ D3D12_CPU_DESCRIPTOR_HANDLE *Texture::AsD3D12UnorderedAccessView(int index, int 
 
 D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12DepthStencilView()
 {
-	if (name == "BaseFramebufferDepth")
-		//SIMUL_BREAK("");
-	// Ensure a valid state for the resource
-	if (mIsUavAndRt)
+	// We need a valid render platform
+	if (!renderPlatform)
 	{
-		
+		SIMUL_CERR_ONCE << "This texture has not been created yet but we are trying to get a view: " << name << std::endl;
+		return nullptr;
 	}
-	if ((mCurrentState & D3D12_RESOURCE_STATE_DEPTH_WRITE) != D3D12_RESOURCE_STATE_DEPTH_WRITE)
+
+	// Ensure a valid state for the resource
+	auto curState = GetCurrentState();
+	if ((curState & D3D12_RESOURCE_STATE_DEPTH_WRITE) != D3D12_RESOURCE_STATE_DEPTH_WRITE)
 	{
-		auto rPlat = (dx11on12::RenderPlatform*)renderPlatform;
-		rPlat->ResourceTransitionSimple(mTextureDefault, mCurrentState, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-		mCurrentState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+		auto rPlat = (dx12::RenderPlatform*)renderPlatform;
+		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+		SetCurrentState(D3D12_RESOURCE_STATE_DEPTH_WRITE);
 	}
 	return &depthStencilView12;
 }
@@ -609,18 +619,14 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12DepthStencilView()
 D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(int index /*= -1*/, int mip /*= -1*/)
 {
 	// Ensure a valid state for the resource
-	if (mIsUavAndRt)
+	auto curState = GetCurrentState(mip, index);
+	if ((curState & D3D12_RESOURCE_STATE_RENDER_TARGET) != D3D12_RESOURCE_STATE_RENDER_TARGET)
 	{
-		
-	}
-	if ((mCurrentState & D3D12_RESOURCE_STATE_RENDER_TARGET) != D3D12_RESOURCE_STATE_RENDER_TARGET)
-	{
-		auto rPlat = (dx11on12::RenderPlatform*)renderPlatform;
-		rPlat->ResourceTransitionSimple(mTextureDefault, mCurrentState, D3D12_RESOURCE_STATE_RENDER_TARGET);
-		mCurrentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		auto rPlat = (dx12::RenderPlatform*)renderPlatform;
+		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_RENDER_TARGET, RenderPlatform::GetResourceIndex(mip, index, mips, arraySize));
+		SetCurrentState(D3D12_RESOURCE_STATE_RENDER_TARGET,mip,index);
 	}
 	
-
 	if (!renderTargetViews12)
 		return NULL;
 	if (index<0)
@@ -646,7 +652,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 	}
 	else
 	{
-		auto renderPlat = (dx11on12::RenderPlatform*)deviceContext.renderPlatform;
+		auto renderPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 
 		if (!mTextureDefault)
 		{
@@ -680,7 +686,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		mTextureUpload->SetName(L"TextureSetTexelsUpload");
 
 		// Parameters
-		int texelSize	= dx11on12::ByteSizeOfFormatElement(dxgi_format);
+		int texelSize	= RenderPlatform::ByteSizeOfFormatElement(dxgi_format);
 		int srcPitch	= texelSize * width;
 		int srcSlice	= srcPitch * length;
 
@@ -691,7 +697,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 			SIMUL_BREAK("Nacho has to implement this");
 
 		// Transition main texture to copy dest
-		renderPlat->ResourceTransitionSimple(mTextureDefault, mCurrentState, D3D12_RESOURCE_STATE_COPY_DEST);
+		renderPlat->ResourceTransitionSimple(mTextureDefault, GetCurrentState(), D3D12_RESOURCE_STATE_COPY_DEST);
 
 		// Copy the data
 		D3D12_SUBRESOURCE_DATA srcData;
@@ -701,7 +707,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		UpdateSubresources(renderPlat->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, 1, &srcData);
 
 		// Transition main texture to pixel shader resource
-		renderPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState);
+		renderPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState());
 	}
 }
 
@@ -724,7 +730,7 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPla
 void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt)
 {
 	// If it's the same as before, return.
-	if ((mTextureDefault == t && srv->ptr == mainShaderResourceView12.ptr) && mainShaderResourceView12.ptr != -1 && (make_rt == (renderTargetViews12 != NULL)))
+	if ((mTextureDefault == t && srv && srv->ptr == mainShaderResourceView12.ptr) && mainShaderResourceView12.ptr != -1 && (make_rt == (renderTargetViews12 != NULL)))
 		return;
 	// If it's the same texture, and we created our own srv, that's fine, return.
 	if (mTextureDefault != NULL && mTextureDefault == t && mainShaderResourceView12.ptr != -1 && srv == NULL)
@@ -733,12 +739,13 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	FreeSRVTables();
 	renderPlatform				= r;
 	mTextureDefault				= t;
-	mainShaderResourceView12	= *srv; // What if the CPU handle changes? we should check this from outside
+	mTextureDefault->SetName(L"FromExternal");
+	mainShaderResourceView12	= srv? *srv : D3D12_CPU_DESCRIPTOR_HANDLE(); // What if the CPU handle changes? we should check this from outside
 	mInitializedFromExternal	= true;
 
 	// Textures initialized from external should be passed by as a SRV so we expect
 	// that the resource was previously transitioned to GENERIC_READ
-	mCurrentState				= D3D12_RESOURCE_STATE_GENERIC_READ;
+	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 
 	if (mTextureDefault)
 	{
@@ -766,7 +773,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 			FreeSRVTables();
 
 			D3D12_RENDER_TARGET_VIEW_DESC rtDesc = {};
-			rtDesc.Format	= TypelessToSrvFormat(textureDesc.Format);
+			rtDesc.Format	= RenderPlatform::TypelessToSrvFormat(textureDesc.Format);
 			InitRTVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
 			arraySize		= textureDesc.DepthOrArraySize;
 			mips			= textureDesc.MipLevels;
@@ -777,7 +784,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 				rtDesc.Texture2DArray.FirstArraySlice	= 0;
 				rtDesc.Texture2DArray.ArraySize			= 1;
 
-				mTextureRtHeap.Restore((dx11on12::RenderPlatform*)r, textureDesc.DepthOrArraySize * textureDesc.MipLevels,D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "TextureRtHeap", false);
+				mTextureRtHeap.Restore((dx12::RenderPlatform*)r, textureDesc.DepthOrArraySize * textureDesc.MipLevels,D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "TextureRtHeap", false);
 
 				for (int i = 0; i < (int)textureDesc.DepthOrArraySize; i++)
 				{
@@ -823,14 +830,14 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 		D3D12_RESOURCE_DESC textureDesc = mTextureDefault->GetDesc();
 		if ((textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) == D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL)
 		{
-			mCurrentState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+			SetCurrentState(D3D12_RESOURCE_STATE_DEPTH_WRITE);
 		}
 		else
 		{
 			SIMUL_BREAK_ONCE("Nacho has to implement this");
 		}
 
-		dxgi_format						= TypelessToSrvFormat(textureDesc.Format);
+		dxgi_format						= RenderPlatform::TypelessToSrvFormat(textureDesc.Format);
 		pixelFormat						= RenderPlatform::FromDxgiFormat(dxgi_format);
 		width							= textureDesc.Width;
 		length							= textureDesc.Height;
@@ -853,7 +860,7 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 		uavDesc.Texture3D.FirstWSlice				= 0;
 
 		uint numDescriptors = (mipUnorderedAccessViews12 ? textureDesc.MipLevels : 0) + (layerMipUnorderedAccessViews12 ? textureDesc.MipLevels : 0);
-		mTextureUavHeap.Restore((dx11on12::RenderPlatform*)renderPlatform, numDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "TextureUAVHeap", false);
+		mTextureUavHeap.Restore((dx12::RenderPlatform*)renderPlatform, numDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "TextureUAVHeap", false);
 
 		if (mipUnorderedAccessViews12)
 		{
@@ -891,7 +898,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 	HRESULT res = S_FALSE;
 
 	pixelFormat		= pf;
-	DXGI_FORMAT f	= dx11on12::RenderPlatform::ToDxgiFormat(pixelFormat);
+	DXGI_FORMAT f	= dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
 	dim				= 3;
 	renderPlatform  = r;
 	bool ok			= true;
@@ -951,11 +958,11 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		}
 
 		// Find the initial texture state
-		mCurrentState = D3D12_RESOURCE_STATE_GENERIC_READ;
+		SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 		if (rendertargets)
-			mCurrentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			SetCurrentState(D3D12_RESOURCE_STATE_RENDER_TARGET);
 		if (computable)
-			mCurrentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			SetCurrentState(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		// Clean resources
 		SAFE_RELEASE(mTextureDefault);
@@ -965,7 +972,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&textureDesc,
-			mCurrentState,
+			GetCurrentState(),
 			rendertargets? &clearValues : nullptr,
 			IID_PPV_ARGS(&mTextureDefault)
 		);
@@ -984,7 +991,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		FreeSRVTables();
 		InitSRVTables(1, m);
 
-		mTextureSrvHeap.Restore((dx11on12::RenderPlatform*)r, 1 + m, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture3DSrvHeap", false);
+		mTextureSrvHeap.Restore((dx12::RenderPlatform*)r, 1 + m, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture3DSrvHeap", false);
 		r->AsD3D12Device()->CreateShaderResourceView(mTextureDefault,&srvDesc, mTextureSrvHeap.CpuHandle());
 		mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
 		mTextureSrvHeap.Offset();
@@ -1005,7 +1012,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 			FreeUAVTables();
 			InitUAVTables(1, m);
 			changed = true;
-			mTextureUavHeap.Restore((dx11on12::RenderPlatform*)r, m * 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture3DUavHeap", false);
+			mTextureUavHeap.Restore((dx12::RenderPlatform*)r, m * 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture3DUavHeap", false);
 
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc	= {};
 			uavDesc.Format								= f;
@@ -1057,7 +1064,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 	int m			= 1;
 	renderPlatform	= r;
 	pixelFormat		= f;
-	dxgi_format		= (DXGI_FORMAT)dx11on12::RenderPlatform::ToDxgiFormat(pixelFormat);
+	dxgi_format		= (DXGI_FORMAT)dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
 	DXGI_FORMAT texture2dFormat = dxgi_format;
 	DXGI_FORMAT srvFormat		= dxgi_format;
 	if (texture2dFormat == DXGI_FORMAT_D32_FLOAT)
@@ -1149,13 +1156,13 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		}
 
 		// Find the initial texture state
-		mCurrentState = D3D12_RESOURCE_STATE_GENERIC_READ;
+		SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 		if (rendertarget)
-			mCurrentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			SetCurrentState(D3D12_RESOURCE_STATE_RENDER_TARGET);
 		if (depthstencil)
-			mCurrentState = D3D12_RESOURCE_STATE_DEPTH_READ;
+			SetCurrentState(D3D12_RESOURCE_STATE_DEPTH_READ);
 		if (computable)
-			mCurrentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			SetCurrentState(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		// Clean resources
 		SAFE_RELEASE(mTextureDefault);
@@ -1166,7 +1173,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&textureDesc,
-			mCurrentState,
+			GetCurrentState(),
 			(rendertarget || depthstencil) ? &clearValues : nullptr,
 			IID_PPV_ARGS(&mTextureDefault)
 		);
@@ -1182,7 +1189,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		srvDesc.ViewDimension					= num_samples == 1 ? D3D12_SRV_DIMENSION_TEXTURE2D : D3D12_SRV_DIMENSION_TEXTURE2DMS;
 		srvDesc.Texture2D.MipLevels				= 1;
 
-		mTextureSrvHeap.Restore((dx11on12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture2DSrvHeap", false);
+		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture2DSrvHeap", false);
 		renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
 		mainShaderResourceView12 = mTextureSrvHeap.CpuHandle();
 		mTextureSrvHeap.Offset();
@@ -1193,7 +1200,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 				m = 1;
 			FreeUAVTables();
 			InitUAVTables(1, m);
-			mTextureUavHeap.Restore((dx11on12::RenderPlatform*)renderPlatform, m * 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture2DUavHeap", false);
+			mTextureUavHeap.Restore((dx12::RenderPlatform*)renderPlatform, m * 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "Texture2DUavHeap", false);
 
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc	= {};
 			uavDesc.Format								= texture2dFormat;
@@ -1220,7 +1227,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		{
 			FreeRTVTables();
 			InitRTVTables(1, m);
-			mTextureRtHeap.Restore((dx11on12::RenderPlatform*)renderPlatform, 1 * m, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "Texture2DRTHeap", false);
+			mTextureRtHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1 * m, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "Texture2DRTHeap", false);
 
 			D3D12_RENDER_TARGET_VIEW_DESC rtDesc	= {};
 			rtDesc.Format							= texture2dFormat;
@@ -1236,7 +1243,7 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		}
 		if (depthstencil && (!ok))
 		{
-			mTextureDsHeap.Restore((dx11on12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, "Texture2DDSVHeap", false);
+			mTextureDsHeap.Restore((dx12::RenderPlatform*)renderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, "Texture2DDSVHeap", false);
 	
 			D3D12_DEPTH_STENCIL_VIEW_DESC dsDesc	= {};
 			dsDesc.Format							= dxgi_format;
@@ -1249,7 +1256,6 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			mTextureDsHeap.Offset();
 		}
 	}
-
 
 	mips		= m;
 	arraySize	= 1;
@@ -1281,7 +1287,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	HRESULT res		= S_FALSE;
 	renderPlatform	= r;
 	pixelFormat		= f;
-	dxgi_format		= dx11on12::RenderPlatform::ToDxgiFormat(pixelFormat);
+	dxgi_format		= dx12::RenderPlatform::ToDxgiFormat(pixelFormat);
 	width			= w;
 	length			= l;
 	depth			= 1;
@@ -1319,11 +1325,11 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	}
 
 	// Find the initial texture state
-	mCurrentState = D3D12_RESOURCE_STATE_GENERIC_READ;
+	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 	if (rendertarget)
-		mCurrentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		SetCurrentState(D3D12_RESOURCE_STATE_RENDER_TARGET);
 	if (computable)
-		mCurrentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		SetCurrentState(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	if (computable && rendertarget)
 		mIsUavAndRt = true;
 
@@ -1335,7 +1341,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&textureDesc,
-		mCurrentState,
+		GetCurrentState(),
 		rendertarget? &clearValues : nullptr,
 		IID_PPV_ARGS(&mTextureDefault)
 	);
@@ -1364,7 +1370,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 
 		// Restore UAV heap
 		uint heapSize = (mipUnorderedAccessViews12 ? m : 0) + (layerMipUnorderedAccessViews12 ? totalNum * m : 0);
-		mTextureUavHeap.Restore((dx11on12::RenderPlatform*)r, heapSize, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "TextureUAVHeap", false);
+		mTextureUavHeap.Restore((dx12::RenderPlatform*)r, heapSize, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "TextureUAVHeap", false);
 
 		if (mipUnorderedAccessViews12)
 		{
@@ -1398,7 +1404,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	{
 		InitRTVTables(totalNum, m);
 
-		mTextureRtHeap.Restore((dx11on12::RenderPlatform*)r, totalNum * m, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "TextureRTHeap", false);
+		mTextureRtHeap.Restore((dx12::RenderPlatform*)r, totalNum * m, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "TextureRTHeap", false);
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtDesc	= {};
 		rtDesc.Format							= dxgi_format;
@@ -1437,7 +1443,7 @@ void Texture::CreateSRVTables(int num, int m, bool cubemap, bool volume, bool ms
 	if (!volume)
 	{
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format					= TypelessToSrvFormat(dxgi_format);
+		srvDesc.Format					= RenderPlatform::TypelessToSrvFormat(dxgi_format);
 		srvDesc.ViewDimension			= D3D12_SRV_DIMENSION_TEXTURE2D;
 		int totalNum					= cubemap ? 6 * num : num;
 		if (cubemap)
@@ -1482,7 +1488,7 @@ void Texture::CreateSRVTables(int num, int m, bool cubemap, bool volume, bool ms
 			(layerShaderResourceViews12 ? totalNum : 0) +
 			(layerMipShaderResourceViews12 ? totalNum * m : 0);
 
-		mTextureSrvHeap.Restore((dx11on12::RenderPlatform*)renderPlatform, heapSize, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "TextureSRVHeap", false);
+		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, heapSize, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "TextureSRVHeap", false);
 
 		// Create main srv
 		renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
@@ -1554,11 +1560,11 @@ void Texture::CreateSRVTables(int num, int m, bool cubemap, bool volume, bool ms
 		uint heapSize = 1 +
 			(mainMipShaderResourceViews12 ? m : 0);
 
-		mTextureSrvHeap.Restore((dx11on12::RenderPlatform*)renderPlatform, heapSize, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "TextureSRVHeap", false);
+		mTextureSrvHeap.Restore((dx12::RenderPlatform*)renderPlatform, heapSize, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "TextureSRVHeap", false);
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc		= {};
 		srvDesc.Shader4ComponentMapping				= D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format								= TypelessToSrvFormat(dxgi_format);
+		srvDesc.Format								= RenderPlatform::TypelessToSrvFormat(dxgi_format);
 		srvDesc.ViewDimension						= D3D12_SRV_DIMENSION_TEXTURE3D;
 		srvDesc.Texture3D.MipLevels					= m;
 		srvDesc.Texture3D.MostDetailedMip			= 0;
@@ -1656,11 +1662,11 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 	// Option 2: There are not FBO on the stack ( apply default render targets)
 	else
 	{
-		m_pOldRenderTargets12[0]	= (D3D12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_rt[0];
-		m_pOldDepthSurface12		= (D3D12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_dt;
+		m_pOldRenderTargets12[0]		= (D3D12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_rt[0];
+		m_pOldDepthSurface12			= (D3D12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_dt;
 
-		m_OldViewports12[0].Width	= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.w;
-		m_OldViewports12[0].Height	= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.h;
+		m_OldViewports12[0].Width		= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.w;
+		m_OldViewports12[0].Height		= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.h;
 		m_OldViewports12[0].TopLeftX	= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.x;
 		m_OldViewports12[0].TopLeftY	= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.y;
 		m_OldViewports12[0].MinDepth	= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.znear;
@@ -1669,7 +1675,7 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 
 	if (renderTargetViews12)
 	{
-		auto rp = (dx11on12::RenderPlatform*)deviceContext.renderPlatform;
+		auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 
 		rp->AsD3D12CommandList()->OMSetRenderTargets(1, AsD3D12RenderTargetView(array_index,mip),false, nullptr);
 		D3D12_VIEWPORT viewport;
@@ -1689,21 +1695,11 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 
 void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext)
 {
-	auto rp = (dx11on12::RenderPlatform*)deviceContext.renderPlatform;
+	auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 
-	
-	// If it is UAV we have to transition it
-	if ((mTextureDefault->GetDesc().Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
-	{
-		if (mCurrentState != D3D12_RESOURCE_STATE_RENDER_TARGET)
-		{
-			rp->ResourceTransitionSimple(mTextureDefault, mCurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-			mCurrentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-		}
-	}
-	
 	// Set the old rt,ds and viewports
 	rp->AsD3D12CommandList()->OMSetRenderTargets(1, m_pOldRenderTargets12[0], false, m_pOldDepthSurface12);
+	if(m_OldViewports12[0].Width*m_OldViewports12[0].Height>0.0f)
 	rp->AsD3D12CommandList()->RSSetViewports(1, &m_OldViewports12[0]);
 	rp->SetCurrentPixelFormat(mOldRtFormat);
 
@@ -1721,8 +1717,75 @@ int Texture::GetSampleCount() const
 	return samples - 1;
 }
 
+D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -1*/)
+{
+	// Return the resource state
+	if (mip == -1 && index == -1)
+	{
+		// If we request the state of the hole resource, we have to make sure
+		// that all of the subresources are in the correct state. The correct state
+		// will be the main resource state.
+		if (!mSubResourcesStates.empty())
+		{
+			auto rPlat = (dx12::RenderPlatform*)renderPlatform;
+			for (unsigned int l = 0; l < mSubResourcesStates.size(); l++)
+			{
+				for (unsigned int m = 0; m < mSubResourcesStates[0].size(); m++)
+				{
+					auto curState = mSubResourcesStates[l][m];
+					if (curState != mResourceState)
+					{
+						rPlat->ResourceTransitionSimple(mTextureDefault, curState, mResourceState, 
+														RenderPlatform::GetResourceIndex(m,l,mips, mSubResourcesStates.size()));
+						mSubResourcesStates[l][m] = mResourceState;
+					}
+				}
+			}
+		}
+		return mResourceState;
+	}
+	// Return a subresource state
+	int curMip		= (mip == -1) ? 0 : mip;
+	int curLayer	= (index == -1)? 0 : index;
+	return mSubResourcesStates[curLayer][curMip];
+}
+
+void Texture::SetCurrentState(D3D12_RESOURCE_STATES state, int mip /*= -1*/, int index /*= -1*/)
+{
+	// Set the resource state
+	if (mip == -1 && index == -1)
+	{
+		mResourceState = state;
+		// And set all the subresources to that state
+		// We understand that we transitioned ALL the resources
+		for (int l = 0; l < mSubResourcesStates.size(); l++)
+		{
+			for (int m = 0; m < mSubResourcesStates[l].size(); m++)
+			{
+				mSubResourcesStates[l][m] = state;
+			}
+		}
+	}
+	// Set a subresource state
+	else
+	{
+		int curMip		= (mip == -1) ? 0 : mip;
+		int curLayer	= (index == -1) ? 0 : index;
+		mSubResourcesStates[curLayer][curMip] = state;
+		// Array Size == 1 && mips = 1 (it only has 1 sub resource)
+		// the asSRV code will return the mainSRV!
+		bool no_array = !cubemap && (arraySize <= 1);
+		if (mips <= 1 && no_array)
+		{
+			mResourceState = state;
+		}
+	}
+}
+
 void Texture::InitSRVTables(int l,int m)
 {
+	InitStateTable(l, m);
+
 	// SRV's for each layer, including all mips
 	if (l>1)
 		layerShaderResourceViews12 = new D3D12_CPU_DESCRIPTOR_HANDLE[l];				
