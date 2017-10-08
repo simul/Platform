@@ -5,7 +5,6 @@
 #include <tchar.h>
 #include "Simul/Platform/DirectX12/Export.h"
 #include "Simul/Platform/CrossPlatform/Macros.h"
-#include <dxgi.h>
 
 typedef std::basic_string<TCHAR> tstring;
 

@@ -17,8 +17,11 @@ SIMUL_CONSTANT_BUFFER(SphericalHarmonicsConstants,10)
 	uniform int sqrtJitterSamples;
 	uniform int numJitterSamples;
 	uniform float invNumJitterSamples; 
+	uniform uint3 lookupOffset;	// 2D offset and cube face.
 	uniform int randomSeed;
+	uniform uint2 lookupSize;	// 2D size
 	uniform int numCoefficients;
+	uniform int padshc;
 SIMUL_CONSTANT_BUFFER_END
 
 struct SphericalHarmonicsSample

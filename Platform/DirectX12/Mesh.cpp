@@ -1,14 +1,4 @@
 #include "Mesh.h"
-#ifndef SIMUL_WIN8_SDK
-#include <d3dx11.h>
-#endif
-
-#include "MacrosDX1x.h"
-#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
-#include "Simul/Platform/CrossPlatform/DeviceContext.h"
-#include "Simul/Platform/CrossPlatform/RenderPlatform.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#include "D3dx11effect.h"
 
 using namespace simul;
 using namespace dx12;

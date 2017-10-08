@@ -1,4 +1,4 @@
-//  Copyright (c) 2015-16 Simul Software Ltd. All rights reserved.
+//  Copyright (c) 2015-17 Simul Software Ltd. All rights reserved.
 #ifndef PLATFORM_CROSSPLATFORM_NOISE_SL
 #define PLATFORM_CROSSPLATFORM_NOISE_SL
 
@@ -18,14 +18,15 @@ float rand3(vec3 co)
 {
     return fract(sin(dot(co.xyz,vec3(12.9898,78.233,42.1897))) * 43758.5453);
 }
+
 /*
-float randhash(unsigned seed,float b)
+float randhash(uint seed,float b)
 {
 	float InverseMaxInt=1.0/4294967295.0;
-	unsigned i=(seed^unsigned(12345391))*unsigned(2654435769);
-	i^=(i<<unsigned(6))^(i>>unsigned(26));
-	i*=unsigned(2654435769);
-	i+=(i<<unsigned(5))^(i>>unsigned(12));
+	uint i=(seed^uint(12345391))*uint(2654435769);
+	i^=(i<<uint(6))^(i>>uint(26));
+	i*=uint(2654435769);
+	i+=(i<<uint(5))^(i>>uint(12));
 	return float(b*i)*InverseMaxInt;
 }*/
 
@@ -104,6 +105,7 @@ vec4 VirtualNoiseLookup(vec3 texCoords,int gridsize,int seed,bool filter=true)
 	return result;
 }
 
+
 vec4 Noise3D(Texture3D random_texture_3d,int freq,vec3 texCoords,int octaves,float persistence,float strength)
 {
 	vec4 result		=vec4(0,0,0,0);
@@ -173,5 +175,4 @@ float cellular3x3(vec3 P)
 	d.x			=min(min(min(d.x,d.y),d.z),d.w);
 	return 1.0-1.5*d.x;
 }
-
 #endif

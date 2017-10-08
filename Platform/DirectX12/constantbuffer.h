@@ -7,7 +7,6 @@
 
 #pragma warning(disable:4251)
 
-struct ID3D12Resource;
 namespace simul
 {
 	namespace dx12
@@ -46,7 +45,6 @@ namespace simul
 
 			ID3D12Resource*					mUploadHeap[kNumBuffers];
 			dx12::Heap						mHeaps[kNumBuffers];
-			crossplatform::RenderPlatform*	mRenderPlatform;
 		};
 	}
 }

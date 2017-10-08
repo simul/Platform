@@ -70,6 +70,13 @@ namespace simul
 			//! Changing the number of bands will resize the internal storeage.
 			virtual void CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext);
 			virtual void RecompileShaders();
+			//! Probe values from cubemap.
+			bool Probe(crossplatform::DeviceContext &deviceContext
+				,int mip_size
+				,int face_index
+				,uint2 pos
+				,uint2 size
+				,vec4 *targetValuesFloat4);
 			//! Get the texture for the colour buffer target.
 			inline Texture *GetTexture()
 			{
@@ -141,6 +148,7 @@ namespace simul
 			int activate_count;
 
 			crossplatform::ConstantBuffer<SphericalHarmonicsConstants>	sphericalHarmonicsConstants;
+				crossplatform::StructuredBuffer<vec4>	probeResultsRW;
 			crossplatform::StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
 			crossplatform::StructuredBuffer<vec4>						sphericalHarmonics;
 			crossplatform::Effect										*sphericalHarmonicsEffect;

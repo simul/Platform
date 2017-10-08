@@ -97,9 +97,11 @@ void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 	if(s<4)
 		s=4;
 	sphericalHarmonics.InvalidateDeviceObjects();
+	probeResultsRW.InvalidateDeviceObjects();
 	sphericalSamples.InvalidateDeviceObjects();
 	sphericalHarmonicsConstants.RestoreDeviceObjects(renderPlatform);
 	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect,"SphericalHarmonicsConstants");
+	probeResultsRW.RestoreDeviceObjects(renderPlatform,256,true);
 	CreateBuffers();
 }
 
@@ -113,6 +115,7 @@ void BaseFramebuffer::InvalidateDeviceObjects()
 	buffer_depth_texture=NULL;
 	sphericalHarmonicsConstants.InvalidateDeviceObjects();
 	sphericalHarmonics.InvalidateDeviceObjects();
+	probeResultsRW.InvalidateDeviceObjects();
 	SAFE_DELETE(sphericalHarmonicsEffect);
 	sphericalSamples.InvalidateDeviceObjects();
 }
@@ -249,6 +252,41 @@ bool BaseFramebuffer::CreateBuffers()
 	return true;
 }
 
+bool BaseFramebuffer::Probe(crossplatform::DeviceContext &deviceContext
+	,int mip_size
+	,int face_index
+	,uint2 pos
+	,uint2 size
+	,vec4 *targetValuesFloat4)
+{
+	crossplatform::EffectTechnique *tech=sphericalHarmonicsEffect->GetTechniqueByName("probe_query");
+	
+	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapAsTexture2DArray",buffer_texture);
+	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, "samplesBuffer");
+	if(size.x*size.y>(unsigned)probeResultsRW.count)
+	{
+		probeResultsRW.RestoreDeviceObjects(renderPlatform,size.x*size.y*2,true);
+	}
+	probeResultsRW.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
+	
+	sphericalHarmonicsConstants.lookupOffset=uint3(pos.x,pos.y,face_index);
+	sphericalHarmonicsConstants.lookupSize=size;
+	
+	sphericalHarmonicsEffect->Apply(deviceContext,tech,0);
+	renderPlatform->DispatchCompute(deviceContext,size.x,size.y,1);
+	sphericalHarmonicsEffect->Unapply(deviceContext);
+	probeResultsRW.CopyToReadBuffer(deviceContext);
+	const vec4 *res=probeResultsRW.OpenReadBuffer(deviceContext);
+	if(res)
+	{
+		memcpy(targetValuesFloat4,res,sizeof(vec4)*size.x*size.y);
+	}
+	probeResultsRW.CloseReadBuffer(deviceContext);
+	return res!=0;
+	return false;
+	
+}
+
 void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)
 {
 	if (!bands)
@@ -280,13 +318,13 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 	
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"jitter")
+
 	{
 		// The table of 3D directional sample positions. sqrt_jitter_samples x sqrt_jitter_samples
 		// We just fill this buffer_texture with random 3d directions.
 		crossplatform::EffectTechnique *jitter=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
 		sphericalSamples.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "samplesBufferRW");
 		sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapTexture"	,buffer_texture);
-
 		sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&	sphericalHarmonicsConstants);
 		sphericalHarmonicsEffect->Apply(deviceContext,jitter,0);
 		int u = (sphericalHarmonicsConstants.numJitterSamples + BLOCK_SIZE - 1) / BLOCK_SIZE;
@@ -326,7 +364,6 @@ void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &devic
 	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
 	
 	static bool sh_by_samples=false;
-
 	sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
 	sphericalHarmonicsEffect->Apply(deviceContext,tech,0);
 	int n = sh_by_samples ? sphericalHarmonicsConstants.numJitterSamples : num_coefficients;

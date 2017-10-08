@@ -7,8 +7,6 @@
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 #include "SimulDirectXHeader.h"
 
-#include "d3dx12.h"
-
 #include <string>
 
 using namespace simul;
@@ -52,9 +50,9 @@ PlatformConstantBuffer::~PlatformConstantBuffer()
 }
 
 static float megas = 0.0f;
-void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* renderPlatform, void *addr) 
+void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, void *addr) 
 {
-	mRenderPlatform = renderPlatform;
+	renderPlatform = r;
 	if (addr)
 		SIMUL_BREAK("Nacho has to check this");
 
@@ -78,7 +76,11 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* render
 			&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
+#ifdef _XBOX_ONE
+			IID_GRAPHICS_PPV_ARGS(&mUploadHeap[i])
+#else
 			IID_PPV_ARGS(&mUploadHeap[i])
+#endif
 		);
 		SIMUL_ASSERT(res == S_OK);
 
@@ -110,7 +112,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE simul::dx12::PlatformConstantBuffer::AsD3D12Constant
 
 void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t size,void *addr)
 {
-	mRenderPlatform = r;
+	renderPlatform = r;
 
 	// Calculate the number of slots this constant buffer will use:
 	// mSlots = 256 Aligned size / 256
@@ -128,7 +130,7 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const ch
 
 void PlatformConstantBuffer::InvalidateDeviceObjects()
 {
-	auto rPlat = (dx12::RenderPlatform*)mRenderPlatform;
+	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
 		mHeaps[i].Release(rPlat);
@@ -158,11 +160,13 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 	UINT8* pDest = nullptr;
 	UINT64 offset = (256 * mSlots) * mCurApplyCount;	
 	const CD3DX12_RANGE range(0, 0);
-	mUploadHeap[curFrameIndex]->Map(0, &range, reinterpret_cast<void**>(&pDest));
+	HRESULT hResult=mUploadHeap[curFrameIndex]->Map(0, &range, reinterpret_cast<void**>(&pDest));
+	if(hResult==S_OK)
 	{
+		if(pDest)
 		memcpy(pDest + offset, addr, size);
-	}
 	mUploadHeap[curFrameIndex]->Unmap(0, &range);
+	}
 
 	// Create a CBV
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};

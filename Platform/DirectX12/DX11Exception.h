@@ -2,8 +2,6 @@
 #include <exception>
 #include "SimulDirectXHeader.h"
 #ifndef SIMUL_WIN8_SDK
-#include <d3dx11.h>
-#include <dxerr.h>
 #else
 #include <string>
 //! Name of an error
@@ -23,7 +21,7 @@ public:
 	DX11Exception (HRESULT hresult)
 		: errorCode(hresult)
 	{
-		std::string errorString = DXGetErrorDescriptionA(hresult);
+		std::string errorString/* = DXGetErrorDescriptionA(hresult)*/;
 
 		std::string message = "DirectX11 Error: ";
 		message += errorString;

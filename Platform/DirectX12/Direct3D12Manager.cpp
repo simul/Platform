@@ -3,13 +3,9 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX12/MacrosDx1x.h"
 #include "Simul/Platform/DirectX12/Utilities.h"
-#include <iomanip>
-#ifndef _XBOX_ONE
-#include <dxgi.h>
-#endif
+#include "Simul/Platform/DirectX12/SimulDirectXHeader.h"
 
-#include <D3Dcompiler.h>
-#include <DirectXMath.h>
+#include <iomanip>
 
 using namespace simul;
 using namespace dx12;
@@ -98,8 +94,10 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 	CreateRenderTarget(d3dDevice);		
 	CreateDepthStencil(d3dDevice);
 
+#ifndef _XBOX_ONE
 	SAFE_RELEASE(factory);
 	SAFE_RELEASE(swapChain);
+#endif
 }
 
 
@@ -176,7 +174,11 @@ void Window::CreateRenderTarget(ID3D12Device* d3dDevice)
 	rtvHeapDesc.NumDescriptors				= FrameCount; 
 	rtvHeapDesc.Type						= D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags						= D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+#ifdef _XBOX_ONE
+	result									= d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_GRAPHICS_PPV_ARGS(&m_rtvHeap));
+#else
 	result									= d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap));
+#endif
 	SIMUL_ASSERT(result == S_OK);
 
 	m_rtvDescriptorSize						= d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -202,7 +204,11 @@ void Window::CreateRenderTarget(ID3D12Device* d3dDevice)
 		rtvHandle.Offset(1, m_rtvDescriptorSize);
 
 		// 3)
+#ifdef _XBOX_ONE
+		result = d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_GRAPHICS_PPV_ARGS(&m_commandAllocators[n]));
+#else
 		result = d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocators[n]));
+#endif
 		SIMUL_ASSERT(result == S_OK);
 	}
 }
@@ -221,7 +227,11 @@ void Window::CreateDepthStencil(ID3D12Device * d3dDevice)
 	res = d3dDevice->CreateDescriptorHeap
 	(
 		&dsHeapDesc,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&m_dsHeap)
+#else
 		IID_PPV_ARGS(&m_dsHeap)
+#endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 
@@ -239,7 +249,11 @@ void Window::CreateDepthStencil(ID3D12Device * d3dDevice)
 		&CD3DX12_RESOURCE_DESC::Tex2D(mDepthStencilFmt, (UINT64)m_viewport.Width, (UINT64)m_viewport.Height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
 		D3D12_RESOURCE_STATE_DEPTH_WRITE,
 		&depthClear,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&m_depthStencilTexture12)
+#else
 		IID_PPV_ARGS(&m_depthStencilTexture12)
+#endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 	m_depthStencilTexture12->SetName(L"Dx12MainDepthStencilTexture");
@@ -326,8 +340,17 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument)
 		ID3D12Debug* debugController = nullptr;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
-			debugController->EnableDebugLayer();
 			dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+			debugController->EnableDebugLayer();
+
+			ID3D12Debug1* debugController1 = nullptr;
+			// Enable GPU validation (it will report a list of errors if ocurred after ExecuteCommandList())
+			bool doGPUValidation = false;
+			if (doGPUValidation)
+			{
+				debugController->QueryInterface(IID_PPV_ARGS(&debugController1));
+				debugController1->SetEnableGPUBasedValidation(true);
+			}
 		}
 		SAFE_RELEASE(debugController);
 	}
@@ -554,7 +577,12 @@ void Direct3D12Manager::Render(HWND h)
 		return;
 	}
 
+#ifdef _XBOX_ONE
+	m_frameIndex = -1;
+#else
 	m_frameIndex = w->m_swapChain->GetCurrentBackBufferIndex();
+#endif
+
 	if(!w->m_backBuffers[m_frameIndex])
 	{
 		SIMUL_CERR<<"No renderTarget exists for HWND "<<std::hex<<h<<std::endl;
@@ -690,7 +718,12 @@ void Direct3D12Manager::AddWindow(HWND hwnd)
 	window->RestoreDeviceObjects(m_d3d12Device, m_vsync_enabled, o.numerator, o.denominator);
 
 	// Create the command list
+#ifdef _XBOX_ONE
+	m_d3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, window->m_commandAllocators[m_frameIndex], nullptr, IID_GRAPHICS_PPV_ARGS(&m_commandList));
+#else
 	m_d3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, window->m_commandAllocators[m_frameIndex], nullptr, IID_PPV_ARGS(&m_commandList));
+#endif // _XBOX_ONE
+
 	m_commandList->SetName(L"Dx12CommandList");
 }
 
@@ -703,7 +736,12 @@ void simul::dx12::Direct3D12Manager::InitialWaitForGpu()
 
 	// Create synchronization objects and wait until assets have been uploaded to the GPU.
 	{
+#ifdef _XBOX_ONE
+		m_d3d12Device->CreateFence(m_fenceValues[m_frameIndex], D3D12_FENCE_FLAG_NONE, IID_GRAPHICS_PPV_ARGS(&m_fence));
+#else
 		m_d3d12Device->CreateFence(m_fenceValues[m_frameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
+#endif // _XBOX_ONE
+
 		m_fenceValues[m_frameIndex]++;
 
 		// Create an event handle to use for frame synchronization.
@@ -742,7 +780,11 @@ void Direct3D12Manager::MoveToNextFrame(Window *window)
 	m_commandQueue->Signal(m_fence, currentFenceValue);
 
 	// Update the frame index.
+#ifdef _XBOX_ONE
+	m_frameIndex = -1;
+#else
 	m_frameIndex = window->m_swapChain->GetCurrentBackBufferIndex();
+#endif 
 
 	// If the next frame is not ready to be rendered yet, wait until it is ready.
 	DWORD ret = 0x1234F0AD;

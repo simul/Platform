@@ -1,32 +1,34 @@
 #pragma once
 
-#ifdef _XBOX_ONE
-#include <d3d11_x.h>
-#define SIMUL_WIN8_SDK
-#define MONOLITHIC 1
-#else
-#ifdef SIMUL_WIN8_SDK
-#include <D3D11_1.h>
-#else
-#include <D3D11.h>
-#endif
-#endif
+//! Improves perfomance of CreateConstantBufferViews and CopyDescriptors
+//! by removing a run time "if". This should only be on release builds...
+#define D3DCOMPILE_NO_DEBUG 1 
 
-#define SIMUL_D3D11_MAP_FLAGS (((dx12::RenderPlatform*)deviceContext.renderPlatform)->GetMapFlags())	
+#include <DirectXMath.h>
 
-#ifdef _XBOX_ONE
+#if defined(_XBOX_ONE)
+	#include <d3d12_x.h>		//! core 12.x header
+	#include <d3dx12_x.h>		//! utility 12.x header
+	#include <D3Dcompiler_x.h>
+	#define MONOLITHIC 1
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 1 
 	#define SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK 1 
 	#define SIMUL_D3D11_BUFFER_CACHE_LINE_SIZE 0x40 
 #else
+	#include <D3Dcompiler.h>
+	#include <dxgi.h>
+	#include <dxgi1_4.h>
+	#include <d3d12.h>
+	#include "d3dx12.h"
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 0 
 #endif
 
-#ifndef _XBOX_ONE
-	struct ID3DUserDefinedAnnotation;
+#if defined(_XBOX_ONE)
+	#pragma comment(lib,"d3dcompiler")
+	#pragma comment(lib,"d3d12_x")
+	//#pragma comment(lib,"d3dcompiler_47")
+#else
+	#pragma comment(lib,"D3D12")
 #endif
 
 
-#define DO_DX12
-#include "d3d12.h"
-#include "d3dx12.h"

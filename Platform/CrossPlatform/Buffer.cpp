@@ -10,4 +10,3 @@ Buffer::Buffer():stride(0),count(0)
 Buffer::~Buffer()
 {
 }
-

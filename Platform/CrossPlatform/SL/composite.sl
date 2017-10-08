@@ -1,4 +1,4 @@
-//  Copyright (c) 2015 Simul Software Ltd. All rights reserved.
+//  Copyright (c) 2015-2017 Simul Software Ltd. All rights reserved.
 #ifndef COMPOSITE_SL
 #define COMPOSITE_SL
 #define DEBUG_COMPOSITING
@@ -7,6 +7,7 @@
 #ifndef PI
 #define PI (3.1415926536)
 #endif
+
 
 #define CLOUD_DEFS_ONLY
 #include "simul_clouds.sl"

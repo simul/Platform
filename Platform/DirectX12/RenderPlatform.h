@@ -5,16 +5,14 @@
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
+#include "SimulDirectXHeader.h"
 
 #include "Heap.h"
 #include "Fence.h"
 
-#include "SimulDirectXHeader.h"
 #include <vector>
 #include <queue>
 
-#include <d3d12.h>
-#include "d3dx12.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -49,7 +47,7 @@ namespace simul
 			//! Sets the reference of a command list. This is usually not needed as we will cache
 			//! the command list after calling render platform methods. We will need to call this
 			//! during initialization (the command list hasn't been cached yet)
-			void SetCommandList(ID3D12GraphicsCommandList* cmdList) { mCommandList = cmdList; }
+			void SetCommandList(ID3D12GraphicsCommandList* cmdList);
 
 			//! Returns the command list reference
 			ID3D12GraphicsCommandList*		AsD3D12CommandList();
@@ -91,7 +89,7 @@ namespace simul
 			void						InvalidateDeviceObjects();
 			void						RecompileShaders();
 
-			D3D11_MAP_FLAG				GetMapFlags();
+			// D3D11_MAP_FLAG				GetMapFlags() { return 0; }
 			bool						UsesFastSemantics() const
 			{
 				return !can_save_and_restore;
@@ -167,6 +165,7 @@ namespace simul
 			static bool								IsTypeless(DXGI_FORMAT fmt, bool partialTypeless);
 			static DXGI_FORMAT						TypelessToSrvFormat(DXGI_FORMAT fmt);
 			static D3D12_QUERY_TYPE					ToD3dQueryType(crossplatform::QueryType t);
+			static D3D12_QUERY_HEAP_TYPE			ToD3D12QueryHeapType(crossplatform::QueryType t);
 			//! Returns the subresource of the provided arguments. If mip or layer equal -1, it will be interpreted as 0.
 			//! If both -1, the hole resource index will be returned
 			static UINT								GetResourceIndex(int mip, int layer, int mips, int layers);
@@ -218,7 +217,6 @@ namespace simul
 
 			bool isInitialized = false;
 
-			ID3DUserDefinedAnnotation*		pUserDefinedAnnotation;
 			std::vector<struct RTState*>	storedRTStates;
 		};
 	}

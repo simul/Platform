@@ -1,13 +1,11 @@
 #pragma once
-#include "SimulDirectXHeader.h"
-#include <map>
-#include <string>
 #include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Simul/Platform/DirectX12/Export.h"
 
-#include <d3d12.h>
-#include <dxgi.h>
-#include <dxgi1_4.h>
+#include "SimulDirectXHeader.h"
+
+#include <string>
+#include <map>
 
 #pragma warning(push)
 #pragma warning(disable:4251)
@@ -19,7 +17,7 @@ namespace simul
 		typedef std::map<HWND, Window*> WindowMap;
 		typedef std::map<int, IDXGIOutput*> OutputMap;
 
-		/// Window class that holds the swap chain and the surfaces used to render (colour and depth)
+		//! Window class that holds the swap chain and the surfaces used to render (colour and depth)
 		struct SIMUL_DIRECTX12_EXPORT Window
 		{
 														Window();
@@ -36,59 +34,62 @@ namespace simul
 			HWND										hwnd;
 			crossplatform::PlatformRendererInterface*	renderer;
 
-			/// The id assigned by the renderer to correspond to this hwnd
+			//! The id assigned by the renderer to correspond to this hwnd
 			int											view_id;			
 			bool										vsync;
-			/// The swap chain used to present the rendered scene
+			//! The swap chain used to present the rendered scene
+#ifdef _XBOX_ONE
+			IDXGISwapChain1*							m_swapChain;
+#else
 			IDXGISwapChain3*							m_swapChain;
-
+#endif
 			void										setCommandQueue(ID3D12CommandQueue *commandQueue);
 
-			/// Number of backbuffers 
+			//! Number of backbuffers 
 			static const UINT							FrameCount = 3;
 			UINT										m_frameIndex;
 			
-			/// The actual backbuffer resources
+			//! The actual backbuffer resources
 			ID3D12Resource*								m_backBuffers[3];											
-			/// Heap to store views to the backbuffers
+			//! Heap to store views to the backbuffers
 			ID3D12DescriptorHeap*						m_rtvHeap;		
-			/// The views of each backbuffers
+			//! The views of each backbuffers
 			CD3DX12_CPU_DESCRIPTOR_HANDLE				mRtvCpuHandle[FrameCount];
-			/// Used to create the views
+			//! Used to create the views
 			UINT										m_rtvDescriptorSize;
 
-			/// Depth format
+			//! Depth format
 			DXGI_FORMAT									mDepthStencilFmt = DXGI_FORMAT_D32_FLOAT;
-			/// Depth stencil surface
+			//! Depth stencil surface
 			ID3D12Resource*								m_depthStencilTexture12;
-			/// Depth Stencil heap
+			//! Depth Stencil heap
 			ID3D12DescriptorHeap*						m_dsHeap;
-			/// We need one command allocator (storage for commands) for each backbuffer
+			//! We need one command allocator (storage for commands) for each backbuffer
 			ID3D12CommandAllocator*						m_commandAllocators[FrameCount];
-			/// Reference to the command queue
+			//! Reference to the command queue
 			ID3D12CommandQueue*							m_dx12CommandQueue;
 
-			/// Reference to the device
+			//! Reference to the device
 			ID3D12Device*								d3d12Device;
 
-			/// Rendered viewport
-			CD3DX12_VIEWPORT							m_viewport;
-			/// Scissor if used
+			//! Rendered viewport
+			D3D12_VIEWPORT								m_viewport;
+			//! Scissor if used
 			CD3DX12_RECT								m_scissorRect;
 		};
 
-		/// Manages the rendering
+		//! Manages the rendering
 		class SIMUL_DIRECTX12_EXPORT Direct3D12Manager: public crossplatform::GraphicsDeviceInterface
 		{
 		public:
 									Direct3D12Manager();
 									~Direct3D12Manager();
 
-			/// Initializes the manager, finds an adapter, checks feature level, creates a rendering device and a command queue
+			//! Initializes the manager, finds an adapter, checks feature level, creates a rendering device and a command queue
 			void					Initialize(bool use_debug=false,bool instrument=false);
-			/// Add a window. Creates a new Swap Chain.
+			//! Add a window. Creates a new Swap Chain.
 			void					AddWindow(HWND h);
-			/// Removes the window and destroys its associated Swap Chain.
+			//! Removes the window and destroys its associated Swap Chain.
 			void					RemoveWindow(HWND h);
 			void					Shutdown();
 			IDXGISwapChain*			GetSwapChain(HWND hwnd);
@@ -119,28 +120,28 @@ namespace simul
 			int							m_videoCardMemory;
 			char						m_videoCardDescription[128];
 
-			/// Map of windows
+			//! Map of windows
 			WindowMap					windows;
-			/// Map of displays
+			//! Map of displays
 			OutputMap					outputs;
 
-			/// Number of backbuffers
+			//! Number of backbuffers
 			static const UINT			FrameCount = 3;
 
-			/// The D3D device 
+			//! The D3D device 
 			ID3D12Device*				m_d3d12Device;
-			/// The command queue
+			//! The command queue
 			ID3D12CommandQueue*			m_commandQueue;		
-			/// A command list used to record commands
+			//! A command list used to record commands
 			ID3D12GraphicsCommandList*	m_commandList;
 
-			/// The current frame index 
+			//! The current frame index 
 			UINT						m_frameIndex;
-			/// Event used to synchronize
+			//! Event used to synchronize
 			HANDLE						m_fenceEvent;
-			/// A d3d fence object
+			//! A d3d fence object
 			ID3D12Fence*				m_fence;
-			/// Storage for the values of the fence
+			//! Storage for the values of the fence
 			UINT64						m_fenceValues[FrameCount];
 		};
 	}

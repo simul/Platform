@@ -26,7 +26,12 @@ namespace simul
 			desc.NodeMask					= 0;
 			desc.Type						= type;
 			desc.Flags						= shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+#ifdef _XBOX_ONE
+			res								= device->CreateDescriptorHeap(&desc, IID_GRAPHICS_PPV_ARGS(&mHeap));
+#else
 			res								= device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mHeap));
+#endif
+
 			SIMUL_ASSERT(res == S_OK);
 
 			mHandleIncrement				= device->GetDescriptorHandleIncrementSize(type);

@@ -9,19 +9,14 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
-#include "D3dx11effect.h"
 #include "SimulDirectXHeader.h"
 #include "MacrosDx1x.h"
-#include "d3dcompiler.h"	// D3DCreateBlob ()
-#include "d3d12.h"
-#include "d3dx12.h"
 
 #include <algorithm>
 #include <string>
 
 using namespace simul;
 using namespace dx12;
-#pragma optimize("",off)
 
 inline bool IsPowerOfTwo( UINT64 n )
 {
@@ -39,83 +34,131 @@ UINT64 BytePtrToUint64( _In_ T* ptr )
     return static_cast< UINT64 >( reinterpret_cast< BYTE* >( ptr ) - static_cast< BYTE* >( nullptr ) );
 }
 
-void Query::SetName(const char *name)
+Query::Query(crossplatform::QueryType t):
+	crossplatform::Query(t),
+	mQueryHeap(nullptr),
+	mReadBuffer(nullptr),
+	mQueryData(nullptr)
 {
-/*
-	for(int i=0;i<QueryLatency;i++)
-		SetDebugObjectName( d3d11Query[i], name );
-*/
+
 }
 
-void Query::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
+Query::~Query()
 {
-/*
 	InvalidateDeviceObjects();
-	ID3D11Device *m_pd3dDevice=r->AsD3D11Device();
-	D3D11_QUERY_DESC qdesc=
-	{
-		toD3dQueryType(type),0
-	};
-	for(int i=0;i<QueryLatency;i++)
-	{
-		gotResults[i]=true;
-		doneQuery[i]=false;
-		m_pd3dDevice->CreateQuery(&qdesc,&d3d11Query[i]);
-	}
-*/
 }
+
+void Query::SetName(const char *name)
+	{
+	std::string n (name);
+	mQueryHeap->SetName(std::wstring(n.begin(),n.end()).c_str());
+	}
+
+void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
+{
+	InvalidateDeviceObjects();
+	auto rPlat = (dx12::RenderPlatform*)r;
+
+	// Create a query heap
+	HRESULT res					= S_FALSE;
+	mD3DType					= dx12::RenderPlatform::ToD3dQueryType(type);
+	D3D12_QUERY_HEAP_DESC hDesc = {};
+	hDesc.Count					= QueryLatency;
+	hDesc.NodeMask				= 0;
+	hDesc.Type					= dx12::RenderPlatform::ToD3D12QueryHeapType(type);
+#ifdef _XBOX_ONE
+	res							= r->AsD3D12Device()->CreateQueryHeap(&hDesc,IID_GRAPHICS_PPV_ARGS(&mQueryHeap));
+#else
+	res							= r->AsD3D12Device()->CreateQueryHeap(&hDesc,IID_PPV_ARGS(&mQueryHeap));
+#endif // _XBOX_ONE
+	SIMUL_ASSERT(res == S_OK);
+
+	// Create a redback buffer to get data
+	res = rPlat->AsD3D12Device()->CreateCommittedResource
+	(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(1),
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&mReadBuffer)
+#else
+		IID_PPV_ARGS(&mReadBuffer)
+#endif
+	);
+	SIMUL_ASSERT(res == S_OK);
+	mReadBuffer->SetName(L"QueryReadBuffer");
+}
+
 void Query::InvalidateDeviceObjects() 
 {
-	for(int i=0;i<QueryLatency;i++)
-		SAFE_RELEASE(d3d11Query[i]);
+	SAFE_RELEASE(mQueryHeap);
 	for(int i=0;i<QueryLatency;i++)
 	{
-		gotResults[i]=true;
+		gotResults[i]= true;	// ?????????
 		doneQuery[i]=false;
 	}
+	SAFE_RELEASE(mReadBuffer);
+	mQueryData = nullptr;
 }
 
 void Query::Begin(crossplatform::DeviceContext &deviceContext)
 {
 /*
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	pContext->Begin(d3d11Query[currFrame]);
+	deviceContext.asD3D12Context()->BeginQuery
+	(
+		mQueryHeap,
+		mD3DType,
+		currFrame
+	);
 */
 }
 
 void Query::End(crossplatform::DeviceContext &deviceContext)
 {
-/*
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
-	pContext->End(d3d11Query[currFrame]);
+	deviceContext.asD3D12Context()->EndQuery
+	(
+		mQueryHeap,
+		mD3DType,
+		currFrame
+	);
 	gotResults[currFrame]=false;
 	doneQuery[currFrame]=true;
-*/
 }
 
 bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz)
 {
-/*
+
 	gotResults[currFrame]=true;
-	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	currFrame = (currFrame + 1) % QueryLatency;
 	if(!doneQuery[currFrame])
+	{
 		return false;
-	// Get the data from the "next" query - which is the oldest!
-	HRESULT hr=pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0);
-	if(hr== S_OK)
+	}
+
+	// Get the data from the query (copy into our read back buffer)
+	deviceContext.asD3D12Context()->ResolveQueryData
+	(
+		mQueryHeap,
+		mD3DType,
+		currFrame,
+		1,
+		mReadBuffer,
+		0
+	);
+	
+	mReadBuffer->Map(0, &CD3DX12_RANGE(0,1), reinterpret_cast<void**>(mQueryData));
+	mReadBuffer->Unmap(0, &CD3DX12_RANGE(0, 0));
+	if (mQueryData)
 	{
 		gotResults[currFrame]=true;
+		data = mQueryData;
 	}
-	return hr== S_OK;
-*/
 	return true;
 }
 
 RenderState::RenderState()
-	:m_depthStencilState(NULL)
-	,m_blendState(NULL)
-	,m_rasterizerState(NULL)
 {
 	BlendDesc			= CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	RasterDesc			= CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -169,7 +212,11 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		&CD3DX12_RESOURCE_DESC::Buffer(mTotalSize,bufferFlags),
 		mCurrentState,
 		nullptr,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&mBufferDefault)
+#else
 		IID_PPV_ARGS(&mBufferDefault)
+#endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 	mBufferDefault->SetName(L"SBDefaultBuffer");
@@ -182,7 +229,11 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		&CD3DX12_RESOURCE_DESC::Buffer(mTotalSize),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&mBufferUpload)
+#else
 		IID_PPV_ARGS(&mBufferUpload)
+#endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 	mBufferUpload->SetName(L"SBUploadBuffer");
@@ -245,7 +296,11 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 			&CD3DX12_RESOURCE_DESC::Buffer(mTotalSize),
 			D3D12_RESOURCE_STATE_COPY_DEST,
 			nullptr,
+#ifdef _XBOX_ONE
+			IID_GRAPHICS_PPV_ARGS(&mBufferRead[i])
+#else
 			IID_PPV_ARGS(&mBufferRead[i])
+#endif
 		);
 		SIMUL_ASSERT(res == S_OK);
 		mBufferRead[i]->SetName(L"SBReadbackBuffer");
@@ -394,10 +449,7 @@ void PlatformStructuredBuffer::ActualApply(simul::crossplatform::DeviceContext& 
 
 int EffectTechnique::NumPasses() const
 {
-	D3DX11_TECHNIQUE_DESC desc;
-	ID3DX11EffectTechnique *tech=const_cast<EffectTechnique*>(this)->asD3DX11EffectTechnique();
-	tech->GetDesc(&desc);
-	return (int)desc.Passes;
+	return (int)passes_by_index.size();
 }
 
 dx12::Effect::Effect() 
@@ -497,9 +549,6 @@ dx12::Effect::~Effect()
 
 void Effect::InvalidateDeviceObjects()
 {
-	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
-	SAFE_RELEASE(e);
-	platform_effect=e;
 }
 
 crossplatform::EffectTechnique *dx12::Effect::GetTechniqueByName(const char *name)
@@ -513,25 +562,7 @@ crossplatform::EffectTechnique *dx12::Effect::GetTechniqueByName(const char *nam
 	{
 		return g->techniques[name];
 	}
-	if(!platform_effect)
 		return NULL;
-	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
-	crossplatform::EffectTechnique *tech=new dx12::EffectTechnique;
-	ID3DX11EffectTechnique *t=e->GetTechniqueByName(name);
-	if(!t->IsValid())
-	{
-		SIMUL_CERR<<"Invalid Effect technique "<<name<<" in effect "<<this->filename.c_str()<<std::endl;
-		if(this->filenameInUseUtf8.length())
-			SIMUL_FILE_LINE_CERR(this->filenameInUseUtf8.c_str(),0)<<"See effect file."<<std::endl;
-	}
-	tech->platform_technique=t;
-	techniques[name]=tech;
-	groups[""]->techniques[name]=tech;
-	if(!tech->platform_technique)
-	{
-		SIMUL_BREAK_ONCE("NULL technique");
-	}
-	return tech;
 }
 
 crossplatform::EffectTechnique *dx12::Effect::GetTechniqueByIndex(int index)
@@ -545,29 +576,8 @@ crossplatform::EffectTechnique *dx12::Effect::GetTechniqueByIndex(int index)
 	{
 		return g->techniques_by_index[index];
 	}
-	if(!platform_effect)
 		return NULL;
-	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
-	ID3DX11EffectTechnique *t=e->GetTechniqueByIndex(index);
-	if(!t)
-		return NULL;
-	D3DX11_TECHNIQUE_DESC desc;
-	t->GetDesc(&desc);
-	crossplatform::EffectTechnique *tech=NULL;
-	if(techniques.find(desc.Name)!=techniques.end())
-	{
-		tech=techniques[desc.Name];
-		techniques_by_index[index]=tech;
-		return tech;;
 	}
-	tech=new dx12::EffectTechnique;
-	tech->platform_technique=t;
-	techniques[desc.Name]=tech;
-	techniques_by_index[index]=tech;
-	groups[""]->techniques[desc.Name]=tech;
-	groups[""]->techniques_by_index[index]=tech;
-	return tech;
-}
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {
@@ -776,19 +786,19 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 		// usesTextures() holds both Textures and UAV
 		if (usesBuffers() || usesTextures() || usesSBs())
 		{
-			mSrvCbvUavTableIndex = rootParams.size();
+			mSrvCbvUavTableIndex = (INT)rootParams.size();
 			
 			rootParams.push_back(CD3DX12_ROOT_PARAMETER());
-			rootParams[mSrvCbvUavTableIndex].InitAsDescriptorTable(mSrvCbvUavRanges.size(), &mSrvCbvUavRanges[0]);
+			rootParams[mSrvCbvUavTableIndex].InitAsDescriptorTable((UINT)mSrvCbvUavRanges.size(), &mSrvCbvUavRanges[0]);
 		}
 
 		// Add a descriptor table holding all the samplers
 		if(usesSamplers())
 		{
-			mSamplerTableIndex = rootParams.size();
+			mSamplerTableIndex = (INT)rootParams.size();
 
 			rootParams.push_back(CD3DX12_ROOT_PARAMETER());
-			rootParams[mSamplerTableIndex].InitAsDescriptorTable(mSamplerRanges.size(), &mSamplerRanges[0]);
+			rootParams[mSamplerTableIndex].InitAsDescriptorTable((UINT)mSamplerRanges.size(), &mSamplerRanges[0]);
 		}
 
 		auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
@@ -819,7 +829,7 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 		CD3DX12_ROOT_SIGNATURE_DESC rootDesc = {};
 		rootDesc.Init
 		(
-			rootParams.size(),
+			(UINT)rootParams.size(),
 			&rootParams[0],
 			0,
 			nullptr,
@@ -834,7 +844,12 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 			OutputDebugStringA((char*)error->GetBufferPointer());
 		}
 		SIMUL_ASSERT(res == S_OK);
+
+#ifdef _XBOX_ONE
+		res = rPlat->AsD3D12Device()->CreateRootSignature(0, rootSerialized->GetBufferPointer(), rootSerialized->GetBufferSize(), IID_GRAPHICS_PPV_ARGS(&mRootS));
+#else
 		res = rPlat->AsD3D12Device()->CreateRootSignature(0, rootSerialized->GetBufferPointer(), rootSerialized->GetBufferSize(), IID_PPV_ARGS(&mRootS));
+#endif
 
 		// Assign a name
 		std::wstring name = L"RootSignature_";
@@ -938,7 +953,11 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 			HRESULT res = curRenderPlat->AsD3D12Device()->CreateGraphicsPipelineState
 			(
 				&psoDesc,
+#ifdef _XBOX_ONE
+				IID_GRAPHICS_PPV_ARGS(&psoPair.second)
+#else
 				IID_PPV_ARGS(&psoPair.second)
+#endif
 			);
 			SIMUL_ASSERT(res == S_OK);
 
@@ -956,13 +975,19 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 
 			D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc	= {};
 			psoDesc.CS									= CD3DX12_SHADER_BYTECODE(c->computeShader12);
+#ifndef _XBOX_ONE
 			psoDesc.Flags								= D3D12_PIPELINE_STATE_FLAG_NONE;
+#endif
 			psoDesc.pRootSignature						= mRootS;
 			psoDesc.NodeMask							= 0;
 			HRESULT res = curRenderPlat->AsD3D12Device()->CreateComputePipelineState
 			(
 				&psoDesc,
+#ifdef _XBOX_ONE
+				IID_GRAPHICS_PPV_ARGS(&mComputePso)
+#else
 				IID_PPV_ARGS(&mComputePso)
+#endif
 			);
 			SIMUL_ASSERT(res == S_OK);
 
@@ -1055,8 +1080,6 @@ void simul::dx12::EffectPass::SetConstantBuffers(ConstantBufferMap & cBuffers, d
 		{
 			SIMUL_BREAK_ONCE("This buffer is assigned to the wrong index.");
 		}
-
-		i->second->GetPlatformConstantBuffer()->ActualApply(context, this, i->second->GetIndex());
 
 		// Destination
 		D3D12_CPU_DESCRIPTOR_HANDLE dstHandle = frameHeap->CpuHandle();

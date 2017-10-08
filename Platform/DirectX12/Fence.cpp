@@ -28,7 +28,11 @@ namespace simul
 
 			mFenceSignal	= 0;
 			mFenceValue		= 1;
+#ifdef _XBOX_ONE
+			res = rPlat->AsD3D12Device()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_GRAPHICS_PPV_ARGS(&mFence));
+#else
 			res				= rPlat->AsD3D12Device()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
+#endif
 			SIMUL_ASSERT(res == S_OK);
 			mFenceEvent		= CreateEvent(nullptr, false, false, nullptr);
 			SIMUL_ASSERT(mFenceEvent != nullptr);
@@ -61,7 +65,7 @@ namespace simul
 
 			HRESULT res = S_FALSE;
 			mSignaled	= false;
-			if (mFence->GetCompletedValue() < mFenceSignal)
+			if (mFence->GetCompletedValue() < (UINT64)mFenceSignal)
 			{
 				res = mFence->SetEventOnCompletion(mFenceSignal, mFenceEvent);
 				SIMUL_ASSERT(res == S_OK);

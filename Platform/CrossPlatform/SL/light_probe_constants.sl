@@ -6,8 +6,11 @@ SIMUL_CONSTANT_BUFFER(LightProbeConstants,9)
 	uniform mat4 invViewProj;
 	uniform int numSHBands;
 	uniform float alpha;
-	uniform float LightProbeConstantsB;
-	uniform float LightProbeConstantsC;
+	uniform float copy_face_exposure;
+	uniform float copy_face_gamma;
+	uniform int mip;
+	uniform int num_mips;
+
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

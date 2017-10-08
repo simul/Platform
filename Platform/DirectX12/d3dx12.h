@@ -11,6 +11,7 @@
 
 #ifndef __D3DX12_H__
 #define __D3DX12_H__
+#ifndef _XBOX_ONE
 
 #include "d3d12.h"
 
@@ -2543,6 +2544,7 @@ inline HRESULT D3DX12ParsePipelineStream(const D3D12_PIPELINE_STATE_STREAM_DESC&
 }
 #endif
 
+#endif
 
 #endif // defined( __cplusplus )
 

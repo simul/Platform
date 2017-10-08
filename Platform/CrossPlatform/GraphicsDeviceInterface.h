@@ -2,17 +2,22 @@
 #define GRAPHICSDEVICEINTERFACE
 #include <string>
 
-
-#ifdef DOXYGEN
-typedef void *HWND;
-#else
-typedef HWND__ *HWND;
-#endif
-
 namespace simul
 {
 	namespace crossplatform
 	{
+
+#ifdef _XBOX_ONE
+#ifdef DECLARE_HANDLE
+		typedef HWND cp_hwnd;
+#else
+		typedef void* cp_hwnd;
+#endif
+#elif !defined(DOXYGEN) && defined(WIN32)
+		typedef HWND__* cp_hwnd;
+#else
+		typedef void* cp_hwnd;
+#endif
 		struct Output
 		{
 			std::string monitorName;
@@ -42,17 +47,17 @@ namespace simul
 		class GraphicsDeviceInterface
 		{
 		public:
-			virtual void	AddWindow(HWND h)=0;
-			virtual void	RemoveWindow(HWND h)=0;
-			virtual void	Render(HWND h)=0;
-			virtual void	SetRenderer(HWND,PlatformRendererInterface *ci,int view_id)=0;
-			virtual void	SetFullScreen(HWND hwnd,bool fullscreen,int which_output)=0;
-			virtual void	ResizeSwapChain(HWND hwnd)=0;
+			virtual void	AddWindow(cp_hwnd h)=0;
+			virtual void	RemoveWindow(cp_hwnd h)=0;
+			virtual void	Render(cp_hwnd h)=0;
+			virtual void	SetRenderer(cp_hwnd,PlatformRendererInterface *ci,int view_id)=0;
+			virtual void	SetFullScreen(cp_hwnd cp_hwnd,bool fullscreen,int which_output)=0;
+			virtual void	ResizeSwapChain(cp_hwnd cp_hwnd)=0;
 			virtual void*	GetDevice()=0;
 			virtual void*	GetDeviceContext()=0;
 			virtual int		GetNumOutputs()=0;
 			virtual Output	GetOutput(int i)=0;
-			virtual int		GetViewId(HWND h)=0;
+			virtual int		GetViewId(cp_hwnd h)=0;
 		};
 	}
 }

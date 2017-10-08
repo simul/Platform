@@ -9,6 +9,11 @@
 
 #include <string>
 
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251) //! "needs to have dll-interface to be used by clients of class"
+#endif
+
 namespace simul
 {
 	namespace dx12
@@ -56,3 +61,7 @@ namespace simul
 		};
 	}
 }
+
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif

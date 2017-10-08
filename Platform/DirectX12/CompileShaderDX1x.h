@@ -1,15 +1,7 @@
 #ifndef COMPILE_SHADER_DX11_H
 #define COMPILE_SHADER_DX11_H
 #include "SimulDirectXHeader.h"
-#ifdef _XBOX_ONE
-#include <D3Dcompiler_x.h>
-#else
-#ifdef USE_XDK_COMPILER
-#include <D3Dcompiler_xdk.h>
-#else
-#include <D3Dcompiler.h>
-#endif
-#endif
+
 #include <string>
 #include <vector>
 

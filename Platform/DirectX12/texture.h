@@ -2,10 +2,10 @@
 #include "Simul/Platform/DirectX12/Export.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/Sl/CppSl.hs"
-#include <string>
 #include "SimulDirectXHeader.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Heap.h"
+#include <string>
 
 #pragma warning(disable:4251)
 
@@ -66,9 +66,9 @@ namespace simul
 																			int num_samples = 1, int aa_quality = 0, bool wrap = false, 
 																			vec4 clear = vec4(0.5f,0.5f,0.2f,1.0f),float clearDepth = 1.0f,uint clearStencil = 0);
 			bool							ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *renderPlatform,int w,int l,int num,int mips,crossplatform::PixelFormat f,bool computable=false,bool rendertarget=false,bool cubemap=false) override;
-			void							ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
+			void							ensureTexture1DSizeAndFormat(ID3D12Device *pd3dDevice,int w,crossplatform::PixelFormat f,bool computable=false);
 			void							GenerateMips(crossplatform::DeviceContext &deviceContext) override;
-			void							map(ID3D11DeviceContext *context);
+			// void							map(ID3D11DeviceContext *context);
 			bool							isMapped() const;
 			void							unmap();
 			vec4							GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoords,bool wrap);

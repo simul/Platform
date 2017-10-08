@@ -111,7 +111,7 @@ SamplerState samplerStateNearestClamp SIMUL_STATE_REGISTER(15)
 	AddressV = Clamp;
 	AddressW = Clamp;
 };
-SamplerState cubeSamplerState
+SamplerState cubeSamplerState SIMUL_STATE_REGISTER(4)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Mirror;

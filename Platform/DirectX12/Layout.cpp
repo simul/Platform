@@ -9,8 +9,6 @@ using namespace simul;
 using namespace dx12;
 
 Layout::Layout():
-	d3d11InputLayout(0),
-	previousInputLayout(0),
 	previousTopology(D3D_PRIMITIVE_TOPOLOGY_UNDEFINED),
 	mAppliedCount(0)
 {
@@ -23,7 +21,7 @@ Layout::~Layout()
 
 void Layout::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(d3d11InputLayout);
+
 }
 
 void Layout::Apply(crossplatform::DeviceContext &deviceContext)

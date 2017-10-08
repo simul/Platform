@@ -10,13 +10,6 @@
 #define NOMINMAX
 #include "FramebufferDX1x.h"
 
-#include <tchar.h>
-#ifndef SIMUL_WIN8_SDK
-#include <dxerr.h>
-#endif
-#include <string>
-#include <assert.h>
-
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
 #include "MacrosDX1x.h"
@@ -24,6 +17,10 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
+
+#include <tchar.h>
+#include <string>
+#include <assert.h>
 
 #pragma optimize("",off)
 
@@ -33,9 +30,6 @@ using namespace dx12;
 
 Framebuffer::Framebuffer(const char *n) :
 	BaseFramebuffer(n)
-	,m_pOldRenderTarget(NULL)
-	,m_pOldDepthSurface(NULL)
-	,num_OldViewports(0) //The usual case is for the user to supply depth look-up textures, which is all we need for the majority of cases... So let's avoid needless construction of depth buffers unless otherwise indicated with a SetDepthFormat(...)
 	,useESRAM(false)
 	,useESRAMforDepth(false)
 {
@@ -53,8 +47,6 @@ void Framebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 
 void Framebuffer::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(m_pOldRenderTarget);
-	SAFE_RELEASE(m_pOldDepthSurface);
 	BaseFramebuffer::InvalidateDeviceObjects();
 }
 
@@ -126,11 +118,11 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	// Push current target and viewport
 	mTargetAndViewport.num				= 1;
 	mTargetAndViewport.m_rt[0]			= buffer_texture->AsD3D12RenderTargetView();
-	mTargetAndViewport.m_dt				= buffer_depth_texture->IsValid()?buffer_depth_texture->AsD3D12DepthStencilView():nullptr;
-	mTargetAndViewport.viewport.w		= mViewport.Width;
-	mTargetAndViewport.viewport.h		= mViewport.Height;
-	mTargetAndViewport.viewport.x		= mViewport.TopLeftX;
-	mTargetAndViewport.viewport.y		= mViewport.TopLeftY;
+	mTargetAndViewport.m_dt				= buffer_depth_texture->AsD3D12DepthStencilView();
+	mTargetAndViewport.viewport.w		= (int)mViewport.Width;
+	mTargetAndViewport.viewport.h		= (int)mViewport.Height;
+	mTargetAndViewport.viewport.x		= (int)mViewport.TopLeftX;
+	mTargetAndViewport.viewport.y		= (int)mViewport.TopLeftY;
 	mTargetAndViewport.viewport.znear	= mViewport.MinDepth;
 	mTargetAndViewport.viewport.zfar	= mViewport.MaxDepth;
 	

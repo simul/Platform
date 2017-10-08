@@ -6,16 +6,11 @@
 
 #include "Heap.h"
 #include "Fence.h"
-#include "RootSignature.h"
 
 #include <string>
 #include <map>
 
 #pragma warning(disable:4251)
-
-struct ID3D11Buffer;
-struct ID3DX11EffectConstantBuffer;
-struct ID3DX11EffectPass;
 
 struct ID3D12RootSignature;
 struct ID3D12PipelineState;
@@ -28,32 +23,31 @@ namespace simul
 	}
 	namespace dx12
 	{
+		//! DirectX12 Query implementation
 		struct SIMUL_DIRECTX12_EXPORT Query:public crossplatform::Query
 		{
-			ID3D11Query *d3d11Query[crossplatform::Query::QueryLatency];
-			Query(crossplatform::QueryType t):crossplatform::Query(t)
-			{
-				for(int i=0;i<QueryLatency;i++)
-					d3d11Query[i]		=0;
-			}
-			virtual ~Query() override
-			{
-				InvalidateDeviceObjects();
-			}
+					Query(crossplatform::QueryType t);
+			virtual ~Query() override;
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
 			void InvalidateDeviceObjects() override;
 			void Begin(crossplatform::DeviceContext &deviceContext) override;
 			void End(crossplatform::DeviceContext &deviceContext) override;
 			bool GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
 			void SetName(const char *n) override;
+
+		protected:
+			//! Holds the queries
+			ID3D12QueryHeap*		mQueryHeap;
+			//! We cache the query type
+			D3D12_QUERY_TYPE		mD3DType;
+			//! Readback buffer to read data from the query
+			ID3D12Resource*			mReadBuffer;
+			//! We hold a pointer to the mapped data
+			void*					mQueryData;
 		};
 
 		struct SIMUL_DIRECTX12_EXPORT RenderState:public crossplatform::RenderState
 		{
-			ID3D11DepthStencilState		*m_depthStencilState;
-			ID3D11BlendState			*m_blendState;
-			ID3D11RasterizerState		*m_rasterizerState;
-
 			D3D12_BLEND_DESC			BlendDesc;
 			D3D12_RASTERIZER_DESC		RasterDesc;
 			D3D12_DEPTH_STENCIL_DESC	DepthStencilDesc;

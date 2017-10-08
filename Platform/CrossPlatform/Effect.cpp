@@ -3,11 +3,11 @@
 #include <Windows.h>
 #endif
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/FileLoader.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
-#include "Simul/Base/DefaultFileLoader.h"
 #include "Simul/Base/StringFunctions.h"
 #include <iostream>
 #include <algorithm>
@@ -674,12 +674,12 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	textureDetailsMap.clear();
 	textureCharMap.clear();
 	// We will load the .sfxo file, which contains the list of shader binary files, and also the arrangement of textures, buffers etc. in numeric slots.
-
 	std::string filepathUtf8=renderPlatform->GetShaderBinaryPath();
 	if (filepathUtf8[filepathUtf8.length() - 1] != '/')
 		filepathUtf8+="/";
 	std::string filenameUtf8=filename_utf8;
-	if (filenameUtf8.find(".") >= filenameUtf8.length())
+	// if (filenameUtf8.find(".") >= filenameUtf8.length())
+	if (filenameUtf8.find(".sfxo") == std::string::npos)
 		filenameUtf8 += ".sfxo";
 	filenameUtf8=filepathUtf8+filenameUtf8;
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filenameUtf8.c_str()))

@@ -1,8 +1,5 @@
 #pragma once
 #include "SimulDirectXHeader.h"
-#ifndef SIMUL_WIN8_SDK
-#include <d3dx11.h>
-#endif
 #include "Simul/Platform/DirectX12/MacrosDx1x.h"
 #include "Simul/Platform/DirectX12/Export.h"
 #include "Simul/Platform/DirectX12/Texture.h"
@@ -12,7 +9,7 @@ namespace simul
 {
 	namespace dx12
 	{
-		//! A DirectX 11 framebuffer class.
+		//! A DirectX 12 framebuffer class.
 		SIMUL_DIRECTX12_EXPORT_CLASS Framebuffer : public crossplatform::BaseFramebuffer
 		{
 		public:
@@ -51,10 +48,6 @@ namespace simul
 
 		protected:
 			bool useESRAM,useESRAMforDepth;
-			ID3D11RenderTargetView*				m_pOldRenderTarget;
-			ID3D11DepthStencilView*				m_pOldDepthSurface;
-			D3D11_VIEWPORT						m_OldViewports[16];
-			unsigned							num_OldViewports;
 		protected:
 			void SaveOldRTs(crossplatform::DeviceContext &deviceContext);
 			void SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float Z=0.0f,float D=1.0f);

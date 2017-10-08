@@ -6,23 +6,16 @@
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
+#include <DirectXTex.h>
 #include <string>
 #include <algorithm>
 
 #include "MacrosDX1x.h"
-#include "d3d12.h"
-#include "d3dx12.h"
 
 using namespace simul;
 using namespace dx12;
 
 #pragma optimize("",off)
-
-#ifndef SIMUL_WIN8_SDK
-#include <dxerr.h>
-#else
-#include <DirectXTex.h>
-#endif // SIMUL_WIN8_SDK
 
 SamplerState::SamplerState(crossplatform::SamplerStateDesc *d)
 {
@@ -259,7 +252,11 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 		&textureDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&mTextureDefault)
+#else
 		IID_PPV_ARGS(&mTextureDefault)
+#endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 	std::string sName = pFilePathUtf8;
@@ -283,7 +280,11 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 		&CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&mTextureUpload)
+#else
 		IID_PPV_ARGS(&mTextureUpload)
+#endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 	n = L"Texture2DUploadResource_";
@@ -346,7 +347,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	// Find all the paths
 	std::vector<std::string> strPaths;
 	strPaths.resize(arraySize);
-	for (unsigned int i = 0; i < arraySize; i++)
+	for (int i = 0; i < arraySize; i++)
 	{
 		int idx = simul::base::FileLoader::GetFileLoader()->FindIndexInPathStack(texture_files[i].c_str(), pathsUtf8);
 		if (idx<-1 || idx >= (int)pathsUtf8.size())
@@ -365,7 +366,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	};
 	std::vector<FileContents> fileContents;
 	fileContents.resize(arraySize);
-	for (unsigned int i = 0; i < arraySize; i++)
+	for (int i = 0; i < arraySize; i++)
 	{
 		auto curContents = &fileContents[i];
 		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(curContents->ptr, curContents->bytes, strPaths[i].c_str(), false);
@@ -380,7 +381,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	};
 	std::vector<WicContents> wicContents;
 	wicContents.resize(arraySize);
-	for (unsigned int i = 0; i < arraySize;i++)
+	for (int i = 0; i < arraySize;i++)
 	{
 		auto curContents	= &fileContents[i];
 		auto curWic			= &wicContents[i];
@@ -389,10 +390,10 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	}
 
 	// Check that formats and sizes are the same (we will use as reference the first image in the array)
-	unsigned int	mainWidth	= wicContents[0].metadata.width;
-	unsigned int	mainLength	= wicContents[0].metadata.height;
+	unsigned int	mainWidth	= (unsigned int)wicContents[0].metadata.width;
+	unsigned int	mainLength	= (unsigned int)wicContents[0].metadata.height;
 	DXGI_FORMAT		mainFormat	= wicContents[0].metadata.format;
-	for (unsigned int i = 1; i < arraySize; i++)
+	for (int i = 1; i < arraySize; i++)
 	{
 		if (wicContents[i].metadata.width != mainWidth ||
 			wicContents[i].metadata.width != mainLength ||
@@ -429,7 +430,11 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 		&textureDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&mTextureDefault)
+#else
 		IID_PPV_ARGS(&mTextureDefault)
+#endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 	std::string sName = name;
@@ -453,7 +458,11 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 		&CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&mTextureUpload)
+#else
 		IID_PPV_ARGS(&mTextureUpload)
+#endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 	n = L"Texture2DArrayUploadResource_";
@@ -463,7 +472,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	// Perform the texture copy
 	std::vector<D3D12_SUBRESOURCE_DATA> textureSubDatas;
 	textureSubDatas.resize(arraySize);
-	for (unsigned int i = 0; i < arraySize; i++)
+	for (int i = 0; i < arraySize; i++)
 	{
 		textureSubDatas[i].pData = wicContents[i].image->pixels;
 		textureSubDatas[i].RowPitch = wicContents[i].image->rowPitch;
@@ -500,12 +509,12 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	mTextureSrvHeap.Offset();
 	
 	// Set the properties of this texture
-	width			= textureDesc.Width;
-	length			= textureDesc.Height;
+	width			= (int)textureDesc.Width;
+	length			= (int)textureDesc.Height;
 	mLoadedFromFile = true;
 	
 	// Clean!
-	for (unsigned int i = 0; i < arraySize; i++)
+	for (int i = 0; i < arraySize; i++)
 	{
 		simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(fileContents[i].ptr);
 	}
@@ -653,6 +662,8 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 	else
 	{
 		auto renderPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
+		// HACK: to make sure the cmd list is there 
+		renderPlat->SetCommandList(deviceContext.asD3D12Context());
 
 		if (!mTextureDefault)
 		{
@@ -680,7 +691,11 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 			&CD3DX12_RESOURCE_DESC::Buffer(texSize),
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
+#ifdef _XBOX_ONE
+			IID_GRAPHICS_PPV_ARGS(&mTextureUpload)
+#else
 			IID_PPV_ARGS(&mTextureUpload)
+#endif
 		);
 		SIMUL_ASSERT(res == S_OK);
 		mTextureUpload->SetName(L"TextureSetTexelsUpload");
@@ -758,8 +773,8 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		}
 		dxgi_format = textureDesc.Format;
 		pixelFormat = RenderPlatform::FromDxgiFormat(dxgi_format);
-		width		= textureDesc.Width;
-		length		= textureDesc.Height;
+		width		= (int)textureDesc.Width;
+		length		= (int)textureDesc.Height;
 		if (!srv)
 		{
 			InitSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels);
@@ -839,8 +854,8 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 
 		dxgi_format						= RenderPlatform::TypelessToSrvFormat(textureDesc.Format);
 		pixelFormat						= RenderPlatform::FromDxgiFormat(dxgi_format);
-		width							= textureDesc.Width;
-		length							= textureDesc.Height;
+		width							= (int)textureDesc.Width;
+		length							= (int)textureDesc.Height;
 		if (!srv)
 		{
 			InitSRVTables(1, textureDesc.MipLevels);
@@ -908,9 +923,9 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		auto desc = mTextureDefault->GetDesc();
 		if (desc.Width != w || desc.Height != l || desc.DepthOrArraySize != d || desc.MipLevels != m || desc.Format != f)
 			ok = false;
-		if (computable != (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
+		if (computable != ((desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS))
 			ok = false;
-		if (rendertargets != (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)
+		if (rendertargets != ((desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET))
 			ok = false;
 	}
 	else
@@ -974,7 +989,11 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 			&textureDesc,
 			GetCurrentState(),
 			rendertargets? &clearValues : nullptr,
+#ifdef _XBOX_ONE
+			IID_GRAPHICS_PPV_ARGS(&mTextureDefault)
+#else
 			IID_PPV_ARGS(&mTextureDefault)
+#endif
 		);
 		SIMUL_ASSERT(res == S_OK);
 		std::wstring n = L"Texture3DDefaultResource_";
@@ -1175,7 +1194,11 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			&textureDesc,
 			GetCurrentState(),
 			(rendertarget || depthstencil) ? &clearValues : nullptr,
+#ifdef _XBOX_ONE
+			IID_GRAPHICS_PPV_ARGS(&mTextureDefault)
+#else
 			IID_PPV_ARGS(&mTextureDefault)
+#endif
 		);
 		SIMUL_ASSERT(res == S_OK);
 		std::wstring n = L"Texture2DDefaultResource_";
@@ -1343,7 +1366,11 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		&textureDesc,
 		GetCurrentState(),
 		rendertarget? &clearValues : nullptr,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&mTextureDefault)
+#else
 		IID_PPV_ARGS(&mTextureDefault)
+#endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 	std::wstring n = L"Texture2DArrayDefaultResource_";
@@ -1590,7 +1617,7 @@ void Texture::CreateSRVTables(int num, int m, bool cubemap, bool volume, bool ms
 	}
 }
 
-void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossplatform::PixelFormat pf,bool computable)
+void Texture::ensureTexture1DSizeAndFormat(ID3D12Device* pd3dDevice,int w,crossplatform::PixelFormat pf,bool computable)
 {
 	// TO-DO: Implement? I don't see it used anywhere
 	SIMUL_BREAK("Nacho has to implement this");
@@ -1601,10 +1628,12 @@ void Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
 	SIMUL_BREAK_ONCE("Mip generation is not implemented");
 }
 
+/*
 void Texture::map(ID3D11DeviceContext *context)
 {
 	SIMUL_BREAK_ONCE("Maping a texture is not implemented");
 }
+*/
 
 bool Texture::isMapped() const
 {
@@ -1652,10 +1681,10 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 		m_pOldRenderTargets12[0]		= (D3D12_CPU_DESCRIPTOR_HANDLE*)curTarget->m_rt[0];
 		m_pOldDepthSurface12			= (D3D12_CPU_DESCRIPTOR_HANDLE*)curTarget->m_dt;
 
-		m_OldViewports12[0].Width		= curTarget->viewport.w;
-		m_OldViewports12[0].Height		= curTarget->viewport.h;
-		m_OldViewports12[0].TopLeftX	= curTarget->viewport.x;
-		m_OldViewports12[0].TopLeftY	= curTarget->viewport.y;
+		m_OldViewports12[0].Width		= (float)curTarget->viewport.w;
+		m_OldViewports12[0].Height		= (float)curTarget->viewport.h;
+		m_OldViewports12[0].TopLeftX	= (float)curTarget->viewport.x;
+		m_OldViewports12[0].TopLeftY	= (float)curTarget->viewport.y;
 		m_OldViewports12[0].MinDepth	= curTarget->viewport.znear;
 		m_OldViewports12[0].MaxDepth	= curTarget->viewport.zfar;
 	}
@@ -1665,10 +1694,10 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 		m_pOldRenderTargets12[0]		= (D3D12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_rt[0];
 		m_pOldDepthSurface12			= (D3D12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_dt;
 
-		m_OldViewports12[0].Width		= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.w;
-		m_OldViewports12[0].Height		= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.h;
-		m_OldViewports12[0].TopLeftX	= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.x;
-		m_OldViewports12[0].TopLeftY	= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.y;
+		m_OldViewports12[0].Width		= (float)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.w;
+		m_OldViewports12[0].Height		= (float)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.h;
+		m_OldViewports12[0].TopLeftX	= (float)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.x;
+		m_OldViewports12[0].TopLeftY	= (float)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.y;
 		m_OldViewports12[0].MinDepth	= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.znear;
 		m_OldViewports12[0].MaxDepth	= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.zfar;
 	}
@@ -1736,7 +1765,7 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -
 					if (curState != mResourceState)
 					{
 						rPlat->ResourceTransitionSimple(mTextureDefault, curState, mResourceState, 
-														RenderPlatform::GetResourceIndex(m,l,mips, mSubResourcesStates.size()));
+														RenderPlatform::GetResourceIndex(m,l,mips, (int)mSubResourcesStates.size()));
 						mSubResourcesStates[l][m] = mResourceState;
 					}
 				}

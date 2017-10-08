@@ -66,7 +66,7 @@ SamplerState g_samplerPerlin SIMUL_STATE_REGISTER(3)
 };
 
 // FFT wave gradient map, converted to normal value in PS
-SamplerState g_samplerGradient SIMUL_STATE_REGISTER(4)
+SamplerState g_samplerGradient SIMUL_STATE_REGISTER(7)
 {
 	Filter =ANISOTROPIC;
 	AddressU =WRAP;

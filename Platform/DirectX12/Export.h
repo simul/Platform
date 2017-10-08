@@ -19,8 +19,6 @@
 #endif
 #endif
 
-#pragma comment(lib,"D3D12")
-
 #if defined(SIMUL_DYNAMIC_LINK) && !defined(DOXYGEN)
 // In this lib:
 #if !defined(SIMUL_DIRECTX1x_DLL) 

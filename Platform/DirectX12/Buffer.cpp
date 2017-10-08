@@ -1,7 +1,7 @@
+#include "SimulDirectXHeader.h"
 #include "Buffer.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX12/MacrosDX1x.h"
-#include "SimulDirectXHeader.h"
 
 using namespace simul;
 using namespace dx12;
@@ -9,6 +9,7 @@ using namespace dx12;
 Buffer::Buffer():
 	mUploadHeap(nullptr)
 {
+
 }
 
 Buffer::~Buffer()
@@ -33,6 +34,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
 	//SIMUL_COUT << "Allocating: " << std::to_string(mBufferSize) << ".bytes in the GPU, (" << std::to_string(megas) << ".MB)\n";
 
 	// Upload heap to hold the vertex data in the GPU (we will be mapping it to copy new data)
+	CD3DX12_RESOURCE_DESC b=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -40,7 +42,11 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&mUploadHeap)
+#else
 		IID_PPV_ARGS(&mUploadHeap)
+#endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 	mUploadHeap->SetName(L"VertexUpload");
@@ -72,7 +78,11 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int
 		&CD3DX12_RESOURCE_DESC::Buffer(mBufferSize),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
+#ifdef _XBOX_ONE
+		IID_GRAPHICS_PPV_ARGS(&mUploadHeap)
+#else
 		IID_PPV_ARGS(&mUploadHeap)
+#endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 	mUploadHeap->SetName(L"IndexUpload");
