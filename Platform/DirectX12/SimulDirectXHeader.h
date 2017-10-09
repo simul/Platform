@@ -29,6 +29,7 @@
 	//#pragma comment(lib,"d3dcompiler_47")
 #else
 	#pragma comment(lib,"D3D12")
+	#pragma comment(lib,"D3dcompiler.lib")
 #endif
 
 

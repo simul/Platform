@@ -2,22 +2,23 @@
 #define GRAPHICSDEVICEINTERFACE
 #include <string>
 
+#ifdef _XBOX_ONE
+#ifdef DECLARE_HANDLE
+typedef HWND cp_hwnd;
+#else
+typedef void* cp_hwnd;
+#endif
+#elif !defined(DOXYGEN) && defined(_MSC_VER)
+#include <Windows.h>
+#define cp_hwnd HWND
+#else
+typedef void* cp_hwnd;
+#endif
+
 namespace simul
 {
 	namespace crossplatform
 	{
-
-#ifdef _XBOX_ONE
-#ifdef DECLARE_HANDLE
-		typedef HWND cp_hwnd;
-#else
-		typedef void* cp_hwnd;
-#endif
-#elif !defined(DOXYGEN) && defined(WIN32)
-		typedef HWND__* cp_hwnd;
-#else
-		typedef void* cp_hwnd;
-#endif
 		struct Output
 		{
 			std::string monitorName;
