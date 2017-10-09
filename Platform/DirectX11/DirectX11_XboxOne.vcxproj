@@ -10,7 +10,6 @@
     <RootNamespace>Render</RootNamespace>
     <ProjectGuid>{742b6c59-e98f-4641-b5e3-a26a0ba0153d}</ProjectGuid>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <Keyword>Win32Proj</Keyword>
     <ApplicationEnvironment>title</ApplicationEnvironment>
     <!-- - - - -->
     <PlatformToolset>v110</PlatformToolset>
