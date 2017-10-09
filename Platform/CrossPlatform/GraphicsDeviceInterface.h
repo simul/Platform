@@ -32,7 +32,7 @@ namespace simul
 		class PlatformRendererInterface
 		{
 		public:
-			virtual void				OnCreateDevice(void* pd3dDevice)=0;
+			virtual void				OnCreateDevice(void* device)=0;
 			//! Add a view. This tells the renderer to create any internal stuff it needs to handle a viewport, so that it is ready when Render() is called. It returns an identifier for that view.
 			virtual int					AddView()=0;
 			virtual void				RemoveView(int)=0;
