@@ -695,6 +695,9 @@
     <ProjectReference Include="..\..\Clouds\Clouds_x64_v140.vcxproj">
       <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\External\DirectX\Effects11_Win8SDK\Effects11_2015.vcxproj">
+      <Project>{df460eab-570d-4b50-9089-2e2fc801bf38}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\Math\Math_x64_v140.vcxproj">
       <Project>{b6cb4ee4-90e3-4b11-8706-e4d7b9024801}</Project>
       <Private>false</Private>
