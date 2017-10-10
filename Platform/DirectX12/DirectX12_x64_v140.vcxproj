@@ -23,7 +23,7 @@
     <ProjectGuid>{866CE181-E49D-4834-AB01-82F72FF1BB09}</ProjectGuid>
     <RootNamespace>DirectX12</RootNamespace>
     <Keyword>x64Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="Configuration">
@@ -75,8 +75,8 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulDLL.props" />
-    <Import Project="..\..\SimulDebug.props" />
     <Import Project="SimulUseWin8SDK.props" />
+    <Import Project="..\..\SimulDebugMD.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -121,7 +121,7 @@
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <ShowProgress>LinkVerboseLib</ShowProgress>
-      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;D3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -150,7 +150,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;D3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -223,7 +223,6 @@
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
-    <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
@@ -250,7 +249,6 @@
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
-    <ClInclude Include="RootSignature.h" />
     <ClInclude Include="SimulDirectXHeader.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />
@@ -313,10 +311,7 @@
     <None Include="HLSL\CppHLSL.hlsl" />
     <None Include="HLSL\HLSL12.json" />
     <None Include="HLSL\shader_platform.sl" />
-    <None Include="SimulUseDXSDK.props" />
-    <None Include="SimulUseWin8SDK.props">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="SimulUseWin8SDK.props" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Applications\Sfx\Sfx.vcxproj">

@@ -65,9 +65,6 @@
     <ClCompile Include="Fence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RootSignature.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Direct3D12Manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -139,9 +136,6 @@
     <ClInclude Include="Fence.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RootSignature.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Direct3D12CallbackInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -159,7 +153,6 @@
     <None Include="HLSL\CppHLSL.hlsl">
       <Filter>HLSL</Filter>
     </None>
-    <None Include="SimulUseDXSDK.props" />
     <None Include="SimulUseWin8SDK.props" />
     <None Include="HLSL\shader_platform.sl">
       <Filter>HLSL</Filter>
