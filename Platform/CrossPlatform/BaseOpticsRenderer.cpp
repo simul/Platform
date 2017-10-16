@@ -144,14 +144,12 @@ void BaseOpticsRenderer::SetOpticsConstants(OpticsConstants &c,const crossplatfo
 	simul::geometry::SimulOrientation ori;
 	ori.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
 	ori.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
-	world=ori.T4;
+	world=ori.GetMatrix();
 	//set up matrices
 	view._41=0.f;
 	view._42=0.f;
 	view._43=0.f;
 	simul::math::Vector3 sun2;
-	simul::math::Matrix4x4 inv_world;
-	world.Inverse(inv_world);
 	simul::math::Multiply4x4(tmp1,world,view);
 	simul::math::Multiply4x4(tmp2,tmp1,proj);
 	c.worldViewProj	=tmp2;

@@ -529,9 +529,7 @@ Camera::~Camera()
 
 const float *Camera::MakeViewMatrix() const
 {
-	static Matrix4x4 M;
-	Orientation.T4.Inverse(M);
-	return M.RowPointer(0);
+	return Orientation.GetInverseMatrix();
 }
 
 // Really making projT here.
@@ -756,24 +754,24 @@ const CameraViewStruct &Camera::GetCameraViewStruct() const
 	// virtual from OrientationInterface
 const float *Camera::GetOrientationAsPermanentMatrix() const
 {
-	return (const float *)(&Orientation.T4);
+	return (const float *)(&Orientation.GetMatrix());
 }
 
 const float *Camera::GetRotationAsQuaternion() const
 {
 	static simul::math::Quaternion q;
-	simul::math::MatrixToQuaternion(q,Orientation.T4);
+	simul::math::MatrixToQuaternion(q,Orientation.GetMatrix());
 	return (const float *)(&q);
 }
 
 const float *Camera::GetPosition() const
 { 
-	return (const float *)(&Orientation.T4.GetRowVector(3));
+	return (const float *)(&Orientation.GetMatrix().GetRowVector(3));
 }
 
 void Camera::SetOrientationAsMatrix(const float *m)
 {
-	Orientation.T4=m;
+	Orientation.SetFromMatrix(m);
 }
 
 void Camera::SetOrientationAsQuaternion(const float *q)
@@ -852,7 +850,7 @@ void Camera::CreateViewMatrix(float *mat,const float *view_dir, const float *vie
 	ori.DefineFromYZ(u,-d);
 	if(pos)
 		ori.SetPosition(pos);
-	ori.T4.Inverse(M);
+	ori.GetMatrix().Inverse(M);
 }
 
 void Camera::LookInDirection(const float *view_dir,const float *view_up)
