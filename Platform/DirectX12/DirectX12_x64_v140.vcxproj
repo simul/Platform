@@ -121,7 +121,7 @@
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <ShowProgress>LinkVerboseLib</ShowProgress>
-      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -150,7 +150,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>
+      </DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -217,6 +219,7 @@
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="Fence.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
+    <ClCompile Include="GpuProfiler.cpp" />
     <ClCompile Include="Heap.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />
@@ -240,6 +243,7 @@
     <ClInclude Include="Export.h" />
     <ClInclude Include="Fence.h" />
     <ClInclude Include="FramebufferDX1x.h" />
+    <ClInclude Include="GpuProfiler.h" />
     <ClInclude Include="Heap.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="Light.h" />

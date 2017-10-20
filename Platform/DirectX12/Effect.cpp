@@ -22,12 +22,14 @@ inline bool IsPowerOfTwo( UINT64 n )
 {
     return ( ( n & (n-1) ) == 0 && (n) != 0 );
 }
+
 inline UINT64 NextMultiple( UINT64 value, UINT64 multiple )
 {
     SIMUL_ASSERT( IsPowerOfTwo(multiple) );
 
     return (value + multiple - 1) & ~(multiple - 1);
 }
+
 template< class T >
 UINT64 BytePtrToUint64( _In_ T* ptr )
 {
@@ -39,9 +41,14 @@ Query::Query(crossplatform::QueryType t):
 	mQueryHeap(nullptr),
 	mReadBuffer(nullptr),
 	mQueryData(nullptr),
-	mTime(0.0)
+	mTime(0.0),
+	mIsDisjoint(false)
 {
-
+	mD3DType = dx12::RenderPlatform::ToD3dQueryType(t);
+	if (t == crossplatform::QueryType::QUERY_TIMESTAMP_DISJOINT)
+	{
+		mIsDisjoint = true;
+	}
 }
 
 Query::~Query()
@@ -64,14 +71,14 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 	HRESULT res					= S_FALSE;
 	mD3DType					= dx12::RenderPlatform::ToD3dQueryType(type);
 	D3D12_QUERY_HEAP_DESC hDesc = {};
-	hDesc.Count					= QueryLatency * 2;
+	hDesc.Count					= QueryLatency;
 	hDesc.NodeMask				= 0;
 	hDesc.Type					= dx12::RenderPlatform::ToD3D12QueryHeapType(type);
 #ifdef _XBOX_ONE
 	res							= r->AsD3D12Device()->CreateQueryHeap(&hDesc,IID_GRAPHICS_PPV_ARGS(&mQueryHeap));
 #else
 	res							= r->AsD3D12Device()->CreateQueryHeap(&hDesc,IID_PPV_ARGS(&mQueryHeap));
-#endif // _XBOX_ONE
+#endif
 	SIMUL_ASSERT(res == S_OK);
 
 	// Create a redback buffer to get data
@@ -79,7 +86,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(QueryLatency * 2 * sizeof(UINT64)),
+		&CD3DX12_RESOURCE_DESC::Buffer(QueryLatency * sizeof(UINT64)),
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 #ifdef _XBOX_ONE
@@ -95,7 +102,7 @@ void Query::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 void Query::InvalidateDeviceObjects() 
 {
 	SAFE_RELEASE(mQueryHeap);
-	for (int i = 0; i < QueryLatency *2 ; i++)
+	for (int i = 0; i < QueryLatency; i++)
 	{
 		gotResults[i]= true;	// ?????????
 		doneQuery[i] = false;
@@ -104,14 +111,11 @@ void Query::InvalidateDeviceObjects()
 	mQueryData = nullptr;
 }
 
+#pragma optimize( "", off)  
+
 void Query::Begin(crossplatform::DeviceContext &deviceContext)
 {
-	deviceContext.asD3D12Context()->EndQuery
-	(
-		mQueryHeap,
-		mD3DType,
-		currFrame
-	);
+
 }
 
 void Query::End(crossplatform::DeviceContext &deviceContext)
@@ -119,23 +123,24 @@ void Query::End(crossplatform::DeviceContext &deviceContext)
 	gotResults[currFrame] = false;
 	doneQuery[currFrame]  = true;
 
+	// For now, only take into account time stamp queries
+	if (mD3DType != D3D12_QUERY_TYPE_TIMESTAMP)
+	{
+		return;
+	}
+
 	deviceContext.asD3D12Context()->EndQuery
 	(
 		mQueryHeap,
 		mD3DType,
-		currFrame + QueryLatency
+		currFrame
 	);
 
-	// Copy query results into read back buffer
-	UINT64 off = currFrame * sizeof(UINT64) * 2;
 	deviceContext.asD3D12Context()->ResolveQueryData
 	(
-		mQueryHeap,
-		mD3DType,
-		currFrame,
-		2,
-		mReadBuffer,
-		off
+		mQueryHeap, mD3DType,
+		currFrame, 1,
+		mReadBuffer, currFrame * sizeof(UINT64)
 	);
 }
 
@@ -143,34 +148,46 @@ bool Query::GetData(crossplatform::DeviceContext& deviceContext,void *data,size_
 {
 	gotResults[currFrame]	= true;
 	currFrame				= (currFrame + 1) % QueryLatency;
+
+	// We provide frequency information
+	if (mIsDisjoint)
+	{
+		auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
+		crossplatform::DisjointQueryStruct disjointData;
+		disjointData.Disjoint	= false;
+		disjointData.Frequency	= rPlat->GetTimeStampFreq();
+		memcpy(data, &disjointData, sz);
+		return true;
+	}
+
+	// For now, only take into account time stamp queries
+	if (mD3DType != D3D12_QUERY_TYPE_TIMESTAMP)
+	{
+		const UINT64 invalid = 0;
+		data = (void*)invalid;
+		return true;
+	}
+
 	if (!doneQuery[currFrame])
 	{
 		return false;
 	}
 	
 	// Get the values from the buffer
-	HRESULT res		= S_FALSE;
-	// const CD3DX12_RANGE readRange(0, 1);
-	res				= mReadBuffer->Map(0, &CD3DX12_RANGE(0, 1), reinterpret_cast<void**>(&mQueryData));
+	HRESULT res				= S_FALSE;
+	res						= mReadBuffer->Map(0, &CD3DX12_RANGE(0, 1), reinterpret_cast<void**>(&mQueryData));
 	SIMUL_ASSERT(res == S_OK);
-
-	UINT64* d		= (UINT64*)mQueryData;
-	UINT64 starT	= d[(currFrame * 2)];
-	UINT64 endT		= d[(currFrame * 2) + 1];
-	//if (endT > starT)
 	{
-		auto rPlat			= (dx12::RenderPlatform*)deviceContext.renderPlatform;
-		UINT64 delta		= endT - starT;
-		double frequency	= double(rPlat->GetTimeStampFreq());
-		mTime				= (delta / frequency) * 1000.0;
-		data				= &mTime;
+		UINT64* d			= (UINT64*)mQueryData;
+		UINT64 time			= d[currFrame];
+		mTime				= time;
+		memcpy(data, &mTime, sz);
 	}
-
-	//const CD3DX12_RANGE closeRange(0, 1);
 	mReadBuffer->Unmap(0, &CD3DX12_RANGE(0, 0));
 
 	return true;
 }
+#pragma optimize( "", on)  
 
 RenderState::RenderState()
 {
@@ -369,7 +386,7 @@ void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceCo
 
 const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext &deviceContext)
 {
-	// TO-DO: we could leave it as mapped so we don't have to map and unmap it
+	// Resources on D3D12_HEAP_TYPE_READBACK heaps do not support persistent map
 	// Map from the oldest frame that should be ready at this point
 	// We intend to read from CPU so we pass a valid range!
 	const CD3DX12_RANGE readRange(0, 1);
@@ -526,8 +543,144 @@ void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *fil
 	}
 }
 
+void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
+{
+#ifndef _XBOX_ONE
+	// We will only recompile if we are in windows
+	// SFX will handle the "if changed"
+	auto buildMode = r->GetShaderBuildMode();
+	if (buildMode == crossplatform::ShaderBuildMode::BUILD_IF_CHANGED ||
+		buildMode == crossplatform::ShaderBuildMode::ALWAYS_BUILD)
+	{
+		std::string simulPath = std::getenv("SIMUL");
+
+		if (simulPath != "")
+		{
+			// Sfx path
+			std::string exe = simulPath;
+			exe += "\\Tools\\bin\\Sfx.exe";
+			std::wstring sfxPath(exe.begin(), exe.end());
+
+			/*
+			Command line:
+				argv[0] we need to pass t he argv[0]. the module name
+				<input.sfx>
+				-I <include path; include path>
+				-O <output>
+				-P <config.json>
+			*/
+			std::string cmdLine = exe;
+			{
+				// File to compile
+				cmdLine += " " + simulPath + "\\Platform\\CrossPlatform\\SFX\\" + filename_utf8 + ".sfx";
+
+				// Includes
+				cmdLine += " -I\"" + simulPath + "\\Platform\\DirectX12\\HLSL;";
+				cmdLine += simulPath + "\\Platform\\CrossPlatform\\SL\"";
+
+				// Platform file
+				cmdLine += " -P\"" + simulPath + "\\Platform\\DirectX12\\HLSL\\HLSL12.json\"";
+				
+				// Ouput file
+				std::string outDir = r->GetShaderBinaryPath();
+				for (unsigned int i = 0; i < outDir.size(); i++)
+				{
+					if (outDir[i] == '/')
+					{
+						outDir[i] = '\\';
+					}
+				}
+				if (outDir[outDir.size() - 1] == '\\')
+				{
+					outDir.erase(outDir.size() - 1);
+				}
+
+				cmdLine += " -O\"" + outDir + "\"";
+				// Intermediate folder
+				cmdLine += " -M\"C:\\shaderbin\"";
+
+				// Force
+				if (buildMode == crossplatform::ShaderBuildMode::ALWAYS_BUILD)
+				{
+					cmdLine += " -F";
+				}
+			}
+
+			// Convert the command line to a wide string
+			size_t newsize = cmdLine.size() + 1;
+			wchar_t* wcstring = new wchar_t[newsize];
+			size_t convertedChars = 0;
+			mbstowcs_s(&convertedChars, wcstring, newsize, cmdLine.c_str(), _TRUNCATE);
+
+			// Setup pipes to get cout/cerr
+			SECURITY_ATTRIBUTES secAttrib	= {};
+			secAttrib.nLength				= sizeof(SECURITY_ATTRIBUTES);
+			secAttrib.bInheritHandle		= TRUE;
+			secAttrib.lpSecurityDescriptor	= NULL;
+
+			HANDLE coutWrite				= 0;
+			HANDLE coutRead					= 0;
+			HANDLE cerrWrite				= 0;
+			HANDLE cerrRead					= 0;
+
+			CreatePipe(&coutRead, &coutWrite, &secAttrib, 100);
+			CreatePipe(&cerrRead, &cerrWrite, &secAttrib, 100);
+
+			// Create the process
+			STARTUPINFO startInfo			= {};
+			startInfo.hStdOutput			= coutWrite;
+			startInfo.hStdError				= cerrWrite;
+			PROCESS_INFORMATION processInfo = {};
+			bool success = CreateProcess
+			(
+				sfxPath.c_str(), wcstring,
+				NULL, NULL, false, CREATE_NO_WINDOW, NULL, NULL,
+				&startInfo, &processInfo
+			);
+
+			// Wait until if finishes
+			if (success)
+			{
+				//SIMUL_COUT << "Rebuilding the effect: " << filename_utf8 << std::endl;
+				DWORD ret = WaitForSingleObject(processInfo.hProcess, INFINITE);
+
+				// TO-DO: Get the output
+				/*
+				const DWORD BUFSIZE = 4096;
+				BYTE buff[BUFSIZE];
+				DWORD dwBytesRead;
+				DWORD dwBytesAvailable;
+				while (PeekNamedPipe(coutRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+				{
+					ReadFile(coutRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
+					SIMUL_COUT << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+				}
+				while (PeekNamedPipe(cerrRead, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+				{
+					ReadFile(cerrRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
+					SIMUL_COUT << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+				}
+				*/
+			}
+			else
+			{
+				DWORD error = GetLastError();
+				SIMUL_COUT << "Could not create the sfx process. Error:" << error << std::endl;
+				return;
+			}
+		}
+		else
+		{
+			SIMUL_COUT << "The env var SIMUL is not defined, skipping rebuild. \n";
+			return;
+		}
+	}
+#endif
+}
+
 void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {	
+	EnsureEffect(r, filename_utf8);
 	crossplatform::Effect::Load(r, filename_utf8, defines);
 	
 	// Ensure slots are correct
@@ -572,6 +725,14 @@ dx12::Effect::~Effect()
 
 void Effect::InvalidateDeviceObjects()
 {
+	for (auto& tech : techniques)
+	{
+		for (auto& pass : tech.second->passes_by_name)
+		{
+			auto pass12 = (dx12::EffectPass*)pass.second;
+			pass12->InvalidateDeviceObjects();
+		}
+	}
 }
 
 crossplatform::EffectTechnique *dx12::Effect::GetTechniqueByName(const char *name)
@@ -731,6 +892,14 @@ crossplatform::EffectPass *EffectTechnique::AddPass(const char *name,int i)
 	crossplatform::EffectPass *p=new dx12::EffectPass;
 	passes_by_name[name]=passes_by_index[i]=p;
 	return p;
+}
+
+void EffectPass::InvalidateDeviceObjects()
+{
+	// TO-DO: nice memory leaks here
+	mComputePso = nullptr;
+	mRootS		= nullptr;
+	mGraphicsPsoMap.clear();
 }
 
 void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asCompute)

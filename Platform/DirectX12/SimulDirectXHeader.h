@@ -26,10 +26,11 @@
 #if defined(_XBOX_ONE)
 	#pragma comment(lib,"d3dcompiler")
 	#pragma comment(lib,"d3d12_x")
-	//#pragma comment(lib,"d3dcompiler_47")
 #else
-	#pragma comment(lib,"D3D12")
+	#pragma comment(lib,"d3d12.lib")
+	#pragma comment(lib,"DirectXTex.lib")
 	#pragma comment(lib,"D3dcompiler.lib")
+	#pragma comment(lib,"DXGI.lib")
 #endif 
 
 

@@ -75,6 +75,7 @@
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="Fence.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
+    <ClCompile Include="GpuProfiler.cpp" />
     <ClCompile Include="Heap.cpp" />
     <ClCompile Include="Layout.cpp" />
     <ClCompile Include="Light.cpp" />

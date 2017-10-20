@@ -160,8 +160,8 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 	// has a minimum size of kBufferAlign)
 	UINT8* pDest = nullptr;
 	UINT64 offset = (kBufferAlign * mSlots) * mCurApplyCount;	
-	const CD3DX12_RANGE range(0, 0);
-	HRESULT hResult=mUploadHeap[curFrameIndex]->Map(0, &range, reinterpret_cast<void**>(&pDest));
+	const CD3DX12_RANGE mapRange(0, 0);
+	HRESULT hResult=mUploadHeap[curFrameIndex]->Map(0, &mapRange, reinterpret_cast<void**>(&pDest));
 	if(hResult==S_OK)
 	{
 		if (pDest)
@@ -169,7 +169,8 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 			memset(pDest + offset, 0, kBufferAlign * mSlots);
 			memcpy(pDest + offset, addr, size);
 		}
-		mUploadHeap[curFrameIndex]->Unmap(0, &range);
+		const CD3DX12_RANGE unMapRange(0, 1);
+		mUploadHeap[curFrameIndex]->Unmap(0, &unMapRange);
 	}
 
 	// Create a CBV

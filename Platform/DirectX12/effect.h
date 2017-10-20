@@ -40,11 +40,12 @@ namespace simul
 			ID3D12QueryHeap*		mQueryHeap;
 			//! We cache the query type
 			D3D12_QUERY_TYPE		mD3DType;
+			bool mIsDisjoint;
 			//! Readback buffer to read data from the query
 			ID3D12Resource*			mReadBuffer;
 			//! We hold a pointer to the mapped data
 			void*					mQueryData;
-			double mTime;
+			UINT64					mTime;
 		};
 
 		struct SIMUL_DIRECTX12_EXPORT RenderState:public crossplatform::RenderState
@@ -121,6 +122,7 @@ namespace simul
 		class SIMUL_DIRECTX12_EXPORT EffectPass:public simul::crossplatform::EffectPass
 		{
 		public:
+			void InvalidateDeviceObjects();
 			void Apply(crossplatform::DeviceContext &deviceContext,bool asCompute) override;
 			bool IsCompute()const { return mIsCompute; }
 
@@ -182,6 +184,8 @@ namespace simul
 		public:
 			Effect();
 			virtual ~Effect();
+
+			void EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8);
 			void Load(crossplatform::RenderPlatform *renderPlatform,const char *filename_utf8,const std::map<std::string,std::string> &defines);
 			void InvalidateDeviceObjects();
 			crossplatform::EffectTechnique *GetTechniqueByName(const char *name);

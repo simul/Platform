@@ -14,11 +14,14 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/DirectX12/CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX12/ConstantBuffer.h"
+#include "Simul/Platform/DirectX12/GpuProfiler.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
-#include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/CrossPlatform/Camera.h"
 #include "Simul/Platform/DirectX12/Utilities.h"
+#include "Simul/Platform/DirectX12/Heap.h"
+#include "Simul/Platform/DirectX12/Fence.h"
+
 
 #ifdef SIMUL_ENABLE_PIX
 #include "pix.h"
@@ -35,8 +38,14 @@ RenderPlatform::RenderPlatform():
 	m12Device(nullptr),
 	mLastFrame(-1),
 	mCurIdx(0),
-	mTimeStampFreq(0)
+	mTimeStampFreq(0),
+	mSamplerHeap(nullptr),
+	mRenderTargetHeap(nullptr),
+	mDepthStencilHeap(nullptr),
+	mFrameHeap(nullptr),
+	mFrameSamplerHeap(nullptr)
 {
+	gpuProfiler = new dx12::GpuProfiler();
 }
 
 RenderPlatform::~RenderPlatform()
@@ -117,8 +126,8 @@ void simul::dx12::RenderPlatform::ClearIA(crossplatform::DeviceContext &deviceCo
 
 void RenderPlatform::RestoreDeviceObjects(void* device)
 {
-	isInitialized = true;
-	mCurInputLayout = nullptr;
+	isInitialized	= true;
+	mCurInputLayout	= nullptr;
 
 	if (m12Device == device && device != nullptr)
 	{
@@ -133,6 +142,8 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 
 	// Create the frame heaps
 	// These heaps will be shader visible as they will be the ones bound to the command list
+	mFrameHeap			= new dx12::Heap[3];
+	mFrameSamplerHeap	= new dx12::Heap[3];
 	for (unsigned int i = 0; i < 3; i++)
 	{
 		mFrameHeap[i].Restore(this, 2048, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,"FrameHeap");
@@ -141,9 +152,12 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	// Create storage heaps
 	// These heaps wont be shader visible as they will be the source of the copy operation
 	// we use these as storage
-	mSamplerHeap.Restore(this, 32, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, "SamplerHeap", false);
-	mRenderTargetHeap.Restore(this, 32, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "RenderTargetsHeap", false);
-	mDepthStencilHeap.Restore(this, 32, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, "DepthStencilsHeap", false);
+	mSamplerHeap = new dx12::Heap;
+	mSamplerHeap->Restore(this, 32, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, "SamplerHeap", false);
+	mRenderTargetHeap = new dx12::Heap;
+	mRenderTargetHeap->Restore(this, 32, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, "RenderTargetsHeap", false);
+	mDepthStencilHeap = new dx12::Heap;
+	mDepthStencilHeap->Restore(this, 32, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, "DepthStencilsHeap", false);
 
 	// Create dummy textures
 	mDummy2D = CreateTexture("Dummy2D");
@@ -156,20 +170,18 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	D3D12_COMMAND_QUEUE_DESC qdesc	= {};
 	qdesc.Flags						= D3D12_COMMAND_QUEUE_FLAG_NONE;
 	qdesc.Type						= D3D12_COMMAND_LIST_TYPE_DIRECT;
-	ID3D12CommandQueue* queue		= nullptr;
 
-	// CreateQueue on xb1 fails...
-	/*
 #ifdef _XBOX_ONE
-	res = m12Device->CreateCommandQueue(&qdesc, IID_GRAPHICS_PPV_ARGS(&queue));
+	// CreateQueue on xb1 fails...
+	mTimeStampFreq = 1000000000;
 #else
+	ID3D12CommandQueue* queue		= nullptr;
 	res = m12Device->CreateCommandQueue(&qdesc, IID_PPV_ARGS(&queue));
-#endif
 	SIMUL_ASSERT(res == S_OK);
 	res = queue->GetTimestampFrequency(&mTimeStampFreq);
 	SIMUL_ASSERT(res == S_OK);
 	SAFE_RELEASE(queue);
-	*/
+#endif
 
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
 	RecompileShaders();
@@ -184,13 +196,13 @@ void RenderPlatform::InvalidateDeviceObjects()
 		delete mat;
 	}
 	materials.clear();
-	SAFE_DELETE(debugEffect);
 }
 
 void RenderPlatform::RecompileShaders()
 {
 	if(!m12Device)
 		return;
+	shaders.clear();
 	crossplatform::RenderPlatform::RecompileShaders();
 	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
 	{
@@ -273,8 +285,6 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
 
 void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *t,crossplatform::Texture *s)
 {
-
-
 	mCommandList		= deviceContext.asD3D12Context();
 	immediateContext	= deviceContext;
 
@@ -299,7 +309,7 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext,cro
 		SIMUL_CERR << "Dst: width: " << dstDesc.Width << ", height: " << dstDesc.Height << ", depth: " << dstDesc.DepthOrArraySize << ", mips: " << dstDesc.MipLevels << std::endl;
 		return;
 	}
-	
+
 	// Ensure source state
 	bool changedSrc = false;
 	auto srcState	= src->GetCurrentState();
@@ -482,9 +492,9 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 	s12.MaxLOD				= D3D12_FLOAT32_MAX;
 
 	// Store the CPU handle
-	m12Device->CreateSampler(&s12, mSamplerHeap.CpuHandle());
-	s->mCpuHandle = mSamplerHeap.CpuHandle();
-	mSamplerHeap.Offset();
+	m12Device->CreateSampler(&s12, mSamplerHeap->CpuHandle());
+	s->mCpuHandle = mSamplerHeap->CpuHandle();
+	mSamplerHeap->Offset();
 
 	return s;
 }
@@ -1247,6 +1257,11 @@ void RenderPlatform::SetLayout(crossplatform::DeviceContext &deviceContext,cross
 	}
 }
 
+void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8, const std::vector<crossplatform::EffectDefineOptions> &options)
+{
+
+}
+
 void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s)
 {
 	mCommandList		= deviceContext.asD3D12Context();
@@ -1551,22 +1566,25 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 	mCommandList = deviceContext.asD3D12Context();
 	immediateContext = deviceContext;
 
+	/*
 	// If it was bound as a render target, we have to transition the resource so we can use it in the shaders
 	dx12::Texture* dx12Texture = (dx12::Texture*)tex;
-	if (tex&&tex->HasRenderTargets())
+	if (tex->HasRenderTargets())
 	{
 		SIMUL_BREAK_ONCE("Check this");
 		ResourceTransitionSimple(dx12Texture->AsD3D12Resource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
-	
+	*/
 	crossplatform::RenderPlatform::DrawTexture(deviceContext, x1, y1, dx, dy, tex, mult, blend, gamma, debug);
 
+	/*
 	// Transition back to rt
-	if (tex&&tex->HasRenderTargets())
+	if (tex->HasRenderTargets())
 	{
 		SIMUL_BREAK_ONCE("Check this");
 		ResourceTransitionSimple(dx12Texture->AsD3D12Resource(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	}
+	*/
 }
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)

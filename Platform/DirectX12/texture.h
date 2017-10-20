@@ -36,8 +36,6 @@ namespace simul
 			Texture();
 			virtual ~Texture() override;
 
-			void SetName(const char *n) override;
-
 			//! Cleans all the resources related with this object
 			void							InvalidateDeviceObjects();
 			//! Loads this texture from a file
