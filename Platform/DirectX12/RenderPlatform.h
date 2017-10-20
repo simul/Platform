@@ -5,10 +5,12 @@
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
-#include "SimulDirectXHeader.h"
 
-#include "Heap.h"
-#include "Fence.h"
+#if defined(_XBOX_ONE)
+	#include <d3dx12_x.h>		
+#else
+	#include "d3dx12.h"
+#endif
 
 #include <vector>
 #include <queue>
@@ -28,6 +30,8 @@ namespace simul
 	}
 	namespace dx12
 	{
+		class Heap;
+		class Fence;
 		class ConstantBufferCache;
 		class Material;
 		//! A class to implement common rendering functionality for DirectX 12.
@@ -72,9 +76,9 @@ namespace simul
 			//! Clears the input assembler state (index and vertex buffers)
 			void						ClearIA(crossplatform::DeviceContext &deviceContext);
 
-			dx12::Heap*					SamplerHeap()		{return &mSamplerHeap;}
-			dx12::Heap*					RenderTargetHeap()	{ return &mRenderTargetHeap; }
-			dx12::Heap*					DepthStencilHeap()	{ return &mDepthStencilHeap; }
+			dx12::Heap*					SamplerHeap()		{return mSamplerHeap;}
+			dx12::Heap*					RenderTargetHeap()	{ return mRenderTargetHeap; }
+			dx12::Heap*					DepthStencilHeap()	{ return mDepthStencilHeap; }
 
 			//! Returns the 2D dummy texture
 			crossplatform::Texture*		GetDummy2D()		{ return mDummy2D;}
@@ -154,7 +158,8 @@ namespace simul
 			
 			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
 			void									SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l) override;
-			
+			void									EnsureEffectIsBuilt(const char *filename_utf8, const std::vector<crossplatform::EffectDefineOptions> &options) override;
+
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									PushRenderTargets(crossplatform::DeviceContext &deviceContext);
@@ -201,15 +206,15 @@ namespace simul
 
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it. 
 			//! The frame heap is used to store CBV SRV and UAV
-			dx12::Heap					mFrameHeap[kNumIdx];
+			dx12::Heap*					mFrameHeap;
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it.
 			//! The sampler heap is used to store SAMPLERS
-			dx12::Heap					mFrameSamplerHeap[kNumIdx];
+			dx12::Heap*					mFrameSamplerHeap;
 
-			dx12::Heap					mSamplerHeap;
-			dx12::Heap					mRenderTargetHeap;
-			dx12::Heap					mDepthStencilHeap;
-
+			dx12::Heap*					mSamplerHeap;
+			dx12::Heap*					mRenderTargetHeap;
+			dx12::Heap*					mDepthStencilHeap;
+					  
 			//! Dummy 2D texture
 			crossplatform::Texture*		mDummy2D;
 			//! Dummy 3D texture

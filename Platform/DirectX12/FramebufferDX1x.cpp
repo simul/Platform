@@ -103,10 +103,22 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	{
 		SIMUL_BREAK_ONCE("No valid textures in the framebuffer");
 	}
-	if(buffer_depth_texture->IsValid())
-		deviceContext.asD3D12Context()->OMSetRenderTargets(1,buffer_texture->AsD3D12RenderTargetView(),false,buffer_depth_texture->AsD3D12DepthStencilView());
+
+	D3D12_CPU_DESCRIPTOR_HANDLE* rtView = nullptr;
+	D3D12_CPU_DESCRIPTOR_HANDLE* dsView = nullptr;
+	if (is_cubemap)
+	{
+		rtView = col12Texture->AsD3D12RenderTargetView(current_face, 0);
+	}
 	else
-		deviceContext.asD3D12Context()->OMSetRenderTargets(1,buffer_texture->AsD3D12RenderTargetView(),false,nullptr);
+	{
+		rtView = col12Texture->AsD3D12RenderTargetView();
+	}
+	if (buffer_depth_texture->IsValid())
+	{
+		dsView = depth12Texture->AsD3D12DepthStencilView();
+	}
+	deviceContext.asD3D12Context()->OMSetRenderTargets(1,rtView,false,dsView);
 
 	// Inform the render platform the current output pixel format 
 	// TO-DO: same for depth!
@@ -122,8 +134,8 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 
 	// Push current target and viewport
 	mTargetAndViewport.num				= 1;
-	mTargetAndViewport.m_rt[0]			= buffer_texture->AsD3D12RenderTargetView();
-	mTargetAndViewport.m_dt				= buffer_depth_texture->AsD3D12DepthStencilView();
+	mTargetAndViewport.m_rt[0]			= rtView;
+	mTargetAndViewport.m_dt				= dsView;
 	mTargetAndViewport.viewport.w		= (int)mViewport.Width;
 	mTargetAndViewport.viewport.h		= (int)mViewport.Height;
 	mTargetAndViewport.viewport.x		= (int)mViewport.TopLeftX;
@@ -134,7 +146,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	crossplatform::BaseFramebuffer::GetFrameBufferStack().push(&mTargetAndViewport);
 
 	colour_active	= true;
-	depth_active	= true;
+	depth_active	= dsView != nullptr;
 }
 
 void Framebuffer::SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float Z,float D)
@@ -202,13 +214,22 @@ void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 
 void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 {
-	deviceContext.asD3D12Context()->OMSetRenderTargets
-	(
-		1,
-		(CD3DX12_CPU_DESCRIPTOR_HANDLE*)buffer_texture->AsD3D12RenderTargetView(),
-		false,
-		nullptr
-	);
+	if (!depth_active)
+	{
+		return;
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE* rtView = nullptr;
+	if (is_cubemap)
+	{
+		rtView = buffer_texture->AsD3D12RenderTargetView(current_face, 0);
+	}
+	else
+	{
+		rtView = buffer_texture->AsD3D12RenderTargetView();
+	}
+	deviceContext.asD3D12Context()->OMSetRenderTargets(1,rtView,false,nullptr);
+
 	depth_active=false;
 
 	// TO-DO: check this NACHOOOOO! :)

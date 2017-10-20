@@ -57,6 +57,7 @@ Texture::~Texture()
 	InvalidateDeviceObjects();
 }
 
+
 void Texture::FreeRTVTables()
 {
 	if (renderTargetViews12)
@@ -163,33 +164,24 @@ void Texture::InvalidateDeviceObjects()
 		
 	}
 
+	auto rPlat = (dx12::RenderPlatform*)(renderPlatform);
 	// We dont want to release the resources of the external texture
 	if (!mInitializedFromExternal)
 	{
 		// Critical resources like textures that could be in use by the GPU will be destroyed by the 
 		// release manager
-		auto rPlat = (dx12::RenderPlatform*)(renderPlatform);
 		rPlat->PushToReleaseManager(mTextureDefault, name + "_Default");
 		rPlat->PushToReleaseManager(mTextureUpload, name + "_Upload");
-
-		mTextureDefault = nullptr;
-		mTextureUpload	= nullptr;
-
-		// Same for heaps (The release method will handle it)
-		mTextureSrvHeap.Release(rPlat);
-		mTextureUavHeap.Release(rPlat);
-		mTextureRtHeap.Release(rPlat);
-		mTextureDsHeap.Release(rPlat);
 	}
-	// Make sure we leave it the correct state... hack?
-	else
-	{
-		if (GetCurrentState() != D3D12_RESOURCE_STATE_DEPTH_WRITE)
-		{
-			// auto rPlat = (dx12::RenderPlatform*)(renderPlatform);
-			// rPlat->ResourceTransitionSimple(mTextureDefault, GetCurrentState(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
-		}
-	}
+
+	mTextureDefault = nullptr;
+	mTextureUpload	= nullptr;
+
+	// Same for heaps (The release method will handle it)
+	mTextureSrvHeap.Release(rPlat);
+	mTextureUavHeap.Release(rPlat);
+	mTextureRtHeap.Release(rPlat);
+	mTextureDsHeap.Release(rPlat);
 }
 
 void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const char *pFilePathUtf8)
@@ -299,8 +291,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	textureSubData.pData					= image->pixels; 
 	textureSubData.RowPitch					= image->rowPitch; 
 	textureSubData.SlicePitch				= image->rowPitch * textureDesc.Height; 
-	if(renderPlatform->AsD3D12CommandList())
-		UpdateSubresources(renderPlatform->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, 1, &textureSubData);
+	UpdateSubresources(renderPlatform->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, 1, &textureSubData);
 
 	// Init states
 	InitStateTable(arraySize, mips);
@@ -308,8 +299,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	// Transition the resource to be used in the shaders
 	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 	auto rPlat		= (dx12::RenderPlatform*)(renderPlatform);
-	if(renderPlatform->AsD3D12CommandList())
-		rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState());
+	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState());
 
 	// Create a descriptor heap for this texture
 	// This heap won't be shader visible as we will be copying the descriptor from here to the FrameHeap (which is shader visible)
@@ -758,18 +748,9 @@ bool Texture::HasRenderTargets() const
 
 void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPlatform,void *t,void *srv,bool make_rt)
 {
-	name = "InitFromExternal2D";
 	InitFromExternalD3D12Texture2D(renderPlatform,(ID3D12Resource*)t,(D3D12_CPU_DESCRIPTOR_HANDLE*)srv,make_rt);
 }
 
-void Texture::SetName(const char *n)
-{
-	crossplatform::Texture::SetName(n);
-	if(!mTextureDefault)
-		return;
-	std::wstring ws=simul::base::Utf8ToWString(n);
-	mTextureDefault->SetName(ws.c_str());
-}
 void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt)
 {
 	// If it's the same as before, return.
@@ -779,24 +760,24 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	if (mTextureDefault != NULL && mTextureDefault == t && mainShaderResourceView12.ptr != -1 && srv == NULL)
 		return;
 
+
 	FreeSRVTables();
 	renderPlatform				= r;
 	mTextureDefault				= t;
 	mainShaderResourceView12	= srv? *srv : D3D12_CPU_DESCRIPTOR_HANDLE(); // What if the CPU handle changes? we should check this from outside
 	mInitializedFromExternal	= true;
 
-	std::wstring ws=simul::base::Utf8ToWString(name);
-	mTextureDefault->SetName(ws.c_str());
+	mTextureDefault->SetName(L"FromExternal2D");
 
 	// Textures initialized from external should be passed by as a SRV so we expect
 	// that the resource was previously transitioned to GENERIC_READ
-	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
-	//SetCurrentState(D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	if (mTextureDefault)
 	{
 		D3D12_RESOURCE_DESC textureDesc = mTextureDefault->GetDesc();
 		// Assume it is a cubemap ??!!!
+
+
 		if (textureDesc.DepthOrArraySize == 6)
 		{
 			cubemap							= true;
@@ -812,6 +793,8 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 			CreateSRVTables(textureDesc.DepthOrArraySize, textureDesc.MipLevels, cubemap, false, textureDesc.SampleDesc.Count > 1);
 			arraySize	= textureDesc.DepthOrArraySize;
 			mips		= textureDesc.MipLevels;
+
+			SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 		}
 		depth = textureDesc.DepthOrArraySize;
 		if (make_rt && (textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET))
@@ -845,6 +828,8 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 					}
 				}
 			}
+
+			SetCurrentState(D3D12_RESOURCE_STATE_RENDER_TARGET);
 		}
 		else
 		{
@@ -1451,9 +1436,9 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 			{
 				for (int j = 0; j < m; j++)
 				{
-					uavDesc.Texture2DArray.FirstArraySlice = i;
-					uavDesc.Texture2DArray.ArraySize = 1;
-					uavDesc.Texture2DArray.MipSlice = j;
+					uavDesc.Texture2DArray.FirstArraySlice	= i;
+					uavDesc.Texture2DArray.ArraySize		= 1;
+					uavDesc.Texture2DArray.MipSlice			= j;
 
 					r->AsD3D12Device()->CreateUnorderedAccessView(mTextureDefault, nullptr, &uavDesc, mTextureUavHeap.CpuHandle());
 					layerMipUnorderedAccessViews12[i][j] = mTextureUavHeap.CpuHandle();
@@ -1574,8 +1559,12 @@ void Texture::CreateSRVTables(int num, int m, bool cubemap, bool volume, bool ms
 		{
 			for (int j = 0; j < m; j++)
 			{
-				srvDesc.Texture3D.MipLevels			= 1;
-				srvDesc.Texture3D.MostDetailedMip	= j;
+				// TO-DO: check this
+				srvDesc.ViewDimension					= D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+				srvDesc.Texture2DArray.ArraySize		= num;
+				srvDesc.Texture2DArray.FirstArraySlice	= 0;
+				srvDesc.Texture2DArray.MipLevels		= 1;
+				srvDesc.Texture2DArray.MostDetailedMip	= j;
 
 				// View for each mip
 				renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
@@ -1591,24 +1580,28 @@ void Texture::CreateSRVTables(int num, int m, bool cubemap, bool volume, bool ms
 			srvFaceDesc.ViewDimension						= D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
 			for (int i = 0; i < totalNum; i++)
 			{
-				srvFaceDesc.Texture2DArray.ArraySize		= 1;
-				srvFaceDesc.Texture2DArray.FirstArraySlice	= i;
-				srvFaceDesc.Texture2DArray.MipLevels		= m;
-				srvFaceDesc.Texture2DArray.MostDetailedMip	 = 0;
 				if (layerShaderResourceViews12)
 				{
-					renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
+					srvFaceDesc.Texture2DArray.ArraySize		= 1;
+					srvFaceDesc.Texture2DArray.FirstArraySlice	= i;
+					srvFaceDesc.Texture2DArray.MipLevels		= m;
+					srvFaceDesc.Texture2DArray.MostDetailedMip	= 0;
+
+					renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvFaceDesc, mTextureSrvHeap.CpuHandle());
 					layerShaderResourceViews12[i] = mTextureSrvHeap.CpuHandle();
 					mTextureSrvHeap.Offset();
 				}
 				if (layerMipShaderResourceViews12)
 				{
+					srvFaceDesc.Texture2DArray.ArraySize		= 1;
+					srvFaceDesc.Texture2DArray.FirstArraySlice	= i;
+					srvFaceDesc.Texture2DArray.MipLevels		= 1;
+
 					for (int j = 0; j < m; j++)
 					{
-						srvFaceDesc.Texture2DArray.MipLevels		= 1;
 						srvFaceDesc.Texture2DArray.MostDetailedMip	= j;
 
-						renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
+						renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvFaceDesc, mTextureSrvHeap.CpuHandle());
 						layerMipShaderResourceViews12[i][j] = mTextureSrvHeap.CpuHandle();
 						mTextureSrvHeap.Offset();
 					}
@@ -1745,7 +1738,7 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 		viewport.MaxDepth	= 1.0f;
 
 		CD3DX12_RECT scissor(0, 0, viewport.Width, viewport.Height);
-
+		
 		rp->AsD3D12CommandList()->RSSetScissorRects(1, &scissor);
 		rp->AsD3D12CommandList()->RSSetViewports(1, &viewport);
 

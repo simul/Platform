@@ -31,7 +31,7 @@ namespace simul
 #ifdef _XBOX_ONE
 			res = rPlat->AsD3D12Device()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_GRAPHICS_PPV_ARGS(&mFence));
 #else
-			res				= rPlat->AsD3D12Device()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
+			res = rPlat->AsD3D12Device()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
 #endif
 			SIMUL_ASSERT(res == S_OK);
 			mFenceEvent		= CreateEvent(nullptr, false, false, nullptr);
