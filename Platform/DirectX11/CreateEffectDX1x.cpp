@@ -174,10 +174,10 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
     loadInfo.pSrcInfo       = NULL;
     loadInfo.Filter         = D3DX11_FILTER_NONE;
 
-	ID3D11Texture2D *tex=NULL;
 	//if(!texturePathsUtf8.size())
 	//	texturePathsUtf8.push_back("media/textures");
-	HRESULT hr;
+	ID3D11Texture2D *tex=NULL;
+	HRESULT res;
 	for(int i=0;i<(int)texturePathsUtf8.size();i++)
 	{
 		std::string str		=texturePathsUtf8[i];
@@ -185,16 +185,20 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 			str+="/";
 		str+=filename;
 		std::wstring wstr	=simul::base::Utf8ToWString(str);
-		hr=D3DX11CreateTextureFromFileW(pd3dDevice,wstr.c_str(),&loadInfo, NULL, ( ID3D11Resource** )&tex, &hr );
-		if(hr==S_OK)
+		res					= D3DX11CreateTextureFromFileW(pd3dDevice,wstr.c_str(),
+														   &loadInfo, NULL, ( ID3D11Resource** )&tex, &res );
+		if(res == S_OK)
 			break;
 	}
-	if(hr!=S_OK)
+	// Report error if none of the paths worked
+	if (res != S_OK)
+	{
 #ifdef DXTRACE_ERR
-        hr=DXTRACE_ERR( L"LoadStagingTexture", hr );
+		DXTRACE_ERR(L"LoadStagingTexture", res);
 #else
 		std::cerr<<"Failed to load texture: "<<filename<<std::endl;
 #endif
+	}
 	return tex;
 }
 		
@@ -587,7 +591,9 @@ static const DWORD default_effect_flags=0;
         hr=DXTRACE_ERR( L"CreateEffect", hr );
 #endif
 		if((shaderBuildMode&crossplatform::BREAK_ON_FAIL) == crossplatform::BREAK_ON_FAIL)
-			BREAK_IF_DEBUGGING;
+		{
+			BREAK_IF_DEBUGGING
+		}
  		if(!IsDebuggerPresent()||(shaderBuildMode&crossplatform::TRY_AGAIN_ON_FAIL)!=crossplatform::TRY_AGAIN_ON_FAIL)
 			break;
  	}

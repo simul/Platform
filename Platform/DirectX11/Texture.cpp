@@ -137,6 +137,7 @@ void Texture::InvalidateDeviceObjects()
 	}
 	if(renderPlatform&&renderPlatform->GetMemoryInterface())
 	{
+		if(!external_texture)
 		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
 		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(stagingBuffer);
 	}
@@ -201,6 +202,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	ID3D11Texture2D *tex;
 	r->AsD3D11Device()->CreateTexture2D(&desc,NULL,&tex);
 	texture=tex;
+	external_texture=false;
 	if(renderPlatform->GetMemoryInterface())
 		renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
 	if(tex)
@@ -462,10 +464,11 @@ void Texture::InitFromExternalD3D11Texture2D(crossplatform::RenderPlatform *r,ID
 	renderPlatform=r;
 	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
-	//if(renderPlatform->GetMemoryInterface())
-	//	renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
+	if(!external_texture&&renderPlatform->GetMemoryInterface())
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
 	SAFE_RELEASE(texture);
 	texture=t;
+	external_texture=true;
 	mainShaderResourceView=srv;
 	if(mainShaderResourceView)
 		mainShaderResourceView->AddRef();
@@ -544,8 +547,9 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 	renderPlatform=r;
 	SAFE_RELEASE(mainShaderResourceView);
 	SAFE_RELEASE(arrayShaderResourceView);
-	//if(renderPlatform->GetMemoryInterface())
-//		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
+	if(!external_texture&&renderPlatform->GetMemoryInterface())
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
+	external_texture=true;
 	SAFE_RELEASE(texture);
 	texture=(ID3D11Resource*)ta;
 	mainShaderResourceView=(ID3D11ShaderResourceView*)srv;
@@ -656,6 +660,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		textureDesc.MiscFlags		=0;
 		
 		V_CHECK(r->AsD3D11Device()->CreateTexture3D(&textureDesc,0,(ID3D11Texture3D**)(&texture)));
+		external_texture=false;
 		if(renderPlatform->GetMemoryInterface())
 			renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
 
@@ -816,6 +821,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		textureDesc.SampleDesc.Quality		=aa_quality;
 		
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
+		external_texture=false;
 		if(renderPlatform->GetMemoryInterface())
 			renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
 
@@ -951,9 +957,10 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,NULL,&pArrayTexture));
 	if(renderPlatform->GetMemoryInterface())
 		renderPlatform->GetMemoryInterface()->TrackVideoMemory(pArrayTexture,GetMemorySize(),name.c_str());
-	if(renderPlatform->GetMemoryInterface())
+	if(!external_texture&&renderPlatform->GetMemoryInterface())
 		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(texture);
 	SAFE_RELEASE(texture);
+	external_texture=false;
 	texture=pArrayTexture;
 	if(!texture)
 		return false;
@@ -1167,6 +1174,7 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 		textureDesc.MiscFlags		=0;
 		
 		V_CHECK(pd3dDevice->CreateTexture1D(&textureDesc,0,(ID3D11Texture1D**)(&texture)));
+		external_texture=false;
 		if(renderPlatform->GetMemoryInterface())
 			renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
 
@@ -1259,9 +1267,9 @@ vec4 Texture::GetTexel(crossplatform::DeviceContext &deviceContext,vec2 texCoord
 		ID3D11Texture2D *tex;
 		ID3D11Device *dev=deviceContext.renderPlatform->AsD3D11Device();
 		deviceContext.renderPlatform->AsD3D11Device()->CreateTexture2D(&desc,NULL,&tex);
-		if(renderPlatform->GetMemoryInterface())
-			renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
 		stagingBuffer=tex;
+		if(renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffer,GetMemorySize(),name.c_str());
 	}
 	if(wrap)
 	{

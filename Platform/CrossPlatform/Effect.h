@@ -794,6 +794,7 @@ namespace simul
 		public:
 			GroupMap groups;
 			TechniqueMap techniques;
+			TechniqueCharMap techniqueCharMap;
 			IndexMap techniques_by_index;
 			std::string filename;
 			std::string filenameInUseUtf8;
@@ -849,6 +850,7 @@ namespace simul
 			virtual void SetTexture		(DeviceContext &deviceContext,const char *name	,Texture *tex,int array_idx=-1,int mip=-1);
 			//! Set the texture for this effect.
 			virtual void SetSamplerState(DeviceContext &deviceContext,const char *name	,SamplerState *s);
+			virtual void SetSamplerState(DeviceContext &deviceContext,ShaderResource &name	,SamplerState *s);
 			//! Set a constant buffer for this effect.
 			virtual void SetConstantBuffer(DeviceContext &deviceContext,const char *name	,ConstantBufferBase *s);
 			//! Set a constant buffer for this effect.

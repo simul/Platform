@@ -148,9 +148,12 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 	InvalidateDeviceObjects();
 	delete[] stagingBuffers;
 }
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data)
+
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r,int ct,int unit_size,bool computable,bool cpu_r,void *init_data)
 {
 	InvalidateDeviceObjects();
+	renderPlatform=r;
+	cpu_read=cpu_r;
 	num_elements=ct;
 	element_bytesize=unit_size;
 	D3D11_BUFFER_DESC sbDesc;
@@ -187,6 +190,8 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		SIMUL_ASSERT( sbDesc.Usage == D3D11_USAGE_DEFAULT );
 		byteWidth = sbDesc.ByteWidth;
 
+		if(renderPlatform&&renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->UntrackVideoMemory(m_pPlacementBuffer);
 		#ifdef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
 		// Force cache line alignment and packing to avoid cache flushing on Unmap in RoundRobinBuffers
 		byteWidth  = static_cast<UINT>( NextMultiple( byteWidth, SIMUL_D3D11_BUFFER_CACHE_LINE_SIZE ) );
@@ -196,34 +201,48 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 			MEM_LARGE_PAGES | MEM_GRAPHICS | MEM_RESERVE | MEM_COMMIT, 
 			PAGE_WRITECOMBINE | PAGE_READWRITE ));
 
+		if(renderPlatform&&renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(m_pPlacementBuffer,numBuffers * byteWidth,"dx11::PlatformStructuredBuffer");
+
 		#ifdef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
 		SIMUL_ASSERT( ( BytePtrToUint64( m_pPlacementBuffer ) & ( SIMUL_D3D11_BUFFER_CACHE_LINE_SIZE - 1 ) ) == 0 );
 		#endif
-
+		if (init_data)
+		{
+			for (int i = 0; i < numBuffers; i++)
+			{
+				memcpy(m_pPlacementBuffer+(i*byteWidth), init_data, byteWidth);
+			}
+		}
 		V_CHECK( ((ID3D11DeviceX*)renderPlatform->AsD3D11Device())->CreatePlacementBuffer( &sbDesc, m_pPlacementBuffer, &buffer ) );
 	}
 	else
 #endif
 	{
-		HRESULT hr = renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &buffer);
-		if (hr != S_OK)
-		{
-			SIMUL_CERR<<GetErrorText(hr)<<std::endl;
-			return;
-		}
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &buffer));
+		if(renderPlatform&&renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(buffer,sbDesc.ByteWidth,"dx11::PlatformStructuredBuffer");
 	}
-	
+	if(cpu_read)
 	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
+	{
+		if(renderPlatform&&renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->UntrackVideoMemory(stagingBuffers[i]);
 		SAFE_RELEASE(stagingBuffers[i]);
-	// May not be needed, but uses only a small amount of memory:
-	if(computable)
+	}
+	// May not be needed, make sure not to set cpu_read if not:
+	if(computable&&cpu_read)
 	{
 		sbDesc.BindFlags=0;
 		sbDesc.Usage				=D3D11_USAGE_STAGING;
 		sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_READ;
 		sbDesc.MiscFlags			=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED ;
 		for(int i=0;i<NUM_STAGING_BUFFERS;i++)
+		{
 			renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &stagingBuffers[i]);
+			if(renderPlatform&&renderPlatform->GetMemoryInterface())
+				renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffers[i],sbDesc.ByteWidth,"dx11::PlatformStructuredBuffer staging");
+		}
 	}
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
@@ -299,7 +318,9 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 		if(hr!=S_OK)
 			mapped.pData=NULL;
 		if(wait>1)
-			SIMUL_CERR<<"PlatformStructuredBuffer::OpenReadBuffer waited "<<wait<<" times."<<std::endl;
+		{
+			SIMUL_CERR_ONCE << "PlatformStructuredBuffer::OpenReadBuffer waited " << wait << " times." << std::endl;
+	}
 	}
 	return mapped.pData;
 }
@@ -406,10 +427,22 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(shaderResourceView);
 	SAFE_RELEASE(buffer);
 	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
+	{
+		if(renderPlatform&&renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->UntrackVideoMemory(stagingBuffers[i]);
 		SAFE_RELEASE(stagingBuffers[i]);
+	}
 	num_elements=0;
 #if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
+	if(renderPlatform&&renderPlatform->GetMemoryInterface())
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(m_pPlacementBuffer);
 	VirtualFree( m_pPlacementBuffer, 0, MEM_RELEASE );
+	m_pPlacementBuffer=nullptr;
+	buffer=nullptr;
+#else
+	SAFE_RELEASE(buffer);
+	if(renderPlatform&&renderPlatform->GetMemoryInterface())
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(buffer);
 #endif
 }
 
@@ -515,14 +548,20 @@ void Effect::InvalidateDeviceObjects()
 
 crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *name)
 {
-	if(techniques.find(name)!=techniques.end())
+	auto c=techniqueCharMap.find(name);
+	if(c!=techniqueCharMap.end())
 	{
-		return techniques[name];
+		return c->second;
 	}
 	auto g=groups[""];
-	if(g->techniques.find(name)!=g->techniques.end())
+	if (!g)
+		return nullptr;
+	auto v=g->techniques.find(name);
+	if(v!=g->techniques.end())
 	{
-		return g->techniques[name];
+		crossplatform::EffectTechnique *tech=v->second;
+		techniqueCharMap[name]=tech;
+		return tech;
 	}
 	if(!platform_effect)
 		return NULL;
@@ -538,6 +577,7 @@ crossplatform::EffectTechnique *dx11::Effect::GetTechniqueByName(const char *nam
 	crossplatform::EffectTechnique *tech=new dx11::EffectTechnique;
 	tech->platform_technique=t;
 	techniques[name]=tech;
+	techniqueCharMap[name]=tech;
 	groups[""]->techniques[name]=tech;
 	if(!tech->platform_technique)
 	{
@@ -745,8 +785,6 @@ void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,cro
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass_num)
 {
-	if(apply_count!=0)
-		SIMUL_BREAK_ONCE("Effect::Apply without a corresponding Unapply!")
 	if(!effectTechnique)
 		return;
 	ID3DX11Effect *effect			=asD3DX11Effect();
@@ -760,8 +798,6 @@ void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::Ef
 
 void Effect::Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *passname)
 {
-	if(apply_count!=0)
-		SIMUL_BREAK_ONCE("Effect::Apply without a corresponding Unapply!")
 	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
 	cs->invalidate();
 	cs->currentTechnique=effectTechnique;

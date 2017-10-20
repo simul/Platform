@@ -529,7 +529,7 @@ Camera::~Camera()
 
 const float *Camera::MakeViewMatrix() const
 {
-	return Orientation.GetInverseMatrix();
+	return Orientation.GetInverseMatrix().RowPointer(0);
 }
 
 // Really making projT here.

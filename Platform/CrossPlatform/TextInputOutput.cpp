@@ -192,7 +192,7 @@ void TextFileInput::Load(const std::string &text)
 			subElements[name].Load(sub);
 			pos=end_brace_pos;
 		}
-		else if(next_ret>=0)
+		else if(next_ret<text.length())
 		{
 			std::string value=text.substr(colon_pos+1,next_ret-1-colon_pos-1);;
 			value=StripOuterQuotes(value);

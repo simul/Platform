@@ -28,12 +28,12 @@ namespace simul
 		{
 					Query(crossplatform::QueryType t);
 			virtual ~Query() override;
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
-			void InvalidateDeviceObjects() override;
-			void Begin(crossplatform::DeviceContext &deviceContext) override;
-			void End(crossplatform::DeviceContext &deviceContext) override;
-			bool GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
-			void SetName(const char *n) override;
+			void	RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
+			void	InvalidateDeviceObjects() override;
+			void	Begin(crossplatform::DeviceContext &deviceContext) override;
+			void	End(crossplatform::DeviceContext &deviceContext) override;
+			bool	GetData(crossplatform::DeviceContext &deviceContext,void *data,size_t sz) override;
+			void	SetName(const char *n) override;
 
 		protected:
 			//! Holds the queries
@@ -44,6 +44,7 @@ namespace simul
 			ID3D12Resource*			mReadBuffer;
 			//! We hold a pointer to the mapped data
 			void*					mQueryData;
+			double mTime;
 		};
 
 		struct SIMUL_DIRECTX12_EXPORT RenderState:public crossplatform::RenderState
@@ -152,8 +153,8 @@ namespace simul
 			//! A vector holding the root parameters (in our case it will always be 1 or 2)
 			std::vector<CD3DX12_ROOT_PARAMETER> rootParams;
 
-			std::vector<CD3DX12_DESCRIPTOR_RANGE> mSrvCbvUavRanges;
-			std::vector<CD3DX12_DESCRIPTOR_RANGE> mSamplerRanges;
+			std::vector<CD3DX12_DESCRIPTOR_RANGE>	mSrvCbvUavRanges;
+			std::vector<CD3DX12_DESCRIPTOR_RANGE>	mSamplerRanges;
 			std::string								mPassName;
 		};
 		class SIMUL_DIRECTX12_EXPORT EffectTechnique:public simul::crossplatform::EffectTechnique

@@ -28,9 +28,12 @@ struct ID3D11Texture2D;
 struct ID3D11Resource;
 struct ID3D11SamplerState;
 typedef unsigned GLuint;
+extern "C"
+{
+struct ID3D12Resource;
+}
 
 struct D3D12_CPU_DESCRIPTOR_HANDLE;
-struct ID3D12Resource;
 
 namespace simul
 {
@@ -106,6 +109,7 @@ namespace simul
 		{
 		protected:
 			bool cubemap;
+			bool external_texture;
 			std::string name;
 			simul::crossplatform::TargetsAndViewport targetsAndViewport;
 			// For API's that don't track resources:
@@ -114,7 +118,7 @@ namespace simul
 		public:
 			Texture(const char *name=NULL);
 			virtual ~Texture();
-			void SetName(const char *n);
+			virtual void SetName(const char *n);
 			/// Set the fence on this texture: it cannot be used until the fence has been triggered by the rendering API.
 			void SetFence(unsigned long long);
 			/// Get the current fence on this texture; it should not be used until the API has passed this fence.

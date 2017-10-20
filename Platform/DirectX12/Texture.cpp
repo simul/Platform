@@ -172,6 +172,9 @@ void Texture::InvalidateDeviceObjects()
 		rPlat->PushToReleaseManager(mTextureDefault, name + "_Default");
 		rPlat->PushToReleaseManager(mTextureUpload, name + "_Upload");
 
+		mTextureDefault = nullptr;
+		mTextureUpload	= nullptr;
+
 		// Same for heaps (The release method will handle it)
 		mTextureSrvHeap.Release(rPlat);
 		mTextureUavHeap.Release(rPlat);
@@ -230,8 +233,8 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.Dimension			= D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	textureDesc.Alignment			= 0;							// Let runtime decide
-	textureDesc.Width				= (UINT64)metadata.width;
-	textureDesc.Height				= (UINT64)metadata.height;
+	textureDesc.Width				= (UINT)metadata.width;
+	textureDesc.Height				= (UINT)metadata.height;
 	textureDesc.DepthOrArraySize	= 1;
 	textureDesc.MipLevels			= 1;
 	textureDesc.Format				= metadata.format;
@@ -296,7 +299,8 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	textureSubData.pData					= image->pixels; 
 	textureSubData.RowPitch					= image->rowPitch; 
 	textureSubData.SlicePitch				= image->rowPitch * textureDesc.Height; 
-	UpdateSubresources(renderPlatform->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, 1, &textureSubData);
+	if(renderPlatform->AsD3D12CommandList())
+		UpdateSubresources(renderPlatform->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, 1, &textureSubData);
 
 	// Init states
 	InitStateTable(arraySize, mips);
@@ -304,7 +308,8 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	// Transition the resource to be used in the shaders
 	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 	auto rPlat		= (dx12::RenderPlatform*)(renderPlatform);
-	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState());
+	if(renderPlatform->AsD3D12CommandList())
+		rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState());
 
 	// Create a descriptor heap for this texture
 	// This heap won't be shader visible as we will be copying the descriptor from here to the FrameHeap (which is shader visible)
@@ -536,14 +541,15 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(bool setState /*
 	if (setState)
 	{
 		auto curState = GetCurrentState(mip,index);
-		if	((((curState) & D3D12_RESOURCE_STATE_UNORDERED_ACCESS) == D3D12_RESOURCE_STATE_UNORDERED_ACCESS) &&
-			  ((curState) & D3D12_RESOURCE_STATE_RENDER_TARGET)    == D3D12_RESOURCE_STATE_RENDER_TARGET)
-		{
-		}
-		else if ((curState & D3D12_RESOURCE_STATE_GENERIC_READ) != D3D12_RESOURCE_STATE_GENERIC_READ)
+		if	((curState & D3D12_RESOURCE_STATE_GENERIC_READ) != D3D12_RESOURCE_STATE_GENERIC_READ )
 		{
 			auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-			rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_GENERIC_READ,RenderPlatform::GetResourceIndex(mip, index,mips,arraySize));
+			int curArray = arraySize;
+			if (cubemap)
+			{
+				curArray *= 6;
+			}
+			rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_GENERIC_READ,RenderPlatform::GetResourceIndex(mip, index,mips, curArray));
 			SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ,mip,index);
 		}
 	}
@@ -586,7 +592,12 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(int index, int 
 	if ((curState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS) != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 	{
 		auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, RenderPlatform::GetResourceIndex(mip, index, mips, arraySize));
+		int curArray = arraySize;
+		if (cubemap)
+		{
+			curArray *= 6;
+		}
+		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
 		SetCurrentState(D3D12_RESOURCE_STATE_UNORDERED_ACCESS,mip,index);
 	}
 
@@ -621,6 +632,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12DepthStencilView()
 		auto rPlat = (dx12::RenderPlatform*)renderPlatform;
 		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 		SetCurrentState(D3D12_RESOURCE_STATE_DEPTH_WRITE);
+		rPlat->FlushBarriers();
 	}
 	return &depthStencilView12;
 }
@@ -632,8 +644,14 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(int index /*= -1*/
 	if ((curState & D3D12_RESOURCE_STATE_RENDER_TARGET) != D3D12_RESOURCE_STATE_RENDER_TARGET)
 	{
 		auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_RENDER_TARGET, RenderPlatform::GetResourceIndex(mip, index, mips, arraySize));
+		int curArray = arraySize;
+		if (cubemap)
+		{
+			curArray *= 6;
+		}
+		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_RENDER_TARGET, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
 		SetCurrentState(D3D12_RESOURCE_STATE_RENDER_TARGET,mip,index);
+		rPlat->FlushBarriers();
 	}
 	
 	if (!renderTargetViews12)
@@ -664,7 +682,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		auto renderPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 		// HACK: to make sure the cmd list is there 
 		renderPlat->SetCommandList(deviceContext.asD3D12Context());
-
+		
 		if (!mTextureDefault)
 		{
 			SIMUL_BREAK("The texture is invalid");
@@ -713,6 +731,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 
 		// Transition main texture to copy dest
 		renderPlat->ResourceTransitionSimple(mTextureDefault, GetCurrentState(), D3D12_RESOURCE_STATE_COPY_DEST);
+		renderPlat->FlushBarriers();
 
 		// Copy the data
 		D3D12_SUBRESOURCE_DATA srcData;
@@ -723,6 +742,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 
 		// Transition main texture to pixel shader resource
 		renderPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState());
+		renderPlat->FlushBarriers();
 	}
 }
 
@@ -742,6 +762,14 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPla
 	InitFromExternalD3D12Texture2D(renderPlatform,(ID3D12Resource*)t,(D3D12_CPU_DESCRIPTOR_HANDLE*)srv,make_rt);
 }
 
+void Texture::SetName(const char *n)
+{
+	crossplatform::Texture::SetName(n);
+	if(!mTextureDefault)
+		return;
+	std::wstring ws=simul::base::Utf8ToWString(n);
+	mTextureDefault->SetName(ws.c_str());
+}
 void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt)
 {
 	// If it's the same as before, return.
@@ -754,13 +782,16 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	FreeSRVTables();
 	renderPlatform				= r;
 	mTextureDefault				= t;
-	mTextureDefault->SetName(L"FromExternal");
 	mainShaderResourceView12	= srv? *srv : D3D12_CPU_DESCRIPTOR_HANDLE(); // What if the CPU handle changes? we should check this from outside
 	mInitializedFromExternal	= true;
+
+	std::wstring ws=simul::base::Utf8ToWString(name);
+	mTextureDefault->SetName(ws.c_str());
 
 	// Textures initialized from external should be passed by as a SRV so we expect
 	// that the resource was previously transitioned to GENERIC_READ
 	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
+	//SetCurrentState(D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	if (mTextureDefault)
 	{
@@ -826,6 +857,9 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 
 void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *ta,void *srv,bool make_uav)
 {
+	SIMUL_BREAK_ONCE("Not implemented");
+	return;
+
 	mInitializedFromExternal = true;
 
 	// If it's the same as before, return.
@@ -837,7 +871,7 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 
 	FreeSRVTables();
 	renderPlatform				= r;
-	mTextureDefault					= (ID3D12Resource*)ta;
+	mTextureDefault				= (ID3D12Resource*)ta;
 	mainShaderResourceView12	= *((D3D12_CPU_DESCRIPTOR_HANDLE*)srv);
 
 	if (mTextureDefault)
@@ -845,6 +879,7 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 		D3D12_RESOURCE_DESC textureDesc = mTextureDefault->GetDesc();
 		if ((textureDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) == D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL)
 		{
+			// TO-DO: Whattt??
 			SetCurrentState(D3D12_RESOURCE_STATE_DEPTH_WRITE);
 		}
 		else
@@ -1628,12 +1663,6 @@ void Texture::GenerateMips(crossplatform::DeviceContext &deviceContext)
 	SIMUL_BREAK_ONCE("Mip generation is not implemented");
 }
 
-/*
-void Texture::map(ID3D11DeviceContext *context)
-{
-	SIMUL_BREAK_ONCE("Maping a texture is not implemented");
-}
-*/
 
 bool Texture::isMapped() const
 {
@@ -1714,6 +1743,10 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 		viewport.TopLeftY	= 0;
 		viewport.MinDepth	= 0.0f;
 		viewport.MaxDepth	= 1.0f;
+
+		CD3DX12_RECT scissor(0, 0, viewport.Width, viewport.Height);
+
+		rp->AsD3D12CommandList()->RSSetScissorRects(1, &scissor);
 		rp->AsD3D12CommandList()->RSSetViewports(1, &viewport);
 
 		// Make sure to cache the current pixel format so we can reset it after we deactivate the render target
@@ -1728,8 +1761,13 @@ void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext
 
 	// Set the old rt,ds and viewports
 	rp->AsD3D12CommandList()->OMSetRenderTargets(1, m_pOldRenderTargets12[0], false, m_pOldDepthSurface12);
-	if(m_OldViewports12[0].Width*m_OldViewports12[0].Height>0.0f)
-	rp->AsD3D12CommandList()->RSSetViewports(1, &m_OldViewports12[0]);
+	if (m_OldViewports12[0].Width * m_OldViewports12[0].Height > 0.0f)
+	{
+		CD3DX12_RECT scissor(0, 0, m_OldViewports12[0].Width, m_OldViewports12[0].Height);
+
+		rp->AsD3D12CommandList()->RSSetScissorRects(1, &scissor);
+		rp->AsD3D12CommandList()->RSSetViewports(1, &m_OldViewports12[0]);
+	}
 	rp->SetCurrentPixelFormat(mOldRtFormat);
 
 	m_pOldRenderTargets12[0]	= nullptr;

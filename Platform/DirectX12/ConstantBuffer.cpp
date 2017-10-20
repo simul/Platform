@@ -58,7 +58,8 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 
 	// Create the heaps (storage for our descriptors)
 	// mBufferSize / 256 (this is the max number of descriptors we can hold with this upload heaps
-	mMaxDescriptors = mBufferSize / (256 * mSlots);
+	// 	Pc alignment != XBOX alignment (?)
+	mMaxDescriptors = mBufferSize / (kBufferAlign * mSlots);
 	for (unsigned int i = 0; i < 3; i++)
 	{
 		mHeaps[i].Restore((dx12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "CBHeap", false);
@@ -80,7 +81,7 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 			IID_GRAPHICS_PPV_ARGS(&mUploadHeap[i])
 #else
 			IID_PPV_ARGS(&mUploadHeap[i])
-#endif
+#endif	
 		);
 		SIMUL_ASSERT(res == S_OK);
 
@@ -113,10 +114,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE simul::dx12::PlatformConstantBuffer::AsD3D12Constant
 void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t size,void *addr)
 {
 	renderPlatform = r;
-
+	
 	// Calculate the number of slots this constant buffer will use:
 	// mSlots = 256 Aligned size / 256
-	mSlots = ((size + 255) & ~255) / 256;
+	mSlots = ((size + (kBufferAlign - 1)) & ~ (kBufferAlign - 1)) / kBufferAlign;
 	InvalidateDeviceObjects();
 	if(!r)
 		return;
@@ -156,22 +157,25 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 	}
 
 	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer
-	// has a minimum size of 256Bytes)
+	// has a minimum size of kBufferAlign)
 	UINT8* pDest = nullptr;
-	UINT64 offset = (256 * mSlots) * mCurApplyCount;	
+	UINT64 offset = (kBufferAlign * mSlots) * mCurApplyCount;	
 	const CD3DX12_RANGE range(0, 0);
 	HRESULT hResult=mUploadHeap[curFrameIndex]->Map(0, &range, reinterpret_cast<void**>(&pDest));
 	if(hResult==S_OK)
 	{
-		if(pDest)
-		memcpy(pDest + offset, addr, size);
-	mUploadHeap[curFrameIndex]->Unmap(0, &range);
+		if (pDest)
+		{
+			memset(pDest + offset, 0, kBufferAlign * mSlots);
+			memcpy(pDest + offset, addr, size);
+		}
+		mUploadHeap[curFrameIndex]->Unmap(0, &range);
 	}
 
 	// Create a CBV
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 	cbvDesc.BufferLocation					= mUploadHeap[curFrameIndex]->GetGPUVirtualAddress() + offset;
-	cbvDesc.SizeInBytes						= 256 * mSlots;
+	cbvDesc.SizeInBytes						= kBufferAlign * mSlots;
 	// If we applied this CB more than once this frame, we will be appending another descriptor (thats why we offset)
 	D3D12_CPU_DESCRIPTOR_HANDLE handle		= mHeaps[curFrameIndex].GetCpuHandleFromStartAfOffset(mCurApplyCount);
 	rPlat->AsD3D12Device()->CreateConstantBufferView(&cbvDesc, handle);

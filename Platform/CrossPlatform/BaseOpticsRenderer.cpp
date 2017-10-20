@@ -110,7 +110,7 @@ void BaseOpticsRenderer::RenderFlare(crossplatform::DeviceContext &deviceContext
 		effect->SetTexture(deviceContext,"flareTexture",flare_texture);
 		SetOpticsConstants(opticsConstants,deviceContext.viewStruct,dir,sunlight,flare_angular_size*flare_magnitude);
 
-effect->SetConstantBuffer(deviceContext,&		opticsConstants);
+		effect->SetConstantBuffer(deviceContext,&		opticsConstants);
 		effect->Apply(deviceContext,m_hTechniqueFlare,0);
 		renderPlatform->DrawQuad(deviceContext);
 		sunlight*=0.25f;
@@ -137,19 +137,20 @@ void BaseOpticsRenderer::SetOpticsConstants(OpticsConstants &c,const crossplatfo
 	simul::math::Vector3 dir(direction);
 	float Yaw=atan2(dir.x,dir.y);
 	float Pitch=-asin(dir.z);
-	simul::math::Matrix4x4 world, tmp1, tmp2;
+	simul::math::Matrix4x4  tmp1, tmp2;
 	simul::math::Matrix4x4 view(viewStruct.view);
 	simul::math::Matrix4x4 proj(viewStruct.proj);
 	
 	simul::geometry::SimulOrientation ori;
 	ori.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
 	ori.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
-	world=ori.GetMatrix();
+
 	//set up matrices
 	view._41=0.f;
 	view._42=0.f;
 	view._43=0.f;
 	simul::math::Vector3 sun2;
+	const simul::math::Matrix4x4 &world=ori.GetMatrix();
 	simul::math::Multiply4x4(tmp1,world,view);
 	simul::math::Multiply4x4(tmp2,tmp1,proj);
 	c.worldViewProj	=tmp2;

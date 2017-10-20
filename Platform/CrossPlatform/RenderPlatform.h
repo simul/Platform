@@ -57,6 +57,20 @@ namespace simul
 		struct PhysicalLightRenderData;
 		struct Query;
 		struct TargetsAndViewport;
+
+		/// Should correspond to UnityGfxRenderer
+		enum class RenderPlatformType
+		{
+			Unknown=-1,
+			OpenGL				 =  0, // Desktop OpenGL
+			D3D11				 =  2, // Direct3D 11
+			Null				= 4,	// null means don't render, as opposed to Unknwon which means uninitialized.
+			PS4					 = 13, // PlayStation 4
+			XboxOne				 = 14, // Xbox One        
+			Metal				 = 16, // iOS Metal
+			D3D12				 = 18, // Direct3D 12
+			D3D11_FastSemantics	= 1002, // Direct3D 11
+		};
 		/// A vertex format for debugging.
 		struct PosColourVertex
 		{
@@ -229,7 +243,7 @@ namespace simul
 			virtual void DrawCamera			(DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)=0;
 			virtual void DrawLineLoop		(DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4])=0;
 
-			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f);
+			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f,bool debug=false);
 			void DrawTexture				(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false,float gamma=1.0f);
 			void DrawDepth					(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL,const float *proj=NULL);
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
@@ -361,6 +375,7 @@ namespace simul
 			// All for debug Effect
 			crossplatform::Effect			*debugEffect;
 			crossplatform::EffectTechnique	*textured;
+			crossplatform::EffectTechnique	*untextured;
 			crossplatform::EffectTechnique	*showVolume;
 			crossplatform::ShaderResource	volumeTexture;
 			crossplatform::ShaderResource	imageTexture;
@@ -375,7 +390,7 @@ namespace simul
 		public:
 			// all shaders are stored here and referenced by techniques.
 			std::map<std::string, Shader*> shaders;
-			std::map<const void *,ContextState *> contextState;
+			std::unordered_map<const void *,ContextState *> contextState;
 			crossplatform::GpuProfiler		*GetGpuProfiler();
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;

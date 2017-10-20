@@ -45,6 +45,8 @@ namespace simul
 
 			ID3D12Resource*					mUploadHeap[kNumBuffers];
 			dx12::Heap						mHeaps[kNumBuffers];
+
+			const int kBufferAlign			= D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
 		};
 	}
 }

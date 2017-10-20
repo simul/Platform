@@ -159,8 +159,8 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 	surfaceDesc.Width		=swapDesc.Width;
 	surfaceDesc.Height		=swapDesc.Height;
 
-	if(renderer)
-		renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
+//	if(renderer)
+//		renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 
 void Window::CreateRenderTarget(ID3D12Device* d3dDevice)
@@ -286,7 +286,7 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
 	if(view_id<0)
 		view_id				=renderer->AddView();
-	renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
+	//renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 
 void Window::Release()
@@ -607,7 +607,7 @@ void Direct3D12Manager::Render(HWND h)
 	m_commandList->OMSetRenderTargets(1, &w->mRtvCpuHandle[m_frameIndex], FALSE, &w->m_dsHeap->GetCPUDescriptorHandleForHeapStart());
 
 	// Submit commands
-	const float kClearColor[4] = { 0.2f,0.2f,0.2f,1.0f };
+	const float kClearColor[4] = { 0.0f,0.0f,0.0f,1.0f };
 	m_commandList->ClearRenderTargetView(w->mRtvCpuHandle[m_frameIndex], kClearColor , 0, nullptr);
 	m_commandList->ClearDepthStencilView(w->m_dsHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
 
@@ -619,7 +619,7 @@ void Direct3D12Manager::Render(HWND h)
 			(void*)&w->mRtvCpuHandle[m_frameIndex],
 			(void*)&w->m_dsHeap->GetCPUDescriptorHandleForHeapStart()
 		};
-		w->renderer->Render(w->view_id, pParams,GetDeviceContext());
+		w->renderer->Render(w->view_id, pParams,GetDeviceContext(),w->m_viewport.Width,w->m_viewport.Height);
 	}
 
 	// Get ready to present

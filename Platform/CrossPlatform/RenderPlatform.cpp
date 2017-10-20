@@ -31,6 +31,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,copyEffect(NULL)
 	,debugEffect(NULL)
 	,textured(NULL)
+	,untextured(nullptr)
 	,showVolume(NULL)
 #ifdef _XBOX_ONE
 	,can_save_and_restore(false)
@@ -159,6 +160,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(solidEffect);
 	SAFE_DELETE(copyEffect);
 	textured=NULL;
+	untextured=nullptr;
 	showVolume=NULL;
 	textureQueryResult.InvalidateDeviceObjects();
 }
@@ -176,6 +178,7 @@ void RenderPlatform::RecompileShaders()
 	if(debugEffect)
 	{
 		textured=debugEffect->GetTechniqueByName("textured");
+		untextured=debugEffect->GetTechniqueByName("untextured");
 		showVolume=debugEffect->GetTechniqueByName("show_volume");
 		volumeTexture=debugEffect->GetShaderResource("volumeTexture");
 		imageTexture=debugEffect->GetShaderResource("imageTexture");
@@ -251,6 +254,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 	// Silently return if not initialized
 	if(!texture->IsValid())
 		return;
+	bool cleared				= false;
 	debugConstants.debugColour=colour;
 	debugConstants.texSize=uint4(texture->width,texture->length,texture->depth,1);
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
@@ -271,10 +275,11 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 			}
 		}
 		debugEffect->UnbindTextures(deviceContext);
+		cleared = true;
 	}
 	// Otherwise, is it computable? We can set the colour value with a compute shader.
 	// Finally, is it mappable? We can set the colour from CPU memory.
-	else if(texture->IsComputable())
+	else if (texture->IsComputable() && !cleared)
 	{
 		int a=texture->NumFaces();
 		if(a==0)
@@ -293,8 +298,8 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				int D=(d+4-1)/4;
 				if (texture->dim == 2 && texture->NumFaces()>1)
 				{
-					W=(w+8-1)/1;
-					L=(l+8-1)/1;
+					W=(w+8-1)/8;
+					L=(l+8-1)/8;
 					D = d;
 					techname = "compute_clear_2d_array";
 					if(texture->GetFormat()==PixelFormat::RGBA_8_UNORM)
@@ -309,8 +314,8 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 				}
 				else if(texture->dim==2)
 				{
-					W=(w+8-1)/1;
-					L=(l+8-1)/1;
+					W=(w+8-1)/8;
+					L=(l+8-1)/8;
 					debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget",texture,i,j);
 					D=1;
 				}
@@ -698,19 +703,21 @@ void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,co
 	Print(deviceContext,(int)pos.x+offsetx,(int)pos.y+offsety,text,colr,bkg);
 }
 
-void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma)
+void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend,float gamma,bool debug)
 {
 	static int level=0;
 	static int lod=0;
 	static int frames=100;
 	static int count=frames;
+	float displayLod=0.0f;
+	if(debug)
+	{
 	count--;
 	if(!count)
 	{
 		lod++;
 		count=frames;
 	}
-	float displayLod=0.0f;
 	if(tex)
 	{
 		int m=tex->GetMipCount();
@@ -718,10 +725,12 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 		if(!tex->IsValid())
 			tex=nullptr;
 	}
+	}
 	
 	debugConstants.debugGamma=gamma;
 	debugConstants.multiplier=mult;
 	debugConstants.displayLod=displayLod;
+	debugConstants.displayLevel=0;
 	crossplatform::EffectTechnique *tech=textured;
 	if(tex&&tex->GetDimension()==3)
 	{
@@ -734,6 +743,8 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap_array");
 			debugEffect->SetTexture(deviceContext,"cubeTextureArray",tex);
+			if(debug)
+			{
 			static char c=0;
 			static char cc=20;
 			c--;
@@ -742,7 +753,9 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 				level++;
 				c=cc;
 			}
+			
 			debugConstants.displayLevel=(float)(level%std::max(1,tex->arraySize));
+		}
 		}
 		else
 		{
@@ -757,14 +770,15 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 	}
 	else
 	{
-		tech=debugEffect->GetTechniqueByName("untextured");
+		tech=untextured;
 	}
-	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,blend?"blend":"noblend");
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,"noblend");
 	debugEffect->UnbindTextures(deviceContext);
+	if(debug)
+	{
 	vec4 white(1.0, 1.0, 1.0, 1.0);
 	vec4 semiblack(0, 0, 0, 0.5);
 	char txt[]="0";
-	y1+=12;
 	if(tex&&tex->GetMipCount()>1&&lod>0&&lod<10)
 	{
 		txt[0]='0'+lod;
@@ -777,6 +791,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 			txt[0]='0'+(l);
 		Print(deviceContext,x1,y1,txt,white,semiblack);
 	}
+}
 }
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect

@@ -33,6 +33,7 @@ namespace simul
 	namespace crossplatform
 	{
 		class Effect;
+		enum ShaderBuildMode;
 	}
 	/// The Simul namespace for DirectX 11 implementations of rendering functions.
 	namespace dx11

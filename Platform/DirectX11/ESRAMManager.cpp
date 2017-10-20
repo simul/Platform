@@ -37,7 +37,7 @@ ESRAMManager::ESRAMManager( ID3D11Device* const dev )
     D3D11_DMA_ENGINE_CONTEXT_DESC desc;
     ZeroMemory( &desc, sizeof(desc) );
     desc.CreateFlags = D3D11_DMA_ENGINE_CONTEXT_CREATE_SDMA_1;
-    desc.RingBufferSizeBytes = 64 * 1024;   // NOTE: Currently if you overflow the ring buffer you'll hang the GPU
+    desc.RingBufferSizeBytes = 0 ;//rfikyt;//64 * 1024;   // NOTE: Currently if you overflow the ring buffer you'll hang the GPU
     HRESULT hr=( pDevice->CreateDmaEngineContext( &desc,&m_spDmaContext ) );
 
     // Start with one free space containing the whole of ESRAM

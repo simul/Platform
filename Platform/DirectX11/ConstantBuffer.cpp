@@ -52,9 +52,12 @@ PlatformConstantBuffer::~PlatformConstantBuffer()
 	InvalidateDeviceObjects();
 }
 
-void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* renderPlatform, void *addr) 
+void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, void *addr) 
 {
+	renderPlatform=r;
 	resize=false;
+	if(renderPlatform&&renderPlatform->GetMemoryInterface())
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(m_pD3D11Buffer);
 	SAFE_RELEASE(m_pD3D11Buffer);	
 	D3D11_BUFFER_DESC cb_desc= { 0 };
 	cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
@@ -92,6 +95,8 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* render
 		#endif
 
 		V_CHECK( ((ID3D11DeviceX*)renderPlatform->AsD3D11Device())->CreatePlacementBuffer( &cb_desc, nullptr, &m_pD3D11Buffer ) );
+		if(renderPlatform&&renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(m_pD3D11Buffer,numBuffers*byteWidth,"PlatformConstantBuffer");
 	}
 	else
 #endif
@@ -99,6 +104,8 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* render
 		if(addr==nullptr)
 		{
 			renderPlatform->AsD3D11Device()->CreateBuffer(&cb_desc,nullptr, &m_pD3D11Buffer);
+			if(renderPlatform&&renderPlatform->GetMemoryInterface())
+				renderPlatform->GetMemoryInterface()->TrackVideoMemory(m_pD3D11Buffer,cb_desc.ByteWidth,"PlatformConstantBuffer");
 		}
 		else
 		{
@@ -156,6 +163,8 @@ void PlatformConstantBuffer::LinkToEffect(crossplatform::Effect *effect,const ch
 
 void PlatformConstantBuffer::InvalidateDeviceObjects()
 {
+	if(renderPlatform&&renderPlatform->GetMemoryInterface())
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(m_pD3D11Buffer);
 	SAFE_RELEASE(m_pD3D11Buffer);
 #if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
 	if(m_pPlacementBuffer)

@@ -97,23 +97,28 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	SIMUL_ASSERT(IsValid());
 
 	// Here we will set both colour and depth
-	dx12::Texture* col12Texture = (dx12::Texture*)buffer_texture;
-	dx12::Texture* depth12Texture = (dx12::Texture*)buffer_depth_texture;
+	dx12::Texture* col12Texture		= (dx12::Texture*)buffer_texture;
+	dx12::Texture* depth12Texture	= (dx12::Texture*)buffer_depth_texture;
 	if (!col12Texture && !depth12Texture)
 	{
 		SIMUL_BREAK_ONCE("No valid textures in the framebuffer");
 	}
 	if(buffer_depth_texture->IsValid())
-		rPlat->AsD3D12CommandList()->OMSetRenderTargets(1,buffer_texture->AsD3D12RenderTargetView(),false,buffer_depth_texture->AsD3D12DepthStencilView());
+		deviceContext.asD3D12Context()->OMSetRenderTargets(1,buffer_texture->AsD3D12RenderTargetView(),false,buffer_depth_texture->AsD3D12DepthStencilView());
 	else
-		rPlat->AsD3D12CommandList()->OMSetRenderTargets(1,buffer_texture->AsD3D12RenderTargetView(),false,nullptr);
+		deviceContext.asD3D12Context()->OMSetRenderTargets(1,buffer_texture->AsD3D12RenderTargetView(),false,nullptr);
 
 	// Inform the render platform the current output pixel format 
 	// TO-DO: same for depth!
 	mLastPixelFormat = rPlat->GetCurrentPixelFormat();
 	rPlat->SetCurrentPixelFormat(((dx12::Texture*)buffer_texture)->dxgi_format);
 
-	SetViewport(deviceContext,0,0,1.f,1.f,0,1.f);
+	SetViewport
+	(
+		deviceContext,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		0.0f, 1.0f
+	);
 
 	// Push current target and viewport
 	mTargetAndViewport.num				= 1;
@@ -138,9 +143,13 @@ void Framebuffer::SetViewport(crossplatform::DeviceContext &deviceContext,float 
 	mViewport.Height		= floorf((float)Height*H + 0.5f);
 	mViewport.TopLeftX		= floorf((float)Width*X + 0.5f);
 	mViewport.TopLeftY		= floorf((float)Height*Y + 0.5f);
-	mViewport.MinDepth		= 0.0f;
-	mViewport.MaxDepth		= 1.0f;
-	deviceContext.renderPlatform->AsD3D12CommandList()->RSSetViewports(1, &mViewport);
+	mViewport.MinDepth		= Z;
+	mViewport.MaxDepth		= D;
+
+	CD3DX12_RECT scissor(0, 0, mViewport.Width, mViewport.Height);
+
+	deviceContext.asD3D12Context()->RSSetScissorRects(1, &scissor);
+	deviceContext.asD3D12Context()->RSSetViewports(1, &mViewport);
 }
 
 void Framebuffer::ActivateDepth(crossplatform::DeviceContext &deviceContext)
@@ -156,18 +165,18 @@ void Framebuffer::ActivateColour(crossplatform::DeviceContext &deviceContext)
 void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 {
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
-	
+
 	// We should leave the state as it was when we started rendering
 	if (crossplatform::BaseFramebuffer::GetFrameBufferStack().size() <= 1)
 	{
 		// Set the default targets
 		crossplatform::BaseFramebuffer::GetFrameBufferStack().pop();
-		rPlat->AsD3D12CommandList()->OMSetRenderTargets
+		deviceContext.asD3D12Context()->OMSetRenderTargets
 		(
 			1,
-			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)BaseFramebuffer::defaultTargetsAndViewport.m_rt[0],
+			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_rt[0],
 			false,
-			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)BaseFramebuffer::defaultTargetsAndViewport.m_dt
+			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_dt
 		);
 	}
 	else
@@ -176,7 +185,7 @@ void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 		crossplatform::BaseFramebuffer::GetFrameBufferStack().pop();
 		auto curTargets = crossplatform::BaseFramebuffer::GetFrameBufferStack().top();
 		SIMUL_ASSERT(curTargets->num == 1);
-		rPlat->AsD3D12CommandList()->OMSetRenderTargets
+		deviceContext.asD3D12Context()->OMSetRenderTargets
 		(
 			1,
 			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)curTargets->m_rt[0],
@@ -185,7 +194,6 @@ void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 		);
 	}
 
-	// Set back the last pixel format
 	rPlat->SetCurrentPixelFormat(mLastPixelFormat);
 
 	colour_active	= false;
@@ -194,7 +202,7 @@ void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 
 void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 {
-	deviceContext.renderPlatform->AsD3D12CommandList()->OMSetRenderTargets
+	deviceContext.asD3D12Context()->OMSetRenderTargets
 	(
 		1,
 		(CD3DX12_CPU_DESCRIPTOR_HANDLE*)buffer_texture->AsD3D12RenderTargetView(),
@@ -244,7 +252,7 @@ void Framebuffer::ClearDepth(crossplatform::DeviceContext &context,float depth)
 {
 	if (buffer_depth_texture->AsD3D12DepthStencilView())
 	{
-		context.renderPlatform->AsD3D12CommandList()->ClearDepthStencilView(*buffer_depth_texture->AsD3D12DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
+		context.asD3D12Context()->ClearDepthStencilView(*buffer_depth_texture->AsD3D12DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
 	}
 }
 
@@ -256,11 +264,11 @@ void Framebuffer::ClearColour(crossplatform::DeviceContext &deviceContext,float 
 		auto tex = (dx12::Texture*)buffer_texture;
 		for (int i = 0; i < 6; i++)
 		{
-			deviceContext.renderPlatform->AsD3D12CommandList()->ClearRenderTargetView(*tex->AsD3D12RenderTargetView(i), clearColor, 0, nullptr);
+			deviceContext.asD3D12Context()->ClearRenderTargetView(*tex->AsD3D12RenderTargetView(i), clearColor, 0, nullptr);
 		}
 	}
 	else
 	{
-		deviceContext.renderPlatform->AsD3D12CommandList()->ClearRenderTargetView(*buffer_texture->AsD3D12RenderTargetView(), clearColor, 0, nullptr);
+		deviceContext.asD3D12Context()->ClearRenderTargetView(*buffer_texture->AsD3D12RenderTargetView(), clearColor, 0, nullptr);
 	}
 }

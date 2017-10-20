@@ -99,7 +99,7 @@ namespace simul
 			void					SetFullScreen(HWND hwnd,bool fullscreen,int which_output);
 			void					ResizeSwapChain(HWND hwnd);
 			void*					GetDevice12();
-			void*					GetDevice() { return 0; }
+			void*					GetDevice() { return GetDevice12(); }
 			void*					GetDeviceContext() { return 0; }
 			void*					GetCommandList() { return m_commandList; }
 			void*					GetCommandQueue() { return m_commandQueue; }

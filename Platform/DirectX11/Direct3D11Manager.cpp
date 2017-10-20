@@ -34,7 +34,7 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	D3D11_RASTERIZER_DESC rasterDesc;
 	RECT rect;
 #if defined(WINVER) && !defined(_XBOX_ONE)
-	GetWindowRect(hwnd,&rect);
+	GetWindowRect((HWND)hwnd,&rect);
 #endif
 	int screenWidth	=abs(rect.right-rect.left);
 	int screenHeight=abs(rect.bottom-rect.top);
@@ -80,7 +80,7 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 
 	// Set the handle for the window to render to.
-	swapChainDesc.OutputWindow = hwnd;
+	swapChainDesc.OutputWindow = (HWND)hwnd;
 
 	// Turn multisampling off.
 	swapChainDesc.SampleDesc.Count = 1;
@@ -169,7 +169,7 @@ void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
 {
 	RECT rect;
 #if defined(WINVER) &&!defined(_XBOX_ONE)
-	if(!GetWindowRect(hwnd,&rect))
+	if(!GetWindowRect((HWND)hwnd,&rect))
 		return;
 #endif
 	int W	=abs(rect.right-rect.left);
@@ -194,8 +194,8 @@ void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
 	surfaceDesc.SampleDesc	=swapDesc.SampleDesc;
 	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
-	if(renderer)
-		renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
+//	if(renderer)
+//		renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 
 void Window::CreateRenderTarget(ID3D11Device* d3dDevice)
@@ -218,7 +218,7 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 {
 	RECT rect;
 #if defined(WINVER) &&!defined(_XBOX_ONE)
-	GetWindowRect(hwnd,&rect);
+	GetWindowRect((HWND)hwnd,&rect);
 #endif
 	int screenWidth	=abs(rect.right-rect.left);
 	int screenHeight=abs(rect.bottom-rect.top);
@@ -341,7 +341,7 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
 	if(view_id<0)
 		view_id				=renderer->AddView();
-	renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
+//	renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 
 void Window::Release()
@@ -723,7 +723,7 @@ ERRNO_BREAK
 	d3dDeviceContext->RSSetState(w->m_rasterState);
 	if(w->renderer)
 	{
-		w->renderer->Render(w->view_id,GetDeviceContext(), w->m_renderTargetView);
+		w->renderer->Render(w->view_id,GetDeviceContext(), w->m_renderTargetView,w->viewport.Width,w->viewport.Height);
 	}
 	static DWORD dwFlags = 0;
 	// 0 - don't wait for 60Hz refresh.

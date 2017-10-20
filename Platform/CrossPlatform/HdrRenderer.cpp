@@ -187,7 +187,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 	crossplatform::EffectTechnique *tech=exposureGammaTechnique;
 	
 	bool doGlow = true;		// nachoooooooo
-	bool doBlur=false;
+	static bool doBlur=false;
 	if(Glow && doGlow)
 	{
 		RenderGlowTexture(deviceContext,texture);
@@ -199,6 +199,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
 	else
 		hdr_effect->SetTexture(deviceContext,"imageTexture"	,texture);
+
 	if(blurTexture->IsValid() && doBlur)
 	{	
 		crossplatform::Texture *src=texture;

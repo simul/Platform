@@ -10,15 +10,14 @@ SIMUL_CONSTANT_BUFFER(RainConstants,10)
 	uniform float particleWidth;
 	uniform vec3 meanFallVelocity;
 	uniform float intensity;
-
 	uniform float flurry;
 	uniform float flurryRate;
+	uniform float phase;
 	uniform float timeStepSeconds;
 	uniform float particleZoneSize;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(MoisturePerViewConstants,9)
-	uniform mat4 invViewProj;
 	uniform vec4 depthViewport;		// xy = pos, zw = size
 	uniform vec4 depthToLinFadeDist;
 SIMUL_CONSTANT_BUFFER_END
@@ -26,25 +25,20 @@ SIMUL_CONSTANT_BUFFER_END
 SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	mat4 worldViewProj[2];		
 	mat4 worldView[2];
-	mat4 invViewProj_2[2];   //384
-	mat4 proj;				
-	mat4 rainDepthTransform;// 512
-	vec4 tanHalfFov;
+	mat4 rainDepthTransform;
+	uniform vec4 tanHalfFov;
 	vec4 viewPos[2];
 	vec4 offset[2];
 	vec4 depthToLinFadeDistRain;
 	vec4 depthToLinFadeDistTexture;
 	vec4 viewportToTexRegionScaleBias;
-
-	vec2 depthTextureSize;
+	vec2 tanHalfFovUnused;
 	vec2 screenSize;		
-
-	vec3 viewPositionOffset;
+	uniform vec3 viewPositionOffset;
 	float nearRainDistance;// as a proportion of max fade distance
-							// 10*16=160+512=672
-
-	vec4 phase[2];			
+	float rainDepthTextureScale;
 	float splashDelta;	
+	float minDistanceM;
 SIMUL_CONSTANT_BUFFER_END
 
 struct PrecipitationVertex

@@ -11,13 +11,12 @@
     <ProjectGuid>{92D088AE-05A6-4A0A-845C-682AC0F71BC2}</ProjectGuid>
     <RootNamespace>DirectX12</RootNamespace>
     <XdkEditionTarget>$(SIMUL_XDK_VERSION)</XdkEditionTarget>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <TargetRuntime>Native</TargetRuntime>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v140</PlatformToolset>
     <UseDebugLibraries>false</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <EmbedManifest>false</EmbedManifest>
@@ -61,8 +60,8 @@
       <PreprocessorDefinitions>WIN64;SIMUL_DIRECTX12_DLL;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Sfx_Rule>
-      <IncludePaths>$(SIMUL)\Platform\DirectX12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
-      <SfxConfig>$(SIMUL)\Platform\DirectX12\HLSL\HLSL12.json</SfxConfig>
+      <IncludePaths>$(SIMUL)\Platform\XboxOne\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
+      <SfxConfig>$(SIMUL)\Platform\XboxOne\HLSL\HLSL12.json</SfxConfig>
       <OutputPath>$(SIMUL)\Platform\XboxOne\shaderbin</OutputPath>
     </Sfx_Rule>
   </ItemDefinitionGroup>
@@ -167,9 +166,8 @@
     <None Include="..\CrossPlatform\SL\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\SL\states.sl" />
     <None Include="..\CrossPlatform\SL\text_constants.sl" />
-    <None Include="HLSL\CppHLSL.hlsl" />
-    <None Include="HLSL\HLSL12.json" />
-    <None Include="HLSL\shader_platform.sl" />
+    <None Include="..\XboxOne\HLSL\HLSL12.json" />
+    <None Include="..\XboxOne\HLSL\shader_platform.sl" />
     <None Include="SimulUseWin8SDK.props" />
   </ItemGroup>
   <ItemGroup>
@@ -195,12 +193,20 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Geometry\Geometry_XboxOne.vcxproj">
+      <Project>{9e740574-8f09-4485-b4eb-53abb425732b}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\CrossPlatform\CrossPlatform_XboxOne.vcxproj">
       <Project>{6e68ee14-f0d0-4e1d-8d59-7288e3942cc6}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\Applications\Sfx\Sfx.vcxproj">
       <Project>{fb7a3960-bdc5-4dbb-a9d3-7df1ad4ea875}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\XboxOne\HLSL\CppHLSL.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">true</ExcludedFromBuild>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

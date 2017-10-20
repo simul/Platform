@@ -25,7 +25,6 @@ namespace simul
 			void RecompileShaders();
 			void Render(crossplatform::DeviceContext &deviceContext,float x,float y,float screen_width,float screen_height,const char *txt,const float *clr=NULL,const float *bck=NULL,bool mirrorY=false);
 		private:
-
 			void Recompile();
 			crossplatform::Effect						*effect;
 			crossplatform::EffectTechnique				*backgTech;

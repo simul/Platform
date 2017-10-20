@@ -12,7 +12,9 @@ SamplerState::~SamplerState()
 {
 }
 
-Texture::Texture(const char *n):cubemap(false)
+Texture::Texture(const char *n)
+				:cubemap(false)
+				,external_texture(false)
 				,fence(0)
 				,unfenceable(false)
 				,width(0)

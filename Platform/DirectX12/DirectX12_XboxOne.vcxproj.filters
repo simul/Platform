@@ -150,13 +150,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="HLSL\CppHLSL.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
     <None Include="SimulUseWin8SDK.props" />
-    <None Include="HLSL\shader_platform.sl">
-      <Filter>HLSL</Filter>
-    </None>
     <None Include="..\CrossPlatform\SL\atmospherics.sl">
       <Filter>SL</Filter>
     </None>
@@ -319,7 +313,12 @@
     <None Include="..\CrossPlatform\SL\text_constants.sl">
       <Filter>SL</Filter>
     </None>
-    <None Include="HLSL\HLSL12.json" />
+    <None Include="..\XboxOne\HLSL\HLSL12.json">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="..\XboxOne\HLSL\shader_platform.sl">
+      <Filter>HLSL</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Sfx_Rule Include="..\CrossPlatform\SFX\atmospherics.sfx">
@@ -382,5 +381,10 @@
     <Sfx_Rule Include="..\CrossPlatform\SFX\terrain.sfx">
       <Filter>SFX</Filter>
     </Sfx_Rule>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\XboxOne\HLSL\CppHLSL.hlsl">
+      <Filter>HLSL</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

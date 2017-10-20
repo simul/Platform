@@ -1198,22 +1198,6 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport=*vps;
 	}
 }
-/*
-crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &deviceContext,int index)
-{
-	D3D11_VIEWPORT viewports[8];
-	unsigned num=0;
-	deviceContext.asD3D11DeviceContext()->RSGetViewports(&num,NULL);
-	deviceContext.asD3D11DeviceContext()->RSGetViewports(&num,viewports);
-	crossplatform::Viewport v;
-	v.x=(int)viewports[index].TopLeftX;
-	v.y=(int)viewports[index].TopLeftY;
-	v.w=(int)viewports[index].Width;
-	v.h=(int)viewports[index].Height;
-	v.znear	=viewports[index].MinDepth;
-	v.zfar	=viewports[index].MaxDepth;
-	return v;
-}*/
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
 {
@@ -1593,8 +1577,6 @@ void RenderPlatform::WaitForFencedResources(crossplatform::DeviceContext &device
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
-	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
-//	pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	pContext->IASetInputLayout(NULL);
 	ApplyContextState(deviceContext);

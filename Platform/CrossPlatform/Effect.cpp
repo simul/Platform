@@ -232,20 +232,17 @@ EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 
 void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::SamplerState *s)
 {
-	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
-	auto i = samplerStates.find(name);
-	if (i == samplerStates.end())
+	auto res=GetShaderResource(name);
+	SetSamplerState(deviceContext,res,s);
+	}
+
+void Effect::SetSamplerState(DeviceContext &deviceContext,ShaderResource &name	,SamplerState *s)
 	{
-		SIMUL_CERR_ONCE << "Sampler state " << name << " not found." << std::endl;
+	if(name.slot>128)
 		return;
-	}
-	if (!s)
-	{
-		SIMUL_CERR_ONCE << "Sampler state " << name << " null." << std::endl;
-		s = renderPlatform->GetOrCreateSamplerStateByName("clampSamplerState");
-	}
-	crossplatform::SamplerState *ss = i->second;
-	cs->samplerStateOverrides[samplerSlots[ss]] = s;
+	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
+	crossplatform::SamplerState *ss = s;
+	cs->samplerStateOverrides[name.slot] = s;
 	cs->samplerStateOverridesValid = false;
 }
 
@@ -295,7 +292,7 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,const char *
 	int slot = GetSlot(name);
 	if(slot<0)
 	{
-		SIMUL_CERR<<"Didn't find Texture "<<name<<std::endl;
+		SIMUL_CERR_ONCE<<"Didn't find Texture "<<name<<std::endl;
 		return;
 	}
 	int dim = GetDimensions(name);
@@ -356,21 +353,31 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 {
 	crossplatform::ShaderResource res;
 	auto i = GetTextureDetails(name);
-	if (!i)
+	unsigned slot=0xFFFFFFFF;
+	if (i)
 	{
+		slot					=GetSlot(name);
+		res.valid				=true;
+		unsigned dim					=GetDimensions(name);
+		res.dimensions					=dim;
+		res.shaderResourceType			=GetResourceType(name);
+	}
+	else
+	{
+		int s=GetSamplerStateSlot(name);
+		if(s<0)
+		{
 		res.valid = false;
 		SIMUL_CERR << "Invalid Shader resource name: " << (name ? name : "") << std::endl;
 		//SIMUL_BREAK_ONCE("Invalid Shader resource")
 		return res;
 	}
-	else
-		res.valid					=true;
-	unsigned slot					=GetSlot(name);
-	unsigned dim					=GetDimensions(name);
+		slot=s;
+		res.shaderResourceType		=ShaderResourceType::SAMPLER;
+	}
+	 
 	res.platform_shader_resource	=(void*)nullptr;
 	res.slot						=slot;
-	res.dimensions					=dim;
-	res.shaderResourceType			=GetResourceType(name);
 	return res;
 }
 

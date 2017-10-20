@@ -44,6 +44,9 @@ namespace simul
 			//! Returns the current idx (used in ring buffers)
 			UCHAR GetIdx()const { return mCurIdx; }
 
+			//! Returns the time stamp freq value
+			UINT64 GetTimeStampFreq()const { return mTimeStampFreq; }
+
 			//! Sets the reference of a command list. This is usually not needed as we will cache
 			//! the command list after calling render platform methods. We will need to call this
 			//! during initialization (the command list hasn't been cached yet)
@@ -59,6 +62,10 @@ namespace simul
 			//! Method to transition a resource from one state to another. We can provide a subresource index
 			//! to only update that subresource, leave as default if updating the hole resource
 			void						ResourceTransitionSimple(ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after,UINT subRes = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+
+			//! Pushes the pending barriers.
+			void						FlushBarriers();
+			
 			//! Keeps track of a resource that must be released. It has a delay of a few frames
 			//! so we the object won't be deleted while in use
 			void						PushToReleaseManager(ID3D12DeviceChild* res, std::string dName);
@@ -107,16 +114,16 @@ namespace simul
 			void									ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
 			
 			void									Draw			(crossplatform::DeviceContext &deviceContext,int num_verts,int start_vert);
-			void									DrawIndexed	(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
+			void									DrawIndexed		(crossplatform::DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
 			void									DrawMarker		(crossplatform::DeviceContext &deviceContext,const double *matrix);
 			void									DrawCrossHair	(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition);
 			void									DrawCamera		(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll);
 			void									DrawLineLoop	(crossplatform::DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4]);
-			void									DrawTexture	(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false);
+			void									DrawTexture		(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f,bool debug=false) override;
 			void									DrawQuad		(crossplatform::DeviceContext &deviceContext);
 
 			void									DrawLines		(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int count,bool strip=false,bool test_depth=false,bool view_centred=false);
-			void									Draw2dLines	(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip);
+			void									Draw2dLines		(crossplatform::DeviceContext &deviceContext,crossplatform::PosColourVertex *lines,int vertex_count,bool strip);
 			void									DrawCube		(crossplatform::DeviceContext &deviceContext);
 			void									ApplyDefaultMaterial();
 
@@ -157,6 +164,7 @@ namespace simul
 			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			bool									ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking = true) override;
 
+			virtual void							ClearTexture(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *texture, const vec4& colour) override;
 
 			static									DXGI_FORMAT ToDxgiFormat(crossplatform::PixelFormat p);
 			static									crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
@@ -171,12 +179,16 @@ namespace simul
 			static UINT								GetResourceIndex(int mip, int layer, int mips, int layers);
 
 		protected:
+
+			//! The GPU timestamp counter frequency (in ticks/second)
+			UINT64 mTimeStampFreq;
+
 			//! Last frame number
 			long long					mLastFrame;
 			//! Value used to determine the number of "x" that we will have, this is useful in dx12
 			//! as many times we can not reuse the same resource as in the last frame so we need to have 
 			//! a ring buffer.
-			static const UCHAR			kNumIdx = 3;
+			static const int			kNumIdx = 3;
 			//! Value used to select the current heap, it will be looping around: [0,kNumIdx)
 			UCHAR						mCurIdx;
 
@@ -214,6 +226,8 @@ namespace simul
 
 			//! Holds resources to be deleted and its age
 			std::vector<std::pair<int, std::pair<std::string, ID3D12DeviceChild*>>> mResourceBin;
+
+			std::vector<D3D12_RESOURCE_BARRIER> mPendingBarriers;
 
 			bool isInitialized = false;
 

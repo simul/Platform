@@ -75,8 +75,8 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\SimulDLL.props" />
+    <Import Project="..\..\SimulDebug.props" />
     <Import Project="SimulUseWin8SDK.props" />
-    <Import Project="..\..\SimulDebugMD.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -121,7 +121,7 @@
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <ShowProgress>LinkVerboseLib</ShowProgress>
-      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;D3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -150,7 +150,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;D3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;DXGI.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -316,9 +316,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Applications\Sfx\Sfx.vcxproj">
       <Project>{21fda305-aeeb-418a-958e-5102cc5927bc}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\External\DirectX\DirectXTex\DirectXTex\DirectXTex_Desktop_2015.vcxproj">
-      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\Math\Math_x64_v140.vcxproj">
       <Project>{b6cb4ee4-90e3-4b11-8706-e4d7b9024801}</Project>

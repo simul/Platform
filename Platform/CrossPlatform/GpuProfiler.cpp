@@ -154,6 +154,7 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 
 		// Insert the start timestamp   
 			profileData->TimestampStartQuery->End(deviceContext);
+
 			profileData->QueryStarted = true;
 		}
 	}
@@ -288,6 +289,7 @@ void GpuProfiler::EndFrame(crossplatform::DeviceContext &deviceContext)
 	}
     if(!root||!enabled||!renderPlatform)
         return;
+
     currFrame = (currFrame + 1) % crossplatform::Query::QueryLatency;    
 
     queryTime = 0.0f;
@@ -323,7 +325,7 @@ const char *GpuProfiler::GetDebugText(base::TextStyle style) const
 const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,int i) const
 {
 	if(parent==NULL)
-		return root;
+		parent=root;
 	crossplatform::ProfileData *p=(crossplatform::ProfileData*)parent;
 	if(!p||(p!=root&&!p->updatedThisFrame))
 		return NULL;

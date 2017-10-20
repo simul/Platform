@@ -91,6 +91,7 @@
     <ClInclude Include="View.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RenderDelegater.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -170,6 +171,7 @@
     <ClCompile Include="View.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RenderDelegater.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SFX\atmospherics.sfx">

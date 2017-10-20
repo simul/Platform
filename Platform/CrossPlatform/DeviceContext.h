@@ -1,7 +1,10 @@
 #ifndef SIMUL_PLATFORM_CROSSPLATFORM_DEVICECONTEXT_H
 #define SIMUL_PLATFORM_CROSSPLATFORM_DEVICECONTEXT_H
 #include "BaseRenderer.h"
+#include "Texture.h"
+#include "Export.h"
 #include <functional>
+#include <stack>
 struct ID3D11DeviceContext;
 struct IDirect3DDevice9;
 struct ID3D12GraphicsCommandList;
@@ -25,7 +28,7 @@ namespace simul
 		//! The base class for Device contexts. The actual context pointer is only applicable in DirectX - in OpenGL, it will be null.
 		//! The DeviceContext also carries a pointer to the platform-specific RenderPlatform.
 		//! DeviceContext is context in the DirectX11 sense, encompassing a platform-specific deviceContext pointer
-		struct DeviceContext
+		struct SIMUL_CROSSPLATFORM_EXPORT DeviceContext
 		{
 			void *platform_context;
 			RenderPlatform *renderPlatform;
@@ -61,6 +64,20 @@ namespace simul
 				return (ID3D12GraphicsCommandList*)platform_context;
 			}
 			ViewStruct viewStruct;
+			uint cur_backbuffer;
+		public:
+			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
+			crossplatform::TargetsAndViewport defaultTargetsAndViewport;
+			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once,
+			//! as 
+			void setDefaultRenderTargets(const ApiRenderTarget*,
+				const ApiDepthRenderTarget*,
+				uint32_t viewportLeft,
+				uint32_t viewportTop,
+				uint32_t viewportRight,
+				uint32_t viewportBottom
+			);
+			std::stack<crossplatform::TargetsAndViewport*> targetStack;
 		};
 
 		struct DeviceContext;
