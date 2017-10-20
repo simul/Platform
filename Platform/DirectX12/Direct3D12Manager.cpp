@@ -636,6 +636,7 @@ void Direct3D12Manager::Render(HWND h)
 	res = w->m_swapChain->Present(SyncInterval,dwFlags);			
 	SIMUL_ASSERT(res == S_OK);
 
+
 	MoveToNextFrame(w);
 }
 
