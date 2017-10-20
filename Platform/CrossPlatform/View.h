@@ -96,7 +96,6 @@ namespace simul
 			/// Default constructor.
 			ViewManager():
 				renderPlatform(NULL)
-				,last_created_view_id(-1)
 			{}
 			typedef std::map<int,View*>	ViewMap;
 			/// Restore the device objects.
@@ -113,8 +112,8 @@ namespace simul
 			const ViewMap &GetViews() const;
 			/// Adds a view.
 			/// \return	An int view_id.
-			int								AddView	();
-			int								AddView	(View *v);
+			View*							AddView	(int);
+			void							AddView	(int,View *v);
 			/// Removes the view.
 			void							RemoveView				(int view_id);
 			/// Clears this object to its blank/initial state.
@@ -123,8 +122,6 @@ namespace simul
 			/// The render platform.
 			crossplatform::RenderPlatform				*renderPlatform;
 			ViewMap							views;
-			/// Identifier for the last created view.
-			int								last_created_view_id;
 		};
 	}
 }
