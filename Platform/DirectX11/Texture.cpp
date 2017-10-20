@@ -802,96 +802,98 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 			if(numQualityLevels==0)
 				num_samples/=2;
 		};
-
-		memset(&textureDesc,0,sizeof(textureDesc));
-		textureDesc.Width					=width=w;
-		textureDesc.Height					=length=l;
-		depth								=1;
-		textureDesc.Format					=texture2dFormat;
-		textureDesc.MipLevels				=mips=m;
-		textureDesc.ArraySize				=arraySize=1;
-		D3D11_USAGE usage					=D3D11_USAGE_DYNAMIC;
-	//	if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
-	//		usage							=D3D11_USAGE_DEFAULT;
-		textureDesc.Usage					=(computable||rendertarget||depthstencil)?D3D11_USAGE_DEFAULT:usage;
-		textureDesc.BindFlags				=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0)|(depthstencil?D3D11_BIND_DEPTH_STENCIL:0);
-		textureDesc.CPUAccessFlags			=(computable||rendertarget||depthstencil)?0:D3D11_CPU_ACCESS_WRITE;
-		textureDesc.MiscFlags				=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
-		textureDesc.SampleDesc.Count		=num_samples;
-		textureDesc.SampleDesc.Quality		=aa_quality;
+		if(w*l>0)
+		{
+			memset(&textureDesc,0,sizeof(textureDesc));
+			textureDesc.Width					=width=w;
+			textureDesc.Height					=length=l;
+			depth								=1;
+			textureDesc.Format					=texture2dFormat;
+			textureDesc.MipLevels				=mips=m;
+			textureDesc.ArraySize				=arraySize=1;
+			D3D11_USAGE usage					=D3D11_USAGE_DYNAMIC;
+		//	if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
+		//		usage							=D3D11_USAGE_DEFAULT;
+			textureDesc.Usage					=(computable||rendertarget||depthstencil)?D3D11_USAGE_DEFAULT:usage;
+			textureDesc.BindFlags				=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0)|(depthstencil?D3D11_BIND_DEPTH_STENCIL:0);
+			textureDesc.CPUAccessFlags			=(computable||rendertarget||depthstencil)?0:D3D11_CPU_ACCESS_WRITE;
+			textureDesc.MiscFlags				=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
+			textureDesc.SampleDesc.Count		=num_samples;
+			textureDesc.SampleDesc.Quality		=aa_quality;
 		
-		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
-		external_texture=false;
-		if(renderPlatform->GetMemoryInterface())
-			renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
+			V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
+			external_texture=false;
+			if(renderPlatform->GetMemoryInterface())
+				renderPlatform->GetMemoryInterface()->TrackVideoMemory(texture,GetMemorySize(),name.c_str());
 
-		SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
-		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-		srv_desc.Format						=srvFormat;
-		srv_desc.ViewDimension				=num_samples>1?D3D11_SRV_DIMENSION_TEXTURE2DMS:D3D11_SRV_DIMENSION_TEXTURE2D;
-		srv_desc.Texture2D.MipLevels		=m;
-		srv_desc.Texture2D.MostDetailedMip	=0;
-		SAFE_RELEASE(mainShaderResourceView);
-		SAFE_RELEASE(arrayShaderResourceView);
-		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&mainShaderResourceView));
-		SetDebugObjectName(mainShaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat mainShaderResourceView");
-	}
-	if(computable&&(!layerMipUnorderedAccessViews||!ok))
-	{
-		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-		uav_desc.Format						=texture2dFormat;
-		uav_desc.ViewDimension				=D3D11_UAV_DIMENSION_TEXTURE2D;
-		uav_desc.Texture2D.MipSlice			=0;
+			SetDebugObjectName(texture,"dx11::Texture::ensureTexture2DSizeAndFormat");
+			D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+			ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+			srv_desc.Format						=srvFormat;
+			srv_desc.ViewDimension				=num_samples>1?D3D11_SRV_DIMENSION_TEXTURE2DMS:D3D11_SRV_DIMENSION_TEXTURE2D;
+			srv_desc.Texture2D.MipLevels		=m;
+			srv_desc.Texture2D.MostDetailedMip	=0;
+			SAFE_RELEASE(mainShaderResourceView);
+			SAFE_RELEASE(arrayShaderResourceView);
+			V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&mainShaderResourceView));
+			SetDebugObjectName(mainShaderResourceView,"dx11::Texture::ensureTexture2DSizeAndFormat mainShaderResourceView");
+		}
+		if(computable&&(!layerMipUnorderedAccessViews||!ok))
+		{
+			D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+			ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+			uav_desc.Format						=texture2dFormat;
+			uav_desc.ViewDimension				=D3D11_UAV_DIMENSION_TEXTURE2D;
+			uav_desc.Texture2D.MipSlice			=0;
 		
-		if(m<1)
-			m=1;
-		InitUAVTables(1,m);
-		if(mipUnorderedAccessViews)
-		for(int i=0;i<m;i++)
-		{
-			uav_desc.Texture2D.MipSlice=i;
-			V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
-			SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			if(m<1)
+				m=1;
+			InitUAVTables(1,m);
+			if(mipUnorderedAccessViews)
+			for(int i=0;i<m;i++)
+			{
+				uav_desc.Texture2D.MipSlice=i;
+				V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
+				SetDebugObjectName(mipUnorderedAccessViews[i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			}
+			if(layerMipUnorderedAccessViews)
+			for(int i=0;i<m;i++)
+			{
+				uav_desc.Texture2D.MipSlice=i;
+				V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][i]));
+				SetDebugObjectName(layerMipUnorderedAccessViews[0][i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			}
 		}
-		if(layerMipUnorderedAccessViews)
-		for(int i=0;i<m;i++)
+		if(rendertarget&&(!renderTargetViews||!ok))
 		{
-			uav_desc.Texture2D.MipSlice=i;
-			V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][i]));
-			SetDebugObjectName(layerMipUnorderedAccessViews[0][i],"dx11::Texture::ensureTexture2DSizeAndFormat unorderedAccessView");
+			InitRTVTables(1,m);
+			// Setup the description of the render target view.
+			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+			renderTargetViewDesc.Format				=texture2dFormat;
+			renderTargetViewDesc.ViewDimension		=num_samples>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
+			// Create the render target in DX11:
+			if(renderTargetViews)
+			for(int j=0;j<m;j++)
+			{
+				renderTargetViewDesc.Texture2D.MipSlice	=j;
+				V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[0][j])));
+				SetDebugObjectName((renderTargetViews[0][j]),"dx11::Texture::ensureTexture2DSizeAndFormat renderTargetView");
+			}
 		}
-	}
-	if(rendertarget&&(!renderTargetViews||!ok))
-	{
-		InitRTVTables(1,m);
-		// Setup the description of the render target view.
-		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-		renderTargetViewDesc.Format				=texture2dFormat;
-		renderTargetViewDesc.ViewDimension		=num_samples>1?D3D11_RTV_DIMENSION_TEXTURE2DMS:D3D11_RTV_DIMENSION_TEXTURE2D;
-		// Create the render target in DX11:
-		if(renderTargetViews)
-		for(int j=0;j<m;j++)
+		if(depthstencil&&(!depthStencilView||!ok))
 		{
-			renderTargetViewDesc.Texture2D.MipSlice	=j;
-			V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&(renderTargetViews[0][j])));
-			SetDebugObjectName((renderTargetViews[0][j]),"dx11::Texture::ensureTexture2DSizeAndFormat renderTargetView");
+			D3D11_TEX2D_DSV dsv;
+			dsv.MipSlice=0;
+			D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
+			depthDesc.ViewDimension		=num_samples>1?D3D11_DSV_DIMENSION_TEXTURE2DMS:D3D11_DSV_DIMENSION_TEXTURE2D;
+			depthDesc.Format			=dxgi_format;
+			depthDesc.Flags				=0;
+			depthDesc.Texture2D			=dsv;
+			SAFE_RELEASE(depthStencilView);
+			V_CHECK(pd3dDevice->CreateDepthStencilView(texture,&depthDesc,&depthStencilView));
 		}
+		SetDebugObjectName(texture,"ensureTexture2DSizeAndFormat");
 	}
-	if(depthstencil&&(!depthStencilView||!ok))
-	{
-		D3D11_TEX2D_DSV dsv;
-		dsv.MipSlice=0;
-		D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
-		depthDesc.ViewDimension		=num_samples>1?D3D11_DSV_DIMENSION_TEXTURE2DMS:D3D11_DSV_DIMENSION_TEXTURE2D;
-		depthDesc.Format			=dxgi_format;
-		depthDesc.Flags				=0;
-		depthDesc.Texture2D			=dsv;
-		SAFE_RELEASE(depthStencilView);
-		V_CHECK(pd3dDevice->CreateDepthStencilView(texture,&depthDesc,&depthStencilView));
-	}
-	SetDebugObjectName(texture,"ensureTexture2DSizeAndFormat");
 	mips=m;
 	arraySize=1;
 	return !ok;

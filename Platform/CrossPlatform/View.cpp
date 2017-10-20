@@ -84,6 +84,10 @@ void View::SetResolution(int w,int h)
 		return;
 	ScreenWidth	=w;
 	ScreenHeight=h;
+	if(hdrFramebuffer)
+	{
+		hdrFramebuffer->SetWidthAndHeight(ScreenWidth,ScreenHeight);
+	}
 }
 
 void View::SetExternalFramebuffer(bool e)
@@ -97,7 +101,7 @@ void View::SetExternalFramebuffer(bool e)
 
 crossplatform::Texture *View::GetResolvedHDRBuffer()
 {
-	if(hdrFramebuffer->numAntialiasingSamples>1)
+	if(hdrFramebuffer->GetNumAntialiasingSamples()>1)
 		return resolvedTexture;
 	else
 		return hdrFramebuffer->GetTexture();
@@ -123,20 +127,19 @@ void ViewManager::InvalidateDeviceObjects()
 	}
 }
 
-int	ViewManager::AddView()
+View *ViewManager::AddView(int id)
 {
 	View *view=new View();
-	return AddView(view);
+	AddView(id,view);
+	return view;
 }
 
-int	ViewManager::AddView(View *v)
+void	ViewManager::AddView(int id,View *v)
 {
-	last_created_view_id++;
-	int view_id		=last_created_view_id;
+	int view_id		=id;
 	View *view		=views[view_id]=v;
 	view->useExternalFramebuffer=false;
 	view->RestoreDeviceObjects(renderPlatform);
-	return view_id;
 }
 
 void ViewManager::RemoveView(int view_id)

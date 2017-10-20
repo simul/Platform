@@ -36,7 +36,9 @@ void Direct3D11Renderer::OnLostDevice()
 
 int	Direct3D11Renderer::AddView()
 {
-	return trueSkyRenderer.AddView();
+	static int view_id=0;
+	trueSkyRenderer.AddView(view_id++);
+	return view_id;
 }
 
 void Direct3D11Renderer::RemoveView	(int view_id)

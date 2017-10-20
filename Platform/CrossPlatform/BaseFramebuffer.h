@@ -97,12 +97,6 @@ namespace simul
 			{
 				return Height;
 			}
-		//protected:
-			//! The size of the buffer
-			int Width,Height;
-			int mips;
-			int numAntialiasingSamples;
-			bool depth_active, colour_active;
 			crossplatform::RenderPlatform *renderPlatform;
 			crossplatform::StructuredBuffer<vec4> &GetSphericalHarmonics()
 			{
@@ -118,6 +112,17 @@ namespace simul
 					sphericalHarmonics.InvalidateDeviceObjects();
 				}
 			}
+			int GetNumAntialiasingSamples() const
+			{
+				return numAntialiasingSamples;
+			}
+
+		protected:
+			//! The size of the buffer
+			int Width,Height;
+			int mips;
+			int numAntialiasingSamples;
+			bool depth_active, colour_active;
 			vec4 DefaultClearColour;
 			float DefaultClearDepth;
 			uint DefaultClearStencil;
