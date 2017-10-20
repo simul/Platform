@@ -91,9 +91,8 @@
     <ClInclude Include="View.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RenderDelegater.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClInclude Include="RenderDelegater.h" />
+    <ClInclude Include="MouseHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -173,9 +172,8 @@
     <ClCompile Include="View.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RenderDelegater.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClCompile Include="RenderDelegater.cpp" />
+    <ClCompile Include="MouseHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SFX\atmospherics.sfx">

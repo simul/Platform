@@ -75,6 +75,8 @@
     <ClCompile Include="AmortizationStruct.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MouseHandler.cpp" />
+    <ClCompile Include="RenderDelegater.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Topology.h">
@@ -167,5 +169,7 @@
     <ClInclude Include="AmortizationStruct.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MouseHandler.h" />
+    <ClInclude Include="RenderDelegater.h" />
   </ItemGroup>
 </Project>

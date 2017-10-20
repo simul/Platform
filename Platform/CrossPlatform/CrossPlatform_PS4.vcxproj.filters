@@ -85,6 +85,8 @@
     <ClInclude Include="View.h" />
     <ClInclude Include="GraphicsDeviceInterface.h" />
     <ClInclude Include="AmortizationStruct.h" />
+    <ClInclude Include="MouseHandler.h" />
+    <ClInclude Include="RenderDelegater.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SL">
@@ -160,5 +162,7 @@
     </ClCompile>
     <ClCompile Include="View.cpp" />
     <ClCompile Include="AmortizationStruct.cpp" />
+    <ClCompile Include="MouseHandler.cpp" />
+    <ClCompile Include="RenderDelegater.cpp" />
   </ItemGroup>
 </Project>

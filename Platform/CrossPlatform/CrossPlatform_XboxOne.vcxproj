@@ -22,7 +22,9 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MouseHandler.cpp" />
     <ClCompile Include="Quaterniond.cpp" />
+    <ClCompile Include="RenderDelegater.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
@@ -51,8 +53,10 @@
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MixedResolutionView.h" />
+    <ClInclude Include="MouseHandler.h" />
     <ClInclude Include="PixelFormat.h" />
     <ClInclude Include="Quaterniond.h" />
+    <ClInclude Include="RenderDelegater.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="ShaderMode.h" />
     <ClInclude Include="TextInputOutput.h" />
