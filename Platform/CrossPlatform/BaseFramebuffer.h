@@ -123,10 +123,10 @@ namespace simul
 			int mips;
 			int numAntialiasingSamples;
 			bool depth_active, colour_active;
+		public:
 			vec4 DefaultClearColour;
 			float DefaultClearDepth;
 			uint DefaultClearStencil;
-		public:
 			static std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
 			static crossplatform::TargetsAndViewport defaultTargetsAndViewport;
 			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once,
