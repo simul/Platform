@@ -69,7 +69,6 @@
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MouseHandler.cpp" />
-    <ClCompile Include="prx.cpp" />
     <ClCompile Include="Quaterniond.cpp" />
     <ClCompile Include="RenderDelegater.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
