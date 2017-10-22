@@ -106,6 +106,7 @@
       <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions>WIN64;SIMUL_DIRECTX12_DLL;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ShowIncludes>false</ShowIncludes>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Sfx_Rule>
       <IncludePaths>$(SIMUL)\Platform\DirectX12\HLSL;$(SIMUL)\Platform\CrossPlatform\SL</IncludePaths>
