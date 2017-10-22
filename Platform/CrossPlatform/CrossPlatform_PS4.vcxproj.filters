@@ -127,9 +127,6 @@
     <ClCompile Include="RenderPlatform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="prx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="BaseOpticsRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
