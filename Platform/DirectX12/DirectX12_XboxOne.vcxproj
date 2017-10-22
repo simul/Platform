@@ -11,7 +11,7 @@
     <ProjectGuid>{92D088AE-05A6-4A0A-845C-682AC0F71BC2}</ProjectGuid>
     <RootNamespace>DirectX12</RootNamespace>
     <XdkEditionTarget>$(SIMUL_XDK_VERSION)</XdkEditionTarget>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <TargetRuntime>Native</TargetRuntime>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

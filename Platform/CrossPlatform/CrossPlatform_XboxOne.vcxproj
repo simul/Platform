@@ -71,7 +71,7 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <Keyword>Win32Proj</Keyword>
     <ApplicationEnvironment>title</ApplicationEnvironment>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <MinimumVisualStudioVersion>11.0</MinimumVisualStudioVersion>
     <TargetRuntime>Native</TargetRuntime>
     <ProjectName>SimulCrossPlatform</ProjectName>
