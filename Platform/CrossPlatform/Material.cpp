@@ -4,8 +4,7 @@
 using namespace simul;
 using namespace crossplatform;
 
-Material::Material() : mShininess(0)
-	,effect(NULL)
+Material::Material(const char *n) : effect(nullptr),name(n)
 {
 
 }
@@ -15,13 +14,9 @@ Material::~Material()
 	InvalidateDeviceObjects();
 } 
 
-void Material::Apply(crossplatform::DeviceContext &, crossplatform::PhysicalLightRenderData &)
-{
-}
-
 void Material::InvalidateDeviceObjects()
 {
-	effect=NULL;
+	effect= nullptr;
 }
 
 void Material::SetEffect(crossplatform::Effect *e)

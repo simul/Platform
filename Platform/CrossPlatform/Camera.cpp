@@ -17,6 +17,9 @@ void ViewStruct::Init()
 	ERRNO_BREAK
 	frustum=GetFrustumFromProjectionMatrix(proj);
 	ERRNO_BREAK
+	//MakeWorldViewMatrix((float*)&modelView, (const float*)&model, (const float*)&view);
+//	MakeWorldViewProjMatrix((float*)&modelViewProj, (const float*)&model, (const float*)&view, (const float*)&proj);
+	MakeViewProjMatrix((float*)&viewProj, (const float*)&view, (const float*)&proj);
 	MakeInvViewProjMatrix((float*)&invViewProj,(const float*)&view,(const float*)&proj);
 	GetCameraPosVector((const float *)&view,(float*)&cam_pos,(float *)&view_dir,(float*)&up);
 	initialized=true;

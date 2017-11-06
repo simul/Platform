@@ -254,12 +254,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 #endif
 	SAFE_RELEASE(m_pVtxDecl);
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
-	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
-	{
-		dx11::Material *mat=(dx11::Material*)(*i);
-		delete mat;
-	}
-	materials.clear();
 	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_DELETE(debugEffect);
@@ -274,11 +268,6 @@ void RenderPlatform::RecompileShaders()
 	if(!device)
 		return;
 	crossplatform::RenderPlatform::RecompileShaders();
-	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
-	{
-		dx11::Material *mat=(dx11::Material*)(*i);
-		mat->SetEffect(solidEffect);
-	}
 }
 
 void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name)
@@ -582,24 +571,6 @@ void RenderPlatform::ApplyDefaultMaterial()
     glBindTexture(GL_TEXTURE_2D, 0);*/
 }
 
-
-crossplatform::Material *RenderPlatform::CreateMaterial()
-{
-	dx11::Material *mat=new dx11::Material;
-	mat->SetEffect(solidEffect);
-	materials.insert(mat);
-	return mat;
-}
-
-crossplatform::Mesh *RenderPlatform::CreateMesh()
-{
-	return new dx11::Mesh;
-}
-
-crossplatform::Light *RenderPlatform::CreateLight()
-{
-	return new dx11::Light();
-}
 
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
@@ -1187,15 +1158,15 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		viewports[i].MaxDepth	=1.0f;
 	}
 	deviceContext.asD3D11DeviceContext()->RSSetViewports(num,viewports);
-	if(crossplatform::BaseFramebuffer::GetFrameBufferStack().size())
+	if(deviceContext.GetFrameBufferStack().size())
 	{
-		crossplatform::TargetsAndViewport *f=crossplatform::BaseFramebuffer::GetFrameBufferStack().top();
+		crossplatform::TargetsAndViewport *f=deviceContext.GetFrameBufferStack().top();
 		if(f)
 			f->viewport=*vps;
 }
 	else
 	{
-		crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport=*vps;
+		deviceContext.defaultTargetsAndViewport.viewport=*vps;
 	}
 }
 
@@ -1805,12 +1776,12 @@ void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 
 void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContext)
 {
-	std::stack<crossplatform::TargetsAndViewport*> &fbs=Framebuffer::GetFrameBufferStack();
+	std::stack<crossplatform::TargetsAndViewport*> &fbs=deviceContext.GetFrameBufferStack();
 	crossplatform::TargetsAndViewport *oldtv=fbs.top();
 	fbs.pop();
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 
-	crossplatform::TargetsAndViewport *state=&crossplatform::BaseFramebuffer::defaultTargetsAndViewport;
+	crossplatform::TargetsAndViewport *state=&deviceContext.defaultTargetsAndViewport;
 	if(fbs.size())
 		state=fbs.top();
 	ID3D11RenderTargetView **rt=(ID3D11RenderTargetView**)state->m_rt;

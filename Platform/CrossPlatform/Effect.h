@@ -265,7 +265,7 @@ namespace simul
 			bool usesRwTextureSlot(int s) const;
 			std::string pixel_str;
 			crossplatform::ShaderType type;
-			std::unordered_map<crossplatform::SamplerState *,int>	samplerStates;
+			std::unordered_map<int,crossplatform::SamplerState *>	samplerStates;
 			unsigned textureSlots;			//t
 			unsigned textureSlotsForSB;		//t
 			unsigned rwTextureSlots;		//u
@@ -282,24 +282,7 @@ namespace simul
 			
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
-			EffectPass()
-				:blendState(NULL)
-				,depthStencilState(NULL)
-				,rasterizerState(NULL)
-				,samplerSlots(0)
-				,constantBufferSlots(0)
-				,textureSlots(0)
-				,textureSlotsForSB(0)
-				,rwTextureSlots(0)
-				,rwTextureSlotsForSB(0)
-				,should_fence_outputs(true)
-				,platform_pass(nullptr)
-			{
-				for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)
-					shaders[i]=NULL;
-				for(int i=0;i<OUTPUT_FORMAT_COUNT;i++)
-					pixelShaders[i]=NULL;
-			}
+			EffectPass();
 			virtual ~EffectPass(){}
 
 			//! This updates the mapping from the pass's list of resources to the effect slot numbers (0-31)
@@ -347,7 +330,7 @@ namespace simul
 			void SetUsesRwTextureSlotsForSB(unsigned);
 			void SetUsesSamplerSlots(unsigned);
 
-			void SetBufferSlots(unsigned s)			{ constantBufferSlots = s; }
+			void SetConstantBufferSlots(unsigned s)			{ constantBufferSlots = s; }
 			void SetTextureSlots(unsigned s)		{ textureSlots = s; }
 			void SetTextureSlotsForSB(unsigned s)	{ textureSlotsForSB = s; }
 			void SetRwTextureSlots(unsigned s)		{ rwTextureSlots = s; }
@@ -445,7 +428,7 @@ namespace simul
 		{
 			std::set<Effect*> linkedEffects;
 		public:
-			ConstantBuffer():ConstantBufferBase("")
+			ConstantBuffer():ConstantBufferBase(typeid(T).name())
 			{
 				// Clear out the part of memory that corresponds to the base class.
 				// We should ONLY inherit from simple structs.
@@ -911,8 +894,9 @@ namespace simul
 			std::unordered_map<std::string,crossplatform::RenderState *> depthStencilStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> blendStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> rasterizerStates;
-			std::unordered_map<crossplatform::SamplerState*,int> samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
+			SamplerStateAssignmentMap samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
 			const ShaderResource *GetTextureDetails(const char *name);
+			virtual void PostLoad(){}
 		public:
 			GroupMap groups;
 			TechniqueMap techniques;
@@ -1002,6 +986,9 @@ namespace simul
 			int GetSamplerStateSlot(const char *name);
 			int GetDimensions(const char *name);
 			crossplatform::ShaderResourceType GetResourceType(const char *name);
+
+			//! Map of sampler states used by this effect
+			crossplatform::SamplerStateAssignmentMap& GetSamplers() { return samplerSlots; }
 		};
 	}
 }

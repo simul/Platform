@@ -5,14 +5,11 @@
 SIMUL_CONSTANT_BUFFER(EarthShadowConstants,9)
 	uniform vec3 sunDir;
 	uniform float radiusOnCylinder;
-
 	uniform vec3 earthShadowNormal;
 	uniform float maxFadeDistance;
-
 	uniform vec2 targetTextureSize;
 	uniform float terminatorDistance;
 	uniform float earthShadowEffectStrength;
-
 	uniform float planetRadiusKm;
 	uniform float pad21473485;
 	uniform float pad2754763;

@@ -239,7 +239,7 @@ void TextFileInput::Load(const char *filename_utf8)
 #else
 		std::ifstream ifs(filename_utf8);
 #endif
-	
+	ERRNO_CHECK
 		std::string line;
 		while(getline(ifs,line))
 		{

@@ -1368,7 +1368,7 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 	targetsAndViewport.viewport.znear=0.0f;
 	targetsAndViewport.num=1;
 	
-	crossplatform::BaseFramebuffer::GetFrameBufferStack().push(&targetsAndViewport);
+	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
 
 }
 
@@ -1377,7 +1377,7 @@ void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext
 	if(renderPlatform)
 		renderPlatform->DeactivateRenderTargets(deviceContext);
 	else
-		crossplatform::BaseFramebuffer::GetFrameBufferStack().pop();
+		deviceContext.GetFrameBufferStack().pop();
 }
 
 int Texture::GetSampleCount() const

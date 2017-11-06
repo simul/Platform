@@ -58,9 +58,13 @@ namespace simul
 			{}
 			bool initialized;
 			int view_id;							///< An id unique to each rendered view, but persistent across frames.
+			math::Matrix4x4 model;
 			math::Matrix4x4 view;					///< The view matrix. If considered as row-major, position information is in the 4th row.
 			math::Matrix4x4 proj;					///< The projection matrix, row-major.
 			math::Matrix4x4 invViewProj;
+			math::Matrix4x4 viewProj;
+			////math::Matrix4x4 modelView;
+		//	math::Matrix4x4 modelViewProj; 
 			vec3 cam_pos,view_dir,up;
 			simul::crossplatform::Frustum frustum;	///< THe viewing frustum, calculated from the proj matrix and stored for convenience using simul::crossplatform::GetFrustumFromProjectionMatrix.
 			DepthTextureStyle depthTextureStyle;	///< How to interpret any depth texture passed from outside.

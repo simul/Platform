@@ -150,7 +150,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	targetsAndViewport.viewport.znear=0.0f;
 	targetsAndViewport.num=1;
 	
-	crossplatform::BaseFramebuffer::GetFrameBufferStack().push(&targetsAndViewport);
+	deviceContext.GetFrameBufferStack().push(&targetsAndViewport);
 }
 
 void Framebuffer::SetViewport(crossplatform::DeviceContext &deviceContext,float X,float Y,float W,float H,float Z,float D)

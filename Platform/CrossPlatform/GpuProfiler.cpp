@@ -14,7 +14,7 @@
 using namespace simul;
 using namespace crossplatform;
 using namespace std;
-static std::map<void*,simul::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
+static std::unordered_map<void*,simul::crossplatform::GpuProfilingInterface*> gpuProfilingInterface;
 typedef uint64_t UINT64;
 typedef int BOOL;
 
@@ -229,9 +229,9 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 		}
 	}
 	static float mix=0.9f;
+	static float final_mix=0.5f;
 	mix*=0.999f;
-	mix+=0.001f*(0.25f);
-	profile->time*=(1.f-mix);
+	mix+=0.001f*(final_mix);
 
 	if(profile->QueryFinished == false)
 		return;
@@ -270,6 +270,7 @@ void GpuProfiler::WalkEndFrame(crossplatform::DeviceContext &deviceContext,cross
 			time = (delta / frequency) * 1000.0f;
 		}
 	}
+	profile->time*=(1.f-mix);
 	if(profile->updatedThisFrame)
 		profile->time+=mix*time;
 	if(profile->time>100.0f)
@@ -325,7 +326,7 @@ const char *GpuProfiler::GetDebugText(base::TextStyle style) const
 const base::ProfileData *GpuProfiler::GetEvent(const base::ProfileData *parent,int i) const
 {
 	if(parent==NULL)
-		return root;
+		parent=root;
 	crossplatform::ProfileData *p=(crossplatform::ProfileData*)parent;
 	if(!p||(p!=root&&!p->updatedThisFrame))
 		return NULL;
