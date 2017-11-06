@@ -1,5 +1,4 @@
 #include "MouseHandler.h"
-#include "Simul/Sky/Float4.h"
 using namespace simul;
 using namespace base;
 using namespace crossplatform;
@@ -33,9 +32,9 @@ MouseHandler::MouseHandler()
 	,cameraMode(LOOKAROUND)
 {
 	camera=new simul::crossplatform::Camera();
-	simul::sky::float4 cameraPos(0.f,0,1500.f,0);
+	vec4 cameraPos(0.f,0,1500.f,0);
 	camera->SetPosition(cameraPos);
-    simul::sky::float4 lookAtPos(-7.07f,cameraPos.y+0.f,7.07f,0);
+	vec4 lookAtPos(-7.07f,cameraPos.y+0.f,7.07f,0);
 	if(!y_vertical)
 	{
 		std::swap(lookAtPos.y,lookAtPos.z);

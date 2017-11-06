@@ -35,14 +35,7 @@ namespace simul
 			EffectTechnique *activeTechnique;
 			long long frame_number;
 			bool initialized;
-			DeviceContext():
-				platform_context(0)
-				,renderPlatform(0)
-				,activeTechnique(0)
-				,frame_number(0)
-			{
-				viewStruct.depthTextureStyle=crossplatform::PROJECTION;
-			}
+			DeviceContext();
 			inline ID3D11DeviceContext *asD3D11DeviceContext()
 			{
 				return (ID3D11DeviceContext*)platform_context;
