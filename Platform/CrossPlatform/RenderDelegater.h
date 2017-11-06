@@ -2,7 +2,7 @@
 
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/GraphicsDeviceInterface.h"
-#include "Simul/Clouds/TrueSkyRenderer.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include <functional>
 #include <unordered_map>
 

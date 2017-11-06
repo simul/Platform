@@ -2,6 +2,7 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/CrossPlatform/RenderDelegater.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
+#include "Simul/Platform/CrossPlatform/renderPlatform.h"
 #include "Simul/Math/pi.h"
 using namespace simul;
 using namespace crossplatform;
@@ -71,7 +72,7 @@ void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,
 	deviceContext.viewStruct.view_id=view_id;
 
 	int2 vs=viewSize[view_id];
-	simul::crossplatform::BaseFramebuffer::setDefaultRenderTargets(rendertarget,
+	deviceContext.setDefaultRenderTargets(rendertarget,
 		NULL,
 		0,0,vs.x,vs.y
 	);
