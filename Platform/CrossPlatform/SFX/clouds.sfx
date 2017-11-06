@@ -191,8 +191,7 @@ void MixInLayer( uint3 g, uint3 t,bool clears)
 void MixInCirrus(uint3 ii,bool clears)
 {
 	int3 idx	=int3(ii)*int3(amortizationScale)+int3(amortizationOffset.xyz);
-	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
-	//	return;
+
 	vec3 texc	=vec3(idx)*scale+offset;
 	idx.xy		+=gridCentreTexel;
 	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
@@ -352,7 +351,11 @@ shader void CS_WindowLighting(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID )
 	int3 idx	=int3(g*4+t)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	//if(idx.x>0&&idx.y>0&&idx.x<windowGrid.x-1&&idx.y<windowGrid.y-1)
 	//	return;
-	vec3 texc	=vec3(idx)/vec3(windowGrid);
+	// The position translates to a texture coordinate in the current cloudDensity texture:
+	vec3 texc	=vec3(idx)*scale+offset;
+	idx.xy		+=gridCentreTexel;
+	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
+	idx.xy		=idx.xy%int2(windowGrid.xy);
 
 	vec3 wpos			=texc/inverseScalesKm;
 	float thickness		=0.0;

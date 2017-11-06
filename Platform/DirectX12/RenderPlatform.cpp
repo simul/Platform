@@ -1342,7 +1342,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	deviceContext.asD3D12Context()->SetDescriptorHeaps(2, currentHeaps);
 
 	// CBV_SRV_UAV table
-	if (pass->usesBuffers() || pass->usesTextures() || pass->usesSBs())
+	if (pass->usesConstantBuffers() || pass->usesTextures() || pass->usesSBs())
 	{
 		if (pass->IsCompute())
 		{
@@ -1391,7 +1391,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	}
 	
 	// Apply Constant Buffers:
-	if (!cs->buffersValid && pass->usesBuffers())
+	if (!cs->constantBuffersValid && pass->usesConstantBuffers())
 	{
 		pass->SetConstantBuffers(cs->applyBuffers, &mFrameHeap[mCurIdx],m12Device,deviceContext);
 	}
@@ -1430,7 +1430,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	{
 		for (auto i : cs->applyVertexBuffers)
 		{
-			//if(pass->UsesBufferSlot(i.first))
+			//if(pass->UsesConstantBufferSlot(i.first))
 			dx12::Buffer* b = (dx12::Buffer*)(i.second);
 
 			auto B=b->AsD3D11Buffer();

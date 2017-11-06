@@ -910,11 +910,11 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 
 		// Fill SRV_CBV_UAV ranges
 		// Constant Buffers
-		if (usesBuffers())
+		if (usesConstantBuffers())
 		{
 			for (unsigned slot = 0; slot < 32; slot++)
 			{
-				if (usesBufferSlot(slot))
+				if (usesConstantBufferSlot(slot))
 				{
 					mSrvCbvUavRanges.push_back(CD3DX12_DESCRIPTOR_RANGE(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, slot));
 				}
@@ -976,7 +976,7 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 
 		// Add a descriptor table holding all the CBV SRV and UAV
 		// usesTextures() holds both Textures and UAV
-		if (usesBuffers() || usesTextures() || usesSBs())
+		if (usesConstantBuffers() || usesTextures() || usesSBs())
 		{
 			mSrvCbvUavTableIndex = (INT)rootParams.size();
 			
@@ -1286,7 +1286,7 @@ void simul::dx12::EffectPass::SetConstantBuffers(ConstantBufferMap & cBuffers, d
 	for (auto i = cbAssignOrdered.begin(); i != cbAssignOrdered.end(); i++)
 	{
 		int slot = i->first;
-		if (!usesBufferSlot(slot))
+		if (!usesConstantBufferSlot(slot))
 		{
 			SIMUL_CERR_ONCE << "The constant buffer at slot: " << slot << " , is applied but the pass does not use it, ignoring it." << std::endl;
 			continue;

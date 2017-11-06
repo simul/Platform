@@ -81,15 +81,6 @@ namespace simul
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const Viewport *vi,const Texture *t);
 		/// A base class for API-specific rendering.
 
-		struct TextureAssignment
-		{
-			crossplatform::Texture *texture;
-			int dimensions;
-			bool uav;
-			int mip;// if -1, it's the whole texture.
-			int index;	// if -1 it's the whole texture
-			crossplatform::ShaderResourceType resourceType;
-		};
 		//! A structure to describe the state that is associated with a given deviceContext.
 		//! When rendering is to be performed, we can ensure that the state is applied.
 		struct ContextState
@@ -101,10 +92,11 @@ namespace simul
 				,currentEffect(NULL)
 				,effectPassValid(false)
 				,vertexBuffersValid(false)
-				,buffersValid(false)
+				,constantBuffersValid(false)
 				,structuredBuffersValid(false)
 				,samplerStateOverridesValid(false)
 				,textureAssignmentMapValid(false)
+				,rwTextureAssignmentMapValid(false)
 				,streamoutTargetsValid(false)
 				,textureSlots(0)
 				,rwTextureSlots(0)
@@ -114,24 +106,35 @@ namespace simul
 			{
 
 			}
+			
+			~ContextState()
+			{
+			}
 			bool last_action_was_compute;
+
+			/* VertexBufferAssignmentMap;
+			 ConstantBufferAssignmentMap;
+			 StructuredBufferAssignmentMap;
+			;*/
 			std::unordered_map<int,crossplatform::Buffer*> applyVertexBuffers;
 			std::unordered_map<int,crossplatform::Buffer*> streamoutTargets;
 			std::unordered_map<int,crossplatform::ConstantBufferBase*> applyBuffers;
 			std::unordered_map<int,crossplatform::PlatformStructuredBuffer*> applyStructuredBuffers;
 			std::unordered_map<int,crossplatform::SamplerState*> samplerStateOverrides;
 			std::unordered_map<int, TextureAssignment> textureAssignmentMap;
-			crossplatform::EffectPass *currentEffectPass;
-			crossplatform::EffectTechnique *currentTechnique;
-			crossplatform::Effect *currentEffect;
+			TextureAssignmentMap rwTextureAssignmentMap;
+			EffectPass *currentEffectPass;
+			EffectTechnique *currentTechnique;
+			Effect *currentEffect;
 			void invalidate()
 			{
 				effectPassValid=false;
 				vertexBuffersValid=false;
-				buffersValid=false;
+				constantBuffersValid=false;
 				structuredBuffersValid=false;
 				samplerStateOverridesValid=false;
 				textureAssignmentMapValid=false;
+				rwTextureAssignmentMapValid=false;
 				streamoutTargetsValid=false;
 				textureSlots=0;
 				rwTextureSlots=0;
@@ -141,10 +144,11 @@ namespace simul
 			}
 			bool effectPassValid;
 			bool vertexBuffersValid;
-			bool buffersValid;
+			bool constantBuffersValid;
 			bool structuredBuffersValid;
 			bool samplerStateOverridesValid;
 			bool textureAssignmentMapValid;
+			bool rwTextureAssignmentMapValid;
 			bool streamoutTargetsValid;
 			unsigned textureSlots;
 			unsigned rwTextureSlots;

@@ -665,6 +665,12 @@
 			this->y=y;
 			this->z=z;
 		}
+		int3(uint3 v)
+		{
+			x=v.x;
+			y=v.y;
+			z=v.z;
+		}
 		int3(const int *v)
 		{
 			operator=(v);

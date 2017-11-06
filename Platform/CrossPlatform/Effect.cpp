@@ -17,6 +17,11 @@ using namespace simul;
 using namespace crossplatform;
 using namespace std;
 
+ConstantBufferBase::ConstantBufferBase(const char *name) :platformConstantBuffer(NULL)
+{
+	if (name&&strlen(name) >7)
+		defaultName = name + 7;
+}
 
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext, crossplatform::Effect *effect, const char *name)
 {
@@ -63,7 +68,7 @@ bool EffectPass::usesRwTextureSlotForSB(int s) const
 	return (rwTextureSlotsForSB&m)!=0;
 }
 
-bool EffectPass::usesBufferSlot(int s) const
+bool EffectPass::usesConstantBufferSlot(int s) const
 {
 	unsigned m=((unsigned)1<<(unsigned)s);
 	return (constantBufferSlots&m)!=0;
@@ -72,7 +77,6 @@ bool EffectPass::usesBufferSlot(int s) const
 bool EffectPass::usesSamplerSlot(int s) const
 {
 	unsigned m=((unsigned)1<<(unsigned)s);
-	//return true;//(samplerSlots&m)!=0;
 	return (samplerSlots&m) != 0;
 }
 
@@ -88,12 +92,22 @@ bool EffectPass::usesTextures() const
 	return (textureSlots+rwTextureSlots)!=0;
 }
 
+bool EffectPass::usesRwTextures() const
+{
+	return (rwTextureSlots)!=0;
+}
+
 bool EffectPass::usesSBs() const
 {
 	return (textureSlotsForSB+rwTextureSlotsForSB)!=0;
 }
 
-bool EffectPass::usesBuffers() const
+bool EffectPass::usesRwSBs() const
+{
+	return (rwTextureSlotsForSB)!=0;
+}
+
+bool EffectPass::usesConstantBuffers() const
 {
 	return constantBufferSlots !=0;
 }
@@ -103,8 +117,7 @@ bool EffectPass::usesSamplers() const
 	return samplerSlots!=0;
 }
 
-
-void EffectPass::SetUsesBufferSlots(unsigned s)
+void EffectPass::SetUsesConstantBufferSlots(unsigned s)
 {
 	constantBufferSlots |=s;
 }
@@ -234,10 +247,10 @@ void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext, const 
 {
 	auto res=GetShaderResource(name);
 	SetSamplerState(deviceContext,res,s);
-	}
+}
 
 void Effect::SetSamplerState(DeviceContext &deviceContext,ShaderResource &name	,SamplerState *s)
-	{
+{
 	if(name.slot>128)
 		return;
 	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
@@ -253,7 +266,7 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext, cons
 	PlatformConstantBuffer *pcb = (PlatformConstantBuffer*)s->GetPlatformConstantBuffer();
 
 	cs->applyBuffers[s->GetIndex()] = s;
-	cs->buffersValid = false;
+	cs->constantBuffersValid = false;
 	pcb->SetChanged();
 }
 
@@ -1081,7 +1094,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						}
 					}
 					// Now we will know which slots must be used by the pass:
-					p->SetUsesBufferSlots(s->constantBufferSlots);
+					p->SetUsesConstantBufferSlots(s->constantBufferSlots);
 					p->SetUsesTextureSlots(s->textureSlots);
 					p->SetUsesTextureSlotsForSB(s->textureSlotsForSB);
 					p->SetUsesRwTextureSlots(s->rwTextureSlots);

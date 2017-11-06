@@ -45,7 +45,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform int raytraceSteps;
 	uniform int cubemapTargetIndex;
 
-	uniform uint3 amortizationOffset;
+	uniform int3 amortizationOffset;
 	uniform float exposure;
 	
 	uniform uint2 targetTextureSize;
