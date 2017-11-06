@@ -5,7 +5,6 @@
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
-#include "Simul/Platform/CrossPlatform/SL/spherical_harmonics_constants.sl"
 #include <stack>
 
 #ifdef _MSC_VER
@@ -66,17 +65,6 @@ namespace simul
 			//! Some hardware has fast RAM that's good for framebuffers.
 			virtual void SetUseFastRAM(bool /*colour*/,bool /*depth*/){};
 			virtual void SetAntialiasing(int s)=0;
-			//! Calculate the spherical harmonics of this cubemap and store the result internally.
-			//! Changing the number of bands will resize the internal storeage.
-			virtual void CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext);
-			virtual void RecompileShaders();
-			//! Probe values from cubemap.
-			bool Probe(crossplatform::DeviceContext &deviceContext
-				,int mip_size
-				,int face_index
-				,uint2 pos
-				,uint2 size
-				,vec4 *targetValuesFloat4);
 			//! Get the texture for the colour buffer target.
 			inline Texture *GetTexture()
 			{
@@ -97,50 +85,18 @@ namespace simul
 			{
 				return Height;
 			}
-			crossplatform::RenderPlatform *renderPlatform;
-			crossplatform::StructuredBuffer<vec4> &GetSphericalHarmonics()
-			{
-				return sphericalHarmonics;
-			}
-			void SetBands(int b)
-			{
-				if(b>MAX_SH_BANDS)
-					b=MAX_SH_BANDS;
-				if(bands!=b)
-				{
-					bands=b;
-					sphericalHarmonics.InvalidateDeviceObjects();
-				}
-			}
-			int GetNumAntialiasingSamples() const
-			{
-				return numAntialiasingSamples;
-			}
-
-		protected:
+		//protected:
 			//! The size of the buffer
 			int Width,Height;
 			int mips;
 			int numAntialiasingSamples;
 			bool depth_active, colour_active;
-		public:
+			crossplatform::RenderPlatform *renderPlatform;
 			vec4 DefaultClearColour;
 			float DefaultClearDepth;
 			uint DefaultClearStencil;
-			static std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
-			static crossplatform::TargetsAndViewport defaultTargetsAndViewport;
-			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once,
-			//! as 
-			static void setDefaultRenderTargets(const ApiRenderTarget*,
-												const ApiDepthRenderTarget*,
-												uint32_t viewportLeft,
-												uint32_t viewportTop,
-												uint32_t viewportRight,
-												uint32_t viewportBottom
-												);
 		protected:
 			crossplatform::TargetsAndViewport targetsAndViewport;
-			static std::stack<crossplatform::TargetsAndViewport*> targetStack;
 			//! The depth buffer.
 			crossplatform::Texture				*buffer_texture;
 			crossplatform::Texture				*buffer_depth_texture;
@@ -149,18 +105,11 @@ namespace simul
 			int	current_face;
 			crossplatform::PixelFormat target_format;
 			crossplatform::PixelFormat depth_format;
-			int bands;
 			int activate_count;
 
-			crossplatform::ConstantBuffer<SphericalHarmonicsConstants>	sphericalHarmonicsConstants;
-				crossplatform::StructuredBuffer<vec4>	probeResultsRW;
-			crossplatform::StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
-			crossplatform::StructuredBuffer<vec4>						sphericalHarmonics;
-			crossplatform::Effect										*sphericalHarmonicsEffect;
 			bool external_texture;
 			bool external_depth_texture;
 			std::string name;
-			int shSeed;
 		};
 	}
 }

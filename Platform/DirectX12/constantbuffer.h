@@ -47,6 +47,7 @@ namespace simul
 			dx12::Heap						mHeaps[kNumBuffers];
 
 			const int kBufferAlign			= D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
+			D3D12_CPU_DESCRIPTOR_HANDLE		*cpuDescriptorHandles[kNumBuffers];
 		};
 	}
 }

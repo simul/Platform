@@ -76,7 +76,7 @@ void Direct3D11Renderer::Render(int view_id,void* context,void* rendertarget)
 	deviceContext.viewStruct.view_id=view_id;
 	
 	int2 vs=viewSize[view_id];
-	simul::crossplatform::BaseFramebuffer::setDefaultRenderTargets(rendertarget,
+	deviceContext.setDefaultRenderTargets(rendertarget,
 															NULL,
 															0,0,vs.x,vs.y
 															);

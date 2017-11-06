@@ -299,7 +299,7 @@ void Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 	// Transition the resource to be used in the shaders
 	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 	auto rPlat		= (dx12::RenderPlatform*)(renderPlatform);
-	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState());
+	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(),true);
 
 	// Create a descriptor heap for this texture
 	// This heap won't be shader visible as we will be copying the descriptor from here to the FrameHeap (which is shader visible)
@@ -481,7 +481,7 @@ void Texture::LoadTextureArray(crossplatform::RenderPlatform *r,const std::vecto
 	// Transition the resource to be used in the shaders
 	SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ);
 	auto rPlat = (dx12::RenderPlatform*)(r);
-	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState());
+	rPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(),true);
 	
 	// Create a descriptor heap for this texture
 	// This heap won't be shader visible as we will be copying the descriptor from here to the FrameHeap (which is shader visible)
@@ -539,7 +539,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(bool setState /*
 			{
 				curArray *= 6;
 			}
-			rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_GENERIC_READ,RenderPlatform::GetResourceIndex(mip, index,mips, curArray));
+			rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_GENERIC_READ, false, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
 			SetCurrentState(D3D12_RESOURCE_STATE_GENERIC_READ,mip,index);
 		}
 	}
@@ -587,7 +587,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(int index, int 
 		{
 			curArray *= 6;
 		}
-		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
+		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, false, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
 		SetCurrentState(D3D12_RESOURCE_STATE_UNORDERED_ACCESS,mip,index);
 	}
 
@@ -620,9 +620,8 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12DepthStencilView()
 	if ((curState & D3D12_RESOURCE_STATE_DEPTH_WRITE) != D3D12_RESOURCE_STATE_DEPTH_WRITE)
 	{
 		auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_DEPTH_WRITE,true);
 		SetCurrentState(D3D12_RESOURCE_STATE_DEPTH_WRITE);
-		rPlat->FlushBarriers();
 	}
 	return &depthStencilView12;
 }
@@ -639,9 +638,8 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(int index /*= -1*/
 		{
 			curArray *= 6;
 		}
-		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_RENDER_TARGET, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
+		rPlat->ResourceTransitionSimple(mTextureDefault, curState, D3D12_RESOURCE_STATE_RENDER_TARGET,true, RenderPlatform::GetResourceIndex(mip, index, mips, curArray));
 		SetCurrentState(D3D12_RESOURCE_STATE_RENDER_TARGET,mip,index);
-		rPlat->FlushBarriers();
 	}
 	
 	if (!renderTargetViews12)
@@ -720,8 +718,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 			SIMUL_BREAK("Nacho has to implement this");
 
 		// Transition main texture to copy dest
-		renderPlat->ResourceTransitionSimple(mTextureDefault, GetCurrentState(), D3D12_RESOURCE_STATE_COPY_DEST);
-		renderPlat->FlushBarriers();
+		renderPlat->ResourceTransitionSimple(mTextureDefault, GetCurrentState(), D3D12_RESOURCE_STATE_COPY_DEST,true);
 
 		// Copy the data
 		D3D12_SUBRESOURCE_DATA srcData;
@@ -731,8 +728,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 		UpdateSubresources(renderPlat->AsD3D12CommandList(), mTextureDefault, mTextureUpload, 0, 0, 1, &srcData);
 
 		// Transition main texture to pixel shader resource
-		renderPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState());
-		renderPlat->FlushBarriers();
+		renderPlat->ResourceTransitionSimple(mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, GetCurrentState(),true);
 	}
 }
 
@@ -751,6 +747,14 @@ void Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform *renderPla
 	InitFromExternalD3D12Texture2D(renderPlatform,(ID3D12Resource*)t,(D3D12_CPU_DESCRIPTOR_HANDLE*)srv,make_rt);
 }
 
+void Texture::SetName(const char *n)
+{
+	crossplatform::Texture::SetName(n);
+	if(!mTextureDefault)
+		return;
+	std::wstring ws=simul::base::Utf8ToWString(n);
+	mTextureDefault->SetName(ws.c_str());
+}
 void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, ID3D12Resource * t, D3D12_CPU_DESCRIPTOR_HANDLE * srv, bool make_rt)
 {
 	// If it's the same as before, return.
@@ -767,7 +771,8 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	mainShaderResourceView12	= srv? *srv : D3D12_CPU_DESCRIPTOR_HANDLE(); // What if the CPU handle changes? we should check this from outside
 	mInitializedFromExternal	= true;
 
-	mTextureDefault->SetName(L"FromExternal2D");
+	std::wstring ws=simul::base::Utf8ToWString(name);
+	mTextureDefault->SetName(ws.c_str());
 
 	// Textures initialized from external should be passed by as a SRV so we expect
 	// that the resource was previously transitioned to GENERIC_READ
@@ -836,7 +841,10 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 			//SIMUL_BREAK("Not a valid D3D12 texture");
 		}
 	}
+
 	dim = 2;
+	auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
+	rPlat->FlushBarriers();
 }
 
 
@@ -926,6 +934,8 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 		}
 	}
 	dim = 3;
+	auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
+	rPlat->FlushBarriers();
 }
 
 bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
@@ -1302,6 +1312,9 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 
 	mips		= m;
 	arraySize	= 1;
+	auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
+	rPlat->FlushBarriers();
+	
 	return !ok;
 }
 
@@ -1480,6 +1493,8 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 	mips			= m;
 	arraySize		= num;
 	this->cubemap	= cubemap;
+	auto rPlat		= (dx12::RenderPlatform*)renderPlatform;
+	rPlat->FlushBarriers();
 
 	return true;
 }
@@ -1696,9 +1711,9 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 	// Store old render targets and viewports:
 	// TO-DO: Check for more than 1!
 	// Option 1: There are FBO on the stack
-	if (crossplatform::BaseFramebuffer::GetFrameBufferStack().size())
+	if (deviceContext.GetFrameBufferStack().size())
 	{
-		auto curTarget					= crossplatform::BaseFramebuffer::GetFrameBufferStack().top();
+		auto curTarget					= deviceContext.GetFrameBufferStack().top();
 
 		m_pOldRenderTargets12[0]		= (D3D12_CPU_DESCRIPTOR_HANDLE*)curTarget->m_rt[0];
 		m_pOldDepthSurface12			= (D3D12_CPU_DESCRIPTOR_HANDLE*)curTarget->m_dt;
@@ -1713,15 +1728,15 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 	// Option 2: There are not FBO on the stack ( apply default render targets)
 	else
 	{
-		m_pOldRenderTargets12[0]		= (D3D12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_rt[0];
-		m_pOldDepthSurface12			= (D3D12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_dt;
+		m_pOldRenderTargets12[0]		= (D3D12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[0];
+		m_pOldDepthSurface12			= (D3D12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt;
 
-		m_OldViewports12[0].Width		= (float)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.w;
-		m_OldViewports12[0].Height		= (float)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.h;
-		m_OldViewports12[0].TopLeftX	= (float)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.x;
-		m_OldViewports12[0].TopLeftY	= (float)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.y;
-		m_OldViewports12[0].MinDepth	= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.znear;
-		m_OldViewports12[0].MaxDepth	= crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport.zfar;
+		m_OldViewports12[0].Width		= (float)deviceContext.defaultTargetsAndViewport.viewport.w;
+		m_OldViewports12[0].Height		= (float)deviceContext.defaultTargetsAndViewport.viewport.h;
+		m_OldViewports12[0].TopLeftX	= (float)deviceContext.defaultTargetsAndViewport.viewport.x;
+		m_OldViewports12[0].TopLeftY	= (float)deviceContext.defaultTargetsAndViewport.viewport.y;
+		m_OldViewports12[0].MinDepth	= deviceContext.defaultTargetsAndViewport.viewport.znear;
+		m_OldViewports12[0].MaxDepth	= deviceContext.defaultTargetsAndViewport.viewport.zfar;
 	}
 
 	if (renderTargetViews12)
@@ -1795,7 +1810,7 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(int mip /*= -1*/, int index /*= -
 					auto curState = mSubResourcesStates[l][m];
 					if (curState != mResourceState)
 					{
-						rPlat->ResourceTransitionSimple(mTextureDefault, curState, mResourceState, 
+						rPlat->ResourceTransitionSimple(mTextureDefault, curState, mResourceState, false,
 														RenderPlatform::GetResourceIndex(m,l,mips, (int)mSubResourcesStates.size()));
 						mSubResourcesStates[l][m] = mResourceState;
 					}

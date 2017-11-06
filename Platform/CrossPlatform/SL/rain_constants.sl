@@ -12,7 +12,8 @@ SIMUL_CONSTANT_BUFFER(RainConstants,10)
 	uniform float intensity;
 	uniform float flurry;
 	uniform float flurryRate;
-	uniform float phase;
+	uniform float phase0;
+	uniform float phase1;
 	uniform float timeStepSeconds;
 	uniform float particleZoneSize;
 SIMUL_CONSTANT_BUFFER_END
@@ -57,7 +58,6 @@ struct SplashVertex
 struct TransformedParticle
 {
     vec4 position;
-	float pointSize;
 	vec3 view;
 	float fade;
 };

@@ -9,37 +9,6 @@
 using namespace simul;
 using namespace crossplatform;
 
-crossplatform::TargetsAndViewport BaseFramebuffer::defaultTargetsAndViewport;
-std::stack<crossplatform::TargetsAndViewport*> BaseFramebuffer::targetStack;
-// Change this from a static construtor to a dynamic construtor so that the memory is allocated by the application rather than the C runtime
-std::stack<crossplatform::TargetsAndViewport*>& BaseFramebuffer::GetFrameBufferStack()
-{
-	return targetStack;
-}
-
-void BaseFramebuffer::setDefaultRenderTargets(const ApiRenderTarget* rt,
-										const ApiDepthRenderTarget* dt,
-										uint32_t viewportLeft,
-										uint32_t viewportTop,
-										uint32_t viewportRight,
-										uint32_t viewportBottom
-										)
-{
-	memset(&defaultTargetsAndViewport,0,sizeof(defaultTargetsAndViewport));
-	defaultTargetsAndViewport.num=1;
-	defaultTargetsAndViewport.m_rt[0] = rt;
-	defaultTargetsAndViewport.m_rt[1] = nullptr;
-	defaultTargetsAndViewport.m_rt[2] = nullptr;
-	defaultTargetsAndViewport.m_rt[3] = nullptr;
-	defaultTargetsAndViewport.m_dt = dt;
-	defaultTargetsAndViewport.viewport.x = viewportLeft;
-	defaultTargetsAndViewport.viewport.y = viewportTop;
-	defaultTargetsAndViewport.viewport.w = viewportRight-viewportLeft;
-	defaultTargetsAndViewport.viewport.h = viewportBottom-viewportTop;
-	defaultTargetsAndViewport.viewport.znear=0.0f;
-	defaultTargetsAndViewport.viewport.zfar=1.0f;
-}
-
 
 BaseFramebuffer::BaseFramebuffer(const char *n)
 	:Width(0)
@@ -56,12 +25,9 @@ BaseFramebuffer::BaseFramebuffer(const char *n)
 	,current_face(-1)
 	,target_format(crossplatform::RGBA_32_FLOAT)
 	,depth_format(crossplatform::UNKNOWN)
-	,bands(4)
 	,activate_count(0)
-	,sphericalHarmonicsEffect(NULL)
 	,external_texture(false)
 	,external_depth_texture(false)
-	,shSeed(0)
 	, DefaultClearColour(1.0f, 1.0f, 1.0f, 1.0f)
 	, DefaultClearDepth(1.0f)
 	, DefaultClearStencil(1)
@@ -82,9 +48,6 @@ void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		SAFE_DELETE(buffer_texture);
 	if(!external_depth_texture)
 		SAFE_DELETE(buffer_depth_texture);
-	static int seed = 0;
-	seed = seed % 1001;
-	shSeed=seed++;
 	if(renderPlatform)
 	{
 		if(!external_texture)
@@ -92,16 +55,6 @@ void BaseFramebuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 		if(!external_depth_texture)
 			buffer_depth_texture=renderPlatform->CreateTexture("BaseFramebufferDepth");
 	}
-	// The table of coefficients.
-	int s=(bands+1);
-	if(s<4)
-		s=4;
-	sphericalHarmonics.InvalidateDeviceObjects();
-	probeResultsRW.InvalidateDeviceObjects();
-	sphericalSamples.InvalidateDeviceObjects();
-	sphericalHarmonicsConstants.RestoreDeviceObjects(renderPlatform);
-	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect,"SphericalHarmonicsConstants");
-	probeResultsRW.RestoreDeviceObjects(renderPlatform,256,true);
 	CreateBuffers();
 }
 
@@ -113,11 +66,6 @@ void BaseFramebuffer::InvalidateDeviceObjects()
 		SAFE_DELETE(buffer_depth_texture);
 	buffer_texture=NULL;
 	buffer_depth_texture=NULL;
-	sphericalHarmonicsConstants.InvalidateDeviceObjects();
-	sphericalHarmonics.InvalidateDeviceObjects();
-	probeResultsRW.InvalidateDeviceObjects();
-	SAFE_DELETE(sphericalHarmonicsEffect);
-	sphericalSamples.InvalidateDeviceObjects();
 }
 
 void BaseFramebuffer::SetWidthAndHeight(int w,int h,int m)
@@ -234,9 +182,15 @@ bool BaseFramebuffer::CreateBuffers()
 	if(buffer_depth_texture)
 		buffer_depth_texture->InvalidateDeviceObjects();
 	if(!buffer_texture)
-		buffer_texture=renderPlatform->CreateTexture("BaseFramebuffer");
+	{
+		std::string cName = "BaseFramebufferColour" + name;
+		buffer_texture=renderPlatform->CreateTexture(cName.c_str());
+	}
 	if(!buffer_depth_texture)
-		buffer_depth_texture=renderPlatform->CreateTexture("BaseFramebuffer");
+	{
+		std::string dName = "BaseFramebufferDepth" + name;
+		buffer_depth_texture=renderPlatform->CreateTexture(dName.c_str());
+	}
 	static int quality=0;
 	if(!external_texture&&target_format!=crossplatform::UNKNOWN)
 	{
@@ -250,139 +204,4 @@ bool BaseFramebuffer::CreateBuffers()
 		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height, depth_format, false, false, true, numAntialiasingSamples, quality, false, vec4(0.0f), DefaultClearDepth,DefaultClearStencil);
 	}
 	return true;
-}
-
-bool BaseFramebuffer::Probe(crossplatform::DeviceContext &deviceContext
-	,int mip_size
-	,int face_index
-	,uint2 pos
-	,uint2 size
-	,vec4 *targetValuesFloat4)
-{
-	crossplatform::EffectTechnique *tech=sphericalHarmonicsEffect->GetTechniqueByName("probe_query");
-	
-	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapAsTexture2DArray",buffer_texture);
-	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, "samplesBuffer");
-	if(size.x*size.y>(unsigned)probeResultsRW.count)
-	{
-		probeResultsRW.RestoreDeviceObjects(renderPlatform,size.x*size.y*2,true);
-	}
-	probeResultsRW.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
-	
-	sphericalHarmonicsConstants.lookupOffset=uint3(pos.x,pos.y,face_index);
-	sphericalHarmonicsConstants.lookupSize=size;
-	
-	sphericalHarmonicsEffect->Apply(deviceContext,tech,0);
-	renderPlatform->DispatchCompute(deviceContext,size.x,size.y,1);
-	sphericalHarmonicsEffect->Unapply(deviceContext);
-	probeResultsRW.CopyToReadBuffer(deviceContext);
-	const vec4 *res=probeResultsRW.OpenReadBuffer(deviceContext);
-	if(res)
-	{
-		memcpy(targetValuesFloat4,res,sizeof(vec4)*size.x*size.y);
-	}
-	probeResultsRW.CloseReadBuffer(deviceContext);
-	return res!=0;
-	return false;
-	
-}
-
-void BaseFramebuffer::CalcSphericalHarmonics(crossplatform::DeviceContext &deviceContext)
-{
-	if (!bands)
-		return;
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"Calc Spherical Harmonics")
-	int num_coefficients=bands*bands;
-	static int BLOCK_SIZE=16;
-	static int sqrt_jitter_samples					=4;
-	if(!sphericalHarmonics.count)
-	{
-		sphericalHarmonics.RestoreDeviceObjects(renderPlatform,num_coefficients,true);
-		sphericalSamples.RestoreDeviceObjects(renderPlatform,sqrt_jitter_samples*sqrt_jitter_samples,true);
-	}
-	if(!sphericalHarmonicsEffect)
-		RecompileShaders();
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"clear")
-	sphericalHarmonicsConstants.num_bands			=bands;
-	sphericalHarmonicsConstants.numCoefficients		=num_coefficients;
-	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
-	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;
-	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
-	sphericalHarmonicsConstants.randomSeed			=shSeed;
-	/*sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
-	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
-	crossplatform::EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");
-	sphericalHarmonicsEffect->Apply(deviceContext,clear,0);
-	renderPlatform->DispatchCompute(deviceContext,(num_coefficients+BLOCK_SIZE-1)/BLOCK_SIZE,1,1);
-	sphericalHarmonicsEffect->Unapply(deviceContext);*/
-	
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"jitter")
-
-	{
-		// The table of 3D directional sample positions. sqrt_jitter_samples x sqrt_jitter_samples
-		// We just fill this buffer_texture with random 3d directions.
-		crossplatform::EffectTechnique *jitter=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
-		sphericalSamples.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "samplesBufferRW");
-		sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapTexture"	,buffer_texture);
-		sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&	sphericalHarmonicsConstants);
-		sphericalHarmonicsEffect->Apply(deviceContext,jitter,0);
-		int u = (sphericalHarmonicsConstants.numJitterSamples + BLOCK_SIZE - 1) / BLOCK_SIZE;
-		renderPlatform->DispatchCompute(deviceContext, u, 1, 1);
-		sphericalHarmonicsEffect->UnbindTextures(deviceContext);
-		sphericalHarmonicsEffect->SetUnorderedAccessView(deviceContext,"samplesBufferRW",NULL);
-		sphericalHarmonicsEffect->Unapply(deviceContext);
-	}
-	static bool test=false;
-	if(test)
-	{
-	// testing:
-		sphericalSamples.CopyToReadBuffer(deviceContext);
-		const SphericalHarmonicsSample* sam=(const SphericalHarmonicsSample* )sphericalSamples.OpenReadBuffer(deviceContext);
-		if(sam)
-		{
-			for(int i=0;i<sphericalSamples.count;i++)
-			{
-				std::cout<<i<<": ("<<sam[i].dir.x<<","<<sam[i].dir.y<<","<<sam[i].dir.z<<") coefficients: ";
-				for(int j=0;j<9;j++)
-				{
-					if(j)
-						std::cout<<", ";
-					std::cout<<sam[i].coeff[j];
-				}
-				std::cout<<std::endl;
-			}
-			std::cout<<std::endl;
-		}
-		sphericalSamples.CloseReadBuffer(deviceContext);
-	}
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"encode")
-	crossplatform::EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
-	sphericalHarmonicsEffect->SetTexture(deviceContext,"cubemapTexture"	,buffer_texture);
-	sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, "samplesBuffer");
-	sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, "targetBuffer");
-	
-	static bool sh_by_samples=false;
-	sphericalHarmonicsEffect->SetConstantBuffer(deviceContext,&sphericalHarmonicsConstants);
-	sphericalHarmonicsEffect->Apply(deviceContext,tech,0);
-	int n = sh_by_samples ? sphericalHarmonicsConstants.numJitterSamples : num_coefficients;
-	//static int ENCODE_BLOCK_SIZE=2;
-	//int U = ((n) + ENCODE_BLOCK_SIZE - 1) / ENCODE_BLOCK_SIZE;
-	renderPlatform->DispatchCompute(deviceContext, n, 1, 1);
-	sphericalHarmonicsEffect->UnbindTextures(deviceContext);
-	sphericalHarmonicsConstants.Unbind(deviceContext);
-	sphericalHarmonicsEffect->Unapply(deviceContext);
-	sphericalHarmonics.CopyToReadBuffer(deviceContext);
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
-}
-
-void BaseFramebuffer::RecompileShaders()
-{
-	SAFE_DELETE(sphericalHarmonicsEffect);
-	if(!renderPlatform)
-		return;
-	sphericalHarmonicsEffect=renderPlatform->CreateEffect("spherical_harmonics");
-	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect,"SphericalHarmonicsConstants");
 }

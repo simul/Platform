@@ -10,6 +10,7 @@
 #include "Simul/Platform/CrossPlatform/Material.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/Mesh.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -47,6 +48,13 @@ RenderPlatform::~RenderPlatform()
 {
 	InvalidateDeviceObjects();
 	delete gpuProfiler;
+
+	for (auto i = materials.begin(); i != materials.end(); i++)
+	{
+		Material *mat = i->second;
+		delete mat;
+	}
+	materials.clear();
 }
 
 crossplatform::ContextState *RenderPlatform::GetContextState(crossplatform::DeviceContext &deviceContext)
@@ -82,7 +90,7 @@ DeviceContext &RenderPlatform::GetImmediateContext()
 
 void RenderPlatform::RestoreDeviceObjects(void*)
 {
-	ERRNO_BREAK
+	
 	crossplatform::RenderStateDesc desc;
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::BLEND;
@@ -104,7 +112,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	RenderState *alpha=CreateRenderState(desc);
 	standardRenderStates[STANDARD_ALPHA_BLENDING]=alpha;
 	
-	ERRNO_BREAK
+	
 	memset(&desc,0,sizeof(desc));
 	desc.type=crossplatform::DEPTH;
 	desc.depth.comparison	=crossplatform::DepthComparison::DEPTH_GREATER_EQUAL;
@@ -121,7 +129,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	RenderState *depth_tle=CreateRenderState(desc);
 	standardRenderStates[STANDARD_TEST_DEPTH_LESS_EQUAL]=depth_tle;
 	
-	ERRNO_BREAK
+	
 	desc.depth.comparison	=crossplatform::DepthComparison::DEPTH_GREATER_EQUAL;
 	RenderState *depth_tge=CreateRenderState(desc);
 	standardRenderStates[STANDARD_TEST_DEPTH_GREATER_EQUAL]=depth_tge;
@@ -131,18 +139,24 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 	standardRenderStates[STANDARD_DEPTH_DISABLE]=depth_no;
 
 	SAFE_DELETE(textRenderer);
-	ERRNO_BREAK
+	
 	textRenderer=new TextRenderer;
-	ERRNO_BREAK
+	
 	textRenderer->RestoreDeviceObjects(this);
-	ERRNO_BREAK
-	solidConstants.RestoreDeviceObjects(this);
-	ERRNO_BREAK
+	
+	
 	debugConstants.RestoreDeviceObjects(this);
-	ERRNO_BREAK
+	
 	gpuProfiler->RestoreDeviceObjects(this);
 	textureQueryResult.InvalidateDeviceObjects();
 	textureQueryResult.RestoreDeviceObjects(this,1,true);
+
+	for (auto i = materials.begin(); i != materials.end(); i++)
+	{
+		crossplatform::Material *mat = (crossplatform::Material*)(i->second);
+		mat->SetEffect(solidEffect);
+
+	}
 }
 
 void RenderPlatform::InvalidateDeviceObjects()
@@ -154,7 +168,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 		SAFE_DELETE(i->second);
 	standardRenderStates.clear();
 	SAFE_DELETE(textRenderer);
-	solidConstants.InvalidateDeviceObjects();
 	debugConstants.InvalidateDeviceObjects();
 	SAFE_DELETE(debugEffect);
 	SAFE_DELETE(solidEffect);
@@ -163,6 +176,14 @@ void RenderPlatform::InvalidateDeviceObjects()
 	untextured=nullptr;
 	showVolume=NULL;
 	textureQueryResult.InvalidateDeviceObjects();
+
+
+
+	for (auto i = materials.begin(); i != materials.end(); i++)
+	{
+		Material *mat = i->second;
+		mat->InvalidateDeviceObjects();
+	}
 }
 
 void RenderPlatform::RecompileShaders()
@@ -170,9 +191,9 @@ void RenderPlatform::RecompileShaders()
 	SAFE_DELETE(debugEffect);
 	SAFE_DELETE(solidEffect);
 	SAFE_DELETE(copyEffect);
-	ERRNO_BREAK
+	
 	textRenderer->RecompileShaders();
-	ERRNO_BREAK
+	
 	std::map<std::string, std::string> defines;
 	debugEffect=CreateEffect("debug",defines);
 	if(debugEffect)
@@ -185,8 +206,12 @@ void RenderPlatform::RecompileShaders()
 	}		
 	solidEffect=CreateEffect("solid",defines);
 	copyEffect=CreateEffect("copy",defines);
-	solidConstants.LinkToEffect(solidEffect,"SolidConstants");
 	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
+	for(auto i=materials.begin();i!=materials.end();i++)
+	{
+		Material *mat=(Material*)(i->second);
+		mat->SetEffect(solidEffect);
+	}
 }
 
 void RenderPlatform::PushTexturePath(const char *path_utf8)
@@ -200,7 +225,24 @@ void RenderPlatform::PopTexturePath()
 
 void RenderPlatform::PushRenderTargets(DeviceContext &deviceContext, TargetsAndViewport *tv)
 {
-	crossplatform::BaseFramebuffer::GetFrameBufferStack().push(tv);
+	deviceContext.GetFrameBufferStack().push(tv);
+}
+
+void RenderPlatform::PopRenderTargets(DeviceContext &deviceContext)
+{
+	deviceContext.GetFrameBufferStack().pop();
+}
+
+void RenderPlatform::LatLongTextureToCubemap(DeviceContext &deviceContext,Texture *destination,Texture *source)
+{
+	debugEffect->SetTexture(deviceContext,"imageTexture",source);
+	debugEffect->SetUnorderedAccessView(deviceContext,"FastClearTarget2DArray",destination);
+	debugEffect->Apply(deviceContext,"lat_long_to_cubemap",0);
+	int D=6;
+	int W=(destination->width+3)/4;
+	DispatchCompute(deviceContext,W,W,D);
+	debugEffect->Unapply(deviceContext);
+	debugEffect->UnbindTextures(deviceContext);
 }
 
 void RenderPlatform::PushShaderPath(const char *path_utf8)
@@ -424,10 +466,6 @@ ConstantBuffer<DebugConstants> &RenderPlatform::GetDebugConstantBuffer()
 	return debugConstants;
 }
 
-ConstantBuffer<SolidConstants> &RenderPlatform::GetSolidConstantBuffer()
-{
-	return solidConstants;
-}
 
 void RenderPlatform::DrawLine(crossplatform::DeviceContext &deviceContext,const float *startp, const float *endp,const float *colour,float width)
 {
@@ -481,23 +519,26 @@ void RenderPlatform::DrawCircle(DeviceContext &deviceContext,const float *pos,co
 
 void RenderPlatform::SetModelMatrix(crossplatform::DeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
 {
-	simul::math::Matrix4x4 wvp;
-	simul::math::Matrix4x4 viewproj;
-	simul::math::Matrix4x4 modelviewproj;
-	simul::math::Multiply4x4(viewproj, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
-	simul::math::Matrix4x4 model(m);
-	model.Transpose();
-	simul::math::Multiply4x4(modelviewproj, model, viewproj);
-	solidConstants.worldViewProj = modelviewproj;
-	crossplatform::MakeWorldViewProjMatrix((float*)&solidConstants.worldViewProj,model,deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
-	solidConstants.world = model;
-
-	solidConstants.lightIrradiance = physicalLightRenderData.lightColour;
-	solidConstants.lightDir = physicalLightRenderData.dirToLight;
-	debugEffect->SetConstantBuffer(deviceContext,&solidConstants);
 
 	simul::crossplatform::Frustum frustum = simul::crossplatform::GetFrustumFromProjectionMatrix((const float*)deviceContext.viewStruct.proj);
 	SetStandardRenderState(deviceContext, frustum.reverseDepth ? crossplatform::STANDARD_DEPTH_GREATER_EQUAL : crossplatform::STANDARD_DEPTH_LESS_EQUAL);
+}
+
+
+crossplatform::Material *RenderPlatform::GetOrCreateMaterial(const char *name)
+{
+	auto i = materials.find(name);
+	if (i != materials.end())
+		return i->second;
+	crossplatform::Material *mat = new crossplatform::Material(name);
+	mat->SetEffect(solidEffect);
+	materials[name]=mat;
+	return mat;
+}
+
+crossplatform::Mesh *RenderPlatform::CreateMesh()
+{
+	return new Mesh;
 }
 
 void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int longt,vec3 origin,float radius,vec4 colour)
@@ -919,17 +960,17 @@ crossplatform::Viewport RenderPlatform::PlatformGetViewport(crossplatform::Devic
 crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &deviceContext,int index)
 {
 	crossplatform::Viewport v;
-	if(BaseFramebuffer::GetFrameBufferStack().size())
+	if(deviceContext.GetFrameBufferStack().size())
 	{
-		v=BaseFramebuffer::GetFrameBufferStack().top()->viewport;
+		v= deviceContext.GetFrameBufferStack().top()->viewport;
 	}
 	else
 	{
-		if(BaseFramebuffer::defaultTargetsAndViewport.viewport.w*BaseFramebuffer::defaultTargetsAndViewport.viewport.h==0)
+		if(deviceContext.defaultTargetsAndViewport.viewport.w*deviceContext.defaultTargetsAndViewport.viewport.h==0)
 		{
-			SIMUL_BREAK_ONCE("The default viewport is empty. Please call simul::crossplatform::BaseFramebuffer::setDefaultRenderTargets() at least once on initialization or at the start of the trueSKY frame.");
+			SIMUL_BREAK_ONCE("The default viewport is empty. Please call deviceContext.setDefaultRenderTargets() at least once on initialization or at the start of the trueSKY frame.");
 		}
-		v=BaseFramebuffer::defaultTargetsAndViewport.viewport;
+		v= deviceContext.defaultTargetsAndViewport.viewport;
 	}
 	return v;
 }
@@ -994,6 +1035,14 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 	return ss;
 }
 
+Effect *RenderPlatform::GetEffect(const char *filename_utf8)
+{
+	auto i = effects.find(filename_utf8);
+	if (i == effects.end())
+		return nullptr;
+	return i->second;
+}
+
 Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
 {
 	std::map<std::string,std::string> defines;
@@ -1005,9 +1054,9 @@ crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8,co
 {
 	std::string fn(filename_utf8);
 	crossplatform::Effect *e=CreateEffect();
+	effects[fn] = e;
 	e->Load(this,filename_utf8,defines);
 	e->SetName(filename_utf8);
-//	solidConstants.LinkToEffect(e,"SolidConstants");
 	return e;
 }
 

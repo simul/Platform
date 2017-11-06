@@ -126,6 +126,7 @@ namespace simul
 		extern SIMUL_CROSSPLATFORM_EXPORT void MakeInvWorldViewProjMatrix(float *ivp,const float *world,const float *v,const float *p);
 		//! Make a viewProj matrix, which converts worldspace into clip position.
 		extern SIMUL_CROSSPLATFORM_EXPORT void MakeViewProjMatrix(float *vp,const float *view,const float *proj);
+		extern SIMUL_CROSSPLATFORM_EXPORT void MakeWorldViewMatrix(float *wv, const float *w, const float *v);
 		//! Make a viewProj matrix, but ignore the view position.
 		extern SIMUL_CROSSPLATFORM_EXPORT void MakeCentredViewProjMatrix(float *vp,const float *view,const float *proj);
 		//! Make a worldViewProj matrix.
