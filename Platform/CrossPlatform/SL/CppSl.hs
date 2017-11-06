@@ -384,6 +384,12 @@
 		r.z=m*v.z;
 		return r;
 	}
+	inline float dot(const vec3 &a,const vec3 &b)
+	{
+		float c;
+		c=a.x*b.x+a.y*b.y+a.z*b.z;
+		return c;
+	}
 	struct vec4
 	{
 		float x,y,z,w;
