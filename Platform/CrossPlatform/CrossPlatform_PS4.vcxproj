@@ -40,7 +40,6 @@
       <PreprocessorDefinitions>SIMUL_CROSSPLATFORM_DLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ORBIS'">
@@ -49,7 +48,6 @@
       <OptimizationLevel>Level0</OptimizationLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -60,6 +58,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CameraInterface.cpp" />
     <ClCompile Include="DemoOverlay.cpp" />
+    <ClCompile Include="DeviceContext.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="GpuProfiler.cpp" />
     <ClCompile Include="HdrRenderer.cpp" />

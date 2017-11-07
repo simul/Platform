@@ -87,6 +87,7 @@
     <ClCompile Include="SphericalHarmonics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DeviceContext.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Topology.h">

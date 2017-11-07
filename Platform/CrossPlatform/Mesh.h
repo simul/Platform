@@ -90,13 +90,13 @@ namespace simul
 				indexSize = sizeof(U);
 				numVertices = (int)vertices.size();
 				numIndices = (int)indices.size();
-				T *v				=new T[num_vertices];
-				U *ind				=new U[num_indices];
-				for(int i=0;i<num_vertices;i++)
+				T *v				=new T[numVertices];
+				U *ind				=new U[numIndices];
+				for(int i=0;i<numVertices;i++)
 					v[i]=vertices[i];
-				for(int i=0;i<num_indices;i++)
+				for(int i=0;i<numIndices;i++)
 					ind[i]=indices[i];
-				init(renderPlatform,num_vertices,num_indices,v,ind);
+				init(renderPlatform,numVertices,numIndices,v,ind);
 				delete [] v;
 				delete [] ind;
 			}

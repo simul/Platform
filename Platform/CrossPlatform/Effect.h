@@ -428,7 +428,7 @@ namespace simul
 		{
 			std::set<Effect*> linkedEffects;
 		public:
-			ConstantBuffer():ConstantBufferBase(typeid(T).name())
+			ConstantBuffer():ConstantBufferBase("")
 			{
 				// Clear out the part of memory that corresponds to the base class.
 				// We should ONLY inherit from simple structs.

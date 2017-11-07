@@ -191,5 +191,6 @@
     <ClCompile Include="View.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DeviceContext.cpp" />
   </ItemGroup>
 </Project>

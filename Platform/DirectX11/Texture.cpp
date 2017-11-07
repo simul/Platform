@@ -1084,11 +1084,27 @@ void Texture::CreateSRVTables(int num,int m,bool cubemap,bool volume,bool msaa)
 		V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture,&SRVDesc, &arrayShaderResourceView));
 	}
 	if(mainMipShaderResourceViews)
+	{
+		if (cubemap)
+		{
+			SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+			SRVDesc.TextureCube.MipLevels = 1;
+			SRVDesc.TextureCube.MostDetailedMip;
 	for(int j=0;j<m;j++)
 	{
+				SRVDesc.Texture3D.MostDetailedMip = j;
+				V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &SRVDesc, &mainMipShaderResourceViews[j]));
+			}
+		}
+		else
+		{
 		SRVDesc.Texture3D.MipLevels=1;
+			for (int j = 0; j < m; j++)
+			{
 		SRVDesc.Texture3D.MostDetailedMip=j;
 		V_CHECK(renderPlatform->AsD3D11Device()->CreateShaderResourceView(texture, &SRVDesc, &mainMipShaderResourceViews[j]));
+	}
+		}
 	}
 	if(layerShaderResourceViews||layerMipShaderResourceViews)
 	{
