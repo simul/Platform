@@ -115,6 +115,7 @@ namespace simul
 			 ConstantBufferAssignmentMap;
 			 StructuredBufferAssignmentMap;
 			;*/
+
 			std::unordered_map<int,Buffer*> applyVertexBuffers;
 			std::unordered_map<int,Buffer*> streamoutTargets;
 			std::unordered_map<int,ConstantBufferBase*> applyBuffers;
