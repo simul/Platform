@@ -292,7 +292,7 @@ shader ParticleGeometryOutput VS_SnowParticles(uint vertex_id : SV_VertexID)
 		p.dir=saturate(in_depth_space.xyz);
 		if(in_depth_space.z>depth)
 			p.type=44;
-    }
+	}
 	else
 		p.type=44;
 #endif
