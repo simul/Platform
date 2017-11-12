@@ -56,7 +56,7 @@ vec3 CubeTexCoordsToView(int cube_face,vec2 texCoords)
 	vec4 clip_pos = vec4(-1.0, 1.0, 1.0, 1.0);
 	clip_pos.x += 2.0*texCoords.x;
 	clip_pos.y -= 2.0*texCoords.y;
-	return ClipPosToView(cube_face,clip_pos);
+	return CubeClipPosToView(cube_face, clip_pos);
 }
 
 vec3 CubeFaceIndexToView(uint3 idx,uint2 dims)

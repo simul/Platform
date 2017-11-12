@@ -6,28 +6,31 @@
 #include "../SL/noise.sl"
 #include "../SL/spherical_harmonics.sl"
 #include "../SL/light_probe_constants.sl"
+#include "../SL/cubemap_matrices.sl"
+#include "../SL/brdf.sl"
 
 #ifndef GLSL
 #ifndef SIMUL_PI_F
 #define SIMUL_PI_F (3.1415926536)
 #endif
+#ifndef pi
+#define pi (3.1415926536)
+#endif
 // A texture (l+1)^2 of basis coefficients.
-uniform StructuredBuffer<float4> basisBuffer;
+uniform StructuredBuffer<vec4> basisBuffer;
 
 uniform Texture2DArray<vec4> sourceTextureArray;
+Texture2D copySourceTexture;
+uniform RWTexture2D<vec4> copyTargetTexture;
+uniform TextureCube sourceCubemap;
 
 float WindowFunction(float x)
 {
 	return saturate((0.0001+sin(SIMUL_PI_F*x))/(0.0001+SIMUL_PI_F*x));
 }
 
-shader vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
+vec4 EvaluateSH(vec3 view)
 {
-	vec4 clip_pos	=vec4(-1.0,1.0,1.0,1.0);
-	clip_pos.x		+=2.0*IN.texCoords.x;
-	clip_pos.y		-=2.0*IN.texCoords.y;
-	vec3 view		=mul(invViewProj,clip_pos).xyz;
-	view			=normalize(view);
 	// convert spherical coords to unit vector 
 	//	vec3 vec		=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
 	// Therefore as atan2(y,x) is the angle from the X-AXIS:
@@ -71,12 +74,49 @@ shader vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 		for (int m = -l; m <= l; m++)
 			result += basisBuffer[n++] * SH(l, m, theta, phi) *w *A[l] / 3.1415926;
 	}
+	return result;
+}
+
+shader vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 clip_pos	=vec4(-1.0,1.0,1.0,1.0);
+	clip_pos.x		+=2.0*IN.texCoords.x;
+	clip_pos.y		-=2.0*IN.texCoords.y;
+
+	vec3 view		=mul(invViewProj,clip_pos).xyz;
+	view			=normalize(view);
+	vec4 result=EvaluateSH(view);
 	//result.r = 0;
 	//result.g= SH(4, -4, theta, phi);
 	//result.b = -result.g;
 	result.a=alpha;
 	return max(result,vec4(0,0,0,0));
 }
+
+float GetroughnessFromMip(float mip, float num_mips,float roughness_mip_scale)
+{
+	// exp2 is pow(2.0,x)
+	return exp2( ( 1 - num_mips + mip) / roughness_mip_scale );
+}
+
+uint ReverseBits(uint bits) {
+	bits = (bits << 16u) | (bits >> 16u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	return bits; 
+}
+
+vec2 Hammersley(uint index, uint NumSamples, uint2 random)
+{
+	float E1 = frac((float)index / NumSamples + float(random.x & 0xffff) / (1 << 16));
+	// Radical inverse:
+	float E2 = float(ReverseBits(index) ^ random.y) * 2.3283064365386963e-10;
+	return vec2(E1, E2);
+}
+
+
 
 shader vec4 PS_BlendMip(posTexVertexOutput IN) : SV_TARGET
 {
@@ -86,6 +126,141 @@ shader vec4 PS_BlendMip(posTexVertexOutput IN) : SV_TARGET
 	src_lookup.a=alpha;
 	return src_lookup;
 }
+mat3 GetTangentBasis(vec3 Z_dir)
+{
+	vec3 UpVector = abs(Z_dir.z) < 0.999 ? vec3(0, 0, 1) : vec3(1, 0, 0);
+	vec3 TangentX = normalize(cross(UpVector, Z_dir));
+	vec3 TangentY = cross(Z_dir, TangentX);
+	return mat3(TangentX, TangentY, Z_dir);
+}
+
+float3 TangentToWorld(vec3 Vec, vec3 Z_dir)
+{
+	return mul(Vec, GetTangentBasis(Z_dir));
+}
+float RoughnessFromMip(float Mip, float CubemapMaxMip)
+{
+	float LevelFrom1x1 = CubemapMaxMip - 1 - Mip;
+	return exp2(( - LevelFrom1x1) / 1.2);
+}
+vec4 CosineSampleHemisphere(vec2 E)
+{
+	float Phi = 2 * PI * E.x;
+	float cos_theta = sqrt(E.y);
+	float sin_theta = sqrt(1 - cos_theta * cos_theta);
+
+	vec3 H;
+	H.x = sin_theta * cos(Phi);
+	H.y = sin_theta * sin(Phi);
+	H.z = cos_theta;
+
+	float PDF = cos_theta / PI;
+
+	return vec4(H, PDF);
+}
+
+vec4 ImportanceSampleGGX(vec2 E, float roughness)
+{
+	float m = roughness * roughness;
+	float m2 = m * m;
+
+	float Phi = 2 * PI * E.x;
+	float cos_theta = sqrt((1 - E.y) / (1 + (m2 - 1) * E.y));
+	float sin_theta = sqrt(1 - cos_theta * cos_theta);
+
+	vec3 H;
+	H.x = sin_theta * cos(Phi);
+	H.y = sin_theta * sin(Phi);
+	H.z = cos_theta;
+
+	float d = (cos_theta * m2 - cos_theta) * cos_theta + 1;
+	float D = m2 / (PI*d*d);
+	float PDF = D * cos_theta;
+
+	return vec4(H, PDF);
+}
+
+vec4 RoughnessMip(vec3 view,bool rough) 
+{
+	vec4 outp;
+	uint CubeSize = 1 << ( numMips - 1 );
+	const float SolidAngleTexel = 4*PI / ( 6 * CubeSize * CubeSize ) * 2;
+	const uint NumSamples =  roughness < 0.1 ? 132 : 164;
+	vec4 result = vec4(0,0,0,0);
+	mat3 TangentToWorld = GetTangentBasis(view);
+	float Weight = 0.0;
+	for (uint i = 0; i < NumSamples; i++)
+	{
+		vec2 E = Hammersley(i, NumSamples, 0);
+		vec3 L;
+		if(rough) // used for roughness > 0.99
+		{
+			// roughness=1, GGX is constant. Use cosine distribution instead
+			L		= CosineSampleHemisphere(E).xyz;
+		}
+		else
+		{
+			vec3 H	= ImportanceSampleGGX(E*0.995, roughness).xyz;
+			L		= 2*H.z*H - vec3(0,0,1.0);
+		}
+		float NoL = L.z;
+		if (NoL>0)
+		{
+			L		= mul(L, TangentToWorld);
+			result	+= sourceCubemap.SampleLevel(cubeSamplerState, L, 0) * NoL;
+			Weight	+= NoL;
+		}
+	}
+	outp = result / Weight;
+	return outp;
+}
+
+shader vec4 PS_RoughnessMip(posTexVertexOutput IN) : SV_TARGET
+{
+	// general case
+	vec3 view = CubeTexCoordsToView(cubeFace, IN.texCoords);
+	return RoughnessMip(view,false);
+}
+shader vec4 PS_RoughnessMip_Rough(posTexVertexOutput IN) : SV_TARGET
+{
+	// For roughness>0.99
+	vec3 view = CubeTexCoordsToView(cubeFace, IN.texCoords);
+	return RoughnessMip(view, true);
+}
+
+shader vec4 PS_RoughnessMip_Smooth(posTexVertexOutput IN) : SV_TARGET
+{
+	// for roughness<0.01
+	vec3 view = CubeTexCoordsToView(cubeFace, IN.texCoords);
+	return sourceCubemap.SampleLevel(cubeSamplerState, view, 0);
+}
+
+
+shader vec4 PS_CopyFace(posTexVertexOutput IN) : SV_TARGET
+{
+	vec4 linear_src=copySourceTexture.SampleLevel(clampSamplerState,IN.texCoords,0);
+	vec4 result=linear_src;
+	return result;
+}
+
+[numthreads(8,8,1)]
+shader void CS_CopyFace(uint3 sub_pos: SV_DispatchThreadID)
+{
+	vec4 linear_src=copySourceTexture[sub_pos.xy];
+	vec4 result=linear_src;
+	copyTargetTexture[sub_pos.xy] =result;
+}
+
+BlendState ProbeBlend
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = INV_SRC_ALPHA;
+	DestBlend = SRC_ALPHA;
+	BlendOp = ADD;
+	SrcBlendAlpha = ONE;
+	DestBlendAlpha = ZERO;
+	BlendOpAlpha = ADD;
+};
 
 technique irradiance_map
 {
@@ -96,8 +271,39 @@ technique irradiance_map
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_IrradianceMap()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(ProbeBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
+}
+
+technique mip_from_roughness
+{
+	pass general
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(DontBlend, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
+		SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip()));
+	}
+	pass rough
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(DontBlend, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
+		SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip_Rough()));
+	}
+	pass smooth
+	{
+		SetRasterizerState(RenderNoCull);
+		SetGeometryShader(NULL);
+		SetDepthStencilState(DisableDepth, 0);
+		SetBlendState(DontBlend, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen()));
+		SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip_Smooth()));
+	}
 }
 
 technique blend_mip
@@ -109,7 +315,7 @@ technique blend_mip
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
 		SetPixelShader(CompileShader(ps_5_0,PS_BlendMip()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(ProbeBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
 
@@ -124,5 +330,25 @@ technique overwrite_mip
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
+}
+
+technique compute_copy_face
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_CopyFace()));
+    }
+}
+technique copy_face
+{
+	pass p0 
+	{
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+		SetPixelShader(CompileShader(ps_5_0,PS_CopyFace()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+	}
 }
 #endif
