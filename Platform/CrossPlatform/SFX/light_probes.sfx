@@ -99,7 +99,7 @@ float GetroughnessFromMip(float mip, float num_mips,float roughness_mip_scale)
 	return exp2( ( 1 - num_mips + mip) / roughness_mip_scale );
 }
 
-uint ReverseBits(uint bits) {
+uint reverseBits(uint bits) {
 	bits = (bits << 16u) | (bits >> 16u);
 	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
@@ -112,7 +112,7 @@ vec2 Hammersley(uint index, uint NumSamples, uint2 random)
 {
 	float E1 = frac((float)index / NumSamples + float(random.x & 0xffff) / (1 << 16));
 	// Radical inverse:
-	float E2 = float(ReverseBits(index) ^ random.y) * 2.3283064365386963e-10;
+	float E2 = float(reverseBits(index) ^ random.y) * 2.3283064365386963e-10;
 	return vec2(E1, E2);
 }
 
@@ -126,6 +126,7 @@ shader vec4 PS_BlendMip(posTexVertexOutput IN) : SV_TARGET
 	src_lookup.a=alpha;
 	return src_lookup;
 }
+
 mat3 GetTangentBasis(vec3 Z_dir)
 {
 	vec3 UpVector = abs(Z_dir.z) < 0.999 ? vec3(0, 0, 1) : vec3(1, 0, 0);
