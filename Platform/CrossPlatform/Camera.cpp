@@ -76,12 +76,12 @@ So, remembering that in this case Z in front of the camera is negative, we have:
 for Zv = -N, Zp = 0
 for Zv = -F, Zp = 1
 */
-
+/*
 static float U(float x)
 {
 	return atan(x/2.f);
 }
-
+*/
 vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const ViewStruct &viewStruct, float max_dist_metres)
 {
 	// 	Z = x/(depth*y + z)+w*depth;

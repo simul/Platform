@@ -112,7 +112,7 @@ FontIndex fontIndices[]={
 };
 
 TextRenderer::TextRenderer()
-	:renderPlatform(NULL), effect(NULL), font_texture(NULL), recompile(false)
+	:effect(NULL), font_texture(NULL), renderPlatform(NULL), recompile(false)
 {
 }
 

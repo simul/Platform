@@ -8,9 +8,9 @@ using namespace simul;
 using namespace crossplatform;
 
 RenderDelegater::RenderDelegater(crossplatform::RenderPlatform *r,simul::base::MemoryInterface *m)
-	:renderPlatform(r)
+	:device(nullptr)
 	,last_view_id(0)
-	,device(nullptr)
+	,renderPlatform(r)
 {
 }
 

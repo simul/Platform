@@ -15,16 +15,16 @@ using namespace simul;
 using namespace crossplatform;
 
 HdrRenderer::HdrRenderer()
-	:renderPlatform(NULL)
+	:Glow(false)
+	,renderPlatform(NULL)
 	,Width(0)
 	,Height(0)
-	,Glow(false)
 	,hdr_effect(NULL)
+	,blurTexture(NULL)
 	,exposureGammaTechnique(NULL)
-	,m_pGaussianEffect(NULL)
 	,glowExposureGammaTechnique(NULL)
 	,glowTechnique(NULL)
-	,blurTexture(NULL)
+	,m_pGaussianEffect(NULL)
 {
 	for(int i=0;i<4;i++)
 	{
@@ -62,7 +62,6 @@ void HdrRenderer::SetBufferSize(int w,int h)
 		if(blurTexture)
 		{
 			blurTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
-			crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
 		}
 	}
 	//RecompileShaders();
@@ -274,16 +273,14 @@ hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
 	hdrConstants.gamma				=Gamma;
 	hdrConstants.exposure			=Exposure;
 	
-	float direction=(offsetX-0.5f)*2.0f;
-
-
+	//float direction=(offsetX-0.5f)*2.0f;
+	
     float as = float(640) / float(800);
 	
 	vec4 distortionK(1.0f,0.22f,0.24f,0.0f);
     // We are using 1/4 of DistortionCenter offset value here, since it is
     // relative to [-1,1] range that gets mapped to [0, 0.5].
-	static float xco				= 0.15197642f;
-	float Distortion_XCenterOffset	= direction*xco;
+	//static float xco				= 0.15197642f;
 	static float Distortion_Scale	= 1.7146056f;
     float scaleFactor				=1.0f/Distortion_Scale;
 	hdrConstants.warpHmdWarpParam	=distortionK;

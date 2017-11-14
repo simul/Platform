@@ -152,7 +152,7 @@ shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
 			vec3 XX=cross(vec3(1.0,0.0,0.0),(s-e));
 			vec3 YY=cross(vec3(0.0,1.0,0.0),(s-e));
 			vec3 x=0.5*(s+e);
-			vec2 noise_texc		=vec2(9.3*float(j+randomSeed)+time,3.1*float(i)+4.5*float(j));
+			noise_texc		=vec2(9.3*float(j+randomSeed)+time,3.1*float(i)+4.5*float(j));
 			vec4 noise_lookup	=texture_wrap_lod(randomTexture,noise_texc,0);
 			float angle			=noise_lookup.x*2.0*3.14159;
 			x+=off*(XX*cos(angle)+YY*sin(angle));
