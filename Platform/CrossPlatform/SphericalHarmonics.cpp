@@ -76,7 +76,7 @@ void SphericalHarmonics::RenderMipsByRoughness(crossplatform::DeviceContext &dev
 	for (int m = 0; m < target->mips - 1; m++)
 	{
 		lightProbeConstants.mipIndex = m+1;
-		lightProbeConstants.roughness = RoughnessFromMip(lightProbeConstants.mipIndex, target->mips );
+		lightProbeConstants.roughness = RoughnessFromMip(float(lightProbeConstants.mipIndex), float(target->mips) );
 		const char *passname = (lightProbeConstants.roughness < 0.01f) ? "smooth" : (lightProbeConstants.roughness < 0.99f ? "general" : "rough");
 		for (int j = 0; j < 6; j++)
 		{

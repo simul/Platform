@@ -28,17 +28,17 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	,solidEffect(NULL)
 	,copyEffect(NULL)
 	,memoryInterface(m)
-	,debugEffect(NULL)
 	,shaderBuildMode(BUILD_IF_CHANGED)
-	,untextured(nullptr)
+	,debugEffect(NULL)
 	,textured(NULL)
-	,textRenderer(NULL)
+	,untextured(nullptr)
 	,showVolume(NULL)
 #ifdef _XBOX_ONE
 	,can_save_and_restore(false)
 #else
 	,can_save_and_restore(true)
 #endif
+	,textRenderer(NULL)
 {
 	immediateContext.renderPlatform=this;
 	gpuProfiler=new GpuProfiler;

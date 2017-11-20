@@ -309,8 +309,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity
 	//res.nearFarDepth.y	=	max(0.00001,res.nearFarDepth.x-res.nearFarDepth.y);
 	//res.nearFarDepth.z	=	max(0.0000001,res.nearFarDepth.x-meanFadeDistance);// / maxFadeDistanceKm;// min(res.nearFarDepth.y, max(res.nearFarDepth.x + distScale, minDistance));// min(distScale, minDistance);
 	res.nearFarDepth.zw	=	meanFadeDistance;
-	for(int j=0;j<num_interp;j++)
-		res.colour[j].rgb+=insc[j].rgb;//*gr;
+	for(int k=0;k<num_interp;k++)
+		res.colour[k].rgb+=insc[k].rgb;//*gr;
 	return res;
 }
 #endif
