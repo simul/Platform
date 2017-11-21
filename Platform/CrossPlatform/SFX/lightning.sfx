@@ -62,17 +62,17 @@ shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 	vec3 outpos[130];
 	outpos[0]			=startP;
 	outpos[num_steps]	=endP;
-	int del				=int(num_steps);
+	uint del			=num_steps;
 	float persistence	=0.8;
 	vec3 off			=vec3(1.0,1.0,vertical)*roughness;
 	float time			=phaseTime;
 	for(uint i=0;i<MAX_OCTAVES;i++)
 	{
-		for(uint j=del/2;j<num_steps;j+=del)
+		for(uint j=del/2u;j<num_steps;j+=del)
 		{
 			// j is the index into the list of outputs.
-			vec3 s				=outpos[j-del/2];
-			vec3 e				=outpos[j+del/2];
+			vec3 s				=outpos[j-del/2u];
+			vec3 e				=outpos[j+del/2u];
 			vec3 XX				=cross(vec3(1.0,0.0,0.0),(s-e));
 			vec3 YY				=cross(vec3(0.0,1.0,0.0),(s-e));
 			vec3 x				=0.5*(s+e);
@@ -82,7 +82,7 @@ shader void CS_InitialFractal(uint3 idx : SV_DispatchThreadID)
 			x					+=off*noise_lookup.y*(XX*cos(angle)+YY*sin(angle));
 			outpos[j]			=x;
 		}
-		del	/=2;
+		del	/=2u;
 		time*=2.0;
 	}
 	float t				=strikeThicknessMetres;//*100;
@@ -131,7 +131,7 @@ shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
 	vec3 outpos[33];
 	outpos[0]			=startP;
 	outpos[num_steps]	=endP;
-	int del				=num_steps;
+	uint del			=(uint)num_steps;
 	float persistence	=0.8;
 	//float off			=roughness;
 	float time			=phaseTime;
@@ -143,12 +143,12 @@ shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
 	OUT.position=endP;
 	OUT.progress=1.0;
 	verticesRW[num_steps]	=OUT;
-	for(int i=0;i<num_octaves;i++)
+	for(uint i=0;i<num_octaves;i++)
 	{
-		for(int j=del/2;j<num_steps;j+=del)
+		for(uint j=del/2u;j<(uint)num_steps;j+=del)
 		{
-			vec3 s=outpos[j-del/2];
-			vec3 e=outpos[j+del/2];
+			vec3 s=outpos[j-del/2u];
+			vec3 e=outpos[j+del/2u];
 			vec3 XX=cross(vec3(1.0,0.0,0.0),(s-e));
 			vec3 YY=cross(vec3(0.0,1.0,0.0),(s-e));
 			vec3 x=0.5*(s+e);
@@ -162,13 +162,13 @@ shader void CS_BranchFractal(uint3 idx : SV_DispatchThreadID)
 				float c				=saturate(float(num_pts-j)/5.0);
 				OUT.position		=outpos[j];
 				float br			=brightness*saturate(float(num_steps-j)/5.0);
-				float endpoint		=float(j>(num_steps-2));
+				float endpoint		=float(j>(uint)(num_steps-2));
 				OUT.texCoords		=c*vec2(strikeThicknessMetres,br);
 				OUT.progress		=IN0.progress+v;
 				verticesRW[branch_start_id+j]=OUT;
 			}
 		}
-		del/=2;
+		del/=2u;
 		//off*=persistence;
 		time*=2.0;
 	}

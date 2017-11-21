@@ -1752,7 +1752,7 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 		viewport.MinDepth	= 0.0f;
 		viewport.MaxDepth	= 1.0f;
 
-		CD3DX12_RECT scissor(0, 0, viewport.Width, viewport.Height);
+		CD3DX12_RECT scissor(0, 0, (LONG)viewport.Width, (LONG)viewport.Height);
 		
 		rp->AsD3D12CommandList()->RSSetScissorRects(1, &scissor);
 		rp->AsD3D12CommandList()->RSSetViewports(1, &viewport);

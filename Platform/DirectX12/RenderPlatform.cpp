@@ -1148,8 +1148,8 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		// Configure scissor
 		scissors[i].left		= 0;
 		scissors[i].top			= 0;
-		scissors[i].right		= viewports[i].Width;
-		scissors[i].bottom		= viewports[i].Height;
+		scissors[i].right		= (LONG)viewports[i].Width;
+		scissors[i].bottom		= (LONG)viewports[i].Height;
 	}
 
 	mCommandList->RSSetViewports(num, viewports);

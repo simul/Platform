@@ -799,8 +799,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		base::ClipWhitespace(line);
 		vector<string> words=simul::base::split(line,' ');
 		pos				=next;
-		int sp=line.find(" ");
-		int open_brace=line.find("{");
+		size_t sp=line.find(" ");
+		size_t open_brace=line.find("{");
 		if(open_brace>=0)
 			level=(Level)(level+1);
 		string word;
@@ -888,7 +888,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				string enablestr=simul::base::toNext(props,')',pos);
 				vector<string> en=base::split(enablestr,',');
 
-				desc.blend.numRTs=en.size();
+				desc.blend.numRTs=(int)en.size();
 				pos++;
 				crossplatform::BlendOperation BlendOp		=(crossplatform::BlendOperation)toInt(base::toNext(props,',',pos));
 				crossplatform::BlendOperation BlendOpAlpha	=(crossplatform::BlendOperation)toInt(base::toNext(props,',',pos));
@@ -974,9 +974,9 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			else if(is_equal(word, "SamplerState"))
 			{
 				//SamplerState clampSamplerState 9,MIN_MAG_MIP_LINEAR,CLAMP,CLAMP,CLAMP,
-				int sp2=line.find(" ",sp+1);
+				size_t sp2=line.find(" ",sp+1);
 				string sampler_name = line.substr(sp + 1, sp2 - sp - 1);
-				int comma=(int)std::min(line.length(),line.find(",",sp2+1));
+				size_t comma=(int)std::min(line.length(),line.find(",",sp2+1));
 				string register_num = line.substr(sp2 + 1, comma - sp2 - 1);
 				int reg=atoi(register_num.c_str());
 				simul::crossplatform::SamplerStateDesc desc;
@@ -1014,8 +1014,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			// Find the shader definitions:
 			// vertex: simple_VS_Main_vv.sb
 			// pixel: simple_PS_Main_p.sb
-			int cl=line.find(":");
-			int cm=line.find(",",cl+1);
+			size_t cl=line.find(":");
+			size_t cm=line.find(",",cl+1);
 			if(cm<0)
 				cm=line.length();
 			if(cl>=0&&tech)
@@ -1204,7 +1204,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				}
 			}
 		}
-		int close_brace=line.find("}");
+		size_t close_brace=line.find("}");
 		if (close_brace >= 0)
 		{
 			level = (Level)(level - 1);

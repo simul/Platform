@@ -775,7 +775,7 @@ namespace simul
 			FastMap():index_limit(0),index_start(count),has_value(0),sz(0)
 			{
 			}
-			const T& operator[](size_t i) const
+			const T& operator[](int i) const
 			{
 				if(i>=index_limit)
 				{
@@ -783,7 +783,7 @@ namespace simul
 				}
 				return values[i];
 			}
-			T& operator[](size_t i)
+			T& operator[](int i)
 			{
 				if(i>=count)
 				{

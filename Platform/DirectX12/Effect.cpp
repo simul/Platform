@@ -41,7 +41,7 @@ Query::Query(crossplatform::QueryType t):
 	mQueryHeap(nullptr),
 	mReadBuffer(nullptr),
 	mQueryData(nullptr),
-	mTime(0.0),
+	mTime((UINT64)0.0),
 	mIsDisjoint(false)
 {
 	mD3DType = dx12::RenderPlatform::ToD3dQueryType(t);

@@ -95,7 +95,7 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 		// as far as we know, an UPLOAD buffer has CPU read/write access and GPU read access.
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.SizeInBytes						= kBufferAlign * mSlots;
-		for(int j=0;j<mMaxDescriptors;j++)
+		for(UINT j=0;j<mMaxDescriptors;j++)
 		{
 			UINT64 offset = (kBufferAlign * mSlots) * j;	
 		// If we applied this CB more than once this frame, we will be appending another descriptor (thats why we offset)

@@ -117,17 +117,17 @@ void MouseHandler::getMousePosition(int &x,int &y) const
 
 bool MouseHandler::getLeftButton() const
 {
-	return MouseButtons&LeftButton;
+	return (MouseButtons==LeftButton);
 }
 
 bool MouseHandler::getRightButton() const
 {
-	return MouseButtons&RightButton;
+	return (MouseButtons==RightButton);
 }
 
 bool MouseHandler::getMiddleButton() const
 {
-	return MouseButtons&MiddleButton;
+	return (MouseButtons==MiddleButton);
 }
 
 void MouseHandler::mouseWheel(int delta)
