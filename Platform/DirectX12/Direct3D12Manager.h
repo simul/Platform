@@ -101,8 +101,7 @@ namespace simul
 			void						SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci,int view_id);
 			void						SetFullScreen(HWND hwnd,bool fullscreen,int which_output);
 			void						ResizeSwapChain(HWND hwnd);
-			void*						GetDevice12();
-			void*						GetDevice()					{ return 0; }
+			void*						GetDevice()					{ return mDevice; }
 			void*						GetDeviceContext()			{ return 0; }
 			void*						GetCommandList(HWND hwnd)	{ return GetWindow(hwnd)->CommandList;; }
 			void*						GetCommandQueue(HWND hwnd)	{ return GetWindow(hwnd)->CommandQueue; }

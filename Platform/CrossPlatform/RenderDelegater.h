@@ -28,6 +28,7 @@ namespace simul
 			std::vector<crossplatform::ShutdownDeviceDelegate> shutdownDeviceDelegates;
 			void *device;
 			int last_view_id;
+			UINT64 frame;
 		public:
 			RenderDelegater(crossplatform::RenderPlatform *r,simul::base::MemoryInterface *m);
 			~RenderDelegater();

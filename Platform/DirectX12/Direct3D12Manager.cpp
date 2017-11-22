@@ -18,6 +18,10 @@ Window::Window():
 	SwapChain(nullptr),
 	FrameIndex(0)
 {
+	for (UINT f = 0; f < FrameCount; f++)
+	{
+		FenceValues[f] = 0;
+	}
 }
 
 Window::~Window()
@@ -620,7 +624,7 @@ void Direct3D12Manager::Render(HWND h)
 			(void*)&w->RTHandles[frameIndex],
 			(void*)&w->DSHeap->GetCPUDescriptorHandleForHeapStart()
 		};
-		w->renderer->Render(w->view_id, pParams,GetDeviceContext(),w->Scissor.right,w->Scissor.bottom);
+		w->renderer->Render(w->view_id, cmdList, pParams,w->Scissor.right,w->Scissor.bottom);
 	}
 
 	// Get ready to present
@@ -697,12 +701,6 @@ void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
 	if(!w)
 		return;
 	w->ResizeSwapChain(mDevice);
-}
-
-
-void* simul::dx12::Direct3D12Manager::GetDevice12()
-{
-	return mDevice;
 }
 
 void Direct3D12Manager::AddWindow(HWND hwnd)
