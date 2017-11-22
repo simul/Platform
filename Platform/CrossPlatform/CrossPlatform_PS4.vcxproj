@@ -40,7 +40,6 @@
       <PreprocessorDefinitions>SIMUL_CROSSPLATFORM_DLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ORBIS'">
@@ -49,7 +48,6 @@
       <OptimizationLevel>Level0</OptimizationLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -60,6 +58,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CameraInterface.cpp" />
     <ClCompile Include="DemoOverlay.cpp" />
+    <ClCompile Include="DeviceContext.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="GpuProfiler.cpp" />
     <ClCompile Include="HdrRenderer.cpp" />
@@ -68,9 +67,12 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="prx.cpp" />
+    <ClCompile Include="MeshRenderer.cpp" />
+    <ClCompile Include="MouseHandler.cpp" />
     <ClCompile Include="Quaterniond.cpp" />
+    <ClCompile Include="RenderDelegater.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />
+    <ClCompile Include="SphericalHarmonics.cpp" />
     <ClCompile Include="TextInputOutput.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Texture.cpp" />
@@ -98,10 +100,14 @@
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MeshRenderer.h" />
+    <ClInclude Include="MouseHandler.h" />
     <ClInclude Include="PixelFormat.h" />
     <ClInclude Include="Quaterniond.h" />
+    <ClInclude Include="RenderDelegater.h" />
     <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="ShaderMode.h" />
+    <ClInclude Include="SphericalHarmonics.h" />
     <ClInclude Include="TextInputOutput.h" />
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Texture.h" />

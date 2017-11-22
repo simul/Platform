@@ -5,12 +5,9 @@
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
 #include "Simul/Platform/CrossPlatform/SL/debug_constants.sl"
+#include "SimulDirectXHeader.h"
 
-#if defined(_XBOX_ONE)
-	#include <d3dx12_x.h>		
-#else
-	#include "d3dx12.h"
-#endif
+
 
 #include <vector>
 #include <queue>
@@ -64,8 +61,9 @@ namespace simul
 			ID3D12CommandQueue*				GetCommandQueue() { return m12Queue; }
 
 			//! Method to transition a resource from one state to another. We can provide a subresource index
-			//! to only update that subresource, leave as default if updating the hole resource
-			void						ResourceTransitionSimple(ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after,UINT subRes = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+			//! to only update that subresource, leave as default if updating the hole resource. Transitions will be stored
+			//! and executed all at once before important calls. Set flush to true to perform the action immediatly
+			void						ResourceTransitionSimple(ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, bool flush = false, UINT subRes = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 
 			//! Pushes the pending barriers.
 			void						FlushBarriers();
@@ -131,9 +129,6 @@ namespace simul
 			void									DrawCube		(crossplatform::DeviceContext &deviceContext);
 			void									ApplyDefaultMaterial();
 
-			crossplatform::Material					*CreateMaterial();
-			crossplatform::Mesh						*CreateMesh();
-			crossplatform::Light					*CreateLight();
 			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8 = nullptr);
 			crossplatform::BaseFramebuffer			*CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d);
@@ -152,13 +147,11 @@ namespace simul
 			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);
 			void									DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext) override;
 		
-			crossplatform::Viewport					GetViewport(crossplatform::DeviceContext &deviceContext,int index);
 			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps);
 			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer);
 			
 			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
 			void									SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l) override;
-			void									EnsureEffectIsBuilt(const char *filename_utf8, const std::vector<crossplatform::EffectDefineOptions> &options) override;
 
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);

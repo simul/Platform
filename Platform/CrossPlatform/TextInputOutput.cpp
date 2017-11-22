@@ -226,12 +226,12 @@ void TextFileInput::Load(const char *filename_utf8)
 	}
 	else
 	{
-	ERRNO_CHECK
-	ERRNO_CHECK
+	
+	
 		if(!fileLoader->FileExists(filename_utf8))
 		{
 			good=false;
-	ERRNO_CHECK
+	
 			return;
 		}
 #ifdef _MSC_VER

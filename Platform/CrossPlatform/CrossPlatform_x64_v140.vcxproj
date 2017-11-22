@@ -182,7 +182,10 @@
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MeshRenderer.h" />
+    <ClInclude Include="MouseHandler.h" />
     <ClInclude Include="RenderDelegater.h" />
+    <ClInclude Include="SphericalHarmonics.h" />
     <ClInclude Include="View.h" />
     <ClInclude Include="PixelFormat.h" />
     <ClInclude Include="Quaterniond.h" />
@@ -201,6 +204,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CameraInterface.cpp" />
     <ClCompile Include="DemoOverlay.cpp" />
+    <ClCompile Include="DeviceContext.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="GpuProfiler.cpp" />
     <ClCompile Include="HdrRenderer.cpp" />
@@ -209,7 +213,10 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MeshRenderer.cpp" />
+    <ClCompile Include="MouseHandler.cpp" />
     <ClCompile Include="RenderDelegater.cpp" />
+    <ClCompile Include="SphericalHarmonics.cpp" />
     <ClCompile Include="View.cpp" />
     <ClCompile Include="Quaterniond.cpp" />
     <ClCompile Include="RenderPlatform.cpp" />

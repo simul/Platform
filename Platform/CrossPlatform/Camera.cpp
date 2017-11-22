@@ -17,6 +17,9 @@ void ViewStruct::Init()
 	ERRNO_BREAK
 	frustum=GetFrustumFromProjectionMatrix(proj);
 	ERRNO_BREAK
+	//MakeWorldViewMatrix((float*)&modelView, (const float*)&model, (const float*)&view);
+//	MakeWorldViewProjMatrix((float*)&modelViewProj, (const float*)&model, (const float*)&view, (const float*)&proj);
+	MakeViewProjMatrix((float*)&viewProj, (const float*)&view, (const float*)&proj);
 	MakeInvViewProjMatrix((float*)&invViewProj,(const float*)&view,(const float*)&proj);
 	GetCameraPosVector((const float *)&view,(float*)&cam_pos,(float *)&view_dir,(float*)&up);
 	initialized=true;
@@ -73,12 +76,12 @@ So, remembering that in this case Z in front of the camera is negative, we have:
 for Zv = -N, Zp = 0
 for Zv = -F, Zp = 1
 */
-
+/*
 static float U(float x)
 {
 	return atan(x/2.f);
 }
-
+*/
 vec4 simul::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle depthTextureStyle, const ViewStruct &viewStruct, float max_dist_metres)
 {
 	// 	Z = x/(depth*y + z)+w*depth;

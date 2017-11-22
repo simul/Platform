@@ -94,8 +94,8 @@ bool GetStochasticSamples_MSAA(Texture2DMS<float4> sourceDepthTextureMS,vec4 dep
 		{
 			vec2 offs	=texelRange*offsets[i];
 			vec2 texc	=saturate(1.01*(texCoords+.6*offs))/1.01;
-			texc		*=depthWind.zw;
-			texc		+=depthWind.xy;
+			texc		*=vec2(depthWind.zw);
+			texc		+=vec2(depthWind.xy);
 			uint2 tex_pos=uint2(texc*source_dims+vec2(0.5,0.5));
 			//fn=vec4(texc,0,0);
 			// VERY important to use NEAREST, and not filter the source depth texture!
@@ -195,7 +195,7 @@ bool GetStochasticSamples_twoEyes_MSAA(Texture2DMS<vec4> sourceDepthTextureMS
 	bool any_result = false;
 	for (int i = 0; i<3; i++)
 	{
-		vec2 offs = texelRange*offsets[i];
+		vec2 offs = vec2(texelRange*offsets[i]);
 		for (int j = 0; j<2; j++)
 		{
 			vec2 texc = saturate(1.01*(texCoords[j] + .6*offs)) / 1.01;

@@ -143,7 +143,7 @@ void Framebuffer::Activate(crossplatform::DeviceContext &deviceContext)
 	mTargetAndViewport.viewport.znear	= mViewport.MinDepth;
 	mTargetAndViewport.viewport.zfar	= mViewport.MaxDepth;
 	
-	crossplatform::BaseFramebuffer::GetFrameBufferStack().push(&mTargetAndViewport);
+	deviceContext.GetFrameBufferStack().push(&mTargetAndViewport);
 
 	colour_active	= true;
 	depth_active	= dsView != nullptr;
@@ -158,7 +158,7 @@ void Framebuffer::SetViewport(crossplatform::DeviceContext &deviceContext,float 
 	mViewport.MinDepth		= Z;
 	mViewport.MaxDepth		= D;
 
-	CD3DX12_RECT scissor(0, 0, mViewport.Width, mViewport.Height);
+	CD3DX12_RECT scissor(0, 0, (LONG)mViewport.Width, (LONG)mViewport.Height);
 
 	deviceContext.asD3D12Context()->RSSetScissorRects(1, &scissor);
 	deviceContext.asD3D12Context()->RSSetViewports(1, &mViewport);
@@ -179,23 +179,23 @@ void Framebuffer::Deactivate(crossplatform::DeviceContext &deviceContext)
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
 
 	// We should leave the state as it was when we started rendering
-	if (crossplatform::BaseFramebuffer::GetFrameBufferStack().size() <= 1)
+	if (deviceContext.GetFrameBufferStack().size() <= 1)
 	{
 		// Set the default targets
-		crossplatform::BaseFramebuffer::GetFrameBufferStack().pop();
+		deviceContext.GetFrameBufferStack().pop();
 		deviceContext.asD3D12Context()->OMSetRenderTargets
 		(
 			1,
-			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_rt[0],
+			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_rt[0],
 			false,
-			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_dt
+			(CD3DX12_CPU_DESCRIPTOR_HANDLE*)deviceContext.defaultTargetsAndViewport.m_dt
 		);
 	}
 	else
 	{
 		// There are other plugin Framebuffers
-		crossplatform::BaseFramebuffer::GetFrameBufferStack().pop();
-		auto curTargets = crossplatform::BaseFramebuffer::GetFrameBufferStack().top();
+		deviceContext.GetFrameBufferStack().pop();
+		auto curTargets = deviceContext.GetFrameBufferStack().top();
 		SIMUL_ASSERT(curTargets->num == 1);
 		deviceContext.asD3D12Context()->OMSetRenderTargets
 		(
@@ -233,15 +233,15 @@ void Framebuffer::DeactivateDepth(crossplatform::DeviceContext &deviceContext)
 	depth_active=false;
 
 	// TO-DO: check this NACHOOOOO! :)
-	if (crossplatform::BaseFramebuffer::GetFrameBufferStack().size())
+	if (deviceContext.GetFrameBufferStack().size())
 	{
-		auto curTop = crossplatform::BaseFramebuffer::GetFrameBufferStack().top();
+		auto curTop = deviceContext.GetFrameBufferStack().top();
 		curTop->m_dt = nullptr;
 	}
 	// And this :]
 	else
 	{
-		crossplatform::BaseFramebuffer::defaultTargetsAndViewport.m_dt = nullptr;
+		deviceContext.defaultTargetsAndViewport.m_dt = nullptr;
 	}
 }
 

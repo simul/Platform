@@ -112,7 +112,7 @@ FontIndex fontIndices[]={
 };
 
 TextRenderer::TextRenderer()
-	:renderPlatform(NULL), effect(NULL), font_texture(NULL), recompile(false)
+	:effect(NULL), font_texture(NULL), renderPlatform(NULL), recompile(false)
 {
 }
 
@@ -186,7 +186,7 @@ void TextRenderer::Render(crossplatform::DeviceContext &deviceContext,float x,fl
 		if(idx<0||idx>100)
 			continue;
 		const FontIndex &f=fontIndices[idx];
-		w+=f.pixel_width*fontScale+1;
+		w+=f.pixel_width*int(fontScale)+1;
 	}
 	float ht=fontScale*20.0f;
 	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);

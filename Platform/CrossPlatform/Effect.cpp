@@ -3,11 +3,11 @@
 #include <Windows.h>
 #endif
 #include "Simul/Base/RuntimeError.h"
-#include "Simul/Base/FileLoader.h"
 #include "Simul/Platform/CrossPlatform/Effect.h"
 #include "Simul/Platform/CrossPlatform/Texture.h"
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/CrossPlatform/PixelFormat.h"
+#include "Simul/Base/DefaultFileLoader.h"
 #include "Simul/Base/StringFunctions.h"
 #include <iostream>
 #include <algorithm>
@@ -17,6 +17,11 @@ using namespace simul;
 using namespace crossplatform;
 using namespace std;
 
+ConstantBufferBase::ConstantBufferBase(const char *name) :platformConstantBuffer(NULL)
+{
+	if (name&&strlen(name) >7)
+		defaultName = name + 7;
+}
 
 void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext &deviceContext, crossplatform::Effect *effect, const char *name)
 {
@@ -41,6 +46,63 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext &deviceContext
 	cs->applyStructuredBuffers[index] = this;
 }
 
+EffectPass::EffectPass()
+	:blendState(NULL)
+	,depthStencilState(NULL)
+	,rasterizerState(NULL)
+
+	,numResourceSlots(0)
+	,numRwResourceSlots(0)
+	,numSbResourceSlots(0)
+	,numRwSbResourceSlots(0)
+	,numSamplerResourcerSlots(0)
+	,samplerSlots(0)
+	,constantBufferSlots(0)
+	,textureSlots(0)
+	,textureSlotsForSB(0)
+	,rwTextureSlots(0)
+	,rwTextureSlotsForSB(0)
+	,should_fence_outputs(true)
+	,platform_pass(nullptr)
+{
+	for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)
+		shaders[i]=NULL;
+	for(int i=0;i<OUTPUT_FORMAT_COUNT;i++)
+		pixelShaders[i]=NULL;
+	memset(resourceSlots,0,sizeof(resourceSlots));
+}
+
+void EffectPass::MakeResourceSlotMap()
+{
+	int r=0;
+	int w=0;
+	int sb=0;
+	int rwsb=0;
+	int sm=0;
+	int cb=0;
+	for(int s=0;s<32;s++)
+	{
+		if(usesTextureSlot(s))
+			resourceSlots[r++]=s;
+		if(usesRwTextureSlot(s))
+			rwResourceSlots[w++]=s;
+		if(usesTextureSlotForSB(s))
+			sbResourceSlots[sb++]=s;
+		if(usesRwTextureSlotForSB(s))
+			rwSbResourceSlots[rwsb++]=s;
+		if(usesSamplerSlot(s))
+			samplerResourceSlots[sm++]=s;
+		if(usesConstantBufferSlot(s))
+			constantBufferResourceSlots[cb++]=s;
+	}
+	numResourceSlots=r;
+	numRwResourceSlots=w;
+	numSbResourceSlots=sb;
+	numRwSbResourceSlots=rwsb;
+	numSamplerResourcerSlots=sm;
+	numConstantBufferResourceSlots=cb;
+}
+
 bool EffectPass::usesTextureSlot(int s) const
 {
 	if(s>=1000)
@@ -63,7 +125,7 @@ bool EffectPass::usesRwTextureSlotForSB(int s) const
 	return (rwTextureSlotsForSB&m)!=0;
 }
 
-bool EffectPass::usesBufferSlot(int s) const
+bool EffectPass::usesConstantBufferSlot(int s) const
 {
 	unsigned m=((unsigned)1<<(unsigned)s);
 	return (constantBufferSlots&m)!=0;
@@ -72,7 +134,6 @@ bool EffectPass::usesBufferSlot(int s) const
 bool EffectPass::usesSamplerSlot(int s) const
 {
 	unsigned m=((unsigned)1<<(unsigned)s);
-	//return true;//(samplerSlots&m)!=0;
 	return (samplerSlots&m) != 0;
 }
 
@@ -88,12 +149,22 @@ bool EffectPass::usesTextures() const
 	return (textureSlots+rwTextureSlots)!=0;
 }
 
+bool EffectPass::usesRwTextures() const
+{
+	return (rwTextureSlots)!=0;
+}
+
 bool EffectPass::usesSBs() const
 {
 	return (textureSlotsForSB+rwTextureSlotsForSB)!=0;
 }
 
-bool EffectPass::usesBuffers() const
+bool EffectPass::usesRwSBs() const
+{
+	return (rwTextureSlotsForSB)!=0;
+}
+
+bool EffectPass::usesConstantBuffers() const
 {
 	return constantBufferSlots !=0;
 }
@@ -103,8 +174,7 @@ bool EffectPass::usesSamplers() const
 	return samplerSlots!=0;
 }
 
-
-void EffectPass::SetUsesBufferSlots(unsigned s)
+void EffectPass::SetUsesConstantBufferSlots(unsigned s)
 {
 	constantBufferSlots |=s;
 }
@@ -234,14 +304,14 @@ void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext, const 
 {
 	auto res=GetShaderResource(name);
 	SetSamplerState(deviceContext,res,s);
-	}
+}
 
 void Effect::SetSamplerState(DeviceContext &deviceContext,ShaderResource &name	,SamplerState *s)
-	{
+{
 	if(name.slot>128)
 		return;
 	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
-	crossplatform::SamplerState *ss = s;
+	//crossplatform::SamplerState *ss = s;
 	cs->samplerStateOverrides[name.slot] = s;
 	cs->samplerStateOverridesValid = false;
 }
@@ -253,7 +323,7 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext, cons
 	PlatformConstantBuffer *pcb = (PlatformConstantBuffer*)s->GetPlatformConstantBuffer();
 
 	cs->applyBuffers[s->GetIndex()] = s;
-	cs->buffersValid = false;
+	cs->constantBuffersValid = false;
 	pcb->SetChanged();
 }
 
@@ -312,16 +382,18 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 	if(!res.valid)
 		return;
 	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
-	unsigned long slot=res.slot+1000;//1000+((combined&(0xFFFF0000))>>16);
-	unsigned long dim=res.dimensions;//combined&0xFFFF;
-	auto &ta=cs->textureAssignmentMap[slot];
+	unsigned long slot=res.slot;
+	if (slot >=1000)
+		slot -= 1000;
+	unsigned long dim=res.dimensions;
+	auto &ta=cs->rwTextureAssignmentMap[slot];
 	ta.resourceType=res.shaderResourceType;
 	ta.texture=(tex&&tex->IsValid()&&res.valid)?tex:0;
 	ta.dimensions=dim;
 	ta.uav=true;
 	ta.mip=mip;
 	ta.index=index;
-	cs->textureAssignmentMapValid=false;
+	cs->rwTextureAssignmentMapValid=false;
 }
 
 void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const char *name, crossplatform::Texture *t,int index, int mip)
@@ -334,10 +406,10 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 	}
 	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
 	// Make sure no slot clash between uav's and srv's:
-	int slot = 1000+GetSlot(name);
+	int slot = GetSlot(name);
 	{
 		int dim = GetDimensions(name);
-		crossplatform::TextureAssignment &ta=cs->textureAssignmentMap[slot];
+		crossplatform::TextureAssignment &ta=cs->rwTextureAssignmentMap[slot];
 		ta.resourceType=GetResourceType(name);
 		ta.texture=t;
 		ta.dimensions=dim;
@@ -346,7 +418,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext,
 		ta.mip=mip;
 		ta.index=index;
 	}
-	cs->textureAssignmentMapValid=false;
+	cs->rwTextureAssignmentMapValid=false;
 }
 
 crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
@@ -587,6 +659,7 @@ void Effect::UnbindTextures(crossplatform::DeviceContext &deviceContext)
 		return;
 	crossplatform::ContextState *cs=renderPlatform->GetContextState(deviceContext);
 	cs->textureAssignmentMap.clear();
+	cs->rwTextureAssignmentMap.clear();
 	cs->samplerStateOverrides.clear();
 	cs->applyBuffers.clear();  //Because we might otherwise have invalid data
 	cs->applyVertexBuffers.clear();
@@ -667,6 +740,8 @@ static bool toBool(string s)
 	return false;
 }
 
+
+#pragma optimize("",off)
 void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, const std::map<std::string, std::string> &defines)
 {
 	renderPlatform=r;
@@ -712,7 +787,6 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	// Load all the .sb's
 	int pos					=0;
 	int next				=(int)str.find('\n',pos+1);
-	int line_number			=0;
 	enum Level
 	{
 		OUTSIDE=0,GROUP=1,TECHNIQUE=2,PASS=3,TOO_FAR=4
@@ -727,12 +801,12 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		base::ClipWhitespace(line);
 		vector<string> words=simul::base::split(line,' ');
 		pos				=next;
-		int sp=line.find(" ");
-		int open_brace=line.find("{");
-		if(open_brace>=0)
+		size_t sp=line.find(" ");
+		size_t open_brace=line.find("{");
+		if(open_brace!=std::string::npos)
 			level=(Level)(level+1);
 		string word;
-		if(sp >= 0)
+		if(sp != std::string::npos)
 			word=line.substr(0, sp);
 		if(level==OUTSIDE)
 		{
@@ -816,7 +890,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				string enablestr=simul::base::toNext(props,')',pos);
 				vector<string> en=base::split(enablestr,',');
 
-				desc.blend.numRTs=en.size();
+				desc.blend.numRTs=(int)en.size();
 				pos++;
 				crossplatform::BlendOperation BlendOp		=(crossplatform::BlendOperation)toInt(base::toNext(props,',',pos));
 				crossplatform::BlendOperation BlendOpAlpha	=(crossplatform::BlendOperation)toInt(base::toNext(props,',',pos));
@@ -861,7 +935,6 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			else if(is_equal(word, "RasterizerState"))
 			{
 				string name		=words[1];
-				size_t pos		=0;
 				crossplatform::RenderStateDesc desc;
 				desc.type=crossplatform::RASTERIZER;
 				// e.g. RenderBackfaceCull (false,CULL_BACK,0,0,false,FILL_WIREFRAME,true,false,false,0)
@@ -903,9 +976,9 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			else if(is_equal(word, "SamplerState"))
 			{
 				//SamplerState clampSamplerState 9,MIN_MAG_MIP_LINEAR,CLAMP,CLAMP,CLAMP,
-				int sp2=line.find(" ",sp+1);
+				size_t sp2=line.find(" ",sp+1);
 				string sampler_name = line.substr(sp + 1, sp2 - sp - 1);
-				int comma=(int)std::min(line.length(),line.find(",",sp2+1));
+				size_t comma=(int)std::min(line.length(),line.find(",",sp2+1));
 				string register_num = line.substr(sp2 + 1, comma - sp2 - 1);
 				int reg=atoi(register_num.c_str());
 				simul::crossplatform::SamplerStateDesc desc;
@@ -918,7 +991,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				desc.slot=reg;
 				crossplatform::SamplerState *ss=renderPlatform->GetOrCreateSamplerStateByName(sampler_name.c_str(),&desc);
 				samplerStates[sampler_name]=ss;
-				samplerSlots[ss]=reg;
+				samplerSlots[reg]=ss;
 			}
 		}
 		else if (level == GROUP)
@@ -943,11 +1016,11 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			// Find the shader definitions:
 			// vertex: simple_VS_Main_vv.sb
 			// pixel: simple_PS_Main_p.sb
-			int cl=line.find(":");
-			int cm=line.find(",",cl+1);
-			if(cm<0)
+			size_t cl=line.find(":");
+			size_t cm=line.find(",",cl+1);
+			if(cm == std::string::npos)
 				cm=line.length();
-			if(cl>=0&&tech)
+			if(cl != std::string::npos && tech)
 			{
 				string type=line.substr(0,cl);
 				string filename=line.substr(cl+1,cm-cl-1);
@@ -1040,6 +1113,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 
 					auto i_begin =std::sregex_iterator(uses.begin(),uses.end(),re_resources);
 					auto i_end = std::sregex_iterator();
+					unsigned cbSlots=0,shaderSamplerSlots=0,textureSlots=0,rwTextureSlots=0
+							,textureSlotsForSB=0,rwTextureSlotsForSB=0;
 					for(std::sregex_iterator i = i_begin; i != i_end; ++i)
 					{
 						string mtch= i->str(0);
@@ -1055,23 +1130,28 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 							for (std::sregex_iterator j = j_begin; j != i_end; ++j)
 							{
 								int t=atoi(j->str().c_str());
+								unsigned m=0;
+								if(t<1000)
+									m=(1<<t);
+								else
+									m=(1<<(t-1000));
 								if(type_char=='c')
-									s->setUsesConstantBufferSlot(t);
+									cbSlots|=m;
 								else if(type_char=='s')
-									s->setUsesSamplerSlot(t);
+									shaderSamplerSlots|=m;
 								else if(type_char=='t')
 								{
 									if(t<1000)
-										s->setUsesTextureSlot(t);
+										textureSlots|=m;
 									else
-										s->setUsesRwTextureSlot(t-1000);
+										rwTextureSlots|=m;
 								}
 								else if(type_char=='b')
 								{
 									if(t<1000)
-										s->setUsesTextureSlotForSB(t);
+										textureSlotsForSB|=m;
 									else
-										s->setUsesRwTextureSlotForSB(t-1000);
+										rwTextureSlotsForSB|=m;
 								}
 								else
 								{
@@ -1080,8 +1160,20 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 							}
 						}
 					}
+					if(!s->constantBufferSlots)
+						s->constantBufferSlots	=cbSlots;
+					if(!s->textureSlots)
+						s->textureSlots			=textureSlots;
+					if(!s->samplerSlots)
+						s->samplerSlots			=shaderSamplerSlots;
+					if(!s->rwTextureSlots)
+						s->rwTextureSlots		=rwTextureSlots;
+					if(!s->textureSlotsForSB)
+						s->textureSlotsForSB	=textureSlotsForSB;
+					if(!s->rwTextureSlotsForSB)
+						s->rwTextureSlotsForSB	=rwTextureSlotsForSB;
 					// Now we will know which slots must be used by the pass:
-					p->SetUsesBufferSlots(s->constantBufferSlots);
+					p->SetUsesConstantBufferSlots(s->constantBufferSlots);
 					p->SetUsesTextureSlots(s->textureSlots);
 					p->SetUsesTextureSlotsForSB(s->textureSlotsForSB);
 					p->SetUsesRwTextureSlots(s->rwTextureSlots);
@@ -1098,11 +1190,11 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						{
 							for(auto j:samplerStates)
 							{
-								if(samplerSlots[j.second]==slot)
+								if(samplerSlots[slot]==j.second)
 								{
 									std::string ss_name=j.first;
 									crossplatform::SamplerState *ss=renderPlatform->GetOrCreateSamplerStateByName(ss_name.c_str());
-									s->samplerStates[ss]=slot;
+									s->samplerStates[slot]=ss;
 								}
 							}
 						}
@@ -1110,11 +1202,12 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						if(!slots)
 							break;
 					}
+					p->MakeResourceSlotMap();
 				}
 			}
 		}
-		int close_brace=line.find("}");
-		if (close_brace >= 0)
+		size_t close_brace=line.find("}");
+		if (close_brace != std::string::npos)
 		{
 			level = (Level)(level - 1);
 			if (level == OUTSIDE)
@@ -1124,8 +1217,9 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 	}
 	SIMUL_ASSERT(level==OUTSIDE);
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(ptr);
-	
+	PostLoad();
 }
+
 void Shader::setUsesTextureSlot(int s)
 {
 	unsigned m=((unsigned)1<<(unsigned)s);
@@ -1197,7 +1291,7 @@ bool Shader::usesConstantBufferSlot(int s) const
 
 bool Shader::usesSamplerSlot(int s) const
 {
-	unsigned m=((unsigned)1<<(unsigned)s);
+	//unsigned m=((unsigned)1<<(unsigned)s);
 	return true;//(samplerSlots&m)!=0;
 }
 

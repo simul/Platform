@@ -7,6 +7,7 @@
 #include "../SL/debug_constants.sl"
 #include "../SL/states.sl"
 #include "../SL/quaternion.sl"
+#include "../SL/cubemap_matrices.sl"
 
 uniform Texture2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 uniform Texture2DMS<vec4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
@@ -203,7 +204,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 	// we have (latitudes+1)*(longitudes+1)*2 id's
 	uint vertex_id		=IN.vertex_id;
 	vec3 pos;
-	if(vertex_id<(latitudes+1)*(longitudes+1))
+	if(vertex_id<((uint)latitudes+1)*((uint)longitudes+1))
 	{
 		uint latitude_strip	=vertex_id/(longitudes+1);
 		vertex_id			-=latitude_strip*(longitudes+1);
@@ -212,8 +213,8 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 		float elevation		=.999*(float(latitude_strip)/float(latitudes)-0.5)*3.1415926536;
 		float cos_el		=cos(elevation);
 		pos					=radius*vec3(sin(azimuth)*cos_el,-cos(azimuth)*cos_el,sin(elevation));
-		float b				=latitude_strip==latitudes/2?1.0:0.2;
-		OUT.colour			=multiplier+vec4(1.0,0.5,0.5,longitude>0&&longitude<longitudes?b:0.0);
+		float b				=latitude_strip==(uint)latitudes/2?1.0:0.2;
+		OUT.colour			=multiplier+vec4(1.0,0.5,0.5,longitude>0&&longitude<(uint)longitudes?b:0.0);
 		//OUT.colour		*=saturate(elevation/1.7);
 	}
 	else
@@ -249,7 +250,7 @@ shader v2f VS_DrawQuadOnSphere(idOnly IN)
 	vec3 pos;
 	if(IN.vertex_id<8)
 	{
-		int vert		=(IN.vertex_id+1)/2;
+		uint vert		=(IN.vertex_id+1)/2;
 		pos				=poss[vert%4];
 		pos.xy			*=sideview;
 		pos.z			=1.0;
@@ -258,7 +259,7 @@ shader v2f VS_DrawQuadOnSphere(idOnly IN)
 	}
 	else
 	{
-		int vert		=IN.vertex_id-8;
+		uint vert		=IN.vertex_id-8;
 		int axis		=vert/3;
 		vec3 ax			=vec3(axis==0,axis==1,axis==2);
 		pos				=vec3(0,0,1.0);
@@ -290,10 +291,11 @@ shader v2f VS_DrawCircleOnSphere(idOnly IN)
 shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
 	vec3 view		=IN.wDirection.xyz;
-	vec4 result		=texture_cube_lod(cubeTexture,view,displayLod);
+	//vec4 result		=texture_cube_lod(cubeTexture,view,displayLod);
+	vec4 result		=cubeTexture.SampleLevel(cubeSamplerState,view,displayLod);
 	result.rgb		*=multiplier.rgb;
 	result.rgb		=pow(result.rgb,vec3(debugGamma,debugGamma,debugGamma));
-	vec4 u			=vec4(result.rgb,1.0);
+	vec4 u			=vec4(saturate(result.rgb),1.0);
 	return u;
 }
 
@@ -565,6 +567,33 @@ shader vec4 PS_Clear(posTexVertexOutput IN) : SV_TARGET
 	return debugColour;
 }
 
+[numthreads(4,4,1)]
+shader void CS_LatLongToCubemap(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 idx = g.xyz*uint3(4,4,1)+ t.xyz;
+	// convert xyz to a direction.
+	uint3 dims;
+	FastClearTarget2DArray.GetDimensions(dims.x,dims.y,dims.z);
+
+
+	vec2 texCoords = (vec2(idx.xy) + vec2(0.5, 0.5)) / vec2(dims.xy);
+	vec4 clip_pos = vec4(-1.0, 1.0, 1.0, 1.0);
+	clip_pos.x += 2.0*texCoords.x;
+	clip_pos.y -= 2.0*texCoords.y;
+	vec3 view = normalize(mul(cubeInvViewProj[idx.z], clip_pos).xyz);
+
+
+//	vec3 view=CubeFaceIndexToView(idx,dims.xx);
+	// convert direction to lat long
+	float lat=asin(view.z);
+	float lon=atan2(view.x,view.y);
+	vec2 texc = vec2(lon / (2.0*SIMUL_PI_F), lat*2.0 / SIMUL_PI_F*0.5 + 0.5);
+	vec4 lookup=imageTexture.SampleLevel(wmcSamplerState,texc,0);
+	// lookup in source texture
+	// write to position in target.
+	FastClearTarget2DArray[idx]= vec4(saturate(lookup.xyz),0.5);
+}
+
 [numthreads(8,8,1)]
 shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
@@ -644,6 +673,14 @@ technique copy_2d
         SetGeometryShader(NULL);
 		SetVertexShader(vs_simplefullscreen_5_0);
 		SetPixelShader(CompileShader(ps_5_0,PS_Copy2DOffset()));
+    }
+}
+
+technique lat_long_to_cubemap
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_LatLongToCubemap()));
     }
 }
 

@@ -25,6 +25,7 @@ namespace simul
 			//! Mark the end of the current render profiling block.
 			virtual void End(crossplatform::DeviceContext &deviceContext)=0;
 			//! Call this at the start of the frame to reset values.
+			using BaseProfilingInterface::StartFrame; //Warning suppressor
 			virtual void StartFrame(crossplatform::DeviceContext &deviceContext)=0;
 			//! Call this at the end of the frame to prepare the data to be read.
 			virtual void EndFrame(crossplatform::DeviceContext &deviceContext)=0;

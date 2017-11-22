@@ -1,8 +1,5 @@
 #pragma once
 #include "SimulDirectXHeader.h"
-#ifndef SIMUL_WIN8_SDK
-#include <d3dx11.h>
-#endif
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Texture.h"

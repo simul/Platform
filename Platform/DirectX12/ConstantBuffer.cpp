@@ -11,7 +11,6 @@
 
 using namespace simul;
 using namespace dx12;
-#pragma optimize("",off)
 
 inline bool IsPowerOfTwo( UINT64 n )
 {
@@ -41,6 +40,7 @@ PlatformConstantBuffer::PlatformConstantBuffer() :
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
 		mUploadHeap[i] = nullptr;
+		cpuDescriptorHandles[i]=nullptr;
 	}
 }
 
@@ -58,13 +58,14 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 
 	// Create the heaps (storage for our descriptors)
 	// mBufferSize / 256 (this is the max number of descriptors we can hold with this upload heaps
-	// 	Pc alignment != XBOX alignment (?)
 	mMaxDescriptors = mBufferSize / (kBufferAlign * mSlots);
 	for (unsigned int i = 0; i < 3; i++)
 	{
 		mHeaps[i].Restore((dx12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "CBHeap", false);
+		delete [] cpuDescriptorHandles[i];
+		cpuDescriptorHandles[i]=new D3D12_CPU_DESCRIPTOR_HANDLE[mMaxDescriptors];
 	}
-
+	int n=0;
 	// Create the upload heap (the gpu memory that will hold the constant buffer)
 	// Each upload heap has 64KB.  (64KB aligned)
 	for (unsigned int i = 0; i < 3; i++)
@@ -90,7 +91,16 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 		
 		// If it is an UPLOAD buffer, will be the memory allocated in VRAM too?
 		// as far as we know, an UPLOAD buffer has CPU read/write access and GPU read access.
-
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		cbvDesc.SizeInBytes						= kBufferAlign * mSlots;
+		for(UINT j=0;j<mMaxDescriptors;j++)
+		{
+			D3D12_CPU_DESCRIPTOR_HANDLE &handle		= cpuDescriptorHandles[i][j];
+			UINT64 offset							= (kBufferAlign * mSlots) * j;	
+			handle									= mHeaps[i].GetCpuHandleFromStartAfOffset(j);
+			cbvDesc.BufferLocation					= mUploadHeap[i]->GetGPUVirtualAddress() + offset;
+			renderPlatform->AsD3D12Device()->CreateConstantBufferView(&cbvDesc, handle);
+		}
 		//SIMUL_COUT << "Total MB Allocated in the GPU: " << std::to_string(megas) << std::endl;
 	}
 }
@@ -108,7 +118,8 @@ D3D12_CPU_DESCRIPTOR_HANDLE simul::dx12::PlatformConstantBuffer::AsD3D12Constant
 	// we substract 1 here
 	if (mCurApplyCount == 0)
 		SIMUL_BREAK("We must apply this cb first");
-	return D3D12_CPU_DESCRIPTOR_HANDLE(mHeaps[mLastFrameIndex].GetCpuHandleFromStartAfOffset(mCurApplyCount - 1));
+	return cpuDescriptorHandles[mLastFrameIndex][mCurApplyCount-1];
+	//return D3D12_CPU_DESCRIPTOR_HANDLE(mHeaps[mLastFrameIndex].GetCpuHandleFromStartAfOffset(mCurApplyCount - 1));
 }
 
 void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t size,void *addr)
@@ -136,6 +147,8 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	{
 		mHeaps[i].Release(rPlat);
 		rPlat->PushToReleaseManager(mUploadHeap[i], "ConstantBufferUpload");
+		delete [] cpuDescriptorHandles[i];
+		cpuDescriptorHandles[i]=nullptr;
 	}
 }
 
@@ -144,7 +157,8 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 	if (mCurApplyCount >= mMaxDescriptors)
 	{
 		// This should really be solved by having like some kind of pool? Or allocating more space, something like that
-		SIMUL_BREAK("Nacho has to fix this");
+		SIMUL_BREAK_ONCE("This ConstantBuffer reached its maximum apply count");
+		return;
 	}
 
 	auto rPlat = (dx12::RenderPlatform*)deviceContext.renderPlatform;
@@ -177,10 +191,7 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 	cbvDesc.BufferLocation					= mUploadHeap[curFrameIndex]->GetGPUVirtualAddress() + offset;
 	cbvDesc.SizeInBytes						= kBufferAlign * mSlots;
-	// If we applied this CB more than once this frame, we will be appending another descriptor (thats why we offset)
-	D3D12_CPU_DESCRIPTOR_HANDLE handle		= mHeaps[curFrameIndex].GetCpuHandleFromStartAfOffset(mCurApplyCount);
-	rPlat->AsD3D12Device()->CreateConstantBufferView(&cbvDesc, handle);
-
+	
 	mCurApplyCount++;
 }
 

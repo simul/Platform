@@ -15,16 +15,16 @@ using namespace simul;
 using namespace crossplatform;
 
 HdrRenderer::HdrRenderer()
-	:renderPlatform(NULL)
-	,hdr_effect(NULL)
+	:Glow(false)
+	,renderPlatform(NULL)
+	,blurTexture(NULL)
 	,Width(0)
 	,Height(0)
-	,m_pGaussianEffect(NULL)
+	,hdr_effect(NULL)
 	,exposureGammaTechnique(NULL)
 	,glowExposureGammaTechnique(NULL)
-	,Glow(false)
 	,glowTechnique(NULL)
-	,blurTexture(NULL)
+	,m_pGaussianEffect(NULL)
 {
 	for(int i=0;i<4;i++)
 	{
@@ -62,7 +62,6 @@ void HdrRenderer::SetBufferSize(int w,int h)
 		if(blurTexture)
 		{
 			blurTexture->ensureTexture2DSizeAndFormat(renderPlatform,W,H,crossplatform::RGBA_16_FLOAT,false,true);
-			crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
 		}
 	}
 	//RecompileShaders();
@@ -187,7 +186,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 	crossplatform::EffectTechnique *tech=exposureGammaTechnique;
 	
 	bool doGlow = true;		// nachoooooooo
-	static bool doBlur=false;
+	bool doBlur=false;
 	if(Glow && doGlow)
 	{
 		RenderGlowTexture(deviceContext,texture);
@@ -199,7 +198,6 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
 	else
 		hdr_effect->SetTexture(deviceContext,"imageTexture"	,texture);
-
 	if(blurTexture->IsValid() && doBlur)
 	{	
 		crossplatform::Texture *src=texture;
@@ -218,6 +216,7 @@ void HdrRenderer::Render(crossplatform::DeviceContext &deviceContext,crossplatfo
 			randomSeed=randomSeed%100;
 			hdrConstants.alpha				=alpha;
 			hdr_effect->SetConstantBuffer(deviceContext,&hdrConstants);
+			hdr_effect->SetTexture(deviceContext,"imageTexture",src);
 			dst->activateRenderTarget(deviceContext);
 			hdr_effect->Apply(deviceContext,hdr_effect->GetTechniqueByName(msaa?"blur_msaa":"blur"),0);
 			renderPlatform->DrawQuad(deviceContext);
@@ -274,20 +273,17 @@ hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
 	hdrConstants.gamma				=Gamma;
 	hdrConstants.exposure			=Exposure;
 	
-	float direction=(offsetX-0.5f)*2.0f;
-
-
+	//float direction=(offsetX-0.5f)*2.0f;
+	
     float as = float(640) / float(800);
 	
 	vec4 distortionK(1.0f,0.22f,0.24f,0.0f);
     // We are using 1/4 of DistortionCenter offset value here, since it is
     // relative to [-1,1] range that gets mapped to [0, 0.5].
-	static float xco				= 0.15197642f;
-	float Distortion_XCenterOffset	= direction*xco;
+	//static float xco				= 0.15197642f;
 	static float Distortion_Scale	= 1.7146056f;
     float scaleFactor				=1.0f/Distortion_Scale;
 	hdrConstants.warpHmdWarpParam	=distortionK;
-	hdrConstants.warpLensCentre		=vec2(0.5f+Distortion_XCenterOffset*0.5f, 0.5f);
 	hdrConstants.warpScreenCentre	=vec2(0.5f,0.5f);
 	hdrConstants.warpScale			=vec2(0.5f* scaleFactor, 0.5f* scaleFactor * as);
 	hdrConstants.warpScaleIn		=vec2(2.f,2.f/ as);
@@ -332,7 +328,6 @@ void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,
 		hdr_effect->SetTexture(deviceContext,"imageTexture",texture);
 		hdr_effect->SetTexture(deviceContext,"imageTextureMS",texture);
 		hdrConstants.offset				=vec2(1.f/Width,1.f/Height);
-
 		hdr_effect->SetConstantBuffer(deviceContext,&		hdrConstants);
 		hdr_effect->Apply(deviceContext,glowTechnique,(0));
 		brightpassTextures[0]->activateRenderTarget(deviceContext);
@@ -404,7 +399,6 @@ void HdrRenderer::DoGaussian(crossplatform::DeviceContext &deviceContext,crosspl
 	// Output texture
 	m_pGaussianEffect->SetUnorderedAccessView(deviceContext,"g_rwtOutput",glowTextures[0]);
 	imageConstants.texelsPerThread				=(brightpassTextures[0]->width + threadsPerGroup - 1)/threadsPerGroup;
-
 	m_pGaussianEffect->SetConstantBuffer(deviceContext,&	imageConstants);
 	// Select pass
 	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");

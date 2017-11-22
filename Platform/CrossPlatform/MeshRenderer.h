@@ -1,0 +1,32 @@
+#pragma once
+#include "RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/SL/camera_constants.sl"
+#include "Export.h"
+namespace simul
+{
+	namespace crossplatform
+	{
+		class SIMUL_CROSSPLATFORM_EXPORT MeshRenderer
+		{
+		public:
+			MeshRenderer();
+			~MeshRenderer();
+			//! To be called when a rendering device has been initialized.
+			void RestoreDeviceObjects(RenderPlatform *r);
+			void RecompileShaders();
+			//! To be called when the rendering device is no longer valid.
+			void InvalidateDeviceObjects();
+			//! Render the lens flares based on the given direction to the light, and its colour.
+			void Render(DeviceContext &deviceContext, Mesh *mesh,mat4 model
+			, Texture *diffuseCubemap, Texture *specularCubemap);
+			void ApplyMaterial(DeviceContext &deviceContext, Material *material);
+		protected:
+			ConstantBuffer<CameraConstants> cameraConstants;
+			RenderPlatform *renderPlatform;
+			Effect *effect;
+			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
+		};
+
+
+	}
+}

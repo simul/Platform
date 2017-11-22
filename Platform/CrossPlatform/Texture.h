@@ -65,7 +65,7 @@ namespace simul
 		typedef void ApiRenderTarget;
 		typedef void ApiDepthRenderTarget;
 		// TODO: Can only store a single rt here, what if we need to restore a multi-buffer rt?
-		struct TargetsAndViewport
+		struct SIMUL_CROSSPLATFORM_EXPORT TargetsAndViewport
 		{
 			TargetsAndViewport():temp(false),num(0)
 			{

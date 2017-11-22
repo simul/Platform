@@ -12,7 +12,8 @@ SIMUL_CONSTANT_BUFFER(RainConstants,10)
 	uniform float intensity;
 	uniform float flurry;
 	uniform float flurryRate;
-	uniform float phase;
+	uniform float phase0;
+	uniform float phase1;
 	uniform float timeStepSeconds;
 	uniform float particleZoneSize;
 SIMUL_CONSTANT_BUFFER_END
@@ -22,8 +23,8 @@ SIMUL_CONSTANT_BUFFER(MoisturePerViewConstants,9)
 	uniform vec4 depthToLinFadeDist;
 SIMUL_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
-	mat4 worldViewProj[2];		
+SIMUL_CONSTANT_BUFFER(RainPerViewConstants, 8)
+	mat4 worldViewProj[2];
 	mat4 worldView[2];
 	mat4 rainDepthTransform;
 	uniform vec4 tanHalfFov;
@@ -33,11 +34,11 @@ SIMUL_CONSTANT_BUFFER(RainPerViewConstants,8)
 	vec4 depthToLinFadeDistTexture;
 	vec4 viewportToTexRegionScaleBias;
 	vec2 tanHalfFovUnused;
-	vec2 screenSize;		
+	vec2 screenSize;
 	uniform vec3 viewPositionOffset;
 	float nearRainDistance;// as a proportion of max fade distance
 	float rainDepthTextureScale;
-	float splashDelta;	
+	float splashDelta;
 	float minDistanceM;
 SIMUL_CONSTANT_BUFFER_END
 
@@ -57,7 +58,6 @@ struct SplashVertex
 struct TransformedParticle
 {
     vec4 position;
-	float pointSize;
 	vec3 view;
 	float fade;
 };

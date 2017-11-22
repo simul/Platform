@@ -83,9 +83,6 @@ namespace simul
 			void DrawCube		(crossplatform::DeviceContext &deviceContext);
 
 			void ApplyDefaultMaterial();
-			crossplatform::Material					*CreateMaterial();
-			crossplatform::Mesh						*CreateMesh();
-			crossplatform::Light					*CreateLight();
 			crossplatform::Texture					*CreateTexture(const char *lFileNameUtf8 = nullptr);
 			crossplatform::BaseFramebuffer			*CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d);

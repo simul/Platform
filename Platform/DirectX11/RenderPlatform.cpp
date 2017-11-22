@@ -254,12 +254,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 #endif
 	SAFE_RELEASE(m_pVtxDecl);
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
-	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
-	{
-		dx11::Material *mat=(dx11::Material*)(*i);
-		delete mat;
-	}
-	materials.clear();
 	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_DELETE(debugEffect);
@@ -274,18 +268,27 @@ void RenderPlatform::RecompileShaders()
 	if(!device)
 		return;
 	crossplatform::RenderPlatform::RecompileShaders();
-	for(std::set<crossplatform::Material*>::iterator i=materials.begin();i!=materials.end();i++)
-	{
-		dx11::Material *mat=(dx11::Material*)(*i);
-		mat->SetEffect(solidEffect);
-	}
 }
 
 void RenderPlatform::BeginEvent			(crossplatform::DeviceContext &deviceContext,const char *name)
 {
 #ifdef SIMUL_WIN8_SDK
-	const wchar_t *wstr_name=base::Utf8ToWString(name).c_str();
-		if(pUserDefinedAnnotation)
+	static std::unordered_map<const char*,const wchar_t*> name_map;
+	auto n=name_map.find(name);
+	const wchar_t *wstr_name=nullptr;
+	if(n==name_map.end())
+	{
+		static std::vector<std::wstring> wstrs;
+		std::wstring wn=base::Utf8ToWString(name);
+		// make sure the string is permanently stored:
+		wstrs.push_back(wn);
+		// and this pointer will remain valid until shutdown.
+		wstr_name=wstrs.back().c_str();
+		name_map[name]=wstr_name;
+	}
+	else
+		wstr_name=n->second;
+	if(pUserDefinedAnnotation&&wstr_name)
 		pUserDefinedAnnotation->BeginEvent(wstr_name);
 #endif
 #ifdef USE_PIX
@@ -393,12 +396,10 @@ void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContex
 		if(cs->currentTechnique&&cs->currentTechnique->shouldFenceOutputs())
 		{
 			fence=((ID3D11DeviceContextX*)pContext)->InsertFence(0);
-			for(auto i=cs->textureAssignmentMap.begin();i!=cs->textureAssignmentMap.end();i++)
+			for(auto i=cs->rwTextureAssignmentMap.begin();i!=cs->rwTextureAssignmentMap.end();++i)
 			{
-				int slot=i->first;
-				if (slot<1000)
-					continue;
-				const crossplatform::TextureAssignment &ta=i->second;
+				int slot=i.first;
+				const crossplatform::TextureAssignment &ta=cs->rwTextureAssignmentMap[slot];
 				if(ta.texture&&!ta.texture->IsUnfenceable())
 					ta.texture->SetFence(fence);
 			}
@@ -582,24 +583,6 @@ void RenderPlatform::ApplyDefaultMaterial()
     glBindTexture(GL_TEXTURE_2D, 0);*/
 }
 
-
-crossplatform::Material *RenderPlatform::CreateMaterial()
-{
-	dx11::Material *mat=new dx11::Material;
-	mat->SetEffect(solidEffect);
-	materials.insert(mat);
-	return mat;
-}
-
-crossplatform::Mesh *RenderPlatform::CreateMesh()
-{
-	return new dx11::Mesh;
-}
-
-crossplatform::Light *RenderPlatform::CreateLight()
-{
-	return new dx11::Light();
-}
 
 crossplatform::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 {
@@ -1187,15 +1170,15 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		viewports[i].MaxDepth	=1.0f;
 	}
 	deviceContext.asD3D11DeviceContext()->RSSetViewports(num,viewports);
-	if(crossplatform::BaseFramebuffer::GetFrameBufferStack().size())
+	if(deviceContext.GetFrameBufferStack().size())
 	{
-		crossplatform::TargetsAndViewport *f=crossplatform::BaseFramebuffer::GetFrameBufferStack().top();
+		crossplatform::TargetsAndViewport *f=deviceContext.GetFrameBufferStack().top();
 		if(f)
 			f->viewport=*vps;
 }
 	else
 	{
-		crossplatform::BaseFramebuffer::defaultTargetsAndViewport.viewport=*vps;
+		deviceContext.defaultTargetsAndViewport.viewport=*vps;
 	}
 }
 
@@ -1555,10 +1538,10 @@ void RenderPlatform::WaitForFencedResources(crossplatform::DeviceContext &device
 #ifdef _XBOX_ONE
 	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
 	crossplatform::ContextState *contextState=GetContextState(deviceContext);
-	for(auto i=contextState->textureAssignmentMap.begin();i!=contextState->textureAssignmentMap.end();i++)
+	for(auto i=contextState->textureAssignmentMap.begin();i!=contextState->textureAssignmentMap.end();++i)
 	{
-		int slot=i->first;
-		const crossplatform::TextureAssignment &ta=i->second;
+		int slot=i.first;
+		const crossplatform::TextureAssignment &ta=contextState->textureAssignmentMap[i.first];
 		if(!ta.texture)
 			continue;
 		// don't need to wait for a writeable texture. PROBABLY
@@ -1595,12 +1578,10 @@ void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 		fence=((ID3D11DeviceContextX*)pContext)->InsertFence(0);
 		// assign this fence to all active texture targets.
 		crossplatform::ContextState *cs=GetContextState(deviceContext);
-		for(auto i=cs->textureAssignmentMap.begin();i!=cs->textureAssignmentMap.end();i++)
+		for(auto i=cs->rwTextureAssignmentMap.begin();i!=cs->rwTextureAssignmentMap.end();++i)
 		{
-			int slot=i->first;
-			if (slot<1000)
-				continue;
-			const crossplatform::TextureAssignment &ta=i->second;
+			int slot=i.first;
+			const crossplatform::TextureAssignment &ta=cs->rwTextureAssignmentMap[i.first];;
 			if(ta.texture&&!ta.texture->IsUnfenceable())
 				ta.texture->SetFence(fence);
 		}
@@ -1805,12 +1786,12 @@ void RenderPlatform::DrawCube(crossplatform::DeviceContext &deviceContext)
 
 void RenderPlatform::PopRenderTargets(crossplatform::DeviceContext &deviceContext)
 {
-	std::stack<crossplatform::TargetsAndViewport*> &fbs=Framebuffer::GetFrameBufferStack();
+	std::stack<crossplatform::TargetsAndViewport*> &fbs=deviceContext.GetFrameBufferStack();
 	crossplatform::TargetsAndViewport *oldtv=fbs.top();
 	fbs.pop();
 	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 
-	crossplatform::TargetsAndViewport *state=&crossplatform::BaseFramebuffer::defaultTargetsAndViewport;
+	crossplatform::TargetsAndViewport *state=&deviceContext.defaultTargetsAndViewport;
 	if(fbs.size())
 		state=fbs.top();
 	ID3D11RenderTargetView **rt=(ID3D11RenderTargetView**)state->m_rt;

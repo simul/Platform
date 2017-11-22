@@ -21,7 +21,7 @@ CS_LAYOUT(BLOCK_SIZE,1,1)
 shader void CS_Clear(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 {
 	uint3 sub_pos = g * BLOCK_SIZE + t;
-	if(sub_pos.x>=numCoefficients)
+	if(sub_pos.x>=(uint)numCoefficients)
 		return;
 	targetBuffer[sub_pos.x]	=vec4(0,1,0,0);
 }
@@ -93,7 +93,7 @@ shader void CS_Encode(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	contribution[sub_pos.y]=contrib;
 	GroupMemoryBarrierWithGroupSync();
 	//	targetBuffer[sub_pos.x]=vec4(1,0,0,0);
-	if(sub_pos.x>=numCoefficients)
+	if(sub_pos.x>= (uint)numCoefficients)
 		return;
 	if(sub_pos.x>8)
 		return;

@@ -20,6 +20,7 @@ namespace simul
 		struct PhysicalLightRenderData
 		{
 			Texture *diffuseCubemap;
+			Texture *specularCubemap;
 			vec3 dirToLight;
 			vec3 lightColour;
 		};
@@ -30,10 +31,9 @@ namespace simul
 		};
 		struct MaterialInitStruct
 		{
-			ColorChannelInitStruct mEmissive;
-			ColorChannelInitStruct mAmbient;
-			ColorChannelInitStruct mDiffuse;
-			ColorChannelInitStruct mSpecular;
+			ColorChannelInitStruct emissive;
+			ColorChannelInitStruct albedo;
+			ColorChannelInitStruct specular;
 			float mShininess;
 			const char *effectName;
 		};
@@ -41,32 +41,28 @@ namespace simul
 		class SIMUL_CROSSPLATFORM_EXPORT Material
 		{
 		public:
-			Material();
+			Material(const char *name);
 			virtual ~Material();
 			void SetEffect(crossplatform::Effect *e);
 			crossplatform::Effect *GetEffect();
 			void InvalidateDeviceObjects();
-			bool HasTexture() const { return mDiffuse.mTextureName != 0; }
-			virtual void Apply(crossplatform::DeviceContext &,PhysicalLightRenderData &)=0;
-			struct ColorChannel
+			void Apply(crossplatform::DeviceContext &,PhysicalLightRenderData &);
+			template<typename T> struct Channel
 			{
-				ColorChannel() : mTextureName(0)
+				Channel() : texture(nullptr)
 				{
-					mColor[0] = 0.0f;
-					mColor[1] = 0.0f;
-					mColor[2] = 0.0f;
-					mColor[3] = 1.0f;
+					memset((T*)&value, 0, sizeof(T));
 				}
-				crossplatform::Texture *mTextureName;
-				float mColor[4];
+				crossplatform::Texture *texture;
+				T value;
 			};
-			ColorChannel mEmissive;
-			ColorChannel mAmbient;
-			ColorChannel mDiffuse;
-			ColorChannel mSpecular;
-			float mShininess;
+			Channel<vec3> albedo;
+			Channel<float> roughness;
+			Channel<float> metal;
+			Channel<float> ambientOcclusion;
 		protected:
 			crossplatform::Effect *effect;
+			std::string name;
 		};
 	}
 }

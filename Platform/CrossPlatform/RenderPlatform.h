@@ -79,17 +79,7 @@ namespace simul
 		};
 		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const Viewport *vi,const Texture *t);
-		/// A base class for API-specific rendering.
 
-		struct TextureAssignment
-		{
-			crossplatform::Texture *texture;
-			int dimensions;
-			bool uav;
-			int mip;// if -1, it's the whole texture.
-			int index;	// if -1 it's the whole texture
-			crossplatform::ShaderResourceType resourceType;
-		};
 		//! A structure to describe the state that is associated with a given deviceContext.
 		//! When rendering is to be performed, we can ensure that the state is applied.
 		struct ContextState
@@ -101,10 +91,11 @@ namespace simul
 				,currentEffect(NULL)
 				,effectPassValid(false)
 				,vertexBuffersValid(false)
-				,buffersValid(false)
+				,constantBuffersValid(false)
 				,structuredBuffersValid(false)
-				,samplerStateOverridesValid(false)
+				,samplerStateOverridesValid(true)
 				,textureAssignmentMapValid(false)
+				,rwTextureAssignmentMapValid(false)
 				,streamoutTargetsValid(false)
 				,textureSlots(0)
 				,rwTextureSlots(0)
@@ -114,24 +105,36 @@ namespace simul
 			{
 
 			}
+			
+			~ContextState()
+			{
+			}
 			bool last_action_was_compute;
-			std::unordered_map<int,crossplatform::Buffer*> applyVertexBuffers;
-			std::unordered_map<int,crossplatform::Buffer*> streamoutTargets;
-			std::unordered_map<int,crossplatform::ConstantBufferBase*> applyBuffers;
-			std::unordered_map<int,crossplatform::PlatformStructuredBuffer*> applyStructuredBuffers;
-			std::unordered_map<int,crossplatform::SamplerState*> samplerStateOverrides;
-			std::unordered_map<int, TextureAssignment> textureAssignmentMap;
-			crossplatform::EffectPass *currentEffectPass;
-			crossplatform::EffectTechnique *currentTechnique;
-			crossplatform::Effect *currentEffect;
+
+			/* VertexBufferAssignmentMap;
+			 ConstantBufferAssignmentMap;
+			 StructuredBufferAssignmentMap;
+			;*/
+
+			std::unordered_map<int,Buffer*> applyVertexBuffers;
+			std::unordered_map<int,Buffer*> streamoutTargets;
+			std::unordered_map<int,ConstantBufferBase*> applyBuffers;
+			std::unordered_map<int,PlatformStructuredBuffer*> applyStructuredBuffers;
+			SamplerStateAssignmentMap samplerStateOverrides;
+			TextureAssignmentMap textureAssignmentMap;
+			TextureAssignmentMap rwTextureAssignmentMap;
+			EffectPass *currentEffectPass;
+			EffectTechnique *currentTechnique;
+			Effect *currentEffect;
 			void invalidate()
 			{
 				effectPassValid=false;
 				vertexBuffersValid=false;
-				buffersValid=false;
+				constantBuffersValid=false;
 				structuredBuffersValid=false;
-				samplerStateOverridesValid=false;
+				samplerStateOverridesValid=true;
 				textureAssignmentMapValid=false;
+				rwTextureAssignmentMapValid=false;
 				streamoutTargetsValid=false;
 				textureSlots=0;
 				rwTextureSlots=0;
@@ -141,10 +144,11 @@ namespace simul
 			}
 			bool effectPassValid;
 			bool vertexBuffersValid;
-			bool buffersValid;
+			bool constantBuffersValid;
 			bool structuredBuffersValid;
 			bool samplerStateOverridesValid;
 			bool textureAssignmentMapValid;
+			bool rwTextureAssignmentMapValid;
 			bool streamoutTargetsValid;
 			unsigned textureSlots;
 			unsigned rwTextureSlots;
@@ -224,8 +228,8 @@ namespace simul
 			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
 			virtual void EndEvent			(DeviceContext &deviceContext);
-			virtual void StartRender		(DeviceContext &deviceContext)=0;
-			virtual void EndRender			(DeviceContext &deviceContext)=0;
+			virtual void StartRender		(DeviceContext &deviceContext){}
+			virtual void EndRender			(DeviceContext &deviceContext){}
 			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;
 
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
@@ -239,9 +243,8 @@ namespace simul
 			virtual void DrawIndexed		(DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0)=0;
 			virtual void DrawMarker			(DeviceContext &deviceContext,const double *matrix)			=0;
 			virtual void DrawLine			(crossplatform::DeviceContext &deviceContext,const float *pGlobalBasePosition, const float *pGlobalEndPosition,const float *colour,float width);
-			virtual void DrawCrossHair		(DeviceContext &deviceContext,const double *pGlobalPosition)	=0;
-			virtual void DrawCamera			(DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)=0;
-			virtual void DrawLineLoop		(DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4])=0;
+		
+			virtual void DrawLineLoop		(DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4]){}
 
 			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f,bool debug=false);
 			void DrawTexture				(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false,float gamma=1.0f);
@@ -267,11 +270,9 @@ namespace simul
 			virtual void SetModelMatrix		(crossplatform::DeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
 			virtual void					ApplyDefaultMaterial			()	=0;
 			/// Create a platform-specific material instance.
-			virtual Material				*CreateMaterial					()	=0;
+			 Material						*GetOrCreateMaterial(const char *name);
 			/// Create a platform-specific mesh instance.
-			virtual Mesh					*CreateMesh						()	=0;
-			/// Create a platform-specific light instance.
-			virtual Light					*CreateLight					()	=0;
+			virtual Mesh					*CreateMesh						();
 			/// Create a platform-specific texture instance.
 			virtual Texture					*CreateTexture					(const char *lFileNameUtf8 =nullptr)	=0;
 			/// Create a platform-specific framebuffer instance - i.e. an optional colour and an optional depth rendertarget. Optionally takes a name string.
@@ -288,6 +289,8 @@ namespace simul
 			virtual Effect					*CreateEffect					()=0;
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					(const char *filename_utf8,const std::map<std::string,std::string> &defines);
+			/// Get the effect named, or return null if it's not been created.
+			Effect							*GetEffect						(const char *name_utf8);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
 			/// simul::crossplatform::ConstantBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	()	=0;
@@ -341,8 +344,9 @@ namespace simul
 			virtual void					PopRenderTargets(DeviceContext &deviceContext)=0;
 			//! Resolve a MSAA texture to a normal texture.
 			virtual void					Resolve(DeviceContext &deviceContext,Texture *destination,Texture *source)=0;
+			void							LatLongTextureToCubemap(DeviceContext &deviceContext,Texture *destination,Texture *source);
 			//! Save a texture to disk.
-			virtual void					SaveTexture(Texture *texture,const char *lFileNameUtf8)=0;
+			virtual void					SaveTexture(Texture *texture,const char *lFileNameUtf8){}
 			/// Clear the contents of the given texture to the specified colour
 			virtual void					ClearTexture(crossplatform::DeviceContext &deviceContext,crossplatform::Texture *texture,const vec4& colour);
 			// Get a blank (black) resource texture.
@@ -355,13 +359,12 @@ namespace simul
 			bool mirrorY, mirrorY2, mirrorYText;
 			crossplatform::Effect *solidEffect;
 			crossplatform::Effect *copyEffect;
-			std::set<crossplatform::Material*> materials;
+			std::map<std::string,crossplatform::Material*> materials;
 			std::vector<std::string> GetTexturePathsUtf8();
 			simul::base::MemoryInterface *GetMemoryInterface();
 			void SetMemoryInterface(simul::base::MemoryInterface *m);
 			crossplatform::Effect *GetDebugEffect();
 			ConstantBuffer<DebugConstants> &GetDebugConstantBuffer();
-			ConstantBuffer<SolidConstants> &GetSolidConstantBuffer();
 		protected:
 			simul::base::MemoryInterface *memoryInterface;
 			std::vector<std::string> shaderPathsUtf8;
@@ -382,12 +385,12 @@ namespace simul
 			//
 
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;
-			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
 			
 			crossplatform::StructuredBuffer<vec4> textureQueryResult;
 			crossplatform::GpuProfiler		*gpuProfiler;
 			bool can_save_and_restore;
 		public:
+			std::map<std::string, Effect*> effects;
 			// all shaders are stored here and referenced by techniques.
 			std::map<std::string, Shader*> shaders;
 			std::unordered_map<const void *,ContextState *> contextState;

@@ -16,17 +16,20 @@ namespace simul
 		//! Sampler class for DirectX12
 		class SIMUL_DIRECTX12_EXPORT SamplerState:public crossplatform::SamplerState
 		{
+			D3D12_CPU_DESCRIPTOR_HANDLE mCpuHandle;
 		public:
 			SamplerState(crossplatform::SamplerStateDesc *d);
 			virtual ~SamplerState() override;
 			
 			void InvalidateDeviceObjects();
-			D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12SamplerState()
+			inline D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12SamplerState()
 			{
 				return &mCpuHandle;
 			}
-
-			D3D12_CPU_DESCRIPTOR_HANDLE mCpuHandle;
+			inline void SetDescriptorHandle(D3D12_CPU_DESCRIPTOR_HANDLE h)
+			{
+				mCpuHandle=h;
+			}
 		};
 
 		//! Texture class for DirectX12, it implement the base Texture methods
@@ -35,6 +38,8 @@ namespace simul
 		public:
 			Texture();
 			virtual ~Texture() override;
+
+			void SetName(const char *n) override;
 
 			//! Cleans all the resources related with this object
 			void							InvalidateDeviceObjects();

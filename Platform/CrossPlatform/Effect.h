@@ -265,7 +265,7 @@ namespace simul
 			bool usesRwTextureSlot(int s) const;
 			std::string pixel_str;
 			crossplatform::ShaderType type;
-			std::unordered_map<crossplatform::SamplerState *,int>	samplerStates;
+			std::unordered_map<int,crossplatform::SamplerState *>	samplerStates;
 			unsigned textureSlots;			//t
 			unsigned textureSlotsForSB;		//t
 			unsigned rwTextureSlots;		//u
@@ -282,56 +282,55 @@ namespace simul
 			
 			Shader* shaders[crossplatform::SHADERTYPE_COUNT];
 			Shader* pixelShaders[OUTPUT_FORMAT_COUNT];
-			EffectPass()
-				:blendState(NULL)
-				,depthStencilState(NULL)
-				,rasterizerState(NULL)
-				,samplerSlots(0)
-				,constantBufferSlots(0)
-				,textureSlots(0)
-				,textureSlotsForSB(0)
-				,rwTextureSlots(0)
-				,rwTextureSlotsForSB(0)
-				,should_fence_outputs(true)
-				,platform_pass(nullptr)
-			{
-				for(int i=0;i<crossplatform::SHADERTYPE_COUNT;i++)
-					shaders[i]=NULL;
-				for(int i=0;i<OUTPUT_FORMAT_COUNT;i++)
-					pixelShaders[i]=NULL;
-			}
+			EffectPass();
 			virtual ~EffectPass(){}
+
+			//! This updates the mapping from the pass's list of resources to the effect slot numbers (0-31)
+			void MakeResourceSlotMap();
+
+			// These are efficient maps from the shader pass's resources to the effect's resource slots.
+			int numResourceSlots;
+			unsigned char resourceSlots[32];
+			int numRwResourceSlots;
+			unsigned char rwResourceSlots[32];
+			int numSbResourceSlots;
+			unsigned char sbResourceSlots[32];
+			int numRwSbResourceSlots;
+			unsigned char rwSbResourceSlots[32];
+			int numSamplerResourcerSlots;
+			unsigned char samplerResourceSlots[32];
+			int numConstantBufferResourceSlots;
+			unsigned char constantBufferResourceSlots[32];
 
 			bool usesTextureSlot(int s) const;
 			bool usesTextureSlotForSB(int s) const;
 			bool usesRwTextureSlotForSB(int s) const;
-			bool usesBufferSlot(int s) const;
+			bool usesConstantBufferSlot(int s) const;
 			bool usesSamplerSlot(int s) const;
 			bool usesRwTextureSlot(int s) const;
 
 			bool usesTextures() const;
 			bool usesSBs() const;
 			bool usesRwSBs() const;
-			bool usesBuffers() const;
+			bool usesConstantBuffers() const;
 			bool usesSamplers() const;
 			bool usesRwTextures() const;
 			bool shouldFenceOutputs() const
 			{
 				return should_fence_outputs;
 			}
-
 			void setShouldFenceOutputs(bool f) 
 			{
 				should_fence_outputs=f;
 			}
-			void SetUsesBufferSlots(unsigned);
+			void SetUsesConstantBufferSlots(unsigned);
 			void SetUsesTextureSlots(unsigned);
 			void SetUsesTextureSlotsForSB(unsigned);
 			void SetUsesRwTextureSlots(unsigned);
 			void SetUsesRwTextureSlotsForSB(unsigned);
 			void SetUsesSamplerSlots(unsigned);
 
-			void SetBufferSlots(unsigned s)			{ constantBufferSlots = s; }
+			void SetConstantBufferSlots(unsigned s)			{ constantBufferSlots = s; }
 			void SetTextureSlots(unsigned s)		{ textureSlots = s; }
 			void SetTextureSlotsForSB(unsigned s)	{ textureSlotsForSB = s; }
 			void SetRwTextureSlots(unsigned s)		{ rwTextureSlots = s; }
@@ -407,9 +406,7 @@ namespace simul
 			PlatformConstantBuffer *platformConstantBuffer;
 			std::string defaultName;
 		public:
-			ConstantBufferBase():platformConstantBuffer(NULL)
-			{
-			}
+			ConstantBufferBase(const char *name);
 			~ConstantBufferBase()
 			{
 				delete platformConstantBuffer;
@@ -431,7 +428,7 @@ namespace simul
 		{
 			std::set<Effect*> linkedEffects;
 		public:
-			ConstantBuffer():ConstantBufferBase()
+			ConstantBuffer():ConstantBufferBase("")
 			{
 				// Clear out the part of memory that corresponds to the base class.
 				// We should ONLY inherit from simple structs.
@@ -765,6 +762,114 @@ namespace simul
 			std::string name;
 			std::vector<std::string> options;
 		};
+		//! A container class intended to reproduce some of the behaviour of std::map with ints for indices, but to be much much faster.
+		template<typename T,int count> class FastMap
+		{
+			std::set<Effect*> linkedEffects;
+			int index_limit;
+			int index_start;
+			T values[count+1];
+			unsigned has_value;
+			int sz;
+		public:
+			FastMap():index_limit(0),index_start(count),has_value(0),sz(0)
+			{
+			}
+			const T& operator[](int i) const
+			{
+				if(i>=index_limit)
+				{
+					//throw std::runtime_error("");
+				}
+				return values[i];
+			}
+			T& operator[](int i)
+			{
+				if(i>=count)
+				{
+					//throw std::runtime_error("");
+				}
+				unsigned value=(1<<i);
+				if(!(has_value&value))
+				{
+					sz++;
+					if(i>=index_limit)
+						index_limit=i+1;
+					if(i<index_start)
+						index_start=i;
+				}
+				has_value|=value;
+				return values[i];
+			}
+			void clear()
+			{
+				index_start=count;
+				index_limit=0;
+				has_value=0;
+				sz=0;
+			}
+			int size() const
+			{
+				return sz;
+			}
+			struct iterator
+			{
+				int position;
+				int first;
+				unsigned has_value;
+				bool operator==(const iterator &i)
+				{
+					return (position==i.position);
+				}
+				bool operator!=(const iterator &i)
+				{
+					return (position!=i.position);
+				}
+				iterator& operator++ ()     // prefix ++
+				{
+					do
+					{
+						first++;
+						has_value>>=(unsigned)1;
+					}
+					while((1&has_value)==0&&has_value!=0);
+					position++;
+					return *this;
+				}
+			};
+			iterator begin()
+			{
+				iterator i;
+				i.position=0;
+				i.first=index_start;
+				i.has_value=(has_value>>(unsigned)index_start);
+				return i;
+			}
+			iterator end()
+			{
+				iterator i;
+				i.position=sz;
+				i.first=index_limit;
+				i.has_value=0;
+				return i;
+			}
+		};
+		struct TextureAssignment
+		{
+			crossplatform::Texture *texture;
+			int dimensions;
+			bool uav;
+			int mip;// if -1, it's the whole texture.
+			int index;	// if -1 it's the whole texture
+			crossplatform::ShaderResourceType resourceType;
+		};
+		class Buffer;
+		typedef FastMap<TextureAssignment,32> TextureAssignmentMap;
+		typedef FastMap<Buffer*,4> VertexBufferAssignmentMap;
+		typedef FastMap<ConstantBufferBase*,32> ConstantBufferAssignmentMap;
+		typedef FastMap<PlatformStructuredBuffer*,32> StructuredBufferAssignmentMap;
+		typedef FastMap<SamplerState*,32> SamplerStateAssignmentMap;
+
 		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1);
 		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2);
 		extern SIMUL_CROSSPLATFORM_EXPORT EffectDefineOptions CreateDefineOptions(const char *name,const char *option1,const char *option2,const char *option3);
@@ -789,8 +894,9 @@ namespace simul
 			std::unordered_map<std::string,crossplatform::RenderState *> depthStencilStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> blendStates;
 			std::unordered_map<std::string,crossplatform::RenderState *> rasterizerStates;
-			std::unordered_map<crossplatform::SamplerState*,int> samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
+			SamplerStateAssignmentMap samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
 			const ShaderResource *GetTextureDetails(const char *name);
+			virtual void PostLoad(){}
 		public:
 			GroupMap groups;
 			TechniqueMap techniques;
@@ -880,6 +986,9 @@ namespace simul
 			int GetSamplerStateSlot(const char *name);
 			int GetDimensions(const char *name);
 			crossplatform::ShaderResourceType GetResourceType(const char *name);
+
+			//! Map of sampler states used by this effect
+			crossplatform::SamplerStateAssignmentMap& GetSamplers() { return samplerSlots; }
 		};
 	}
 }
