@@ -330,6 +330,10 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	// Store the vsync setting.
 	m_vsync_enabled			= false;
 
+	SIMUL_COUT << "=========================================\n";
+	SIMUL_COUT << "Initializing Directx12 manager with: \n";
+	SIMUL_COUT << "-Device Debug = " << (use_debug ? "enabled" : "disabled") << std::endl;
+
 #ifndef _XBOX_ONE
 
 	// Debug layer
@@ -344,6 +348,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 
 			// Enable GPU validation (it will report a list of errors if ocurred after ExecuteCommandList())
 			bool doGPUValidation = false;
+			SIMUL_COUT << "-Gpu Validation = " << (doGPUValidation ? "enabled" : "disabled") << std::endl;
 			if (doGPUValidation)
 			{
 				ID3D12Debug1* debugController1 = nullptr;
@@ -401,14 +406,34 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 		res = D3D12CreateDevice(hardwareAdapter,D3D_FEATURE_LEVEL_11_0,IID_PPV_ARGS(&mDevice));
 		SIMUL_ASSERT(res == S_OK);
 
-		// Set break on_x settings
-		bool breakOnWarning = false;
-		if (breakOnWarning)
+		// Some extra debug settings
 		{
 			ID3D12InfoQueue* infoQueue = nullptr;
 			mDevice->QueryInterface(IID_PPV_ARGS(&infoQueue));
-			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
-			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+			
+			// Set break on_x settings
+			bool breakOnWarning = false;
+			SIMUL_COUT << "-Break on Warning = " << (breakOnWarning ? "enabled" : "disabled") << std::endl;
+			if (breakOnWarning)
+			{
+				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+				infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+			}
+
+			// Filter msgs
+			bool filterMsgs = true;
+			if (filterMsgs)
+			{
+				D3D12_MESSAGE_ID msgs[] =
+				{
+					D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE
+				};
+				D3D12_INFO_QUEUE_FILTER filter	= {};
+				filter.DenyList.pIDList			= msgs;
+				filter.DenyList.NumIDs			= _countof(msgs);
+				infoQueue->AddStorageFilterEntries(&filter);
+			}
+			SAFE_RELEASE(infoQueue);
 		}
 
 		// Store information about the GPU
@@ -417,8 +442,8 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 		wcstombs_s(&stringLength, m_videoCardDescription, 128, hardwareAdapterDesc.Description, 128);
 
 		// Log
-		SIMUL_COUT << "Adapter: " << m_videoCardDescription << std::endl;
-		SIMUL_COUT << "Adapter memory: " << m_videoCardMemory << "(MB)" << std::endl;
+		SIMUL_COUT << "-Adapter: " << m_videoCardDescription << std::endl;
+		SIMUL_COUT << "-Adapter memory: " << m_videoCardMemory << "(MB)" << std::endl;
 
 		// Enumerate outputs(monitors)
 		IDXGIOutput* output = nullptr;
@@ -437,6 +462,9 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 		SAFE_RELEASE(hardwareAdapter);
 	}
 	SAFE_RELEASE(factory);
+
+	SIMUL_COUT << "=========================================\n";
+
 #endif
 }
 
