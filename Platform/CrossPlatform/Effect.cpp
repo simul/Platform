@@ -83,17 +83,17 @@ void EffectPass::MakeResourceSlotMap()
 	for(int s=0;s<32;s++)
 	{
 		if(usesTextureSlot(s))
-			resourceSlots[r++]=s;
+			resourceSlots[r++]=(char)s;
 		if(usesRwTextureSlot(s))
-			rwResourceSlots[w++]=s;
+			rwResourceSlots[w++]= (char)s;
 		if(usesTextureSlotForSB(s))
-			sbResourceSlots[sb++]=s;
+			sbResourceSlots[sb++]= (char)s;
 		if(usesRwTextureSlotForSB(s))
-			rwSbResourceSlots[rwsb++]=s;
+			rwSbResourceSlots[rwsb++]= (char)s;
 		if(usesSamplerSlot(s))
-			samplerResourceSlots[sm++]=s;
+			samplerResourceSlots[sm++]= (char)s;
 		if(usesConstantBufferSlot(s))
-			constantBufferResourceSlots[cb++]=s;
+			constantBufferResourceSlots[cb++]= (char)s;
 	}
 	numResourceSlots=r;
 	numRwResourceSlots=w;
@@ -799,8 +799,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		base::ClipWhitespace(line);
 		vector<string> words=simul::base::split(line,' ');
 		pos				=next;
-		size_t sp=line.find(" ");
-		size_t open_brace=line.find("{");
+		int sp=line.find(" ");
+		int open_brace=line.find("{");
 		if(open_brace>=0)
 			level=(Level)(level+1);
 		string word;
@@ -880,24 +880,24 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			{
 				string name		=words[1];
 				string props	=words[2];
-				size_t pos		=0;
+				size_t pos_t		=0;
 				crossplatform::RenderStateDesc desc;
 				desc.type=crossplatform::BLEND;
-				desc.blend.AlphaToCoverageEnable=toBool(simul::base::toNext(props,',',pos));
-				pos++;
-				string enablestr=simul::base::toNext(props,')',pos);
+				desc.blend.AlphaToCoverageEnable=toBool(simul::base::toNext(props,',', pos_t));
+				pos_t++;
+				string enablestr=simul::base::toNext(props,')', pos_t);
 				vector<string> en=base::split(enablestr,',');
 
-				desc.blend.numRTs=(int)en.size();
+				desc.blend.numRTs=en.size();
 				pos++;
-				crossplatform::BlendOperation BlendOp		=(crossplatform::BlendOperation)toInt(base::toNext(props,',',pos));
-				crossplatform::BlendOperation BlendOpAlpha	=(crossplatform::BlendOperation)toInt(base::toNext(props,',',pos));
-				crossplatform::BlendOption SrcBlend			=(crossplatform::BlendOption)toInt(base::toNext(props,',',pos));
-				crossplatform::BlendOption DestBlend		=(crossplatform::BlendOption)toInt(base::toNext(props,',',pos));
-				crossplatform::BlendOption SrcBlendAlpha	=(crossplatform::BlendOption)toInt(base::toNext(props,',',pos));
-				crossplatform::BlendOption DestBlendAlpha	=(crossplatform::BlendOption)toInt(base::toNext(props,',',pos));
-				pos++;
-				string maskstr=base::toNext(props,')',pos);
+				crossplatform::BlendOperation BlendOp		=(crossplatform::BlendOperation)toInt(base::toNext(props,',', pos_t));
+				crossplatform::BlendOperation BlendOpAlpha	=(crossplatform::BlendOperation)toInt(base::toNext(props,',', pos_t));
+				crossplatform::BlendOption SrcBlend			=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_t));
+				crossplatform::BlendOption DestBlend		=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_t));
+				crossplatform::BlendOption SrcBlendAlpha	=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_t));
+				crossplatform::BlendOption DestBlendAlpha	=(crossplatform::BlendOption)toInt(base::toNext(props,',', pos_t));
+				pos_t++;
+				string maskstr=base::toNext(props,')',pos_t);
 				vector<string> ma=base::split(maskstr,',');
 
 				for(int i=0;i<desc.blend.numRTs;i++)
@@ -962,21 +962,21 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			{
 				string name		=words[1];
 				string props	=words[2];
-				size_t pos		=0;
+				size_t pos_t		=0;
 				crossplatform::RenderStateDesc desc;
 				desc.type=crossplatform::DEPTH;
-				desc.depth.test=toBool(simul::base::toNext(props,',',pos));
-				desc.depth.write=toInt(simul::base::toNext(props,',',pos));
-				desc.depth.comparison=(crossplatform::DepthComparison)toInt(simul::base::toNext(props,',',pos));
+				desc.depth.test=toBool(simul::base::toNext(props,',',pos_t));
+				desc.depth.write=(bool)toInt(simul::base::toNext(props,',',pos_t));
+				desc.depth.comparison=(crossplatform::DepthComparison)toInt(simul::base::toNext(props,',',pos_t));
 				crossplatform::RenderState *ds=renderPlatform->CreateRenderState(desc);
 				depthStencilStates[name]=ds;
 			}
 			else if(is_equal(word, "SamplerState"))
 			{
 				//SamplerState clampSamplerState 9,MIN_MAG_MIP_LINEAR,CLAMP,CLAMP,CLAMP,
-				size_t sp2=line.find(" ",sp+1);
+				int sp2=line.find(" ",sp+1);
 				string sampler_name = line.substr(sp + 1, sp2 - sp - 1);
-				size_t comma=(int)std::min(line.length(),line.find(",",sp2+1));
+				int comma=(int)std::min(line.length(),line.find(",",sp2+1));
 				string register_num = line.substr(sp2 + 1, comma - sp2 - 1);
 				int reg=atoi(register_num.c_str());
 				simul::crossplatform::SamplerStateDesc desc;
@@ -1014,20 +1014,20 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			// Find the shader definitions:
 			// vertex: simple_VS_Main_vv.sb
 			// pixel: simple_PS_Main_p.sb
-			size_t cl=line.find(":");
-			size_t cm=line.find(",",cl+1);
+			int cl=line.find(":");
+			int cm=line.find(",",cl+1);
 			if(cm<0)
 				cm=line.length();
 			if(cl>=0&&tech)
 			{
 				string type=line.substr(0,cl);
-				string filename=line.substr(cl+1,cm-cl-1);
+				string filenamestr=line.substr(cl+1,cm-cl-1);
 				string uses;
 				if(cm<line.length())
 					uses=line.substr(cm+1,line.length()-cm-1);
 				base::ClipWhitespace(uses);
 				base::ClipWhitespace(type);
-				base::ClipWhitespace(filename);
+				base::ClipWhitespace(filenamestr);
 				const string &name=words[1];
 				crossplatform::ShaderType t=crossplatform::ShaderType::SHADERTYPE_COUNT;
 				PixelOutputFormat fmt=FMT_UNKNOWN;
@@ -1095,7 +1095,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						SIMUL_BREAK(base::QuickFormat("Unknown shader type or command: %s\n",type.c_str()));
 						continue;
 					}
-					Shader *s=renderPlatform->EnsureShader(filename.c_str(),t);
+					Shader *s=renderPlatform->EnsureShader(filenamestr.c_str(),t);
 					if(s)
 					{
 						if(t==crossplatform::SHADERTYPE_PIXEL&&fmt!=FMT_UNKNOWN)
@@ -1121,32 +1121,32 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 						string spec			=i->str(2);
 						smatch res;
 						std::regex re("([0-9]+)");
-						std::smatch res_smatch;
-						if(std::regex_search(spec,res_smatch,re))
+						std::smatch match;
+						if(std::regex_search(spec,match,re))
 						{
 							auto j_begin = std::sregex_iterator(spec.begin(), spec.end(), re);
 							for (std::sregex_iterator j = j_begin; j != i_end; ++j)
 							{
-								int t=atoi(j->str().c_str());
+								int u=atoi(j->str().c_str());
 								unsigned m=0;
-								if(t<1000)
-									m=(1<<t);
+								if(u<1000)
+									m=(1<<u);
 								else
-									m=(1<<(t-1000));
+									m=(1<<(u-1000));
 								if(type_char=='c')
 									cbSlots|=m;
 								else if(type_char=='s')
 									shaderSamplerSlots|=m;
 								else if(type_char=='t')
 								{
-									if(t<1000)
+									if(u<1000)
 										textureSlots|=m;
 									else
 										rwTextureSlots|=m;
 								}
 								else if(type_char=='b')
 								{
-									if(t<1000)
+									if(u<1000)
 										textureSlotsForSB|=m;
 									else
 										rwTextureSlotsForSB|=m;
@@ -1204,7 +1204,7 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				}
 			}
 		}
-		size_t close_brace=line.find("}");
+		int close_brace=line.find("}");
 		if (close_brace >= 0)
 		{
 			level = (Level)(level - 1);
