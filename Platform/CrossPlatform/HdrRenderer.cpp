@@ -349,7 +349,7 @@ void HdrRenderer::RenderGlowTexture(crossplatform::DeviceContext &deviceContext,
 	for(int i=0;i<4;i++)
 	{
 		char c[]={'0',0};
-		c[0]='0'+i;
+		c[0]='0'+(char)i;
 		SIMUL_COMBINED_PROFILE_START(deviceContext,c)
 		DoGaussian(deviceContext,brightpassTextures[i],glowTextures[i]);
 		SIMUL_COMBINED_PROFILE_END(deviceContext)

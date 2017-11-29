@@ -318,7 +318,7 @@ void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *tar
 	int expected_pitch=byteSize*width;
 	int expected_depth_pitch=expected_pitch*length;
 	char *dest=(char*)target;
-	if(mappedResource.RowPitch==expected_pitch&&mappedResource.DepthPitch==expected_depth_pitch)
+	if(mappedResource.RowPitch==(UINT)expected_pitch&&mappedResource.DepthPitch==(UINT)expected_depth_pitch)
 	{
 		source+=start_texel*byteSize;
 		dest+=start_texel*byteSize;
@@ -374,7 +374,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 	const unsigned char *source=(const unsigned char*)src;
 	unsigned char *target=(unsigned char*)mapped.pData;
 	int expected_pitch=byteSize*width;
-	if(mapped.RowPitch==expected_pitch)
+	if(mapped.RowPitch==(UINT)expected_pitch)
 	{
 		target+=texel_index*byteSize;
 		memcpy(target,source,num_texels*byteSize);
@@ -626,7 +626,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Depth!=d||textureDesc.Format!=f||mips!=m)
+			if(textureDesc.Width!=(UINT)w||textureDesc.Height!=(UINT)l||textureDesc.Depth!=(UINT)d||textureDesc.Format!=f||mips!=m)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -773,7 +773,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=texture2dFormat)
+			if(textureDesc.Width!=(UINT)w||textureDesc.Height!= (UINT)l||textureDesc.Format!=texture2dFormat)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -915,7 +915,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.ArraySize!=total_num||textureDesc.MipLevels!=m||textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=dxgi_format)
+			if(textureDesc.ArraySize!=(UINT)total_num||textureDesc.MipLevels!=(UINT)m||textureDesc.Width!=(UINT)w||textureDesc.Height!=(UINT)l||textureDesc.Format!=dxgi_format)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -1165,7 +1165,7 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Format!=f)
+			if(textureDesc.Width!= (UINT)w||textureDesc.Format!=f)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;

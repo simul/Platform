@@ -156,7 +156,7 @@ bool SphericalHarmonics::Probe(crossplatform::DeviceContext &deviceContext
 	}
 	probeResultsRW.CloseReadBuffer(deviceContext);
 	return res!=0;
-	return false;
+	//return false;
 
 }
 

@@ -188,6 +188,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 
 void RenderPlatform::RecompileShaders()
 {
+	
 	SAFE_DELETE(debugEffect);
 	SAFE_DELETE(solidEffect);
 	SAFE_DELETE(copyEffect);

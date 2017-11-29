@@ -740,6 +740,8 @@ static bool toBool(string s)
 	return false;
 }
 
+
+#pragma optimize("",off)
 void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, const std::map<std::string, std::string> &defines)
 {
 	renderPlatform=r;
@@ -799,12 +801,12 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 		base::ClipWhitespace(line);
 		vector<string> words=simul::base::split(line,' ');
 		pos				=next;
-		int sp=line.find(" ");
-		int open_brace=line.find("{");
-		if(open_brace>=0)
+		size_t open_brace=line.find("{");
+		if(open_brace!=std::string::npos)
 			level=(Level)(level+1);
 		string word;
-		if(sp >= 0)
+		int sp = line.find(" ");
+		if(sp != std::string::npos)
 			word=line.substr(0, sp);
 		if(level==OUTSIDE)
 		{
@@ -974,9 +976,9 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			else if(is_equal(word, "SamplerState"))
 			{
 				//SamplerState clampSamplerState 9,MIN_MAG_MIP_LINEAR,CLAMP,CLAMP,CLAMP,
-				int sp2=line.find(" ",sp+1);
+				size_t sp2=line.find(" ",sp+1);
 				string sampler_name = line.substr(sp + 1, sp2 - sp - 1);
-				int comma=(int)std::min(line.length(),line.find(",",sp2+1));
+				size_t comma=(int)std::min(line.length(),line.find(",",sp2+1));
 				string register_num = line.substr(sp2 + 1, comma - sp2 - 1);
 				int reg=atoi(register_num.c_str());
 				simul::crossplatform::SamplerStateDesc desc;
@@ -1014,11 +1016,12 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 			// Find the shader definitions:
 			// vertex: simple_VS_Main_vv.sb
 			// pixel: simple_PS_Main_p.sb
-			int cl=line.find(":");
-			int cm=line.find(",",cl+1);
-			if(cm<0)
+
+			size_t cl=line.find(":");
+			size_t cm=line.find(",",cl+1);
+			if(cm == std::string::npos)
 				cm=line.length();
-			if(cl>=0&&tech)
+			if(cl != std::string::npos && tech)
 			{
 				string type=line.substr(0,cl);
 				string filenamestr=line.substr(cl+1,cm-cl-1);
@@ -1204,8 +1207,8 @@ void Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8, c
 				}
 			}
 		}
-		int close_brace=line.find("}");
-		if (close_brace >= 0)
+		size_t close_brace=line.find("}");
+		if (close_brace != std::string::npos)
 		{
 			level = (Level)(level - 1);
 			if (level == OUTSIDE)

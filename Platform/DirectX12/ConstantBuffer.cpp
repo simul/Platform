@@ -11,7 +11,6 @@
 
 using namespace simul;
 using namespace dx12;
-#pragma optimize("",off)
 
 inline bool IsPowerOfTwo( UINT64 n )
 {
@@ -59,7 +58,6 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 
 	// Create the heaps (storage for our descriptors)
 	// mBufferSize / 256 (this is the max number of descriptors we can hold with this upload heaps
-	// 	Pc alignment != XBOX alignment (?)
 	mMaxDescriptors = mBufferSize / (kBufferAlign * mSlots);
 	for (unsigned int i = 0; i < 3; i++)
 	{
@@ -97,9 +95,8 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 		cbvDesc.SizeInBytes						= kBufferAlign * mSlots;
 		for(UINT j=0;j<mMaxDescriptors;j++)
 		{
-			UINT64 offset = (kBufferAlign * mSlots) * j;	
-		// If we applied this CB more than once this frame, we will be appending another descriptor (thats why we offset)
 			D3D12_CPU_DESCRIPTOR_HANDLE &handle		= cpuDescriptorHandles[i][j];
+			UINT64 offset							= (kBufferAlign * mSlots) * j;	
 			handle									= mHeaps[i].GetCpuHandleFromStartAfOffset(j);
 			cbvDesc.BufferLocation					= mUploadHeap[i]->GetGPUVirtualAddress() + offset;
 			renderPlatform->AsD3D12Device()->CreateConstantBufferView(&cbvDesc, handle);
@@ -160,7 +157,7 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 	if (mCurApplyCount >= mMaxDescriptors)
 	{
 		// This should really be solved by having like some kind of pool? Or allocating more space, something like that
-		SIMUL_BREAK("Nacho has to fix this");
+		SIMUL_BREAK_ONCE("This ConstantBuffer reached its maximum apply count");
 		return;
 	}
 
@@ -194,7 +191,7 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 	cbvDesc.BufferLocation					= mUploadHeap[curFrameIndex]->GetGPUVirtualAddress() + offset;
 	cbvDesc.SizeInBytes						= kBufferAlign * mSlots;
-
+	
 	mCurApplyCount++;
 }
 
