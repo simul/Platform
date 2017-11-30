@@ -87,7 +87,7 @@ void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,
 		void** pData = (void**)rendertarget;
 		deviceContext.setDefaultRenderTargets
 		(
-			pData[0], NULL,
+			pData[0], pData[1],
 			0, 0, vs.x, vs.y
 		);
 	}

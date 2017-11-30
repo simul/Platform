@@ -1333,6 +1333,11 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 		The resources will be ordered (based on slot index) inside the Set() Call.
 	*/
 
+	if (cs->samplerStateOverrides.size() > 0)
+	{
+
+	}
+
 	// Apply Samplers:	
 	if (pass->usesSamplers())
 	{

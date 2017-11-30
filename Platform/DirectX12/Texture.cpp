@@ -940,6 +940,12 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 
 bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {
+	if ((w * l * d) <= 0)
+	{
+		SIMUL_CERR << "ensureTexture3DSizeAndFormat called with null size! \n";
+		return false;
+	}
+
 	HRESULT res = S_FALSE;
 
 	pixelFormat		= pf;

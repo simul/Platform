@@ -679,7 +679,7 @@ crossplatform::SamplerStateDesc::Wrapping stringToWrapping(string s)
 		return crossplatform::SamplerStateDesc::CLAMP;
 	if(is_equal(s,"MIRROR"))
 		return crossplatform::SamplerStateDesc::MIRROR;
-	SIMUL_BREAK((string("Invalid string")+s).c_str());
+	SIMUL_BREAK_ONCE((string("Invalid string")+s).c_str());
 	return crossplatform::SamplerStateDesc::WRAP;
 }
 

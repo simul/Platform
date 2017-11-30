@@ -270,7 +270,7 @@ namespace simul
 			unsigned textureSlotsForSB;		//t
 			unsigned rwTextureSlots;		//u
 			unsigned rwTextureSlotsForSB;	//u
-			unsigned constantBufferSlots;			//b
+			unsigned constantBufferSlots;	//b
 			unsigned samplerSlots;			//s
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectPass
@@ -330,7 +330,7 @@ namespace simul
 			void SetUsesRwTextureSlotsForSB(unsigned);
 			void SetUsesSamplerSlots(unsigned);
 
-			void SetConstantBufferSlots(unsigned s)			{ constantBufferSlots = s; }
+			void SetConstantBufferSlots(unsigned s)	{ constantBufferSlots = s; }
 			void SetTextureSlots(unsigned s)		{ textureSlots = s; }
 			void SetTextureSlotsForSB(unsigned s)	{ textureSlotsForSB = s; }
 			void SetRwTextureSlots(unsigned s)		{ rwTextureSlots = s; }

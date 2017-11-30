@@ -6,6 +6,7 @@
 #include "Simul/Platform/CrossPlatform/RenderPlatform.h"
 #include "Simul/Platform/DirectX12/RenderPlatform.h"
 #include "SimulDirectXHeader.h"
+#include "MacrosDx1x.h"
 
 #include <string>
 
@@ -29,18 +30,17 @@ template< class T > UINT64 BytePtrToUint64( _In_ T* ptr )
 	return static_cast< UINT64 >( reinterpret_cast< BYTE* >( ptr ) - static_cast< BYTE* >( nullptr ) );
 }
 
-
-
 PlatformConstantBuffer::PlatformConstantBuffer() :
 	mSlots(0),
 	mMaxDescriptors(0),
 	mLastFrameIndex(UINT_MAX),
-	mCurApplyCount(0)
+	mCurApplyCount(0),
+	mCurData(nullptr)
 {
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
 		mUploadHeap[i] = nullptr;
-		cpuDescriptorHandles[i]=nullptr;
+		mCpuDescriptorHandles[i]=nullptr;
 	}
 }
 
@@ -54,20 +54,21 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 {
 	renderPlatform = r;
 	if (addr)
-		SIMUL_BREAK("Nacho has to check this");
+		SIMUL_BREAK("This constant buffer has initial data. \n");
 
 	// Create the heaps (storage for our descriptors)
-	// mBufferSize / 256 (this is the max number of descriptors we can hold with this upload heaps
+	// mBufferSize / kBufferAlign (this is the max number of descriptors we can hold with this upload heaps
 	mMaxDescriptors = mBufferSize / (kBufferAlign * mSlots);
 	for (unsigned int i = 0; i < 3; i++)
 	{
 		mHeaps[i].Restore((dx12::RenderPlatform*)renderPlatform, mMaxDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, "CBHeap", false);
-		delete [] cpuDescriptorHandles[i];
-		cpuDescriptorHandles[i]=new D3D12_CPU_DESCRIPTOR_HANDLE[mMaxDescriptors];
+		delete [] mCpuDescriptorHandles[i];
+		mCpuDescriptorHandles[i]=new D3D12_CPU_DESCRIPTOR_HANDLE[mMaxDescriptors];
 	}
-	int n=0;
-	// Create the upload heap (the gpu memory that will hold the constant buffer)
-	// Each upload heap has 64KB.  (64KB aligned)
+
+	int n = 0;
+	// Create each upload heap (the gpu memory that will hold the constant buffer)
+	// Each upload heap has mBufferSize (KB) (aligned to 64KB)
 	for (unsigned int i = 0; i < 3; i++)
 	{
 		HRESULT res;
@@ -89,13 +90,11 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 		// Just debug memory usage
 		megas += (float)(mBufferSize) / 1048576.0f;
 		
-		// If it is an UPLOAD buffer, will be the memory allocated in VRAM too?
-		// as far as we know, an UPLOAD buffer has CPU read/write access and GPU read access.
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.SizeInBytes						= kBufferAlign * mSlots;
 		for(UINT j=0;j<mMaxDescriptors;j++)
 		{
-			D3D12_CPU_DESCRIPTOR_HANDLE &handle		= cpuDescriptorHandles[i][j];
+			D3D12_CPU_DESCRIPTOR_HANDLE &handle		= mCpuDescriptorHandles[i][j];
 			UINT64 offset							= (kBufferAlign * mSlots) * j;	
 			handle									= mHeaps[i].GetCpuHandleFromStartAfOffset(j);
 			cbvDesc.BufferLocation					= mUploadHeap[i]->GetGPUVirtualAddress() + offset;
@@ -103,6 +102,8 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 		}
 		//SIMUL_COUT << "Total MB Allocated in the GPU: " << std::to_string(megas) << std::endl;
 	}
+
+	mCurData = malloc(kBufferAlign * mSlots);
 }
 
 void PlatformConstantBuffer::SetNumBuffers(crossplatform::RenderPlatform *r, UINT nContexts,  UINT nMapsPerFrame, UINT nFramesBuffering )
@@ -118,7 +119,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE simul::dx12::PlatformConstantBuffer::AsD3D12Constant
 	// we substract 1 here
 	if (mCurApplyCount == 0)
 		SIMUL_BREAK("We must apply this cb first");
-	return cpuDescriptorHandles[mLastFrameIndex][mCurApplyCount-1];
+	return mCpuDescriptorHandles[mLastFrameIndex][mCurApplyCount-1];
 	//return D3D12_CPU_DESCRIPTOR_HANDLE(mHeaps[mLastFrameIndex].GetCpuHandleFromStartAfOffset(mCurApplyCount - 1));
 }
 
@@ -147,9 +148,10 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	{
 		mHeaps[i].Release(rPlat);
 		rPlat->PushToReleaseManager(mUploadHeap[i], "ConstantBufferUpload");
-		delete [] cpuDescriptorHandles[i];
-		cpuDescriptorHandles[i]=nullptr;
+		delete [] mCpuDescriptorHandles[i];
+		mCpuDescriptorHandles[i]=nullptr;
 	}
+	SAFE_DELETE(mCurData);
 }
 
 void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceContext, size_t size, void *addr)
@@ -172,26 +174,21 @@ void  PlatformConstantBuffer::Apply(simul::crossplatform::DeviceContext &deviceC
 
 	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer
 	// has a minimum size of kBufferAlign)
-	UINT8* pDest = nullptr;
-	UINT64 offset = (kBufferAlign * mSlots) * mCurApplyCount;	
+	UINT8* pDest	= nullptr;
+	UINT64 offset	= (kBufferAlign * mSlots) * mCurApplyCount;	
 	const CD3DX12_RANGE mapRange(0, 0);
-	HRESULT hResult=mUploadHeap[curFrameIndex]->Map(0, &mapRange, reinterpret_cast<void**>(&pDest));
-	if(hResult==S_OK)
+	HRESULT hResult = mUploadHeap[curFrameIndex]->Map(0, &mapRange, reinterpret_cast<void**>(&pDest));
+	if (hResult == S_OK)
 	{
+		SIMUL_ASSERT(size < (kBufferAlign * mSlots));
 		if (pDest)
 		{
-			memset(pDest + offset, 0, kBufferAlign * mSlots);
 			memcpy(pDest + offset, addr, size);
 		}
 		const CD3DX12_RANGE unMapRange(0, 1);
 		mUploadHeap[curFrameIndex]->Unmap(0, &unMapRange);
 	}
 
-	// Create a CBV
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-	cbvDesc.BufferLocation					= mUploadHeap[curFrameIndex]->GetGPUVirtualAddress() + offset;
-	cbvDesc.SizeInBytes						= kBufferAlign * mSlots;
-	
 	mCurApplyCount++;
 }
 

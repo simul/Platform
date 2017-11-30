@@ -426,7 +426,8 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			{
 				D3D12_MESSAGE_ID msgs[] =
 				{
-					D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE
+					D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
+					D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE
 				};
 				D3D12_INFO_QUEUE_FILTER filter	= {};
 				filter.DenyList.pIDList			= msgs;
@@ -541,6 +542,7 @@ crossplatform::Output Direct3D12Manager::GetOutput(int i)
 #endif
 	return o;
 }
+
 void Direct3D12Manager::Shutdown()
 {
 	// TO-DO: wait for the GPU to complete last work
@@ -560,9 +562,6 @@ void Direct3D12Manager::Shutdown()
 	ReportMessageFilterState();
 
 	SAFE_RELEASE(mDevice);
-	//SAFE_RELEASE(CommandQueue);
-	//SAFE_RELEASE(CommandList);
-	//SAFE_DELETE(m_fence);
 }
 
 void Direct3D12Manager::RemoveWindow(HWND hwnd)
