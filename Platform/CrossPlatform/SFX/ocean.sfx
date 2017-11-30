@@ -610,7 +610,7 @@ shader TwoColourCompositeOutput OceanSurfFinalPS(posTexVertexOutput In) : SV_Tar
 	float cos_spec = max(dot(reflect_vec, g_SunDir), 0.0);
 	float sun_spot = pow(cos_spec, g_Shineness);
 	vec3 refl = texture_cube(g_texReflectCube, reflect_vec);
-	Output.add.rgb += vec4(g_SunColor * sun_spot, sun_spot)+refl;
+	Output.add.rgb += vec3(g_SunColor * sun_spot)+refl;
 
 	float sine = v.z;
 	vec2 fadeTexc = vec2(sqrt(input.y * g_WorldScale), 0.5*(1.0 - sine));

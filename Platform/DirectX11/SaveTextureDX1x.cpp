@@ -29,7 +29,7 @@ namespace simul
 			std::wstring wfilename=simul::base::Utf8ToWString(fn_utf8);
 			ID3D11DeviceContext*			m_pImmediateContext;
 			pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-			int flags=0;
+			//int flags=0;
 //			DirectX::TexMetadata metadata;
 			DirectX::ScratchImage scratchImage;
 			HRESULT hr=DirectX::CaptureTexture( pd3dDevice, m_pImmediateContext, texture, scratchImage );

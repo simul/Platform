@@ -1076,7 +1076,7 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext &deviceContex
 	,const crossplatform::Layout *layout
 	,const int *vertexSteps)
 {
-	UINT offset = 0;
+	//UINT offset = 0;
 	ID3D11Buffer *buf[10];
 	UINT strides[10];
 	UINT offsets[10];
@@ -1495,7 +1495,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int
 			simul::dx11::setTexture(debugEffect->asD3DX11Effect(),"cubeTexture",srv);
 		}
 	}
-	unsigned int num_v=1;
+	//unsigned int num_v=1;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
 	//pContext->RSGetViewports(&num_v,&viewport);
 	if(mirrorY2)
@@ -1682,7 +1682,7 @@ void RenderPlatform::Draw2dLines(crossplatform::DeviceContext &deviceContext,cro
 		HRESULT hr=S_OK;
 		ID3DX11EffectTechnique *tech			=debugEffect->asD3DX11Effect()->GetTechniqueByName("lines_2d");
 		
-		unsigned int num_v=1;
+		//unsigned int num_v=1;
 		//D3D11_VIEWPORT								viewport;
 		//pContext->RSGetViewports(&num_v,&viewport);
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);

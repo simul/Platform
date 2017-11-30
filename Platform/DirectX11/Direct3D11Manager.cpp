@@ -172,8 +172,8 @@ void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
 	if(!GetWindowRect((HWND)hwnd,&rect))
 		return;
 #endif
-	int W	=abs(rect.right-rect.left);
-	int H	=abs(rect.bottom-rect.top);
+	UINT W	=abs(rect.right-rect.left);
+	UINT H	=abs(rect.bottom-rect.top);
 	ID3D11RenderTargetView *t[]={NULL};
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	HRESULT hr=m_swapChain->GetDesc(&swapDesc);
