@@ -129,19 +129,19 @@ PlatformStructuredBuffer::PlatformStructuredBuffer()
 				,unorderedAccessView(0)
 				,lastContext(NULL)
 #if _XBOX_ONE
-	,m_pPlacementBuffer( nullptr )
-	,byteWidth( 0 )
+				,m_pPlacementBuffer( nullptr )
+				,byteWidth( 0 )
 #endif
-	,m_nContexts( 0 )
-	,m_nObjects( 0 )
-	,m_nBuffering( 0 )
-	,iObject(0)
-			{
-				stagingBuffers=new ID3D11Buffer*[NUM_STAGING_BUFFERS];
-				for(int i=0;i<NUM_STAGING_BUFFERS;i++)
-					stagingBuffers[i]=NULL;
-				memset(&mapped,0,sizeof(mapped));
-			}
+				,m_nContexts( 0 )
+				,m_nObjects( 0 )
+				,m_nBuffering( 0 )
+				,iObject(0)
+	{
+		stagingBuffers=new ID3D11Buffer*[NUM_STAGING_BUFFERS];
+		for(int i=0;i<NUM_STAGING_BUFFERS;i++)
+			stagingBuffers[i]=NULL;
+		memset(&mapped,0,sizeof(mapped));
+	}
 
 PlatformStructuredBuffer::~PlatformStructuredBuffer()
 {
@@ -202,7 +202,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 			PAGE_WRITECOMBINE | PAGE_READWRITE ));
 
 		if(renderPlatform&&renderPlatform->GetMemoryInterface())
-			renderPlatform->GetMemoryInterface()->TrackVideoMemory(m_pPlacementBuffer,numBuffers * byteWidth,"dx11::PlatformStructuredBuffer");
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(m_pPlacementBuffer,numBuffers * byteWidth,"dx11::PlatformStructuredBuffer placement");
 
 		#ifdef SIMUL_D3D11_MAP_PLACEMENT_BUFFERS_CACHE_LINE_ALIGNMENT_PACK
 		SIMUL_ASSERT( ( BytePtrToUint64( m_pPlacementBuffer ) & ( SIMUL_D3D11_BUFFER_CACHE_LINE_SIZE - 1 ) ) == 0 );
@@ -219,9 +219,11 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	else
 #endif
 	{
+		if(renderPlatform&&renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->UntrackVideoMemory(buffer);
 		V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &buffer));
 		if(renderPlatform&&renderPlatform->GetMemoryInterface())
-			renderPlatform->GetMemoryInterface()->TrackVideoMemory(buffer,sbDesc.ByteWidth,"dx11::PlatformStructuredBuffer");
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(buffer,sbDesc.ByteWidth,"dx11::PlatformStructuredBuffer main buffer");
 	}
 	if(cpu_read)
 	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
@@ -289,15 +291,15 @@ void *PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext &deviceCo
 	else
 #endif
 	{
-	lastContext=deviceContext.asD3D11DeviceContext();
+		lastContext=deviceContext.asD3D11DeviceContext();
 		D3D11_MAP map_type=D3D11_MAP_WRITE_DISCARD;
 		if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
 			map_type=D3D11_MAP_WRITE;
-	if(!mapped.pData)
+		if(!mapped.pData)
 			lastContext->Map(buffer,0,map_type,SIMUL_D3D11_MAP_FLAGS,&mapped);
-	void *ptr=(void *)mapped.pData;
-	return ptr;
-}
+		void *ptr=(void *)mapped.pData;
+		return ptr;
+	}
 }
 
 const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext &deviceContext)
@@ -320,7 +322,7 @@ const void *PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContex
 		if(wait>1)
 		{
 			SIMUL_CERR_ONCE << "PlatformStructuredBuffer::OpenReadBuffer waited " << wait << " times." << std::endl;
-	}
+		}
 	}
 	return mapped.pData;
 }
@@ -425,7 +427,6 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	mapped.pData=NULL;
 	SAFE_RELEASE(unorderedAccessView);
 	SAFE_RELEASE(shaderResourceView);
-	SAFE_RELEASE(buffer);
 	for(int i=0;i<NUM_STAGING_BUFFERS;i++)
 	{
 		if(renderPlatform&&renderPlatform->GetMemoryInterface())
@@ -440,9 +441,9 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	m_pPlacementBuffer=nullptr;
 	buffer=nullptr;
 #else
-	SAFE_RELEASE(buffer);
 	if(renderPlatform&&renderPlatform->GetMemoryInterface())
 		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(buffer);
+	SAFE_RELEASE(buffer);
 #endif
 }
 

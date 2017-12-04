@@ -689,6 +689,14 @@
 		{
 			return &x;
 		}
+		int3 operator+(int3 v2) const
+		{
+			int3 ret;
+			ret.x=x+v2.x;
+			ret.y=y+v2.y;
+			ret.z=z+v2.z;
+			return ret;
+		}
 		void operator=(const int *v)
 		{
 			x=v[0];
