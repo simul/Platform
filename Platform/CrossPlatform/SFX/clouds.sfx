@@ -173,9 +173,9 @@ void MixInLayer( int3 p,bool clears)
 		return;
 	// The position translates to a texture coordinate in the current cloudDensity texture:
 	idx.xy		+=gridCentreTexel;
+	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
 	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
-	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
 	vec4 res = 0.0;
 	for (int i = -2; i < 3; i++)
 	{
@@ -220,8 +220,8 @@ void MixInCirrus(uint3 ii,bool clears)
 	int3 idx	=int3(ii)*int3(amortizationScale)+int3(amortizationOffset.xyz);
 	if(idx.x>=exclusionRange.x&&idx.y>=exclusionRange.y&&idx.x<exclusionRange.z&&idx.y<exclusionRange.w)
 		return;
-	vec3 texc	=vec3(idx)*scale+offset;
 	idx.xy		+=gridCentreTexel;
+	vec3 texc	=vec3(idx-int3(gridCentreTexel+windowGrid.xy/2,0))*scale+offset;
 	idx.xy		+=int2(windowGrid.xy+windowGrid.xy/2);
 	idx.xy		=idx.xy%int2(windowGrid.xy);
 	// The position translates to a texture coordinate in the current cloudDensity texture:
@@ -247,7 +247,7 @@ void MixInCirrus(uint3 ii,bool clears)
 	res.z		=saturate((res.z-0.5)/diffusivity);
 	//res.z=frac(float(idx.x)/float(windowGrid.x));
 	res.z*=saturate(1.0-fall_amount)* max_density_gm3*saturate(texc.z / zPixel1 - 0.5)*saturate((1.0 - 0.5*zPixel1 - texc.z) / zPixel1);
-	vec4 current=vec4(0,0,0,1.0);
+	vec4 current=vec4(0,0,0,0.0);
 	if(!clears)
 		current=UnpackUintToVec4(packedOutputTexture3d[idx]);
 	{

@@ -147,13 +147,11 @@ namespace simul
 			void									ActivateRenderTargets(crossplatform::DeviceContext &deviceContext,int num,crossplatform::Texture **targs,crossplatform::Texture *depth);
 			void									DeactivateRenderTargets(crossplatform::DeviceContext &deviceContext) override;
 		
-			crossplatform::Viewport					GetViewport(crossplatform::DeviceContext &deviceContext,int index);
 			void									SetViewports(crossplatform::DeviceContext &deviceContext,int num,const crossplatform::Viewport *vps);
 			void									SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer);
 			
 			void									SetTopology(crossplatform::DeviceContext &deviceContext,crossplatform::Topology t) override;
 			void									SetLayout(crossplatform::DeviceContext &deviceContext,crossplatform::Layout *l) override;
-			void									EnsureEffectIsBuilt(const char *filename_utf8, const std::vector<crossplatform::EffectDefineOptions> &options) override;
 
 			void									StoreRenderState(crossplatform::DeviceContext &deviceContext);
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext);

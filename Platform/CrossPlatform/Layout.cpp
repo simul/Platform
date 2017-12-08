@@ -7,11 +7,12 @@
 using namespace simul;
 using namespace crossplatform;
 
+/*
 static int sizeOf(const LayoutDesc *d)
 {
 	return d->format;
 }
-
+*/
 Layout::Layout()
 	:apply_count(0)
 	,struct_size(0)

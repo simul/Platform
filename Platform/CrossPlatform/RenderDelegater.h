@@ -6,8 +6,10 @@
 #include <functional>
 #include <unordered_map>
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
 
 namespace simul
 {
@@ -26,6 +28,7 @@ namespace simul
 			std::vector<crossplatform::ShutdownDeviceDelegate> shutdownDeviceDelegates;
 			void *device;
 			int last_view_id;
+			unsigned long long frame;
 		public:
 			RenderDelegater(crossplatform::RenderPlatform *r,simul::base::MemoryInterface *m);
 			~RenderDelegater();
@@ -42,4 +45,6 @@ namespace simul
 		};
 	}
 }
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif

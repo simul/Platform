@@ -209,7 +209,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		#endif
 		if (init_data)
 		{
-			for (int i = 0; i < numBuffers; i++)
+			for (uint i = 0; i < numBuffers; i++)
 			{
 				memcpy(m_pPlacementBuffer+(i*byteWidth), init_data, byteWidth);
 			}

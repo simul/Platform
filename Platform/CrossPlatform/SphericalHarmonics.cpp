@@ -8,9 +8,9 @@ using namespace crossplatform;
 
 SphericalHarmonics::SphericalHarmonics()
 	:bands(4)
-, sphericalHarmonicsEffect(nullptr)
-,lightProbesEffect (nullptr)
-, shSeed(0)
+,sphericalHarmonicsEffect(nullptr)
+,shSeed(0)
+,lightProbesEffect(nullptr)
 {
 }
 
@@ -76,7 +76,7 @@ void SphericalHarmonics::RenderMipsByRoughness(crossplatform::DeviceContext &dev
 	for (int m = 0; m < target->mips - 1; m++)
 	{
 		lightProbeConstants.mipIndex = m+1;
-		lightProbeConstants.roughness = RoughnessFromMip(lightProbeConstants.mipIndex, target->mips );
+		lightProbeConstants.roughness = RoughnessFromMip(float(lightProbeConstants.mipIndex), float(target->mips) );
 		const char *passname = (lightProbeConstants.roughness < 0.01f) ? "smooth" : (lightProbeConstants.roughness < 0.99f ? "general" : "rough");
 		for (int j = 0; j < 6; j++)
 		{
@@ -156,7 +156,7 @@ bool SphericalHarmonics::Probe(crossplatform::DeviceContext &deviceContext
 	}
 	probeResultsRW.CloseReadBuffer(deviceContext);
 	return res!=0;
-	return false;
+	//return false;
 
 }
 
@@ -257,8 +257,8 @@ void SphericalHarmonics::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 	if (!lightProbesEffect)
 		return;
 	math::Matrix4x4 invViewProj;
-	mat4 view;
-	float cam_pos[] = { 0,0,0 };
+	//mat4 view;
+	//float cam_pos[] = { 0,0,0 };
 	crossplatform::EffectTechnique *tech = lightProbesEffect->GetTechniqueByName("irradiance_map");
 		// For each face, 
 		SIMUL_COMBINED_PROFILE_START(deviceContext, "RenderEnvmap draw")
@@ -273,7 +273,7 @@ void SphericalHarmonics::RenderEnvmap(crossplatform::DeviceContext &deviceContex
 		target_texture->activateRenderTarget(deviceContext,i,0);
 		//math::Matrix4x4 cube_proj = simul::crossplatform::Camera::MakeDepthReversedProjectionMatrix(SIMUL_PI_F / 2.f, SIMUL_PI_F / 2.f, 0.2f, 200000.f);
 		{
-			static bool rev = true;
+			//static bool rev = true;
 			//simul::crossplatform::GetCubeMatrixAtPosition((float *)&view, i, cam_pos, false, rev);
 			//crossplatform::MakeInvViewProjMatrix(invViewProj, view, cube_proj);
 			simul::crossplatform::GetCubeInvViewProjMatrix(invViewProj,i,false,true);

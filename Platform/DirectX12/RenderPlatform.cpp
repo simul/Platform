@@ -79,7 +79,7 @@ void RenderPlatform::ResourceTransitionSimple(	ID3D12Resource * res, D3D12_RESOU
 	if (flush)
 	{
 		FlushBarriers();
-}
+	}
 }
 
 void RenderPlatform::FlushBarriers()
@@ -141,8 +141,8 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	mFrameSamplerHeap	= new dx12::Heap[3];
 	for (unsigned int i = 0; i < 3; i++)
 	{
-		mFrameHeap[i].Restore(this, 2048, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,"FrameHeap");
-		mFrameSamplerHeap[i].Restore(this, 1024, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,"FrameSamplerHeap");
+		mFrameHeap[i].Restore(this, D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,"FrameHeap");
+		mFrameSamplerHeap[i].Restore(this, D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,"FrameSamplerHeap");
 	}
 	// Create storage heaps
 	// These heaps wont be shader visible as they will be the source of the copy operation
@@ -160,17 +160,15 @@ void RenderPlatform::RestoreDeviceObjects(void* device)
 	mDummy2D->ensureTexture2DSizeAndFormat(this, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 	mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, true);
 
-	// We will create a temp cmd queue to get the time stamp frequency value
+
+#ifdef _XBOX_ONE
+	// Refer to UE4:(XboxOneD3D12Device.cpp) FXboxOneD3D12DynamicRHI::GetHardwareGPUFrameTime() 
+	mTimeStampFreq					= D3D11X_XBOX_GPU_TIMESTAMP_FREQUENCY;
+#else
 	HRESULT res						= S_FALSE;
 	D3D12_COMMAND_QUEUE_DESC qdesc	= {};
 	qdesc.Flags						= D3D12_COMMAND_QUEUE_FLAG_NONE;
 	qdesc.Type						= D3D12_COMMAND_LIST_TYPE_DIRECT;
-
-#ifdef _XBOX_ONE
-	D3D12XBOX_GPU_HARDWARE_CONFIGURATION gpuHardwareConfiguration;
-	m12Device->GetGpuHardwareConfigurationX(&gpuHardwareConfiguration);
-	mTimeStampFreq=gpuHardwareConfiguration.GpuFrequency;
-#else
 	ID3D12CommandQueue* queue		= nullptr;
 	res = m12Device->CreateCommandQueue(&qdesc, IID_PPV_ARGS(&queue));
 	SIMUL_ASSERT(res == S_OK);
@@ -431,7 +429,7 @@ static D3D12_FILTER ToD3D12Filter(crossplatform::SamplerStateDesc::Filtering f)
 	case simul::crossplatform::SamplerStateDesc::POINT:
 		return D3D12_FILTER_MIN_MAG_MIP_POINT;
 	case simul::crossplatform::SamplerStateDesc::LINEAR:
-		return D3D12_FILTER_ANISOTROPIC;
+		return D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	case simul::crossplatform::SamplerStateDesc::ANISOTROPIC:
 		return D3D12_FILTER_ANISOTROPIC;
 	default: 
@@ -441,6 +439,7 @@ static D3D12_FILTER ToD3D12Filter(crossplatform::SamplerStateDesc::Filtering f)
 
 crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::SamplerStateDesc *d)
 {
+	const float border[4] = { 0.0f,0.0f,0.0f,0.0f };
 	dx12::SamplerState *s = new dx12::SamplerState(d);
 
 	D3D12_SAMPLER_DESC s12	= {};
@@ -450,10 +449,10 @@ crossplatform::SamplerState *RenderPlatform::CreateSamplerState(crossplatform::S
 	s12.AddressW			= ToD3D12TextureAddressMode(d->z);
 	s12.ComparisonFunc		= D3D12_COMPARISON_FUNC_NEVER;
 	s12.MaxAnisotropy		= 16;
-	s12.MinLOD				= 0;
+	s12.MinLOD				= 0.0f;
 	s12.MaxLOD				= D3D12_FLOAT32_MAX;
-
-	// Store the CPU handle
+	s12.MipLODBias			= 0.0f;
+	
 	m12Device->CreateSampler(&s12, mSamplerHeap->CpuHandle());
 	s->SetDescriptorHandle( mSamplerHeap->CpuHandle());
 	mSamplerHeap->Offset();
@@ -1148,18 +1147,12 @@ void RenderPlatform::SetViewports(crossplatform::DeviceContext &deviceContext,in
 		// Configure scissor
 		scissors[i].left		= 0;
 		scissors[i].top			= 0;
-		scissors[i].right		= viewports[i].Width;
-		scissors[i].bottom		= viewports[i].Height;
+		scissors[i].right		= (LONG)viewports[i].Width;
+		scissors[i].bottom		= (LONG)viewports[i].Height;
 	}
 
 	mCommandList->RSSetViewports(num, viewports);
 	mCommandList->RSSetScissorRects(num, scissors);
-}
-
-crossplatform::Viewport	RenderPlatform::GetViewport(crossplatform::DeviceContext &deviceContext,int index)
-{
-	// TO-DO: Multiple viewports?
-	return deviceContext.defaultTargetsAndViewport.viewport;
 }
 
 void RenderPlatform::SetIndexBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::Buffer *buffer)
@@ -1217,11 +1210,6 @@ void RenderPlatform::SetLayout(crossplatform::DeviceContext &deviceContext,cross
 	{
 		l->Apply(deviceContext);
 	}
-}
-
-void RenderPlatform::EnsureEffectIsBuilt(const char *filename_utf8, const std::vector<crossplatform::EffectDefineOptions> &options)
-{
-
 }
 
 void RenderPlatform::SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s)
@@ -1344,6 +1332,11 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext& deviceConte
 	
 		The resources will be ordered (based on slot index) inside the Set() Call.
 	*/
+
+	if (cs->samplerStateOverrides.size() > 0)
+	{
+
+	}
 
 	// Apply Samplers:	
 	if (pass->usesSamplers())
@@ -1532,11 +1525,11 @@ void RenderPlatform::RestoreRenderState( crossplatform::DeviceContext &deviceCon
 
 void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend/*=false*/,float gamma, bool debug)
 {
-	mCommandList = deviceContext.asD3D12Context();
-	immediateContext = deviceContext;
+	mCommandList		= deviceContext.asD3D12Context();
+	immediateContext	= deviceContext;
 
 	crossplatform::RenderPlatform::DrawTexture(deviceContext, x1, y1, dx, dy, tex, mult, blend, gamma, debug);
-	}
+}
 
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext)
 {

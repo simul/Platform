@@ -22,14 +22,13 @@ using namespace simul;
 using namespace crossplatform;
 
 RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
-	:memoryInterface(m)
-	,mirrorY(false)
+	:mirrorY(false)
 	,mirrorY2(false)
 	,mirrorYText(false)
-	,textRenderer(NULL)
-	,shaderBuildMode(BUILD_IF_CHANGED)
 	,solidEffect(NULL)
 	,copyEffect(NULL)
+	,memoryInterface(m)
+	,shaderBuildMode(BUILD_IF_CHANGED)
 	,debugEffect(NULL)
 	,textured(NULL)
 	,untextured(nullptr)
@@ -39,6 +38,7 @@ RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 #else
 	,can_save_and_restore(true)
 #endif
+	,textRenderer(NULL)
 {
 	immediateContext.renderPlatform=this;
 	gpuProfiler=new GpuProfiler;
@@ -188,6 +188,7 @@ void RenderPlatform::InvalidateDeviceObjects()
 
 void RenderPlatform::RecompileShaders()
 {
+	
 	SAFE_DELETE(debugEffect);
 	SAFE_DELETE(solidEffect);
 	SAFE_DELETE(copyEffect);
@@ -548,9 +549,8 @@ void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
 	math::Matrix4x4 wvp,world;
 	world.ResetToUnitMatrix();
-	float tan_x=1.0f/proj(0, 0);
-	float tan_y=1.0f/proj(1, 1);
-	float size_req=tan_x*.5f;
+	//float tan_x=1.0f/proj(0, 0);
+	//float tan_y=1.0f/proj(1, 1);
 	world._41=origin.x;
 	world._42=origin.y;
 	world._43=origin.z;
@@ -579,7 +579,7 @@ void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	debugEffect->Unapply(deviceContext);
 }
 
-void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float qsize,float radius,vec4 colour)
+void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,vec4 orient_quat,float qsize,float sph_rad,vec4 colour)
 {
 	Viewport viewport=GetViewport(deviceContext,0);
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
@@ -587,9 +587,7 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 
 	math::Matrix4x4 wvp,world;
 	world.ResetToUnitMatrix();
-	float tan_x=1.0f/proj(0, 0);
-	float tan_y=1.0f/proj(1, 1);
-	float size_req=tan_x*.5f;
+
 	world._41=origin.x;
 	world._42=origin.y;
 	world._43=origin.z;
@@ -601,12 +599,12 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_quad_on_sphere");
 
 	debugConstants.quaternion		=orient_quat;
-	debugConstants.radius			=radius;
+	debugConstants.radius			=sph_rad;
 	debugConstants.sideview			=qsize;
 	debugConstants.debugColour		=colour;
 	debugConstants.debugViewDir		=view_dir;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-	debugEffect->SetConstantBuffer(deviceContext,"DebugConstants",&debugConstants);
+
 	debugEffect->Apply(deviceContext,tech,0);
 
 	SetTopology(deviceContext,LINELIST);
@@ -614,48 +612,42 @@ void RenderPlatform::DrawQuadOnSphere(DeviceContext &deviceContext,vec3 origin,v
 
 	debugEffect->Unapply(deviceContext);
 }
-void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origin, vec4 q, float rad,float sph_rad, vec4 colour)
+void RenderPlatform::DrawCircleOnSphere(DeviceContext &deviceContext, vec3 origin, vec4 orient_quat, float rad,float sph_rad, vec4 colour)
 {
-	Viewport viewport = GetViewport(deviceContext, 0);
-	math::Matrix4x4 view = deviceContext.viewStruct.view;
+	Viewport viewport=GetViewport(deviceContext,0);
+	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	const math::Matrix4x4 &proj = deviceContext.viewStruct.proj;
-	math::Matrix4x4 wvp, world;
+
+	math::Matrix4x4 wvp,world;
 	world.ResetToUnitMatrix();
-	float tan_x = 1.0f / proj(0, 0);
-	float tan_y = 1.0f / proj(1, 1);
-	float size_req = tan_x*.5f;
-	view._41 = 0;
-	view._42 = 0;
-	view._43 = 0;
-	world._41 = origin.x;
-	world._42 = origin.y;
-	world._43 = origin.z;
-	crossplatform::MakeWorldViewProjMatrix(wvp, world, view, proj);
-	debugConstants.debugWorldViewProj = wvp;
+
+	world._41=origin.x;
+	world._42=origin.y;
+	world._43=origin.z;
+	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
+	debugConstants.debugWorldViewProj=wvp;
 	vec3 view_dir;
 	math::Vector3 cam_pos;
-	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view, (float*)&cam_pos, (float*)&view_dir);
-	crossplatform::EffectTechnique*		tech = debugEffect->GetTechniqueByName("draw_circle_on_sphere");
+	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
+	crossplatform::EffectTechnique*		tech		=debugEffect->GetTechniqueByName("draw_quad_on_sphere");
 
-
-
-	debugConstants.quaternion = q;
-	debugConstants.radius = sph_rad;
-	debugConstants.sideview = rad;
-	debugConstants.debugColour = colour;
-	debugConstants.debugViewDir = view_dir;
+	debugConstants.quaternion		=orient_quat;
+	debugConstants.radius			=sph_rad;
+	debugConstants.sideview			=rad;
+	debugConstants.debugColour		=colour;
+	debugConstants.debugViewDir		=view_dir;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-	debugEffect->SetConstantBuffer(deviceContext, "DebugConstants", &debugConstants);
-	debugEffect->Apply(deviceContext, tech, 0);
+
+	debugEffect->Apply(deviceContext,tech,0);
 
 	SetTopology(deviceContext, LINESTRIP);
-	Draw(deviceContext, 32, 0);
+	Draw(deviceContext,32, 0);
 
 	debugEffect->Unapply(deviceContext);
 }
 void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
 {
-	unsigned int num_v=0;
+	//unsigned int num_v=0;
 
 	Viewport oldv=GetViewport(deviceContext,0);
 	
@@ -675,7 +667,7 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 	math::Matrix4x4 wvp,world;
 	world.ResetToUnitMatrix();
 	float tan_x=1.0f/proj(0, 0);
-	float tan_y=1.0f/proj(1, 1);
+	//float tan_y=1.0f/proj(1, 1);
 	float size_req=tan_x*.5f;
 	static float sizem=3.f;
 	float d=2.0f*sizem/size_req;
@@ -712,7 +704,7 @@ void RenderPlatform::DrawCubemap(DeviceContext &deviceContext,Texture *cubemap,f
 
 void RenderPlatform::PrintAt3dPos(crossplatform::DeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg,int offsetx,int offsety,bool centred)
 {
-	unsigned int num_v=1;
+	//unsigned int num_v=1;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
 	mat4 wvp;
 	if(centred)
@@ -838,7 +830,7 @@ void RenderPlatform::DrawTexture(crossplatform::DeviceContext &deviceContext, in
 void RenderPlatform::DrawQuad(crossplatform::DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect
 	,crossplatform::EffectTechnique *technique,const char *pass)
 {
-	unsigned int num_v=1;
+	//unsigned int num_v=1;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
 	vec4 r(2.f*(float)x1/(float)viewport.w-1.f
 		,1.f-2.f*(float)(y1+dy)/(float)viewport.h
@@ -928,7 +920,7 @@ void RenderPlatform::Print(DeviceContext &deviceContext,int x,int y,const char *
 		colr=clr;
 	if(!bkg)
 		bkg=black;
-	unsigned int num_v=1;
+	//unsigned int num_v=1;
 	crossplatform::Viewport viewport=GetViewport(deviceContext,0);
 	int h=(int)viewport.h;
 	int pos=0;

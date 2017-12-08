@@ -50,7 +50,7 @@ namespace simul
 			mCnt++;
 			if (mCnt > mTotalCnt)
 			{
-				SIMUL_BREAK_ONCE("Nacho has to fix this");
+				SIMUL_BREAK_ONCE("This heap reached the maximum capacity!");
 			}
 		}
 

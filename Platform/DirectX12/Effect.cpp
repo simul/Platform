@@ -41,7 +41,7 @@ Query::Query(crossplatform::QueryType t):
 	mQueryHeap(nullptr),
 	mReadBuffer(nullptr),
 	mQueryData(nullptr),
-	mTime(0.0),
+	mTime((UINT64)0.0),
 	mIsDisjoint(false)
 {
 	mD3DType = dx12::RenderPlatform::ToD3dQueryType(t);
@@ -227,6 +227,11 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	mTotalSize			= mNumElements * mElementByteSize;
 	mRenderPlatform		= (dx12::RenderPlatform*)renderPlatform;
 	
+	// TO-DO: do we need this? Is it different for non UAV?
+	const int rawAlign	= D3D12_CS_4_X_RAW_UAV_BYTE_ALIGNMENT;
+	int s				= mTotalSize % rawAlign;
+	mTotalSize			= s ? mTotalSize + (rawAlign - s) : mTotalSize;
+
 	if (mTotalSize == 0)
 	{
 		SIMUL_BREAK("Invalid arguments for the SB creation");
@@ -346,6 +351,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	//SIMUL_COUT << "[RAM] Allocating:" << std::to_string((float)mTotalSize / 1048576.0f) << ".MB" << " , " << mTotalSize << ".bytes" << std::endl;
 }
 
+
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::Effect *effect, const char *name)
 {
 	crossplatform::PlatformStructuredBuffer::Apply(deviceContext, effect, name);
@@ -414,7 +420,7 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 	}
 
 	// Schedule a copy
-	unsigned int curIdx = deviceContext.frame_number % mReadTotalCnt;
+	unsigned int curIdx = (deviceContext.frame_number) % mReadTotalCnt;
 	deviceContext.renderPlatform->AsD3D12CommandList()->CopyResource(mBufferRead[curIdx], mBufferDefault);
 
 	// Restore state
@@ -426,7 +432,16 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 
 void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext &deviceContext,void *data)
 {
-	SIMUL_BREAK_ONCE("This is not implemented in dx12\n");
+	SIMUL_BREAK_ONCE("This is not working in dx12\n");
+	if (data)
+	{
+		D3D12_SUBRESOURCE_DATA dataToCopy	= {};
+		dataToCopy.pData					= data;
+		dataToCopy.RowPitch					= dataToCopy.SlicePitch = mTotalSize;
+		mRenderPlatform->ResourceTransitionSimple(mBufferDefault, mCurrentState, D3D12_RESOURCE_STATE_COPY_DEST,true);
+		UpdateSubresources(mRenderPlatform->AsD3D12CommandList(), mBufferDefault, mBufferUpload, 0, 0, 1, &dataToCopy);
+		mRenderPlatform->ResourceTransitionSimple(mBufferDefault, D3D12_RESOURCE_STATE_COPY_DEST, mCurrentState,true);
+	}
 }
 
 void PlatformStructuredBuffer::InvalidateDeviceObjects()
@@ -497,43 +512,74 @@ EffectTechnique *Effect::CreateTechnique()
 
 void Shader::load(crossplatform::RenderPlatform *renderPlatform, const char *filename_utf8, crossplatform::ShaderType t)
 {
-	simul::base::MemoryInterface *allocator = renderPlatform->GetMemoryInterface();
-	void* pShaderBytecode;
-	uint32_t BytecodeLength;
-	simul::base::FileLoader *fileLoader = simul::base::FileLoader::GetFileLoader();
-	std::string filenameUtf8 = renderPlatform->GetShaderBinaryPath();
-	filenameUtf8 += "/";
-	filenameUtf8 += filename_utf8;
-	fileLoader->AcquireFileContents(pShaderBytecode, BytecodeLength, filenameUtf8.c_str(), false);
-	if (!pShaderBytecode)
+	simul::base::MemoryInterface* allocator = renderPlatform->GetMemoryInterface();
+	simul::base::FileLoader* fileLoader		= simul::base::FileLoader::GetFileLoader();
+
+	struct FileBlob
+	{
+		void*		pData;
+		uint32_t	DataSize;
+	};
+
+	// Load the shader binary
+	FileBlob shaderBlob;
+	std::string filenameUtf8	= renderPlatform->GetShaderBinaryPath();
+	filenameUtf8				+= "/";
+	filenameUtf8				+= filename_utf8;
+	fileLoader->AcquireFileContents(shaderBlob.pData, shaderBlob.DataSize, filenameUtf8.c_str(), false);
+	if (!shaderBlob.pData)
 	{
 		// Some engines force filenames to lower case because reasons:
 		std::transform(filenameUtf8.begin(), filenameUtf8.end(), filenameUtf8.begin(), ::tolower);
-		fileLoader->AcquireFileContents(pShaderBytecode, BytecodeLength, filenameUtf8.c_str(), false);
-		if (!pShaderBytecode)
+		fileLoader->AcquireFileContents(shaderBlob.pData, shaderBlob.DataSize, filenameUtf8.c_str(), false);
+		if (!shaderBlob.pData)
+		{
 			return;
+		}
 	}
 
+	// Load the root signature binary
+	FileBlob rootSignatureBlob;
+	filenameUtf8			= renderPlatform->GetShaderBinaryPath();
+	filenameUtf8			+= "/";
+	std::string rsFilename	= filename_utf8;
+	simul::base::find_and_replace(rsFilename, ".cso", "_withrs.cso");
+	filenameUtf8			+= rsFilename;
+	//fileLoader->AcquireFileContents(rootSignatureBlob.pData, rootSignatureBlob.DataSize, filenameUtf8.c_str(), false);
+	if (!rootSignatureBlob.pData)
+	{
+		// SIMUL_CERR << "The root signature binary for: " << filename_utf8 << " could not be loaded! \n";
+		// Copy RootSignature
+	}
+
+	// D3DCreateBlob(rootSignatureBlob.DataSize, &mRootSignature);
+	// memcpy(mRootSignature->GetBufferPointer(), rootSignatureBlob.pData, mRootSignature->GetBufferSize());
+
+	// Copy shader
 	type = t;
 	if (t == crossplatform::SHADERTYPE_PIXEL)
 	{
-		D3DCreateBlob(BytecodeLength, &pixelShader12);
-		memcpy(pixelShader12->GetBufferPointer(), pShaderBytecode, pixelShader12->GetBufferSize());
+		D3DCreateBlob(shaderBlob.DataSize, &pixelShader12);
+		memcpy(pixelShader12->GetBufferPointer(), shaderBlob.pData, pixelShader12->GetBufferSize());
 	}
 	else if (t == crossplatform::SHADERTYPE_VERTEX)
 	{
-		D3DCreateBlob(BytecodeLength, &vertexShader12);
-		memcpy(vertexShader12->GetBufferPointer(), pShaderBytecode, vertexShader12->GetBufferSize());
+		D3DCreateBlob(shaderBlob.DataSize, &vertexShader12);
+		memcpy(vertexShader12->GetBufferPointer(), shaderBlob.pData, vertexShader12->GetBufferSize());
 	}
 	else if (t == crossplatform::SHADERTYPE_COMPUTE)
 	{
-		D3DCreateBlob(BytecodeLength, &computeShader12);
-		memcpy(computeShader12->GetBufferPointer(), pShaderBytecode, computeShader12->GetBufferSize());
+		D3DCreateBlob(shaderBlob.DataSize, &computeShader12);
+		memcpy(computeShader12->GetBufferPointer(), shaderBlob.pData, computeShader12->GetBufferSize());
 	}
 	else if (t == crossplatform::SHADERTYPE_GEOMETRY)
 	{
 		SIMUL_CERR << "Geometry shaders are not implemented in Dx12" << std::endl;
 	}
+
+	// Free the loaded memory
+	// fileLoader->ReleaseFileContents(rootSignatureBlob.pData);
+	fileLoader->ReleaseFileContents(shaderBlob.pData);
 }
 
 void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename_utf8)
@@ -542,8 +588,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 	// We will only recompile if we are in windows
 	// SFX will handle the "if changed"
 	auto buildMode = r->GetShaderBuildMode();
-	if (buildMode == crossplatform::ShaderBuildMode::BUILD_IF_CHANGED ||
-		buildMode == crossplatform::ShaderBuildMode::ALWAYS_BUILD)
+	if ((buildMode & crossplatform::BUILD_IF_CHANGED) != 0)
 	{
 		std::string simulPath = std::getenv("SIMUL");
 
@@ -556,7 +601,7 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 
 			/*
 			Command line:
-				argv[0] we need to pass t he argv[0]. the module name
+				argv[0] we need to pass the module name
 				<input.sfx>
 				-I <include path; include path>
 				-O <output>
@@ -590,10 +635,10 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 
 				cmdLine += " -O\"" + outDir + "\"";
 				// Intermediate folder
-				cmdLine += " -M\"C:\\shaderbin\"";
-
+				cmdLine += " -M\"";				
+				cmdLine +=simulPath + "\\Platform\\DirectX12\\sfx_intermediate\"";
 				// Force
-				if (buildMode == crossplatform::ShaderBuildMode::ALWAYS_BUILD)
+				if ((buildMode & crossplatform::ShaderBuildMode::ALWAYS_BUILD) != 0)
 				{
 					cmdLine += " -F";
 				}
@@ -634,11 +679,11 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 			// Wait until if finishes
 			if (success)
 			{
-				//SIMUL_COUT << "Rebuilding the effect: " << filename_utf8 << std::endl;
-				DWORD ret = WaitForSingleObject(processInfo.hProcess, INFINITE);
+				// Wait for the main handle and the output pipes
+				HANDLE hWaitHandles[]	= {processInfo.hProcess, coutRead, cerrRead };
+				DWORD ret				= WaitForMultipleObjects(3, hWaitHandles, FALSE, INFINITE);
 
-				// TO-DO: Get the output
-				/*
+				// Print the pipes
 				const DWORD BUFSIZE = 4096;
 				BYTE buff[BUFSIZE];
 				DWORD dwBytesRead;
@@ -653,7 +698,6 @@ void Effect::EnsureEffect(crossplatform::RenderPlatform *r, const char *filename
 					ReadFile(cerrRead, buff, BUFSIZE - 1, &dwBytesRead, 0);
 					SIMUL_COUT << std::string((char*)buff, (size_t)dwBytesRead).c_str();
 				}
-				*/
 			}
 			else
 			{
@@ -676,7 +720,7 @@ void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,con
 	EnsureEffect(r, filename_utf8);
 	crossplatform::Effect::Load(r, filename_utf8, defines);
 }
-#pragma optimize("",off)
+
 void Effect::PostLoad()
 {
 	// Ensure slots are correct
@@ -1180,7 +1224,7 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext,bool asComput
 			std::string techName = deviceContext.renderPlatform->GetContextState(deviceContext)->currentTechnique->name;
 			name += std::wstring(techName.begin(), techName.end());
 			if(psoPair.second)
-			psoPair.second->SetName(name.c_str());
+				psoPair.second->SetName(name.c_str());
 			else
 			{
 				// Having failed to set posPair.second, we either get a null pointer reference here, or later, when we try to set the pso.
@@ -1400,17 +1444,17 @@ void EffectPass::SetTextures(crossplatform::TextureAssignmentMap& textures, dx12
 		for (int i = 0; i < 32; i++)
 		{
 			if (this->usesTextureSlot(i))
-	{
+			{
 				unsigned int testSlot = 1 << i;
 				if (testSlot & missingSlots)
-		{
+				{
 					SIMUL_CERR << "Resource binding error at: " << mPassName << ". Texture slot " << i << " was not set!" << std::endl;
 				}
 			}
 		}
 	}
 #endif
-		}
+}
 
 void EffectPass::SetRWTextures(crossplatform::TextureAssignmentMap& rwTextures, dx12::Heap* frameHeap, ID3D12Device * device, crossplatform::DeviceContext & context)
 {	

@@ -270,7 +270,7 @@ namespace simul
 			unsigned textureSlotsForSB;		//t
 			unsigned rwTextureSlots;		//u
 			unsigned rwTextureSlotsForSB;	//u
-			unsigned constantBufferSlots;			//b
+			unsigned constantBufferSlots;	//b
 			unsigned samplerSlots;			//s
 		};
 		class SIMUL_CROSSPLATFORM_EXPORT EffectPass
@@ -330,7 +330,7 @@ namespace simul
 			void SetUsesRwTextureSlotsForSB(unsigned);
 			void SetUsesSamplerSlots(unsigned);
 
-			void SetConstantBufferSlots(unsigned s)			{ constantBufferSlots = s; }
+			void SetConstantBufferSlots(unsigned s)	{ constantBufferSlots = s; }
 			void SetTextureSlots(unsigned s)		{ textureSlots = s; }
 			void SetTextureSlotsForSB(unsigned s)	{ textureSlotsForSB = s; }
 			void SetRwTextureSlots(unsigned s)		{ rwTextureSlots = s; }
@@ -775,7 +775,7 @@ namespace simul
 			FastMap():index_limit(0),index_start(count),has_value(0),sz(0)
 			{
 			}
-			const T& operator[](size_t i) const
+			const T& operator[](int i) const
 			{
 				if(i>=index_limit)
 				{
@@ -783,7 +783,7 @@ namespace simul
 				}
 				return values[i];
 			}
-			T& operator[](size_t i)
+			T& operator[](int i)
 			{
 				if(i>=count)
 				{

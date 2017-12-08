@@ -26,8 +26,8 @@ namespace simul
 			{
 				return 0;
 			}
-			virtual void GetVertices(DeviceContext &deviceContext,void *v) {}
-			virtual void GetIndices(DeviceContext &deviceContext, void *i) {}
+			virtual void GetVertices(DeviceContext &,void *) {}
+			virtual void GetIndices(DeviceContext &, void *) {}
 			//! Set up as a vertex buffer. You must pass a pointer to an already-created Layout, and don't destroy the layout until after destroying the vertex buffer.
 			virtual void EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const Layout *layout,const void *data,bool cpu_access=false,bool streamout_target=false)=0;
 			//! Set up as an index buffer.

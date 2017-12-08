@@ -22,13 +22,13 @@ int View::last_class_id=0;
 int View::static_class_id=0;
 
 View::View()
-	:ScreenWidth(0)
-	,ScreenHeight(0)
-	,viewType(MAIN_3D_VIEW)
-	,useExternalFramebuffer(false)
+	:viewType(MAIN_3D_VIEW)
 	,hdrFramebuffer(NULL)
 	,resolvedTexture(NULL)
-	, last_framenumber(-1)
+	,ScreenWidth(0)
+	,ScreenHeight(0)
+	,last_framenumber(-1)
+	,useExternalFramebuffer(false)
  {
 	if(!static_class_id)
 		static_class_id=last_class_id++;

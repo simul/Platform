@@ -69,7 +69,7 @@ shader void CS_Loss(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	uint linear_pos		=(sub_pos.x+threadOffset.x);
 	int3 pos			=LinearThreadToPos2D(int(linear_pos),int3(dims));
-	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
+	if((uint)pos.x>=targetSize.x||(uint)pos.y>=targetSize.y)
 		return;
 	IMAGE_STORE_3D(targetTexture,pos,vec4(1.0,0.0,0.0,1.0));
 	
@@ -137,7 +137,7 @@ shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	if(alt_texc>=0.5)
 		alt_km						=lerp(sun_start_alt_km,maxOutputAltKm,(alt_texc-0.5)/0.5);
 	float sun_alt_km				=(maxOutputAltKm-sun_start_alt_km)*(alt_texc)+sun_start_alt_km;
-	vec4 sunlight					=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,max(alt_km,sun_start_alt_km),lightDir)*smoothstep(-.15,0.0,alt_km);
+	vec4 sunlight				=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,lightDir)*smoothstep(-.15,0.0,alt_km);
 	vec4 moonlight					=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,density_texture,maxDensityAltKm,alt_km,directionToMoon)*vec4(moonIrradianceFactor,1.0);
 	// equivalent to GetAnisotropicInscatterFactor(true,altitude_km,SIMUL_PI_F/2.f,0,1e5f,sun_irradiance,starlight,dir_to_sun,dir_to_moon,haze,overcast,false,0):
 	vec4 ambientLight				=vec4(getSkylight(alt_km, insc_texture),1.0);
@@ -145,7 +145,7 @@ shader void CS_LightTable( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	uint3 pos_sun					=uint3(pos.xy,0);
 	if(pos.x==0&&sun_start_alt_km>0.0)
 		sunlight					=vec4(0,0,0,0);
-	//if(sun_start_alt_km>0.0&&alt_texc>0.5)
+	if(sun_start_alt_km>0.0&&alt_texc>0.5)
 		sunlight*=saturate((alt_km-sun_start_alt_km)/3.0);
 	IMAGE_STORE_3D(targetTexture,pos_sun,sunlight);
 	uint3 pos_moon					=uint3(pos.xy,1);
@@ -169,7 +169,7 @@ shader void CS_Insc( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	int linear_pos			=int(sub_pos.x)+int(threadOffset.x);
 	
 	int3 pos				=LinearThreadToPos2D(linear_pos,targetSize);
-	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
+	if((uint)pos.x>=targetSize.x||(uint)pos.y>=targetSize.y)
 		return;
 	vec2 texc				=(pos.xy+vec2(0.5,0.5))/vec2(targetSize.xy);
 
@@ -243,7 +243,7 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 	GET_IMAGE_DIMENSIONS_3D(targetTexture,dims.x,dims.y,dims.z);
 	int linear_pos		=sub_pos.x+int(threadOffset.x);
 	int3 pos			=LinearThreadToPos2D(linear_pos,int3(dims));
-	if(pos.x>=targetSize.x||pos.y>=targetSize.y)
+	if((uint)pos.x>=targetSize.x|| (uint)pos.y>=targetSize.y)
 		return;
 	vec2 texc			=(pos.xy+vec2(0.5,0.5))/vec2(targetSize.xy);
 	
@@ -256,14 +256,14 @@ shader void CS_Skyl( uint3 g:SV_GroupID,uint3 t:SV_GroupThreadID )
 
 	float prevDist_km	=0.0;
 	// The midpoint of the step represented by this layer
-	for(int i=0;i<int(targetSize.z);i++)
+	for(uint i=0;i<targetSize.z;i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow(float(i)/(float(targetSize.z)-1.0),2.0);
 
 		vec3 previous_loss	=TEXTURE_LOAD_3D(loss_texture,idx).rgb;
 		float dist_km		=zPosition*maxDistanceKm;
-		if(i==targetSize.z-1)
+		if(i==targetSize.z-1u)
 			dist_km=1000.0;
 		vec4 skyl	=Skyl(	insc_texture
 							,density_texture

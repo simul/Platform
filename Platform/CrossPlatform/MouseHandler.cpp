@@ -3,17 +3,22 @@ using namespace simul;
 using namespace base;
 using namespace crossplatform;
 MouseHandler::MouseHandler()
-	:camera(NULL)
+	:step_rotate_x(0)
+	,step_rotate_y(0)
+	,cameraMode(LOOKAROUND)
+	,CameraDamping(1e5f)
 	,fDeltaX(0)
 	,fDeltaY(0)
+	,minAlt(0.f)
+	,maxAlt(10000.f)
 	,fov(40.f)
 	,speed_factor(100.f)
 	,MouseX(0)
-	,MouseY(0)	
+	,MouseY(0)
 	,MouseButtons(0)
-	,aspect(1.f)
-	,CameraDamping(1e5f)
 	,y_vertical(false)
+	,aspect(1.f)
+	,camera(NULL)
 	,move_forward(false)
 	,move_backward(false)
 	,move_left(false)
@@ -22,14 +27,9 @@ MouseHandler::MouseHandler()
 	,move_down(false)
 	,shift_down(false)
 	,alt_down(false)
-	,minAlt(0.f)
-	,maxAlt(10000.f)
 	,up_down_spd(0.f)
 	,forward_back_spd(0.f)
 	,right_left_spd(0.f)
-	,step_rotate_x(0)
-	,step_rotate_y(0)
-	,cameraMode(LOOKAROUND)
 {
 	camera=new simul::crossplatform::Camera();
 	vec4 cameraPos(0.f,0,1500.f,0);
@@ -117,17 +117,17 @@ void MouseHandler::getMousePosition(int &x,int &y) const
 
 bool MouseHandler::getLeftButton() const
 {
-	return MouseButtons&LeftButton;
+	return (MouseButtons==LeftButton);
 }
 
 bool MouseHandler::getRightButton() const
 {
-	return MouseButtons&RightButton;
+	return (MouseButtons==RightButton);
 }
 
 bool MouseHandler::getMiddleButton() const
 {
-	return MouseButtons&MiddleButton;
+	return (MouseButtons==MiddleButton);
 }
 
 void MouseHandler::mouseWheel(int delta)

@@ -321,7 +321,7 @@ void Texture::copyToMemory(crossplatform::DeviceContext &deviceContext,void *tar
 	int expected_pitch=byteSize*width;
 	int expected_depth_pitch=expected_pitch*length;
 	char *dest=(char*)target;
-	if(mappedResource.RowPitch==expected_pitch&&mappedResource.DepthPitch==expected_depth_pitch)
+	if(mappedResource.RowPitch==(UINT)expected_pitch&&mappedResource.DepthPitch==(UINT)expected_depth_pitch)
 	{
 		source+=start_texel*byteSize;
 		dest+=start_texel*byteSize;
@@ -377,7 +377,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 	const unsigned char *source=(const unsigned char*)src;
 	unsigned char *target=(unsigned char*)mapped.pData;
 	int expected_pitch=byteSize*width;
-	if(mapped.RowPitch==expected_pitch)
+	if(mapped.RowPitch==(UINT)expected_pitch)
 	{
 		target+=texel_index*byteSize;
 		memcpy(target,source,num_texels*byteSize);
@@ -590,7 +590,7 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 			uav_desc.Texture3D.FirstWSlice	=0;
 		
 			if(mipUnorderedAccessViews)
-			for(int i=0;i<(int)textureDesc3.MipLevels;i++)
+			for(uint i=0;i<textureDesc3.MipLevels;i++)
 			{
 				uav_desc.Texture3D.MipSlice=i;
 				V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &mipUnorderedAccessViews[i]));
@@ -599,7 +599,7 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 		
 			uav_desc.Texture3D.WSize	= textureDesc3.Depth;
 			if(layerMipUnorderedAccessViews)
-			for(int i=0;i<(int)textureDesc3.MipLevels;i++)
+			for(uint i=0;i<textureDesc3.MipLevels;i++)
 			{
 				uav_desc.Texture3D.MipSlice=i;
 				V_CHECK(r->AsD3D11Device()->CreateUnorderedAccessView(texture, &uav_desc, &layerMipUnorderedAccessViews[0][i]));
@@ -639,7 +639,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Depth!=d||textureDesc.Format!=dxgiFormat||mips!=m)
+			if(textureDesc.Width!=(UINT)w||textureDesc.Height!=(UINT)l||textureDesc.Depth!=(UINT)d||textureDesc.Format!=dxgiFormat||mips!=m)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -781,7 +781,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform *r
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=texture2dFormat)
+			if(textureDesc.Width!=(UINT)w||textureDesc.Height!= (UINT)l||textureDesc.Format!=texture2dFormat)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -923,7 +923,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r,i
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.ArraySize!=total_num||textureDesc.MipLevels!=m||textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=dxgi_format)
+			if(textureDesc.ArraySize!=(UINT)total_num||textureDesc.MipLevels!=(UINT)m||textureDesc.Width!=(UINT)w||textureDesc.Height!=(UINT)l||textureDesc.Format!=dxgi_format)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -1173,7 +1173,7 @@ void Texture::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,crossp
 		else
 		{
 			ppd->GetDesc(&textureDesc);
-			if(textureDesc.Width!=w||textureDesc.Format!=f)
+			if(textureDesc.Width!= (UINT)w||textureDesc.Format!=f)
 				ok=false;
 			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
@@ -1386,8 +1386,8 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 	targetsAndViewport.m_rt[0]=&renderTargetViews[array_index][mip];
 	targetsAndViewport.m_dt=nullptr;
 	targetsAndViewport.viewport.x=targetsAndViewport.viewport.y=0;
-	targetsAndViewport.viewport.w=viewport.Width;
-	targetsAndViewport.viewport.h=viewport.Height;
+	targetsAndViewport.viewport.w=(int)viewport.Width;
+	targetsAndViewport.viewport.h=(int)viewport.Height;
 	targetsAndViewport.viewport.zfar=1.0f;
 	targetsAndViewport.viewport.znear=0.0f;
 	targetsAndViewport.num=1;

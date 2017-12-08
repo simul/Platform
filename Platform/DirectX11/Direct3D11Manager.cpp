@@ -172,8 +172,8 @@ void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
 	if(!GetWindowRect((HWND)hwnd,&rect))
 		return;
 #endif
-	int W	=abs(rect.right-rect.left);
-	int H	=abs(rect.bottom-rect.top);
+	UINT W	=abs(rect.right-rect.left);
+	UINT H	=abs(rect.bottom-rect.top);
 	ID3D11RenderTargetView *t[]={NULL};
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	HRESULT hr=m_swapChain->GetDesc(&swapDesc);
@@ -723,7 +723,7 @@ ERRNO_BREAK
 	d3dDeviceContext->RSSetState(w->m_rasterState);
 	if(w->renderer)
 	{
-		w->renderer->Render(w->view_id,GetDeviceContext(), w->m_renderTargetView,w->viewport.Width,w->viewport.Height);
+		w->renderer->Render(w->view_id,GetDeviceContext(), w->m_renderTargetView,(int)w->viewport.Width,(int)w->viewport.Height);
 	}
 	static DWORD dwFlags = 0;
 	// 0 - don't wait for 60Hz refresh.

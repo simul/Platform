@@ -227,9 +227,9 @@ namespace simul
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
 			virtual void BeginEvent			(DeviceContext &deviceContext,const char *name);
 			//! For platforms that support named events, e.g. PIX in DirectX. Use BeginEvent(), EndEvent() as pairs.
-			virtual void EndEvent			(DeviceContext &deviceContext);
-			virtual void StartRender		(DeviceContext &deviceContext){}
-			virtual void EndRender			(DeviceContext &deviceContext){}
+			virtual void EndEvent			(DeviceContext &);
+			virtual void StartRender		(DeviceContext &){}
+			virtual void EndRender			(DeviceContext &){}
 			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;
 
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
@@ -244,7 +244,7 @@ namespace simul
 			virtual void DrawMarker			(DeviceContext &deviceContext,const double *matrix)			=0;
 			virtual void DrawLine			(crossplatform::DeviceContext &deviceContext,const float *pGlobalBasePosition, const float *pGlobalEndPosition,const float *colour,float width);
 		
-			virtual void DrawLineLoop		(DeviceContext &deviceContext,const double *mat,int num,const double *vertexArray,const float colr[4]){}
+			virtual void DrawLineLoop		(DeviceContext &,const double *,int ,const double *,const float [4]){}
 
 			virtual void DrawTexture		(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f,bool debug=false);
 			void DrawTexture				(DeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,float mult=1.f,bool blend=false,float gamma=1.0f);

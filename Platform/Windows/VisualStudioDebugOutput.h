@@ -77,9 +77,9 @@ public:
 							const char *logfilename=NULL,size_t bufsize=(size_t)16
 							,DebugOutputCallback c=NULL)
 		:vsBufferedStringStreamBuf((int)bufsize)
+		,to_logfile(false)
 		,old_cout_buffer(NULL)
 		,old_cerr_buffer(NULL)
-		,to_logfile(false)
 		,callback(c)
 	{
 	ERRNO_CHECK

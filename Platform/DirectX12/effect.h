@@ -176,6 +176,7 @@ namespace simul
 				ID3DBlob*					computeShader12;
 			};
 			ID3D12ShaderReflection*			mShaderReflection = nullptr;
+			ID3DBlob* mRootSignature = nullptr;
 		};
 		class SIMUL_DIRECTX12_EXPORT Effect:public simul::crossplatform::Effect
 		{

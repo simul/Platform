@@ -842,7 +842,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 		}
 	}
 
-	dim = 2;
+	dim			= 2;
 	auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
 	rPlat->FlushBarriers();
 }
@@ -933,13 +933,19 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 			SIMUL_BREAK("Invalid D3D Texure");
 		}
 	}
-	dim = 3;
+	dim			= 3;
 	auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
 	rPlat->FlushBarriers();
 }
 
 bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {
+	if ((w * l * d) <= 0)
+	{
+		SIMUL_CERR << "ensureTexture3DSizeAndFormat called with null size! \n";
+		return false;
+	}
+
 	HRESULT res = S_FALSE;
 
 	pixelFormat		= pf;
@@ -1572,19 +1578,36 @@ void Texture::CreateSRVTables(int num, int m, bool cubemap, bool volume, bool ms
 		}
 		if (mainMipShaderResourceViews12)
 		{
-			for (int j = 0; j < m; j++)
+			if (cubemap)
 			{
-				// TO-DO: check this
-				srvDesc.ViewDimension					= D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-				srvDesc.Texture2DArray.ArraySize		= num;
-				srvDesc.Texture2DArray.FirstArraySlice	= 0;
-				srvDesc.Texture2DArray.MipLevels		= 1;
-				srvDesc.Texture2DArray.MostDetailedMip	= j;
+				srvDesc.ViewDimension			= D3D12_SRV_DIMENSION_TEXTURECUBE;
+				srvDesc.TextureCube.MipLevels	= 1;
+				for (int j = 0; j < m; j++)
+				{
+					srvDesc.TextureCube.MostDetailedMip = j;
 
-				// View for each mip
-				renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
-				mainMipShaderResourceViews12[j] = mTextureSrvHeap.CpuHandle();
-				mTextureSrvHeap.Offset();
+					// View for each mip
+					renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
+					mainMipShaderResourceViews12[j] = mTextureSrvHeap.CpuHandle();
+					mTextureSrvHeap.Offset();
+				}
+			}
+			else
+			{
+				for (int j = 0; j < m; j++)
+				{
+					// TO-DO: check this
+					srvDesc.ViewDimension					= D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+					srvDesc.Texture2DArray.ArraySize		= num;
+					srvDesc.Texture2DArray.FirstArraySlice	= 0;
+					srvDesc.Texture2DArray.MipLevels		= 1;
+					srvDesc.Texture2DArray.MostDetailedMip	= j;
+
+					// View for each mip
+					renderPlatform->AsD3D12Device()->CreateShaderResourceView(mTextureDefault, &srvDesc, mTextureSrvHeap.CpuHandle());
+					mainMipShaderResourceViews12[j] = mTextureSrvHeap.CpuHandle();
+					mTextureSrvHeap.Offset();
+				}
 			}
 		}
 		if (layerShaderResourceViews12 || layerMipShaderResourceViews12)
@@ -1741,9 +1764,10 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 
 	if (renderTargetViews12)
 	{
-		auto rp = (dx12::RenderPlatform*)deviceContext.renderPlatform;
+		auto rp		= (dx12::RenderPlatform*)deviceContext.renderPlatform;
+		auto rtView = AsD3D12RenderTargetView(array_index, mip);
+		rp->AsD3D12CommandList()->OMSetRenderTargets(1, rtView,false, nullptr);
 
-		rp->AsD3D12CommandList()->OMSetRenderTargets(1, AsD3D12RenderTargetView(array_index,mip),false, nullptr);
 		D3D12_VIEWPORT viewport;
 		viewport.Width		= (float)(std::max(1, (width >> mip)));
 		viewport.Height		= (float)(std::max(1, (length >> mip)));
@@ -1752,10 +1776,23 @@ void Texture::activateRenderTarget(crossplatform::DeviceContext &deviceContext,i
 		viewport.MinDepth	= 0.0f;
 		viewport.MaxDepth	= 1.0f;
 
-		CD3DX12_RECT scissor(0, 0, viewport.Width, viewport.Height);
+		CD3DX12_RECT scissor(0, 0, (LONG)viewport.Width, (LONG)viewport.Height);
 		
 		rp->AsD3D12CommandList()->RSSetScissorRects(1, &scissor);
 		rp->AsD3D12CommandList()->RSSetViewports(1, &viewport);
+	
+		// Inform crossplatform!
+		crossplatform::TargetsAndViewport vp {};
+		vp.num				= 1;
+		vp.m_dt				= nullptr;
+		vp.m_rt[0]			= rtView;
+		vp.viewport.w		= (float)(std::max(1, (width >> mip)));
+		vp.viewport.h		= (float)(std::max(1, (length >> mip)));
+		vp.viewport.x		= 0;
+		vp.viewport.y		= 0;
+		vp.viewport.znear	= 0.0f;
+		vp.viewport.zfar	= 1.0f;
+		deviceContext.GetFrameBufferStack().push(&vp);
 
 		// Make sure to cache the current pixel format so we can reset it after we deactivate the render target
 		mOldRtFormat = rp->GetCurrentPixelFormat();
@@ -1777,6 +1814,9 @@ void Texture::deactivateRenderTarget(crossplatform::DeviceContext &deviceContext
 		rp->AsD3D12CommandList()->RSSetViewports(1, &m_OldViewports12[0]);
 	}
 	rp->SetCurrentPixelFormat(mOldRtFormat);
+
+	// Again, inform crossplatform
+	deviceContext.GetFrameBufferStack().pop();
 
 	m_pOldRenderTargets12[0]	= nullptr;
 	m_pOldDepthSurface12		= nullptr;
