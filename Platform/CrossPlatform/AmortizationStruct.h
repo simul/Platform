@@ -1,6 +1,7 @@
 #pragma once
 #include "Simul/Platform/CrossPlatform/Export.h"
 #include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include <math.h>
 namespace simul
 {
 namespace crossplatform
@@ -49,12 +50,12 @@ public:
 	{
 		if(!pattern||amortization<=1)
 			return uint3(0,0,0);
-		int sub_frame	=(framenumber/framesPerIncrement)%(numOffsets);
+		int sub_frame = fmod((framenumber - fmod(framenumber, numOffsets))/ numOffsets, numOffsets);
 		return pattern[sub_frame];
 	}
-	void validate(int4 region)
+	void validate(int newFramenumber)
 	{
-		framenumber++;
+		framenumber++;// = newFramenumber;
 	}
 };
 }
