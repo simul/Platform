@@ -10,12 +10,6 @@
 #ifndef CREATEEFFECTDX1X_H
 #define CREATEEFFECTDX1X_H
 #include "SimulDirectXHeader.h"
-#include "Simul/Platform/CrossPlatform/Effect.h"
-#ifndef SIMUL_WIN8_SDK
-#include <d3dx11.h>
-#else
-#include <DirectXMath.h>
-#endif
 
 #include <map>
 #include <vector>

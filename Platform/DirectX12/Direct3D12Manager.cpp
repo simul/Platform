@@ -15,13 +15,10 @@ Window::Window():
 	renderer(nullptr),
 	view_id(-1),
 	vsync(false),
-	SwapChain(nullptr),
-	FrameIndex(0)
+	m_swapChain(nullptr),
+	m_frameIndex(0),
+	d3d12Device(nullptr)
 {
-	for (UINT f = 0; f < FrameCount; f++)
-	{
-		FenceValues[f] = 0;
-	}
 }
 
 Window::~Window()
@@ -45,18 +42,18 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 	int screenHeight		= abs(rect.bottom - rect.top);
 
 	// Viewport
-	Viewport.TopLeftX		= 0;
-	Viewport.TopLeftY		= 0;
-	Viewport.Width		= (float)screenWidth;
-	Viewport.Height		= (float)screenHeight;
-	Viewport.MinDepth		= 0.0f;
-	Viewport.MaxDepth		= 1.0f;
+	m_viewport.TopLeftX		= 0;
+	m_viewport.TopLeftY		= 0;
+	m_viewport.Width		= (float)screenWidth;
+	m_viewport.Height		= (float)screenHeight;
+	m_viewport.MinDepth		= 0.0f;
+	m_viewport.MaxDepth		= 1.0f;
 
 	// Scissor
-	Scissor.left		= 0;
-	Scissor.top		= 0;
-	Scissor.right		= screenWidth;
-	Scissor.bottom	= screenHeight;
+	m_scissorRect.left		= 0;
+	m_scissorRect.top		= 0;
+	m_scissorRect.right		= screenWidth;
+	m_scissorRect.bottom	= screenHeight;
 
 #ifndef _XBOX_ONE
 	// Dx12 swap chain	
@@ -74,18 +71,11 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 	res							= CreateDXGIFactory2(0, IID_PPV_ARGS(&factory));
 	SIMUL_ASSERT(res == S_OK);
 
-	// Create a command queue
-	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-	queueDesc.Type	= D3D12_COMMAND_LIST_TYPE_DIRECT;
-	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	res				= d3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&CommandQueue));
-	SIMUL_ASSERT(res == S_OK);
-
 	// Create it
 	IDXGISwapChain1* swapChain	= nullptr;
 	res							= factory->CreateSwapChainForHwnd
 	(
-		CommandQueue,
+		m_dx12CommandQueue,
 		hwnd,
 		&swapChainDesc12,
 		nullptr,
@@ -96,21 +86,13 @@ void Window::RestoreDeviceObjects(ID3D12Device* d3dDevice, bool m_vsync_enabled,
 
 	// Assign and query
 	factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
-	swapChain->QueryInterface(__uuidof(IDXGISwapChain1), (void **)&SwapChain);
-	FrameIndex = SwapChain->GetCurrentBackBufferIndex();
+	swapChain->QueryInterface(__uuidof(IDXGISwapChain1), (void **)& m_swapChain);
+	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 #endif
 
 	// Initialize colour and depth surfaces
 	CreateRenderTarget(d3dDevice);		
 	CreateDepthStencil(d3dDevice);
-
-	// Create the command list
-#ifdef _XBOX_ONE
-	d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, CommandAllocators[FrameIndex], nullptr, IID_GRAPHICS_PPV_ARGS(&CommandList));
-#else
-	d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, CommandAllocators[FrameIndex], nullptr, IID_PPV_ARGS(&CommandList));
-#endif
-	CommandList->SetName(L"WindowCommandList");
 
 #ifndef _XBOX_ONE
 	SAFE_RELEASE(factory);
@@ -136,34 +118,42 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 	int H	=abs(rect.bottom-rect.top);
 
 	// DX12 viewport
-	Viewport.TopLeftX		= 0;
-	Viewport.TopLeftY		= 0;
-	Viewport.Width		= (float)W;
-	Viewport.Height		= (float)H;
-	Viewport.MinDepth		= 0.0f;
-	Viewport.MaxDepth		= 1.0f;
+	m_viewport.TopLeftX		= 0;
+	m_viewport.TopLeftY		= 0;
+	m_viewport.Width		= (float)W;
+	m_viewport.Height		= (float)H;
+	m_viewport.MinDepth		= 0.0f;
+	m_viewport.MaxDepth		= 1.0f;
 
 	// DX12 scissor rect	
-	Scissor.left		= 0;
-	Scissor.top		= 0;
-	Scissor.right		= W;
-	Scissor.bottom	= H;
+	m_scissorRect.left		= 0;
+	m_scissorRect.top		= 0;
+	m_scissorRect.right		= W;
+	m_scissorRect.bottom	= H;
 
 	DXGI_SWAP_CHAIN_DESC1 swapDesc;
-	HRESULT hr = SwapChain->GetDesc1(&swapDesc);
+	HRESULT hr = m_swapChain->GetDesc1(&swapDesc);
 	if (hr != S_OK)
 		return;
 	if (swapDesc.Width == W && swapDesc.Height == H)
 		return;
 
+	/*
+	SAFE_RELEASE_ARRAY	(m_renderTargetView,FrameCount);
+	SAFE_RELEASE		(m_depthStencilTexture);
+	SAFE_RELEASE		(m_depthStencilView);
+	SAFE_RELEASE		(m_depthStencilState);
+	SAFE_RELEASE		(m_rasterState);
+	*/
+
 	// Nacho: that format ?? We should make a member to store this format
-	hr = SwapChain->ResizeBuffers(2,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0);	
+	hr = m_swapChain->ResizeBuffers(2,W,H,DXGI_FORMAT_R8G8B8A8_UNORM,0);	
 
 	CreateRenderTarget(d3dDevice);
 	CreateDepthStencil(d3dDevice);
 
 	DXGI_SURFACE_DESC surfaceDesc;
-	SwapChain->GetDesc1(&swapDesc);
+	m_swapChain->GetDesc1(&swapDesc);
 	surfaceDesc.Format		=swapDesc.Format;
 	surfaceDesc.SampleDesc	=swapDesc.SampleDesc;
 	surfaceDesc.Width		=swapDesc.Width;
@@ -176,7 +166,7 @@ void Window::ResizeSwapChain(ID3D12Device* d3dDevice)
 void Window::CreateRenderTarget(ID3D12Device* d3dDevice)
 {
 	HRESULT result = S_OK;
-	if(!d3dDevice || !SwapChain)
+	if(!d3dDevice || !m_swapChain)
 		return;
 
 	// Describe and create a render target view (RTV) descriptor heap.
@@ -185,39 +175,39 @@ void Window::CreateRenderTarget(ID3D12Device* d3dDevice)
 	rtvHeapDesc.Type						= D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags						= D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 #ifdef _XBOX_ONE
-	result									= d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_GRAPHICS_PPV_ARGS(&RTHeap));
+	result									= d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_GRAPHICS_PPV_ARGS(&m_rtvHeap));
 #else
-	result									= d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&RTHeap));
+	result									= d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap));
 #endif
 	SIMUL_ASSERT(result == S_OK);
 
-	RTDescriptorSize						= d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	RTHeap->SetName(L"WindowRTHeap");
+	m_rtvDescriptorSize						= d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	m_rtvHeap->SetName(L"Dx12BackbufferRtHeap");
 	
 	// Back buffers creation:
 	// 1) Get the back buffer resources from the swap chain
 	// 2) Create DX12 descriptor for each back buffer
 	// 3) Create command allocators
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(RTHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
 	for (UINT n = 0; n < FrameCount; n++)
 	{
 		// Store a DX12 Cpu handle for the render targets
-		RTHandles[n] = rtvHandle;
+		mRtvCpuHandle[n] = rtvHandle;
 
 		// 1)
-		result = SwapChain->GetBuffer(n, __uuidof(ID3D12Resource), (LPVOID*)&BackBuffers[n]);
+		result = m_swapChain->GetBuffer(n, __uuidof(ID3D12Resource), (LPVOID*)&m_backBuffers[n]);
 		SIMUL_ASSERT(result == S_OK);
 
 		// 2)
-		d3dDevice->CreateRenderTargetView(BackBuffers[n], nullptr, rtvHandle);
-		BackBuffers[n]->SetName(L"WindowBackBuffer");
-		rtvHandle.Offset(1, RTDescriptorSize);
+		d3dDevice->CreateRenderTargetView(m_backBuffers[n], nullptr, rtvHandle);
+		m_backBuffers[n]->SetName(L"Dx12BackBuffer");
+		rtvHandle.Offset(1, m_rtvDescriptorSize);
 
 		// 3)
 #ifdef _XBOX_ONE
-		result = d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_GRAPHICS_PPV_ARGS(&CommandAllocators[n]));
+		result = d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_GRAPHICS_PPV_ARGS(&m_commandAllocators[n]));
 #else
-		result = d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&CommandAllocators[n]));
+		result = d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocators[n]));
 #endif
 		SIMUL_ASSERT(result == S_OK);
 	}
@@ -238,16 +228,16 @@ void Window::CreateDepthStencil(ID3D12Device * d3dDevice)
 	(
 		&dsHeapDesc,
 #ifdef _XBOX_ONE
-		IID_GRAPHICS_PPV_ARGS(&DSHeap)
+		IID_GRAPHICS_PPV_ARGS(&m_dsHeap)
 #else
-		IID_PPV_ARGS(&DSHeap)
+		IID_PPV_ARGS(&m_dsHeap)
 #endif
 	);
 	SIMUL_ASSERT(res == S_OK);
 
 	// Default clear
 	D3D12_CLEAR_VALUE depthClear	= {};
-	depthClear.Format				= DepthStencilFormat;
+	depthClear.Format				= mDepthStencilFmt;
 	depthClear.DepthStencil.Depth	= 0.0f;
 	depthClear.DepthStencil.Stencil = 0;
 
@@ -256,24 +246,24 @@ void Window::CreateDepthStencil(ID3D12Device * d3dDevice)
 	(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Tex2D(DepthStencilFormat, (UINT64)Viewport.Width, (UINT64)Viewport.Height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
+		&CD3DX12_RESOURCE_DESC::Tex2D(mDepthStencilFmt, (UINT64)m_viewport.Width, (UINT64)m_viewport.Height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
 		D3D12_RESOURCE_STATE_DEPTH_WRITE,
 		&depthClear,
 #ifdef _XBOX_ONE
-		IID_GRAPHICS_PPV_ARGS(&DepthStencilBuffer)
+		IID_GRAPHICS_PPV_ARGS(&m_depthStencilTexture12)
 #else
-		IID_PPV_ARGS(&DepthStencilBuffer)
+		IID_PPV_ARGS(&m_depthStencilTexture12)
 #endif
 	);
 	SIMUL_ASSERT(res == S_OK);
-	DepthStencilBuffer->SetName(L"WindowDepthStencilBuffer");
+	m_depthStencilTexture12->SetName(L"Dx12MainDepthStencilTexture");
 
 	// Create a descriptor of this ds
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsViewDesc	= {};
-	dsViewDesc.Format							= DepthStencilFormat;
+	dsViewDesc.Format							= mDepthStencilFmt;
 	dsViewDesc.ViewDimension					= D3D12_DSV_DIMENSION_TEXTURE2D;
 	dsViewDesc.Flags							= D3D12_DSV_FLAG_NONE;
-	d3dDevice->CreateDepthStencilView(DepthStencilBuffer, &dsViewDesc, DSHeap->GetCPUDescriptorHandleForHeapStart());
+	d3dDevice->CreateDepthStencilView(m_depthStencilTexture12, &dsViewDesc, m_dsHeap->GetCPUDescriptorHandleForHeapStart());
 }
 
 void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
@@ -284,12 +274,12 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 		renderer->RemoveView(view_id);
 	view_id		=vw_id;
 	renderer	=ci;
-	if(!SwapChain)
+	if(!m_swapChain)
 		return;
 
 	DXGI_SWAP_CHAIN_DESC	swapDesc;
 	DXGI_SURFACE_DESC		surfaceDesc;
-	SwapChain->GetDesc(&swapDesc);
+	m_swapChain->GetDesc(&swapDesc);
 	surfaceDesc.Format		=swapDesc.BufferDesc.Format;
 	surfaceDesc.SampleDesc	=swapDesc.SampleDesc;
 	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
@@ -302,19 +292,30 @@ void Window::SetRenderer(crossplatform::PlatformRendererInterface *ci,int vw_id)
 void Window::Release()
 {
 	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
-	if(SwapChain)
-		SwapChain->SetFullscreenState(false, NULL);
+	if(m_swapChain)
+		m_swapChain->SetFullscreenState(false, NULL);
 
-	SAFE_RELEASE(SwapChain);
-	SAFE_RELEASE_ARRAY(BackBuffers,FrameCount);
-	SAFE_RELEASE(RTHeap);
-	SAFE_RELEASE(DepthStencilBuffer);
-	SAFE_RELEASE(DSHeap);
-	SAFE_RELEASE_ARRAY(CommandAllocators,FrameCount);
+	SAFE_RELEASE(m_swapChain);
+	SAFE_RELEASE_ARRAY(m_backBuffers,FrameCount);
+	SAFE_RELEASE(m_rtvHeap);
+	SAFE_RELEASE(m_depthStencilTexture12);
+	SAFE_RELEASE(m_dsHeap);
+	SAFE_RELEASE_ARRAY(m_commandAllocators,FrameCount);
+	SAFE_RELEASE(m_dx12CommandQueue);
+	SAFE_RELEASE(d3d12Device);
 }
 
+void Window::setCommandQueue(ID3D12CommandQueue *commandQueue) 
+{
+	m_dx12CommandQueue = commandQueue;
+}
+
+
 Direct3D12Manager::Direct3D12Manager():
-	mDevice(nullptr)
+	m_d3d12Device(nullptr),
+	m_commandQueue(nullptr),
+	m_commandList(nullptr),
+	m_fence(nullptr)
 {
 }
 
@@ -370,7 +371,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	{
 		IDXGIAdapter* warpAdapter	= nullptr;
 		factory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter));
-		res							= D3D12CreateDevice(warpAdapter,D3D_FEATURE_LEVEL_11_0,IID_PPV_ARGS(&mDevice));
+		res							= D3D12CreateDevice(warpAdapter,D3D_FEATURE_LEVEL_11_0,IID_PPV_ARGS(&m_d3d12Device));
 		SIMUL_ASSERT(res == S_OK);
 		SAFE_RELEASE(warpAdapter);
 	}
@@ -403,13 +404,13 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 			}
 			curAdapterIdx++;
 		}
-		res = D3D12CreateDevice(hardwareAdapter,D3D_FEATURE_LEVEL_11_0,IID_PPV_ARGS(&mDevice));
+		res = D3D12CreateDevice(hardwareAdapter,D3D_FEATURE_LEVEL_11_0,IID_PPV_ARGS(&m_d3d12Device));
 		SIMUL_ASSERT(res == S_OK);
 
 		// Some extra debug settings
 		{
 			ID3D12InfoQueue* infoQueue = nullptr;
-			mDevice->QueryInterface(IID_PPV_ARGS(&infoQueue));
+			m_d3d12Device->QueryInterface(IID_PPV_ARGS(&infoQueue));
 			
 			// Set break on_x settings
 			bool breakOnWarning = false;
@@ -451,7 +452,7 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 		int outputIdx		= 0;
 		while (hardwareAdapter->EnumOutputs(outputIdx, &output) != DXGI_ERROR_NOT_FOUND)
 		{
-			mOutputs[outputIdx] = output;
+			outputs[outputIdx] = output;
 			SIMUL_ASSERT(res == S_OK);
 			outputIdx++;
 			if (outputIdx>100)
@@ -464,21 +465,28 @@ void Direct3D12Manager::Initialize(bool use_debug,bool instrument, bool default_
 	}
 	SAFE_RELEASE(factory);
 
-	SIMUL_COUT << "=========================================\n";
+	// Create a command queue
+	D3D12_COMMAND_QUEUE_DESC queueDesc	= {};
+	queueDesc.Type						= D3D12_COMMAND_LIST_TYPE_DIRECT;
+	queueDesc.Flags						= D3D12_COMMAND_QUEUE_FLAG_NONE;
+	res									= m_d3d12Device->CreateCommandQueue(&queueDesc,IID_PPV_ARGS(&m_commandQueue));
+	SIMUL_ASSERT(res == S_OK);
+
+	// The window will create the swap chain latter...
 
 #endif
 }
 
 int Direct3D12Manager::GetNumOutputs()
 {
-	return (int)mOutputs.size();
+	return (int)outputs.size();
 }
 
 crossplatform::Output Direct3D12Manager::GetOutput(int i)
 {
 	unsigned numModes;
 	crossplatform::Output o;
-	IDXGIOutput *output=mOutputs[i];
+	IDXGIOutput *output=outputs[i];
 #ifndef _XBOX_ONE
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
 	HRESULT result = output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
@@ -542,46 +550,48 @@ crossplatform::Output Direct3D12Manager::GetOutput(int i)
 #endif
 	return o;
 }
-
 void Direct3D12Manager::Shutdown()
 {
 	// TO-DO: wait for the GPU to complete last work
-	for(OutputMap::iterator i=mOutputs.begin();i!=mOutputs.end();i++)
+	for(OutputMap::iterator i=outputs.begin();i!=outputs.end();i++)
 	{
 		SAFE_RELEASE(i->second);
 	}
-	mOutputs.clear();
+	outputs.clear();
 	
-	for(WindowMap::iterator i=mWindows.begin();i!=mWindows.end();i++)
+	for(WindowMap::iterator i=windows.begin();i!=windows.end();i++)
 	{
 		SetFullScreen(i->second->hwnd,false,0);
 		delete i->second;
 	}
-	mWindows.clear();
+	windows.clear();
 
 	ReportMessageFilterState();
 
-	SAFE_RELEASE(mDevice);
+	SAFE_RELEASE(m_d3d12Device);
+	//SAFE_RELEASE(m_commandQueue);
+	//SAFE_RELEASE(m_commandList);
+	//SAFE_DELETE(m_fence);
 }
 
 void Direct3D12Manager::RemoveWindow(HWND hwnd)
 {
-	if(mWindows.find(hwnd)==mWindows.end())
+	if(windows.find(hwnd)==windows.end())
 		return;
-	Window *w=mWindows[hwnd];
+	Window *w=windows[hwnd];
 	SetFullScreen(hwnd,false,0);
 	delete w;
-	mWindows.erase(hwnd);
+	windows.erase(hwnd);
 }
 
 IDXGISwapChain* Direct3D12Manager::GetSwapChain(HWND h)
 {
-	if(mWindows.find(h)==mWindows.end())
+	if(windows.find(h)==windows.end())
 		return NULL;
-	Window *w=mWindows[h];
+	Window *w=windows[h];
 	if(!w)
 		return NULL;
-	return w->SwapChain;
+	return w->m_swapChain;
 }
 
 void Direct3D12Manager::Render(HWND h)
@@ -589,9 +599,9 @@ void Direct3D12Manager::Render(HWND h)
 	HRESULT res = S_FALSE;
 
 	// Error checking
-	if(mWindows.find(h)==mWindows.end())
+	if(windows.find(h)==windows.end())
 		return;
-	Window *w=mWindows[h];
+	Window *w=windows[h];
 	if(!w)
 	{
 		SIMUL_CERR<<"No window exists for HWND "<<std::hex<<h<<std::endl;
@@ -603,69 +613,58 @@ void Direct3D12Manager::Render(HWND h)
 		return;
 	}
 
-	UINT frameIndex = 0;
 #ifdef _XBOX_ONE
-	frameIndex = 0;
+	m_frameIndex = -1;
 #else
-	frameIndex = w->SwapChain->GetCurrentBackBufferIndex();
+	m_frameIndex = w->m_swapChain->GetCurrentBackBufferIndex();
 #endif
 
-	if(!w->BackBuffers[frameIndex])
+	if(!w->m_backBuffers[m_frameIndex])
 	{
 		SIMUL_CERR<< "No renderTarget exists for HWND "<<std::hex<<h<<std::endl;
 		return;
 	}
 
-	// Get the window command list
-	auto cmdList = w->CommandList;
-	SIMUL_ASSERT(cmdList != nullptr);
-
 	// To start, first we have to setup dx12 for the new frame
 	// Reset command allocators	
-	res = w->CommandAllocators[frameIndex]->Reset();
+	res = w->m_commandAllocators[m_frameIndex]->Reset();
 	SIMUL_ASSERT(res == S_OK);
 
 	// Reset command list
-	res = cmdList->Reset(w->CommandAllocators[frameIndex],nullptr);
+	res =  m_commandList->Reset(w->m_commandAllocators[m_frameIndex],nullptr);
 	SIMUL_ASSERT(res == S_OK);
 
 	// Set viewport 
-	cmdList->RSSetViewports(1, &w->Viewport);
-	cmdList->RSSetScissorRects(1, &w->Scissor);
+	m_commandList->RSSetViewports(1, &w->m_viewport);
+	m_commandList->RSSetScissorRects(1, &w->m_scissorRect);
 
 	// Indicate that the back buffer will be used as a render target.
-	cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->BackBuffers[frameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-	cmdList->OMSetRenderTargets(1, &w->RTHandles[frameIndex], FALSE, &w->DSHeap->GetCPUDescriptorHandleForHeapStart());
+	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->m_backBuffers[m_frameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	m_commandList->OMSetRenderTargets(1, &w->mRtvCpuHandle[m_frameIndex], FALSE, &w->m_dsHeap->GetCPUDescriptorHandleForHeapStart());
 
 	// Submit commands
 	const float kClearColor[4] = { 0.0f,0.0f,0.0f,1.0f };
-	cmdList->ClearRenderTargetView(w->RTHandles[frameIndex], kClearColor , 0, nullptr);
-	cmdList->ClearDepthStencilView(w->DSHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
+	m_commandList->ClearRenderTargetView(w->mRtvCpuHandle[m_frameIndex], kClearColor , 0, nullptr);
+	m_commandList->ClearDepthStencilView(w->m_dsHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
 
-	// Call the window renderer
 	if (w->renderer)
 	{
-		// Pass both colour and depth descriptors
-		void* pParams[2] =
-		{
-			(void*)&w->RTHandles[frameIndex],
-			(void*)&w->DSHeap->GetCPUDescriptorHandleForHeapStart()
-		};
-		w->renderer->Render(w->view_id, cmdList, pParams,w->Scissor.right,w->Scissor.bottom);
+		w->renderer->Render(w->view_id, pParams,&w->mRtvCpuHandle[m_frameIndex],w->m_scissorRect.right,w->m_scissorRect.bottom);
+	
 	}
 
 	// Get ready to present
-	cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->BackBuffers[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(w->m_backBuffers[m_frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
 	// Closing  the command list and executing it with the recorded commands
-	res = cmdList->Close();
+	res = m_commandList->Close();
 	SIMUL_ASSERT(res == S_OK);
-	ID3D12CommandList* ppCommandLists[] = { cmdList };
-	w->CommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	ID3D12CommandList* ppCommandLists[] = { m_commandList };
+	m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 	static DWORD dwFlags		= 0;
 	static UINT SyncInterval	= 1;									
-	res = w->SwapChain->Present(SyncInterval,dwFlags);			
+	res = w->m_swapChain->Present(SyncInterval,dwFlags);			
 	SIMUL_ASSERT(res == S_OK);
 
 	MoveToNextFrame(w);
@@ -673,9 +672,9 @@ void Direct3D12Manager::Render(HWND h)
 
 void Direct3D12Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInterface *ci, int view_id)
 {
-	if(mWindows.find(hwnd)==mWindows.end())
+	if(windows.find(hwnd)==windows.end())
 		return;
-	Window *w=mWindows[hwnd];
+	Window *w=windows[hwnd];
 	if(!w)
 		return;
 	w->SetRenderer(ci,  view_id);
@@ -683,17 +682,17 @@ void Direct3D12Manager::SetRenderer(HWND hwnd,crossplatform::PlatformRendererInt
 
 int Direct3D12Manager::GetViewId(HWND hwnd)
 {
-	if(mWindows.find(hwnd)==mWindows.end())
+	if(windows.find(hwnd)==windows.end())
 		return -1;
-	Window *w=mWindows[hwnd];
+	Window *w=windows[hwnd];
 	return w->view_id;
 }
 
 Window *Direct3D12Manager::GetWindow(HWND hwnd)
 {
-	if(mWindows.find(hwnd)==mWindows.end())
+	if(windows.find(hwnd)==windows.end())
 		return NULL;
-	Window *w=mWindows[hwnd];
+	Window *w=windows[hwnd];
 	return w;
 }
 
@@ -708,63 +707,77 @@ void Direct3D12Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 	Window *w=(Window*)GetWindow(hwnd);
 	if(!w)
 		return;
-	IDXGIOutput *output=mOutputs[which_output];
-	if(!w->SwapChain)
+	IDXGIOutput *output=outputs[which_output];
+	if(!w->m_swapChain)
 		return;
 	BOOL current_fullscreen;
-	res = w->SwapChain->GetFullscreenState(&current_fullscreen, NULL);
+	res = w->m_swapChain->GetFullscreenState(&current_fullscreen, NULL);
 	SIMUL_ASSERT(res == S_OK);
 	if((current_fullscreen==TRUE)==fullscreen)
 		return;
-	res = w->SwapChain->SetFullscreenState(fullscreen, NULL);
+	res = w->m_swapChain->SetFullscreenState(fullscreen, NULL);
 	ResizeSwapChain(hwnd);
 }
 
 void Direct3D12Manager::ResizeSwapChain(HWND hwnd)
 {
-	if(mWindows.find(hwnd)==mWindows.end())
+	if(windows.find(hwnd)==windows.end())
 		return;
-	Window *w=mWindows[hwnd];
+	Window *w=windows[hwnd];
 	if(!w)
 		return;
-	w->ResizeSwapChain(mDevice);
+	w->ResizeSwapChain(m_d3d12Device);
+}
+
+
+void * simul::dx12::Direct3D12Manager::GetDevice12()
+{
+	return m_d3d12Device;
 }
 
 void Direct3D12Manager::AddWindow(HWND hwnd)
 {
-	if(mWindows.find(hwnd)!=mWindows.end())
+	if(windows.find(hwnd)!=windows.end())
 		return;
 	Window *window	= new Window;
-	mWindows[hwnd]	= window;
+	windows[hwnd]=window;
 	window->hwnd	= hwnd;
 
+	window->setCommandQueue(m_commandQueue);
+	
 	crossplatform::Output o = GetOutput(0);
-	window->RestoreDeviceObjects(mDevice, m_vsync_enabled, o.numerator, o.denominator);
+	window->RestoreDeviceObjects(m_d3d12Device, m_vsync_enabled, o.numerator, o.denominator);
+
+	// Create the command list
+#ifdef _XBOX_ONE
+	m_d3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, window->m_commandAllocators[m_frameIndex], nullptr, IID_GRAPHICS_PPV_ARGS(&m_commandList));
+#else
+	m_d3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, window->m_commandAllocators[m_frameIndex], nullptr, IID_PPV_ARGS(&m_commandList));
+#endif // _XBOX_ONE
+
+	m_commandList->SetName(L"Dx12CommandList");
 }
 
-void simul::dx12::Direct3D12Manager::InitialWaitForGpu(HWND hwnd)
+void simul::dx12::Direct3D12Manager::InitialWaitForGpu()
 {
-	auto w = GetWindow(hwnd);
-	SIMUL_ASSERT(w != nullptr);
-
 	// Close the command list and execute it to begin initial copies
-	w->CommandList->Close();
-	ID3D12CommandList* ppCommandLists[] = { w->CommandList };
-	w->CommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	m_commandList->Close();
+	ID3D12CommandList* ppCommandLists[] = { m_commandList };
+	m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 	// Create synchronization objects and wait until assets have been uploaded to the GPU.
 	{
 #ifdef _XBOX_ONE
-		mDevice->CreateFence(w->FenceValues[w->FrameIndex], D3D12_FENCE_FLAG_NONE, IID_GRAPHICS_PPV_ARGS(&w->Fence));
+		m_d3d12Device->CreateFence(m_fenceValues[m_frameIndex], D3D12_FENCE_FLAG_NONE, IID_GRAPHICS_PPV_ARGS(&m_fence));
 #else
-		mDevice->CreateFence(w->FenceValues[w->FrameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&w->Fence));
-#endif
+		m_d3d12Device->CreateFence(m_fenceValues[m_frameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
+#endif // _XBOX_ONE
 
-		w->FenceValues[w->FrameIndex]++;
+		m_fenceValues[m_frameIndex]++;
 
 		// Create an event handle to use for frame synchronization.
-		w->FenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-		if (w->FenceEvent == nullptr)
+		m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+		if (m_fenceEvent == nullptr)
 		{
 			HRESULT result = HRESULT_FROM_WIN32(GetLastError());
 		}
@@ -772,45 +785,46 @@ void simul::dx12::Direct3D12Manager::InitialWaitForGpu(HWND hwnd)
 		// Wait for the command list to execute; we are reusing the same command 
 		// list in our main loop but for now, we just want to wait for setup to 
 		// complete before continuing.
-		WaitForGpu(w);
+		WaitForGpu();
 	}
 }
 
-void Direct3D12Manager::WaitForGpu(Window* w)
+// Wait for pending GPU work to complete.
+void Direct3D12Manager::WaitForGpu()
 {
 	// Schedule a Signal command in the queue.
-	w->CommandQueue->Signal(w->Fence, w->FenceValues[w->FrameIndex]);
+	m_commandQueue->Signal(m_fence, m_fenceValues[m_frameIndex]);
 
 	// Wait until the fence has been processed.
-	w->Fence->SetEventOnCompletion(w->FenceValues[w->FrameIndex], w->FenceEvent);
-	DWORD ret = WaitForSingleObjectEx(w->FenceEvent, INFINITE, FALSE);
+	m_fence->SetEventOnCompletion(m_fenceValues[m_frameIndex], m_fenceEvent);
+	DWORD ret = WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
 
 	// Increment the fence value for the current frame.
-	w->FenceValues[w->FrameIndex]++;
+	m_fenceValues[m_frameIndex]++;
 }
 
 // Prepare to render the next frame.
-void Direct3D12Manager::MoveToNextFrame(Window* w)
+void Direct3D12Manager::MoveToNextFrame(Window *window)
 {
 	// Schedule a Signal command in the queue.
-	const UINT64 currentFenceValue = w->FenceValues[w->FrameIndex];
-	w->CommandQueue->Signal(w->Fence, currentFenceValue);
+	const UINT64 currentFenceValue = m_fenceValues[m_frameIndex];
+	m_commandQueue->Signal(m_fence, currentFenceValue);
 
 	// Update the frame index.
 #ifdef _XBOX_ONE
-	w->FrameIndex = -1;
+	m_frameIndex = -1;
 #else
-	w->FrameIndex = w->SwapChain->GetCurrentBackBufferIndex();
+	m_frameIndex = window->m_swapChain->GetCurrentBackBufferIndex();
 #endif 
 
 	// If the next frame is not ready to be rendered yet, wait until it is ready.
 	DWORD ret = 0x1234F0AD;
-	if (w->Fence->GetCompletedValue() < w->FenceValues[w->FrameIndex])
+	if (m_fence->GetCompletedValue() < m_fenceValues[m_frameIndex])
 	{
-		w->Fence->SetEventOnCompletion(w->FenceValues[w->FrameIndex], w->FenceEvent);
-		ret = WaitForSingleObjectEx(w->FenceEvent, INFINITE, FALSE);
+		m_fence->SetEventOnCompletion(m_fenceValues[m_frameIndex], m_fenceEvent);
+		ret = WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
 	}
 
 	// Set the fence value for the next frame.
-	w->FenceValues[w->FrameIndex] = currentFenceValue + 1;
+	m_fenceValues[m_frameIndex] = currentFenceValue + 1;
 }

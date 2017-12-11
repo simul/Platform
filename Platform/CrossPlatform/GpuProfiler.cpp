@@ -83,7 +83,6 @@ void GpuProfiler::InvalidateDeviceObjects()
 #endif
     renderPlatform = NULL;
     enabled=true;
-	last_context.clear();
 	profileStack.clear();
 	BaseProfilingInterface::Clear();
 }
@@ -105,7 +104,6 @@ void GpuProfiler::Begin(crossplatform::DeviceContext &deviceContext,const char *
 	}
 	max_level_this_frame=std::max(max_level_this_frame,level);
 	{
-		last_context.push_back(&deviceContext);
 		if(!enabled||!renderPlatform)
 			return;
 	    crossplatform::ProfileData *parentData=NULL;
@@ -178,7 +176,6 @@ void GpuProfiler::End(crossplatform::DeviceContext &deviceContext)
 		return;
 	if(!profileStack.size())
 		return;
-	last_context.pop_back();
 	
     crossplatform::ProfileData *profileData=(crossplatform::ProfileData *)profileStack.back();
 	

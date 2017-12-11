@@ -466,6 +466,7 @@ EffectTechnique *Effect::CreateTechnique()
 #define D3DCOMPILE_DEBUG 1
 void Effect::Load(crossplatform::RenderPlatform *r,const char *filename_utf8,const std::map<std::string,std::string> &defines)
 {
+	memset(constantBuffersBySlot,0,16*sizeof(void*));
 	ID3DX11Effect *e=(ID3DX11Effect *)platform_effect;
 	SAFE_RELEASE(e);
 	renderPlatform=r;
@@ -696,12 +697,51 @@ void Effect::SetTexture(crossplatform::DeviceContext &deviceContext,crossplatfor
 	crossplatform::Effect::SetTexture(deviceContext,shaderResource,t,index,mip);
 }
 
-void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s)	
+ID3DX11EffectConstantBuffer *Effect::GetConstantBufferBySlot( uint32_t Slot)
+{
+	if(constantBuffersBySlot[Slot])
+		return constantBuffersBySlot[Slot];
+	ID3DX11Effect*effect=asD3DX11Effect();
+	D3DX11_EFFECT_VARIABLE_DESC desc;
+	ID3DX11EffectConstantBuffer *found_buffer=nullptr;
+	const char *firstname="";
+	for (int i=0;i<32;i++)
+	{
+		auto *b=effect->GetConstantBufferByIndex(i);
+		if(!b->IsValid())
+			continue;
+		b->GetDesc(&desc);
+		if(desc.ExplicitBindPoint==Slot)
+		{
+			if(found_buffer)
+			{
+				const char *secondname=desc.Name?desc.Name:"unknown";
+				SIMUL_CERR<<"Constant buffer slot "<<Slot<<" used twice in effect "<<this->GetName()<<", for "<<firstname<<" and "<<secondname<<std::endl;
+				//SIMUL_CERR<<"See source file "<<this->sourcefile<<std::endl;
+				SIMUL_BREAK_ONCE("Constant buffer slot used more than once");
+				return nullptr;
+			}
+			else
+			{
+				found_buffer=b;
+				firstname=desc.Name?desc.Name:"unknown";
+			}
+		}
+	}
+	constantBuffersBySlot[Slot]=found_buffer;
+	return found_buffer;
+}
+
+void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s)	
 {
 	if(!asD3DX11Effect())
 		return;
-	ID3DX11EffectConstantBuffer *pD3DX11EffectConstantBuffer=asD3DX11Effect()->GetConstantBufferByName(name);
-	if(pD3DX11EffectConstantBuffer)
+	ID3DX11EffectConstantBuffer *pD3DX11EffectConstantBuffer=GetConstantBufferBySlot(s->GetIndex());
+	if(pD3DX11EffectConstantBuffer==nullptr)
+	{
+		pD3DX11EffectConstantBuffer=asD3DX11Effect()->GetConstantBufferByName(s->GetDefaultName());
+	}
+	if(pD3DX11EffectConstantBuffer&&pD3DX11EffectConstantBuffer->IsValid())
 	{
 		crossplatform::PlatformConstantBuffer *pcb=s->GetPlatformConstantBuffer();
 		dx11::PlatformConstantBuffer *pcb11=(dx11::PlatformConstantBuffer *)pcb;
@@ -718,6 +758,10 @@ void Effect::SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const
 			if(currentPass)
 				V_CHECK(currentPass->Apply(0, deviceContext.asD3D11DeviceContext()));
 		}
+	}
+	else
+	{
+		SIMUL_CERR_ONCE<<"Bad constant buffer in shader"<<std::endl;
 	}
 }
 
@@ -763,9 +807,17 @@ crossplatform::ShaderResource Effect::GetShaderResource(const char *name)
 		}
 		else
 		{
+			ID3DX11EffectSamplerVariable*	sam	=var->AsSampler();
+			if(sam->IsValid())
+			{
+				res.platform_shader_resource=(void*)sam;
+			}
+			else
+			{
 			SIMUL_ASSERT_WARN(var->IsValid()!=0,(std::string("Unknown resource type ")+name).c_str());
 			return res;
 		}
+	}
 	}
 	res.valid=true;
 	return res;
@@ -781,6 +833,21 @@ void Effect::SetSamplerState(crossplatform::DeviceContext&,const char *name	,cro
 	if (!s)
 		return;
 	ID3DX11EffectSamplerVariable*	var	=asD3DX11Effect()->GetVariableByName(name)->AsSampler();
+	var->SetSampler(0,s->asD3D11SamplerState());
+}
+
+void Effect::SetSamplerState(crossplatform::DeviceContext &deviceContext,crossplatform::ShaderResource &res	,crossplatform::SamplerState *s)
+{
+	if(!asD3DX11Effect())
+	{
+		SIMUL_CERR<<"Invalid effect "<<std::endl;
+		return;
+	}
+	if (!s)
+		return;
+	ID3DX11EffectSamplerVariable*	var	=(ID3DX11EffectSamplerVariable*)res.platform_shader_resource;
+	if (!s)
+		return;
 	var->SetSampler(0,s->asD3D11SamplerState());
 }
 

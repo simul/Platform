@@ -52,10 +52,10 @@ namespace simul
 			int GetSubMeshCount() const;
 			void SetSubMesh(int submesh,int index_start,int num_indices,Material *m);
 			
-			static int VERTEX_STRIDE;
-			static int NORMAL_STRIDE;
-			static int UV_STRIDE;
-			static int TRIANGLE_VERTEX_COUNT;
+			int VERTEX_STRIDE;
+			int NORMAL_STRIDE;
+			int UV_STRIDE;
+			int TRIANGLE_VERTEX_COUNT;
 			struct SubMesh
 			{
 				SubMesh() : IndexOffset(0), TriangleCount(0),drawAs(AS_TRIANGLES),material(nullptr) {}

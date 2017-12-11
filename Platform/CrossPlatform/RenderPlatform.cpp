@@ -8,9 +8,9 @@
 #include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Platform/CrossPlatform/Layout.h"
 #include "Simul/Platform/CrossPlatform/Material.h"
+#include "Simul/Platform/CrossPlatform/Mesh.h"
 #include "Simul/Platform/CrossPlatform/GpuProfiler.h"
 #include "Simul/Platform/CrossPlatform/BaseFramebuffer.h"
-#include "Simul/Platform/CrossPlatform/Mesh.h"
 #include "Effect.h"
 #include <algorithm>
 #ifdef _MSC_VER
@@ -20,6 +20,40 @@
 #endif
 using namespace simul;
 using namespace crossplatform;
+
+ContextState& ContextState::operator=(const ContextState& cs)
+{
+	std::cerr<<"Warning: copying contextState is slow."<<std::endl;
+
+	last_action_was_compute		=cs.last_action_was_compute;
+
+	applyVertexBuffers			=cs.applyVertexBuffers;
+	streamoutTargets			=cs.streamoutTargets;
+	applyBuffers				=cs.applyBuffers;
+	applyStructuredBuffers		=cs.applyStructuredBuffers;
+	applyRwStructuredBuffers	=cs.applyRwStructuredBuffers;
+	samplerStateOverrides		=cs.samplerStateOverrides;
+	textureAssignmentMap		=cs.textureAssignmentMap;
+	rwTextureAssignmentMap		=cs.rwTextureAssignmentMap;
+	currentEffectPass			=cs.currentEffectPass;
+	currentTechnique			=cs.currentTechnique;
+	currentEffect				=cs.currentEffect;
+	effectPassValid				=cs.effectPassValid;
+	vertexBuffersValid			=cs.vertexBuffersValid;
+	constantBuffersValid		=cs.constantBuffersValid;
+	structuredBuffersValid		=cs.structuredBuffersValid;
+	rwStructuredBuffersValid	=cs.rwStructuredBuffersValid;
+	samplerStateOverridesValid	=cs.samplerStateOverridesValid;
+	textureAssignmentMapValid	=cs.textureAssignmentMapValid;
+	rwTextureAssignmentMapValid	=cs.rwTextureAssignmentMapValid;
+	streamoutTargetsValid		=cs.streamoutTargetsValid;
+	textureSlots				=cs.textureSlots;
+	rwTextureSlots				=cs.rwTextureSlots;
+	rwTextureSlotsForSB			=cs.rwTextureSlotsForSB;
+	textureSlotsForSB			=cs.textureSlotsForSB;
+	bufferSlots					=cs.bufferSlots;
+	return *this;
+}
 
 RenderPlatform::RenderPlatform(simul::base::MemoryInterface *m)
 	:mirrorY(false)
@@ -59,13 +93,7 @@ RenderPlatform::~RenderPlatform()
 
 crossplatform::ContextState *RenderPlatform::GetContextState(crossplatform::DeviceContext &deviceContext)
 {
-	auto i=contextState.find(deviceContext.platform_context);
-	if(i==contextState.end())
-	{
-		contextState[deviceContext.platform_context]=new crossplatform::ContextState;
-		i=contextState.find(deviceContext.platform_context);
-	}
-	return i->second;
+	return &deviceContext.contextState;
 }
 
 ID3D12GraphicsCommandList* RenderPlatform::AsD3D12CommandList()
@@ -208,11 +236,6 @@ void RenderPlatform::RecompileShaders()
 	solidEffect=CreateEffect("solid",defines);
 	copyEffect=CreateEffect("copy",defines);
 	debugConstants.LinkToEffect(debugEffect,"DebugConstants");
-	for(auto i=materials.begin();i!=materials.end();i++)
-	{
-		Material *mat=(Material*)(i->second);
-		mat->SetEffect(solidEffect);
-	}
 }
 
 void RenderPlatform::PushTexturePath(const char *path_utf8)
@@ -567,7 +590,6 @@ void RenderPlatform::DrawLatLongSphere(DeviceContext &deviceContext,int lat, int
 	debugConstants.multiplier		=colour;
 	debugConstants.debugViewDir		=view_dir;
 	debugEffect->SetConstantBuffer(deviceContext,&debugConstants);
-	debugEffect->SetConstantBuffer(deviceContext,"DebugConstants",&debugConstants);
 	debugEffect->Apply(deviceContext,tech,0);
 
 	SetTopology(deviceContext,LINESTRIP);

@@ -4,6 +4,10 @@
 //! by removing a run time "if". This should only be on release builds...
 #define D3DCOMPILE_NO_DEBUG 1 
 
+#ifndef _XBOX_ONE
+	#define SIMUL_DX12_SLOTS_CHECK
+#endif
+
 #include <DirectXMath.h>
 
 #if defined(_XBOX_ONE)

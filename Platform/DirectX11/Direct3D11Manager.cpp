@@ -116,7 +116,7 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 	// We'll use the CreateRenderTargetView function to attach the back buffer to our swap chain.
 
 	// Get the pointer to the back buffer.
-	HRESULT result;
+	HRESULT result=S_OK;
 #ifndef _XBOX_ONE
 /*	NOTE: ***YOU CANNOT DO THIS***
   IDXGIFactory * factory;
@@ -194,7 +194,6 @@ void Window::ResizeSwapChain(ID3D11Device* d3dDevice)
 	surfaceDesc.SampleDesc	=swapDesc.SampleDesc;
 	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
-//	if(renderer)
 //		renderer->ResizeView(view_id,surfaceDesc.Width,surfaceDesc.Height);
 }
 

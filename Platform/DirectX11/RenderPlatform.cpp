@@ -429,144 +429,19 @@ void RenderPlatform::DrawIndexed(crossplatform::DeviceContext &deviceContext,int
 
 void RenderPlatform::DrawMarker(crossplatform::DeviceContext &deviceContext,const double *matrix)
 {
- /*   glColor3f(0.0, 1.0, 1.0);
-    glLineWidth(1.0);
-	
-	
-    
-    glMultMatrixd((const double*) matrix);
-
-    glBegin(GL_LINE_LOOP);
-        glVertex3f(+1.0f, -1.0f, +1.0f);
-        glVertex3f(+1.0f, -1.0f, -1.0f);
-        glVertex3f(+1.0f, +1.0f, -1.0f);
-        glVertex3f(+1.0f, +1.0f, +1.0f);
-
-        glVertex3f(+1.0f, +1.0f, +1.0f);
-        glVertex3f(+1.0f, +1.0f, -1.0f);
-        glVertex3f(-1.0f, +1.0f, -1.0f);
-        glVertex3f(-1.0f, +1.0f, +1.0f);
-
-        glVertex3f(+1.0f, +1.0f, +1.0f);
-        glVertex3f(-1.0f, +1.0f, +1.0f);
-        glVertex3f(-1.0f, -1.0f, +1.0f);
-        glVertex3f(+1.0f, -1.0f, +1.0f);
-
-        glVertex3f(-1.0f, -1.0f, +1.0f);
-        glVertex3f(-1.0f, +1.0f, +1.0f);
-        glVertex3f(-1.0f, +1.0f, -1.0f);
-        glVertex3f(-1.0f, -1.0f, -1.0f);
-
-        glVertex3f(-1.0f, -1.0f, +1.0f);
-        glVertex3f(-1.0f, -1.0f, -1.0f);
-        glVertex3f(+1.0f, -1.0f, -1.0f);
-        glVertex3f(+1.0f, -1.0f, +1.0f);
-
-        glVertex3f(-1.0f, -1.0f, -1.0f);
-        glVertex3f(-1.0f, +1.0f, -1.0f);
-        glVertex3f(+1.0f, +1.0f, -1.0f);
-        glVertex3f(+1.0f, -1.0f, -1.0f);
-    glEnd();
-    */
 }
 
 
 void RenderPlatform::DrawCrossHair(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition)
 {
-/*    glColor3f(1.0, 1.0, 1.0);
-    glLineWidth(1.0);
-	
-	
-    
-    glMultMatrixd((double*) pGlobalPosition);
-
-    double lCrossHair[6][3] = { { -3, 0, 0 }, { 3, 0, 0 },
-    { 0, -3, 0 }, { 0, 3, 0 },
-    { 0, 0, -3 }, { 0, 0, 3 } };
-
-    glBegin(GL_LINES);
-
-    glVertex3dv(lCrossHair[0]);
-    glVertex3dv(lCrossHair[1]);
-
-    glEnd();
-
-    glBegin(GL_LINES);
-
-    glVertex3dv(lCrossHair[2]);
-    glVertex3dv(lCrossHair[3]);
-
-    glEnd();
-
-    glBegin(GL_LINES);
-
-    glVertex3dv(lCrossHair[4]);
-    glVertex3dv(lCrossHair[5]);
-
-    glEnd();
-	
-	
-    */
 }
 
 void RenderPlatform::DrawCamera(crossplatform::DeviceContext &deviceContext,const double *pGlobalPosition, double pRoll)
 {
- /*   glColor3d(1.0, 1.0, 1.0);
-    glLineWidth(1.0);
-	
-	
-    
-    glMultMatrixd((const double*) pGlobalPosition);
-    glRotated(pRoll, 1.0, 0.0, 0.0);
-
-    int i;
-    float lCamera[10][2] = {{ 0, 5.5 }, { -3, 4.5 },
-    { -3, 7.5 }, { -6, 10.5 }, { -23, 10.5 },
-    { -23, -4.5 }, { -20, -7.5 }, { -3, -7.5 },
-    { -3, -4.5 }, { 0, -5.5 }   };
-
-    glBegin( GL_LINE_LOOP );
-    {
-        for (i = 0; i < 10; i++)
-        {
-            glVertex3f(lCamera[i][0], lCamera[i][1], 4.5);
-        }
-    }
-    glEnd();
-
-    glBegin( GL_LINE_LOOP );
-    {
-        for (i = 0; i < 10; i++)
-        {
-            glVertex3f(lCamera[i][0], lCamera[i][1], -4.5);
-        }
-    }
-    glEnd();
-
-    for (i = 0; i < 10; i++)
-    {
-        glBegin( GL_LINES );
-        {
-            glVertex3f(lCamera[i][0], lCamera[i][1], -4.5);
-            glVertex3f(lCamera[i][0], lCamera[i][1], 4.5);
-        }
-        glEnd();
-    }
-    */
 }
 
 void RenderPlatform::DrawLineLoop(crossplatform::DeviceContext &deviceContext,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {
-/*    
-    glMultMatrixd((const double*)mat);
-	glColor3f(colr[0],colr[1],colr[2]);
-	glBegin(GL_LINE_LOOP);
-	for (int lVerticeIndex = 0; lVerticeIndex < lVerticeCount; lVerticeIndex++)
-	{
-		glVertex3dv((GLdouble *)&vertexArray[lVerticeIndex*3]);
-	}
-	glEnd();
-    */
 }
 
 void RenderPlatform::ApplyDefaultMaterial()

@@ -118,13 +118,19 @@ namespace simul
 			crossplatform::ShaderResource GetShaderResource(const char *name) override;
 			void SetTexture		(crossplatform::DeviceContext &,crossplatform::ShaderResource &shaderResource,crossplatform::Texture *t,int index=-1,int mip=-1) override;
 			void SetTexture		(crossplatform::DeviceContext &deviceContext,const char *name,crossplatform::Texture *tex,int index=-1,int mip=-1) override;
-			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s);
-			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,const char *name	,crossplatform::ConstantBufferBase *s);
+			void SetSamplerState(crossplatform::DeviceContext&,const char *name	,crossplatform::SamplerState *s) override;
+			void SetSamplerState(crossplatform::DeviceContext&,crossplatform::ShaderResource &shaderResource,crossplatform::SamplerState *s) override;
+			void SetConstantBuffer(crossplatform::DeviceContext &deviceContext,crossplatform::ConstantBufferBase *s);
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,int pass) override;
 			void Apply(crossplatform::DeviceContext &deviceContext,crossplatform::EffectTechnique *effectTechnique,const char *pass) override;
 			void Reapply(crossplatform::DeviceContext &deviceContext);
 			void Unapply(crossplatform::DeviceContext &deviceContext) override;
 			void UnbindTextures(crossplatform::DeviceContext &deviceContext);
+			// fixup 
+		protected:
+			ID3DX11EffectConstantBuffer *constantBuffersBySlot[32];
+			ID3DX11EffectConstantBuffer * GetConstantBufferBySlot( uint32_t Slot);
+			
 		};
 	}
 }

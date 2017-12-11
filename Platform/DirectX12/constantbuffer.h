@@ -47,12 +47,7 @@ namespace simul
 			dx12::Heap						mHeaps[kNumBuffers];
 
 			const int kBufferAlign			= D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
-			//! Pre-generated habdles
-			D3D12_CPU_DESCRIPTOR_HANDLE*	mCpuDescriptorHandles[kNumBuffers];
-			//! This will hold a raw blob of memory with the current data
-			void* mCurData;
-			//! Real size (without the alignment)
-			size_t mDataSize;
+			D3D12_CPU_DESCRIPTOR_HANDLE		*cpuDescriptorHandles[kNumBuffers];
 		};
 	}
 }

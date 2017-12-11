@@ -152,7 +152,7 @@ Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 	frustum.tanHalfFov.y=fabs(M._34/M._22);
 	frustum.tanHalfFov.z= x_sgn*M._31/M._11;
 	frustum.tanHalfFov.w= y_sgn*M._32/M._22;
-	ERRNO_BREAK
+	
 	return frustum;
 }
 
@@ -288,9 +288,9 @@ void simul::crossplatform::GetCameraPosVector(const float *v,float *dcam_pos,flo
 {
 	simul::math::Matrix4x4 tmp1;
 	const simul::math::Matrix4x4 &view(*((const simul::math::Matrix4x4*)v));
-	ERRNO_BREAK
+	
 	view.Inverse(tmp1);
-	ERRNO_BREAK
+	
 	if(dcam_pos)
 	{
 		dcam_pos[0]=tmp1._41;
@@ -313,7 +313,7 @@ void simul::crossplatform::GetCameraPosVector(const float *v,float *dcam_pos,flo
 
 const float *simul::crossplatform::GetCameraPosVector(const float *v)
 {
-	ERRNO_BREAK
+	
 	simul::math::Matrix4x4 view(v);
 	static float cam_pos[4],view_dir[4];
 	GetCameraPosVector(view,(float*)cam_pos,(float*)view_dir);
@@ -356,8 +356,7 @@ vec4 simul::crossplatform::GetFrustumRangeOnCubeFace(int face,const float *invVi
 	vec4 range(1.0,1.0,-1.0,-1.0);
 	mat4 faceMatrix;
 	GetCubeMatrix((float*)&faceMatrix,face,true,false);
-	//faceMatrix=mat4::identity();
-	//faceMatrix.transpose();
+
 	mat4 &ivp=*((mat4*)invViewProj);
 	static float sc = 1.0f;
 	 vec4 clips[]=			{vec4(-1.0f,-1.0f,1.0f,1.0f)
@@ -864,7 +863,7 @@ void Camera::LookInDirection(const float *view_dir,const float *view_up)
 	Vector3 x=d^u;
 	x.Normalize();
 	u=x^d;
-	Orientation.DefineFromYZ(u,d);
+	Orientation.DefineFromYZ(u,-d);
 }
 
 void Camera::LookInDirection(const float *view_dir)

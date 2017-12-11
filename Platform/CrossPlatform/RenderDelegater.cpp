@@ -65,6 +65,8 @@ void RenderDelegater::RegisterShutdownDelegate(crossplatform::ShutdownDeviceDele
 
 void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,int h)
 {
+	if(!rendertarget)
+		return;
 	crossplatform::DeviceContext deviceContext;
 	viewSize[view_id]					= int2(w,h);
 	deviceContext.platform_context		= context;
@@ -74,23 +76,11 @@ void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,
 	int2 vs								= viewSize[view_id];
 
 	std::string pn(renderPlatform->GetName());
-	if (pn == "DirectX 11")
-	{
-		deviceContext.setDefaultRenderTargets
+	deviceContext.setDefaultRenderTargets
 		(
 			rendertarget, NULL,
 			0, 0, vs.x, vs.y
 		);
-	}
-	else
-	{
-		void** pData = (void**)rendertarget;
-		deviceContext.setDefaultRenderTargets
-		(
-			pData[0], pData[1],
-			0, 0, vs.x, vs.y
-		);
-	}
 
 	simul::crossplatform::SetGpuProfilingInterface(deviceContext,renderPlatform->GetGpuProfiler());
 	if (renderDelegate[view_id])

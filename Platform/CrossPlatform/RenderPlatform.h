@@ -80,83 +80,6 @@ namespace simul
 		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const Viewport *vi,const Texture *t);
 
-		//! A structure to describe the state that is associated with a given deviceContext.
-		//! When rendering is to be performed, we can ensure that the state is applied.
-		struct ContextState
-		{
-			ContextState()
-				:last_action_was_compute(false)
-				,currentEffectPass(NULL)
-				,currentTechnique(NULL)
-				,currentEffect(NULL)
-				,effectPassValid(false)
-				,vertexBuffersValid(false)
-				,constantBuffersValid(false)
-				,structuredBuffersValid(false)
-				,samplerStateOverridesValid(true)
-				,textureAssignmentMapValid(false)
-				,rwTextureAssignmentMapValid(false)
-				,streamoutTargetsValid(false)
-				,textureSlots(0)
-				,rwTextureSlots(0)
-				,rwTextureSlotsForSB(0)
-				,textureSlotsForSB(0)
-				,bufferSlots(0)
-			{
-
-			}
-			
-			~ContextState()
-			{
-			}
-			bool last_action_was_compute;
-
-			/* VertexBufferAssignmentMap;
-			 ConstantBufferAssignmentMap;
-			 StructuredBufferAssignmentMap;
-			;*/
-
-			std::unordered_map<int,Buffer*> applyVertexBuffers;
-			std::unordered_map<int,Buffer*> streamoutTargets;
-			std::unordered_map<int,ConstantBufferBase*> applyBuffers;
-			std::unordered_map<int,PlatformStructuredBuffer*> applyStructuredBuffers;
-			SamplerStateAssignmentMap samplerStateOverrides;
-			TextureAssignmentMap textureAssignmentMap;
-			TextureAssignmentMap rwTextureAssignmentMap;
-			EffectPass *currentEffectPass;
-			EffectTechnique *currentTechnique;
-			Effect *currentEffect;
-			void invalidate()
-			{
-				effectPassValid=false;
-				vertexBuffersValid=false;
-				constantBuffersValid=false;
-				structuredBuffersValid=false;
-				samplerStateOverridesValid=true;
-				textureAssignmentMapValid=false;
-				rwTextureAssignmentMapValid=false;
-				streamoutTargetsValid=false;
-				textureSlots=0;
-				rwTextureSlots=0;
-				rwTextureSlotsForSB=0;
-				textureSlotsForSB=0;
-				bufferSlots=0;
-			}
-			bool effectPassValid;
-			bool vertexBuffersValid;
-			bool constantBuffersValid;
-			bool structuredBuffersValid;
-			bool samplerStateOverridesValid;
-			bool textureAssignmentMapValid;
-			bool rwTextureAssignmentMapValid;
-			bool streamoutTargetsValid;
-			unsigned textureSlots;
-			unsigned rwTextureSlots;
-			unsigned rwTextureSlotsForSB;
-			unsigned textureSlotsForSB;
-			unsigned bufferSlots;
-		};
-
 		/*! RenderPlatform is an interface that allows Simul's rendering functions to be developed
 			in a cross-platform manner. By abstracting the common functionality of the different graphics API's
 			into an interface, we can write render code that need not know which API is being used. It is possible
@@ -230,7 +153,6 @@ namespace simul
 			virtual void EndEvent			(DeviceContext &);
 			virtual void StartRender		(DeviceContext &){}
 			virtual void EndRender			(DeviceContext &){}
-			virtual void IntializeLightingEnvironment(const float pAmbientLight[3])		=0;
 
 			virtual void CopyTexture		(DeviceContext &,crossplatform::Texture *,crossplatform::Texture *){};
 			//! Execute the currently applied compute shader.
@@ -241,7 +163,6 @@ namespace simul
 			virtual void Draw				(DeviceContext &deviceContext,int num_verts,int start_vert)=0;
 			//! Draw the specified number of vertices using the bound index arrays.
 			virtual void DrawIndexed		(DeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0)=0;
-			virtual void DrawMarker			(DeviceContext &deviceContext,const double *matrix)			=0;
 			virtual void DrawLine			(crossplatform::DeviceContext &deviceContext,const float *pGlobalBasePosition, const float *pGlobalEndPosition,const float *colour,float width);
 		
 			virtual void DrawLineLoop		(DeviceContext &,const double *,int ,const double *,const float [4]){}

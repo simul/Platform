@@ -15,8 +15,6 @@
 using namespace simul;
 using namespace dx12;
 
-#pragma optimize("",off)
-
 SamplerState::SamplerState(crossplatform::SamplerStateDesc *d)
 {
 }
@@ -851,7 +849,7 @@ void Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *ta,void *srv,bool make_uav)
 {
 	SIMUL_BREAK_ONCE("Not implemented");
-	return;
+#if 0
 
 	mInitializedFromExternal = true;
 
@@ -936,16 +934,11 @@ void Texture::InitFromExternalTexture3D(crossplatform::RenderPlatform *r,void *t
 	dim			= 3;
 	auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
 	rPlat->FlushBarriers();
+#endif
 }
 
 bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int w,int l,int d,crossplatform::PixelFormat pf,bool computable,int m,bool rendertargets)
 {
-	if ((w * l * d) <= 0)
-	{
-		SIMUL_CERR << "ensureTexture3DSizeAndFormat called with null size! \n";
-		return false;
-	}
-
 	HRESULT res = S_FALSE;
 
 	pixelFormat		= pf;
@@ -1314,12 +1307,12 @@ bool Texture::ensureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			depthStencilView12 = mTextureDsHeap.CpuHandle();
 			mTextureDsHeap.Offset();
 		}
+		auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
+		rPlat->FlushBarriers();
 	}
 
 	mips		= m;
 	arraySize	= 1;
-	auto rPlat	= (dx12::RenderPlatform*)renderPlatform;
-	rPlat->FlushBarriers();
 	
 	return !ok;
 }
