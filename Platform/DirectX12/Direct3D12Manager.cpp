@@ -649,7 +649,7 @@ void Direct3D12Manager::Render(HWND h)
 
 	if (w->renderer)
 	{
-		w->renderer->Render(w->view_id, pParams,&w->mRtvCpuHandle[m_frameIndex],w->m_scissorRect.right,w->m_scissorRect.bottom);
+		w->renderer->Render(w->view_id,m_commandList,&w->mRtvCpuHandle[m_frameIndex],w->m_scissorRect.right,w->m_scissorRect.bottom);
 	
 	}
 
